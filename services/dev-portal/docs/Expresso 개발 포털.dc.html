@@ -1250,6 +1250,77 @@ class Component extends DCLogic {
     }, 350);
   }
 
+  // 뷰어 안의 요소로 스크롤한다. scrollDoc 과 같은 방식으로,
+  // 스크롤 컨테이너가 따로 있으면 그쪽을, 없으면 iframe 창을 움직인다.
+  scrollElInDoc(el) {
+    const fr = document.getElementById('docframe');
+    if (!fr || !el) return;
+    try {
+      const d = fr.contentDocument, w = fr.contentWindow;
+      let box = el.parentElement, cont = null;
+      while (box && box !== d.body) {
+        const st = w.getComputedStyle(box);
+        if (/(auto|scroll)/.test(st.overflowY) && box.scrollHeight > box.clientHeight + 8) { cont = box; break; }
+        box = box.parentElement;
+      }
+      if (cont) {
+        cont.scrollTop += el.getBoundingClientRect().top - cont.getBoundingClientRect().top - 24;
+      } else {
+        const top = el.getBoundingClientRect().top + (w.scrollY || 0) - 24;
+        w.scrollTo(0, top);
+        if (Math.abs((w.scrollY || 0) - top) > 4 && d.scrollingElement) d.scrollingElement.scrollTop = top;
+      }
+    } catch (e) {}
+  }
+
+  // 뷰어에 뜬 문서에서 후보 문구가 있는 곳으로 내려간다.
+  // 기능 ID(F1.6)처럼 제목이 아닌 항목도 있으므로 제목만 보지 않고 말단 요소를
+  // 훑는다. 후보는 좁은 것 → 넓은 것 순서로 넘어오고, 같은 후보 안에서는
+  // 텍스트가 가장 짧은(= 가장 구체적인) 요소를 고른다.
+  seekInDoc(cands, tries, wantFile) {
+    const fr = document.getElementById('docframe');
+    const norm = t => String(t).toLowerCase().replace(/\s+/g, ' ').trim();
+    const again = () => { if ((tries || 0) < 30) setTimeout(() => this.seekInDoc(cands, (tries || 0) + 1, wantFile), 300); };
+    let d = null;
+    try { d = fr && fr.contentDocument; } catch (e) { d = null; }
+    if (!d || !d.body || d.body.children.length === 0) { again(); return; }
+    // 아직 이전 문서가 남아 있을 수 있다. 그 문서에서 찾아 스크롤하면
+    // 새 문서가 뜨는 순간 헛수고가 되므로, 대상 문서가 뜰 때까지 기다린다.
+    if (wantFile) {
+      let here = '';
+      try { here = decodeURIComponent(d.URL || ''); } catch (e) { here = String(d.URL || ''); }
+      if (here.indexOf(wantFile) < 0) { again(); return; }
+    }
+    const leaves = Array.prototype.slice.call(d.querySelectorAll('h1, h2, h3, h4, span, td, th, p, strong, b, li, div'))
+      .filter(el => el.children.length === 0 && el.textContent && el.textContent.trim().length > 0);
+    for (let c = 0; c < cands.length; c++) {
+      const n = norm(cands[c]);
+      if (!n) continue;
+      let best = null, bestLen = Infinity;
+      for (let k = 0; k < leaves.length; k++) {
+        const t = norm(leaves[k].textContent);
+        if (t.indexOf(n) < 0) continue;
+        if (t.length < bestLen) { best = leaves[k]; bestLen = t.length; }
+      }
+      if (best) {
+        this.scrollElInDoc(best);
+        // 스크롤이 먹었는지 확인한다. 문서가 아직 자라는 중이면 목표 위치가
+        // 문서 높이로 클램프되어 맨 위에 머문다 — 그럴 때 다시 시도한다.
+        const target = best;
+        setTimeout(() => {
+          if (!target.isConnected) { again(); return; }   // 문서가 교체된 경우
+          const box = target.getBoundingClientRect();
+          const h = fr.clientHeight || 800;
+          if (box.top < -60 || box.top > h) again();
+        }, 320);
+        return;
+      }
+    }
+    // 아직 못 찾았다면 문서가 덜 그려진 것이다 — dc-runtime 은 CDN 에서 React 를
+    // 받아 렌더하므로 body 에 자식이 생긴 뒤에도 내용이 한동안 비어 있다.
+    again();
+  }
+
   loadRecent() { this.setState({ recent: RStore.load() }); }
 
   // 검색어를 최근 목록 맨 앞으로 올린다. 같은 말은 중복으로 쌓지 않는다.
@@ -1283,19 +1354,19 @@ class Component extends DCLogic {
     const hits = [];
     if (q) {
       D.forEach(d => {
-        if ((d[0] + ' ' + d[1]).toLowerCase().indexOf(q) >= 0) hits.push({ type: 'DOMAIN', label: d[0] + ' ' + d[1], sub: d[3] + 'pt', href: url(MM), dom: d[0] });
+        if ((d[0] + ' ' + d[1]).toLowerCase().indexOf(q) >= 0) hits.push({ type: 'DOMAIN', label: d[0] + ' ' + d[1], sub: d[3] + 'pt', href: url(MM), file: MM, dom: d[0], seek: [d[1]] });
         d[8].forEach((f, fi) => {
           const fid = 'F' + d[0].slice(1) + '.' + (fi + 1);
-          if ((fid + ' ' + f[0]).toLowerCase().indexOf(q) >= 0) hits.push({ type: 'FEATURE', label: fid + ' ' + f[0], sub: d[1], href: url(F), dom: d[0] });
+          if ((fid + ' ' + f[0]).toLowerCase().indexOf(q) >= 0) hits.push({ type: 'FEATURE', label: fid + ' ' + f[0], sub: d[1], href: url(F), file: F, dom: d[0], seek: [fid + ' ' + f[0], f[0], d[1]] });
         });
         tasksOf(d).forEach(t => {
-          if ((t.id + ' ' + t.label).toLowerCase().indexOf(q) >= 0) hits.push({ type: 'TASK', label: t.id + ' ' + t.label, sub: t.feature + ' · ' + d[1], href: url(F), dom: d[0] });
+          if ((t.id + ' ' + t.label).toLowerCase().indexOf(q) >= 0) hits.push({ type: 'TASK', label: t.id + ' ' + t.label, sub: t.feature + ' · ' + d[1], href: url(F), file: F, dom: d[0], seek: [t.feature, d[1]] });
         });
-        d[6].forEach(tb => { if (tb.indexOf(q) >= 0) hits.push({ type: 'TABLE', label: tb, sub: d[0] + ' ' + d[1], href: url(ERD), dom: d[0] }); });
-        d[5].forEach(sn => { if (sn.toLowerCase().indexOf(q) >= 0) hits.push({ type: 'SCREEN', label: '화면 ' + sn, sub: d[0] + ' ' + d[1], href: url(IM), dom: d[0] }); });
+        d[6].forEach(tb => { if (tb.indexOf(q) >= 0) hits.push({ type: 'TABLE', label: tb, sub: d[0] + ' ' + d[1], href: url(ERD), file: ERD, dom: d[0], seek: [tb] }); });
+        d[5].forEach(sn => { if (sn.toLowerCase().indexOf(q) >= 0) hits.push({ type: 'SCREEN', label: '화면 ' + sn, sub: d[0] + ' ' + d[1], href: url(IM), file: IM, dom: d[0], seek: [sn, d[1]] }); });
       });
-      DOCS.forEach(dc => { if (dc[0].toLowerCase().indexOf(q) >= 0) hits.push({ type: 'DOC', label: dc[0], sub: dc[3], href: url(dc[1]), nav: FILE_NAV[dc[1]] || null }); });
-      DECISIONS.forEach(x => { if ((x[0] + ' ' + x[1]).toLowerCase().indexOf(q) >= 0) hits.push({ type: 'DECIDE', label: x[0] + ' ' + x[1], sub: x[2], href: url(F) }); });
+      DOCS.forEach(dc => { if (dc[0].toLowerCase().indexOf(q) >= 0) hits.push({ type: 'DOC', label: dc[0], sub: dc[3], href: url(dc[1]), file: dc[1] }); });
+      DECISIONS.forEach(x => { if ((x[0] + ' ' + x[1]).toLowerCase().indexOf(q) >= 0) hits.push({ type: 'DECIDE', label: x[0] + ' ' + x[1], sub: x[2], href: url(F), file: F, seek: [x[1].slice(0, 12)] }); });
     }
     const HC = { DOMAIN: ['#9A4030', '#FBEEE4'], FEATURE: ['#3C6E9E', '#E9F0F8'], TASK: ['#5A6B87', '#EFF3F9'], TABLE: ['#2F5C86', '#E9F0F8'], SCREEN: ['#12A97A', '#E7F6F0'], DOC: ['#8A6553', '#F4EDE7'], DECIDE: ['#9A4030', '#FBEEE4'] };
 
@@ -1304,15 +1375,15 @@ class Component extends DCLogic {
     // (콘솔 우측 레일이 관련 화면·테이블을 이미 보여준다).
     const openHit = h => {
       this.commitRecent();
-      if (h.nav) {
-        this._frame = null;
-        this.setState({ doc: h.nav, view: 'console', toc: [], tocAt: -1, q: '', sopen: false, scur: -1 });
-      } else if (h.dom) {
-        this.setState({ sel: h.dom, doc: null, view: 'console', section: 'domain', q: '', sopen: false, scur: -1 });
-        window.scrollTo(0, 0);
-      } else {
-        window.location.href = h.href;
-      }
+      const nav = h.file ? FILE_NAV[h.file] : null;
+      if (!nav) { window.location.href = h.href; return; }   // NAV 에 없는 문서는 새로 열어 준다
+      this._frame = null;
+      // 소속 도메인도 함께 맞춰 둔다 — 뷰어를 닫으면 관련 도메인이 열려 있다
+      const next = { doc: nav, view: 'console', section: 'domain', toc: [], tocAt: -1, q: '', sopen: false, scur: -1 };
+      if (h.dom) next.sel = h.dom;
+      this.setState(next);
+      window.scrollTo(0, 0);
+      if (h.seek && h.seek.length) this.seekInDoc(h.seek, 0, h.file);
     };
 
     const byType = hits.slice().sort((a, b) => TYPE_ORDER[a.type] - TYPE_ORDER[b.type]);
