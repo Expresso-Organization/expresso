@@ -25,7 +25,7 @@
 <script src="./screen-map.js"></script>
 </helmet>
 
-<div style="width: 1440px; background: #F7FAFE; min-height: 900px">
+<div style="width: 100%; min-width: 1024px; max-width: 2000px; margin: 0 auto; background: #F7FAFE; min-height: 900px">
 
   <div style="display: flex; align-items: center; gap: 14px; padding: 16px 32px; background: #16223A; color: #fff">
     <svg width="22" height="22" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cpt"><circle cx="44" cy="54" r="36"></circle></clipPath><mask id="kpt"><rect x="0" y="0" width="108" height="108" fill="#fff"></rect><circle cx="44" cy="54" r="46.5" fill="#000"></circle></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.5" mask="url(#kpt)"></circle><rect x="0" y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#cpt)"></rect><circle cx="44" cy="54" r="36" stroke="#fff" stroke-width="10"></circle></svg>
@@ -46,7 +46,7 @@
     </div>
   </div>
 
-  <div style="display: flex; align-items: center; gap: 4px; padding: 0 32px; background: #1D2B47; border-bottom: 1px solid rgba(255,255,255,.08)">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 0 32px; background: #1D2B47; border-bottom: 1px solid rgba(255,255,255,.08); overflow-x: auto; scrollbar-width: none">
     <sc-for list="{{ navLinks }}" as="n" hint-placeholder-count="8">
       <a href="{{ n.href }}" onClick="{{ n.onClick }}" style="display: flex; align-items: center; gap: 7px; padding: 11px 13px; font-size: 12.5px; font-weight: {{ n.weight }}; color: {{ n.color }}; background: {{ n.bg }}; white-space: nowrap; flex-shrink: 0; cursor: pointer; border-bottom: 2px solid {{ n.edge }}" style-hover="color: #fff; border-bottom-color: #E0B486; background: rgba(255,255,255,.09)">
         <span style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: .08em; color: {{ n.tagColor }}">{{ n.tag }}</span>{{ n.label }}
@@ -64,7 +64,7 @@
       </div>
       <div style="display: flex; align-items: flex-start">
         <sc-if value="{{ tocOpen }}" hint-placeholder-val="{{ false }}">
-          <div style="width: 268px; height: 1180px; overflow-y: auto; flex-shrink: 0; background: #FBFCFE; border-right: 1px solid #E2E9F4; padding: 18px 0 40px">
+          <div style="width: 268px; height: calc(100vh - 157px); overflow-y: auto; flex-shrink: 0; background: #FBFCFE; border-right: 1px solid #E2E9F4; padding: 18px 0 40px">
             <div style="display: flex; align-items: baseline; gap: 8px; padding: 0 18px 14px; margin-bottom: 6px; border-bottom: 1px solid #F1F5FB">
               <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .12em; color: #93A2BA">CONTENTS</span>
               <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #C6CEDD">{{ tocCount }}</span>
@@ -74,7 +74,7 @@
             </sc-for>
           </div>
         </sc-if>
-        <iframe id="docframe" src="{{ viewerSrc }}" style="display: block; width: {{ frameW }}px; height: 1180px; border: none; background: #fff"></iframe>
+        <iframe id="docframe" src="{{ viewerSrc }}" style="display: block; flex: 1 1 auto; width: auto; height: calc(100vh - 157px); border: none; background: #fff"></iframe>
       </div>
     </div>
   </sc-if>
@@ -362,7 +362,7 @@
         </div>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 8px; padding: 12px 14px; background: #fff; border: 1px solid #E2E9F4; border-radius: 12px; margin-bottom: 16px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 14px; background: #fff; border: 1px solid #E2E9F4; border-radius: 12px; margin-bottom: 16px">
         <input value="{{ form.title }}" onChange="{{ form.onTitle }}" onKeyDown="{{ form.onKey }}" placeholder="새 티켓 제목 — Enter로 추가" style="flex: 1; min-width: 0; font-size: 13px; color: #16223A; background: #F7FAFE; border: 1px solid #E2E9F4; border-radius: 8px; padding: 9px 12px" />
         <input value="{{ form.assignee }}" onChange="{{ form.onAssignee }}" placeholder="담당자" style="width: 104px; font-size: 12.5px; color: #16223A; background: #F7FAFE; border: 1px solid #E2E9F4; border-radius: 8px; padding: 9px 11px" />
         <input value="{{ form.due }}" onChange="{{ form.onDue }}" type="date" style="width: 136px; font-size: 12.5px; color: #16223A; background: #F7FAFE; border: 1px solid #E2E9F4; border-radius: 8px; padding: 8px 11px" />
@@ -1357,7 +1357,6 @@ class Component extends DCLogic {
 
       tocOpen: s.toc.length >= 3,
       tocCount: s.toc.length + '항목',
-      frameW: s.toc.length >= 3 ? 1171 : 1440,
       toc: s.toc.map(h => ({
         text: h.text,
         indent: 16 + (h.level - 1) * 13,
