@@ -1,8 +1,8 @@
 # Expresso 개발 포털
 
-Expresso 팀의 명세 문서와 개발 콘솔입니다. 빌드 없이 브라우저에서 바로 렌더되며, GitHub Pages로 배포됩니다.
+Expresso 팀의 명세 문서와 개발 콘솔입니다. 빌드 없이 브라우저에서 바로 렌더되며, Cloudflare Pages로 배포됩니다.
 
-**https://expresso-organization.github.io/dev-portal/**
+**https://expresso-dev-portal.pages.dev**
 
 ## 무엇이 들어 있나
 
@@ -47,7 +47,30 @@ python3 -m http.server 8000 --directory docs
 
 ## 배포
 
-`main` 브랜치의 `/docs` 폴더를 GitHub Pages가 그대로 서빙합니다. 빌드 단계가 없으므로 push하면 1–2분 내에 반영됩니다.
+Cloudflare Pages 프로젝트 `expresso-dev-portal`에 `docs/`를 직접 업로드합니다. 빌드 단계가 없습니다.
+
+```bash
+npx wrangler pages deploy docs --project-name=expresso-dev-portal --branch main
+```
+
+처음 쓰는 사람은 `npx wrangler login`으로 Cloudflare 인증을 먼저 해야 합니다.
+push할 때 자동 배포되게 하려면 Cloudflare 대시보드에서 이 GitHub 저장소를 연결하십시오
+(Workers & Pages → expresso-dev-portal → Settings → Builds & deployments).
+
+### `.html` 이 사라지는 것은 정상입니다
+
+Cloudflare Pages는 `/문서.dc.html` 요청을 `/문서.dc` 로 308 리다이렉트합니다(확장자 제거 정규화).
+브라우저와 iframe이 리다이렉트를 그대로 따라가므로 문서 간 링크는 정상 동작합니다 — 주소창에
+`.html` 이 없어도 문제가 아닙니다.
+
+### GitHub Pages를 쓰지 않는 이유
+
+`Expresso-Organization` 조직에서 GitHub Pages 배포가 4회 연속 실패했습니다. `build` 잡은 매번
+성공(아티팩트 업로드 완료)하는데 `deploy` 잡이 `deployment_queued` 상태로 10분간 대기하다
+타임아웃됩니다. 저장소·조직 설정(public, Actions 활성, `members_can_create_pages`,
+`github-pages` 환경의 `main` 허용, 이메일 인증)은 모두 정상 확인했고, 같은 계정의 개인 저장소
+Pages는 정상 동작하므로 신규 조직 쪽 문제로 보입니다. 실패한 run — `31102223605`,
+`31103706549`, `31106905848`, `31108111972`.
 
 ## 알려진 한계
 
