@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<script src="./image-slot.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; background: #F7FAFE; }
+  body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; color: #16223A; }
+  * { box-sizing: border-box; }
+  a { color: #16223A; text-decoration: none; }
+  a:hover { color: #0B1220; text-decoration: underline; text-underline-offset: 3px; }
+  @keyframes ex-drop { 0% { transform: translateY(-6px); opacity: 0; } 22% { opacity: 1; } 62% { transform: translateY(7px); opacity: 1; } 74%, 100% { transform: translateY(7px); opacity: 0; } }
+  @keyframes ex-ripple { 0%, 40% { transform: translate(-50%,-50%) scale(1); } 62% { transform: translate(-50%,-50%) scale(1.07); } 88%, 100% { transform: translate(-50%,-50%) scale(1); } }
+  @keyframes ex-pour { 0% { transform: translateY(-12px); opacity: 0; } 18% { opacity: 1; } 72% { transform: translateY(5px); opacity: 1; } 100% { transform: translateY(9px); opacity: 0; } }
+  @keyframes ex-level { 0%, 12% { height: 22%; } 62%, 100% { height: 46%; } }
+</style>
+</helmet>
+
+<div style="max-width: 1280px; margin: 0 auto; padding: 0 40px 140px">
+
+  <header style="padding: 68px 0 56px">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 48px">
+      <svg width="26" height="26" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx401"><circle cx="44" cy="54" r="35.5"/></clipPath><mask id="mx401"><rect x="0" y="0" width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="47.05" fill="#000"/></mask></defs><circle cx="77.72" cy="54" r="19.53" stroke="#E0B486" stroke-width="9.35" mask="url(#mx401)"/><rect x="0" y="58.8" width="108" height="49.20" fill="#9A4030" clip-path="url(#cx401)"/><circle cx="44" cy="54" r="35.5" stroke="#9A4030" stroke-width="11"/></svg>
+      <span style="font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 500; letter-spacing: -.02em">Expre<span style="color: #9A4030">ss</span>o</span>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .14em; color: #93A2BA; border: 1px solid #E2E9F4; border-radius: 5px; padding: 4px 8px; margin-left: 6px">ICONOGRAPHY</span>
+      <a href="Expresso Design System.dc.html" style="margin-left: auto; font-size: 13px">← 디자인 시스템</a>
+    </div>
+    <div style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 60px; line-height: 1.05; letter-spacing: -.03em; margin-bottom: 26px">Marks &amp; Icons</div>
+    <p style="margin: 0; font-size: 16px; line-height: 1.8; color: #5A6B87; max-width: 620px; text-wrap: pretty">브랜드 마크는 <b style="color: #16223A; font-weight: 600">수위가 담긴 원과 겹쳐진 손잡이</b>. 잔을 묘사하는 대신 담긴 상태만 남겨, 16px까지 형태가 버팁니다. UI 아이콘은 Phosphor 기반으로 획을 맞춥니다.</p>
+  </header>
+
+  <section style="margin-bottom: 100px">
+    <div style="display: flex; align-items: baseline; gap: 16px; border-bottom: 1px solid #E2E9F4; padding-bottom: 14px; margin-bottom: 30px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">01</span>
+      <h2 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 400; letter-spacing: -.025em">Brand Mark</h2>
+      <span style="font-size: 13px; color: #5A6B87; margin-left: auto">원 · 수위 · 겹쳐진 손잡이</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 20px; margin-bottom: 20px">
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 34px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #9A4030; margin-bottom: 30px">THE MARK</div>
+        <div style="height: 180px; display: grid; place-items: center; margin-bottom: 28px"><svg width="160" height="160" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx402"><circle cx="44" cy="54" r="37"/></clipPath><mask id="mx402"><rect x="0" y="0" width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="45.4" fill="#000"/></mask></defs><circle cx="79.15" cy="54" r="20.35" stroke="#E0B486" stroke-width="6.80" mask="url(#mx402)"/><rect x="0" y="59.28" width="108" height="48.72" fill="#9A4030" clip-path="url(#cx402)"/><circle cx="44" cy="54" r="37" stroke="#9A4030" stroke-width="8"/></svg></div>
+        <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 8px">차오르는 잔</div>
+        <div style="font-size: 12.5px; color: #5A6B87; line-height: 1.75">기록이 쌓일수록 채워진다 — 서비스 구조를 형태 하나로 줄였습니다. 오른쪽에 겹친 작은 원이 손잡이입니다. 손잡이는 잔 뒤로 돌아가 본체에 가려지고, 사이에 배경이 비치는 간격을 둡니다. 획은 본체의 <b style="color: #35455F">85%</b>, 색은 Crema로 한 톤 낮춰 본체 실루엣을 흐리지 않습니다.</div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 34px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 30px">CONSTRUCTION</div>
+        <div style="height: 180px; display: grid; place-items: center; margin-bottom: 28px"><svg width="160" height="160" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cg"><circle cx="44" cy="54" r="37"/></clipPath><mask id="mg"><rect x="0" y="0" width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="45.4" fill="#000"/></mask></defs><circle cx="44" cy="54" r="45" stroke="#E4E9F2" stroke-width="1"/><line x1="2" y1="54" x2="106" y2="54" stroke="#E4E9F2" stroke-width="1"/><line x1="44" y1="6" x2="44" y2="102" stroke="#E4E9F2" stroke-width="1"/><circle cx="79.15" cy="54" r="20.35" stroke="#E0B486" stroke-width="6.80" mask="url(#mg)"/><rect x="0" y="59.28" width="108" height="48.72" fill="#9A4030" clip-path="url(#cg)"/><circle cx="44" cy="54" r="37" stroke="#9A4030" stroke-width="8"/><line x1="2" y1="59.28" x2="106" y2="59.28" stroke="#16223A" stroke-width="1" stroke-dasharray="3 3"/></svg></div>
+        <div style="display: grid; gap: 9px">
+          <div style="display: flex; justify-content: space-between; font-size: 12.5px"><span style="color: #5A6B87">획 두께 · 지름 대비</span><span style="font-family: 'JetBrains Mono', monospace; color: #16223A">8%</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 12.5px"><span style="color: #5A6B87">수위 · 안지름 대비</span><span style="font-family: 'JetBrains Mono', monospace; color: #16223A">42%</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 12.5px"><span style="color: #5A6B87">수면과 획 사이</span><span style="font-family: 'JetBrains Mono', monospace; color: #16223A">0 · 맞닿음</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 12.5px"><span style="color: #5A6B87">손잡이 원 · 반지름 / 획</span><span style="font-family: 'JetBrains Mono', monospace; color: #16223A">55% / 85%</span></div>
+        </div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 34px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 30px">LEVEL · 상태 표현</div>
+        <div style="height: 180px; display: flex; align-items: center; justify-content: center; gap: 22px; margin-bottom: 28px">
+          <div style="text-align: center"><svg width="64" height="64" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx403"><circle cx="44" cy="54" r="36.5"/></clipPath><mask id="mx403"><rect x="0" y="0" width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="45.95" fill="#000"/></mask></defs><circle cx="78.67" cy="54" r="20.08" stroke="#E0B486" stroke-width="7.65" mask="url(#mx403)"/><rect x="0" y="76.44" width="108" height="31.56" fill="#9A4030" clip-path="url(#cx403)"/><circle cx="44" cy="54" r="36.5" stroke="#9A4030" stroke-width="9"/></svg><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 12px">EMPTY</div></div>
+          <div style="text-align: center"><svg width="64" height="64" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx404"><circle cx="44" cy="54" r="36.5"/></clipPath><mask id="mx404"><rect x="0" y="0" width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="45.95" fill="#000"/></mask></defs><circle cx="78.67" cy="54" r="20.08" stroke="#E0B486" stroke-width="7.65" mask="url(#mx404)"/><rect x="0" y="59.28" width="108" height="48.72" fill="#9A4030" clip-path="url(#cx404)"/><circle cx="44" cy="54" r="36.5" stroke="#9A4030" stroke-width="9"/></svg><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 12px">DEFAULT</div></div>
+          <div style="text-align: center"><svg width="64" height="64" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx405"><circle cx="44" cy="54" r="36.5"/></clipPath><mask id="mx405"><rect x="0" y="0" width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="45.95" fill="#000"/></mask></defs><circle cx="78.67" cy="54" r="20.08" stroke="#E0B486" stroke-width="7.65" mask="url(#mx405)"/><rect x="0" y="38.16" width="108" height="69.84" fill="#9A4030" clip-path="url(#cx405)"/><circle cx="44" cy="54" r="36.5" stroke="#9A4030" stroke-width="9"/></svg><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 12px">FULL</div></div>
+        </div>
+        <div style="font-size: 12.5px; color: #5A6B87; line-height: 1.75">수위는 제품 안에서 <b style="color: #35455F">진행률로 확장</b>됩니다. 온보딩 완성도, 추출 진행, 무료 quota 잔량을 같은 형태 하나로 말할 수 있습니다. 단, 로고로 쓸 때는 42%로 고정합니다.</div>
+      </div>
+    </div>
+
+    <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 28px; margin-bottom: 20px">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 26px">크기별 검증</div>
+      <div style="display: flex; align-items: flex-end; gap: 40px; flex-wrap: wrap">
+        <div style="text-align: center"><div style="height: 68px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 12px"><svg width="64" height="64" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx406"><circle cx="44" cy="54" r="36.5"/></clipPath><mask id="mx406"><rect x="0" y="0" width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="45.95" fill="#000"/></mask></defs><circle cx="78.67" cy="54" r="20.08" stroke="#E0B486" stroke-width="7.65" mask="url(#mx406)"/><rect x="0" y="59.12" width="108" height="48.88" fill="#9A4030" clip-path="url(#cx406)"/><circle cx="44" cy="54" r="36.5" stroke="#9A4030" stroke-width="9"/></svg></div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA">64</div></div>
+        <div style="text-align: center"><div style="height: 68px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 12px"><svg width="40" height="40" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx407"><circle cx="44" cy="54" r="36"/></clipPath><mask id="mx407"><rect x="0" y="0" width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="46.5" fill="#000"/></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.50" mask="url(#mx407)"/><rect x="0" y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#cx407)"/><circle cx="44" cy="54" r="36" stroke="#9A4030" stroke-width="10"/></svg></div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA">40</div></div>
+        <div style="text-align: center"><div style="height: 68px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 12px"><svg width="24" height="24" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx408"><circle cx="44" cy="54" r="35.5"/></clipPath><mask id="mx408"><rect x="0" y="0" width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="47.05" fill="#000"/></mask></defs><circle cx="77.72" cy="54" r="19.53" stroke="#E0B486" stroke-width="9.35" mask="url(#mx408)"/><rect x="0" y="58.8" width="108" height="49.20" fill="#9A4030" clip-path="url(#cx408)"/><circle cx="44" cy="54" r="35.5" stroke="#9A4030" stroke-width="11"/></svg></div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA">24</div></div>
+        <div style="text-align: center"><div style="height: 68px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 12px"><svg width="16" height="16" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx409"><circle cx="54" cy="54" r="43.5"/></clipPath></defs><rect x="0" y="59.92" width="108" height="48.08" fill="#9A4030" clip-path="url(#cx409)"/><circle cx="54" cy="54" r="43.5" stroke="#9A4030" stroke-width="13"/></svg></div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA">16 · min</div></div>
+        <div style="flex: 1; min-width: 240px; font-size: 12.5px; color: #5A6B87; line-height: 1.75; border-left: 1px solid #F1F5FB; padding-left: 24px">작아질수록 획을 두껍게 보정합니다 — 64px에서 9%, 40px 10%, 24px 11%, 16px 13%. 손잡이 원은 본체 획의 85% 두께에 Crema, <b style="color: #35455F">16px에서는 뺍니다</b>.</div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
+      <div style="background: #16223A; border-radius: 18px; padding: 30px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #E0B486; margin-bottom: 26px">ON DARK · CREMA</div>
+        <div style="display: flex; align-items: center; gap: 28px">
+          <svg width="72" height="72" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx410"><circle cx="44" cy="54" r="36.5"/></clipPath><mask id="mx410"><rect x="0" y="0" width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="45.95" fill="#000"/></mask></defs><circle cx="78.67" cy="54" r="20.08" stroke="#A9793F" stroke-width="7.65" mask="url(#mx410)"/><rect x="0" y="59.12" width="108" height="48.88" fill="#E0B486" clip-path="url(#cx410)"/><circle cx="44" cy="54" r="36.5" stroke="#E0B486" stroke-width="9"/></svg>
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 400; font-size: 34px; letter-spacing: -.03em; color: #F7FAFE">Expre<span style="color: #E0B486">ss</span>o</span>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 30px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 26px">MONOTONE · 단색 매체</div>
+        <div style="display: flex; align-items: center; gap: 28px">
+          <svg width="72" height="72" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx411"><circle cx="44" cy="54" r="36.5"/></clipPath><mask id="mx411"><rect x="0" y="0" width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="45.95" fill="#000"/></mask></defs><circle cx="78.67" cy="54" r="20.08" stroke="#8492A9" stroke-width="7.65" mask="url(#mx411)"/><rect x="0" y="59.12" width="108" height="48.88" fill="#16223A" clip-path="url(#cx411)"/><circle cx="44" cy="54" r="36.5" stroke="#16223A" stroke-width="9"/></svg>
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 400; font-size: 34px; letter-spacing: -.03em; color: #16223A">Expresso</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-bottom: 100px">
+    <div style="display: flex; align-items: baseline; gap: 16px; border-bottom: 1px solid #E2E9F4; padding-bottom: 14px; margin-bottom: 30px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">02</span>
+      <h2 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 400; letter-spacing: -.025em">Lockup &amp; Applications</h2>
+      <span style="font-size: 13px; color: #5A6B87; margin-left: auto">마크 + 워드마크</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; margin-bottom: 20px">
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 30px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 30px">HORIZONTAL LOCKUP</div>
+        <div style="display: flex; align-items: center; gap: 13px; margin-bottom: 30px">
+          <svg width="44" height="44" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx412"><circle cx="44" cy="54" r="36"/></clipPath><mask id="mx412"><rect x="0" y="0" width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="46.5" fill="#000"/></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.50" mask="url(#mx412)"/><rect x="0" y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#cx412)"/><circle cx="44" cy="54" r="36" stroke="#9A4030" stroke-width="10"/></svg>
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 400; font-size: 34px; letter-spacing: -.03em; color: #16223A">Expre<span style="color: #9A4030">ss</span>o</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 30px">
+          <svg width="28" height="28" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx413"><circle cx="44" cy="54" r="35.5"/></clipPath><mask id="mx413"><rect x="0" y="0" width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="47.05" fill="#000"/></mask></defs><circle cx="77.72" cy="54" r="19.53" stroke="#E0B486" stroke-width="9.35" mask="url(#mx413)"/><rect x="0" y="58.8" width="108" height="49.20" fill="#9A4030" clip-path="url(#cx413)"/><circle cx="44" cy="54" r="35.5" stroke="#9A4030" stroke-width="11"/></svg>
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 500; font-size: 22px; letter-spacing: -.025em; color: #16223A">Expre<span style="color: #9A4030">ss</span>o</span>
+        </div>
+        <div style="font-size: 12.5px; color: #5A6B87; line-height: 1.75; padding-top: 22px; border-top: 1px solid #F1F5FB">마크와 워드마크 사이는 마크 너비의 <b style="color: #35455F">30%</b>, 여백은 사방으로 50% 이상. 좁은 공간에서는 마크만, 본문 안에서는 워드마크만 쓰는 것도 허용합니다.</div>
+      </div>
+
+      <div style="background: #16223A; border-radius: 18px; padding: 30px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #E0B486; margin-bottom: 30px">ON DARK</div>
+        <div style="display: flex; align-items: center; gap: 13px; margin-bottom: 22px">
+          <svg width="44" height="44" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx414"><circle cx="44" cy="54" r="36"/></clipPath><mask id="mx414"><rect x="0" y="0" width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="46.5" fill="#000"/></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#A9793F" stroke-width="8.50" mask="url(#mx414)"/><rect x="0" y="58.96" width="108" height="49.04" fill="#E0B486" clip-path="url(#cx414)"/><circle cx="44" cy="54" r="36" stroke="#E0B486" stroke-width="10"/></svg>
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 400; font-size: 34px; letter-spacing: -.03em; color: #F7FAFE">Expre<span style="color: #E0B486">ss</span>o</span>
+        </div>
+        <div style="font-size: 12.5px; color: #93A2BA; line-height: 1.75">다크 배경에서는 마크와 액센트를 <b style="color: #E0B486">Crema</b>로 올립니다. 진한 브라운은 어두운 지면에서 사라집니다.</div>
+      </div>
+    </div>
+
+    <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 30px; margin-bottom: 20px">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 28px">WORDMARK · 이중 s 액센트</div>
+      <div style="display: flex; align-items: flex-end; gap: 56px; flex-wrap: wrap; margin-bottom: 28px">
+        <span style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 56px; line-height: 1; letter-spacing: -.035em; color: #16223A">Expre<span style="color: #9A4030">ss</span>o</span>
+        <span style="font-family: 'Outfit', sans-serif; font-weight: 400; font-size: 34px; line-height: 1; letter-spacing: -.03em; color: #16223A">Expre<span style="color: #9A4030">ss</span>o</span>
+        <span style="font-family: 'Outfit', sans-serif; font-weight: 500; font-size: 20px; line-height: 1; letter-spacing: -.02em; color: #16223A">Expre<span style="color: #9A4030">ss</span>o</span>
+        <span style="font-family: 'Outfit', sans-serif; font-weight: 500; font-size: 14px; line-height: 1; letter-spacing: -.01em; color: #16223A">Expre<span style="color: #9A4030">ss</span>o</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding-top: 24px; border-top: 1px solid #F1F5FB">
+        <div style="font-size: 12.5px; color: #5A6B87; line-height: 1.75">가운데 <b style="color: #35455F">ss 두 글자에만</b> Espresso 컬러. Express와 Espresso가 겹치는 지점을 색으로 짚어 이름의 중의성을 드러냅니다.</div>
+        <div style="font-size: 12.5px; color: #5A6B87; line-height: 1.75">마크와 함께 놓을 때도 <b style="color: #35455F">액센트는 유지</b>합니다. 마크가 있어도 워드마크는 독립적으로 성립해야 합니다.</div>
+        <div style="font-size: 12.5px; color: #5A6B87; line-height: 1.75">단색 인쇄·자수처럼 색을 못 쓰는 매체에서만 전체 단색으로 떨어뜨립니다. <b style="color: #35455F">굵기 대비로 대체하지 않습니다.</b></div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px">
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 26px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 22px">APP ICON</div>
+        <div style="display: grid; place-items: center; margin-bottom: 18px">
+          <div style="width: 92px; height: 92px; border-radius: 24px; background: #9A4030; display: grid; place-items: center; box-shadow: 0 10px 26px rgba(154,64,48,.24)"><svg width="56" height="56" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx415"><circle cx="44" cy="54" r="36.5"/></clipPath><mask id="mx415"><rect x="0" y="0" width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="45.95" fill="#000"/></mask></defs><circle cx="78.67" cy="54" r="20.08" stroke="#D79E7C" stroke-width="7.65" mask="url(#mx415)"/><rect x="0" y="59.12" width="108" height="48.88" fill="#FBEEE4" clip-path="url(#cx415)"/><circle cx="44" cy="54" r="36.5" stroke="#FBEEE4" stroke-width="9"/></svg></div>
+        </div>
+        <div style="font-size: 12.5px; color: #5A6B87; line-height: 1.7; text-align: center">Espresso 바탕 + Bean 라인</div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 26px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 22px">FAVICON</div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 18px; height: 92px">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: #9A4030; display: grid; place-items: center"><svg width="20" height="20" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx416"><circle cx="44" cy="54" r="34.5"/></clipPath><mask id="mx416"><rect x="0" y="0" width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="48.15" fill="#000"/></mask></defs><circle cx="76.78" cy="54" r="18.98" stroke="#D79E7C" stroke-width="11.05" mask="url(#mx416)"/><rect x="0" y="58.48" width="108" height="49.52" fill="#FBEEE4" clip-path="url(#cx416)"/><circle cx="44" cy="54" r="34.5" stroke="#FBEEE4" stroke-width="13"/></svg></div>
+          <div style="width: 16px; height: 16px; border-radius: 4px; background: #9A4030; display: grid; place-items: center"><svg width="11" height="11" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx417"><circle cx="54" cy="54" r="43.5"/></clipPath></defs><rect x="0" y="59.92" width="108" height="48.08" fill="#FBEEE4" clip-path="url(#cx417)"/><circle cx="54" cy="54" r="43.5" stroke="#FBEEE4" stroke-width="13"/></svg></div>
+        </div>
+        <div style="font-size: 12.5px; color: #5A6B87; line-height: 1.7; text-align: center">16px에서는 획을 13%까지 두껍게</div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 26px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 22px">FOOTER BADGE</div>
+        <div style="display: grid; place-items: center; height: 92px; margin-bottom: 18px">
+          <div style="display: flex; align-items: center; gap: 7px; border: 1px solid #E2E9F4; border-radius: 999px; padding: 7px 15px 7px 12px; background: #fff">
+            <svg width="16" height="16" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cx418"><circle cx="54" cy="54" r="43.5"/></clipPath></defs><rect x="0" y="59.92" width="108" height="48.08" fill="#9A4030" clip-path="url(#cx418)"/><circle cx="54" cy="54" r="43.5" stroke="#9A4030" stroke-width="13"/></svg>
+            <span style="font-size: 12.5px; color: #5A6B87; white-space: nowrap">Brewed by <b style="color: #16223A; font-weight: 600">Expre<span style="color: #9A4030">ss</span>o</b></span>
+          </div>
+        </div>
+        <div style="font-size: 12.5px; color: #5A6B87; line-height: 1.7; text-align: center">생성된 포트폴리오 하단 고정</div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 26px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 22px">AVATAR · BARISTA</div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 14px; height: 92px; margin-bottom: 18px">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: #FBEEE4; display: grid; place-items: center"><i class="ph ph-user-circle" style="font-size: 24px; color: #9A4030"></i></div>
+          <div style="width: 30px; height: 30px; border-radius: 50%; background: #FBEEE4; display: grid; place-items: center"><i class="ph ph-user-circle" style="font-size: 17px; color: #9A4030"></i></div>
+        </div>
+        <div style="font-size: 12.5px; color: #5A6B87; line-height: 1.7; text-align: center">브랜드 심볼과 반드시 구분</div>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-bottom: 100px">
+    <div style="display: flex; align-items: baseline; gap: 16px; border-bottom: 1px solid #E2E9F4; padding-bottom: 14px; margin-bottom: 30px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">03</span>
+      <h2 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 400; letter-spacing: -.025em">UI Icon Set</h2>
+      <span style="font-size: 13px; color: #5A6B87; margin-left: auto">Phosphor Regular · 24px 그리드</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px">
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 26px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 22px">NAVIGATION</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 12px">
+          <div style="text-align: center"><i class="ph ph-house" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">홈</div></div>
+          <div style="text-align: center"><i class="ph ph-folders" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">내 커리어</div></div>
+          <div style="text-align: center"><i class="ph ph-target" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">타겟</div></div>
+          <div style="text-align: center"><i class="ph ph-chart-bar" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">분석</div></div>
+          <div style="text-align: center"><i class="ph ph-globe-simple" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">배포</div></div>
+          <div style="text-align: center"><i class="ph ph-magnifying-glass" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">검색</div></div>
+          <div style="text-align: center"><i class="ph ph-bell" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">알림</div></div>
+          <div style="text-align: center"><i class="ph ph-gear-six" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">설정</div></div>
+        </div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 26px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 22px">ACTIONS</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 12px">
+          <div style="text-align: center"><i class="ph ph-plus" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">추가</div></div>
+          <div style="text-align: center"><i class="ph ph-pencil-simple" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">편집</div></div>
+          <div style="text-align: center"><i class="ph ph-arrows-clockwise" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">재생성</div></div>
+          <div style="text-align: center"><i class="ph ph-copy" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">복제</div></div>
+          <div style="text-align: center"><i class="ph ph-share-network" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">공유</div></div>
+          <div style="text-align: center"><i class="ph ph-download-simple" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">내보내기</div></div>
+          <div style="text-align: center"><i class="ph ph-trash" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">삭제</div></div>
+          <div style="text-align: center"><i class="ph ph-sliders-horizontal" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">옵션</div></div>
+        </div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 26px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 22px">STATE</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 12px">
+          <div style="text-align: center"><i class="ph-fill ph-check-circle" style="font-size: 24px; color: #12A97A"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">완료</div></div>
+          <div style="text-align: center"><i class="ph-fill ph-warning-circle" style="font-size: 24px; color: #E2543A"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">오류</div></div>
+          <div style="text-align: center"><i class="ph ph-info" style="font-size: 24px; color: #16223A"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">안내</div></div>
+          <div style="text-align: center"><i class="ph ph-clock" style="font-size: 24px; color: #93A2BA"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">대기</div></div>
+          <div style="text-align: center"><i class="ph ph-lock-simple" style="font-size: 24px; color: #93A2BA"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">잠김</div></div>
+          <div style="text-align: center"><i class="ph ph-eye" style="font-size: 24px; color: #35455F"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">공개</div></div>
+          <div style="text-align: center"><i class="ph ph-eye-slash" style="font-size: 24px; color: #93A2BA"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">비공개</div></div>
+          <div style="text-align: center"><i class="ph ph-circle-notch" style="font-size: 24px; color: #16223A"></i><div style="font-size: 10.5px; color: #93A2BA; margin-top: 8px">로딩</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 26px">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 22px">EDITOR · 자연어 편집 툴바</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 20px 12px; align-items: center">
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #E2E9F4; border-radius: 10px; padding: 8px 13px; cursor: pointer; transition: border-color .18s, color .18s" style-hover="border-color: #16223A; color: #16223A"><i class="ph ph-text-aa" style="font-size: 18px"></i><span style="font-size: 13px; white-space: nowrap">텍스트</span></div>
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #E2E9F4; border-radius: 10px; padding: 8px 13px; cursor: pointer; transition: border-color .18s, color .18s" style-hover="border-color: #16223A; color: #16223A"><i class="ph ph-image-square" style="font-size: 18px"></i><span style="font-size: 13px; white-space: nowrap">이미지</span></div>
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #E2E9F4; border-radius: 10px; padding: 8px 13px; cursor: pointer; transition: border-color .18s, color .18s" style-hover="border-color: #16223A; color: #16223A"><i class="ph ph-rows" style="font-size: 18px"></i><span style="font-size: 13px; white-space: nowrap">섹션</span></div>
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #E2E9F4; border-radius: 10px; padding: 8px 13px; cursor: pointer; transition: border-color .18s, color .18s" style-hover="border-color: #16223A; color: #16223A"><i class="ph ph-palette" style="font-size: 18px"></i><span style="font-size: 13px; white-space: nowrap">스타일</span></div>
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #E2E9F4; border-radius: 10px; padding: 8px 13px; cursor: pointer; transition: border-color .18s, color .18s" style-hover="border-color: #16223A; color: #16223A"><i class="ph ph-code" style="font-size: 18px"></i><span style="font-size: 13px; white-space: nowrap">코드</span></div>
+        <div style="display: flex; align-items: center; gap: 8px; border-radius: 10px; padding: 8px 13px; background: #EFF2F7; color: #16223A; cursor: pointer"><i class="ph-fill ph-chat-circle-dots" style="font-size: 18px"></i><span style="font-size: 13px; font-weight: 600; white-space: nowrap">AI에게 말하기</span></div>
+        <div style="margin-left: auto; font-size: 12.5px; color: #5A6B87; line-height: 1.7; max-width: 300px">툴바 아이콘은 항상 <b style="color: #35455F">라벨과 함께</b>. 아이콘만 두는 건 24px 아이콘 버튼에 한정합니다.</div>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-bottom: 100px">
+    <div style="display: flex; align-items: baseline; gap: 16px; border-bottom: 1px solid #E2E9F4; padding-bottom: 14px; margin-bottom: 30px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">04</span>
+      <h2 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 400; letter-spacing: -.025em">Feature Icons</h2>
+      <span style="font-size: 13px; color: #5A6B87; margin-left: auto">기능을 대표하는 여섯 개 — Espresso 컬러 허용</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px">
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 24px; display: flex; gap: 16px; align-items: flex-start">
+        <div style="flex-shrink: 0; width: 44px; height: 44px; border-radius: 14px; background: #FBEEE4; display: grid; place-items: center"><i class="ph ph-target" style="font-size: 22px; color: #9A4030"></i></div>
+        <div>
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 5px">Target-adaptive</div>
+          <div style="font-size: 12.5px; color: #5A6B87; line-height: 1.65">기업 맞춤형 재구성</div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 24px; display: flex; gap: 16px; align-items: flex-start">
+        <div style="flex-shrink: 0; width: 44px; height: 44px; border-radius: 14px; background: #FBEEE4; display: grid; place-items: center"><i class="ph ph-stack" style="font-size: 22px; color: #9A4030"></i></div>
+        <div>
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 5px">Career Archive · 내 커리어</div>
+          <div style="font-size: 12.5px; color: #5A6B87; line-height: 1.65">기록이 쌓이는 저장고</div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 24px; display: flex; gap: 16px; align-items: flex-start">
+        <div style="flex-shrink: 0; width: 44px; height: 44px; border-radius: 14px; background: #FBEEE4; display: grid; place-items: center"><i class="ph ph-coffee" style="font-size: 22px; color: #9A4030"></i></div>
+        <div>
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 5px">Brew</div>
+          <div style="font-size: 12.5px; color: #5A6B87; line-height: 1.65">포트폴리오 생성</div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 24px; display: flex; gap: 16px; align-items: flex-start">
+        <div style="flex-shrink: 0; width: 44px; height: 44px; border-radius: 14px; background: #FBEEE4; display: grid; place-items: center"><i class="ph ph-drop-half" style="font-size: 22px; color: #9A4030"></i></div>
+        <div>
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 5px">Flavor Matching</div>
+          <div style="font-size: 12.5px; color: #5A6B87; line-height: 1.65">기업 톤앤매너 추천</div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 24px; display: flex; gap: 16px; align-items: flex-start">
+        <div style="flex-shrink: 0; width: 44px; height: 44px; border-radius: 14px; background: #FBEEE4; display: grid; place-items: center"><i class="ph ph-paper-plane-tilt" style="font-size: 22px; color: #9A4030"></i></div>
+        <div>
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 5px">Publish</div>
+          <div style="font-size: 12.5px; color: #5A6B87; line-height: 1.65">즉시 배포와 호스팅</div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 24px; display: flex; gap: 16px; align-items: flex-start">
+        <div style="flex-shrink: 0; width: 44px; height: 44px; border-radius: 14px; background: #FBEEE4; display: grid; place-items: center"><i class="ph ph-sparkle" style="font-size: 22px; color: #9A4030"></i></div>
+        <div>
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 5px">AI Insight</div>
+          <div style="font-size: 12.5px; color: #5A6B87; line-height: 1.65">방문자 행동 해석</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-bottom: 100px">
+    <div style="display: flex; align-items: baseline; gap: 16px; border-bottom: 1px solid #E2E9F4; padding-bottom: 14px; margin-bottom: 30px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">05</span>
+      <h2 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 400; letter-spacing: -.025em">Rules</h2>
+      <span style="font-size: 13px; color: #5A6B87; margin-left: auto">크기 · 무게 · 컬러</span>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 26px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 22px">SIZE &amp; WEIGHT</div>
+        <div style="display: flex; align-items: flex-end; gap: 26px; margin-bottom: 24px">
+          <div style="text-align: center"><i class="ph ph-target" style="font-size: 16px; color: #35455F"></i><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 10px">16</div></div>
+          <div style="text-align: center"><i class="ph ph-target" style="font-size: 20px; color: #35455F"></i><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 10px">20</div></div>
+          <div style="text-align: center"><i class="ph ph-target" style="font-size: 24px; color: #35455F"></i><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 10px">24 · 기본</div></div>
+          <div style="text-align: center"><i class="ph ph-target" style="font-size: 32px; color: #35455F"></i><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 10px">32</div></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 26px; padding-top: 20px; border-top: 1px solid #F1F5FB">
+          <div style="text-align: center"><i class="ph ph-bell" style="font-size: 26px; color: #35455F"></i><div style="font-size: 11px; color: #93A2BA; margin-top: 9px">Regular · 기본</div></div>
+          <div style="text-align: center"><i class="ph-bold ph-bell" style="font-size: 26px; color: #35455F"></i><div style="font-size: 11px; color: #93A2BA; margin-top: 9px">Bold · 금지</div></div>
+          <div style="text-align: center"><i class="ph-fill ph-bell" style="font-size: 26px; color: #16223A"></i><div style="font-size: 11px; color: #93A2BA; margin-top: 9px">Fill · 활성/상태</div></div>
+        </div>
+        <div style="margin-top: 20px; padding-top: 18px; border-top: 1px solid #F1F5FB; font-size: 12.5px; color: #5A6B87; line-height: 1.75">한 화면에서 Regular와 Fill을 섞되, <b style="color: #35455F">Fill은 현재 상태를 뜻할 때만</b>. Bold는 쓰지 않습니다.</div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 18px; padding: 26px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 22px">COLOR MAPPING</div>
+        <div style="display: grid; gap: 12px">
+          <div style="display: flex; align-items: center; gap: 13px"><i class="ph ph-folders" style="font-size: 20px; color: #35455F"></i><span style="font-size: 13px; color: #35455F; flex: 1">기본 — Slate 700</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">#35455F</span></div>
+          <div style="display: flex; align-items: center; gap: 13px"><i class="ph ph-folders" style="font-size: 20px; color: #93A2BA"></i><span style="font-size: 13px; color: #35455F; flex: 1">비활성 — Slate 400</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">#93A2BA</span></div>
+          <div style="display: flex; align-items: center; gap: 13px"><i class="ph-fill ph-folders" style="font-size: 20px; color: #16223A"></i><span style="font-size: 13px; color: #35455F; flex: 1">활성/선택 — Blue 500</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">#16223A</span></div>
+          <div style="display: flex; align-items: center; gap: 13px"><i class="ph ph-coffee" style="font-size: 20px; color: #9A4030"></i><span style="font-size: 13px; color: #35455F; flex: 1">기능 시그니처 — Espresso</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">#9A4030</span></div>
+        </div>
+        <div style="margin-top: 20px; padding-top: 18px; border-top: 1px solid #F1F5FB; font-size: 12.5px; color: #5A6B87; line-height: 1.75">Espresso 컬러 아이콘은 <b style="color: #35455F">기능 카드와 브랜드 순간</b>에만. 네비게이션·툴바 같은 반복 UI에서는 절대 쓰지 않습니다.</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+</x-dc>
+</body>
+</html>

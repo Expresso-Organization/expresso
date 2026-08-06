@@ -1,0 +1,4585 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<style>
+html, body { margin: 0; padding: 0; background: #E6EBF3; }
+body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; color: #16223A; }
+* { box-sizing: border-box; }
+a { color: #16223A; text-decoration: none; }
+a:hover { color: #0B1220; }
+@keyframes ex-pulse { 0%, 100% { opacity: .3; transform: scale(.72); } 50% { opacity: 1; transform: scale(1); } }
+@keyframes ex-caret { 0%, 45% { opacity: 1; } 55%, 100% { opacity: 0; } }
+@keyframes ex-ring { 0% { opacity: .5; transform: scale(1); } 100% { opacity: 0; transform: scale(2.3); } }
+@keyframes ex-shimmer { 0% { background-position: -280px 0; } 100% { background-position: 280px 0; } }
+@keyframes ex-fill { 0% { width: 18%; } 100% { width: 84%; } }
+</style>
+</helmet>
+<div>
+<div>
+<div>
+<div data-screen-label="00">
+<span>00</span>
+<h2>Home</h2>
+<span>지금 무엇을 해야 하는지 알려주는 화면</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<span>홈</span>
+<div>
+<div><i class="ph ph-magnifying-glass"></i></div>
+<div><i class="ph ph-bell"></i><span></span></div>
+</div>
+</div>
+<div>
+<div>
+<i class="ph ph-sparkle"></i>
+<span>"내 파이프라인 경험을 살릴 수 있는 자리" 처럼 문장으로 물어보세요</span>
+<span>⌘K</span>
+<button>물어보기</button>
+</div>
+<div>
+<span>이렇게 물어볼 수 있어요</span>
+<span>리모트 되는 데이터 엔지니어</span>
+<span>Kafka 안 쓰는 곳</span>
+<span>이번 주 마감 임박</span>
+<span>시리즈 B 이상 스타트업</span>
+<span><i class="ph ph-bell-simple"></i>저장한 검색 2</span>
+</div>
+<div>
+<div>
+<div>
+<span>지금 나에게 맞는 공고</span>
+<div>
+<span>추천 18</span>
+<span>관심 3</span>
+<span>새 공고 12</span>
+</div>
+<span>기록 44건 기준 · 오늘 아침 갱신</span>
+<a href="#jobs">전체</a>
+</div>
+<div>
+<div>T</div>
+<div>
+<div><span>토스 · 백엔드 엔지니어</span><span>92</span><span>D-9</span></div>
+<div>일 3,000만 건 적재 경험을 그대로 씁니다 · 기록 7건 일치</div>
+</div>
+<button>만들기</button>
+</div>
+<div>
+<div>B</div>
+<div>
+<div><span>뱅크샐러드 · 파이프라인</span><span>84</span><span>상시</span></div>
+<div>Kafka 항목이 비어 있음 · 질문 3개로 채우면 92까지 올라갑니다</div>
+</div>
+<button>만들기</button>
+</div>
+<div>
+<div>N</div>
+<div>
+<div><span>네이버 · 데이터 플랫폼</span><span>81</span><span>D-14</span></div>
+<div>규모 · 스택은 잘 맞고, 리모트 조건만 어긋납니다</div>
+</div>
+<button>만들기</button>
+</div>
+</div>
+<div>
+<div>
+<div>
+<span><span></span>작성 중</span>
+<span>D-4</span>
+</div>
+<div>당근 지원용 · 질문 2개 남음</div>
+<div>어제 오후 9:41에 멈췄습니다</div>
+<div>
+<div><div></div></div>
+<span>4 / 6</span>
+</div>
+<button>이어서 답하기</button>
+</div>
+<div>
+<div><span>저장한 검색</span><a href="#jobs">관리</a></div>
+<div>
+<div><i class="ph ph-bell-simple"></i><span>리모트 데이터 엔지니어</span><span>+7</span></div>
+<div><i class="ph ph-bell-simple"></i><span>시리즈 B 이상 · 서울</span><span>+5</span></div>
+</div>
+<div>매일 아침 새 공고를 모아 알려드립니다</div>
+</div>
+</div>
+</div>
+<div>
+<div>
+<span>내 포트폴리오</span>
+<span>배포된 사이트 2개</span>
+<a href="#all">전체 보기</a>
+</div>
+<div>
+<div>
+<div>
+<div>
+<span></span>
+<span>이지원</span>
+<div><span>역량</span><span>프로젝트</span><span>연락</span></div>
+</div>
+<div>쌓이는 데이터를<br>믿을 수 있게 만듭니다</div>
+<div>
+<div><div>3,000만</div><div>일 레코드</div></div>
+<div><div>24분</div><div>배치 소요</div></div>
+<div><div>0건</div><div>6개월 지연</div></div>
+</div>
+<span><span></span><span>배포됨</span></span>
+</div>
+<div>
+<div>
+<span>토스 지원용</span>
+<span>v3</span>
+</div>
+<div>jiwon.xpresso.me</div>
+<div>
+<div>
+<div>1,284</div>
+<div>30일 방문 · 연락처 37</div>
+</div>
+<div><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>$ whoami</div>
+<div>jiwon.lee — data engineer</div>
+<div>
+<div>→ 30M records / day · airflow · spark · dbt</div>
+<div>→ nightly batch 3h ······ 24m</div>
+<div>→ incidents 0 / last 6 months</div>
+</div>
+<div><span>$</span><span></span></div>
+<span><span></span><span>배포됨</span></span>
+</div>
+<div>
+<div>
+<span>범용 포트폴리오</span>
+<span>v1</span>
+</div>
+<div>jiwon-dev.xpresso.me</div>
+<div>
+<div>
+<div>312</div>
+<div>30일 방문 · 연락처 6</div>
+</div>
+<div><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+</div>
+</div>
+</div>
+<div>
+<div><i class="ph ph-plus"></i></div>
+<div>
+<div>새 포트폴리오</div>
+<div>공고를 붙여넣으면 그 기업에<br>맞춰 기록을 다시 고릅니다</div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<span>사이트 성과</span>
+<span><span>토스 지원용</span><i class="ph ph-caret-down"></i></span>
+</div>
+<div>최근 30일 · 어제 오후 4:12 마지막 방문</div>
+</div>
+<div></div>
+<div>
+<div>방문</div>
+<div><span>1,284</span><span>▲ 18.2%</span></div>
+</div>
+<div>
+<div>평균 체류</div>
+<div><span>2:41</span><span>업계 1:12</span></div>
+</div>
+<div>
+<div>끝까지 읽음</div>
+<div><span>46%</span><span>▲ 6.1%</span></div>
+</div>
+<div>
+<div>연락처 클릭</div>
+<div><span>37</span><span>이번 주 12</span></div>
+</div>
+<div>
+<div>이력서 내려받기</div>
+<div><span>12</span><span>지난 7일 4</span></div>
+</div>
+<div></div>
+<div>
+<div><i class="ph-fill ph-coffee"></i><span>토스 방문자는 협업 · 리드를 가장 오래 읽습니다</span></div>
+<a href="#analytics">제안 2건 보기</a>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+<div>
+<div data-screen-label="00b">
+<span>00b</span>
+<h2>공고 AI 검색 결과</h2>
+<span>문장으로 물어본 조건을 해석해 내 기록과 비교한 목록</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<span>공고 검색</span>
+<span>원티드 · 잡코리아 · 링크드인 4,182건</span>
+<div>
+<span><i class="ph ph-bookmark-simple"></i>관심 공고 3</span>
+<div></div>
+<span><i class="ph ph-bell-simple"></i>알림 설정</span>
+</div>
+</div>
+<div>
+<div>
+<div>
+<i class="ph ph-sparkle"></i>
+<span>내 파이프라인 경험을 살릴 수 있는 자리, 리모트 가능하고 3년차 지원 가능한 곳</span>
+<i class="ph ph-x"></i>
+<button>검색</button>
+</div>
+<div>
+<span>이렇게 이해했습니다</span>
+<span>직무 · 백엔드 / 데이터<i class="ph ph-caret-down"></i></span>
+<span>경력 · 3년 이상<i class="ph ph-caret-down"></i></span>
+<span>근무 · 리모트 가능<i class="ph ph-x"></i></span>
+<span>규모 · 일 1,000만 건 이상<i class="ph ph-x"></i></span>
+<span><i class="ph ph-plus"></i>조건 추가</span>
+<span><i class="ph ph-bell-simple"></i>이 검색 저장</span>
+</div>
+</div>
+<div>
+<div>
+<div>
+<span>결과 18건</span>
+<span>내 기록 44건과 비교</span>
+<div>
+<span>일치도 순</span>
+<span>마감 순</span>
+<span>최신 순</span>
+</div>
+<span><i class="ph ph-sparkle"></i>적재 파이프라인 · 정산 스케줄러 기록이 순서를 정했습니다</span>
+</div>
+<div>
+<div>
+<div>T</div>
+<div><div>백엔드 엔지니어 (데이터)</div><div>토스 · 서울 강남 · 리모트 혼합</div></div>
+<div><span>Airflow</span><span>dbt</span><span>Spark</span></div>
+<div>기록 7건이 그대로 맞습니다 · 추가 질문 없음</div>
+<div><div><div></div></div><span>92</span></div>
+<span>D-9</span>
+<i class="ph ph-bookmark-simple"></i>
+</div>
+<div>
+<div>B</div>
+<div><div>데이터 파이프라인 엔지니어</div><div>뱅크샐러드 · 서울 · 리모트</div></div>
+<div><span>Kafka</span><span>Flink</span><span>dbt</span></div>
+<div>Kafka 항목만 비어 있음 · 질문 3개로 채울 수 있습니다</div>
+<div><div><div></div></div><span>84</span></div>
+<span>상시</span>
+<i class="ph ph-bookmark-simple"></i>
+</div>
+<div>
+<div>N</div>
+<div><div>데이터 플랫폼 개발</div><div>네이버 · 분당 · 출근</div></div>
+<div><span>Hadoop</span><span>Spark</span></div>
+<div>리모트 조건과 어긋남 · 규모 · 스택은 잘 맞습니다</div>
+<div><div><div></div></div><span>81</span></div>
+<span>D-14</span>
+<i class="ph ph-bookmark-simple"></i>
+</div>
+<div>
+<div>L</div>
+<div><div>서버 개발자 (정산)</div><div>레이니스트 · 서울 · 리모트 가능</div></div>
+<div><span>Kotlin</span><span>Airflow</span></div>
+<div>정산 스케줄러 경험이 요구사항과 직접 겹칩니다</div>
+<div><div><div></div></div><span>76</span></div>
+<span>D-6</span>
+<i class="ph ph-bookmark-simple"></i>
+</div>
+<div>
+<div>C</div>
+<div><div>데이터 엔지니어</div><div>컬리 · 서울 · 주 2일 재택</div></div>
+<div><span>Spark</span><span>Iceberg</span></div>
+<div>Iceberg 미기록 · 나머지 요구는 충족</div>
+<div><div><div></div></div><span>72</span></div>
+<span>D-21</span>
+<i class="ph ph-bookmark-simple"></i>
+</div>
+<div>
+<div>W</div>
+<div><div>플랫폼 엔지니어</div><div>왓챠 · 서울 · 리모트</div></div>
+<div><span>Kubernetes</span><span>Terraform</span></div>
+<div>인프라 비중이 높아 기록 보강이 많이 필요합니다</div>
+<div><div><div></div></div><span>68</span></div>
+<span>D-11</span>
+<i class="ph ph-bookmark-simple"></i>
+</div>
+<div>
+<div>S</div>
+<div><div>데이터 엔지니어 (광고)</div><div>스포카 · 서울 · 리모트 가능</div></div>
+<div><span>BigQuery</span><span>Airflow</span></div>
+<div>광고 도메인 지표 경험이 기록에 없습니다</div>
+<div><div><div></div></div><span>66</span></div>
+<span>D-8</span>
+<i class="ph ph-bookmark-simple"></i>
+</div>
+<div>
+<div>R</div>
+<div><div>백엔드 엔지니어</div><div>리디 · 서울 · 주 3일 재택</div></div>
+<div><span>Django</span><span>Celery</span></div>
+<div>파이썬 스택은 맞고 처리 규모 요구가 작습니다</div>
+<div><div><div></div></div><span>63</span></div>
+<span>D-19</span>
+<i class="ph ph-bookmark-simple"></i>
+</div>
+<div>
+<div>M</div>
+<div><div>데이터 인프라</div><div>마이리얼트립 · 서울 · 리모트</div></div>
+<div><span>Kafka</span><span>Airflow</span></div>
+<div>Kafka 요구 · 규모는 절반 수준</div>
+<div><div><div></div></div><span>61</span></div>
+<span>D-27</span>
+<i class="ph ph-bookmark-simple"></i>
+</div>
+<div>
+<div>Y</div>
+<div><div>서버 개발자 (물류)</div><div>야드 · 성수 · 출근</div></div>
+<div><span>Go</span><span>Postgres</span></div>
+<div>리모트 조건과 어긋나고 언어 경험이 다릅니다</div>
+<div><div><div></div></div><span>58</span></div>
+<span>상시</span>
+<i class="ph ph-bookmark-simple"></i>
+</div>
+</div>
+<div>
+<span>일치도 68 미만 12건은 접어 두었습니다</span>
+<span>모두 보기</span>
+<span>이번 달 추출 2 / 3</span>
+</div>
+</div>
+<div>
+<div>
+<div>
+<i class="ph-fill ph-coffee"></i>
+<span>이 결과가 요구하는 것</span>
+</div>
+<div>18건 중 <b>11건</b>이 스트리밍 처리를 요구합니다. 지금 기록에는 배치 이야기만 있습니다.</div>
+<div>
+<div>비어 있는 재료 2</div>
+<div>
+<div><span>Kafka 61%</span><span>공고 11건이 요구</span></div>
+<div><span>Iceberg 22%</span><span>공고 4건이 요구</span></div>
+</div>
+</div>
+<button>이 경험 기록하기</button>
+</div>
+<div>
+<div>일치도는 이렇게 계산됩니다</div>
+<div>
+<div><span>기술 스택</span><div><div></div></div><span>40%</span></div>
+<div><span>규모 · 지표</span><div><div></div></div><span>30%</span></div>
+<div><span>역할 · 연차</span><div><div></div></div><span>20%</span></div>
+<div><span>근무 조건</span><div><div></div></div><span>10%</span></div>
+</div>
+<div>가중치를 바꾸면 순서가 다시 계산됩니다</div>
+</div>
+<div>
+<div><span>비슷한 검색</span></div>
+<div>
+<span>스트리밍 없는 데이터 팀</span>
+<span>정산 · 결제 도메인</span>
+<span>시리즈 B 이상</span>
+</div>
+</div>
+<div>
+<div><span>최근 검색</span><a href="#jobs">지우기</a></div>
+<div>
+<div><i class="ph ph-clock-counter-clockwise"></i><span>배치 위주로 운영하는 팀</span><span>9건</span></div>
+<div><i class="ph ph-clock-counter-clockwise"></i><span>연봉 협상 가능 · 리모트</span><span>14건</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div data-screen-label="01">
+<span>01</span>
+<h2>공고 분석</h2>
+<span>어디에 지원하는지부터. AI가 공고를 읽고 리포트를 씁니다</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<i class="ph ph-caret-left"></i>
+<span>새 포트폴리오</span>
+<span><span>당근 지원용</span><i class="ph ph-pencil-simple"></i></span>
+<div><span><i class="ph ph-cloud-check"></i>자동 저장됨</span>
+<div></div>
+<i class="ph ph-x"></i></div>
+</div>
+<div>
+<div><span><span>01</span></span><span>공고 분석</span></div><span></span><div><span><span>02</span></span><span>재료 고르기</span></div><span></span><div><span><span>03</span></span><span>AI 대화</span></div><span></span><div><span><span>04</span></span><span>구성안</span></div><span></span><div><span><span>05</span></span><span>디자인 선택</span></div><span></span><div><span><span>06</span></span><span>다듬기</span></div>
+<span>예상 3분</span>
+</div>
+<div>
+<div>
+<div>
+<div>
+<span>어디에 지원하나요</span>
+<div>
+<span>공고 붙여넣기</span>
+<span>기업 URL</span>
+<span>목표 없이</span>
+</div>
+</div>
+<div>
+<i class="ph ph-file-text"></i>
+<span>데이터 플랫폼 엔지니어 (신입~3년)</span>
+<span>careers.daangn.com · 5,200자</span>
+<span>다시 분석</span>
+</div>
+<div>
+<div>
+<span>이 공고는 이런 사람을 찾습니다</span>
+<span>AI 분석</span>
+</div>
+<div>세 번 이상 반복되는 말은 <b>규모</b>와 <b>복구</b>입니다. 하루 3,000만 건 수준의 적재를 다뤄본 경험, 문제가 생겼을 때 스스로 기준을 세워 되돌린 경험을 요구합니다. 신입 공고인데도 "혼자 완결한 결과"보다 "팀에 남긴 흔적"을 묻는 문장이 네 번 등장합니다.</div>
+</div>
+<div>
+<div>
+<span>요구 역량과 내 기록</span>
+<span>다섯 개 중 셋은 이미 쓸 수 있습니다</span>
+</div>
+<div>
+<span>01</span>
+<div>
+<div>
+<span>대용량 처리</span>
+<span>7회 언급</span>
+<span>기록 있음</span>
+</div>
+<div>"하루 3,000만 건", "피크 시간대 지연 최소화"</div>
+</div>
+</div>
+<div>
+<span>02</span>
+<div>
+<div>
+<span>장애 대응</span>
+<span>5회 언급</span>
+<span>기록 있음</span>
+</div>
+<div>"온콜 경험", "재발 방지 기준을 세운 경험"</div>
+</div>
+</div>
+<div>
+<span>03</span>
+<div>
+<div>
+<span>협업 · 문서화</span>
+<span>4회 언급</span>
+<span>보강 필요</span>
+</div>
+<div>"코드 리뷰 문화", "온보딩 문서를 남기는 사람"</div>
+</div>
+</div>
+<div>
+<span>04</span>
+<div>
+<div>
+<span>SQL · 모델링</span>
+<span>4회 언급</span>
+<span>기록 없음</span>
+</div>
+<div>"복잡한 조인보다 읽히는 모델"</div>
+</div>
+</div>
+<div>
+<span>05</span>
+<div>
+<div>
+<span>직접 만든 것</span>
+<span>3회 언급</span>
+<span>기록 있음</span>
+</div>
+<div>"사이드 프로젝트든 사내 도구든, 만든 것을 보여주세요"</div>
+</div>
+</div>
+</div>
+<div>
+<i class="ph ph-books"></i>
+<span>공고 원문 5,200자 · 기술 블로그 4편 · 인재상 페이지를 함께 읽었습니다</span>
+<span>전체 리포트 보기</span>
+</div>
+</div>
+<div>
+<div>
+<span>공고에서 읽은 문장</span>
+<span>5 / 42</span>
+</div>
+<div>표시된 부분이 위 분석의 근거입니다</div>
+<div>
+<div>"하루 <span>3,000만 건</span>이 넘는 이벤트를 적재하는 파이프라인을 함께 만들 분을 찾습니다."</div>
+<div>"장애는 납니다. 중요한 건 <span>얼마나 빨리 되돌리고</span>, 같은 일이 반복되지 않게 <span>기준을 세우는지</span>입니다."</div>
+<div>"복잡한 조인을 자랑하기보다, 다음 사람이 <span>읽을 수 있는 모델</span>을 만드는 분이면 좋겠습니다."</div>
+<div>"리뷰와 문서로 <span>팀에 남기는 일</span>을 즐기는 분과 일하고 싶습니다."</div>
+<div>"전공과 학벌은 보지 않습니다. 대신 <span>직접 만든 것</span>을 보여주세요."</div>
+</div>
+<div>
+<div>반복해서 등장하는 표현</div>
+<div>
+<span>직접 굴려본</span>
+<span>규모가 주는 문제</span>
+<span>기준을 세우는</span>
+<span>팀에 남기는</span>
+<span>＋ 12개 더</span>
+</div>
+</div>
+<div>
+<div>공고 밖에서 함께 읽은 것</div>
+<div>
+<div>
+<i class="ph ph-article-medium"></i>
+<span>기술 블로그 · 데이터 플랫폼 팀이 일하는 법</span>
+<span>4편</span>
+</div>
+<div>
+<i class="ph ph-buildings"></i>
+<span>인재상 · "스스로 기준을 만드는 사람"</span>
+<span>1편</span>
+</div>
+</div>
+</div>
+<div>
+<i class="ph ph-chat-teardrop-dots"></i>
+<div>
+<div>비어 있는 두 가지는 대화에서 채웁니다</div>
+<div>SQL · 모델링은 기록이 없고, 협업 · 문서화는 결과 수치가 빠져 있습니다. 다음 대화의 질문 여섯 개 중 두 개가 여기에 배정됩니다.</div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<i class="ph ph-target"></i>
+<span>이 분석 결과로 44건 중 <b>8건</b>을 골라두었습니다</span>
+<div>
+<button>목표 없이 만들기</button>
+<button>담을 기록 고르기</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+<div>
+<div data-screen-label="01b">
+<span>01b</span>
+<h2>재료 고르기</h2>
+<span>무엇을 담고, 어떻게 만들지</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<i class="ph ph-caret-left"></i>
+<span>새 포트폴리오</span>
+<span><span>당근 지원용</span><i class="ph ph-pencil-simple"></i></span>
+<div><span><i class="ph ph-cloud-check"></i>자동 저장됨</span>
+<div></div>
+<i class="ph ph-x"></i></div>
+</div>
+<div>
+<div><span><i class="ph ph-check"></i></span><span>공고 분석</span></div><span></span><div><span><span>02</span></span><span>재료 고르기</span></div><span></span><div><span><span>03</span></span><span>AI 대화</span></div><span></span><div><span><span>04</span></span><span>구성안</span></div><span></span><div><span><span>05</span></span><span>디자인 선택</span></div><span></span><div><span><span>06</span></span><span>다듬기</span></div>
+<span>예상 3분</span>
+</div>
+<div>
+<div>
+<div>
+<div><i class="ph-fill ph-list-checks"></i></div>
+<span>무엇을 담을까요</span>
+<span>공고 매칭도가 높은 순</span>
+</div>
+<div>내 커리어 44건 중 이 공고에 맞는 8건을 골라두었습니다. 체크를 바꾸면 예상 구성도 함께 바뀝니다.</div>
+<div>
+<span>전체 44</span>
+<span>고른 것 8</span>
+<span>카테고리별</span>
+<div>
+<span>필터</span>
+<span>정렬</span>
+<span>속성</span>
+<div>
+<button>기록 추가</button>
+<div></div>
+<button><i class="ph-fill ph-coffee"></i>AI 추천 다시</button>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div><i class="ph ph-text-aa"></i><span>제목</span></div>
+<div><i class="ph ph-folder-simple"></i><span>카테고리</span></div>
+<div><i class="ph ph-tag"></i><span>역량</span></div>
+<div><i class="ph ph-calendar-blank"></i><span>시기</span></div>
+<div><i class="ph ph-target"></i><span>매칭</span></div>
+</div>
+<div>
+<div>
+<span><i class="ph ph-check"></i></span>
+<i class="ph ph-file-text"></i>
+<span>배치 파이프라인 재설계</span>
+</div>
+<div>프로젝트</div>
+<div><span>대용량</span></div>
+<div>2025.03</div>
+<div>
+<div><div></div></div>
+<span>96</span>
+</div>
+</div>
+<div>
+<div>
+<span><i class="ph ph-check"></i></span>
+<i class="ph ph-file-text"></i>
+<span>로그 없는 시스템에서 원인을 좁혀간 3일</span>
+<span>AI</span>
+</div>
+<div>경험</div>
+<div><span>장애 대응</span></div>
+<div>2025.04</div>
+<div>
+<div><div></div></div>
+<span>91</span>
+</div>
+</div>
+<div>
+<div>
+<span><i class="ph ph-check"></i></span>
+<i class="ph ph-file-text"></i>
+<span>데이터 품질 모니터링 자동화</span>
+</div>
+<div>프로젝트</div>
+<div><span>자동화</span></div>
+<div>2024.11</div>
+<div>
+<div><div></div></div>
+<span>84</span>
+</div>
+</div>
+<div>
+<div>
+<span><i class="ph ph-check"></i></span>
+<i class="ph ph-file-text"></i>
+<span>신입 두 명을 동시에 온보딩한 두 달</span>
+<span>AI</span>
+</div>
+<div>경험</div>
+<div><span>협업</span></div>
+<div>2025.01</div>
+<div>
+<div><div></div></div>
+<span>72</span>
+</div>
+</div>
+<div>
+<div>
+<span><i class="ph ph-check"></i></span>
+<i class="ph ph-file-text"></i>
+<span>Airflow · dbt · Kafka</span>
+</div>
+<div>스킬</div>
+<div><span>도구</span></div>
+<div>2023–</div>
+<div>
+<div><div></div></div>
+<span>68</span>
+</div>
+</div>
+<div>
+<div>
+<span><i class="ph ph-check"></i></span>
+<i class="ph ph-file-text"></i>
+<span>사내 데이터 카탈로그 사이드 프로젝트</span>
+</div>
+<div>프로젝트</div>
+<div><span>직접 제작</span></div>
+<div>2024.07</div>
+<div>
+<div><div></div></div>
+<span>63</span>
+</div>
+</div>
+<div>
+<div>
+<span><i class="ph ph-check"></i></span>
+<i class="ph ph-file-text"></i>
+<span>SQLD 자격증</span>
+</div>
+<div>자격증</div>
+<div><span>SQL</span></div>
+<div>2024.09</div>
+<div>
+<div><div></div></div>
+<span>47</span>
+</div>
+</div>
+<div>
+<div>
+<span><i class="ph ph-check"></i></span>
+<i class="ph ph-file-text"></i>
+<span>컴퓨터공학 학사</span>
+</div>
+<div>학력</div>
+<div><span>전공</span></div>
+<div>2021–25</div>
+<div>
+<div><div></div></div>
+<span>41</span>
+</div>
+</div>
+<div>
+<div>
+<span></span>
+<i class="ph ph-file-text"></i>
+<span>반대하는 팀원을 설득해 구조를 바꾼 일</span>
+<span>AI</span>
+</div>
+<div>경험</div>
+<div><span>설득</span></div>
+<div>2025.02</div>
+<div>
+<div><div></div></div>
+<span>38</span>
+</div>
+</div>
+<div>
+<div>
+<span></span>
+<i class="ph ph-file-text"></i>
+<span>교내 해커톤 대상</span>
+</div>
+<div>자격증</div>
+<div><span>수상</span></div>
+<div>2023.10</div>
+<div>
+<div><div></div></div>
+<span>28</span>
+</div>
+</div>
+<div>
+<div>
+<span></span>
+<i class="ph ph-file-text"></i>
+<span>학회 논문 공저</span>
+</div>
+<div>학술</div>
+<div><span>연구</span></div>
+<div>2024.05</div>
+<div>
+<div><div></div></div>
+<span>19</span>
+</div>
+</div>
+<div>
+<div>
+<span></span>
+<i class="ph ph-file-text"></i>
+<span>동아리 운영진 2년</span>
+</div>
+<div>활동</div>
+<div><span>리더십</span></div>
+<div>2022–24</div>
+<div>
+<div><div></div></div>
+<span>17</span>
+</div>
+</div>
+<div>
+<div>
+<span></span>
+<i class="ph ph-file-text"></i>
+<span>프론트엔드 스터디 리드</span>
+</div>
+<div>활동</div>
+<div><span>스터디</span></div>
+<div>2023.06</div>
+<div>
+<div><div></div></div>
+<span>14</span>
+</div>
+</div>
+<div>
+<div>
+<span></span>
+<i class="ph ph-file-text"></i>
+<span>개인 블로그 기술 글 12편</span>
+</div>
+<div>학술</div>
+<div><span>집필</span></div>
+<div>2024–</div>
+<div>
+<div><div></div></div>
+<span>12</span>
+</div>
+</div>
+<div>
+<div>
+<span></span>
+<i class="ph ph-file-text"></i>
+<span>고객 문의를 직접 받아본 2주</span>
+</div>
+<div>경험</div>
+<div><span>고객 이해</span></div>
+<div>2021.03</div>
+<div>
+<div><div></div></div>
+<span>6</span>
+</div>
+</div>
+</div>
+<div>
+<span>나머지 29건 더 보기</span>
+<span>·</span>
+<span>체크한 8건만 이번 포트폴리오에 들어갑니다</span>
+</div>
+</div>
+<div>
+<div>
+<div>
+<span>고른 재료 8건</span>
+<span>36건 제외됨</span>
+</div>
+<div>
+<div>
+<div></div>
+<div></div>
+<div></div>
+<div></div>
+<div></div>
+</div>
+<div>
+<div><span></span><span>프로젝트</span><span>3</span></div>
+<div><span></span><span>경험</span><span>2</span></div>
+<div><span></span><span>활동 · 스킬 · 학력 · 자격</span><span>3</span></div>
+</div>
+</div>
+</div>
+<div>
+<div>
+<span>MODE</span>
+<span>어떻게 만들까요</span>
+</div>
+<div>
+<div>
+<span></span>
+<div>
+<div>에이전트 모드</div>
+<div>질문 여섯 개에 답하면 나머지는 맡깁니다</div>
+</div>
+</div>
+<div>
+<span></span>
+<div>
+<div>Cowork 모드 <span>PRO</span></div>
+<div>섹션마다 함께 고칩니다. 결과는 더 내 것에 가깝습니다</div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>예상 구성 6개 섹션</div>
+<div>이 중 2개는 공고 분석 결과로 들어갑니다</div>
+</div>
+<span>구성안 보기</span>
+</div>
+<div>
+<div>
+<div>이 공고 마감 D-9</div>
+<div>8월 12일 자정 · 이틀 전에 알려드립니다</div>
+</div>
+<span><span></span></span>
+</div>
+<div>
+<div>제외한 36건은 왜 빠졌나요</div>
+<div>
+<div><span></span><span>공고 역량과 겹치지 않음</span><span>21</span></div>
+<div><span></span><span>내용이 너무 짧음</span><span>9</span></div>
+<div><span></span><span>더 최신 기록으로 대체됨</span><span>6</span></div>
+</div>
+</div>
+<div>
+<div>
+<span>이번 달 추출</span>
+<span>2 / 3</span>
+</div>
+<div>
+<div></div>
+<div></div>
+<div></div>
+</div>
+<button>AI와 대화 시작 · 6문항</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div data-screen-label="02">
+<span>02</span>
+<h2>Barista's Counter</h2>
+<span>답하는 동안 기록이 쌓이는 대화</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<i class="ph ph-caret-left"></i>
+<span>새 포트폴리오</span>
+<span><span>당근 지원용</span><i class="ph ph-pencil-simple"></i></span>
+<div><span><i class="ph ph-cloud-check"></i>자동 저장됨</span>
+<div></div>
+<i class="ph ph-x"></i></div>
+</div>
+<div>
+<div><span><i class="ph ph-check"></i></span><span>공고 분석</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>재료 고르기</span></div><span></span><div><span><span>03</span></span><span>AI 대화</span></div><span></span><div><span><span>04</span></span><span>구성안</span></div><span></span><div><span><span>05</span></span><span>디자인 선택</span></div><span></span><div><span><span>06</span></span><span>다듬기</span></div>
+<span>남은 질문 2개</span>
+</div>
+<div>
+<div>
+<div>
+<div><i class="ph-fill ph-coffee"></i></div>
+<span>바리스타</span>
+<span>공고를 읽고 질문 6개를 골랐습니다</span>
+<div>
+<div>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+</div>
+<span>4 / 6</span>
+<div></div>
+<span>나중에 이어서</span>
+</div>
+</div>
+<div>
+<div>
+<div></div>
+<span>앞선 질문 3개 펼치기</span>
+<div></div>
+</div>
+<div>
+<div><i class="ph-fill ph-coffee"></i></div>
+<div>
+<div>그 3일 동안 <b>가장 먼저 의심한 것</b>은 무엇이었나요?</div>
+</div>
+</div>
+<div>
+<div>배치 스케줄러를 의심했는데 아니었고, 결국 업스트림에서 스키마가 조용히 바뀐 거였어요. 로그가 없어서 적재량 추이로 역추적했습니다.</div>
+</div>
+<div>
+<i class="ph ph-file-text"></i>
+<span>로그 없는 시스템에서 원인을 좁혀간 3일</span>
+<span>기록에 담는 중</span>
+<span>보기</span>
+</div>
+<div>
+<div><i class="ph-fill ph-coffee"></i></div>
+<div>
+<div>질문 04</div>
+<div>그 일이 끝난 뒤, 팀에 <span>남긴 것</span>이 있나요?</div>
+<div>
+<i class="ph ph-info"></i>
+<span>이 공고는 ‘혼자 해결’보다 ‘남긴 흔적’을 7번 언급했습니다</span>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div>
+<span>문서로 남겼어요</span>
+<span>알림을 붙였어요</span>
+<span>딱히 없어요</span>
+<span>예시 보기</span>
+</div>
+<div>
+<div>떠오르는 대로 적어도 됩니다. 문장은 제가 다듬을게요.</div>
+<div>
+<i class="ph ph-microphone"></i>
+<i class="ph ph-paperclip"></i>
+<span>말로 답해도 됩니다</span>
+<button>보내기<i class="ph ph-arrow-up"></i></button>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<span>지금 만들어지는 기록</span>
+<span>3 / 4</span>
+</div>
+<div>답할 때마다 내 커리어에 저장됩니다</div>
+</div>
+<div>
+<div>
+<i class="ph ph-file-text"></i>
+<span>로그 없는 시스템에서 원인을 좁혀간 3일</span>
+</div>
+<div>경험 · 2025.04 · 장애 대응</div>
+<div>
+<span>상황</span>
+<span>새벽 적재가 이틀째 실패했지만 로그가 남지 않는 구간이었습니다.</span>
+</div>
+<div>
+<span>과제</span>
+<span>원인을 좁힐 단서가 적재량 추이밖에 없는 상태에서 사흘 안에 복구해야 했습니다.</span>
+</div>
+<div>
+<span>행동</span>
+<div><span>스케줄러를 먼저 배제하고 업스트림 스키마 변경을 역추적</span><span></span></div>
+</div>
+<div>
+<span>결과</span>
+<span>아직 비어 있습니다</span>
+</div>
+<div>
+<i class="ph-fill ph-coffee"></i>
+<span>지금 질문에 답하면 ‘결과’가 채워집니다</span>
+</div>
+<div></div>
+<div>
+<span>이번 대화로 마친 기록</span>
+<span>2</span>
+<a href="#archive">내 커리어</a>
+</div>
+<div>
+<div><i class="ph ph-file-text"></i><span>신입 두 명을 동시에 온보딩한 두 달</span><span>AI</span></div>
+<div><i class="ph ph-file-text"></i><span>첫 프로덕션 장애를 낸 날</span><span>AI</span></div>
+</div>
+<div></div>
+<div>
+<span>남은 질문</span>
+<span>2</span>
+<span>질문 바꾸기</span>
+</div>
+<div>
+<div><span>05</span><span>하루 몇 건을 처리하는 파이프라인이었나요?</span></div>
+<div><span>06</span><span>그 개선으로 팀의 무엇이 달라졌나요?</span></div>
+</div>
+</div>
+<div>
+<span>두 개만 더 답하면<br>구성안을 만들 수 있습니다</span>
+<button>건너뛰고 진행</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+<div>
+<div data-screen-label="02b">
+<span>02b</span>
+<h2>구성안</h2>
+<span>공고 · 기록 · 대화를 읽고 만든 뼈대</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<i class="ph ph-caret-left"></i>
+<span>새 포트폴리오</span>
+<span><span>당근 지원용</span><i class="ph ph-pencil-simple"></i></span>
+<div><span><i class="ph ph-cloud-check"></i>자동 저장됨</span>
+<div></div>
+<i class="ph ph-x"></i></div>
+</div>
+<div>
+<div><span><i class="ph ph-check"></i></span><span>공고 분석</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>재료 고르기</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>AI 대화</span></div><span></span><div><span><span>04</span></span><span>구성안</span></div><span></span><div><span><span>05</span></span><span>디자인 선택</span></div><span></span><div><span><span>06</span></span><span>다듬기</span></div>
+<span>초안 완성 · 섹션 6개</span>
+</div>
+<div>
+<div>
+<i class="ph-fill ph-list-checks"></i>
+<span>컨텍스트 문서 6개로 구성했습니다</span>
+<span></span>
+<span>읽은 것</span>
+<span><i class="ph ph-target"></i>공고 1건</span>
+<span><i class="ph ph-file-text"></i>고른 기록 8건</span>
+<span><i class="ph ph-chat-circle-dots"></i>대화 6문답</span>
+<span>근거 자세히</span>
+<div>
+<span><i class="ph ph-arrow-counter-clockwise"></i>구성 다시 만들기</span>
+<span><i class="ph-fill ph-coffee"></i>말로 고치기</span>
+</div>
+</div>
+<div>
+<div>
+<div>
+<span>구성</span>
+<span>지면 순서</span>
+<span>6</span>
+</div>
+<div>
+<div>
+<span>01</span>
+<div>
+<div>첫 화면 · 한 문장 소개</div>
+<div><span></span><span>내가 고침</span></div>
+</div>
+</div>
+<div>
+<span>02</span>
+<div>
+<div>일하는 방식 · 장애를 좁혀간 3일</div>
+<div><span></span><span>AI 초안</span></div>
+</div>
+</div>
+<div>
+<span>03</span>
+<div>
+<div>대표 프로젝트 2건</div>
+<div><span></span><span>AI 초안</span></div>
+</div>
+</div>
+<div>
+<span>04</span>
+<div>
+<div>팀에 남긴 것</div>
+<div><span></span><span>AI 초안</span></div>
+</div>
+</div>
+<div>
+<span>05</span>
+<div>
+<div>기술 스택</div>
+<div><span></span><span>AI 초안</span></div>
+</div>
+</div>
+<div>
+<span>06</span>
+<div>
+<div>연락</div>
+<div><span></span><span>비어 있음</span></div>
+</div>
+</div>
+</div>
+<div>
+<span><i class="ph ph-plus"></i>문서 추가</span>
+<div>끌어서 순서를 바꿉니다</div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<i class="ph ph-file-text"></i>
+<span>일하는 방식 · 장애를 좁혀간 3일</span>
+<div>
+<span>지</span>
+<span><i class="ph-fill ph-coffee"></i></span>
+<span>함께 편집</span>
+</div>
+</div>
+<div>
+<span>컨텍스트</span>
+<span>무엇을 담을지 적어두는 문서 · 문장은 아직 쓰지 않습니다</span>
+<span><span><i class="ph ph-file-text"></i>장애 대응 3일</span><span><i class="ph ph-chat-circle-dots"></i>질문 04</span></span>
+</div>
+</div>
+<div>
+<div>
+<div>
+<div>목표</div>
+<div><span></span><span>AI</span></div>
+</div>
+<div>
+<div>읽는 사람이 <b>단서가 없는 상황에서 원인을 좁히는 방식</b>을 판단할 수 있게 한다.</div>
+</div>
+</div>
+<div>
+<div>
+<div>담을 요점</div>
+<div><span></span><span>AI</span></div>
+</div>
+<div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<span>로그가 없는 상태에서 단서를 만든 방법</span>
+<span><span><i class="ph ph-file-text"></i>기록</span></span>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<span>원인을 좁힌 순서 — 배제 후 역추적</span>
+<span><span><i class="ph ph-file-text"></i>기록</span></span>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<span>복구 뒤 재발을 막은 장치</span>
+<span><span><i class="ph ph-chat-circle-dots"></i>질문 04</span></span>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>쓸 수치</div>
+<div><span></span><span>나</span></div>
+</div>
+<div>
+<div><span>3일</span><span>24분</span><span>0건 · 6개월</span><span>이 중 하나만 문장에 남김</span></div>
+</div>
+</div>
+<div>
+<div>
+<div>형식</div>
+<div><span></span><span>AI</span></div>
+</div>
+<div>
+<div><span>3문단 이내</span><span>문단당 2문장</span><span>도구 이름 나열 없음</span></div>
+</div>
+</div>
+<div>
+<div>
+<div>톤</div>
+<div><span></span><span>나</span></div>
+</div>
+<div>
+<div>담담하게. 혼자 해결한 영웅담처럼 쓰지 않기.</div>
+</div>
+</div>
+<div>
+<div>
+<div>제외</div>
+<div><span></span><span>AI</span></div>
+</div>
+<div>
+<div>스케줄러를 의심했던 과정은 한 줄로 축약. 사내 시스템 이름은 쓰지 않기.</div>
+</div>
+</div>
+<div>
+<i class="ph ph-plus"></i>
+<span>컨텍스트 추가 · 직접 쓰거나 AI에게 맡기기</span>
+</div>
+<div>
+<i class="ph-fill ph-coffee"></i>
+<span>다음 단계에서 이 컨텍스트대로 문장이 만들어집니다</span>
+</div>
+</div>
+<div>
+<span><i class="ph ph-pencil-simple"></i>내가 편집</span>
+<span><i class="ph-fill ph-coffee"></i>AI에게 맡기기</span>
+<span>변경 이력 4</span>
+<span>항목 6개 · 마지막 편집 2분 전</span>
+</div>
+</div>
+<div>
+<div>
+<div><span>문서 · AI 초안 · 내가 고침</span><span>6 · 4 · 1</span></div>
+<div><span>배치된 재료</span><span>7 / 8</span></div>
+<div><span>읽는 시간</span><span>약 2분</span></div>
+</div>
+<div>
+<div>
+<span>왜 이 구성인가</span>
+<span>전체 보기</span>
+</div>
+<div>
+<div>
+<span></span>
+<div><div>공고가 ‘남긴 흔적’을 일곱 번 언급했습니다</div><div>공고 → 문서 04 신설</div></div>
+</div>
+<div>
+<span></span>
+<div><div>대화에서 확인된 수치 세 개를 앞으로 옮겼습니다</div><div>대화 → 문서 01 · 03</div></div>
+</div>
+<div>
+<span></span>
+<div><div>매칭 96점 기록을 프로젝트 첫 자리에 두었습니다</div><div>기록 → 문서 03</div></div>
+</div>
+</div>
+<div></div>
+<div>
+<span>쓰이지 않은 재료</span>
+<span>1</span>
+</div>
+<div>
+<i class="ph ph-file-text"></i>
+<div><div>학회 논문 공저</div><div>이 공고 역량과 겹치지 않음</div></div>
+<span>넣을 곳 찾기</span>
+</div>
+</div>
+<div>
+<div>다음 단계에서는 이 컨텍스트에 맞는 디자인만 보여드립니다.</div>
+<button>이 구성안으로 디자인 고르기</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div data-screen-label="03">
+<span>03</span>
+<h2>디자인 선택</h2>
+<span>고품질 샘플에서 고르고, 한 문장으로 비틉니다</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<i class="ph ph-caret-left"></i>
+<span>새 포트폴리오</span>
+<span><span>당근 지원용</span><i class="ph ph-pencil-simple"></i></span>
+<div>
+<span><i class="ph ph-cloud-check"></i>자동 저장됨</span>
+<div></div>
+<i class="ph ph-x"></i>
+</div>
+</div>
+<div>
+<div><span><i class="ph ph-check"></i></span><span>공고 분석</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>재료 고르기</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>AI 대화</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>구성안</span></div><span></span><div><span><span>05</span></span><span>디자인 선택</span></div><span></span><div><span><span>06</span></span><span>다듬기</span></div>
+<span>예상 40초</span>
+</div>
+<div>
+<div>
+<div>
+<div>
+<span>디자인을 고르세요</span>
+<span>고른 뒤에도 언제든 바꿀 수 있습니다</span>
+<div>
+<span>당근 톤 반영</span>
+<div><div></div></div>
+</div>
+</div>
+<div>
+<i class="ph-fill ph-list-checks"></i>
+<span>구성안 6개 섹션을 그대로 채워 보여줍니다</span>
+<span>첫 화면 · 일하는 방식 · 프로젝트 · 남긴 것 · 스택 · 연락</span>
+<span>구성안 보기</span>
+</div>
+<div>
+<span>전체 12</span>
+<span>개발 · 데이터</span>
+<span>기획 · 디자인</span>
+<span>연구 · 학술</span>
+<span><i class="ph ph-eye"></i>전체 화면으로 보기</span>
+</div>
+<div>
+<div>
+<div>
+<div>DATA ENGINEER</div>
+<div>쌓이는 데이터를<br>믿을 수 있게<br>만듭니다</div>
+<div></div>
+<div>
+<div><div>3,000만</div><div>일 레코드</div></div>
+<div><div>24분</div><div>배치 소요</div></div>
+</div>
+<span><i class="ph ph-check"></i></span>
+</div>
+<div>
+<div>
+<span>Monolith</span>
+<span>FREE</span>
+</div>
+<div>여백 중심 · 개발/데이터 직군</div>
+</div>
+</div>
+<div>
+<div>
+<div>믿을 수 있는<br><i>데이터</i>를 만드는 일</div>
+<div>이지원 · 2019—2025</div>
+<div>
+<div><div></div><div></div><div></div><div></div></div>
+<div><div></div><div></div><div></div><div></div></div>
+</div>
+<span><i class="ph-fill ph-sparkle"></i><span>당근 톤과 잘 맞음</span></span>
+</div>
+<div>
+<div>
+<span>Editorial</span>
+<span>PRO</span>
+</div>
+<div>타이포 중심 · 읽히는 글</div>
+</div>
+</div>
+<div>
+<div>
+<div>$ cat about.md</div>
+<div>jiwon.lee<br>data engineer</div>
+<div>
+<div>→ 30M rec/day · spark · dbt</div>
+<div>→ batch 3h ····· 24m</div>
+<div>→ incidents 0 / 6mo</div>
+</div>
+<div><span>$</span><span></span></div>
+</div>
+<div>
+<div>
+<span>Terminal</span>
+<span>FREE</span>
+</div>
+<div>모노스페이스 · 다크</div>
+</div>
+</div>
+<div>
+<div>
+<div><span>이지원</span><span>SELECTED WORK · 6</span></div>
+<div>
+<div><span>pipeline</span></div><div><span>quality</span></div><div><span>realtime</span></div>
+<div><span>lineage</span></div><div><span>cost</span></div><div><span>alerting</span></div>
+</div>
+<div><div></div><div></div></div>
+</div>
+<div>
+<div>
+<span>Grid</span>
+<span>PRO</span>
+</div>
+<div>작업물 격자 · 이미지 강함</div>
+</div>
+</div>
+<div>
+<div>
+<div>기록 — 이지원</div>
+<div>
+<div></div>
+<div>
+<div><span></span><div>2025.06</div><div>실시간 적재 전환</div></div>
+<div><span></span><div>2024.11</div><div>배치 3시간 → 24분</div></div>
+<div><span></span><div>2023.04</div><div>품질 모니터링 도입</div></div>
+</div>
+</div>
+</div>
+<div>
+<div>
+<span>Journal</span>
+<span>FREE</span>
+</div>
+<div>시간순 기록 · 연구자</div>
+</div>
+</div>
+<div>
+<div>
+<span></span>
+<div>믿을 수 있는<br>데이터</div>
+<div>JIWON LEE · SCROLL ↓</div>
+<div></div>
+</div>
+<div>
+<div>
+<span>Studio</span>
+<span>PRO</span>
+</div>
+<div>한 장 스크롤 · 강한 인상</div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div>
+<i class="ph ph-magic-wand"></i>
+<span>Style Remix</span>
+<span>고른 디자인을 한 문장으로 비틀 수 있습니다</span>
+</div>
+<div>
+<span>여백을 더 넓게, 제목은 더 크게. 색은 차분하게</span>
+<span></span>
+<button>적용</button>
+</div>
+<div>
+<span>예시</span>
+<span>더 미니멀하게</span>
+<span>다크 모드로</span>
+<span>사진을 크게</span>
+<span>공대생 느낌으로</span>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<span>Monolith</span>
+<span>FREE</span>
+<span>바꾸기</span>
+</div>
+<div>
+<div>
+<span>팔레트</span>
+<div><span></span><span></span><span></span></div>
+<span>당근 CI 반영</span>
+</div>
+<div>
+<span>타이포</span>
+<span>Pretendard · 본문 16</span>
+</div>
+<div>
+<span>밀도</span>
+<span>넓게 · 한 화면 한 섹션</span>
+</div>
+</div>
+</div>
+<div>
+<div>얼마나 진하게?</div>
+<div>담을 내용의 양을 정합니다</div>
+<div>
+<div>
+<span></span>
+<div><div>Single Shot</div><div>한 장 · 핵심만</div></div>
+<span>3 섹션</span>
+</div>
+<div>
+<span><span></span></span>
+<div><div>Double Shot</div><div>프로젝트마다 상세 페이지</div></div>
+<span>6 섹션</span>
+</div>
+<div>
+<span></span>
+<div><div>Macchiato</div><div>모션과 인터랙션까지</div></div>
+<span>PRO</span>
+</div>
+</div>
+<div>
+<button><i class="ph-fill ph-coffee"></i>추출하기</button>
+<div>약 90초 걸립니다 · 이번 달 2 / 3</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div data-screen-label="04">
+<span>04</span>
+<h2>다듬기 · 문구 고치기</h2>
+<span>말로 고치는 게 기본, 글자는 바로 집어서 고칩니다</span>
+</div>
+<div>
+<div>
+<svg/>
+<div><i class="ph ph-house"></i></div>
+<div><i class="ph-fill ph-coffee"></i></div>
+<div><i class="ph ph-target"></i></div>
+<div><i class="ph ph-chart-bar"></i><span></span></div>
+<div>
+<div><i class="ph ph-question"></i></div>
+<div>지</div>
+</div>
+</div>
+<div>
+<div>
+<i class="ph ph-caret-left"></i>
+<span>당근 지원용</span>
+<span><span></span><span>아직 배포 전</span></span>
+<div>
+<div>
+<div><i class="ph ph-desktop"></i></div>
+<div><i class="ph ph-device-mobile"></i></div>
+</div>
+<div></div>
+<div>
+<i class="ph ph-arrow-counter-clockwise"></i>
+<i class="ph ph-arrow-clockwise"></i>
+</div>
+<div></div>
+<span><i class="ph ph-cloud-check"></i>3초 전 저장</span>
+<span><i class="ph ph-palette"></i>테마</span>
+<button>미리보기</button>
+<button><i class="ph ph-rocket-launch"></i>배포하기</button>
+</div>
+</div>
+<div>
+<div><span><i class="ph ph-check"></i></span><span>공고 분석</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>재료 고르기</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>AI 대화</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>구성안</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>디자인 선택</span></div><span></span><div><span><span>06</span></span><span>다듬기</span></div>
+<span>추출 완료 · 6개 섹션</span>
+</div>
+<div>
+<div>
+<div>
+<span>섹션</span>
+<span>6</span>
+<i class="ph ph-plus"></i>
+</div>
+<div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>소개</div>
+<div>이름 · 한 문장</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>핵심 역량</div>
+<div>역량 5개 · 공고 기준</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>대표 프로젝트</div>
+<div>3건 · 카드형</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>장애 대응 경험</div>
+<div>대화에서 추가됨</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>기술 스택</div>
+<div>4개 강조</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>연락처</div>
+<div>이메일 · GitHub</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>수상 내역</div>
+<div>숨김 · 공고와 무관</div>
+</div>
+<i class="ph ph-eye-slash"></i>
+</div>
+</div>
+<div>
+<div>
+<div><i class="ph ph-lightbulb"></i><span>한 가지 제안</span></div>
+<div>"장애 대응 경험"을 프로젝트보다 위로 올리면 공고 요구와 먼저 만납니다</div>
+<div>
+<span>올리기</span>
+<span>그대로 두기</span>
+</div>
+</div>
+</div>
+<div>
+<div><i class="ph ph-palette"></i><span>테마 · 글꼴</span><span></span></div>
+<div><i class="ph ph-ruler"></i><span>간격 · 여백 기준</span><span>보통</span></div>
+<div><i class="ph ph-code-simple"></i><span>HTML 직접 보기</span></div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<span></span>
+<span></span>
+<span></span>
+<div><span>jiwon-daangn.xpresso.me</span></div>
+</div>
+<div>
+<div></div>
+<div>
+<span></span>
+<span>이지원</span>
+<div>
+<span>역량</span>
+<span>프로젝트</span>
+<span>기록</span>
+<span>연락</span>
+</div>
+</div>
+<div>
+<div>
+<span>DATA ENGINEER</span>
+<span></span>
+<span>SINCE 2019</span>
+</div>
+<div>
+<div>
+<span><span>−</span><span>34</span><span>＋</span></span>
+<span></span>
+<span><i class="ph ph-text-b"></i></span><span><i class="ph ph-text-italic"></i></span><span><i class="ph ph-text-strikethrough"></i></span><span><span></span></span>
+<span><span></span></span>
+<span></span>
+<span><i class="ph-fill ph-coffee"></i>AI로 다듬기<i class="ph ph-caret-down"></i></span>
+</div>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<div>쌓이는 데이터를<br><span>믿을 수 있게</span> 만듭니다<span></span></div>
+</div>
+<div>일 3천만 건이 오가는 배치를 맡아 지연과 장애를 줄여 왔습니다. 지금은 데이터를 쓰는 사람이 숫자를 의심하지 않아도 되는 상태를 만드는 일에 관심이 있습니다.</div>
+</div>
+<div>
+<div>핵심 역량</div>
+<div>
+<div>
+<div><span>3,000</span><span>만 건</span></div>
+<div>하루에 지나가는 레코드</div>
+</div>
+<span></span>
+<div>
+<div><span>24</span><span>분</span></div>
+<div>야간 배치 소요 · 이전에는 3시간</div>
+</div>
+</div>
+<div>기준을 다시 잡은 뒤 여섯 달 동안, 지연으로 인한 장애는 <b>0건</b>이었습니다.</div>
+</div>
+<div>
+<div>
+<span>대표 프로젝트</span>
+<span>6건 중 공고와 가까운 2건</span>
+</div>
+<div>
+<div>
+<div>
+<span></span><span></span><span></span><span></span><span></span><span></span>
+<span>3h → 24m</span>
+</div>
+<div>
+<div>배치 파이프라인 재설계</div>
+<div>파티션 기준을 다시 잡고 셔플을 줄여, 야간 배치를 8분의 1로 줄였습니다</div>
+<div><span>Airflow</span><span>Spark</span></div>
+</div>
+</div>
+<div>
+<div>
+<div><span></span><div></div><span>98.7%</span></div>
+<div><span></span><div><div></div></div><span>이상 2건</span></div>
+<div><span></span><div></div><span>자동 복구</span></div>
+</div>
+<div>
+<div>데이터 품질 모니터링</div>
+<div>이상 감지를 자동화해 매일 아침 30분씩 걸린 수동 점검을 없앴습니다</div>
+<div><span>dbt</span><span>BigQuery</span></div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>장애 대응</div>
+<div>새벽 3시에 멈춘 적재를 두 시간 만에 되돌렸습니다</div>
+<div>복구가 끝난 뒤에는 같은 일이 반복되지 않도록 알림 기준을 다시 세우고, 재적재 절차를 문서로 남겼습니다. 다음 사람이 새벽에 혼자 헤매지 않도록.</div>
+</div>
+<div>
+<div>2시간</div>
+<div>복구까지</div>
+<div>6개월</div>
+<div>이후 무재발</div>
+</div>
+</div>
+<div>
+<div>기술 스택</div>
+<div>
+<span><span></span>Airflow</span>
+<span><span></span>Spark</span>
+<span><span></span>dbt</span>
+<span><span></span>BigQuery</span>
+<span>Python</span><span>Terraform</span><span>Kafka</span>
+</div>
+</div>
+<div>
+<div>
+<div>데이터가 미덥지 않은 팀이라면, 이야기해요</div>
+<div>jiwon.lee@example.com</div>
+</div>
+<span>GitHub</span>
+<span>이력서 PDF</span>
+</div>
+</div>
+</div>
+<div>
+<div><span>소개</span><i class="ph ph-caret-right"></i><span>제목</span><i class="ph ph-caret-right"></i><span>문장 2</span></div>
+<div>
+<i class="ph ph-arrow-up"></i>
+<i class="ph ph-arrow-down"></i>
+<i class="ph ph-copy"></i>
+<i class="ph ph-trash"></i>
+<span></span>
+<span><i class="ph-fill ph-coffee"></i>이 부분만 AI에게</span>
+</div>
+<span>데스크톱 1440</span>
+<span></span>
+<div>
+<i class="ph ph-minus"></i>
+<span>72%</span>
+<i class="ph ph-plus"></i>
+</div>
+</div>
+</div>
+<div>
+<div>
+<span>편집</span>
+<span>제목 · 소개 선택됨</span>
+<i class="ph ph-arrow-square-out"></i>
+</div>
+<div>
+<span>채팅</span><span>속성</span><span>이력</span>
+</div>
+<div>
+<div>
+<span></span>
+<span>오늘 14:21</span>
+<span></span>
+</div>
+<div>
+<span><i class="ph ph-cursor-click"></i><span>소개 · 성과 숫자 3개</span></span>
+<div>이 섹션 숫자를 더 크게 하고, 세 개 말고 두 개만 남겨줘</div>
+</div>
+<div>
+<div><div></div></div>
+<div>
+<div>
+<span>에스프레소</span>
+<span>1.4s</span>
+</div>
+<div>“3천만”과 “24분”만 남기고 글자를 키웠어요. “0건”은 아래 문장으로 옮겼습니다.</div>
+<div>
+<div>
+<i class="ph ph-git-diff"></i>
+<span>바뀐 곳 2</span>
+<span>화면에서 보기</span>
+</div>
+<div>
+<div>
+<span>숫자 개수</span>
+<span><span>3</span><i class="ph ph-arrow-right"></i><span>2</span></span>
+</div>
+<div>
+<span>숫자 크기</span>
+<span><span>28</span><i class="ph ph-arrow-right"></i><span>44px</span></span>
+</div>
+</div>
+</div>
+<div>
+<span><i class="ph ph-arrow-counter-clockwise"></i>되돌리기</span>
+<span><i class="ph ph-check"></i>그대로 두기</span>
+</div>
+</div>
+</div>
+<div>
+<i class="ph ph-cursor-click"></i>
+<span>더 고칠 곳은 화면에서 집어서 말해주세요.</span>
+</div>
+</div>
+<div>
+<div>
+<span>이 문장 더 짧게</span>
+<span>숫자 강조</span>
+<span>내 커리어에서 가져오기</span>
+</div>
+<div>
+<div>
+<span>고치고 싶은 부분을 말해주세요</span>
+<span></span>
+</div>
+<div>
+<i class="ph ph-image"></i>
+<i class="ph ph-cursor-click"></i>
+<span>⌘↵</span>
+<div><i class="ph ph-arrow-up"></i></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div data-screen-label="04b">
+<span>04b</span>
+<h2>다듬기 · 값 미세 조정</h2>
+<span>숫자 · 크기 · 여백까지 직접</span>
+</div>
+<div>
+<div>
+<svg/>
+<div><i class="ph ph-house"></i></div>
+<div><i class="ph-fill ph-coffee"></i></div>
+<div><i class="ph ph-target"></i></div>
+<div><i class="ph ph-chart-bar"></i><span></span></div>
+<div>
+<div><i class="ph ph-question"></i></div>
+<div>지</div>
+</div>
+</div>
+<div>
+<div>
+<i class="ph ph-caret-left"></i>
+<span>당근 지원용</span>
+<span><span></span><span>아직 배포 전</span></span>
+<div>
+<div>
+<div><i class="ph ph-desktop"></i></div>
+<div><i class="ph ph-device-mobile"></i></div>
+</div>
+<div></div>
+<div>
+<i class="ph ph-arrow-counter-clockwise"></i>
+<i class="ph ph-arrow-clockwise"></i>
+</div>
+<div></div>
+<span><i class="ph ph-cloud-check"></i>3초 전 저장</span>
+<span><i class="ph ph-palette"></i>테마</span>
+<button>미리보기</button>
+<button><i class="ph ph-rocket-launch"></i>배포하기</button>
+</div>
+</div>
+<div>
+<div><span><i class="ph ph-check"></i></span><span>공고 분석</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>재료 고르기</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>AI 대화</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>구성안</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>디자인 선택</span></div><span></span><div><span><span>06</span></span><span>다듬기</span></div>
+<span>추출 완료 · 6개 섹션</span>
+</div>
+<div>
+<div>
+<div>
+<span>섹션</span>
+<span>6</span>
+<i class="ph ph-plus"></i>
+</div>
+<div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>소개</div>
+<div>이름 · 한 문장</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>핵심 역량</div>
+<div>역량 5개 · 공고 기준</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>대표 프로젝트</div>
+<div>3건 · 카드형</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>장애 대응 경험</div>
+<div>대화에서 추가됨</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>기술 스택</div>
+<div>4개 강조</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>연락처</div>
+<div>이메일 · GitHub</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>수상 내역</div>
+<div>숨김 · 공고와 무관</div>
+</div>
+<i class="ph ph-eye-slash"></i>
+</div>
+</div>
+<div>
+<div>
+<div><i class="ph ph-lightbulb"></i><span>한 가지 제안</span></div>
+<div>"장애 대응 경험"을 프로젝트보다 위로 올리면 공고 요구와 먼저 만납니다</div>
+<div>
+<span>올리기</span>
+<span>그대로 두기</span>
+</div>
+</div>
+</div>
+<div>
+<div><i class="ph ph-palette"></i><span>테마 · 글꼴</span><span></span></div>
+<div><i class="ph ph-ruler"></i><span>간격 · 여백 기준</span><span>보통</span></div>
+<div><i class="ph ph-code-simple"></i><span>HTML 직접 보기</span></div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<span></span>
+<span></span>
+<span></span>
+<div><span>jiwon-daangn.xpresso.me</span></div>
+</div>
+<div>
+<div></div>
+<div>
+<span></span>
+<span>이지원</span>
+<div>
+<span>역량</span>
+<span>프로젝트</span>
+<span>기록</span>
+<span>연락</span>
+</div>
+</div>
+<div>
+<div>
+<span>DATA ENGINEER</span>
+<span></span>
+<span>SINCE 2019</span>
+</div>
+<div>쌓이는 데이터를<br><span>믿을 수 있게</span> 만듭니다</div>
+<div>일 3천만 건이 오가는 배치를 맡아 지연과 장애를 줄여 왔습니다. 지금은 데이터를 쓰는 사람이 숫자를 의심하지 않아도 되는 상태를 만드는 일에 관심이 있습니다.</div>
+</div>
+<div>
+<div>핵심 역량</div>
+<div>
+<div>
+<div>
+<span><i class="ph ph-number-square-one"></i><span>숫자 지표</span></span>
+<span></span>
+<span></span>
+<span></span>
+<span>3,000</span><span>만 건</span>
+<span>37px · 700</span>
+</div>
+<div>하루에 지나가는 레코드</div>
+</div>
+<span></span>
+<div>
+<div><span>24</span><span>분</span></div>
+<div>야간 배치 소요 · 이전에는 3시간</div>
+</div>
+</div>
+<div>기준을 다시 잡은 뒤 여섯 달 동안, 지연으로 인한 장애는 <b>0건</b>이었습니다.</div>
+</div>
+<div>
+<div>
+<span>대표 프로젝트</span>
+<span>6건 중 공고와 가까운 2건</span>
+</div>
+<div>
+<div>
+<div>
+<span></span><span></span><span></span><span></span><span></span><span></span>
+<span>3h → 24m</span>
+</div>
+<div>
+<div>배치 파이프라인 재설계</div>
+<div>파티션 기준을 다시 잡고 셔플을 줄여, 야간 배치를 8분의 1로 줄였습니다</div>
+<div><span>Airflow</span><span>Spark</span></div>
+</div>
+</div>
+<div>
+<div>
+<div><span></span><div></div><span>98.7%</span></div>
+<div><span></span><div><div></div></div><span>이상 2건</span></div>
+<div><span></span><div></div><span>자동 복구</span></div>
+</div>
+<div>
+<div>데이터 품질 모니터링</div>
+<div>이상 감지를 자동화해 매일 아침 30분씩 걸린 수동 점검을 없앴습니다</div>
+<div><span>dbt</span><span>BigQuery</span></div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>장애 대응</div>
+<div>새벽 3시에 멈춘 적재를 두 시간 만에 되돌렸습니다</div>
+<div>복구가 끝난 뒤에는 같은 일이 반복되지 않도록 알림 기준을 다시 세우고, 재적재 절차를 문서로 남겼습니다. 다음 사람이 새벽에 혼자 헤매지 않도록.</div>
+</div>
+<div>
+<div>2시간</div>
+<div>복구까지</div>
+<div>6개월</div>
+<div>이후 무재발</div>
+</div>
+</div>
+<div>
+<div>기술 스택</div>
+<div>
+<span><span></span>Airflow</span>
+<span><span></span>Spark</span>
+<span><span></span>dbt</span>
+<span><span></span>BigQuery</span>
+<span>Python</span><span>Terraform</span><span>Kafka</span>
+</div>
+</div>
+<div>
+<div>
+<div>데이터가 미덥지 않은 팀이라면, 이야기해요</div>
+<div>jiwon.lee@example.com</div>
+</div>
+<span>GitHub</span>
+<span>이력서 PDF</span>
+</div>
+</div>
+</div>
+<div>
+<div><span>핵심 역량</span><i class="ph ph-caret-right"></i><span>지표 카드</span><i class="ph ph-caret-right"></i><span>숫자 1</span></div>
+<div>
+<i class="ph ph-arrow-up"></i>
+<i class="ph ph-arrow-down"></i>
+<i class="ph ph-copy"></i>
+<i class="ph ph-trash"></i>
+<span></span>
+<span><i class="ph-fill ph-coffee"></i>이 부분만 AI에게</span>
+</div>
+<span>데스크톱 1440</span>
+<span></span>
+<div>
+<i class="ph ph-minus"></i>
+<span>72%</span>
+<i class="ph ph-plus"></i>
+</div>
+</div>
+</div>
+<div>
+<div>
+<span>편집</span>
+<span>숫자 지표 선택됨</span>
+<i class="ph ph-arrow-square-out"></i>
+</div>
+<div>
+<span data-om-label="채팅">채팅</span><span>속성</span><span>이력</span>
+</div>
+<div>
+<div>
+<i class="ph ph-number-square-one"></i>
+<div><div>숫자 지표</div><div>핵심 역량 › 지표 카드 › 1번</div></div>
+<i class="ph ph-arrows-left-right"></i>
+</div>
+<div>
+<div><span>내용</span><span></span></div>
+<div>
+<div><span>값</span><span><span>−</span><span>3,000</span><span>＋</span></span><span>천 단위 쉼표</span></div>
+<div><span>단위</span><span>만 건</span></div>
+<div><span>라벨</span><span>하루에 지나가는 레코드</span></div>
+<div><span>비교값</span><span>이전에는 3시간</span></div>
+</div>
+</div>
+<div>
+<div><span>글자</span><span></span><span>테마 글꼴 Pretendard</span></div>
+<div>
+<div><span>크기</span><span><span><span></span><span></span></span><span><span>−</span><span>37</span><span>px</span><span>＋</span></span></span></div>
+<div><span>굵기</span><span><span>400</span><span>500</span><span>700</span></span></div>
+<div><span>자간</span><span><span>−</span><span>-0.05</span><span>em</span><span>＋</span></span></div>
+<div><span>색</span><span><span></span><span></span><span></span><span></span><span>테마 상속</span></span></div>
+</div>
+</div>
+<div>
+<div><span>배치</span><span></span></div>
+<div>
+<div><span>지표 수</span><span><span>−</span><span>2</span><span>개</span><span>＋</span></span><span>3번째는 숨김</span></div>
+<div><span>간격</span><span><span><span></span><span></span></span><span><span>−</span><span>30</span><span>px</span><span>＋</span></span></span></div>
+<div><span>패딩</span><span><span><span>−</span><span>18</span><span>↕</span><span>＋</span></span><span><span>−</span><span>20</span><span>↔</span><span>＋</span></span></span></div>
+<div><span>정렬</span><span><span><i class="ph ph-align-left-simple"></i></span><span><i class="ph ph-align-center-horizontal-simple"></i></span><span><i class="ph ph-align-right-simple"></i></span></span></div>
+<div>
+<div><div>가운데 구분선</div></div>
+<span><span></span></span>
+</div>
+</div>
+</div>
+<div>
+<div><span>연결된 기록</span><span></span></div>
+<div>
+<div>
+<i class="ph ph-link-simple"></i>
+<div><div>야간 배치 파이프라인 안정화</div><div>프로젝트 · 2025.06</div></div>
+<i class="ph ph-arrow-square-out"></i>
+</div>
+<div>
+<div><div>기록과 값 동기화</div><div>기록이 바뀌면 이 숫자도 바뀝니다</div></div>
+<span><span></span></span>
+</div>
+<div><i class="ph-fill ph-warning-circle"></i><span>직접 고친 값은 기록과 달라질 수 있습니다. 지금 값은 기록과 일치합니다.</span></div>
+</div>
+</div>
+</div>
+<div>
+<span>기본값으로</span>
+<span>CSS 보기</span>
+<button><i class="ph-fill ph-coffee"></i>말로 고치기</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div data-screen-label="04c">
+<span>04c</span>
+<h2>다듬기 · 변경 이력</h2>
+<span>AI가 고친 것과 내가 고친 것을 나눠서 되돌립니다</span>
+</div>
+<div>
+<div>
+<svg/>
+<div><i class="ph ph-house"></i></div>
+<div><i class="ph-fill ph-coffee"></i></div>
+<div><i class="ph ph-target"></i></div>
+<div><i class="ph ph-chart-bar"></i><span></span></div>
+<div>
+<div><i class="ph ph-question"></i></div>
+<div>지</div>
+</div>
+</div>
+<div>
+<div>
+<i class="ph ph-caret-left"></i>
+<span>당근 지원용</span>
+<span><span></span><span>아직 배포 전</span></span>
+<div>
+<div>
+<div><i class="ph ph-desktop"></i></div>
+<div><i class="ph ph-device-mobile"></i></div>
+</div>
+<div></div>
+<div>
+<i class="ph ph-arrow-counter-clockwise"></i>
+<i class="ph ph-arrow-clockwise"></i>
+</div>
+<div></div>
+<span><i class="ph ph-cloud-check"></i>3초 전 저장</span>
+<span><i class="ph ph-palette"></i>테마</span>
+<button>미리보기</button>
+<button><i class="ph ph-rocket-launch"></i>배포하기</button>
+</div>
+</div>
+<div>
+<div><span><i class="ph ph-check"></i></span><span>공고 분석</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>재료 고르기</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>AI 대화</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>구성안</span></div><span></span><div><span><i class="ph ph-check"></i></span><span>디자인 선택</span></div><span></span><div><span><span>06</span></span><span>다듬기</span></div>
+<span>추출 완료 · 6개 섹션</span>
+</div>
+<div>
+<div>
+<div>
+<span>섹션</span>
+<span>6</span>
+<i class="ph ph-plus"></i>
+</div>
+<div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>소개</div>
+<div>이름 · 한 문장</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>핵심 역량</div>
+<div>역량 5개 · 공고 기준</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>대표 프로젝트</div>
+<div>3건 · 카드형</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>장애 대응 경험</div>
+<div>대화에서 추가됨</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>기술 스택</div>
+<div>4개 강조</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>연락처</div>
+<div>이메일 · GitHub</div>
+</div>
+<i class="ph ph-eye"></i>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div>
+<div>수상 내역</div>
+<div>숨김 · 공고와 무관</div>
+</div>
+<i class="ph ph-eye-slash"></i>
+</div>
+</div>
+<div>
+<div>
+<div><i class="ph ph-lightbulb"></i><span>한 가지 제안</span></div>
+<div>"장애 대응 경험"을 프로젝트보다 위로 올리면 공고 요구와 먼저 만납니다</div>
+<div>
+<span>올리기</span>
+<span>그대로 두기</span>
+</div>
+</div>
+</div>
+<div>
+<div><i class="ph ph-palette"></i><span>테마 · 글꼴</span><span></span></div>
+<div><i class="ph ph-ruler"></i><span>간격 · 여백 기준</span><span>보통</span></div>
+<div><i class="ph ph-code-simple"></i><span>HTML 직접 보기</span></div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<span></span>
+<span></span>
+<span></span>
+<div><span>jiwon-daangn.xpresso.me</span></div>
+</div>
+<div>
+<div></div>
+<div>
+<span></span>
+<span>이지원</span>
+<div>
+<span>역량</span>
+<span>프로젝트</span>
+<span>기록</span>
+<span>연락</span>
+</div>
+</div>
+<div>
+<div>
+<span>DATA ENGINEER</span>
+<span></span>
+<span>SINCE 2019</span>
+</div>
+<div>쌓이는 데이터를<br><span>믿을 수 있게</span> 만듭니다</div>
+<div>
+<span><i class="ph-fill ph-coffee"></i><span>AI 편집 · 2분 전</span></span>
+<span>하루 3천만 건 규모의 데이터를 다뤘습니다.</span> <span>일 3천만 건이 오가는 배치를 맡아 지연과 장애를 줄여 왔습니다.</span> 지금은 데이터를 쓰는 사람이 숫자를 의심하지 않아도 되는 상태를 만드는 일에 관심이 있습니다.
+<span><span>이 변경만 되돌리기</span><span></span><span>유지</span></span>
+</div>
+</div>
+<div>
+<div>핵심 역량</div>
+<div>
+<div>
+<div><span>3,000</span><span>만 건</span></div>
+<div>하루에 지나가는 레코드</div>
+</div>
+<span></span>
+<div>
+<div><span>24</span><span>분</span></div>
+<div>야간 배치 소요 · 이전에는 3시간</div>
+</div>
+</div>
+<div>기준을 다시 잡은 뒤 여섯 달 동안, 지연으로 인한 장애는 <b>0건</b>이었습니다.</div>
+</div>
+<div>
+<div>
+<span>대표 프로젝트</span>
+<span>6건 중 공고와 가까운 2건</span>
+</div>
+<div>
+<div>
+<div>
+<span></span><span></span><span></span><span></span><span></span><span></span>
+<span>3h → 24m</span>
+</div>
+<div>
+<div>배치 파이프라인 재설계</div>
+<div>파티션 기준을 다시 잡고 셔플을 줄여, 야간 배치를 8분의 1로 줄였습니다</div>
+<div><span>Airflow</span><span>Spark</span></div>
+</div>
+</div>
+<div>
+<div>
+<div><span></span><div></div><span>98.7%</span></div>
+<div><span></span><div><div></div></div><span>이상 2건</span></div>
+<div><span></span><div></div><span>자동 복구</span></div>
+</div>
+<div>
+<div>데이터 품질 모니터링</div>
+<div>이상 감지를 자동화해 매일 아침 30분씩 걸린 수동 점검을 없앴습니다</div>
+<div><span>dbt</span><span>BigQuery</span></div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>장애 대응</div>
+<div>새벽 3시에 멈춘 적재를 두 시간 만에 되돌렸습니다</div>
+<div>복구가 끝난 뒤에는 같은 일이 반복되지 않도록 알림 기준을 다시 세우고, 재적재 절차를 문서로 남겼습니다. 다음 사람이 새벽에 혼자 헤매지 않도록.</div>
+</div>
+<div>
+<div>2시간</div>
+<div>복구까지</div>
+<div>6개월</div>
+<div>이후 무재발</div>
+</div>
+</div>
+<div>
+<div>기술 스택</div>
+<div>
+<span><span></span>Airflow</span>
+<span><span></span>Spark</span>
+<span><span></span>dbt</span>
+<span><span></span>BigQuery</span>
+<span>Python</span><span>Terraform</span><span>Kafka</span>
+</div>
+</div>
+<div>
+<div>
+<div>데이터가 미덥지 않은 팀이라면, 이야기해요</div>
+<div>jiwon.lee@example.com</div>
+</div>
+<span>GitHub</span>
+<span>이력서 PDF</span>
+</div>
+</div>
+</div>
+<div>
+<div><span>소개</span><i class="ph ph-caret-right"></i><span>본문 문단</span></div>
+<div>
+<i class="ph ph-arrow-up"></i>
+<i class="ph ph-arrow-down"></i>
+<i class="ph ph-copy"></i>
+<i class="ph ph-trash"></i>
+<span></span>
+<span><i class="ph-fill ph-coffee"></i>이 부분만 AI에게</span>
+</div>
+<span>데스크톱 1440</span>
+<span></span>
+<div>
+<i class="ph ph-minus"></i>
+<span>72%</span>
+<i class="ph ph-plus"></i>
+</div>
+</div>
+</div>
+<div>
+<div>
+<span>편집</span>
+<span>변경 5건</span>
+<i class="ph ph-arrow-square-out"></i>
+</div>
+<div>
+<span>채팅</span><span>속성</span><span>이력</span>
+</div>
+<div>
+<span>전체</span><span>AI 편집</span><span>직접 편집</span>
+<i class="ph ph-git-diff"></i>
+</div>
+<div>
+<div>오늘</div>
+<div>
+<div>
+<div><i class="ph-fill ph-coffee"></i></div>
+<div><div>소개 문단을 <b>공고 문장에 맞춰</b> 다시 씀</div><div>2분 전 · 지금 보는 상태</div></div>
+</div>
+<div>
+<div><span>지</span></div>
+<div><div>제목 글자 크기 38 → 34px</div><div>9분 전</div></div>
+<i class="ph ph-arrow-counter-clockwise"></i>
+</div>
+<div>
+<div><span>지</span></div>
+<div><div>"믿을 수 있게"에 형광 표시 추가</div><div>11분 전</div></div>
+<i class="ph ph-arrow-counter-clockwise"></i>
+</div>
+<div>
+<div><i class="ph-fill ph-coffee"></i></div>
+<div><div>지표를 3개에서 2개로 줄이고 숫자를 키움</div><div>14분 전</div></div>
+<i class="ph ph-arrow-counter-clockwise"></i>
+</div>
+<div>
+<div><span>지</span></div>
+<div><div>자격 · 수상 섹션 숨김</div><div>22분 전</div></div>
+<i class="ph ph-arrow-counter-clockwise"></i>
+</div>
+</div>
+<div>되돌릴 수 있는 지점</div>
+<div>
+<div><i class="ph ph-flag"></i><div><div>AI 추출 직후</div><div>오늘 오전 11:02 · 6개 섹션</div></div><span>복원</span></div>
+<div><i class="ph ph-flag"></i><div><div>직접 편집 시작 전</div><div>오늘 오후 1:44</div></div><span>복원</span></div>
+</div>
+<div>
+<i class="ph ph-info"></i>
+<span>직접 고친 부분은 AI가 다시 쓸 때 그대로 둡니다. 잠금을 풀면 함께 고칩니다.</span>
+</div>
+</div>
+<div>
+<span>변경 5건</span>
+<button>이 지점으로 되돌리기</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div data-screen-label="05">
+<span>05</span>
+<h2>내 커리어</h2>
+<span>직접 쓰거나 AI에게 맡기거나 — 문서로 관리하는 커리어</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<span>내 커리어</span>
+<span>/</span>
+<span>경험</span>
+<div>
+<span>3분 전 편집</span>
+<span>공유</span>
+<i class="ph ph-clock-counter-clockwise"></i>
+<i class="ph ph-dots-three"></i>
+</div>
+</div>
+<div>
+<div>
+<div>
+<div><i class="ph-fill ph-chat-circle-dots"></i></div>
+<span>경험</span>
+<span></span>
+</div>
+<div>대화로 꺼낸 순간들을 문서로 관리합니다. 직접 쓰거나, 바리스타에게 질문을 받아 채울 수 있습니다.</div>
+<div>
+<span>테이블</span>
+<span>보드</span>
+<span>타임라인</span>
+<span>＋ 뷰 추가</span>
+<div>
+<span>필터</span>
+<span>정렬</span>
+<span>속성</span>
+<div>
+<button>새로 만들기</button>
+<div></div>
+<button><i class="ph-fill ph-coffee"></i>AI로 만들기</button>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div><i class="ph ph-text-aa"></i><span>제목</span></div>
+<div><i class="ph ph-circle-half"></i><span>상태</span></div>
+<div><i class="ph ph-tag"></i><span>역량</span></div>
+<div><i class="ph ph-calendar-blank"></i><span>시기</span></div>
+<div><i class="ph ph-link-simple"></i><span>사용처</span></div>
+<div><i class="ph ph-plus"></i></div>
+</div>
+<div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<i class="ph ph-file-text"></i>
+<span>로그 없는 시스템에서 원인을 좁혀간 3일</span>
+<span>AI</span>
+</div>
+<div><span>정리됨</span></div>
+<div><span>장애 대응</span><span>원인 분석</span></div>
+<div>2025.04</div>
+<div>2곳</div>
+<div><i class="ph ph-dots-three"></i></div>
+</div>
+<div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<i class="ph ph-file-text"></i>
+<span>반대하는 팀원을 설득해 구조를 바꾼 일</span>
+<span>AI</span>
+</div>
+<div><span>정리됨</span></div>
+<div><span>설득</span><span>협업</span></div>
+<div>2025.02</div>
+<div>—</div>
+<div><i class="ph ph-dots-three"></i></div>
+</div>
+<div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<i class="ph ph-file-text"></i>
+<span>첫 프로덕션 장애를 낸 날</span>
+</div>
+<div><span>초안</span></div>
+<div><span>실패 경험</span></div>
+<div>2024.12</div>
+<div>1곳</div>
+<div><i class="ph ph-dots-three"></i></div>
+</div>
+<div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<i class="ph ph-file-text"></i>
+<span>아무도 안 하던 일을 먼저 시작한 경험</span>
+<span>AI</span>
+</div>
+<div><span>정리됨</span></div>
+<div><span>주도성</span></div>
+<div>2024.10</div>
+<div>1곳</div>
+<div><i class="ph ph-dots-three"></i></div>
+</div>
+<div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<i class="ph ph-file-text"></i>
+<span>신입 두 명을 동시에 온보딩한 두 달</span>
+</div>
+<div><span>초안</span></div>
+<div><span>협업</span><span>멘토링</span></div>
+<div>2024.08</div>
+<div>—</div>
+<div><i class="ph ph-dots-three"></i></div>
+</div>
+<div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<i class="ph ph-file-text"></i>
+<span>마감을 지키려 품질을 포기한 판단</span>
+</div>
+<div><span>비어 있음</span></div>
+<div><span>의사결정</span></div>
+<div>2024.05</div>
+<div>—</div>
+<div><i class="ph ph-dots-three"></i></div>
+</div>
+<div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<i class="ph ph-file-text"></i>
+<span>레거시 API를 단계적으로 걷어낸 6개월</span>
+<span>AI</span>
+</div>
+<div><span>정리됨</span></div>
+<div><span>설계</span><span>주도성</span></div>
+<div>2024.03</div>
+<div>1곳</div>
+<div><i class="ph ph-dots-three"></i></div>
+</div>
+<div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<i class="ph ph-file-text"></i>
+<span>고객 문의를 직접 받아본 2주</span>
+</div>
+<div><span>초안</span></div>
+<div><span>사용자 이해</span></div>
+<div>2023.11</div>
+<div>—</div>
+<div><i class="ph ph-dots-three"></i></div>
+</div>
+<div>
+<i class="ph ph-plus"></i>
+<span>새로 만들기</span>
+<span>또는</span>
+<span>바리스타에게 질문받기</span>
+</div>
+</div>
+<div>
+<span>8개 · 초안 3 · 비어 있음 1</span>
+<span>합계 계산</span>
+</div>
+</div>
+<div>
+<div>
+<i class="ph ph-arrows-out-simple"></i>
+<span>경험 · 문서</span>
+<div>
+<span>저장됨</span>
+<i class="ph ph-x"></i>
+</div>
+</div>
+<div>
+<div>로그 없는 시스템에서<br>원인을 좁혀간 3일</div>
+<div>
+<div>
+<div><i class="ph ph-circle-half"></i><span>상태</span></div>
+<div><span>정리됨</span></div>
+</div>
+<div>
+<div><i class="ph ph-tag"></i><span>역량</span></div>
+<div><div><span>장애 대응</span><span>원인 분석</span><span>＋</span></div></div>
+</div>
+<div>
+<div><i class="ph ph-calendar-blank"></i><span>시기</span></div>
+<div><span>2025.03 – 2025.04</span></div>
+</div>
+<div>
+<div><i class="ph ph-chat-circle-dots"></i><span>출처</span></div>
+<div><a href="#src">AI 대화 · 4월 18일</a></div>
+</div>
+<div>
+<div><i class="ph ph-link-simple"></i><span>사용처</span></div>
+<div><div><span>토스 v3</span><span>범용</span></div></div>
+</div>
+<div>
+<div><i class="ph ph-plus"></i><span>속성 추가</span></div>
+<span></span>
+</div>
+</div>
+<div></div>
+<div>
+<div>
+<div>상황</div>
+<div>야간 배치가 주 3회 실패했지만 로그가 남지 않아 원인 추적이 불가능한 상태였습니다.</div>
+</div>
+<div>
+<div>행동</div>
+<div>
+<div><span>•</span><span>실행 단계별 트레이스를 삽입해 재현 경로 확보</span></div>
+<div><span>•</span><span>상류 테이블의 스키마 변경을 원인으로 특정</span></div>
+<div><span>•</span><span>파이프라인 앞단에 검증 단계 추가</span></div>
+</div>
+</div>
+<div>
+<div>
+<i class="ph-fill ph-coffee"></i>
+<span>AI가 정리한 교훈</span>
+<span>클릭해서 수정</span>
+</div>
+<div>관측 가능성이 없는 시스템에서는 디버깅보다 계측이 먼저입니다.</div>
+</div>
+<div>
+<i class="ph ph-plus"></i>
+<span>입력하거나 / 를 눌러 명령어를 사용하세요</span>
+</div>
+</div>
+</div>
+<div>
+<div>
+<span>이어서 질문받기</span>
+<span>성과를 숫자로</span>
+<span>문장 다듬기</span>
+<span>STAR로 재구성</span>
+</div>
+<div>
+<i class="ph-fill ph-coffee"></i>
+<span>이 문서에 대해 바리스타에게 요청하기</span>
+<button><i class="ph-fill ph-arrow-up"></i></button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+<div>
+<div data-screen-label="05b">
+<span>05b</span>
+<h2>내 커리어 · 프로젝트</h2>
+<span>카테고리마다 속성과 뷰가 다릅니다</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<span>내 커리어</span>
+<span>/</span>
+<span>프로젝트</span>
+<div>
+<span>어제 편집</span>
+<span>공유</span>
+<i class="ph ph-clock-counter-clockwise"></i>
+<i class="ph ph-dots-three"></i>
+</div>
+</div>
+<div>
+<div>
+<div>
+<div><i class="ph-fill ph-briefcase"></i></div>
+<span>프로젝트</span>
+</div>
+<div>무엇을 만들었고 무엇이 달라졌는지. 성과 수치가 비어 있으면 AI가 먼저 물어봅니다.</div>
+<div>
+<span>갤러리</span>
+<span>테이블</span>
+<span>타임라인</span>
+<span>＋ 뷰 추가</span>
+<div>
+<span>필터</span>
+<span>정렬</span>
+<span>속성</span>
+<div>
+<button>새로 만들기</button>
+<div></div>
+<button><i class="ph-fill ph-coffee"></i>AI로 만들기</button>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<div>
+<span>nightly_etl</span>
+<span>success 62/62</span>
+</div>
+<div>
+<span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+<span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+</div>
+<div>
+<span>런타임</span>
+<span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+<span></span>
+</div>
+<span>AI 요약됨</span>
+</div>
+<div>
+<div>야간 배치 파이프라인 안정화</div>
+<div>로그가 없는 상태에서 트레이스를 심어 원인을 특정하고 실패율을 0으로 낮췄습니다.</div>
+<div>
+<span>Python</span><span>Airflow</span>
+</div>
+<div>
+<span>2025.03 – 06</span>
+<span>실패 3회 → 0</span>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<span>12.4M</span>
+<span>건 / 일</span>
+<span>lag 0.4s</span>
+</div>
+<div>
+<span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+</div>
+<div><span>09.24</span><span>01.25</span></div>
+<span>AI 요약됨</span>
+</div>
+<div>
+<div>결제 정산 스케줄러 재설계</div>
+<div>일 1,200만 건 정산을 안정적으로 처리하도록 큐 기반 구조로 전환했습니다.</div>
+<div>
+<span>Kotlin</span><span>Kafka</span>
+</div>
+<div>
+<span>2024.09 – 25.01</span>
+<span>일 1,200만 건</span>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<i class="ph ph-magnifying-glass"></i>
+<span>level:error AND svc:settle</span>
+<span>14 hits · 82ms</span>
+</div>
+<div>
+<div>12:04:11 <span>svc:api</span> retry scheduled</div>
+<div>12:04:12 <span>ERROR</span> settle: connection reset</div>
+<div>12:04:12 <span>svc:settle</span> fallback queue</div>
+<div>12:04:15 <span>svc:settle</span> recovered</div>
+</div>
+</div>
+<div>
+<div>사내 로그 뷰어 개발</div>
+<div>팀 내부용 로그 검색 도구를 직접 만들어 배포했습니다.</div>
+<div>
+<span>React</span><span>Go</span>
+</div>
+<div>
+<span>2024.06 – 08</span>
+<span>성과 수치 없음</span>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<span><span></span>v1</span>
+<span><span></span>v2</span>
+<span>트래픽 이관</span>
+</div>
+<div>
+<div><div></div><div></div></div><div><div></div><div></div></div><div><div></div><div></div></div><div><div></div><div></div></div><div><div></div><div></div></div><div><div></div><div></div></div><div><div></div><div></div></div>
+</div>
+<div><span>23.09</span><span>24.03</span></div>
+<span>AI 요약됨</span>
+</div>
+<div>
+<div>레거시 API 단계적 제거</div>
+<div>트래픽을 나눠 흘리며 6개월에 걸쳐 구 API를 걷어냈습니다.</div>
+<div>
+<span>Java</span><span>Nginx</span>
+</div>
+<div>
+<span>2023.09 – 24.03</span>
+<span>응답 41% 개선</span>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<div><span></span><span>이번 주</span><span>32.4km</span></div>
+<div>
+<span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+</div>
+<div>
+<div><div>5'12"</div><div>평균 페이스</div></div>
+<div><div>4회</div><div>러닝</div></div>
+</div>
+</div>
+<span>App Store</span>
+</div>
+<div>
+<div>러닝 기록 사이드 프로젝트</div>
+<div>개인 프로젝트로 만든 기록 앱. 앱스토어에 배포했습니다.</div>
+<div>
+<span>Swift</span>
+</div>
+<div>
+<span>2024.11</span>
+<span>성과 수치 없음</span>
+</div>
+</div>
+</div>
+<div>
+<i class="ph ph-plus"></i>
+<span>프로젝트 추가</span>
+<span>또는 AI로 만들기</span>
+</div>
+</div>
+<div>
+<span>12개 · 성과 수치 없음 3</span>
+<span>비어 있는 성과 채우기</span>
+</div>
+</div>
+<div>
+<div>
+<i class="ph ph-arrows-out-simple"></i>
+<span>프로젝트 · 문서</span>
+<div><span>저장됨</span><i class="ph ph-x"></i></div>
+</div>
+<div>
+<div>야간 배치 파이프라인 안정화</div>
+<div>
+<div><div><i class="ph ph-user"></i><span>역할</span></div><span>백엔드 리드 · 4인 팀</span></div>
+<div><div><i class="ph ph-code"></i><span>기술</span></div><div><span>Python</span><span>Airflow</span><span>＋</span></div></div>
+<div><div><i class="ph ph-calendar-blank"></i><span>기간</span></div><span>2025.03 – 2025.06</span></div>
+<div><div><i class="ph ph-chart-line-up"></i><span>성과</span></div><div><span>실패 3회 → 0</span><span>감지 8h → 4m</span></div></div>
+<div><div><i class="ph ph-chat-circle-dots"></i><span>연결된 경험</span></div><a href="#exp">로그 없는 시스템에서 원인을…</a></div>
+<div><div><i class="ph ph-plus"></i><span>속성 추가</span></div><span></span></div>
+</div>
+<div></div>
+<div>
+<div><div>문제</div><div>야간 배치가 주 3회 실패했으나 로그가 남지 않아 원인 추적이 불가능했습니다.</div></div>
+<div><div>해결</div><div>실행 단계별 트레이스를 심어 재현 경로를 확보하고, 상류 스키마 변경을 원인으로 특정한 뒤 검증 단계를 추가했습니다.</div></div>
+<div>
+<div><i class="ph-fill ph-coffee"></i><span>AI 제안</span></div>
+<div>"레거시 API 제거" 프로젝트와 기술 스택이 겹칩니다. 두 기록을 묶어 한 편의 서사로 만들까요?</div>
+</div>
+<div><i class="ph ph-plus"></i><span>입력하거나 / 를 눌러 명령어를 사용하세요</span></div>
+</div>
+</div>
+<div>
+<div>
+<span>성과를 숫자로</span>
+<span>기술 선택 이유 추가</span>
+<span>회고 쓰기</span>
+</div>
+<div>
+<i class="ph-fill ph-coffee"></i>
+<span>이 문서에 대해 바리스타에게 요청하기</span>
+<button><i class="ph-fill ph-arrow-up"></i></button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+<div>
+<div data-screen-label="05c">
+<span>05c</span>
+<h2>내 커리어 · 학력 · 이력</h2>
+<span>시간 순서가 중요한 카테고리는 타임라인 뷰로</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<span>내 커리어</span><span>/</span><span>학력 · 이력</span>
+<div><span>어제 편집</span><span>공유</span><i class="ph ph-clock-counter-clockwise"></i><i class="ph ph-dots-three"></i></div>
+</div>
+<div>
+<div>
+<div>
+<div><i class="ph-fill ph-graduation-cap"></i></div>
+<span>학력 · 이력</span>
+</div>
+<div>학교와 회사를 시간순으로. 각 항목 안에서 무엇을 했는지는 프로젝트·경험과 연결됩니다.</div>
+<div>
+<span>타임라인</span><span>테이블</span><span>갤러리</span>
+<span>＋ 뷰 추가</span>
+<div>
+<span>필터</span><span>정렬</span><span>속성</span>
+<div>
+<button>새로 만들기</button>
+<div></div>
+<button><i class="ph-fill ph-coffee"></i>AI로 만들기</button>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<div>2023.03</div>
+<div>현재</div>
+</div>
+<div>
+<span></span>
+<span></span>
+</div>
+<div>
+<div>
+<div>
+<i class="ph ph-buildings"></i>
+<span>토스페이먼츠 · 백엔드 엔지니어</span>
+<span>재직 중</span>
+<span>정규직 · 3년차</span>
+</div>
+<div>정산 도메인에서 배치와 API를 담당하고 있습니다.</div>
+<div><span>프로젝트 4건 연결</span><span>경험 5건 연결</span></div>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>2021.07</div>
+<div>2023.02</div>
+</div>
+<div>
+<span></span>
+<span></span>
+</div>
+<div>
+<div>
+<div>
+<i class="ph ph-buildings"></i>
+<span>스타트업 A · 서버 개발</span>
+<span>정규직 · 1년 8개월</span>
+</div>
+<div>초기 서비스의 서버를 처음부터 만들고 운영했습니다.</div>
+<div><span>프로젝트 3건 연결</span></div>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>2017.03</div>
+<div>2021.02</div>
+</div>
+<div>
+<span></span>
+<span></span>
+</div>
+<div>
+<div>
+<div>
+<i class="ph ph-graduation-cap"></i>
+<span>한국대학교 컴퓨터공학과</span>
+<span>학사 · GPA 3.8 / 4.5</span>
+</div>
+<div>데이터베이스 연구실에서 학부 연구생으로 활동했습니다.</div>
+<div><span>학술 1건 연결</span></div>
+</div>
+</div>
+</div>
+<div>
+<div></div>
+<div><span></span></div>
+<div>
+<div>
+<i class="ph ph-plus"></i>
+<span>이력 추가</span>
+<span>이력서 PDF에서 불러오기</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div>
+<i class="ph ph-arrows-out-simple"></i>
+<span>이력 · 문서</span>
+<div><span>저장됨</span><i class="ph ph-x"></i></div>
+</div>
+<div>
+<div>토스페이먼츠 · 백엔드 엔지니어</div>
+<div>
+<div><div><i class="ph ph-briefcase"></i><span>고용 형태</span></div><span>정규직</span></div>
+<div><div><i class="ph ph-calendar-blank"></i><span>기간</span></div><span>2023.03 – 재직 중</span></div>
+<div><div><i class="ph ph-users-three"></i><span>소속</span></div><span>정산플랫폼팀 · 6인</span></div>
+<div><div><i class="ph ph-link-simple"></i><span>연결</span></div><div><span>프로젝트 4</span><span>경험 5</span><span>＋</span></div></div>
+<div><div><i class="ph ph-plus"></i><span>속성 추가</span></div><span></span></div>
+</div>
+<div></div>
+<div>
+<div><div>맡은 일</div>
+<div>
+<div><span>•</span><span>정산 배치 파이프라인 설계와 운영</span></div>
+<div><span>•</span><span>가맹점 정산 API 개발 및 성능 개선</span></div>
+<div><span>•</span><span>신입 온보딩 멘토링</span></div>
+</div>
+</div>
+<div>
+<div><i class="ph-fill ph-coffee"></i><span>AI 제안</span></div>
+<div>이 회사에서 한 일 중 <b>수치가 붙은 항목이 1개</b>뿐입니다. 정산 API 개선 결과를 물어볼까요?</div>
+</div>
+<div><i class="ph ph-plus"></i><span>입력하거나 / 를 눌러 명령어를 사용하세요</span></div>
+</div>
+</div>
+<div>
+<div>
+<span>성과 물어보기</span>
+<span>이력서 문장으로</span>
+<span>영문으로 번역</span>
+</div>
+<div>
+<i class="ph-fill ph-coffee"></i>
+<span>이 문서에 대해 바리스타에게 요청하기</span>
+<button><i class="ph-fill ph-arrow-up"></i></button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+<div>
+<div data-screen-label="05d">
+<span>05d</span>
+<h2>내 커리어 · 스킬 · 도구</h2>
+<span>기록에서 뽑아낸 스킬. 근거가 있는 것만 포트폴리오에 올라갑니다</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<span>내 커리어</span><span>/</span><span>스킬 · 도구</span>
+<div><span>3일 전 편집</span><span>공유</span><i class="ph ph-clock-counter-clockwise"></i><i class="ph ph-dots-three"></i></div>
+</div>
+<div>
+<div>
+<div>
+<div><i class="ph-fill ph-code"></i></div>
+<span>스킬 · 도구</span>
+</div>
+<div>직접 고르지 않아도 됩니다. 기록에 등장한 도구를 세어 자동으로 채웠고, 숙련도는 근거 개수로 계산합니다.</div>
+<div>
+<span>보드</span><span>테이블</span><span>수요 비교</span>
+<span>＋ 뷰 추가</span>
+<div>
+<span>필터</span><span>정렬</span><span>속성</span>
+<div>
+<button>새로 만들기</button>
+<div></div>
+<button><i class="ph-fill ph-coffee"></i>AI로 만들기</button>
+</div>
+</div>
+</div>
+<div>
+<i class="ph ph-target"></i>
+<span>관심 공고 14건이 요구하는데 내게 없는 것 <b>3개</b></span>
+<div>
+<span>Kafka 79%</span>
+<span>Flink 43%</span>
+<span>CDC 29%</span>
+</div>
+<span>질문으로 채우기</span>
+</div>
+<div>
+<div>
+<span>언어 · 쿼리</span>
+<span>3</span>
+<span></span>
+<i class="ph ph-plus"></i>
+</div>
+<div><div>
+<div>
+<span><i class="ph-fill ph-database"></i></span><span>SQL</span>
+<span>공고 100%</span>
+</div>
+<div>
+<span></span><span></span><span></span><span></span><span></span>
+</div>
+<div>근거 9건 · 최근 2025.07</div>
+</div><div>
+<div>
+<span><img src="https://cdn.simpleicons.org/python/3776AB" alt=""></span><span>Python</span>
+<span>공고 93%</span>
+</div>
+<div>
+<span></span><span></span><span></span><span></span><span></span>
+</div>
+<div>근거 8건 · 최근 2025.07</div>
+</div><div>
+<div>
+<span><img src="https://cdn.simpleicons.org/kotlin/7F52FF" alt=""></span><span>Kotlin</span>
+<span>공고 21%</span>
+</div>
+<div>
+<span></span><span></span><span></span><span></span><span></span>
+</div>
+<div>근거 4건 · 최근 2025.05</div>
+</div></div>
+</div>
+<div>
+<div>
+<span>데이터 · 파이프라인</span>
+<span>4</span>
+<span></span>
+<i class="ph ph-plus"></i>
+</div>
+<div><div>
+<div>
+<span><img src="https://cdn.simpleicons.org/apacheairflow/017CEE" alt=""></span><span>Airflow</span>
+<span>공고 79%</span>
+</div>
+<div>
+<span></span><span></span><span></span><span></span><span></span>
+</div>
+<div>근거 5건 · 최근 2025.06</div>
+</div><div>
+<div>
+<span><img src="https://cdn.simpleicons.org/apachespark/E25A1C" alt=""></span><span>Spark</span>
+<span>공고 50%</span>
+</div>
+<div>
+<span></span><span></span><span></span><span></span><span></span>
+</div>
+<div>근거 3건 · 최근 2025.04</div>
+</div><div>
+<div>
+<span>dbt</span><span>dbt</span>
+<span>공고 36%</span>
+</div>
+<div>
+<span></span><span></span><span></span><span></span><span></span>
+</div>
+<div>근거 2건 · 최근 2024.11</div>
+</div><div>
+<div>
+<span><img src="https://cdn.simpleicons.org/googlebigquery/669DF6" alt=""></span><span>BigQuery</span>
+<span>공고 43%</span>
+</div>
+<div>
+<span></span><span></span><span></span><span></span><span></span>
+</div>
+<div>근거 4건 · 최근 2025.06</div>
+</div></div>
+</div>
+<div>
+<div>
+<span>인프라 · 운영</span>
+<span>2</span>
+<span></span>
+<i class="ph ph-plus"></i>
+</div>
+<div><div>
+<div>
+<span><img src="https://cdn.simpleicons.org/terraform/844FBA" alt=""></span><span>Terraform</span>
+<span>공고 29%</span>
+</div>
+<div>
+<span></span><span></span><span></span><span></span><span></span>
+</div>
+<div>근거 2건 · 최근 2024.09</div>
+</div><div>
+<div>
+<span><img src="https://cdn.simpleicons.org/kubernetes/326CE5" alt=""></span><span>Kubernetes</span>
+<i class="ph-fill ph-warning-circle"></i>
+<span>공고 36%</span>
+</div>
+<div>
+<span></span><span></span><span></span><span></span><span></span>
+</div>
+<div>근거 1건 · 뒷받침 약함</div>
+</div><div><i class="ph ph-plus"></i><span>스킬 추가</span></div></div>
+</div>
+</div>
+<div>
+<div>
+<i class="ph ph-arrows-out-simple"></i>
+<span>스킬 · 문서</span>
+<div><span>저장됨</span><i class="ph ph-x"></i></div>
+</div>
+<div>
+<div>
+<span><img src="https://cdn.simpleicons.org/apacheairflow/017CEE" alt=""></span><span>Airflow</span>
+<span>근거 5건</span>
+</div>
+<div>
+<div><div><i class="ph ph-folder-simple"></i><span>분류</span></div><span>데이터 · 파이프라인</span></div>
+<div><div><i class="ph ph-calendar-blank"></i><span>처음 사용</span></div><span>2022.08</span></div>
+<div><div><i class="ph ph-clock-counter-clockwise"></i><span>최근 사용</span></div><span>2025.06 · 두 달 전</span></div>
+<div><div><i class="ph ph-chart-bar"></i><span>공고 수요</span></div><span>관심 공고 14건 중 11건</span></div>
+<div><div><i class="ph ph-link-simple"></i><span>연결</span></div><span>프로젝트 3 · 경험 2</span></div>
+<div><div><i class="ph ph-plus"></i><span>속성 추가</span></div><span></span></div>
+</div>
+<div></div>
+<div>이 스킬의 근거</div>
+<div>
+<div>
+<div>야간 배치 파이프라인 안정화</div>
+<div>"Airflow DAG를 다시 쪼개 실패 지점을 좁혔습니다"</div>
+</div>
+<div>
+<div>결제 정산 스케줄러 재설계</div>
+<div>"스케줄 의존성을 Airflow로 옮겨 수동 재적재를 없앴습니다"</div>
+</div>
+<div>그 외 3건 더 보기</div>
+</div>
+<div>
+<div><i class="ph-fill ph-coffee"></i><span>AI 제안</span></div>
+<div>근거는 충분한데 <b>숫자가 붙은 문장이 없습니다</b>. "3시간 → 24분"을 이 스킬에 연결하면 공고 11건에서 바로 읽힙니다.</div>
+</div>
+</div>
+<div>
+<div>
+<span>숫자 연결하기</span><span>비슷한 스킬 묶기</span><span>영문 표기 정리</span>
+</div>
+<div>
+<i class="ph-fill ph-coffee"></i>
+<span>이 문서에 대해 바리스타에게 요청하기</span>
+<button><i class="ph-fill ph-arrow-up"></i></button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+<div>
+<div data-screen-label="05e">
+<span>05e</span>
+<h2>내 커리어 · 학술 · 집필</h2>
+<span>논문과 글은 지표까지 함께 봅니다 — 어떤 문단이 포트폴리오로 갔는지도</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<span>내 커리어</span><span>/</span><span>학술 · 집필</span>
+<div><span>2주 전 편집</span><span>공유</span><i class="ph ph-clock-counter-clockwise"></i><i class="ph ph-dots-three"></i></div>
+</div>
+<div>
+<div>
+<div>
+<div><i class="ph-fill ph-article"></i></div>
+<span>학술 · 집필</span>
+</div>
+<div>논문 · 기술 글 · 발표를 한 곳에. 외부 링크의 조회와 인용은 자동으로 따라옵니다.</div>
+<div>
+<span>목록</span><span>타임라인</span><span>인용 지표</span>
+<span>＋ 뷰 추가</span>
+<div>
+<span>필터</span><span>정렬</span><span>속성</span>
+<div>
+<button>새로 만들기</button>
+<div></div>
+<button><i class="ph-fill ph-coffee"></i>AI로 만들기</button>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<span>기술 글</span>
+<span>토스페이먼츠 기술블로그</span>
+<span>2025.02</span>
+</div>
+<div>3시간짜리 배치를 24분으로 줄인 이야기</div>
+<div>파티션 기준을 다시 잡은 과정과, 그 과정에서 깨진 가정 세 가지를 적었습니다.</div>
+<div>
+<div><span>12,400</span><span>조회</span></div><div><span>210</span><span>좋아요</span></div><div><span>4:12</span><span>평균 체류</span></div>
+<span><i class="ph ph-link-simple"></i>blog.tosspayments.com</span>
+</div>
+</div>
+<div>
+<div>
+<span>논문</span>
+<span>한국정보과학회 KCC 2022</span>
+<span>2022.06</span>
+</div>
+<div>분산 환경에서 배치 적재 지연을 줄이는 파티셔닝 기법</div>
+<div>학부 연구생 시절 연구입니다. 3인 공저 중 2저자로 실험과 구현을 담당했습니다.</div>
+<div>
+<div><span>4</span><span>인용</span></div><div><span>3인</span><span>공저</span></div><div><span>2저자</span><span>기여</span></div>
+<span><i class="ph ph-link-simple"></i>DOI 10.5626/KCC.2022</span>
+</div>
+</div>
+<div>
+<span>초안</span>
+<span>데이터 품질 자동화를 도입하고 반년 지난 회고</span>
+<span>3문단까지 씀 · 4월부터 멈춤</span>
+<span>이어 쓰기</span>
+</div>
+<div>
+<i class="ph ph-plus"></i>
+<span>글 · 논문 추가</span>
+<span>URL 붙여넣으면 제목과 지표를 가져옵니다</span>
+</div>
+</div>
+</div>
+<div>
+<div>
+<i class="ph ph-arrows-out-simple"></i>
+<span>글 · 문서</span>
+<div><span>저장됨</span><i class="ph ph-x"></i></div>
+</div>
+<div>
+<div>3시간짜리 배치를<br>24분으로 줄인 이야기</div>
+<div>
+<div><div><i class="ph ph-article"></i><span>유형</span></div><span>기술 글 · 단독 집필</span></div>
+<div><div><i class="ph ph-buildings"></i><span>게재처</span></div><span>토스페이먼츠 기술블로그</span></div>
+<div><div><i class="ph ph-calendar-blank"></i><span>게재일</span></div><span>2025.02.18</span></div>
+<div><div><i class="ph ph-eye"></i><span>지표</span></div><span>조회 12,400 · 체류 4분 12초</span></div>
+<div><div><i class="ph ph-link-simple"></i><span>연결</span></div><span>프로젝트 1 · 스킬 3</span></div>
+</div>
+<div></div>
+<div>
+<span>핵심 기여</span>
+<span>AI가 본문에서 뽑았습니다</span>
+</div>
+<div>
+<div><span>•</span><span>파티션 기준을 날짜에서 가맹점 해시로 바꿔 셔플을 8분의 1로 줄임</span></div>
+<div><span>•</span><span>재적재 절차를 문서화해 팀의 야간 대기 부담을 없앰</span></div>
+</div>
+<div>
+<div><i class="ph ph-quotes"></i><span>포트폴리오에 인용된 문단 2개</span></div>
+<div>"장애 대응" 섹션의 두 문장이 이 글에서 왔습니다. 원문을 고치면 다시 가져올지 물어봅니다.</div>
+</div>
+<div>
+<div><i class="ph-fill ph-coffee"></i><span>AI 제안</span></div>
+<div>이 글 4번째 문단에 <b>Kafka로 옮긴 이야기</b>가 있습니다. 스킬에 없는 항목이니 기록으로 올릴까요?</div>
+</div>
+</div>
+<div>
+<div>
+<span>스킬로 올리기</span><span>요약 3문장</span><span>영문으로 번역</span>
+</div>
+<div>
+<i class="ph-fill ph-coffee"></i>
+<span>이 문서에 대해 바리스타에게 요청하기</span>
+<button><i class="ph-fill ph-arrow-up"></i></button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div data-screen-label="06">
+<span>06</span>
+<h2>공고 탐색</h2>
+<span>카테고리로 모아 보고, 조건을 말로 적어 찾습니다</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<span>공고 탐색</span>
+<span>원티드 · 잡코리아 · 링크드인에서 매일 아침 모아 옵니다</span>
+<div>
+<span><i class="ph ph-bookmark-simple"></i>관심 공고 3</span>
+<div></div>
+<span><i class="ph ph-bell-simple"></i>알림 설정</span>
+</div>
+</div>
+<div>
+<div>
+<i class="ph-fill ph-sparkle"></i>
+<span>리모트 되고 데이터 파이프라인 다루는 백엔드, 연봉 8천 이상</span>
+<span></span>
+<span>⌘↵</span>
+<button>찾기</button>
+</div>
+<div>
+<span>이렇게 읽었습니다</span>
+<span>근무 형태 · 리모트<i class="ph ph-x"></i></span><span>직무 · 데이터/백엔드<i class="ph ph-x"></i></span><span>연봉 8,000만 이상<i class="ph ph-x"></i></span><span>경력 3년+<i class="ph ph-x"></i></span>
+<span><i class="ph ph-floppy-disk"></i>이 검색 저장</span>
+</div>
+</div>
+<div>
+<div>
+<div>
+<span>전체<span>44</span></span><span>백엔드 · 데이터<span>18</span></span><span>플랫폼 · 인프라<span>9</span></span><span>리모트<span>12</span></span><span>마감 임박<span>5</span></span>
+<span>내 기록과 가까운 순<i class="ph ph-caret-down"></i></span>
+</div>
+<div>
+<div>
+<span>공고 · 14건</span>
+<span>키워드</span>
+<span>내 기록 일치</span>
+<span>마감</span>
+<span></span>
+</div>
+<div>
+<div>
+<div>
+<div>T</div>
+<div>
+<div>
+<span>백엔드 엔지니어 (Core Banking)</span>
+</div>
+<div>토스 · 서울 강남 · 5년+</div>
+</div>
+</div>
+<div><span>Kotlin</span><span>대용량</span></div>
+<div>
+<div><div></div></div>
+<span>92</span>
+</div>
+<span>D-4</span>
+<i class="ph-fill ph-bookmark-simple"></i>
+</div>
+<div>
+<div>
+<div>B</div>
+<div>
+<div>
+<span>데이터 파이프라인 엔지니어</span>
+<span>NEW</span>
+</div>
+<div>뱅크샐러드 · 리모트 · 3년+</div>
+</div>
+</div>
+<div><span>Airflow</span><span>dbt</span></div>
+<div>
+<div><div></div></div>
+<span>88</span>
+</div>
+<span>상시</span>
+<i class="ph-fill ph-bookmark-simple"></i>
+</div>
+<div>
+<div>
+<div>L</div>
+<div>
+<div>
+<span>데이터 플랫폼 엔지니어</span>
+<span>NEW</span>
+</div>
+<div>라인 · 리모트 가능 · 4년+</div>
+</div>
+</div>
+<div><span>Kafka</span><span>Spark</span></div>
+<div>
+<div><div></div></div>
+<span>85</span>
+</div>
+<span>상시</span>
+<i class="ph ph-bookmark-simple"></i>
+</div>
+<div>
+<div>
+<div>C</div>
+<div>
+<div>
+<span>Data Infrastructure Engineer</span>
+</div>
+<div>쿠팡 · 서울 · 시애틀 · 5년+</div>
+</div>
+</div>
+<div><span>IaC</span><span>온콜</span></div>
+<div>
+<div><div></div></div>
+<span>81</span>
+</div>
+<span>D-11</span>
+<i class="ph ph-bookmark-simple"></i>
+</div>
+<div>
+<div>
+<div>D</div>
+<div>
+<div>
+<span>서버 개발자 (커뮤니티)</span>
+</div>
+<div>당근 · 서울 · 리모트 일부 · 3년+</div>
+</div>
+</div>
+<div><span>Go</span><span>Kubernetes</span></div>
+<div>
+<div><div></div></div>
+<span>78</span>
+</div>
+<span>D-9</span>
+<i class="ph-fill ph-bookmark-simple"></i>
+</div>
+<div>
+<div>
+<div>M</div>
+<div>
+<div>
+<span>데이터 엔지니어</span>
+</div>
+<div>무신사 · 서울 성수 · 3년+</div>
+</div>
+</div>
+<div><span>BigQuery</span></div>
+<div>
+<div><div></div></div>
+<span>76</span>
+</div>
+<span>D-2</span>
+<i class="ph ph-bookmark-simple"></i>
+</div>
+<div>
+<div>
+<div>K</div>
+<div>
+<div>
+<span>플랫폼 엔지니어</span>
+</div>
+<div>카카오 · 판교 · 5년+</div>
+</div>
+</div>
+<div><span>Java</span><span>MSA</span></div>
+<div>
+<div><div></div></div>
+<span>74</span>
+</div>
+<span>D-18</span>
+<i class="ph ph-bookmark-simple"></i>
+</div>
+<div>
+<div>
+<div>N</div>
+<div>
+<div>
+<span>백엔드 (검색 플랫폼)</span>
+</div>
+<div>네이버 · 분당 · 경력</div>
+</div>
+</div>
+<div><span>Elasticsearch</span></div>
+<div>
+<div><div></div></div>
+<span>69</span>
+</div>
+<span>상시</span>
+<i class="ph ph-bookmark-simple"></i>
+</div>
+</div>
+<div>
+<span>14건 중 8건 표시</span>
+<span>더 보기</span>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<i class="ph-fill ph-drop-half"></i>
+<span>이 14건이 공통으로 찾는 것</span>
+</div>
+<div>
+<div><span>스트리밍 파이프라인</span><span>11건</span></div>
+<div><div></div></div>
+</div>
+<div>
+<div><span>IaC · 배포 자동화</span><span>8건</span></div>
+<div><div></div></div>
+</div>
+<div>
+<div><span>온콜 · 장애 대응</span><span>6건</span></div>
+<div><div></div></div>
+</div>
+<div>
+<div><span>데이터 모델링</span><span>4건</span></div>
+<div><div></div></div>
+</div>
+<div>공고 원문과 기술 블로그에서 뽑았습니다. 카테고리를 바꾸면 다시 계산됩니다.</div>
+</div>
+<div>
+<div>
+<i class="ph-fill ph-coffee"></i>
+<span>비어 있는 재료</span>
+</div>
+<div>스트리밍 경험이 기록에 없습니다</div>
+<div>11건이 Kafka나 Flink를 요구합니다. 정산 스케줄러 이야기에 큐 처리 부분이 있다면, 그것만 따로 기록해두면 8건이 더 열립니다.</div>
+<button>이 경험 기록하기</button>
+</div>
+<div>
+<div>
+<span>관심 공고</span>
+<span>마감 순</span>
+<a href="#saved">전체</a>
+</div>
+<div>
+<div>
+<div>T</div>
+<div><div>토스 · 백엔드</div><div>포트폴리오 준비됨</div></div>
+<span>D-4</span>
+</div>
+<div>
+<div>D</div>
+<div><div>당근 · 서버</div><div>초안 · 질문 4/6</div></div>
+<span>D-9</span>
+</div>
+<div>
+<div>B</div>
+<div><div>뱅크샐러드 · 파이프라인</div><div>아직 시작 안 함</div></div>
+<span>상시</span>
+</div>
+</div>
+<button>선택한 공고로 포트폴리오 만들기<i class="ph ph-arrow-right"></i></button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+<div>
+<div data-screen-label="06b">
+<span>06b</span>
+<h2>공고 상세</h2>
+<span>공고 원문을 그대로 읽으면서, 내 기록이 어디에 닿는지 함께 봅니다</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<span><i class="ph ph-arrow-left"></i>공고 탐색</span>
+<div></div>
+<div>B</div>
+<span>뱅크샐러드 · 데이터 파이프라인 엔지니어</span>
+<span>NEW</span>
+<span>원티드 · 2일 전 등록</span>
+<div>
+<span><i class="ph ph-arrow-square-out"></i>원문</span>
+<span><i class="ph-fill ph-bookmark-simple"></i>관심 공고</span>
+<button>공고 사이트에서 지원</button>
+</div>
+</div>
+<div>
+<div>
+<div>
+<div>데이터 파이프라인 엔지니어 (Streaming · Batch)</div>
+<div>뱅크샐러드 · 데이터플랫폼팀 · 채용 시 마감</div>
+<div>
+<div><div>경력</div><div>3년 이상</div></div>
+<div><div>고용 형태</div><div>정규직 · 수습 3개월</div></div>
+<div><div>근무지</div><div>서울 강남 · 리모트 주 2일</div></div>
+<div><div>연봉</div><div>8,000만 – 1억 1,000만</div></div>
+<div><div>마감</div><div>상시 · 채용 시 마감</div></div>
+</div>
+<div>
+<div>
+<div>주요 업무</div>
+<div>
+<div><span></span><span>Streaming Data Engineering</span></div>
+<div><div><span>–</span><span>Kafka · Flink 기반 실시간 데이터 파이프라인 개발과 운영</span></div><div><span>–</span><span>앱 로그와 주요 이벤트 데이터의 수집 · 가공 파이프라인 품질 관리</span></div></div>
+</div>
+<div>
+<div><span></span><span>Batch Data Engineering</span></div>
+<div><div><span>–</span><span>Airflow 기반 배치 파이프라인 설계 및 개발</span></div><div><span>–</span><span>Python · SQL 기반 적재 · 변환 로직 구현과 데이터 마트 설계</span></div></div>
+</div>
+<div>
+<div><span></span><span>운영과 개선</span></div>
+<div><div><span>–</span><span>데이터 정합성 보장, 온콜 대응, 파이프라인 효율 개선</span></div></div>
+</div>
+<div>기술 스택</div>
+<div>
+<span>Kafka</span><span>Flink</span><span><span></span>Airflow</span><span><span></span>Spark</span><span><span></span>dbt</span><span><span></span>BigQuery</span><span><span></span>Python</span><span>Kotlin</span><span><span></span>Terraform</span><span>Kubernetes</span>
+</div>
+<div><span></span><span>표시된 6개는 내 기록에 이미 있는 것입니다</span></div>
+</div>
+<div>
+<div>
+<span>자격 요건</span>
+<span>5개 중 3개 충족</span>
+</div>
+<div>
+<i class="ph-fill ph-check-circle"></i>
+<div>
+<div>데이터 엔지니어링 또는 관련 분야 3년 이상</div>
+<div>야간 배치 파이프라인 안정화 · 2025.03–06</div>
+</div>
+</div>
+<div>
+<i class="ph-fill ph-check-circle"></i>
+<div>
+<div>SQL 및 Python · Java · Scala 중 하나에 숙련</div>
+<div>스킬 · Python, SQL · 실무 6년</div>
+</div>
+</div>
+<div>
+<i class="ph-fill ph-check-circle"></i>
+<div>
+<div>대용량 ETL / ELT 파이프라인 설계 · 운영 경험</div>
+<div>정산 스케줄러 재설계 · 일 1,200만 건</div>
+</div>
+</div>
+<div>
+<i class="ph-fill ph-warning-circle"></i>
+<div>
+<div>Airflow 등 워크플로우 운영 경험</div>
+<div>기록은 있지만 성과 수치가 비어 있습니다</div>
+</div>
+</div>
+<div>
+<i class="ph ph-circle-dashed"></i>
+<div>
+<div>Kafka · Flink 기반 스트리밍 처리 경험</div>
+<div>기록에 없습니다 · 질문 3개로 채울 수 있습니다</div>
+</div>
+</div>
+<div>우대 사항</div>
+<div>
+<div><i class="ph-fill ph-warning-circle"></i><span>금융권 데이터 프로젝트 수행 경험</span><span>약함</span></div>
+<div><i class="ph ph-circle-dashed"></i><span>CDC(Debezium) 기반 실시간 동기화</span><span>없음</span></div>
+<div><i class="ph ph-circle-dashed"></i><span>MLOps 파이프라인 구축 · 자동화</span><span>없음</span></div>
+<div><i class="ph-fill ph-check-circle"></i><span>데이터 거버넌스 · 문서화 이해</span><span>있음</span></div>
+</div>
+</div>
+</div>
+<div>전형 절차 · 평균 3주</div>
+<div>
+<div><div><span>01</span><span></span></div><div>서류 전형</div></div><div><div><span>02</span><span></span></div><div>직무 · 기술 인터뷰</div></div><div><div><span>03</span><span></span></div><div>컬처핏 인터뷰</div></div><div><div><span>04</span><span></span></div><div>처우 협의 · 입사</div></div>
+</div>
+<div>수습 3개월 후 정규직 전환 평가가 있으며 수습 기간 임금은 전액 지급됩니다 · 국가유공자 및 장애인은 관계 법령에 따라 우대합니다</div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<div>
+<div>내 기록과의 일치</div>
+<div><span>88</span><span>%</span></div>
+</div>
+<div>
+<div>충족 3</div>
+<div>약함 1</div>
+<div>없음 1</div>
+</div>
+</div>
+<div>
+<div></div>
+<div></div>
+<div></div>
+</div>
+<div>비슷한 공고 14건 중 <b>2번째로 가까운</b> 공고입니다. 스트리밍 경험만 채우면 이 조건대의 8건이 함께 열립니다.</div>
+</div>
+<div>
+<div>
+<i class="ph-fill ph-coffee"></i>
+<span>빠진 재료 하나</span>
+</div>
+<div>큐로 처리한 이야기가 기록에 없습니다</div>
+<div>정산 스케줄러를 큐 기반으로 바꿨다고 적어두셨는데, 그게 스트리밍 경험입니다. 질문 3개면 요건 하나가 채워집니다.</div>
+<button><i class="ph ph-chat-circle-dots"></i>질문 3개로 채우기</button>
+</div>
+<div>
+<div>
+<i class="ph-fill ph-drop-half"></i>
+<span>이 회사의 톤</span>
+</div>
+<div>
+<div><div></div><div>#1B2A4A</div></div>
+<div><div></div><div>#2E7CF6</div></div>
+<div><div></div><div>#EFF2F6</div></div>
+</div>
+<div>
+<div><span>공고 말투</span><span>담백 · 사실 위주</span></div>
+<div><span>인상</span><span>정확 · 신뢰</span></div>
+</div>
+</div>
+<div>
+<div>이 공고로 만들면</div>
+<div>이 기록들이 먼저 올라갑니다</div>
+<div>
+<div><span>01</span><span>정산 스케줄러 재설계</span><i class="ph ph-arrow-up"></i></div>
+<div><span>02</span><span>야간 배치 안정화</span></div>
+<div><span>03</span><span>데이터 품질 모니터링</span></div>
+</div>
+<button><i class="ph-fill ph-coffee"></i>이 공고로 포트폴리오 만들기</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div data-screen-label="07">
+<span>07</span>
+<h2>분석 · 내가 만든 대시보드</h2>
+<span>보고 싶은 지표만, 보고 싶은 방식으로</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<span>토스 지원용</span>
+<a href="#site"><i class="ph ph-arrow-square-out"></i>jiwon.xpresso.me</a>
+<span><span></span><span>배포됨 · 2시간 전</span></span>
+<div><div>
+<span>7일</span>
+<span>30일</span>
+<span>전체</span>
+</div>
+<button><i class="ph ph-sliders-horizontal"></i>대시보드 편집</button>
+<button>리포트 보내기</button></div>
+</div>
+<div>
+<span>요약</span><span>채용담당자 시선</span><span>콘텐츠 성적</span><span>공고별</span><span>＋ 뷰 추가</span>
+<div><span><i class="ph ph-funnel"></i>기업 도메인만</span><span>＋ 필터</span><span></span><span>4분 전 갱신</span></div>
+</div>
+<div>
+<div>
+<div>
+<div><span>방문</span><span>일별 · 30일</span></div>
+<div><span>1,284</span><span>▲ 18.2%</span></div>
+<div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+</div>
+<div>
+<div><span>평균 체류</span><span>업계 평균 대비</span></div>
+<div><span>2:41</span><span>— 0.4%</span></div>
+<div>
+<div><span>나</span><span></span></div>
+<div><span>업계</span><span></span><span>1:12</span></div>
+</div>
+</div>
+<div>
+<div><span>끝까지 읽은 비율</span><span>스크롤 90%+</span></div>
+<div><span>46%</span><span>▲ 6.1%</span></div>
+<div><div></div></div>
+<div>이탈 지점 대부분 · 자격 · 수상</div>
+</div>
+<div>
+<div><span><span>연락처 클릭</span></span><span>목표 30 · 달성</span></div>
+<div><span>37</span><span>▲ 42%</span></div>
+<div><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+<div>이번 주에만 12건</div>
+</div>
+</div>
+<div>
+<div>
+<div><span>방문 추이</span><span>일별 · 30일</span>
+<div>
+<span><span></span>토스 지원용</span>
+<span><span></span>범용 포트폴리오</span>
+<i class="ph ph-dots-three"></i>
+</div>
+</div>
+<svg/>
+<div><span>07.05</span><span>07.14</span><span>07.23</span><span>08.03</span></div>
+<div><i class="ph-fill ph-envelope-simple"></i><span>07.24 지원 메일 12통 발송 — 이후 방문 3.1배</span><span>주석 편집</span></div>
+</div>
+<div>
+<div>
+<i class="ph-fill ph-coffee"></i>
+<span>BARISTA'S READ</span>
+<span>이 위젯 고정</span>
+</div>
+<div>토스 도메인 방문자는 <b>협업과 리드</b>를 4분 넘게 읽고, 기술 스택은 건너뛰었습니다. 기술보다 <b>사람을 다룬 이야기</b>를 확인하고 있습니다.</div>
+<div>
+<div>제안 2건</div>
+<div>
+<div><i class="ph ph-arrow-up"></i><span>멘토링 사례 1건 추가 · 질문 3개로 채울 수 있음</span></div>
+<div><i class="ph ph-arrow-down"></i><span>자격 · 수상 섹션을 맨 아래로 (체류 0:09)</span></div>
+</div>
+</div>
+<button>제안 반영해 다시 추출</button>
+</div>
+</div>
+<div>
+<div>
+<div><span>섹션별 체류</span><span>오래 머문 순</span></div>
+<div><div>
+<div><span>협업과 리드</span><span>1:52</span></div>
+<div><div></div></div>
+</div><div>
+<div><span>프로젝트 · 배치 파이프라인</span><span>1:34</span></div>
+<div><div></div></div>
+</div><div>
+<div><span>헤더 · 소개</span><span>0:48</span></div>
+<div><div></div></div>
+</div><div>
+<div><span>임팩트 지표</span><span>0:31</span></div>
+<div><div></div></div>
+</div><div>
+<div><span>자격 · 수상</span><span>0:09</span></div>
+<div><div></div></div>
+</div></div>
+</div>
+<div>
+<div><span>유입 경로</span><span>도넛</span></div>
+<div>
+<svg/>
+<div>
+<div><span></span><span>이력서 링크</span><span>612</span></div><div><span></span><span>링크드인</span><span>348</span></div><div><span></span><span>깃허브</span><span>201</span></div><div><span></span><span>메일 서명</span><span>123</span></div>
+</div>
+</div>
+</div>
+<div>
+<div><span>기업 도메인 방문</span><span>PRO</span></div>
+<div>
+<div>
+<div>T</div>
+<div><div>toss.im</div><div>어제 오후 4:12 · 3회 · 협업과 리드 정독</div></div>
+<span>4:21</span>
+</div>
+<div>
+<div>D</div>
+<div><div>daangn.com</div><div>3일 전 · 1회 · 프로젝트만</div></div>
+<span>1:07</span>
+</div>
+<div>
+<div>K</div>
+<div><div>kakaocorp.com</div><div>6일 전 · 2회 · PDF 내려받음</div></div>
+<span>2:48</span>
+</div>
+<div><i class="ph ph-info"></i><span>기업 네트워크 접속만 표시 · 개인 식별 안 함</span></div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+<div>
+<div data-screen-label="07b">
+<span>07b</span>
+<h2>지표 추가</h2>
+<span>라이브러리에서 끌어다 놓기</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<span>토스 지원용</span>
+<a href="#site"><i class="ph ph-arrow-square-out"></i>jiwon.xpresso.me</a>
+<span><span></span><span>배포됨 · 2시간 전</span></span>
+<div><span><i class="ph ph-sliders-horizontal"></i>편집 중 · 나에게만 보임</span>
+<div><i class="ph ph-arrow-counter-clockwise"></i><i class="ph ph-arrow-clockwise"></i></div>
+<button>취소</button>
+<button>편집 완료</button></div>
+</div>
+<div>
+<span>요약</span><span>채용담당자 시선</span><span>콘텐츠 성적</span><span>공고별</span><span>＋ 뷰 추가</span>
+<div><span>위젯 8개 · 12칼럼 그리드</span><span></span><span><i class="ph ph-columns"></i>레이아웃 초기화</span></div>
+</div>
+<div>
+<div>
+<div>
+<div><i class="ph ph-dots-six-vertical"></i><span>방문</span><span>일별 · 30일</span><div><i class="ph ph-copy"></i><i class="ph ph-x"></i></div></div>
+<div><span>1,284</span><span>▲ 18.2%</span></div>
+<div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+<span><i class="ph ph-arrow-down-right"></i></span>
+</div>
+<div>
+<div><i class="ph ph-dots-six-vertical"></i><span>평균 체류</span><span>업계 평균 대비</span><div><i class="ph ph-copy"></i><i class="ph ph-x"></i></div></div>
+<div><span>2:41</span><span>— 0.4%</span></div>
+<div>
+<div><span>나</span><span></span></div>
+<div><span>업계</span><span></span><span>1:12</span></div>
+</div>
+<span><i class="ph ph-arrow-down-right"></i></span>
+</div>
+<div>
+<div><i class="ph ph-dots-six-vertical"></i><span>끝까지 읽은 비율</span><span>스크롤 90%+</span><div><i class="ph ph-copy"></i><i class="ph ph-x"></i></div></div>
+<div><span>46%</span><span>▲ 6.1%</span></div>
+<div><div></div></div>
+<div>이탈 지점 대부분 · 자격 · 수상</div>
+<span><i class="ph ph-arrow-down-right"></i></span>
+</div>
+<div>
+<span>여기에 놓기</span>
+<span>3 칼럼 · 1/4 폭</span>
+</div>
+</div>
+<div>
+<div>
+<div><span>방문 추이</span><span>일별 · 30일</span>
+<div>
+<span><span></span>토스 지원용</span>
+<span><span></span>범용 포트폴리오</span>
+<i class="ph ph-dots-three"></i>
+</div>
+</div>
+<svg/>
+<div><span>07.05</span><span>07.14</span><span>07.23</span><span>08.03</span></div>
+<div><i class="ph-fill ph-envelope-simple"></i><span>07.24 지원 메일 12통 발송 — 이후 방문 3.1배</span><span>주석 편집</span></div>
+</div>
+<div>
+<div>
+<i class="ph-fill ph-coffee"></i>
+<span>BARISTA'S READ</span>
+<span>이 위젯 고정</span>
+</div>
+<div>토스 도메인 방문자는 <b>협업과 리드</b>를 4분 넘게 읽고, 기술 스택은 건너뛰었습니다. 기술보다 <b>사람을 다룬 이야기</b>를 확인하고 있습니다.</div>
+<div>
+<div>제안 2건</div>
+<div>
+<div><i class="ph ph-arrow-up"></i><span>멘토링 사례 1건 추가 · 질문 3개로 채울 수 있음</span></div>
+<div><i class="ph ph-arrow-down"></i><span>자격 · 수상 섹션을 맨 아래로 (체류 0:09)</span></div>
+</div>
+</div>
+<button>제안 반영해 다시 추출</button>
+</div>
+</div>
+<div>
+<div>
+<div><i class="ph ph-dots-six-vertical"></i><span>섹션별 체류</span><span>오래 머문 순</span></div>
+<div><div>
+<div><span>협업과 리드</span><span>1:52</span></div>
+<div><div></div></div>
+</div><div>
+<div><span>프로젝트 · 배치 파이프라인</span><span>1:34</span></div>
+<div><div></div></div>
+</div><div>
+<div><span>헤더 · 소개</span><span>0:48</span></div>
+<div><div></div></div>
+</div><div>
+<div><span>임팩트 지표</span><span>0:31</span></div>
+<div><div></div></div>
+</div><div>
+<div><span>자격 · 수상</span><span>0:09</span></div>
+<div><div></div></div>
+</div></div>
+<span><i class="ph ph-arrow-down-right"></i></span>
+</div>
+<div>
+<div><i class="ph ph-dots-six-vertical"></i><span>유입 경로</span><span>도넛</span></div>
+<div>
+<svg/>
+<div>
+<div><span></span><span>이력서 링크</span><span>612</span></div><div><span></span><span>링크드인</span><span>348</span></div><div><span></span><span>깃허브</span><span>201</span></div><div><span></span><span>메일 서명</span><span>123</span></div>
+</div>
+</div>
+<span><i class="ph ph-arrow-down-right"></i></span>
+</div>
+<div>
+<div><i class="ph ph-dots-six-vertical"></i><span>기업 도메인 방문</span><span>PRO</span></div>
+<div>
+<div>
+<div>T</div>
+<div><div>toss.im</div><div>어제 오후 4:12 · 3회 · 협업과 리드 정독</div></div>
+<span>4:21</span>
+</div>
+<div>
+<div>D</div>
+<div><div>daangn.com</div><div>3일 전 · 1회 · 프로젝트만</div></div>
+<span>1:07</span>
+</div>
+<div>
+<div>K</div>
+<div><div>kakaocorp.com</div><div>6일 전 · 2회 · PDF 내려받음</div></div>
+<span>2:48</span>
+</div>
+<div><i class="ph ph-info"></i><span>기업 네트워크 접속만 표시 · 개인 식별 안 함</span></div>
+</div>
+<span><i class="ph ph-arrow-down-right"></i></span>
+</div>
+</div>
+<div>
+<div><i class="ph ph-dots-six-vertical"></i><span>채용담당자 재방문율</span></div>
+<div><span>3 / 7</span><span>회사</span></div>
+<div>놓으면 이 자리에 추가됩니다</div>
+</div>
+</div>
+</main>
+<div>
+<div>
+<span>지표 추가</span>
+<i class="ph ph-x"></i>
+</div> <div>
+<span>지표 라이브러리</span><span>위젯 설정</span>
+</div>
+<div>
+<div>
+<i class="ph ph-magnifying-glass"></i>
+<span>지표 검색 · 예: 재방문</span>
+</div>
+<div>
+<div>
+<div>
+<span>방문</span>
+<span>4</span>
+<span></span>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div><div>방문</div><div>기간 내 전체 페이지뷰</div></div>
+<span>사용 중</span>
+</div><div>
+<i class="ph ph-dots-six-vertical"></i>
+<div><div>순 방문자</div><div>중복 제거 · 기기 기준</div></div>
+</div><div>
+<i class="ph ph-dots-six-vertical"></i>
+<div><div>재방문율</div><div>두 번 이상 온 사람 비율</div></div>
+<span>신규</span>
+</div><div>
+<i class="ph ph-dots-six-vertical"></i>
+<div><div>지역 · 기기</div><div>수도권 / 모바일 비중</div></div>
+</div>
+</div>
+<div>
+<div>
+<span>참여</span>
+<span>4</span>
+<span></span>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div><div>평균 체류</div><div>한 번 방문에 머문 시간</div></div>
+<span>사용 중</span>
+</div><div>
+<i class="ph ph-dots-six-vertical"></i>
+<div><div>끝까지 읽은 비율</div><div>스크롤 90% 이상</div></div>
+<span>사용 중</span>
+</div><div>
+<i class="ph ph-dots-six-vertical"></i>
+<div><div>섹션별 체류</div><div>어느 섹션을 오래 봤나</div></div>
+<span>사용 중</span>
+</div><div>
+<i class="ph ph-dots-six-vertical"></i>
+<div><div>이탈 지점</div><div>읽기를 멈춘 위치</div></div>
+</div>
+</div>
+<div>
+<div>
+<span>전환</span>
+<span>3</span>
+<span></span>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div><div>연락처 클릭</div><div>메일 · 전화 · 링크드인</div></div>
+<span>사용 중</span>
+</div><div>
+<i class="ph ph-dots-six-vertical"></i>
+<div><div>이력서 PDF 내려받기</div><div>파일별 집계</div></div>
+</div><div>
+<i class="ph ph-dots-six-vertical"></i>
+<div><div>문의 메일 수신</div><div>폼 · 메일 회신</div></div>
+<span>신규</span>
+</div>
+</div>
+<div>
+<div>
+<span>채용담당자</span>
+<span>2</span>
+<span></span>
+</div>
+<div>
+<i class="ph ph-dots-six-vertical"></i>
+<div><div>기업 도메인 방문</div><div>회사 네트워크 접속만</div></div>
+<span>사용 중</span>
+</div><div>
+<i class="ph ph-dots-six-vertical"></i>
+<div><div>채용담당자 재방문율</div><div>같은 회사 두 번 이상</div></div>
+<span>PRO</span>
+</div>
+</div>
+</div>
+<div>
+<div><i class="ph ph-function"></i><span>수식으로 지표 만들기</span></div>
+<div>연락처 클릭 ÷ 방문 = 전환율</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div data-screen-label="07c">
+<span>07c</span>
+<h2>위젯 설정</h2>
+<span>무엇을 · 어떻게 · 무엇과 비교할지</span>
+</div>
+<div>
+<aside>[표준 사이드바 — 00과 동일, 활성 항목만 다름]</aside>
+<main>
+<div>
+<span>토스 지원용</span>
+<a href="#site"><i class="ph ph-arrow-square-out"></i>jiwon.xpresso.me</a>
+<span><span></span><span>배포됨 · 2시간 전</span></span>
+<div><span><i class="ph ph-sliders-horizontal"></i>편집 중 · 나에게만 보임</span>
+<div><i class="ph ph-arrow-counter-clockwise"></i><i class="ph ph-arrow-clockwise"></i></div>
+<button>취소</button>
+<button>편집 완료</button></div>
+</div>
+<div>
+<span>요약</span><span>채용담당자 시선</span><span>콘텐츠 성적</span><span>공고별</span><span>＋ 뷰 추가</span>
+<div><span>위젯 8개 · 12칼럼 그리드</span><span></span><span><i class="ph ph-columns"></i>레이아웃 초기화</span></div>
+</div>
+<div>
+<div>
+<div>
+<div><i class="ph ph-dots-six-vertical"></i><span>방문</span><span>일별 · 30일</span><div><i class="ph ph-copy"></i><i class="ph ph-x"></i></div></div>
+<div><span>1,284</span><span>▲ 18.2%</span></div>
+<div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+<span><i class="ph ph-arrow-down-right"></i></span>
+</div>
+<div>
+<div><i class="ph ph-dots-six-vertical"></i><span>평균 체류</span><span>업계 평균 대비</span><div><i class="ph ph-copy"></i><i class="ph ph-x"></i></div></div>
+<div><span>2:41</span><span>— 0.4%</span></div>
+<div>
+<div><span>나</span><span></span></div>
+<div><span>업계</span><span></span><span>1:12</span></div>
+</div>
+<span><i class="ph ph-arrow-down-right"></i></span>
+</div>
+<div>
+<div><i class="ph ph-dots-six-vertical"></i><span>끝까지 읽은 비율</span><span>스크롤 90%+</span><div><i class="ph ph-copy"></i><i class="ph ph-x"></i></div></div>
+<div><span>46%</span><span>▲ 6.1%</span></div>
+<div><div></div></div>
+<div>이탈 지점 대부분 · 자격 · 수상</div>
+<span><i class="ph ph-arrow-down-right"></i></span>
+</div>
+<div>
+<div><i class="ph ph-dots-six-vertical"></i><span><span>연락처 클릭</span></span><span>목표 30 · 달성</span><div><i class="ph ph-copy"></i><i class="ph ph-x"></i></div></div>
+<div><span>37</span><span>▲ 42%</span></div>
+<div><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+<div>이번 주에만 12건</div>
+<span><i class="ph ph-arrow-down-right"></i></span>
+</div>
+</div>
+<div>
+<div>
+<div><i class="ph ph-dots-six-vertical"></i><span>방문 추이</span><span>일별 · 30일</span>
+<div>
+<span><span></span>토스 지원용</span>
+<span><span></span>범용 포트폴리오</span>
+<i class="ph ph-x"></i>
+</div>
+</div>
+<svg/>
+<div><span>07.05</span><span>07.14</span><span>07.23</span><span>08.03</span></div>
+<div><i class="ph-fill ph-envelope-simple"></i><span>07.24 지원 메일 12통 발송 — 이후 방문 3.1배</span><span>주석 편집</span></div>
+<span><i class="ph ph-arrow-down-right"></i></span>
+</div>
+<div>
+<div>
+<i class="ph-fill ph-coffee"></i>
+<span>BARISTA'S READ</span>
+<span>이 위젯 고정</span>
+</div>
+<div>토스 도메인 방문자는 <b>협업과 리드</b>를 4분 넘게 읽고, 기술 스택은 건너뛰었습니다. 기술보다 <b>사람을 다룬 이야기</b>를 확인하고 있습니다.</div>
+<div>
+<div>제안 2건</div>
+<div>
+<div><i class="ph ph-arrow-up"></i><span>멘토링 사례 1건 추가 · 질문 3개로 채울 수 있음</span></div>
+<div><i class="ph ph-arrow-down"></i><span>자격 · 수상 섹션을 맨 아래로 (체류 0:09)</span></div>
+</div>
+</div>
+<button>제안 반영해 다시 추출</button>
+</div>
+</div>
+<div>
+<div>
+<div><i class="ph ph-dots-six-vertical"></i><span>섹션별 체류</span><span>오래 머문 순</span></div>
+<div><div>
+<div><span>협업과 리드</span><span>1:52</span></div>
+<div><div></div></div>
+</div><div>
+<div><span>프로젝트 · 배치 파이프라인</span><span>1:34</span></div>
+<div><div></div></div>
+</div><div>
+<div><span>헤더 · 소개</span><span>0:48</span></div>
+<div><div></div></div>
+</div><div>
+<div><span>임팩트 지표</span><span>0:31</span></div>
+<div><div></div></div>
+</div><div>
+<div><span>자격 · 수상</span><span>0:09</span></div>
+<div><div></div></div>
+</div></div>
+<span><i class="ph ph-arrow-down-right"></i></span>
+</div>
+<div>
+<div><i class="ph ph-dots-six-vertical"></i><span>유입 경로</span><span>도넛</span></div>
+<div>
+<svg/>
+<div>
+<div><span></span><span>이력서 링크</span><span>612</span></div><div><span></span><span>링크드인</span><span>348</span></div><div><span></span><span>깃허브</span><span>201</span></div><div><span></span><span>메일 서명</span><span>123</span></div>
+</div>
+</div>
+<span><i class="ph ph-arrow-down-right"></i></span>
+</div>
+<div>
+<div><i class="ph ph-dots-six-vertical"></i><span>기업 도메인 방문</span><span>PRO</span></div>
+<div>
+<div>
+<div>T</div>
+<div><div>toss.im</div><div>어제 오후 4:12 · 3회 · 협업과 리드 정독</div></div>
+<span>4:21</span>
+</div>
+<div>
+<div>D</div>
+<div><div>daangn.com</div><div>3일 전 · 1회 · 프로젝트만</div></div>
+<span>1:07</span>
+</div>
+<div>
+<div>K</div>
+<div><div>kakaocorp.com</div><div>6일 전 · 2회 · PDF 내려받음</div></div>
+<span>2:48</span>
+</div>
+<div><i class="ph ph-info"></i><span>기업 네트워크 접속만 표시 · 개인 식별 안 함</span></div>
+</div>
+<span><i class="ph ph-arrow-down-right"></i></span>
+</div>
+</div>
+<div>
+<span><i class="ph ph-chart-line-up"></i>시각화</span><span><i class="ph ph-rows"></i>나눠 보기</span><span><i class="ph ph-git-diff"></i>비교</span><span><i class="ph ph-arrows-horizontal"></i>크기</span>
+<span></span>
+<i class="ph ph-copy"></i>
+<i class="ph ph-trash"></i>
+</div>
+</div>
+</main>
+<div>
+<div>
+<span>위젯 설정</span>
+<i class="ph ph-x"></i>
+</div> <div>
+<span>지표 라이브러리</span><span>위젯 설정</span>
+</div>
+<div>
+<div>
+<div><span>방문 추이</span><span>미리보기</span></div>
+<svg/>
+</div>
+<div>
+<div>무엇을</div>
+<div> <div>
+<i class="ph ph-chart-line"></i>
+<span>지표</span>
+<span>방문</span>
+<i class="ph ph-caret-down"></i>
+</div> <div>
+<i class="ph ph-rows"></i>
+<span>나눠 보기</span>
+<span>일자별</span>
+<i class="ph ph-caret-down"></i>
+</div> <div>
+<i class="ph ph-calendar-blank"></i>
+<span>기간</span>
+<span>최근 30일</span>
+<i class="ph ph-caret-down"></i>
+</div></div>
+</div>
+<div>
+<div>어떻게 보여줄까</div>
+<div><div><i class="ph ph-number-square-one"></i><span>숫자</span></div><div><i class="ph ph-pulse"></i><span>스파크</span></div><div><i class="ph ph-chart-bar"></i><span>막대</span></div><div><i class="ph ph-chart-line-up"></i><span>선</span></div><div><i class="ph ph-chart-donut"></i><span>도넛</span></div><div><i class="ph ph-table"></i><span>표</span></div></div>
+<div><span>1/4</span><span>1/3</span><span>2/3</span><span>전체 폭</span></div>
+</div>
+<div>
+<div>무엇과 비교할까</div>
+<div> <div>
+<div><div>전 기간 대비</div><div>이전 30일</div></div>
+<span><span></span></span>
+</div> <div>
+<div><div>다른 포트폴리오</div><div>범용 포트폴리오</div></div>
+<span><span></span></span>
+</div> <div>
+<div><div>업계 평균</div><div>데이터 직군 · 익명 집계</div></div>
+<span><span></span></span>
+</div></div>
+</div>
+<div>
+<div>표시</div>
+<div> <div>
+<div><div>주석 표시</div><div>지원 메일 발송 시점 등</div></div>
+<span><span></span></span>
+</div> <div>
+<div><div>축 라벨</div></div>
+<span><span></span></span>
+</div> <div>
+<div><div>목표선</div></div>
+<span><span></span></span>
+</div></div>
+</div>
+<div>
+<span><i class="ph ph-copy"></i>복제</span>
+<span><i class="ph ph-push-pin"></i>다른 뷰에도</span>
+<span><i class="ph ph-trash"></i>삭제</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+</body>
+</html>
