@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Expresso · 개발 포털</title>
+<script>
+  // 개발 포털이 이 사이트의 진입점입니다. 바로 넘깁니다.
+  // 아래 목록은 리다이렉트가 듣지 않을 때의 대비책이며, ?index 로 들어오면 목록에 머무릅니다.
+  if (location.search !== '?index') location.replace('./Expresso%20%EA%B0%9C%EB%B0%9C%20%ED%8F%AC%ED%84%B8.dc.html');
+</script>
+<noscript><meta http-equiv="refresh" content="0; url=./Expresso%20%EA%B0%9C%EB%B0%9C%20%ED%8F%AC%ED%84%B8.dc.html"></noscript>
+<style>
+  :root { color-scheme: light; }
+  html, body { margin: 0; padding: 0; background: #EEF2F8; }
+  body {
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
+                 'Apple SD Gothic Neo', 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased; color: #16223A;
+    padding: 56px 24px 80px;
+  }
+  * { box-sizing: border-box; }
+  main { max-width: 720px; margin: 0 auto; }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  h1 { font-size: 21px; font-weight: 600; letter-spacing: -.02em; margin: 0; }
+  h1 em { font-style: normal; color: #9A4030; }
+  .lede { color: #5A6B87; font-size: 13.5px; line-height: 1.65; margin: 0 0 28px 38px; }
+  .doc {
+    display: grid; grid-template-columns: 58px 1fr; gap: 2px 14px; align-items: baseline;
+    padding: 13px 16px; margin-bottom: 6px; background: #fff; border: 1px solid #E2E9F4;
+    border-radius: 10px; text-decoration: none; color: inherit;
+  }
+  .doc:hover { border-color: #C3D0E4; background: #FBFCFE; }
+  .tag {
+    grid-row: span 2; font-family: ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace;
+    font-size: 9.5px; letter-spacing: .1em; color: #9A4030; padding-top: 3px;
+  }
+  .name { font-size: 14.5px; font-weight: 600; }
+  .desc { font-size: 12.5px; color: #7C8CA6; line-height: 1.5; }
+  footer { margin-top: 24px; font-size: 12px; color: #90A0B8; line-height: 1.7; }
+  @media (max-width: 560px) {
+    body { padding: 32px 16px 60px; }
+    .lede { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header><svg width="26" height="26" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><clipPath id="cp"><circle cx="44" cy="54" r="36"/></clipPath><mask id="mk"><rect width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="46.5" fill="#000"/></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.5" mask="url(#mk)"/><rect y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#cp)"/><circle cx="44" cy="54" r="36" stroke="#16223A" stroke-width="10"/></svg><h1>Expr<em>ess</em>o 개발 포털</h1></header>
+  <p class="lede">
+    포털로 자동 이동합니다. 넘어가지 않으면 아래에서 직접 여십시오.<br>
+    문서는 브라우저에서 바로 렌더되며 별도 빌드가 없습니다.
+  </p>
+    <a class="doc" href="./Expresso%20%EA%B0%9C%EB%B0%9C%20%ED%8F%AC%ED%84%B8.dc.html">
+      <span class="tag">HOME</span>
+      <span class="name">개발 포털</span>
+      <span class="desc">도메인·기능·태스크 콘솔 · 칸반 보드 · 팀 위키</span>
+    </a>
+    <a class="doc" href="./Expresso%20%EA%B8%B0%EB%8A%A5%20%EB%AA%85%EC%84%B8%EC%84%9C.dc.html">
+      <span class="tag">SPEC</span>
+      <span class="name">기능 명세서</span>
+      <span class="desc">D1–D12 · 151 태스크 · 동작 규칙과 제약</span>
+    </a>
+    <a class="doc" href="./Expresso%20%EA%B5%AC%ED%98%84%20%EB%AA%85%EC%84%B8%EC%84%9C.dc.html">
+      <span class="tag">IMPL</span>
+      <span class="name">구현 명세서</span>
+      <span class="desc">화면별 구성과 동작 · 치수</span>
+    </a>
+    <a class="doc" href="./Expresso%20Screens.dc.html">
+      <span class="tag">UI</span>
+      <span class="name">화면 정의서</span>
+      <span class="desc">00–10e 화면 20여 종</span>
+    </a>
+    <a class="doc" href="./Expresso%20%EB%8D%B0%EC%9D%B4%ED%84%B0%20%EB%AA%A8%EB%8D%B8%20%EB%AA%85%EC%84%B8%EC%84%9C.dc.html">
+      <span class="tag">DATA</span>
+      <span class="name">데이터 모델</span>
+      <span class="desc">테이블 정의 · 삭제 정책 · 상태 전이</span>
+    </a>
+    <a class="doc" href="./Expresso%20ERD.dc.html">
+      <span class="tag">ERD</span>
+      <span class="name">구조 다이어그램</span>
+      <span class="desc">엔티티 관계 전체 지도</span>
+    </a>
+    <a class="doc" href="./Expresso%20%EA%B8%B0%EB%8A%A5%20%EC%A7%80%EB%8F%84.dc.html">
+      <span class="tag">MAP</span>
+      <span class="name">기능 지도</span>
+      <span class="desc">도메인 간 의존 관계</span>
+    </a>
+    <a class="doc" href="./Expresso%20%EA%B8%B0%EB%8A%A5%20%EB%A7%88%EC%9D%B8%EB%93%9C%EB%A7%B5.dc.html">
+      <span class="tag">SCOPE</span>
+      <span class="name">기능 마인드맵</span>
+      <span class="desc">기능 범위 조망</span>
+    </a>
+    <a class="doc" href="./Expresso%20%EA%B0%9C%EB%B0%9C%20%EB%A1%9C%EB%93%9C%EB%A7%B5.dc.html">
+      <span class="tag">PLAN</span>
+      <span class="name">개발 로드맵</span>
+      <span class="desc">16주 · 4명 · 77pt · 마일스톤</span>
+    </a>
+    <a class="doc" href="./Expresso%20Design%20System.dc.html">
+      <span class="tag">DS</span>
+      <span class="name">디자인 시스템</span>
+      <span class="desc">색 · 타이포 · 컴포넌트</span>
+    </a>
+    <a class="doc" href="./Expresso%20Icons.dc.html">
+      <span class="tag">ICON</span>
+      <span class="name">아이콘</span>
+      <span class="desc">아이콘 세트</span>
+    </a>
+    <a class="doc" href="./Expresso%20Landing.dc.html">
+      <span class="tag">WEB</span>
+      <span class="name">랜딩</span>
+      <span class="desc">제품 랜딩 페이지 시안</span>
+    </a>
+    <a class="doc" href="./Expresso%20Home%20Hero%20Options.dc.html">
+      <span class="tag">HERO</span>
+      <span class="name">홈 히어로 시안</span>
+      <span class="desc">홈 상단 대안 비교</span>
+    </a>
+  <footer>
+    보드·위키 내용은 각자 브라우저(localStorage)에 저장됩니다 — 팀원 간 자동 공유되지 않습니다.<br>
+    포털 보드의 <strong>JSON 내보내기 / 가져오기</strong>로 주고받으십시오.
+  </footer>
+</main>
+</body>
+</html>

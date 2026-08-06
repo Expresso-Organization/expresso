@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<style>
+html, body { margin: 0; padding: 0; background: #F7FAFE; }
+body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; color: #16223A; }
+* { box-sizing: border-box; }
+a { color: #16223A; text-decoration: none; }
+a:hover { color: #0B1220; }
+@keyframes ex-roll {
+0% { transform: translate3d(0,0,0); }
+22.3% { transform: translate3d(0,0,0); animation-timing-function: cubic-bezier(.16,1,.3,1); }
+33.3% { transform: translate3d(0,-84px,0); }
+55.6% { transform: translate3d(0,-84px,0); animation-timing-function: cubic-bezier(.16,1,.3,1); }
+66.6% { transform: translate3d(0,-168px,0); }
+89% { transform: translate3d(0,-168px,0); animation-timing-function: cubic-bezier(.16,1,.3,1); }
+100% { transform: translate3d(0,-252px,0); }
+}
+@keyframes ex-merge {
+0%, 55.6% { transform: translate3d(0,0,0); animation-timing-function: cubic-bezier(.16,1,.3,1); }
+66.6%, 89% { transform: translate3d(-9px,0,0); animation-timing-function: cubic-bezier(.16,1,.3,1); }
+100% { transform: translate3d(0,0,0); }
+}
+@keyframes ex-your {
+0%, 55.6% { transform: translate3d(0,0,0); color: #16223A; animation-timing-function: cubic-bezier(.16,1,.3,1); }
+66.6%, 89% { transform: translate3d(9px,0,0); color: #9A4030; animation-timing-function: cubic-bezier(.16,1,.3,1); }
+100% { transform: translate3d(0,0,0); color: #16223A; }
+}
+@keyframes ex-pulse { 0%, 100% { opacity: .25; transform: scale(.7); } 50% { opacity: 1; transform: scale(1); } }
+@keyframes ex-fill { 0% { width: 12%; } 100% { width: 86%; } }
+@keyframes ex-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes ex-caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+</style>
+</helmet>
+<div>
+<nav>
+<svg/>
+<span>Expre<span>ss</span>o</span>
+<div>
+<a href="#outline">구성안</a>
+<a href="#flow">만드는 순서</a>
+<a href="#target">기업 맞춤</a>
+<a href="#pricing">요금제</a>
+</div>
+<div>
+<a href="#login">로그인</a>
+<button>{{ ctaLabel }}</button>
+</div>
+</nav>
+<header>
+<div>
+<span>BETA</span>
+<span>공고 · 내 기록 · 대화로 구성안을 먼저 만드는 포트폴리오 도구</span>
+</div>
+<div>
+<span>Express <span>your</span></span>
+<div>
+<div>
+<div>work.</div>
+<div>idea.</div>
+<div>self.</div>
+<div>work.</div>
+</div>
+</div>
+</div>
+<p>문장을 쓰기 전에 <b>무엇을 담을지 먼저 정합니다.</b> 공고와 내 기록, 그리고 몇 개의 질문에서 섹션별 구성안을 만들고 — 그 뼈대 위에 디자인과 문장을 얹습니다.</p>
+<div>
+<button>{{ ctaLabel }}</button>
+<button>완성 사례 보기</button>
+</div>
+<div>무료로 3회 추출 · 신용카드 없이 시작</div>
+</header>
+<div>
+<div>
+<div></div>
+<div></div>
+<div></div>
+<div>
+<i class="ph ph-list-checks"></i>
+<span>당근 지원용 · 구성안</span>
+</div>
+<span><i class="ph ph-cloud-check"></i>자동 저장됨</span>
+</div>
+<div>
+<div>
+<div>
+<span>구성</span>
+<span>지면 순서</span>
+<span>6</span>
+</div>
+<div><span>01</span><div><div>첫 화면 · 한 문장 소개</div><div><span></span><span>내가 고침</span></div></div></div>
+<div><span>02</span><div><div>일하는 방식 · 장애를 좁혀간 3일</div><div><span></span><span>AI 초안</span></div></div></div>
+<div><span>03</span><div><div>대표 프로젝트 2건</div><div><span></span><span>AI 초안</span></div></div></div>
+<div><span>04</span><div><div>팀에 남긴 것</div><div><span></span><span>AI 초안</span></div></div></div>
+<div><span>05</span><div><div>기술 스택</div><div><span></span><span>AI 초안</span></div></div></div>
+<div><span>06</span><div><div>연락</div><div><span></span><span>비어 있음</span></div></div></div>
+<div><i class="ph ph-plus"></i><span>문서 추가</span></div>
+</div>
+<div>
+<div>
+<div>
+<i class="ph ph-file-text"></i>
+<span>일하는 방식 · 장애를 좁혀간 3일</span>
+<div>
+<span>지</span>
+<span><i class="ph-fill ph-coffee"></i></span>
+<span>함께 편집</span>
+</div>
+</div>
+<div>
+<span>컨텍스트</span>
+<span>무엇을 담을지 적어두는 문서 · 문장은 아직 쓰지 않습니다</span>
+</div>
+</div>
+<div>
+<div>
+<div><div>목표</div><div><span></span><span>AI</span></div></div>
+<div>읽는 사람이 <b>단서가 없는 상황에서 원인을 좁히는 방식</b>을 판단할 수 있게 한다.</div>
+</div>
+<div>
+<div><div>담을 요점</div><div><span></span><span>AI</span></div></div>
+<div>
+<div><i class="ph ph-dots-six-vertical"></i><span>로그가 없는 상태에서 단서를 만든 방법</span><span><i class="ph ph-file-text"></i>기록</span></div>
+<div><i class="ph ph-dots-six-vertical"></i><span>복구 뒤 재발을 막은 장치</span><span><i class="ph ph-chat-circle-dots"></i>질문 04</span></div>
+</div>
+</div>
+<div>
+<div><div>쓸 수치</div><div><span></span><span>나</span></div></div>
+<div>
+<span>3일</span>
+<span>24분</span>
+<span>0건 · 6개월</span>
+<span>이 중 하나만<span></span></span>
+</div>
+</div>
+<div>
+<div><div>형식 · 톤</div><div><span></span><span>AI</span></div></div>
+<div>3문단 이내 · 문단당 두 문장 · 담담하게, 영웅담처럼 쓰지 않기</div>
+</div>
+<div>
+<span><i class="ph ph-pencil-simple"></i>내가 편집</span>
+<span><i class="ph-fill ph-coffee"></i>AI에게 맡기기</span>
+<span>항목 6개 · 2분 전 편집</span>
+</div>
+</div>
+</div>
+<div>
+<div>
+<div><span>문서 · AI · 나</span><span>6 · 4 · 1</span></div>
+<div><span>배치된 재료</span><span>7 / 8</span></div>
+</div>
+<div>
+<div>왜 이 구성인가</div>
+<div>
+<div><span></span><div><div>공고가 ‘남긴 흔적’을 일곱 번 언급했습니다</div><div>공고 → 문서 04 신설</div></div></div>
+<div><span></span><div><div>대화에서 확인된 수치 세 개를 앞으로 옮겼습니다</div><div>대화 → 문서 01 · 03</div></div></div>
+</div>
+</div>
+<div>
+<div>이 구성안으로 디자인 고르기</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<section>
+<div>
+<div>
+<div>
+<div>6개</div>
+<div>문장을 쓰기 전에 합의하는 섹션 컨텍스트 문서</div>
+</div>
+<div>
+<div>4분</div>
+<div>첫 포트폴리오가 배포되기까지 걸린 평균 시간</div>
+</div>
+<div>
+<div>기업별</div>
+<div>지원처마다 다시 짜이는 구성안과 강조</div>
+</div>
+<div>
+<div>1개 링크</div>
+<div>파일 대신 주소 하나로 끝나는 제출</div>
+</div>
+</div>
+</div>
+</section>
+<section id="outline">
+<div>
+<div>
+<div>THE OUTLINE</div>
+<h2>쓸 내용이 없는 게 아니라,<br>무엇을 담을지 정해지지 않은 겁니다</h2>
+<p>Expresso는 백지도, 완성된 남의 문장도 내밀지 않습니다. 섹션마다 <b>무엇을 담고 무엇을 빼는지</b> 적은 문서를 먼저 만들고, 그 문서를 사람과 AI가 같이 고칩니다.</p>
+</div>
+<div>
+<div>
+<div>
+<i class="ph-fill ph-chat-circle-dots"></i>
+<span>BARISTA'S COUNTER</span>
+</div>
+<div>
+<div><i class="ph-fill ph-coffee"></i></div>
+<div>그 일이 끝난 뒤, 팀에 <b>남긴 것</b>이 있나요?</div>
+</div>
+<div>
+<div>같은 실패를 잡아내는 알림을 붙여뒀어요</div>
+</div>
+<div>
+<i class="ph ph-file-text"></i>
+<span>담을 요점에 추가 · 재발을 막은 장치</span>
+<span>구성안 반영</span>
+</div>
+<div>공고가 반복해서 묻는 것을 골라 <b>여섯 개만</b> 질문합니다. 답변은 그대로 구성안의 근거가 됩니다.</div>
+</div>
+<div>
+<div>
+<i class="ph-fill ph-list-checks"></i>
+<span>CONTEXT → SENTENCE</span>
+</div>
+<div>
+<div>구성안에 적힌 컨텍스트</div>
+<div>
+<div><span></span><span>원인을 좁힌 순서 — 배제 후 역추적</span></div>
+<div><span></span><span>수치는 ‘24분’ 하나만 · 도구 이름 나열 없음</span></div>
+</div>
+</div>
+<div><i class="ph ph-arrow-down"></i></div>
+<div>
+<div>추출된 문장</div>
+<div>스케줄러를 먼저 배제하고 적재량 추이로 스키마 변경을 역추적해, <b>3시간 걸리던 배치를 24분으로</b> 줄였습니다.</div>
+</div>
+<div>문장은 컨텍스트를 벗어나지 않습니다. 과장이 끼어들 자리가 <b>애초에 없습니다</b>.</div>
+</div>
+</div>
+</div>
+</section>
+<section id="flow">
+<div>
+<div>HOW IT WORKS</div>
+<div>
+<h2>여섯 단계, 그중 넷은<br>앉아서 답만 하면 됩니다</h2>
+<p>구성안까지가 절반입니다. 뼈대가 정해지면 디자인과 문장은 금방 끝납니다.</p>
+</div>
+<div>
+<div>
+<div><span><i class="ph ph-check"></i></span><span>공고 분석</span></div>
+<span></span>
+<div><span><i class="ph ph-check"></i></span><span>재료 고르기</span></div>
+<span></span>
+<div><span><i class="ph ph-check"></i></span><span>AI 대화</span></div>
+<span></span>
+<div><span><span>04</span></span><span>구성안</span></div>
+<span></span>
+<div><span><span>05</span></span><span>디자인 선택</span></div>
+<span></span>
+<div><span><span>06</span></span><span>다듬기</span></div>
+</div>
+<div>
+<div>
+<div>01</div>
+<h3>공고 분석</h3>
+<p>공고 링크를 붙이면 반복되는 역량과 표현을 뽑아냅니다.</p>
+</div>
+<div>
+<div>02</div>
+<h3>재료 고르기</h3>
+<p>내 커리어 기록 중 이 공고에 맞는 것만 체크합니다.</p>
+</div>
+<div>
+<div>03</div>
+<h3>AI 대화</h3>
+<p>여섯 개 질문에 답하는 동안 기록이 함께 쌓입니다.</p>
+</div>
+<div>
+<div>04</div>
+<h3>구성안</h3>
+<p>섹션별 컨텍스트 문서를 확인하고 직접 고칩니다.</p>
+</div>
+<div>
+<div>05</div>
+<h3>디자인 선택</h3>
+<p>구성안이 채워진 상태의 샘플 12종에서 고릅니다.</p>
+</div>
+<div>
+<div>06</div>
+<h3>다듬기</h3>
+<p>화면에서 집어 말로 고치고, 링크로 배포합니다.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<sc-if value="{{ showFlavor }}" hint-placeholder-val="{{ true }}">
+<section id="target">
+<div>
+<div>
+<div>
+<div>
+<div>TARGET-ADAPTIVE OUTLINE</div>
+<h2>기업이 바뀌면<br>구성안이 바뀝니다</h2>
+<p>같은 기록에서 <b>다른 섹션 순서와 다른 요점</b>이 나옵니다. 문장을 다시 쓰는 게 아니라, 무엇을 담을지부터 다시 정합니다.</p>
+</div>
+<div>
+<div>채용공고 URL 붙여넣기</div>
+<div>
+<i class="ph ph-link-simple"></i>
+<span>careers.company.com/data</span>
+</div>
+<div>
+<div></div>
+</div>
+<div>
+<span></span>
+구성안 초안을 짜는 중 · 섹션 6개
+</div>
+</div>
+</div>
+<div>
+<div>
+<div>
+<span>금융권 · 데이터</span>
+<span>구성안 A</span>
+</div>
+<div>
+<div><span>01</span><span>장애 대응과 안정성</span><span>수치 3개</span></div>
+<div><span>02</span><span>데이터 정합성 검증</span><span>수치 2개</span></div>
+<div><span>03</span><span>문서로 남긴 것</span><span>인용 1개</span></div>
+</div>
+<div>
+<span>톤</span>
+<span></span>
+<span></span>
+<span></span>
+<span>신뢰 · 절제</span>
+</div>
+</div>
+<div>
+<div>
+<span>IT 스타트업 · 데이터</span>
+<span>구성안 B</span>
+</div>
+<div>
+<div><span>01</span><span>혼자 만든 카탈로그</span><span>수치 1개</span></div>
+<div><span>02</span><span>3시간 → 24분</span><span>수치 2개</span></div>
+<div><span>03</span><span>장애 대응과 안정성</span><span>수치 1개</span></div>
+</div>
+<div>
+<span>톤</span>
+<span></span>
+<span></span>
+<span></span>
+<span>속도 · 도전</span>
+</div>
+</div>
+</div>
+<div>같은 사람, 같은 기록입니다. 앞에 둘 것과 뺄 것만 달라집니다 — 이것이 <b>Flavor Matching</b>입니다.</div>
+</div>
+</div>
+</section>
+</sc-if>
+<section>
+<div>
+<div>
+<div>
+<div><i class="ph ph-stack"></i></div>
+<h3>쌓아두는 내 커리어</h3>
+<p>경험 · 프로젝트 · 스킬을 카테고리로 남겨두면, 공고가 바뀔 때마다 골라 쓰는 재료가 됩니다. 취업 시즌에 몰아 쓰지 않아도 됩니다.</p>
+<div>
+<span>경험 8</span>
+<span>프로젝트 12</span>
+<span>스킬 9</span>
+</div>
+</div>
+<div>
+<div><i class="ph ph-cursor-click"></i></div>
+<h3>집어서, 말로 고칩니다</h3>
+<p>화면에서 부분을 집어 "숫자를 키우고 두 개만 남겨줘"라고 말하면 됩니다. 무엇이 바뀌었는지 항목으로 보여주고, 되돌릴 수 있습니다.</p>
+<div>
+<div><i class="ph ph-git-diff"></i><span>바뀐 곳 2</span></div>
+<div>
+<div><span>숫자 개수</span><span><span>3</span><i class="ph ph-arrow-right"></i><span>2</span></span></div>
+<div><span>숫자 크기</span><span><span>28</span><i class="ph ph-arrow-right"></i><span>44px</span></span></div>
+</div>
+</div>
+</div>
+<div>
+<div><i class="ph ph-chart-bar"></i></div>
+<h3>누가 무엇을 봤는지</h3>
+<p>방문자가 어느 섹션에 오래 머물렀는지 알려줍니다. 면접 전에 무엇을 준비해야 하는지가 데이터로 보입니다.</p>
+<div>
+<div>
+<div><span>일하는 방식</span><span>1:52</span></div>
+<div><div></div></div>
+</div>
+<div>
+<div><span>대표 프로젝트</span><span>0:48</span></div>
+<div><div></div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<sc-if value="{{ showPricing }}" hint-placeholder-val="{{ true }}">
+<section id="pricing">
+<div>
+<div>
+<div>
+<div>PRICING</div>
+<h2>한 잔부터 시작하세요</h2>
+</div>
+<p>무료로 세 번 추출해보고, 필요할 때 샷을 추가하면 됩니다. 언제든 해지할 수 있습니다.</p>
+</div>
+<div>
+<div>
+<div>SINGLE SHOT</div>
+<div>
+<span>무료</span>
+</div>
+<p>처음 만들어보는 사람에게</p>
+<div>
+<div><i class="ph ph-check"></i><span>월 3회 추출</span></div>
+<div><i class="ph ph-check"></i><span>구성안 자동 생성</span></div>
+<div><i class="ph ph-check"></i><span>서브도메인 호스팅</span></div>
+</div>
+<button>무료로 시작</button>
+</div>
+<div>
+<div>
+<span>DOUBLE SHOT</span>
+<span>추천</span>
+</div>
+<div>
+<span>9,900</span>
+<span>원 / 월</span>
+</div>
+<p>본격적으로 지원 중인 사람에게</p>
+<div>
+<div><i class="ph ph-check"></i><span>기업 맞춤 구성안 무제한</span></div>
+<div><i class="ph ph-check"></i><span>구성안 공동 편집 · 변경 이력</span></div>
+<div><i class="ph ph-check"></i><span>방문자 분석과 인사이트</span></div>
+<div><i class="ph ph-check"></i><span>PDF · PPT 내보내기</span></div>
+</div>
+<button>Double Shot 시작</button>
+</div>
+<div>
+<div>EXTRA SHOT</div>
+<div>
+<span>19,900</span>
+<span>원 / 월</span>
+</div>
+<p>브랜드를 쌓아가는 사람에게</p>
+<div>
+<div><i class="ph ph-check"></i><span>Double Shot 전체 기능</span></div>
+<div><i class="ph ph-check"></i><span>커스텀 도메인 연결</span></div>
+<div><i class="ph ph-check"></i><span>AI 커리어 분석 리포트</span></div>
+<div><i class="ph ph-check"></i><span>푸터 배지 제거</span></div>
+</div>
+<button>Extra Shot 시작</button>
+</div>
+</div>
+</div>
+</section>
+</sc-if>
+<section id="gallery">
+<div>
+<div>
+<div>
+<h2>오늘 저녁,<br>당신의 링크가 생깁니다</h2>
+<p>기록이 완벽하지 않아도 됩니다. 질문 여섯 개에 답하면 구성안이 먼저 나옵니다.</p>
+<div>
+<button>{{ ctaLabel }}</button>
+<button>사례 둘러보기</button>
+</div>
+</div>
+<div>
+<div><span>SAMPLE 01</span></div>
+<div><span>SAMPLE 02</span></div>
+<div><span>SAMPLE 03</span></div>
+<div><span>SAMPLE 04</span></div>
+</div>
+</div>
+</div>
+</section>
+<footer>
+<div>
+<div>
+<div>
+<div>
+<svg/>
+<span>Expre<span>ss</span>o</span>
+</div>
+<p>표현의 문턱을 낮추는 AI 바리스타. 무엇을 담을지부터 함께 정합니다.</p>
+</div>
+<div>
+<div>
+<div>PRODUCT</div>
+<div>
+<a href="#outline">구성안</a>
+<a href="#flow">만드는 순서</a>
+<a href="#target">기업 맞춤</a>
+<a href="#pricing">요금제</a>
+</div>
+</div>
+<div>
+<div>RESOURCES</div>
+<div>
+<a href="#gallery">완성 사례</a>
+<a href="#guide">작성 가이드</a>
+<a href="#changelog">업데이트</a>
+</div>
+</div>
+<div>
+<div>COMPANY</div>
+<div>
+<a href="#about">소개</a>
+<a href="#contact">문의</a>
+<a href="#terms">약관 · 개인정보</a>
+</div>
+</div>
+</div>
+</div>
+<div>
+<span>© 2026 Expresso</span>
+<span>EXPRESS YOUR IDEA / WORK / SELF</span>
+</div>
+</div>
+</footer>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;ctaLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Brew 시작하기&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;내용&quot;},&quot;showPricing&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;섹션&quot;},&quot;showFlavor&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;섹션&quot;}}">
+class Component extends DCLogic {
+renderVals() {
+return {
+ctaLabel: this.props.ctaLabel ?? 'Brew 시작하기',
+showPricing: this.props.showPricing ?? true,
+showFlavor: this.props.showFlavor ?? true
+};
+}
+}
+</script>
+</body>
+</html>
