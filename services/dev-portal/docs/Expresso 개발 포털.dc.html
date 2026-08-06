@@ -1289,7 +1289,10 @@ class Component extends DCLogic {
     if (wantFile) {
       let here = '';
       try { here = decodeURIComponent(d.URL || ''); } catch (e) { here = String(d.URL || ''); }
-      if (here.indexOf(wantFile) < 0) { again(); return; }
+      // 확장자는 떼고 비교한다 — Cloudflare Pages 가 .dc.html 요청을 .dc 로
+      // 308 리다이렉트하므로 iframe 의 실제 URL 에는 .html 이 없다.
+      const base = String(wantFile).replace(/\.html$/i, '');
+      if (here.indexOf(base) < 0) { again(); return; }
     }
     const leaves = Array.prototype.slice.call(d.querySelectorAll('h1, h2, h3, h4, span, td, th, p, strong, b, li, div'))
       .filter(el => el.children.length === 0 && el.textContent && el.textContent.trim().length > 0);
