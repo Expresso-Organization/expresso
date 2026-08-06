@@ -28,8 +28,10 @@
 <div style="width: 100%; min-width: 1024px; max-width: 2000px; margin: 0 auto; background: #F7FAFE; min-height: 900px">
 
   <div style="display: flex; align-items: center; gap: 14px; padding: 16px 32px; background: #16223A; color: #fff">
+    <div onClick="{{ goHome }}" title="초기 화면으로" style="display: flex; align-items: center; gap: 14px; cursor: pointer" style-hover="opacity: .72">
     <svg width="22" height="22" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cpt"><circle cx="44" cy="54" r="36"></circle></clipPath><mask id="kpt"><rect x="0" y="0" width="108" height="108" fill="#fff"></rect><circle cx="44" cy="54" r="46.5" fill="#000"></circle></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.5" mask="url(#kpt)"></circle><rect x="0" y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#cpt)"></rect><circle cx="44" cy="54" r="36" stroke="#fff" stroke-width="10"></circle></svg>
     <span style="font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 500; letter-spacing: -.02em">Expre<span style="color: #E0B486">ss</span>o</span>
+    </div>
     <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .14em; color: #8395AF">DEV CONSOLE</span>
 
     <div style="flex: 1; max-width: 520px; margin-left: 18px; position: relative">
@@ -1309,6 +1311,15 @@ class Component extends DCLogic {
 
     return {
       docVersion: this.props.docVersion ?? 'v1.1 · 2026.08',
+      goHome: () => {
+        this._frame = null;
+        this.setState({
+          sel: 'D1', q: '', role: 'all', status: 'all',
+          doc: null, toc: [], tocAt: -1,
+          view: 'console', section: 'domain', tsel: null
+        });
+        window.scrollTo(0, 0);
+      },
       navLinks: NAV.map(n => {
         const VIEW = { 1: 'console', 2: 'board', 3: 'wiki' };
         const active = n[4] ? (!s.doc && s.view === VIEW[n[4]]) : s.doc === n[1];
