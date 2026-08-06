@@ -23,7 +23,7 @@ Expresso 제품 웹 서비스입니다. **아직 착수 전이며 스택이 정�
 ## 명세
 
 원본은 [dev-portal](https://github.com/Expresso-Organization/dev-portal) 저장소에 있습니다 —
-**https://expresso-organization.github.io/dev-portal/**
+**https://expresso-dev-portal.pages.dev**
 
 | 무엇을 볼 때 | 어느 문서 |
 |---|---|
