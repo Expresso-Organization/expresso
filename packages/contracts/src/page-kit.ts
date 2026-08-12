@@ -68,10 +68,16 @@ export const PAGE_KIT_CSS = String.raw`
 .k-narrow{max-width:var(--k-measure)}
 
 /* ── 크롬 ─────────────────────────────────────────────── */
+/*
+ * 띠는 화면 끝까지, 글자는 안쪽에. 한 요소가 둘을 겸할 수 없어서 배경 · 경계선은
+ * .k-nav가 지고 가로 배치는 안쪽 .k-wrap이 진다. 바깥에도 같은 배치를 남겨 두는
+ * 것은 .k-wrap을 빠뜨린 지면이 세로로 무너지지는 않게 하려는 것이다.
+ */
 .k-nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;
   justify-content:space-between;gap:1rem;padding:.85rem 0;
   background:color-mix(in oklab, var(--k-bg) 88%, transparent);
   backdrop-filter:blur(8px);border-bottom:1px solid var(--k-hair)}
+.k-nav > .k-wrap{display:flex;align-items:center;justify-content:space-between;gap:1rem}
 .k-nav__mark{font-family:var(--k-font);font-weight:600;letter-spacing:-.01em}
 .k-nav__links{display:flex;gap:1.25rem;flex-wrap:wrap;font-size:.86em;color:var(--k-muted)}
 .k-nav__links a{color:inherit;text-decoration:none;position:relative;padding-bottom:2px}
@@ -89,6 +95,8 @@ export const PAGE_KIT_CSS = String.raw`
 .k-foot{margin-top:var(--k-section);padding:2rem 0 3rem;border-top:1px solid var(--k-hair);
   display:grid;gap:1.25rem;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));
   font-size:.86em;color:var(--k-muted)}
+.k-foot > .k-wrap{display:grid;gap:1.25rem;
+  grid-template-columns:repeat(auto-fit,minmax(12rem,1fr))}
 .k-foot dt{font-family:var(--k-font-mono);font-size:.8em;letter-spacing:.08em;
   text-transform:uppercase;margin-bottom:.35rem}
 .k-foot dd{margin:0;color:var(--k-text)}
@@ -305,6 +313,24 @@ export function pageKitPrompt(): string {
     "        --k-pct는 **가장 큰 값 대비 비율**이다. 차오르는 애니메이션이 붙어 있다.",
     "강조    .k-callout 왼쪽에 선 그은 상자",
     "등장    .k-reveal 올라오며 나타남   .k-stagger 자식이 하나씩(자식에 style=\"--i:0,1,2…\")",
+    "```",
+    "",
+    "### 뼈대 — 이 중첩을 그대로 지킨다",
+    "`.k-wrap`이 **가로 여백과 골격을 동시에 만든다.** 빠뜨리면 글이 화면 끝에 달라붙고",
+    "2단 배치 · 좌우 배치가 통째로 사라진다 — 색만 남고 고른 골격은 안 보인다.",
+    "띠(`.k-nav` · `.k-section` · `.k-foot`)는 화면 끝까지 가고 글자는 그 안의 `.k-wrap`에 선다.",
+    "```html",
+    "<div class=\"k-page k-page--dense-grid\">",
+    "  <nav class=\"k-nav\"><div class=\"k-wrap\">…</div></nav>",
+    "  <main>",
+    "    <header class=\"k-hero k-hero--split\"><div class=\"k-wrap\">…</div></header>",
+    "    <section class=\"k-section\"><div class=\"k-wrap\">",
+    "      <div class=\"k-section__meta\">…</div>",
+    "      <div class=\"k-section__body\">…</div>",
+    "    </div></section>",
+    "  </main>",
+    "  <footer class=\"k-foot\"><div class=\"k-wrap\">…</div></footer>",
+    "</div>",
     "```",
     "",
     "### 같은 부품의 다른 모습 — **섹션마다 다르게 골라라**",
