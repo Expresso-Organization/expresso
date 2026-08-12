@@ -10,6 +10,7 @@ import { loadRuntimeConfig } from "../../config/runtime-config.js";
 import {
   AiError,
   callKey,
+  toToolSchema,
   DEFAULT_MODEL_TIER,
   type AiCallSpec,
   type AiClient,
@@ -156,5 +157,18 @@ describe("AI 클라이언트 만들기", () => {
   it("아직 없는 프로바이더는 조용히 넘어가지 않는다", () => {
     expect(() => createAiClient(loadRuntimeConfig({ AI_PROVIDER: "anthropic" })))
       .toThrow(/not implemented/);
+  });
+});
+
+describe("toToolSchema", () => {
+  it("떼어낸다 — 모르는 format 하나가 계약 전체를 400으로 막는다", () => {
+    const schema = z.object({
+      blocks: z.array(z.object({ href: z.url(), at: z.iso.datetime() })),
+    });
+
+    const json = JSON.stringify(toToolSchema(schema));
+
+    expect(json).not.toContain('"format"');
+    expect(json).toContain('"href"');
   });
 });
