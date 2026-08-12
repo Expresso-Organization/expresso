@@ -10,6 +10,7 @@ import {
   AiError,
   DEFAULT_MODEL_TIER,
   parseToolOutput,
+  logAiFailure,
   toToolSchema,
   type AiCallSpec,
   type AiClient,
@@ -122,8 +123,10 @@ export class CodexAiClient implements AiClient {
 
       if (code !== 0) {
         const message = failure || `codex exited with ${code}`;
+        const failureCode = RATE_LIMIT_PATTERN.test(message) ? "AI_RATE_LIMITED" : "AI_UNAVAILABLE";
+        logAiFailure({ contract: spec.contract, model, code: failureCode, detail: message });
         throw new AiError(
-          RATE_LIMIT_PATTERN.test(message) ? "AI_RATE_LIMITED" : "AI_UNAVAILABLE",
+          failureCode,
           spec.contract,
           message,
           { retryable: false },
@@ -131,10 +134,12 @@ export class CodexAiClient implements AiClient {
       }
 
       if (!parsed.finalMessage) {
+        const message = failure || "codex did not return a final agent message";
+        logAiFailure({ contract: spec.contract, model, code: "AI_INVALID_OUTPUT", detail: message });
         throw new AiError(
           "AI_INVALID_OUTPUT",
           spec.contract,
-          failure || "codex did not return a final agent message",
+          message,
           { retryable: true },
         );
       }
@@ -153,6 +158,11 @@ export class CodexAiClient implements AiClient {
 
       const validated = parseToolOutput(schema, json);
       if (!validated.success) {
+        logAiFailure({
+          contract: spec.contract, model, code: "AI_INVALID_OUTPUT",
+          // 모델 출력에는 기록 본문이 섞일 수 있다. 어긋난 **자리**만 남긴다.
+          detail: `schema mismatch at ${validated.error.issues.map((issue) => issue.path.join(".") || "(root)").join(", ")}`,
+        });
         throw new AiError(
           "AI_INVALID_OUTPUT",
           spec.contract,
