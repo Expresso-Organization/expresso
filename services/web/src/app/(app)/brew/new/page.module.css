@@ -1,0 +1,7 @@
+/* 화면 정의서 바깥의 캔버스만 제공한다. 화면 자체 스타일은 원본 인라인 코드다. */
+.canvas {
+  width: 1440px;
+  min-height: 940px;
+  overflow: hidden;
+  background: #e6ebf3;
+}
