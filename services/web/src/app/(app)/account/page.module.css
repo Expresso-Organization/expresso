@@ -1,0 +1,401 @@
+/* 09 계정 · 요금제 — 한도는 숨기지 않는다 */
+
+.body {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  display: flex;
+}
+
+/* 좌측 설정 탭 */
+.nav {
+  width: 200px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--ex-line-200);
+  padding: 22px 12px;
+  display: grid;
+  gap: 1px;
+  align-content: start;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  width: 100%;
+  text-align: left;
+  font-size: 12.5px;
+  color: var(--ex-slate-700);
+  transition: background var(--ex-motion-instant);
+}
+
+.navItem:hover {
+  background: var(--ex-surface-50);
+}
+
+.navItemActive,
+.navItemActive:hover {
+  background: var(--ex-tint-50);
+  font-weight: 600;
+  color: var(--ex-ink-900);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 26px 32px 34px;
+  overflow: auto;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  margin-bottom: 8px;
+}
+
+.intro {
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--ex-slate-500);
+  max-width: 640px;
+  margin-bottom: 24px;
+}
+
+.sectionLabel {
+  font-family: var(--ex-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--ex-slate-500);
+  margin-bottom: 12px;
+}
+
+.section {
+  margin-bottom: 28px;
+}
+
+/* 사용량 3칸 */
+.usageGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.usageCard {
+  background: var(--ex-white);
+  border: 1px solid var(--ex-line-200);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+.usageHead {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-bottom: 11px;
+}
+
+.usageLabel {
+  font-size: 12px;
+  color: var(--ex-slate-500);
+}
+
+.usageValue {
+  margin-left: auto;
+  font-family: var(--ex-font-mono);
+  font-size: 12px;
+  color: var(--ex-ink-900);
+}
+
+.usageSlots {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 10px;
+}
+
+.usageSlot {
+  flex: 1;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--ex-line-200);
+}
+
+.usageSlotUsed {
+  background: var(--ex-espresso);
+}
+
+.usageResets {
+  font-size: 10.5px;
+  color: var(--ex-slate-400);
+}
+
+/* 요금제 3단 */
+.plans {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.plan {
+  background: var(--ex-white);
+  border: 1px solid var(--ex-line-200);
+  border-radius: 16px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 사용 중인 플랜만 espresso 보더 — 시그니처 문맥 */
+.planCurrent {
+  border: 1.5px solid var(--ex-espresso);
+  background: #fdf6f1;
+}
+
+.planHead {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-bottom: 5px;
+}
+
+.planName {
+  font-family: var(--ex-font-brand);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.planBadge {
+  font-family: var(--ex-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--ex-espresso-text);
+  background: var(--ex-bean-50);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.planPrice {
+  font-size: 13px;
+  color: var(--ex-slate-500);
+  margin-bottom: 16px;
+}
+
+.planFeature {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 12px;
+  color: var(--ex-slate-700);
+}
+
+.planCta {
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.planButton {
+  width: 100%;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+  background: var(--ex-white);
+  border: 1px solid var(--ex-border-quiet);
+  border-radius: 9px;
+  padding: 10px;
+  transition: border-color var(--ex-motion-quick);
+}
+
+.planButton:hover {
+  border-color: var(--ex-border-strong);
+}
+
+.planButtonCurrent {
+  color: var(--ex-espresso-text);
+  background: none;
+  border-color: rgba(154, 64, 48, 0.32);
+}
+
+.planButtonCurrent:hover {
+  border-color: var(--ex-espresso);
+}
+
+/* 결제 내역 */
+.billingRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ex-hairline);
+}
+
+.billingDate {
+  font-family: var(--ex-font-mono);
+  font-size: 11px;
+  color: var(--ex-slate-500);
+  width: 92px;
+  flex-shrink: 0;
+}
+
+.billingItem {
+  font-size: 12.5px;
+  color: var(--ex-ink-900);
+  flex: 1;
+  min-width: 0;
+}
+
+.billingAmount {
+  font-family: var(--ex-font-mono);
+  font-size: 12px;
+  color: var(--ex-ink-900);
+}
+
+.billingState {
+  font-size: 11px;
+  color: var(--ex-success-text);
+  background: var(--ex-success-surface);
+  border-radius: 6px;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
+
+.billingReceipt {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 11.5px;
+  color: var(--ex-slate-700);
+  white-space: nowrap;
+}
+
+/* 데이터 관리 */
+.dataRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 12px;
+  background: var(--ex-white);
+}
+
+.dataRow + .dataRow {
+  margin-top: 9px;
+}
+
+.dataTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ex-ink-900);
+}
+
+.dataTitleDanger {
+  color: var(--ex-danger-text);
+}
+
+.dataNote {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  margin-top: 4px;
+}
+
+.dataAction {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+  background: var(--ex-white);
+  border: 1px solid var(--ex-border-quiet);
+  border-radius: 9px;
+  padding: 8px 14px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.dataActionDanger {
+  color: var(--ex-danger-text);
+  border-color: rgba(226, 84, 58, 0.32);
+}
+
+.footNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 13px 15px;
+  background: var(--ex-bean-50);
+  border-radius: 12px;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--ex-bean-ink);
+}
+
+/* ── AI 사용 동의 ─────────────────────────────────────────── */
+
+.consentRows {
+  display: grid;
+  gap: 10px;
+}
+
+.consentRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 12px;
+  background: var(--ex-white);
+}
+
+.consentName {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.consentWhat {
+  margin-top: 3px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ex-slate-500);
+}
+
+.consentRenew {
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--ex-espresso);
+}
+
+.consentOn,
+.consentOff {
+  margin-left: auto;
+  padding: 7px 16px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.consentOn {
+  border: 1px solid var(--ex-espresso);
+  background: var(--ex-espresso);
+  color: var(--ex-white);
+}
+
+.consentOff {
+  border: 1px solid var(--ex-line-200);
+  background: var(--ex-white);
+  color: var(--ex-slate-500);
+}
+
+.consentNote {
+  margin-top: 10px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ex-slate-500);
+}

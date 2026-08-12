@@ -1,0 +1,553 @@
+/* 내 커리어 05–05e — 화면 정의서의 <main> 내부를 그대로 옮긴 것 */
+
+.list {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 26px 30px 0;
+}
+
+/* 카테고리 헤더 — 34px 아이콘 타일 + 27px 제목 + 캐럿 */
+.categoryHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.categoryIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--ex-bean-50);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.categoryName {
+  font-size: 27px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.caret {
+  display: inline-block;
+  width: 1.5px;
+  height: 26px;
+  background: var(--ex-ink-900);
+}
+
+.categoryBlurb {
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--ex-slate-500);
+  margin-bottom: 20px;
+  max-width: 620px;
+}
+
+/* 뷰 탭 줄 */
+.viewBar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid var(--ex-hairline);
+  margin-bottom: 12px;
+}
+
+.viewTab {
+  border: none;
+  background: none;
+  font-size: 12.5px;
+  color: var(--ex-slate-500);
+  padding: 0 2px 9px;
+  transition: color var(--ex-motion-quick);
+}
+
+.viewTab:hover {
+  color: var(--ex-ink-900);
+}
+
+.viewTabActive {
+  font-weight: 600;
+  color: var(--ex-ink-900);
+  border-bottom: 1.5px solid var(--ex-ink-900);
+  margin-bottom: -1px;
+}
+
+.viewBarRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 7px;
+}
+
+.viewBarAction {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--ex-slate-500);
+}
+
+.viewBarAction:hover {
+  color: var(--ex-ink-900);
+}
+
+/* 새로 만들기 / AI로 만들기 — 붙은 2분할 버튼 */
+.splitButton {
+  display: flex;
+  align-items: stretch;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--ex-line-200);
+}
+
+.splitPrimary {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+  background: var(--ex-white);
+  border: none;
+  padding: 7px 12px;
+  white-space: nowrap;
+  transition: background var(--ex-motion-quick);
+}
+
+.splitPrimary:hover {
+  background: var(--ex-surface-50);
+}
+
+.splitDivider {
+  width: 1px;
+  background: var(--ex-line-200);
+}
+
+.splitAi {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ex-espresso-text);
+  background: var(--ex-bean-50);
+  border: none;
+  padding: 7px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: background var(--ex-motion-quick);
+}
+
+.splitAi:hover {
+  background: var(--ex-bean-100);
+}
+
+/* 테이블 */
+.table {
+  border: 1px solid var(--ex-hairline);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) 74px 110px 80px 74px 34px;
+  border-bottom: 1px solid var(--ex-hairline);
+  align-items: center;
+}
+
+.headRow {
+  background: var(--ex-table-header);
+}
+
+.headCell {
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-left: 1px solid var(--ex-hairline);
+}
+
+.headCell:first-child {
+  border-left: none;
+}
+
+.headLabel {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+}
+
+.headCellAction {
+  padding: 9px 8px;
+  border-left: 1px solid var(--ex-hairline);
+  display: grid;
+  place-items: center;
+}
+
+.bodyRow {
+  cursor: pointer;
+  transition: background var(--ex-motion-instant);
+  color: inherit;
+}
+
+.bodyRow:hover {
+  background: var(--ex-table-header);
+  color: inherit;
+}
+
+.bodyRowSelected,
+.bodyRowSelected:hover {
+  background: var(--ex-surface-50);
+}
+
+.titleCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  min-width: 0;
+}
+
+.recordTitle {
+  font-size: 13px;
+  color: var(--ex-ink-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 드래그 핸들과 행 메뉴는 호버한 행에서만 보인다 */
+.rowOnly {
+  color: transparent;
+}
+
+.bodyRow:hover .rowOnly,
+.bodyRowSelected .rowOnly {
+  color: var(--ex-border-strong);
+}
+
+.bodyRow:hover .rowMenu,
+.bodyRowSelected .rowMenu {
+  color: var(--ex-slate-500);
+}
+
+.cell {
+  padding: 9px 12px;
+  border-left: 1px solid var(--ex-hairline);
+  font-size: 12px;
+  color: var(--ex-slate-500);
+  white-space: nowrap;
+}
+
+.cellStrong {
+  color: var(--ex-slate-700);
+}
+
+.cellTags {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.cellAction {
+  padding: 9px 8px;
+  border-left: 1px solid var(--ex-hairline);
+  display: grid;
+  place-items: center;
+}
+
+/* 배지 */
+.aiBadge {
+  font-family: var(--ex-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  color: var(--ex-espresso-text);
+  background: var(--ex-bean-50);
+  border-radius: 4px;
+  padding: 2px 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.statusOrganized {
+  font-size: 10.5px;
+  color: var(--ex-espresso-text);
+  background: var(--ex-bean-50);
+  border-radius: 5px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.statusPlain {
+  font-size: 10.5px;
+  color: var(--ex-slate-700);
+  background: var(--ex-line-inner);
+  border-radius: 5px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.tag {
+  font-size: 10.5px;
+  color: var(--ex-slate-700);
+  background: var(--ex-line-inner);
+  border-radius: 5px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+/* 마지막 행 — 새로 만들기 또는 바리스타에게 질문받기 */
+.newRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 10px 12px;
+  transition: background var(--ex-motion-instant);
+}
+
+.newRow:hover {
+  background: var(--ex-table-header);
+}
+
+.newRowLabel {
+  font-size: 12.5px;
+  color: var(--ex-slate-500);
+}
+
+.newRowOr {
+  font-size: 11.5px;
+  color: var(--ex-border-strong);
+}
+
+.newRowAi {
+  font-size: 12.5px;
+  color: var(--ex-espresso-text);
+}
+
+/* 하단 집계 바 */
+.summary {
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
+  padding: 0 2px 26px;
+}
+
+.summaryText {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+}
+
+.summaryRight {
+  margin-left: auto;
+}
+
+/* 빈 상태 */
+.empty {
+  border: 1px dashed var(--ex-border-strong);
+  border-radius: 14px;
+  background: var(--ex-row-hover);
+  padding: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.emptyTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ex-ink-900);
+}
+
+.emptyBody {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ex-slate-500);
+}
+
+.emptyAction {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ex-white);
+  background: var(--ex-espresso);
+  border: none;
+  border-radius: 9px;
+  padding: 11px 18px;
+  transition: background var(--ex-motion-quick);
+}
+
+.emptyAction:hover {
+  background: var(--ex-espresso-hover);
+}
+
+/* 갤러리 뷰 (05b) */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.galleryCard {
+  border: 1px solid var(--ex-line-200);
+  border-radius: 14px;
+  background: var(--ex-white);
+  overflow: hidden;
+  text-align: left;
+  padding: 0;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.galleryCard:hover {
+  box-shadow: var(--ex-elevation-card-hover);
+  transform: translateY(-2px);
+}
+
+.galleryBody {
+  padding: 15px 17px 16px;
+}
+
+.galleryTitle {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ex-ink-900);
+  margin-bottom: 6px;
+}
+
+.galleryMeta {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+}
+
+.galleryMissing {
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--ex-slate-400);
+}
+
+/* 타임라인 뷰 (05c) */
+.timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.timelineRow {
+  display: grid;
+  grid-template-columns: 120px 20px 1fr;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.timelinePeriod {
+  font-family: var(--ex-font-mono);
+  font-size: 10.5px;
+  color: var(--ex-slate-500);
+  text-align: right;
+  padding-top: 12px;
+}
+
+.timelineAxis {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.timelineAxis::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: -20px;
+  width: 1px;
+  background: var(--ex-line-200);
+}
+
+.timelineDot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  margin-top: 14px;
+  border-radius: 50%;
+  background: var(--ex-slate-400);
+}
+
+.timelineDotOngoing {
+  background: var(--ex-espresso);
+}
+
+.timelineCard {
+  border: 1px solid var(--ex-line-200);
+  border-radius: 10px;
+  background: var(--ex-white);
+  padding: 12px 15px;
+  text-align: left;
+  width: 100%;
+}
+
+.timelineCard:hover {
+  background: var(--ex-surface-50);
+}
+
+/* 보드 뷰 (05d) */
+.board {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(200px, 1fr);
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.boardColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.boardLabel {
+  font-family: var(--ex-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--ex-slate-500);
+  padding: 0 4px;
+}
+
+.boardCard {
+  border: 1px solid var(--ex-line-200);
+  border-radius: 10px;
+  background: var(--ex-white);
+  padding: 11px 13px;
+  font-size: 12.5px;
+  color: var(--ex-ink-900);
+  text-align: left;
+}
+
+.boardCard:hover {
+  background: var(--ex-surface-50);
+}
+
+/* 목록 뷰 (05e) */
+.listView {
+  display: flex;
+  flex-direction: column;
+}
+
+.listRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 13px 2px;
+  border: none;
+  border-bottom: 1px solid var(--ex-hairline);
+  background: none;
+  text-align: left;
+}
+
+.listRow:hover {
+  background: var(--ex-table-header);
+}

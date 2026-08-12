@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<style>
+  html, body { margin: 0; padding: 0; background: #F7FAFE; }
+  body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; color: #16223A; }
+  * { box-sizing: border-box; }
+  a { color: #16223A; text-decoration: none; }
+  a:hover { color: #0B1220; }
+  @keyframes ex-roll {
+    0%     { transform: translate3d(0,0,0); }
+    22.3%  { transform: translate3d(0,0,0); animation-timing-function: cubic-bezier(.16,1,.3,1); }
+    33.3%  { transform: translate3d(0,-84px,0); }
+    55.6%  { transform: translate3d(0,-84px,0); animation-timing-function: cubic-bezier(.16,1,.3,1); }
+    66.6%  { transform: translate3d(0,-168px,0); }
+    89%    { transform: translate3d(0,-168px,0); animation-timing-function: cubic-bezier(.16,1,.3,1); }
+    100%   { transform: translate3d(0,-252px,0); }
+  }
+  @keyframes ex-merge {
+    0%, 55.6%  { transform: translate3d(0,0,0); animation-timing-function: cubic-bezier(.16,1,.3,1); }
+    66.6%, 89% { transform: translate3d(-9px,0,0); animation-timing-function: cubic-bezier(.16,1,.3,1); }
+    100%       { transform: translate3d(0,0,0); }
+  }
+  @keyframes ex-your {
+    0%, 55.6%  { transform: translate3d(0,0,0); color: #16223A; animation-timing-function: cubic-bezier(.16,1,.3,1); }
+    66.6%, 89% { transform: translate3d(9px,0,0); color: #9A4030; animation-timing-function: cubic-bezier(.16,1,.3,1); }
+    100%       { transform: translate3d(0,0,0); color: #16223A; }
+  }
+  @keyframes ex-pulse { 0%, 100% { opacity: .25; transform: scale(.7); } 50% { opacity: 1; transform: scale(1); } }
+  @keyframes ex-fill { 0% { width: 12%; } 100% { width: 86%; } }
+  @keyframes ex-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  @keyframes ex-caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+</style>
+</helmet>
+
+<div style="max-width: 1240px; margin: 0 auto; padding: 0 40px 0">
+
+  <nav style="display: flex; align-items: center; gap: 12px; padding: 26px 0 0">
+    <svg width="30" height="30" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cnav"><circle cx="44" cy="54" r="36"></circle></clipPath><mask id="knav"><rect x="0" y="0" width="108" height="108" fill="#fff"></rect><circle cx="44" cy="54" r="46.5" fill="#000"></circle></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.5" mask="url(#knav)"></circle><rect x="0" y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#cnav)"></rect><circle cx="44" cy="54" r="36" stroke="#9A4030" stroke-width="10"></circle></svg>
+    <span style="font-family: 'Outfit', sans-serif; font-size: 23px; font-weight: 500; letter-spacing: -.025em">Expre<span style="color: #9A4030">ss</span>o</span>
+    <div style="display: flex; gap: 26px; margin-left: 44px">
+      <a href="#outline" style="font-size: 14px; color: #35455F">레시피</a>
+      <a href="#flow" style="font-size: 14px; color: #35455F">만드는 순서</a>
+      <a href="#target" style="font-size: 14px; color: #35455F">기업 맞춤</a>
+      <a href="#pricing" style="font-size: 14px; color: #35455F">요금제</a>
+    </div>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 16px">
+      <a href="#login" style="font-size: 14px; font-weight: 500; color: #35455F">로그인</a>
+      <button style="font-family: inherit; font-size: 14px; font-weight: 600; color: #fff; background: #9A4030; border: none; border-radius: 999px; padding: 11px 22px; cursor: pointer; transition: transform .22s cubic-bezier(.34,1.4,.64,1), background .18s ease" style-hover="transform: translateY(-2px); background: #7E3225">{{ ctaLabel }}</button>
+    </div>
+  </nav>
+
+  <header style="padding: 82px 0 64px">
+    <div style="display: inline-flex; align-items: center; gap: 9px; border: 1px solid #E2E9F4; background: #fff; border-radius: 999px; padding: 6px 14px 6px 8px; margin-bottom: 32px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .1em; color: #fff; background: #9A4030; border-radius: 999px; padding: 3px 8px">BETA</span>
+      <span style="font-size: 12.5px; color: #5A6B87">공고 · 내 기록 · 대화로 레시피를 먼저 만드는 포트폴리오 도구</span>
+    </div>
+
+    <div style="display: flex; align-items: flex-end; flex-wrap: wrap; margin-bottom: 28px">
+      <span style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 78px; line-height: 84px; letter-spacing: -.035em; color: #16223A">Express <span style="display: inline-block; animation: ex-your 6s linear infinite; will-change: transform">your</span></span>
+      <div style="height: 84px; overflow: hidden; margin-left: 20px; animation: ex-merge 6s linear infinite">
+        <div style="animation: ex-roll 6s linear infinite; will-change: transform">
+          <div style="height: 84px; line-height: 84px; font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 78px; letter-spacing: -.035em; color: #9A4030">work.</div>
+          <div style="height: 84px; line-height: 84px; font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 78px; letter-spacing: -.035em; color: #9A4030">idea.</div>
+          <div style="height: 84px; line-height: 84px; font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 78px; letter-spacing: -.035em; color: #9A4030">self.</div>
+          <div style="height: 84px; line-height: 84px; font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 78px; letter-spacing: -.035em; color: #9A4030">work.</div>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin: 0 0 38px; font-size: 19px; line-height: 1.75; color: #35455F; max-width: 640px; text-wrap: pretty">문장을 쓰기 전에 <b style="font-weight: 600; color: #16223A">무엇을 담을지 먼저 정합니다.</b> 공고와 내 기록, 그리고 몇 개의 질문에서 섹션별 레시피를 만들고 — 그 뼈대 위에 디자인과 문장을 얹습니다.</p>
+
+    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 18px">
+      <button style="font-family: inherit; font-size: 16px; font-weight: 600; color: #fff; background: #9A4030; border: none; border-radius: 999px; padding: 16px 34px; cursor: pointer; transition: transform .22s cubic-bezier(.34,1.4,.64,1), background .18s ease" style-hover="transform: translateY(-2px); background: #7E3225">{{ ctaLabel }}</button>
+      <button style="font-family: inherit; font-size: 15px; font-weight: 600; color: #35455F; background: #fff; border: 1px solid #E2E9F4; border-radius: 999px; padding: 15px 26px; cursor: pointer; transition: border-color .18s ease, color .18s ease" style-hover="border-color: #16223A; color: #16223A">완성 사례 보기</button>
+    </div>
+    <div style="font-size: 13px; color: #93A2BA">무료로 3회 추출 · 신용카드 없이 시작</div>
+  </header>
+
+  <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 20px 20px 0 0; border-bottom: none; padding: 13px 13px 0; box-shadow: 0 24px 60px rgba(22,34,58,.09)">
+    <div style="display: flex; align-items: center; gap: 8px; padding: 4px 8px 13px">
+      <div style="width: 9px; height: 9px; border-radius: 50%; background: #E2E9F4"></div>
+      <div style="width: 9px; height: 9px; border-radius: 50%; background: #E2E9F4"></div>
+      <div style="width: 9px; height: 9px; border-radius: 50%; background: #E2E9F4"></div>
+      <div style="margin-left: 14px; display: flex; align-items: center; gap: 8px; background: #F7FAFE; border-radius: 8px; padding: 6px 12px">
+        <i class="ph ph-list-checks" style="font-size: 12px; color: #9A4030"></i>
+        <span style="font-size: 11.5px; color: #5A6B87; white-space: nowrap">당근 지원용 · 레시피</span>
+      </div>
+      <span style="margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 11px; color: #93A2BA; white-space: nowrap; flex-shrink: 0"><i class="ph ph-cloud-check" style="font-size: 13px"></i>자동 저장됨</span>
+    </div>
+
+    <div style="background: #F7FAFE; border: 1px solid #EDF1F7; border-bottom: none; border-radius: 12px 12px 0 0; padding: 16px; display: flex; gap: 12px; height: 424px; overflow: hidden">
+
+      <div style="width: 196px; flex-shrink: 0; background: #fff; border: 1px solid #E6EBF4; border-radius: 12px; padding: 13px 8px; display: flex; flex-direction: column; gap: 2px">
+        <div style="display: flex; align-items: baseline; gap: 7px; padding: 0 8px 10px">
+          <span style="font-size: 12px; font-weight: 600; white-space: nowrap">구성</span>
+          <span style="font-size: 10.5px; color: #93A2BA; white-space: nowrap">지면 순서</span>
+          <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #5A6B87">6</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 18px 1fr; gap: 8px; padding: 8px; border-radius: 8px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #93A2BA; padding-top: 2px">01</span><div><div style="font-size: 11.5px; font-weight: 600; line-height: 1.4">첫 화면 · 한 문장 소개</div><div style="display: flex; align-items: center; gap: 5px; margin-top: 4px"><span style="width: 4.5px; height: 4.5px; border-radius: 50%; background: #4562CE"></span><span style="font-size: 9.5px; color: #93A2BA">내가 고침</span></div></div></div>
+        <div style="display: grid; grid-template-columns: 18px 1fr; gap: 8px; padding: 8px; border-radius: 8px; background: #FBEEE4"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #9A4030; padding-top: 2px">02</span><div><div style="font-size: 11.5px; font-weight: 600; line-height: 1.4; color: #7E3225">일하는 방식 · 장애를 좁혀간 3일</div><div style="display: flex; align-items: center; gap: 5px; margin-top: 4px"><span style="width: 4.5px; height: 4.5px; border-radius: 50%; background: #E0B486"></span><span style="font-size: 9.5px; color: #A9836B">AI 초안</span></div></div></div>
+        <div style="display: grid; grid-template-columns: 18px 1fr; gap: 8px; padding: 8px; border-radius: 8px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #93A2BA; padding-top: 2px">03</span><div><div style="font-size: 11.5px; font-weight: 600; line-height: 1.4">대표 프로젝트 2건</div><div style="display: flex; align-items: center; gap: 5px; margin-top: 4px"><span style="width: 4.5px; height: 4.5px; border-radius: 50%; background: #E0B486"></span><span style="font-size: 9.5px; color: #93A2BA">AI 초안</span></div></div></div>
+        <div style="display: grid; grid-template-columns: 18px 1fr; gap: 8px; padding: 8px; border-radius: 8px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #93A2BA; padding-top: 2px">04</span><div><div style="font-size: 11.5px; font-weight: 600; line-height: 1.4">팀에 남긴 것</div><div style="display: flex; align-items: center; gap: 5px; margin-top: 4px"><span style="width: 4.5px; height: 4.5px; border-radius: 50%; background: #E0B486"></span><span style="font-size: 9.5px; color: #93A2BA">AI 초안</span></div></div></div>
+        <div style="display: grid; grid-template-columns: 18px 1fr; gap: 8px; padding: 8px; border-radius: 8px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #93A2BA; padding-top: 2px">05</span><div><div style="font-size: 11.5px; font-weight: 600; line-height: 1.4">기술 스택</div><div style="display: flex; align-items: center; gap: 5px; margin-top: 4px"><span style="width: 4.5px; height: 4.5px; border-radius: 50%; background: #E0B486"></span><span style="font-size: 9.5px; color: #93A2BA">AI 초안</span></div></div></div>
+        <div style="display: grid; grid-template-columns: 18px 1fr; gap: 8px; padding: 8px; border-radius: 8px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #93A2BA; padding-top: 2px">06</span><div><div style="font-size: 11.5px; font-weight: 600; line-height: 1.4">연락</div><div style="display: flex; align-items: center; gap: 5px; margin-top: 4px"><span style="width: 4.5px; height: 4.5px; border-radius: 50%; background: #C7D2E2"></span><span style="font-size: 9.5px; color: #93A2BA">비어 있음</span></div></div></div>
+        <div style="margin-top: auto; display: flex; align-items: center; gap: 6px; padding: 8px"><i class="ph ph-plus" style="font-size: 11px; color: #93A2BA"></i><span style="font-size: 11px; color: #93A2BA; white-space: nowrap">문서 추가</span></div>
+      </div>
+
+      <div style="flex: 1; min-width: 0; background: #fff; border: 1px solid #E6EBF4; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden">
+        <div style="padding: 13px 16px 12px; border-bottom: 1px solid #F1F5FB">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 7px">
+            <i class="ph ph-file-text" style="font-size: 13px; color: #9A4030; flex-shrink: 0"></i>
+            <span style="font-size: 13px; font-weight: 600; letter-spacing: -.02em; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">일하는 방식 · 장애를 좁혀간 3일</span>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 5px; flex-shrink: 0">
+              <span style="width: 19px; height: 19px; border-radius: 50%; background: #E4E9F2; display: grid; place-items: center; font-size: 9px; font-weight: 600; color: #16223A">지</span>
+              <span style="width: 19px; height: 19px; border-radius: 50%; background: #9A4030; display: grid; place-items: center"><i class="ph-fill ph-coffee" style="font-size: 9px; color: #FBEEE4"></i></span>
+              <span style="font-size: 10px; color: #5A6B87; white-space: nowrap">함께 편집</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #A39B8C; white-space: nowrap">컨텍스트</span>
+            <span style="font-size: 11px; color: #5A6B87; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">무엇을 담을지 적어두는 문서 · 문장은 아직 쓰지 않습니다</span>
+          </div>
+        </div>
+        <div style="flex: 1; min-height: 0; overflow: hidden; padding: 15px 16px; display: flex; flex-direction: column; gap: 13px">
+          <div style="display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: start">
+            <div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #9A4030">목표</div><div style="display: flex; align-items: center; gap: 4px; margin-top: 5px"><span style="width: 4.5px; height: 4.5px; border-radius: 50%; background: #E0B486"></span><span style="font-size: 9px; color: #A8B4C8">AI</span></div></div>
+            <div style="border-left: 2px solid #F0E2D2; padding-left: 12px; font-size: 12px; line-height: 1.75; color: #35455F">읽는 사람이 <b style="color: #16223A">단서가 없는 상황에서 원인을 좁히는 방식</b>을 판단할 수 있게 한다.</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: start">
+            <div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #9A4030">담을 요점</div><div style="display: flex; align-items: center; gap: 4px; margin-top: 5px"><span style="width: 4.5px; height: 4.5px; border-radius: 50%; background: #E0B486"></span><span style="font-size: 9px; color: #A8B4C8">AI</span></div></div>
+            <div style="border-left: 2px solid #F0E2D2; padding-left: 12px; display: grid; gap: 6px">
+              <div style="display: flex; align-items: center; gap: 8px"><i class="ph ph-dots-six-vertical" style="font-size: 11px; color: #DCE3ED; flex-shrink: 0"></i><span style="font-size: 12px; color: #35455F; min-width: 0">로그가 없는 상태에서 단서를 만든 방법</span><span style="margin-left: auto; display: flex; align-items: center; gap: 4px; font-size: 9.5px; color: #5A6B87; background: #F7FAFE; border: 1px solid #EDF1F7; border-radius: 5px; padding: 2px 6px; white-space: nowrap; flex-shrink: 0"><i class="ph ph-file-text" style="font-size: 9px; color: #9A4030"></i>기록</span></div>
+              <div style="display: flex; align-items: center; gap: 8px"><i class="ph ph-dots-six-vertical" style="font-size: 11px; color: #DCE3ED; flex-shrink: 0"></i><span style="font-size: 12px; color: #35455F; min-width: 0">복구 뒤 재발을 막은 장치</span><span style="margin-left: auto; display: flex; align-items: center; gap: 4px; font-size: 9.5px; color: #5A6B87; background: #F7FAFE; border: 1px solid #EDF1F7; border-radius: 5px; padding: 2px 6px; white-space: nowrap; flex-shrink: 0"><i class="ph ph-chat-circle-dots" style="font-size: 9px; color: #9A4030"></i>질문 04</span></div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: start">
+            <div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #9A4030">쓸 수치</div><div style="display: flex; align-items: center; gap: 4px; margin-top: 5px"><span style="width: 4.5px; height: 4.5px; border-radius: 50%; background: #4562CE"></span><span style="font-size: 9px; color: #A8B4C8">나</span></div></div>
+            <div style="border-left: 2px solid #DBE2F8; padding-left: 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap">
+              <span style="font-size: 10.5px; color: #35455F; background: #F7FAFE; border: 1px solid #E6EBF4; border-radius: 999px; padding: 4px 9px; white-space: nowrap">3일</span>
+              <span style="font-size: 10.5px; color: #35455F; background: #F7FAFE; border: 1px solid #E6EBF4; border-radius: 999px; padding: 4px 9px; white-space: nowrap">24분</span>
+              <span style="font-size: 10.5px; color: #35455F; background: #F7FAFE; border: 1px solid #E6EBF4; border-radius: 999px; padding: 4px 9px; white-space: nowrap">0건 · 6개월</span>
+              <span style="font-size: 10px; color: #A8B4C8; white-space: nowrap">이 중 하나만<span style="display: inline-block; width: 1.5px; height: 11px; background: #4562CE; margin-left: 3px; vertical-align: -2px; animation: ex-caret 1.1s steps(1) infinite"></span></span>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: start">
+            <div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #9A4030">형식 · 톤</div><div style="display: flex; align-items: center; gap: 4px; margin-top: 5px"><span style="width: 4.5px; height: 4.5px; border-radius: 50%; background: #E0B486"></span><span style="font-size: 9px; color: #A8B4C8">AI</span></div></div>
+            <div style="border-left: 2px solid #F0E2D2; padding-left: 12px; font-size: 12px; line-height: 1.75; color: #35455F">3문단 이내 · 문단당 두 문장 · 담담하게, 영웅담처럼 쓰지 않기</div>
+          </div>
+          <div style="margin-top: auto; display: flex; align-items: center; gap: 8px">
+            <span style="display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #35455F; border: 1px solid #E2E9F4; border-radius: 8px; padding: 6px 11px; white-space: nowrap"><i class="ph ph-pencil-simple" style="font-size: 10px"></i>내가 편집</span>
+            <span style="display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #7E3225; background: #FBEEE4; border-radius: 8px; padding: 6px 11px; white-space: nowrap"><i class="ph-fill ph-coffee" style="font-size: 10px"></i>AI에게 맡기기</span>
+            <span style="margin-left: auto; font-size: 10px; color: #A8B4C8; white-space: nowrap">항목 6개 · 2분 전 편집</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="width: 226px; flex-shrink: 0; background: #fff; border: 1px solid #E6EBF4; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden">
+        <div style="padding: 13px 14px 12px; border-bottom: 1px solid #F1F5FB; display: grid; gap: 7px">
+          <div style="display: flex; align-items: center; gap: 8px"><span style="font-size: 11px; color: #5A6B87; flex: 1; white-space: nowrap">문서 · AI · 나</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #16223A; white-space: nowrap">6 · 4 · 1</span></div>
+          <div style="display: flex; align-items: center; gap: 8px"><span style="font-size: 11px; color: #5A6B87; flex: 1; white-space: nowrap">배치된 재료</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #16223A; white-space: nowrap">7 / 8</span></div>
+        </div>
+        <div style="flex: 1; min-height: 0; overflow: hidden; padding: 13px 14px">
+          <div style="font-size: 11.5px; font-weight: 600; margin-bottom: 10px; white-space: nowrap">왜 이 구성인가</div>
+          <div style="display: grid; gap: 10px">
+            <div style="display: flex; gap: 8px; align-items: flex-start"><span style="width: 4.5px; height: 4.5px; border-radius: 50%; background: #E0B486; flex-shrink: 0; margin-top: 5px"></span><div><div style="font-size: 11px; color: #35455F; line-height: 1.6">공고가 ‘남긴 흔적’을 일곱 번 언급했습니다</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #9A4030; margin-top: 3px">공고 → 문서 04 신설</div></div></div>
+            <div style="display: flex; gap: 8px; align-items: flex-start"><span style="width: 4.5px; height: 4.5px; border-radius: 50%; background: #E0B486; flex-shrink: 0; margin-top: 5px"></span><div><div style="font-size: 11px; color: #35455F; line-height: 1.6">대화에서 확인된 수치 세 개를 앞으로 옮겼습니다</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #9A4030; margin-top: 3px">대화 → 문서 01 · 03</div></div></div>
+          </div>
+        </div>
+        <div style="padding: 12px 14px 14px; border-top: 1px solid #F1F5FB">
+          <div style="width: 100%; font-size: 11.5px; font-weight: 600; color: #fff; background: #9A4030; border-radius: 999px; padding: 10px; text-align: center; white-space: nowrap">이 레시피로 디자인 고르기</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section style="background: #fff; border-top: 1px solid #E2E9F4; padding: 68px 0 76px">
+  <div style="max-width: 1240px; margin: 0 auto; padding: 0 40px">
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px">
+      <div>
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 46px; line-height: 1; letter-spacing: -.03em; color: #16223A; margin-bottom: 12px">6개</div>
+        <div style="font-size: 13.5px; color: #5A6B87; line-height: 1.7">문장을 쓰기 전에 합의하는 섹션 컨텍스트 문서</div>
+      </div>
+      <div>
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 46px; line-height: 1; letter-spacing: -.03em; color: #16223A; margin-bottom: 12px">4분</div>
+        <div style="font-size: 13.5px; color: #5A6B87; line-height: 1.7">첫 포트폴리오가 배포되기까지 걸린 평균 시간</div>
+      </div>
+      <div>
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 46px; line-height: 1; letter-spacing: -.03em; color: #16223A; margin-bottom: 12px">기업별</div>
+        <div style="font-size: 13.5px; color: #5A6B87; line-height: 1.7">지원처마다 다시 짜이는 레시피와 강조</div>
+      </div>
+      <div>
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 46px; line-height: 1; letter-spacing: -.03em; color: #16223A; margin-bottom: 12px">1개 링크</div>
+        <div style="font-size: 13.5px; color: #5A6B87; line-height: 1.7">파일 대신 주소 하나로 끝나는 제출</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="outline" style="padding: 100px 0 0">
+  <div style="max-width: 1240px; margin: 0 auto; padding: 0 40px">
+    <div style="max-width: 700px; margin-bottom: 56px">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .14em; color: #9A4030; margin-bottom: 20px">THE OUTLINE</div>
+      <h2 style="margin: 0 0 22px; font-size: 40px; font-weight: 600; letter-spacing: -.03em; line-height: 1.3">쓸 내용이 없는 게 아니라,<br>무엇을 담을지 정해지지 않은 겁니다</h2>
+      <p style="margin: 0; font-size: 17px; line-height: 1.85; color: #5A6B87; text-wrap: pretty">Expresso는 백지도, 완성된 남의 문장도 내밀지 않습니다. 섹션마다 <b style="color: #35455F">무엇을 담고 무엇을 빼는지</b> 적은 문서를 먼저 만들고, 그 문서를 사람과 AI가 같이 고칩니다.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px">
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 20px; padding: 34px">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 26px">
+          <i class="ph-fill ph-chat-circle-dots" style="font-size: 19px; color: #9A4030"></i>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #9A4030">BARISTA'S COUNTER</span>
+        </div>
+        <div style="display: flex; gap: 11px; margin-bottom: 12px">
+          <div style="flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; background: #FBEEE4; display: grid; place-items: center; animation: ex-float 3.4s ease-in-out infinite"><i class="ph-fill ph-coffee" style="font-size: 15px; color: #9A4030"></i></div>
+          <div style="background: #FBEEE4; border-radius: 6px 16px 16px 16px; padding: 13px 16px; font-size: 14px; line-height: 1.7; color: #5A3A28">그 일이 끝난 뒤, 팀에 <b style="color: #16223A">남긴 것</b>이 있나요?</div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 12px">
+          <div style="background: #4562CE; color: #fff; border-radius: 16px 6px 16px 16px; padding: 13px 16px; font-size: 14px; line-height: 1.7; max-width: 80%">같은 실패를 잡아내는 알림을 붙여뒀어요</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; background: #F7FAFE; border: 1px solid #EDF1F7; border-radius: 12px; padding: 12px 14px; margin: 0 0 24px 41px">
+          <i class="ph ph-file-text" style="font-size: 14px; color: #5A6B87; flex-shrink: 0"></i>
+          <span style="font-size: 13px; color: #16223A; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">담을 요점에 추가 · 재발을 막은 장치</span>
+          <span style="font-size: 11px; color: #7E3225; background: #FBEEE4; border-radius: 5px; padding: 3px 8px; white-space: nowrap">레시피 반영</span>
+        </div>
+        <div style="border-top: 1px solid #F1F5FB; padding-top: 20px; font-size: 13.5px; line-height: 1.8; color: #5A6B87">공고가 반복해서 묻는 것을 골라 <b style="color: #35455F">여섯 개만</b> 질문합니다. 답변은 그대로 레시피의 근거가 됩니다.</div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 20px; padding: 34px">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 26px">
+          <i class="ph-fill ph-list-checks" style="font-size: 19px; color: #9A4030"></i>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #9A4030">CONTEXT → SENTENCE</span>
+        </div>
+        <div style="background: #F7FAFE; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .1em; color: #93A2BA; margin-bottom: 12px">레시피에 적힌 컨텍스트</div>
+          <div style="display: grid; gap: 8px">
+            <div style="display: flex; align-items: center; gap: 9px"><span style="width: 4.5px; height: 4.5px; border-radius: 50%; background: #E0B486; flex-shrink: 0"></span><span style="font-size: 13px; color: #5A6B87; line-height: 1.6">원인을 좁힌 순서 — 배제 후 역추적</span></div>
+            <div style="display: flex; align-items: center; gap: 9px"><span style="width: 4.5px; height: 4.5px; border-radius: 50%; background: #E0B486; flex-shrink: 0"></span><span style="font-size: 13px; color: #5A6B87; line-height: 1.6">수치는 ‘24분’ 하나만 · 도구 이름 나열 없음</span></div>
+          </div>
+        </div>
+        <div style="display: grid; place-items: center; margin-bottom: 14px"><i class="ph ph-arrow-down" style="font-size: 18px; color: #93A2BA"></i></div>
+        <div style="background: #EFF2F7; border-radius: 14px; padding: 18px 20px; margin-bottom: 24px">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .1em; color: #16223A; margin-bottom: 10px">추출된 문장</div>
+          <div style="font-size: 14px; line-height: 1.75; color: #16223A">스케줄러를 먼저 배제하고 적재량 추이로 스키마 변경을 역추적해, <b>3시간 걸리던 배치를 24분으로</b> 줄였습니다.</div>
+        </div>
+        <div style="border-top: 1px solid #F1F5FB; padding-top: 20px; font-size: 13.5px; line-height: 1.8; color: #5A6B87">문장은 컨텍스트를 벗어나지 않습니다. 과장이 끼어들 자리가 <b style="color: #35455F">애초에 없습니다</b>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="flow" style="padding: 100px 0 0">
+  <div style="max-width: 1240px; margin: 0 auto; padding: 0 40px">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .14em; color: #9A4030; margin-bottom: 20px">HOW IT WORKS</div>
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; flex-wrap: wrap; margin-bottom: 48px">
+      <h2 style="margin: 0; font-size: 40px; font-weight: 600; letter-spacing: -.03em; line-height: 1.3">여섯 단계, 그중 넷은<br>앉아서 답만 하면 됩니다</h2>
+      <p style="margin: 0; font-size: 15px; line-height: 1.8; color: #5A6B87; max-width: 360px">레시피까지가 절반입니다. 뼈대가 정해지면 디자인과 문장은 금방 끝납니다.</p>
+    </div>
+
+    <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 20px; padding: 30px 32px 34px">
+      <div style="display: flex; align-items: center; gap: 0; margin-bottom: 26px; flex-wrap: nowrap">
+        <div style="display: flex; align-items: center; gap: 8px"><span style="width: 22px; height: 22px; border-radius: 50%; background: #FBEEE4; display: grid; place-items: center; flex-shrink: 0"><i class="ph ph-check" style="font-size: 12px; color: #9A4030"></i></span><span style="font-size: 13px; font-weight: 500; color: #35455F; white-space: nowrap">공고 분석</span></div>
+        <span style="flex: 1; height: 1px; background: #EDF1F7; margin: 0 12px; min-width: 14px"></span>
+        <div style="display: flex; align-items: center; gap: 8px"><span style="width: 22px; height: 22px; border-radius: 50%; background: #FBEEE4; display: grid; place-items: center; flex-shrink: 0"><i class="ph ph-check" style="font-size: 12px; color: #9A4030"></i></span><span style="font-size: 13px; font-weight: 500; color: #35455F; white-space: nowrap">재료 고르기</span></div>
+        <span style="flex: 1; height: 1px; background: #EDF1F7; margin: 0 12px; min-width: 14px"></span>
+        <div style="display: flex; align-items: center; gap: 8px"><span style="width: 22px; height: 22px; border-radius: 50%; background: #FBEEE4; display: grid; place-items: center; flex-shrink: 0"><i class="ph ph-check" style="font-size: 12px; color: #9A4030"></i></span><span style="font-size: 13px; font-weight: 500; color: #35455F; white-space: nowrap">AI 대화</span></div>
+        <span style="flex: 1; height: 1px; background: #EDF1F7; margin: 0 12px; min-width: 14px"></span>
+        <div style="display: flex; align-items: center; gap: 8px"><span style="width: 22px; height: 22px; border-radius: 50%; background: #9A4030; display: grid; place-items: center; flex-shrink: 0"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #fff">04</span></span><span style="font-size: 13px; font-weight: 600; color: #16223A; white-space: nowrap">레시피</span></div>
+        <span style="flex: 1; height: 1px; background: #EDF1F7; margin: 0 12px; min-width: 14px"></span>
+        <div style="display: flex; align-items: center; gap: 8px"><span style="width: 22px; height: 22px; border-radius: 50%; border: 1px solid #DCE3ED; display: grid; place-items: center; flex-shrink: 0"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #93A2BA">05</span></span><span style="font-size: 13px; font-weight: 500; color: #93A2BA; white-space: nowrap">디자인 선택</span></div>
+        <span style="flex: 1; height: 1px; background: #EDF1F7; margin: 0 12px; min-width: 14px"></span>
+        <div style="display: flex; align-items: center; gap: 8px"><span style="width: 22px; height: 22px; border-radius: 50%; border: 1px solid #DCE3ED; display: grid; place-items: center; flex-shrink: 0"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #93A2BA">06</span></span><span style="font-size: 13px; font-weight: 500; color: #93A2BA; white-space: nowrap">다듬기</span></div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; border-top: 1px solid #F1F5FB; padding-top: 26px">
+        <div>
+          <div style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 28px; line-height: 1; color: #9A4030; margin-bottom: 12px">01</div>
+          <h3 style="margin: 0 0 8px; font-size: 14.5px; font-weight: 600; letter-spacing: -.02em">공고 분석</h3>
+          <p style="margin: 0; font-size: 12.5px; line-height: 1.75; color: #5A6B87">공고 링크를 붙이면 반복되는 역량과 표현을 뽑아냅니다.</p>
+        </div>
+        <div>
+          <div style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 28px; line-height: 1; color: #9A4030; margin-bottom: 12px">02</div>
+          <h3 style="margin: 0 0 8px; font-size: 14.5px; font-weight: 600; letter-spacing: -.02em">재료 고르기</h3>
+          <p style="margin: 0; font-size: 12.5px; line-height: 1.75; color: #5A6B87">내 커리어 기록 중 이 공고에 맞는 것만 체크합니다.</p>
+        </div>
+        <div>
+          <div style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 28px; line-height: 1; color: #9A4030; margin-bottom: 12px">03</div>
+          <h3 style="margin: 0 0 8px; font-size: 14.5px; font-weight: 600; letter-spacing: -.02em">AI 대화</h3>
+          <p style="margin: 0; font-size: 12.5px; line-height: 1.75; color: #5A6B87">여섯 개 질문에 답하는 동안 기록이 함께 쌓입니다.</p>
+        </div>
+        <div>
+          <div style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 28px; line-height: 1; color: #9A4030; margin-bottom: 12px">04</div>
+          <h3 style="margin: 0 0 8px; font-size: 14.5px; font-weight: 600; letter-spacing: -.02em">레시피</h3>
+          <p style="margin: 0; font-size: 12.5px; line-height: 1.75; color: #5A6B87">섹션별 컨텍스트 문서를 확인하고 직접 고칩니다.</p>
+        </div>
+        <div>
+          <div style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 28px; line-height: 1; color: #9A4030; margin-bottom: 12px">05</div>
+          <h3 style="margin: 0 0 8px; font-size: 14.5px; font-weight: 600; letter-spacing: -.02em">디자인 선택</h3>
+          <p style="margin: 0; font-size: 12.5px; line-height: 1.75; color: #5A6B87">내 내용이 채워진 지면 3안을 만들어 보여줍니다.</p>
+        </div>
+        <div>
+          <div style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 28px; line-height: 1; color: #9A4030; margin-bottom: 12px">06</div>
+          <h3 style="margin: 0 0 8px; font-size: 14.5px; font-weight: 600; letter-spacing: -.02em">다듬기</h3>
+          <p style="margin: 0; font-size: 12.5px; line-height: 1.75; color: #5A6B87">화면에서 집어 말로 고치고, 링크로 배포합니다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<sc-if value="{{ showFlavor }}" hint-placeholder-val="{{ true }}">
+<section id="target" style="padding: 100px 0">
+  <div style="max-width: 1240px; margin: 0 auto; padding: 0 40px">
+    <div style="background: #16223A; border-radius: 28px; padding: 60px 56px; color: #F7FAFE">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 48px; flex-wrap: wrap; margin-bottom: 48px">
+        <div style="max-width: 560px">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .14em; color: #E0B486; margin-bottom: 20px">TARGET-ADAPTIVE OUTLINE</div>
+          <h2 style="margin: 0 0 20px; font-size: 40px; font-weight: 600; letter-spacing: -.03em; line-height: 1.3">기업이 바뀌면<br>레시피가 바뀝니다</h2>
+          <p style="margin: 0; font-size: 16px; line-height: 1.85; color: #93A2BA; text-wrap: pretty">같은 기록에서 <b style="color: #F7FAFE">다른 섹션 순서와 다른 요점</b>이 나옵니다. 문장을 다시 쓰는 게 아니라, 무엇을 담을지부터 다시 정합니다.</p>
+        </div>
+        <div style="background: rgba(255,255,255,.05); border-radius: 16px; padding: 20px 22px; min-width: 300px">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .1em; color: #8494AC; margin-bottom: 12px">채용공고 URL 붙여넣기</div>
+          <div style="display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.07); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px">
+            <i class="ph ph-link-simple" style="font-size: 15px; color: #8494AC"></i>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #C6CEDD">careers.company.com/data</span>
+          </div>
+          <div style="height: 3px; background: rgba(255,255,255,.10); border-radius: 999px; overflow: hidden; margin-bottom: 14px">
+            <div style="height: 100%; width: 62%; background: #E0B486; border-radius: 999px; animation: ex-fill 3.6s ease-in-out infinite alternate"></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: #C6CEDD">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: #E0B486; animation: ex-pulse 1.3s ease-in-out infinite"></span>
+            레시피 초안을 짜는 중 · 섹션 6개
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
+        <div style="background: rgba(255,255,255,.05); border-radius: 18px; padding: 26px 28px">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px">
+            <span style="font-size: 14px; font-weight: 600">금융권 · 데이터</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .1em; color: #16223A; background: #C6CEDD; border-radius: 6px; padding: 3px 8px">레시피 A</span>
+          </div>
+          <div style="display: grid; gap: 9px; margin-bottom: 20px">
+            <div style="display: flex; align-items: center; gap: 11px; background: rgba(255,255,255,.06); border-radius: 10px; padding: 11px 14px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8494AC">01</span><span style="font-size: 13.5px">장애 대응과 안정성</span><span style="margin-left: auto; font-size: 11px; color: #8494AC; white-space: nowrap">수치 3개</span></div>
+            <div style="display: flex; align-items: center; gap: 11px; background: rgba(255,255,255,.06); border-radius: 10px; padding: 11px 14px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8494AC">02</span><span style="font-size: 13.5px">데이터 정합성 검증</span><span style="margin-left: auto; font-size: 11px; color: #8494AC; white-space: nowrap">수치 2개</span></div>
+            <div style="display: flex; align-items: center; gap: 11px; background: rgba(255,255,255,.06); border-radius: 10px; padding: 11px 14px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8494AC">03</span><span style="font-size: 13.5px">문서로 남긴 것</span><span style="margin-left: auto; font-size: 11px; color: #8494AC; white-space: nowrap">인용 1개</span></div>
+          </div>
+          <div style="display: flex; gap: 7px; align-items: center">
+            <span style="font-size: 11.5px; color: #8494AC">톤</span>
+            <span style="width: 15px; height: 15px; border-radius: 4px; background: #26304A"></span>
+            <span style="width: 15px; height: 15px; border-radius: 4px; background: #35455F"></span>
+            <span style="width: 15px; height: 15px; border-radius: 4px; background: #C6CEDD"></span>
+            <span style="font-size: 11.5px; color: #8494AC; margin-left: 4px">신뢰 · 절제</span>
+          </div>
+        </div>
+
+        <div style="background: rgba(255,255,255,.05); border-radius: 18px; padding: 26px 28px">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px">
+            <span style="font-size: 14px; font-weight: 600">IT 스타트업 · 데이터</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .1em; color: #16223A; background: #E0B486; border-radius: 6px; padding: 3px 8px">레시피 B</span>
+          </div>
+          <div style="display: grid; gap: 9px; margin-bottom: 20px">
+            <div style="display: flex; align-items: center; gap: 11px; background: rgba(255,255,255,.06); border-radius: 10px; padding: 11px 14px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8494AC">01</span><span style="font-size: 13.5px">혼자 만든 카탈로그</span><span style="margin-left: auto; font-size: 11px; color: #8494AC; white-space: nowrap">수치 1개</span></div>
+            <div style="display: flex; align-items: center; gap: 11px; background: rgba(255,255,255,.06); border-radius: 10px; padding: 11px 14px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8494AC">02</span><span style="font-size: 13.5px">3시간 → 24분</span><span style="margin-left: auto; font-size: 11px; color: #8494AC; white-space: nowrap">수치 2개</span></div>
+            <div style="display: flex; align-items: center; gap: 11px; background: rgba(255,255,255,.06); border-radius: 10px; padding: 11px 14px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8494AC">03</span><span style="font-size: 13.5px">장애 대응과 안정성</span><span style="margin-left: auto; font-size: 11px; color: #8494AC; white-space: nowrap">수치 1개</span></div>
+          </div>
+          <div style="display: flex; gap: 7px; align-items: center">
+            <span style="font-size: 11.5px; color: #8494AC">톤</span>
+            <span style="width: 15px; height: 15px; border-radius: 4px; background: #12A97A"></span>
+            <span style="width: 15px; height: 15px; border-radius: 4px; background: #16223A"></span>
+            <span style="width: 15px; height: 15px; border-radius: 4px; background: #E0B486"></span>
+            <span style="font-size: 11.5px; color: #8494AC; margin-left: 4px">속도 · 도전</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 28px; font-size: 13px; color: #8494AC; line-height: 1.8">같은 사람, 같은 기록입니다. 앞에 둘 것과 뺄 것만 달라집니다 — 이것이 <b style="color: #E0B486">Flavor Matching</b>입니다.</div>
+    </div>
+  </div>
+</section>
+</sc-if>
+
+<section style="padding: 0 0 100px">
+  <div style="max-width: 1240px; margin: 0 auto; padding: 0 40px">
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px">
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 20px; padding: 32px">
+        <div style="width: 44px; height: 44px; border-radius: 14px; background: #FBEEE4; display: grid; place-items: center; margin-bottom: 24px"><i class="ph ph-stack" style="font-size: 22px; color: #9A4030"></i></div>
+        <h3 style="margin: 0 0 12px; font-size: 19px; font-weight: 600; letter-spacing: -.02em">쌓아두는 내 커리어</h3>
+        <p style="margin: 0 0 22px; font-size: 14px; line-height: 1.8; color: #5A6B87">경험 · 프로젝트 · 스킬을 카테고리로 남겨두면, 공고가 바뀔 때마다 골라 쓰는 재료가 됩니다. 취업 시즌에 몰아 쓰지 않아도 됩니다.</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 7px">
+          <span style="font-size: 12px; color: #35455F; background: #F7FAFE; border-radius: 999px; padding: 6px 12px; white-space: nowrap">경험 8</span>
+          <span style="font-size: 12px; color: #35455F; background: #F7FAFE; border-radius: 999px; padding: 6px 12px; white-space: nowrap">프로젝트 12</span>
+          <span style="font-size: 12px; color: #35455F; background: #F7FAFE; border-radius: 999px; padding: 6px 12px; white-space: nowrap">스킬 9</span>
+        </div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 20px; padding: 32px">
+        <div style="width: 44px; height: 44px; border-radius: 14px; background: #FBEEE4; display: grid; place-items: center; margin-bottom: 24px"><i class="ph ph-cursor-click" style="font-size: 22px; color: #9A4030"></i></div>
+        <h3 style="margin: 0 0 12px; font-size: 19px; font-weight: 600; letter-spacing: -.02em">집어서, 말로 고칩니다</h3>
+        <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.8; color: #5A6B87">화면에서 부분을 집어 "숫자를 키우고 두 개만 남겨줘"라고 말하면 됩니다. 무엇이 바뀌었는지 항목으로 보여주고, 되돌릴 수 있습니다.</p>
+        <div style="border: 1px solid #E6EBF4; border-radius: 12px; overflow: hidden">
+          <div style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #F7FAFE; border-bottom: 1px solid #EDF1F8"><i class="ph ph-git-diff" style="font-size: 11px; color: #5A6B87"></i><span style="font-size: 10.5px; font-weight: 600; color: #35455F; white-space: nowrap">바뀐 곳 2</span></div>
+          <div style="display: grid; gap: 7px; padding: 10px 12px">
+            <div style="display: flex; align-items: center; gap: 8px"><span style="font-size: 11.5px; color: #6B7A93; white-space: nowrap">숫자 개수</span><span style="margin-left: auto; display: flex; align-items: center; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 11px"><span style="color: #A8B4C8; text-decoration: line-through">3</span><i class="ph ph-arrow-right" style="font-size: 9px; color: #C7D2E2"></i><span style="font-weight: 700; color: #16223A">2</span></span></div>
+            <div style="display: flex; align-items: center; gap: 8px"><span style="font-size: 11.5px; color: #6B7A93; white-space: nowrap">숫자 크기</span><span style="margin-left: auto; display: flex; align-items: center; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 11px"><span style="color: #A8B4C8; text-decoration: line-through">28</span><i class="ph ph-arrow-right" style="font-size: 9px; color: #C7D2E2"></i><span style="font-weight: 700; color: #16223A">44px</span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 20px; padding: 32px">
+        <div style="width: 44px; height: 44px; border-radius: 14px; background: #FBEEE4; display: grid; place-items: center; margin-bottom: 24px"><i class="ph ph-chart-bar" style="font-size: 22px; color: #9A4030"></i></div>
+        <h3 style="margin: 0 0 12px; font-size: 19px; font-weight: 600; letter-spacing: -.02em">누가 무엇을 봤는지</h3>
+        <p style="margin: 0 0 22px; font-size: 14px; line-height: 1.8; color: #5A6B87">방문자가 어느 섹션에 오래 머물렀는지 알려줍니다. 면접 전에 무엇을 준비해야 하는지가 데이터로 보입니다.</p>
+        <div style="display: grid; gap: 9px">
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px"><span style="color: #35455F">일하는 방식</span><span style="font-family: 'JetBrains Mono', monospace; color: #93A2BA; font-size: 10.5px">1:52</span></div>
+            <div style="height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 72%; height: 100%; background: #16223A; border-radius: 999px"></div></div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px"><span style="color: #35455F">대표 프로젝트</span><span style="font-family: 'JetBrains Mono', monospace; color: #93A2BA; font-size: 10.5px">0:48</span></div>
+            <div style="height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 38%; height: 100%; background: #97A3BC; border-radius: 999px"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<sc-if value="{{ showPricing }}" hint-placeholder-val="{{ true }}">
+<section id="pricing" style="background: #fff; border-top: 1px solid #E2E9F4; border-bottom: 1px solid #E2E9F4; padding: 96px 0">
+  <div style="max-width: 1240px; margin: 0 auto; padding: 0 40px">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; flex-wrap: wrap; margin-bottom: 48px">
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .14em; color: #9A4030; margin-bottom: 20px">PRICING</div>
+        <h2 style="margin: 0; font-size: 40px; font-weight: 600; letter-spacing: -.03em; line-height: 1.3">한 잔부터 시작하세요</h2>
+      </div>
+      <p style="margin: 0; font-size: 15px; line-height: 1.8; color: #5A6B87; max-width: 380px">무료로 세 번 추출해보고, 필요할 때 샷을 추가하면 됩니다. 언제든 해지할 수 있습니다.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px">
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 20px; padding: 34px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 18px">SINGLE SHOT</div>
+        <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 10px">
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 44px; line-height: 1; letter-spacing: -.03em">무료</span>
+        </div>
+        <p style="margin: 0 0 28px; font-size: 13.5px; color: #5A6B87; line-height: 1.7">처음 만들어보는 사람에게</p>
+        <div style="display: grid; gap: 12px; margin-bottom: 30px">
+          <div style="display: flex; gap: 10px; align-items: flex-start"><i class="ph ph-check" style="font-size: 15px; color: #12A97A; margin-top: 3px"></i><span style="font-size: 13.5px; color: #35455F; line-height: 1.6">월 3회 추출</span></div>
+          <div style="display: flex; gap: 10px; align-items: flex-start"><i class="ph ph-check" style="font-size: 15px; color: #12A97A; margin-top: 3px"></i><span style="font-size: 13.5px; color: #35455F; line-height: 1.6">레시피 자동 생성</span></div>
+          <div style="display: flex; gap: 10px; align-items: flex-start"><i class="ph ph-check" style="font-size: 15px; color: #12A97A; margin-top: 3px"></i><span style="font-size: 13.5px; color: #35455F; line-height: 1.6">서브도메인 호스팅</span></div>
+        </div>
+        <button style="width: 100%; font-family: inherit; font-size: 14px; font-weight: 600; color: #35455F; background: #fff; border: 1px solid #E2E9F4; border-radius: 12px; padding: 13px; cursor: pointer; transition: border-color .18s ease, color .18s ease" style-hover="border-color: #16223A; color: #16223A">무료로 시작</button>
+      </div>
+
+      <div style="background: #fff; border: 1.5px solid #9A4030; border-radius: 20px; padding: 34px; box-shadow: 0 0 0 4px rgba(154,64,48,.08)">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #9A4030">DOUBLE SHOT</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .1em; color: #fff; background: #9A4030; border-radius: 6px; padding: 3px 8px">추천</span>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 10px">
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 44px; line-height: 1; letter-spacing: -.03em">9,900</span>
+          <span style="font-size: 14px; color: #5A6B87">원 / 월</span>
+        </div>
+        <p style="margin: 0 0 28px; font-size: 13.5px; color: #5A6B87; line-height: 1.7">본격적으로 지원 중인 사람에게</p>
+        <div style="display: grid; gap: 12px; margin-bottom: 30px">
+          <div style="display: flex; gap: 10px; align-items: flex-start"><i class="ph ph-check" style="font-size: 15px; color: #12A97A; margin-top: 3px"></i><span style="font-size: 13.5px; color: #35455F; line-height: 1.6">기업 맞춤 레시피 무제한</span></div>
+          <div style="display: flex; gap: 10px; align-items: flex-start"><i class="ph ph-check" style="font-size: 15px; color: #12A97A; margin-top: 3px"></i><span style="font-size: 13.5px; color: #35455F; line-height: 1.6">레시피 공동 편집 · 변경 이력</span></div>
+          <div style="display: flex; gap: 10px; align-items: flex-start"><i class="ph ph-check" style="font-size: 15px; color: #12A97A; margin-top: 3px"></i><span style="font-size: 13.5px; color: #35455F; line-height: 1.6">방문자 분석과 인사이트</span></div>
+          <div style="display: flex; gap: 10px; align-items: flex-start"><i class="ph ph-check" style="font-size: 15px; color: #12A97A; margin-top: 3px"></i><span style="font-size: 13.5px; color: #35455F; line-height: 1.6">PDF · PPT 내보내기</span></div>
+        </div>
+        <button style="width: 100%; font-family: inherit; font-size: 14px; font-weight: 600; color: #fff; background: #9A4030; border: none; border-radius: 12px; padding: 13px; cursor: pointer; transition: background .18s ease, transform .2s cubic-bezier(.34,1.4,.64,1)" style-hover="background: #7E3225; transform: translateY(-1px)">Double Shot 시작</button>
+      </div>
+
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 20px; padding: 34px">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 18px">EXTRA SHOT</div>
+        <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 10px">
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 44px; line-height: 1; letter-spacing: -.03em">19,900</span>
+          <span style="font-size: 14px; color: #5A6B87">원 / 월</span>
+        </div>
+        <p style="margin: 0 0 28px; font-size: 13.5px; color: #5A6B87; line-height: 1.7">브랜드를 쌓아가는 사람에게</p>
+        <div style="display: grid; gap: 12px; margin-bottom: 30px">
+          <div style="display: flex; gap: 10px; align-items: flex-start"><i class="ph ph-check" style="font-size: 15px; color: #12A97A; margin-top: 3px"></i><span style="font-size: 13.5px; color: #35455F; line-height: 1.6">Double Shot 전체 기능</span></div>
+          <div style="display: flex; gap: 10px; align-items: flex-start"><i class="ph ph-check" style="font-size: 15px; color: #12A97A; margin-top: 3px"></i><span style="font-size: 13.5px; color: #35455F; line-height: 1.6">커스텀 도메인 연결</span></div>
+          <div style="display: flex; gap: 10px; align-items: flex-start"><i class="ph ph-check" style="font-size: 15px; color: #12A97A; margin-top: 3px"></i><span style="font-size: 13.5px; color: #35455F; line-height: 1.6">AI 커리어 분석 리포트</span></div>
+          <div style="display: flex; gap: 10px; align-items: flex-start"><i class="ph ph-check" style="font-size: 15px; color: #12A97A; margin-top: 3px"></i><span style="font-size: 13.5px; color: #35455F; line-height: 1.6">푸터 배지 제거</span></div>
+        </div>
+        <button style="width: 100%; font-family: inherit; font-size: 14px; font-weight: 600; color: #35455F; background: #fff; border: 1px solid #E2E9F4; border-radius: 12px; padding: 13px; cursor: pointer; transition: border-color .18s ease, color .18s ease" style-hover="border-color: #16223A; color: #16223A">Extra Shot 시작</button>
+      </div>
+    </div>
+  </div>
+</section>
+</sc-if>
+
+<section id="gallery" style="padding: 100px 0">
+  <div style="max-width: 1240px; margin: 0 auto; padding: 0 40px">
+    <div style="background: #FBEEE4; border-radius: 28px; padding: 60px 56px; display: flex; align-items: center; justify-content: space-between; gap: 48px; flex-wrap: wrap">
+      <div style="max-width: 520px">
+        <h2 style="margin: 0 0 18px; font-size: 36px; font-weight: 600; letter-spacing: -.03em; line-height: 1.35; color: #16223A">오늘 저녁,<br>당신의 링크가 생깁니다</h2>
+        <p style="margin: 0 0 32px; font-size: 16px; line-height: 1.8; color: #5A3A28">기록이 완벽하지 않아도 됩니다. 질문 여섯 개에 답하면 레시피가 먼저 나옵니다.</p>
+        <div style="display: flex; gap: 14px; flex-wrap: wrap">
+          <button style="font-family: inherit; font-size: 16px; font-weight: 600; color: #fff; background: #9A4030; border: none; border-radius: 999px; padding: 16px 34px; cursor: pointer; transition: transform .22s cubic-bezier(.34,1.4,.64,1), background .18s ease" style-hover="transform: translateY(-2px); background: #7E3225">{{ ctaLabel }}</button>
+          <button style="font-family: inherit; font-size: 15px; font-weight: 600; color: #7E3225; background: transparent; border: 1px solid rgba(154,64,48,.3); border-radius: 999px; padding: 15px 26px; cursor: pointer; transition: background .18s ease, border-color .18s ease" style-hover="background: rgba(154,64,48,.07); border-color: #9A4030">사례 둘러보기</button>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; min-width: 320px; flex: 1; max-width: 420px">
+        <div style="height: 130px; border-radius: 14px; background: repeating-linear-gradient(135deg, #fff 0 10px, #F6E6D8 10px 20px); display: grid; place-items: center"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .1em; color: #A9836B">SAMPLE 01</span></div>
+        <div style="height: 130px; border-radius: 14px; background: repeating-linear-gradient(135deg, #fff 0 10px, #F6E6D8 10px 20px); display: grid; place-items: center; margin-top: 22px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .1em; color: #A9836B">SAMPLE 02</span></div>
+        <div style="height: 130px; border-radius: 14px; background: repeating-linear-gradient(135deg, #fff 0 10px, #F6E6D8 10px 20px); display: grid; place-items: center"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .1em; color: #A9836B">SAMPLE 03</span></div>
+        <div style="height: 130px; border-radius: 14px; background: repeating-linear-gradient(135deg, #fff 0 10px, #F6E6D8 10px 20px); display: grid; place-items: center; margin-top: 22px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .1em; color: #A9836B">SAMPLE 04</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer style="background: #16223A; padding: 64px 0 40px">
+  <div style="max-width: 1240px; margin: 0 auto; padding: 0 40px">
+    <div style="display: flex; justify-content: space-between; gap: 48px; flex-wrap: wrap; padding-bottom: 44px; border-bottom: 1px solid #263453">
+      <div style="max-width: 300px">
+        <div style="display: flex; align-items: center; gap: 11px; margin-bottom: 18px">
+          <svg width="26" height="26" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cft"><circle cx="44" cy="54" r="36"></circle></clipPath><mask id="kft"><rect x="0" y="0" width="108" height="108" fill="#fff"></rect><circle cx="44" cy="54" r="46.5" fill="#000"></circle></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#A9793F" stroke-width="8.5" mask="url(#kft)"></circle><rect x="0" y="58.96" width="108" height="49.04" fill="#E0B486" clip-path="url(#cft)"></rect><circle cx="44" cy="54" r="36" stroke="#E0B486" stroke-width="10"></circle></svg>
+          <span style="font-family: 'Outfit', sans-serif; font-size: 21px; font-weight: 500; letter-spacing: -.025em; color: #F7FAFE">Expre<span style="color: #E0B486">ss</span>o</span>
+        </div>
+        <p style="margin: 0; font-size: 13px; line-height: 1.8; color: #8494AC">표현의 문턱을 낮추는 AI 바리스타. 무엇을 담을지부터 함께 정합니다.</p>
+      </div>
+      <div style="display: flex; gap: 64px; flex-wrap: wrap">
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .12em; color: #5A6B87; margin-bottom: 16px">PRODUCT</div>
+          <div style="display: grid; gap: 11px">
+            <a href="#outline" style="font-size: 13.5px; color: #C6CEDD">레시피</a>
+            <a href="#flow" style="font-size: 13.5px; color: #C6CEDD">만드는 순서</a>
+            <a href="#target" style="font-size: 13.5px; color: #C6CEDD">기업 맞춤</a>
+            <a href="#pricing" style="font-size: 13.5px; color: #C6CEDD">요금제</a>
+          </div>
+        </div>
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .12em; color: #5A6B87; margin-bottom: 16px">RESOURCES</div>
+          <div style="display: grid; gap: 11px">
+            <a href="#gallery" style="font-size: 13.5px; color: #C6CEDD">완성 사례</a>
+            <a href="#guide" style="font-size: 13.5px; color: #C6CEDD">작성 가이드</a>
+            <a href="#changelog" style="font-size: 13.5px; color: #C6CEDD">업데이트</a>
+          </div>
+        </div>
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .12em; color: #5A6B87; margin-bottom: 16px">COMPANY</div>
+          <div style="display: grid; gap: 11px">
+            <a href="#about" style="font-size: 13.5px; color: #C6CEDD">소개</a>
+            <a href="#contact" style="font-size: 13.5px; color: #C6CEDD">문의</a>
+            <a href="#terms" style="font-size: 13.5px; color: #C6CEDD">약관 · 개인정보</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; padding-top: 26px">
+      <span style="font-size: 12.5px; color: #5A6B87">© 2026 Expresso</span>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #5A6B87">EXPRESS YOUR IDEA / WORK / SELF</span>
+    </div>
+  </div>
+</footer>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;ctaLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Brew 시작하기&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;내용&quot;},&quot;showPricing&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;섹션&quot;},&quot;showFlavor&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;섹션&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      ctaLabel: this.props.ctaLabel ?? 'Brew 시작하기',
+      showPricing: this.props.showPricing ?? true,
+      showFlavor: this.props.showFlavor ?? true
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,445 @@
+/*
+ * 사이드바 — 화면 정의서 05의 <aside>를 그대로 옮긴 것.
+ * 250px 고정, 배경 #F7F8FA, 우측 보더 #E9ECF2, 패딩 14px 10px.
+ */
+
+.sidebar {
+  width: 250px;
+  flex-shrink: 0;
+  background: var(--ex-chrome-50);
+  border-right: 1px solid var(--ex-chrome-border);
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.scroll {
+  min-height: 0;
+  overflow-y: auto;
+  /* 스크롤바가 250px 폭을 흔들지 않게 한다 */
+  scrollbar-width: thin;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 8px 14px;
+}
+
+.brandName {
+  flex: 1;
+}
+
+/* 1차 메뉴 */
+.primary {
+  display: grid;
+  gap: 1px;
+  margin-bottom: 18px;
+}
+
+.primaryItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background var(--ex-motion-instant);
+}
+
+.primaryItem:hover {
+  background: #f2f5f9;
+}
+
+.primaryLabel {
+  font-size: 12.5px;
+  color: var(--ex-slate-700);
+  flex: 1;
+}
+
+.primaryItemActive {
+  background: var(--ex-tint-50);
+}
+
+.primaryItemActive .primaryLabel {
+  font-weight: 600;
+  color: var(--ex-ink-900);
+}
+
+.shortcut {
+  font-family: var(--ex-font-mono);
+  font-size: 9.5px;
+  color: var(--ex-slate-400);
+}
+
+.primaryCount {
+  font-family: var(--ex-font-mono);
+  font-size: 9.5px;
+  color: var(--ex-slate-500);
+}
+
+/* 그룹 라벨 */
+.groupHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 8px 8px;
+}
+
+.groupHeadFirst {
+  padding-top: 0;
+}
+
+.groupLabel {
+  font-family: var(--ex-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--ex-slate-500);
+}
+
+.groupActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.groupCount {
+  font-family: var(--ex-font-mono);
+  font-size: 9px;
+  color: var(--ex-slate-500);
+}
+
+.groupAction {
+  border: none;
+  background: none;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ex-slate-500);
+}
+
+/* 내 포트폴리오 */
+.portfolios {
+  display: grid;
+  gap: 2px;
+}
+
+.portfolioItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background var(--ex-motion-instant);
+}
+
+.portfolioItem:hover {
+  background: #f2f5f9;
+}
+
+/* 미리보기 썸네일 — 사선 줄무늬 위에 상태 점 */
+.thumb {
+  position: relative;
+  width: 26px;
+  height: 20px;
+  border-radius: 4px;
+  background: repeating-linear-gradient(
+    135deg,
+    #fff 0 5px,
+    var(--ex-track) 5px 10px
+  );
+  border: 1px solid var(--ex-line-200);
+  flex-shrink: 0;
+}
+
+.thumbDot {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 2px solid var(--ex-chrome-50);
+}
+
+.thumbDotPublished {
+  background: var(--ex-success);
+}
+
+.thumbDotDraft {
+  background: var(--ex-crema);
+}
+
+.portfolioBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.portfolioName {
+  font-size: 12.5px;
+  color: var(--ex-slate-700);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portfolioMeta {
+  font-family: var(--ex-font-mono);
+  font-size: 9.5px;
+  color: var(--ex-slate-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.portfolioStat {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.portfolioVisits {
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  color: var(--ex-ink-900);
+}
+
+.portfolioDelta {
+  font-size: 9px;
+  margin-top: 2px;
+  color: var(--ex-success-text);
+}
+
+.portfolioDeltaQuiet {
+  color: var(--ex-slate-500);
+}
+
+.draftChip {
+  font-family: var(--ex-font-mono);
+  font-size: 9.5px;
+  color: var(--ex-espresso-text);
+  background: var(--ex-bean-50);
+  border-radius: 4px;
+  padding: 3px 6px;
+  flex-shrink: 0;
+}
+
+/* 관심 공고 */
+.interests {
+  display: grid;
+  gap: 1px;
+}
+
+.interestItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background var(--ex-motion-instant);
+}
+
+.interestItem:hover {
+  background: #f2f5f9;
+}
+
+.initial {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: var(--ex-white);
+  border: 1px solid var(--ex-line-200);
+  display: grid;
+  place-items: center;
+  font-family: var(--ex-font-brand);
+  font-size: 10px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.interestName {
+  font-size: 12.5px;
+  color: var(--ex-slate-700);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.score {
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+}
+
+.scoreHigh {
+  color: var(--ex-success-text);
+}
+
+.scoreMid {
+  color: var(--ex-warning-text);
+}
+
+.pending {
+  font-size: 10.5px;
+  color: var(--ex-slate-500);
+  white-space: nowrap;
+}
+
+/* 내 커리어 트리 */
+.categories {
+  display: grid;
+  gap: 1px;
+}
+
+.categoryItem {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background var(--ex-motion-instant);
+}
+
+.categoryItem:hover {
+  background: #f2f5f9;
+}
+
+.categoryItemActive,
+.categoryItemActive:hover {
+  background: var(--ex-tint-50);
+}
+
+.categoryName {
+  font-size: 12.5px;
+  color: var(--ex-slate-700);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.categoryItemActive .categoryName {
+  font-weight: 600;
+  color: var(--ex-ink-900);
+}
+
+.categoryCount {
+  font-family: var(--ex-font-mono);
+  font-size: 9.5px;
+  color: var(--ex-slate-500);
+}
+
+.addCategory {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background var(--ex-motion-instant);
+}
+
+.addCategory:hover {
+  background: #f2f5f9;
+}
+
+.addCategoryLabel {
+  font-size: 12.5px;
+  color: var(--ex-slate-500);
+}
+
+/* 푸터 — 항상 하단 고정 */
+.footer {
+  margin-top: auto;
+  padding-top: 14px;
+  flex-shrink: 0;
+}
+
+.quotaCard {
+  background: var(--ex-white);
+  border: 1px solid var(--ex-chrome-border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.quotaHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.quotaLabel {
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.quotaValue {
+  font-family: var(--ex-font-mono);
+  font-size: 10.5px;
+  color: var(--ex-espresso);
+}
+
+.quotaTrack {
+  height: 4px;
+  background: var(--ex-track);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 9px;
+}
+
+.quotaFill {
+  height: 100%;
+  background: var(--ex-espresso);
+  border-radius: 999px;
+}
+
+.upgradeLink {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ex-espresso);
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 8px;
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ex-tint-100);
+  display: grid;
+  place-items: center;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ex-ink-900);
+  flex-shrink: 0;
+}
+
+.userName {
+  font-size: 12.5px;
+  color: var(--ex-slate-700);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userAction {
+  border: none;
+  background: none;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ex-slate-500);
+}

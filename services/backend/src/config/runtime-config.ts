@@ -1,0 +1,127 @@
+import { z } from "zod";
+
+const runtimeConfigSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  HOST: z.string().min(1).default("127.0.0.1"),
+  PORT: z.coerce.number().int().min(1).max(65_535).default(4_000),
+  LOG_LEVEL: z
+    .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
+    .default("info"),
+  DATABASE_URL: z
+    .url()
+    .default("postgres://expresso:expresso@127.0.0.1:5432/expresso"),
+  REDIS_URL: z.url().default("redis://127.0.0.1:6379"),
+  OUTBOX_POLL_INTERVAL_MS: z.coerce.number().int().min(100).max(60_000).default(1_000),
+  OUTBOX_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(25),
+  OUTBOX_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(20).default(5),
+  QUEUE_PREFIX: z.string().regex(/^[a-z][a-z0-9-]{1,30}$/).default("expresso"),
+  ASSET_SIGNING_SECRET: z.string().min(16).default("expresso-local-asset-signing-secret"),
+  MEDIA_PROVIDER: z.enum(["local", "s3"]).default("local"),
+  MEDIA_DIR: z.string().min(1).default("var/media"),
+  ANALYTICS_VISITOR_SALT: z.string().min(16).default("expresso-local-analytics-salt"),
+  REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).default(30_000),
+
+  /**
+   * AI 프로바이더. 기본은 `off` — 키도 로그인도 없이 앱 전체가 돌아야 하고,
+   * 그때는 각 모듈의 규칙 기반 구현이 그대로 쓰인다.
+   *
+   * `claude-code`와 `codex`는 **개발 전용**이다. 이 머신에 로그인된 CLI로 부르고,
+   * CI·컨테이너에서는 별도 인증 없이는 동작하지 않는다.
+   */
+  AI_PROVIDER: z.enum(["off", "claude-code", "codex", "fixture", "anthropic"]).default("off"),
+  /**
+   * 고용24(워크넷) 공공 API 인증키. 공공데이터포털에서 발급받는다.
+   *
+   * 없으면 워크넷 어댑터를 만들지 않는다 — 키 없이 도는 척하면 매일 아침
+   * 0건을 모으고 성공했다고 적는다.
+   */
+  WORK24_API_KEY: z.string().min(1).optional(),
+  AI_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(600_000).default(180_000),
+  AI_FIXTURE_DIR: z.string().min(1).default("fixtures/ai"),
+  /** 호출을 픽스처로 남긴다. 탐색이 회귀 테스트를 먹여살리는 지점. */
+  AI_RECORD: z.stringbool().default(false),
+  CLAUDE_CLI_PATH: z.string().min(1).default("claude"),
+  CODEX_CLI_PATH: z.string().min(1).default("codex"),
+  /** 계약별 모델 덮어쓰기 — `AI_MODEL_JOB_ANALYSIS=sonnet` 형태. */
+  AI_MODEL_JOB_ANALYSIS: z.string().min(1).optional(),
+  AI_MODEL_SEARCH_INTERPRET: z.string().min(1).optional(),
+  AI_MODEL_QUESTION_DRAFT: z.string().min(1).optional(),
+  AI_MODEL_RECORD_CLEANUP: z.string().min(1).optional(),
+  AI_MODEL_RECIPE_DRAFT: z.string().min(1).optional(),
+  AI_MODEL_GENERATION: z.string().min(1).optional(),
+  AI_MODEL_PARTIAL_EDIT: z.string().min(1).optional(),
+  AI_MODEL_STYLE_REMIX: z.string().min(1).optional(),
+  AI_MODEL_INSIGHT_NOTE: z.string().min(1).optional(),
+});
+
+export interface RuntimeConfig {
+  nodeEnv: z.infer<typeof runtimeConfigSchema>["NODE_ENV"];
+  host: string;
+  port: number;
+  logLevel: z.infer<typeof runtimeConfigSchema>["LOG_LEVEL"];
+  databaseUrl: string;
+  redisUrl: string;
+  outboxPollIntervalMs: number;
+  outboxBatchSize: number;
+  outboxMaxAttempts: number;
+  queuePrefix: string;
+  assetSigningSecret?: string;
+  /** 올린 이미지를 어디에 두는가. `s3`는 아직 어댑터가 없다. */
+  mediaProvider?: "local" | "s3";
+  mediaDir?: string;
+  analyticsVisitorSalt?: string;
+  requestTimeoutMs?: number;
+  /** 없으면 `off`. 키도 로그인도 없이 앱 전체가 돌아야 한다. */
+  aiProvider?: "off" | "claude-code" | "codex" | "fixture" | "anthropic";
+  work24ApiKey?: string | undefined;
+  aiTimeoutMs?: number;
+  aiFixtureDir?: string;
+  aiRecord?: boolean;
+  claudeCliPath?: string;
+  codexCliPath?: string;
+  aiModelOverrides?: Partial<Record<string, string>>;
+}
+
+export function loadRuntimeConfig(
+  environment: NodeJS.ProcessEnv = process.env,
+): RuntimeConfig {
+  const result = runtimeConfigSchema.parse(environment);
+
+  return {
+    nodeEnv: result.NODE_ENV,
+    host: result.HOST,
+    port: result.PORT,
+    logLevel: result.LOG_LEVEL,
+    databaseUrl: result.DATABASE_URL,
+    redisUrl: result.REDIS_URL,
+    outboxPollIntervalMs: result.OUTBOX_POLL_INTERVAL_MS,
+    outboxBatchSize: result.OUTBOX_BATCH_SIZE,
+    outboxMaxAttempts: result.OUTBOX_MAX_ATTEMPTS,
+    queuePrefix: result.QUEUE_PREFIX,
+    assetSigningSecret: result.ASSET_SIGNING_SECRET,
+    mediaProvider: result.MEDIA_PROVIDER,
+    mediaDir: result.MEDIA_DIR,
+    analyticsVisitorSalt: result.ANALYTICS_VISITOR_SALT,
+    requestTimeoutMs: result.REQUEST_TIMEOUT_MS,
+    aiProvider: result.AI_PROVIDER,
+    work24ApiKey: result.WORK24_API_KEY,
+    aiTimeoutMs: result.AI_TIMEOUT_MS,
+    aiFixtureDir: result.AI_FIXTURE_DIR,
+    aiRecord: result.AI_RECORD,
+    claudeCliPath: result.CLAUDE_CLI_PATH,
+    codexCliPath: result.CODEX_CLI_PATH,
+    aiModelOverrides: Object.fromEntries(
+      Object.entries({
+        job_analysis: result.AI_MODEL_JOB_ANALYSIS,
+        search_interpret: result.AI_MODEL_SEARCH_INTERPRET,
+        question_draft: result.AI_MODEL_QUESTION_DRAFT,
+        record_cleanup: result.AI_MODEL_RECORD_CLEANUP,
+        recipe_draft: result.AI_MODEL_RECIPE_DRAFT,
+        generation: result.AI_MODEL_GENERATION,
+        partial_edit: result.AI_MODEL_PARTIAL_EDIT,
+        style_remix: result.AI_MODEL_STYLE_REMIX,
+        insight_note: result.AI_MODEL_INSIGHT_NOTE,
+      }).filter(([, value]) => value !== undefined),
+    ),
+  };
+}

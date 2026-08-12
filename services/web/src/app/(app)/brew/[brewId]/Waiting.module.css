@@ -1,0 +1,84 @@
+.wrap {
+  display: grid;
+  place-items: center;
+  min-height: 420px;
+  padding: 48px 24px;
+}
+
+.card {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  max-width: 420px;
+  text-align: center;
+}
+
+.badge {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ex-espresso);
+  margin-bottom: 4px;
+}
+
+.title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.note {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ex-slate-500);
+}
+
+.stage {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--ex-font-mono);
+  font-size: 11px;
+  color: var(--ex-slate-400);
+}
+
+.stageDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ex-espresso);
+}
+
+.failure {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ex-espresso);
+}
+
+.primary,
+.ghost {
+  margin-top: 6px;
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary {
+  border: 1px solid var(--ex-espresso);
+  background: var(--ex-espresso);
+  color: var(--ex-white);
+}
+
+.ghost {
+  border: 1px solid var(--ex-line-200);
+  background: var(--ex-white);
+  color: var(--ex-slate-500);
+}

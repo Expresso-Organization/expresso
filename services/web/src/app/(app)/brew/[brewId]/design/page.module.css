@@ -1,0 +1,554 @@
+/* 03 디자인 선택 — 화면 정의서 그대로 */
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 20px;
+  padding: 22px 26px;
+}
+
+.left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  background: var(--ex-white);
+  border: 1px solid var(--ex-line-200);
+  border-radius: 16px;
+}
+
+.pickerCard {
+  padding: 20px 22px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pickerHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.pickerTitle {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.pickerNote {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+}
+
+.toneRow {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toneLabel {
+  font-size: 11.5px;
+  color: var(--ex-slate-700);
+}
+
+/* 기업 톤 토글 34×20 — 색은 미리보기에 구워 나오므로 서버를 다시 부르는 링크다 */
+.toneToggle {
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--ex-line-200);
+  border: none;
+  padding: 3px;
+  display: flex;
+  justify-content: flex-start;
+  transition: background var(--ex-motion-quick);
+}
+
+.toneToggleOn {
+  background: var(--ex-espresso);
+  justify-content: flex-end;
+}
+
+.toneKnob {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ex-white);
+}
+
+/* 레시피 안내 바 */
+.recipeBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--ex-surface-50);
+  border: 1px solid var(--ex-track);
+  border-radius: 10px;
+  padding: 9px 13px;
+  margin-bottom: 13px;
+}
+
+.recipeBarText {
+  font-size: 12px;
+  color: var(--ex-slate-700);
+  white-space: nowrap;
+}
+
+.recipeBarSections {
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  color: var(--ex-slate-400);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recipeBarAction {
+  margin-left: auto;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 3열. 줄 수는 후보 수가 정한다 — 템플릿은 표에 있는 만큼만 있다. */
+.templates {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 14px;
+}
+
+.template {
+  border: 1px solid var(--ex-line-200);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--ex-white);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  text-align: left;
+  transition:
+    border-color var(--ex-motion-quick),
+    transform 0.18s;
+}
+
+.template:hover {
+  border-color: var(--ex-border-strong);
+  transform: translateY(-2px);
+}
+
+/* 선택 카드 — 1.5px 파랑 보더 + 링 */
+.templateSelected,
+.templateSelected:hover {
+  border: 1.5px solid #4562ce;
+  box-shadow: 0 0 0 3px rgba(69, 98, 206, 0.11);
+  transform: none;
+}
+
+.templateCanvas {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.templateCheck {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #4562ce;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 6px rgba(22, 34, 58, 0.18);
+}
+
+.toneBadgeText {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ex-white);
+  white-space: nowrap;
+}
+
+/* 추천 배지 — 기업 톤·업종과 가장 많이 겹친 후보 */
+.toneBadge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--ex-espresso);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.templateFoot {
+  flex-shrink: 0;
+  padding: 12px 14px;
+  border-top: 1px solid var(--ex-line-inner);
+}
+
+.templateNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.templateName {
+  font-family: var(--ex-font-brand);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.planFree {
+  margin-left: auto;
+  font-family: var(--ex-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--ex-slate-500);
+  background: var(--ex-hairline);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.planPro {
+  margin-left: auto;
+  font-family: var(--ex-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--ex-espresso-text);
+  background: var(--ex-bean-50);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.templateDesc {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 우측 322px */
+.right {
+  width: 322px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.chosenCard {
+  padding: 18px 20px;
+  flex-shrink: 0;
+}
+
+.chosenHead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+.chosenName {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.chosenList {
+  display: grid;
+  gap: 11px;
+}
+
+.chosenRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chosenLabel {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  width: 52px;
+  flex-shrink: 0;
+}
+
+.palette {
+  display: flex;
+  gap: 4px;
+}
+
+.swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+}
+
+.ciNote {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--ex-espresso);
+  white-space: nowrap;
+}
+
+.chosenValue {
+  font-size: 12.5px;
+  color: var(--ex-ink-900);
+}
+
+.styleSelect {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 7px;
+  background: var(--ex-white);
+  color: var(--ex-ink-900);
+  padding: 5px 7px;
+  font: inherit;
+  font-size: 11.5px;
+}
+
+.styleSelect:focus-visible {
+  outline: 2px solid var(--ex-espresso);
+  outline-offset: 2px;
+}
+
+/* 추출 카드 — 이 화면이 하는 일 하나 */
+.actionCard {
+  padding: 18px 20px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.brewWrap {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+/* 추출 CTA — 이 화면의 유일한 brew 버튼 */
+.brew {
+  width: 100%;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ex-white);
+  background: var(--ex-espresso);
+  border: none;
+  border-radius: 11px;
+  padding: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition:
+    background var(--ex-motion-quick),
+    transform var(--ex-motion-spring);
+}
+
+.brew:hover {
+  background: var(--ex-espresso-hover);
+  transform: translateY(-1px);
+  color: var(--ex-white);
+}
+
+.brewNote {
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  margin-top: 10px;
+}
+
+/* 썸네일 — 서버가 낸 미리보기를 그대로 그린다 */
+.thumb {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 15px;
+  overflow: hidden;
+  font-size: 6.5px;
+  line-height: 1.55;
+}
+
+.thumbSection {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.thumbTitle {
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thumbLine {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  opacity: 0.82;
+}
+
+.thumbEmpty {
+  align-self: flex-start;
+  border: 1px dashed currentColor;
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 6px;
+  opacity: 0.45;
+}
+
+/* 오른쪽 레일 — 이미 뽑은 것 · 실패 · 잠김 */
+.madeRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 11px;
+  background: var(--ex-surface-50);
+  border-radius: 9px;
+  margin-bottom: 12px;
+}
+
+.madeText {
+  flex: 1;
+  min-width: 0;
+  font-size: 11.5px;
+  color: var(--ex-slate-700);
+}
+
+.madeLink {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ex-espresso);
+}
+
+.failure {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ex-espresso);
+  background: var(--ex-bean-50, #fbf6f1);
+  border-radius: 9px;
+  padding: 9px 11px;
+  margin-top: 11px;
+}
+
+.gateNoteSmall {
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--ex-slate-500);
+  margin-top: 10px;
+}
+
+/* 레시피 없음 · 추출 중 · 추출 끝 — 한 장짜리 화면 */
+.gate {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 40px 24px;
+}
+
+.gateCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  max-width: 420px;
+  background: var(--ex-white);
+  border: 1px solid var(--ex-line-200);
+  border-radius: 16px;
+  padding: 30px 28px 26px;
+}
+
+.gateBadge {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--ex-espresso);
+  display: grid;
+  place-items: center;
+}
+
+.gateTitle {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.gateNote {
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--ex-slate-500);
+}
+
+.gateStage {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--ex-font-mono);
+  font-size: 10.5px;
+  color: var(--ex-slate-500);
+}
+
+.gateDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ex-espresso);
+}
+
+.gateAction {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  background: var(--ex-espresso);
+  color: var(--ex-white);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gateGhost {
+  margin-top: 6px;
+  padding: 9px 18px;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 10px;
+  background: var(--ex-white);
+  font-size: 12.5px;
+  color: var(--ex-slate-700);
+  cursor: pointer;
+}

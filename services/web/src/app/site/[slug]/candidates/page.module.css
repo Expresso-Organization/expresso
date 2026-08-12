@@ -1,0 +1,132 @@
+.page {
+  min-height: 100vh;
+  background: var(--ex-canvas);
+  padding: 32px 28px 64px;
+}
+
+.head {
+  max-width: 1360px;
+  margin: 0 auto 24px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+}
+
+.note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ex-slate-500);
+}
+
+.grid {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.candidate {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.candidateHead {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+
+.candidateNo {
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  color: var(--ex-slate-400);
+}
+
+.candidateName {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.candidateMeta {
+  margin-left: auto;
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  color: var(--ex-slate-400);
+}
+
+.rationale {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ex-slate-500);
+  min-height: 40px;
+}
+
+/* 실제 지면을 축소해 보여준다 — 폭 1080을 카드 폭에 맞춰 줄인다. */
+.frame {
+  border: 1px solid var(--ex-line-200);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--ex-white);
+  height: 560px;
+}
+
+.scaled {
+  width: 1080px;
+  transform: scale(0.39);
+  transform-origin: top left;
+  height: 1436px;
+}
+
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .scaled {
+    transform: scale(0.62);
+  }
+}
+
+.empty {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 40px 0;
+  font-size: 13.5px;
+  color: var(--ex-slate-500);
+}
+
+/* 고르는 버튼은 미리보기 아래에 붙는다 — 보고 나서 고른다. */
+.choose,
+.chosen {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.choose {
+  border: 1px solid var(--ex-line-200);
+  background: var(--ex-white);
+  color: var(--ex-ink);
+}
+
+.choose:hover {
+  border-color: var(--ex-espresso);
+  color: var(--ex-espresso);
+}
+
+.chosen {
+  border: 1px solid var(--ex-espresso);
+  background: var(--ex-espresso);
+  color: var(--ex-white);
+  cursor: default;
+}

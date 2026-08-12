@@ -1,0 +1,833 @@
+/* 10c · 10d · 10e 온보딩 — 앱 셸 없이 단일 지면(#F4F6FA) */
+
+.frame {
+  min-height: 100dvh;
+  background: #f4f6fa;
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+}
+
+/* 상단 3단계 인디케이터 */
+.head {
+  height: 62px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 26px;
+}
+
+.steps {
+  margin-left: 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stepMark {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  background: var(--ex-hairline);
+  color: var(--ex-slate-300);
+  border: 1.5px solid transparent;
+}
+
+.stepCurrent .stepMark {
+  background: var(--ex-bean-50);
+  color: var(--ex-espresso);
+  border-color: var(--ex-espresso);
+}
+
+.stepDone .stepMark {
+  background: var(--ex-bean-50);
+  color: var(--ex-espresso);
+  border-color: transparent;
+}
+
+.stepLabel {
+  font-size: 12px;
+  color: var(--ex-slate-400);
+  white-space: nowrap;
+}
+
+.stepCurrent .stepLabel,
+.stepDone .stepLabel {
+  color: var(--ex-slate-700);
+}
+
+.stepCurrent .stepLabel {
+  font-weight: 600;
+  color: var(--ex-ink-900);
+}
+
+.connector {
+  width: 34px;
+  height: 1px;
+  background: var(--ex-line-200);
+}
+
+.skip {
+  margin-left: auto;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--ex-slate-500);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  padding: 10px 26px 26px;
+  overflow: auto;
+}
+
+.panel {
+  width: 100%;
+  max-width: 720px;
+}
+
+.panelWide {
+  max-width: 880px;
+}
+
+.stepLabelMono {
+  font-family: var(--ex-font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: var(--ex-espresso);
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.35;
+  margin-bottom: 10px;
+}
+
+.lede {
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--ex-slate-500);
+  margin-bottom: 28px;
+  max-width: 560px;
+}
+
+.field {
+  margin-bottom: 26px;
+}
+
+.fieldLabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+  margin-bottom: 11px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  font-size: 12.5px;
+  color: var(--ex-slate-700);
+  background: var(--ex-white);
+  border: 1px solid var(--ex-line-200);
+  border-radius: 999px;
+  padding: 8px 15px;
+  white-space: nowrap;
+  transition:
+    border-color var(--ex-motion-quick),
+    background var(--ex-motion-quick);
+}
+
+.chip:hover {
+  border-color: var(--ex-border-strong);
+}
+
+.chipOn {
+  color: var(--ex-white);
+  background: var(--ex-ink-900);
+  border-color: var(--ex-ink-900);
+}
+
+.chipDashed {
+  color: var(--ex-slate-500);
+  background: none;
+  border-style: dashed;
+}
+
+/* 경력 슬라이더 */
+.sliderRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sliderEdge {
+  font-size: 11.5px;
+  color: var(--ex-slate-400);
+  white-space: nowrap;
+}
+
+.slider {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--ex-track);
+  position: relative;
+}
+
+.sliderFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: var(--ex-ink-900);
+}
+
+.sliderKnob {
+  position: absolute;
+  top: -6px;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  border-radius: 50%;
+  background: var(--ex-white);
+  border: 1.5px solid var(--ex-ink-900);
+  box-shadow: 0 1px 3px rgba(22, 34, 58, 0.18);
+}
+
+.sliderValue {
+  font-family: var(--ex-font-brand);
+  font-weight: 300;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  color: var(--ex-ink-900);
+  width: 60px;
+  text-align: right;
+}
+
+/* 목표 라디오 카드 */
+.goals {
+  display: grid;
+  gap: 10px;
+}
+
+.goal {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 15px 17px;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 13px;
+  background: var(--ex-white);
+  text-align: left;
+  transition: border-color var(--ex-motion-quick);
+}
+
+.goal:hover {
+  border-color: var(--ex-border-strong);
+}
+
+.goalOn {
+  border: 1.5px solid var(--ex-espresso);
+  background: #fdf6f1;
+}
+
+.goalMark {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ex-border-quiet);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.goalOn .goalMark {
+  border: 4.5px solid var(--ex-espresso);
+}
+
+.goalTitle {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ex-ink-900);
+  margin-bottom: 5px;
+}
+
+.goalOn .goalTitle {
+  font-weight: 600;
+}
+
+.goalNote {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  line-height: 1.65;
+}
+
+/* 하단 액션 바 */
+.foot {
+  flex-shrink: 0;
+  height: 76px;
+  border-top: 1px solid var(--ex-line-200);
+  background: var(--ex-white);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 26px;
+}
+
+.footProgress {
+  font-family: var(--ex-font-mono);
+  font-size: 11px;
+  color: var(--ex-slate-500);
+}
+
+.footRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ghost {
+  border: none;
+  background: none;
+  padding: 11px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ex-slate-500);
+}
+
+.ghost:hover {
+  color: var(--ex-ink-900);
+}
+
+.primary {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ex-white);
+  background: var(--ex-espresso);
+  border: none;
+  border-radius: 999px;
+  padding: 13px 26px;
+  display: inline-block;
+  transition:
+    background var(--ex-motion-quick),
+    transform var(--ex-motion-spring);
+}
+
+.primary:hover {
+  background: var(--ex-espresso-hover);
+  transform: translateY(-1px);
+  color: var(--ex-white);
+}
+
+/* ── 10d 재료 채우기 ──────────────────────────────────────── */
+
+.importGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.dropZone {
+  grid-column: 1 / -1;
+  border: 1px dashed var(--ex-border-strong);
+  border-radius: 14px;
+  background: var(--ex-white);
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.dropTitle {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ex-ink-900);
+}
+
+.dropNote {
+  font-size: 11.5px;
+  color: var(--ex-slate-400);
+}
+
+.uploaded {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 10px 13px;
+  background: var(--ex-surface-50);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.uploadedName {
+  font-size: 12.5px;
+  color: var(--ex-ink-900);
+}
+
+.uploadedMeta {
+  font-size: 10.5px;
+  color: var(--ex-slate-400);
+  margin-top: 3px;
+}
+
+.importCard {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 16px;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 13px;
+  background: var(--ex-white);
+  text-align: left;
+}
+
+.importTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ex-ink-900);
+}
+
+.importNote {
+  font-size: 11px;
+  color: var(--ex-slate-500);
+  margin-top: 4px;
+}
+
+.importState {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--ex-slate-400);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.importAction {
+  margin-left: auto;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+  background: none;
+  border: 1px solid var(--ex-border-quiet);
+  border-radius: 8px;
+  padding: 7px 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.privacyNote {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--ex-slate-400);
+  margin-bottom: 26px;
+}
+
+.splitHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.splitTitle {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.splitCount {
+  font-family: var(--ex-font-mono);
+  font-size: 11px;
+  color: var(--ex-espresso);
+}
+
+.splitClear {
+  margin-left: auto;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+}
+
+.splitList {
+  background: var(--ex-white);
+  border: 1px solid var(--ex-line-200);
+  border-radius: 13px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.splitRow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 11px 15px;
+  border: none;
+  border-bottom: 1px solid var(--ex-hairline);
+  background: none;
+  text-align: left;
+}
+
+.splitRow:last-child {
+  border-bottom: none;
+}
+
+.splitCheck {
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  background: var(--ex-ink-900);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.splitCategory {
+  font-size: 10.5px;
+  color: var(--ex-slate-700);
+  background: var(--ex-line-inner);
+  border-radius: 5px;
+  padding: 3px 8px;
+  white-space: nowrap;
+  width: 76px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.splitName {
+  font-size: 12.5px;
+  color: var(--ex-ink-900);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.splitPeriod {
+  font-family: var(--ex-font-mono);
+  font-size: 10.5px;
+  color: var(--ex-slate-400);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.gapNote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 15px;
+  background: var(--ex-bean-50);
+  border-radius: 11px;
+  font-size: 11.5px;
+  color: var(--ex-bean-ink);
+  line-height: 1.65;
+}
+
+/* ── 10e 첫 포트폴리오 ────────────────────────────────────── */
+
+.readyTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ex-espresso);
+  margin-bottom: 8px;
+}
+
+.jobCards {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.jobCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 18px;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 14px;
+  background: var(--ex-white);
+  text-align: left;
+  transition:
+    border-color var(--ex-motion-quick),
+    transform 0.18s;
+}
+
+.jobCard:hover {
+  border-color: var(--ex-border-strong);
+  transform: translateY(-2px);
+}
+
+.jobCardOn {
+  border: 1.5px solid var(--ex-espresso);
+  background: #fdf6f1;
+}
+
+.jobAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--ex-surface-50);
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+  flex-shrink: 0;
+}
+
+.jobCompany {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ex-ink-900);
+}
+
+.jobRole {
+  font-size: 12px;
+  color: var(--ex-slate-500);
+  margin-top: 3px;
+}
+
+.jobReason {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  margin-top: 6px;
+}
+
+.jobScoreWrap {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.jobScore {
+  font-family: var(--ex-font-brand);
+  font-weight: 300;
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ex-ink-900);
+}
+
+.jobScoreLabel {
+  font-size: 10.5px;
+  color: var(--ex-slate-400);
+  margin-top: 5px;
+}
+
+.timeNote {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  margin-bottom: 26px;
+}
+
+.nextLabel {
+  font-family: var(--ex-font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: var(--ex-slate-400);
+  margin-bottom: 14px;
+}
+
+.nextGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.nextCard {
+  padding: 15px 17px;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 13px;
+  background: var(--ex-white);
+}
+
+.nextNo {
+  font-family: var(--ex-font-mono);
+  font-size: 9.5px;
+  color: var(--ex-espresso);
+  margin-bottom: 7px;
+}
+
+.nextTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ex-ink-900);
+  margin-bottom: 5px;
+}
+
+.nextNote {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  line-height: 1.65;
+}
+
+.altCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 17px;
+  border: 1px dashed var(--ex-border-strong);
+  border-radius: 13px;
+  background: var(--ex-white);
+}
+
+.altTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ex-ink-900);
+}
+
+.altNote {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  margin-top: 4px;
+}
+
+.altAction {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+  background: var(--ex-white);
+  border: 1px solid var(--ex-border-quiet);
+  border-radius: 9px;
+  padding: 8px 14px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── 10d 직전 동의 ────────────────────────────────────────── */
+
+.consentList {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.consentCard {
+  display: flex;
+  gap: 13px;
+  padding: 16px 18px;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 14px;
+  background: var(--ex-white);
+  cursor: pointer;
+}
+
+.consentCard:hover {
+  border-color: var(--ex-espresso);
+}
+
+.consentCard:has(.consentBox:checked) {
+  border-color: var(--ex-espresso);
+  background: var(--ex-bean-50);
+}
+
+.consentBox {
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--ex-espresso);
+}
+
+.consentBody {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.consentTitle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* 무엇이 나가는지 — 이 줄이 가장 중요하다. */
+.consentWhat {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ex-ink-900);
+}
+
+.consentWhy {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ex-slate-500);
+}
+
+.consentOn,
+.consentOff,
+.consentRenew {
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.consentOn {
+  background: var(--ex-bean-50);
+  color: var(--ex-espresso);
+}
+
+.consentOff {
+  background: var(--ex-line-100, #eef1f6);
+  color: var(--ex-slate-500);
+}
+
+.consentRenew {
+  background: var(--ex-espresso);
+  color: var(--ex-white);
+}
+
+.consentFoot {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 18px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ex-slate-500);
+}
+
+.privacyLink {
+  color: var(--ex-espresso);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

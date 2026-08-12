@@ -10,3 +10,8 @@ build/
 .env
 .env.*
 *.log
+
+# next build가 이 파일을 자기 것으로 덮어쓴다. 아래를 남겨 두면 덮어쓰지 않는다.
+.next/
+out/
+next-env.d.ts.bak

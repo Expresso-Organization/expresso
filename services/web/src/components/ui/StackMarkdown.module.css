@@ -1,0 +1,41 @@
+/*
+ * 본문 안에 서는 스택 칩.
+ *
+ * 줄 사이에 끼는 물건이라 **줄 높이를 밀지 않는 것**이 첫째다. 테두리와 배경은
+ * 옅게 — 한 문장에 칩이 예닐곱 개 서는 공고가 흔한데, 진하면 글이 아니라
+ * 단추밭이 된다.
+ */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  /*
+   * 좌우 여백을 두지 않는다. 한국어 공고는 이름 뒤에 조사가 바로 붙는데
+   * (`Go를` · `GraphQL을`), 1px만 띄워도 "Go 를"처럼 떨어져 읽힌다.
+   * 테두리와 배경이 이미 칩을 글에서 떼어 놓는다.
+   */
+  margin: 0;
+  padding: 0 6px 0 5px;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 5px;
+  background: var(--ex-surface-50);
+  color: var(--ex-ink-900);
+  font-size: 0.94em;
+  font-weight: 500;
+  line-height: 1.55;
+  white-space: nowrap;
+  /* 글자 기준선에 맞춰 살짝 내린다. 안 그러면 칩만 떠 보인다. */
+  vertical-align: -0.14em;
+}
+
+/* 로고가 없는 칩. 왼쪽에 로고 자리만큼 비워 둘 이유가 없다. */
+.bare {
+  padding: 0 6px;
+}
+
+.mark {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
