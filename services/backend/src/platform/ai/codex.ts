@@ -9,6 +9,7 @@ import { z } from "zod";
 import {
   AiError,
   DEFAULT_MODEL_TIER,
+  parseToolOutput,
   toToolSchema,
   type AiCallSpec,
   type AiClient,
@@ -150,7 +151,7 @@ export class CodexAiClient implements AiClient {
         );
       }
 
-      const validated = schema.safeParse(json);
+      const validated = parseToolOutput(schema, json);
       if (!validated.success) {
         throw new AiError(
           "AI_INVALID_OUTPUT",

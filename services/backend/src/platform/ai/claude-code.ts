@@ -8,6 +8,7 @@ import { z } from "zod";
 import {
   AiError,
   DEFAULT_MODEL_TIER,
+  parseToolOutput,
   toToolSchema,
   type AiCallSpec,
   type AiClient,
@@ -131,7 +132,7 @@ export class ClaudeCodeAiClient implements AiClient {
     }
 
     // `--json-schema`를 주면 구조화 결과가 여기 온다. 없으면 계약 위반이다.
-    const validated = schema.safeParse(parsed.structured_output);
+    const validated = parseToolOutput(schema, parsed.structured_output);
     if (!validated.success) {
       throw new AiError(
         "AI_INVALID_OUTPUT",

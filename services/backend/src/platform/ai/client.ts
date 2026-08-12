@@ -131,12 +131,103 @@ export class AiError extends Error {
  *
  * `$schema` 메타 참조는 떼어낸다 — 도구 쪽 검증기가 그 URL을 풀지 못해
  * "no schema with key or ref"로 거절한다.
+ *
+ * `format`도 전부 떼어낸다. `z.string().url()`은 `"format":"uri"`로 나가는데
+ * 구조화 출력 검증기가 **모르는 포맷을 400으로 거절한다**(`'uri' is not a valid
+ * format`). 계약 하나에 그런 필드가 하나만 있어도 그 계약은 절대 성공하지
+ * 못하고, 재시도가 전부 같은 400을 맞는다 — 지면 생성이 `PROVIDER_FAILED`로
+ * 죽던 원인이 이것이었다.
+ *
+ * 떼어내도 안전한 것은 **모델 응답을 우리가 다시 Zod로 파싱하기 때문이다.**
+ * 여기 넘기는 스키마는 모양을 알려주는 힌트이고, 진짜 문은 어댑터가 쥐고 있다.
  */
 export function toToolSchema(schema: z.ZodType): Record<string, unknown> {
   const generated = z.toJSONSchema(schema, { target: "draft-2020-12" }) as
     Record<string, unknown>;
   const { $schema: _ignored, ...rest } = generated;
-  return rest;
+  return normalize(rest) as Record<string, unknown>;
+}
+
+/**
+ * 프로바이더 방언에 맞춘다. 계약은 건드리지 않는다.
+ *
+ * 구조화 출력의 strict 모드는 두 가지를 더 요구한다 —
+ *
+ * - **모든 속성이 `required`**여야 한다. 선택 필드는 빼는 게 아니라 `null`을
+ *   허용해서 표현한다(`'required' … Missing 'mark'`로 400).
+ * - 모르는 `format`은 거절한다(위 주석).
+ *
+ * 그래서 선택 필드를 nullable로 바꿔 내보내고, 돌아온 `null`은 파싱 전에
+ * 걷어낸다(`dropNulls`). 계약이 진짜로 nullable인 자리는 Zod가 그 null을
+ * 받으므로 먼저 그대로 파싱해 보고, 실패할 때만 걷어낸 것으로 다시 본다.
+ */
+function normalize(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(normalize);
+  if (!node || typeof node !== "object") return node;
+
+  const source = node as Record<string, unknown>;
+  const properties = source["properties"] as Record<string, unknown> | undefined;
+  const required = new Set(
+    Array.isArray(source["required"]) ? (source["required"] as string[]) : [],
+  );
+
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(source)) {
+    if (key === "format") continue;
+    if (key === "properties" && properties) {
+      result[key] = Object.fromEntries(
+        Object.entries(properties).map(([name, property]) => [
+          name,
+          required.has(name) ? normalize(property) : nullable(normalize(property)),
+        ]),
+      );
+      continue;
+    }
+    result[key] = normalize(value);
+  }
+
+  if (properties) result["required"] = Object.keys(properties);
+  return result;
+}
+
+/** 선택 필드를 "값 아니면 null"로 넓힌다. */
+function nullable(node: unknown): unknown {
+  if (!node || typeof node !== "object") return node;
+  const source = node as Record<string, unknown>;
+  const type = source["type"];
+  if (typeof type === "string") return { ...source, type: [type, "null"] };
+  if (Array.isArray(type)) {
+    return type.includes("null") ? source : { ...source, type: [...type, "null"] };
+  }
+  // enum · anyOf · $ref처럼 type이 없는 모양은 감싸서 넓힌다.
+  return { anyOf: [source, { type: "null" }] };
+}
+
+/**
+ * `null`을 걷어낸다.
+ *
+ * strict 모드 때문에 넓혀 둔 선택 필드가 `null`로 돌아온다. 계약에서 그 자리는
+ * "없음"이지 "null"이 아니라, 그대로 파싱하면 계약이 거절한다.
+ */
+export function dropNulls(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(dropNulls);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .filter(([, item]) => item !== null)
+      .map(([key, item]) => [key, dropNulls(item)]),
+  );
+}
+
+/**
+ * 모델이 낸 JSON을 계약으로 받는다.
+ *
+ * 먼저 **온 그대로** 본다 — 계약이 진짜 nullable인 자리의 null을 잃지 않기
+ * 위해서다. 거절당하면 그때 null을 걷어내고 다시 본다.
+ */
+export function parseToolOutput<T>(schema: z.ZodType<T>, json: unknown): z.ZodSafeParseResult<T> {
+  const asIs = schema.safeParse(json);
+  return asIs.success ? asIs : schema.safeParse(dropNulls(json));
 }
 
 /** 같은 입력이면 같은 키. 픽스처 경로이자 중복 호출 판정 기준이다. */
