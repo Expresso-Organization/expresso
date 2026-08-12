@@ -9,7 +9,7 @@ import type { RuntimeConfig } from "../../src/config/runtime-config.js";
 import { CareerService } from "../../src/modules/career/service.js";
 import { IdentityService } from "../../src/modules/identity/service.js";
 import { JobAnalysisService } from "../../src/modules/job-analysis/service.js";
-import { RuleBasedRequirementExtractor } from "../../src/modules/job-analysis/rule-extractor.js";
+import { StubRequirementExtractor } from "../support/stub-extractor.js";
 import { JobMarketService } from "../../src/modules/jobs/service.js";
 import { OutboxDispatcher } from "../../src/platform/outbox.js";
 import { createReliableQueue } from "../../src/platform/queue.js";
@@ -109,7 +109,7 @@ describeWithInfrastructure("job submission and analysis vertical slice", () => {
     });
     origin = await app.listen({ host: "127.0.0.1", port: 0 });
 
-    const ruleExtractor = new RuleBasedRequirementExtractor();
+    const stubExtractor = new StubRequirementExtractor();
     worker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
       queueName: "domain-jobs",
       redisUrl: redisUrl!,
@@ -120,7 +120,7 @@ describeWithInfrastructure("job submission and analysis vertical slice", () => {
         async extract(source) {
           signalExtractionStarted();
           await extractionReleased;
-          return ruleExtractor.extract(source);
+          return stubExtractor.extract(source);
         },
       }),
     });

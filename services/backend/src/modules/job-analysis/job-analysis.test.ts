@@ -5,7 +5,6 @@ import { describe, expect, it } from "vitest";
 import type { ExtractedRequirement } from "@expresso/contracts";
 
 import { calculateRequirementCoverage } from "./coverage.js";
-import { RuleBasedRequirementExtractor } from "./rule-extractor.js";
 import {
   AnalysisEvidenceError,
   codePointSlice,
@@ -19,7 +18,22 @@ describe("job analysis evidence", () => {
       "PostgreSQL 운영 경험과 장애 대응 역량이 필요합니다.",
       "AWS 환경에서 서비스 신뢰성을 개선합니다.",
     ].join(" ");
-    const extraction = await new RuleBasedRequirementExtractor().extract(source);
+    // 스팬은 **코드 포인트**로 센다. 한국어가 섞이면 UTF-16 인덱스와 갈라지므로
+    // 여기서 인용문의 위치를 직접 세어 계약대로 만든다.
+    const extraction = {
+      requirements: source
+        .split(/(?<=\.)\s+/)
+        .map((quote) => {
+          const start = Array.from(source.slice(0, source.indexOf(quote))).length;
+          return {
+            label: quote,
+            kind: "must" as const,
+            axis: "other" as const,
+            sourceSpan: { start, end: start + Array.from(quote).length, quote },
+          };
+        }),
+      normalized: { technologies: [], impacts: [], roles: [], conditions: [] },
+    };
 
     expect(extraction.requirements).toHaveLength(3);
     for (const requirement of extraction.requirements) {

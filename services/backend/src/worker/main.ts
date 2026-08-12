@@ -7,12 +7,12 @@ import { createReliableQueue } from "../platform/queue.js";
 import { safeErrorSummary } from "../platform/observability.js";
 import { createQueueWorker } from "./create-queue-worker.js";
 import { JobAnalysisService } from "../modules/job-analysis/service.js";
-import { RuleBasedRequirementExtractor } from "../modules/job-analysis/rule-extractor.js";
+import { UnavailableRequirementExtractor } from "../modules/job-analysis/extractor.js";
 import { AiRequirementExtractor } from "../modules/job-analysis/ai-extractor.js";
 import { createAiClient } from "../platform/ai/create-client.js";
 import { createJobAnalysisProcessor } from "./processors/job-analysis.js";
-import { DeterministicSentenceWriter, GenerationService } from "../modules/generation/service.js";
-import { AiSentenceWriter } from "../modules/generation/writer.js";
+import { GenerationService } from "../modules/generation/service.js";
+import { AiSentenceWriter, UnavailableSentenceWriter } from "../modules/generation/writer.js";
 import { AiLayoutDesigner } from "../modules/layout/designer.js";
 import { createGenerationProcessor } from "./processors/generation.js";
 import { BrewJobService } from "../modules/brew-jobs/service.js";
@@ -51,7 +51,7 @@ const dispatcher = new OutboxDispatcher({
   maxAttempts: config.outboxMaxAttempts,
 });
 const abortController = new AbortController();
-// AI가 꺼져 있으면(`AI_PROVIDER=off`) 규칙 기반 구현이 그대로 쓰인다.
+// AI가 꺼져 있으면(`AI_PROVIDER=off`) 요건 추출과 문장 생성은 멈춘다.
 const ai = createAiClient(config);
 // 계약을 부르기 전에 지나는 문. 워커에서 도는 계약도 예외가 아니다.
 const consentService = new ConsentService(postgres.sql);
@@ -60,12 +60,12 @@ const generationService = new GenerationService(postgres.sql, consentService);
 const pageService = new PageService(postgres.sql, consentService);
 const analysisProcessor = createJobAnalysisProcessor(
   jobAnalysisService,
-  ai ? new AiRequirementExtractor(ai) : new RuleBasedRequirementExtractor(),
+  ai ? new AiRequirementExtractor(ai) : new UnavailableRequirementExtractor(),
 );
-// AI가 없으면 문장은 아웃라인 그대로, 지면은 기본 배치가 된다.
+// AI가 없으면 여기서 멈춘다 — 규칙으로 흉내 낸 문장과 요건을 제품에 두지 않는다.
 const generationProcessor = createGenerationProcessor(
   generationService,
-  ai ? new AiSentenceWriter(ai) : new DeterministicSentenceWriter(),
+  ai ? new AiSentenceWriter(ai) : new UnavailableSentenceWriter(),
   ai ? new AiLayoutDesigner(ai) : null,
   ai ? { service: pageService, generator: new AiPageGenerator(ai) } : null,
 );
