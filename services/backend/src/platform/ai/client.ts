@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 
 import { z } from "zod";
 
+import { redactedDetail } from "../observability.js";
+
 /**
  * AI 호출 포트.
  *
@@ -124,6 +126,29 @@ export class AiError extends Error {
     this.contract = contract;
     this.retryable = options.retryable ?? code === "AI_TIMEOUT";
   }
+}
+
+/**
+ * 계약 호출이 실패한 자리를 남긴다.
+ *
+ * 프로바이더가 우리 **요청**을 거절한 사유는 우리 쪽 버그를 설명하는 문장이라
+ * 남길 값이 있다. 오늘 `PROVIDER_FAILED` 세 건의 정체가 여기 한 줄이면 바로
+ * 보였을 것이다 — 대신 아는 비밀 모양을 지우고 길이를 자른다.
+ */
+export function logAiFailure(input: {
+  contract: AiContract;
+  model: string;
+  code: AiErrorCode;
+  detail: string;
+}): void {
+  console.error(JSON.stringify({
+    level: "error",
+    event: "ai.call_failed",
+    contract: input.contract,
+    model: input.model,
+    code: input.code,
+    detail: redactedDetail(input.detail),
+  }));
 }
 
 /**

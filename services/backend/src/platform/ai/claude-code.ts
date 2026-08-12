@@ -9,6 +9,7 @@ import {
   AiError,
   DEFAULT_MODEL_TIER,
   parseToolOutput,
+  logAiFailure,
   toToolSchema,
   type AiCallSpec,
   type AiClient,
@@ -112,8 +113,10 @@ export class ClaudeCodeAiClient implements AiClient {
 
     if (code !== 0) {
       const message = stderr.trim() || `claude exited with ${code}`;
+      const failureCode = RATE_LIMIT_PATTERN.test(message) ? "AI_RATE_LIMITED" : "AI_UNAVAILABLE";
+      logAiFailure({ contract: spec.contract, model, code: failureCode, detail: message });
       throw new AiError(
-        RATE_LIMIT_PATTERN.test(message) ? "AI_RATE_LIMITED" : "AI_UNAVAILABLE",
+        failureCode,
         spec.contract,
         message,
         { retryable: false },
@@ -123,6 +126,11 @@ export class ClaudeCodeAiClient implements AiClient {
     const parsed = this.#parseEnvelope(stdout, spec);
     if (parsed.is_error) {
       const message = parsed.result ?? "claude reported an error";
+      logAiFailure({
+        contract: spec.contract, model,
+        code: RATE_LIMIT_PATTERN.test(message) ? "AI_RATE_LIMITED" : "AI_UNAVAILABLE",
+        detail: message,
+      });
       throw new AiError(
         RATE_LIMIT_PATTERN.test(message) ? "AI_RATE_LIMITED" : "AI_UNAVAILABLE",
         spec.contract,
