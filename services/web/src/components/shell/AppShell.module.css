@@ -1,0 +1,115 @@
+/*
+ * 앱 셸 — 화면 정의서의 1440×940 프레임.
+ *
+ * 정의서는 캔버스 위 목업이라 프레임이 고정 크기 + 그림자였습니다. 실제 앱에서는
+ * 뷰포트를 채우되 내부 치수(사이드바 250px, 헤더 높이, 패딩)는 정의서 값을
+ * 그대로 씁니다 — 구현 명세서 §4.1의 "높이는 뷰포트에 맞추고 폭만 최소 1280px".
+ */
+
+.frame {
+  display: flex;
+  height: 100dvh;
+  min-width: 1280px;
+  background: var(--ex-white);
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 홈(00)의 헤더 — 56px, 흰 지면, 보더 #E2E9F4 */
+.header {
+  height: 56px;
+  flex-shrink: 0;
+  background: var(--ex-white);
+  border-bottom: 1px solid var(--ex-line-200);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 26px;
+}
+
+/* 내 커리어(05)의 헤더 — 46px, breadcrumb, 보더 #F2F5F9 */
+.headerDocument {
+  height: 46px;
+  border-bottom: 1px solid var(--ex-hairline);
+  gap: 10px;
+  padding: 0 22px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.crumb {
+  font-size: 12.5px;
+  color: var(--ex-slate-500);
+}
+
+.crumbSeparator {
+  font-size: 12.5px;
+  color: var(--ex-border-strong);
+}
+
+.crumbCurrent {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.headerActions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.headerActionsWide {
+  gap: 14px;
+}
+
+/* 헤더 아이콘 버튼 32×32 */
+.iconButton {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: var(--ex-slate-500);
+  transition: background var(--ex-motion-instant);
+}
+
+.iconButton:hover {
+  background: var(--ex-surface-50);
+}
+
+.notificationDot {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ex-espresso);
+  border: 1.5px solid var(--ex-white);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+}

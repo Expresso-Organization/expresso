@@ -1,0 +1,25 @@
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+
+.claude/settings.local.json
+.wrangler/
+
+node_modules/
+dist/
+build/
+coverage/
+*.log
+*.tsbuildinfo
+
+.env
+.env.*
+!.env.example
+
+# 올린 이미지(로컬 저장소 어댑터). MEDIA_DIR로 옮길 수 있다.
+var/
+
+# 독립 실험 저장소 — 자체 Git 이력으로 관리한다.
+sites/portfolio-qd-demo/

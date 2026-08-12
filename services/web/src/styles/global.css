@@ -1,0 +1,157 @@
+@import "./tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--ex-canvas);
+  color: var(--ex-ink-900);
+  font-family: var(--ex-font-ui);
+  /* 화면 정의서의 셸 루트 font-size */
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote {
+  margin: 0;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: var(--ex-ink-900);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--ex-ink-900-hover);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}
+
+/*
+ * 애니메이션 유틸리티.
+ * CSS Modules는 모듈 안의 animation-name까지 스코프해서 전역 키프레임을 못 찾는다.
+ * 그래서 애니메이션은 전역 클래스로 붙인다.
+ */
+.ex-anim-caret {
+  animation: ex-caret 1.1s steps(1) infinite;
+}
+
+.ex-anim-pulse {
+  animation: ex-pulse 1.4s ease-in-out infinite;
+}
+
+.ex-anim-shimmer {
+  animation: ex-shimmer 1.5s linear infinite;
+}
+
+.ex-anim-bob {
+  animation: ex-bob 3s ease-in-out infinite;
+}
+
+/* 화면 정의서의 키프레임 — 이름과 값을 그대로 옮긴다 */
+@keyframes ex-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.72);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes ex-caret {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes ex-ring {
+  0% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.3);
+  }
+}
+
+@keyframes ex-shimmer {
+  0% {
+    background-position: -280px 0;
+  }
+  100% {
+    background-position: 280px 0;
+  }
+}
+
+/* 바리스타 아바타 — 디자인 시스템 §06 MOTION에 정의된 3s bob */
+@keyframes ex-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes ex-fill {
+  0% {
+    width: 18%;
+  }
+  100% {
+    width: 84%;
+  }
+}

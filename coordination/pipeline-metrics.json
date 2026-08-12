@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "project": "Expresso",
+  "updated_at": "2026-08-08T15:30:59.298858Z",
+  "timing": {
+    "measurement_status": "unavailable",
+    "actual_wall_seconds": null,
+    "serial_equivalent_seconds": null,
+    "saved_wall_seconds": null,
+    "speedup": null,
+    "savings_rate": null,
+    "coordination_tax_seconds": null,
+    "notes": []
+  },
+  "tokens": {
+    "measurement_status": "unavailable",
+    "expected_sessions_by_role": {
+      "implementer": 0,
+      "reviewer": 0,
+      "coordinator": 1
+    },
+    "records": [],
+    "summary": {
+      "total_tokens": null,
+      "input_tokens": null,
+      "cached_input_tokens": null,
+      "uncached_input_tokens": null,
+      "output_tokens": null,
+      "reasoning_output_tokens": null,
+      "measured_sessions": 0,
+      "expected_sessions": 1,
+      "coverage_rate": 0.0,
+      "by_role": {
+        "implementer": {
+          "input_tokens": 0,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_output_tokens": 0,
+          "total_tokens": 0,
+          "sessions": 0,
+          "expected_sessions": 0,
+          "coverage_rate": null,
+          "uncached_input_tokens": 0
+        },
+        "reviewer": {
+          "input_tokens": 0,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_output_tokens": 0,
+          "total_tokens": 0,
+          "sessions": 0,
+          "expected_sessions": 0,
+          "coverage_rate": null,
+          "uncached_input_tokens": 0
+        },
+        "coordinator": {
+          "input_tokens": 0,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_output_tokens": 0,
+          "total_tokens": 0,
+          "sessions": 0,
+          "expected_sessions": 1,
+          "coverage_rate": 0.0,
+          "uncached_input_tokens": 0
+        }
+      }
+    }
+  }
+}

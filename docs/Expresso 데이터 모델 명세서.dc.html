@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; color: #16223A; }
+  * { box-sizing: border-box; }
+  a { color: #9A4030; text-decoration: none; }
+  a:hover { color: #7E3225; text-decoration: underline; text-underline-offset: 3px; }
+  h1, h2, h3, h4 { text-wrap: balance; }
+  p, li { text-wrap: pretty; orphans: 3; widows: 3; }
+</style>
+<script src="./doc-page.js"></script>
+</helmet>
+
+<doc-page margin="0.72in">
+
+  <div style="display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid #E2E9F4; margin-bottom: 34px">
+    <svg width="24" height="24" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cerd"><circle cx="44" cy="54" r="36"></circle></clipPath><mask id="kerd"><rect x="0" y="0" width="108" height="108" fill="#fff"></rect><circle cx="44" cy="54" r="46.5" fill="#000"></circle></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.5" mask="url(#kerd)"></circle><rect x="0" y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#cerd)"></rect><circle cx="44" cy="54" r="36" stroke="#9A4030" stroke-width="10"></circle></svg>
+    <span style="font-family: 'Outfit', sans-serif; font-size: 17px; font-weight: 500; letter-spacing: -.02em">Expre<span style="color: #9A4030">ss</span>o</span>
+    <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .13em; color: #93A2BA">DATA MODEL SPEC · {{ docVersion }}</span>
+  </div>
+
+  <h1 style="margin: 0 0 18px; font-size: 34px; font-weight: 600; letter-spacing: -.03em; line-height: 1.32">Expresso 데이터 모델 명세서</h1>
+  <p style="margin: 0 0 14px; font-size: 15px; line-height: 1.8; color: #35455F">기능 명세서 D1–D12의 태스크에서 도출한 물리 스키마입니다. 테이블·컬럼 정의와 제약, 관계의 삭제 정책, 상태 전이, 보존 규칙을 담습니다. 전체 구조를 한눈에 보려면 <a href="./Expresso ERD.dc.html">데이터 구조 다이어그램</a>을 함께 보십시오.</p>
+
+  <div style="display: grid; gap: 6px; margin-bottom: 28px; padding: 14px 16px; background: #F7FAFE; border-radius: 12px; font-size: 13px; line-height: 1.7; color: #35455F">
+    <div><b style="font-weight: 600">표기 규칙</b> — 테이블·컬럼명은 <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">snake_case</span>, 모든 PK는 <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">uuid</span>, 시각은 <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">timestamptz</span>(UTC 저장 · 표시 시 변환).</div>
+    <div><b style="font-weight: 600">jsonb 사용 기준</b> — 사용자마다 형태가 달라지는 값(속성 스키마 · 근거 배열 · 위젯 배치)만 jsonb로 두고, 질의·집계 대상이 되는 값은 컬럼으로 승격합니다.</div>
+    <div><b style="font-weight: 600">소유자 격리</b> — 사용자 데이터를 담는 모든 테이블은 <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">user_id</span>를 갖고, 모든 질의는 소유자 조건을 먼저 적용합니다. 표에서는 지면상 생략된 경우가 있습니다.</div>
+    <div><b style="font-weight: 600">enum</b> — 값이 늘어날 수 있는 분류는 DB enum이 아니라 코드 테이블 또는 text + 체크 제약으로 둡니다(마이그레이션 비용).</div>
+  </div>
+
+  <h2 style="margin: 34px 0 14px; padding-bottom: 10px; border-bottom: 1px solid #E2E9F4; font-size: 22px; font-weight: 600; letter-spacing: -.025em"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #9A4030; margin-right: 10px">01</span>규모와 설계의 축</h2>
+
+  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 28px">
+    <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 16px; padding: 18px 20px">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 10px">엔티티</div>
+      <div style="display: flex; align-items: baseline; gap: 8px"><span style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 38px; line-height: 1; letter-spacing: -.03em">{{ entityCount }}</span><span style="font-size: 12.5px; color: #5A6B87">테이블 · 6 클러스터</span></div>
+    </div>
+    <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 16px; padding: 18px 20px">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 10px">관계</div>
+      <div style="display: flex; align-items: baseline; gap: 8px"><span style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 38px; line-height: 1; letter-spacing: -.03em">{{ relCount }}</span><span style="font-size: 12.5px; color: #5A6B87">외래 키 경로</span></div>
+    </div>
+    <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 16px; padding: 18px 20px">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 10px">상태 기계</div>
+      <div style="display: flex; align-items: baseline; gap: 8px"><span style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 38px; line-height: 1; letter-spacing: -.03em">5</span><span style="font-size: 12.5px; color: #5A6B87">record · brew · job · portfolio · deployment</span></div>
+    </div>
+    <div style="background: #FBEEE4; border-radius: 16px; padding: 18px 20px">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .12em; color: #9A4030; margin-bottom: 10px">설계의 축</div>
+      <div style="font-size: 12.5px; line-height: 1.7; color: #5A3A28"><b style="color: #16223A">근거(evidence)와 잠금(locked)</b> — AI 산출물의 모든 행은 출처를 갖고, 사용자가 고친 행은 재생성에서 제외됩니다.</div>
+    </div>
+  </div>
+
+  <h2 style="margin: 34px 0 14px; padding-bottom: 10px; border-bottom: 1px solid #E2E9F4; font-size: 22px; font-weight: 600; letter-spacing: -.025em"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #9A4030; margin-right: 10px">02</span>전역 제약이 스키마에서 지켜지는 방식</h2>
+
+  <div style="display: grid; gap: 9px; margin-bottom: 34px">
+    <sc-for list="{{ principles }}" as="p" hint-placeholder-count="5">
+      <div style="display: flex; gap: 14px; align-items: baseline; border: 1px solid #E2E9F4; border-radius: 12px; padding: 12px 16px; break-inside: avoid">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #9A4030; flex-shrink: 0">{{ p.no }}</span>
+        <span style="font-size: 13px; font-weight: 600; width: 148px; flex-shrink: 0">{{ p.rule }}</span>
+        <span style="font-size: 12.5px; line-height: 1.7; color: #35455F">{{ p.impl }}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <h2 style="margin: 34px 0 14px; padding-bottom: 10px; border-bottom: 1px solid #E2E9F4; font-size: 22px; font-weight: 600; letter-spacing: -.025em"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #9A4030; margin-right: 10px">03</span>테이블 정의</h2>
+
+  <sc-for list="{{ clusters }}" as="c" hint-placeholder-count="6">
+    <div style="margin-bottom: 26px">
+      <div style="display: flex; align-items: baseline; gap: 11px; margin: 24px 0 12px">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #fff; background: #16223A; border-radius: 5px; padding: 3px 7px">{{ c.key }}</span>
+        <h3 style="margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.02em">{{ c.label }}</h3>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #9A4030">{{ c.domains }}</span>
+      </div>
+      <p style="margin: 0 0 16px; font-size: 13px; line-height: 1.75; color: #5A6B87">{{ c.note }}</p>
+      <sc-for list="{{ c.entities }}" as="e" hint-placeholder-count="4">
+        <div style="margin-bottom: 16px; break-inside: avoid">
+          <div style="display: flex; align-items: baseline; gap: 10px; padding: 8px 12px; background: #F7FAFE; border: 1px solid #E2E9F4; border-radius: 10px 10px 0 0; border-bottom: none">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 500; color: #16223A">{{ e.table }}</span>
+            <span style="font-size: 12.5px; color: #35455F">{{ e.ko }}</span>
+            <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .08em; color: #9A4030">{{ e.badge }}</span>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; border: 1px solid #E2E9F4; border-radius: 0 0 10px 10px">
+            <thead>
+              <tr>
+                <th style="text-align: left; padding: 6px 12px; width: 34%; border-bottom: 1px solid #E2E9F4; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #93A2BA; font-weight: 400">COLUMN</th>
+                <th style="text-align: left; padding: 6px 12px; width: 16%; border-bottom: 1px solid #E2E9F4; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #93A2BA; font-weight: 400">TYPE</th>
+                <th style="text-align: left; padding: 6px 12px; border-bottom: 1px solid #E2E9F4; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #93A2BA; font-weight: 400">키 · 제약 · 비고</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ e.fields }}" as="f" hint-placeholder-count="6">
+                <tr>
+                  <td style="padding: 5px 12px; border-bottom: 1px solid #F4F7FC; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{ f.nameColor }}">{{ f.name }}</td>
+                  <td style="padding: 5px 12px; border-bottom: 1px solid #F4F7FC; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA">{{ f.type }}</td>
+                  <td style="padding: 5px 12px; border-bottom: 1px solid #F4F7FC; font-size: 11.5px; line-height: 1.5; color: {{ f.tagColor }}">{{ f.tag }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-for>
+    </div>
+  </sc-for>
+
+  <h2 style="margin: 34px 0 14px; padding-bottom: 10px; border-bottom: 1px solid #E2E9F4; font-size: 22px; font-weight: 600; letter-spacing: -.025em"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #9A4030; margin-right: 10px">04</span>관계와 삭제 정책</h2>
+  <p style="margin: 0 0 16px; font-size: 13px; line-height: 1.75; color: #5A6B87">RESTRICT는 참조가 남아 있으면 삭제를 막습니다 — 근거가 사라지는 경로를 차단하기 위한 선택입니다. CASCADE는 부모 없이 의미가 없는 종속 행에만 씁니다.</p>
+  <table style="width: 100%; border-collapse: collapse; border: 1px solid #E2E9F4; margin-bottom: 34px">
+    <thead>
+      <tr>
+        <th style="text-align: left; padding: 7px 12px; background: #F7FAFE; border-bottom: 1px solid #E2E9F4; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #93A2BA; font-weight: 400">FROM</th>
+        <th style="text-align: left; padding: 7px 12px; background: #F7FAFE; border-bottom: 1px solid #E2E9F4; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #93A2BA; font-weight: 400">TO</th>
+        <th style="text-align: left; padding: 7px 12px; background: #F7FAFE; border-bottom: 1px solid #E2E9F4; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #93A2BA; font-weight: 400">CARD.</th>
+        <th style="text-align: left; padding: 7px 12px; background: #F7FAFE; border-bottom: 1px solid #E2E9F4; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #93A2BA; font-weight: 400">ON DELETE</th>
+        <th style="text-align: left; padding: 7px 12px; background: #F7FAFE; border-bottom: 1px solid #E2E9F4; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #93A2BA; font-weight: 400">의미</th>
+      </tr>
+    </thead>
+    <tbody>
+      <sc-for list="{{ relations }}" as="r" hint-placeholder-count="10">
+        <tr>
+          <td style="padding: 6px 12px; border-bottom: 1px solid #F4F7FC; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #35455F">{{ r.from }}</td>
+          <td style="padding: 6px 12px; border-bottom: 1px solid #F4F7FC; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #35455F">{{ r.to }}</td>
+          <td style="padding: 6px 12px; border-bottom: 1px solid #F4F7FC; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #9A4030">{{ r.card }}</td>
+          <td style="padding: 6px 12px; border-bottom: 1px solid #F4F7FC; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: {{ r.delColor }}">{{ r.del }}</td>
+          <td style="padding: 6px 12px; border-bottom: 1px solid #F4F7FC; font-size: 11.5px; color: #5A6B87; line-height: 1.5">{{ r.note }}</td>
+        </tr>
+      </sc-for>
+    </tbody>
+  </table>
+
+  <h2 style="margin: 34px 0 14px; padding-bottom: 10px; border-bottom: 1px solid #E2E9F4; font-size: 22px; font-weight: 600; letter-spacing: -.025em"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #9A4030; margin-right: 10px">05</span>상태 전이</h2>
+  <p style="margin: 0 0 16px; font-size: 13px; line-height: 1.75; color: #5A6B87">전이는 서버에서만 수행합니다. 클라이언트는 상태를 표시할 뿐이며, 되돌릴 수 없는 전이는 확인 절차를 거칩니다.</p>
+  <div style="margin-bottom: 34px">
+    <div style="display: grid; gap: 12px">
+      <sc-for list="{{ machines }}" as="m" hint-placeholder-count="5">
+        <div style="border: 1px solid #E2E9F4; border-radius: 12px; padding: 14px 16px; break-inside: avoid">
+          <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #16223A">{{ m.field }}</span>
+            <span style="font-size: 12.5px; color: #5A6B87">{{ m.ko }}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px">
+            <sc-for list="{{ m.states }}" as="s" hint-placeholder-count="4">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{ s.color }}; background: {{ s.bg }}; border: 1px solid {{ s.border }}; border-radius: 8px; padding: 6px 10px">{{ s.label }}</span>
+            </sc-for>
+          </div>
+          <div style="font-size: 12.5px; line-height: 1.7; color: #5A6B87">{{ m.rule }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display: grid; gap: 18px">
+    <div>
+      <h2 style="margin: 20px 0 14px; padding-bottom: 10px; border-bottom: 1px solid #E2E9F4; font-size: 22px; font-weight: 600; letter-spacing: -.025em"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #9A4030; margin-right: 10px">06</span>보존 · 삭제 정책</h2>
+      <div style="display: grid; gap: 12px">
+        <sc-for list="{{ retention }}" as="d" hint-placeholder-count="5">
+          <div style="display: flex; gap: 14px; align-items: baseline">
+            <span style="font-size: 12.5px; font-weight: 600; width: 168px; flex-shrink: 0">{{ d.case }}</span>
+            <span style="font-size: 12.5px; line-height: 1.6; color: #5A6B87">{{ d.policy }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="background: #16223A; border-radius: 14px; padding: 20px 22px; break-inside: avoid">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .12em; color: #E0B486; margin-bottom: 16px">착수 전 결정 필요 — 기능 명세서 부록 B 연결</div>
+      <div style="display: grid; gap: 13px">
+        <sc-for list="{{ open }}" as="o" hint-placeholder-count="4">
+          <div style="display: flex; gap: 12px; align-items: baseline">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #E0B486; flex-shrink: 0">{{ o.id }}</span>
+            <span style="font-size: 12.5px; line-height: 1.65; color: #C6CEDD">{{ o.q }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;docVersion&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;v1.0 · 2026.08&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;문서&quot;}}">
+const PK = 'pk', F = t => 'fk:' + t;
+
+const CLUSTERS = [
+  ['A', '계정 · 요금제', 'D12 · D11', '모든 테이블은 user_id로 격리된다 — 조회는 항상 소유자 스코프가 먼저 걸린다.', [
+    ['user', '계정', 'D12', [
+      ['id', 'uuid', PK], ['email', 'citext', 'unique'], ['display_name', 'text', ''],
+      ['plan_id', 'uuid', F('plan')], ['deletion_requested_at', 'timestamptz', '유예 기간 취소 가능'],
+      ['created_at', 'timestamptz', '']]],
+    ['plan', '요금제', 'D12', [
+      ['id', 'uuid', PK], ['code', 'enum', 'free · pro · team'],
+      ['generation_quota', 'int', '월 생성 횟수'], ['features', 'jsonb', '게이팅 플래그'],
+      ['is_public_listed', 'bool', '']]],
+    ['usage_counter', '생성 사용량', 'D12', [
+      ['id', 'uuid', PK], ['user_id', 'uuid', F('user')], ['period_start', 'date', 'unique(user, period)'],
+      ['used', 'int', '차감 · 실패 시 복구'], ['resets_at', 'timestamptz', '초기화 날짜 표시']]],
+    ['notification', '알림', 'D11', [
+      ['id', 'uuid', PK], ['user_id', 'uuid', F('user')],
+      ['kind', 'enum', 'deadline · saved_search · generation · traffic'],
+      ['target_url', 'text', '해당 화면 직행'], ['dedupe_key', 'text', '같은 사유 하루 1건'],
+      ['read_at', 'timestamptz', '']]]
+  ]],
+  ['B', '커리어 기록', 'D1', '기록은 삭제보다 보존이 기본이다 — 포트폴리오에 인용된 기록은 RESTRICT로 지킨다.', [
+    ['category', '커리어 카테고리', 'D1', [
+      ['id', 'uuid', PK], ['user_id', 'uuid', F('user') + ' · null=기본 7종'],
+      ['key', 'text', 'experience · project …'], ['is_system', 'bool', '기본 카테고리 여부'],
+      ['property_schema', 'jsonb', '카테고리별 속성 정의'], ['sort_order', 'int', '트리 순서']]],
+    ['record', '커리어 기록', 'D1', [
+      ['id', 'uuid', PK], ['user_id', 'uuid', F('user')], ['category_id', 'uuid', F('category')],
+      ['title', 'text', ''], ['status', 'enum', 'draft · organized · verified'],
+      ['origin', 'enum', 'manual · ai · interview · import'],
+      ['properties', 'jsonb', 'schema 검증 대상'], ['body_md', 'text', 'AI 정리 블록 포함'],
+      ['period', 'daterange', '타임라인 뷰 근거']]],
+    ['record_link', '기록 연결', 'D1', [
+      ['id', 'uuid', PK], ['from_record_id', 'uuid', F('record')], ['to_record_id', 'uuid', F('record')],
+      ['relation', 'enum', 'related · parent · duplicate_of'],
+      ['created_by', 'enum', 'user · ai(병합 제안)']]],
+    ['record_usage', '사용처 · 인용 추적', 'D1', [
+      ['id', 'uuid', PK], ['record_id', 'uuid', F('record')], ['block_id', 'uuid', F('block')],
+      ['quoted_text', 'text', '인용 문단 원문'], ['first_used_at', 'timestamptz', '']]],
+    ['skill', '집계 스킬', 'D1', [
+      ['id', 'uuid', PK], ['user_id', 'uuid', F('user')], ['name', 'text', 'unique(user, name)'],
+      ['level', 'int', '1–5 · 산출값'], ['computed_at', 'timestamptz', '재집계 시각'],
+      ['demand_score', 'numeric', '공고 수요 비교']]],
+    ['skill_evidence', '스킬 근거', 'D1', [
+      ['skill_id', 'uuid', F('skill')], ['record_id', 'uuid', F('record')],
+      ['weight', 'numeric', '숙련도 기여도'], ['extracted_span', 'jsonb', '추출 위치']]]
+  ]],
+  ['C', '채용 공고', 'D2 · D3', '공고 원문은 불변으로 보관한다 — 분석·근거가 원문 위치(span)를 가리키기 때문이다.', [
+    ['job_posting', '채용 공고', 'D2', [
+      ['id', 'uuid', PK], ['company_id', 'uuid', F('company')],
+      ['source', 'enum', 'api · partner · user_input'], ['external_id', 'text', 'unique(source, ext)'],
+      ['title', 'text', ''], ['description_raw', 'text', '불변 원문'],
+      ['requirements', 'jsonb', '정규화 필드'], ['expires_at', 'timestamptz', '만료 처리'],
+      ['dedupe_hash', 'text', '중복 제거 키']]],
+    ['company', '기업', 'D2', [
+      ['id', 'uuid', PK], ['name', 'text', ''], ['domain', 'text', '기업 방문 식별에 사용'],
+      ['industry', 'text', ''], ['tone_summary', 'text', '기업 톤 정보']]],
+    ['saved_search', '저장 검색', 'D2', [
+      ['id', 'uuid', PK], ['user_id', 'uuid', F('user')], ['query_text', 'text', '자연어 원문'],
+      ['filters', 'jsonb', '변환된 조건'], ['notify', 'bool', '새 공고 알림'],
+      ['last_run_at', 'timestamptz', '']]],
+    ['match_score', '일치도', 'D2', [
+      ['id', 'uuid', PK], ['user_id', 'uuid', F('user')], ['job_posting_id', 'uuid', F('job_posting')],
+      ['total', 'numeric', '요건 충족률 0–100'], ['axes', 'jsonb', '축별 요구 · 충족 건수'],
+      ['reason_text', 'text', '한 문장 사유'], ['computed_at', 'timestamptz', '캐시 무효화 기준']]],
+    ['interest', '관심 공고', 'D2', [
+      ['id', 'uuid', PK], ['user_id', 'uuid', F('user')], ['job_posting_id', 'uuid', F('job_posting')],
+      ['stage', 'enum', 'saved · applied · closed'], ['deadline_at', 'timestamptz', '마감 알림 기준']]],
+    ['job_analysis', '공고 분석', 'D3', [
+      ['id', 'uuid', PK], ['user_id', 'uuid', F('user')],
+      ['job_posting_id', 'uuid', F('job_posting') + ' · nullable'],
+      ['input_type', 'enum', 'url · paste · file'], ['status', 'enum', 'queued · running · done · failed'],
+      ['attachments', 'jsonb', '부가 자료']]],
+    ['job_posting_requirement', '요구 역량', 'D3', [
+      ['id', 'uuid', PK], ['job_posting_id', 'uuid', F('job_posting')],
+      ['order_no', 'int', '원문에 나온 순서'], ['label', 'text', ''],
+      ['kind', 'enum', 'must · nice · tone'], ['source_span', 'jsonb', '원문 하이라이트 좌표'],
+      ['extractor_version', 'int', '추출기를 바꿀 때만 오른다']]],
+    ['requirement_coverage', '요건 충족 여부', 'D3', [
+      ['user_id', 'uuid', F('user') + ' · PK'],
+      ['requirement_id', 'uuid', F('job_posting_requirement') + ' · PK'],
+      ['coverage', 'enum', 'covered · partial · missing'],
+      ['covered_by', 'uuid[]', F('record') + ' 배열'],
+      ['computed_at', 'tstz', '']]]
+  ]],
+  ['D', '제작 흐름', 'D4 · D5 · D6', 'brew 한 행이 제작 세션 하나다 — 재료 선정부터 레시피 확정까지 모든 단계가 여기에 매달린다.', [
+    ['brew', '제작 세션', 'D4', [
+      ['id', 'uuid', PK], ['user_id', 'uuid', F('user')], ['job_analysis_id', 'uuid', F('job_analysis')],
+      ['mode', 'enum', 'solo · collab'], ['length_preset', 'enum', 'single · double · triple'],
+      ['status', 'enum', '아래 상태 전이 참조'], ['deadline_at', 'timestamptz', '마감 알림'],
+      ['resumed_at', 'timestamptz', '이어가기 기준']]],
+    ['brew_source', '선정된 재료', 'D4', [
+      ['brew_id', 'uuid', F('brew')], ['record_id', 'uuid', F('record')],
+      ['rank', 'int', '매칭 순 정렬'], ['selected_by', 'enum', 'auto · user'],
+      ['excluded_reason', 'text', '제외 사유 표시']]],
+    ['interview_session', 'AI 인터뷰', 'D5', [
+      ['id', 'uuid', PK], ['brew_id', 'uuid', F('brew')],
+      ['status', 'enum', 'open · paused · done'], ['question_count', 'int', '남은 질문 계산'],
+      ['transcript_url', 'text', '이전 대화 열람']]],
+    ['question', '질문', 'D5', [
+      ['id', 'uuid', PK], ['interview_session_id', 'uuid', F('interview_session')],
+      ['requirement_id', 'uuid', F('job_posting_requirement') + ' · 배정 근거'], ['order_no', 'int', ''],
+      ['text', 'text', ''], ['replaced_from_id', 'uuid', F('question') + ' · 교체 이력'],
+      ['skipped', 'bool', '건너뛰기']]],
+    ['answer', '응답', 'D5', [
+      ['id', 'uuid', PK], ['question_id', 'uuid', F('question')],
+      ['input_type', 'enum', 'text · voice'], ['transcript', 'text', ''],
+      ['created_record_id', 'uuid', F('record') + ' · 확정 시 생성']]],
+    ['recipe', '포트폴리오 레시피', 'D6', [
+      ['id', 'uuid', PK], ['brew_id', 'uuid', F('brew')], ['version', 'int', '전체 재생성 시 증가'],
+      ['status', 'enum', 'draft · confirmed'], ['completeness', 'numeric', '완성도 요약'],
+      ['generated_at', 'timestamptz', '']]],
+    ['recipe_section', '레시피 섹션', 'D6', [
+      ['id', 'uuid', PK], ['recipe_id', 'uuid', F('recipe')], ['order_no', 'int', '순서 변경'],
+      ['title', 'text', ''], ['purpose', 'text', '이 섹션이 답하는 요건'],
+      ['target_length', 'int', '분량 배분']]],
+    ['recipe_item', '담을 요점', 'D6', [
+      ['id', 'uuid', PK], ['recipe_section_id', 'uuid', F('recipe_section')],
+      ['point_text', 'text', ''], ['evidence', 'jsonb[]', 'record_id · quote · question_no'],
+      ['locked', 'bool', '사용자 편집 → 재생성 제외'],
+      ['edited_by', 'enum', 'ai · user']]]
+  ]],
+  ['E', '산출물', 'D7 · D8 · D9', 'block이 편집의 최소 단위다 — 잠금·동기화·이력이 모두 block 기준으로 걸린다.', [
+    ['template', '지면 시드', 'D7', [
+      ['id', 'uuid', PK], ['code', 'text', 'unique'], ['name', 'text', ''],
+      ['tone_tags', 'text[]', '기업 톤과 맞춰 생성 입력으로'],
+      ['supported_sections', 'text[]', '레시피 호환 검사'],
+      ['plan_required', 'enum', 'free · pro']]],
+    ['layout_spec', '생성된 지면', 'D7', [
+      ['id', 'uuid', PK], ['user_id', 'uuid', F('user')],
+      ['portfolio_id', 'uuid', F('portfolio')],
+      ['seed_template_id', 'uuid', F('template') + ' · 출발점, nullable'],
+      ['archetype', 'text', '레이아웃 아키타입'],
+      ['spec', 'jsonb', '섹션 배치 · 타입 스케일 · 팔레트 · 밀도 · 블록 표현'],
+      ['prompt_version', 'int', '지면 생성 프롬프트 버전'],
+      ['edited_by', 'enum', 'ai · user · 부분 편집 시 user로'],
+      ['created_at', 'tstz', '']]],
+    ['generation_job', '생성 작업', 'D7', [
+      ['id', 'uuid', PK], ['brew_id', 'uuid', F('brew')], ['recipe_id', 'uuid', F('recipe')],
+      ['template_id', 'uuid', F('template')], ['status', 'enum', 'queued · running · done · failed'],
+      ['usage_charged', 'bool', '실패 시 복구'], ['error_code', 'text', '']]],
+    ['portfolio', '포트폴리오', 'D8', [
+      ['id', 'uuid', PK], ['user_id', 'uuid', F('user')], ['brew_id', 'uuid', F('brew')],
+      ['template_id', 'uuid', F('template') + ' · 생성의 출발점'],
+      ['layout_spec_id', 'uuid', F('layout_spec') + ' · 실제로 그리는 지면'],
+      ['title', 'text', ''],
+      ['status', 'enum', 'draft · published · unlisted'],
+      ['current_deployment_id', 'uuid', F('deployment')]]],
+    ['portfolio_section', '문서 섹션', 'D8', [
+      ['id', 'uuid', PK], ['portfolio_id', 'uuid', F('portfolio')],
+      ['recipe_section_id', 'uuid', F('recipe_section') + ' · 원본'],
+      ['order_no', 'int', '순서 편집'], ['visible', 'bool', '표시 · 숨김']]],
+    ['block', '블록', 'D8', [
+      ['id', 'uuid', PK], ['portfolio_section_id', 'uuid', F('portfolio_section')],
+      ['kind', 'enum', 'heading · paragraph · list · metric · media'],
+      ['content', 'jsonb', '내용 속성'], ['style', 'jsonb', '표현 속성'],
+      ['source_record_id', 'uuid', F('record')],
+      ['sync_state', 'enum', 'synced · stale · detached'], ['locked', 'bool', 'AI 재생성 제외']]],
+    ['revision', '변경 이력', 'D8', [
+      ['id', 'uuid', PK], ['portfolio_id', 'uuid', F('portfolio')],
+      ['block_id', 'uuid', F('block') + ' · null=구조 변경'], ['actor', 'enum', 'user · ai'],
+      ['before', 'jsonb', '개별 되돌리기 원본'], ['after', 'jsonb', ''],
+      ['restore_label', 'text', '복원 지점 이름']]],
+    ['deployment', '배포', 'D9', [
+      ['id', 'uuid', PK], ['portfolio_id', 'uuid', F('portfolio')], ['version', 'int', '배포마다 증가'],
+      ['subdomain', 'text', 'unique · 변경 시 30일 리다이렉트'],
+      ['custom_domain', 'text', '상위 플랜'], ['seo_indexable', 'bool', '색인 차단 연동'],
+      ['contact_visibility', 'enum', 'public · on_request · hidden'],
+      ['published_at', 'timestamptz', ''], ['has_unpublished_changes', 'bool', '']]],
+    ['export_asset', '내보내기 · 첨부', 'D9', [
+      ['id', 'uuid', PK], ['portfolio_id', 'uuid', F('portfolio')],
+      ['kind', 'enum', 'pdf · deck · resume_file'], ['file_url', 'text', '교체 시 이전 링크 무효'],
+      ['page_format', 'text', 'letter · a4'], ['download_count', 'int', '지표 집계']]]
+  ]],
+  ['F', '통계 분석', 'D10', '원시 이벤트와 집계를 분리한다 — 화면은 metric_daily만 읽고, 표본 수는 집계에 함께 저장한다.', [
+    ['visit_event', '방문', 'D10', [
+      ['id', 'uuid', PK], ['deployment_id', 'uuid', F('deployment')],
+      ['session_id', 'text', '순 방문자 산출'], ['referrer', 'text', '유입 경로'],
+      ['org_domain', 'text', '조직 단위만 · 개인 식별 금지'],
+      ['is_owner', 'bool', '본인 방문 제외'], ['started_at', 'timestamptz', '']]],
+    ['section_view', '섹션 열람', 'D10', [
+      ['id', 'uuid', PK], ['visit_event_id', 'uuid', F('visit_event')],
+      ['portfolio_section_id', 'uuid', F('portfolio_section')],
+      ['dwell_ms', 'int', '1초 미만 집계 제외'], ['scroll_depth', 'numeric', '완독 판정'],
+      ['exited', 'bool', '이탈 지점']]],
+    ['conversion_event', '전환', 'D10', [
+      ['id', 'uuid', PK], ['visit_event_id', 'uuid', F('visit_event')],
+      ['kind', 'enum', 'contact_click · file_download · link_click'],
+      ['target', 'text', '']]],
+    ['metric_daily', '일별 집계', 'D10', [
+      ['id', 'uuid', PK], ['deployment_id', 'uuid', F('deployment')],
+      ['date', 'date', 'unique(deployment, date, key)'], ['metric_key', 'text', ''],
+      ['value', 'numeric', ''], ['sample_size', 'int', '기준 미만이면 해설 숨김']]],
+    ['dashboard_view', '대시보드 뷰', 'D10', [
+      ['id', 'uuid', PK], ['user_id', 'uuid', F('user')], ['portfolio_id', 'uuid', F('portfolio')],
+      ['name', 'text', '포트폴리오당 최대 6개'], ['period', 'enum', '7d · 30d · all'],
+      ['is_default', 'bool', '']]],
+    ['widget', '위젯', 'D10', [
+      ['id', 'uuid', PK], ['dashboard_view_id', 'uuid', F('dashboard_view')],
+      ['metric_key', 'text', ''], ['derived_metric_id', 'uuid', F('derived_metric')],
+      ['visualization', 'enum', '지표 성격에 맞는 것만'],
+      ['compare_to', 'enum', 'prev_period · other_portfolio · industry'],
+      ['position', 'jsonb', 'x · y · w · h']]],
+    ['derived_metric', '파생 지표', 'D10', [
+      ['id', 'uuid', PK], ['user_id', 'uuid', F('user')], ['name', 'text', ''],
+      ['numerator_key', 'text', ''], ['denominator_key', 'text', '0 나눗셈 정의 불가']]],
+    ['insight', '해설 · 제안', 'D10', [
+      ['id', 'uuid', PK], ['deployment_id', 'uuid', F('deployment')],
+      ['period', 'daterange', ''], ['narrative', 'text', '두 문장 이내'],
+      ['evidence_metrics', 'text[]', '근거 지표 표시'],
+      ['suggestions', 'jsonb', '최대 2건 · 섹션 지시'], ['generated_at', 'timestamptz', '']]],
+    ['annotation', '주석', 'D10', [
+      ['id', 'uuid', PK], ['portfolio_id', 'uuid', F('portfolio')], ['date', 'date', ''],
+      ['label', 'text', '수동 입력만'], ['note', 'text', '']]]
+  ]]
+];
+
+const RELATIONS = [
+  ['user', 'record · portfolio · brew', '1:N', 'CASCADE', '계정 삭제는 유예 후 전체 삭제'],
+  ['category', 'record', '1:N', 'RESTRICT', '기록이 남은 카테고리는 삭제 불가'],
+  ['record', 'record_usage', '1:N', 'RESTRICT', '인용된 기록은 삭제 대신 영향 범위 안내'],
+  ['record', 'skill_evidence', '1:N', 'CASCADE', '기록이 사라지면 숙련도 재집계'],
+  ['job_posting', 'job_analysis', '1:N', 'SET NULL', '공고 만료 후에도 분석 결과는 보존'],
+  ['job_posting', 'job_posting_requirement', '1:N', 'CASCADE', '요건은 공고에 붙는다 — 누가 읽든 같다'],
+  ['portfolio', 'layout_spec', '1:N', 'CASCADE', '지면은 매번 새로 짠다 — 재생성마다 새 행'],
+  ['job_posting_requirement', 'requirement_coverage', '1:N', 'CASCADE', '충족 여부만 사람마다 다르다'],
+  ['job_posting_requirement', 'question', '1:N', 'SET NULL', '질문의 배정 근거'],
+  ['brew', 'brew_source', '1:N', 'CASCADE', '재료 선정은 세션에 종속'],
+  ['brew', 'interview_session', '1:1', 'CASCADE', '세션당 인터뷰 하나'],
+  ['brew', 'recipe', '1:N', 'CASCADE', '재생성마다 version 증가'],
+  ['recipe', 'recipe_section', '1:N', 'CASCADE', ''],
+  ['recipe_section', 'recipe_item', '1:N', 'CASCADE', '요점 단위 잠금'],
+  ['recipe', 'generation_job', '1:N', 'RESTRICT', '생성 근거는 삭제하지 않는다'],
+  ['recipe_section', 'portfolio_section', '1:1', 'SET NULL', '문서 섹션의 원본 추적'],
+  ['portfolio_section', 'block', '1:N', 'CASCADE', ''],
+  ['record', 'block', '1:N', 'SET NULL', '연결 해제 시 sync_state=detached'],
+  ['block', 'revision', '1:N', 'CASCADE', '되돌리기 · 복원 지점'],
+  ['portfolio', 'deployment', '1:N', 'CASCADE', '버전 목록과 되돌리기'],
+  ['deployment', 'visit_event', '1:N', 'CASCADE', '공개 중단 시 처리 방식 안내'],
+  ['visit_event', 'section_view · conversion_event', '1:N', 'CASCADE', ''],
+  ['deployment', 'metric_daily', '1:N', 'CASCADE', '화면은 집계만 조회'],
+  ['dashboard_view', 'widget', '1:N', 'CASCADE', '뷰 복제 시 위젯 복사']
+];
+
+const MACHINES = [
+  ['record.status', '기록 상태 — 자동 판정', ['draft', 'organized', 'verified'],
+    '속성 필수값이 채워지면 organized, 사용자가 확인하면 verified. 역방향 강등은 사용자 편집으로만 발생한다.'],
+  ['brew.status', '제작 세션', ['draft', 'interviewing', 'recipe', 'generating', 'done'],
+    '앞 단계로 돌아가면 이후 단계의 산출물에 stale 표시를 남긴다(삭제하지 않음). 이어가기는 resumed_at 기준.'],
+  ['generation_job.status', '생성 작업', ['queued', 'running', 'done', 'failed'],
+    'running 진입 시 usage_counter를 차감하고, failed면 즉시 복구한다. 30초 초과는 백그라운드로 계속된다.'],
+  ['portfolio.status', '포트폴리오', ['draft', 'published', 'unlisted'],
+    '편집 내용은 배포 전까지 공개되지 않는다. 플랜 다운그레이드 초과분은 삭제하지 않고 unlisted로 전환.'],
+  ['block.sync_state', '원본 기록 동기화', ['synced', 'stale', 'detached'],
+    '원본 record가 수정되면 stale, 사용자가 연결을 끊으면 detached. locked=true인 블록은 자동 갱신하지 않는다.']
+];
+
+const RETENTION = [
+  ['계정 삭제 요청', 'deletion_requested_at 기록 후 유예 기간을 두고 실행 — 기간 내 취소 가능. 삭제 시 공개 사이트와 수집 데이터의 처리 방식을 사전 안내.'],
+  ['공개 중단', 'deployment는 남기고 published_at을 무효화. 주소는 비공개 안내 페이지로 대체하며 visit_event는 보존.'],
+  ['플랜 다운그레이드', '초과 포트폴리오는 삭제하지 않고 unlisted로 전환. 잠기는 기능과 데이터 처리 방식을 사전 고지.'],
+  ['주소 변경', '이전 subdomain은 30일간 리다이렉트 레코드로 유지한 뒤 회수.'],
+  ['원시 이벤트', 'visit_event는 롤링 보관(기간 정책 필요), metric_daily는 영구 보관 — 대시보드는 집계만 참조.'],
+  ['기록 삭제', '인용(record_usage)이 있으면 RESTRICT. 사용자에게 영향 범위를 보여준 뒤 연결 해제 → detached 처리 후 삭제.']
+];
+
+const OPEN = [
+  ['Q1', 'visit_event 원시 보관 기간과 익명화 시점 — 업계 평균 비교(B2)를 위한 익명 집계와 개인정보 정책의 경계.'],
+  ['Q2', 'collab 모드의 동시 편집 모델(B3) — recipe_item에 편집 세션·소유권 컬럼이 필요한지, 코멘트 테이블을 별도로 둘지.'],
+  ['Q3', '공고 수집 경로(B1)에 따라 job_posting의 source·external_id 유니크 전략과 정규화 파이프라인 규모가 달라진다.'],
+  ['Q4', 'evidence를 jsonb로 둘지 별도 evidence 테이블로 정규화할지 — 근거 역참조(이 기록이 쓰인 요점 찾기) 빈도에 따라 결정.'],
+  ['Q5', 'brew와 portfolio의 1:N 허용 여부 — 같은 세션에서 지면만 다시 짜 여러 문서를 만들 수 있게 할지. 지면 후보 3안을 layout_spec 3행으로 남길지, 고른 하나만 남길지도 여기 걸린다.']
+];
+
+const TAGC = { pk: '#9A4030', fk: '#3C6E9E', plain: '#93A2BA' };
+
+class Component extends DCLogic {
+  renderVals() {
+    let rel = 0;
+    const clusters = CLUSTERS.map(c => ({
+      key: c[0], label: c[1], domains: c[2], note: c[3],
+      entities: c[4].map(e => ({
+        table: e[0], ko: e[1], badge: e[2],
+        fields: e[3].map(f => {
+          const tag = f[2] || '';
+          const isPk = tag === 'pk';
+          const isFk = tag.indexOf('fk:') === 0;
+          if (isFk) rel++;
+          return {
+            name: f[0],
+            type: f[1],
+            nameColor: isPk ? '#9A4030' : '#35455F',
+            tag: isPk ? 'PK' : (isFk ? '→ ' + tag.slice(3) : tag),
+            tagColor: isPk ? TAGC.pk : (isFk ? TAGC.fk : TAGC.plain)
+          };
+        })
+      }))
+    }));
+    const entityCount = CLUSTERS.reduce((s, c) => s + c[4].length, 0);
+    return {
+      docVersion: this.props.docVersion ?? 'v1.0 · 2026.08',
+      clusters, entityCount, relCount: rel,
+      principles: [
+        { no: '①', rule: '근거 없는 산출물 금지', impl: 'AI가 만든 모든 행은 evidence(record_id · quote · question_no)를 갖는다. recipe_item.evidence가 비면 저장하지 않고 화면에도 내보내지 않는다.' },
+        { no: '②', rule: '사용자 편집은 잠긴다', impl: 'recipe_item.locked · block.locked이 true인 행은 어떤 재생성에서도 대상이 되지 않는다. 잠금 해제는 명시적 조작이며 목록으로 확인한다.' },
+        { no: '③', rule: '없는 수치는 만들지 않는다', impl: '수치를 담는 block(kind=metric)은 source_record_id가 필수다. 기록에 없는 값은 생성 파이프라인에서 폐기한다.' },
+        { no: '④', rule: '모든 변경은 되돌린다', impl: 'revision이 before/after를 행 단위로 남긴다. 구조 변경은 block_id=null로 기록하고, 복원 지점은 restore_label로 이름을 갖는다.' },
+        { no: '⑤', rule: '긴 작업은 작업 테이블로', impl: '30초 이상 걸리는 일은 job 행(job_analysis · generation_job)으로 존재한다. 창을 닫아도 상태가 남고 사용량 차감·복구가 이 행에 묶인다.' }
+      ],
+      relations: RELATIONS.map(r => ({
+        from: r[0], to: r[1], card: r[2], del: r[3], note: r[4] || '—',
+        delColor: r[3] === 'RESTRICT' ? '#9A4030' : (r[3] === 'CASCADE' ? '#5A6B87' : '#3C6E9E')
+      })),
+      machines: MACHINES.map(m => ({
+        field: m[0], ko: m[1], rule: m[3],
+        states: m[2].map((s, i) => ({
+          label: (i ? '→ ' : '') + s,
+          color: i === m[2].length - 1 ? '#12A97A' : '#35455F',
+          bg: i === m[2].length - 1 ? '#EAF7F1' : '#F7FAFE',
+          border: i === m[2].length - 1 ? '#BFE6D6' : '#E2E9F4'
+        }))
+      })),
+      retention: RETENTION.map(r => ({ case: r[0], policy: r[1] })),
+      open: OPEN.map(o => ({ id: o[0], q: o[1] }))
+    };
+  }
+}
+
+</script>
+</body>
+</html>

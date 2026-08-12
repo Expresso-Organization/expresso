@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "project": "Expresso",
+  "repo": "/Users/minjaepark/code/Expresso",
+  "coordinator_worktree": "/Users/minjaepark/code/Expresso",
+  "base_revision": "706fb6db1c56507b76910af095d11ec98449ba4d",
+  "worktree_root": null,
+  "dag": "/Users/minjaepark/code/Expresso/coordination/task-dag.json",
+  "status": "not_applicable",
+  "execution_mode": "coordinator_serial",
+  "reason": "The user selected direct serial execution without subagents, worker branches, or worker worktrees.",
+  "worktrees": []
+}

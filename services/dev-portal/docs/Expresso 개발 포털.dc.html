@@ -28,8 +28,8 @@
 <div style="width: 100%; min-width: 1024px; max-width: 2000px; margin: 0 auto; background: #F7FAFE; min-height: 900px">
 
   <div style="display: flex; align-items: center; gap: 14px; padding: 16px 32px; background: #16223A; color: #fff">
-    <div onClick="{{ goHome }}" title="초기 화면으로" style="display: flex; align-items: center; gap: 14px; cursor: pointer" style-hover="opacity: .72">
-    <svg width="22" height="22" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cpt"><circle cx="44" cy="54" r="36"></circle></clipPath><mask id="kpt"><rect x="0" y="0" width="108" height="108" fill="#fff"></rect><circle cx="44" cy="54" r="46.5" fill="#000"></circle></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.5" mask="url(#kpt)"></circle><rect x="0" y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#cpt)"></rect><circle cx="44" cy="54" r="36" stroke="#fff" stroke-width="10"></circle></svg>
+    <div onClick="{{ goHome }}" title="초기 화면으로" style="display: flex; align-items: center; gap: 7px; cursor: pointer" style-hover="opacity: .72">
+    <svg width="22" height="22" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cpt"><circle cx="44" cy="54" r="35.5"></circle></clipPath><mask id="kpt"><rect x="0" y="0" width="108" height="108" fill="#fff"></rect><circle cx="44" cy="54" r="47.05" fill="#000"></circle></mask></defs><circle cx="77.72" cy="54" r="19.53" stroke="#A9793F" stroke-width="9.35" mask="url(#kpt)"></circle><rect x="0" y="58.8" width="108" height="49.2" fill="#E0B486" clip-path="url(#cpt)"></rect><circle cx="44" cy="54" r="35.5" stroke="#E0B486" stroke-width="11"></circle></svg>
     <span style="font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 500; letter-spacing: -.02em">Expre<span style="color: #E0B486">ss</span>o</span>
     </div>
     <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .14em; color: #8395AF">DEV CONSOLE</span>
@@ -128,7 +128,7 @@
     </div>
   </div>
 
-  <div style="display: flex; align-items: center; gap: 4px; padding: 0 32px; background: #1D2B47; border-bottom: 1px solid rgba(255,255,255,.08); overflow-x: auto; scrollbar-width: none">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 0 32px; background: #1D2B47; border-bottom: 1px solid rgba(255,255,255,.08); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none">
     <sc-for list="{{ navLinks }}" as="n" hint-placeholder-count="8">
       <a href="{{ n.href }}" onClick="{{ n.onClick }}" style="display: flex; align-items: center; gap: 7px; padding: 11px 13px; font-size: 12.5px; font-weight: {{ n.weight }}; color: {{ n.color }}; background: {{ n.bg }}; white-space: nowrap; flex-shrink: 0; cursor: pointer; border-bottom: 2px solid {{ n.edge }}" style-hover="color: #fff; border-bottom-color: #E0B486; background: rgba(255,255,255,.09)">
         <span style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: .08em; color: {{ n.tagColor }}">{{ n.tag }}</span>{{ n.label }}
@@ -152,7 +152,10 @@
               <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #C6CEDD">{{ tocCount }}</span>
             </div>
             <sc-for list="{{ toc }}" as="i" hint-placeholder-count="8">
-              <div onClick="{{ i.onClick }}" style="padding: 7px 16px 7px {{ i.indent }}px; font-size: {{ i.size }}px; font-weight: {{ i.weight }}; line-height: 1.5; color: {{ i.color }}; background: {{ i.bg }}; border-left: 2px solid {{ i.edge }}; cursor: pointer" style-hover="background: #F1F5FB; color: #9A4030">{{ i.text }}</div>
+              <div onClick="{{ i.onClick }}" style="display: flex; align-items: baseline; gap: {{ i.gap }}px; padding: 7px 16px 7px {{ i.indent }}px; font-size: {{ i.size }}px; font-weight: {{ i.weight }}; line-height: 1.5; color: {{ i.color }}; background: {{ i.bg }}; border-left: 2px solid {{ i.edge }}; cursor: pointer" style-hover="background: #F1F5FB; color: #9A4030">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .04em; color: {{ i.numColor }}; min-width: {{ i.numW }}px; flex-shrink: 0">{{ i.num }}</span>
+                <span style="flex: 1; min-width: 0">{{ i.text }}</span>
+              </div>
             </sc-for>
           </div>
         </sc-if>
@@ -1028,6 +1031,20 @@ const NAV = [
 const NAV_TAG = {}, NAV_FILE = {};
 NAV.forEach(n => { NAV_TAG[n[1]] = n[0]; NAV_FILE[n[1]] = n[2]; });
 
+// 목차를 붙일 문서. 여기 없는 문서는 훑지도, 목차 자리를 잡지도 않는다.
+//
+// 뷰어를 열자마자 자리를 잡아야 한다 — 문서를 다 그린 뒤에 목차가 붙으면 iframe 폭이
+// 그때 줄어들며 화면이 한 번 흔들린다. 실제 항목은 scanToc 이 채우고, 훑어도 목차가
+// 나오지 않으면 스스로 거둔다(tocMiss).
+//
+// 뺀 문서들 — 랜딩은 시안이라 제목 태그에 들어 있는 것이 페이지 카피지 목차가 아니다
+// ("쓸 내용이 없는 게 아니라, 무엇을 담을지 정해지지 않은 겁니다"). 기능 지도는 절이
+// 둘뿐이라 목차로 얻는 것보다 다이어그램이 268px 넓어지는 편이 낫다.
+const NAV_TOC = {
+  '기능 명세서': 1, '구현 명세서': 1, '화면 정의서': 1, '데이터 모델': 1,
+  '디자인 시스템': 1, '아이콘': 1
+};
+
 // 검색 결과에서 문서를 뷰어로 열려면 파일명 → NAV 라벨이 필요하다
 const FILE_NAV = {};
 NAV.forEach(n => { FILE_NAV[n[2]] = n[1]; });
@@ -1055,7 +1072,7 @@ function tasksOf(d) {
 
 class Component extends DCLogic {
   state = {
-    sel: 'D1', q: '', role: 'all', status: 'all', prog: {}, doc: null, toc: [], tocAt: -1,
+    sel: 'D1', q: '', role: 'all', status: 'all', prog: {}, doc: null, toc: [], tocAt: -1, tocMiss: null,
     view: 'console', section: 'domain', bview: 'kanban', tickets: [], seq: 1, tsel: null, member: 'all',
     impDomain: 'D1', form: { title: '', assignee: '', due: '', effort: 'M', domain: '' },
     pages: [], comments: [], wseq: 1, psel: null, editing: false, block: -1, draft: '', me: '', newTpl: 'blank',
@@ -1178,22 +1195,89 @@ class Component extends DCLogic {
     return t;
   }
 
+  // 목차 항목이 될 제목만 골라낸다. 제목 태그를 썼다고 다 목차 항목은 아니다.
+  // 목차를 만들 때(scanToc)와 목차를 눌러 이동할 때(scrollDoc)가 같은 목록을 봐야
+  // 번호가 어긋나지 않으므로 한 곳에서만 고른다.
+  tocHeads(d) {
+    let heads = [];
+    try {
+      heads = Array.prototype.slice.call(d.querySelectorAll('h1, h2, h3'))
+        .filter(h => h.textContent.trim().length > 1);
+    } catch (e) { return []; }
+
+    // ① 화면 정의서는 화면마다 제품 목업이 통째로 들어 있어 목업 안의 제목까지 딸려 온다
+    //    ("결제 트래픽을 견디는 서버를 만듭니다" 같은 공개 사이트 목업의 카피).
+    //    화면 제목에만 [data-screen-label] 조상이 있으므로 그것만 남긴다.
+    const labeled = heads.filter(h => h.closest('[data-screen-label]'));
+    if (labeled.length) heads = labeled;
+
+    // ② 문서 제목은 목차 항목이 아니다 — 맨 앞에 홀로 있는 h1 이 문서 제목이다.
+    if (heads.length && heads[0].tagName === 'H1' &&
+        heads.filter(h => h.tagName === 'H1').length === 1) heads = heads.slice(1);
+
+    // ③ 문서가 자기 목차를 한 절로 두기도 한다. 목차 안의 목차는 뺀다.
+    return heads.filter(h => !/^(목차|contents?)$/i.test(h.textContent.trim()));
+  }
+
   // 문서 탭이 열리면 iframe 안의 제목을 읽어 목차를 만든다(DC 렌더가 끝날 때까지 폴링)
   scanToc(frame, n) {
     let heads = [];
-    try {
-      const d = frame.contentDocument;
-      heads = Array.prototype.slice.call(d.querySelectorAll('h1, h2, h3'))
-        .filter(h => h.textContent.trim().length > 1);
-    } catch (e) { heads = []; }
+    try { heads = this.tocHeads(frame.contentDocument); } catch (e) { heads = []; }
     if (heads.length >= 3) {
       this.setState({
-        toc: heads.map((h, i) => ({ text: h.textContent.trim().replace(/\s+/g, ' '), level: +h.tagName.charAt(1), i })),
+        // 화면 정의서는 화면 번호가, 명세서들은 제목 앞에 붙은 절 번호 배지(01 · D1)가
+        // 곧 번호다. 둘 다 목차의 번호 칸으로 옮긴다 — 안 그러면 "01제품 정의와 용어"처럼
+        // 번호와 제목이 붙어 나온다.
+        toc: heads.map((h, i) => {
+          const blk = h.closest('[data-screen-label]');
+          const raw = h.textContent.replace(/\s+/g, ' ').trim();
+          let num = blk ? blk.getAttribute('data-screen-label') : '', text = raw;
+          const first = h.firstElementChild;
+          if (!num && first && first.tagName === 'SPAN') {
+            const badge = first.textContent.replace(/\s+/g, ' ').trim();
+            const rest = badge && raw.indexOf(badge) === 0 ? raw.slice(badge.length).trim() : '';
+            if (badge.length <= 5 && rest) { num = badge; text = rest; }
+          }
+          return { text, num, level: +h.tagName.charAt(1), i };
+        }),
         tocAt: -1
       });
       return;
     }
-    if ((n || 0) < 20) setTimeout(() => this.scanToc(frame, (n || 0) + 1), 300);
+    if ((n || 0) < 20) { setTimeout(() => this.scanToc(frame, (n || 0) + 1), 300); return; }
+    // 끝까지 목차가 없는 문서다. NAV_TOC 가 낡아 자리를 잡아 두었다면 여기서 거둔다.
+    this.setState({ tocMiss: this.state.doc });
+  }
+
+  // 목차·검색으로 옮길 때는 부드럽게 미끄러지게 한다. 어디서 어디로 갔는지 보이면
+  // 문서 안에서 길을 잃지 않는다. 다만 운영체제에서 동작 줄이기를 켠 사람에게는 즉시 옮긴다.
+  motion(w) {
+    try { return w.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'; }
+    catch (e) { return 'smooth'; }
+  }
+
+  // 뷰어 창을 대상 앞으로 옮긴다. 세로만 맞추면 화면 정의서처럼 1440px 열이 옆으로
+  // 늘어선 문서에서 엉뚱한 열에 떨어진다 — 대상이 가로로 화면 밖에 있을 때만 가로도 옮긴다.
+  // 화면 정의서는 제목이 아니라 제목이 속한 화면 블록의 왼쪽 끝에 맞춘다.
+  winScrollTo(d, w, el, pad) {
+    const top = el.getBoundingClientRect().top + (w.scrollY || 0) - pad;
+    const blk = el.closest('[data-screen-label]') || el;
+    const r = blk.getBoundingClientRect();
+    let left = w.scrollX || 0;
+    if (r.left < pad || r.right > d.documentElement.clientWidth) left = Math.max(0, r.left + left - pad);
+    const behavior = this.motion(w);
+    const y0 = w.scrollY || 0;
+    w.scrollTo({ left, top, behavior });
+    const rescue = () => {
+      if (!d.scrollingElement) return;
+      d.scrollingElement.scrollTop = top;
+      d.scrollingElement.scrollLeft = left;
+    };
+    // scrollTo 가 먹지 않는 문서가 있어 확인이 필요하다. 즉시 이동은 그 자리에서 보면 되지만
+    // 부드럽게 가는 중에는 알 수 없으므로 끝날 즈음 본다. 이때 "전혀 움직이지 않았을 때"만
+    // 손대야 한다 — 그 사이 사용자가 직접 스크롤했다면 y 가 달라져 있으니 끌어당기지 않는다.
+    if (behavior === 'auto') { if (Math.abs((w.scrollY || 0) - top) > 4) rescue(); return; }
+    setTimeout(() => { if ((w.scrollY || 0) === y0 && Math.abs(y0 - top) > 8) rescue(); }, 700);
   }
 
   scrollDoc(i) {
@@ -1201,9 +1285,7 @@ class Component extends DCLogic {
     if (!fr) return;
     try {
       const d = fr.contentDocument, w = fr.contentWindow;
-      const heads = Array.prototype.slice.call(d.querySelectorAll('h1, h2, h3'))
-        .filter(h => h.textContent.trim().length > 1);
-      const el = heads[i];
+      const el = this.tocHeads(d)[i];   // 목차를 만든 것과 같은 목록이어야 번호가 맞는다
       if (!el) return;
       let box = el.parentElement, cont = null;
       while (box && box !== d.body) {
@@ -1212,11 +1294,9 @@ class Component extends DCLogic {
         box = box.parentElement;
       }
       if (cont) {
-        cont.scrollTop += el.getBoundingClientRect().top - cont.getBoundingClientRect().top - 18;
+        cont.scrollBy({ top: el.getBoundingClientRect().top - cont.getBoundingClientRect().top - 18, behavior: this.motion(w) });
       } else {
-        const top = el.getBoundingClientRect().top + (w.scrollY || 0) - 18;
-        w.scrollTo(0, top);
-        if (Math.abs((w.scrollY || 0) - top) > 4 && d.scrollingElement) d.scrollingElement.scrollTop = top;
+        this.winScrollTo(d, w, el, 18);
       }
       this.setState({ tocAt: i });
     } catch (e) {}
@@ -1243,7 +1323,7 @@ class Component extends DCLogic {
   componentDidUpdate() {
     if (this._prevDoc === this.state.doc) return;
     this._prevDoc = this.state.doc;
-    if (!this.state.doc) return;
+    if (!this.state.doc || !NAV_TOC[this.state.doc]) return;   // 목차를 붙일 문서만 훑는다
     setTimeout(() => {
       const fr = document.getElementById('docframe');
       if (fr) this.scanToc(fr, 0);
@@ -1264,11 +1344,9 @@ class Component extends DCLogic {
         box = box.parentElement;
       }
       if (cont) {
-        cont.scrollTop += el.getBoundingClientRect().top - cont.getBoundingClientRect().top - 24;
+        cont.scrollBy({ top: el.getBoundingClientRect().top - cont.getBoundingClientRect().top - 24, behavior: this.motion(w) });
       } else {
-        const top = el.getBoundingClientRect().top + (w.scrollY || 0) - 24;
-        w.scrollTo(0, top);
-        if (Math.abs((w.scrollY || 0) - top) > 4 && d.scrollingElement) d.scrollingElement.scrollTop = top;
+        this.winScrollTo(d, w, el, 24);
       }
     } catch (e) {}
   }
@@ -1309,13 +1387,17 @@ class Component extends DCLogic {
         this.scrollElInDoc(best);
         // 스크롤이 먹었는지 확인한다. 문서가 아직 자라는 중이면 목표 위치가
         // 문서 높이로 클램프되어 맨 위에 머문다 — 그럴 때 다시 시도한다.
+        // 부드럽게 미끄러지는 중에는 아직 도착 전이니, 위치가 멎은 뒤에 본다.
         const target = best;
-        setTimeout(() => {
+        const settled = (n, prev) => {
+          const y = (fr.contentWindow && fr.contentWindow.scrollY) || 0;
+          if (n < 14 && y !== prev) { setTimeout(() => settled(n + 1, y), 120); return; }
           if (!target.isConnected) { again(); return; }   // 문서가 교체된 경우
           const box = target.getBoundingClientRect();
-          const h = fr.clientHeight || 800;
-          if (box.top < -60 || box.top > h) again();
-        }, 320);
+          const h = fr.clientHeight || 800, vw = fr.clientWidth || 1200;
+          if (box.top < -60 || box.top > h || box.right < 0 || box.left > vw) again();
+        };
+        setTimeout(() => settled(0, NaN), 320);
         return;
       }
     }
@@ -1567,10 +1649,14 @@ class Component extends DCLogic {
       viewerSrc: s.doc ? url(NAV_FILE[s.doc]) : '',
       closeViewer: () => { this._frame = null; this.setState({ doc: null, toc: [], tocAt: -1 }); },
 
-      tocOpen: s.toc.length >= 3,
-      tocCount: s.toc.length + '항목',
+      tocOpen: !!s.doc && !!NAV_TOC[s.doc] && s.tocMiss !== s.doc,
+      tocCount: s.toc.length ? s.toc.length + '항목' : '읽는 중',
       toc: s.toc.map(h => ({
         text: h.text,
+        num: h.num || '',
+        gap: h.num ? 8 : 0,
+        numW: h.num ? 24 : 0,
+        numColor: s.tocAt === h.i ? '#9A4030' : '#AAB6C8',
         indent: 16 + (h.level - 1) * 13,
         size: h.level === 1 ? 13 : (h.level === 2 ? 12.5 : 12),
         weight: h.level >= 3 ? 400 : 600,

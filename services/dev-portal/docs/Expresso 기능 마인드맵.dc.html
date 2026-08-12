@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
+<script src="./canvas-zoom.js"></script>
+<script src="./task-spec.js"></script>
 </head>
 <body>
 <x-dc>
@@ -30,7 +32,7 @@
       <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .14em; color: #9A4030; margin-bottom: 8px">WORK MAP · DOMAIN → FEATURE → TASK</div>
       <h1 style="margin: 0; font-size: 30px; font-weight: 600; letter-spacing: -.03em">작업 지도 — 규모와 진행 상황</h1>
     </div>
-    <span style="margin-left: auto; font-size: 13.5px; color: #5A6B87; padding-bottom: 4px">태스크 151개까지 펼친 전체 그림 · 도메인 12 · 기능 32</span>
+    <span style="margin-left: auto; font-size: 13.5px; color: #5A6B87; padding-bottom: 4px">도메인 12 · 기능 32 · 태스크 151 — 기능을 누르면 태스크가, 태스크를 누르면 정의가 열립니다</span>
     <button onClick="{{ toggleAll }}" style="font-family: inherit; font-size: 13px; font-weight: 600; color: #fff; background: #16223A; border: none; border-radius: 12px; padding: 11px 20px; cursor: pointer; transition: background .18s ease" style-hover="background: #0B1220">{{ allLabel }}</button>
   </div>
 
@@ -64,37 +66,26 @@
 
   <div id="mm-canvas" style="position: relative; display: grid; grid-template-columns: max-content 420px max-content; justify-content: center; align-items: center">
     {{ connectors }}
+    {{ modal }}
 
     <div style="position: relative; z-index: 1; display: grid; gap: 30px; justify-items: end">
       <sc-for list="{{ left }}" as="d" hint-placeholder-count="5">
         <div style="display: flex; align-items: center; gap: 92px">
-          <sc-if value="{{ tasksOpen }}" hint-placeholder-val="{{ true }}">
             <div style="display: grid; gap: 14px">
               <sc-for list="{{ d.feats }}" as="f" hint-placeholder-count="3">
                 <div style="display: flex; align-items: center; gap: 80px">
-                  <div style="display: grid; gap: 4px">
+                  <div style="display: {{ f.taskDisplay }}; gap: 4px">
                     <sc-for list="{{ f.tasks }}" as="t" hint-placeholder-count="4">
-                      <div data-mm="{{ t.id }}" style="width: 300px; background: #fff; border: 1px solid #EAF0F9; border-radius: 9px; padding: 6px 10px; font-size: 11.5px; line-height: 1.45; color: #35455F; text-wrap: pretty"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #AFBACB">{{ t.id }}</span> {{ t.label }}</div>
+                      <div data-mm="{{ t.id }}" onClick="{{ t.onOpen }}" style="width: 300px; background: #fff; border: 1px solid #EAF0F9; border-radius: 9px; padding: 6px 10px; font-size: 11.5px; line-height: 1.45; color: #35455F; text-wrap: pretty; cursor: pointer; transition: border-color .15s, box-shadow .15s" style-hover="border-color: #C9B2A6; box-shadow: 0 3px 10px rgba(22,34,58,.09)"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #AFBACB">{{ t.id }}</span> {{ t.label }}</div>
                     </sc-for>
                   </div>
-                  <div data-mm="{{ f.id }}" style="width: 244px; background: #fff; border: 1px solid #E2E9F4; border-radius: 12px; padding: 11px 13px">
+                  <div data-mm="{{ f.id }}" onClick="{{ f.onToggle }}" title="{{ f.hint }}" style="width: 244px; background: {{ f.cardBg }}; border: 1px solid {{ f.cardBorder }}; border-radius: 12px; padding: 11px 13px; cursor: pointer; transition: border-color .15s, box-shadow .15s" style-hover="border-color: #C9B2A6; box-shadow: 0 3px 12px rgba(22,34,58,.09)">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px"><span style="width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: {{ f.dot }}; border: 1.5px solid {{ f.dotBorder }}"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #9A4030">{{ f.id }}</span><span style="font-size: 12.5px; font-weight: 600; letter-spacing: -.01em">{{ f.name }}</span></div>
-                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #93A2BA">{{ f.meta }}</div>
+                    <div style="display: flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #93A2BA"><span style="color: {{ f.caretColor }}">{{ f.caret }}</span>{{ f.meta }}</div>
                   </div>
                 </div>
               </sc-for>
             </div>
-          </sc-if>
-          <sc-if value="{{ tasksClosed }}" hint-placeholder-val="{{ false }}">
-            <div style="display: grid; gap: 8px">
-              <sc-for list="{{ d.feats }}" as="f" hint-placeholder-count="3">
-                <div data-mm="{{ f.id }}" style="width: 244px; background: #fff; border: 1px solid #E2E9F4; border-radius: 12px; padding: 11px 13px">
-                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px"><span style="width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: {{ f.dot }}; border: 1.5px solid {{ f.dotBorder }}"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #9A4030">{{ f.id }}</span><span style="font-size: 12.5px; font-weight: 600; letter-spacing: -.01em">{{ f.name }}</span></div>
-                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #93A2BA">{{ f.meta }}</div>
-                </div>
-              </sc-for>
-            </div>
-          </sc-if>
           <div data-mm="{{ d.id }}" style="width: 272px; background: {{ d.cardBg }}; border: 1.5px solid {{ d.cardBorder }}; border-radius: 14px; padding: 14px 16px">
             <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #fff; background: #9A4030; border-radius: 5px; padding: 3px 6px">{{ d.id }}</span><span style="font-size: 15px; font-weight: 600; letter-spacing: -.015em">{{ d.name }}</span><span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #9A4030">{{ d.tag }}</span></div>
             <div style="display: flex; gap: 3px; margin-bottom: 9px">
@@ -129,33 +120,21 @@
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #5A6B87"><span>{{ d.meta }}</span><span style="font-family: 'JetBrains Mono', monospace; color: #16223A">{{ d.ptsLabel }}</span></div>
           </div>
-          <sc-if value="{{ tasksOpen }}" hint-placeholder-val="{{ true }}">
             <div style="display: grid; gap: 14px">
               <sc-for list="{{ d.feats }}" as="f" hint-placeholder-count="3">
                 <div style="display: flex; align-items: center; gap: 80px">
-                  <div data-mm="{{ f.id }}" style="width: 244px; background: #fff; border: 1px solid #E2E9F4; border-radius: 12px; padding: 11px 13px">
+                  <div data-mm="{{ f.id }}" onClick="{{ f.onToggle }}" title="{{ f.hint }}" style="width: 244px; background: {{ f.cardBg }}; border: 1px solid {{ f.cardBorder }}; border-radius: 12px; padding: 11px 13px; cursor: pointer; transition: border-color .15s, box-shadow .15s" style-hover="border-color: #C9B2A6; box-shadow: 0 3px 12px rgba(22,34,58,.09)">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px"><span style="width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: {{ f.dot }}; border: 1.5px solid {{ f.dotBorder }}"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #9A4030">{{ f.id }}</span><span style="font-size: 12.5px; font-weight: 600; letter-spacing: -.01em">{{ f.name }}</span></div>
-                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #93A2BA">{{ f.meta }}</div>
+                    <div style="display: flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #93A2BA"><span style="color: {{ f.caretColor }}">{{ f.caret }}</span>{{ f.meta }}</div>
                   </div>
-                  <div style="display: grid; gap: 4px">
+                  <div style="display: {{ f.taskDisplay }}; gap: 4px">
                     <sc-for list="{{ f.tasks }}" as="t" hint-placeholder-count="4">
-                      <div data-mm="{{ t.id }}" style="width: 300px; background: #fff; border: 1px solid #EAF0F9; border-radius: 9px; padding: 6px 10px; font-size: 11.5px; line-height: 1.45; color: #35455F; text-wrap: pretty"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #AFBACB">{{ t.id }}</span> {{ t.label }}</div>
+                      <div data-mm="{{ t.id }}" onClick="{{ t.onOpen }}" style="width: 300px; background: #fff; border: 1px solid #EAF0F9; border-radius: 9px; padding: 6px 10px; font-size: 11.5px; line-height: 1.45; color: #35455F; text-wrap: pretty; cursor: pointer; transition: border-color .15s, box-shadow .15s" style-hover="border-color: #C9B2A6; box-shadow: 0 3px 10px rgba(22,34,58,.09)"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #AFBACB">{{ t.id }}</span> {{ t.label }}</div>
                     </sc-for>
                   </div>
                 </div>
               </sc-for>
             </div>
-          </sc-if>
-          <sc-if value="{{ tasksClosed }}" hint-placeholder-val="{{ false }}">
-            <div style="display: grid; gap: 8px">
-              <sc-for list="{{ d.feats }}" as="f" hint-placeholder-count="3">
-                <div data-mm="{{ f.id }}" style="width: 244px; background: #fff; border: 1px solid #E2E9F4; border-radius: 12px; padding: 11px 13px">
-                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px"><span style="width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: {{ f.dot }}; border: 1.5px solid {{ f.dotBorder }}"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #9A4030">{{ f.id }}</span><span style="font-size: 12.5px; font-weight: 600; letter-spacing: -.01em">{{ f.name }}</span></div>
-                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #93A2BA">{{ f.meta }}</div>
-                </div>
-              </sc-for>
-            </div>
-          </sc-if>
         </div>
       </sc-for>
     </div>
@@ -260,7 +239,9 @@ function elbow(x1, y1, x2, y2, rad) {
 }
 
 class Component extends DCLogic {
-  state = { open: true, segs: [], w: 0, h: 0 };
+  // openF = 펼쳐 둔 기능 { 'F1.1': true }. 기본은 모두 접힘 — 151개를 한꺼번에 펼쳐 두면
+  // 전체 그림이 안 보인다. task = 모달에 띄운 태스크.
+  state = { openF: {}, segs: [], w: 0, h: 0, task: null };
 
   model() {
     if (!this._all) this._all = DATA.map((row, i) => build(row, i < 5 ? 'L' : 'R'));
@@ -270,14 +251,35 @@ class Component extends DCLogic {
   componentDidMount() {
     this._onResize = () => this.schedule();
     window.addEventListener('resize', this._onResize);
+    this._onKey = e => { if (e.key === 'Escape' && this.state.task) this.setState({ task: null }); };
+    window.addEventListener('keydown', this._onKey);
     this.schedule();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.schedule());
     setTimeout(() => this.schedule(), 400);
     setTimeout(() => this.schedule(), 1200);
   }
-  componentWillUnmount() { window.removeEventListener('resize', this._onResize); cancelAnimationFrame(this._raf); }
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.open !== this.state.open) this.schedule();
+  componentWillUnmount() {
+    window.removeEventListener('resize', this._onResize);
+    window.removeEventListener('keydown', this._onKey);
+    cancelAnimationFrame(this._raf);
+  }
+  // 런타임은 componentDidUpdate 에 prevProps 하나만 넘긴다 — prevState 를 받으려 하면
+  // 매 갱신마다 던진다. 직전 값을 직접 들고 비교한다.
+  componentDidUpdate() {
+    if (this._openRef !== this.state.openF) {
+      this._openRef = this.state.openF;
+      this.schedule();
+    }
+  }
+
+  toggleFeat(id) {
+    this.setState(x => {
+      const openF = Object.assign({}, x.openF);
+      if (openF[id]) delete openF[id]; else openF[id] = true;
+      return { openF };
+    });
+    setTimeout(() => this.schedule(), 60);
+    setTimeout(() => this.schedule(), 260);
   }
 
   schedule() {
@@ -315,6 +317,7 @@ class Component extends DCLogic {
         if (!F) return;
         const x1 = L ? D.l : D.r, x2 = L ? F.r : F.l;
         segs.push({ d: 'M' + x1 + ' ' + D.y + 'L' + x2 + ' ' + F.y, c: '#C9D3E2', w: 1.1 });
+        if (!this.state.openF[f.id]) return;   // 접힌 기능의 태스크는 자리가 없다
         f.tasks.forEach(t => {
           const T = pos[t.id];
           if (!T) return;
@@ -340,19 +343,111 @@ class Component extends DCLogic {
         key: i, d: seg.d, stroke: seg.c, strokeWidth: seg.w, fill: 'none', strokeLinecap: 'round'
       })));
     }
+    const openF = s.openF;
+    const anyOpen = Object.keys(openF).length > 0;
+
+    // 기능마다 펼침 상태를 입혀 넘긴다. 접힌 기능의 태스크 칸은 display: none 이라
+    // 자리를 차지하지 않는다 — 커넥터도 measure() 에서 같이 건너뛴다.
+    const dress = d => Object.assign({}, d, {
+      feats: d.feats.map(f => {
+        const on = !!openF[f.id];
+        return Object.assign({}, f, {
+          taskDisplay: on ? 'grid' : 'none',
+          caret: on ? '▾' : '▸',
+          caretColor: on ? '#9A4030' : '#C6CEDD',
+          cardBg: on ? '#FFFCFA' : '#fff',
+          cardBorder: on ? '#E6D0C3' : '#E2E9F4',
+          hint: on ? '태스크 접기' : '태스크 ' + f.tasks.length + '개 펼치기',
+          onToggle: () => this.toggleFeat(f.id),
+          tasks: f.tasks.map(t => Object.assign({}, t, {
+            onOpen: () => this.setState({ task: { t, f, d } })
+          }))
+        });
+      })
+    });
+
     return {
-      left: all.filter(d => d.side === 'L'),
-      right: all.filter(d => d.side === 'R'),
-      tasksOpen: s.open,
-      tasksClosed: !s.open,
-      allLabel: s.open ? '태스크 모두 접기' : '태스크 모두 펼치기',
+      left: all.filter(d => d.side === 'L').map(dress),
+      right: all.filter(d => d.side === 'R').map(dress),
+      allLabel: anyOpen ? '태스크 모두 접기' : '태스크 모두 펼치기',
       toggleAll: () => {
-        this.setState(x => ({ open: !x.open }));
+        const next = {};
+        if (!anyOpen) all.forEach(d => d.feats.forEach(f => { next[f.id] = true; }));
+        this.setState({ openF: next });
         setTimeout(() => this.schedule(), 60);
         setTimeout(() => this.schedule(), 260);
       },
-      connectors: this._svg
+      connectors: this._svg,
+      modal: this.renderModal()
     };
+  }
+
+  // 태스크 문서 모달. #dc-root 바깥(body)으로 내보낸다 — canvas-zoom.js 가 #dc-root 에
+  // transform 을 걸어 두어서, 그 안에 두면 position: fixed 가 화면이 아니라 캔버스 기준이
+  // 되고 배율까지 따라 줄어든다.
+  renderModal() {
+    const s = this.state;
+    if (!s.task || typeof ReactDOM === 'undefined' || !ReactDOM.createPortal) return null;
+    const h = React.createElement;
+    const { t, f, d } = s.task;
+    const spec = (window.TASK_SPEC || {})[t.id] || null;
+    const close = () => this.setState({ task: null });
+
+    const label = (text, color) => h('div', {
+      style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 9.5, letterSpacing: '.12em', color: color || '#93A2BA', marginBottom: 9 }
+    }, text);
+    const body = text => h('div', {
+      style: { fontSize: 13.5, lineHeight: 1.8, color: '#35455F', textWrap: 'pretty' }
+    }, text);
+
+    const blocks = [
+      h('div', { key: 'does' },
+        label('무엇을 만드는가'),
+        body(spec ? spec.does : t.label)),
+      spec && spec.rule ? h('div', { key: 'rule', style: { marginTop: 22, padding: '16px 18px', background: '#FBEEE4', borderRadius: 12 } },
+        label('제약 · 예외', '#9A4030'),
+        h('div', { style: { fontSize: 13, lineHeight: 1.75, color: '#5A3A28', textWrap: 'pretty' } }, spec.rule)) : null,
+      spec ? null : h('div', { key: 'none', style: { marginTop: 18, fontSize: 12.5, color: '#93A2BA' } },
+        '이 태스크의 상세 정의는 아직 기능 명세서에 없습니다.')
+    ];
+
+    // 포털은 React.isValidElement 가 false 라, 런타임이 요소로 안 보고 문자열로 찍는다.
+    // Fragment 로 한 겹 싸서 요소로 넘긴다.
+    return h(React.Fragment, null, ReactDOM.createPortal(
+      h('div', {
+        onClick: close,
+        style: {
+          position: 'fixed', left: 0, top: 0, right: 0, bottom: 0, zIndex: 2147482000,
+          background: 'rgba(11,18,32,.44)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', padding: 28
+        }
+      },
+        h('div', {
+          onClick: e => e.stopPropagation(),
+          style: {
+            width: 620, maxWidth: '100%', maxHeight: '100%', overflowY: 'auto',
+            background: '#fff', borderRadius: 18, padding: '26px 30px 30px',
+            boxShadow: '0 30px 80px rgba(11,18,32,.34)',
+            fontFamily: "'Pretendard Variable', Pretendard, -apple-system, sans-serif"
+          }
+        },
+          h('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 } },
+            h('span', { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: '#fff', background: '#9A4030', borderRadius: 5, padding: '3px 7px' } }, t.id),
+            h('span', { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, color: '#93A2BA' } }, d.id + ' ' + d.name + '  ·  ' + f.id + ' ' + f.name),
+            h('button', {
+              onClick: close,
+              style: { marginLeft: 'auto', font: 'inherit', fontSize: 12, fontWeight: 600, color: '#fff', background: '#16223A', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer' }
+            }, '닫기')),
+          h('h2', { style: { margin: '10px 0 22px', fontSize: 21, fontWeight: 600, letterSpacing: '-.02em', color: '#16223A' } },
+            spec ? spec.name : t.label),
+          blocks,
+          h('div', { style: { marginTop: 24, paddingTop: 16, borderTop: '1px solid #F1F5FB', display: 'flex', alignItems: 'center', gap: 14, fontSize: 12, color: '#93A2BA' } },
+            h('span', null, '기능 ' + f.id + ' · ' + f.meta),
+            h('span', { style: { marginLeft: 'auto', fontFamily: "'JetBrains Mono', monospace", fontSize: 9.5, letterSpacing: '.06em' } }, 'esc 닫기'))
+        )
+      ),
+      document.body
+    ));
   }
 }
 

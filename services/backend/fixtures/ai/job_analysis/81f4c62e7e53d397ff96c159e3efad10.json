@@ -1,0 +1,93 @@
+{
+  "contract": "job_analysis",
+  "promptVersion": 1,
+  "model": "claude-haiku-4-5-20251001",
+  "system": "너는 채용 공고에서 지원자가 충족해야 할 요건을 뽑아내는 추출기다.\n\n규칙:\n1. 공고에 적힌 것만 뽑는다. 업계 상식으로 보충하거나 추측하지 않는다.\n2. quote는 공고 원문에서 **한 글자도 바꾸지 않고** 그대로 잘라 온다.\n   줄바꿈·공백·문장부호를 손대면 그 항목은 버려진다.\n3. label은 그 요건을 짧게 정리한 말이다. 원문 그대로여도 되고 줄여도 된다.\n4. kind — must는 자격 요건, nice는 우대 사항, tone은 일하는 방식·문화.\n5. axis — 그 요건이 무엇을 묻는지로 하나 고른다.\n   technology: 기술·도구·언어\n   impact: 규모·지표·성과\n   role: 역할·직무·연차\n   conditions: 근무지·고용 형태·근무 형태\n   other: 위 넷 중 어디에도 확실히 안 붙을 때. **애매하면 other를 쓴다.**\n6. normalized는 일치도 계산에 쓰는 짧은 키워드 목록이다.\n   공고가 명시한 것만 넣는다. 없으면 빈 배열로 둔다.\n\n요건은 중요한 것부터 3–8개. 같은 내용을 두 번 넣지 않는다.",
+  "prompt": "다음 채용 공고에서 요건을 뽑아라.\n\n---\n뱅크샐러드 데이터플랫폼팀에서 함께할 데이터 엔지니어를 찾습니다.\n\n[주요 업무]\nKafka · Flink 기반 실시간 데이터 파이프라인 개발과 운영\n앱 로그와 주요 이벤트 데이터의 수집 · 가공 파이프라인 품질 관리\nAirflow 기반 배치 파이프라인 설계 및 개발\nPython · SQL 기반 적재 · 변환 로직 구현과 데이터 마트 설계\n데이터 정합성 보장, 온콜 대응, 파이프라인 효율 개선\n\n[자격 요건]\n데이터 엔지니어링 또는 관련 분야 3년 이상\nSQL 및 Python · Java · Scala 중 하나에 숙련\n대용량 ETL / ELT 파이프라인 설계 · 운영 경험\nAirflow 등 워크플로우 운영 경험\nKafka · Flink 기반 스트리밍 처리 경험\n\n[우대 사항]\n금융권 데이터 프로젝트 수행 경험\nCDC(Debezium) 기반 실시간 동기화\nMLOps 파이프라인 구축 · 자동화\n데이터 거버넌스 · 문서화 이해\n---",
+  "data": {
+    "requirements": [
+      {
+        "label": "데이터 엔지니어링 3년 이상",
+        "kind": "must",
+        "axis": "role",
+        "quote": "데이터 엔지니어링 또는 관련 분야 3년 이상"
+      },
+      {
+        "label": "SQL과 Python/Java/Scala 중 하나 숙련",
+        "kind": "must",
+        "axis": "technology",
+        "quote": "SQL 및 Python · Java · Scala 중 하나에 숙련"
+      },
+      {
+        "label": "대용량 ETL/ELT 파이프라인 설계·운영 경험",
+        "kind": "must",
+        "axis": "technology",
+        "quote": "대용량 ETL / ELT 파이프라인 설계 · 운영 경험"
+      },
+      {
+        "label": "Airflow 등 워크플로우 운영 경험",
+        "kind": "must",
+        "axis": "technology",
+        "quote": "Airflow 등 워크플로우 운영 경험"
+      },
+      {
+        "label": "Kafka·Flink 스트리밍 처리 경험",
+        "kind": "must",
+        "axis": "technology",
+        "quote": "Kafka · Flink 기반 스트리밍 처리 경험"
+      },
+      {
+        "label": "금융권 데이터 프로젝트 경험",
+        "kind": "nice",
+        "axis": "other",
+        "quote": "금융권 데이터 프로젝트 수행 경험"
+      },
+      {
+        "label": "CDC(Debezium) 실시간 동기화",
+        "kind": "nice",
+        "axis": "technology",
+        "quote": "CDC(Debezium) 기반 실시간 동기화"
+      },
+      {
+        "label": "MLOps 파이프라인 구축·자동화",
+        "kind": "nice",
+        "axis": "technology",
+        "quote": "MLOps 파이프라인 구축 · 자동화"
+      }
+    ],
+    "normalized": {
+      "technologies": [
+        "Kafka",
+        "Flink",
+        "Airflow",
+        "SQL",
+        "Python",
+        "Java",
+        "Scala",
+        "ETL",
+        "ELT",
+        "CDC",
+        "Debezium",
+        "MLOps"
+      ],
+      "impacts": [
+        "대용량"
+      ],
+      "roles": [
+        "데이터 엔지니어",
+        "3년 이상"
+      ],
+      "conditions": []
+    }
+  },
+  "usage": {
+    "model": "claude-haiku-4-5-20251001",
+    "inputTokens": 2,
+    "outputTokens": 1621,
+    "cacheReadTokens": 0,
+    "cacheCreationTokens": 28750,
+    "costUsd": 0.32917,
+    "durationMs": 18099
+  },
+  "recordedAt": "2026-08-09T10:38:41.156Z"
+}

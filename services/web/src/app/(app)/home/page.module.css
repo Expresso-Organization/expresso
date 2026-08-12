@@ -1,0 +1,721 @@
+/* 00 Home — 화면 정의서의 <main> 내부를 그대로 옮긴 것 */
+
+.content {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 26px 26px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* 영역 1 — AI 검색 바 */
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  background: var(--ex-white);
+  border: 1px solid #dcc5b8;
+  border-radius: 999px;
+  padding: 8px 8px 8px 22px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px -8px rgba(22, 34, 58, 0.14);
+  transition:
+    border-color var(--ex-motion-quick),
+    box-shadow var(--ex-motion-quick);
+}
+
+.searchBar:focus-within {
+  border-color: var(--ex-espresso);
+  box-shadow: 0 0 0 3px rgba(154, 64, 48, 0.09);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font-size: 15.5px;
+  color: var(--ex-ink-900);
+}
+
+.searchInput::placeholder {
+  color: var(--ex-slate-400);
+}
+
+.searchShortcut {
+  font-family: var(--ex-font-mono);
+  font-size: 10.5px;
+  color: var(--ex-slate-400);
+  background: var(--ex-surface-50);
+  border-radius: 6px;
+  padding: 5px 9px;
+  flex-shrink: 0;
+}
+
+.searchSubmit {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ex-white);
+  background: var(--ex-espresso);
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: background var(--ex-motion-quick);
+}
+
+.searchSubmit:hover {
+  background: var(--ex-espresso-hover);
+}
+
+/* 예시 칩 줄 */
+.examples {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.examplesLabel {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  margin-right: 2px;
+}
+
+.exampleChip {
+  font-size: 12px;
+  color: var(--ex-slate-700);
+  background: var(--ex-white);
+  border: 1px solid var(--ex-line-200);
+  border-radius: 999px;
+  padding: 7px 13px;
+  white-space: nowrap;
+  transition: border-color var(--ex-motion-quick);
+}
+
+.exampleChip:hover {
+  border-color: var(--ex-border-strong);
+}
+
+.savedSearches {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--ex-slate-700);
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+/* 영역 2·3 — 공고 + 사이드 카드 */
+.midRow {
+  display: grid;
+  grid-template-columns: 1.62fr 1fr;
+  gap: 18px;
+  flex-shrink: 0;
+}
+
+.card {
+  background: var(--ex-white);
+  border: 1px solid var(--ex-line-200);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--ex-line-inner);
+}
+
+.cardTitle {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.segment {
+  display: flex;
+  background: var(--ex-surface-50);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.segmentItem {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  border: none;
+  background: none;
+  border-radius: 6px;
+  padding: 5px 11px;
+}
+
+.segmentItemActive {
+  font-weight: 600;
+  color: var(--ex-ink-900);
+  background: var(--ex-white);
+}
+
+.cardNote {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  white-space: nowrap;
+}
+
+.cardLink {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--ex-slate-700);
+  white-space: nowrap;
+}
+
+/* 공고 행 */
+.jobRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--ex-line-inner);
+  transition: background var(--ex-motion-instant);
+}
+
+.jobRow:hover {
+  background: var(--ex-row-hover);
+}
+
+.jobRow:last-child {
+  border-bottom: none;
+}
+
+.jobInitial {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-family: var(--ex-font-brand);
+  font-size: 11.5px;
+  font-weight: 500;
+  flex-shrink: 0;
+  margin-top: 2px;
+  background: #eef2fc;
+  color: #2a48b8;
+}
+
+.jobBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.jobHead {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+
+.jobName {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jobScore {
+  font-family: var(--ex-font-mono);
+  font-size: 10.5px;
+  flex-shrink: 0;
+  color: var(--ex-slate-700);
+}
+
+.jobScoreHigh {
+  color: var(--ex-success-text);
+}
+
+.jobDeadline {
+  font-family: var(--ex-font-mono);
+  font-size: 10.5px;
+  color: var(--ex-slate-500);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.jobReason {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  margin-top: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jobCta {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ex-white);
+  background: var(--ex-espresso);
+  border: none;
+  border-radius: 8px;
+  padding: 9px 14px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: background var(--ex-motion-quick);
+}
+
+.jobCta:hover {
+  background: var(--ex-espresso-hover);
+}
+
+.jobCtaQuiet {
+  color: var(--ex-slate-700);
+  background: var(--ex-white);
+  border: 1px solid var(--ex-border-quiet);
+}
+
+.jobCtaQuiet:hover {
+  background: var(--ex-white);
+  border-color: var(--ex-border-strong);
+}
+
+/* 사이드 카드 열 */
+.sideColumn {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.plainCard {
+  background: var(--ex-white);
+  border: 1px solid var(--ex-line-200);
+  border-radius: 16px;
+  padding: 17px 20px;
+}
+
+/* 이어서 답하기 */
+.draftHead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 11px;
+}
+
+.workingChip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ex-bean-50);
+  border-radius: 6px;
+  padding: 4px 9px;
+  font-size: 11px;
+  color: var(--ex-espresso-text);
+  white-space: nowrap;
+}
+
+.workingDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ex-espresso);
+}
+
+.draftDeadline {
+  margin-left: auto;
+  font-family: var(--ex-font-mono);
+  font-size: 10.5px;
+  color: var(--ex-danger-text);
+}
+
+.draftTitle {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 5px;
+}
+
+.draftMeta {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  margin-bottom: 12px;
+}
+
+.draftProgress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 13px;
+}
+
+.draftTrack {
+  flex: 1;
+  height: 5px;
+  background: var(--ex-surface-100);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.draftFill {
+  height: 100%;
+  background: var(--ex-espresso);
+  border-radius: 999px;
+}
+
+.draftCount {
+  font-family: var(--ex-font-mono);
+  font-size: 10.5px;
+  color: var(--ex-slate-700);
+}
+
+.draftCta {
+  width: 100%;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ex-white);
+  background: var(--ex-espresso);
+  border: none;
+  border-radius: 9px;
+  padding: 11px;
+  transition:
+    background var(--ex-motion-quick),
+    transform var(--ex-motion-spring);
+}
+
+.draftCta:hover {
+  background: var(--ex-espresso-hover);
+  transform: translateY(-1px);
+}
+
+/* 저장한 검색 카드 */
+.savedHead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.savedTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.savedList {
+  display: grid;
+  gap: 9px;
+}
+
+.savedRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.savedName {
+  font-size: 11.5px;
+  color: var(--ex-slate-700);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.savedCount {
+  font-family: var(--ex-font-mono);
+  font-size: 10.5px;
+  color: var(--ex-espresso);
+}
+
+.savedFoot {
+  font-size: 11px;
+  color: var(--ex-slate-400);
+  margin-top: 11px;
+  line-height: 1.65;
+}
+
+/* 영역 4 — 내 포트폴리오 */
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.sectionNote {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+}
+
+.sectionLink {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--ex-slate-700);
+}
+
+.portfolioGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.newPortfolio {
+  border: 1px dashed var(--ex-border-strong);
+  border-radius: 14px;
+  background: var(--ex-row-hover);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px;
+  text-align: left;
+  transition:
+    border-color 0.18s,
+    background 0.18s;
+}
+
+.newPortfolio:hover {
+  border-color: var(--ex-espresso);
+  background: #fdf8f5;
+}
+
+.newPortfolioIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ex-bean-50);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.newPortfolioTitle {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+  margin-bottom: 6px;
+}
+
+.newPortfolioBody {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  line-height: 1.65;
+}
+
+/* 영역 5 — 사이트 성과 스트립 */
+.performance {
+  flex-shrink: 0;
+  background: var(--ex-white);
+  border: 1px solid var(--ex-line-200);
+  border-radius: 16px;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+.performanceLead {
+  width: 176px;
+  flex-shrink: 0;
+}
+
+.performanceHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.performancePicker {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--ex-surface-50);
+  border: none;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 10.5px;
+  color: var(--ex-slate-700);
+  white-space: nowrap;
+}
+
+.performanceRule {
+  width: 1px;
+  align-self: stretch;
+  background: var(--ex-line-inner);
+  flex-shrink: 0;
+}
+
+.metric {
+  flex: 1;
+  min-width: 0;
+}
+
+.metricLabel {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  margin-bottom: 7px;
+  white-space: nowrap;
+}
+
+.metricRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.metricValue {
+  font-family: var(--ex-font-brand);
+  font-weight: 300;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ex-ink-900);
+}
+
+.metricValueSignature {
+  color: var(--ex-espresso);
+}
+
+.metricDelta {
+  font-size: 11px;
+  color: var(--ex-slate-500);
+  white-space: nowrap;
+}
+
+.baristaRead {
+  width: 250px;
+  flex-shrink: 0;
+}
+
+.baristaHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.baristaText {
+  font-size: 11.5px;
+  color: var(--ex-espresso-text);
+  flex: 1;
+  min-width: 0;
+  line-height: 1.6;
+}
+
+.baristaLink {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+}
+
+/* 기록 0건 빈 상태 (§09) */
+.firstRun {
+  flex-shrink: 0;
+  border: 1px dashed var(--ex-border-strong);
+  border-radius: 16px;
+  background: var(--ex-white);
+  padding: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.firstRunTitle {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.firstRunBody {
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--ex-slate-500);
+}
+
+.firstRunCta {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ex-white);
+  background: var(--ex-espresso);
+  border: none;
+  border-radius: 999px;
+  padding: 12px 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background var(--ex-motion-quick);
+}
+
+.firstRunCta:hover {
+  background: var(--ex-espresso-hover);
+}
+
+/* 카테고리 요약 그리드 */
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.categoryCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 17px;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 14px;
+  background: var(--ex-white);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.categoryCard:hover {
+  box-shadow: var(--ex-elevation-card-hover);
+  transform: translateY(-2px);
+}
+
+.categoryCardIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--ex-surface-50);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.categoryCardName {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.categoryCardCount {
+  font-family: var(--ex-font-brand);
+  font-weight: 300;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ex-ink-900);
+}

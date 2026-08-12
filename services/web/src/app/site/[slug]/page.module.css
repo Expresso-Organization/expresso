@@ -1,0 +1,380 @@
+/*
+ * 08 공개 사이트. 앱 셸 없음.
+ * 소유자가 볼 때만 상단에 "내 사이트를 보는 중" 바가 붙고, 방문자에게는
+ * 사이트만 보인다. 데스크톱 · 모바일 · 공유 카드가 같은 배포에 묶인다.
+ */
+
+.page {
+  min-height: 100dvh;
+  background: var(--ex-canvas);
+}
+
+/* 소유자 바 */
+.ownerBar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 48px;
+  padding: 0 22px;
+  background: var(--ex-ink-900);
+  color: var(--ex-white);
+}
+
+.ownerLabel {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.ownerMeta {
+  font-family: var(--ex-font-mono);
+  font-size: 11px;
+  color: #8fa0bf;
+}
+
+.ownerActions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.ownerGhost {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ex-white);
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 8px;
+  padding: 7px 13px;
+  white-space: nowrap;
+}
+
+.ownerPrimary {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ex-white);
+  background: var(--ex-espresso);
+  border: none;
+  border-radius: 8px;
+  padding: 7px 13px;
+  white-space: nowrap;
+}
+
+.stage {
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  align-items: center;
+}
+
+.sectionLabel {
+  font-family: var(--ex-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: var(--ex-slate-400);
+  align-self: flex-start;
+  max-width: 1000px;
+  width: 100%;
+}
+
+/* 데스크톱 렌더 */
+.desktop {
+  width: 100%;
+  max-width: 1000px;
+  background: #f5f2ec;
+  border-radius: 14px;
+  box-shadow: var(--ex-elevation-frame);
+  overflow: hidden;
+}
+
+.siteNav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 46px;
+}
+
+.siteName {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ex-ink-900);
+}
+
+.siteMenu {
+  margin-left: auto;
+  display: flex;
+  gap: 22px;
+}
+
+.siteMenuItem {
+  font-size: 12.5px;
+  color: #6b6558;
+}
+
+.hero {
+  padding: 26px 46px 40px;
+}
+
+.eyebrow {
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: #ff6f0f;
+  margin-bottom: 14px;
+}
+
+.headline {
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 1.18;
+  color: var(--ex-ink-900);
+  margin-bottom: 18px;
+  max-width: 620px;
+}
+
+.lede {
+  font-size: 14px;
+  line-height: 1.9;
+  color: #5c574c;
+  max-width: 620px;
+  margin-bottom: 30px;
+}
+
+.metrics {
+  display: flex;
+  gap: 44px;
+}
+
+.metricValue {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--ex-ink-900);
+}
+
+.metricLabel {
+  font-size: 11px;
+  color: #8a8377;
+  margin-top: 6px;
+}
+
+.works {
+  padding: 0 46px 44px;
+}
+
+.worksLabel {
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: #a39b8c;
+  margin-bottom: 18px;
+}
+
+.work {
+  padding: 18px 0;
+  border-top: 1px solid #e2dacb;
+}
+
+.workHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.workTitle {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ex-ink-900);
+}
+
+.workYear {
+  margin-left: auto;
+  font-family: var(--ex-font-mono);
+  font-size: 11px;
+  color: #a39b8c;
+}
+
+.workBody {
+  font-size: 13px;
+  line-height: 1.85;
+  color: #5c574c;
+  max-width: 620px;
+}
+
+/* 모바일 + 공유 카드 */
+.previews {
+  width: 100%;
+  max-width: 1000px;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 26px;
+  align-items: start;
+}
+
+.phone {
+  width: 300px;
+  background: var(--ex-white);
+  border-radius: 22px;
+  box-shadow: var(--ex-elevation-frame);
+  overflow: hidden;
+}
+
+.phoneStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px 5px;
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  color: var(--ex-ink-900);
+}
+
+.phoneStatusRight {
+  margin-left: auto;
+  letter-spacing: 0.08em;
+}
+
+.phoneBody {
+  background: #f5f2ec;
+  padding: 18px 20px 24px;
+}
+
+.phoneName {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ex-ink-900);
+}
+
+.phoneEyebrow {
+  font-family: var(--ex-font-mono);
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  color: #ff6f0f;
+  margin: 14px 0 8px;
+}
+
+.phoneHeadline {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.25;
+  color: var(--ex-ink-900);
+  margin-bottom: 11px;
+}
+
+.phoneLede {
+  font-size: 11px;
+  line-height: 1.8;
+  color: #5c574c;
+  margin-bottom: 16px;
+}
+
+.phoneWork {
+  padding: 10px 0;
+  border-top: 1px solid #e2dacb;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ex-ink-900);
+}
+
+.phoneCta {
+  margin-top: 16px;
+  width: 100%;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ex-white);
+  background: var(--ex-ink-900);
+  border: none;
+  border-radius: 9px;
+  padding: 10px;
+}
+
+.notes {
+  margin-top: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--ex-slate-500);
+}
+
+.shareColumn {
+  display: grid;
+  gap: 14px;
+}
+
+/* 공유 카드 */
+.shareCard {
+  background: var(--ex-white);
+  border: 1px solid var(--ex-line-200);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.shareImage {
+  background: #f5f2ec;
+  padding: 26px 28px;
+  border-bottom: 1px solid var(--ex-line-200);
+}
+
+.shareTitle {
+  font-family: var(--ex-font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: #a39b8c;
+  margin-bottom: 12px;
+}
+
+.shareHeadline {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.3;
+  color: var(--ex-ink-900);
+}
+
+.shareMeta {
+  padding: 13px 16px;
+}
+
+.shareDomain {
+  font-family: var(--ex-font-mono);
+  font-size: 10.5px;
+  color: var(--ex-slate-400);
+  margin-bottom: 6px;
+}
+
+.shareOgTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ex-ink-900);
+  margin-bottom: 5px;
+}
+
+.shareOgDescription {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  line-height: 1.6;
+}
+
+.shareNote {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--ex-slate-400);
+}

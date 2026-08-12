@@ -1,0 +1,215 @@
+"use client";
+
+import type { CareerRecordListItem } from "@expresso/contracts";
+
+import { Icon } from "@/components/ui/Icon";
+import { MarkdownBody } from "@/components/ui/Markdown";
+
+import styles from "./DocumentPanel.module.css";
+
+/** 05 카테고리별 빠른 액션. 첫 항목만 시그니처 지면을 쓴다. */
+const QUICK_ACTIONS: Record<string, readonly string[]> = {
+  experience: ["이어서 질문받기", "성과를 숫자로", "문장 다듬기", "STAR로 재구성"],
+  project: ["성과를 숫자로", "기술 선택 이유 추가", "회고 쓰기"],
+  education_history: ["성과 물어보기", "이력서 문장으로", "영문으로 번역"],
+  certification_award: ["증빙 연결하기", "유효기간 확인", "영문 표기 정리"],
+  academic_writing: ["스킬로 올리기", "요약 3문장", "영문으로 번역"],
+  activity_leadership: ["성과를 숫자로", "규모 적어두기", "문장 다듬기"],
+  skill_tool: ["숫자 연결하기", "비슷한 스킬 묶기", "영문 표기 정리"],
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  draft: "초안",
+  organized: "정리됨",
+  verified: "검증됨",
+};
+
+function statusLabel(record: CareerRecordListItem): string {
+  if (record.isEmpty) return "비어 있음";
+  return STATUS_LABEL[record.status] ?? record.status;
+}
+
+function periodText(record: CareerRecordListItem): string | null {
+  if (!record.periodFrom) return null;
+  const from = record.periodFrom.slice(0, 7).replace("-", ".");
+  if (!record.periodTo) return `${from} – 현재`;
+  return `${from} – ${record.periodTo.slice(0, 7).replace("-", ".")}`;
+}
+
+const ORIGIN_LABEL: Record<string, string> = {
+  manual: "직접 작성",
+  ai: "AI 정리",
+  interview: "AI 대화",
+  import: "가져오기",
+};
+
+export function DocumentPanel({
+  record,
+  categoryKey,
+  categoryName,
+  onClose,
+}: {
+  record: CareerRecordListItem | null;
+  categoryKey: string;
+  categoryName: string;
+  onClose: () => void;
+}) {
+  const quickActions = QUICK_ACTIONS[categoryKey] ?? QUICK_ACTIONS.experience!;
+
+  return (
+    <aside className={styles.panel} aria-label="문서 패널">
+      <div className={styles.head}>
+        <button type="button" className={styles.headAction} aria-label="넓게 보기">
+          <Icon name="arrows-out-simple" size={15} />
+        </button>
+        <span className={styles.headLabel}>{categoryName} · 문서</span>
+        <div className={styles.headRight}>
+          <span className={styles.headLabel}>{record ? "저장됨" : ""}</span>
+          <button type="button" className={styles.headAction} aria-label="닫기" onClick={onClose}>
+            <Icon name="x" size={15} />
+          </button>
+        </div>
+      </div>
+
+      {record === null ? (
+        <div className={styles.none}>
+          <p className={styles.noneText}>
+            목록에서 기록을 고르면
+            <br />
+            여기에서 바로 고칠 수 있습니다
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className={styles.body}>
+            <div className={styles.title}>{record.title || "제목 없음"}</div>
+
+            <div className={styles.properties}>
+              <div className={styles.propertyRow}>
+                <span className={styles.propertyLabel}>
+                  <Icon name="circle-half" size={13} color="var(--ex-slate-500)" />
+                  <span className={styles.propertyLabelText}>상태</span>
+                </span>
+                <span>
+                  <span
+                    className={
+                      record.status === "draft" || record.isEmpty
+                        ? styles.chip
+                        : styles.chipSignature
+                    }
+                  >
+                    {statusLabel(record)}
+                  </span>
+                </span>
+              </div>
+
+              <div className={styles.propertyRow}>
+                <span className={styles.propertyLabel}>
+                  <Icon name="calendar-blank" size={13} color="var(--ex-slate-500)" />
+                  <span className={styles.propertyLabelText}>시기</span>
+                </span>
+                <span className={styles.propertyValue}>
+                  {periodText(record) ?? "—"}
+                </span>
+              </div>
+
+              <div className={styles.propertyRow}>
+                <span className={styles.propertyLabel}>
+                  <Icon name="chat-circle-dots" size={13} color="var(--ex-slate-500)" />
+                  <span className={styles.propertyLabelText}>출처</span>
+                </span>
+                <span className={styles.propertyValue}>
+                  {ORIGIN_LABEL[record.origin] ?? record.origin}
+                </span>
+              </div>
+
+              <div className={styles.propertyRow}>
+                <span className={styles.propertyLabel}>
+                  <Icon name="link-simple" size={13} color="var(--ex-slate-500)" />
+                  <span className={styles.propertyLabelText}>사용처</span>
+                </span>
+                <span className={styles.propertyValue}>
+                  {record.usedInCount > 0 ? `${record.usedInCount}곳` : "—"}
+                </span>
+              </div>
+
+              {/* 카테고리 스키마가 정의한 속성만 보여준다 */}
+              {Object.entries(record.properties).map(([key, value]) => (
+                <div key={key} className={styles.propertyRow}>
+                  <span className={styles.propertyLabel}>
+                    <Icon name="tag" size={13} color="var(--ex-slate-500)" />
+                    <span className={styles.propertyLabelText}>{key}</span>
+                  </span>
+                  <span>
+                    {Array.isArray(value) ? (
+                      <span className={styles.propertyChips}>
+                        {value.map((item) => (
+                          <span key={item} className={styles.chip}>
+                            {item}
+                          </span>
+                        ))}
+                      </span>
+                    ) : (
+                      <span className={styles.propertyValue}>{String(value)}</span>
+                    )}
+                  </span>
+                </div>
+              ))}
+
+              <div className={styles.propertyRow}>
+                <span className={styles.propertyLabel}>
+                  <Icon name="plus" size={13} color="var(--ex-border-strong)" />
+                  <span className={styles.propertyLabelText}>속성 추가</span>
+                </span>
+                <span />
+              </div>
+            </div>
+
+            <div className={styles.divider} />
+
+            <div className={styles.blocks}>
+              {/* 기록 본문은 마크다운이다(`record.body_md`). 평문으로 그리면
+                  STAR로 정리된 제목과 항목이 한 덩어리로 붙는다. */}
+              {record.bodyMd ? (
+                <MarkdownBody className={styles.blockText}>{record.bodyMd}</MarkdownBody>
+              ) : null}
+              <div className={styles.placeholder}>
+                <Icon name="plus" size={14} color="var(--ex-border-strong)" />
+                <span className={styles.placeholderText}>
+                  입력하거나 / 를 눌러 명령어를 사용하세요
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.foot}>
+            <div className={styles.quickActions}>
+              {quickActions.map((action, index) => (
+                <button
+                  key={action}
+                  type="button"
+                  className={`${styles.quickAction} ${
+                    index === 0 ? styles.quickActionSignature : ""
+                  }`}
+                >
+                  {action}
+                </button>
+              ))}
+            </div>
+            <div className={styles.composer}>
+              <Icon name="coffee" weight="fill" size={14} color="var(--ex-espresso)" />
+              <input
+                className={styles.composerInput}
+                placeholder="이 문서에 대해 바리스타에게 요청하기"
+                aria-label="바리스타에게 요청"
+              />
+              <button type="button" className={styles.composerSend} aria-label="보내기">
+                <Icon name="arrow-up" weight="fill" size={12} color="var(--ex-white)" />
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </aside>
+  );
+}

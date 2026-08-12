@@ -1,0 +1,1248 @@
+/* 07 · 07b · 07c 분석 — 화면 정의서 그대로 */
+
+.content {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 20px 26px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* 헤더 */
+.headDomain {
+  font-family: var(--ex-font-mono);
+  font-size: 11px;
+  color: var(--ex-slate-500);
+}
+
+.headState {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--ex-success-text);
+  background: var(--ex-success-surface);
+  border-radius: 6px;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
+
+.headStateDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ex-success);
+}
+
+.period {
+  display: flex;
+  background: var(--ex-surface-50);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.periodItem {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  border: none;
+  background: none;
+  border-radius: 6px;
+  padding: 5px 11px;
+}
+
+.periodItemActive {
+  font-weight: 600;
+  color: var(--ex-ink-900);
+  background: var(--ex-white);
+}
+
+.headButton {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+  background: var(--ex-white);
+  border: 1px solid var(--ex-border-quiet);
+  border-radius: 9px;
+  padding: 8px 14px;
+  white-space: nowrap;
+  transition: border-color var(--ex-motion-quick);
+}
+
+.headButton:hover {
+  border-color: var(--ex-border-strong);
+}
+
+.headButtonPrimary {
+  color: var(--ex-white);
+  background: var(--ex-ink-900);
+  border-color: var(--ex-ink-900);
+}
+
+.headButtonPrimary:hover {
+  background: var(--ex-ink-900-hover);
+  border-color: var(--ex-ink-900-hover);
+}
+
+/* 뷰 탭 줄 */
+.viewBar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid var(--ex-hairline);
+  flex-shrink: 0;
+}
+
+.viewTab {
+  border: none;
+  background: none;
+  font-size: 12.5px;
+  color: var(--ex-slate-500);
+  padding: 0 2px 9px;
+  transition: color var(--ex-motion-quick);
+}
+
+.viewTab:hover {
+  color: var(--ex-ink-900);
+}
+
+.viewTabActive {
+  font-weight: 600;
+  color: var(--ex-ink-900);
+  border-bottom: 1.5px solid var(--ex-ink-900);
+  margin-bottom: -1px;
+}
+
+.viewBarRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 7px;
+}
+
+.filterChip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--ex-slate-700);
+  background: var(--ex-surface-50);
+  border: none;
+  border-radius: 999px;
+  padding: 5px 11px;
+  white-space: nowrap;
+}
+
+.filterAdd {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  border: 1px dashed var(--ex-border-quiet);
+  background: none;
+  border-radius: 999px;
+  padding: 5px 11px;
+  white-space: nowrap;
+}
+
+.refreshed {
+  font-size: 11px;
+  color: var(--ex-slate-400);
+  white-space: nowrap;
+}
+
+/* 위젯 그리드 */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.widget {
+  background: var(--ex-white);
+  border: 1px solid var(--ex-line-200);
+  border-radius: 14px;
+  padding: 16px 18px;
+  position: relative;
+}
+
+/* 편집 모드 — 드래그 핸들과 액션이 뜬다 */
+.widgetEditing {
+  cursor: grab;
+}
+
+.widgetEditing:hover {
+  border-color: #4562ce;
+  box-shadow: 0 0 0 3px rgba(69, 98, 206, 0.09);
+}
+
+.widgetSelected,
+.widgetSelected:hover {
+  border: 1.5px solid #4562ce;
+  box-shadow: 0 0 0 3px rgba(69, 98, 206, 0.11);
+}
+
+.widgetTools {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--ex-white);
+  border: 1px solid var(--ex-line-200);
+  border-radius: 8px;
+  padding: 2px;
+  box-shadow: var(--ex-elevation-raised);
+}
+
+.widgetTool {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: none;
+  color: var(--ex-slate-500);
+}
+
+.widgetTool:hover {
+  background: var(--ex-surface-50);
+  color: var(--ex-ink-900);
+}
+
+.tileHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.tileLabel {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  white-space: nowrap;
+}
+
+.tileMeta {
+  margin-left: auto;
+  font-family: var(--ex-font-mono);
+  font-size: 9.5px;
+  color: var(--ex-slate-400);
+  white-space: nowrap;
+}
+
+.tileValueRow {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-bottom: 11px;
+}
+
+.tileValue {
+  font-family: var(--ex-font-brand);
+  font-weight: 300;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.deltaUp {
+  font-size: 11.5px;
+  color: var(--ex-success-text);
+  white-space: nowrap;
+}
+
+.deltaFlat {
+  font-size: 11.5px;
+  color: var(--ex-slate-400);
+  white-space: nowrap;
+}
+
+.spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 24px;
+}
+
+.sparkBar {
+  flex: 1;
+  background: #e9edf4;
+  border-radius: 2px;
+}
+
+.sparkBarHot {
+  background: var(--ex-ink-900);
+}
+
+.compareRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compareRow + .compareRow {
+  margin-top: 6px;
+}
+
+.compareKey {
+  font-size: 10.5px;
+  color: var(--ex-slate-400);
+  width: 26px;
+  flex-shrink: 0;
+}
+
+.compareTrack {
+  flex: 1;
+  height: 5px;
+  background: var(--ex-surface-100);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.compareFill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.compareValue {
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  color: var(--ex-slate-400);
+}
+
+.tileNote {
+  font-size: 10.5px;
+  color: var(--ex-slate-400);
+  line-height: 1.6;
+}
+
+/* 2행 — 추이 차트 + BARISTA'S READ */
+.row2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr);
+  gap: 14px;
+  /* 세로로 줄어들지 않는다 — 해설이 길면 줄이 늘어나야지 카드 밖으로 넘치면 안 된다. */
+  flex-shrink: 0;
+}
+
+.chartHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.chartTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.legend {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: var(--ex-slate-500);
+  white-space: nowrap;
+}
+
+.legendLine {
+  width: 12px;
+  height: 2px;
+  border-radius: 2px;
+}
+
+.chartWrap {
+  position: relative;
+}
+
+.chartAxis {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.axisLabel {
+  font-family: var(--ex-font-mono);
+  font-size: 9.5px;
+  color: var(--ex-slate-400);
+}
+
+.chartDates {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.annotation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ex-hairline);
+}
+
+.annotationMark {
+  width: 2px;
+  height: 12px;
+  background: var(--ex-espresso);
+  flex-shrink: 0;
+}
+
+.annotationText {
+  font-size: 11px;
+  color: var(--ex-slate-500);
+  flex: 1;
+  min-width: 0;
+}
+
+.annotationAction {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 11px;
+  color: var(--ex-slate-500);
+  white-space: nowrap;
+}
+
+/* BARISTA'S READ — bean-50 지면 */
+.baristaCard {
+  background: var(--ex-bean-50);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  /* 편집 모드의 손잡이가 이 카드 안에 머문다 — 없으면 화면 오른쪽 끝으로 달아난다. */
+  position: relative;
+}
+
+.baristaHead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.baristaLabel {
+  font-family: var(--ex-font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  color: var(--ex-espresso);
+}
+
+.baristaPin {
+  margin-left: auto;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 10.5px;
+  color: var(--ex-espresso-text);
+  white-space: nowrap;
+}
+
+.baristaBody {
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--ex-bean-ink);
+  margin-bottom: 14px;
+}
+
+.suggestionLabel {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ex-bean-ink);
+  margin-bottom: 8px;
+}
+
+.suggestionRow {
+  display: flex;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.suggestionDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ex-espresso);
+  flex-shrink: 0;
+  margin-top: 7px;
+}
+
+.suggestionText {
+  font-size: 11.5px;
+  color: var(--ex-bean-ink);
+  line-height: 1.65;
+}
+
+.baristaCta {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.baristaButton {
+  width: 100%;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ex-white);
+  background: var(--ex-espresso);
+  border: none;
+  border-radius: 9px;
+  padding: 11px;
+  transition: background var(--ex-motion-quick);
+}
+
+.baristaButton:hover {
+  background: var(--ex-espresso-hover);
+}
+
+/* 3행 */
+.row3 {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.dwellRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 0;
+}
+
+.dwellLabel {
+  font-size: 11.5px;
+  color: var(--ex-slate-700);
+  width: 132px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dwellTrack {
+  flex: 1;
+  height: 5px;
+  background: var(--ex-surface-100);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.dwellFill {
+  height: 100%;
+  background: var(--ex-ink-900);
+  border-radius: 999px;
+}
+
+.dwellTime {
+  font-family: var(--ex-font-mono);
+  font-size: 10.5px;
+  color: var(--ex-slate-500);
+  flex-shrink: 0;
+}
+
+.donutRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.donutCenter {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.donutValue {
+  font-family: var(--ex-font-brand);
+  font-weight: 300;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.donutLabel {
+  font-size: 10px;
+  color: var(--ex-slate-400);
+  margin-top: 3px;
+}
+
+.donutLegend {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.donutLegendRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.donutSwatch {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.donutLegendLabel {
+  font-size: 11.5px;
+  color: var(--ex-slate-700);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.donutLegendValue {
+  font-family: var(--ex-font-mono);
+  font-size: 10.5px;
+  color: var(--ex-ink-900);
+}
+
+.proBadge {
+  font-family: var(--ex-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--ex-espresso-text);
+  background: var(--ex-bean-50);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.orgRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ex-hairline);
+}
+
+.orgRow:last-of-type {
+  border-bottom: none;
+}
+
+.orgInitial {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--ex-surface-50);
+  display: grid;
+  place-items: center;
+  font-family: var(--ex-font-brand);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ex-slate-700);
+  flex-shrink: 0;
+}
+
+.orgDomain {
+  font-family: var(--ex-font-mono);
+  font-size: 11px;
+  color: var(--ex-ink-900);
+}
+
+.orgNote {
+  font-size: 10.5px;
+  color: var(--ex-slate-400);
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.orgDwell {
+  font-family: var(--ex-font-mono);
+  font-size: 10.5px;
+  color: var(--ex-slate-700);
+  flex-shrink: 0;
+}
+
+/* 프라이버시 고지 — 기업 도메인 위젯에는 항상 붙는다 */
+.privacy {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ex-hairline);
+  font-size: 10.5px;
+  color: var(--ex-slate-400);
+}
+
+/* ── 07b 드롭 존 ──────────────────────────────────────────── */
+
+.dropZone {
+  border: 1px dashed var(--ex-border-strong);
+  border-radius: 14px;
+  background: var(--ex-row-hover);
+  display: grid;
+  place-items: center;
+  min-height: 110px;
+  text-align: center;
+  padding: 16px;
+}
+
+.dropZoneText {
+  font-size: 11.5px;
+  color: var(--ex-slate-400);
+  line-height: 1.7;
+}
+
+/* ── 07b · 07c 우측 400px 드로어 ──────────────────────────── */
+
+.drawer {
+  width: 400px;
+  flex-shrink: 0;
+  background: var(--ex-white);
+  border-left: 1px solid var(--ex-line-200);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.drawerHead {
+  height: 50px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--ex-line-inner);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 18px;
+}
+
+.drawerTitle {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.drawerClose {
+  margin-left: auto;
+  border: none;
+  background: none;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ex-slate-500);
+}
+
+.drawerBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 18px;
+}
+
+.drawerSearch {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--ex-border-quiet);
+  border-radius: 10px;
+  padding: 9px 12px;
+  margin-bottom: 16px;
+}
+
+.drawerSearchInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font-size: 12.5px;
+  color: var(--ex-ink-900);
+}
+
+.drawerSearchInput::placeholder {
+  color: var(--ex-slate-400);
+}
+
+.metricGroup {
+  margin-bottom: 16px;
+}
+
+.metricGroupHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.metricGroupLabel {
+  font-family: var(--ex-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--ex-slate-500);
+  white-space: nowrap;
+}
+
+.metricGroupRule {
+  flex: 1;
+  height: 1px;
+  background: var(--ex-hairline);
+}
+
+.metricGroupCount {
+  font-family: var(--ex-font-mono);
+  font-size: 9.5px;
+  color: var(--ex-slate-400);
+}
+
+.metricRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 10px;
+  background: var(--ex-white);
+  text-align: left;
+  cursor: grab;
+  transition: border-color var(--ex-motion-quick);
+}
+
+.metricRow + .metricRow {
+  margin-top: 6px;
+}
+
+.metricRow:hover {
+  border-color: var(--ex-border-strong);
+}
+
+.metricName {
+  font-size: 12.5px;
+  color: var(--ex-ink-900);
+  flex: 1;
+  min-width: 0;
+}
+
+.stateUsed {
+  font-size: 10px;
+  color: var(--ex-slate-500);
+  background: var(--ex-surface-50);
+  border-radius: 5px;
+  padding: 3px 7px;
+  white-space: nowrap;
+}
+
+.stateNew {
+  font-size: 10px;
+  color: var(--ex-ink-900);
+  background: var(--ex-tint-100);
+  border-radius: 5px;
+  padding: 3px 7px;
+  white-space: nowrap;
+}
+
+.statePro {
+  font-family: var(--ex-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--ex-espresso-text);
+  background: var(--ex-bean-50);
+  border-radius: 5px;
+  padding: 3px 7px;
+  white-space: nowrap;
+}
+
+.drawerFoot {
+  flex-shrink: 0;
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--ex-line-inner);
+}
+
+.formulaButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+  background: none;
+  border: 1px dashed var(--ex-border-quiet);
+  border-radius: 10px;
+  padding: 11px;
+}
+
+.formulaButton:hover {
+  border-color: var(--ex-border-strong);
+}
+
+/* 07c 위젯 설정 */
+.settingPreview {
+  background: var(--ex-surface-50);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.settingGroup {
+  margin-bottom: 16px;
+}
+
+.settingGroupTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.settingRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settingRow + .settingRow {
+  margin-top: 9px;
+}
+
+.settingLabel {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.settingSelect {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--ex-border-quiet);
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: none;
+  font-size: 12px;
+  color: var(--ex-ink-900);
+  text-align: left;
+}
+
+.vizGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.vizOption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 0;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 9px;
+  background: none;
+}
+
+.vizOptionActive {
+  border: 1.5px solid var(--ex-ink-900);
+}
+
+.vizLabel {
+  font-size: 10px;
+  color: var(--ex-slate-500);
+}
+
+.vizOptionActive .vizLabel {
+  color: var(--ex-ink-900);
+  font-weight: 600;
+}
+
+.spanRow {
+  display: flex;
+  gap: 2px;
+  background: var(--ex-line-inner);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.spanOption {
+  flex: 1;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  border: none;
+  background: none;
+  border-radius: 6px;
+  padding: 6px 0;
+}
+
+.spanOptionActive {
+  font-weight: 600;
+  color: var(--ex-ink-900);
+  background: var(--ex-white);
+  box-shadow: 0 1px 2px rgba(22, 34, 58, 0.08);
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+}
+
+.toggleLabel {
+  font-size: 12px;
+  color: var(--ex-slate-700);
+  flex: 1;
+}
+
+.toggle {
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: #d7deea;
+  border: none;
+  padding: 3px;
+  display: flex;
+  flex-shrink: 0;
+}
+
+.toggleOn {
+  background: var(--ex-ink-900);
+  justify-content: flex-end;
+}
+
+.toggleKnob {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ex-white);
+}
+
+.settingActions {
+  display: flex;
+  gap: 7px;
+  margin-top: 4px;
+}
+
+.settingAction {
+  flex: 1;
+  font-size: 11.5px;
+  color: var(--ex-slate-700);
+  background: none;
+  border: 1px solid var(--ex-border-quiet);
+  border-radius: 8px;
+  padding: 8px 0;
+}
+
+.settingAction:hover {
+  border-color: var(--ex-border-strong);
+}
+
+.settingDelete {
+  color: var(--ex-danger-text);
+}
+
+/* 편집 모드 헤더 */
+.editingBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #354da8;
+  background: #eef1fc;
+  border-radius: 6px;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
+
+/* 줄어든 값 — 늘어난 값(deltaUp)의 반대편 */
+.deltaDown {
+  font-size: 11.5px;
+  color: var(--ex-danger-text);
+  white-space: nowrap;
+}
+
+.dwellViews {
+  color: var(--ex-slate-400);
+}
+
+/* 아직 계산되지 않은 날 알림 */
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 13px;
+  background: var(--ex-bean-50);
+  border-radius: 10px;
+}
+
+.noticeText {
+  flex: 1;
+  min-width: 0;
+  font-size: 11.5px;
+  color: var(--ex-slate-700);
+  line-height: 1.6;
+}
+
+.noticeAction {
+  border: 1px solid var(--ex-border-strong);
+  background: var(--ex-surface-0);
+  border-radius: 7px;
+  padding: 5px 11px;
+  font-size: 11.5px;
+  color: var(--ex-ink-900);
+  white-space: nowrap;
+}
+
+.noticeAction:disabled {
+  color: var(--ex-slate-400);
+}
+
+/* 해설이 무엇을 보고 한 말인가 */
+.evidenceRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 10px 0 4px;
+}
+
+.evidenceChip {
+  font-size: 10px;
+  color: var(--ex-slate-500);
+  background: var(--ex-surface-0);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+
+.baristaError {
+  font-size: 11px;
+  color: var(--ex-danger-text);
+  line-height: 1.6;
+}
+
+/* 볼 것이 없을 때 */
+.blank {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 320px;
+  text-align: center;
+}
+
+.blankTitle {
+  font-size: 14px;
+  color: var(--ex-ink-900);
+}
+
+.blankBody {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  line-height: 1.7;
+  max-width: 380px;
+}
+
+.blankAction {
+  margin-top: 6px;
+  border: 1px solid var(--ex-border-strong);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 12px;
+  color: var(--ex-ink-900);
+}
+
+/* 12칼럼 위젯 그리드 — 폭은 위젯마다 span으로 붙는다 */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+/* 07b 지표 행 — 이름 아래에 그게 무엇인지 한 줄 */
+.metricBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metricWhat {
+  font-size: 10.5px;
+  color: var(--ex-slate-400);
+  line-height: 1.6;
+}
+
+.metricAdd,
+.metricAddAgain {
+  border: 1px solid var(--ex-border-quiet);
+  background: var(--ex-white);
+  border-radius: 7px;
+  padding: 4px 9px;
+  font-size: 10.5px;
+  color: var(--ex-ink-900);
+  white-space: nowrap;
+}
+
+.metricAdd:hover,
+.metricAddAgain:hover {
+  border-color: var(--ex-border-strong);
+}
+
+.metricAddAgain {
+  color: var(--ex-slate-500);
+}
+
+/* 세고 있지 않은 지표 */
+.stateNone {
+  font-size: 10px;
+  color: var(--ex-slate-400);
+  background: var(--ex-surface-50);
+  border-radius: 999px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.settingFixed {
+  flex: 1;
+  font-size: 11.5px;
+  color: var(--ex-ink-900);
+}
+
+/* 끌고 있는 위젯 — 원래 자리는 흐려지고 미리보기가 자리를 잡는다 */
+.widgetDragging {
+  opacity: 0.4;
+}
+
+.metricDraggable {
+  cursor: grab;
+}
+
+/* 잡을 수 있다는 말은 커서가 한다 — 카드마다 손잡이를 박지 않는다. */
+.widgetEditing:active,
+.metricDraggable:active {
+  cursor: grabbing;
+}

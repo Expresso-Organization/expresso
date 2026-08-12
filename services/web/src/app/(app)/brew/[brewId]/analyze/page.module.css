@@ -1,0 +1,454 @@
+/* 01 공고 분석 — 화면 정의서 그대로 */
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+/* 좌측 본문 */
+.left {
+  flex: 1;
+  min-width: 0;
+  padding: 26px 32px;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 13px;
+}
+
+.headTitle {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+/* 입력 방식 3택 세그먼트 */
+.segment {
+  margin-left: auto;
+  display: flex;
+  background: var(--ex-hairline);
+  border-radius: 9px;
+  padding: 3px;
+}
+
+.segmentItem {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  border: none;
+  background: none;
+  padding: 5px 11px;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+
+.segmentItemActive {
+  font-weight: 600;
+  color: var(--ex-ink-900);
+  background: var(--ex-white);
+  box-shadow: 0 1px 2px rgba(22, 34, 58, 0.07);
+}
+
+/* 확정된 공고 — 파일 카드로 축약 */
+.sourceCard {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  /* 다시 분석이 남기는 말은 아랫줄로 내려간다 — 한 줄에 끼우면 제목이 잘린다. */
+  flex-wrap: wrap;
+  gap: 11px;
+  background: var(--ex-surface-50);
+  border-radius: 11px;
+  padding: 13px 16px;
+  margin-bottom: 24px;
+}
+
+.sourceTitle {
+  font-size: 12.5px;
+  color: var(--ex-ink-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sourceMeta {
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  color: var(--ex-slate-500);
+  white-space: nowrap;
+}
+
+.sourceAction {
+  margin-left: auto;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+  white-space: nowrap;
+}
+
+/* AI 분석 문단 */
+.block {
+  flex-shrink: 0;
+  margin-bottom: 24px;
+}
+
+.blockHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.blockTitle {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.aiTag {
+  font-family: var(--ex-font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  color: var(--ex-espresso);
+  background: var(--ex-bean-50);
+  border-radius: 5px;
+  padding: 3px 7px;
+}
+
+.summary {
+  font-size: 13.5px;
+  color: var(--ex-slate-700);
+  line-height: 1.95;
+  text-wrap: pretty;
+}
+
+/* 요구 역량 목록 */
+.requirementsHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.requirementsNote {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+}
+
+.requirement {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid #f4f7fb;
+}
+
+.requirementNo {
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  color: var(--ex-espresso);
+  flex-shrink: 0;
+  width: 14px;
+  padding-top: 2px;
+}
+
+.requirementBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.requirementHead {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-bottom: 5px;
+}
+
+.requirementLabel {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.requirementMentions {
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  color: var(--ex-slate-500);
+}
+
+/* 커버리지 배지 — 기록 있음 / 보강 필요 / 기록 없음 */
+.coverage {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 11px;
+  border-radius: 6px;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
+
+.coverageHave {
+  color: var(--ex-success-text);
+  background: var(--ex-success-surface);
+}
+
+.coverageWeak {
+  color: var(--ex-espresso-text);
+  background: var(--ex-bean-50);
+}
+
+.coverageNone {
+  color: var(--ex-slate-500);
+  background: var(--ex-hairline);
+}
+
+.requirementQuote {
+  font-size: 12.5px;
+  color: var(--ex-slate-500);
+  line-height: 1.65;
+}
+
+/* 읽은 자료 요약 바 */
+.readBar {
+  margin-top: auto;
+  padding-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.readBarText {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  flex: 1;
+  line-height: 1.7;
+}
+
+.readBarAction {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+  white-space: nowrap;
+}
+
+/* 우측 468px — 공고에서 읽은 문장 */
+.right {
+  width: 468px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--ex-track);
+  padding: 26px 30px;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.rightHead {
+  flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 3px;
+}
+
+.rightTitle {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.rightCount {
+  margin-left: auto;
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  color: var(--ex-slate-500);
+}
+
+.rightNote {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  margin-bottom: 8px;
+}
+
+.quote {
+  font-size: 12.5px;
+  color: var(--ex-slate-700);
+  line-height: 1.95;
+  padding: 13px 0;
+  border-bottom: 1px solid #f4f7fb;
+}
+
+.rightSection {
+  flex-shrink: 0;
+  margin-top: 20px;
+}
+
+.rightSectionLabel {
+  font-size: 12px;
+  color: var(--ex-slate-500);
+  margin-bottom: 10px;
+}
+
+.phrases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.phrase {
+  font-size: 12px;
+  color: var(--ex-slate-700);
+  background: var(--ex-surface-50);
+  border-radius: 999px;
+  padding: 7px 13px;
+  white-space: nowrap;
+}
+
+.phraseMore {
+  font-size: 12px;
+  color: var(--ex-slate-500);
+  border: 1px dashed var(--ex-border-quiet);
+  background: none;
+  border-radius: 999px;
+  padding: 7px 13px;
+  white-space: nowrap;
+}
+
+.extraList {
+  display: grid;
+  gap: 10px;
+}
+
+.extraRow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.extraLabel {
+  font-size: 12px;
+  color: var(--ex-slate-700);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.extraCount {
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  color: var(--ex-slate-500);
+  flex-shrink: 0;
+}
+
+/* 대화 예고 블록 */
+.preview {
+  margin-top: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--ex-surface-50);
+  border-radius: 13px;
+  padding: 16px 18px;
+}
+
+.previewTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.previewBody {
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  line-height: 1.7;
+}
+
+/* 하단 액션 바 */
+.footer {
+  height: 76px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--ex-line-200);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 32px;
+}
+
+.footerText {
+  font-size: 12.5px;
+  color: var(--ex-slate-700);
+}
+
+.footerActions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ghost {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ex-slate-500);
+  background: transparent;
+  border: none;
+  padding: 11px 14px;
+  transition: color var(--ex-motion-quick);
+}
+
+.ghost:hover {
+  color: var(--ex-ink-900);
+}
+
+/* brew CTA — radius full + espresso */
+.brew {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ex-white);
+  background: var(--ex-espresso);
+  border: none;
+  border-radius: 999px;
+  padding: 13px 26px;
+  display: inline-block;
+  transition:
+    background var(--ex-motion-quick),
+    transform var(--ex-motion-spring);
+}
+
+.brew:hover {
+  background: var(--ex-espresso-hover);
+  transform: translateY(-1px);
+  color: var(--ex-white);
+}
+
+/* 다시 분석이 남긴 말 · 분석 실패 */
+.sourceNotice {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: var(--ex-slate-500);
+  line-height: 1.6;
+}
+
+.failure {
+  font-size: 11.5px;
+  color: var(--ex-danger-text);
+  background: var(--ex-danger-surface);
+  border-radius: 8px;
+  padding: 9px 13px;
+  line-height: 1.6;
+  flex-shrink: 0;
+}

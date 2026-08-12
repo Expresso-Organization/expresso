@@ -1,0 +1,101 @@
+/*
+ * Expresso 디자인 토큰.
+ *
+ * 값의 출처는 두 곳이고 우선순위가 있습니다 — 구현 명세서 §3이 기준표이고,
+ * 화면 정의서(`docs/Expresso Screens.dc.html`)가 실제 사용값입니다.
+ * 둘이 어긋나면 **화면 정의서가 기준**입니다(구현 명세서 마지막 줄).
+ * 그래서 여기에는 명세서 표에 없지만 화면이 실제로 쓰는 색도 함께 둡니다.
+ *
+ * 여기에 없는 값을 새로 만들지 않습니다.
+ */
+
+:root {
+  /* 색 — 시스템(무채색) */
+  --ex-ink-900: #16223a;
+  --ex-ink-900-hover: #0b1220;
+  --ex-slate-700: #35455f;
+  --ex-slate-500: #5a6b87;
+  --ex-slate-400: #93a2ba;
+  --ex-slate-300: #afbacb;
+  --ex-line-200: #e2e9f4;
+  --ex-line-inner: #f1f5fb;
+  --ex-tint-50: #eff2f7;
+  --ex-tint-100: #e4e9f2;
+  --ex-surface-100: #eff4fb;
+  --ex-surface-50: #f7fafe;
+  --ex-chrome-50: #f7f8fa;
+  --ex-chrome-border: #e9ecf2;
+  --ex-white: #ffffff;
+
+  /* 화면 정의서가 실제로 쓰는 추가 계조 */
+  --ex-hairline: #f2f5f9; /* 셸 내부 구분선 */
+  --ex-table-header: #fafbfd; /* 테이블 헤더 · 행 호버 */
+  --ex-row-hover: #fcfdff; /* 카드 목록 행 호버 */
+  --ex-track: #edf1f7; /* 게이지 트랙 */
+  --ex-border-strong: #c7d2e2; /* 채워진 입력 · 점선 보더 */
+  --ex-border-quiet: #dce3ed; /* 보조 버튼 보더 */
+  --ex-canvas: #e6ebf3; /* 화면 정의서 캔버스 배경 */
+  --ex-form-surface: #fbfcfe; /* 로그인 · 가입 폼 지면 */
+
+  /* 어두운 지면 위 텍스트 (10 · 10b 좌측 패널) */
+  --ex-on-dark-body: #9fb0c9;
+  --ex-on-dark-muted: #7c8ba5;
+
+  /* 색 — 시그니처와 상태 */
+  --ex-espresso: #9a4030;
+  --ex-espresso-hover: #7e3225;
+  --ex-espresso-text: #7e3225;
+  --ex-crema: #e0b486;
+  --ex-bean-50: #fbeee4;
+  --ex-bean-100: #f6e2d3; /* bean 지면의 호버 */
+  --ex-bean-ink: #5a3a28;
+  --ex-success: #12a97a;
+  --ex-success-text: #0e8a63;
+  --ex-success-surface: #e4f7f0;
+  --ex-warning-text: #8a6412; /* 중간 구간 일치도 */
+  --ex-warning-surface: #fbf4e2; /* 06b "약함" 요건 행 */
+  --ex-danger: #e2543a;
+  --ex-danger-text: #c6402a;
+  --ex-danger-surface: #fef5f3;
+  --ex-danger-surface-deep: #fceeea; /* 06b "없음" 요건 행 */
+
+  /* 타이포그래피 — 3서체 고정 */
+  --ex-font-ui: "Pretendard Variable", Pretendard, -apple-system,
+    BlinkMacSystemFont, system-ui, sans-serif;
+  --ex-font-brand: "Outfit", var(--ex-font-ui);
+  --ex-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+    monospace;
+
+  /* 깊이 */
+  --ex-elevation-raised: 0 2px 10px rgba(22, 34, 58, 0.05);
+  --ex-elevation-overlay: 0 18px 44px rgba(22, 34, 58, 0.11);
+  --ex-elevation-card-hover: 0 14px 32px rgba(22, 34, 58, 0.1);
+  --ex-elevation-frame: 0 22px 54px rgba(22, 34, 58, 0.13);
+  --ex-focus-ring: 0 0 0 3px rgba(22, 34, 58, 0.18);
+
+  /* 모션 */
+  --ex-motion-instant: 140ms ease;
+  --ex-motion-quick: 160ms ease;
+  --ex-motion-panel: 280ms cubic-bezier(0.32, 0.72, 0, 1);
+  --ex-motion-spring: 200ms cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  /* 셸 치수 — 기준 캔버스 1440×940 */
+  --ex-sidebar-width: 250px;
+  --ex-rail-width: 316px;
+  --ex-doc-panel-width: 452px;
+  --ex-editor-rail-width: 56px;
+  --ex-editor-sections-width: 244px;
+  --ex-editor-panel-width: 320px;
+}
+
+/* §12 모션 감소 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
