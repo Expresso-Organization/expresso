@@ -1,7 +1,376 @@
-/* 화면 정의서 바깥의 캔버스만 제공한다. 화면 자체 스타일은 원본 인라인 코드다. */
-.canvas {
-  width: 1440px;
-  min-height: 940px;
+/* 01 어디에 지원하나요 — 치수·색은 화면 정의서 01에서 가져왔다. */
+
+.page {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 26px 32px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 13px;
+}
+
+.title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+.lede {
+  font-size: 12.5px;
+  color: var(--ex-slate-500);
+  margin: 0 0 20px;
+  max-width: 560px;
+}
+
+/* ── 첫 선택 ─────────────────────────────────────────── */
+
+/* 넷은 한 줄에 편다 — 접히면 마지막 갈래가 덤처럼 보인다. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(212px, 1fr));
+  gap: 12px;
+  max-width: 1180px;
+}
+
+.card {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 11px;
+  background: #fff;
+  text-decoration: none;
+  transition: border-color var(--ex-motion-instant), background var(--ex-motion-instant);
+}
+
+.card:hover {
+  border-color: var(--ex-border-strong);
+  background: var(--ex-row-hover);
+}
+
+.cardIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--ex-bean-50);
+  margin-bottom: 4px;
+}
+
+.cardLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ex-ink-900);
+}
+
+.cardLede {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ex-slate-500);
+}
+
+/* ── 고른 뒤의 세그먼트 ──────────────────────────────── */
+
+.tabs {
+  margin-left: auto;
+  display: flex;
+  background: var(--ex-hairline);
+  border-radius: 9px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.tab,
+.tabOn {
+  font-size: 11.5px;
+  padding: 5px 11px;
+  border-radius: 7px;
+  white-space: nowrap;
+  text-decoration: none;
+  color: var(--ex-slate-500);
+}
+
+.tabOn {
+  font-weight: 600;
+  color: var(--ex-ink-900);
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(22 34 58 / 7%);
+}
+
+/* ── 공고 목록 ───────────────────────────────────────── */
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--ex-surface-50);
+  border: 1px solid var(--ex-line-200);
+  border-radius: 11px;
+  padding: 11px 14px;
+  max-width: 560px;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  font-size: 12.5px;
+  color: var(--ex-ink-900);
+}
+
+.searchInput:focus {
+  outline: none;
+}
+
+.searchGo {
+  border: none;
+  background: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+  cursor: pointer;
+}
+
+.count {
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  color: var(--ex-slate-500);
+  margin: 16px 0 6px;
+}
+
+.empty {
+  font-size: 12.5px;
+  color: var(--ex-slate-500);
+  margin: 12px 0 0;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 11px;
   overflow: hidden;
-  background: #e6ebf3;
+  max-width: 960px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--ex-line-inner);
+  transition: background var(--ex-motion-instant);
+}
+
+.rows li:last-child .row {
+  border-bottom: none;
+}
+
+.row:hover {
+  background: var(--ex-row-hover);
+}
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.rowRole {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ex-ink-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowCompany {
+  font-size: 11px;
+  color: var(--ex-slate-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowFamily {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  color: var(--ex-slate-500);
+  background: var(--ex-tint-50);
+  border-radius: 5px;
+  padding: 3px 7px;
+  white-space: nowrap;
+}
+
+.rowGo {
+  flex-shrink: 0;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 7px;
+  background: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ex-slate-700);
+  padding: 6px 11px;
+  cursor: pointer;
+  transition: border-color var(--ex-motion-instant), color var(--ex-motion-instant);
+}
+
+.rowGo:hover {
+  border-color: var(--ex-espresso);
+  color: var(--ex-espresso);
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  font-size: 11.5px;
+}
+
+.pagerLink {
+  color: var(--ex-slate-700);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.pagerAt {
+  font-family: var(--ex-font-mono);
+  font-size: 10px;
+  color: var(--ex-slate-500);
+}
+
+/* ── 아직 없는 갈래 ──────────────────────────────────── */
+
+.notBuilt {
+  max-width: 560px;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 11px;
+  background: var(--ex-surface-50);
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.notBuiltWhy {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ex-slate-700);
+  margin: 0;
+}
+
+.notBuiltGo {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ex-espresso);
+  text-decoration: none;
+}
+
+/* ── 분석을 기다리는 자리(/brew/new/[jobAnalysisId]) ── */
+
+.wait {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+}
+
+.waitCard {
+  width: 420px;
+  max-width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 32px 28px;
+  border: 1px solid var(--ex-line-200);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.waitBadge {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ex-espresso);
+  margin-bottom: 4px;
+}
+
+.waitTitle {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.waitNote {
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--ex-slate-500);
+  margin: 0;
+}
+
+.waitStage {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--ex-slate-700);
+  margin-top: 4px;
+}
+
+.waitDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ex-crema);
+}
+
+.waitAction {
+  margin-top: 8px;
+  border: none;
+  border-radius: 9px;
+  background: var(--ex-espresso);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 10px 18px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.waitAction:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.waitGhost {
+  border: none;
+  background: none;
+  font-size: 11.5px;
+  color: var(--ex-slate-500);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.waitError {
+  font-size: 11.5px;
+  color: var(--ex-danger);
+  margin: 8px 0 0;
 }
