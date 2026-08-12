@@ -4,8 +4,32 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { LayoutDraft } from "@expresso/contracts";
 import { LayoutService } from "../layout/service.js";
 import type { LayoutDesignContext, LayoutDesigner } from "../layout/designer.js";
-import { DeterministicSentenceWriter, GenerationService } from "./service.js";
-import type { SentenceWriter } from "./writer.js";
+import { GenerationService } from "./service.js";
+import { GenerationOutputSchema } from "@expresso/contracts";
+import type { SentenceWriter, WriterContext } from "./writer.js";
+
+/**
+ * 계약 없이 파이프라인만 돌리는 대역. 제품에는 이런 폴백을 두지 않는다 —
+ * 아웃라인을 그대로 문단으로 옮긴 결과를 "포트폴리오"라 부를 수 없어서 걷어냈다.
+ */
+class StubSentenceWriter implements SentenceWriter {
+  readonly usesContract = false;
+
+  async write(context: WriterContext) {
+    return GenerationOutputSchema.parse({
+      blocks: context.sections.flatMap((section) =>
+        section.items.map((item) => ({
+          recipeSectionId: section.recipeSectionId,
+          kind: "paragraph" as const,
+          text: item.pointText,
+          label: null,
+          evidencePathIds: item.sourceNumbers
+            .map((number) => context.evidence[number - 1]?.id)
+            .filter((id): id is string => Boolean(id)),
+        }))),
+    });
+  }
+}
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
@@ -69,7 +93,7 @@ describeWithDatabase("generation integration", () => {
     expect(new Set(submissions.map(({ generationJobId }) => generationJobId)).size).toBe(1);
     const jobId = submissions[0]!.generationJobId;
     const results = await Promise.all(Array.from({ length: 10 }, () =>
-      service.process(jobId, new DeterministicSentenceWriter())));
+      service.process(jobId, new StubSentenceWriter())));
     expect(results.every(({ status }) => status === "done")).toBe(true);
     const status = await service.getStatus(userId, jobId);
     expect(status).toMatchObject({ status: "done", stage: "done", usageCharged: true });
@@ -119,7 +143,7 @@ describeWithDatabase("generation integration", () => {
     });
     const status = await service.process(
       submitted.generationJobId,
-      new DeterministicSentenceWriter(),
+      new StubSentenceWriter(),
       designer,
     );
     const portfolioId = status.portfolioId ?? "";
@@ -155,7 +179,7 @@ describeWithDatabase("generation integration", () => {
     });
     const status = await service.process(
       submitted.generationJobId,
-      new DeterministicSentenceWriter(),
+      new StubSentenceWriter(),
       { async design() { throw new Error("layout provider is down"); } },
     );
 

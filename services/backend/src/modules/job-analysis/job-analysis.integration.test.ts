@@ -10,7 +10,7 @@ import { createReliableQueue } from "../../platform/queue.js";
 import { createQueueWorker } from "../../worker/create-queue-worker.js";
 import { createJobAnalysisProcessor } from "../../worker/processors/job-analysis.js";
 import { IdentityService } from "../identity/service.js";
-import type { RequirementExtractor } from "./rule-extractor.js";
+import type { RequirementExtractor } from "./extractor.js";
 import { JobAnalysisService } from "./service.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;

@@ -10,7 +10,10 @@ import type postgres from "postgres";
 
 import { addOutboxEvent } from "../../platform/outbox.js";
 import { calculateRequirementCoverage } from "./coverage.js";
-import type { RequirementExtractor } from "./rule-extractor.js";
+import {
+  RequirementExtractorUnavailableError,
+  type RequirementExtractor,
+} from "./extractor.js";
 import { AnalysisEvidenceError, validateExtractionSource } from "./source-span.js";
 
 interface AnalysisRow {
@@ -46,8 +49,11 @@ interface RequirementRow {
  *
  * 이 값을 올리면 그 공고의 요건이 통째로 교체되고, 다른 사람의 커버리지도
  * 함께 지워진다(각자 다음 분석에서 다시 채워진다).
+ *
+ * 2 — 규칙 기반 추출기를 걷어냈다. 올리지 않으면 규칙이 잘라 둔 회사 비전
+ * 문구가 그 공고의 "요건"으로 영원히 남는다(캐시가 공고에 붙어 있다).
  */
-const EXTRACTOR_VERSION = 1;
+const EXTRACTOR_VERSION = 2;
 
 interface StoredRequirementRow {
   id: string;
@@ -106,6 +112,10 @@ function mapRequirement(row: RequirementRow) {
 function safeFailure(error: unknown): { code: string; retryable: boolean } {
   if (error instanceof AnalysisEvidenceError) {
     return { code: "INVALID_SOURCE_SPAN", retryable: false };
+  }
+  // 다시 시도해도 같다 — 프로바이더가 켜지기 전에는 뽑을 방법이 없다.
+  if (error instanceof RequirementExtractorUnavailableError) {
+    return { code: "EXTRACTOR_UNAVAILABLE", retryable: false };
   }
   return { code: "EXTRACTION_FAILED", retryable: true };
 }
