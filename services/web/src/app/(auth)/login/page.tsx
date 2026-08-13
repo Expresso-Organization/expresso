@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 
 import { loginAction, type AuthFormState } from "@/app/auth-actions";
+import { Catchphrase } from "@/components/brand/Catchphrase";
 import { Icon } from "@/components/ui/Icon";
 
 import { AuthAside } from "../AuthAside";
@@ -18,13 +19,7 @@ export default function LoginPage() {
     <div className={styles.frame}>
       <AuthAside
         eyebrow="WELCOME BACK"
-        headline={
-          <>
-            기록은 쌓아 두고,
-            <br />
-            공고가 뜨면 꺼내 씁니다
-          </>
-        }
+        headline={<Catchphrase tone="dark" />}
         lede="한 번 적은 경험은 사라지지 않습니다. 지원할 때마다 처음부터 쓰지 말고, 쌓아 둔 재료에서 골라 뽑아내십시오."
       />
 
