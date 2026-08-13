@@ -5,7 +5,7 @@ import { AnalyticsService } from "../analytics/service.js";
 import type { JobIngestService } from "../jobs/ingest/service.js";
 import { addOutboxEvent } from "../../platform/outbox.js";
 
-export type ScheduledJobKey = "saved_searches" | "expire_postings" | "notification_batch" | "analytics_daily" | "deletion_grace" | "retention" | "job_ingest";
+export type ScheduledJobKey = "saved_searches" | "expire_postings" | "notification_batch" | "analytics_daily" | "deletion_grace" | "retention" | "job_ingest" | "posting_facts";
 
 interface DefinitionRow {
   job_key: ScheduledJobKey; interval_seconds: number; next_run_at: Date | string;
@@ -142,6 +142,15 @@ export class SchedulingService {
       // 대신 그렇다고 적는다 — "모았다"는 빈 결과와 구분돼야 한다.
       if (!this.#ingest) return { skipped: "ingest service is not wired" };
       return this.#ingest.run(at) as unknown as Record<string, unknown>;
+    }
+    /*
+     * 수집과 나눠 둔 이유는 성질이 달라서다. 수집은 HTTP 몇 번이고 이건 공고
+     * 하나당 모델 한 번이다. 한 잡에 묶여 있으면 모델이 죽은 날 공고 목록도
+     * 갱신되지 않는다.
+     */
+    if (key === "posting_facts") {
+      if (!this.#ingest) return { skipped: "ingest service is not wired" };
+      return this.#ingest.readPendingFacts(undefined, at) as unknown as Record<string, unknown>;
     }
     if (key === "deletion_grace") return this.#accounts.purgeExpired(at);
     const records = await this.#sql<{ id: string }[]>`delete from record where purge_after <= ${at} returning id`;
