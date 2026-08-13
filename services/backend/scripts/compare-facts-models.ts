@@ -97,7 +97,9 @@ for (const model of MODELS) {
         salary: null,
         experience: null,
         workType: null,
-        error: error instanceof Error ? `${error.name}: ${error.message}`.slice(0, 120) : "unknown",
+        error: error instanceof Error
+          ? `${error.name}: ${error.message}\n${(error.stack ?? "").split("\n").slice(1, 4).join("\n")}`
+          : "unknown",
       });
     }
     process.stderr.write(`  ${model} ${index + 1}/${postings.length}\r`);
