@@ -33,6 +33,7 @@ export function createAiClient(config: RuntimeConfig): AiClient | null {
   if (provider === "codex") {
     const client = new CodexAiClient({
       ...(config.codexCliPath ? { cliPath: config.codexCliPath } : {}),
+      ...(config.codexHome ? { codexHome: config.codexHome } : {}),
       ...(config.aiTimeoutMs ? { timeoutMs: config.aiTimeoutMs } : {}),
       ...(config.aiModelOverrides ? { models: config.aiModelOverrides } : {}),
     });
