@@ -55,42 +55,68 @@ Node 24 리눅스 빌드는 glibc 2.28 이상을 요구하고 이 기계는 **2.
 
 ## 3. 아직 정하지 않은 것
 
-### AI 프로바이더 — 이게 정해져야 흐름이 돈다
-
-서버의 `~/.local/bin/claude`(v2.1.208)와 `~/.codex/auth.json`은 있지만
-**둘 다 OAuth가 만료됐다**(`Failed to authenticate: OAuth session expired`).
-그리고 어댑터는 로그인된 CLI를 `spawn`하는 방식이다.
-
-세 갈래다.
-
-1. **서버에서 CLI 재로그인** — 사람이 대화형으로 붙어야 한다. 가장 빠르지만
-   토큰이 또 만료되면 같은 자리에서 멈춘다.
-2. **`anthropic` API 어댑터 구현** — `platform/ai/create-client.ts`에 자리만
-   있고 *"아직 없다 — 운영에 올리기 전에 채운다"*로 남아 있다. 서버에는 이쪽이
-   정공법이다. API 키가 필요하다.
-3. **AI 없이 먼저 올린다** — 화면·목록·공고 수집까지는 돌지만 요건 추출과
-   문장 생성은 `EXTRACTOR_UNAVAILABLE` · `WRITER_UNAVAILABLE`로 멈춘다.
-   규칙으로 흉내 내는 폴백은 제품에서 걷어냈다.
-
-### 도메인
-
-nginx가 이미 `*.lawdigest.kr`을 여럿 서비스한다. `expresso.lawdigest.kr` 같은
-서브도메인을 붙일지, 당분간 SSH 터널로만 볼지 정해야 한다.
-
 ### 실행 방식
 
 이 저장소에는 Dockerfile이 없다. 서버가 로컬과 같은 arm64라 이미지를 만들 수도
 있지만, **개발을 이어 가는 것이 목적**이라면 `git pull` → 빌드 → systemd 3개
 (api · worker · web)가 단순하다.
 
-## 4. 준비물
+## 4. 정해진 것
+
+### AI — `claude-code`로 간다 (2026-08-13 확인)
+
+서버의 `~/.local/bin/claude`(v2.1.208)가 다시 로그인되어 **응답한다**. 그래서
+서버 환경은 이렇게 둔다.
+
+```
+AI_PROVIDER=claude-code
+CLAUDE_CLI_PATH=/home/ubuntu/.local/bin/claude
+```
+
+토큰이 만료되면 계약이 `AI_UNAVAILABLE`로 죽고 `ai.call_failed` 로그에 사유가
+남는다. 그때는 다시 로그인하거나 API 어댑터(`create-client.ts`의 빈 자리)를
+채운다.
+
+### 도메인 — `expresso.ai.kr` (인증서 발급 완료)
+
+DNS가 이미 이 서버를 가리키고 있었다. 인증서는 Let's Encrypt로 받았다
+(만료 2026-11-11, 기존 vhost들과 같은 webroot 방식).
+
+앞단 구성은 `infra/nginx/expresso.ai.kr.conf`에 그대로 있다. 서버에 놓인
+사본은 `/etc/nginx/sites-available/expresso.ai.kr`이다.
+
+| 경로 | 어디로 |
+|---|---|
+| `/v1/` | API `127.0.0.1:4500` — 배포된 지면이 그림을 `/v1/media/<id>`로 부른다 |
+| `/` | 웹 `127.0.0.1:3500` |
+
+지금은 앱이 없어 **502가 정상이다.**
+
+#### 이 기계의 nginx는 systemd가 아니다
+
+`nginx.service`는 `inactive`인데 80/443은 다른 마스터(`nginx -c
+/etc/nginx/nginx.conf`, PID 552610)가 쥐고 있고 `/run/nginx.pid`가 비어 있다.
+그래서 `systemctl reload nginx`도 `nginx -s reload`도 듣지 않는다. 리로드는
+마스터에 직접 신호를 보낸다.
+
+```bash
+sudo kill -HUP "$(pgrep -f 'nginx: master process nginx -c')"
+```
+
+**이것이 인증서 갱신에도 걸린다.** `/etc/letsencrypt/renewal-hooks/deploy/00-reload-nginx.sh`가
+`systemctl reload nginx`를 부르고 실패한다(발급할 때 실제로 실패했다). 갱신은
+되지만 **nginx가 새 인증서를 집어 들지 않는다** — 이 기계의 모든 도메인이 같은
+상태다. 훅을 고칠지는 다른 서비스에도 영향이 있어 따로 정한다.
+
+## 5. 준비물
 
 - `infra/compose.server.yaml` — 전용 Postgres · Redis. 포트는 루프백에만 열고
   비밀번호는 `.env`에서 받는다.
 - `services/backend/.env.server.example` — 서버용 환경 예시. 서명 키와 소금은
   `openssl rand -hex 32`로 채운다.
+- `infra/nginx/expresso.ai.kr.conf` — 앞단 vhost. 서버 사본과 같은 내용이다.
 
-## 5. 올릴 때 밟을 순서
+## 6. 올릴 때 밟을 순서
 
 ```bash
 # 1. 런타임 — 끝났다. v24.13.1 + pnpm 11.16.0이 붙어 있다.
@@ -110,5 +136,5 @@ ssh Oracle-Server 'cd ~/expresso && ~/.nvm/versions/node/v24.13.1/bin/pnpm db:mi
 # 5. 기동 (systemd 유닛은 아직 안 만들었다)
 ```
 
-5번의 유닛 파일은 위 "아직 정하지 않은 것"이 정해진 뒤에 쓴다 — 실행 방식과
+마지막 유닛 파일은 위 "아직 정하지 않은 것"이 정해진 뒤에 쓴다 — 실행 방식과
 AI 프로바이더에 따라 내용이 달라진다.
