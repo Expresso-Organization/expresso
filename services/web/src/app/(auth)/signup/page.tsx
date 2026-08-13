@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 
 import { signupAction, type AuthFormState } from "@/app/auth-actions";
+import { Catchphrase } from "@/components/brand/Catchphrase";
 import { Icon } from "@/components/ui/Icon";
 
 import { AuthAside } from "../AuthAside";
@@ -32,13 +33,7 @@ export default function SignupPage() {
     <div className={styles.frame}>
       <AuthAside
         eyebrow="GET STARTED"
-        headline={
-          <>
-            3분이면 첫 포트폴리오가
-            <br />
-            주소를 갖습니다
-          </>
-        }
+        headline={<Catchphrase tone="dark" />}
         lede="가입하면 커리어 카테고리 7종이 자동으로 만들어집니다. 이력서 한 장만 올려도 기록이 채워지기 시작합니다."
       />
 
