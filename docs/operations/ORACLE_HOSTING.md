@@ -13,25 +13,34 @@
 | CPU · 메모리 | 4 vCPU · 23GB(여유 8.7GB) |
 | 아키텍처 | **aarch64** (Ampere) — 로컬 Mac(arm64)과 같다 |
 | OS | Ubuntu 22.04.5 LTS |
-| 디스크 | 194GB 중 **9.3GB 남음(96% 사용)** |
+| 디스크 | 194GB 중 **67GB 남음**(2026-08-13 사용자가 정리) |
 | Docker | 27.2.1 · 컨테이너 28개 가동 중 |
-| Node | nvm에 18 · 20 · 22. **24 없음**(이 저장소는 `>=24` 요구) |
+| Node | nvm에 18 · 20 · 22 · **24.13.1**. pnpm 11.16.0을 24에 붙여 뒀다 |
 | 앞단 | 호스트 nginx가 80/443 점유, certbot으로 `*.lawdigest.kr` 다수 서비스 중 |
 
 이 기계는 **공용이다.** lawdigest · aris · synapsenote · SWE-bench 평가
 컨테이너가 함께 돈다. 그래서 준비물은 전부 "남의 것과 안 겹치게"를 전제로 짰다.
 
-### 디스크가 가장 큰 제약
+### 런타임은 24에 고정하되 기계의 기본값은 건드리지 않는다
 
-`/home/ubuntu`가 136GB를 쓰고 있다(`project` 62GB · `research` 17GB).
-Docker 이미지에 회수 가능한 5GB가 있지만 **다른 프로젝트의 이미지라 함부로
-지우지 않는다.** Expresso가 새로 쓸 것은 대략 이렇다.
+`nvm alias default`는 **22로 둔다.** 이 기계의 다른 프로젝트가 그 값을 보고
+돌기 때문이다. Expresso는 절대 경로로 24를 가리킨다.
 
-- postgres:18.4 + redis:8.2 이미지 — 약 0.5GB
-- 저장소 + `node_modules` — 약 2GB
-- 업로드 미디어 · DB 데이터 — 쓰는 만큼
+```
+/home/ubuntu/.nvm/versions/node/v24.13.1/bin/node
+/home/ubuntu/.nvm/versions/node/v24.13.1/bin/pnpm   # 11.16.0, corepack로 붙임
+```
 
-9.3GB로 시작할 수는 있지만 여유가 없다. **올리기 전에 정리 여부를 정해야 한다.**
+systemd 유닛도 이 경로를 그대로 쓴다 — 셸을 거치지 않으므로 `nvm use`에
+기대면 안 된다. 저장소의 `.nvmrc`(24)는 사람이 붙어 작업할 때를 위한 것이다.
+
+### 우분투는 올릴 필요가 없다
+
+Node 24 리눅스 빌드는 glibc 2.28 이상을 요구하고 이 기계는 **2.35**다
+(Ubuntu 22.04.5). 확인했고 `node -v`가 `v24.13.1`을 낸다.
+
+굳이 올려야 할 일이 생기면 `sudo do-release-upgrade`지만, 컨테이너 28개가
+도는 기계라 권하지 않는다. 올릴 이유가 생기면 그때 따로 판단한다.
 
 ## 2. 포트 배정 (2026-08-13 기준 전부 비어 있음)
 
@@ -84,18 +93,19 @@ nginx가 이미 `*.lawdigest.kr`을 여럿 서비스한다. `expresso.lawdigest.
 ## 5. 올릴 때 밟을 순서
 
 ```bash
-# 1. Node 24 (aarch64 공식 빌드가 있다)
-ssh Oracle-Server 'bash -lc "nvm install 24 && node -v"'
+# 1. 런타임 — 끝났다. v24.13.1 + pnpm 11.16.0이 붙어 있다.
+ssh Oracle-Server '~/.nvm/versions/node/v24.13.1/bin/node -v'
 
 # 2. 코드
-ssh Oracle-Server 'git clone <repo> ~/expresso && cd ~/expresso && npm i -g pnpm@11 && pnpm install'
+ssh Oracle-Server 'git clone <repo> ~/expresso'
+ssh Oracle-Server 'cd ~/expresso && ~/.nvm/versions/node/v24.13.1/bin/pnpm install'
 
 # 3. 인프라
 scp infra/compose.server.yaml Oracle-Server:~/expresso/infra/
 ssh Oracle-Server 'cd ~/expresso && EXPRESSO_POSTGRES_PASSWORD=... docker compose -f infra/compose.server.yaml up -d --wait'
 
 # 4. 스키마
-ssh Oracle-Server 'cd ~/expresso && pnpm db:migrate'
+ssh Oracle-Server 'cd ~/expresso && ~/.nvm/versions/node/v24.13.1/bin/pnpm db:migrate'
 
 # 5. 기동 (systemd 유닛은 아직 안 만들었다)
 ```
