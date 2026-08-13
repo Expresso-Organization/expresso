@@ -183,6 +183,10 @@ export class JobIngestService {
           if (!family || !TARGET_FAMILIES.includes(family)) continue;
           if (await this.#store(source, posting, family)) added += 1;
         }
+        // 출처 설정에 사이트가 적혀 있으면 이미 들여 둔 회사에도 따라 붙인다.
+        // `#store`는 중복 공고에서 회사를 건드리기 전에 빠져나가므로, 이걸
+        // 여기 두지 않으면 **새 공고가 없는 날에는 설정 변경이 영영 닿지 않는다.**
+        await this.#syncCompanyDomain(source);
         await this.#markSource(source.id, at, "succeeded", null, postings.length, added);
         results.push({
           sourceId: source.id, provider: source.provider, displayName: source.display_name,
@@ -213,6 +217,29 @@ export class JobIngestService {
         logosRead,
       },
     });
+  }
+
+  /**
+   * 출처가 아는 회사 사이트를 회사 행에 적는다.
+   *
+   * `company.domain`은 출처의 내용이 아니라 **우리 설정**이다(`job_source.site_url`).
+   * 그래서 공고가 새로 들어오는 일과 무관하게 따라와야 한다 — 갈래와 지역을
+   * 이미 들인 공고에도 다시 적어 주는 것과 같은 이유다.
+   *
+   * 이미 적혀 있으면 덮지 않는다. 설정을 바꾸는 일보다 수집이 도는 일이 훨씬 잦다.
+   */
+  async #syncCompanyDomain(source: SourceRow): Promise<void> {
+    const host = source.site_url === null ? null : hostOf(source.site_url);
+    if (!host) return;
+    // `starts_with`를 쓴다 — token에 LIKE 메타문자가 들어와도 그대로 글자로 본다.
+    await this.#sql`
+      update company set domain = ${host}
+      where domain is null
+        and id in (
+          select company_id from job_posting
+          where starts_with(external_id, ${`${source.provider}:${source.token}:`})
+        )
+    `;
   }
 
   /**

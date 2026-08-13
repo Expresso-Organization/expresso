@@ -239,6 +239,34 @@ The base pay for this position ranges from $174,00/year to $299,000/year.`;
     expect(row?.facts_read_at).not.toBeNull();
   });
 
+  it("나중에 출처에 사이트를 적어도 이미 들인 회사에 따라 붙는다", async () => {
+    /*
+     * 2026-08-13에 막혔던 자리다. 씨앗에 `site_url`이 없어 회사의 `domain`이
+     * 비었고, 뒤늦게 적어 넣은 뒤 수집을 다시 돌려도 **공고가 전부 중복이라**
+     * `#store`가 회사를 건드리기 전에 빠져나갔다. 로고는 `domain`이 있는
+     * 회사만 받으러 가므로, 영영 한 번도 시도하지 않았다.
+     */
+    await sql`update job_source set site_url = null where id = ${sourceId}`;
+    await sql`update company set domain = null where name = ${`Ingest ${marker}`}`;
+    adapter.postings = [posting(marker, 42)];
+    await service.run(new Date(), [sourceId]);
+
+    const before = await sql<{ domain: string | null }[]>`
+      select domain from company where name = ${`Ingest ${marker}`}
+    `;
+    expect(before[0]?.domain).toBeNull();
+
+    // 설정만 바꾸고, 새 공고는 하나도 없이 다시 돌린다.
+    await sql`update job_source set site_url = 'https://later.example' where id = ${sourceId}`;
+    const rerun = await service.run(new Date(), [sourceId]);
+    expect(rerun.totals.added).toBe(0);
+
+    const after = await sql<{ domain: string | null }[]>`
+      select domain from company where name = ${`Ingest ${marker}`}
+    `;
+    expect(after[0]?.domain).toBe("later.example");
+  });
+
   it("출처에 사이트를 적어 두면 회사 로고를 받아 담는다", async () => {
     await sql`update job_source set site_url = 'https://example.test' where id = ${sourceId}`;
     await sql`update company set domain = null, logo_read_at = null
