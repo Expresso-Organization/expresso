@@ -51,6 +51,12 @@ const runtimeConfigSchema = z.object({
   AI_RECORD: z.stringbool().default(false),
   CLAUDE_CLI_PATH: z.string().min(1).default("claude"),
   CODEX_CLI_PATH: z.string().min(1).default("codex"),
+  /**
+   * codex 홈을 사람이 쓰는 것과 갈라 놓는다. 비우면 사람 홈을 그대로 쓴다.
+   *
+   * 실측(2026-08-13): 사람 홈의 `AGENTS.md`가 호출마다 4,260토큰씩 실려 갔다.
+   */
+  CODEX_HOME: z.string().min(1).optional(),
   /** 계약별 모델 덮어쓰기 — `AI_MODEL_JOB_ANALYSIS=sonnet` 형태. */
   AI_MODEL_JOB_ANALYSIS: z.string().min(1).optional(),
   /** 공고 본문에서 급여·경력·근무형태를 읽는 계약. 163건을 한 번에 도는 자리라 모델을 갈아 볼 일이 잦다. */
@@ -92,6 +98,8 @@ export interface RuntimeConfig {
   aiRecord?: boolean;
   claudeCliPath?: string;
   codexCliPath?: string;
+  /** 없으면 사람이 쓰는 codex 홈을 그대로 쓴다. */
+  codexHome?: string | undefined;
   aiModelOverrides?: Partial<Record<string, string>>;
 }
 
@@ -124,6 +132,7 @@ export function loadRuntimeConfig(
     aiRecord: result.AI_RECORD,
     claudeCliPath: result.CLAUDE_CLI_PATH,
     codexCliPath: result.CODEX_CLI_PATH,
+    codexHome: result.CODEX_HOME,
     aiModelOverrides: Object.fromEntries(
       Object.entries({
         job_analysis: result.AI_MODEL_JOB_ANALYSIS,

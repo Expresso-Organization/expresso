@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdtempSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -43,6 +43,19 @@ export interface CodexOptions {
   timeoutMs?: number;
   /** 계약별 Codex 모델 덮어쓰기. */
   models?: Partial<Record<string, string>>;
+  /**
+   * `CODEX_HOME`. 이 기계에서 사람이 쓰는 codex 홈과 **갈라 놓는 자리**다.
+   *
+   * 실측(2026-08-13): 최소 호출 하나에 입력 19,430토큰이 나갔는데, 그중
+   * **4,260이 `~/.codex/AGENTS.md`**였다(17,961바이트). 이 프로젝트와 무관한
+   * 다른 작업용 지침이 공고 본문에서 세 칸 읽는 호출에 매번 실려 간 것이다.
+   * 어댑터가 `--ignore-rules`를 주는데도 통과했다.
+   *
+   * 인증만 든 디렉터리를 가리키면 그 4,260이 사라진다. 부수 효과가 더 중요한데,
+   * **재현성**이 생긴다 — 지금은 서버에서 그 파일을 고치면 우리 추출 결과가
+   * 조용히 달라진다.
+   */
+  codexHome?: string;
 }
 
 const USAGE_SCHEMA = z.looseObject({
@@ -71,12 +84,20 @@ export class CodexAiClient implements AiClient {
   readonly #timeoutMs: number;
   readonly #models: Partial<Record<string, string>>;
   readonly #cwd: string;
+  readonly #home: string | null;
 
   constructor(options: CodexOptions = {}) {
     this.#cliPath = options.cliPath ?? "codex";
     this.#timeoutMs = options.timeoutMs ?? 180_000;
     this.#models = options.models ?? {};
     this.#cwd = mkdtempSync(join(tmpdir(), "expresso-codex-"));
+    this.#home = options.codexHome ?? null;
+    if (this.#home !== null && !existsSync(join(this.#home, "auth.json"))) {
+      // 조용히 사람 홈으로 되돌아가지 않는다 — 그러면 아낀 줄 알고 계속 낸다.
+      throw new Error(
+        `CODEX_HOME "${this.#home}" has no auth.json — run scripts/operations/prepare-codex-home.sh`,
+      );
+    }
   }
 
   async complete<T>(spec: AiCallSpec, schema: z.ZodType<T>): Promise<AiResult<T>> {
@@ -230,6 +251,9 @@ export class CodexAiClient implements AiClient {
       const child = spawn(this.#cliPath, args, {
         cwd: this.#cwd,
         stdio: ["pipe", "pipe", "pipe"],
+        ...(this.#home === null
+          ? {}
+          : { env: { ...process.env, CODEX_HOME: this.#home } }),
       });
       child.stdin.on("error", () => undefined);
       child.stdin.end(prompt, "utf8");
