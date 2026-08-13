@@ -1,3 +1,5 @@
+import type { Route } from "next";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { CommandPalette } from "@/components/CommandPalette";
@@ -42,24 +44,41 @@ export function AppHeader({
   );
 }
 
+/**
+ * 빵부스러기 한 조각. 글자만 주면 글자로 서고, 갈 곳을 함께 주면 링크가 된다.
+ *
+ * 마지막 조각은 **지금 보고 있는 화면**이라 갈 곳을 줘도 링크로 만들지 않는다 —
+ * 제자리로 가는 링크는 눌러도 아무 일이 없고, 그런 링크가 있으면 나머지 조각도
+ * 눌러 봐야 아는 것이 된다.
+ */
+export type Crumb = string | { label: string; href: Route };
+
 /** 내 커리어(05) 헤더 — 46px, breadcrumb + 편집 시각. */
 export function DocumentHeader({
   crumbs,
   actions,
 }: {
-  crumbs: readonly string[];
+  crumbs: readonly Crumb[];
   actions?: ReactNode;
 }) {
   return (
     <div className={`${styles.header} ${styles.headerDocument}`}>
       {crumbs.map((crumb, index) => {
         const last = index === crumbs.length - 1;
+        const label = typeof crumb === "string" ? crumb : crumb.label;
+        const href = typeof crumb === "string" ? null : crumb.href;
         return (
-          <span key={crumb} style={{ display: "contents" }}>
+          <span key={label} style={{ display: "contents" }}>
             {index > 0 ? <span className={styles.crumbSeparator}>/</span> : null}
-            <span className={last ? styles.crumbCurrent : styles.crumb}>
-              {crumb}
-            </span>
+            {href && !last ? (
+              <Link href={href} className={`${styles.crumb} ${styles.crumbLink}`}>
+                {label}
+              </Link>
+            ) : (
+              <span className={last ? styles.crumbCurrent : styles.crumb}>
+                {label}
+              </span>
+            )}
           </span>
         );
       })}

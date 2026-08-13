@@ -1,4 +1,6 @@
 import type { JobPostingDetail, JobRequirement } from "@expresso/contracts";
+import type { Route } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AppShell, DocumentHeader } from "@/components/shell/AppShell";
@@ -90,7 +92,10 @@ export default async function JobDetailPage({
       }
       header={
         <DocumentHeader
-          crumbs={["공고 탐색", `${job.company.name} · ${job.title}`]}
+          crumbs={[
+            { label: "공고 탐색", href: "/jobs" },
+            `${job.company.name} · ${job.title}`,
+          ]}
           actions={
             <>
               <button type="button" className={styles.headAction}>
@@ -110,6 +115,20 @@ export default async function JobDetailPage({
     >
       <div className={styles.body}>
         <div className={styles.left}>
+          {/*
+            * 목록으로 돌아가는 길을 지면 안에도 둔다.
+            *
+            * 빵부스러기는 46px 헤더 왼쪽 끝에 12.5px로 서 있어서, 본문을 읽던
+            * 눈이 거기까지 올라가지 않는다. 제목 바로 위가 다 읽고 나서 손이
+            * 가는 자리다.
+            *
+            * 브라우저 뒤로가기가 아니라 **목록 주소**로 간다 — 주소를 직접
+            * 열었거나 알림에서 들어온 사람에게도 같은 자리로 데려다준다.
+            */}
+          <Link href={"/jobs" as Route} className={styles.backToList}>
+            <Icon name="arrow-left" size={13} />
+            목록으로 돌아가기
+          </Link>
           <h1 className={styles.role}>{job.title}</h1>
           <div className={styles.team}>
             <CompanyAvatar company={job.company} className={styles.companyMark} fit="line" />
