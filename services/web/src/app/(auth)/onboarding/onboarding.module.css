@@ -169,12 +169,6 @@
   border-color: var(--ex-ink-900);
 }
 
-.chipDashed {
-  color: var(--ex-slate-500);
-  background: none;
-  border-style: dashed;
-}
-
 /* 경력 슬라이더 */
 .sliderRow {
   display: flex;
@@ -362,10 +356,27 @@
     transform var(--ex-motion-spring);
 }
 
-.primary:hover {
+.primary:hover:not(:disabled) {
   background: var(--ex-espresso-hover);
   transform: translateY(-1px);
   color: var(--ex-white);
+}
+
+/* 저장하는 동안. 두 번 눌러 두 번 보내지 않게 한다. */
+.primary:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* 저장이 실패했을 때 — 화면 안에서 말한다. 조용히 넘어가지 않는다. */
+.formError {
+  margin-bottom: 14px;
+  padding: 11px 14px;
+  border: 1px solid var(--ex-danger);
+  border-radius: 10px;
+  background: var(--ex-danger-surface);
+  font-size: 12.5px;
+  color: var(--ex-danger-text);
 }
 
 /* ── 10d 재료 채우기 ──────────────────────────────────────── */
