@@ -53,6 +53,8 @@ const runtimeConfigSchema = z.object({
   CODEX_CLI_PATH: z.string().min(1).default("codex"),
   /** 계약별 모델 덮어쓰기 — `AI_MODEL_JOB_ANALYSIS=sonnet` 형태. */
   AI_MODEL_JOB_ANALYSIS: z.string().min(1).optional(),
+  /** 공고 본문에서 급여·경력·근무형태를 읽는 계약. 163건을 한 번에 도는 자리라 모델을 갈아 볼 일이 잦다. */
+  AI_MODEL_JOB_FACTS: z.string().min(1).optional(),
   AI_MODEL_SEARCH_INTERPRET: z.string().min(1).optional(),
   AI_MODEL_QUESTION_DRAFT: z.string().min(1).optional(),
   AI_MODEL_RECORD_CLEANUP: z.string().min(1).optional(),
@@ -125,6 +127,7 @@ export function loadRuntimeConfig(
     aiModelOverrides: Object.fromEntries(
       Object.entries({
         job_analysis: result.AI_MODEL_JOB_ANALYSIS,
+        job_facts: result.AI_MODEL_JOB_FACTS,
         search_interpret: result.AI_MODEL_SEARCH_INTERPRET,
         question_draft: result.AI_MODEL_QUESTION_DRAFT,
         record_cleanup: result.AI_MODEL_RECORD_CLEANUP,
