@@ -17,6 +17,7 @@ import { BROWSE_QUERY_PLACEHOLDER, SIMILAR_SEARCHES } from "@/lib/sample/jobs";
 import { requireSession } from "@/lib/require-session";
 
 import { JobRowList, deadlineLabel } from "./JobRows";
+import { currentListQuery, detailHref } from "./list-query";
 import { Pagination } from "./Pagination";
 import { ALL, JobFilter, type FilterSection } from "./JobFilter";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
@@ -178,6 +179,11 @@ export default async function JobsPage({
     ? params.company.trim()
     : undefined;
   const pageSize = 20;
+  /*
+   * 지금 걸린 조건을 한 문자열로 만들어 상세로 실어 보낸다. 상세 화면은
+   * 어디서 왔는지 모르므로, 이걸 안 주면 돌아올 때 필터가 풀린다.
+   */
+  const listQuery = currentListQuery(params);
   const session = await requireSession();
   const now = Date.now();
 
@@ -437,6 +443,7 @@ export default async function JobsPage({
               highlightFirst={Boolean(q)}
               tail={q ? "workType" : "experience"}
               now={now}
+              listQuery={listQuery}
             />
 
             <div className={styles.resultsFoot}>
@@ -474,6 +481,7 @@ export default async function JobsPage({
                 missing={listing.summary.missingTechnologies}
                 watched={watched.data}
                 now={now}
+                listQuery={listQuery}
               />
             )}
           </aside>
@@ -715,12 +723,15 @@ function BrowseRail({
   missing,
   watched,
   now,
+  listQuery,
 }: {
   total: number;
   common: readonly JobPostingFacet[];
   missing: readonly JobPostingFacet[];
   watched: readonly JobPostingSummary[];
   now: number;
+  /** 관심 공고에서 들어가도 **보고 있던 목록으로** 돌아온다. */
+  listQuery: string;
 }) {
   const gap = missing[0];
 
@@ -778,7 +789,7 @@ function BrowseRail({
           {watched.map((job) => (
             <Link
               key={job.id}
-              href={`/jobs/${job.id}` as Route}
+              href={detailHref(job.id, listQuery)}
               className={styles.watchRow}
             >
               <CompanyAvatar company={job.company} className={styles.watchInitial} />
