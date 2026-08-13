@@ -108,6 +108,31 @@ sudo kill -HUP "$(pgrep -f 'nginx: master process nginx -c')"
 되지만 **nginx가 새 인증서를 집어 들지 않는다** — 이 기계의 모든 도메인이 같은
 상태다. 훅을 고칠지는 다른 서비스에도 영향이 있어 따로 정한다.
 
+### 올린 결과 (2026-08-13)
+
+세 프로세스가 systemd로 돈다. Node 24를 절대 경로로 가리킨다 — 유닛은 셸을
+거치지 않으므로 `nvm use`에 기댈 수 없다.
+
+| 유닛 | 무엇 | 로그 |
+|---|---|---|
+| `expresso-api` | `dist/api/main.js` · 4500 | `~/expresso/log/api.log` |
+| `expresso-worker` | `dist/worker/main.js` | `~/expresso/log/worker.log` |
+| `expresso-web` | `next start --port 3500` | `~/expresso/log/web.log` |
+
+코드는 서버의 bare 저장소(`~/expresso.git`)를 거쳐 들어간다. 다음 배포부터는
+로컬에서 `git push oracle <브랜치>` 뒤 서버에서 pull·빌드·재시작이면 된다.
+
+종단 확인 — 가입 → 공고 제출 → **요건 6개 추출까지 서버에서 돌았다.**
+
+#### 계약 타임아웃을 600초로 올렸다
+
+첫 시도가 어댑터 기본값 180초를 넘겨 버려지고 2차에서 성공했다. 이 기계에서
+opus 호출이 그보다 오래 걸린다는 뜻이라 `AI_TIMEOUT_MS=600000`을 준다. 재시도로
+덮으면 사용자는 3분을 더 기다리고 호출은 두 번 나간다.
+
+이걸 찾을 수 있었던 것은 어제 붙인 실패 로그 덕이다 — `queue.job_failed`가
+`AiError` / `AI_TIMEOUT`을 그대로 남겼다.
+
 ## 5. 준비물
 
 - `infra/compose.server.yaml` — 전용 Postgres · Redis. 포트는 루프백에만 열고
