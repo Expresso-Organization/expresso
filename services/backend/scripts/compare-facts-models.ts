@@ -9,6 +9,7 @@
  *   DATABASE_URL=… CODEX_CLI_PATH=… node --import tsx scripts/compare-facts-models.ts [건수]
  */
 import postgres from "postgres";
+import type { z } from "zod";
 
 import { AiFactsReader } from "../src/modules/jobs/ingest/facts.js";
 import type { AiCallSpec, AiClient, AiResult, AiUsage } from "../src/platform/ai/client.js";
@@ -24,8 +25,9 @@ if (!databaseUrl) throw new Error("DATABASE_URL is required");
 class Metered implements AiClient {
   readonly usages: AiUsage[] = [];
   constructor(private readonly inner: AiClient) {}
-  async complete<T>(spec: AiCallSpec): Promise<AiResult<T>> {
-    const result = await this.inner.complete<T>(spec);
+  async complete<T>(spec: AiCallSpec, schema: z.ZodType<T>): Promise<AiResult<T>> {
+    // 스키마를 반드시 함께 넘긴다. 빠뜨리면 어댑터가 도구 스키마를 못 만든다.
+    const result = await this.inner.complete<T>(spec, schema);
     this.usages.push(result.usage);
     return result;
   }
