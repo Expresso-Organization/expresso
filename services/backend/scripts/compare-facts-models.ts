@@ -64,6 +64,8 @@ for (const model of MODELS) {
   const metered = new Metered(
     new CodexAiClient({
       ...(process.env["CODEX_CLI_PATH"] ? { cliPath: process.env["CODEX_CLI_PATH"] } : {}),
+      // 운영과 같은 홈으로 재야 값이 맞는다.
+      ...(process.env["CODEX_HOME"] ? { codexHome: process.env["CODEX_HOME"] } : {}),
       timeoutMs: Number(process.env["AI_TIMEOUT_MS"] ?? 600_000),
       models: { job_facts: model },
     }),
