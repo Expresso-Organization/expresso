@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdtempSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import { z } from "zod";
 
@@ -78,6 +78,29 @@ const EVENT_SCHEMA = z.looseObject({
 });
 
 const RATE_LIMIT_PATTERN = /rate.?limit|usage limit|quota|too many requests/i;
+
+/**
+ * 자식이 물려받을 환경.
+ *
+ * **CLI가 있는 디렉터리를 PATH 앞에 붙인다.** npm으로 깐 CLI는 대개
+ * `#!/usr/bin/env node` 셔임이고, systemd는 셸을 거치지 않아 PATH가
+ * `/usr/bin:/bin` 수준이다. nvm이 깐 node는 거기 없다 — 그래서 CLI를 절대
+ * 경로로 불러도 **셔임 안에서 `env node`가 못 찾는다.**
+ *
+ * 2026-08-13에 이걸로 25건이 0.25초 만에 전부 깨졌다:
+ *   `/usr/bin/env: 'node': No such file or directory`
+ *
+ * node는 그 CLI와 같은 bin 디렉터리에 있다. 그러니 그 자리를 알려 주면 된다.
+ */
+function childEnv(cliPath: string, extra: Record<string, string> = {}): NodeJS.ProcessEnv {
+  const binDir = dirname(cliPath);
+  const path = process.env["PATH"] ?? "";
+  return {
+    ...process.env,
+    PATH: path.split(":").includes(binDir) ? path : `${binDir}:${path}`,
+    ...extra,
+  };
+}
 
 export class CodexAiClient implements AiClient {
   readonly #cliPath: string;
@@ -251,9 +274,7 @@ export class CodexAiClient implements AiClient {
       const child = spawn(this.#cliPath, args, {
         cwd: this.#cwd,
         stdio: ["pipe", "pipe", "pipe"],
-        ...(this.#home === null
-          ? {}
-          : { env: { ...process.env, CODEX_HOME: this.#home } }),
+        env: childEnv(this.#cliPath, this.#home === null ? {} : { CODEX_HOME: this.#home }),
       });
       child.stdin.on("error", () => undefined);
       child.stdin.end(prompt, "utf8");

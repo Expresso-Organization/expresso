@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import { z } from "zod";
 
@@ -198,6 +198,19 @@ export class ClaudeCodeAiClient implements AiClient {
       const child = spawn(this.#cliPath, args, {
         cwd: this.#cwd,
         stdio: ["pipe", "pipe", "pipe"],
+        /*
+         * CLI가 있는 디렉터리를 PATH 앞에 붙인다. 지금 서버의 claude는 단독
+         * 바이너리라 없어도 돌지만, npm으로 깔면 `#!/usr/bin/env node` 셔임이
+         * 되고 systemd의 PATH에는 nvm node가 없다 — codex가 그렇게 깨졌다.
+         */
+        env: (() => {
+          const binDir = dirname(this.#cliPath);
+          const path = process.env["PATH"] ?? "";
+          return {
+            ...process.env,
+            PATH: path.split(":").includes(binDir) ? path : `${binDir}:${path}`,
+          };
+        })(),
       });
       // 프롬프트를 흘려 넣고 바로 닫는다. 열어두면 CLI가 입력을 더 기다린다.
       child.stdin.on("error", () => undefined);
