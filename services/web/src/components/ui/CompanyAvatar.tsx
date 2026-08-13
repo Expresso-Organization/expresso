@@ -1,5 +1,7 @@
 import { API_BASE_URL } from "@/lib/api/client";
 
+import { avatarTint } from "./company-avatar-tint";
+
 /**
  * 회사 자리에 서는 동그라미.
  *
@@ -61,12 +63,20 @@ export function CompanyAvatar({
     );
   }
 
+  /*
+   * 로고가 없으면 이니셜이 선다.
+   *
+   * 정의서가 손으로 정해 둔 색이 있으면 그것이 먼저다. 없으면 이름에서
+   * 결정적으로 뽑는다 — 예전에는 전부 같은 회색이라, 로고 없는 회사가 목록에
+   * 줄지어 서면 서로 구분되지 않았다.
+   */
+  const tint = avatarTint(company.name);
   return (
     <span
       className={className}
       style={{
-        background: company.avatarBackground ?? "var(--ex-tint-50)",
-        color: company.avatarColor ?? "var(--ex-slate-700)",
+        background: company.avatarBackground ?? tint.background,
+        color: company.avatarColor ?? tint.color,
       }}
     >
       {company.initial ?? [...company.name][0]}
