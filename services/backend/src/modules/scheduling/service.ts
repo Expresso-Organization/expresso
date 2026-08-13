@@ -5,7 +5,24 @@ import { AnalyticsService } from "../analytics/service.js";
 import type { JobIngestService } from "../jobs/ingest/service.js";
 import { addOutboxEvent } from "../../platform/outbox.js";
 
-export type ScheduledJobKey = "saved_searches" | "expire_postings" | "notification_batch" | "analytics_daily" | "deletion_grace" | "retention" | "job_ingest" | "posting_facts";
+/**
+ * 코드가 다룰 줄 아는 잡. **DB의 `scheduled_job_definition_job_key_check`와
+ * 같아야 한다** — 어긋나면 스케줄러가 모르는 키를 집어 든다.
+ *
+ * 타입이 아니라 값으로 둔다. 타입은 컴파일에 지워져서 시험이 확인할 수 없다.
+ */
+export const SCHEDULED_JOB_KEYS = [
+  "saved_searches",
+  "expire_postings",
+  "notification_batch",
+  "analytics_daily",
+  "deletion_grace",
+  "retention",
+  "job_ingest",
+  "posting_facts",
+] as const;
+
+export type ScheduledJobKey = (typeof SCHEDULED_JOB_KEYS)[number];
 
 interface DefinitionRow {
   job_key: ScheduledJobKey; interval_seconds: number; next_run_at: Date | string;
@@ -153,10 +170,25 @@ export class SchedulingService {
       return this.#ingest.readPendingFacts(undefined, at) as unknown as Record<string, unknown>;
     }
     if (key === "deletion_grace") return this.#accounts.purgeExpired(at);
-    const records = await this.#sql<{ id: string }[]>`delete from record where purge_after <= ${at} returning id`;
-    const redirects = await this.#sql<{ id: string }[]>`delete from deployment_slug_redirect where expires_at <= ${at} returning id`;
-    const receipts = await this.#sql<{ event_id: string }[]>`delete from analytics_event_receipt where received_at < ${new Date(at.getTime() - 90 * 86_400_000)} returning event_id`;
-    return { records: records.length, redirects: redirects.length, analyticsReceipts: receipts.length };
+    if (key === "retention") {
+      const records = await this.#sql<{ id: string }[]>`delete from record where purge_after <= ${at} returning id`;
+      const redirects = await this.#sql<{ id: string }[]>`delete from deployment_slug_redirect where expires_at <= ${at} returning id`;
+      const receipts = await this.#sql<{ event_id: string }[]>`delete from analytics_event_receipt where received_at < ${new Date(at.getTime() - 90 * 86_400_000)} returning event_id`;
+      return { records: records.length, redirects: redirects.length, analyticsReceipts: receipts.length };
+    }
+
+    /*
+     * 모르는 키는 **크게 실패한다.**
+     *
+     * 여기는 원래 조건 없는 폴스루였고, 그래서 모르는 키가 오면 retention의
+     * `delete` 세 개를 돌리고 성공했다고 적었다. 2026-08-13에 실제로 그 일이
+     * 일어났다 — 마이그레이션이 `posting_facts`를 심은 직후, 아직 재시작하지
+     * 않은 옛 워커가 그 키를 집어 남의 잡을 실행했다.
+     *
+     * 배포 중에는 언제든 새 키와 옛 코드가 만난다. 그때 지우는 쪽으로
+     * 넘어가지 않는 것이 중요하다.
+     */
+    throw new Error(`unknown scheduled job key: ${key}`);
   }
 
   async getRun(id: string, at = new Date()) {
