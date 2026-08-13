@@ -58,7 +58,8 @@ describeWithInfrastructure("full release fresh-environment smoke", () => {
       migrations: (await loadMigrations()).length,
       categories: 7,
       templates: 3,
-      schedules: 7,
+      // job_ingest에서 posting_facts를 떼어 내 8개가 됐다(0054).
+      schedules: 8,
     });
   });
 

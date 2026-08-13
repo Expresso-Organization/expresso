@@ -34,8 +34,10 @@ class FakeAdapter implements JobSourceAdapter {
 /** 무엇을 답할지 시험이 정해 주는 모델. 검증기까지 진짜 코드로 지난다. */
 class FakeAi implements AiClient {
   answer: JobFactsAiOutput = { salary: null, experience: null, workType: null };
+  calls = 0;
 
   async complete<T>(_spec: AiCallSpec): Promise<AiResult<T>> {
+    this.calls += 1;
     return {
       data: this.answer as T,
       usage: {
@@ -218,6 +220,8 @@ The base pay for this position ranges from $174,00/year to $299,000/year.`;
       workType: { value: "하이브리드", quote: "**Type of work model**\n\n-   Hybrid" },
     };
     await service.run(new Date(), [sourceId]);
+    // 읽기는 수집이 하지 않는다. 나눠 둔 두 번째 걸음이 한다.
+    await service.readPendingFacts();
 
     const [row] = await sql<{
       salary_note: string | null; experience_note: string | null;

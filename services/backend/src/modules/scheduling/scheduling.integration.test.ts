@@ -45,12 +45,22 @@ describeWithDatabase("scheduled job leases and observability", () => {
 
   it("creates one run per due slot under concurrent scheduler ticks", async () => {
     const now = new Date("2026-08-09T01:00:00Z");
+    /*
+     * 세는 것은 **슬롯 하나에 실행 하나**이지 잡이 몇 개인가가 아니다.
+     * 정의 수를 DB에서 읽어 기준으로 삼는다 — 잡이 늘 때마다 이 숫자를 고치게
+     * 두면, 고치는 사람이 무엇을 확인하는 시험인지 잊는다.
+     */
+    const definitions = (await sql<{ count: number }[]>`
+      select count(*)::integer as count from scheduled_job_definition
+    `)[0]?.count ?? 0;
+    expect(definitions).toBeGreaterThan(0);
+
     const ticks = await Promise.all(Array.from({ length: 20 }, () => service.scheduleDue(now)));
-    expect(new Set(ticks.flatMap(({ scheduled }) => scheduled)).size).toBe(7);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from scheduled_job_run`)[0]?.count).toBe(7);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from platform_outbox where topic = 'scheduled.execute'`)[0]?.count).toBe(7);
+    expect(new Set(ticks.flatMap(({ scheduled }) => scheduled)).size).toBe(definitions);
+    expect((await sql<{ count: number }[]>`select count(*)::integer as count from scheduled_job_run`)[0]?.count).toBe(definitions);
+    expect((await sql<{ count: number }[]>`select count(*)::integer as count from platform_outbox where topic = 'scheduled.execute'`)[0]?.count).toBe(definitions);
     const status = await service.status(now);
-    expect(status).toHaveLength(7);
+    expect(status).toHaveLength(definitions);
     expect(status.every(({ nextRunAt }) => new Date(nextRunAt) > now)).toBe(true);
   });
 

@@ -34,10 +34,11 @@ describeWithDatabase("커리어 프로필 (온보딩 1단계)", () => {
   let accessToken: string;
   const auth = () => ({ authorization: `Bearer ${accessToken}` });
 
-  const save = (payload: unknown) =>
-    app.inject({ method: "PUT", url: "/v1/career/profile", headers: auth(), payload });
-  const read = () =>
-    app.inject({ method: "GET", url: "/v1/career/profile", headers: auth() });
+  // `app.inject`는 체이닝 객체도 겸해서 반환한다. 여기서 await해 응답으로 좁힌다.
+  const save = async (payload: Record<string, unknown>) =>
+    await app.inject({ method: "PUT", url: "/v1/career/profile", headers: auth(), payload });
+  const read = async () =>
+    await app.inject({ method: "GET", url: "/v1/career/profile", headers: auth() });
 
   beforeAll(async () => {
     await sql`

@@ -75,16 +75,39 @@ export const JobIngestRunSchema = z.strictObject({
     added: z.number().int().nonnegative(),
     failedSources: z.number().int().nonnegative(),
     /**
-     * 이번에 본문을 훑어 연봉 · 경력 · 근무 형태를 읽은 공고 수.
+     * 이번에 마크를 새로 받아 둔 회사 수.
      *
-     * 새로 들인 것과 따로 센다 — 규칙이 나아져 이미 들인 공고를 다시 읽는
-     * 일이 생기고, 그때 `added`가 0인데도 화면의 값은 달라진다.
+     * 로고는 여기 남고 본문 읽기는 나갔다. 둘의 성질이 다르다 — 로고는
+     * 회사 수만큼(다섯)이고 그냥 HTTP 한 번이지만, 본문 읽기는 공고 수만큼
+     * 모델을 부른다.
      */
-    factsRead: z.number().int().nonnegative(),
-    /** 이번에 마크를 새로 받아 둔 회사 수. */
     logosRead: z.number().int().nonnegative(),
   }),
 });
+
+/**
+ * 공고 본문 읽기 한 번의 결과.
+ *
+ * **수집과 분리돼 있다.** 수집은 HTTP 몇 번이면 끝나는데 본문 읽기는 공고
+ * 하나당 모델 한 번이라, 한 잡에 묶여 있으면 느린 쪽이 빠른 쪽을 붙잡는다 —
+ * 모델이 죽은 날에는 공고 목록도 갱신되지 않았다.
+ *
+ * 나눠 두면 목록은 즉시 최신이 되고, 급여 · 경력 · 근무 형태는 뒤따라 채워진다.
+ */
+export const PostingFactsRunSchema = z.strictObject({
+  startedAt: TimestampSchema,
+  finishedAt: TimestampSchema,
+  /** 이번에 읽어 채운 공고 수. */
+  read: z.number().int().nonnegative(),
+  /** 모델이 답하지 못한 공고 수. 다음 실행이 다시 집어간다. */
+  failed: z.number().int().nonnegative(),
+  /** 이번 실행이 끝난 뒤에도 아직 안 읽힌 공고 수. 밀린 정도가 보여야 한다. */
+  pending: z.number().int().nonnegative(),
+  /** 읽기 담당이 없으면(AI 꺼짐) 한 건도 건드리지 않는다. */
+  skipped: z.literal("reader is not configured").nullable(),
+});
+
+export type PostingFactsRun = z.infer<typeof PostingFactsRunSchema>;
 
 /**
  * 주소 한 건으로 공고를 들인다.

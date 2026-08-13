@@ -3,8 +3,10 @@ import { createHash } from "node:crypto";
 import {
   JobIngestRunSchema,
   JobSourceSchema,
+  PostingFactsRunSchema,
   type CreateJobSource,
   type JobSourceProvider,
+  type PostingFactsRun,
 } from "@expresso/contracts";
 import type postgres from "postgres";
 
@@ -50,6 +52,16 @@ const MINIMUM_BODY_LENGTH = 200;
 
 /** 본문 읽기를 동시에 몇 개까지 겹쳐 돌릴지. */
 const FACTS_LANES = 4;
+
+/**
+ * 본문 읽기 한 번이 집어가는 공고 수.
+ *
+ * 실측이 기준이다 — 163건을 4레인으로 돌리면 수십 분이 걸린다(공고당 대략
+ * 10초 남짓). 25건이면 한 번에 3~4분이라 **자기 실행 간격(10분) 안에 끝난다.**
+ * 겹쳐 돌지 않으면서, 하루치 수집(다섯 곳 기준 백여 건)을 한 시간쯤에 따라잡는
+ * 크기다.
+ */
+const POSTING_FACTS_BATCH = 25;
 
 /** 설정된 사이트 주소에서 호스트만. 공개 https가 아니면 적지 않는다. */
 function hostOf(siteUrl: string): string | null {
@@ -186,9 +198,8 @@ export class JobIngestService {
       }
     }
 
-    // 출처를 하나만 골라 돌렸어도 이건 돈다. 밀린 공고를 읽는 일은 어느
-    // 출처의 것인지와 상관이 없다.
-    const factsRead = await this.#readPendingFacts();
+    // 로고는 여기 남는다 — 회사 수만큼(다섯)이고 HTTP 한 번이라 수집과 같은
+    // 성질이다. 본문 읽기는 공고 수만큼 모델을 부르므로 `posting_facts`로 나갔다.
     const logosRead = await this.#readPendingLogos();
 
     return JobIngestRunSchema.parse({
@@ -199,7 +210,6 @@ export class JobIngestService {
         seen: results.reduce((sum, one) => sum + one.seen, 0),
         added: results.reduce((sum, one) => sum + one.added, 0),
         failedSources: results.filter((one) => one.error !== null).length,
-        factsRead,
         logosRead,
       },
     });
@@ -262,8 +272,19 @@ export class JobIngestService {
    * 이미 값이 있으면 덮지 않는다. 출처가 직접 알려 준 값이 우리가 본문에서
    * 읽어 낸 것보다 낫다.
    */
-  async #readPendingFacts(limit = 500): Promise<number> {
-    if (!this.#facts) return 0;
+  async readPendingFacts(
+    limit = POSTING_FACTS_BATCH,
+    at = new Date(),
+  ): Promise<PostingFactsRun> {
+    const finish = (
+      extra: { read: number; failed: number; skipped: PostingFactsRun["skipped"] },
+    ) => this.#factsRunResult(at, extra);
+
+    if (!this.#facts) {
+      // 조용히 0건을 읽었다고 하지 않는다. 담당이 없다는 것과 읽을 게
+      // 없다는 것은 다른 상태다.
+      return finish({ read: 0, failed: 0, skipped: "reader is not configured" });
+    }
     const reader = this.#facts;
     const pending = await this.#sql<{ id: string; description_raw: string }[]>`
       select id, description_raw from job_posting
@@ -273,6 +294,7 @@ export class JobIngestService {
     `;
 
     let read = 0;
+    let failed = 0;
     // 공고 하나에 모델 호출 한 번이다. 줄 세워 돌리면 163건에 몇十 분이
     // 걸리므로 조금씩 겹쳐 돌린다. 크게 벌리지 않는 것은 레이트 리밋 때문이다.
     const lanes = Array.from({ length: FACTS_LANES }, async () => {
@@ -284,6 +306,7 @@ export class JobIngestService {
           facts = await reader.read(row.description_raw);
         } catch {
           // 모델이 죽었거나 스키마를 못 맞췄다. 이 공고는 다음 실행에서 다시 본다.
+          failed += 1;
           continue;
         }
         await this.#sql`
@@ -298,7 +321,25 @@ export class JobIngestService {
       }
     });
     await Promise.all(lanes);
-    return read;
+    return finish({ read, failed, skipped: null });
+  }
+
+  /** 남은 일감까지 세어 결과를 만든다 — 밀린 정도가 보여야 다음을 정할 수 있다. */
+  async #factsRunResult(
+    at: Date,
+    extra: { read: number; failed: number; skipped: PostingFactsRun["skipped"] },
+  ): Promise<PostingFactsRun> {
+    const [remaining] = await this.#sql<{ count: string }[]>`
+      select count(*)::text as count from job_posting where facts_read_at is null
+    `;
+    return PostingFactsRunSchema.parse({
+      startedAt: at.toISOString(),
+      finishedAt: new Date().toISOString(),
+      read: extra.read,
+      failed: extra.failed,
+      pending: Number(remaining?.count ?? 0),
+      skipped: extra.skipped,
+    });
   }
 
   /** 넣었으면 true. 이미 있으면 false. */
