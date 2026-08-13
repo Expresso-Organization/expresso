@@ -198,6 +198,22 @@ function overlapping(rows: { label: string; count: number }[]): JobPostingFacet[
     .map((row) => ({ ...row, ratio: biggest === 0 ? 0 : row.count / biggest }));
 }
 
+/**
+ * 어떤 축의 조건을 빼고 센 칩들의 비율.
+ *
+ * 그 축의 건수 합이 곧 모집단이다. 걸러진 총계로 나누면 1을 넘는다 — 회사
+ * 하나로 좁힌 화면에서 다른 회사의 건수가 그대로 남아 있기 때문이다.
+ */
+function ratioOf<T extends { count: number | string }>(
+  rows: T[],
+): { row: T; ratio: number }[] {
+  const population = rows.reduce((sum, row) => sum + Number(row.count), 0);
+  return rows.map((row) => ({
+    row,
+    ratio: population === 0 ? 0 : Number(row.count) / population,
+  }));
+}
+
 function facets(rows: FacetRow[], total: number): JobPostingFacet[] {
   return rows.map((row) => ({
     label: row.label,
@@ -629,7 +645,7 @@ export class JobBoardService {
         missingTechnologies: facets(missing, total),
         // 나라 칩은 **나라 조건을 뺀** 모집단에서 셌다. 그러니 비율도 그
         // 모집단으로 나눠야 한다 — 걸러진 수(`total`)로 나누면 1을 넘는다.
-        countries: facets(countries, countries.reduce((sum, row) => sum + Number(row.count), 0)),
+        countries: ratioOf(countries).map(({ row, ratio }) => ({ label: row.label, count: Number(row.count), ratio })),
         // 연차·근무 형태는 **겹치는 칸막이**라 합이 전체와 다르다. 비율의
         // 기준은 그 축을 빼고 센 모집단이다.
         experienceLevels: overlapping(
@@ -644,11 +660,15 @@ export class JobBoardService {
             count: Number(workTypes[0]?.[`w${index}`] ?? 0),
           })),
         ),
-        companies: companies.map((row) => ({
+        // 회사 칩도 **회사 조건을 뺀** 모집단에서 셌다. 나라 칩과 같은 이유로
+        // 같은 모집단으로 나눈다 — 걸러진 수(`total`)로 나누면 1을 넘고,
+        // 계약이 `ratio <= 1`이라 응답이 통째로 거절된다. 회사 하나로 좁힌
+        // 화면이 500으로 죽던 자리다.
+        companies: ratioOf(companies).map(({ row, ratio }) => ({
           key: row.key,
           label: row.label,
           count: Number(row.count),
-          ratio: total === 0 ? 0 : Number(row.count) / total,
+          ratio,
         })),
       },
       page: {
