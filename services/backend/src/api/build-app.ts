@@ -5,6 +5,7 @@ import type { ReadinessCheck } from "../modules/system/readiness.js";
 import { registerSystemRoutes } from "../modules/system/routes.js";
 import type { IdentityService } from "../modules/identity/service.js";
 import { registerIdentityRoutes } from "../modules/identity/routes.js";
+import type { GoogleIdTokenVerifier } from "../modules/identity/google.js";
 import type { EntitlementService } from "../modules/entitlements/service.js";
 import { registerEntitlementRoutes } from "../modules/entitlements/routes.js";
 import { createAuthenticateRequest } from "./plugins/auth-context.js";
@@ -62,6 +63,8 @@ export interface BuildApiOptions {
   config: RuntimeConfig;
   readinessChecks?: readonly ReadinessCheck[];
   identityService?: IdentityService;
+  /** 없으면 Google 로그인 경로가 503으로 답한다. */
+  googleIdTokenVerifier?: GoogleIdTokenVerifier;
   entitlementService?: EntitlementService;
   careerService?: CareerService;
   jobMarketService?: JobMarketService;
@@ -110,7 +113,12 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
   });
 
   if (options.identityService) {
-    registerIdentityRoutes(app, { identityService: options.identityService });
+    registerIdentityRoutes(app, {
+      identityService: options.identityService,
+      ...(options.googleIdTokenVerifier
+        ? { googleIdTokenVerifier: options.googleIdTokenVerifier }
+        : {}),
+    });
     if (options.entitlementService) {
       registerEntitlementRoutes(app, {
         entitlementService: options.entitlementService,

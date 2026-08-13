@@ -22,6 +22,15 @@ const runtimeConfigSchema = z.object({
   REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).default(30_000),
 
   /**
+   * Google 로그인의 클라이언트 ID. **검증에만 쓴다** — ID 토큰의 `aud`가 우리
+   * 것인지 보는 값이라 비밀이 아니다. 인가 코드 교환(client secret)은 웹이 한다.
+   *
+   * 없으면 `/v1/auth/google*`이 503으로 답한다. 검증기 없이 통과시키는 경로는
+   * 두지 않는다 — 그건 아무나 로그인된다는 뜻이다.
+   */
+  GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+
+  /**
    * AI 프로바이더. 기본은 `off` — 키도 로그인도 없이 앱 전체가 돌아야 하고,
    * 그때는 각 모듈의 규칙 기반 구현이 그대로 쓰인다.
    *
@@ -71,6 +80,8 @@ export interface RuntimeConfig {
   mediaDir?: string;
   analyticsVisitorSalt?: string;
   requestTimeoutMs?: number;
+  /** 없으면 Google 로그인 경로를 열지 않는다. */
+  googleClientId?: string | undefined;
   /** 없으면 `off`. 키도 로그인도 없이 앱 전체가 돌아야 한다. */
   aiProvider?: "off" | "claude-code" | "codex" | "fixture" | "anthropic";
   work24ApiKey?: string | undefined;
@@ -103,6 +114,7 @@ export function loadRuntimeConfig(
     mediaDir: result.MEDIA_DIR,
     analyticsVisitorSalt: result.ANALYTICS_VISITOR_SALT,
     requestTimeoutMs: result.REQUEST_TIMEOUT_MS,
+    googleClientId: result.GOOGLE_CLIENT_ID,
     aiProvider: result.AI_PROVIDER,
     work24ApiKey: result.WORK24_API_KEY,
     aiTimeoutMs: result.AI_TIMEOUT_MS,
