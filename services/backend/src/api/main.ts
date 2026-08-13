@@ -3,6 +3,7 @@ import { loadRuntimeConfig } from "../config/runtime-config.js";
 import { createPostgresResource } from "../platform/postgres.js";
 import { createRedisResource } from "../platform/redis.js";
 import { IdentityService } from "../modules/identity/service.js";
+import { RemoteGoogleIdTokenVerifier } from "../modules/identity/google.js";
 import { EntitlementService } from "../modules/entitlements/service.js";
 import { CareerService } from "../modules/career/service.js";
 import { JobMarketService } from "../modules/jobs/service.js";
@@ -37,6 +38,11 @@ const config = loadRuntimeConfig();
 const postgres = createPostgresResource(config.databaseUrl);
 const redis = createRedisResource(config.redisUrl);
 const identityService = new IdentityService(postgres.sql);
+// 클라이언트 ID가 없으면 만들지 않는다 — 라우트가 503으로 답하고, 화면은
+// 버튼을 열지 않는다. 검증기 없이 도는 척하는 경로를 두지 않는다.
+const googleIdTokenVerifier = config.googleClientId
+  ? new RemoteGoogleIdTokenVerifier({ clientId: config.googleClientId })
+  : null;
 const entitlementService = new EntitlementService(postgres.sql);
 const careerService = new CareerService(postgres.sql);
 const jobMarketService = new JobMarketService(postgres.sql);
@@ -97,6 +103,7 @@ const app = buildApi({
   config,
   readinessChecks: [postgres.readinessCheck, redis.readinessCheck],
   identityService,
+  ...(googleIdTokenVerifier ? { googleIdTokenVerifier } : {}),
   entitlementService,
   careerService,
   jobMarketService,
