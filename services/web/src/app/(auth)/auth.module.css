@@ -151,6 +151,8 @@
 .social {
   width: 100%;
   display: flex;
+  /* 이 자리는 버튼일 때도 링크일 때도 같아 보여야 한다. */
+  text-decoration: none;
   align-items: center;
   justify-content: center;
   gap: 10px;
