@@ -194,6 +194,31 @@
   border-radius: 999px;
   background: var(--ex-track);
   position: relative;
+  cursor: pointer;
+  /* 손가락으로 끌 때 지면이 같이 스크롤되지 않게 한다. */
+  touch-action: none;
+}
+
+/*
+ * 막대는 4px이지만 **누를 수 있는 자리는 그보다 넓어야 한다.**
+ * 레이아웃을 건드리지 않고 위아래로만 잡는 면을 키운다.
+ */
+.slider::before {
+  content: "";
+  position: absolute;
+  inset: -13px 0;
+}
+
+/*
+ * 초점 표시는 막대가 아니라 손잡이에 준다 — 4px짜리 선을 두르면
+ * 어디에 초점이 있는지 오히려 안 보인다.
+ */
+.slider:focus-visible {
+  box-shadow: none;
+}
+
+.slider:focus-visible .sliderKnob {
+  box-shadow: var(--ex-focus-ring), 0 1px 3px rgba(22, 34, 58, 0.18);
 }
 
 .sliderFill {

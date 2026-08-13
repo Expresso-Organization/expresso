@@ -2,7 +2,7 @@
 
 import type { Route } from "next";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { OnboardingShell, onboardingStyles as styles } from "../OnboardingShell";
 
@@ -38,12 +38,29 @@ const GOALS = [
 
 const MAX_YEARS = 12;
 
+function clampYears(value: number): number {
+  return Math.min(MAX_YEARS, Math.max(0, value));
+}
+
 export default function OnboardingGoalPage() {
   const [role, setRole] = useState<string>("백엔드");
   const [years, setYears] = useState(5);
   const [goal, setGoal] = useState<string>("build");
+  const trackRef = useRef<HTMLSpanElement>(null);
 
   const ratio = (years / MAX_YEARS) * 100;
+
+  /**
+   * 트랙 위의 가로 위치를 연차로 읽는다. 폭은 매번 잰다 — 창이 바뀌어도 맞아야 한다.
+   * 잴 수 없으면 null이다. 못 잰 것을 현재 값으로 덮어 조용히 넘기지 않는다.
+   */
+  const yearsAt = useCallback((clientX: number): number | null => {
+    const track = trackRef.current;
+    if (!track) return null;
+    const rect = track.getBoundingClientRect();
+    if (rect.width === 0) return null;
+    return clampYears(Math.round(((clientX - rect.left) / rect.width) * MAX_YEARS));
+  }, []);
 
   return (
     <OnboardingShell
@@ -86,16 +103,47 @@ export default function OnboardingGoalPage() {
         <div className={styles.sliderRow}>
           <span className={styles.sliderEdge}>신입</span>
           <span
+            ref={trackRef}
             className={styles.slider}
             role="slider"
             aria-valuenow={years}
             aria-valuemin={0}
             aria-valuemax={MAX_YEARS}
+            /* 읽는 기계에는 "0"이 아니라 "신입"으로 들려야 한다. */
+            aria-valuetext={years === 0 ? "신입" : `${years}년`}
             aria-label="경력 연차"
             tabIndex={0}
+            /*
+             * 누르는 순간 포인터를 붙잡는다. 그래야 트랙 밖으로 끌고 나가도
+             * 계속 따라온다 — 4px짜리 막대 위에서만 끌 수 있으면 못 쓴다.
+             */
+            onPointerDown={(event) => {
+              const next = yearsAt(event.clientX);
+              if (next !== null) setYears(next);
+              // 붙잡기가 실패해도 방금 누른 값은 이미 섰다.
+              event.currentTarget.setPointerCapture(event.pointerId);
+            }}
+            onPointerMove={(event) => {
+              if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+              const next = yearsAt(event.clientX);
+              if (next !== null) setYears(next);
+            }}
+            onPointerUp={(event) => {
+              event.currentTarget.releasePointerCapture(event.pointerId);
+            }}
             onKeyDown={(event) => {
-              if (event.key === "ArrowRight") setYears(Math.min(MAX_YEARS, years + 1));
-              if (event.key === "ArrowLeft") setYears(Math.max(0, years - 1));
+              const step = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1, PageUp: 3, PageDown: -3 }[
+                event.key
+              ];
+              const jump = { Home: 0, End: MAX_YEARS }[event.key];
+              if (step === undefined && jump === undefined) return;
+              // 화살표로 지면이 같이 스크롤되면 값을 맞출 수 없다.
+              event.preventDefault();
+              /*
+               * 직전 값에서 센다. 키를 누르고 있으면 다시 그리기 전에 여러 번
+               * 들어오는데, 렌더 시점의 값을 쓰면 그 걸음들이 서로를 덮어쓴다.
+               */
+              setYears((previous) => clampYears(jump ?? previous + (step ?? 0)));
             }}
           >
             <span className={styles.sliderFill} style={{ width: `${ratio}%` }} />
