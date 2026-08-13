@@ -6,6 +6,7 @@ import {
   CareerPropertySchemaSchema,
   CareerRecordListResponseSchema,
   CareerRecordSchema,
+  CareerProfileSchema,
   CareerSkillSchema,
   CareerViewSchema,
   type CareerCategory,
@@ -17,6 +18,7 @@ import {
   type CreateCareerView,
   type ListCareerRecordsQuery,
   type RecomputeCareerSkill,
+  type SaveCareerProfile,
   type UpdateCareerRecord,
 } from "@expresso/contracts";
 import type postgres from "postgres";
@@ -246,6 +248,22 @@ function mapSkill(row: SkillRow) {
     strength: row.strength,
     lastUsedAt: new Date(row.last_used_at).toISOString(),
     computedAt: new Date(row.computed_at).toISOString(),
+  });
+}
+
+interface CareerProfileRow {
+  target_roles: string[];
+  experience_years: number;
+  primary_goal: string;
+  updated_at: Date | string;
+}
+
+function mapCareerProfile(row: CareerProfileRow) {
+  return CareerProfileSchema.parse({
+    targetRoles: row.target_roles,
+    experienceYears: row.experience_years,
+    primaryGoal: row.primary_goal,
+    updatedAt: new Date(row.updated_at).toISOString(),
   });
 }
 
@@ -935,5 +953,45 @@ export class CareerService {
       recordTitle: row.record_title,
       span: row.extracted_span,
     }));
+  }
+
+  /* ── 온보딩 1단계 · 커리어 프로필 (화면 10c) ── */
+
+  /** 아직 온보딩을 지나지 않았으면 null이다. 없는 것을 기본값으로 꾸미지 않는다. */
+  async getProfile(userId: string) {
+    const rows = await this.#sql<CareerProfileRow[]>`
+      select target_roles, experience_years, primary_goal, updated_at
+      from career_profile
+      where user_id = ${userId}
+    `;
+    const row = rows[0];
+    return row ? mapCareerProfile(row) : null;
+  }
+
+  /**
+   * 통째로 덮어쓴다. 화면이 세 값을 한 번에 정하므로 부분 갱신이 없고,
+   * 온보딩을 다시 지나거나 나중에 설정에서 고쳐도 같은 문 하나를 쓴다.
+   */
+  async saveProfile(userId: string, input: SaveCareerProfile) {
+    // 같은 칩을 두 번 담아 보내도 한 번만 남는다.
+    const targetRoles = [...new Set(input.targetRoles)];
+    const rows = await this.#sql<CareerProfileRow[]>`
+      insert into career_profile (user_id, target_roles, experience_years, primary_goal)
+      values (
+        ${userId},
+        ${this.#sql.array(targetRoles)},
+        ${input.experienceYears},
+        ${input.primaryGoal}
+      )
+      on conflict (user_id) do update set
+        target_roles = excluded.target_roles,
+        experience_years = excluded.experience_years,
+        primary_goal = excluded.primary_goal,
+        updated_at = now()
+      returning target_roles, experience_years, primary_goal, updated_at
+    `;
+    const row = rows[0];
+    if (!row) throw new Error("career profile was not persisted");
+    return mapCareerProfile(row);
   }
 }

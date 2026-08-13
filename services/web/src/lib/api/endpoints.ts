@@ -17,6 +17,9 @@ import {
   type AnalyticsPeriodPreset,
   type UpdateWidget,
   CareerCategoriesResponseSchema,
+  CareerProfileResponseSchema,
+  OptionalCareerProfileResponseSchema,
+  type SaveCareerProfile,
   CareerRecordListResponseSchema,
   CareerRecordResponseSchema,
   CurrentUserResponseSchema,
@@ -760,6 +763,20 @@ export const jobs = {
 };
 
 export const career = {
+  /** 온보딩 1단계가 정한 것. 지나지 않았으면 data가 null이다. */
+  profile: (accessToken: string) =>
+    request(`${API_PREFIX}/career/profile`, OptionalCareerProfileResponseSchema, {
+      accessToken,
+      cache: "no-store",
+    }),
+
+  saveProfile: (accessToken: string, input: SaveCareerProfile) =>
+    request(`${API_PREFIX}/career/profile`, CareerProfileResponseSchema, {
+      method: "PUT",
+      accessToken,
+      body: input,
+    }),
+
   categories: (accessToken: string) =>
     request(`${API_PREFIX}/career/categories`, CareerCategoriesResponseSchema, {
       accessToken,
