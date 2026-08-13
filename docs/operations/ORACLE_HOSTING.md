@@ -2,9 +2,9 @@
 
 작성일 2026-08-13 · 대상 `Oracle-Server`(`ubuntu@140.245.74.246`)
 
-개발을 서버에서 이어 가기 위한 준비 기록이다. **아직 아무것도 올리지 않았다** —
-서버는 읽기만 했고, 이 문서와 `infra/compose.server.yaml`,
-`services/backend/.env.server.example`이 준비물의 전부다.
+개발을 서버에서 이어 가기 위한 기록이다. **2026-08-13에 올렸고 지금 돌고 있다** —
+<https://expresso.ai.kr>가 그것이다. 1~4절은 그때 실측하고 정한 것이고,
+5·6절이 지금 쓰는 배포 절차다.
 
 ## 1. 서버 실측 (2026-08-13)
 
@@ -135,31 +135,62 @@ opus 호출이 그보다 오래 걸린다는 뜻이라 `AI_TIMEOUT_MS=600000`을
 
 ## 5. 준비물
 
+저장소는 **<https://github.com/Expresso-Organization/expresso>** 다(public).
+서버의 `~/expresso`도 여기서 직접 당긴다 — 예전에 쓰던 `~/expresso.git`(로컬
+bare)은 더 이상 경로에 없다.
+
 - `infra/compose.server.yaml` — 전용 Postgres · Redis. 포트는 루프백에만 열고
   비밀번호는 `.env`에서 받는다.
 - `services/backend/.env.server.example` — 서버용 환경 예시. 서명 키와 소금은
   `openssl rand -hex 32`로 채운다.
 - `infra/nginx/expresso.ai.kr.conf` — 앞단 vhost. 서버 사본과 같은 내용이다.
+- `infra/systemd/expresso-{api,worker,web}.service` — 세 유닛. Node 24를 절대
+  경로로 부른다.
 
-## 6. 올릴 때 밟을 순서
+## 6. 배포
+
+평소에는 세 줄이다. **빌드 대상과 재시작 대상을 짝지어야 한다** — 어긋나면
+옛 코드가 도는 채로 "배포했다"고 믿게 된다.
 
 ```bash
-# 1. 런타임 — 끝났다. v24.13.1 + pnpm 11.16.0이 붙어 있다.
-ssh Oracle-Server '~/.nvm/versions/node/v24.13.1/bin/node -v'
+# 1. 올린다
+git push origin <branch>
 
-# 2. 코드
-ssh Oracle-Server 'git clone <repo> ~/expresso'
-ssh Oracle-Server 'cd ~/expresso && ~/.nvm/versions/node/v24.13.1/bin/pnpm install'
+# 2. 서버가 당기고 빌드한다 (웹을 고쳤을 때)
+ssh Oracle-Server 'cd ~/expresso && git pull -q && \
+  PATH=$HOME/.nvm/versions/node/v24.13.1/bin:$PATH pnpm --filter @expresso/web build'
 
-# 3. 인프라
-scp infra/compose.server.yaml Oracle-Server:~/expresso/infra/
-ssh Oracle-Server 'cd ~/expresso && EXPRESSO_POSTGRES_PASSWORD=... docker compose -f infra/compose.server.yaml up -d --wait'
-
-# 4. 스키마
-ssh Oracle-Server 'cd ~/expresso && ~/.nvm/versions/node/v24.13.1/bin/pnpm db:migrate'
-
-# 5. 기동 (systemd 유닛은 아직 안 만들었다)
+# 3. 짝이 맞는 유닛만 재시작한다
+ssh Oracle-Server 'sudo systemctl restart expresso-web'
 ```
 
-마지막 유닛 파일은 위 "아직 정하지 않은 것"이 정해진 뒤에 쓴다 — 실행 방식과
-AI 프로바이더에 따라 내용이 달라진다.
+| 고친 곳 | 빌드 | 재시작 |
+|---|---|---|
+| `services/web` | `--filter @expresso/web` | `expresso-web` |
+| `services/backend` | `--filter @expresso/backend` | `expresso-api expresso-worker` |
+| `packages/contracts` · `packages/database` | `-r` (전부) | 셋 다 |
+| `packages/database/migrations` | — | `pnpm db:migrate` 먼저 |
+
+### 처음 한 번 (빈 기계에 올릴 때)
+
+```bash
+# 런타임 — nvm default는 22로 두고 24를 절대 경로로 쓴다
+ssh Oracle-Server '~/.nvm/versions/node/v24.13.1/bin/node -v'
+
+ssh Oracle-Server 'git clone https://github.com/Expresso-Organization/expresso.git ~/expresso'
+ssh Oracle-Server 'cd ~/expresso && ~/.nvm/versions/node/v24.13.1/bin/pnpm install'
+
+# 인프라 — 비밀번호는 셸 이력에 남지 않게 넣는다
+ssh Oracle-Server 'cd ~/expresso && EXPRESSO_POSTGRES_PASSWORD=... docker compose -f infra/compose.server.yaml up -d --wait'
+
+# 스키마
+ssh Oracle-Server 'cd ~/expresso && ~/.nvm/versions/node/v24.13.1/bin/pnpm db:migrate'
+
+# 환경과 유닛
+ssh Oracle-Server 'cp ~/expresso/services/backend/.env.server.example ~/expresso/services/backend/.env'   # 값을 채운다
+ssh Oracle-Server 'sudo cp ~/expresso/infra/systemd/*.service /etc/systemd/system/ && sudo systemctl daemon-reload'
+ssh Oracle-Server 'sudo systemctl enable --now expresso-api expresso-worker expresso-web'
+```
+
+앞단 nginx는 이 기계에서 **systemd가 아니다** — 4절 「이 기계의 nginx는
+systemd가 아니다」를 보라. vhost를 넣은 뒤에는 `sudo nginx -s reload`로 올린다.
