@@ -100,8 +100,12 @@ DNS가 이미 이 서버를 가리키고 있었다. 인증서는 Let's Encrypt�
 마스터에 직접 신호를 보낸다.
 
 ```bash
-sudo kill -HUP "$(pgrep -f 'nginx: master process nginx -c')"
+sudo kill -HUP "$(pgrep -f '^nginx: master process nginx -c')"
 ```
+
+**앵커(`^`)를 빼면 듣지 않는다.** 이 기계에는 컨테이너의 nginx 마스터가 셋 더
+있고, `pgrep -f`는 그 명령을 담은 자기 자신의 셸까지 물어 온다. PID가 여럿
+나오면 `kill`이 인자를 못 읽고 실패한다(2026-08-20에 겪었다).
 
 **이것이 인증서 갱신에도 걸린다.** `/etc/letsencrypt/renewal-hooks/deploy/00-reload-nginx.sh`가
 `systemctl reload nginx`를 부르고 실패한다(발급할 때 실제로 실패했다). 갱신은
@@ -193,4 +197,101 @@ ssh Oracle-Server 'sudo systemctl enable --now expresso-api expresso-worker expr
 ```
 
 앞단 nginx는 이 기계에서 **systemd가 아니다** — 4절 「이 기계의 nginx는
-systemd가 아니다」를 보라. vhost를 넣은 뒤에는 `sudo nginx -s reload`로 올린다.
+systemd가 아니다」를 보라. vhost를 넣은 뒤에는 `sudo nginx -t`로 검사하고 그 절의
+`kill -HUP`으로 올린다.
+
+## 7. 개발 포털 — `dev.expresso.ai.kr` (2026-08-20)
+
+문서를 브라우저로 돌려 보려고 매번 `scripts/serve-docs.py`를 띄우지 않도록 같은
+기계에 정적으로 올렸다. 제품(`expresso.ai.kr`)과 달리 앱이 없다 — HTML과 그 옆의
+스크립트뿐이라 nginx가 파일을 그대로 내보낸다. 프록시도 업스트림도 빌드도 없다.
+
+| 항목 | 값 |
+|---|---|
+| 주소 | <https://dev.expresso.ai.kr> |
+| DNS | 이미 `140.245.74.246`을 가리키고 있었다 — 레코드를 새로 만들지 않았다 |
+| 인증서 | Let's Encrypt · 만료 **2026-11-18** · 기존 도메인들과 같은 webroot 방식 |
+| vhost | `infra/nginx/dev.expresso.ai.kr.conf` — 서버 사본은 `/etc/nginx/sites-available/dev.expresso.ai.kr` |
+| 웹루트 | `/var/www/dev.expresso.ai.kr` |
+| 원본 | 저장소 루트의 `docs/` |
+
+### 웹루트를 따로 두는 이유
+
+작업 트리(`~/expresso/docs`)를 직접 가리키지 않는다. 호스트 nginx가 `www-data`로
+도는데 `/home/ubuntu`가 `700`이라 그 밑을 읽지 못한다. 홈 권한을 여는 것은 이
+기계가 공용이라 하지 않는다. 옮겨 놓으면 서버에서 브랜치를 바꿔도 공개된 문서가
+함께 바뀌지 않는 이점도 따라온다.
+
+### 공개 범위
+
+인증을 걸지 않았다. 대신 `docs/robots.txt`(`Disallow: /`)와 `X-Robots-Tag:
+noindex, nofollow` 헤더로 색인을 막는다. 저장소가 public이라 이 문서들은 이미
+GitHub에서 읽히므로 새로 드러나는 것은 없다. 인증이 필요해지면 `htpasswd`와
+`auth_basic` 두 줄이면 된다.
+
+### 배포 — `docs/`를 푸시하면 올라간다
+
+`.github/workflows/dev-portal-oracle.yml`이 `main`과 `flow/**`의 `docs/` 변경을
+보고 있다. **밀어 넣지 않고 서버가 당긴다** — 러너는 커밋 해시 하나만 건네고,
+서버가 그 해시를 GitHub에서 받아 발행한다. 무엇이 올라갔는지가 해시로 남는다.
+
+**커밋·푸시하기 전까지는 보이지 않는다.** 웹루트는 하나뿐이라 뒤에 온 푸시가
+이긴다.
+
+액션이 막혔을 때와 올라간 것을 확인할 때만 손으로 부른다.
+
+```bash
+scripts/deploy-dev-portal.sh              # 지금 브랜치의 HEAD
+scripts/deploy-dev-portal.sh <커밋|브랜치>  # 지정한 것
+```
+
+#### 포털용 클론을 따로 둔다
+
+발행은 `~/expresso-dev-portal`에서 한다. **제품이 도는 `~/expresso`가 아니다** —
+거기서 브랜치를 오가면 돌고 있는 API·웹이 함께 흔들린다.
+
+#### 배포 키로는 셸이 열리지 않는다
+
+이 기계는 남의 서비스가 함께 도는 공용이라 CI에 셸을 주지 않는다. 서버의
+`~/.ssh/authorized_keys`가 그 키를 `command=`로 묶어 스크립트 하나만 실행한다.
+
+```
+command="/usr/local/bin/expresso-dev-portal-deploy",no-agent-forwarding,no-port-forwarding,no-X11-forwarding,no-user-rc,no-pty ssh-ed25519 AAAA… expresso-dev-portal-ci
+```
+
+스크립트 원본은 `infra/server/expresso-dev-portal-deploy.sh`다. 요청한 명령은
+`SSH_ORIGINAL_COMMAND`로 들어오고, 거기서 **커밋 해시만** 받는다. 해시가 아니면
+아무것도 하지 않는다 — 바깥에서 온 문자열을 셸에 그대로 넘기지 않기 위해서다.
+
+#### 시크릿 한 개가 필요하다
+
+개인키는 저장소 시크릿 `ORACLE_DEV_PORTAL_KEY`에 넣는다. 키는 이 배포에만 쓰는
+전용 ed25519이고, 사람이 쓰는 키와 별개다.
+
+```bash
+gh secret set ORACLE_DEV_PORTAL_KEY \
+  --repo Expresso-Organization/expresso < ~/.ssh/expresso-dev-portal-ci
+```
+
+호스트 키는 시크릿이 아니라 지문이라 워크플로에 그대로 박아 두었다. 서버를 다시
+만들면 그 줄도 바꾼다(`ssh-keyscan -t ed25519 140.245.74.246`).
+
+### nginx 리로드는 4절의 그 문제를 그대로 겪는다
+
+`systemctl reload nginx`도 `nginx -s reload`도 듣지 않는다. 마스터에 직접
+신호를 보낸다. `pgrep -f "nginx: master"`는 **컨테이너의 마스터 셋과 자기
+자신까지 물어 온다** — 앵커를 붙여 호스트 것만 고른다.
+
+```bash
+sudo kill -HUP "$(pgrep -f '^nginx: master process nginx -c')"
+```
+
+인증서를 받을 때 `deploy-hook`이 `nginx.service is not active`로 실패한 것도
+같은 원인이고, 이 기계의 모든 도메인이 같은 상태다. 발급 자체는 되었다.
+
+### 남은 것 — 문서가 두 벌이다
+
+`services/dev-portal/docs/`에 같은 문서의 **오래된 사본**이 있고(2026-08-07),
+`.github/workflows/dev-portal-deploy.yml`이 그것을 Cloudflare Pages로 올린다.
+루트 `docs/`가 실제로 고쳐 온 원본이므로 지금은 Pages 쪽이 뒤처져 있다. 한 벌로
+합칠지, Pages를 걷을지는 따로 정한다.
