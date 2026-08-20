@@ -55,7 +55,7 @@ src={mediaAssetUrl(API_BASE_URL, media.assetId, media.variants.at(-1))}
 ```
 
 이 `<img src>`가 그대로 브라우저로 내려간다. `http://127.0.0.1:4500`을 넣으면
-방문자 브라우저가 자기 컴퓨터의 4000번을 찾아가고 포트폴리오 이미지가 전부
+방문자 브라우저가 자기 컴퓨터의 4500번을 찾아가고 포트폴리오 이미지가 전부
 깨진다. 그래서 **`https://expresso.ai.kr`을 넣고, nginx가 `/v1/`을 백엔드로
 넘긴다.**
 
@@ -293,38 +293,106 @@ scripts/operations/deploy.sh <커밋>     # 특정 커밋으로
 ## GitHub Actions 자동 배포
 
 `.github/workflows/web-deploy.yml`이 `main` 푸시에 반응해 SSH로 위 스크립트를
-부른다. 배포는 `concurrency: production-deploy`로 직렬화된다 — 앞선 배포가
-마이그레이션 중일 수 있어 겹치면 안 된다.
+부른다. 2026-08-20부터 돌고 있다. 배포는 `concurrency: production-deploy`로
+직렬화된다 — 앞선 배포가 마이그레이션 중일 수 있어 겹치면 안 된다.
+
+경로 필터가 걸려 있어 `services/` · `packages/` · 락파일 · `deploy.sh`가 바뀔
+때만 돈다. 문서만 고친 푸시로는 배포가 일어나지 않는다.
 
 저장소 **Settings → Environments → `production`** 에 시크릿 넷을 넣는다.
 
 | 시크릿 | 값 |
 |---|---|
-| `DEPLOY_SSH_HOST` | 서버 주소 또는 IP (`140.245.74.246`) |
+| `DEPLOY_SSH_HOST` | `140.245.74.246` |
 | `DEPLOY_SSH_USER` | `ubuntu` |
-| `DEPLOY_SSH_KEY` | 배포 전용 개인 키 (아래에서 만든다) |
-| `DEPLOY_KNOWN_HOSTS` | 서버의 호스트 키 한 줄 |
+| `DEPLOY_SSH_KEY` | 배포 전용 개인 키 전문 |
+| `DEPLOY_KNOWN_HOSTS` | 서버의 호스트 키. **아래 함정 2를 먼저 읽는다.** |
 
 `DEPLOY_SSH_PORT`는 22가 아닐 때만 넣는다.
 
 배포 전용 키를 따로 만든다. 개인 키를 재사용하지 않는다.
 
 ```bash
-# 로컬에서
 ssh-keygen -t ed25519 -f ~/.ssh/expresso-deploy -N '' -C 'github-actions-deploy'
-
-# 공개 키를 서버의 ubuntu 사용자에게 등록
 ssh-copy-id -i ~/.ssh/expresso-deploy.pub ubuntu@expresso.ai.kr
+cat ~/.ssh/expresso-deploy          # DEPLOY_SSH_KEY 에 넣을 값
+```
 
-# DEPLOY_SSH_KEY 에 넣을 값 (개인 키 전문)
-cat ~/.ssh/expresso-deploy
+### 함정 1. 키가 서버에 있는지, ssh 설정에 속지 않고 확인한다
 
-# DEPLOY_KNOWN_HOSTS 에 넣을 값
-ssh-keyscan -t ed25519 expresso.ai.kr
+`ssh -i ~/.ssh/expresso-deploy ubuntu@140.245.74.246`이 붙었다고 해서 **그 키로
+붙은 것이 아니다.** `~/.ssh/config`에 그 호스트 항목이 있으면 ssh는 거기 적힌
+`IdentityFile`을 함께 내민다. `-o IdentitiesOnly=yes`를 줘도 막히지 않는다 —
+그 옵션은 "설정과 명령줄에 적힌 것만 쓴다"는 뜻이지 명령줄만 쓴다는 뜻이 아니다.
+
+실제로 이 자리에서 한 번 속았다. 배포 키가 서버에 없는데도 로컬 접속이 되어
+깔린 줄 알았고, 워크플로만 계속 인증에서 떨어졌다.
+
+**설정을 배제하고 재야 한다.**
+
+```bash
+ssh -F /dev/null -o IdentitiesOnly=yes -o BatchMode=yes \
+    -i ~/.ssh/expresso-deploy ubuntu@140.245.74.246 'whoami'
+```
+
+서버에서 지문으로 대조해도 된다. `ssh-keygen -lf ~/.ssh/expresso-deploy.pub`의
+지문이 아래 목록에 있어야 한다.
+
+```bash
+ssh ubuntu@expresso.ai.kr 'ssh-keygen -lf ~/.ssh/authorized_keys'
+```
+
+### 함정 2. `DEPLOY_KNOWN_HOSTS`는 `DEPLOY_SSH_HOST`와 같은 이름이어야 한다
+
+known_hosts는 **접속할 때 쓴 이름으로** 찾는다. `ssh-keyscan expresso.ai.kr`의
+결과를 넣어 두고 `DEPLOY_SSH_HOST`에 IP를 적으면, 같은 서버인데도 `Host key
+verification failed`로 떨어진다.
+
+둘 다 적어 두면 어느 쪽을 쓰든 걸리지 않는다. 이름을 쉼표로 잇는 것이
+known_hosts의 문법이다.
+
+```
+expresso.ai.kr,140.245.74.246 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFJxhIS0yTprHKrjfOL8F/GhXWixRIpdrJ1+o6QfVDwD
+```
+
+넣기 전에 그 값이 실제로 통하는지 워크플로와 같은 조건으로 잰다.
+
+```bash
+printf '%s\n' 'expresso.ai.kr,140.245.74.246 ssh-ed25519 AAAA...' > /tmp/kh
+ssh -F /dev/null -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/tmp/kh \
+    -o IdentitiesOnly=yes -i ~/.ssh/expresso-deploy ubuntu@expresso.ai.kr 'whoami'
 ```
 
 `ssh-keyscan`을 워크플로 안에서 매번 돌리지 않고 시크릿으로 고정한 이유는,
 그때그때 받으면 중간에 낀 서버의 키를 그대로 믿게 되기 때문이다.
+
+### 손으로 돌려 보기
+
+```bash
+gh workflow run web-deploy.yml --ref main
+gh run list --workflow=web-deploy.yml --limit 1
+```
+
+성공한 로그의 끝은 이 모양이다.
+
+```
+API 준비됨 (시도 2)
+웹 준비됨 (시도 2)
+https://expresso.ai.kr/login → 200
+https://expresso.ai.kr/home  → 307 (세션 없이 307이 정상)
+배포 완료 cb66bda (이전 f6101cd)
+```
+
+실패하면 워크플로가 세 유닛의 journald 로그를 마지막 60줄 함께 뱉는다. 자주
+보는 것들.
+
+| 로그 | 원인 |
+|---|---|
+| `ssh ... "@"` 뒤 usage 출력 | 시크릿이 비어 있다. `production` 환경에 넣었는지 확인한다 |
+| `Host key verification failed` | 함정 2 |
+| `Permission denied (publickey)` | 함정 1 |
+| `cd: ... No such file or directory` | `~/expresso`가 없다. 배포 사용자의 홈을 확인한다 |
+| `pnpm을 찾지 못했습니다` | `deploy.sh`의 `NODE_BIN`이 실제 nvm 경로와 다르다 |
 
 `production` 환경에 **필수 검토자**를 걸어 두면 배포 전에 승인 단계를 넣을 수
 있다(Settings → Environments → production → Required reviewers).
