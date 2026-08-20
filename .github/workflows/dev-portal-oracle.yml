@@ -13,7 +13,7 @@ name: 개발 포털 배포 (dev.expresso.ai.kr)
 # `infra/server/expresso-dev-portal-deploy.sh`.
 on:
   push:
-    branches: [main, "flow/**"]
+    branches: [main]
     paths:
       - "docs/**"
       - ".github/workflows/dev-portal-oracle.yml"
@@ -22,8 +22,7 @@ on:
 permissions:
   contents: read
 
-# 뒤에 온 푸시가 이긴다. 웹루트는 하나뿐이라 둘이 겹치면 무엇이 올라갔는지
-# 알 수 없게 된다.
+# 웹루트는 하나뿐이라 둘이 겹치면 무엇이 올라갔는지 알 수 없게 된다.
 concurrency:
   group: dev-portal-oracle
   cancel-in-progress: true
