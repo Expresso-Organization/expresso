@@ -123,6 +123,16 @@ export class CodexAiClient implements AiClient {
     }
   }
 
+  /**
+   * 부분 출력이 없다.
+   *
+   * 2026-08-14 실측(codex-cli 0.145.0): `exec --json`은 최종 메시지를
+   * `item.completed` **한 덩어리로만** 낸다. 짧은 응답도 200줄짜리 지면도
+   * 같았다. `item.started` · `item.updated`가 프로토콜에는 있지만 명령 실행
+   * 같은 다른 항목의 자리이고 최종 메시지는 쓰지 않는다.
+   */
+  readonly streams = false;
+
   async complete<T>(spec: AiCallSpec, schema: z.ZodType<T>): Promise<AiResult<T>> {
     const tier = spec.modelTier ?? DEFAULT_MODEL_TIER[spec.contract];
     const model = this.#models[spec.contract] ?? DEFAULT_CODEX_MODEL[tier];

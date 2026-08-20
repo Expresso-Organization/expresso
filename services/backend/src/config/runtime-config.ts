@@ -39,6 +39,24 @@ const runtimeConfigSchema = z.object({
    */
   AI_PROVIDER: z.enum(["off", "claude-code", "codex", "fixture", "anthropic"]).default("off"),
   /**
+   * 지면 생성만 다른 프로바이더로.
+   *
+   * **부분 출력을 낼 수 있는 프로바이더가 갈린다.** 2026-08-14 실측 —
+   * codex `exec --json`은 최종 메시지를 한 덩어리로만 내고(짧은 응답 · 200줄
+   * 지면 모두), claude-code는 `--include-partial-messages`로 구조화 출력을
+   * 조각내 준다. 만들어지는 지면을 보여주는 화면은 뒤엣것이라야 살아난다.
+   *
+   * 값이 따로 든다 — 같은 실측에서 40줄짜리 히어로 하나에 6턴 · $0.093이었다
+   * (에이전트가 `Write`·`Artifact`를 먼저 시도하다 거절당하고 마지막에
+   * `StructuredOutput`을 부른다). 그래서 **이 계약 하나만** 가른다.
+   *
+   * 비우면 `AI_PROVIDER`를 그대로 쓴다. 그러면 조각은 안 흐르고 `done`만 간다 —
+   * 진행률을 지어내지 않는다.
+   */
+  AI_PROVIDER_PAGE_GENERATION: z
+    .enum(["claude-code", "codex", "fixture", "anthropic"])
+    .optional(),
+  /**
    * 고용24(워크넷) 공공 API 인증키. 공공데이터포털에서 발급받는다.
    *
    * 없으면 워크넷 어댑터를 만들지 않는다 — 키 없이 도는 척하면 매일 아침
@@ -92,6 +110,8 @@ export interface RuntimeConfig {
   googleClientId?: string | undefined;
   /** 없으면 `off`. 키도 로그인도 없이 앱 전체가 돌아야 한다. */
   aiProvider?: "off" | "claude-code" | "codex" | "fixture" | "anthropic";
+  /** 지면 생성만 갈아 끼울 때. 비우면 `aiProvider`와 같다. */
+  aiPageGenerationProvider?: "claude-code" | "codex" | "fixture" | "anthropic";
   work24ApiKey?: string | undefined;
   aiTimeoutMs?: number;
   aiFixtureDir?: string;
@@ -126,6 +146,9 @@ export function loadRuntimeConfig(
     requestTimeoutMs: result.REQUEST_TIMEOUT_MS,
     googleClientId: result.GOOGLE_CLIENT_ID,
     aiProvider: result.AI_PROVIDER,
+    ...(result.AI_PROVIDER_PAGE_GENERATION
+      ? { aiPageGenerationProvider: result.AI_PROVIDER_PAGE_GENERATION }
+      : {}),
     work24ApiKey: result.WORK24_API_KEY,
     aiTimeoutMs: result.AI_TIMEOUT_MS,
     aiFixtureDir: result.AI_FIXTURE_DIR,

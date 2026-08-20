@@ -93,8 +93,53 @@ export interface AiResult<T> {
   usage: AiUsage;
 }
 
+/**
+ * 한 번의 호출에 붙는 것. 계약이 아니라 **부르는 쪽의 사정**이다.
+ */
+export interface AiCallOptions {
+  /**
+   * 모델이 쓰는 동안 지금까지 쌓인 것을 준다.
+   *
+   * 넘어오는 것은 완성된 값이 아니라 **끝나지 않은 JSON 조각**이다 —
+   * `{"css":"body{ma`처럼 문자열 한가운데서 끊긴다. 그래서 여기서
+   * `JSON.parse`를 부르면 안 되고, `partialDraft()`로 읽는다.
+   *
+   * 인자는 **이번에 새로 온 조각**이다. 누적은 받는 쪽이 한다 — 매번 전체를
+   * 넘기면 지면 하나에 같은 글자를 수십 번 다시 보낸다.
+   */
+  onPartial?: (delta: string) => void;
+  /**
+   * 모델이 생각하는 동안 쌓인 분량(토큰).
+   *
+   * 실측에서 지면 하나의 첫 조각까지 126초가 걸렸고, 그 사이 결과 쪽으로는 한
+   * 글자도 안 나온다. 생각을 줄여 침묵을 없애 봤더니 지면이 통째로 사라졌다
+   * (`claude-code.ts` 주석). 그러면 남은 길은 그 시간에 **무슨 일이 일어나는지
+   * 말해 주는 것**뿐이다.
+   *
+   * **글이 아니라 분량이다.** sonnet은 추론 내용을 내주지 않는다(실측: 조각
+   * 35개가 전부 빈 문자열). 화면에 숫자를 쓰라는 뜻이 아니라, 이 신호가 오는
+   * 동안은 「구상하는 중」이고 조각이 오기 시작하면 「쓰는 중」이라는 뜻이다.
+   */
+  onThinking?: (estimatedTokens: number) => void;
+}
+
 export interface AiClient {
-  complete<T>(spec: AiCallSpec, schema: z.ZodType<T>): Promise<AiResult<T>>;
+  complete<T>(
+    spec: AiCallSpec,
+    schema: z.ZodType<T>,
+    options?: AiCallOptions,
+  ): Promise<AiResult<T>>;
+  /**
+   * 이 프로바이더가 부분 출력을 낼 수 있는가.
+   *
+   * **없으면 없는 것으로 본다.** 흉내 내지 않는다 — 진행률을 지어내면 화면은
+   * 3분 동안 거짓말을 하게 되고, 실제로 어디까지 갔는지는 아무도 모른다.
+   *
+   * 2026-08-14 실측: codex `exec --json`은 최종 메시지를 `item.completed` 한
+   * 덩어리로만 낸다(짧은 응답 · 긴 응답 모두). claude-code는
+   * `--include-partial-messages`로 구조화 출력을 `input_json_delta`로 쪼개 준다.
+   */
+  readonly streams?: boolean;
 }
 
 export type AiErrorCode =

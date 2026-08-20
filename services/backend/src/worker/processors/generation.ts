@@ -25,7 +25,9 @@ export function createGenerationProcessor(
     ) {
       // 블록 적재 transaction은 이미 끝났다. 페이지 호출이 실패해도 근거가 연결된
       // 편집 초안은 남고, queue 재시도는 페이지가 없는 경우에만 다시 이 자리를 돈다.
-      await page.service.generate(userId, status.portfolioId, page.generator);
+      // 조각은 **잡 id로** 흐른다. 03 화면이 첫 렌더부터 아는 것이 그것뿐이라
+      // 포트폴리오가 생기기를 기다리지 않고 붙어 있을 수 있다.
+      await page.service.generate(userId, status.portfolioId, page.generator, { streamId: id });
     }
     return status;
   };

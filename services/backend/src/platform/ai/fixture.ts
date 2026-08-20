@@ -6,6 +6,7 @@ import type { z } from "zod";
 import {
   AiError,
   callKey,
+  type AiCallOptions,
   type AiCallSpec,
   type AiClient,
   type AiResult,
@@ -45,7 +46,21 @@ export class FixtureAiClient implements AiClient {
     this.#directory = directory;
   }
 
-  async complete<T>(spec: AiCallSpec, schema: z.ZodType<T>): Promise<AiResult<T>> {
+  /**
+   * 녹화본을 조각내 흘려준다.
+   *
+   * 진짜 모델이 아니니 "빨라진" 것은 없다 — 값은 **경계에 있다.** 실제 델타는
+   * 이스케이프 한가운데(`\\n`의 backslash와 n 사이)나 태그 중간에서 끊기고,
+   * 받는 쪽이 그걸 견디는지는 그 경계를 재현해야만 드러난다. 지연은 넣지
+   * 않는다 — 재현할 근거가 없는 숫자다.
+   */
+  readonly streams = true;
+
+  async complete<T>(
+    spec: AiCallSpec,
+    schema: z.ZodType<T>,
+    options: AiCallOptions = {},
+  ): Promise<AiResult<T>> {
     const key = callKey(spec, schema);
     const path = fixturePath(this.#directory, spec, key);
     let raw: string;
@@ -71,6 +86,14 @@ export class FixtureAiClient implements AiClient {
         { retryable: false },
       );
     }
+    if (options.onPartial) {
+      // 2026-08-14 실측: claude-code가 2,363자 응답을 69조각으로 냈다 — 조각당 34자.
+      const CHUNK = 34;
+      const encoded = JSON.stringify(record.data);
+      for (let at = 0; at < encoded.length; at += CHUNK) {
+        options.onPartial(encoded.slice(at, at + CHUNK));
+      }
+    }
     return { data: validated.data, usage: record.usage };
   }
 }
@@ -89,8 +112,17 @@ export class RecordingAiClient implements AiClient {
     this.#directory = directory;
   }
 
-  async complete<T>(spec: AiCallSpec, schema: z.ZodType<T>): Promise<AiResult<T>> {
-    const result = await this.#inner.complete(spec, schema);
+  get streams(): boolean {
+    return this.#inner.streams ?? false;
+  }
+
+  async complete<T>(
+    spec: AiCallSpec,
+    schema: z.ZodType<T>,
+    options: AiCallOptions = {},
+  ): Promise<AiResult<T>> {
+    // 감싼 쪽의 사정을 그대로 넘긴다 — 여기서 빠뜨리면 녹화 중에만 조각이 끊긴다.
+    const result = await this.#inner.complete(spec, schema, options);
     const key = callKey(spec, schema);
     const path = fixturePath(this.#directory, spec, key);
     const record: FixtureRecord = {

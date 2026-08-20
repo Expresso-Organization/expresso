@@ -19,6 +19,7 @@ import type {
   PageMedia,
 } from "./generator.js";
 import { DESIGN_PRINCIPLES_VERSION } from "./generator.js";
+import type { PageStream } from "./stream.js";
 
 /**
  * 자유 생성 지면의 살림.
@@ -102,10 +103,20 @@ function toPage(row: PageRow): GeneratedPage {
 export class PageService {
   readonly #sql: postgres.Sql;
   readonly #consent: ConsentService | null;
+  readonly #stream: PageStream | null;
 
-  constructor(sql: postgres.Sql, consent?: ConsentService | null) {
+  constructor(sql: postgres.Sql, consent?: ConsentService | null, stream?: PageStream | null) {
     this.#sql = sql;
     this.#consent = consent ?? null;
+    this.#stream = stream ?? null;
+  }
+
+  /** 내 것인가. 스트림을 열기 전에 묻는다 — 남의 지면이 흐르면 안 된다. */
+  async owns(userId: string, portfolioId: string): Promise<boolean> {
+    const row = (await this.#sql<{ id: string }[]>`
+      select id from portfolio where user_id = ${userId} and id = ${portfolioId}
+    `)[0];
+    return Boolean(row);
   }
 
   /** 가장 최근 판. 없으면 null — 아직 안 뽑은 포트폴리오다. */
@@ -316,7 +327,17 @@ export class PageService {
     userId: string,
     portfolioId: string,
     generator: PageGenerator,
-    options: { instruction?: string | undefined } = {},
+    options: {
+      instruction?: string | undefined;
+      /**
+       * 조각이 흐를 자리의 이름.
+       *
+       * 기본은 포트폴리오지만, **처음 뽑을 때는 포트폴리오가 아직 없다** —
+       * 화면이 열리는 시점에 존재하는 것은 생성 잡뿐이라 워커가 그 id를 준다.
+       * 보는 쪽이 첫 렌더부터 붙어 있어야 첫 조각을 놓치지 않는다.
+       */
+      streamId?: string | undefined;
+    } = {},
   ): Promise<GeneratedPage> {
     const owned = (await this.#sql<{ id: string }[]>`
       select id from portfolio where user_id = ${userId} and id = ${portfolioId}
@@ -336,9 +357,44 @@ export class PageService {
 
     // 계약을 부르기 전에 문을 지난다. 기록 본문이 통째로 나가는 계약이다.
     await this.#consent?.require(userId, "page_generation");
-    // 멈춘 프로바이더를 막는 backstop이다. 실제 한계는 어댑터가 쥐고 있고,
-    // 재시도까지 하면 두 배가 되므로 여기서 먼저 끊으면 재시도가 잘린다.
-    const result = await withTimeout(generator.generate(context), 900_000, "page generator");
+    /*
+     * 만들어지는 동안을 흘려보낸다.
+     *
+     * **실패해도 생성을 멈추지 않는다.** Redis가 잠깐 없는 것과 지면을 못 만드는
+     * 것은 다른 일이고, 3분짜리 호출을 보여주기 실패로 버리면 사용자가 잃는
+     * 것이 훨씬 크다. 대신 조용히 넘기지 않고 한 줄 남긴다.
+     */
+    const stream = this.#stream;
+    const streamId = options.streamId ?? portfolioId;
+    const sink = stream
+      ? {
+        delta: (text: string) => { void this.#publish(stream.delta(streamId, text)); },
+        /*
+         * 생각은 **분량만** 온다 — 모델이 내용을 안 준다(실측: 조각 35개가 전부
+         * 빈 문자열). 그래서 이 신호가 하는 일은 하나다: 아직 아무것도 안
+         * 나왔지만 멈춘 것은 아니라고 말해 준다. 첫 조각까지 실측 126초라
+         * 그 말이 없으면 화면이 죽은 것과 구분되지 않는다.
+         */
+        thinking: (tokens: number) => { void this.#publish(stream.thinking(streamId, tokens)); },
+      }
+      : null;
+
+    // 무엇으로 그릴지 먼저 알린다 — 조각보다 앞서야 첫 조각부터 제 모습이다.
+    await this.#publish(stream?.begin(streamId, JSON.stringify(context.style ?? null)));
+
+    let result;
+    try {
+      // 멈춘 프로바이더를 막는 backstop이다. 실제 한계는 어댑터가 쥐고 있고,
+      // 재시도까지 하면 두 배가 되므로 여기서 먼저 끊으면 재시도가 잘린다.
+      result = await withTimeout(generator.generate(context, sink), 900_000, "page generator");
+    } catch (error) {
+      // 보고 있던 사람에게 끝났다고 말한다. 말하지 않으면 화면이 영원히 기다린다.
+      await this.#publish(stream?.failed(
+        streamId,
+        error instanceof Error ? error.name : "PAGE_GENERATION_FAILED",
+      ));
+      throw error;
+    }
 
     const row = (await this.#sql<PageRow[]>`
       insert into generated_page (
@@ -360,6 +416,8 @@ export class PageService {
       ) returning *
     `)[0];
     if (!row) throw new Error("generated page missing");
+    // 여기서부터는 미리보기가 아니라 진짜가 있다. 받는 쪽이 그리로 넘어간다.
+    await this.#publish(stream?.done(streamId, row.id));
 
     // 지운 것이 있으면 프롬프트가 규칙을 덜 가르쳤다는 뜻이다. 지면은 나가되
     // 우리는 알아야 한다.
@@ -372,6 +430,20 @@ export class PageService {
       }));
     }
     return toPage(row);
+  }
+
+  /** 흘려보내기 실패는 생성 실패가 아니다. 삼키되 남긴다. */
+  async #publish(work: Promise<void> | undefined): Promise<void> {
+    if (!work) return;
+    try {
+      await work;
+    } catch (error) {
+      console.error(JSON.stringify({
+        level: "warn",
+        event: "page.stream_failed",
+        detail: error instanceof Error ? error.message : String(error),
+      }));
+    }
   }
 }
 
