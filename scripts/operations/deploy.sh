@@ -3,14 +3,34 @@
 # expresso.ai.kr 배포. 서버에서 실행한다 — 사람이 SSH로 들어와서든,
 # GitHub Actions가 SSH로 부르든 같은 스크립트를 쓴다.
 #
+# 서버는 ubuntu 사용자의 홈에 있다(/home/ubuntu/expresso). 위치·포트·node
+# 자리는 모두 아래에서 환경 변수로 덮을 수 있다.
+#
 #   scripts/operations/deploy.sh [커밋-ish]
 #
 # 인자가 없으면 origin/main의 최신 커밋으로 간다.
 set -euo pipefail
 
-ROOT="${EXPRESSO_ROOT:-/opt/expresso}"
+ROOT="${EXPRESSO_ROOT:-/home/ubuntu/expresso}"
 SITE_URL="${EXPRESSO_SITE_URL:-https://expresso.ai.kr}"
 TARGET="${1:-origin/main}"
+
+# 서비스가 듣는 자리. nginx가 /v1은 API로, 나머지는 웹으로 보낸다.
+# infra/nginx/expresso.ai.kr.conf 와 같은 숫자여야 한다.
+API_PORT="${EXPRESSO_API_PORT:-4500}"
+WEB_PORT="${EXPRESSO_WEB_PORT:-3500}"
+
+# nvm은 로그인 셸에서만 PATH에 붙어서, Actions가 SSH로 부르면 node가 없다.
+# 그래서 자리를 직접 적는다. **infra/systemd/*.service 의 ExecStart 와 같은
+# 버전이어야 한다** — 여기만 올리면 배포는 새 node로 짓고 서비스는 옛 node로
+# 돈다. nvm의 default 별칭(22)은 일부러 쓰지 않는다.
+NODE_BIN="${EXPRESSO_NODE_BIN:-/home/ubuntu/.nvm/versions/node/v24.13.1/bin}"
+export PATH="$NODE_BIN:$PATH"
+
+if ! command -v pnpm > /dev/null; then
+  echo "pnpm을 찾지 못했습니다 — NODE_BIN=$NODE_BIN 이 맞는지 확인하세요" >&2
+  exit 1
+fi
 
 cd "$ROOT"
 
@@ -44,7 +64,7 @@ sudo systemctl restart expresso-api
 
 # API가 실제로 준비될 때까지 기다린다. ready는 PostgreSQL과 Redis를 함께 본다.
 for attempt in $(seq 1 30); do
-  if curl -fsS --max-time 5 http://127.0.0.1:4000/health/ready > /dev/null; then
+  if curl -fsS --max-time 5 "http://127.0.0.1:$API_PORT/health/ready" > /dev/null; then
     echo "API 준비됨 (시도 $attempt)"
     break
   fi
@@ -59,7 +79,7 @@ done
 sudo systemctl restart expresso-web
 
 for attempt in $(seq 1 30); do
-  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:3000/login || true)"
+  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "http://127.0.0.1:$WEB_PORT/login" || true)"
   if [ "$code" = "200" ]; then
     echo "웹 준비됨 (시도 $attempt)"
     break
