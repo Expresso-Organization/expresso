@@ -1,8 +1,7 @@
 import type { JobPostingDetail, JobRequirement } from "@expresso/contracts";
 import { notFound } from "next/navigation";
 
-import { AppShell, DocumentHeader } from "@/components/shell/AppShell";
-import { Sidebar } from "@/components/shell/Sidebar";
+import { AppBody, DocumentHeader } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
 import { ApiError } from "@/lib/api/client";
 import { jobs as jobsApi } from "@/lib/api/endpoints";
@@ -78,336 +77,326 @@ export default async function JobDetailPage({
     || job.technologies.length > 0;
 
   return (
-    <AppShell
-      sidebar={
-        <Sidebar
-          active="jobs"
-          categories={session.categories}
-          displayName={session.user.displayName}
-          quotaUsed={session.quota.used}
-          quotaLimit={session.quota.limit}
-        />
-      }
-      header={
-        <DocumentHeader
-          crumbs={["공고 탐색", `${job.company.name} · ${job.title}`]}
-          actions={
-            <>
-              <button type="button" className={styles.headAction}>
-                <Icon
-                  name="bookmark-simple"
-                  weight={job.interest ? "fill" : "regular"}
-                  size={14}
-                  color={job.interest ? "var(--ex-espresso)" : "var(--ex-slate-500)"}
-                />
-                {job.interest ? "관심 공고" : "관심 공고에 담기"}
-              </button>
-              <Icon name="arrow-square-out" size={16} color="var(--ex-slate-500)" />
-            </>
-          }
-        />
-      }
-    >
-      <div className={styles.body}>
-        <div className={styles.left}>
-          <h1 className={styles.role}>{job.title}</h1>
-          <div className={styles.team}>
-            <CompanyAvatar company={job.company} className={styles.companyMark} fit="line" />
-            {[job.company.name, job.team].filter(Boolean).join(" · ")}
-            {deadlineText(job) ? (
-              <span className={styles.deadline}>{deadlineText(job)}</span>
-            ) : null}
-          </div>
-
-          {/*
-            * 노션의 페이지 속성처럼 한 줄에 하나씩 세운다.
-            *
-            * 칸을 나눈 표는 **비어 있는 칸이 그대로 구멍으로 보인다** — 다섯
-            * 칸에 셋만 차면 남은 둘이 빈 상자로 남았다. 줄로 세우면 값이 있는
-            * 것만 세우고 나머지는 없던 줄로 둘 수 있다.
-            */}
-          {rows.length > 0 ? (
-            <dl className={styles.facts}>
-              {rows.map((fact) => (
-                <div key={fact.label} className={styles.fact}>
-                  <dt className={styles.factLabel}>
-                    <Icon name={fact.icon} size={14} color="var(--ex-slate-400)" />
-                    {fact.label}
-                  </dt>
-                  <dd className={styles.factValue}>{fact.value}</dd>
-                </div>
-              ))}
-            </dl>
-          ) : null}
-
-          {job.duties.length > 0 ? (
-            <div className={styles.section}>
-              <div className={styles.blockTitle}>주요 업무</div>
-              {job.duties.map((duty) => (
-                <div key={duty.group} className={styles.dutyGroup}>
-                  <div className={styles.dutyGroupTitle}>{duty.group}</div>
-                  {duty.items.map((item) => (
-                    <div key={item} className={styles.dutyItem}>
-                      <span className={styles.dutyBullet}>–</span>
-                      <span className={styles.dutyText}>{item}</span>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          ) : null}
-
-          {job.technologies.length > 0 ? (
-            <div className={styles.section}>
-              <div className={styles.blockTitle}>기술 스택</div>
-              <div className={styles.stackRow}>
-                {job.technologies.map((tool) =>
-                  tool.matched === true ? (
-                    <span key={tool.name} className={styles.stackHave}>
-                      <Icon name="check" size={11} color="var(--ex-success-text)" />
-                      {tool.name}
-                    </span>
-                  ) : (
-                    <span key={tool.name} className={styles.stackMissing}>
-                      {tool.name}
-                    </span>
-                  ),
-                )}
-              </div>
-              <div className={styles.stackNote}>
-                {job.match
-                  ? `표시된 ${haveStack}개는 내 기록에 이미 있는 것입니다`
-                  : "아직 내 기록과 대조하지 않았습니다"}
-              </div>
-            </div>
-          ) : null}
-
-          {musts.length > 0 ? (
-            <div className={styles.section}>
-              <div className={styles.blockTitleRow}>
-                <span className={styles.blockTitle} style={{ marginBottom: 0 }}>
-                  자격 요건
-                </span>
-                <span className={styles.blockTitleNote}>
-                  {comparedCount === 0
-                    ? `${musts.length}개 · 아직 대조하지 않았습니다`
-                    : `${musts.length}개 중 ${coveredCount}개 충족`}
-                </span>
-              </div>
-              {musts.map((requirement) => (
-                <RequirementRow key={requirement.id} requirement={requirement} />
-              ))}
-            </div>
-          ) : null}
-
-          {job.preferred.length > 0 ? (
-            <div className={styles.section}>
-              <div className={styles.blockTitle}>우대 사항</div>
-              <div className={styles.preferredList}>
-                {job.preferred.map((item) => {
-                  const state = item.coverage ? COVERAGE[item.coverage] : null;
-                  return (
-                    <div key={item.label} className={styles.preferredItem}>
-                      {state ? (
-                        <Icon
-                          name={state.icon}
-                          weight={state.weight}
-                          size={13}
-                          color={state.color}
-                          style={{ flexShrink: 0 }}
-                        />
-                      ) : null}
-                      <span className={styles.preferredLabel}>{item.label}</span>
-                      {state ? (
-                        <span
-                          className={styles.preferredState}
-                          style={{ color: state.color }}
-                        >
-                          {state.label}
-                        </span>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
-
-          {job.hiringProcess.length > 0 ? (
-            <div className={styles.section}>
-              <div className={styles.blockTitle}>
-                전형 절차{job.processNote ? ` · ${job.processNote}` : ""}
-              </div>
-              <div className={styles.processRow}>
-                {job.hiringProcess.map((step, index) => (
-                  <span key={step.label} className={styles.processStep}>
-                    <span className={styles.processNo}>
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    {step.label}
-                    {index < job.hiringProcess.length - 1 ? (
-                      <Icon name="caret-right" size={10} color="var(--ex-border-strong)" />
-                    ) : null}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {/*
-            * 공고 원문.
-            *
-            * 위의 절들은 **뽑아 놓은 것**을 그린다 — 주요 업무 · 우대 사항 ·
-            * 전형 절차는 사람이 심었거나 분석이 채운 칸이다. 모아 온 공고는
-            * 아직 그 칸이 비어 있어서, 이게 없으면 3,883자짜리 공고를 열고도
-            * **빈 화면**을 본다.
-            *
-            * 뽑아 놓은 것이 있으면 접어 두고, 없으면 펴 둔다. 여기 온 사람이
-            * 하려던 일은 공고를 읽는 것이다.
-            */}
-          {job.descriptionRaw ? (
-            <details className={styles.rawSection} open={!hasStructure}>
-              <summary className={styles.rawSummary}>
-                공고 원문
-                <span className={styles.rawNote}>
-                  {hasStructure
-                    ? `${job.descriptionRaw.length.toLocaleString("ko-KR")}자`
-                    : "아직 요건을 뽑지 않아 원문 그대로 보여드립니다"}
-                </span>
-              </summary>
-              {/* 글자 수는 원문의 것을 세고, 그리는 것만 편다 — 위의 `1,234자`가
-                  우리가 손댄 길이를 말하면 안 된다. */}
-              <StackMarkdown className={styles.rawBody}>
-                {mendEmphasis(job.descriptionRaw)}
-              </StackMarkdown>
-            </details>
-          ) : null}
-
-          {job.notice ? <p className={styles.notice}>{job.notice}</p> : null}
-        </div>
-
-        <aside className={styles.rail}>
-          {job.match ? (
-            <div className={styles.matchCard}>
-              {/*
-                큰 숫자는 요건 충족률이고, 오른쪽 내역이 그 분자·분모다.
-                요건 원문의 충족 · 약함 · 없음 3단 판정은 아래 "자격 요건"
-                절이 따로 보여준다 — 정밀도가 다른 별개의 읽기다.
-              */}
-              <div className={styles.matchHead}>
-                <div>
-                  <div className={styles.matchLabel}>내 기록과의 일치</div>
-                  <div className={styles.matchScoreRow}>
-                    <span className={styles.matchScore}>{job.match.total}</span>
-                    <span className={styles.matchUnit}>%</span>
-                  </div>
-                </div>
-                <div className={styles.matchTally}>
-                  <div className={`${styles.legendItem} ${styles.legendCovered}`}>
-                    충족 {job.match.covered}
-                  </div>
-                  <div className={styles.legendItem}>
-                    미충족 {job.match.required - job.match.covered}
-                  </div>
-                  <div className={styles.legendItem}>요건 {job.match.required}개</div>
-                </div>
-              </div>
-              <div className={styles.matchBar}>
-                <span
-                  className={styles.matchSlot}
-                  style={{ flex: job.match.covered, background: "var(--ex-success)" }}
-                />
-                <span
-                  className={styles.matchSlot}
-                  style={{
-                    flex: job.match.required - job.match.covered,
-                    background: "var(--ex-line-200)",
-                  }}
-                />
-              </div>
-              {job.rank ? (
-                <div className={styles.matchRank}>
-                  비슷한 공고 {job.rank.total}건 중 <b>{job.rank.position}번째로 가까운</b>{" "}
-                  공고입니다.
-                </div>
+    <>
+      <DocumentHeader
+        crumbs={["공고 탐색", `${job.company.name} · ${job.title}`]}
+        actions={
+          <>
+            <button type="button" className={styles.headAction}>
+              <Icon
+                name="bookmark-simple"
+                weight={job.interest ? "fill" : "regular"}
+                size={14}
+                color={job.interest ? "var(--ex-espresso)" : "var(--ex-slate-500)"}
+              />
+              {job.interest ? "관심 공고" : "관심 공고에 담기"}
+            </button>
+            <Icon name="arrow-square-out" size={16} color="var(--ex-slate-500)" />
+          </>
+        }
+      />
+      <AppBody>
+        <div className={styles.body}>
+          <div className={styles.left}>
+            <h1 className={styles.role}>{job.title}</h1>
+            <div className={styles.team}>
+              <CompanyAvatar company={job.company} className={styles.companyMark} fit="line" />
+              {[job.company.name, job.team].filter(Boolean).join(" · ")}
+              {deadlineText(job) ? (
+                <span className={styles.deadline}>{deadlineText(job)}</span>
               ) : null}
             </div>
-          ) : null}
 
-          {firstMissing ? (
-            <div className={styles.railCardBrew}>
-              <div className={styles.railTitle}>빠진 재료 하나</div>
-              <p className={`${styles.railBody} ${styles.railBodyBrew}`}>
-                {firstMissing.label}만 기록이 없습니다. {job.match?.nextAction}
-              </p>
+            {/*
+              * 노션의 페이지 속성처럼 한 줄에 하나씩 세운다.
+              *
+              * 칸을 나눈 표는 **비어 있는 칸이 그대로 구멍으로 보인다** — 다섯
+              * 칸에 셋만 차면 남은 둘이 빈 상자로 남았다. 줄로 세우면 값이 있는
+              * 것만 세우고 나머지는 없던 줄로 둘 수 있다.
+              */}
+            {rows.length > 0 ? (
+              <dl className={styles.facts}>
+                {rows.map((fact) => (
+                  <div key={fact.label} className={styles.fact}>
+                    <dt className={styles.factLabel}>
+                      <Icon name={fact.icon} size={14} color="var(--ex-slate-400)" />
+                      {fact.label}
+                    </dt>
+                    <dd className={styles.factValue}>{fact.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
+
+            {job.duties.length > 0 ? (
+              <div className={styles.section}>
+                <div className={styles.blockTitle}>주요 업무</div>
+                {job.duties.map((duty) => (
+                  <div key={duty.group} className={styles.dutyGroup}>
+                    <div className={styles.dutyGroupTitle}>{duty.group}</div>
+                    {duty.items.map((item) => (
+                      <div key={item} className={styles.dutyItem}>
+                        <span className={styles.dutyBullet}>–</span>
+                        <span className={styles.dutyText}>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {job.technologies.length > 0 ? (
+              <div className={styles.section}>
+                <div className={styles.blockTitle}>기술 스택</div>
+                <div className={styles.stackRow}>
+                  {job.technologies.map((tool) =>
+                    tool.matched === true ? (
+                      <span key={tool.name} className={styles.stackHave}>
+                        <Icon name="check" size={11} color="var(--ex-success-text)" />
+                        {tool.name}
+                      </span>
+                    ) : (
+                      <span key={tool.name} className={styles.stackMissing}>
+                        {tool.name}
+                      </span>
+                    ),
+                  )}
+                </div>
+                <div className={styles.stackNote}>
+                  {job.match
+                    ? `표시된 ${haveStack}개는 내 기록에 이미 있는 것입니다`
+                    : "아직 내 기록과 대조하지 않았습니다"}
+                </div>
+              </div>
+            ) : null}
+
+            {musts.length > 0 ? (
+              <div className={styles.section}>
+                <div className={styles.blockTitleRow}>
+                  <span className={styles.blockTitle} style={{ marginBottom: 0 }}>
+                    자격 요건
+                  </span>
+                  <span className={styles.blockTitleNote}>
+                    {comparedCount === 0
+                      ? `${musts.length}개 · 아직 대조하지 않았습니다`
+                      : `${musts.length}개 중 ${coveredCount}개 충족`}
+                  </span>
+                </div>
+                {musts.map((requirement) => (
+                  <RequirementRow key={requirement.id} requirement={requirement} />
+                ))}
+              </div>
+            ) : null}
+
+            {job.preferred.length > 0 ? (
+              <div className={styles.section}>
+                <div className={styles.blockTitle}>우대 사항</div>
+                <div className={styles.preferredList}>
+                  {job.preferred.map((item) => {
+                    const state = item.coverage ? COVERAGE[item.coverage] : null;
+                    return (
+                      <div key={item.label} className={styles.preferredItem}>
+                        {state ? (
+                          <Icon
+                            name={state.icon}
+                            weight={state.weight}
+                            size={13}
+                            color={state.color}
+                            style={{ flexShrink: 0 }}
+                          />
+                        ) : null}
+                        <span className={styles.preferredLabel}>{item.label}</span>
+                        {state ? (
+                          <span
+                            className={styles.preferredState}
+                            style={{ color: state.color }}
+                          >
+                            {state.label}
+                          </span>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            {job.hiringProcess.length > 0 ? (
+              <div className={styles.section}>
+                <div className={styles.blockTitle}>
+                  전형 절차{job.processNote ? ` · ${job.processNote}` : ""}
+                </div>
+                <div className={styles.processRow}>
+                  {job.hiringProcess.map((step, index) => (
+                    <span key={step.label} className={styles.processStep}>
+                      <span className={styles.processNo}>
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      {step.label}
+                      {index < job.hiringProcess.length - 1 ? (
+                        <Icon name="caret-right" size={10} color="var(--ex-border-strong)" />
+                      ) : null}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {/*
+              * 공고 원문.
+              *
+              * 위의 절들은 **뽑아 놓은 것**을 그린다 — 주요 업무 · 우대 사항 ·
+              * 전형 절차는 사람이 심었거나 분석이 채운 칸이다. 모아 온 공고는
+              * 아직 그 칸이 비어 있어서, 이게 없으면 3,883자짜리 공고를 열고도
+              * **빈 화면**을 본다.
+              *
+              * 뽑아 놓은 것이 있으면 접어 두고, 없으면 펴 둔다. 여기 온 사람이
+              * 하려던 일은 공고를 읽는 것이다.
+              */}
+            {job.descriptionRaw ? (
+              <details className={styles.rawSection} open={!hasStructure}>
+                <summary className={styles.rawSummary}>
+                  공고 원문
+                  <span className={styles.rawNote}>
+                    {hasStructure
+                      ? `${job.descriptionRaw.length.toLocaleString("ko-KR")}자`
+                      : "아직 요건을 뽑지 않아 원문 그대로 보여드립니다"}
+                  </span>
+                </summary>
+                {/* 글자 수는 원문의 것을 세고, 그리는 것만 편다 — 위의 `1,234자`가
+                    우리가 손댄 길이를 말하면 안 된다. */}
+                <StackMarkdown className={styles.rawBody}>
+                  {mendEmphasis(job.descriptionRaw)}
+                </StackMarkdown>
+              </details>
+            ) : null}
+
+            {job.notice ? <p className={styles.notice}>{job.notice}</p> : null}
+          </div>
+
+          <aside className={styles.rail}>
+            {job.match ? (
+              <div className={styles.matchCard}>
+                {/*
+                  큰 숫자는 요건 충족률이고, 오른쪽 내역이 그 분자·분모다.
+                  요건 원문의 충족 · 약함 · 없음 3단 판정은 아래 "자격 요건"
+                  절이 따로 보여준다 — 정밀도가 다른 별개의 읽기다.
+                */}
+                <div className={styles.matchHead}>
+                  <div>
+                    <div className={styles.matchLabel}>내 기록과의 일치</div>
+                    <div className={styles.matchScoreRow}>
+                      <span className={styles.matchScore}>{job.match.total}</span>
+                      <span className={styles.matchUnit}>%</span>
+                    </div>
+                  </div>
+                  <div className={styles.matchTally}>
+                    <div className={`${styles.legendItem} ${styles.legendCovered}`}>
+                      충족 {job.match.covered}
+                    </div>
+                    <div className={styles.legendItem}>
+                      미충족 {job.match.required - job.match.covered}
+                    </div>
+                    <div className={styles.legendItem}>요건 {job.match.required}개</div>
+                  </div>
+                </div>
+                <div className={styles.matchBar}>
+                  <span
+                    className={styles.matchSlot}
+                    style={{ flex: job.match.covered, background: "var(--ex-success)" }}
+                  />
+                  <span
+                    className={styles.matchSlot}
+                    style={{
+                      flex: job.match.required - job.match.covered,
+                      background: "var(--ex-line-200)",
+                    }}
+                  />
+                </div>
+                {job.rank ? (
+                  <div className={styles.matchRank}>
+                    비슷한 공고 {job.rank.total}건 중 <b>{job.rank.position}번째로 가까운</b>{" "}
+                    공고입니다.
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {firstMissing ? (
+              <div className={styles.railCardBrew}>
+                <div className={styles.railTitle}>빠진 재료 하나</div>
+                <p className={`${styles.railBody} ${styles.railBodyBrew}`}>
+                  {firstMissing.label}만 기록이 없습니다. {job.match?.nextAction}
+                </p>
+                <form action={analyzePostingAction}>
+                  <input type="hidden" name="jobPostingId" value={job.id} />
+                  <button type="submit" className={styles.railCta}>
+                    질문 3개로 채우기
+                  </button>
+                </form>
+              </div>
+            ) : null}
+
+            {job.company.brandColors.length > 0 || job.company.toneSummary ? (
+              <div className={styles.railCard}>
+                <div className={styles.railTitle}>이 회사의 톤</div>
+                {job.company.brandColors.length > 0 ? (
+                  <div className={styles.palette}>
+                    {job.company.brandColors.map((color) => (
+                      <span key={color} className={styles.swatch}>
+                        <span className={styles.swatchChip} style={{ background: color }} />
+                        <span className={styles.swatchHex}>{color}</span>
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                {job.company.toneSummary ? (
+                  <div className={styles.toneRow}>
+                    <span className={styles.toneKey}>공고 말투</span>
+                    <span>{job.company.toneSummary}</span>
+                  </div>
+                ) : null}
+                {job.company.toneImpression ? (
+                  <div className={styles.toneRow} style={{ marginTop: "6px" }}>
+                    <span className={styles.toneKey}>인상</span>
+                    <span>{job.company.toneImpression}</span>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className={styles.railCard}>
+              <div className={styles.railTitle}>
+                이 공고로 만들면 이 기록들이 먼저 올라갑니다
+              </div>
+              {job.topRecords.length > 0 ? (
+                job.topRecords.map((record, index) => (
+                  <div key={record.id} className={styles.topRecord}>
+                    <span className={styles.topRecordNo}>
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className={styles.topRecordTitle}>{record.title}</span>
+                  </div>
+                ))
+              ) : (
+                <div className={styles.topRecord}>
+                  <span className={styles.topRecordTitle}>
+                    아직 이 공고를 해석하지 않았습니다
+                  </span>
+                </div>
+              )}
+              {/* 공고는 이미 있다. 새로 생기는 것은 내 분석과 제작뿐이다. */}
               <form action={analyzePostingAction}>
                 <input type="hidden" name="jobPostingId" value={job.id} />
-                <button type="submit" className={styles.railCta}>
-                  질문 3개로 채우기
+                <button type="submit" className={styles.brew}>
+                  이 공고로 포트폴리오 만들기
                 </button>
               </form>
             </div>
-          ) : null}
-
-          {job.company.brandColors.length > 0 || job.company.toneSummary ? (
-            <div className={styles.railCard}>
-              <div className={styles.railTitle}>이 회사의 톤</div>
-              {job.company.brandColors.length > 0 ? (
-                <div className={styles.palette}>
-                  {job.company.brandColors.map((color) => (
-                    <span key={color} className={styles.swatch}>
-                      <span className={styles.swatchChip} style={{ background: color }} />
-                      <span className={styles.swatchHex}>{color}</span>
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-              {job.company.toneSummary ? (
-                <div className={styles.toneRow}>
-                  <span className={styles.toneKey}>공고 말투</span>
-                  <span>{job.company.toneSummary}</span>
-                </div>
-              ) : null}
-              {job.company.toneImpression ? (
-                <div className={styles.toneRow} style={{ marginTop: "6px" }}>
-                  <span className={styles.toneKey}>인상</span>
-                  <span>{job.company.toneImpression}</span>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
-          <div className={styles.railCard}>
-            <div className={styles.railTitle}>
-              이 공고로 만들면 이 기록들이 먼저 올라갑니다
-            </div>
-            {job.topRecords.length > 0 ? (
-              job.topRecords.map((record, index) => (
-                <div key={record.id} className={styles.topRecord}>
-                  <span className={styles.topRecordNo}>
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className={styles.topRecordTitle}>{record.title}</span>
-                </div>
-              ))
-            ) : (
-              <div className={styles.topRecord}>
-                <span className={styles.topRecordTitle}>
-                  아직 이 공고를 해석하지 않았습니다
-                </span>
-              </div>
-            )}
-            {/* 공고는 이미 있다. 새로 생기는 것은 내 분석과 제작뿐이다. */}
-            <form action={analyzePostingAction}>
-              <input type="hidden" name="jobPostingId" value={job.id} />
-              <button type="submit" className={styles.brew}>
-                이 공고로 포트폴리오 만들기
-              </button>
-            </form>
-          </div>
-        </aside>
-      </div>
-    </AppShell>
+          </aside>
+        </div>
+      </AppBody>
+    </>
   );
 }
 

@@ -1,42 +1,15 @@
 import type { CareerCategory } from "@expresso/contracts";
-import type { Route } from "next";
 import Link from "next/link";
 
 import { LogoMark, Wordmark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
 
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
+import { SidebarCategories } from "./SidebarCategories";
+import { SidebarNav, type SidebarSection } from "./SidebarNav";
 import styles from "./Sidebar.module.css";
 
-export type SidebarSection =
-  | "home"
-  | "new-portfolio"
-  | "jobs"
-  | "analytics"
-  | "career";
-
-/** §3.5 카테고리 7종의 아이콘은 고정 매핑이다. 다른 아이콘으로 대체하지 않는다. */
-const CATEGORY_ICONS: Record<string, string> = {
-  experience: "chat-circle-dots",
-  project: "briefcase",
-  education_history: "graduation-cap",
-  certification_award: "certificate",
-  academic_writing: "article",
-  activity_leadership: "users-three",
-  skill_tool: "code",
-};
-
-const PRIMARY_ITEMS: readonly {
-  key: SidebarSection;
-  label: string;
-  href: Route;
-  icon: string;
-}[] = [
-  { key: "home", label: "홈", href: "/home", icon: "house" },
-  { key: "new-portfolio", label: "새 포트폴리오", href: "/brew/new", icon: "coffee" },
-  { key: "jobs", label: "공고 탐색", href: "/jobs", icon: "target" },
-  { key: "analytics", label: "분석", href: "/analytics", icon: "chart-bar" },
-];
+export type { SidebarSection };
 
 export interface SidebarPortfolio {
   id: string;
@@ -60,8 +33,6 @@ export interface SidebarInterest {
 }
 
 export interface SidebarProps {
-  active: SidebarSection;
-  activeCategoryKey?: string | undefined;
   categories: readonly CareerCategory[];
   portfolios?: readonly SidebarPortfolio[];
   interests?: readonly SidebarInterest[];
@@ -74,8 +45,6 @@ export interface SidebarProps {
 }
 
 export function Sidebar({
-  active,
-  activeCategoryKey,
   categories,
   portfolios = [],
   interests = [],
@@ -97,36 +66,7 @@ export function Sidebar({
           <Icon name="caret-up-down" size={13} color="var(--ex-slate-500)" />
         </div>
 
-        <nav className={styles.primary} aria-label="주요 이동">
-          <div className={styles.primaryItem}>
-            <Icon name="magnifying-glass" size={14} color="var(--ex-slate-500)" />
-            <span className={styles.primaryLabel}>검색</span>
-            <span className={styles.shortcut}>⌘K</span>
-          </div>
-          {PRIMARY_ITEMS.map((item) => (
-            <Link
-              key={item.key}
-              href={item.href}
-              className={`${styles.primaryItem} ${
-                active === item.key ? styles.primaryItemActive : ""
-              }`}
-              aria-current={active === item.key ? "page" : undefined}
-            >
-              <Icon
-                name={item.icon}
-                weight={active === item.key ? "fill" : "regular"}
-                size={14}
-                color={
-                  active === item.key ? "var(--ex-ink-900)" : "var(--ex-slate-500)"
-                }
-              />
-              <span className={styles.primaryLabel}>{item.label}</span>
-              {item.key === "jobs" && jobCount !== undefined ? (
-                <span className={styles.primaryCount}>{jobCount}</span>
-              ) : null}
-            </Link>
-          ))}
-        </nav>
+        <SidebarNav jobCount={jobCount} />
 
         {portfolios.length > 0 ? (
           <>
@@ -230,37 +170,7 @@ export function Sidebar({
             </button>
           </div>
         </div>
-        <div className={styles.categories}>
-          {categories.map((category) => {
-            const isActive =
-              active === "career" && activeCategoryKey === category.key;
-            return (
-              <Link
-                key={category.id}
-                href={`/career/${category.key}` as Route}
-                className={`${styles.categoryItem} ${
-                  isActive ? styles.categoryItemActive : ""
-                }`}
-                aria-current={isActive ? "page" : undefined}
-              >
-                <Icon name="caret-right" size={10} color="var(--ex-border-strong)" />
-                <Icon
-                  name={CATEGORY_ICONS[category.key] ?? "file-text"}
-                  weight={isActive ? "fill" : "regular"}
-                  size={14}
-                  color={isActive ? "var(--ex-ink-900)" : "var(--ex-slate-500)"}
-                />
-                <span className={styles.categoryName}>{category.name}</span>
-                <span className={styles.categoryCount}>{category.recordCount}</span>
-                <Icon name="plus" size={11} color="var(--ex-border-strong)" />
-              </Link>
-            );
-          })}
-          <div className={styles.addCategory}>
-            <Icon name="plus" size={13} color="var(--ex-slate-500)" />
-            <span className={styles.addCategoryLabel}>카테고리 추가</span>
-          </div>
-        </div>
+        <SidebarCategories categories={categories} />
       </div>
 
       <div className={styles.footer}>

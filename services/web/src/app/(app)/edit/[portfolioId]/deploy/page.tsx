@@ -2,8 +2,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { AppShell, DocumentHeader } from "@/components/shell/AppShell";
-import { Sidebar } from "@/components/shell/Sidebar";
+import { AppBody, DocumentHeader } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
 import { ApiError } from "@/lib/api/client";
 import { entitlements, portfolios, publishing } from "@/lib/api/endpoints";
@@ -83,54 +82,44 @@ export default async function DeployPage({
   ];
 
   return (
-    <AppShell
-      sidebar={
-        <Sidebar
-          active="new-portfolio"
-          categories={session.categories}
-          displayName={session.user.displayName}
-          quotaUsed={session.quota.used}
-          quotaLimit={session.quota.limit}
-        />
-      }
-      header={
-        <DocumentHeader
-          crumbs={[portfolio.title, "배포"]}
-          actions={
-            <>
-              <span className={styles.headSaved}>저장됨</span>
-              <Link href={editor} className={styles.headGhost}>
-                편집으로
-              </Link>
-              <button type="submit" form="publish" className={styles.headPublish}>
-                <Icon name="rocket-launch" size={14} />v{nextVersion} 배포
-              </button>
-            </>
-          }
-        />
-      }
-    >
-      <div className={styles.body}>
-        <div className={styles.inner}>
-          <h1 className={styles.title}>배포</h1>
-          <p className={styles.intro}>
-            주소를 발급하고 버전 단위로 공개합니다. 배포하면 이전 버전은 남고, 언제든
-            되돌릴 수 있습니다.
-          </p>
+    <>
+      <DocumentHeader
+        crumbs={[portfolio.title, "배포"]}
+        actions={
+          <>
+            <span className={styles.headSaved}>저장됨</span>
+            <Link href={editor} className={styles.headGhost}>
+              편집으로
+            </Link>
+            <button type="submit" form="publish" className={styles.headPublish}>
+              <Icon name="rocket-launch" size={14} />v{nextVersion} 배포
+            </button>
+          </>
+        }
+      />
+      <AppBody>
+        <div className={styles.body}>
+          <div className={styles.inner}>
+            <h1 className={styles.title}>배포</h1>
+            <p className={styles.intro}>
+              주소를 발급하고 버전 단위로 공개합니다. 배포하면 이전 버전은 남고, 언제든
+              되돌릴 수 있습니다.
+            </p>
 
-          <DeployPanel
-            portfolio={portfolio}
-            deployments={deployments}
-            checks={checks}
-            canExport={exportable.data.allowed}
-          />
+            <DeployPanel
+              portfolio={portfolio}
+              deployments={deployments}
+              checks={checks}
+              canExport={exportable.data.allowed}
+            />
 
-          <div className={styles.footNote}>
-            <Icon name="info" size={13} color="var(--ex-slate-400)" />
-            공개를 중단해도 문서와 기록은 지워지지 않습니다. 주소만 접근할 수 없게 됩니다.
+            <div className={styles.footNote}>
+              <Icon name="info" size={13} color="var(--ex-slate-400)" />
+              공개를 중단해도 문서와 기록은 지워지지 않습니다. 주소만 접근할 수 없게 됩니다.
+            </div>
           </div>
         </div>
-      </div>
-    </AppShell>
+      </AppBody>
+    </>
   );
 }

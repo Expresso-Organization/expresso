@@ -1,0 +1,77 @@
+/*
+ * 앱 셸 **밖**에서 쓰는 알림 자리.
+ *
+ * 에디터·공개 지면·주소를 잘못 친 경우엔 그릴 셸이 없다. 사이드바가 없으니
+ * 화면 한가운데에 무슨 일인지와 갈 곳 하나를 둔다.
+ */
+
+.wrap {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 24px;
+  text-align: center;
+  background: var(--ex-white);
+}
+
+.mark {
+  margin-bottom: 6px;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ex-ink-900);
+}
+
+.body {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ex-slate-500);
+  max-width: 400px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.action {
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 1px solid var(--ex-ink-900);
+  background: var(--ex-ink-900);
+  color: var(--ex-white);
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.action:hover {
+  background: var(--ex-ink-900-hover);
+}
+
+.actionGhost {
+  border-color: var(--ex-line-200);
+  background: var(--ex-white);
+  color: var(--ex-slate-700);
+}
+
+.actionGhost:hover {
+  background: var(--ex-line-inner);
+}
+
+.digest {
+  font-family: var(--ex-font-mono);
+  font-size: 11px;
+  color: var(--ex-slate-400);
+  margin-top: 4px;
+}
