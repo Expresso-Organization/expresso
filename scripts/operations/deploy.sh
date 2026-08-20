@@ -64,7 +64,10 @@ sudo systemctl restart expresso-api
 
 # API가 실제로 준비될 때까지 기다린다. ready는 PostgreSQL과 Redis를 함께 본다.
 for attempt in $(seq 1 30); do
-  if curl -fsS --max-time 5 "http://127.0.0.1:$API_PORT/health/ready" > /dev/null; then
+  # 첫 시도는 아직 안 뜬 API에 붙으므로 거의 늘 실패한다. curl의 오류 문구까지
+  # 버린다 — 정상인 자리에 "Connection refused"가 찍히면 배포 로그를 읽는 사람이
+  # 매번 멈춰 선다.
+  if curl -fsS --max-time 5 "http://127.0.0.1:$API_PORT/health/ready" > /dev/null 2>&1; then
     echo "API 준비됨 (시도 $attempt)"
     break
   fi
