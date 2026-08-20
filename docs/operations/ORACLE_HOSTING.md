@@ -289,9 +289,22 @@ sudo kill -HUP "$(pgrep -f '^nginx: master process nginx -c')"
 인증서를 받을 때 `deploy-hook`이 `nginx.service is not active`로 실패한 것도
 같은 원인이고, 이 기계의 모든 도메인이 같은 상태다. 발급 자체는 되었다.
 
-### 남은 것 — 문서가 두 벌이다
+### 문서를 한 벌로 모았다 (2026-08-20)
 
-`services/dev-portal/docs/`에 같은 문서의 **오래된 사본**이 있고(2026-08-07),
-`.github/workflows/dev-portal-deploy.yml`이 그것을 Cloudflare Pages로 올린다.
-루트 `docs/`가 실제로 고쳐 온 원본이므로 지금은 Pages 쪽이 뒤처져 있다. 한 벌로
-합칠지, Pages를 걷을지는 따로 정한다.
+같은 문서가 세 벌이었다. 셋이 갈라진 채 각자 늙었고, 배포는 둘 다 멈춰 있었다.
+
+| 어디 | 마지막 갱신 | 배포 |
+|---|---|---|
+| `Expresso-Organization/dev-portal`(별도 저장소) | 2026-08-06 | Cloudflare Pages — 최근 3회 실행 전부 실패 |
+| `services/dev-portal/docs/`(모노레포 안 사본) | 2026-08-07 | 같은 Pages 프로젝트 — 한 번도 실행되지 않음 |
+| `docs/` | 계속 | dev.expresso.ai.kr |
+
+`docs/`만 남겼다. 사본과 `.github/workflows/dev-portal-deploy.yml`을 지우고,
+별도 저장소는 읽기 전용으로 돌렸다(지우지는 않았다 — 그 이력이 유일한 곳이다).
+
+`services/dev-portal/`에는 문서를 만들 때 쓴 자료(`source/`)만 남는다. `docs/`는
+그대로 공개되는 폴더라 거기로 옮기지 않았다.
+
+**`expresso-dev-portal.pages.dev`는 아직 살아 있고 8월 6일 문서를 보여 준다.**
+이제 아무도 갱신하지 않으므로 Pages 프로젝트를 지우는 편이 낫지만, 그 주소를
+아는 사람이 있을 수 있어 따로 정한다.

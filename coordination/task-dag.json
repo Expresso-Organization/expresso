@@ -15,7 +15,7 @@
       "dependencies": [],
       "checklist_ids": ["M0-01", "M0-02"],
       "owned_paths": ["docs/IMPLEMENTATION_PLAN.md", "coordination/evidence/BASELINE.md"],
-      "read_only_paths": ["services/dev-portal/docs/**", "services/backend/**", "packages/database/**"],
+      "read_only_paths": ["docs/**", "services/backend/**", "packages/database/**"],
       "completion_gate": "사용자가 구현 기본값을 승인하고 기준 리비전, 작업 트리, 테스트와 인프라 상태 증거가 기록된다"
     },
     {
@@ -26,7 +26,7 @@
       "dependencies": ["B00"],
       "checklist_ids": ["M0-03"],
       "owned_paths": ["packages/contracts/**"],
-      "read_only_paths": ["docs/IMPLEMENTATION_PLAN.md", "services/dev-portal/docs/task-spec.js", "packages/database/migrations/0001_initial_schema.sql"],
+      "read_only_paths": ["docs/IMPLEMENTATION_PLAN.md", "docs/task-spec.js", "packages/database/migrations/0001_initial_schema.sql"],
       "agent_role": "pipeline_implementer",
       "required_mcp_servers": [],
       "required_mcp_tools": {},
