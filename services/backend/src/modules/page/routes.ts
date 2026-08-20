@@ -8,10 +8,13 @@ import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
 import { PageGenerationError, type PageGenerator } from "./generator.js";
 import { PageServiceError, type PageService } from "./service.js";
+import { writePageStream, type PageStream } from "./stream.js";
 
 export interface RegisterPageRoutesOptions {
   service: PageService;
   generator: PageGenerator;
+  /** 없으면 흘려보내는 자리를 열지 않는다. */
+  stream?: PageStream | null;
   authenticateRequest: preHandlerHookHandler;
 }
 
@@ -43,6 +46,37 @@ export function registerPageRoutes(
     const page = await lift(() => options.service.latest(principal.user.id, portfolioId));
     if (!page) throw new HttpStatusError(404, "아직 지면을 만들지 않았습니다");
     return { data: page };
+  });
+
+  /**
+   * 만들어지는 동안.
+   *
+   * **완성된 지면이 아니라 조각이 흐른다.** 받는 쪽은 이어 붙여 `partialFields`로
+   * 읽는다(계약 쪽에 있다 — 흘리는 쪽과 그리는 쪽이 같은 코드를 본다).
+   *
+   * 조각을 못 내는 프로바이더에서도 이 자리는 값이 있다. `done`과 `failed`는
+   * 프로바이더와 무관하게 나가므로, **끝났을 때 화면이 스스로 넘어간다.**
+   * 지금까지는 사람이 새로고침을 눌러야만 알 수 있었다.
+   *
+   * 브라우저는 `Authorization`을 못 붙인다(EventSource). 그래서 이 자리는
+   * 웹 서버가 세션으로 대신 붙어 흘려 준다 — 토큰이 주소에 실리지 않는다.
+   */
+  /**
+   * 만들어지는 동안 — 포트폴리오로 여는 자리.
+   *
+   * 04b에서 지시를 붙여 다시 뽑을 때 쓴다. 그때는 포트폴리오가 이미 있다.
+   * 처음 뽑는 03은 아직 포트폴리오가 없어서 **잡으로 연다**
+   * (`/generation-jobs/:id/page-stream`).
+   */
+  app.get(`${path}/stream`, { preHandler: options.authenticateRequest }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
+    const stream = options.stream;
+    if (!stream) throw new HttpStatusError(503, "지면 스트림이 꺼져 있습니다");
+    if (!await options.service.owns(principal.user.id, portfolioId)) {
+      throw new HttpStatusError(404, "portfolio not found");
+    }
+    await writePageStream(request, reply, stream, portfolioId);
   });
 
   app.get(`${path}/history`, { preHandler: options.authenticateRequest }, async (request) => {

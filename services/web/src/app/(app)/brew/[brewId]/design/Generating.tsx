@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 
 import { openPortfolioAction, refreshGenerationAction } from "./design-actions";
+import { LivePreview } from "./LivePreview";
 import styles from "./page.module.css";
 
 /** 추출이 지나는 자리. `generation_job.stage`가 그대로 문장이 된다. */
@@ -23,19 +24,28 @@ const STAGE = {
  * 01b·02b의 `Waiting`과 같은 자리지만 잡 표가 다르다(`generation_job`). 끝나면
  * 스스로 넘어가지 않고 **눌러서** 간다 — 3분을 기다린 사람이 다른 탭에 있는
  * 동안 화면이 멋대로 바뀌면 무엇이 만들어졌는지 못 본다.
+ *
+ * 만드는 동안에는 `LivePreview`가 이 카드를 넘겨받는다. 지면 조각이 흐르면
+ * 그 자리에 **만들어지는 지면이 그대로 선다.** 조각이 안 오면(프로바이더가 못
+ * 내거나 아직 문장 단계) 이 카드가 그대로 남는다 — 진행률을 지어내지 않는다.
+ *
+ * 새로고침 버튼은 남겨 둔다. 끝났다는 신호는 워커가 보내는데, 그 워커가
+ * 죽으면 아무 신호도 안 온다. 그때 사람이 쥘 것이 있어야 한다.
  */
 export function Generating({
   brewId,
   generation,
   portfolioId,
+  title,
 }: {
   brewId: string;
   generation: NonNullable<BrewState["latestGeneration"]>;
   portfolioId: string | null;
+  title: string;
 }) {
   const running = generation.status === "queued" || generation.status === "running";
 
-  return (
+  const card = (
     <div className={styles.gate}>
       <div className={styles.gateCard}>
         <span className={`${styles.gateBadge} ${running ? "ex-anim-bob" : ""}`}>
@@ -77,4 +87,9 @@ export function Generating({
       </div>
     </div>
   );
+
+  if (running) {
+    return <LivePreview jobId={generation.id} title={title}>{card}</LivePreview>;
+  }
+  return card;
 }

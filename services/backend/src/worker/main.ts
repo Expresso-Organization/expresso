@@ -35,6 +35,8 @@ import { SchedulingService } from "../modules/scheduling/service.js";
 import { AiFactsReader, createJobSourceAdapters, BundledMarkReader, JobIngestService, SiteMarkReader } from "../modules/jobs/ingest/index.js";
 import { createScheduledJobProcessor } from "./processors/scheduled-jobs.js";
 import { PageService } from "../modules/page/service.js";
+import { PageStream } from "../modules/page/stream.js";
+import { createStreamRedis } from "../platform/redis.js";
 import { AiPageGenerator } from "../modules/page/generator.js";
 
 const config = loadRuntimeConfig();
@@ -57,7 +59,11 @@ const ai = createAiClient(config);
 const consentService = new ConsentService(postgres.sql);
 const jobAnalysisService = new JobAnalysisService(postgres.sql);
 const generationService = new GenerationService(postgres.sql, consentService);
-const pageService = new PageService(postgres.sql, consentService);
+// 지면을 만드는 쪽이 여기다 — 조각은 전부 이 프로세스에서 나간다.
+const pageStream = new PageStream(createStreamRedis(config.redisUrl), {
+  prefix: config.queuePrefix,
+});
+const pageService = new PageService(postgres.sql, consentService, pageStream);
 const analysisProcessor = createJobAnalysisProcessor(
   jobAnalysisService,
   ai ? new AiRequirementExtractor(ai) : new UnavailableRequirementExtractor(),
