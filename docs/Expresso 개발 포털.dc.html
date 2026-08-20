@@ -137,16 +137,17 @@
   </div>
 
   <sc-if value="{{ viewerOpen }}" hint-placeholder-val="{{ false }}">
-    <div>
-      <div style="display: flex; align-items: center; gap: 14px; padding: 10px 32px; background: #fff; border-bottom: 1px solid #E2E9F4">
+    <div style="{{ viewerWrap }}">
+      <div style="display: flex; align-items: center; gap: 14px; padding: 10px 32px; background: #fff; border-bottom: 1px solid #E2E9F4; flex-shrink: 0">
         <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .12em; color: #9A4030">{{ viewerTag }}</span>
         <span style="font-size: 13.5px; font-weight: 600; white-space: nowrap">{{ viewerTitle }}</span>
-        <a href="{{ viewerSrc }}" style="margin-left: auto; font-size: 12px; font-weight: 600; color: #5A6B87">새 창에서 열기 ↗</a>
+        <button onClick="{{ goFull }}" style="margin-left: auto; font-family: inherit; font-size: 12px; font-weight: 600; color: #35455F; background: #fff; border: 1px solid #E2E9F4; border-radius: 8px; padding: 6px 13px; cursor: pointer" style-hover="border-color: #C58C78; color: #9A4030">{{ fullLabel }}</button>
+        <a href="{{ viewerSrc }}" style="font-size: 12px; font-weight: 600; color: #5A6B87">새 창에서 열기 ↗</a>
         <button onClick="{{ closeViewer }}" style="font-family: inherit; font-size: 12px; font-weight: 600; color: #fff; background: #16223A; border: none; border-radius: 8px; padding: 7px 14px; cursor: pointer">닫기</button>
       </div>
       <div style="display: flex; align-items: flex-start">
         <sc-if value="{{ tocOpen }}" hint-placeholder-val="{{ false }}">
-          <div style="width: 268px; height: calc(100vh - 157px); overflow-y: auto; flex-shrink: 0; background: #FBFCFE; border-right: 1px solid #E2E9F4; padding: 18px 0 40px">
+          <div style="width: 268px; height: {{ frameH }}; overflow-y: auto; flex-shrink: 0; background: #FBFCFE; border-right: 1px solid #E2E9F4; padding: 18px 0 40px">
             <div style="display: flex; align-items: baseline; gap: 8px; padding: 0 18px 14px; margin-bottom: 6px; border-bottom: 1px solid #F1F5FB">
               <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .12em; color: #93A2BA">CONTENTS</span>
               <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #C6CEDD">{{ tocCount }}</span>
@@ -159,7 +160,7 @@
             </sc-for>
           </div>
         </sc-if>
-        <iframe id="docframe" src="{{ viewerSrc }}" style="display: block; flex: 1 1 auto; width: auto; height: calc(100vh - 157px); border: none; background: #fff"></iframe>
+        <iframe id="docframe" src="{{ viewerSrc }}" allowfullscreen allow="fullscreen" style="display: block; flex: 1 1 auto; width: auto; height: {{ frameH }}; border: none; background: #fff"></iframe>
       </div>
     </div>
   </sc-if>
@@ -875,7 +876,7 @@ const DECISIONS = [
 
 const DOCS = [
   ['설계서', GD, '문서', '전원 — 졸업작품 제출본', 'all'],
-  ['서비스 소개 발표 자료', DECK, '문서', '전원 — 발표·공유용', 'all'],
+  ['프리젠테이션', DECK, '문서', '전원 — 발표·공유용', 'all'],
   ['기능 명세서', F, '문서', '전원 — 착수 전 필독', 'all'],
   ['구현 명세서', IM, '문서', '프론트엔드 · QA', 'fe'],
   ['화면 정의서 Screens', SC, '화면', '프론트엔드 · 디자이너', 'fe'],
@@ -1021,7 +1022,7 @@ const NAV = [
   ['HOME', '개발 포털', 'Expresso 개발 포털.dc.html', '#fff', 1],
 
   ['SRS', '설계서', GD, '#E0B486'],
-  ['DECK', '소개 발표', DECK, '#E0B486'],
+  ['DECK', '프리젠테이션', DECK, '#E0B486'],
   ['SPEC', '기능 명세서', F, '#E0B486'],
   ['IMPL', '구현 명세서', IM, '#E0B486'],
   ['UI', '화면 정의서', SC, '#7FD3AE'],
@@ -1083,7 +1084,7 @@ class Component extends DCLogic {
     impDomain: 'D1', form: { title: '', assignee: '', due: '', effort: 'M', domain: '' },
     pages: [], comments: [], wseq: 1, psel: null, editing: false, block: -1, draft: '', me: '', newTpl: 'blank',
     replyTo: null, replyDraft: '', showResolved: false, shots: {},
-    sopen: false, recent: [], scur: -1
+    sopen: false, recent: [], scur: -1, full: false
   };
 
   loadWiki() {
@@ -1653,7 +1654,34 @@ class Component extends DCLogic {
       viewerTitle: s.doc || '',
       viewerTag: (NAV_TAG[s.doc] || 'DOC'),
       viewerSrc: s.doc ? url(NAV_FILE[s.doc]) : '',
-      closeViewer: () => { this._frame = null; this.setState({ doc: null, toc: [], tocAt: -1 }); },
+      closeViewer: () => { this._frame = null; this.setState({ doc: null, toc: [], tocAt: -1, full: false }); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); },
+
+      // 전체화면은 두 겹이다. 바깥 겹은 뷰어를 창 전체로 펴는 CSS 이고, 이것은 어디서나
+      // 돈다. 안쪽 겹은 브라우저의 Fullscreen API 라 사용자 제스처가 있어야 열리고
+      // 정책에 따라 거절되기도 한다 — 거절되어도 바깥 겹이 남아 지면은 창을 다 쓴다.
+      viewerWrap: s.full ? 'position: fixed; inset: 0; z-index: 9000; background: #fff; display: flex; flex-direction: column' : '',
+      frameH: s.full ? 'calc(100vh - 45px)' : 'calc(100vh - 157px)',
+      fullLabel: s.full ? '전체화면 끄기 ⤡' : '전체화면 ⤢',
+      goFull: () => {
+        const on = !this.state.full;
+        this.setState({ full: on });
+        const f = document.getElementById('docframe');
+        try {
+          if (on) {
+            const req = f && (f.requestFullscreen || f.webkitRequestFullscreen);
+            if (req) { const r = req.call(f); if (r && r.catch) r.catch(() => {}); }
+            const esc = ev => {
+              if (ev.key !== 'Escape') return;
+              document.removeEventListener('keydown', esc);
+              this.setState({ full: false });
+              if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+            };
+            document.addEventListener('keydown', esc);
+          } else if (document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+          }
+        } catch (e) {}
+      },
 
       tocOpen: !!s.doc && !!NAV_TOC[s.doc] && s.tocMiss !== s.doc,
       tocCount: s.toc.length ? s.toc.length + '항목' : '읽는 중',
