@@ -9,8 +9,7 @@ import type {
 import type { Route } from "next";
 import Link from "next/link";
 
-import { AppHeader, AppShell } from "@/components/shell/AppShell";
-import { Sidebar } from "@/components/shell/Sidebar";
+import { AppBody, AppHeader } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
 import { jobs as jobsApi } from "@/lib/api/endpoints";
 import { BROWSE_QUERY_PLACEHOLDER, SIMILAR_SEARCHES } from "@/lib/sample/jobs";
@@ -181,31 +180,42 @@ export default async function JobsPage({
   const session = await requireSession();
   const now = Date.now();
 
-  // 00b는 말로 쓴 조건을 먼저 해석하고, 그 결과를 실제 필터로 옮겨 찾는다.
-  // 문장을 그대로 이름 매칭에 넣으면 아무것도 걸리지 않는다.
-  const interpreted = q ? await jobsApi.interpret(session.accessToken, q, 0) : null;
-  const derived = searchFilters(q, interpreted?.conditions ?? []);
-
-  const [listing, watched, recent] = await Promise.all([
-    jobsApi.postings(session.accessToken, {
-      ...(q ? derived : categoryFilter(category)),
-      ...(countryFilter ? { country: countryFilter } : {}),
-      ...(experienceYears === undefined ? {} : { experience: experienceYears }),
-      ...(workType ? { workType } : {}),
-      ...(company ? { company } : {}),
-      sort,
-      page,
-      limit: pageSize,
-    }),
+  /*
+   * 토큰만 있으면 되는 것들은 한 번에 나간다.
+   *
+   * 예전에는 해석 → 목록 → 수집처 순으로 줄을 서서, 관심 공고와 최근 검색이
+   * 문장 해석이 끝나기를 기다렸다. 셋 다 검색어와 아무 상관이 없다.
+   *
+   * `session`은 여전히 앞에 둔다 — 만료된 토큰의 401을 받아 로그인으로 보내는
+   * 관문이라, 이것과 나란히 세우면 만료 세션이 로그인 대신 오류 화면으로 샌다.
+   *
+   * 00b는 말로 쓴 조건을 먼저 해석하고, 그 결과를 실제 필터로 옮겨 찾는다.
+   * 문장을 그대로 이름 매칭에 넣으면 아무것도 걸리지 않는다.
+   */
+  const [interpreted, watched, recent, sourceList] = await Promise.all([
+    q ? jobsApi.interpret(session.accessToken, q, 0) : Promise.resolve(null),
     jobsApi.postings(session.accessToken, { interested: true, sort: "deadline", limit: 5 }),
     jobsApi.recentSearches(session.accessToken, 4),
+    // 헤더가 "어디서 몇 건"을 말하려면 실제로 모으는 곳을 알아야 한다.
+    // 예전에는 "원티드 · 잡코리아 · 링크드인에서 매일 아침 모아 옵니다 ·
+    // 4,182건"이 적혀 있었는데, 셋 다 우리가 모을 수 없는 곳이고 4,182는
+    // 지어낸 수였다.
+    jobsApi.sources(session.accessToken),
   ]);
 
-  // 헤더가 "어디서 몇 건"을 말하려면 실제로 모으는 곳을 알아야 한다.
-  // 예전에는 "원티드 · 잡코리아 · 링크드인에서 매일 아침 모아 옵니다 · 4,182건"이
-  // 적혀 있었는데, 셋 다 우리가 모을 수 없는 곳이고 4,182는 지어낸 수였다.
-  const sources = (await jobsApi.sources(session.accessToken)).data
-    .filter((source) => source.active);
+  const sources = sourceList.data.filter((source) => source.active);
+  const derived = searchFilters(q, interpreted?.conditions ?? []);
+
+  const listing = await jobsApi.postings(session.accessToken, {
+    ...(q ? derived : categoryFilter(category)),
+    ...(countryFilter ? { country: countryFilter } : {}),
+    ...(experienceYears === undefined ? {} : { experience: experienceYears }),
+    ...(workType ? { workType } : {}),
+    ...(company ? { company } : {}),
+    sort,
+    page,
+    limit: pageSize,
+  });
 
   // 결과 수를 알고 나서 최근 검색에 적어 둔다. 같은 말이면 새 줄이 생기지 않고
   // 방금 그 줄이 갱신된다.
@@ -336,17 +346,6 @@ export default async function JobsPage({
     0,
   );
 
-  const sidebar = (
-    <Sidebar
-      active="jobs"
-      categories={session.categories}
-      jobCount={listing.summary.categories[0]?.count ?? 0}
-      displayName={session.user.displayName}
-      quotaUsed={session.quota.used}
-      quotaLimit={session.quota.limit}
-    />
-  );
-
   const header = (
     <AppHeader
       title={q ? "공고 검색" : "공고 탐색"}
@@ -368,118 +367,121 @@ export default async function JobsPage({
   );
 
   return (
-    <AppShell sidebar={sidebar} header={header}>
-      <div className={styles.content}>
-        {q ? (
-          <SearchQueryCard query={q} conditions={interpreted?.conditions ?? []} />
-        ) : (
-          <BrowseSearchBar />
-        )}
+    <>
+      {header}
+      <AppBody>
+        <div className={styles.content}>
+          {q ? (
+            <SearchQueryCard query={q} conditions={interpreted?.conditions ?? []} />
+          ) : (
+            <BrowseSearchBar />
+          )}
 
-        {q ? null : (
-          <div className={styles.categoryTabs}>
-            {listing.summary.categories.map((chip) => (
-              <Link
-                key={chip.key}
-                href={chipHref(chip)}
-                className={`${styles.categoryTab} ${
-                  (category ?? "all") === chip.key ? styles.categoryTabActive : ""
-                }`}
-              >
-                {chip.label}
-                <span className={styles.categoryCount}>{chip.count}</span>
-              </Link>
-            ))}
-            <button type="button" className={styles.sortSelect}>
-              내 기록과 가까운 순
-              <Icon name="caret-down" size={10} />
-            </button>
-          </div>
-        )}
-
-        <div className={styles.columns}>
-          <div className={styles.results}>
-            <div className={styles.resultsHead}>
-              <span className={styles.resultsCount}>
-                {q ? `결과 ${listing.summary.total}건` : `공고 · ${listing.summary.total}건`}
-              </span>
-              <span className={styles.resultsNote}>내 기록 {recordCount}건과 비교</span>
-              {q ? (
-                <>
-                  <div className={styles.sorts}>
-                    {(
-                      [
-                        ["match", "일치도 순"],
-                        ["deadline", "마감 순"],
-                        ["recent", "최신 순"],
-                      ] as const
-                    ).map(([key, label]) => (
-                      <Link
-                        key={key}
-                        href={
-                          (key === "match"
-                            ? `/jobs?q=${encodeURIComponent(q)}`
-                            : `/jobs?q=${encodeURIComponent(q)}&sort=${key}`) as Route
-                        }
-                        className={`${styles.sort} ${sort === key ? styles.sortActive : ""}`}
-                      >
-                        {label}
-                      </Link>
-                    ))}
-                  </div>
-                </>
-              ) : null}
-              <JobFilter sections={sections} />
+          {q ? null : (
+            <div className={styles.categoryTabs}>
+              {listing.summary.categories.map((chip) => (
+                <Link
+                  key={chip.key}
+                  href={chipHref(chip)}
+                  className={`${styles.categoryTab} ${
+                    (category ?? "all") === chip.key ? styles.categoryTabActive : ""
+                  }`}
+                >
+                  {chip.label}
+                  <span className={styles.categoryCount}>{chip.count}</span>
+                </Link>
+              ))}
+              <button type="button" className={styles.sortSelect}>
+                내 기록과 가까운 순
+                <Icon name="caret-down" size={10} />
+              </button>
             </div>
+          )}
 
-            <JobRowList
-              jobs={postings}
-              highlightFirst={Boolean(q)}
-              tail={q ? "workType" : "experience"}
-              now={now}
-            />
-
-            <div className={styles.resultsFoot}>
-              <span className={styles.footText}>
-                {listing.summary.total === 0
-                  ? "걸린 공고가 없습니다"
-                  : `${listing.summary.total.toLocaleString("ko-KR")}건 중 ${
-                      ((page - 1) * pageSize + 1).toLocaleString("ko-KR")
-                    }–${
-                      ((page - 1) * pageSize + postings.length).toLocaleString("ko-KR")
-                    }`}
-              </span>
-              <Pagination page={listing.page} href={pageHref} />
-              {q ? (
-                <span className={styles.footQuota}>
-                  이번 달 추출 {session.quota.used} / {session.quota.limit ?? "무제한"}
+          <div className={styles.columns}>
+            <div className={styles.results}>
+              <div className={styles.resultsHead}>
+                <span className={styles.resultsCount}>
+                  {q ? `결과 ${listing.summary.total}건` : `공고 · ${listing.summary.total}건`}
                 </span>
-              ) : null}
-            </div>
-          </div>
+                <span className={styles.resultsNote}>내 기록 {recordCount}건과 비교</span>
+                {q ? (
+                  <>
+                    <div className={styles.sorts}>
+                      {(
+                        [
+                          ["match", "일치도 순"],
+                          ["deadline", "마감 순"],
+                          ["recent", "최신 순"],
+                        ] as const
+                      ).map(([key, label]) => (
+                        <Link
+                          key={key}
+                          href={
+                            (key === "match"
+                              ? `/jobs?q=${encodeURIComponent(q)}`
+                              : `/jobs?q=${encodeURIComponent(q)}&sort=${key}`) as Route
+                          }
+                          className={`${styles.sort} ${sort === key ? styles.sortActive : ""}`}
+                        >
+                          {label}
+                        </Link>
+                      ))}
+                    </div>
+                  </>
+                ) : null}
+                <JobFilter sections={sections} />
+              </div>
 
-          <aside className={styles.rail}>
-            {q ? (
-              <SearchRail
-                total={listing.summary.total}
-                missing={listing.summary.missingTechnologies}
-                axes={matchAxes(postings)}
-                recent={recent.data}
-                query={q}
-              />
-            ) : (
-              <BrowseRail
-                total={listing.summary.total}
-                common={listing.summary.commonTechnologies}
-                missing={listing.summary.missingTechnologies}
-                watched={watched.data}
+              <JobRowList
+                jobs={postings}
+                highlightFirst={Boolean(q)}
+                tail={q ? "workType" : "experience"}
                 now={now}
               />
-            )}
-          </aside>
+
+              <div className={styles.resultsFoot}>
+                <span className={styles.footText}>
+                  {listing.summary.total === 0
+                    ? "걸린 공고가 없습니다"
+                    : `${listing.summary.total.toLocaleString("ko-KR")}건 중 ${
+                        ((page - 1) * pageSize + 1).toLocaleString("ko-KR")
+                      }–${
+                        ((page - 1) * pageSize + postings.length).toLocaleString("ko-KR")
+                      }`}
+                </span>
+                <Pagination page={listing.page} href={pageHref} />
+                {q ? (
+                  <span className={styles.footQuota}>
+                    이번 달 추출 {session.quota.used} / {session.quota.limit ?? "무제한"}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            <aside className={styles.rail}>
+              {q ? (
+                <SearchRail
+                  total={listing.summary.total}
+                  missing={listing.summary.missingTechnologies}
+                  axes={matchAxes(postings)}
+                  recent={recent.data}
+                  query={q}
+                />
+              ) : (
+                <BrowseRail
+                  total={listing.summary.total}
+                  common={listing.summary.commonTechnologies}
+                  missing={listing.summary.missingTechnologies}
+                  watched={watched.data}
+                  now={now}
+                />
+              )}
+            </aside>
+          </div>
         </div>
-      </div>
-    </AppShell>
+      </AppBody>
+    </>
   );
 }
 

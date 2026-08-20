@@ -13,7 +13,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { useActionState, useState, useTransition, type DragEvent, type ReactNode } from "react";
 
-import { AppHeader, AppShell } from "@/components/shell/AppShell";
+import { AppBody, AppHeader } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
 
 import {
@@ -199,13 +199,11 @@ function polyline(points: { visits: number }[]): string {
 }
 
 export function Dashboard({
-  sidebar,
   dashboard,
   portfolios,
   catalog,
   editing: startEditing,
 }: {
-  sidebar: ReactNode;
   dashboard: AnalyticsDashboard;
   portfolios: { id: string; title: string }[];
   catalog: MetricCatalogEntry[];
@@ -275,202 +273,200 @@ export function Dashboard({
     `/analytics?portfolio=${next.portfolio ?? dashboard.portfolio.id}&period=${next.period ?? period.preset}` as Route;
 
   return (
-    <AppShell
-      sidebar={sidebar}
-      header={
-        <AppHeader
-          title={dashboard.portfolio.title}
-          actions={
-            editing ? (
-              <>
-                <span className={styles.editingBadge}>
-                  <Icon name="pencil-simple" size={11} />
-                  편집 중 · 나에게만 보임
-                </span>
-                {dashboard.customized ? (
-                  <WidgetForm
-                    intent="reset"
-                    portfolioId={dashboard.portfolio.id}
-                    preset={period.preset}
-                    className={styles.headButton}
-                    onDone={() => setSelected(null)}
-                  >
-                    레이아웃 초기화
-                  </WidgetForm>
-                ) : null}
-                <button
-                  type="button"
-                  className={`${styles.headButton} ${styles.headButtonPrimary}`}
-                  onClick={() => { setMode("view"); setSelected(null); }}
-                >
-                  편집 완료
-                </button>
-              </>
-            ) : (
-              <>
-                <span className={styles.headDomain}>{dashboard.deployment.subdomain}.xpresso.me</span>
-                <span className={styles.headState}>
-                  <span className={styles.headStateDot} />
-                  {dashboard.deployment.publishedAt
-                    ? `배포됨 · ${formatDate(dashboard.deployment.publishedAt.slice(0, 10))}`
-                    : "배포 준비 중"}
-                </span>
-                <div className={styles.period}>
-                  {(["7d", "30d", "all"] as const).map((preset) => (
-                    <Link
-                      key={preset}
-                      href={href({ period: preset })}
-                      className={`${styles.periodItem} ${
-                        preset === period.preset ? styles.periodItemActive : ""
-                      }`}
-                    >
-                      {PERIOD_LABEL[preset]}
-                    </Link>
-                  ))}
-                </div>
-                {/* 편집을 시작하는 순간 기본 지면이 내 것으로 굳는다. */}
+    <>
+      <AppHeader
+        title={dashboard.portfolio.title}
+        actions={
+          editing ? (
+            <>
+              <span className={styles.editingBadge}>
+                <Icon name="pencil-simple" size={11} />
+                편집 중 · 나에게만 보임
+              </span>
+              {dashboard.customized ? (
                 <WidgetForm
-                  intent="edit"
+                  intent="reset"
                   portfolioId={dashboard.portfolio.id}
                   preset={period.preset}
                   className={styles.headButton}
-                  onDone={() => setMode("edit")}
+                  onDone={() => setSelected(null)}
                 >
-                  대시보드 편집
+                  레이아웃 초기화
                 </WidgetForm>
-              </>
-            )
-          }
-        />
-      }
-    >
-      <div className={styles.content}>
-        <div className={styles.viewBar}>
-          {portfolios.map((item) => (
-            <Link
-              key={item.id}
-              href={href({ portfolio: item.id })}
-              className={`${styles.viewTab} ${
-                item.id === dashboard.portfolio.id ? styles.viewTabActive : ""
-              }`}
-            >
-              {item.title}
-            </Link>
-          ))}
-          <div className={styles.viewBarRight}>
-            <span className={styles.refreshed}>
-              {editing
-                ? `위젯 ${widgets.length}개 · 12칼럼 그리드`
-                : `${period.start} ~ ${period.end} · 집계 ${coverage.aggregatedDays}/${coverage.days}일`}
-            </span>
+              ) : null}
+              <button
+                type="button"
+                className={`${styles.headButton} ${styles.headButtonPrimary}`}
+                onClick={() => { setMode("view"); setSelected(null); }}
+              >
+                편집 완료
+              </button>
+            </>
+          ) : (
+            <>
+              <span className={styles.headDomain}>{dashboard.deployment.subdomain}.xpresso.me</span>
+              <span className={styles.headState}>
+                <span className={styles.headStateDot} />
+                {dashboard.deployment.publishedAt
+                  ? `배포됨 · ${formatDate(dashboard.deployment.publishedAt.slice(0, 10))}`
+                  : "배포 준비 중"}
+              </span>
+              <div className={styles.period}>
+                {(["7d", "30d", "all"] as const).map((preset) => (
+                  <Link
+                    key={preset}
+                    href={href({ period: preset })}
+                    className={`${styles.periodItem} ${
+                      preset === period.preset ? styles.periodItemActive : ""
+                    }`}
+                  >
+                    {PERIOD_LABEL[preset]}
+                  </Link>
+                ))}
+              </div>
+              {/* 편집을 시작하는 순간 기본 지면이 내 것으로 굳는다. */}
+              <WidgetForm
+                intent="edit"
+                portfolioId={dashboard.portfolio.id}
+                preset={period.preset}
+                className={styles.headButton}
+                onDone={() => setMode("edit")}
+              >
+                대시보드 편집
+              </WidgetForm>
+            </>
+          )
+        }
+      />
+      <AppBody>
+        <div className={styles.content}>
+          <div className={styles.viewBar}>
+            {portfolios.map((item) => (
+              <Link
+                key={item.id}
+                href={href({ portfolio: item.id })}
+                className={`${styles.viewTab} ${
+                  item.id === dashboard.portfolio.id ? styles.viewTabActive : ""
+                }`}
+              >
+                {item.title}
+              </Link>
+            ))}
+            <div className={styles.viewBarRight}>
+              <span className={styles.refreshed}>
+                {editing
+                  ? `위젯 ${widgets.length}개 · 12칼럼 그리드`
+                  : `${period.start} ~ ${period.end} · 집계 ${coverage.aggregatedDays}/${coverage.days}일`}
+              </span>
+            </div>
           </div>
-        </div>
 
-        {coverage.pendingDates.length > 0 ? (
-          <Aggregate
-            portfolioId={dashboard.portfolio.id}
-            preset={period.preset}
-            pending={coverage.pendingDates.length}
-          />
-        ) : null}
+          {coverage.pendingDates.length > 0 ? (
+            <Aggregate
+              portfolioId={dashboard.portfolio.id}
+              preset={period.preset}
+              pending={coverage.pendingDates.length}
+            />
+          ) : null}
 
-        {failed ? <p className={styles.blankBody}>{failed}</p> : null}
+          {failed ? <p className={styles.blankBody}>{failed}</p> : null}
 
-        {/* §2.1의 `?edit=1`로 바로 들어오면 아직 굳지 않은 기본 지면 위에 서 있다. */}
-        {editing && !dashboard.customized ? (
-          <div className={styles.notice}>
-            <Icon name="info" size={12} color="var(--ex-slate-500)" />
-            <span className={styles.noticeText}>
-              지금 보고 계신 것은 <b>기본 지면</b>입니다. 옮기거나 고치려면 먼저 내 것으로
-              가져와야 합니다 — 라이브러리에서 지표를 하나 놓아도 같이 가져옵니다.
-            </span>
-            <button
-              type="button"
-              className={styles.noticeAction}
-              onClick={() => run({
-                intent: "edit",
-                portfolioId: dashboard.portfolio.id,
-                period: period.preset,
-              })}
-            >
-              내 것으로 가져오기
-            </button>
-          </div>
-        ) : null}
+          {/* §2.1의 `?edit=1`로 바로 들어오면 아직 굳지 않은 기본 지면 위에 서 있다. */}
+          {editing && !dashboard.customized ? (
+            <div className={styles.notice}>
+              <Icon name="info" size={12} color="var(--ex-slate-500)" />
+              <span className={styles.noticeText}>
+                지금 보고 계신 것은 <b>기본 지면</b>입니다. 옮기거나 고치려면 먼저 내 것으로
+                가져와야 합니다 — 라이브러리에서 지표를 하나 놓아도 같이 가져옵니다.
+              </span>
+              <button
+                type="button"
+                className={styles.noticeAction}
+                onClick={() => run({
+                  intent: "edit",
+                  portfolioId: dashboard.portfolio.id,
+                  period: period.preset,
+                })}
+              >
+                내 것으로 가져오기
+              </button>
+            </div>
+          ) : null}
 
-        <div className={styles.grid} onDrop={drop} onDragOver={(event) => event.preventDefault()}>
-          {preview.map((widget, index) => (
-            widget.id === GHOST ? (
+          <div className={styles.grid} onDrop={drop} onDragOver={(event) => event.preventDefault()}>
+            {preview.map((widget, index) => (
+              widget.id === GHOST ? (
+                <div
+                  key="ghost"
+                  className={styles.dropZone}
+                  style={{ gridColumn: `span ${widget.span}` }}
+                >
+                  <span className={styles.dropZoneText}>
+                    여기에 놓기
+                    <br />
+                    {widget.span} 칼럼
+                  </span>
+                </div>
+              ) : (
+                <WidgetCard
+                  key={widget.id ?? `${widget.metricKey}-${index}`}
+                  widget={widget}
+                  dashboard={dashboard}
+                  editing={editing}
+                  selected={widget.id !== null && widget.id === selected}
+                  dragging={drag?.kind === "widget" && drag.id === widget.id}
+                  onSelect={() => setSelected(widget.id)}
+                  onDragStart={() => { if (widget.id) setDrag({ kind: "widget", id: widget.id }); }}
+                  onDragOver={(event) => {
+                    if (!drag) return;
+                    event.preventDefault();
+                    setSlot(slotFor(event, widgets, widget, index));
+                  }}
+                  onDragEnd={endDrag}
+                />
+              )
+            ))}
+
+            {/* 맨 뒤에 놓을 자리. 편집 중에는 늘 열려 있다(정의서 07b). */}
+            {editing ? (
               <div
-                key="ghost"
                 className={styles.dropZone}
-                style={{ gridColumn: `span ${widget.span}` }}
+                style={{ gridColumn: "span 3" }}
+                onDragOver={(event) => { event.preventDefault(); setSlot(widgets.length); }}
               >
                 <span className={styles.dropZoneText}>
                   여기에 놓기
                   <br />
-                  {widget.span} 칼럼
+                  맨 뒤 · 3 칼럼
                 </span>
               </div>
-            ) : (
-              <WidgetCard
-                key={widget.id ?? `${widget.metricKey}-${index}`}
-                widget={widget}
-                dashboard={dashboard}
-                editing={editing}
-                selected={widget.id !== null && widget.id === selected}
-                dragging={drag?.kind === "widget" && drag.id === widget.id}
-                onSelect={() => setSelected(widget.id)}
-                onDragStart={() => { if (widget.id) setDrag({ kind: "widget", id: widget.id }); }}
-                onDragOver={(event) => {
-                  if (!drag) return;
-                  event.preventDefault();
-                  setSlot(slotFor(event, widgets, widget, index));
-                }}
-                onDragEnd={endDrag}
-              />
-            )
-          ))}
-
-          {/* 맨 뒤에 놓을 자리. 편집 중에는 늘 열려 있다(정의서 07b). */}
-          {editing ? (
-            <div
-              className={styles.dropZone}
-              style={{ gridColumn: "span 3" }}
-              onDragOver={(event) => { event.preventDefault(); setSlot(widgets.length); }}
-            >
-              <span className={styles.dropZoneText}>
-                여기에 놓기
-                <br />
-                맨 뒤 · 3 칼럼
-              </span>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </div>
-      </div>
 
-      {editing && chosen === null ? (
-        <MetricLibrary
-          catalog={catalog}
-          used={new Set(widgets.map(({ metricKey }) => metricKey))}
-          portfolioId={dashboard.portfolio.id}
-          preset={period.preset}
-          onDragStart={(metricKey) => setDrag({ kind: "metric", metricKey })}
-          onDragEnd={endDrag}
-          onClose={() => { setMode("view"); setSelected(null); }}
-        />
-      ) : null}
-      {editing && chosen !== null ? (
-        <WidgetSettings
-          widget={chosen}
-          entry={catalog.find(({ key }) => key === chosen.metricKey) ?? null}
-          position={widgets.findIndex(({ id }) => id === chosen.id)}
-          total={widgets.length}
-          onMove={(step) => { if (chosen.id) move(chosen.id, step); }}
-          onClose={() => setSelected(null)}
-        />
-      ) : null}
-    </AppShell>
+        {editing && chosen === null ? (
+          <MetricLibrary
+            catalog={catalog}
+            used={new Set(widgets.map(({ metricKey }) => metricKey))}
+            portfolioId={dashboard.portfolio.id}
+            preset={period.preset}
+            onDragStart={(metricKey) => setDrag({ kind: "metric", metricKey })}
+            onDragEnd={endDrag}
+            onClose={() => { setMode("view"); setSelected(null); }}
+          />
+        ) : null}
+        {editing && chosen !== null ? (
+          <WidgetSettings
+            widget={chosen}
+            entry={catalog.find(({ key }) => key === chosen.metricKey) ?? null}
+            position={widgets.findIndex(({ id }) => id === chosen.id)}
+            total={widgets.length}
+            onMove={(step) => { if (chosen.id) move(chosen.id, step); }}
+            onClose={() => setSelected(null)}
+          />
+        ) : null}
+      </AppBody>
+    </>
   );
 }
 
