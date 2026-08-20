@@ -4,7 +4,8 @@ import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildApi } from "../../src/api/build-app.js";
 import type { RuntimeConfig } from "../../src/config/runtime-config.js";
-import { DeterministicSentenceWriter, GenerationService } from "../../src/modules/generation/service.js";
+import { GenerationService } from "../../src/modules/generation/service.js";
+import { StubSentenceWriter } from "../support/stub-writer.js";
 import { IdentityService } from "../../src/modules/identity/service.js";
 import { PortfolioEditingService } from "../../src/modules/portfolio-editing/service.js";
 import { OutboxDispatcher } from "../../src/platform/outbox.js";
@@ -59,7 +60,7 @@ describeWithInfrastructure("generation edit restore vertical slice", () => {
     generation = new GenerationService(sql); const editing = new PortfolioEditingService(sql);
     const config: RuntimeConfig = { nodeEnv: 'test', host: '127.0.0.1', port: 0, logLevel: 'silent', databaseUrl: isolated.toString(), redisUrl: redisUrl!, outboxPollIntervalMs: 1000, outboxBatchSize: 25, outboxMaxAttempts: 5, queuePrefix: prefix };
     app = buildApi({ config, identityService: identity, generationService: generation, portfolioEditingService: editing }); origin = await app.listen({ host: '127.0.0.1', port: 0 });
-    worker = createQueueWorker({ queueName: 'domain-jobs', redisUrl: redisUrl!, prefix, concurrency: 1, deadLetterQueue: queue.deadLetterQueue, processor: createGenerationProcessor(generation, new DeterministicSentenceWriter()) });
+    worker = createQueueWorker({ queueName: 'domain-jobs', redisUrl: redisUrl!, prefix, concurrency: 1, deadLetterQueue: queue.deadLetterQueue, processor: createGenerationProcessor(generation, new StubSentenceWriter()) });
     dispatcher = new OutboxDispatcher({ sql, queue: queue.queue });
     (globalThis as unknown as { generationFixture: { recipeId: string; templateId: string } }).generationFixture = { recipeId, templateId };
   }, 30000);
@@ -82,7 +83,7 @@ describeWithInfrastructure("generation edit restore vertical slice", () => {
     const proposalId = ((await preview.json()) as { data: { id: string } }).data.id;
     await api(`/v1/portfolio-edit-proposals/${proposalId}/apply`, { method: 'POST' });
     await sql`update generation_job set status = 'queued', stage = 'queued' where id = ${jobId}`;
-    await expect(generation.process(jobId, new DeterministicSentenceWriter())).rejects.toThrow(/locked block/);
+    await expect(generation.process(jobId, new StubSentenceWriter())).rejects.toThrow(/locked block/);
     expect((await sql<{ used: number }[]>`select used from usage_counter limit 1`)[0]?.used).toBe(1);
     const restore = await api(`/v1/portfolios/${portfolioId}/restore`, { method: 'POST', body: { snapshotId, confirm: true } });
     expect(restore.status).toBe(200);

@@ -1,8 +1,9 @@
 import { buildApi } from "./build-app.js";
 import { loadRuntimeConfig } from "../config/runtime-config.js";
 import { createPostgresResource } from "../platform/postgres.js";
-import { createRedisResource } from "../platform/redis.js";
+import { createRedisResource, createStreamRedis } from "../platform/redis.js";
 import { IdentityService } from "../modules/identity/service.js";
+import { RemoteGoogleIdTokenVerifier } from "../modules/identity/google.js";
 import { EntitlementService } from "../modules/entitlements/service.js";
 import { CareerService } from "../modules/career/service.js";
 import { JobMarketService } from "../modules/jobs/service.js";
@@ -27,6 +28,7 @@ import { LayoutService } from "../modules/layout/service.js";
 import { PublishingService } from "../modules/publishing/service.js";
 import { MediaService } from "../modules/media/service.js";
 import { PageService } from "../modules/page/service.js";
+import { PageStream } from "../modules/page/stream.js";
 import { AiPageGenerator } from "../modules/page/generator.js";
 import { createMediaStorage } from "../platform/storage/create-storage.js";
 import { AnalyticsService } from "../modules/analytics/service.js";
@@ -37,6 +39,11 @@ const config = loadRuntimeConfig();
 const postgres = createPostgresResource(config.databaseUrl);
 const redis = createRedisResource(config.redisUrl);
 const identityService = new IdentityService(postgres.sql);
+// 클라이언트 ID가 없으면 만들지 않는다 — 라우트가 503으로 답하고, 화면은
+// 버튼을 열지 않는다. 검증기 없이 도는 척하는 경로를 두지 않는다.
+const googleIdTokenVerifier = config.googleClientId
+  ? new RemoteGoogleIdTokenVerifier({ clientId: config.googleClientId })
+  : null;
 const entitlementService = new EntitlementService(postgres.sql);
 const careerService = new CareerService(postgres.sql);
 const jobMarketService = new JobMarketService(postgres.sql);
@@ -79,7 +86,11 @@ const publishingService = new PublishingService(postgres.sql, config.assetSignin
 const mediaService = new MediaService(postgres.sql, createMediaStorage(config));
 // 자유 생성 지면. 요청 안에서 계약을 부른다 — 사용자가 뽑기를 누르고 기다리는
 // 화면이고, 결과가 곧 페이지 전체라 뒤로 미뤄 봐야 볼 것이 없다.
-const pageService = new PageService(postgres.sql, consentService);
+// 만들어지는 지면이 지나는 길. 워커가 쓰고 여기서 읽어 브라우저로 흘린다.
+const pageStream = new PageStream(createStreamRedis(config.redisUrl), {
+  prefix: config.queuePrefix,
+});
+const pageService = new PageService(postgres.sql, consentService, pageStream);
 // AI가 꺼져 있으면 지면을 만들 길이 없다. 규칙 폴백을 두지 않는다 —
 // 이 경로의 산출물은 **모델이 쓴 마크업 그 자체**여서 흉내 낼 것이 없다.
 const pageGenerator = ai ? new AiPageGenerator(ai) : null;
@@ -97,6 +108,7 @@ const app = buildApi({
   config,
   readinessChecks: [postgres.readinessCheck, redis.readinessCheck],
   identityService,
+  ...(googleIdTokenVerifier ? { googleIdTokenVerifier } : {}),
   entitlementService,
   careerService,
   jobMarketService,
@@ -118,6 +130,7 @@ const app = buildApi({
   publishingService,
   mediaService,
   pageService,
+  pageStream,
   ...(pageGenerator ? { pageGenerator } : {}),
   analyticsService,
   engagementService,

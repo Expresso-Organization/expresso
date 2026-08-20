@@ -6,7 +6,7 @@ import {
 } from "@expresso/contracts";
 
 import type { AiClient } from "../../platform/ai/client.js";
-import type { RequirementExtractor } from "./rule-extractor.js";
+import type { RequirementExtractor } from "./extractor.js";
 import { AnalysisEvidenceError } from "./source-span.js";
 
 /**

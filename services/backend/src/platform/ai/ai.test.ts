@@ -6,10 +6,11 @@ import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { loadRuntimeConfig } from "../../config/runtime-config.js";
+import { loadRuntimeConfig, type RuntimeConfig } from "../../config/runtime-config.js";
 import {
   AiError,
   callKey,
+  toToolSchema,
   DEFAULT_MODEL_TIER,
   type AiCallSpec,
   type AiClient,
@@ -156,5 +157,51 @@ describe("AI 클라이언트 만들기", () => {
   it("아직 없는 프로바이더는 조용히 넘어가지 않는다", () => {
     expect(() => createAiClient(loadRuntimeConfig({ AI_PROVIDER: "anthropic" })))
       .toThrow(/not implemented/);
+  });
+});
+
+describe("toToolSchema", () => {
+  it("떼어낸다 — 모르는 format 하나가 계약 전체를 400으로 막는다", () => {
+    const schema = z.object({
+      blocks: z.array(z.object({ href: z.url(), at: z.iso.datetime() })),
+    });
+
+    const json = JSON.stringify(toToolSchema(schema));
+
+    expect(json).not.toContain('"format"');
+    expect(json).toContain('"href"');
+  });
+});
+
+describe("계약별 프로바이더 가르기", () => {
+  const base = { aiFixtureDir: "fixtures/ai" } as RuntimeConfig;
+
+  it("따로 지정하지 않으면 하나만 만든다", () => {
+    const client = createAiClient({ ...base, aiProvider: "fixture" });
+    expect(client).toBeInstanceOf(FixtureAiClient);
+  });
+
+  it("지면 생성만 다른 프로바이더로 보낸다", async () => {
+    const client = createAiClient({
+      ...base,
+      aiProvider: "fixture",
+      aiPageGenerationProvider: "codex",
+      // 실행 파일을 부르지는 않는다 — 어느 쪽으로 갔는지만 본다.
+      codexCliPath: "/nonexistent/codex",
+    });
+    expect(client).not.toBeInstanceOf(FixtureAiClient);
+
+    // 픽스처가 없는 계약은 픽스처 어댑터의 말로 거절당한다 — 그쪽으로 갔다는 뜻이다.
+    await expect(client!.complete(
+      { contract: "job_facts", system: "s", prompt: "p", promptVersion: 1 },
+      z.string(),
+    )).rejects.toThrow(/녹화된 응답이 없습니다/);
+  });
+
+  it("같은 프로바이더를 지정하면 가르지 않는다", () => {
+    const client = createAiClient({
+      ...base, aiProvider: "fixture", aiPageGenerationProvider: "fixture",
+    });
+    expect(client).toBeInstanceOf(FixtureAiClient);
   });
 });

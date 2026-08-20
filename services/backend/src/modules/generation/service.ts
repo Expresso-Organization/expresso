@@ -17,7 +17,12 @@ import {
   type LayoutDesigner,
 } from "../layout/designer.js";
 import { GenerationValidationError, validateGenerationOutput } from "./validator.js";
-import type { SentenceWriter, WriterContext, WriterSection } from "./writer.js";
+import {
+  SentenceWriterUnavailableError,
+  type SentenceWriter,
+  type WriterContext,
+  type WriterSection,
+} from "./writer.js";
 import { withTimeout } from "../../platform/timeouts.js";
 import type { ConsentService } from "../consent/service.js";
 
@@ -47,31 +52,6 @@ interface BrewSubjectRow {
   job_title: string | null; job_family: string | null;
   company_name: string; industry: string | null; tone_summary: string | null;
   brand_colors: string[];
-}
-
-/**
- * AI가 꺼져 있을 때(`AI_PROVIDER=off`) 쓰는 폴백.
- *
- * 아웃라인 항목을 **그대로** 문단으로 옮긴다. 문장을 쓰지는 않지만 근거는
- * 정확하고, 키도 로그인도 없이 앱 전체가 돈다.
- */
-export class DeterministicSentenceWriter implements SentenceWriter {
-  readonly usesContract = false;
-
-  async write(context: WriterContext) {
-    return GenerationOutputSchema.parse({
-      blocks: context.sections.flatMap((section) =>
-        section.items.map((item) => ({
-          recipeSectionId: section.recipeSectionId,
-          kind: "paragraph" as const,
-          text: item.pointText,
-          label: null,
-          evidencePathIds: item.sourceNumbers
-            .map((number) => context.evidence[number - 1]?.id)
-            .filter((id): id is string => Boolean(id)),
-        }))),
-    });
-  }
 }
 
 export class GenerationError extends Error {
@@ -494,8 +474,17 @@ export class GenerationService {
       });
       return this.getStatus(job.user_id, job.id);
     } catch (error) {
-      const retryable = !(error instanceof GenerationValidationError || error instanceof GenerationError);
-      const code = error instanceof GenerationValidationError ? "EVIDENCE_INVALID" : error instanceof GenerationError ? "GENERATION_REJECTED" : "PROVIDER_FAILED";
+      const retryable = !(error instanceof GenerationValidationError
+        || error instanceof GenerationError
+        || error instanceof SentenceWriterUnavailableError);
+      const code = error instanceof GenerationValidationError
+        ? "EVIDENCE_INVALID"
+        : error instanceof GenerationError
+          ? "GENERATION_REJECTED"
+          // 다시 시도해도 같다 — 프로바이더가 켜지기 전에는 쓸 방법이 없다.
+          : error instanceof SentenceWriterUnavailableError
+            ? "WRITER_UNAVAILABLE"
+            : "PROVIDER_FAILED";
       await this.#sql.begin(async (transaction) => {
         const job = (await transaction<JobRow[]>`select * from generation_job where id = ${jobId} for update`)[0];
         if (!job || job.status === "done") return;

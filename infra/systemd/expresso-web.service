@@ -1,0 +1,26 @@
+[Unit]
+Description=Expresso Web
+After=network-online.target expresso-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/expresso/services/web
+ExecStart=/home/ubuntu/.nvm/versions/node/v24.13.1/bin/node node_modules/next/dist/bin/next start --port 3500
+Environment=NODE_ENV=production
+Environment=HOSTNAME=127.0.0.1
+# 브라우저가 부르는 주소다. 서버 컴포넌트도 같은 값을 쓴다(앞단 nginx를 지난다).
+Environment=NEXT_PUBLIC_API_BASE_URL=https://expresso.ai.kr
+# Google 리디렉션 주소를 만드는 기준. Google Console에 등록한 것과 같아야 한다.
+Environment=APP_BASE_URL=https://expresso.ai.kr
+# Google client secret은 여기에 적지 않는다 — 유닛 파일은 누구나 읽는다.
+# 아래 파일(600)에 두고 systemd가 읽어 넘긴다. 없으면 그냥 안 넘어간다(`-`).
+EnvironmentFile=-/home/ubuntu/expresso/services/web/.env
+Restart=always
+RestartSec=3
+StandardOutput=append:/home/ubuntu/expresso/log/web.log
+StandardError=append:/home/ubuntu/expresso/log/web.log
+
+[Install]
+WantedBy=multi-user.target

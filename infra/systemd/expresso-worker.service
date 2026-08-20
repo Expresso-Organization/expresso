@@ -1,0 +1,20 @@
+[Unit]
+Description=Expresso Worker
+# 인프라는 compose가 쥐고 있다. 도커가 뜬 뒤에 시작한다.
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/expresso/services/backend
+# 셸을 거치지 않으므로 nvm에 기대지 않는다. 이 기계의 기본 Node는 22다.
+ExecStart=/home/ubuntu/.nvm/versions/node/v24.13.1/bin/node dist/worker/main.js
+EnvironmentFile=/home/ubuntu/expresso/services/backend/.env
+Restart=always
+RestartSec=3
+StandardOutput=append:/home/ubuntu/expresso/log/worker.log
+StandardError=append:/home/ubuntu/expresso/log/worker.log
+
+[Install]
+WantedBy=multi-user.target

@@ -10,7 +10,7 @@ import { CareerService } from "../../src/modules/career/service.js";
 import { IdentityService } from "../../src/modules/identity/service.js";
 import { InterviewService } from "../../src/modules/interview/service.js";
 import { JobAnalysisService } from "../../src/modules/job-analysis/service.js";
-import { RuleBasedRequirementExtractor } from "../../src/modules/job-analysis/rule-extractor.js";
+import { StubRequirementExtractor } from "../support/stub-extractor.js";
 import { JobMarketService } from "../../src/modules/jobs/service.js";
 import { MaterialsService } from "../../src/modules/materials/service.js";
 import { RecipeService } from "../../src/modules/recipe/service.js";
@@ -96,7 +96,7 @@ describeWithInfrastructure("analysis to evidence recipe vertical slice", () => {
         }
         // 기록 정리는 계약이 없으면 아무 일도 하지 않는다.
         if (job.name === "record.cleanup") return createRecordCleanupProcessor(interview)(job);
-        return createJobAnalysisProcessor(analysis, new RuleBasedRequirementExtractor())(job);
+        return createJobAnalysisProcessor(analysis, new StubRequirementExtractor())(job);
       },
     });
     brewJobProcessor = createBrewJobProcessor(brewJobs, {

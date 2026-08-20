@@ -71,11 +71,34 @@ export interface SentenceWriter {
   /**
    * 계약을 부르는가.
    *
-   * 규칙 폴백은 false다 — 아무것도 밖으로 나가지 않으므로 동의를 묻지 않는다.
-   * 클래스 이름으로 판단하지 않는다. 이름은 번들러가 바꾼다.
+   * 밖으로 나가는 것이 있을 때만 동의를 묻는다. 클래스 이름으로 판단하지
+   * 않는다 — 이름은 번들러가 바꾼다.
    */
   readonly usesContract: boolean;
   write(context: WriterContext): Promise<GenerationOutput>;
+}
+
+export class SentenceWriterUnavailableError extends Error {
+  constructor() {
+    super("sentence writer is unavailable: AI provider is off");
+    this.name = "SentenceWriterUnavailableError";
+  }
+}
+
+/**
+ * AI가 꺼져 있을 때 그 자리에 서는 것.
+ *
+ * 예전에는 아웃라인 항목을 그대로 문단으로 옮기는 폴백이 있었다. 근거는
+ * 정확했지만 결과물은 **문단 아홉 개짜리 개요**였고, 화면은 그것을
+ * "포트폴리오"라고 불렀다. 요건 추출과 같은 병이다 — 품질이 조용히 갈리는
+ * 두 경로를 두지 않는다.
+ */
+export class UnavailableSentenceWriter implements SentenceWriter {
+  readonly usesContract = false;
+
+  async write(): Promise<never> {
+    throw new SentenceWriterUnavailableError();
+  }
 }
 
 const SYSTEM = [

@@ -7,6 +7,9 @@ import {
   AnalyticsDashboardResponseSchema,
   API_PREFIX,
   AuthSessionResponseSchema,
+  SocialAuthSessionResponseSchema,
+  type GoogleSignIn,
+  type GoogleLink,
   InsightResponseSchema,
   MetricCatalogResponseSchema,
   WidgetListResponseSchema,
@@ -14,6 +17,9 @@ import {
   type AnalyticsPeriodPreset,
   type UpdateWidget,
   CareerCategoriesResponseSchema,
+  CareerProfileResponseSchema,
+  OptionalCareerProfileResponseSchema,
+  type SaveCareerProfile,
   CareerRecordListResponseSchema,
   CareerRecordResponseSchema,
   CurrentUserResponseSchema,
@@ -76,6 +82,20 @@ export const auth = {
 
   login: (input: Login) =>
     request(`${API_PREFIX}/auth/login`, AuthSessionResponseSchema, {
+      method: "POST",
+      body: input,
+    }),
+
+  /** 소셜 로그인. 웹이 코드와 바꿔 온 ID 토큰의 진위는 백엔드가 판단한다. */
+  google: (input: GoogleSignIn) =>
+    request(`${API_PREFIX}/auth/google`, SocialAuthSessionResponseSchema, {
+      method: "POST",
+      body: input,
+    }),
+
+  /** 비밀번호를 확인하고 잇는다. 이메일이 같다는 것만으로는 잇지 않는다. */
+  googleLink: (input: GoogleLink) =>
+    request(`${API_PREFIX}/auth/google/link`, SocialAuthSessionResponseSchema, {
       method: "POST",
       body: input,
     }),
@@ -743,6 +763,20 @@ export const jobs = {
 };
 
 export const career = {
+  /** 온보딩 1단계가 정한 것. 지나지 않았으면 data가 null이다. */
+  profile: (accessToken: string) =>
+    request(`${API_PREFIX}/career/profile`, OptionalCareerProfileResponseSchema, {
+      accessToken,
+      cache: "no-store",
+    }),
+
+  saveProfile: (accessToken: string, input: SaveCareerProfile) =>
+    request(`${API_PREFIX}/career/profile`, CareerProfileResponseSchema, {
+      method: "PUT",
+      accessToken,
+      body: input,
+    }),
+
   categories: (accessToken: string) =>
     request(`${API_PREFIX}/career/categories`, CareerCategoriesResponseSchema, {
       accessToken,

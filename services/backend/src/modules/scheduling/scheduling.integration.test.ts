@@ -4,7 +4,7 @@ import { migrate } from "@expresso/database";
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { SchedulingService, type ScheduledJobKey } from "./service.js";
+import { SCHEDULED_JOB_KEYS, SchedulingService, type ScheduledJobKey } from "./service.js";
 
 const rootDatabaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = rootDatabaseUrl ? describe : describe.skip;
@@ -43,14 +43,39 @@ describeWithDatabase("scheduled job leases and observability", () => {
     }
   }, 30_000);
 
+  it("DB가 허용하는 잡 키를 코드가 전부 안다", async () => {
+    /*
+     * 2026-08-13에 어긋났던 자리다. 마이그레이션이 `posting_facts`를 심은
+     * 직후, 아직 재시작하지 않은 워커가 그 키를 집어 **남의 잡(retention)의
+     * `delete`를 돌리고 성공했다고 적었다.** 지금은 모르는 키에서 throw하지만,
+     * 애초에 어긋나지 않게 여기서 잡는다.
+     */
+    const rows = await sql<{ key: string }[]>`
+      select job_key as key from scheduled_job_definition order by job_key
+    `;
+    expect(rows.length).toBeGreaterThan(0);
+    const known = new Set<string>(SCHEDULED_JOB_KEYS);
+    expect(rows.filter(({ key }) => !known.has(key))).toEqual([]);
+  });
+
   it("creates one run per due slot under concurrent scheduler ticks", async () => {
     const now = new Date("2026-08-09T01:00:00Z");
+    /*
+     * 세는 것은 **슬롯 하나에 실행 하나**이지 잡이 몇 개인가가 아니다.
+     * 정의 수를 DB에서 읽어 기준으로 삼는다 — 잡이 늘 때마다 이 숫자를 고치게
+     * 두면, 고치는 사람이 무엇을 확인하는 시험인지 잊는다.
+     */
+    const definitions = (await sql<{ count: number }[]>`
+      select count(*)::integer as count from scheduled_job_definition
+    `)[0]?.count ?? 0;
+    expect(definitions).toBeGreaterThan(0);
+
     const ticks = await Promise.all(Array.from({ length: 20 }, () => service.scheduleDue(now)));
-    expect(new Set(ticks.flatMap(({ scheduled }) => scheduled)).size).toBe(7);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from scheduled_job_run`)[0]?.count).toBe(7);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from platform_outbox where topic = 'scheduled.execute'`)[0]?.count).toBe(7);
+    expect(new Set(ticks.flatMap(({ scheduled }) => scheduled)).size).toBe(definitions);
+    expect((await sql<{ count: number }[]>`select count(*)::integer as count from scheduled_job_run`)[0]?.count).toBe(definitions);
+    expect((await sql<{ count: number }[]>`select count(*)::integer as count from platform_outbox where topic = 'scheduled.execute'`)[0]?.count).toBe(definitions);
     const status = await service.status(now);
-    expect(status).toHaveLength(7);
+    expect(status).toHaveLength(definitions);
     expect(status.every(({ nextRunAt }) => new Date(nextRunAt) > now)).toBe(true);
   });
 

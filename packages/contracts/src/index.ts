@@ -21,6 +21,7 @@ export * from "./portfolio-chart.js";
 export * from "./media.js";
 export * from "./page.js";
 export * from "./page-kit.js";
+export * from "./page-stream.js";
 export * from "./generation.js";
 export * from "./portfolio-editing.js";
 export * from "./portfolios.js";
