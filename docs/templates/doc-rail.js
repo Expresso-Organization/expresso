@@ -37,10 +37,10 @@
   if (window.__exDocRail) return;
   window.__exDocRail = true;
 
-  var RAIL_W = 208;        // 펼친 레일 폭
+  var RAIL_W = 170;        // 펼친 레일 폭
   var FOLD_W = 34;         // 접은 레일 폭
   var GAP = 18;            // 오른쪽 여백
-  var MIN_ROOM = 1400;     // 이 아래로는 띄우지 않는다
+  var MIN_ROOM = 1360;     // 이 아래로는 띄우지 않는다
 
   var sheet, rail, map, clip, ghost, win, pageNow, barFill, cuts;
   var folded = false, scale = 0, sheetTop = 0, total = 0, pagedAt = '';
