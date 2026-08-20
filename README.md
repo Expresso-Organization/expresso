@@ -39,4 +39,10 @@ curl http://127.0.0.1:4000/health/live
 curl http://127.0.0.1:4000/health/ready
 ```
 
+## 배포
+
+운영 배포는 `docs/operations/DEPLOYMENT.md`를 따릅니다. `main`에 머지되면
+`.github/workflows/web-deploy.yml`이 서버에서 `scripts/operations/deploy.sh`를
+실행합니다.
+
 현재 API는 PostgreSQL과 Redis를 준비 상태 검사에 포함합니다. `pnpm infra:up`은 기존 로컬 서비스와 충돌하지 않도록 PostgreSQL `55432`, Redis `56379`에 고정 이미지를 실행합니다. 두 인프라가 준비되지 않아도 API 프로세스는 시작되지만 `/health/ready`는 `503`을 반환합니다.
