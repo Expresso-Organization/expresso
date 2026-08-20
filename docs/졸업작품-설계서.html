@@ -815,7 +815,7 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
             <tr><td>클라이언트</td><td>웹 (Next.js)</td><td>네이티브 모바일 앱</td></tr>
             <tr><td>서버</td><td>REST API · 비동기 Worker</td><td>—</td></tr>
             <tr><td>AI 생성</td><td>공고 분석 · 레시피 · 포트폴리오 생성 · 편집 제안 <strong>(외부 LLM API 이용)</strong></td><td>다중 후보 생성 후 선별</td></tr>
-            <tr><td>AI 학습</td><td>공고 추천 랭커(모델 A) · 요건 충족 분류기(모델 B)</td><td>자체 LLM 사전학습 · 생성 모델 파인튜닝</td></tr>
+            <tr><td>AI 학습</td><td>공고 추천 랭커(모델 A) · 기록 추천 랭커(모델 B)</td><td>자체 LLM 사전학습 · 생성 모델 파인튜닝</td></tr>
             <tr><td>배포</td><td>공개 사이트 배포 · 버전 · 롤백 · 내보내기</td><td>커스텀 도메인 자동 발급</td></tr>
             <tr><td>분석</td><td>방문 지표 수집 · 대시보드 · 해설</td><td>외부 광고 플랫폼 연동</td></tr>
           </tbody>
@@ -1034,7 +1034,7 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
   <text class="t" x="782" y="197" text-anchor="middle">모델 배포</text>
 
   <rect class="bxs" x="282" y="252" width="294" height="46" rx="12"/>
-  <text class="tb sigt" x="429" y="274" text-anchor="middle">모델 A 랭커 · 모델 B 분류기</text>
+  <text class="tb sigt" x="429" y="274" text-anchor="middle">모델 A 랭커 · 모델 B 랭커</text>
   <text class="s sigt" x="429" y="291" text-anchor="middle">기록 ↔ 공고 연결</text>
   <path class="fls" d="M 782 214 V 234 H 604 V 275 H 584" marker-end="url(#a1s)"/>
   <text class="lm sig" x="693" y="228" text-anchor="middle">배포된 모델</text>
@@ -1187,10 +1187,10 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
         <table>
           <thead><tr><th>구분</th><th>모델 A — 기록에서 공고로</th><th>모델 B — 공고에서 기록으로</th></tr></thead>
           <tbody>
-            <tr><td>답하는 질문</td><td>이 사람에게 맞는 공고는 무엇인가</td><td>이 요구사항을 충족하는 기록은 무엇인가</td></tr>
-            <tr><td>관측 단위</td><td>(사용자 프로필 1건, 채용 공고 1건)</td><td>(공고 요구사항 1건, 사용자 기록 1건)</td></tr>
-            <tr><td>출력</td><td>관련도 점수와 그에 따른 공고 순위</td><td><code>covered</code> · <code>partial</code> · <code>missing</code> 3분류</td></tr>
-            <tr><td>학습 방식</td><td>순위 학습</td><td>다중 분류</td></tr>
+            <tr><td>답하는 질문</td><td>이 사람에게 맞는 공고는 무엇인가</td><td>이 공고에 쓸 기록은 무엇인가</td></tr>
+            <tr><td>관측 단위</td><td>(사용자 프로필 1건, 채용 공고 1건)</td><td>(채용 공고 1건, 사용자 기록 1건)</td></tr>
+            <tr><td>출력</td><td>관련도 점수와 그에 따른 공고 순위</td><td>적합도 점수와 그에 따른 기록 순위</td></tr>
+            <tr><td>학습 방식</td><td>순위 학습</td><td>순위 학습</td></tr>
             <tr><td>필요 표본</td><td>20,000쌍</td><td>20,000쌍</td></tr>
             <tr><td>사람 검수 표본</td><td>300쌍</td><td>300쌍</td></tr>
             <tr><td>쓰이는 자리</td><td>공고 목록과 추천 화면의 정렬</td><td>공고 분석 결과의 요건별 판정</td></tr>
@@ -1245,7 +1245,7 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
             <tr><td class="num">11</td><td><span class="rep">데이터세트 모듈</span></td><td>프로필·공고 단위 분할 기능</td><td>—</td></tr>
             <tr><td class="num">12</td><td><span class="rep">데이터세트 모듈</span></td><td>데이터세트 버전 기록 기능</td><td>—</td></tr>
             <tr><td class="num">13</td><td>학습 모듈</td><td>모델 A 랭커 학습 기능</td><td>—</td></tr>
-            <tr><td class="num">14</td><td><span class="rep">학습 모듈</span></td><td>모델 B 분류기 학습 기능</td><td>—</td></tr>
+            <tr><td class="num">14</td><td><span class="rep">학습 모듈</span></td><td>모델 B 랭커 학습 기능</td><td>—</td></tr>
             <tr><td class="num">15</td><td><span class="rep">학습 모듈</span></td><td>하이퍼파라미터 탐색 기능</td><td>—</td></tr>
             <tr><td class="num">16</td><td><span class="rep">학습 모듈</span></td><td>학습 중단 · 재개 기능</td><td>—</td></tr>
             <tr><td class="num">17</td><td><span class="rep">학습 모듈</span></td><td>재학습 기능</td><td>—</td></tr>
@@ -1450,118 +1450,117 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
             <tr><td class="num">37</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.2 자연어 검색과 조건 해석</span></td><td><code>T2.2.4</code> 검색 저장과 알림</td><td>—</td></tr>
             <tr><td class="num">38</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.2 자연어 검색과 조건 해석</span></td><td><code>T2.2.5</code> 최근 검색 · 추천 질의</td><td>—</td></tr>
             <tr><td class="num">39</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td>F2.3 일치도 산출과 설명</td><td><code>T2.3.1</code> 점수 계산</td><td>—</td></tr>
-            <tr><td class="num">40</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.3 일치도 산출과 설명</span></td><td><code>T2.3.2</code> 한 문장 사유 생성</td><td>—</td></tr>
-            <tr><td class="num">41</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.3 일치도 산출과 설명</span></td><td><code>T2.3.3</code> 축별 충족 내역</td><td>—</td></tr>
-            <tr><td class="num">42</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.3 일치도 산출과 설명</span></td><td><code>T2.3.4</code> 낮은 점수 접기</td><td>—</td></tr>
-            <tr><td class="num">43</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.3 일치도 산출과 설명</span></td><td><code>T2.3.5</code> 결과 집합 요약</td><td>—</td></tr>
-            <tr><td class="num">44</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td>F2.4 공고 상세 열람과 요건 대조</td><td><code>T2.4.1</code> 원문 렌더링</td><td>—</td></tr>
-            <tr><td class="num">45</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.2</code> 요건별 충족 판정</td><td>—</td></tr>
-            <tr><td class="num">46</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.3</code> 스택 대조 표시</td><td>—</td></tr>
-            <tr><td class="num">47</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.4</code> 보강 경로 제시</td><td>—</td></tr>
-            <tr><td class="num">48</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.5</code> 기업 톤 정보</td><td>—</td></tr>
-            <tr><td class="num">49</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.6</code> 관심 공고 관리</td><td>—</td></tr>
-            <tr><td class="num">50</td><td>D3 채용 공고 분석</td><td>F3.1 분석 대상 지정</td><td><code>T3.1.1</code> 입력 방식 3종</td><td>—</td></tr>
-            <tr><td class="num">51</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.1 분석 대상 지정</span></td><td><code>T3.1.2</code> 부가 자료 수집</td><td>—</td></tr>
-            <tr><td class="num">52</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.1 분석 대상 지정</span></td><td><code>T3.1.3</code> 진행 상태 표시</td><td>—</td></tr>
-            <tr><td class="num">53</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.1 분석 대상 지정</span></td><td><code>T3.1.4</code> 재분석</td><td>—</td></tr>
-            <tr><td class="num">54</td><td><span class="rep">D3 채용 공고 분석</span></td><td>F3.2 요구 역량 도출과 근거</td><td><code>T3.2.1</code> 역량 항목 추출</td><td>—</td></tr>
-            <tr><td class="num">55</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.2</code> 기록 커버리지 판정</td><td>—</td></tr>
-            <tr><td class="num">56</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.3</code> 원문 근거 하이라이트</td><td>—</td></tr>
-            <tr><td class="num">57</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.4</code> 반복 표현 추출</td><td>—</td></tr>
-            <tr><td class="num">58</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.5</code> 질문 배정 예고</td><td>—</td></tr>
-            <tr><td class="num">59</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.6</code> 소스 후보 선별</td><td>—</td></tr>
-            <tr><td class="num">60</td><td>D4 포트폴리오 재료 선정</td><td>F4.1 소스 기록 추천과 선택</td><td><code>T4.1.1</code> 매칭 순 정렬과 자동 선택</td><td>—</td></tr>
-            <tr><td class="num">61</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.1 소스 기록 추천과 선택</span></td><td><code>T4.1.2</code> 선택 변경과 즉시 반영</td><td>—</td></tr>
-            <tr><td class="num">62</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.1 소스 기록 추천과 선택</span></td><td><code>T4.1.3</code> 제외 사유 제시</td><td>—</td></tr>
-            <tr><td class="num">63</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.1 소스 기록 추천과 선택</span></td><td><code>T4.1.4</code> 현장에서 기록 추가</td><td>—</td></tr>
-            <tr><td class="num">64</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td>F4.2 생성 모드와 분량 설정</td><td><code>T4.2.1</code> 모드 선택</td><td>—</td></tr>
-            <tr><td class="num">65</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.2 생성 모드와 분량 설정</span></td><td><code>T4.2.2</code> 분량 프리셋</td><td>—</td></tr>
-            <tr><td class="num">66</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.2 생성 모드와 분량 설정</span></td><td><code>T4.2.3</code> 마감 알림 설정</td><td>—</td></tr>
-            <tr><td class="num">67</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.2 생성 모드와 분량 설정</span></td><td><code>T4.2.4</code> 사용량 확인</td><td>—</td></tr>
-            <tr><td class="num">68</td><td>D5 AI 인터뷰</td><td>F5.1 질문 생성과 배정</td><td><code>T5.1.1</code> 질문 세트 구성</td><td>—</td></tr>
-            <tr><td class="num">69</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.1 질문 생성과 배정</span></td><td><code>T5.1.2</code> 질문 근거 표시</td><td>—</td></tr>
-            <tr><td class="num">70</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.1 질문 생성과 배정</span></td><td><code>T5.1.3</code> 질문 품질 규칙</td><td>—</td></tr>
-            <tr><td class="num">71</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.1 질문 생성과 배정</span></td><td><code>T5.1.4</code> 질문 교체</td><td>—</td></tr>
-            <tr><td class="num">72</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.1 질문 생성과 배정</span></td><td><code>T5.1.5</code> 남은 질문 미리보기</td><td>—</td></tr>
-            <tr><td class="num">73</td><td><span class="rep">D5 AI 인터뷰</span></td><td>F5.2 응답 수집과 기록 생성</td><td><code>T5.2.1</code> 답변 입력 수단</td><td>—</td></tr>
-            <tr><td class="num">74</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.2</code> 실시간 기록 구성</td><td>—</td></tr>
-            <tr><td class="num">75</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.3</code> 기록 확정과 저장</td><td>—</td></tr>
-            <tr><td class="num">76</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.4</code> 추가 질문(꼬리 질문)</td><td>—</td></tr>
-            <tr><td class="num">77</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.5</code> 중단 · 재개 · 건너뛰기</td><td>—</td></tr>
-            <tr><td class="num">78</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.6</code> 이전 대화 열람</td><td>—</td></tr>
-            <tr><td class="num">79</td><td>D6 포트폴리오 레시피</td><td>F6.1 레시피 생성</td><td><code>T6.1.1</code> 입력 통합</td><td>—</td></tr>
-            <tr><td class="num">80</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.2</code> 섹션 목록 생성</td><td>—</td></tr>
-            <tr><td class="num">81</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.3</code> 컨텍스트 문서 작성</td><td>—</td></tr>
-            <tr><td class="num">82</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.4</code> 근거 경로 기록</td><td>—</td></tr>
-            <tr><td class="num">83</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.5</code> 미사용 소스 처리</td><td>—</td></tr>
-            <tr><td class="num">84</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.6</code> 전체 재생성</td><td>—</td></tr>
-            <tr><td class="num">85</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td>F6.2 레시피 편집과 공동 작업</td><td><code>T6.2.1</code> 섹션 순서·추가·삭제</td><td>—</td></tr>
-            <tr><td class="num">86</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.2 레시피 편집과 공동 작업</span></td><td><code>T6.2.2</code> 항목 단위 편집</td><td>—</td></tr>
-            <tr><td class="num">87</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.2 레시피 편집과 공동 작업</span></td><td><code>T6.2.3</code> 문장으로 수정 지시</td><td>—</td></tr>
-            <tr><td class="num">88</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.2 레시피 편집과 공동 작업</span></td><td><code>T6.2.4</code> 변경 이력</td><td>—</td></tr>
-            <tr><td class="num">89</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.2 레시피 편집과 공동 작업</span></td><td><code>T6.2.5</code> 완성도 요약</td><td>—</td></tr>
-            <tr><td class="num">90</td><td>D7 포트폴리오 생성</td><td>F7.1 지면 생성</td><td><code>T7.1.1</code> 내 내용으로 후보 비교</td><td>—</td></tr>
-            <tr><td class="num">91</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.1 지면 생성</span></td><td><code>T7.1.2</code> 후보 3안과 전체 보기</td><td>—</td></tr>
-            <tr><td class="num">92</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.1 지면 생성</span></td><td><code>T7.1.3</code> 기업 톤 반영</td><td>—</td></tr>
-            <tr><td class="num">93</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.1 지면 생성</span></td><td><code>T7.1.4</code> 스타일 변형 지시</td><td>—</td></tr>
-            <tr><td class="num">94</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.1 지면 생성</span></td><td><code>T7.1.5</code> 선택 요약</td><td>—</td></tr>
-            <tr><td class="num">95</td><td><span class="rep">D7 포트폴리오 생성</span></td><td>F7.2 문서 생성 실행</td><td><code>T7.2.1</code> 레시피 준수 생성</td><td>—</td></tr>
-            <tr><td class="num">96</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.2 문서 생성 실행</span></td><td><code>T7.2.2</code> 진행 표시와 백그라운드</td><td>—</td></tr>
-            <tr><td class="num">97</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.2 문서 생성 실행</span></td><td><code>T7.2.3</code> 사용량 차감과 복구</td><td>—</td></tr>
-            <tr><td class="num">98</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.2 문서 생성 실행</span></td><td><code>T7.2.4</code> 생성 직후 스냅샷</td><td>—</td></tr>
-            <tr><td class="num">99</td><td>D8 포트폴리오 편집</td><td>F8.1 구조 편집</td><td><code>T8.1.1</code> 섹션 순서·표시</td><td>—</td></tr>
-            <tr><td class="num">100</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.1 구조 편집</span></td><td><code>T8.1.2</code> 순서 개선 제안</td><td>—</td></tr>
-            <tr><td class="num">101</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.1 구조 편집</span></td><td><code>T8.1.3</code> 섹션 추가</td><td>—</td></tr>
-            <tr><td class="num">102</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.1 구조 편집</span></td><td><code>T8.1.4</code> 뷰포트 전환</td><td>—</td></tr>
-            <tr><td class="num">103</td><td><span class="rep">D8 포트폴리오 편집</span></td><td>F8.2 대화형 수정</td><td><code>T8.2.1</code> 대상 지정</td><td>—</td></tr>
-            <tr><td class="num">104</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.2 대화형 수정</span></td><td><code>T8.2.2</code> 변경 요약 제시</td><td>—</td></tr>
-            <tr><td class="num">105</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.2 대화형 수정</span></td><td><code>T8.2.3</code> 기록에서 가져오기</td><td>—</td></tr>
-            <tr><td class="num">106</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.2 대화형 수정</span></td><td><code>T8.2.4</code> 인라인 텍스트 편집</td><td>—</td></tr>
-            <tr><td class="num">107</td><td><span class="rep">D8 포트폴리오 편집</span></td><td>F8.3 속성 조정과 기록 동기화</td><td><code>T8.3.1</code> 내용 속성 편집</td><td>—</td></tr>
-            <tr><td class="num">108</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.3 속성 조정과 기록 동기화</span></td><td><code>T8.3.2</code> 표현 속성 편집</td><td>—</td></tr>
-            <tr><td class="num">109</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.3 속성 조정과 기록 동기화</span></td><td><code>T8.3.3</code> 원본 기록 동기화</td><td>—</td></tr>
-            <tr><td class="num">110</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.3 속성 조정과 기록 동기화</span></td><td><code>T8.3.4</code> 기본값 복원</td><td>—</td></tr>
-            <tr><td class="num">111</td><td><span class="rep">D8 포트폴리오 편집</span></td><td>F8.4 변경 이력과 잠금</td><td><code>T8.4.1</code> 주체별 이력</td><td>—</td></tr>
-            <tr><td class="num">112</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.4 변경 이력과 잠금</span></td><td><code>T8.4.2</code> 개별 되돌리기</td><td>—</td></tr>
-            <tr><td class="num">113</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.4 변경 이력과 잠금</span></td><td><code>T8.4.3</code> 변경 위치 비교 보기</td><td>—</td></tr>
-            <tr><td class="num">114</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.4 변경 이력과 잠금</span></td><td><code>T8.4.4</code> 복원 지점</td><td>—</td></tr>
-            <tr><td class="num">115</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.4 변경 이력과 잠금</span></td><td><code>T8.4.5</code> 잠금 관리</td><td>—</td></tr>
-            <tr><td class="num">116</td><td>D9 배포 · 공개 사이트</td><td>F9.1 배포와 버전</td><td><code>T9.1.1</code> 주소 발급</td><td>—</td></tr>
-            <tr><td class="num">117</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.1 배포와 버전</span></td><td><code>T9.1.2</code> 배포 전 확인</td><td>—</td></tr>
-            <tr><td class="num">118</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.1 배포와 버전</span></td><td><code>T9.1.3</code> 버전 관리</td><td>—</td></tr>
-            <tr><td class="num">119</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.1 배포와 버전</span></td><td><code>T9.1.4</code> 공개 중단·삭제</td><td>—</td></tr>
-            <tr><td class="num">120</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.1 배포와 버전</span></td><td><code>T9.1.5</code> 커스텀 도메인</td><td>—</td></tr>
-            <tr><td class="num">121</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td>F9.2 공개 사이트 품질과 내보내기</td><td><code>T9.2.1</code> 모바일 대응</td><td>—</td></tr>
-            <tr><td class="num">122</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.2 공개 사이트 품질과 내보내기</span></td><td><code>T9.2.2</code> 공유 메타 정보</td><td>—</td></tr>
-            <tr><td class="num">123</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.2 공개 사이트 품질과 내보내기</span></td><td><code>T9.2.3</code> 문서 내보내기</td><td>—</td></tr>
-            <tr><td class="num">124</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.2 공개 사이트 품질과 내보내기</span></td><td><code>T9.2.4</code> 이력서 파일 첨부</td><td>—</td></tr>
-            <tr><td class="num">125</td><td>D10 통계 분석</td><td>F10.1 방문 데이터 수집</td><td><code>T10.1.1</code> 기본 지표 수집</td><td>—</td></tr>
-            <tr><td class="num">126</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.1 방문 데이터 수집</span></td><td><code>T10.1.2</code> 섹션 단위 측정</td><td>—</td></tr>
-            <tr><td class="num">127</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.1 방문 데이터 수집</span></td><td><code>T10.1.3</code> 기업 방문 식별</td><td>—</td></tr>
-            <tr><td class="num">128</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.1 방문 데이터 수집</span></td><td><code>T10.1.4</code> 표본 부족 처리</td><td>—</td></tr>
-            <tr><td class="num">129</td><td><span class="rep">D10 통계 분석</span></td><td>F10.2 대시보드 구성</td><td><code>T10.2.1</code> 기본 대시보드</td><td>—</td></tr>
-            <tr><td class="num">130</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.2</code> 위젯 추가·배치</td><td>—</td></tr>
-            <tr><td class="num">131</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.3</code> 위젯 설정</td><td>—</td></tr>
-            <tr><td class="num">132</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.4</code> 뷰 저장</td><td>—</td></tr>
-            <tr><td class="num">133</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.5</code> 파생 지표</td><td>—</td></tr>
-            <tr><td class="num">134</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.6</code> 주석</td><td>—</td></tr>
-            <tr><td class="num">135</td><td><span class="rep">D10 통계 분석</span></td><td>F10.3 해석과 개선 제안</td><td><code>T10.3.1</code> 읽기 패턴 해설</td><td>—</td></tr>
-            <tr><td class="num">136</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.3 해석과 개선 제안</span></td><td><code>T10.3.2</code> 실행 가능한 제안</td><td>—</td></tr>
-            <tr><td class="num">137</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.3 해석과 개선 제안</span></td><td><code>T10.3.3</code> 홈 요약 연동</td><td>—</td></tr>
-            <tr><td class="num">138</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.3 해석과 개선 제안</span></td><td><code>T10.3.4</code> 리포트 발송</td><td>—</td></tr>
-            <tr><td class="num">139</td><td>D11 홈 · 내비게이션</td><td>F11.1 홈 대시보드</td><td><code>T11.1.1</code> 추천 공고 제시</td><td>—</td></tr>
-            <tr><td class="num">140</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.1 홈 대시보드</span></td><td><code>T11.1.2</code> 진행 중 작업 이어가기</td><td>—</td></tr>
-            <tr><td class="num">141</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.1 홈 대시보드</span></td><td><code>T11.1.3</code> 포트폴리오 현황</td><td>—</td></tr>
-            <tr><td class="num">142</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.1 홈 대시보드</span></td><td><code>T11.1.4</code> 최초 사용자 안내</td><td>—</td></tr>
-            <tr><td class="num">143</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td>F11.2 전역 내비게이션과 검색</td><td><code>T11.2.1</code> 사이드바 구성</td><td>—</td></tr>
-            <tr><td class="num">144</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.2 전역 내비게이션과 검색</span></td><td><code>T11.2.2</code> 통합 검색</td><td>—</td></tr>
-            <tr><td class="num">145</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.2 전역 내비게이션과 검색</span></td><td><code>T11.2.3</code> 알림</td><td>—</td></tr>
-            <tr><td class="num">146</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.2 전역 내비게이션과 검색</span></td><td><code>T11.2.4</code> 진행 단계 표시</td><td>—</td></tr>
-            <tr><td class="num">147</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.2 전역 내비게이션과 검색</span></td><td><code>T11.2.5</code> 자동 저장 표시</td><td>—</td></tr>
-            <tr><td class="num">148</td><td>D12 계정 · 요금제</td><td>F12.1 사용량과 플랜 게이팅</td><td><code>T12.1.1</code> 사용량 표시</td><td>—</td></tr>
-            <tr><td class="num">149</td><td><span class="rep">D12 계정 · 요금제</span></td><td><span class="rep">F12.1 사용량과 플랜 게이팅</span></td><td><code>T12.1.2</code> 유료 기능 노출</td><td>—</td></tr>
-            <tr><td class="num">150</td><td><span class="rep">D12 계정 · 요금제</span></td><td><span class="rep">F12.1 사용량과 플랜 게이팅</span></td><td><code>T12.1.3</code> 플랜 변경</td><td>—</td></tr>
-            <tr><td class="num">151</td><td><span class="rep">D12 계정 · 요금제</span></td><td><span class="rep">F12.1 사용량과 플랜 게이팅</span></td><td><code>T12.1.4</code> 계정 데이터 관리</td><td>—</td></tr>
+            <tr><td class="num">40</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.3 일치도 산출과 설명</span></td><td><code>T2.3.3</code> 축별 충족 내역</td><td>—</td></tr>
+            <tr><td class="num">41</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.3 일치도 산출과 설명</span></td><td><code>T2.3.4</code> 낮은 점수 접기</td><td>—</td></tr>
+            <tr><td class="num">42</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.3 일치도 산출과 설명</span></td><td><code>T2.3.5</code> 결과 집합 요약</td><td>—</td></tr>
+            <tr><td class="num">43</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td>F2.4 공고 상세 열람과 요건 대조</td><td><code>T2.4.1</code> 원문 렌더링</td><td>—</td></tr>
+            <tr><td class="num">44</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.2</code> 요건별 충족 판정</td><td>—</td></tr>
+            <tr><td class="num">45</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.3</code> 스택 대조 표시</td><td>—</td></tr>
+            <tr><td class="num">46</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.4</code> 보강 경로 제시</td><td>—</td></tr>
+            <tr><td class="num">47</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.5</code> 기업 톤 정보</td><td>—</td></tr>
+            <tr><td class="num">48</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.6</code> 관심 공고 관리</td><td>—</td></tr>
+            <tr><td class="num">49</td><td>D3 채용 공고 분석</td><td>F3.1 분석 대상 지정</td><td><code>T3.1.1</code> 입력 방식 3종</td><td>—</td></tr>
+            <tr><td class="num">50</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.1 분석 대상 지정</span></td><td><code>T3.1.2</code> 부가 자료 수집</td><td>—</td></tr>
+            <tr><td class="num">51</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.1 분석 대상 지정</span></td><td><code>T3.1.3</code> 진행 상태 표시</td><td>—</td></tr>
+            <tr><td class="num">52</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.1 분석 대상 지정</span></td><td><code>T3.1.4</code> 재분석</td><td>—</td></tr>
+            <tr><td class="num">53</td><td><span class="rep">D3 채용 공고 분석</span></td><td>F3.2 요구 역량 도출과 근거</td><td><code>T3.2.1</code> 역량 항목 추출</td><td>—</td></tr>
+            <tr><td class="num">54</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.2</code> 기록 커버리지 판정</td><td>—</td></tr>
+            <tr><td class="num">55</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.3</code> 원문 근거 하이라이트</td><td>—</td></tr>
+            <tr><td class="num">56</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.4</code> 반복 표현 추출</td><td>—</td></tr>
+            <tr><td class="num">57</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.5</code> 질문 배정 예고</td><td>—</td></tr>
+            <tr><td class="num">58</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.6</code> 소스 후보 선별</td><td>—</td></tr>
+            <tr><td class="num">59</td><td>D4 포트폴리오 재료 선정</td><td>F4.1 소스 기록 추천과 선택</td><td><code>T4.1.1</code> 매칭 순 정렬과 자동 선택</td><td>—</td></tr>
+            <tr><td class="num">60</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.1 소스 기록 추천과 선택</span></td><td><code>T4.1.2</code> 선택 변경과 즉시 반영</td><td>—</td></tr>
+            <tr><td class="num">61</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.1 소스 기록 추천과 선택</span></td><td><code>T4.1.3</code> 제외 사유 제시</td><td>—</td></tr>
+            <tr><td class="num">62</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.1 소스 기록 추천과 선택</span></td><td><code>T4.1.4</code> 현장에서 기록 추가</td><td>—</td></tr>
+            <tr><td class="num">63</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td>F4.2 생성 모드와 분량 설정</td><td><code>T4.2.1</code> 모드 선택</td><td>—</td></tr>
+            <tr><td class="num">64</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.2 생성 모드와 분량 설정</span></td><td><code>T4.2.2</code> 분량 프리셋</td><td>—</td></tr>
+            <tr><td class="num">65</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.2 생성 모드와 분량 설정</span></td><td><code>T4.2.3</code> 마감 알림 설정</td><td>—</td></tr>
+            <tr><td class="num">66</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.2 생성 모드와 분량 설정</span></td><td><code>T4.2.4</code> 사용량 확인</td><td>—</td></tr>
+            <tr><td class="num">67</td><td>D5 AI 인터뷰</td><td>F5.1 질문 생성과 배정</td><td><code>T5.1.1</code> 질문 세트 구성</td><td>—</td></tr>
+            <tr><td class="num">68</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.1 질문 생성과 배정</span></td><td><code>T5.1.2</code> 질문 근거 표시</td><td>—</td></tr>
+            <tr><td class="num">69</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.1 질문 생성과 배정</span></td><td><code>T5.1.3</code> 질문 품질 규칙</td><td>—</td></tr>
+            <tr><td class="num">70</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.1 질문 생성과 배정</span></td><td><code>T5.1.4</code> 질문 교체</td><td>—</td></tr>
+            <tr><td class="num">71</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.1 질문 생성과 배정</span></td><td><code>T5.1.5</code> 남은 질문 미리보기</td><td>—</td></tr>
+            <tr><td class="num">72</td><td><span class="rep">D5 AI 인터뷰</span></td><td>F5.2 응답 수집과 기록 생성</td><td><code>T5.2.1</code> 답변 입력 수단</td><td>—</td></tr>
+            <tr><td class="num">73</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.2</code> 실시간 기록 구성</td><td>—</td></tr>
+            <tr><td class="num">74</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.3</code> 기록 확정과 저장</td><td>—</td></tr>
+            <tr><td class="num">75</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.4</code> 추가 질문(꼬리 질문)</td><td>—</td></tr>
+            <tr><td class="num">76</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.5</code> 중단 · 재개 · 건너뛰기</td><td>—</td></tr>
+            <tr><td class="num">77</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.6</code> 이전 대화 열람</td><td>—</td></tr>
+            <tr><td class="num">78</td><td>D6 포트폴리오 레시피</td><td>F6.1 레시피 생성</td><td><code>T6.1.1</code> 입력 통합</td><td>—</td></tr>
+            <tr><td class="num">79</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.2</code> 섹션 목록 생성</td><td>—</td></tr>
+            <tr><td class="num">80</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.3</code> 컨텍스트 문서 작성</td><td>—</td></tr>
+            <tr><td class="num">81</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.4</code> 근거 경로 기록</td><td>—</td></tr>
+            <tr><td class="num">82</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.5</code> 미사용 소스 처리</td><td>—</td></tr>
+            <tr><td class="num">83</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.6</code> 전체 재생성</td><td>—</td></tr>
+            <tr><td class="num">84</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td>F6.2 레시피 편집과 공동 작업</td><td><code>T6.2.1</code> 섹션 순서·추가·삭제</td><td>—</td></tr>
+            <tr><td class="num">85</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.2 레시피 편집과 공동 작업</span></td><td><code>T6.2.2</code> 항목 단위 편집</td><td>—</td></tr>
+            <tr><td class="num">86</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.2 레시피 편집과 공동 작업</span></td><td><code>T6.2.3</code> 문장으로 수정 지시</td><td>—</td></tr>
+            <tr><td class="num">87</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.2 레시피 편집과 공동 작업</span></td><td><code>T6.2.4</code> 변경 이력</td><td>—</td></tr>
+            <tr><td class="num">88</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.2 레시피 편집과 공동 작업</span></td><td><code>T6.2.5</code> 완성도 요약</td><td>—</td></tr>
+            <tr><td class="num">89</td><td>D7 포트폴리오 생성</td><td>F7.1 지면 생성</td><td><code>T7.1.1</code> 내 내용으로 후보 비교</td><td>—</td></tr>
+            <tr><td class="num">90</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.1 지면 생성</span></td><td><code>T7.1.2</code> 후보 3안과 전체 보기</td><td>—</td></tr>
+            <tr><td class="num">91</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.1 지면 생성</span></td><td><code>T7.1.3</code> 기업 톤 반영</td><td>—</td></tr>
+            <tr><td class="num">92</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.1 지면 생성</span></td><td><code>T7.1.4</code> 스타일 변형 지시</td><td>—</td></tr>
+            <tr><td class="num">93</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.1 지면 생성</span></td><td><code>T7.1.5</code> 선택 요약</td><td>—</td></tr>
+            <tr><td class="num">94</td><td><span class="rep">D7 포트폴리오 생성</span></td><td>F7.2 문서 생성 실행</td><td><code>T7.2.1</code> 레시피 준수 생성</td><td>—</td></tr>
+            <tr><td class="num">95</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.2 문서 생성 실행</span></td><td><code>T7.2.2</code> 진행 표시와 백그라운드</td><td>—</td></tr>
+            <tr><td class="num">96</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.2 문서 생성 실행</span></td><td><code>T7.2.3</code> 사용량 차감과 복구</td><td>—</td></tr>
+            <tr><td class="num">97</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.2 문서 생성 실행</span></td><td><code>T7.2.4</code> 생성 직후 스냅샷</td><td>—</td></tr>
+            <tr><td class="num">98</td><td>D8 포트폴리오 편집</td><td>F8.1 구조 편집</td><td><code>T8.1.1</code> 섹션 순서·표시</td><td>—</td></tr>
+            <tr><td class="num">99</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.1 구조 편집</span></td><td><code>T8.1.2</code> 순서 개선 제안</td><td>—</td></tr>
+            <tr><td class="num">100</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.1 구조 편집</span></td><td><code>T8.1.3</code> 섹션 추가</td><td>—</td></tr>
+            <tr><td class="num">101</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.1 구조 편집</span></td><td><code>T8.1.4</code> 뷰포트 전환</td><td>—</td></tr>
+            <tr><td class="num">102</td><td><span class="rep">D8 포트폴리오 편집</span></td><td>F8.2 대화형 수정</td><td><code>T8.2.1</code> 대상 지정</td><td>—</td></tr>
+            <tr><td class="num">103</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.2 대화형 수정</span></td><td><code>T8.2.2</code> 변경 요약 제시</td><td>—</td></tr>
+            <tr><td class="num">104</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.2 대화형 수정</span></td><td><code>T8.2.3</code> 기록에서 가져오기</td><td>—</td></tr>
+            <tr><td class="num">105</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.2 대화형 수정</span></td><td><code>T8.2.4</code> 인라인 텍스트 편집</td><td>—</td></tr>
+            <tr><td class="num">106</td><td><span class="rep">D8 포트폴리오 편집</span></td><td>F8.3 속성 조정과 기록 동기화</td><td><code>T8.3.1</code> 내용 속성 편집</td><td>—</td></tr>
+            <tr><td class="num">107</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.3 속성 조정과 기록 동기화</span></td><td><code>T8.3.2</code> 표현 속성 편집</td><td>—</td></tr>
+            <tr><td class="num">108</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.3 속성 조정과 기록 동기화</span></td><td><code>T8.3.3</code> 원본 기록 동기화</td><td>—</td></tr>
+            <tr><td class="num">109</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.3 속성 조정과 기록 동기화</span></td><td><code>T8.3.4</code> 기본값 복원</td><td>—</td></tr>
+            <tr><td class="num">110</td><td><span class="rep">D8 포트폴리오 편집</span></td><td>F8.4 변경 이력과 잠금</td><td><code>T8.4.1</code> 주체별 이력</td><td>—</td></tr>
+            <tr><td class="num">111</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.4 변경 이력과 잠금</span></td><td><code>T8.4.2</code> 개별 되돌리기</td><td>—</td></tr>
+            <tr><td class="num">112</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.4 변경 이력과 잠금</span></td><td><code>T8.4.3</code> 변경 위치 비교 보기</td><td>—</td></tr>
+            <tr><td class="num">113</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.4 변경 이력과 잠금</span></td><td><code>T8.4.4</code> 복원 지점</td><td>—</td></tr>
+            <tr><td class="num">114</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.4 변경 이력과 잠금</span></td><td><code>T8.4.5</code> 잠금 관리</td><td>—</td></tr>
+            <tr><td class="num">115</td><td>D9 배포 · 공개 사이트</td><td>F9.1 배포와 버전</td><td><code>T9.1.1</code> 주소 발급</td><td>—</td></tr>
+            <tr><td class="num">116</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.1 배포와 버전</span></td><td><code>T9.1.2</code> 배포 전 확인</td><td>—</td></tr>
+            <tr><td class="num">117</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.1 배포와 버전</span></td><td><code>T9.1.3</code> 버전 관리</td><td>—</td></tr>
+            <tr><td class="num">118</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.1 배포와 버전</span></td><td><code>T9.1.4</code> 공개 중단·삭제</td><td>—</td></tr>
+            <tr><td class="num">119</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.1 배포와 버전</span></td><td><code>T9.1.5</code> 커스텀 도메인</td><td>—</td></tr>
+            <tr><td class="num">120</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td>F9.2 공개 사이트 품질과 내보내기</td><td><code>T9.2.1</code> 모바일 대응</td><td>—</td></tr>
+            <tr><td class="num">121</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.2 공개 사이트 품질과 내보내기</span></td><td><code>T9.2.2</code> 공유 메타 정보</td><td>—</td></tr>
+            <tr><td class="num">122</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.2 공개 사이트 품질과 내보내기</span></td><td><code>T9.2.3</code> 문서 내보내기</td><td>—</td></tr>
+            <tr><td class="num">123</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.2 공개 사이트 품질과 내보내기</span></td><td><code>T9.2.4</code> 이력서 파일 첨부</td><td>—</td></tr>
+            <tr><td class="num">124</td><td>D10 통계 분석</td><td>F10.1 방문 데이터 수집</td><td><code>T10.1.1</code> 기본 지표 수집</td><td>—</td></tr>
+            <tr><td class="num">125</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.1 방문 데이터 수집</span></td><td><code>T10.1.2</code> 섹션 단위 측정</td><td>—</td></tr>
+            <tr><td class="num">126</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.1 방문 데이터 수집</span></td><td><code>T10.1.3</code> 기업 방문 식별</td><td>—</td></tr>
+            <tr><td class="num">127</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.1 방문 데이터 수집</span></td><td><code>T10.1.4</code> 표본 부족 처리</td><td>—</td></tr>
+            <tr><td class="num">128</td><td><span class="rep">D10 통계 분석</span></td><td>F10.2 대시보드 구성</td><td><code>T10.2.1</code> 기본 대시보드</td><td>—</td></tr>
+            <tr><td class="num">129</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.2</code> 위젯 추가·배치</td><td>—</td></tr>
+            <tr><td class="num">130</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.3</code> 위젯 설정</td><td>—</td></tr>
+            <tr><td class="num">131</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.4</code> 뷰 저장</td><td>—</td></tr>
+            <tr><td class="num">132</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.5</code> 파생 지표</td><td>—</td></tr>
+            <tr><td class="num">133</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.6</code> 주석</td><td>—</td></tr>
+            <tr><td class="num">134</td><td><span class="rep">D10 통계 분석</span></td><td>F10.3 해석과 개선 제안</td><td><code>T10.3.1</code> 읽기 패턴 해설</td><td>—</td></tr>
+            <tr><td class="num">135</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.3 해석과 개선 제안</span></td><td><code>T10.3.2</code> 실행 가능한 제안</td><td>—</td></tr>
+            <tr><td class="num">136</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.3 해석과 개선 제안</span></td><td><code>T10.3.3</code> 홈 요약 연동</td><td>—</td></tr>
+            <tr><td class="num">137</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.3 해석과 개선 제안</span></td><td><code>T10.3.4</code> 리포트 발송</td><td>—</td></tr>
+            <tr><td class="num">138</td><td>D11 홈 · 내비게이션</td><td>F11.1 홈 대시보드</td><td><code>T11.1.1</code> 추천 공고 제시</td><td>—</td></tr>
+            <tr><td class="num">139</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.1 홈 대시보드</span></td><td><code>T11.1.2</code> 진행 중 작업 이어가기</td><td>—</td></tr>
+            <tr><td class="num">140</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.1 홈 대시보드</span></td><td><code>T11.1.3</code> 포트폴리오 현황</td><td>—</td></tr>
+            <tr><td class="num">141</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.1 홈 대시보드</span></td><td><code>T11.1.4</code> 최초 사용자 안내</td><td>—</td></tr>
+            <tr><td class="num">142</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td>F11.2 전역 내비게이션과 검색</td><td><code>T11.2.1</code> 사이드바 구성</td><td>—</td></tr>
+            <tr><td class="num">143</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.2 전역 내비게이션과 검색</span></td><td><code>T11.2.2</code> 통합 검색</td><td>—</td></tr>
+            <tr><td class="num">144</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.2 전역 내비게이션과 검색</span></td><td><code>T11.2.3</code> 알림</td><td>—</td></tr>
+            <tr><td class="num">145</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.2 전역 내비게이션과 검색</span></td><td><code>T11.2.4</code> 진행 단계 표시</td><td>—</td></tr>
+            <tr><td class="num">146</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.2 전역 내비게이션과 검색</span></td><td><code>T11.2.5</code> 자동 저장 표시</td><td>—</td></tr>
+            <tr><td class="num">147</td><td>D12 계정 · 요금제</td><td>F12.1 사용량과 플랜 게이팅</td><td><code>T12.1.1</code> 사용량 표시</td><td>—</td></tr>
+            <tr><td class="num">148</td><td><span class="rep">D12 계정 · 요금제</span></td><td><span class="rep">F12.1 사용량과 플랜 게이팅</span></td><td><code>T12.1.2</code> 유료 기능 노출</td><td>—</td></tr>
+            <tr><td class="num">149</td><td><span class="rep">D12 계정 · 요금제</span></td><td><span class="rep">F12.1 사용량과 플랜 게이팅</span></td><td><code>T12.1.3</code> 플랜 변경</td><td>—</td></tr>
+            <tr><td class="num">150</td><td><span class="rep">D12 계정 · 요금제</span></td><td><span class="rep">F12.1 사용량과 플랜 게이팅</span></td><td><code>T12.1.4</code> 계정 데이터 관리</td><td>—</td></tr>
           </tbody>
           <caption>이 표의 행 수가 5장(화면 설계)과 6장(시퀀스 다이어그램)의 분량을 그대로 결정한다.</caption>
         </table>
@@ -1823,8 +1822,8 @@ else if (matched &gt; 0)                     partiallyCovered.push(record.id); /
         <table>
           <thead><tr><th>항목</th><th>모델 A</th><th>모델 B</th></tr></thead>
           <tbody>
-            <tr><td>교사 입력</td><td>프로필 요약 + 공고 요약</td><td>요구사항 1건 + 기록 1건</td></tr>
-            <tr><td>교사 출력</td><td>적합도 0–100 + 축별 충족 + 사유</td><td>covered / partial / missing + 사유</td></tr>
+            <tr><td>교사 입력</td><td>프로필 요약 + 공고 요약</td><td>공고 요약 + 기록 1건</td></tr>
+            <tr><td>교사 출력</td><td>적합도 0–100 + 축별 충족 + 사유</td><td>적합도 0–100 + 사유</td></tr>
             <tr><td>목표 쌍 수</td><td class="num">20,000</td><td class="num">20,000</td></tr>
             <tr><td>예상 비용 (Batch API)</td><td class="num">$45 – $90</td><td class="num">$45 – $90</td></tr>
           </tbody>
@@ -1851,9 +1850,9 @@ else if (matched &gt; 0)                     partiallyCovered.push(record.id); /
             <tr><td rowspan="3">A</td><td class="num">70–100</td><td>필수 요건 대부분을 기록으로 증명할 수 있다. 지금 지원할 만하다.</td></tr>
             <tr><td class="num">40–69</td><td>핵심 요건 일부가 비어 있으나 인접 경험으로 메울 여지가 있다.</td></tr>
             <tr><td class="num">0–39</td><td>직무가 다르거나 필수 요건이 대부분 비어 있다.</td></tr>
-            <tr><td rowspan="3">B</td><td><code>covered</code></td><td>기록이 요구사항의 핵심 역량을 직접 증명한다. 채용 담당자에게 근거로 제시할 수 있다.</td></tr>
-            <tr><td><code>partial</code></td><td>인접 역량이거나, 증명은 되지만 깊이 · 기간이 요구 수준에 못 미친다.</td></tr>
-            <tr><td><code>missing</code></td><td>관련이 없다.</td></tr>
+            <tr><td rowspan="3">B</td><td class="num">70–100</td><td>공고의 핵심 요건을 직접 증명한다. 채용 담당자에게 근거로 제시할 수 있다.</td></tr>
+            <tr><td class="num">40–69</td><td>인접 역량이거나, 증명은 되지만 깊이 · 기간이 요구 수준에 못 미친다.</td></tr>
+            <tr><td class="num">0–39</td><td>이 공고와 관련이 없다.</td></tr>
           </tbody>
         </table>
       </div>
@@ -1907,14 +1906,14 @@ else if (matched &gt; 0)                     partiallyCovered.push(record.id); /
       </p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>항목</th><th><code>match-v1</code> (모델 A)</th><th><code>coverage-v1</code> (모델 B)</th></tr></thead>
+          <thead><tr><th>항목</th><th><code>match-v1</code> (모델 A)</th><th><code>record-v1</code> (모델 B)</th></tr></thead>
           <tbody>
-            <tr><td>단위</td><td>(프로필, 공고) 쌍</td><td>(요구사항, 기록) 쌍</td></tr>
+            <tr><td>단위</td><td>(프로필, 공고) 쌍</td><td>(공고, 기록) 쌍</td></tr>
             <tr><td>특징</td><td class="num">22차원</td><td class="num">34차원</td></tr>
-            <tr><td>라벨</td><td>적합도 0–100 (+ 3구간)</td><td>covered / partial / missing</td></tr>
+            <tr><td>라벨</td><td>적합도 0–100 (+ 3구간)</td><td>적합도 0–100 (+ 3구간)</td></tr>
             <tr><td>목표 규모</td><td class="num">20,000행</td><td class="num">20,000행</td></tr>
             <tr><td>사람 검수분</td><td class="num">300행</td><td class="num">300행</td></tr>
-            <tr><td>클래스 균형</td><td class="num">높음 25 · 중간 35 · 낮음 40%</td><td class="num">covered 30 · partial 35 · missing 35%</td></tr>
+            <tr><td>구간 균형</td><td class="num">높음 25 · 중간 35 · 낮음 40%</td><td class="num">높음 30 · 중간 35 · 낮음 35%</td></tr>
           </tbody>
           <caption>낮은 쪽에는 무작위 쌍을 섞는다. 어려운 음성 표본만 사용하면 쉬운 음성의 정확도가 떨어진다.</caption>
         </table>
@@ -1977,14 +1976,14 @@ else if (matched &gt; 0)                     partiallyCovered.push(record.id); /
   <text class="s" x="272" y="63" text-anchor="middle">프로필 × 공고</text>
   <rect class="bx" x="188" y="82" width="168" height="46" rx="11"/>
   <text class="t" x="272" y="102" text-anchor="middle">Claude 교사 B</text>
-  <text class="s" x="272" y="119" text-anchor="middle">요구사항 × 기록</text>
+  <text class="s" x="272" y="119" text-anchor="middle">공고 × 기록</text>
   <line class="fl" x1="156" y1="77" x2="184" y2="77" marker-end="url(#p4)"/>
 
   <text class="l" x="392" y="14">데이터세트</text>
   <rect class="bxq" x="392" y="26" width="150" height="46" rx="11"/>
   <text class="t" x="467" y="53" text-anchor="middle">match-v1</text>
   <rect class="bxq" x="392" y="82" width="150" height="46" rx="11"/>
-  <text class="t" x="467" y="109" text-anchor="middle">coverage-v1</text>
+  <text class="t" x="467" y="109" text-anchor="middle">record-v1</text>
   <line class="fl" x1="360" y1="49" x2="388" y2="49" marker-end="url(#p4)"/>
   <line class="fl" x1="360" y1="105" x2="388" y2="105" marker-end="url(#p4)"/>
 
@@ -1993,8 +1992,8 @@ else if (matched &gt; 0)                     partiallyCovered.push(record.id); /
   <text class="tb" x="653" y="47" text-anchor="middle">모델 A 랭커</text>
   <text class="s" x="653" y="64" text-anchor="middle">lambdarank</text>
   <rect class="bx" x="578" y="82" width="150" height="46" rx="11"/>
-  <text class="tb" x="653" y="103" text-anchor="middle">모델 B 분류기</text>
-  <text class="s" x="653" y="120" text-anchor="middle">multiclass</text>
+  <text class="tb" x="653" y="103" text-anchor="middle">모델 B 랭커</text>
+  <text class="s" x="653" y="120" text-anchor="middle">lambdarank</text>
   <line class="fl" x1="546" y1="49" x2="574" y2="49" marker-end="url(#p4)"/>
   <line class="fl" x1="546" y1="105" x2="574" y2="105" marker-end="url(#p4)"/>
 
@@ -2042,10 +2041,10 @@ else if (matched &gt; 0)                     partiallyCovered.push(record.id); /
       </div>
 
       <p>
-        그림 4.1을 보면 교사 라벨링은 원천 데이터에서 프로필 × 공고 쌍과 요구사항 × 기록 쌍을
+        그림 4.1을 보면 교사 라벨링은 원천 데이터에서 프로필 × 공고 쌍과 공고 × 기록 쌍을
         만들어 Claude에 판정을 요청하고, 그 결과를 <code>match-v1</code>과
-        <code>coverage-v1</code> 두 데이터세트로 적재한다. 두 데이터세트는 각각 모델 A 랭커와
-        모델 B 분류기의 학습에 사용되며, 학습이 끝나면 검증 · 승인 단계에서 ROC · NDCG와
+        <code>record-v1</code> 두 데이터세트로 적재한다. 두 데이터세트는 각각 모델 A 랭커와
+        모델 B 랭커의 학습에 사용되며, 학습이 끝나면 검증 · 승인 단계에서 ROC · NDCG와
         baseline 대조를 거쳐 배포된다. 사람 검수 300쌍으로 산출한 교사–사람 일치도 κ가 0.6에
         못 미치면 학습으로 넘어가지 않고 교사 프롬프트를 수정한다.
       </p>
@@ -2110,9 +2109,10 @@ else if (matched &gt; 0)                     partiallyCovered.push(record.id); /
         따라서 <strong>그래디언트 부스팅(LightGBM)</strong>을 선정하였다.
       </p>
       <p>
-        모델 A는 순위를 학습하여야 하므로 <code>lambdarank</code> 목적함수를, 모델 B는 세
-        분류를 판정하여야 하므로 <code>multiclass</code> 목적함수를 사용한다. 두 모델이 같은
-        알고리즘을 쓰므로 학습 코드와 특징 파이프라인을 공유할 수 있다.
+        두 모델 모두 순위를 학습하여야 하므로 <code>lambdarank</code> 목적함수를 사용한다.
+        그룹 단위만 다르다 — 모델 A는 프로필 1명의 공고 묶음을, 모델 B는 공고 1건의 기록
+        묶음을 한 그룹으로 삼는다. 두 모델이 같은 알고리즘을 쓰므로 학습 코드와 특징
+        파이프라인을 공유할 수 있다.
       </p>
 
       <div class="adr">
@@ -2144,9 +2144,9 @@ else if (matched &gt; 0)                     partiallyCovered.push(record.id); /
         <div class="row">
           <div class="k">결정</div>
           <div class="v">
-            두 모델 모두 <strong>LightGBM</strong>을 사용하되 목적함수를 나눈다. 모델 A는
-            <code>lambdarank</code>(평가 NDCG@10)를, 모델 B는 <code>multiclass</code>(평가
-            multi_logloss)를 사용한다. 로지스틱 회귀는 각각의 보조 baseline으로 함께 학습한다.
+            두 모델 모두 <strong>LightGBM</strong> 랭커를 사용한다. 목적함수는
+            <code>lambdarank</code>(평가 NDCG@10)로 같고, 그룹 단위만 다르다. 로지스틱
+            회귀는 각각의 보조 baseline으로 함께 학습한다.
           </div>
         </div>
         <div class="row">
@@ -2188,10 +2188,10 @@ else if (matched &gt; 0)                     partiallyCovered.push(record.id); /
         <table>
           <thead><tr><th>파라미터</th><th class="num">모델 A</th><th class="num">모델 B</th><th>선정 근거</th></tr></thead>
           <tbody>
-            <tr><td><code>objective</code></td><td class="num">lambdarank</td><td class="num">multiclass</td><td>A는 순위, B는 3분류</td></tr>
-            <tr><td><code>metric</code></td><td class="num">ndcg@5,10</td><td class="num">multi_logloss</td><td>B는 확률 보정까지 보려면 정확도보다 로그손실</td></tr>
-            <tr><td><code>label_gain</code></td><td class="num">[0, 1, 3]</td><td class="num">—</td><td>높음의 이득을 크게</td></tr>
-            <tr><td><code>class_weight</code></td><td class="num">—</td><td class="num">balanced</td><td>층화 후에도 남는 불균형 보정</td></tr>
+            <tr><td><code>objective</code></td><td class="num">lambdarank</td><td class="num">lambdarank</td><td>둘 다 순위가 제품이 쓰는 값</td></tr>
+            <tr><td><code>metric</code></td><td class="num">ndcg@5,10</td><td class="num">ndcg@5,10</td><td>B는 상위 여덟 건을 재료 고르기가 씀</td></tr>
+            <tr><td><code>label_gain</code></td><td class="num">[0, 1, 3]</td><td class="num">[0, 1, 3]</td><td>높음의 이득을 크게</td></tr>
+            <tr><td>그룹 단위</td><td class="num">프로필 1명</td><td class="num">공고 1건</td><td>한 묶음 안에서 줄을 세운다</td></tr>
             <tr><td><code>num_leaves</code></td><td class="num">31</td><td class="num">31</td><td>20,000행에서 기본값 이상은 과적합</td></tr>
             <tr><td><code>max_depth</code></td><td class="num">6</td><td class="num">6</td><td>상호작용 6단계까지</td></tr>
             <tr><td><code>learning_rate</code></td><td class="num">0.05</td><td class="num">0.05</td><td>낮추고 트리 수로 보완</td></tr>
@@ -2246,7 +2246,7 @@ else if (matched &gt; 0)                     partiallyCovered.push(record.id); /
           <thead><tr><th>항목</th><th>규칙</th></tr></thead>
           <tbody>
             <tr><td>버전 형식</td><td><code>match-{데이터세트}-{일련번호}</code> · <code>coverage-{데이터세트}-{일련번호}</code></td></tr>
-            <tr><td>예</td><td><code>match-v1-003</code> · <code>coverage-v1-002</code></td></tr>
+            <tr><td>예</td><td><code>match-v1-003</code> · <code>record-v1-002</code></td></tr>
             <tr><td>배포 단위</td><td>모델별로 한 번에 하나의 버전만 활성</td></tr>
             <tr><td>독립성</td><td>A와 B는 따로 배포하고 따로 롤백한다</td></tr>
             <tr><td>보관</td><td>각 최근 5개 버전</td></tr>
@@ -6244,17 +6244,16 @@ POST /v1/assets/ast_77/signed-url</code></pre>
 
       <figure class="code">
         <div class="bar">
-          <span>POST /inference/coverage — 응답</span>
+          <span>POST /inference/record-rank — 응답</span>
           <button class="copy" type="button">COPY</button>
         </div>
         <pre><code>{
-  "modelVersion": "coverage-v1-003",
+  "modelVersion": "record-v1-003",
   "results": [
     {
-      "pairId": "p1",
-      "label": "covered",
-      "confidence": 0.86,
-      "probabilities": { "missing": 0.03, "partial": 0.11, "covered": 0.86 },
+      "recordId": "r1",
+      "score": 96,
+      "rank": 1,
       "topFeatures": ["max_sent_cos", "tech_token_recall", "duration_months"]
     }
   ]
@@ -7335,7 +7334,6 @@ POST /v1/assets/ast_77/signed-url</code></pre>
             <tr><td class="num">3</td><td><code>job_posting_id</code></td><td>UUID</td><td class="num">O</td><td class="num">—</td><td><code>job_posting</code></td><td>채용 공고 참조</td></tr>
             <tr><td class="num">4</td><td><code>total</code></td><td>NUMERIC</td><td class="num">O</td><td class="num">—</td><td>—</td><td>—</td></tr>
             <tr><td class="num">5</td><td><code>axes</code></td><td>JSONB</td><td class="num">O</td><td class="num">—</td><td>—</td><td>—</td></tr>
-            <tr><td class="num">6</td><td><code>reason_text</code></td><td>TEXT</td><td class="num">O</td><td class="num">—</td><td>—</td><td>—</td></tr>
             <tr><td class="num">7</td><td><code>computed_at</code></td><td>TIMESTAMPTZ</td><td class="num">O</td><td class="num">—</td><td>—</td><td>기본값 now()</td></tr>
             <tr><td class="num">8</td><td><code>next_action</code></td><td>TEXT</td><td class="num">—</td><td class="num">—</td><td>—</td><td>—</td></tr>
           </tbody>
@@ -8445,7 +8443,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
           <tbody>
             <tr><td>근거 없는 수치 차단율</td><td class="num">%</td><td class="num">100</td><td>팀 자체시험</td></tr>
             <tr><td>공고 추천 순위 품질 (모델 A · NDCG@10)</td><td class="num">—</td><td class="num">≥ 0.80</td><td>팀 자체시험</td></tr>
-            <tr><td>요건 충족 판정 정확도 (모델 B · 매크로 F1)</td><td class="num">%</td><td class="num">≥ 70</td><td>팀 자체시험</td></tr>
+            <tr><td>기록 추천 정확도 (모델 B · Precision@8)</td><td class="num">%</td><td class="num">≥ 75</td><td>팀 자체시험</td></tr>
             <tr><td>포트폴리오 생성 성공률</td><td class="num">%</td><td class="num">≥ 90</td><td>팀 자체시험</td></tr>
             <tr><td>대표 read 경로 p95</td><td class="num">ms</td><td class="num">≤ 300</td><td>자동화 시험</td></tr>
             <tr><td>대표 write 경로 p95</td><td class="num">ms</td><td class="num">≤ 300</td><td>자동화 시험</td></tr>
@@ -8492,9 +8490,9 @@ POST /v1/assets/ast_77/signed-url</code></pre>
       <div class="table-wrap">
         <table>
           <tbody>
-            <tr><th style="width:104px">시험내용</th><td>모델 B가 (공고 요구사항, 사용자 기록) 쌍을 covered · partial · missing 가운데 어느 것으로 판정하는지가 사람의 판단과 일치하는지 측정한다. 세 클래스의 표본 수가 고르지 않으므로 정확도 대신 매크로 F1을 사용하며, 0.70 이상이면 통과로 간주한다.</td></tr>
+            <tr><th style="width:104px">시험내용</th><td>모델 B가 (채용 공고, 사용자 기록) 쌍에 매긴 적합도 순서가 사람의 판단과 일치하는지 측정한다. 순서를 재는 것이므로 NDCG@10을 주 지표로 삼으며, 0.80 이상이면 통과로 간주한다.</td></tr>
             <tr><th>시험환경</th><td><ol style="margin:0; padding-left:18px"><li>test 분할 3,000쌍 (공고 단위로 분리된 것)</li><li>사람이 검수한 300쌍</li><li>학습이 완료된 모델 B</li><li>규칙 baseline — <code>coverage.ts</code>의 <code>calculateRequirementCoverage()</code></li><li>혼동 행렬과 F1을 산출하는 스크립트</li></ol></td></tr>
-            <tr><th>시험절차</th><td><ol style="margin:0; padding-left:18px"><li>test 분할의 모든 쌍을 모델 B로 판정한다.</li><li>클래스별 정밀도와 재현율을 계산한다.</li><li>세 클래스의 F1을 평균하여 매크로 F1을 구한다. 0.70 이상이면 통과이다.</li><li>사람이 검수한 300쌍에 대하여 같은 값을 따로 산출한다.</li><li><code>covered</code>를 <code>missing</code>으로 판정한 건수를 세고, 전체의 2%를 넘으면 목표치와 무관하게 배포하지 않는다.</li></ol></td></tr>
+            <tr><th>시험절차</th><td><ol style="margin:0; padding-left:18px"><li>test 분할의 모든 쌍을 모델 B로 정렬한다.</li><li>NDCG@10과 상위 여덟 건의 정밀도를 계산한다.</li><li>NDCG@10이 0.80 이상이면 통과이다.</li><li>사람이 검수한 300쌍에 대하여 같은 값을 따로 산출한다.</li><li><code>covered</code>를 <code>missing</code>으로 판정한 건수를 세고, 전체의 2%를 넘으면 목표치와 무관하게 배포하지 않는다.</li></ol></td></tr>
           </tbody>
         </table>
       </div>
@@ -8516,7 +8514,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
       <h3 data-page="197">9.2 AI학습 성능 (ROC)</h3>
       <p>
         개발할 AI학습의 성능을 측정하기 위해 두 모델을 각각 ROC 곡선으로 평가한다. 재는 것이
-        서로 다르므로 지표도 다르다. 모델 A는 순위를, 모델 B는 3분류를 판정한다.
+        서로 다르므로 지표도 다르다. 둘 다 순위를 재되 줄 세우는 대상이 다르다.
       </p>
 
       <div class="table-wrap">
@@ -8526,16 +8524,16 @@ POST /v1/assets/ast_77/signed-url</code></pre>
             <tr><td rowspan="3">A</td><td>NDCG@10</td><td>상위 10건의 순서가 교사 판단과 얼마나 맞는가</td></tr>
             <tr><td>MAP</td><td>전체 순위 품질</td></tr>
             <tr><td>AUC (높음 vs 나머지)</td><td>이진 판정으로서의 분별력 — 양식의 ROC를 위해</td></tr>
-            <tr><td rowspan="3">B</td><td>covered vs rest AUC</td><td>OvR 3곡선 중 가장 중요한 클래스</td></tr>
-            <tr><td>partial · missing vs rest AUC</td><td>나머지 두 곡선</td></tr>
-            <tr><td>매크로 F1</td><td>클래스 불균형을 반영한 종합</td></tr>
+            <tr><td rowspan="3">B</td><td>NDCG@10</td><td>상위 10건의 순서가 교사 판단과 얼마나 맞는가</td></tr>
+            <tr><td>Precision@8</td><td>재료 고르기가 미리 체크하는 여덟 건의 정확도</td></tr>
+            <tr><td>AUC (높음 vs 나머지)</td><td>이진 판정으로서의 분별력 — 양식의 ROC를 위해</td></tr>
           </tbody>
         </table>
       </div>
 
       <figure class="fig">
-        <div class="plate"><span class="ph">그림 9.1 · 모델 A ROC · 9.2 · 모델 B OvR ROC 3곡선 · 9.3 · 혼동 행렬</span></div>
-        <figcaption>그림 9.1 모델 A의 ROC · 그림 9.2 모델 B의 OvR ROC 3곡선 · 그림 9.3 혼동 행렬</figcaption>
+        <div class="plate"><span class="ph">그림 9.1 · 모델 A ROC · 9.2 · 모델 B ROC</span></div>
+        <figcaption>그림 9.1 모델 A의 ROC · 그림 9.2 모델 B의 ROC</figcaption>
       </figure>
 
       <h4 data-page="198">■ 세 축으로 측정한다 — 증류의 함정</h4>
@@ -8570,11 +8568,11 @@ POST /v1/assets/ast_77/signed-url</code></pre>
             <tr><td>AUC (높음 vs 나머지)</td><td class="num">≥ 0.85</td><td>이진 분별력</td></tr>
             <tr><td>학생↔사람 일치도</td><td class="num">규칙 대비 +20%</td><td>제품이 나아졌다는 증거</td></tr>
             <tr><td>서빙 지연 (공고 200건)</td><td class="num">≤ 50ms</td><td>목록 렌더 예산</td></tr>
-            <tr><td rowspan="5"><strong>B</strong></td><td>매크로 AUC (학생↔교사)</td><td class="num">≥ 0.85</td><td>3분류 실용 하한</td></tr>
-            <tr><td>covered vs rest AUC</td><td class="num">≥ 0.88</td><td>가장 중요한 클래스</td></tr>
-            <tr><td>매크로 F1 (학생↔사람)</td><td class="num">≥ 0.70</td><td>사람 기준 실용성</td></tr>
-            <tr><td><strong>covered → missing 오분류율</strong></td><td class="num">≤ 2%</td><td>아래 설명</td></tr>
-            <tr><td>baseline 대비 매크로 F1</td><td class="num">상대 +15%</td><td>복잡한 모델을 쓸 이유</td></tr>
+            <tr><td rowspan="5"><strong>B</strong></td><td>NDCG@10 (학생↔교사)</td><td class="num">≥ 0.80</td><td>증류 성공의 하한</td></tr>
+            <tr><td>AUC (높음 vs 나머지)</td><td class="num">≥ 0.85</td><td>이진 분별력</td></tr>
+            <tr><td>Precision@8 (학생↔사람)</td><td class="num">≥ 0.75</td><td>미리 체크한 여덟 건의 실용성</td></tr>
+            <tr><td><strong>높음을 낮음으로 떨어뜨린 비율</strong></td><td class="num">≤ 2%</td><td>아래 설명</td></tr>
+            <tr><td>baseline 대비 NDCG@10</td><td class="num">상대 +15%</td><td>복잡한 모델을 쓸 이유</td></tr>
             <tr><td><strong>공통</strong></td><td>교사 ↔ 사람 일치도 (κ)</td><td class="num">≥ 0.6</td><td>미달이면 배포 이전에 학습 자체를 막는다</td></tr>
           </tbody>
           <caption>κ가 0.6 미만이면 <strong>모델을 배포하지 않고 교사 프롬프트부터 고친다.</strong> 교사가 사람과 어긋난 상태에서는 학생을 아무리 잘 학습시켜도 제품이 나아지지 않기 때문이다.</caption>
@@ -8586,16 +8584,15 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <table>
           <thead><tr><th>오분류</th><th>사용자에게 일어나는 일</th><th>심각도</th></tr></thead>
           <tbody>
-            <tr><td>covered → partial</td><td>근거 있는 기록이 「부분 충족」으로 표시된다.</td><td>낮음</td></tr>
-            <tr><td>partial → covered</td><td>약한 근거가 강조된다.</td><td>중간</td></tr>
-            <tr><td><strong>covered → missing</strong></td><td><strong>실제로 갖춘 역량이 「없음」으로 표시된다.</strong></td><td>높음</td></tr>
-            <tr><td>missing → covered</td><td>없는 역량을 있다고 보여줍니다.</td><td>높음</td></tr>
+            <tr><td>상위 안에서 순서가 뒤바뀜</td><td>여덟 건에는 그대로 들어간다.</td><td>낮음</td></tr>
+            <tr><td>중간 구간이 위로 올라감</td><td>약한 근거가 강조된다.</td><td>중간</td></tr>
+            <tr><td><strong>높음이 하위로 떨어짐</strong></td><td><strong>실제로 갖춘 강점이 목록 밖으로 밀린다.</strong></td><td>높음</td></tr>
           </tbody>
         </table>
       </div>
 
       <blockquote>
-        covered → missing은 사용자가 실제로 가진 강점을 포트폴리오에서 빼게 만듭니다.
+        높은 기록이 하위로 밀리면 사용자가 실제로 가진 강점을 포트폴리오에서 빼게 만듭니다.
         그리고 사용자는 그것이 빠졌다는 사실조차 모릅니다.
         <cite>전체 정확도와 별개로 이 칸에만 2% 상한을 두는 이유</cite>
       </blockquote>
@@ -8608,9 +8605,9 @@ POST /v1/assets/ast_77/signed-url</code></pre>
             <tr><td rowspan="3">A</td><td>NDCG@10</td><td class="num">—</td><td class="num">—</td><td class="num">≥ 0.80</td><td><span class="badge hold">측정 전</span></td></tr>
             <tr><td>AUC (높음 vs 나머지)</td><td class="num">—</td><td class="num">—</td><td class="num">≥ 0.85</td><td><span class="badge hold">측정 전</span></td></tr>
             <tr><td>서빙 지연 (200건)</td><td class="num">—</td><td class="num">—</td><td class="num">≤ 50ms</td><td><span class="badge hold">측정 전</span></td></tr>
-            <tr><td rowspan="3">B</td><td>매크로 AUC</td><td class="num">—</td><td class="num">—</td><td class="num">≥ 0.85</td><td><span class="badge hold">측정 전</span></td></tr>
-            <tr><td>매크로 F1 (사람 기준)</td><td class="num">—</td><td class="num">—</td><td class="num">≥ 0.70</td><td><span class="badge hold">측정 전</span></td></tr>
-            <tr><td>covered → missing</td><td class="num">—</td><td class="num">—</td><td class="num">≤ 2%</td><td><span class="badge hold">측정 전</span></td></tr>
+            <tr><td rowspan="3">B</td><td>NDCG@10</td><td class="num">—</td><td class="num">—</td><td class="num">≥ 0.80</td><td><span class="badge hold">측정 전</span></td></tr>
+            <tr><td>Precision@8 (사람 기준)</td><td class="num">—</td><td class="num">—</td><td class="num">≥ 0.75</td><td><span class="badge hold">측정 전</span></td></tr>
+            <tr><td>높음이 하위로 떨어짐</td><td class="num">—</td><td class="num">—</td><td class="num">≤ 2%</td><td><span class="badge hold">측정 전</span></td></tr>
             <tr><td>공통</td><td>교사 ↔ 사람 κ</td><td class="num">—</td><td class="num">—</td><td class="num">≥ 0.6</td><td><span class="badge hold">측정 전</span></td></tr>
           </tbody>
           <caption>데이터세트 구축과 학습이 실제로 돌아야 채워집니다.</caption>
@@ -8760,8 +8757,8 @@ pnpm dev:backend</code></pre>
             <tr><td>파라미터 · JSON 필드</td><td>camelCase</td><td><code>:portfolioId</code> · <code>usageRemaining</code></td></tr>
             <tr><td>오류 코드</td><td>UPPER_SNAKE_CASE</td><td><code>PRECONDITION_FAILED</code></td></tr>
             <tr><td rowspan="3">Python</td><td>변수 · 함수 · 특징</td><td>snake_case</td><td><code>max_sent_cos</code></td></tr>
-            <tr><td>데이터세트 버전</td><td><code>coverage-v&lt;번호&gt;</code></td><td><code>coverage-v1</code></td></tr>
-            <tr><td>모델 버전</td><td><code>coverage-v&lt;세트&gt;-&lt;일련&gt;</code></td><td><code>coverage-v1-003</code></td></tr>
+            <tr><td>데이터세트 버전</td><td><code>record-v&lt;번호&gt;</code></td><td><code>record-v1</code></td></tr>
+            <tr><td>모델 버전</td><td><code>record-v&lt;세트&gt;-&lt;일련&gt;</code></td><td><code>record-v1-003</code></td></tr>
           </tbody>
           <caption>TypeScript는 camelCase를, 데이터베이스는 snake_case를 사용하며 경계에서 변환한다. 특징 이름은 <code>feature_spec.json</code>에 그대로 실리므로, 이름을 바꾸는 일은 데이터세트 버전을 올리는 일과 같다.</caption>
         </table>

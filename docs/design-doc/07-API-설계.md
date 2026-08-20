@@ -290,7 +290,7 @@ GET /v1/job-analyses/3f2a1c8e-0b47-4d9a-91c2-6e5f0a7b1d34
       "coverage": "covered",
       "confidence": 0.86,
       "coveredBy": ["rec_a91f"],
-      "decidedBy": "model:coverage-v1-003"
+      "decidedBy": "llm:job_analysis"
     }
   ]
 }
@@ -349,13 +349,13 @@ AI학습서버는 별도로 실행되는 서버다. 서비스 API와 포트·프
 | 포트 | 4100 |
 | 인증 | 내부 네트워크 + 서비스 토큰 |
 | 외부 공개 | 하지 않음 |
-| 모델 종류 | `match`(모델 A) · `coverage`(모델 B) — 경로 파라미터 또는 본문의 `kind`로 구분 |
+| 모델 종류 | `match`(모델 A) · `record`(모델 B) — 경로 파라미터 또는 본문의 `kind`로 구분 |
 
 ### API 정의
 
 | Method | URI | Description |
 | --- | --- | --- |
-| GET | `/training/datasets` | 데이터세트 목록 조회 (`?kind=match\|coverage`) |
+| GET | `/training/datasets` | 데이터세트 목록 조회 (`?kind=match\|record`) |
 | POST | `/training/datasets` | 데이터세트 생성 — 쌍 생성 · 교사 라벨링 · 특징 추출 |
 | GET | `/training/datasets/:version` | 데이터세트 상세(행 수 · 분포 · 교사 모델 · κ) |
 | DELETE | `/training/datasets/:version` | 데이터세트 삭제 |
@@ -378,7 +378,7 @@ AI학습서버는 별도로 실행되는 서버다. 서비스 API와 포트·프
 | PUT | `/training/teacher-prompts/:kind` | 교사 프롬프트 수정 |
 | GET | `/training/failures` | 학습 장애기록 조회 |
 | POST | `/inference/match` | **모델 A** — 공고 적합도 판정 |
-| POST | `/inference/coverage` | **모델 B** — 요건 충족 판정 |
+| POST | `/inference/record-rank` | **모델 B** — 공고에 맞는 기록 정렬 |
 | GET | `/health/live` | 생존 확인 |
 | GET | `/health/ready` | 준비 확인(모델 로드 여부) |
 
@@ -445,54 +445,50 @@ API 서버  ──▶  공고 적합도 판정 요청  ──▶ (IN)   AI학습
 `usable`이 false면 호출자가 `match-score.ts` 규칙으로 되돌아갑니다. 기록이 3건 미만인
 신규 사용자는 학습 분포 밖이라 모델이 근거 없는 순위를 냅니다.
 
-### POST /inference/coverage — 모델 B
+### POST /inference/record-rank — 모델 B
 
 **Parameter**
 
 | 속성 | IN | OUT | Type | Description |
 | --- | --- | --- | --- | --- |
-| `pairs` | O | | Array | (요구사항, 기록) 쌍 목록 |
-| `pairs[].requirement` | O | | Object | 라벨 · 인용문 · 축(axis) · 종류(kind) |
-| `pairs[].record` | O | | Object | 제목 · 본문 · 카테고리 · 속성 |
-| `modelVersion` | | O | String | 판정에 쓴 모델 버전 |
-| `results[].label` | | O | String | covered / partial / missing |
-| `results[].confidence` | | O | float | 최대 클래스 확률 |
-| `results[].probabilities` | | O | Object | 클래스별 확률 |
-| `results[].topFeatures` | | O | Array | 판정에 기여한 특징 상위 3개 |
+| `posting` | O | | Object | 공고 요약 · 요구사항 목록 |
+| `records` | O | | Array | 정렬 대상 기록 목록 |
+| `records[]` | O | | Object | 제목 · 본문 · 카테고리 · 속성 |
+| `modelVersion` | | O | String | 정렬에 쓴 모델 버전 |
+| `results[].score` | | O | float | 적합도 0–100 |
+| `results[].rank` | | O | int | 이 공고 안에서의 순위 |
+| `results[].topFeatures` | | O | Array | 적합도에 기여한 특징 상위 3개 |
 
 **실제 전송내용 (JSON)**
 
 ```json
 전송방향 : IN
 {
-  "pairs": [
+  "posting": {
+    "summary": "React 기반 웹 프론트엔드 개발자를 찾습니다. ...",
+    "requirements": [
+      { "label": "React 기반 프론트엔드 개발 경험", "axis": "technology", "kind": "must" }
+    ]
+  },
+  "records": [
     {
-      "pairId": "p1",
-      "requirement": {
-        "label": "React 기반 프론트엔드 개발 경험",
-        "quote": "React를 사용한 웹 프론트엔드 개발 경험 3년 이상",
-        "axis": "technology",
-        "kind": "must"
-      },
-      "record": {
-        "title": "사내 관리자 콘솔 재구축",
-        "body": "React와 TypeScript로 관리자 콘솔을 다시 만들었다. ...",
-        "category": "프로젝트",
-        "properties": { "durationMonths": 8, "stack": ["react", "typescript"] }
-      }
+      "recordId": "r1",
+      "title": "사내 관리자 콘솔 재구축",
+      "body": "React와 TypeScript로 관리자 콘솔을 다시 만들었다. ...",
+      "category": "프로젝트",
+      "properties": { "durationMonths": 8, "stack": ["react", "typescript"] }
     }
   ]
 }
 
 전송방향 : OUT
 {
-  "modelVersion": "coverage-v1-002",
+  "modelVersion": "record-v1-002",
   "results": [
     {
-      "pairId": "p1",
-      "label": "covered",
-      "confidence": 0.86,
-      "probabilities": { "missing": 0.03, "partial": 0.11, "covered": 0.86 },
+      "recordId": "r1",
+      "score": 96,
+      "rank": 1,
       "topFeatures": ["max_sent_cos", "tech_token_recall", "duration_months"]
     }
   ]
@@ -508,9 +504,9 @@ API 서버  ──▶  공고 적합도 판정 요청  ──▶ (IN)   AI학습
 
 | 속성 | IN | OUT | Type | Description |
 | --- | --- | --- | --- | --- |
-| `kind` | O | | String | `match` 또는 `coverage` |
+| `kind` | O | | String | `match` 또는 `record` |
 | `datasetVersion` | O | | String | 학습에 쓸 데이터세트 |
-| `algorithm` | O | | String | `lightgbm_rank` / `lightgbm_multiclass` / `logistic` |
+| `algorithm` | O | | String | `lightgbm_rank` / `logistic` |
 | `parameterOverrides` | | | Object | 4.3 기본값 덮어쓰기 |
 | `runId` | | O | uuid | 학습 실행 식별자 |
 | `status` | | O | String | queued |
@@ -525,12 +521,12 @@ API 서버  ──▶  공고 적합도 판정 요청  ──▶ (IN)   AI학습
 | 속성 | IN | OUT | Type | Description |
 | --- | --- | --- | --- | --- |
 | `id` | O | | uuid | 학습 실행 식별자 |
-| `kind` | | O | String | `match` / `coverage` |
+| `kind` | | O | String | `match` / `record` |
 | `ndcg` | | O | Object | 모델 A 전용 — `@5` · `@10` |
-| `macroF1` | | O | float | 매크로 F1 |
-| `perClass` | | O | Object | 클래스별 정밀도·재현율·F1 (모델 B) |
-| `rocPoints` | | O | Array | ROC 좌표 (A: 1곡선, B: OvR 3곡선) |
-| `auc` | | O | Object | 곡선별 AUC와 매크로 AUC |
+| `precisionAt8` | | O | float | 상위 여덟 건의 정밀도 (모델 B) |
+| `ndcg` | | O | Object | NDCG@5 · NDCG@10 (두 모델 공통) |
+| `rocPoints` | | O | Array | ROC 좌표 (높음 vs 나머지, 모델별 1곡선) |
+| `auc` | | O | Object | 높음 vs 나머지 AUC |
 | `baseline` | | O | Object | 규칙 기반 동일 지표 |
 | `teacherAgreement` | | O | Object | 교사↔사람 κ |
 | `studentHuman` | | O | Object | 학생↔사람 일치도 |

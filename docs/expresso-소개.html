@@ -8,9 +8,10 @@
 <!--
   Expresso — 우리가 만들고 있는 것 (팀 내부 공유)
   ─────────────────────────────────────────────────────────────
-  docs/templates/expresso-deck.html 을 복사해 만들었습니다. 스물다섯 장이고
-  네 절로 나뉩니다 — 무엇을 만드나 · 어떻게 도나 · 무엇으로 지었나 ·
-  지금 어디쯤.
+  docs/templates/expresso-deck.html 을 복사해 만들었습니다. 서른 장이고
+  세 절로 나뉩니다 — 무엇을 만드나 · 어떻게 도나 · 무엇으로 지었나.
+  마지막 절의 끝 세 장(27–29)은 AI 구성입니다 — 두 갈래 · 프론티어 LLM ·
+  독자 모델.
 
   숫자의 출처는 전부 저장소입니다(2026-08-14에 직접 셈). 문서에서
   가져온 것은 슬라이드마다 어느 문서인지 적어 두었습니다.
@@ -358,16 +359,6 @@ blockquote cite {
   display: block; margin-top: 26px; font-style: normal;
   font-family: var(--ex-font-mono); font-size: 16px; letter-spacing: .12em; color: var(--ex-slate-400);
 }
-
-/* DO / DON'T */
-.dd { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
-.dd > div { background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 18px; padding: 30px 32px; }
-.dd .t { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; font-family: var(--ex-font-mono); font-size: 14px; letter-spacing: .12em; }
-.dd .t .m { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; }
-.dd .do .t { color: var(--ex-success-text); } .dd .do .t .m { background: var(--ex-success-surface); }
-.dd .dont .t { color: var(--ex-danger-text); } .dd .dont .t .m { background: var(--ex-danger-surface); }
-.dd p { font-size: 23px; line-height: 1.7; color: var(--ex-slate-700); word-break: keep-all; }
-.dd .dont p { color: var(--ex-slate-400); }
 
 /* 브랜드 · 표지 */
 /* 레일의 라틴 크롬 규칙(대문자 · 자간)이 워드마크까지 먹지 않게 끊습니다. */
@@ -860,32 +851,27 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="오늘 이야기할 것" data-kind="AGENDA">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">AGENDA</span><span class="end count">02 / 26</span></div>
+    <div class="rail in in-fade dl-1"><span class="now">AGENDA</span><span class="end count">02 / 31</span></div>
     <div class="head in dl-2">
       <h2>목차</h2>
       <p class="sub">Table of Contents</p>
     </div>
     <div class="body">
-      <div class="cols c-4" style="align-items: start; align-content: center">
+      <div class="cols c-3" style="align-items: start; align-content: center">
         <div class="in dl-3">
           <div class="bignum">01</div>
           <h3 style="font-size: 27px; font-weight: 600; margin-top: 24px; letter-spacing: -.02em">어떤 서비스인가</h3>
-          <p style="font-size: 19px; line-height: 1.7; color: var(--ex-slate-500); margin-top: 10px">어떤 문제를 푸는지</p>
+          <p style="font-size: 19px; line-height: 1.7; color: var(--ex-slate-500); margin-top: 10px"><br></p>
         </div>
         <div class="in dl-4">
           <div class="bignum" style="color: var(--ex-slate-300)">02</div>
           <h3 style="font-size: 27px; font-weight: 600; margin-top: 24px; letter-spacing: -.02em">어떻게 동작하나</h3>
-          <p style="font-size: 19px; line-height: 1.7; color: var(--ex-slate-500); margin-top: 10px">생성 요청이 어떻게 처리되는지</p>
+          <p style="font-size: 19px; line-height: 1.7; color: var(--ex-slate-500); margin-top: 10px"><br></p>
         </div>
         <div class="in dl-5">
           <div class="bignum" style="color: var(--ex-slate-300)">03</div>
           <h3 style="font-size: 27px; font-weight: 600; margin-top: 24px; letter-spacing: -.02em">무엇으로 만들었나</h3>
-          <p style="font-size: 19px; line-height: 1.7; color: var(--ex-slate-500); margin-top: 10px">코드를 어떻게 나눠 두었는지</p>
-        </div>
-        <div class="in dl-6">
-          <div class="bignum" style="color: var(--ex-slate-300)">04</div>
-          <h3 style="font-size: 27px; font-weight: 600; margin-top: 24px; letter-spacing: -.02em">어디까지 진행됐나</h3>
-          <p style="font-size: 19px; line-height: 1.7; color: var(--ex-slate-500); margin-top: 10px">지금 어디까지 왔는지</p>
+          <p style="font-size: 19px; line-height: 1.7; color: var(--ex-slate-500); margin-top: 10px"><br></p>
         </div>
       </div>
     </div>
@@ -906,7 +892,7 @@ svg [data-morph] { transform-box: fill-box; }
     <rect class="in in-wipe dl-2" style="transform-box: view-box; transform-origin: 0px 1078px" y="1076" width="1920" height="4" fill="var(--ex-espresso)"></rect>
   </svg>
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">SECTION</span><span class="end">01 / 04</span></div>
+    <div class="rail in in-fade dl-1"><span class="now">SECTION</span><span class="end">01 / 03</span></div>
     <div class="body mid" style="max-width: 1100px">
       <div class="kicker in dl-2">WHAT WE BUILD</div>
       <h2 class="in dl-3" style="font-size: 76px">어떤 서비스인가</h2>
@@ -949,7 +935,7 @@ svg [data-morph] { transform-box: fill-box; }
     </g>
   </svg>
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">CLAIM</span><span class="end count">04 / 26</span></div>
+    <div class="rail in in-fade dl-1"><span class="now">CLAIM</span><span class="end count">04 / 31</span></div>
     <div class="body mid">
       <div class="oneline in dl-2">지원하는 회사마다, <em>보려는 게 다르니까.</em></div>
       <p class="sub in dl-3" style="max-width: 1300px; margin-top: 44px; font-size: 30px">같은 경력이라도 채용 공고마다 강조할 항목이 달라집니다.<br>매번 다시 만들 필요 없이, 자동으로 맞춰지는 나만의 포트폴리오.</p>
@@ -966,7 +952,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="쌓고 · 고르고 · 만든다" data-kind="JOURNEY">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">HOW IT WORKS</span><span>·</span><span class="ko">기록 → 공고 → 페이지</span><span class="end count">05 / 26</span></div>
+    <div class="rail in in-fade dl-1"><span class="now">HOW IT WORKS</span><span>·</span><span class="ko">기록 → 공고 → 페이지</span><span class="end count">05 / 31</span></div>
     <div class="head in dl-2">
       <div class="kicker">RECORD · JOB · PAGE</div>
       <h2>쌓아 둔 기록이 채용 공고를 만나 맞춤형 포트폴리오로</h2>
@@ -1072,7 +1058,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="배포와 방문 분석" data-kind="LOOP">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">PUBLISHING</span><span>·</span><span class="ko">배포 뒤에 일어나는 일</span><span class="end count">06 / 26</span></div>
+    <div class="rail in in-fade dl-1"><span class="now">PUBLISHING</span><span>·</span><span class="ko">배포 뒤에 일어나는 일</span><span class="end count">06 / 31</span></div>
     <div class="head in dl-2">
       <div class="kicker">DEPLOY · VISIT · READ</div>
       <h2>포트폴리오 배포와 방문자 데이터 분석까지</h2>
@@ -1172,7 +1158,7 @@ svg [data-morph] { transform-box: fill-box; }
     <rect class="in in-wipe dl-2" style="transform-box: view-box; transform-origin: 0px 1078px" y="1076" width="1920" height="4" fill="var(--ex-espresso)"></rect>
   </svg>
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">SECTION</span><span class="end">02 / 04</span></div>
+    <div class="rail in in-fade dl-1"><span class="now">SECTION</span><span class="end">02 / 03</span></div>
     <div class="body mid" style="max-width: 1100px">
       <div class="kicker in dl-2">HOW IT RUNS</div>
       <h2 class="in dl-3" style="font-size: 76px">어떻게 동작하나</h2>
@@ -1189,7 +1175,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="01 공고 분석" data-kind="BUILD 01">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">BUILD 01</span><span>·</span><span class="ko">화면 06 → 01 · 공고 탐색과 분석</span><span class="end count">08 / 26</span></div>
+    <div class="rail in in-fade dl-1"><span class="now">BUILD 01</span><span>·</span><span class="ko">화면 06 → 01 · 공고 탐색과 분석</span><span class="end count">08 / 31</span></div>
     <div class="head in dl-2">
       <div class="kicker">STEP 01 / 06 · ANALYZE</div>
       <h2>매일 모아 온 공고에서 고르기</h2>
@@ -1316,7 +1302,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="02 재료 고르기" data-kind="BUILD 02">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">BUILD 02</span><span>·</span><span class="ko">화면 01b · 재료 고르기</span><span class="end count">09 / 26</span></div>
+    <div class="rail in in-fade dl-1"><span class="now">BUILD 02</span><span>·</span><span class="ko">화면 01b · 재료 고르기</span><span class="end count">09 / 31</span></div>
     <div class="head in dl-2">
       <div class="kicker">STEP 02 / 06 · MATERIALS</div>
       <h2>포트폴리오에 담을 커리어 기록 선택</h2>
@@ -1434,7 +1420,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="03 AI 대화" data-kind="BUILD 03">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">BUILD 03</span><span>·</span><span class="ko">화면 02 · AI 대화</span><span class="end count">10 / 26</span></div>
+    <div class="rail in in-fade dl-1"><span class="now">BUILD 03</span><span>·</span><span class="ko">화면 02 · AI 대화</span><span class="end count">10 / 31</span></div>
     <div class="head in dl-2">
       <div class="kicker">STEP 03 / 06 · COUNTER</div>
       <h2>AI 대화를 통해 찾아내는 나의 경쟁력</h2>
@@ -1535,7 +1521,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="04 레시피" data-kind="BUILD 04">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">BUILD 04</span><span>·</span><span class="ko">화면 02b · 레시피</span><span class="end count">11 / 26</span></div>
+    <div class="rail in in-fade dl-1"><span class="now">BUILD 04</span><span>·</span><span class="ko">화면 02b · 레시피</span><span class="end count">11 / 31</span></div>
     <div class="head in dl-2">
       <div class="kicker">STEP 04 / 06 · OUTLINE</div>
       <h2>포트폴리오 구조부터 만들기</h2>
@@ -1649,7 +1635,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="05 디자인 선택" data-kind="BUILD 05">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">BUILD 05</span><span>·</span><span class="ko">화면 03 · 디자인 선택</span><span class="end count">12 / 26</span></div>
+    <div class="rail in in-fade dl-1"><span class="now">BUILD 05</span><span>·</span><span class="ko">화면 03 · 디자인 선택</span><span class="end count">12 / 31</span></div>
     <div class="head in dl-2">
       <div class="kicker">STEP 05 / 06 · DESIGN</div>
       <h2>디자인 스타일 선택</h2>
@@ -1767,7 +1753,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="06 다듬기" data-kind="BUILD 06">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">BUILD 06</span><span>·</span><span class="ko">화면 04 · 다듬기</span><span class="end count">13 / 26</span></div>
+    <div class="rail in in-fade dl-1"><span class="now">BUILD 06</span><span>·</span><span class="ko">화면 04 · 다듬기</span><span class="end count">13 / 31</span></div>
     <div class="head in dl-2">
       <div class="kicker">STEP 06 / 06 · EDIT</div>
       <h2>다듬어 나가며 완성</h2>
@@ -1869,7 +1855,7 @@ svg [data-morph] { transform-box: fill-box; }
     <rect y="1076" width="1920" height="4" fill="var(--ex-espresso)"></rect>
   </svg>
   <div class="frame">
-    <div class="rail"><span class="now">SECTION</span><span class="end">03 / 04</span></div>
+    <div class="rail"><span class="now">SECTION</span><span class="end">03 / 03</span></div>
     <div class="body mid" style="max-width: 1100px">
       <div class="kicker">HOW IT IS BUILT</div>
       <h2 style="font-size: 76px">무엇으로 만들었나</h2>
@@ -1888,7 +1874,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="한 장으로 본 전체" data-kind="SYSTEM MAP">
   <div class="frame">
-    <div class="rail"><span class="now">ARCHITECTURE</span><span>·</span><span class="ko">저장소 한 장</span><span class="end count">15 / 26</span></div>
+    <div class="rail"><span class="now">ARCHITECTURE</span><span>·</span><span class="ko">저장소 한 장</span><span class="end count">15 / 31</span></div>
     <div class="head" style="padding-top: 40px">
       <div class="kicker">STACK · INTERNALS · EXTERNALS</div>
       <h2>전체 시스템 구조</h2>
@@ -1957,8 +1943,8 @@ svg [data-morph] { transform-box: fill-box; }
             <text class="t" x="1198" y="261" style="font-size: 15px">Work24</text>
             <text class="ko" x="1166" y="286" style="font-size: 12.5px">공공데이터포털 · 국내 채용 공고</text>
             <rect class="box" x="1150" y="316" width="494" height="76" rx="10"></rect>
-            <g transform="translate(1166, 334) scale(0.916667)" aria-hidden="true"><title>Claude</title><path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z" fill="#D97757"></path></g>
-            <text class="t" x="1198" y="351" style="font-size: 15px">Claude Code CLI · Codex CLI</text>
+            <g transform="translate(1166, 334) scale(0.916667)" aria-hidden="true"><title>Claude</title><path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z" fill="#D97757"></path></g><g transform="translate(1190, 334) scale(0.916667)" aria-hidden="true"><title>Codex</title><path d="M19.503 0H4.496A4.496 4.496 0 000 4.496v15.007A4.496 4.496 0 004.496 24h15.007A4.496 4.496 0 0024 19.503V4.496A4.496 4.496 0 0019.503 0z" fill="#fff"></path><path d="M9.064 3.344a4.578 4.578 0 012.285-.312c1 .115 1.891.54 2.673 1.275.01.01.024.017.037.021a.09.09 0 00.043 0 4.55 4.55 0 013.046.275l.047.022.116.057a4.581 4.581 0 012.188 2.399c.209.51.313 1.041.315 1.595a4.24 4.24 0 01-.134 1.223.123.123 0 00.03.115c.594.607.988 1.33 1.183 2.17.289 1.425-.007 2.71-.887 3.854l-.136.166a4.548 4.548 0 01-2.201 1.388.123.123 0 00-.081.076c-.191.551-.383 1.023-.74 1.494-.9 1.187-2.222 1.846-3.711 1.838-1.187-.006-2.239-.44-3.157-1.302a.107.107 0 00-.105-.024c-.388.125-.78.143-1.204.138a4.441 4.441 0 01-1.945-.466 4.544 4.544 0 01-1.61-1.335c-.152-.202-.303-.392-.414-.617a5.81 5.81 0 01-.37-.961 4.582 4.582 0 01-.014-2.298.124.124 0 00.006-.056.085.085 0 00-.027-.048 4.467 4.467 0 01-1.034-1.651 3.896 3.896 0 01-.251-1.192 5.189 5.189 0 01.141-1.6c.337-1.112.982-1.985 1.933-2.618.212-.141.413-.251.601-.33.215-.089.43-.164.646-.227a.098.098 0 00.065-.066 4.51 4.51 0 01.829-1.615 4.535 4.535 0 011.837-1.388zm3.482 10.565a.637.637 0 000 1.272h3.636a.637.637 0 100-1.272h-3.636zM8.462 9.23a.637.637 0 00-1.106.631l1.272 2.224-1.266 2.136a.636.636 0 101.095.649l1.454-2.455a.636.636 0 00.005-.64L8.462 9.23z" fill="url(#ex-cx-map)"></path><defs><linearGradient gradientUnits="userSpaceOnUse" id="ex-cx-map" x1="12" x2="12" y1="3" y2="21"><stop stop-color="#B1A7FF"></stop><stop offset=".5" stop-color="#7A9DFF"></stop><stop offset="1" stop-color="#3941FF"></stop></linearGradient></defs></g>
+            <text class="t" x="1220" y="351" style="font-size: 15px">Claude Code CLI · Codex CLI</text>
             <text class="ko" x="1166" y="376" style="font-size: 12.5px">문장 · 지면 생성 · 제공자 교체 가능</text>
             <rect class="box" x="1150" y="406" width="494" height="76" rx="10"></rect>
             <text class="t" x="1166" y="441" style="font-size: 15px">회사 사이트</text>
@@ -1983,7 +1969,7 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section><section class="slide" data-title="홈 진입 경로" data-kind="USER FLOW">
   <div class="frame">
-    <div class="rail"><span class="now">SCREENS</span><span></span><span class="ko">services/web/src/app</span><span class="end count">16 / 26</span></div>
+    <div class="rail"><span class="now">SCREENS</span><span></span><span class="ko">services/web/src/app</span><span class="end count">16 / 31</span></div>
     <div class="head" style="padding-top: 40px">
       <div class="kicker">USER FLOW · 1</div>
       <h2>프론트엔드 사용자 플로우차트</h2>
@@ -2030,7 +2016,7 @@ svg [data-morph] { transform-box: fill-box; }
 
 <section class="slide" data-title="프론트엔드 기능 범위" data-kind="USER FLOW">
   <div class="frame">
-    <div class="rail"><span class="now">SCREENS</span><span></span><span class="ko">services/web/src/app</span><span class="end count">17 / 26</span></div>
+    <div class="rail"><span class="now">SCREENS</span><span></span><span class="ko">services/web/src/app</span><span class="end count">17 / 31</span></div>
     <div class="head" style="padding-top: 40px">
       <div class="kicker">SCOPE</div>
       <h2>프론트엔드 기능 범위</h2>
@@ -2080,7 +2066,7 @@ svg [data-morph] { transform-box: fill-box; }
 
 <section class="slide" data-title="홈" data-kind="SCREENS">
   <div class="frame">
-    <div class="rail"><span class="now">SCREENS</span><span></span><span class="ko">화면 정의서</span><span class="end count"></span></div>
+    <div class="rail"><span class="now">SCREENS</span><span></span><span class="ko">화면 정의서</span><span class="end count">18 / 31</span></div>
     <div class="head" style="padding-top: 28px">
       <div class="kicker">SCOPE</div>
       <h2>홈</h2>
@@ -2380,13 +2366,13 @@ svg [data-morph] { transform-box: fill-box; }
         </aside>
       </div>
     </div>
-    <div class="foot"><p></p><span class="pg"></span></div>
+    <div class="foot"><p></p><span class="pg">18</span></div>
   </div>
 </section>
 
 <section class="slide" data-title="커리어 기록" data-kind="SCREENS">
   <div class="frame">
-    <div class="rail"><span class="now">SCREENS</span><span></span><span class="ko">화면 정의서</span><span class="end count"></span></div>
+    <div class="rail"><span class="now">SCREENS</span><span></span><span class="ko">화면 정의서</span><span class="end count">19 / 31</span></div>
     <div class="head" style="padding-top: 28px">
       <div class="kicker">SCOPE</div>
       <h2>커리어 기록</h2>
@@ -2743,13 +2729,13 @@ svg [data-morph] { transform-box: fill-box; }
         </aside>
       </div>
     </div>
-    <div class="foot"><p></p><span class="pg"></span></div>
+    <div class="foot"><p></p><span class="pg">19</span></div>
   </div>
 </section>
 
 <section class="slide" data-title="공고 탐색" data-kind="SCREENS">
   <div class="frame">
-    <div class="rail"><span class="now">SCREENS</span><span></span><span class="ko">화면 정의서</span><span class="end count"></span></div>
+    <div class="rail"><span class="now">SCREENS</span><span></span><span class="ko">화면 정의서</span><span class="end count">20 / 31</span></div>
     <div class="head" style="padding-top: 28px">
       <div class="kicker">SCOPE</div>
       <h2>공고 탐색</h2>
@@ -3117,13 +3103,13 @@ svg [data-morph] { transform-box: fill-box; }
         </aside>
       </div>
     </div>
-    <div class="foot"><p></p><span class="pg"></span></div>
+    <div class="foot"><p></p><span class="pg">20</span></div>
   </div>
 </section>
 
 <section class="slide" data-title="포트폴리오 생성" data-kind="SCREENS">
   <div class="frame">
-    <div class="rail"><span class="now">SCREENS</span><span></span><span class="ko">화면 정의서</span><span class="end count"></span></div>
+    <div class="rail"><span class="now">SCREENS</span><span></span><span class="ko">화면 정의서</span><span class="end count">21 / 31</span></div>
     <div class="head" style="padding-top: 28px">
       <div class="kicker">SCOPE</div>
       <h2>포트폴리오 생성</h2>
@@ -3593,13 +3579,13 @@ svg [data-morph] { transform-box: fill-box; }
         </aside>
       </div>
     </div>
-    <div class="foot"><p></p><span class="pg"></span></div>
+    <div class="foot"><p></p><span class="pg">21</span></div>
   </div>
 </section>
 
 <section class="slide" data-title="포트폴리오 생성" data-kind="SCREENS">
   <div class="frame">
-    <div class="rail"><span class="now">SCREENS</span><span></span><span class="ko">화면 정의서</span><span class="end count"></span></div>
+    <div class="rail"><span class="now">SCREENS</span><span></span><span class="ko">화면 정의서</span><span class="end count">22 / 31</span></div>
     <div class="head" style="padding-top: 28px">
       <div class="kicker">SCOPE</div>
       <h2>포트폴리오 생성</h2>
@@ -3983,13 +3969,13 @@ svg [data-morph] { transform-box: fill-box; }
         </aside>
       </div>
     </div>
-    <div class="foot"><p></p><span class="pg"></span></div>
+    <div class="foot"><p></p><span class="pg">22</span></div>
   </div>
 </section>
 
 <section class="slide" data-title="방문자 데이터 분석" data-kind="SCREENS">
   <div class="frame">
-    <div class="rail"><span class="now">SCREENS</span><span></span><span class="ko">화면 정의서</span><span class="end count"></span></div>
+    <div class="rail"><span class="now">SCREENS</span><span></span><span class="ko">화면 정의서</span><span class="end count">23 / 31</span></div>
     <div class="head" style="padding-top: 28px">
       <div class="kicker">SCOPE</div>
       <h2>방문자 데이터 분석</h2>
@@ -4233,7 +4219,7 @@ svg [data-morph] { transform-box: fill-box; }
         </aside>
       </div>
     </div>
-    <div class="foot"><p></p><span class="pg"></span></div>
+    <div class="foot"><p></p><span class="pg">23</span></div>
   </div>
 </section>
 
@@ -4244,7 +4230,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="도메인 모듈 24" data-kind="MODULES">
   <div class="frame">
-    <div class="rail"><span class="now">MODULES</span><span>·</span><span class="ko">services/backend/src/modules</span><span class="end count">18 / 26</span></div>
+    <div class="rail"><span class="now">MODULES</span><span>·</span><span class="ko">services/backend/src/modules</span><span class="end count">24 / 31</span></div>
     <div class="head" style="padding-top: 40px">
       <div class="kicker">BACKEND MODULES</div>
       <h2>백엔드 도메인 모듈 구성</h2>
@@ -4357,7 +4343,7 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="foot">
       <p></p>
-      <span class="pg">18</span>
+      <span class="pg">24</span>
     </div>
   </div>
 </section>
@@ -4373,7 +4359,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="화면과 백엔드를 잇는 것" data-kind="CONTRACTS">
   <div class="frame">
-    <div class="rail"><span class="now">WIRING</span><span>·</span><span class="ko">화면과 API 의 연결 상태</span><span class="end count">19 / 26</span></div>
+    <div class="rail"><span class="now">WIRING</span><span>·</span><span class="ko">화면과 API 의 연결 상태</span><span class="end count">25 / 31</span></div>
     <div class="head" style="padding-top: 40px">
       <div class="kicker">WIRED · NOT YET</div>
       <h2>프론트엔드 · 백엔드 연결 구조</h2>
@@ -4400,8 +4386,8 @@ svg [data-morph] { transform-box: fill-box; }
             <text class="t" x="18" y="186" style="font-size: 16px">공고 탐색</text>
             <rect class="box" x="1194" y="154" width="470" height="52" rx="10"></rect>
             <text class="m" x="1212" y="185" style="font-size: 13px">jobs</text>
-            <line x1="496" y1="180" x2="1168" y2="180" stroke="var(--ex-slate-300)" stroke-width="2" stroke-dasharray="6 5"></line>
-            <text class="ko" x="832" y="168" text-anchor="middle" style="font-size: 13px">표본 데이터로 도는 중</text>
+            <line x1="496" y1="180" x2="1168" y2="180" stroke="var(--ex-slate-300)" stroke-width="2"></line>
+            <text class="ko" x="832" y="168" text-anchor="middle" style="font-size: 13px">일부만</text>
             <rect class="sig" x="0" y="214" width="470" height="52" rx="10"></rect>
             <text class="t" x="18" y="246" style="font-size: 16px">포트폴리오 제작</text>
             <rect class="box" x="1194" y="214" width="470" height="52" rx="10"></rect>
@@ -4423,7 +4409,7 @@ svg [data-morph] { transform-box: fill-box; }
             <text class="ko" x="832" y="348" text-anchor="middle" style="font-size: 13px">일부만</text>
             <rect class="box" x="0" y="394" width="470" height="52" rx="10"></rect>
             <text class="t" x="18" y="426" style="font-size: 16px">알림</text>
-            <rect class="ghost" x="1194" y="394" width="470" height="52" rx="10"></rect>
+            <rect class="box" x="1194" y="394" width="470" height="52" rx="10"></rect>
             <text class="m" x="1212" y="425" style="font-size: 13px">engagement</text>
             <line x1="1168" y1="420" x2="1018" y2="420" stroke="var(--ex-slate-300)" stroke-width="2" stroke-dasharray="4 5"></line>
             <line x1="1006" y1="413" x2="1020" y2="427" stroke="var(--ex-slate-300)" stroke-width="2"></line>
@@ -4431,12 +4417,10 @@ svg [data-morph] { transform-box: fill-box; }
             <text class="ko" x="832" y="408" text-anchor="middle" style="font-size: 13px">화면이 아직 없음</text>
             <rect class="box" x="0" y="454" width="470" height="52" rx="10"></rect>
             <text class="t" x="18" y="486" style="font-size: 16px">계정 · 탈퇴</text>
-            <rect class="ghost" x="1194" y="454" width="470" height="52" rx="10"></rect>
+            <rect class="box" x="1194" y="454" width="470" height="52" rx="10"></rect>
             <text class="m" x="1212" y="485" style="font-size: 13px">entitlements · account-lifecycle</text>
-            <line x1="1168" y1="480" x2="1018" y2="480" stroke="var(--ex-slate-300)" stroke-width="2" stroke-dasharray="4 5"></line>
-            <line x1="1006" y1="473" x2="1020" y2="487" stroke="var(--ex-slate-300)" stroke-width="2"></line>
-            <line x1="1020" y1="473" x2="1006" y2="487" stroke="var(--ex-slate-300)" stroke-width="2"></line>
-            <text class="ko" x="832" y="468" text-anchor="middle" style="font-size: 13px">화면이 아직 없음</text>
+            <line x1="496" y1="480" x2="1168" y2="480" stroke="var(--ex-slate-300)" stroke-width="2" stroke-dasharray="6 5"></line>
+            <text class="ko" x="832" y="468" text-anchor="middle" style="font-size: 13px">표본 데이터로 도는 중</text>
             <text class="ko" x="0" y="548" style="font-size: 13px">읽는 법</text>
             <line x1="90" y1="543" x2="134" y2="543" stroke="var(--ex-espresso)" stroke-width="2.5"></line>
             <text class="ko" x="146" y="548" style="font-size: 13px">이어짐</text>
@@ -4451,7 +4435,7 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="foot">
       <p></p>
-      <span class="pg">19</span>
+      <span class="pg">25</span>
     </div>
   </div>
 </section>
@@ -4461,7 +4445,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="데이터 파이프라인 구조" data-kind="WRITE PATH">
   <div class="frame">
-    <div class="rail"><span class="now">INGEST</span><span>·</span><span class="ko">공고 수집</span><span class="end count">20 / 26</span></div>
+    <div class="rail"><span class="now">INGEST</span><span>·</span><span class="ko">공고 수집</span><span class="end count">26 / 31</span></div>
     <div class="head" style="padding-top: 40px">
       <div class="kicker">FETCH · CLEAN · LOAD · ENRICH</div>
       <h2>데이터 파이프라인 구조</h2>
@@ -4517,7 +4501,7 @@ svg [data-morph] { transform-box: fill-box; }
             <text class="ko" x="1280" y="168" text-anchor="middle" style="font-size: 12px">본문</text>
             <line class="flow" x1="1380" y1="230" x2="1180" y2="230"></line>
             <text class="m" x="1280" y="252" text-anchor="middle" style="font-size: 12px; fill: var(--ex-espresso)">연봉 · 경력 · 근무 형태</text>
-            <g transform="translate(1447, 180) scale(1.91667)" aria-hidden="true"><title>Claude</title><path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z" fill="#D97757"></path></g>
+            <g transform="translate(1422, 180) scale(1.91667)" aria-hidden="true"><title>Claude</title><path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z" fill="#D97757"></path></g><g transform="translate(1476, 180) scale(1.91667)" aria-hidden="true"><title>Codex</title><path d="M19.503 0H4.496A4.496 4.496 0 000 4.496v15.007A4.496 4.496 0 004.496 24h15.007A4.496 4.496 0 0024 19.503V4.496A4.496 4.496 0 0019.503 0z" fill="#fff"></path><path d="M9.064 3.344a4.578 4.578 0 012.285-.312c1 .115 1.891.54 2.673 1.275.01.01.024.017.037.021a.09.09 0 00.043 0 4.55 4.55 0 013.046.275l.047.022.116.057a4.581 4.581 0 012.188 2.399c.209.51.313 1.041.315 1.595a4.24 4.24 0 01-.134 1.223.123.123 0 00.03.115c.594.607.988 1.33 1.183 2.17.289 1.425-.007 2.71-.887 3.854l-.136.166a4.548 4.548 0 01-2.201 1.388.123.123 0 00-.081.076c-.191.551-.383 1.023-.74 1.494-.9 1.187-2.222 1.846-3.711 1.838-1.187-.006-2.239-.44-3.157-1.302a.107.107 0 00-.105-.024c-.388.125-.78.143-1.204.138a4.441 4.441 0 01-1.945-.466 4.544 4.544 0 01-1.61-1.335c-.152-.202-.303-.392-.414-.617a5.81 5.81 0 01-.37-.961 4.582 4.582 0 01-.014-2.298.124.124 0 00.006-.056.085.085 0 00-.027-.048 4.467 4.467 0 01-1.034-1.651 3.896 3.896 0 01-.251-1.192 5.189 5.189 0 01.141-1.6c.337-1.112.982-1.985 1.933-2.618.212-.141.413-.251.601-.33.215-.089.43-.164.646-.227a.098.098 0 00.065-.066 4.51 4.51 0 01.829-1.615 4.535 4.535 0 011.837-1.388zm3.482 10.565a.637.637 0 000 1.272h3.636a.637.637 0 100-1.272h-3.636zM8.462 9.23a.637.637 0 00-1.106.631l1.272 2.224-1.266 2.136a.636.636 0 101.095.649l1.454-2.455a.636.636 0 00.005-.64L8.462 9.23z" fill="url(#ex-cx-etl)"></path><defs><linearGradient gradientUnits="userSpaceOnUse" id="ex-cx-etl" x1="12" x2="12" y1="3" y2="21"><stop stop-color="#B1A7FF"></stop><stop offset=".5" stop-color="#7A9DFF"></stop><stop offset="1" stop-color="#3941FF"></stop></linearGradient></defs></g>
             <text class="t" x="1470" y="252" text-anchor="middle" style="font-size: 15px">AI 제공자</text>
             <text class="ko" x="1470" y="271" text-anchor="middle" style="font-size: 12px">Claude Code · Codex</text>
             <text class="m" x="1470" y="108" text-anchor="middle" style="font-size: 13px">ENRICH</text>
@@ -4531,165 +4515,780 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="foot">
       <p></p>
-      <span class="pg">20</span>
+      <span class="pg">26</span>
     </div>
   </div>
 </section>
 
 <!-- ============================================================
-     20 · DO / DON'T — 저장소에서 지키는 선.
+     AI 모델 구성 — 벤토 그리드. 조각의 성격이 제각각이라(엔진 둘 · 화면
+     다섯 · 지표) 같은 크기 칸에 넣지 않고 칸 크기를 달리했습니다. 외부 LLM
+     칸이 2×2 로 가장 크고, 화면 칸은 1×1, 지면 생성만 가로로 넓습니다.
+
+     자체 학습 모델 칸은 안에서 둘로 나눕니다 — 설계서 4.1 의 모델 A · B 가
+     서로 다른 모델이라, 한 칸에 두 이름을 줄바꿈으로 넣으면 한 문장이 접힌
+     것으로 읽힙니다.
+
+     아이콘은 노드망 마크입니다. 설계서 4.2 가 채택한 것은 그래디언트
+     부스팅(LightGBM)이라 엄밀히는 트리 모델이지만, 학습 모델을 가리키는
+     표시로 이 마크를 쓰기로 정했습니다.
+
+     외부 LLM 칸의 오른쪽 표는 계약별 기본 모델(client.ts 의
+     DEFAULT_MODEL_TIER)을 세 무게로 묶은 것입니다. Claude Code 어댑터는
+     티어 이름을 그대로 `--model` 로 넘기고, Codex 어댑터는 codex.ts 의
+     DEFAULT_CODEX_MODEL 로 바꿔 넘깁니다. 용도 딱지는 화면 칸들이 이미
+     말하고 있어 표에서는 뺐습니다 — 이름만 남겨야 표가 표답게 읽힙니다.
+
+     제공자 마크는 각 소유자의 상표이고, 여기서는 그 서비스를 가리키는
+     용도로만 씁니다. 마크의 그러데이션은 상표의 일부라 그대로 둡니다 —
+     우리가 넣는 장식용 그러데이션이 아닙니다.
+
+     화면 칸의 아이콘 타일 색이 어느 엔진이 처리하는지 가리킵니다 —
+     bean-50 타일은 외부 LLM 칸의 바탕색, surface-100 타일은 자체 학습
+     모델 칸의 바탕색과 같습니다. 배경색이 곧 범례라 점을 따로 달지
+     않습니다.
+
+     시그니처는 면으로 깔지 않습니다 — 넓은 면은 전부 무채색이거나 bean-50
+     이고, espresso 와 crema-deep 은 9px 점과 라벨에만 씁니다.
      ============================================================ -->
-<section class="slide" data-title="지키는 선" data-kind="DO / DON'T">
+<section class="slide" data-title="AI 모델 구성" data-kind="AI MAP">
   <div class="frame">
-    <div class="rail"><span class="now">RULES</span><span>·</span><span class="ko">지키는 선</span><span class="end count">21 / 26</span></div>
-    <div class="head">
-      <div class="kicker">VOICE &amp; LIMITS</div>
-      <h2>코드 리뷰에서 반려되는 네 가지</h2>
+    <div class="rail"><span class="now">AI</span><span>·</span><span class="ko">외부 LLM · 자체 학습 모델</span><span class="end count">27 / 31</span></div>
+    <div class="head" style="padding-top: 34px">
+      <div class="kicker">EXTERNAL LLM · OWN MODEL</div>
+      <h2>AI 모델 구성</h2>
+      <p class="sub" style="font-size: 22px">기능별 처리 모델 구분</p>
     </div>
-    <div class="body">
-      <div class="dd">
-        <div class="do">
-          <div class="t"><span class="m">✓</span>DO</div>
-          <p>"공고에서 요구사항 여섯 개를 찾았습니다."</p>
+    <div class="body" style="padding-top: 30px">
+      <div style="flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1fr 1.3fr; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); gap: 20px">
+
+        <div style="background: var(--ex-bean-50); border-radius: 20px; padding: 28px 32px; display: flex; gap: 28px">
+          <div style="flex: none; width: 300px; display: flex; flex-direction: column; justify-content: center">
+            <span style="display: flex; gap: 10px">
+              <span style="width: 58px; height: 58px; border-radius: 16px; background: var(--ex-white); display: grid; place-items: center"><svg viewBox="0 0 24 24" width="40" height="40" role="img" aria-label="Claude"><path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z" fill="#D97757"></path></svg></span>
+              <span style="width: 58px; height: 58px; border-radius: 16px; background: var(--ex-white); display: grid; place-items: center"><svg viewBox="0 0 24 24" width="40" height="40" role="img" aria-label="Codex"><path d="M19.503 0H4.496A4.496 4.496 0 000 4.496v15.007A4.496 4.496 0 004.496 24h15.007A4.496 4.496 0 0024 19.503V4.496A4.496 4.496 0 0019.503 0z" fill="#fff"></path><path d="M9.064 3.344a4.578 4.578 0 012.285-.312c1 .115 1.891.54 2.673 1.275.01.01.024.017.037.021a.09.09 0 00.043 0 4.55 4.55 0 013.046.275l.047.022.116.057a4.581 4.581 0 012.188 2.399c.209.51.313 1.041.315 1.595a4.24 4.24 0 01-.134 1.223.123.123 0 00.03.115c.594.607.988 1.33 1.183 2.17.289 1.425-.007 2.71-.887 3.854l-.136.166a4.548 4.548 0 01-2.201 1.388.123.123 0 00-.081.076c-.191.551-.383 1.023-.74 1.494-.9 1.187-2.222 1.846-3.711 1.838-1.187-.006-2.239-.44-3.157-1.302a.107.107 0 00-.105-.024c-.388.125-.78.143-1.204.138a4.441 4.441 0 01-1.945-.466 4.544 4.544 0 01-1.61-1.335c-.152-.202-.303-.392-.414-.617a5.81 5.81 0 01-.37-.961 4.582 4.582 0 01-.014-2.298.124.124 0 00.006-.056.085.085 0 00-.027-.048 4.467 4.467 0 01-1.034-1.651 3.896 3.896 0 01-.251-1.192 5.189 5.189 0 01.141-1.6c.337-1.112.982-1.985 1.933-2.618.212-.141.413-.251.601-.33.215-.089.43-.164.646-.227a.098.098 0 00.065-.066 4.51 4.51 0 01.829-1.615 4.535 4.535 0 011.837-1.388zm3.482 10.565a.637.637 0 000 1.272h3.636a.637.637 0 100-1.272h-3.636zM8.462 9.23a.637.637 0 00-1.106.631l1.272 2.224-1.266 2.136a.636.636 0 101.095.649l1.454-2.455a.636.636 0 00.005-.64L8.462 9.23z" fill="url(#ex-codex-grad)"></path><defs><linearGradient gradientUnits="userSpaceOnUse" id="ex-codex-grad" x1="12" x2="12" y1="3" y2="21"><stop stop-color="#B1A7FF"></stop><stop offset=".5" stop-color="#7A9DFF"></stop><stop offset="1" stop-color="#3941FF"></stop></linearGradient></defs></svg></span>
+            </span>
+            <div style="margin-top: 18px; font-size: 14.5px; font-weight: 600; letter-spacing: .02em; color: var(--ex-espresso)">프론티어 LLM 모델</div>
+            <div style="margin-top: 8px; font-size: 28px; font-weight: 600; letter-spacing: -.03em; color: var(--ex-bean-ink)">포트폴리오 생성 모델</div>
+            <div style="margin-top: 20px; display: flex; gap: 34px"><span style="font-size: 15px; color: var(--ex-slate-400)">응답 시간 <b style="font-size: 18px; font-weight: 600; color: var(--ex-bean-ink)">수 초</b></span><span style="font-size: 15px; color: var(--ex-slate-400)">호출 비용 <b style="font-size: 18px; font-weight: 600; color: var(--ex-bean-ink)">건당 과금</b></span></div>
+          </div>
+
+          <div style="flex: 1 1 auto; min-width: 0; border-left: 1px solid var(--ex-crema); padding-left: 28px; display: flex; flex-direction: column; justify-content: center">
+            <div style="padding-bottom: 12px; border-bottom: 1px solid var(--ex-crema); display: grid; grid-template-columns: 1fr 1.4fr; gap: 12px"><span style="font-family: var(--ex-font-brand); font-size: 12.5px; font-weight: 500; letter-spacing: .1em; color: var(--ex-espresso)">CLAUDE CODE</span><span style="font-family: var(--ex-font-brand); font-size: 12.5px; font-weight: 500; letter-spacing: .1em; color: var(--ex-espresso)">CODEX</span></div>
+            <div style="display: grid; grid-template-columns: 1fr 1.4fr; gap: 12px; padding-top: 18px"><span style="font-family: var(--ex-font-brand); font-size: 21px; font-weight: 500; letter-spacing: -.01em; color: var(--ex-bean-ink)">Opus</span><span style="font-family: var(--ex-font-brand); font-size: 21px; font-weight: 500; letter-spacing: -.01em; color: var(--ex-bean-ink)">GPT-5.6 Sol</span></div>
+            <div style="display: grid; grid-template-columns: 1fr 1.4fr; gap: 12px; padding-top: 18px"><span style="font-family: var(--ex-font-brand); font-size: 21px; font-weight: 500; letter-spacing: -.01em; color: var(--ex-bean-ink)">Sonnet</span><span style="font-family: var(--ex-font-brand); font-size: 21px; font-weight: 500; letter-spacing: -.01em; color: var(--ex-bean-ink)">GPT-5.6 Terra</span></div>
+            <div style="display: grid; grid-template-columns: 1fr 1.4fr; gap: 12px; padding-top: 18px"><span style="font-family: var(--ex-font-brand); font-size: 21px; font-weight: 500; letter-spacing: -.01em; color: var(--ex-bean-ink)">Haiku</span><span style="font-family: var(--ex-font-brand); font-size: 21px; font-weight: 500; letter-spacing: -.01em; color: var(--ex-bean-ink)">GPT-5.6 Luna</span></div>
+          </div>
         </div>
-        <div class="dont">
-          <div class="t"><span class="m">×</span>DON'T</div>
-          <p>"완벽한 한 잔을 위해 원두를 고르는 중이에요"</p>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px">
+          <div style="background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 20px; padding: 24px 26px; display: flex; flex-direction: column">
+            <span style="width: 54px; height: 54px; border-radius: 14px; background: var(--ex-bean-50); display: grid; place-items: center"><i class="ph ph-file-text" style="font-size: 29px; color: var(--ex-espresso)"></i></span>
+            <div style="margin-top: auto">
+              <b style="display: block; font-size: 22px; font-weight: 600; letter-spacing: -.02em; color: var(--ex-ink-900)">공고 분석</b>
+              <span style="display: block; margin-top: 6px; font-size: 16px; line-height: 1.5; color: var(--ex-slate-400)">공고가 원하는 조건 뽑기</span>
+            </div>
+          </div>
+          <div style="background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 20px; padding: 24px 26px; display: flex; flex-direction: column">
+            <span style="width: 54px; height: 54px; border-radius: 14px; background: var(--ex-bean-50); display: grid; place-items: center"><i class="ph ph-chat-circle-dots" style="font-size: 29px; color: var(--ex-espresso)"></i></span>
+            <div style="margin-top: auto">
+              <b style="display: block; font-size: 22px; font-weight: 600; letter-spacing: -.02em; color: var(--ex-ink-900)">AI 대화</b>
+              <span style="display: block; margin-top: 6px; font-size: 16px; line-height: 1.5; color: var(--ex-slate-400)">AI 가상 인터뷰</span>
+            </div>
+          </div>
+          <div style="background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 20px; padding: 24px 26px; display: flex; flex-direction: column">
+            <span style="width: 54px; height: 54px; border-radius: 14px; background: var(--ex-bean-50); display: grid; place-items: center"><i class="ph ph-stack" style="font-size: 29px; color: var(--ex-espresso)"></i></span>
+            <div style="margin-top: auto">
+              <b style="display: block; font-size: 22px; font-weight: 600; letter-spacing: -.02em; color: var(--ex-ink-900)">포트폴리오 디자인</b>
+              <span style="display: block; margin-top: 6px; font-size: 16px; line-height: 1.5; color: var(--ex-slate-400)">포트폴리오 문장과 화면 만들기</span>
+            </div>
+          </div>
         </div>
-      </div>
-      <div style="margin-top: 40px; display: grid; gap: 16px; max-width: 1400px">
-        <div style="display: flex; gap: 18px; font-size: 22px; align-items: baseline"><span style="font-family: var(--ex-font-mono); color: var(--ex-espresso); font-size: 16px">01</span><span style="color: var(--ex-slate-700)">공개 문장과 수치에는 반드시 사용자 증거</span></div>
-        <div style="display: flex; gap: 18px; font-size: 22px; align-items: baseline"><span style="font-family: var(--ex-font-mono); color: var(--ex-espresso); font-size: 16px">02</span><span style="color: var(--ex-slate-700)"><code style="font-family: var(--ex-font-mono)">tokens.css</code>에 없는 색과 크기 금지</span></div>
-        <div style="display: flex; gap: 18px; font-size: 22px; align-items: baseline"><span style="font-family: var(--ex-font-mono); color: var(--ex-espresso); font-size: 16px">03</span><span style="color: var(--ex-slate-700)">스키마는 마이그레이션으로만. 서버가 시작하면서 바꾸지 않음</span></div>
-        <div style="display: flex; gap: 18px; font-size: 22px; align-items: baseline"><span style="font-family: var(--ex-font-mono); color: var(--ex-espresso); font-size: 16px">04</span><span style="color: var(--ex-slate-700)">커피 용어는 기능 이름에만. 동작을 설명하는 문장에는 사실만</span></div>
+
+        <div style="background: var(--ex-surface-100); border-radius: 20px; padding: 28px 32px; display: flex; flex-direction: column">
+          <div style="display: flex; align-items: center; gap: 16px">
+            <span style="width: 58px; height: 58px; border-radius: 16px; background: var(--ex-white); display: grid; place-items: center; flex: none"><svg viewBox="0 0 24 24" width="40" height="40" role="img" aria-label="학습 모델" stroke="var(--ex-ink-900)" stroke-width="1.4" stroke-linecap="round" fill="none"><line x1="12.0" y1="3.8" x2="19.1" y2="7.9"></line><line x1="19.1" y1="7.9" x2="19.1" y2="16.1"></line><line x1="19.1" y1="16.1" x2="12.0" y2="20.2"></line><line x1="12.0" y1="20.2" x2="4.9" y2="16.1"></line><line x1="4.9" y1="16.1" x2="4.9" y2="7.9"></line><line x1="4.9" y1="7.9" x2="12.0" y2="3.8"></line><line x1="12.0" y1="3.8" x2="19.1" y2="16.1"></line><line x1="12.0" y1="3.8" x2="4.9" y2="16.1"></line><line x1="12.0" y1="20.2" x2="19.1" y2="7.9"></line><line x1="12.0" y1="20.2" x2="4.9" y2="7.9"></line><line x1="12.0" y1="3.8" x2="12.0" y2="12.0"></line><line x1="19.1" y1="7.9" x2="12.0" y2="12.0"></line><line x1="19.1" y1="16.1" x2="12.0" y2="12.0"></line><line x1="12.0" y1="20.2" x2="12.0" y2="12.0"></line><line x1="4.9" y1="16.1" x2="12.0" y2="12.0"></line><line x1="4.9" y1="7.9" x2="12.0" y2="12.0"></line><g fill="var(--ex-white)"><circle cx="12.0" cy="3.8" r="2.3"></circle><circle cx="19.1" cy="7.9" r="2.3"></circle><circle cx="19.1" cy="16.1" r="2.3"></circle><circle cx="12.0" cy="20.2" r="2.3"></circle><circle cx="4.9" cy="16.1" r="2.3"></circle><circle cx="4.9" cy="7.9" r="2.3"></circle><circle cx="12.0" cy="12.0" r="2.3"></circle></g></svg></span>
+            <span style="font-size: 14.5px; font-weight: 600; letter-spacing: .02em; color: var(--ex-slate-500)">자체 학습 모델</span>
+            <span style="margin-left: auto; display: flex; gap: 22px"><span style="font-size: 15px; color: var(--ex-slate-400)">응답 시간 <b style="font-size: 18px; font-weight: 600; color: var(--ex-success-text)">즉시</b></span><span style="font-size: 15px; color: var(--ex-slate-400)">호출 비용 <b style="font-size: 18px; font-weight: 600; color: var(--ex-success-text)">없음</b></span></span>
+          </div>
+          <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--ex-line-200); flex: 1 1 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 28px">
+            <div style=" display: flex; flex-direction: column; justify-content: center">
+              <b style="font-size: 23px; font-weight: 600; letter-spacing: -.025em; line-height: 1.3; color: var(--ex-ink-900)">채용 공고 추천 모델</b>
+              <span style="margin-top: 9px; font-size: 16px; line-height: 1.55; color: var(--ex-slate-400)">내 커리어 기록과 채용 공고 사이 적합도 도출</span>
+            </div>
+            <div style=" border-left: 1px solid var(--ex-line-200); padding-left: 28px; display: flex; flex-direction: column; justify-content: center">
+              <b style="font-size: 23px; font-weight: 600; letter-spacing: -.025em; line-height: 1.3; color: var(--ex-ink-900)">커리어 기록 추천 모델</b>
+              <span style="margin-top: 9px; font-size: 16px; line-height: 1.55; color: var(--ex-slate-400)">공고 요건에 맞는 기록 적합도 도출</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px">
+          <div style="background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 20px; padding: 24px 26px; display: flex; flex-direction: column">
+            <span style="width: 54px; height: 54px; border-radius: 14px; background: var(--ex-surface-100); display: grid; place-items: center"><i class="ph ph-magnifying-glass" style="font-size: 29px; color: var(--ex-ink-900)"></i></span>
+            <div style="margin-top: auto">
+              <b style="display: block; font-size: 22px; font-weight: 600; letter-spacing: -.02em; color: var(--ex-ink-900)">채용 공고 탐색</b>
+              <span style="display: block; margin-top: 6px; font-size: 16px; line-height: 1.5; color: var(--ex-slate-400)">나에게 맞는 공고를 위로 올리기</span>
+            </div>
+          </div>
+          <div style="background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 20px; padding: 24px 26px; display: flex; flex-direction: column">
+            <span style="width: 54px; height: 54px; border-radius: 14px; background: var(--ex-surface-100); display: grid; place-items: center"><i class="ph ph-notebook" style="font-size: 29px; color: var(--ex-ink-900)"></i></span>
+            <div style="margin-top: auto">
+              <b style="display: block; font-size: 22px; font-weight: 600; letter-spacing: -.02em; color: var(--ex-ink-900)">재료 고르기</b>
+              <span style="display: block; margin-top: 6px; font-size: 16px; line-height: 1.5; color: var(--ex-slate-400)">채용 공고와 관련된 내 커리어 기록 추천<br></span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
     <div class="foot">
       <p></p>
-      <span class="pg">21</span>
+      <span class="pg">27</span>
     </div>
   </div>
 </section>
 
+
+
+
+
+
+
 <!-- ============================================================
-     21 · 수치 — 잰 날짜를 함께 답니다.
+     23 · 프론티어 LLM — platform/ai/client.ts 의 AI_CONTRACTS 와
+     DEFAULT_MODEL_TIER 을 그대로 옮겼습니다. 티어를 가르는 기준도 그 파일의
+     주석에 적힌 문장입니다. 프로바이더는 create-client.ts 의 build() 넷입니다.
      ============================================================ -->
-<section class="slide" data-title="저장소의 크기" data-kind="METRICS">
+<section class="slide" data-title="프론티어 LLM 활용" data-kind="AI · FRONTIER">
   <div class="frame">
-    <div class="rail"><span class="now">REPOSITORY</span><span class="end count">22 / 26</span></div>
-    <div class="head">
-      <div class="kicker">COUNTED · 2026-08-14</div>
-      <h2>저장소 규모</h2>
-      <p class="sub">저장소에서 직접 센 값</p>
+    <div class="rail"><span class="now">FRONTIER LLM</span><span>·</span><span class="ko">외부 LLM</span><span class="end count">28 / 31</span></div>
+    <div class="head" style="padding-top: 40px">
+      <div class="kicker">MODEL TIERS</div>
+      <h2>프론티어 LLM 활용</h2>
+      <p class="sub" style="font-size: 22px">비용-성능에 따른 모델 선택 분리</p>
     </div>
-    <div class="body mid">
-      <div class="cols c-4" style="align-items: start">
-        <div class="stat"><div class="k">도메인 모듈</div><div class="v">24</div><div class="d">services/backend/src/modules</div></div>
-        <div class="stat"><div class="k">/v1 엔드포인트</div><div class="v">131</div><div class="d">모듈별 routes.ts</div></div>
-        <div class="stat"><div class="k">테이블</div><div class="v">74</div><div class="d">마이그레이션 54</div></div>
-        <div class="stat"><div class="k">테스트</div><div class="v">502</div><div class="d">파일 91</div></div>
+    <div class="body" style="padding-top: 28px">
+      <div style="flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-content: start">
+        <div style="background: var(--ex-bean-50); border-radius: 20px; padding: 26px 30px; display: flex; flex-direction: column">
+          <div style="display: flex; align-items: baseline; gap: 10px">
+            <span style="font-family: var(--ex-font-brand); font-size: 27px; font-weight: 500; letter-spacing: -.02em; color: var(--ex-ink-900)">Opus</span>
+            <span style="font-family: var(--ex-font-brand); font-size: 20px; font-weight: 400; color: var(--ex-slate-300)">·</span>
+            <span style="font-family: var(--ex-font-brand); font-size: 27px; font-weight: 500; letter-spacing: -.02em; color: var(--ex-ink-900)">GPT-5.6 Sol</span>
+          </div>
+          <p style="margin-top: 8px; font-size: 17px; color: var(--ex-slate-500)">고비용 - 고성능 하이엔드 모델</p>
+          <div style="margin-top: 18px">
+            <div style="padding: 10px 0; font-size: 18px; letter-spacing: -.01em; color: var(--ex-ink-900)">공고 분석</div>
+            <div style="border-top: 1px solid var(--ex-crema); padding: 10px 0; font-size: 18px; letter-spacing: -.01em; color: var(--ex-ink-900)">레시피 초안</div>
+            <div style="border-top: 1px solid var(--ex-crema); padding: 10px 0; font-size: 18px; letter-spacing: -.01em; color: var(--ex-ink-900)">배치 초안</div>
+            <div style="border-top: 1px solid var(--ex-crema); padding: 10px 0; font-size: 18px; letter-spacing: -.01em; color: var(--ex-ink-900)">포트폴리오 지면 생성</div>
+          </div>
+        </div>
+        <div style="background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 20px; padding: 26px 30px; display: flex; flex-direction: column">
+          <div style="display: flex; align-items: baseline; gap: 10px">
+            <span style="font-family: var(--ex-font-brand); font-size: 27px; font-weight: 500; letter-spacing: -.02em; color: var(--ex-ink-900)">Sonnet</span>
+            <span style="font-family: var(--ex-font-brand); font-size: 20px; font-weight: 400; color: var(--ex-slate-300)">·</span>
+            <span style="font-family: var(--ex-font-brand); font-size: 27px; font-weight: 500; letter-spacing: -.02em; color: var(--ex-ink-900)">GPT-5.6 Terra</span>
+          </div>
+          <p style="margin-top: 8px; font-size: 17px; color: var(--ex-slate-500)">고효율 미들스트림 모델</p>
+          <div style="margin-top: 18px">
+            <div style="padding: 10px 0; font-size: 18px; letter-spacing: -.01em; color: var(--ex-ink-900)">공고 본문 읽기</div>
+            <div style="border-top: 1px solid var(--ex-line-200); padding: 10px 0; font-size: 18px; letter-spacing: -.01em; color: var(--ex-ink-900)">대화 질문 만들기</div>
+            <div style="border-top: 1px solid var(--ex-line-200); padding: 10px 0; font-size: 18px; letter-spacing: -.01em; color: var(--ex-ink-900)">커리어 기록 정리</div>
+            <div style="border-top: 1px solid var(--ex-line-200); padding: 10px 0; font-size: 18px; letter-spacing: -.01em; color: var(--ex-ink-900)">문장 생성</div>
+            <div style="border-top: 1px solid var(--ex-line-200); padding: 10px 0; font-size: 18px; letter-spacing: -.01em; color: var(--ex-ink-900)">부분 편집</div>
+            <div style="border-top: 1px solid var(--ex-line-200); padding: 10px 0; font-size: 18px; letter-spacing: -.01em; color: var(--ex-ink-900)">스타일 변형</div>
+          </div>
+        </div>
+        <div style="background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 20px; padding: 26px 30px; display: flex; flex-direction: column">
+          <div style="display: flex; align-items: baseline; gap: 10px">
+            <span style="font-family: var(--ex-font-brand); font-size: 27px; font-weight: 500; letter-spacing: -.02em; color: var(--ex-ink-900)">Haiku</span>
+            <span style="font-family: var(--ex-font-brand); font-size: 20px; font-weight: 400; color: var(--ex-slate-300)">·</span>
+            <span style="font-family: var(--ex-font-brand); font-size: 27px; font-weight: 500; letter-spacing: -.02em; color: var(--ex-ink-900)">GPT-5.6 Luna</span>
+          </div>
+          <p style="margin-top: 8px; font-size: 17px; color: var(--ex-slate-500)">저비용 저성능 엔트리급 모델</p>
+          <div style="margin-top: 18px">
+            <div style="padding: 10px 0; font-size: 18px; letter-spacing: -.01em; color: var(--ex-ink-900)">방문 분석 요약</div>
+          </div>
+        </div>
       </div>
-      <div style="margin-top: 72px; display: flex; gap: 64px; font-family: var(--ex-font-mono); font-size: 21px; color: var(--ex-slate-400); flex-wrap: wrap">
-        <span>화면 <b style="color: var(--ex-ink-900); font-weight: 400">25</b></span>
-        <span>계약 스키마 <b style="color: var(--ex-ink-900); font-weight: 400">33</b></span>
-        <span>워커 프로세서 <b style="color: var(--ex-ink-900); font-weight: 400">8</b></span>
-        <span>TypeScript <b style="color: var(--ex-ink-900); font-weight: 400">373</b> 파일 · <b style="color: var(--ex-ink-900); font-weight: 400">60,132</b> 줄</span>
+
+      <div style="margin-top: 28px; display: flex; align-items: center; justify-content: center; gap: 72px">
+        <span style="display: flex; align-items: center; gap: 14px"><svg viewBox="0 0 24 24" width="44" height="44" role="img" aria-label="Claude"><path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z" fill="#D97757"></path></svg><span style="font-family: var(--ex-font-brand); font-size: 22px; font-weight: 500; color: var(--ex-slate-500)">Claude Code</span></span>
+        <span style="display: flex; align-items: center; gap: 14px"><svg viewBox="0 0 24 24" width="44" height="44" role="img" aria-label="Codex"><path d="M19.503 0H4.496A4.496 4.496 0 000 4.496v15.007A4.496 4.496 0 004.496 24h15.007A4.496 4.496 0 0024 19.503V4.496A4.496 4.496 0 0019.503 0z" fill="#fff"></path><path d="M9.064 3.344a4.578 4.578 0 012.285-.312c1 .115 1.891.54 2.673 1.275.01.01.024.017.037.021a.09.09 0 00.043 0 4.55 4.55 0 013.046.275l.047.022.116.057a4.581 4.581 0 012.188 2.399c.209.51.313 1.041.315 1.595a4.24 4.24 0 01-.134 1.223.123.123 0 00.03.115c.594.607.988 1.33 1.183 2.17.289 1.425-.007 2.71-.887 3.854l-.136.166a4.548 4.548 0 01-2.201 1.388.123.123 0 00-.081.076c-.191.551-.383 1.023-.74 1.494-.9 1.187-2.222 1.846-3.711 1.838-1.187-.006-2.239-.44-3.157-1.302a.107.107 0 00-.105-.024c-.388.125-.78.143-1.204.138a4.441 4.441 0 01-1.945-.466 4.544 4.544 0 01-1.61-1.335c-.152-.202-.303-.392-.414-.617a5.81 5.81 0 01-.37-.961 4.582 4.582 0 01-.014-2.298.124.124 0 00.006-.056.085.085 0 00-.027-.048 4.467 4.467 0 01-1.034-1.651 3.896 3.896 0 01-.251-1.192 5.189 5.189 0 01.141-1.6c.337-1.112.982-1.985 1.933-2.618.212-.141.413-.251.601-.33.215-.089.43-.164.646-.227a.098.098 0 00.065-.066 4.51 4.51 0 01.829-1.615 4.535 4.535 0 011.837-1.388zm3.482 10.565a.637.637 0 000 1.272h3.636a.637.637 0 100-1.272h-3.636zM8.462 9.23a.637.637 0 00-1.106.631l1.272 2.224-1.266 2.136a.636.636 0 101.095.649l1.454-2.455a.636.636 0 00.005-.64L8.462 9.23z" fill="url(#ex-cx-tiers)"></path><defs><linearGradient gradientUnits="userSpaceOnUse" id="ex-cx-tiers" x1="12" x2="12" y1="3" y2="21"><stop stop-color="#B1A7FF"></stop><stop offset=".5" stop-color="#7A9DFF"></stop><stop offset="1" stop-color="#3941FF"></stop></linearGradient></defs></svg><span style="font-family: var(--ex-font-brand); font-size: 22px; font-weight: 500; color: var(--ex-slate-500)">Codex</span></span>
       </div>
     </div>
     <div class="foot">
       <p></p>
-      <span class="pg">22</span>
+      <span class="pg">28</span>
     </div>
   </div>
 </section>
 
 <!-- ============================================================
-     22 · 섹션 04
-     ============================================================ -->
-<section class="slide" data-title="04 어디까지 진행됐나" data-kind="DIVIDER / NUMERAL">
-  <svg class="bg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <rect width="1920" height="1080" fill="var(--ex-surface-50)"></rect>
-    <text x="1900" y="1180" text-anchor="end" style="font-family: var(--ex-font-brand); font-weight: 300; font-size: 1180px; letter-spacing: -.05em; fill: var(--ex-tint-100)">04</text>
-    <rect y="1076" width="1920" height="4" fill="var(--ex-espresso)"></rect>
-  </svg>
-  <div class="frame">
-    <div class="rail"><span class="now">SECTION</span><span class="end">04 / 04</span></div>
-    <div class="body mid" style="max-width: 1100px">
-      <div class="kicker">WHERE WE ARE</div>
-      <h2 style="font-size: 76px">현재 진행 상황</h2>
-      <p class="sub" style="font-size: 28px">16주 계획에서 지금 어디쯤인가</p>
-    </div>
-    <div class="foot"><p></p><span class="pg">23</span></div>
-  </div>
-</section>
+     24 · 독자 모델 — docs/design-doc/04-AI학습모델의-설계.md 의 4.1~4.3 을
+     옮겼습니다. 파라미터 표(4.3)는 발표 지면에 넣지 않고 목적함수와 평가
+     지표만 남겼습니다 — 나머지는 설계서에서 봅니다.
 
-<!-- ============================================================
-     23 · 일정 — 개발 로드맵의 네 구간.
+     **아직 학습된 모델이 없습니다.** 맨 아랫줄이 지금 그 자리에 서 있는
+     규칙 기반 코드이고, 둘 다 저장소에서 확인했습니다.
      ============================================================ -->
-<section class="slide" data-title="로드맵" data-kind="TIMELINE">
+<section class="slide" data-title="자체 학습 모델" data-kind="AI · OWN MODEL">
   <div class="frame">
-    <div class="rail"><span class="now">ROADMAP</span><span>·</span><span class="ko">16주 · 4명 · 77pt</span><span class="end count">24 / 26</span></div>
-    <div class="head">
-      <div class="kicker">PLAN</div>
-      <h2>지금은 포트폴리오 생성 구간</h2>
-      <p class="sub">백엔드는 출시 게이트 50개를 모두 통과. 남은 것은 화면과 생성 경로</p>
+    <div class="rail in in-fade dl-1"><span class="now">OWN MODEL</span><span>·</span><span class="ko">자체 학습 모델</span><span class="end count">29 / 31</span></div>
+    <div class="head" style="padding-top: 30px">
+      <div class="kicker">TRAIN · SERVE</div>
+      <h2>자체 학습 모델</h2>
+      <p class="sub" style="font-size: 22px">무엇을 학습해서 어느 화면에 쓰는가</p>
     </div>
-    <div class="body">
-      <div class="tl">
-        <div class="row"><div class="when">W1 — W2</div><div class="what">스키마와 화면 뼈대 확정</div><div class="who">로그인하면 빈 카테고리 7종</div></div>
-        <div class="row"><div class="when">W2 — W9</div><div class="what">기록 쌓기 · 공고 모으기 · 일치도 매기기</div><div class="who">M1 · W7 내부 데모</div></div>
-        <div class="row on"><div class="when">W7 — W14</div><div class="what">기록 고르기 · 대화 · 페이지 만들기</div><div class="who">M2 · W14 비공개 베타</div></div>
-        <div class="row"><div class="when">W10 — W16</div><div class="what">다듬기 · 주소 발급 · 방문 해석</div><div class="who">M3 · W16 공개</div></div>
+    <div class="body" style="padding-top: 22px">
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 372px minmax(0, 1fr); align-items: center">
+        <div class="in dl-2" style="display: flex; flex-direction: column; min-width: 0">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 11px"><span style="font-size: 19px; font-weight: 600; letter-spacing: -.02em; color: var(--ex-ink-900)">커리어 기록</span><span style="font-size: 14px; color: var(--ex-slate-400)">재료 고르기</span></div>
+          <div style="position: relative; height: 344px; border-radius: 14px; overflow: hidden; border: 1px solid var(--ex-line-200); background: #fff; box-shadow: var(--ex-elevation-raised)">
+            <div style="width: 734px; transform: scale(0.8801); transform-origin: 0 0"><div style="flex: 1; min-height: 0; border: 1px solid #F2F5F9; border-radius: 10px; overflow: hidden">
+            <div style="display: grid; grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px; background: #FAFBFD; border-bottom: 1px solid #F2F5F9">
+              <div style="padding: 9px 12px; display: flex; align-items: center; gap: 6px"><i class="ph ph-text-aa" style="font-size: 12px; color: #5A6B87"></i><span style="font-size: 11.5px; color: #5A6B87">제목</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 6px"><i class="ph ph-folder-simple" style="font-size: 12px; color: #5A6B87"></i><span style="font-size: 11.5px; color: #5A6B87">카테고리</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 6px"><i class="ph ph-tag" style="font-size: 12px; color: #5A6B87"></i><span style="font-size: 11.5px; color: #5A6B87">역량</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 6px"><i class="ph ph-calendar-blank" style="font-size: 12px; color: #5A6B87"></i><span style="font-size: 11.5px; color: #5A6B87">시기</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 6px"><i class="ph ph-target" style="font-size: 12px; color: #9A4030"></i><span style="font-size: 11.5px; color: #5A6B87">매칭</span></div>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px; border-bottom: 1px solid #F2F5F9; align-items: center; cursor: pointer; background: #F7FAFE;">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; min-width: 0">
+                <span style="width: 15px; height: 15px; border-radius: 4px; flex-shrink: 0; background: #16223A; display: grid; place-items: center"><i class="ph ph-check" style="font-size: 10px; color: #fff"></i></span>
+                <i class="ph ph-file-text" style="font-size: 14px; color: #5A6B87; flex-shrink: 0"></i>
+                <span style="font-size: 13px; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">배치 파이프라인 재설계</span>
+                
+              </div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">프로젝트</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #35455F; background: #F1F5FB; border-radius: 5px; padding: 3px 8px; white-space: nowrap">대용량</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap">2025.03</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 8px">
+                <div style="flex: 1; height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 96%; height: 100%; background: #16223A; border-radius: 999px"></div></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #16223A; flex-shrink: 0">96</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px; border-bottom: 1px solid #F2F5F9; align-items: center; cursor: pointer; background: #F7FAFE;">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; min-width: 0">
+                <span style="width: 15px; height: 15px; border-radius: 4px; flex-shrink: 0; background: #16223A; display: grid; place-items: center"><i class="ph ph-check" style="font-size: 10px; color: #fff"></i></span>
+                <i class="ph ph-file-text" style="font-size: 14px; color: #5A6B87; flex-shrink: 0"></i>
+                <span style="font-size: 13px; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">로그 없는 시스템에서 원인을 좁혀간 3일</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: .08em; color: #7E3225; background: #FBEEE4; border-radius: 4px; padding: 2px 5px; white-space: nowrap; flex-shrink: 0">AI</span>
+              </div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">경험</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #35455F; background: #F1F5FB; border-radius: 5px; padding: 3px 8px; white-space: nowrap">장애 대응</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap">2025.04</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 8px">
+                <div style="flex: 1; height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 91%; height: 100%; background: #16223A; border-radius: 999px"></div></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #16223A; flex-shrink: 0">91</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px; border-bottom: 1px solid #F2F5F9; align-items: center; cursor: pointer; background: #F7FAFE;">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; min-width: 0">
+                <span style="width: 15px; height: 15px; border-radius: 4px; flex-shrink: 0; background: #16223A; display: grid; place-items: center"><i class="ph ph-check" style="font-size: 10px; color: #fff"></i></span>
+                <i class="ph ph-file-text" style="font-size: 14px; color: #5A6B87; flex-shrink: 0"></i>
+                <span style="font-size: 13px; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">데이터 품질 모니터링 자동화</span>
+                
+              </div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">프로젝트</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #35455F; background: #F1F5FB; border-radius: 5px; padding: 3px 8px; white-space: nowrap">자동화</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap">2024.11</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 8px">
+                <div style="flex: 1; height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 84%; height: 100%; background: #16223A; border-radius: 999px"></div></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #16223A; flex-shrink: 0">84</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px; border-bottom: 1px solid #F2F5F9; align-items: center; cursor: pointer; background: #F7FAFE;">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; min-width: 0">
+                <span style="width: 15px; height: 15px; border-radius: 4px; flex-shrink: 0; background: #16223A; display: grid; place-items: center"><i class="ph ph-check" style="font-size: 10px; color: #fff"></i></span>
+                <i class="ph ph-file-text" style="font-size: 14px; color: #5A6B87; flex-shrink: 0"></i>
+                <span style="font-size: 13px; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">신입 두 명을 동시에 온보딩한 두 달</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: .08em; color: #7E3225; background: #FBEEE4; border-radius: 4px; padding: 2px 5px; white-space: nowrap; flex-shrink: 0">AI</span>
+              </div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">경험</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #35455F; background: #F1F5FB; border-radius: 5px; padding: 3px 8px; white-space: nowrap">협업</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap">2025.01</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 8px">
+                <div style="flex: 1; height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 72%; height: 100%; background: #16223A; border-radius: 999px"></div></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #16223A; flex-shrink: 0">72</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px; border-bottom: 1px solid #F2F5F9; align-items: center; cursor: pointer; background: #F7FAFE;">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; min-width: 0">
+                <span style="width: 15px; height: 15px; border-radius: 4px; flex-shrink: 0; background: #16223A; display: grid; place-items: center"><i class="ph ph-check" style="font-size: 10px; color: #fff"></i></span>
+                <i class="ph ph-file-text" style="font-size: 14px; color: #5A6B87; flex-shrink: 0"></i>
+                <span style="font-size: 13px; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Airflow · dbt · Kafka</span>
+                
+              </div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">스킬</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #35455F; background: #F1F5FB; border-radius: 5px; padding: 3px 8px; white-space: nowrap">도구</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap">2023–</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 8px">
+                <div style="flex: 1; height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 68%; height: 100%; background: #5A6B87; border-radius: 999px"></div></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #16223A; flex-shrink: 0">68</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px; border-bottom: 1px solid #F2F5F9; align-items: center; cursor: pointer; background: #F7FAFE;">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; min-width: 0">
+                <span style="width: 15px; height: 15px; border-radius: 4px; flex-shrink: 0; background: #16223A; display: grid; place-items: center"><i class="ph ph-check" style="font-size: 10px; color: #fff"></i></span>
+                <i class="ph ph-file-text" style="font-size: 14px; color: #5A6B87; flex-shrink: 0"></i>
+                <span style="font-size: 13px; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">사내 데이터 카탈로그 사이드 프로젝트</span>
+                
+              </div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">프로젝트</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #35455F; background: #F1F5FB; border-radius: 5px; padding: 3px 8px; white-space: nowrap">직접 제작</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap">2024.07</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 8px">
+                <div style="flex: 1; height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 63%; height: 100%; background: #5A6B87; border-radius: 999px"></div></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #16223A; flex-shrink: 0">63</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px; border-bottom: 1px solid #F2F5F9; align-items: center; cursor: pointer; background: #F7FAFE;">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; min-width: 0">
+                <span style="width: 15px; height: 15px; border-radius: 4px; flex-shrink: 0; background: #16223A; display: grid; place-items: center"><i class="ph ph-check" style="font-size: 10px; color: #fff"></i></span>
+                <i class="ph ph-file-text" style="font-size: 14px; color: #5A6B87; flex-shrink: 0"></i>
+                <span style="font-size: 13px; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">SQLD 자격증</span>
+                
+              </div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">자격증</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #35455F; background: #F1F5FB; border-radius: 5px; padding: 3px 8px; white-space: nowrap">SQL</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap">2024.09</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 8px">
+                <div style="flex: 1; height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 47%; height: 100%; background: #5A6B87; border-radius: 999px"></div></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #16223A; flex-shrink: 0">47</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px; border-bottom: 1px solid #F2F5F9; align-items: center; cursor: pointer; background: #F7FAFE;">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; min-width: 0">
+                <span style="width: 15px; height: 15px; border-radius: 4px; flex-shrink: 0; background: #16223A; display: grid; place-items: center"><i class="ph ph-check" style="font-size: 10px; color: #fff"></i></span>
+                <i class="ph ph-file-text" style="font-size: 14px; color: #5A6B87; flex-shrink: 0"></i>
+                <span style="font-size: 13px; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">컴퓨터공학 학사</span>
+                
+              </div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">학력</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #35455F; background: #F1F5FB; border-radius: 5px; padding: 3px 8px; white-space: nowrap">전공</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap">2021–25</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 8px">
+                <div style="flex: 1; height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 41%; height: 100%; background: #C7D2E2; border-radius: 999px"></div></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #5A6B87; flex-shrink: 0">41</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px; border-bottom: 1px solid #F2F5F9; align-items: center; cursor: pointer; transition: background .14s" style-hover="background: #FAFBFD">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; min-width: 0">
+                <span style="width: 15px; height: 15px; border-radius: 4px; flex-shrink: 0; border: 1.5px solid #DCE3ED"></span>
+                <i class="ph ph-file-text" style="font-size: 14px; color: #5A6B87; flex-shrink: 0"></i>
+                <span style="font-size: 13px; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">반대하는 팀원을 설득해 구조를 바꾼 일</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: .08em; color: #7E3225; background: #FBEEE4; border-radius: 4px; padding: 2px 5px; white-space: nowrap; flex-shrink: 0">AI</span>
+              </div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">경험</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #35455F; background: #F1F5FB; border-radius: 5px; padding: 3px 8px; white-space: nowrap">설득</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap">2025.02</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 8px">
+                <div style="flex: 1; height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 38%; height: 100%; background: #C7D2E2; border-radius: 999px"></div></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #5A6B87; flex-shrink: 0">38</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px; border-bottom: 1px solid #F2F5F9; align-items: center; cursor: pointer; transition: background .14s" style-hover="background: #FAFBFD">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; min-width: 0">
+                <span style="width: 15px; height: 15px; border-radius: 4px; flex-shrink: 0; border: 1.5px solid #DCE3ED"></span>
+                <i class="ph ph-file-text" style="font-size: 14px; color: #5A6B87; flex-shrink: 0"></i>
+                <span style="font-size: 13px; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">교내 해커톤 대상</span>
+                
+              </div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">자격증</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #35455F; background: #F1F5FB; border-radius: 5px; padding: 3px 8px; white-space: nowrap">수상</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap">2023.10</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 8px">
+                <div style="flex: 1; height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 28%; height: 100%; background: #C7D2E2; border-radius: 999px"></div></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #5A6B87; flex-shrink: 0">28</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px; border-bottom: 1px solid #F2F5F9; align-items: center; cursor: pointer; transition: background .14s" style-hover="background: #FAFBFD">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; min-width: 0">
+                <span style="width: 15px; height: 15px; border-radius: 4px; flex-shrink: 0; border: 1.5px solid #DCE3ED"></span>
+                <i class="ph ph-file-text" style="font-size: 14px; color: #5A6B87; flex-shrink: 0"></i>
+                <span style="font-size: 13px; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">학회 논문 공저</span>
+                
+              </div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">학술</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #35455F; background: #F1F5FB; border-radius: 5px; padding: 3px 8px; white-space: nowrap">연구</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap">2024.05</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 8px">
+                <div style="flex: 1; height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 19%; height: 100%; background: #C7D2E2; border-radius: 999px"></div></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #5A6B87; flex-shrink: 0">19</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px; border-bottom: 1px solid #F2F5F9; align-items: center; cursor: pointer; transition: background .14s" style-hover="background: #FAFBFD">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; min-width: 0">
+                <span style="width: 15px; height: 15px; border-radius: 4px; flex-shrink: 0; border: 1.5px solid #DCE3ED"></span>
+                <i class="ph ph-file-text" style="font-size: 14px; color: #5A6B87; flex-shrink: 0"></i>
+                <span style="font-size: 13px; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">동아리 운영진 2년</span>
+                
+              </div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">활동</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #35455F; background: #F1F5FB; border-radius: 5px; padding: 3px 8px; white-space: nowrap">리더십</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap">2022–24</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 8px">
+                <div style="flex: 1; height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 17%; height: 100%; background: #C7D2E2; border-radius: 999px"></div></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #5A6B87; flex-shrink: 0">17</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px; border-bottom: 1px solid #F2F5F9; align-items: center; cursor: pointer; transition: background .14s" style-hover="background: #FAFBFD">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; min-width: 0">
+                <span style="width: 15px; height: 15px; border-radius: 4px; flex-shrink: 0; border: 1.5px solid #DCE3ED"></span>
+                <i class="ph ph-file-text" style="font-size: 14px; color: #5A6B87; flex-shrink: 0"></i>
+                <span style="font-size: 13px; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">프론트엔드 스터디 리드</span>
+                
+              </div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">활동</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #35455F; background: #F1F5FB; border-radius: 5px; padding: 3px 8px; white-space: nowrap">스터디</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap">2023.06</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 8px">
+                <div style="flex: 1; height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 14%; height: 100%; background: #C7D2E2; border-radius: 999px"></div></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #5A6B87; flex-shrink: 0">14</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px; border-bottom: 1px solid #F2F5F9; align-items: center; cursor: pointer; transition: background .14s" style-hover="background: #FAFBFD">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; min-width: 0">
+                <span style="width: 15px; height: 15px; border-radius: 4px; flex-shrink: 0; border: 1.5px solid #DCE3ED"></span>
+                <i class="ph ph-file-text" style="font-size: 14px; color: #5A6B87; flex-shrink: 0"></i>
+                <span style="font-size: 13px; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">개인 블로그 기술 글 12편</span>
+                
+              </div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">학술</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #35455F; background: #F1F5FB; border-radius: 5px; padding: 3px 8px; white-space: nowrap">집필</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap">2024–</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 8px">
+                <div style="flex: 1; height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 12%; height: 100%; background: #C7D2E2; border-radius: 999px"></div></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #5A6B87; flex-shrink: 0">12</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px; border-bottom: 1px solid #F2F5F9; align-items: center; cursor: pointer; transition: background .14s" style-hover="background: #FAFBFD">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; min-width: 0">
+                <span style="width: 15px; height: 15px; border-radius: 4px; flex-shrink: 0; border: 1.5px solid #DCE3ED"></span>
+                <i class="ph ph-file-text" style="font-size: 14px; color: #5A6B87; flex-shrink: 0"></i>
+                <span style="font-size: 13px; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">고객 문의를 직접 받아본 2주</span>
+                
+              </div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">경험</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #35455F; background: #F1F5FB; border-radius: 5px; padding: 3px 8px; white-space: nowrap">고객 이해</span></div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; font-size: 12px; color: #5A6B87; white-space: nowrap">2021.03</div>
+              <div style="padding: 9px 12px; border-left: 1px solid #F2F5F9; display: flex; align-items: center; gap: 8px">
+                <div style="flex: 1; height: 5px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 6%; height: 100%; background: #C7D2E2; border-radius: 999px"></div></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #5A6B87; flex-shrink: 0">6</span>
+              </div>
+            </div>
+          </div></div>
+            <div class="in dl-6" style="position: absolute; left: 566px; top: 4px; width: 78px; height: 336px; border: 2px solid var(--ex-espresso); border-radius: 9px; pointer-events: none"></div>
+          </div>
+        </div>
+        <div class="in dl-4" style="display: flex; flex-direction: column; justify-content: center; gap: 40px; padding: 0 18px">
+          <div>
+            <div style="font-size: 17px; font-weight: 600; letter-spacing: -.02em; color: var(--ex-espresso); text-align: center; margin-bottom: 9px">채용 공고 추천 모델</div>
+            <svg viewBox="0 0 336 12" width="336" height="12" aria-hidden="true"><line x1="10" y1="6" x2="326" y2="6" stroke="var(--ex-espresso)" stroke-width="2" stroke-opacity=".55"></line><path d="M318 1 L326 6 L318 11" fill="none" stroke="var(--ex-espresso)" stroke-width="2" stroke-opacity=".55"></path></svg>
+          </div>
+          <div>
+            <div style="font-size: 17px; font-weight: 600; letter-spacing: -.02em; color: var(--ex-slate-500); text-align: center; margin-bottom: 9px">커리어 기록 추천 모델</div>
+            <svg viewBox="0 0 336 12" width="336" height="12" aria-hidden="true"><line x1="326" y1="6" x2="10" y2="6" stroke="var(--ex-slate-300)" stroke-width="2"></line><path d="M18 1 L10 6 L18 11" fill="none" stroke="var(--ex-slate-300)" stroke-width="2"></path></svg>
+          </div>
+        </div>
+        <div class="in dl-3" style="display: flex; flex-direction: column; min-width: 0">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 11px"><span style="font-size: 19px; font-weight: 600; letter-spacing: -.02em; color: var(--ex-ink-900)">채용 공고</span><span style="font-size: 14px; color: var(--ex-slate-400)">공고 탐색</span></div>
+          <div style="position: relative; height: 344px; border-radius: 14px; overflow: hidden; border: 1px solid var(--ex-line-200); background: #fff; box-shadow: var(--ex-elevation-raised)">
+            <div style="width: 790px; transform: scale(0.8177); transform-origin: 0 0"><div style="flex: 1; min-height: 0; background: #fff; border: 1px solid #E2E9F4; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column">
+            <div style="display: grid; grid-template-columns: minmax(0,1fr) 148px 96px 62px 30px; align-items: center; gap: 14px; padding: 11px 20px; border-bottom: 1px solid #EFF4FB; background: #FCFDFF; flex-shrink: 0">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #93A2BA">공고 · 14건</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #93A2BA">키워드</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #93A2BA">내 기록 일치</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: #93A2BA">마감</span>
+              <span></span>
+            </div>
+            <div style="flex: 1; min-height: 0; overflow: hidden">
+                <div style="display: grid; grid-template-columns: minmax(0,1fr) 148px 96px 62px 30px; align-items: center; gap: 14px; padding: 13px 20px; border-bottom: 1px solid #F4F7FB; cursor: pointer; background: #F7FAFE; transition: background .14s" style-hover="background: #F7FAFE">
+                  <div style="display: flex; align-items: center; gap: 12px; min-width: 0">
+                    <div style="width: 30px; height: 30px; border-radius: 8px; background: #EEF2FC; display: grid; place-items: center; font-family: 'Outfit', sans-serif; font-size: 12.5px; font-weight: 500; color: #2A48B8; flex-shrink: 0">T</div>
+                    <div style="min-width: 0">
+                      <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 4px">
+                        <span style="font-size: 13px; font-weight: 600; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">백엔드 엔지니어 (Core Banking)</span>
+                        
+                      </div>
+                      <div style="font-size: 11.5px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">토스 · 서울 강남 · 5년+</div>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #5A6B87; background: #F2F5F9; border-radius: 5px; padding: 3px 8px; white-space: nowrap">Kotlin</span><span style="font-size: 10.5px; color: #5A6B87; background: #F2F5F9; border-radius: 5px; padding: 3px 8px; white-space: nowrap">대용량</span></div>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <div style="flex: 1; height: 4px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 92%; height: 100%; background: #0E8A63; border-radius: 999px"></div></div>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #0E8A63">92</span>
+                  </div>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #5A6B87; background: #F7FAFE; border-radius: 5px; padding: 4px 7px; white-space: nowrap">D-4</span>
+                  <i class="ph-fill ph-bookmark-simple" style="font-size: 15px; color: #9A4030; justify-self: end"></i>
+                </div>
+                <div style="display: grid; grid-template-columns: minmax(0,1fr) 148px 96px 62px 30px; align-items: center; gap: 14px; padding: 13px 20px; border-bottom: 1px solid #F4F7FB; cursor: pointer; transition: background .14s" style-hover="background: #F7FAFE">
+                  <div style="display: flex; align-items: center; gap: 12px; min-width: 0">
+                    <div style="width: 30px; height: 30px; border-radius: 8px; background: #E9F3FB; display: grid; place-items: center; font-family: 'Outfit', sans-serif; font-size: 12.5px; font-weight: 500; color: #1E63A9; flex-shrink: 0">B</div>
+                    <div style="min-width: 0">
+                      <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 4px">
+                        <span style="font-size: 13px; font-weight: 600; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">데이터 파이프라인 엔지니어</span>
+                        <span style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: .08em; color: #0E8A63; background: #E4F7F0; border-radius: 4px; padding: 2px 5px; flex-shrink: 0">NEW</span>
+                      </div>
+                      <div style="font-size: 11.5px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">뱅크샐러드 · 리모트 · 3년+</div>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #5A6B87; background: #F2F5F9; border-radius: 5px; padding: 3px 8px; white-space: nowrap">Airflow</span><span style="font-size: 10.5px; color: #5A6B87; background: #F2F5F9; border-radius: 5px; padding: 3px 8px; white-space: nowrap">dbt</span></div>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <div style="flex: 1; height: 4px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 88%; height: 100%; background: #0E8A63; border-radius: 999px"></div></div>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #0E8A63">88</span>
+                  </div>
+                  <span style="font-size: 10.5px; color: #93A2BA; white-space: nowrap">상시</span>
+                  <i class="ph-fill ph-bookmark-simple" style="font-size: 15px; color: #9A4030; justify-self: end"></i>
+                </div>
+                <div style="display: grid; grid-template-columns: minmax(0,1fr) 148px 96px 62px 30px; align-items: center; gap: 14px; padding: 13px 20px; border-bottom: 1px solid #F4F7FB; cursor: pointer; transition: background .14s" style-hover="background: #F7FAFE">
+                  <div style="display: flex; align-items: center; gap: 12px; min-width: 0">
+                    <div style="width: 30px; height: 30px; border-radius: 8px; background: #EAF6EE; display: grid; place-items: center; font-family: 'Outfit', sans-serif; font-size: 12.5px; font-weight: 500; color: #1E7A45; flex-shrink: 0">L</div>
+                    <div style="min-width: 0">
+                      <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 4px">
+                        <span style="font-size: 13px; font-weight: 600; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">데이터 플랫폼 엔지니어</span>
+                        <span style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: .08em; color: #0E8A63; background: #E4F7F0; border-radius: 4px; padding: 2px 5px; flex-shrink: 0">NEW</span>
+                      </div>
+                      <div style="font-size: 11.5px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">라인 · 리모트 가능 · 4년+</div>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #5A6B87; background: #F2F5F9; border-radius: 5px; padding: 3px 8px; white-space: nowrap">Kafka</span><span style="font-size: 10.5px; color: #5A6B87; background: #F2F5F9; border-radius: 5px; padding: 3px 8px; white-space: nowrap">Spark</span></div>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <div style="flex: 1; height: 4px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 85%; height: 100%; background: #0E8A63; border-radius: 999px"></div></div>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #0E8A63">85</span>
+                  </div>
+                  <span style="font-size: 10.5px; color: #93A2BA; white-space: nowrap">상시</span>
+                  <i class="ph ph-bookmark-simple" style="font-size: 15px; color: #C7D2E2; justify-self: end"></i>
+                </div>
+                <div style="display: grid; grid-template-columns: minmax(0,1fr) 148px 96px 62px 30px; align-items: center; gap: 14px; padding: 13px 20px; border-bottom: 1px solid #F4F7FB; cursor: pointer; transition: background .14s" style-hover="background: #F7FAFE">
+                  <div style="display: flex; align-items: center; gap: 12px; min-width: 0">
+                    <div style="width: 30px; height: 30px; border-radius: 8px; background: #FCEDEA; display: grid; place-items: center; font-family: 'Outfit', sans-serif; font-size: 12.5px; font-weight: 500; color: #B03A25; flex-shrink: 0">C</div>
+                    <div style="min-width: 0">
+                      <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 4px">
+                        <span style="font-size: 13px; font-weight: 600; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Data Infrastructure Engineer</span>
+                        
+                      </div>
+                      <div style="font-size: 11.5px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">쿠팡 · 서울 · 시애틀 · 5년+</div>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #5A6B87; background: #F2F5F9; border-radius: 5px; padding: 3px 8px; white-space: nowrap">IaC</span><span style="font-size: 10.5px; color: #5A6B87; background: #F2F5F9; border-radius: 5px; padding: 3px 8px; white-space: nowrap">온콜</span></div>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <div style="flex: 1; height: 4px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 81%; height: 100%; background: #8A6412; border-radius: 999px"></div></div>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #8A6412">81</span>
+                  </div>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #5A6B87; background: #F7FAFE; border-radius: 5px; padding: 4px 7px; white-space: nowrap">D-11</span>
+                  <i class="ph ph-bookmark-simple" style="font-size: 15px; color: #C7D2E2; justify-self: end"></i>
+                </div>
+                <div style="display: grid; grid-template-columns: minmax(0,1fr) 148px 96px 62px 30px; align-items: center; gap: 14px; padding: 13px 20px; border-bottom: 1px solid #F4F7FB; cursor: pointer; transition: background .14s" style-hover="background: #F7FAFE">
+                  <div style="display: flex; align-items: center; gap: 12px; min-width: 0">
+                    <div style="width: 30px; height: 30px; border-radius: 8px; background: #FBEEE4; display: grid; place-items: center; font-family: 'Outfit', sans-serif; font-size: 12.5px; font-weight: 500; color: #9A4030; flex-shrink: 0">D</div>
+                    <div style="min-width: 0">
+                      <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 4px">
+                        <span style="font-size: 13px; font-weight: 600; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">서버 개발자 (커뮤니티)</span>
+                        
+                      </div>
+                      <div style="font-size: 11.5px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">당근 · 서울 · 리모트 일부 · 3년+</div>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #5A6B87; background: #F2F5F9; border-radius: 5px; padding: 3px 8px; white-space: nowrap">Go</span><span style="font-size: 10.5px; color: #5A6B87; background: #F2F5F9; border-radius: 5px; padding: 3px 8px; white-space: nowrap">Kubernetes</span></div>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <div style="flex: 1; height: 4px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 78%; height: 100%; background: #8A6412; border-radius: 999px"></div></div>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #8A6412">78</span>
+                  </div>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #5A6B87; background: #F7FAFE; border-radius: 5px; padding: 4px 7px; white-space: nowrap">D-9</span>
+                  <i class="ph-fill ph-bookmark-simple" style="font-size: 15px; color: #9A4030; justify-self: end"></i>
+                </div>
+                <div style="display: grid; grid-template-columns: minmax(0,1fr) 148px 96px 62px 30px; align-items: center; gap: 14px; padding: 13px 20px; border-bottom: 1px solid #F4F7FB; cursor: pointer; transition: background .14s" style-hover="background: #F7FAFE">
+                  <div style="display: flex; align-items: center; gap: 12px; min-width: 0">
+                    <div style="width: 30px; height: 30px; border-radius: 8px; background: #F1F2F5; display: grid; place-items: center; font-family: 'Outfit', sans-serif; font-size: 12.5px; font-weight: 500; color: #2C3038; flex-shrink: 0">M</div>
+                    <div style="min-width: 0">
+                      <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 4px">
+                        <span style="font-size: 13px; font-weight: 600; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">데이터 엔지니어</span>
+                        
+                      </div>
+                      <div style="font-size: 11.5px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">무신사 · 서울 성수 · 3년+</div>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #5A6B87; background: #F2F5F9; border-radius: 5px; padding: 3px 8px; white-space: nowrap">BigQuery</span></div>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <div style="flex: 1; height: 4px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 76%; height: 100%; background: #8A6412; border-radius: 999px"></div></div>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #8A6412">76</span>
+                  </div>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #C6402A; background: #FCEEEA; border-radius: 5px; padding: 4px 7px; white-space: nowrap">D-2</span>
+                  <i class="ph ph-bookmark-simple" style="font-size: 15px; color: #C7D2E2; justify-self: end"></i>
+                </div>
+                <div style="display: grid; grid-template-columns: minmax(0,1fr) 148px 96px 62px 30px; align-items: center; gap: 14px; padding: 13px 20px; border-bottom: 1px solid #F4F7FB; cursor: pointer; transition: background .14s" style-hover="background: #F7FAFE">
+                  <div style="display: flex; align-items: center; gap: 12px; min-width: 0">
+                    <div style="width: 30px; height: 30px; border-radius: 8px; background: #FBF4E2; display: grid; place-items: center; font-family: 'Outfit', sans-serif; font-size: 12.5px; font-weight: 500; color: #8A6412; flex-shrink: 0">K</div>
+                    <div style="min-width: 0">
+                      <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 4px">
+                        <span style="font-size: 13px; font-weight: 600; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">플랫폼 엔지니어</span>
+                        
+                      </div>
+                      <div style="font-size: 11.5px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">카카오 · 판교 · 5년+</div>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #5A6B87; background: #F2F5F9; border-radius: 5px; padding: 3px 8px; white-space: nowrap">Java</span><span style="font-size: 10.5px; color: #5A6B87; background: #F2F5F9; border-radius: 5px; padding: 3px 8px; white-space: nowrap">MSA</span></div>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <div style="flex: 1; height: 4px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 74%; height: 100%; background: #8A6412; border-radius: 999px"></div></div>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #8A6412">74</span>
+                  </div>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #5A6B87; background: #F7FAFE; border-radius: 5px; padding: 4px 7px; white-space: nowrap">D-18</span>
+                  <i class="ph ph-bookmark-simple" style="font-size: 15px; color: #C7D2E2; justify-self: end"></i>
+                </div>
+                <div style="display: grid; grid-template-columns: minmax(0,1fr) 148px 96px 62px 30px; align-items: center; gap: 14px; padding: 13px 20px; border-bottom: 1px solid #F4F7FB; cursor: pointer; transition: background .14s" style-hover="background: #F7FAFE">
+                  <div style="display: flex; align-items: center; gap: 12px; min-width: 0">
+                    <div style="width: 30px; height: 30px; border-radius: 8px; background: #E9F4EC; display: grid; place-items: center; font-family: 'Outfit', sans-serif; font-size: 12.5px; font-weight: 500; color: #1E7A45; flex-shrink: 0">N</div>
+                    <div style="min-width: 0">
+                      <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 4px">
+                        <span style="font-size: 13px; font-weight: 600; color: #16223A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">백엔드 (검색 플랫폼)</span>
+                        
+                      </div>
+                      <div style="font-size: 11.5px; color: #5A6B87; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">네이버 · 분당 · 경력</div>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 5px; overflow: hidden"><span style="font-size: 10.5px; color: #5A6B87; background: #F2F5F9; border-radius: 5px; padding: 3px 8px; white-space: nowrap">Elasticsearch</span></div>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <div style="flex: 1; height: 4px; background: #EFF4FB; border-radius: 999px; overflow: hidden"><div style="width: 69%; height: 100%; background: #5A6B87; border-radius: 999px"></div></div>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6B87">69</span>
+                  </div>
+                  <span style="font-size: 10.5px; color: #93A2BA; white-space: nowrap">상시</span>
+                  <i class="ph ph-bookmark-simple" style="font-size: 15px; color: #C7D2E2; justify-self: end"></i>
+                </div>
+            </div>
+            <div style="flex-shrink: 0; border-top: 1px solid #EFF4FB; padding: 12px 20px; display: flex; align-items: center; gap: 10px; background: #FCFDFF">
+              <span style="font-size: 11.5px; color: #5A6B87">14건 중 8건 표시</span>
+              <span style="margin-left: auto; font-size: 12px; font-weight: 600; color: #35455F; cursor: pointer">더 보기</span>
+            </div>
+          </div></div>
+            <div class="in dl-6" style="position: absolute; left: 449px; top: 4px; width: 87px; height: 336px; border: 2px solid var(--ex-espresso); border-radius: 9px; pointer-events: none"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="in dl-5" style="margin-top: 20px">
+        <div style="display: grid; grid-template-columns: 268px minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1fr); column-gap: 40px; padding-bottom: 12px">
+          <div></div>
+          <div style="font-size: 14px; font-weight: 600; letter-spacing: .02em; color: var(--ex-espresso)">기반 모델</div>
+          <div style="font-size: 14px; font-weight: 600; letter-spacing: .02em; color: var(--ex-espresso)"><span style="color: var(--ex-slate-300); font-size: 15px; margin-right: 8px">→</span>학습 방법</div>
+          <div style="font-size: 14px; font-weight: 600; letter-spacing: .02em; color: var(--ex-espresso)"><span style="color: var(--ex-slate-300); font-size: 15px; margin-right: 8px">→</span>활용 목적</div>
+        </div>
+        <div style="display: grid; grid-template-columns: 268px minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1fr); column-gap: 40px; padding: 15px 0; align-items: start">
+          <div style="font-size: 21px; font-weight: 600; letter-spacing: -.025em; color: var(--ex-ink-900)">채용 공고 추천 모델</div>
+          <div>
+            <div style="font-size: 18px; font-weight: 600; letter-spacing: -.02em; color: var(--ex-ink-900)">LightGBM 랭커</div>
+            <div style="margin-top: 5px; font-size: 16px; line-height: 1.45; color: var(--ex-slate-500)">프로필에 맞는 공고를 적합도 순으로 정렬</div>
+          </div>
+          <div>
+            <div style="font-size: 16px; line-height: 1.45; color: var(--ex-slate-500)">Claude 교사가 프로필 × 공고에 적합도 라벨</div>
+            <div style="margin-top: 5px; font-size: 16px; line-height: 1.45; color: var(--ex-slate-500)">사람이 표본을 검수해 학습 승인</div>
+          </div>
+          <div>
+            <div style="font-size: 16px; line-height: 1.45; color: var(--ex-slate-500)">채용 공고 탐색 목록 정렬</div>
+          </div>
+        </div>
+        <div style="border-top: 1px solid var(--ex-line-200); display: grid; grid-template-columns: 268px minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1fr); column-gap: 40px; padding: 15px 0; align-items: start">
+          <div style="font-size: 21px; font-weight: 600; letter-spacing: -.025em; color: var(--ex-ink-900)">커리어 기록 추천 모델</div>
+          <div>
+            <div style="font-size: 18px; font-weight: 600; letter-spacing: -.02em; color: var(--ex-ink-900)">LightGBM 랭커</div>
+            <div style="margin-top: 5px; font-size: 16px; line-height: 1.45; color: var(--ex-slate-500)">공고에 맞는 기록을 적합도 순으로 정렬</div>
+          </div>
+          <div>
+            <div style="font-size: 16px; line-height: 1.45; color: var(--ex-slate-500)">Claude 교사가 공고 × 기록에 적합도 라벨</div>
+            <div style="margin-top: 5px; font-size: 16px; line-height: 1.45; color: var(--ex-slate-500)">사람이 표본을 검수해 학습 승인</div>
+          </div>
+          <div>
+            <div style="font-size: 16px; line-height: 1.45; color: var(--ex-slate-500)">재료 고르기 기록 자동 선택</div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="foot">
+    <div class="foot in in-fade dl-1">
       <p></p>
-      <span class="pg">24</span>
+      <span class="pg">29</span>
     </div>
   </div>
 </section>
 
 <!-- ============================================================
-     24 · 마무리 — 아직 구현되지 않은 것.
+     연속 학습 — 교사 라벨로 한 번 학습하고 끝나는 것이 아니라, 배포한
+     모델의 예측과 사용자의 실제 선택을 짝지어 다시 학습합니다.
+
+     신호는 이미 스키마에 있습니다(08 데이터 설계).
+     · match_score.model_version — 그 순위를 어느 모델이 냈는가
+     · interest.stage            — 목록에서 관심을 눌렀는가 · 지원까지 갔는가
+     · brew_source.selected_by   — 모델이 고른 것을 사용자가 지웠는가 · 더했는가
      ============================================================ -->
-<section class="slide dark" data-title="아직 구현되지 않은 것" data-kind="CLOSING">
+<section class="slide" data-title="Continuous learning" data-kind="AI · OWN MODEL">
   <div class="frame">
-    <div class="rail" style="border: none"><span class="now" style="color: var(--ex-crema)">OPEN</span><span>·</span><span class="ko">남은 작업</span><span class="end count">25 / 26</span></div>
-    <div class="head">
-      <h2 style="color: #fff">아직 구현되지 않은 세 가지</h2>
+    <div class="rail in in-fade dl-1"><span class="now">OWN MODEL</span><span>·</span><span class="ko">연속 학습</span><span class="end count">30 / 31</span></div>
+    <div class="head" style="padding-top: 36px">
+      <div class="kicker">RETRAINING</div>
+      <h2>Continuous Learning</h2>
+      <p class="sub" style="font-size: 22px">모델 배포 이후의 재학습 계획</p>
     </div>
-    <div class="body">
-      <div class="cols c-3">
-        <div class="panel" style="background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.12)">
-          <div class="lab" style="color: var(--ex-crema)">01 · 생성</div>
-          <h3 style="color: #fff">회사를 스스로 찾아보게 하기</h3>
-          <p style="color: var(--ex-on-dark-body)">지금은 사용자가 넣어 준 자료뿐. 웹에서 직접 찾아 오는 일이 없음</p>
+    <div class="body" style="padding-top: 24px">
+      <div class="in dl-2">
+        <div style="display: grid; grid-template-columns: 232px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); column-gap: 30px; padding-bottom: 14px">
+          <div></div>
+          <div style="display: flex; align-items: center; gap: 11px"><span style="width: 38px; height: 38px; border-radius: 11px; background: var(--ex-bean-50); display: grid; place-items: center; flex: none"><i class="ph ph-list-checks" style="font-size: 21px; color: var(--ex-espresso)"></i></span><span style="font-size: 16px; font-weight: 600; letter-spacing: -.01em; color: var(--ex-ink-900)">모델의 추천</span></div>
+          <div style="display: flex; align-items: center; gap: 11px"><span style="width: 38px; height: 38px; border-radius: 11px; background: var(--ex-bean-50); display: grid; place-items: center; flex: none"><i class="ph ph-cursor-click" style="font-size: 21px; color: var(--ex-espresso)"></i></span><span style="font-size: 16px; font-weight: 600; letter-spacing: -.01em; color: var(--ex-ink-900)">사용자의 선택</span></div>
+          <div style="display: flex; align-items: center; gap: 11px"><span style="width: 38px; height: 38px; border-radius: 11px; background: var(--ex-bean-50); display: grid; place-items: center; flex: none"><i class="ph ph-database" style="font-size: 21px; color: var(--ex-espresso)"></i></span><span style="font-size: 16px; font-weight: 600; letter-spacing: -.01em; color: var(--ex-ink-900)">새 학습 데이터</span></div>
         </div>
-        <div class="panel" style="background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.12)">
-          <div class="lab" style="color: var(--ex-crema)">02 · 검증</div>
-          <h3 style="color: #fff">만든 화면을 눈으로 보기</h3>
-          <p style="color: var(--ex-on-dark-body)">기계 검사는 붙음. 그려 본 뒤 눈으로 판단하는 자리가 빔</p>
+        <div style="display: grid; grid-template-columns: 232px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); column-gap: 30px; padding: 18px 0; align-items: center">
+          <div style="font-size: 21px; font-weight: 600; letter-spacing: -.025em; color: var(--ex-ink-900)">커리어 기록 추천 모델</div>
+          <div style="background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 16px; padding: 14px 20px">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0"><i class="ph ph-check-square" style="font-size: 17px; color: var(--ex-espresso); flex: none"></i><span style="font-size: 15.5px; letter-spacing: -.01em; color: var(--ex-ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">배치 파이프라인 재설계</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0"><i class="ph ph-check-square" style="font-size: 17px; color: var(--ex-espresso); flex: none"></i><span style="font-size: 15.5px; letter-spacing: -.01em; color: var(--ex-ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">로그 없는 시스템 원인 좁히기</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0"><i class="ph ph-check-square" style="font-size: 17px; color: var(--ex-espresso); flex: none"></i><span style="font-size: 15.5px; letter-spacing: -.01em; color: var(--ex-ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">데이터 품질 모니터링 자동화</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0"><i class="ph ph-check-square" style="font-size: 17px; color: var(--ex-espresso); flex: none"></i><span style="font-size: 15.5px; letter-spacing: -.01em; color: var(--ex-ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">신입 두 명 동시 온보딩</span></div>
+          </div>
+          <div style="background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 16px; padding: 14px 20px">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0"><i class="ph ph-check-square" style="font-size: 17px; color: var(--ex-espresso); flex: none"></i><span style="font-size: 15.5px; letter-spacing: -.01em; color: var(--ex-ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">배치 파이프라인 재설계</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0"><i class="ph ph-square" style="font-size: 17px; color: var(--ex-slate-300); flex: none"></i><span style="text-decoration: line-through; font-size: 15.5px; letter-spacing: -.01em; color: var(--ex-slate-400); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">로그 없는 시스템 원인 좁히기</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0"><i class="ph ph-check-square" style="font-size: 17px; color: var(--ex-espresso); flex: none"></i><span style="font-size: 15.5px; letter-spacing: -.01em; color: var(--ex-ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">데이터 품질 모니터링 자동화</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0"><i class="ph ph-square" style="font-size: 17px; color: var(--ex-slate-300); flex: none"></i><span style="text-decoration: line-through; font-size: 15.5px; letter-spacing: -.01em; color: var(--ex-slate-400); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">신입 두 명 동시 온보딩</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0"><i class="ph ph-plus-square" style="font-size: 17px; color: var(--ex-espresso); flex: none"></i><span style="font-size: 15.5px; letter-spacing: -.01em; color: var(--ex-ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">SQLD 자격증</span></div>
+          </div>
+          <div style="background: var(--ex-bean-50); border-radius: 16px; padding: 14px 20px">
+            <div style="display: flex; align-items: center; gap: 11px; padding: 6px 0"><span style="font-size: 15.5px; color: var(--ex-bean-ink); flex: 1 1 auto">체크를 지운 기록</span><span style="display: flex; align-items: center; gap: 6px; background: var(--ex-white); border-radius: 999px; padding: 4px 12px; flex: none"><span style="font-size: 14px; font-weight: 600; color: var(--ex-bean-ink)">낮은 적합도</span></span></div>
+            <div style="display: flex; align-items: center; gap: 11px; padding: 6px 0"><span style="font-size: 15.5px; color: var(--ex-bean-ink); flex: 1 1 auto">직접 더한 기록</span><span style="display: flex; align-items: center; gap: 6px; background: var(--ex-white); border-radius: 999px; padding: 4px 12px; flex: none"><span style="font-size: 14px; font-weight: 600; color: var(--ex-bean-ink)">높은 적합도</span></span></div>
+          </div>
         </div>
-        <div class="panel" style="background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.12)">
-          <div class="lab" style="color: var(--ex-crema)">03 · 문서</div>
-          <h3 style="color: #fff">문서를 코드에 맞추기</h3>
-          <p style="color: var(--ex-on-dark-body)">frontend.md는 M3 이후를 미착수로 적어 둠. 그 화면들은 이미 서 있음</p>
+        <div style="border-top: 1px solid var(--ex-line-200); display: grid; grid-template-columns: 232px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); column-gap: 30px; padding: 18px 0; align-items: center">
+          <div style="font-size: 21px; font-weight: 600; letter-spacing: -.025em; color: var(--ex-ink-900)">채용 공고 추천 모델</div>
+          <div style="background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 16px; padding: 14px 20px">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0"><span style="font-size: 15.5px; letter-spacing: -.01em; color: var(--ex-ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">토스 · 백엔드</span><span style="margin-left: auto; font-family: var(--ex-font-brand); font-size: 15px; color: var(--ex-slate-400); flex: none">92</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0"><span style="font-size: 15.5px; letter-spacing: -.01em; color: var(--ex-ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">당근 · 서버</span><span style="margin-left: auto; font-family: var(--ex-font-brand); font-size: 15px; color: var(--ex-slate-400); flex: none">78</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0"><span style="font-size: 15.5px; letter-spacing: -.01em; color: var(--ex-ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">카카오 · 플랫폼</span><span style="margin-left: auto; font-family: var(--ex-font-brand); font-size: 15px; color: var(--ex-slate-400); flex: none">61</span></div>
+          </div>
+          <div style="background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 16px; padding: 14px 20px">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0"><span style="font-size: 15.5px; letter-spacing: -.01em; color: var(--ex-ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">토스 · 백엔드</span><span style="margin-left: auto; font-family: var(--ex-font-brand); font-size: 15px; color: var(--ex-slate-400); flex: none">92</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0"><span style="font-size: 15.5px; letter-spacing: -.01em; color: var(--ex-ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">당근 · 서버</span><span style="margin-left: auto; font-family: var(--ex-font-brand); font-size: 15px; color: var(--ex-slate-400); flex: none">78</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0"><span style="font-size: 15.5px; letter-spacing: -.01em; color: var(--ex-ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">카카오 · 플랫폼</span><span style="margin-left: auto; background: var(--ex-espresso); border-radius: 999px; padding: 3px 11px; flex: none"><span style="font-size: 13px; font-weight: 600; color: var(--ex-white)">관심 · 지원</span></span></div>
+          </div>
+          <div style="background: var(--ex-bean-50); border-radius: 16px; padding: 14px 20px">
+            <div style="display: flex; align-items: center; gap: 11px; padding: 6px 0"><span style="font-size: 15.5px; color: var(--ex-bean-ink); flex: 1 1 auto">관심을 누른 공고</span><span style="display: flex; align-items: center; gap: 6px; background: var(--ex-white); border-radius: 999px; padding: 4px 12px; flex: none"><span style="font-size: 14px; font-weight: 600; color: var(--ex-bean-ink)">높은 적합도</span></span></div>
+            <div style="display: flex; align-items: center; gap: 11px; padding: 6px 0"><span style="font-size: 15.5px; color: var(--ex-bean-ink); flex: 1 1 auto">지나친 공고</span><span style="display: flex; align-items: center; gap: 6px; background: var(--ex-white); border-radius: 999px; padding: 4px 12px; flex: none"><span style="font-size: 14px; font-weight: 600; color: var(--ex-bean-ink)">낮은 적합도</span></span></div>
+          </div>
         </div>
       </div>
-      <div style="margin-top: 56px; display: flex; align-items: center; gap: 28px">
-        <span class="brew">Brew Portfolio</span>
-      </div>
+      <svg viewBox="0 0 1664 62" xmlns="http://www.w3.org/2000/svg" class="map in dl-4" style="margin-top: 6px" aria-hidden="true">
+        <path class="flow-sig" d="M1560 0 V34 Q1560 46 1548 46 H128 Q116 46 116 34 V8"></path>
+        <path class="flow-sig" d="M108 16 L116 8 L124 16"></path>
+        <rect x="700" y="30" width="264" height="32" rx="8" fill="var(--ex-surface-50)"></rect>
+        <text x="832" y="52" text-anchor="middle" style="font-family: var(--ex-font-ui); font-size: 17px; font-weight: 600; fill: var(--ex-espresso)">다시 학습해 배포</text>
+      </svg>
     </div>
-    <div class="foot">
+    <div class="foot in in-fade dl-1">
       <p></p>
-      <span class="pg" style="color: var(--ex-on-dark-muted)">25</span>
+      <span class="pg">30</span>
     </div>
   </div>
 </section>
 
-<!-- ============================================================
-     25 · 끝장 — 표지(01)의 마크를 좌우로 뒤집어 짝을 맞춥니다.
-     ============================================================ -->
 <section class="slide dark" data-title="끝장 · 인사" data-kind="END">
   <svg class="bg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <defs>
@@ -4709,7 +5308,7 @@ svg [data-morph] { transform-box: fill-box; }
         <svg width="26" height="26" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><clipPath id="ec"><circle cx="44" cy="54" r="36"></circle></clipPath><mask id="em"><rect width="108" height="108" fill="#fff"></rect><circle cx="44" cy="54" r="46.5" fill="#000"></circle></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#A9793F" stroke-width="8.5" mask="url(#em)"></circle><rect y="58.96" width="108" height="49.04" fill="#E0B486" clip-path="url(#ec)"></rect><circle cx="44" cy="54" r="36" stroke="#E0B486" stroke-width="10"></circle></svg>
         <span class="word" style="color: #fff; font-size: 22px">Expre<em>ss</em>o</span>
       </span>
-      <span class="end count">26 / 26</span>
+      <span class="end count">31 / 31</span>
     </div>
 
     <div class="body mid" style="align-items: flex-end; text-align: right">
@@ -4718,7 +5317,7 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub" style="max-width: 760px; margin-left: auto">Expresso 프로젝트 소개 프리젠테이션</p>
     </div>
 
-    <div class="foot"><p></p><span class="pg" style="color: var(--ex-on-dark-muted)">26</span></div>
+    <div class="foot"><p></p><span class="pg" style="color: var(--ex-on-dark-muted)">31</span></div>
   </div>
 </section>
 
@@ -4732,7 +5331,7 @@ svg [data-morph] { transform-box: fill-box; }
   </a>
   <span class="sep"></span>
   <button id="prevBtn" type="button" aria-label="이전 슬라이드">←</button>
-  <span class="counter" id="counter">01 / 26</span>
+  <span class="counter" id="counter">01 / 31</span>
   <button id="nextBtn" type="button" aria-label="다음 슬라이드">→</button>
   <button id="mapBtn" type="button" aria-label="슬라이드 목록">☰</button>
 </div>
