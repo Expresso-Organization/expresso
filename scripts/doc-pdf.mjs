@@ -14,7 +14,7 @@
  */
 
 import { spawn } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve, basename } from "node:path";
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
@@ -115,6 +115,47 @@ function readOutline(buf) {
   return { pages, total: order.length };
 }
 
+/* ── 쪽 번호를 원본 HTML에 새긴다 ──────────────────────────────────
+   화면과 인쇄는 레이아웃이 달라, 브라우저 혼자서는 자기가 몇 쪽인지 알 수 없다.
+   그런데 여기서는 방금 잰 값이 있다. 그것을 제목에 `data-page`로 남기면 읽는
+   쪽(`docs/templates/doc-rail.js`)이 그대로 쓴다.
+
+   목차 지면은 파일에 쓰지 않는데 이것은 쓰는 이유 — 목차는 매번 다시 재면 되지만,
+   쪽 번호는 PDF를 뽑을 때만 알 수 있어서 남겨 두지 않으면 사라진다.
+
+   제목은 문서 순서로 맞춘다. READ_HEADINGS 가 절마다 h2 하나와 그 아래 h3 들을
+   차례로 담으므로 파일에 나타나는 차례와 같다. 개수가 어긋나면 쓰지 않는다 —
+   한 칸 밀린 쪽 번호는 없느니만 못하다. */
+function writePages(file, rows, total) {
+  const src = readFileSync(file, "utf8");
+  const tags = [...src.matchAll(/<(h2|h3|h4)(\s[^>]*?)?>/g)];
+
+  if (tags.length !== rows.length) {
+    console.warn(`경고: 제목 ${tags.length}개인데 쪽 번호는 ${rows.length}개입니다. 새기지 않았습니다.`);
+    return false;
+  }
+
+  let out = "", at = 0;
+  tags.forEach((m, i) => {
+    const attrs = (m[2] ?? "").replace(/\s*data-page="[^"]*"/g, "");
+    const page = rows[i].page;
+    out += src.slice(at, m.index)
+      + `<${m[1]}${attrs}${page ? ` data-page="${page}"` : ""}>`;
+    at = m.index + m[0].length;
+  });
+  out += src.slice(at);
+
+  // 전체 쪽수와 잰 날. 문서를 고치고 다시 뽑지 않으면 이 날짜가 어긋난다 —
+  // 레일이 그때 "지난 번 출력 기준"이라고 말할 수 있어야 한다.
+  const stamp = new Date().toISOString().slice(0, 10);
+  out = out.replace(/<main class="sheet" id="doc"(?:\s+data-doc-[a-z-]+="[^"]*")*/,
+    `<main class="sheet" id="doc" data-doc-pages="${total}" data-doc-paged-at="${stamp}"`);
+
+  if (out === src) return false;
+  writeFileSync(file, out);
+  return true;
+}
+
 /** 목차 지면을 문서 안에 끼워 넣는다. 파일에는 쓰지 않는다 — 매번 새로 잰다. */
 const INJECT_TOC = (rows) => `(() => {
   document.getElementById('ex-toc-page')?.remove();
@@ -135,12 +176,12 @@ const INJECT_TOC = (rows) => `(() => {
   };
   sec.innerHTML = '<div style="text-align:center; font-size:20pt; letter-spacing:.3em; margin:10mm 0 12mm">목 차</div>'
     + rows.map(line).join('');
-  const first = document.querySelector('main > section.sec');
+  const first = document.querySelector('#doc > section.sec');
   first.parentNode.insertBefore(sec, first);
 })()`;
 
 /** 문서에서 장·절의 차례를 읽는다. */
-const READ_HEADINGS = `(() => [...document.querySelectorAll('main > section.sec')].flatMap((sec) => {
+const READ_HEADINGS = `(() => [...document.querySelectorAll('#doc > section.sec')].flatMap((sec) => {
   const h2 = sec.querySelector('.sec-head h2');
   const num = (sec.querySelector('.sec-head .num')?.textContent ?? '').trim();
   const out = [{ level: 1, key: h2.textContent.trim(), label: num + '. ' + h2.textContent.trim() }];
@@ -150,6 +191,14 @@ const READ_HEADINGS = `(() => [...document.querySelectorAll('main > section.sec'
   }
   return out;
 }))()`;
+
+/* 쪽 번호를 새길 닻. 목차 행(h2·h3)보다 촘촘해야 한다 — 5.3절 하나에 화면이
+   29개라, 절 머리에만 닻을 두면 그 사이 60쪽을 비율로 찍게 되고 실제와 어긋난다.
+   Chrome 의 문서 개요는 h4 도 책갈피로 만들므로 쪽 번호를 그대로 얻을 수 있다.
+
+   문서에 나타나는 차례 그대로 담는다. 되쓰기가 이 차례로 태그를 찾는다. */
+const READ_ANCHORS = `(() => [...document.querySelectorAll('#doc h2, #doc h3, #doc h4')]
+  .map((h) => ({ tag: h.tagName.toLowerCase(), key: h.textContent.trim() })))()`;
 
 /** 파일을 그대로 내주는 최소 서버. file:// 로 열면 글꼴 CDN이 막힌다. */
 async function serve(root) {
@@ -291,6 +340,29 @@ async function main() {
       rows = next;
     }
     if (!settled) console.warn("경고: 쪽 번호가 멎지 않았습니다. 목차를 확인하십시오.");
+
+    if (settled) {
+      const anchors = (await cdp.send("Runtime.evaluate", {
+        expression: READ_ANCHORS, returnByValue: true,
+      }, sessionId)).result.value;
+
+      /* 같은 제목이 두 번 나오면(「■ 상호작용 유형」) 개요는 첫 자리만 알려 준다.
+         그대로 쓰면 뒤쪽 닻이 앞 쪽수를 달고 번호가 거꾸로 간다. 앞 닻보다
+         작아지는 것은 버린다 — 닻 하나가 없는 편이 거꾸로 가는 것보다 낫다. */
+      const { pages, total } = readOutline(pdf);
+      let last = 0;
+      const marks = anchors.map((a) => {
+        const page = pages.get(a.key);
+        if (!page || page < last) return { page: null };
+        last = page;
+        return { page };
+      });
+
+      const found = marks.filter((m) => m.page).length;
+      if (writePages(resolve(ROOT, input), marks, total)) {
+        console.log(`쪽 번호를 ${basename(input)} 에 새겼습니다 — 닻 ${found}/${marks.length}`);
+      }
+    }
 
     mkdirSync(dirname(output), { recursive: true });
     writeFileSync(output, pdf);
