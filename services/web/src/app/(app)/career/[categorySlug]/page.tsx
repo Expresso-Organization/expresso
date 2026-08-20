@@ -1,8 +1,7 @@
 import type { CareerRecordSort } from "@expresso/contracts";
 import { notFound } from "next/navigation";
 
-import { AppShell, DocumentHeader } from "@/components/shell/AppShell";
-import { Sidebar } from "@/components/shell/Sidebar";
+import { AppBody, DocumentHeader } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
 import { career } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
@@ -48,44 +47,33 @@ export default async function CareerCategoryPage({
   });
 
   return (
-    <AppShell
-      sidebar={
-        <Sidebar
-          active="career"
-          activeCategoryKey={category.key}
-          categories={session.categories}
-          displayName={session.user.displayName}
-          quotaUsed={session.quota.used}
-          quotaLimit={session.quota.limit}
-        />
-      }
-      header={
-        <DocumentHeader
-          crumbs={["내 커리어", category.name]}
-          actions={
-            <>
-              <span style={{ fontSize: "12px", color: "var(--ex-slate-500)" }}>
-                기록 {category.recordCount}건
-              </span>
-              <span style={{ fontSize: "12.5px", color: "var(--ex-slate-700)" }}>
-                공유
-              </span>
-              <Icon
-                name="clock-counter-clockwise"
-                size={16}
-                color="var(--ex-slate-500)"
-              />
-              <Icon name="dots-three" size={16} color="var(--ex-slate-500)" />
-            </>
-          }
-        />
-      }
-    >
-      <CareerBrowser
-        category={category}
-        records={records.data}
-        summary={records.summary}
+    <>
+      <DocumentHeader
+        crumbs={["내 커리어", category.name]}
+        actions={
+          <>
+            <span style={{ fontSize: "12px", color: "var(--ex-slate-500)" }}>
+              기록 {category.recordCount}건
+            </span>
+            <span style={{ fontSize: "12.5px", color: "var(--ex-slate-700)" }}>
+              공유
+            </span>
+            <Icon
+              name="clock-counter-clockwise"
+              size={16}
+              color="var(--ex-slate-500)"
+            />
+            <Icon name="dots-three" size={16} color="var(--ex-slate-500)" />
+          </>
+        }
       />
-    </AppShell>
+      <AppBody>
+        <CareerBrowser
+          category={category}
+          records={records.data}
+          summary={records.summary}
+        />
+      </AppBody>
+    </>
   );
 }

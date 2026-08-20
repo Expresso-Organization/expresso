@@ -1,5 +1,6 @@
 import type { AuthenticatedUser, CareerCategory } from "@expresso/contracts";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 import { ApiError } from "./api/client";
 import { auth, career, entitlements } from "./api/endpoints";
@@ -22,8 +23,13 @@ export interface AppSession {
 /**
  * 앱 셸 화면의 공통 진입점. 사이드바가 모든 화면에서 카테고리 트리를 그리므로
  * 사용자와 카테고리를 한 번에 가져온다.
+ *
+ * `cache()`로 감싼 이유 — App Router에서 레이아웃은 자식에게 데이터를 넘길 수
+ * 없다. 그래서 셸을 그리는 레이아웃과 그 안의 화면이 **각자** 이 함수를 부르는
+ * 것이 정상이다. 메모이제이션이 없으면 한 번 그릴 때 백엔드에 세 번씩 두 벌,
+ * 여섯 번이 나간다. 감싸 두면 한 요청 안에서는 몇 번을 부르든 실제 호출은 1회다.
  */
-export async function requireSession(): Promise<AppSession> {
+export const requireSession = cache(async (): Promise<AppSession> => {
   const accessToken = await readAccessToken();
   if (!accessToken) redirect("/login");
 
@@ -46,4 +52,4 @@ export async function requireSession(): Promise<AppSession> {
     if (error instanceof ApiError && error.status === 401) redirect("/login");
     throw error;
   }
-}
+});
