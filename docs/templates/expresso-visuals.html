@@ -1,0 +1,1908 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>시각 요소 — Expresso</title>
+
+<!--
+  Expresso 시각 요소 v1
+  ─────────────────────────────────────────────────────────────
+  발표와 문서에 붙이는 차트 · 다이어그램 · 표시들입니다. 이 파일은 **고르는
+  자리**이지 고치는 자리가 아닙니다. 쓸 것을 찾아 COPY를 누르고, 붙여 넣은
+  쪽에서 숫자와 글자를 바꿉니다.
+
+  전부 인라인 SVG이고 viewBox를 들고 있습니다 — 넣는 상자 크기에 맞춰 알아서
+  커집니다. 발표 지면(1920×1080)이든 문서 본문이든 같은 코드를 씁니다.
+
+  색은 `var(--ex-*)`로 씁니다. 두 양식(expresso-doc.html · expresso-deck.html)이
+  같은 :root 블록을 들고 있으므로 그대로 붙으면 됩니다. 토큰이 없는 곳에
+  붙일 일은 없습니다.
+
+  스타일은 SVG 안에 함께 들고 다닙니다. 이름과 뜻이 모든 그림에서 같으므로
+  두 개를 같은 지면에 붙여도 서로 다투지 않습니다.
+-->
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- 아이콘 — 제품과 같은 세트(@phosphor-icons/web). Regular만 씁니다. -->
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+
+<style>
+/* ===========================================================
+   TOKENS — 두 양식과 같은 블록. 그림들이 읽는 색은 전부 여기서 옵니다.
+   =========================================================== */
+:root {
+  color-scheme: light;
+
+  --ex-ink-900: #16223a;
+  --ex-ink-900-hover: #0b1220;
+  --ex-slate-700: #35455f;
+  --ex-slate-500: #5a6b87;
+  --ex-slate-400: #93a2ba;
+  --ex-slate-300: #afbacb;
+  --ex-line-200: #e2e9f4;
+  --ex-line-inner: #f1f5fb;
+  --ex-tint-50: #eff2f7;
+  --ex-tint-100: #e4e9f2;
+  --ex-surface-100: #eff4fb;
+  --ex-surface-50: #f7fafe;
+  --ex-white: #ffffff;
+  --ex-table-header: #fafbfd;
+  --ex-track: #edf1f7;
+
+  --ex-espresso: #9a4030;
+  --ex-espresso-hover: #7e3225;
+  --ex-crema: #e0b486;
+  --ex-bean-50: #fbeee4;
+  --ex-bean-ink: #5a3a28;
+
+  --ex-success-text: #0e8a63;
+  --ex-success-surface: #e4f7f0;
+  --ex-warning-text: #8a6412;
+  --ex-warning-surface: #fbf4e2;
+  --ex-danger: #e2543a;
+  --ex-danger-text: #c6402a;
+  --ex-danger-surface: #fef5f3;
+
+  --ex-font-ui: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --ex-font-brand: "Outfit", var(--ex-font-ui);
+  --ex-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --ex-elevation-raised: 0 2px 10px rgba(22, 34, 58, .05);
+  --ex-focus-ring: 0 0 0 3px rgba(22, 34, 58, .18);
+  --ex-motion-quick: 160ms ease;
+}
+
+/* ===========================================================
+   GALLERY — 고르는 자리의 껍데기. 복사해 갈 것은 카드 안의 그림뿐입니다.
+   =========================================================== */
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--ex-surface-50); color: var(--ex-ink-900);
+  font-family: var(--ex-font-ui); font-size: 15px; line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 32px 140px; }
+
+header.top { padding: 64px 0 52px; }
+.brand { display: flex; align-items: center; gap: 11px; margin-bottom: 44px; }
+.brand .word { font-family: var(--ex-font-brand); font-size: 20px; font-weight: 500; letter-spacing: -.025em; }
+.brand .word em { font-style: normal; color: var(--ex-espresso); }
+.brand .tag {
+  font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .14em; color: var(--ex-slate-400);
+  border: 1px solid var(--ex-line-200); border-radius: 5px; padding: 4px 8px; margin-left: 4px;
+}
+.brand .where { margin-left: auto; font-size: 13px; color: var(--ex-slate-500); }
+header.top h1 {
+  margin: 0; font-family: var(--ex-font-brand); font-weight: 300; font-size: 58px;
+  letter-spacing: -.03em; line-height: 1.05;
+}
+header.top h1 em { font-style: normal; color: var(--ex-espresso); }
+header.top .lede {
+  margin: 22px 0 0; font-size: 16px; line-height: 1.85; color: var(--ex-slate-500);
+  max-width: 620px; word-break: keep-all; text-wrap: pretty;
+}
+
+section { margin-bottom: 84px; }
+.sec-head {
+  display: flex; align-items: baseline; gap: 15px;
+  border-bottom: 1px solid var(--ex-line-200); padding-bottom: 13px; margin-bottom: 26px;
+}
+.sec-head .num { font-family: var(--ex-font-mono); font-size: 11px; color: var(--ex-espresso); }
+.sec-head h2 {
+  margin: 0; font-family: var(--ex-font-brand); font-size: 30px; font-weight: 400; letter-spacing: -.025em;
+}
+.sec-head .aside { margin-left: auto; font-size: 12.5px; color: var(--ex-slate-500); }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.item {
+  background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 18px;
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.item.wide { grid-column: span 2; }
+.item > .h {
+  display: flex; align-items: baseline; gap: 12px; padding: 15px 20px;
+  border-bottom: 1px solid var(--ex-line-inner);
+}
+.item .name { font-size: 14px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; }
+.item .use { font-size: 12.5px; color: var(--ex-slate-500); word-break: keep-all; }
+.item .copy {
+  margin-left: auto; flex: none; font: inherit;
+  font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .1em;
+  background: transparent; border: 1px solid var(--ex-line-200); border-radius: 8px;
+  padding: 5px 10px; color: var(--ex-slate-400); cursor: pointer;
+  transition: border-color var(--ex-motion-quick), color var(--ex-motion-quick);
+}
+.item .copy:hover { border-color: var(--ex-ink-900); color: var(--ex-ink-900); }
+.item .copy.done { border-color: var(--ex-success-text); color: var(--ex-success-text); }
+.stage { padding: 26px 24px; flex: 1 1 auto; display: grid; place-items: center; }
+.stage > svg { display: block; width: 100%; height: auto; }
+.stage.sm > svg { max-width: 260px; }
+/* 전면 지면 — 카드 가장자리까지 닿게 두어야 실제 크기가 보입니다. */
+.stage.bleed { padding: 0; display: block; }
+.stage.bleed > svg { width: 100%; height: auto; aspect-ratio: 16 / 9; }
+.stage.xs > svg { max-width: 200px; }
+.item .note {
+  padding: 13px 20px; border-top: 1px solid var(--ex-line-inner);
+  font-size: 12.5px; color: var(--ex-slate-500); line-height: 1.7; word-break: keep-all;
+}
+.item .note b { color: var(--ex-slate-700); font-weight: 600; }
+
+/* 규칙 카드 */
+.rules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.rule { background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 18px; padding: 24px 26px; }
+.rule .lab {
+  font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .12em;
+  color: var(--ex-slate-400); margin-bottom: 14px;
+}
+.rule h3 { margin: 0 0 10px; font-size: 17px; font-weight: 600; letter-spacing: -.015em; }
+.rule p { margin: 0; font-size: 13.5px; line-height: 1.75; color: var(--ex-slate-500); word-break: keep-all; }
+.rule p b { color: var(--ex-ink-900); font-weight: 600; }
+.ramp { display: flex; gap: 6px; margin-top: 16px; }
+.ramp i { display: block; height: 30px; border-radius: 8px; }
+.ramp span {
+  font-family: var(--ex-font-mono); font-size: 9.5px; color: var(--ex-slate-400);
+  display: block; margin-top: 6px;
+}
+
+/* 아이콘 격자 — 낱개를 눌러 그 아이콘만 복사합니다. */
+.icons { display: grid; gap: 26px; width: 100%; }
+.icons .grp {
+  font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .12em;
+  color: var(--ex-slate-400); margin-bottom: 14px;
+}
+.icons .row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; }
+.icons button {
+  font: inherit; background: transparent; border: 1px solid transparent; border-radius: 12px;
+  padding: 14px 6px 11px; cursor: pointer; display: grid; justify-items: center; gap: 9px;
+  transition: border-color var(--ex-motion-quick), background var(--ex-motion-quick);
+}
+.icons button:hover { border-color: var(--ex-line-200); background: var(--ex-surface-50); }
+.icons button i { font-size: 24px; color: var(--ex-slate-700); }
+.icons button .n { font-size: 11px; color: var(--ex-slate-400); white-space: nowrap; }
+.icons button.done { border-color: var(--ex-success-text); }
+.icons button.done .n { color: var(--ex-success-text); }
+
+footer.end {
+  margin-top: 20px; padding-top: 24px; border-top: 1px solid var(--ex-line-200);
+  font-size: 12.5px; color: var(--ex-slate-400); line-height: 1.8;
+}
+code {
+  font-family: var(--ex-font-mono); font-size: .88em; background: var(--ex-tint-50);
+  border-radius: 6px; padding: 2px 6px; overflow-wrap: anywhere;
+}
+
+@media (max-width: 940px) {
+  .grid, .rules { grid-template-columns: 1fr; }
+  .item.wide { grid-column: auto; }
+  .wrap { padding: 0 16px 80px; }
+  header.top h1 { font-size: 38px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><clipPath id="bc"><circle cx="44" cy="54" r="36"/></clipPath><mask id="bm"><rect width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="46.5" fill="#000"/></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.5" mask="url(#bm)"/><rect y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#bc)"/><circle cx="44" cy="54" r="36" stroke="#9A4030" stroke-width="10"/></svg>
+    <span class="word">Expre<em>ss</em>o</span>
+    <span class="tag">VISUALS v1</span>
+    <span class="where">고르고, 복사하고, 숫자만 바꿉니다</span>
+  </div>
+  <h1>Show the <em>number.</em></h1>
+  <p class="lede">
+    발표와 문서에 붙이는 차트 · 다이어그램 · 표시입니다. 전부 인라인 SVG이고
+    넣는 상자에 맞춰 알아서 커집니다. 새로 그리기 전에 여기 있는지 먼저 봅니다.
+  </p>
+</header>
+
+<!-- ============================================================
+     01 · 규칙 — 그림을 그리기 전에 정해진 것
+     ============================================================ -->
+<section>
+  <div class="sec-head">
+    <span class="num">01</span>
+    <h2>Rules</h2>
+    <span class="aside">색이 의미를 가지는 방식</span>
+  </div>
+  <div class="rules">
+    <div class="rule">
+      <div class="lab">COLOR</div>
+      <h3>계열은 무채색, 강조는 하나</h3>
+      <p>여러 계열은 <b>잉크 계조</b>로만 구분합니다. Espresso는 말하려는 것 <b>하나</b>에만 칠합니다 — 둘이 되는 순간 어느 쪽도 눈에 띄지 않습니다.</p>
+      <div class="ramp">
+        <div style="flex:1"><i style="background:var(--ex-ink-900)"></i><span>900</span></div>
+        <div style="flex:1"><i style="background:var(--ex-slate-700)"></i><span>700</span></div>
+        <div style="flex:1"><i style="background:var(--ex-slate-500)"></i><span>500</span></div>
+        <div style="flex:1"><i style="background:var(--ex-slate-400)"></i><span>400</span></div>
+        <div style="flex:1"><i style="background:var(--ex-slate-300)"></i><span>300</span></div>
+        <div style="flex:1"><i style="background:var(--ex-espresso)"></i><span>SIG</span></div>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="lab">AXIS</div>
+      <h3>축은 0에서, 격자는 얇게</h3>
+      <p>막대의 축은 언제나 <b>0에서 시작</b>합니다. 잘라 놓은 축은 없는 차이를 만듭니다. 격자는 <code>line-200</code>, 라벨은 mono <code>slate-400</code>로 눕힙니다.</p>
+      <p style="margin-top:12px">범례보다 <b>직접 라벨</b>을 답니다. 눈이 색과 이름을 오가지 않게 합니다.</p>
+    </div>
+    <div class="rule">
+      <div class="lab">NEVER</div>
+      <h3>하지 않는 것</h3>
+      <p>3D · 입체 · 그림자 없음. 그러데이션 없음(스켈레톤 shimmer만 예외). 원형 차트에 조각 다섯 개 이상 없음. 축 없는 막대 없음.</p>
+      <p style="margin-top:12px">그림 하나가 말하는 것은 <b>한 가지</b>입니다. 두 가지면 두 장으로 나눕니다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     02 · 차트
+     ============================================================ -->
+<section>
+  <div class="sec-head">
+    <span class="num">02</span>
+    <h2>Charts</h2>
+    <span class="aside">숫자로 말할 수 있을 때</span>
+  </div>
+  <div class="grid">
+
+    <!-- 세로 막대 -->
+    <figure class="item">
+      <div class="h">
+        <span class="name">세로 막대</span>
+        <span class="use">시간에 따른 크기 비교</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="주별 추출 성공 건수">
+          <style>
+            .ax { stroke: var(--ex-line-200); stroke-width: 1; }
+            .lb { font-family: var(--ex-font-mono); font-size: 11px; fill: var(--ex-slate-400); }
+            .ink { fill: var(--ex-ink-900); }
+            .sig { fill: var(--ex-espresso); }
+            .vn { font-family: var(--ex-font-brand); font-weight: 300; font-size: 22px; letter-spacing: -.03em; }
+          </style>
+          <line class="ax" x1="56" y1="24" x2="620" y2="24"/>
+          <line class="ax" x1="56" y1="93" x2="620" y2="93"/>
+          <line class="ax" x1="56" y1="162" x2="620" y2="162"/>
+          <line class="ax" x1="56" y1="231" x2="620" y2="231"/>
+          <line class="ax" x1="56" y1="300" x2="620" y2="300" style="stroke: var(--ex-slate-300)"/>
+          <text class="lb" x="46" y="28" text-anchor="end">32</text>
+          <text class="lb" x="46" y="97" text-anchor="end">24</text>
+          <text class="lb" x="46" y="166" text-anchor="end">16</text>
+          <text class="lb" x="46" y="235" text-anchor="end">8</text>
+          <text class="lb" x="46" y="304" text-anchor="end">0</text>
+          <rect class="ink" x="76"  y="196.5" width="54" height="103.5" rx="4" opacity=".22"/>
+          <rect class="ink" x="170" y="144.8" width="54" height="155.2" rx="4" opacity=".22"/>
+          <rect class="ink" x="264" y="170.6" width="54" height="129.4" rx="4" opacity=".22"/>
+          <rect class="ink" x="358" y="93"    width="54" height="207"   rx="4" opacity=".22"/>
+          <rect class="ink" x="452" y="118.9" width="54" height="181.1" rx="4" opacity=".22"/>
+          <rect class="sig" x="546" y="32.6"  width="54" height="267.4" rx="4"/>
+          <text class="lb" x="103" y="322" text-anchor="middle">W1</text>
+          <text class="lb" x="197" y="322" text-anchor="middle">W2</text>
+          <text class="lb" x="291" y="322" text-anchor="middle">W3</text>
+          <text class="lb" x="385" y="322" text-anchor="middle">W4</text>
+          <text class="lb" x="479" y="322" text-anchor="middle">W5</text>
+          <text class="lb" x="573" y="322" text-anchor="middle" style="fill: var(--ex-espresso)">W6</text>
+          <text class="vn sig" x="573" y="22" text-anchor="middle">31</text>
+        </svg>
+      </template>
+      <figcaption class="note">말하려는 막대 <b>하나만</b> Espresso, 나머지는 잉크 22%. 값은 강조한 막대에만 답니다.</figcaption>
+    </figure>
+
+    <!-- 가로 막대 -->
+    <figure class="item">
+      <div class="h">
+        <span class="name">가로 막대</span>
+        <span class="use">항목 줄세우기 · 긴 이름</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="영역별 남은 태스크">
+          <style>
+            .lb { font-family: var(--ex-font-mono); font-size: 11px; fill: var(--ex-slate-400); }
+            .nm { font-family: var(--ex-font-ui); font-size: 13px; fill: var(--ex-slate-700); }
+            .ink { fill: var(--ex-ink-900); }
+            .sig { fill: var(--ex-espresso); }
+          </style>
+          <text class="nm" x="140" y="47"  text-anchor="end">포트폴리오 편집기</text>
+          <rect class="sig" x="160" y="31"  width="460" height="22" rx="4"/>
+          <text class="lb" x="612" y="47"  text-anchor="end" style="fill: var(--ex-white)">48</text>
+          <text class="nm" x="140" y="91"  text-anchor="end">공고 수집</text>
+          <rect class="ink" x="160" y="75"  width="345" height="22" rx="4" opacity=".22"/>
+          <text class="lb" x="517" y="91">36</text>
+          <text class="nm" x="140" y="135" text-anchor="end">추출 파이프라인</text>
+          <rect class="ink" x="160" y="119" width="297" height="22" rx="4" opacity=".22"/>
+          <text class="lb" x="469" y="135">31</text>
+          <text class="nm" x="140" y="179" text-anchor="end">배포</text>
+          <rect class="ink" x="160" y="163" width="211" height="22" rx="4" opacity=".22"/>
+          <text class="lb" x="383" y="179">22</text>
+          <text class="nm" x="140" y="223" text-anchor="end">방문 통계</text>
+          <rect class="ink" x="160" y="207" width="134" height="22" rx="4" opacity=".22"/>
+          <text class="lb" x="306" y="223">14</text>
+          <line x1="160" y1="245" x2="620" y2="245" stroke="var(--ex-line-200)"/>
+          <text class="lb" x="160" y="264">0</text>
+          <text class="lb" x="620" y="264" text-anchor="end">48 태스크</text>
+        </svg>
+      </template>
+      <figcaption class="note">큰 것부터 <b>내림차순</b>으로 놓습니다. 이름이 길면 세로 막대 대신 이것을 씁니다.</figcaption>
+    </figure>
+
+    <!-- 선 그래프 -->
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">선 그래프</span>
+        <span class="use">추세와 목표선 — 지금 어디까지 왔는지</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="P95 응답 시간 추세">
+          <style>
+            .ax { stroke: var(--ex-line-200); stroke-width: 1; }
+            .lb { font-family: var(--ex-font-mono); font-size: 11px; fill: var(--ex-slate-400); }
+            .ln { fill: none; stroke: var(--ex-ink-900); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+            .tg { fill: none; stroke: var(--ex-espresso); stroke-width: 1.5; stroke-dasharray: 6 5; }
+          </style>
+          <line class="ax" x1="56" y1="24"  x2="620" y2="24"/>
+          <line class="ax" x1="56" y1="79"  x2="620" y2="79"/>
+          <line class="ax" x1="56" y1="134" x2="620" y2="134"/>
+          <line class="ax" x1="56" y1="189" x2="620" y2="189"/>
+          <line class="ax" x1="56" y1="244" x2="620" y2="244"/>
+          <line class="ax" x1="56" y1="300" x2="620" y2="300" style="stroke: var(--ex-slate-300)"/>
+          <text class="lb" x="46" y="28"  text-anchor="end">5s</text>
+          <text class="lb" x="46" y="138" text-anchor="end">3s</text>
+          <text class="lb" x="46" y="248" text-anchor="end">1s</text>
+          <text class="lb" x="46" y="304" text-anchor="end">0</text>
+          <line class="tg" x1="56" y1="255.8" x2="620" y2="255.8"/>
+          <text class="lb" x="620" y="272" text-anchor="end" style="fill: var(--ex-espresso)">목표 0.8s</text>
+          <polyline class="ln" points="56,68.2 136.6,90.2 217.1,84.7 297.7,128.9 378.3,139.9 458.9,156.5 539.4,167.5 620,167.5"/>
+          <circle cx="620" cy="167.5" r="7" fill="var(--ex-white)" stroke="var(--ex-ink-900)" stroke-width="2.5"/>
+          <text class="lb" x="608" y="152" text-anchor="end" style="fill: var(--ex-ink-900)">2.4s</text>
+          <text class="lb" x="56"  y="322">6월</text>
+          <text class="lb" x="338" y="322" text-anchor="middle">7월</text>
+          <text class="lb" x="620" y="322" text-anchor="end">8월</text>
+        </svg>
+      </template>
+      <figcaption class="note">실측은 잉크 실선, <b>목표는 Espresso 점선</b>. 강조는 목표 하나뿐이고 마지막 점은 흰 속을 둔 고리로 표시합니다.</figcaption>
+    </figure>
+
+    <!-- 구성비 100% -->
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">구성비 막대</span>
+        <span class="use">전체를 100으로 두고 나누기</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 640 130" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="포트폴리오 문장의 출처 구성">
+          <style>
+            .lb { font-family: var(--ex-font-mono); font-size: 11px; fill: var(--ex-slate-400); }
+            .nm { font-family: var(--ex-font-ui); font-size: 12.5px; fill: var(--ex-slate-700); }
+          </style>
+          <defs><clipPath id="vz-bar"><rect x="0" y="8" width="640" height="46" rx="8"/></clipPath></defs>
+          <g clip-path="url(#vz-bar)">
+            <rect x="0"     y="8" width="294.4" height="46" fill="var(--ex-espresso)"/>
+            <rect x="294.4" y="8" width="198.4" height="46" fill="var(--ex-slate-500)"/>
+            <rect x="492.8" y="8" width="96"    height="46" fill="var(--ex-slate-400)"/>
+            <rect x="588.8" y="8" width="51.2"  height="46" fill="var(--ex-slate-300)"/>
+          </g>
+          <line x1="8"     y1="62" x2="8"     y2="74" stroke="var(--ex-line-200)"/>
+          <line x1="302.4" y1="62" x2="302.4" y2="74" stroke="var(--ex-line-200)"/>
+          <line x1="500.8" y1="62" x2="500.8" y2="74" stroke="var(--ex-line-200)"/>
+          <line x1="596.8" y1="62" x2="596.8" y2="74" stroke="var(--ex-line-200)"/>
+          <text class="nm" x="8"     y="93">자동 추출</text>
+          <text class="lb" x="8"     y="111" style="fill: var(--ex-espresso)">46%</text>
+          <text class="nm" x="302.4" y="93">사용자 수정</text>
+          <text class="lb" x="302.4" y="111">31%</text>
+          <text class="nm" x="500.8" y="93">템플릿</text>
+          <text class="lb" x="500.8" y="111">15%</text>
+          <text class="nm" x="596.8" y="93">기타</text>
+          <text class="lb" x="596.8" y="111">8%</text>
+        </svg>
+      </template>
+      <figcaption class="note">조각은 <b>넷까지</b>. 범례 없이 아래에 직접 답니다. 다섯 번째부터는 「기타」로 접습니다.</figcaption>
+    </figure>
+
+    <!-- 도넛 -->
+    <figure class="item">
+      <div class="h">
+        <span class="name">비율 고리</span>
+        <span class="use">지표 하나의 달성률</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage sm"></div>
+      <template class="src">
+        <svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="추출 성공률 96.4%">
+          <style>
+            .lb { font-family: var(--ex-font-mono); font-size: 11px; fill: var(--ex-slate-400); }
+            .vn { font-family: var(--ex-font-brand); font-weight: 300; font-size: 52px; letter-spacing: -.03em; fill: var(--ex-ink-900); }
+          </style>
+          <circle cx="120" cy="120" r="90" fill="none" stroke="var(--ex-track)" stroke-width="22"/>
+          <circle cx="120" cy="120" r="90" fill="none" stroke="var(--ex-espresso)" stroke-width="22"
+                  stroke-linecap="round" stroke-dasharray="545.1 565.5"
+                  transform="rotate(-90 120 120)"/>
+          <text class="vn" x="120" y="128" text-anchor="middle">96.4</text>
+          <text class="lb" x="120" y="152" text-anchor="middle">추출 성공률 %</text>
+        </svg>
+      </template>
+      <figcaption class="note">조각을 나누는 원형 차트는 쓰지 않습니다. 고리는 <b>지표 하나</b>의 달성률에만 씁니다.</figcaption>
+    </figure>
+
+    <!-- 스파크라인 -->
+    <figure class="item">
+      <div class="h">
+        <span class="name">스파크라인</span>
+        <span class="use">숫자 옆에 붙는 흐름</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage xs"></div>
+      <template class="src">
+        <svg viewBox="0 0 160 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="최근 12주 흐름">
+          <polyline fill="none" stroke="var(--ex-slate-400)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"
+                    points="5.0,35.0 18.6,30.3 32.3,33.4 45.9,25.7 59.5,28.8 73.2,21.0 86.8,24.1 100.5,17.9 114.1,19.4 127.7,11.7 141.4,14.8 155.0,7.0"/>
+          <circle cx="155" cy="7" r="3" fill="var(--ex-espresso)"/>
+        </svg>
+      </template>
+      <figcaption class="note">축도 라벨도 없습니다. <b>방향만</b> 말합니다 — 값은 옆의 숫자가 말합니다.</figcaption>
+    </figure>
+
+    <!-- 전후 비교 -->
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">전후 비교</span>
+        <span class="use">지금과 앞으로를 한 축에</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 640 290" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="개선 전후 비교">
+          <style>
+            .lb { font-family: var(--ex-font-mono); font-size: 11px; fill: var(--ex-slate-400); }
+            .nm { font-family: var(--ex-font-ui); font-size: 13px; fill: var(--ex-slate-700); }
+            .cn { stroke: var(--ex-line-200); stroke-width: 3; stroke-linecap: round; }
+            .b4 { fill: var(--ex-slate-300); }
+            .af { fill: var(--ex-espresso); }
+          </style>
+          <text class="nm" x="150" y="51"  text-anchor="end">자동 추출 비율</text>
+          <line class="cn" x1="367.8" y1="46" x2="505.4" y2="46"/>
+          <circle class="b4" cx="367.8" cy="46" r="7"/><circle class="af" cx="505.4" cy="46" r="7"/>
+          <text class="nm" x="150" y="95"  text-anchor="end">첫 시도 성공</text>
+          <line class="cn" x1="432.3" y1="90" x2="552.7" y2="90"/>
+          <circle class="b4" cx="432.3" cy="90" r="7"/><circle class="af" cx="552.7" cy="90" r="7"/>
+          <text class="nm" x="150" y="139" text-anchor="end">재시도 없음</text>
+          <line class="cn" x1="393.6" y1="134" x2="531.2" y2="134"/>
+          <circle class="b4" cx="393.6" cy="134" r="7"/><circle class="af" cx="531.2" cy="134" r="7"/>
+          <text class="nm" x="150" y="183" text-anchor="end">검증 통과</text>
+          <line class="cn" x1="471" y1="178" x2="569.9" y2="178"/>
+          <circle class="b4" cx="471" cy="178" r="7"/><circle class="af" cx="569.9" cy="178" r="7"/>
+          <text class="nm" x="150" y="227" text-anchor="end">수동 수정 필요</text>
+          <line class="cn" x1="221.6" y1="222" x2="359.2" y2="222"/>
+          <circle class="b4" cx="359.2" cy="222" r="7"/><circle class="af" cx="221.6" cy="222" r="7"/>
+          <line x1="170" y1="248" x2="600" y2="248" stroke="var(--ex-line-200)"/>
+          <text class="lb" x="170" y="267">0%</text>
+          <text class="lb" x="600" y="267" text-anchor="end">100%</text>
+          <circle class="b4" cx="330" cy="262" r="5"/><text class="lb" x="342" y="267">지금</text>
+          <circle class="af" cx="400" cy="262" r="5"/><text class="lb" x="412" y="267" style="fill: var(--ex-espresso)">앞으로</text>
+        </svg>
+      </template>
+      <figcaption class="note">모든 줄이 <b>같은 축</b>을 씁니다. 단위가 다른 지표를 한 그림에 섞지 않습니다 — 마지막 줄처럼 방향이 반대인 것은 그대로 두면 눈에 띕니다.</figcaption>
+    </figure>
+
+    <!-- 히트맵 -->
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">히트맵</span>
+        <span class="use">두 축에 걸친 밀도 — 언제 몰리는지</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="요일별 주별 활동 밀도">
+          <style>
+            .lb { font-family: var(--ex-font-mono); font-size: 11px; fill: var(--ex-slate-400); }
+            .ink { fill: var(--ex-ink-900); }
+          </style>
+    <rect x="40" y="30" width="44" height="34" rx="5" class="ink" opacity="0.12"/>
+    <rect x="90" y="30" width="44" height="34" rx="5" class="ink" opacity="0.24"/>
+    <rect x="140" y="30" width="44" height="34" rx="5" class="ink" opacity="0.24"/>
+    <rect x="190" y="30" width="44" height="34" rx="5" class="ink" opacity="0.42"/>
+    <rect x="240" y="30" width="44" height="34" rx="5" class="ink" opacity="0.24"/>
+    <rect x="290" y="30" width="44" height="34" rx="5" class="ink" opacity="0.42"/>
+    <rect x="340" y="30" width="44" height="34" rx="5" class="ink" opacity="0.66"/>
+    <rect x="390" y="30" width="44" height="34" rx="5" class="ink" opacity="0.42"/>
+    <rect x="440" y="30" width="44" height="34" rx="5" class="ink" opacity="0.66"/>
+    <rect x="490" y="30" width="44" height="34" rx="5" class="ink" opacity="1"/>
+    <rect x="540" y="30" width="44" height="34" rx="5" class="ink" opacity="0.66"/>
+    <rect x="590" y="30" width="44" height="34" rx="5" class="ink" opacity="1"/>
+    <rect x="40" y="70" width="44" height="34" rx="5" class="ink" opacity="0.24"/>
+    <rect x="90" y="70" width="44" height="34" rx="5" class="ink" opacity="0.24"/>
+    <rect x="140" y="70" width="44" height="34" rx="5" class="ink" opacity="0.42"/>
+    <rect x="190" y="70" width="44" height="34" rx="5" class="ink" opacity="0.42"/>
+    <rect x="240" y="70" width="44" height="34" rx="5" class="ink" opacity="0.42"/>
+    <rect x="290" y="70" width="44" height="34" rx="5" class="ink" opacity="0.66"/>
+    <rect x="340" y="70" width="44" height="34" rx="5" class="ink" opacity="0.66"/>
+    <rect x="390" y="70" width="44" height="34" rx="5" class="ink" opacity="0.66"/>
+    <rect x="440" y="70" width="44" height="34" rx="5" class="ink" opacity="1"/>
+    <rect x="490" y="70" width="44" height="34" rx="5" class="ink" opacity="1"/>
+    <rect x="540" y="70" width="44" height="34" rx="5" class="ink" opacity="1"/>
+    <rect x="590" y="70" width="44" height="34" rx="5" class="ink" opacity="1"/>
+    <rect x="40" y="110" width="44" height="34" rx="5" class="ink" opacity="0.12"/>
+    <rect x="90" y="110" width="44" height="34" rx="5" class="ink" opacity="0.12"/>
+    <rect x="140" y="110" width="44" height="34" rx="5" class="ink" opacity="0.24"/>
+    <rect x="190" y="110" width="44" height="34" rx="5" class="ink" opacity="0.24"/>
+    <rect x="240" y="110" width="44" height="34" rx="5" class="ink" opacity="0.42"/>
+    <rect x="290" y="110" width="44" height="34" rx="5" class="ink" opacity="0.42"/>
+    <rect x="340" y="110" width="44" height="34" rx="5" class="ink" opacity="0.42"/>
+    <rect x="390" y="110" width="44" height="34" rx="5" class="ink" opacity="0.66"/>
+    <rect x="440" y="110" width="44" height="34" rx="5" class="ink" opacity="0.66"/>
+    <rect x="490" y="110" width="44" height="34" rx="5" class="ink" opacity="0.66"/>
+    <rect x="540" y="110" width="44" height="34" rx="5" class="ink" opacity="1"/>
+    <rect x="590" y="110" width="44" height="34" rx="5" class="ink" opacity="0.66"/>
+    <rect x="40" y="150" width="44" height="34" rx="5" class="ink" opacity="0.05"/>
+    <rect x="90" y="150" width="44" height="34" rx="5" class="ink" opacity="0.12"/>
+    <rect x="140" y="150" width="44" height="34" rx="5" class="ink" opacity="0.12"/>
+    <rect x="190" y="150" width="44" height="34" rx="5" class="ink" opacity="0.24"/>
+    <rect x="240" y="150" width="44" height="34" rx="5" class="ink" opacity="0.24"/>
+    <rect x="290" y="150" width="44" height="34" rx="5" class="ink" opacity="0.24"/>
+    <rect x="340" y="150" width="44" height="34" rx="5" class="ink" opacity="0.42"/>
+    <rect x="390" y="150" width="44" height="34" rx="5" class="ink" opacity="0.42"/>
+    <rect x="440" y="150" width="44" height="34" rx="5" class="ink" opacity="0.42"/>
+    <rect x="490" y="150" width="44" height="34" rx="5" class="ink" opacity="0.66"/>
+    <rect x="540" y="150" width="44" height="34" rx="5" class="ink" opacity="0.66"/>
+    <rect x="590" y="150" width="44" height="34" rx="5" class="ink" opacity="1"/>
+    <rect x="40" y="190" width="44" height="34" rx="5" class="ink" opacity="0.05"/>
+    <rect x="90" y="190" width="44" height="34" rx="5" class="ink" opacity="0.05"/>
+    <rect x="140" y="190" width="44" height="34" rx="5" class="ink" opacity="0.12"/>
+    <rect x="190" y="190" width="44" height="34" rx="5" class="ink" opacity="0.12"/>
+    <rect x="240" y="190" width="44" height="34" rx="5" class="ink" opacity="0.12"/>
+    <rect x="290" y="190" width="44" height="34" rx="5" class="ink" opacity="0.24"/>
+    <rect x="340" y="190" width="44" height="34" rx="5" class="ink" opacity="0.24"/>
+    <rect x="390" y="190" width="44" height="34" rx="5" class="ink" opacity="0.24"/>
+    <rect x="440" y="190" width="44" height="34" rx="5" class="ink" opacity="0.42"/>
+    <rect x="490" y="190" width="44" height="34" rx="5" class="ink" opacity="0.42"/>
+    <rect x="540" y="190" width="44" height="34" rx="5" class="ink" opacity="0.42"/>
+    <rect x="590" y="190" width="44" height="34" rx="5" class="ink" opacity="0.66"/>
+    <text x="32" y="52" class="lb" text-anchor="end">월</text>
+    <text x="32" y="92" class="lb" text-anchor="end">화</text>
+    <text x="32" y="132" class="lb" text-anchor="end">수</text>
+    <text x="32" y="172" class="lb" text-anchor="end">목</text>
+    <text x="32" y="212" class="lb" text-anchor="end">금</text>
+    <text x="62" y="245" class="lb" text-anchor="middle">W1</text>
+    <text x="212" y="245" class="lb" text-anchor="middle">W4</text>
+    <text x="362" y="245" class="lb" text-anchor="middle">W7</text>
+    <text x="512" y="245" class="lb" text-anchor="middle">W10</text>
+    <text x="612" y="245" class="lb" text-anchor="middle">W12</text>
+          <text class="lb" x="440" y="16">적음</text>
+          <rect class="ink" x="472" y="6" width="18" height="12" rx="3" opacity=".05"/>
+          <rect class="ink" x="494" y="6" width="18" height="12" rx="3" opacity=".24"/>
+          <rect class="ink" x="516" y="6" width="18" height="12" rx="3" opacity=".42"/>
+          <rect class="ink" x="538" y="6" width="18" height="12" rx="3" opacity=".66"/>
+          <rect class="ink" x="560" y="6" width="18" height="12" rx="3"/>
+          <text class="lb" x="586" y="16">많음</text>
+        </svg>
+      </template>
+      <figcaption class="note">한 색의 <b>불투명도 단계</b>로만 말합니다. 여러 색을 섞은 히트맵은 읽는 사람이 순서를 추측하게 만듭니다.</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     03 · 다이어그램
+     ============================================================ -->
+<section>
+  <div class="sec-head">
+    <span class="num">03</span>
+    <h2>Diagrams</h2>
+    <span class="aside">숫자가 아니라 관계를 말할 때</span>
+  </div>
+  <div class="grid">
+
+    <!-- 파이프라인 -->
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">파이프라인</span>
+        <span class="use">입력에서 결과까지 · 현재 위치 하나</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 900 130" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="추출 파이프라인 5단계">
+          <style>
+            .bx { fill: var(--ex-white); stroke: var(--ex-line-200); }
+            .tt { font-family: var(--ex-font-ui); font-size: 15px; font-weight: 600; fill: var(--ex-ink-900); }
+            .tx { font-family: var(--ex-font-ui); font-size: 12px; fill: var(--ex-slate-500); }
+            .lb { font-family: var(--ex-font-mono); font-size: 10.5px; letter-spacing: .1em; fill: var(--ex-slate-400); }
+            .fl { stroke: var(--ex-slate-300); stroke-width: 1.5; fill: none; }
+          </style>
+          <defs>
+            <marker id="vz-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ex-slate-300)"/>
+            </marker>
+          </defs>
+          <rect class="bx" x="0"   y="26" width="148" height="84" rx="14"/>
+          <text class="lb" x="16"  y="50">01</text>
+          <text class="tt" x="16"  y="76">수집</text>
+          <text class="tx" x="16"  y="96">공고 · 기록</text>
+          <line class="fl" x1="156" y1="68" x2="180" y2="68" marker-end="url(#vz-arrow)"/>
+          <rect class="bx" x="188" y="26" width="148" height="84" rx="14"/>
+          <text class="lb" x="204" y="50">02</text>
+          <text class="tt" x="204" y="76">정규화</text>
+          <text class="tx" x="204" y="96">스키마 정리</text>
+          <line class="fl" x1="344" y1="68" x2="368" y2="68" marker-end="url(#vz-arrow)"/>
+          <rect x="376" y="26" width="148" height="84" rx="14" fill="var(--ex-bean-50)" stroke="var(--ex-espresso)" stroke-width="1.5"/>
+          <text class="lb" x="392" y="50" style="fill: var(--ex-espresso)">03 · NOW</text>
+          <text class="tt" x="392" y="76">추출</text>
+          <text class="tx" x="392" y="96" style="fill: var(--ex-bean-ink)">역량 매칭</text>
+          <line class="fl" x1="532" y1="68" x2="556" y2="68" marker-end="url(#vz-arrow)"/>
+          <rect class="bx" x="564" y="26" width="148" height="84" rx="14"/>
+          <text class="lb" x="580" y="50">04</text>
+          <text class="tt" x="580" y="76">검증</text>
+          <text class="tx" x="580" y="96">근거 확인</text>
+          <line class="fl" x1="720" y1="68" x2="744" y2="68" marker-end="url(#vz-arrow)"/>
+          <rect class="bx" x="752" y="26" width="148" height="84" rx="14"/>
+          <text class="lb" x="768" y="50">05</text>
+          <text class="tt" x="768" y="76">배포</text>
+          <text class="tx" x="768" y="96">공개 주소</text>
+        </svg>
+      </template>
+      <figcaption class="note">현재 단계 <b>하나만</b> Bean 지면에 Espresso 테두리. 여섯 칸을 넘으면 두 줄로 나눕니다.</figcaption>
+    </figure>
+
+    <!-- 레이어 -->
+    <figure class="item">
+      <div class="h">
+        <span class="name">레이어</span>
+        <span class="use">쌓인 구조 · 의존 방향</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="서비스 레이어 구조">
+          <style>
+            .ly { fill: var(--ex-surface-50); stroke: var(--ex-line-200); }
+            .tt { font-family: var(--ex-font-ui); font-size: 15px; font-weight: 600; fill: var(--ex-ink-900); }
+            .lb { font-family: var(--ex-font-mono); font-size: 10.5px; letter-spacing: .1em; fill: var(--ex-slate-400); }
+            .cp { fill: var(--ex-white); stroke: var(--ex-line-200); }
+            .cx { font-family: var(--ex-font-mono); font-size: 11px; fill: var(--ex-slate-500); }
+          </style>
+          <rect class="ly" x="0" y="0"   width="640" height="64" rx="14"/>
+          <text class="lb" x="20" y="26">L1</text>
+          <text class="tt" x="20" y="48">클라이언트</text>
+          <rect class="cp" x="320" y="18" width="88" height="28" rx="8"/><text class="cx" x="364" y="37" text-anchor="middle">web</text>
+          <rect class="cp" x="418" y="18" width="88" height="28" rx="8"/><text class="cx" x="462" y="37" text-anchor="middle">mobile</text>
+          <rect class="cp" x="516" y="18" width="104" height="28" rx="8"/><text class="cx" x="568" y="37" text-anchor="middle">desktop</text>
+          <rect class="ly" x="0" y="78"  width="640" height="64" rx="14"/>
+          <text class="lb" x="20" y="104">L2</text>
+          <text class="tt" x="20" y="126">계약</text>
+          <rect class="cp" x="516" y="96" width="104" height="28" rx="8"/><text class="cx" x="568" y="115" text-anchor="middle">contracts</text>
+          <rect x="0" y="156" width="640" height="64" rx="14" fill="var(--ex-bean-50)"/>
+          <text class="lb" x="20" y="182" style="fill: var(--ex-espresso)">L3</text>
+          <text class="tt" x="20" y="204">서비스</text>
+          <rect class="cp" x="418" y="174" width="88" height="28" rx="8"/><text class="cx" x="462" y="193" text-anchor="middle">api</text>
+          <rect class="cp" x="516" y="174" width="104" height="28" rx="8"/><text class="cx" x="568" y="193" text-anchor="middle">worker</text>
+          <rect class="ly" x="0" y="234" width="640" height="64" rx="14"/>
+          <text class="lb" x="20" y="260">L4</text>
+          <text class="tt" x="20" y="282">저장소</text>
+          <rect class="cp" x="418" y="252" width="88" height="28" rx="8"/><text class="cx" x="462" y="271" text-anchor="middle">redis</text>
+          <rect class="cp" x="516" y="252" width="104" height="28" rx="8"/><text class="cx" x="568" y="271" text-anchor="middle">postgres</text>
+        </svg>
+      </template>
+      <figcaption class="note">위에서 아래로만 의존합니다. 말하려는 레이어 하나를 <b>Bean 지면</b>으로 들어 올립니다.</figcaption>
+    </figure>
+
+    <!-- 시퀀스 -->
+    <figure class="item">
+      <div class="h">
+        <span class="name">시퀀스</span>
+        <span class="use">누가 누구에게 · 어떤 순서로</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="추출 요청 흐름">
+          <style>
+            .ac { fill: var(--ex-white); stroke: var(--ex-line-200); }
+            .an { font-family: var(--ex-font-ui); font-size: 13px; font-weight: 600; fill: var(--ex-ink-900); }
+            .ll { stroke: var(--ex-line-200); stroke-width: 1; stroke-dasharray: 4 5; }
+            .ms { stroke: var(--ex-slate-500); stroke-width: 1.5; fill: none; }
+            .rt { stroke: var(--ex-slate-300); stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+            .lb { font-family: var(--ex-font-mono); font-size: 11px; fill: var(--ex-slate-500); }
+          </style>
+          <defs>
+            <marker id="vz-tip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ex-slate-500)"/>
+            </marker>
+          </defs>
+          <rect class="ac" x="20"  y="0" width="140" height="40" rx="12"/><text class="an" x="90"  y="26" text-anchor="middle">웹</text>
+          <rect class="ac" x="250" y="0" width="140" height="40" rx="12"/><text class="an" x="320" y="26" text-anchor="middle">API</text>
+          <rect class="ac" x="480" y="0" width="140" height="40" rx="12"/><text class="an" x="550" y="26" text-anchor="middle">Worker</text>
+          <line class="ll" x1="90"  y1="48" x2="90"  y2="280"/>
+          <line class="ll" x1="320" y1="48" x2="320" y2="280"/>
+          <line class="ll" x1="550" y1="48" x2="550" y2="280"/>
+          <text class="lb" x="100" y="84">POST /brew</text>
+          <line class="ms" x1="90"  y1="92"  x2="320" y2="92"  marker-end="url(#vz-tip)"/>
+          <text class="lb" x="330" y="136">작업 등록</text>
+          <line class="ms" x1="320" y1="144" x2="550" y2="144" marker-end="url(#vz-tip)"/>
+          <text class="lb" x="330" y="188" text-anchor="start">단계 완료</text>
+          <line class="rt" x1="550" y1="196" x2="320" y2="196" marker-end="url(#vz-tip)"/>
+          <text class="lb" x="100" y="240">진행률 · SSE</text>
+          <line class="rt" x1="320" y1="248" x2="90"  y2="248" marker-end="url(#vz-tip)"/>
+        </svg>
+      </template>
+      <figcaption class="note">요청은 실선, <b>응답은 점선</b>. 화살표 넷을 넘으면 읽는 사람이 순서를 놓칩니다.</figcaption>
+    </figure>
+
+    <!-- 상태 전이 -->
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">상태 전이</span>
+        <span class="use">무엇이 무엇으로 · 어떤 조건에</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="추출 작업 상태 전이">
+          <style>
+            .st { fill: var(--ex-white); stroke: var(--ex-line-200); }
+            .sn { font-family: var(--ex-font-mono); font-size: 13px; fill: var(--ex-ink-900); }
+            .ed { stroke: var(--ex-slate-300); stroke-width: 1.5; fill: none; }
+            .lb { font-family: var(--ex-font-mono); font-size: 10.5px; fill: var(--ex-slate-400); }
+          </style>
+          <defs>
+            <marker id="vz-edge" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ex-slate-300)"/>
+            </marker>
+          </defs>
+          <rect class="st" x="20"  y="40" width="130" height="52" rx="14"/><text class="sn" x="85"  y="72" text-anchor="middle">draft</text>
+          <rect class="st" x="205" y="40" width="130" height="52" rx="14"/><text class="sn" x="270" y="72" text-anchor="middle">queued</text>
+          <rect class="st" x="390" y="40" width="130" height="52" rx="14"/><text class="sn" x="455" y="72" text-anchor="middle">running</text>
+          <rect x="575" y="40" width="105" height="52" rx="14" fill="var(--ex-success-surface)"/>
+          <text class="sn" x="627" y="72" text-anchor="middle" style="fill: var(--ex-success-text)">done</text>
+          <rect x="390" y="165" width="130" height="52" rx="14" fill="var(--ex-danger-surface)"/>
+          <text class="sn" x="455" y="197" text-anchor="middle" style="fill: var(--ex-danger-text)">failed</text>
+          <line class="ed" x1="150" y1="66" x2="197" y2="66" marker-end="url(#vz-edge)"/>
+          <text class="lb" x="173" y="56" text-anchor="middle">제출</text>
+          <line class="ed" x1="335" y1="66" x2="382" y2="66" marker-end="url(#vz-edge)"/>
+          <text class="lb" x="358" y="56" text-anchor="middle">착수</text>
+          <line class="ed" x1="520" y1="66" x2="567" y2="66" marker-end="url(#vz-edge)"/>
+          <text class="lb" x="543" y="56" text-anchor="middle">완료</text>
+          <line class="ed" x1="455" y1="92" x2="455" y2="157" marker-end="url(#vz-edge)" style="stroke: var(--ex-danger)"/>
+          <text class="lb" x="466" y="128" style="fill: var(--ex-danger-text)">3회 실패</text>
+          <path class="ed" d="M 390 191 L 270 191 L 270 100" marker-end="url(#vz-edge)"/>
+          <text class="lb" x="282" y="150">재시도</text>
+        </svg>
+      </template>
+      <figcaption class="note">끝 상태만 색을 씁니다 — <b>done은 초록, failed는 빨강</b>. 중간 상태는 전부 무채색으로 둡니다.</figcaption>
+    </figure>
+
+    <!-- 2×2 -->
+    <figure class="item">
+      <div class="h">
+        <span class="name">2×2 매트릭스</span>
+        <span class="use">무엇을 먼저 할지 고를 때</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage sm"></div>
+      <template class="src">
+        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="효과와 노력 매트릭스">
+          <style>
+            .qd { fill: var(--ex-surface-50); }
+            .ax { stroke: var(--ex-slate-300); stroke-width: 1.5; }
+            .lb { font-family: var(--ex-font-mono); font-size: 11px; fill: var(--ex-slate-400); }
+            .nm { font-family: var(--ex-font-ui); font-size: 12.5px; fill: var(--ex-slate-700); }
+          </style>
+          <rect class="qd" x="40" y="40" width="160" height="160" rx="12"/>
+          <rect x="40" y="40" width="160" height="160" rx="12" fill="var(--ex-bean-50)"/>
+          <rect class="qd" x="208" y="40"  width="160" height="160" rx="12"/>
+          <rect class="qd" x="40"  y="208" width="160" height="160" rx="12"/>
+          <rect class="qd" x="208" y="208" width="160" height="160" rx="12"/>
+          <text class="lb" x="52" y="60" style="fill: var(--ex-espresso)">지금 한다</text>
+          <text class="lb" x="220" y="60">계획한다</text>
+          <text class="lb" x="52" y="228">틈날 때</text>
+          <text class="lb" x="220" y="228">하지 않는다</text>
+          <line class="ax" x1="40" y1="376" x2="376" y2="376" marker-end="url(#vz-ax)"/>
+          <line class="ax" x1="32" y1="368" x2="32" y2="32"  marker-end="url(#vz-ax)"/>
+          <defs>
+            <marker id="vz-ax" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ex-slate-300)"/>
+            </marker>
+          </defs>
+          <text class="lb" x="376" y="394" text-anchor="end">노력 →</text>
+          <text class="lb" x="14" y="40" transform="rotate(-90 14 40)">효과 →</text>
+          <circle cx="96"  cy="112" r="7" fill="var(--ex-espresso)"/>
+          <text class="nm" x="110" y="117" style="fill: var(--ex-espresso)">단계별 재시도</text>
+          <circle cx="150" cy="164" r="7" fill="var(--ex-slate-400)"/>
+          <text class="nm" x="164" y="169">실패 기록</text>
+          <circle cx="268" cy="120" r="7" fill="var(--ex-slate-400)"/>
+          <text class="nm" x="282" y="125">관측 지표</text>
+          <circle cx="288" cy="286" r="7" fill="var(--ex-slate-300)"/>
+          <text class="nm" x="302" y="291" style="fill: var(--ex-slate-400)">전면 재작성</text>
+        </svg>
+      </template>
+      <figcaption class="note">점은 <b>다섯 개까지</b>. 고른 하나만 Espresso로 칠하고 그 사분면을 Bean 지면으로 들어 올립니다.</figcaption>
+    </figure>
+
+    <!-- 분기 -->
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">분기</span>
+        <span class="use">하나에서 갈라지는 선택지</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 640 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="추출 실패 시 분기">
+          <style>
+            .bx { fill: var(--ex-white); stroke: var(--ex-line-200); }
+            .tt { font-family: var(--ex-font-ui); font-size: 14px; font-weight: 600; fill: var(--ex-ink-900); }
+            .tx { font-family: var(--ex-font-ui); font-size: 12px; fill: var(--ex-slate-500); }
+            .ed { stroke: var(--ex-line-200); stroke-width: 1.5; fill: none; }
+            .lb { font-family: var(--ex-font-mono); font-size: 10.5px; fill: var(--ex-slate-400); }
+          </style>
+          <rect x="245" y="10" width="150" height="56" rx="14" fill="var(--ex-ink-900)"/>
+          <text class="tt" x="320" y="44" text-anchor="middle" style="fill: var(--ex-white)">추출 실패</text>
+          <path class="ed" d="M 320 66 L 320 100 M 105 100 L 525 100 M 105 100 L 105 130 M 320 100 L 320 130 M 525 100 L 525 130"/>
+          <rect class="bx" x="30"  y="130" width="150" height="80" rx="14"/>
+          <text class="lb" x="46"  y="154">01</text>
+          <text class="tt" x="46"  y="178">같은 단계 재시도</text>
+          <text class="tx" x="46"  y="198">일시 오류일 때</text>
+          <rect x="245" y="130" width="150" height="80" rx="14" fill="var(--ex-bean-50)" stroke="var(--ex-espresso)" stroke-width="1.5"/>
+          <text class="lb" x="261" y="154" style="fill: var(--ex-espresso)">02 · 선택</text>
+          <text class="tt" x="261" y="178">이전 초안 유지</text>
+          <text class="tx" x="261" y="198" style="fill: var(--ex-bean-ink)">사용자를 막지 않는다</text>
+          <rect class="bx" x="460" y="130" width="150" height="80" rx="14"/>
+          <text class="lb" x="476" y="154">03</text>
+          <text class="tt" x="476" y="178">전체 중단</text>
+          <text class="tx" x="476" y="198">데이터가 깨졌을 때</text>
+        </svg>
+      </template>
+      <figcaption class="note">고른 가지 하나만 <b>Bean 지면</b>. 버린 가지를 지우지 않습니다 — 고른 이유는 버린 것 옆에서만 설득력이 생깁니다.</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     04 · 표시 — 그림 위에 얹거나 글 사이에 끼우는 것들
+     ============================================================ -->
+<section>
+  <div class="sec-head">
+    <span class="num">04</span>
+    <h2>Marks</h2>
+    <span class="aside">그림에 얹는 부품</span>
+  </div>
+  <div class="grid">
+
+    <!-- 커넥터 -->
+    <figure class="item">
+      <div class="h">
+        <span class="name">선과 화살표</span>
+        <span class="use">직접 그릴 때 쓰는 획</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="커넥터 종류">
+          <style>
+            .lb { font-family: var(--ex-font-mono); font-size: 11px; fill: var(--ex-slate-400); }
+            .c1 { stroke: var(--ex-slate-500); stroke-width: 1.5; fill: none; }
+            .c2 { stroke: var(--ex-slate-300); stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+            .c3 { stroke: var(--ex-espresso); stroke-width: 2.5; fill: none; }
+          </style>
+          <defs>
+            <marker id="vz-m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ex-slate-500)"/>
+            </marker>
+            <marker id="vz-m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ex-slate-300)"/>
+            </marker>
+            <marker id="vz-m3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ex-espresso)"/>
+            </marker>
+          </defs>
+          <text class="lb" x="0" y="30">FLOW · 흐름</text>
+          <line class="c1" x1="180" y1="25" x2="380" y2="25" marker-end="url(#vz-m1)"/>
+          <text class="lb" x="0" y="70">RETURN · 응답</text>
+          <line class="c2" x1="180" y1="65" x2="380" y2="65" marker-end="url(#vz-m2)"/>
+          <text class="lb" x="0" y="110">BOTH · 양방향</text>
+          <line class="c1" x1="180" y1="105" x2="380" y2="105" marker-start="url(#vz-m1)" marker-end="url(#vz-m1)"/>
+          <text class="lb" x="0" y="150">EMPHASIS · 강조</text>
+          <line class="c3" x1="180" y1="145" x2="380" y2="145" marker-end="url(#vz-m3)"/>
+          <text class="lb" x="0" y="196">ELBOW · 꺾임</text>
+          <path class="c1" d="M 180 165 L 280 165 L 280 205 L 380 205" marker-end="url(#vz-m1)"/>
+          <text class="lb" x="410" y="30">기본. 요청 · 진행</text>
+          <text class="lb" x="410" y="70">되돌아오는 것</text>
+          <text class="lb" x="410" y="110">주고받는 관계</text>
+          <text class="lb" x="410" y="150" style="fill: var(--ex-espresso)">한 그림에 하나만</text>
+          <text class="lb" x="410" y="196">층을 건너뛸 때</text>
+        </svg>
+      </template>
+      <figcaption class="note">획 굵기는 <b>1.5</b>가 기본, 강조만 2.5입니다. 곡선은 쓰지 않습니다 — 직선과 직각만으로 그립니다.</figcaption>
+    </figure>
+
+    <!-- 주석 핀 -->
+    <figure class="item">
+      <div class="h">
+        <span class="name">주석 핀</span>
+        <span class="use">화면 캡처에 번호를 달 때</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="캡처 주석">
+          <style>
+            .sh { fill: var(--ex-surface-100); stroke: var(--ex-line-200); }
+            .ld { stroke: var(--ex-espresso); stroke-width: 1.5; fill: none; }
+            .pn { fill: var(--ex-espresso); }
+            .pt { font-family: var(--ex-font-mono); font-size: 12px; fill: var(--ex-white); }
+            .nt { font-family: var(--ex-font-ui); font-size: 12.5px; fill: var(--ex-slate-700); }
+            .lb { font-family: var(--ex-font-mono); font-size: 10.5px; letter-spacing: .1em; fill: var(--ex-slate-400); }
+          </style>
+          <rect class="sh" x="0" y="0" width="380" height="230" rx="14"/>
+          <text class="lb" x="190" y="120" text-anchor="middle">SCREENSHOT</text>
+          <line class="ld" x1="120" y1="70"  x2="404" y2="52"/>
+          <circle class="pn" cx="120" cy="70" r="14"/>
+          <text class="pt" x="120" y="75" text-anchor="middle">1</text>
+          <circle class="pn" cx="404" cy="52" r="14"/>
+          <text class="pt" x="404" y="57" text-anchor="middle">1</text>
+          <text class="nt" x="428" y="49">여기서 조건이 걸립니다</text>
+          <text class="lb" x="428" y="69">목록으로 돌아가도 남습니다</text>
+          <line class="ld" x1="250" y1="168" x2="404" y2="152"/>
+          <circle class="pn" cx="250" cy="168" r="14"/>
+          <text class="pt" x="250" y="173" text-anchor="middle">2</text>
+          <circle class="pn" cx="404" cy="152" r="14"/>
+          <text class="pt" x="404" y="157" text-anchor="middle">2</text>
+          <text class="nt" x="428" y="149">회사 하나로 좁힐 때</text>
+          <text class="lb" x="428" y="169">500이 나던 자리</text>
+        </svg>
+      </template>
+      <figcaption class="note">핀은 <b>번호만</b> 달고 설명은 옆으로 뺍니다. 그림 위에 글을 얹으면 둘 다 읽히지 않습니다.</figcaption>
+    </figure>
+
+    <!-- 델타 -->
+    <figure class="item">
+      <div class="h">
+        <span class="name">변화 표시</span>
+        <span class="use">수치 옆의 증감</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 440 130" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="증감 표시">
+          <style>
+            .vn { font-family: var(--ex-font-brand); font-weight: 300; font-size: 38px; letter-spacing: -.03em; fill: var(--ex-ink-900); }
+            .dl { font-family: var(--ex-font-ui); font-size: 13px; }
+            .lb { font-family: var(--ex-font-mono); font-size: 10.5px; letter-spacing: .1em; fill: var(--ex-slate-400); }
+          </style>
+          <text class="lb" x="0"   y="18">GOOD UP</text>
+          <text class="vn" x="0"   y="62">1,284</text>
+          <text class="dl" x="0"   y="88" style="fill: var(--ex-success-text)">▲ 18.2%</text>
+          <text class="lb" x="160" y="18">BAD UP</text>
+          <text class="vn" x="160" y="62">2.4s</text>
+          <text class="dl" x="160" y="88" style="fill: var(--ex-danger-text)">▲ 0.3s</text>
+          <text class="lb" x="320" y="18">FLAT</text>
+          <text class="vn" x="320" y="62">2:41</text>
+          <text class="dl" x="320" y="88" style="fill: var(--ex-slate-400)">— 0.4%</text>
+          <text class="lb" x="0" y="118">색은 방향이 아니라 좋고 나쁨을 말합니다</text>
+        </svg>
+      </template>
+      <figcaption class="note">화살표는 방향, <b>색은 좋고 나쁨</b>입니다. 응답 시간이 올라간 것은 초록이 아닙니다.</figcaption>
+    </figure>
+
+    <!-- 스켈레톤 -->
+    <figure class="item">
+      <div class="h">
+        <span class="name">스켈레톤</span>
+        <span class="use">아직 오지 않은 값의 자리</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <div style="width: 100%; display: grid; gap: 12px">
+          <style>@keyframes ex-shimmer { 0% { background-position: -260px 0 } 100% { background-position: 260px 0 } }</style>
+          <div style="height: 34px; width: 60%; border-radius: 10px; background: linear-gradient(90deg, #eff4fb 25%, #e3eaf6 50%, #eff4fb 75%); background-size: 520px 100%; animation: ex-shimmer 1.5s linear infinite"></div>
+          <div style="height: 14px; width: 100%; border-radius: 7px; background: linear-gradient(90deg, #eff4fb 25%, #e3eaf6 50%, #eff4fb 75%); background-size: 520px 100%; animation: ex-shimmer 1.5s linear infinite"></div>
+          <div style="height: 14px; width: 82%; border-radius: 7px; background: linear-gradient(90deg, #eff4fb 25%, #e3eaf6 50%, #eff4fb 75%); background-size: 520px 100%; animation: ex-shimmer 1.5s linear infinite"></div>
+        </div>
+      </template>
+      <figcaption class="note">유일하게 허용되는 그러데이션입니다. 값이 오는 자리와 <b>같은 크기</b>로 놓아야 화면이 튀지 않습니다.</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     05 · 아이콘 — 이모지를 대신하는 자리
+     ============================================================ -->
+<section>
+  <div class="sec-head">
+    <span class="num">05</span>
+    <h2>Icons</h2>
+    <span class="aside">낱개로 눌러 복사합니다</span>
+  </div>
+  <div class="grid">
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">아이콘 세트</span>
+        <span class="use">제품과 같은 세트 — Phosphor Regular</span>
+        <span class="copy" style="cursor: default; border-color: transparent">낱개로 누릅니다</span>
+      </div>
+      <div class="stage" style="display: block">
+        <div class="icons" id="iconSet"></div>
+      </div>
+      <figcaption class="note">
+        <b>Regular만</b> 씁니다 — Bold와 Fill은 쓰지 않습니다. 크기는 24px, 색은 글자색을 따릅니다.
+        지면에 아이콘을 흩뿌리지 않습니다: 목록의 줄머리나 상태 표시처럼 <b>자리가 정해진 곳</b>에만 답니다.
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============================================================
+     06 · 지면 부품 — 화면과 파일을 담는 틀
+     ============================================================ -->
+<section>
+  <div class="sec-head">
+    <span class="num">06</span>
+    <h2>Frames</h2>
+    <span class="aside">발표 지면 크기로 짜여 있습니다</span>
+  </div>
+  <div class="grid">
+
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">브라우저 창</span>
+        <span class="use">화면 캡처를 넣는 자리 — 발표에서 가장 많이 쓰는 틀</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <div style="border: 1px solid var(--ex-line-200); border-radius: 18px; overflow: hidden; background: var(--ex-white); box-shadow: var(--ex-elevation-raised); width: 100%">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: var(--ex-surface-50); border-bottom: 1px solid var(--ex-line-200)">
+            <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--ex-line-200)"></span>
+            <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--ex-line-200)"></span>
+            <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--ex-line-200)"></span>
+            <span style="margin-left: 12px; flex: 1; max-width: 420px; background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 8px; padding: 5px 12px; font-family: var(--ex-font-mono); font-size: 13px; color: var(--ex-slate-400)">expresso.app/p/minjae</span>
+          </div>
+          <div style="height: 260px; display: grid; place-items: center; background: repeating-linear-gradient(135deg, #f2f6fc 0 10px, #eaf0f9 10px 20px)">
+            <span style="font-family: var(--ex-font-mono); font-size: 13px; letter-spacing: .12em; color: var(--ex-slate-400)">SCREENSHOT</span>
+          </div>
+        </div>
+      </template>
+      <figcaption class="note">주소는 <b>진짜 주소</b>를 적습니다. 캡처를 넣을 때는 줄무늬 지면을 <code>&lt;img&gt;</code>로 바꿉니다.</figcaption>
+    </figure>
+
+    <figure class="item">
+      <div class="h">
+        <span class="name">모바일 창</span>
+        <span class="use">좁은 화면을 보일 때</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage sm"></div>
+      <template class="src">
+        <div style="width: 260px; border: 8px solid var(--ex-ink-900); border-radius: 34px; overflow: hidden; background: var(--ex-white)">
+          <div style="height: 26px; display: grid; place-items: center; background: var(--ex-ink-900)">
+            <span style="width: 76px; height: 5px; border-radius: 999px; background: rgba(255,255,255,.28)"></span>
+          </div>
+          <div style="height: 380px; display: grid; place-items: center; background: repeating-linear-gradient(135deg, #f2f6fc 0 10px, #eaf0f9 10px 20px)">
+            <span style="font-family: var(--ex-font-mono); font-size: 12px; letter-spacing: .12em; color: var(--ex-slate-400)">SCREEN</span>
+          </div>
+        </div>
+      </template>
+      <figcaption class="note">테두리는 <b>ink-900</b>. 기기 흉내를 더 내지 않습니다 — 버튼도 카메라도 그리지 않습니다.</figcaption>
+    </figure>
+
+    <figure class="item">
+      <div class="h">
+        <span class="name">파일 카드</span>
+        <span class="use">어느 파일 이야기인지</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <div style="display: grid; gap: 10px; width: 100%">
+          <div style="display: flex; align-items: center; gap: 12px; border: 1px solid var(--ex-line-200); border-radius: 12px; padding: 12px 16px; background: var(--ex-white)">
+            <i class="ph ph-file-code" style="font-size: 22px; color: var(--ex-slate-400)"></i>
+            <span style="font-family: var(--ex-font-mono); font-size: 15px; color: var(--ex-ink-900)">services/api/src/pipeline.ts</span>
+            <span style="margin-left: auto; font-family: var(--ex-font-mono); font-size: 13px; color: var(--ex-slate-400)">+142 −38</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; border: 1px solid var(--ex-espresso); border-radius: 12px; padding: 12px 16px; background: var(--ex-bean-50)">
+            <i class="ph ph-warning-circle" style="font-size: 22px; color: var(--ex-espresso)"></i>
+            <span style="font-family: var(--ex-font-mono); font-size: 15px; color: var(--ex-bean-ink)">packages/database/schema.sql</span>
+            <span style="margin-left: auto; font-family: var(--ex-font-mono); font-size: 13px; color: var(--ex-espresso)">마이그레이션</span>
+          </div>
+        </div>
+      </template>
+      <figcaption class="note">경로는 저장소 기준으로 <b>끝까지</b> 적습니다. 손이 가야 하는 파일 하나만 Bean 지면으로 들어 올립니다.</figcaption>
+    </figure>
+
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">전후 나란히</span>
+        <span class="use">같은 화면의 지금과 앞으로</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%">
+          <div>
+            <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 12px">
+              <span style="font-family: var(--ex-font-mono); font-size: 13px; letter-spacing: .12em; color: var(--ex-slate-400)">BEFORE</span>
+              <span style="flex: 1; height: 1px; background: var(--ex-line-200)"></span>
+            </div>
+            <div style="height: 200px; border: 1px solid var(--ex-line-200); border-radius: 14px; display: grid; place-items: center; background: var(--ex-surface-50)">
+              <span style="font-family: var(--ex-font-mono); font-size: 12px; color: var(--ex-slate-400)">지금 화면</span>
+            </div>
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 12px">
+              <span style="font-family: var(--ex-font-mono); font-size: 13px; letter-spacing: .12em; color: var(--ex-espresso)">AFTER</span>
+              <span style="flex: 1; height: 1px; background: var(--ex-espresso); opacity: .3"></span>
+            </div>
+            <div style="height: 200px; border: 1.5px solid var(--ex-espresso); border-radius: 14px; display: grid; place-items: center; background: var(--ex-bean-50)">
+              <span style="font-family: var(--ex-font-mono); font-size: 12px; color: var(--ex-bean-ink)">바뀐 화면</span>
+            </div>
+          </div>
+        </div>
+      </template>
+      <figcaption class="note">두 틀은 <b>같은 크기</b>여야 합니다. 크기가 다르면 눈이 내용이 아니라 틀을 비교합니다.</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     07 · 사람과 말
+     ============================================================ -->
+<section>
+  <div class="sec-head">
+    <span class="num">07</span>
+    <h2>People &amp; Speech</h2>
+    <span class="aside">누가 하는지 · 무슨 말이 오가는지</span>
+  </div>
+  <div class="grid">
+
+    <figure class="item">
+      <div class="h">
+        <span class="name">아바타</span>
+        <span class="use">담당자 표시</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <div style="display: flex; align-items: center; gap: 24px">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <span style="width: 44px; height: 44px; border-radius: 50%; background: var(--ex-tint-100); display: grid; place-items: center; font-size: 16px; font-weight: 600; color: var(--ex-slate-700)">박</span>
+            <span style="font-size: 17px; color: var(--ex-slate-700)">박민재</span>
+          </div>
+          <div style="display: flex">
+            <span style="width: 40px; height: 40px; border-radius: 50%; background: var(--ex-tint-100); border: 2px solid var(--ex-white); display: grid; place-items: center; font-size: 15px; font-weight: 600; color: var(--ex-slate-700)">박</span>
+            <span style="width: 40px; height: 40px; border-radius: 50%; background: var(--ex-tint-50); border: 2px solid var(--ex-white); margin-left: -12px; display: grid; place-items: center; font-size: 15px; font-weight: 600; color: var(--ex-slate-700)">이</span>
+            <span style="width: 40px; height: 40px; border-radius: 50%; background: var(--ex-surface-100); border: 2px solid var(--ex-white); margin-left: -12px; display: grid; place-items: center; font-size: 15px; font-weight: 600; color: var(--ex-slate-700)">김</span>
+            <span style="width: 40px; height: 40px; border-radius: 50%; background: var(--ex-white); border: 2px solid var(--ex-white); box-shadow: inset 0 0 0 1px var(--ex-line-200); margin-left: -12px; display: grid; place-items: center; font-family: var(--ex-font-mono); font-size: 12px; color: var(--ex-slate-400)">+2</span>
+          </div>
+        </div>
+      </template>
+      <figcaption class="note">사진을 쓰지 않습니다 — <b>성 한 글자</b>와 무채색 지면. 넷을 넘으면 <code>+n</code>으로 접습니다.</figcaption>
+    </figure>
+
+    <figure class="item">
+      <div class="h">
+        <span class="name">상태 점</span>
+        <span class="use">지금 살아 있는지</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <div style="display: grid; gap: 14px">
+          <span style="display: flex; align-items: center; gap: 11px; font-size: 17px; color: var(--ex-slate-700)">
+            <span style="width: 9px; height: 9px; border-radius: 50%; background: var(--ex-success-text)"></span>운영 · 정상
+          </span>
+          <span style="display: flex; align-items: center; gap: 11px; font-size: 17px; color: var(--ex-slate-700)">
+            <span style="width: 9px; height: 9px; border-radius: 50%; background: var(--ex-warning-text)"></span>스테이징 · 배포 중
+          </span>
+          <span style="display: flex; align-items: center; gap: 11px; font-size: 17px; color: var(--ex-slate-700)">
+            <span style="width: 9px; height: 9px; border-radius: 50%; background: var(--ex-danger)"></span>워커 · 중단
+          </span>
+          <span style="display: flex; align-items: center; gap: 11px; font-size: 17px; color: var(--ex-slate-400)">
+            <span style="width: 9px; height: 9px; border-radius: 50%; background: var(--ex-slate-300)"></span>배치 · 대기
+          </span>
+        </div>
+      </template>
+      <figcaption class="note">점 하나와 낱말 하나. 초록은 <b>정상일 때만</b> 씁니다 — 초록이 흔해지면 빨강이 안 보입니다.</figcaption>
+    </figure>
+
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">대화</span>
+        <span class="use">바리스타와 사용자 — 색으로 화자를 구분합니다</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <div style="display: grid; gap: 14px; width: 100%; max-width: 760px">
+          <div style="display: flex; gap: 13px">
+            <span style="flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--ex-espresso); display: grid; place-items: center">
+              <span style="width: 11px; height: 11px; border-radius: 50%; background: var(--ex-bean-50)"></span>
+            </span>
+            <span style="background: var(--ex-bean-50); border-radius: 6px 18px 18px 18px; padding: 14px 18px; font-size: 18px; line-height: 1.7; color: var(--ex-bean-ink)">그 프로젝트에서 <b style="color: var(--ex-ink-900)">가장 막막했던 순간</b>은 언제였나요?</span>
+          </div>
+          <div style="display: flex; justify-content: flex-end">
+            <span style="background: var(--ex-ink-900); color: var(--ex-white); border-radius: 18px 6px 18px 18px; padding: 14px 18px; font-size: 18px; line-height: 1.7; max-width: 76%">API 응답이 3초씩 걸려서 팀 전체가 손 놓고 있었어요</span>
+          </div>
+          <div style="display: flex; gap: 13px; align-items: center">
+            <span style="flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--ex-espresso); display: grid; place-items: center">
+              <span style="width: 11px; height: 11px; border-radius: 50%; background: var(--ex-bean-50)"></span>
+            </span>
+            <span style="background: var(--ex-bean-50); border-radius: 6px 18px 18px 18px; padding: 16px 18px; display: flex; gap: 6px">
+              <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--ex-espresso); opacity: .4"></span>
+              <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--ex-espresso); opacity: .7"></span>
+              <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--ex-espresso)"></span>
+            </span>
+          </div>
+        </div>
+      </template>
+      <figcaption class="note">AI 말풍선만 <b>Bean 50</b>, 사용자 말풍선은 <b>Ink</b>. 꼬리는 말하는 쪽 모서리만 각지게 둡니다.</figcaption>
+    </figure>
+
+    <figure class="item">
+      <div class="h">
+        <span class="name">큰 인용</span>
+        <span class="use">남의 말을 그대로 옮길 때</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <div style="width: 100%">
+          <svg viewBox="0 0 40 30" width="40" height="30" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M0 30V16C0 7.2 5.2 1.2 14 0l2 5c-5 1.4-7.6 4.6-7.6 8.6H16V30zM24 30V16C24 7.2 29.2 1.2 38 0l2 5c-5 1.4-7.6 4.6-7.6 8.6H40V30z" style="fill: var(--ex-crema)"/>
+          </svg>
+          <p style="margin: 14px 0 0; font-size: 26px; line-height: 1.6; font-weight: 500; letter-spacing: -.02em; color: var(--ex-ink-900); word-break: keep-all">공고를 붙여 넣으니까 제 이력에서 뭘 꺼내야 하는지 알겠더라고요.</p>
+          <p style="margin: 16px 0 0; font-family: var(--ex-font-mono); font-size: 13px; letter-spacing: .1em; color: var(--ex-slate-400)">사용자 인터뷰 · 2026-07</p>
+        </div>
+      </template>
+      <figcaption class="note">따옴표는 <b>Crema</b>로 한 번. 출처와 날짜가 없으면 인용이 아니라 지어낸 말입니다.</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     08 · 진행과 위치
+     ============================================================ -->
+<section>
+  <div class="sec-head">
+    <span class="num">08</span>
+    <h2>Progress</h2>
+    <span class="aside">지금 어디까지 왔는지</span>
+  </div>
+  <div class="grid">
+
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">스테퍼</span>
+        <span class="use">여러 장에 걸쳐 같은 자리에 두는 진행 표시</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <div style="display: flex; align-items: center; gap: 0; width: 100%">
+          <span style="display: flex; align-items: center; gap: 11px">
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: var(--ex-ink-900); color: var(--ex-white); display: grid; place-items: center; font-family: var(--ex-font-mono); font-size: 12px">✓</span>
+            <span style="font-size: 17px; color: var(--ex-slate-400)">수집</span>
+          </span>
+          <span style="flex: 1; height: 1px; background: var(--ex-line-200); margin: 0 16px"></span>
+          <span style="display: flex; align-items: center; gap: 11px">
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: var(--ex-ink-900); color: var(--ex-white); display: grid; place-items: center; font-family: var(--ex-font-mono); font-size: 12px">✓</span>
+            <span style="font-size: 17px; color: var(--ex-slate-400)">정규화</span>
+          </span>
+          <span style="flex: 1; height: 1px; background: var(--ex-line-200); margin: 0 16px"></span>
+          <span style="display: flex; align-items: center; gap: 11px">
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: var(--ex-espresso); color: var(--ex-white); display: grid; place-items: center; font-family: var(--ex-font-mono); font-size: 12px">3</span>
+            <span style="font-size: 17px; font-weight: 600; color: var(--ex-ink-900)">추출</span>
+          </span>
+          <span style="flex: 1; height: 1px; background: var(--ex-line-200); margin: 0 16px"></span>
+          <span style="display: flex; align-items: center; gap: 11px">
+            <span style="width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--ex-line-200); color: var(--ex-slate-400); display: grid; place-items: center; font-family: var(--ex-font-mono); font-size: 12px">4</span>
+            <span style="font-size: 17px; color: var(--ex-slate-400)">배포</span>
+          </span>
+        </div>
+      </template>
+      <figcaption class="note">지난 단계는 <b>체크</b>, 지금은 <b>Espresso</b>, 남은 것은 빈 테두리. 여러 장에 쓸 때 <b>같은 자리</b>에 둡니다.</figcaption>
+    </figure>
+
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">마일스톤</span>
+        <span class="use">가로로 흐르는 일정 — 오늘이 어디인지</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 700 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="분기 마일스톤">
+          <style>
+            .lb { font-family: var(--ex-font-mono); font-size: 12px; letter-spacing: .1em; fill: var(--ex-slate-400); }
+            .nm { font-family: var(--ex-font-ui); font-size: 15px; font-weight: 600; fill: var(--ex-ink-900); }
+          </style>
+          <line x1="20" y1="75" x2="680" y2="75" stroke="var(--ex-line-200)" stroke-width="2"/>
+          <line x1="20" y1="75" x2="400" y2="75" stroke="var(--ex-ink-900)" stroke-width="2"/>
+          <circle cx="20"  cy="75" r="8" fill="var(--ex-ink-900)"/>
+          <text class="lb" x="20" y="48" text-anchor="middle">6월</text>
+          <text class="nm" x="20" y="105" text-anchor="middle">설계</text>
+          <circle cx="210" cy="75" r="8" fill="var(--ex-ink-900)"/>
+          <text class="lb" x="210" y="48" text-anchor="middle">7월</text>
+          <text class="nm" x="210" y="105" text-anchor="middle">구현</text>
+          <circle cx="400" cy="75" r="11" fill="var(--ex-espresso)"/>
+          <circle cx="400" cy="75" r="19" fill="none" stroke="var(--ex-espresso)" stroke-width="1.5" opacity=".35"/>
+          <text class="lb" x="400" y="41" text-anchor="middle" style="fill: var(--ex-espresso)">오늘</text>
+          <text class="nm" x="400" y="112" text-anchor="middle" style="fill: var(--ex-espresso)">검증</text>
+          <circle cx="590" cy="75" r="8" fill="var(--ex-white)" stroke="var(--ex-line-200)" stroke-width="2"/>
+          <text class="lb" x="590" y="48" text-anchor="middle">9월</text>
+          <text class="nm" x="590" y="105" text-anchor="middle" style="fill: var(--ex-slate-400)">배포</text>
+          <circle cx="680" cy="75" r="5" fill="var(--ex-line-200)"/>
+        </svg>
+      </template>
+      <figcaption class="note">지나온 구간만 실선이 진합니다. <b>오늘</b>에만 고리를 두르고, 남은 점은 속을 비웁니다.</figcaption>
+    </figure>
+
+    <figure class="item">
+      <div class="h">
+        <span class="name">키캡</span>
+        <span class="use">단축키를 설명할 때</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 17px; color: var(--ex-slate-500)">
+          <span style="font-family: var(--ex-font-mono); font-size: 15px; background: var(--ex-white); border: 1px solid var(--ex-line-200); border-bottom-width: 3px; border-radius: 8px; padding: 6px 12px; color: var(--ex-slate-700)">⌘</span>
+          <span style="font-family: var(--ex-font-mono); font-size: 15px; background: var(--ex-white); border: 1px solid var(--ex-line-200); border-bottom-width: 3px; border-radius: 8px; padding: 6px 12px; color: var(--ex-slate-700)">K</span>
+          <span>명령 팔레트</span>
+        </div>
+      </template>
+      <figcaption class="note">아래 테두리만 굵게 — 눌리는 물건처럼 보이는 유일한 장치입니다. 그림자를 쓰지 않습니다.</figcaption>
+    </figure>
+
+    <figure class="item">
+      <div class="h">
+        <span class="name">번호 판</span>
+        <span class="use">섹션 · 순서 · 큰 수</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <div style="display: flex; align-items: baseline; gap: 28px">
+          <span style="font-family: var(--ex-font-brand); font-weight: 300; font-size: 92px; line-height: .82; letter-spacing: -.04em; color: var(--ex-espresso)">03</span>
+          <span style="font-family: var(--ex-font-brand); font-weight: 300; font-size: 92px; line-height: .82; letter-spacing: -.04em; color: var(--ex-slate-300)">04</span>
+          <span style="font-family: var(--ex-font-brand); font-weight: 300; font-size: 92px; line-height: .82; letter-spacing: -.04em; color: var(--ex-tint-100)">05</span>
+        </div>
+      </template>
+      <figcaption class="note">숫자는 <b>Outfit 300</b>. 지금 자리만 Espresso, 나머지는 계조로 물러납니다.</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     09 · 강조와 지면 — 눈길을 어디로 보낼지
+     ============================================================ -->
+<section>
+  <div class="sec-head">
+    <span class="num">09</span>
+    <h2>Emphasis &amp; Plates</h2>
+    <span class="aside">지면을 채우고 눈을 끄는 것</span>
+  </div>
+  <div class="grid">
+
+    <figure class="item">
+      <div class="h">
+        <span class="name">구간 표시</span>
+        <span class="use">여기부터 여기까지</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 420 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="구간 브래킷">
+          <style>
+            .lb { font-family: var(--ex-font-mono); font-size: 12px; letter-spacing: .1em; fill: var(--ex-espresso); }
+            .bk { fill: none; stroke: var(--ex-espresso); stroke-width: 1.5; }
+          </style>
+          <rect x="0"   y="60" width="90" height="40" rx="10" fill="var(--ex-surface-100)"/>
+          <rect x="102" y="60" width="90" height="40" rx="10" fill="var(--ex-surface-100)"/>
+          <rect x="204" y="60" width="90" height="40" rx="10" fill="var(--ex-surface-100)"/>
+          <rect x="306" y="60" width="90" height="40" rx="10" fill="var(--ex-surface-100)"/>
+          <path class="bk" d="M 0 44 V 32 H 192 V 44"/>
+          <path class="bk" d="M 96 32 V 22"/>
+          <text class="lb" x="96" y="14" text-anchor="middle">이번 스프린트</text>
+        </svg>
+      </template>
+      <figcaption class="note">브래킷은 <b>Espresso 한 겹</b>. 두 구간을 동시에 묶지 않습니다 — 그때는 지면을 나눕니다.</figcaption>
+    </figure>
+
+    <figure class="item">
+      <div class="h">
+        <span class="name">밑줄 강조</span>
+        <span class="use">문장 속 낱말 하나</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <p style="margin: 0; font-size: 26px; line-height: 1.6; font-weight: 500; letter-spacing: -.02em; color: var(--ex-ink-900); word-break: keep-all">
+          지금 막힌 것은 속도가 아니라
+          <span style="background: linear-gradient(transparent 62%, var(--ex-bean-50) 62%); padding: 0 2px">어디서 끊겼는지 모른다</span>는 사실입니다.
+        </p>
+      </template>
+      <figcaption class="note">한 지면에 <b>한 번</b>. 밑줄은 Bean 50이 글자 아래쪽만 받치게 두고, 글자색은 건드리지 않습니다.</figcaption>
+    </figure>
+
+    <figure class="item">
+      <div class="h">
+        <span class="name">가리키는 화살표</span>
+        <span class="use">그림 위 한 곳을 짚을 때</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 420 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="콜아웃 화살표">
+          <style>
+            .nt { font-family: var(--ex-font-ui); font-size: 15px; fill: var(--ex-espresso); }
+            .ar { fill: none; stroke: var(--ex-espresso); stroke-width: 1.5; }
+          </style>
+          <defs>
+            <marker id="vz-call" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ex-espresso)"/>
+            </marker>
+          </defs>
+          <rect x="0" y="40" width="240" height="110" rx="14" fill="var(--ex-surface-100)"/>
+          <text x="120" y="100" text-anchor="middle" style="font-family: var(--ex-font-mono); font-size: 12px; letter-spacing: .1em; fill: var(--ex-slate-400)">CONTENT</text>
+          <path class="ar" d="M 400 34 C 340 34 320 60 268 82" marker-end="url(#vz-call)"/>
+          <text class="nt" x="418" y="26" text-anchor="end">여기가 바뀝니다</text>
+        </svg>
+      </template>
+      <figcaption class="note">여기서만 <b>곡선</b>을 씁니다 — 손으로 가리키는 몸짓이라 다이어그램의 직각 규칙에서 뺍니다. 지면당 하나.</figcaption>
+    </figure>
+
+    <figure class="item">
+      <div class="h">
+        <span class="name">빈 지면</span>
+        <span class="use">아직 그림이 없는 자리</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%">
+          <div style="height: 130px; border-radius: 14px; background: repeating-linear-gradient(135deg, #f2f6fc 0 10px, #eaf0f9 10px 20px); display: grid; place-items: center">
+            <span style="font-family: var(--ex-font-mono); font-size: 12px; letter-spacing: .12em; color: var(--ex-slate-400)">STRIPE</span>
+          </div>
+          <div style="height: 130px; border-radius: 14px; border: 1px solid var(--ex-line-200); background-image: radial-gradient(var(--ex-line-200) 1.2px, transparent 1.2px); background-size: 16px 16px; display: grid; place-items: center">
+            <span style="font-family: var(--ex-font-mono); font-size: 12px; letter-spacing: .12em; color: var(--ex-slate-400)">DOT GRID</span>
+          </div>
+        </div>
+      </template>
+      <figcaption class="note">줄무늬는 <b>들어올 그림의 자리</b>, 도트 그리드는 <b>도형을 얹는 판</b>입니다. 지면 장식으로 쓰지 않습니다.</figcaption>
+    </figure>
+
+    <figure class="item">
+      <div class="h">
+        <span class="name">모서리 마크</span>
+        <span class="use">지면 구석의 정렬 표시</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <svg viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="모서리 마크">
+          <style>.cn { fill: none; stroke: var(--ex-slate-300); stroke-width: 1.5; }</style>
+          <path class="cn" d="M 10 34 V 10 H 34"/>
+          <path class="cn" d="M 266 10 H 290 V 34"/>
+          <path class="cn" d="M 290 126 V 150 H 266"/>
+          <path class="cn" d="M 34 150 H 10 V 126"/>
+          <text x="150" y="86" text-anchor="middle" style="font-family: var(--ex-font-mono); font-size: 12px; letter-spacing: .14em; fill: var(--ex-slate-400)">FULL BLEED</text>
+        </svg>
+      </template>
+      <figcaption class="note">지면 전체를 쓰는 장에서만 씁니다. <b>네 귀퉁이 모두</b> 또는 아예 없거나 — 둘 중 하나입니다.</figcaption>
+    </figure>
+
+    <figure class="item">
+      <div class="h">
+        <span class="name">로고</span>
+        <span class="use">표지 · 마무리 · 문서 머리</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage"></div>
+      <template class="src">
+        <div style="display: flex; align-items: center; gap: 28px">
+          <span style="display: flex; align-items: center; gap: 11px; padding: 14px 18px; border-radius: 14px; background: var(--ex-white); border: 1px solid var(--ex-line-200)">
+            <svg width="26" height="26" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><clipPath id="ex-l"><circle cx="44" cy="54" r="36"/></clipPath><mask id="ex-lm"><rect width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="46.5" fill="#000"/></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.5" mask="url(#ex-lm)"/><rect y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#ex-l)"/><circle cx="44" cy="54" r="36" stroke="#9A4030" stroke-width="10"/></svg>
+            <span style="font-family: var(--ex-font-brand); font-size: 19px; font-weight: 500; letter-spacing: -.025em; color: var(--ex-ink-900)">Expre<span style="color: var(--ex-espresso)">ss</span>o</span>
+          </span>
+          <span style="display: flex; align-items: center; gap: 11px; padding: 14px 18px; border-radius: 14px; background: var(--ex-ink-900)">
+            <svg width="26" height="26" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><clipPath id="ex-d"><circle cx="44" cy="54" r="36"/></clipPath><mask id="ex-dm"><rect width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="46.5" fill="#000"/></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#A9793F" stroke-width="8.5" mask="url(#ex-dm)"/><rect y="58.96" width="108" height="49.04" fill="#E0B486" clip-path="url(#ex-d)"/><circle cx="44" cy="54" r="36" stroke="#E0B486" stroke-width="10"/></svg>
+            <span style="font-family: var(--ex-font-brand); font-size: 19px; font-weight: 500; letter-spacing: -.025em; color: var(--ex-white)">Expre<span style="color: var(--ex-crema)">ss</span>o</span>
+          </span>
+        </div>
+      </template>
+      <figcaption class="note">밝은 지면은 컵 Espresso · 손잡이 Crema, 어두운 지면은 뒤집습니다. 워드마크의 <b>ss만</b> 시그니처를 씁니다.</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     10 · 전면 지면 — 슬라이드 한 장을 통째로 덮는 것
+     ============================================================ -->
+<section>
+  <div class="sec-head">
+    <span class="num">10</span>
+    <h2>Backdrops</h2>
+    <span class="aside">1920×1080 · 지면 전체</span>
+  </div>
+
+  <div class="rules" style="margin-bottom: 20px">
+    <div class="rule" style="grid-column: span 2">
+      <div class="lab">HOW TO USE</div>
+      <h3>내용 뒤에 깔고, 내용은 그대로 둡니다</h3>
+      <p>슬라이드 안에서 <code>.frame</code>보다 <b>앞에</b> 놓습니다. 지면과 같은 16:9라 늘어나지 않습니다.</p>
+      <pre style="margin: 14px 0 0; padding: 14px 16px; background: var(--ex-surface-50); border-radius: 12px; font-family: var(--ex-font-mono); font-size: 12px; line-height: 1.7; color: var(--ex-slate-700); overflow-x: auto">&lt;section class="slide"&gt;
+  &lt;svg viewBox="0 0 1920 1080" style="position:absolute; inset:0; width:100%; height:100%"&gt;…&lt;/svg&gt;
+  &lt;div class="frame"&gt;…&lt;/div&gt;
+&lt;/section&gt;</pre>
+    </div>
+    <div class="rule">
+      <div class="lab">RULE</div>
+      <h3>한 덱에 두 종류까지</h3>
+      <p>전면 지면은 <b>표지 · 섹션 표지 · 마무리</b>에만 씁니다. 본문 장에 깔면 글자가 읽히지 않습니다.</p>
+      <p style="margin-top: 12px">깔았으면 그 위의 글자는 <b>한 덩어리</b>만 둡니다.</p>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">잘린 마크</span>
+        <span class="use">표지 — 로고가 지면 밖으로 걸어 나갑니다</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage bleed"></div>
+      <template class="src">
+        <svg viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <clipPath id="vz-bd-cup"><circle cx="1560" cy="540" r="430"/></clipPath>
+            <mask id="vz-bd-mask">
+              <rect width="1920" height="1080" fill="#fff"/>
+              <circle cx="1560" cy="540" r="555" fill="#000"/>
+            </mask>
+          </defs>
+          <rect width="1920" height="1080" fill="var(--ex-ink-900)"/>
+          <circle cx="1968" cy="540" r="236" fill="none" stroke="var(--ex-crema-deep)" stroke-width="101" mask="url(#vz-bd-mask)" opacity=".5"/>
+          <rect x="1130" y="599" width="860" height="481" fill="var(--ex-crema)" clip-path="url(#vz-bd-cup)" opacity=".22"/>
+          <circle cx="1560" cy="540" r="430" fill="none" stroke="var(--ex-crema)" stroke-width="119" opacity=".22"/>
+        </svg>
+      </template>
+      <figcaption class="note">마크를 <b>지면 밖으로 넘겨</b> 잘라 씁니다. 온전한 로고는 왼쪽 위 작은 자리에 따로 둡니다 — 같은 지면에 큰 마크와 작은 마크가 겹치지 않게.</figcaption>
+    </figure>
+
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">차오르는 잔</span>
+        <span class="use">섹션 표지 — 지면이 잔이고, 찬 만큼이 진행입니다</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage bleed"></div>
+      <template class="src">
+        <svg viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="1920" height="1080" fill="var(--ex-surface-50)"/>
+          <rect y="670" width="1920" height="410" fill="var(--ex-espresso)"/>
+          <rect y="662" width="1920" height="8" fill="var(--ex-crema)"/>
+          <text x="1856" y="628" text-anchor="end"
+                style="font-family: var(--ex-font-mono); font-size: 30px; letter-spacing: .14em; fill: var(--ex-espresso)">38% EXTRACTED</text>
+        </svg>
+      </template>
+      <figcaption class="note">아이콘 문서의 <b>차오르는 잔</b>을 지면 크기로 옮긴 것입니다. 찬 높이가 진행률이므로 <b>아무 높이나 쓰지 않습니다</b> — 숫자와 맞춥니다.</figcaption>
+    </figure>
+
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">파문</span>
+        <span class="use">추출이 일어나는 순간 · 한 점에서 퍼지는 것</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage bleed"></div>
+      <template class="src">
+        <svg viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="1920" height="1080" fill="var(--ex-surface-50)"/>
+          <g fill="none" stroke="var(--ex-line-200)" stroke-width="2">
+            <circle cx="1450" cy="560" r="140"/>
+            <circle cx="1450" cy="560" r="280"/>
+            <circle cx="1450" cy="560" r="420"/>
+            <circle cx="1450" cy="560" r="700"/>
+            <circle cx="1450" cy="560" r="840"/>
+            <circle cx="1450" cy="560" r="980"/>
+            <circle cx="1450" cy="560" r="1120"/>
+          </g>
+          <circle cx="1450" cy="560" r="560" fill="none" stroke="var(--ex-espresso)" stroke-width="2.5"/>
+          <circle cx="1450" cy="560" r="14" fill="var(--ex-espresso)"/>
+        </svg>
+      </template>
+      <figcaption class="note">고리 하나만 Espresso이고 <b>가운데 점</b>이 시작점입니다. 글은 왼쪽 빈 곳에 놓습니다 — 고리 위에 글자를 얹지 않습니다.</figcaption>
+    </figure>
+
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">도트 필드</span>
+        <span class="use">지면 전체가 판 · 한 점만 여기</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage bleed"></div>
+      <template class="src">
+        <svg viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <pattern id="vz-bd-dots" width="48" height="48" patternUnits="userSpaceOnUse">
+              <circle cx="24" cy="24" r="2.5" fill="var(--ex-line-200)"/>
+            </pattern>
+          </defs>
+          <rect width="1920" height="1080" fill="var(--ex-white)"/>
+          <rect width="1920" height="1080" fill="url(#vz-bd-dots)"/>
+          <circle cx="1368" cy="504" r="7" fill="var(--ex-espresso)"/>
+          <circle cx="1368" cy="504" r="30" fill="none" stroke="var(--ex-espresso)" stroke-width="2" opacity=".45"/>
+          <circle cx="1368" cy="504" r="58" fill="none" stroke="var(--ex-espresso)" stroke-width="1.5" opacity=".2"/>
+        </svg>
+      </template>
+      <figcaption class="note">패턴이라 지면이 커져도 점 간격이 그대로입니다. 강조 점은 <b>격자 위</b>에 정확히 올립니다 — 48의 배수 자리에.</figcaption>
+    </figure>
+
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">대각 분할</span>
+        <span class="use">두 이야기를 한 지면에 놓을 때</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage bleed"></div>
+      <template class="src">
+        <svg viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="1920" height="1080" fill="var(--ex-surface-50)"/>
+          <polygon points="0,0 900,0 700,1080 0,1080" fill="var(--ex-ink-900)"/>
+          <polygon points="900,0 936,0 736,1080 700,1080" fill="var(--ex-espresso)"/>
+        </svg>
+      </template>
+      <figcaption class="note">기울기는 <b>한 지면에 하나</b>. 어두운 쪽에는 흰 글자를, 밝은 쪽에는 잉크 글자를 두고 경계를 넘기지 않습니다.</figcaption>
+    </figure>
+
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">거대 번호</span>
+        <span class="use">섹션 표지 — 번호가 지면이 됩니다</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage bleed"></div>
+      <template class="src">
+        <svg viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="1920" height="1080" fill="var(--ex-surface-50)"/>
+          <text x="1900" y="1180" text-anchor="end"
+                style="font-family: var(--ex-font-brand); font-weight: 300; font-size: 1180px; letter-spacing: -.05em; fill: var(--ex-tint-100)">03</text>
+          <rect y="1076" width="1920" height="4" fill="var(--ex-espresso)"/>
+        </svg>
+      </template>
+      <figcaption class="note">번호는 <b>Tint 100</b>까지만 진하게 — 그보다 진하면 글자와 싸웁니다. 아래를 잘라 지면 밖으로 내보냅니다.</figcaption>
+    </figure>
+
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">흐름선</span>
+        <span class="use">흩어진 것이 한 점으로 모이는 지면</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage bleed"></div>
+      <template class="src">
+        <svg viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="1920" height="1080" fill="var(--ex-white)"/>
+          <g fill="none" stroke="var(--ex-line-200)" stroke-width="2.5">
+            <path d="M0 60 C 760 60, 980 540, 1660 540"/>
+            <path d="M0 180 C 760 180, 980 540, 1660 540"/>
+            <path d="M0 300 C 760 300, 980 540, 1660 540"/>
+            <path d="M0 420 C 760 420, 980 540, 1660 540"/>
+            <path d="M0 660 C 760 660, 980 540, 1660 540"/>
+            <path d="M0 780 C 760 780, 980 540, 1660 540"/>
+            <path d="M0 900 C 760 900, 980 540, 1660 540"/>
+            <path d="M0 1020 C 760 1020, 980 540, 1660 540"/>
+          </g>
+          <path d="M0 540 L 1660 540" fill="none" stroke="var(--ex-espresso)" stroke-width="3"/>
+          <circle cx="1660" cy="540" r="16" fill="var(--ex-espresso)"/>
+        </svg>
+      </template>
+      <figcaption class="note">기록이 한 잔으로 모이는 그림입니다. <b>곧은 선 하나만</b> Espresso — 그것이 이 장에서 말하는 경로입니다.</figcaption>
+    </figure>
+
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">로스트 스케일</span>
+        <span class="use">단계가 있는 것 · 마무리 지면</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage bleed"></div>
+      <template class="src">
+        <svg viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="0"    width="240" height="1080" fill="var(--ex-surface-50)"/>
+          <rect x="240"  width="240" height="1080" fill="var(--ex-surface-100)"/>
+          <rect x="480"  width="240" height="1080" fill="var(--ex-tint-100)"/>
+          <rect x="720"  width="240" height="1080" fill="var(--ex-slate-300)"/>
+          <rect x="960"  width="240" height="1080" fill="var(--ex-slate-400)"/>
+          <rect x="1200" width="240" height="1080" fill="var(--ex-slate-500)"/>
+          <rect x="1440" width="240" height="1080" fill="var(--ex-slate-700)"/>
+          <rect x="1680" width="240" height="1080" fill="var(--ex-ink-900)"/>
+          <rect x="1668" width="12" height="1080" fill="var(--ex-espresso)"/>
+        </svg>
+      </template>
+      <figcaption class="note">밝은 데서 어두운 데로 <b>여덟 계단</b>. 글자는 양 끝의 가장 밝은 칸이나 가장 어두운 칸에만 올립니다 — 가운데는 어느 글자색도 읽히지 않습니다.</figcaption>
+    </figure>
+
+    <figure class="item wide">
+      <div class="h">
+        <span class="name">표지 한 장</span>
+        <span class="use">전면 지면 위에 글을 얹으면 이렇게 됩니다</span>
+        <button class="copy" type="button">COPY</button>
+      </div>
+      <div class="stage bleed"></div>
+      <template class="src">
+        <div style="position: relative; container-type: inline-size; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: var(--ex-ink-900)">
+          <svg viewBox="0 0 1920 1080" style="position: absolute; inset: 0; width: 100%; height: 100%" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <clipPath id="vz-cv-cup"><circle cx="1560" cy="540" r="430"/></clipPath>
+              <mask id="vz-cv-mask">
+                <rect width="1920" height="1080" fill="#fff"/>
+                <circle cx="1560" cy="540" r="555" fill="#000"/>
+              </mask>
+            </defs>
+            <circle cx="1968" cy="540" r="236" fill="none" stroke="var(--ex-crema-deep)" stroke-width="101" mask="url(#vz-cv-mask)" opacity=".5"/>
+            <rect x="1130" y="599" width="860" height="481" fill="var(--ex-crema)" clip-path="url(#vz-cv-cup)" opacity=".22"/>
+            <circle cx="1560" cy="540" r="430" fill="none" stroke="var(--ex-crema)" stroke-width="119" opacity=".22"/>
+          </svg>
+          <div style="position: absolute; inset: 8.15% 6.67%; display: flex; flex-direction: column; justify-content: center">
+            <div style="font-family: var(--ex-font-mono); font-size: 1.6cqw; letter-spacing: .18em; color: var(--ex-crema); margin-bottom: 1.6cqw">DOMAIN · 주제</div>
+            <div style="font-family: var(--ex-font-brand); font-weight: 300; font-size: 7.2cqw; line-height: 1.02; letter-spacing: -.035em; color: var(--ex-white)">Brew it <span style="color: var(--ex-crema)">light.</span></div>
+            <div style="font-size: 3.4cqw; font-weight: 600; letter-spacing: -.03em; color: var(--ex-white); margin-top: 1.8cqw">발표 제목을 한글 한 줄로</div>
+          </div>
+        </div>
+      </template>
+      <figcaption class="note">지면 뒤에 그림, 앞에 글 <b>한 덩어리</b>. 글은 마크가 없는 쪽으로 몰고, 마크는 <b>22%</b>까지만 올려 글자를 방해하지 않게 둡니다.</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<footer class="end">
+  여기 없는 그림이 필요하면 만들어 쓰고, 다시 쓸 만하면 이 파일에 넣습니다 —
+  그때 <code>:root</code>에 없는 색을 새로 만들지 않았는지 먼저 봅니다.<br>
+  규칙의 출처는 <code>docs/Expresso Design System.dc.html</code>이고, 쓰는 법은
+  <code>docs/templates/README.md</code>에 있습니다.
+</footer>
+
+</div>
+
+<script>
+/* ===========================================================
+   그림은 <template> 하나에서 나옵니다 — 화면에 그리는 것과
+   복사되는 것이 같은 문자열이라 둘이 어긋날 수 없습니다.
+   =========================================================== */
+(function () {
+  const dedent = (raw) => {
+    const lines = raw.replace(/^\n/, '').replace(/\s+$/, '').split('\n');
+    const pad = Math.min(...lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length));
+    return lines.map((l) => l.slice(pad)).join('\n');
+  };
+
+  document.querySelectorAll('.item').forEach((item) => {
+    const tpl = item.querySelector('template.src');
+    const stage = item.querySelector('.stage');
+    const btn = item.querySelector('.copy');
+    if (!tpl || !stage) return;
+
+    stage.appendChild(tpl.content.cloneNode(true));
+
+    btn.addEventListener('click', async () => {
+      const src = dedent(tpl.innerHTML);
+      try {
+        await navigator.clipboard.writeText(src);
+        btn.textContent = 'COPIED';
+        btn.classList.add('done');
+        setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('done'); }, 1400);
+      } catch (_) {
+        /* 클립보드가 막힌 환경에서는 새 창에 원문을 띄웁니다. */
+        const w = window.open('', '_blank');
+        w.document.write('<pre style="font:12px/1.7 monospace; padding:20px; white-space:pre-wrap"></pre>');
+        w.document.querySelector('pre').textContent = src;
+      }
+    });
+  });
+})();
+
+/* ===========================================================
+   아이콘 — 이름의 출처는 docs/Expresso Icons.dc.html이고,
+   세트는 제품이 쓰는 @phosphor-icons/web 그대로입니다.
+   =========================================================== */
+(function () {
+  const SET = [
+    ['NAVIGATION', [
+      ['house', '홈'], ['folders', '내 커리어'], ['target', '타겟'], ['chart-bar', '분석'],
+      ['globe-simple', '배포'], ['magnifying-glass', '검색'], ['bell', '알림'], ['gear-six', '설정'],
+    ]],
+    ['ACTIONS', [
+      ['plus', '추가'], ['pencil-simple', '편집'], ['arrows-clockwise', '재생성'], ['copy', '복제'],
+      ['share-network', '공유'], ['download-simple', '내보내기'], ['trash', '삭제'], ['sliders-horizontal', '옵션'],
+    ]],
+    ['STATE', [
+      ['check-circle', '완료'], ['warning-circle', '오류'], ['info', '안내'], ['clock', '대기'],
+      ['lock-simple', '잠김'], ['eye', '공개'], ['eye-slash', '비공개'], ['circle-notch', '로딩'],
+    ]],
+  ];
+
+  const host = document.getElementById('iconSet');
+  if (!host) return;
+
+  SET.forEach(([group, icons]) => {
+    const wrap = document.createElement('div');
+    const label = document.createElement('div');
+    label.className = 'grp';
+    label.textContent = group;
+    wrap.appendChild(label);
+
+    const row = document.createElement('div');
+    row.className = 'row';
+    icons.forEach(([id, name]) => {
+      const src = '<i class="ph ph-' + id + '"></i>';
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.title = 'ph-' + id;
+      b.innerHTML = src + '<span class="n"></span>';
+      b.querySelector('.n').textContent = name;
+      b.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(src);
+          b.classList.add('done');
+          b.querySelector('.n').textContent = 'COPIED';
+          setTimeout(() => { b.classList.remove('done'); b.querySelector('.n').textContent = name; }, 1200);
+        } catch (_) {
+          window.prompt('복사할 코드', src);
+        }
+      });
+      row.appendChild(b);
+    });
+    wrap.appendChild(row);
+    host.appendChild(wrap);
+  });
+})();
+</script>
+</body>
+</html>

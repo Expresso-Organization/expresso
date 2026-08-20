@@ -32,7 +32,7 @@
 
 ### 현재 구현
 
-- pnpm 모노레포 구조: `services/backend`, `services/web`, `services/mobile`, `services/desktop`, `services/dev-portal`과 공유 `packages`.
+- pnpm 모노레포 구조: `services/backend`, `services/web`, `services/mobile`, `services/desktop`과 공유 `packages`. 개발 포털 문서는 `docs/`.
 - Fastify API와 BullMQ Worker의 실행 골격, 환경 변수 검증, 정상/준비 상태 엔드포인트가 존재한다.
 - `packages/database`가 개발 포털의 42개 제품 테이블과 소유권·불변성 트리거를 PostgreSQL 마이그레이션으로 구현한다.
 - 2026-08-09 기준 `pnpm test` 15개, `pnpm typecheck`, `pnpm build`가 통과한다.
@@ -40,10 +40,10 @@
 
 ### 제품 기준 문서
 
-- `services/dev-portal/docs/Expresso 기능 명세서.dc.html`: D1–D12, 151개 태스크, 전역 제약.
-- `services/dev-portal/docs/task-spec.js`: 태스크별 동작과 규칙의 기계 판독 원본.
-- `services/dev-portal/docs/Expresso 데이터 모델 명세서.dc.html`과 `Expresso ERD.dc.html`: 42개 제품 테이블.
-- `services/dev-portal/docs/Expresso 개발 로드맵.dc.html`: 16주, 77pt, M1–M3 제품 마일스톤과 선행 관계.
+- `docs/Expresso 기능 명세서.dc.html`: D1–D12, 151개 태스크, 전역 제약.
+- `docs/task-spec.js`: 태스크별 동작과 규칙의 기계 판독 원본.
+- `docs/Expresso 데이터 모델 명세서.dc.html`과 `Expresso ERD.dc.html`: 42개 제품 테이블.
+- `docs/Expresso 개발 로드맵.dc.html`: 16주, 77pt, M1–M3 제품 마일스톤과 선행 관계.
 - 문서 간 물리 스키마 차이는 `docs/architecture/data-model-decisions.md`의 기존 결정을 따른다.
 
 ### 고정 제약

@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<!-- 제목은 「문서 이름 — Expresso」로 씁니다. 탭 목록에서 우리 문서를 찾는 유일한 단서입니다. -->
+<title>문서 제목 — Expresso</title>
+
+<!--
+  Expresso 문서 양식 v1
+  ─────────────────────────────────────────────────────────────
+  쓰는 법: 이 파일을 복사해 이름을 바꾸고, 아래 세 곳만 손댑니다.
+    1) <title>과 .doc-head — 문서 이름 · 한 줄 요약 · 메타
+    2) <section class="sec"> 들 — 본문. 목차는 h2를 읽어 자동으로 만들어집니다.
+    3) 맨 끝 「변경 이력」 표
+
+  손대지 않는 곳: :root 토큰. 값의 출처는 services/web/src/styles/tokens.css이고
+  화면 정의서가 기준입니다. 여기에 없는 색을 새로 만들지 않습니다.
+
+  마지막 절(부품 상자)은 이 양식이 가진 부품 목록입니다. 실제 문서를 쓸 때는
+  통째로 지우고, 필요할 때 이 파일 원본을 다시 열어 보십시오.
+-->
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- 아이콘 — 이모지 대신 씁니다. Regular만, Bold는 쓰지 않습니다. -->
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+
+<style>
+/* ===========================================================
+   01 · TOKENS — 디자인 시스템 그대로. 여기서만 값을 읽습니다.
+   =========================================================== */
+:root {
+  color-scheme: light;
+
+  /* 시스템 — 무채색 */
+  --ex-ink-900: #16223a;
+  --ex-ink-900-hover: #0b1220;
+  --ex-slate-700: #35455f;
+  --ex-slate-500: #5a6b87;
+  --ex-slate-400: #93a2ba;
+  --ex-slate-300: #afbacb;
+  --ex-line-200: #e2e9f4;
+  --ex-line-inner: #f1f5fb;
+  --ex-tint-50: #eff2f7;
+  --ex-tint-100: #e4e9f2;
+  --ex-surface-100: #eff4fb;
+  --ex-surface-50: #f7fafe;
+  --ex-white: #ffffff;
+  --ex-hairline: #f2f5f9;
+  --ex-table-header: #fafbfd;
+  --ex-row-hover: #fcfdff;
+  --ex-track: #edf1f7;
+  --ex-border-quiet: #dce3ed;
+
+  /* 시그니처 — 결정적인 순간에만 */
+  --ex-espresso: #9a4030;
+  --ex-espresso-hover: #7e3225;
+  --ex-espresso-text: #7e3225;
+  --ex-crema: #e0b486;
+  --ex-bean-50: #fbeee4;
+  --ex-bean-ink: #5a3a28;
+
+  /* 상태 */
+  --ex-success-text: #0e8a63;
+  --ex-success-surface: #e4f7f0;
+  --ex-warning-text: #8a6412;
+  --ex-warning-surface: #fbf4e2;
+  --ex-danger: #e2543a;
+  --ex-danger-text: #c6402a;
+  --ex-danger-surface: #fef5f3;
+
+  /* 서체 — 3벌 고정 */
+  --ex-font-ui: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --ex-font-brand: "Outfit", var(--ex-font-ui);
+  --ex-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* 깊이 — 얕고 넓게 */
+  --ex-elevation-raised: 0 2px 10px rgba(22, 34, 58, .05);
+  --ex-elevation-overlay: 0 18px 44px rgba(22, 34, 58, .11);
+  --ex-focus-ring: 0 0 0 3px rgba(22, 34, 58, .18);
+
+  /* 모션 */
+  --ex-motion-instant: 140ms ease;
+  --ex-motion-quick: 160ms ease;
+  --ex-motion-panel: 280ms cubic-bezier(.32, .72, 0, 1);
+
+  /* 지면 치수 */
+  --sheet: 820px;   /* 본문 한 줄이 너무 길어지지 않는 폭 */
+  --toc: 212px;
+  --gap: 40px;
+}
+
+/* ===========================================================
+   02 · BASE
+   =========================================================== */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 96px; }
+body {
+  margin: 0;
+  background: var(--ex-surface-50);
+  color: var(--ex-ink-900);
+  font-family: var(--ex-font-ui);
+  font-size: 15px;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--ex-ink-900); text-decoration: none; }
+a:hover { color: var(--ex-ink-900-hover); text-decoration: underline; text-underline-offset: 3px; }
+
+/* 키보드로 도는 사람이 첫 탭에서 본문으로 건너뛸 수 있어야 합니다. */
+.skip {
+  position: fixed; top: 10px; left: 10px; z-index: 60;
+  transform: translateY(-160%);
+  background: var(--ex-ink-900); color: var(--ex-white);
+  font-size: 13px; font-weight: 600; padding: 9px 14px; border-radius: 10px;
+  transition: transform var(--ex-motion-quick);
+}
+.skip:focus { transform: none; text-decoration: none; }
+:focus-visible { outline: none; box-shadow: var(--ex-focus-ring); border-radius: 8px; }
+
+/* ===========================================================
+   03 · TOPBAR — 문서가 무엇이고 지금 어떤 상태인지 한 줄로
+   =========================================================== */
+.topbar {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; align-items: center; gap: 12px;
+  height: 56px; padding: 0 24px;
+  background: rgba(247, 250, 254, .88);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--ex-line-200);
+}
+.brand { display: flex; align-items: center; gap: 9px; }
+.brand .word {
+  font-family: var(--ex-font-brand); font-size: 16px; font-weight: 500; letter-spacing: -.025em;
+}
+.brand .word em { font-style: normal; color: var(--ex-espresso); }
+.doctype {
+  font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .14em;
+  color: var(--ex-slate-400); border: 1px solid var(--ex-line-200);
+  border-radius: 5px; padding: 4px 8px; white-space: nowrap;
+}
+.topbar .spacer { margin-left: auto; }
+.topbar .where { font-size: 12.5px; color: var(--ex-slate-500); }
+.btn-quiet {
+  font: inherit; font-size: 12.5px; font-weight: 600; color: var(--ex-slate-500);
+  background: transparent; border: 1px solid var(--ex-line-200); border-radius: 10px;
+  padding: 7px 13px; cursor: pointer;
+  transition: border-color var(--ex-motion-quick), color var(--ex-motion-quick);
+}
+.btn-quiet:hover { border-color: var(--ex-ink-900); color: var(--ex-ink-900); }
+
+/* 읽은 만큼 차오르는 실선. 문서 길이를 몸으로 알려 줍니다. */
+.readbar {
+  position: absolute; left: 0; bottom: -1px; height: 2px; width: 0;
+  background: var(--ex-espresso);
+}
+
+/* ===========================================================
+   04 · LAYOUT — 목차 레일 + 본문 지면
+   =========================================================== */
+.shell {
+  display: grid;
+  grid-template-columns: var(--toc) minmax(0, var(--sheet));
+  gap: var(--gap);
+  justify-content: center;
+  padding: 48px 24px 120px;
+}
+.toc { position: sticky; top: 92px; align-self: start; max-height: calc(100vh - 140px); overflow: auto; }
+.toc-label {
+  font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .14em;
+  color: var(--ex-slate-400); margin-bottom: 12px;
+}
+.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.toc a {
+  display: grid; grid-template-columns: 22px 1fr; gap: 9px; align-items: baseline;
+  padding: 6px 9px; border-radius: 8px;
+  font-size: 13px; line-height: 1.5; color: var(--ex-slate-500);
+  transition: background var(--ex-motion-quick), color var(--ex-motion-quick);
+}
+.toc a:hover { background: var(--ex-white); color: var(--ex-ink-900); text-decoration: none; }
+.toc a .n { font-family: var(--ex-font-mono); font-size: 10.5px; color: var(--ex-slate-400); }
+.toc a.on { background: var(--ex-tint-50); color: var(--ex-ink-900); font-weight: 600; }
+.toc a.on .n { color: var(--ex-espresso); }
+
+.sheet {
+  background: var(--ex-white);
+  border: 1px solid var(--ex-line-200);
+  border-radius: 18px;
+  padding: 56px 60px 64px;
+}
+
+/* ===========================================================
+   05 · 문서 머리 — 이름 · 한 줄 요약 · 메타
+   =========================================================== */
+.kicker {
+  font-family: var(--ex-font-mono); font-size: 11px; letter-spacing: .12em;
+  color: var(--ex-espresso); text-transform: uppercase;
+}
+.doc-head { padding-bottom: 34px; border-bottom: 1px solid var(--ex-line-200); margin-bottom: 44px; }
+.doc-head h1 {
+  margin: 14px 0 0; font-size: 36px; font-weight: 600; letter-spacing: -.03em; line-height: 1.3;
+  word-break: keep-all;
+}
+.doc-head .lede {
+  margin: 14px 0 0; font-size: 16px; line-height: 1.85; color: var(--ex-slate-500);
+  max-width: 620px; text-wrap: pretty; word-break: keep-all;
+}
+.meta {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 30px;
+}
+.meta .k {
+  font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .12em;
+  color: var(--ex-slate-400); margin-bottom: 6px;
+}
+.meta .v { font-size: 13.5px; font-weight: 500; color: var(--ex-slate-700); }
+
+/* ===========================================================
+   06 · 절 — 번호 · 제목 · 오른쪽 보조 한 마디
+   =========================================================== */
+.sec { margin-bottom: 64px; scroll-margin-top: 92px; }
+.sec:last-of-type { margin-bottom: 0; }
+.sec-head {
+  display: flex; align-items: baseline; gap: 14px;
+  border-bottom: 1px solid var(--ex-line-200); padding-bottom: 12px; margin-bottom: 26px;
+}
+.sec-head .num { font-family: var(--ex-font-mono); font-size: 11px; color: var(--ex-espresso); }
+.sec-head h2 {
+  margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -.025em; line-height: 1.4;
+  word-break: keep-all;
+}
+.sec-head .aside { margin-left: auto; font-size: 12.5px; color: var(--ex-slate-500); white-space: nowrap; }
+/* 제목에 마우스를 올리면 나타나는 앵커. 문서 한 줄을 정확히 가리켜 공유합니다. */
+.anchor {
+  font-family: var(--ex-font-mono); font-size: 12px; color: var(--ex-slate-300);
+  opacity: 0; margin-left: 2px; transition: opacity var(--ex-motion-quick);
+}
+.sec-head:hover .anchor, .anchor:focus { opacity: 1; }
+.anchor:hover { color: var(--ex-espresso); text-decoration: none; }
+
+h3 {
+  margin: 34px 0 12px; font-size: 17px; font-weight: 600; letter-spacing: -.015em; line-height: 1.5;
+}
+h4 {
+  margin: 24px 0 10px; font-size: 14px; font-weight: 600; color: var(--ex-slate-700);
+}
+p { margin: 0 0 16px; color: var(--ex-slate-700); text-wrap: pretty; word-break: keep-all; }
+p:last-child { margin-bottom: 0; }
+strong { font-weight: 600; color: var(--ex-ink-900); }
+ul, ol { margin: 0 0 16px; padding-left: 20px; color: var(--ex-slate-700); }
+li { margin-bottom: 7px; word-break: keep-all; }
+li::marker { color: var(--ex-slate-400); }
+hr { border: none; border-top: 1px solid var(--ex-line-inner); margin: 34px 0; }
+
+/* ===========================================================
+   07 · 인라인 부품
+   =========================================================== */
+code {
+  font-family: var(--ex-font-mono); font-size: .88em;
+  background: var(--ex-tint-50); border-radius: 6px; padding: 2px 6px;
+  color: var(--ex-ink-900); overflow-wrap: anywhere;
+}
+kbd {
+  font-family: var(--ex-font-mono); font-size: 11.5px;
+  background: var(--ex-white); border: 1px solid var(--ex-border-quiet);
+  border-bottom-width: 2px; border-radius: 6px; padding: 2px 7px; color: var(--ex-slate-700);
+}
+.badge {
+  display: inline-block; font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .1em;
+  border-radius: 8px; padding: 4px 8px; white-space: nowrap; vertical-align: 1px;
+  color: var(--ex-slate-500); background: var(--ex-surface-100);
+}
+.badge.done  { color: var(--ex-ink-900); background: var(--ex-tint-50); }
+.badge.live  { color: var(--ex-success-text); background: var(--ex-success-surface); }
+.badge.pro   { color: var(--ex-espresso); background: var(--ex-bean-50); }
+.badge.hold  { color: var(--ex-warning-text); background: var(--ex-warning-surface); }
+.badge.stop  { color: var(--ex-danger-text); background: var(--ex-danger-surface); }
+.chip {
+  display: inline-block; font-size: 12.5px; color: var(--ex-slate-700);
+  border: 1px solid var(--ex-line-200); border-radius: 999px; padding: 5px 12px; background: var(--ex-white);
+}
+
+/* ===========================================================
+   08 · 상자 — 알림 · 결정 · 인용
+   =========================================================== */
+.box {
+  border: 1px solid var(--ex-line-200); border-radius: 14px;
+  padding: 18px 20px; margin: 0 0 20px; background: var(--ex-surface-50);
+}
+.box > :last-child { margin-bottom: 0; }
+.box .t {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 9px;
+  font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .12em; color: var(--ex-slate-400);
+}
+.box .t::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ex-slate-400);
+}
+/* 시그니처 상자 — 이 문서에서 딱 하나, 가장 중요한 결정에만 씁니다. */
+.box.key { background: var(--ex-bean-50); border-color: transparent; }
+.box.key .t { color: var(--ex-espresso); }
+.box.key .t::before { background: var(--ex-espresso); }
+.box.key p { color: var(--ex-bean-ink); }
+.box.key strong { color: var(--ex-bean-ink); }
+.box.warn { background: var(--ex-warning-surface); border-color: transparent; }
+.box.warn .t { color: var(--ex-warning-text); }
+.box.warn .t::before { background: var(--ex-warning-text); }
+.box.stop { background: var(--ex-danger-surface); border-color: transparent; }
+.box.stop .t { color: var(--ex-danger-text); }
+.box.stop .t::before { background: var(--ex-danger); }
+
+blockquote {
+  margin: 0 0 20px; padding: 4px 0 4px 20px; border-left: 2px solid var(--ex-espresso);
+  font-size: 16px; line-height: 1.85; color: var(--ex-slate-700); word-break: keep-all;
+}
+blockquote cite {
+  display: block; margin-top: 10px; font-style: normal;
+  font-family: var(--ex-font-mono); font-size: 11px; letter-spacing: .1em; color: var(--ex-slate-400);
+}
+
+/* 결정 기록 — 배경 · 선택지 · 결정 · 근거를 한 상자에 묶습니다. */
+.adr { border: 1px solid var(--ex-line-200); border-radius: 16px; overflow: hidden; margin-bottom: 20px; }
+.adr > .h {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--ex-surface-50); border-bottom: 1px solid var(--ex-line-200); padding: 13px 20px;
+}
+.adr > .h .id { font-family: var(--ex-font-mono); font-size: 11px; color: var(--ex-espresso); }
+.adr > .h .ttl { font-size: 14px; font-weight: 600; }
+.adr > .h .badge { margin-left: auto; }
+.adr .row {
+  display: grid; grid-template-columns: 92px 1fr; gap: 18px;
+  padding: 15px 20px; border-bottom: 1px solid var(--ex-line-inner);
+}
+.adr .row:last-child { border-bottom: none; }
+.adr .row .k {
+  font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .12em;
+  color: var(--ex-slate-400); padding-top: 4px;
+}
+.adr .row .v { font-size: 14px; line-height: 1.8; color: var(--ex-slate-700); word-break: keep-all; }
+.adr .row .v > :last-child { margin-bottom: 0; }
+
+/* ===========================================================
+   09 · 표
+   =========================================================== */
+.table-wrap { overflow-x: auto; margin-bottom: 20px; border: 1px solid var(--ex-line-200); border-radius: 14px; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+thead th {
+  text-align: left; font-weight: 600; color: var(--ex-slate-500);
+  background: var(--ex-table-header); border-bottom: 1px solid var(--ex-line-200);
+  padding: 12px 16px; white-space: nowrap;
+  font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+}
+tbody td {
+  padding: 13px 16px; border-bottom: 1px solid var(--ex-line-inner);
+  color: var(--ex-slate-700); vertical-align: top; word-break: keep-all;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--ex-row-hover); }
+td.num, th.num { font-family: var(--ex-font-mono); text-align: right; white-space: nowrap; }
+caption {
+  caption-side: bottom; text-align: left; padding: 12px 16px;
+  font-size: 12px; color: var(--ex-slate-400); border-top: 1px solid var(--ex-line-inner);
+}
+
+/* ===========================================================
+   10 · 코드
+   =========================================================== */
+figure.code { margin: 0 0 20px; border: 1px solid var(--ex-line-200); border-radius: 14px; overflow: hidden; }
+figure.code .bar {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--ex-surface-50); border-bottom: 1px solid var(--ex-line-200); padding: 9px 14px;
+  font-family: var(--ex-font-mono); font-size: 11px; color: var(--ex-slate-500);
+}
+figure.code .bar .copy {
+  margin-left: auto; font: inherit; font-size: 10px; letter-spacing: .1em;
+  background: transparent; border: 1px solid var(--ex-line-200); border-radius: 7px;
+  padding: 3px 8px; color: var(--ex-slate-400); cursor: pointer;
+  transition: border-color var(--ex-motion-quick), color var(--ex-motion-quick);
+}
+figure.code .bar .copy:hover { border-color: var(--ex-ink-900); color: var(--ex-ink-900); }
+pre {
+  margin: 0; padding: 16px 18px; overflow-x: auto;
+  background: var(--ex-white);
+  font-family: var(--ex-font-mono); font-size: 12.5px; line-height: 1.75; color: var(--ex-ink-900);
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+
+/* ===========================================================
+   11 · 목록 부품 — 단계 · 체크 · 비교
+   =========================================================== */
+.steps { list-style: none; margin: 0 0 20px; padding: 0; counter-reset: step; }
+.steps li {
+  position: relative; counter-increment: step;
+  padding: 0 0 20px 40px; margin: 0;
+  border-left: 1px solid var(--ex-line-200); margin-left: 11px;
+}
+.steps li:last-child { border-left-color: transparent; padding-bottom: 0; }
+.steps li::before {
+  content: counter(step, decimal-leading-zero);
+  position: absolute; left: -11px; top: 0;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--ex-white); border: 1px solid var(--ex-line-200);
+  display: grid; place-items: center;
+  font-family: var(--ex-font-mono); font-size: 9.5px; color: var(--ex-slate-500);
+}
+.steps li .t { font-size: 14px; font-weight: 600; display: block; margin-bottom: 5px; }
+.steps li .d { font-size: 13.5px; color: var(--ex-slate-500); line-height: 1.75; }
+.steps li.now::before { background: var(--ex-espresso); border-color: var(--ex-espresso); color: var(--ex-white); }
+
+.check { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 2px; }
+/* 표시는 절대 배치로 답니다 — li를 grid로 만들면 안에 쓴 <code>가 칸 하나를 차지해 찌그러집니다. */
+.check li {
+  position: relative; padding: 8px 10px 8px 40px; border-radius: 10px; margin: 0;
+  font-size: 14px; line-height: 1.75; color: var(--ex-slate-700);
+}
+.check li:hover { background: var(--ex-surface-50); }
+.check li::before {
+  content: ""; position: absolute; left: 12px; top: 13px;
+  width: 15px; height: 15px; box-sizing: border-box;
+  border: 1.5px solid var(--ex-slate-300); border-radius: 5px;
+}
+.check li.ok { color: var(--ex-slate-500); }
+.check li.ok::before {
+  content: "✓"; border-color: var(--ex-success-text); background: var(--ex-success-surface);
+  color: var(--ex-success-text); font-size: 9px; line-height: 12px; text-align: center;
+}
+
+.dodont { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.dodont > div { background: var(--ex-surface-50); border-radius: 14px; padding: 16px 18px; }
+.dodont .t {
+  display: flex; align-items: center; gap: 7px; margin-bottom: 10px;
+  font-family: var(--ex-font-mono); font-size: 9.5px; letter-spacing: .1em;
+}
+.dodont .do .t { color: var(--ex-success-text); }
+.dodont .dont .t { color: var(--ex-danger-text); }
+.dodont .t .m {
+  width: 15px; height: 15px; border-radius: 50%; display: grid; place-items: center; font-size: 9px;
+}
+.dodont .do .t .m { background: var(--ex-success-surface); }
+.dodont .dont .t .m { background: var(--ex-danger-surface); }
+.dodont p { font-size: 13.5px; line-height: 1.75; }
+.dodont .dont p { color: var(--ex-slate-400); }
+
+/* ===========================================================
+   12 · 수치 — 숫자는 Outfit 300으로, 항상 얇게
+   =========================================================== */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.stat { background: var(--ex-surface-50); border-radius: 14px; padding: 16px 18px; }
+.stat .k { font-size: 11.5px; color: var(--ex-slate-500); margin-bottom: 8px; }
+.stat .v {
+  font-family: var(--ex-font-brand); font-weight: 300; font-size: 34px; line-height: 1;
+  letter-spacing: -.03em; color: var(--ex-ink-900);
+}
+.stat .d { font-size: 11.5px; margin-top: 7px; color: var(--ex-slate-400); }
+.stat .d.up { color: var(--ex-success-text); }
+.stat .d.down { color: var(--ex-danger-text); }
+
+.gauges { display: grid; gap: 11px; margin-bottom: 20px; }
+.gauge .l { display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 6px; color: var(--ex-slate-700); }
+.gauge .l span:last-child { font-family: var(--ex-font-mono); font-size: 11px; color: var(--ex-slate-400); }
+.gauge .bar { height: 6px; background: var(--ex-track); border-radius: 999px; overflow: hidden; }
+.gauge .bar i { display: block; height: 100%; background: var(--ex-ink-900); border-radius: 999px; }
+.gauge .bar i.sig { background: var(--ex-espresso); }
+
+/* 그림 자리 — 캡션은 그림이 무엇인지 말합니다. */
+figure.fig { margin: 0 0 20px; }
+figure.fig .plate {
+  border: 1px solid var(--ex-line-200); border-radius: 14px; overflow: hidden;
+  background: repeating-linear-gradient(135deg, #f2f6fc 0 10px, #eaf0f9 10px 20px);
+  min-height: 180px; display: grid; place-items: center;
+}
+figure.fig .plate img { display: block; width: 100%; height: auto; }
+figure.fig .plate .ph { font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .1em; color: var(--ex-slate-400); }
+figure.fig figcaption { margin-top: 10px; font-size: 12.5px; color: var(--ex-slate-500); line-height: 1.7; }
+
+/* ===========================================================
+   13 · 꼬리 — 변경 이력과 문서 끝
+   =========================================================== */
+.docfoot {
+  margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--ex-line-200);
+  font-size: 12.5px; color: var(--ex-slate-400); line-height: 1.8;
+}
+
+/* ===========================================================
+   14 · 좁은 화면 — 목차는 접히고 지면은 폭을 다 씁니다.
+   =========================================================== */
+@media (max-width: 1080px) {
+  .shell { grid-template-columns: minmax(0, var(--sheet)); padding: 32px 16px 80px; }
+  .toc { display: none; }
+  .sheet { padding: 36px 24px 44px; border-radius: 14px; }
+  .doc-head h1 { font-size: 28px; }
+  .meta { grid-template-columns: 1fr 1fr; }
+  .dodont { grid-template-columns: 1fr; }
+  .adr .row { grid-template-columns: 1fr; gap: 6px; }
+}
+
+/* ===========================================================
+   15 · 인쇄 — 크롬을 걷어내고 종이로 만듭니다.
+   =========================================================== */
+@media print {
+  @page { size: A4; margin: 16mm 14mm; }
+  body { background: #fff; font-size: 10.5pt; line-height: 1.7; }
+  .topbar, .toc, .skip, figure.code .copy, .anchor { display: none !important; }
+  .shell { display: block; padding: 0; }
+  .sheet { border: none; border-radius: 0; padding: 0; max-width: none; }
+  .sec { margin-bottom: 28px; break-inside: auto; }
+  .sec-head { break-after: avoid; }
+  h3, h4 { break-after: avoid; }
+  .box, .adr, figure, table, .stat { break-inside: avoid; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 8.5pt; color: #5a6b87; }
+}
+
+/* §12 모션 감소 */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+}
+</style>
+</head>
+
+<body>
+<a class="skip" href="#doc">본문으로 건너뛰기</a>
+
+<!-- ============================================================
+     TOPBAR — 문서 종류와 상태. doctype 글자만 문서마다 바꿉니다.
+     ============================================================ -->
+<header class="topbar">
+  <span class="brand">
+    <svg width="22" height="22" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><clipPath id="lc"><circle cx="44" cy="54" r="36"/></clipPath><mask id="lm"><rect width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="46.5" fill="#000"/></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.5" mask="url(#lm)"/><rect y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#lc)"/><circle cx="44" cy="54" r="36" stroke="#9A4030" stroke-width="10"/></svg>
+    <span class="word">Expre<em>ss</em>o</span>
+  </span>
+  <span class="doctype">TECH NOTE</span>
+  <span class="spacer"></span>
+  <span class="where" id="where">문서 제목</span>
+  <button class="btn-quiet" onclick="window.print()">PDF로 저장</button>
+  <span class="readbar" id="readbar"></span>
+</header>
+
+<div class="shell">
+
+  <!-- 목차는 아래 h2를 읽어 스크립트가 채웁니다. 손으로 적지 않습니다. -->
+  <nav class="toc" aria-label="목차">
+    <div class="toc-label">CONTENTS</div>
+    <ol id="tocList"></ol>
+  </nav>
+
+  <main class="sheet" id="doc">
+
+    <!-- ========================================================
+         문서 머리 — 여기부터 손댑니다.
+         ======================================================== -->
+    <div class="doc-head">
+      <div class="kicker">DOMAIN · 주제 한 단어</div>
+      <h1>문서 제목을 한 줄로 적습니다</h1>
+      <p class="lede">
+        이 문서를 읽고 나면 무엇을 알게 되는지 두 문장 안에 적습니다.
+        읽는 사람이 자기 일과 상관있는지 여기서 판단할 수 있어야 합니다.
+      </p>
+      <div class="meta">
+        <div><div class="k">AUTHOR</div><div class="v">이름</div></div>
+        <div><div class="k">UPDATED</div><div class="v">2026-08-13</div></div>
+        <div><div class="k">VERSION</div><div class="v">v1.0</div></div>
+        <div><div class="k">STATUS</div><div class="v"><span class="badge live">REVIEWED</span></div></div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         01 — 왜 이 문서가 있는지. 배경과 문제.
+         ======================================================== -->
+    <section class="sec" id="background">
+      <div class="sec-head">
+        <span class="num">01</span>
+        <h2>배경</h2>
+        <span class="aside">읽는 데 2분</span>
+      </div>
+
+      <p>
+        무슨 일이 있었고 지금 무엇이 막혀 있는지 적습니다. 한 문장에 한 가지만 담고,
+        숫자로 말할 수 있으면 숫자로 말합니다. 배경을 모르는 사람이 읽어도
+        <strong>다음 절로 넘어갈 이유</strong>가 생겨야 합니다.
+      </p>
+
+      <div class="stats">
+        <div class="stat"><div class="k">영향 받는 사용자</div><div class="v">1,284</div><div class="d up">▲ 18.2%</div></div>
+        <div class="stat"><div class="k">평균 응답</div><div class="v">2.4s</div><div class="d down">▼ 목표 0.8s</div></div>
+        <div class="stat"><div class="k">관련 태스크</div><div class="v">7</div><div class="d">D4 · D7</div></div>
+      </div>
+
+      <div class="box">
+        <div class="t">CONTEXT</div>
+        <p>곁가지 사실이나 앞선 논의의 링크는 이 상자에 둡니다. 본문 흐름을 끊지 않습니다.</p>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         02 — 무엇을 정했는지. 문서의 심장.
+         ======================================================== -->
+    <section class="sec" id="decision">
+      <div class="sec-head">
+        <span class="num">02</span>
+        <h2>결정</h2>
+        <span class="aside">되돌리려면 D7까지 함께 본다</span>
+      </div>
+
+      <div class="box key">
+        <div class="t">DECISION</div>
+        <p><strong>정한 것을 한 문장으로 적습니다.</strong> 이 상자는 문서마다 하나뿐입니다 — 둘이 되는 순간 독자는 무엇이 중요한지 알 수 없게 됩니다.</p>
+      </div>
+
+      <p>결정에 이른 과정은 아래 기록으로 남깁니다. 선택하지 <em>않은</em> 길을 적어 두어야 6개월 뒤에 같은 논의를 반복하지 않습니다.</p>
+
+      <div class="adr">
+        <div class="h">
+          <span class="id">ADR-001</span>
+          <span class="ttl">결정 이름</span>
+          <span class="badge done">ACCEPTED</span>
+        </div>
+        <div class="row">
+          <div class="k">배경</div>
+          <div class="v">어떤 제약 아래에서 골라야 했는지 적습니다.</div>
+        </div>
+        <div class="row">
+          <div class="k">선택지</div>
+          <div class="v">
+            <ul style="margin:0; padding-left:18px">
+              <li><strong>A</strong> — 무엇을 얻고 무엇을 잃는지</li>
+              <li><strong>B</strong> — 무엇을 얻고 무엇을 잃는지</li>
+            </ul>
+          </div>
+        </div>
+        <div class="row">
+          <div class="k">결정</div>
+          <div class="v">A를 고릅니다.</div>
+        </div>
+        <div class="row">
+          <div class="k">근거</div>
+          <div class="v">고른 이유를 적습니다. 근거가 무너지면 이 결정도 다시 엽니다.</div>
+        </div>
+        <div class="row">
+          <div class="k">영향</div>
+          <div class="v">이 결정 때문에 앞으로 무엇을 하지 못하게 되는지 적습니다.</div>
+        </div>
+      </div>
+
+      <div class="box warn">
+        <div class="t">CAUTION</div>
+        <p>주의할 점은 여기에. 위험이 아니라 <strong>실수하기 쉬운 자리</strong>를 가리킵니다.</p>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         03 — 어떻게 하는지. 순서와 코드.
+         ======================================================== -->
+    <section class="sec" id="how">
+      <div class="sec-head">
+        <span class="num">03</span>
+        <h2>동작</h2>
+        <span class="aside">순서대로 읽습니다</span>
+      </div>
+
+      <ol class="steps">
+        <li>
+          <span class="t">첫 단계 이름</span>
+          <span class="d">이 단계가 무엇을 받아 무엇을 내놓는지 한 줄로 적습니다.</span>
+        </li>
+        <li class="now">
+          <span class="t">지금 작업 중인 단계</span>
+          <span class="d"><code>now</code> 클래스를 붙이면 시그니처 색으로 현재 위치를 표시합니다. 한 번에 하나만.</span>
+        </li>
+        <li>
+          <span class="t">마지막 단계 이름</span>
+          <span class="d">끝났을 때 무엇이 남는지 적습니다.</span>
+        </li>
+      </ol>
+
+      <h3>표로 정리할 때</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>필드</th><th>타입</th><th class="num">기본값</th><th>설명</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>status</code></td><td>enum</td><td class="num">draft</td><td>상태 전이는 데이터 모델 명세서를 따릅니다.</td></tr>
+            <tr><td><code>retry_count</code></td><td>int</td><td class="num">3</td><td>넘어서면 실패로 기록하고 멈춥니다.</td></tr>
+            <tr><td><code>expires_at</code></td><td>timestamp</td><td class="num">—</td><td>비어 있으면 만료가 없습니다.</td></tr>
+          </tbody>
+          <caption>표 아래 한 줄은 표가 말하지 못하는 것을 적는 자리입니다.</caption>
+        </table>
+      </div>
+
+      <h3>코드를 보일 때</h3>
+      <figure class="code">
+        <div class="bar">
+          <span>services/api/src/pipeline.ts</span>
+          <button class="copy" type="button">COPY</button>
+        </div>
+        <pre><code>// 실패한 단계만 다시 돌립니다. 성공한 결과는 건드리지 않습니다.
+export async function resume(runId: string) {
+  const run = await runs.get(runId);
+  const pending = run.stages.filter((s) => s.status !== "done");
+  return pipeline.execute(pending, { runId });
+}</code></pre>
+      </figure>
+
+      <p>
+        긴 코드는 접어 두는 편이 낫습니다. 문서에 붙이는 코드는
+        <strong>읽는 사람이 눈으로 따라갈 수 있는 길이</strong>까지입니다.
+        나머지는 <code>파일:줄</code> 로 가리킵니다.
+      </p>
+    </section>
+
+    <!-- ========================================================
+         04 — 지키는 선. 해도 되는 것과 안 되는 것.
+         ======================================================== -->
+    <section class="sec" id="rules">
+      <div class="sec-head">
+        <span class="num">04</span>
+        <h2>규칙</h2>
+        <span class="aside">리뷰에서 되돌아오는 자리</span>
+      </div>
+
+      <div class="dodont">
+        <div class="do">
+          <div class="t"><span class="m">✓</span>DO</div>
+          <p>"채용공고에서 핵심 역량 6개를 찾았어요."</p>
+        </div>
+        <div class="dont">
+          <div class="t"><span class="m">×</span>DON'T</div>
+          <p>"완벽한 한 잔을 위해 원두를 고르는 중이에요"</p>
+        </div>
+      </div>
+
+      <ul class="check">
+        <li class="ok">이미 만족한 항목은 <code>ok</code>를 붙입니다.</li>
+        <li>남은 항목은 그대로 둡니다. 문장은 검증할 수 있게 씁니다.</li>
+        <li>"잘 동작해야 한다" 같은 문장은 체크리스트에 넣지 않습니다.</li>
+      </ul>
+
+      <div class="box stop">
+        <div class="t">DO NOT</div>
+        <p>절대 하면 안 되는 것만 이 상자에 둡니다. 자주 쓰면 아무도 읽지 않습니다.</p>
+      </div>
+
+      <blockquote>
+        커피 은유는 명사에만 삽니다 — Brew, Extra Shot, Barista.
+        동작을 설명하는 문장은 언제나 정확하고 담백하게.
+        <cite>DESIGN SYSTEM · MOTION &amp; VOICE</cite>
+      </blockquote>
+    </section>
+
+    <!-- ========================================================
+         05 — 남은 것. 이 문서가 끝나고 무엇이 일어나야 하는지.
+         ======================================================== -->
+    <section class="sec" id="next">
+      <div class="sec-head">
+        <span class="num">05</span>
+        <h2>다음</h2>
+        <span class="aside">담당과 기한을 함께</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>할 일</th><th>담당</th><th>기한</th><th>상태</th></tr></thead>
+          <tbody>
+            <tr><td>남은 작업을 동사로 적습니다</td><td>이름</td><td>2026-08-20</td><td><span class="badge">DRAFT</span></td></tr>
+            <tr><td>검증할 수 있는 단위로 쪼갭니다</td><td>이름</td><td>2026-08-27</td><td><span class="badge hold">BLOCKED</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="gauges">
+        <div class="gauge">
+          <div class="l"><span>구현</span><span>64%</span></div>
+          <div class="bar"><i style="width:64%"></i></div>
+        </div>
+        <div class="gauge">
+          <div class="l"><span>검증</span><span>22%</span></div>
+          <div class="bar"><i class="sig" style="width:22%"></i></div>
+        </div>
+      </div>
+
+      <figure class="fig">
+        <div class="plate"><span class="ph">SCREENSHOT · DIAGRAM</span></div>
+        <figcaption>그림을 넣을 자리입니다. 캡션은 그림 제목이 아니라 <strong>그림에서 봐야 할 것</strong>을 적습니다.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ========================================================
+         부품 상자 — 실제 문서를 쓸 때는 이 절을 통째로 지웁니다.
+         ======================================================== -->
+    <section class="sec" id="parts">
+      <div class="sec-head">
+        <span class="num">06</span>
+        <h2>이 양식의 부품</h2>
+        <span class="aside">쓸 때는 이 절을 지웁니다</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>부품</th><th>클래스</th><th>쓰는 자리</th></tr></thead>
+          <tbody>
+            <tr><td>절 머리</td><td><code>.sec-head</code></td><td>번호 · 제목 · 오른쪽 한 마디. 번호는 손으로 적습니다.</td></tr>
+            <tr><td>알림 상자</td><td><code>.box</code></td><td>곁가지 사실. 본문 흐름을 끊지 않을 때.</td></tr>
+            <tr><td>결정 상자</td><td><code>.box.key</code></td><td><strong>문서당 하나.</strong> 가장 중요한 한 문장.</td></tr>
+            <tr><td>주의 · 금지</td><td><code>.box.warn</code> · <code>.box.stop</code></td><td>실수하기 쉬운 자리와 절대 금지.</td></tr>
+            <tr><td>결정 기록</td><td><code>.adr</code></td><td>배경 · 선택지 · 결정 · 근거 · 영향.</td></tr>
+            <tr><td>단계</td><td><code>.steps</code> · <code>li.now</code></td><td>순서가 있는 흐름. 현재 위치는 하나만.</td></tr>
+            <tr><td>체크리스트</td><td><code>.check</code> · <code>li.ok</code></td><td>검증할 수 있는 항목만.</td></tr>
+            <tr><td>비교</td><td><code>.dodont</code></td><td>같은 상황의 좋은 예와 나쁜 예.</td></tr>
+            <tr><td>수치</td><td><code>.stats</code> · <code>.gauges</code></td><td>숫자는 Outfit 300. 굵게 쓰지 않습니다.</td></tr>
+            <tr><td>배지</td><td><code>.badge</code> <code>.done .live .pro .hold .stop</code></td><td>상태 한 낱말. 대문자 라틴만.</td></tr>
+            <tr><td>코드</td><td><code>figure.code</code></td><td>파일 경로를 머리에 답니다.</td></tr>
+            <tr><td>표</td><td><code>.table-wrap</code></td><td>좁은 화면에서 가로로 흐르게 감쌉니다.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="box">
+        <div class="t">RULES</div>
+        <p>
+          색은 <code>:root</code>에 있는 것만 씁니다. 시그니처(<code>--ex-espresso</code>)는 절 번호 ·
+          결정 상자 · 현재 위치 세 곳에만 나타납니다. 그러데이션은 쓰지 않고, 그림자는 얕고 넓게.
+          이모지 대신 배지와 부호를 씁니다.
+        </p>
+      </div>
+    </section>
+
+    <footer class="docfoot">
+      <strong>변경 이력</strong> · 2026-08-13 v1.0 최초 작성 — 이름<br>
+      질문은 이 문서를 만든 사람에게. 고칠 곳을 찾으면 고쳐서 알려 주십시오.
+    </footer>
+
+  </main>
+</div>
+
+<script>
+/* ===========================================================
+   목차 · 현재 위치 · 읽은 양 · 코드 복사
+   문서를 쓰는 사람이 손댈 일은 없습니다.
+   =========================================================== */
+(function () {
+  const secs = [...document.querySelectorAll('main .sec')];
+  const list = document.getElementById('tocList');
+  const where = document.getElementById('where');
+  const bar = document.getElementById('readbar');
+  const title = document.querySelector('.doc-head h1');
+
+  if (where && title) where.textContent = title.textContent.trim();
+
+  /* 1) h2를 읽어 목차를 만들고, 제목마다 앵커를 답니다. */
+  const links = secs.map((sec, i) => {
+    const head = sec.querySelector('.sec-head');
+    const h2 = head.querySelector('h2');
+    const num = (head.querySelector('.num') || {}).textContent || String(i + 1).padStart(2, '0');
+    if (!sec.id) sec.id = 'sec-' + (i + 1);
+
+    const a = document.createElement('a');
+    a.href = '#' + sec.id;
+    a.innerHTML = '<span class="n"></span><span class="l"></span>';
+    a.querySelector('.n').textContent = num;
+    a.querySelector('.l').textContent = h2.textContent.trim();
+    const li = document.createElement('li');
+    li.appendChild(a);
+    list.appendChild(li);
+
+    const anchor = document.createElement('a');
+    anchor.className = 'anchor';
+    anchor.href = '#' + sec.id;
+    anchor.textContent = '#';
+    anchor.setAttribute('aria-label', h2.textContent.trim() + ' 링크');
+    h2.insertAdjacentElement('afterend', anchor);
+
+    return a;
+  });
+
+  /* 2) 화면에 들어온 절을 목차에서 밝힙니다. 위쪽 절이 이깁니다. */
+  const seen = new Set();
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => e.isIntersecting ? seen.add(e.target) : seen.delete(e.target));
+    const top = secs.filter((s) => seen.has(s))[0];
+    links.forEach((a, i) => a.classList.toggle('on', secs[i] === top));
+  }, { rootMargin: '-88px 0px -60% 0px' });
+  secs.forEach((s) => io.observe(s));
+
+  /* 3) 읽은 양. 문서 길이를 스크롤바 대신 실선으로 알려 줍니다. */
+  const onScroll = () => {
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (h > 0 ? Math.min(1, window.scrollY / h) * 100 : 0) + '%';
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  onScroll();
+
+  /* 4) 코드 복사. 붙여 넣을 때 머리말이 따라가지 않게 <code>만 읽습니다. */
+  document.querySelectorAll('figure.code .copy').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const code = btn.closest('figure').querySelector('code');
+      try {
+        await navigator.clipboard.writeText(code.textContent);
+        const was = btn.textContent;
+        btn.textContent = 'COPIED';
+        setTimeout(() => { btn.textContent = was; }, 1200);
+      } catch (_) {
+        /* 클립보드가 막힌 환경(비 HTTPS 등)에서는 직접 긁어 갑니다. */
+        const r = document.createRange();
+        r.selectNodeContents(code);
+        const sel = getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+      }
+    });
+  });
+})();
+</script>
+
+<!-- 읽는 자리 표시(쪽 번호 · 미니맵). 문서에 매이지 않은 도구라
+     다른 문서에도 이 한 줄로 붙습니다. 고칠 일은 여기가 아니라
+     templates/doc-rail.js 에서 합니다. -->
+<script src="./doc-rail.js" defer></script>
+
+</body>
+</html>
