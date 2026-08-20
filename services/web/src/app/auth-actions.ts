@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
 import { auth } from "@/lib/api/endpoints";
+import { clearPendingLink, readPendingLink } from "@/lib/auth/oauth-cookies";
 import { clearAccessToken, readAccessToken, writeAccessToken } from "@/lib/session";
 
 export interface AuthFormState {
@@ -72,6 +73,47 @@ export async function signupAction(
 
   // 10b → 10c. 가입 직후에는 온보딩으로 들어간다.
   redirect("/onboarding/goal");
+}
+
+/**
+ * Google을 기존 비밀번호 계정에 잇는다.
+ *
+ * 비밀번호 확인이 곧 소유 증명이다. 이 서비스에는 이메일 인증이 없어서
+ * "Google 이메일이 같다"만으로는 같은 사람이라고 볼 근거가 없다.
+ */
+export async function linkGoogleAction(
+  _previous: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const pending = await readPendingLink();
+  // 10분이 지났거나 다른 경로로 들어왔다. 처음부터 다시 한다.
+  if (!pending) redirect("/login?error=google_expired");
+
+  const password = formData.get("password");
+  if (typeof password !== "string" || password.length === 0) {
+    return { fieldErrors: { password: "비밀번호를 입력해 주세요." } };
+  }
+
+  try {
+    const { data } = await auth.googleLink({
+      idToken: pending.idToken,
+      nonce: pending.nonce,
+      password,
+    });
+    await writeAccessToken(data.session.accessToken, data.session.expiresAt);
+    await clearPendingLink();
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      return { error: "비밀번호가 맞지 않습니다. 다시 입력해 주세요." };
+    }
+    if (error instanceof ApiError) {
+      await clearPendingLink();
+      redirect("/login?error=google_failed");
+    }
+    throw error;
+  }
+
+  redirect("/home");
 }
 
 export async function logoutAction(): Promise<void> {

@@ -1,14 +1,16 @@
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdtempSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import { z } from "zod";
 
 import {
   AiError,
   DEFAULT_MODEL_TIER,
+  parseToolOutput,
+  logAiFailure,
   toToolSchema,
   type AiCallSpec,
   type AiClient,
@@ -41,6 +43,19 @@ export interface CodexOptions {
   timeoutMs?: number;
   /** 계약별 Codex 모델 덮어쓰기. */
   models?: Partial<Record<string, string>>;
+  /**
+   * `CODEX_HOME`. 이 기계에서 사람이 쓰는 codex 홈과 **갈라 놓는 자리**다.
+   *
+   * 실측(2026-08-13): 최소 호출 하나에 입력 19,430토큰이 나갔는데, 그중
+   * **4,260이 `~/.codex/AGENTS.md`**였다(17,961바이트). 이 프로젝트와 무관한
+   * 다른 작업용 지침이 공고 본문에서 세 칸 읽는 호출에 매번 실려 간 것이다.
+   * 어댑터가 `--ignore-rules`를 주는데도 통과했다.
+   *
+   * 인증만 든 디렉터리를 가리키면 그 4,260이 사라진다. 부수 효과가 더 중요한데,
+   * **재현성**이 생긴다 — 지금은 서버에서 그 파일을 고치면 우리 추출 결과가
+   * 조용히 달라진다.
+   */
+  codexHome?: string;
 }
 
 const USAGE_SCHEMA = z.looseObject({
@@ -64,18 +79,59 @@ const EVENT_SCHEMA = z.looseObject({
 
 const RATE_LIMIT_PATTERN = /rate.?limit|usage limit|quota|too many requests/i;
 
+/**
+ * 자식이 물려받을 환경.
+ *
+ * **CLI가 있는 디렉터리를 PATH 앞에 붙인다.** npm으로 깐 CLI는 대개
+ * `#!/usr/bin/env node` 셔임이고, systemd는 셸을 거치지 않아 PATH가
+ * `/usr/bin:/bin` 수준이다. nvm이 깐 node는 거기 없다 — 그래서 CLI를 절대
+ * 경로로 불러도 **셔임 안에서 `env node`가 못 찾는다.**
+ *
+ * 2026-08-13에 이걸로 25건이 0.25초 만에 전부 깨졌다:
+ *   `/usr/bin/env: 'node': No such file or directory`
+ *
+ * node는 그 CLI와 같은 bin 디렉터리에 있다. 그러니 그 자리를 알려 주면 된다.
+ */
+function childEnv(cliPath: string, extra: Record<string, string> = {}): NodeJS.ProcessEnv {
+  const binDir = dirname(cliPath);
+  const path = process.env["PATH"] ?? "";
+  return {
+    ...process.env,
+    PATH: path.split(":").includes(binDir) ? path : `${binDir}:${path}`,
+    ...extra,
+  };
+}
+
 export class CodexAiClient implements AiClient {
   readonly #cliPath: string;
   readonly #timeoutMs: number;
   readonly #models: Partial<Record<string, string>>;
   readonly #cwd: string;
+  readonly #home: string | null;
 
   constructor(options: CodexOptions = {}) {
     this.#cliPath = options.cliPath ?? "codex";
     this.#timeoutMs = options.timeoutMs ?? 180_000;
     this.#models = options.models ?? {};
     this.#cwd = mkdtempSync(join(tmpdir(), "expresso-codex-"));
+    this.#home = options.codexHome ?? null;
+    if (this.#home !== null && !existsSync(join(this.#home, "auth.json"))) {
+      // 조용히 사람 홈으로 되돌아가지 않는다 — 그러면 아낀 줄 알고 계속 낸다.
+      throw new Error(
+        `CODEX_HOME "${this.#home}" has no auth.json — run scripts/operations/prepare-codex-home.sh`,
+      );
+    }
   }
+
+  /**
+   * 부분 출력이 없다.
+   *
+   * 2026-08-14 실측(codex-cli 0.145.0): `exec --json`은 최종 메시지를
+   * `item.completed` **한 덩어리로만** 낸다. 짧은 응답도 200줄짜리 지면도
+   * 같았다. `item.started` · `item.updated`가 프로토콜에는 있지만 명령 실행
+   * 같은 다른 항목의 자리이고 최종 메시지는 쓰지 않는다.
+   */
+  readonly streams = false;
 
   async complete<T>(spec: AiCallSpec, schema: z.ZodType<T>): Promise<AiResult<T>> {
     const tier = spec.modelTier ?? DEFAULT_MODEL_TIER[spec.contract];
@@ -121,8 +177,10 @@ export class CodexAiClient implements AiClient {
 
       if (code !== 0) {
         const message = failure || `codex exited with ${code}`;
+        const failureCode = RATE_LIMIT_PATTERN.test(message) ? "AI_RATE_LIMITED" : "AI_UNAVAILABLE";
+        logAiFailure({ contract: spec.contract, model, code: failureCode, detail: message });
         throw new AiError(
-          RATE_LIMIT_PATTERN.test(message) ? "AI_RATE_LIMITED" : "AI_UNAVAILABLE",
+          failureCode,
           spec.contract,
           message,
           { retryable: false },
@@ -130,10 +188,12 @@ export class CodexAiClient implements AiClient {
       }
 
       if (!parsed.finalMessage) {
+        const message = failure || "codex did not return a final agent message";
+        logAiFailure({ contract: spec.contract, model, code: "AI_INVALID_OUTPUT", detail: message });
         throw new AiError(
           "AI_INVALID_OUTPUT",
           spec.contract,
-          failure || "codex did not return a final agent message",
+          message,
           { retryable: true },
         );
       }
@@ -150,8 +210,13 @@ export class CodexAiClient implements AiClient {
         );
       }
 
-      const validated = schema.safeParse(json);
+      const validated = parseToolOutput(schema, json);
       if (!validated.success) {
+        logAiFailure({
+          contract: spec.contract, model, code: "AI_INVALID_OUTPUT",
+          // 모델 출력에는 기록 본문이 섞일 수 있다. 어긋난 **자리**만 남긴다.
+          detail: `schema mismatch at ${validated.error.issues.map((issue) => issue.path.join(".") || "(root)").join(", ")}`,
+        });
         throw new AiError(
           "AI_INVALID_OUTPUT",
           spec.contract,
@@ -219,6 +284,7 @@ export class CodexAiClient implements AiClient {
       const child = spawn(this.#cliPath, args, {
         cwd: this.#cwd,
         stdio: ["pipe", "pipe", "pipe"],
+        env: childEnv(this.#cliPath, this.#home === null ? {} : { CODEX_HOME: this.#home }),
       });
       child.stdin.on("error", () => undefined);
       child.stdin.end(prompt, "utf8");

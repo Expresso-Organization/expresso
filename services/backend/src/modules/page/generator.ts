@@ -3,7 +3,6 @@ import { createHash } from "node:crypto";
 import {
   PAGE_PROMPT_VERSION,
   PageDraftSchema,
-  PAGE_KIT_CSS,
   pageKitPrompt,
   pagePolicyPrompt,
   pageStyleGrammarPrompt,
@@ -13,10 +12,9 @@ import {
   type PortfolioPlan,
 } from "@expresso/contracts";
 
-import { AiError, type AiClient, type AiModelTier, type AiUsage } from "../../platform/ai/client.js";
-import { PageSanitizeError, sanitizePage } from "../../platform/html/sanitize.js";
-import { inlineSizedClasses, unstyledClasses } from "../../platform/html/unstyled.js";
-import { ungroundedNumbers } from "../../platform/numbers.js";
+import type { AiClient, AiModelTier, AiUsage } from "../../platform/ai/client.js";
+import { sanitizePage } from "../../platform/html/sanitize.js";
+import { isOrdinalLabel, ungroundedNumbers } from "../../platform/numbers.js";
 
 /**
  * 지면을 통째로 만든다.
@@ -108,8 +106,28 @@ export interface GeneratedPageResult {
   manifest: PageGenerationManifest;
 }
 
+/**
+ * 만들어지는 동안 흘려보낼 곳.
+ *
+ * 한 번 부르고 한 장을 받는다. 중간에 버리고 다시 쓰는 일이 없으므로
+ * 받는 쪽도 이어 붙이기만 하면 된다.
+ */
+export interface PageStreamSink {
+  delta(text: string): void;
+  /**
+   * 아직 쓰지는 않지만 **생각하고 있다**는 신호. 값은 지금까지 쌓인 분량이다.
+   *
+   * 지면이 나오기까지의 침묵이 실측 126초였다. 그동안 화면이 「구상하는 중」과
+   * 「멈춤」을 구분할 수 있는 유일한 근거다.
+   */
+  thinking(estimatedTokens: number): void;
+}
+
 export interface PageGenerator {
-  generate(context: PageGenerationContext): Promise<GeneratedPageResult>;
+  generate(
+    context: PageGenerationContext,
+    sink?: PageStreamSink | null,
+  ): Promise<GeneratedPageResult>;
 }
 
 export class PageGenerationError extends Error {
@@ -309,137 +327,99 @@ export class AiPageGenerator implements PageGenerator {
     this.#ai = ai;
   }
 
-  async generate(context: PageGenerationContext): Promise<GeneratedPageResult> {
+  async generate(
+    context: PageGenerationContext,
+    sink: PageStreamSink | null = null,
+  ): Promise<GeneratedPageResult> {
     if (context.sections.length === 0) throw new PageGenerationError("만들 섹션이 없습니다");
 
     const prompt = buildPrompt(context);
     const useKit = Boolean(context.useKit && context.style);
     const source = context.evidence.map(({ text }) => text).join("\n");
-    let lastError: unknown;
-    let lenient: GeneratedPageResult | null = null;
-    const total: AiUsage = {
-      model: "unknown",
-      inputTokens: 0,
-      outputTokens: 0,
-      cacheReadTokens: 0,
-      cacheCreationTokens: 0,
-      costUsd: 0,
-      durationMs: 0,
-    };
 
-    for (const attempt of [1, 2]) {
-      try {
-        const { data, usage } = await this.#ai.complete(
-          {
-            contract: "page_generation",
-            system: useKit ? SYSTEM_KIT : SYSTEM,
-            prompt: attempt === 1 ? prompt : `${prompt}\n\n${retryNote(lastError)}`,
-            promptVersion: PAGE_PROMPT_VERSION,
-            ...(context.modelTier ? { modelTier: context.modelTier } : {}),
-          },
-          PageDraftSchema,
-        );
-        total.model = usage.model;
-        total.inputTokens += usage.inputTokens;
-        total.outputTokens += usage.outputTokens;
-        total.cacheReadTokens += usage.cacheReadTokens;
-        total.cacheCreationTokens += usage.cacheCreationTokens;
-        total.durationMs += usage.durationMs;
-        total.costUsd = total.costUsd === null || usage.costUsd === null
-          ? null
-          : total.costUsd + usage.costUsd;
-
-        const clean = sanitizePage(data);
-        // 규칙 없는 클래스는 **화면에서 요소가 사라진다는 뜻**이다. 모델은 제
-        // 지면을 못 보므로 이걸 스스로 알 길이 없다. 이름을 짚어 되돌려 준다.
-        //
-        // 검사는 **실제로 실릴 CSS 전부**를 봐야 한다. 키트를 빼고 보면 `k-*`가
-        // 전부 규칙 없음으로 걸리고, 모델은 그걸 고치려고 키트를 통째로 다시
-        // 쓴다 — 키트를 만든 이유가 그대로 사라진다(실측에서 토큰이 되레 늘었다).
-        const styleSheet = useKit ? `${PAGE_KIT_CSS}\n${clean.css}` : clean.css;
-        const unstyled = unstyledClasses(clean.html, styleSheet);
-        const inlineSized = inlineSizedClasses(clean.html, styleSheet);
-        const ungrounded = ungroundedNumbers(visibleText(clean.html), source)
-          // 한 자리 수는 장식이다 — 섹션 번호 · 목록 순번이 여기 걸린다.
-          .filter((number) => number.replace(/\D/g, "").length >= 2);
-        const qaReport = pageQa({
-          ungrounded,
-          removed: clean.removed,
-          unstyled,
-          inlineSized,
-          styleSheet,
-          portfolioPlan: context.portfolioPlan,
-        });
-        const promptHash = createHash("sha256")
-          .update(`${useKit ? SYSTEM_KIT : SYSTEM}\0${prompt}`)
-          .digest("hex");
-        const manifest: PageGenerationManifest = {
-          methodologyVersion: 1,
-          model: total.model,
-          promptHash,
-          promptVersions: {
-            page: PAGE_PROMPT_VERSION,
-            designPrinciples: DESIGN_PRINCIPLES_VERSION,
-          },
-          tools: [],
-          sourceUrls: [...new Set(
-            context.portfolioPlan?.companyContext.flatMap(({ sourceUrl }) =>
-              sourceUrl ? [sourceUrl] : []) ?? [],
-          )],
-          attempts: attempt,
-          repairCount: attempt - 1,
-          usage: {
-            inputTokens: total.inputTokens,
-            outputTokens: total.outputTokens,
-            cacheReadTokens: total.cacheReadTokens,
-            cacheCreationTokens: total.cacheCreationTokens,
-            durationMs: total.durationMs,
-            costUsd: total.costUsd,
-          },
-        };
-        const result: GeneratedPageResult = {
-          html: clean.html,
-          css: clean.css,
-          rationale: data.rationale,
-          ungrounded,
-          removed: clean.removed,
-          usage: { ...total },
-          qaReport,
-          manifest,
-        };
-
-        if (qaReport.status === "ready") {
-          return result;
-        }
-        // 한 번은 구체적인 실패 목록으로 고치게 한다. 두 번째에도 남으면 결과를
-        // 버리지 않고 failed_qa 초안으로 보존하되 공개 문서 경로에서는 제외한다.
-        lenient = result;
-        throw new PageGenerationError(
-          qaReport.checks
-            .filter(({ status, severity }) => status === "fail" && severity === "error")
-            .map(({ detail }) => detail)
-            .join("\n"),
-        );
-      } catch (error) {
-        if (error instanceof AiError && error.code !== "AI_INVALID_OUTPUT") throw error;
-        lastError = error;
-      }
-    }
-
-    if (lenient) return lenient;
-    throw new PageGenerationError(
-      `지면 생성이 두 번 모두 거절되었습니다: ${String(lastError)}`,
-      { cause: lastError },
+    const { data, usage } = await this.#ai.complete(
+      {
+        contract: "page_generation",
+        system: useKit ? SYSTEM_KIT : SYSTEM,
+        prompt,
+        promptVersion: PAGE_PROMPT_VERSION,
+        ...(context.modelTier ? { modelTier: context.modelTier } : {}),
+      },
+      PageDraftSchema,
+      sink
+        ? { onPartial: (text) => sink.delta(text), onThinking: (tokens) => sink.thinking(tokens) }
+        : {},
     );
+
+    const clean = sanitizePage(data);
+    const ungrounded = ungroundedNumbers(visibleText(clean.html), source)
+      // 세는 수가 아닌 것은 뺀다 — 한 자리 수와 `01`처럼 0을 앞세운 번호가
+      // 여기 걸린다. 둘 다 지면에 매기는 이름표지 성과가 아니다.
+      .filter((number) => number.replace(/\D/g, "").length >= 2 && !isOrdinalLabel(number));
+    const qaReport = pageQa({
+      html: clean.html,
+      useKit,
+      ungrounded,
+      portfolioPlan: context.portfolioPlan,
+    });
+
+    return {
+      html: clean.html,
+      css: clean.css,
+      rationale: data.rationale,
+      ungrounded,
+      removed: clean.removed,
+      usage,
+      qaReport,
+      manifest: {
+        methodologyVersion: 1,
+        model: usage.model,
+        promptHash: createHash("sha256")
+          .update(`${useKit ? SYSTEM_KIT : SYSTEM}\0${prompt}`)
+          .digest("hex"),
+        promptVersions: {
+          page: PAGE_PROMPT_VERSION,
+          designPrinciples: DESIGN_PRINCIPLES_VERSION,
+        },
+        tools: [],
+        sourceUrls: [...new Set(
+          context.portfolioPlan?.companyContext.flatMap(({ sourceUrl }) =>
+            sourceUrl ? [sourceUrl] : []) ?? [],
+        )],
+        // 한 번만 부른다. 남겨 두는 것은 옛 판을 읽기 위해서다.
+        attempts: 1,
+        repairCount: 0,
+        usage: {
+          inputTokens: usage.inputTokens,
+          outputTokens: usage.outputTokens,
+          cacheReadTokens: usage.cacheReadTokens,
+          cacheCreationTokens: usage.cacheCreationTokens,
+          durationMs: usage.durationMs,
+          costUsd: usage.costUsd,
+        },
+      },
+    };
   }
 }
 
+/**
+ * 만든 지면을 무엇으로 판단하는가.
+ *
+ * **여기 있는 것은 두 가지뿐이다** — 지면이 있는가, 그리고 근거에 없는 수를
+ * 썼는가. 한때 여섯이었는데, 실측해 보니 나머지 넷이 하는 일이 지면 한 장을
+ * 통째로 다시 쓰게 만드는 것뿐이었다(2026-08-14, 세 판 · 여섯 번의 거절 중
+ * 다섯이 우리 쪽 오탐이었다). 규칙 없는 클래스 · media query 유무 같은 것은
+ * **화면을 보지 않고 하는 추측**이라, 맞아도 지면이 못 쓸 정도로 나쁘지 않고
+ * 틀리면 값을 두 배로 낸다.
+ *
+ * 막는 것은 `has-markup` 하나다 — 지면이 아예 없으면 보여 줄 것도 없다.
+ * 근거 없는 수는 **기록만 한다.** 그 판단은 자기 이력을 아는 사람이 해야지
+ * 글자 비교가 대신할 수 없고, 값은 `ungrounded_numbers`에 남는다.
+ */
 function pageQa(input: {
+  html: string;
+  useKit: boolean;
   ungrounded: string[];
-  removed: string[];
-  unstyled: string[];
-  inlineSized: string[];
-  styleSheet: string;
   portfolioPlan: PortfolioPlan | null;
 }): PageQaReport {
   const checks: PageQaReport["checks"] = [];
@@ -450,44 +430,35 @@ function pageQa(input: {
     detail: string,
   ) => checks.push({ name, status: pass ? "pass" : "fail", severity, detail });
 
+  /*
+   * 지면인가.
+   *
+   * 이것만 막는다. 2026-08-14에 모델이 마크업 대신 이 한 줄을 `html`로 냈는데
+   *
+   *     (see file portfolio.html content above — passed inline below)
+   *
+   * 그때 있던 검사 일곱 개가 전부 통과하고 `ready`로 저장됐다 — 나머지가 전부
+   * **지면이 있다는 전제** 위에 서 있었기 때문이다.
+   */
+  const hasElement = /<[a-zA-Z]/.test(input.html);
+  const hasRoot = !input.useKit || input.html.includes("k-page");
+  check(
+    "has-markup",
+    hasElement && hasRoot,
+    "error",
+    !hasElement
+      ? "지면에 태그가 하나도 없습니다 — 마크업 대신 설명을 냈습니다"
+      : hasRoot ? "지면이 마크업으로 되어 있음" : "최상위 `k-page`가 없습니다",
+  );
   check(
     "grounded-numbers",
     input.ungrounded.length === 0,
-    "error",
-    input.ungrounded.length === 0 ? "모든 수치가 근거에 있음" : `근거 없는 수치: ${input.ungrounded.join(", ")}`,
-  );
-  check(
-    "sanitized-output",
-    input.removed.length === 0,
-    "error",
-    input.removed.length === 0 ? "소독기가 제거한 출력 없음" : `제거됨: ${input.removed.join(", ")}`,
-  );
-  check(
-    "styled-elements",
-    input.unstyled.length === 0,
-    "error",
-    input.unstyled.length === 0 ? "모든 클래스에 스타일이 있음" : `스타일 없음: ${input.unstyled.join(", ")}`,
-  );
-  check(
-    "sized-elements",
-    input.inlineSized.length === 0,
-    "error",
-    input.inlineSized.length === 0 ? "크기 지정 요소의 display가 유효함" : `inline 크기 오류: ${input.inlineSized.join(", ")}`,
-  );
-  check(
-    "responsive-css",
-    /@media\s*\(/i.test(input.styleSheet),
-    "error",
-    /@media\s*\(/i.test(input.styleSheet) ? "반응형 media query 있음" : "반응형 media query 없음",
-  );
-  const animated = /\b(?:animation|transition)\s*:/i.test(input.styleSheet);
-  check(
-    "reduced-motion",
-    !animated || /prefers-reduced-motion\s*:\s*reduce/i.test(input.styleSheet),
-    "error",
-    !animated || /prefers-reduced-motion\s*:\s*reduce/i.test(input.styleSheet)
-      ? "모션 감소 경로 있음"
-      : "애니메이션은 있으나 모션 감소 경로가 없음",
+    // 알리되 막지 않는다. 지어낸 수치는 사람이 보고 판단할 일이고, 자동으로
+    // 다시 뽑는 것은 같은 모델에게 같은 프롬프트를 다시 주는 일일 뿐이다.
+    "warning",
+    input.ungrounded.length === 0
+      ? "모든 수치가 근거에 있음"
+      : `근거에서 확인하지 못한 수: ${input.ungrounded.join(", ")}`,
   );
   check(
     "portfolio-plan",
@@ -504,12 +475,3 @@ function pageQa(input: {
   };
 }
 
-function retryNote(error: unknown): string {
-  const detail = error instanceof PageSanitizeError
-    ? error.reason
-    : error instanceof Error ? error.message : String(error);
-  return [
-    `직전 시도는 거절되었다. 사유: ${detail}`,
-    "같은 실수를 반복하지 말고 다시 만들어라.",
-  ].join("\n");
-}

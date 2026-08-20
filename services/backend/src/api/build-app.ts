@@ -5,6 +5,7 @@ import type { ReadinessCheck } from "../modules/system/readiness.js";
 import { registerSystemRoutes } from "../modules/system/routes.js";
 import type { IdentityService } from "../modules/identity/service.js";
 import { registerIdentityRoutes } from "../modules/identity/routes.js";
+import type { GoogleIdTokenVerifier } from "../modules/identity/google.js";
 import type { EntitlementService } from "../modules/entitlements/service.js";
 import { registerEntitlementRoutes } from "../modules/entitlements/routes.js";
 import { createAuthenticateRequest } from "./plugins/auth-context.js";
@@ -44,6 +45,7 @@ import { registerPublishingRoutes } from "../modules/publishing/routes.js";
 import type { MediaService } from "../modules/media/service.js";
 import { registerMediaRoutes } from "../modules/media/routes.js";
 import { registerPageRoutes } from "../modules/page/routes.js";
+import type { PageStream } from "../modules/page/stream.js";
 import type { PageGenerator } from "../modules/page/generator.js";
 import type { PageService } from "../modules/page/service.js";
 import type { AnalyticsService } from "../modules/analytics/service.js";
@@ -62,6 +64,8 @@ export interface BuildApiOptions {
   config: RuntimeConfig;
   readinessChecks?: readonly ReadinessCheck[];
   identityService?: IdentityService;
+  /** 없으면 Google 로그인 경로가 503으로 답한다. */
+  googleIdTokenVerifier?: GoogleIdTokenVerifier;
   entitlementService?: EntitlementService;
   careerService?: CareerService;
   jobMarketService?: JobMarketService;
@@ -85,6 +89,8 @@ export interface BuildApiOptions {
   pageService?: PageService;
   /** 자유 생성 지면을 쓰려면 서비스와 생성기가 **둘 다** 있어야 한다. */
   pageGenerator?: PageGenerator;
+  /** 만들어지는 지면을 흘려보내는 통로. 없으면 그 자리가 503이다. */
+  pageStream?: PageStream | null;
   analyticsService?: AnalyticsService;
   engagementService?: EngagementService;
   accountLifecycleService?: AccountLifecycleService;
@@ -110,7 +116,12 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
   });
 
   if (options.identityService) {
-    registerIdentityRoutes(app, { identityService: options.identityService });
+    registerIdentityRoutes(app, {
+      identityService: options.identityService,
+      ...(options.googleIdTokenVerifier
+        ? { googleIdTokenVerifier: options.googleIdTokenVerifier }
+        : {}),
+    });
     if (options.entitlementService) {
       registerEntitlementRoutes(app, {
         entitlementService: options.entitlementService,
@@ -185,6 +196,7 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
     if (options.generationService) {
       registerGenerationRoutes(app, {
         generationService: options.generationService,
+        pageStream: options.pageStream ?? null,
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }
@@ -222,6 +234,7 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
       registerPageRoutes(app, {
         service: options.pageService,
         generator: options.pageGenerator,
+        stream: options.pageStream ?? null,
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }

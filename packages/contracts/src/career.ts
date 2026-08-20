@@ -327,3 +327,57 @@ export const RecordCleanupSchema = z.strictObject({
 });
 
 export type RecordCleanup = z.infer<typeof RecordCleanupSchema>;
+
+/* ── 온보딩 1단계 · 커리어 프로필 (화면 10c) ── */
+
+/**
+ * 화면의 직무 칩 8종.
+ *
+ * 자유 입력이 아니라 **닫힌 목록**이다. 이 값으로 공고를 고르고 질문을 만들
+ * 것이라면, 사람마다 다르게 적은 문자열을 나중에 맞춰 볼 방법이 없다.
+ */
+export const TargetRoleSchema = z.enum([
+  "백엔드",
+  "프론트엔드",
+  "데이터",
+  "ML · AI",
+  "모바일",
+  "DevOps",
+  "기획 · PM",
+  "디자인",
+]);
+
+/** 화면의 "지금 가장 급한 것" 세 갈래. */
+export const CareerGoalSchema = z.enum(["explore", "build", "organize"]);
+
+/** 슬라이더 상한. **12는 "12년 이상"이다.** */
+export const MAX_EXPERIENCE_YEARS = 12;
+
+export const CareerProfileSchema = z.strictObject({
+  /** 빈 배열은 "아직 안 정했다"는 뜻이다. 그것도 답이라 막지 않는다. */
+  targetRoles: z.array(TargetRoleSchema).max(8),
+  experienceYears: z.number().int().min(0).max(MAX_EXPERIENCE_YEARS),
+  primaryGoal: CareerGoalSchema,
+  updatedAt: TimestampSchema,
+});
+
+/** 저장은 통째로 덮어쓴다 — 화면이 세 값을 한 번에 정하므로 부분 갱신이 없다. */
+export const SaveCareerProfileSchema = z.strictObject({
+  targetRoles: z.array(TargetRoleSchema).max(8),
+  experienceYears: z.number().int().min(0).max(MAX_EXPERIENCE_YEARS),
+  primaryGoal: CareerGoalSchema,
+});
+
+export const CareerProfileResponseSchema = z.strictObject({
+  data: CareerProfileSchema,
+});
+
+/** 아직 온보딩을 지나지 않은 사람에게는 프로필이 없다. */
+export const OptionalCareerProfileResponseSchema = z.strictObject({
+  data: CareerProfileSchema.nullable(),
+});
+
+export type TargetRole = z.infer<typeof TargetRoleSchema>;
+export type CareerGoal = z.infer<typeof CareerGoalSchema>;
+export type CareerProfile = z.infer<typeof CareerProfileSchema>;
+export type SaveCareerProfile = z.infer<typeof SaveCareerProfileSchema>;

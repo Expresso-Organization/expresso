@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
+import { detailHref } from "./list-query";
 import styles from "./page.module.css";
 
 /** 게이지 채움은 점수 구간으로 갈린다 (정의서 00b). */
@@ -60,6 +61,7 @@ export function JobRowList({
   highlightFirst = false,
   tail = "workType",
   now,
+  listQuery = "",
 }: {
   jobs: readonly JobPostingSummary[];
   /** 00b는 가장 잘 맞는 첫 행에 시그니처 지면을 깐다. */
@@ -67,13 +69,18 @@ export function JobRowList({
   tail?: "workType" | "experience";
   /** NEW 배지 기준 시각. 서버에서 한 번 정해 넘긴다. */
   now: number;
+  /**
+   * 지금 목록이 걸고 있는 조건. 상세로 실어 보내 **돌아올 때 그대로 되살린다.**
+   * 비어 있으면 안 싣는다 — 조건 없는 목록에서 `?from=`은 짐일 뿐이다.
+   */
+  listQuery?: string;
 }) {
   return (
     <div className={styles.rows}>
       {jobs.map((job, index) => (
         <Link
           key={job.id}
-          href={`/jobs/${job.id}` as Route}
+          href={detailHref(job.id, listQuery)}
           className={`${styles.row} ${
             highlightFirst && index === 0 ? styles.rowTop : ""
           }`}

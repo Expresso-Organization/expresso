@@ -1,6 +1,11 @@
 /*
  * 10 로그인 · 10b 회원가입 — 화면 정의서를 그대로 옮긴 것.
- * 좌측 560px 어두운 패널 + 우측 폼 패널.
+ * 좌측 어두운 패널 + 우측 폼 패널.
+ *
+ * 패널 폭은 정의서가 560px였다. 캐치프레이즈(Express your work.)가 한 줄에
+ * 서려면 안쪽으로 518px이 필요해 640px로 넓혔다 — 줄이 바뀌면 `your`와 굴러가는
+ * 단어가 다른 줄에 서고, 서로 다가갔다 멀어지는 그 모션이 성립하지 않는다.
+ * 정의서의 560px는 이 문장이 들어오기 전 치수다.
  */
 
 .frame {
@@ -13,7 +18,7 @@
 
 /* 좌측 브랜드 패널 */
 .aside {
-  width: 560px;
+  width: 640px;
   flex-shrink: 0;
   background: linear-gradient(155deg, #16223a 0%, #241c21 58%, #3a2a22 100%);
   padding: 46px 48px;
@@ -64,6 +69,13 @@
   margin-bottom: 20px;
 }
 
+/*
+ * 헤드라인은 폭을 제한하지 않는다.
+ *
+ * 예전 400px 제한은 두 줄짜리 한국어 문구를 재기 좋게 자르려던 것인데, 지금
+ * 로그인은 캐치프레이즈가 그 자리에 서고(518px) 회원가입은 `<br>`로 직접 끊는다.
+ * 둘 다 제한이 할 일이 없고, 남겨 두면 캐치프레이즈만 줄이 바뀐다.
+ */
 .headline {
   font-size: 30px;
   font-weight: 600;
@@ -71,7 +83,6 @@
   line-height: 1.45;
   color: var(--ex-white);
   margin-bottom: 18px;
-  max-width: 400px;
 }
 
 .lede {
@@ -140,6 +151,8 @@
 .social {
   width: 100%;
   display: flex;
+  /* 이 자리는 버튼일 때도 링크일 때도 같아 보여야 한다. */
+  text-decoration: none;
   align-items: center;
   justify-content: center;
   gap: 10px;

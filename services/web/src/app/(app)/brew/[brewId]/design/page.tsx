@@ -77,6 +77,7 @@ export default async function DesignPage({
           brewId={brewId}
           generation={generation}
           portfolioId={generation.portfolioId ?? brew.portfolioId}
+          title={title ?? "포트폴리오"}
         />
       </BrewFrame>
     );

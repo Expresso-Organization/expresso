@@ -113,6 +113,17 @@ export const PAGE_ALLOWED_SVG_TAGS = [
 /** 태그를 가리지 않고 붙을 수 있는 속성. */
 export const PAGE_GLOBAL_ATTRIBUTES = [
   "class", "id", "style", "title", "role", "lang", "dir",
+  /*
+   * 키보드로 닿는 자리.
+   *
+   * 우리가 **먼저 시켜 놓고** 지우고 있었다 — 공통 디자인 원칙이 "키보드 접근,
+   * 포커스 표시"를 요구하는데 목록에 이게 없어서, 모델이 그대로 따르면
+   * `sanitized-output`이 실패하고 지면을 통째로 다시 쓴다. 실측 두 번 연속
+   * 이걸로 재시도가 돌았고, 그때마다 시간과 값이 두 배가 됐다(150초 → 320초).
+   *
+   * 스크립트가 실행될 길은 없다. 초점 순서만 바꾼다.
+   */
+  "tabindex",
   // 키트의 API가 여기 달린다 — 모델은 코드가 아니라 속성을 쓴다.
   // 스크립트가 없으면 그냥 붙어만 있는 값이라 그 자체로는 아무 일도 안 한다.
   "data-*",
@@ -268,6 +279,7 @@ export type PageStyleGrammar = z.infer<typeof PageStyleGrammarSchema>;
 
 export const PageQaCheckSchema = z.strictObject({
   name: z.enum([
+    "has-markup",
     "grounded-numbers",
     "sanitized-output",
     "styled-elements",
@@ -394,6 +406,37 @@ ${input.css}
 ${input.html}
 </body>
 </html>`;
+}
+
+/**
+ * 만들어지는 중인 지면을 그릴 문서.
+ *
+ * `pageDocument`와 **같은 것에 자물쇠 하나를 더 건다.** 미리보기가 실제와
+ * 달라지면 안 된다는 규칙은 그대로지만, 여기 들어오는 것은 **아직 소독을 안
+ * 지난 모델 출력**이다 — 저장 시점에 `sanitizePage`가 거르는 것들이 아직
+ * 그대로 들어 있다.
+ *
+ * 그래서 두 겹으로 막는다. 문서 쪽은 이 CSP고, 넣는 쪽은
+ * `<iframe sandbox="allow-same-origin">`이다(스크립트 권한을 안 주므로 코드가
+ * 돌 길이 없다). `allow-same-origin`을 주는 이유는 그것 없이는 오리진이
+ * 익명이 되어 **`img-src 'self'`가 우리 그림까지 막기** 때문이다.
+ */
+export function pagePreviewDocument(input: Parameters<typeof pageDocument>[0]): string {
+  const styleHosts = PAGE_ALLOWED_STYLESHEET_HOSTS.map((host) => `https://${host}`).join(" ");
+  const policy = [
+    "default-src 'none'",
+    "script-src 'none'",
+    // 그림은 우리가 내보낸 것만. 바깥 주소를 열면 지면을 여는 것만으로
+    // 방문자의 IP가 그 서버에 남는다 — 소독기가 막는 것과 같은 이유다.
+    "img-src 'self' data:",
+    `style-src 'unsafe-inline' ${styleHosts}`,
+    `font-src ${styleHosts}`,
+    "form-action 'none'",
+  ].join("; ");
+  return pageDocument(input).replace(
+    "<head>",
+    `<head>\n<meta http-equiv="Content-Security-Policy" content="${policy}">`,
+  );
 }
 
 /**

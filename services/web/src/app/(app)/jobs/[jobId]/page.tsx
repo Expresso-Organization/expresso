@@ -1,4 +1,5 @@
 import type { JobPostingDetail, JobRequirement } from "@expresso/contracts";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AppBody, DocumentHeader } from "@/components/shell/AppShell";
@@ -6,6 +7,8 @@ import { Icon } from "@/components/ui/Icon";
 import { ApiError } from "@/lib/api/client";
 import { jobs as jobsApi } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
+
+import { backToListHref } from "../list-query";
 
 import { analyzePostingAction } from "../../brew/new/new-brew-actions";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
@@ -44,10 +47,16 @@ const COVERAGE = {
 
 export default async function JobDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ jobId: string }>;
+  /** 목록이 실어 보낸 조건. 돌아갈 때 그대로 되살린다. */
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { jobId } = await params;
+  const { from } = await searchParams;
+  // 주소창에 노출되는 값이라 믿지 않는다 — 아는 조건만 골라 다시 조립한다.
+  const backHref = backToListHref(from);
   const session = await requireSession();
 
   let job: JobPostingDetail;
@@ -79,7 +88,10 @@ export default async function JobDetailPage({
   return (
     <>
       <DocumentHeader
-        crumbs={["공고 탐색", `${job.company.name} · ${job.title}`]}
+        crumbs={[
+          { label: "공고 탐색", href: backHref },
+          `${job.company.name} · ${job.title}`,
+        ]}
         actions={
           <>
             <button type="button" className={styles.headAction}>
@@ -98,7 +110,21 @@ export default async function JobDetailPage({
       <AppBody>
         <div className={styles.body}>
           <div className={styles.left}>
-            <h1 className={styles.role}>{job.title}</h1>
+            {/*
+            * 목록으로 돌아가는 길을 지면 안에도 둔다.
+            *
+            * 빵부스러기는 46px 헤더 왼쪽 끝에 12.5px로 서 있어서, 본문을 읽던
+            * 눈이 거기까지 올라가지 않는다. 제목 바로 위가 다 읽고 나서 손이
+            * 가는 자리다.
+            *
+            * 브라우저 뒤로가기가 아니라 **목록 주소**로 간다 — 주소를 직접
+            * 열었거나 알림에서 들어온 사람에게도 같은 자리로 데려다준다.
+            */}
+          <Link href={backHref} className={styles.backToList}>
+            <Icon name="arrow-left" size={13} />
+            목록으로 돌아가기
+          </Link>
+          <h1 className={styles.role}>{job.title}</h1>
             <div className={styles.team}>
               <CompanyAvatar company={job.company} className={styles.companyMark} fit="line" />
               {[job.company.name, job.team].filter(Boolean).join(" · ")}

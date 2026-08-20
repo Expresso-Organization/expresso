@@ -3,7 +3,10 @@ import {
   CareerCategoriesResponseSchema,
   CareerCategoryIdParamsSchema,
   CareerRecordIdParamsSchema,
+  CareerProfileResponseSchema,
   CareerSkillEvidenceResponseSchema,
+  OptionalCareerProfileResponseSchema,
+  SaveCareerProfileSchema,
   CareerSkillIdParamsSchema,
   CareerRecordResponseSchema,
   CreateCareerCategorySchema,
@@ -74,6 +77,28 @@ export function registerCareerRoutes(
   options: RegisterCareerRoutesOptions,
 ): void {
   const preHandler = options.authenticateRequest;
+
+  /**
+   * 온보딩 1단계가 정한 것 — 노리는 자리, 연차, 지금 급한 것.
+   *
+   * 지나지 않은 사람에게는 `null`이다. 없는 것을 기본값으로 꾸며 돌려주면
+   * 화면이 "이 사람은 백엔드 5년"이라고 믿게 된다 — 아무도 그렇게 말한 적 없다.
+   */
+  app.get(`${API_PREFIX}/career/profile`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    return OptionalCareerProfileResponseSchema.parse({
+      data: await options.careerService.getProfile(principal.user.id),
+    });
+  });
+
+  /** 통째로 덮어쓴다. 몇 번을 보내도 결과가 같다. */
+  app.put(`${API_PREFIX}/career/profile`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const input = parseBody(SaveCareerProfileSchema, request);
+    return CareerProfileResponseSchema.parse({
+      data: await options.careerService.saveProfile(principal.user.id, input),
+    });
+  });
 
   app.get(`${API_PREFIX}/career/categories`, { preHandler }, async (request) => {
     const principal = requireAuth(request);

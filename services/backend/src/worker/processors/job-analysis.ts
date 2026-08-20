@@ -1,7 +1,7 @@
 import type { Job } from "bullmq";
 
 import type { JobAnalysisService } from "../../modules/job-analysis/service.js";
-import type { RequirementExtractor } from "../../modules/job-analysis/rule-extractor.js";
+import type { RequirementExtractor } from "../../modules/job-analysis/extractor.js";
 
 export interface JobAnalysisJobPayload extends Record<string, unknown> {
   jobAnalysisId: string;
