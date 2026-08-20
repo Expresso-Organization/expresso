@@ -10,26 +10,30 @@ import { PageStream, type PageStreamMessage } from "./stream.js";
  * 순서가 어긋나면 그냥 깨진 HTML이 되고, 3분짜리 생성 중에 새로고침 한 번이면
  * 늦게 붙는 일이 실제로 일어난다.
  */
-const redisUrl = process.env["REDIS_URL"] ?? "redis://127.0.0.1:56379";
-const redis = createStreamRedis(redisUrl);
-const stream = new PageStream(redis, { prefix: `test-${process.pid}` });
+// 인프라를 요구하는 다른 통합 테스트와 같은 변수를 본다. 없으면 건너뛴다 —
+// 붙을 곳 없는 Redis를 기다리다 시간 초과로 죽는 것보다 낫다.
+const redisUrl = process.env.TEST_REDIS_URL;
+const describeWithRedis = redisUrl ? describe : describe.skip;
+
+const redis = redisUrl ? createStreamRedis(redisUrl) : null;
+const stream = redis ? new PageStream(redis, { prefix: `test-${process.pid}` }) : null;
 
 afterAll(async () => {
-  redis.disconnect();
+  redis?.disconnect();
 });
 
 async function collect(portfolioId: string): Promise<PageStreamMessage[]> {
   const seen: PageStreamMessage[] = [];
-  for await (const message of stream.follow(portfolioId)) seen.push(message);
+  for await (const message of stream!.follow(portfolioId)) seen.push(message);
   return seen;
 }
 
-describe("PageStream", () => {
+describeWithRedis("PageStream", () => {
   it("늦게 붙어도 처음부터 다 받는다", async () => {
     const portfolioId = `late-${process.pid}`;
-    await stream.delta(portfolioId, '{"css":"body{');
-    await stream.delta(portfolioId, 'margin:0}","html":"<p>안녕');
-    await stream.done(portfolioId, "11111111-1111-4111-8111-111111111111");
+    await stream!.delta(portfolioId, '{"css":"body{');
+    await stream!.delta(portfolioId, 'margin:0}","html":"<p>안녕');
+    await stream!.done(portfolioId, "11111111-1111-4111-8111-111111111111");
 
     // 다 끝난 뒤에 붙는다 — 새로고침하고 돌아온 사람이 이 자리다.
     const seen = await collect(portfolioId);
@@ -41,8 +45,8 @@ describe("PageStream", () => {
   it("흐르는 동안 붙어도 순서대로 받는다", async () => {
     const portfolioId = `live-${process.pid}`;
     const watching = collect(portfolioId);
-    for (const text of ["a", "b", "c"]) await stream.delta(portfolioId, text);
-    await stream.failed(portfolioId, "AI_TIMEOUT");
+    for (const text of ["a", "b", "c"]) await stream!.delta(portfolioId, text);
+    await stream!.failed(portfolioId, "AI_TIMEOUT");
 
     const seen = await watching;
     expect(seen.map((m) => (m.event === "delta" ? m.text : m.event)))
@@ -51,16 +55,16 @@ describe("PageStream", () => {
 
   it("다시 뽑으면 앞 판을 지우고 연다", async () => {
     const portfolioId = `again-${process.pid}`;
-    await stream.begin(portfolioId, "null");
-    await stream.delta(portfolioId, "첫 판");
-    await stream.done(portfolioId, "44444444-4444-4444-8444-444444444444");
+    await stream!.begin(portfolioId, "null");
+    await stream!.delta(portfolioId, "첫 판");
+    await stream!.done(portfolioId, "44444444-4444-4444-8444-444444444444");
 
     // 같은 이름으로 다시. 안 지우면 새로 붙은 사람이 앞 판의 done에서 닫힌다.
-    await stream.begin(portfolioId, "null");
-    await stream.delta(portfolioId, "두 번째 판");
+    await stream!.begin(portfolioId, "null");
+    await stream!.delta(portfolioId, "두 번째 판");
 
     const seen: PageStreamMessage[] = [];
-    for await (const message of stream.follow(portfolioId)) {
+    for await (const message of stream!.follow(portfolioId)) {
       seen.push(message);
       if (seen.length === 2) break;
     }

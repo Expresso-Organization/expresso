@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import Fastify from "fastify";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { registerErrorHandler } from "../../api/error-handler.js";
 import { createStreamRedis } from "../../platform/redis.js";
@@ -22,9 +22,9 @@ import { PageStream } from "./stream.js";
  * nginx가 없어 끝까지 안 보인다.
  */
 
-const redisUrl = process.env["REDIS_URL"] ?? "redis://127.0.0.1:56379";
-const redis = createStreamRedis(redisUrl);
-const stream = new PageStream(redis, { prefix: `test-route-${process.pid}` });
+// 인프라를 요구하는 다른 통합 테스트와 같은 변수를 본다. 없으면 건너뛴다.
+const redisUrl = process.env.TEST_REDIS_URL;
+const describeWithRedis = redisUrl ? describe : describe.skip;
 
 const OWNER = "owner-user";
 const PORTFOLIO = randomUUID();
@@ -34,36 +34,48 @@ const service = {
   owns: async (userId: string) => userId === OWNER,
 } as unknown as PageService;
 
-const app = Fastify();
-app.decorateRequest("auth", null);
-// 404·401을 상태 코드로 옮기는 것은 이 핸들러다. 없으면 전부 500으로 뭉갠다.
-registerErrorHandler(app);
-registerPageRoutes(app, {
-  service,
-  generator: {} as PageGenerator,
-  stream,
-  authenticateRequest: async (request) => {
-    const userId = request.headers["x-test-user"];
-    if (typeof userId !== "string") throw new Error("no user");
-    request.auth = { user: { id: userId } } as never;
-  },
-});
-
-const listening = app.listen({ port: 0, host: "127.0.0.1" });
-
-afterAll(async () => {
-  await app.close();
-  redis.disconnect();
-});
+// 건너뛸 때는 Redis도 소켓도 열지 않는다. 최상단에서 열면 이 파일을 건너뛰어도
+// 붙을 곳 없는 Redis에 매달려 실행이 끝나지 않는다.
+let redis: ReturnType<typeof createStreamRedis>;
+let stream: PageStream;
+let app: ReturnType<typeof Fastify>;
+let origin: string;
 
 async function baseUrl(): Promise<string> {
-  await listening;
-  const address = app.server.address();
-  if (typeof address === "string" || !address) throw new Error("no address");
-  return `http://127.0.0.1:${address.port}`;
+  return origin;
 }
 
-describe("지면 스트림 라우트", () => {
+describeWithRedis("지면 스트림 라우트", () => {
+  beforeAll(async () => {
+    redis = createStreamRedis(redisUrl!);
+    stream = new PageStream(redis, { prefix: `test-route-${process.pid}` });
+
+    app = Fastify();
+    app.decorateRequest("auth", null);
+    // 404·401을 상태 코드로 옮기는 것은 이 핸들러다. 없으면 전부 500으로 뭉갠다.
+    registerErrorHandler(app);
+    registerPageRoutes(app, {
+      service,
+      generator: {} as PageGenerator,
+      stream,
+      authenticateRequest: async (request) => {
+        const userId = request.headers["x-test-user"];
+        if (typeof userId !== "string") throw new Error("no user");
+        request.auth = { user: { id: userId } } as never;
+      },
+    });
+
+    await app.listen({ port: 0, host: "127.0.0.1" });
+    const address = app.server.address();
+    if (typeof address === "string" || !address) throw new Error("no address");
+    origin = `http://127.0.0.1:${address.port}`;
+  });
+
+  afterAll(async () => {
+    await app.close();
+    redis.disconnect();
+  });
+
   it("남의 지면은 열어 주지 않는다", async () => {
     const response = await fetch(`${await baseUrl()}/v1/portfolios/${PORTFOLIO}/page/stream`, {
       headers: { "x-test-user": "someone-else" },
