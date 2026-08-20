@@ -42,9 +42,11 @@
   var GAP = 18;            // 오른쪽 여백
   var MIN_ROOM = 1400;     // 이 아래로는 띄우지 않는다
 
-  var sheet, rail, map, clip, ghost, win, pageNow, barFill;
+  var sheet, rail, map, clip, ghost, win, pageNow, barFill, cuts;
   var folded = false, scale = 0, sheetTop = 0, total = 0, pagedAt = '';
   var heads = [];          // { el, page, top }  top 은 지면 기준
+  var pageTops = [];       // pageTops[n] = n 쪽이 시작하는 자리(지면 기준)
+  var gaps = [];           // 쪽과 쪽 사이에 얹는 띠. 다시 쓴다.
   var KEY = 'ex-doc-rail:' + location.pathname;
 
   /* ── 붙을 수 있는 문서인가 ─────────────────────────────────────── */
@@ -96,7 +98,8 @@
           '<span class="ex-rail-of">/ ' + total + '쪽</span></div>' +
           '<div class="ex-rail-bar"><i></i></div>'
         : '') +
-      '<div class="ex-rail-map"><div class="ex-rail-clip"></div><div class="ex-rail-win"></div></div>' +
+      '<div class="ex-rail-map"><div class="ex-rail-clip"></div>' +
+      '<div class="ex-rail-cuts"></div><div class="ex-rail-win"></div></div>' +
       (pagedAt ? '<div class="ex-rail-note">' + pagedAt + ' 출력 기준</div>' : '');
     document.body.appendChild(rail);
 
@@ -105,6 +108,7 @@
     win = rail.querySelector('.ex-rail-win');
     pageNow = rail.querySelector('.ex-rail-now');
     barFill = rail.querySelector('.ex-rail-bar i');
+    cuts = rail.querySelector('.ex-rail-cuts');
 
     rail.querySelector('.ex-rail-fold').addEventListener('click', fold);
     map.addEventListener('click', jump);
@@ -165,8 +169,72 @@
     heads.forEach(function (h) {
       h.top = h.el.getBoundingClientRect().top + scrollY - sheetTop;
     });
+    buildPageTops();
 
     draw();
+  }
+
+  /* 쪽이 시작하는 자리를 닻 사이에서 뽑는다.
+
+     닻은 제목에만 있어 쪽마다 하나씩 있지는 않다(169개로 205쪽). 닻 둘 사이는
+     높이를 쪽수로 나눠 채운다 — 그 구간의 쪽들이 고르게 이어진다고 보는 것이다.
+     한 쪽이 그림 한 장으로 차 있으면 조금 어긋나지만, 미니맵에서 그 차이는
+     몇 픽셀이다.
+
+     맨 앞 몇 쪽은 표지와 목차라 본문에 자리가 없다(첫 닻이 5쪽이다). 그 쪽들은
+     경계를 그리지 않는다 — 없는 자리에 선을 그으면 첫 지면이 잘려 보인다. */
+  function buildPageTops() {
+    pageTops = [];
+    if (!heads.length || !total) return;
+
+    for (var i = 0; i < heads.length; i += 1) {
+      var a = heads[i], b = heads[i + 1];
+      var toPage = b ? b.page : total + 1;
+      var toTop = b ? b.top : sheet.offsetHeight;
+      var n = Math.max(1, toPage - a.page);
+      for (var k = 0; k < n; k += 1) {
+        // 먼저 잡은 자리를 그대로 둔다. 한 쪽에 제목이 둘이면(장 제목과 첫 절)
+        // 나중 것으로 덮어쓰게 되고, 그러면 경계가 쪽 한가운데로 내려간다.
+        if (pageTops[a.page + k] == null) {
+          pageTops[a.page + k] = a.top + (toTop - a.top) * (k / n);
+        }
+      }
+    }
+  }
+
+  /* 쪽과 쪽 사이를 띠로 끊는다. 미니맵은 지면을 이어 붙인 한 덩어리라, 끊지
+     않으면 어디서 쪽이 바뀌는지 알 수 없다.
+
+     띠는 내용을 밀지 않고 덮는다. 밀려면 지면을 쪽마다 잘라 따로 앉혀야 하고,
+     그러려면 복제본이 보이는 쪽 수만큼 필요하다 — 20만 픽셀짜리 문서에 그럴
+     수는 없다. 이 배율에서 띠가 가리는 것은 한 줄 남짓이다.
+
+     띠는 만들어 두고 다시 쓴다. 스크롤마다 새로 만들면 한 번에 수백 개가
+     생겼다 사라진다. */
+  function drawCuts(top, view) {
+    var shown = 0;
+
+    for (var n = 2; n <= total; n += 1) {
+      var y = pageTops[n];
+      if (y == null) continue;
+      if (y < top) continue;
+      if (y > top + view) break;
+
+      var g = gaps[shown];
+      if (!g) {
+        g = document.createElement('div');
+        g.className = 'ex-rail-cut';
+        g.innerHTML = '<i></i><b></b>';
+        cuts.appendChild(g);
+        gaps[shown] = g;
+      }
+      g.style.display = '';
+      g.style.transform = 'translateY(' + Math.round((y - top) * scale) + 'px)';
+      g.lastChild.textContent = n;
+      shown += 1;
+    }
+
+    for (var j = shown; j < gaps.length; j += 1) gaps[j].style.display = 'none';
   }
 
   /* ── 따라간다 ──────────────────────────────────────────────────── */
@@ -189,6 +257,7 @@
     var t = shownTop();
     ghost.style.marginTop = Math.round(-t * scale) + 'px';
     win.style.transform = 'translateY(' + Math.round((view - t) * scale) + 'px)';
+    drawCuts(t, map.clientHeight / scale);
   }
 
   /* 미니맵이 담는 구간의 맨 위(지면 기준). 문서의 처음과 끝에서는 넘어가지
@@ -264,6 +333,15 @@
       '.ex-rail-map{position:relative;flex:1 1 auto;min-height:0;overflow:hidden;cursor:pointer;',
       '  border-radius:8px;background:var(--ex-tint-50,#F7F8FA)}',
       '.ex-rail-clip{position:absolute;inset:0;overflow:hidden}',
+
+      // 쪽과 쪽 사이. 띠가 지면을 끊고, 그 위에 다음 쪽 번호를 얹는다.
+      '.ex-rail-cuts{position:absolute;inset:0;overflow:hidden;pointer-events:none}',
+      '.ex-rail-cut{position:absolute;left:0;right:0;top:0;height:13px;',
+      '  margin-top:-6px;background:var(--ex-tint-50,#F7F8FA)}',
+      '.ex-rail-cut i{position:absolute;left:0;right:0;top:6px;height:0;display:block;',
+      '  border-top:1px solid var(--ex-line-200,#E6EAF0)}',
+      '.ex-rail-cut b{position:absolute;right:2px;top:0;font-family:var(--ex-font-mono,monospace);',
+      '  font-size:7.5px;font-weight:400;line-height:13px;color:var(--ex-slate-400,#8B97A8)}',
       '.ex-rail-ghost{transform-origin:0 0;pointer-events:none;user-select:none;',
       '  margin:0;box-shadow:none;border:none;background:transparent}',
       '.ex-rail-win{position:absolute;left:0;right:0;top:0;pointer-events:none;',
