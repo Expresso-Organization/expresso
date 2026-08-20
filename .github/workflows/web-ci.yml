@@ -37,15 +37,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # setup-node의 cache: pnpm은 pnpm이 이미 PATH에 있어야 동작한다.
+      # 그래서 pnpm을 먼저 깐다. 버전은 package.json의 packageManager를
+      # 읽으므로 여기에 다시 적지 않는다.
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: pnpm
-
-      - name: pnpm 활성화
-        run: |
-          corepack enable
-          corepack prepare pnpm@11.16.0 --activate
 
       - name: 의존성 설치
         run: pnpm install --frozen-lockfile
