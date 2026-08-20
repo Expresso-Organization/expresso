@@ -22,6 +22,7 @@ interface SeededGraph {
 
 const ownerScopedTables = [
   "identity_session",
+  "identity_oauth_account",
   "usage_counter",
   "notification",
   "notification_preference",
@@ -34,6 +35,7 @@ const ownerScopedTables = [
   "record_link",
   "recent_search",
   "record_usage",
+  "career_profile",
   "skill",
   "skill_evidence",
   "saved_search",
