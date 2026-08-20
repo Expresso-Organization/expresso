@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>포트폴리오 생성 파이프라인 — Expresso</title>
+
+<!-- ===========================================================
+     FONTS — Google Fonts only, no system fonts.
+     IBM Plex Sans KR : 한글 본문과 제목 (300/400/500/600/700)
+     IBM Plex Mono    : 크롬 · 라벨 · 코드 · 수치
+     Archivo          : 대형 라틴 숫자(페이지 번호 · 단계 번호)
+     =========================================================== -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===========================================================
+   THEME — Grid & Signal
+   흰 지면, 검은 활자, 단 하나의 적색. 그리드는 숨기지 않는다.
+   여기 값만 바꾸면 덱 전체의 인상이 바뀐다.
+   =========================================================== */
+:root {
+    /* 색 */
+    --paper:      #ffffff;
+    --wash:       #f6f6f4;   /* 패널 바탕 */
+    --wash-deep:  #eeeeeb;   /* 표 머리 · 강조 셀 */
+    --ink:        #0b0b0b;
+    --ink-soft:   #33322f;
+    --grey:       #6b6b6b;
+    --rule:       #d8d8d8;   /* 경계선 */
+    --gridline:   #ededed;   /* 배경 그리드 */
+    --red:        #ff3300;   /* 단 하나의 악센트 */
+    --red-wash:   rgba(255, 51, 0, .08);
+
+    --stage-bg:   #e9e9e6;
+    --slide-bg:   var(--paper);
+
+    /* 활자 — 1920×1080 지면 기준의 고정 크기 */
+    --f-sans: 'IBM Plex Sans KR', sans-serif;
+    --f-mono: 'IBM Plex Mono', monospace;
+    --f-num:  'Archivo', sans-serif;
+
+    /* 여백 */
+    --pad-x: 112px;
+    --pad-y: 88px;
+
+    /* 모션 */
+    --ease: cubic-bezier(.16, 1, .3, 1);
+    --dur: .68s;
+}
+
+/* ===========================================================
+   FIXED 16:9 STAGE — MANDATORY BASE STYLES (viewport-base.css)
+   슬라이드는 1920×1080으로 짜고, 무대 전체를 한 번에 축소한다.
+   기기별로 내용을 다시 흘리지 않는다.
+   =========================================================== */
+
+/* 1. Lock the browser viewport */
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 2. Full-window deck viewport */
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 3. Fixed 16:9 design canvas. JS sets transform: translate(...) scale(...). */
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+
+/* 4. Slides stack inside the fixed stage. */
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+/* 5. Keep media inside authored slide bounds */
+img, video, canvas, svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* 6. Presentation chrome stays outside the slide design system */
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+/* 7. Print one fixed-size slide per page */
+@media print {
+    html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+    .deck-viewport { position: static; overflow: visible; background: #fff; }
+    .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+    .slide {
+        position: relative; display: block !important; visibility: visible !important;
+        opacity: 1 !important; pointer-events: auto !important;
+        width: 1920px; height: 1080px; break-after: page; page-break-after: always;
+    }
+    .slide:last-child { break-after: auto; page-break-after: auto; }
+    .deck-controls { display: none !important; }
+}
+
+/* 8. Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* ===========================================================
+   SLIDE SHELL — 모든 슬라이드가 공유하는 뼈대
+   보이는 그리드가 배경으로 깔리고, 위아래 레일이 지면을 잡는다.
+   =========================================================== */
+.slide {
+    font-family: var(--f-sans);
+    color: var(--ink);
+    /* 360px 간격의 세로 그리드. 스위스식 armature를 숨기지 않는다. */
+    background-image: linear-gradient(90deg, var(--gridline) 1px, transparent 1px);
+    background-size: 360px 100%;
+    background-position: var(--pad-x) 0;
+}
+
+/* 지면은 위→아래 세 덩어리로 흐른다: 레일 · 제목 · 본문 · 레일.
+   본문이 남는 높이를 전부 가져가므로 슬라이드마다 위치를 손으로 맞출 필요가 없다. */
+.frame {
+    position: absolute; inset: var(--pad-y) var(--pad-x);
+    display: flex; flex-direction: column;
+}
+
+/* 위 레일 — 왼쪽에 섹션, 오른쪽에 문서 좌표 */
+.rail {
+    flex: none;
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--f-mono); font-size: 18px; color: var(--grey);
+    padding-bottom: 18px; border-bottom: 1px solid var(--rule);
+}
+.rail .now { color: var(--ink); font-weight: 500; }
+.rail .hot { color: var(--red); }
+/* 한글에는 자간을 벌리지 않는다 — 라틴 크롬에만 적용 */
+.rail .lat { letter-spacing: .14em; text-transform: uppercase; }
+
+/* 아래 레일 — 한 줄 요약과 페이지 번호 */
+.foot {
+    flex: none; margin-top: auto;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    border-top: 1px solid var(--rule); padding-top: 18px;
+}
+.foot p { font-size: 20px; color: var(--grey); word-break: keep-all; }
+.foot .pg { font-family: var(--f-num); font-weight: 900; font-size: 40px; line-height: .8; }
+
+/* 제목 블록 */
+.head { flex: none; padding-top: 48px; }
+.kicker {
+    font-family: var(--f-mono); font-size: 21px; color: var(--red);
+    margin-bottom: 16px;
+}
+.kicker .lat { letter-spacing: .18em; text-transform: uppercase; }
+h2 {
+    font-weight: 700; font-size: 62px; line-height: 1.12; letter-spacing: -.03em;
+    word-break: keep-all;
+}
+h2 em { font-style: normal; color: var(--red); }
+.sub {
+    margin-top: 16px; font-weight: 300; font-size: 25px; line-height: 1.55;
+    color: var(--ink-soft); max-width: 1400px; word-break: keep-all;
+}
+.hr { height: 3px; background: var(--red); margin-top: 22px; transform-origin: left; }
+
+/* 본문 영역 — 남는 높이를 전부 가져간다. min-height:0 이 없으면 flex 자식이 줄지 않는다. */
+.body { flex: 1 1 auto; min-height: 0; padding: 22px 0 16px; }
+.body.low { }   /* 옛 이름. 흐름 배치로 바뀌면서 보정이 필요 없어졌다. */
+
+/* ===========================================================
+   COMPONENTS — 여기서 정의한 부품만으로 모든 슬라이드를 짠다
+   =========================================================== */
+
+/* 다단 */
+.cols { display: grid; gap: 30px; height: 100%; }
+.c-2 { grid-template-columns: 1fr 1fr; }
+.c-3 { grid-template-columns: repeat(3, 1fr); }
+.c-4 { grid-template-columns: repeat(4, 1fr); }
+.c-58 { grid-template-columns: 1.05fr 1fr; }
+.c-64 { grid-template-columns: 1.5fr 1fr; }
+.c-46 { grid-template-columns: 1fr 1.5fr; }
+
+/* 패널 — 둥근 모서리 없음, 그림자 없음. 선과 면만. */
+.panel { border: 1px solid var(--rule); background: var(--wash); padding: 21px 25px; }
+.panel.plain { background: var(--paper); }
+.panel.hot { border: 2px solid var(--red); background: var(--paper); }
+.panel h3 {
+    font-family: var(--f-mono); font-size: 19px; color: var(--grey);
+    margin-bottom: 13px; font-weight: 500;
+}
+.panel h3 .lat { letter-spacing: .16em; text-transform: uppercase; }
+
+/* 표 */
+table { width: 100%; border-collapse: collapse; }
+th, td {
+    text-align: left; padding: 10px 15px; font-size: 21px; line-height: 1.42;
+    border-bottom: 1px solid var(--rule); vertical-align: top; word-break: keep-all;
+}
+th {
+    font-family: var(--f-mono); font-size: 18px; font-weight: 500; color: var(--grey);
+    background: var(--wash-deep); border-bottom: 2px solid var(--ink); padding: 12px 16px;
+}
+td.mono { font-family: var(--f-mono); font-size: 20px; }
+td.num  { font-family: var(--f-num); font-weight: 800; font-size: 24px; color: var(--red); width: 56px; }
+td.dim  { color: var(--grey); }
+tr.mark td { background: var(--red-wash); }
+tr:last-child td { border-bottom: 0; }
+table.tight th, table.tight td { padding: 8px 13px; font-size: 20px; }
+table.tight td.mono { font-size: 19px; }
+
+/* 라벨 · 태그 */
+.tag {
+    display: inline-block; font-family: var(--f-mono); font-size: 17px;
+    border: 1px solid var(--rule); padding: 4px 11px; color: var(--grey);
+}
+.tag.hot { border-color: var(--red); color: var(--red); }
+.tag.solid { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+/* 번호 붙은 목록 */
+.lst { display: grid; align-content: start; gap: 16px; }
+.lst > li { list-style: none; display: grid; grid-template-columns: 54px 1fr; gap: 16px; }
+.lst .n {
+    font-family: var(--f-num); font-weight: 800; font-size: 30px; color: var(--red);
+    line-height: 1.15;
+}
+.lst .t { font-size: 23px; line-height: 1.48; word-break: keep-all; }
+.lst .t b { font-weight: 600; }
+.lst .t i { font-style: normal; display: block; color: var(--grey); font-size: 21px; margin-top: 4px; }
+
+/* 이름–값 행 */
+.kv { display: grid; gap: 0; }
+.kv > div {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 18px;
+    padding: 10px 0; border-bottom: 1px solid var(--rule);
+}
+.kv > div:last-child { border-bottom: 0; }
+.kv .k { font-size: 21px; word-break: keep-all; }
+.kv .v { font-family: var(--f-mono); font-size: 20px; color: var(--red); white-space: nowrap; }
+.kv .v.cool { color: var(--grey); }
+
+/* 코드 · JSON 패널 */
+.code {
+    font-family: var(--f-mono); font-size: 18px; line-height: 1.58;
+    background: var(--ink); color: #e8e6e2; padding: 22px 24px;
+    white-space: pre; overflow: hidden;
+}
+.code .key { color: #ffb59e; }
+.code .str { color: #a8d8b9; }
+.code .cm  { color: #7d7a75; }
+.code .hot { color: var(--red); }
+
+/* 흐름도 */
+.flow { display: grid; align-content: start; gap: 0; }
+.node {
+    border: 1px solid var(--rule); background: var(--paper); padding: 14px 20px;
+}
+.node .t { font-size: 23px; font-weight: 600; word-break: keep-all; }
+.node .d { font-size: 19px; color: var(--grey); margin-top: 3px; word-break: keep-all; }
+.node.hot { border: 2px solid var(--red); }
+.node.solid { background: var(--ink); border-color: var(--ink); }
+.node.solid .t { color: var(--paper); }
+.node.solid .d { color: #a9a6a1; }
+.trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.down {
+    display: flex; align-items: center; gap: 14px; padding: 7px 0 7px 24px;
+    font-family: var(--f-mono); font-size: 19px; color: var(--grey);
+}
+.down::before {
+    content: ''; width: 2px; height: 26px; background: var(--red); flex: none;
+}
+
+/* 우선순위 사다리 */
+.ladder { display: grid; gap: 8px; align-content: start; }
+.ladder > div {
+    display: flex; align-items: center; gap: 16px; padding: 10px 17px;
+    border-left: 4px solid var(--red); background: var(--wash); font-size: 22px;
+}
+.ladder > div span { font-family: var(--f-mono); font-size: 18px; color: var(--grey); }
+.ladder > div:nth-child(1) { background: var(--red); color: var(--paper); border-left-color: var(--ink); }
+.ladder > div:nth-child(1) span { color: rgba(255,255,255,.72); }
+.ladder > div:nth-child(2) { background: var(--wash-deep); }
+.ladder > div:nth-child(4),
+.ladder > div:nth-child(5) { border-left-color: var(--rule); color: var(--grey); }
+
+/* 체크 목록 */
+.checks { display: grid; gap: 8px; align-content: start; }
+.checks > div {
+    display: grid; grid-template-columns: 30px 1fr; gap: 14px; align-items: start;
+    font-size: 21px; line-height: 1.42; word-break: keep-all;
+}
+.checks .b {
+    width: 20px; height: 20px; border: 2px solid var(--red); margin-top: 5px;
+}
+.checks .b.warn { border-color: var(--rule); }
+
+/* 큰 수치 */
+.figs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+.figs > div { border-left: 1px solid var(--rule); padding: 0 24px; }
+.figs > div:first-child { border-left: 0; padding-left: 0; }
+.figs .n { font-family: var(--f-num); font-weight: 900; font-size: 68px; line-height: .92; letter-spacing: -.04em; }
+.figs .n.hot { color: var(--red); }
+.figs .l { font-size: 20px; color: var(--grey); margin-top: 12px; line-height: 1.45; word-break: keep-all; }
+
+/* 본문 문단 */
+.p { font-size: 23px; line-height: 1.56; word-break: keep-all; }
+.p + .p { margin-top: 16px; }
+.p b { font-weight: 600; }
+.p .hot { color: var(--red); font-weight: 600; }
+.mut { color: var(--grey); }
+.note {
+    border-left: 4px solid var(--ink); padding: 3px 0 3px 19px;
+    font-size: 21px; line-height: 1.5; word-break: keep-all;
+}
+.note.hot { border-left-color: var(--red); }
+
+/* ===========================================================
+   TITLE SLIDE — 표지만 다른 문법을 쓴다
+   =========================================================== */
+.title-slide .kick {
+    font-family: var(--f-mono); font-size: 22px; color: var(--red); margin-bottom: 32px;
+}
+.title-slide h1 {
+    font-weight: 700; font-size: 130px; line-height: 1.04; letter-spacing: -.038em;
+    word-break: keep-all;
+}
+.title-slide h1 em { font-style: normal; color: var(--red); }
+.title-slide .bar { width: 660px; height: 14px; background: var(--red); margin: 48px 0 40px; transform-origin: left; }
+.title-slide .lede { font-weight: 300; font-size: 32px; line-height: 1.62; max-width: 1120px; color: var(--ink-soft); word-break: keep-all; }
+.spine { position: absolute; right: 0; top: 148px; width: 250px; border-top: 3px solid var(--ink); padding-top: 20px; }
+.spine div {
+    display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 19px;
+    padding: 11px 0; border-bottom: 1px solid var(--rule); color: var(--grey);
+}
+.spine div span:first-child { color: var(--ink); font-weight: 500; }
+.spine div.on span { color: var(--red); }
+
+/* ===========================================================
+   MOTION — 등장은 한 번, 계단식으로.
+   .slide.visible 이 붙을 때만 돈다.
+   =========================================================== */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease); }
+.slide.visible .reveal { opacity: 1; transform: none; }
+.slide.visible .reveal:nth-child(1) { transition-delay: .05s; }
+.slide.visible .reveal:nth-child(2) { transition-delay: .12s; }
+.slide.visible .reveal:nth-child(3) { transition-delay: .19s; }
+.slide.visible .reveal:nth-child(4) { transition-delay: .26s; }
+.slide.visible .reveal:nth-child(5) { transition-delay: .33s; }
+.d1 { transition-delay: .10s !important; }
+.d2 { transition-delay: .20s !important; }
+.d3 { transition-delay: .30s !important; }
+.d4 { transition-delay: .40s !important; }
+.d5 { transition-delay: .50s !important; }
+
+.wipe { transform: scaleX(0); transition: transform .8s var(--ease) .3s; }
+.slide.visible .wipe { transform: scaleX(1); }
+
+/* ===========================================================
+   DECK CHROME — 무대 밖 UI. 슬라이드 디자인 시스템과 분리한다.
+   =========================================================== */
+.deck-controls {
+    display: flex; align-items: center; gap: 14px;
+    font-family: var(--f-mono); font-size: 13px; color: #55534f;
+    background: rgba(255,255,255,.88); border: 1px solid var(--rule);
+    padding: 7px 14px; opacity: 0; transition: opacity .3s ease;
+}
+.deck-viewport:hover .deck-controls { opacity: 1; }
+.deck-controls button {
+    font: inherit; background: none; border: 0; cursor: pointer; color: inherit; padding: 2px 6px;
+}
+.deck-controls button:hover { color: var(--red); }
+.progress {
+    position: fixed; left: 0; bottom: 0; height: 3px; background: var(--red);
+    z-index: 1001; transition: width .35s var(--ease);
+}
+
+/* 인라인 편집 — 초안을 받은 뒤 손으로 고칠 수 있게 둔다 */
+.edit-hotzone { position: fixed; top: 0; left: 0; width: 80px; height: 80px; z-index: 10000; cursor: pointer; }
+.edit-toggle {
+    position: fixed; top: 18px; left: 18px; z-index: 10001;
+    width: 40px; height: 40px; border: 1px solid var(--rule); background: #fff;
+    cursor: pointer; font-size: 17px; line-height: 1;
+    opacity: 0; pointer-events: none; transition: opacity .3s ease;
+}
+.edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+.edit-toggle.active { border-color: var(--red); color: var(--red); }
+body.editing [contenteditable="true"]:hover { outline: 1px dashed var(--red); outline-offset: 3px; }
+body.editing [contenteditable="true"]:focus { outline: 2px solid var(--red); outline-offset: 3px; }
+.edit-hint {
+    position: fixed; top: 18px; left: 68px; z-index: 10001;
+    font-family: var(--f-mono); font-size: 12px; color: var(--grey);
+    background: rgba(255,255,255,.92); border: 1px solid var(--rule); padding: 6px 10px;
+    opacity: 0; pointer-events: none; transition: opacity .3s ease;
+}
+.edit-hint.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+<!-- ==================== 01 · 표지 ==================== -->
+<section class="slide title-slide active visible">
+    <div class="frame">
+        <div class="rail">
+            <span class="lat">EXPRESSO <span style="color:var(--grey)">/ SERVICES / BACKEND</span></span>
+            <span class="lat">2026.08.13 &nbsp;·&nbsp; <span class="hot">V1</span></span>
+        </div>
+
+        <div style="position:absolute;left:0;top:148px;width:1310px">
+            <div class="kick reveal">생성 방법론 v1</div>
+            <h1 class="reveal">포트폴리오<br>생성 <em>파이프라인</em></h1>
+            <div class="bar wipe"></div>
+            <p class="lede reveal d4">원천 자료를 곧바로 생성 모델에 넣지 않는다. 공고 · 회사 조사 · 커리어 기록을
+                먼저 근거 중심의 설계안으로 정제하고, 확정된 설계안에 스타일 문법과 공통 디자인 원칙을 결합해
+                지면을 한 번 생성한다.</p>
+        </div>
+
+        <div class="spine reveal d5">
+            <div><span>0</span><span>수집</span></div>
+            <div><span>1</span><span>정제</span></div>
+            <div><span>2</span><span>연결</span></div>
+            <div class="on"><span>3</span><span>설계</span></div>
+            <div><span>4</span><span>스타일</span></div>
+            <div class="on"><span>5</span><span>생성</span></div>
+            <div><span>6</span><span>검증</span></div>
+            <div><span>7</span><span>수정</span></div>
+            <div><span>8</span><span>배포</span></div>
+        </div>
+
+        <div class="foot">
+            <p>PortfolioPlan → StyleSpec → DesignPrinciples → HTML/CSS</p>
+            <div class="pg">01</div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== 02 · 왜 두 단계인가 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">결정 요약</span><span class="lat">02 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">왜 한 번에 넣지 않는가</div>
+            <h2 class="reveal">원천 자료와 생성 모델 사이에<br><em>설계안</em>을 하나 세운다</h2>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body">
+            <div class="cols c-58">
+                <div class="flow reveal d1">
+                    <div class="trio">
+                        <div class="node"><div class="t">채용 공고</div><div class="d">요건 · 원문 인용</div></div>
+                        <div class="node"><div class="t">회사 조사</div><div class="d">사실 · 해석</div></div>
+                        <div class="node"><div class="t">커리어 기록</div><div class="d">공개 승인분</div></div>
+                    </div>
+                    <div class="down">정제 · 연결 — 단계 1~2</div>
+                    <div class="node hot">
+                        <div class="t">PortfolioPlan v1</div>
+                        <div class="d">무엇을 · 왜 · 어떤 순서로 전달할지. 완성 문장도 시각 디자인도 아니다.</div>
+                    </div>
+                    <div class="down">+ StyleSpec &nbsp;+ DesignPrinciples v1 — 단계 4~5</div>
+                    <div class="node solid">
+                        <div class="t">포트폴리오 웹 지면</div>
+                        <div class="d">소독을 통과한 HTML / CSS 한 장, 그리고 생성 이유 한 문장</div>
+                    </div>
+                </div>
+
+                <div>
+                    <ol class="lst reveal d3">
+                        <li><span class="n">01</span><span class="t"><b>비용</b>이 줄어든다<i>긴 원문을 최종 생성 모델이 반복해 읽지 않는다</i></span></li>
+                        <li><span class="n">02</span><span class="t">회사가 원하는 역량과 <b>사용자의 실제 증거를 먼저 연결</b>한다<i>지면을 그리기 전에 무엇을 증명할지 정한다</i></span></li>
+                        <li><span class="n">03</span><span class="t">콘텐츠 설계와 시각 표현이 <b>서로의 사실을 바꾸지 못한다</b><i>설계안은 내용의 계약, 스타일은 표현의 계약</i></span></li>
+                        <li><span class="n">04</span><span class="t">여러 결과를 뽑아 고르지 않아도 <b>방향이 유지된다</b><i>스타일은 생성 전에 확정한다</i></span></li>
+                        <li><span class="n">05</span><span class="t">입력 · 프롬프트 · 모델 · 비용이 <b>재현 가능하게</b> 남는다<i>planning_manifest · generation_manifest</i></span></li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="foot"><p>docs/architecture/portfolio-generation-methodology-v1.md §1</p><div class="pg">02</div></div>
+    </div>
+</section>
+
+<!-- ==================== 03 · 전체 지도 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">전체 지도</span><span class="lat">03 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">단계 0 → 8</div>
+            <h2 class="reveal">수집에서 배포까지 아홉 자리</h2>
+            <p class="sub reveal d1">붉게 표시한 네 자리만 모델을 부른다. 나머지는 규칙 · 결정적 코드 · 트랜잭션이 맡는다.</p>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body low">
+            <div class="reveal d2">
+                <table class="tight">
+                    <thead><tr>
+                        <th style="width:62px">#</th><th style="width:190px">단계</th>
+                        <th style="width:400px">입력</th><th style="width:430px">산출물</th><th>실행 방식</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr><td class="num">0</td><td>수집</td><td class="dim">공고 · 회사 웹 자료 · 사용자 기록</td><td>원천 자료와 출처 메타데이터</td><td class="mono dim">크롤러 · 기존 데이터</td></tr>
+                        <tr><td class="num">1</td><td>정제</td><td class="dim">원천 자료</td><td>세 종류의 정규화된 팩트</td><td class="mono">규칙 + 저비용 LLM</td></tr>
+                        <tr><td class="num">2</td><td>연결</td><td class="dim">정규화 팩트</td><td>요구사항–증거 맵</td><td class="mono">결정적 점수 + LLM 보조</td></tr>
+                        <tr class="mark"><td class="num">3</td><td><b>설계</b></td><td class="dim">연결 결과</td><td><b>PortfolioPlan</b></td><td class="mono">설계용 LLM <b>1회</b></td></tr>
+                        <tr><td class="num">4</td><td>스타일 확정</td><td class="dim">사용자 선택</td><td>StyleSpec</td><td class="mono">선택값을 규격으로 컴파일</td></tr>
+                        <tr class="mark"><td class="num">5</td><td><b>생성</b></td><td class="dim">Plan + Style + 원칙</td><td><b>HTML/CSS와 생성 이유</b></td><td class="mono">고성능 LLM <b>1회</b></td></tr>
+                        <tr><td class="num">6</td><td>검증</td><td class="dim">생성 페이지</td><td>QaReport</td><td class="mono">자동 검사 + 시각 검사 1회</td></tr>
+                        <tr class="mark"><td class="num">7</td><td>제한 수정</td><td class="dim">구체적인 실패 목록</td><td>수정된 HTML/CSS</td><td class="mono">실패할 때만 LLM <b>최대 1회</b></td></tr>
+                        <tr><td class="num">8</td><td>저장 · 배포</td><td class="dim">통과 결과</td><td>페이지 · 명세 · 비용 원장</td><td class="mono">트랜잭션 + 배포 스냅샷</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="foot"><p>무제한 재생성을 품질 전략으로 사용하지 않는다 — 한 번 생성하고, 필요할 때만 한 번 고친다</p><div class="pg">03</div></div>
+    </div>
+</section>
+
+<!-- ==================== 04 · 불변 조건 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">불변 조건</span><span class="lat">04 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">충돌하면 무엇이 이기는가</div>
+            <h2 class="reveal">일곱 개의 불변 조건과<br>하나의 <em>우선순위 사다리</em></h2>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body">
+            <div class="cols c-64">
+                <ol class="lst reveal d1" style="gap:15px">
+                    <li><span class="n">1</span><span class="t"><b>사실은 증거에서만 나온다.</b> 공개 문장과 수치는 하나 이상의 사용자 증거를 가리킨다.</span></li>
+                    <li><span class="n">2</span><span class="t"><b>회사 정보는 맥락이지 성과의 증거가 아니다.</b> 회사 조사로 사용자 경험을 만들지 않는다.</span></li>
+                    <li><span class="n">3</span><span class="t"><b>설계안은 내용의 계약이다.</b> 생성 단계가 프로젝트 선택 · 주장 · 성과를 바꾸지 않는다.</span></li>
+                    <li><span class="n">4</span><span class="t"><b>스타일은 표현의 계약이다.</b> 색뿐 아니라 구성 · 밀도 · 타이포 · 모션까지 통제한다.</span></li>
+                    <li><span class="n">5</span><span class="t"><b>디자인 원칙이 스타일보다 우선한다.</b> 스타일이 가독성 · 접근성 · 사실성을 해치면 제한된다.</span></li>
+                    <li><span class="n">6</span><span class="t"><b>근거가 장식보다 우선한다.</b> 주요 시각 요소는 실제 프로젝트와 결과의 이해를 도와야 한다.</span></li>
+                    <li><span class="n">7</span><span class="t"><b>한 번 생성하고, 필요할 때만 한 번 고친다.</b></span></li>
+                </ol>
+
+                <div style="display:grid;align-content:start;gap:26px">
+                    <div class="reveal d3">
+                        <div class="ladder">
+                            <div><span>01</span>사실 정확성</div>
+                            <div><span>02</span>콘텐츠 전달과 가독성</div>
+                            <div><span>03</span>접근성 · 보안 · 반응형</div>
+                            <div><span>04</span>사용자 선택 스타일</div>
+                            <div><span>05</span>장식적 효과</div>
+                        </div>
+                    </div>
+                    <div class="note hot reveal d4">사실성 오류는 <b>자동 완화해 공개하지 않는다.</b>
+                        수정에 실패하면 초안 상태로 보존하고, 해당 문장과 근거 부족을 사용자에게 보여 준다.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="foot"><p>방법론 §3 — 우선순위는 코드 곳곳의 분기가 아니라 하나의 사다리로 적혀 있다</p><div class="pg">04</div></div>
+    </div>
+</section>
+
+<!-- ==================== 05 · 런타임 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">런타임</span><span class="lat">05 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">무엇이 어디서 도는가</div>
+            <h2 class="reveal">API는 약속만 하고,<br>일은 <em>워커</em>가 한다</h2>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body">
+            <div class="cols c-58">
+                <div class="flow reveal d1">
+                    <div class="node"><div class="t">API — Fastify</div><div class="d">POST /generations · 소유권 확인 · 멱등키 검사</div></div>
+                    <div class="down">같은 트랜잭션 안에서 outbox 행을 넣는다</div>
+                    <div class="node hot"><div class="t">outbox_event</div><div class="d">topic <span style="font-family:var(--f-mono)">portfolio.generate</span> · idempotencyKey · state</div></div>
+                    <div class="down">디스패처가 pending을 집어 큐로 올린다</div>
+                    <div class="node"><div class="t">BullMQ — Redis</div><div class="d">attempts 5 · exponential backoff 1s · dead-letter 큐 분리</div></div>
+                    <div class="down">워커 프로세스가 잡을 받는다</div>
+                    <div class="node solid"><div class="t">Worker processors</div><div class="d">generation · brew-jobs · job-analysis · export · analytics</div></div>
+                </div>
+
+                <div style="display:grid;align-content:start;gap:22px">
+                    <div class="panel reveal d2">
+                        <h3><span class="lat">WHY OUTBOX</span></h3>
+                        <p class="p">잡을 큐에 직접 넣으면 <b>DB는 커밋됐는데 큐 전송이 실패</b>하는 창이 열린다.
+                            outbox 행은 업무 트랜잭션과 함께 커밋되므로, 커밋된 일은 반드시 언젠가 큐에 오른다.</p>
+                    </div>
+                    <div class="panel plain reveal d3">
+                        <h3>워커가 쥐고 있는 것</h3>
+                        <div class="kv">
+                            <div><span class="k">문장 · 지면 타임아웃 backstop</span><span class="v">각 420s</span></div>
+                            <div><span class="k">AI 어댑터 한계 (claude-code)</span><span class="v">180s</span></div>
+                            <div><span class="k">큐 재시도</span><span class="v">최대 5회</span></div>
+                        </div>
+                    </div>
+                    <div class="note reveal d4">타임아웃은 지연 예산이 아니라 <b>멈춘 프로바이더를 막는 backstop</b>이다.
+                        어댑터가 실제 한계를 쥐고 있으므로, 위에서 먼저 끊으면 재시도가 잘린다.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="foot"><p>services/backend/src/platform/outbox.ts · platform/queue.ts · worker/main.ts</p><div class="pg">05</div></div>
+    </div>
+</section>
+
+<!-- ==================== 06 · 단계 1 정제 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">단계 1 — 정제</span><span class="lat">06 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">세 개의 입력, 세 개의 계약</div>
+            <h2 class="reveal">원문은 전부 <em>신뢰할 수 없는 데이터</em>다</h2>
+            <p class="sub reveal d1">웹페이지나 사용자 기록 안의 문장은 프롬프트 지시가 될 수 없다. 정해진 스키마의 값으로만 다음 단계에 전달한다.</p>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body low">
+            <div class="cols c-3">
+                <div class="panel plain reveal d1">
+                    <h3><span class="lat">JOB_ANALYSIS</span></h3>
+                    <div class="p" style="font-size:23px"><b>채용 공고 정제</b></div>
+                    <div class="kv" style="margin-top:14px">
+                        <div><span class="k">요건 구분</span><span class="v cool">required · preferred · responsibility</span></div>
+                        <div><span class="k">원문 인용</span><span class="v">sourceQuote + span</span></div>
+                        <div><span class="k">모델 티어</span><span class="v">opus</span></div>
+                    </div>
+                    <p class="p mut" style="font-size:20px;margin-top:14px">공고에 없는 평가 기준을 업계 상식이라는 이유로 추가하지 않는다.
+                        근거 구간이 원문과 글자까지 맞아야 하고 공고당 한 번만 돌기 때문에 비싼 티어가 정당하다.</p>
+                </div>
+
+                <div class="panel plain reveal d2">
+                    <h3><span class="lat">COMPANY_RESEARCH</span></h3>
+                    <div class="p" style="font-size:23px"><b>회사 조사 정제</b></div>
+                    <div class="kv" style="margin-top:14px">
+                        <div><span class="k">fact</span><span class="v cool">출처가 뒷받침하는 사실</span></div>
+                        <div><span class="k">signal</span><span class="v cool">사실에서 도출한 해석</span></div>
+                        <div><span class="k">보존</span><span class="v">URL · 수집 시각 · confidence</span></div>
+                    </div>
+                    <p class="p mut" style="font-size:20px;margin-top:14px">사실과 해석을 분리한다.
+                        <b style="color:var(--red)">회사 정보는 사용자 성과의 증거가 될 수 없다</b> — 맥락과 우선순위 조정에만 쓴다.
+                        원본 웹 콘텐츠를 생성 모델에 직접 넘기지 않는다.</p>
+                </div>
+
+                <div class="panel plain reveal d3">
+                    <h3><span class="lat">RECORD_CLEANUP</span></h3>
+                    <div class="p" style="font-size:23px"><b>커리어 기록 정제</b></div>
+                    <div class="kv" style="margin-top:14px">
+                        <div><span class="k">단위</span><span class="v cool">상황 · 행동 · 결과 · 수치</span></div>
+                        <div><span class="k">상태</span><span class="v">organized · verified</span></div>
+                        <div><span class="k">공개</span><span class="v">publishability</span></div>
+                    </div>
+                    <p class="p mut" style="font-size:20px;margin-top:14px">본인의 역할과 팀의 결과를 구분한다.
+                        수치는 원형을 유지하고 환산하지 않는다. 모르는 값은 <span style="font-family:var(--f-mono)">null</span>로 두며 추정하지 않는다.
+                        쓰지 않은 좋은 기록도 지우지 않고 이유를 남긴다.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="foot"><p>modules/job-analysis · modules/company-research · modules/career/record-cleaner.ts</p><div class="pg">06</div></div>
+    </div>
+</section>
+
+<!-- ==================== 07 · 단계 2 연결 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">단계 2 — 연결</span><span class="lat">07 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">모델을 부르기 전에 할 수 있는 일</div>
+            <h2 class="reveal">요구사항–증거 연결은<br><em>결정적 코드</em>가 먼저 한다</h2>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body">
+            <div class="cols c-2">
+                <div style="display:grid;align-content:start;gap:22px">
+                    <div class="code reveal d1">score = <span class="hot">겹치는 말의 수 × 10</span>
+      + (검증한 기록이면 <span class="hot">+3</span>)
+
+<span class="cm">// 동점이면 제목, 그 다음 id 순 — 순서가 흔들리지 않게</span>
+sort: score ↓ · title ↑ · id ↑</div>
+                    <div class="panel reveal d2">
+                        <h3>정렬에 쓰는 신호</h3>
+                        <p class="p" style="font-size:22px">공고 요구사항의 중요도 · 증거의 직접성 · 검증 상태 ·
+                            구체적인 행동과 결과의 존재 · 다른 선택 프로젝트와의 중복 정도 · 회사 맥락과의 관련성</p>
+                    </div>
+                </div>
+
+                <div style="display:grid;align-content:start;gap:20px">
+                    <div class="note hot reveal d2">점수는 후보를 정렬하는 <b>보조 수단</b>이지 최종 진실 판정이 아니다.
+                        판단은 설계 단계가 하고, 코드는 그 앞에 놓을 순서만 만든다.</div>
+                    <div class="panel plain reveal d3">
+                        <h3>사용자에게 그대로 보이는 이유 문장</h3>
+                        <div class="kv">
+                            <div><span class="k">겹치는 말이 있을 때</span><span class="v cool">공고 요건과 겹치는 말: …</span></div>
+                            <div><span class="k">없지만 검증된 기록</span><span class="v cool">요건과 겹치는 말은 없지만 검증한 기록입니다</span></div>
+                            <div><span class="k">둘 다 아닐 때</span><span class="v cool">요건과 겹치는 말이 없습니다</span></div>
+                        </div>
+                        <p class="p mut" style="font-size:20px;margin-top:14px">점수만 보여주면 사용자는 왜 그 기록이 위에 있는지 알 수 없다.
+                            <span style="font-family:var(--f-mono)">reason</span>은 화면이 줄마다 그대로 읽는 문장으로 쓴다.</p>
+                    </div>
+                    <div class="note reveal d4"><b>missing 요구사항은 감추거나 만들어내지 않는다.</b>
+                        설계안에서 제외하거나, 사용자에게 추가 기록을 요청할 질문 후보로 남긴다.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="foot"><p>modules/materials/ranking.ts · modules/job-analysis/coverage.ts</p><div class="pg">07</div></div>
+    </div>
+</section>
+
+<!-- ==================== 08 · 단계 3 설계 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">단계 3 — 설계</span><span class="lat">08 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">RecipePlanner · 프롬프트 v2</div>
+            <h2 class="reveal">레시피는 <em>계획</em>이다 —<br>여기서 문장을 쓰면 고칠 곳이 두 군데로 갈린다</h2>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body">
+            <div class="cols c-2">
+                <div style="display:grid;align-content:start;gap:18px">
+                    <div class="panel hot reveal d1">
+                        <h3 style="color:var(--red)">절대 규칙 — 문장을 쓰지 않는다</h3>
+                        <p class="p">항목은 <b>요점</b>이다. “일 1,200만 건 처리 · 큐 분리”처럼 적는다.
+                            “…했습니다” · “…입니다”로 끝나는 완성 문장을 쓰면 <span class="hot">그 초안은 거절된다.</span></p>
+                    </div>
+                    <div class="panel plain reveal d2">
+                        <h3>섹션 구성</h3>
+                        <p class="p" style="font-size:22px">3~7개를 <b>공고가 묻는 것에 맞춰</b> 정한다. 고정된 제목 세트가 없다 —
+                            공고가 장애 대응을 물으면 그 섹션을 두고, 안 물으면 두지 않는다.
+                            재료가 없는 섹션은 만들지 않는다.</p>
+                    </div>
+                    <div class="panel plain reveal d3">
+                        <h3>섹션마다 정하는 것</h3>
+                        <p class="p mono" style="font-family:var(--f-mono);font-size:18px;line-height:1.62;color:var(--ink-soft);white-space:pre-line">purpose · goal · points · metrics · tone · format
+exclude · targetLength · takeaway
+contentPattern · interactionOpportunity</p>
+                    </div>
+                </div>
+
+                <div style="display:grid;align-content:start;gap:18px">
+                    <div class="panel reveal d2">
+                        <h3>재료는 번호로 준다</h3>
+                        <p class="p" style="font-size:22px">모델에게 <b>UUID를 옮겨 적게 하지 않는다.</b> 36자리 식별자는
+                            한 글자만 틀려도 그 항목이 통째로 사라진다. 배열 순서가 곧 번호(1부터)다.
+                            지면 생성 · 문장 생성이 모두 같은 규율을 쓴다.</p>
+                    </div>
+                    <div class="panel plain reveal d3">
+                        <h3>초안을 되돌려 보내는 조건</h3>
+                        <div class="checks" style="margin-top:4px">
+                            <div><span class="b"></span><span>없는 번호의 재료를 가리켰다</span></div>
+                            <div><span class="b"></span><span>같은 기록이 두 섹션에 들어갔다 — 같은 이야기가 두 번 나온다</span></div>
+                            <div><span class="b"></span><span>완성 문장을 썼다</span></div>
+                            <div><span class="b"></span><span>섹션 targetLength의 합이 분량 프리셋과 맞지 않는다</span></div>
+                        </div>
+                    </div>
+                    <div class="note hot reveal d4">쓰지 않은 기록은 <b>번호와 이유</b>를 함께 남긴다.
+                        “우선순위가 낮음”이 아니라 “공고가 프런트엔드를 묻지 않아 뺐다”처럼 <b>이 공고 기준으로</b> 쓴다.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="foot"><p>modules/recipe/planner.ts — RECIPE_PROMPT_VERSION 2</p><div class="pg">08</div></div>
+    </div>
+</section>
+
+<!-- ==================== 09 · PortfolioPlan 계약 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">1단계의 유일한 산출물</span><span class="lat">09 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">PortfolioPlan v1</div>
+            <h2 class="reveal">역추적할 수 있는 <em>내용의 계약</em></h2>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body">
+            <div class="cols c-46">
+                <div style="display:grid;align-content:start;gap:16px">
+                    <div class="panel plain reveal d1">
+                        <h3>설계 단계가 반드시 정하는 것</h3>
+                        <p class="p" style="font-size:21px">지원자를 어떤 한 문장으로 이해시킬지 · 어떤 요구사항을 앞에 둘지 ·
+                            무엇을 선택하고 무엇을 제외할지 · 프로젝트마다 무엇을 강조할지 · 읽기 순서와 섹션별 takeaway ·
+                            내용이 요구하는 표현 방식과 인터랙션 기회</p>
+                    </div>
+                    <div class="panel reveal d2">
+                        <h3>설계 단계가 정하지 않는 것</h3>
+                        <p class="p" style="font-size:21px">최종 색상 · 폰트 · 그림자 · 모서리 반경 ·
+                            픽셀 단위 레이아웃 · 애니메이션 곡선과 지속 시간 · 완성 문장의 미세한 문체</p>
+                    </div>
+                    <div class="note hot reveal d3"><span style="font-family:var(--f-mono)">allowedNumbers</span>는
+                        연결한 근거에 적힌 <b>형태 그대로만</b> 쓴다. 검증기가 나중에 이 목록으로 지면의 숫자를 대조한다.</div>
+                </div>
+
+                <div class="code reveal d2">{
+  <span class="key">"version"</span>: 1,
+  <span class="key">"target"</span>: { <span class="key">"company"</span>, <span class="key">"role"</span>, <span class="key">"primaryReaders"</span>, <span class="key">"decisionGoal"</span> },
+  <span class="key">"positioning"</span>: { <span class="key">"headlineIntent"</span>, <span class="key">"valueProposition"</span>, … },
+  <span class="key">"requirementCoverage"</span>: [{
+    <span class="key">"requirementId"</span>, <span class="key">"priority"</span>,
+    <span class="key">"evidenceIds"</span>: […],          <span class="cm">// 기록 · 답변만</span>
+    <span class="key">"coverage"</span>: <span class="str">"covered | partial | missing"</span>
+  }],
+  <span class="key">"narrative"</span>: { <span class="key">"arc"</span>, <span class="key">"sectionOrder"</span> },
+  <span class="key">"sections"</span>: [{ <span class="key">"purpose"</span>, <span class="key">"takeaway"</span>, <span class="key">"evidenceIds"</span>,
+                <span class="key">"contentPattern"</span>, <span class="key">"targetLength"</span> }],
+  <span class="key">"claims"</span>: [{ <span class="key">"intent"</span>, <span class="key">"evidenceIds"</span>,
+              <span class="hot">"allowedNumbers"</span>: [<span class="str">"220분"</span>, <span class="str">"24분"</span>] }],
+  <span class="key">"exclusions"</span>: [], <span class="key">"unusedEvidence"</span>: [{ <span class="key">"evidenceId"</span>, <span class="key">"reason"</span> }],
+  <span class="key">"companyContext"</span>: [],       <span class="cm">// fact / signal</span>
+  <span class="key">"rationale"</span>: <span class="str">"이 구성과 증거를 고른 이유"</span>
+}</div>
+            </div>
+        </div>
+
+        <div class="foot"><p>packages/contracts/src/portfolio-plan.ts · recipe.portfolio_plan 컬럼에 스냅샷으로 저장</p><div class="pg">09</div></div>
+    </div>
+</section>
+
+<!-- ==================== 10 · 단계 4 스타일 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">단계 4 — 스타일</span><span class="lat">10 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">표현의 계약</div>
+            <h2 class="reveal">“모던하고 세련되게”는<br>계약이 <em>아니다</em></h2>
+            <p class="sub reveal d1">사용자의 선택은 자유 문장 그대로 전달하지 않고 PageStyleGrammar로 컴파일한다. 생성 전에 성격을 정해 두면 한 장으로 충분하다.</p>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body low">
+            <div class="cols c-58">
+                <div class="reveal d2">
+                    <table class="tight">
+                        <thead><tr><th style="width:230px">축</th><th>컴파일된 값</th></tr></thead>
+                        <tbody>
+                            <tr><td class="mono">composition</td><td class="dim">linear-story · asymmetric-editorial · evidence-grid</td></tr>
+                            <tr><td class="mono">typography</td><td class="dim">display-led · editorial · technical</td></tr>
+                            <tr><td class="mono">geometry</td><td class="dim">contained-cards · open-planes · ruled-sections</td></tr>
+                            <tr><td class="mono">density</td><td class="dim">compact · comfortable · spacious</td></tr>
+                            <tr><td class="mono">motion</td><td class="dim">calm-responsive · precise-technical</td></tr>
+                            <tr><td class="mono">interaction</td><td class="dim">evidence-exploration · comparison</td></tr>
+                            <tr><td class="mono">imagery</td><td class="dim">typography-first · project-artifacts-first · data-visual-first</td></tr>
+                            <tr class="mark"><td class="mono">antiPatterns</td><td>generic-saas-landing · three-identical-cards · decorative-dashboard-without-evidence · color-only-variation</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="display:grid;align-content:start;gap:20px">
+                    <div class="panel plain reveal d3">
+                        <h3>다양성은 팔레트가 아니라 축의 조합에서 나온다</h3>
+                        <p class="p" style="font-size:22px">읽는 흐름 · 지면의 주인공 · 정보 밀도와 여백 리듬 ·
+                            프로젝트를 보여주는 형식 · 모션의 성격 · 표면 문법(색 · 선 · 면 · 질감)</p>
+                    </div>
+                    <div class="note hot reveal d4"><b>색만 달라지고</b> 같은 히어로와 같은 카드 배열을 반복하면
+                        <b>다양성 실패로 판정한다.</b> 색을 제거해도 서로 다른 구조로 보여야 한다.</div>
+                    <div class="panel reveal d5">
+                        <h3>반쯤 채운 문법은 넘기지 않는다</h3>
+                        <p class="p" style="font-size:21px">템플릿 style이 비어 있는 옛 행은 <b>문법 없이</b> 간다.
+                            절반만 주면 모델이 나머지를 지어내고, 사용자가 고른 것과 다른 지면이 나온다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="foot"><p>modules/page/service.ts — composeTemplateStyle(template.style, portfolio.style_overrides)</p><div class="pg">10</div></div>
+    </div>
+</section>
+
+<!-- ==================== 11 · 단계 5 생성 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">단계 5 — 생성</span><span class="lat">11 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">한 잡이 두 가지를 만든다</div>
+            <h2 class="reveal">근거가 연결된 <em>편집 초안</em>과<br>공개할 <em>지면</em>은 서로 다른 산출물이다</h2>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body">
+            <div class="cols c-2">
+                <div style="display:grid;align-content:start;gap:16px">
+                    <div class="panel plain reveal d1">
+                        <h3>경로 A — 블록 · <span style="color:var(--ink)">SentenceWriter + LayoutDesigner</span></h3>
+                        <p class="p" style="font-size:22px">문장을 블록으로 쓰고, 같은 내용으로 <b>지면 3안</b>을 낸다.
+                            블록마다 근거가 붙고, 사용자가 잠근 문장은 그대로 살아남아야 한다.
+                            여기서 <b>부분 편집 · 문장 고정 · 3안 비교</b>가 나온다.</p>
+                        <p class="p mut" style="font-size:20px;margin-top:10px">지면 초안이 실패해도 던지지 않는다 —
+                            배치가 없으면 기본 배열로 그려지지만, 여기서 던지면 문장까지 통째로 날아간다.</p>
+                    </div>
+
+                    <div class="panel hot reveal d3">
+                        <h3 style="color:var(--red)">경로 B — 지면 · <span style="color:var(--ink)">AiPageGenerator</span></h3>
+                        <p class="p" style="font-size:22px">한 번의 호출이 <b>글과 지면을 함께</b> 낸다. 모델이 CSS 전부를 쓴다.
+                            대신 문장 고정 · 부분 재생성 · 3안 비교를 포기한다.</p>
+                        <p class="p mut" style="font-size:20px;margin-top:10px">우리가 남긴 것은 셋 —
+                            <b>소독 · 근거 대조 · 프롬프트</b>. 되돌리기는 판(revision)으로 쌓는다.</p>
+                    </div>
+                </div>
+
+                <div style="display:grid;align-content:start;gap:20px">
+                    <div class="flow reveal d2">
+                        <div class="node"><div class="t">generation_job — 트랜잭션</div><div class="d">status running · stage validating → materializing → charging → done</div></div>
+                        <div class="down">블록 적재 트랜잭션이 커밋된다</div>
+                        <div class="node"><div class="t">portfolio_section · block · layout_spec</div><div class="d">지면 후보 3안 중 1안이 selected로 붙는다</div></div>
+                        <div class="down">지면이 아직 없을 때만 한 번 더</div>
+                        <div class="node solid"><div class="t">generated_page</div><div class="d">revision 누적 · quality_status ready | failed_qa</div></div>
+                    </div>
+                    <div class="note hot reveal d4">순서가 중요하다. <b>블록 적재는 이미 커밋됐다</b> —
+                        지면 호출이 실패해도 근거가 연결된 편집 초안은 남고, 큐 재시도는 지면이 없는 경우에만 이 자리를 다시 돈다.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="foot"><p>worker/processors/generation.ts · modules/generation/service.ts · modules/page/service.ts</p><div class="pg">11</div></div>
+    </div>
+</section>
+
+<!-- ==================== 12 · 프롬프트 조립 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">지면 프롬프트</span><span class="lat">12 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">순서를 고정한다</div>
+            <h2 class="reveal">품질은 이제 거의 전부<br>이 <em>조립 순서</em>에 달려 있다</h2>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body">
+            <div class="cols c-58">
+                <ol class="lst reveal d1" style="gap:14px">
+                    <li><span class="n">1</span><span class="t">System role과 <b>보안 · 사실성 정책</b></span></li>
+                    <li><span class="n">2</span><span class="t"><b>DesignPrinciples v1</b> — 스타일보다 우선하는 공통 헌법 10개</span></li>
+                    <li><span class="n">3</span><span class="t"><b>StyleSpec</b> — 사용자가 생성 전에 고른 표현의 계약</span></li>
+                    <li><span class="n">4</span><span class="t"><b>PortfolioPlan v1</b> — 내용과 순서를 임의로 바꾸지 않는다</span></li>
+                    <li><span class="n">5</span><span class="t">공개 가능한 <b>증거 원문과 미디어 목록</b><i>Plan에 있는 내용을 원문 전체로 다시 반복하지 않는다. 다만 사실성 대조에 필요한 최소 증거와 허용 수치는 함께 넘긴다.</i></span></li>
+                    <li><span class="n">6</span><span class="t"><b>HTML/CSS 출력 계약</b>과 허용 목록</span></li>
+                    <li><span class="n">7</span><span class="t"><b>자체 점검 체크리스트</b></span></li>
+                </ol>
+
+                <div style="display:grid;align-content:start;gap:18px">
+                    <div class="panel hot reveal d3">
+                        <h3 style="color:var(--red)">생성 모델이 해서는 안 되는 것</h3>
+                        <div class="checks" style="margin-top:4px">
+                            <div><span class="b"></span><span>원천 자료를 다시 해석해 설계 결정을 뒤집는 일</span></div>
+                            <div><span class="b"></span><span>더 멋져 보인다는 이유로 성과를 과장하거나 수치를 환산하는 일</span></div>
+                            <div><span class="b"></span><span>스타일에 없는 상투적인 SaaS 구성으로 회귀하는 일</span></div>
+                            <div><span class="b"></span><span>허용되지 않은 스크립트 · 외부 이미지 · 폼을 추가하는 일</span></div>
+                        </div>
+                    </div>
+                    <div class="panel plain reveal d4">
+                        <h3>선언되지 않은 도구는 허용하지 않는다</h3>
+                        <p class="p" style="font-size:21px">외부 도구나 레퍼런스를 실험적으로 쓴다면 생성 명세에 명시하고 별도 실험군으로 취급한다.
+                            선언되지 않은 사용은 <b>재현성과 비용 비교를 깨뜨린다.</b></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="foot"><p>modules/page/generator.ts — buildPrompt() · DESIGN_PRINCIPLES_VERSION 1</p><div class="pg">12</div></div>
+    </div>
+</section>
+
+<!-- ==================== 13 · 지면 키트 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">지면 키트</span><span class="lat">13 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">매번 다시 만들 이유가 없는 것들</div>
+            <h2 class="reveal">모델이 못하거나 비싸게 하는 것은 키트로,<br>잘하는 것은 <em>모델에게</em></h2>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body">
+            <div class="cols c-58">
+                <div style="display:grid;align-content:start;gap:20px">
+                    <div class="reveal d1">
+                        <div class="figs">
+                            <div><div class="n">7</div><div class="l">세 장이 각자 처음부터 만들던 공통 부품 — 내비 · 푸터 · 섹션 머리 · 카드 · 칩 · 스펙 행 · 그래프</div></div>
+                            <div><div class="n">0</div><div class="l">키트 안의 스크립트. 등장 · 순차 지연 · 진행 막대 · 카운트업이 전부 CSS로 돈다</div></div>
+                            <div><div class="n hot">26k</div><div class="l">키트 없이 sonnet이 쓰던 토큰 — 디자인 시스템을 매번 발명한다</div></div>
+                            <div><div class="n hot">16k</div><div class="l">키트를 붙인 뒤. 품질은 opus와 눈으로 구분되지 않았다</div></div>
+                        </div>
+                    </div>
+                    <div class="note hot reveal d3">모델이 하는 일이 <b>“디자인 시스템을 발명하라”에서 “있는 부품으로 조판하라”</b>로 바뀐다.
+                        그래서 이 경로는 더 싼 티어로 내려올 수 있다.</div>
+                </div>
+
+                <div style="display:grid;align-content:start;gap:18px">
+                    <div class="panel plain reveal d2">
+                        <h3>키트가 가져가는 것</h3>
+                        <p class="p" style="font-size:22px">모션 · 접근성 · 반응형 · 명도 대비 — <b>매번 발명할 값이 없는 것들.</b>
+                            문법이 정한 색과 밀도를 CSS 변수로 펴고, 키트 전체가 그 변수만 보고 돈다.</p>
+                    </div>
+                    <div class="panel reveal d3">
+                        <h3>모델이 가져가는 것</h3>
+                        <p class="p" style="font-size:22px">무엇을 강조할지, 어떤 부품을 어떻게 쓸지.
+                            <b>모델은 여전히 제 마크업을 짜고 제 CSS를 얹는다</b> — 키트는 고정 DOM이 아니라 가져다 쓸 수 있는 부품이다.</p>
+                    </div>
+                    <div class="note reveal d4">규칙 없는 클래스는 <b>화면에서 요소가 사라진다는 뜻</b>이다.
+                        모델은 제 지면을 볼 수 없으므로, 검사기가 이름을 짚어 되돌려 준다 — 이때 <b>키트를 포함한 CSS 전부</b>를 봐야 한다.
+                        빼고 보면 모델이 키트를 통째로 다시 쓰고, 키트를 만든 이유가 사라진다.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="foot"><p>packages/contracts/src/page-kit.ts — PAGE_KIT_VERSION 1</p><div class="pg">13</div></div>
+    </div>
+</section>
+
+<!-- ==================== 14 · 단계 6 검증 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">단계 6 — 검증</span><span class="lat">14 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">하드 게이트</div>
+            <h2 class="reveal">문장 전체는 글자 비교로 못 지킨다.<br><em>숫자는 지킬 수 있다</em></h2>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body">
+            <div class="cols c-58">
+                <div class="reveal d1">
+                    <table class="tight">
+                        <thead><tr><th style="width:270px">검사</th><th style="width:110px">등급</th><th>무엇을 막는가</th></tr></thead>
+                        <tbody>
+                            <tr class="mark"><td class="mono">grounded-numbers</td><td class="mono">error</td><td>근거에 없는 수치</td></tr>
+                            <tr><td class="mono">sanitized-output</td><td class="mono">error</td><td>소독기가 지운 태그 · 속성</td></tr>
+                            <tr><td class="mono">styled-elements</td><td class="mono">error</td><td>규칙 없는 클래스 — 화면에서 사라진 요소</td></tr>
+                            <tr><td class="mono">sized-elements</td><td class="mono">error</td><td>inline 요소에 준 크기</td></tr>
+                            <tr><td class="mono">responsive-css</td><td class="mono">error</td><td>media query 없음</td></tr>
+                            <tr><td class="mono">reduced-motion</td><td class="mono">error</td><td>애니메이션은 있고 모션 감소 경로가 없음</td></tr>
+                            <tr><td class="mono dim">portfolio-plan</td><td class="mono dim">warning</td><td class="dim">옛 레시피 호환 경로로 생성됨</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="display:grid;align-content:start;gap:16px">
+                    <div class="panel hot reveal d2">
+                        <h3 style="color:var(--red)">근거 대조</h3>
+                        <p class="p" style="font-size:22px">블록에 적힌 숫자는 <b>그 블록이 인용한 근거 안에</b> 있어야 한다.
+                            인용하지 않은 근거의 숫자를 빌려 올 수도 없다. 그림에 적힌 수도 같은 규율을 받는다.</p>
+                        <p class="p mut" style="font-size:20px;margin-top:10px">자릿점만 걷어낸다 —
+                            <b>3,000만 = 3000만</b>이지만 <b>두 시간 ≠ 2시간</b>이다. 근거가 쓴 형태를 그대로 옮기게 하는 편이 낫다.
+                            한 자리 수는 장식이라 두 자리부터 검사한다.</p>
+                    </div>
+                    <div class="panel plain reveal d3">
+                        <h3>소독은 예의가 아니라 방어선이다</h3>
+                        <p class="p" style="font-size:21px">지면의 재료에는 <b>바깥에서 긁어 온 공고문</b>이 섞여 있다.
+                            방식은 <b>허용 목록</b> — 아는 것만 남기므로 새 공격 모양을 미리 알 필요가 없다.</p>
+                    </div>
+                    <div class="note reveal d4">한 번은 <b>구체적인 실패 목록</b>으로 고치게 한다. 두 번째에도 남으면
+                        버리지 않고 <span style="font-family:var(--f-mono)">failed_qa</span>로 보존하되 공개 경로에서 제외한다.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="foot"><p>platform/numbers.ts · platform/html/sanitize.ts · modules/generation/validator.ts</p><div class="pg">14</div></div>
+    </div>
+</section>
+
+<!-- ==================== 15 · 실패 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">실패 처리</span><span class="lat">15 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">왜 실패했는지, 다시 눌러도 되는지</div>
+            <h2 class="reveal">실패는 <em>남는다</em>. 그리고<br>대부분은 재시도하지 않는다</h2>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body">
+            <div class="cols c-64">
+                <div class="reveal d1">
+                    <table class="tight">
+                        <thead><tr><th style="width:290px">코드</th><th style="width:120px">재시도</th><th>왜</th></tr></thead>
+                        <tbody>
+                            <tr><td class="mono">EVIDENCE_INVALID</td><td class="mono">아니오</td><td>근거 대조 실패 — 다시 불러도 같은 답이다</td></tr>
+                            <tr><td class="mono">GENERATION_REJECTED</td><td class="mono">아니오</td><td>도메인 거절 — 쿼터 소진 · 재료 없음</td></tr>
+                            <tr><td class="mono">WRITER_UNAVAILABLE</td><td class="mono">아니오</td><td>프로바이더가 꺼져 있다 — 켜지기 전에는 방법이 없다</td></tr>
+                            <tr><td class="mono">BREW_INPUT_REJECTED</td><td class="mono">아니오</td><td>재료가 모자라거나 근거가 없다</td></tr>
+                            <tr><td class="mono">CONTRACT_REJECTED</td><td class="mono">아니오</td><td>계약은 안에서 이미 두 번 물었다 — 세 번째는 쿼터만 태운다</td></tr>
+                            <tr><td class="mono">AI_RATE_LIMITED</td><td class="mono">아니오</td><td>창이 열릴 때까지 기다려야 한다. 백오프로 표현할 수 없다</td></tr>
+                            <tr class="mark"><td class="mono">PROVIDER_FAILED</td><td class="mono"><b>예</b></td><td>그 외 — 큐가 최대 5회까지 다시 잡는다</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="display:grid;align-content:start;gap:18px">
+                    <div class="panel hot reveal d2">
+                        <h3 style="color:var(--red)">규칙 기반 폴백을 걷어낸 이유</h3>
+                        <p class="p" style="font-size:22px">예전에는 AI가 꺼져 있으면 아웃라인 항목을 그대로 문단으로 옮기는 폴백이 있었다.
+                            근거는 정확했지만 결과물은 <b>문단 아홉 개짜리 개요</b>였고, 화면은 그것을 “포트폴리오”라고 불렀다.</p>
+                        <p class="p" style="font-size:22px;margin-top:12px"><b>품질이 조용히 갈리는 두 경로를 두지 않는다.</b>
+                            이제 프로바이더가 없으면 명시적으로 실패한다.</p>
+                    </div>
+                    <div class="note reveal d3">실패해도 <b>포트폴리오 행은 만들어 둔다.</b>
+                        사용자가 다시 눌렀을 때 돌아갈 자리가 있어야 하고, 그때는 재료나 공고가 달라져 있을 수 있다.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="foot"><p>worker/processors/brew-jobs.ts — classifyBrewJobFailure() · modules/generation/service.ts</p><div class="pg">15</div></div>
+    </div>
+</section>
+
+<!-- ==================== 16 · AI 계약과 티어 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">AI 계약</span><span class="lat">16 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">도메인은 어느 모델인지 모른다</div>
+            <h2 class="reveal">계약 12종, 티어를 가르는 <em>기준 하나</em></h2>
+            <p class="sub reveal d1">한 번 뽑아서 오래 쓰는 것은 비싼 모델, 사람이 기다리는 것은 빠른 모델. 프로바이더를 바꾸면 platform/ai/ 안에서 끝난다.</p>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body low">
+            <div class="cols c-3">
+                <div class="panel hot reveal d1">
+                    <h3 style="color:var(--red)"><span class="lat">OPUS</span> — 오래 쓰는 것</h3>
+                    <div class="kv">
+                        <div><span class="k">job_analysis</span><span class="v cool">근거 구간이 원문과 글자까지 맞아야 한다</span></div>
+                        <div><span class="k">recipe_draft</span><span class="v cool">설계안은 뒤 단계 전부의 계약이다</span></div>
+                        <div><span class="k">layout_draft</span><span class="v cool">추출 한 번에 한 번 돈다</span></div>
+                        <div><span class="k">page_generation</span><span class="v cool">이 결과가 곧 사람들이 보는 페이지다</span></div>
+                    </div>
+                </div>
+
+                <div class="panel plain reveal d2">
+                    <h3><span class="lat">SONNET</span> — 정해진 일</h3>
+                    <div class="kv">
+                        <div><span class="k">generation</span><span class="v cool">문장 쓰기</span></div>
+                        <div><span class="k">question_draft</span><span class="v cool">인터뷰 질문</span></div>
+                        <div><span class="k">record_cleanup</span><span class="v cool">기록 정리</span></div>
+                        <div><span class="k">job_facts</span><span class="v cool">세 칸을 읽고 인용을 붙인다</span></div>
+                        <div><span class="k">partial_edit</span><span class="v cool">부분 수정</span></div>
+                        <div><span class="k">style_remix</span><span class="v cool">스타일 변주</span></div>
+                    </div>
+                </div>
+
+                <div class="panel reveal d3">
+                    <h3><span class="lat">HAIKU</span> — 사람이 기다리는 것</h3>
+                    <div class="kv">
+                        <div><span class="k">search_interpret</span><span class="v cool">검색어 해석</span></div>
+                        <div><span class="k">insight_note</span><span class="v cool">방문 데이터 메모</span></div>
+                    </div>
+                    <p class="p mut" style="font-size:20px;margin-top:18px">응답은 <b>항상 스키마로 강제한다.</b>
+                        자유 문장만 반환하는 응답은 무효다. 다만 스키마를 통과한 것이 곧 좋은 값은 아니다 —
+                        포트는 <b>구조</b>만 책임진다.</p>
+                    <p class="p mut" style="font-size:20px;margin-top:12px">틀린 것을 막는 일은 도메인 검증기와 DB 트리거가,
+                        좋게 만드는 일은 계약별 프롬프트가 한다.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="foot"><p>platform/ai/client.ts — AI_CONTRACTS · DEFAULT_MODEL_TIER · 어댑터: claude-code · codex · fixture · off</p><div class="pg">16</div></div>
+    </div>
+</section>
+
+<!-- ==================== 17 · 재현성과 비용 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">재현성 · 비용</span><span class="lat">17 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">셀 수 없으면 비교할 수 없다</div>
+            <h2 class="reveal">모든 생성은 자기가 어떻게 만들어졌는지<br><em>스스로 설명</em>할 수 있어야 한다</h2>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body">
+            <div class="cols c-3">
+                <div class="panel plain reveal d1">
+                    <h3>프롬프트 판</h3>
+                    <div class="kv">
+                        <div><span class="k">recipe</span><span class="v">v2</span></div>
+                        <div><span class="k">generation</span><span class="v">v3</span></div>
+                        <div><span class="k">layout</span><span class="v">v3</span></div>
+                        <div><span class="k">page</span><span class="v">v6</span></div>
+                        <div><span class="k">page kit</span><span class="v">v1</span></div>
+                        <div><span class="k">design principles</span><span class="v">v1</span></div>
+                    </div>
+                    <p class="p mut" style="font-size:20px;margin-top:14px">프롬프트를 고치면 올린다.
+                        산출물에 함께 저장해 <b>낡은 결과를 가려낸다.</b></p>
+                </div>
+
+                <div class="panel plain reveal d2">
+                    <h3>manifest에 남는 것</h3>
+                    <div class="kv">
+                        <div><span class="k">model · promptHash</span><span class="v cool">어떤 프롬프트로</span></div>
+                        <div><span class="k">attempts · repairCount</span><span class="v cool">몇 번 만에</span></div>
+                        <div><span class="k">sourceCounts</span><span class="v cool">재료가 몇 건</span></div>
+                        <div><span class="k">sourceUrls</span><span class="v cool">참고한 주소</span></div>
+                        <div><span class="k">tools</span><span class="v cool">비어 있으면 안 썼다는 뜻</span></div>
+                        <div><span class="k">usage</span><span class="v cool">토큰 · 시간 · 비용</span></div>
+                    </div>
+                </div>
+
+                <div style="display:grid;align-content:start;gap:16px">
+                    <div class="panel hot reveal d3">
+                        <h3 style="color:var(--red)">확정 비용의 정의</h3>
+                        <p class="p" style="font-size:21px">실제 API가 반환한 usage만 확정 비용으로 쓴다.
+                            값이 없으면 추정치를 확정 비용처럼 기록하지 않고 <b>unavailable로 남긴다.</b></p>
+                    </div>
+                    <div class="note reveal d4">싼 결과와 좋은 결과를 <b>하나의 임의 점수로 합치지 않는다.</b>
+                        비용과 품질을 함께 놓고 파레토 우위 여부로 비교한다.</div>
+                    <div class="panel reveal d5">
+                        <h3>쿼터를 차감하는 자리</h3>
+                        <p class="p" style="font-size:21px">사용자 행을 잠그고 entitlement를 확인한 뒤,
+                            <b>블록을 적재하는 같은 트랜잭션 안에서</b> usage_counter를 올리고 원장에 남긴다.
+                            생성이 실패하면 차감도 없다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="foot"><p>recipe.planning_manifest · generated_page.generation_manifest · generation_usage_ledger</p><div class="pg">17</div></div>
+    </div>
+</section>
+
+<!-- ==================== 18 · 남은 차이 ==================== -->
+<section class="slide">
+    <div class="frame">
+        <div class="rail"><span class="now">현재 상태</span><span class="lat">18 / 18</span></div>
+        <div class="head">
+            <div class="kicker reveal">v1 기준으로 어디까지 왔나</div>
+            <h2 class="reveal">구현된 것과 <em>남은 차이</em></h2>
+            <div class="hr wipe"></div>
+        </div>
+
+        <div class="body">
+            <div class="cols c-58">
+                <div class="reveal d1">
+                    <table class="tight">
+                        <thead><tr><th style="width:250px">v1 개념</th><th style="width:290px">현재 대응</th><th>남은 차이</th></tr></thead>
+                        <tbody>
+                            <tr><td>채용 공고 정제</td><td class="mono dim">job_analysis + 원문 span</td><td class="dim">v1 필드 · 우선순위 명시</td></tr>
+                            <tr><td>회사 검색 정제</td><td class="mono dim">company_research_item</td><td class="dim"><b>자동 검색 수집기</b></td></tr>
+                            <tr><td>요구사항–증거 연결</td><td class="mono dim">coverage · ranking</td><td class="dim">회사 맥락 · 중복도 반영</td></tr>
+                            <tr><td>PortfolioPlan</td><td class="mono dim">Recipe + plan 스냅샷</td><td class="dim">claim trace 확장</td></tr>
+                            <tr><td>스타일 계약</td><td class="mono dim">PageStyleGrammar</td><td class="dim">—</td></tr>
+                            <tr><td>웹사이트 생성</td><td class="mono dim">AiPageGenerator</td><td class="dim">—</td></tr>
+                            <tr><td>사실 · 보안 검증</td><td class="mono dim">숫자 대조 · sanitize</td><td class="dim">비수치 주장 trace</td></tr>
+                            <tr class="mark"><td>시각 검증</td><td class="mono">정적 검사만</td><td><b>렌더 스크린샷 기반 QA</b></td></tr>
+                            <tr><td>비용 기록</td><td class="mono dim">단계별 manifest</td><td class="dim">—</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="display:grid;align-content:start;gap:16px">
+                    <div class="panel plain reveal d2">
+                        <h3>읽을 곳</h3>
+                        <p class="p" style="font-family:var(--f-mono);font-size:18px;line-height:1.85;color:var(--ink-soft);white-space:pre-line">docs/architecture/portfolio-generation-methodology-v1.md
+modules/recipe/planner.ts
+modules/generation/{service,writer,validator}.ts
+modules/layout/designer.ts
+modules/page/{service,generator}.ts
+packages/contracts/src/{portfolio-plan,page,page-kit}.ts
+platform/ai/client.ts · platform/html/sanitize.ts</p>
+                    </div>
+                    <div class="note hot reveal d3">기존 <span style="font-family:var(--f-mono)">Recipe</span>는 폐기 대상이 아니라
+                        <b>PortfolioPlan으로 진화할 출발점</b>이다. AiPageGenerator도 유지하되,
+                        원천 자료의 해석 책임을 줄이고 <b>확정된 설계안을 표현하는 역할로 좁힌다.</b></div>
+                    <div class="note reveal d4">다음 순서 — 회사 검색 수집과 출처 평가 · 렌더 기반 QA와 한 번의 제한 수정 계약 ·
+                        단계별 비용 비교 실험 프로토콜.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="foot"><p>방법론 §14~16 — v1 완료 조건과 후속 설계 순서</p><div class="pg">18</div></div>
+    </div>
+</section>
+
+</main>
+</div>
+
+<!-- 무대 밖 UI -->
+<div class="progress" id="progress"></div>
+<div class="deck-controls">
+    <button id="prevBtn" aria-label="이전 슬라이드">←</button>
+    <span id="counter">01 / 18</span>
+    <button id="nextBtn" aria-label="다음 슬라이드">→</button>
+</div>
+<div class="edit-hotzone" aria-hidden="true"></div>
+<button class="edit-toggle" id="editToggle" title="편집 모드 (E)">✎</button>
+<div class="edit-hint" id="editHint">편집 모드 · 글자를 눌러 고치고 Ctrl+S로 저장</div>
+
+<script>
+/* ===========================================================
+   SLIDE PRESENTATION CONTROLLER
+   무대는 통째로 축소된다. 슬라이드 내용은 절대 다시 흐르지 않는다.
+   =========================================================== */
+class SlidePresentation {
+    constructor() {
+        this.slides = [...document.querySelectorAll('.slide')];
+        this.stage = document.getElementById('deckStage');
+        this.progress = document.getElementById('progress');
+        this.counter = document.getElementById('counter');
+        this.current = 0;
+
+        this.setupStageScale();
+        this.setupKeyboardNav();
+        this.setupTouchNav();
+        this.setupWheelNav();
+        this.setupButtons();
+        this.show(0);
+    }
+
+    /* 1920×1080 무대를 뷰포트에 맞춰 한 번의 transform으로 축소한다.
+       남는 공간은 레터박스로 둔다 — 내용을 재배치하지 않는다. */
+    setupStageScale() {
+        const fit = () => {
+            const f = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+            const x = (window.innerWidth - 1920 * f) / 2;
+            const y = (window.innerHeight - 1080 * f) / 2;
+            this.stage.style.transform = `translate(${x}px, ${y}px) scale(${f})`;
+        };
+        fit();
+        window.addEventListener('resize', fit);
+    }
+
+    setupKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            if (document.body.classList.contains('editing')) return;
+            if (['ArrowRight', 'ArrowDown', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); this.next(); }
+            if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); this.prev(); }
+            if (e.key === 'Home') { e.preventDefault(); this.show(0); }
+            if (e.key === 'End') { e.preventDefault(); this.show(this.slides.length - 1); }
+        });
+    }
+
+    setupTouchNav() {
+        let x0 = null;
+        document.addEventListener('touchstart', (e) => { x0 = e.changedTouches[0].clientX; }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            if (x0 === null) return;
+            const dx = e.changedTouches[0].clientX - x0;
+            if (Math.abs(dx) > 60) dx < 0 ? this.next() : this.prev();
+            x0 = null;
+        }, { passive: true });
+    }
+
+    /* 휠은 연속 이벤트라 잠금을 둔다 — 한 번 굴려 한 장만 넘어가게. */
+    setupWheelNav() {
+        let lock = false;
+        window.addEventListener('wheel', (e) => {
+            if (lock || document.body.classList.contains('editing')) return;
+            if (Math.abs(e.deltaY) < 24) return;
+            lock = true;
+            e.deltaY > 0 ? this.next() : this.prev();
+            setTimeout(() => { lock = false; }, 620);
+        }, { passive: true });
+    }
+
+    setupButtons() {
+        document.getElementById('nextBtn').addEventListener('click', () => this.next());
+        document.getElementById('prevBtn').addEventListener('click', () => this.prev());
+    }
+
+    next() { this.show(this.current + 1); }
+    prev() { this.show(this.current - 1); }
+
+    show(i) {
+        this.current = Math.max(0, Math.min(i, this.slides.length - 1));
+        this.slides.forEach((s, n) => {
+            s.classList.toggle('active', n === this.current);
+            s.classList.toggle('visible', n === this.current);
+        });
+        const pct = ((this.current + 1) / this.slides.length) * 100;
+        this.progress.style.width = pct + '%';
+        this.counter.textContent =
+            String(this.current + 1).padStart(2, '0') + ' / ' + String(this.slides.length).padStart(2, '0');
+    }
+}
+
+/* ===========================================================
+   INLINE EDITING — 초안을 브라우저에서 그대로 고친다.
+   저장은 localStorage, 내보내기는 Ctrl+S.
+   =========================================================== */
+class InlineEditor {
+    constructor(deck) {
+        this.deck = deck;
+        this.isActive = false;
+        this.key = 'expresso-pipeline-deck-edits';
+        this.targets = [...document.querySelectorAll('h1, h2, h3, p, td, th, .t, .d, .k, .v, .l, .n, .kicker, .tag, li span')];
+        this.restore();
+        this.bind();
+    }
+
+    bind() {
+        const toggle = document.getElementById('editToggle');
+        const hotzone = document.querySelector('.edit-hotzone');
+        let hideTimer = null;
+
+        /* CSS의 ~ 선택자를 쓰지 않는다 — pointer-events:none이 hover 사슬을 끊는다.
+           400ms 유예를 둔 JS 방식만 안정적으로 동작한다. */
+        const show = () => { clearTimeout(hideTimer); toggle.classList.add('show'); };
+        const hide = () => {
+            hideTimer = setTimeout(() => { if (!this.isActive) toggle.classList.remove('show'); }, 400);
+        };
+        hotzone.addEventListener('mouseenter', show);
+        hotzone.addEventListener('mouseleave', hide);
+        toggle.addEventListener('mouseenter', show);
+        toggle.addEventListener('mouseleave', hide);
+        hotzone.addEventListener('click', () => this.toggle());
+        toggle.addEventListener('click', () => this.toggle());
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === 'e' || e.key === 'E') && !e.target.getAttribute('contenteditable')) this.toggle();
+            if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); this.save(); }
+        });
+    }
+
+    toggle() {
+        this.isActive = !this.isActive;
+        document.body.classList.toggle('editing', this.isActive);
+        document.getElementById('editToggle').classList.toggle('active', this.isActive);
+        document.getElementById('editToggle').classList.add('show');
+        document.getElementById('editHint').classList.toggle('show', this.isActive);
+        this.targets.forEach((el, i) => {
+            el.setAttribute('contenteditable', this.isActive ? 'true' : 'false');
+            if (this.isActive) {
+                el.dataset.editId = 'n' + i;
+                el.addEventListener('input', this.persist, { once: false });
+            }
+        });
+        if (!this.isActive) this.persist();
+    }
+
+    persist = () => {
+        const map = {};
+        this.targets.forEach((el, i) => { map['n' + i] = el.innerHTML; });
+        try { localStorage.setItem(this.key, JSON.stringify(map)); } catch (_) {}
+    };
+
+    restore() {
+        try {
+            const raw = localStorage.getItem(this.key);
+            if (!raw) return;
+            const map = JSON.parse(raw);
+            this.targets.forEach((el, i) => {
+                if (map['n' + i] !== undefined) el.innerHTML = map['n' + i];
+            });
+        } catch (_) {}
+    }
+
+    /* 고친 내용을 그대로 담은 HTML 한 장을 내려받는다. */
+    save() {
+        this.persist();
+        const clone = document.documentElement.cloneNode(true);
+        clone.querySelectorAll('[contenteditable]').forEach((el) => el.removeAttribute('contenteditable'));
+        const blob = new Blob(['<!DOCTYPE html>\n' + clone.outerHTML], { type: 'text/html' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'portfolio-generation-pipeline.html';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+}
+
+const deck = new SlidePresentation();
+const editor = new InlineEditor(deck);
+</script>
+</body>
+</html>

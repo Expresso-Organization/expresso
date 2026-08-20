@@ -784,6 +784,7 @@ const F = 'Expresso 기능 명세서.dc.html', IM = 'Expresso 구현 명세서.d
 const DM = 'Expresso 데이터 모델 명세서.dc.html', ERD = 'Expresso ERD.dc.html', MM = 'Expresso 기능 마인드맵.dc.html';
 const MAP = 'Expresso 기능 지도.dc.html', DS = 'Expresso Design System.dc.html', IC = 'Expresso Icons.dc.html';
 const LD = 'Expresso Landing.dc.html', HH = 'Expresso Home Hero Options.dc.html';
+const GD = '졸업작품-설계서.html';
 const url = f => './' + encodeURIComponent(f);
 
 // [id, name, does, pts, status, screens, tables, blockers, features[[name,status,band,tasks]]]
@@ -873,6 +874,7 @@ const DECISIONS = [
 ];
 
 const DOCS = [
+  ['요구규격 및 설계서', GD, '문서', '전원 — 졸업작품 제출본', 'all'],
   ['기능 명세서', F, '문서', '전원 — 착수 전 필독', 'all'],
   ['구현 명세서', IM, '문서', '프론트엔드 · QA', 'fe'],
   ['화면 정의서 Screens', SC, '화면', '프론트엔드 · 디자이너', 'fe'],
@@ -1017,6 +1019,7 @@ const BSTYLE = {
 const NAV = [
   ['HOME', '개발 포털', 'Expresso 개발 포털.dc.html', '#fff', 1],
 
+  ['SRS', '요구규격 및 설계서', GD, '#E0B486'],
   ['SPEC', '기능 명세서', F, '#E0B486'],
   ['IMPL', '구현 명세서', IM, '#E0B486'],
   ['UI', '화면 정의서', SC, '#7FD3AE'],
@@ -1039,7 +1042,8 @@ NAV.forEach(n => { NAV_TAG[n[1]] = n[0]; NAV_FILE[n[1]] = n[2]; });
 //
 // 뺀 문서들 — 랜딩은 시안이라 제목 태그에 들어 있는 것이 페이지 카피지 목차가 아니다
 // ("쓸 내용이 없는 게 아니라, 무엇을 담을지 정해지지 않은 겁니다"). 기능 지도는 절이
-// 둘뿐이라 목차로 얻는 것보다 다이어그램이 268px 넓어지는 편이 낫다.
+// 둘뿐이라 목차로 얻는 것보다 다이어그램이 268px 넓어지는 편이 낫다. 설계서는 문서가
+// 자기 목차 레일을 이미 달고 있어, 여기서 하나를 더 붙이면 목차가 둘이 된다.
 const NAV_TOC = {
   '기능 명세서': 1, '구현 명세서': 1, '화면 정의서': 1, '데이터 모델': 1,
   '디자인 시스템': 1, '아이콘': 1
