@@ -1,0 +1,95 @@
+name: 개발 포털 배포 (dev.expresso.ai.kr)
+
+# docs/ 가 바뀌면 오라클 서버의 웹루트로 발행한다. 빌드 단계는 없다 —
+# 문서는 HTML 과 그 옆의 스크립트가 전부다.
+#
+# 밀어 넣지 않고 **서버가 당긴다.** 러너는 커밋 해시 하나만 건네고 서버가 그
+# 해시를 GitHub 에서 받아 발행한다. 문서 전체를 러너에 태워 보낼 이유가 없고,
+# 무엇이 올라갔는지가 해시로 남는다.
+#
+# 배포 키로는 셸이 열리지 않는다. 서버의 authorized_keys 가 `command=` 로
+# `/usr/local/bin/expresso-dev-portal-deploy` 만 실행하게 묶어 두었다 — 이 기계는
+# 남의 서비스가 함께 도는 공용이다. 원본은
+# `infra/server/expresso-dev-portal-deploy.sh`.
+on:
+  push:
+    branches: [main, "flow/**"]
+    paths:
+      - "docs/**"
+      - ".github/workflows/dev-portal-oracle.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 뒤에 온 푸시가 이긴다. 웹루트는 하나뿐이라 둘이 겹치면 무엇이 올라갔는지
+# 알 수 없게 된다.
+concurrency:
+  group: dev-portal-oracle
+  cancel-in-progress: true
+
+env:
+  SERVER: ubuntu@140.245.74.246
+  # 서버의 호스트 키. 비밀이 아니라 지문이다 — 박아 두어야 중간에 끼어든
+  # 서버에 접속하지 않는다. 서버를 다시 만들면 이 줄도 바꾼다.
+  #   ssh-keyscan -t ed25519 140.245.74.246
+  KNOWN_HOSTS: "140.245.74.246 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFJxhIS0yTprHKrjfOL8F/GhXWixRIpdrJ1+o6QfVDwD"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # 맥에서 만든 한글 파일명이 NFD 로 들어가면 링크가 깨진다. 브라우저는
+      # NFC 로 요청하는데 파일은 NFD 로 놓여 있어 404 가 된다.
+      - name: 한글 파일명이 NFC 인지
+        run: |
+          python3 - <<'PY'
+          import os, sys, unicodedata
+          bad = [os.path.join(r, n)
+                 for r, ds, fs in os.walk('docs')
+                 for n in ds + fs
+                 if unicodedata.normalize('NFC', n) != n]
+          if bad:
+              print('NFD 파일명이 있습니다 — 서버에서 링크가 깨집니다:')
+              for p in bad:
+                  print('  ', p)
+              sys.exit(1)
+          print('OK — 전부 NFC')
+          PY
+
+      - name: 진입점 존재 확인
+        run: |
+          for f in "docs/index.html" "docs/Expresso 개발 포털.dc.html" "docs/robots.txt"; do
+            [ -f "$f" ] || { echo "없음: $f"; exit 1; }
+          done
+          echo "OK"
+
+      - name: 서버가 당겨 발행한다
+        env:
+          DEPLOY_KEY: ${{ secrets.ORACLE_DEV_PORTAL_KEY }}
+        run: |
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "ORACLE_DEV_PORTAL_KEY 시크릿이 없습니다 — 넣는 법은"
+            echo "docs/operations/ORACLE_HOSTING.md 7절에 있습니다."
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY"  > ~/.ssh/deploy      && chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts && chmod 600 ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/deploy -o IdentitiesOnly=yes -o BatchMode=yes \
+              "$SERVER" "deploy $GITHUB_SHA"
+
+      - name: 지면이 서는지
+        run: |
+          for i in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://dev.expresso.ai.kr/)
+            echo "시도 $i — HTTP $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 5
+          done
+          echo "200 을 받지 못했습니다"
+          exit 1
