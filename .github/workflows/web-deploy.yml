@@ -4,6 +4,9 @@ name: 운영 배포
 # scripts/operations/deploy.sh 하나이고, 여기서는 그것을 SSH로 부를 뿐이다.
 # 사람이 손으로 배포할 때도 같은 스크립트를 쓴다 — 두 경로가 갈리면
 # "CI에서는 되는데 손으로는 안 되는" 상태가 생긴다.
+#
+# 저장소는 배포 사용자의 홈에 있다(~/expresso). 대상 커밋을 받아 오는 것도
+# 스크립트가 하므로 여기서 fetch하지 않는다.
 on:
   push:
     branches: [main]
@@ -52,7 +55,7 @@ jobs:
               -i ~/.ssh/id_ed25519 \
               -p "${{ secrets.DEPLOY_SSH_PORT || 22 }}" \
               "${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}" \
-              "bash -lc 'cd /opt/expresso && git fetch origin main && scripts/operations/deploy.sh ${{ github.sha }}'"
+              "bash -lc 'cd ~/expresso && scripts/operations/deploy.sh ${{ github.sha }}'"
 
       - name: 배포 실패 시 로그
         if: failure()

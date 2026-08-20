@@ -3,21 +3,27 @@
 Oracle Cloud 인스턴스 한 대에 API · Worker · 웹을 함께 올리고, nginx가 앞에서
 `expresso.ai.kr` 하나로 묶는다.
 
-> **이 문서는 목표 구성을 적은 것이다.** 서버에 이미 다른 배치가 있으면
-> [부록 A](#부록-a--서버-현황-조사)의 명령으로 현황을 먼저 확인하고 차이를 맞춘다.
+> **지금 서버에 올라가 있는 구성이다.** nginx 설정과 systemd 유닛은 저장소
+> `infra/` 아래 파일이 그대로 깔려 있다(2026-08-20 대조, 세 유닛과 nginx 모두
+> 한 글자도 다르지 않다). 문서가 사본을 또 들고 있으면 둘이 갈라지므로, 고칠
+> 때는 `infra/`의 파일을 고치고 서버에 다시 깐다.
 
 ## 구성 요소
 
 | 프로세스 | 명령 | 포트 | 비고 |
 |---|---|---|---|
-| API | `node dist/api/main.js` | 4000 | `HOST=127.0.0.1` |
+| API | `node dist/api/main.js` | 4500 | `HOST=127.0.0.1` |
 | Worker | `node dist/worker/main.js` | 없음 | 큐 소비 · 매일 아침 수집 |
-| 웹 | `next start -H 127.0.0.1 -p 3000` | 3000 | Next.js 16 |
+| 웹 | `next start --port 3500` | 3500 | Next.js 16 · `HOSTNAME=127.0.0.1` |
 | PostgreSQL | `infra/compose.yaml` | 55432 | 컨테이너 |
 | Redis | `infra/compose.yaml` | 56379 | 컨테이너 |
 
 바깥으로 열리는 포트는 443(과 80→443 전환)뿐이다. 나머지 넷은 모두
 `127.0.0.1`에만 묶는다.
+
+저장소는 `/home/ubuntu/expresso`에 있고 세 유닛 모두 `ubuntu` 사용자로 돈다.
+node는 nvm이 깐 `v24.13.1`을 **절대 경로로** 부른다. nvm의 `default` 별칭은
+22라서, 배포 스크립트가 `nvm.sh`를 읽어 오면 서비스와 다른 node로 짓게 된다.
 
 ## 배포 전에 반드시 아는 것
 
@@ -32,7 +38,7 @@ Oracle Cloud 인스턴스 한 대에 API · Worker · 웹을 함께 올리고, n
 # 맞다 — 빌드에 값이 들어간다
 NEXT_PUBLIC_API_BASE_URL=https://expresso.ai.kr pnpm --filter @expresso/web build
 
-# 틀리다 — 번들에는 기본값 http://127.0.0.1:4000 이 박힌 뒤다
+# 틀리다 — 번들에는 기본값 http://127.0.0.1:4500 이 박힌 뒤다
 pnpm --filter @expresso/web build
 NEXT_PUBLIC_API_BASE_URL=https://expresso.ai.kr pnpm --filter @expresso/web start
 ```
@@ -48,7 +54,7 @@ src={mediaAssetUrl(API_BASE_URL, media.assetId, media.variants.at(-1))}
 // → https://expresso.ai.kr/v1/media/{assetId}?w=1200
 ```
 
-이 `<img src>`가 그대로 브라우저로 내려간다. `http://127.0.0.1:4000`을 넣으면
+이 `<img src>`가 그대로 브라우저로 내려간다. `http://127.0.0.1:4500`을 넣으면
 방문자 브라우저가 자기 컴퓨터의 4000번을 찾아가고 포트폴리오 이미지가 전부
 깨진다. 그래서 **`https://expresso.ai.kr`을 넣고, nginx가 `/v1/`을 백엔드로
 넘긴다.**
@@ -72,18 +78,30 @@ openssl rand -base64 32   # 두 번 돌려 서로 다른 값을 쓴다
 
 ## 서버 준비 (최초 1회)
 
-Node 24 이상과 pnpm 11.16.0이 필요하다. Oracle 무료 인스턴스는 ARM(Ampere)인
-경우가 많은데, `sharp`는 `linux-arm64` 프리빌트 바이너리가 있어 별도 빌드 도구가
-필요 없다.
+Node 24와 pnpm 11.16.0이 필요하다. Oracle 무료 인스턴스는 ARM(Ampere)인 경우가
+많은데, `sharp`는 `linux-arm64` 프리빌트 바이너리가 있어 별도 빌드 도구가 필요
+없다.
+
+인스턴스에 이미 nvm이 있어 그것을 쓴다. 별도 배포 계정을 만들지 않고 `ubuntu`
+사용자의 홈에 둔다.
 
 ```bash
-# 배포 사용자와 위치
-sudo useradd --system --create-home --shell /bin/bash expresso
-sudo mkdir -p /opt/expresso && sudo chown expresso:expresso /opt/expresso
-
-sudo -u expresso -i
+# nvm 으로 24를 깐다. pnpm 은 corepack 이 packageManager 를 읽어 붙인다.
+nvm install 24
 corepack enable && corepack prepare pnpm@11.16.0 --activate
-git clone https://github.com/Expresso-Organization/expresso.git /opt/expresso
+
+git clone https://github.com/Expresso-Organization/expresso.git ~/expresso
+```
+
+`nvm alias default`는 22로 두어도 된다. 서비스와 배포 스크립트가 `v24.13.1`을
+절대 경로로 부르기 때문이다. 다만 **셋이 같은 자리를 가리켜야 한다** —
+`infra/systemd/*.service`의 `ExecStart`, `scripts/operations/deploy.sh`의
+`NODE_BIN`, 그리고 실제로 깔린 버전.
+
+```bash
+ls ~/.nvm/versions/node/          # v24.13.1 이 있는지
+grep -h ExecStart ~/expresso/infra/systemd/*.service
+grep NODE_BIN ~/expresso/scripts/operations/deploy.sh
 ```
 
 PostgreSQL과 Redis는 저장소의 compose 파일을 쓰되, **`pnpm infra:up`을 그대로
@@ -111,7 +129,7 @@ services:
 않는다. 서버에서는 두 파일을 함께 지정해 올린다.
 
 ```bash
-cd /opt/expresso/infra
+cd ~/expresso/infra
 docker compose -f compose.yaml -f compose.override.yaml up -d --wait
 docker compose ps --format '{{.Name}}\t{{.Ports}}'   # 127.0.0.1 로 시작하는지 확인
 ```
@@ -121,13 +139,13 @@ Oracle Cloud는 인스턴스 방화벽과 별개로 **VCN 보안 목록**이 있
 
 ## 환경 파일
 
-`/opt/expresso/services/backend/.env` — API와 Worker가 함께 읽고,
+`/home/ubuntu/expresso/services/backend/.env` — API와 Worker가 함께 읽고,
 `pnpm db:migrate`도 이 파일을 읽는다.
 
 ```bash
 NODE_ENV=production
 HOST=127.0.0.1
-PORT=4000
+PORT=4500
 LOG_LEVEL=info
 
 DATABASE_URL=postgres://expresso:<바꾼-비밀번호>@127.0.0.1:55432/expresso
@@ -137,7 +155,7 @@ ASSET_SIGNING_SECRET=<openssl rand -base64 32>
 ANALYTICS_VISITOR_SALT=<openssl rand -base64 32 — 위와 다른 값>
 
 MEDIA_PROVIDER=local
-MEDIA_DIR=/opt/expresso/var/media
+MEDIA_DIR=/home/ubuntu/expresso/var/media
 
 # 키도 로그인도 없이 도는 기본값. 각 모듈의 규칙 기반 구현이 쓰인다.
 # claude-code · codex는 이 머신에 로그인된 CLI를 부르는 개발 전용이고,
@@ -152,146 +170,88 @@ AI_PROVIDER=off
 (`platform/storage/local.ts`의 `resolve(root)`) **절대 경로로 적는다.**
 
 ```bash
-sudo -u expresso mkdir -p /opt/expresso/var/media
-sudo chmod 600 /opt/expresso/services/backend/.env
+mkdir -p ~/expresso/var/media
+chmod 600 ~/expresso/services/backend/.env
 ```
 
 웹은 `.env` 파일을 읽지 않는다. 빌드할 때 환경 변수로 넘긴다([함정 1](#1-next_public_api_base_url은-빌드-시점에-박힌다)).
 
 ## nginx
 
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name expresso.ai.kr;
-
-    ssl_certificate     /etc/letsencrypt/live/expresso.ai.kr/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/expresso.ai.kr/privkey.pem;
-
-    # 포트폴리오 이미지는 8MB까지 받는다 (MEDIA_MAX_BYTES).
-    client_max_body_size 8M;
-
-    # /v1/ 은 백엔드. 브라우저가 직접 받는 이미지가 이 경로로 온다.
-    location /v1/ {
-        proxy_pass http://127.0.0.1:4000;
-        proxy_set_header Host              $host;
-        proxy_set_header X-Real-IP         $remote_addr;
-        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # 나머지는 전부 Next.
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_set_header Host              $host;
-        proxy_set_header X-Real-IP         $remote_addr;
-        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Upgrade           $http_upgrade;
-        proxy_set_header Connection        "upgrade";
-        # 스트리밍 — 셸이 먼저 나가고 본문이 뒤따른다. 버퍼링하면 그 효과가 사라진다.
-        proxy_buffering off;
-    }
-}
-
-server {
-    listen 80;
-    server_name expresso.ai.kr;
-    return 301 https://$host$request_uri;
-}
-```
-
-`proxy_buffering off`가 중요하다. 각 구간에 `loading.tsx`가 있어 응답이 셸부터
-흘러나오는데, nginx가 전부 모아서 한 번에 보내면 사용자에게는 예전과 똑같이
-느려 보인다.
+설정은 저장소에 있다 — `infra/nginx/expresso.ai.kr.conf`. 서버에 깔린 것과 같은
+파일이므로 여기에 다시 옮겨 적지 않는다. 고칠 일이 있으면 그 파일을 고치고 다시
+깐다.
 
 ```bash
-sudo certbot --nginx -d expresso.ai.kr
+sudo cp ~/expresso/infra/nginx/expresso.ai.kr.conf /etc/nginx/sites-available/expresso.ai.kr
+sudo ln -sf /etc/nginx/sites-available/expresso.ai.kr /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-## systemd
-
-세 유닛을 만든다. `/etc/systemd/system/expresso-api.service`:
-
-```ini
-[Unit]
-Description=Expresso API
-After=network-online.target docker.service
-Wants=network-online.target
-
-[Service]
-Type=simple
-User=expresso
-WorkingDirectory=/opt/expresso/services/backend
-EnvironmentFile=/opt/expresso/services/backend/.env
-ExecStart=/usr/bin/node dist/api/main.js
-Restart=always
-RestartSec=3
-StandardOutput=journal
-StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
-```
-
-`expresso-worker.service`는 `ExecStart`만 `node dist/worker/main.js`로 바꾼다.
-`WorkingDirectory`는 그대로 둔다 — `AI_FIXTURE_DIR` 같은 상대 경로가 이 기준이다.
-
-`expresso-web.service`:
-
-```ini
-[Unit]
-Description=Expresso Web
-After=network-online.target expresso-api.service
-Wants=network-online.target
-
-[Service]
-Type=simple
-User=expresso
-WorkingDirectory=/opt/expresso/services/web
-ExecStart=/usr/bin/pnpm exec next start -H 127.0.0.1 -p 3000
-Restart=always
-RestartSec=3
-StandardOutput=journal
-StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
-```
-
-`-H 127.0.0.1`을 빼면 `next start`는 `0.0.0.0`에 묶여 3000번이 인터넷에 그대로
-열린다. nginx를 우회해 들어올 수 있으므로 반드시 적는다.
+인증서는 certbot이 발급하고, 80번의 `/.well-known/acme-challenge/`가 그 갱신
+경로다. 그래서 80번은 전부 301로 넘기지 않고 그 한 자리만 남겨 둔다.
 
 ```bash
+sudo certbot --nginx -d expresso.ai.kr
+```
+
+읽을 때 눈여겨볼 두 가지.
+
+- **`/v1/`만 API로 간다.** 배포된 지면이 그림을 `/v1/media/<id>`로 가리키고
+  공개 포트폴리오도 같은 접두어를 쓴다. 브라우저가 직접 부르는 경로다.
+- **`/v1/`의 `proxy_read_timeout`이 900초다.** 생성 계약은 모델을 기다린다.
+  기본 60초로는 지면 한 장을 못 받는다.
+
+지면 스트림(SSE)은 nginx 설정이 아니라 응답 헤더로 푼다 — 라우트가
+`X-Accel-Buffering: no`를 실어 보내고 nginx가 그 응답만 버퍼링하지 않는다.
+`services/backend/src/modules/page/stream-route.integration.test.ts`가 그 헤더가
+빠지지 않았는지 지킨다.
+
+## systemd
+
+유닛 셋도 저장소에 있다 — `infra/systemd/expresso-{api,web,worker}.service`.
+서버에 깔린 것과 같은 파일이다.
+
+```bash
+sudo cp ~/expresso/infra/systemd/expresso-*.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now expresso-api expresso-worker expresso-web
 ```
 
+읽을 때 눈여겨볼 두 가지.
+
+- **`ExecStart`가 node를 절대 경로로 부른다**
+  (`/home/ubuntu/.nvm/versions/node/v24.13.1/bin/node`). systemd는 로그인 셸을
+  거치지 않아 nvm이 PATH에 붙지 않는다. 버전을 올릴 때는 세 유닛과 `deploy.sh`의
+  `NODE_BIN`을 함께 고친다.
+- **웹은 `HOSTNAME=127.0.0.1`로 묶는다.** 이 값이 없으면 `next start`가
+  `0.0.0.0`에 붙어 3500번이 인터넷에 그대로 열린다. nginx를 우회해 들어올 수
+  있다.
+
+Worker와 API는 `WorkingDirectory`가 같다 — `AI_FIXTURE_DIR` 같은 상대 경로가 이
+기준이다.
+
 ## sudo 권한
 
-배포 스크립트가 서비스를 재시작해야 하므로, `expresso` 사용자에게 그 세 명령만
-비밀번호 없이 허용한다. `/etc/sudoers.d/expresso`:
-
-```
-expresso ALL=(root) NOPASSWD: /usr/bin/systemctl restart expresso-api, \
-                              /usr/bin/systemctl restart expresso-worker, \
-                              /usr/bin/systemctl restart expresso-web
-```
+배포 스크립트가 서비스를 재시작하고 실패하면 journald를 읽는다. 지금은 `ubuntu`가
+`sudo` 그룹에 있어 비밀번호 없이 둘 다 된다.
 
 ```bash
-sudo visudo -c -f /etc/sudoers.d/expresso   # 문법 검사 후 저장
-sudo chmod 440 /etc/sudoers.d/expresso
+sudo -n systemctl is-active expresso-api    # 되물음 없이 답하면 통과
 ```
 
-`ALL=(root) NOPASSWD: ALL`로 열지 않는다. 배포 키가 새면 그대로 루트가 된다.
+**이 상태는 필요한 것보다 넓다.** 배포 키가 새면 그대로 루트가 된다. 좁히려면
+전용 계정을 만들고 재시작 셋만 여는 편이 낫다.
 
-로그는 sudo 대신 그룹으로 푼다. 배포 스크립트가 실패했을 때 journald를 읽어야
-한다.
-
-```bash
-sudo usermod -aG systemd-journal expresso   # 다시 로그인해야 적용된다
 ```
+# /etc/sudoers.d/expresso — 계정을 나눌 때
+<배포계정> ALL=(root) NOPASSWD: /usr/bin/systemctl restart expresso-api, \
+                               /usr/bin/systemctl restart expresso-worker, \
+                               /usr/bin/systemctl restart expresso-web
+```
+
+계정을 나누면 `infra/systemd/*.service`의 `User=`와 `WorkingDirectory=`,
+`deploy.sh`의 `ROOT`·`NODE_BIN`이 함께 바뀐다.
 
 ## 배포 절차
 
@@ -299,13 +259,15 @@ sudo usermod -aG systemd-journal expresso   # 다시 로그인해야 적용된�
 되는데 손으로는 안 되는" 상태가 생긴다.
 
 ```bash
-sudo -u expresso -i
-cd /opt/expresso
-git fetch origin main
+ssh ubuntu@expresso.ai.kr
+cd ~/expresso
 
 scripts/operations/deploy.sh            # origin/main 최신으로
 scripts/operations/deploy.sh <커밋>     # 특정 커밋으로
 ```
+
+스크립트가 `origin/main`을 직접 받아 오므로 앞에서 `git fetch`를 따로 하지
+않는다. node 자리도 스크립트가 PATH에 붙이므로 nvm을 미리 읽을 필요가 없다.
 
 스크립트가 하는 일은 이 순서다. 어느 단계든 실패하면 거기서 멈춘다.
 
@@ -316,9 +278,10 @@ scripts/operations/deploy.sh <커밋>     # 특정 커밋으로
 4. `pnpm db:migrate` — `services/backend/.env`를 읽는다.
 5. 백엔드를 빌드하고, 웹은 `NEXT_PUBLIC_API_BASE_URL`을 준 채로 빌드한다
    ([함정 1](#1-next_public_api_base_url은-빌드-시점에-박힌다)).
-6. Worker → API 순으로 재시작하고 `/health/ready`가 200을 낼 때까지 기다린다.
+6. Worker → API 순으로 재시작하고 4500번의 `/health/ready`가 200을 낼 때까지
+   기다린다.
    큐 소비자를 먼저 올려야 새 스키마의 작업을 받을 수 있다.
-7. 웹을 재시작하고 3000번이 200을 낼 때까지 기다린다.
+7. 웹을 재시작하고 3500번이 200을 낼 때까지 기다린다.
 8. 바깥에서 본 `https://expresso.ai.kr/login`과 `/home`을 확인한다. nginx
    라우팅이 틀리면 여기서 걸린다.
 
@@ -337,8 +300,8 @@ scripts/operations/deploy.sh <커밋>     # 특정 커밋으로
 
 | 시크릿 | 값 |
 |---|---|
-| `DEPLOY_SSH_HOST` | 서버 주소 또는 IP |
-| `DEPLOY_SSH_USER` | `expresso` |
+| `DEPLOY_SSH_HOST` | 서버 주소 또는 IP (`140.245.74.246`) |
+| `DEPLOY_SSH_USER` | `ubuntu` |
 | `DEPLOY_SSH_KEY` | 배포 전용 개인 키 (아래에서 만든다) |
 | `DEPLOY_KNOWN_HOSTS` | 서버의 호스트 키 한 줄 |
 
@@ -350,8 +313,8 @@ scripts/operations/deploy.sh <커밋>     # 특정 커밋으로
 # 로컬에서
 ssh-keygen -t ed25519 -f ~/.ssh/expresso-deploy -N '' -C 'github-actions-deploy'
 
-# 공개 키를 서버의 expresso 사용자에게 등록
-ssh-copy-id -i ~/.ssh/expresso-deploy.pub expresso@expresso.ai.kr
+# 공개 키를 서버의 ubuntu 사용자에게 등록
+ssh-copy-id -i ~/.ssh/expresso-deploy.pub ubuntu@expresso.ai.kr
 
 # DEPLOY_SSH_KEY 에 넣을 값 (개인 키 전문)
 cat ~/.ssh/expresso-deploy
@@ -373,8 +336,8 @@ ssh-keyscan -t ed25519 expresso.ai.kr
 systemctl is-active expresso-api expresso-worker expresso-web
 
 # API — ready는 PostgreSQL과 Redis를 함께 본다. 둘 중 하나라도 죽으면 503.
-curl -s http://127.0.0.1:4000/health/live
-curl -s http://127.0.0.1:4000/health/ready
+curl -s http://127.0.0.1:4500/health/live
+curl -s http://127.0.0.1:4500/health/ready
 
 # 바깥에서
 curl -s -o /dev/null -w '%{http_code}\n' https://expresso.ai.kr/login   # 200
@@ -393,7 +356,7 @@ nginx는 `/v1/`만 넘기므로 **바깥에서는 닿지 않는다.** 의도한 
 바깥에 열려 있으면 안 되는 포트도 확인한다. **다른 머신에서** 실행한다.
 
 ```bash
-for port in 3000 4000 55432 56379; do
+for port in 3500 4500 55432 56379; do
   timeout 5 bash -c "</dev/tcp/expresso.ai.kr/$port" 2>/dev/null \
     && echo "$port 열려 있다 — 막아야 한다" \
     || echo "$port 닫힘"
@@ -412,11 +375,11 @@ journalctl -u expresso-worker --since '10 min ago'
 
 ## 롤백
 
-배포 스크립트가 직전 커밋을 `/opt/expresso/.last-deployed-commit`에 남긴다.
+배포 스크립트가 직전 커밋을 `~/expresso/.last-deployed-commit`에 남긴다.
 
 ```bash
-sudo -u expresso -i
-cd /opt/expresso
+ssh ubuntu@expresso.ai.kr
+cd ~/expresso
 scripts/operations/deploy.sh "$(cat .last-deployed-commit)"
 ```
 
@@ -461,7 +424,7 @@ scripts/operations/backup-postgres.sh /secure/path/expresso-$(date +%Y%m%dT%H%M%
   echo "## 컨테이너"; docker ps --format '{{.Names}}\t{{.Image}}\t{{.Ports}}' 2>&1
   echo "## nginx 사이트"; ls /etc/nginx/sites-enabled/ 2>&1; sudo nginx -T 2>/dev/null | grep -E 'server_name|proxy_pass|listen' | head -30
   echo "## 인증서"; sudo certbot certificates 2>&1 | head -20
-  echo "## 체크아웃 위치"; ls -d /opt/expresso /srv/expresso /home/*/expresso 2>/dev/null
+  echo "## 체크아웃 위치"; ls -d /home/ubuntu/expresso /opt/expresso 2>/dev/null
   echo "## 디스크"; df -h / | tail -1
 } 2>&1
 ```
