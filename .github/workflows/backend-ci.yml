@@ -80,6 +80,14 @@ jobs:
       - name: 의존성 설치
         run: pnpm install --frozen-lockfile
 
+      # 테스트는 계약과 스키마를 dist로 불러온다. 지어 두지 않으면 vitest가
+      # @expresso/contracts를 찾지 못한다. 순서는 deploy.sh와 같다 — 배포와
+      # CI가 다른 순서로 지으면 한쪽에서만 깨진다.
+      - name: 계약 · 스키마 빌드
+        run: |
+          pnpm --filter @expresso/contracts build
+          pnpm --filter @expresso/database build
+
       - name: 마이그레이션
         run: pnpm db:migrate
 
