@@ -3,7 +3,6 @@ import type { SqlTag } from "../../src/platform/mysql.js";
 import { createMysqlResource } from "../../src/platform/mysql.js";
 
 import { migrate } from "@expresso/database";
-import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../src/api/build-app.js";
@@ -15,6 +14,7 @@ import { OutboxDispatcher } from "../../src/platform/outbox.js";
 import { createReliableQueue } from "../../src/platform/queue.js";
 import { createQueueWorker } from "../../src/worker/create-queue-worker.js";
 import { createAnalyticsProcessor } from "../../src/worker/processors/analytics.js";
+import { ISOLATED_DATABASE_TIMEOUT_MS } from "../support/timeouts.js";
 
 const rootDatabaseUrl = process.env.TEST_DATABASE_URL;
 const redisUrl = process.env.TEST_REDIS_URL;
@@ -87,7 +87,7 @@ describeWithInfrastructure("publish visit aggregate insight rollback vertical sl
       deadLetterQueue: jobs.deadLetterQueue, processor: createAnalyticsProcessor(analytics),
     });
     dispatcher = new OutboxDispatcher({ sql, queue: jobs.queue });
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   afterAll(async () => {
     if (worker) await worker.close();
@@ -99,7 +99,7 @@ describeWithInfrastructure("publish visit aggregate insight rollback vertical sl
       await admin.unsafe(`drop database if exists \`${databaseName}\``);
       await admin.end({ timeout: 5 });
     }
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   async function api(path: string, options: { method?: string; body?: unknown; anonymous?: boolean } = {}) {
     return fetch(`${origin}${path}`, {

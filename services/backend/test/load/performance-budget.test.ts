@@ -4,7 +4,6 @@ import { createMysqlResource } from "../../src/platform/mysql.js";
 import { performance } from "node:perf_hooks";
 
 import { migrate } from "@expresso/database";
-import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../src/api/build-app.js";
@@ -13,6 +12,7 @@ import { AnalyticsService } from "../../src/modules/analytics/service.js";
 import { CareerService } from "../../src/modules/career/service.js";
 import { EngagementService } from "../../src/modules/engagement/service.js";
 import { IdentityService } from "../../src/modules/identity/service.js";
+import { ISOLATED_DATABASE_TIMEOUT_MS } from "../support/timeouts.js";
 
 const rootDatabaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = rootDatabaseUrl ? describe : describe.skip;
@@ -60,12 +60,12 @@ describeWithDatabase("release performance and backpressure budget", () => {
     const config: RuntimeConfig = { nodeEnv: "test", host: "127.0.0.1", port: 0, logLevel: "silent", databaseUrl: isolated.toString(), redisUrl: "redis://127.0.0.1:1", outboxPollIntervalMs: 1_000, outboxBatchSize: 25, outboxMaxAttempts: 5, queuePrefix: "load-test" };
     app = buildApi({ config, identityService: identity, careerService: new CareerService(sql), engagementService: new EngagementService(sql), analyticsService: analytics });
     await app.ready();
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   afterAll(async () => {
     if (app) await app.close(); if (sql) await sql.end({ timeout: 5 });
     if (admin) { await admin.unsafe(`drop database if exists \`${databaseName}\``); await admin.end({ timeout: 5 }); }
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   async function timed(request: Parameters<typeof app.inject>[0]) {
     const started = performance.now(); const response = await app.inject(request); return { response, ms: performance.now() - started };

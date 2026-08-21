@@ -69,7 +69,7 @@ describe("redactedDetail", () => {
   it("아는 비밀 모양을 지우고 길이를 자른다", () => {
     const detail = redactedDetail(
       "codex failed for jiwon@example.com with exps_AbC-123 on"
-      + " postgres://expresso:expresso@127.0.0.1:55432/expresso and token=zzz",
+      + " mysql://expresso:expresso@127.0.0.1:53306/expresso and token=zzz",
     );
 
     expect(detail).not.toContain("jiwon@example.com");

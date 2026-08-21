@@ -261,6 +261,65 @@ describeWithDatabase("Expresso 스키마", () => {
     ).rejects.toThrow(/same portfolio/);
   });
 
+  it("요건의 근거 구간은 공고 원문 그대로여야 한다", async () => {
+    await expect(db.query(
+      `insert into job_posting_requirement (id, job_posting_id, order_no, label, kind, source_span)
+       values (?, ?, 0, 'tampered', 'must', ?)`,
+      [randomUUID(), jobPostingId, JSON.stringify({ start: 0, end: 9, quote: "not-source" })],
+    )).rejects.toThrow(/does not match immutable posting source/);
+    await db.query(
+      `insert into job_posting_requirement (id, job_posting_id, order_no, label, kind, source_span)
+       values (?, ?, 1, 'exact', 'must', ?)`,
+      [randomUUID(), jobPostingId, JSON.stringify({ start: 0, end: 8, quote: "Original" })],
+    );
+  });
+
+  it("기록 속성은 분류가 정의한 것만, 정의한 타입으로만 받는다", async () => {
+    const graph = await seedGraph();
+    const ownCategoryId = randomUUID();
+    await db.query(
+      `insert into category (id, user_id, \`key\`, name, icon, default_view, is_system, property_schema, sort_order)
+       values (?, ?, 'probe', 'Probe', 'star', 'list', 0, ?, 0)`,
+      [ownCategoryId, graph.userId, JSON.stringify({
+        role: { type: "text" }, tags: { type: "tags" }, years: { type: "number", required: true },
+      })],
+    );
+    const insertRecord = (properties: unknown) => db.query(
+      `insert into record (id, user_id, category_id, title, origin, properties)
+       values (?, ?, ?, 'Probe record', 'manual', ?)`,
+      [randomUUID(), graph.userId, ownCategoryId, JSON.stringify(properties)],
+    );
+    await expect(insertRecord({ nope: "x", years: 1 })).rejects.toThrow(/not defined by the category/);
+    await expect(insertRecord({ role: 5, years: 1 })).rejects.toThrow(/does not match type text/);
+    await expect(insertRecord({ tags: ["a", 3], years: 1 })).rejects.toThrow(/does not match type tags/);
+    await expect(insertRecord({ role: "a" })).rejects.toThrow(/required property years is missing/);
+    await insertRecord({ role: "a", tags: ["x"], years: 3 });
+  });
+
+  it("값이 남아 있는 속성 정의는 지우지 못한다", async () => {
+    const graph = await seedGraph();
+    const ownCategoryId = randomUUID();
+    await db.query(
+      `insert into category (id, user_id, \`key\`, name, icon, default_view, is_system, property_schema, sort_order)
+       values (?, ?, 'probe', 'Probe', 'star', 'list', 0, ?, 0)`,
+      [ownCategoryId, graph.userId, JSON.stringify({ role: { type: "text" }, note: { type: "text" } })],
+    );
+    await db.query(
+      `insert into record (id, user_id, category_id, title, origin, properties)
+       values (?, ?, ?, 'Probe record', 'manual', ?)`,
+      [randomUUID(), graph.userId, ownCategoryId, JSON.stringify({ role: "backend" })],
+    );
+    await expect(db.query(
+      "update category set property_schema = ? where id = ?",
+      [JSON.stringify({ note: { type: "text" } }), ownCategoryId],
+    )).rejects.toThrow(/property role still has record values/);
+    // 값을 넣은 적 없는 정의는 지워진다.
+    await db.query(
+      "update category set property_schema = ? where id = ?",
+      [JSON.stringify({ role: { type: "text" } }), ownCategoryId],
+    );
+  });
+
   it("대시보드 뷰는 포트폴리오마다 여섯 개까지", async () => {
     const graph = await seedGraph();
     for (let index = 0; index < 6; index += 1) {

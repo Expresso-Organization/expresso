@@ -1,8 +1,8 @@
 import { writeFileSync } from "node:fs";
 
 import { pageDocument } from "@expresso/contracts";
-import postgres from "postgres";
 
+import { createMysqlResource } from "../src/platform/mysql.js";
 import { loadRuntimeConfig } from "../src/config/runtime-config.js";
 import { ConsentService } from "../src/modules/consent/service.js";
 import { AiPageGenerator } from "../src/modules/page/generator.js";
@@ -28,7 +28,7 @@ const portfolioId = process.argv[2];
 if (!portfolioId) throw new Error("usage: run-page-stream.ts <portfolioId>");
 
 const config = loadRuntimeConfig();
-const sql = postgres(config.databaseUrl, { max: 4 });
+const { sql } = createMysqlResource(config.databaseUrl);
 const redis = createStreamRedis(config.redisUrl);
 const stream = new PageStream(redis, { prefix: config.queuePrefix });
 const ai = createAiClient(config);

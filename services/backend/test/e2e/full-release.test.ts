@@ -3,13 +3,13 @@ import type { SqlTag } from "../../src/platform/mysql.js";
 import { createMysqlResource } from "../../src/platform/mysql.js";
 
 import { loadMigrations, migrate } from "@expresso/database";
-import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../src/api/build-app.js";
 import type { RuntimeConfig } from "../../src/config/runtime-config.js";
 
 import { createRedisResource } from "../../src/platform/redis.js";
+import { ISOLATED_DATABASE_TIMEOUT_MS } from "../support/timeouts.js";
 
 const rootDatabaseUrl = process.env.TEST_DATABASE_URL;
 const redisUrl = process.env.TEST_REDIS_URL;
@@ -37,12 +37,12 @@ describeWithInfrastructure("full release fresh-environment smoke", () => {
     app = buildApi({ config, readinessChecks: [databaseResource.readinessCheck, redisResource.readinessCheck] });
     await app.ready();
     closeResources = async () => { await Promise.allSettled([databaseResource.close(), redisResource.close()]); };
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   afterAll(async () => {
     if (app) await app.close(); if (closeResources) await closeResources(); if (sql) await sql.end({ timeout: 5 });
     if (admin) { await admin.unsafe(`drop database if exists \`${databaseName}\``); await admin.end({ timeout: 5 }); }
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   it("boots with all canonical seeds and live dependencies", async () => {
     expect((await app.inject({ method: "GET", url: "/health/live" })).json()).toEqual({ status: "alive" });

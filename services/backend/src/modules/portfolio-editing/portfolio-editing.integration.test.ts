@@ -9,11 +9,11 @@ import { PortfolioEditingService } from "./service.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
-const config: RuntimeConfig = { nodeEnv: "test", host: "127.0.0.1", port: 4000, logLevel: "silent", databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1", redisUrl: "redis://127.0.0.1:1", outboxPollIntervalMs: 1000, outboxBatchSize: 25, outboxMaxAttempts: 5, queuePrefix: "editing-test" };
+const config: RuntimeConfig = { nodeEnv: "test", host: "127.0.0.1", port: 4000, logLevel: "silent", databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1", redisUrl: "redis://127.0.0.1:1", outboxPollIntervalMs: 1000, outboxBatchSize: 25, outboxMaxAttempts: 5, queuePrefix: "editing-test" };
 interface IdRow { id: string }
 
 describeWithDatabase("portfolio editing integration", () => {
-  const sql = createMysqlResource(databaseUrl ?? "postgres://127.0.0.1:1").sql;
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1").sql;
   const identity = new IdentityService(sql);
   const service = new PortfolioEditingService(sql);
   const app = buildApi({ config, identityService: identity, portfolioEditingService: service });

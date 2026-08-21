@@ -51,7 +51,8 @@ interface QuestionRow {
   rationale: string | null;
   replaced_from_id: string | null;
   skipped: boolean;
-  answered: boolean;
+  /** 식으로 계산한 값이라 0 · 1 로 온다. */
+  answered: number;
   variant: number;
   requirement_id: string | null;
   interview_session_id: string;
@@ -419,7 +420,9 @@ export class InterviewService {
         rationale: question.rationale,
         replacedFromId: question.replaced_from_id,
         skipped: question.skipped,
-        answered: question.answered,
+        // 계산해서 만든 참·거짓은 MySQL 이 0 · 1 로 준다 — 열이 아니라 식이라
+        // 드라이버가 tinyint(1) 로 보지 못한다.
+        answered: Boolean(question.answered),
       })),
     });
   }

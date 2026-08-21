@@ -4,7 +4,13 @@ import { loadMigrations } from "./migrations.js";
 
 // 한 번에 한 프로세스만 마이그레이션하도록 이름 있는 잠금을 씁니다.
 // PostgreSQL 의 pg_advisory_lock 자리입니다.
-const migrationLockName = "expresso:migration";
+//
+// 이름에 데이터베이스를 넣습니다 — MySQL 의 이름 있는 잠금은 서버 하나에 하나라,
+// 이름이 같으면 서로 다른 데이터베이스의 마이그레이션까지 줄을 섭니다. 테스트는
+// 격리 데이터베이스를 여럿 만들어 동시에 옮기므로 그 줄이 그대로 대기 시간이
+// 됩니다. 이름은 64자를 넘지 못합니다.
+const migrationLockExpression =
+  "left(concat('expresso:migration:', database()), 64)";
 const migrationLockTimeoutSeconds = 30;
 
 export interface MigrateOptions {
@@ -24,8 +30,8 @@ interface AppliedMigration {
 
 async function acquireLock(connection: Connection): Promise<void> {
   const [rows] = await connection.query<any[]>(
-    "select get_lock(?, ?) as locked",
-    [migrationLockName, migrationLockTimeoutSeconds],
+    `select get_lock(${migrationLockExpression}, ?) as locked`,
+    [migrationLockTimeoutSeconds],
   );
   if (rows[0]?.locked !== 1) {
     throw new Error("Could not acquire the migration lock");
@@ -84,7 +90,7 @@ export async function migrate(options: MigrateOptions): Promise<MigrateResult> {
     return result;
   } finally {
     try {
-      await connection.query("select release_lock(?)", [migrationLockName]);
+      await connection.query(`select release_lock(${migrationLockExpression})`);
     } finally {
       await connection.end();
     }

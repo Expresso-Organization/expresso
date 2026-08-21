@@ -327,7 +327,7 @@ export class AnalyticsService {
           left join recipe_section on recipe_section.id = portfolio_section.recipe_section_id
           where section_view.user_id = ${userId} and visit_event.deployment_id = ${deploymentId}
             and section_view.occurred_at >= ${start}
-            and section_view.occurred_at < (${end} + 1)
+            and section_view.occurred_at < date_add(${end}, interval 1 day)
           group by recipe_section.title, portfolio_section.order_no
           order by portfolio_section.order_no
         `,
@@ -335,7 +335,7 @@ export class AnalyticsService {
           select coalesce(referrer, '(직접 방문)') as origin, count(*) as visits
           from visit_event
           where user_id = ${userId} and deployment_id = ${deploymentId} and not is_owner
-            and started_at >= ${start} and started_at < (${end} + 1)
+            and started_at >= ${start} and started_at < date_add(${end}, interval 1 day)
           group by 1 order by 2 desc limit 6
         `,
         this.#sql<{ domain: string; visits: number }[]>`
@@ -343,7 +343,7 @@ export class AnalyticsService {
           from visit_event
           where user_id = ${userId} and deployment_id = ${deploymentId} and not is_owner
             and org_domain is not null
-            and started_at >= ${start} and started_at < (${end} + 1)
+            and started_at >= ${start} and started_at < date_add(${end}, interval 1 day)
           group by 1 order by 2 desc limit 6
         `,
       ]);
@@ -420,7 +420,7 @@ export class AnalyticsService {
       return { preset, start: shiftDate(today, 1 - (preset === "7d" ? 7 : 30)), end: today };
     }
     const first = (await this.#sql<{ date: string | null }[]>`
-      select min(started_at) as date
+      select date(min(started_at)) as date
       from visit_event where deployment_id = ${deploymentId} and not is_owner
     `)[0]?.date;
     return { preset, start: first && first < today ? first : today, end: today };
@@ -449,12 +449,13 @@ export class AnalyticsService {
    * 우리를 의심하지 않는다.
    */
   async #coverage(userId: string, deploymentId: string, start: string, end: string) {
-    const rows = await this.#sql<{ date: string; aggregated: boolean }[]>`
+    // aggregated 는 식으로 계산한 값이라 MySQL 이 0 · 1 로 준다.
+    const rows = await this.#sql<{ date: string; aggregated: number }[]>`
       with visited as (
-        select distinct started_at as date
+        select distinct date(started_at) as date
         from visit_event
         where user_id = ${userId} and deployment_id = ${deploymentId} and not is_owner
-          and started_at between ${start} and ${end}
+          and date(started_at) between ${start} and ${end}
       ), aggregated as (
         select distinct date from metric_daily
         where user_id = ${userId} and deployment_id = ${deploymentId}
@@ -519,7 +520,7 @@ export class AnalyticsService {
           left join recipe_section on recipe_section.id = portfolio_section.recipe_section_id
           where section_view.user_id = ${userId} and visit_event.deployment_id = ${deploymentId}
             and not visit_event.is_owner and section_view.dwell_ms >= 1000
-            and section_view.occurred_at in ${this.#sql(counted)}
+            and date(section_view.occurred_at) in ${this.#sql(counted)}
           group by portfolio_section.id, recipe_section.title
           order by dwell_ms desc limit 50
         `,
@@ -527,7 +528,7 @@ export class AnalyticsService {
           select referrer as origin, count(*) as visits
           from visit_event
           where user_id = ${userId} and deployment_id = ${deploymentId} and not is_owner
-            and started_at in ${this.#sql(counted)}
+            and date(started_at) in ${this.#sql(counted)}
           group by referrer order by visits desc limit 8
         `,
         this.#sql<StoredInsightRow[]>`
@@ -557,7 +558,7 @@ export class AnalyticsService {
             and section_view.dwell_ms >= 1000
           where visit_event.user_id = ${userId} and visit_event.deployment_id = ${deploymentId}
             and not visit_event.is_owner and visit_event.org_domain is not null
-            and visit_event.started_at in ${this.#sql(counted)}
+            and date(visit_event.started_at) in ${this.#sql(counted)}
           group by visit_event.org_domain
           order by visits desc limit 20
         `
@@ -652,7 +653,7 @@ export class AnalyticsService {
     const rows = await this.#sql<WidgetRow[]>`
       select id, metric_key, visualization, compare_to, position from widget
       where dashboard_view_id = ${viewId}
-      order by (position ->> '$.order') is null, (position ->> '$.order'), id
+      order by cast(position ->> '$.order' as unsigned) is null, cast(position ->> '$.order' as unsigned), id
     `;
     return rows.map((row, index) => ({
       id: row.id,
@@ -724,7 +725,7 @@ export class AnalyticsService {
 
     await this.#sql.begin(async (transaction) => {
       const last = (await transaction<{ next: number }[]>`
-        select coalesce(max((position ->> '$.order')) + 1, 0) as next
+        select coalesce(max(cast(position ->> '$.order' as unsigned)) + 1, 0) as next
         from widget where dashboard_view_id = ${viewId}
       `)[0]?.next ?? 0;
       const order = input.index === undefined ? last : Math.min(input.index, last);
@@ -732,7 +733,7 @@ export class AnalyticsService {
       if (order < last) await transaction`
         update widget
         set position = json_set(position, '$.order', cast(position ->> '$.order' as unsigned) + 1)
-        where dashboard_view_id = ${viewId} and (position ->> '$.order') >= ${order}
+        where dashboard_view_id = ${viewId} and cast(position ->> '$.order' as unsigned) >= ${order}
       `;
       await insertWidget(transaction, userId, viewId, {
         metricKey: input.metricKey,
