@@ -27,6 +27,7 @@ services:
       retries: 30
     volumes:
       - expresso-mysql:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
 
   redis:

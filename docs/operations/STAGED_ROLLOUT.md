@@ -2,7 +2,7 @@
 
 ## 순서
 
-1. 검증된 PostgreSQL 백업과 현재 API/Worker artifact checksum을 보존한다.
+1. 검증된 MySQL 백업과 현재 API/Worker artifact checksum을 보존한다.
 2. expand-only migration을 적용한다.
 3. 새 Worker 한 인스턴스를 시작하고 scheduled/outbox lag와 dead letter를 확인한다.
 4. 새 API 한 인스턴스를 시작해 `/health/live`, `/health/ready`와 핵심 public/auth smoke를 확인한다.

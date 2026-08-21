@@ -261,6 +261,16 @@ describeWithDatabase("Expresso 스키마", () => {
     ).rejects.toThrow(/same portfolio/);
   });
 
+  it("트리거 본문은 세미콜론으로 끝나지 않는다", async () => {
+    // 세미콜론이 본문에 남으면 mysqldump 가 받은 백업이 그 줄에서 복원을 멈춘다.
+    // 문장 하나짜리 본문은 begin · end 로 감싸야 그 일이 없다.
+    const leaking = await rows<{ trigger_name: string }>(
+      `select trigger_name as trigger_name from information_schema.triggers
+       where trigger_schema = database() and action_statement like '%;'`,
+    );
+    expect(leaking.map(({ trigger_name }) => trigger_name)).toEqual([]);
+  });
+
   it("요건의 근거 구간은 공고 원문 그대로여야 한다", async () => {
     await expect(db.query(
       `insert into job_posting_requirement (id, job_posting_id, order_no, label, kind, source_span)

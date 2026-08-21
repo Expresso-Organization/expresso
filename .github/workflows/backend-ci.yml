@@ -89,16 +89,22 @@ jobs:
           pnpm --filter @expresso/contracts build
           pnpm --filter @expresso/database build
 
-      # 마이그레이션이 트리거와 저장 프로시저를 만든다. 바이너리 로그가 켜져
-      # 있으면 MySQL 은 그것을 만드는 사람에게 SUPER 를 요구한다 — 8.4 는 행
-      # 단위로만 기록하므로 되감을 문장이 없고, 그 검사만 끈다.
-      # 서비스 컨테이너에는 명령 인자를 넘길 수 없어 여기서 켠다
-      # (infra/compose.server.yaml 에서는 서버 설정으로 들어간다).
-      - name: 트리거 생성 검사 끄기
+      # 두 가지를 여기서 연다. 서비스 컨테이너에는 명령 인자를 넘길 수 없어
+      # 설정 파일 대신 켜는 자리다.
+      #
+      #   · 바이너리 로그가 켜져 있으면 MySQL 은 트리거와 저장 프로시저를 만드는
+      #     사람에게 SUPER 를 요구한다. 8.4 는 행 단위로만 기록하므로 되감을
+      #     문장이 없고, 그 검사만 끈다(운영은 infra/compose.server.yaml).
+      #   · 통합 테스트는 파일마다 격리 데이터베이스를 새로 만들고 지운다.
+      #     공식 이미지가 주는 권한은 expresso 하나뿐이라 그 자리를 넓힌다.
+      #     버리는 컨테이너에서만 그렇게 한다.
+      - name: 테스트용 데이터베이스 권한
         run: |
           docker run --rm --network host mysql:8.4 \
-            mysql -h 127.0.0.1 -P 3306 -uroot -pexpresso \
-            -e "set global log_bin_trust_function_creators=1"
+            mysql -h 127.0.0.1 -P 3306 -uroot -pexpresso -e "
+              set global log_bin_trust_function_creators = 1;
+              grant all privileges on *.* to 'expresso'@'%';
+              flush privileges;"
 
       - name: 마이그레이션
         run: pnpm db:migrate

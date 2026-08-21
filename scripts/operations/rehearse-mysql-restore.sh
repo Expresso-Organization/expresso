@@ -27,12 +27,17 @@ cleanup
 mysql_root --execute="create database \`$restore_database\` character set utf8mb4 collate utf8mb4_bin;" >/dev/null
 mysql_root "$restore_database" < "$backup_path"
 
-verification_sql="select
+# 배포 스냅샷은 하나가 커서 group_concat 기본 한도(1KB)를 그대로 넘는다. 줄마다
+# 먼저 md5 를 내고 그 값들을 잇는다 — 한도도 함께 올린다.
+verification_sql="set session group_concat_max_len = 16777216;
+select concat_ws('|',
   (select count(*) from schema_migration),
-  (select count(*) from \"user\"),
+  (select count(*) from \`user\`),
   (select count(*) from record),
   (select count(*) from deployment),
-  (select md5(coalesce(string_agg(id::text || ':' || snapshot::text, ',' order by id), '')) from deployment);"
+  (select coalesce(md5(group_concat(row_hash order by row_id separator ',')), '')
+     from (select id as row_id, md5(concat(id, ':', cast(snapshot as char))) as row_hash
+             from deployment) as hashed));"
 
 source_fingerprint="$(mysql_root expresso --batch --skip-column-names --execute="$verification_sql")"
 restore_fingerprint="$(mysql_root "$restore_database" --batch --skip-column-names --execute="$verification_sql")"
