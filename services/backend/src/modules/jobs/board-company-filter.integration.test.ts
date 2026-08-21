@@ -77,18 +77,20 @@ describeWithDatabase("회사 필터", () => {
     bigCompanyId = await company("큰회사");
 
     const seed = async (companyId: string, count: number, prefix: string) => {
-      await sql`
-        insert into job_posting (
-          company_id, source, title, description_raw, requirements,
-          dedupe_hash, created_at, location, job_family
-        )
-        select
-          ${companyId}, 'user_input', ${`${prefix} 엔지니어 `} || index,
-          ${body}, '{}',
-          ${`cf-${prefix}-${marker}-`} || index, now() - interval '1 minute',
-          '서울', '백엔드 · 데이터'
-        from generate_series(1, ${count}) as index
-      `;
+      for (let index = 1; index <= count; index += 1) {
+        await sql`
+          insert into job_posting (
+            company_id, source, title, description_raw, requirements,
+            dedupe_hash, created_at, location, job_family
+          )
+          values (
+            ${companyId}, 'user_input', ${`${prefix} 엔지니어 ${index}`},
+            ${body}, '{}',
+            ${`cf-${prefix}-${marker}-${index}`}, now(6) - interval 1 minute,
+            '서울', '백엔드 · 데이터'
+          )
+        `;
+      }
     };
     // 큰 쪽이 작은 쪽보다 많아야 비율이 1을 넘는다.
     await seed(smallCompanyId, 2, "small");
