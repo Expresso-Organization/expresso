@@ -49,12 +49,7 @@ describeWithDatabase("career record list HTTP integration", () => {
   let projectId: string;
 
   beforeAll(async () => {
-    const plans = await sql<IdRow[]>`
-      insert into plan (code, generation_quota)
-      values ('free', 3)
-      as new on duplicate key update generation_quota = plan.generation_quota
-      returning id
-    `;
+    const plans = await sql<IdRow[]>`select id from plan where code = 'free'`;
     const planId = plans[0]?.id;
     if (!planId) throw new Error("test plan was not available");
 
