@@ -96,6 +96,21 @@ export function SkelRegion({
   );
 }
 
+/**
+ * 읽는 기계에만 남는 한 줄.
+ *
+ * `SkelRegion`은 감싸는 `div`를 하나 만든다 — 그 자리가 곧 지면의 격자인
+ * 화면에서는 편하지만, 이미 짜인 flex 사슬 한가운데에 끼우면 사슬이 끊긴다.
+ * 그런 자리에서는 껍데기 없이 이것만 놓는다.
+ */
+export function SkelAnnounce({ label }: { label: string }) {
+  return (
+    <span role="status" aria-busy="true" className="ex-sr-only">
+      {label}
+    </span>
+  );
+}
+
 /** 몇 개를 놓을지만 정해 주면 되는 자리 — `key`를 매번 적지 않기 위해. */
 export function skelKeys(count: number): readonly number[] {
   return Array.from({ length: count }, (_, index) => index);
