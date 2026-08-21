@@ -267,17 +267,26 @@ export class AnalyticsService {
   async createDashboardView(userId: string, portfolioId: string, input: DashboardViewInput) {
     try {
       const viewId = randomUUID();
-      await this.#sql`
-        insert into dashboard_view (id, user_id, portfolio_id, name, period, is_default)
-        select ${viewId}, ${userId}, id, ${input.name}, ${input.period}, ${input.isDefault}
-        from portfolio where id = ${portfolioId} and user_id = ${userId}
-      `;
-      const row = (await this.#sql<{ id: string }[]>`
-        select id from dashboard_view where id = ${viewId}
-      `)[0];
-      if (!row) throw new AnalyticsError(404, "portfolio not found");
+      // 여섯 개 제한을 세는 동안 다른 요청이 끼어들면 둘 다 통과한다. 포트폴리오
+      // 한 줄을 먼저 잠가 차례를 만든다 — PostgreSQL 에서는 트리거가 하던 일인데,
+      // MySQL 트리거는 바깥 문장이 쓰고 있는 표를 잠그지 못한다.
+      const row = await this.#sql.begin(async (transaction) => {
+        const owner = (await transaction<{ id: string }[]>`
+          select id from portfolio where id = ${portfolioId} and user_id = ${userId} for update
+        `)[0];
+        if (!owner) throw new AnalyticsError(404, "portfolio not found");
+        await transaction`
+          insert into dashboard_view (id, user_id, portfolio_id, name, period, is_default)
+          values (${viewId}, ${userId}, ${portfolioId}, ${input.name}, ${input.period}, ${input.isDefault})
+        `;
+        return { id: viewId };
+      });
       return { id: row.id, portfolioId, ...input };
     } catch (error) {
+      if (error instanceof AnalyticsError) throw error;
+      if (typeof error === "object" && error !== null && "sqlState" in error && error.sqlState === "45000") {
+        throw new AnalyticsError(409, "dashboard view limit exceeded");
+      }
       if (typeof error === "object" && error !== null && "code" in error && error.code === "23514") {
         throw new AnalyticsError(409, "dashboard view limit exceeded");
       }
