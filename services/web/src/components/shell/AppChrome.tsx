@@ -6,7 +6,7 @@ import { requireSession } from "@/lib/require-session";
 
 import { AppShell } from "./AppShell";
 import { Sidebar } from "./Sidebar";
-import styles from "./Sidebar.module.css";
+import { SidebarSkeleton } from "./SidebarSkeleton";
 
 /**
  * 앱 셸 화면의 공통 껍데기. 각 구간의 `layout.tsx`가 이것 하나만 그린다.
@@ -19,7 +19,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
   return (
     <AppShell
       sidebar={
-        <Suspense fallback={<SidebarFallback />}>
+        <Suspense fallback={<SidebarSkeleton />}>
           <AppSidebar />
         </Suspense>
       }
@@ -69,9 +69,3 @@ async function AppSidebar() {
   );
 }
 
-/**
- * 사이드바가 도착하기 전의 자리. 폭이 같아야 본문이 흔들리지 않는다.
- */
-function SidebarFallback() {
-  return <aside className={styles.sidebar} aria-hidden="true" />;
-}
