@@ -123,12 +123,12 @@ describeWithInfrastructure("job analysis integration", () => {
   beforeAll(async () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("free plan missing");
-    const users = await sql<IdRow[]>`
-      insert into \`user\` (email, display_name, plan_id)
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        (${`analysis-a-${marker}@example.com`}, 'Analysis A', ${planId}),
-        (${`analysis-b-${marker}@example.com`}, 'Analysis B', ${planId})
-      returning id
+        (${users[0]!.id}, ${`analysis-a-${marker}@example.com`}, 'Analysis A', ${planId}),
+        (${users[1]!.id}, ${`analysis-b-${marker}@example.com`}, 'Analysis B', ${planId})
     `;
     userId = users[0]?.id ?? "";
     otherUserId = users[1]?.id ?? "";
@@ -283,13 +283,13 @@ describeWithInfrastructure("job analysis integration", () => {
     `;
     const freshPostingId = freshPostings[0]?.id ?? "";
     tamperPostingId = freshPostingId;
-    const failures = await sql<IdRow[]>`
-      insert into job_analysis (user_id, job_posting_id, input_type)
-      values (${userId}, ${freshPostingId}, 'paste'), (${userId}, ${freshPostingId}, 'paste')
-      returning id
+    const evidenceFailureId = randomUUID();
+    const providerFailureId = randomUUID();
+    await sql`
+      insert into job_analysis (id, user_id, job_posting_id, input_type)
+      values (${evidenceFailureId}, ${userId}, ${freshPostingId}, 'paste'),
+             (${providerFailureId}, ${userId}, ${freshPostingId}, 'paste')
     `;
-    const evidenceFailureId = failures[0]?.id ?? "";
-    const providerFailureId = failures[1]?.id ?? "";
     const tampered = extractionFor(source, sourceQuotes.slice(0, 3));
     tampered.requirements[0]!.sourceSpan.quote += " 변조";
 

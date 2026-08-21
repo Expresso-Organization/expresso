@@ -109,8 +109,8 @@ function encodeCursor(cursor: Cursor): string {
 }
 
 /**
- * 커서 값은 질의에서 `::text`를 한 번 거쳐 넘긴다. postgres.js는 파라미터 뒤의
- * `::timestamptz`를 보고 문자열을 `Date`로 바꿔 보내는데, `Date`는 밀리초까지만
+ * 커서 값은 질의에서 ``를 한 번 거쳐 넘긴다. postgres.js는 파라미터 뒤의
+ * ``를 보고 문자열을 `Date`로 바꿔 보내는데, `Date`는 밀리초까지만
  * 담아 마이크로초가 잘린다. 잘린 값으로 seek하면 방금 읽은 행이 또 나온다.
  */
 function decodeCursor(value: string | undefined): Cursor | null {
@@ -232,7 +232,7 @@ export class PortfolioReadService {
       ${this.#summarySelect(userId)}
         ${query.status ? sql`and portfolio.status = ${query.status}` : sql``}
         ${cursor
-          ? sql`and (portfolio.updated_at, portfolio.id) < (${cursor.at}::text::timestamptz, ${cursor.id}::uuid)`
+          ? sql`and (portfolio.updated_at, portfolio.id) < (${cursor.at}, ${cursor.id})`
           : sql``}
       order by portfolio.updated_at desc, portfolio.id desc
       limit ${query.limit + 1}
@@ -370,7 +370,7 @@ export class PortfolioReadService {
           and portfolio_id = ${portfolioId}
           ${query.actor ? sql`and actor = ${query.actor}` : sql``}
           ${cursor
-            ? sql`and (created_at, id) < (${cursor.at}::text::timestamptz, ${cursor.id}::uuid)`
+            ? sql`and (created_at, id) < (${cursor.at}, ${cursor.id})`
             : sql``}
         order by created_at desc, id desc
         limit ${query.limit + 1}

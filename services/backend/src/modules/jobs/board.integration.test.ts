@@ -95,12 +95,12 @@ describeWithDatabase("job board read HTTP integration", () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("free plan missing");
 
-    const users = await sql<IdRow[]>`
-      insert into \`user\` (email, display_name, plan_id)
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        (${`board-a-${marker}@example.com`}, 'Board A', ${planId}),
-        (${`board-b-${marker}@example.com`}, 'Board B', ${planId})
-      returning id
+        (${users[0]!.id}, ${`board-a-${marker}@example.com`}, 'Board A', ${planId}),
+        (${users[1]!.id}, ${`board-b-${marker}@example.com`}, 'Board B', ${planId})
     `;
     userId = users[0]!.id;
     otherUserId = users[1]!.id;
@@ -151,7 +151,7 @@ describeWithDatabase("job board read HTTP integration", () => {
           now() + interval '30 days', ${`board-later-${marker}`}, now() - interval '2 minutes',
           '서울', '출근', '5년 이상', '백엔드 · 데이터',
           '정규직', '면접 후 협의',
-          '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, null, null
+          '[]', '[]', '[]', null, null
         ),
         (
           ${companyId}, 'user_input', '플랫폼 엔지니어',
@@ -159,7 +159,7 @@ describeWithDatabase("job board read HTTP integration", () => {
           ${sql.json({ technologies: ["Go"], impacts: [], roles: [], conditions: [] })},
           null, ${`board-always-${marker}`}, now() - interval '1 minute',
           null, '리모트', '경력', '플랫폼 · 인프라',
-          null, null, '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, null, null
+          null, null, '[]', '[]', '[]', null, null
         )
       returning id
     `;
@@ -196,20 +196,20 @@ describeWithDatabase("job board read HTTP integration", () => {
     `)[0]!.id;
 
     // 요건은 공고에 붙고, 커버리지만 사용자별로 붙는다.
-    const criteria = await sql<IdRow[]>`
+    const criteria: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
       insert into job_posting_requirement (
-        job_posting_id, order_no, label, kind, source_span
+        id, job_posting_id, order_no, label, kind, source_span
       )
       values
         (
-          ${urgentId}, 0, '대용량 처리 경험', 'must',
+          ${criteria[0]!.id}, ${urgentId}, 0, '대용량 처리 경험', 'must',
           ${sql.json({ start: QUOTE_START, end: QUOTE_START + QUOTE.length, quote: QUOTE })}
         ),
         (
-          ${urgentId}, 1, '금융권 데이터 프로젝트 수행 경험', 'nice',
+          ${criteria[1]!.id}, ${urgentId}, 1, '금융권 데이터 프로젝트 수행 경험', 'nice',
           ${sql.json({ start: QUOTE_START, end: QUOTE_START + QUOTE.length, quote: QUOTE })}
         )
-      returning id
     `;
     await sql`
       insert into requirement_coverage (user_id, requirement_id, coverage)

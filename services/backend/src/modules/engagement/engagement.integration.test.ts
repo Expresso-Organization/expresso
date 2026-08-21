@@ -23,10 +23,12 @@ describeWithDatabase("notifications and read models integration", () => {
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
     const categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id;
     if (!planId || !templateId || !categoryId) throw new Error("engagement seed missing");
-    const users = await sql<IdRow[]>`
-      insert into \`user\` (email, display_name, plan_id) values
-      (${`engagement-${marker}@example.com`}, 'Engagement', ${planId}),
-      (${`engagement-other-${marker}@example.com`}, 'Other', ${planId}) returning id
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
+      values
+        (${users[0]!.id}, ${`engagement-${marker}@example.com`}, 'Engagement', ${planId}),
+        (${users[1]!.id}, ${`engagement-other-${marker}@example.com`}, 'Other', ${planId})
     `;
     userId = users[0]?.id ?? "";
     otherUserId = users[1]?.id ?? "";
@@ -50,7 +52,7 @@ describeWithDatabase("notifications and read models integration", () => {
     `)[0]?.id ?? "";
     const deploymentId = (await sql<IdRow[]>`
       insert into deployment (user_id, portfolio_id, version, subdomain, published_at, snapshot)
-      values (${userId}, ${portfolioId}, 1, ${`engagement-${marker}`}, now(), '{}'::jsonb) returning id
+      values (${userId}, ${portfolioId}, 1, ${`engagement-${marker}`}, now(), '{}') returning id
     `)[0]?.id;
     if (!deploymentId) throw new Error("engagement deployment missing");
     await sql`update portfolio set current_deployment_id = ${deploymentId}, status = 'published' where id = ${portfolioId}`;

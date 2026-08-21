@@ -317,10 +317,10 @@ export class CareerService {
     const sortKey = () => {
       if (query.sort === "title_asc") return sql`record.title`;
       if (query.sort === "period_desc") {
-        return sql`coalesce(lower(record.period)::text, '0001-01-01')`;
+        return sql`coalesce(lower(record.period), '0001-01-01')`;
       }
       if (query.sort === "period_asc") {
-        return sql`coalesce(lower(record.period)::text, '9999-12-31')`;
+        return sql`coalesce(lower(record.period), '9999-12-31')`;
       }
       return sql`to_char(record.updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
     };
@@ -371,10 +371,10 @@ export class CareerService {
       join category on category.id = record.category_id
       where ${scope()}
         ${cursor && descending
-          ? sql`and (${sortKey()}, record.id) < (${cursor.key}, ${cursor.id}::uuid)`
+          ? sql`and (${sortKey()}, record.id) < (${cursor.key}, ${cursor.id})`
           : sql``}
         ${cursor && !descending
-          ? sql`and (${sortKey()}, record.id) > (${cursor.key}, ${cursor.id}::uuid)`
+          ? sql`and (${sortKey()}, record.id) > (${cursor.key}, ${cursor.id})`
           : sql``}
       order by ${sortKey()} ${descending ? sql`desc` : sql`asc`},
         record.id ${descending ? sql`desc` : sql`asc`}

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   ApiErrorResponseSchema,
   CurrentUserResponseSchema,
@@ -52,12 +53,12 @@ describeWithDatabase("identity HTTP integration", () => {
     const planId = plans[0]?.id;
     if (!planId) throw new Error("test plan was not available");
 
-    const users = await sql<IdRow[]>`
-      insert into \`user\` (email, display_name, plan_id)
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        (${`identity-a-${crypto.randomUUID()}@example.com`}, 'Identity A', ${planId}),
-        (${`identity-b-${crypto.randomUUID()}@example.com`}, 'Identity B', ${planId})
-      returning id
+        (${users[0]!.id}, ${`identity-a-${crypto.randomUUID()}@example.com`}, 'Identity A', ${planId}),
+        (${users[1]!.id}, ${`identity-b-${crypto.randomUUID()}@example.com`}, 'Identity B', ${planId})
     `;
     const [first, second] = users;
     if (!first || !second) throw new Error("test users were not persisted");

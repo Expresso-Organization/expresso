@@ -84,7 +84,7 @@ describeWithDatabase("회사 필터", () => {
         )
         select
           ${companyId}, 'user_input', ${`${prefix} 엔지니어 `} || index,
-          ${body}, '{}'::jsonb,
+          ${body}, '{}',
           ${`cf-${prefix}-${marker}-`} || index, now() - interval '1 minute',
           '서울', '백엔드 · 데이터'
         from generate_series(1, ${count}) as index

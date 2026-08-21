@@ -61,12 +61,12 @@ describeWithDatabase("recipe integration", () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     const categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id;
     if (!planId || !categoryId) throw new Error("recipe seed missing");
-    const users = await sql<IdRow[]>`
-      insert into \`user\` (email, display_name, plan_id)
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        (${`recipe-a-${marker}@example.com`}, 'Recipe A', ${planId}),
-        (${`recipe-b-${marker}@example.com`}, 'Recipe B', ${planId})
-      returning id
+        (${users[0]!.id}, ${`recipe-a-${marker}@example.com`}, 'Recipe A', ${planId}),
+        (${users[1]!.id}, ${`recipe-b-${marker}@example.com`}, 'Recipe B', ${planId})
     `;
     userId = users[0]?.id ?? "";
     otherUserId = users[1]?.id ?? "";
@@ -102,7 +102,7 @@ describeWithDatabase("recipe integration", () => {
     for (let index = 0; index < 5; index += 1) {
       const record = (await sql<IdRow[]>`
         insert into record (user_id, category_id, title, status, origin, properties, body_md)
-        values (${userId}, ${categoryId}, ${`Selected evidence ${index}`}, 'organized', 'manual', '{}'::jsonb, ${`Evidence body ${index}`}) returning id
+        values (${userId}, ${categoryId}, ${`Selected evidence ${index}`}, 'organized', 'manual', '{}', ${`Evidence body ${index}`}) returning id
       `)[0];
       if (record) records.push(record);
     }

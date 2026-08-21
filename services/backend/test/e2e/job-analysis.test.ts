@@ -76,10 +76,11 @@ describeWithInfrastructure("job submission and analysis vertical slice", () => {
 
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("fresh database did not seed the free plan");
-    const users = await sql<IdRow[]>`
-      insert into \`user\` (email, display_name, plan_id)
-      values ('jobs-vertical@example.com', 'Jobs Vertical', ${planId})
-      returning id
+    const users: IdRow[] = [{ id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
+      values
+        (${users[0]!.id}, 'jobs-vertical@example.com', 'Jobs Vertical', ${planId})
     `;
     userId = users[0]?.id ?? "";
     if (!userId) throw new Error("vertical slice user was not created");
