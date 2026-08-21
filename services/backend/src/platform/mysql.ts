@@ -395,6 +395,8 @@ export function createMysqlResource(databaseUrl: string): MysqlResource {
     idleTimeout: 20_000,
     // 시각은 어디서나 UTC 로 오갑니다.
     timezone: "Z",
+    // 날짜만 있는 열은 문자열로 받습니다 — 계약이 'YYYY-MM-DD' 를 봅니다.
+    dateStrings: ["DATE"],
     // 소수점 자리가 있는 수를 문자열이 아니라 수로 받습니다.
     decimalNumbers: true,
     // MySQL 의 boolean 은 tinyint(1) 이라 0 · 1 로 옵니다. 계약은 참 · 거짓을
