@@ -93,11 +93,15 @@ start_pair() {
 }
 
 start_pair "$repo_root/services/backend/dist/api/main.js" "$repo_root/services/backend/dist/worker/main.js"
+# 정기 작업이 몇 개인지는 스키마가 안다 — 여기에 다시 적으면 하나 늘 때마다
+# 이 줄이 조용히 어긋난다.
+expected="$(mysql_query "select count(*) from scheduled_job_definition;")"
 for _ in $(seq 1 100); do
   completed="$(mysql_query "select count(*) from scheduled_job_run where status='succeeded';")"
-  if [[ "$completed" -eq 6 ]]; then break; fi
+  if [[ "$completed" -eq "$expected" ]]; then break; fi
   sleep 0.1
 done
+test "$completed" -eq "$expected"
 dead_count="$(mysql_query "select count(*) from platform_outbox where state='dead_letter';")"
 failed_count="$(mysql_query "select count(*) from scheduled_job_run where status='failed';")"
 test "$dead_count" -eq 0
