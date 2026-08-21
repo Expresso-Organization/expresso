@@ -149,7 +149,7 @@ export class JobIngestService {
     const sources = only && only.length > 0
       ? await this.#sql<SourceRow[]>`
         select * from job_source
-        where is_active and id = any(${only}[])
+        where is_active and id in ${this.#sql(only)}
         order by provider, token
       `
       : await this.#sql<SourceRow[]>`

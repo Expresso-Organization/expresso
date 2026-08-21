@@ -177,7 +177,7 @@ create table `template` (
   `code` varchar(255) not null,
   `name` text not null,
   `tone_tags` json not null default (cast('[]' as json)),
-  `supported_sections` json not null,
+  `supported_sections` json not null default (cast('["*"]' as json)),
   `plan_required` text not null,
   `description` text not null default (''),
   `renderer_version` int not null default 1,
@@ -1410,10 +1410,10 @@ alter table `job_posting` add constraint `job_posting_company_id_fkey` foreign k
 alter table `job_analysis` add constraint `job_analysis_job_posting_id_fkey` foreign key (`job_posting_id`) references `job_posting` (`id`) on delete set null;
 alter table `job_analysis` add constraint `job_analysis_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `brew` add constraint `brew_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
-alter table `brew` add constraint `brew_user_id_job_analysis_id_fkey` foreign key (`user_id`, `job_analysis_id`) references `job_analysis` (`user_id`, `id`) on delete restrict;
+alter table `brew` add constraint `brew_user_id_job_analysis_id_fkey` foreign key (`user_id`, `job_analysis_id`) references `job_analysis` (`user_id`, `id`) on delete cascade;
 alter table `portfolio` add constraint `portfolio_current_deployment_fk` foreign key (`current_deployment_id`) references `deployment` (`id`) on delete set null;
 alter table `portfolio` add constraint `portfolio_template_id_fkey` foreign key (`template_id`) references `template` (`id`) on delete restrict;
-alter table `portfolio` add constraint `portfolio_user_id_brew_id_fkey` foreign key (`user_id`, `brew_id`) references `brew` (`user_id`, `id`) on delete restrict;
+alter table `portfolio` add constraint `portfolio_user_id_brew_id_fkey` foreign key (`user_id`, `brew_id`) references `brew` (`user_id`, `id`) on delete cascade;
 alter table `portfolio` add constraint `portfolio_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `deployment` add constraint `deployment_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `deployment` add constraint `deployment_user_id_portfolio_id_fkey` foreign key (`user_id`, `portfolio_id`) references `portfolio` (`user_id`, `id`) on delete cascade;
@@ -1429,7 +1429,7 @@ alter table `question` add constraint `question_requirement_id_fkey` foreign key
 alter table `question` add constraint `question_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `question` add constraint `question_user_id_interview_session_id_fkey` foreign key (`user_id`, `interview_session_id`) references `interview_session` (`user_id`, `id`) on delete cascade;
 alter table `category` add constraint `category_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
-alter table `record` add constraint `record_category_id_fkey` foreign key (`category_id`) references `category` (`id`) on delete restrict;
+alter table `record` add constraint `record_category_id_fkey` foreign key (`category_id`) references `category` (`id`) on delete cascade;
 alter table `record` add constraint `record_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `answer` add constraint `answer_created_record_id_fkey` foreign key (`created_record_id`) references `record` (`id`) on delete set null;
 alter table `answer` add constraint `answer_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
@@ -1450,7 +1450,7 @@ alter table `block` add constraint `block_user_id_portfolio_section_id_fkey` for
 alter table `brew_job` add constraint `brew_job_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `brew_source` add constraint `brew_source_user_id_brew_id_fkey` foreign key (`user_id`, `brew_id`) references `brew` (`user_id`, `id`) on delete cascade;
 alter table `brew_source` add constraint `brew_source_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
-alter table `brew_source` add constraint `brew_source_user_id_record_id_fkey` foreign key (`user_id`, `record_id`) references `record` (`user_id`, `id`) on delete restrict;
+alter table `brew_source` add constraint `brew_source_user_id_record_id_fkey` foreign key (`user_id`, `record_id`) references `record` (`user_id`, `id`) on delete cascade;
 alter table `career_profile` add constraint `career_profile_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `category_view` add constraint `category_view_category_id_fkey` foreign key (`category_id`) references `category` (`id`) on delete cascade;
 alter table `category_view` add constraint `category_view_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
@@ -1476,22 +1476,22 @@ alter table `generated_page` add constraint `generated_page_user_id_fkey` foreig
 alter table `generated_page` add constraint `generated_page_user_id_portfolio_id_fkey` foreign key (`user_id`, `portfolio_id`) references `portfolio` (`user_id`, `id`) on delete cascade;
 alter table `generation_job` add constraint `generation_job_portfolio_fk` foreign key (`portfolio_id`) references `portfolio` (`id`) on delete set null;  -- 소유자 일치는 트리거가 봅니다
 alter table `generation_job` add constraint `generation_job_template_id_fkey` foreign key (`template_id`) references `template` (`id`) on delete restrict;
-alter table `generation_job` add constraint `generation_job_user_id_brew_id_fkey` foreign key (`user_id`, `brew_id`) references `brew` (`user_id`, `id`) on delete restrict;
+alter table `generation_job` add constraint `generation_job_user_id_brew_id_fkey` foreign key (`user_id`, `brew_id`) references `brew` (`user_id`, `id`) on delete cascade;
 alter table `generation_job` add constraint `generation_job_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
-alter table `generation_job` add constraint `generation_job_user_id_recipe_id_fkey` foreign key (`user_id`, `recipe_id`) references `recipe` (`user_id`, `id`) on delete restrict;
+alter table `generation_job` add constraint `generation_job_user_id_recipe_id_fkey` foreign key (`user_id`, `recipe_id`) references `recipe` (`user_id`, `id`) on delete cascade;
 alter table `recipe_item` add constraint `recipe_item_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `recipe_item` add constraint `recipe_item_user_id_recipe_section_id_fkey` foreign key (`user_id`, `recipe_section_id`) references `recipe_section` (`user_id`, `id`) on delete cascade;
 alter table `recipe_evidence_path` add constraint `recipe_evidence_path_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `recipe_evidence_path` add constraint `recipe_evidence_path_user_id_recipe_id_fkey` foreign key (`user_id`, `recipe_id`) references `recipe` (`user_id`, `id`) on delete cascade;
 alter table `recipe_evidence_path` add constraint `recipe_evidence_path_user_id_recipe_item_id_fkey` foreign key (`user_id`, `recipe_item_id`) references `recipe_item` (`user_id`, `id`) on delete cascade;
-alter table `generation_sentence_evidence` add constraint `generation_sentence_evidence_recipe_evidence_path_id_fkey` foreign key (`recipe_evidence_path_id`) references `recipe_evidence_path` (`id`) on delete restrict;
+alter table `generation_sentence_evidence` add constraint `generation_sentence_evidence_recipe_evidence_path_id_fkey` foreign key (`recipe_evidence_path_id`) references `recipe_evidence_path` (`id`) on delete cascade;
 alter table `generation_sentence_evidence` add constraint `generation_sentence_evidence_user_id_block_id_fkey` foreign key (`user_id`, `block_id`) references `block` (`user_id`, `id`) on delete cascade;
 alter table `generation_sentence_evidence` add constraint `generation_sentence_evidence_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `generation_sentence_evidence` add constraint `generation_sentence_evidence_user_id_generation_job_id_fkey` foreign key (`user_id`, `generation_job_id`) references `generation_job` (`user_id`, `id`) on delete cascade;
 alter table `usage_counter` add constraint `usage_counter_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `generation_usage_ledger` add constraint `generation_usage_ledger_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `generation_usage_ledger` add constraint `generation_usage_ledger_user_id_generation_job_id_fkey` foreign key (`user_id`, `generation_job_id`) references `generation_job` (`user_id`, `id`) on delete cascade;
-alter table `generation_usage_ledger` add constraint `generation_usage_ledger_user_id_usage_counter_id_fkey` foreign key (`user_id`, `usage_counter_id`) references `usage_counter` (`user_id`, `id`) on delete restrict;
+alter table `generation_usage_ledger` add constraint `generation_usage_ledger_user_id_usage_counter_id_fkey` foreign key (`user_id`, `usage_counter_id`) references `usage_counter` (`user_id`, `id`) on delete cascade;
 alter table `identity_oauth_account` add constraint `identity_oauth_account_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `identity_session` add constraint `identity_session_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `insight` add constraint `insight_user_id_deployment_id_fkey` foreign key (`user_id`, `deployment_id`) references `deployment` (`user_id`, `id`) on delete cascade;
@@ -1516,7 +1516,7 @@ alter table `notification_preference` add constraint `notification_preference_us
 alter table `portfolio_edit_proposal` add constraint `portfolio_edit_proposal_user_id_block_id_fkey` foreign key (`user_id`, `block_id`) references `block` (`user_id`, `id`) on delete cascade;
 alter table `portfolio_edit_proposal` add constraint `portfolio_edit_proposal_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `portfolio_edit_proposal` add constraint `portfolio_edit_proposal_user_id_portfolio_id_fkey` foreign key (`user_id`, `portfolio_id`) references `portfolio` (`user_id`, `id`) on delete cascade;
-alter table `portfolio_edit_proposal` add constraint `portfolio_edit_proposal_user_id_source_record_id_fkey` foreign key (`user_id`, `source_record_id`) references `record` (`user_id`, `id`) on delete restrict;
+alter table `portfolio_edit_proposal` add constraint `portfolio_edit_proposal_user_id_source_record_id_fkey` foreign key (`user_id`, `source_record_id`) references `record` (`user_id`, `id`) on delete cascade;
 alter table `portfolio_snapshot` add constraint `portfolio_snapshot_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `portfolio_snapshot` add constraint `portfolio_snapshot_user_id_portfolio_id_fkey` foreign key (`user_id`, `portfolio_id`) references `portfolio` (`user_id`, `id`) on delete cascade;
 alter table `recent_search` add constraint `recent_search_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
@@ -1530,7 +1530,7 @@ alter table `record_link` add constraint `record_link_user_id_from_record_id_fke
 alter table `record_link` add constraint `record_link_user_id_to_record_id_fkey` foreign key (`user_id`, `to_record_id`) references `record` (`user_id`, `id`) on delete cascade;
 alter table `record_usage` add constraint `record_usage_user_id_block_id_fkey` foreign key (`user_id`, `block_id`) references `block` (`user_id`, `id`) on delete cascade;
 alter table `record_usage` add constraint `record_usage_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
-alter table `record_usage` add constraint `record_usage_user_id_record_id_fkey` foreign key (`user_id`, `record_id`) references `record` (`user_id`, `id`) on delete restrict;
+alter table `record_usage` add constraint `record_usage_user_id_record_id_fkey` foreign key (`user_id`, `record_id`) references `record` (`user_id`, `id`) on delete cascade;
 alter table `requirement_coverage` add constraint `requirement_coverage_requirement_id_fkey` foreign key (`requirement_id`) references `job_posting_requirement` (`id`) on delete cascade;
 alter table `requirement_coverage` add constraint `requirement_coverage_user_id_fkey` foreign key (`user_id`) references `user` (`id`) on delete cascade;
 alter table `revision` add constraint `revision_block_id_fkey` foreign key (`block_id`) references `block` (`id`) on delete cascade;

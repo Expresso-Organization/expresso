@@ -125,7 +125,7 @@ export class AnalyticsService {
         where deployment.subdomain = ${input.slug} and portfolio.status = 'published'
       `)[0];
       if (!deployment) throw new AnalyticsError(404, "published deployment not found");
-      await transaction`select get_lock(concat('analytics:', ${sessionHash}), 10)`;
+      await transaction`select get_lock(left(concat('an:', ${sessionHash}), 64), 10)`;
       const existing = (await transaction<{ payload_hash: string }[]>`
         select payload_hash from analytics_event_receipt where event_id = ${input.eventId}
       `)[0];
@@ -374,8 +374,8 @@ export class AnalyticsService {
       new Set(metricMap.keys()),
     );
     await this.#sql`
-      insert into insight (user_id, deployment_id, period, narrative, evidence_metrics, suggestions)
-      values (${userId}, ${deploymentId}, daterange(${start}, (${end} + 1), '[)'), ${generated.narrative}, ${generated.evidenceMetrics}, ${this.#sql.json(generated.suggestions)})
+      insert into insight (user_id, deployment_id, period_start, period_end, narrative, evidence_metrics, suggestions)
+      values (${userId}, ${deploymentId}, ${start}, ${end}, ${generated.narrative}, ${this.#sql.array(generated.evidenceMetrics)}, ${this.#sql.json(generated.suggestions)})
     `;
     return InsightSchema.parse({ visibility: "visible", ...generated, period: { start, end }, sampleSize });
   }
@@ -407,7 +407,7 @@ export class AnalyticsService {
       return { preset, start: shiftDate(today, 1 - (preset === "7d" ? 7 : 30)), end: today };
     }
     const first = (await this.#sql<{ date: string | null }[]>`
-      select min((started_at at time zone 'UTC')) as date
+      select min(started_at) as date
       from visit_event where deployment_id = ${deploymentId} and not is_owner
     `)[0]?.date;
     return { preset, start: first && first < today ? first : today, end: today };
@@ -438,10 +438,10 @@ export class AnalyticsService {
   async #coverage(userId: string, deploymentId: string, start: string, end: string) {
     const rows = await this.#sql<{ date: string; aggregated: boolean }[]>`
       with visited as (
-        select distinct (started_at at time zone 'UTC') as date
+        select distinct started_at as date
         from visit_event
         where user_id = ${userId} and deployment_id = ${deploymentId} and not is_owner
-          and (started_at at time zone 'UTC') between ${start} and ${end}
+          and started_at between ${start} and ${end}
       ), aggregated as (
         select distinct date from metric_daily
         where user_id = ${userId} and deployment_id = ${deploymentId}
@@ -506,7 +506,7 @@ export class AnalyticsService {
           left join recipe_section on recipe_section.id = portfolio_section.recipe_section_id
           where section_view.user_id = ${userId} and visit_event.deployment_id = ${deploymentId}
             and not visit_event.is_owner and section_view.dwell_ms >= 1000
-            and (section_view.occurred_at at time zone 'UTC') = any(${counted}[])
+            and section_view.occurred_at in ${this.#sql(counted)}
           group by portfolio_section.id, recipe_section.title
           order by dwell_ms desc limit 50
         `,
@@ -514,14 +514,14 @@ export class AnalyticsService {
           select referrer as origin, count(*) as visits
           from visit_event
           where user_id = ${userId} and deployment_id = ${deploymentId} and not is_owner
-            and (started_at at time zone 'UTC') = any(${counted}[])
+            and started_at in ${this.#sql(counted)}
           group by referrer order by visits desc limit 8
         `,
         this.#sql<StoredInsightRow[]>`
           select narrative, evidence_metrics, suggestions, generated_at
           from insight
           where user_id = ${userId} and deployment_id = ${deploymentId}
-            and period = daterange(${start}, (${end} + 1), '[)')
+            and period_start = ${start} and period_end = ${end}
           order by generated_at desc limit 1
         `,
         this.#sql<{ id: string; name: string; period: string; is_default: boolean }[]>`
@@ -544,7 +544,7 @@ export class AnalyticsService {
             and section_view.dwell_ms >= 1000
           where visit_event.user_id = ${userId} and visit_event.deployment_id = ${deploymentId}
             and not visit_event.is_owner and visit_event.org_domain is not null
-            and (visit_event.started_at at time zone 'UTC') = any(${counted}[])
+            and visit_event.started_at in ${this.#sql(counted)}
           group by visit_event.org_domain
           order by visits desc limit 20
         `

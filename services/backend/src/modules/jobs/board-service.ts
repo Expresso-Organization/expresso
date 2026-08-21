@@ -382,7 +382,7 @@ export class JobBoardService {
   #countryClause(query: ListJobPostingsQuery) {
     const sql = this.#sql;
     return query.country
-      ? sql`and job_posting.location_region = any(${regionsOf(query.country)})`
+      ? sql`and job_posting.location_region in ${sql(regionsOf(query.country))}`
       : sql``;
   }
 
@@ -490,7 +490,7 @@ export class JobBoardService {
       join job_analysis
         on job_analysis.user_id = brew.user_id and job_analysis.id = brew.job_analysis_id
       where brew.user_id = ${userId}
-        and job_analysis.job_posting_id = any(${jobPostingIds}[])
+        and job_analysis.job_posting_id in ${this.#sql(jobPostingIds)}
       order by job_analysis.job_posting_id, brew.updated_at desc, brew.id desc
     `;
     return new Map(rows.map((row) => [row.job_posting_id, row]));
@@ -781,7 +781,7 @@ export class JobBoardService {
       : new Map(
           (await sql<RecordRow[]>`
             select id, title from record
-            where user_id = ${userId} and id = any(${coveredIds}[])
+            where user_id = ${userId} and id in ${sql(coveredIds)}
           `).map((record) => [record.id, record.title]),
         );
 

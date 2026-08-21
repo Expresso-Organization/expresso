@@ -487,7 +487,7 @@ export class PortfolioEditingService {
         where block.portfolio_section_id = portfolio_section.id
           and portfolio_section.portfolio_id = ${portfolioId}
           and block.user_id = ${userId}
-          and not (block.id = any(${kept}[]))
+          and not (block.id in ${transaction(kept)})
       `;
       for (const section of target.snapshot.sections) {
         await transaction`update portfolio_section set order_no = ${section.order}, visible = ${section.visible} where id = ${section.id} and user_id = ${userId} and portfolio_id = ${portfolioId}`;

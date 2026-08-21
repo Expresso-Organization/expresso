@@ -48,7 +48,7 @@ describeWithDatabase("account export and deletion grace lifecycle", () => {
     if (!visitId) throw new Error("account lifecycle visit missing");
     await sql`insert into analytics_event_receipt (event_id, user_id, deployment_id, event_type, visitor_hash, payload_hash, payload_bytes, occurred_at) values (${randomUUID()}, ${userId}, ${deploymentId}, 'visit', ${"b".repeat(64)}, ${"c".repeat(64)}, 100, '2026-08-09')`;
     await sql`insert into metric_daily (user_id, deployment_id, date, metric_key, value, sample_size) values (${userId}, ${deploymentId}, '2026-08-09', 'visits', 1, 1)`;
-    await sql`insert into insight (user_id, deployment_id, period, narrative, evidence_metrics) values (${userId}, ${deploymentId}, daterange('2026-08-09', '2026-08-10', '[)'), '1 visit', array['visits'])`;
+    await sql`insert into insight (user_id, deployment_id, period_start, period_end, narrative, evidence_metrics) values (${userId}, ${deploymentId}, '2026-08-09', '2026-08-10', '1 visit', ${sql.array(['visits'])})`;
     return { userId, portfolioId, deploymentId, assetId };
   }
 

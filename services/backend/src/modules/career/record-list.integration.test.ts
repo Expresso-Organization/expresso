@@ -80,12 +80,12 @@ describeWithDatabase("career record list HTTP integration", () => {
     // 정렬·페이지네이션 경계를 보려면 updated_at이 동률인 행이 필요하다.
     const sharedUpdatedAt = "2026-03-01T00:00:00Z";
     await sql`
-      insert into record (user_id, category_id, title, status, origin, properties, body_md, period, updated_at)
+      insert into record (user_id, category_id, title, status, origin, properties, body_md, period_start, period_end, updated_at)
       values
-        (${userId}, ${experienceId}, '적재 파이프라인 구축', 'organized', 'manual', '{\`role\`:"백엔드"}', '3천만 건을 매일 적재했습니다.', daterange('2024-01-01','2024-12-31'), ${sharedUpdatedAt}),
-        (${userId}, ${experienceId}, '정산 스케줄러 안정화', 'draft', 'interview', '{}', '', daterange('2023-01-01','2023-06-30'), ${sharedUpdatedAt}),
+        (${userId}, ${experienceId}, '적재 파이프라인 구축', 'organized', 'manual', '{"role":"백엔드"}', '3천만 건을 매일 적재했습니다.', '2024-01-01', '2024-12-31', ${sharedUpdatedAt}),
+        (${userId}, ${experienceId}, '정산 스케줄러 안정화', 'draft', 'interview', '{}', '', '2023-01-01', '2023-06-30', ${sharedUpdatedAt}),
         (${userId}, ${experienceId}, '장애 대응 3일', 'organized', 'ai', '{}', '로그 없이 원인을 좁혔습니다.', null, '2026-04-01T00:00:00Z'),
-        (${userId}, ${projectId}, '데이터 품질 모니터링', 'verified', 'manual', '{}', '자동화했습니다.', daterange('2025-01-01','2025-08-31'), '2026-05-01T00:00:00Z'),
+        (${userId}, ${projectId}, '데이터 품질 모니터링', 'verified', 'manual', '{}', '자동화했습니다.', '2025-01-01', '2025-08-31', '2026-05-01T00:00:00Z'),
         (${otherUserId}, ${experienceId}, '남의 기록', 'organized', 'manual', '{}', '보이면 안 됩니다.', null, '2026-06-01T00:00:00Z')
     `;
 

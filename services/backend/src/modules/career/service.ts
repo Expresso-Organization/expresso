@@ -317,12 +317,12 @@ export class CareerService {
     const sortKey = () => {
       if (query.sort === "title_asc") return sql`record.title`;
       if (query.sort === "period_desc") {
-        return sql`coalesce(lower(record.period), '0001-01-01')`;
+        return sql`coalesce(record.period_start, '0001-01-01')`;
       }
       if (query.sort === "period_asc") {
-        return sql`coalesce(lower(record.period), '9999-12-31')`;
+        return sql`coalesce(record.period_start, '9999-12-31')`;
       }
-      return sql`to_char(record.updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
+      return sql`date_format(record.updated_at, '%Y-%m-%dT%H:%i:%s.%fZ')`;
     };
 
     const scope = () => sql`
@@ -349,8 +349,8 @@ export class CareerService {
         record.updated_at,
         record.deleted_at,
         record.purge_after,
-        lower(record.period) as period_from,
-        upper(record.period) as period_to,
+        record.period_start as period_from,
+        record.period_end as period_to,
         ${sortKey()} as sort_key,
         (
           select count(*) from record_link
@@ -859,7 +859,7 @@ export class CareerService {
         where record.user_id = ${userId}
           and record.deleted_at is null
           and category.is_system
-          and record.id = any(${ids}[])
+          and record.id in ${transaction(ids)}
       `;
       if (records.length !== ids.length) {
         throw new CareerError(404, "skill evidence record not found");

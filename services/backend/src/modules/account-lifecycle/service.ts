@@ -30,7 +30,7 @@ export class AccountLifecycleService {
     if (!account) throw new AccountLifecycleError(404, "account not found");
     const [categories, records, skills, analyses, savedSearches, interests, brews, recipes, portfolios, deployments, assets, metrics, insights] = await Promise.all([
       this.#sql<Record<string, unknown>[]>`select id, \`key\`, name, property_schema, sort_order from category where user_id = ${userId} order by sort_order, id`,
-      this.#sql<Record<string, unknown>[]>`select id, category_id, title, status, origin, properties, body_md, period, updated_at, deleted_at from record where user_id = ${userId} order by id`,
+      this.#sql<Record<string, unknown>[]>`select id, category_id, title, status, origin, properties, body_md, period_start, period_end, updated_at, deleted_at from record where user_id = ${userId} order by id`,
       this.#sql<Record<string, unknown>[]>`select id, name, level, evidence_count, last_used_at, strength from skill where user_id = ${userId} order by name, id`,
       this.#sql<Record<string, unknown>[]>`select id, job_posting_id, input_type, status, analyzed_at from job_analysis where user_id = ${userId} order by id`,
       this.#sql<Record<string, unknown>[]>`select id, query_text, filters, notify, last_run_at from saved_search where user_id = ${userId} order by id`,
@@ -41,7 +41,7 @@ export class AccountLifecycleService {
       this.#sql<Record<string, unknown>[]>`select id, portfolio_id, version, subdomain, contact_visibility, published_at, snapshot, seo from deployment where user_id = ${userId} order by portfolio_id, version`,
       this.#sql<Record<string, unknown>[]>`select id, portfolio_id, kind, file_url, page_format, version, revoked_at, created_at from export_asset where user_id = ${userId} order by created_at, id`,
       this.#sql<Record<string, unknown>[]>`select deployment_id, date, metric_key, value, sample_size from metric_daily where user_id = ${userId} order by date, metric_key`,
-      this.#sql<Record<string, unknown>[]>`select deployment_id, period, narrative, evidence_metrics, suggestions, generated_at from insight where user_id = ${userId} order by generated_at, id`,
+      this.#sql<Record<string, unknown>[]>`select deployment_id, period_start, period_end, narrative, evidence_metrics, suggestions, generated_at from insight where user_id = ${userId} order by generated_at, id`,
     ]);
     return AccountExportSchema.parse(JSON.parse(JSON.stringify({
       schemaVersion: 1, generatedAt: at.toISOString(), account,

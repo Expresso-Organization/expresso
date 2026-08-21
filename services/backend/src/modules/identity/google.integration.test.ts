@@ -112,7 +112,7 @@ describeWithDatabase("Google 로그인 HTTP 통합", () => {
   });
 
   afterAll(async () => {
-    await sql`delete from \`user\` where email = any(${createdEmails})`;
+    await sql`delete from \`user\` where email in ${sql(createdEmails)}`;
     await app.close();
     await sql.end({ timeout: 5 });
   });
