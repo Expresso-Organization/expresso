@@ -18,6 +18,30 @@ services:
       - expresso-postgres:/var/lib/postgresql
     restart: unless-stopped
 
+  # MySQL 전환 중입니다 — 두 데이터베이스를 함께 띄워 두고 옮깁니다.
+  # 전환이 끝나면 postgres 서비스와 볼륨을 지웁니다.
+  mysql:
+    image: mysql:8.4
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+00:00
+    environment:
+      MYSQL_DATABASE: expresso
+      MYSQL_USER: expresso
+      MYSQL_PASSWORD: expresso
+      MYSQL_ROOT_PASSWORD: expresso
+    ports:
+      - "${EXPRESSO_MYSQL_PORT:-53306}:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uexpresso", "-pexpresso"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - expresso-mysql:/var/lib/mysql
+    restart: unless-stopped
+
   redis:
     image: redis:8.2.1-alpine
     command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
@@ -34,4 +58,5 @@ services:
 
 volumes:
   expresso-postgres:
+  expresso-mysql:
   expresso-redis:
