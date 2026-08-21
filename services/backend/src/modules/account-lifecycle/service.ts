@@ -92,7 +92,7 @@ export class AccountLifecycleService {
       `;
       const assetIds = (request.restoration.assets ?? []).map(({ id }) => id);
       if (assetIds.length > 0) await transaction`
-        update export_asset set revoked_at = null, access_nonce = gen_random_uuid()
+        update export_asset set revoked_at = null, access_nonce = uuid()
         where user_id = ${request.user_id} and id in ${transaction(assetIds)}
       `;
       await transaction`update account_deletion_request set status = 'cancelled', cancelled_at = ${at}, phase = 'cancelled' where id = ${request.id}`;

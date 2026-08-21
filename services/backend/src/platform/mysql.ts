@@ -377,6 +377,15 @@ export function createMysqlResource(databaseUrl: string): MysqlResource {
     timezone: "Z",
     // 소수점 자리가 있는 수를 문자열이 아니라 수로 받습니다.
     decimalNumbers: true,
+    // MySQL 의 boolean 은 tinyint(1) 이라 0 · 1 로 옵니다. 계약은 참 · 거짓을
+    // 받으므로 여기서 되돌립니다 — PostgreSQL 이 주던 것과 같은 값이 됩니다.
+    typeCast(field, next) {
+      if (field.type === "TINY" && field.length === 1) {
+        const value = field.string();
+        return value === null ? null : value === "1";
+      }
+      return next();
+    },
     supportBigNumbers: true,
     bigNumberStrings: false,
   });

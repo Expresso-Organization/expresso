@@ -158,14 +158,14 @@ describeWithDatabase("portfolio editing integration", () => {
   });
 
   it("restores the full initial snapshot while preserving deployment state and records the restore", async () => {
-    const deploymentBefore = (await sql<{ value: unknown }[]>`select to_jsonb(deployment) as value from deployment where id = ${deploymentId}`)[0]?.value;
+    const deploymentBefore = (await sql<{ value: unknown }[]>`select json_object('snapshot', snapshot, 'subdomain', subdomain, 'version', version) as value from deployment where id = ${deploymentId}`)[0]?.value;
     const proposal = await service.preview(userId, portfolioId, blockId, { operation: "set_style", style: { highlight: true, spacing: "wide" } });
     await service.apply(userId, proposal.id);
     const restored = await service.restore(userId, portfolioId, snapshotId);
     expect(restored.preRestoreSnapshotId).toBeTruthy();
     expect(restored.revisionId).toBeTruthy();
     expect((await sql<{ content: { text: string }; style: { weight: string }; locked: boolean }[]>`select content, style, locked from block where id = ${blockId}`)[0]).toEqual({ content: { text: initialText }, style: { weight: 'normal' }, locked: false });
-    const deploymentAfter = (await sql<{ value: unknown }[]>`select to_jsonb(deployment) as value from deployment where id = ${deploymentId}`)[0]?.value;
+    const deploymentAfter = (await sql<{ value: unknown }[]>`select json_object('snapshot', snapshot, 'subdomain', subdomain, 'version', version) as value from deployment where id = ${deploymentId}`)[0]?.value;
     expect(deploymentAfter).toEqual(deploymentBefore);
     expect((await sql<{ count: number }[]>`select count(*) as count from revision where user_id = ${userId} and portfolio_id = ${portfolioId} and change_kind in ('revert', 'restore')`)[0]?.count).toBeGreaterThanOrEqual(2);
   });

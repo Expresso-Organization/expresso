@@ -715,7 +715,7 @@ export class AnalyticsService {
       // 끼워 넣은 자리부터 뒤로 한 칸씩 민다. 안 밀면 두 위젯이 같은 자리를 갖는다.
       if (order < last) await transaction`
         update widget
-        set position = jsonb_set(position, '{order}', to_jsonb((position ->> '$.order') + 1))
+        set position = json_set(position, '$.order', cast(position ->> '$.order' as unsigned) + 1)
         where dashboard_view_id = ${viewId} and (position ->> '$.order') >= ${order}
       `;
       await insertWidget(transaction, userId, viewId, {
@@ -753,7 +753,7 @@ export class AnalyticsService {
 
     await this.#sql.begin(async (transaction) => {
       for (const [order, id] of widgetIds.entries()) await transaction`
-        update widget set position = jsonb_set(position, '{order}', to_jsonb(${order}))
+        update widget set position = json_set(position, '$.order', ${order})
         where id = ${id} and user_id = ${userId}
       `;
     });
