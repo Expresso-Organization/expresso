@@ -496,6 +496,17 @@ export class RecipeService {
       `)[0];
       if (!revision) throw new Error("recipe revision missing");
       revisionId = revision.id;
+      // 최근 50개만 남긴다. PostgreSQL 에서는 트리거가 하던 일인데, MySQL 트리거는
+      // 자기 표를 지우지 못해 여기서 한다.
+      const stale = await transaction<IdRow[]>`
+        select id from recipe_revision
+        where user_id = ${userId} and recipe_id = ${recipeId}
+        order by created_at desc, id desc
+        limit 18446744073709551615 offset 50
+      `;
+      if (stale.length > 0) {
+        await transaction`delete from recipe_revision where id in ${transaction(stale.map(({ id }) => id))}`;
+      }
       await transaction`update recipe set updated_at = now(6) where id = ${recipeId} and user_id = ${userId}`;
     });
     return RecipeEditResultSchema.parse({ recipe: await this.getRecipe(userId, recipeId), revisionId, diff });

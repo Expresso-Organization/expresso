@@ -324,20 +324,24 @@ export class MaterialsService {
       if (allowed.length !== recordIds.length) {
         throw new MaterialsError(409, "selection contains an ineligible record");
       }
-      await transaction`
-        update brew_source
-        set is_selected = false, selected_by = 'user',
-            excluded_reason = 'USER_DESELECTED', updated_at = now(6)
-        where user_id = ${userId} and brew_id = ${brewId}
-      `;
       // rank는 매칭 순위지 고른 차례가 아니다. 여기서 다시 매기면 목록이 두 가지
       // 뜻을 섞어 정렬되고, 뺀 기록이 고른 기록보다 위로 올라온다.
+      //
+      // 고를 것을 먼저 켜고 나머지를 끈다. 선택이 한순간도 0이 되지 않아야
+      // 「후보가 있으면 선택 하나는 남는다」를 보는 트리거에 걸리지 않는다.
       await transaction`
         update brew_source
         set is_selected = true, selected_by = 'user',
             excluded_reason = null, updated_at = now(6)
         where user_id = ${userId} and brew_id = ${brewId}
           and record_id in ${transaction(recordIds)}
+      `;
+      await transaction`
+        update brew_source
+        set is_selected = false, selected_by = 'user',
+            excluded_reason = 'USER_DESELECTED', updated_at = now(6)
+        where user_id = ${userId} and brew_id = ${brewId}
+          and record_id not in ${transaction(recordIds)}
       `;
       await transaction`
         update brew set updated_at = now(6)
