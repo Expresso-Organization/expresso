@@ -2,13 +2,13 @@ import type { Route } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { logoutAction } from "@/app/auth-actions";
-import { AppBody, AppHeader, appShellStyles } from "@/components/shell/AppShell";
-import { SearchAndNotifications } from "@/components/shell/HeaderActions";
+import { AppBody } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
 import { homeEngagement, recentPortfolios } from "@/lib/app-data";
 import { requireSession } from "@/lib/require-session";
 
+import { HomeHeader, HomeSearch } from "./HomeChrome";
+import { MidRowSkeleton, PortfolioGridSkeleton } from "./HomeSkeleton";
 import styles from "./page.module.css";
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -20,14 +20,6 @@ const CATEGORY_ICONS: Record<string, string> = {
   activity_leadership: "users-three",
   skill_tool: "code",
 };
-
-/** 00 영역 1 — 예시 칩 4개는 확정 문구다. */
-const EXAMPLE_QUERIES = [
-  "리모트 되는 데이터 엔지니어",
-  "Kafka 안 쓰는 곳",
-  "이번 주 마감 임박",
-  "시리즈 B 이상 스타트업",
-];
 
 /**
  * 00 홈.
@@ -49,56 +41,10 @@ export default async function HomePage() {
 
   return (
     <>
-      <AppHeader
-        title="홈"
-        actions={
-          <>
-            <SearchAndNotifications />
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                className={appShellStyles.iconButton}
-                aria-label="로그아웃"
-              >
-                <Icon name="sign-out" size={17} />
-              </button>
-            </form>
-          </>
-        }
-      />
+      <HomeHeader />
       <AppBody>
         <div className={styles.content}>
-          {/* 영역 1 — AI 검색 바 */}
-          <form className={styles.searchBar} action="/jobs">
-            <Icon name="sparkle" size={18} color="var(--ex-espresso)" />
-            <input
-              name="q"
-              className={styles.searchInput}
-              placeholder='"내 파이프라인 경험을 살릴 수 있는 자리" 처럼 문장으로 물어보세요'
-              aria-label="공고 검색"
-            />
-            <span className={styles.searchShortcut}>⌘K</span>
-            <button type="submit" className={styles.searchSubmit}>
-              물어보기
-            </button>
-          </form>
-
-          <div className={styles.examples}>
-            <span className={styles.examplesLabel}>이렇게 물어볼 수 있어요</span>
-            {EXAMPLE_QUERIES.map((query) => (
-              <Link
-                key={query}
-                href={{ pathname: "/jobs", query: { q: query } }}
-                className={styles.exampleChip}
-              >
-                {query}
-              </Link>
-            ))}
-            <button type="button" className={styles.savedSearches}>
-              <Icon name="bell-simple" size={14} color="var(--ex-slate-500)" />
-              저장한 검색
-            </button>
-          </div>
+          <HomeSearch />
 
           {/*
             00 빈 상태 — 기록 0건이면 추천·일치도 UI를 모두 숨기고
@@ -121,11 +67,11 @@ export default async function HomePage() {
             </div>
           ) : null}
 
-          <Suspense fallback={<div className={styles.midRow} />}>
+          <Suspense fallback={<MidRowSkeleton />}>
             <Recommended accessToken={session.accessToken} recordTotal={recordTotal} />
           </Suspense>
 
-          <Suspense fallback={<div />}>
+          <Suspense fallback={<PortfolioGridSkeleton />}>
             <Portfolios accessToken={session.accessToken} />
           </Suspense>
 
