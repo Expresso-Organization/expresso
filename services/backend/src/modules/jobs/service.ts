@@ -414,7 +414,7 @@ export class JobMarketService {
     }
     const rows = await this.#sql<RequirementPostingRow[]>`
       select id, requirements from job_posting
-      where id = any(${jobPostingIds}[])
+      where id in ${this.#sql(jobPostingIds)}
     `;
     if (rows.length < 5) {
       return JobDemandSummarySchema.parse({

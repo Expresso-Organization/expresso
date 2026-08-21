@@ -120,7 +120,7 @@ describeWithDatabase("publishing and asset lifecycle integration", () => {
     const secondSlug = `second-${marker}`;
     const first = await service.publish(proUserId, proPortfolioId, PublishPortfolioSchema.parse({ slug: firstSlug }), at);
     expect(first).toMatchObject({ version: expect.any(Number), contactVisibility: "hidden" });
-    await expect(sql`update deployment set snapshot = '{\`tampered\`:true}' where id = ${first.id}`).rejects.toThrow(/immutable/);
+    await expect(sql`update deployment set snapshot = '{"tampered":true}' where id = ${first.id}`).rejects.toThrow(/immutable/);
     await sql`update block set content = ${sql.json({ text: "unpublished edit" })} where id = ${blockId}`;
 
     const beforeRepublish = await app.inject({ method: "GET", url: `/v1/public/portfolios/${firstSlug}` });

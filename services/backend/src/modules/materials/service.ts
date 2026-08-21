@@ -268,8 +268,8 @@ export class MaterialsService {
              brew_source.score, brew_source.\`rank\`, brew_source.is_selected,
              brew_source.selected_by, brew_source.excluded_reason, brew_source.reason_text,
              category.name as category_name, category.icon as category_icon,
-             lower(record.period) as period_from,
-             upper(record.period) as period_to
+             record.period_start as period_from,
+             record.period_end as period_to
       from brew_source
       join record on record.id = brew_source.record_id
         and record.user_id = brew_source.user_id
@@ -319,7 +319,7 @@ export class MaterialsService {
       const allowed = await transaction<{ record_id: string }[]>`
         select record_id from brew_source
         where user_id = ${userId} and brew_id = ${brewId}
-          and record_id = any(${recordIds}[])
+          and record_id in ${transaction(recordIds)}
       `;
       if (allowed.length !== recordIds.length) {
         throw new MaterialsError(409, "selection contains an ineligible record");
@@ -337,7 +337,7 @@ export class MaterialsService {
         set is_selected = true, selected_by = 'user',
             excluded_reason = null, updated_at = now(6)
         where user_id = ${userId} and brew_id = ${brewId}
-          and record_id = any(${recordIds}[])
+          and record_id in ${transaction(recordIds)}
       `;
       await transaction`
         update brew set updated_at = now(6)

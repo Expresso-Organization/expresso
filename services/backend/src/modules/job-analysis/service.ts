@@ -263,7 +263,7 @@ export class JobAnalysisService {
         // 같은 공고를 두 사람이 동시에 처음 읽으면 요건이 두 벌 들어간다.
         // 공고 하나에 한 번만 쓰이도록 잠근다.
         await transaction`
-          select get_lock(concat('job-analysis:', ${analysis.job_posting_id}), 10)
+          select get_lock(left(concat('ja:', ${analysis.job_posting_id}), 64), 10)
         `;
 
         // 요건은 처음 뽑을 때만 쓴다. 이미 있으면 그대로 두고, 그래서 다른

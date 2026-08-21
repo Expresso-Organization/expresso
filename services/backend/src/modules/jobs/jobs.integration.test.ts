@@ -83,7 +83,7 @@ describeWithDatabase("job market integration", () => {
       await sql`delete from \`user\` where id in (${firstUserId}, ${secondUserId})`;
     }
     if (postingIds.length > 0) {
-      await sql`delete from job_posting where id = any(${postingIds}[])`;
+      await sql`delete from job_posting where id in ${sql(postingIds)}`;
     }
     if (primaryCompanyId) await sql`delete from company where id = ${primaryCompanyId}`;
     await app.close();
