@@ -288,7 +288,7 @@ export class MediaService {
       // 사용자가 직접 놓은 것이라 잠긴 채로 들어간다 — 다시 추출해도 지워지지
       // 않는다(P3). 이력에도 한 줄 남아 04c에서 되돌릴 수 있다.
       await transaction`
-        insert into revision (user_id, portfolio_id, block_id, actor, change_kind, summary, before, after)
+        insert into revision (user_id, portfolio_id, block_id, actor, change_kind, summary, \`before\`, after)
         values (
           ${userId}, ${portfolioId}, ${block.id}, 'user', 'edit', '이미지를 놓았습니다',
           null, ${transaction.json(content as unknown as JSONValue)}

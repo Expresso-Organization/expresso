@@ -158,7 +158,7 @@ export class EngagementService {
         where score.user_id = ${userId} order by score.total desc, posting.id limit 5
       `,
       this.#sql<{ key: string; value: string | number }[]>`
-        select metric.metric_key as key, sum(metric.value) as value
+        select metric.metric_key as \`key\`, sum(metric.value) as value
         from metric_daily as metric join portfolio on portfolio.current_deployment_id = metric.deployment_id
         where portfolio.user_id = ${userId} group by metric.metric_key order by metric.metric_key
       `,

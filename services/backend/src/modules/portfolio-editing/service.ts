@@ -248,7 +248,7 @@ export class PortfolioEditingService {
         as new on duplicate key update quoted_text = new.quoted_text
       `;
       revisionId = (await transaction<{ id: string }[]>`
-        insert into revision (user_id, portfolio_id, block_id, actor, before, after, proposal_id, summary)
+        insert into revision (user_id, portfolio_id, block_id, actor, \`before\`, after, proposal_id, summary)
         values (${userId}, ${proposal.portfolio_id}, ${block.id}, 'user', ${transaction.json(proposal.before_state as JSONValue)}, ${transaction.json(proposal.after_state as JSONValue)}, ${proposal.id}, ${OPERATION_SUMMARY[proposal.operation]}) returning id
       `)[0]?.id ?? "";
       applied = (await transaction<ProposalRow[]>`update portfolio_edit_proposal set status = 'applied', applied_at = now(6) where id = ${proposal.id} returning *`)[0]!;
@@ -261,7 +261,7 @@ export class PortfolioEditingService {
       const revision = (await transaction<{
         id: string; portfolio_id: string; block_id: string | null;
         before: Record<string, unknown>; after: Record<string, unknown>;
-      }[]>`select id, portfolio_id, block_id, before, after from revision where id = ${revisionId} and user_id = ${userId} for update`)[0];
+      }[]>`select id, portfolio_id, block_id, \`before\`, after from revision where id = ${revisionId} and user_id = ${userId} for update`)[0];
       if (!revision?.block_id) throw new PortfolioEditingError(404, "revertible revision not found");
       const block = (await transaction<BlockRow[]>`select * from block where id = ${revision.block_id} and user_id = ${userId} for update`)[0];
       if (!block) throw new PortfolioEditingError(404, "revision block not found");
@@ -270,7 +270,7 @@ export class PortfolioEditingService {
       const before = revision.before as { content: Record<string, unknown>; style: Record<string, unknown>; sourceRecordId: string | null; syncState: string; locked: boolean };
       await transaction`update block set content = ${transaction.json(before.content as JSONValue)}, style = ${transaction.json(before.style as JSONValue)}, source_record_id = ${before.sourceRecordId}, sync_state = ${before.syncState}, locked = ${before.locked} where id = ${block.id}`;
       const newRevisionId = (await transaction<{ id: string }[]>`
-        insert into revision (user_id, portfolio_id, block_id, actor, before, after, reverted_revision_id, change_kind, summary)
+        insert into revision (user_id, portfolio_id, block_id, actor, \`before\`, after, reverted_revision_id, change_kind, summary)
         values (${userId}, ${revision.portfolio_id}, ${block.id}, 'user', ${transaction.json(blockState(block) as JSONValue)}, ${transaction.json(before as JSONValue)}, ${revision.id}, 'revert', '한 번의 변경을 되돌렸습니다') returning id
       `)[0]?.id;
       return { revisionId: newRevisionId, conflictResolved: conflict };
@@ -297,7 +297,7 @@ export class PortfolioEditingService {
         update block set order_no = ${order} where id = ${id} and user_id = ${userId}
       `;
       const revisionId = (await transaction<{ id: string }[]>`
-        insert into revision (user_id, portfolio_id, actor, before, after, change_kind, summary)
+        insert into revision (user_id, portfolio_id, actor, \`before\`, after, change_kind, summary)
         values (
           ${userId}, ${portfolioId}, 'user',
           ${transaction.json({ blockIds: current.map(({ id }) => id) })},
@@ -345,7 +345,7 @@ export class PortfolioEditingService {
       if (!copy) throw new Error("block copy missing");
 
       const revisionId = (await transaction<{ id: string }[]>`
-        insert into revision (user_id, portfolio_id, block_id, actor, before, after, change_kind, summary)
+        insert into revision (user_id, portfolio_id, block_id, actor, \`before\`, after, change_kind, summary)
         values (
           ${userId}, ${portfolioId}, ${copy.id}, 'user', null,
           ${transaction.json(blockState(block) as JSONValue)},
@@ -381,7 +381,7 @@ export class PortfolioEditingService {
           and order_no > ${block.order_no}
       `;
       const revisionId = (await transaction<{ id: string }[]>`
-        insert into revision (user_id, portfolio_id, actor, before, after, change_kind, summary)
+        insert into revision (user_id, portfolio_id, actor, \`before\`, after, change_kind, summary)
         values (
           ${userId}, ${portfolioId}, 'user',
           ${transaction.json(blockState(block) as JSONValue)}, null,
@@ -418,7 +418,7 @@ export class PortfolioEditingService {
         where id = ${sectionId} and user_id = ${userId}
       `;
       const revisionId = (await transaction<{ id: string }[]>`
-        insert into revision (user_id, portfolio_id, actor, before, after, change_kind, summary)
+        insert into revision (user_id, portfolio_id, actor, \`before\`, after, change_kind, summary)
         values (
           ${userId}, ${portfolioId}, 'user',
           ${transaction.json({ sectionId, visible: section.visible })},
@@ -459,7 +459,7 @@ export class PortfolioEditingService {
         where id = ${id} and user_id = ${userId} and portfolio_id = ${portfolioId}
       `;
       const revisionId = (await transaction<{ id: string }[]>`
-        insert into revision (user_id, portfolio_id, actor, before, after, change_kind, summary)
+        insert into revision (user_id, portfolio_id, actor, \`before\`, after, change_kind, summary)
         values (
           ${userId}, ${portfolioId}, 'user',
           ${transaction.json({ sectionIds: current.map(({ id }) => id) })},
@@ -508,7 +508,7 @@ export class PortfolioEditingService {
         `;
       }
       const revisionId = (await transaction<{ id: string }[]>`
-        insert into revision (user_id, portfolio_id, actor, before, after, change_kind, summary)
+        insert into revision (user_id, portfolio_id, actor, \`before\`, after, change_kind, summary)
         values (${userId}, ${portfolioId}, 'user', ${transaction.json({ preRestoreSnapshotId: preRestoreId })}, ${transaction.json({ restoredSnapshotId: snapshotId })}, 'restore', '지점으로 복원했습니다') returning id
       `)[0]?.id;
       return { snapshotId, preRestoreSnapshotId: preRestoreId, revisionId };

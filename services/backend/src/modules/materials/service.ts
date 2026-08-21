@@ -136,7 +136,7 @@ export class MaterialsService {
         const selected = index < SELECTION_LIMIT;
         await transaction`
           insert into brew_source (
-            user_id, brew_id, record_id, rank, selected_by,
+            user_id, brew_id, record_id, \`rank\`, selected_by,
             excluded_reason, score, reason_text, is_selected
           ) values (
             ${userId}, ${brew.id}, ${record.id}, ${index}, 'auto',
@@ -265,7 +265,7 @@ export class MaterialsService {
     if (!brew) throw new MaterialsError(404, "brew not found");
     const rows = await this.#sql<SourceRow[]>`
       select brew_source.record_id, record.title, record.status, record.origin,
-             brew_source.score, brew_source.rank, brew_source.is_selected,
+             brew_source.score, brew_source.\`rank\`, brew_source.is_selected,
              brew_source.selected_by, brew_source.excluded_reason, brew_source.reason_text,
              category.name as category_name, category.icon as category_icon,
              lower(record.period) as period_from,
@@ -275,7 +275,7 @@ export class MaterialsService {
         and record.user_id = brew_source.user_id
       join category on category.id = record.category_id
       where brew_source.user_id = ${userId} and brew_source.brew_id = ${brewId}
-      order by brew_source.rank, brew_source.record_id
+      order by brew_source.\`rank\`, brew_source.record_id
     `;
     return BrewMaterialsSchema.parse({
       brewId: brew.id,

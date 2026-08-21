@@ -159,14 +159,14 @@ export class RecipeService {
           if (!itemId) throw new Error("recipe item missing");
 
           for (const { source } of cited) await transaction`
-            insert into recipe_evidence_path (
+            insert ignore into recipe_evidence_path (
               user_id, recipe_id, recipe_item_id, source_type,
               source_id, source_label, target_path
             ) values (
               ${userId}, ${recipe.id}, ${itemId}, ${source.type}, ${source.id},
               ${source.label.slice(0, 5_000)},
               ${`sections[${order}].items[${itemOrder}]`}
-            ) on conflict do nothing
+            )
           `;
         }
         if (sectionEvidenceIds.size > 0) {
@@ -307,7 +307,7 @@ export class RecipeService {
         join record on record.id = brew_source.record_id and record.user_id = brew_source.user_id
         where brew_source.user_id = ${userId} and brew_source.brew_id = ${brewId}
           and brew_source.is_selected
-        order by brew_source.rank
+        order by brew_source.\`rank\`
         limit 8
       `,
       sql<{ id: string; label: string; kind: string; quote: string | null }[]>`

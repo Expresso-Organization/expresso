@@ -123,8 +123,9 @@ export class JobMarketService {
       `)[0];
       if (!posting) throw new Error("job posting was not persisted");
 
-      const insertedAnalyses = await transaction<AnalysisRow[]>`
-        insert into job_analysis (
+      // 같은 멱등 키로 다시 들어오면 새 줄이 생기지 않는다 — 넣고 나서 그 키로 읽는다.
+      await transaction`
+        insert ignore into job_analysis (
           user_id, job_posting_id, input_type,
           status, input_idempotency_key, input_request_hash
         )
@@ -132,13 +133,8 @@ export class JobMarketService {
           ${userId}, ${posting.id}, ${input.sourceUrl ? "url" : "paste"},
           'queued', ${idempotencyKey}, ${inputHash}
         )
-        on conflict (user_id, input_idempotency_key)
-          where input_idempotency_key is not null
-        do nothing
-        returning id, input_request_hash
       `;
-      const insertedAnalysis = insertedAnalyses[0];
-      const analysis = insertedAnalysis ?? (await transaction<AnalysisRow[]>`
+      const analysis = (await transaction<AnalysisRow[]>`
         select id, input_request_hash from job_analysis
         where user_id = ${userId} and input_idempotency_key = ${idempotencyKey}
       `)[0];

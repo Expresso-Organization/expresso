@@ -39,7 +39,7 @@ describeWithDatabase("release performance and backpressure budget", () => {
     sql = createMysqlResource(isolated.toString().sql, { max: 20 });
     const planId = (await sql<IdRow[]>`select id from plan where code = 'pro'`)[0]?.id;
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
-    categoryId = (await sql<IdRow[]>`select id from category where key = 'experience' and is_system`)[0]?.id ?? "";
+    categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id ?? "";
     if (!planId || !templateId || !categoryId) throw new Error("load seed missing");
     const userId = (await sql<IdRow[]>`insert into \`user\` (email, display_name, plan_id) values ('load@example.com', 'Load', ${planId}) returning id`)[0]?.id;
     if (!userId) throw new Error("load user missing");

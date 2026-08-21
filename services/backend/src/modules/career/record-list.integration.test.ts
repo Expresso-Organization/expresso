@@ -70,8 +70,8 @@ describeWithDatabase("career record list HTTP integration", () => {
     otherUserId = other.id;
 
     const categories = await sql<CategoryKeyRow[]>`
-      select id, key from category
-      where user_id is null and key in ('experience', 'project')
+      select id, \`key\` from category
+      where user_id is null and \`key\` in ('experience', 'project')
     `;
     experienceId = categories.find((row) => row.key === "experience")!.id;
     projectId = categories.find((row) => row.key === "project")!.id;

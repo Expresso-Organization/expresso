@@ -48,7 +48,7 @@ describeWithDatabase("brew materials integration", () => {
   beforeAll(async () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     const categoryId = (await sql<IdRow[]>`
-      select id from category where key = 'experience' and is_system
+      select id from category where \`key\` = 'experience' and is_system
     `)[0]?.id;
     if (!planId || !categoryId) throw new Error("materials seed data missing");
     const users = await sql<IdRow[]>`

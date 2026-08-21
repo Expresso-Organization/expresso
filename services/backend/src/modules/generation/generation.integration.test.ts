@@ -63,7 +63,7 @@ describeWithDatabase("generation integration", () => {
 
   beforeAll(async () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
-    const categoryId = (await sql<IdRow[]>`select id from category where key = 'experience' and is_system`)[0]?.id;
+    const categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id;
     templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id ?? "";
     if (!planId || !categoryId || !templateId) throw new Error("generation seed missing");
     userId = (await sql<IdRow[]>`insert into \`user\` (email, display_name, plan_id) values (${`generation-${marker}@example.com`}, 'Generation', ${planId}) returning id`)[0]?.id ?? "";
@@ -75,7 +75,7 @@ describeWithDatabase("generation integration", () => {
     recordId = (await sql<IdRow[]>`insert into record (user_id, category_id, title, status, origin, properties, body_md) values (${userId}, ${categoryId}, 'Record source', 'organized', 'manual', '{}', ${quote}) returning id`)[0]?.id ?? "";
     if (!analysisId || !requirementId || !recordId) throw new Error("generation domain seed missing");
     brewId = (await sql<IdRow[]>`insert into brew (user_id, job_analysis_id, length_preset, status) values (${userId}, ${analysisId}, 'single', 'recipe') returning id`)[0]?.id ?? "";
-    await sql`insert into brew_source (user_id, brew_id, record_id, rank, selected_by, score, reason_text, is_selected) values (${userId}, ${brewId}, ${recordId}, 0, 'auto', 10, 'fixture', true)`;
+    await sql`insert into brew_source (user_id, brew_id, record_id, \`rank\`, selected_by, score, reason_text, is_selected) values (${userId}, ${brewId}, ${recordId}, 0, 'auto', 10, 'fixture', true)`;
     recipeId = await seedRecipe(1);
   });
 
