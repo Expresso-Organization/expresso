@@ -652,25 +652,28 @@ export class InterviewService {
   }
 
   async #refreshProgress(userId: string, sessionId: string) {
+    // MySQL 은 CTE 로 갱신하지 못한다 — 진행 상태를 먼저 세고 그 값으로 고친다.
+    const progress = (await this.#sql<{
+      answered_count: number; current_order: number; finished: number;
+    }[]>`
+      select
+        count(answer.id) as answered_count,
+        coalesce(min(case when answer.id is null and not question.skipped then question.order_no end), count(*)) as current_order,
+        min(answer.id is not null or question.skipped) as finished
+      from question
+      left join answer on answer.user_id = question.user_id and answer.question_id = question.id
+      where question.user_id = ${userId}
+        and question.interview_session_id = ${sessionId}
+        and question.active
+    `)[0];
+    if (!progress) return;
     await this.#sql`
-      with progress as (
-        select
-          count(answer.id) as answered_count,
-          coalesce(min(case when answer.id is null and not question.skipped then question.order_no end), count(*)) as current_order,
-          bool_and(answer.id is not null or question.skipped) as finished
-        from question
-        left join answer on answer.user_id = question.user_id and answer.question_id = question.id
-        where question.user_id = ${userId}
-          and question.interview_session_id = ${sessionId}
-          and question.active
-      )
       update interview_session
-      set answered_count = progress.answered_count,
-          current_order = progress.current_order,
-          status = case when progress.finished then 'done' else status end,
+      set answered_count = ${progress.answered_count},
+          current_order = ${progress.current_order},
+          status = case when ${progress.finished ? 1 : 0} = 1 then 'done' else status end,
           updated_at = now(6)
-      from progress
-      where interview_session.id = ${sessionId} and interview_session.user_id = ${userId}
+      where id = ${sessionId} and user_id = ${userId}
     `;
   }
 

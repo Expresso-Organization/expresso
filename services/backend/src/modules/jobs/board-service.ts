@@ -309,10 +309,11 @@ export class JobBoardService {
           : sql``}
         ${query.technology
           ? sql`and exists (
-              select 1 from jsonb_array_elements_text(
-                coalesce(job_posting.requirements -> 'technologies', '[]')
-              ) as technology
-              where lower(technology) = lower(${query.technology})
+              select 1 from json_table(
+                coalesce(job_posting.requirements -> '$.technologies', cast('[]' as json)),
+                '$[*]' columns (technology varchar(255) path '$')
+              ) as technologies
+              where lower(technologies.technology) = lower(${query.technology})
             )`
           : sql``}
         ${query.interested === true ? sql`and interest.id is not null` : sql``}
@@ -363,16 +364,16 @@ export class JobBoardService {
     const sql = this.#sql;
     return sql`
         ${query.family ? sql`and job_posting.job_family = ${query.family}` : sql``}
-        ${query.remote === true ? sql`and lower(job_posting.work_type) like lower('%리모트%'` : sql``})
+        ${query.remote === true ? sql`and lower(job_posting.work_type) like lower('%리모트%')` : sql``}
         ${query.remote === false
-          ? sql`and (job_posting.work_type is null or job_posting.work_type lower(not) like lower('%리모트%')`
-          : sql``})
+          ? sql`and (job_posting.work_type is null or lower(job_posting.work_type) not like lower('%리모트%'))`
+          : sql``}
         ${query.deadline === "urgent"
-          ? sql`and job_posting.expires_at >= now()
-                and job_posting.expires_at < now() + interval '7 days'`
+          ? sql`and job_posting.expires_at >= now(6)
+                and job_posting.expires_at < now(6) + interval 7 day`
           : sql``}
         ${query.deadline === "open"
-          ? sql`and (job_posting.expires_at is null or job_posting.expires_at >= now())`
+          ? sql`and (job_posting.expires_at is null or job_posting.expires_at >= now(6))`
           : sql``}
         ${query.deadline === "always" ? sql`and job_posting.expires_at is null` : sql``}
     `;
@@ -434,7 +435,7 @@ export class JobBoardService {
       job_posting.expires_at,
       job_posting.deadline_note,
       job_posting.created_at,
-      (job_posting.expires_at - now()) as days_left,
+      timestampdiff(day, now(6), job_posting.expires_at) as days_left,
       company.id as company_id,
       company.name as company_name,
       company.domain as company_domain,
@@ -512,7 +513,7 @@ export class JobBoardService {
       query.sort === "match"
         ? sql`coalesce(match_score.total, -1)`
         : query.sort === "deadline"
-          ? sql`coalesce(job_posting.expires_at, 'infinity')`
+          ? sql`coalesce(job_posting.expires_at, '9999-12-31')`
           : sql`job_posting.created_at`;
     const order = query.sort === "deadline" ? sql`asc` : sql`desc`;
     const offset = (query.page - 1) * query.limit;
@@ -528,11 +529,11 @@ export class JobBoardService {
       sql<CategoryCountRow[]>`
         select
           count(*) as total,
-          count(case when lower(job_posting.work_type) like lower('%리모트%' then 1 end) as remote,
-          count(case when job_posting.expires_at >= now( then 1 end)
-              and job_posting.expires_at < now(6) + interval 7 day
-          ) as urgent
-        ${without("category")})
+          count(case when lower(job_posting.work_type) like lower('%리모트%') then 1 end) as remote,
+          count(case when job_posting.expires_at >= now(6)
+                       and job_posting.expires_at < now(6) + interval 7 day
+                     then 1 end) as urgent
+        ${without("category")}
       `,
       sql<FacetRow[]>`
         select job_posting.job_family as label, count(*) as count
@@ -557,18 +558,14 @@ export class JobBoardService {
       // 연차 칸막이는 **상한**이라 서로 겹친다. 한 번에 세고 뒤에서 편다.
       sql<Record<string, number>[]>`
         select ${sql.unsafe(EXPERIENCE_LEVELS
-          .map((years) => `count(*) filter (
-             where job_posting.experience_min_years is null
-                or job_posting.experience_min_years <= ${years}
-           ) as "y${years}"`)
+          .map((years) => `count(case when job_posting.experience_min_years is null
+                or job_posting.experience_min_years <= ${years} then 1 end) as \`y${years}\``)
           .join(", "))}
         ${without("experience")}
       `,
       sql<Record<string, number>[]>`
         select ${sql.unsafe(WORK_TYPES
-          .map((label, index) => `count(*) filter (
-             where job_posting.work_type like '%${label}%'
-           ) as "w${index}"`)
+          .map((label, index) => `count(case when job_posting.work_type like '%${label}%' then 1 end) as \`w${index}\``)
           .join(", "))}
         ${without("workType")}
       `,
@@ -597,23 +594,25 @@ export class JobBoardService {
       ? [[] as FacetRow[], [] as FacetRow[]]
       : await Promise.all([
           sql<FacetRow[]>`
-            select technology as label, count(*) as count
+            select technologies.technology as label, count(*) as count
             from (select job_posting.requirements ${scope}) as scoped
-            cross join lateral jsonb_array_elements_text(
-              coalesce(scoped.requirements -> '$.technologies', '[]')
-            ) as technology
-            group by technology
-            order by count(*) desc, technology
+            join json_table(
+              coalesce(scoped.requirements -> '$.technologies', cast('[]' as json)),
+              '$[*]' columns (technology varchar(255) path '$')
+            ) as technologies on true
+            group by technologies.technology
+            order by count(*) desc, technologies.technology
             limit 8
           `,
           sql<FacetRow[]>`
-            select technology as label, count(*) as count
+            select technologies.technology as label, count(*) as count
             from (select match_score.axes ${scope}) as scoped
-            cross join lateral jsonb_array_elements_text(
-              coalesce(scoped.axes -> '$.technology' -> '$.missing', '[]')
-            ) as technology
-            group by technology
-            order by count(*) desc, technology
+            join json_table(
+              coalesce(scoped.axes -> '$.technology.missing', cast('[]' as json)),
+              '$[*]' columns (technology varchar(255) path '$')
+            ) as technologies on true
+            group by technologies.technology
+            order by count(*) desc, technologies.technology
             limit 5
           `,
         ]);
@@ -748,7 +747,7 @@ export class JobBoardService {
         ? Promise.resolve([] as { position: number; total: number }[])
         : sql<{ position: number; total: number }[]>`
             select
-              count(*) filter (where total > ${posting.match_total}) + 1 as position,
+              count(case when total > ${posting.match_total} then 1 end) + 1 as position,
               count(*) as total
             from match_score
             where user_id = ${userId}

@@ -64,23 +64,19 @@ export async function addOutboxEvent(
   sql: SqlTag | SqlTag,
   input: OutboxEventInput,
 ): Promise<OutboxEvent> {
-  const rows = await sql<OutboxRow[]>`
-    with inserted as (
-      insert ignore into platform_outbox (topic, payload, idempotency_key)
-      values (
-        ${input.topic},
-        ${sql.json(input.payload as JSONValue)},
-        ${input.idempotencyKey}
-      )
-        
-      returning id, topic, payload, idempotency_key, state, attempts
+  // 같은 멱등 키가 이미 있으면 새 줄이 생기지 않는다 — 넣고 나서 그 키로 읽는다.
+  await sql`
+    insert ignore into platform_outbox (topic, payload, idempotency_key)
+    values (
+      ${input.topic},
+      ${sql.json(input.payload as JSONValue)},
+      ${input.idempotencyKey}
     )
-    select id, topic, payload, idempotency_key, state, attempts from inserted
-    union all
+  `;
+  const rows = await sql<OutboxRow[]>`
     select id, topic, payload, idempotency_key, state, attempts
     from platform_outbox
     where idempotency_key = ${input.idempotencyKey}
-      and not exists (select 1 from inserted)
     limit 1
   `;
   const row = rows[0];
@@ -140,31 +136,35 @@ export class OutboxDispatcher {
   }
 
   async #claim(): Promise<OutboxEvent[]> {
-    const rows = await this.#sql.begin(async (transaction) =>
-      transaction<OutboxRow[]>`
-        with candidates as (
-          select id
-          from platform_outbox
-          where (
-              state = 'pending'
-              or (
-                state = 'publishing'
-                and locked_at < now(6) - make_interval(secs => ${this.#lockTimeoutSeconds})
-              )
+    // 집어 갈 것을 잠가서 고르고, 같은 트랜잭션 안에서 상태를 옮긴 뒤 다시 읽는다.
+    const rows = await this.#sql.begin(async (transaction) => {
+      const candidates = await transaction<{ id: string }[]>`
+        select id
+        from platform_outbox
+        where (
+            state = 'pending'
+            or (
+              state = 'publishing'
+              and locked_at < now(6) - interval ${this.#lockTimeoutSeconds} second
             )
-            and available_at <= now(6)
-          order by available_at, created_at
-          for update skip locked
-          limit ${this.#batchSize}
-        )
-        update platform_outbox as outbox
+          )
+          and available_at <= now(6)
+        order by available_at, created_at
+        limit ${this.#batchSize}
+        for update skip locked
+      `;
+      if (candidates.length === 0) return [] as OutboxRow[];
+      const ids = candidates.map(({ id }) => id);
+      await transaction`
+        update platform_outbox
         set state = 'publishing', locked_at = now(6), updated_at = now(6)
-        from candidates
-        where outbox.id = candidates.id
-        returning outbox.id, outbox.topic, outbox.payload,
-          outbox.idempotency_key, outbox.state, outbox.attempts
-      `,
-    );
+        where id in ${transaction(ids)}
+      `;
+      return transaction<OutboxRow[]>`
+        select id, topic, payload, idempotency_key, state, attempts
+        from platform_outbox where id in ${transaction(ids)}
+      `;
+    });
     return rows.map(toEvent);
   }
 
