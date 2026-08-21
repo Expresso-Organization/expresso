@@ -279,7 +279,7 @@ export class RecipeService {
         where user_id = ${userId} and id = ${recipe.id}
       `;
 
-      await transaction`update brew set status = 'recipe', updated_at = now() where id = ${brew.id}`;
+      await transaction`update brew set status = 'recipe', updated_at = now(6) where id = ${brew.id}`;
       return recipe.id;
     });
     return this.getRecipe(userId, recipeId);
@@ -442,7 +442,7 @@ export class RecipeService {
             and recipe_section.recipe_id = ${recipeId} for update of recipe_item
         `)[0];
         if (!item) throw new RecipeError(404, "recipe item not found");
-        await transaction`update recipe_item set point_text = ${edit.pointText}, locked = true, edited_by = 'user', updated_at = now() where id = ${item.id}`;
+        await transaction`update recipe_item set point_text = ${edit.pointText}, locked = true, edited_by = 'user', updated_at = now(6) where id = ${item.id}`;
         diff = [{ path: `items.${item.id}.pointText`, before: item.point_text, after: edit.pointText }];
       } else if (edit.operation === "move_item") {
         const item = (await transaction<ItemRow[]>`
@@ -487,7 +487,7 @@ export class RecipeService {
         const section = sectionRows.find((item) => item.order_no === order);
         if (!section) throw new RecipeError(404, "instruction section not found");
         const title = match[2]!.trim();
-        await transaction`update recipe_section set title = ${title}, locked = true, edited_by = 'user', updated_at = now() where id = ${section.id}`;
+        await transaction`update recipe_section set title = ${title}, locked = true, edited_by = 'user', updated_at = now(6) where id = ${section.id}`;
         diff = [{ path: `sections.${section.id}.title`, before: section.title, after: title }];
       }
       const revision = (await transaction<IdRow[]>`
@@ -496,7 +496,7 @@ export class RecipeService {
       `)[0];
       if (!revision) throw new Error("recipe revision missing");
       revisionId = revision.id;
-      await transaction`update recipe set updated_at = now() where id = ${recipeId} and user_id = ${userId}`;
+      await transaction`update recipe set updated_at = now(6) where id = ${recipeId} and user_id = ${userId}`;
     });
     return RecipeEditResultSchema.parse({ recipe: await this.getRecipe(userId, recipeId), revisionId, diff });
   }

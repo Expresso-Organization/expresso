@@ -85,9 +85,14 @@ export class ConsentService {
   /** 10d 온보딩과 09 설정이 읽는다. 범위마다 지금 상태 하나씩. */
   async list(userId: string) {
     const rows = await this.#sql<ConsentRow[]>`
-      select distinct on (scope) scope, policy_version, granted_at, revoked_at
-      from consent where user_id = ${userId}
-      order by scope, granted_at desc
+      select scope, policy_version, granted_at, revoked_at
+      from (
+        select scope, policy_version, granted_at, revoked_at,
+               row_number() over (partition by scope order by granted_at desc) as rn
+        from consent where user_id = ${userId}
+      ) latest
+      where rn = 1
+      order by scope
     `;
     const byScope = new Map(rows.map((row) => [row.scope, row]));
 
@@ -120,7 +125,7 @@ export class ConsentService {
       for (const scope of scopes) {
         // 살아 있는 옛 판이 있으면 끄고 새로 적는다 — 어느 판에 승낙했는지가 남는다.
         await transaction`
-          update consent set revoked_at = now()
+          update consent set revoked_at = now(6)
           where user_id = ${userId} and scope = ${scope} and revoked_at is null
             and policy_version <> ${policyVersion}
         `;
@@ -135,7 +140,7 @@ export class ConsentService {
 
   async revoke(userId: string, scope: ConsentScope) {
     await this.#sql`
-      update consent set revoked_at = now()
+      update consent set revoked_at = now(6)
       where user_id = ${userId} and scope = ${scope} and revoked_at is null
     `;
     return this.list(userId);

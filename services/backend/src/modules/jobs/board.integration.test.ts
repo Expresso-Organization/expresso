@@ -136,7 +136,7 @@ describeWithDatabase("job board read HTTP integration", () => {
           ${companyId}, 'user_input', '데이터 플랫폼 엔지니어',
           ${DESCRIPTION},
           ${sql.json({ technologies: ["Airflow", "Spark"], impacts: [], roles: [], conditions: [] })},
-          now() + interval 3 day, ${`board-urgent-${marker}`}, now() - interval '3 minutes',
+          now(6) + interval 3 day, ${`board-urgent-${marker}`}, now() - interval '3 minutes',
           '서울 강남', '리모트 주 2일', '3년 이상', '백엔드 · 데이터',
           '정규직 · 수습 3개월', '8,000만 – 1억 1,000만',
           ${sql.json([{ group: "적재 파이프라인", items: ["하루 3,000만 건 적재"] }])},
@@ -186,12 +186,12 @@ describeWithDatabase("job board read HTTP integration", () => {
 
     await sql`
       insert into interest (user_id, job_posting_id, stage, deadline_at, memo)
-      values (${userId}, ${urgentId}, 'applied', now() + interval 3 day, '지원 완료')
+      values (${userId}, ${urgentId}, 'applied', now(6) + interval 3 day, '지원 완료')
     `;
 
     analysisId = (await sql<IdRow[]>`
       insert into job_analysis (user_id, job_posting_id, input_type, status, progress_stage, analyzed_at)
-      values (${userId}, ${urgentId}, 'paste', 'done', 'done', now())
+      values (${userId}, ${urgentId}, 'paste', 'done', 'done', now(6))
       returning id
     `)[0]!.id;
 
@@ -221,9 +221,9 @@ describeWithDatabase("job board read HTTP integration", () => {
     await sql`
       insert into recent_search (user_id, query_text, conditions, result_count, created_at)
       values
-        (${userId}, '배치 위주로 운영하는 팀', '[]', 9, now() - interval 2 hour),
-        (${userId}, '연봉 협상 가능 · 리모트', '[]', 14, now() - interval 1 hour),
-        (${otherUserId}, '다른 사람 검색', '[]', 3, now())
+        (${userId}, '배치 위주로 운영하는 팀', '[]', 9, now(6) - interval 2 hour),
+        (${userId}, '연봉 협상 가능 · 리모트', '[]', 14, now(6) - interval 1 hour),
+        (${otherUserId}, '다른 사람 검색', '[]', 3, now(6))
     `;
 
     await app.ready();

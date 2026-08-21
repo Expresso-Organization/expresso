@@ -128,7 +128,7 @@ export class BrewJobService {
       await transaction`
         update brew_job set status = 'running', stage = 'drafting',
           attempts = attempts + 1, error_code = null, failure_retryable = null,
-          updated_at = now()
+          updated_at = now(6)
         where id = ${jobId}
       `;
       return { ...locked, attempts: locked.attempts + 1 };
@@ -147,14 +147,14 @@ export class BrewJobService {
       });
       await this.#sql`
         update brew_job set status = 'succeeded', stage = 'done',
-          result_id = ${resultId}, updated_at = now()
+          result_id = ${resultId}, updated_at = now(6)
         where id = ${jobId}
       `;
     } catch (error) {
       const { code, retryable } = classify(error);
       await this.#sql`
         update brew_job set status = 'failed', stage = 'failed',
-          error_code = ${code}, failure_retryable = ${retryable}, updated_at = now()
+          error_code = ${code}, failure_retryable = ${retryable}, updated_at = now(6)
         where id = ${jobId}
       `.catch(() => undefined);
       throw error;

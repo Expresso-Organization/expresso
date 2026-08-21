@@ -98,7 +98,7 @@ describeWithDatabase("platform outbox integration", () => {
       deadLettered: 0,
     });
     await sql`
-      update platform_outbox set available_at = now() where id = ${event.id}
+      update platform_outbox set available_at = now(6) where id = ${event.id}
     `;
     await expect(dispatcher.pollOnce()).resolves.toEqual({
       published: 0,

@@ -275,7 +275,7 @@ export class JobIngestService {
           logo_media_type = ${mark ? mark.mediaType : null},
           logo_source_url = ${mark ? mark.sourceUrl : null},
           logo_checksum = ${mark ? mark.checksum : null},
-          logo_read_at = now()
+          logo_read_at = now(6)
         where id = ${row.id}
       `;
       if (mark) read += 1;
@@ -340,7 +340,7 @@ export class JobIngestService {
             salary_note = coalesce(salary_note, ${facts.salaryNote}),
             experience_note = coalesce(experience_note, ${facts.experienceNote}),
             work_type = coalesce(work_type, ${facts.workType}),
-            facts_read_at = now()
+            facts_read_at = now(6)
           where id = ${row.id}
         `;
         read += 1;

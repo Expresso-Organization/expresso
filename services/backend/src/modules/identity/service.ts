@@ -235,7 +235,7 @@ export class IdentityService {
       }
       await this.#sql`
         update identity_oauth_account
-        set last_login_at = now(), email = ${identity.email}
+        set last_login_at = now(6), email = ${identity.email}
         where provider = 'google' and provider_account_id = ${identity.subject}
       `;
       return {
@@ -298,7 +298,7 @@ export class IdentityService {
       await this.#sql`
         insert into identity_oauth_account
           (user_id, provider, provider_account_id, email, last_login_at)
-        values (${account.id}, 'google', ${identity.subject}, ${identity.email}, now())
+        values (${account.id}, 'google', ${identity.subject}, ${identity.email}, now(6))
       `;
     } catch (error) {
       if (!isUniqueViolation(error)) throw error;
@@ -359,7 +359,7 @@ export class IdentityService {
       await tx`
         insert into identity_oauth_account
           (user_id, provider, provider_account_id, email, last_login_at)
-        values (${account.id}, 'google', ${identity.subject}, ${identity.email}, now())
+        values (${account.id}, 'google', ${identity.subject}, ${identity.email}, now(6))
       `;
       return account;
     });
@@ -381,11 +381,11 @@ export class IdentityService {
         join \`user\` as account on account.id = session.user_id
         where session.token_hash = ${hashAccessToken(accessToken)}
           and session.revoked_at is null
-          and session.expires_at > now()
+          and session.expires_at > now(6)
           and account.deletion_requested_at is null
       ), touched_session as (
         update identity_session as session
-        set last_seen_at = now()
+        set last_seen_at = now(6)
         from valid_session
         where session.id = valid_session.id
         returning session.id, session.user_id
@@ -417,7 +417,7 @@ export class IdentityService {
   async revokeOwnedSession(userId: string, sessionId: string): Promise<boolean> {
     const rows = await this.#sql<RevokedSessionRow[]>`
       update identity_session
-      set revoked_at = now()
+      set revoked_at = now(6)
       where id = ${sessionId}
         and user_id = ${userId}
         and revoked_at is null

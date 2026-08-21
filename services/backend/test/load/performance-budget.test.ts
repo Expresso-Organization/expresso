@@ -53,7 +53,7 @@ describeWithDatabase("release performance and backpressure budget", () => {
     const sectionId = portfolioId && (await sql<IdRow[]>`insert into portfolio_section (user_id, portfolio_id, order_no) values (${userId}, ${portfolioId}, 0) returning id`)[0]?.id;
     if (!portfolioId || !sectionId) throw new Error("load portfolio missing");
     slug = `load-${randomUUID()}`;
-    deploymentId = (await sql<IdRow[]>`insert into deployment (user_id, portfolio_id, version, subdomain, published_at, snapshot) values (${userId}, ${portfolioId}, 1, ${slug}, now(), ${sql.json({ sections: [{ id: sectionId }] })}) returning id`)[0]?.id ?? "";
+    deploymentId = (await sql<IdRow[]>`insert into deployment (user_id, portfolio_id, version, subdomain, published_at, snapshot) values (${userId}, ${portfolioId}, 1, ${slug}, now(6), ${sql.json({ sections: [{ id: sectionId }] })}) returning id`)[0]?.id ?? "";
     await sql`update portfolio set current_deployment_id = ${deploymentId}, status = 'published' where id = ${portfolioId}`;
     const analytics = new AnalyticsService(sql, { visitorSalt: "load-test-visitor-salt", rateLimit: 10 });
     const config: RuntimeConfig = { nodeEnv: "test", host: "127.0.0.1", port: 0, logLevel: "silent", databaseUrl: isolated.toString(), redisUrl: "redis://127.0.0.1:1", outboxPollIntervalMs: 1_000, outboxBatchSize: 25, outboxMaxAttempts: 5, queuePrefix: "load-test" };

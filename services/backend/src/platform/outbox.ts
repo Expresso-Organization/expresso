@@ -122,9 +122,9 @@ export class OutboxDispatcher {
           update platform_outbox
           set state = 'published',
               locked_at = null,
-              published_at = now(),
+              published_at = now(6),
               last_error = null,
-              updated_at = now()
+              updated_at = now(6)
           where id = ${event.id}
             and state = 'publishing'
         `;
@@ -149,16 +149,16 @@ export class OutboxDispatcher {
               state = 'pending'
               or (
                 state = 'publishing'
-                and locked_at < now() - make_interval(secs => ${this.#lockTimeoutSeconds})
+                and locked_at < now(6) - make_interval(secs => ${this.#lockTimeoutSeconds})
               )
             )
-            and available_at <= now()
+            and available_at <= now(6)
           order by available_at, created_at
           for update skip locked
           limit ${this.#batchSize}
         )
         update platform_outbox as outbox
-        set state = 'publishing', locked_at = now(), updated_at = now()
+        set state = 'publishing', locked_at = now(6), updated_at = now(6)
         from candidates
         where outbox.id = candidates.id
         returning outbox.id, outbox.topic, outbox.payload,
@@ -182,11 +182,11 @@ export class OutboxDispatcher {
           attempts = ${nextAttempts},
           available_at = case
             when ${deadLettered} then available_at
-            else now() + make_interval(secs => ${retryDelaySeconds})
+            else now(6) + make_interval(secs => ${retryDelaySeconds})
           end,
           locked_at = null,
           last_error = ${sanitizedError(error)},
-          updated_at = now()
+          updated_at = now(6)
       where id = ${event.id}
         and state = 'publishing'
     `;

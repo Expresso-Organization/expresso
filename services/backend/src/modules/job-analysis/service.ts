@@ -253,7 +253,7 @@ export class JobAnalysisService {
               job_analysis_id, user_id, previous_version, requirements, archived_at
             ) values (
               ${jobAnalysisId}, ${analysis.user_id}, ${analysis.result_version},
-              ${transaction.json(previousRows.map(mapRequirement) as JSONValue)}, now()
+              ${transaction.json(previousRows.map(mapRequirement) as JSONValue)}, now(6)
             )
             as new on duplicate key update previous_version = new.previous_version,
               requirements = new.requirements,
@@ -305,7 +305,7 @@ export class JobAnalysisService {
           await transaction`
             update job_posting
             set requirements = ${transaction.json(extraction.normalized as JSONValue)},
-                normalized_at = now()
+                normalized_at = now(6)
             where id = ${analysis.job_posting_id}
           `;
         }
@@ -335,14 +335,14 @@ export class JobAnalysisService {
               user_id, requirement_id, coverage, covered_by, computed_at
             ) values (
               ${analysis.user_id}, ${target.id}, ${result.coverage},
-              ${result.coveredBy}, now()
+              ${result.coveredBy}, now(6)
             )
           `;
         }
         await transaction`
           update job_analysis
           set status = 'done', progress_stage = 'done',
-              result_version = ${targetVersion}, analyzed_at = now(),
+              result_version = ${targetVersion}, analyzed_at = now(6),
               failure_code = null, failure_retryable = null
           where id = ${jobAnalysisId}
         `;

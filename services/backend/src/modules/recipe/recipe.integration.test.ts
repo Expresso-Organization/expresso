@@ -81,7 +81,7 @@ describeWithDatabase("recipe integration", () => {
     `)[0]?.id ?? "";
     analysisId = (await sql<IdRow[]>`
       insert into job_analysis (user_id, job_posting_id, input_type, status, progress_stage, result_version, target_version, analyzed_at)
-      values (${userId}, ${postingId}, 'paste', 'done', 'done', 1, 1, now()) returning id
+      values (${userId}, ${postingId}, 'paste', 'done', 'done', 1, 1, now(6)) returning id
     `)[0]?.id ?? "";
     let cursor = 0;
     for (const [order, quote] of quotes.entries()) {

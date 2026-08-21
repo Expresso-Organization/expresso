@@ -41,7 +41,7 @@ describeWithDatabase("release fault injection audit", () => {
     const disconnected = new OutboxDispatcher({ sql, maxAttempts: 3, queue: { async add() { throw Object.assign(new Error("connection refused with secret"), { code: "ECONNREFUSED" }); } } });
     await expect(disconnected.pollOnce()).resolves.toMatchObject({ retried: 1 });
     expect((await sql<{ state: string; attempts: number; last_error: string }[]>`select state, attempts, last_error from platform_outbox where id = ${event.id}`)[0]).toEqual({ state: "pending", attempts: 1, last_error: "Error:ECONNREFUSED" });
-    await sql`update platform_outbox set available_at = now() where id = ${event.id}`;
+    await sql`update platform_outbox set available_at = now(6) where id = ${event.id}`;
     const published: string[] = [];
     const recovered = new OutboxDispatcher({ sql, queue: { async add(_name, _payload, options) { published.push(String(options.jobId)); } } });
     await expect(recovered.pollOnce()).resolves.toMatchObject({ published: 1 });

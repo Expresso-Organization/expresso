@@ -300,7 +300,7 @@ export class MaterialsService {
       if (!decision.allowed) throw new MaterialsError(403, "cowork mode requires an upgraded plan");
     }
     const rows = await this.#sql<{ id: string }[]>`
-      update brew set mode = ${input.mode}, updated_at = now()
+      update brew set mode = ${input.mode}, updated_at = now(6)
       where id = ${brewId} and user_id = ${userId}
       returning id
     `;
@@ -327,7 +327,7 @@ export class MaterialsService {
       await transaction`
         update brew_source
         set is_selected = false, selected_by = 'user',
-            excluded_reason = 'USER_DESELECTED', updated_at = now()
+            excluded_reason = 'USER_DESELECTED', updated_at = now(6)
         where user_id = ${userId} and brew_id = ${brewId}
       `;
       // rank는 매칭 순위지 고른 차례가 아니다. 여기서 다시 매기면 목록이 두 가지
@@ -335,12 +335,12 @@ export class MaterialsService {
       await transaction`
         update brew_source
         set is_selected = true, selected_by = 'user',
-            excluded_reason = null, updated_at = now()
+            excluded_reason = null, updated_at = now(6)
         where user_id = ${userId} and brew_id = ${brewId}
           and record_id = any(${recordIds}[])
       `;
       await transaction`
-        update brew set updated_at = now()
+        update brew set updated_at = now(6)
         where id = ${brewId} and user_id = ${userId}
       `;
     });

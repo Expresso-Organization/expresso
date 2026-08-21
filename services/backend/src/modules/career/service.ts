@@ -981,7 +981,7 @@ export class CareerService {
       as new on duplicate key update target_roles = new.target_roles,
         experience_years = new.experience_years,
         primary_goal = new.primary_goal,
-        updated_at = now()
+        updated_at = now(6)
       returning target_roles, experience_years, primary_goal, updated_at
     `;
     const row = rows[0];
