@@ -220,11 +220,11 @@ describeWithDatabase("privacy-minimized analytics integration", () => {
 
   it("위젯은 편집을 시작할 때 굳고, 초기화는 처음으로 되돌린다", async () => {
     // 뷰 여섯 개를 이미 쓴 포트폴리오와 섞이지 않게 새로 만든다.
-    const boardId = (await sql<IdRow[]>`
-      insert into portfolio (user_id, brew_id, template_id, title)
-      select user_id, brew_id, template_id, 'Widget portfolio' from portfolio where id = ${portfolioId}
-      returning id
-    `)[0]?.id ?? "";
+    const boardId = randomUUID();
+    await sql`
+      insert into portfolio (id, user_id, brew_id, template_id, title)
+      select ${boardId}, user_id, brew_id, template_id, 'Widget portfolio' from portfolio where id = ${portfolioId}
+    `;
 
     // 아직 굳히지 않았다 — 기본 지면은 코드에 있고 id가 없다.
     const before = await service.widgets(userId, boardId);
@@ -290,11 +290,11 @@ describeWithDatabase("privacy-minimized analytics integration", () => {
   });
 
   it("배포한 적 없는 포트폴리오는 볼 것이 없다", async () => {
-    const draftId = (await sql<IdRow[]>`
-      insert into portfolio (user_id, brew_id, template_id, title)
-      select user_id, brew_id, template_id, 'Draft portfolio' from portfolio where id = ${portfolioId}
-      returning id
-    `)[0]?.id ?? "";
+    const draftId = randomUUID();
+    await sql`
+      insert into portfolio (id, user_id, brew_id, template_id, title)
+      select ${draftId}, user_id, brew_id, template_id, 'Draft portfolio' from portfolio where id = ${portfolioId}
+    `;
     await expect(service.dashboard(userId, draftId, "30d")).rejects.toMatchObject({ statusCode: 409 });
     await expect(service.dashboard(userId, randomUUID(), "30d")).rejects.toMatchObject({ statusCode: 404 });
   });

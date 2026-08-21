@@ -66,25 +66,7 @@ describeWithInfrastructure("generation edit restore vertical slice", () => {
     (globalThis as unknown as { generationFixture: { recipeId: string; templateId: string } }).generationFixture = { recipeId, templateId };
   }, 30000);
 
-  afterAll(async () => { if (worker) await worker.close(); await Promise.allSettled([queue.queue.obliterate({ force: true }), queue.deadLetterQueue.obliterate({ force: true })]); await queue.close(); if (app) await app.close(); if (sql) await sql.end({ timeout: 5 }); if (admin) { await admin`select pg_terminate_backend(pid) from pg_stat_activity where datname = ${databaseName} and pid <> pg_backend_pid()`; await admin.unsafe(`drop database if exists "${databaseName}"`); await admin.end({ timeout: 5 }); } }, 30000);
-  async function api(path: string, options: { method?: string; body?: unknown; headers?: Record<string, string> } = {}) { return fetch(`${origin}${path}`, { method: options.method ?? 'GET', headers: { authorization: `Bearer ${token}`, ...(options.body === undefined ? {} : { 'content-type': 'application/json' }), ...options.headers }, ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }) }); }
-
-  it("generates through Redis, charges once, rejects a locked rewrite, and restores", async () => {
-    const fixture = (globalThis as unknown as { generationFixture: { recipeId: string; templateId: string } }).generationFixture;
-    const submit = await api('/v1/generation-jobs', { method: 'POST', headers: { 'idempotency-key': 'generation-e2e-submit-001' }, body: fixture });
-    const jobId = ((await submit.json()) as { data: { generationJobId: string } }).data.generationJobId;
-    expect((await dispatcher.pollOnce()).published).toBe(1);
-    await waitUntil(async () => ((await (await api(`/v1/generation-jobs/${jobId}`)).json()) as { data: { status: string } }).data.status === 'done');
-    const status = (await (await api(`/v1/generation-jobs/${jobId}`)).json()) as { data: { portfolioId: string } };
-    const portfolioId = status.data.portfolioId;
-    const blockId = (await sql<IdRow[]>`select block.id from block join portfolio_section on portfolio_section.id = block.portfolio_section_id where portfolio_section.portfolio_id = ${portfolioId} order by portfolio_section.order_no limit 1`)[0]?.id;
-    const snapshotId = (await sql<IdRow[]>`select id from portfolio_snapshot where portfolio_id = ${portfolioId} and kind = 'initial_generation'`)[0]?.id;
-    if (!blockId || !snapshotId) throw new Error("generation E2E artifact missing");
-    const preview = await api(`/v1/portfolios/${portfolioId}/blocks/${blockId}/edit-preview`, { method: 'POST', body: { operation: 'update_text', text: 'Locked user sentence' } });
-    const proposalId = ((await preview.json()) as { data: { id: string } }).data.id;
-    await api(`/v1/portfolio-edit-proposals/${proposalId}/apply`, { method: 'POST' });
-    await sql`update generation_job set status = 'queued', stage = 'queued' where id = ${jobId}`;
-    await expect(generation.process(jobId, new StubSentenceWriter())).rejects.toThrow(/locked block/);
+  afterAll(async () => { if (worker) await worker.close(); await Promise.allSettled([queue.queue.obliterate({ force: true }), queue.deadLetterQueue.obliterate({ force: true })]); await queue.close(); if (app) await app.close(); if (sql) await sql.end({ timeout: 5 }); if (admin) {    await expect(generation.process(jobId, new StubSentenceWriter())).rejects.toThrow(/locked block/);
     expect((await sql<{ used: number }[]>`select used from usage_counter limit 1`)[0]?.used).toBe(1);
     const restore = await api(`/v1/portfolios/${portfolioId}/restore`, { method: 'POST', body: { snapshotId, confirm: true } });
     expect(restore.status).toBe(200);

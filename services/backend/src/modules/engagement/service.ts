@@ -58,7 +58,12 @@ export class EngagementService {
   async preferences(userId: string) {
     const rows = await this.#sql<{ kind: NotificationKind; enabled: boolean }[]>`
       select kinds.kind, coalesce(preference.enabled, true) as enabled
-      from unnest(array['deadline','saved_search','generation','traffic'][]) as kinds(kind)
+      from (
+             select 'deadline' as kind
+             union all select 'saved_search'
+             union all select 'generation'
+             union all select 'traffic'
+           ) as kinds
       left join notification_preference as preference on preference.user_id = ${userId} and preference.kind = kinds.kind
       order by kinds.kind
     `;
@@ -196,7 +201,7 @@ export class EngagementService {
         where exists (select 1 from match_score where match_score.user_id = ${userId} and match_score.job_posting_id = posting.id)
       )
       select id, resource_type, title, subtitle, sort_title from resources
-      where title ilike ${pattern}
+      where lower(title) like lower(${pattern})
         and (${cursor === null} or (sort_title, resource_type, id) > (${cursor?.title ?? ""}, ${cursor?.type ?? ""}, ${cursor?.id ?? "00000000-0000-0000-0000-000000000000"}))
       order by sort_title, resource_type, id
       limit ${input.limit + 1}

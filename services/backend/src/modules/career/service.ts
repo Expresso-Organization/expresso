@@ -331,7 +331,7 @@ export class CareerService {
       ${query.categoryId ? sql`and record.category_id = ${query.categoryId}` : sql``}
       ${query.status ? sql`and record.status = ${query.status}` : sql``}
       ${query.origin ? sql`and record.origin = ${query.origin}` : sql``}
-      ${query.q ? sql`and record.title ilike ${`%${query.q}%`}` : sql``}
+      ${query.q ? sql`and lower(record.title) like lower(${`%${query.q}%`})` : sql``}
     `;
 
     const rows = await sql<RecordListRow[]>`
