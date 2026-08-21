@@ -5,11 +5,27 @@ repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
 compose_file="$repo_root/infra/compose.yaml"
 staging_database="expresso_staging_rehearsal"
 staging_port="44123"
-database_url="postgres://expresso:expresso@127.0.0.1:55432/$staging_database"
+database_url="mysql://expresso:expresso@127.0.0.1:53306/$staging_database"
 redis_url="redis://127.0.0.1:56379"
 artifact_dir="$(mktemp -d "$repo_root/services/backend/.release-rehearsal.XXXXXX")"
 api_pid=""
 worker_pid=""
+
+mysql_root() {
+  docker compose -f "$compose_file" exec -T mysql \
+    mysql --user=root --password="${EXPRESSO_MYSQL_PASSWORD:-expresso}" "$@"
+}
+
+mysql_staging() {
+  docker compose -f "$compose_file" exec -T mysql \
+    mysql --user=root --password="${EXPRESSO_MYSQL_PASSWORD:-expresso}" "$staging_database"
+}
+
+mysql_query() {
+  docker compose -f "$compose_file" exec -T mysql \
+    mysql --user=root --password="${EXPRESSO_MYSQL_PASSWORD:-expresso}" \
+      --batch --skip-column-names "$staging_database" --execute="$1"
+}
 
 stop_processes() {
   if [[ -n "$api_pid" ]]; then kill "$api_pid" 2>/dev/null || true; wait "$api_pid" 2>/dev/null || true; api_pid=""; fi
@@ -23,20 +39,45 @@ cleanup() {
     test ! -f "$artifact_dir/api.log" || { echo "api_log:" >&2; tail -50 "$artifact_dir/api.log" >&2; }
     test ! -f "$artifact_dir/worker.log" || { echo "worker_log:" >&2; tail -50 "$artifact_dir/worker.log" >&2; }
   fi
-  docker compose -f "$compose_file" exec -T postgres psql --username=expresso --dbname=postgres --set=ON_ERROR_STOP=1 --command="drop database if exists $staging_database with (force);" >/dev/null
+  mysql_root --execute="drop database if exists \`$staging_database\`;" >/dev/null
   if [[ "$artifact_dir" == "$repo_root/services/backend/.release-rehearsal."* ]]; then rm -rf "$artifact_dir"; fi
 }
 trap cleanup EXIT
 
-docker compose -f "$compose_file" exec -T postgres psql --username=expresso --dbname=postgres --set=ON_ERROR_STOP=1 --command="drop database if exists $staging_database with (force);" >/dev/null
-docker compose -f "$compose_file" exec -T postgres psql --username=expresso --dbname=postgres --set=ON_ERROR_STOP=1 --command="create database $staging_database;" >/dev/null
+mysql_root --execute="drop database if exists \`$staging_database\`;" >/dev/null
+mysql_root --execute="create database \`$staging_database\` character set utf8mb4 collate utf8mb4_bin;" >/dev/null
 
 cd "$repo_root"
 pnpm build >/dev/null
 cp -R services/backend/dist "$artifact_dir/dist"
 DATABASE_URL="$database_url" pnpm --filter @expresso/database migrate >/dev/null
 
-docker compose -f "$compose_file" exec -T postgres psql --username=expresso --dbname="$staging_database" --set=ON_ERROR_STOP=1 --command="with u as (insert into \"user\" (email, display_name, plan_id) select 'staging@expresso.local', 'Staging', id from plan where code='pro' returning id), c as (insert into company (name, dedupe_key) values ('Staging', 'staging-rehearsal') returning id), j as (insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash) select c.id, 'user_input', 'Staging', repeat('s',250), '{}'::jsonb, 'staging-rehearsal' from c returning id), a as (insert into job_analysis (user_id, job_posting_id, input_type, status) select u.id,j.id,'paste','done' from u,j returning id,user_id), b as (insert into brew (user_id, job_analysis_id, length_preset, status) select a.user_id,a.id,'single','done' from a returning id,user_id), p as (insert into portfolio (user_id, brew_id, template_id, title) select b.user_id,b.id,t.id,'Staging portfolio' from b join template t on t.code='clarity' returning id,user_id), d1 as (insert into deployment (user_id, portfolio_id, version, subdomain, published_at, snapshot) select p.user_id,p.id,1,'staging-v1',now(),'{\"text\":\"version one\"}'::jsonb from p returning portfolio_id,user_id), d2 as (insert into deployment (user_id, portfolio_id, version, subdomain, published_at, snapshot) select d1.user_id,d1.portfolio_id,2,'staging-v2',now(),'{\"text\":\"version two\"}'::jsonb from d1 returning id,portfolio_id) select id from d2; update portfolio set current_deployment_id=(select id from deployment where subdomain='staging-v2'), status='published' where title='Staging portfolio';" >/dev/null
+mysql_staging <<'SEED' >/dev/null
+set @user_id = uuid();
+set @company_id = uuid();
+set @posting_id = uuid();
+set @analysis_id = uuid();
+set @brew_id = uuid();
+set @portfolio_id = uuid();
+set @deployment_one = uuid();
+set @deployment_two = uuid();
+insert into `user` (id, email, display_name, plan_id)
+  select @user_id, 'staging@expresso.local', 'Staging', id from plan where code = 'pro';
+insert into company (id, name, dedupe_key) values (@company_id, 'Staging', 'staging-rehearsal');
+insert into job_posting (id, company_id, source, title, description_raw, requirements, dedupe_hash)
+  values (@posting_id, @company_id, 'user_input', 'Staging', repeat('s', 250), '{}', 'staging-rehearsal');
+insert into job_analysis (id, user_id, job_posting_id, input_type, status)
+  values (@analysis_id, @user_id, @posting_id, 'paste', 'done');
+insert into brew (id, user_id, job_analysis_id, length_preset, status)
+  values (@brew_id, @user_id, @analysis_id, 'single', 'done');
+insert into portfolio (id, user_id, brew_id, template_id, title)
+  select @portfolio_id, @user_id, @brew_id, id, 'Staging portfolio' from template where code = 'clarity';
+insert into deployment (id, user_id, portfolio_id, version, subdomain, published_at, snapshot)
+  values (@deployment_one, @user_id, @portfolio_id, 1, 'staging-v1', now(6), '{"text":"version one"}');
+insert into deployment (id, user_id, portfolio_id, version, subdomain, published_at, snapshot)
+  values (@deployment_two, @user_id, @portfolio_id, 2, 'staging-v2', now(6), '{"text":"version two"}');
+update portfolio set current_deployment_id = @deployment_two, status = 'published' where id = @portfolio_id;
+SEED
 
 start_pair() {
   local api_entry="$1"
@@ -52,25 +93,29 @@ start_pair() {
 }
 
 start_pair "$repo_root/services/backend/dist/api/main.js" "$repo_root/services/backend/dist/worker/main.js"
+# 정기 작업이 몇 개인지는 스키마가 안다 — 여기에 다시 적으면 하나 늘 때마다
+# 이 줄이 조용히 어긋난다.
+expected="$(mysql_query "select count(*) from scheduled_job_definition;")"
 for _ in $(seq 1 100); do
-  completed="$(docker compose -f "$compose_file" exec -T postgres psql --username=expresso --dbname="$staging_database" --tuples-only --no-align --command="select count(*) from scheduled_job_run where status='succeeded';")"
-  if [[ "$completed" -eq 6 ]]; then break; fi
+  completed="$(mysql_query "select count(*) from scheduled_job_run where status='succeeded';")"
+  if [[ "$completed" -eq "$expected" ]]; then break; fi
   sleep 0.1
 done
-dead_count="$(docker compose -f "$compose_file" exec -T postgres psql --username=expresso --dbname="$staging_database" --tuples-only --no-align --command="select count(*) from platform_outbox where state='dead_letter';")"
-failed_count="$(docker compose -f "$compose_file" exec -T postgres psql --username=expresso --dbname="$staging_database" --tuples-only --no-align --command="select count(*) from scheduled_job_run where status='failed';")"
+test "$completed" -eq "$expected"
+dead_count="$(mysql_query "select count(*) from platform_outbox where state='dead_letter';")"
+failed_count="$(mysql_query "select count(*) from scheduled_job_run where status='failed';")"
 test "$dead_count" -eq 0
 test "$failed_count" -eq 0
 curl --fail --silent "http://127.0.0.1:$staging_port/v1/public/portfolios/staging-v2" | grep -q 'version two'
 
 stop_processes
 start_pair "$artifact_dir/dist/api/main.js" "$artifact_dir/dist/worker/main.js"
-docker compose -f "$compose_file" exec -T postgres psql --username=expresso --dbname="$staging_database" --set=ON_ERROR_STOP=1 --command="update portfolio set current_deployment_id=(select id from deployment where subdomain='staging-v1') where title='Staging portfolio';" >/dev/null
+mysql_query "update portfolio set current_deployment_id = (select id from (select id from deployment where subdomain='staging-v1') as pick) where title='Staging portfolio';" >/dev/null
 curl --fail --silent "http://127.0.0.1:$staging_port/v1/public/portfolios/staging-v1" | grep -q 'version one'
 status_v2="$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:$staging_port/v1/public/portfolios/staging-v2")"
 test "$status_v2" -eq 404
 
-echo "migration_count=$(docker compose -f "$compose_file" exec -T postgres psql --username=expresso --dbname="$staging_database" --tuples-only --no-align --command='select count(*) from schema_migration;')"
+echo "migration_count=$(mysql_query 'select count(*) from schema_migration;')"
 echo "scheduled_succeeded=$completed"
 echo "dead_letter=$dead_count"
 echo "scheduled_failed=$failed_count"

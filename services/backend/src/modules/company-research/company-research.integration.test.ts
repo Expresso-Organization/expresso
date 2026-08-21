@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { CompanyResearchError, CompanyResearchService } from "./service.js";
@@ -11,7 +12,7 @@ const describeWithDatabase = databaseUrl ? describe : describe.skip;
 interface IdRow { id: string }
 
 describeWithDatabase("company research normalization", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused");
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const service = new CompanyResearchService(sql);
   const marker = randomUUID();
   let userId = "";
@@ -23,11 +24,12 @@ describeWithDatabase("company research normalization", () => {
   beforeAll(async () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("free plan missing");
-    const users = await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id) values
-        (${`research-a-${marker}@example.com`}, 'Research A', ${planId}),
-        (${`research-b-${marker}@example.com`}, 'Research B', ${planId})
-      returning id
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
+      values
+        (${users[0]!.id}, ${`research-a-${marker}@example.com`}, 'Research A', ${planId}),
+        (${users[1]!.id}, ${`research-b-${marker}@example.com`}, 'Research B', ${planId})
     `;
     userId = users[0]?.id ?? "";
     otherUserId = users[1]?.id ?? "";
@@ -37,14 +39,14 @@ describeWithDatabase("company research normalization", () => {
     `)[0]?.id ?? "";
     postingId = (await sql<IdRow[]>`
       insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash)
-      values (${companyId}, 'user_input', 'Designer', 'Portfolio', '{}'::jsonb,
+      values (${companyId}, 'user_input', 'Designer', 'Portfolio', '{}',
               ${`research-posting-${marker}`}) returning id
     `)[0]?.id ?? "";
     const analysisId = (await sql<IdRow[]>`
       insert into job_analysis (
         user_id, job_posting_id, input_type, status, progress_stage,
         result_version, target_version, analyzed_at
-      ) values (${userId}, ${postingId}, 'paste', 'done', 'done', 1, 1, now()) returning id
+      ) values (${userId}, ${postingId}, 'paste', 'done', 'done', 1, 1, now(6)) returning id
     `)[0]?.id;
     brewId = (await sql<IdRow[]>`
       insert into brew (user_id, job_analysis_id, length_preset, status)
@@ -54,7 +56,7 @@ describeWithDatabase("company research normalization", () => {
 
   afterAll(async () => {
     if (userId || otherUserId) {
-      await sql`delete from "user" where id in (${userId}, ${otherUserId})`;
+      await sql`delete from \`user\` where id in (${userId}, ${otherUserId})`;
     }
     if (postingId) await sql`delete from job_posting where id = ${postingId}`;
     if (companyId) await sql`delete from company where id = ${companyId}`;

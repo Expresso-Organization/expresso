@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../../platform/mysql.js";
 
 import type { JobFactsAiOutput } from "@expresso/contracts";
-import postgres from "postgres";
+import type { SqlTag } from "../../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { AiCallSpec, AiClient, AiResult } from "../../../platform/ai/client.js";
@@ -58,7 +59,7 @@ function posting(marker: string, index: number): RawPosting {
 }
 
 describeWithDatabase("수집과 본문 읽기의 분리", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 4 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const marker = randomUUID().slice(0, 8);
   const adapter = new FakeAdapter();
   const model = new CountingAi();
@@ -69,7 +70,7 @@ describeWithDatabase("수집과 본문 읽기의 분리", () => {
 
   const pendingCount = async () => {
     const [row] = await sql<{ count: string }[]>`
-      select count(*)::text as count from job_posting
+      select count(*) as count from job_posting
       where facts_read_at is null and external_id like ${`%${marker}%`}
     `;
     return Number(row?.count ?? 0);
@@ -108,7 +109,7 @@ describeWithDatabase("수집과 본문 읽기의 분리", () => {
      * 휘둘린다. 내 것을 확실히 맨 앞에 세워 둔다.
      */
     await sql`
-      update job_posting set created_at = timestamptz '2000-01-01'
+      update job_posting set created_at = '2000-01-01 00:00:00'
       where external_id like ${`%${marker}%`}
     `;
   });

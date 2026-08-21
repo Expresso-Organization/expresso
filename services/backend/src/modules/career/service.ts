@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import {
   CareerCategorySchema,
@@ -21,7 +21,7 @@ import {
   type SaveCareerProfile,
   type UpdateCareerRecord,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import { CareerError } from "./errors.js";
 import { validateCareerProperties } from "./properties.js";
@@ -268,9 +268,9 @@ function mapCareerProfile(row: CareerProfileRow) {
 }
 
 export class CareerService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
 
-  constructor(sql: postgres.Sql) {
+  constructor(sql: SqlTag) {
     this.#sql = sql;
   }
 
@@ -278,7 +278,7 @@ export class CareerService {
     const rows = await this.#sql<CategoryRow[]>`
       select
         category.id,
-        category.key,
+        category.\`key\`,
         category.name,
         category.icon,
         category.default_view,
@@ -286,7 +286,7 @@ export class CareerService {
         category.property_schema,
         category.sort_order,
         category.version,
-        count(record.id)::integer as record_count
+        count(record.id) as record_count
       from category
       left join record on record.category_id = category.id
         and record.user_id = ${userId}
@@ -317,12 +317,12 @@ export class CareerService {
     const sortKey = () => {
       if (query.sort === "title_asc") return sql`record.title`;
       if (query.sort === "period_desc") {
-        return sql`coalesce(lower(record.period)::text, '0001-01-01')`;
+        return sql`coalesce(record.period_start, '0001-01-01')`;
       }
       if (query.sort === "period_asc") {
-        return sql`coalesce(lower(record.period)::text, '9999-12-31')`;
+        return sql`coalesce(record.period_start, '9999-12-31')`;
       }
-      return sql`to_char(record.updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
+      return sql`date_format(record.updated_at, '%Y-%m-%dT%H:%i:%s.%fZ')`;
     };
 
     const scope = () => sql`
@@ -331,7 +331,7 @@ export class CareerService {
       ${query.categoryId ? sql`and record.category_id = ${query.categoryId}` : sql``}
       ${query.status ? sql`and record.status = ${query.status}` : sql``}
       ${query.origin ? sql`and record.origin = ${query.origin}` : sql``}
-      ${query.q ? sql`and record.title ilike ${`%${query.q}%`}` : sql``}
+      ${query.q ? sql`and lower(record.title) like lower(${`%${query.q}%`})` : sql``}
     `;
 
     const rows = await sql<RecordListRow[]>`
@@ -339,7 +339,7 @@ export class CareerService {
         record.id,
         record.user_id,
         record.category_id,
-        category.key as category_key,
+        category.\`key\` as category_key,
         record.title,
         record.status,
         record.origin,
@@ -349,16 +349,16 @@ export class CareerService {
         record.updated_at,
         record.deleted_at,
         record.purge_after,
-        lower(record.period)::text as period_from,
-        upper(record.period)::text as period_to,
+        record.period_start as period_from,
+        record.period_end as period_to,
         ${sortKey()} as sort_key,
         (
-          select count(*)::integer from record_link
+          select count(*) from record_link
           where record_link.user_id = record.user_id
             and (record_link.from_record_id = record.id or record_link.to_record_id = record.id)
         ) as link_count,
         (
-          select count(distinct portfolio_section.portfolio_id)::integer
+          select count(distinct portfolio_section.portfolio_id)
           from record_usage
           join block on block.id = record_usage.block_id
             and block.user_id = record_usage.user_id
@@ -371,10 +371,10 @@ export class CareerService {
       join category on category.id = record.category_id
       where ${scope()}
         ${cursor && descending
-          ? sql`and (${sortKey()}, record.id) < (${cursor.key}, ${cursor.id}::uuid)`
+          ? sql`and (${sortKey()}, record.id) < (${cursor.key}, ${cursor.id})`
           : sql``}
         ${cursor && !descending
-          ? sql`and (${sortKey()}, record.id) > (${cursor.key}, ${cursor.id}::uuid)`
+          ? sql`and (${sortKey()}, record.id) > (${cursor.key}, ${cursor.id})`
           : sql``}
       order by ${sortKey()} ${descending ? sql`desc` : sql`asc`},
         record.id ${descending ? sql`desc` : sql`asc`}
@@ -387,13 +387,11 @@ export class CareerService {
 
     const [summary] = await sql<RecordSummaryRow[]>`
       select
-        count(*)::integer as total,
-        count(*) filter (where record.status = 'draft')::integer as draft,
-        count(*) filter (where record.status = 'organized')::integer as organized,
-        count(*) filter (where record.status = 'verified')::integer as verified,
-        count(*) filter (
-          where record.body_md = '' and record.properties = '{}'::jsonb
-        )::integer as empty
+        count(*) as total,
+        count(case when record.status = 'draft' then 1 end) as draft,
+        count(case when record.status = 'organized' then 1 end) as organized,
+        count(case when record.status = 'verified' then 1 end) as verified,
+        count(case when record.body_md = '' and json_length(record.properties) = 0 then 1 end) as \`empty\`
       from record
       where ${scope()}
     `;
@@ -435,17 +433,17 @@ export class CareerService {
     const propertySchema = CareerPropertySchemaSchema.parse(input.propertySchema);
     const rows = await this.#sql<CategoryRow[]>`
       insert into category (
-        user_id, key, name, icon, default_view,
+        user_id, \`key\`, name, icon, default_view,
         is_system, property_schema, sort_order
       )
       values (
         ${userId}, ${input.key}, ${input.name}, ${input.icon},
         ${input.defaultView}, false,
-        ${this.#sql.json(propertySchema as postgres.JSONValue)},
-        (select 7 + count(*)::integer from category where user_id = ${userId})
+        ${this.#sql.json(propertySchema as JSONValue)},
+        (select 7 + counted.total from (select count(*) as total from category where user_id = ${userId}) as counted)
       )
-      returning id, key, name, icon, default_view, is_system,
-        property_schema, sort_order, version, 0::integer as record_count
+      returning id, \`key\`, name, icon, default_view, is_system,
+        property_schema, sort_order, version, 0 as record_count
     `;
     const category = rows[0];
     if (!category) throw new Error("career category was not persisted");
@@ -462,8 +460,8 @@ export class CareerService {
     const nextSchema = CareerPropertySchemaSchema.parse(nextSchemaInput);
     return this.#sql.begin(async (transaction) => {
       const existingRows = await transaction<CategoryRow[]>`
-        select id, key, name, icon, default_view, is_system,
-          property_schema, sort_order, version, 0::integer as record_count
+        select id, \`key\`, name, icon, default_view, is_system,
+          property_schema, sort_order, version, 0 as record_count
         from category
         where id = ${categoryId} and user_id = ${userId} and not is_system
         for update
@@ -488,12 +486,12 @@ export class CareerService {
       const propertyValueCounts: Record<string, number> = {};
       for (const key of removedKeys) {
         const counts = await transaction<CountRow[]>`
-          select count(*)::integer as count
+          select count(*) as count
           from record
           where user_id = ${userId}
             and category_id = ${categoryId}
             and deleted_at is null
-            and properties ? ${key}
+            and json_contains_path(properties, 'one', concat('$.', ${key}))
         `;
         const count = Number(counts[0]?.count ?? 0);
         if (count > 0) propertyValueCounts[key] = count;
@@ -507,20 +505,20 @@ export class CareerService {
       for (const key of Object.keys(propertyValueCounts)) {
         await transaction`
           update record
-          set properties = properties - ${key}
+          set properties = json_remove(properties, concat('$.', ${key}))
           where user_id = ${userId}
             and category_id = ${categoryId}
-            and properties ? ${key}
+            and json_contains_path(properties, 'one', concat('$.', ${key}))
         `;
       }
       const updatedRows = await transaction<CategoryRow[]>`
         update category
-        set property_schema = ${transaction.json(nextSchema as postgres.JSONValue)}
+        set property_schema = ${transaction.json(nextSchema as JSONValue)}
         where id = ${categoryId}
           and user_id = ${userId}
           and version = ${expectedVersion}
-        returning id, key, name, icon, default_view, is_system,
-          property_schema, sort_order, version, 0::integer as record_count
+        returning id, \`key\`, name, icon, default_view, is_system,
+          property_schema, sort_order, version, 0 as record_count
       `;
       const updated = updatedRows[0];
       if (!updated) throw new CareerError(412, "category version is stale");
@@ -545,20 +543,22 @@ export class CareerService {
       if (!category) throw new CareerError(404, "career category not found");
       validateCareerProperties(category.property_schema, input.properties);
 
-      const inserted = await transaction<RecordRow[]>`
-        insert into record (
-          user_id, category_id, title, status, origin,
+      // 멱등 키가 이미 쓰였으면 새 줄이 생기지 않는다. 우리가 만든 id 로 다시 읽어
+      // 방금 넣은 것인지 가려낸다.
+      const newRecordId = randomUUID();
+      await transaction`
+        insert ignore into record (
+          id, user_id, category_id, title, status, origin,
           properties, body_md, create_idempotency_key, create_request_hash
         )
         values (
-          ${userId}, ${input.categoryId}, ${input.title}, 'draft', 'manual',
-          ${transaction.json(input.properties as postgres.JSONValue)},
+          ${newRecordId}, ${userId}, ${input.categoryId}, ${input.title}, 'draft', 'manual',
+          ${transaction.json(input.properties as JSONValue)},
           ${input.bodyMd}, ${idempotencyKey}, ${hash}
         )
-        on conflict (user_id, create_idempotency_key)
-          where create_idempotency_key is not null
-        do nothing
-        returning *
+      `;
+      const inserted = await transaction<RecordRow[]>`
+        select * from record where id = ${newRecordId}
       `;
       const created = inserted[0];
       if (created) return { record: mapRecord(created), created: true };
@@ -613,7 +613,7 @@ export class CareerService {
       const updatedRows = await transaction<RecordRow[]>`
         update record
         set title = ${input.title ?? existing.title},
-            properties = ${transaction.json(properties as postgres.JSONValue)},
+            properties = ${transaction.json(properties as JSONValue)},
             body_md = ${input.bodyMd ?? existing.body_md}
         where id = ${recordId}
           and user_id = ${userId}
@@ -661,7 +661,7 @@ export class CareerService {
         throw new CareerError(400, "timeline views require a date property");
       }
       const counts = await transaction<CountRow[]>`
-        select count(*)::integer as count from category_view
+        select count(*) as count from category_view
         where user_id = ${userId} and category_id = ${categoryId}
       `;
       if (Number(counts[0]?.count ?? 0) >= 8) {
@@ -674,8 +674,8 @@ export class CareerService {
         )
         values (
           ${userId}, ${categoryId}, ${input.name}, ${input.viewType},
-          ${transaction.json(input.filters as postgres.JSONValue)},
-          ${transaction.json(input.sorts as postgres.JSONValue)},
+          ${transaction.json(input.filters as JSONValue)},
+          ${transaction.json(input.sorts as JSONValue)},
           ${input.visibleProperties}, ${Number(counts[0]?.count ?? 0)}
         )
         returning *
@@ -722,14 +722,17 @@ export class CareerService {
     if (!fromRecordId || !targetRecordId) {
       throw new Error("career link endpoints were not resolved");
     }
-    const rows = await this.#sql<LinkRow[]>`
-      insert into record_link (
+    // 같은 연결을 두 번 만들어도 하나다. 이미 있으면 그대로 두고 그 행을 읽는다.
+    await this.#sql`
+      insert ignore into record_link (
         user_id, from_record_id, to_record_id, relation, created_by
       )
       values (${userId}, ${fromRecordId}, ${targetRecordId}, ${relation}, 'user')
-      on conflict (user_id, from_record_id, to_record_id, relation)
-      do update set created_by = record_link.created_by
-      returning id, from_record_id, to_record_id, relation
+    `;
+    const rows = await this.#sql<LinkRow[]>`
+      select id, from_record_id, to_record_id, relation from record_link
+      where user_id = ${userId} and from_record_id = ${fromRecordId}
+        and to_record_id = ${targetRecordId} and relation = ${relation}
     `;
     const link = rows[0];
     if (!link) throw new Error("career record link was not persisted");
@@ -768,8 +771,8 @@ export class CareerService {
     if (!records[0]) throw new CareerError(404, "career record not found");
     const impacts = await this.#sql<ImpactRow[]>`
       select
-        count(distinct portfolio_section.portfolio_id)::integer as portfolio_count,
-        count(distinct record_usage.block_id)::integer as block_count
+        count(distinct portfolio_section.portfolio_id) as portfolio_count,
+        count(distinct record_usage.block_id) as block_count
       from record_usage
       left join block on block.id = record_usage.block_id
         and block.user_id = record_usage.user_id
@@ -791,8 +794,8 @@ export class CareerService {
     return this.#sql.begin(async (transaction) => {
       const impacts = await transaction<ImpactRow[]>`
         select
-          count(distinct portfolio_section.portfolio_id)::integer as portfolio_count,
-          count(distinct record_usage.block_id)::integer as block_count
+          count(distinct portfolio_section.portfolio_id) as portfolio_count,
+          count(distinct record_usage.block_id) as block_count
         from record_usage
         left join block on block.id = record_usage.block_id
           and block.user_id = record_usage.user_id
@@ -803,7 +806,7 @@ export class CareerService {
       `;
       const rows = await transaction<RecordRow[]>`
         update record
-        set deleted_at = ${at}, purge_after = ${at} + interval '30 days'
+        set deleted_at = ${at}, purge_after = ${at} + interval 30 day
         where id = ${recordId} and user_id = ${userId} and deleted_at is null
         returning *
       `;
@@ -856,7 +859,7 @@ export class CareerService {
         where record.user_id = ${userId}
           and record.deleted_at is null
           and category.is_system
-          and record.id = any(${ids}::uuid[])
+          and record.id in ${transaction(ids)}
       `;
       if (records.length !== ids.length) {
         throw new CareerError(404, "skill evidence record not found");
@@ -879,7 +882,7 @@ export class CareerService {
         lastUsedAt,
         computedAt,
       );
-      const skills = await transaction<SkillRow[]>`
+      await transaction`
         insert into skill (
           user_id, name, level, computed_at,
           evidence_count, last_used_at, strength
@@ -888,14 +891,14 @@ export class CareerService {
           ${userId}, ${name}, ${aggregate.level}, ${computedAt},
           ${input.evidence.length}, ${lastUsedAt}, ${aggregate.strength}
         )
-        on conflict (user_id, name)
-        do update set
-          level = excluded.level,
-          computed_at = excluded.computed_at,
-          evidence_count = excluded.evidence_count,
-          last_used_at = excluded.last_used_at,
-          strength = excluded.strength
-        returning *
+        as new on duplicate key update level = new.level,
+          computed_at = new.computed_at,
+          evidence_count = new.evidence_count,
+          last_used_at = new.last_used_at,
+          strength = new.strength
+      `;
+      const skills = await transaction<SkillRow[]>`
+        select * from skill where user_id = ${userId} and name = ${name}
       `;
       const skill = skills[0];
       if (!skill) throw new Error("career skill was not persisted");
@@ -909,7 +912,7 @@ export class CareerService {
           )
           values (
             ${userId}, ${skill.id}, ${evidence.recordId}, 1,
-            ${transaction.json(evidence.span as postgres.JSONValue)}
+            ${transaction.json(evidence.span as JSONValue)}
           )
         `;
       }
@@ -975,7 +978,7 @@ export class CareerService {
   async saveProfile(userId: string, input: SaveCareerProfile) {
     // 같은 칩을 두 번 담아 보내도 한 번만 남는다.
     const targetRoles = [...new Set(input.targetRoles)];
-    const rows = await this.#sql<CareerProfileRow[]>`
+    await this.#sql`
       insert into career_profile (user_id, target_roles, experience_years, primary_goal)
       values (
         ${userId},
@@ -983,12 +986,14 @@ export class CareerService {
         ${input.experienceYears},
         ${input.primaryGoal}
       )
-      on conflict (user_id) do update set
-        target_roles = excluded.target_roles,
-        experience_years = excluded.experience_years,
-        primary_goal = excluded.primary_goal,
-        updated_at = now()
-      returning target_roles, experience_years, primary_goal, updated_at
+      as new on duplicate key update target_roles = new.target_roles,
+        experience_years = new.experience_years,
+        primary_goal = new.primary_goal,
+        updated_at = now(6)
+    `;
+    const rows = await this.#sql<CareerProfileRow[]>`
+      select target_roles, experience_years, primary_goal, updated_at
+      from career_profile where user_id = ${userId}
     `;
     const row = rows[0];
     if (!row) throw new Error("career profile was not persisted");

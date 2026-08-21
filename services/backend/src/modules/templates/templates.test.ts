@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { contrastRatio, ensureReadableStyle, renderTemplate } from "./render.js";
@@ -24,7 +25,7 @@ describe("template contrast", () => {
 });
 
 describeWithDatabase("template conformance", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 1 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   afterAll(async () => sql.end({ timeout: 5 }));
 
   it("renders every arbitrary recipe section with actual content and preserves empty state", async () => {

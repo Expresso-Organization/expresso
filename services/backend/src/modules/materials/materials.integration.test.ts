@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
@@ -16,7 +17,7 @@ const config: RuntimeConfig = {
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -27,7 +28,7 @@ const config: RuntimeConfig = {
 interface IdRow { id: string }
 
 describeWithDatabase("brew materials integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 4 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identityService = new IdentityService(sql);
   const materialsService = new MaterialsService(sql);
   const app = buildApi({ config, identityService, materialsService });
@@ -47,15 +48,15 @@ describeWithDatabase("brew materials integration", () => {
   beforeAll(async () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     const categoryId = (await sql<IdRow[]>`
-      select id from category where key = 'experience' and is_system
+      select id from category where \`key\` = 'experience' and is_system
     `)[0]?.id;
     if (!planId || !categoryId) throw new Error("materials seed data missing");
-    const users = await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        (${`materials-a-${marker}@example.com`}, 'Materials A', ${planId}),
-        (${`materials-b-${marker}@example.com`}, 'Materials B', ${planId})
-      returning id
+        (${users[0]!.id}, ${`materials-a-${marker}@example.com`}, 'Materials A', ${planId}),
+        (${users[1]!.id}, ${`materials-b-${marker}@example.com`}, 'Materials B', ${planId})
     `;
     userId = users[0]?.id ?? "";
     otherUserId = users[1]?.id ?? "";
@@ -69,7 +70,7 @@ describeWithDatabase("brew materials integration", () => {
       insert into job_posting (
         company_id, source, title, description_raw, requirements, dedupe_hash
       ) values (
-        ${companyId}, 'user_input', 'Backend Engineer', ${source}, '{}'::jsonb,
+        ${companyId}, 'user_input', 'Backend Engineer', ${source}, '{}',
         ${`materials-posting-${marker}`}
       ) returning id
     `)[0]?.id ?? "";
@@ -78,7 +79,7 @@ describeWithDatabase("brew materials integration", () => {
         user_id, job_posting_id, input_type, status, progress_stage,
         result_version, target_version, analyzed_at
       ) values (
-        ${userId}, ${postingId}, 'paste', 'done', 'done', 1, 1, now()
+        ${userId}, ${postingId}, 'paste', 'done', 'done', 1, 1, now(6)
       ) returning id
     `)[0]?.id ?? "";
     await sql`
@@ -95,7 +96,7 @@ describeWithDatabase("brew materials integration", () => {
           user_id, category_id, title, status, origin, properties, body_md
         ) values (
           ${userId}, ${categoryId}, ${`Eligible ${index.toString().padStart(2, "0")}`},
-          ${index % 3 === 0 ? "verified" : "organized"}, 'manual', '{}'::jsonb,
+          ${index % 3 === 0 ? "verified" : "organized"}, 'manual', '{}',
           ${index < 3 ? "TypeScript PostgreSQL backend reliability" : "Other organized evidence"}
         )
       `;
@@ -103,20 +104,20 @@ describeWithDatabase("brew materials integration", () => {
     draftRecordId = (await sql<IdRow[]>`
       insert into record (
         user_id, category_id, title, status, origin, properties, body_md
-      ) values (${userId}, ${categoryId}, 'Draft', 'draft', 'manual', '{}'::jsonb, 'TypeScript')
+      ) values (${userId}, ${categoryId}, 'Draft', 'draft', 'manual', '{}', 'TypeScript')
       returning id
     `)[0]?.id ?? "";
     await sql`
       insert into record (
         user_id, category_id, title, status, origin, properties, body_md
-      ) values (${otherUserId}, ${categoryId}, 'Other owner', 'verified', 'manual', '{}'::jsonb, 'TypeScript PostgreSQL')
+      ) values (${otherUserId}, ${categoryId}, 'Other owner', 'verified', 'manual', '{}', 'TypeScript PostgreSQL')
     `;
     await app.ready();
   });
 
   afterAll(async () => {
     if (userId && otherUserId) {
-      await sql`delete from "user" where id in (${userId}, ${otherUserId})`;
+      await sql`delete from \`user\` where id in (${userId}, ${otherUserId})`;
     }
     if (postingId) await sql`delete from job_posting where id = ${postingId}`;
     if (templateId) await sql`delete from template where id = ${templateId}`;
@@ -221,7 +222,7 @@ describeWithDatabase("brew materials integration", () => {
       where user_id = ${userId} and brew_id = ${created.brewId}
     `).rejects.toThrow(/at least one selected source/);
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count from brew_source
+      select count(*) as count from brew_source
       where user_id = ${userId} and brew_id = ${created.brewId} and is_selected
     `)[0]?.count).toBe(2);
 

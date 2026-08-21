@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
+import type { SqlTag } from "../../src/platform/mysql.js";
+import { createMysqlResource } from "../../src/platform/mysql.js";
 import { migrate } from "@expresso/database";
-import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildApi } from "../../src/api/build-app.js";
 import type { RuntimeConfig } from "../../src/config/runtime-config.js";
@@ -12,6 +13,7 @@ import { OutboxDispatcher } from "../../src/platform/outbox.js";
 import { createReliableQueue } from "../../src/platform/queue.js";
 import { createQueueWorker } from "../../src/worker/create-queue-worker.js";
 import { createGenerationProcessor } from "../../src/worker/processors/generation.js";
+import { ISOLATED_DATABASE_TIMEOUT_MS } from "../support/timeouts.js";
 
 const rootDatabaseUrl = process.env.TEST_DATABASE_URL;
 const redisUrl = process.env.TEST_REDIS_URL;
@@ -23,31 +25,31 @@ describeWithInfrastructure("generation edit restore vertical slice", () => {
   const databaseName = `expresso_generation_e2e_${randomUUID().replaceAll("-", "")}`;
   const prefix = `expresso-${databaseName}`;
   const queue = createReliableQueue<Record<string, unknown>>("domain-jobs", redisUrl!, prefix);
-  let admin: postgres.Sql; let sql: postgres.Sql; let app: ReturnType<typeof buildApi>;
+  let admin: SqlTag; let sql: SqlTag; let app: ReturnType<typeof buildApi>;
   let worker: ReturnType<typeof createQueueWorker<Record<string, unknown>, Record<string, unknown>>>;
   let dispatcher: OutboxDispatcher; let origin = ""; let token = "";
   let generation: GenerationService;
 
   beforeAll(async () => {
-    const root = new URL(rootDatabaseUrl!); const adminUrl = new URL(root); adminUrl.pathname = "/postgres";
-    admin = postgres(adminUrl.toString(), { max: 1 }); await admin.unsafe(`create database "${databaseName}"`);
+    const root = new URL(rootDatabaseUrl!); const adminUrl = new URL(root); adminUrl.pathname = "/mysql";
+    admin = createMysqlResource(adminUrl.toString()).sql; await admin.unsafe(`create database \`${databaseName}\``);
     const isolated = new URL(root); isolated.pathname = `/${databaseName}`; await migrate({ databaseUrl: isolated.toString() });
-    sql = postgres(isolated.toString(), { max: 6 });
+    sql = createMysqlResource(isolated.toString()).sql;
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
-    const categoryId = (await sql<IdRow[]>`select id from category where key = 'experience' and is_system`)[0]?.id;
+    const categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id;
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
     if (!planId || !categoryId || !templateId) throw new Error("generation E2E seed missing");
-    const userId = (await sql<IdRow[]>`insert into "user" (email, display_name, plan_id) values ('generation-e2e@example.com', 'Generation E2E', ${planId}) returning id`)[0]?.id;
+    const userId = (await sql<IdRow[]>`insert into \`user\` (email, display_name, plan_id) values ('generation-e2e@example.com', 'Generation E2E', ${planId}) returning id`)[0]?.id;
     if (!userId) throw new Error("generation E2E user missing");
     const identity = new IdentityService(sql); token = (await identity.issueSession({ userId })).accessToken;
     const companyId = (await sql<IdRow[]>`insert into company (name, dedupe_key) values ('Generation E2E', ${databaseName}) returning id`)[0]?.id;
-    const postingId = companyId && (await sql<IdRow[]>`insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash) values (${companyId}, 'user_input', 'Engineer', 'Grounded source', '{}'::jsonb, ${databaseName}) returning id`)[0]?.id;
+    const postingId = companyId && (await sql<IdRow[]>`insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash) values (${companyId}, 'user_input', 'Engineer', 'Grounded source', '{}', ${databaseName}) returning id`)[0]?.id;
     const analysisId = postingId && (await sql<IdRow[]>`insert into job_analysis (user_id, job_posting_id, input_type) values (${userId}, ${postingId}, 'paste') returning id`)[0]?.id;
-    const recordId = (await sql<IdRow[]>`insert into record (user_id, category_id, title, status, origin, properties, body_md) values (${userId}, ${categoryId}, 'Grounded record', 'organized', 'manual', '{}'::jsonb, 'Grounded record') returning id`)[0]?.id;
+    const recordId = (await sql<IdRow[]>`insert into record (user_id, category_id, title, status, origin, properties, body_md) values (${userId}, ${categoryId}, 'Grounded record', 'organized', 'manual', '{}', 'Grounded record') returning id`)[0]?.id;
     if (!analysisId || !recordId) throw new Error("generation E2E domain missing");
     const brewId = (await sql<IdRow[]>`insert into brew (user_id, job_analysis_id, length_preset) values (${userId}, ${analysisId}, 'single') returning id`)[0]?.id;
     if (!brewId) throw new Error("generation E2E brew missing");
-    await sql`insert into brew_source (user_id, brew_id, record_id, rank, selected_by, score, reason_text, is_selected) values (${userId}, ${brewId}, ${recordId}, 0, 'auto', 10, 'fixture', true)`;
+    await sql`insert into brew_source (user_id, brew_id, record_id, \`rank\`, selected_by, score, reason_text, is_selected) values (${userId}, ${brewId}, ${recordId}, 0, 'auto', 10, 'fixture', true)`;
     const recipeId = (await sql<IdRow[]>`insert into recipe (user_id, brew_id, version, completeness) values (${userId}, ${brewId}, 1, 100) returning id`)[0]?.id;
     if (!recipeId) throw new Error("generation E2E recipe missing");
     for (let index = 0; index < 3; index += 1) {
@@ -63,9 +65,9 @@ describeWithInfrastructure("generation edit restore vertical slice", () => {
     worker = createQueueWorker({ queueName: 'domain-jobs', redisUrl: redisUrl!, prefix, concurrency: 1, deadLetterQueue: queue.deadLetterQueue, processor: createGenerationProcessor(generation, new StubSentenceWriter()) });
     dispatcher = new OutboxDispatcher({ sql, queue: queue.queue });
     (globalThis as unknown as { generationFixture: { recipeId: string; templateId: string } }).generationFixture = { recipeId, templateId };
-  }, 30000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
-  afterAll(async () => { if (worker) await worker.close(); await Promise.allSettled([queue.queue.obliterate({ force: true }), queue.deadLetterQueue.obliterate({ force: true })]); await queue.close(); if (app) await app.close(); if (sql) await sql.end({ timeout: 5 }); if (admin) { await admin`select pg_terminate_backend(pid) from pg_stat_activity where datname = ${databaseName} and pid <> pg_backend_pid()`; await admin.unsafe(`drop database if exists "${databaseName}"`); await admin.end({ timeout: 5 }); } }, 30000);
+  afterAll(async () => { if (worker) await worker.close(); await Promise.allSettled([queue.queue.obliterate({ force: true }), queue.deadLetterQueue.obliterate({ force: true })]); await queue.close(); if (app) await app.close(); if (sql) await sql.end({ timeout: 5 }); if (admin) { await admin.unsafe(`drop database if exists \`${databaseName}\``); await admin.end({ timeout: 5 }); } }, ISOLATED_DATABASE_TIMEOUT_MS);
   async function api(path: string, options: { method?: string; body?: unknown; headers?: Record<string, string> } = {}) { return fetch(`${origin}${path}`, { method: options.method ?? 'GET', headers: { authorization: `Bearer ${token}`, ...(options.body === undefined ? {} : { 'content-type': 'application/json' }), ...options.headers }, ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }) }); }
 
   it("generates through Redis, charges once, rejects a locked rewrite, and restores", async () => {
@@ -87,7 +89,7 @@ describeWithInfrastructure("generation edit restore vertical slice", () => {
     expect((await sql<{ used: number }[]>`select used from usage_counter limit 1`)[0]?.used).toBe(1);
     const restore = await api(`/v1/portfolios/${portfolioId}/restore`, { method: 'POST', body: { snapshotId, confirm: true } });
     expect(restore.status).toBe(200);
-    expect((await sql<{ text: string; locked: boolean }[]>`select content ->> 'text' as text, locked from block where id = ${blockId}`)[0]).toEqual({ text: 'Grounded record 0', locked: false });
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from generation_sentence_evidence where generation_job_id = ${jobId}`)[0]?.count).toBe(3);
+    expect((await sql<{ text: string; locked: boolean }[]>`select content ->> '$.text' as text, locked from block where id = ${blockId}`)[0]).toEqual({ text: 'Grounded record 0', locked: false });
+    expect((await sql<{ count: number }[]>`select count(*) as count from generation_sentence_evidence where generation_job_id = ${jobId}`)[0]?.count).toBe(3);
   }, 30000);
 });

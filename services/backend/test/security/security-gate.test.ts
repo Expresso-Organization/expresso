@@ -24,7 +24,7 @@ import type { TemplateService } from "../../src/modules/templates/service.js";
 const uuid = "11111111-1111-4111-8111-111111111111";
 const config: RuntimeConfig = {
   nodeEnv: "test", host: "127.0.0.1", port: 4_000, logLevel: "silent",
-  databaseUrl: "postgres://127.0.0.1:1/unused", redisUrl: "redis://127.0.0.1:1",
+  databaseUrl: "mysql://127.0.0.1:1/unused", redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000, outboxBatchSize: 25, outboxMaxAttempts: 5, queuePrefix: "security-gate",
 };
 const identity = { async verifyAccessToken() { return null; } } as IdentityService;

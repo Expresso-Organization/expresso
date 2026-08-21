@@ -15,7 +15,7 @@ Oracle Cloud 인스턴스 한 대에 API · Worker · 웹을 함께 올리고, n
 | API | `node dist/api/main.js` | 4500 | `HOST=127.0.0.1` |
 | Worker | `node dist/worker/main.js` | 없음 | 큐 소비 · 매일 아침 수집 |
 | 웹 | `next start --port 3500` | 3500 | Next.js 16 · `HOSTNAME=127.0.0.1` |
-| PostgreSQL | `infra/compose.yaml` | 55432 | 컨테이너 |
+| MySQL | `infra/compose.yaml` | 53306 | 컨테이너 |
 | Redis | `infra/compose.yaml` | 56379 | 컨테이너 |
 
 바깥으로 열리는 포트는 443(과 80→443 전환)뿐이다. 나머지 넷은 모두
@@ -24,6 +24,76 @@ Oracle Cloud 인스턴스 한 대에 API · Worker · 웹을 함께 올리고, n
 저장소는 `/home/ubuntu/expresso`에 있고 세 유닛 모두 `ubuntu` 사용자로 돈다.
 node는 nvm이 깐 `v24.13.1`을 **절대 경로로** 부른다. nvm의 `default` 별칭은
 22라서, 배포 스크립트가 `nvm.sh`를 읽어 오면 서비스와 다른 node로 짓게 된다.
+
+## PostgreSQL 에서 MySQL 로 갈아타기
+
+이미 돌고 있는 서버를 옮길 때의 순서다. 사이트가 내려가는 구간은 마지막 둘뿐이다.
+
+1. `infra/.env` 에 `EXPRESSO_MYSQL_PASSWORD` 를 넣는다.
+
+   ```bash
+   printf 'EXPRESSO_MYSQL_PASSWORD=%s\n' "$(openssl rand -hex 24)" >> infra/.env
+   ```
+
+2. PostgreSQL 을 그대로 둔 채 MySQL 컨테이너를 띄운다.
+
+   ```bash
+   docker compose -f infra/compose.server.yaml --env-file infra/.env up -d mysql --wait
+   ```
+
+3. 마이그레이션을 적용한다. `pnpm db:migrate` 가 `.env` 의 `DATABASE_URL` 을 보므로,
+   아직 바꾸기 전이라면 그 자리에서 넘긴다.
+
+   ```bash
+   DATABASE_URL="mysql://expresso:$(grep '^EXPRESSO_MYSQL_PASSWORD=' infra/.env | cut -d= -f2)@127.0.0.1:53306/expresso" \
+   pnpm db:migrate
+   ```
+
+4. 공고 데이터를 옮긴다 — 아래 「공고 데이터 옮기기」.
+
+5. `services/backend/.env` 의 `DATABASE_URL` 을 MySQL 로 바꾼다. **여기서부터
+   사이트가 내려간다** — 아직 돌고 있는 프로세스는 PostgreSQL 용 코드다.
+
+6. `main` 에 머지해 자동 배포를 돌린다. 빌드가 끝나고 세 서비스가 다시 뜨면
+   올라온다.
+
+7. 확인한 뒤 PostgreSQL 컨테이너를 멈춘다. 볼륨은 남겨 둔다.
+
+   ```bash
+   docker stop expresso-server-postgres-1
+   ```
+
+### 트리거를 만들려면 바이너리 로그 검사를 꺼야 한다
+
+바이너리 로그가 켜져 있으면 MySQL 은 트리거와 저장 프로시저를 만드는 사람에게
+SUPER 를 요구한다. 문장을 그대로 되감아 실행하던 시절의 규칙인데, 8.4 는 행
+단위로만 기록하므로 되감을 문장이 없다. 앱 계정에 SUPER 를 주는 대신
+`--log-bin-trust-function-creators=1` 로 그 검사를 끈다 —
+`infra/compose.server.yaml` 에 들어 있다. 이미 돌고 있는 컨테이너라면 그 자리에서
+바꿔도 된다.
+
+```bash
+docker exec -i expresso-server-mysql-1 mysql -uroot -p"$PASSWORD" \
+  -e "set global log_bin_trust_function_creators=1"
+```
+
+## 공고 데이터 옮기기
+
+MySQL 로 갈아탈 때 사람에게 딸린 것은 계정과 함께 새로 시작하고, 모아 둔 공고는
+가져온다. 옮기는 표는 넷이다 — 수집 소스 · 기업 · 채용 공고 · 요구 역량.
+
+```bash
+SOURCE_PSQL="docker exec -i expresso-local-postgres-1 psql -U expresso -d expresso" \
+DATABASE_URL="mysql://expresso:expresso@127.0.0.1:53306/expresso" \
+node scripts/operations/copy-job-postings.mjs
+```
+
+`SOURCE_PSQL` 은 옛 PostgreSQL 에 붙는 psql 실행 명령입니다. 서버에서는 그 서버의
+컨테이너 이름으로 바꿔 같은 명령을 돌립니다.
+
+두 스키마가 어긋나 있어도 됩니다 — 양쪽에 다 있는 열만 옮기고 나머지는 MySQL 쪽
+기본값이 채웁니다. 이미 있는 id 는 건너뛰므로 여러 번 돌려도 결과가 같습니다.
+옮긴 뒤에는 줄 수와 본문 길이 합을 양쪽에서 세어 견주십시오.
 
 ## 배포 전에 반드시 아는 것
 
@@ -104,23 +174,24 @@ grep -h ExecStart ~/expresso/infra/systemd/*.service
 grep NODE_BIN ~/expresso/scripts/operations/deploy.sh
 ```
 
-PostgreSQL과 Redis는 저장소의 compose 파일을 쓰되, **`pnpm infra:up`을 그대로
+MySQL과 Redis는 저장소의 compose 파일을 쓰되, **`pnpm infra:up`을 그대로
 쓰지 않는다.**
 
 `infra/compose.yaml`의 포트 게시는
-`"55432:5432"` 형태라 도커가 **`0.0.0.0`에 묶는다.** 게다가 도커는 자기 규칙을
-iptables에 직접 넣기 때문에 `ufw deny 55432`로 막아도 뚫린다. 로컬 개발용
-비밀번호(`expresso:expresso`)가 그대로인 PostgreSQL이 인터넷에 열린다는 뜻이다.
+`"53306:5432"` 형태라 도커가 **`0.0.0.0`에 묶는다.** 게다가 도커는 자기 규칙을
+iptables에 직접 넣기 때문에 `ufw deny 53306`로 막아도 뚫린다. 로컬 개발용
+비밀번호(`expresso:expresso`)가 그대로인 MySQL이 인터넷에 열린다는 뜻이다.
 
 운영 서버에는 루프백에만 묶는 override 파일을 둔다.
 
 ```yaml
 # infra/compose.override.yaml — 저장소에 넣지 않는다(서버에만 둔다)
 services:
-  postgres:
-    ports: ["127.0.0.1:55432:5432"]
+  mysql:
+    ports: ["127.0.0.1:53306:3306"]
     environment:
-      POSTGRES_PASSWORD: <바꾼-비밀번호>
+      MYSQL_PASSWORD: <바꾼-비밀번호>
+      MYSQL_ROOT_PASSWORD: <바꾼-비밀번호>
   redis:
     ports: ["127.0.0.1:56379:6379"]
 ```
@@ -148,7 +219,7 @@ HOST=127.0.0.1
 PORT=4500
 LOG_LEVEL=info
 
-DATABASE_URL=postgres://expresso:<바꾼-비밀번호>@127.0.0.1:55432/expresso
+DATABASE_URL=mysql://expresso:<바꾼-비밀번호>@127.0.0.1:53306/expresso
 REDIS_URL=redis://127.0.0.1:56379
 
 ASSET_SIGNING_SECRET=<openssl rand -base64 32>
@@ -403,7 +474,7 @@ https://expresso.ai.kr/home  → 307 (세션 없이 307이 정상)
 # 프로세스
 systemctl is-active expresso-api expresso-worker expresso-web
 
-# API — ready는 PostgreSQL과 Redis를 함께 본다. 둘 중 하나라도 죽으면 503.
+# API — ready는 MySQL과 Redis를 함께 본다. 둘 중 하나라도 죽으면 503.
 curl -s http://127.0.0.1:4500/health/live
 curl -s http://127.0.0.1:4500/health/ready
 
@@ -424,7 +495,7 @@ nginx는 `/v1/`만 넘기므로 **바깥에서는 닿지 않는다.** 의도한 
 바깥에 열려 있으면 안 되는 포트도 확인한다. **다른 머신에서** 실행한다.
 
 ```bash
-for port in 3500 4500 55432 56379; do
+for port in 3500 4500 53306 56379; do
   timeout 5 bash -c "</dev/tcp/expresso.ai.kr/$port" 2>/dev/null \
     && echo "$port 열려 있다 — 막아야 한다" \
     || echo "$port 닫힘"
@@ -459,7 +530,7 @@ scripts/operations/deploy.sh "$(cat .last-deployed-commit)"
 백업이 전제다.
 
 ```bash
-scripts/operations/backup-postgres.sh /secure/path/expresso-$(date +%Y%m%dT%H%M%S).dump
+scripts/operations/backup-mysql.sh /secure/path/expresso-$(date +%Y%m%dT%H%M%S).dump
 ```
 
 ## 아직 안 되는 것

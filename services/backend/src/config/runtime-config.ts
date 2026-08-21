@@ -9,7 +9,7 @@ const runtimeConfigSchema = z.object({
     .default("info"),
   DATABASE_URL: z
     .url()
-    .default("postgres://expresso:expresso@127.0.0.1:5432/expresso"),
+    .default("mysql://expresso:expresso@127.0.0.1:53306/expresso"),
   REDIS_URL: z.url().default("redis://127.0.0.1:6379"),
   OUTBOX_POLL_INTERVAL_MS: z.coerce.number().int().min(100).max(60_000).default(1_000),
   OUTBOX_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(25),

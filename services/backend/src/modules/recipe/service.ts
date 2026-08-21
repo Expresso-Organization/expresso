@@ -4,7 +4,7 @@ import {
   RecipeSchema,
   type RecipeEdit,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import {
   DeterministicRecipePlanner,
@@ -55,12 +55,12 @@ const DEFAULT_CONTEXT = {
 };
 
 export class RecipeService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #planner: RecipePlanner;
   readonly #promptVersion: number;
   readonly #consent: ConsentService | null;
 
-  constructor(sql: postgres.Sql, planner?: RecipePlanner | null, consent?: ConsentService | null) {
+  constructor(sql: SqlTag, planner?: RecipePlanner | null, consent?: ConsentService | null) {
     this.#sql = sql;
     this.#consent = consent ?? null;
     // AI가 없으면 규칙 구현이 그대로 쓰인다 — 죽은 코드가 아니라 폴백이다.
@@ -89,7 +89,7 @@ export class RecipeService {
       `)[0];
       if (replay) return replay.id;
       const version = Number((await transaction<{ version: number }[]>`
-        select coalesce(max(version), 0)::integer + 1 as version
+        select coalesce(max(version), 0) + 1 as version
         from recipe where user_id = ${userId} and brew_id = ${brewId}
       `)[0]?.version ?? 1);
       const recipe = (await transaction<IdRow[]>`
@@ -126,7 +126,7 @@ export class RecipeService {
               takeaway: section.takeaway,
               contentPattern: section.contentPattern,
               interactionOpportunity: section.interactionOpportunity,
-            } as postgres.JSONValue)}
+            } as JSONValue)}
           ) returning id
         `)[0]?.id;
         if (!sectionId) throw new Error("recipe section missing");
@@ -152,21 +152,21 @@ export class RecipeService {
             ) values (
               ${userId}, ${sectionId}, ${itemOrder}, ${item.pointText},
               ${transaction.json(cited.map(({ source }) =>
-                ({ sourceType: source.type, sourceId: source.id })) as postgres.JSONValue)},
+                ({ sourceType: source.type, sourceId: source.id })) as JSONValue)},
               'ai'
             ) returning id
           `)[0]?.id;
           if (!itemId) throw new Error("recipe item missing");
 
           for (const { source } of cited) await transaction`
-            insert into recipe_evidence_path (
+            insert ignore into recipe_evidence_path (
               user_id, recipe_id, recipe_item_id, source_type,
               source_id, source_label, target_path
             ) values (
               ${userId}, ${recipe.id}, ${itemId}, ${source.type}, ${source.id},
               ${source.label.slice(0, 5_000)},
               ${`sections[${order}].items[${itemOrder}]`}
-            ) on conflict do nothing
+            )
           `;
         }
         if (sectionEvidenceIds.size > 0) {
@@ -189,11 +189,11 @@ export class RecipeService {
       for (const [index, source] of context.sources.entries()) {
         if (source.type !== "record" || citedNumbers.has(index + 1)) continue;
         await transaction`
-          insert into recipe_unused_source (user_id, recipe_id, record_id, reason)
+          insert ignore into recipe_unused_source (user_id, recipe_id, record_id, reason)
           values (
             ${userId}, ${recipe.id}, ${source.id},
             ${reasons.get(index + 1) ?? "이번 공고에서 우선순위가 높은 근거를 먼저 배치함"}
-          ) on conflict do nothing
+          )   
         `;
       }
 
@@ -274,12 +274,12 @@ export class RecipeService {
       };
       await transaction`
         update recipe set
-          portfolio_plan = ${transaction.json(portfolioPlan as postgres.JSONValue)},
-          planning_manifest = ${transaction.json(planningManifest as postgres.JSONValue)}
+          portfolio_plan = ${transaction.json(portfolioPlan as JSONValue)},
+          planning_manifest = ${transaction.json(planningManifest as JSONValue)}
         where user_id = ${userId} and id = ${recipe.id}
       `;
 
-      await transaction`update brew set status = 'recipe', updated_at = now() where id = ${brew.id}`;
+      await transaction`update brew set status = 'recipe', updated_at = now(6) where id = ${brew.id}`;
       return recipe.id;
     });
     return this.getRecipe(userId, recipeId);
@@ -307,13 +307,13 @@ export class RecipeService {
         join record on record.id = brew_source.record_id and record.user_id = brew_source.user_id
         where brew_source.user_id = ${userId} and brew_source.brew_id = ${brewId}
           and brew_source.is_selected
-        order by brew_source.rank
+        order by brew_source.\`rank\`
         limit 8
       `,
       sql<{ id: string; label: string; kind: string; quote: string | null }[]>`
         select job_posting_requirement.id, job_posting_requirement.label,
                job_posting_requirement.kind,
-               job_posting_requirement.source_span ->> 'quote' as quote
+               job_posting_requirement.source_span ->> '$.quote' as quote
         from job_analysis
         join job_posting_requirement
           on job_posting_requirement.job_posting_id = job_analysis.job_posting_id
@@ -425,7 +425,7 @@ export class RecipeService {
             context, locked, edited_by
           ) values (
             ${userId}, ${recipeId}, ${sectionRows.length}, ${edit.title}, ${edit.purpose}, 300,
-            ${transaction.json(DEFAULT_CONTEXT as postgres.JSONValue)}, true, 'user'
+            ${transaction.json(DEFAULT_CONTEXT as JSONValue)}, true, 'user'
           ) returning id
         `)[0];
         diff = [{ path: `sections.${section?.id}`, after: edit.title }];
@@ -442,7 +442,7 @@ export class RecipeService {
             and recipe_section.recipe_id = ${recipeId} for update of recipe_item
         `)[0];
         if (!item) throw new RecipeError(404, "recipe item not found");
-        await transaction`update recipe_item set point_text = ${edit.pointText}, locked = true, edited_by = 'user', updated_at = now() where id = ${item.id}`;
+        await transaction`update recipe_item set point_text = ${edit.pointText}, locked = true, edited_by = 'user', updated_at = now(6) where id = ${item.id}`;
         diff = [{ path: `items.${item.id}.pointText`, before: item.point_text, after: edit.pointText }];
       } else if (edit.operation === "move_item") {
         const item = (await transaction<ItemRow[]>`
@@ -464,10 +464,10 @@ export class RecipeService {
             and user_id = ${userId} and recipe_id = ${recipeId}
         `)[0];
         if (!source) throw new RecipeError(404, "recipe evidence path not found");
-        const order = Number((await transaction<{ count: number }[]>`select count(*)::integer as count from recipe_item where user_id = ${userId} and recipe_section_id = ${edit.sectionId}`)[0]?.count ?? 0);
+        const order = Number((await transaction<{ count: number }[]>`select count(*) as count from recipe_item where user_id = ${userId} and recipe_section_id = ${edit.sectionId}`)[0]?.count ?? 0);
         const item = (await transaction<IdRow[]>`
           insert into recipe_item (user_id, recipe_section_id, order_no, point_text, evidence, locked, edited_by)
-          values (${userId}, ${edit.sectionId}, ${order}, ${edit.pointText}, ${transaction.json([{ sourceType: source.source_type, sourceId: source.source_id }] as postgres.JSONValue)}, true, 'user') returning id
+          values (${userId}, ${edit.sectionId}, ${order}, ${edit.pointText}, ${transaction.json([{ sourceType: source.source_type, sourceId: source.source_id }] as JSONValue)}, true, 'user') returning id
         `)[0];
         if (!item) throw new Error("recipe item missing");
         await transaction`insert into recipe_evidence_path (user_id, recipe_id, recipe_item_id, source_type, source_id, source_label, target_path) values (${userId}, ${recipeId}, ${item.id}, ${source.source_type}, ${source.source_id}, ${source.source_label}, ${`sections.${edit.sectionId}.items.${item.id}`})`;
@@ -487,16 +487,27 @@ export class RecipeService {
         const section = sectionRows.find((item) => item.order_no === order);
         if (!section) throw new RecipeError(404, "instruction section not found");
         const title = match[2]!.trim();
-        await transaction`update recipe_section set title = ${title}, locked = true, edited_by = 'user', updated_at = now() where id = ${section.id}`;
+        await transaction`update recipe_section set title = ${title}, locked = true, edited_by = 'user', updated_at = now(6) where id = ${section.id}`;
         diff = [{ path: `sections.${section.id}.title`, before: section.title, after: title }];
       }
       const revision = (await transaction<IdRow[]>`
         insert into recipe_revision (user_id, recipe_id, actor, action, snapshot, diff)
-        values (${userId}, ${recipeId}, 'user', ${edit.operation}, ${transaction.json(before as postgres.JSONValue)}, ${transaction.json(diff as postgres.JSONValue)}) returning id
+        values (${userId}, ${recipeId}, 'user', ${edit.operation}, ${transaction.json(before as JSONValue)}, ${transaction.json(diff as JSONValue)}) returning id
       `)[0];
       if (!revision) throw new Error("recipe revision missing");
       revisionId = revision.id;
-      await transaction`update recipe set updated_at = now() where id = ${recipeId} and user_id = ${userId}`;
+      // 최근 50개만 남긴다. PostgreSQL 에서는 트리거가 하던 일인데, MySQL 트리거는
+      // 자기 표를 지우지 못해 여기서 한다.
+      const stale = await transaction<IdRow[]>`
+        select id from recipe_revision
+        where user_id = ${userId} and recipe_id = ${recipeId}
+        order by created_at desc, id desc
+        limit 18446744073709551615 offset 50
+      `;
+      if (stale.length > 0) {
+        await transaction`delete from recipe_revision where id in ${transaction(stale.map(({ id }) => id))}`;
+      }
+      await transaction`update recipe set updated_at = now(6) where id = ${recipeId} and user_id = ${userId}`;
     });
     return RecipeEditResultSchema.parse({ recipe: await this.getRecipe(userId, recipeId), revisionId, diff });
   }
@@ -511,7 +522,7 @@ export class RecipeService {
   }
 
   async #loadRecipe(
-    sql: postgres.Sql | postgres.TransactionSql,
+    sql: SqlTag | SqlTag,
     userId: string,
     recipeId: string,
     forUpdate = false,

@@ -70,7 +70,7 @@ export interface SafeErrorSummary {
  */
 const SECRET_PATTERNS: readonly RegExp[] = [
   /exps_[A-Za-z0-9_-]+/g,
-  /\b(?:postgres|postgresql|redis|rediss|amqp|mongodb):\/\/\S+/gi,
+  /\b(?:mysql|postgres|postgresql|redis|rediss|amqp|mongodb):\/\/\S+/gi,
   /\bBearer\s+\S+/gi,
   /\b[\w.%+-]+@[\w.-]+\.[A-Za-z]{2,}\b/g,
   /\b(?:password|passwd|secret|token|api[_-]?key)\s*[=:]\s*\S+/gi,

@@ -4,7 +4,7 @@ import {
   type PortfolioEditCommandSchema,
 } from "@expresso/contracts";
 import type { z } from "zod";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import {
   applyPatches,
@@ -81,11 +81,11 @@ function mapProposal(row: ProposalRow) {
 }
 
 export class PortfolioEditingService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #editor: BlockEditor | null;
   readonly #consent: ConsentService | null;
 
-  constructor(sql: postgres.Sql, editor?: BlockEditor | null, consent?: ConsentService | null) {
+  constructor(sql: SqlTag, editor?: BlockEditor | null, consent?: ConsentService | null) {
     this.#sql = sql;
     this.#editor = editor ?? null;
     this.#consent = consent ?? null;
@@ -157,9 +157,9 @@ export class PortfolioEditingService {
         before_state, after_state, source_record_id, instruction, patches
       ) values (
         ${userId}, ${portfolioId}, ${targetPath}, ${blockId}, ${command.operation},
-        ${this.#sql.json(before as postgres.JSONValue)}, ${this.#sql.json(after as postgres.JSONValue)},
+        ${this.#sql.json(before as JSONValue)}, ${this.#sql.json(after as JSONValue)},
         ${sourceRecordId}, ${instruction},
-        ${this.#sql.json(patches as unknown as postgres.JSONValue)}
+        ${this.#sql.json(patches as unknown as JSONValue)}
       ) returning *
     `)[0];
     if (!proposal) throw new Error("edit proposal missing");
@@ -237,21 +237,21 @@ export class PortfolioEditingService {
         sourceRecordId: string | null; syncState: string;
       };
       await transaction`
-        update block set content = ${transaction.json(after.content as postgres.JSONValue)},
-          style = ${transaction.json(after.style as postgres.JSONValue)},
+        update block set content = ${transaction.json(after.content as JSONValue)},
+          style = ${transaction.json(after.style as JSONValue)},
           source_record_id = ${after.sourceRecordId}, sync_state = ${after.syncState}, locked = true
         where id = ${block.id} and user_id = ${userId}
       `;
       if (after.sourceRecordId) await transaction`
         insert into record_usage (user_id, record_id, block_id, quoted_text)
         values (${userId}, ${after.sourceRecordId}, ${block.id}, ${String(after.content.text ?? "")})
-        on conflict (user_id, record_id, block_id) do update set quoted_text = excluded.quoted_text
+        as new on duplicate key update quoted_text = new.quoted_text
       `;
       revisionId = (await transaction<{ id: string }[]>`
-        insert into revision (user_id, portfolio_id, block_id, actor, before, after, proposal_id, summary)
-        values (${userId}, ${proposal.portfolio_id}, ${block.id}, 'user', ${transaction.json(proposal.before_state as postgres.JSONValue)}, ${transaction.json(proposal.after_state as postgres.JSONValue)}, ${proposal.id}, ${OPERATION_SUMMARY[proposal.operation]}) returning id
+        insert into revision (user_id, portfolio_id, block_id, actor, \`before\`, after, proposal_id, summary)
+        values (${userId}, ${proposal.portfolio_id}, ${block.id}, 'user', ${transaction.json(proposal.before_state as JSONValue)}, ${transaction.json(proposal.after_state as JSONValue)}, ${proposal.id}, ${OPERATION_SUMMARY[proposal.operation]}) returning id
       `)[0]?.id ?? "";
-      applied = (await transaction<ProposalRow[]>`update portfolio_edit_proposal set status = 'applied', applied_at = now() where id = ${proposal.id} returning *`)[0]!;
+      applied = (await transaction<ProposalRow[]>`update portfolio_edit_proposal set status = 'applied', applied_at = now(6) where id = ${proposal.id} returning *`)[0]!;
     });
     return ApplyPortfolioEditResultSchema.parse({ proposal: mapProposal(applied), revisionId, locked: true });
   }
@@ -261,17 +261,17 @@ export class PortfolioEditingService {
       const revision = (await transaction<{
         id: string; portfolio_id: string; block_id: string | null;
         before: Record<string, unknown>; after: Record<string, unknown>;
-      }[]>`select id, portfolio_id, block_id, before, after from revision where id = ${revisionId} and user_id = ${userId} for update`)[0];
+      }[]>`select id, portfolio_id, block_id, \`before\`, after from revision where id = ${revisionId} and user_id = ${userId} for update`)[0];
       if (!revision?.block_id) throw new PortfolioEditingError(404, "revertible revision not found");
       const block = (await transaction<BlockRow[]>`select * from block where id = ${revision.block_id} and user_id = ${userId} for update`)[0];
       if (!block) throw new PortfolioEditingError(404, "revision block not found");
       const conflict = stableJson(blockState(block)) !== stableJson(revision.after);
       if (conflict && !confirmConflict) throw new PortfolioEditingError(409, "revert conflicts with later changes", { conflict: true, blockId: block.id });
       const before = revision.before as { content: Record<string, unknown>; style: Record<string, unknown>; sourceRecordId: string | null; syncState: string; locked: boolean };
-      await transaction`update block set content = ${transaction.json(before.content as postgres.JSONValue)}, style = ${transaction.json(before.style as postgres.JSONValue)}, source_record_id = ${before.sourceRecordId}, sync_state = ${before.syncState}, locked = ${before.locked} where id = ${block.id}`;
+      await transaction`update block set content = ${transaction.json(before.content as JSONValue)}, style = ${transaction.json(before.style as JSONValue)}, source_record_id = ${before.sourceRecordId}, sync_state = ${before.syncState}, locked = ${before.locked} where id = ${block.id}`;
       const newRevisionId = (await transaction<{ id: string }[]>`
-        insert into revision (user_id, portfolio_id, block_id, actor, before, after, reverted_revision_id, change_kind, summary)
-        values (${userId}, ${revision.portfolio_id}, ${block.id}, 'user', ${transaction.json(blockState(block) as postgres.JSONValue)}, ${transaction.json(before as postgres.JSONValue)}, ${revision.id}, 'revert', '한 번의 변경을 되돌렸습니다') returning id
+        insert into revision (user_id, portfolio_id, block_id, actor, \`before\`, after, reverted_revision_id, change_kind, summary)
+        values (${userId}, ${revision.portfolio_id}, ${block.id}, 'user', ${transaction.json(blockState(block) as JSONValue)}, ${transaction.json(before as JSONValue)}, ${revision.id}, 'revert', '한 번의 변경을 되돌렸습니다') returning id
       `)[0]?.id;
       return { revisionId: newRevisionId, conflictResolved: conflict };
     });
@@ -297,7 +297,7 @@ export class PortfolioEditingService {
         update block set order_no = ${order} where id = ${id} and user_id = ${userId}
       `;
       const revisionId = (await transaction<{ id: string }[]>`
-        insert into revision (user_id, portfolio_id, actor, before, after, change_kind, summary)
+        insert into revision (user_id, portfolio_id, actor, \`before\`, after, change_kind, summary)
         values (
           ${userId}, ${portfolioId}, 'user',
           ${transaction.json({ blockIds: current.map(({ id }) => id) })},
@@ -337,18 +337,18 @@ export class PortfolioEditingService {
           source_record_id, sync_state, locked, order_no
         ) values (
           ${userId}, ${block.portfolio_section_id}, ${block.kind},
-          ${transaction.json(block.content as postgres.JSONValue)},
-          ${transaction.json(block.style as postgres.JSONValue)},
+          ${transaction.json(block.content as JSONValue)},
+          ${transaction.json(block.style as JSONValue)},
           ${block.source_record_id}, ${block.sync_state}, true, ${block.order_no + 1}
         ) returning id
       `)[0];
       if (!copy) throw new Error("block copy missing");
 
       const revisionId = (await transaction<{ id: string }[]>`
-        insert into revision (user_id, portfolio_id, block_id, actor, before, after, change_kind, summary)
+        insert into revision (user_id, portfolio_id, block_id, actor, \`before\`, after, change_kind, summary)
         values (
           ${userId}, ${portfolioId}, ${copy.id}, 'user', null,
-          ${transaction.json(blockState(block) as postgres.JSONValue)},
+          ${transaction.json(blockState(block) as JSONValue)},
           'edit', '블록을 하나 더 만들었습니다'
         ) returning id
       `)[0]?.id;
@@ -381,10 +381,10 @@ export class PortfolioEditingService {
           and order_no > ${block.order_no}
       `;
       const revisionId = (await transaction<{ id: string }[]>`
-        insert into revision (user_id, portfolio_id, actor, before, after, change_kind, summary)
+        insert into revision (user_id, portfolio_id, actor, \`before\`, after, change_kind, summary)
         values (
           ${userId}, ${portfolioId}, 'user',
-          ${transaction.json(blockState(block) as postgres.JSONValue)}, null,
+          ${transaction.json(blockState(block) as JSONValue)}, null,
           'edit', '블록을 지웠습니다'
         ) returning id
       `)[0]?.id;
@@ -418,7 +418,7 @@ export class PortfolioEditingService {
         where id = ${sectionId} and user_id = ${userId}
       `;
       const revisionId = (await transaction<{ id: string }[]>`
-        insert into revision (user_id, portfolio_id, actor, before, after, change_kind, summary)
+        insert into revision (user_id, portfolio_id, actor, \`before\`, after, change_kind, summary)
         values (
           ${userId}, ${portfolioId}, 'user',
           ${transaction.json({ sectionId, visible: section.visible })},
@@ -459,7 +459,7 @@ export class PortfolioEditingService {
         where id = ${id} and user_id = ${userId} and portfolio_id = ${portfolioId}
       `;
       const revisionId = (await transaction<{ id: string }[]>`
-        insert into revision (user_id, portfolio_id, actor, before, after, change_kind, summary)
+        insert into revision (user_id, portfolio_id, actor, \`before\`, after, change_kind, summary)
         values (
           ${userId}, ${portfolioId}, 'user',
           ${transaction.json({ sectionIds: current.map(({ id }) => id) })},
@@ -483,11 +483,11 @@ export class PortfolioEditingService {
       const kept = target.snapshot.sections.flatMap((section) =>
         section.blocks.map((block) => block.id));
       await transaction`
-        delete from block using portfolio_section
-        where block.portfolio_section_id = portfolio_section.id
-          and portfolio_section.portfolio_id = ${portfolioId}
+        delete block from block
+        join portfolio_section on portfolio_section.id = block.portfolio_section_id
+        where portfolio_section.portfolio_id = ${portfolioId}
           and block.user_id = ${userId}
-          and not (block.id = any(${kept}::uuid[]))
+          and block.id not in ${transaction(kept)}
       `;
       for (const section of target.snapshot.sections) {
         await transaction`update portfolio_section set order_no = ${section.order}, visible = ${section.visible} where id = ${section.id} and user_id = ${userId} and portfolio_id = ${portfolioId}`;
@@ -498,28 +498,38 @@ export class PortfolioEditingService {
             source_record_id, sync_state, locked, order_no
           ) values (
             ${block.id}, ${userId}, ${section.id}, ${block.kind},
-            ${transaction.json(block.content as postgres.JSONValue)},
-            ${transaction.json(block.style as postgres.JSONValue)},
+            ${transaction.json(block.content as JSONValue)},
+            ${transaction.json(block.style as JSONValue)},
             ${block.sourceRecordId}, ${block.syncState}, ${block.locked}, ${order}
           )
-          on conflict (id) do update set
-            content = excluded.content, style = excluded.style,
-            source_record_id = excluded.source_record_id, sync_state = excluded.sync_state,
-            locked = excluded.locked, order_no = excluded.order_no
+          as new on duplicate key update content = new.content, style = new.style,
+            source_record_id = new.source_record_id, sync_state = new.sync_state,
+            locked = new.locked, order_no = new.order_no
         `;
       }
       const revisionId = (await transaction<{ id: string }[]>`
-        insert into revision (user_id, portfolio_id, actor, before, after, change_kind, summary)
+        insert into revision (user_id, portfolio_id, actor, \`before\`, after, change_kind, summary)
         values (${userId}, ${portfolioId}, 'user', ${transaction.json({ preRestoreSnapshotId: preRestoreId })}, ${transaction.json({ restoredSnapshotId: snapshotId })}, 'restore', '지점으로 복원했습니다') returning id
       `)[0]?.id;
       return { snapshotId, preRestoreSnapshotId: preRestoreId, revisionId };
     });
   }
 
-  async #captureSnapshot(transaction: postgres.TransactionSql, userId: string, portfolioId: string, kind: "edit" | "manual") {
+  async #captureSnapshot(transaction: SqlTag, userId: string, portfolioId: string, kind: "edit" | "manual") {
     const sections = await transaction<{ id: string; recipe_section_id: string | null; order_no: number; visible: boolean }[]>`select id, recipe_section_id, order_no, visible from portfolio_section where user_id = ${userId} and portfolio_id = ${portfolioId} order by order_no`;
     const blocks = await transaction<BlockRow[]>`select block.* from block join portfolio_section on portfolio_section.id = block.portfolio_section_id where block.user_id = ${userId} and portfolio_section.portfolio_id = ${portfolioId} order by portfolio_section.order_no, block.order_no, block.id`;
     const snapshot = { portfolioId, sections: sections.map((section) => ({ id: section.id, recipeSectionId: section.recipe_section_id, order: section.order_no, visible: section.visible, blocks: blocks.filter((block) => block.portfolio_section_id === section.id).map((block) => ({ id: block.id, kind: block.kind, content: block.content, style: block.style, sourceRecordId: block.source_record_id, syncState: block.sync_state, locked: block.locked })) })) };
-    return (await transaction<{ id: string }[]>`insert into portfolio_snapshot (user_id, portfolio_id, kind, snapshot) values (${userId}, ${portfolioId}, ${kind}, ${transaction.json(snapshot as postgres.JSONValue)}) returning id`)[0]?.id ?? "";
+    const inserted = (await transaction<{ id: string }[]>`insert into portfolio_snapshot (user_id, portfolio_id, kind, snapshot) values (${userId}, ${portfolioId}, ${kind}, ${transaction.json(snapshot as JSONValue)}) returning id`)[0]?.id ?? "";
+    // 포트폴리오마다 최근 50개만 남긴다 — MySQL 트리거는 자기 표를 지우지 못한다.
+    const stale = await transaction<{ id: string }[]>`
+      select id from portfolio_snapshot
+      where user_id = ${userId} and portfolio_id = ${portfolioId}
+      order by created_at desc, id desc
+      limit 18446744073709551615 offset 50
+    `;
+    if (stale.length > 0) {
+      await transaction`delete from portfolio_snapshot where id in ${transaction(stale.map(({ id }) => id))}`;
+    }
+    return inserted;
   }
 }

@@ -2,7 +2,7 @@ import {
   BrewJobStatusSchema,
   type BrewJobType,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import { addOutboxEvent } from "../../platform/outbox.js";
 
@@ -52,9 +52,9 @@ const TOPIC: Record<BrewJobType, string> = {
 };
 
 export class BrewJobService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
 
-  constructor(sql: postgres.Sql) {
+  constructor(sql: SqlTag) {
     this.#sql = sql;
   }
 
@@ -71,11 +71,9 @@ export class BrewJobService {
       if (!owned) throw new BrewJobError(404, "brew not found");
 
       const inserted = (await transaction<{ id: string; input: { brewId?: string } }[]>`
-        insert into brew_job (user_id, type, input, input_idempotency_key)
+        insert ignore into brew_job (user_id, type, input, input_idempotency_key)
         values (${userId}, ${type}, ${transaction.json(input)}, ${idempotencyKey})
-        on conflict (user_id, input_idempotency_key)
-          where input_idempotency_key is not null
-        do nothing returning id, input
+        returning id, input
       `)[0] ?? (await transaction<{ id: string; input: { brewId?: string } }[]>`
         select id, input from brew_job
         where user_id = ${userId} and input_idempotency_key = ${idempotencyKey}
@@ -130,7 +128,7 @@ export class BrewJobService {
       await transaction`
         update brew_job set status = 'running', stage = 'drafting',
           attempts = attempts + 1, error_code = null, failure_retryable = null,
-          updated_at = now()
+          updated_at = now(6)
         where id = ${jobId}
       `;
       return { ...locked, attempts: locked.attempts + 1 };
@@ -149,14 +147,14 @@ export class BrewJobService {
       });
       await this.#sql`
         update brew_job set status = 'succeeded', stage = 'done',
-          result_id = ${resultId}, updated_at = now()
+          result_id = ${resultId}, updated_at = now(6)
         where id = ${jobId}
       `;
     } catch (error) {
       const { code, retryable } = classify(error);
       await this.#sql`
         update brew_job set status = 'failed', stage = 'failed',
-          error_code = ${code}, failure_retryable = ${retryable}, updated_at = now()
+          error_code = ${code}, failure_retryable = ${retryable}, updated_at = now(6)
         where id = ${jobId}
       `.catch(() => undefined);
       throw error;

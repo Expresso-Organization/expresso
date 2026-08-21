@@ -3,15 +3,20 @@
  * 구조 다이어그램의 V1(현재 구현) 자료를 스키마에서 다시 뽑는다.
  *
  * `docs/Expresso ERD.dc.html` 의 V1 은 손으로 적는 그림이 아니라 지금 돌고 있는
- * 스키마의 사본이다. 마이그레이션을 PGlite 에 전부 적용한 뒤 pg_catalog 에서
- * 테이블 · 컬럼 · 기본 키 · 외래 키를 읽어 `<erd-v1:auto>` 구간을 갈아 끼운다.
- * 사람이 정한 것 — 테이블의 한국어 이름과 ZONES1 의 자리 배치 — 은 문서에서
- * 그대로 읽어 보존하고, 이름이나 자리가 없는 새 테이블이 있으면 멈춘다.
+ * 스키마의 사본이다. 임시 데이터베이스를 하나 만들어 마이그레이션을 전부 적용한
+ * 뒤 information_schema 에서 테이블 · 컬럼 · 기본 키 · 외래 키를 읽어
+ * `<erd-v1:auto>` 구간을 갈아 끼운다. 사람이 정한 것 — 테이블의 한국어 이름과
+ * ZONES1 의 자리 배치 — 은 문서에서 그대로 읽어 보존하고, 이름이나 자리가 없는
+ * 새 테이블이 있으면 멈춘다.
+ *
+ * 돌고 있는 MySQL 이 있어야 한다. 주소는 DATABASE_URL · TEST_DATABASE_URL 에서
+ * 읽고, 없으면 `pnpm infra:up` 이 띄우는 로컬 주소를 쓴다.
  *
  *   node scripts/dump-erd-schema.mjs           갈아 끼운다
  *   node scripts/dump-erd-schema.mjs --check   달라진 것이 있으면 1 로 끝난다(CI 용)
  */
 
+import { randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
@@ -23,60 +28,85 @@ const DOC = resolve(ROOT, "docs/Expresso ERD.dc.html");
 const OPEN = "// <erd-v1:auto> — 여기서부터 자동 생성";
 const CLOSE = "// </erd-v1:auto>";
 
-// pglite 는 @expresso/database 의 개발 의존성이라 그 자리에서 찾는다
+// mysql2 는 @expresso/database 의 의존성이라 그 자리에서 찾는다
 const req = createRequire(resolve(ROOT, "packages/database/package.json"));
-const { PGlite } = await import(req.resolve("@electric-sql/pglite"));
-const { citext } = await import(req.resolve("@electric-sql/pglite/contrib/citext"));
+const mysql = await import(req.resolve("mysql2/promise"));
+
+const DATABASE_URL = process.env.DATABASE_URL
+  ?? process.env.TEST_DATABASE_URL
+  ?? "mysql://expresso:expresso@127.0.0.1:53306/expresso";
 
 const TYPE = {
-  "timestamp with time zone": "tstz",
-  integer: "int",
+  datetime: "datetime",
+  timestamp: "datetime",
   bigint: "int8",
   smallint: "int2",
-  boolean: "bool",
-  "double precision": "float8",
+  tinyint: "int1",
+  double: "float8",
+  longtext: "text",
+  mediumtext: "text",
+  tinytext: "text",
 };
+// tinyint(1) 은 MySQL 의 참거짓 자리다.
 const shorten = (row) =>
-  row.typtype === "e" ? "enum"
-  : row.type.startsWith("character varying") ? "varchar"
-  : TYPE[row.type] ?? row.type;
+  row.column_type === "tinyint(1)" ? "bool" : TYPE[row.data_type] ?? row.data_type;
 
 async function schema() {
   const files = (await readdir(MIGRATIONS)).filter((f) => f.endsWith(".sql")).sort();
-  const db = new PGlite({ extensions: { citext } });
-  for (const file of files) await db.exec(await readFile(resolve(MIGRATIONS, file), "utf8"));
+  const name = `expresso_erd_${randomUUID().replaceAll("-", "")}`.slice(0, 60);
+  const root = new URL(DATABASE_URL);
+  const adminUrl = new URL(root); adminUrl.pathname = "/mysql";
+  const admin = await mysql.createConnection({ uri: adminUrl.toString() });
+  await admin.query(`create database \`${name}\` character set utf8mb4 collate utf8mb4_bin`);
 
-  const columns = await db.query(`
-    select c.relname as table_name, a.attname as column_name,
-           format_type(a.atttypid, a.atttypmod) as type, t.typtype
-    from pg_class c
-    join pg_namespace n on n.oid = c.relnamespace and n.nspname = 'public'
-    join pg_attribute a on a.attrelid = c.oid and a.attnum > 0 and not a.attisdropped
-    join pg_type t on t.oid = a.atttypid
-    where c.relkind = 'r'
-    order by c.relname, a.attnum`);
+  const isolated = new URL(root); isolated.pathname = `/${name}`;
+  const db = await mysql.createConnection({ uri: isolated.toString(), multipleStatements: true });
+  try {
+    for (const file of files) await db.query(await readFile(resolve(MIGRATIONS, file), "utf8"));
 
-  const pks = await db.query(`
-    select rel.relname as table_name, att.attname as column_name
-    from pg_constraint con
-    join pg_class rel on rel.oid = con.conrelid
-    join unnest(con.conkey) as k(attnum) on true
-    join pg_attribute att on att.attrelid = con.conrelid and att.attnum = k.attnum
-    where con.contype = 'p'`);
+    const [columns] = await db.query(`
+      select table_name as table_name, column_name as column_name,
+             data_type as data_type, column_type as column_type
+      from information_schema.columns
+      where table_schema = ?
+      order by table_name, ordinal_position`, [name]);
 
-  const fks = await db.query(`
-    select src.relname as table_name, tgt.relname as ref_table,
-      (select array_agg(a.attname order by u.ord) from unnest(con.conkey) with ordinality u(attnum, ord)
-        join pg_attribute a on a.attrelid = con.conrelid and a.attnum = u.attnum) as cols,
-      (select array_agg(a.attname order by u.ord) from unnest(con.confkey) with ordinality u(attnum, ord)
-        join pg_attribute a on a.attrelid = con.confrelid and a.attnum = u.attnum) as refcols
-    from pg_constraint con
-    join pg_class src on src.oid = con.conrelid
-    join pg_class tgt on tgt.oid = con.confrelid
-    where con.contype = 'f'
-    order by src.relname, tgt.relname`);
+    const [pks] = await db.query(`
+      select key_column.table_name as table_name, key_column.column_name as column_name
+      from information_schema.table_constraints as constraints
+      join information_schema.key_column_usage as key_column
+        on key_column.constraint_schema = constraints.constraint_schema
+       and key_column.constraint_name = constraints.constraint_name
+       and key_column.table_name = constraints.table_name
+      where constraints.constraint_schema = ? and constraints.constraint_type = 'PRIMARY KEY'`, [name]);
 
-  return { count: files.length, columns: columns.rows, pks: pks.rows, fks: fks.rows };
+    // 한 제약이 열 여럿을 걸면 information_schema 는 줄 여럿으로 준다 — 이름으로 다시 묶는다.
+    const [parts] = await db.query(`
+      select constraint_name as constraint_name, table_name as table_name,
+             referenced_table_name as ref_table, column_name as column_name,
+             referenced_column_name as ref_column
+      from information_schema.key_column_usage
+      where constraint_schema = ? and referenced_table_name is not null
+      order by table_name, constraint_name, ordinal_position`, [name]);
+    const grouped = new Map();
+    for (const part of parts) {
+      const key = `${part.table_name}.${part.constraint_name}`;
+      const found = grouped.get(key)
+        ?? grouped.set(key, {
+          table_name: part.table_name, ref_table: part.ref_table, cols: [], refcols: [],
+        }).get(key);
+      found.cols.push(part.column_name);
+      found.refcols.push(part.ref_column);
+    }
+    const fks = [...grouped.values()]
+      .sort((a, b) => a.table_name.localeCompare(b.table_name) || a.ref_table.localeCompare(b.ref_table));
+
+    return { count: files.length, columns, pks, fks };
+  } finally {
+    await db.end();
+    await admin.query(`drop database if exists \`${name}\``);
+    await admin.end();
+  }
 }
 
 function render({ count, columns, pks, fks }, names, order) {

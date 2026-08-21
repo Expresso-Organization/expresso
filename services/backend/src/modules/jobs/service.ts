@@ -13,7 +13,7 @@ import {
   type SubmitJobPosting,
   type UpsertJobInterest,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import { addOutboxEvent } from "../../platform/outbox.js";
 import { JobMarketError } from "./errors.js";
@@ -78,9 +78,9 @@ function mapSavedSearch(row: SavedSearchRow) {
 }
 
 export class JobMarketService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
 
-  constructor(sql: postgres.Sql) {
+  constructor(sql: SqlTag) {
     this.#sql = sql;
   }
 
@@ -96,25 +96,27 @@ export class JobMarketService {
     const inputHash = sha256(JSON.stringify({ dedupeHash, sourceUrl: input.sourceUrl ?? null }));
 
     return this.#sql.begin(async (transaction) => {
-      const companies = await transaction<IdRow[]>`
+      await transaction`
         insert into company (name, domain, dedupe_key)
         values (${input.companyName}, ${input.companyDomain ?? null}, ${companyKey})
-        on conflict (dedupe_key) do update set name = company.name
-        returning id
+        as new on duplicate key update name = company.name
+      `;
+      const companies = await transaction<IdRow[]>`
+        select id from company where dedupe_key = ${companyKey}
       `;
       const companyId = companies[0]?.id;
       if (!companyId) throw new Error("job company was not persisted");
 
       const insertedPostings = await transaction<PostingRow[]>`
-        insert into job_posting (
+        insert ignore into job_posting (
           company_id, source, title, description_raw,
           source_url, dedupe_hash, requirements
         )
         values (
           ${companyId}, 'user_input', ${input.title}, ${input.descriptionRaw},
-          ${input.sourceUrl ?? null}, ${dedupeHash}, '{}'::jsonb
+          ${input.sourceUrl ?? null}, ${dedupeHash}, '{}'
         )
-        on conflict (dedupe_hash) do nothing
+          
         returning id, requirements
       `;
       const insertedPosting = insertedPostings[0];
@@ -123,8 +125,9 @@ export class JobMarketService {
       `)[0];
       if (!posting) throw new Error("job posting was not persisted");
 
-      const insertedAnalyses = await transaction<AnalysisRow[]>`
-        insert into job_analysis (
+      // 같은 멱등 키로 다시 들어오면 새 줄이 생기지 않는다 — 넣고 나서 그 키로 읽는다.
+      await transaction`
+        insert ignore into job_analysis (
           user_id, job_posting_id, input_type,
           status, input_idempotency_key, input_request_hash
         )
@@ -132,13 +135,8 @@ export class JobMarketService {
           ${userId}, ${posting.id}, ${input.sourceUrl ? "url" : "paste"},
           'queued', ${idempotencyKey}, ${inputHash}
         )
-        on conflict (user_id, input_idempotency_key)
-          where input_idempotency_key is not null
-        do nothing
-        returning id, input_request_hash
       `;
-      const insertedAnalysis = insertedAnalyses[0];
-      const analysis = insertedAnalysis ?? (await transaction<AnalysisRow[]>`
+      const analysis = (await transaction<AnalysisRow[]>`
         select id, input_request_hash from job_analysis
         where user_id = ${userId} and input_idempotency_key = ${idempotencyKey}
       `)[0];
@@ -223,20 +221,23 @@ export class JobMarketService {
 
     // 같은 검색을 다시 해석하면(00b를 새로고침하면) 최근 검색이 한 줄씩
     // 늘어난다. 방금 한 검색과 같은 말이면 그 줄을 갱신한다.
-    const repeated = await this.#sql<IdRow[]>`
-      update recent_search set
-        conditions = ${this.#sql.json(conditions as postgres.JSONValue)},
-        result_count = ${resultCount},
-        created_at = now()
-      where id = (
-        select id from recent_search
-        where user_id = ${userId}
-        order by created_at desc, id desc
-        limit 1
-      )
-        and query_text = ${query}
-      returning id
-    `;
+    // MySQL 은 고치는 표를 부속 질의에서 다시 읽지 못한다 — 대상을 먼저 찾는다.
+    const latest = (await this.#sql<IdRow[]>`
+      select id from recent_search
+      where user_id = ${userId}
+      order by created_at desc, id desc
+      limit 1
+    `)[0];
+    const repeated = latest
+      ? await this.#sql<IdRow[]>`
+          update recent_search set
+            conditions = ${this.#sql.json(conditions as JSONValue)},
+            result_count = ${resultCount},
+            created_at = now(6)
+          where id = ${latest.id} and query_text = ${query}
+          returning id
+        `
+      : [];
     if (repeated[0]) {
       return {
         originalQuery: query,
@@ -253,7 +254,7 @@ export class JobMarketService {
       insert into recent_search (user_id, query_text, conditions, result_count)
       values (
         ${userId}, ${query},
-        ${this.#sql.json(conditions as postgres.JSONValue)}, ${resultCount}
+        ${this.#sql.json(conditions as JSONValue)}, ${resultCount}
       )
       returning id
     `;
@@ -262,10 +263,12 @@ export class JobMarketService {
     await this.#sql`
       delete from recent_search
       where id in (
-        select id from recent_search
-        where user_id = ${userId}
-        order by created_at desc, id desc
-        offset 20
+        select id from (
+          select id from recent_search
+          where user_id = ${userId}
+          order by created_at desc, id desc
+          limit 18446744073709551615 offset 20
+        ) as overflow
       )
     `;
     return {
@@ -290,7 +293,7 @@ export class JobMarketService {
 
   async saveSearch(userId: string, input: SaveJobSearch) {
     const counts = await this.#sql<CountRow[]>`
-      select count(*)::integer as count from saved_search where user_id = ${userId}
+      select count(*) as count from saved_search where user_id = ${userId}
     `;
     if (Number(counts[0]?.count ?? 0) >= 10) {
       throw new JobMarketError(409, "saved search limit exceeded", { limit: 10 });
@@ -299,7 +302,7 @@ export class JobMarketService {
       insert into saved_search (user_id, name, query_text, filters, notify)
       values (
         ${userId}, ${input.name}, ${input.originalQuery},
-        ${this.#sql.json({ conditions: input.conditions } as postgres.JSONValue)},
+        ${this.#sql.json({ conditions: input.conditions } as JSONValue)},
         ${input.notify}
       )
       returning *
@@ -326,24 +329,25 @@ export class JobMarketService {
       select id from job_posting where id = ${jobPostingId}
     `;
     if (!postings[0]) throw new JobMarketError(404, "job posting not found");
+    await this.#sql`
+      insert into interest (user_id, job_posting_id, stage, deadline_at, memo)
+      values (
+        ${userId}, ${jobPostingId}, ${input.stage},
+        ${input.deadlineAt ? new Date(input.deadlineAt) : null}, ${input.memo}
+      )
+      as new on duplicate key update stage = new.stage,
+        deadline_at = new.deadline_at,
+        memo = new.memo,
+        updated_at = now(6)
+    `;
     const rows = await this.#sql<{
       id: string;
       stage: string;
       deadline_at: Date | string | null;
       memo: string | null;
     }[]>`
-      insert into interest (user_id, job_posting_id, stage, deadline_at, memo)
-      values (
-        ${userId}, ${jobPostingId}, ${input.stage},
-        ${input.deadlineAt ? new Date(input.deadlineAt) : null}, ${input.memo}
-      )
-      on conflict (user_id, job_posting_id)
-      do update set
-        stage = excluded.stage,
-        deadline_at = excluded.deadline_at,
-        memo = excluded.memo,
-        updated_at = now()
-      returning id, stage, deadline_at, memo
+      select id, stage, deadline_at, memo from interest
+      where user_id = ${userId} and job_posting_id = ${jobPostingId}
     `;
     const interest = rows[0];
     if (!interest) throw new Error("job interest was not persisted");
@@ -393,24 +397,25 @@ export class JobMarketService {
         jobPostingId,
       });
     }
-    const rows = await this.#sql<{ computed_at: Date | string }[]>`
+    await this.#sql`
       insert into match_score (
         user_id, job_posting_id, total, axes,
         reason_text, next_action, computed_at
       )
       values (
         ${userId}, ${jobPostingId}, ${match.total},
-        ${this.#sql.json(match.axes as postgres.JSONValue)},
+        ${this.#sql.json(match.axes as JSONValue)},
         ${match.reason}, ${match.nextAction}, ${at}
       )
-      on conflict (user_id, job_posting_id)
-      do update set
-        total = excluded.total,
-        axes = excluded.axes,
-        reason_text = excluded.reason_text,
-        next_action = excluded.next_action,
-        computed_at = excluded.computed_at
-      returning computed_at
+      as new on duplicate key update total = new.total,
+        axes = new.axes,
+        reason_text = new.reason_text,
+        next_action = new.next_action,
+        computed_at = new.computed_at
+    `;
+    const rows = await this.#sql<{ computed_at: Date | string }[]>`
+      select computed_at from match_score
+      where user_id = ${userId} and job_posting_id = ${jobPostingId}
     `;
     if (!rows[0]) throw new Error("job match was not persisted");
     return ExplainableMatchSchema.parse(match);
@@ -422,7 +427,7 @@ export class JobMarketService {
     }
     const rows = await this.#sql<RequirementPostingRow[]>`
       select id, requirements from job_posting
-      where id = any(${jobPostingIds}::uuid[])
+      where id in ${this.#sql(jobPostingIds)}
     `;
     if (rows.length < 5) {
       return JobDemandSummarySchema.parse({

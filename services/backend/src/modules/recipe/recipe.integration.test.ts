@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
@@ -14,14 +15,14 @@ const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
 const config: RuntimeConfig = {
   nodeEnv: "test", host: "127.0.0.1", port: 4_000, logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1", outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25, outboxMaxAttempts: 5, queuePrefix: "expresso-recipe-test",
 };
 interface IdRow { id: string }
 
 describeWithDatabase("recipe integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 4 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identityService = new IdentityService(sql);
   const recipeService = new RecipeService(sql);
   const brewJobService = new BrewJobService(sql);
@@ -58,14 +59,14 @@ describeWithDatabase("recipe integration", () => {
 
   beforeAll(async () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
-    const categoryId = (await sql<IdRow[]>`select id from category where key = 'experience' and is_system`)[0]?.id;
+    const categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id;
     if (!planId || !categoryId) throw new Error("recipe seed missing");
-    const users = await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        (${`recipe-a-${marker}@example.com`}, 'Recipe A', ${planId}),
-        (${`recipe-b-${marker}@example.com`}, 'Recipe B', ${planId})
-      returning id
+        (${users[0]!.id}, ${`recipe-a-${marker}@example.com`}, 'Recipe A', ${planId}),
+        (${users[1]!.id}, ${`recipe-b-${marker}@example.com`}, 'Recipe B', ${planId})
     `;
     userId = users[0]?.id ?? "";
     otherUserId = users[1]?.id ?? "";
@@ -76,11 +77,11 @@ describeWithDatabase("recipe integration", () => {
     `)[0]?.id ?? "";
     postingId = (await sql<IdRow[]>`
       insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash)
-      values (${companyId}, 'user_input', 'Engineer', ${source}, '{}'::jsonb, ${`recipe-posting-${marker}`}) returning id
+      values (${companyId}, 'user_input', 'Engineer', ${source}, '{}', ${`recipe-posting-${marker}`}) returning id
     `)[0]?.id ?? "";
     analysisId = (await sql<IdRow[]>`
       insert into job_analysis (user_id, job_posting_id, input_type, status, progress_stage, result_version, target_version, analyzed_at)
-      values (${userId}, ${postingId}, 'paste', 'done', 'done', 1, 1, now()) returning id
+      values (${userId}, ${postingId}, 'paste', 'done', 'done', 1, 1, now(6)) returning id
     `)[0]?.id ?? "";
     let cursor = 0;
     for (const [order, quote] of quotes.entries()) {
@@ -101,7 +102,7 @@ describeWithDatabase("recipe integration", () => {
     for (let index = 0; index < 5; index += 1) {
       const record = (await sql<IdRow[]>`
         insert into record (user_id, category_id, title, status, origin, properties, body_md)
-        values (${userId}, ${categoryId}, ${`Selected evidence ${index}`}, 'organized', 'manual', '{}'::jsonb, ${`Evidence body ${index}`}) returning id
+        values (${userId}, ${categoryId}, ${`Selected evidence ${index}`}, 'organized', 'manual', '{}', ${`Evidence body ${index}`}) returning id
       `)[0];
       if (record) records.push(record);
     }
@@ -111,7 +112,7 @@ describeWithDatabase("recipe integration", () => {
     `)[0]?.id ?? "";
     for (const [rank, record] of records.entries()) {
       await sql`
-        insert into brew_source (user_id, brew_id, record_id, rank, selected_by, score, reason_text, is_selected)
+        insert into brew_source (user_id, brew_id, record_id, \`rank\`, selected_by, score, reason_text, is_selected)
         values (${userId}, ${brewId}, ${record.id}, ${rank}, 'user', ${10 - rank}, 'selected fixture', true)
       `;
     }
@@ -127,7 +128,7 @@ describeWithDatabase("recipe integration", () => {
     `)[0]?.id;
     const answerRecordId = (await sql<IdRow[]>`
       insert into record (user_id, category_id, title, status, origin, properties, body_md)
-      values (${userId}, ${categoryId}, 'Interview evidence', 'draft', 'interview', '{}'::jsonb, '장애 원인을 분석하고 재발을 막았습니다.') returning id
+      values (${userId}, ${categoryId}, 'Interview evidence', 'draft', 'interview', '{}', '장애 원인을 분석하고 재발을 막았습니다.') returning id
     `)[0]?.id;
     if (!questionId || !answerRecordId) throw new Error("recipe answer fixture missing");
     await sql`
@@ -138,7 +139,7 @@ describeWithDatabase("recipe integration", () => {
   });
 
   afterAll(async () => {
-    if (userId && otherUserId) await sql`delete from "user" where id in (${userId}, ${otherUserId})`;
+    if (userId && otherUserId) await sql`delete from \`user\` where id in (${userId}, ${otherUserId})`;
     if (postingId) await sql`delete from job_posting where id = ${postingId}`;
     if (companyId) await sql`delete from company where id = ${companyId}`;
     await app.close(); await sql.end({ timeout: 5 });
@@ -247,7 +248,7 @@ describeWithDatabase("recipe integration", () => {
       });
     }
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count from recipe_revision
+      select count(*) as count from recipe_revision
       where user_id = ${userId} and recipe_id = ${recipe.id}
     `)[0]?.count).toBe(50);
   }, 30_000);

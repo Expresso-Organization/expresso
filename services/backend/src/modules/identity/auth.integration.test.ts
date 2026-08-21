@@ -4,7 +4,8 @@ import {
   CareerCategoriesResponseSchema,
   CurrentUserResponseSchema,
 } from "@expresso/contracts";
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
@@ -20,7 +21,7 @@ const config: RuntimeConfig = {
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -31,7 +32,7 @@ const config: RuntimeConfig = {
 const PASSWORD = "correct-horse-battery";
 
 describeWithDatabase("auth HTTP integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 2 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identityService = new IdentityService(sql);
   const app = buildApi({
     config,
@@ -45,13 +46,13 @@ describeWithDatabase("auth HTTP integration", () => {
     await sql`
       insert into plan (code, generation_quota)
       values ('free', 3)
-      on conflict (code) do update set generation_quota = plan.generation_quota
+      as new on duplicate key update generation_quota = plan.generation_quota
     `;
     await app.ready();
   });
 
   afterAll(async () => {
-    await sql`delete from "user" where email in ${sql(createdEmails)}`;
+    await sql`delete from \`user\` where email in ${sql(createdEmails)}`;
     await app.close();
     await sql.end({ timeout: 5 });
   });
@@ -97,7 +98,7 @@ describeWithDatabase("auth HTTP integration", () => {
 
   it("never stores the password in plaintext and rejects a duplicate email", async () => {
     const stored = await sql<{ password_hash: string | null }[]>`
-      select password_hash from "user" where email = ${email}
+      select password_hash from \`user\` where email = ${email}
     `;
     expect(stored[0]?.password_hash).toMatch(/^scrypt\$\d+\$\d+\$\d+\$[0-9a-f]{32}\$[0-9a-f]{128}$/);
     expect(stored[0]?.password_hash).not.toContain(PASSWORD);
@@ -190,7 +191,7 @@ describeWithDatabase("auth HTTP integration", () => {
       "VALIDATION_ERROR",
     );
 
-    const rows = await sql`select 1 from "user" where email = ${shortPassword}`;
+    const rows = await sql`select 1 from \`user\` where email = ${shortPassword}`;
     expect(rows).toHaveLength(0);
   });
 });

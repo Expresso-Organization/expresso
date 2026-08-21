@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
+import type { SqlTag } from "../../src/platform/mysql.js";
+import { createMysqlResource } from "../../src/platform/mysql.js";
 import { performance } from "node:perf_hooks";
 
 import { migrate } from "@expresso/database";
-import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../src/api/build-app.js";
@@ -11,6 +12,7 @@ import { AnalyticsService } from "../../src/modules/analytics/service.js";
 import { CareerService } from "../../src/modules/career/service.js";
 import { EngagementService } from "../../src/modules/engagement/service.js";
 import { IdentityService } from "../../src/modules/identity/service.js";
+import { ISOLATED_DATABASE_TIMEOUT_MS } from "../support/timeouts.js";
 
 const rootDatabaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = rootDatabaseUrl ? describe : describe.skip;
@@ -23,8 +25,8 @@ function percentile(values: number[], ratio: number) {
 
 describeWithDatabase("release performance and backpressure budget", () => {
   const databaseName = `expresso_load_${randomUUID().replaceAll("-", "")}`;
-  let admin: postgres.Sql;
-  let sql: postgres.Sql;
+  let admin: SqlTag;
+  let sql: SqlTag;
   let app: ReturnType<typeof buildApi>;
   let token = "";
   let categoryId = "";
@@ -32,19 +34,19 @@ describeWithDatabase("release performance and backpressure budget", () => {
   let slug = "";
 
   beforeAll(async () => {
-    const root = new URL(rootDatabaseUrl!); const adminUrl = new URL(root); adminUrl.pathname = "/postgres";
-    admin = postgres(adminUrl.toString(), { max: 1 }); await admin.unsafe(`create database "${databaseName}"`);
+    const root = new URL(rootDatabaseUrl!); const adminUrl = new URL(root); adminUrl.pathname = "/mysql";
+    admin = createMysqlResource(adminUrl.toString()).sql; await admin.unsafe(`create database \`${databaseName}\``);
     const isolated = new URL(root); isolated.pathname = `/${databaseName}`; await migrate({ databaseUrl: isolated.toString() });
-    sql = postgres(isolated.toString(), { max: 20 });
+    sql = createMysqlResource(isolated.toString()).sql;
     const planId = (await sql<IdRow[]>`select id from plan where code = 'pro'`)[0]?.id;
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
-    categoryId = (await sql<IdRow[]>`select id from category where key = 'experience' and is_system`)[0]?.id ?? "";
+    categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id ?? "";
     if (!planId || !templateId || !categoryId) throw new Error("load seed missing");
-    const userId = (await sql<IdRow[]>`insert into "user" (email, display_name, plan_id) values ('load@example.com', 'Load', ${planId}) returning id`)[0]?.id;
+    const userId = (await sql<IdRow[]>`insert into \`user\` (email, display_name, plan_id) values ('load@example.com', 'Load', ${planId}) returning id`)[0]?.id;
     if (!userId) throw new Error("load user missing");
     const identity = new IdentityService(sql); token = (await identity.issueSession({ userId })).accessToken;
     const companyId = (await sql<IdRow[]>`insert into company (name, dedupe_key) values ('Load', ${databaseName}) returning id`)[0]?.id;
-    const postingId = companyId && (await sql<IdRow[]>`insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash) values (${companyId}, 'user_input', 'Load', ${"l".repeat(250)}, '{}'::jsonb, ${databaseName}) returning id`)[0]?.id;
+    const postingId = companyId && (await sql<IdRow[]>`insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash) values (${companyId}, 'user_input', 'Load', ${"l".repeat(250)}, '{}', ${databaseName}) returning id`)[0]?.id;
     const analysisId = postingId && (await sql<IdRow[]>`insert into job_analysis (user_id, job_posting_id, input_type, status) values (${userId}, ${postingId}, 'paste', 'done') returning id`)[0]?.id;
     const brewId = analysisId && (await sql<IdRow[]>`insert into brew (user_id, job_analysis_id, length_preset, status) values (${userId}, ${analysisId}, 'single', 'done') returning id`)[0]?.id;
     if (!brewId) throw new Error("load brew missing");
@@ -52,18 +54,18 @@ describeWithDatabase("release performance and backpressure budget", () => {
     const sectionId = portfolioId && (await sql<IdRow[]>`insert into portfolio_section (user_id, portfolio_id, order_no) values (${userId}, ${portfolioId}, 0) returning id`)[0]?.id;
     if (!portfolioId || !sectionId) throw new Error("load portfolio missing");
     slug = `load-${randomUUID()}`;
-    deploymentId = (await sql<IdRow[]>`insert into deployment (user_id, portfolio_id, version, subdomain, published_at, snapshot) values (${userId}, ${portfolioId}, 1, ${slug}, now(), ${sql.json({ sections: [{ id: sectionId }] })}) returning id`)[0]?.id ?? "";
+    deploymentId = (await sql<IdRow[]>`insert into deployment (user_id, portfolio_id, version, subdomain, published_at, snapshot) values (${userId}, ${portfolioId}, 1, ${slug}, now(6), ${sql.json({ sections: [{ id: sectionId }] })}) returning id`)[0]?.id ?? "";
     await sql`update portfolio set current_deployment_id = ${deploymentId}, status = 'published' where id = ${portfolioId}`;
     const analytics = new AnalyticsService(sql, { visitorSalt: "load-test-visitor-salt", rateLimit: 10 });
     const config: RuntimeConfig = { nodeEnv: "test", host: "127.0.0.1", port: 0, logLevel: "silent", databaseUrl: isolated.toString(), redisUrl: "redis://127.0.0.1:1", outboxPollIntervalMs: 1_000, outboxBatchSize: 25, outboxMaxAttempts: 5, queuePrefix: "load-test" };
     app = buildApi({ config, identityService: identity, careerService: new CareerService(sql), engagementService: new EngagementService(sql), analyticsService: analytics });
     await app.ready();
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   afterAll(async () => {
     if (app) await app.close(); if (sql) await sql.end({ timeout: 5 });
-    if (admin) { await admin`select pg_terminate_backend(pid) from pg_stat_activity where datname = ${databaseName} and pid <> pg_backend_pid()`; await admin.unsafe(`drop database if exists "${databaseName}"`); await admin.end({ timeout: 5 }); }
-  }, 30_000);
+    if (admin) { await admin.unsafe(`drop database if exists \`${databaseName}\``); await admin.end({ timeout: 5 }); }
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   async function timed(request: Parameters<typeof app.inject>[0]) {
     const started = performance.now(); const response = await app.inject(request); return { response, ms: performance.now() - started };

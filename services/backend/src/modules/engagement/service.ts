@@ -1,5 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { API_PREFIX, HomeReadModelSchema, type NotificationKind, type UnifiedSearchQuery } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import { addOutboxEvent } from "../../platform/outbox.js";
 
@@ -41,16 +42,16 @@ function encodeCursor(row: SearchRow): string {
 }
 
 export class EngagementService {
-  readonly #sql: postgres.Sql;
-  constructor(sql: postgres.Sql) { this.#sql = sql; }
+  readonly #sql: SqlTag;
+  constructor(sql: SqlTag) { this.#sql = sql; }
 
   async setPreference(userId: string, kind: NotificationKind, enabled: boolean) {
-    const user = (await this.#sql<{ id: string }[]>`select id from "user" where id = ${userId} and deletion_requested_at is null`)[0];
+    const user = (await this.#sql<{ id: string }[]>`select id from \`user\` where id = ${userId} and deletion_requested_at is null`)[0];
     if (!user) throw new EngagementError(404, "user not found");
     await this.#sql`
       insert into notification_preference (user_id, kind, enabled)
       values (${userId}, ${kind}, ${enabled})
-      on conflict (user_id, kind) do update set enabled = excluded.enabled, updated_at = now()
+      as new on duplicate key update enabled = new.enabled, updated_at = now(6)
     `;
     return { kind, enabled };
   }
@@ -58,7 +59,12 @@ export class EngagementService {
   async preferences(userId: string) {
     const rows = await this.#sql<{ kind: NotificationKind; enabled: boolean }[]>`
       select kinds.kind, coalesce(preference.enabled, true) as enabled
-      from unnest(array['deadline','saved_search','generation','traffic']::text[]) as kinds(kind)
+      from (
+             select 'deadline' as kind
+             union all select 'saved_search'
+             union all select 'generation'
+             union all select 'traffic'
+           ) as kinds
       left join notification_preference as preference on preference.user_id = ${userId} and preference.kind = kinds.kind
       order by kinds.kind
     `;
@@ -72,20 +78,19 @@ export class EngagementService {
       `)[0]?.enabled ?? true;
       if (!enabled) return { created: false, reason: "PREFERENCE_DISABLED" as const, notification: null };
       const date = kstDate(at);
-      const row = (await transaction<(NotificationRow & { inserted: boolean })[]>`
-        with inserted as (
-          insert into notification (user_id, kind, target_url, dedupe_key, dedupe_date, created_at, next_attempt_at)
-          values (${userId}, ${kind}, ${targetUrl}, ${dedupeKey}, ${date}, ${at}, ${at})
-          on conflict (user_id, dedupe_key, dedupe_date) do nothing
-          returning *, true as inserted
-        )
-        select * from inserted
-        union all
-        select notification.*, false as inserted from notification
+      // 같은 사유의 알림은 하루 하나다. 우리가 만든 id 로 다시 읽어 방금 넣은
+      // 것인지 가려낸다.
+      const notificationId = randomUUID();
+      await transaction`
+        insert ignore into notification (id, user_id, kind, target_url, dedupe_key, dedupe_date, created_at, next_attempt_at)
+        values (${notificationId}, ${userId}, ${kind}, ${targetUrl}, ${dedupeKey}, ${date}, ${at}, ${at})
+      `;
+      const found = (await transaction<NotificationRow[]>`
+        select * from notification
         where user_id = ${userId} and dedupe_key = ${dedupeKey} and dedupe_date = ${date}
-          and not exists (select 1 from inserted)
         limit 1
       `)[0];
+      const row = found ? { ...found, inserted: found.id === notificationId } : undefined;
       if (!row) throw new Error("notification missing");
       if (row.inserted) await addOutboxEvent(transaction, {
         topic: "notification.deliver", payload: { notificationId: row.id, userId }, idempotencyKey: `notification-deliver:${row.id}`,
@@ -158,7 +163,7 @@ export class EngagementService {
         where score.user_id = ${userId} order by score.total desc, posting.id limit 5
       `,
       this.#sql<{ key: string; value: string | number }[]>`
-        select metric.metric_key as key, sum(metric.value) as value
+        select metric.metric_key as \`key\`, sum(metric.value) as value
         from metric_daily as metric join portfolio on portfolio.current_deployment_id = metric.deployment_id
         where portfolio.user_id = ${userId} group by metric.metric_key order by metric.metric_key
       `,
@@ -185,7 +190,7 @@ export class EngagementService {
     const pattern = `%${input.q}%`;
     const rows = await this.#sql<SearchRow[]>`
       with resources as (
-        select record.id, 'record'::text as resource_type, record.title, record.status as subtitle, lower(record.title) as sort_title
+        select record.id, 'record' as resource_type, record.title, record.status as subtitle, lower(record.title) as sort_title
         from record where record.user_id = ${userId} and record.deleted_at is null
         union all
         select portfolio.id, 'portfolio', portfolio.title, portfolio.status, lower(portfolio.title)
@@ -196,8 +201,8 @@ export class EngagementService {
         where exists (select 1 from match_score where match_score.user_id = ${userId} and match_score.job_posting_id = posting.id)
       )
       select id, resource_type, title, subtitle, sort_title from resources
-      where title ilike ${pattern}
-        and (${cursor === null} or (sort_title, resource_type, id) > (${cursor?.title ?? ""}, ${cursor?.type ?? ""}, ${cursor?.id ?? "00000000-0000-0000-0000-000000000000"}::uuid))
+      where lower(title) like lower(${pattern})
+        and (${cursor === null} or (sort_title, resource_type, id) > (${cursor?.title ?? ""}, ${cursor?.type ?? ""}, ${cursor?.id ?? "00000000-0000-0000-0000-000000000000"}))
       order by sort_title, resource_type, id
       limit ${input.limit + 1}
     `;

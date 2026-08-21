@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type {
   AuthSession,
   AuthenticatedUser,
@@ -7,7 +8,7 @@ import type {
   Signup,
   SocialAuthSession,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import type { GoogleIdentity } from "./google.js";
 import { hashPassword, verifyPassword } from "./password.js";
@@ -101,9 +102,9 @@ function displayNameFor(identity: GoogleIdentity): string {
 }
 
 export class IdentityService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
 
-  constructor(sql: postgres.Sql) {
+  constructor(sql: SqlTag) {
     this.#sql = sql;
   }
 
@@ -138,24 +139,26 @@ export class IdentityService {
    */
   async signup(input: Signup): Promise<AuthSession> {
     const passwordHash = await hashPassword(input.password);
+    // 이메일이 이미 있으면 새 줄이 생기지 않는다 — 우리가 만든 id 로 다시 읽어
+    // 방금 만든 계정인지 가려낸다.
+    const newUserId = randomUUID();
+    await this.#sql`
+      insert ignore into \`user\` (id, email, display_name, plan_id, password_hash)
+      select ${newUserId}, ${input.email}, ${input.displayName}, plan.id, ${passwordHash}
+      from plan
+      where plan.code = 'free'
+    `;
     const rows = await this.#sql<CredentialRow[]>`
-      with created as (
-        insert into "user" (email, display_name, plan_id, password_hash)
-        select ${input.email}, ${input.displayName}, plan.id, ${passwordHash}
-        from plan
-        where plan.code = 'free'
-        on conflict (email) do nothing
-        returning id, email, display_name, plan_id, password_hash, deletion_requested_at
-      )
       select
-        created.id,
-        created.email::text as email,
-        created.display_name,
+        account.id,
+        account.email as email,
+        account.display_name,
         plan.code as plan_code,
-        created.password_hash,
-        created.deletion_requested_at
-      from created
-      join plan on plan.id = created.plan_id
+        account.password_hash,
+        account.deletion_requested_at
+      from \`user\` as account
+      join plan on plan.id = account.plan_id
+      where account.id = ${newUserId}
     `;
 
     const account = rows[0];
@@ -178,12 +181,12 @@ export class IdentityService {
     const rows = await this.#sql<CredentialRow[]>`
       select
         account.id,
-        account.email::text as email,
+        account.email as email,
         account.display_name,
         plan.code as plan_code,
         account.password_hash,
         account.deletion_requested_at
-      from "user" as account
+      from \`user\` as account
       join plan on plan.id = account.plan_id
       where account.email = ${input.email}
     `;
@@ -216,13 +219,13 @@ export class IdentityService {
     const linked = await this.#sql<CredentialRow[]>`
       select
         account.id,
-        account.email::text as email,
+        account.email as email,
         account.display_name,
         plan.code as plan_code,
         account.password_hash,
         account.deletion_requested_at
       from identity_oauth_account as oauth
-      join "user" as account on account.id = oauth.user_id
+      join \`user\` as account on account.id = oauth.user_id
       join plan on plan.id = account.plan_id
       where oauth.provider = 'google'
         and oauth.provider_account_id = ${identity.subject}
@@ -235,7 +238,7 @@ export class IdentityService {
       }
       await this.#sql`
         update identity_oauth_account
-        set last_login_at = now(), email = ${identity.email}
+        set last_login_at = now(6), email = ${identity.email}
         where provider = 'google' and provider_account_id = ${identity.subject}
       `;
       return {
@@ -251,7 +254,7 @@ export class IdentityService {
     }
 
     const owner = await this.#sql<{ id: string }[]>`
-      select id from "user" where email = ${identity.email}
+      select id from \`user\` where email = ${identity.email}
     `;
     if (owner[0]) {
       throw new IdentityError(409, "email belongs to a password account", {
@@ -277,12 +280,12 @@ export class IdentityService {
     const rows = await this.#sql<CredentialRow[]>`
       select
         account.id,
-        account.email::text as email,
+        account.email as email,
         account.display_name,
         plan.code as plan_code,
         account.password_hash,
         account.deletion_requested_at
-      from "user" as account
+      from \`user\` as account
       join plan on plan.id = account.plan_id
       where account.email = ${identity.email}
     `;
@@ -298,7 +301,7 @@ export class IdentityService {
       await this.#sql`
         insert into identity_oauth_account
           (user_id, provider, provider_account_id, email, last_login_at)
-        values (${account.id}, 'google', ${identity.subject}, ${identity.email}, now())
+        values (${account.id}, 'google', ${identity.subject}, ${identity.email}, now(6))
       `;
     } catch (error) {
       if (!isUniqueViolation(error)) throw error;
@@ -323,24 +326,24 @@ export class IdentityService {
     identity: GoogleIdentity,
   ): Promise<SocialAuthSession> {
     const created = await this.#sql.begin(async (tx) => {
+      const newUserId = randomUUID();
+      await tx`
+        insert ignore into \`user\` (id, email, display_name, plan_id, password_hash)
+        select ${newUserId}, ${identity.email}, ${displayNameFor(identity)}, plan.id, null
+        from plan
+        where plan.code = 'free'
+      `;
       const rows = await tx<CredentialRow[]>`
-        with created as (
-          insert into "user" (email, display_name, plan_id, password_hash)
-          select ${identity.email}, ${displayNameFor(identity)}, plan.id, null
-          from plan
-          where plan.code = 'free'
-          on conflict (email) do nothing
-          returning id, email, display_name, plan_id, password_hash, deletion_requested_at
-        )
         select
-          created.id,
-          created.email::text as email,
-          created.display_name,
+          account.id,
+          account.email as email,
+          account.display_name,
           plan.code as plan_code,
-          created.password_hash,
-          created.deletion_requested_at
-        from created
-        join plan on plan.id = created.plan_id
+          account.password_hash,
+          account.deletion_requested_at
+        from \`user\` as account
+        join plan on plan.id = account.plan_id
+        where account.id = ${newUserId}
       `;
 
       const account = rows[0];
@@ -359,7 +362,7 @@ export class IdentityService {
       await tx`
         insert into identity_oauth_account
           (user_id, provider, provider_account_id, email, last_login_at)
-        values (${account.id}, 'google', ${identity.subject}, ${identity.email}, now())
+        values (${account.id}, 'google', ${identity.subject}, ${identity.email}, now(6))
       `;
       return account;
     });
@@ -374,32 +377,28 @@ export class IdentityService {
   async verifyAccessToken(accessToken: string): Promise<IdentityPrincipal | null> {
     if (!isAccessToken(accessToken)) return null;
 
+    // MySQL 은 CTE 안에서 갱신하지 못한다 — 세션을 찾아 읽고, 본 시각은 따로 찍는다.
+    const tokenHash = hashAccessToken(accessToken);
     const rows = await this.#sql<AuthenticatedSessionRow[]>`
-      with valid_session as (
-        select session.id, session.user_id
-        from identity_session as session
-        join "user" as account on account.id = session.user_id
-        where session.token_hash = ${hashAccessToken(accessToken)}
-          and session.revoked_at is null
-          and session.expires_at > now()
-          and account.deletion_requested_at is null
-      ), touched_session as (
-        update identity_session as session
-        set last_seen_at = now()
-        from valid_session
-        where session.id = valid_session.id
-        returning session.id, session.user_id
-      )
       select
-        touched_session.id as session_id,
+        session.id as session_id,
         account.id as user_id,
-        account.email::text as email,
+        account.email as email,
         account.display_name,
         plan.code as plan_code
-      from touched_session
-      join "user" as account on account.id = touched_session.user_id
+      from identity_session as session
+      join \`user\` as account on account.id = session.user_id
       join plan on plan.id = account.plan_id
+      where session.token_hash = ${tokenHash}
+        and session.revoked_at is null
+        and session.expires_at > now(6)
+        and account.deletion_requested_at is null
     `;
+    if (rows[0]) {
+      await this.#sql`
+        update identity_session set last_seen_at = now(6) where id = ${rows[0].session_id}
+      `;
+    }
     const session = rows[0];
     if (!session) return null;
 
@@ -417,7 +416,7 @@ export class IdentityService {
   async revokeOwnedSession(userId: string, sessionId: string): Promise<boolean> {
     const rows = await this.#sql<RevokedSessionRow[]>`
       update identity_session
-      set revoked_at = now()
+      set revoked_at = now(6)
       where id = ${sessionId}
         and user_id = ${userId}
         and revoked_at is null

@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
+import type { SqlTag } from "../../src/platform/mysql.js";
+import { createMysqlResource } from "../../src/platform/mysql.js";
 
 import { migrate } from "@expresso/database";
-import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../src/api/build-app.js";
@@ -13,6 +14,7 @@ import { OutboxDispatcher } from "../../src/platform/outbox.js";
 import { createReliableQueue } from "../../src/platform/queue.js";
 import { createQueueWorker } from "../../src/worker/create-queue-worker.js";
 import { createAnalyticsProcessor } from "../../src/worker/processors/analytics.js";
+import { ISOLATED_DATABASE_TIMEOUT_MS } from "../support/timeouts.js";
 
 const rootDatabaseUrl = process.env.TEST_DATABASE_URL;
 const redisUrl = process.env.TEST_REDIS_URL;
@@ -32,8 +34,8 @@ describeWithInfrastructure("publish visit aggregate insight rollback vertical sl
   const databaseName = `expresso_publish_e2e_${randomUUID().replaceAll("-", "")}`;
   const queuePrefix = `expresso-${databaseName}`;
   const jobs = createReliableQueue<Record<string, unknown>>("domain-jobs", redisUrl!, queuePrefix);
-  let admin: postgres.Sql;
-  let sql: postgres.Sql;
+  let admin: SqlTag;
+  let sql: SqlTag;
   let app: ReturnType<typeof buildApi>;
   let worker: ReturnType<typeof createQueueWorker<Record<string, unknown>, Record<string, unknown>>>;
   let dispatcher: OutboxDispatcher;
@@ -45,24 +47,24 @@ describeWithInfrastructure("publish visit aggregate insight rollback vertical sl
 
   beforeAll(async () => {
     const root = new URL(rootDatabaseUrl!);
-    const adminUrl = new URL(root); adminUrl.pathname = "/postgres";
-    admin = postgres(adminUrl.toString(), { max: 1 });
-    await admin.unsafe(`create database "${databaseName}"`);
+    const adminUrl = new URL(root); adminUrl.pathname = "/mysql";
+    admin = createMysqlResource(adminUrl.toString()).sql;
+    await admin.unsafe(`create database \`${databaseName}\``);
     const isolated = new URL(root); isolated.pathname = `/${databaseName}`;
     await migrate({ databaseUrl: isolated.toString() });
-    sql = postgres(isolated.toString(), { max: 8 });
+    sql = createMysqlResource(isolated.toString()).sql;
     const planId = (await sql<IdRow[]>`select id from plan where code = 'pro'`)[0]?.id;
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
     if (!planId || !templateId) throw new Error("publish E2E plan/template missing");
     userId = (await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id) values ('publish-e2e@example.com', 'Publish E2E', ${planId}) returning id
+      insert into \`user\` (email, display_name, plan_id) values ('publish-e2e@example.com', 'Publish E2E', ${planId}) returning id
     `)[0]?.id ?? "";
     const identity = new IdentityService(sql);
     token = (await identity.issueSession({ userId })).accessToken;
     const companyId = (await sql<IdRow[]>`insert into company (name, dedupe_key) values ('Publish E2E', ${databaseName}) returning id`)[0]?.id;
     const postingId = companyId && (await sql<IdRow[]>`
       insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash)
-      values (${companyId}, 'user_input', 'Engineer', ${"p".repeat(250)}, '{}'::jsonb, ${databaseName}) returning id
+      values (${companyId}, 'user_input', 'Engineer', ${"p".repeat(250)}, '{}', ${databaseName}) returning id
     `)[0]?.id;
     const analysisId = postingId && (await sql<IdRow[]>`insert into job_analysis (user_id, job_posting_id, input_type, status) values (${userId}, ${postingId}, 'paste', 'done') returning id`)[0]?.id;
     const brewId = analysisId && (await sql<IdRow[]>`insert into brew (user_id, job_analysis_id, length_preset, status) values (${userId}, ${analysisId}, 'single', 'done') returning id`)[0]?.id;
@@ -85,7 +87,7 @@ describeWithInfrastructure("publish visit aggregate insight rollback vertical sl
       deadLetterQueue: jobs.deadLetterQueue, processor: createAnalyticsProcessor(analytics),
     });
     dispatcher = new OutboxDispatcher({ sql, queue: jobs.queue });
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   afterAll(async () => {
     if (worker) await worker.close();
@@ -94,11 +96,10 @@ describeWithInfrastructure("publish visit aggregate insight rollback vertical sl
     if (app) await app.close();
     if (sql) await sql.end({ timeout: 5 });
     if (admin) {
-      await admin`select pg_terminate_backend(pid) from pg_stat_activity where datname = ${databaseName} and pid <> pg_backend_pid()`;
-      await admin.unsafe(`drop database if exists "${databaseName}"`);
+      await admin.unsafe(`drop database if exists \`${databaseName}\``);
       await admin.end({ timeout: 5 });
     }
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   async function api(path: string, options: { method?: string; body?: unknown; anonymous?: boolean } = {}) {
     return fetch(`${origin}${path}`, {
@@ -132,7 +133,7 @@ describeWithInfrastructure("publish visit aggregate insight rollback vertical sl
     expect(aggregate.status).toBe(202);
     expect((await dispatcher.pollOnce()).published).toBe(1);
     // 하루치 집계는 지표 일곱 줄이다 — 방문 · 완독 · 연락처 · 내려받기 · 링크 · 섹션 조회 · 섹션 체류.
-    await waitUntil(async () => Number((await sql<{ count: number }[]>`select count(*)::integer as count from metric_daily where deployment_id = ${first.data.id}`)[0]?.count ?? 0) === 7);
+    await waitUntil(async () => Number((await sql<{ count: number }[]>`select count(*) as count from metric_daily where deployment_id = ${first.data.id}`)[0]?.count ?? 0) === 7);
     const insight = await api(`/v1/deployments/${first.data.id}/analytics/insight?start=2026-08-09&end=2026-08-09`);
     expect(insight.status).toBe(200);
     expect(await insight.json()).toMatchObject({ data: { visibility: "visible", sampleSize: 5, evidenceMetrics: ["visits", "completes"] } });

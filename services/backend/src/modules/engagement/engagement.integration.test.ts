@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { EngagementService } from "./service.js";
@@ -10,7 +11,7 @@ const describeWithDatabase = databaseUrl ? describe : describe.skip;
 interface IdRow { id: string }
 
 describeWithDatabase("notifications and read models integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 20 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const service = new EngagementService(sql);
   const marker = randomUUID();
   let userId = "";
@@ -20,19 +21,21 @@ describeWithDatabase("notifications and read models integration", () => {
   beforeAll(async () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'pro'`)[0]?.id;
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
-    const categoryId = (await sql<IdRow[]>`select id from category where key = 'experience' and is_system`)[0]?.id;
+    const categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id;
     if (!planId || !templateId || !categoryId) throw new Error("engagement seed missing");
-    const users = await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id) values
-      (${`engagement-${marker}@example.com`}, 'Engagement', ${planId}),
-      (${`engagement-other-${marker}@example.com`}, 'Other', ${planId}) returning id
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
+      values
+        (${users[0]!.id}, ${`engagement-${marker}@example.com`}, 'Engagement', ${planId}),
+        (${users[1]!.id}, ${`engagement-other-${marker}@example.com`}, 'Other', ${planId})
     `;
     userId = users[0]?.id ?? "";
     otherUserId = users[1]?.id ?? "";
     const companyId = (await sql<IdRow[]>`insert into company (name, dedupe_key) values ('Alpha Company', ${`engagement-${marker}`}) returning id`)[0]?.id;
     const postingId = companyId && (await sql<IdRow[]>`
       insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash)
-      values (${companyId}, 'user_input', 'Alpha Job', ${"j".repeat(250)}, '{}'::jsonb, ${`engagement-post-${marker}`}) returning id
+      values (${companyId}, 'user_input', 'Alpha Job', ${"j".repeat(250)}, '{}', ${`engagement-post-${marker}`}) returning id
     `)[0]?.id;
     const analysisId = postingId && (await sql<IdRow[]>`
       insert into job_analysis (user_id, job_posting_id, input_type, status)
@@ -49,12 +52,12 @@ describeWithDatabase("notifications and read models integration", () => {
     `)[0]?.id ?? "";
     const deploymentId = (await sql<IdRow[]>`
       insert into deployment (user_id, portfolio_id, version, subdomain, published_at, snapshot)
-      values (${userId}, ${portfolioId}, 1, ${`engagement-${marker}`}, now(), '{}'::jsonb) returning id
+      values (${userId}, ${portfolioId}, 1, ${`engagement-${marker}`}, now(), '{}') returning id
     `)[0]?.id;
     if (!deploymentId) throw new Error("engagement deployment missing");
     await sql`update portfolio set current_deployment_id = ${deploymentId}, status = 'published' where id = ${portfolioId}`;
     await sql`insert into metric_daily (user_id, deployment_id, date, metric_key, value, sample_size) values (${userId}, ${deploymentId}, '2026-08-09', 'visits', 12, 12)`;
-    await sql`insert into match_score (user_id, job_posting_id, total, axes, reason_text, next_action) values (${userId}, ${postingId}, 88, '{}'::jsonb, 'evidence', 'review')`;
+    await sql`insert into match_score (user_id, job_posting_id, total, axes, reason_text, next_action) values (${userId}, ${postingId}, 88, '{}', 'evidence', 'review')`;
     for (const title of ["Alpha Record A", "Alpha Record B"]) await sql`
       insert into record (user_id, category_id, title, status, origin) values (${userId}, ${categoryId}, ${title}, 'organized', 'manual')
     `;
@@ -63,8 +66,8 @@ describeWithDatabase("notifications and read models integration", () => {
 
   afterAll(async () => {
     if (userId || otherUserId) {
-      await sql`delete from platform_outbox where payload ->> 'userId' in (${userId}, ${otherUserId})`;
-      await sql`delete from "user" where id in (${userId}, ${otherUserId})`;
+      await sql`delete from platform_outbox where payload ->> '$.userId' in (${userId}, ${otherUserId})`;
+      await sql`delete from \`user\` where id in (${userId}, ${otherUserId})`;
     }
     // 공고와 회사는 전역이라 사용자를 지워도 남는다 — 목록 API가 이걸 다 읽는다.
     await sql`delete from job_posting where dedupe_hash like ${`%${marker}`}`;
@@ -81,8 +84,8 @@ describeWithDatabase("notifications and read models integration", () => {
     expect(attempts.filter(({ created }) => created)).toHaveLength(1);
     const notificationId = attempts[0]?.notification?.id;
     expect(notificationId).toBeTruthy();
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from notification where user_id = ${userId} and dedupe_key = 'generation:1'`)[0]?.count).toBe(1);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from platform_outbox where topic = 'notification.deliver' and payload ->> 'notificationId' = ${notificationId!}`)[0]?.count).toBe(1);
+    expect((await sql<{ count: number }[]>`select count(*) as count from notification where user_id = ${userId} and dedupe_key = 'generation:1'`)[0]?.count).toBe(1);
+    expect((await sql<{ count: number }[]>`select count(*) as count from platform_outbox where topic = 'notification.deliver' and payload ->> '$.notificationId' = ${notificationId!}`)[0]?.count).toBe(1);
     await expect(service.notify(userId, "generation", "/portfolios/1", "generation:1", new Date("2026-08-09T15:00:00Z")))
       .resolves.toMatchObject({ created: true });
   });

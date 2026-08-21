@@ -1,4 +1,4 @@
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import { AccountLifecycleService } from "../account-lifecycle/service.js";
 import { AnalyticsService } from "../analytics/service.js";
@@ -47,14 +47,14 @@ function runDto(row: RunRow, at = new Date()) {
 }
 
 export class SchedulingService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #analytics: AnalyticsService;
   readonly #accounts: AccountLifecycleService;
   /** 수집 어댑터는 워커에만 있다. API 프로세스는 이 자리를 비운 채 돈다. */
   readonly #ingest: JobIngestService | null;
   readonly #overrides: Partial<Record<ScheduledJobKey, (at: Date) => Promise<Record<string, unknown>>>>;
 
-  constructor(sql: postgres.Sql, dependencies: {
+  constructor(sql: SqlTag, dependencies: {
     analytics?: AnalyticsService;
     accounts?: AccountLifecycleService;
     ingest?: JobIngestService | null;
@@ -77,9 +77,9 @@ export class SchedulingService {
       for (const definition of definitions) {
         const scheduledFor = new Date(definition.next_run_at);
         const run = (await transaction<{ id: string }[]>`
-          insert into scheduled_job_run (job_key, scheduled_for)
+          insert ignore into scheduled_job_run (job_key, scheduled_for)
           values (${definition.job_key}, ${scheduledFor})
-          on conflict (job_key, scheduled_for) do nothing returning id
+            returning id
         `)[0] ?? (await transaction<{ id: string }[]>`
           select id from scheduled_job_run where job_key = ${definition.job_key} and scheduled_for = ${scheduledFor}
         `)[0];
@@ -132,12 +132,19 @@ export class SchedulingService {
       return { updated: rows.length };
     }
     if (key === "expire_postings") {
-      const rows = await this.#sql<{ id: string }[]>`
-        update interest set stage = 'closed' from job_posting
-        where job_posting.id = interest.job_posting_id and job_posting.expires_at <= ${at} and interest.stage <> 'closed'
-        returning interest.id
+      // 두 표를 함께 보는 갱신은 MySQL 에서 join 으로 적는다. 몇 줄이 닫혔는지는
+      // 고치기 전에 세어 둔다.
+      const targets = await this.#sql<{ id: string }[]>`
+        select interest.id from interest
+        join job_posting on job_posting.id = interest.job_posting_id
+        where job_posting.expires_at <= ${at} and interest.stage <> 'closed'
       `;
-      return { closed: rows.length };
+      if (targets.length > 0) {
+        await this.#sql`
+          update interest set stage = 'closed' where id in ${this.#sql(targets.map(({ id }) => id))}
+        `;
+      }
+      return { closed: targets.length };
     }
     if (key === "notification_batch") {
       const rows = await this.#sql<{ id: string; user_id: string }[]>`

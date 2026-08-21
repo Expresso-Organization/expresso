@@ -1,8 +1,10 @@
+import { randomUUID } from "node:crypto";
 import {
   ApiErrorResponseSchema,
   CareerRecordListResponseSchema,
 } from "@expresso/contracts";
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
@@ -18,7 +20,7 @@ const config: RuntimeConfig = {
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -36,7 +38,7 @@ interface CategoryKeyRow {
 }
 
 describeWithDatabase("career record list HTTP integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 2 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identityService = new IdentityService(sql);
   const app = buildApi({ config, identityService, careerService: new CareerService(sql) });
 
@@ -47,21 +49,16 @@ describeWithDatabase("career record list HTTP integration", () => {
   let projectId: string;
 
   beforeAll(async () => {
-    const plans = await sql<IdRow[]>`
-      insert into plan (code, generation_quota)
-      values ('free', 3)
-      on conflict (code) do update set generation_quota = plan.generation_quota
-      returning id
-    `;
+    const plans = await sql<IdRow[]>`select id from plan where code = 'free'`;
     const planId = plans[0]?.id;
     if (!planId) throw new Error("test plan was not available");
 
-    const users = await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        (${`career-list-${crypto.randomUUID()}@example.com`}, '목록 사용자', ${planId}),
-        (${`career-other-${crypto.randomUUID()}@example.com`}, '다른 사용자', ${planId})
-      returning id
+        (${users[0]!.id}, ${`career-list-${crypto.randomUUID()}@example.com`}, '목록 사용자', ${planId}),
+        (${users[1]!.id}, ${`career-other-${crypto.randomUUID()}@example.com`}, '다른 사용자', ${planId})
     `;
     const [owner, other] = users;
     if (!owner || !other) throw new Error("test users were not persisted");
@@ -69,8 +66,8 @@ describeWithDatabase("career record list HTTP integration", () => {
     otherUserId = other.id;
 
     const categories = await sql<CategoryKeyRow[]>`
-      select id, key from category
-      where user_id is null and key in ('experience', 'project')
+      select id, \`key\` from category
+      where user_id is null and \`key\` in ('experience', 'project')
     `;
     experienceId = categories.find((row) => row.key === "experience")!.id;
     projectId = categories.find((row) => row.key === "project")!.id;
@@ -78,13 +75,13 @@ describeWithDatabase("career record list HTTP integration", () => {
     // 정렬·페이지네이션 경계를 보려면 updated_at이 동률인 행이 필요하다.
     const sharedUpdatedAt = "2026-03-01T00:00:00Z";
     await sql`
-      insert into record (user_id, category_id, title, status, origin, properties, body_md, period, updated_at)
+      insert into record (user_id, category_id, title, status, origin, properties, body_md, period_start, period_end, updated_at)
       values
-        (${userId}, ${experienceId}, '적재 파이프라인 구축', 'organized', 'manual', '{"role":"백엔드"}'::jsonb, '3천만 건을 매일 적재했습니다.', daterange('2024-01-01','2024-12-31'), ${sharedUpdatedAt}),
-        (${userId}, ${experienceId}, '정산 스케줄러 안정화', 'draft', 'interview', '{}'::jsonb, '', daterange('2023-01-01','2023-06-30'), ${sharedUpdatedAt}),
-        (${userId}, ${experienceId}, '장애 대응 3일', 'organized', 'ai', '{}'::jsonb, '로그 없이 원인을 좁혔습니다.', null, '2026-04-01T00:00:00Z'),
-        (${userId}, ${projectId}, '데이터 품질 모니터링', 'verified', 'manual', '{}'::jsonb, '자동화했습니다.', daterange('2025-01-01','2025-08-31'), '2026-05-01T00:00:00Z'),
-        (${otherUserId}, ${experienceId}, '남의 기록', 'organized', 'manual', '{}'::jsonb, '보이면 안 됩니다.', null, '2026-06-01T00:00:00Z')
+        (${userId}, ${experienceId}, '적재 파이프라인 구축', 'organized', 'manual', '{"role":"백엔드"}', '3천만 건을 매일 적재했습니다.', '2024-01-01', '2024-12-31', ${sharedUpdatedAt}),
+        (${userId}, ${experienceId}, '정산 스케줄러 안정화', 'draft', 'interview', '{}', '', '2023-01-01', '2023-06-30', ${sharedUpdatedAt}),
+        (${userId}, ${experienceId}, '장애 대응 3일', 'organized', 'ai', '{}', '로그 없이 원인을 좁혔습니다.', null, null, '2026-04-01 00:00:00'),
+        (${userId}, ${projectId}, '데이터 품질 모니터링', 'verified', 'manual', '{}', '자동화했습니다.', '2025-01-01', '2025-08-31', '2026-05-01 00:00:00'),
+        (${otherUserId}, ${experienceId}, '남의 기록', 'organized', 'manual', '{}', '보이면 안 됩니다.', null, null, '2026-06-01 00:00:00')
     `;
 
     const owned = await sql<{ id: string; title: string }[]>`
@@ -108,7 +105,7 @@ describeWithDatabase("career record list HTTP integration", () => {
 
   afterAll(async () => {
     if (userId && otherUserId) {
-      await sql`delete from "user" where id in (${userId}, ${otherUserId})`;
+      await sql`delete from \`user\` where id in (${userId}, ${otherUserId})`;
     }
     await app.close();
     await sql.end({ timeout: 5 });
