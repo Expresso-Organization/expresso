@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -27,7 +28,7 @@ const describeWithDatabase = databaseUrl ? describe : describe.skip;
 const root = mkdtempSync(join(tmpdir(), "expresso-media-"));
 const config: RuntimeConfig = {
   nodeEnv: "test", host: "127.0.0.1", port: 4_000, logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1", outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25, outboxMaxAttempts: 5, queuePrefix: "expresso-media-test",
   mediaProvider: "local", mediaDir: root,
@@ -61,7 +62,7 @@ async function png(width: number, height: number, tint = 0): Promise<Buffer> {
 }
 
 describeWithDatabase("media upload and placement integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 10 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const service = new MediaService(sql, new LocalMediaStorage(root));
   const identity = new IdentityService(sql);
   const app = buildApi({ config, identityService: identity, mediaService: service });
@@ -75,11 +76,11 @@ describeWithDatabase("media upload and placement integration", () => {
     const plan = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!plan) throw new Error("plan seed missing");
     ownerId = (await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values (${`media-owner-${marker}@example.com`}, 'Owner', ${plan}) returning id
     `)[0]?.id ?? "";
     strangerId = (await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values (${`media-stranger-${marker}@example.com`}, 'Stranger', ${plan}) returning id
     `)[0]?.id ?? "";
 
@@ -88,7 +89,7 @@ describeWithDatabase("media upload and placement integration", () => {
     `)[0]?.id;
     const postingId = (await sql<IdRow[]>`
       insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash)
-      values (${companyId!}, 'user_input', 'Engineer', ${"x".repeat(250)}, '{}'::jsonb, ${`media-posting-${marker}`})
+      values (${companyId!}, 'user_input', 'Engineer', ${"x".repeat(250)}, '{}', ${`media-posting-${marker}`})
       returning id
     `)[0]?.id;
     const analysisId = (await sql<IdRow[]>`
@@ -117,7 +118,7 @@ describeWithDatabase("media upload and placement integration", () => {
 
   afterAll(async () => {
     if (ownerId || strangerId) {
-      await sql`delete from "user" where id in (${ownerId}, ${strangerId})`;
+      await sql`delete from \`user\` where id in (${ownerId}, ${strangerId})`;
     }
     await sql`delete from job_posting where dedupe_hash like ${`%${marker}`}`;
     await sql`delete from company where dedupe_key like ${`%${marker}`}`;
@@ -135,7 +136,7 @@ describeWithDatabase("media upload and placement integration", () => {
     const again = await service.upload(ownerId, bytes);
     expect(again.id).toBe(asset.id);
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count from media_asset where user_id = ${ownerId}
+      select count(*) as count from media_asset where user_id = ${ownerId}
     `)[0]?.count).toBe(1);
 
     // 확장자도 Content-Type도 믿지 않는다 — SVG는 스크립트를 담을 수 있다.
@@ -228,7 +229,7 @@ describeWithDatabase("media upload and placement integration", () => {
 
     // 이력에도 한 줄 남아 04c에서 되돌릴 수 있다.
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count from revision where block_id = ${placed.blockId}
+      select count(*) as count from revision where block_id = ${placed.blockId}
     `)[0]?.count).toBe(1);
   });
 });

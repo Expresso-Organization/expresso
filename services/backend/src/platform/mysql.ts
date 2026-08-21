@@ -229,6 +229,30 @@ function findKeyword(text: string, keyword: string): number {
   return -1;
 }
 
+function splitTopLevel(text: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let quote: string | null = null;
+  let start = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (quote) {
+      if (ch === "\\") i += 1;
+      else if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === "`") quote = ch;
+    else if (ch === "(") depth += 1;
+    else if (ch === ")") depth -= 1;
+    else if (ch === "," && depth === 0) {
+      parts.push(text.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(text.slice(start));
+  return parts;
+}
+
 function closingParen(text: string, open: number): number {
   let depth = 0;
   let quote: string | null = null;
@@ -277,15 +301,23 @@ async function execReturning(
     if (/\)\s*,\s*\(/.test(body.slice(close))) unsupported("여러 행을 한 번에 넣고 있습니다");
 
     const before = countPlaceholders(body.slice(0, open));
-    const inside = countPlaceholders(body.slice(open, close + 1));
-    if (inside !== cols.length) unsupported("열 수와 자리 표시 수가 다릅니다");
+    const exprs = splitTopLevel(body.slice(open + 1, close));
+    if (exprs.length !== cols.length) unsupported("열 수와 값 수가 다릅니다");
 
     const idAt = cols.indexOf("id");
     let statement = body;
     let bound = params;
     let id: unknown;
     if (idAt >= 0) {
-      id = params[before + idAt];
+      // id 앞에 놓인 값 중 자리 표시가 몇 개인지 세어 그 자리의 매개변수를 집는다
+      const expr = (exprs[idAt] ?? "").trim();
+      if (expr === "?") {
+        id = params[before + countPlaceholders(exprs.slice(0, idAt).join(","))];
+      } else if (/^'[^']*'$/.test(expr)) {
+        id = expr.slice(1, -1);
+      } else {
+        unsupported("id 값을 읽지 못했습니다");
+      }
     } else {
       id = randomUUID();
       statement =

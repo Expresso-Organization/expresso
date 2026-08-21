@@ -25,7 +25,7 @@ export class AccountLifecycleService {
 
   async exportData(userId: string, at = new Date()) {
     const account = (await this.#sql<Record<string, unknown>[]>`
-      select id, email::text, display_name, created_at from "user" where id = ${userId}
+      select id, email, display_name, created_at from \`user\` where id = ${userId}
     `)[0];
     if (!account) throw new AccountLifecycleError(404, "account not found");
     const [categories, records, skills, analyses, savedSearches, interests, brews, recipes, portfolios, deployments, assets, metrics, insights] = await Promise.all([
@@ -54,7 +54,7 @@ export class AccountLifecycleService {
     const cancellationToken = randomBytes(32).toString("base64url");
     const row = await this.#sql.begin(async (transaction) => {
       const account = (await transaction<{ id: string; deletion_requested_at: Date | string | null }[]>`
-        select id, deletion_requested_at from "user" where id = ${userId} for update
+        select id, deletion_requested_at from \`user\` where id = ${userId} for update
       `)[0];
       if (!account) throw new AccountLifecycleError(404, "account not found");
       if (account.deletion_requested_at) throw new AccountLifecycleError(409, "account deletion already requested");
@@ -112,20 +112,20 @@ export class AccountLifecycleService {
       const didPurge = await this.#sql.begin(async (transaction) => {
         const request = (await transaction<DeletionRow[]>`select * from account_deletion_request where id = ${id} and status = 'pending' and purge_after <= ${at} for update`)[0];
         if (!request || !request.user_id) return false;
-        const rawCount = Number((await transaction<{ count: number }[]>`select count(*)::integer as count from analytics_event_receipt where user_id = ${request.user_id}`)[0]?.count ?? 0);
+        const rawCount = Number((await transaction<{ count: number }[]>`select count(*) as count from analytics_event_receipt where user_id = ${request.user_id}`)[0]?.count ?? 0);
         await transaction`delete from analytics_event_receipt where user_id = ${request.user_id}`;
         await transaction`delete from visit_event where user_id = ${request.user_id}`;
-        await transaction`insert into account_deletion_event (request_id, phase, affected_rows, occurred_at) values (${id}, 'analytics_raw_purged', ${rawCount}, ${at}) on conflict do nothing`;
+        await transaction`insert ignore into account_deletion_event (request_id, phase, affected_rows, occurred_at) values (${id}, 'analytics_raw_purged', ${rawCount}, ${at})   `;
         const aggregateCount = Number((await transaction<{ count: number }[]>`
-          select (select count(*) from metric_daily where user_id = ${request.user_id})::integer
-            + (select count(*) from insight where user_id = ${request.user_id})::integer as count
+          select (select count(*) from metric_daily where user_id = ${request.user_id})
+            + (select count(*) from insight where user_id = ${request.user_id}) as count
         `)[0]?.count ?? 0);
         await transaction`delete from metric_daily where user_id = ${request.user_id}`;
         await transaction`delete from insight where user_id = ${request.user_id}`;
-        await transaction`insert into account_deletion_event (request_id, phase, affected_rows, occurred_at) values (${id}, 'analytics_aggregate_purged', ${aggregateCount}, ${at}) on conflict do nothing`;
-        await transaction`delete from "user" where id = ${request.user_id}`;
+        await transaction`insert ignore into account_deletion_event (request_id, phase, affected_rows, occurred_at) values (${id}, 'analytics_aggregate_purged', ${aggregateCount}, ${at})   `;
+        await transaction`delete from \`user\` where id = ${request.user_id}`;
         await transaction`update account_deletion_request set status = 'purged', purged_at = ${at}, phase = 'complete' where id = ${id}`;
-        await transaction`insert into account_deletion_event (request_id, phase, affected_rows, occurred_at) values (${id}, 'account_purged', 1, ${at}) on conflict do nothing`;
+        await transaction`insert ignore into account_deletion_event (request_id, phase, affected_rows, occurred_at) values (${id}, 'account_purged', 1, ${at})   `;
         return true;
       });
       if (didPurge) purged.push(id);

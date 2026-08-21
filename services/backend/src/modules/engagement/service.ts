@@ -45,12 +45,12 @@ export class EngagementService {
   constructor(sql: SqlTag) { this.#sql = sql; }
 
   async setPreference(userId: string, kind: NotificationKind, enabled: boolean) {
-    const user = (await this.#sql<{ id: string }[]>`select id from "user" where id = ${userId} and deletion_requested_at is null`)[0];
+    const user = (await this.#sql<{ id: string }[]>`select id from \`user\` where id = ${userId} and deletion_requested_at is null`)[0];
     if (!user) throw new EngagementError(404, "user not found");
     await this.#sql`
       insert into notification_preference (user_id, kind, enabled)
       values (${userId}, ${kind}, ${enabled})
-      on conflict (user_id, kind) do update set enabled = excluded.enabled, updated_at = now()
+      as new on duplicate key update enabled = new.enabled, updated_at = now()
     `;
     return { kind, enabled };
   }
@@ -58,7 +58,7 @@ export class EngagementService {
   async preferences(userId: string) {
     const rows = await this.#sql<{ kind: NotificationKind; enabled: boolean }[]>`
       select kinds.kind, coalesce(preference.enabled, true) as enabled
-      from unnest(array['deadline','saved_search','generation','traffic']::text[]) as kinds(kind)
+      from unnest(array['deadline','saved_search','generation','traffic'][]) as kinds(kind)
       left join notification_preference as preference on preference.user_id = ${userId} and preference.kind = kinds.kind
       order by kinds.kind
     `;
@@ -74,9 +74,9 @@ export class EngagementService {
       const date = kstDate(at);
       const row = (await transaction<(NotificationRow & { inserted: boolean })[]>`
         with inserted as (
-          insert into notification (user_id, kind, target_url, dedupe_key, dedupe_date, created_at, next_attempt_at)
+          insert ignore into notification (user_id, kind, target_url, dedupe_key, dedupe_date, created_at, next_attempt_at)
           values (${userId}, ${kind}, ${targetUrl}, ${dedupeKey}, ${date}, ${at}, ${at})
-          on conflict (user_id, dedupe_key, dedupe_date) do nothing
+            
           returning *, true as inserted
         )
         select * from inserted
@@ -185,7 +185,7 @@ export class EngagementService {
     const pattern = `%${input.q}%`;
     const rows = await this.#sql<SearchRow[]>`
       with resources as (
-        select record.id, 'record'::text as resource_type, record.title, record.status as subtitle, lower(record.title) as sort_title
+        select record.id, 'record' as resource_type, record.title, record.status as subtitle, lower(record.title) as sort_title
         from record where record.user_id = ${userId} and record.deleted_at is null
         union all
         select portfolio.id, 'portfolio', portfolio.title, portfolio.status, lower(portfolio.title)
@@ -197,7 +197,7 @@ export class EngagementService {
       )
       select id, resource_type, title, subtitle, sort_title from resources
       where title ilike ${pattern}
-        and (${cursor === null} or (sort_title, resource_type, id) > (${cursor?.title ?? ""}, ${cursor?.type ?? ""}, ${cursor?.id ?? "00000000-0000-0000-0000-000000000000"}::uuid))
+        and (${cursor === null} or (sort_title, resource_type, id) > (${cursor?.title ?? ""}, ${cursor?.type ?? ""}, ${cursor?.id ?? "00000000-0000-0000-0000-000000000000"}))
       order by sort_title, resource_type, id
       limit ${input.limit + 1}
     `;

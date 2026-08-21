@@ -255,17 +255,15 @@ export class JobAnalysisService {
               ${jobAnalysisId}, ${analysis.user_id}, ${analysis.result_version},
               ${transaction.json(previousRows.map(mapRequirement) as JSONValue)}, now()
             )
-            on conflict (job_analysis_id)
-            do update set
-              previous_version = excluded.previous_version,
-              requirements = excluded.requirements,
-              archived_at = excluded.archived_at
+            as new on duplicate key update previous_version = new.previous_version,
+              requirements = new.requirements,
+              archived_at = new.archived_at
           `;
         }
         // 같은 공고를 두 사람이 동시에 처음 읽으면 요건이 두 벌 들어간다.
         // 공고 하나에 한 번만 쓰이도록 잠근다.
         await transaction`
-          select pg_advisory_xact_lock(hashtext(${analysis.job_posting_id})::bigint)
+          select pg_advisory_xact_lock(hashtext(${analysis.job_posting_id}))
         `;
 
         // 요건은 처음 뽑을 때만 쓴다. 이미 있으면 그대로 두고, 그래서 다른
@@ -443,8 +441,8 @@ export class JobAnalysisService {
       }
       const impacts = await transaction<ImpactRow[]>`
         select
-          count(distinct brew.id)::integer as brew_count,
-          count(distinct recipe.id)::integer as recipe_count
+          count(distinct brew.id) as brew_count,
+          count(distinct recipe.id) as recipe_count
         from brew
         left join recipe on recipe.brew_id = brew.id and recipe.user_id = brew.user_id
         where brew.user_id = ${userId} and brew.job_analysis_id = ${jobAnalysisId}

@@ -1,4 +1,5 @@
 import type { SqlTag } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
@@ -14,7 +15,7 @@ const config: RuntimeConfig = {
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -23,7 +24,7 @@ const config: RuntimeConfig = {
 };
 
 describeWithDatabase("커리어 프로필 (온보딩 1단계)", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 2 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const app = buildApi({
     config,
     identityService: new IdentityService(sql),
@@ -43,7 +44,7 @@ describeWithDatabase("커리어 프로필 (온보딩 1단계)", () => {
   beforeAll(async () => {
     await sql`
       insert into plan (code, generation_quota) values ('free', 3)
-      on conflict (code) do update set generation_quota = plan.generation_quota
+      as new on duplicate key update generation_quota = plan.generation_quota
     `;
     await app.ready();
     const signup = await app.inject({
@@ -56,7 +57,7 @@ describeWithDatabase("커리어 프로필 (온보딩 1단계)", () => {
   });
 
   afterAll(async () => {
-    await sql`delete from "user" where email = ${email}`;
+    await sql`delete from \`user\` where email = ${email}`;
     await app.close();
     await sql.end({ timeout: 5 });
   });

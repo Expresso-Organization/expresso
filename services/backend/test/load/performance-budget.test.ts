@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../src/platform/mysql.js";
 import { performance } from "node:perf_hooks";
 
 import { migrate } from "@expresso/database";
@@ -33,18 +34,18 @@ describeWithDatabase("release performance and backpressure budget", () => {
 
   beforeAll(async () => {
     const root = new URL(rootDatabaseUrl!); const adminUrl = new URL(root); adminUrl.pathname = "/postgres";
-    admin = postgres(adminUrl.toString(), { max: 1 }); await admin.unsafe(`create database "${databaseName}"`);
+    admin = createMysqlResource(adminUrl.toString().sql, { max: 1 }); await admin.unsafe(`create database "${databaseName}"`);
     const isolated = new URL(root); isolated.pathname = `/${databaseName}`; await migrate({ databaseUrl: isolated.toString() });
-    sql = postgres(isolated.toString(), { max: 20 });
+    sql = createMysqlResource(isolated.toString().sql, { max: 20 });
     const planId = (await sql<IdRow[]>`select id from plan where code = 'pro'`)[0]?.id;
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
     categoryId = (await sql<IdRow[]>`select id from category where key = 'experience' and is_system`)[0]?.id ?? "";
     if (!planId || !templateId || !categoryId) throw new Error("load seed missing");
-    const userId = (await sql<IdRow[]>`insert into "user" (email, display_name, plan_id) values ('load@example.com', 'Load', ${planId}) returning id`)[0]?.id;
+    const userId = (await sql<IdRow[]>`insert into \`user\` (email, display_name, plan_id) values ('load@example.com', 'Load', ${planId}) returning id`)[0]?.id;
     if (!userId) throw new Error("load user missing");
     const identity = new IdentityService(sql); token = (await identity.issueSession({ userId })).accessToken;
     const companyId = (await sql<IdRow[]>`insert into company (name, dedupe_key) values ('Load', ${databaseName}) returning id`)[0]?.id;
-    const postingId = companyId && (await sql<IdRow[]>`insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash) values (${companyId}, 'user_input', 'Load', ${"l".repeat(250)}, '{}'::jsonb, ${databaseName}) returning id`)[0]?.id;
+    const postingId = companyId && (await sql<IdRow[]>`insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash) values (${companyId}, 'user_input', 'Load', ${"l".repeat(250)}, '{}', ${databaseName}) returning id`)[0]?.id;
     const analysisId = postingId && (await sql<IdRow[]>`insert into job_analysis (user_id, job_posting_id, input_type, status) values (${userId}, ${postingId}, 'paste', 'done') returning id`)[0]?.id;
     const brewId = analysisId && (await sql<IdRow[]>`insert into brew (user_id, job_analysis_id, length_preset, status) values (${userId}, ${analysisId}, 'single', 'done') returning id`)[0]?.id;
     if (!brewId) throw new Error("load brew missing");

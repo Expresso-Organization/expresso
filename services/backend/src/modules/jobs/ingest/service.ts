@@ -128,9 +128,8 @@ export class JobIngestService {
     const row = (await this.#sql<SourceRow[]>`
       insert into job_source (provider, token, display_name, site_url)
       values (${input.provider}, ${input.token}, ${input.displayName}, ${input.siteUrl ?? null})
-      on conflict (provider, token) do update set
-        display_name = excluded.display_name, is_active = true,
-        site_url = coalesce(excluded.site_url, job_source.site_url)
+      as new on duplicate key update display_name = new.display_name, is_active = true,
+        site_url = coalesce(new.site_url, job_source.site_url)
       returning *
     `)[0];
     if (!row) throw new Error("job source was not persisted");
@@ -148,7 +147,7 @@ export class JobIngestService {
     const sources = only && only.length > 0
       ? await this.#sql<SourceRow[]>`
         select * from job_source
-        where is_active and id = any(${only}::uuid[])
+        where is_active and id = any(${only}[])
         order by provider, token
       `
       : await this.#sql<SourceRow[]>`
@@ -357,7 +356,7 @@ export class JobIngestService {
     extra: { read: number; failed: number; skipped: PostingFactsRun["skipped"] },
   ): Promise<PostingFactsRun> {
     const [remaining] = await this.#sql<{ count: string }[]>`
-      select count(*)::text as count from job_posting where facts_read_at is null
+      select count(*) as count from job_posting where facts_read_at is null
     `;
     return PostingFactsRunSchema.parse({
       startedAt: at.toISOString(),
@@ -406,8 +405,7 @@ export class JobIngestService {
       const company = (await transaction<{ id: string }[]>`
         insert into company (name, dedupe_key, domain)
         values (${posting.companyName}, ${companyKey}, ${site})
-        on conflict (dedupe_key) do update set
-          name = company.name, domain = coalesce(company.domain, excluded.domain)
+        as new on duplicate key update name = company.name, domain = coalesce(company.domain, new.domain)
         returning id
       `)[0];
       if (!company) throw new Error("company was not persisted");
@@ -421,7 +419,7 @@ export class JobIngestService {
           employment_type, experience_label, team, job_family, expires_at
         ) values (
           ${company.id}, 'api', ${externalId}, ${posting.title}, ${posting.descriptionRaw},
-          '{}'::jsonb, ${hash}, ${posting.sourceUrl}, ${source.display_name},
+          '{}', ${hash}, ${posting.sourceUrl}, ${source.display_name},
           ${posting.location}, ${normalizeRegion(posting.location)},
           ${posting.employmentType}, ${posting.experienceLabel},
           ${posting.team}, ${family}, ${posting.expiresAt}

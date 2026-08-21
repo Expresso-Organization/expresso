@@ -4,6 +4,7 @@ import {
   IssuedIdentitySessionSchema,
 } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
@@ -18,7 +19,7 @@ const config: RuntimeConfig = {
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -35,7 +36,7 @@ interface TokenHashRow {
 }
 
 describeWithDatabase("identity HTTP integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 2 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identityService = new IdentityService(sql);
   const app = buildApi({ config, identityService });
   let firstUserId: string;
@@ -45,14 +46,14 @@ describeWithDatabase("identity HTTP integration", () => {
     const plans = await sql<IdRow[]>`
       insert into plan (code, generation_quota)
       values ('free', 3)
-      on conflict (code) do update set generation_quota = plan.generation_quota
+      as new on duplicate key update generation_quota = plan.generation_quota
       returning id
     `;
     const planId = plans[0]?.id;
     if (!planId) throw new Error("test plan was not available");
 
     const users = await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values
         (${`identity-a-${crypto.randomUUID()}@example.com`}, 'Identity A', ${planId}),
         (${`identity-b-${crypto.randomUUID()}@example.com`}, 'Identity B', ${planId})
@@ -67,7 +68,7 @@ describeWithDatabase("identity HTTP integration", () => {
 
   afterAll(async () => {
     if (firstUserId && secondUserId) {
-      await sql`delete from "user" where id in (${firstUserId}, ${secondUserId})`;
+      await sql`delete from \`user\` where id in (${firstUserId}, ${secondUserId})`;
     }
     await app.close();
     await sql.end({ timeout: 5 });

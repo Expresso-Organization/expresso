@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
 import { JobPostingListResponseSchema } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/mysql.js";
@@ -17,7 +18,7 @@ const config: RuntimeConfig = {
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -41,7 +42,7 @@ interface IdRow {
  * 이유는 하나다 — **회사가 하나뿐이었다.** 그러면 비율이 늘 1이다.
  */
 describeWithDatabase("회사 필터", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 4 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identity = new IdentityService(sql);
   const app = buildApi({
     config,
@@ -60,7 +61,7 @@ describeWithDatabase("회사 필터", () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("free plan missing");
     userId = (await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values (${`company-filter-${marker}@example.com`}, '회사 필터', ${planId})
       returning id
     `)[0]!.id;
@@ -98,7 +99,7 @@ describeWithDatabase("회사 필터", () => {
   afterAll(async () => {
     await sql`delete from job_posting where company_id in (${smallCompanyId}, ${bigCompanyId})`;
     await sql`delete from company where id in (${smallCompanyId}, ${bigCompanyId})`;
-    await sql`delete from "user" where id = ${userId}`;
+    await sql`delete from \`user\` where id = ${userId}`;
     await app.close();
     await sql.end({ timeout: 5 });
   });

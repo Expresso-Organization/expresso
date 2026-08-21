@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../src/platform/mysql.js";
 
 import { migrate } from "@expresso/database";
 import postgres from "postgres";
@@ -17,9 +18,9 @@ describeWithDatabase("release fault injection audit", () => {
 
   beforeAll(async () => {
     const root = new URL(rootDatabaseUrl!); const adminUrl = new URL(root); adminUrl.pathname = "/postgres";
-    admin = postgres(adminUrl.toString(), { max: 1 }); await admin.unsafe(`create database "${databaseName}"`);
+    admin = createMysqlResource(adminUrl.toString().sql, { max: 1 }); await admin.unsafe(`create database "${databaseName}"`);
     const isolated = new URL(root); isolated.pathname = `/${databaseName}`; await migrate({ databaseUrl: isolated.toString() });
-    sql = postgres(isolated.toString(), { max: 4 });
+    sql = createMysqlResource(isolated.toString().sql, { max: 4 });
   }, 30_000);
 
   afterAll(async () => {
@@ -32,7 +33,7 @@ describeWithDatabase("release fault injection audit", () => {
       await addOutboxEvent(transaction, { topic: "fault.test", payload: { safe: true }, idempotencyKey: "fault-rollback-0001" });
       throw new Error("forced transaction failure");
     })).rejects.toThrow(/forced/);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from platform_outbox where idempotency_key = 'fault-rollback-0001'`)[0]?.count).toBe(0);
+    expect((await sql<{ count: number }[]>`select count(*) as count from platform_outbox where idempotency_key = 'fault-rollback-0001'`)[0]?.count).toBe(0);
   });
 
   it("preserves an outbox event across a disconnected queue and publishes once after recovery", async () => {

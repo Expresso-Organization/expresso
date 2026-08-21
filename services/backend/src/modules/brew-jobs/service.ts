@@ -71,11 +71,9 @@ export class BrewJobService {
       if (!owned) throw new BrewJobError(404, "brew not found");
 
       const inserted = (await transaction<{ id: string; input: { brewId?: string } }[]>`
-        insert into brew_job (user_id, type, input, input_idempotency_key)
+        insert ignore into brew_job (user_id, type, input, input_idempotency_key)
         values (${userId}, ${type}, ${transaction.json(input)}, ${idempotencyKey})
-        on conflict (user_id, input_idempotency_key)
-          where input_idempotency_key is not null
-        do nothing returning id, input
+        returning id, input
       `)[0] ?? (await transaction<{ id: string; input: { brewId?: string } }[]>`
         select id, input from brew_job
         where user_id = ${userId} and input_idempotency_key = ${idempotencyKey}

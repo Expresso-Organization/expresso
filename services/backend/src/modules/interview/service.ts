@@ -601,7 +601,7 @@ export class InterviewService {
         await transaction`
           update answer_record_change
           set change_type = 'strengthened',
-              changed_fields = '["title","body_md"]'::jsonb,
+              changed_fields = '[\`title\`,\`body_md\`]',
               source_quote = ${input.transcript}, created_at = now()
           where user_id = ${userId} and answer_id = ${existing.id}
         `;
@@ -616,7 +616,7 @@ export class InterviewService {
           user_id, category_id, title, status, origin, properties, body_md
         ) values (
           ${userId}, ${categoryId}, ${fallbackTitle(input.transcript)},
-          'draft', 'interview', '{}'::jsonb, ${input.transcript}
+          'draft', 'interview', '{}', ${input.transcript}
         ) returning id
       `)[0]?.id;
       if (!recordId) throw new Error("interview record was not persisted");
@@ -635,7 +635,7 @@ export class InterviewService {
           user_id, answer_id, record_id, change_type, changed_fields, source_quote
         ) values (
           ${userId}, ${answerId}, ${recordId}, 'created',
-          '["title","body_md"]'::jsonb, ${input.transcript}
+          '[\`title\`,\`body_md\`]', ${input.transcript}
         )
       `;
       // 정리는 뒤에서 따라온다. 답을 저장하는 일이 계약을 기다리면 안 된다 —
@@ -655,10 +655,8 @@ export class InterviewService {
     await this.#sql`
       with progress as (
         select
-          count(answer.id)::integer as answered_count,
-          coalesce(min(question.order_no) filter (
-            where answer.id is null and not question.skipped
-          ), count(*)::integer) as current_order,
+          count(answer.id) as answered_count,
+          coalesce(min(case when answer.id is null and not question.skipped then question.order_no end), count(*)) as current_order,
           bool_and(answer.id is not null or question.skipped) as finished
         from question
         left join answer on answer.user_id = question.user_id and answer.question_id = question.id

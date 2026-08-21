@@ -3,6 +3,7 @@ import {
   type PlanCode,
 } from "@expresso/contracts";
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
@@ -19,7 +20,7 @@ const config: RuntimeConfig = {
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -38,7 +39,7 @@ interface IdRow {
 }
 
 describeWithDatabase("entitlement integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 3 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identityService = new IdentityService(sql);
   const entitlementService = new EntitlementService(sql);
   const app = buildApi({ config, identityService, entitlementService });
@@ -63,7 +64,7 @@ describeWithDatabase("entitlement integration", () => {
 
     for (const planCode of ["free", "pro", "team"] as const) {
       const rows = await sql<IdRow[]>`
-        insert into "user" (email, display_name, plan_id)
+        insert into \`user\` (email, display_name, plan_id)
         values (
           ${`entitlement-${planCode}-${randomUUID()}@example.com`},
           ${`Entitlement ${planCode}`},
@@ -103,7 +104,7 @@ describeWithDatabase("entitlement integration", () => {
 
   afterAll(async () => {
     const ids = Object.values(userIds);
-    if (ids.length > 0) await sql`delete from "user" where id in ${sql(ids)}`;
+    if (ids.length > 0) await sql`delete from \`user\` where id in ${sql(ids)}`;
     await app.close();
     await sql.end({ timeout: 5 });
   });
@@ -134,8 +135,7 @@ describeWithDatabase("entitlement integration", () => {
     await sql`
       insert into usage_counter (user_id, period_start, used, resets_at)
       values (${freeUserId}, '2026-08-01', ${freeQuota}, '2026-08-31T15:00:00Z')
-      on conflict (user_id, period_start)
-      do update set used = excluded.used, resets_at = excluded.resets_at
+      as new on duplicate key update used = new.used, resets_at = new.resets_at
     `;
 
     const beforeReset = await entitlementService.check(

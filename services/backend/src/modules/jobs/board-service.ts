@@ -469,13 +469,13 @@ export class JobBoardService {
         brew.id,
         brew.status,
         (
-          select coalesce(sum(interview_session.answered_count), 0)::integer
+          select coalesce(sum(interview_session.answered_count), 0)
           from interview_session
           where interview_session.user_id = brew.user_id
             and interview_session.brew_id = brew.id
         ) as answered,
         (
-          select coalesce(sum(interview_session.question_count), 0)::integer
+          select coalesce(sum(interview_session.question_count), 0)
           from interview_session
           where interview_session.user_id = brew.user_id
             and interview_session.brew_id = brew.id
@@ -490,7 +490,7 @@ export class JobBoardService {
       join job_analysis
         on job_analysis.user_id = brew.user_id and job_analysis.id = brew.job_analysis_id
       where brew.user_id = ${userId}
-        and job_analysis.job_posting_id = any(${jobPostingIds}::uuid[])
+        and job_analysis.job_posting_id = any(${jobPostingIds}[])
       order by job_analysis.job_posting_id, brew.updated_at desc, brew.id desc
     `;
     return new Map(rows.map((row) => [row.job_posting_id, row]));
@@ -527,18 +527,15 @@ export class JobBoardService {
       `,
       sql<CategoryCountRow[]>`
         select
-          count(*)::integer as total,
-          count(*) filter (
-            where job_posting.work_type ilike '%리모트%'
-          )::integer as remote,
-          count(*) filter (
-            where job_posting.expires_at >= now()
-              and job_posting.expires_at < now() + interval '7 days'
-          )::integer as urgent
+          count(*) as total,
+          count(case when job_posting.work_type ilike '%리모트%' then 1 end) as remote,
+          count(case when job_posting.expires_at >= now( then 1 end)
+              and job_posting.expires_at < now() + interval 7 day
+          ) as urgent
         ${without("category")}
       `,
       sql<FacetRow[]>`
-        select job_posting.job_family as label, count(*)::integer as count
+        select job_posting.job_family as label, count(*) as count
         ${without("category")}
           and job_posting.job_family is not null
         group by job_posting.job_family
@@ -550,13 +547,13 @@ export class JobBoardService {
       // 지역으로 세고 나라로 묶는 것은 DB가 나라를 모르기 때문이다. 지역→나라
       // 표는 지역을 만드는 곳(`classify.ts`)에 있고, 그 한 표만 본다.
       sql<FacetRow[]>`
-        select job_posting.location_region as label, count(*)::integer as count
+        select job_posting.location_region as label, count(*) as count
         ${without("country")}
           and job_posting.location_region is not null
         group by job_posting.location_region
         order by count(*) desc, job_posting.location_region
       `,
-      sql<{ total: number }[]>`select count(*)::integer as total ${scope}`,
+      sql<{ total: number }[]>`select count(*) as total ${scope}`,
       // 연차 칸막이는 **상한**이라 서로 겹친다. 한 번에 세고 뒤에서 편다.
       sql<Record<string, number>[]>`
         select ${sql.unsafe(EXPERIENCE_LEVELS
@@ -576,7 +573,7 @@ export class JobBoardService {
         ${without("workType")}
       `,
       sql<{ key: string; label: string; count: number }[]>`
-        select company.id as key, company.name as label, count(*)::integer as count
+        select company.id as key, company.name as label, count(*) as count
         ${without("company")}
         group by company.id, company.name
         order by count(*) desc, company.name
@@ -600,20 +597,20 @@ export class JobBoardService {
       ? [[] as FacetRow[], [] as FacetRow[]]
       : await Promise.all([
           sql<FacetRow[]>`
-            select technology as label, count(*)::integer as count
+            select technology as label, count(*) as count
             from (select job_posting.requirements ${scope}) as scoped
             cross join lateral jsonb_array_elements_text(
-              coalesce(scoped.requirements -> 'technologies', '[]'::jsonb)
+              coalesce(scoped.requirements -> '$.technologies', '[]')
             ) as technology
             group by technology
             order by count(*) desc, technology
             limit 8
           `,
           sql<FacetRow[]>`
-            select technology as label, count(*)::integer as count
+            select technology as label, count(*) as count
             from (select match_score.axes ${scope}) as scoped
             cross join lateral jsonb_array_elements_text(
-              coalesce(scoped.axes -> 'technology' -> 'missing', '[]'::jsonb)
+              coalesce(scoped.axes -> '$.technology' -> '$.missing', '[]')
             ) as technology
             group by technology
             order by count(*) desc, technology
@@ -751,8 +748,8 @@ export class JobBoardService {
         ? Promise.resolve([] as { position: number; total: number }[])
         : sql<{ position: number; total: number }[]>`
             select
-              count(*) filter (where total > ${posting.match_total}::numeric)::integer + 1 as position,
-              count(*)::integer as total
+              count(*) filter (where total > ${posting.match_total}) + 1 as position,
+              count(*) as total
             from match_score
             where user_id = ${userId}
           `,
@@ -781,7 +778,7 @@ export class JobBoardService {
       : new Map(
           (await sql<RecordRow[]>`
             select id, title from record
-            where user_id = ${userId} and id = any(${coveredIds}::uuid[])
+            where user_id = ${userId} and id = any(${coveredIds}[])
           `).map((record) => [record.id, record.title]),
         );
 

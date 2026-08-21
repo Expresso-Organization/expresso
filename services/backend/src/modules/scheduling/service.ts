@@ -77,9 +77,9 @@ export class SchedulingService {
       for (const definition of definitions) {
         const scheduledFor = new Date(definition.next_run_at);
         const run = (await transaction<{ id: string }[]>`
-          insert into scheduled_job_run (job_key, scheduled_for)
+          insert ignore into scheduled_job_run (job_key, scheduled_for)
           values (${definition.job_key}, ${scheduledFor})
-          on conflict (job_key, scheduled_for) do nothing returning id
+            returning id
         `)[0] ?? (await transaction<{ id: string }[]>`
           select id from scheduled_job_run where job_key = ${definition.job_key} and scheduled_for = ${scheduledFor}
         `)[0];

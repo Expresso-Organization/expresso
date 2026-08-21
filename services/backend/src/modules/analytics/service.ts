@@ -134,8 +134,8 @@ export class AnalyticsService {
         return { accepted: true, duplicate: true, eventId: input.eventId };
       }
       const recent = Number((await transaction<{ count: number }[]>`
-        select count(*)::integer as count from analytics_event_receipt
-        where visitor_hash = ${sessionHash} and received_at > now() - interval '1 minute'
+        select count(*) as count from analytics_event_receipt
+        where visitor_hash = ${sessionHash} and received_at > now() - interval 1 minute
       `)[0]?.count ?? 0);
       if (recent >= this.#rateLimit) throw new AnalyticsError(429, "analytics rate limit exceeded");
       const occurredAt = new Date(input.occurredAt);
@@ -217,17 +217,17 @@ export class AnalyticsService {
           and not is_owner
       )
       select
-        (select count(*)::integer from eligible_visits) as visits,
-        (select count(*)::integer from eligible_visits where completed) as completes,
-        (select count(*)::integer from conversion_event join eligible_visits on eligible_visits.id = conversion_event.visit_event_id
+        (select count(*) from eligible_visits) as visits,
+        (select count(*) from eligible_visits where completed) as completes,
+        (select count(*) from conversion_event join eligible_visits on eligible_visits.id = conversion_event.visit_event_id
           where conversion_event.kind = 'contact_click' and occurred_at >= ${start} and occurred_at < ${end}) as contacts,
-        (select count(*)::integer from conversion_event join eligible_visits on eligible_visits.id = conversion_event.visit_event_id
+        (select count(*) from conversion_event join eligible_visits on eligible_visits.id = conversion_event.visit_event_id
           where conversion_event.kind = 'file_download' and occurred_at >= ${start} and occurred_at < ${end}) as downloads,
-        (select count(*)::integer from conversion_event join eligible_visits on eligible_visits.id = conversion_event.visit_event_id
+        (select count(*) from conversion_event join eligible_visits on eligible_visits.id = conversion_event.visit_event_id
           where conversion_event.kind = 'link_click' and occurred_at >= ${start} and occurred_at < ${end}) as links,
-        (select count(*)::integer from section_view join eligible_visits on eligible_visits.id = section_view.visit_event_id
+        (select count(*) from section_view join eligible_visits on eligible_visits.id = section_view.visit_event_id
           where dwell_ms >= 1000 and occurred_at >= ${start} and occurred_at < ${end}) as section_views,
-        (select coalesce(sum(dwell_ms), 0)::integer from section_view join eligible_visits on eligible_visits.id = section_view.visit_event_id
+        (select coalesce(sum(dwell_ms), 0) from section_view join eligible_visits on eligible_visits.id = section_view.visit_event_id
           where dwell_ms >= 1000 and occurred_at >= ${start} and occurred_at < ${end}) as dwell_ms
     `)[0] ?? { visits: 0, completes: 0, contacts: 0, downloads: 0, links: 0, section_views: 0, dwell_ms: 0 };
     const metrics = {
@@ -243,8 +243,7 @@ export class AnalyticsService {
       for (const [key, value] of Object.entries(metrics)) await transaction`
         insert into metric_daily (user_id, deployment_id, date, metric_key, value, sample_size)
         values (${deployment.user_id}, ${deploymentId}, ${date}, ${key}, ${value}, ${values.visits})
-        on conflict (user_id, deployment_id, date, metric_key)
-        do update set value = excluded.value, sample_size = excluded.sample_size
+        as new on duplicate key update value = new.value, sample_size = new.sample_size
       `;
     });
     return metrics;
@@ -307,31 +306,31 @@ export class AnalyticsService {
       const [sections, referrers, domains] = await Promise.all([
         this.#sql<{ title: string | null; views: number; dwell_ms: number }[]>`
           select recipe_section.title,
-                 count(*)::integer as views,
-                 coalesce(sum(section_view.dwell_ms), 0)::integer as dwell_ms
+                 count(*) as views,
+                 coalesce(sum(section_view.dwell_ms), 0) as dwell_ms
           from section_view
           join visit_event on visit_event.id = section_view.visit_event_id
           join portfolio_section on portfolio_section.id = section_view.portfolio_section_id
           left join recipe_section on recipe_section.id = portfolio_section.recipe_section_id
           where section_view.user_id = ${userId} and visit_event.deployment_id = ${deploymentId}
-            and section_view.occurred_at >= ${start}::date
-            and section_view.occurred_at < (${end}::date + 1)
+            and section_view.occurred_at >= ${start}
+            and section_view.occurred_at < (${end} + 1)
           group by recipe_section.title, portfolio_section.order_no
           order by portfolio_section.order_no
         `,
         this.#sql<{ origin: string; visits: number }[]>`
-          select coalesce(referrer, '(직접 방문)') as origin, count(*)::integer as visits
+          select coalesce(referrer, '(직접 방문)') as origin, count(*) as visits
           from visit_event
           where user_id = ${userId} and deployment_id = ${deploymentId} and not is_owner
-            and started_at >= ${start}::date and started_at < (${end}::date + 1)
+            and started_at >= ${start} and started_at < (${end} + 1)
           group by 1 order by 2 desc limit 6
         `,
         this.#sql<{ domain: string; visits: number }[]>`
-          select org_domain as domain, count(*)::integer as visits
+          select org_domain as domain, count(*) as visits
           from visit_event
           where user_id = ${userId} and deployment_id = ${deploymentId} and not is_owner
             and org_domain is not null
-            and started_at >= ${start}::date and started_at < (${end}::date + 1)
+            and started_at >= ${start} and started_at < (${end} + 1)
           group by 1 order by 2 desc limit 6
         `,
       ]);
@@ -360,7 +359,7 @@ export class AnalyticsService {
 
   async insight(userId: string, deploymentId: string, start: string, end: string, draft?: InsightDraft) {
     const rows = await this.#sql<MetricRow[]>`
-      select metric_key, sum(value) as value, max(sample_size)::integer as sample_size
+      select metric_key, sum(value) as value, max(sample_size) as sample_size
       from metric_daily where user_id = ${userId} and deployment_id = ${deploymentId}
         and date between ${start} and ${end}
       group by metric_key
@@ -376,7 +375,7 @@ export class AnalyticsService {
     );
     await this.#sql`
       insert into insight (user_id, deployment_id, period, narrative, evidence_metrics, suggestions)
-      values (${userId}, ${deploymentId}, daterange(${start}::date, (${end}::date + 1), '[)'), ${generated.narrative}, ${generated.evidenceMetrics}, ${this.#sql.json(generated.suggestions)})
+      values (${userId}, ${deploymentId}, daterange(${start}, (${end} + 1), '[)'), ${generated.narrative}, ${generated.evidenceMetrics}, ${this.#sql.json(generated.suggestions)})
     `;
     return InsightSchema.parse({ visibility: "visible", ...generated, period: { start, end }, sampleSize });
   }
@@ -408,7 +407,7 @@ export class AnalyticsService {
       return { preset, start: shiftDate(today, 1 - (preset === "7d" ? 7 : 30)), end: today };
     }
     const first = (await this.#sql<{ date: string | null }[]>`
-      select min((started_at at time zone 'UTC')::date)::text as date
+      select min((started_at at time zone 'UTC')) as date
       from visit_event where deployment_id = ${deploymentId} and not is_owner
     `)[0]?.date;
     return { preset, start: first && first < today ? first : today, end: today };
@@ -416,7 +415,7 @@ export class AnalyticsService {
 
   async #metrics(userId: string, deploymentId: string, start: string, end: string) {
     const rows = await this.#sql<{ metric_key: string; value: string }[]>`
-      select metric_key, sum(value)::text as value from metric_daily
+      select metric_key, sum(value) as value from metric_daily
       where user_id = ${userId} and deployment_id = ${deploymentId}
         and date between ${start} and ${end}
       group by metric_key
@@ -439,16 +438,16 @@ export class AnalyticsService {
   async #coverage(userId: string, deploymentId: string, start: string, end: string) {
     const rows = await this.#sql<{ date: string; aggregated: boolean }[]>`
       with visited as (
-        select distinct (started_at at time zone 'UTC')::date as date
+        select distinct (started_at at time zone 'UTC') as date
         from visit_event
         where user_id = ${userId} and deployment_id = ${deploymentId} and not is_owner
-          and (started_at at time zone 'UTC')::date between ${start} and ${end}
+          and (started_at at time zone 'UTC') between ${start} and ${end}
       ), aggregated as (
         select distinct date from metric_daily
         where user_id = ${userId} and deployment_id = ${deploymentId}
           and metric_key = 'visits' and date between ${start} and ${end}
       )
-      select visited.date::text as date, (aggregated.date is not null) as aggregated
+      select visited.date as date, (aggregated.date is not null) as aggregated
       from visited left join aggregated on aggregated.date = visited.date
       order by visited.date
     `;
@@ -488,9 +487,9 @@ export class AnalyticsService {
           ? Promise.resolve(null)
           : this.#metrics(userId, deploymentId, shiftDate(start, -length), shiftDate(start, -1)),
         this.#sql<{ date: string; visits: number; completes: number }[]>`
-          select date::text as date,
-                 coalesce(max(value) filter (where metric_key = 'visits'), 0)::integer as visits,
-                 coalesce(max(value) filter (where metric_key = 'completes'), 0)::integer as completes
+          select date as date,
+                 coalesce(max(case when metric_key = 'visits' then value end), 0) as visits,
+                 coalesce(max(case when metric_key = 'completes' then value end), 0) as completes
           from metric_daily
           where user_id = ${userId} and deployment_id = ${deploymentId}
             and date between ${start} and ${end}
@@ -499,30 +498,30 @@ export class AnalyticsService {
         this.#sql<{ id: string; title: string; views: number; dwell_ms: number }[]>`
           select portfolio_section.id,
                  coalesce(recipe_section.title, '') as title,
-                 count(*)::integer as views,
-                 coalesce(sum(section_view.dwell_ms), 0)::integer as dwell_ms
+                 count(*) as views,
+                 coalesce(sum(section_view.dwell_ms), 0) as dwell_ms
           from section_view
           join visit_event on visit_event.id = section_view.visit_event_id
           join portfolio_section on portfolio_section.id = section_view.portfolio_section_id
           left join recipe_section on recipe_section.id = portfolio_section.recipe_section_id
           where section_view.user_id = ${userId} and visit_event.deployment_id = ${deploymentId}
             and not visit_event.is_owner and section_view.dwell_ms >= 1000
-            and (section_view.occurred_at at time zone 'UTC')::date = any(${counted}::date[])
+            and (section_view.occurred_at at time zone 'UTC') = any(${counted}[])
           group by portfolio_section.id, recipe_section.title
           order by dwell_ms desc limit 50
         `,
         this.#sql<{ origin: string | null; visits: number }[]>`
-          select referrer as origin, count(*)::integer as visits
+          select referrer as origin, count(*) as visits
           from visit_event
           where user_id = ${userId} and deployment_id = ${deploymentId} and not is_owner
-            and (started_at at time zone 'UTC')::date = any(${counted}::date[])
+            and (started_at at time zone 'UTC') = any(${counted}[])
           group by referrer order by visits desc limit 8
         `,
         this.#sql<StoredInsightRow[]>`
           select narrative, evidence_metrics, suggestions, generated_at
           from insight
           where user_id = ${userId} and deployment_id = ${deploymentId}
-            and period = daterange(${start}::date, (${end}::date + 1), '[)')
+            and period = daterange(${start}, (${end} + 1), '[)')
           order by generated_at desc limit 1
         `,
         this.#sql<{ id: string; name: string; period: string; is_default: boolean }[]>`
@@ -537,15 +536,15 @@ export class AnalyticsService {
     const domains = entitlement?.allowed
       ? await this.#sql<{ domain: string; visits: number; dwell_ms: number; last_visit_at: Date }[]>`
           select visit_event.org_domain as domain,
-                 count(distinct visit_event.id)::integer as visits,
-                 coalesce(sum(section_view.dwell_ms), 0)::integer as dwell_ms,
+                 count(distinct visit_event.id) as visits,
+                 coalesce(sum(section_view.dwell_ms), 0) as dwell_ms,
                  max(visit_event.started_at) as last_visit_at
           from visit_event
           left join section_view on section_view.visit_event_id = visit_event.id
             and section_view.dwell_ms >= 1000
           where visit_event.user_id = ${userId} and visit_event.deployment_id = ${deploymentId}
             and not visit_event.is_owner and visit_event.org_domain is not null
-            and (visit_event.started_at at time zone 'UTC')::date = any(${counted}::date[])
+            and (visit_event.started_at at time zone 'UTC') = any(${counted}[])
           group by visit_event.org_domain
           order by visits desc limit 20
         `
@@ -640,7 +639,7 @@ export class AnalyticsService {
     const rows = await this.#sql<WidgetRow[]>`
       select id, metric_key, visualization, compare_to, position from widget
       where dashboard_view_id = ${viewId}
-      order by (position ->> 'order')::integer nulls last, id
+      order by (position ->> '$.order') nulls last, id
     `;
     return rows.map((row, index) => ({
       id: row.id,
@@ -709,15 +708,15 @@ export class AnalyticsService {
 
     await this.#sql.begin(async (transaction) => {
       const last = (await transaction<{ next: number }[]>`
-        select coalesce(max((position ->> 'order')::integer) + 1, 0) as next
+        select coalesce(max((position ->> '$.order')) + 1, 0) as next
         from widget where dashboard_view_id = ${viewId}
       `)[0]?.next ?? 0;
       const order = input.index === undefined ? last : Math.min(input.index, last);
       // 끼워 넣은 자리부터 뒤로 한 칸씩 민다. 안 밀면 두 위젯이 같은 자리를 갖는다.
       if (order < last) await transaction`
         update widget
-        set position = jsonb_set(position, '{order}', to_jsonb((position ->> 'order')::integer + 1))
-        where dashboard_view_id = ${viewId} and (position ->> 'order')::integer >= ${order}
+        set position = jsonb_set(position, '{order}', to_jsonb((position ->> '$.order') + 1))
+        where dashboard_view_id = ${viewId} and (position ->> '$.order') >= ${order}
       `;
       await insertWidget(transaction, userId, viewId, {
         metricKey: input.metricKey,
@@ -754,7 +753,7 @@ export class AnalyticsService {
 
     await this.#sql.begin(async (transaction) => {
       for (const [order, id] of widgetIds.entries()) await transaction`
-        update widget set position = jsonb_set(position, '{order}', to_jsonb(${order}::integer))
+        update widget set position = jsonb_set(position, '{order}', to_jsonb(${order}))
         where id = ${id} and user_id = ${userId}
       `;
     });

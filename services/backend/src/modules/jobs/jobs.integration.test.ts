@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
 import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -17,7 +18,7 @@ const config: RuntimeConfig = {
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -34,7 +35,7 @@ interface CountRow {
 }
 
 describeWithDatabase("job market integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 4 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identityService = new IdentityService(sql);
   const careerService = new CareerService(sql);
   const jobMarketService = new JobMarketService(sql);
@@ -55,7 +56,7 @@ describeWithDatabase("job market integration", () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("free plan missing");
     const users = await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values
         (${`jobs-a-${marker}@example.com`}, 'Jobs A', ${planId}),
         (${`jobs-b-${marker}@example.com`}, 'Jobs B', ${planId})
@@ -78,12 +79,12 @@ describeWithDatabase("job market integration", () => {
       await sql`
         delete from platform_outbox
         where topic = 'job.normalize'
-          and payload ->> 'userId' in (${firstUserId}, ${secondUserId})
+          and payload ->> '$.userId' in (${firstUserId}, ${secondUserId})
       `;
-      await sql`delete from "user" where id in (${firstUserId}, ${secondUserId})`;
+      await sql`delete from \`user\` where id in (${firstUserId}, ${secondUserId})`;
     }
     if (postingIds.length > 0) {
-      await sql`delete from job_posting where id = any(${postingIds}::uuid[])`;
+      await sql`delete from job_posting where id = any(${postingIds}[])`;
     }
     if (primaryCompanyId) await sql`delete from company where id = ${primaryCompanyId}`;
     await app.close();
@@ -141,8 +142,8 @@ describeWithDatabase("job market integration", () => {
       sql`update job_posting set description_raw = 'tampered' where id = ${primaryPostingId}`,
     ).rejects.toThrow(/immutable/);
     const outbox = await sql<CountRow[]>`
-      select count(*)::integer as count from platform_outbox
-      where topic = 'job.normalize' and payload ->> 'jobPostingId' = ${primaryPostingId}
+      select count(*) as count from platform_outbox
+      where topic = 'job.normalize' and payload ->> '$.jobPostingId' = ${primaryPostingId}
     `;
     expect(outbox[0]?.count).toBe(2);
   });
@@ -200,7 +201,7 @@ describeWithDatabase("job market integration", () => {
     });
     expect(interest).toMatchObject({ jobPostingId: primaryPostingId, stage: "saved" });
     const secondUserInterests = await sql<CountRow[]>`
-      select count(*)::integer as count from interest where user_id = ${secondUserId}
+      select count(*) as count from interest where user_id = ${secondUserId}
     `;
     expect(secondUserInterests[0]?.count).toBe(0);
   });
@@ -250,7 +251,7 @@ describeWithDatabase("job market integration", () => {
     expect(match.reason.length).toBeGreaterThan(0);
     expect(match.nextAction).toContain("기록");
     const persisted = await sql<{ total: string; reason_text: string; next_action: string }[]>`
-      select total::text, reason_text, next_action from match_score
+      select total, reason_text, next_action from match_score
       where user_id = ${firstUserId} and job_posting_id = ${primaryPostingId}
     `;
     expect(Number(persisted[0]?.total)).toBe(match.total);
@@ -282,7 +283,7 @@ describeWithDatabase("job market integration", () => {
 
   it("brings a board posting into a per-user analysis exactly once, without cloning the posting", async () => {
     const before = (await sql<CountRow[]>`
-      select count(*)::integer as count from job_posting where id = ${primaryPostingId}
+      select count(*) as count from job_posting where id = ${primaryPostingId}
     `)[0]?.count;
 
     const created = await app.inject({
@@ -311,18 +312,18 @@ describeWithDatabase("job market integration", () => {
 
     // 공고는 이미 있던 것을 쓴다. 본문 해시로 다시 찾으면 사본이 하나 더 생긴다.
     expect((await sql<CountRow[]>`
-      select count(*)::integer as count from job_posting where id = ${primaryPostingId}
+      select count(*) as count from job_posting where id = ${primaryPostingId}
     `)[0]?.count).toBe(before);
     expect((await sql<CountRow[]>`
-      select count(*)::integer as count from job_analysis
+      select count(*) as count from job_analysis
       where user_id = ${secondUserId} and job_posting_id = ${primaryPostingId}
     `)[0]?.count).toBe(1);
 
     // 요건을 뽑는 것은 워커가 한다. 여기서는 자리만 만들고 큐에 넣는다.
     expect((await sql<CountRow[]>`
-      select count(*)::integer as count from platform_outbox
+      select count(*) as count from platform_outbox
       where topic = 'job.normalize'
-        and payload ->> 'jobAnalysisId' = ${created.json().data.jobAnalysisId}
+        and payload ->> '$.jobAnalysisId' = ${created.json().data.jobAnalysisId}
     `)[0]?.count).toBe(1);
 
     const missing = await app.inject({

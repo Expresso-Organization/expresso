@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
 import type { JobAnalysisExtraction } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/mysql.js";
@@ -22,7 +23,7 @@ const config: RuntimeConfig = {
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: redisUrl ?? "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -80,7 +81,7 @@ async function waitUntil(
 }
 
 describeWithInfrastructure("job analysis integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 6 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identityService = new IdentityService(sql);
   const service = new JobAnalysisService(sql);
   const app = buildApi({ config, identityService, jobAnalysisService: service });
@@ -123,7 +124,7 @@ describeWithInfrastructure("job analysis integration", () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("free plan missing");
     const users = await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values
         (${`analysis-a-${marker}@example.com`}, 'Analysis A', ${planId}),
         (${`analysis-b-${marker}@example.com`}, 'Analysis B', ${planId})
@@ -146,7 +147,7 @@ describeWithInfrastructure("job analysis integration", () => {
       insert into job_posting (
         company_id, source, title, description_raw, requirements, dedupe_hash
       ) values (
-        ${companyId}, 'user_input', 'Backend Engineer', ${source}, '{}'::jsonb,
+        ${companyId}, 'user_input', 'Backend Engineer', ${source}, '{}',
         ${`analysis-posting-${marker}`}
       ) returning id
     `;
@@ -164,9 +165,9 @@ describeWithInfrastructure("job analysis integration", () => {
     await sql`
       insert into record (user_id, category_id, title, origin, properties, body_md)
       values
-        (${userId}, ${experienceCategoryId}, 'Covered evidence', 'manual', '{}'::jsonb, ${sourceQuotes[0]!}),
-        (${userId}, ${experienceCategoryId}, 'Partial evidence', 'manual', '{}'::jsonb, 'AWS 장애 대응 경험'),
-        (${userId}, ${experienceCategoryId}, 'Unrelated evidence', 'manual', '{}'::jsonb, '브랜드 디자인 시스템 구축')
+        (${userId}, ${experienceCategoryId}, 'Covered evidence', 'manual', '{}', ${sourceQuotes[0]!}),
+        (${userId}, ${experienceCategoryId}, 'Partial evidence', 'manual', '{}', 'AWS 장애 대응 경험'),
+        (${userId}, ${experienceCategoryId}, 'Unrelated evidence', 'manual', '{}', '브랜드 디자인 시스템 구축')
     `;
     worker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
       queueName: "domain-jobs",
@@ -187,10 +188,10 @@ describeWithInfrastructure("job analysis integration", () => {
     ]);
     await queue.close();
     if (userId) {
-      await sql`delete from platform_outbox where payload ->> 'userId' = ${userId}`;
+      await sql`delete from platform_outbox where payload ->> '$.userId' = ${userId}`;
     }
     if (userId && otherUserId) {
-      await sql`delete from "user" where id in (${userId}, ${otherUserId})`;
+      await sql`delete from \`user\` where id in (${userId}, ${otherUserId})`;
     }
     if (postingId) await sql`delete from job_posting where id = ${postingId}`;
     if (tamperPostingId) await sql`delete from job_posting where id = ${tamperPostingId}`;
@@ -243,11 +244,11 @@ describeWithInfrastructure("job analysis integration", () => {
     expect(rows[0]).toMatchObject({ attempts: 1, result_version: 1 });
     // 요건은 공고에 붙고, 커버리지만 사용자별로 붙는다.
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count from job_posting_requirement
+      select count(*) as count from job_posting_requirement
       where job_posting_id = ${postingId}
     `)[0]?.count).toBe(3);
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count
+      select count(*) as count
       from requirement_coverage
       join job_posting_requirement on job_posting_requirement.id = requirement_coverage.requirement_id
       where requirement_coverage.user_id = ${userId}
@@ -276,7 +277,7 @@ describeWithInfrastructure("job analysis integration", () => {
       insert into job_posting (
         company_id, source, title, description_raw, requirements, dedupe_hash
       ) values (
-        ${companyId}, 'user_input', 'Backend Engineer', ${source}, '{}'::jsonb,
+        ${companyId}, 'user_input', 'Backend Engineer', ${source}, '{}',
         ${`analysis-tamper-${marker}`}
       ) returning id
     `;
@@ -317,7 +318,7 @@ describeWithInfrastructure("job analysis integration", () => {
     ]);
     // 실패한 분석은 요건을 하나도 남기지 않는다.
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count from job_posting_requirement
+      select count(*) as count from job_posting_requirement
       where job_posting_id = ${freshPostingId}
     `)[0]?.count).toBe(0);
 
@@ -369,7 +370,7 @@ describeWithInfrastructure("job analysis integration", () => {
     expect(third.previous?.version).toBe(2);
     expect(third.previous?.requirements).toEqual(second.requirements);
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count from job_analysis_history
+      select count(*) as count from job_analysis_history
       where job_analysis_id = ${analysisId}
     `)[0]?.count).toBe(1);
   });

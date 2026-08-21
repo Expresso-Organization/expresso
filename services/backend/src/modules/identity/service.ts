@@ -140,16 +140,16 @@ export class IdentityService {
     const passwordHash = await hashPassword(input.password);
     const rows = await this.#sql<CredentialRow[]>`
       with created as (
-        insert into "user" (email, display_name, plan_id, password_hash)
+        insert ignore into \`user\` (email, display_name, plan_id, password_hash)
         select ${input.email}, ${input.displayName}, plan.id, ${passwordHash}
         from plan
         where plan.code = 'free'
-        on conflict (email) do nothing
+          
         returning id, email, display_name, plan_id, password_hash, deletion_requested_at
       )
       select
         created.id,
-        created.email::text as email,
+        created.email as email,
         created.display_name,
         plan.code as plan_code,
         created.password_hash,
@@ -178,12 +178,12 @@ export class IdentityService {
     const rows = await this.#sql<CredentialRow[]>`
       select
         account.id,
-        account.email::text as email,
+        account.email as email,
         account.display_name,
         plan.code as plan_code,
         account.password_hash,
         account.deletion_requested_at
-      from "user" as account
+      from \`user\` as account
       join plan on plan.id = account.plan_id
       where account.email = ${input.email}
     `;
@@ -216,13 +216,13 @@ export class IdentityService {
     const linked = await this.#sql<CredentialRow[]>`
       select
         account.id,
-        account.email::text as email,
+        account.email as email,
         account.display_name,
         plan.code as plan_code,
         account.password_hash,
         account.deletion_requested_at
       from identity_oauth_account as oauth
-      join "user" as account on account.id = oauth.user_id
+      join \`user\` as account on account.id = oauth.user_id
       join plan on plan.id = account.plan_id
       where oauth.provider = 'google'
         and oauth.provider_account_id = ${identity.subject}
@@ -251,7 +251,7 @@ export class IdentityService {
     }
 
     const owner = await this.#sql<{ id: string }[]>`
-      select id from "user" where email = ${identity.email}
+      select id from \`user\` where email = ${identity.email}
     `;
     if (owner[0]) {
       throw new IdentityError(409, "email belongs to a password account", {
@@ -277,12 +277,12 @@ export class IdentityService {
     const rows = await this.#sql<CredentialRow[]>`
       select
         account.id,
-        account.email::text as email,
+        account.email as email,
         account.display_name,
         plan.code as plan_code,
         account.password_hash,
         account.deletion_requested_at
-      from "user" as account
+      from \`user\` as account
       join plan on plan.id = account.plan_id
       where account.email = ${identity.email}
     `;
@@ -325,16 +325,16 @@ export class IdentityService {
     const created = await this.#sql.begin(async (tx) => {
       const rows = await tx<CredentialRow[]>`
         with created as (
-          insert into "user" (email, display_name, plan_id, password_hash)
+          insert ignore into \`user\` (email, display_name, plan_id, password_hash)
           select ${identity.email}, ${displayNameFor(identity)}, plan.id, null
           from plan
           where plan.code = 'free'
-          on conflict (email) do nothing
+            
           returning id, email, display_name, plan_id, password_hash, deletion_requested_at
         )
         select
           created.id,
-          created.email::text as email,
+          created.email as email,
           created.display_name,
           plan.code as plan_code,
           created.password_hash,
@@ -378,7 +378,7 @@ export class IdentityService {
       with valid_session as (
         select session.id, session.user_id
         from identity_session as session
-        join "user" as account on account.id = session.user_id
+        join \`user\` as account on account.id = session.user_id
         where session.token_hash = ${hashAccessToken(accessToken)}
           and session.revoked_at is null
           and session.expires_at > now()
@@ -393,11 +393,11 @@ export class IdentityService {
       select
         touched_session.id as session_id,
         account.id as user_id,
-        account.email::text as email,
+        account.email as email,
         account.display_name,
         plan.code as plan_code
       from touched_session
-      join "user" as account on account.id = touched_session.user_id
+      join \`user\` as account on account.id = touched_session.user_id
       join plan on plan.id = account.plan_id
     `;
     const session = rows[0];

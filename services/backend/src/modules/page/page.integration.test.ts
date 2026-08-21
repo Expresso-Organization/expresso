@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
 import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -25,7 +26,7 @@ const describeWithDatabase = databaseUrl ? describe : describe.skip;
 
 const config: RuntimeConfig = {
   nodeEnv: "test", host: "127.0.0.1", port: 4_000, logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1", outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25, outboxMaxAttempts: 5, queuePrefix: "expresso-page-test",
   mediaProvider: "local", mediaDir: "/tmp/unused",
@@ -70,7 +71,7 @@ class RecordingGenerator implements PageGenerator {
 }
 
 describeWithDatabase("free page generation integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 10 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const service = new PageService(sql);
   const generator = new RecordingGenerator();
   const identity = new IdentityService(sql);
@@ -86,11 +87,11 @@ describeWithDatabase("free page generation integration", () => {
     const plan = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!plan) throw new Error("plan seed missing");
     ownerId = (await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values (${`page-owner-${marker}@example.com`}, 'Owner', ${plan}) returning id
     `)[0]?.id ?? "";
     strangerId = (await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values (${`page-stranger-${marker}@example.com`}, 'Stranger', ${plan}) returning id
     `)[0]?.id ?? "";
 
@@ -101,7 +102,7 @@ describeWithDatabase("free page generation integration", () => {
     `)[0]?.id;
     const postingId = (await sql<IdRow[]>`
       insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash)
-      values (${companyId!}, 'user_input', '결제 백엔드', ${"x".repeat(250)}, '{}'::jsonb, ${`page-posting-${marker}`})
+      values (${companyId!}, 'user_input', '결제 백엔드', ${"x".repeat(250)}, '{}', ${`page-posting-${marker}`})
       returning id
     `)[0]?.id;
     const analysisId = (await sql<IdRow[]>`
@@ -154,7 +155,7 @@ describeWithDatabase("free page generation integration", () => {
   });
 
   afterAll(async () => {
-    if (ownerId || strangerId) await sql`delete from "user" where id in (${ownerId}, ${strangerId})`;
+    if (ownerId || strangerId) await sql`delete from \`user\` where id in (${ownerId}, ${strangerId})`;
     await sql`delete from job_posting where dedupe_hash like ${`%${marker}`}`;
     await sql`delete from company where dedupe_key like ${`%${marker}`}`;
     await app.close();

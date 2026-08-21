@@ -66,13 +66,13 @@ export async function addOutboxEvent(
 ): Promise<OutboxEvent> {
   const rows = await sql<OutboxRow[]>`
     with inserted as (
-      insert into platform_outbox (topic, payload, idempotency_key)
+      insert ignore into platform_outbox (topic, payload, idempotency_key)
       values (
         ${input.topic},
         ${sql.json(input.payload as JSONValue)},
         ${input.idempotencyKey}
       )
-      on conflict (idempotency_key) do nothing
+        
       returning id, topic, payload, idempotency_key, state, attempts
     )
     select id, topic, payload, idempotency_key, state, attempts from inserted

@@ -179,7 +179,7 @@ export class PortfolioReadService {
     const sql = this.#sql;
     return sql`
       select
-        portfolio.updated_at::text as cursor_key,
+        portfolio.updated_at as cursor_key,
         portfolio.id,
         portfolio.brew_id,
         portfolio.title,
@@ -189,18 +189,18 @@ export class PortfolioReadService {
         portfolio.created_at,
         portfolio.updated_at,
         (
-          select count(*)::integer from portfolio_section
+          select count(*) from portfolio_section
           where portfolio_section.user_id = portfolio.user_id
             and portfolio_section.portfolio_id = portfolio.id
         ) as section_count,
         (
-          select count(*)::integer from portfolio_section
+          select count(*) from portfolio_section
           where portfolio_section.user_id = portfolio.user_id
             and portfolio_section.portfolio_id = portfolio.id
             and portfolio_section.visible
         ) as visible_section_count,
         (
-          select count(*)::integer
+          select count(*)
           from block
           join portfolio_section on portfolio_section.id = block.portfolio_section_id
             and portfolio_section.user_id = block.user_id
@@ -364,7 +364,7 @@ export class PortfolioReadService {
     const [rows, checkpoints] = await Promise.all([
       sql<(RevisionRow & CursorKeyRow)[]>`
         select id, actor, change_kind, summary, block_id, created_at,
-          created_at::text as cursor_key
+          created_at as cursor_key
         from revision
         where user_id = ${userId}
           and portfolio_id = ${portfolioId}

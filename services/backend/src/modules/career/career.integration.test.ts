@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
 import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -17,7 +18,7 @@ const config: RuntimeConfig = {
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -38,7 +39,7 @@ interface CountRow {
 }
 
 describeWithDatabase("career domain integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 4 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identityService = new IdentityService(sql);
   const careerService = new CareerService(sql);
   const app = buildApi({ config, identityService, careerService });
@@ -58,7 +59,7 @@ describeWithDatabase("career domain integration", () => {
     const planId = plans[0]?.id;
     if (!planId) throw new Error("free plan is missing");
     const users = await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values
         (${`career-a-${randomUUID()}@example.com`}, 'Career A', ${planId}),
         (${`career-b-${randomUUID()}@example.com`}, 'Career B', ${planId})
@@ -81,7 +82,7 @@ describeWithDatabase("career domain integration", () => {
 
   afterAll(async () => {
     if (firstUserId && secondUserId) {
-      await sql`delete from "user" where id in (${firstUserId}, ${secondUserId})`;
+      await sql`delete from \`user\` where id in (${firstUserId}, ${secondUserId})`;
     }
     for (const item of globalCleanup.reverse()) {
       await sql.unsafe(`delete from ${item.table} where id = $1`, [item.id]);
@@ -116,7 +117,7 @@ describeWithDatabase("career domain integration", () => {
       first.json().data.map(({ id }: { id: string }) => id),
     );
     const counts = await sql<CountRow[]>`
-      select count(*)::integer as count from category where is_system
+      select count(*) as count from category where is_system
     `;
     expect(counts[0]?.count).toBe(7);
     await expect(
@@ -142,7 +143,7 @@ describeWithDatabase("career domain integration", () => {
     expect(replayed.json().data.id).toBe(created.json().data.id);
     const recordId = created.json().data.id as string;
     const counts = await sql<CountRow[]>`
-      select count(*)::integer as count from record
+      select count(*) as count from record
       where user_id = ${firstUserId} and create_idempotency_key = 'career-record:retry-0001'
     `;
     expect(counts[0]?.count).toBe(1);

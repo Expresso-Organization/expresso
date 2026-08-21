@@ -125,10 +125,9 @@ export class ConsentService {
             and policy_version <> ${policyVersion}
         `;
         await transaction`
-          insert into consent (user_id, scope, policy_version)
+          insert ignore into consent (user_id, scope, policy_version)
           values (${userId}, ${scope}, ${policyVersion})
-          on conflict (user_id, scope) where revoked_at is null do nothing
-        `;
+          `;
       }
     });
     return this.list(userId);

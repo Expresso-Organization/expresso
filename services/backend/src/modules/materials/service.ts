@@ -175,8 +175,8 @@ export class MaterialsService {
         where job_analysis.id = ${brew.job_analysis_id} and job_analysis.user_id = ${userId}
       `,
       sql<{ selected: number; total: number }[]>`
-        select count(*) filter (where is_selected)::integer as selected,
-               count(*)::integer as total
+        select count(case when is_selected then 1 end) as selected,
+               count(*) as total
         from brew_source where user_id = ${userId} and brew_id = ${brewId}
       `,
       sql<{ id: string }[]>`
@@ -200,7 +200,7 @@ export class MaterialsService {
       }[]>`
         select id, type, status, stage, attempts, result_id, error_code, failure_retryable
         from brew_job
-        where user_id = ${userId} and input ->> 'brewId' = ${brewId}
+        where user_id = ${userId} and input ->> '$.brewId' = ${brewId}
         order by created_at desc limit 1
       `,
       sql<{
@@ -268,8 +268,8 @@ export class MaterialsService {
              brew_source.score, brew_source.rank, brew_source.is_selected,
              brew_source.selected_by, brew_source.excluded_reason, brew_source.reason_text,
              category.name as category_name, category.icon as category_icon,
-             lower(record.period)::text as period_from,
-             upper(record.period)::text as period_to
+             lower(record.period) as period_from,
+             upper(record.period) as period_to
       from brew_source
       join record on record.id = brew_source.record_id
         and record.user_id = brew_source.user_id
@@ -319,7 +319,7 @@ export class MaterialsService {
       const allowed = await transaction<{ record_id: string }[]>`
         select record_id from brew_source
         where user_id = ${userId} and brew_id = ${brewId}
-          and record_id = any(${recordIds}::uuid[])
+          and record_id = any(${recordIds}[])
       `;
       if (allowed.length !== recordIds.length) {
         throw new MaterialsError(409, "selection contains an ineligible record");
@@ -337,7 +337,7 @@ export class MaterialsService {
         set is_selected = true, selected_by = 'user',
             excluded_reason = null, updated_at = now()
         where user_id = ${userId} and brew_id = ${brewId}
-          and record_id = any(${recordIds}::uuid[])
+          and record_id = any(${recordIds}[])
       `;
       await transaction`
         update brew set updated_at = now()
