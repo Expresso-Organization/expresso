@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { SqlTag } from "../../src/platform/mysql.js";
 import { createMysqlResource } from "../../src/platform/mysql.js";
 
 import { migrate } from "@expresso/database";
@@ -13,14 +14,14 @@ const describeWithDatabase = rootDatabaseUrl ? describe : describe.skip;
 
 describeWithDatabase("release fault injection audit", () => {
   const databaseName = `expresso_fault_${randomUUID().replaceAll("-", "")}`;
-  let admin: postgres.Sql;
-  let sql: postgres.Sql;
+  let admin: SqlTag;
+  let sql: SqlTag;
 
   beforeAll(async () => {
-    const root = new URL(rootDatabaseUrl!); const adminUrl = new URL(root); adminUrl.pathname = "/postgres";
-    admin = createMysqlResource(adminUrl.toString().sql, { max: 1 }); await admin.unsafe(`create database "${databaseName}"`);
+    const root = new URL(rootDatabaseUrl!); const adminUrl = new URL(root); adminUrl.pathname = "/mysql";
+    admin = createMysqlResource(adminUrl.toString()).sql; await admin.unsafe(`create database \`${databaseName}\``);
     const isolated = new URL(root); isolated.pathname = `/${databaseName}`; await migrate({ databaseUrl: isolated.toString() });
-    sql = createMysqlResource(isolated.toString().sql, { max: 4 });
+    sql = createMysqlResource(isolated.toString()).sql;
   }, 30_000);
 
   afterAll(async () => {

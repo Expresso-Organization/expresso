@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { SqlTag } from "../../src/platform/mysql.js";
 import { createMysqlResource } from "../../src/platform/mysql.js";
 
 import { migrate } from "@expresso/database";
@@ -19,8 +20,8 @@ interface IdRow {
 
 describeWithDatabase("career authenticated vertical slice", () => {
   const databaseName = `expresso_e2e_${randomUUID().replaceAll("-", "")}`;
-  let admin: postgres.Sql;
-  let sql: postgres.Sql;
+  let admin: SqlTag;
+  let sql: SqlTag;
   let app: ReturnType<typeof buildApi>;
   let origin: string;
   let firstAccessToken: string;
@@ -30,14 +31,14 @@ describeWithDatabase("career authenticated vertical slice", () => {
   beforeAll(async () => {
     const rootUrl = new URL(rootDatabaseUrl ?? "mysql://127.0.0.1:1/unused");
     const adminUrl = new URL(rootUrl);
-    adminUrl.pathname = "/postgres";
-    admin = createMysqlResource(adminUrl.toString().sql, { max: 1 });
-    await admin.unsafe(`create database "${databaseName}"`);
+    adminUrl.pathname = "/mysql";
+    admin = createMysqlResource(adminUrl.toString()).sql;
+    await admin.unsafe(`create database \`${databaseName}\``);
 
     const isolatedUrl = new URL(rootUrl);
     isolatedUrl.pathname = `/${databaseName}`;
     await migrate({ databaseUrl: isolatedUrl.toString() });
-    sql = createMysqlResource(isolatedUrl.toString().sql, { max: 4 });
+    sql = createMysqlResource(isolatedUrl.toString()).sql;
 
     const plans = await sql<IdRow[]>`select id from plan where code = 'free'`;
     const planId = plans[0]?.id;
@@ -77,7 +78,7 @@ describeWithDatabase("career authenticated vertical slice", () => {
     if (app) await app.close();
     if (sql) await sql.end({ timeout: 5 });
     if (admin) {
-      await admin.unsafe(`drop database if exists "${databaseName}"`);
+      await admin.unsafe(`drop database if exists \`${databaseName}\``);
       await admin.end({ timeout: 5 });
     }
   }, 30_000);
