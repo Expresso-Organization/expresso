@@ -182,7 +182,7 @@ export class OutboxDispatcher {
           attempts = ${nextAttempts},
           available_at = case
             when ${deadLettered} then available_at
-            else now(6) + make_interval(secs => ${retryDelaySeconds})
+            else now(6) + interval ${retryDelaySeconds} second
           end,
           locked_at = null,
           last_error = ${sanitizedError(error)},
