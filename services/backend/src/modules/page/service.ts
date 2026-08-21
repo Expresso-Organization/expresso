@@ -262,8 +262,7 @@ export class PageService {
     const media = await this.#sql<MediaRow[]>`
       select distinct asset.id as asset_id, asset.width, asset.height,
              block.content ->> '$.alt' as alt,
-             coalesce(array_agg(variant.width order by variant.width)
-                      filter (where variant.width is not null), '{}') as variants
+             coalesce(json_arrayagg(variant.width), json_array()) as variants
       from block
       join portfolio_section on portfolio_section.id = block.portfolio_section_id
       join media_asset asset

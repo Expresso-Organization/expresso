@@ -125,12 +125,14 @@ export class JobIngestService {
       // 어댑터가 없는 프로바이더를 켜 두면 수집이 매일 조용히 실패한다.
       throw new JobMarketError(422, `no adapter for ${input.provider}`);
     }
-    const row = (await this.#sql<SourceRow[]>`
+    await this.#sql`
       insert into job_source (provider, token, display_name, site_url)
       values (${input.provider}, ${input.token}, ${input.displayName}, ${input.siteUrl ?? null})
       as new on duplicate key update display_name = new.display_name, is_active = true,
         site_url = coalesce(new.site_url, job_source.site_url)
-      returning *
+    `;
+    const row = (await this.#sql<SourceRow[]>`
+      select * from job_source where provider = ${input.provider} and token = ${input.token}
     `)[0];
     if (!row) throw new Error("job source was not persisted");
     return sourceDto(row);

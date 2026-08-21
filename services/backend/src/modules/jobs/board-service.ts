@@ -302,9 +302,9 @@ export class JobBoardService {
       where true
         ${like
           ? sql`and (
-              job_posting.title ilike ${like}
-              or company.name ilike ${like}
-              or job_posting.description_raw ilike ${like}
+              lower(job_posting.title) like lower(${like})
+              or lower(company.name) like lower(${like})
+              or lower(job_posting.description_raw) like lower(${like})
             )`
           : sql``}
         ${query.technology
@@ -363,10 +363,10 @@ export class JobBoardService {
     const sql = this.#sql;
     return sql`
         ${query.family ? sql`and job_posting.job_family = ${query.family}` : sql``}
-        ${query.remote === true ? sql`and job_posting.work_type ilike '%리모트%'` : sql``}
+        ${query.remote === true ? sql`and lower(job_posting.work_type) like lower('%리모트%'` : sql``})
         ${query.remote === false
-          ? sql`and (job_posting.work_type is null or job_posting.work_type not ilike '%리모트%')`
-          : sql``}
+          ? sql`and (job_posting.work_type is null or job_posting.work_type lower(not) like lower('%리모트%')`
+          : sql``})
         ${query.deadline === "urgent"
           ? sql`and job_posting.expires_at >= now()
                 and job_posting.expires_at < now() + interval '7 days'`
@@ -528,11 +528,11 @@ export class JobBoardService {
       sql<CategoryCountRow[]>`
         select
           count(*) as total,
-          count(case when job_posting.work_type ilike '%리모트%' then 1 end) as remote,
+          count(case when lower(job_posting.work_type) like lower('%리모트%' then 1 end) as remote,
           count(case when job_posting.expires_at >= now( then 1 end)
               and job_posting.expires_at < now(6) + interval 7 day
           ) as urgent
-        ${without("category")}
+        ${without("category")})
       `,
       sql<FacetRow[]>`
         select job_posting.job_family as label, count(*) as count
@@ -759,8 +759,11 @@ export class JobBoardService {
         from requirement_coverage
         join job_posting_requirement
           on job_posting_requirement.id = requirement_coverage.requirement_id
-        cross join lateral unnest(requirement_coverage.covered_by) as covered_record_id
-        join record on record.id = covered_record_id
+        join json_table(
+          requirement_coverage.covered_by, '$[*]'
+          columns (covered_record_id char(36) path '$')
+        ) as covered on true
+        join record on record.id = covered.covered_record_id
           and record.user_id = requirement_coverage.user_id
         where requirement_coverage.user_id = ${userId}
           and job_posting_requirement.job_posting_id = ${jobPostingId}

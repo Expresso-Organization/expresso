@@ -265,11 +265,11 @@ export class PublishingService {
         select current_deployment_id from portfolio where id = ${portfolioId} and user_id = ${userId}
       `)[0];
       if (!portfolio) throw new PublishingError(404, "portfolio not found");
-      const inserted = (await transaction<ExportJobRow[]>`
+      await transaction`
         insert ignore into export_job (user_id, portfolio_id, deployment_id, kind, page_format, idempotency_key, request_hash)
         values (${userId}, ${portfolioId}, ${portfolio.current_deployment_id}, ${input.kind}, ${input.pageFormat}, ${key}, ${hash})
-          returning *
-      `)[0] ?? (await transaction<ExportJobRow[]>`
+      `;
+      const inserted = (await transaction<ExportJobRow[]>`
         select * from export_job where user_id = ${userId} and idempotency_key = ${key}
       `)[0];
       if (!inserted) throw new Error("export job missing");

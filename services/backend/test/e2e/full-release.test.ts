@@ -40,7 +40,7 @@ describeWithInfrastructure("full release fresh-environment smoke", () => {
 
   afterAll(async () => {
     if (app) await app.close(); if (closeResources) await closeResources(); if (sql) await sql.end({ timeout: 5 });
-    if (admin) { await admin`select pg_terminate_backend(pid) from pg_stat_activity where datname = ${databaseName} and pid <> pg_backend_pid()`; await admin.unsafe(`drop database if exists "${databaseName}"`); await admin.end({ timeout: 5 }); }
+    if (admin) { await admin.unsafe(`drop database if exists "${databaseName}"`); await admin.end({ timeout: 5 }); }
   }, 30_000);
 
   it("boots with all canonical seeds and live dependencies", async () => {
