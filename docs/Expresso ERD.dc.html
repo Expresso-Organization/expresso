@@ -23,7 +23,7 @@
 </style>
 </helmet>
 
-<div style="width: 2900px; padding: 52px 56px 80px; background: #F7FAFE">
+<div style="width: {{ pageW }}px; padding: 52px 56px 80px; background: #F7FAFE">
 
   <div style="display: flex; align-items: flex-end; gap: 18px; padding-bottom: 18px; border-bottom: 1px solid #E2E9F4; margin-bottom: 22px">
     <svg width="28" height="28" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cer"><circle cx="44" cy="54" r="36"></circle></clipPath><mask id="ker"><rect x="0" y="0" width="108" height="108" fill="#fff"></rect><circle cx="44" cy="54" r="46.5" fill="#000"></circle></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.5" mask="url(#ker)"></circle><rect x="0" y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#cer)"></rect><circle cx="44" cy="54" r="36" stroke="#9A4030" stroke-width="10"></circle></svg>
@@ -31,7 +31,17 @@
       <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .14em; color: #9A4030; margin-bottom: 8px">ERD · PHYSICAL SCHEMA</div>
       <h1 style="margin: 0; font-size: 30px; font-weight: 600; letter-spacing: -.03em; white-space: nowrap">데이터 구조 다이어그램</h1>
     </div>
-    <span style="margin-left: auto; font-size: 13.5px; color: #5A6B87; padding-bottom: 4px">42 테이블 · {{ edgeCount }} 외래 키 — 컬럼 제약과 삭제 정책은 <a href="./Expresso 데이터 모델 명세서.dc.html">데이터 모델 명세서</a></span>
+    <div style="flex-shrink: 0; padding-bottom: 2px">
+      <div style="display: flex; align-items: center; gap: 3px; padding: 3px; background: #EFF3F9; border: 1px solid #E2E9F4; border-radius: 10px; width: max-content">
+        <sc-for list="{{ versions }}" as="v" hint-placeholder-count="2">
+          <button onClick="{{ v.onPick }}" style="display: flex; align-items: baseline; gap: 7px; font-family: inherit; font-size: 12.5px; font-weight: {{ v.weight }}; color: {{ v.color }}; background: {{ v.bg }}; border: none; border-radius: 8px; padding: 7px 13px; cursor: pointer; box-shadow: {{ v.shadow }}">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .08em; color: {{ v.codeColor }}">{{ v.code }}</span>{{ v.label }}
+          </button>
+        </sc-for>
+      </div>
+      <div style="font-size: 12px; color: #7A8BA6; margin-top: 7px; padding-left: 3px">{{ verNote }}</div>
+    </div>
+    <span style="margin-left: auto; font-size: 13.5px; color: #5A6B87; padding-bottom: 4px">{{ tableCount }} 테이블 · {{ edgeCount }} 외래 키 — {{ sourceNote }}</span>
   </div>
 
   <div style="display: flex; align-items: center; gap: 22px; margin-bottom: 24px; padding: 12px 20px; background: #fff; border: 1px solid #E2E9F4; border-radius: 12px; width: max-content">
@@ -103,57 +113,58 @@
 <script type="text/x-dc" data-dc-script>
 const W = 272, HEAD = 32, ROW = 17, TOP_PAD = 4, BOT_PAD = 6;
 
-// [name, ko, col, y, fields]  ·  field: name:type[:pk|:fk]
+// [name, ko, fields]  ·  field: name:type[:pk|:fk]
+// V0 — 2026-08 설계 확정본. 기능 명세서 · 데이터 모델 명세서가 정한 구조입니다.
 const T = [
-  ['user', '계정', 0, 60, 'id:uuid:pk|email:citext|display_name:text|plan_id:uuid:fk|deletion_requested_at:tstz|created_at:tstz'],
-  ['plan', '요금제', 0, 250, 'id:uuid:pk|code:enum|generation_quota:int|features:jsonb|is_public_listed:bool'],
-  ['usage_counter', '생성 사용량', 0, 420, 'id:uuid:pk|user_id:uuid:fk|period_start:date|used:int|resets_at:tstz'],
-  ['notification', '알림', 0, 590, 'id:uuid:pk|user_id:uuid:fk|kind:enum|target_url:text|dedupe_key:text|read_at:tstz'],
+  ['user', '계정', 'id:uuid:pk|email:citext|display_name:text|plan_id:uuid:fk|deletion_requested_at:tstz|created_at:tstz'],
+  ['plan', '요금제', 'id:uuid:pk|code:enum|generation_quota:int|features:jsonb|is_public_listed:bool'],
+  ['usage_counter', '생성 사용량', 'id:uuid:pk|user_id:uuid:fk|period_start:date|used:int|resets_at:tstz'],
+  ['notification', '알림', 'id:uuid:pk|user_id:uuid:fk|kind:enum|target_url:text|dedupe_key:text|read_at:tstz'],
 
-  ['category', '커리어 카테고리', 1, 60, 'id:uuid:pk|user_id:uuid:fk|key:text|is_system:bool|property_schema:jsonb|sort_order:int'],
-  ['record', '커리어 기록', 1, 250, 'id:uuid:pk|user_id:uuid:fk|category_id:uuid:fk|title:text|status:enum|origin:enum|properties:jsonb|body_md:text|period:daterange'],
-  ['record_link', '기록 연결', 1, 500, 'id:uuid:pk|from_record_id:uuid:fk|to_record_id:uuid:fk|relation:enum|created_by:enum'],
-  ['record_usage', '사용처 · 인용', 1, 670, 'id:uuid:pk|record_id:uuid:fk|block_id:uuid:fk|quoted_text:text|first_used_at:tstz'],
-  ['skill', '집계 스킬', 1, 840, 'id:uuid:pk|user_id:uuid:fk|name:text|level:int|demand_score:numeric|computed_at:tstz'],
-  ['skill_evidence', '스킬 근거', 1, 1030, 'id:uuid:pk|skill_id:uuid:fk|record_id:uuid:fk|weight:numeric|extracted_span:jsonb'],
+  ['category', '커리어 카테고리', 'id:uuid:pk|user_id:uuid:fk|key:text|is_system:bool|property_schema:jsonb|sort_order:int'],
+  ['record', '커리어 기록', 'id:uuid:pk|user_id:uuid:fk|category_id:uuid:fk|title:text|status:enum|origin:enum|properties:jsonb|body_md:text|period:daterange'],
+  ['record_link', '기록 연결', 'id:uuid:pk|from_record_id:uuid:fk|to_record_id:uuid:fk|relation:enum|created_by:enum'],
+  ['record_usage', '사용처 · 인용', 'id:uuid:pk|record_id:uuid:fk|block_id:uuid:fk|quoted_text:text|first_used_at:tstz'],
+  ['skill', '집계 스킬', 'id:uuid:pk|user_id:uuid:fk|name:text|level:int|demand_score:numeric|computed_at:tstz'],
+  ['skill_evidence', '스킬 근거', 'id:uuid:pk|skill_id:uuid:fk|record_id:uuid:fk|weight:numeric|extracted_span:jsonb'],
 
-  ['company', '기업', 2, 60, 'id:uuid:pk|name:text|domain:text|industry:text|tone_summary:text'],
-  ['job_posting', '채용 공고', 2, 230, 'id:uuid:pk|company_id:uuid:fk|source:enum|external_id:text|title:text|description_raw:text|requirements:jsonb|expires_at:tstz|dedupe_hash:text'],
-  ['match_score', '일치도', 2, 480, 'id:uuid:pk|user_id:uuid:fk|job_posting_id:uuid:fk|total:numeric|axes:jsonb|reason_text:text|computed_at:tstz'],
-  ['saved_search', '저장 검색', 2, 690, 'id:uuid:pk|user_id:uuid:fk|query_text:text|filters:jsonb|notify:bool|last_run_at:tstz'],
-  ['interest', '관심 공고', 2, 880, 'id:uuid:pk|user_id:uuid:fk|job_posting_id:uuid:fk|stage:enum|deadline_at:tstz|memo:text'],
-  ['job_analysis', '공고 분석', 2, 1070, 'id:uuid:pk|user_id:uuid:fk|job_posting_id:uuid:fk|input_type:enum|status:enum|attachments:jsonb|analyzed_at:tstz'],
-  ['job_posting_requirement', '요구 역량', 2, 1280, 'id:uuid:pk|job_posting_id:uuid:fk|order_no:int|label:text|kind:enum|source_span:jsonb|extractor_version:int'],
-  ['requirement_coverage', '요건 충족 여부', 2, 1510, 'user_id:uuid:pk|requirement_id:uuid:pk|coverage:enum|covered_by:uuid[]|computed_at:tstz'],
+  ['company', '기업', 'id:uuid:pk|name:text|domain:text|industry:text|tone_summary:text'],
+  ['job_posting', '채용 공고', 'id:uuid:pk|company_id:uuid:fk|source:enum|external_id:text|title:text|description_raw:text|requirements:jsonb|expires_at:tstz|dedupe_hash:text'],
+  ['match_score', '일치도', 'id:uuid:pk|user_id:uuid:fk|job_posting_id:uuid:fk|total:numeric|axes:jsonb|reason_text:text|computed_at:tstz'],
+  ['saved_search', '저장 검색', 'id:uuid:pk|user_id:uuid:fk|query_text:text|filters:jsonb|notify:bool|last_run_at:tstz'],
+  ['interest', '관심 공고', 'id:uuid:pk|user_id:uuid:fk|job_posting_id:uuid:fk|stage:enum|deadline_at:tstz|memo:text'],
+  ['job_analysis', '공고 분석', 'id:uuid:pk|user_id:uuid:fk|job_posting_id:uuid:fk|input_type:enum|status:enum|attachments:jsonb|analyzed_at:tstz'],
+  ['job_posting_requirement', '요구 역량', 'id:uuid:pk|job_posting_id:uuid:fk|order_no:int|label:text|kind:enum|source_span:jsonb|extractor_version:int'],
+  ['requirement_coverage', '요건 충족 여부', 'user_id:uuid:pk|requirement_id:uuid:pk|coverage:enum|covered_by:uuid[]|computed_at:tstz'],
 
-  ['brew', '제작 세션', 3, 60, 'id:uuid:pk|user_id:uuid:fk|job_analysis_id:uuid:fk|mode:enum|length_preset:enum|status:enum|deadline_at:tstz|resumed_at:tstz'],
-  ['brew_source', '선정된 재료', 3, 290, 'id:uuid:pk|brew_id:uuid:fk|record_id:uuid:fk|rank:int|selected_by:enum|excluded_reason:text'],
-  ['interview_session', 'AI 인터뷰', 3, 480, 'id:uuid:pk|brew_id:uuid:fk|status:enum|question_count:int|transcript_url:text'],
-  ['question', '질문', 3, 650, 'id:uuid:pk|interview_session_id:uuid:fk|requirement_id:uuid:fk|replaced_from_id:uuid:fk|order_no:int|text:text|skipped:bool'],
-  ['answer', '응답', 3, 860, 'id:uuid:pk|question_id:uuid:fk|created_record_id:uuid:fk|input_type:enum|transcript:text'],
-  ['recipe', '포트폴리오 레시피', 3, 1030, 'id:uuid:pk|brew_id:uuid:fk|version:int|status:enum|completeness:numeric|generated_at:tstz'],
-  ['recipe_section', '레시피 섹션', 3, 1220, 'id:uuid:pk|recipe_id:uuid:fk|order_no:int|title:text|purpose:text|target_length:int'],
-  ['recipe_item', '담을 요점', 3, 1410, 'id:uuid:pk|recipe_section_id:uuid:fk|order_no:int|point_text:text|evidence:jsonb|locked:bool|edited_by:enum'],
+  ['brew', '제작 세션', 'id:uuid:pk|user_id:uuid:fk|job_analysis_id:uuid:fk|mode:enum|length_preset:enum|status:enum|deadline_at:tstz|resumed_at:tstz'],
+  ['brew_source', '선정된 재료', 'id:uuid:pk|brew_id:uuid:fk|record_id:uuid:fk|rank:int|selected_by:enum|excluded_reason:text'],
+  ['interview_session', 'AI 인터뷰', 'id:uuid:pk|brew_id:uuid:fk|status:enum|question_count:int|transcript_url:text'],
+  ['question', '질문', 'id:uuid:pk|interview_session_id:uuid:fk|requirement_id:uuid:fk|replaced_from_id:uuid:fk|order_no:int|text:text|skipped:bool'],
+  ['answer', '응답', 'id:uuid:pk|question_id:uuid:fk|created_record_id:uuid:fk|input_type:enum|transcript:text'],
+  ['recipe', '포트폴리오 레시피', 'id:uuid:pk|brew_id:uuid:fk|version:int|status:enum|completeness:numeric|generated_at:tstz'],
+  ['recipe_section', '레시피 섹션', 'id:uuid:pk|recipe_id:uuid:fk|order_no:int|title:text|purpose:text|target_length:int'],
+  ['recipe_item', '담을 요점', 'id:uuid:pk|recipe_section_id:uuid:fk|order_no:int|point_text:text|evidence:jsonb|locked:bool|edited_by:enum'],
 
-  ['template', '지면 시드', 4, 60, 'id:uuid:pk|code:text|name:text|tone_tags:text[]|supported_sections:text[]|plan_required:enum'],
-  ['layout_spec', '생성된 지면', 4, 290, 'id:uuid:pk|portfolio_id:uuid:fk|seed_template_id:uuid:fk|archetype:text|spec:jsonb|prompt_version:int|edited_by:enum'],
-  ['generation_job', '생성 작업', 4, 250, 'id:uuid:pk|brew_id:uuid:fk|recipe_id:uuid:fk|template_id:uuid:fk|status:enum|usage_charged:bool|error_code:text'],
-  ['portfolio', '포트폴리오', 4, 460, 'id:uuid:pk|user_id:uuid:fk|brew_id:uuid:fk|template_id:uuid:fk|current_deployment_id:uuid:fk|title:text|status:enum'],
-  ['portfolio_section', '문서 섹션', 4, 670, 'id:uuid:pk|portfolio_id:uuid:fk|recipe_section_id:uuid:fk|order_no:int|visible:bool'],
-  ['block', '블록', 4, 840, 'id:uuid:pk|portfolio_section_id:uuid:fk|source_record_id:uuid:fk|kind:enum|content:jsonb|style:jsonb|sync_state:enum|locked:bool'],
-  ['revision', '변경 이력', 4, 1070, 'id:uuid:pk|portfolio_id:uuid:fk|block_id:uuid:fk|actor:enum|before:jsonb|after:jsonb|restore_label:text'],
-  ['export_asset', '내보내기 · 첨부', 4, 1280, 'id:uuid:pk|portfolio_id:uuid:fk|kind:enum|file_url:text|page_format:text|download_count:int'],
-  ['deployment', '배포', 4, 1450, 'id:uuid:pk|portfolio_id:uuid:fk|version:int|subdomain:text|custom_domain:text|seo_indexable:bool|contact_visibility:enum|published_at:tstz'],
+  ['template', '지면 시드', 'id:uuid:pk|code:text|name:text|tone_tags:text[]|supported_sections:text[]|plan_required:enum'],
+  ['layout_spec', '생성된 지면', 'id:uuid:pk|portfolio_id:uuid:fk|seed_template_id:uuid:fk|archetype:text|spec:jsonb|prompt_version:int|edited_by:enum'],
+  ['generation_job', '생성 작업', 'id:uuid:pk|brew_id:uuid:fk|recipe_id:uuid:fk|template_id:uuid:fk|status:enum|usage_charged:bool|error_code:text'],
+  ['portfolio', '포트폴리오', 'id:uuid:pk|user_id:uuid:fk|brew_id:uuid:fk|template_id:uuid:fk|current_deployment_id:uuid:fk|title:text|status:enum'],
+  ['portfolio_section', '문서 섹션', 'id:uuid:pk|portfolio_id:uuid:fk|recipe_section_id:uuid:fk|order_no:int|visible:bool'],
+  ['block', '블록', 'id:uuid:pk|portfolio_section_id:uuid:fk|source_record_id:uuid:fk|kind:enum|content:jsonb|style:jsonb|sync_state:enum|locked:bool'],
+  ['revision', '변경 이력', 'id:uuid:pk|portfolio_id:uuid:fk|block_id:uuid:fk|actor:enum|before:jsonb|after:jsonb|restore_label:text'],
+  ['export_asset', '내보내기 · 첨부', 'id:uuid:pk|portfolio_id:uuid:fk|kind:enum|file_url:text|page_format:text|download_count:int'],
+  ['deployment', '배포', 'id:uuid:pk|portfolio_id:uuid:fk|version:int|subdomain:text|custom_domain:text|seo_indexable:bool|contact_visibility:enum|published_at:tstz'],
 
-  ['visit_event', '방문', 5, 60, 'id:uuid:pk|deployment_id:uuid:fk|session_id:text|referrer:text|org_domain:text|is_owner:bool|started_at:tstz'],
-  ['section_view', '섹션 열람', 5, 270, 'id:uuid:pk|visit_event_id:uuid:fk|portfolio_section_id:uuid:fk|dwell_ms:int|scroll_depth:numeric|exited:bool'],
-  ['conversion_event', '전환', 5, 460, 'id:uuid:pk|visit_event_id:uuid:fk|kind:enum|target:text'],
-  ['metric_daily', '일별 집계', 5, 610, 'id:uuid:pk|deployment_id:uuid:fk|date:date|metric_key:text|value:numeric|sample_size:int'],
-  ['insight', '해설 · 제안', 5, 800, 'id:uuid:pk|deployment_id:uuid:fk|period:daterange|narrative:text|evidence_metrics:text[]|suggestions:jsonb'],
-  ['annotation', '주석', 5, 990, 'id:uuid:pk|portfolio_id:uuid:fk|date:date|label:text|note:text'],
-  ['dashboard_view', '대시보드 뷰', 5, 1160, 'id:uuid:pk|user_id:uuid:fk|portfolio_id:uuid:fk|name:text|period:enum|is_default:bool'],
-  ['widget', '위젯', 5, 1350, 'id:uuid:pk|dashboard_view_id:uuid:fk|derived_metric_id:uuid:fk|metric_key:text|visualization:enum|compare_to:enum|position:jsonb'],
-  ['derived_metric', '파생 지표', 5, 1560, 'id:uuid:pk|user_id:uuid:fk|name:text|numerator_key:text|denominator_key:text']
+  ['visit_event', '방문', 'id:uuid:pk|deployment_id:uuid:fk|session_id:text|referrer:text|org_domain:text|is_owner:bool|started_at:tstz'],
+  ['section_view', '섹션 열람', 'id:uuid:pk|visit_event_id:uuid:fk|portfolio_section_id:uuid:fk|dwell_ms:int|scroll_depth:numeric|exited:bool'],
+  ['conversion_event', '전환', 'id:uuid:pk|visit_event_id:uuid:fk|kind:enum|target:text'],
+  ['metric_daily', '일별 집계', 'id:uuid:pk|deployment_id:uuid:fk|date:date|metric_key:text|value:numeric|sample_size:int'],
+  ['insight', '해설 · 제안', 'id:uuid:pk|deployment_id:uuid:fk|period:daterange|narrative:text|evidence_metrics:text[]|suggestions:jsonb'],
+  ['annotation', '주석', 'id:uuid:pk|portfolio_id:uuid:fk|date:date|label:text|note:text'],
+  ['dashboard_view', '대시보드 뷰', 'id:uuid:pk|user_id:uuid:fk|portfolio_id:uuid:fk|name:text|period:enum|is_default:bool'],
+  ['widget', '위젯', 'id:uuid:pk|dashboard_view_id:uuid:fk|derived_metric_id:uuid:fk|metric_key:text|visualization:enum|compare_to:enum|position:jsonb'],
+  ['derived_metric', '파생 지표', 'id:uuid:pk|user_id:uuid:fk|name:text|numerator_key:text|denominator_key:text']
 ];
 
 const FK_TARGET = {
@@ -161,14 +172,6 @@ const FK_TARGET = {
   replaced_from_id: 'question', current_deployment_id: 'deployment'
 };
 
-const GROUPS = [
-  ['계정 · 요금제', 'D12 · D11', 0, 0, '#9A4030'],
-  ['커리어 기록', 'D1', 1, 1, '#5A6B87'],
-  ['채용 공고', 'D2 · D3', 2, 2, '#5A6B87'],
-  ['제작 흐름', 'D4 · D5 · D6', 3, 3, '#9A4030'],
-  ['산출물', 'D7 · D8 · D9', 4, 4, '#5A6B87'],
-  ['통계 분석', 'D10', 5, 5, '#5A6B87']
-];
 
 const CORE = { record: 1, brew: 1, recipe: 1, recipe_item: 1, portfolio: 1, block: 1 };
 
@@ -188,24 +191,188 @@ const ZONES = [
     cols: [['visit_event', 'section_view', 'conversion_event'], ['metric_daily', 'insight', 'annotation'], ['dashboard_view', 'widget', 'derived_metric']] }
 ];
 
-const STACK_X = [40, 740, 1772];
-const PITCH = 330, PAD_S = 20, PAD_T = 30, PAD_B = 22, ROW_GAP = 38, ZONE_GAP = 54;
+// V1 — 지금 돌고 있는 스키마. 아래 두 블록은 손으로 적지 않습니다.
+// `node scripts/dump-erd-schema.mjs` 가 마이그레이션을 전부 적용한 뒤 다시 뽑아
+// 갈아 끼웁니다. 한국어 이름과 ZONES1 의 자리 배치는 사람이 정하고 그대로 보존합니다.
+// <erd-v1:auto> — 여기서부터 자동 생성
+// 마이그레이션 0001–0054 적용 기준
+const T1 = [
+  ['plan', '요금제', 'id:uuid:pk|code:text|generation_quota:int|features:jsonb|is_public_listed:bool'],
+  ['notification', '알림', 'id:uuid:pk|user_id:uuid:fk|kind:text|target_url:text|dedupe_key:text|read_at:tstz|dedupe_date:date|delivery_status:text|attempts:int|next_attempt_at:tstz|last_error:text|created_at:tstz|delivered_at:tstz'],
+  ['notification_preference', '알림 설정', 'user_id:uuid:pk|kind:text:pk|enabled:bool|updated_at:tstz'],
+  ['consent', '동의', 'id:uuid:pk|user_id:uuid:fk|scope:text|policy_version:int|granted_at:tstz|revoked_at:tstz'],
+  ['user', '계정', 'id:uuid:pk|email:citext|display_name:text|plan_id:uuid:fk|deletion_requested_at:tstz|created_at:tstz|password_hash:text'],
+  ['identity_session', '세션', 'id:uuid:pk|user_id:uuid:fk|token_hash:text|expires_at:tstz|revoked_at:tstz|last_seen_at:tstz|created_at:tstz'],
+  ['identity_oauth_account', '소셜 로그인', 'id:uuid:pk|user_id:uuid:fk|provider:text|provider_account_id:text|email:citext|linked_at:tstz|last_login_at:tstz'],
+  ['usage_counter', '생성 사용량', 'id:uuid:pk|user_id:uuid:fk|period_start:date|used:int|resets_at:tstz'],
+  ['account_deletion_request', '삭제 요청', 'id:uuid:pk|user_id:uuid:fk|subject_id:uuid|status:text|requested_at:tstz|purge_after:tstz|cancelled_at:tstz|purged_at:tstz|cancellation_token_hash:text|restoration:jsonb|phase:text'],
+  ['account_deletion_event', '삭제 처리 기록', 'id:uuid:pk|request_id:uuid:fk|phase:text|affected_rows:int|occurred_at:tstz'],
+  ['category', '커리어 카테고리', 'id:uuid:pk|user_id:uuid:fk|key:text|is_system:bool|property_schema:jsonb|sort_order:int|name:text|icon:text|default_view:text|version:int|updated_at:tstz'],
+  ['category_view', '카테고리 뷰', 'id:uuid:pk|user_id:uuid:fk|category_id:uuid:fk|name:text|view_type:text|filters:jsonb|sorts:jsonb|visible_properties:text[]|sort_order:int|created_at:tstz'],
+  ['skill', '집계 스킬', 'id:uuid:pk|user_id:uuid:fk|name:text|level:int|computed_at:tstz|demand_score:numeric|evidence_count:int|last_used_at:tstz|strength:text'],
+  ['skill_evidence', '스킬 근거', 'id:uuid:pk|user_id:uuid:fk|skill_id:uuid:fk|record_id:uuid:fk|weight:numeric|extracted_span:jsonb'],
+  ['career_profile', '커리어 프로필', 'user_id:uuid:pk|target_roles:text[]|experience_years:int|primary_goal:text|updated_at:tstz'],
+  ['record', '커리어 기록', 'id:uuid:pk|user_id:uuid:fk|category_id:uuid:fk|title:text|status:text|origin:text|properties:jsonb|body_md:text|period:daterange|version:int|updated_at:tstz|deleted_at:tstz|purge_after:tstz|create_idempotency_key:text|create_request_hash:text'],
+  ['record_link', '기록 연결', 'id:uuid:pk|user_id:uuid:fk|from_record_id:uuid:fk|to_record_id:uuid:fk|relation:text|created_by:text'],
+  ['record_usage', '사용처 · 인용', 'id:uuid:pk|user_id:uuid:fk|record_id:uuid:fk|block_id:uuid:fk|quoted_text:text|first_used_at:tstz'],
+  ['media_asset', '미디어 원본', 'id:uuid:pk|user_id:uuid:fk|storage_key:text|mime_type:text|width:int|height:int|byte_size:int|checksum:text|created_at:tstz'],
+  ['media_variant', '미디어 변형본', 'id:uuid:pk|user_id:uuid:fk|media_asset_id:uuid:fk|storage_key:text|mime_type:text|width:int|height:int|byte_size:int|created_at:tstz'],
+  ['platform_outbox', '이벤트 아웃박스', 'id:uuid:pk|topic:text|payload:jsonb|idempotency_key:text|state:text|attempts:int|available_at:tstz|locked_at:tstz|published_at:tstz|last_error:text|created_at:tstz|updated_at:tstz'],
+  ['scheduled_job_definition', '정기 작업', 'job_key:text:pk|interval_seconds:int|next_run_at:tstz|last_started_at:tstz|last_finished_at:tstz|last_status:text|failure_count:int'],
+  ['scheduled_job_run', '정기 작업 실행', 'id:uuid:pk|job_key:text:fk|scheduled_for:tstz|status:text|attempts:int|started_at:tstz|finished_at:tstz|last_error:text|result:jsonb|created_at:tstz'],
+  ['job_source', '수집 소스', 'id:uuid:pk|provider:text|token:text|display_name:text|is_active:bool|last_run_at:tstz|last_status:text|last_error:text|last_seen_count:int|last_added_count:int|created_at:tstz|site_url:text'],
+  ['company', '기업', 'id:uuid:pk|name:text|domain:text|industry:text|tone_summary:text|dedupe_key:text|tone_palette:jsonb|avatar_background:text|avatar_color:text|brand_colors:text[]|tone_impression:text|initial:text|logo_data:bytea|logo_media_type:text|logo_source_url:text|logo_checksum:text|logo_read_at:tstz'],
+  ['company_research_item', '기업 조사', 'id:uuid:pk|user_id:uuid:fk|company_id:uuid:fk|kind:text|topic:text|statement:text|source_url:text|published_at:tstz|captured_at:tstz|confidence:text|basis_fact_ids:uuid[]'],
+  ['job_posting', '채용 공고', 'id:uuid:pk|company_id:uuid:fk|source:text|external_id:text|title:text|description_raw:text|requirements:jsonb|expires_at:tstz|dedupe_hash:text|source_url:text|created_at:tstz|normalized_at:tstz|location:text|work_type:text|experience_label:text|employment_type:text|salary_note:text|job_family:text|duties:jsonb|preferred:jsonb|hiring_process:jsonb|process_note:text|notice:text|team:text|deadline_note:text|source_board:text|location_region:text|experience_note:text|facts_read_at:tstz|experience_min_years:int'],
+  ['match_score', '일치도', 'id:uuid:pk|user_id:uuid:fk|job_posting_id:uuid:fk|total:numeric|axes:jsonb|reason_text:text|computed_at:tstz|next_action:text'],
+  ['interest', '관심 공고', 'id:uuid:pk|user_id:uuid:fk|job_posting_id:uuid:fk|stage:text|deadline_at:tstz|memo:text|updated_at:tstz'],
+  ['saved_search', '저장 검색', 'id:uuid:pk|user_id:uuid:fk|query_text:text|filters:jsonb|notify:bool|last_run_at:tstz|name:text|created_at:tstz|updated_at:tstz'],
+  ['recent_search', '최근 검색', 'id:uuid:pk|user_id:uuid:fk|query_text:text|conditions:jsonb|result_count:int|created_at:tstz'],
+  ['job_analysis', '공고 분석', 'id:uuid:pk|user_id:uuid:fk|job_posting_id:uuid:fk|input_type:text|status:text|attachments:jsonb|analyzed_at:tstz|input_idempotency_key:text|input_request_hash:text|progress_stage:text|attempts:int|result_version:int|target_version:int|failure_code:text|failure_retryable:bool'],
+  ['job_analysis_history', '분석 이력', 'job_analysis_id:uuid:pk|user_id:uuid:fk|previous_version:int|requirements:jsonb|archived_at:tstz'],
+  ['job_posting_requirement', '요구 역량', 'id:uuid:pk|job_posting_id:uuid:fk|order_no:int|label:text|kind:text|source_span:jsonb|extractor_version:int|extracted_at:tstz|axis:text'],
+  ['requirement_coverage', '요건 충족 여부', 'user_id:uuid:pk|requirement_id:uuid:pk|coverage:text|covered_by:uuid[]|computed_at:tstz'],
+  ['template', '지면 시드', 'id:uuid:pk|code:text|name:text|tone_tags:text[]|supported_sections:text[]|plan_required:text|description:text|renderer_version:int|style:jsonb|industries:text[]|is_active:bool'],
+  ['layout_spec', '지면 명세', 'id:uuid:pk|user_id:uuid:fk|portfolio_id:uuid:fk|batch_id:uuid|generation_job_id:uuid:fk|seed_template_id:uuid:fk|spec:jsonb|prompt_version:int|edited_by:text|order_no:int|selected:bool|created_at:tstz|instruction:text'],
+  ['generated_page', '생성된 지면', 'id:uuid:pk|user_id:uuid:fk|portfolio_id:uuid:fk|html:text|css:text|rationale:text|revision:int|instruction:text|prompt_version:int|ungrounded_numbers:text[]|removed:text[]|created_at:tstz|quality_status:text|qa_report:jsonb|generation_manifest:jsonb|portfolio_plan_snapshot:jsonb|style_spec_snapshot:jsonb|design_principles_version:int'],
+  ['portfolio_section', '문서 섹션', 'id:uuid:pk|user_id:uuid:fk|portfolio_id:uuid:fk|recipe_section_id:uuid:fk|order_no:int|visible:bool|hidden_reason:text'],
+  ['block', '블록', 'id:uuid:pk|user_id:uuid:fk|portfolio_section_id:uuid:fk|kind:text|content:jsonb|style:jsonb|source_record_id:uuid:fk|sync_state:text|locked:bool|order_no:int'],
+  ['generation_job', '생성 작업', 'id:uuid:pk|user_id:uuid:fk|brew_id:uuid:fk|recipe_id:uuid:fk|template_id:uuid:fk|status:text|usage_charged:bool|error_code:text|input_idempotency_key:text|request_hash:text|stage:text|attempts:int|failure_retryable:bool|portfolio_id:uuid:fk|created_at:tstz|updated_at:tstz|style_overrides:jsonb'],
+  ['generation_sentence_evidence', '근거', 'id:uuid:pk|user_id:uuid:fk|generation_job_id:uuid:fk|block_id:uuid:fk|recipe_evidence_path_id:uuid:fk|source_quote:text|created_at:tstz'],
+  ['generation_usage_ledger', '사용량 원장', 'id:uuid:pk|user_id:uuid:fk|generation_job_id:uuid:fk|usage_counter_id:uuid:fk|amount:int|reason:text|created_at:tstz'],
+  ['portfolio', '포트폴리오', 'id:uuid:pk|user_id:uuid:fk|brew_id:uuid:fk|template_id:uuid:fk|current_deployment_id:uuid:fk|title:text|status:text|created_at:tstz|updated_at:tstz|style_overrides:jsonb'],
+  ['portfolio_snapshot', '스냅샷', 'id:uuid:pk|user_id:uuid:fk|portfolio_id:uuid:fk|kind:text|snapshot:jsonb|created_at:tstz'],
+  ['revision', '변경 이력', 'id:uuid:pk|user_id:uuid:fk|portfolio_id:uuid:fk|block_id:uuid:fk|actor:text|before:jsonb|after:jsonb|restore_label:text|proposal_id:uuid:fk|reverted_revision_id:uuid:fk|change_kind:text|summary:text|created_at:tstz'],
+  ['portfolio_edit_proposal', '편집 제안', 'id:uuid:pk|user_id:uuid:fk|portfolio_id:uuid:fk|target_path:text|block_id:uuid:fk|operation:text|before_state:jsonb|after_state:jsonb|source_record_id:uuid:fk|status:text|created_at:tstz|expires_at:tstz|applied_at:tstz|patches:jsonb|instruction:text'],
+  ['export_asset', '내보내기 파일', 'id:uuid:pk|user_id:uuid:fk|portfolio_id:uuid:fk|kind:text|file_url:text|page_format:text|download_count:int|version:int|access_nonce:uuid|revoked_at:tstz|created_at:tstz'],
+  ['export_job', '내보내기 작업', 'id:uuid:pk|user_id:uuid:fk|portfolio_id:uuid:fk|deployment_id:uuid:fk|kind:text|page_format:text|status:text|attempts:int|idempotency_key:text|request_hash:text|asset_id:uuid:fk|error_code:text|created_at:tstz|updated_at:tstz'],
+  ['deployment', '배포', 'id:uuid:pk|user_id:uuid:fk|portfolio_id:uuid:fk|version:int|subdomain:text|custom_domain:text|seo_indexable:bool|contact_visibility:text|published_at:tstz|has_unpublished_changes:bool|snapshot:jsonb|seo:jsonb'],
+  ['deployment_slug_redirect', '이전 주소', 'id:uuid:pk|user_id:uuid:fk|portfolio_id:uuid:fk|old_slug:text|new_slug:text|created_at:tstz|expires_at:tstz'],
+  ['brew', '제작 세션', 'id:uuid:pk|user_id:uuid:fk|job_analysis_id:uuid:fk|mode:text|length_preset:text|status:text|deadline_at:tstz|resumed_at:tstz|created_at:tstz|updated_at:tstz'],
+  ['brew_job', '제작 작업', 'id:uuid:pk|user_id:uuid:fk|type:text|status:text|stage:text|attempts:int|input:jsonb|result_id:uuid|error_code:text|failure_retryable:bool|input_idempotency_key:text|created_at:tstz|updated_at:tstz'],
+  ['interview_session', 'AI 인터뷰', 'id:uuid:pk|user_id:uuid:fk|brew_id:uuid:fk|status:text|question_count:int|transcript_url:text|input_idempotency_key:text|current_order:int|answered_count:int|paused_at:tstz|created_at:tstz|updated_at:tstz'],
+  ['question', '질문', 'id:uuid:pk|user_id:uuid:fk|interview_session_id:uuid:fk|requirement_id:uuid:fk|replaced_from_id:uuid:fk|order_no:int|text:text|skipped:bool|basis:jsonb|active:bool|variant:int|created_at:tstz|rationale:text'],
+  ['brew_source', '선정된 재료', 'id:uuid:pk|user_id:uuid:fk|brew_id:uuid:fk|record_id:uuid:fk|rank:int|selected_by:text|excluded_reason:text|score:int|reason_text:text|is_selected:bool|updated_at:tstz'],
+  ['answer', '응답', 'id:uuid:pk|user_id:uuid:fk|question_id:uuid:fk|input_type:text|transcript:text|created_record_id:uuid:fk|input_idempotency_key:text|request_hash:text|version:int|updated_at:tstz'],
+  ['answer_record_change', '답변 → 기록 반영', 'id:uuid:pk|user_id:uuid:fk|answer_id:uuid:fk|record_id:uuid:fk|change_type:text|changed_fields:jsonb|source_quote:text|created_at:tstz'],
+  ['recipe', '포트폴리오 레시피', 'id:uuid:pk|user_id:uuid:fk|brew_id:uuid:fk|version:int|status:text|completeness:numeric|generated_at:tstz|input_idempotency_key:text|updated_at:tstz|prompt_version:int|portfolio_plan:jsonb|planning_manifest:jsonb'],
+  ['recipe_section', '레시피 섹션', 'id:uuid:pk|user_id:uuid:fk|recipe_id:uuid:fk|order_no:int|title:text|purpose:text|target_length:int|context:jsonb|locked:bool|edited_by:text|updated_at:tstz'],
+  ['recipe_item', '담을 요점', 'id:uuid:pk|user_id:uuid:fk|recipe_section_id:uuid:fk|order_no:int|point_text:text|evidence:jsonb|locked:bool|edited_by:text|updated_at:tstz'],
+  ['recipe_revision', '레시피 이력', 'id:uuid:pk|user_id:uuid:fk|recipe_id:uuid:fk|actor:text|action:text|snapshot:jsonb|diff:jsonb|created_at:tstz'],
+  ['recipe_evidence_path', '근거 경로', 'id:uuid:pk|user_id:uuid:fk|recipe_id:uuid:fk|recipe_item_id:uuid:fk|source_type:text|source_id:uuid|source_label:text|target_path:text|created_at:tstz'],
+  ['recipe_unused_source', '미사용 소스', 'id:uuid:pk|user_id:uuid:fk|recipe_id:uuid:fk|record_id:uuid:fk|reason:text|created_at:tstz'],
+  ['visit_event', '방문', 'id:uuid:pk|user_id:uuid:fk|deployment_id:uuid:fk|session_id:text|referrer:text|org_domain:text|is_owner:bool|started_at:tstz|event_id:uuid|completed:bool|duration_ms:int'],
+  ['section_view', '섹션 열람', 'id:uuid:pk|user_id:uuid:fk|visit_event_id:uuid:fk|portfolio_section_id:uuid:fk|dwell_ms:int|scroll_depth:numeric|exited:bool|event_id:uuid|occurred_at:tstz'],
+  ['conversion_event', '전환', 'id:uuid:pk|user_id:uuid:fk|visit_event_id:uuid:fk|kind:text|target:text|event_id:uuid|occurred_at:tstz'],
+  ['analytics_event_receipt', '수집 접수', 'event_id:uuid:pk|user_id:uuid:fk|deployment_id:uuid:fk|event_type:text|visitor_hash:text|payload_hash:text|payload_bytes:int|occurred_at:tstz|received_at:tstz'],
+  ['metric_daily', '일별 집계', 'id:uuid:pk|user_id:uuid:fk|deployment_id:uuid:fk|date:date|metric_key:text|value:numeric|sample_size:int'],
+  ['insight', '해설 · 제안', 'id:uuid:pk|user_id:uuid:fk|deployment_id:uuid:fk|period:daterange|narrative:text|evidence_metrics:text[]|suggestions:jsonb|generated_at:tstz'],
+  ['annotation', '주석', 'id:uuid:pk|user_id:uuid:fk|portfolio_id:uuid:fk|date:date|label:text|note:text'],
+  ['dashboard_view', '대시보드 뷰', 'id:uuid:pk|user_id:uuid:fk|portfolio_id:uuid:fk|name:text|period:text|is_default:bool'],
+  ['widget', '위젯', 'id:uuid:pk|user_id:uuid:fk|dashboard_view_id:uuid:fk|metric_key:text|derived_metric_id:uuid:fk|visualization:text|compare_to:text|position:jsonb'],
+  ['derived_metric', '파생 지표', 'id:uuid:pk|user_id:uuid:fk|name:text|numerator_key:text|denominator_key:text'],
+];
 
-function model() {
+// 실제 외래 키 — 한 제약이 선 하나. 복합 키(user_id, x_id)는 부모의 id 를 가리키는 열로 잡습니다.
+const EDGES1 = [
+  'account_deletion_event.request_id>account_deletion_request', 'account_deletion_request.user_id>user', 'analytics_event_receipt.deployment_id>deployment', 'analytics_event_receipt.user_id>user',
+  'annotation.portfolio_id>portfolio', 'annotation.user_id>user', 'answer.created_record_id>record', 'answer.question_id>question',
+  'answer.user_id>user', 'answer_record_change.answer_id>answer', 'answer_record_change.record_id>record', 'answer_record_change.user_id>user',
+  'block.portfolio_section_id>portfolio_section', 'block.source_record_id>record', 'block.user_id>user', 'brew.job_analysis_id>job_analysis',
+  'brew.user_id>user', 'brew_job.user_id>user', 'brew_source.brew_id>brew', 'brew_source.record_id>record',
+  'brew_source.user_id>user', 'career_profile.user_id>user', 'category.user_id>user', 'category_view.category_id>category',
+  'category_view.user_id>user', 'company_research_item.company_id>company', 'company_research_item.user_id>user', 'consent.user_id>user',
+  'conversion_event.user_id>user', 'conversion_event.visit_event_id>visit_event', 'dashboard_view.portfolio_id>portfolio', 'dashboard_view.user_id>user',
+  'deployment.portfolio_id>portfolio', 'deployment.user_id>user', 'deployment_slug_redirect.portfolio_id>portfolio', 'deployment_slug_redirect.user_id>user',
+  'derived_metric.user_id>user', 'export_asset.portfolio_id>portfolio', 'export_asset.user_id>user', 'export_job.asset_id>export_asset',
+  'export_job.deployment_id>deployment', 'export_job.portfolio_id>portfolio', 'export_job.user_id>user', 'generated_page.portfolio_id>portfolio',
+  'generated_page.user_id>user', 'generation_job.brew_id>brew', 'generation_job.portfolio_id>portfolio', 'generation_job.recipe_id>recipe',
+  'generation_job.template_id>template', 'generation_job.user_id>user', 'generation_sentence_evidence.block_id>block', 'generation_sentence_evidence.generation_job_id>generation_job',
+  'generation_sentence_evidence.recipe_evidence_path_id>recipe_evidence_path', 'generation_sentence_evidence.user_id>user', 'generation_usage_ledger.generation_job_id>generation_job', 'generation_usage_ledger.usage_counter_id>usage_counter',
+  'generation_usage_ledger.user_id>user', 'identity_oauth_account.user_id>user', 'identity_session.user_id>user', 'insight.deployment_id>deployment',
+  'insight.user_id>user', 'interest.job_posting_id>job_posting', 'interest.user_id>user', 'interview_session.brew_id>brew',
+  'interview_session.user_id>user', 'job_analysis.job_posting_id>job_posting', 'job_analysis.user_id>user', 'job_analysis_history.job_analysis_id>job_analysis',
+  'job_analysis_history.user_id>user', 'job_posting.company_id>company', 'job_posting_requirement.job_posting_id>job_posting', 'layout_spec.generation_job_id>generation_job',
+  'layout_spec.portfolio_id>portfolio', 'layout_spec.seed_template_id>template', 'layout_spec.user_id>user', 'match_score.job_posting_id>job_posting',
+  'match_score.user_id>user', 'media_asset.user_id>user', 'media_variant.media_asset_id>media_asset', 'media_variant.user_id>user',
+  'metric_daily.deployment_id>deployment', 'metric_daily.user_id>user', 'notification.user_id>user', 'notification_preference.user_id>user',
+  'portfolio.brew_id>brew', 'portfolio.current_deployment_id>deployment', 'portfolio.template_id>template', 'portfolio.user_id>user',
+  'portfolio_edit_proposal.block_id>block', 'portfolio_edit_proposal.portfolio_id>portfolio', 'portfolio_edit_proposal.source_record_id>record', 'portfolio_edit_proposal.user_id>user',
+  'portfolio_section.portfolio_id>portfolio', 'portfolio_section.recipe_section_id>recipe_section', 'portfolio_section.user_id>user', 'portfolio_snapshot.portfolio_id>portfolio',
+  'portfolio_snapshot.user_id>user', 'question.interview_session_id>interview_session', 'question.replaced_from_id>question', 'question.requirement_id>job_posting_requirement',
+  'question.user_id>user', 'recent_search.user_id>user', 'recipe.brew_id>brew', 'recipe.user_id>user',
+  'recipe_evidence_path.recipe_id>recipe', 'recipe_evidence_path.recipe_item_id>recipe_item', 'recipe_evidence_path.user_id>user', 'recipe_item.recipe_section_id>recipe_section',
+  'recipe_item.user_id>user', 'recipe_revision.recipe_id>recipe', 'recipe_revision.user_id>user', 'recipe_section.recipe_id>recipe',
+  'recipe_section.user_id>user', 'recipe_unused_source.recipe_id>recipe', 'recipe_unused_source.record_id>record', 'recipe_unused_source.user_id>user',
+  'record.category_id>category', 'record.user_id>user', 'record_link.from_record_id>record', 'record_link.to_record_id>record',
+  'record_link.user_id>user', 'record_usage.block_id>block', 'record_usage.record_id>record', 'record_usage.user_id>user',
+  'requirement_coverage.requirement_id>job_posting_requirement', 'requirement_coverage.user_id>user', 'revision.block_id>block', 'revision.portfolio_id>portfolio',
+  'revision.proposal_id>portfolio_edit_proposal', 'revision.reverted_revision_id>revision', 'revision.user_id>user', 'saved_search.user_id>user',
+  'scheduled_job_run.job_key>scheduled_job_definition', 'section_view.portfolio_section_id>portfolio_section', 'section_view.user_id>user', 'section_view.visit_event_id>visit_event',
+  'skill.user_id>user', 'skill_evidence.record_id>record', 'skill_evidence.skill_id>skill', 'skill_evidence.user_id>user',
+  'usage_counter.user_id>user', 'user.plan_id>plan', 'visit_event.deployment_id>deployment', 'visit_event.user_id>user',
+  'widget.dashboard_view_id>dashboard_view', 'widget.derived_metric_id>derived_metric', 'widget.user_id>user',
+];
+// </erd-v1:auto>
+
+// 영역과 열 배치 — 사람이 정합니다. 새 테이블은 여기에 자리를 잡아야 그려집니다.
+const ZONES1 = [
+  { key: 'A', label: '계정 · 세션 · 요금제', domains: 'D12 · D11', stack: 0, accent: 1, cols: [['plan', 'notification', 'notification_preference', 'consent'], ['user', 'identity_session', 'identity_oauth_account', 'usage_counter', 'account_deletion_request', 'account_deletion_event']] },
+  { key: 'B', label: '커리어 기록', domains: 'D1', stack: 0, cols: [['category', 'category_view', 'skill', 'skill_evidence', 'career_profile'], ['record', 'record_link', 'record_usage', 'media_asset', 'media_variant']] },
+  { key: 'G', label: '플랫폼 · 정기 작업', domains: '운영', stack: 0, cols: [['platform_outbox', 'scheduled_job_definition'], ['scheduled_job_run']] },
+  { key: 'C', label: '채용 공고 수집 · 분석', domains: 'D2 · D3', stack: 1, cols: [['job_source', 'company', 'company_research_item'], ['job_posting', 'match_score', 'interest'], ['saved_search', 'recent_search', 'job_analysis', 'job_analysis_history'], ['job_posting_requirement', 'requirement_coverage']] },
+  { key: 'E', label: '산출물 — 생성 · 편집 · 배포', domains: 'D7 · D8 · D9', stack: 1, cols: [['template', 'layout_spec', 'generated_page', 'portfolio_section', 'block'], ['generation_job', 'generation_sentence_evidence', 'generation_usage_ledger', 'portfolio', 'portfolio_snapshot', 'revision'], ['portfolio_edit_proposal', 'export_asset', 'export_job', 'deployment', 'deployment_slug_redirect']] },
+  { key: 'D', label: '제작 흐름', domains: 'D4 · D5 · D6', stack: 2, accent: 1, cols: [['brew', 'brew_job', 'interview_session', 'question'], ['brew_source', 'answer', 'answer_record_change'], ['recipe', 'recipe_section', 'recipe_item', 'recipe_revision', 'recipe_evidence_path', 'recipe_unused_source']] },
+  { key: 'F', label: '통계 분석', domains: 'D10', stack: 2, cols: [['visit_event', 'section_view', 'conversion_event', 'analytics_event_receipt'], ['metric_daily', 'insight', 'annotation'], ['dashboard_view', 'widget', 'derived_metric']] },
+];
+
+const READING = {
+  V0: [
+    { tag: 'READING 01', title: '여섯 클러스터가 왼쪽에서 오른쪽으로 이어진다', body: '계정 → 기록 → 공고 → 제작 → 산출물 → 분석. 점선 박스가 클러스터 경계이고, 선은 FK가 있는 컬럼 행에서 출발해 부모의 id 행으로 들어갑니다. 까마귀발이 붙은 쪽이 N, 이중선이 붙은 쪽이 1입니다.' },
+    { tag: 'READING 02', title: '붉은 테두리 여섯 개가 뼈대', body: 'record · brew · recipe · recipe_item · portfolio · block. 스키마 확정과 인덱스 설계는 이 여섯 개를 먼저 끝낸 뒤 나머지로 확장합니다. 주황색 선은 클러스터를 건너뛰는 참조 — 원본 기록을 직접 가리키는 경로들입니다.' },
+    { tag: 'READING 03', title: '왕복 참조 두 곳', body: 'record ↔ block(record_usage의 사용처 추적과 block.source_record_id의 원본 동기화), recipe_section ↔ portfolio_section(문서 섹션의 원본). 순환 삭제를 막기 위해 한쪽은 SET NULL 또는 RESTRICT로 고정합니다. 연회색 선은 전 테이블 공통 user_id입니다.' }
+  ],
+  V1: [
+    { tag: 'READING 01', title: '설계에서 잡은 테이블은 그대로 있고, 운영에 필요한 자리가 붙었다', body: 'V0 의 테이블은 하나도 사라지지 않았습니다. 붙은 것은 로그인과 세션(identity_session · identity_oauth_account), 동의와 계정 삭제, 미디어(media_asset · media_variant), 작업 큐(brew_job · export_job)와 이벤트 아웃박스 · 정기 작업, 그리고 이력(job_analysis_history · recipe_revision · portfolio_snapshot)입니다.' },
+    { tag: 'READING 02', title: '소유자가 키 안으로 들어갔다', body: '자식 테이블은 부모를 (user_id, 부모 id) 복합 외래 키로 가리킵니다. 남의 데이터에 잘못 잇는 일을 조회 조건이 아니라 스키마가 막습니다. 그림의 선은 이 복합 키에서 부모의 id 를 가리키는 쪽 하나만 그렸습니다 — 연회색 user_id 선은 계정으로 가는 것입니다.' },
+    { tag: 'READING 03', title: '상태 값은 enum 타입이 아니라 text + check 제약', body: 'V0 에서 enum 으로 적은 자리가 구현에서는 text 열과 check 제약입니다. 값을 늘릴 때 타입을 바꾸지 않고 마이그레이션으로 제약만 다시 겁니다. 그래서 이 판의 타입 칸에는 enum 이 나오지 않습니다.' }
+  ]
+};
+
+// 고를 수 있는 판. tables · zones 는 자리 잡기, edges 가 없으면 컬럼 이름에서 부모를 찾는다.
+const VERSIONS = [
+  { code: 'V0', label: '설계 원안', note: '기능 명세서 · 데이터 모델 명세서가 정한 구조 — 2026-08 확정본',
+    tables: T, zones: ZONES, fkTarget: FK_TARGET, core: CORE, reading: READING.V0 },
+  { code: 'V1', label: '현재 구현', note: '마이그레이션 0001–0054 를 적용한 스키마에서 그대로 뽑았습니다',
+    tables: T1, zones: ZONES1, edges: EDGES1, core: CORE, reading: READING.V1 }
+];
+
+const PITCH = 330, PAD_S = 20, PAD_T = 30, PAD_B = 22, ROW_GAP = 38, ZONE_GAP = 54, STACK_GAP = 60;
+
+// 판 하나를 좌표로 편다. 스택의 x 는 영역 폭에서 계산한다 —
+// 열이 늘어도 옆 스택을 덮지 않는다.
+function model(ds) {
   const defs = {};
-  T.forEach(t => {
+  ds.tables.forEach(t => {
     defs[t[0]] = {
       name: t[0], ko: t[1],
-      fields: t[4].split('|').map(f => {
+      fields: t[2].split('|').map(f => {
         const p = f.split(':');
         return { name: p[0], type: p[1], flag: p[2] || '' };
       })
     };
   });
+  const zoneW = z => PAD_S * 2 + z.cols.length * W + (z.cols.length - 1) * (PITCH - W);
+  const bandW = [];
+  ds.zones.forEach(z => { bandW[z.stack] = Math.max(bandW[z.stack] || 0, zoneW(z)); });
+  const bandX = [];
+  let bx = 40;
+  bandW.forEach((w, i) => { bandX[i] = bx; bx += w + STACK_GAP; });
+
   const map = {}, tables = [], zones = [];
-  const stackY = [60, 60, 60];
-  ZONES.forEach((z, zi) => {
-    const zx = STACK_X[z.stack], zy = stackY[z.stack];
+  const stackY = bandX.map(() => 60);
+  ds.zones.forEach((z, zi) => {
+    const zx = bandX[z.stack], zy = stackY[z.stack];
     let contentH = 0;
     z.cols.forEach((col, ci) => {
       let y = zy + PAD_T;
@@ -231,21 +398,37 @@ function model() {
 function rowY(t, i) { return t.y + HEAD + TOP_PAD + i * ROW + ROW / 2; }
 
 class Component extends DCLogic {
-  state = { focus: null };
+  state = { focus: null, ver: 0 };
 
   renderVals() {
-    const { tables, map, zones } = model();
+    const ds = VERSIONS[this.state.ver] || VERSIONS[0];
+    const CORE = ds.core;
+    const { tables, map, zones } = model(ds);
     const focus = this.state.focus;
     const edges = [];
-    tables.forEach(t => {
-      t.fields.forEach((f, i) => {
-        if (f.flag !== 'fk') return;
-        const target = FK_TARGET[f.name] || f.name.replace(/_id$/, '');
-        const p = map[target];
-        if (!p || p === t) return;
-        edges.push({ from: t, fromY: rowY(t, i), to: p, toY: rowY(p, 0), field: f.name, jump: t.zone === p.zone ? 0 : 2 });
+    const link = (t, i, p) => {
+      if (!p || p === t) return;
+      edges.push({ from: t, fromY: rowY(t, i), to: p, toY: rowY(p, 0), field: t.fields[i].name, jump: t.zone === p.zone ? 0 : 2 });
+    };
+    if (ds.edges) {
+      // 실제 제약에서 뽑은 목록 — 'table.column>parent'
+      ds.edges.forEach(spec => {
+        const dot = spec.indexOf('.'), gt = spec.indexOf('>');
+        const t = map[spec.slice(0, dot)];
+        if (!t) return;
+        const col = spec.slice(dot + 1, gt);
+        const i = t.fields.findIndex(f => f.name === col);
+        if (i >= 0) link(t, i, map[spec.slice(gt + 1)]);
       });
-    });
+    } else {
+      // 컬럼 이름에서 부모를 찾는다 — 이름이 다른 것만 fkTarget 에 적혀 있다
+      tables.forEach(t => {
+        t.fields.forEach((f, i) => {
+          if (f.flag !== 'fk') return;
+          link(t, i, map[ds.fkTarget[f.name] || f.name.replace(/_id$/, '')]);
+        });
+      });
+    }
 
     // 포커스 — 클릭한 테이블과 직접 연결된 테이블만 남긴다
     const linked = {};
@@ -320,7 +503,28 @@ class Component extends DCLogic {
 
     return {
       canvasW, canvasH,
+      pageW: canvasW + 112,
+      tableCount: tables.length,
       edgeCount: edges.length,
+      verNote: ds.note,
+      sourceNote: ds.code === 'V0'
+        ? React.createElement('span', null, '컬럼 제약과 삭제 정책은 ',
+            React.createElement('a', { href: './Expresso 데이터 모델 명세서.dc.html' }, '데이터 모델 명세서'))
+        : React.createElement('span', null, '컬럼 제약과 삭제 정책은 ',
+            React.createElement('code', { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: '12px' } }, 'packages/database/migrations')),
+      versions: VERSIONS.map((v, i) => {
+        const on = i === this.state.ver;
+        return {
+          code: v.code, label: v.label,
+          color: on ? '#16223A' : '#7A8BA6',
+          codeColor: on ? '#9A4030' : '#AFBACB',
+          weight: on ? 600 : 400,
+          bg: on ? '#fff' : 'transparent',
+          shadow: on ? '0 1px 4px rgba(22,34,58,.12)' : 'none',
+          // 판이 바뀌면 없던 테이블에 초점이 남지 않게 함께 푼다
+          onPick: () => this.setState({ ver: i, focus: null })
+        };
+      }),
       connectors: React.createElement('svg', {
         width: canvasW, height: canvasH,
         style: { position: 'absolute', left: 0, top: 0, overflow: 'visible', pointerEvents: 'none', zIndex: 1 }
@@ -352,11 +556,7 @@ class Component extends DCLogic {
           bd: f.flag === 'pk' ? '#B98A55' : (f.flag === 'fk' ? '#2F5C86' : '#B9C4D4')
         }))
       })),
-      reading: [
-        { tag: 'READING 01', title: '여섯 클러스터가 왼쪽에서 오른쪽으로 이어진다', body: '계정 → 기록 → 공고 → 제작 → 산출물 → 분석. 점선 박스가 클러스터 경계이고, 선은 FK가 있는 컬럼 행에서 출발해 부모의 id 행으로 들어갑니다. 까마귀발이 붙은 쪽이 N, 이중선이 붙은 쪽이 1입니다.' },
-        { tag: 'READING 02', title: '붉은 테두리 여섯 개가 뼈대', body: 'record · brew · recipe · recipe_item · portfolio · block. 스키마 확정과 인덱스 설계는 이 여섯 개를 먼저 끝낸 뒤 나머지로 확장합니다. 주황색 선은 클러스터를 건너뛰는 참조 — 원본 기록을 직접 가리키는 경로들입니다.' },
-        { tag: 'READING 03', title: '왕복 참조 두 곳', body: 'record ↔ block(record_usage의 사용처 추적과 block.source_record_id의 원본 동기화), recipe_section ↔ portfolio_section(문서 섹션의 원본). 순환 삭제를 막기 위해 한쪽은 SET NULL 또는 RESTRICT로 고정합니다. 연회색 선은 전 테이블 공통 user_id입니다.' }
-      ]
+      reading: ds.reading
     };
   }
 }
