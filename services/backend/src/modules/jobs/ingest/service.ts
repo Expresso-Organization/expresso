@@ -404,11 +404,13 @@ export class JobIngestService {
       // 로고를 여기서 받는다. 이미 적혀 있으면 덮지 않는다 — 설정을 바꾸는
       // 일보다 공고가 들어오는 일이 훨씬 잦다.
       const site = source.site_url === null ? null : hostOf(source.site_url);
-      const company = (await transaction<{ id: string }[]>`
+      await transaction`
         insert into company (name, dedupe_key, domain)
         values (${posting.companyName}, ${companyKey}, ${site})
         as new on duplicate key update name = company.name, domain = coalesce(company.domain, new.domain)
-        returning id
+      `;
+      const company = (await transaction<{ id: string }[]>`
+        select id from company where dedupe_key = ${companyKey}
       `)[0];
       if (!company) throw new Error("company was not persisted");
 
