@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { createPool, type Pool, type PoolConnection } from "mysql2/promise";
 
 import type { ReadinessCheck } from "../modules/system/readiness.js";
@@ -142,7 +144,7 @@ export interface SqlTag {
   json(value: unknown): JsonValue;
   /** PostgreSQL 배열 열이 JSON 배열이 되었습니다 — 같은 자리에 그대로 씁니다. */
   array(values: readonly unknown[]): JsonValue;
-  end(): Promise<void>;
+  end(options?: { timeout?: number }): Promise<void>;
 }
 
 function makeTag(exec: Exec, extra: Partial<SqlTag> = {}): SqlTag {
@@ -184,6 +186,148 @@ async function run(
   return Array.isArray(rows) ? rows : [];
 }
 
+/**
+ * MySQL 에는 RETURNING 이 없습니다. 쓰기 한 문장이 쓰기와 재조회 두 문장이 되는데,
+ * 이 나눔을 자리마다 손으로 적으면 오백 곳에 흩어집니다. 그래서 여기 한 곳에 둡니다.
+ *
+ * 다루는 꼴은 셋입니다 — 한 행 insert · update · delete. 그 밖의 꼴(여러 행 insert,
+ * on duplicate key update 와 함께 쓴 returning)은 뜻이 갈리므로 오류를 냅니다.
+ * 부르는 쪽에서 두 문장으로 적어야 합니다.
+ */
+const returningPattern = /\s+returning\s+([\s\S]+?)\s*;?\s*$/i;
+
+/** 따옴표 안의 물음표는 자리 표시가 아닙니다. */
+function countPlaceholders(text: string): number {
+  let count = 0;
+  let quote: string | null = null;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (quote) {
+      if (ch === "\\") i += 1;
+      else if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === "`") quote = ch;
+    else if (ch === "?") count += 1;
+  }
+  return count;
+}
+
+function findKeyword(text: string, keyword: string): number {
+  const pattern = new RegExp(`^\\s${keyword}\\s`, "i");
+  let quote: string | null = null;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (quote) {
+      if (ch === "\\") i += 1;
+      else if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === "`") { quote = ch; continue; }
+    if (pattern.test(text.slice(i, i + keyword.length + 2))) return i;
+  }
+  return -1;
+}
+
+function closingParen(text: string, open: number): number {
+  let depth = 0;
+  let quote: string | null = null;
+  for (let i = open; i < text.length; i += 1) {
+    const ch = text[i];
+    if (quote) {
+      if (ch === "\\") i += 1;
+      else if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === "`") quote = ch;
+    else if (ch === "(") depth += 1;
+    else if (ch === ")") { depth -= 1; if (depth === 0) return i; }
+  }
+  return -1;
+}
+
+const unsupported = (why: string): never => {
+  throw new Error(
+    `MySQL 에서는 이 returning 을 옮기지 못합니다 — ${why}. 쓰기와 재조회를 나눠 적으십시오.`,
+  );
+};
+
+async function execReturning(
+  runner: Pool | PoolConnection,
+  text: string,
+  params: unknown[],
+): Promise<unknown> {
+  const match = returningPattern.exec(text);
+  if (!match) return run(runner, text, params);
+
+  const body = text.slice(0, match.index);
+  const columns = (match[1] ?? "").trim();
+
+  if (/^\s*insert/i.test(body)) {
+    if (/on\s+duplicate\s+key/i.test(body)) {
+      unsupported("insert 가 on duplicate key update 와 함께 있습니다");
+    }
+    const head = /^\s*insert\s+into\s+(`?[a-z_][a-z0-9_]*`?)\s*\(([^)]*)\)\s*values\s*\(/i.exec(body);
+    if (!head) unsupported("insert 의 열 목록과 values 를 읽지 못했습니다");
+    const table = head![1] ?? "";
+    const cols = (head![2] ?? "").split(",").map((c) => c.trim().replace(/`/g, ""));
+    const open = head!.index + head![0].length - 1;
+    const close = closingParen(body, open);
+    if (close < 0) unsupported("values 괄호가 닫히지 않았습니다");
+    if (/\)\s*,\s*\(/.test(body.slice(close))) unsupported("여러 행을 한 번에 넣고 있습니다");
+
+    const before = countPlaceholders(body.slice(0, open));
+    const inside = countPlaceholders(body.slice(open, close + 1));
+    if (inside !== cols.length) unsupported("열 수와 자리 표시 수가 다릅니다");
+
+    const idAt = cols.indexOf("id");
+    let statement = body;
+    let bound = params;
+    let id: unknown;
+    if (idAt >= 0) {
+      id = params[before + idAt];
+    } else {
+      id = randomUUID();
+      statement =
+        body.slice(0, head!.index) +
+        head![0].replace(/\(([^)]*)\)\s*values\s*\($/i, (_m, list: string) => `(id, ${list}) values (?, `) +
+        body.slice(head!.index + head![0].length);
+      bound = [...params.slice(0, before), id, ...params.slice(before)];
+    }
+    await run(runner, statement, bound);
+    return run(runner, `select ${columns} from ${table} where id = ?`, [id]);
+  }
+
+  if (/^\s*update/i.test(body)) {
+    const head = /^\s*update\s+(`?[a-z_][a-z0-9_]*`?)\s/i.exec(body);
+    if (!head) unsupported("update 의 표 이름을 읽지 못했습니다");
+    const table = head![1] ?? "";
+    const whereAt = findKeyword(body, "where");
+    const where = whereAt < 0 ? "" : body.slice(whereAt);
+    const whereParams = whereAt < 0 ? [] : params.slice(countPlaceholders(body.slice(0, whereAt)));
+    const targets = (await run(runner, `select id from ${table} ${where}`, whereParams)) as Row[];
+    await run(runner, body, params);
+    if (targets.length === 0) return [];
+    const ids = targets.map((row) => row.id);
+    const marks = ids.map(() => "?").join(", ");
+    return run(runner, `select ${columns} from ${table} where id in (${marks})`, ids);
+  }
+
+  if (/^\s*delete/i.test(body)) {
+    const head = /^\s*delete\s+from\s+(`?[a-z_][a-z0-9_]*`?)\s*/i.exec(body);
+    if (!head) unsupported("delete 의 표 이름을 읽지 못했습니다");
+    const table = head![1] ?? "";
+    const whereAt = findKeyword(body, "where");
+    const where = whereAt < 0 ? "" : body.slice(whereAt);
+    const rows = await run(runner, `select ${columns} from ${table} ${where}`, params);
+    await run(runner, body, params);
+    return rows;
+  }
+
+  return unsupported("insert · update · delete 가 아닙니다");
+}
+
+
 export interface MysqlResource {
   sql: SqlTag;
   readinessCheck: ReadinessCheck;
@@ -204,12 +348,12 @@ export function createMysqlResource(databaseUrl: string): MysqlResource {
     bigNumberStrings: false,
   });
 
-  const sql = makeTag((text, params) => run(pool, text, params), {
+  const sql = makeTag((text, params) => execReturning(pool, text, params), {
     async begin<T>(fn: (tx: SqlTag) => Promise<T>): Promise<T> {
       const connection = await pool.getConnection();
       try {
         await connection.beginTransaction();
-        const tx = makeTag((text, params) => run(connection, text, params), {
+        const tx = makeTag((text, params) => execReturning(connection, text, params), {
           begin: (nested) => nested(tx),
           end: async () => {},
         });
