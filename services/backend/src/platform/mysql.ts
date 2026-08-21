@@ -117,8 +117,13 @@ function build(
       text += value.text;
       params.push(...value.params);
     } else if (isList(value)) {
-      text += `(${value.values.map(() => "?").join(", ")})`;
-      params.push(...value.values.map(bind));
+      // 빈 목록은 () 가 되어 문법이 깨진다. 아무것도 맞지 않는 값을 하나 둔다.
+      if (value.values.length === 0) {
+        text += "(null)";
+      } else {
+        text += `(${value.values.map(() => "?").join(", ")})`;
+        params.push(...value.values.map(bind));
+      }
     } else {
       text += "?";
       params.push(bind(value));

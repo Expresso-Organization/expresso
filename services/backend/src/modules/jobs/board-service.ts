@@ -464,9 +464,15 @@ export class JobBoardService {
    */
   async #brewsFor(userId: string, jobPostingIds: string[]) {
     if (jobPostingIds.length === 0) return new Map<string, BrewRow>();
+    // 공고마다 가장 최근 제작 세션 하나. MySQL 에는 distinct on 이 없어 순위를 매긴다.
     const rows = await this.#sql<BrewRow[]>`
-      select distinct on (job_analysis.job_posting_id)
+      select job_posting_id, id, status, answered, question_count, portfolio_id from (
+      select
         job_analysis.job_posting_id,
+        row_number() over (
+          partition by job_analysis.job_posting_id
+          order by brew.updated_at desc, brew.id desc
+        ) as rn,
         brew.id,
         brew.status,
         (
@@ -492,7 +498,9 @@ export class JobBoardService {
         on job_analysis.user_id = brew.user_id and job_analysis.id = brew.job_analysis_id
       where brew.user_id = ${userId}
         and job_analysis.job_posting_id in ${this.#sql(jobPostingIds)}
-      order by job_analysis.job_posting_id, brew.updated_at desc, brew.id desc
+      ) as ranked
+      where rn = 1
+      order by job_posting_id
     `;
     return new Map(rows.map((row) => [row.job_posting_id, row]));
   }
