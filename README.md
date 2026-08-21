@@ -412,6 +412,11 @@ API / Worker → PostgreSQL · local media
 | [디자인 시스템](<docs/Expresso Design System.dc.html>) | 색, 크기, 타이포그래피, 토큰 |
 | [ERD](<docs/Expresso ERD.dc.html>) | 데이터 모델과 관계 |
 
+개발 포털은 보고 있는 자리를 주소에 싣습니다 — `#/domain/D6` · `#/board/kanban/EXP-3` ·
+`#/wiki/PG-2` · `#/doc/spec`. 주소를 그대로 건네면 같은 자리가 열리고, 뒤로 가기가
+지나온 자리로 돌아갑니다. 보드 티켓과 위키 문서는 각자 브라우저에 저장되므로, 받은
+쪽에 그 항목이 없으면 보드·위키까지만 열립니다.
+
 ### 아키텍처와 운영
 
 | 문서 | 내용 |
