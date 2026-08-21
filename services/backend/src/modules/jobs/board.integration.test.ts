@@ -123,8 +123,10 @@ describeWithDatabase("job board read HTTP integration", () => {
       returning id
     `)[0]!.id;
 
-    const postings = await sql<IdRow[]>`
+    const postings: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }, { id: randomUUID() }];
+    await sql`
       insert into job_posting (
+        id,
         company_id, source, title, description_raw,
         requirements, expires_at, dedupe_hash, created_at,
         location, work_type, experience_label, job_family,
@@ -133,10 +135,10 @@ describeWithDatabase("job board read HTTP integration", () => {
       )
       values
         (
-          ${companyId}, 'user_input', '데이터 플랫폼 엔지니어',
+          ${postings[0]!.id}, ${companyId}, 'user_input', '데이터 플랫폼 엔지니어',
           ${DESCRIPTION},
           ${sql.json({ technologies: ["Airflow", "Spark"], impacts: [], roles: [], conditions: [] })},
-          now(6) + interval 3 day, ${`board-urgent-${marker}`}, now() - interval '3 minutes',
+          now(6) + interval 3 day, ${`board-urgent-${marker}`}, now(6) - interval 3 minute,
           '서울 강남', '리모트 주 2일', '3년 이상', '백엔드 · 데이터',
           '정규직 · 수습 3개월', '8,000만 – 1억 1,000만',
           ${sql.json([{ group: "적재 파이프라인", items: ["하루 3,000만 건 적재"] }])},
@@ -145,23 +147,22 @@ describeWithDatabase("job board read HTTP integration", () => {
           '수습 3개월 후 정규직 전환 평가가 있습니다'
         ),
         (
-          ${companyId}, 'user_input', '백엔드 엔지니어',
+          ${postings[1]!.id}, ${companyId}, 'user_input', '백엔드 엔지니어',
           ${DESCRIPTION},
           ${sql.json({ technologies: ["Airflow", "Kafka"], impacts: [], roles: [], conditions: [] })},
-          now() + interval '30 days', ${`board-later-${marker}`}, now() - interval '2 minutes',
+          now(6) + interval 30 day, ${`board-later-${marker}`}, now(6) - interval 2 minute,
           '서울', '출근', '5년 이상', '백엔드 · 데이터',
           '정규직', '면접 후 협의',
           '[]', '[]', '[]', null, null
         ),
         (
-          ${companyId}, 'user_input', '플랫폼 엔지니어',
+          ${postings[2]!.id}, ${companyId}, 'user_input', '플랫폼 엔지니어',
           ${DESCRIPTION},
           ${sql.json({ technologies: ["Go"], impacts: [], roles: [], conditions: [] })},
-          null, ${`board-always-${marker}`}, now() - interval '1 minute',
+          null, ${`board-always-${marker}`}, now(6) - interval 1 minute,
           null, '리모트', '경력', '플랫폼 · 인프라',
           null, null, '[]', '[]', '[]', null, null
         )
-      returning id
     `;
     urgentId = postings[0]!.id;
     laterId = postings[1]!.id;

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { API_PREFIX, HomeReadModelSchema, type NotificationKind, type UnifiedSearchQuery } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/mysql.js";
 
@@ -77,20 +78,19 @@ export class EngagementService {
       `)[0]?.enabled ?? true;
       if (!enabled) return { created: false, reason: "PREFERENCE_DISABLED" as const, notification: null };
       const date = kstDate(at);
-      const row = (await transaction<(NotificationRow & { inserted: boolean })[]>`
-        with inserted as (
-          insert ignore into notification (user_id, kind, target_url, dedupe_key, dedupe_date, created_at, next_attempt_at)
-          values (${userId}, ${kind}, ${targetUrl}, ${dedupeKey}, ${date}, ${at}, ${at})
-            
-          returning *, true as inserted
-        )
-        select * from inserted
-        union all
-        select notification.*, false as inserted from notification
+      // 같은 사유의 알림은 하루 하나다. 우리가 만든 id 로 다시 읽어 방금 넣은
+      // 것인지 가려낸다.
+      const notificationId = randomUUID();
+      await transaction`
+        insert ignore into notification (id, user_id, kind, target_url, dedupe_key, dedupe_date, created_at, next_attempt_at)
+        values (${notificationId}, ${userId}, ${kind}, ${targetUrl}, ${dedupeKey}, ${date}, ${at}, ${at})
+      `;
+      const found = (await transaction<NotificationRow[]>`
+        select * from notification
         where user_id = ${userId} and dedupe_key = ${dedupeKey} and dedupe_date = ${date}
-          and not exists (select 1 from inserted)
         limit 1
       `)[0];
+      const row = found ? { ...found, inserted: found.id === notificationId } : undefined;
       if (!row) throw new Error("notification missing");
       if (row.inserted) await addOutboxEvent(transaction, {
         topic: "notification.deliver", payload: { notificationId: row.id, userId }, idempotencyKey: `notification-deliver:${row.id}`,
