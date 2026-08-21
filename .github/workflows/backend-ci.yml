@@ -118,5 +118,10 @@ jobs:
       - name: 실제 인프라 통합 테스트
         run: pnpm --filter @expresso/backend test:infra
 
+      # 다른 파일이 같은 데이터베이스를 두드리는 동안 잰 p95 는 그 경로의 값이
+      # 아니다. 혼자 돌린다.
+      - name: 성능 예산
+        run: pnpm --filter @expresso/backend test:load
+
       - name: 빌드
         run: pnpm build

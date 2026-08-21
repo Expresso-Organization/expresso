@@ -14,7 +14,8 @@
     "start:worker": "node dist/worker/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "pnpm --filter @expresso/contracts build && pnpm --filter @expresso/database build && vitest run",
-    "test:infra": "pnpm --filter @expresso/contracts build && pnpm --filter @expresso/database build && vitest run integration.test.ts"
+    "test:infra": "pnpm --filter @expresso/contracts build && pnpm --filter @expresso/database build && vitest run integration.test.ts",
+    "test:load": "pnpm --filter @expresso/contracts build && pnpm --filter @expresso/database build && EXPRESSO_LOAD_TEST=1 vitest run"
   },
   "dependencies": {
     "@expresso/contracts": "workspace:*",
