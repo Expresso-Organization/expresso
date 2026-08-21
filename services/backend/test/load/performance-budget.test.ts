@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { SqlTag } from "../../src/platform/mysql.js";
 import { createMysqlResource } from "../../src/platform/mysql.js";
 import { performance } from "node:perf_hooks";
 
@@ -24,8 +25,8 @@ function percentile(values: number[], ratio: number) {
 
 describeWithDatabase("release performance and backpressure budget", () => {
   const databaseName = `expresso_load_${randomUUID().replaceAll("-", "")}`;
-  let admin: postgres.Sql;
-  let sql: postgres.Sql;
+  let admin: SqlTag;
+  let sql: SqlTag;
   let app: ReturnType<typeof buildApi>;
   let token = "";
   let categoryId = "";
@@ -33,10 +34,10 @@ describeWithDatabase("release performance and backpressure budget", () => {
   let slug = "";
 
   beforeAll(async () => {
-    const root = new URL(rootDatabaseUrl!); const adminUrl = new URL(root); adminUrl.pathname = "/postgres";
-    admin = createMysqlResource(adminUrl.toString().sql, { max: 1 }); await admin.unsafe(`create database "${databaseName}"`);
+    const root = new URL(rootDatabaseUrl!); const adminUrl = new URL(root); adminUrl.pathname = "/mysql";
+    admin = createMysqlResource(adminUrl.toString()).sql; await admin.unsafe(`create database \`${databaseName}\``);
     const isolated = new URL(root); isolated.pathname = `/${databaseName}`; await migrate({ databaseUrl: isolated.toString() });
-    sql = createMysqlResource(isolated.toString().sql, { max: 20 });
+    sql = createMysqlResource(isolated.toString()).sql;
     const planId = (await sql<IdRow[]>`select id from plan where code = 'pro'`)[0]?.id;
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
     categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id ?? "";
@@ -63,7 +64,7 @@ describeWithDatabase("release performance and backpressure budget", () => {
 
   afterAll(async () => {
     if (app) await app.close(); if (sql) await sql.end({ timeout: 5 });
-    if (admin) { await admin.unsafe(`drop database if exists "${databaseName}"`); await admin.end({ timeout: 5 }); }
+    if (admin) { await admin.unsafe(`drop database if exists \`${databaseName}\``); await admin.end({ timeout: 5 }); }
   }, 30_000);
 
   async function timed(request: Parameters<typeof app.inject>[0]) {

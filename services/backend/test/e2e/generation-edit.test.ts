@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { SqlTag } from "../../src/platform/mysql.js";
 import { createMysqlResource } from "../../src/platform/mysql.js";
 import { migrate } from "@expresso/database";
 import postgres from "postgres";
@@ -24,16 +25,16 @@ describeWithInfrastructure("generation edit restore vertical slice", () => {
   const databaseName = `expresso_generation_e2e_${randomUUID().replaceAll("-", "")}`;
   const prefix = `expresso-${databaseName}`;
   const queue = createReliableQueue<Record<string, unknown>>("domain-jobs", redisUrl!, prefix);
-  let admin: postgres.Sql; let sql: postgres.Sql; let app: ReturnType<typeof buildApi>;
+  let admin: SqlTag; let sql: SqlTag; let app: ReturnType<typeof buildApi>;
   let worker: ReturnType<typeof createQueueWorker<Record<string, unknown>, Record<string, unknown>>>;
   let dispatcher: OutboxDispatcher; let origin = ""; let token = "";
   let generation: GenerationService;
 
   beforeAll(async () => {
-    const root = new URL(rootDatabaseUrl!); const adminUrl = new URL(root); adminUrl.pathname = "/postgres";
-    admin = createMysqlResource(adminUrl.toString().sql, { max: 1 }); await admin.unsafe(`create database "${databaseName}"`);
+    const root = new URL(rootDatabaseUrl!); const adminUrl = new URL(root); adminUrl.pathname = "/mysql";
+    admin = createMysqlResource(adminUrl.toString()).sql; await admin.unsafe(`create database \`${databaseName}\``);
     const isolated = new URL(root); isolated.pathname = `/${databaseName}`; await migrate({ databaseUrl: isolated.toString() });
-    sql = createMysqlResource(isolated.toString().sql, { max: 6 });
+    sql = createMysqlResource(isolated.toString()).sql;
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     const categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id;
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;

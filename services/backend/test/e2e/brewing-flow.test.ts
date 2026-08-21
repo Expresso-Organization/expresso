@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { SqlTag } from "../../src/platform/mysql.js";
 import { createMysqlResource } from "../../src/platform/mysql.js";
 
 import { migrate } from "@expresso/database";
@@ -41,8 +42,8 @@ describeWithInfrastructure("analysis to evidence recipe vertical slice", () => {
   const databaseName = `expresso_brew_e2e_${randomUUID().replaceAll("-", "")}`;
   const prefix = `expresso-${databaseName}`;
   const jobs = createReliableQueue<Record<string, unknown>>("domain-jobs", redisUrl!, prefix);
-  let admin: postgres.Sql;
-  let sql: postgres.Sql;
+  let admin: SqlTag;
+  let sql: SqlTag;
   let app: ReturnType<typeof buildApi>;
   let worker: ReturnType<typeof createQueueWorker<Record<string, unknown>, Record<string, unknown>>>;
   let dispatcher: OutboxDispatcher;
@@ -52,12 +53,12 @@ describeWithInfrastructure("analysis to evidence recipe vertical slice", () => {
 
   beforeAll(async () => {
     const rootUrl = new URL(rootDatabaseUrl!);
-    const adminUrl = new URL(rootUrl); adminUrl.pathname = "/postgres";
-    admin = createMysqlResource(adminUrl.toString().sql, { max: 1 });
-    await admin.unsafe(`create database "${databaseName}"`);
+    const adminUrl = new URL(rootUrl); adminUrl.pathname = "/mysql";
+    admin = createMysqlResource(adminUrl.toString()).sql;
+    await admin.unsafe(`create database \`${databaseName}\``);
     const isolatedUrl = new URL(rootUrl); isolatedUrl.pathname = `/${databaseName}`;
     await migrate({ databaseUrl: isolatedUrl.toString() });
-    sql = createMysqlResource(isolatedUrl.toString().sql, { max: 6 });
+    sql = createMysqlResource(isolatedUrl.toString()).sql;
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("fresh plan missing");
     const userId = (await sql<IdRow[]>`
@@ -122,7 +123,7 @@ describeWithInfrastructure("analysis to evidence recipe vertical slice", () => {
     if (app) await app.close();
     if (sql) await sql.end({ timeout: 5 });
     if (admin) {
-      await admin.unsafe(`drop database if exists "${databaseName}"`);
+      await admin.unsafe(`drop database if exists \`${databaseName}\``);
       await admin.end({ timeout: 5 });
     }
   }, 30_000);
