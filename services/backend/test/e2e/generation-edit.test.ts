@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../src/platform/mysql.js";
 import { migrate } from "@expresso/database";
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -30,20 +31,20 @@ describeWithInfrastructure("generation edit restore vertical slice", () => {
 
   beforeAll(async () => {
     const root = new URL(rootDatabaseUrl!); const adminUrl = new URL(root); adminUrl.pathname = "/postgres";
-    admin = postgres(adminUrl.toString(), { max: 1 }); await admin.unsafe(`create database "${databaseName}"`);
+    admin = createMysqlResource(adminUrl.toString().sql, { max: 1 }); await admin.unsafe(`create database "${databaseName}"`);
     const isolated = new URL(root); isolated.pathname = `/${databaseName}`; await migrate({ databaseUrl: isolated.toString() });
-    sql = postgres(isolated.toString(), { max: 6 });
+    sql = createMysqlResource(isolated.toString().sql, { max: 6 });
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     const categoryId = (await sql<IdRow[]>`select id from category where key = 'experience' and is_system`)[0]?.id;
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
     if (!planId || !categoryId || !templateId) throw new Error("generation E2E seed missing");
-    const userId = (await sql<IdRow[]>`insert into "user" (email, display_name, plan_id) values ('generation-e2e@example.com', 'Generation E2E', ${planId}) returning id`)[0]?.id;
+    const userId = (await sql<IdRow[]>`insert into \`user\` (email, display_name, plan_id) values ('generation-e2e@example.com', 'Generation E2E', ${planId}) returning id`)[0]?.id;
     if (!userId) throw new Error("generation E2E user missing");
     const identity = new IdentityService(sql); token = (await identity.issueSession({ userId })).accessToken;
     const companyId = (await sql<IdRow[]>`insert into company (name, dedupe_key) values ('Generation E2E', ${databaseName}) returning id`)[0]?.id;
-    const postingId = companyId && (await sql<IdRow[]>`insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash) values (${companyId}, 'user_input', 'Engineer', 'Grounded source', '{}'::jsonb, ${databaseName}) returning id`)[0]?.id;
+    const postingId = companyId && (await sql<IdRow[]>`insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash) values (${companyId}, 'user_input', 'Engineer', 'Grounded source', '{}', ${databaseName}) returning id`)[0]?.id;
     const analysisId = postingId && (await sql<IdRow[]>`insert into job_analysis (user_id, job_posting_id, input_type) values (${userId}, ${postingId}, 'paste') returning id`)[0]?.id;
-    const recordId = (await sql<IdRow[]>`insert into record (user_id, category_id, title, status, origin, properties, body_md) values (${userId}, ${categoryId}, 'Grounded record', 'organized', 'manual', '{}'::jsonb, 'Grounded record') returning id`)[0]?.id;
+    const recordId = (await sql<IdRow[]>`insert into record (user_id, category_id, title, status, origin, properties, body_md) values (${userId}, ${categoryId}, 'Grounded record', 'organized', 'manual', '{}', 'Grounded record') returning id`)[0]?.id;
     if (!analysisId || !recordId) throw new Error("generation E2E domain missing");
     const brewId = (await sql<IdRow[]>`insert into brew (user_id, job_analysis_id, length_preset) values (${userId}, ${analysisId}, 'single') returning id`)[0]?.id;
     if (!brewId) throw new Error("generation E2E brew missing");
@@ -87,7 +88,7 @@ describeWithInfrastructure("generation edit restore vertical slice", () => {
     expect((await sql<{ used: number }[]>`select used from usage_counter limit 1`)[0]?.used).toBe(1);
     const restore = await api(`/v1/portfolios/${portfolioId}/restore`, { method: 'POST', body: { snapshotId, confirm: true } });
     expect(restore.status).toBe(200);
-    expect((await sql<{ text: string; locked: boolean }[]>`select content ->> 'text' as text, locked from block where id = ${blockId}`)[0]).toEqual({ text: 'Grounded record 0', locked: false });
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from generation_sentence_evidence where generation_job_id = ${jobId}`)[0]?.count).toBe(3);
+    expect((await sql<{ text: string; locked: boolean }[]>`select content ->> '$.text' as text, locked from block where id = ${blockId}`)[0]).toEqual({ text: 'Grounded record 0', locked: false });
+    expect((await sql<{ count: number }[]>`select count(*) as count from generation_sentence_evidence where generation_job_id = ${jobId}`)[0]?.count).toBe(3);
   }, 30000);
 });

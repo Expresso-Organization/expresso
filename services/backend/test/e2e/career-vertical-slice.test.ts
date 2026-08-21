@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../src/platform/mysql.js";
 
 import { migrate } from "@expresso/database";
 import postgres from "postgres";
@@ -27,22 +28,22 @@ describeWithDatabase("career authenticated vertical slice", () => {
   let firstUserId: string;
 
   beforeAll(async () => {
-    const rootUrl = new URL(rootDatabaseUrl ?? "postgres://127.0.0.1:1/unused");
+    const rootUrl = new URL(rootDatabaseUrl ?? "mysql://127.0.0.1:1/unused");
     const adminUrl = new URL(rootUrl);
     adminUrl.pathname = "/postgres";
-    admin = postgres(adminUrl.toString(), { max: 1 });
+    admin = createMysqlResource(adminUrl.toString().sql, { max: 1 });
     await admin.unsafe(`create database "${databaseName}"`);
 
     const isolatedUrl = new URL(rootUrl);
     isolatedUrl.pathname = `/${databaseName}`;
     await migrate({ databaseUrl: isolatedUrl.toString() });
-    sql = postgres(isolatedUrl.toString(), { max: 4 });
+    sql = createMysqlResource(isolatedUrl.toString().sql, { max: 4 });
 
     const plans = await sql<IdRow[]>`select id from plan where code = 'free'`;
     const planId = plans[0]?.id;
     if (!planId) throw new Error("fresh database did not seed the free plan");
     const users = await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values
         ('vertical-a@example.com', 'Vertical A', ${planId}),
         ('vertical-b@example.com', 'Vertical B', ${planId})
@@ -204,7 +205,7 @@ describeWithDatabase("career authenticated vertical slice", () => {
     });
     expect(crossUserResponse.status).toBe(404);
     const count = await sql<{ count: number }[]>`
-      select count(*)::integer as count from record where user_id = ${firstUserId}
+      select count(*) as count from record where user_id = ${firstUserId}
     `;
     expect(count[0]?.count).toBe(1);
   }, 30_000);

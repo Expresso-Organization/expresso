@@ -192,7 +192,7 @@ export class PageService {
              coalesce(
                nullif(concat_ws(E'\n', record.title, record.body_md), ''),
                answer.transcript,
-               nullif(concat_ws(E'\n', requirement.label, requirement.source_span ->> 'quote'), ''),
+               nullif(concat_ws(E'\n', requirement.label, requirement.source_span ->> '$.quote'), ''),
                ''
              ) as source_text
       from recipe_evidence_path path
@@ -261,17 +261,17 @@ export class PageService {
     // 상관없는 사진이 지면에 실릴 수 있다.
     const media = await this.#sql<MediaRow[]>`
       select distinct asset.id as asset_id, asset.width, asset.height,
-             block.content ->> 'alt' as alt,
+             block.content ->> '$.alt' as alt,
              coalesce(array_agg(variant.width order by variant.width)
                       filter (where variant.width is not null), '{}') as variants
       from block
       join portfolio_section on portfolio_section.id = block.portfolio_section_id
       join media_asset asset
-        on asset.id = (block.content ->> 'assetId')::uuid and asset.user_id = block.user_id
+        on asset.id = (block.content ->> '$.assetId') and asset.user_id = block.user_id
       left join media_variant variant on variant.media_asset_id = asset.id
       where block.user_id = ${userId} and portfolio_section.portfolio_id = ${portfolioId}
         and block.kind = 'media'
-      group by asset.id, asset.width, asset.height, block.content ->> 'alt'
+      group by asset.id, asset.width, asset.height, block.content ->> '$.alt'
     `;
 
     return {

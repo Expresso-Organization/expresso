@@ -286,7 +286,7 @@ export class CareerService {
         category.property_schema,
         category.sort_order,
         category.version,
-        count(record.id)::integer as record_count
+        count(record.id) as record_count
       from category
       left join record on record.category_id = category.id
         and record.user_id = ${userId}
@@ -349,16 +349,16 @@ export class CareerService {
         record.updated_at,
         record.deleted_at,
         record.purge_after,
-        lower(record.period)::text as period_from,
-        upper(record.period)::text as period_to,
+        lower(record.period) as period_from,
+        upper(record.period) as period_to,
         ${sortKey()} as sort_key,
         (
-          select count(*)::integer from record_link
+          select count(*) from record_link
           where record_link.user_id = record.user_id
             and (record_link.from_record_id = record.id or record_link.to_record_id = record.id)
         ) as link_count,
         (
-          select count(distinct portfolio_section.portfolio_id)::integer
+          select count(distinct portfolio_section.portfolio_id)
           from record_usage
           join block on block.id = record_usage.block_id
             and block.user_id = record_usage.user_id
@@ -387,13 +387,11 @@ export class CareerService {
 
     const [summary] = await sql<RecordSummaryRow[]>`
       select
-        count(*)::integer as total,
-        count(*) filter (where record.status = 'draft')::integer as draft,
-        count(*) filter (where record.status = 'organized')::integer as organized,
-        count(*) filter (where record.status = 'verified')::integer as verified,
-        count(*) filter (
-          where record.body_md = '' and record.properties = '{}'::jsonb
-        )::integer as empty
+        count(*) as total,
+        count(case when record.status = 'draft' then 1 end) as draft,
+        count(case when record.status = 'organized' then 1 end) as organized,
+        count(case when record.status = 'verified' then 1 end) as verified,
+        count(case when record.body_md = '' and record.properties = '{}' then 1 end) as empty
       from record
       where ${scope()}
     `;
@@ -442,10 +440,10 @@ export class CareerService {
         ${userId}, ${input.key}, ${input.name}, ${input.icon},
         ${input.defaultView}, false,
         ${this.#sql.json(propertySchema as JSONValue)},
-        (select 7 + count(*)::integer from category where user_id = ${userId})
+        (select 7 + count(*) from category where user_id = ${userId})
       )
       returning id, key, name, icon, default_view, is_system,
-        property_schema, sort_order, version, 0::integer as record_count
+        property_schema, sort_order, version, 0 as record_count
     `;
     const category = rows[0];
     if (!category) throw new Error("career category was not persisted");
@@ -463,7 +461,7 @@ export class CareerService {
     return this.#sql.begin(async (transaction) => {
       const existingRows = await transaction<CategoryRow[]>`
         select id, key, name, icon, default_view, is_system,
-          property_schema, sort_order, version, 0::integer as record_count
+          property_schema, sort_order, version, 0 as record_count
         from category
         where id = ${categoryId} and user_id = ${userId} and not is_system
         for update
@@ -488,7 +486,7 @@ export class CareerService {
       const propertyValueCounts: Record<string, number> = {};
       for (const key of removedKeys) {
         const counts = await transaction<CountRow[]>`
-          select count(*)::integer as count
+          select count(*) as count
           from record
           where user_id = ${userId}
             and category_id = ${categoryId}
@@ -520,7 +518,7 @@ export class CareerService {
           and user_id = ${userId}
           and version = ${expectedVersion}
         returning id, key, name, icon, default_view, is_system,
-          property_schema, sort_order, version, 0::integer as record_count
+          property_schema, sort_order, version, 0 as record_count
       `;
       const updated = updatedRows[0];
       if (!updated) throw new CareerError(412, "category version is stale");
@@ -661,7 +659,7 @@ export class CareerService {
         throw new CareerError(400, "timeline views require a date property");
       }
       const counts = await transaction<CountRow[]>`
-        select count(*)::integer as count from category_view
+        select count(*) as count from category_view
         where user_id = ${userId} and category_id = ${categoryId}
       `;
       if (Number(counts[0]?.count ?? 0) >= 8) {
@@ -727,8 +725,7 @@ export class CareerService {
         user_id, from_record_id, to_record_id, relation, created_by
       )
       values (${userId}, ${fromRecordId}, ${targetRecordId}, ${relation}, 'user')
-      on conflict (user_id, from_record_id, to_record_id, relation)
-      do update set created_by = record_link.created_by
+      as new on duplicate key update created_by = record_link.created_by
       returning id, from_record_id, to_record_id, relation
     `;
     const link = rows[0];
@@ -768,8 +765,8 @@ export class CareerService {
     if (!records[0]) throw new CareerError(404, "career record not found");
     const impacts = await this.#sql<ImpactRow[]>`
       select
-        count(distinct portfolio_section.portfolio_id)::integer as portfolio_count,
-        count(distinct record_usage.block_id)::integer as block_count
+        count(distinct portfolio_section.portfolio_id) as portfolio_count,
+        count(distinct record_usage.block_id) as block_count
       from record_usage
       left join block on block.id = record_usage.block_id
         and block.user_id = record_usage.user_id
@@ -791,8 +788,8 @@ export class CareerService {
     return this.#sql.begin(async (transaction) => {
       const impacts = await transaction<ImpactRow[]>`
         select
-          count(distinct portfolio_section.portfolio_id)::integer as portfolio_count,
-          count(distinct record_usage.block_id)::integer as block_count
+          count(distinct portfolio_section.portfolio_id) as portfolio_count,
+          count(distinct record_usage.block_id) as block_count
         from record_usage
         left join block on block.id = record_usage.block_id
           and block.user_id = record_usage.user_id
@@ -803,7 +800,7 @@ export class CareerService {
       `;
       const rows = await transaction<RecordRow[]>`
         update record
-        set deleted_at = ${at}, purge_after = ${at} + interval '30 days'
+        set deleted_at = ${at}, purge_after = ${at} + interval 30 day
         where id = ${recordId} and user_id = ${userId} and deleted_at is null
         returning *
       `;
@@ -856,7 +853,7 @@ export class CareerService {
         where record.user_id = ${userId}
           and record.deleted_at is null
           and category.is_system
-          and record.id = any(${ids}::uuid[])
+          and record.id = any(${ids}[])
       `;
       if (records.length !== ids.length) {
         throw new CareerError(404, "skill evidence record not found");
@@ -888,13 +885,11 @@ export class CareerService {
           ${userId}, ${name}, ${aggregate.level}, ${computedAt},
           ${input.evidence.length}, ${lastUsedAt}, ${aggregate.strength}
         )
-        on conflict (user_id, name)
-        do update set
-          level = excluded.level,
-          computed_at = excluded.computed_at,
-          evidence_count = excluded.evidence_count,
-          last_used_at = excluded.last_used_at,
-          strength = excluded.strength
+        as new on duplicate key update level = new.level,
+          computed_at = new.computed_at,
+          evidence_count = new.evidence_count,
+          last_used_at = new.last_used_at,
+          strength = new.strength
         returning *
       `;
       const skill = skills[0];
@@ -983,10 +978,9 @@ export class CareerService {
         ${input.experienceYears},
         ${input.primaryGoal}
       )
-      on conflict (user_id) do update set
-        target_roles = excluded.target_roles,
-        experience_years = excluded.experience_years,
-        primary_goal = excluded.primary_goal,
+      as new on duplicate key update target_roles = new.target_roles,
+        experience_years = new.experience_years,
+        primary_goal = new.primary_goal,
         updated_at = now()
       returning target_roles, experience_years, primary_goal, updated_at
     `;

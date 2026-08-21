@@ -301,7 +301,7 @@ export class GenerationService {
                coalesce(
                  nullif(concat_ws(E'\n', record.title, record.body_md), ''),
                  answer.transcript,
-                 nullif(concat_ws(E'\n', requirement.label, requirement.source_span ->> 'quote'), ''),
+                 nullif(concat_ws(E'\n', requirement.label, requirement.source_span ->> '$.quote'), ''),
                  ''
                ) as source_text
         from recipe_evidence_path path
@@ -315,7 +315,7 @@ export class GenerationService {
         order by path.created_at, path.id
       `;
       const locked = job.portfolio_id ? await this.#sql<{ text: string }[]>`
-        select block.content ->> 'text' as text from block
+        select block.content ->> '$.text' as text from block
         join portfolio_section on portfolio_section.id = block.portfolio_section_id
         where block.user_id = ${job.user_id} and portfolio_section.portfolio_id = ${job.portfolio_id} and block.locked
       ` : [];
@@ -345,7 +345,7 @@ export class GenerationService {
       await this.#sql.begin(async (transaction) => {
         const current = (await transaction<JobRow[]>`select * from generation_job where id = ${jobId} for update`)[0];
         if (!current || current.status === "done") return;
-        await transaction`select id from "user" where id = ${current.user_id} for update`;
+        await transaction`select id from \`user\` where id = ${current.user_id} for update`;
         const decision = await new EntitlementService(transaction).check(current.user_id, "portfolio.generate");
         if (!decision.allowed || !decision.usage) throw new GenerationError(409, "generation quota is exhausted");
         await transaction`update generation_job set stage = 'materializing' where id = ${jobId}`;
@@ -363,7 +363,7 @@ export class GenerationService {
         }
         if (!portfolioId) throw new Error("portfolio missing");
         const lockedCount = Number((await transaction<{ count: number }[]>`
-          select count(*)::integer as count from block join portfolio_section on portfolio_section.id = block.portfolio_section_id
+          select count(*) as count from block join portfolio_section on portfolio_section.id = block.portfolio_section_id
           where block.user_id = ${current.user_id} and portfolio_section.portfolio_id = ${portfolioId} and block.locked
         `)[0]?.count ?? 0);
         if (lockedCount === 0) await transaction`delete from portfolio_section where user_id = ${current.user_id} and portfolio_id = ${portfolioId}`;
@@ -372,8 +372,7 @@ export class GenerationService {
           const id = (await transaction<{ id: string }[]>`
             insert into portfolio_section (user_id, portfolio_id, recipe_section_id, order_no)
             values (${current.user_id}, ${portfolioId}, ${recipeSectionId}, ${order})
-            on conflict (user_id, portfolio_id, recipe_section_id)
-              do update set order_no = excluded.order_no returning id
+            as new on duplicate key update order_no = new.order_no returning id
           `)[0]?.id;
           if (id) sectionMap.set(recipeSectionId, id);
         }
@@ -399,8 +398,8 @@ export class GenerationService {
             values (${current.user_id}, ${jobId}, ${blockId}, ${path.id}, ${path.source_label})
           `;
           if (recordPath) await transaction`
-            insert into record_usage (user_id, record_id, block_id, quoted_text)
-            values (${current.user_id}, ${recordPath.source_id}, ${blockId}, ${recordPath.source_label}) on conflict do nothing
+            insert ignore into record_usage (user_id, record_id, block_id, quoted_text)
+            values (${current.user_id}, ${recordPath.source_id}, ${blockId}, ${recordPath.source_label})   
           `;
         }
         // 지면 후보를 남긴다. 03이 셋을 나란히 놓고, 고를 때까지는 1안이 붙는다.
@@ -431,13 +430,13 @@ export class GenerationService {
         const usage = (await transaction<{ id: string }[]>`
           insert into usage_counter (user_id, period_start, used, resets_at)
           values (${current.user_id}, ${decision.usage.periodStart}, 1, ${decision.usage.resetsAt})
-          on conflict (user_id, period_start) do update set used = usage_counter.used + 1, resets_at = excluded.resets_at
+          as new on duplicate key update used = usage_counter.used + 1, resets_at = new.resets_at
           returning id
         `)[0];
         if (!usage) throw new Error("usage counter missing");
         await transaction`
-          insert into generation_usage_ledger (user_id, generation_job_id, usage_counter_id, amount, reason)
-          values (${current.user_id}, ${jobId}, ${usage.id}, 1, 'success') on conflict do nothing
+          insert ignore into generation_usage_ledger (user_id, generation_job_id, usage_counter_id, amount, reason)
+          values (${current.user_id}, ${jobId}, ${usage.id}, 1, 'success')   
         `;
         const snapshotSections = await transaction<{
           id: string; recipe_section_id: string | null; order_no: number; visible: boolean;

@@ -138,7 +138,7 @@ export class PublishingService {
           where portfolio.id = ${portfolioId} and portfolio.user_id = ${userId}
         `)[0];
         const version = Number((await transaction<{ version: number }[]>`
-          select coalesce(max(version), 0)::integer + 1 as version
+          select coalesce(max(version), 0) + 1 as version
           from deployment where user_id = ${userId} and portfolio_id = ${portfolioId}
         `)[0]?.version ?? 1);
         const row = (await transaction<DeploymentRow[]>`
@@ -164,8 +164,7 @@ export class PublishingService {
           await transaction`
             insert into deployment_slug_redirect (user_id, portfolio_id, old_slug, new_slug, created_at, expires_at)
             values (${userId}, ${portfolioId}, ${current.subdomain}, ${input.slug}, ${at}, ${expiresAt})
-            on conflict (old_slug) do update set
-              new_slug = excluded.new_slug, created_at = excluded.created_at, expires_at = excluded.expires_at
+            as new on duplicate key update new_slug = new.new_slug, created_at = new.created_at, expires_at = new.expires_at
           `;
         }
         return deploymentDto(row);
@@ -267,9 +266,9 @@ export class PublishingService {
       `)[0];
       if (!portfolio) throw new PublishingError(404, "portfolio not found");
       const inserted = (await transaction<ExportJobRow[]>`
-        insert into export_job (user_id, portfolio_id, deployment_id, kind, page_format, idempotency_key, request_hash)
+        insert ignore into export_job (user_id, portfolio_id, deployment_id, kind, page_format, idempotency_key, request_hash)
         values (${userId}, ${portfolioId}, ${portfolio.current_deployment_id}, ${input.kind}, ${input.pageFormat}, ${key}, ${hash})
-        on conflict (user_id, idempotency_key) do nothing returning *
+          returning *
       `)[0] ?? (await transaction<ExportJobRow[]>`
         select * from export_job where user_id = ${userId} and idempotency_key = ${key}
       `)[0];

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../src/platform/mysql.js";
 
 import { migrate } from "@expresso/database";
 import postgres from "postgres";
@@ -52,15 +53,15 @@ describeWithInfrastructure("analysis to evidence recipe vertical slice", () => {
   beforeAll(async () => {
     const rootUrl = new URL(rootDatabaseUrl!);
     const adminUrl = new URL(rootUrl); adminUrl.pathname = "/postgres";
-    admin = postgres(adminUrl.toString(), { max: 1 });
+    admin = createMysqlResource(adminUrl.toString().sql, { max: 1 });
     await admin.unsafe(`create database "${databaseName}"`);
     const isolatedUrl = new URL(rootUrl); isolatedUrl.pathname = `/${databaseName}`;
     await migrate({ databaseUrl: isolatedUrl.toString() });
-    sql = postgres(isolatedUrl.toString(), { max: 6 });
+    sql = createMysqlResource(isolatedUrl.toString().sql, { max: 6 });
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("fresh plan missing");
     const userId = (await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values ('brewing-vertical@example.com', 'Brewing Vertical', ${planId}) returning id
     `)[0]?.id;
     if (!userId) throw new Error("fresh user missing");
@@ -241,7 +242,7 @@ describeWithInfrastructure("analysis to evidence recipe vertical slice", () => {
         editedBy: "user",
       });
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count from recipe_evidence_path where user_id = (select user_id from brew where id = ${brew.data.brewId}) and recipe_id = ${recipe.data.id}
+      select count(*) as count from recipe_evidence_path where user_id = (select user_id from brew where id = ${brew.data.brewId}) and recipe_id = ${recipe.data.id}
     `)[0]?.count).toBeGreaterThanOrEqual(3);
   }, 30_000);
 });

@@ -245,7 +245,7 @@ export class PortfolioEditingService {
       if (after.sourceRecordId) await transaction`
         insert into record_usage (user_id, record_id, block_id, quoted_text)
         values (${userId}, ${after.sourceRecordId}, ${block.id}, ${String(after.content.text ?? "")})
-        on conflict (user_id, record_id, block_id) do update set quoted_text = excluded.quoted_text
+        as new on duplicate key update quoted_text = new.quoted_text
       `;
       revisionId = (await transaction<{ id: string }[]>`
         insert into revision (user_id, portfolio_id, block_id, actor, before, after, proposal_id, summary)
@@ -487,7 +487,7 @@ export class PortfolioEditingService {
         where block.portfolio_section_id = portfolio_section.id
           and portfolio_section.portfolio_id = ${portfolioId}
           and block.user_id = ${userId}
-          and not (block.id = any(${kept}::uuid[]))
+          and not (block.id = any(${kept}[]))
       `;
       for (const section of target.snapshot.sections) {
         await transaction`update portfolio_section set order_no = ${section.order}, visible = ${section.visible} where id = ${section.id} and user_id = ${userId} and portfolio_id = ${portfolioId}`;
@@ -502,10 +502,9 @@ export class PortfolioEditingService {
             ${transaction.json(block.style as JSONValue)},
             ${block.sourceRecordId}, ${block.syncState}, ${block.locked}, ${order}
           )
-          on conflict (id) do update set
-            content = excluded.content, style = excluded.style,
-            source_record_id = excluded.source_record_id, sync_state = excluded.sync_state,
-            locked = excluded.locked, order_no = excluded.order_no
+          as new on duplicate key update content = new.content, style = new.style,
+            source_record_id = new.source_record_id, sync_state = new.sync_state,
+            locked = new.locked, order_no = new.order_no
         `;
       }
       const revisionId = (await transaction<{ id: string }[]>`

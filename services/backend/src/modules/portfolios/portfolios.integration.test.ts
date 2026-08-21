@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
 import {
   ApiErrorResponseSchema,
@@ -22,7 +23,7 @@ const config: RuntimeConfig = {
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -35,7 +36,7 @@ interface IdRow {
 }
 
 describeWithDatabase("portfolio read HTTP integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 4 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identity = new IdentityService(sql);
   const app = buildApi({
     config,
@@ -77,7 +78,7 @@ describeWithDatabase("portfolio read HTTP integration", () => {
     if (!planId || !templateId) throw new Error("portfolio read seed missing");
 
     const users = await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values
         (${`pf-a-${marker}@example.com`}, 'Portfolio A', ${planId}),
         (${`pf-b-${marker}@example.com`}, 'Portfolio B', ${planId})
@@ -97,7 +98,7 @@ describeWithDatabase("portfolio read HTTP integration", () => {
     postingId = (
       await sql<IdRow[]>`
         insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash)
-        values (${companyId}, 'user_input', 'Engineer', 'Body', '{}'::jsonb, ${`pf-posting-${marker}`})
+        values (${companyId}, 'user_input', 'Engineer', 'Body', '{}', ${`pf-posting-${marker}`})
         returning id
       `
     )[0]!.id;
@@ -185,8 +186,8 @@ describeWithDatabase("portfolio read HTTP integration", () => {
     await sql`
       insert into revision (user_id, portfolio_id, actor, change_kind, summary, after, created_at)
       values
-        (${userId}, ${publishedId}, 'user', 'edit', '자격 · 수상 섹션 숨김', ${sql.json({})}, now() - interval '22 minutes'),
-        (${userId}, ${publishedId}, 'ai', 'edit', '소개 문단을 공고 문장에 맞춰 다시 씀', ${sql.json({})}, now() - interval '2 minutes')
+        (${userId}, ${publishedId}, 'user', 'edit', '자격 · 수상 섹션 숨김', ${sql.json({})}, now() - interval 22 minute),
+        (${userId}, ${publishedId}, 'ai', 'edit', '소개 문단을 공고 문장에 맞춰 다시 씀', ${sql.json({})}, now() - interval 2 minute)
     `;
     await sql`
       insert into portfolio_snapshot (user_id, portfolio_id, kind, snapshot)
@@ -198,7 +199,7 @@ describeWithDatabase("portfolio read HTTP integration", () => {
 
   afterAll(async () => {
     if (userId && otherUserId) {
-      await sql`delete from "user" where id in (${userId}, ${otherUserId})`;
+      await sql`delete from \`user\` where id in (${userId}, ${otherUserId})`;
     }
     if (postingId) await sql`delete from job_posting where id = ${postingId}`;
     if (companyId) await sql`delete from company where id = ${companyId}`;

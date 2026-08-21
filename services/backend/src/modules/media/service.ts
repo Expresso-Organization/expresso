@@ -148,11 +148,10 @@ export class MediaService {
             ${userId}, ${assetId}, ${key}, ${variant.mimeType},
             ${variant.width}, ${variant.height}, ${variant.bytes.length}
           )
-          on conflict (media_asset_id, width) do update set
-            storage_key = excluded.storage_key,
-            mime_type = excluded.mime_type,
-            height = excluded.height,
-            byte_size = excluded.byte_size
+          as new on duplicate key update storage_key = new.storage_key,
+            mime_type = new.mime_type,
+            height = new.height,
+            byte_size = new.byte_size
         `;
         widths.push(variant.width);
       }

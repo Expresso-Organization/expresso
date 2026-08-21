@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
 import { migrate } from "@expresso/database";
 import type { SqlTag } from "../../platform/mysql.js";
@@ -18,12 +19,12 @@ describeWithDatabase("scheduled job leases and observability", () => {
 
   beforeAll(async () => {
     const root = new URL(rootDatabaseUrl!);
-    const adminUrl = new URL(root); adminUrl.pathname = "/postgres";
-    admin = postgres(adminUrl.toString(), { max: 1 });
-    await admin.unsafe(`create database "${databaseName}"`);
+    const adminUrl = new URL(root); adminUrl.pathname = "/mysql";
+    admin = createMysqlResource(adminUrl.toString()).sql;
+    await admin.unsafe(`create database \`${databaseName}\``);
     const isolated = new URL(root); isolated.pathname = `/${databaseName}`;
     await migrate({ databaseUrl: isolated.toString() });
-    sql = postgres(isolated.toString(), { max: 20 });
+    sql = createMysqlResource(isolated.toString()).sql;
     service = new SchedulingService(sql, { overrides: {
       retention: async () => {
         retentionCalls += 1;
@@ -38,7 +39,7 @@ describeWithDatabase("scheduled job leases and observability", () => {
     if (sql) await sql.end({ timeout: 5 });
     if (admin) {
       await admin`select pg_terminate_backend(pid) from pg_stat_activity where datname = ${databaseName} and pid <> pg_backend_pid()`;
-      await admin.unsafe(`drop database if exists "${databaseName}"`);
+      await admin.unsafe(`drop database if exists \`${databaseName}\``);
       await admin.end({ timeout: 5 });
     }
   }, 30_000);
@@ -66,14 +67,14 @@ describeWithDatabase("scheduled job leases and observability", () => {
      * 두면, 고치는 사람이 무엇을 확인하는 시험인지 잊는다.
      */
     const definitions = (await sql<{ count: number }[]>`
-      select count(*)::integer as count from scheduled_job_definition
+      select count(*) as count from scheduled_job_definition
     `)[0]?.count ?? 0;
     expect(definitions).toBeGreaterThan(0);
 
     const ticks = await Promise.all(Array.from({ length: 20 }, () => service.scheduleDue(now)));
     expect(new Set(ticks.flatMap(({ scheduled }) => scheduled)).size).toBe(definitions);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from scheduled_job_run`)[0]?.count).toBe(definitions);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from platform_outbox where topic = 'scheduled.execute'`)[0]?.count).toBe(definitions);
+    expect((await sql<{ count: number }[]>`select count(*) as count from scheduled_job_run`)[0]?.count).toBe(definitions);
+    expect((await sql<{ count: number }[]>`select count(*) as count from platform_outbox where topic = 'scheduled.execute'`)[0]?.count).toBe(definitions);
     const status = await service.status(now);
     expect(status).toHaveLength(definitions);
     expect(status.every(({ nextRunAt }) => new Date(nextRunAt) > now)).toBe(true);

@@ -89,7 +89,7 @@ export class RecipeService {
       `)[0];
       if (replay) return replay.id;
       const version = Number((await transaction<{ version: number }[]>`
-        select coalesce(max(version), 0)::integer + 1 as version
+        select coalesce(max(version), 0) + 1 as version
         from recipe where user_id = ${userId} and brew_id = ${brewId}
       `)[0]?.version ?? 1);
       const recipe = (await transaction<IdRow[]>`
@@ -189,11 +189,11 @@ export class RecipeService {
       for (const [index, source] of context.sources.entries()) {
         if (source.type !== "record" || citedNumbers.has(index + 1)) continue;
         await transaction`
-          insert into recipe_unused_source (user_id, recipe_id, record_id, reason)
+          insert ignore into recipe_unused_source (user_id, recipe_id, record_id, reason)
           values (
             ${userId}, ${recipe.id}, ${source.id},
             ${reasons.get(index + 1) ?? "이번 공고에서 우선순위가 높은 근거를 먼저 배치함"}
-          ) on conflict do nothing
+          )   
         `;
       }
 
@@ -313,7 +313,7 @@ export class RecipeService {
       sql<{ id: string; label: string; kind: string; quote: string | null }[]>`
         select job_posting_requirement.id, job_posting_requirement.label,
                job_posting_requirement.kind,
-               job_posting_requirement.source_span ->> 'quote' as quote
+               job_posting_requirement.source_span ->> '$.quote' as quote
         from job_analysis
         join job_posting_requirement
           on job_posting_requirement.job_posting_id = job_analysis.job_posting_id
@@ -464,7 +464,7 @@ export class RecipeService {
             and user_id = ${userId} and recipe_id = ${recipeId}
         `)[0];
         if (!source) throw new RecipeError(404, "recipe evidence path not found");
-        const order = Number((await transaction<{ count: number }[]>`select count(*)::integer as count from recipe_item where user_id = ${userId} and recipe_section_id = ${edit.sectionId}`)[0]?.count ?? 0);
+        const order = Number((await transaction<{ count: number }[]>`select count(*) as count from recipe_item where user_id = ${userId} and recipe_section_id = ${edit.sectionId}`)[0]?.count ?? 0);
         const item = (await transaction<IdRow[]>`
           insert into recipe_item (user_id, recipe_section_id, order_no, point_text, evidence, locked, edited_by)
           values (${userId}, ${edit.sectionId}, ${order}, ${edit.pointText}, ${transaction.json([{ sourceType: source.source_type, sourceId: source.source_id }] as JSONValue)}, true, 'user') returning id

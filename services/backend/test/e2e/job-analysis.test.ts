@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../src/platform/mysql.js";
 
 import { migrate } from "@expresso/database";
 import postgres from "postgres";
@@ -62,21 +63,21 @@ describeWithInfrastructure("job submission and analysis vertical slice", () => {
   });
 
   beforeAll(async () => {
-    const rootUrl = new URL(rootDatabaseUrl ?? "postgres://127.0.0.1:1/unused");
+    const rootUrl = new URL(rootDatabaseUrl ?? "mysql://127.0.0.1:1/unused");
     const adminUrl = new URL(rootUrl);
     adminUrl.pathname = "/postgres";
-    admin = postgres(adminUrl.toString(), { max: 1 });
+    admin = createMysqlResource(adminUrl.toString().sql, { max: 1 });
     await admin.unsafe(`create database "${databaseName}"`);
 
     const isolatedUrl = new URL(rootUrl);
     isolatedUrl.pathname = `/${databaseName}`;
     await migrate({ databaseUrl: isolatedUrl.toString() });
-    sql = postgres(isolatedUrl.toString(), { max: 6 });
+    sql = createMysqlResource(isolatedUrl.toString().sql, { max: 6 });
 
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("fresh database did not seed the free plan");
     const users = await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values ('jobs-vertical@example.com', 'Jobs Vertical', ${planId})
       returning id
     `;
@@ -297,15 +298,15 @@ describeWithInfrastructure("job submission and analysis vertical slice", () => {
 
     expect((await sql<{ state: string }[]>`
       select state from platform_outbox
-      where payload ->> 'jobAnalysisId' = ${submitted.data.jobAnalysisId}
+      where payload ->> '$.jobAnalysisId' = ${submitted.data.jobAnalysisId}
     `)[0]?.state).toBe("published");
     // 요건은 공고에 붙고, 커버리지만 사용자별로 붙는다.
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count from job_posting_requirement
+      select count(*) as count from job_posting_requirement
       where job_posting_id = ${submitted.data.jobPostingId}
     `)[0]?.count).toBe(completed.data.requirements.length);
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count
+      select count(*) as count
       from requirement_coverage
       join job_posting_requirement
         on job_posting_requirement.id = requirement_coverage.requirement_id

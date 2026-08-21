@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
 import { CONSENT_POLICY_VERSION } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/mysql.js";
@@ -11,7 +12,7 @@ const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
 
 describeWithDatabase("동의", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 4 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const service = new ConsentService(sql);
   const marker = randomUUID();
   let userId = "";
@@ -20,13 +21,13 @@ describeWithDatabase("동의", () => {
     const planId = (await sql<{ id: string }[]>`select id from plan where code = 'free'`)[0]?.id ?? "";
     const email = `consent-${marker}@example.com`;
     userId = (await sql<{ id: string }[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values (${email}, 'Consent', ${planId}) returning id
     `)[0]?.id ?? "";
   });
 
   afterAll(async () => {
-    if (userId) await sql`delete from "user" where id = ${userId}`;
+    if (userId) await sql`delete from \`user\` where id = ${userId}`;
     await sql.end({ timeout: 5 });
   });
 
@@ -66,7 +67,7 @@ describeWithDatabase("동의", () => {
   it("두 번 눌러도 동의는 하나다", async () => {
     await service.grant(userId, ["job_posting_analysis"], CONSENT_POLICY_VERSION);
     const rows = await sql<{ count: number }[]>`
-      select count(*)::integer as count from consent
+      select count(*) as count from consent
       where user_id = ${userId} and scope = 'job_posting_analysis' and revoked_at is null
     `;
     expect(rows[0]?.count).toBe(1);

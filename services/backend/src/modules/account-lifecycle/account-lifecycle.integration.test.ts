@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
 import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -12,7 +13,7 @@ interface IdRow { id: string }
 interface Graph { userId: string; portfolioId: string; deploymentId: string; assetId: string }
 
 describeWithDatabase("account export and deletion grace lifecycle", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 10 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const service = new AccountLifecycleService(sql);
   const publishing = new PublishingService(sql, "account-lifecycle-signing-secret");
   const marker = randomUUID();
@@ -25,13 +26,13 @@ describeWithDatabase("account export and deletion grace lifecycle", () => {
     const categoryId = (await sql<IdRow[]>`select id from category where key = 'experience' and is_system`)[0]?.id;
     if (!planId || !templateId || !categoryId) throw new Error("account lifecycle seed missing");
     const userId = (await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id) values (${`${label}-${marker}@example.com`}, ${label}, ${planId}) returning id
+      insert into \`user\` (email, display_name, plan_id) values (${`${label}-${marker}@example.com`}, ${label}, ${planId}) returning id
     `)[0]?.id ?? "";
     await sql`insert into record (user_id, category_id, title, status, origin, body_md) values (${userId}, ${categoryId}, ${`${label} record`}, 'organized', 'manual', 'exported body')`;
     const companyId = (await sql<IdRow[]>`insert into company (name, dedupe_key) values (${label}, ${`${label}-${marker}`}) returning id`)[0]?.id;
     const postingId = companyId && (await sql<IdRow[]>`
       insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash)
-      values (${companyId}, 'user_input', 'Engineer', ${"a".repeat(250)}, '{}'::jsonb, ${`${label}-post-${marker}`}) returning id
+      values (${companyId}, 'user_input', 'Engineer', ${"a".repeat(250)}, '{}', ${`${label}-post-${marker}`}) returning id
     `)[0]?.id;
     const analysisId = postingId && (await sql<IdRow[]>`insert into job_analysis (user_id, job_posting_id, input_type, status) values (${userId}, ${postingId}, 'paste', 'done') returning id`)[0]?.id;
     const brewId = analysisId && (await sql<IdRow[]>`insert into brew (user_id, job_analysis_id, length_preset, status) values (${userId}, ${analysisId}, 'single', 'done') returning id`)[0]?.id;
@@ -57,8 +58,8 @@ describeWithDatabase("account export and deletion grace lifecycle", () => {
   });
 
   afterAll(async () => {
-    if (cancelGraph?.userId) await sql`delete from "user" where id = ${cancelGraph.userId}`;
-    if (purgeGraph?.userId) await sql`delete from "user" where id = ${purgeGraph.userId}`;
+    if (cancelGraph?.userId) await sql`delete from \`user\` where id = ${cancelGraph.userId}`;
+    if (purgeGraph?.userId) await sql`delete from \`user\` where id = ${purgeGraph.userId}`;
     // 공고와 회사는 전역이라 사용자를 지워도 남는다 — 목록 API가 이걸 다 읽는다.
     await sql`delete from job_posting where dedupe_hash like ${`%${marker}`}`;
     await sql`delete from company where dedupe_key like ${`%${marker}`}`;
@@ -94,10 +95,10 @@ describeWithDatabase("account export and deletion grace lifecycle", () => {
   it("keeps data through day 29 then purges analytics and account in audited order", async () => {
     const requested = await service.requestDeletion(purgeGraph.userId, new Date("2026-08-09T00:00:00Z"));
     await expect(service.purgeExpired(new Date("2026-09-07T23:59:59Z"))).resolves.toEqual({ purged: [] });
-    expect((await sql<IdRow[]>`select id from "user" where id = ${purgeGraph.userId}`)).toHaveLength(1);
+    expect((await sql<IdRow[]>`select id from \`user\` where id = ${purgeGraph.userId}`)).toHaveLength(1);
     await expect(service.cancelDeletion(requested.cancellationToken!, new Date("2026-09-08T00:00:00Z"))).rejects.toMatchObject({ statusCode: 409 });
     await expect(service.purgeExpired(new Date("2026-09-08T00:00:00Z"))).resolves.toEqual({ purged: [requested.requestId] });
-    expect((await sql<IdRow[]>`select id from "user" where id = ${purgeGraph.userId}`)).toHaveLength(0);
+    expect((await sql<IdRow[]>`select id from \`user\` where id = ${purgeGraph.userId}`)).toHaveLength(0);
     expect((await sql<{ status: string; user_id: string | null; phase: string }[]>`select status, user_id, phase from account_deletion_request where id = ${requested.requestId}`)[0]).toEqual({ status: "purged", user_id: null, phase: "complete" });
     expect((await sql<{ phase: string }[]>`
       select phase from account_deletion_event where request_id = ${requested.requestId}

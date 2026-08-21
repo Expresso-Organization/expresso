@@ -99,22 +99,22 @@ export class JobMarketService {
       const companies = await transaction<IdRow[]>`
         insert into company (name, domain, dedupe_key)
         values (${input.companyName}, ${input.companyDomain ?? null}, ${companyKey})
-        on conflict (dedupe_key) do update set name = company.name
+        as new on duplicate key update name = company.name
         returning id
       `;
       const companyId = companies[0]?.id;
       if (!companyId) throw new Error("job company was not persisted");
 
       const insertedPostings = await transaction<PostingRow[]>`
-        insert into job_posting (
+        insert ignore into job_posting (
           company_id, source, title, description_raw,
           source_url, dedupe_hash, requirements
         )
         values (
           ${companyId}, 'user_input', ${input.title}, ${input.descriptionRaw},
-          ${input.sourceUrl ?? null}, ${dedupeHash}, '{}'::jsonb
+          ${input.sourceUrl ?? null}, ${dedupeHash}, '{}'
         )
-        on conflict (dedupe_hash) do nothing
+          
         returning id, requirements
       `;
       const insertedPosting = insertedPostings[0];
@@ -290,7 +290,7 @@ export class JobMarketService {
 
   async saveSearch(userId: string, input: SaveJobSearch) {
     const counts = await this.#sql<CountRow[]>`
-      select count(*)::integer as count from saved_search where user_id = ${userId}
+      select count(*) as count from saved_search where user_id = ${userId}
     `;
     if (Number(counts[0]?.count ?? 0) >= 10) {
       throw new JobMarketError(409, "saved search limit exceeded", { limit: 10 });
@@ -337,11 +337,9 @@ export class JobMarketService {
         ${userId}, ${jobPostingId}, ${input.stage},
         ${input.deadlineAt ? new Date(input.deadlineAt) : null}, ${input.memo}
       )
-      on conflict (user_id, job_posting_id)
-      do update set
-        stage = excluded.stage,
-        deadline_at = excluded.deadline_at,
-        memo = excluded.memo,
+      as new on duplicate key update stage = new.stage,
+        deadline_at = new.deadline_at,
+        memo = new.memo,
         updated_at = now()
       returning id, stage, deadline_at, memo
     `;
@@ -403,13 +401,11 @@ export class JobMarketService {
         ${this.#sql.json(match.axes as JSONValue)},
         ${match.reason}, ${match.nextAction}, ${at}
       )
-      on conflict (user_id, job_posting_id)
-      do update set
-        total = excluded.total,
-        axes = excluded.axes,
-        reason_text = excluded.reason_text,
-        next_action = excluded.next_action,
-        computed_at = excluded.computed_at
+      as new on duplicate key update total = new.total,
+        axes = new.axes,
+        reason_text = new.reason_text,
+        next_action = new.next_action,
+        computed_at = new.computed_at
       returning computed_at
     `;
     if (!rows[0]) throw new Error("job match was not persisted");
@@ -422,7 +418,7 @@ export class JobMarketService {
     }
     const rows = await this.#sql<RequirementPostingRow[]>`
       select id, requirements from job_posting
-      where id = any(${jobPostingIds}::uuid[])
+      where id = any(${jobPostingIds}[])
     `;
     if (rows.length < 5) {
       return JobDemandSummarySchema.parse({

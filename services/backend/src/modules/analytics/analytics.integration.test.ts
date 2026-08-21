@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
 import { AnalyticsEventSchema } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/mysql.js";
@@ -12,7 +13,7 @@ const describeWithDatabase = databaseUrl ? describe : describe.skip;
 interface IdRow { id: string }
 
 describeWithDatabase("privacy-minimized analytics integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 20 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const service = new AnalyticsService(sql, { visitorSalt: "analytics-integration-salt", minimumSample: 5 });
   const marker = randomUUID();
   const slug = `analytics-${marker}`;
@@ -27,13 +28,13 @@ describeWithDatabase("privacy-minimized analytics integration", () => {
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
     if (!planId || !templateId) throw new Error("analytics seed missing");
     userId = (await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values (${`analytics-${marker}@example.com`}, 'Analytics', ${planId}) returning id
     `)[0]?.id ?? "";
     const companyId = (await sql<IdRow[]>`insert into company (name, dedupe_key) values (${`Analytics ${marker}`}, ${`analytics-${marker}`}) returning id`)[0]?.id;
     const postingId = companyId && (await sql<IdRow[]>`
       insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash)
-      values (${companyId}, 'user_input', 'Engineer', ${"a".repeat(250)}, '{}'::jsonb, ${`analytics-post-${marker}`}) returning id
+      values (${companyId}, 'user_input', 'Engineer', ${"a".repeat(250)}, '{}', ${`analytics-post-${marker}`}) returning id
     `)[0]?.id;
     const analysisId = postingId && (await sql<IdRow[]>`
       insert into job_analysis (user_id, job_posting_id, input_type, status)
@@ -62,8 +63,8 @@ describeWithDatabase("privacy-minimized analytics integration", () => {
 
   afterAll(async () => {
     if (userId) {
-      await sql`delete from platform_outbox where payload ->> 'userId' = ${userId}`;
-      await sql`delete from "user" where id = ${userId}`;
+      await sql`delete from platform_outbox where payload ->> '$.userId' = ${userId}`;
+      await sql`delete from \`user\` where id = ${userId}`;
     }
     // 공고와 회사는 전역이라 사용자를 지워도 남는다 — 목록 API가 이걸 다 읽는다.
     await sql`delete from job_posting where dedupe_hash like ${`%${marker}`}`;
@@ -111,11 +112,11 @@ describeWithDatabase("privacy-minimized analytics integration", () => {
     const first = await service.aggregateDay(deploymentId, date);
     expect(first).toMatchObject({ visits: 8, completes: 2, contact_clicks: 1, eligible_section_views: 4, total_section_dwell_ms: 4_800 });
     const persistedBefore = await sql<{ metric_key: string; value: string }[]>`
-      select metric_key, value::text from metric_daily where deployment_id = ${deploymentId} and date = ${date} order by metric_key
+      select metric_key, value from metric_daily where deployment_id = ${deploymentId} and date = ${date} order by metric_key
     `;
     expect(await service.aggregateDay(deploymentId, date)).toEqual(first);
     const persistedAfter = await sql<{ metric_key: string; value: string }[]>`
-      select metric_key, value::text from metric_daily where deployment_id = ${deploymentId} and date = ${date} order by metric_key
+      select metric_key, value from metric_daily where deployment_id = ${deploymentId} and date = ${date} order by metric_key
     `;
     expect(persistedAfter).toEqual(persistedBefore);
     await service.aggregateDay(deploymentId, "2026-08-10");

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../../platform/mysql.js";
 
 import type { SqlTag } from "../../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -74,7 +75,7 @@ function posting(marker: string, index: number, body = "충분히 긴 공고 본
 }
 
 describeWithDatabase("job ingest integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 4 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const marker = randomUUID().slice(0, 8);
   const adapter = new FakeAdapter();
   const model = new FakeAi();
@@ -138,7 +139,7 @@ describeWithDatabase("job ingest integration", () => {
     expect(run.sources.find((one) => one.sourceId === sourceId))
       .toMatchObject({ seen: 1, added: 0 });
     expect((await sql<CountRow[]>`
-      select count(*)::integer as count from job_posting
+      select count(*) as count from job_posting
       where external_id = ${`greenhouse:ingest-${marker}:${marker}-90`}
     `)[0]?.count).toBe(0);
   });
@@ -179,7 +180,7 @@ describeWithDatabase("job ingest integration", () => {
     expect(run.sources.find((one) => one.sourceId === duplicate.id))
       .toMatchObject({ seen: 1, added: 0, skipped: 1 });
     expect((await sql<CountRow[]>`
-      select count(*)::integer as count from job_posting
+      select count(*) as count from job_posting
       where description_raw like ${`${marker}-1%`}
     `)[0]?.count).toBe(1);
 

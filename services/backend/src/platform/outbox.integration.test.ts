@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "./mysql.js";
 
 import { migrate } from "@expresso/database";
 import type { SqlTag } from "./mysql.js";
@@ -15,15 +16,15 @@ describeWithDatabase("platform outbox integration", () => {
   let sql: SqlTag;
 
   beforeAll(async () => {
-    const rootUrl = new URL(databaseUrl ?? "postgres://127.0.0.1:1/unused");
+    const rootUrl = new URL(databaseUrl ?? "mysql://127.0.0.1:1/unused");
     const adminUrl = new URL(rootUrl);
-    adminUrl.pathname = "/postgres";
-    admin = postgres(adminUrl.toString(), { max: 1 });
-    await admin.unsafe(`create database "${databaseName}"`);
+    adminUrl.pathname = "/mysql";
+    admin = createMysqlResource(adminUrl.toString()).sql;
+    await admin.unsafe(`create database \`${databaseName}\``);
     const isolatedUrl = new URL(rootUrl);
     isolatedUrl.pathname = `/${databaseName}`;
     await migrate({ databaseUrl: isolatedUrl.toString() });
-    sql = postgres(isolatedUrl.toString(), { max: 2 });
+    sql = createMysqlResource(isolatedUrl.toString()).sql;
   }, 30_000);
 
   afterAll(async () => {
@@ -33,7 +34,7 @@ describeWithDatabase("platform outbox integration", () => {
         select pg_terminate_backend(pid) from pg_stat_activity
         where datname = ${databaseName} and pid <> pg_backend_pid()
       `;
-      await admin.unsafe(`drop database if exists "${databaseName}"`);
+      await admin.unsafe(`drop database if exists \`${databaseName}\``);
       await admin.end({ timeout: 5 });
     }
   }, 30_000);
