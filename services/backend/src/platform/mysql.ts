@@ -43,6 +43,8 @@ interface JsonValue {
   value: unknown;
 }
 
+const isoTimestamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/;
+
 /** 값을 mysql2 가 받을 수 있는 꼴로 바꿉니다. 객체와 배열은 JSON 열에 들어갑니다. */
 function bind(value: unknown): unknown {
   if (typeof value === "object" && value !== null && jsonMark in value) {
@@ -53,6 +55,11 @@ function bind(value: unknown): unknown {
   if (value === null) return null;
   if (value instanceof Date) return value;
   if (Buffer.isBuffer(value)) return value;
+  // ISO 8601 문자열은 MySQL 이 그대로 받지 않는다 — 시각으로 바꿔 넘긴다.
+  if (typeof value === "string" && isoTimestamp.test(value)) {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
   if (typeof value === "object") return JSON.stringify(value);
   return value;
 }
