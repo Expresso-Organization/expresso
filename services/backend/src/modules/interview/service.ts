@@ -601,7 +601,7 @@ export class InterviewService {
         await transaction`
           update answer_record_change
           set change_type = 'strengthened',
-              changed_fields = '[\`title\`,\`body_md\`]',
+              changed_fields = '["title","body_md"]',
               source_quote = ${input.transcript}, created_at = now(6)
           where user_id = ${userId} and answer_id = ${existing.id}
         `;
@@ -635,7 +635,7 @@ export class InterviewService {
           user_id, answer_id, record_id, change_type, changed_fields, source_quote
         ) values (
           ${userId}, ${answerId}, ${recordId}, 'created',
-          '[\`title\`,\`body_md\`]', ${input.transcript}
+          '["title","body_md"]', ${input.transcript}
         )
       `;
       // 정리는 뒤에서 따라온다. 답을 저장하는 일이 계약을 기다리면 안 된다 —
