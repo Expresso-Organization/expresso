@@ -5,7 +5,7 @@
 -- DB에 같은 값이 들어 있어야 한다.
 --
 -- 실행:
---   docker exec -i expresso-local-postgres-1 psql -U expresso -d expresso \
+--   docker exec -i expresso-local-mysql-1 mysql -uexpresso -pexpresso expresso \
 --     -v ON_ERROR_STOP=1 -f - < scripts/seed-demo-jobs.sql
 --
 -- `demo@expresso.local` 계정이 있어야 일치도 · 관심 · 해석이 함께 심긴다.

@@ -8,9 +8,9 @@
  *
  *   DATABASE_URL=… CODEX_CLI_PATH=… node --import tsx scripts/compare-facts-models.ts [건수]
  */
-import postgres from "postgres";
 import type { z } from "zod";
 
+import { createMysqlResource } from "../src/platform/mysql.js";
 import { AiFactsReader } from "../src/modules/jobs/ingest/facts.js";
 import type { AiCallSpec, AiClient, AiResult, AiUsage } from "../src/platform/ai/client.js";
 import { CodexAiClient } from "../src/platform/ai/codex.js";
@@ -46,7 +46,7 @@ interface Attempt {
   error?: string;
 }
 
-const sql = postgres(databaseUrl, { max: 2 });
+const { sql } = createMysqlResource(databaseUrl);
 
 const postings = await sql<{ id: string; title: string; description_raw: string }[]>`
   select id, title, description_raw

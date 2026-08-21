@@ -3,7 +3,7 @@ import {
   type CompanyResearchItem,
   type ReplaceCompanyResearch,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 export class CompanyResearchError extends Error {
   readonly statusCode: number;
@@ -44,9 +44,9 @@ function toResearchItem(row: ResearchRow): CompanyResearchItem {
 
 /** 검색기는 바뀔 수 있지만 정제된 사실이 들어오는 문은 하나다. */
 export class CompanyResearchService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
 
-  constructor(sql: postgres.Sql) {
+  constructor(sql: SqlTag) {
     this.#sql = sql;
   }
 
@@ -98,7 +98,7 @@ export class CompanyResearchService {
           ) values (
             ${userId}, ${companyId}, 'fact', ${item.topic}, ${item.statement},
             ${item.sourceUrl}, ${item.publishedAt ? new Date(item.publishedAt) : null},
-            ${item.confidence}, '{}'
+            ${item.confidence}, '[]'
           ) returning id
         `)[0];
         if (!row) throw new Error("company fact was not persisted");
@@ -127,7 +127,7 @@ export class CompanyResearchService {
     return this.list(userId, brewId);
   }
 
-  async #companyId(sql: postgres.Sql, userId: string, brewId: string): Promise<string> {
+  async #companyId(sql: SqlTag, userId: string, brewId: string): Promise<string> {
     const row = (await sql<{ company_id: string }[]>`
       select job_posting.company_id
       from brew

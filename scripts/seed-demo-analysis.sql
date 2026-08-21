@@ -8,7 +8,7 @@
 -- 원문에 없으면 여기서 바로 터진다. 그게 이 제품이 지키려는 규칙이다.
 --
 -- 실행:
---   docker exec -i expresso-local-postgres-1 psql -U expresso -d expresso \
+--   docker exec -i expresso-local-mysql-1 mysql -uexpresso -pexpresso expresso \
 --     -v ON_ERROR_STOP=1 -f - < scripts/seed-demo-analysis.sql
 
 begin;

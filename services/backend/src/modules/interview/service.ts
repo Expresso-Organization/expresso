@@ -6,7 +6,7 @@ import {
   type InterviewQuestionBasis,
   type SaveInterviewAnswer,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import { generateQuestionDrafts, hasMetric, questionTextForBasis } from "./questions.js";
 import {
@@ -51,7 +51,8 @@ interface QuestionRow {
   rationale: string | null;
   replaced_from_id: string | null;
   skipped: boolean;
-  answered: boolean;
+  /** 식으로 계산한 값이라 0 · 1 로 온다. */
+  answered: number;
   variant: number;
   requirement_id: string | null;
   interview_session_id: string;
@@ -94,13 +95,13 @@ function hashAnswer(questionId: string, input: SaveInterviewAnswer) {
 }
 
 export class InterviewService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #writer: QuestionWriter | null;
   readonly #cleaner: RecordCleaner | null;
   readonly #consent: ConsentService | null;
 
   constructor(
-    sql: postgres.Sql,
+    sql: SqlTag,
     writer?: QuestionWriter | null,
     cleaner?: RecordCleaner | null,
     consent?: ConsentService | null,
@@ -162,15 +163,15 @@ export class InterviewService {
       await transaction`
         update record
         set title = ${cleaned.title},
-            properties = ${transaction.json(cleanupProperties(cleaned) as postgres.JSONValue)},
+            properties = ${transaction.json(cleanupProperties(cleaned) as JSONValue)},
             -- 정리된 기록은 재료로 고를 수 있다. 원문만 남은 초안은 못 고른다.
             status = 'organized',
-            updated_at = now()
+            updated_at = now(6)
         where id = ${context.record_id} and user_id = ${userId}
       `;
       await transaction`
         update answer_record_change
-        set changed_fields = ${transaction.json(cleanupChangedFields(cleaned) as postgres.JSONValue)}
+        set changed_fields = ${transaction.json(cleanupChangedFields(cleaned) as JSONValue)}
         where user_id = ${userId} and answer_id = ${answerId}
       `;
     });
@@ -226,13 +227,13 @@ export class InterviewService {
             text, basis, variant, rationale
           ) values (
             ${userId}, ${session.id}, ${draft.requirementId}, ${order},
-            ${draft.text}, ${transaction.json(draft.basis as postgres.JSONValue)},
+            ${draft.text}, ${transaction.json(draft.basis as JSONValue)},
             ${draft.variant}, ${draft.rationale}
           )
         `;
       }
       await transaction`
-        update brew set status = 'interviewing', updated_at = now()
+        update brew set status = 'interviewing', updated_at = now(6)
         where id = ${brewId} and user_id = ${userId}
       `;
       return session.id;
@@ -282,7 +283,7 @@ export class InterviewService {
           and record.user_id = brew_source.user_id
         where brew_source.user_id = ${userId} and brew_source.brew_id = ${brewId}
           and brew_source.is_selected
-        order by brew_source.rank
+        order by brew_source.\`rank\`
       `,
       sql<{
         job_title: string; company_name: string;
@@ -419,7 +420,9 @@ export class InterviewService {
         rationale: question.rationale,
         replacedFromId: question.replaced_from_id,
         skipped: question.skipped,
-        answered: question.answered,
+        // 계산해서 만든 참·거짓은 MySQL 이 0 · 1 로 준다 — 열이 아니라 식이라
+        // 드라이버가 tinyint(1) 로 보지 못한다.
+        answered: Boolean(question.answered),
       })),
     });
   }
@@ -476,12 +479,12 @@ export class InterviewService {
         ) values (
           ${userId}, ${sessionId}, ${question.requirement_id}, ${question.id},
           ${question.order_no}, ${rewritten.text},
-          ${transaction.json(question.basis as postgres.JSONValue)}, ${variant},
+          ${transaction.json(question.basis as JSONValue)}, ${variant},
           ${rewritten.rationale}
         )
       `;
       await transaction`
-        update interview_session set updated_at = now() where id = ${sessionId}
+        update interview_session set updated_at = now(6) where id = ${sessionId}
       `;
     });
     return this.getSession(userId, sessionId);
@@ -589,7 +592,7 @@ export class InterviewService {
         await transaction`
           update answer set input_type = ${input.inputType}, transcript = ${input.transcript},
             input_idempotency_key = ${idempotencyKey}, request_hash = ${requestHash},
-            version = version + 1, updated_at = now()
+            version = version + 1, updated_at = now(6)
           where id = ${existing.id} and user_id = ${userId}
         `;
         await transaction`
@@ -601,14 +604,14 @@ export class InterviewService {
         await transaction`
           update answer_record_change
           set change_type = 'strengthened',
-              changed_fields = '["title","body_md"]'::jsonb,
-              source_quote = ${input.transcript}, created_at = now()
+              changed_fields = '["title","body_md"]',
+              source_quote = ${input.transcript}, created_at = now(6)
           where user_id = ${userId} and answer_id = ${existing.id}
         `;
         return existing.id;
       }
       const categoryId = (await transaction<IdRow[]>`
-        select id from category where key = 'experience' and is_system
+        select id from category where \`key\` = 'experience' and is_system
       `)[0]?.id;
       if (!categoryId) throw new Error("experience category missing");
       const recordId = (await transaction<IdRow[]>`
@@ -616,7 +619,7 @@ export class InterviewService {
           user_id, category_id, title, status, origin, properties, body_md
         ) values (
           ${userId}, ${categoryId}, ${fallbackTitle(input.transcript)},
-          'draft', 'interview', '{}'::jsonb, ${input.transcript}
+          'draft', 'interview', '{}', ${input.transcript}
         ) returning id
       `)[0]?.id;
       if (!recordId) throw new Error("interview record was not persisted");
@@ -635,7 +638,7 @@ export class InterviewService {
           user_id, answer_id, record_id, change_type, changed_fields, source_quote
         ) values (
           ${userId}, ${answerId}, ${recordId}, 'created',
-          '["title","body_md"]'::jsonb, ${input.transcript}
+          '["title","body_md"]', ${input.transcript}
         )
       `;
       // 정리는 뒤에서 따라온다. 답을 저장하는 일이 계약을 기다리면 안 된다 —
@@ -652,27 +655,28 @@ export class InterviewService {
   }
 
   async #refreshProgress(userId: string, sessionId: string) {
+    // MySQL 은 CTE 로 갱신하지 못한다 — 진행 상태를 먼저 세고 그 값으로 고친다.
+    const progress = (await this.#sql<{
+      answered_count: number; current_order: number; finished: number;
+    }[]>`
+      select
+        count(answer.id) as answered_count,
+        coalesce(min(case when answer.id is null and not question.skipped then question.order_no end), count(*)) as current_order,
+        min(answer.id is not null or question.skipped) as finished
+      from question
+      left join answer on answer.user_id = question.user_id and answer.question_id = question.id
+      where question.user_id = ${userId}
+        and question.interview_session_id = ${sessionId}
+        and question.active
+    `)[0];
+    if (!progress) return;
     await this.#sql`
-      with progress as (
-        select
-          count(answer.id)::integer as answered_count,
-          coalesce(min(question.order_no) filter (
-            where answer.id is null and not question.skipped
-          ), count(*)::integer) as current_order,
-          bool_and(answer.id is not null or question.skipped) as finished
-        from question
-        left join answer on answer.user_id = question.user_id and answer.question_id = question.id
-        where question.user_id = ${userId}
-          and question.interview_session_id = ${sessionId}
-          and question.active
-      )
       update interview_session
-      set answered_count = progress.answered_count,
-          current_order = progress.current_order,
-          status = case when progress.finished then 'done' else status end,
-          updated_at = now()
-      from progress
-      where interview_session.id = ${sessionId} and interview_session.user_id = ${userId}
+      set answered_count = ${progress.answered_count},
+          current_order = ${progress.current_order},
+          status = case when ${progress.finished ? 1 : 0} = 1 then 'done' else status end,
+          updated_at = now(6)
+      where id = ${sessionId} and user_id = ${userId}
     `;
   }
 

@@ -8,7 +8,7 @@ import {
   type PublishPortfolio,
   type SubmitExport,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import { EntitlementService } from "../entitlements/service.js";
 import { addOutboxEvent } from "../../platform/outbox.js";
@@ -84,16 +84,16 @@ function isUniqueViolation(error: unknown): boolean {
 }
 
 export class PublishingService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #signingSecret: string;
 
-  constructor(sql: postgres.Sql, signingSecret = "expresso-local-asset-signing-secret") {
+  constructor(sql: SqlTag, signingSecret = "expresso-local-asset-signing-secret") {
     if (signingSecret.length < 16) throw new Error("asset signing secret must be at least 16 characters");
     this.#sql = sql;
     this.#signingSecret = signingSecret;
   }
 
-  async #snapshot(transaction: postgres.TransactionSql, userId: string, portfolioId: string) {
+  async #snapshot(transaction: SqlTag, userId: string, portfolioId: string) {
     const portfolio = (await transaction<{ id: string; title: string; template_id: string }[]>`
       select id, title, template_id from portfolio where id = ${portfolioId} and user_id = ${userId} for update
     `)[0];
@@ -138,7 +138,7 @@ export class PublishingService {
           where portfolio.id = ${portfolioId} and portfolio.user_id = ${userId}
         `)[0];
         const version = Number((await transaction<{ version: number }[]>`
-          select coalesce(max(version), 0)::integer + 1 as version
+          select coalesce(max(version), 0) + 1 as version
           from deployment where user_id = ${userId} and portfolio_id = ${portfolioId}
         `)[0]?.version ?? 1);
         const row = (await transaction<DeploymentRow[]>`
@@ -164,8 +164,7 @@ export class PublishingService {
           await transaction`
             insert into deployment_slug_redirect (user_id, portfolio_id, old_slug, new_slug, created_at, expires_at)
             values (${userId}, ${portfolioId}, ${current.subdomain}, ${input.slug}, ${at}, ${expiresAt})
-            on conflict (old_slug) do update set
-              new_slug = excluded.new_slug, created_at = excluded.created_at, expires_at = excluded.expires_at
+            as new on duplicate key update new_slug = new.new_slug, created_at = new.created_at, expires_at = new.expires_at
           `;
         }
         return deploymentDto(row);
@@ -266,11 +265,11 @@ export class PublishingService {
         select current_deployment_id from portfolio where id = ${portfolioId} and user_id = ${userId}
       `)[0];
       if (!portfolio) throw new PublishingError(404, "portfolio not found");
-      const inserted = (await transaction<ExportJobRow[]>`
-        insert into export_job (user_id, portfolio_id, deployment_id, kind, page_format, idempotency_key, request_hash)
+      await transaction`
+        insert ignore into export_job (user_id, portfolio_id, deployment_id, kind, page_format, idempotency_key, request_hash)
         values (${userId}, ${portfolioId}, ${portfolio.current_deployment_id}, ${input.kind}, ${input.pageFormat}, ${key}, ${hash})
-        on conflict (user_id, idempotency_key) do nothing returning *
-      `)[0] ?? (await transaction<ExportJobRow[]>`
+      `;
+      const inserted = (await transaction<ExportJobRow[]>`
         select * from export_job where user_id = ${userId} and idempotency_key = ${key}
       `)[0];
       if (!inserted) throw new Error("export job missing");
@@ -303,14 +302,14 @@ export class PublishingService {
       const job = (await transaction<ExportJobRow[]>`select * from export_job where id = ${id} for update`)[0];
       if (!job) throw new PublishingError(404, "export job not found");
       if (job.status === "done") return;
-      await transaction`update export_job set status = 'running', attempts = attempts + 1, updated_at = now() where id = ${id}`;
+      await transaction`update export_job set status = 'running', attempts = attempts + 1, updated_at = now(6) where id = ${id}`;
       const asset = (await transaction<{ id: string }[]>`
         insert into export_asset (user_id, portfolio_id, kind, file_url, page_format)
         values (${job.user_id}, ${job.portfolio_id}, ${job.kind}, ${`exports/${job.user_id}/${id}.${job.kind}`}, ${job.page_format})
         returning id
       `)[0];
       if (!asset) throw new Error("export asset missing");
-      await transaction`update export_job set status = 'done', asset_id = ${asset.id}, error_code = null, updated_at = now() where id = ${id}`;
+      await transaction`update export_job set status = 'done', asset_id = ${asset.id}, error_code = null, updated_at = now(6) where id = ${id}`;
     });
     const row = (await this.#sql<ExportJobRow[]>`select * from export_job where id = ${id}`)[0];
     if (!row) throw new Error("export job missing");
@@ -330,7 +329,7 @@ export class PublishingService {
           and kind = 'resume_file' and revoked_at is null for update
       `)[0];
       await transaction`
-        update export_asset set revoked_at = now()
+        update export_asset set revoked_at = now(6)
         where user_id = ${userId} and portfolio_id = ${portfolioId} and kind = 'resume_file' and revoked_at is null
       `;
       const asset = (await transaction<AssetRow[]>`

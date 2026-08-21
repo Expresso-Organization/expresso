@@ -8,7 +8,7 @@ const config: RuntimeConfig = {
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: "postgres://localhost/expresso_test",
+  databaseUrl: "mysql://localhost/expresso_test",
   redisUrl: "redis://localhost:6379",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,

@@ -6,7 +6,7 @@ import {
   type ExtractedRequirement,
   type JobAnalysisExtraction,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import { addOutboxEvent } from "../../platform/outbox.js";
 import { calculateRequirementCoverage } from "./coverage.js";
@@ -121,9 +121,9 @@ function safeFailure(error: unknown): { code: string; retryable: boolean } {
 }
 
 export class JobAnalysisService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
 
-  constructor(sql: postgres.Sql) {
+  constructor(sql: SqlTag) {
     this.#sql = sql;
   }
 
@@ -253,19 +253,17 @@ export class JobAnalysisService {
               job_analysis_id, user_id, previous_version, requirements, archived_at
             ) values (
               ${jobAnalysisId}, ${analysis.user_id}, ${analysis.result_version},
-              ${transaction.json(previousRows.map(mapRequirement) as postgres.JSONValue)}, now()
+              ${transaction.json(previousRows.map(mapRequirement) as JSONValue)}, now(6)
             )
-            on conflict (job_analysis_id)
-            do update set
-              previous_version = excluded.previous_version,
-              requirements = excluded.requirements,
-              archived_at = excluded.archived_at
+            as new on duplicate key update previous_version = new.previous_version,
+              requirements = new.requirements,
+              archived_at = new.archived_at
           `;
         }
         // 같은 공고를 두 사람이 동시에 처음 읽으면 요건이 두 벌 들어간다.
         // 공고 하나에 한 번만 쓰이도록 잠근다.
         await transaction`
-          select pg_advisory_xact_lock(hashtext(${analysis.job_posting_id})::bigint)
+          select get_lock(left(concat('ja:', ${analysis.job_posting_id}), 64), 10)
         `;
 
         // 요건은 처음 뽑을 때만 쓴다. 이미 있으면 그대로 두고, 그래서 다른
@@ -288,7 +286,7 @@ export class JobAnalysisService {
                 ${analysis.job_posting_id}, ${order}, ${requirement.label},
                 ${requirement.kind},
                 ${requirement.axis === "other" ? null : requirement.axis},
-                ${transaction.json(requirement.sourceSpan as postgres.JSONValue)},
+                ${transaction.json(requirement.sourceSpan as JSONValue)},
                 ${EXTRACTOR_VERSION}
               )
               returning id
@@ -306,8 +304,8 @@ export class JobAnalysisService {
           targets = inserted;
           await transaction`
             update job_posting
-            set requirements = ${transaction.json(extraction.normalized as postgres.JSONValue)},
-                normalized_at = now()
+            set requirements = ${transaction.json(extraction.normalized as JSONValue)},
+                normalized_at = now(6)
             where id = ${analysis.job_posting_id}
           `;
         }
@@ -337,14 +335,14 @@ export class JobAnalysisService {
               user_id, requirement_id, coverage, covered_by, computed_at
             ) values (
               ${analysis.user_id}, ${target.id}, ${result.coverage},
-              ${result.coveredBy}, now()
+              ${result.coveredBy}, now(6)
             )
           `;
         }
         await transaction`
           update job_analysis
           set status = 'done', progress_stage = 'done',
-              result_version = ${targetVersion}, analyzed_at = now(),
+              result_version = ${targetVersion}, analyzed_at = now(6),
               failure_code = null, failure_retryable = null
           where id = ${jobAnalysisId}
         `;
@@ -443,8 +441,8 @@ export class JobAnalysisService {
       }
       const impacts = await transaction<ImpactRow[]>`
         select
-          count(distinct brew.id)::integer as brew_count,
-          count(distinct recipe.id)::integer as recipe_count
+          count(distinct brew.id) as brew_count,
+          count(distinct recipe.id) as recipe_count
         from brew
         left join recipe on recipe.brew_id = brew.id and recipe.user_id = brew.user_id
         where brew.user_id = ${userId} and brew.job_analysis_id = ${jobAnalysisId}

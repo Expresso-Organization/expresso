@@ -1,452 +1,362 @@
 import { randomUUID } from "node:crypto";
 
-import { PGlite } from "@electric-sql/pglite";
-import { citext } from "@electric-sql/pglite/contrib/citext";
+import { createConnection, type Connection } from "mysql2/promise";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { loadMigrations } from "./migrations.js";
+import { migrate } from "./migrate.js";
 
-interface IdRow {
-  id: string;
+/**
+ * 스키마가 지키는 것을 실제 MySQL 에 올려 확인한다.
+ *
+ * PostgreSQL 을 쓸 때는 PGlite 로 프로세스 안에서 돌렸지만, MySQL 에는 그런
+ * 구현이 없다. `TEST_DATABASE_URL` 이 없으면 건너뛴다.
+ */
+const databaseUrl = process.env.TEST_DATABASE_URL;
+const describeWithDatabase = databaseUrl ? describe : describe.skip;
+
+const ownerScopedTables = [
+  "identity_session", "identity_oauth_account", "usage_counter", "notification",
+  "notification_preference", "account_deletion_request", "category", "consent",
+  "category_view", "company_research_item", "record", "record_link", "recent_search",
+  "record_usage", "career_profile", "skill", "skill_evidence", "saved_search",
+  "match_score", "media_asset", "media_variant", "generated_page", "interest",
+  "job_analysis", "job_analysis_history", "answer_record_change", "recipe_evidence_path",
+  "recipe_unused_source", "recipe_revision", "generation_usage_ledger",
+  "generation_sentence_evidence", "portfolio_snapshot", "portfolio_edit_proposal",
+  "requirement_coverage", "brew", "brew_source", "brew_job", "interview_session",
+  "question", "answer", "recipe", "recipe_section", "recipe_item", "generation_job",
+  "portfolio", "portfolio_section", "layout_spec", "block", "revision", "deployment",
+  "deployment_slug_redirect", "analytics_event_receipt", "export_asset", "export_job",
+  "visit_event", "section_view", "conversion_event", "metric_daily", "dashboard_view",
+  "widget", "derived_metric", "insight", "annotation",
+] as const;
+
+const productTables = [
+  "plan", "user", "usage_counter", "notification", "category", "consent", "record",
+  "record_link", "record_usage", "skill", "skill_evidence", "company",
+  "company_research_item", "job_posting", "saved_search", "match_score", "media_asset",
+  "media_variant", "generated_page", "interest", "job_analysis", "job_posting_requirement",
+  "requirement_coverage", "brew", "brew_source", "brew_job", "interview_session",
+  "question", "answer", "recipe", "recipe_section", "recipe_item", "template",
+  "generation_job", "portfolio", "portfolio_section", "layout_spec", "block", "revision",
+  "deployment", "export_asset", "visit_event", "section_view", "conversion_event",
+  "metric_daily", "dashboard_view", "widget", "derived_metric", "insight", "annotation",
+] as const;
+
+let db: Connection;
+let planId = "";
+let categoryId = "";
+let templateId = "";
+let jobPostingId = "";
+
+async function rows<T>(sql: string, parameters: unknown[] = []): Promise<T[]> {
+  const [result] = await db.query(sql, parameters);
+  return (Array.isArray(result) ? result : []) as T[];
 }
 
-interface SeededGraph {
+async function one<T>(sql: string, parameters: unknown[] = []): Promise<T | undefined> {
+  return (await rows<T>(sql, parameters))[0];
+}
+
+interface Graph {
   userId: string;
   recordId: string;
   brewId: string;
-  recipeId: string;
   recipeSectionId: string;
   portfolioId: string;
   portfolioSectionId: string;
 }
 
-const ownerScopedTables = [
-  "identity_session",
-  "identity_oauth_account",
-  "usage_counter",
-  "notification",
-  "notification_preference",
-  "account_deletion_request",
-  "category",
-  "consent",
-  "category_view",
-  "company_research_item",
-  "record",
-  "record_link",
-  "recent_search",
-  "record_usage",
-  "career_profile",
-  "skill",
-  "skill_evidence",
-  "saved_search",
-  "match_score",
-  "media_asset",
-  "media_variant",
-  "generated_page",
-  "interest",
-  "job_analysis",
-      "job_analysis_history",
-      "answer_record_change",
-      "recipe_evidence_path",
-      "recipe_unused_source",
-      "recipe_revision",
-      "generation_usage_ledger",
-      "generation_sentence_evidence",
-      "portfolio_snapshot",
-      "portfolio_edit_proposal",
-  "requirement_coverage",
-  "brew",
-  "brew_source",
-  "brew_job",
-  "interview_session",
-  "question",
-  "answer",
-  "recipe",
-  "recipe_section",
-  "recipe_item",
-  "generation_job",
-  "portfolio",
-  "portfolio_section",
-  "layout_spec",
-  "block",
-  "revision",
-  "deployment",
-  "deployment_slug_redirect",
-  "analytics_event_receipt",
-  "export_asset",
-  "export_job",
-  "visit_event",
-  "section_view",
-  "conversion_event",
-  "metric_daily",
-  "dashboard_view",
-  "widget",
-  "derived_metric",
-  "insight",
-  "annotation",
-] as const;
-
-const productTables = [
-  "plan",
-  "user",
-  "usage_counter",
-  "notification",
-  "category",
-  "consent",
-  "record",
-  "record_link",
-  "record_usage",
-  "skill",
-  "skill_evidence",
-  "company",
-  "company_research_item",
-  "job_posting",
-  "saved_search",
-  "match_score",
-  "media_asset",
-  "media_variant",
-  "generated_page",
-  "interest",
-  "job_analysis",
-  "job_posting_requirement",
-  "requirement_coverage",
-  "brew",
-  "brew_source",
-  "brew_job",
-  "interview_session",
-  "question",
-  "answer",
-  "recipe",
-  "recipe_section",
-  "recipe_item",
-  "template",
-  "generation_job",
-  "portfolio",
-  "portfolio_section",
-  "layout_spec",
-  "block",
-  "revision",
-  "deployment",
-  "export_asset",
-  "visit_event",
-  "section_view",
-  "conversion_event",
-  "metric_daily",
-  "dashboard_view",
-  "widget",
-  "derived_metric",
-  "insight",
-  "annotation",
-] as const;
-
-let database: PGlite;
-let planId: string;
-let categoryId: string;
-let jobPostingId: string;
-let templateId: string;
-
-async function oneId(sql: string, parameters: unknown[]): Promise<string> {
-  const result = await database.query<IdRow>(sql, parameters);
-  const id = result.rows[0]?.id;
-  if (!id) throw new Error("Expected an inserted id");
-  return id;
-}
-
-async function seedGraph(): Promise<SeededGraph> {
-  const userId = await oneId(
-    `insert into "user" (email, display_name, plan_id)
-     values ($1, 'Test User', $2)
-     returning id`,
-    [`${randomUUID()}@example.com`, planId],
+/** 한 사람의 기록에서 포트폴리오 섹션까지 한 벌을 만든다. */
+async function seedGraph(): Promise<Graph> {
+  const userId = randomUUID();
+  await db.query(
+    "insert into `user` (id, email, display_name, plan_id) values (?, ?, 'Test User', ?)",
+    [userId, `${randomUUID()}@example.com`, planId],
   );
-  const recordId = await oneId(
-    `insert into record (user_id, category_id, title, origin)
-     values ($1, $2, 'Career record', 'manual')
-     returning id`,
-    [userId, categoryId],
+  const recordId = randomUUID();
+  await db.query(
+    "insert into record (id, user_id, category_id, title, origin) values (?, ?, ?, 'Career record', 'manual')",
+    [recordId, userId, categoryId],
   );
-  const jobAnalysisId = await oneId(
-    `insert into job_analysis (user_id, job_posting_id, input_type)
-     values ($1, $2, 'url')
-     returning id`,
-    [userId, jobPostingId],
+  const analysisId = randomUUID();
+  await db.query(
+    "insert into job_analysis (id, user_id, job_posting_id, input_type) values (?, ?, ?, 'url')",
+    [analysisId, userId, jobPostingId],
   );
-  const brewId = await oneId(
-    `insert into brew (user_id, job_analysis_id, length_preset)
-     values ($1, $2, 'single')
-     returning id`,
-    [userId, jobAnalysisId],
+  const brewId = randomUUID();
+  await db.query(
+    "insert into brew (id, user_id, job_analysis_id, length_preset) values (?, ?, ?, 'single')",
+    [brewId, userId, analysisId],
   );
-  const recipeId = await oneId(
-    `insert into recipe (user_id, brew_id, version, completeness)
-     values ($1, $2, 1, 0)
-     returning id`,
-    [userId, brewId],
+  const recipeId = randomUUID();
+  await db.query(
+    "insert into recipe (id, user_id, brew_id, version, completeness) values (?, ?, ?, 1, 0)",
+    [recipeId, userId, brewId],
   );
-  const recipeSectionId = await oneId(
-    `insert into recipe_section
-       (user_id, recipe_id, order_no, title, purpose, target_length)
-     values ($1, $2, 0, 'Intro', 'Introduce the candidate', 400)
-     returning id`,
-    [userId, recipeId],
+  const recipeSectionId = randomUUID();
+  await db.query(
+    `insert into recipe_section (id, user_id, recipe_id, order_no, title, purpose, target_length)
+     values (?, ?, ?, 0, 'Intro', 'Introduce the candidate', 400)`,
+    [recipeSectionId, userId, recipeId],
   );
-  const portfolioId = await oneId(
-    `insert into portfolio (user_id, brew_id, template_id, title)
-     values ($1, $2, $3, 'Portfolio')
-     returning id`,
-    [userId, brewId, templateId],
+  const portfolioId = randomUUID();
+  await db.query(
+    "insert into portfolio (id, user_id, brew_id, template_id, title) values (?, ?, ?, ?, 'Portfolio')",
+    [portfolioId, userId, brewId, templateId],
   );
-  const portfolioSectionId = await oneId(
-    `insert into portfolio_section
-       (user_id, portfolio_id, recipe_section_id, order_no)
-     values ($1, $2, $3, 0)
-     returning id`,
-    [userId, portfolioId, recipeSectionId],
+  const portfolioSectionId = randomUUID();
+  await db.query(
+    `insert into portfolio_section (id, user_id, portfolio_id, recipe_section_id, order_no)
+     values (?, ?, ?, ?, 0)`,
+    [portfolioSectionId, userId, portfolioId, recipeSectionId],
   );
-
-  return {
-    userId,
-    recordId,
-    brewId,
-    recipeId,
-    recipeSectionId,
-    portfolioId,
-    portfolioSectionId,
-  };
+  return { userId, recordId, brewId, recipeSectionId, portfolioId, portfolioSectionId };
 }
 
 beforeAll(async () => {
-  database = new PGlite({ extensions: { citext } });
+  if (!databaseUrl) return;
+  await migrate({ databaseUrl });
+  db = await createConnection({ uri: databaseUrl, timezone: "Z", multipleStatements: true });
 
-  for (const migration of await loadMigrations()) {
-    await database.exec(migration.sql);
-  }
-
-  planId = await oneId(
-    `insert into plan (code, generation_quota)
-     values ('free', 3)
-     on conflict (code) do update
-       set generation_quota = plan.generation_quota
-     returning id`,
-    [],
+  planId = (await one<{ id: string }>("select id from plan where code = 'free'"))?.id ?? "";
+  categoryId = (await one<{ id: string }>(
+    "select id from category where `key` = 'experience' and is_system = 1",
+  ))?.id ?? "";
+  templateId = randomUUID();
+  await db.query(
+    "insert into template (id, code, name, plan_required) values (?, ?, 'Classic', 'free')",
+    [templateId, `classic-${templateId.slice(0, 8)}`],
   );
-  categoryId = await oneId(
-    `select id from category
-     where key = 'experience' and is_system = true`,
-    [],
+  const companyId = randomUUID();
+  await db.query(
+    "insert into company (id, name, domain, dedupe_key) values (?, 'Example', 'example.com', ?)",
+    [companyId, companyId],
   );
-  const companyId = await oneId(
-    `insert into company (name, domain)
-     values ('Example', 'example.com')
-     returning id`,
-    [],
-  );
-  jobPostingId = await oneId(
-    `insert into job_posting
-       (company_id, source, external_id, title, description_raw, dedupe_hash)
-     values ($1, 'api', 'job-1', 'Engineer', 'Original source', 'hash-1')
-     returning id`,
-    [companyId],
-  );
-  templateId = await oneId(
-    `insert into template (code, name, plan_required)
-     values ('classic', 'Classic', 'free')
-     returning id`,
-    [],
+  jobPostingId = randomUUID();
+  await db.query(
+    `insert into job_posting (id, company_id, source, external_id, title, description_raw, dedupe_hash)
+     values (?, ?, 'api', ?, 'Engineer', 'Original source', ?)`,
+    [jobPostingId, companyId, `job-${jobPostingId.slice(0, 8)}`, jobPostingId],
   );
 });
 
 afterAll(async () => {
-  await database.close();
+  if (db) await db.end();
 });
 
-describe("initial Expresso schema", () => {
-  it("creates the 43 documented product tables", async () => {
-    const result = await database.query<{ table_name: string }>(`
-      select table_name
-      from information_schema.tables
-      where table_schema = 'public'
-        and table_type = 'BASE TABLE'
-      order by table_name
-    `);
-
-    const allTables = result.rows.map(({ table_name }) => table_name);
-    const actualProductTables = allTables.filter((tableName) =>
-      productTables.some((productTable) => productTable === tableName),
+describeWithDatabase("Expresso 스키마", () => {
+  it("제품 표를 모두 만든다", async () => {
+    const found = await rows<{ table_name: string }>(
+      `select table_name as table_name from information_schema.tables
+       where table_schema = database() and table_type = 'BASE TABLE'
+       order by table_name`,
     );
-
-    expect(actualProductTables).toEqual([...productTables].sort());
-    expect(allTables).toContain("platform_outbox");
-    expect(allTables).toContain("identity_session");
+    const names = found.map(({ table_name }) => table_name);
+    for (const table of productTables) expect(names).toContain(table);
+    expect(names).toContain("platform_outbox");
+    expect(names).toContain("identity_session");
   });
 
-  it("puts user_id directly on every owner-scoped table", async () => {
-    const result = await database.query<{ table_name: string }>(`
-      select table_name
-      from information_schema.columns
-      where table_schema = 'public' and column_name = 'user_id'
-      order by table_name
-    `);
-
-    expect(result.rows.map(({ table_name }) => table_name)).toEqual(
-      [...ownerScopedTables].sort(),
+  it("사용자 소유 표에는 user_id 가 직접 붙어 있다", async () => {
+    const found = await rows<{ table_name: string }>(
+      `select table_name as table_name from information_schema.columns
+       where table_schema = database() and column_name = 'user_id'
+       order by table_name`,
     );
+    expect(found.map(({ table_name }) => table_name)).toEqual([...ownerScopedTables].sort());
   });
 
-  it("treats email addresses case-insensitively", async () => {
+  it("이메일은 대소문자를 가리지 않는다", async () => {
     const email = `${randomUUID()}@example.com`;
-    await database.query(
-      `insert into "user" (email, display_name, plan_id) values ($1, 'First', $2)`,
-      [email, planId],
-    );
-
+    await db.query("insert into `user` (id, email, display_name, plan_id) values (?, ?, 'First', ?)", [randomUUID(), email, planId]);
     await expect(
-      database.query(
-        `insert into "user" (email, display_name, plan_id) values ($1, 'Second', $2)`,
-        [email.toUpperCase(), planId],
-      ),
+      db.query("insert into `user` (id, email, display_name, plan_id) values (?, ?, 'Second', ?)", [randomUUID(), email.toUpperCase(), planId]),
     ).rejects.toThrow();
   });
 
-  it("rejects recipe items without evidence", async () => {
+  it("근거 없는 레시피 항목은 받지 않는다", async () => {
     const graph = await seedGraph();
-
     await expect(
-      database.query(
-        `insert into recipe_item
-           (user_id, recipe_section_id, order_no, point_text, evidence, edited_by)
-         values ($1, $2, 0, 'Unsupported claim', '[]'::jsonb, 'ai')`,
-        [graph.userId, graph.recipeSectionId],
+      db.query(
+        `insert into recipe_item (id, user_id, recipe_section_id, order_no, point_text, evidence, edited_by)
+         values (?, ?, ?, 0, 'Unsupported claim', '[]', 'ai')`,
+        [randomUUID(), graph.userId, graph.recipeSectionId],
       ),
     ).rejects.toThrow();
-
     await expect(
-      database.query(
-        `insert into recipe_item
-           (user_id, recipe_section_id, order_no, point_text, evidence, edited_by)
-         values ($1, $2, 0, 'Supported claim', $3::jsonb, 'ai')`,
-        [
-          graph.userId,
-          graph.recipeSectionId,
-          JSON.stringify([{ record_id: graph.recordId, quote: "Evidence" }]),
-        ],
+      db.query(
+        `insert into recipe_item (id, user_id, recipe_section_id, order_no, point_text, evidence, edited_by)
+         values (?, ?, ?, 0, 'Supported claim', ?, 'ai')`,
+        [randomUUID(), graph.userId, graph.recipeSectionId,
+          JSON.stringify([{ record_id: graph.recordId, quote: "Evidence" }])],
       ),
     ).resolves.toBeDefined();
   });
 
-  it("rejects cross-owner references", async () => {
+  it("남의 것을 가리키지 못한다", async () => {
     const first = await seedGraph();
     const second = await seedGraph();
-
     await expect(
-      database.query(
-        `insert into record_link
-           (user_id, from_record_id, to_record_id, relation, created_by)
-         values ($1, $2, $3, 'related', 'user')`,
-        [first.userId, first.recordId, second.recordId],
+      db.query(
+        `insert into record_link (id, user_id, from_record_id, to_record_id, relation, created_by)
+         values (?, ?, ?, ?, 'related', 'user')`,
+        [randomUUID(), first.userId, first.recordId, second.recordId],
       ),
     ).rejects.toThrow();
   });
 
-  it("keeps job posting source text immutable", async () => {
+  it("공고 원문은 고쳐지지 않는다", async () => {
     await expect(
-      database.query(
-        `update job_posting set description_raw = 'Changed' where id = $1`,
-        [jobPostingId],
-      ),
+      db.query("update job_posting set description_raw = 'Changed' where id = ?", [jobPostingId]),
     ).rejects.toThrow(/immutable/);
   });
 
-  it("detaches blocks when an unquoted source record is deleted", async () => {
+  it("인용 없는 원본을 지우면 블록이 떨어져 나온다", async () => {
     const graph = await seedGraph();
-    const blockId = await oneId(
-      `insert into block
-         (user_id, portfolio_section_id, kind, content, source_record_id)
-       values ($1, $2, 'paragraph', '{"text":"Example"}'::jsonb, $3)
-       returning id`,
-      [graph.userId, graph.portfolioSectionId, graph.recordId],
+    const blockId = randomUUID();
+    await db.query(
+      `insert into block (id, user_id, portfolio_section_id, kind, content, source_record_id)
+       values (?, ?, ?, 'paragraph', '{"text":"Example"}', ?)`,
+      [blockId, graph.userId, graph.portfolioSectionId, graph.recordId],
     );
-
-    await database.query(`delete from record where id = $1`, [graph.recordId]);
-    const result = await database.query<{
-      source_record_id: string | null;
-      sync_state: string;
-    }>(`select source_record_id, sync_state from block where id = $1`, [blockId]);
-
-    expect(result.rows[0]).toEqual({
-      source_record_id: null,
-      sync_state: "detached",
-    });
+    await db.query("delete from record where id = ?", [graph.recordId]);
+    const block = await one<{ source_record_id: string | null; sync_state: string }>(
+      "select source_record_id, sync_state from block where id = ?", [blockId],
+    );
+    expect(block).toEqual({ source_record_id: null, sync_state: "detached" });
   });
 
-  it("restricts deletion while a record quotation remains", async () => {
+  it("인용이 남아 있으면 원본을 지우지 못한다", async () => {
     const graph = await seedGraph();
-    const blockId = await oneId(
-      `insert into block
-         (user_id, portfolio_section_id, kind, content, source_record_id)
-       values ($1, $2, 'paragraph', '{"text":"Quoted"}'::jsonb, $3)
-       returning id`,
-      [graph.userId, graph.portfolioSectionId, graph.recordId],
+    const blockId = randomUUID();
+    await db.query(
+      `insert into block (id, user_id, portfolio_section_id, kind, content, source_record_id)
+       values (?, ?, ?, 'paragraph', '{"text":"Quoted"}', ?)`,
+      [blockId, graph.userId, graph.portfolioSectionId, graph.recordId],
     );
-    await database.query(
-      `insert into record_usage (user_id, record_id, block_id, quoted_text)
-       values ($1, $2, $3, 'Quoted')`,
-      [graph.userId, graph.recordId, blockId],
+    await db.query(
+      "insert into record_usage (id, user_id, record_id, block_id, quoted_text) values (?, ?, ?, ?, 'Quoted')",
+      [randomUUID(), graph.userId, graph.recordId, blockId],
     );
-
-    await expect(
-      database.query(`delete from record where id = $1`, [graph.recordId]),
-    ).rejects.toThrow();
-
-    const result = await database.query<{ count: number }>(
-      `select count(*)::int as count from record where id = $1`,
-      [graph.recordId],
-    );
-    expect(result.rows[0]?.count).toBe(1);
+    await expect(db.query("delete from record where id = ?", [graph.recordId])).rejects.toThrow();
+    const left = await one<{ count: number }>("select count(*) as count from record where id = ?", [graph.recordId]);
+    expect(left?.count).toBe(1);
   });
 
-  it("only accepts a current deployment from the same portfolio", async () => {
+  it("지금 배포는 같은 포트폴리오의 것만 가리킨다", async () => {
     const graph = await seedGraph();
-    const otherPortfolioId = await oneId(
-      `insert into portfolio (user_id, brew_id, template_id, title)
-       values ($1, $2, $3, 'Other portfolio')
-       returning id`,
-      [graph.userId, graph.brewId, templateId],
+    const otherPortfolioId = randomUUID();
+    await db.query(
+      "insert into portfolio (id, user_id, brew_id, template_id, title) values (?, ?, ?, ?, 'Other portfolio')",
+      [otherPortfolioId, graph.userId, graph.brewId, templateId],
     );
-    const deploymentId = await oneId(
-      `insert into deployment
-         (user_id, portfolio_id, version, subdomain)
-       values ($1, $2, 1, $3)
-       returning id`,
-      [graph.userId, graph.portfolioId, `portfolio-${randomUUID()}`],
+    const deploymentId = randomUUID();
+    await db.query(
+      "insert into deployment (id, user_id, portfolio_id, version, subdomain) values (?, ?, ?, 1, ?)",
+      [deploymentId, graph.userId, graph.portfolioId, `portfolio-${randomUUID().slice(0, 8)}`],
     );
-
     await expect(
-      database.query(
-        `update portfolio set current_deployment_id = $1 where id = $2`,
-        [deploymentId, otherPortfolioId],
-      ),
+      db.query("update portfolio set current_deployment_id = ? where id = ?", [deploymentId, otherPortfolioId]),
     ).rejects.toThrow(/same portfolio/);
   });
 
-  it("limits dashboard views to six per portfolio", async () => {
-    const graph = await seedGraph();
+  it("계약이 받는 길이를 열이 담는다", async () => {
+    // MySQL 의 text 는 65,535 바이트에서 끊긴다 — 한글이면 21,845자다. 계약이 그보다
+    // 긴 값을 통과시키는 자리는 열도 그만큼 넓어야 검증을 지난 값이 거절되지 않는다.
+    const narrow = await rows<{ table_name: string; column_name: string }>(
+      `select table_name as table_name, column_name as column_name
+       from information_schema.columns
+       where table_schema = database() and data_type = 'text'
+         and (table_name, column_name) in (
+           ('record', 'body_md'), ('answer', 'transcript'),
+           ('answer_record_change', 'source_quote'), ('job_posting', 'description_raw'),
+           ('generated_page', 'html'), ('generated_page', 'css'))`,
+    );
+    expect(narrow.map(({ table_name, column_name }) => `${table_name}.${column_name}`)).toEqual([]);
+  });
 
+  it("트리거 본문은 세미콜론으로 끝나지 않는다", async () => {
+    // 세미콜론이 본문에 남으면 mysqldump 가 받은 백업이 그 줄에서 복원을 멈춘다.
+    // 문장 하나짜리 본문은 begin · end 로 감싸야 그 일이 없다.
+    const leaking = await rows<{ trigger_name: string }>(
+      `select trigger_name as trigger_name from information_schema.triggers
+       where trigger_schema = database() and action_statement like '%;'`,
+    );
+    expect(leaking.map(({ trigger_name }) => trigger_name)).toEqual([]);
+  });
+
+  it("요건의 근거 구간은 공고 원문 그대로여야 한다", async () => {
+    await expect(db.query(
+      `insert into job_posting_requirement (id, job_posting_id, order_no, label, kind, source_span)
+       values (?, ?, 0, 'tampered', 'must', ?)`,
+      [randomUUID(), jobPostingId, JSON.stringify({ start: 0, end: 9, quote: "not-source" })],
+    )).rejects.toThrow(/does not match immutable posting source/);
+    await db.query(
+      `insert into job_posting_requirement (id, job_posting_id, order_no, label, kind, source_span)
+       values (?, ?, 1, 'exact', 'must', ?)`,
+      [randomUUID(), jobPostingId, JSON.stringify({ start: 0, end: 8, quote: "Original" })],
+    );
+  });
+
+  it("기록 속성은 분류가 정의한 것만, 정의한 타입으로만 받는다", async () => {
+    const graph = await seedGraph();
+    const ownCategoryId = randomUUID();
+    await db.query(
+      `insert into category (id, user_id, \`key\`, name, icon, default_view, is_system, property_schema, sort_order)
+       values (?, ?, 'probe', 'Probe', 'star', 'list', 0, ?, 0)`,
+      [ownCategoryId, graph.userId, JSON.stringify({
+        role: { type: "text" }, tags: { type: "tags" }, years: { type: "number", required: true },
+      })],
+    );
+    const insertRecord = (properties: unknown) => db.query(
+      `insert into record (id, user_id, category_id, title, origin, properties)
+       values (?, ?, ?, 'Probe record', 'manual', ?)`,
+      [randomUUID(), graph.userId, ownCategoryId, JSON.stringify(properties)],
+    );
+    await expect(insertRecord({ nope: "x", years: 1 })).rejects.toThrow(/not defined by the category/);
+    await expect(insertRecord({ role: 5, years: 1 })).rejects.toThrow(/does not match type text/);
+    await expect(insertRecord({ tags: ["a", 3], years: 1 })).rejects.toThrow(/does not match type tags/);
+    await expect(insertRecord({ role: "a" })).rejects.toThrow(/required property years is missing/);
+    await insertRecord({ role: "a", tags: ["x"], years: 3 });
+  });
+
+  it("값이 남아 있는 속성 정의는 지우지 못한다", async () => {
+    const graph = await seedGraph();
+    const ownCategoryId = randomUUID();
+    await db.query(
+      `insert into category (id, user_id, \`key\`, name, icon, default_view, is_system, property_schema, sort_order)
+       values (?, ?, 'probe', 'Probe', 'star', 'list', 0, ?, 0)`,
+      [ownCategoryId, graph.userId, JSON.stringify({ role: { type: "text" }, note: { type: "text" } })],
+    );
+    await db.query(
+      `insert into record (id, user_id, category_id, title, origin, properties)
+       values (?, ?, ?, 'Probe record', 'manual', ?)`,
+      [randomUUID(), graph.userId, ownCategoryId, JSON.stringify({ role: "backend" })],
+    );
+    await expect(db.query(
+      "update category set property_schema = ? where id = ?",
+      [JSON.stringify({ note: { type: "text" } }), ownCategoryId],
+    )).rejects.toThrow(/property role still has record values/);
+    // 값을 넣은 적 없는 정의는 지워진다.
+    await db.query(
+      "update category set property_schema = ? where id = ?",
+      [JSON.stringify({ role: { type: "text" } }), ownCategoryId],
+    );
+  });
+
+  it("대시보드 뷰는 포트폴리오마다 여섯 개까지", async () => {
+    const graph = await seedGraph();
     for (let index = 0; index < 6; index += 1) {
-      await database.query(
-        `insert into dashboard_view
-           (user_id, portfolio_id, name, period)
-         values ($1, $2, $3, '30d')`,
-        [graph.userId, graph.portfolioId, `View ${index}`],
+      await db.query(
+        "insert into dashboard_view (id, user_id, portfolio_id, name, period) values (?, ?, ?, ?, '30d')",
+        [randomUUID(), graph.userId, graph.portfolioId, `View ${index}`],
       );
     }
-
     await expect(
-      database.query(
-        `insert into dashboard_view
-           (user_id, portfolio_id, name, period)
-         values ($1, $2, 'View 7', '30d')`,
-        [graph.userId, graph.portfolioId],
+      db.query(
+        "insert into dashboard_view (id, user_id, portfolio_id, name, period) values (?, ?, ?, 'View 7', '30d')",
+        [randomUUID(), graph.userId, graph.portfolioId],
       ),
     ).rejects.toThrow(/at most 6/);
   });

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import postgres from "postgres";
+import { createMysqlResource } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { LayoutDraft } from "@expresso/contracts";
 import { LayoutService } from "../layout/service.js";
@@ -36,7 +37,7 @@ const describeWithDatabase = databaseUrl ? describe : describe.skip;
 interface IdRow { id: string }
 
 describeWithDatabase("generation integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 20 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const service = new GenerationService(sql);
   const marker = randomUUID();
   const quote = "PostgreSQL 운영 근거";
@@ -62,25 +63,25 @@ describeWithDatabase("generation integration", () => {
 
   beforeAll(async () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
-    const categoryId = (await sql<IdRow[]>`select id from category where key = 'experience' and is_system`)[0]?.id;
+    const categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id;
     templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id ?? "";
     if (!planId || !categoryId || !templateId) throw new Error("generation seed missing");
-    userId = (await sql<IdRow[]>`insert into "user" (email, display_name, plan_id) values (${`generation-${marker}@example.com`}, 'Generation', ${planId}) returning id`)[0]?.id ?? "";
+    userId = (await sql<IdRow[]>`insert into \`user\` (email, display_name, plan_id) values (${`generation-${marker}@example.com`}, 'Generation', ${planId}) returning id`)[0]?.id ?? "";
     companyId = (await sql<IdRow[]>`insert into company (name, dedupe_key) values (${`Generation ${marker}`}, ${`generation-company-${marker}`}) returning id`)[0]?.id ?? "";
-    postingId = (await sql<IdRow[]>`insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash) values (${companyId}, 'user_input', 'Engineer', ${quote}, '{}'::jsonb, ${`generation-posting-${marker}`}) returning id`)[0]?.id ?? "";
+    postingId = (await sql<IdRow[]>`insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash) values (${companyId}, 'user_input', 'Engineer', ${quote}, '{}', ${`generation-posting-${marker}`}) returning id`)[0]?.id ?? "";
     const analysisId = (await sql<IdRow[]>`insert into job_analysis (user_id, job_posting_id, input_type, status, progress_stage, result_version, target_version) values (${userId}, ${postingId}, 'paste', 'done', 'done', 1, 1) returning id`)[0]?.id;
     requirementId = (await sql<IdRow[]>`insert into job_posting_requirement (job_posting_id, order_no, label, kind, source_span) values (${postingId}, 0, ${quote}, 'must', ${sql.json({ start: 0, end: Array.from(quote).length, quote })}) returning id`)[0]?.id ?? "";
     if (requirementId) await sql`insert into requirement_coverage (user_id, requirement_id, coverage) values (${userId}, ${requirementId}, 'covered')`;
-    recordId = (await sql<IdRow[]>`insert into record (user_id, category_id, title, status, origin, properties, body_md) values (${userId}, ${categoryId}, 'Record source', 'organized', 'manual', '{}'::jsonb, ${quote}) returning id`)[0]?.id ?? "";
+    recordId = (await sql<IdRow[]>`insert into record (user_id, category_id, title, status, origin, properties, body_md) values (${userId}, ${categoryId}, 'Record source', 'organized', 'manual', '{}', ${quote}) returning id`)[0]?.id ?? "";
     if (!analysisId || !requirementId || !recordId) throw new Error("generation domain seed missing");
     brewId = (await sql<IdRow[]>`insert into brew (user_id, job_analysis_id, length_preset, status) values (${userId}, ${analysisId}, 'single', 'recipe') returning id`)[0]?.id ?? "";
-    await sql`insert into brew_source (user_id, brew_id, record_id, rank, selected_by, score, reason_text, is_selected) values (${userId}, ${brewId}, ${recordId}, 0, 'auto', 10, 'fixture', true)`;
+    await sql`insert into brew_source (user_id, brew_id, record_id, \`rank\`, selected_by, score, reason_text, is_selected) values (${userId}, ${brewId}, ${recordId}, 0, 'auto', 10, 'fixture', true)`;
     recipeId = await seedRecipe(1);
   });
 
   afterAll(async () => {
-    if (userId) await sql`delete from platform_outbox where payload ->> 'userId' = ${userId}`;
-    if (userId) await sql`delete from "user" where id = ${userId}`;
+    if (userId) await sql`delete from platform_outbox where payload ->> '$.userId' = ${userId}`;
+    if (userId) await sql`delete from \`user\` where id = ${userId}`;
     if (postingId) await sql`delete from job_posting where id = ${postingId}`;
     if (companyId) await sql`delete from company where id = ${companyId}`;
     await sql.end({ timeout: 5 });
@@ -98,11 +99,11 @@ describeWithDatabase("generation integration", () => {
     const status = await service.getStatus(userId, jobId);
     expect(status).toMatchObject({ status: "done", stage: "done", usageCharged: true });
     expect((await sql<{ used: number }[]>`select used from usage_counter where user_id = ${userId}`)[0]?.used).toBe(1);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from generation_usage_ledger where user_id = ${userId} and generation_job_id = ${jobId}`)[0]?.count).toBe(1);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from generation_sentence_evidence where user_id = ${userId} and generation_job_id = ${jobId}`)[0]?.count).toBe(3);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from record_usage where user_id = ${userId}`)[0]?.count).toBe(1);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from portfolio_snapshot where user_id = ${userId} and portfolio_id = ${status.portfolioId}`)[0]?.count).toBe(1);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from portfolio_section where user_id = ${userId} and portfolio_id = ${status.portfolioId}`)[0]?.count).toBe(3);
+    expect((await sql<{ count: number }[]>`select count(*) as count from generation_usage_ledger where user_id = ${userId} and generation_job_id = ${jobId}`)[0]?.count).toBe(1);
+    expect((await sql<{ count: number }[]>`select count(*) as count from generation_sentence_evidence where user_id = ${userId} and generation_job_id = ${jobId}`)[0]?.count).toBe(3);
+    expect((await sql<{ count: number }[]>`select count(*) as count from record_usage where user_id = ${userId}`)[0]?.count).toBe(1);
+    expect((await sql<{ count: number }[]>`select count(*) as count from portfolio_snapshot where user_id = ${userId} and portfolio_id = ${status.portfolioId}`)[0]?.count).toBe(1);
+    expect((await sql<{ count: number }[]>`select count(*) as count from portfolio_section where user_id = ${userId} and portfolio_id = ${status.portfolioId}`)[0]?.count).toBe(3);
   }, 30_000);
 
   it("rejects ungrounded output before charging and preserves a retryable/non-retryable draft", async () => {
@@ -185,13 +186,13 @@ describeWithDatabase("generation integration", () => {
 
     expect(status).toMatchObject({ status: "done", usageCharged: true });
     const count = (await sql<{ count: number }[]>`
-      select count(*)::integer as count from layout_spec
+      select count(*) as count from layout_spec
       where user_id = ${userId} and portfolio_id = ${status.portfolioId}
     `)[0]?.count;
     expect(count).toBe(0);
     // 지면이 없어도 블록은 그대로다. 화면은 기본 배치로 그린다.
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count from block
+      select count(*) as count from block
       join portfolio_section on portfolio_section.id = block.portfolio_section_id
       where block.user_id = ${userId} and portfolio_section.portfolio_id = ${status.portfolioId}
     `)[0]?.count).toBe(3);

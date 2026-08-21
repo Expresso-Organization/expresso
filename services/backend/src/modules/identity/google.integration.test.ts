@@ -1,7 +1,8 @@
 import { generateKeyPairSync, sign as signWith } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
 import { ApiErrorResponseSchema, SocialAuthSessionResponseSchema } from "@expresso/contracts";
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
@@ -20,7 +21,7 @@ const config: RuntimeConfig = {
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -65,7 +66,7 @@ interface IdRow {
 }
 
 describeWithDatabase("Google 로그인 HTTP 통합", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 2 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identityService = new IdentityService(sql);
   const app = buildApi({
     config,
@@ -93,7 +94,7 @@ describeWithDatabase("Google 로그인 HTTP 통합", () => {
   beforeAll(async () => {
     await sql`
       insert into plan (code, generation_quota) values ('free', 3)
-      on conflict (code) do update set generation_quota = plan.generation_quota
+      as new on duplicate key update generation_quota = plan.generation_quota
     `;
     await app.ready();
 
@@ -111,7 +112,7 @@ describeWithDatabase("Google 로그인 HTTP 통합", () => {
   });
 
   afterAll(async () => {
-    await sql`delete from "user" where email = any(${createdEmails})`;
+    await sql`delete from \`user\` where email in ${sql(createdEmails)}`;
     await app.close();
     await sql.end({ timeout: 5 });
   });
@@ -131,7 +132,7 @@ describeWithDatabase("Google 로그인 HTTP 통합", () => {
 
     // 비밀번호 없는 계정이어야 한다.
     const rows = await sql<{ password_hash: string | null }[]>`
-      select password_hash from "user" where email = ${freshEmail}
+      select password_hash from \`user\` where email = ${freshEmail}
     `;
     expect(rows[0]?.password_hash).toBeNull();
   });
@@ -191,7 +192,7 @@ describeWithDatabase("Google 로그인 HTTP 통합", () => {
     });
 
     expect(response.statusCode).toBe(401);
-    const rows = await sql`select 1 from "user" where email = ${unverified}`;
+    const rows = await sql`select 1 from \`user\` where email = ${unverified}`;
     expect(rows).toHaveLength(0);
   });
 
@@ -244,7 +245,7 @@ describeWithDatabase("Google 로그인 HTTP 통합", () => {
 
 describe("검증기가 없을 때", () => {
   it("Google 경로는 503으로 답한다 — 조용히 통과시키지 않는다", async () => {
-    const sql = postgres("postgres://127.0.0.1:1/unused", { max: 1 });
+    const sql = createMysqlResource("mysql://127.0.0.1:1/unused").sql;
     const app = buildApi({ config, identityService: new IdentityService(sql) });
     await app.ready();
 

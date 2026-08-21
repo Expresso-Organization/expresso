@@ -12,7 +12,7 @@ import {
   type JobRequirements,
   type ListJobPostingsQuery,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import { JobMarketError } from "./errors.js";
 import { countryOf, regionsOf } from "./ingest/classify.js";
@@ -277,9 +277,9 @@ function mapSummary(row: PostingRow, brew: BrewRow | undefined) {
 }
 
 export class JobBoardService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
 
-  constructor(sql: postgres.Sql) {
+  constructor(sql: SqlTag) {
     this.#sql = sql;
   }
 
@@ -302,17 +302,15 @@ export class JobBoardService {
       where true
         ${like
           ? sql`and (
-              job_posting.title ilike ${like}
-              or company.name ilike ${like}
-              or job_posting.description_raw ilike ${like}
+              lower(job_posting.title) like lower(${like})
+              or lower(company.name) like lower(${like})
+              or lower(job_posting.description_raw) like lower(${like})
             )`
           : sql``}
         ${query.technology
-          ? sql`and exists (
-              select 1 from jsonb_array_elements_text(
-                coalesce(job_posting.requirements -> 'technologies', '[]'::jsonb)
-              ) as technology
-              where lower(technology) = lower(${query.technology})
+          ? sql`and json_contains(
+              cast(lower(coalesce(job_posting.requirements ->> '$.technologies', '[]')) as json),
+              json_quote(lower(${query.technology}))
             )`
           : sql``}
         ${query.interested === true ? sql`and interest.id is not null` : sql``}
@@ -363,16 +361,16 @@ export class JobBoardService {
     const sql = this.#sql;
     return sql`
         ${query.family ? sql`and job_posting.job_family = ${query.family}` : sql``}
-        ${query.remote === true ? sql`and job_posting.work_type ilike '%리모트%'` : sql``}
+        ${query.remote === true ? sql`and lower(job_posting.work_type) like lower('%리모트%')` : sql``}
         ${query.remote === false
-          ? sql`and (job_posting.work_type is null or job_posting.work_type not ilike '%리모트%')`
+          ? sql`and (job_posting.work_type is null or lower(job_posting.work_type) not like lower('%리모트%'))`
           : sql``}
         ${query.deadline === "urgent"
-          ? sql`and job_posting.expires_at >= now()
-                and job_posting.expires_at < now() + interval '7 days'`
+          ? sql`and job_posting.expires_at >= now(6)
+                and job_posting.expires_at < now(6) + interval 7 day`
           : sql``}
         ${query.deadline === "open"
-          ? sql`and (job_posting.expires_at is null or job_posting.expires_at >= now())`
+          ? sql`and (job_posting.expires_at is null or job_posting.expires_at >= now(6))`
           : sql``}
         ${query.deadline === "always" ? sql`and job_posting.expires_at is null` : sql``}
     `;
@@ -382,7 +380,7 @@ export class JobBoardService {
   #countryClause(query: ListJobPostingsQuery) {
     const sql = this.#sql;
     return query.country
-      ? sql`and job_posting.location_region = any(${regionsOf(query.country)})`
+      ? sql`and job_posting.location_region in ${sql(regionsOf(query.country))}`
       : sql``;
   }
 
@@ -434,7 +432,7 @@ export class JobBoardService {
       job_posting.expires_at,
       job_posting.deadline_note,
       job_posting.created_at,
-      (job_posting.expires_at::date - now()::date) as days_left,
+      datediff(job_posting.expires_at, now(6)) as days_left,
       company.id as company_id,
       company.name as company_name,
       company.domain as company_domain,
@@ -463,19 +461,25 @@ export class JobBoardService {
    */
   async #brewsFor(userId: string, jobPostingIds: string[]) {
     if (jobPostingIds.length === 0) return new Map<string, BrewRow>();
+    // 공고마다 가장 최근 제작 세션 하나. MySQL 에는 distinct on 이 없어 순위를 매긴다.
     const rows = await this.#sql<BrewRow[]>`
-      select distinct on (job_analysis.job_posting_id)
+      select job_posting_id, id, status, answered, question_count, portfolio_id from (
+      select
         job_analysis.job_posting_id,
+        row_number() over (
+          partition by job_analysis.job_posting_id
+          order by brew.updated_at desc, brew.id desc
+        ) as rn,
         brew.id,
         brew.status,
         (
-          select coalesce(sum(interview_session.answered_count), 0)::integer
+          select coalesce(sum(interview_session.answered_count), 0)
           from interview_session
           where interview_session.user_id = brew.user_id
             and interview_session.brew_id = brew.id
         ) as answered,
         (
-          select coalesce(sum(interview_session.question_count), 0)::integer
+          select coalesce(sum(interview_session.question_count), 0)
           from interview_session
           where interview_session.user_id = brew.user_id
             and interview_session.brew_id = brew.id
@@ -490,8 +494,10 @@ export class JobBoardService {
       join job_analysis
         on job_analysis.user_id = brew.user_id and job_analysis.id = brew.job_analysis_id
       where brew.user_id = ${userId}
-        and job_analysis.job_posting_id = any(${jobPostingIds}::uuid[])
-      order by job_analysis.job_posting_id, brew.updated_at desc, brew.id desc
+        and job_analysis.job_posting_id in ${this.#sql(jobPostingIds)}
+      ) as ranked
+      where rn = 1
+      order by job_posting_id
     `;
     return new Map(rows.map((row) => [row.job_posting_id, row]));
   }
@@ -512,7 +518,7 @@ export class JobBoardService {
       query.sort === "match"
         ? sql`coalesce(match_score.total, -1)`
         : query.sort === "deadline"
-          ? sql`coalesce(job_posting.expires_at, 'infinity'::timestamptz)`
+          ? sql`coalesce(job_posting.expires_at, '9999-12-31')`
           : sql`job_posting.created_at`;
     const order = query.sort === "deadline" ? sql`asc` : sql`desc`;
     const offset = (query.page - 1) * query.limit;
@@ -527,18 +533,15 @@ export class JobBoardService {
       `,
       sql<CategoryCountRow[]>`
         select
-          count(*)::integer as total,
-          count(*) filter (
-            where job_posting.work_type ilike '%리모트%'
-          )::integer as remote,
-          count(*) filter (
-            where job_posting.expires_at >= now()
-              and job_posting.expires_at < now() + interval '7 days'
-          )::integer as urgent
+          count(*) as total,
+          count(case when lower(job_posting.work_type) like lower('%리모트%') then 1 end) as remote,
+          count(case when job_posting.expires_at >= now(6)
+                       and job_posting.expires_at < now(6) + interval 7 day
+                     then 1 end) as urgent
         ${without("category")}
       `,
       sql<FacetRow[]>`
-        select job_posting.job_family as label, count(*)::integer as count
+        select job_posting.job_family as label, count(*) as count
         ${without("category")}
           and job_posting.job_family is not null
         group by job_posting.job_family
@@ -550,33 +553,29 @@ export class JobBoardService {
       // 지역으로 세고 나라로 묶는 것은 DB가 나라를 모르기 때문이다. 지역→나라
       // 표는 지역을 만드는 곳(`classify.ts`)에 있고, 그 한 표만 본다.
       sql<FacetRow[]>`
-        select job_posting.location_region as label, count(*)::integer as count
+        select job_posting.location_region as label, count(*) as count
         ${without("country")}
           and job_posting.location_region is not null
         group by job_posting.location_region
         order by count(*) desc, job_posting.location_region
       `,
-      sql<{ total: number }[]>`select count(*)::integer as total ${scope}`,
+      sql<{ total: number }[]>`select count(*) as total ${scope}`,
       // 연차 칸막이는 **상한**이라 서로 겹친다. 한 번에 세고 뒤에서 편다.
       sql<Record<string, number>[]>`
         select ${sql.unsafe(EXPERIENCE_LEVELS
-          .map((years) => `count(*) filter (
-             where job_posting.experience_min_years is null
-                or job_posting.experience_min_years <= ${years}
-           )::integer as "y${years}"`)
+          .map((years) => `count(case when job_posting.experience_min_years is null
+                or job_posting.experience_min_years <= ${years} then 1 end) as \`y${years}\``)
           .join(", "))}
         ${without("experience")}
       `,
       sql<Record<string, number>[]>`
         select ${sql.unsafe(WORK_TYPES
-          .map((label, index) => `count(*) filter (
-             where job_posting.work_type like '%${label}%'
-           )::integer as "w${index}"`)
+          .map((label, index) => `count(case when job_posting.work_type like '%${label}%' then 1 end) as \`w${index}\``)
           .join(", "))}
         ${without("workType")}
       `,
       sql<{ key: string; label: string; count: number }[]>`
-        select company.id as key, company.name as label, count(*)::integer as count
+        select company.id as \`key\`, company.name as label, count(*) as count
         ${without("company")}
         group by company.id, company.name
         order by count(*) desc, company.name
@@ -600,23 +599,25 @@ export class JobBoardService {
       ? [[] as FacetRow[], [] as FacetRow[]]
       : await Promise.all([
           sql<FacetRow[]>`
-            select technology as label, count(*)::integer as count
+            select technologies.technology as label, count(*) as count
             from (select job_posting.requirements ${scope}) as scoped
-            cross join lateral jsonb_array_elements_text(
-              coalesce(scoped.requirements -> 'technologies', '[]'::jsonb)
-            ) as technology
-            group by technology
-            order by count(*) desc, technology
+            join json_table(
+              coalesce(scoped.requirements -> '$.technologies', cast('[]' as json)),
+              '$[*]' columns (technology varchar(255) path '$')
+            ) as technologies on true
+            group by technologies.technology
+            order by count(*) desc, technologies.technology
             limit 8
           `,
           sql<FacetRow[]>`
-            select technology as label, count(*)::integer as count
+            select technologies.technology as label, count(*) as count
             from (select match_score.axes ${scope}) as scoped
-            cross join lateral jsonb_array_elements_text(
-              coalesce(scoped.axes -> 'technology' -> 'missing', '[]'::jsonb)
-            ) as technology
-            group by technology
-            order by count(*) desc, technology
+            join json_table(
+              coalesce(scoped.axes -> '$.technology.missing', cast('[]' as json)),
+              '$[*]' columns (technology varchar(255) path '$')
+            ) as technologies on true
+            group by technologies.technology
+            order by count(*) desc, technologies.technology
             limit 5
           `,
         ]);
@@ -717,7 +718,7 @@ export class JobBoardService {
       select id, status, progress_stage, analyzed_at
       from job_analysis
       where user_id = ${userId} and job_posting_id = ${jobPostingId}
-      order by analyzed_at desc nulls last, id desc
+      order by analyzed_at is null, analyzed_at desc, id desc
       limit 1
     `;
     const analysis = analyses[0];
@@ -751,8 +752,8 @@ export class JobBoardService {
         ? Promise.resolve([] as { position: number; total: number }[])
         : sql<{ position: number; total: number }[]>`
             select
-              count(*) filter (where total > ${posting.match_total}::numeric)::integer + 1 as position,
-              count(*)::integer as total
+              count(case when total > ${posting.match_total} then 1 end) + 1 as position,
+              count(*) as total
             from match_score
             where user_id = ${userId}
           `,
@@ -762,8 +763,11 @@ export class JobBoardService {
         from requirement_coverage
         join job_posting_requirement
           on job_posting_requirement.id = requirement_coverage.requirement_id
-        cross join lateral unnest(requirement_coverage.covered_by) as covered_record_id
-        join record on record.id = covered_record_id
+        join json_table(
+          requirement_coverage.covered_by, '$[*]'
+          columns (covered_record_id char(36) path '$')
+        ) as covered on true
+        join record on record.id = covered.covered_record_id
           and record.user_id = requirement_coverage.user_id
         where requirement_coverage.user_id = ${userId}
           and job_posting_requirement.job_posting_id = ${jobPostingId}
@@ -781,7 +785,7 @@ export class JobBoardService {
       : new Map(
           (await sql<RecordRow[]>`
             select id, title from record
-            where user_id = ${userId} and id = any(${coveredIds}::uuid[])
+            where user_id = ${userId} and id in ${sql(coveredIds)}
           `).map((record) => [record.id, record.title]),
         );
 

@@ -1,13 +1,15 @@
 import { randomUUID } from "node:crypto";
+import type { SqlTag } from "../../src/platform/mysql.js";
+import { createMysqlResource } from "../../src/platform/mysql.js";
 
 import { migrate } from "@expresso/database";
-import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../src/api/build-app.js";
 import type { RuntimeConfig } from "../../src/config/runtime-config.js";
 import { CareerService } from "../../src/modules/career/service.js";
 import { IdentityService } from "../../src/modules/identity/service.js";
+import { ISOLATED_DATABASE_TIMEOUT_MS } from "../support/timeouts.js";
 
 const rootDatabaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = rootDatabaseUrl ? describe : describe.skip;
@@ -18,8 +20,8 @@ interface IdRow {
 
 describeWithDatabase("career authenticated vertical slice", () => {
   const databaseName = `expresso_e2e_${randomUUID().replaceAll("-", "")}`;
-  let admin: postgres.Sql;
-  let sql: postgres.Sql;
+  let admin: SqlTag;
+  let sql: SqlTag;
   let app: ReturnType<typeof buildApi>;
   let origin: string;
   let firstAccessToken: string;
@@ -27,26 +29,26 @@ describeWithDatabase("career authenticated vertical slice", () => {
   let firstUserId: string;
 
   beforeAll(async () => {
-    const rootUrl = new URL(rootDatabaseUrl ?? "postgres://127.0.0.1:1/unused");
+    const rootUrl = new URL(rootDatabaseUrl ?? "mysql://127.0.0.1:1/unused");
     const adminUrl = new URL(rootUrl);
-    adminUrl.pathname = "/postgres";
-    admin = postgres(adminUrl.toString(), { max: 1 });
-    await admin.unsafe(`create database "${databaseName}"`);
+    adminUrl.pathname = "/mysql";
+    admin = createMysqlResource(adminUrl.toString()).sql;
+    await admin.unsafe(`create database \`${databaseName}\``);
 
     const isolatedUrl = new URL(rootUrl);
     isolatedUrl.pathname = `/${databaseName}`;
     await migrate({ databaseUrl: isolatedUrl.toString() });
-    sql = postgres(isolatedUrl.toString(), { max: 4 });
+    sql = createMysqlResource(isolatedUrl.toString()).sql;
 
     const plans = await sql<IdRow[]>`select id from plan where code = 'free'`;
     const planId = plans[0]?.id;
     if (!planId) throw new Error("fresh database did not seed the free plan");
-    const users = await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        ('vertical-a@example.com', 'Vertical A', ${planId}),
-        ('vertical-b@example.com', 'Vertical B', ${planId})
-      returning id
+        (${users[0]!.id}, 'vertical-a@example.com', 'Vertical A', ${planId}),
+        (${users[1]!.id}, 'vertical-b@example.com', 'Vertical B', ${planId})
     `;
     const [first, second] = users;
     if (!first || !second) throw new Error("vertical slice users were not created");
@@ -70,21 +72,16 @@ describeWithDatabase("career authenticated vertical slice", () => {
     };
     app = buildApi({ config, identityService, careerService });
     origin = await app.listen({ host: "127.0.0.1", port: 0 });
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   afterAll(async () => {
     if (app) await app.close();
     if (sql) await sql.end({ timeout: 5 });
     if (admin) {
-      await admin`
-        select pg_terminate_backend(pid)
-        from pg_stat_activity
-        where datname = ${databaseName} and pid <> pg_backend_pid()
-      `;
-      await admin.unsafe(`drop database if exists "${databaseName}"`);
+      await admin.unsafe(`drop database if exists \`${databaseName}\``);
       await admin.end({ timeout: 5 });
     }
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   async function api(
     path: string,
@@ -204,7 +201,7 @@ describeWithDatabase("career authenticated vertical slice", () => {
     });
     expect(crossUserResponse.status).toBe(404);
     const count = await sql<{ count: number }[]>`
-      select count(*)::integer as count from record where user_id = ${firstUserId}
+      select count(*) as count from record where user_id = ${firstUserId}
     `;
     expect(count[0]?.count).toBe(1);
   }, 30_000);

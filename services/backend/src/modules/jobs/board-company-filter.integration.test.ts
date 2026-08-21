@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
 import { JobPostingListResponseSchema } from "@expresso/contracts";
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
@@ -17,7 +18,7 @@ const config: RuntimeConfig = {
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -41,7 +42,7 @@ interface IdRow {
  * 이유는 하나다 — **회사가 하나뿐이었다.** 그러면 비율이 늘 1이다.
  */
 describeWithDatabase("회사 필터", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 4 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identity = new IdentityService(sql);
   const app = buildApi({
     config,
@@ -60,7 +61,7 @@ describeWithDatabase("회사 필터", () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("free plan missing");
     userId = (await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values (${`company-filter-${marker}@example.com`}, '회사 필터', ${planId})
       returning id
     `)[0]!.id;
@@ -76,18 +77,20 @@ describeWithDatabase("회사 필터", () => {
     bigCompanyId = await company("큰회사");
 
     const seed = async (companyId: string, count: number, prefix: string) => {
-      await sql`
-        insert into job_posting (
-          company_id, source, title, description_raw, requirements,
-          dedupe_hash, created_at, location, job_family
-        )
-        select
-          ${companyId}, 'user_input', ${`${prefix} 엔지니어 `} || index,
-          ${body}, '{}'::jsonb,
-          ${`cf-${prefix}-${marker}-`} || index, now() - interval '1 minute',
-          '서울', '백엔드 · 데이터'
-        from generate_series(1, ${count}) as index
-      `;
+      for (let index = 1; index <= count; index += 1) {
+        await sql`
+          insert into job_posting (
+            company_id, source, title, description_raw, requirements,
+            dedupe_hash, created_at, location, job_family
+          )
+          values (
+            ${companyId}, 'user_input', ${`${prefix} 엔지니어 ${index}`},
+            ${body}, '{}',
+            ${`cf-${prefix}-${marker}-${index}`}, now(6) - interval 1 minute,
+            '서울', '백엔드 · 데이터'
+          )
+        `;
+      }
     };
     // 큰 쪽이 작은 쪽보다 많아야 비율이 1을 넘는다.
     await seed(smallCompanyId, 2, "small");
@@ -98,7 +101,7 @@ describeWithDatabase("회사 필터", () => {
   afterAll(async () => {
     await sql`delete from job_posting where company_id in (${smallCompanyId}, ${bigCompanyId})`;
     await sql`delete from company where id in (${smallCompanyId}, ${bigCompanyId})`;
-    await sql`delete from "user" where id = ${userId}`;
+    await sql`delete from \`user\` where id = ${userId}`;
     await app.close();
     await sql.end({ timeout: 5 });
   });

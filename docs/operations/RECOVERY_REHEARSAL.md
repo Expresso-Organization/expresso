@@ -1,5 +1,27 @@
 # 백업·복구 리허설 기록
 
+## 2026-08-21 · MySQL
+
+- 원본: Docker Compose `expresso` MySQL 8.4
+- 복구 대상: 임시 `expresso_restore_rehearsal` database
+- 백업 형식: `mysqldump --single-transaction --routines --triggers --set-gtid-purged=OFF`
+
+```text
+source=9|28|26|3|5dd6459c82f0d11a6a44ef006fcaef2f
+restored=9|28|26|3|5dd6459c82f0d11a6a44ef006fcaef2f
+restore_rehearsal=PASS
+```
+
+fingerprint 순서는 마이그레이션 수, user 수, record 수, deployment 수, 정렬된
+deployment snapshot MD5다.
+
+첫 시도는 복원이 멈췄다. 문장 하나짜리 트리거 본문에 세미콜론이 함께 저장되어
+있었고, mysqldump 가 그것을 받으면 주석 닫는 자리가 어긋난다. 마이그레이션 0009
+가 그 여덟 개를 `begin` · `end` 로 감쌌고, 스키마 테스트가 같은 일이 다시
+생기는지 본다.
+
+## 2026-08-09 · PostgreSQL (전환 전)
+
 - 실행일: 2026-08-09
 - 원본: Docker Compose `expresso` PostgreSQL 18.4
 - 복구 대상: 임시 `expresso_restore_rehearsal` database

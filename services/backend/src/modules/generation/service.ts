@@ -6,7 +6,7 @@ import {
   type GenerationOutput,
   type SubmitGeneration,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import { EntitlementService } from "../entitlements/service.js";
 import { addOutboxEvent } from "../../platform/outbox.js";
@@ -145,9 +145,9 @@ function blockContent(block: GenerationOutput["blocks"][number]): Record<string,
 }
 
 export class GenerationService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #consent: ConsentService | null;
-  constructor(sql: postgres.Sql, consent?: ConsentService | null) {
+  constructor(sql: SqlTag, consent?: ConsentService | null) {
     this.#sql = sql;
     this.#consent = consent ?? null;
   }
@@ -161,18 +161,17 @@ export class GenerationService {
       if (!recipe) throw new GenerationError(404, "recipe not found");
       const template = (await transaction<{ id: string }[]>`select id from template where id = ${input.templateId} and is_active`)[0];
       if (!template) throw new GenerationError(404, "template not found");
-      const inserted = (await transaction<{ id: string; request_hash: string }[]>`
-        insert into generation_job (
+      await transaction`
+        insert ignore into generation_job (
           user_id, brew_id, recipe_id, template_id, status,
           input_idempotency_key, request_hash, style_overrides
         ) values (
           ${userId}, ${recipe.brew_id}, ${input.recipeId}, ${input.templateId}, 'queued',
           ${idempotencyKey}, ${hash},
-          ${transaction.json((input.styleOverrides ?? {}) as postgres.JSONValue)}
-        ) on conflict (user_id, input_idempotency_key)
-          where input_idempotency_key is not null
-        do nothing returning id, request_hash
-      `)[0] ?? (await transaction<{ id: string; request_hash: string }[]>`
+          ${transaction.json((input.styleOverrides ?? {}) as JSONValue)}
+        )
+      `;
+      const inserted = (await transaction<{ id: string; request_hash: string }[]>`
         select id, request_hash from generation_job
         where user_id = ${userId} and input_idempotency_key = ${idempotencyKey}
       `)[0];
@@ -283,7 +282,7 @@ export class GenerationService {
         const locked = (await transaction<JobRow[]>`select * from generation_job where id = ${jobId} for update`)[0];
         if (!locked) throw new GenerationError(404, "generation job not found");
         if (locked.status === "done") return locked;
-        await transaction`update generation_job set status = 'running', stage = 'validating', attempts = attempts + 1, error_code = null, failure_retryable = null, updated_at = now() where id = ${jobId}`;
+        await transaction`update generation_job set status = 'running', stage = 'validating', attempts = attempts + 1, error_code = null, failure_retryable = null, updated_at = now(6) where id = ${jobId}`;
         return { ...locked, attempts: locked.attempts + 1 };
       });
       if (job.status === "done") return this.getStatus(job.user_id, job.id);
@@ -299,9 +298,9 @@ export class GenerationService {
       const evidence = await this.#sql<PathRow[]>`
         select path.id, path.recipe_item_id, path.source_type, path.source_id, path.source_label,
                coalesce(
-                 nullif(concat_ws(E'\n', record.title, record.body_md), ''),
+                 nullif(concat_ws('\n', record.title, record.body_md), ''),
                  answer.transcript,
-                 nullif(concat_ws(E'\n', requirement.label, requirement.source_span ->> 'quote'), ''),
+                 nullif(concat_ws('\n', requirement.label, requirement.source_span ->> '$.quote'), ''),
                  ''
                ) as source_text
         from recipe_evidence_path path
@@ -315,7 +314,7 @@ export class GenerationService {
         order by path.created_at, path.id
       `;
       const locked = job.portfolio_id ? await this.#sql<{ text: string }[]>`
-        select block.content ->> 'text' as text from block
+        select block.content ->> '$.text' as text from block
         join portfolio_section on portfolio_section.id = block.portfolio_section_id
         where block.user_id = ${job.user_id} and portfolio_section.portfolio_id = ${job.portfolio_id} and block.locked
       ` : [];
@@ -345,7 +344,7 @@ export class GenerationService {
       await this.#sql.begin(async (transaction) => {
         const current = (await transaction<JobRow[]>`select * from generation_job where id = ${jobId} for update`)[0];
         if (!current || current.status === "done") return;
-        await transaction`select id from "user" where id = ${current.user_id} for update`;
+        await transaction`select id from \`user\` where id = ${current.user_id} for update`;
         const decision = await new EntitlementService(transaction).check(current.user_id, "portfolio.generate");
         if (!decision.allowed || !decision.usage) throw new GenerationError(409, "generation quota is exhausted");
         await transaction`update generation_job set stage = 'materializing' where id = ${jobId}`;
@@ -357,23 +356,27 @@ export class GenerationService {
             ) values (
               ${current.user_id}, ${current.brew_id}, ${current.template_id},
               'Generated portfolio', 'draft',
-              ${transaction.json((current.style_overrides ?? {}) as postgres.JSONValue)}
+              ${transaction.json((current.style_overrides ?? {}) as JSONValue)}
             ) returning id
           `)[0]?.id ?? null;
         }
         if (!portfolioId) throw new Error("portfolio missing");
         const lockedCount = Number((await transaction<{ count: number }[]>`
-          select count(*)::integer as count from block join portfolio_section on portfolio_section.id = block.portfolio_section_id
+          select count(*) as count from block join portfolio_section on portfolio_section.id = block.portfolio_section_id
           where block.user_id = ${current.user_id} and portfolio_section.portfolio_id = ${portfolioId} and block.locked
         `)[0]?.count ?? 0);
         if (lockedCount === 0) await transaction`delete from portfolio_section where user_id = ${current.user_id} and portfolio_id = ${portfolioId}`;
         const sectionMap = new Map<string, string>();
         for (const [order, recipeSectionId] of sectionIds.entries()) {
-          const id = (await transaction<{ id: string }[]>`
+          await transaction`
             insert into portfolio_section (user_id, portfolio_id, recipe_section_id, order_no)
             values (${current.user_id}, ${portfolioId}, ${recipeSectionId}, ${order})
-            on conflict (user_id, portfolio_id, recipe_section_id)
-              do update set order_no = excluded.order_no returning id
+            as new on duplicate key update order_no = new.order_no
+          `;
+          const id = (await transaction<{ id: string }[]>`
+            select id from portfolio_section
+            where user_id = ${current.user_id} and portfolio_id = ${portfolioId}
+              and recipe_section_id = ${recipeSectionId}
           `)[0]?.id;
           if (id) sectionMap.set(recipeSectionId, id);
         }
@@ -389,7 +392,7 @@ export class GenerationService {
           const blockId = (await transaction<{ id: string }[]>`
             insert into block (user_id, portfolio_section_id, kind, content, source_record_id, order_no)
             values (${current.user_id}, ${portfolioSectionId}, ${generated.kind},
-                    ${transaction.json(blockContent(generated) as postgres.JSONValue)},
+                    ${transaction.json(blockContent(generated) as JSONValue)},
                     ${recordPath?.source_id ?? null}, ${blockOrder}) returning id
           `)[0]?.id;
           if (!blockId) throw new Error("block missing");
@@ -399,8 +402,8 @@ export class GenerationService {
             values (${current.user_id}, ${jobId}, ${blockId}, ${path.id}, ${path.source_label})
           `;
           if (recordPath) await transaction`
-            insert into record_usage (user_id, record_id, block_id, quoted_text)
-            values (${current.user_id}, ${recordPath.source_id}, ${blockId}, ${recordPath.source_label}) on conflict do nothing
+            insert ignore into record_usage (user_id, record_id, block_id, quoted_text)
+            values (${current.user_id}, ${recordPath.source_id}, ${blockId}, ${recordPath.source_label})   
           `;
         }
         // 지면 후보를 남긴다. 03이 셋을 나란히 놓고, 고를 때까지는 1안이 붙는다.
@@ -422,22 +425,25 @@ export class GenerationService {
               order_no, selected
             ) values (
               ${current.user_id}, ${portfolioId}, ${batchId}, ${jobId},
-              ${transaction.json(spec as unknown as postgres.JSONValue)},
+              ${transaction.json(spec as unknown as JSONValue)},
               ${LAYOUT_PROMPT_VERSION}, ${order}, ${order === 0}
             )
           `;
         }
         await transaction`update generation_job set stage = 'charging' where id = ${jobId}`;
-        const usage = (await transaction<{ id: string }[]>`
+        await transaction`
           insert into usage_counter (user_id, period_start, used, resets_at)
           values (${current.user_id}, ${decision.usage.periodStart}, 1, ${decision.usage.resetsAt})
-          on conflict (user_id, period_start) do update set used = usage_counter.used + 1, resets_at = excluded.resets_at
-          returning id
+          as new on duplicate key update used = usage_counter.used + 1, resets_at = new.resets_at
+        `;
+        const usage = (await transaction<{ id: string }[]>`
+          select id from usage_counter
+          where user_id = ${current.user_id} and period_start = ${decision.usage.periodStart}
         `)[0];
         if (!usage) throw new Error("usage counter missing");
         await transaction`
-          insert into generation_usage_ledger (user_id, generation_job_id, usage_counter_id, amount, reason)
-          values (${current.user_id}, ${jobId}, ${usage.id}, 1, 'success') on conflict do nothing
+          insert ignore into generation_usage_ledger (user_id, generation_job_id, usage_counter_id, amount, reason)
+          values (${current.user_id}, ${jobId}, ${usage.id}, 1, 'success')   
         `;
         const snapshotSections = await transaction<{
           id: string; recipe_section_id: string | null; order_no: number; visible: boolean;
@@ -469,8 +475,8 @@ export class GenerationService {
             })),
           })),
         };
-        await transaction`insert into portfolio_snapshot (user_id, portfolio_id, kind, snapshot) values (${current.user_id}, ${portfolioId}, 'initial_generation', ${transaction.json(snapshot as postgres.JSONValue)})`;
-        await transaction`update generation_job set status = 'done', stage = 'done', usage_charged = true, portfolio_id = ${portfolioId}, updated_at = now() where id = ${jobId}`;
+        await transaction`insert into portfolio_snapshot (user_id, portfolio_id, kind, snapshot) values (${current.user_id}, ${portfolioId}, 'initial_generation', ${transaction.json(snapshot as JSONValue)})`;
+        await transaction`update generation_job set status = 'done', stage = 'done', usage_charged = true, portfolio_id = ${portfolioId}, updated_at = now(6) where id = ${jobId}`;
       });
       return this.getStatus(job.user_id, job.id);
     } catch (error) {
@@ -494,10 +500,10 @@ export class GenerationService {
             user_id, brew_id, template_id, title, status, style_overrides
           ) values (
             ${job.user_id}, ${job.brew_id}, ${job.template_id}, 'Failed generation draft',
-            'draft', ${transaction.json((job.style_overrides ?? {}) as postgres.JSONValue)}
+            'draft', ${transaction.json((job.style_overrides ?? {}) as JSONValue)}
           ) returning id
         `)[0]?.id ?? null;
-        await transaction`update generation_job set status = 'failed', stage = 'failed', error_code = ${code}, failure_retryable = ${retryable}, portfolio_id = ${portfolioId}, updated_at = now() where id = ${jobId}`;
+        await transaction`update generation_job set status = 'failed', stage = 'failed', error_code = ${code}, failure_retryable = ${retryable}, portfolio_id = ${portfolioId}, updated_at = now(6) where id = ${jobId}`;
       }).catch(() => undefined);
       throw error;
     }

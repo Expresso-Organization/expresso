@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
+import type { SqlTag } from "../../src/platform/mysql.js";
+import { createMysqlResource } from "../../src/platform/mysql.js";
 
 import { migrate } from "@expresso/database";
-import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../src/api/build-app.js";
@@ -15,6 +16,7 @@ import { OutboxDispatcher } from "../../src/platform/outbox.js";
 import { createReliableQueue } from "../../src/platform/queue.js";
 import { createQueueWorker } from "../../src/worker/create-queue-worker.js";
 import { createJobAnalysisProcessor } from "../../src/worker/processors/job-analysis.js";
+import { ISOLATED_DATABASE_TIMEOUT_MS } from "../support/timeouts.js";
 
 const rootDatabaseUrl = process.env.TEST_DATABASE_URL;
 const redisUrl = process.env.TEST_REDIS_URL;
@@ -44,8 +46,8 @@ describeWithInfrastructure("job submission and analysis vertical slice", () => {
     redisUrl ?? "redis://127.0.0.1:1",
     queuePrefix,
   );
-  let admin: postgres.Sql;
-  let sql: postgres.Sql;
+  let admin: SqlTag;
+  let sql: SqlTag;
   let app: ReturnType<typeof buildApi>;
   let worker: ReturnType<typeof createQueueWorker<Record<string, unknown>, Record<string, unknown>>>;
   let dispatcher: OutboxDispatcher;
@@ -62,23 +64,24 @@ describeWithInfrastructure("job submission and analysis vertical slice", () => {
   });
 
   beforeAll(async () => {
-    const rootUrl = new URL(rootDatabaseUrl ?? "postgres://127.0.0.1:1/unused");
+    const rootUrl = new URL(rootDatabaseUrl ?? "mysql://127.0.0.1:1/unused");
     const adminUrl = new URL(rootUrl);
-    adminUrl.pathname = "/postgres";
-    admin = postgres(adminUrl.toString(), { max: 1 });
-    await admin.unsafe(`create database "${databaseName}"`);
+    adminUrl.pathname = "/mysql";
+    admin = createMysqlResource(adminUrl.toString()).sql;
+    await admin.unsafe(`create database \`${databaseName}\``);
 
     const isolatedUrl = new URL(rootUrl);
     isolatedUrl.pathname = `/${databaseName}`;
     await migrate({ databaseUrl: isolatedUrl.toString() });
-    sql = postgres(isolatedUrl.toString(), { max: 6 });
+    sql = createMysqlResource(isolatedUrl.toString()).sql;
 
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("fresh database did not seed the free plan");
-    const users = await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
-      values ('jobs-vertical@example.com', 'Jobs Vertical', ${planId})
-      returning id
+    const users: IdRow[] = [{ id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
+      values
+        (${users[0]!.id}, 'jobs-vertical@example.com', 'Jobs Vertical', ${planId})
     `;
     userId = users[0]?.id ?? "";
     if (!userId) throw new Error("vertical slice user was not created");
@@ -130,7 +133,7 @@ describeWithInfrastructure("job submission and analysis vertical slice", () => {
       batchSize: 25,
       maxAttempts: 5,
     });
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   afterAll(async () => {
     releaseExtraction();
@@ -143,15 +146,10 @@ describeWithInfrastructure("job submission and analysis vertical slice", () => {
     if (app) await app.close();
     if (sql) await sql.end({ timeout: 5 });
     if (admin) {
-      await admin`
-        select pg_terminate_backend(pid)
-        from pg_stat_activity
-        where datname = ${databaseName} and pid <> pg_backend_pid()
-      `;
-      await admin.unsafe(`drop database if exists "${databaseName}"`);
+      await admin.unsafe(`drop database if exists \`${databaseName}\``);
       await admin.end({ timeout: 5 });
     }
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   async function api(
     path: string,
@@ -297,15 +295,15 @@ describeWithInfrastructure("job submission and analysis vertical slice", () => {
 
     expect((await sql<{ state: string }[]>`
       select state from platform_outbox
-      where payload ->> 'jobAnalysisId' = ${submitted.data.jobAnalysisId}
+      where payload ->> '$.jobAnalysisId' = ${submitted.data.jobAnalysisId}
     `)[0]?.state).toBe("published");
     // 요건은 공고에 붙고, 커버리지만 사용자별로 붙는다.
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count from job_posting_requirement
+      select count(*) as count from job_posting_requirement
       where job_posting_id = ${submitted.data.jobPostingId}
     `)[0]?.count).toBe(completed.data.requirements.length);
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count
+      select count(*) as count
       from requirement_coverage
       join job_posting_requirement
         on job_posting_requirement.id = requirement_coverage.requirement_id

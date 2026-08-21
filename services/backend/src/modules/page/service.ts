@@ -9,7 +9,7 @@ import {
   type GeneratedPage,
   type PageStyleGrammar,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import type { ConsentService } from "../consent/service.js";
 import { withTimeout } from "../../platform/timeouts.js";
@@ -101,11 +101,11 @@ function toPage(row: PageRow): GeneratedPage {
 }
 
 export class PageService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #consent: ConsentService | null;
   readonly #stream: PageStream | null;
 
-  constructor(sql: postgres.Sql, consent?: ConsentService | null, stream?: PageStream | null) {
+  constructor(sql: SqlTag, consent?: ConsentService | null, stream?: PageStream | null) {
     this.#sql = sql;
     this.#consent = consent ?? null;
     this.#stream = stream ?? null;
@@ -190,9 +190,9 @@ export class PageService {
     const evidence = await this.#sql<EvidenceRow[]>`
       select distinct path.source_label,
              coalesce(
-               nullif(concat_ws(E'\n', record.title, record.body_md), ''),
+               nullif(concat_ws('\n', record.title, record.body_md), ''),
                answer.transcript,
-               nullif(concat_ws(E'\n', requirement.label, requirement.source_span ->> 'quote'), ''),
+               nullif(concat_ws('\n', requirement.label, requirement.source_span ->> '$.quote'), ''),
                ''
              ) as source_text
       from recipe_evidence_path path
@@ -261,17 +261,16 @@ export class PageService {
     // 상관없는 사진이 지면에 실릴 수 있다.
     const media = await this.#sql<MediaRow[]>`
       select distinct asset.id as asset_id, asset.width, asset.height,
-             block.content ->> 'alt' as alt,
-             coalesce(array_agg(variant.width order by variant.width)
-                      filter (where variant.width is not null), '{}') as variants
+             block.content ->> '$.alt' as alt,
+             coalesce(json_arrayagg(variant.width), json_array()) as variants
       from block
       join portfolio_section on portfolio_section.id = block.portfolio_section_id
       join media_asset asset
-        on asset.id = (block.content ->> 'assetId')::uuid and asset.user_id = block.user_id
+        on asset.id = (block.content ->> '$.assetId') and asset.user_id = block.user_id
       left join media_variant variant on variant.media_asset_id = asset.id
       where block.user_id = ${userId} and portfolio_section.portfolio_id = ${portfolioId}
         and block.kind = 'media'
-      group by asset.id, asset.width, asset.height, block.content ->> 'alt'
+      group by asset.id, asset.width, asset.height, block.content ->> '$.alt'
     `;
 
     return {
@@ -406,12 +405,12 @@ export class PageService {
         ${userId}, ${portfolioId}, ${result.html}, ${result.css}, ${result.rationale},
         ${(current?.revision ?? -1) + 1}, ${options.instruction ?? null},
         ${PAGE_PROMPT_VERSION}, ${result.ungrounded}, ${result.removed},
-        ${result.qaReport.status}, ${this.#sql.json(result.qaReport as postgres.JSONValue)},
-        ${this.#sql.json(result.manifest as postgres.JSONValue)},
+        ${result.qaReport.status}, ${this.#sql.json(result.qaReport as JSONValue)},
+        ${this.#sql.json(result.manifest as JSONValue)},
         ${context.portfolioPlan
-          ? this.#sql.json(context.portfolioPlan as postgres.JSONValue)
+          ? this.#sql.json(context.portfolioPlan as JSONValue)
           : null},
-        ${context.style ? this.#sql.json(context.style as unknown as postgres.JSONValue) : null},
+        ${context.style ? this.#sql.json(context.style as unknown as JSONValue) : null},
         ${DESIGN_PRINCIPLES_VERSION}
       ) returning *
     `)[0];

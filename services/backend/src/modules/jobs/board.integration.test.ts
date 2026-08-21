@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
 import {
   ApiErrorResponseSchema,
@@ -6,7 +7,7 @@ import {
   JobPostingListResponseSchema,
   RecentJobSearchListResponseSchema,
 } from "@expresso/contracts";
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
@@ -22,7 +23,7 @@ const config: RuntimeConfig = {
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -67,7 +68,7 @@ function totalOf(seeded: ReturnType<typeof axes>): number {
 }
 
 describeWithDatabase("job board read HTTP integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 4 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identity = new IdentityService(sql);
   const app = buildApi({
     config,
@@ -94,12 +95,12 @@ describeWithDatabase("job board read HTTP integration", () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("free plan missing");
 
-    const users = await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        (${`board-a-${marker}@example.com`}, 'Board A', ${planId}),
-        (${`board-b-${marker}@example.com`}, 'Board B', ${planId})
-      returning id
+        (${users[0]!.id}, ${`board-a-${marker}@example.com`}, 'Board A', ${planId}),
+        (${users[1]!.id}, ${`board-b-${marker}@example.com`}, 'Board B', ${planId})
     `;
     userId = users[0]!.id;
     otherUserId = users[1]!.id;
@@ -122,8 +123,10 @@ describeWithDatabase("job board read HTTP integration", () => {
       returning id
     `)[0]!.id;
 
-    const postings = await sql<IdRow[]>`
+    const postings: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }, { id: randomUUID() }];
+    await sql`
       insert into job_posting (
+        id,
         company_id, source, title, description_raw,
         requirements, expires_at, dedupe_hash, created_at,
         location, work_type, experience_label, job_family,
@@ -132,10 +135,10 @@ describeWithDatabase("job board read HTTP integration", () => {
       )
       values
         (
-          ${companyId}, 'user_input', '데이터 플랫폼 엔지니어',
+          ${postings[0]!.id}, ${companyId}, 'user_input', '데이터 플랫폼 엔지니어',
           ${DESCRIPTION},
           ${sql.json({ technologies: ["Airflow", "Spark"], impacts: [], roles: [], conditions: [] })},
-          now() + interval '3 days', ${`board-urgent-${marker}`}, now() - interval '3 minutes',
+          now(6) + interval 3 day, ${`board-urgent-${marker}`}, now(6) - interval 3 minute,
           '서울 강남', '리모트 주 2일', '3년 이상', '백엔드 · 데이터',
           '정규직 · 수습 3개월', '8,000만 – 1억 1,000만',
           ${sql.json([{ group: "적재 파이프라인", items: ["하루 3,000만 건 적재"] }])},
@@ -144,23 +147,22 @@ describeWithDatabase("job board read HTTP integration", () => {
           '수습 3개월 후 정규직 전환 평가가 있습니다'
         ),
         (
-          ${companyId}, 'user_input', '백엔드 엔지니어',
+          ${postings[1]!.id}, ${companyId}, 'user_input', '백엔드 엔지니어',
           ${DESCRIPTION},
           ${sql.json({ technologies: ["Airflow", "Kafka"], impacts: [], roles: [], conditions: [] })},
-          now() + interval '30 days', ${`board-later-${marker}`}, now() - interval '2 minutes',
+          now(6) + interval 30 day, ${`board-later-${marker}`}, now(6) - interval 2 minute,
           '서울', '출근', '5년 이상', '백엔드 · 데이터',
           '정규직', '면접 후 협의',
-          '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, null, null
+          '[]', '[]', '[]', null, null
         ),
         (
-          ${companyId}, 'user_input', '플랫폼 엔지니어',
+          ${postings[2]!.id}, ${companyId}, 'user_input', '플랫폼 엔지니어',
           ${DESCRIPTION},
           ${sql.json({ technologies: ["Go"], impacts: [], roles: [], conditions: [] })},
-          null, ${`board-always-${marker}`}, now() - interval '1 minute',
+          null, ${`board-always-${marker}`}, now(6) - interval 1 minute,
           null, '리모트', '경력', '플랫폼 · 인프라',
-          null, null, '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, null, null
+          null, null, '[]', '[]', '[]', null, null
         )
-      returning id
     `;
     urgentId = postings[0]!.id;
     laterId = postings[1]!.id;
@@ -185,30 +187,30 @@ describeWithDatabase("job board read HTTP integration", () => {
 
     await sql`
       insert into interest (user_id, job_posting_id, stage, deadline_at, memo)
-      values (${userId}, ${urgentId}, 'applied', now() + interval '3 days', '지원 완료')
+      values (${userId}, ${urgentId}, 'applied', now(6) + interval 3 day, '지원 완료')
     `;
 
     analysisId = (await sql<IdRow[]>`
       insert into job_analysis (user_id, job_posting_id, input_type, status, progress_stage, analyzed_at)
-      values (${userId}, ${urgentId}, 'paste', 'done', 'done', now())
+      values (${userId}, ${urgentId}, 'paste', 'done', 'done', now(6))
       returning id
     `)[0]!.id;
 
     // 요건은 공고에 붙고, 커버리지만 사용자별로 붙는다.
-    const criteria = await sql<IdRow[]>`
+    const criteria: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
       insert into job_posting_requirement (
-        job_posting_id, order_no, label, kind, source_span
+        id, job_posting_id, order_no, label, kind, source_span
       )
       values
         (
-          ${urgentId}, 0, '대용량 처리 경험', 'must',
+          ${criteria[0]!.id}, ${urgentId}, 0, '대용량 처리 경험', 'must',
           ${sql.json({ start: QUOTE_START, end: QUOTE_START + QUOTE.length, quote: QUOTE })}
         ),
         (
-          ${urgentId}, 1, '금융권 데이터 프로젝트 수행 경험', 'nice',
+          ${criteria[1]!.id}, ${urgentId}, 1, '금융권 데이터 프로젝트 수행 경험', 'nice',
           ${sql.json({ start: QUOTE_START, end: QUOTE_START + QUOTE.length, quote: QUOTE })}
         )
-      returning id
     `;
     await sql`
       insert into requirement_coverage (user_id, requirement_id, coverage)
@@ -220,16 +222,16 @@ describeWithDatabase("job board read HTTP integration", () => {
     await sql`
       insert into recent_search (user_id, query_text, conditions, result_count, created_at)
       values
-        (${userId}, '배치 위주로 운영하는 팀', '[]'::jsonb, 9, now() - interval '2 hours'),
-        (${userId}, '연봉 협상 가능 · 리모트', '[]'::jsonb, 14, now() - interval '1 hour'),
-        (${otherUserId}, '다른 사람 검색', '[]'::jsonb, 3, now())
+        (${userId}, '배치 위주로 운영하는 팀', '[]', 9, now(6) - interval 2 hour),
+        (${userId}, '연봉 협상 가능 · 리모트', '[]', 14, now(6) - interval 1 hour),
+        (${otherUserId}, '다른 사람 검색', '[]', 3, now(6))
     `;
 
     await app.ready();
   });
 
   afterAll(async () => {
-    if (userId) await sql`delete from "user" where id in (${userId}, ${otherUserId})`;
+    if (userId) await sql`delete from \`user\` where id in (${userId}, ${otherUserId})`;
     if (urgentId) {
       await sql`delete from job_posting where id in (${urgentId}, ${laterId}, ${alwaysId})`;
     }

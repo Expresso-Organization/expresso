@@ -3,7 +3,8 @@ import {
   type PlanCode,
 } from "@expresso/contracts";
 import { randomUUID } from "node:crypto";
-import postgres from "postgres";
+import { createMysqlResource } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
@@ -19,7 +20,7 @@ const config: RuntimeConfig = {
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -38,7 +39,7 @@ interface IdRow {
 }
 
 describeWithDatabase("entitlement integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 3 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identityService = new IdentityService(sql);
   const entitlementService = new EntitlementService(sql);
   const app = buildApi({ config, identityService, entitlementService });
@@ -62,15 +63,14 @@ describeWithDatabase("entitlement integration", () => {
     freeQuota = free.generation_quota;
 
     for (const planCode of ["free", "pro", "team"] as const) {
-      const rows = await sql<IdRow[]>`
-        insert into "user" (email, display_name, plan_id)
-        values (
-          ${`entitlement-${planCode}-${randomUUID()}@example.com`},
+      const rows: IdRow[] = [{ id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
+      values
+        (${rows[0]!.id}, ${`entitlement-${planCode}-${randomUUID()}@example.com`},
           ${`Entitlement ${planCode}`},
-          ${planIds[planCode]}
-        )
-        returning id
-      `;
+          ${planIds[planCode]})
+    `;
       const userId = rows[0]?.id;
       if (!userId) throw new Error(`failed to create ${planCode} user`);
       userIds[planCode] = userId;
@@ -80,7 +80,7 @@ describeWithDatabase("entitlement integration", () => {
     if (!teamUserId) throw new Error("team user is missing");
     const categories = await sql<IdRow[]>`
       insert into category (
-        user_id, key, name, icon, default_view, is_system
+        user_id, \`key\`, name, icon, default_view, is_system
       )
       values (
         ${teamUserId}, ${`preserved-${randomUUID()}`},
@@ -103,7 +103,7 @@ describeWithDatabase("entitlement integration", () => {
 
   afterAll(async () => {
     const ids = Object.values(userIds);
-    if (ids.length > 0) await sql`delete from "user" where id in ${sql(ids)}`;
+    if (ids.length > 0) await sql`delete from \`user\` where id in ${sql(ids)}`;
     await app.close();
     await sql.end({ timeout: 5 });
   });
@@ -133,9 +133,8 @@ describeWithDatabase("entitlement integration", () => {
     if (!freeUserId) throw new Error("free user is missing");
     await sql`
       insert into usage_counter (user_id, period_start, used, resets_at)
-      values (${freeUserId}, '2026-08-01', ${freeQuota}, '2026-08-31T15:00:00Z')
-      on conflict (user_id, period_start)
-      do update set used = excluded.used, resets_at = excluded.resets_at
+      values (${freeUserId}, '2026-08-01', ${freeQuota}, '2026-08-31 15:00:00')
+      as new on duplicate key update used = new.used, resets_at = new.resets_at
     `;
 
     const beforeReset = await entitlementService.check(
@@ -169,7 +168,7 @@ describeWithDatabase("entitlement integration", () => {
     ).resolves.toMatchObject({ allowed: true, planCode: "team" });
 
     await sql`
-      update "user" set plan_id = ${planIds.free} where id = ${teamUserId}
+      update \`user\` set plan_id = ${planIds.free} where id = ${teamUserId}
     `;
 
     await expect(

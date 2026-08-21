@@ -8,7 +8,7 @@ import {
   type JobSourceProvider,
   type PostingFactsRun,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../../platform/mysql.js";
 
 import { JobMarketError } from "../errors.js";
 import type { JobSourceAdapter, RawPosting } from "./adapter.js";
@@ -96,13 +96,13 @@ function sourceDto(row: SourceRow) {
  * `expire_postings` 스케줄이 관심 공고를 닫을 수 있다.
  */
 export class JobIngestService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #adapters: Map<JobSourceProvider, JobSourceAdapter>;
   readonly #facts: FactsReader | null;
   readonly #marks: MarkReader | null;
 
   constructor(
-    sql: postgres.Sql,
+    sql: SqlTag,
     adapters: JobSourceAdapter[],
     facts: FactsReader | null = null,
     marks: MarkReader | null = null,
@@ -125,13 +125,14 @@ export class JobIngestService {
       // 어댑터가 없는 프로바이더를 켜 두면 수집이 매일 조용히 실패한다.
       throw new JobMarketError(422, `no adapter for ${input.provider}`);
     }
-    const row = (await this.#sql<SourceRow[]>`
+    await this.#sql`
       insert into job_source (provider, token, display_name, site_url)
       values (${input.provider}, ${input.token}, ${input.displayName}, ${input.siteUrl ?? null})
-      on conflict (provider, token) do update set
-        display_name = excluded.display_name, is_active = true,
-        site_url = coalesce(excluded.site_url, job_source.site_url)
-      returning *
+      as new on duplicate key update display_name = new.display_name, is_active = true,
+        site_url = coalesce(new.site_url, job_source.site_url)
+    `;
+    const row = (await this.#sql<SourceRow[]>`
+      select * from job_source where provider = ${input.provider} and token = ${input.token}
     `)[0];
     if (!row) throw new Error("job source was not persisted");
     return sourceDto(row);
@@ -148,7 +149,7 @@ export class JobIngestService {
     const sources = only && only.length > 0
       ? await this.#sql<SourceRow[]>`
         select * from job_source
-        where is_active and id = any(${only}::uuid[])
+        where is_active and id in ${this.#sql(only)}
         order by provider, token
       `
       : await this.#sql<SourceRow[]>`
@@ -231,13 +232,16 @@ export class JobIngestService {
   async #syncCompanyDomain(source: SourceRow): Promise<void> {
     const host = source.site_url === null ? null : hostOf(source.site_url);
     if (!host) return;
-    // `starts_with`를 쓴다 — token에 LIKE 메타문자가 들어와도 그대로 글자로 본다.
+    // left() 로 앞자리를 견준다 — token 에 LIKE 메타문자가 들어와도 그대로 글자로 본다.
+    const prefix = `${source.provider}:${source.token}:`;
     await this.#sql`
       update company set domain = ${host}
       where domain is null
         and id in (
-          select company_id from job_posting
-          where starts_with(external_id, ${`${source.provider}:${source.token}:`})
+          select company_id from (
+            select distinct company_id from job_posting
+            where left(external_id, ${prefix.length}) = ${prefix}
+          ) as matched
         )
     `;
   }
@@ -276,7 +280,7 @@ export class JobIngestService {
           logo_media_type = ${mark ? mark.mediaType : null},
           logo_source_url = ${mark ? mark.sourceUrl : null},
           logo_checksum = ${mark ? mark.checksum : null},
-          logo_read_at = now()
+          logo_read_at = now(6)
         where id = ${row.id}
       `;
       if (mark) read += 1;
@@ -341,7 +345,7 @@ export class JobIngestService {
             salary_note = coalesce(salary_note, ${facts.salaryNote}),
             experience_note = coalesce(experience_note, ${facts.experienceNote}),
             work_type = coalesce(work_type, ${facts.workType}),
-            facts_read_at = now()
+            facts_read_at = now(6)
           where id = ${row.id}
         `;
         read += 1;
@@ -357,7 +361,7 @@ export class JobIngestService {
     extra: { read: number; failed: number; skipped: PostingFactsRun["skipped"] },
   ): Promise<PostingFactsRun> {
     const [remaining] = await this.#sql<{ count: string }[]>`
-      select count(*)::text as count from job_posting where facts_read_at is null
+      select count(*) as count from job_posting where facts_read_at is null
     `;
     return PostingFactsRunSchema.parse({
       startedAt: at.toISOString(),
@@ -403,12 +407,13 @@ export class JobIngestService {
       // 로고를 여기서 받는다. 이미 적혀 있으면 덮지 않는다 — 설정을 바꾸는
       // 일보다 공고가 들어오는 일이 훨씬 잦다.
       const site = source.site_url === null ? null : hostOf(source.site_url);
-      const company = (await transaction<{ id: string }[]>`
+      await transaction`
         insert into company (name, dedupe_key, domain)
         values (${posting.companyName}, ${companyKey}, ${site})
-        on conflict (dedupe_key) do update set
-          name = company.name, domain = coalesce(company.domain, excluded.domain)
-        returning id
+        as new on duplicate key update name = company.name, domain = coalesce(company.domain, new.domain)
+      `;
+      const company = (await transaction<{ id: string }[]>`
+        select id from company where dedupe_key = ${companyKey}
       `)[0];
       if (!company) throw new Error("company was not persisted");
 
@@ -421,7 +426,7 @@ export class JobIngestService {
           employment_type, experience_label, team, job_family, expires_at
         ) values (
           ${company.id}, 'api', ${externalId}, ${posting.title}, ${posting.descriptionRaw},
-          '{}'::jsonb, ${hash}, ${posting.sourceUrl}, ${source.display_name},
+          '{}', ${hash}, ${posting.sourceUrl}, ${source.display_name},
           ${posting.location}, ${normalizeRegion(posting.location)},
           ${posting.employmentType}, ${posting.experienceLabel},
           ${posting.team}, ${family}, ${posting.expiresAt}

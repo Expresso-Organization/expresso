@@ -5,7 +5,7 @@ import {
   type CreateBrew,
   type UpdateBrew,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import { rankMaterials, type MaterialRecord } from "./ranking.js";
 import { EntitlementService } from "../entitlements/service.js";
@@ -83,9 +83,9 @@ function mapSource(row: SourceRow): BrewMaterial {
 }
 
 export class MaterialsService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
 
-  constructor(sql: postgres.Sql) {
+  constructor(sql: SqlTag) {
     this.#sql = sql;
   }
 
@@ -136,7 +136,7 @@ export class MaterialsService {
         const selected = index < SELECTION_LIMIT;
         await transaction`
           insert into brew_source (
-            user_id, brew_id, record_id, rank, selected_by,
+            user_id, brew_id, record_id, \`rank\`, selected_by,
             excluded_reason, score, reason_text, is_selected
           ) values (
             ${userId}, ${brew.id}, ${record.id}, ${index}, 'auto',
@@ -175,8 +175,8 @@ export class MaterialsService {
         where job_analysis.id = ${brew.job_analysis_id} and job_analysis.user_id = ${userId}
       `,
       sql<{ selected: number; total: number }[]>`
-        select count(*) filter (where is_selected)::integer as selected,
-               count(*)::integer as total
+        select count(case when is_selected then 1 end) as selected,
+               count(*) as total
         from brew_source where user_id = ${userId} and brew_id = ${brewId}
       `,
       sql<{ id: string }[]>`
@@ -200,7 +200,7 @@ export class MaterialsService {
       }[]>`
         select id, type, status, stage, attempts, result_id, error_code, failure_retryable
         from brew_job
-        where user_id = ${userId} and input ->> 'brewId' = ${brewId}
+        where user_id = ${userId} and input ->> '$.brewId' = ${brewId}
         order by created_at desc limit 1
       `,
       sql<{
@@ -265,17 +265,17 @@ export class MaterialsService {
     if (!brew) throw new MaterialsError(404, "brew not found");
     const rows = await this.#sql<SourceRow[]>`
       select brew_source.record_id, record.title, record.status, record.origin,
-             brew_source.score, brew_source.rank, brew_source.is_selected,
+             brew_source.score, brew_source.\`rank\`, brew_source.is_selected,
              brew_source.selected_by, brew_source.excluded_reason, brew_source.reason_text,
              category.name as category_name, category.icon as category_icon,
-             lower(record.period)::text as period_from,
-             upper(record.period)::text as period_to
+             record.period_start as period_from,
+             record.period_end as period_to
       from brew_source
       join record on record.id = brew_source.record_id
         and record.user_id = brew_source.user_id
       join category on category.id = record.category_id
       where brew_source.user_id = ${userId} and brew_source.brew_id = ${brewId}
-      order by brew_source.rank, brew_source.record_id
+      order by brew_source.\`rank\`, brew_source.record_id
     `;
     return BrewMaterialsSchema.parse({
       brewId: brew.id,
@@ -300,7 +300,7 @@ export class MaterialsService {
       if (!decision.allowed) throw new MaterialsError(403, "cowork mode requires an upgraded plan");
     }
     const rows = await this.#sql<{ id: string }[]>`
-      update brew set mode = ${input.mode}, updated_at = now()
+      update brew set mode = ${input.mode}, updated_at = now(6)
       where id = ${brewId} and user_id = ${userId}
       returning id
     `;
@@ -319,28 +319,32 @@ export class MaterialsService {
       const allowed = await transaction<{ record_id: string }[]>`
         select record_id from brew_source
         where user_id = ${userId} and brew_id = ${brewId}
-          and record_id = any(${recordIds}::uuid[])
+          and record_id in ${transaction(recordIds)}
       `;
       if (allowed.length !== recordIds.length) {
         throw new MaterialsError(409, "selection contains an ineligible record");
       }
-      await transaction`
-        update brew_source
-        set is_selected = false, selected_by = 'user',
-            excluded_reason = 'USER_DESELECTED', updated_at = now()
-        where user_id = ${userId} and brew_id = ${brewId}
-      `;
       // rank는 매칭 순위지 고른 차례가 아니다. 여기서 다시 매기면 목록이 두 가지
       // 뜻을 섞어 정렬되고, 뺀 기록이 고른 기록보다 위로 올라온다.
+      //
+      // 고를 것을 먼저 켜고 나머지를 끈다. 선택이 한순간도 0이 되지 않아야
+      // 「후보가 있으면 선택 하나는 남는다」를 보는 트리거에 걸리지 않는다.
       await transaction`
         update brew_source
         set is_selected = true, selected_by = 'user',
-            excluded_reason = null, updated_at = now()
+            excluded_reason = null, updated_at = now(6)
         where user_id = ${userId} and brew_id = ${brewId}
-          and record_id = any(${recordIds}::uuid[])
+          and record_id in ${transaction(recordIds)}
       `;
       await transaction`
-        update brew set updated_at = now()
+        update brew_source
+        set is_selected = false, selected_by = 'user',
+            excluded_reason = 'USER_DESELECTED', updated_at = now(6)
+        where user_id = ${userId} and brew_id = ${brewId}
+          and record_id not in ${transaction(recordIds)}
+      `;
+      await transaction`
+        update brew set updated_at = now(6)
         where id = ${brewId} and user_id = ${userId}
       `;
     });

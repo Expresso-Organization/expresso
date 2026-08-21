@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import postgres from "postgres";
+import { createMysqlResource } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
@@ -8,11 +9,11 @@ import { PortfolioEditingService } from "./service.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
-const config: RuntimeConfig = { nodeEnv: "test", host: "127.0.0.1", port: 4000, logLevel: "silent", databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1", redisUrl: "redis://127.0.0.1:1", outboxPollIntervalMs: 1000, outboxBatchSize: 25, outboxMaxAttempts: 5, queuePrefix: "editing-test" };
+const config: RuntimeConfig = { nodeEnv: "test", host: "127.0.0.1", port: 4000, logLevel: "silent", databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1", redisUrl: "redis://127.0.0.1:1", outboxPollIntervalMs: 1000, outboxBatchSize: 25, outboxMaxAttempts: 5, queuePrefix: "editing-test" };
 interface IdRow { id: string }
 
 describeWithDatabase("portfolio editing integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1", { max: 4 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1").sql;
   const identity = new IdentityService(sql);
   const service = new PortfolioEditingService(sql);
   const app = buildApi({ config, identityService: identity, portfolioEditingService: service });
@@ -25,15 +26,21 @@ describeWithDatabase("portfolio editing integration", () => {
 
   beforeAll(async () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
-    const categoryId = (await sql<IdRow[]>`select id from category where key = 'experience' and is_system`)[0]?.id;
+    const categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id;
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
     if (!planId || !categoryId || !templateId) throw new Error("editing seed missing");
-    const users = await sql<IdRow[]>`insert into "user" (email, display_name, plan_id) values (${`editing-a-${marker}@example.com`}, 'Editing A', ${planId}), (${`editing-b-${marker}@example.com`}, 'Editing B', ${planId}) returning id`;
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
+      values
+        (${users[0]!.id}, ${`editing-a-${marker}@example.com`}, 'Editing A', ${planId}),
+        (${users[1]!.id}, ${`editing-b-${marker}@example.com`}, 'Editing B', ${planId})
+    `;
     userId = users[0]?.id ?? ""; otherUserId = users[1]?.id ?? "";
     token = (await identity.issueSession({ userId })).accessToken;
-    recordId = (await sql<IdRow[]>`insert into record (user_id, category_id, title, status, origin, properties, body_md) values (${userId}, ${categoryId}, 'Source record', 'organized', 'manual', '{}'::jsonb, 'Exact record body') returning id`)[0]?.id ?? "";
+    recordId = (await sql<IdRow[]>`insert into record (user_id, category_id, title, status, origin, properties, body_md) values (${userId}, ${categoryId}, 'Source record', 'organized', 'manual', '{}', 'Exact record body') returning id`)[0]?.id ?? "";
     companyId = (await sql<IdRow[]>`insert into company (name, dedupe_key) values (${`Editing ${marker}`}, ${`editing-company-${marker}`}) returning id`)[0]?.id ?? "";
-    postingId = (await sql<IdRow[]>`insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash) values (${companyId}, 'user_input', 'Engineer', 'Editing source', '{}'::jsonb, ${`editing-posting-${marker}`}) returning id`)[0]?.id ?? "";
+    postingId = (await sql<IdRow[]>`insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash) values (${companyId}, 'user_input', 'Engineer', 'Editing source', '{}', ${`editing-posting-${marker}`}) returning id`)[0]?.id ?? "";
     const analysisId = (await sql<IdRow[]>`insert into job_analysis (user_id, job_posting_id, input_type) values (${userId}, ${postingId}, 'paste') returning id`)[0]?.id;
     const brewId = analysisId && (await sql<IdRow[]>`insert into brew (user_id, job_analysis_id, length_preset) values (${userId}, ${analysisId}, 'single') returning id`)[0]?.id;
     if (!brewId) throw new Error("editing brew missing");
@@ -47,7 +54,7 @@ describeWithDatabase("portfolio editing integration", () => {
   });
 
   afterAll(async () => {
-    if (userId && otherUserId) await sql`delete from "user" where id in (${userId}, ${otherUserId})`;
+    if (userId && otherUserId) await sql`delete from \`user\` where id in (${userId}, ${otherUserId})`;
     if (postingId) await sql`delete from job_posting where id = ${postingId}`;
     if (companyId) await sql`delete from company where id = ${companyId}`;
     await app.close(); await sql.end({ timeout: 5 });
@@ -62,14 +69,14 @@ describeWithDatabase("portfolio editing integration", () => {
     expect(proposal.targetPath).toContain(`block:${blockId}`);
     expect(proposal.before.content.text).toBe(initialText);
     expect(proposal.after.content.text).toBe("Exact record body");
-    expect((await sql<{ text: string }[]>`select content ->> 'text' as text from block where id = ${blockId}`)[0]?.text).toBe(initialText);
+    expect((await sql<{ text: string }[]>`select content ->> '$.text' as text from block where id = ${blockId}`)[0]?.text).toBe(initialText);
 
     const applyResponse = await app.inject({ method: "POST", url: `/v1/portfolio-edit-proposals/${proposal.id}/apply`, headers: auth() });
     expect(applyResponse.statusCode).toBe(200);
     const applied = applyResponse.json().data as { revisionId: string; locked: boolean };
     expect(applied.locked).toBe(true);
-    expect((await sql<{ text: string; locked: boolean; source_record_id: string }[]>`select content ->> 'text' as text, locked, source_record_id from block where id = ${blockId}`)[0]).toEqual({ text: "Exact record body", locked: true, source_record_id: recordId });
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from record_usage where user_id = ${userId} and record_id = ${recordId} and block_id = ${blockId}`)[0]?.count).toBe(1);
+    expect((await sql<{ text: string; locked: boolean; source_record_id: string }[]>`select content ->> '$.text' as text, locked, source_record_id from block where id = ${blockId}`)[0]).toEqual({ text: "Exact record body", locked: true, source_record_id: recordId });
+    expect((await sql<{ count: number }[]>`select count(*) as count from record_usage where user_id = ${userId} and record_id = ${recordId} and block_id = ${blockId}`)[0]?.count).toBe(1);
 
     // 04 블록 조작 — 복제하고, 차례를 바꾸고, 지운다.
     const sectionOfBlock = (await sql<{ id: string }[]>`
@@ -147,19 +154,19 @@ describeWithDatabase("portfolio editing integration", () => {
     await expect(service.revertRevision(userId, textApplied.revisionId)).rejects.toMatchObject({ statusCode: 409, publicDetails: { conflict: true } });
     const reverted = await service.revertRevision(userId, textApplied.revisionId, true);
     expect(reverted.conflictResolved).toBe(true);
-    expect((await sql<{ text: string }[]>`select content ->> 'text' as text from block where id = ${blockId}`)[0]?.text).toBe("Exact record body");
+    expect((await sql<{ text: string }[]>`select content ->> '$.text' as text from block where id = ${blockId}`)[0]?.text).toBe("Exact record body");
   });
 
   it("restores the full initial snapshot while preserving deployment state and records the restore", async () => {
-    const deploymentBefore = (await sql<{ value: unknown }[]>`select to_jsonb(deployment) as value from deployment where id = ${deploymentId}`)[0]?.value;
+    const deploymentBefore = (await sql<{ value: unknown }[]>`select json_object('snapshot', snapshot, 'subdomain', subdomain, 'version', version) as value from deployment where id = ${deploymentId}`)[0]?.value;
     const proposal = await service.preview(userId, portfolioId, blockId, { operation: "set_style", style: { highlight: true, spacing: "wide" } });
     await service.apply(userId, proposal.id);
     const restored = await service.restore(userId, portfolioId, snapshotId);
     expect(restored.preRestoreSnapshotId).toBeTruthy();
     expect(restored.revisionId).toBeTruthy();
     expect((await sql<{ content: { text: string }; style: { weight: string }; locked: boolean }[]>`select content, style, locked from block where id = ${blockId}`)[0]).toEqual({ content: { text: initialText }, style: { weight: 'normal' }, locked: false });
-    const deploymentAfter = (await sql<{ value: unknown }[]>`select to_jsonb(deployment) as value from deployment where id = ${deploymentId}`)[0]?.value;
+    const deploymentAfter = (await sql<{ value: unknown }[]>`select json_object('snapshot', snapshot, 'subdomain', subdomain, 'version', version) as value from deployment where id = ${deploymentId}`)[0]?.value;
     expect(deploymentAfter).toEqual(deploymentBefore);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from revision where user_id = ${userId} and portfolio_id = ${portfolioId} and change_kind in ('revert', 'restore')`)[0]?.count).toBeGreaterThanOrEqual(2);
+    expect((await sql<{ count: number }[]>`select count(*) as count from revision where user_id = ${userId} and portfolio_id = ${portfolioId} and change_kind in ('revert', 'restore')`)[0]?.count).toBeGreaterThanOrEqual(2);
   });
 });

@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
+import type { SqlTag } from "../../src/platform/mysql.js";
+import { createMysqlResource } from "../../src/platform/mysql.js";
 
 import { migrate } from "@expresso/database";
-import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../src/api/build-app.js";
@@ -21,6 +22,7 @@ import { createJobAnalysisProcessor } from "../../src/worker/processors/job-anal
 import { BrewJobService } from "../../src/modules/brew-jobs/service.js";
 import { createBrewJobProcessor } from "../../src/worker/processors/brew-jobs.js";
 import { createRecordCleanupProcessor } from "../../src/worker/processors/record-cleanup.js";
+import { ISOLATED_DATABASE_TIMEOUT_MS } from "../support/timeouts.js";
 
 const rootDatabaseUrl = process.env.TEST_DATABASE_URL;
 const redisUrl = process.env.TEST_REDIS_URL;
@@ -40,8 +42,8 @@ describeWithInfrastructure("analysis to evidence recipe vertical slice", () => {
   const databaseName = `expresso_brew_e2e_${randomUUID().replaceAll("-", "")}`;
   const prefix = `expresso-${databaseName}`;
   const jobs = createReliableQueue<Record<string, unknown>>("domain-jobs", redisUrl!, prefix);
-  let admin: postgres.Sql;
-  let sql: postgres.Sql;
+  let admin: SqlTag;
+  let sql: SqlTag;
   let app: ReturnType<typeof buildApi>;
   let worker: ReturnType<typeof createQueueWorker<Record<string, unknown>, Record<string, unknown>>>;
   let dispatcher: OutboxDispatcher;
@@ -51,16 +53,16 @@ describeWithInfrastructure("analysis to evidence recipe vertical slice", () => {
 
   beforeAll(async () => {
     const rootUrl = new URL(rootDatabaseUrl!);
-    const adminUrl = new URL(rootUrl); adminUrl.pathname = "/postgres";
-    admin = postgres(adminUrl.toString(), { max: 1 });
-    await admin.unsafe(`create database "${databaseName}"`);
+    const adminUrl = new URL(rootUrl); adminUrl.pathname = "/mysql";
+    admin = createMysqlResource(adminUrl.toString()).sql;
+    await admin.unsafe(`create database \`${databaseName}\``);
     const isolatedUrl = new URL(rootUrl); isolatedUrl.pathname = `/${databaseName}`;
     await migrate({ databaseUrl: isolatedUrl.toString() });
-    sql = postgres(isolatedUrl.toString(), { max: 6 });
+    sql = createMysqlResource(isolatedUrl.toString()).sql;
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("fresh plan missing");
     const userId = (await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values ('brewing-vertical@example.com', 'Brewing Vertical', ${planId}) returning id
     `)[0]?.id;
     if (!userId) throw new Error("fresh user missing");
@@ -112,7 +114,7 @@ describeWithInfrastructure("analysis to evidence recipe vertical slice", () => {
       },
     });
     dispatcher = new OutboxDispatcher({ sql, queue: jobs.queue });
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   afterAll(async () => {
     if (worker) await worker.close();
@@ -121,11 +123,10 @@ describeWithInfrastructure("analysis to evidence recipe vertical slice", () => {
     if (app) await app.close();
     if (sql) await sql.end({ timeout: 5 });
     if (admin) {
-      await admin`select pg_terminate_backend(pid) from pg_stat_activity where datname = ${databaseName} and pid <> pg_backend_pid()`;
-      await admin.unsafe(`drop database if exists "${databaseName}"`);
+      await admin.unsafe(`drop database if exists \`${databaseName}\``);
       await admin.end({ timeout: 5 });
     }
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   async function api(path: string, options: { method?: string; headers?: Record<string, string>; body?: unknown } = {}) {
     return fetch(`${origin}${path}`, {
@@ -241,7 +242,7 @@ describeWithInfrastructure("analysis to evidence recipe vertical slice", () => {
         editedBy: "user",
       });
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count from recipe_evidence_path where user_id = (select user_id from brew where id = ${brew.data.brewId}) and recipe_id = ${recipe.data.id}
+      select count(*) as count from recipe_evidence_path where user_id = (select user_id from brew where id = ${brew.data.brewId}) and recipe_id = ${recipe.data.id}
     `)[0]?.count).toBeGreaterThanOrEqual(3);
   }, 30_000);
 });

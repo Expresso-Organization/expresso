@@ -4,9 +4,9 @@ import {
   type EntitlementDecision,
   type PlanCode,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
-type DatabaseClient = postgres.Sql | postgres.TransactionSql;
+type DatabaseClient = SqlTag | SqlTag;
 
 interface EntitlementSubjectRow {
   plan_code: PlanCode;
@@ -137,7 +137,7 @@ export class EntitlementService {
         plan.code as plan_code,
         plan.generation_quota,
         plan.features
-      from "user" as account
+      from \`user\` as account
       join plan on plan.id = account.plan_id
       where account.id = ${userId}
         and account.deletion_requested_at is null

@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
 import { AnalyticsEventSchema } from "@expresso/contracts";
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { AnalyticsService, validateInsightDraft } from "./service.js";
@@ -12,7 +13,7 @@ const describeWithDatabase = databaseUrl ? describe : describe.skip;
 interface IdRow { id: string }
 
 describeWithDatabase("privacy-minimized analytics integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 20 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const service = new AnalyticsService(sql, { visitorSalt: "analytics-integration-salt", minimumSample: 5 });
   const marker = randomUUID();
   const slug = `analytics-${marker}`;
@@ -27,13 +28,13 @@ describeWithDatabase("privacy-minimized analytics integration", () => {
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
     if (!planId || !templateId) throw new Error("analytics seed missing");
     userId = (await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values (${`analytics-${marker}@example.com`}, 'Analytics', ${planId}) returning id
     `)[0]?.id ?? "";
     const companyId = (await sql<IdRow[]>`insert into company (name, dedupe_key) values (${`Analytics ${marker}`}, ${`analytics-${marker}`}) returning id`)[0]?.id;
     const postingId = companyId && (await sql<IdRow[]>`
       insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash)
-      values (${companyId}, 'user_input', 'Engineer', ${"a".repeat(250)}, '{}'::jsonb, ${`analytics-post-${marker}`}) returning id
+      values (${companyId}, 'user_input', 'Engineer', ${"a".repeat(250)}, '{}', ${`analytics-post-${marker}`}) returning id
     `)[0]?.id;
     const analysisId = postingId && (await sql<IdRow[]>`
       insert into job_analysis (user_id, job_posting_id, input_type, status)
@@ -55,15 +56,15 @@ describeWithDatabase("privacy-minimized analytics integration", () => {
     await sql`insert into block (user_id, portfolio_section_id, kind, content) values (${userId}, ${sectionId}, 'paragraph', ${sql.json({ text: "evidence" })})`;
     deploymentId = (await sql<IdRow[]>`
       insert into deployment (user_id, portfolio_id, version, subdomain, published_at, snapshot)
-      values (${userId}, ${portfolioId}, 1, ${slug}, now(), ${sql.json({ sections: [{ id: sectionId }] })}) returning id
+      values (${userId}, ${portfolioId}, 1, ${slug}, now(6), ${sql.json({ sections: [{ id: sectionId }] })}) returning id
     `)[0]?.id ?? "";
     await sql`update portfolio set current_deployment_id = ${deploymentId}, status = 'published' where id = ${portfolioId}`;
   });
 
   afterAll(async () => {
     if (userId) {
-      await sql`delete from platform_outbox where payload ->> 'userId' = ${userId}`;
-      await sql`delete from "user" where id = ${userId}`;
+      await sql`delete from platform_outbox where payload ->> '$.userId' = ${userId}`;
+      await sql`delete from \`user\` where id = ${userId}`;
     }
     // 공고와 회사는 전역이라 사용자를 지워도 남는다 — 목록 API가 이걸 다 읽는다.
     await sql`delete from job_posting where dedupe_hash like ${`%${marker}`}`;
@@ -111,11 +112,11 @@ describeWithDatabase("privacy-minimized analytics integration", () => {
     const first = await service.aggregateDay(deploymentId, date);
     expect(first).toMatchObject({ visits: 8, completes: 2, contact_clicks: 1, eligible_section_views: 4, total_section_dwell_ms: 4_800 });
     const persistedBefore = await sql<{ metric_key: string; value: string }[]>`
-      select metric_key, value::text from metric_daily where deployment_id = ${deploymentId} and date = ${date} order by metric_key
+      select metric_key, value from metric_daily where deployment_id = ${deploymentId} and date = ${date} order by metric_key
     `;
     expect(await service.aggregateDay(deploymentId, date)).toEqual(first);
     const persistedAfter = await sql<{ metric_key: string; value: string }[]>`
-      select metric_key, value::text from metric_daily where deployment_id = ${deploymentId} and date = ${date} order by metric_key
+      select metric_key, value from metric_daily where deployment_id = ${deploymentId} and date = ${date} order by metric_key
     `;
     expect(persistedAfter).toEqual(persistedBefore);
     await service.aggregateDay(deploymentId, "2026-08-10");
@@ -219,11 +220,11 @@ describeWithDatabase("privacy-minimized analytics integration", () => {
 
   it("위젯은 편집을 시작할 때 굳고, 초기화는 처음으로 되돌린다", async () => {
     // 뷰 여섯 개를 이미 쓴 포트폴리오와 섞이지 않게 새로 만든다.
-    const boardId = (await sql<IdRow[]>`
-      insert into portfolio (user_id, brew_id, template_id, title)
-      select user_id, brew_id, template_id, 'Widget portfolio' from portfolio where id = ${portfolioId}
-      returning id
-    `)[0]?.id ?? "";
+    const boardId = randomUUID();
+    await sql`
+      insert into portfolio (id, user_id, brew_id, template_id, title)
+      select ${boardId}, user_id, brew_id, template_id, 'Widget portfolio' from portfolio where id = ${portfolioId}
+    `;
 
     // 아직 굳히지 않았다 — 기본 지면은 코드에 있고 id가 없다.
     const before = await service.widgets(userId, boardId);
@@ -289,11 +290,11 @@ describeWithDatabase("privacy-minimized analytics integration", () => {
   });
 
   it("배포한 적 없는 포트폴리오는 볼 것이 없다", async () => {
-    const draftId = (await sql<IdRow[]>`
-      insert into portfolio (user_id, brew_id, template_id, title)
-      select user_id, brew_id, template_id, 'Draft portfolio' from portfolio where id = ${portfolioId}
-      returning id
-    `)[0]?.id ?? "";
+    const draftId = randomUUID();
+    await sql`
+      insert into portfolio (id, user_id, brew_id, template_id, title)
+      select ${draftId}, user_id, brew_id, template_id, 'Draft portfolio' from portfolio where id = ${portfolioId}
+    `;
     await expect(service.dashboard(userId, draftId, "30d")).rejects.toMatchObject({ statusCode: 409 });
     await expect(service.dashboard(userId, randomUUID(), "30d")).rejects.toMatchObject({ statusCode: 404 });
   });

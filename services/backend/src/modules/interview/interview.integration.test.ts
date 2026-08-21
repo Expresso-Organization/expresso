@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
@@ -15,7 +16,7 @@ const describeWithDatabase = databaseUrl ? describe : describe.skip;
 
 const config: RuntimeConfig = {
   nodeEnv: "test", host: "127.0.0.1", port: 4_000, logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1", outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25, outboxMaxAttempts: 5, queuePrefix: "expresso-interview-test",
 };
@@ -23,7 +24,7 @@ const config: RuntimeConfig = {
 interface IdRow { id: string }
 
 describeWithDatabase("interview integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 4 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identityService = new IdentityService(sql);
   const interviewService = new InterviewService(sql);
   const brewJobService = new BrewJobService(sql);
@@ -69,15 +70,15 @@ describeWithDatabase("interview integration", () => {
   beforeAll(async () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     const categoryId = (await sql<IdRow[]>`
-      select id from category where key = 'experience' and is_system
+      select id from category where \`key\` = 'experience' and is_system
     `)[0]?.id;
     if (!planId || !categoryId) throw new Error("interview seed missing");
-    const users = await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        (${`interview-a-${marker}@example.com`}, 'Interview A', ${planId}),
-        (${`interview-b-${marker}@example.com`}, 'Interview B', ${planId})
-      returning id
+        (${users[0]!.id}, ${`interview-a-${marker}@example.com`}, 'Interview A', ${planId}),
+        (${users[1]!.id}, ${`interview-b-${marker}@example.com`}, 'Interview B', ${planId})
     `;
     userId = users[0]?.id ?? "";
     otherUserId = users[1]?.id ?? "";
@@ -91,7 +92,7 @@ describeWithDatabase("interview integration", () => {
       insert into job_posting (
         company_id, source, title, description_raw, requirements, dedupe_hash
       ) values (
-        ${companyId}, 'user_input', 'Backend Engineer', ${source}, '{}'::jsonb,
+        ${companyId}, 'user_input', 'Backend Engineer', ${source}, '{}',
         ${`interview-posting-${marker}`}
       ) returning id
     `)[0]?.id ?? "";
@@ -99,7 +100,7 @@ describeWithDatabase("interview integration", () => {
       insert into job_analysis (
         user_id, job_posting_id, input_type, status, progress_stage,
         result_version, target_version, analyzed_at
-      ) values (${userId}, ${postingId}, 'paste', 'done', 'done', 1, 1, now())
+      ) values (${userId}, ${postingId}, 'paste', 'done', 'done', 1, 1, now(6))
       returning id
     `)[0]?.id ?? "";
     let cursor = 0;
@@ -124,13 +125,13 @@ describeWithDatabase("interview integration", () => {
         )
       `;
     }
-    const records = await sql<IdRow[]>`
+    const records: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
       insert into record (
-        user_id, category_id, title, status, origin, properties, body_md
+        id, user_id, category_id, title, status, origin, properties, body_md
       ) values
-        (${userId}, ${categoryId}, 'Migration project', 'organized', 'manual', '{}'::jsonb, 'Led a database migration'),
-        (${userId}, ${categoryId}, 'Incident response', 'verified', 'manual', '{}'::jsonb, 'Resolved a production incident')
-      returning id
+        (${records[0]!.id}, ${userId}, ${categoryId}, 'Migration project', 'organized', 'manual', '{}', 'Led a database migration'),
+        (${records[1]!.id}, ${userId}, ${categoryId}, 'Incident response', 'verified', 'manual', '{}', 'Resolved a production incident')
     `;
     brewId = (await sql<IdRow[]>`
       insert into brew (user_id, job_analysis_id, length_preset)
@@ -139,7 +140,7 @@ describeWithDatabase("interview integration", () => {
     for (const [rank, record] of records.entries()) {
       await sql`
         insert into brew_source (
-          user_id, brew_id, record_id, rank, selected_by,
+          user_id, brew_id, record_id, \`rank\`, selected_by,
           score, reason_text, is_selected
         ) values (
           ${userId}, ${brewId}, ${record.id}, ${rank}, 'auto',
@@ -152,7 +153,7 @@ describeWithDatabase("interview integration", () => {
 
   afterAll(async () => {
     if (userId && otherUserId) {
-      await sql`delete from "user" where id in (${userId}, ${otherUserId})`;
+      await sql`delete from \`user\` where id in (${userId}, ${otherUserId})`;
     }
     if (postingId) await sql`delete from job_posting where id = ${postingId}`;
     if (companyId) await sql`delete from company where id = ${companyId}`;
@@ -240,7 +241,7 @@ describeWithDatabase("interview integration", () => {
       sourceQuote: transcript,
     });
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count from answer
+      select count(*) as count from answer
       where user_id = ${userId} and question_id = ${questionId}
     `)[0]?.count).toBe(1);
     expect((await sql<{ body_md: string; origin: string }[]>`

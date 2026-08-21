@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
 import { PublishPortfolioSchema } from "@expresso/contracts";
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
@@ -13,7 +14,7 @@ const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
 const config: RuntimeConfig = {
   nodeEnv: "test", host: "127.0.0.1", port: 4_000, logLevel: "silent",
-  databaseUrl: databaseUrl ?? "postgres://127.0.0.1:1/unused",
+  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1", outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25, outboxMaxAttempts: 5, queuePrefix: "expresso-publishing-test",
   assetSigningSecret: "publishing-integration-secret",
@@ -22,7 +23,7 @@ const config: RuntimeConfig = {
 interface IdRow { id: string }
 
 describeWithDatabase("publishing and asset lifecycle integration", () => {
-  const sql = postgres(databaseUrl ?? "postgres://127.0.0.1:1/unused", { max: 20 });
+  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const service = new PublishingService(sql, config.assetSigningSecret);
   const identity = new IdentityService(sql);
   const app = buildApi({ config, identityService: identity, publishingService: service });
@@ -40,7 +41,7 @@ describeWithDatabase("publishing and asset lifecycle integration", () => {
     `)[0]?.id;
     const postingId = companyId && (await sql<IdRow[]>`
       insert into job_posting (company_id, source, title, description_raw, requirements, dedupe_hash)
-      values (${companyId}, 'user_input', 'Engineer', ${"x".repeat(250)}, '{}'::jsonb, ${`${label}-posting-${marker}`}) returning id
+      values (${companyId}, 'user_input', 'Engineer', ${"x".repeat(250)}, '{}', ${`${label}-posting-${marker}`}) returning id
     `)[0]?.id;
     const analysisId = postingId && (await sql<IdRow[]>`
       insert into job_analysis (user_id, job_posting_id, input_type, status)
@@ -74,11 +75,11 @@ describeWithDatabase("publishing and asset lifecycle integration", () => {
     const freePlan = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!proPlan || !freePlan) throw new Error("plan seed missing");
     proUserId = (await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values (${`publish-pro-${marker}@example.com`}, 'Publisher', ${proPlan}) returning id
     `)[0]?.id ?? "";
     freeUserId = (await sql<IdRow[]>`
-      insert into "user" (email, display_name, plan_id)
+      insert into \`user\` (email, display_name, plan_id)
       values (${`publish-free-${marker}@example.com`}, 'Free publisher', ${freePlan}) returning id
     `)[0]?.id ?? "";
     const primary = await createPortfolio(proUserId, "primary");
@@ -91,8 +92,8 @@ describeWithDatabase("publishing and asset lifecycle integration", () => {
 
   afterAll(async () => {
     if (proUserId || freeUserId) {
-      await sql`delete from platform_outbox where payload ->> 'userId' in (${proUserId}, ${freeUserId})`;
-      await sql`delete from "user" where id in (${proUserId}, ${freeUserId})`;
+      await sql`delete from platform_outbox where payload ->> '$.userId' in (${proUserId}, ${freeUserId})`;
+      await sql`delete from \`user\` where id in (${proUserId}, ${freeUserId})`;
     }
     // 공고와 회사는 전역이라 사용자를 지워도 남는다 — 목록 API가 이걸 다 읽는다.
     await sql`delete from job_posting where dedupe_hash like ${`%${marker}`}`;
@@ -110,7 +111,7 @@ describeWithDatabase("publishing and asset lifecycle integration", () => {
     ]);
     expect(attempts.filter(({ status }) => status === "fulfilled")).toHaveLength(1);
     expect(attempts.filter(({ status }) => status === "rejected")).toHaveLength(19);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from deployment where subdomain = ${slug}`)[0]?.count).toBe(1);
+    expect((await sql<{ count: number }[]>`select count(*) as count from deployment where subdomain = ${slug}`)[0]?.count).toBe(1);
   });
 
   it("serves only immutable current snapshots, redirects for 30 days, rolls back, and unpublishes", async () => {
@@ -119,7 +120,7 @@ describeWithDatabase("publishing and asset lifecycle integration", () => {
     const secondSlug = `second-${marker}`;
     const first = await service.publish(proUserId, proPortfolioId, PublishPortfolioSchema.parse({ slug: firstSlug }), at);
     expect(first).toMatchObject({ version: expect.any(Number), contactVisibility: "hidden" });
-    await expect(sql`update deployment set snapshot = '{"tampered":true}'::jsonb where id = ${first.id}`).rejects.toThrow(/immutable/);
+    await expect(sql`update deployment set snapshot = '{"tampered":true}' where id = ${first.id}`).rejects.toThrow(/immutable/);
     await sql`update block set content = ${sql.json({ text: "unpublished edit" })} where id = ${blockId}`;
 
     const beforeRepublish = await app.inject({ method: "GET", url: `/v1/public/portfolios/${firstSlug}` });
@@ -156,8 +157,8 @@ describeWithDatabase("publishing and asset lifecycle integration", () => {
     const repeated = await service.submitExport(proUserId, proPortfolioId, "pro-export-request-00001", { kind: "deck", pageFormat: null });
     expect(repeated.id).toBe(queued.id);
     expect((await sql<{ count: number }[]>`
-      select count(*)::integer as count from platform_outbox
-      where topic = 'portfolio.export' and payload ->> 'exportJobId' = ${queued.id}
+      select count(*) as count from platform_outbox
+      where topic = 'portfolio.export' and payload ->> '$.exportJobId' = ${queued.id}
     `)[0]?.count).toBe(1);
     const done = await service.processExport(queued.id);
     expect(done).toMatchObject({ status: "done", attempts: 1, assetId: expect.any(String) });

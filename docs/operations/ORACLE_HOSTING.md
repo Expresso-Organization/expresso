@@ -50,7 +50,7 @@ Node 24 리눅스 빌드는 glibc 2.28 이상을 요구하고 이 기계는 **2.
 |---|---|
 | API | 4500 |
 | 웹 | 3500 |
-| PostgreSQL | 55432 |
+| MySQL | 53306 |
 | Redis | 56379 |
 
 ## 3. 아직 정하지 않은 것
@@ -143,7 +143,7 @@ opus 호출이 그보다 오래 걸린다는 뜻이라 `AI_TIMEOUT_MS=600000`을
 서버의 `~/expresso`도 여기서 직접 당긴다 — 예전에 쓰던 `~/expresso.git`(로컬
 bare)은 더 이상 경로에 없다.
 
-- `infra/compose.server.yaml` — 전용 Postgres · Redis. 포트는 루프백에만 열고
+- `infra/compose.server.yaml` — 전용 MySQL · Redis. 포트는 루프백에만 열고
   비밀번호는 `.env`에서 받는다.
 - `services/backend/.env.server.example` — 서버용 환경 예시. 서명 키와 소금은
   `openssl rand -hex 32`로 채운다.
@@ -185,7 +185,7 @@ ssh Oracle-Server 'git clone https://github.com/Expresso-Organization/expresso.g
 ssh Oracle-Server 'cd ~/expresso && ~/.nvm/versions/node/v24.13.1/bin/pnpm install'
 
 # 인프라 — 비밀번호는 셸 이력에 남지 않게 넣는다
-ssh Oracle-Server 'cd ~/expresso && EXPRESSO_POSTGRES_PASSWORD=... docker compose -f infra/compose.server.yaml up -d --wait'
+ssh Oracle-Server 'cd ~/expresso && EXPRESSO_MYSQL_PASSWORD=... docker compose -f infra/compose.server.yaml up -d --wait'
 
 # 스키마
 ssh Oracle-Server 'cd ~/expresso && ~/.nvm/versions/node/v24.13.1/bin/pnpm db:migrate'

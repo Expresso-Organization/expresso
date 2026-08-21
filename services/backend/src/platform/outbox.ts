@@ -1,5 +1,5 @@
 import type { JobsOptions } from "bullmq";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "./mysql.js";
 
 export interface OutboxEventInput {
   topic: string;
@@ -34,7 +34,7 @@ export interface QueuePublisher {
 }
 
 export interface OutboxDispatcherOptions {
-  sql: postgres.Sql;
+  sql: SqlTag;
   queue: QueuePublisher;
   batchSize?: number;
   maxAttempts?: number;
@@ -61,26 +61,22 @@ function sanitizedError(error: unknown): string {
 }
 
 export async function addOutboxEvent(
-  sql: postgres.Sql | postgres.TransactionSql,
+  sql: SqlTag | SqlTag,
   input: OutboxEventInput,
 ): Promise<OutboxEvent> {
-  const rows = await sql<OutboxRow[]>`
-    with inserted as (
-      insert into platform_outbox (topic, payload, idempotency_key)
-      values (
-        ${input.topic},
-        ${sql.json(input.payload as postgres.JSONValue)},
-        ${input.idempotencyKey}
-      )
-      on conflict (idempotency_key) do nothing
-      returning id, topic, payload, idempotency_key, state, attempts
+  // 같은 멱등 키가 이미 있으면 새 줄이 생기지 않는다 — 넣고 나서 그 키로 읽는다.
+  await sql`
+    insert ignore into platform_outbox (topic, payload, idempotency_key)
+    values (
+      ${input.topic},
+      ${sql.json(input.payload as JSONValue)},
+      ${input.idempotencyKey}
     )
-    select id, topic, payload, idempotency_key, state, attempts from inserted
-    union all
+  `;
+  const rows = await sql<OutboxRow[]>`
     select id, topic, payload, idempotency_key, state, attempts
     from platform_outbox
     where idempotency_key = ${input.idempotencyKey}
-      and not exists (select 1 from inserted)
     limit 1
   `;
   const row = rows[0];
@@ -89,7 +85,7 @@ export async function addOutboxEvent(
 }
 
 export class OutboxDispatcher {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #queue: QueuePublisher;
   readonly #batchSize: number;
   readonly #maxAttempts: number;
@@ -122,9 +118,9 @@ export class OutboxDispatcher {
           update platform_outbox
           set state = 'published',
               locked_at = null,
-              published_at = now(),
+              published_at = now(6),
               last_error = null,
-              updated_at = now()
+              updated_at = now(6)
           where id = ${event.id}
             and state = 'publishing'
         `;
@@ -140,31 +136,35 @@ export class OutboxDispatcher {
   }
 
   async #claim(): Promise<OutboxEvent[]> {
-    const rows = await this.#sql.begin(async (transaction) =>
-      transaction<OutboxRow[]>`
-        with candidates as (
-          select id
-          from platform_outbox
-          where (
-              state = 'pending'
-              or (
-                state = 'publishing'
-                and locked_at < now() - make_interval(secs => ${this.#lockTimeoutSeconds})
-              )
+    // 집어 갈 것을 잠가서 고르고, 같은 트랜잭션 안에서 상태를 옮긴 뒤 다시 읽는다.
+    const rows = await this.#sql.begin(async (transaction) => {
+      const candidates = await transaction<{ id: string }[]>`
+        select id
+        from platform_outbox
+        where (
+            state = 'pending'
+            or (
+              state = 'publishing'
+              and locked_at < now(6) - interval ${this.#lockTimeoutSeconds} second
             )
-            and available_at <= now()
-          order by available_at, created_at
-          for update skip locked
-          limit ${this.#batchSize}
-        )
-        update platform_outbox as outbox
-        set state = 'publishing', locked_at = now(), updated_at = now()
-        from candidates
-        where outbox.id = candidates.id
-        returning outbox.id, outbox.topic, outbox.payload,
-          outbox.idempotency_key, outbox.state, outbox.attempts
-      `,
-    );
+          )
+          and available_at <= now(6)
+        order by available_at, created_at
+        limit ${this.#batchSize}
+        for update skip locked
+      `;
+      if (candidates.length === 0) return [] as OutboxRow[];
+      const ids = candidates.map(({ id }) => id);
+      await transaction`
+        update platform_outbox
+        set state = 'publishing', locked_at = now(6), updated_at = now(6)
+        where id in ${transaction(ids)}
+      `;
+      return transaction<OutboxRow[]>`
+        select id, topic, payload, idempotency_key, state, attempts
+        from platform_outbox where id in ${transaction(ids)}
+      `;
+    });
     return rows.map(toEvent);
   }
 
@@ -182,11 +182,11 @@ export class OutboxDispatcher {
           attempts = ${nextAttempts},
           available_at = case
             when ${deadLettered} then available_at
-            else now() + make_interval(secs => ${retryDelaySeconds})
+            else now(6) + interval ${retryDelaySeconds} second
           end,
           locked_at = null,
           last_error = ${sanitizedError(error)},
-          updated_at = now()
+          updated_at = now(6)
       where id = ${event.id}
         and state = 'publishing'
     `;

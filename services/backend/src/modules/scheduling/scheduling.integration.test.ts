@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { createMysqlResource } from "../../platform/mysql.js";
 
 import { migrate } from "@expresso/database";
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { SCHEDULED_JOB_KEYS, SchedulingService, type ScheduledJobKey } from "./service.js";
@@ -11,19 +12,19 @@ const describeWithDatabase = rootDatabaseUrl ? describe : describe.skip;
 
 describeWithDatabase("scheduled job leases and observability", () => {
   const databaseName = `expresso_scheduler_${randomUUID().replaceAll("-", "")}`;
-  let admin: postgres.Sql;
-  let sql: postgres.Sql;
+  let admin: SqlTag;
+  let sql: SqlTag;
   let service: SchedulingService;
   let retentionCalls = 0;
 
   beforeAll(async () => {
     const root = new URL(rootDatabaseUrl!);
-    const adminUrl = new URL(root); adminUrl.pathname = "/postgres";
-    admin = postgres(adminUrl.toString(), { max: 1 });
-    await admin.unsafe(`create database "${databaseName}"`);
+    const adminUrl = new URL(root); adminUrl.pathname = "/mysql";
+    admin = createMysqlResource(adminUrl.toString()).sql;
+    await admin.unsafe(`create database \`${databaseName}\``);
     const isolated = new URL(root); isolated.pathname = `/${databaseName}`;
     await migrate({ databaseUrl: isolated.toString() });
-    sql = postgres(isolated.toString(), { max: 20 });
+    sql = createMysqlResource(isolated.toString()).sql;
     service = new SchedulingService(sql, { overrides: {
       retention: async () => {
         retentionCalls += 1;
@@ -31,14 +32,13 @@ describeWithDatabase("scheduled job leases and observability", () => {
         return { retained: true };
       },
     } });
-    await sql`update scheduled_job_definition set next_run_at = '2026-08-09T00:00:00Z'`;
+    await sql`update scheduled_job_definition set next_run_at = '2026-08-09 00:00:00'`;
   }, 30_000);
 
   afterAll(async () => {
     if (sql) await sql.end({ timeout: 5 });
     if (admin) {
-      await admin`select pg_terminate_backend(pid) from pg_stat_activity where datname = ${databaseName} and pid <> pg_backend_pid()`;
-      await admin.unsafe(`drop database if exists "${databaseName}"`);
+      await admin.unsafe(`drop database if exists \`${databaseName}\``);
       await admin.end({ timeout: 5 });
     }
   }, 30_000);
@@ -51,7 +51,7 @@ describeWithDatabase("scheduled job leases and observability", () => {
      * 애초에 어긋나지 않게 여기서 잡는다.
      */
     const rows = await sql<{ key: string }[]>`
-      select job_key as key from scheduled_job_definition order by job_key
+      select job_key as \`key\` from scheduled_job_definition order by job_key
     `;
     expect(rows.length).toBeGreaterThan(0);
     const known = new Set<string>(SCHEDULED_JOB_KEYS);
@@ -66,14 +66,14 @@ describeWithDatabase("scheduled job leases and observability", () => {
      * 두면, 고치는 사람이 무엇을 확인하는 시험인지 잊는다.
      */
     const definitions = (await sql<{ count: number }[]>`
-      select count(*)::integer as count from scheduled_job_definition
+      select count(*) as count from scheduled_job_definition
     `)[0]?.count ?? 0;
     expect(definitions).toBeGreaterThan(0);
 
     const ticks = await Promise.all(Array.from({ length: 20 }, () => service.scheduleDue(now)));
     expect(new Set(ticks.flatMap(({ scheduled }) => scheduled)).size).toBe(definitions);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from scheduled_job_run`)[0]?.count).toBe(definitions);
-    expect((await sql<{ count: number }[]>`select count(*)::integer as count from platform_outbox where topic = 'scheduled.execute'`)[0]?.count).toBe(definitions);
+    expect((await sql<{ count: number }[]>`select count(*) as count from scheduled_job_run`)[0]?.count).toBe(definitions);
+    expect((await sql<{ count: number }[]>`select count(*) as count from platform_outbox where topic = 'scheduled.execute'`)[0]?.count).toBe(definitions);
     const status = await service.status(now);
     expect(status).toHaveLength(definitions);
     expect(status.every(({ nextRunAt }) => new Date(nextRunAt) > now)).toBe(true);
