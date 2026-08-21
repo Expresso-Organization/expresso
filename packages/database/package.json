@@ -16,6 +16,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "mysql2": "^3.23.4",
     "postgres": "^3.4.9"
   },
   "devDependencies": {
