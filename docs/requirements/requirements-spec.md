@@ -424,6 +424,58 @@ Career Record는 공통 및 Category별 필수값을 충족한 경우에만 저�
 - 제목과 활동 내용을 갖춘 활동·리더십 Record를 저장할 수 있다.
 - 입력한 선택 항목을 활동·리더십 Record에 표현할 수 있다.
 
+#### REQ-CAR-011 Career Record 생성
+
+- **상태:** `PROPOSED`
+- **대상:** 사용자
+
+##### 설명
+
+사용자는 자신의 커리어 정보를 관리하기 위해
+현재 사용할 수 있는 Career Category를 선택하여
+Career Record를 생성할 수 있다.
+
+현재 사용할 수 있는 Career Category는
+시스템이 제공하며 상세 구조와 필수값이 정의되어
+Career Record 생성 대상으로 사용 가능한 Category를 의미한다.
+
+##### 기본 흐름
+
+1. 사용자는 현재 사용할 수 있는 Career Category를 선택한다.
+2. 사용자는 제목과 해당 Category에서 요구하는 정보를 입력한다.
+3. 시스템은 공통 필수값과 Category별 필수값을 검증한다.
+4. 모든 필수값이 유효한 경우 Career Record를 저장한다.
+5. 생성된 Career Record는 해당 사용자에게 귀속된다.
+
+##### 핵심 규칙
+
+- Career Record는 반드시 하나의 Category에 속해야 한다.
+- 사용자는 현재 사용할 수 있는 시스템 Category만 선택할 수 있다.
+- 제목은 모든 Career Record의 공통 필수값이다.
+- Category별 필수값을 충족하지 않으면 Career Record를 생성할 수 없다.
+- 공백 등 유효하지 않은 값은 필수값을 충족한 것으로 보지 않는다.
+- 미완성 Career Record의 Draft 저장은 지원하지 않는다.
+- 생성 이후 사용자가 Record의 Category를 변경하는 기능은 지원하지 않는다.
+- 동일하거나 유사한 제목 또는 내용을 가진 Career Record가 이미 존재하더라도
+  새로운 Record 생성을 제한하지 않는다.
+- 중복 Record 탐지 및 병합은 현재 생성 요구사항 범위에 포함하지 않는다.
+
+##### 예외 및 제약
+
+- 시스템에서 제공하지 않거나 상세 구조와 필수값이 정의되지 않아
+  현재 생성 대상으로 사용할 수 없는 Category를 선택한 경우
+  Career Record를 생성하지 않는다.
+- 필수값 검증에 실패한 경우 Career Record를 생성하지 않는다.
+
+##### 완료 기준
+
+- 현재 사용할 수 있는 Category와 모든 필수값을 유효하게 입력하면
+  Career Record가 저장된다.
+- 생성된 Record는 Record를 생성한 사용자에게 귀속된다.
+- 필수값을 충족하지 않으면 Career Record가 저장되지 않는다.
+- 동일하거나 유사한 Record가 존재하더라도 유효한 입력이라면
+  새로운 Record를 생성할 수 있다.
+
 #### 미결정 사항
 
 ##### DECISION-CAR-001 경험 Category
