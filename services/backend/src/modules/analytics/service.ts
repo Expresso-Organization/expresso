@@ -135,7 +135,7 @@ export class AnalyticsService {
       }
       const recent = Number((await transaction<{ count: number }[]>`
         select count(*) as count from analytics_event_receipt
-        where visitor_hash = ${sessionHash} and received_at > now() - interval 1 minute
+        where visitor_hash = ${sessionHash} and received_at > now(6) - interval 1 minute
       `)[0]?.count ?? 0);
       if (recent >= this.#rateLimit) throw new AnalyticsError(429, "analytics rate limit exceeded");
       const occurredAt = new Date(input.occurredAt);

@@ -302,14 +302,14 @@ export class PublishingService {
       const job = (await transaction<ExportJobRow[]>`select * from export_job where id = ${id} for update`)[0];
       if (!job) throw new PublishingError(404, "export job not found");
       if (job.status === "done") return;
-      await transaction`update export_job set status = 'running', attempts = attempts + 1, updated_at = now() where id = ${id}`;
+      await transaction`update export_job set status = 'running', attempts = attempts + 1, updated_at = now(6) where id = ${id}`;
       const asset = (await transaction<{ id: string }[]>`
         insert into export_asset (user_id, portfolio_id, kind, file_url, page_format)
         values (${job.user_id}, ${job.portfolio_id}, ${job.kind}, ${`exports/${job.user_id}/${id}.${job.kind}`}, ${job.page_format})
         returning id
       `)[0];
       if (!asset) throw new Error("export asset missing");
-      await transaction`update export_job set status = 'done', asset_id = ${asset.id}, error_code = null, updated_at = now() where id = ${id}`;
+      await transaction`update export_job set status = 'done', asset_id = ${asset.id}, error_code = null, updated_at = now(6) where id = ${id}`;
     });
     const row = (await this.#sql<ExportJobRow[]>`select * from export_job where id = ${id}`)[0];
     if (!row) throw new Error("export job missing");
@@ -329,7 +329,7 @@ export class PublishingService {
           and kind = 'resume_file' and revoked_at is null for update
       `)[0];
       await transaction`
-        update export_asset set revoked_at = now()
+        update export_asset set revoked_at = now(6)
         where user_id = ${userId} and portfolio_id = ${portfolioId} and kind = 'resume_file' and revoked_at is null
       `;
       const asset = (await transaction<AssetRow[]>`

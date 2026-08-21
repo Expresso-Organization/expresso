@@ -50,7 +50,7 @@ export class EngagementService {
     await this.#sql`
       insert into notification_preference (user_id, kind, enabled)
       values (${userId}, ${kind}, ${enabled})
-      as new on duplicate key update enabled = new.enabled, updated_at = now()
+      as new on duplicate key update enabled = new.enabled, updated_at = now(6)
     `;
     return { kind, enabled };
   }

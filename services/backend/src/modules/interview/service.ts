@@ -165,7 +165,7 @@ export class InterviewService {
             properties = ${transaction.json(cleanupProperties(cleaned) as JSONValue)},
             -- 정리된 기록은 재료로 고를 수 있다. 원문만 남은 초안은 못 고른다.
             status = 'organized',
-            updated_at = now()
+            updated_at = now(6)
         where id = ${context.record_id} and user_id = ${userId}
       `;
       await transaction`
@@ -232,7 +232,7 @@ export class InterviewService {
         `;
       }
       await transaction`
-        update brew set status = 'interviewing', updated_at = now()
+        update brew set status = 'interviewing', updated_at = now(6)
         where id = ${brewId} and user_id = ${userId}
       `;
       return session.id;
@@ -481,7 +481,7 @@ export class InterviewService {
         )
       `;
       await transaction`
-        update interview_session set updated_at = now() where id = ${sessionId}
+        update interview_session set updated_at = now(6) where id = ${sessionId}
       `;
     });
     return this.getSession(userId, sessionId);
@@ -589,7 +589,7 @@ export class InterviewService {
         await transaction`
           update answer set input_type = ${input.inputType}, transcript = ${input.transcript},
             input_idempotency_key = ${idempotencyKey}, request_hash = ${requestHash},
-            version = version + 1, updated_at = now()
+            version = version + 1, updated_at = now(6)
           where id = ${existing.id} and user_id = ${userId}
         `;
         await transaction`
@@ -602,7 +602,7 @@ export class InterviewService {
           update answer_record_change
           set change_type = 'strengthened',
               changed_fields = '[\`title\`,\`body_md\`]',
-              source_quote = ${input.transcript}, created_at = now()
+              source_quote = ${input.transcript}, created_at = now(6)
           where user_id = ${userId} and answer_id = ${existing.id}
         `;
         return existing.id;
@@ -668,7 +668,7 @@ export class InterviewService {
       set answered_count = progress.answered_count,
           current_order = progress.current_order,
           status = case when progress.finished then 'done' else status end,
-          updated_at = now()
+          updated_at = now(6)
       from progress
       where interview_session.id = ${sessionId} and interview_session.user_id = ${userId}
     `;

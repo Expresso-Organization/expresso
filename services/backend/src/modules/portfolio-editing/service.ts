@@ -251,7 +251,7 @@ export class PortfolioEditingService {
         insert into revision (user_id, portfolio_id, block_id, actor, before, after, proposal_id, summary)
         values (${userId}, ${proposal.portfolio_id}, ${block.id}, 'user', ${transaction.json(proposal.before_state as JSONValue)}, ${transaction.json(proposal.after_state as JSONValue)}, ${proposal.id}, ${OPERATION_SUMMARY[proposal.operation]}) returning id
       `)[0]?.id ?? "";
-      applied = (await transaction<ProposalRow[]>`update portfolio_edit_proposal set status = 'applied', applied_at = now() where id = ${proposal.id} returning *`)[0]!;
+      applied = (await transaction<ProposalRow[]>`update portfolio_edit_proposal set status = 'applied', applied_at = now(6) where id = ${proposal.id} returning *`)[0]!;
     });
     return ApplyPortfolioEditResultSchema.parse({ proposal: mapProposal(applied), revisionId, locked: true });
   }

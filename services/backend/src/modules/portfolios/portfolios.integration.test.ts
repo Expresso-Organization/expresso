@@ -186,8 +186,8 @@ describeWithDatabase("portfolio read HTTP integration", () => {
     await sql`
       insert into revision (user_id, portfolio_id, actor, change_kind, summary, after, created_at)
       values
-        (${userId}, ${publishedId}, 'user', 'edit', '자격 · 수상 섹션 숨김', ${sql.json({})}, now() - interval 22 minute),
-        (${userId}, ${publishedId}, 'ai', 'edit', '소개 문단을 공고 문장에 맞춰 다시 씀', ${sql.json({})}, now() - interval 2 minute)
+        (${userId}, ${publishedId}, 'user', 'edit', '자격 · 수상 섹션 숨김', ${sql.json({})}, now(6) - interval 22 minute),
+        (${userId}, ${publishedId}, 'ai', 'edit', '소개 문단을 공고 문장에 맞춰 다시 씀', ${sql.json({})}, now(6) - interval 2 minute)
     `;
     await sql`
       insert into portfolio_snapshot (user_id, portfolio_id, kind, snapshot)

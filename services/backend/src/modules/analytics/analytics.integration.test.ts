@@ -56,7 +56,7 @@ describeWithDatabase("privacy-minimized analytics integration", () => {
     await sql`insert into block (user_id, portfolio_section_id, kind, content) values (${userId}, ${sectionId}, 'paragraph', ${sql.json({ text: "evidence" })})`;
     deploymentId = (await sql<IdRow[]>`
       insert into deployment (user_id, portfolio_id, version, subdomain, published_at, snapshot)
-      values (${userId}, ${portfolioId}, 1, ${slug}, now(), ${sql.json({ sections: [{ id: sectionId }] })}) returning id
+      values (${userId}, ${portfolioId}, 1, ${slug}, now(6), ${sql.json({ sections: [{ id: sectionId }] })}) returning id
     `)[0]?.id ?? "";
     await sql`update portfolio set current_deployment_id = ${deploymentId}, status = 'published' where id = ${portfolioId}`;
   });

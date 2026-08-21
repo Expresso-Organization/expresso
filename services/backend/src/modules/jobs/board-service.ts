@@ -530,7 +530,7 @@ export class JobBoardService {
           count(*) as total,
           count(case when job_posting.work_type ilike '%리모트%' then 1 end) as remote,
           count(case when job_posting.expires_at >= now( then 1 end)
-              and job_posting.expires_at < now() + interval 7 day
+              and job_posting.expires_at < now(6) + interval 7 day
           ) as urgent
         ${without("category")}
       `,

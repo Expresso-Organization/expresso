@@ -227,7 +227,7 @@ export class JobMarketService {
       update recent_search set
         conditions = ${this.#sql.json(conditions as JSONValue)},
         result_count = ${resultCount},
-        created_at = now()
+        created_at = now(6)
       where id = (
         select id from recent_search
         where user_id = ${userId}
@@ -340,7 +340,7 @@ export class JobMarketService {
       as new on duplicate key update stage = new.stage,
         deadline_at = new.deadline_at,
         memo = new.memo,
-        updated_at = now()
+        updated_at = now(6)
       returning id, stage, deadline_at, memo
     `;
     const interest = rows[0];

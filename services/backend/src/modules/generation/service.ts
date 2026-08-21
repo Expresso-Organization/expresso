@@ -283,7 +283,7 @@ export class GenerationService {
         const locked = (await transaction<JobRow[]>`select * from generation_job where id = ${jobId} for update`)[0];
         if (!locked) throw new GenerationError(404, "generation job not found");
         if (locked.status === "done") return locked;
-        await transaction`update generation_job set status = 'running', stage = 'validating', attempts = attempts + 1, error_code = null, failure_retryable = null, updated_at = now() where id = ${jobId}`;
+        await transaction`update generation_job set status = 'running', stage = 'validating', attempts = attempts + 1, error_code = null, failure_retryable = null, updated_at = now(6) where id = ${jobId}`;
         return { ...locked, attempts: locked.attempts + 1 };
       });
       if (job.status === "done") return this.getStatus(job.user_id, job.id);
@@ -469,7 +469,7 @@ export class GenerationService {
           })),
         };
         await transaction`insert into portfolio_snapshot (user_id, portfolio_id, kind, snapshot) values (${current.user_id}, ${portfolioId}, 'initial_generation', ${transaction.json(snapshot as JSONValue)})`;
-        await transaction`update generation_job set status = 'done', stage = 'done', usage_charged = true, portfolio_id = ${portfolioId}, updated_at = now() where id = ${jobId}`;
+        await transaction`update generation_job set status = 'done', stage = 'done', usage_charged = true, portfolio_id = ${portfolioId}, updated_at = now(6) where id = ${jobId}`;
       });
       return this.getStatus(job.user_id, job.id);
     } catch (error) {
@@ -496,7 +496,7 @@ export class GenerationService {
             'draft', ${transaction.json((job.style_overrides ?? {}) as JSONValue)}
           ) returning id
         `)[0]?.id ?? null;
-        await transaction`update generation_job set status = 'failed', stage = 'failed', error_code = ${code}, failure_retryable = ${retryable}, portfolio_id = ${portfolioId}, updated_at = now() where id = ${jobId}`;
+        await transaction`update generation_job set status = 'failed', stage = 'failed', error_code = ${code}, failure_retryable = ${retryable}, portfolio_id = ${portfolioId}, updated_at = now(6) where id = ${jobId}`;
       }).catch(() => undefined);
       throw error;
     }
