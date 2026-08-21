@@ -60,6 +60,9 @@ export function registerErrorHandler(app: FastifyInstance): void {
       { requestId: request.id, error: safeErrorSummary(error) },
       "request failed",
     );
+    if (process.env.EXPRESSO_SQL_TRACE === "1") {
+      console.error("요청 실패:", statusCode, request.url, "|", String(errorValue.message).slice(0, 200));
+    }
 
     return reply.code(statusCode).send({
       error: {
