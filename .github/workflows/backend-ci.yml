@@ -36,19 +36,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
-      postgres:
-        image: postgres:18.4-bookworm
+      mysql:
+        image: mysql:8.4
         env:
-          POSTGRES_DB: expresso
-          POSTGRES_USER: expresso
-          POSTGRES_PASSWORD: expresso
+          MYSQL_DATABASE: expresso
+          MYSQL_USER: expresso
+          MYSQL_PASSWORD: expresso
+          MYSQL_ROOT_PASSWORD: expresso
         ports:
-          - 5432:5432
+          - 3306:3306
         options: >-
-          --health-cmd "pg_isready -U expresso -d expresso"
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uexpresso -pexpresso"
           --health-interval 2s
           --health-timeout 3s
-          --health-retries 20
+          --health-retries 30
       redis:
         image: redis:8.2.1-alpine
         ports:
@@ -60,8 +61,8 @@ jobs:
           --health-retries 20
 
     env:
-      DATABASE_URL: postgres://expresso:expresso@127.0.0.1:5432/expresso
-      TEST_DATABASE_URL: postgres://expresso:expresso@127.0.0.1:5432/expresso
+      DATABASE_URL: mysql://expresso:expresso@127.0.0.1:3306/expresso
+      TEST_DATABASE_URL: mysql://expresso:expresso@127.0.0.1:3306/expresso
       TEST_REDIS_URL: redis://127.0.0.1:6379
 
     steps:

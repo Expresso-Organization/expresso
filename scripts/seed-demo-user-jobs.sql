@@ -4,7 +4,7 @@
 -- 달라지는 부분만 심는다. 값은 화면 정의서 00b · 06 · 06b가 그리는 것과 같다.
 --
 -- 실행:
---   docker exec -i expresso-local-postgres-1 psql -U expresso -d expresso \
+--   docker exec -i expresso-local-mysql-1 mysql -uexpresso -pexpresso expresso \
 --     -v ON_ERROR_STOP=1 -f - < scripts/seed-demo-user-jobs.sql
 
 begin;

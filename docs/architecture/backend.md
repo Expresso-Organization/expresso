@@ -13,7 +13,7 @@ services/backend/src/api
     ▼
 services/backend/src/modules
     │
-    ├── PostgreSQL
+    ├── MySQL
     ├── Redis / BullMQ
     └── Object storage
 
@@ -30,7 +30,7 @@ services/backend/src/worker
 - `api`: HTTP 서버 조립, 라우팅, 인증 컨텍스트, 오류 응답
 - `worker`: 큐 소비자 조립과 장시간 작업 실행
 - `modules`: 커리어 기록, 공고, 인터뷰, 생성, 편집, 배포, 분석 등 업무 규칙
-- `platform`: PostgreSQL, Redis, 큐, 객체 저장소처럼 외부 시스템과 맞닿는 어댑터
+- `platform`: MySQL, Redis, 큐, 객체 저장소처럼 외부 시스템과 맞닿는 어댑터
 - `config`: 실행 환경 검증
 
 도메인 모듈은 다른 모듈의 내부 파일을 직접 가져오지 않습니다. 공유해야 하는 공개 계약은 각 모듈의 진입점이나 `packages/contracts`를 통해 노출합니다.
