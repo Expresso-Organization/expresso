@@ -261,10 +261,12 @@ export class JobMarketService {
     await this.#sql`
       delete from recent_search
       where id in (
-        select id from recent_search
-        where user_id = ${userId}
-        order by created_at desc, id desc
-        offset 20
+        select id from (
+          select id from recent_search
+          where user_id = ${userId}
+          order by created_at desc, id desc
+          limit 18446744073709551615 offset 20
+        ) as overflow
       )
     `;
     return {
