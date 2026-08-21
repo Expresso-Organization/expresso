@@ -519,6 +519,17 @@ export class PortfolioEditingService {
     const sections = await transaction<{ id: string; recipe_section_id: string | null; order_no: number; visible: boolean }[]>`select id, recipe_section_id, order_no, visible from portfolio_section where user_id = ${userId} and portfolio_id = ${portfolioId} order by order_no`;
     const blocks = await transaction<BlockRow[]>`select block.* from block join portfolio_section on portfolio_section.id = block.portfolio_section_id where block.user_id = ${userId} and portfolio_section.portfolio_id = ${portfolioId} order by portfolio_section.order_no, block.order_no, block.id`;
     const snapshot = { portfolioId, sections: sections.map((section) => ({ id: section.id, recipeSectionId: section.recipe_section_id, order: section.order_no, visible: section.visible, blocks: blocks.filter((block) => block.portfolio_section_id === section.id).map((block) => ({ id: block.id, kind: block.kind, content: block.content, style: block.style, sourceRecordId: block.source_record_id, syncState: block.sync_state, locked: block.locked })) })) };
-    return (await transaction<{ id: string }[]>`insert into portfolio_snapshot (user_id, portfolio_id, kind, snapshot) values (${userId}, ${portfolioId}, ${kind}, ${transaction.json(snapshot as JSONValue)}) returning id`)[0]?.id ?? "";
+    const inserted = (await transaction<{ id: string }[]>`insert into portfolio_snapshot (user_id, portfolio_id, kind, snapshot) values (${userId}, ${portfolioId}, ${kind}, ${transaction.json(snapshot as JSONValue)}) returning id`)[0]?.id ?? "";
+    // 포트폴리오마다 최근 50개만 남긴다 — MySQL 트리거는 자기 표를 지우지 못한다.
+    const stale = await transaction<{ id: string }[]>`
+      select id from portfolio_snapshot
+      where user_id = ${userId} and portfolio_id = ${portfolioId}
+      order by created_at desc, id desc
+      limit 18446744073709551615 offset 50
+    `;
+    if (stale.length > 0) {
+      await transaction`delete from portfolio_snapshot where id in ${transaction(stale.map(({ id }) => id))}`;
+    }
+    return inserted;
   }
 }
