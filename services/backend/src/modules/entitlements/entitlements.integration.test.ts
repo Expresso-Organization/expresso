@@ -133,7 +133,7 @@ describeWithDatabase("entitlement integration", () => {
     if (!freeUserId) throw new Error("free user is missing");
     await sql`
       insert into usage_counter (user_id, period_start, used, resets_at)
-      values (${freeUserId}, '2026-08-01', ${freeQuota}, '2026-08-31T15:00:00Z')
+      values (${freeUserId}, '2026-08-01', ${freeQuota}, '2026-08-31 15:00:00')
       as new on duplicate key update used = new.used, resets_at = new.resets_at
     `;
 

@@ -721,7 +721,7 @@ export class JobBoardService {
       select id, status, progress_stage, analyzed_at
       from job_analysis
       where user_id = ${userId} and job_posting_id = ${jobPostingId}
-      order by analyzed_at desc nulls last, id desc
+      order by analyzed_at is null, analyzed_at desc, id desc
       limit 1
     `;
     const analysis = analyses[0];
