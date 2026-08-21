@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { createHash } from "node:crypto";
 
 import {
@@ -265,11 +266,14 @@ export class AnalyticsService {
 
   async createDashboardView(userId: string, portfolioId: string, input: DashboardViewInput) {
     try {
-      const row = (await this.#sql<{ id: string }[]>`
-        insert into dashboard_view (user_id, portfolio_id, name, period, is_default)
-        select ${userId}, id, ${input.name}, ${input.period}, ${input.isDefault}
+      const viewId = randomUUID();
+      await this.#sql`
+        insert into dashboard_view (id, user_id, portfolio_id, name, period, is_default)
+        select ${viewId}, ${userId}, id, ${input.name}, ${input.period}, ${input.isDefault}
         from portfolio where id = ${portfolioId} and user_id = ${userId}
-        returning id
+      `;
+      const row = (await this.#sql<{ id: string }[]>`
+        select id from dashboard_view where id = ${viewId}
       `)[0];
       if (!row) throw new AnalyticsError(404, "portfolio not found");
       return { id: row.id, portfolioId, ...input };

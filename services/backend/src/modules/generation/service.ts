@@ -368,10 +368,15 @@ export class GenerationService {
         if (lockedCount === 0) await transaction`delete from portfolio_section where user_id = ${current.user_id} and portfolio_id = ${portfolioId}`;
         const sectionMap = new Map<string, string>();
         for (const [order, recipeSectionId] of sectionIds.entries()) {
-          const id = (await transaction<{ id: string }[]>`
+          await transaction`
             insert into portfolio_section (user_id, portfolio_id, recipe_section_id, order_no)
             values (${current.user_id}, ${portfolioId}, ${recipeSectionId}, ${order})
-            as new on duplicate key update order_no = new.order_no returning id
+            as new on duplicate key update order_no = new.order_no
+          `;
+          const id = (await transaction<{ id: string }[]>`
+            select id from portfolio_section
+            where user_id = ${current.user_id} and portfolio_id = ${portfolioId}
+              and recipe_section_id = ${recipeSectionId}
           `)[0]?.id;
           if (id) sectionMap.set(recipeSectionId, id);
         }
