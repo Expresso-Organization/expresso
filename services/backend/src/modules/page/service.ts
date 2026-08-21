@@ -190,9 +190,9 @@ export class PageService {
     const evidence = await this.#sql<EvidenceRow[]>`
       select distinct path.source_label,
              coalesce(
-               nullif(concat_ws(E'\n', record.title, record.body_md), ''),
+               nullif(concat_ws('\n', record.title, record.body_md), ''),
                answer.transcript,
-               nullif(concat_ws(E'\n', requirement.label, requirement.source_span ->> '$.quote'), ''),
+               nullif(concat_ws('\n', requirement.label, requirement.source_span ->> '$.quote'), ''),
                ''
              ) as source_text
       from recipe_evidence_path path

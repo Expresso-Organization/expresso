@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import {
   CareerCategorySchema,
@@ -278,7 +278,7 @@ export class CareerService {
     const rows = await this.#sql<CategoryRow[]>`
       select
         category.id,
-        category.key,
+        category.\`key\`,
         category.name,
         category.icon,
         category.default_view,
@@ -339,7 +339,7 @@ export class CareerService {
         record.id,
         record.user_id,
         record.category_id,
-        category.key as category_key,
+        category.\`key\` as category_key,
         record.title,
         record.status,
         record.origin,
@@ -433,7 +433,7 @@ export class CareerService {
     const propertySchema = CareerPropertySchemaSchema.parse(input.propertySchema);
     const rows = await this.#sql<CategoryRow[]>`
       insert into category (
-        user_id, key, name, icon, default_view,
+        user_id, \`key\`, name, icon, default_view,
         is_system, property_schema, sort_order
       )
       values (
@@ -442,7 +442,7 @@ export class CareerService {
         ${this.#sql.json(propertySchema as JSONValue)},
         (select 7 + count(*) from category where user_id = ${userId})
       )
-      returning id, key, name, icon, default_view, is_system,
+      returning id, \`key\`, name, icon, default_view, is_system,
         property_schema, sort_order, version, 0 as record_count
     `;
     const category = rows[0];
@@ -460,7 +460,7 @@ export class CareerService {
     const nextSchema = CareerPropertySchemaSchema.parse(nextSchemaInput);
     return this.#sql.begin(async (transaction) => {
       const existingRows = await transaction<CategoryRow[]>`
-        select id, key, name, icon, default_view, is_system,
+        select id, \`key\`, name, icon, default_view, is_system,
           property_schema, sort_order, version, 0 as record_count
         from category
         where id = ${categoryId} and user_id = ${userId} and not is_system
@@ -517,7 +517,7 @@ export class CareerService {
         where id = ${categoryId}
           and user_id = ${userId}
           and version = ${expectedVersion}
-        returning id, key, name, icon, default_view, is_system,
+        returning id, \`key\`, name, icon, default_view, is_system,
           property_schema, sort_order, version, 0 as record_count
       `;
       const updated = updatedRows[0];
@@ -543,20 +543,22 @@ export class CareerService {
       if (!category) throw new CareerError(404, "career category not found");
       validateCareerProperties(category.property_schema, input.properties);
 
-      const inserted = await transaction<RecordRow[]>`
-        insert into record (
-          user_id, category_id, title, status, origin,
+      // 멱등 키가 이미 쓰였으면 새 줄이 생기지 않는다. 우리가 만든 id 로 다시 읽어
+      // 방금 넣은 것인지 가려낸다.
+      const newRecordId = randomUUID();
+      await transaction`
+        insert ignore into record (
+          id, user_id, category_id, title, status, origin,
           properties, body_md, create_idempotency_key, create_request_hash
         )
         values (
-          ${userId}, ${input.categoryId}, ${input.title}, 'draft', 'manual',
+          ${newRecordId}, ${userId}, ${input.categoryId}, ${input.title}, 'draft', 'manual',
           ${transaction.json(input.properties as JSONValue)},
           ${input.bodyMd}, ${idempotencyKey}, ${hash}
         )
-        on conflict (user_id, create_idempotency_key)
-          where create_idempotency_key is not null
-        do nothing
-        returning *
+      `;
+      const inserted = await transaction<RecordRow[]>`
+        select * from record where id = ${newRecordId}
       `;
       const created = inserted[0];
       if (created) return { record: mapRecord(created), created: true };
@@ -720,13 +722,17 @@ export class CareerService {
     if (!fromRecordId || !targetRecordId) {
       throw new Error("career link endpoints were not resolved");
     }
-    const rows = await this.#sql<LinkRow[]>`
-      insert into record_link (
+    // 같은 연결을 두 번 만들어도 하나다. 이미 있으면 그대로 두고 그 행을 읽는다.
+    await this.#sql`
+      insert ignore into record_link (
         user_id, from_record_id, to_record_id, relation, created_by
       )
       values (${userId}, ${fromRecordId}, ${targetRecordId}, ${relation}, 'user')
-      as new on duplicate key update created_by = record_link.created_by
-      returning id, from_record_id, to_record_id, relation
+    `;
+    const rows = await this.#sql<LinkRow[]>`
+      select id, from_record_id, to_record_id, relation from record_link
+      where user_id = ${userId} and from_record_id = ${fromRecordId}
+        and to_record_id = ${targetRecordId} and relation = ${relation}
     `;
     const link = rows[0];
     if (!link) throw new Error("career record link was not persisted");
@@ -876,7 +882,7 @@ export class CareerService {
         lastUsedAt,
         computedAt,
       );
-      const skills = await transaction<SkillRow[]>`
+      await transaction`
         insert into skill (
           user_id, name, level, computed_at,
           evidence_count, last_used_at, strength
@@ -890,7 +896,9 @@ export class CareerService {
           evidence_count = new.evidence_count,
           last_used_at = new.last_used_at,
           strength = new.strength
-        returning *
+      `;
+      const skills = await transaction<SkillRow[]>`
+        select * from skill where user_id = ${userId} and name = ${name}
       `;
       const skill = skills[0];
       if (!skill) throw new Error("career skill was not persisted");
@@ -970,7 +978,7 @@ export class CareerService {
   async saveProfile(userId: string, input: SaveCareerProfile) {
     // 같은 칩을 두 번 담아 보내도 한 번만 남는다.
     const targetRoles = [...new Set(input.targetRoles)];
-    const rows = await this.#sql<CareerProfileRow[]>`
+    await this.#sql`
       insert into career_profile (user_id, target_roles, experience_years, primary_goal)
       values (
         ${userId},
@@ -982,7 +990,10 @@ export class CareerService {
         experience_years = new.experience_years,
         primary_goal = new.primary_goal,
         updated_at = now(6)
-      returning target_roles, experience_years, primary_goal, updated_at
+    `;
+    const rows = await this.#sql<CareerProfileRow[]>`
+      select target_roles, experience_years, primary_goal, updated_at
+      from career_profile where user_id = ${userId}
     `;
     const row = rows[0];
     if (!row) throw new Error("career profile was not persisted");

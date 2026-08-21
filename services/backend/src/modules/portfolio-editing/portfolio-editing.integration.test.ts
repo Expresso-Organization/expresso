@@ -26,7 +26,7 @@ describeWithDatabase("portfolio editing integration", () => {
 
   beforeAll(async () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
-    const categoryId = (await sql<IdRow[]>`select id from category where key = 'experience' and is_system`)[0]?.id;
+    const categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id;
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
     if (!planId || !categoryId || !templateId) throw new Error("editing seed missing");
     const users = await sql<IdRow[]>`insert into \`user\` (email, display_name, plan_id) values (${`editing-a-${marker}@example.com`}, 'Editing A', ${planId}), (${`editing-b-${marker}@example.com`}, 'Editing B', ${planId}) returning id`;

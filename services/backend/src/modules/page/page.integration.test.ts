@@ -137,7 +137,7 @@ describeWithDatabase("free page generation integration", () => {
     `)[0]?.id;
     // 근거 본문이 통째로 나가는 경로다. 기록에 실제 수치를 넣어 둔다.
     const categoryId = (await sql<IdRow[]>`
-      insert into category (user_id, key, name, icon, default_view)
+      insert into category (user_id, \`key\`, name, icon, default_view)
       values (${ownerId}, ${`project-${marker}`}, '프로젝트', 'folder', 'list') returning id
     `)[0]?.id;
     const recordId = (await sql<IdRow[]>`

@@ -136,7 +136,7 @@ describeWithInfrastructure("job analysis integration", () => {
     token = (await identityService.issueSession({ userId })).accessToken;
     otherToken = (await identityService.issueSession({ userId: otherUserId })).accessToken;
     experienceCategoryId = (await sql<IdRow[]>`
-      select id from category where key = 'experience' and is_system
+      select id from category where \`key\` = 'experience' and is_system
     `)[0]?.id ?? "";
     const companies = await sql<IdRow[]>`
       insert into company (name, dedupe_key)

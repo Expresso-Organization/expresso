@@ -81,7 +81,7 @@ describeWithDatabase("entitlement integration", () => {
     if (!teamUserId) throw new Error("team user is missing");
     const categories = await sql<IdRow[]>`
       insert into category (
-        user_id, key, name, icon, default_view, is_system
+        user_id, \`key\`, name, icon, default_view, is_system
       )
       values (
         ${teamUserId}, ${`preserved-${randomUUID()}`},
@@ -169,7 +169,7 @@ describeWithDatabase("entitlement integration", () => {
     ).resolves.toMatchObject({ allowed: true, planCode: "team" });
 
     await sql`
-      update "user" set plan_id = ${planIds.free} where id = ${teamUserId}
+      update \`user\` set plan_id = ${planIds.free} where id = ${teamUserId}
     `;
 
     await expect(

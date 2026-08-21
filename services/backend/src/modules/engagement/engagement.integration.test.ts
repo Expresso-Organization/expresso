@@ -21,7 +21,7 @@ describeWithDatabase("notifications and read models integration", () => {
   beforeAll(async () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'pro'`)[0]?.id;
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
-    const categoryId = (await sql<IdRow[]>`select id from category where key = 'experience' and is_system`)[0]?.id;
+    const categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id;
     if (!planId || !templateId || !categoryId) throw new Error("engagement seed missing");
     const users = await sql<IdRow[]>`
       insert into \`user\` (email, display_name, plan_id) values

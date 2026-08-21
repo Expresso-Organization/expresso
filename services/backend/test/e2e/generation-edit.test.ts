@@ -35,7 +35,7 @@ describeWithInfrastructure("generation edit restore vertical slice", () => {
     const isolated = new URL(root); isolated.pathname = `/${databaseName}`; await migrate({ databaseUrl: isolated.toString() });
     sql = createMysqlResource(isolated.toString().sql, { max: 6 });
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
-    const categoryId = (await sql<IdRow[]>`select id from category where key = 'experience' and is_system`)[0]?.id;
+    const categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id;
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
     if (!planId || !categoryId || !templateId) throw new Error("generation E2E seed missing");
     const userId = (await sql<IdRow[]>`insert into \`user\` (email, display_name, plan_id) values ('generation-e2e@example.com', 'Generation E2E', ${planId}) returning id`)[0]?.id;
@@ -48,7 +48,7 @@ describeWithInfrastructure("generation edit restore vertical slice", () => {
     if (!analysisId || !recordId) throw new Error("generation E2E domain missing");
     const brewId = (await sql<IdRow[]>`insert into brew (user_id, job_analysis_id, length_preset) values (${userId}, ${analysisId}, 'single') returning id`)[0]?.id;
     if (!brewId) throw new Error("generation E2E brew missing");
-    await sql`insert into brew_source (user_id, brew_id, record_id, rank, selected_by, score, reason_text, is_selected) values (${userId}, ${brewId}, ${recordId}, 0, 'auto', 10, 'fixture', true)`;
+    await sql`insert into brew_source (user_id, brew_id, record_id, \`rank\`, selected_by, score, reason_text, is_selected) values (${userId}, ${brewId}, ${recordId}, 0, 'auto', 10, 'fixture', true)`;
     const recipeId = (await sql<IdRow[]>`insert into recipe (user_id, brew_id, version, completeness) values (${userId}, ${brewId}, 1, 100) returning id`)[0]?.id;
     if (!recipeId) throw new Error("generation E2E recipe missing");
     for (let index = 0; index < 3; index += 1) {

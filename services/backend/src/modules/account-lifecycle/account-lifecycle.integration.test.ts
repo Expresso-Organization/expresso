@@ -23,7 +23,7 @@ describeWithDatabase("account export and deletion grace lifecycle", () => {
   async function createGraph(label: string): Promise<Graph> {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'pro'`)[0]?.id;
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
-    const categoryId = (await sql<IdRow[]>`select id from category where key = 'experience' and is_system`)[0]?.id;
+    const categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id;
     if (!planId || !templateId || !categoryId) throw new Error("account lifecycle seed missing");
     const userId = (await sql<IdRow[]>`
       insert into \`user\` (email, display_name, plan_id) values (${`${label}-${marker}@example.com`}, ${label}, ${planId}) returning id

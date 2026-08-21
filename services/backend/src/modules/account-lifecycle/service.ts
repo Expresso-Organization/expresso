@@ -29,7 +29,7 @@ export class AccountLifecycleService {
     `)[0];
     if (!account) throw new AccountLifecycleError(404, "account not found");
     const [categories, records, skills, analyses, savedSearches, interests, brews, recipes, portfolios, deployments, assets, metrics, insights] = await Promise.all([
-      this.#sql<Record<string, unknown>[]>`select id, key, name, property_schema, sort_order from category where user_id = ${userId} order by sort_order, id`,
+      this.#sql<Record<string, unknown>[]>`select id, \`key\`, name, property_schema, sort_order from category where user_id = ${userId} order by sort_order, id`,
       this.#sql<Record<string, unknown>[]>`select id, category_id, title, status, origin, properties, body_md, period, updated_at, deleted_at from record where user_id = ${userId} order by id`,
       this.#sql<Record<string, unknown>[]>`select id, name, level, evidence_count, last_used_at, strength from skill where user_id = ${userId} order by name, id`,
       this.#sql<Record<string, unknown>[]>`select id, job_posting_id, input_type, status, analyzed_at from job_analysis where user_id = ${userId} order by id`,
@@ -70,7 +70,7 @@ export class AccountLifecycleService {
         ) returning *
       `)[0];
       if (!request) throw new Error("deletion request missing");
-      await transaction`update "user" set deletion_requested_at = ${at} where id = ${userId}`;
+      await transaction`update \`user\` set deletion_requested_at = ${at} where id = ${userId}`;
       await transaction`update portfolio set status = 'unlisted' where user_id = ${userId} and status = 'published'`;
       await transaction`update export_asset set revoked_at = ${at} where user_id = ${userId} and revoked_at is null`;
       await transaction`insert into account_deletion_event (request_id, phase, affected_rows, occurred_at) values (${request.id}, 'access_revoked', ${portfolios.length + assets.length}, ${at})`;
@@ -86,7 +86,7 @@ export class AccountLifecycleService {
       `)[0];
       if (!request || !request.user_id) throw new AccountLifecycleError(404, "pending deletion request not found");
       if (new Date(request.purge_after) <= at) throw new AccountLifecycleError(409, "deletion grace period expired");
-      await transaction`update "user" set deletion_requested_at = null where id = ${request.user_id}`;
+      await transaction`update \`user\` set deletion_requested_at = null where id = ${request.user_id}`;
       for (const portfolio of request.restoration.portfolios ?? []) await transaction`
         update portfolio set status = ${portfolio.status} where id = ${portfolio.id} and user_id = ${request.user_id}
       `;

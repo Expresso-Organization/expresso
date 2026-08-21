@@ -68,7 +68,7 @@ describeWithDatabase("job market integration", () => {
     firstToken = (await identityService.issueSession({ userId: firstUserId })).accessToken;
     secondToken = (await identityService.issueSession({ userId: secondUserId })).accessToken;
     experienceCategoryId = (await sql<IdRow[]>`
-      select id from category where key = 'experience' and is_system
+      select id from category where \`key\` = 'experience' and is_system
     `)[0]?.id ?? "";
     if (!experienceCategoryId) throw new Error("experience category missing");
     await app.ready();

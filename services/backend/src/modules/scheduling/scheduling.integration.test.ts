@@ -52,7 +52,7 @@ describeWithDatabase("scheduled job leases and observability", () => {
      * 애초에 어긋나지 않게 여기서 잡는다.
      */
     const rows = await sql<{ key: string }[]>`
-      select job_key as key from scheduled_job_definition order by job_key
+      select job_key as \`key\` from scheduled_job_definition order by job_key
     `;
     expect(rows.length).toBeGreaterThan(0);
     const known = new Set<string>(SCHEDULED_JOB_KEYS);

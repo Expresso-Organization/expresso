@@ -161,18 +161,17 @@ export class GenerationService {
       if (!recipe) throw new GenerationError(404, "recipe not found");
       const template = (await transaction<{ id: string }[]>`select id from template where id = ${input.templateId} and is_active`)[0];
       if (!template) throw new GenerationError(404, "template not found");
-      const inserted = (await transaction<{ id: string; request_hash: string }[]>`
-        insert into generation_job (
+      await transaction`
+        insert ignore into generation_job (
           user_id, brew_id, recipe_id, template_id, status,
           input_idempotency_key, request_hash, style_overrides
         ) values (
           ${userId}, ${recipe.brew_id}, ${input.recipeId}, ${input.templateId}, 'queued',
           ${idempotencyKey}, ${hash},
           ${transaction.json((input.styleOverrides ?? {}) as JSONValue)}
-        ) on conflict (user_id, input_idempotency_key)
-          where input_idempotency_key is not null
-        do nothing returning id, request_hash
-      `)[0] ?? (await transaction<{ id: string; request_hash: string }[]>`
+        )
+      `;
+      const inserted = (await transaction<{ id: string; request_hash: string }[]>`
         select id, request_hash from generation_job
         where user_id = ${userId} and input_idempotency_key = ${idempotencyKey}
       `)[0];
@@ -299,9 +298,9 @@ export class GenerationService {
       const evidence = await this.#sql<PathRow[]>`
         select path.id, path.recipe_item_id, path.source_type, path.source_id, path.source_label,
                coalesce(
-                 nullif(concat_ws(E'\n', record.title, record.body_md), ''),
+                 nullif(concat_ws('\n', record.title, record.body_md), ''),
                  answer.transcript,
-                 nullif(concat_ws(E'\n', requirement.label, requirement.source_span ->> '$.quote'), ''),
+                 nullif(concat_ws('\n', requirement.label, requirement.source_span ->> '$.quote'), ''),
                  ''
                ) as source_text
         from recipe_evidence_path path

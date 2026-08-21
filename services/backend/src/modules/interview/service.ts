@@ -282,7 +282,7 @@ export class InterviewService {
           and record.user_id = brew_source.user_id
         where brew_source.user_id = ${userId} and brew_source.brew_id = ${brewId}
           and brew_source.is_selected
-        order by brew_source.rank
+        order by brew_source.\`rank\`
       `,
       sql<{
         job_title: string; company_name: string;
@@ -608,7 +608,7 @@ export class InterviewService {
         return existing.id;
       }
       const categoryId = (await transaction<IdRow[]>`
-        select id from category where key = 'experience' and is_system
+        select id from category where \`key\` = 'experience' and is_system
       `)[0]?.id;
       if (!categoryId) throw new Error("experience category missing");
       const recordId = (await transaction<IdRow[]>`

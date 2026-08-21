@@ -573,7 +573,7 @@ export class JobBoardService {
         ${without("workType")}
       `,
       sql<{ key: string; label: string; count: number }[]>`
-        select company.id as key, company.name as label, count(*) as count
+        select company.id as \`key\`, company.name as label, count(*) as count
         ${without("company")}
         group by company.id, company.name
         order by count(*) desc, company.name

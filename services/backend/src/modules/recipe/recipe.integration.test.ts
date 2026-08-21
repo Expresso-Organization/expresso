@@ -59,7 +59,7 @@ describeWithDatabase("recipe integration", () => {
 
   beforeAll(async () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
-    const categoryId = (await sql<IdRow[]>`select id from category where key = 'experience' and is_system`)[0]?.id;
+    const categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id;
     if (!planId || !categoryId) throw new Error("recipe seed missing");
     const users = await sql<IdRow[]>`
       insert into \`user\` (email, display_name, plan_id)
@@ -112,7 +112,7 @@ describeWithDatabase("recipe integration", () => {
     `)[0]?.id ?? "";
     for (const [rank, record] of records.entries()) {
       await sql`
-        insert into brew_source (user_id, brew_id, record_id, rank, selected_by, score, reason_text, is_selected)
+        insert into brew_source (user_id, brew_id, record_id, \`rank\`, selected_by, score, reason_text, is_selected)
         values (${userId}, ${brewId}, ${record.id}, ${rank}, 'user', ${10 - rank}, 'selected fixture', true)
       `;
     }

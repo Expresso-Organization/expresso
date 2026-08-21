@@ -72,7 +72,7 @@ describeWithDatabase("career domain integration", () => {
     firstAccessToken = (await identityService.issueSession({ userId: firstUserId })).accessToken;
     secondAccessToken = (await identityService.issueSession({ userId: secondUserId })).accessToken;
     const categories = await sql<CategoryRow[]>`
-      select id, key from category where is_system order by sort_order
+      select id, \`key\` from category where is_system order by sort_order
     `;
     const experience = categories.find(({ key }) => key === "experience");
     if (!experience) throw new Error("experience category is missing");
