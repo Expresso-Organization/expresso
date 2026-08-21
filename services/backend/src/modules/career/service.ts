@@ -440,7 +440,7 @@ export class CareerService {
         ${userId}, ${input.key}, ${input.name}, ${input.icon},
         ${input.defaultView}, false,
         ${this.#sql.json(propertySchema as JSONValue)},
-        (select 7 + count(*) from category where user_id = ${userId})
+        (select 7 + counted.total from (select count(*) as total from category where user_id = ${userId}) as counted)
       )
       returning id, \`key\`, name, icon, default_view, is_system,
         property_schema, sort_order, version, 0 as record_count

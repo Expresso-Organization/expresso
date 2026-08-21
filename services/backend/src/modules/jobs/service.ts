@@ -219,20 +219,23 @@ export class JobMarketService {
 
     // 같은 검색을 다시 해석하면(00b를 새로고침하면) 최근 검색이 한 줄씩
     // 늘어난다. 방금 한 검색과 같은 말이면 그 줄을 갱신한다.
-    const repeated = await this.#sql<IdRow[]>`
-      update recent_search set
-        conditions = ${this.#sql.json(conditions as JSONValue)},
-        result_count = ${resultCount},
-        created_at = now(6)
-      where id = (
-        select id from recent_search
-        where user_id = ${userId}
-        order by created_at desc, id desc
-        limit 1
-      )
-        and query_text = ${query}
-      returning id
-    `;
+    // MySQL 은 고치는 표를 부속 질의에서 다시 읽지 못한다 — 대상을 먼저 찾는다.
+    const latest = (await this.#sql<IdRow[]>`
+      select id from recent_search
+      where user_id = ${userId}
+      order by created_at desc, id desc
+      limit 1
+    `)[0];
+    const repeated = latest
+      ? await this.#sql<IdRow[]>`
+          update recent_search set
+            conditions = ${this.#sql.json(conditions as JSONValue)},
+            result_count = ${resultCount},
+            created_at = now(6)
+          where id = ${latest.id} and query_text = ${query}
+          returning id
+        `
+      : [];
     if (repeated[0]) {
       return {
         originalQuery: query,

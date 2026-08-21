@@ -232,13 +232,16 @@ export class JobIngestService {
   async #syncCompanyDomain(source: SourceRow): Promise<void> {
     const host = source.site_url === null ? null : hostOf(source.site_url);
     if (!host) return;
-    // `starts_with`를 쓴다 — token에 LIKE 메타문자가 들어와도 그대로 글자로 본다.
+    // left() 로 앞자리를 견준다 — token 에 LIKE 메타문자가 들어와도 그대로 글자로 본다.
+    const prefix = `${source.provider}:${source.token}:`;
     await this.#sql`
       update company set domain = ${host}
       where domain is null
         and id in (
-          select company_id from job_posting
-          where starts_with(external_id, ${`${source.provider}:${source.token}:`})
+          select company_id from (
+            select distinct company_id from job_posting
+            where left(external_id, ${prefix.length}) = ${prefix}
+          ) as matched
         )
     `;
   }

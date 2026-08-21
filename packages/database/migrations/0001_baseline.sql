@@ -1104,7 +1104,7 @@ create table `portfolio_edit_proposal` (
   `source_record_id` char(36) null,
   `status` varchar(255) not null default 'pending',
   `created_at` datetime(6) not null default current_timestamp(6),
-  `expires_at` datetime(6) not null,
+  `expires_at` datetime(6) not null default (now(6) + interval 60 minute),
   `applied_at` datetime(6) null,
   `patches` json not null default (cast('[]' as json)),
   `instruction` text null,

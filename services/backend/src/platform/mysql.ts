@@ -194,8 +194,15 @@ async function run(
   text: string,
   params: unknown[],
 ): Promise<unknown> {
-  const [rows] = await runner.query(text, params);
-  return Array.isArray(rows) ? rows : [];
+  try {
+    const [rows] = await runner.query(text, params);
+    return Array.isArray(rows) ? rows : [];
+  } catch (error) {
+    if (process.env.EXPRESSO_SQL_TRACE === "1") {
+      console.error("SQL 실패:", String((error as Error).message).slice(0, 160), "|", text.replace(/\s+/g, " ").slice(0, 200));
+    }
+    throw error;
+  }
 }
 
 /**
