@@ -329,12 +329,7 @@ export class JobMarketService {
       select id from job_posting where id = ${jobPostingId}
     `;
     if (!postings[0]) throw new JobMarketError(404, "job posting not found");
-    const rows = await this.#sql<{
-      id: string;
-      stage: string;
-      deadline_at: Date | string | null;
-      memo: string | null;
-    }[]>`
+    await this.#sql`
       insert into interest (user_id, job_posting_id, stage, deadline_at, memo)
       values (
         ${userId}, ${jobPostingId}, ${input.stage},
@@ -344,7 +339,15 @@ export class JobMarketService {
         deadline_at = new.deadline_at,
         memo = new.memo,
         updated_at = now(6)
-      returning id, stage, deadline_at, memo
+    `;
+    const rows = await this.#sql<{
+      id: string;
+      stage: string;
+      deadline_at: Date | string | null;
+      memo: string | null;
+    }[]>`
+      select id, stage, deadline_at, memo from interest
+      where user_id = ${userId} and job_posting_id = ${jobPostingId}
     `;
     const interest = rows[0];
     if (!interest) throw new Error("job interest was not persisted");
@@ -394,7 +397,7 @@ export class JobMarketService {
         jobPostingId,
       });
     }
-    const rows = await this.#sql<{ computed_at: Date | string }[]>`
+    await this.#sql`
       insert into match_score (
         user_id, job_posting_id, total, axes,
         reason_text, next_action, computed_at
@@ -409,7 +412,10 @@ export class JobMarketService {
         reason_text = new.reason_text,
         next_action = new.next_action,
         computed_at = new.computed_at
-      returning computed_at
+    `;
+    const rows = await this.#sql<{ computed_at: Date | string }[]>`
+      select computed_at from match_score
+      where user_id = ${userId} and job_posting_id = ${jobPostingId}
     `;
     if (!rows[0]) throw new Error("job match was not persisted");
     return ExplainableMatchSchema.parse(match);
