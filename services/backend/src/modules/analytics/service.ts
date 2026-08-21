@@ -643,7 +643,7 @@ export class AnalyticsService {
     const rows = await this.#sql<WidgetRow[]>`
       select id, metric_key, visualization, compare_to, position from widget
       where dashboard_view_id = ${viewId}
-      order by (position ->> '$.order') nulls last, id
+      order by (position ->> '$.order') is null, (position ->> '$.order'), id
     `;
     return rows.map((row, index) => ({
       id: row.id,

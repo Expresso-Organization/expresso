@@ -32,7 +32,7 @@ describeWithDatabase("scheduled job leases and observability", () => {
         return { retained: true };
       },
     } });
-    await sql`update scheduled_job_definition set next_run_at = '2026-08-09T00:00:00Z'`;
+    await sql`update scheduled_job_definition set next_run_at = '2026-08-09 00:00:00'`;
   }, 30_000);
 
   afterAll(async () => {

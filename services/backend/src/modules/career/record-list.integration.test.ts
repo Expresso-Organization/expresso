@@ -79,9 +79,9 @@ describeWithDatabase("career record list HTTP integration", () => {
       values
         (${userId}, ${experienceId}, '적재 파이프라인 구축', 'organized', 'manual', '{"role":"백엔드"}', '3천만 건을 매일 적재했습니다.', '2024-01-01', '2024-12-31', ${sharedUpdatedAt}),
         (${userId}, ${experienceId}, '정산 스케줄러 안정화', 'draft', 'interview', '{}', '', '2023-01-01', '2023-06-30', ${sharedUpdatedAt}),
-        (${userId}, ${experienceId}, '장애 대응 3일', 'organized', 'ai', '{}', '로그 없이 원인을 좁혔습니다.', null, '2026-04-01T00:00:00Z'),
-        (${userId}, ${projectId}, '데이터 품질 모니터링', 'verified', 'manual', '{}', '자동화했습니다.', '2025-01-01', '2025-08-31', '2026-05-01T00:00:00Z'),
-        (${otherUserId}, ${experienceId}, '남의 기록', 'organized', 'manual', '{}', '보이면 안 됩니다.', null, '2026-06-01T00:00:00Z')
+        (${userId}, ${experienceId}, '장애 대응 3일', 'organized', 'ai', '{}', '로그 없이 원인을 좁혔습니다.', null, '2026-04-01 00:00:00'),
+        (${userId}, ${projectId}, '데이터 품질 모니터링', 'verified', 'manual', '{}', '자동화했습니다.', '2025-01-01', '2025-08-31', '2026-05-01 00:00:00'),
+        (${otherUserId}, ${experienceId}, '남의 기록', 'organized', 'manual', '{}', '보이면 안 됩니다.', null, '2026-06-01 00:00:00')
     `;
 
     const owned = await sql<{ id: string; title: string }[]>`
