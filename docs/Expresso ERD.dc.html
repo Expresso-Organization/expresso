@@ -195,7 +195,7 @@ const ZONES = [
 // `node scripts/dump-erd-schema.mjs` 가 마이그레이션을 전부 적용한 뒤 다시 뽑아
 // 갈아 끼웁니다. 한국어 이름과 ZONES1 의 자리 배치는 사람이 정하고 그대로 보존합니다.
 // <erd-v1:auto> — 여기서부터 자동 생성
-// 마이그레이션 0001–0008 적용 기준
+// 마이그레이션 0001–0010 적용 기준
 const T1 = [
   ['plan', '요금제', 'id:char:pk|code:varchar|generation_quota:int|features:json|is_public_listed:bool'],
   ['notification', '알림', 'id:char:pk|user_id:char:fk|kind:text|target_url:text|dedupe_key:varchar|read_at:datetime|dedupe_date:date|delivery_status:varchar|attempts:int|next_attempt_at:datetime|last_error:text|created_at:datetime|delivered_at:datetime'],
@@ -212,7 +212,7 @@ const T1 = [
   ['skill', '집계 스킬', 'id:char:pk|user_id:char:fk|name:varchar|level:int|computed_at:datetime|demand_score:decimal|evidence_count:int|last_used_at:datetime|strength:text'],
   ['skill_evidence', '스킬 근거', 'id:char:pk|user_id:char:fk|skill_id:char:fk|record_id:char:fk|weight:decimal|extracted_span:json'],
   ['career_profile', '커리어 프로필', 'user_id:char:pk|target_roles:json|experience_years:int|primary_goal:text|updated_at:datetime'],
-  ['record', '커리어 기록', 'id:char:pk|user_id:char:fk|category_id:char:fk|title:text|status:text|origin:text|properties:json|body_md:text|period_start:date|period_end:date|version:int|updated_at:datetime|deleted_at:datetime|purge_after:datetime|create_idempotency_key:varchar|create_request_hash:text'],
+  ['record', '커리어 기록', 'id:char:pk|user_id:char:fk|category_id:char:fk|title:text|status:text|origin:text|properties:json|body_md:mediumtext|period_start:date|period_end:date|version:int|updated_at:datetime|deleted_at:datetime|purge_after:datetime|create_idempotency_key:varchar|create_request_hash:text'],
   ['record_link', '기록 연결', 'id:char:pk|user_id:char:fk|from_record_id:char:fk|to_record_id:char:fk|relation:varchar|created_by:text'],
   ['record_usage', '사용처 · 인용', 'id:char:pk|user_id:char:fk|record_id:char:fk|block_id:char:fk|quoted_text:text|first_used_at:datetime'],
   ['media_asset', '미디어 원본', 'id:char:pk|user_id:char:fk|storage_key:text|mime_type:text|width:int|height:int|byte_size:int|checksum:varchar|created_at:datetime'],
@@ -223,7 +223,7 @@ const T1 = [
   ['job_source', '수집 소스', 'id:char:pk|provider:varchar|token:varchar|display_name:text|is_active:bool|last_run_at:datetime|last_status:text|last_error:text|last_seen_count:int|last_added_count:int|created_at:datetime|site_url:text'],
   ['company', '기업', 'id:char:pk|name:text|domain:text|industry:text|tone_summary:text|dedupe_key:varchar|tone_palette:json|avatar_background:text|avatar_color:text|brand_colors:json|tone_impression:text|initial:text|logo_data:blob|logo_media_type:text|logo_source_url:text|logo_checksum:text|logo_read_at:datetime'],
   ['company_research_item', '기업 조사', 'id:char:pk|user_id:char:fk|company_id:char:fk|kind:varchar|topic:text|statement:text|source_url:text|published_at:datetime|captured_at:datetime|confidence:text|basis_fact_ids:json'],
-  ['job_posting', '채용 공고', 'id:char:pk|company_id:char:fk|source:varchar|external_id:varchar|title:text|description_raw:text|requirements:json|expires_at:datetime|dedupe_hash:varchar|source_url:text|created_at:datetime|normalized_at:datetime|location:text|work_type:text|experience_label:text|employment_type:text|salary_note:text|job_family:varchar|duties:json|preferred:json|hiring_process:json|process_note:text|notice:text|team:text|deadline_note:text|source_board:text|location_region:varchar|experience_note:text|facts_read_at:datetime|experience_min_years:int'],
+  ['job_posting', '채용 공고', 'id:char:pk|company_id:char:fk|source:varchar|external_id:varchar|title:text|description_raw:mediumtext|requirements:json|expires_at:datetime|dedupe_hash:varchar|source_url:text|created_at:datetime|normalized_at:datetime|location:text|work_type:text|experience_label:text|employment_type:text|salary_note:text|job_family:varchar|duties:json|preferred:json|hiring_process:json|process_note:text|notice:text|team:text|deadline_note:text|source_board:text|location_region:varchar|experience_note:text|facts_read_at:datetime|experience_min_years:int'],
   ['match_score', '일치도', 'id:char:pk|user_id:char:fk|job_posting_id:char:fk|total:decimal|axes:json|reason_text:text|computed_at:datetime|next_action:text'],
   ['interest', '관심 공고', 'id:char:pk|user_id:char:fk|job_posting_id:char:fk|stage:text|deadline_at:datetime|memo:text|updated_at:datetime'],
   ['saved_search', '저장 검색', 'id:char:pk|user_id:char:fk|query_text:text|filters:json|notify:bool|last_run_at:datetime|name:varchar|created_at:datetime|updated_at:datetime'],
@@ -234,7 +234,7 @@ const T1 = [
   ['requirement_coverage', '요건 충족 여부', 'user_id:char:pk|requirement_id:char:pk|coverage:text|covered_by:json|computed_at:datetime'],
   ['template', '지면 시드', 'id:char:pk|code:varchar|name:text|tone_tags:json|supported_sections:json|plan_required:text|description:text|renderer_version:int|style:json|industries:json|is_active:bool'],
   ['layout_spec', '지면 명세', 'id:char:pk|user_id:char:fk|portfolio_id:char:fk|batch_id:char|generation_job_id:char:fk|seed_template_id:char:fk|spec:json|prompt_version:int|edited_by:text|order_no:int|selected:bool|created_at:datetime|instruction:text|selected_portfolio_id:char'],
-  ['generated_page', '생성된 지면', 'id:char:pk|user_id:char:fk|portfolio_id:char:fk|html:text|css:text|rationale:text|revision:int|instruction:text|prompt_version:int|ungrounded_numbers:json|removed:json|created_at:datetime|quality_status:text|qa_report:json|generation_manifest:json|portfolio_plan_snapshot:json|style_spec_snapshot:json|design_principles_version:int'],
+  ['generated_page', '생성된 지면', 'id:char:pk|user_id:char:fk|portfolio_id:char:fk|html:mediumtext|css:mediumtext|rationale:text|revision:int|instruction:text|prompt_version:int|ungrounded_numbers:json|removed:json|created_at:datetime|quality_status:text|qa_report:json|generation_manifest:json|portfolio_plan_snapshot:json|style_spec_snapshot:json|design_principles_version:int'],
   ['portfolio_section', '문서 섹션', 'id:char:pk|user_id:char:fk|portfolio_id:char:fk|recipe_section_id:char:fk|order_no:int|visible:bool|hidden_reason:text'],
   ['block', '블록', 'id:char:pk|user_id:char:fk|portfolio_section_id:char:fk|kind:text|content:json|style:json|source_record_id:char:fk|sync_state:text|locked:bool|order_no:int'],
   ['generation_job', '생성 작업', 'id:char:pk|user_id:char:fk|brew_id:char:fk|recipe_id:char:fk|template_id:char:fk|status:varchar|usage_charged:bool|error_code:text|input_idempotency_key:varchar|request_hash:text|stage:text|attempts:int|failure_retryable:bool|portfolio_id:char:fk|created_at:datetime|updated_at:datetime|style_overrides:json'],
@@ -253,8 +253,8 @@ const T1 = [
   ['interview_session', 'AI 인터뷰', 'id:char:pk|user_id:char:fk|brew_id:char:fk|status:text|question_count:int|transcript_url:text|input_idempotency_key:varchar|current_order:int|answered_count:int|paused_at:datetime|created_at:datetime|updated_at:datetime'],
   ['question', '질문', 'id:char:pk|user_id:char:fk|interview_session_id:char:fk|requirement_id:char:fk|replaced_from_id:char:fk|order_no:int|text:text|skipped:bool|basis:json|active:bool|variant:int|created_at:datetime|rationale:text|active_order_no:int'],
   ['brew_source', '선정된 재료', 'id:char:pk|user_id:char:fk|brew_id:char:fk|record_id:char:fk|rank:int|selected_by:text|excluded_reason:text|score:int|reason_text:text|is_selected:bool|updated_at:datetime|selected_rank:int'],
-  ['answer', '응답', 'id:char:pk|user_id:char:fk|question_id:char:fk|input_type:text|transcript:text|created_record_id:char:fk|input_idempotency_key:varchar|request_hash:text|version:int|updated_at:datetime'],
-  ['answer_record_change', '답변 → 기록 반영', 'id:char:pk|user_id:char:fk|answer_id:char:fk|record_id:char:fk|change_type:text|changed_fields:json|source_quote:text|created_at:datetime'],
+  ['answer', '응답', 'id:char:pk|user_id:char:fk|question_id:char:fk|input_type:text|transcript:mediumtext|created_record_id:char:fk|input_idempotency_key:varchar|request_hash:text|version:int|updated_at:datetime'],
+  ['answer_record_change', '답변 → 기록 반영', 'id:char:pk|user_id:char:fk|answer_id:char:fk|record_id:char:fk|change_type:text|changed_fields:json|source_quote:mediumtext|created_at:datetime'],
   ['recipe', '포트폴리오 레시피', 'id:char:pk|user_id:char:fk|brew_id:char:fk|version:int|status:text|completeness:decimal|generated_at:datetime|input_idempotency_key:varchar|updated_at:datetime|prompt_version:int|portfolio_plan:json|planning_manifest:json'],
   ['recipe_section', '레시피 섹션', 'id:char:pk|user_id:char:fk|recipe_id:char:fk|order_no:int|title:text|purpose:text|target_length:int|context:json|locked:bool|edited_by:text|updated_at:datetime'],
   ['recipe_item', '담을 요점', 'id:char:pk|user_id:char:fk|recipe_section_id:char:fk|order_no:int|point_text:text|evidence:json|locked:bool|edited_by:text|updated_at:datetime'],

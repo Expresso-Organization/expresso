@@ -36,6 +36,8 @@ const DATABASE_URL = process.env.DATABASE_URL
   ?? process.env.TEST_DATABASE_URL
   ?? "mysql://expresso:expresso@127.0.0.1:53306/expresso";
 
+// text 계열은 이름을 그대로 둔다 — 담는 양이 64KB · 16MB · 4GB 로 갈리므로
+// 한데 묶으면 그림이 그 차이를 감춘다.
 const TYPE = {
   datetime: "datetime",
   timestamp: "datetime",
@@ -43,9 +45,6 @@ const TYPE = {
   smallint: "int2",
   tinyint: "int1",
   double: "float8",
-  longtext: "text",
-  mediumtext: "text",
-  tinytext: "text",
 };
 // tinyint(1) 은 MySQL 의 참거짓 자리다.
 const shorten = (row) =>
