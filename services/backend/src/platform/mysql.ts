@@ -412,6 +412,13 @@ export function createMysqlResource(databaseUrl: string): MysqlResource {
     bigNumberStrings: false,
   });
 
+  // PostgreSQL 의 기본 격리 수준은 READ COMMITTED 다. MySQL 기본(REPEATABLE READ)
+  // 에서는 트랜잭션이 시작 시점의 사본을 계속 보아, 옆 트랜잭션이 방금 넣은 줄을
+  // 못 본다 — 「넣거나 이미 있는 것을 가져오기」가 빈손으로 돌아온다.
+  pool.on("connection", (connection) => {
+    connection.query("set session transaction isolation level read committed");
+  });
+
   const sql = makeTag((text, params) => execReturning(pool, text, params), {
     async begin<T>(fn: (tx: SqlTag) => Promise<T>): Promise<T> {
       const connection = await pool.getConnection();
