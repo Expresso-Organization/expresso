@@ -1,12 +1,42 @@
 /*
- * 구간 규약 파일(error · not-found)이 함께 쓰는 자리.
+ * 구간 규약 파일(loading · error · not-found)이 함께 쓰는 자리.
  *
- * 둘 다 앱 셸 **안쪽**에 그려진다 — 사이드바와 머리말은 레이아웃이 이미 냈고,
- * 여기서 바뀌는 것은 본문뿐이다. 오류와 없음이 셸을 지우지 않는다.
- *
- * 기다리는 동안의 자리는 여기 없다. 화면마다 골격이 달라서 화면 옆의
- * `loading.tsx`가 자기 `page.module.css`로 직접 그린다.
+ * 셋 다 앱 셸 **안쪽**에 그려진다 — 사이드바와 머리말은 레이아웃이 이미 냈고,
+ * 여기서 바뀌는 것은 본문뿐이다. 기다림·오류·없음이 셸을 지우지 않는다.
  */
+
+.skeleton {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding: 22px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* 뼈대 한 줄. 폭만 달리해서 글이 앉을 자리를 짐작하게 한다. */
+.bar {
+  height: 13px;
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    var(--ex-line-inner) 0%,
+    var(--ex-line-200) 50%,
+    var(--ex-line-inner) 100%
+  );
+  background-size: 280px 100%;
+}
+
+.barTitle {
+  height: 19px;
+  width: 190px;
+}
+
+.card {
+  height: 62px;
+  border-radius: 10px;
+}
 
 .notice {
   flex: 1;

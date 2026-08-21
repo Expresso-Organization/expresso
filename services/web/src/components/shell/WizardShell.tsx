@@ -22,8 +22,8 @@ export function WizardHeader({
   portfolioTitle,
   saveState = "자동 저장됨",
 }: {
-  portfolioTitle: ReactNode;
-  saveState?: ReactNode;
+  portfolioTitle: string;
+  saveState?: string;
 }) {
   return (
     <div className={styles.buildHeader}>
@@ -49,26 +49,17 @@ export function WizardHeader({
   );
 }
 
-/**
- * 단계 줄.
- *
- * `brewId`와 `current`는 **아직 모를 수 있다** — `loading.tsx`는 params를 받지
- * 않는다(Next 16 `loading.js` 규약). 모르면 되돌아가는 링크를 걸지 않고,
- * 어느 단계도 지난 단계로 칠하지 않는다. 여섯 칸의 자리는 그대로 선다.
- */
 export function WizardSteps({
-  brewId = null,
-  current = null,
+  brewId,
+  current,
   situation,
 }: {
-  brewId?: string | null;
-  current?: WizardStepKey | null;
+  brewId: string;
+  current: WizardStepKey;
   /** 우측 끝 상황 문구 — "예상 3분", "남은 질문 2개", "초안 완성 · 섹션 6개". */
-  situation: ReactNode;
+  situation: string;
 }) {
-  const currentIndex = current === null
-    ? -1
-    : WIZARD_STEPS.findIndex((step) => step.key === current);
+  const currentIndex = WIZARD_STEPS.findIndex((step) => step.key === current);
 
   return (
     <nav className={styles.steps} aria-label="포트폴리오 제작 단계">
@@ -101,7 +92,7 @@ export function WizardSteps({
           <span key={step.key} style={{ display: "contents" }}>
             {index > 0 ? <span className={styles.connector} aria-hidden="true" /> : null}
             {/* 완료 단계만 클릭으로 되돌아갈 수 있다. 미래 단계는 비활성. */}
-            {done && brewId ? (
+            {done ? (
               <Link
                 href={`/brew/${brewId}/${step.segment}` as Route}
                 className={className}
