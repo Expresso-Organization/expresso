@@ -96,11 +96,13 @@ export class JobMarketService {
     const inputHash = sha256(JSON.stringify({ dedupeHash, sourceUrl: input.sourceUrl ?? null }));
 
     return this.#sql.begin(async (transaction) => {
-      const companies = await transaction<IdRow[]>`
+      await transaction`
         insert into company (name, domain, dedupe_key)
         values (${input.companyName}, ${input.companyDomain ?? null}, ${companyKey})
         as new on duplicate key update name = company.name
-        returning id
+      `;
+      const companies = await transaction<IdRow[]>`
+        select id from company where dedupe_key = ${companyKey}
       `;
       const companyId = companies[0]?.id;
       if (!companyId) throw new Error("job company was not persisted");

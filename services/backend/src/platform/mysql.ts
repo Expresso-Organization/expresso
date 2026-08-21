@@ -311,7 +311,7 @@ async function execReturning(
     if (/on\s+duplicate\s+key/i.test(body)) {
       unsupported("insert 가 on duplicate key update 와 함께 있습니다", body);
     }
-    const head = /^\s*insert\s+into\s+(`?[a-z_][a-z0-9_]*`?)\s*\(([^)]*)\)\s*values\s*\(/i.exec(body);
+    const head = /^\s*insert\s+(?:ignore\s+)?into\s+(`?[a-z_][a-z0-9_]*`?)\s*\(([^)]*)\)\s*values\s*\(/i.exec(body);
     if (!head) unsupported("insert 의 열 목록과 values 를 읽지 못했습니다", body);
     const table = head![1] ?? "";
     const cols = (head![2] ?? "").split(",").map((c) => c.trim().replace(/`/g, ""));
@@ -347,6 +347,7 @@ async function execReturning(
       bound = [...params.slice(0, before), id, ...params.slice(before)];
     }
     await run(runner, statement, bound);
+    // insert ignore 로 걸러졌으면 그 id 가 없다 — 빈 결과가 그대로 답이다.
     return run(runner, `select ${columns} from ${table} where id = ?`, [id]);
   }
 
