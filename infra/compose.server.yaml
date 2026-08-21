@@ -15,6 +15,11 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_0900_ai_ci
       - --default-time-zone=+00:00
+      # 마이그레이션이 트리거와 저장 프로시저를 만든다. 바이너리 로그가 켜져
+      # 있으면 MySQL 은 그것을 만드는 사람에게 SUPER 를 요구한다 — 문장을
+      # 그대로 되감아 실행하던 시절의 규칙이다. 8.4 는 행 단위로만 기록하므로
+      # 되감을 문장이 없고, 앱 계정에 SUPER 를 주는 대신 이 검사를 끈다.
+      - --log-bin-trust-function-creators=1
     environment:
       MYSQL_DATABASE: expresso
       MYSQL_USER: expresso

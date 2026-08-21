@@ -25,6 +25,58 @@ Oracle Cloud 인스턴스 한 대에 API · Worker · 웹을 함께 올리고, n
 node는 nvm이 깐 `v24.13.1`을 **절대 경로로** 부른다. nvm의 `default` 별칭은
 22라서, 배포 스크립트가 `nvm.sh`를 읽어 오면 서비스와 다른 node로 짓게 된다.
 
+## PostgreSQL 에서 MySQL 로 갈아타기
+
+이미 돌고 있는 서버를 옮길 때의 순서다. 사이트가 내려가는 구간은 마지막 둘뿐이다.
+
+1. `infra/.env` 에 `EXPRESSO_MYSQL_PASSWORD` 를 넣는다.
+
+   ```bash
+   printf 'EXPRESSO_MYSQL_PASSWORD=%s\n' "$(openssl rand -hex 24)" >> infra/.env
+   ```
+
+2. PostgreSQL 을 그대로 둔 채 MySQL 컨테이너를 띄운다.
+
+   ```bash
+   docker compose -f infra/compose.server.yaml --env-file infra/.env up -d mysql --wait
+   ```
+
+3. 마이그레이션을 적용한다. `pnpm db:migrate` 가 `.env` 의 `DATABASE_URL` 을 보므로,
+   아직 바꾸기 전이라면 그 자리에서 넘긴다.
+
+   ```bash
+   DATABASE_URL="mysql://expresso:$(grep '^EXPRESSO_MYSQL_PASSWORD=' infra/.env | cut -d= -f2)@127.0.0.1:53306/expresso" \
+   pnpm db:migrate
+   ```
+
+4. 공고 데이터를 옮긴다 — 아래 「공고 데이터 옮기기」.
+
+5. `services/backend/.env` 의 `DATABASE_URL` 을 MySQL 로 바꾼다. **여기서부터
+   사이트가 내려간다** — 아직 돌고 있는 프로세스는 PostgreSQL 용 코드다.
+
+6. `main` 에 머지해 자동 배포를 돌린다. 빌드가 끝나고 세 서비스가 다시 뜨면
+   올라온다.
+
+7. 확인한 뒤 PostgreSQL 컨테이너를 멈춘다. 볼륨은 남겨 둔다.
+
+   ```bash
+   docker stop expresso-server-postgres-1
+   ```
+
+### 트리거를 만들려면 바이너리 로그 검사를 꺼야 한다
+
+바이너리 로그가 켜져 있으면 MySQL 은 트리거와 저장 프로시저를 만드는 사람에게
+SUPER 를 요구한다. 문장을 그대로 되감아 실행하던 시절의 규칙인데, 8.4 는 행
+단위로만 기록하므로 되감을 문장이 없다. 앱 계정에 SUPER 를 주는 대신
+`--log-bin-trust-function-creators=1` 로 그 검사를 끈다 —
+`infra/compose.server.yaml` 에 들어 있다. 이미 돌고 있는 컨테이너라면 그 자리에서
+바꿔도 된다.
+
+```bash
+docker exec -i expresso-server-mysql-1 mysql -uroot -p"$PASSWORD" \
+  -e "set global log_bin_trust_function_creators=1"
+```
+
 ## 공고 데이터 옮기기
 
 MySQL 로 갈아탈 때 사람에게 딸린 것은 계정과 함께 새로 시작하고, 모아 둔 공고는
