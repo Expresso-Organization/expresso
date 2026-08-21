@@ -24,11 +24,12 @@ describeWithDatabase("company research normalization", () => {
   beforeAll(async () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("free plan missing");
-    const users = await sql<IdRow[]>`
-      insert into \`user\` (email, display_name, plan_id) values
-        (${`research-a-${marker}@example.com`}, 'Research A', ${planId}),
-        (${`research-b-${marker}@example.com`}, 'Research B', ${planId})
-      returning id
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
+      values
+        (${users[0]!.id}, ${`research-a-${marker}@example.com`}, 'Research A', ${planId}),
+        (${users[1]!.id}, ${`research-b-${marker}@example.com`}, 'Research B', ${planId})
     `;
     userId = users[0]?.id ?? "";
     otherUserId = users[1]?.id ?? "";

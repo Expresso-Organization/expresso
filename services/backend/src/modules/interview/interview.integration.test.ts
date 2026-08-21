@@ -73,12 +73,12 @@ describeWithDatabase("interview integration", () => {
       select id from category where \`key\` = 'experience' and is_system
     `)[0]?.id;
     if (!planId || !categoryId) throw new Error("interview seed missing");
-    const users = await sql<IdRow[]>`
-      insert into \`user\` (email, display_name, plan_id)
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        (${`interview-a-${marker}@example.com`}, 'Interview A', ${planId}),
-        (${`interview-b-${marker}@example.com`}, 'Interview B', ${planId})
-      returning id
+        (${users[0]!.id}, ${`interview-a-${marker}@example.com`}, 'Interview A', ${planId}),
+        (${users[1]!.id}, ${`interview-b-${marker}@example.com`}, 'Interview B', ${planId})
     `;
     userId = users[0]?.id ?? "";
     otherUserId = users[1]?.id ?? "";
@@ -125,13 +125,13 @@ describeWithDatabase("interview integration", () => {
         )
       `;
     }
-    const records = await sql<IdRow[]>`
+    const records: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
       insert into record (
-        user_id, category_id, title, status, origin, properties, body_md
+        id, user_id, category_id, title, status, origin, properties, body_md
       ) values
-        (${userId}, ${categoryId}, 'Migration project', 'organized', 'manual', '{}', 'Led a database migration'),
-        (${userId}, ${categoryId}, 'Incident response', 'verified', 'manual', '{}', 'Resolved a production incident')
-      returning id
+        (${records[0]!.id}, ${userId}, ${categoryId}, 'Migration project', 'organized', 'manual', '{}', 'Led a database migration'),
+        (${records[1]!.id}, ${userId}, ${categoryId}, 'Incident response', 'verified', 'manual', '{}', 'Resolved a production incident')
     `;
     brewId = (await sql<IdRow[]>`
       insert into brew (user_id, job_analysis_id, length_preset)

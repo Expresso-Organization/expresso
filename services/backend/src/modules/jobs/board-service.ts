@@ -310,7 +310,7 @@ export class JobBoardService {
         ${query.technology
           ? sql`and exists (
               select 1 from jsonb_array_elements_text(
-                coalesce(job_posting.requirements -> 'technologies', '[]'::jsonb)
+                coalesce(job_posting.requirements -> 'technologies', '[]')
               ) as technology
               where lower(technology) = lower(${query.technology})
             )`
@@ -434,7 +434,7 @@ export class JobBoardService {
       job_posting.expires_at,
       job_posting.deadline_note,
       job_posting.created_at,
-      (job_posting.expires_at::date - now()::date) as days_left,
+      (job_posting.expires_at - now()) as days_left,
       company.id as company_id,
       company.name as company_name,
       company.domain as company_domain,
@@ -512,7 +512,7 @@ export class JobBoardService {
       query.sort === "match"
         ? sql`coalesce(match_score.total, -1)`
         : query.sort === "deadline"
-          ? sql`coalesce(job_posting.expires_at, 'infinity'::timestamptz)`
+          ? sql`coalesce(job_posting.expires_at, 'infinity')`
           : sql`job_posting.created_at`;
     const order = query.sort === "deadline" ? sql`asc` : sql`desc`;
     const offset = (query.page - 1) * query.limit;
@@ -560,7 +560,7 @@ export class JobBoardService {
           .map((years) => `count(*) filter (
              where job_posting.experience_min_years is null
                 or job_posting.experience_min_years <= ${years}
-           )::integer as "y${years}"`)
+           ) as "y${years}"`)
           .join(", "))}
         ${without("experience")}
       `,
@@ -568,7 +568,7 @@ export class JobBoardService {
         select ${sql.unsafe(WORK_TYPES
           .map((label, index) => `count(*) filter (
              where job_posting.work_type like '%${label}%'
-           )::integer as "w${index}"`)
+           ) as "w${index}"`)
           .join(", "))}
         ${without("workType")}
       `,

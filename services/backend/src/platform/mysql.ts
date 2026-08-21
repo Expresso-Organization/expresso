@@ -270,9 +270,10 @@ function closingParen(text: string, open: number): number {
   return -1;
 }
 
-const unsupported = (why: string): never => {
+const unsupported = (why: string, statement = ""): never => {
+  const head = statement.replace(/\s+/g, " ").trim().slice(0, 160);
   throw new Error(
-    `MySQL 에서는 이 returning 을 옮기지 못합니다 — ${why}. 쓰기와 재조회를 나눠 적으십시오.`,
+    `MySQL 에서는 이 returning 을 옮기지 못합니다 — ${why}. 쓰기와 재조회를 나눠 적으십시오.${head ? ` [${head}]` : ""}`,
   );
 };
 
@@ -289,20 +290,20 @@ async function execReturning(
 
   if (/^\s*insert/i.test(body)) {
     if (/on\s+duplicate\s+key/i.test(body)) {
-      unsupported("insert 가 on duplicate key update 와 함께 있습니다");
+      unsupported("insert 가 on duplicate key update 와 함께 있습니다", body);
     }
     const head = /^\s*insert\s+into\s+(`?[a-z_][a-z0-9_]*`?)\s*\(([^)]*)\)\s*values\s*\(/i.exec(body);
-    if (!head) unsupported("insert 의 열 목록과 values 를 읽지 못했습니다");
+    if (!head) unsupported("insert 의 열 목록과 values 를 읽지 못했습니다", body);
     const table = head![1] ?? "";
     const cols = (head![2] ?? "").split(",").map((c) => c.trim().replace(/`/g, ""));
     const open = head!.index + head![0].length - 1;
     const close = closingParen(body, open);
-    if (close < 0) unsupported("values 괄호가 닫히지 않았습니다");
-    if (/\)\s*,\s*\(/.test(body.slice(close))) unsupported("여러 행을 한 번에 넣고 있습니다");
+    if (close < 0) unsupported("values 괄호가 닫히지 않았습니다", body);
+    if (/\)\s*,\s*\(/.test(body.slice(close))) unsupported("여러 행을 한 번에 넣고 있습니다", body);
 
     const before = countPlaceholders(body.slice(0, open));
     const exprs = splitTopLevel(body.slice(open + 1, close));
-    if (exprs.length !== cols.length) unsupported("열 수와 값 수가 다릅니다");
+    if (exprs.length !== cols.length) unsupported("열 수와 값 수가 다릅니다", body);
 
     const idAt = cols.indexOf("id");
     let statement = body;
@@ -316,7 +317,7 @@ async function execReturning(
       } else if (/^'[^']*'$/.test(expr)) {
         id = expr.slice(1, -1);
       } else {
-        unsupported("id 값을 읽지 못했습니다");
+        unsupported("id 값을 읽지 못했습니다", body);
       }
     } else {
       id = randomUUID();
@@ -332,7 +333,7 @@ async function execReturning(
 
   if (/^\s*update/i.test(body)) {
     const head = /^\s*update\s+(`?[a-z_][a-z0-9_]*`?)\s/i.exec(body);
-    if (!head) unsupported("update 의 표 이름을 읽지 못했습니다");
+    if (!head) unsupported("update 의 표 이름을 읽지 못했습니다", body);
     const table = head![1] ?? "";
     const whereAt = findKeyword(body, "where");
     const where = whereAt < 0 ? "" : body.slice(whereAt);
@@ -347,7 +348,7 @@ async function execReturning(
 
   if (/^\s*delete/i.test(body)) {
     const head = /^\s*delete\s+from\s+(`?[a-z_][a-z0-9_]*`?)\s*/i.exec(body);
-    if (!head) unsupported("delete 의 표 이름을 읽지 못했습니다");
+    if (!head) unsupported("delete 의 표 이름을 읽지 못했습니다", body);
     const table = head![1] ?? "";
     const whereAt = findKeyword(body, "where");
     const where = whereAt < 0 ? "" : body.slice(whereAt);
@@ -356,7 +357,7 @@ async function execReturning(
     return rows;
   }
 
-  return unsupported("insert · update · delete 가 아닙니다");
+  return unsupported("insert · update · delete 가 아닙니다", body);
 }
 
 
@@ -400,6 +401,13 @@ export function createMysqlResource(databaseUrl: string): MysqlResource {
         }
         throw error;
       } finally {
+        // PostgreSQL 의 자문 잠금은 트랜잭션이 끝나면 풀렸다. MySQL 의 get_lock 은
+        // 세션에 붙어 있어, 연결을 풀에 돌려주기 전에 여기서 푼다.
+        try {
+          await connection.query("do release_all_locks()");
+        } catch {
+          // 잠금 해제가 실패해도 연결은 돌려준다.
+        }
         connection.release();
       }
     },

@@ -58,12 +58,12 @@ describeWithDatabase("career domain integration", () => {
     const plans = await sql<IdRow[]>`select id from plan where code = 'free'`;
     const planId = plans[0]?.id;
     if (!planId) throw new Error("free plan is missing");
-    const users = await sql<IdRow[]>`
-      insert into \`user\` (email, display_name, plan_id)
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        (${`career-a-${randomUUID()}@example.com`}, 'Career A', ${planId}),
-        (${`career-b-${randomUUID()}@example.com`}, 'Career B', ${planId})
-      returning id
+        (${users[0]!.id}, ${`career-a-${randomUUID()}@example.com`}, 'Career A', ${planId}),
+        (${users[1]!.id}, ${`career-b-${randomUUID()}@example.com`}, 'Career B', ${planId})
     `;
     const [first, second] = users;
     if (!first || !second) throw new Error("career test users are missing");

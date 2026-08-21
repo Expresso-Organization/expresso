@@ -77,12 +77,12 @@ describeWithDatabase("portfolio read HTTP integration", () => {
     )[0]?.id;
     if (!planId || !templateId) throw new Error("portfolio read seed missing");
 
-    const users = await sql<IdRow[]>`
-      insert into \`user\` (email, display_name, plan_id)
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        (${`pf-a-${marker}@example.com`}, 'Portfolio A', ${planId}),
-        (${`pf-b-${marker}@example.com`}, 'Portfolio B', ${planId})
-      returning id
+        (${users[0]!.id}, ${`pf-a-${marker}@example.com`}, 'Portfolio A', ${planId}),
+        (${users[1]!.id}, ${`pf-b-${marker}@example.com`}, 'Portfolio B', ${planId})
     `;
     userId = users[0]!.id;
     otherUserId = users[1]!.id;

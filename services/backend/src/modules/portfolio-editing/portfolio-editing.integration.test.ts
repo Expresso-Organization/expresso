@@ -29,7 +29,13 @@ describeWithDatabase("portfolio editing integration", () => {
     const categoryId = (await sql<IdRow[]>`select id from category where \`key\` = 'experience' and is_system`)[0]?.id;
     const templateId = (await sql<IdRow[]>`select id from template where code = 'clarity'`)[0]?.id;
     if (!planId || !categoryId || !templateId) throw new Error("editing seed missing");
-    const users = await sql<IdRow[]>`insert into \`user\` (email, display_name, plan_id) values (${`editing-a-${marker}@example.com`}, 'Editing A', ${planId}), (${`editing-b-${marker}@example.com`}, 'Editing B', ${planId}) returning id`;
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
+      values
+        (${users[0]!.id}, ${`editing-a-${marker}@example.com`}, 'Editing A', ${planId}),
+        (${users[1]!.id}, ${`editing-b-${marker}@example.com`}, 'Editing B', ${planId})
+    `;
     userId = users[0]?.id ?? ""; otherUserId = users[1]?.id ?? "";
     token = (await identity.issueSession({ userId })).accessToken;
     recordId = (await sql<IdRow[]>`insert into record (user_id, category_id, title, status, origin, properties, body_md) values (${userId}, ${categoryId}, 'Source record', 'organized', 'manual', '{}', 'Exact record body') returning id`)[0]?.id ?? "";

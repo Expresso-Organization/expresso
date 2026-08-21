@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   ApiErrorResponseSchema,
   CareerRecordListResponseSchema,
@@ -57,12 +58,12 @@ describeWithDatabase("career record list HTTP integration", () => {
     const planId = plans[0]?.id;
     if (!planId) throw new Error("test plan was not available");
 
-    const users = await sql<IdRow[]>`
-      insert into \`user\` (email, display_name, plan_id)
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        (${`career-list-${crypto.randomUUID()}@example.com`}, '목록 사용자', ${planId}),
-        (${`career-other-${crypto.randomUUID()}@example.com`}, '다른 사용자', ${planId})
-      returning id
+        (${users[0]!.id}, ${`career-list-${crypto.randomUUID()}@example.com`}, '목록 사용자', ${planId}),
+        (${users[1]!.id}, ${`career-other-${crypto.randomUUID()}@example.com`}, '다른 사용자', ${planId})
     `;
     const [owner, other] = users;
     if (!owner || !other) throw new Error("test users were not persisted");

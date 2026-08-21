@@ -125,7 +125,7 @@ export class AnalyticsService {
         where deployment.subdomain = ${input.slug} and portfolio.status = 'published'
       `)[0];
       if (!deployment) throw new AnalyticsError(404, "published deployment not found");
-      await transaction`select pg_advisory_xact_lock(hashtext(${sessionHash}))`;
+      await transaction`select get_lock(concat('analytics:', ${sessionHash}), 10)`;
       const existing = (await transaction<{ payload_hash: string }[]>`
         select payload_hash from analytics_event_receipt where event_id = ${input.eventId}
       `)[0];

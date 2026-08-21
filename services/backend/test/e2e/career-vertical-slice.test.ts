@@ -42,12 +42,12 @@ describeWithDatabase("career authenticated vertical slice", () => {
     const plans = await sql<IdRow[]>`select id from plan where code = 'free'`;
     const planId = plans[0]?.id;
     if (!planId) throw new Error("fresh database did not seed the free plan");
-    const users = await sql<IdRow[]>`
-      insert into \`user\` (email, display_name, plan_id)
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        ('vertical-a@example.com', 'Vertical A', ${planId}),
-        ('vertical-b@example.com', 'Vertical B', ${planId})
-      returning id
+        (${users[0]!.id}, 'vertical-a@example.com', 'Vertical A', ${planId}),
+        (${users[1]!.id}, 'vertical-b@example.com', 'Vertical B', ${planId})
     `;
     const [first, second] = users;
     if (!first || !second) throw new Error("vertical slice users were not created");

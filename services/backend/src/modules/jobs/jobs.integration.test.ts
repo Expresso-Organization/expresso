@@ -55,16 +55,15 @@ describeWithDatabase("job market integration", () => {
   beforeAll(async () => {
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("free plan missing");
-    const users = await sql<IdRow[]>`
-      insert into \`user\` (email, display_name, plan_id)
+    // 여러 행을 한 번에 넣을 때는 id 를 우리가 만들어 준다 — MySQL 은 returning 이 없다.
+    firstUserId = randomUUID();
+    secondUserId = randomUUID();
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        (${`jobs-a-${marker}@example.com`}, 'Jobs A', ${planId}),
-        (${`jobs-b-${marker}@example.com`}, 'Jobs B', ${planId})
-      returning id
+        (${firstUserId}, ${`jobs-a-${marker}@example.com`}, 'Jobs A', ${planId}),
+        (${secondUserId}, ${`jobs-b-${marker}@example.com`}, 'Jobs B', ${planId})
     `;
-    if (!users[0] || !users[1]) throw new Error("job users missing");
-    firstUserId = users[0].id;
-    secondUserId = users[1].id;
     firstToken = (await identityService.issueSession({ userId: firstUserId })).accessToken;
     secondToken = (await identityService.issueSession({ userId: secondUserId })).accessToken;
     experienceCategoryId = (await sql<IdRow[]>`

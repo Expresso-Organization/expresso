@@ -51,12 +51,12 @@ describeWithDatabase("brew materials integration", () => {
       select id from category where \`key\` = 'experience' and is_system
     `)[0]?.id;
     if (!planId || !categoryId) throw new Error("materials seed data missing");
-    const users = await sql<IdRow[]>`
-      insert into \`user\` (email, display_name, plan_id)
+    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
       values
-        (${`materials-a-${marker}@example.com`}, 'Materials A', ${planId}),
-        (${`materials-b-${marker}@example.com`}, 'Materials B', ${planId})
-      returning id
+        (${users[0]!.id}, ${`materials-a-${marker}@example.com`}, 'Materials A', ${planId}),
+        (${users[1]!.id}, ${`materials-b-${marker}@example.com`}, 'Materials B', ${planId})
     `;
     userId = users[0]?.id ?? "";
     otherUserId = users[1]?.id ?? "";
@@ -96,7 +96,7 @@ describeWithDatabase("brew materials integration", () => {
           user_id, category_id, title, status, origin, properties, body_md
         ) values (
           ${userId}, ${categoryId}, ${`Eligible ${index.toString().padStart(2, "0")}`},
-          ${index % 3 === 0 ? "verified" : "organized"}, 'manual', '{}'::jsonb,
+          ${index % 3 === 0 ? "verified" : "organized"}, 'manual', '{}',
           ${index < 3 ? "TypeScript PostgreSQL backend reliability" : "Other organized evidence"}
         )
       `;

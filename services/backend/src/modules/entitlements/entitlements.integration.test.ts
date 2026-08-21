@@ -63,15 +63,14 @@ describeWithDatabase("entitlement integration", () => {
     freeQuota = free.generation_quota;
 
     for (const planCode of ["free", "pro", "team"] as const) {
-      const rows = await sql<IdRow[]>`
-        insert into \`user\` (email, display_name, plan_id)
-        values (
-          ${`entitlement-${planCode}-${randomUUID()}@example.com`},
+      const rows: IdRow[] = [{ id: randomUUID() }];
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
+      values
+        (${rows[0]!.id}, ${`entitlement-${planCode}-${randomUUID()}@example.com`},
           ${`Entitlement ${planCode}`},
-          ${planIds[planCode]}
-        )
-        returning id
-      `;
+          ${planIds[planCode]})
+    `;
       const userId = rows[0]?.id;
       if (!userId) throw new Error(`failed to create ${planCode} user`);
       userIds[planCode] = userId;
