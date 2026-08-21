@@ -198,6 +198,7 @@ async function run(
     const [rows] = await runner.query(text, params);
     return Array.isArray(rows) ? rows : [];
   } catch (error) {
+    // 옮기는 중에 어떤 문장이 걸렸는지 보려면 EXPRESSO_SQL_TRACE=1 로 띄웁니다.
     if (process.env.EXPRESSO_SQL_TRACE === "1") {
       console.error("SQL 실패:", String((error as Error).message).slice(0, 160), "|", text.replace(/\s+/g, " ").slice(0, 200));
     }
