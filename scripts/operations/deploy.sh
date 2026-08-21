@@ -62,7 +62,7 @@ NEXT_PUBLIC_API_BASE_URL="$SITE_URL" pnpm --filter @expresso/web build
 sudo systemctl restart expresso-worker
 sudo systemctl restart expresso-api
 
-# API가 실제로 준비될 때까지 기다린다. ready는 PostgreSQL과 Redis를 함께 본다.
+# API가 실제로 준비될 때까지 기다린다. ready는 MySQL과 Redis를 함께 본다.
 for attempt in $(seq 1 30); do
   # 첫 시도는 아직 안 뜬 API에 붙으므로 거의 늘 실패한다. curl의 오류 문구까지
   # 버린다 — 정상인 자리에 "Connection refused"가 찍히면 배포 로그를 읽는 사람이
