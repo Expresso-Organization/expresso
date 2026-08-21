@@ -308,12 +308,9 @@ export class JobBoardService {
             )`
           : sql``}
         ${query.technology
-          ? sql`and exists (
-              select 1 from json_table(
-                coalesce(job_posting.requirements -> '$.technologies', cast('[]' as json)),
-                '$[*]' columns (technology varchar(255) path '$')
-              ) as technologies
-              where lower(technologies.technology) = lower(${query.technology})
+          ? sql`and json_contains(
+              cast(lower(coalesce(job_posting.requirements ->> '$.technologies', '[]')) as json),
+              json_quote(lower(${query.technology}))
             )`
           : sql``}
         ${query.interested === true ? sql`and interest.id is not null` : sql``}
@@ -435,7 +432,7 @@ export class JobBoardService {
       job_posting.expires_at,
       job_posting.deadline_note,
       job_posting.created_at,
-      timestampdiff(day, now(6), job_posting.expires_at) as days_left,
+      datediff(job_posting.expires_at, now(6)) as days_left,
       company.id as company_id,
       company.name as company_name,
       company.domain as company_domain,

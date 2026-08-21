@@ -98,7 +98,7 @@ export class CompanyResearchService {
           ) values (
             ${userId}, ${companyId}, 'fact', ${item.topic}, ${item.statement},
             ${item.sourceUrl}, ${item.publishedAt ? new Date(item.publishedAt) : null},
-            ${item.confidence}, '{}'
+            ${item.confidence}, '[]'
           ) returning id
         `)[0];
         if (!row) throw new Error("company fact was not persisted");

@@ -3,7 +3,6 @@ import type { SqlTag } from "../../src/platform/mysql.js";
 import { createMysqlResource } from "../../src/platform/mysql.js";
 
 import { migrate } from "@expresso/database";
-import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../src/api/build-app.js";
@@ -23,6 +22,7 @@ import { createJobAnalysisProcessor } from "../../src/worker/processors/job-anal
 import { BrewJobService } from "../../src/modules/brew-jobs/service.js";
 import { createBrewJobProcessor } from "../../src/worker/processors/brew-jobs.js";
 import { createRecordCleanupProcessor } from "../../src/worker/processors/record-cleanup.js";
+import { ISOLATED_DATABASE_TIMEOUT_MS } from "../support/timeouts.js";
 
 const rootDatabaseUrl = process.env.TEST_DATABASE_URL;
 const redisUrl = process.env.TEST_REDIS_URL;
@@ -114,7 +114,7 @@ describeWithInfrastructure("analysis to evidence recipe vertical slice", () => {
       },
     });
     dispatcher = new OutboxDispatcher({ sql, queue: jobs.queue });
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   afterAll(async () => {
     if (worker) await worker.close();
@@ -126,7 +126,7 @@ describeWithInfrastructure("analysis to evidence recipe vertical slice", () => {
       await admin.unsafe(`drop database if exists \`${databaseName}\``);
       await admin.end({ timeout: 5 });
     }
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   async function api(path: string, options: { method?: string; headers?: Record<string, string>; body?: unknown } = {}) {
     return fetch(`${origin}${path}`, {

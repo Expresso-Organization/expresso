@@ -7,6 +7,12 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_0900_ai_ci
       - --default-time-zone=+00:00
+      # 버리는 데이터를 담는 통이라 문장마다 디스크에 밀어 넣지 않습니다. MySQL 은
+      # DDL 문장마다 커밋하므로, 테스트가 격리 데이터베이스를 새로 만들 때마다
+      # 그 비용이 그대로 대기 시간이 됩니다 — 여기서만 완화하고 운영
+      # (compose.server.yaml) 은 기본값을 그대로 씁니다.
+      - --innodb-flush-log-at-trx-commit=2
+      - --skip-log-bin
     environment:
       MYSQL_DATABASE: expresso
       MYSQL_USER: expresso

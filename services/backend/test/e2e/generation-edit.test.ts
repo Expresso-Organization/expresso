@@ -2,7 +2,6 @@ import { randomUUID } from "node:crypto";
 import type { SqlTag } from "../../src/platform/mysql.js";
 import { createMysqlResource } from "../../src/platform/mysql.js";
 import { migrate } from "@expresso/database";
-import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildApi } from "../../src/api/build-app.js";
 import type { RuntimeConfig } from "../../src/config/runtime-config.js";
@@ -14,6 +13,7 @@ import { OutboxDispatcher } from "../../src/platform/outbox.js";
 import { createReliableQueue } from "../../src/platform/queue.js";
 import { createQueueWorker } from "../../src/worker/create-queue-worker.js";
 import { createGenerationProcessor } from "../../src/worker/processors/generation.js";
+import { ISOLATED_DATABASE_TIMEOUT_MS } from "../support/timeouts.js";
 
 const rootDatabaseUrl = process.env.TEST_DATABASE_URL;
 const redisUrl = process.env.TEST_REDIS_URL;
@@ -65,9 +65,27 @@ describeWithInfrastructure("generation edit restore vertical slice", () => {
     worker = createQueueWorker({ queueName: 'domain-jobs', redisUrl: redisUrl!, prefix, concurrency: 1, deadLetterQueue: queue.deadLetterQueue, processor: createGenerationProcessor(generation, new StubSentenceWriter()) });
     dispatcher = new OutboxDispatcher({ sql, queue: queue.queue });
     (globalThis as unknown as { generationFixture: { recipeId: string; templateId: string } }).generationFixture = { recipeId, templateId };
-  }, 30000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
-  afterAll(async () => { if (worker) await worker.close(); await Promise.allSettled([queue.queue.obliterate({ force: true }), queue.deadLetterQueue.obliterate({ force: true })]); await queue.close(); if (app) await app.close(); if (sql) await sql.end({ timeout: 5 }); if (admin) { await admin.unsafe(`drop database if exists \`${databaseName}\``); await admin.end({ timeout: 5 }); } }await expect(generation.process(jobId, new StubSentenceWriter())).rejects.toThrow(/locked block/);
+  afterAll(async () => { if (worker) await worker.close(); await Promise.allSettled([queue.queue.obliterate({ force: true }), queue.deadLetterQueue.obliterate({ force: true })]); await queue.close(); if (app) await app.close(); if (sql) await sql.end({ timeout: 5 }); if (admin) { await admin.unsafe(`drop database if exists \`${databaseName}\``); await admin.end({ timeout: 5 }); } }, ISOLATED_DATABASE_TIMEOUT_MS);
+  async function api(path: string, options: { method?: string; body?: unknown; headers?: Record<string, string> } = {}) { return fetch(`${origin}${path}`, { method: options.method ?? 'GET', headers: { authorization: `Bearer ${token}`, ...(options.body === undefined ? {} : { 'content-type': 'application/json' }), ...options.headers }, ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }) }); }
+
+  it("generates through Redis, charges once, rejects a locked rewrite, and restores", async () => {
+    const fixture = (globalThis as unknown as { generationFixture: { recipeId: string; templateId: string } }).generationFixture;
+    const submit = await api('/v1/generation-jobs', { method: 'POST', headers: { 'idempotency-key': 'generation-e2e-submit-001' }, body: fixture });
+    const jobId = ((await submit.json()) as { data: { generationJobId: string } }).data.generationJobId;
+    expect((await dispatcher.pollOnce()).published).toBe(1);
+    await waitUntil(async () => ((await (await api(`/v1/generation-jobs/${jobId}`)).json()) as { data: { status: string } }).data.status === 'done');
+    const status = (await (await api(`/v1/generation-jobs/${jobId}`)).json()) as { data: { portfolioId: string } };
+    const portfolioId = status.data.portfolioId;
+    const blockId = (await sql<IdRow[]>`select block.id from block join portfolio_section on portfolio_section.id = block.portfolio_section_id where portfolio_section.portfolio_id = ${portfolioId} order by portfolio_section.order_no limit 1`)[0]?.id;
+    const snapshotId = (await sql<IdRow[]>`select id from portfolio_snapshot where portfolio_id = ${portfolioId} and kind = 'initial_generation'`)[0]?.id;
+    if (!blockId || !snapshotId) throw new Error("generation E2E artifact missing");
+    const preview = await api(`/v1/portfolios/${portfolioId}/blocks/${blockId}/edit-preview`, { method: 'POST', body: { operation: 'update_text', text: 'Locked user sentence' } });
+    const proposalId = ((await preview.json()) as { data: { id: string } }).data.id;
+    await api(`/v1/portfolio-edit-proposals/${proposalId}/apply`, { method: 'POST' });
+    await sql`update generation_job set status = 'queued', stage = 'queued' where id = ${jobId}`;
+    await expect(generation.process(jobId, new StubSentenceWriter())).rejects.toThrow(/locked block/);
     expect((await sql<{ used: number }[]>`select used from usage_counter limit 1`)[0]?.used).toBe(1);
     const restore = await api(`/v1/portfolios/${portfolioId}/restore`, { method: 'POST', body: { snapshotId, confirm: true } });
     expect(restore.status).toBe(200);

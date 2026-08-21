@@ -3,13 +3,13 @@ import type { SqlTag } from "../../src/platform/mysql.js";
 import { createMysqlResource } from "../../src/platform/mysql.js";
 
 import { migrate } from "@expresso/database";
-import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../src/api/build-app.js";
 import type { RuntimeConfig } from "../../src/config/runtime-config.js";
 import { CareerService } from "../../src/modules/career/service.js";
 import { IdentityService } from "../../src/modules/identity/service.js";
+import { ISOLATED_DATABASE_TIMEOUT_MS } from "../support/timeouts.js";
 
 const rootDatabaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = rootDatabaseUrl ? describe : describe.skip;
@@ -72,7 +72,7 @@ describeWithDatabase("career authenticated vertical slice", () => {
     };
     app = buildApi({ config, identityService, careerService });
     origin = await app.listen({ host: "127.0.0.1", port: 0 });
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   afterAll(async () => {
     if (app) await app.close();
@@ -81,7 +81,7 @@ describeWithDatabase("career authenticated vertical slice", () => {
       await admin.unsafe(`drop database if exists \`${databaseName}\``);
       await admin.end({ timeout: 5 });
     }
-  }, 30_000);
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
 
   async function api(
     path: string,
