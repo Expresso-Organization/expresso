@@ -2,7 +2,7 @@ import {
   BrewJobStatusSchema,
   type BrewJobType,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import { addOutboxEvent } from "../../platform/outbox.js";
 
@@ -52,9 +52,9 @@ const TOPIC: Record<BrewJobType, string> = {
 };
 
 export class BrewJobService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
 
-  constructor(sql: postgres.Sql) {
+  constructor(sql: SqlTag) {
     this.#sql = sql;
   }
 

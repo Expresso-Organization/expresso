@@ -1,5 +1,5 @@
 import type { JobsOptions } from "bullmq";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "./mysql.js";
 
 export interface OutboxEventInput {
   topic: string;
@@ -34,7 +34,7 @@ export interface QueuePublisher {
 }
 
 export interface OutboxDispatcherOptions {
-  sql: postgres.Sql;
+  sql: SqlTag;
   queue: QueuePublisher;
   batchSize?: number;
   maxAttempts?: number;
@@ -61,7 +61,7 @@ function sanitizedError(error: unknown): string {
 }
 
 export async function addOutboxEvent(
-  sql: postgres.Sql | postgres.TransactionSql,
+  sql: SqlTag | SqlTag,
   input: OutboxEventInput,
 ): Promise<OutboxEvent> {
   const rows = await sql<OutboxRow[]>`
@@ -69,7 +69,7 @@ export async function addOutboxEvent(
       insert into platform_outbox (topic, payload, idempotency_key)
       values (
         ${input.topic},
-        ${sql.json(input.payload as postgres.JSONValue)},
+        ${sql.json(input.payload as JSONValue)},
         ${input.idempotencyKey}
       )
       on conflict (idempotency_key) do nothing
@@ -89,7 +89,7 @@ export async function addOutboxEvent(
 }
 
 export class OutboxDispatcher {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #queue: QueuePublisher;
   readonly #batchSize: number;
   readonly #maxAttempts: number;

@@ -1,4 +1,4 @@
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import { AccountLifecycleService } from "../account-lifecycle/service.js";
 import { AnalyticsService } from "../analytics/service.js";
@@ -47,14 +47,14 @@ function runDto(row: RunRow, at = new Date()) {
 }
 
 export class SchedulingService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #analytics: AnalyticsService;
   readonly #accounts: AccountLifecycleService;
   /** 수집 어댑터는 워커에만 있다. API 프로세스는 이 자리를 비운 채 돈다. */
   readonly #ingest: JobIngestService | null;
   readonly #overrides: Partial<Record<ScheduledJobKey, (at: Date) => Promise<Record<string, unknown>>>>;
 
-  constructor(sql: postgres.Sql, dependencies: {
+  constructor(sql: SqlTag, dependencies: {
     analytics?: AnalyticsService;
     accounts?: AccountLifecycleService;
     ingest?: JobIngestService | null;

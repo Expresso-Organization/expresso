@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { AnalyticsEventSchema } from "@expresso/contracts";
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { AnalyticsService, validateInsightDraft } from "./service.js";

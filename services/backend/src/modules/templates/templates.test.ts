@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { contrastRatio, ensureReadableStyle, renderTemplate } from "./render.js";

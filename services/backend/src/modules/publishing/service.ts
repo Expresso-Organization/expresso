@@ -8,7 +8,7 @@ import {
   type PublishPortfolio,
   type SubmitExport,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import { EntitlementService } from "../entitlements/service.js";
 import { addOutboxEvent } from "../../platform/outbox.js";
@@ -84,16 +84,16 @@ function isUniqueViolation(error: unknown): boolean {
 }
 
 export class PublishingService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #signingSecret: string;
 
-  constructor(sql: postgres.Sql, signingSecret = "expresso-local-asset-signing-secret") {
+  constructor(sql: SqlTag, signingSecret = "expresso-local-asset-signing-secret") {
     if (signingSecret.length < 16) throw new Error("asset signing secret must be at least 16 characters");
     this.#sql = sql;
     this.#signingSecret = signingSecret;
   }
 
-  async #snapshot(transaction: postgres.TransactionSql, userId: string, portfolioId: string) {
+  async #snapshot(transaction: SqlTag, userId: string, portfolioId: string) {
     const portfolio = (await transaction<{ id: string; title: string; template_id: string }[]>`
       select id, title, template_id from portfolio where id = ${portfolioId} and user_id = ${userId} for update
     `)[0];

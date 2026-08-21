@@ -13,7 +13,7 @@ import {
   type SubmitJobPosting,
   type UpsertJobInterest,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import { addOutboxEvent } from "../../platform/outbox.js";
 import { JobMarketError } from "./errors.js";
@@ -78,9 +78,9 @@ function mapSavedSearch(row: SavedSearchRow) {
 }
 
 export class JobMarketService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
 
-  constructor(sql: postgres.Sql) {
+  constructor(sql: SqlTag) {
     this.#sql = sql;
   }
 
@@ -225,7 +225,7 @@ export class JobMarketService {
     // 늘어난다. 방금 한 검색과 같은 말이면 그 줄을 갱신한다.
     const repeated = await this.#sql<IdRow[]>`
       update recent_search set
-        conditions = ${this.#sql.json(conditions as postgres.JSONValue)},
+        conditions = ${this.#sql.json(conditions as JSONValue)},
         result_count = ${resultCount},
         created_at = now()
       where id = (
@@ -253,7 +253,7 @@ export class JobMarketService {
       insert into recent_search (user_id, query_text, conditions, result_count)
       values (
         ${userId}, ${query},
-        ${this.#sql.json(conditions as postgres.JSONValue)}, ${resultCount}
+        ${this.#sql.json(conditions as JSONValue)}, ${resultCount}
       )
       returning id
     `;
@@ -299,7 +299,7 @@ export class JobMarketService {
       insert into saved_search (user_id, name, query_text, filters, notify)
       values (
         ${userId}, ${input.name}, ${input.originalQuery},
-        ${this.#sql.json({ conditions: input.conditions } as postgres.JSONValue)},
+        ${this.#sql.json({ conditions: input.conditions } as JSONValue)},
         ${input.notify}
       )
       returning *
@@ -400,7 +400,7 @@ export class JobMarketService {
       )
       values (
         ${userId}, ${jobPostingId}, ${match.total},
-        ${this.#sql.json(match.axes as postgres.JSONValue)},
+        ${this.#sql.json(match.axes as JSONValue)},
         ${match.reason}, ${match.nextAction}, ${at}
       )
       on conflict (user_id, job_posting_id)

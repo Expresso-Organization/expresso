@@ -4,9 +4,9 @@ import {
   type EntitlementDecision,
   type PlanCode,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
-type DatabaseClient = postgres.Sql | postgres.TransactionSql;
+type DatabaseClient = SqlTag | SqlTag;
 
 interface EntitlementSubjectRow {
   plan_code: PlanCode;

@@ -13,7 +13,7 @@ import {
   type UpdateWidget,
   type Widget,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import {
   DEFAULT_LAYOUT,
@@ -85,7 +85,7 @@ export function validateInsightDraft(draft: InsightDraft, availableMetricKeys: R
 }
 
 export class AnalyticsService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #visitorSalt: string;
   readonly #writer: InsightWriter | null;
   readonly #consent: ConsentService | null;
@@ -94,7 +94,7 @@ export class AnalyticsService {
   readonly #rateLimit: number;
 
   constructor(
-    sql: postgres.Sql,
+    sql: SqlTag,
     options: {
       visitorSalt?: string; minimumSample?: number; rateLimit?: number;
       writer?: InsightWriter | null;
@@ -839,7 +839,7 @@ interface WidgetRow {
 }
 
 async function insertWidget(
-  sql: postgres.Sql | postgres.TransactionSql,
+  sql: SqlTag | SqlTag,
   userId: string,
   viewId: string,
   widget: Omit<Widget, "id">,

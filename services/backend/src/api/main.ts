@@ -1,6 +1,6 @@
 import { buildApi } from "./build-app.js";
 import { loadRuntimeConfig } from "../config/runtime-config.js";
-import { createPostgresResource } from "../platform/postgres.js";
+import { createMysqlResource } from "../platform/mysql.js";
 import { createRedisResource, createStreamRedis } from "../platform/redis.js";
 import { IdentityService } from "../modules/identity/service.js";
 import { RemoteGoogleIdTokenVerifier } from "../modules/identity/google.js";
@@ -36,26 +36,26 @@ import { EngagementService } from "../modules/engagement/service.js";
 import { AccountLifecycleService } from "../modules/account-lifecycle/service.js";
 
 const config = loadRuntimeConfig();
-const postgres = createPostgresResource(config.databaseUrl);
+const database = createMysqlResource(config.databaseUrl);
 const redis = createRedisResource(config.redisUrl);
-const identityService = new IdentityService(postgres.sql);
+const identityService = new IdentityService(database.sql);
 // 클라이언트 ID가 없으면 만들지 않는다 — 라우트가 503으로 답하고, 화면은
 // 버튼을 열지 않는다. 검증기 없이 도는 척하는 경로를 두지 않는다.
 const googleIdTokenVerifier = config.googleClientId
   ? new RemoteGoogleIdTokenVerifier({ clientId: config.googleClientId })
   : null;
-const entitlementService = new EntitlementService(postgres.sql);
-const careerService = new CareerService(postgres.sql);
-const jobMarketService = new JobMarketService(postgres.sql);
+const entitlementService = new EntitlementService(database.sql);
+const careerService = new CareerService(database.sql);
+const jobMarketService = new JobMarketService(database.sql);
 const jobUrlImporter = new JobUrlImporter();
-const jobBoardService = new JobBoardService(postgres.sql);
-const jobAnalysisService = new JobAnalysisService(postgres.sql);
-const materialsService = new MaterialsService(postgres.sql);
-const interviewService = new InterviewService(postgres.sql);
-const recipeService = new RecipeService(postgres.sql);
-const companyResearchService = new CompanyResearchService(postgres.sql);
-const templateService = new TemplateService(postgres.sql, recipeService);
-const generationService = new GenerationService(postgres.sql);
+const jobBoardService = new JobBoardService(database.sql);
+const jobAnalysisService = new JobAnalysisService(database.sql);
+const materialsService = new MaterialsService(database.sql);
+const interviewService = new InterviewService(database.sql);
+const recipeService = new RecipeService(database.sql);
+const companyResearchService = new CompanyResearchService(database.sql);
+const templateService = new TemplateService(database.sql, recipeService);
+const generationService = new GenerationService(database.sql);
 // 04b "말로 고치기"만 요청 안에서 계약을 부른다 — 사용자가 결과를 보고
 // 적용할지 정하는 대화형 편집이라 뒤로 미룰 수 없다(§8.3은 이 화면을
 // 스트리밍으로 그린다. 지금은 한 번에 받는다).
@@ -63,7 +63,7 @@ const ai = createAiClient(config);
 
 // 수집은 매일 아침 워커가 돌린다. API에는 목록·수동 실행과 주소 읽기만 있으면 된다.
 const jobIngestService = new JobIngestService(
-  postgres.sql,
+  database.sql,
   createJobSourceAdapters(config),
   // AI가 꺼져 있으면 본문을 읽지 않는다. 규칙 폴백을 두지 않는 이유는
   // 정확도가 조용히 갈리기 때문이다 — 화면은 그 둘을 구분해 말할 수 없다.
@@ -73,28 +73,28 @@ const jobIngestService = new JobIngestService(
   new BundledMarkReader(new SiteMarkReader()),
 );
 // 계약을 부르기 전에 지나는 문. 규칙 폴백은 지나지 않는다.
-const consentService = new ConsentService(postgres.sql);
+const consentService = new ConsentService(database.sql);
 const portfolioEditingService = new PortfolioEditingService(
-  postgres.sql,
+  database.sql,
   ai ? new AiBlockEditor(ai) : null,
   consentService,
 );
-const portfolioReadService = new PortfolioReadService(postgres.sql);
-const layoutService = new LayoutService(postgres.sql, ai ? new AiLayoutRemixer(ai) : null, consentService);
-const brewJobService = new BrewJobService(postgres.sql);
-const publishingService = new PublishingService(postgres.sql, config.assetSigningSecret);
-const mediaService = new MediaService(postgres.sql, createMediaStorage(config));
+const portfolioReadService = new PortfolioReadService(database.sql);
+const layoutService = new LayoutService(database.sql, ai ? new AiLayoutRemixer(ai) : null, consentService);
+const brewJobService = new BrewJobService(database.sql);
+const publishingService = new PublishingService(database.sql, config.assetSigningSecret);
+const mediaService = new MediaService(database.sql, createMediaStorage(config));
 // 자유 생성 지면. 요청 안에서 계약을 부른다 — 사용자가 뽑기를 누르고 기다리는
 // 화면이고, 결과가 곧 페이지 전체라 뒤로 미뤄 봐야 볼 것이 없다.
 // 만들어지는 지면이 지나는 길. 워커가 쓰고 여기서 읽어 브라우저로 흘린다.
 const pageStream = new PageStream(createStreamRedis(config.redisUrl), {
   prefix: config.queuePrefix,
 });
-const pageService = new PageService(postgres.sql, consentService, pageStream);
+const pageService = new PageService(database.sql, consentService, pageStream);
 // AI가 꺼져 있으면 지면을 만들 길이 없다. 규칙 폴백을 두지 않는다 —
 // 이 경로의 산출물은 **모델이 쓴 마크업 그 자체**여서 흉내 낼 것이 없다.
 const pageGenerator = ai ? new AiPageGenerator(ai) : null;
-const analyticsService = new AnalyticsService(postgres.sql, {
+const analyticsService = new AnalyticsService(database.sql, {
   ...(config.analyticsVisitorSalt ? { visitorSalt: config.analyticsVisitorSalt } : {}),
   // 해설은 07에서 사용자가 누를 때만 쓴다. 없으면 숫자를 다시 읽어 주는 한 문장이 남는다.
   writer: ai ? new AiInsightWriter(ai) : null,
@@ -102,11 +102,11 @@ const analyticsService = new AnalyticsService(postgres.sql, {
   // 기업 도메인 방문은 PRO다. 자격 판정이 없으면 아예 보여주지 않는다.
   entitlements: entitlementService,
 });
-const engagementService = new EngagementService(postgres.sql);
-const accountLifecycleService = new AccountLifecycleService(postgres.sql);
+const engagementService = new EngagementService(database.sql);
+const accountLifecycleService = new AccountLifecycleService(database.sql);
 const app = buildApi({
   config,
-  readinessChecks: [postgres.readinessCheck, redis.readinessCheck],
+  readinessChecks: [database.readinessCheck, redis.readinessCheck],
   identityService,
   ...(googleIdTokenVerifier ? { googleIdTokenVerifier } : {}),
   entitlementService,
@@ -145,7 +145,7 @@ async function stop(signal: NodeJS.Signals): Promise<void> {
 
   app.log.info({ signal }, "stopping API");
   await app.close();
-  await Promise.allSettled([postgres.close(), redis.close()]);
+  await Promise.allSettled([database.close(), redis.close()]);
 }
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
@@ -161,6 +161,6 @@ try {
   await app.listen({ host: config.host, port: config.port });
 } catch (error) {
   app.log.error({ error }, "failed to start API");
-  await Promise.allSettled([app.close(), postgres.close(), redis.close()]);
+  await Promise.allSettled([app.close(), database.close(), redis.close()]);
   process.exitCode = 1;
 }

@@ -9,7 +9,7 @@ import {
   type GeneratedPage,
   type PageStyleGrammar,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import type { ConsentService } from "../consent/service.js";
 import { withTimeout } from "../../platform/timeouts.js";
@@ -101,11 +101,11 @@ function toPage(row: PageRow): GeneratedPage {
 }
 
 export class PageService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #consent: ConsentService | null;
   readonly #stream: PageStream | null;
 
-  constructor(sql: postgres.Sql, consent?: ConsentService | null, stream?: PageStream | null) {
+  constructor(sql: SqlTag, consent?: ConsentService | null, stream?: PageStream | null) {
     this.#sql = sql;
     this.#consent = consent ?? null;
     this.#stream = stream ?? null;
@@ -406,12 +406,12 @@ export class PageService {
         ${userId}, ${portfolioId}, ${result.html}, ${result.css}, ${result.rationale},
         ${(current?.revision ?? -1) + 1}, ${options.instruction ?? null},
         ${PAGE_PROMPT_VERSION}, ${result.ungrounded}, ${result.removed},
-        ${result.qaReport.status}, ${this.#sql.json(result.qaReport as postgres.JSONValue)},
-        ${this.#sql.json(result.manifest as postgres.JSONValue)},
+        ${result.qaReport.status}, ${this.#sql.json(result.qaReport as JSONValue)},
+        ${this.#sql.json(result.manifest as JSONValue)},
         ${context.portfolioPlan
-          ? this.#sql.json(context.portfolioPlan as postgres.JSONValue)
+          ? this.#sql.json(context.portfolioPlan as JSONValue)
           : null},
-        ${context.style ? this.#sql.json(context.style as unknown as postgres.JSONValue) : null},
+        ${context.style ? this.#sql.json(context.style as unknown as JSONValue) : null},
         ${DESIGN_PRINCIPLES_VERSION}
       ) returning *
     `)[0];

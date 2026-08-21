@@ -6,7 +6,7 @@ import {
   type InterviewQuestionBasis,
   type SaveInterviewAnswer,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import { generateQuestionDrafts, hasMetric, questionTextForBasis } from "./questions.js";
 import {
@@ -94,13 +94,13 @@ function hashAnswer(questionId: string, input: SaveInterviewAnswer) {
 }
 
 export class InterviewService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #writer: QuestionWriter | null;
   readonly #cleaner: RecordCleaner | null;
   readonly #consent: ConsentService | null;
 
   constructor(
-    sql: postgres.Sql,
+    sql: SqlTag,
     writer?: QuestionWriter | null,
     cleaner?: RecordCleaner | null,
     consent?: ConsentService | null,
@@ -162,7 +162,7 @@ export class InterviewService {
       await transaction`
         update record
         set title = ${cleaned.title},
-            properties = ${transaction.json(cleanupProperties(cleaned) as postgres.JSONValue)},
+            properties = ${transaction.json(cleanupProperties(cleaned) as JSONValue)},
             -- 정리된 기록은 재료로 고를 수 있다. 원문만 남은 초안은 못 고른다.
             status = 'organized',
             updated_at = now()
@@ -170,7 +170,7 @@ export class InterviewService {
       `;
       await transaction`
         update answer_record_change
-        set changed_fields = ${transaction.json(cleanupChangedFields(cleaned) as postgres.JSONValue)}
+        set changed_fields = ${transaction.json(cleanupChangedFields(cleaned) as JSONValue)}
         where user_id = ${userId} and answer_id = ${answerId}
       `;
     });
@@ -226,7 +226,7 @@ export class InterviewService {
             text, basis, variant, rationale
           ) values (
             ${userId}, ${session.id}, ${draft.requirementId}, ${order},
-            ${draft.text}, ${transaction.json(draft.basis as postgres.JSONValue)},
+            ${draft.text}, ${transaction.json(draft.basis as JSONValue)},
             ${draft.variant}, ${draft.rationale}
           )
         `;
@@ -476,7 +476,7 @@ export class InterviewService {
         ) values (
           ${userId}, ${sessionId}, ${question.requirement_id}, ${question.id},
           ${question.order_no}, ${rewritten.text},
-          ${transaction.json(question.basis as postgres.JSONValue)}, ${variant},
+          ${transaction.json(question.basis as JSONValue)}, ${variant},
           ${rewritten.rationale}
         )
       `;

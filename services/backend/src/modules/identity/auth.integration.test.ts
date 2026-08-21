@@ -4,7 +4,7 @@ import {
   CareerCategoriesResponseSchema,
   CurrentUserResponseSchema,
 } from "@expresso/contracts";
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";

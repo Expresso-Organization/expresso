@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { migrate } from "@expresso/database";
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { SCHEDULED_JOB_KEYS, SchedulingService, type ScheduledJobKey } from "./service.js";
@@ -11,8 +11,8 @@ const describeWithDatabase = rootDatabaseUrl ? describe : describe.skip;
 
 describeWithDatabase("scheduled job leases and observability", () => {
   const databaseName = `expresso_scheduler_${randomUUID().replaceAll("-", "")}`;
-  let admin: postgres.Sql;
-  let sql: postgres.Sql;
+  let admin: SqlTag;
+  let sql: SqlTag;
   let service: SchedulingService;
   let retentionCalls = 0;
 

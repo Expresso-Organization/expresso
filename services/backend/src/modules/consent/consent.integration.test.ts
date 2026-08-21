@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { CONSENT_POLICY_VERSION } from "@expresso/contracts";
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { CONTRACT_CONSENT, ConsentError, ConsentService } from "./service.js";

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import type { JobFactsAiOutput } from "@expresso/contracts";
-import postgres from "postgres";
+import type { SqlTag } from "../../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { AiCallSpec, AiClient, AiResult } from "../../../platform/ai/client.js";

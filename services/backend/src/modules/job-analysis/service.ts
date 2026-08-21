@@ -6,7 +6,7 @@ import {
   type ExtractedRequirement,
   type JobAnalysisExtraction,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import { addOutboxEvent } from "../../platform/outbox.js";
 import { calculateRequirementCoverage } from "./coverage.js";
@@ -121,9 +121,9 @@ function safeFailure(error: unknown): { code: string; retryable: boolean } {
 }
 
 export class JobAnalysisService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
 
-  constructor(sql: postgres.Sql) {
+  constructor(sql: SqlTag) {
     this.#sql = sql;
   }
 
@@ -253,7 +253,7 @@ export class JobAnalysisService {
               job_analysis_id, user_id, previous_version, requirements, archived_at
             ) values (
               ${jobAnalysisId}, ${analysis.user_id}, ${analysis.result_version},
-              ${transaction.json(previousRows.map(mapRequirement) as postgres.JSONValue)}, now()
+              ${transaction.json(previousRows.map(mapRequirement) as JSONValue)}, now()
             )
             on conflict (job_analysis_id)
             do update set
@@ -288,7 +288,7 @@ export class JobAnalysisService {
                 ${analysis.job_posting_id}, ${order}, ${requirement.label},
                 ${requirement.kind},
                 ${requirement.axis === "other" ? null : requirement.axis},
-                ${transaction.json(requirement.sourceSpan as postgres.JSONValue)},
+                ${transaction.json(requirement.sourceSpan as JSONValue)},
                 ${EXTRACTOR_VERSION}
               )
               returning id
@@ -306,7 +306,7 @@ export class JobAnalysisService {
           targets = inserted;
           await transaction`
             update job_posting
-            set requirements = ${transaction.json(extraction.normalized as postgres.JSONValue)},
+            set requirements = ${transaction.json(extraction.normalized as JSONValue)},
                 normalized_at = now()
             where id = ${analysis.job_posting_id}
           `;

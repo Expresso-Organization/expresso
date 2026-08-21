@@ -4,7 +4,7 @@ import {
   ConsentScopeSchema,
   type ConsentScope,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import type { AiContract } from "../../platform/ai/client.js";
 
@@ -73,11 +73,11 @@ interface ConsentRow {
 }
 
 export class ConsentService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   /** 지금 묻고 있는 문구의 판. 문구를 고치면 올린다. */
   readonly #policyVersion: number;
 
-  constructor(sql: postgres.Sql, options: { policyVersion?: number } = {}) {
+  constructor(sql: SqlTag, options: { policyVersion?: number } = {}) {
     this.#sql = sql;
     this.#policyVersion = options.policyVersion ?? CONSENT_POLICY_VERSION;
   }

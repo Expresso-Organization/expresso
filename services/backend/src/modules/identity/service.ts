@@ -7,7 +7,7 @@ import type {
   Signup,
   SocialAuthSession,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import type { GoogleIdentity } from "./google.js";
 import { hashPassword, verifyPassword } from "./password.js";
@@ -101,9 +101,9 @@ function displayNameFor(identity: GoogleIdentity): string {
 }
 
 export class IdentityService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
 
-  constructor(sql: postgres.Sql) {
+  constructor(sql: SqlTag) {
     this.#sql = sql;
   }
 

@@ -8,7 +8,7 @@ import {
   type PortfolioBlock,
   type PortfolioSection,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import { parseStoredSpec } from "../layout/service.js";
 
@@ -164,9 +164,9 @@ function mapSummary(row: SummaryRow) {
 }
 
 export class PortfolioReadService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
 
-  constructor(sql: postgres.Sql) {
+  constructor(sql: SqlTag) {
     this.#sql = sql;
   }
 
