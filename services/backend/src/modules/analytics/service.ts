@@ -675,11 +675,14 @@ export class AnalyticsService {
     if (existing) return { customized: true, widgets: await this.#widgetsOf(existing) };
 
     const viewId = await this.#sql.begin(async (transaction) => {
-      const row = (await transaction<{ id: string }[]>`
-        insert into dashboard_view (user_id, portfolio_id, name, period, is_default)
-        select ${userId}, id, '기본', ${preset}, true
+      const defaultViewId = randomUUID();
+      await transaction`
+        insert into dashboard_view (id, user_id, portfolio_id, name, period, is_default)
+        select ${defaultViewId}, ${userId}, id, '기본', ${preset}, true
         from portfolio where id = ${portfolioId} and user_id = ${userId}
-        returning id
+      `;
+      const row = (await transaction<{ id: string }[]>`
+        select id from dashboard_view where id = ${defaultViewId}
       `)[0];
       if (!row) throw new AnalyticsError(404, "portfolio not found");
       for (const widget of DEFAULT_LAYOUT) await insertWidget(transaction, userId, row.id, widget);

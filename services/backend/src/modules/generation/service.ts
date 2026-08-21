@@ -431,11 +431,14 @@ export class GenerationService {
           `;
         }
         await transaction`update generation_job set stage = 'charging' where id = ${jobId}`;
-        const usage = (await transaction<{ id: string }[]>`
+        await transaction`
           insert into usage_counter (user_id, period_start, used, resets_at)
           values (${current.user_id}, ${decision.usage.periodStart}, 1, ${decision.usage.resetsAt})
           as new on duplicate key update used = usage_counter.used + 1, resets_at = new.resets_at
-          returning id
+        `;
+        const usage = (await transaction<{ id: string }[]>`
+          select id from usage_counter
+          where user_id = ${current.user_id} and period_start = ${decision.usage.periodStart}
         `)[0];
         if (!usage) throw new Error("usage counter missing");
         await transaction`
