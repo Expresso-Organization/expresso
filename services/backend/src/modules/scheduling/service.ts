@@ -132,12 +132,19 @@ export class SchedulingService {
       return { updated: rows.length };
     }
     if (key === "expire_postings") {
-      const rows = await this.#sql<{ id: string }[]>`
-        update interest set stage = 'closed' from job_posting
-        where job_posting.id = interest.job_posting_id and job_posting.expires_at <= ${at} and interest.stage <> 'closed'
-        returning interest.id
+      // 두 표를 함께 보는 갱신은 MySQL 에서 join 으로 적는다. 몇 줄이 닫혔는지는
+      // 고치기 전에 세어 둔다.
+      const targets = await this.#sql<{ id: string }[]>`
+        select interest.id from interest
+        join job_posting on job_posting.id = interest.job_posting_id
+        where job_posting.expires_at <= ${at} and interest.stage <> 'closed'
       `;
-      return { closed: rows.length };
+      if (targets.length > 0) {
+        await this.#sql`
+          update interest set stage = 'closed' where id in ${this.#sql(targets.map(({ id }) => id))}
+        `;
+      }
+      return { closed: targets.length };
     }
     if (key === "notification_batch") {
       const rows = await this.#sql<{ id: string; user_id: string }[]>`
