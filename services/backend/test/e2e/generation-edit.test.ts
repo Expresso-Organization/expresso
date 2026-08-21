@@ -67,7 +67,7 @@ describeWithInfrastructure("generation edit restore vertical slice", () => {
     (globalThis as unknown as { generationFixture: { recipeId: string; templateId: string } }).generationFixture = { recipeId, templateId };
   }, 30000);
 
-  afterAll(async () => { if (worker) await worker.close(); await Promise.allSettled([queue.queue.obliterate({ force: true }), queue.deadLetterQueue.obliterate({ force: true })]); await queue.close(); if (app) await app.close(); if (sql) await sql.end({ timeout: 5 }); if (admin) {    await expect(generation.process(jobId, new StubSentenceWriter())).rejects.toThrow(/locked block/);
+  afterAll(async () => { if (worker) await worker.close(); await Promise.allSettled([queue.queue.obliterate({ force: true }), queue.deadLetterQueue.obliterate({ force: true })]); await queue.close(); if (app) await app.close(); if (sql) await sql.end({ timeout: 5 }); if (admin) { await admin.unsafe(`drop database if exists \`${databaseName}\``); await admin.end({ timeout: 5 }); } }await expect(generation.process(jobId, new StubSentenceWriter())).rejects.toThrow(/locked block/);
     expect((await sql<{ used: number }[]>`select used from usage_counter limit 1`)[0]?.used).toBe(1);
     const restore = await api(`/v1/portfolios/${portfolioId}/restore`, { method: 'POST', body: { snapshotId, confirm: true } });
     expect(restore.status).toBe(200);
