@@ -483,11 +483,11 @@ export class PortfolioEditingService {
       const kept = target.snapshot.sections.flatMap((section) =>
         section.blocks.map((block) => block.id));
       await transaction`
-        delete from block using portfolio_section
-        where block.portfolio_section_id = portfolio_section.id
-          and portfolio_section.portfolio_id = ${portfolioId}
+        delete block from block
+        join portfolio_section on portfolio_section.id = block.portfolio_section_id
+        where portfolio_section.portfolio_id = ${portfolioId}
           and block.user_id = ${userId}
-          and not (block.id in ${transaction(kept)})
+          and block.id not in ${transaction(kept)}
       `;
       for (const section of target.snapshot.sections) {
         await transaction`update portfolio_section set order_no = ${section.order}, visible = ${section.visible} where id = ${section.id} and user_id = ${userId} and portfolio_id = ${portfolioId}`;
