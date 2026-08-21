@@ -132,9 +132,9 @@ flowchart LR
     WORKER --> MEDIA[(미디어 저장소)]
     WORKER --> AI[AI 프로바이더]
 
-    CONTRACTS[@expresso/contracts] -. 요청·응답 계약 .-> WEB
-    CONTRACTS -. 요청·응답 계약 .-> API
-    DATABASE[@expresso/database] -. 스키마·마이그레이션 .-> DB
+    CONTRACTS["공유 API 계약<br/>@expresso/contracts"] -.-> WEB
+    CONTRACTS -.-> API
+    DATABASE["DB 스키마·마이그레이션<br/>@expresso/database"] -.-> DB
 ```
 
 ### 기술 스택
