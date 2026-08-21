@@ -89,6 +89,17 @@ jobs:
           pnpm --filter @expresso/contracts build
           pnpm --filter @expresso/database build
 
+      # 마이그레이션이 트리거와 저장 프로시저를 만든다. 바이너리 로그가 켜져
+      # 있으면 MySQL 은 그것을 만드는 사람에게 SUPER 를 요구한다 — 8.4 는 행
+      # 단위로만 기록하므로 되감을 문장이 없고, 그 검사만 끈다.
+      # 서비스 컨테이너에는 명령 인자를 넘길 수 없어 여기서 켠다
+      # (infra/compose.server.yaml 에서는 서버 설정으로 들어간다).
+      - name: 트리거 생성 검사 끄기
+        run: |
+          docker run --rm --network host mysql:8.4 \
+            mysql -h 127.0.0.1 -P 3306 -uroot -pexpresso \
+            -e "set global log_bin_trust_function_creators=1"
+
       - name: 마이그레이션
         run: pnpm db:migrate
 
