@@ -25,6 +25,24 @@ Oracle Cloud 인스턴스 한 대에 API · Worker · 웹을 함께 올리고, n
 node는 nvm이 깐 `v24.13.1`을 **절대 경로로** 부른다. nvm의 `default` 별칭은
 22라서, 배포 스크립트가 `nvm.sh`를 읽어 오면 서비스와 다른 node로 짓게 된다.
 
+## 공고 데이터 옮기기
+
+MySQL 로 갈아탈 때 사람에게 딸린 것은 계정과 함께 새로 시작하고, 모아 둔 공고는
+가져온다. 옮기는 표는 넷이다 — 수집 소스 · 기업 · 채용 공고 · 요구 역량.
+
+```bash
+SOURCE_PSQL="docker exec -i expresso-local-postgres-1 psql -U expresso -d expresso" \
+DATABASE_URL="mysql://expresso:expresso@127.0.0.1:53306/expresso" \
+node scripts/operations/copy-job-postings.mjs
+```
+
+`SOURCE_PSQL` 은 옛 PostgreSQL 에 붙는 psql 실행 명령입니다. 서버에서는 그 서버의
+컨테이너 이름으로 바꿔 같은 명령을 돌립니다.
+
+두 스키마가 어긋나 있어도 됩니다 — 양쪽에 다 있는 열만 옮기고 나머지는 MySQL 쪽
+기본값이 채웁니다. 이미 있는 id 는 건너뛰므로 여러 번 돌려도 결과가 같습니다.
+옮긴 뒤에는 줄 수와 본문 길이 합을 양쪽에서 세어 견주십시오.
+
 ## 배포 전에 반드시 아는 것
 
 이 셋을 모르면 배포는 성공한 것처럼 보이고 화면만 깨진다.
