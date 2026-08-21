@@ -14,7 +14,8 @@ compose_file="${EXPRESSO_COMPOSE_FILE:-$repo_root/infra/compose.yaml}"
 mkdir -p "$(dirname "$output_path")"
 docker compose -f "$compose_file" exec -T mysql \
   mysqldump --user=expresso --password="${EXPRESSO_MYSQL_PASSWORD:-expresso}" \
-  --single-transaction --routines --triggers --set-gtid-purged=OFF expresso \
+  --single-transaction --routines --triggers --set-gtid-purged=OFF \
+  --no-tablespaces expresso \
   > "$output_path"
 test -s "$output_path"
 echo "backup_path=$output_path"

@@ -8,7 +8,8 @@ fi
 
 repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
 backup_path="$1"
-compose_file="$repo_root/infra/compose.yaml"
+# 서버에서 돌릴 때는 compose 파일을 넘긴다 — 통 이름이 다르다.
+compose_file="${EXPRESSO_COMPOSE_FILE:-$repo_root/infra/compose.yaml}"
 restore_database="expresso_restore_rehearsal"
 
 test -s "$backup_path"
