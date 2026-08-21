@@ -261,6 +261,21 @@ describeWithDatabase("Expresso 스키마", () => {
     ).rejects.toThrow(/same portfolio/);
   });
 
+  it("계약이 받는 길이를 열이 담는다", async () => {
+    // MySQL 의 text 는 65,535 바이트에서 끊긴다 — 한글이면 21,845자다. 계약이 그보다
+    // 긴 값을 통과시키는 자리는 열도 그만큼 넓어야 검증을 지난 값이 거절되지 않는다.
+    const narrow = await rows<{ table_name: string; column_name: string }>(
+      `select table_name as table_name, column_name as column_name
+       from information_schema.columns
+       where table_schema = database() and data_type = 'text'
+         and (table_name, column_name) in (
+           ('record', 'body_md'), ('answer', 'transcript'),
+           ('answer_record_change', 'source_quote'), ('job_posting', 'description_raw'),
+           ('generated_page', 'html'), ('generated_page', 'css'))`,
+    );
+    expect(narrow.map(({ table_name, column_name }) => `${table_name}.${column_name}`)).toEqual([]);
+  });
+
   it("트리거 본문은 세미콜론으로 끝나지 않는다", async () => {
     // 세미콜론이 본문에 남으면 mysqldump 가 받은 백업이 그 줄에서 복원을 멈춘다.
     // 문장 하나짜리 본문은 begin · end 로 감싸야 그 일이 없다.
