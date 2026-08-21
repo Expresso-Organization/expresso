@@ -391,7 +391,7 @@ export class CareerService {
         count(case when record.status = 'draft' then 1 end) as draft,
         count(case when record.status = 'organized' then 1 end) as organized,
         count(case when record.status = 'verified' then 1 end) as verified,
-        count(case when record.body_md = '' and record.properties = '{}' then 1 end) as empty
+        count(case when record.body_md = '' and json_length(record.properties) = 0 then 1 end) as \`empty\`
       from record
       where ${scope()}
     `;
@@ -491,7 +491,7 @@ export class CareerService {
           where user_id = ${userId}
             and category_id = ${categoryId}
             and deleted_at is null
-            and properties ? ${key}
+            and json_contains_path(properties, 'one', concat('$.', ${key}))
         `;
         const count = Number(counts[0]?.count ?? 0);
         if (count > 0) propertyValueCounts[key] = count;
@@ -505,10 +505,10 @@ export class CareerService {
       for (const key of Object.keys(propertyValueCounts)) {
         await transaction`
           update record
-          set properties = properties - ${key}
+          set properties = json_remove(properties, concat('$.', ${key}))
           where user_id = ${userId}
             and category_id = ${categoryId}
-            and properties ? ${key}
+            and json_contains_path(properties, 'one', concat('$.', ${key}))
         `;
       }
       const updatedRows = await transaction<CategoryRow[]>`

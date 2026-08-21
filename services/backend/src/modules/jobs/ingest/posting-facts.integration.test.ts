@@ -109,7 +109,7 @@ describeWithDatabase("수집과 본문 읽기의 분리", () => {
      * 휘둘린다. 내 것을 확실히 맨 앞에 세워 둔다.
      */
     await sql`
-      update job_posting set created_at = timestamptz '2000-01-01'
+      update job_posting set created_at = '2000-01-01 00:00:00'
       where external_id like ${`%${marker}%`}
     `;
   });
