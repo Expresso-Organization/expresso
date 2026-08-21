@@ -26,7 +26,7 @@ Node 24 이상, pnpm 11입니다.
 
 ```bash
 pnpm install
-pnpm infra:up                                   # PostgreSQL 55432 · Redis 56379
+pnpm infra:up                                   # MySQL 53306 · Redis 56379
 cp services/backend/.env.example services/backend/.env
 pnpm db:migrate
 pnpm dev:backend                                # http://127.0.0.1:4000
