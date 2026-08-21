@@ -1,7 +1,7 @@
 import { generateKeyPairSync, sign as signWith } from "node:crypto";
 
 import { ApiErrorResponseSchema, SocialAuthSessionResponseSchema } from "@expresso/contracts";
-import postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";

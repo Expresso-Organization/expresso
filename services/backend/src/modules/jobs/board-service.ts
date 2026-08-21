@@ -12,7 +12,7 @@ import {
   type JobRequirements,
   type ListJobPostingsQuery,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import { JobMarketError } from "./errors.js";
 import { countryOf, regionsOf } from "./ingest/classify.js";
@@ -277,9 +277,9 @@ function mapSummary(row: PostingRow, brew: BrewRow | undefined) {
 }
 
 export class JobBoardService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
 
-  constructor(sql: postgres.Sql) {
+  constructor(sql: SqlTag) {
     this.#sql = sql;
   }
 

@@ -8,7 +8,7 @@ import {
   type JobSourceProvider,
   type PostingFactsRun,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../../platform/mysql.js";
 
 import { JobMarketError } from "../errors.js";
 import type { JobSourceAdapter, RawPosting } from "./adapter.js";
@@ -96,13 +96,13 @@ function sourceDto(row: SourceRow) {
  * `expire_postings` 스케줄이 관심 공고를 닫을 수 있다.
  */
 export class JobIngestService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #adapters: Map<JobSourceProvider, JobSourceAdapter>;
   readonly #facts: FactsReader | null;
   readonly #marks: MarkReader | null;
 
   constructor(
-    sql: postgres.Sql,
+    sql: SqlTag,
     adapters: JobSourceAdapter[],
     facts: FactsReader | null = null,
     marks: MarkReader | null = null,

@@ -5,7 +5,7 @@ import {
   type CreateBrew,
   type UpdateBrew,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import { rankMaterials, type MaterialRecord } from "./ranking.js";
 import { EntitlementService } from "../entitlements/service.js";
@@ -83,9 +83,9 @@ function mapSource(row: SourceRow): BrewMaterial {
 }
 
 export class MaterialsService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
 
-  constructor(sql: postgres.Sql) {
+  constructor(sql: SqlTag) {
     this.#sql = sql;
   }
 

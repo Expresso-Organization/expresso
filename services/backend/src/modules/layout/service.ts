@@ -3,7 +3,7 @@ import {
   LayoutSpecSchema,
   type LayoutSpec,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import { LayoutRemixError, type LayoutRemixer } from "./remixer.js";
 import type { ConsentService } from "../consent/service.js";
@@ -38,11 +38,11 @@ export class LayoutError extends Error {
 }
 
 export class LayoutService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #remixer: LayoutRemixer | null;
   readonly #consent: ConsentService | null;
 
-  constructor(sql: postgres.Sql, remixer?: LayoutRemixer | null, consent?: ConsentService | null) {
+  constructor(sql: SqlTag, remixer?: LayoutRemixer | null, consent?: ConsentService | null) {
     this.#sql = sql;
     this.#remixer = remixer ?? null;
     this.#consent = consent ?? null;
@@ -132,7 +132,7 @@ export class LayoutService {
           order_no, selected, instruction
         ) values (
           ${userId}, ${portfolioId}, ${batch.batch_id},
-          ${transaction.json(remixed as unknown as postgres.JSONValue)},
+          ${transaction.json(remixed as unknown as JSONValue)},
           ${current.prompt_version}, ${batch.next_order}, true, ${instruction}
         )
       `;

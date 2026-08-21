@@ -2,7 +2,7 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import { loadRuntimeConfig } from "../config/runtime-config.js";
 import { OutboxDispatcher } from "../platform/outbox.js";
-import { createPostgresResource } from "../platform/postgres.js";
+import { createMysqlResource } from "../platform/mysql.js";
 import { createReliableQueue } from "../platform/queue.js";
 import { safeErrorSummary } from "../platform/observability.js";
 import { createQueueWorker } from "./create-queue-worker.js";
@@ -40,14 +40,14 @@ import { createStreamRedis } from "../platform/redis.js";
 import { AiPageGenerator } from "../modules/page/generator.js";
 
 const config = loadRuntimeConfig();
-const postgres = createPostgresResource(config.databaseUrl);
+const database = createMysqlResource(config.databaseUrl);
 const jobs = createReliableQueue<Record<string, unknown>>(
   "domain-jobs",
   config.redisUrl,
   config.queuePrefix,
 );
 const dispatcher = new OutboxDispatcher({
-  sql: postgres.sql,
+  sql: database.sql,
   queue: jobs.queue,
   batchSize: config.outboxBatchSize,
   maxAttempts: config.outboxMaxAttempts,
@@ -56,14 +56,14 @@ const abortController = new AbortController();
 // AI가 꺼져 있으면(`AI_PROVIDER=off`) 요건 추출과 문장 생성은 멈춘다.
 const ai = createAiClient(config);
 // 계약을 부르기 전에 지나는 문. 워커에서 도는 계약도 예외가 아니다.
-const consentService = new ConsentService(postgres.sql);
-const jobAnalysisService = new JobAnalysisService(postgres.sql);
-const generationService = new GenerationService(postgres.sql, consentService);
+const consentService = new ConsentService(database.sql);
+const jobAnalysisService = new JobAnalysisService(database.sql);
+const generationService = new GenerationService(database.sql, consentService);
 // 지면을 만드는 쪽이 여기다 — 조각은 전부 이 프로세스에서 나간다.
 const pageStream = new PageStream(createStreamRedis(config.redisUrl), {
   prefix: config.queuePrefix,
 });
-const pageService = new PageService(postgres.sql, consentService, pageStream);
+const pageService = new PageService(database.sql, consentService, pageStream);
 const analysisProcessor = createJobAnalysisProcessor(
   jobAnalysisService,
   ai ? new AiRequirementExtractor(ai) : new UnavailableRequirementExtractor(),
@@ -76,14 +76,14 @@ const generationProcessor = createGenerationProcessor(
   ai ? { service: pageService, generator: new AiPageGenerator(ai) } : null,
 );
 // 질문 생성 · 레시피 생성도 여기서 돈다. HTTP 요청은 잡만 만들고 바로 돌아간다.
-const brewJobService = new BrewJobService(postgres.sql);
+const brewJobService = new BrewJobService(database.sql);
 const interviewService = new InterviewService(
-  postgres.sql,
+  database.sql,
   ai ? new AiQuestionWriter(ai) : null,
   ai ? new AiRecordCleaner(ai) : null,
   consentService,
 );
-const recipeService = new RecipeService(postgres.sql, ai ? new AiRecipePlanner(ai) : null, consentService);
+const recipeService = new RecipeService(database.sql, ai ? new AiRecipePlanner(ai) : null, consentService);
 const brewJobProcessor = createBrewJobProcessor(brewJobService, {
   interview: {
     async run({ userId, brewId, idempotencyKey }) {
@@ -97,16 +97,16 @@ const brewJobProcessor = createBrewJobProcessor(brewJobService, {
   },
 });
 const recordCleanupProcessor = createRecordCleanupProcessor(interviewService);
-const publishingService = new PublishingService(postgres.sql, config.assetSigningSecret);
+const publishingService = new PublishingService(database.sql, config.assetSigningSecret);
 const exportProcessor = createExportProcessor(publishingService);
-const analyticsService = new AnalyticsService(postgres.sql, config.analyticsVisitorSalt ? { visitorSalt: config.analyticsVisitorSalt } : {});
+const analyticsService = new AnalyticsService(database.sql, config.analyticsVisitorSalt ? { visitorSalt: config.analyticsVisitorSalt } : {});
 const analyticsProcessor = createAnalyticsProcessor(analyticsService);
-const engagementService = new EngagementService(postgres.sql);
+const engagementService = new EngagementService(database.sql);
 const notificationProcessor = createNotificationProcessor(engagementService, new ConsoleNotificationProvider());
-const accountLifecycleService = new AccountLifecycleService(postgres.sql);
+const accountLifecycleService = new AccountLifecycleService(database.sql);
 // 수집은 여기서만 돈다 — 바깥을 부르는 일은 요청 경로가 아니라 워커의 일이다.
 const jobIngestService = new JobIngestService(
-  postgres.sql,
+  database.sql,
   createJobSourceAdapters(config),
   // AI가 꺼져 있으면 본문을 읽지 않는다. 규칙 폴백을 두지 않는 이유는
   // 정확도가 조용히 갈리기 때문이다 — 화면은 그 둘을 구분해 말할 수 없다.
@@ -115,7 +115,7 @@ const jobIngestService = new JobIngestService(
   // 저장소에 넣어 둔 파일이 있으면 그것이 먼저다(받아 올 수 없는 회사가 있다).
   new BundledMarkReader(new SiteMarkReader()),
 );
-const schedulingService = new SchedulingService(postgres.sql, { analytics: analyticsService, accounts: accountLifecycleService, ingest: jobIngestService });
+const schedulingService = new SchedulingService(database.sql, { analytics: analyticsService, accounts: accountLifecycleService, ingest: jobIngestService });
 const scheduledJobProcessor = createScheduledJobProcessor(schedulingService);
 const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
   queueName: "domain-jobs",
@@ -197,4 +197,4 @@ while (!abortController.signal.aborted) {
   }
 }
 
-await Promise.allSettled([queueWorker.close(), jobs.close(), postgres.close()]);
+await Promise.allSettled([queueWorker.close(), jobs.close(), database.close()]);

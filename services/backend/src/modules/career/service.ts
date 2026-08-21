@@ -21,7 +21,7 @@ import {
   type SaveCareerProfile,
   type UpdateCareerRecord,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import { CareerError } from "./errors.js";
 import { validateCareerProperties } from "./properties.js";
@@ -268,9 +268,9 @@ function mapCareerProfile(row: CareerProfileRow) {
 }
 
 export class CareerService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
 
-  constructor(sql: postgres.Sql) {
+  constructor(sql: SqlTag) {
     this.#sql = sql;
   }
 
@@ -441,7 +441,7 @@ export class CareerService {
       values (
         ${userId}, ${input.key}, ${input.name}, ${input.icon},
         ${input.defaultView}, false,
-        ${this.#sql.json(propertySchema as postgres.JSONValue)},
+        ${this.#sql.json(propertySchema as JSONValue)},
         (select 7 + count(*)::integer from category where user_id = ${userId})
       )
       returning id, key, name, icon, default_view, is_system,
@@ -515,7 +515,7 @@ export class CareerService {
       }
       const updatedRows = await transaction<CategoryRow[]>`
         update category
-        set property_schema = ${transaction.json(nextSchema as postgres.JSONValue)}
+        set property_schema = ${transaction.json(nextSchema as JSONValue)}
         where id = ${categoryId}
           and user_id = ${userId}
           and version = ${expectedVersion}
@@ -552,7 +552,7 @@ export class CareerService {
         )
         values (
           ${userId}, ${input.categoryId}, ${input.title}, 'draft', 'manual',
-          ${transaction.json(input.properties as postgres.JSONValue)},
+          ${transaction.json(input.properties as JSONValue)},
           ${input.bodyMd}, ${idempotencyKey}, ${hash}
         )
         on conflict (user_id, create_idempotency_key)
@@ -613,7 +613,7 @@ export class CareerService {
       const updatedRows = await transaction<RecordRow[]>`
         update record
         set title = ${input.title ?? existing.title},
-            properties = ${transaction.json(properties as postgres.JSONValue)},
+            properties = ${transaction.json(properties as JSONValue)},
             body_md = ${input.bodyMd ?? existing.body_md}
         where id = ${recordId}
           and user_id = ${userId}
@@ -674,8 +674,8 @@ export class CareerService {
         )
         values (
           ${userId}, ${categoryId}, ${input.name}, ${input.viewType},
-          ${transaction.json(input.filters as postgres.JSONValue)},
-          ${transaction.json(input.sorts as postgres.JSONValue)},
+          ${transaction.json(input.filters as JSONValue)},
+          ${transaction.json(input.sorts as JSONValue)},
           ${input.visibleProperties}, ${Number(counts[0]?.count ?? 0)}
         )
         returning *
@@ -909,7 +909,7 @@ export class CareerService {
           )
           values (
             ${userId}, ${skill.id}, ${evidence.recordId}, 1,
-            ${transaction.json(evidence.span as postgres.JSONValue)}
+            ${transaction.json(evidence.span as JSONValue)}
           )
         `;
       }

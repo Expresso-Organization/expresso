@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { migrate } from "@expresso/database";
-import postgres from "postgres";
+import type { SqlTag } from "./mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { addOutboxEvent, OutboxDispatcher } from "./outbox.js";
@@ -11,8 +11,8 @@ const describeWithDatabase = databaseUrl ? describe : describe.skip;
 
 describeWithDatabase("platform outbox integration", () => {
   const databaseName = `expresso_outbox_${randomUUID().replaceAll("-", "")}`;
-  let admin: postgres.Sql;
-  let sql: postgres.Sql;
+  let admin: SqlTag;
+  let sql: SqlTag;
 
   beforeAll(async () => {
     const rootUrl = new URL(databaseUrl ?? "postgres://127.0.0.1:1/unused");

@@ -1,5 +1,5 @@
 import { API_PREFIX, HomeReadModelSchema, type NotificationKind, type UnifiedSearchQuery } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import { addOutboxEvent } from "../../platform/outbox.js";
 
@@ -41,8 +41,8 @@ function encodeCursor(row: SearchRow): string {
 }
 
 export class EngagementService {
-  readonly #sql: postgres.Sql;
-  constructor(sql: postgres.Sql) { this.#sql = sql; }
+  readonly #sql: SqlTag;
+  constructor(sql: SqlTag) { this.#sql = sql; }
 
   async setPreference(userId: string, kind: NotificationKind, enabled: boolean) {
     const user = (await this.#sql<{ id: string }[]>`select id from "user" where id = ${userId} and deletion_requested_at is null`)[0];

@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 
 import { AccountExportSchema, DeletionRequestSchema } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 export class AccountLifecycleError extends Error {
   readonly statusCode: number;
@@ -20,8 +20,8 @@ interface DeletionRow {
 }
 
 export class AccountLifecycleService {
-  readonly #sql: postgres.Sql;
-  constructor(sql: postgres.Sql) { this.#sql = sql; }
+  readonly #sql: SqlTag;
+  constructor(sql: SqlTag) { this.#sql = sql; }
 
   async exportData(userId: string, at = new Date()) {
     const account = (await this.#sql<Record<string, unknown>[]>`

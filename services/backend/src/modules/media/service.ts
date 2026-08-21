@@ -7,7 +7,7 @@ import {
   PortfolioMediaSchema,
   type CreateMediaBlock,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import { readImageMeta, UnsupportedImageError, type ImageMeta } from "../../platform/storage/image.js";
 import { buildVariants, orientedSize } from "../../platform/storage/transcode.js";
@@ -63,10 +63,10 @@ function assetDto(row: AssetRow, variants: readonly number[] = []) {
 }
 
 export class MediaService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #storage: MediaStorage;
 
-  constructor(sql: postgres.Sql, storage: MediaStorage) {
+  constructor(sql: SqlTag, storage: MediaStorage) {
     this.#sql = sql;
     this.#storage = storage;
   }
@@ -281,7 +281,7 @@ export class MediaService {
       const block = (await transaction<{ id: string }[]>`
         insert into block (user_id, portfolio_section_id, kind, content, order_no, locked)
         values (${userId}, ${sectionId}, 'media',
-                ${transaction.json(content as unknown as postgres.JSONValue)}, ${at}, true)
+                ${transaction.json(content as unknown as JSONValue)}, ${at}, true)
         returning id
       `)[0];
       if (!block) throw new Error("media block insert failed");
@@ -292,7 +292,7 @@ export class MediaService {
         insert into revision (user_id, portfolio_id, block_id, actor, change_kind, summary, before, after)
         values (
           ${userId}, ${portfolioId}, ${block.id}, 'user', 'edit', '이미지를 놓았습니다',
-          null, ${transaction.json(content as unknown as postgres.JSONValue)}
+          null, ${transaction.json(content as unknown as JSONValue)}
         )
       `;
       return { blockId: block.id, sectionId, assetId: asset.id };

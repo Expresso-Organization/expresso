@@ -1,5 +1,5 @@
 import { TemplatePreviewsSchema } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag } from "../../platform/mysql.js";
 
 import type { RecipeService } from "../recipe/service.js";
 import { renderTemplate } from "./render.js";
@@ -10,9 +10,9 @@ interface TemplateRow {
 }
 
 export class TemplateService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #recipes: RecipeService;
-  constructor(sql: postgres.Sql, recipes: RecipeService) {
+  constructor(sql: SqlTag, recipes: RecipeService) {
     this.#sql = sql; this.#recipes = recipes;
   }
 

@@ -4,7 +4,7 @@ import {
   RecipeSchema,
   type RecipeEdit,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import {
   DeterministicRecipePlanner,
@@ -55,12 +55,12 @@ const DEFAULT_CONTEXT = {
 };
 
 export class RecipeService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #planner: RecipePlanner;
   readonly #promptVersion: number;
   readonly #consent: ConsentService | null;
 
-  constructor(sql: postgres.Sql, planner?: RecipePlanner | null, consent?: ConsentService | null) {
+  constructor(sql: SqlTag, planner?: RecipePlanner | null, consent?: ConsentService | null) {
     this.#sql = sql;
     this.#consent = consent ?? null;
     // AI가 없으면 규칙 구현이 그대로 쓰인다 — 죽은 코드가 아니라 폴백이다.
@@ -126,7 +126,7 @@ export class RecipeService {
               takeaway: section.takeaway,
               contentPattern: section.contentPattern,
               interactionOpportunity: section.interactionOpportunity,
-            } as postgres.JSONValue)}
+            } as JSONValue)}
           ) returning id
         `)[0]?.id;
         if (!sectionId) throw new Error("recipe section missing");
@@ -152,7 +152,7 @@ export class RecipeService {
             ) values (
               ${userId}, ${sectionId}, ${itemOrder}, ${item.pointText},
               ${transaction.json(cited.map(({ source }) =>
-                ({ sourceType: source.type, sourceId: source.id })) as postgres.JSONValue)},
+                ({ sourceType: source.type, sourceId: source.id })) as JSONValue)},
               'ai'
             ) returning id
           `)[0]?.id;
@@ -274,8 +274,8 @@ export class RecipeService {
       };
       await transaction`
         update recipe set
-          portfolio_plan = ${transaction.json(portfolioPlan as postgres.JSONValue)},
-          planning_manifest = ${transaction.json(planningManifest as postgres.JSONValue)}
+          portfolio_plan = ${transaction.json(portfolioPlan as JSONValue)},
+          planning_manifest = ${transaction.json(planningManifest as JSONValue)}
         where user_id = ${userId} and id = ${recipe.id}
       `;
 
@@ -425,7 +425,7 @@ export class RecipeService {
             context, locked, edited_by
           ) values (
             ${userId}, ${recipeId}, ${sectionRows.length}, ${edit.title}, ${edit.purpose}, 300,
-            ${transaction.json(DEFAULT_CONTEXT as postgres.JSONValue)}, true, 'user'
+            ${transaction.json(DEFAULT_CONTEXT as JSONValue)}, true, 'user'
           ) returning id
         `)[0];
         diff = [{ path: `sections.${section?.id}`, after: edit.title }];
@@ -467,7 +467,7 @@ export class RecipeService {
         const order = Number((await transaction<{ count: number }[]>`select count(*)::integer as count from recipe_item where user_id = ${userId} and recipe_section_id = ${edit.sectionId}`)[0]?.count ?? 0);
         const item = (await transaction<IdRow[]>`
           insert into recipe_item (user_id, recipe_section_id, order_no, point_text, evidence, locked, edited_by)
-          values (${userId}, ${edit.sectionId}, ${order}, ${edit.pointText}, ${transaction.json([{ sourceType: source.source_type, sourceId: source.source_id }] as postgres.JSONValue)}, true, 'user') returning id
+          values (${userId}, ${edit.sectionId}, ${order}, ${edit.pointText}, ${transaction.json([{ sourceType: source.source_type, sourceId: source.source_id }] as JSONValue)}, true, 'user') returning id
         `)[0];
         if (!item) throw new Error("recipe item missing");
         await transaction`insert into recipe_evidence_path (user_id, recipe_id, recipe_item_id, source_type, source_id, source_label, target_path) values (${userId}, ${recipeId}, ${item.id}, ${source.source_type}, ${source.source_id}, ${source.source_label}, ${`sections.${edit.sectionId}.items.${item.id}`})`;
@@ -492,7 +492,7 @@ export class RecipeService {
       }
       const revision = (await transaction<IdRow[]>`
         insert into recipe_revision (user_id, recipe_id, actor, action, snapshot, diff)
-        values (${userId}, ${recipeId}, 'user', ${edit.operation}, ${transaction.json(before as postgres.JSONValue)}, ${transaction.json(diff as postgres.JSONValue)}) returning id
+        values (${userId}, ${recipeId}, 'user', ${edit.operation}, ${transaction.json(before as JSONValue)}, ${transaction.json(diff as JSONValue)}) returning id
       `)[0];
       if (!revision) throw new Error("recipe revision missing");
       revisionId = revision.id;
@@ -511,7 +511,7 @@ export class RecipeService {
   }
 
   async #loadRecipe(
-    sql: postgres.Sql | postgres.TransactionSql,
+    sql: SqlTag | SqlTag,
     userId: string,
     recipeId: string,
     forUpdate = false,

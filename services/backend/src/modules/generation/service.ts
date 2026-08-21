@@ -6,7 +6,7 @@ import {
   type GenerationOutput,
   type SubmitGeneration,
 } from "@expresso/contracts";
-import type postgres from "postgres";
+import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import { EntitlementService } from "../entitlements/service.js";
 import { addOutboxEvent } from "../../platform/outbox.js";
@@ -145,9 +145,9 @@ function blockContent(block: GenerationOutput["blocks"][number]): Record<string,
 }
 
 export class GenerationService {
-  readonly #sql: postgres.Sql;
+  readonly #sql: SqlTag;
   readonly #consent: ConsentService | null;
-  constructor(sql: postgres.Sql, consent?: ConsentService | null) {
+  constructor(sql: SqlTag, consent?: ConsentService | null) {
     this.#sql = sql;
     this.#consent = consent ?? null;
   }
@@ -168,7 +168,7 @@ export class GenerationService {
         ) values (
           ${userId}, ${recipe.brew_id}, ${input.recipeId}, ${input.templateId}, 'queued',
           ${idempotencyKey}, ${hash},
-          ${transaction.json((input.styleOverrides ?? {}) as postgres.JSONValue)}
+          ${transaction.json((input.styleOverrides ?? {}) as JSONValue)}
         ) on conflict (user_id, input_idempotency_key)
           where input_idempotency_key is not null
         do nothing returning id, request_hash
@@ -357,7 +357,7 @@ export class GenerationService {
             ) values (
               ${current.user_id}, ${current.brew_id}, ${current.template_id},
               'Generated portfolio', 'draft',
-              ${transaction.json((current.style_overrides ?? {}) as postgres.JSONValue)}
+              ${transaction.json((current.style_overrides ?? {}) as JSONValue)}
             ) returning id
           `)[0]?.id ?? null;
         }
@@ -389,7 +389,7 @@ export class GenerationService {
           const blockId = (await transaction<{ id: string }[]>`
             insert into block (user_id, portfolio_section_id, kind, content, source_record_id, order_no)
             values (${current.user_id}, ${portfolioSectionId}, ${generated.kind},
-                    ${transaction.json(blockContent(generated) as postgres.JSONValue)},
+                    ${transaction.json(blockContent(generated) as JSONValue)},
                     ${recordPath?.source_id ?? null}, ${blockOrder}) returning id
           `)[0]?.id;
           if (!blockId) throw new Error("block missing");
@@ -422,7 +422,7 @@ export class GenerationService {
               order_no, selected
             ) values (
               ${current.user_id}, ${portfolioId}, ${batchId}, ${jobId},
-              ${transaction.json(spec as unknown as postgres.JSONValue)},
+              ${transaction.json(spec as unknown as JSONValue)},
               ${LAYOUT_PROMPT_VERSION}, ${order}, ${order === 0}
             )
           `;
@@ -469,7 +469,7 @@ export class GenerationService {
             })),
           })),
         };
-        await transaction`insert into portfolio_snapshot (user_id, portfolio_id, kind, snapshot) values (${current.user_id}, ${portfolioId}, 'initial_generation', ${transaction.json(snapshot as postgres.JSONValue)})`;
+        await transaction`insert into portfolio_snapshot (user_id, portfolio_id, kind, snapshot) values (${current.user_id}, ${portfolioId}, 'initial_generation', ${transaction.json(snapshot as JSONValue)})`;
         await transaction`update generation_job set status = 'done', stage = 'done', usage_charged = true, portfolio_id = ${portfolioId}, updated_at = now() where id = ${jobId}`;
       });
       return this.getStatus(job.user_id, job.id);
@@ -494,7 +494,7 @@ export class GenerationService {
             user_id, brew_id, template_id, title, status, style_overrides
           ) values (
             ${job.user_id}, ${job.brew_id}, ${job.template_id}, 'Failed generation draft',
-            'draft', ${transaction.json((job.style_overrides ?? {}) as postgres.JSONValue)}
+            'draft', ${transaction.json((job.style_overrides ?? {}) as JSONValue)}
           ) returning id
         `)[0]?.id ?? null;
         await transaction`update generation_job set status = 'failed', stage = 'failed', error_code = ${code}, failure_retryable = ${retryable}, portfolio_id = ${portfolioId}, updated_at = now() where id = ${jobId}`;
