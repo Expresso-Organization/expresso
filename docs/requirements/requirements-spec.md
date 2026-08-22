@@ -147,6 +147,9 @@ Expresso의 현재 최소 작동 흐름은 다음과 같다.
 → AI 생성 결과 수신
 → 유효한 결과를 Portfolio로 저장
 → 생성 결과 확인
+→ 내 Portfolio 목록 또는 단일 결과 조회
+→ 필요 시 Portfolio 수정
+→ 필요 시 Portfolio 삭제
 
 축약한 흐름은 다음과 같다.
 
@@ -156,9 +159,12 @@ Expresso의 현재 최소 작동 흐름은 다음과 같다.
 → 재료 선택
 → Portfolio 생성
 → 생성 결과 확인
+→ Portfolio 조회
+→ 필요 시 수정 또는 삭제
 
 로그인 인증 및 인가의 상세 요구사항과
-Portfolio 생성 이후의 전체 관리 기능은 현재 흐름에서 정의하지 않는다.
+Portfolio 공유, 공개, 출력, 복제, 버전 관리 및 재생성의
+상세 흐름은 현재 정의하지 않는다.
 
 ## 3. 기능 요구사항
 
@@ -2726,7 +2732,10 @@ Portfolio 도메인의 Requirement ID에는 `POR` 코드를 사용한다.
 본 절은 Portfolio 전체 기능을 상세화하지 않고,
 Career Record를 재료로 사용하는 Portfolio 생성의 최소 비즈니스 경계를 정의한다.
 
-Portfolio 상세 편집, 목록 및 상세 조회, 삭제, 공유, 공개, 출력,
+Portfolio 기본 관리에 해당하는 목록 및 단일 결과 조회,
+최소 수정 및 삭제는 3.4에서 정의한다.
+
+Portfolio 상세 편집, 공유, 공개, 출력, 복제,
 버전 관리 및 재생성은 현재 범위에서 정의하지 않는다.
 
 AI Prompt, 모델, 생성 알고리즘과 구체적인 API, 메시지, DB 및 처리 구조도
@@ -2818,22 +2827,38 @@ Portfolio는 생성 시점의 Career 정보를 기반으로 생성되지만,
 - Career Record를 삭제해도 기존 Portfolio를 유지한다.
 - 삭제된 Career Record는 이후 새로운 Portfolio 생성 재료로 사용할 수 없다.
 - 기존 Portfolio를 최신 Career 정보와 자동으로 다시 동기화하지 않는다.
+- Portfolio 생성에 사용된 Career Record의 출처 관계는
+  생성 이후에도 추적 가능한 정보로 유지한다.
+- 출처 관계 유지는 원본 Career Record와 Portfolio 콘텐츠의
+  자동 동기화를 의미하지 않는다.
+- Portfolio를 수정해도 원본 Career Record를 자동으로 변경하지 않는다.
+- Portfolio를 삭제해도 원본 Career Record를 유지한다.
 
 다음 구현 방식은 현재 요구사항에서 결정하지 않는다.
 
 - snapshot
 - 데이터 또는 Asset 복사
+- 식별자 보존
 - JSON 저장
 - Foreign Key
 - 참조 테이블
 - Cascade
+- Career Record 삭제 시 출처 관계 처리
 - 기타 DB 및 스토리지 구조
+
+출처 추적을 Portfolio 전체 생성 입력 수준으로 유지할지,
+Section 또는 콘텐츠 수준까지 세분화할지는
+후속 상세 요구사항 또는 설계에서 결정한다.
 
 ##### 완료 기준
 
 - 기존 Portfolio는 원본 Career Record의 수정 또는 삭제와 관계없이 유지된다.
 - 삭제된 Career Record는 이후 새로운 Portfolio 생성에 사용할 수 없다.
 - 기존 Portfolio 자동 재동기화 기능은 제공하지 않는다.
+- Portfolio 생성에 사용된 Career Record의 출처 관계를
+  생성 이후에도 추적할 수 있다.
+- Portfolio의 수정 또는 삭제는
+  원본 Career Record를 자동으로 변경하거나 삭제하지 않는다.
 
 #### REQ-POR-006 Portfolio 생성 실패
 
@@ -2870,3 +2895,196 @@ Portfolio 생성 과정이 정상적으로 완료되지 않은 경우
 - 정상적으로 완료되지 않은 생성 요청은
   완료된 Portfolio로 저장하거나 제공하지 않는다.
 - 사용자는 생성 성공 여부를 구분할 수 있다.
+
+### 3.4 Portfolio 기본 관리
+
+본 절은 생성된 Portfolio의 기본 구조와 소유권,
+목록 및 단일 결과 조회, 최소 수정 및 삭제 정책을 정의한다.
+
+공유, 공개, 출력, 복제, 버전 관리, 재생성 및
+상세 편집 기능은 현재 범위에서 정의하지 않는다.
+
+#### REQ-POR-007 Portfolio 기본 구조 및 소유권
+
+- **상태:** `PROPOSED`
+- **대상:** 사용자
+
+##### 설명
+
+사용자는 여러 Portfolio를 생성하고 보유할 수 있으며,
+각 Portfolio는 생성을 요청한 사용자에게 귀속된다.
+
+##### 소유권
+
+- 사용자 한 명은 여러 Portfolio를 생성하고 보유할 수 있다.
+- 각 Portfolio는 생성 요청 사용자에게 귀속된다.
+- 사용자는 자신에게 귀속된 Portfolio만 관리할 수 있다.
+
+##### 제목
+
+- 각 Portfolio는 사용자가 서로 구분할 수 있는 제목을 가진다.
+- 제목은 Portfolio의 필수 정보이다.
+- 사용자가 생성 전에 제목을 입력하지 않더라도
+  시스템은 기본 제목을 부여하여 유효한 Portfolio를 저장할 수 있다.
+- 생성 이후 사용자는 자신의 Portfolio 제목을 수정할 수 있다.
+
+다음 정책은 현재 확정하지 않는다.
+
+- 기본 제목의 정확한 문구
+- 제목 생성 규칙
+- AI의 제목 생성 여부
+- 제목 길이 제한
+- 제목 중복 허용 또는 금지 정책
+
+##### 논리적 결과 구조
+
+- Portfolio는 논리적으로 순서가 있는 여러 Section으로 구성된다.
+- 각 Section은 Portfolio의 일부 콘텐츠를 표현한다.
+
+다음 사항은 현재 확정하지 않는다.
+
+- Section 내부 Block 구조
+- Section 내부 저장 형태
+- JSON 또는 HTML 등의 기술 표현
+- DB 구조
+- Section 추가 또는 삭제 기능
+- Section 표시 또는 숨김 기능
+- Section 순서 변경 기능
+
+##### 완료 기준
+
+- 사용자 한 명은 여러 Portfolio를 생성하고 보유할 수 있다.
+- 각 Portfolio는 소유자와 필수 제목을 가진다.
+- 사용자가 제목을 입력하지 않은 경우에도
+  시스템은 기본 제목을 부여하여 Portfolio를 저장할 수 있다.
+- Portfolio는 순서가 있는 여러 Section으로 구성된다.
+
+#### REQ-POR-008 Portfolio 목록 및 단일 결과 조회
+
+- **상태:** `PROPOSED`
+- **대상:** 사용자
+
+##### 설명
+
+사용자는 자신에게 귀속된 Portfolio 목록과
+특정 Portfolio의 단일 결과를 조회할 수 있다.
+
+##### 조회 범위
+
+- 사용자는 자신에게 귀속된 Portfolio 목록을 조회할 수 있다.
+- 사용자는 자신에게 귀속된 특정 Portfolio의
+  단일 결과를 조회할 수 있다.
+- 다른 사용자의 Portfolio는 조회할 수 없다.
+- 단일 Portfolio 조회에서는 생성된 Portfolio의
+  Section과 콘텐츠를 확인할 수 있어야 한다.
+- 생성 완료 직후 결과 확인은
+  자신의 Portfolio 단일 결과 조회 흐름과 일관되어야 한다.
+
+다음 기능 및 상세 정책은 현재 확정하지 않는다.
+
+- 검색
+- 필터
+- 페이지네이션
+- 목록 정렬
+- 공개 Portfolio 조회
+- 목록의 구체적인 UI
+- 목록에서 표시할 세부 필드 구성
+
+##### 완료 기준
+
+- 사용자는 자신에게 귀속된 Portfolio 목록을 조회할 수 있다.
+- 사용자는 자신에게 귀속된 Portfolio의
+  Section과 콘텐츠를 단일 결과로 확인할 수 있다.
+- 다른 사용자의 Portfolio는 조회할 수 없다.
+
+#### REQ-POR-009 Portfolio 수정
+
+- **상태:** `PROPOSED`
+- **대상:** 사용자
+
+##### 설명
+
+사용자는 자신에게 귀속된 Portfolio의 제목과
+Section 콘텐츠를 수정할 수 있다.
+
+##### 수정 권한 및 범위
+
+- 사용자는 자신에게 귀속된 Portfolio만 수정할 수 있다.
+- 다른 사용자의 Portfolio는 수정할 수 없다.
+- MVP의 최소 수정 대상은 다음과 같다.
+  - Portfolio 제목
+  - Portfolio Section의 콘텐츠
+
+##### Career Record와의 관계
+
+- Portfolio 수정은 원본 Career Record를 자동으로 변경하지 않는다.
+- Career Record 수정은 기존 Portfolio를 자동으로 변경하지 않는다.
+
+##### 현재 범위 제외
+
+다음 세부 편집 기능은 후속 상세 요구사항에서 결정한다.
+
+- Section 추가
+- Section 삭제
+- Section 표시 또는 숨김
+- Section 순서 변경
+- Block 단위 수정
+- Block 추가, 삭제 또는 복제
+- 생성 재료 변경
+- 수정 후 AI 재생성
+- 변경 이력
+- 이전 버전 복원
+
+Block은 현재 SRS의 필수 논리 구조로 확정하지 않는다.
+
+##### 완료 기준
+
+- 사용자는 자신의 Portfolio 제목을 수정할 수 있다.
+- 사용자는 자신의 Portfolio Section 콘텐츠를 수정할 수 있다.
+- Portfolio 수정은 원본 Career Record를 자동으로 변경하지 않는다.
+- 다른 사용자의 Portfolio는 수정할 수 없다.
+
+#### REQ-POR-010 Portfolio 삭제
+
+- **상태:** `PROPOSED`
+- **대상:** 사용자
+
+##### 설명
+
+사용자는 자신에게 귀속된 Portfolio를
+삭제 전 확인을 거쳐 삭제할 수 있다.
+
+##### 삭제 권한
+
+- 사용자는 자신에게 귀속된 Portfolio만 삭제할 수 있다.
+- 다른 사용자의 Portfolio는 삭제할 수 없다.
+
+##### 삭제 전 확인
+
+- 삭제 전에 사용자에게 삭제 의사를 확인한다.
+
+##### 삭제 이후
+
+- 삭제 이후 사용자는 해당 Portfolio를 더 이상 사용할 수 없다.
+- 현재 MVP에서는 사용자가 삭제된 Portfolio를 복구하는 기능을 제공하지 않는다.
+- Portfolio 삭제는 원본 Career Record를 삭제하거나 변경하지 않는다.
+
+사용자 관점에서는 삭제 후 복구를 지원하지 않는다는
+결과만 정의한다.
+
+다음 구현 방식은 현재 확정하지 않는다.
+
+- Hard Delete
+- Soft Delete
+- 내부 데이터 보존
+- 보존 기간
+- Foreign Key
+- Cascade
+- 실제 물리 삭제 방식
+
+##### 완료 기준
+
+- 사용자는 자신에게 귀속된 Portfolio를
+  삭제 전 확인을 거쳐 삭제할 수 있다.
+- 삭제 이후 사용자는 해당 Portfolio를 더 이상 사용하거나 복구할 수 없다.
+- Portfolio 삭제는 원본 Career Record를 삭제하거나 변경하지 않는다.
