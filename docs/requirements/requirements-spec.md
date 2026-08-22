@@ -2544,3 +2544,230 @@ Delete 요구사항에서 별도 데이터 정책을 추가하지 않는다.
 `DECISION-CAR-007`은 해당 Category 상세화 시 결정한다.
 
 `DECISION-CAR-008`과 `DECISION-CAR-009`는 DB 및 API 설계 전에 결정한다.
+
+### 3.2 Portfolio 생성 경계
+
+본 절은 Portfolio 전체 기능을 상세화하지 않고,
+Career Record를 재료로 사용하는 Portfolio 생성의 최소 비즈니스 경계를 정의한다.
+
+Portfolio 도메인의 Requirement ID에는 `POR` 코드를 사용한다.
+
+Portfolio 상세 편집, 목록 및 상세 조회, 삭제, 공유, 공개, 출력,
+버전 관리 및 재생성은 현재 범위에서 정의하지 않는다.
+
+AI Prompt, 모델, 생성 알고리즘과 구체적인 API, 메시지, DB 및 처리 구조도
+현재 범위에서 정의하지 않는다.
+
+#### REQ-POR-001 Portfolio 생성 재료 선택
+
+- **상태:** `PROPOSED`
+- **대상:** 사용자
+
+##### 설명
+
+사용자는 자신에게 귀속된 Career Record를
+Portfolio 생성 재료로 선택할 수 있다.
+
+##### 핵심 규칙
+
+현재 Career v0.1에서 상세화된 다음 Category의 Record를
+생성 재료 후보로 사용할 수 있다.
+
+- 프로젝트
+- 학력·이력
+- 자격증·수상
+- 학술·집필
+
+다음 `DEFERRED` Category는 현재 생성 재료의 구조화 대상에 포함하지 않는다.
+
+- 활동·리더십
+- 경험
+- 스킬·도구
+
+- 생성 재료는 Career Record 단위로 선택한다.
+- 사용자는 여러 Career Record를 선택할 수 있다.
+
+다음 사항은 현재 요구사항에서 확정하지 않는다.
+
+- 최소 선택 개수
+- 최대 선택 개수
+- Category별 최소 및 최대 선택 개수
+- 선택 순서의 의미
+
+##### 완료 기준
+
+- 사용자는 자신에게 귀속된 현재 사용 가능한 Career Record를
+  Portfolio 생성 재료로 선택할 수 있다.
+- 현재 상세화된 Category의 Record를 재료 후보로 사용할 수 있다.
+- `DEFERRED` Category는 현재 구조화된 재료 후보에 포함되지 않는다.
+
+#### REQ-POR-002 Portfolio 생성 재료 검증
+
+- **상태:** `PROPOSED`
+- **대상:** 사용자
+
+##### 설명
+
+시스템은 Portfolio 생성 요청에 사용된 Career Record가
+현재 생성 재료로 사용할 수 있는지 검증한다.
+
+##### 핵심 규칙
+
+선택된 Career Record는 다음 조건을 모두 충족해야 한다.
+
+- 실제 존재하는 Career Record
+- 생성 요청 사용자에게 귀속된 Career Record
+- 현재 새로운 Portfolio 생성에 사용할 수 있는 Career Record
+
+- 다른 사용자의 Career Record는 생성 재료로 사용할 수 없다.
+- 삭제된 Career Record는 새로운 Portfolio 생성 재료로 사용할 수 없다.
+- 시스템은 전달된 Career 내용을 그대로 신뢰하지 않고,
+  선택 대상을 검증한 후 현재 유효한 Career 정보를 조회하여 사용한다.
+
+구체적인 API 요청 구조는 현재 정의하지 않는다.
+
+##### 완료 기준
+
+- 존재 여부, 사용자 귀속 및 신규 활용 가능 여부를 모두 검증한
+  Career Record만 생성 재료로 사용할 수 있다.
+- 시스템은 검증한 Career Record의 현재 정보를 기준으로
+  Portfolio 생성 입력을 구성할 수 있다.
+
+#### REQ-POR-003 Portfolio 생성 요청
+
+- **상태:** `PROPOSED`
+- **대상:** 사용자
+
+##### 설명
+
+사용자는 선택한 Career Record를 기반으로
+Portfolio 생성을 요청할 수 있다.
+
+##### 기본 흐름
+
+1. 시스템은 생성 요청 사용자를 확인한다.
+2. 시스템은 선택된 Career Record를 검증한다.
+3. 시스템은 생성에 필요한 현재 Career 정보를 조회한다.
+4. 시스템은 AI 생성 파트에서 사용할 입력 데이터를 구성한다.
+5. 시스템은 AI 생성 요청을 전달하고 생성 결과를 수신한다.
+
+##### 책임 경계
+
+Backend는 다음을 담당한다.
+
+- 요청 사용자 확인
+- 선택 Career Record 검증
+- 필요한 Career 정보 조회
+- AI 생성 파트에서 사용할 입력 데이터 구성
+- AI 생성 요청 전달 및 결과 수신
+
+AI 생성 파트는 다음을 담당한다.
+
+- Prompt 구성의 세부 로직
+- 모델 선택
+- LLM 또는 AI 호출
+- 실제 Portfolio 콘텐츠 생성 로직
+- AI 품질 개선
+
+Backend와 AI 생성 파트 사이의 구체적인 API 또는 메시지 계약은
+이후 설계 단계에서 정의한다.
+
+##### 완료 기준
+
+- 사용자는 검증된 Career Record를 기반으로 Portfolio 생성을 요청할 수 있다.
+- Backend는 Career 정보 검증 및 입력 구성과
+  AI 생성 요청 전달 및 결과 수신을 담당한다.
+- AI 생성의 내부 로직은 현재 Backend SRS 범위에 포함되지 않는다.
+
+#### REQ-POR-004 Portfolio 생성 성공 및 결과 저장
+
+- **상태:** `PROPOSED`
+- **대상:** 사용자
+
+##### 설명
+
+시스템은 Portfolio 생성에 성공하고 유효한 결과를 수신한 경우
+해당 결과를 요청 사용자의 Portfolio로 저장한다.
+
+##### 핵심 규칙
+
+- 저장된 Portfolio는 생성에 사용된 Career Record와 별개의 독립된 결과물이다.
+- 생성 이후 원본 Career Record가 수정되어도
+  기존 Portfolio를 자동으로 변경하지 않는다.
+- 생성 이후 원본 Career Record가 삭제되어도 기존 Portfolio를 유지한다.
+- 수정된 Career 정보는 이후 새로운 Portfolio 생성 요청에 사용할 수 있다.
+
+##### 완료 기준
+
+- 유효한 생성 결과를 요청 사용자의 Portfolio로 저장할 수 있다.
+- 저장된 Portfolio는 원본 Career Record의 이후 수정 또는 삭제로
+  자동 변경되거나 삭제되지 않는다.
+
+#### REQ-POR-005 Portfolio 생성 결과와 원본 Career의 관계
+
+- **상태:** `PROPOSED`
+- **대상:** 사용자
+
+##### 설명
+
+Portfolio는 생성 시점의 Career 정보를 기반으로 생성되지만,
+생성 완료 이후 원본 Career Record의 현재 상태에 자동 종속되지 않는다.
+
+##### 핵심 규칙
+
+- Career Record를 수정해도 기존 Portfolio를 유지한다.
+- Career Record를 삭제해도 기존 Portfolio를 유지한다.
+- 삭제된 Career Record는 이후 새로운 Portfolio 생성 재료로 사용할 수 없다.
+- 기존 Portfolio를 최신 Career 정보와 자동으로 다시 동기화하지 않는다.
+
+다음 구현 방식은 현재 요구사항에서 결정하지 않는다.
+
+- snapshot
+- 데이터 또는 Asset 복사
+- JSON 저장
+- Foreign Key
+- 참조 테이블
+- Cascade
+- 기타 DB 및 스토리지 구조
+
+##### 완료 기준
+
+- 기존 Portfolio는 원본 Career Record의 수정 또는 삭제와 관계없이 유지된다.
+- 삭제된 Career Record는 이후 새로운 Portfolio 생성에 사용할 수 없다.
+- 기존 Portfolio 자동 재동기화 기능은 제공하지 않는다.
+
+#### REQ-POR-006 Portfolio 생성 실패
+
+- **상태:** `PROPOSED`
+- **대상:** 사용자
+
+##### 설명
+
+Portfolio 생성 과정이 정상적으로 완료되지 않은 경우
+해당 요청을 정상 완료된 Portfolio로 취급하지 않는다.
+
+##### 핵심 규칙
+
+다음과 같은 경우 Portfolio 생성 실패로 처리할 수 있다.
+
+- AI 생성 실패
+- AI 서비스 오류
+- 유효한 생성 결과를 얻지 못한 경우
+
+- 실패한 생성 요청을 정상 완료된 Portfolio로 사용자에게 제공하지 않는다.
+- 사용자는 생성 성공과 생성 실패를 구분할 수 있어야 한다.
+
+다음 기술 정책은 이후 설계 단계에서 결정한다.
+
+- 동기 또는 비동기 생성
+- 생성 과정의 내부 상태 모델
+- Queue 사용 여부
+- timeout 값
+- 자동 재시도 횟수와 알고리즘
+- Worker 구조
+
+##### 완료 기준
+
+- 정상적으로 완료되지 않은 생성 요청은
+  완료된 Portfolio로 저장하거나 제공하지 않는다.
+- 사용자는 생성 성공 여부를 구분할 수 있다.
