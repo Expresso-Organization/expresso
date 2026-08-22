@@ -154,7 +154,7 @@ Career v0.1에서는 다음 Category를 우선 상세화한다.
 
 다음 Category는 현재 상세화 대상에서 제외한다.
 
-- 경험: `NEED_DECISION`
+- 경험: `DEFERRED`
 - 스킬·도구: `DEFERRED`
 - 활동·리더십: `DEFERRED`
 
@@ -2457,12 +2457,18 @@ Delete 요구사항에서 별도 데이터 정책을 추가하지 않는다.
 
 ##### DECISION-CAR-001 경험 Category
 
-- **상태:** `NEED_DECISION`
+- **상태:** `DEFERRED`
 
-- 경험 Category를 유지할지
-- 유지한다면 다른 Category와 구분되는 고유 역할
-- 업무 / 비업무 경험의 범위
-- 프로젝트 / 재직 경력 / 활동·리더십과의 경계
+- 현재 독립적인 경험 CRUD 상세 요구사항을 작성하지 않는다.
+- 현재 MVP의 독립 Career Category로 확정하지 않는다.
+- 현재 DB 및 API 구조 설계 대상으로 확정하지 않는다.
+- 경험 Category를 영구 제거한 것은 아니다.
+- 기존 Category의 의미에 자연스럽게 해당하는 내용은
+  해당 Category Record로 기록할 수 있다.
+- 모든 경험을 프로젝트 또는 활동·리더십에 통합하는 정책은
+  현재 확정하지 않는다.
+- 기존 Category 경계가 불명확한 비정형 경험은
+  활동·리더십 등과 함께 향후 Career Category 구조 재검토 시 판단한다.
 
 ##### DECISION-CAR-002 스킬·도구
 
