@@ -51,7 +51,7 @@ export const UpdateBrewSchema = z.strictObject({
 });
 
 export const UpdateBrewMaterialsSchema = z.strictObject({
-  recordIds: z.array(UuidSchema).min(1).max(10)
+  recordIds: z.array(UuidSchema).max(10)
     .refine((ids) => new Set(ids).size === ids.length, {
       message: "record IDs must be unique",
     }),

@@ -128,6 +128,39 @@ describeWithDatabase("brew materials integration", () => {
 
   const auth = (accessToken = token) => ({ authorization: `Bearer ${accessToken}` });
 
+  it("starts a brew when the user has no organized records", async () => {
+    const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
+    if (!planId) throw new Error("free plan missing");
+    const emptyUserId = randomUUID();
+    await sql`
+      insert into \`user\` (id, email, display_name, plan_id)
+      values (${emptyUserId}, ${`materials-empty-${marker}@example.com`}, 'Materials Empty', ${planId})
+    `;
+
+    try {
+      const emptyToken = (await identityService.issueSession({ userId: emptyUserId })).accessToken;
+      const emptyAnalysisId = (await sql<IdRow[]>`
+        insert into job_analysis (
+          user_id, job_posting_id, input_type, status, progress_stage,
+          result_version, target_version, analyzed_at
+        ) values (
+          ${emptyUserId}, ${postingId}, 'paste', 'done', 'done', 1, 1, now(6)
+        ) returning id
+      `)[0]?.id;
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/v1/brews",
+        headers: auth(emptyToken),
+        payload: { jobAnalysisId: emptyAnalysisId, lengthPreset: "single" },
+      });
+      expect(response.statusCode).toBe(201);
+      expect(response.json().data).toMatchObject({ materials: [] });
+    } finally {
+      await sql`delete from \`user\` where id = ${emptyUserId}`;
+    }
+  });
+
   it("auto-selects at most ten organized records and persists user selection metadata", async () => {
     const createdResponse = await app.inject({
       method: "POST",
@@ -179,7 +212,10 @@ describeWithDatabase("brew materials integration", () => {
       headers: auth(),
       payload: { recordIds: [] },
     });
-    expect(emptyResponse.statusCode).toBe(400);
+    expect(emptyResponse.statusCode).toBe(200);
+    expect(emptyResponse.json().data.materials.every(
+      ({ selected }: { selected: boolean }) => !selected,
+    )).toBe(true);
     // 매칭 순위 한가운데를 골라 본다 — rank가 고른 차례로 덮이면 여기서 드러난다.
     const picked = [created.materials[3], created.materials[7]];
     const selectedIds = picked.map((material) => material?.recordId ?? "");
@@ -216,15 +252,15 @@ describeWithDatabase("brew materials integration", () => {
     });
     expect(crossUserResponse.statusCode).toBe(404);
 
-    await expect(sql`
+    await sql`
       update brew_source set is_selected = false,
         excluded_reason = 'DIRECT_EMPTY'
       where user_id = ${userId} and brew_id = ${created.brewId}
-    `).rejects.toThrow(/at least one selected source/);
+    `;
     expect((await sql<{ count: number }[]>`
       select count(*) as count from brew_source
       where user_id = ${userId} and brew_id = ${created.brewId} and is_selected
-    `)[0]?.count).toBe(2);
+    `)[0]?.count).toBe(0);
 
     // 03은 이 두 칸을 보고 고르기와 기다리기를 가른다.
     const fresh = await app.inject({

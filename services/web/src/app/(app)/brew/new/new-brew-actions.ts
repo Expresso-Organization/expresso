@@ -2,7 +2,6 @@
 
 import { randomUUID } from "node:crypto";
 
-import { revalidatePath } from "next/cache";
 import type { Route } from "next";
 import { redirect } from "next/navigation";
 
@@ -134,19 +133,13 @@ export async function startBrewAction(
   redirect(`/brew/${brewId}/analyze`);
 }
 
-/** 기다리는 동안 다시 읽어 온다. */
-export async function refreshAnalysisAction(formData: FormData): Promise<void> {
-  await requireSession();
-  revalidatePath(`/brew/new/${String(formData.get("jobAnalysisId") ?? "")}`);
-}
-
 /** §13 — 에러는 다음 행동으로 끝난다. */
 function startFailure(error: ApiError): string {
   if (error.status === 402 || error.status === 403) {
     return "이번 달 추출 횟수를 다 썼습니다. 다음 달에 다시 시작하거나 요금제를 올려 주세요.";
   }
   if (error.status === 409) {
-    return "아직 시작할 수 없습니다. 분석이 끝났는지, 정리된 기록이 한 건이라도 있는지 확인해 주세요.";
+    return "분석이 아직 끝나지 않았습니다. 잠시 뒤 자동으로 다시 확인합니다.";
   }
   return "제작을 시작하지 못했습니다. 잠시 뒤 다시 눌러 주세요.";
 }
