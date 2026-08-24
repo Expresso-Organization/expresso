@@ -11,7 +11,6 @@ import {
 import {
   AiRecipePlanner,
   DeterministicRecipePlanner,
-  RecipePlanError,
   type PlannerContext,
 } from "./planner.js";
 
@@ -122,7 +121,34 @@ describe("레시피 생성 계약", () => {
     expect(prompt).toContain("## 공고가 요구하는 것");
   });
 
-  it("완성 문장을 쓰면 다시 짜게 한다", async () => {
+  it("재료가 없어도 한 번의 편집 가능한 계획을 반환한다", async () => {
+    const emptyPlan = {
+      ...plan,
+      plan: {
+        ...plan.plan,
+        positioning: { ...plan.plan.positioning, differentiators: [] },
+        requirementCoverage: [],
+        claims: [],
+      },
+      sections: [{
+        ...section(),
+        targetLength: 0,
+        points: [],
+        metrics: [],
+        exclude: [],
+        items: [],
+      }],
+      unused: [],
+    };
+    const ai = new StubAiClient([emptyPlan]);
+    const result = await new AiRecipePlanner(ai).plan({ ...context, sources: [], requirements: [] });
+
+    expect(result.attempts).toBe(1);
+    expect(result.draft.sections[0]?.items).toEqual([]);
+    expect(ai.calls).toHaveLength(1);
+  });
+
+  it("완성 문장도 한 번의 설계안으로 보존한다", async () => {
     const wrote = {
       ...plan,
       sections: [
@@ -131,14 +157,13 @@ describe("레시피 생성 계약", () => {
         plan.sections[2]!,
       ],
     };
-    const ai = new StubAiClient([wrote, plan]);
+    const ai = new StubAiClient([wrote]);
     await new AiRecipePlanner(ai).plan(context);
 
-    expect(ai.calls).toHaveLength(2);
-    expect(ai.calls[1]?.prompt).toContain("완성 문장입니다");
+    expect(ai.calls).toHaveLength(1);
   });
 
-  it("같은 기록을 두 섹션에 넣으면 다시 짜게 한다", async () => {
+  it("편집상 중복도 재생성 사유가 아니다", async () => {
     const doubled = {
       ...plan,
       sections: [
@@ -147,34 +172,27 @@ describe("레시피 생성 계약", () => {
         plan.sections[2]!,
       ],
     };
-    const ai = new StubAiClient([doubled, plan]);
+    const ai = new StubAiClient([doubled]);
     await new AiRecipePlanner(ai).plan(context);
-    expect(ai.calls[1]?.prompt).toContain("1번 기록이 여러 섹션에 들어갔습니다");
+    expect(ai.calls).toHaveLength(1);
   });
 
-  it("없는 재료를 가리키거나 분량이 어긋나면 다시 짜게 한다", async () => {
+  it("편집상 참조와 분량 어긋남도 재생성하지 않는다", async () => {
     const wrong = {
       ...plan,
       sections: [section({ items: [{ pointText: "없는 재료", sources: [9] }] }), plan.sections[1]!, plan.sections[2]!],
     };
-    const ai = new StubAiClient([wrong, plan]);
+    const ai = new StubAiClient([wrong]);
     await new AiRecipePlanner(ai).plan(context);
-    expect(ai.calls[1]?.prompt).toContain("9번 재료는 없습니다");
+    expect(ai.calls).toHaveLength(1);
 
     const short = {
       ...plan,
       sections: plan.sections.map((item) => ({ ...item, targetLength: 100 })),
     };
     const second = new StubAiClient([short]);
-    await expect(new AiRecipePlanner(second).plan(context)).rejects.toThrow(RecipePlanError);
-    expect(second.calls[1]?.prompt).toContain("분량 합이 300자입니다");
-  });
-
-  it("레이트 리밋은 다시 물어보지 않는다", async () => {
-    const limited = new AiError("AI_RATE_LIMITED", "recipe_draft", "usage limit", { retryable: false });
-    const ai = new StubAiClient([limited]);
-    await expect(new AiRecipePlanner(ai).plan(context)).rejects.toThrow(AiError);
-    expect(ai.calls).toHaveLength(1);
+    await new AiRecipePlanner(second).plan(context);
+    expect(second.calls).toHaveLength(1);
   });
 
   it("폴백은 종류별로 둘씩 골라 세 갈래를 다 넣는다", async () => {
@@ -217,7 +235,7 @@ describe("레시피 생성 계약", () => {
       },
     };
     const invalid = new StubAiClient([misused]);
-    await expect(new AiRecipePlanner(invalid).plan(companyContext)).rejects.toThrow(RecipePlanError);
-    expect(invalid.calls[1]?.prompt).toContain("기록 또는 답변이어야 합니다");
+    await new AiRecipePlanner(invalid).plan(companyContext);
+    expect(invalid.calls).toHaveLength(1);
   });
 });

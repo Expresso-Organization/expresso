@@ -1,11 +1,10 @@
 import {
   RecipeDraftSchema,
-  isCompleteSentence,
   type CompanyResearchItem,
   type RecipeDraft,
 } from "@expresso/contracts";
 
-import { AiError, type AiClient, type AiUsage } from "../../platform/ai/client.js";
+import { type AiClient, type AiUsage } from "../../platform/ai/client.js";
 
 /**
  * §8.3 「레시피 생성」 계약 — 무엇을 담을지 정한다.
@@ -69,10 +68,9 @@ const SYSTEM = [
   "무엇을 어디에 담을지 정하는 일이다.",
   "산출물은 Expresso의 PortfolioPlan v1이다.",
   "",
-  "## 절대 규칙 — 문장을 쓰지 않는다",
-  "항목(pointText)은 **요점**이다. \"일 1,200만 건 처리 · 큐 분리\"처럼 적는다.",
-  "\"...했습니다\" · \"...입니다\"로 끝나는 완성 문장을 쓰면 그 초안은 거절된다.",
-  "문장은 다음 단계가 쓴다. 여기서 미리 쓰면 고칠 곳이 두 군데로 갈린다.",
+  "## 편집 가능한 제안",
+  "항목(pointText)은 요점이나 짧은 문장 어느 쪽이어도 된다. 사용자가 나중에 고친다.",
+  "완결된 한 페이지 초안을 우선한다. 문체, 중복, 분량, 출처 연결은 전체 계획을 버리는 이유가 아니다.",
   "",
   "## 섹션 구성",
   "- 3~7개. **공고가 묻는 것에 맞춰** 정한다. 정해진 제목 세트가 있는 것이 아니다.",
@@ -80,18 +78,15 @@ const SYSTEM = [
   "- 제목은 그 사람의 것으로 쓴다. \"주요 경험\" 같은 어느 이력서에나 붙는 라벨 말고,",
   "  무엇을 말하는 섹션인지 알 수 있게 쓴다.",
   "- 첫 섹션은 **이 사람이 무엇을 하는 사람인지**가 한눈에 들어와야 한다.",
-  "- 재료가 없는 섹션은 만들지 않는다. 채울 것이 없으면 섹션을 줄인다.",
+  "- 재료가 적은 섹션도 사용자가 보완할 수 있게 남길 수 있다. 빈 자리를 만들지는 않는다.",
   "",
   "## 재료 배치",
-  "- 항목마다 쓸 재료 번호를 단다. 근거 없는 항목은 만들 수 없다.",
-  "- **같은 기록을 여러 섹션에 넣지 않는다.** 넣으면 같은 이야기가 두 번 나온다.",
-  "- 재료의 무게를 본다. 수치와 기간이 있는 기록이 더 앞에, 더 큰 자리를 받는다.",
-  "- metrics에는 **재료에 실제로 적힌 수치만** 옮긴다. 없으면 빈 배열로 둔다.",
+  "- 항목의 재료 번호는 연결할 수 있으면 단다. 없거나 불확실하면 빈 배열로 남긴다.",
+  "- 같은 기록의 반복, 재료의 무게, 수치의 출처는 사용자가 검토할 수 있는 제안이다.",
+  "- metrics는 도움이 될 때만 적고, 특정 수치를 임의로 만들어 내지 않는다.",
   "",
   "## 안 쓴 재료",
-  "쓰지 않은 **기록**은 unused에 번호와 이유를 적는다.",
-  "\"우선순위가 낮음\" 같은 말이 아니라 **이 공고 기준으로 왜 뺐는지** 쓴다 —",
-  "\"공고가 프런트엔드를 묻지 않아 뺐다\"처럼.",
+  "쓰지 않은 기록은 unused에 번호와 이유를 적을 수 있다. 빠진 기록은 자동으로 삭제하지 않는다.",
   "",
   "## 섹션마다 정할 것",
   "- purpose: 이 섹션이 읽는 사람에게 무엇을 남기는가.",
@@ -102,19 +97,15 @@ const SYSTEM = [
   "- format: narrative(서사) · bullets(나열) · metrics(수치 중심) · timeline(시간순).",
   "- exclude: 이 섹션에서 쓰면 안 되는 말. 과장 · 상투구 · 근거 없는 주장 중",
   "  **이 섹션에서 특히 위험한 것**을 적는다.",
-  "- targetLength: 이 섹션의 글자 수. 모든 섹션의 합이 주어진 전체 분량이어야 한다.",
+  "- targetLength: 이 섹션의 글자 수에 대한 제안. 합계는 검토 정보다.",
   "- takeaway: 읽은 사람이 이 섹션에서 기억할 한 가지.",
   "- contentPattern: hero · case-study · metrics · timeline · capabilities · about · contact 중 하나.",
   "- interactionOpportunity: 내용을 더 잘 이해시키는 상호작용. 필요 없으면 null.",
   "",
-  "## 설계안 핵심",
-  "- positioning은 이 사람의 실제 기록에서만 만든다.",
-  "- requirementCoverage의 requirementSource는 공고 요건 번호만 가리킨다.",
-  "- evidenceSources와 claims는 기록 또는 인터뷰 답변만 가리킨다. 공고와 회사 정보는",
-  "  사용자 성과의 증거가 아니다.",
-  "- missing 요건은 빈 evidenceSources로 둔다. 채우려고 경험을 만들지 않는다.",
-  "- allowedNumbers는 연결한 근거에 적힌 형태 그대로만 쓴다.",
-  "- 회사 조사 fact는 확인된 맥락, signal은 해석이다. 둘을 사용자 경험처럼 말하지 않는다.",
+  "## 설계안 맥락",
+  "- positioning, requirementCoverage, evidenceSources, claims는 사용자가 검토·편집할 연결 제안이다.",
+  "- missing 요건과 빈 evidenceSources는 그대로 남길 수 있다. 채우려고 특정 경험을 지어내지 않는다.",
+  "- 특정 숫자·회사명·프로젝트를 임의로 만들지 않고, 회사 조사 fact와 signal은 맥락으로 구분한다.",
 ].join("\n");
 
 const SOURCE_KIND: Record<PlannerSourceType, string> = {
@@ -153,82 +144,10 @@ function buildPrompt(context: PlannerContext): string {
 
   lines.push(
     "",
-    `전체 분량은 ${context.totalLength}자다. 섹션들의 targetLength 합을 여기 맞춘다.`,
+    `권장 전체 분량은 ${context.totalLength}자다. 섹션들의 targetLength 합은 검토용 제안이다.`,
     "이 공고에 맞는 구성을 짜라.",
   );
   return lines.join("\n");
-}
-
-/** 초안이 우리가 준 재료만 가리키는지, 분량이 맞는지. */
-function complaints(draft: RecipeDraft, context: PlannerContext): string[] {
-  const found: string[] = [];
-  const count = context.sources.length;
-
-  const cited = draft.sections.flatMap(({ items }) => items.flatMap(({ sources }) => sources));
-  const outOfRange = [...new Set(cited)].filter((number) => number > count);
-  if (outOfRange.length > 0) found.push(`${outOfRange.join(" · ")}번 재료는 없습니다`);
-
-  // 같은 기록이 두 섹션에 들어가면 같은 이야기가 두 번 나온다.
-  const sectionsBySource = new Map<number, Set<number>>();
-  for (const [index, section] of draft.sections.entries()) {
-    for (const item of section.items) {
-      for (const number of item.sources) {
-        const bucket = sectionsBySource.get(number) ?? new Set<number>();
-        bucket.add(index);
-        sectionsBySource.set(number, bucket);
-      }
-    }
-  }
-  const reused = [...sectionsBySource]
-    .filter(([number, sections]) =>
-      sections.size > 1 && context.sources[number - 1]?.type === "record")
-    .map(([number]) => number);
-  if (reused.length > 0) found.push(`${reused.join(" · ")}번 기록이 여러 섹션에 들어갔습니다`);
-
-  const total = draft.sections.reduce((sum, { targetLength }) => sum + targetLength, 0);
-  const slack = Math.round(context.totalLength * 0.2);
-  if (Math.abs(total - context.totalLength) > slack) {
-    found.push(`분량 합이 ${total}자입니다 (${context.totalLength}자 ± ${slack})`);
-  }
-
-  // §8.3: 완성 문장 생성 금지. 여기서 문장을 쓰면 추출이 할 일이 없어진다.
-  const sentences = draft.sections
-    .flatMap(({ items }) => items.map(({ pointText }) => pointText))
-    .filter((text) => isCompleteSentence(text));
-  if (sentences.length > 0) {
-    found.push(`요점이 아니라 완성 문장입니다: "${sentences[0]}"`);
-  }
-
-  const badUnused = draft.unused.filter(({ source }) =>
-    context.sources[source - 1]?.type !== "record");
-  if (badUnused.length > 0) found.push("unused에는 기록만 적습니다");
-
-  const sourceAt = (number: number) => context.sources[number - 1];
-  const badCoverage = draft.plan.requirementCoverage.filter(({ requirementSource }) =>
-    sourceAt(requirementSource)?.type !== "requirement");
-  if (badCoverage.length > 0) found.push("requirementCoverage는 공고 요건만 가리켜야 합니다");
-
-  const badEvidence = [
-    ...draft.plan.requirementCoverage.flatMap(({ evidenceSources }) => evidenceSources),
-    ...draft.plan.claims.flatMap(({ evidenceSources }) => evidenceSources),
-  ].filter((number) => !["record", "answer"].includes(sourceAt(number)?.type ?? ""));
-  if (badEvidence.length > 0) {
-    found.push(`사용자 주장의 근거는 기록 또는 답변이어야 합니다: ${[...new Set(badEvidence)].join(" · ")}`);
-  }
-
-  const missingWithEvidence = draft.plan.requirementCoverage.filter((entry) =>
-    entry.coverage === "missing" && entry.evidenceSources.length > 0);
-  if (missingWithEvidence.length > 0) found.push("missing 요건에는 사용자 근거를 붙일 수 없습니다");
-
-  for (const claim of draft.plan.claims) {
-    const evidenceText = claim.evidenceSources
-      .map((number) => sourceAt(number)?.text ?? "")
-      .join("\n");
-    const invented = claim.allowedNumbers.filter((number) => !evidenceText.includes(number));
-    if (invented.length > 0) found.push(`근거에 없는 허용 수치입니다: ${invented.join(" · ")}`);
-  }
-
-  return found;
 }
 
 export class AiRecipePlanner implements RecipePlanner {
@@ -239,57 +158,20 @@ export class AiRecipePlanner implements RecipePlanner {
   }
 
   async plan(context: PlannerContext): Promise<RecipePlanResult> {
-    if (context.sources.length < 3) throw new RecipePlanError("재료가 세 건보다 적습니다");
-
     const prompt = buildPrompt(context);
-    let lastError: unknown;
-    const total: AiUsage = {
-      model: "unknown",
-      inputTokens: 0,
-      outputTokens: 0,
-      cacheReadTokens: 0,
-      cacheCreationTokens: 0,
-      costUsd: 0,
-      durationMs: 0,
-    };
-    for (const attempt of [1, 2]) {
-      try {
-        const { data, usage } = await this.#ai.complete(
-          {
-            contract: "recipe_draft",
-            system: SYSTEM,
-            prompt: attempt === 1 ? prompt : `${prompt}\n\n${retryNote(lastError)}`,
-            promptVersion: RECIPE_PROMPT_VERSION,
-          },
-          RecipeDraftSchema,
-        );
-        total.model = usage.model;
-        total.inputTokens += usage.inputTokens;
-        total.outputTokens += usage.outputTokens;
-        total.cacheReadTokens += usage.cacheReadTokens;
-        total.cacheCreationTokens += usage.cacheCreationTokens;
-        total.durationMs += usage.durationMs;
-        total.costUsd = total.costUsd === null || usage.costUsd === null
-          ? null
-          : total.costUsd + usage.costUsd;
-        const found = complaints(data, context);
-        if (found.length > 0) throw new RecipePlanError(found.join(", "));
-        return { draft: data, usage: total, attempts: attempt };
-      } catch (error) {
-        if (error instanceof AiError && error.code !== "AI_INVALID_OUTPUT") throw error;
-        lastError = error;
-      }
-    }
-    throw new RecipePlanError(
-      `레시피 초안이 두 번 모두 계약을 벗어났습니다: ${String(lastError)}`,
-      { cause: lastError },
+    // 편집 판단과 근거 평가는 사용자에게 남긴다. 이 단계는 스키마로 읽을 수 있는
+    // 한 번의 설계안을 저장할 뿐, 문체·중복·수치 같은 편집 이유로 통째로 다시 묻지 않는다.
+    const { data, usage } = await this.#ai.complete(
+      {
+        contract: "recipe_draft",
+        system: SYSTEM,
+        prompt,
+        promptVersion: RECIPE_PROMPT_VERSION,
+      },
+      RecipeDraftSchema,
     );
+    return { draft: data, usage, attempts: 1 };
   }
-}
-
-function retryNote(error: unknown): string {
-  const detail = error instanceof Error ? error.message : String(error);
-  return `직전 시도는 거절되었다. 사유: ${detail}\n같은 실수를 반복하지 말고 다시 짜라.`;
 }
 
 /**
@@ -365,7 +247,7 @@ export class DeterministicRecipePlanner implements RecipePlanner {
             pointText: source.label.slice(0, 200),
             sources: [number],
           })),
-      })).filter(({ items }) => items.length > 0),
+      })),
       unused: context.sources.flatMap((source, index) =>
         source.type === "record" && !cited.has(index + 1)
           ? [{

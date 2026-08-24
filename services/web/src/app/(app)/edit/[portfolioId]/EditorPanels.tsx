@@ -1,6 +1,11 @@
 "use client";
 
-import type { BlockStyle, PortfolioBlock, PortfolioRevision } from "@expresso/contracts";
+import type {
+  BlockStyle,
+  GeneratedPage,
+  PortfolioBlock,
+  PortfolioRevision,
+} from "@expresso/contracts";
 import { useActionState, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
@@ -35,10 +40,13 @@ const BLOCK_KIND_LABEL: Record<string, string> = {
 export function ChatPanel({
   portfolioId,
   blocks,
+  freePage = false,
 }: {
   portfolioId: string;
   /** 말로 고칠 수 있는 블록. 미디어는 없고, 잠근 것은 계약이 거절한다. */
   blocks: { id: string; label: string }[];
+  /** 자유 HTML이 최종 지면이면 블록 대신 페이지 전체를 새 판으로 고친다. */
+  freePage?: boolean;
 }) {
   const [result, instruct, pending] = useActionState<EditResult, FormData>(
     instructAction, {},
@@ -46,10 +54,12 @@ export function ChatPanel({
   const [applied, apply, applying] = useActionState<EditResult, FormData>(
     applyProposalAction, {},
   );
-  const [target, setTarget] = useState(blocks[0]?.id ?? "layout");
-  const targetLabel = target === "layout"
-    ? "지면 전체"
-    : blocks.find(({ id }) => id === target)?.label ?? "블록";
+  const [target, setTarget] = useState(freePage ? "page" : (blocks[0]?.id ?? "layout"));
+  const targetLabel = target === "page"
+    ? "웹페이지 전체"
+    : target === "layout"
+      ? "지면 전체"
+      : blocks.find(({ id }) => id === target)?.label ?? "블록";
   const kept = applied.error === undefined && !applying && result.proposalId === undefined;
 
   return (
@@ -81,6 +91,12 @@ export function ChatPanel({
                 {/* 지면 변형은 바로 적용된다. 되돌리기는 03에서 옛 후보를 고르는 일. */}
                 {result.layoutRationale ? (
                   <div className={styles.aiBubble}>{result.layoutRationale}</div>
+                ) : null}
+
+                {result.pageRationale ? (
+                  <div className={styles.aiBubble}>
+                    판 {Number(result.pageRevision ?? 0) + 1}을 만들었습니다. {result.pageRationale}
+                  </div>
                 ) : null}
 
                 {result.patches && result.patches.length > 0 ? (
@@ -150,17 +166,23 @@ export function ChatPanel({
             onChange={(event) => setTarget(event.target.value)}
             aria-label="고칠 대상"
           >
-            {blocks.map((block) => (
-              <option key={block.id} value={block.id}>{block.label}</option>
-            ))}
-            <option value="layout">지면 전체</option>
+            {freePage ? (
+              <option value="page">웹페이지 전체</option>
+            ) : (
+              <>
+                {blocks.map((block) => (
+                  <option key={block.id} value={block.id}>{block.label}</option>
+                ))}
+                <option value="layout">지면 전체</option>
+              </>
+            )}
           </select>
         </div>
         <div className={styles.inputBox}>
           <input
             name="instruction"
             className={styles.input}
-            placeholder={target === "layout"
+            placeholder={target === "page" || target === "layout"
               ? "더 차분하게 · 여백을 줄여 주세요"
               : "한 문장으로 줄여 주세요"}
             aria-label="편집 지시"
@@ -180,6 +202,64 @@ export function ChatPanel({
         </div>
       </form>
     </>
+  );
+}
+
+/** 자유 HTML의 자동 검사는 판정이 아니라 사용자가 볼 참고 정보다. */
+export function FreePageProperties({ page }: { page: GeneratedPage }) {
+  const attention = page.qaReport.checks.filter(({ status }) => status === "fail");
+  return (
+    <div className={styles.properties}>
+      <div className={styles.targetCard}>
+        <Icon name="code" size={15} color="#354DA8" />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className={styles.targetName}>자유 HTML · 판 {page.revision + 1}</div>
+          <div className={styles.targetPath}>사용자가 요청할 때만 새 판을 만듭니다</div>
+        </div>
+      </div>
+      <div className={styles.propGroup}>
+        <div className={styles.propGroupHead}>
+          <span className={styles.propGroupLabel}>생성 메모</span>
+          <span className={styles.propGroupRule} />
+        </div>
+        <p className={styles.panelEmpty}>{page.rationale}</p>
+      </div>
+      <div className={styles.propGroup}>
+        <div className={styles.propGroupHead}>
+          <span className={styles.propGroupLabel}>확인할 곳</span>
+          <span className={styles.propGroupRule} />
+        </div>
+        {attention.length === 0 ? (
+          <p className={styles.panelEmpty}>
+            편집 주의점이 없습니다. 필요하면 채팅에서 수정을 요청하세요.
+          </p>
+        ) : attention.map((check) => (
+          <p key={check.name} className={styles.panelEmpty}>{check.detail}</p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** 자유 HTML 이력은 원본을 지우지 않고 쌓인 판 목록이다. */
+export function FreePageHistoryPanel({ pages }: { pages: readonly GeneratedPage[] }) {
+  return (
+    <div className={styles.history}>
+      {pages.map((page, index) => (
+        <div key={page.id} className={styles.revision}>
+          <span className={index === 0 ? styles.revisionAi : styles.revisionUser}>
+            {page.revision + 1}
+          </span>
+          <div className={styles.revisionBody}>
+            <div className={styles.revisionSummary}>판 {page.revision + 1}</div>
+            <div className={styles.revisionMeta}>
+              {new Date(page.createdAt).toLocaleString("ko-KR")}
+              {index === 0 ? " · 현재" : ""}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

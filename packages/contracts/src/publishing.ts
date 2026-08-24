@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TimestampSchema, UuidSchema } from "./common.js";
+import { GeneratedPageDeploymentSnapshotSchema } from "./page.js";
 
 export const SlugSchema = z.string().min(3).max(63).regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/);
 
@@ -22,6 +23,15 @@ export const DeploymentSchema = z.strictObject({
   seo: z.record(z.string(), z.unknown()),
   contactVisibility: z.enum(["public", "on_request", "hidden"]),
   publishedAt: TimestampSchema,
+});
+
+/** 새 자유 HTML 배포가 넣는 스냅샷의 최소 호환 모양. */
+export const FreeHtmlDeploymentSnapshotSchema = z.strictObject({
+  portfolioId: UuidSchema,
+  title: z.string(),
+  templateId: UuidSchema,
+  sections: z.array(z.unknown()),
+  generatedPage: GeneratedPageDeploymentSnapshotSchema,
 });
 
 /**

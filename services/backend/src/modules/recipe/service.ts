@@ -133,14 +133,13 @@ export class RecipeService {
 
         const sectionEvidenceIds = new Set<string>();
         for (const [itemOrder, item] of section.items.entries()) {
-          // 없는 번호를 가리키는 근거는 버린다. 근거가 하나도 없으면 항목을 버린다 —
-          // 근거 없는 항목은 `recipe_item`의 CHECK가 애초에 받지 않는다.
+          // 유효한 연결만 path로 남긴다. 비어 있거나 잘못된 번호는 사용자 검토용
+          // 빈 evidence 배열로 보존한다 — 항목 자체를 버리면 계획에 구멍이 생긴다.
           const cited = [...new Set(item.sources)]
             .flatMap((number) => {
               const source = context.sources[number - 1];
               return source ? [{ number, source }] : [];
             });
-          if (cited.length === 0) continue;
           for (const { number, source } of cited) {
             citedNumbers.add(number);
             sectionEvidenceIds.add(source.id);
@@ -169,18 +168,16 @@ export class RecipeService {
             )
           `;
         }
-        if (sectionEvidenceIds.size > 0) {
-          plannedSections.push({
-            id: sectionId,
-            title: section.title,
-            purpose: section.purpose,
-            takeaway: section.takeaway,
-            evidenceIds: [...sectionEvidenceIds],
-            contentPattern: section.contentPattern,
-            interactionOpportunity: section.interactionOpportunity,
-            targetLength: section.targetLength,
-          });
-        }
+        plannedSections.push({
+          id: sectionId,
+          title: section.title,
+          purpose: section.purpose,
+          takeaway: section.takeaway,
+          evidenceIds: [...sectionEvidenceIds],
+          contentPattern: section.contentPattern,
+          interactionOpportunity: section.interactionOpportunity,
+          targetLength: section.targetLength,
+        });
       }
 
       // 안 쓴 기록은 이유와 함께 남긴다. 계약이 이유를 냈으면 그걸 쓰고,
@@ -367,8 +364,6 @@ export class RecipeService {
         label: row.prompt, text: row.transcript,
       })),
     ];
-    if (sources.length < 3) throw new RecipeError(409, "at least three evidence sources are required");
-
     const context: PlannerContext = {
       sources,
       company: subject[0]

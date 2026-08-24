@@ -34,6 +34,7 @@ describeWithDatabase("publishing and asset lifecycle integration", () => {
   let competingPortfolioId = "";
   let freePortfolioId = "";
   let blockId = "";
+  let primaryPageId = "";
 
   async function createPortfolio(userId: string, label: string) {
     const companyId = (await sql<IdRow[]>`
@@ -67,7 +68,13 @@ describeWithDatabase("publishing and asset lifecycle integration", () => {
       values (${userId}, ${sectionId}, 'paragraph', ${sql.json({ text: `${label} original` })}) returning id
     `)[0]?.id;
     if (!seededBlockId) throw new Error("block seed missing");
-    return { portfolioId, blockId: seededBlockId };
+    const pageId = (await sql<IdRow[]>`
+      insert into generated_page (user_id, portfolio_id, html, css, rationale, revision, prompt_version)
+      values (${userId}, ${portfolioId}, ${`<main>${label} free html</main>`}, 'main{display:block}', 'seeded page', 0, 6)
+      returning id
+    `)[0]?.id;
+    if (!pageId) throw new Error("page seed missing");
+    return { portfolioId, blockId: seededBlockId, pageId };
   }
 
   beforeAll(async () => {
@@ -85,6 +92,7 @@ describeWithDatabase("publishing and asset lifecycle integration", () => {
     const primary = await createPortfolio(proUserId, "primary");
     proPortfolioId = primary.portfolioId;
     blockId = primary.blockId;
+    primaryPageId = primary.pageId;
     competingPortfolioId = (await createPortfolio(freeUserId, "competitor")).portfolioId;
     freePortfolioId = (await createPortfolio(freeUserId, "free-export")).portfolioId;
     await app.ready();
@@ -118,15 +126,25 @@ describeWithDatabase("publishing and asset lifecycle integration", () => {
     const at = new Date("2026-08-09T00:00:00.000Z");
     const firstSlug = `first-${marker}`;
     const secondSlug = `second-${marker}`;
+    await sql`
+      update generated_page
+      set html = '<main>frozen-free-html</main>', css = 'main{color:#16223a}', rationale = 'fixed page'
+      where id = ${primaryPageId}
+    `;
     const first = await service.publish(proUserId, proPortfolioId, PublishPortfolioSchema.parse({ slug: firstSlug }), at);
     expect(first).toMatchObject({ version: expect.any(Number), contactVisibility: "hidden" });
+    expect((first.snapshot as { generatedPage?: { id?: string; revision?: number; document?: string } }).generatedPage)
+      .toMatchObject({ id: primaryPageId, revision: 0, document: expect.stringContaining("frozen-free-html") });
     await expect(sql`update deployment set snapshot = '{"tampered":true}' where id = ${first.id}`).rejects.toThrow(/immutable/);
+    await sql`update generated_page set html = '<main>mutable edit</main>' where id = ${primaryPageId}`;
     await sql`update block set content = ${sql.json({ text: "unpublished edit" })} where id = ${blockId}`;
 
     const beforeRepublish = await app.inject({ method: "GET", url: `/v1/public/portfolios/${firstSlug}` });
     expect(beforeRepublish.statusCode).toBe(200);
     expect(JSON.stringify(beforeRepublish.json())).toContain("primary original");
     expect(JSON.stringify(beforeRepublish.json())).not.toContain("unpublished edit");
+    expect(JSON.stringify(beforeRepublish.json())).toContain("frozen-free-html");
+    expect(JSON.stringify(beforeRepublish.json())).not.toContain("mutable edit");
 
     const second = await service.publish(proUserId, proPortfolioId, PublishPortfolioSchema.parse({ slug: secondSlug }), at);
     expect(second.version).toBe(first.version + 1);

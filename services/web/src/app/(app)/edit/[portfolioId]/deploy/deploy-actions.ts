@@ -31,6 +31,9 @@ function message(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.status === 403) return "이 요금제에서는 할 수 없습니다.";
     if (error.status === 404) return "포트폴리오를 찾지 못했습니다.";
+    if (error.status === 409 && error.message.includes("generated page")) {
+      return "먼저 자유 HTML 페이지를 만든 뒤 배포해 주세요.";
+    }
     if (error.status === 409) return "이미 쓰이고 있는 주소입니다. 다른 주소로 해 주세요.";
     if (error.status === 422) return error.message;
   }

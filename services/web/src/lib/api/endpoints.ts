@@ -29,6 +29,7 @@ import {
   ConsentListResponseSchema,
   DeploymentListResponseSchema,
   DeploymentSchema,
+  PublicPortfolioSchema,
   EntitlementDecisionResponseSchema,
   type EntitlementCapability,
   ApplyPortfolioEditResultSchema,
@@ -201,6 +202,14 @@ export const entitlements = {
 };
 
 export const publishing = {
+  /** 방문자가 읽는 불변 배포 사본. 인증된 편집본을 다시 읽지 않는다. */
+  public: (slug: string) =>
+    request(
+      `${API_PREFIX}/public/portfolios/${encodeURIComponent(slug)}`,
+      z.strictObject({ data: PublicPortfolioSchema }),
+      { cache: "no-store" },
+    ),
+
   /** 08b 버전 목록. 되돌릴 대상을 여기서 고른다. */
   deployments: (accessToken: string, portfolioId: string) =>
     request(

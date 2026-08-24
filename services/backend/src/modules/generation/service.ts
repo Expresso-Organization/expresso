@@ -4,6 +4,7 @@ import {
   GenerationJobStatusSchema,
   GenerationOutputSchema,
   type GenerationOutput,
+  type GeneratedPage,
   type SubmitGeneration,
 } from "@expresso/contracts";
 import type { SqlTag, JSONValue } from "../../platform/mysql.js";
@@ -268,6 +269,114 @@ export class GenerationService {
       portfolioId: job.portfolio_id,
       failure: job.error_code ? { code: job.error_code, retryable: job.failure_retryable ?? false } : null,
     });
+  }
+
+  /**
+   * 자유 HTML 정식 경로의 포트폴리오 껍데기를 먼저 만든다.
+   *
+   * 문장·블록 산출물은 이전 편집기 호환 경로에만 남긴다. 이 경로는 페이지 판이
+   * 저장되기 전에는 사용량도 완료 상태도 만들지 않는다.
+   */
+  async prepareFreeHtml(jobId: string) {
+    const prepared = await this.#sql.begin(async (transaction) => {
+      const job = (await transaction<JobRow[]>`
+        select * from generation_job where id = ${jobId} for update
+      `)[0];
+      if (!job) throw new GenerationError(404, "generation job not found");
+      if (job.status === "done" || job.status === "failed") return { job, portfolioId: job.portfolio_id };
+
+      let portfolioId = job.portfolio_id;
+      if (!portfolioId) {
+        portfolioId = (await transaction<{ id: string }[]>`
+          insert into portfolio (
+            user_id, brew_id, template_id, title, status, style_overrides
+          ) values (
+            ${job.user_id}, ${job.brew_id}, ${job.template_id},
+            'Generated portfolio', 'draft',
+            ${transaction.json((job.style_overrides ?? {}) as JSONValue)}
+          ) returning id
+        `)[0]?.id ?? null;
+      }
+      if (!portfolioId) throw new Error("portfolio missing");
+      await transaction`
+        update generation_job
+        set status = 'running', stage = 'materializing', attempts = attempts + 1,
+            error_code = null, failure_retryable = null, portfolio_id = ${portfolioId}, updated_at = now(6)
+        where id = ${jobId}
+      `;
+      return { job: { ...job, status: "running" as const, portfolio_id: portfolioId }, portfolioId };
+    });
+    return {
+      userId: prepared.job.user_id,
+      portfolioId: prepared.portfolioId,
+      status: await this.getStatus(prepared.job.user_id, jobId),
+    };
+  }
+
+  /** 저장된 ready 지면을 확인한 뒤에만 quota와 완료 상태를 한 transaction으로 확정한다. */
+  async completeFreeHtml(jobId: string, page: GeneratedPage) {
+    const userId = await this.#sql.begin(async (transaction) => {
+      const job = (await transaction<JobRow[]>`
+        select * from generation_job where id = ${jobId} for update
+      `)[0];
+      if (!job) throw new GenerationError(404, "generation job not found");
+      if (job.status === "done") return job.user_id;
+      if (job.status === "failed") return job.user_id;
+      if (
+        !job.portfolio_id
+        || page.generationJobId !== job.id
+        || page.portfolioId !== job.portfolio_id
+        || page.qualityStatus !== "ready"
+      ) throw new GenerationError(409, "ready generated page is required before completion");
+
+      await transaction`select id from \`user\` where id = ${job.user_id} for update`;
+      const decision = await new EntitlementService(transaction).check(job.user_id, "portfolio.generate");
+      if (!decision.allowed || !decision.usage) throw new GenerationError(409, "generation quota is exhausted");
+      await transaction`update generation_job set stage = 'charging' where id = ${jobId}`;
+      await transaction`
+        insert into usage_counter (user_id, period_start, used, resets_at)
+        values (${job.user_id}, ${decision.usage.periodStart}, 1, ${decision.usage.resetsAt})
+        as new on duplicate key update used = usage_counter.used + 1, resets_at = new.resets_at
+      `;
+      const usage = (await transaction<{ id: string }[]>`
+        select id from usage_counter
+        where user_id = ${job.user_id} and period_start = ${decision.usage.periodStart}
+      `)[0];
+      if (!usage) throw new Error("usage counter missing");
+      await transaction`
+        insert ignore into generation_usage_ledger (user_id, generation_job_id, usage_counter_id, amount, reason)
+        values (${job.user_id}, ${jobId}, ${usage.id}, 1, 'success')
+      `;
+      await transaction`
+        update generation_job
+        set status = 'done', stage = 'done', usage_charged = true, updated_at = now(6)
+        where id = ${jobId}
+      `;
+      return job.user_id;
+    });
+    return this.getStatus(userId, jobId);
+  }
+
+  /** 페이지 호출·보안 검증 실패는 결과와 이유만 남기고 quota를 건드리지 않는다. */
+  async failFreeHtml(
+    jobId: string,
+    code: "PAGE_GENERATION_FAILED" | "PAGE_OUTPUT_INVALID" | "GENERATION_REJECTED",
+  ) {
+    const userId = await this.#sql.begin(async (transaction) => {
+      const job = (await transaction<JobRow[]>`
+        select * from generation_job where id = ${jobId} for update
+      `)[0];
+      if (!job) throw new GenerationError(404, "generation job not found");
+      if (job.status === "done") return job.user_id;
+      await transaction`
+        update generation_job
+        set status = 'failed', stage = 'failed', error_code = ${code}, failure_retryable = false,
+            updated_at = now(6)
+        where id = ${jobId}
+      `;
+      return job.user_id;
+    });
+    return this.getStatus(userId, jobId);
   }
 
   /**

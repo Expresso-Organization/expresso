@@ -42,12 +42,44 @@ import {
   composeTemplateStyle,
   PAGE_KIT_CSS,
   pageKitPrompt,
+  PortfolioPlanSchema,
+  RecipeDraftSchema,
 } from "./index.js";
 
 const ids = {
   job: "11111111-1111-4111-8111-111111111111",
   user: "22222222-2222-4222-8222-222222222222",
 };
+
+describe("advisory recipe and plan contracts", () => {
+  it("keeps a single complete section even when source links and editorial lists are empty", () => {
+    expect(RecipeDraftSchema.parse({
+      plan: {
+        positioning: { headlineIntent: "소개", valueProposition: "가치", differentiators: [] },
+        requirementCoverage: [], narrativeArc: "한 페이지 흐름", claims: [], exclusions: [], rationale: "초안 이유",
+      },
+      sections: [{
+        title: "소개", purpose: "전체 초안", targetLength: 0, goal: "읽기 시작", points: [], metrics: [],
+        tone: "professional", format: "narrative", exclude: [], takeaway: "한 가지", contentPattern: "hero",
+        interactionOpportunity: null, items: [],
+      }],
+      unused: [],
+    }).sections).toHaveLength(1);
+
+    expect(PortfolioPlanSchema.parse({
+      version: 1,
+      target: { company: "회사", role: "직무", primaryReaders: [], decisionGoal: "검토" },
+      positioning: { headlineIntent: "소개", valueProposition: "가치", differentiators: [] },
+      requirementCoverage: [], narrative: { arc: "흐름", sectionOrder: [] },
+      sections: [{
+        id: ids.job, title: "소개", purpose: "전체 초안", takeaway: "한 가지", evidenceIds: [],
+        contentPattern: "hero", interactionOpportunity: null, targetLength: 0,
+      }],
+      claims: [{ id: "claim-1", intent: "검토할 주장", evidenceIds: [], allowedNumbers: [] }],
+      exclusions: [], unusedEvidence: [], companyContext: [], rationale: "초안 이유",
+    }).claims[0]?.evidenceIds).toEqual([]);
+  });
+});
 
 describe("HTTP contract primitives", () => {
   it("accepts the stable error envelope and rejects unknown error codes", () => {
