@@ -3,6 +3,7 @@ import {
   BrewStateSchema,
   type BrewMaterial,
   type CreateBrew,
+  type CreateFreeBrew,
   type UpdateBrew,
 } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/mysql.js";
@@ -149,6 +150,56 @@ export class MaterialsService {
     return this.getMaterials(userId, brewId);
   }
 
+  async createFreeBrew(userId: string, input: CreateFreeBrew) {
+    const brewId = await this.#sql.begin(async (transaction) => {
+      const analyses = await transaction<{ id: string }[]>`
+        insert into job_analysis (
+          user_id, job_posting_id, input_type, status, progress_stage,
+          analyzed_at, result_version, target_version
+        ) values (
+          ${userId}, null, 'free', 'done', 'done', now(6), 1, 1
+        ) returning id
+      `;
+      const analysis = analyses[0];
+      if (!analysis) throw new Error("free job analysis was not persisted");
+
+      const records = await transaction<RecordRow[]>`
+        select id, title, status, body_md, properties
+        from record
+        where user_id = ${userId}
+          and deleted_at is null
+          and status in ('organized', 'verified')
+      `;
+      const ranked = rankMaterials(records.map((record): MaterialRecord => ({
+        id: record.id,
+        title: record.title,
+        status: record.status,
+        text: `${record.title}\n${record.body_md}\n${JSON.stringify(record.properties)}`,
+      })), [input.brief]).slice(0, 50);
+      const brews = await transaction<{ id: string }[]>`
+        insert into brew (user_id, job_analysis_id, free_title, free_brief, length_preset)
+        values (${userId}, ${analysis.id}, ${input.title}, ${input.brief}, ${input.lengthPreset})
+        returning id
+      `;
+      const brew = brews[0];
+      if (!brew) throw new Error("free brew was not persisted");
+      for (const [index, record] of ranked.entries()) {
+        const selected = index < SELECTION_LIMIT;
+        await transaction`
+          insert into brew_source (
+            user_id, brew_id, record_id, \`rank\`, selected_by,
+            excluded_reason, score, reason_text, is_selected
+          ) values (
+            ${userId}, ${brew.id}, ${record.id}, ${index}, 'auto',
+            ${selected ? null : "AUTO_LIMIT"}, ${record.score}, ${record.reason}, ${selected}
+          )
+        `;
+      }
+      return brew.id;
+    });
+    return this.getMaterials(userId, brewId);
+  }
+
   /**
    * 위저드가 자기 자리를 되찾는 데 필요한 것.
    *
@@ -160,8 +211,9 @@ export class MaterialsService {
     const brew = (await sql<{
       id: string; job_analysis_id: string; status: string;
       length_preset: "single" | "double" | "triple"; updated_at: Date | string;
+      free_title: string | null; free_brief: string | null;
     }[]>`
-      select id, job_analysis_id, status, length_preset, updated_at
+      select id, job_analysis_id, status, length_preset, free_title, free_brief, updated_at
       from brew where id = ${brewId} and user_id = ${userId}
     `)[0];
     if (!brew) throw new MaterialsError(404, "brew not found");
@@ -220,6 +272,8 @@ export class MaterialsService {
       jobAnalysisId: brew.job_analysis_id,
       status: brew.status,
       lengthPreset: brew.length_preset,
+      freeTitle: brew.free_title,
+      freeBrief: brew.free_brief,
       posting: posting[0]
         ? { title: posting[0].title, companyName: posting[0].company_name }
         : null,

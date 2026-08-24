@@ -45,6 +45,8 @@ export interface PlannerContext {
   sources: PlannerSource[];
   company: { name: string; industry: string | null; toneSummary: string | null } | null;
   jobTitle: string | null;
+  freeTitle?: string | null;
+  freeBrief?: string | null;
   /** 공고가 요구하는 것. 섹션 구성이 이걸 향해야 한다. */
   requirements: { label: string; kind: string }[];
   /** 사실과 해석이 분리된 회사 조사. 사용자 성과의 근거로는 쓸 수 없다. */
@@ -117,6 +119,11 @@ const SOURCE_KIND: Record<PlannerSourceType, string> = {
 function buildPrompt(context: PlannerContext): string {
   const lines: string[] = [];
   if (context.jobTitle) lines.push(`지원 공고: ${context.jobTitle}`);
+  if (context.freeTitle || context.freeBrief) {
+    lines.push("", "## 사용자가 요청한 방향");
+    if (context.freeTitle) lines.push(`포트폴리오 제목: ${context.freeTitle}`);
+    if (context.freeBrief) lines.push(`요청 내용: ${context.freeBrief}`);
+  }
   if (context.company) {
     const { name, industry, toneSummary } = context.company;
     lines.push(`회사: ${name}${industry ? ` (${industry})` : ""}`);
@@ -196,7 +203,9 @@ export class DeterministicRecipePlanner implements RecipePlanner {
         positioning: {
           headlineIntent: context.jobTitle
             ? `${context.jobTitle}에 연결되는 검증된 경험을 먼저 제시`
-            : "검증된 경험을 먼저 제시",
+            : context.freeTitle
+              ? `${context.freeTitle}에 맞는 검증된 경험을 먼저 제시`
+              : "검증된 경험을 먼저 제시",
           valueProposition: "선택한 기록의 행동과 결과로 기여 가능성을 설명",
           differentiators: ["근거가 연결된 실제 프로젝트"],
         },
@@ -230,8 +239,10 @@ export class DeterministicRecipePlanner implements RecipePlanner {
         title,
         purpose: `${title}에 맞는 근거를 배치`,
         targetLength: perSection,
-        goal: "선택한 근거로 핵심 경험을 설명",
-        points: [title],
+        goal: context.freeBrief && index === 0
+          ? "사용자가 요청한 방향과 선택한 근거를 함께 설명"
+          : "선택한 근거로 핵심 경험을 설명",
+        points: [index === 0 && context.freeBrief ? context.freeBrief.slice(0, 500) : title],
         metrics: [],
         tone: "professional",
         format: "narrative",

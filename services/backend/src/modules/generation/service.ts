@@ -51,7 +51,7 @@ interface ContextRow {
 }
 interface BrewSubjectRow {
   job_title: string | null; job_family: string | null;
-  company_name: string; industry: string | null; tone_summary: string | null;
+  free_title: string | null; company_name: string | null; industry: string | null; tone_summary: string | null;
   brand_colors: string[];
 }
 
@@ -118,14 +118,14 @@ export function buildWriterContext(input: {
       label: path.source_label,
       text: path.source_text,
     })),
-    company: input.subject
+    company: input.subject?.company_name
       ? {
         name: input.subject.company_name,
         industry: input.subject.industry,
         toneSummary: input.subject.tone_summary,
       }
       : null,
-    jobTitle: input.subject?.job_title ?? null,
+    jobTitle: input.subject?.job_title ?? input.subject?.free_title ?? null,
     lockedTexts: input.lockedTexts,
   };
 }
@@ -191,14 +191,14 @@ export class GenerationService {
   /** 이 추출이 누구에게 보내는 것인지. 문장과 지면이 같은 값을 본다. */
   async #subject(job: JobRow): Promise<BrewSubjectRow | null> {
     return (await this.#sql<BrewSubjectRow[]>`
-      select job_posting.title as job_title, job_posting.job_family,
+      select job_posting.title as job_title, job_posting.job_family, brew.free_title,
              company.name as company_name, company.industry, company.tone_summary,
-             company.brand_colors
+             coalesce(company.brand_colors, json_array()) as brand_colors
       from brew
       join job_analysis on job_analysis.id = brew.job_analysis_id
         and job_analysis.user_id = brew.user_id
-      join job_posting on job_posting.id = job_analysis.job_posting_id
-      join company on company.id = job_posting.company_id
+      left join job_posting on job_posting.id = job_analysis.job_posting_id
+      left join company on company.id = job_posting.company_id
       where brew.user_id = ${job.user_id} and brew.id = ${job.brew_id}
     `)[0] ?? null;
   }
@@ -232,7 +232,7 @@ export class GenerationService {
               }]
               : []),
         })),
-        company: subject
+        company: subject?.company_name
           ? {
             name: subject.company_name,
             industry: subject.industry,
@@ -240,7 +240,7 @@ export class GenerationService {
             brandColors: subject.brand_colors,
           }
           : null,
-        jobTitle: subject?.job_title ?? null,
+        jobTitle: subject?.job_title ?? subject?.free_title ?? null,
         jobFamily: subject?.job_family ?? null,
       };
 
@@ -287,12 +287,17 @@ export class GenerationService {
 
       let portfolioId = job.portfolio_id;
       if (!portfolioId) {
+        const subject = (await transaction<{ free_title: string | null }[]>`
+          select brew.free_title
+          from brew
+          where brew.id = ${job.brew_id} and brew.user_id = ${job.user_id}
+        `)[0];
         portfolioId = (await transaction<{ id: string }[]>`
           insert into portfolio (
             user_id, brew_id, template_id, title, status, style_overrides
           ) values (
             ${job.user_id}, ${job.brew_id}, ${job.template_id},
-            'Generated portfolio', 'draft',
+            ${subject?.free_title ?? "Generated portfolio"}, 'draft',
             ${transaction.json((job.style_overrides ?? {}) as JSONValue)}
           ) returning id
         `)[0]?.id ?? null;

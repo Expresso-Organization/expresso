@@ -61,6 +61,7 @@ import {
   TemplatePreviewsResponseSchema,
   GenerationJobStatusResponseSchema,
   type CreateBrew,
+  type CreateFreeBrew,
   type SubmitGeneration,
   type SubmitJobPosting,
   type ListJobPostingsQuery,
@@ -286,6 +287,14 @@ export const brews = {
    */
   create: (accessToken: string, input: CreateBrew) =>
     request(`${API_PREFIX}/brews`, BrewMaterialsResponseSchema, {
+      accessToken,
+      method: "POST",
+      body: input,
+    }),
+
+  /** 공고 없이 자유로운 설명만으로 제작을 연다. */
+  createFree: (accessToken: string, input: CreateFreeBrew) =>
+    request(`${API_PREFIX}/brews/free`, BrewMaterialsResponseSchema, {
       accessToken,
       method: "POST",
       body: input,

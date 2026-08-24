@@ -51,7 +51,8 @@ interface SectionRow {
 interface EvidenceRow { source_label: string; source_text: string }
 interface SubjectRow {
   job_title: string | null;
-  company_name: string;
+  free_title: string | null;
+  company_name: string | null;
   industry: string | null;
   tone_summary: string | null;
   brand_colors: string[];
@@ -258,13 +259,14 @@ export class PageService {
       : undefined;
 
     const subject = (await this.#sql<SubjectRow[]>`
-      select job_posting.title as job_title, company.name as company_name,
-             company.industry, company.tone_summary, company.brand_colors
+      select job_posting.title as job_title, brew.free_title,
+             company.name as company_name, company.industry, company.tone_summary,
+             coalesce(company.brand_colors, json_array()) as brand_colors
       from portfolio
       join brew on brew.id = portfolio.brew_id and brew.user_id = portfolio.user_id
       join job_analysis on job_analysis.id = brew.job_analysis_id
-      join job_posting on job_posting.id = job_analysis.job_posting_id
-      join company on company.id = job_posting.company_id
+      left join job_posting on job_posting.id = job_analysis.job_posting_id
+      left join company on company.id = job_posting.company_id
       where portfolio.user_id = ${userId} and portfolio.id = ${portfolioId}
     `)[0] ?? null;
 
@@ -308,8 +310,8 @@ export class PageService {
         width: row.width,
         height: row.height,
       })),
-      jobTitle: subject?.job_title ?? null,
-      company: subject
+      jobTitle: subject?.job_title ?? subject?.free_title ?? null,
+      company: subject?.company_name
         ? {
           name: subject.company_name,
           industry: subject.industry,

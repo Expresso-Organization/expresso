@@ -80,6 +80,33 @@ export async function analyzePostingAction(formData: FormData): Promise<void> {
   redirect(`/brew/new/${analyzed.jobAnalysisId}?length=${lengthPreset(formData)}` as Route);
 }
 
+/** 공고와 기록을 요구하지 않고 사용자의 설명으로 제작을 연다. */
+export async function createFreeBrewAction(
+  _state: NewBrewState,
+  formData: FormData,
+): Promise<NewBrewState> {
+  const session = await requireSession();
+  const title = String(formData.get("title") ?? "").trim();
+  const brief = String(formData.get("brief") ?? "").trim();
+
+  if (!title) return { error: "포트폴리오 제목을 적어 주세요." };
+  if (!brief) return { error: "담고 싶은 내용이나 방향을 적어 주세요." };
+
+  try {
+    const created = await brews.createFree(session.accessToken, {
+      title,
+      brief,
+      lengthPreset: lengthPreset(formData),
+    });
+    redirect(`/brew/${created.data.brewId}/outline`);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { error: "자유 제작을 시작하지 못했습니다. 잠시 뒤 다시 눌러 주세요." };
+    }
+    throw error;
+  }
+}
+
 /**
  * 분석이 끝난 뒤 제작을 만든다.
  *
