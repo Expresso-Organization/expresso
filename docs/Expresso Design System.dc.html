@@ -236,14 +236,107 @@
       </div>
       <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; padding: 18px 20px">
         <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 9px">RULE 03</div>
-        <div style="font-size: 13.5px; line-height: 1.7; color: #35455F">지면은 항상 밝게. 다크 서피스와 장식용 그러데이션은 쓰지 않는다.</div>
+        <div style="font-size: 13.5px; line-height: 1.7; color: #35455F"><b>포트폴리오 지면</b>은 항상 밝게. 장식용 그러데이션은 쓰지 않는다. 앱 화면은 아래 §01b의 두 벌을 따른다.</div>
       </div>
       <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; padding: 18px 20px">
         <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin-bottom: 9px">RULE 04</div>
         <div style="font-size: 13.5px; line-height: 1.7; color: #35455F">면을 나누는 건 색이 아니라 <b>보더와 여백</b>. 채도는 액션에만 남긴다.</div>
       </div>
     </div>
-  </section>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin: 34px 0 14px">§01b · SURFACE — TWO SETS</div>
+    <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; padding: 20px 22px; margin-bottom: 14px">
+      <div style="font-size: 13.5px; line-height: 1.75; color: #35455F">색은 <b>두 층</b>입니다. <b>팔레트</b>는 값을 서술하는 이름(<code style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #9A4030">--ex-white</code>)이고 테마와 무관합니다. <b>역할</b>은 쓰임을 서술하는 이름(<code style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #9A4030">--ex-bg</code>)이고 테마마다 값이 다릅니다. <b>화면은 역할 층만 씁니다</b> — 팔레트를 직접 쓰면 어두운 지면에서 이름이 거짓말을 합니다.</div>
+      <div style="font-size: 13.5px; line-height: 1.75; color: #35455F; margin-top: 12px">기본은 기기 설정(<code style="font-family: 'JetBrains Mono', monospace; font-size: 12px">prefers-color-scheme</code>)이고, 계정 화면에서 밝게 · 어둡게 · 시스템으로 덮어씁니다. 테마를 <b>타면 안 되는 지면</b>은 그 자리에 <code style="font-family: 'JetBrains Mono', monospace; font-size: 12px">data-theme</code>을 박아 고정합니다 — 로그인 좌측 패널은 늘 어둡고, 공개 포트폴리오는 늘 밝습니다.</div>
+      <div style="font-size: 13.5px; line-height: 1.75; color: #35455F; margin-top: 12px">어두운 지면은 무채색 회색이 아니라 잉크(<code style="font-family: 'JetBrains Mono', monospace; font-size: 12px">#16223A</code>)와 같은 <b>남색 기운</b>입니다. 회색으로 내려가면 다른 제품처럼 보입니다.</div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px">
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; overflow: hidden">
+        <div style="display: flex; height: 56px"><div style="flex: 1; background: #FFFFFF"></div><div style="flex: 1; background: #121A2B"></div></div>
+        <div style="padding: 10px 12px 12px">
+          <div style="font-size: 12px; font-weight: 600">--ex-bg</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 3px">#FFFFFF · #121A2B</div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; overflow: hidden">
+        <div style="display: flex; height: 56px"><div style="flex: 1; background: #E6EBF3"></div><div style="flex: 1; background: #0A0F1A"></div></div>
+        <div style="padding: 10px 12px 12px">
+          <div style="font-size: 12px; font-weight: 600">--ex-bg-canvas</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 3px">#E6EBF3 · #0A0F1A</div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; overflow: hidden">
+        <div style="display: flex; height: 56px"><div style="flex: 1; background: #F7FAFE"></div><div style="flex: 1; background: #0E1524"></div></div>
+        <div style="padding: 10px 12px 12px">
+          <div style="font-size: 12px; font-weight: 600">--ex-bg-sunken</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 3px">#F7FAFE · #0E1524</div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; overflow: hidden">
+        <div style="display: flex; height: 56px"><div style="flex: 1; background: #EFF4FB"></div><div style="flex: 1; background: #1F2A40"></div></div>
+        <div style="padding: 10px 12px 12px">
+          <div style="font-size: 12px; font-weight: 600">--ex-bg-muted</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 3px">#EFF4FB · #1F2A40</div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; overflow: hidden">
+        <div style="display: flex; height: 56px"><div style="flex: 1; background: #16223A"></div><div style="flex: 1; background: #E8EDF6"></div></div>
+        <div style="padding: 10px 12px 12px">
+          <div style="font-size: 12px; font-weight: 600">--ex-fg</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 3px">#16223A · #E8EDF6</div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; overflow: hidden">
+        <div style="display: flex; height: 56px"><div style="flex: 1; background: #35455F"></div><div style="flex: 1; background: #C2CDDE"></div></div>
+        <div style="padding: 10px 12px 12px">
+          <div style="font-size: 12px; font-weight: 600">--ex-fg-body</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 3px">#35455F · #C2CDDE</div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; overflow: hidden">
+        <div style="display: flex; height: 56px"><div style="flex: 1; background: #5A6B87"></div><div style="flex: 1; background: #94A3BB"></div></div>
+        <div style="padding: 10px 12px 12px">
+          <div style="font-size: 12px; font-weight: 600">--ex-fg-muted</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 3px">#5A6B87 · #94A3BB</div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; overflow: hidden">
+        <div style="display: flex; height: 56px"><div style="flex: 1; background: #93A2BA"></div><div style="flex: 1; background: #6F7F99"></div></div>
+        <div style="padding: 10px 12px 12px">
+          <div style="font-size: 12px; font-weight: 600">--ex-fg-subtle</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 3px">#93A2BA · #6F7F99</div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; overflow: hidden">
+        <div style="display: flex; height: 56px"><div style="flex: 1; background: #E2E9F4"></div><div style="flex: 1; background: #26324A"></div></div>
+        <div style="padding: 10px 12px 12px">
+          <div style="font-size: 12px; font-weight: 600">--ex-border</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 3px">#E2E9F4 · #26324A</div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; overflow: hidden">
+        <div style="display: flex; height: 56px"><div style="flex: 1; background: #C7D2E2"></div><div style="flex: 1; background: #3A4863"></div></div>
+        <div style="padding: 10px 12px 12px">
+          <div style="font-size: 12px; font-weight: 600">--ex-border-firm</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 3px">#C7D2E2 · #3A4863</div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; overflow: hidden">
+        <div style="display: flex; height: 56px"><div style="flex: 1; background: #9A4030"></div><div style="flex: 1; background: #B04A37"></div></div>
+        <div style="padding: 10px 12px 12px">
+          <div style="font-size: 12px; font-weight: 600">--ex-accent</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 3px">#9A4030 · #B04A37</div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; overflow: hidden">
+        <div style="display: flex; height: 56px"><div style="flex: 1; background: #7E3225"></div><div style="flex: 1; background: #E0937F"></div></div>
+        <div style="padding: 10px 12px 12px">
+          <div style="font-size: 12px; font-weight: 600">--ex-accent-text</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #93A2BA; margin-top: 3px">#7E3225 · #E0937F</div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size: 12px; color: #93A2BA; margin-top: 10px">왼쪽 절반이 밝은 지면, 오른쪽 절반이 어두운 지면. 전체 표는 <code style="font-family: 'JetBrains Mono', monospace; font-size: 11px">services/web/src/styles/tokens.css</code>에 있고 두 값이 갈리지 않는지 <code style="font-family: 'JetBrains Mono', monospace; font-size: 11px">tokens.test.ts</code>가 지킵니다.</div>
+</section>
 
   <section style="margin-bottom: 100px">
     <div style="display: flex; align-items: baseline; gap: 16px; border-bottom: 1px solid #E2E9F4; padding-bottom: 14px; margin-bottom: 30px">
@@ -314,7 +407,87 @@
         </div>
       </div>
     </div>
-  </section>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin: 34px 0 14px">§02b · TYPE SCALE — 13 STEPS</div>
+    <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; padding: 20px 22px; margin-bottom: 14px">
+      <div style="font-size: 13.5px; line-height: 1.75; color: #35455F">화면들이 쓰던 <b>37종</b>의 제각각인 크기를 13단계로 모았습니다. 단위는 <code style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #9A4030">rem</code>이고 루트는 브라우저 기본(16px)입니다 — 글자를 크게 보려고 설정을 올린 사람이 그 설정대로 보게 됩니다. 전에는 루트에 13px이 박혀 있고 화면은 절대 px이라 아무 일도 일어나지 않았습니다.</div>
+      <div style="font-size: 13.5px; line-height: 1.75; color: #35455F; margin-top: 12px">작은 쪽을 많이 올리고 큰 쪽은 거의 두는 <b>압축 스케일</b>입니다. 본문은 11.5 → 13px, 가장 작던 8~9.5px는 11px이 됩니다. 제목까지 같은 비율로 키우면 화면 밀도가 무너집니다.</div>
+    </div>
+    <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; overflow: hidden">
+      <div style="display: grid; grid-template-columns: 168px 92px 1fr 132px; gap: 16px; padding: 12px 22px; background: #F7FAFE; border-bottom: 1px solid #E2E9F4">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA">TOKEN</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA">REM</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA">SAMPLE</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA">PX · USE</span>
+      </div>
+      
+<div style="display: grid; grid-template-columns: 168px 92px 1fr 132px; gap: 16px; padding: 11px 22px; border-bottom: 1px solid #F1F5FB; align-items: baseline">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A">--ex-text-3xs</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">0.6875rem</span>
+          <span style="font-size: 11px; color: #35455F; line-height: 1.2">경험을 문장으로</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">11px · 배지 · 미세 캡션</span>
+        </div>        <div style="display: grid; grid-template-columns: 168px 92px 1fr 132px; gap: 16px; padding: 11px 22px; border-bottom: 1px solid #F1F5FB; align-items: baseline">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A">--ex-text-2xs</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">0.75rem</span>
+          <span style="font-size: 12px; color: #35455F; line-height: 1.2">경험을 문장으로</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">12px · 캡션 · 메타</span>
+        </div>        <div style="display: grid; grid-template-columns: 168px 92px 1fr 132px; gap: 16px; padding: 11px 22px; border-bottom: 1px solid #F1F5FB; align-items: baseline">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A">--ex-text-xs</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">0.8125rem</span>
+          <span style="font-size: 13px; color: #35455F; line-height: 1.2">경험을 문장으로</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">13px · 본문</span>
+        </div>        <div style="display: grid; grid-template-columns: 168px 92px 1fr 132px; gap: 16px; padding: 11px 22px; border-bottom: 1px solid #F1F5FB; align-items: baseline">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A">--ex-text-sm</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">0.875rem</span>
+          <span style="font-size: 14px; color: #35455F; line-height: 1.2">경험을 문장으로</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">14px · 강조 본문 · 라벨</span>
+        </div>        <div style="display: grid; grid-template-columns: 168px 92px 1fr 132px; gap: 16px; padding: 11px 22px; border-bottom: 1px solid #F1F5FB; align-items: baseline">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A">--ex-text-md</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">0.9375rem</span>
+          <span style="font-size: 15px; color: #35455F; line-height: 1.2">경험을 문장으로</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">15px · 소제목</span>
+        </div>        <div style="display: grid; grid-template-columns: 168px 92px 1fr 132px; gap: 16px; padding: 11px 22px; border-bottom: 1px solid #F1F5FB; align-items: baseline">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A">--ex-text-lg</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">1rem</span>
+          <span style="font-size: 16px; color: #35455F; line-height: 1.2">경험을 문장으로</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">16px · 카드 제목</span>
+        </div>        <div style="display: grid; grid-template-columns: 168px 92px 1fr 132px; gap: 16px; padding: 11px 22px; border-bottom: 1px solid #F1F5FB; align-items: baseline">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A">--ex-text-xl</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">1.125rem</span>
+          <span style="font-size: 18px; color: #35455F; line-height: 1.2">경험을 문장으로</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">18px · 섹션 제목</span>
+        </div>        <div style="display: grid; grid-template-columns: 168px 92px 1fr 132px; gap: 16px; padding: 11px 22px; border-bottom: 1px solid #F1F5FB; align-items: baseline">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A">--ex-text-2xl</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">1.25rem</span>
+          <span style="font-size: 20px; color: #35455F; line-height: 1.2">경험을 문장으로</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">20px</span>
+        </div>        <div style="display: grid; grid-template-columns: 168px 92px 1fr 132px; gap: 16px; padding: 11px 22px; border-bottom: 1px solid #F1F5FB; align-items: baseline">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A">--ex-text-3xl</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">1.5rem</span>
+          <span style="font-size: 24px; color: #35455F; line-height: 1.2">경험을 문장으로</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">24px · 화면 제목</span>
+        </div>        <div style="display: grid; grid-template-columns: 168px 92px 1fr 132px; gap: 16px; padding: 11px 22px; border-bottom: 1px solid #F1F5FB; align-items: baseline">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A">--ex-text-4xl</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">1.875rem</span>
+          <span style="font-size: 30px; color: #35455F; line-height: 1.2">경험을 문장으로</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">30px</span>
+        </div>        <div style="display: grid; grid-template-columns: 168px 92px 1fr 132px; gap: 16px; padding: 11px 22px; border-bottom: 1px solid #F1F5FB; align-items: baseline">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A">--ex-text-display-sm</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">2.25rem</span>
+          <span style="font-size: 30px; color: #35455F; line-height: 1.2">경험을 문장으로</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">36px</span>
+        </div>        <div style="display: grid; grid-template-columns: 168px 92px 1fr 132px; gap: 16px; padding: 11px 22px; border-bottom: 1px solid #F1F5FB; align-items: baseline">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A">--ex-text-display-md</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">2.75rem</span>
+          <span style="font-size: 30px; color: #35455F; line-height: 1.2">경험을 문장으로</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">44px</span>
+        </div>        <div style="display: grid; grid-template-columns: 168px 92px 1fr 132px; gap: 16px; padding: 11px 22px; align-items: baseline">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A">--ex-text-display-lg</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">4.125rem</span>
+          <span style="font-size: 30px; color: #35455F; line-height: 1.2">경험을 문장으로</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #93A2BA">66px · 캐치프레이즈</span>
+        </div>
+    </div>
+</section>
 
   <section style="margin-bottom: 100px">
     <div style="display: flex; align-items: baseline; gap: 16px; border-bottom: 1px solid #E2E9F4; padding-bottom: 14px; margin-bottom: 30px">
@@ -367,7 +540,40 @@
         <div style="margin-top: 18px; padding-top: 16px; border-top: 1px solid #F1F5FB; font-size: 12.5px; color: #5A6B87; line-height: 1.7">그림자는 항상 얕고 넓게, 쿨 톤(#16223A 알파)으로. 진한 그림자는 무거움을 만든다.</div>
       </div>
     </div>
-  </section>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: #93A2BA; margin: 34px 0 14px">§03b · BREAKPOINTS — MOBILE FIRST</div>
+    <div style="display: grid; grid-template-columns: 1fr 1.25fr; gap: 20px">
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; padding: 22px 24px">
+        <div style="display: grid">
+          <div style="display: flex; align-items: baseline; gap: 12px; padding: 8px 0; border-bottom: 1px solid #F1F5FB">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030; width: 52px">(기본)</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A; width: 54px">360px</span>
+            <span style="font-size: 12.5px; color: #5A6B87">폰 — 조건 없는 규칙이 여기</span>
+          </div><div style="display: flex; align-items: baseline; gap: 12px; padding: 8px 0; border-bottom: 1px solid #F1F5FB">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030; width: 52px">sm</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A; width: 54px">480px</span>
+            <span style="font-size: 12.5px; color: #5A6B87">큰 폰</span>
+          </div><div style="display: flex; align-items: baseline; gap: 12px; padding: 8px 0; border-bottom: 1px solid #F1F5FB">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030; width: 52px">md</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A; width: 54px">768px</span>
+            <span style="font-size: 12.5px; color: #5A6B87">태블릿 세로</span>
+          </div><div style="display: flex; align-items: baseline; gap: 12px; padding: 8px 0; border-bottom: 1px solid #F1F5FB">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030; width: 52px">lg</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A; width: 54px">1024px</span>
+            <span style="font-size: 12.5px; color: #5A6B87">태블릿 가로 · 작은 노트북</span>
+          </div><div style="display: flex; align-items: baseline; gap: 12px; padding: 8px 0; border-bottom: 1px solid #F1F5FB">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030; width: 52px">xl</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #16223A; width: 54px">1280px</span>
+            <span style="font-size: 12.5px; color: #5A6B87">데스크톱 — 화면 정의서의 지면</span>
+          </div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 14px; padding: 22px 24px">
+        <div style="font-size: 13.5px; line-height: 1.75; color: #35455F">규칙은 <b>모바일 우선</b>입니다. 조건 없는 규칙이 폰(360px 이상)의 모습이고, 넓어질수록 이 정의서의 치수로 돌아갑니다. 예전 구현 명세서 §4.1의 "폭만 최소 1280px"은 더 쓰지 않습니다 — 13인치 노트북에서도 가로 스크롤이 났습니다.</div>
+        <div style="font-size: 13.5px; line-height: 1.75; color: #35455F; margin-top: 12px">좁아질 때 접히는 방식은 <b>원형</b>으로 정해져 있고 화면들이 거기서 파생됩니다 — 셸 이동(사이드바 → 서랍 → 하단 탭바) · 보조 패널(나란히 → 쌓기 → 전면 시트) · 표(칸 → 카드) · 마법사(여섯 단계 → 진행 막대) · 에디터 3분할(네 열 → 칸 전환).</div>
+        <div style="font-size: 12px; color: #93A2BA; margin-top: 12px">경계 밖의 숫자가 끼어들지 않는지 <code style="font-family: 'JetBrains Mono', monospace; font-size: 11px">tokens.test.ts</code>가 지킵니다.</div>
+      </div>
+    </div>
+</section>
 
   <section style="margin-bottom: 100px">
     <div style="display: flex; align-items: baseline; gap: 16px; border-bottom: 1px solid #E2E9F4; padding-bottom: 14px; margin-bottom: 30px">
