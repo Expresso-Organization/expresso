@@ -1262,3 +1262,35 @@
     box-shadow: var(--ex-elevation-overlay);
   }
 }
+
+/*
+ * 좁은 화면의 격자들.
+ *
+ * 12칼럼 위젯 격자는 위젯마다 `span`으로 폭을 잡는다. 칼럼 수만 줄이면
+ * `span 12`가 남아 있는 칼럼보다 많은 자리를 요구하고, 그러면 격자가 암시적
+ * 칼럼을 만들어 지면 밖으로 넘어간다. 그래서 폭을 줄이는 자리에서는 span을
+ * 함께 놓아준다 — 위젯들이 그냥 차례로 흐른다.
+ *
+ * span은 인라인 스타일로 붙어 있어 `!important`가 아니면 이기지 못한다.
+ */
+@media (max-width: 1023px) {
+  .tiles,
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .grid > * {
+    grid-column: auto !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .tiles,
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vizGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

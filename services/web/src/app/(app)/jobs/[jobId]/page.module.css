@@ -630,3 +630,14 @@
     padding: 18px 14px;
   }
 }
+
+/*
+ * 좁은 화면 — 라벨 폭 148px을 떼면 값이 200px도 안 남는다. 라벨을 값 위로
+ * 올린다.
+ */
+@media (max-width: 767px) {
+  .fact {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}

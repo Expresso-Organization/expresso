@@ -416,3 +416,10 @@
   font-size: var(--ex-text-sm);
   white-space: nowrap;
 }
+
+/* 좁은 화면 — 나란히 선 셋이 한 줄에 하나씩 */
+@media (max-width: 767px) {
+  .exportGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

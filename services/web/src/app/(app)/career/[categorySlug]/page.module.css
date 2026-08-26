@@ -592,3 +592,15 @@
     margin-left: auto;
   }
 }
+
+/* 좁은 화면 — 두 칸 요약과 라벨-값 줄이 접힌다 */
+@media (max-width: 767px) {
+  .gallery {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .timelineRow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}

@@ -867,3 +867,11 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* 좁은 화면 — 두 칸으로 나뉜 고르개가 한 줄에 하나씩 */
+@media (max-width: 767px) {
+  .importGrid,
+  .nextGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

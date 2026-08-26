@@ -571,3 +571,10 @@
     padding: 14px;
   }
 }
+
+/* 좁은 화면 — 디자인 후보를 한 줄에 하나씩 본다. 셋을 늘어놓으면 미리보기가 안 보인다 */
+@media (max-width: 1023px) {
+  .templates {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

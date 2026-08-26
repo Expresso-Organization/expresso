@@ -455,3 +455,11 @@
     padding: 18px 14px 26px;
   }
 }
+
+/* 좁은 화면 — 사용량 카드와 요금제가 한 줄에 하나씩 */
+@media (max-width: 1023px) {
+  .usageGrid,
+  .plans {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

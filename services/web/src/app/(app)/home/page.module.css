@@ -728,3 +728,17 @@
     min-width: 0;
   }
 }
+
+/* 좁은 화면 — 나란히 선 카드들이 한 줄에 하나씩 */
+@media (max-width: 1023px) {
+  .midRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .portfolioGrid,
+  .categoryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
