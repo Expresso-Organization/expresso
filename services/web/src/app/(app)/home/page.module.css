@@ -78,6 +78,8 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  /* 예시 질문이 여럿이라 좁은 지면에서는 다음 줄로 넘어가야 한다 */
+  flex-wrap: wrap;
 }
 
 .examplesLabel {
