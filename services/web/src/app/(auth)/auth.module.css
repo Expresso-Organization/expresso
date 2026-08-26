@@ -18,6 +18,11 @@
 
 /* 좌측 브랜드 패널 */
 .aside {
+  /*
+   * 이 패널은 늘 어둡다 — 지면이 그러데이션으로 박혀 있다. 그래서
+   * `AuthAside`가 `data-theme="dark"`로 고정하고, 아래 규칙들은 여느 자리와
+   * 똑같이 역할 토큰만 쓴다.
+   */
   width: 640px;
   flex-shrink: 0;
   background: linear-gradient(155deg, #16223a 0%, #241c21 58%, #3a2a22 100%);
@@ -81,14 +86,14 @@
   font-weight: 600;
   letter-spacing: -0.035em;
   line-height: 1.45;
-  color: var(--ex-fg-on-accent);
+  color: var(--ex-fg);
   margin-bottom: 18px;
 }
 
 .lede {
   font-size: var(--ex-text-md);
   line-height: 1.85;
-  color: var(--ex-fg-on-inverse-body);
+  color: var(--ex-fg-body);
   max-width: 400px;
 }
 
@@ -103,13 +108,13 @@
   font-family: var(--ex-font-brand);
   font-size: var(--ex-text-xl);
   font-weight: 400;
-  color: var(--ex-fg-on-accent);
+  color: var(--ex-fg);
   margin-bottom: 4px;
 }
 
 .statLabel {
   font-size: var(--ex-text-xs);
-  color: var(--ex-fg-on-inverse-muted);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 

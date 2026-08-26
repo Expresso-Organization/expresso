@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "C:/Users/parkm/AppData/Local/claude-shims/pnpm.cmd",
+      "runtimeArgs": ["--filter", "@expresso/web", "dev"],
+      "port": 3000
+    }
+  ]
+}

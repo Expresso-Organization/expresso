@@ -16,6 +16,10 @@
  * **화면 CSS는 역할 층만 씁니다.** 팔레트를 직접 쓰면 다크에서 이름이
  * 거짓말을 합니다 — `--ex-white`가 검정이 되는 식입니다. 정적 가드
  * (`tokens.test.ts`)가 직접 사용을 막습니다.
+ *
+ * **테마를 타지 않아야 하는 지면**은 그 자리에 `data-theme`을 박아 고정합니다.
+ * 로그인 좌측 패널은 늘 어둡고(`dark`), 공개 포트폴리오는 늘 밝습니다
+ * (`light`). 고정해 두면 그 안쪽은 여느 자리와 똑같이 역할 토큰만 쓰면 됩니다.
  */
 
 :root {
@@ -126,9 +130,7 @@
   --ex-fg-muted: var(--ex-slate-500);
   --ex-fg-subtle: var(--ex-slate-400);
   --ex-fg-faint: var(--ex-slate-300);
-  --ex-fg-on-inverse: var(--ex-white); /* 어두운 지면 위 글자 */
-  --ex-fg-on-inverse-body: var(--ex-on-dark-body);
-  --ex-fg-on-inverse-muted: var(--ex-on-dark-muted);
+  --ex-fg-on-inverse: var(--ex-white); /* --ex-bg-inverse 위의 글자 */
   --ex-fg-on-accent: var(--ex-white); /* 에스프레소 지면 위 글자 */
 
   /* ── 역할 · 선 ───────────────────────────────────────────── */
@@ -254,8 +256,6 @@
     --ex-fg-subtle: #6f7f99;
     --ex-fg-faint: #56637a;
     --ex-fg-on-inverse: #16223a;
-    --ex-fg-on-inverse-body: #35455f;
-    --ex-fg-on-inverse-muted: #5a6b87;
     --ex-fg-on-accent: #ffffff;
 
     --ex-border: #26324a;
@@ -317,8 +317,6 @@
   --ex-fg-subtle: #6f7f99;
   --ex-fg-faint: #56637a;
   --ex-fg-on-inverse: #16223a;
-  --ex-fg-on-inverse-body: #35455f;
-  --ex-fg-on-inverse-muted: #5a6b87;
   --ex-fg-on-accent: #ffffff;
 
   --ex-border: #26324a;
