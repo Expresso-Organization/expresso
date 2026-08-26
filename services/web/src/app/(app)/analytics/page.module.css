@@ -4,7 +4,7 @@
   flex: 1;
   min-width: 0;
   overflow: auto;
-  padding: 20px 26px 22px;
+  padding: 16px 14px 18px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -1292,5 +1292,12 @@
 
   .vizGrid {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* 넓어지면 정의서의 여백으로 돌아간다 */
+@media (min-width: 768px) {
+  .content {
+    padding: 20px 26px 22px;
   }
 }

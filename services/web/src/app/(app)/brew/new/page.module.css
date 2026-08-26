@@ -4,7 +4,7 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 26px 32px;
+  padding: 18px 14px;
 }
 
 .head {
@@ -373,4 +373,11 @@
   font-size: var(--ex-text-xs);
   color: var(--ex-status-danger);
   margin: 8px 0 0;
+}
+
+/* 넓어지면 정의서의 여백으로 돌아간다 */
+@media (min-width: 768px) {
+  .page {
+    padding: 26px 32px;
+  }
 }

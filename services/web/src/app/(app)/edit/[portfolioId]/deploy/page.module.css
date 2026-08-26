@@ -4,7 +4,7 @@
   flex: 1;
   min-width: 0;
   overflow: auto;
-  padding: 26px 32px 34px;
+  padding: 18px 14px 26px;
 }
 
 .inner {
@@ -421,5 +421,12 @@
 @media (max-width: 767px) {
   .exportGrid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 넓어지면 정의서의 여백으로 돌아간다 */
+@media (min-width: 768px) {
+  .body {
+    padding: 26px 32px 34px;
   }
 }

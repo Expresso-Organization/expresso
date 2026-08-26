@@ -10,19 +10,35 @@
 
 /* 상단 3단계 인디케이터 */
 .head {
-  height: 62px;
+  min-height: 58px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 26px;
+  gap: 10px;
+  padding: 0 14px;
+}
+
+@media (min-width: 768px) {
+  .head {
+    min-height: 62px;
+    gap: 12px;
+    padding: 0 26px;
+  }
 }
 
 .steps {
-  margin-left: 22px;
+  margin-left: 8px;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+}
+
+@media (min-width: 768px) {
+  .steps {
+    margin-left: 22px;
+    gap: 10px;
+  }
 }
 
 .step {
@@ -92,8 +108,14 @@
   min-height: 0;
   display: flex;
   justify-content: center;
-  padding: 10px 26px 26px;
+  padding: 10px 14px 20px;
   overflow: auto;
+}
+
+@media (min-width: 768px) {
+  .body {
+    padding: 10px 26px 26px;
+  }
 }
 
 .panel {
@@ -307,13 +329,21 @@
 /* 하단 액션 바 */
 .foot {
   flex-shrink: 0;
-  height: 76px;
+  min-height: 68px;
   border-top: 1px solid var(--ex-border);
   background: var(--ex-bg);
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 26px;
+  gap: 10px;
+  padding: 10px 14px;
+}
+
+@media (min-width: 768px) {
+  .foot {
+    min-height: 76px;
+    gap: 14px;
+    padding: 0 26px;
+  }
 }
 
 .footProgress {
@@ -873,5 +903,36 @@
   .importGrid,
   .nextGrid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/*
+ * 좁은 화면의 단계 표시.
+ *
+ * 네 단계에 이름을 다 붙이면 431px이라 360px 지면 밖으로 나간다. 지금 단계의
+ * 이름만 남기고 나머지는 동그라미로 둔다 — 몇 번째인지는 하단의 "3 / 4"가
+ * 다시 말해 준다.
+ */
+@media (max-width: 767px) {
+  .step:not(.stepCurrent) .stepLabel {
+    display: none;
+  }
+
+  .connector {
+    width: 12px;
+  }
+
+  .stepCurrent .stepLabel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* 더 좁아지면 워드마크까지 물러난다 — 마크만으로도 어느 제품인지 안다 */
+@media (max-width: 479px) {
+  .head > :nth-child(2) {
+    display: none;
   }
 }

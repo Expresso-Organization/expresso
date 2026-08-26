@@ -4,7 +4,7 @@
   flex: 1;
   min-width: 0;
   overflow: auto;
-  padding: 22px 26px 20px;
+  padding: 16px 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -983,4 +983,11 @@
   font-family: var(--ex-font-mono);
   font-size: var(--ex-text-2xs);
   opacity: 0.7;
+}
+
+/* 넓어지면 정의서의 여백으로 돌아간다 */
+@media (min-width: 768px) {
+  .content {
+    padding: 22px 26px 20px;
+  }
 }
