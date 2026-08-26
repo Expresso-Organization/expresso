@@ -22,7 +22,7 @@
 }
 
 .topTitle {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   letter-spacing: -0.015em;
   white-space: nowrap;
@@ -37,7 +37,7 @@
 
 .topLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.12em;
   color: #a39b8c;
   white-space: nowrap;
@@ -47,7 +47,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   background: var(--ex-bg-sunken);
   border: 1px solid var(--ex-bg-track);
@@ -60,7 +60,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
 }
@@ -77,7 +77,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   background: none;
   border: 1px solid var(--ex-border);
@@ -95,7 +95,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
@@ -142,13 +142,13 @@
 }
 
 .sectionsTitle {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .sectionsNote {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
@@ -156,7 +156,7 @@
 .sectionsCount {
   margin-left: auto;
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
 }
 
@@ -193,7 +193,7 @@
 
 .sectionNo {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-fg-subtle);
   padding-top: 2px;
 }
@@ -203,7 +203,7 @@
 }
 
 .sectionTitle {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.45;
@@ -243,7 +243,7 @@
 }
 
 .originLabel {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
@@ -261,14 +261,14 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-fg-body);
   white-space: nowrap;
 }
 
 .dragHint {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   line-height: 1.6;
   margin-top: 8px;
@@ -294,7 +294,7 @@
 }
 
 .documentTitle {
-  font-size: 15px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
   letter-spacing: -0.025em;
   min-width: 0;
@@ -318,7 +318,7 @@
   background: var(--ex-bg-tint-strong);
   display: grid;
   place-items: center;
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   font-weight: 600;
   color: var(--ex-fg);
 }
@@ -333,7 +333,7 @@
 }
 
 .collabLabel {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
 }
@@ -345,7 +345,7 @@
 }
 
 .documentSubText {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   min-width: 0;
   white-space: nowrap;
@@ -385,7 +385,7 @@
 
 .contextKey {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.1em;
   color: var(--ex-accent-text);
   white-space: nowrap;
@@ -399,7 +399,7 @@
 }
 
 .authorName {
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
@@ -419,7 +419,7 @@
 }
 
 .contextText {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.75;
   color: var(--ex-fg-body);
   text-wrap: pretty;
@@ -428,7 +428,7 @@
 .contextHint {
   margin-top: 5px;
   color: var(--ex-fg-muted);
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   line-height: 1.55;
 }
 
@@ -440,7 +440,7 @@
 }
 
 .pointText {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.6;
   color: var(--ex-fg-body);
   min-width: 0;
@@ -456,7 +456,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   background: var(--ex-bg-sunken);
   border: 1px solid var(--ex-bg-track);
@@ -474,7 +474,7 @@
 }
 
 .valueChip {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   background: var(--ex-bg-sunken);
   border: 1px solid var(--ex-border);
@@ -484,7 +484,7 @@
 }
 
 .chipNote {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
@@ -506,7 +506,7 @@
 }
 
 .addContextLabel {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
@@ -523,7 +523,7 @@
 }
 
 .brewNoticeText {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-accent-ink);
   line-height: 1.6;
 }
@@ -541,7 +541,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-fg-body);
   background: none;
@@ -560,7 +560,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
@@ -579,7 +579,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
   margin-left: 4px;
@@ -587,7 +587,7 @@
 
 .footMeta {
   margin-left: auto;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
@@ -613,7 +613,7 @@
 }
 
 .summaryLabel {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
   flex: 1;
   white-space: nowrap;
@@ -621,7 +621,7 @@
 
 .summaryValue {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg);
   white-space: nowrap;
 }
@@ -641,7 +641,7 @@
 }
 
 .rationaleTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -651,7 +651,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
 }
@@ -668,7 +668,7 @@
   border-radius: 9px;
   background: var(--ex-accent-surface);
   color: var(--ex-accent-text);
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   line-height: 1.55;
 }
 
@@ -684,7 +684,7 @@
   border-radius: 999px;
   padding: 3px 6px;
   font-family: var(--ex-font-mono);
-  font-size: 8.5px;
+  font-size: var(--ex-text-3xs);
   text-align: center;
 }
 
@@ -719,7 +719,7 @@
 }
 
 .rationaleText {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   line-height: 1.65;
 }
@@ -727,7 +727,7 @@
 /* "출처 → 대상" 경로 */
 .rationalePath {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.06em;
   color: var(--ex-accent-text);
   margin-top: 3px;
@@ -750,7 +750,7 @@
 }
 
 .unusedTitle {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
   white-space: nowrap;
   overflow: hidden;
@@ -758,7 +758,7 @@
 }
 
 .unusedReason {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   margin-top: 2px;
 }
@@ -767,7 +767,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: #354da8;
   white-space: nowrap;
@@ -781,7 +781,7 @@
 }
 
 .rationaleFootNote {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   line-height: 1.65;
   margin-bottom: 12px;
@@ -790,7 +790,7 @@
 .brew {
   display: block;
   width: 100%;
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);

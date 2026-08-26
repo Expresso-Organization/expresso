@@ -1,14 +1,14 @@
 /* 마크다운 본문 — 06b 공고 원문과 05 기록 본문이 같이 쓴다 */
 
 .body {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   line-height: 1.85;
   color: var(--ex-fg-body);
   word-break: break-word;
 }
 
 .heading {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
   color: var(--ex-fg);
   letter-spacing: -0.01em;
@@ -16,7 +16,7 @@
 }
 
 .subheading {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg);
   margin: 16px 0 6px;
@@ -65,7 +65,7 @@
 
 .code {
   font-family: var(--ex-font-mono);
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   background: var(--ex-bg-sunken);
   border-radius: 4px;
   padding: 1px 5px;
@@ -98,7 +98,7 @@
 
 .table {
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
 }
 
 .tableHead,

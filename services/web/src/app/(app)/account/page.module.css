@@ -28,7 +28,7 @@
   border-radius: 8px;
   width: 100%;
   text-align: left;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   transition: background var(--ex-motion-instant);
 }
@@ -52,14 +52,14 @@
 }
 
 .title {
-  font-size: 24px;
+  font-size: var(--ex-text-3xl);
   font-weight: 600;
   letter-spacing: -0.03em;
   margin-bottom: 8px;
 }
 
 .intro {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   line-height: 1.75;
   color: var(--ex-fg-muted);
   max-width: 640px;
@@ -68,7 +68,7 @@
 
 .sectionLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.12em;
   color: var(--ex-fg-muted);
   margin-bottom: 12px;
@@ -100,14 +100,14 @@
 }
 
 .usageLabel {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
 }
 
 .usageValue {
   margin-left: auto;
   font-family: var(--ex-font-mono);
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
 }
 
@@ -129,7 +129,7 @@
 }
 
 .usageResets {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
 }
 
@@ -164,14 +164,14 @@
 
 .planName {
   font-family: var(--ex-font-brand);
-  font-size: 16px;
+  font-size: var(--ex-text-xl);
   font-weight: 500;
   letter-spacing: -0.02em;
 }
 
 .planBadge {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.08em;
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
@@ -180,7 +180,7 @@
 }
 
 .planPrice {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   color: var(--ex-fg-muted);
   margin-bottom: 16px;
 }
@@ -190,7 +190,7 @@
   align-items: center;
   gap: 8px;
   padding: 5px 0;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
 }
 
@@ -201,7 +201,7 @@
 
 .planButton {
   width: 100%;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-body);
   background: var(--ex-bg);
@@ -236,14 +236,14 @@
 
 .billingDate {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   width: 92px;
   flex-shrink: 0;
 }
 
 .billingItem {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
   flex: 1;
   min-width: 0;
@@ -251,12 +251,12 @@
 
 .billingAmount {
   font-family: var(--ex-font-mono);
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
 }
 
 .billingState {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-status-success-text);
   background: var(--ex-status-success-surface);
   border-radius: 6px;
@@ -268,7 +268,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   white-space: nowrap;
 }
@@ -289,7 +289,7 @@
 }
 
 .dataTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg);
 }
@@ -299,14 +299,14 @@
 }
 
 .dataNote {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   margin-top: 4px;
 }
 
 .dataAction {
   margin-left: auto;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-body);
   background: var(--ex-bg);
@@ -329,7 +329,7 @@
   padding: 13px 15px;
   background: var(--ex-accent-surface);
   border-radius: 12px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   line-height: 1.7;
   color: var(--ex-accent-ink);
 }
@@ -352,20 +352,20 @@
 }
 
 .consentName {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
 }
 
 .consentWhat {
   margin-top: 3px;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.6;
   color: var(--ex-fg-muted);
 }
 
 .consentRenew {
   margin-top: 5px;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-accent-text);
 }
 
@@ -375,7 +375,7 @@
   padding: 7px 16px;
   border-radius: 9px;
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -395,7 +395,32 @@
 
 .consentNote {
   margin-top: 10px;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.7;
   color: var(--ex-fg-muted);
+}
+
+/* 지면 밝기 절 — 왼쪽은 설명, 오른쪽은 고르개. 좁으면 아래로 내려선다. */
+.themeRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 0;
+}
+
+.themeName {
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+}
+
+.themeNote {
+  margin-top: 3px;
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+  line-height: 1.6;
+}
+
+.themeRow > :last-child {
+  margin-left: auto;
 }

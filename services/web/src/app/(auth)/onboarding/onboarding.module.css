@@ -5,7 +5,7 @@
   background: var(--ex-bg-sunken);
   display: flex;
   flex-direction: column;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
 }
 
 /* 상단 3단계 인디케이터 */
@@ -38,7 +38,7 @@
   display: grid;
   place-items: center;
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   background: var(--ex-border-hair);
   color: var(--ex-fg-faint);
   border: 1.5px solid transparent;
@@ -57,7 +57,7 @@
 }
 
 .stepLabel {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
@@ -83,7 +83,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
 }
 
@@ -107,14 +107,14 @@
 
 .stepLabelMono {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.16em;
   color: var(--ex-accent-text);
   margin-bottom: 12px;
 }
 
 .title {
-  font-size: 30px;
+  font-size: var(--ex-text-4xl);
   font-weight: 600;
   letter-spacing: -0.035em;
   line-height: 1.35;
@@ -122,7 +122,7 @@
 }
 
 .lede {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   line-height: 1.8;
   color: var(--ex-fg-muted);
   margin-bottom: 28px;
@@ -134,7 +134,7 @@
 }
 
 .fieldLabel {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-body);
   margin-bottom: 11px;
@@ -147,7 +147,7 @@
 }
 
 .chip {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
@@ -177,7 +177,7 @@
 }
 
 .sliderEdge {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
@@ -239,7 +239,7 @@
 .sliderValue {
   font-family: var(--ex-font-brand);
   font-weight: 300;
-  font-size: 22px;
+  font-size: var(--ex-text-3xl);
   letter-spacing: -0.02em;
   color: var(--ex-fg);
   width: 60px;
@@ -288,7 +288,7 @@
 }
 
 .goalTitle {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   font-weight: 500;
   color: var(--ex-fg);
   margin-bottom: 5px;
@@ -299,7 +299,7 @@
 }
 
 .goalNote {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   line-height: 1.65;
 }
@@ -318,7 +318,7 @@
 
 .footProgress {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
@@ -333,7 +333,7 @@
   border: none;
   background: none;
   padding: 11px 14px;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 500;
   color: var(--ex-fg-muted);
 }
@@ -343,7 +343,7 @@
 }
 
 .primary {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
@@ -375,7 +375,7 @@
   border: 1px solid var(--ex-status-danger);
   border-radius: 10px;
   background: var(--ex-status-danger-surface);
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-status-danger-text);
 }
 
@@ -402,13 +402,13 @@
 }
 
 .dropTitle {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg);
 }
 
 .dropNote {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
 }
 
@@ -425,12 +425,12 @@
 }
 
 .uploadedName {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
 }
 
 .uploadedMeta {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   margin-top: 3px;
 }
@@ -447,20 +447,20 @@
 }
 
 .importTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg);
 }
 
 .importNote {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   margin-top: 4px;
 }
 
 .importState {
   margin-left: auto;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
   white-space: nowrap;
   flex-shrink: 0;
@@ -468,7 +468,7 @@
 
 .importAction {
   margin-left: auto;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-fg-body);
   background: none;
@@ -483,7 +483,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
   margin-bottom: 26px;
 }
@@ -496,13 +496,13 @@
 }
 
 .splitTitle {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
 }
 
 .splitCount {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-accent-text);
 }
 
@@ -511,7 +511,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
@@ -550,7 +550,7 @@
 }
 
 .splitCategory {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-body);
   background: var(--ex-border-inner);
   border-radius: 5px;
@@ -562,7 +562,7 @@
 }
 
 .splitName {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
   flex: 1;
   min-width: 0;
@@ -573,7 +573,7 @@
 
 .splitPeriod {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   white-space: nowrap;
   flex-shrink: 0;
@@ -586,7 +586,7 @@
   padding: 12px 15px;
   background: var(--ex-accent-surface);
   border-radius: 11px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-accent-ink);
   line-height: 1.65;
 }
@@ -594,7 +594,7 @@
 /* ── 10e 첫 포트폴리오 ────────────────────────────────────── */
 
 .readyTitle {
-  font-size: 15px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
   color: var(--ex-accent-text);
   margin-bottom: 8px;
@@ -638,26 +638,26 @@
   background: var(--ex-bg-sunken);
   display: grid;
   place-items: center;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg-body);
   flex-shrink: 0;
 }
 
 .jobCompany {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg);
 }
 
 .jobRole {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
   margin-top: 3px;
 }
 
 .jobReason {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   margin-top: 6px;
 }
@@ -670,27 +670,27 @@
 .jobScore {
   font-family: var(--ex-font-brand);
   font-weight: 300;
-  font-size: 28px;
+  font-size: var(--ex-text-4xl);
   line-height: 1;
   letter-spacing: -0.03em;
   color: var(--ex-fg);
 }
 
 .jobScoreLabel {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   margin-top: 5px;
 }
 
 .timeNote {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   margin-bottom: 26px;
 }
 
 .nextLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.16em;
   color: var(--ex-fg-subtle);
   margin-bottom: 14px;
@@ -712,20 +712,20 @@
 
 .nextNo {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-accent-text);
   margin-bottom: 7px;
 }
 
 .nextTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg);
   margin-bottom: 5px;
 }
 
 .nextNote {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   line-height: 1.65;
 }
@@ -741,20 +741,20 @@
 }
 
 .altTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg);
 }
 
 .altNote {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   margin-top: 4px;
 }
 
 .altAction {
   margin-left: auto;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-body);
   background: var(--ex-bg);
@@ -810,20 +810,20 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 14.5px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
 /* 무엇이 나가는지 — 이 줄이 가장 중요하다. */
 .consentWhat {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   line-height: 1.65;
   color: var(--ex-fg);
 }
 
 .consentWhy {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.6;
   color: var(--ex-fg-muted);
 }
@@ -832,7 +832,7 @@
 .consentOff,
 .consentRenew {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   padding: 2px 7px;
   border-radius: 999px;
 }
@@ -857,7 +857,7 @@
   align-items: flex-start;
   gap: 7px;
   margin-top: 18px;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.7;
   color: var(--ex-fg-muted);
 }

@@ -28,7 +28,7 @@
   margin: 0 0 10px -6px;
   padding: 4px 6px;
   border-radius: 7px;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 500;
   color: var(--ex-fg-muted);
   text-decoration: none;
@@ -43,7 +43,7 @@
 }
 
 .role {
-  font-size: 24px;
+  font-size: var(--ex-text-3xl);
   font-weight: 600;
   letter-spacing: -0.03em;
   margin-bottom: 7px;
@@ -53,7 +53,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
   margin-bottom: 20px;
 }
@@ -75,7 +75,7 @@
   justify-content: center;
   overflow: hidden;
   font-family: var(--ex-font-brand);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   font-weight: 500;
   flex-shrink: 0;
   margin-right: -4px;
@@ -83,7 +83,7 @@
 
 .deadline {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-status-danger-text);
 }
 
@@ -113,13 +113,13 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
   margin: 0;
 }
 
 .factValue {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   color: var(--ex-fg);
   margin: 0;
 }
@@ -133,7 +133,7 @@
 
 .blockTitle {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.14em;
   color: var(--ex-fg-subtle);
   margin-bottom: 13px;
@@ -148,7 +148,7 @@
 }
 
 .blockTitleNote {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
@@ -157,7 +157,7 @@
 }
 
 .dutyGroupTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-body);
   margin-bottom: 8px;
@@ -171,11 +171,11 @@
 
 .dutyBullet {
   color: var(--ex-border-firm);
-  font-size: 13px;
+  font-size: var(--ex-text-md);
 }
 
 .dutyText {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   line-height: 1.8;
   color: var(--ex-fg-body);
 }
@@ -196,7 +196,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
   background: var(--ex-status-success-surface);
   border-radius: 999px;
@@ -205,7 +205,7 @@
 }
 
 .stackMissing {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
   background: var(--ex-bg-sunken);
   border: 1px solid var(--ex-border);
@@ -215,7 +215,7 @@
 }
 
 .stackNote {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
@@ -239,14 +239,14 @@
 }
 
 .requirementLabel {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.65;
   color: var(--ex-fg);
   margin-bottom: 5px;
 }
 
 .requirementNote {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-status-success-text);
 }
 
@@ -271,7 +271,7 @@
 }
 
 .preferredLabel {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.6;
   color: var(--ex-fg-body);
   flex: 1;
@@ -279,7 +279,7 @@
 
 .preferredState {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   flex-shrink: 0;
 }
 
@@ -294,7 +294,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
 }
 
@@ -306,13 +306,13 @@
   display: grid;
   place-items: center;
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-fg-subtle);
   flex-shrink: 0;
 }
 
 .notice {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
   line-height: 1.7;
 }
@@ -351,7 +351,7 @@
 }
 
 .matchUnit {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   color: var(--ex-fg-muted);
 }
 
@@ -363,14 +363,14 @@
 .matchScore {
   font-family: var(--ex-font-brand);
   font-weight: 300;
-  font-size: 34px;
+  font-size: var(--ex-text-display-sm);
   line-height: 1;
   letter-spacing: -0.03em;
   color: var(--ex-fg);
 }
 
 .matchLabel {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
@@ -393,7 +393,7 @@
 }
 
 .legendItem {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
 }
 
@@ -408,7 +408,7 @@
 }
 
 .matchRank {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   line-height: 1.65;
   margin-top: 11px;
@@ -428,13 +428,13 @@
 }
 
 .railTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   margin-bottom: 9px;
 }
 
 .railBody {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   line-height: 1.7;
   color: var(--ex-fg-muted);
 }
@@ -446,7 +446,7 @@
 .railCta {
   width: 100%;
   margin-top: 12px;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
@@ -482,14 +482,14 @@
 
 .swatchHex {
   font-family: var(--ex-font-mono);
-  font-size: 8.5px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-fg-subtle);
 }
 
 .toneRow {
   display: flex;
   gap: 8px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   line-height: 1.65;
 }
@@ -509,13 +509,13 @@
 
 .topRecordNo {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-accent-text);
   flex-shrink: 0;
 }
 
 .topRecordTitle {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   min-width: 0;
   white-space: nowrap;
@@ -528,7 +528,7 @@
   display: block;
   width: 100%;
   margin-top: 12px;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
@@ -555,7 +555,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   cursor: pointer;
 }
@@ -571,7 +571,7 @@
   display: flex;
   align-items: baseline;
   gap: 10px;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg);
   cursor: pointer;
@@ -584,7 +584,7 @@
 
 .rawSummary::before {
   content: "▸";
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
 }
 
@@ -593,7 +593,7 @@
 }
 
 .rawNote {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 400;
   color: var(--ex-fg-muted);
 }

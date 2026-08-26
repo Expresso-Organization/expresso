@@ -1,0 +1,56 @@
+/*
+ * 세 조각짜리 고르개. 셋 중 하나만 켜진다.
+ */
+
+.group {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--ex-border-soft);
+  border-radius: 10px;
+  background: var(--ex-bg-sunken);
+}
+
+.option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /*
+   * 높이를 박지 않는다. 브라우저 글꼴을 크게 쓰는 사람에게 글자만 커지고
+   * 상자가 그대로면 글이 잘린다.
+   */
+  min-height: 30px;
+  padding: 0 11px;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  font-size: var(--ex-text-2xs);
+  font-weight: 500;
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+  transition:
+    background var(--ex-motion-instant),
+    color var(--ex-motion-instant);
+}
+
+.option:hover {
+  color: var(--ex-fg);
+}
+
+.optionOn {
+  background: var(--ex-bg);
+  color: var(--ex-fg);
+  box-shadow: var(--ex-elevation-raised);
+}
+
+/* 폰에서는 셋이 가로를 채운다 */
+@media (max-width: 479px) {
+  .group {
+    display: flex;
+  }
+
+  .option {
+    flex: 1;
+    justify-content: center;
+  }
+}

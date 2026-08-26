@@ -51,13 +51,13 @@
 }
 
 .noticeTitle {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
   color: var(--ex-fg);
 }
 
 .noticeBody {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.7;
   color: var(--ex-fg-muted);
   max-width: 380px;
@@ -77,7 +77,7 @@
   border: 1px solid var(--ex-fg);
   background: var(--ex-bg-inverse);
   color: var(--ex-fg-on-inverse);
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 500;
   display: inline-flex;
   align-items: center;
@@ -101,7 +101,7 @@
 /* 요청 번호 — 문의할 때 이 줄만 알려주면 로그에서 바로 찾는다. */
 .digest {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
   margin-top: 2px;
 }

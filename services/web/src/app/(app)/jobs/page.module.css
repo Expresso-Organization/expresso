@@ -11,7 +11,7 @@
 }
 
 .headNote {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
@@ -22,7 +22,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
 }
 
@@ -50,7 +50,7 @@
 }
 
 .queryText {
-  font-size: 15.5px;
+  font-size: var(--ex-text-lg);
   color: var(--ex-fg);
   letter-spacing: -0.015em;
   flex: 1;
@@ -71,7 +71,7 @@
 }
 
 .querySubmit {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
@@ -99,7 +99,7 @@
 
 .parsedLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.12em;
   color: var(--ex-accent-text);
   margin-right: 4px;
@@ -114,7 +114,7 @@
   border: 1px solid var(--ex-accent-surface-hover);
   border-radius: 999px;
   padding: 6px 12px;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-accent-text);
   white-space: nowrap;
 }
@@ -127,7 +127,7 @@
   background: none;
   border-radius: 999px;
   padding: 6px 12px;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-accent-text);
   white-space: nowrap;
 }
@@ -140,7 +140,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-accent-text);
   white-space: nowrap;
 }
@@ -173,13 +173,13 @@
 }
 
 .resultsCount {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .resultsNote {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
 }
@@ -195,7 +195,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
 }
 
@@ -241,7 +241,7 @@
   display: grid;
   place-items: center;
   font-family: var(--ex-font-brand);
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 500;
   flex-shrink: 0;
 }
@@ -252,7 +252,7 @@
 }
 
 .rowRole {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -260,7 +260,7 @@
 }
 
 .rowCompany {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   margin-top: 4px;
   white-space: nowrap;
@@ -275,7 +275,7 @@
 }
 
 .stackChip {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-body);
   background: var(--ex-border-inner);
   border-radius: 5px;
@@ -292,7 +292,7 @@
 .rowReason {
   flex: 1;
   min-width: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -322,12 +322,12 @@
 
 .scoreValue {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
 }
 
 .rowDeadline {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   width: 42px;
   text-align: right;
@@ -363,7 +363,7 @@
 }
 
 .footText {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
@@ -371,14 +371,14 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-fg-body);
 }
 
 .footQuota {
   justify-self: end;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
@@ -415,13 +415,13 @@
 
 .brewLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.1em;
   color: var(--ex-accent-text);
 }
 
 .brewBody {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.75;
   color: var(--ex-accent-ink);
   margin-bottom: 14px;
@@ -435,7 +435,7 @@
 }
 
 .brewInnerTitle {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-accent-ink);
   margin-bottom: 9px;
@@ -452,7 +452,7 @@
 }
 
 .missingDanger {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-status-danger-text);
   background: var(--ex-status-danger-surface-deep);
   border-radius: 999px;
@@ -461,7 +461,7 @@
 }
 
 .missingWarning {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-status-warning-text);
   background: var(--ex-status-warning-surface);
   border-radius: 999px;
@@ -470,13 +470,13 @@
 }
 
 .missingNote {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-accent-text);
 }
 
 .brewCta {
   width: 100%;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
@@ -491,7 +491,7 @@
 }
 
 .railTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   margin-bottom: 12px;
 }
@@ -507,7 +507,7 @@
 }
 
 .axisLabel {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   width: 74px;
   flex-shrink: 0;
@@ -528,12 +528,12 @@
 
 .axisWeight {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
 }
 
 .railNote {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
   margin-top: 12px;
   line-height: 1.65;
@@ -546,7 +546,7 @@
 }
 
 .railChip {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   background: var(--ex-bg-sunken);
   border: none;
@@ -563,7 +563,7 @@
 
 .railHeadAction {
   margin-left: auto;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   border: none;
   background: none;
@@ -587,7 +587,7 @@
 }
 
 .recentText {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   flex: 1;
   min-width: 0;
@@ -598,7 +598,7 @@
 
 .recentCount {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
 }
 
@@ -631,7 +631,7 @@
   border: none;
   outline: none;
   background: none;
-  font-size: 15.5px;
+  font-size: var(--ex-text-lg);
   color: var(--ex-fg);
 }
 
@@ -641,7 +641,7 @@
 
 .searchShortcut {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   background: var(--ex-bg-sunken);
   border-radius: 6px;
@@ -661,7 +661,7 @@
 .categoryTab {
   border: none;
   background: none;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
   padding: 0 2px 9px;
   transition: color var(--ex-motion-quick);
@@ -680,7 +680,7 @@
 
 .categoryCount {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   margin-left: 5px;
 }
@@ -693,7 +693,7 @@
   gap: 6px;
   border: none;
   background: none;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
 }
 
@@ -709,7 +709,7 @@
 }
 
 .requirementLabel {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   flex: 1;
   min-width: 0;
@@ -720,7 +720,7 @@
 
 .requirementCount {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   flex-shrink: 0;
 }
@@ -771,13 +771,13 @@
   display: grid;
   place-items: center;
   font-family: var(--ex-font-brand);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   font-weight: 500;
   flex-shrink: 0;
 }
 
 .watchLabel {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   flex: 1;
   min-width: 0;
@@ -788,7 +788,7 @@
 
 .watchDeadline {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
 }
 
@@ -799,7 +799,7 @@
 /* 06 — 등록된 지 얼마 안 된 공고에 붙는 배지. */
 .rowNew {
   font-family: var(--ex-font-mono);
-  font-size: 8.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.08em;
   color: var(--ex-status-success-text);
   background: var(--ex-status-success-surface);
@@ -826,7 +826,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   transition: background var(--ex-motion-quick), color var(--ex-motion-quick);
 }
@@ -851,7 +851,7 @@
 .pagerGap {
   min-width: 16px;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-subtle);
 }
 
@@ -877,7 +877,7 @@
   border: 1px solid var(--ex-border);
   border-radius: 8px;
   background: var(--ex-bg);
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   white-space: nowrap;
   transition:
@@ -926,7 +926,7 @@
   align-items: baseline;
   gap: 7px;
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.12em;
   color: var(--ex-fg-subtle);
   padding: 5px 9px 6px;
@@ -935,7 +935,7 @@
 /* "지원할 수 있는 공고" — 수를 어떻게 읽어야 하는지. */
 .filterNote {
   font-family: var(--ex-font-sans);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0;
   color: var(--ex-fg-subtle);
 }
@@ -947,7 +947,7 @@
   gap: 14px;
   padding: 7px 9px;
   border-radius: 7px;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   transition: background var(--ex-motion-quick), color var(--ex-motion-quick);
 }
@@ -964,6 +964,6 @@
 
 .filterCount {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   opacity: 0.7;
 }

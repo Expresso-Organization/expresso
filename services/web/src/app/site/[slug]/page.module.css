@@ -24,13 +24,13 @@
 }
 
 .ownerLabel {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
 }
 
 .ownerMeta {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
 }
 
@@ -42,7 +42,7 @@
 }
 
 .ownerGhost {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
   background: none;
@@ -53,7 +53,7 @@
 }
 
 .ownerPrimary {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
@@ -73,7 +73,7 @@
 
 .sectionLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.16em;
   color: var(--ex-fg-subtle);
   align-self: flex-start;
@@ -99,7 +99,7 @@
 }
 
 .siteName {
-  font-size: 15px;
+  font-size: var(--ex-text-lg);
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--ex-fg);
@@ -112,7 +112,7 @@
 }
 
 .siteMenuItem {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: #6b6558;
 }
 
@@ -122,14 +122,14 @@
 
 .eyebrow {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   letter-spacing: 0.18em;
   color: #ff6f0f;
   margin-bottom: 14px;
 }
 
 .headline {
-  font-size: 40px;
+  font-size: var(--ex-text-display-md);
   font-weight: 700;
   letter-spacing: -0.05em;
   line-height: 1.18;
@@ -139,7 +139,7 @@
 }
 
 .lede {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   line-height: 1.9;
   color: #5c574c;
   max-width: 620px;
@@ -152,14 +152,14 @@
 }
 
 .metricValue {
-  font-size: 26px;
+  font-size: var(--ex-text-4xl);
   font-weight: 700;
   letter-spacing: -0.04em;
   color: var(--ex-fg);
 }
 
 .metricLabel {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: #8a8377;
   margin-top: 6px;
 }
@@ -170,7 +170,7 @@
 
 .worksLabel {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   letter-spacing: 0.18em;
   color: #a39b8c;
   margin-bottom: 18px;
@@ -189,7 +189,7 @@
 }
 
 .workTitle {
-  font-size: 17px;
+  font-size: var(--ex-text-xl);
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--ex-fg);
@@ -198,12 +198,12 @@
 .workYear {
   margin-left: auto;
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: #a39b8c;
 }
 
 .workBody {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   line-height: 1.85;
   color: #5c574c;
   max-width: 620px;
@@ -233,7 +233,7 @@
   gap: 8px;
   padding: 9px 18px 5px;
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg);
 }
 
@@ -248,7 +248,7 @@
 }
 
 .phoneName {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--ex-fg);
@@ -256,14 +256,14 @@
 
 .phoneEyebrow {
   font-family: var(--ex-font-mono);
-  font-size: 8px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.18em;
   color: #ff6f0f;
   margin: 14px 0 8px;
 }
 
 .phoneHeadline {
-  font-size: 19px;
+  font-size: var(--ex-text-2xl);
   font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 1.25;
@@ -272,7 +272,7 @@
 }
 
 .phoneLede {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   line-height: 1.8;
   color: #5c574c;
   margin-bottom: 16px;
@@ -281,7 +281,7 @@
 .phoneWork {
   padding: 10px 0;
   border-top: 1px solid #e2dacb;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-fg);
 }
@@ -289,7 +289,7 @@
 .phoneCta {
   margin-top: 16px;
   width: 100%;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-fg-on-inverse);
   background: var(--ex-bg-inverse);
@@ -308,7 +308,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
@@ -333,14 +333,14 @@
 
 .shareTitle {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.16em;
   color: #a39b8c;
   margin-bottom: 12px;
 }
 
 .shareHeadline {
-  font-size: 22px;
+  font-size: var(--ex-text-3xl);
   font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 1.3;
@@ -353,20 +353,20 @@
 
 .shareDomain {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   margin-bottom: 6px;
 }
 
 .shareOgTitle {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg);
   margin-bottom: 5px;
 }
 
 .shareOgDescription {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   line-height: 1.6;
 }
@@ -375,6 +375,6 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
 }

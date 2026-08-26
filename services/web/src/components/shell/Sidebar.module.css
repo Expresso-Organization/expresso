@@ -53,7 +53,7 @@
 }
 
 .primaryLabel {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   flex: 1;
 }
@@ -69,13 +69,13 @@
 
 .shortcut {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-fg-subtle);
 }
 
 .primaryCount {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-fg-muted);
 }
 
@@ -93,7 +93,7 @@
 
 .groupLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.12em;
   color: var(--ex-fg-muted);
 }
@@ -106,7 +106,7 @@
 
 .groupCount {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-fg-muted);
 }
 
@@ -178,7 +178,7 @@
 }
 
 .portfolioName {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   white-space: nowrap;
   overflow: hidden;
@@ -187,7 +187,7 @@
 
 .portfolioMeta {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -202,12 +202,12 @@
 
 .portfolioVisits {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg);
 }
 
 .portfolioDelta {
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   margin-top: 2px;
   color: var(--ex-status-success-text);
 }
@@ -218,7 +218,7 @@
 
 .draftChip {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
   border-radius: 4px;
@@ -255,13 +255,13 @@
   display: grid;
   place-items: center;
   font-family: var(--ex-font-brand);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   font-weight: 500;
   flex-shrink: 0;
 }
 
 .interestName {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   flex: 1;
   white-space: nowrap;
@@ -271,7 +271,7 @@
 
 .score {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
 }
 
 .scoreHigh {
@@ -283,7 +283,7 @@
 }
 
 .pending {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
 }
@@ -314,7 +314,7 @@
 }
 
 .categoryName {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   flex: 1;
   white-space: nowrap;
@@ -329,7 +329,7 @@
 
 .categoryCount {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-fg-muted);
 }
 
@@ -348,7 +348,7 @@
 }
 
 .addCategoryLabel {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
 }
 
@@ -375,13 +375,13 @@
 }
 
 .quotaLabel {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
 }
 
 .quotaValue {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-accent-text);
 }
 
@@ -400,7 +400,7 @@
 }
 
 .upgradeLink {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-accent-text);
 }
@@ -419,14 +419,14 @@
   background: var(--ex-bg-tint-strong);
   display: grid;
   place-items: center;
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   font-weight: 600;
   color: var(--ex-fg);
   flex-shrink: 0;
 }
 
 .userName {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   flex: 1;
   min-width: 0;

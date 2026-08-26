@@ -25,14 +25,14 @@
 
 .title {
   margin: 0;
-  font-size: 19px;
+  font-size: var(--ex-text-2xl);
   font-weight: 600;
   letter-spacing: -0.02em;
 }
 
 .note {
   margin: 0;
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   line-height: 1.7;
   color: var(--ex-fg-muted);
 }
@@ -42,7 +42,7 @@
   align-items: center;
   gap: 7px;
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
 }
 
@@ -55,7 +55,7 @@
 
 .failure {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   line-height: 1.6;
   color: var(--ex-accent-text);
 }
@@ -66,7 +66,7 @@
   padding: 9px 18px;
   border-radius: 10px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   cursor: pointer;
 }

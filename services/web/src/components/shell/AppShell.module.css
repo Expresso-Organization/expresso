@@ -12,7 +12,6 @@
   min-width: 1280px;
   background: var(--ex-bg);
   overflow: hidden;
-  font-size: 13px;
 }
 
 .main {
@@ -43,12 +42,12 @@
 }
 
 .title {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
 }
 
 .crumb {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
 }
 
@@ -69,12 +68,12 @@
 }
 
 .crumbSeparator {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-border-firm);
 }
 
 .crumbCurrent {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 500;
 }
 

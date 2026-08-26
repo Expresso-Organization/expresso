@@ -68,6 +68,42 @@
   --ex-danger-surface: #fef5f3;
   --ex-danger-surface-deep: #fceeea; /* 06b "없음" 요건 행 */
 
+  color-scheme: light;
+
+  /* ── 셸 치수 ─────────────────────────────────────────────── */
+  --ex-sidebar-width: 250px;
+  --ex-rail-width: 316px;
+  --ex-doc-panel-width: 452px;
+  --ex-editor-rail-width: 56px;
+  --ex-editor-sections-width: 244px;
+  --ex-editor-panel-width: 320px;
+  --ex-tabbar-height: 56px; /* `<md` 하단 탭바 */
+
+  /*
+   * 중단점.
+   *
+   * CSS 사용자 정의 속성은 `@media`에서 쓸 수 없습니다. 미디어 쿼리에는 숫자를
+   * 그대로 적고, 같은 경계를 `matchMedia`로 보는 자바스크립트가 이 값을
+   * 씁니다. 둘이 갈리지 않게 `tokens.test.ts`가 미디어 쿼리의 숫자를 이 표와
+   * 대조합니다. 하한은 360px이고 규칙은 모바일 우선입니다.
+   */
+  --ex-bp-sm: 480px; /* 큰 폰 */
+  --ex-bp-md: 768px; /* 태블릿 세로 */
+  --ex-bp-lg: 1024px; /* 태블릿 가로 · 작은 노트북 */
+  --ex-bp-xl: 1280px; /* 데스크톱 — 화면 정의서의 지면 */
+}
+
+/*
+ * 역할 토큰 — 밝은 지면.
+ *
+ * 선택자가 `:root`만이 아닌 이유는 **지면 일부만 밝게 고정**할 자리가 있기
+ * 때문입니다. 공개 포트폴리오(`/site/[slug]`)는 방문자가 볼 지면을 그대로
+ * 보여주는 곳이라 앱이 어두워졌다고 함께 어두워지면 안 됩니다.
+ */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
   /* ── 역할 · 지면 ─────────────────────────────────────────── */
   --ex-bg-canvas: var(--ex-canvas); /* 앱 바깥 지면 */
   --ex-bg: var(--ex-white); /* 기본 지면 */
@@ -123,6 +159,16 @@
   --ex-status-danger-surface: var(--ex-danger-surface);
   --ex-status-danger-surface-deep: var(--ex-danger-surface-deep);
 
+  /* ── 깊이 — 어두운 지면에서는 값이 달라진다 ──────────────── */
+  --ex-elevation-raised: 0 2px 10px rgba(22, 34, 58, 0.05);
+  --ex-elevation-overlay: 0 18px 44px rgba(22, 34, 58, 0.11);
+  --ex-elevation-card-hover: 0 14px 32px rgba(22, 34, 58, 0.1);
+  --ex-elevation-frame: 0 22px 54px rgba(22, 34, 58, 0.13);
+  --ex-focus-ring: 0 0 0 3px rgba(22, 34, 58, 0.18);
+}
+
+/* 테마를 타지 않는 것들 — 서체 · 글자 크기 · 모션. */
+:root {
   /* ── 타이포그래피 · 3서체 고정 ───────────────────────────── */
   --ex-font-ui: "Pretendard Variable", Pretendard, -apple-system,
     BlinkMacSystemFont, system-ui, sans-serif;
@@ -163,42 +209,11 @@
   --ex-leading-normal: 1.6;
   --ex-leading-relaxed: 1.75;
 
-  /* ── 깊이 ────────────────────────────────────────────────── */
-  --ex-elevation-raised: 0 2px 10px rgba(22, 34, 58, 0.05);
-  --ex-elevation-overlay: 0 18px 44px rgba(22, 34, 58, 0.11);
-  --ex-elevation-card-hover: 0 14px 32px rgba(22, 34, 58, 0.1);
-  --ex-elevation-frame: 0 22px 54px rgba(22, 34, 58, 0.13);
-  --ex-focus-ring: 0 0 0 3px rgba(22, 34, 58, 0.18);
-
   /* ── 모션 ────────────────────────────────────────────────── */
   --ex-motion-instant: 140ms ease;
   --ex-motion-quick: 160ms ease;
   --ex-motion-panel: 280ms cubic-bezier(0.32, 0.72, 0, 1);
   --ex-motion-spring: 200ms cubic-bezier(0.34, 1.4, 0.64, 1);
-
-  /* ── 셸 치수 ─────────────────────────────────────────────── */
-  --ex-sidebar-width: 250px;
-  --ex-rail-width: 316px;
-  --ex-doc-panel-width: 452px;
-  --ex-editor-rail-width: 56px;
-  --ex-editor-sections-width: 244px;
-  --ex-editor-panel-width: 320px;
-  --ex-tabbar-height: 56px; /* `<md` 하단 탭바 */
-
-  /*
-   * 중단점.
-   *
-   * CSS 사용자 정의 속성은 `@media`에서 쓸 수 없습니다. 미디어 쿼리에는 숫자를
-   * 그대로 적고, 같은 경계를 `matchMedia`로 보는 자바스크립트가 이 값을
-   * 씁니다. 둘이 갈리지 않게 `tokens.test.ts`가 미디어 쿼리의 숫자를 이 표와
-   * 대조합니다. 하한은 360px이고 규칙은 모바일 우선입니다.
-   */
-  --ex-bp-sm: 480px; /* 큰 폰 */
-  --ex-bp-md: 768px; /* 태블릿 세로 */
-  --ex-bp-lg: 1024px; /* 태블릿 가로 · 작은 노트북 */
-  --ex-bp-xl: 1280px; /* 데스크톱 — 화면 정의서의 지면 */
-
-  color-scheme: light;
 }
 
 /*
@@ -211,7 +226,8 @@
  * 내려가면 브랜드가 다른 제품처럼 보입니다.
  *
  * 규칙이 두 벌인 이유는 진입이 둘이기 때문입니다. `data-theme`이 없으면 OS
- * 설정을 따르고, 있으면 그 선택이 이깁니다.
+ * 설정을 따르고, 있으면 그 선택이 이깁니다. 두 벌의 값은 같아야 하고
+ * `tokens.test.ts`가 대조합니다.
  */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -276,11 +292,8 @@
   }
 }
 
-/*
- * 손으로 어둡게 고른 사람. 위 블록과 값이 같아야 합니다 —
- * `tokens.test.ts`가 두 블록을 대조합니다.
- */
-:root[data-theme="dark"] {
+/* 손으로 어둡게 고른 사람 · 어둡게 고정한 지면. */
+[data-theme="dark"] {
   color-scheme: dark;
 
   --ex-bg-canvas: #0a0f1a;

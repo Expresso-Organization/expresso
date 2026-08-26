@@ -13,7 +13,7 @@
 /* 헤더 */
 .headDomain {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
@@ -21,7 +21,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-status-success-text);
   background: var(--ex-status-success-surface);
   border-radius: 6px;
@@ -44,7 +44,7 @@
 }
 
 .periodItem {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   border: none;
   background: none;
@@ -59,7 +59,7 @@
 }
 
 .headButton {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-body);
   background: var(--ex-bg);
@@ -97,7 +97,7 @@
 .viewTab {
   border: none;
   background: none;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
   padding: 0 2px 9px;
   transition: color var(--ex-motion-quick);
@@ -126,7 +126,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   background: var(--ex-bg-sunken);
   border: none;
@@ -139,7 +139,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   border: 1px dashed var(--ex-border-soft);
   background: none;
@@ -149,7 +149,7 @@
 }
 
 .refreshed {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
@@ -224,7 +224,7 @@
 }
 
 .tileLabel {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
 }
@@ -232,7 +232,7 @@
 .tileMeta {
   margin-left: auto;
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
@@ -247,19 +247,19 @@
 .tileValue {
   font-family: var(--ex-font-brand);
   font-weight: 300;
-  font-size: 30px;
+  font-size: var(--ex-text-4xl);
   line-height: 1;
   letter-spacing: -0.03em;
 }
 
 .deltaUp {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-status-success-text);
   white-space: nowrap;
 }
 
 .deltaFlat {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
@@ -292,7 +292,7 @@
 }
 
 .compareKey {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   width: 26px;
   flex-shrink: 0;
@@ -313,12 +313,12 @@
 
 .compareValue {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
 }
 
 .tileNote {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   line-height: 1.6;
 }
@@ -340,7 +340,7 @@
 }
 
 .chartTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
 }
 
@@ -355,7 +355,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
 }
@@ -382,7 +382,7 @@
 
 .axisLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-fg-subtle);
 }
 
@@ -409,7 +409,7 @@
 }
 
 .annotationText {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   flex: 1;
   min-width: 0;
@@ -419,7 +419,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
 }
@@ -444,7 +444,7 @@
 
 .baristaLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.1em;
   color: var(--ex-accent-text);
 }
@@ -454,20 +454,20 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-accent-text);
   white-space: nowrap;
 }
 
 .baristaBody {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.8;
   color: var(--ex-accent-ink);
   margin-bottom: 14px;
 }
 
 .suggestionLabel {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-accent-ink);
   margin-bottom: 8px;
@@ -489,7 +489,7 @@
 }
 
 .suggestionText {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-accent-ink);
   line-height: 1.65;
 }
@@ -501,7 +501,7 @@
 
 .baristaButton {
   width: 100%;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
@@ -531,7 +531,7 @@
 }
 
 .dwellLabel {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   width: 132px;
   flex-shrink: 0;
@@ -556,7 +556,7 @@
 
 .dwellTime {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   flex-shrink: 0;
 }
@@ -578,13 +578,13 @@
 .donutValue {
   font-family: var(--ex-font-brand);
   font-weight: 300;
-  font-size: 22px;
+  font-size: var(--ex-text-3xl);
   line-height: 1;
   letter-spacing: -0.02em;
 }
 
 .donutLabel {
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   margin-top: 3px;
 }
@@ -610,7 +610,7 @@
 }
 
 .donutLegendLabel {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   flex: 1;
   min-width: 0;
@@ -621,13 +621,13 @@
 
 .donutLegendValue {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg);
 }
 
 .proBadge {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.08em;
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
@@ -655,7 +655,7 @@
   display: grid;
   place-items: center;
   font-family: var(--ex-font-brand);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   font-weight: 500;
   color: var(--ex-fg-body);
   flex-shrink: 0;
@@ -663,12 +663,12 @@
 
 .orgDomain {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg);
 }
 
 .orgNote {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   margin-top: 3px;
   white-space: nowrap;
@@ -678,7 +678,7 @@
 
 .orgDwell {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-body);
   flex-shrink: 0;
 }
@@ -691,7 +691,7 @@
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid var(--ex-border-hair);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
 }
 
@@ -709,7 +709,7 @@
 }
 
 .dropZoneText {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
   line-height: 1.7;
 }
@@ -737,7 +737,7 @@
 }
 
 .drawerTitle {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
 }
 
@@ -774,7 +774,7 @@
   border: none;
   outline: none;
   background: none;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
 }
 
@@ -795,7 +795,7 @@
 
 .metricGroupLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.12em;
   color: var(--ex-fg-muted);
   white-space: nowrap;
@@ -809,7 +809,7 @@
 
 .metricGroupCount {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-fg-subtle);
 }
 
@@ -836,14 +836,14 @@
 }
 
 .metricName {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
   flex: 1;
   min-width: 0;
 }
 
 .stateUsed {
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   background: var(--ex-bg-sunken);
   border-radius: 5px;
@@ -852,7 +852,7 @@
 }
 
 .stateNew {
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg);
   background: var(--ex-bg-tint-strong);
   border-radius: 5px;
@@ -862,7 +862,7 @@
 
 .statePro {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.08em;
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
@@ -883,7 +883,7 @@
   justify-content: center;
   gap: 7px;
   width: 100%;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-body);
   background: none;
@@ -909,7 +909,7 @@
 }
 
 .settingGroupTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   margin-bottom: 10px;
 }
@@ -925,7 +925,7 @@
 }
 
 .settingLabel {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   width: 70px;
   flex-shrink: 0;
@@ -941,7 +941,7 @@
   border-radius: 8px;
   padding: 7px 10px;
   background: none;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
   text-align: left;
 }
@@ -968,7 +968,7 @@
 }
 
 .vizLabel {
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
 }
 
@@ -988,7 +988,7 @@
 .spanOption {
   flex: 1;
   text-align: center;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   border: none;
   background: none;
@@ -1011,7 +1011,7 @@
 }
 
 .toggleLabel {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   flex: 1;
 }
@@ -1047,7 +1047,7 @@
 
 .settingAction {
   flex: 1;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   background: none;
   border: 1px solid var(--ex-border-soft);
@@ -1068,7 +1068,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: #354da8;
   background: #eef1fc;
   border-radius: 6px;
@@ -1078,7 +1078,7 @@
 
 /* 줄어든 값 — 늘어난 값(deltaUp)의 반대편 */
 .deltaDown {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-status-danger-text);
   white-space: nowrap;
 }
@@ -1100,7 +1100,7 @@
 .noticeText {
   flex: 1;
   min-width: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   line-height: 1.6;
 }
@@ -1110,7 +1110,7 @@
   background: var(--ex-bg);
   border-radius: 7px;
   padding: 5px 11px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg);
   white-space: nowrap;
 }
@@ -1128,7 +1128,7 @@
 }
 
 .evidenceChip {
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   background: var(--ex-bg-muted);
   border-radius: 999px;
@@ -1136,7 +1136,7 @@
 }
 
 .baristaError {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-status-danger-text);
   line-height: 1.6;
 }
@@ -1153,12 +1153,12 @@
 }
 
 .blankTitle {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   color: var(--ex-fg);
 }
 
 .blankBody {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   line-height: 1.7;
   max-width: 380px;
@@ -1169,7 +1169,7 @@
   border: 1px solid var(--ex-border-firm);
   border-radius: 8px;
   padding: 7px 14px;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
 }
 
@@ -1191,7 +1191,7 @@
 }
 
 .metricWhat {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   line-height: 1.6;
 }
@@ -1202,7 +1202,7 @@
   background: var(--ex-bg);
   border-radius: 7px;
   padding: 4px 9px;
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg);
   white-space: nowrap;
 }
@@ -1218,7 +1218,7 @@
 
 /* 세고 있지 않은 지표 */
 .stateNone {
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   background: var(--ex-bg-sunken);
   border-radius: 999px;
@@ -1228,7 +1228,7 @@
 
 .settingFixed {
   flex: 1;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg);
 }
 

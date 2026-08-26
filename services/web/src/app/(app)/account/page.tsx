@@ -1,4 +1,5 @@
 import { AppBody, DocumentHeader } from "@/components/shell/AppShell";
+import { ThemePicker } from "@/components/ThemePicker";
 import { Icon } from "@/components/ui/Icon";
 import { ACCOUNT } from "@/lib/sample/site";
 import { consents } from "@/lib/api/endpoints";
@@ -134,6 +135,21 @@ export default async function AccountPage() {
                   </button>
                 </div>
               ))}
+            </div>
+
+            {/* 지면을 밝게 볼지 어둡게 볼지 — 이 기기에만 남는다 */}
+            <div className={styles.section}>
+              <div className={styles.sectionLabel}>지면</div>
+              <div className={styles.themeRow}>
+                <div style={{ minWidth: 0 }}>
+                  <div className={styles.themeName}>지면 밝기</div>
+                  <div className={styles.themeNote}>
+                    시스템을 고르면 기기 설정을 따라갑니다. 이 선택은 계정이 아니라
+                    지금 쓰는 브라우저에 남습니다.
+                  </div>
+                </div>
+                <ThemePicker />
+              </div>
             </div>
 
             <div className={styles.section}>

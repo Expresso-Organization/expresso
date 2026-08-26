@@ -18,7 +18,7 @@
 .lead {
   font-family: var(--ex-font-brand);
   font-weight: 300;
-  font-size: 66px;
+  font-size: var(--ex-text-display-lg);
   line-height: 96px;
   letter-spacing: -0.03em;
 }
@@ -48,7 +48,7 @@
   line-height: 96px;
   font-family: var(--ex-font-brand);
   font-weight: 300;
-  font-size: 66px;
+  font-size: var(--ex-text-display-lg);
   letter-spacing: -0.03em;
 }
 

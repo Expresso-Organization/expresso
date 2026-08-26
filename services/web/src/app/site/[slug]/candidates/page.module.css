@@ -10,7 +10,7 @@
 }
 
 .title {
-  font-size: 22px;
+  font-size: var(--ex-text-3xl);
   font-weight: 600;
   letter-spacing: -0.02em;
   margin: 0 0 6px;
@@ -18,7 +18,7 @@
 
 .note {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   color: var(--ex-fg-muted);
 }
 
@@ -44,25 +44,25 @@
 
 .candidateNo {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
 }
 
 .candidateName {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
 }
 
 .candidateMeta {
   margin-left: auto;
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
 }
 
 .rationale {
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.6;
   color: var(--ex-fg-muted);
   min-height: 40px;
@@ -97,7 +97,7 @@
   max-width: 1360px;
   margin: 0 auto;
   padding: 40px 0;
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   color: var(--ex-fg-muted);
 }
 
@@ -107,7 +107,7 @@
   width: 100%;
   padding: 9px 12px;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;

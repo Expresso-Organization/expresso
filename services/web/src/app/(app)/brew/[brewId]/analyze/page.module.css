@@ -26,7 +26,7 @@
 }
 
 .headTitle {
-  font-size: 17px;
+  font-size: var(--ex-text-xl);
   font-weight: 600;
   letter-spacing: -0.03em;
 }
@@ -41,7 +41,7 @@
 }
 
 .segmentItem {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   border: none;
   background: none;
@@ -72,7 +72,7 @@
 }
 
 .sourceTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
   white-space: nowrap;
   overflow: hidden;
@@ -81,7 +81,7 @@
 
 .sourceMeta {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
 }
@@ -91,7 +91,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-fg-body);
   white-space: nowrap;
@@ -111,13 +111,13 @@
 }
 
 .blockTitle {
-  font-size: 15px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
 }
 
 .aiTag {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.1em;
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
@@ -126,7 +126,7 @@
 }
 
 .summary {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   color: var(--ex-fg-body);
   line-height: 1.95;
   text-wrap: pretty;
@@ -142,7 +142,7 @@
 
 .requirementsNote {
   margin-left: auto;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
@@ -156,7 +156,7 @@
 
 .requirementNo {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-accent-text);
   flex-shrink: 0;
   width: 14px;
@@ -176,14 +176,14 @@
 }
 
 .requirementLabel {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .requirementMentions {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
 }
 
@@ -191,7 +191,7 @@
 .coverage {
   margin-left: auto;
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   border-radius: 6px;
   padding: 4px 9px;
   white-space: nowrap;
@@ -213,7 +213,7 @@
 }
 
 .requirementQuote {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
   line-height: 1.65;
 }
@@ -228,7 +228,7 @@
 }
 
 .readBarText {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   flex: 1;
   line-height: 1.7;
@@ -238,7 +238,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-fg-body);
   white-space: nowrap;
@@ -264,26 +264,26 @@
 }
 
 .rightTitle {
-  font-size: 15px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
 }
 
 .rightCount {
   margin-left: auto;
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
 }
 
 .rightNote {
   flex-shrink: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   margin-bottom: 8px;
 }
 
 .quote {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   line-height: 1.95;
   padding: 13px 0;
@@ -296,7 +296,7 @@
 }
 
 .rightSectionLabel {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
   margin-bottom: 10px;
 }
@@ -308,7 +308,7 @@
 }
 
 .phrase {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   background: var(--ex-bg-sunken);
   border-radius: 999px;
@@ -317,7 +317,7 @@
 }
 
 .phraseMore {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
   border: 1px dashed var(--ex-border-soft);
   background: none;
@@ -338,7 +338,7 @@
 }
 
 .extraLabel {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   flex: 1;
   min-width: 0;
@@ -349,7 +349,7 @@
 
 .extraCount {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   flex-shrink: 0;
 }
@@ -366,13 +366,13 @@
 }
 
 .previewTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   margin-bottom: 5px;
 }
 
 .previewBody {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   line-height: 1.7;
 }
@@ -389,7 +389,7 @@
 }
 
 .footerText {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
 }
 
@@ -401,7 +401,7 @@
 }
 
 .ghost {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 500;
   color: var(--ex-fg-muted);
   background: transparent;
@@ -416,7 +416,7 @@
 
 /* brew CTA — radius full + espresso */
 .brew {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
@@ -438,13 +438,13 @@
 /* 다시 분석이 남긴 말 · 분석 실패 */
 .sourceNotice {
   flex-basis: 100%;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   line-height: 1.6;
 }
 
 .failure {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-status-danger-text);
   background: var(--ex-status-danger-surface);
   border-radius: 8px;

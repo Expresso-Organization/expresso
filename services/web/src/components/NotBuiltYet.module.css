@@ -18,20 +18,20 @@
 
 .screens {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   letter-spacing: 0.12em;
   color: var(--ex-accent-text);
 }
 
 .title {
-  font-size: 17px;
+  font-size: var(--ex-text-xl);
   font-weight: 600;
   letter-spacing: -0.015em;
   color: var(--ex-fg);
 }
 
 .body {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.75;
   color: var(--ex-fg-muted);
 }

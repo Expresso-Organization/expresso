@@ -37,7 +37,7 @@
   border: none;
   outline: none;
   background: none;
-  font-size: 15.5px;
+  font-size: var(--ex-text-lg);
   color: var(--ex-fg);
 }
 
@@ -47,7 +47,7 @@
 
 .searchShortcut {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   background: var(--ex-bg-sunken);
   border-radius: 6px;
@@ -56,7 +56,7 @@
 }
 
 .searchSubmit {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
@@ -81,13 +81,13 @@
 }
 
 .examplesLabel {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   margin-right: 2px;
 }
 
 .exampleChip {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
@@ -106,7 +106,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   border: none;
   background: none;
@@ -137,7 +137,7 @@
 }
 
 .cardTitle {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -150,7 +150,7 @@
 }
 
 .segmentItem {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   border: none;
   background: none;
@@ -165,14 +165,14 @@
 }
 
 .cardNote {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 
 .cardLink {
   margin-left: auto;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   white-space: nowrap;
 }
@@ -202,7 +202,7 @@
   display: grid;
   place-items: center;
   font-family: var(--ex-font-brand);
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 500;
   flex-shrink: 0;
   margin-top: 2px;
@@ -222,7 +222,7 @@
 }
 
 .jobName {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -231,7 +231,7 @@
 
 .jobScore {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   flex-shrink: 0;
   color: var(--ex-fg-body);
 }
@@ -242,14 +242,14 @@
 
 .jobDeadline {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   margin-left: auto;
   flex-shrink: 0;
 }
 
 .jobReason {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   margin-top: 5px;
   white-space: nowrap;
@@ -258,7 +258,7 @@
 }
 
 .jobCta {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
@@ -314,7 +314,7 @@
   background: var(--ex-accent-surface);
   border-radius: 6px;
   padding: 4px 9px;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-accent-text);
   white-space: nowrap;
 }
@@ -329,19 +329,19 @@
 .draftDeadline {
   margin-left: auto;
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-status-danger-text);
 }
 
 .draftTitle {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
   letter-spacing: -0.02em;
   margin-bottom: 5px;
 }
 
 .draftMeta {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   margin-bottom: 12px;
 }
@@ -369,13 +369,13 @@
 
 .draftCount {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-body);
 }
 
 .draftCta {
   width: 100%;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
@@ -401,7 +401,7 @@
 }
 
 .savedTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
 }
 
@@ -417,7 +417,7 @@
 }
 
 .savedName {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   flex: 1;
   min-width: 0;
@@ -428,12 +428,12 @@
 
 .savedCount {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-accent-text);
 }
 
 .savedFoot {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
   margin-top: 11px;
   line-height: 1.65;
@@ -448,18 +448,18 @@
 }
 
 .sectionTitle {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
 }
 
 .sectionNote {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
 .sectionLink {
   margin-left: auto;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
 }
 
@@ -500,7 +500,7 @@
 
 .newPortfolioTitle {
   display: block;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg-body);
   margin-bottom: 6px;
@@ -508,7 +508,7 @@
 
 .newPortfolioBody {
   display: block;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   line-height: 1.65;
 }
@@ -545,7 +545,7 @@
   border: none;
   border-radius: 6px;
   padding: 3px 8px;
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-body);
   white-space: nowrap;
 }
@@ -563,7 +563,7 @@
 }
 
 .metricLabel {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   margin-bottom: 7px;
   white-space: nowrap;
@@ -578,7 +578,7 @@
 .metricValue {
   font-family: var(--ex-font-brand);
   font-weight: 300;
-  font-size: 22px;
+  font-size: var(--ex-text-3xl);
   line-height: 1;
   letter-spacing: -0.02em;
   color: var(--ex-fg);
@@ -589,7 +589,7 @@
 }
 
 .metricDelta {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
 }
@@ -607,7 +607,7 @@
 }
 
 .baristaText {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-accent-text);
   flex: 1;
   min-width: 0;
@@ -615,7 +615,7 @@
 }
 
 .baristaLink {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-fg-body);
 }
@@ -634,20 +634,20 @@
 }
 
 .firstRunTitle {
-  font-size: 17px;
+  font-size: var(--ex-text-xl);
   font-weight: 600;
   letter-spacing: -0.015em;
 }
 
 .firstRunBody {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.75;
   color: var(--ex-fg-muted);
 }
 
 .firstRunCta {
   margin-top: 6px;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
@@ -701,7 +701,7 @@
 }
 
 .categoryCardName {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-body);
   flex: 1;
@@ -714,7 +714,7 @@
 .categoryCardCount {
   font-family: var(--ex-font-brand);
   font-weight: 300;
-  font-size: 22px;
+  font-size: var(--ex-text-3xl);
   line-height: 1;
   letter-spacing: -0.02em;
   color: var(--ex-fg);

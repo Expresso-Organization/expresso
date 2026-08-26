@@ -26,7 +26,7 @@
 }
 
 .categoryName {
-  font-size: 27px;
+  font-size: var(--ex-text-4xl);
   font-weight: 600;
   letter-spacing: -0.03em;
 }
@@ -39,7 +39,7 @@
 }
 
 .categoryBlurb {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   line-height: 1.75;
   color: var(--ex-fg-muted);
   margin-bottom: 20px;
@@ -58,7 +58,7 @@
 .viewTab {
   border: none;
   background: none;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
   padding: 0 2px 9px;
   transition: color var(--ex-motion-quick);
@@ -87,7 +87,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
 }
 
@@ -105,7 +105,7 @@
 }
 
 .splitPrimary {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-body);
   background: var(--ex-bg);
@@ -125,7 +125,7 @@
 }
 
 .splitAi {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
@@ -173,7 +173,7 @@
 }
 
 .headLabel {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
@@ -209,7 +209,7 @@
 }
 
 .recordTitle {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   color: var(--ex-fg);
   white-space: nowrap;
   overflow: hidden;
@@ -234,7 +234,7 @@
 .cell {
   padding: 9px 12px;
   border-left: 1px solid var(--ex-border-hair);
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
   white-space: nowrap;
 }
@@ -259,7 +259,7 @@
 /* 배지 */
 .aiBadge {
   font-family: var(--ex-font-mono);
-  font-size: 8.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.08em;
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
@@ -270,7 +270,7 @@
 }
 
 .statusOrganized {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
   border-radius: 5px;
@@ -279,7 +279,7 @@
 }
 
 .statusPlain {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-body);
   background: var(--ex-border-inner);
   border-radius: 5px;
@@ -288,7 +288,7 @@
 }
 
 .tag {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-body);
   background: var(--ex-border-inner);
   border-radius: 5px;
@@ -313,17 +313,17 @@
 }
 
 .newRowLabel {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
 }
 
 .newRowOr {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-border-firm);
 }
 
 .newRowAi {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-accent-text);
 }
 
@@ -336,7 +336,7 @@
 }
 
 .summaryText {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
@@ -357,20 +357,20 @@
 }
 
 .emptyTitle {
-  font-size: 15px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
   color: var(--ex-fg);
 }
 
 .emptyBody {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.7;
   color: var(--ex-fg-muted);
 }
 
 .emptyAction {
   margin-top: 4px;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
@@ -413,20 +413,20 @@
 }
 
 .galleryTitle {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg);
   margin-bottom: 6px;
 }
 
 .galleryMeta {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
 .galleryMissing {
   margin-top: 8px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
 }
 
@@ -445,7 +445,7 @@
 
 .timelinePeriod {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   text-align: right;
   padding-top: 12px;
@@ -510,7 +510,7 @@
 
 .boardLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.12em;
   color: var(--ex-fg-muted);
   padding: 0 4px;
@@ -521,7 +521,7 @@
   border-radius: 10px;
   background: var(--ex-bg);
   padding: 11px 13px;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
   text-align: left;
 }

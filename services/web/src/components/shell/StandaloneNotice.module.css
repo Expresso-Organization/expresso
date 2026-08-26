@@ -22,13 +22,13 @@
 }
 
 .title {
-  font-size: 15px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
   color: var(--ex-fg);
 }
 
 .body {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   line-height: 1.7;
   color: var(--ex-fg-muted);
   max-width: 400px;
@@ -48,7 +48,7 @@
   border: 1px solid var(--ex-fg);
   background: var(--ex-bg-inverse);
   color: var(--ex-fg-on-inverse);
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 500;
   display: inline-flex;
   align-items: center;
@@ -71,7 +71,7 @@
 
 .digest {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
   margin-top: 4px;
 }

@@ -51,7 +51,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   color: var(--ex-fg-muted);
 }
 
@@ -104,7 +104,7 @@
 .thought {
   margin: 14px auto 0;
   max-width: 34em;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   line-height: 1.6;
   color: var(--ex-fg-subtle);
   text-align: center;

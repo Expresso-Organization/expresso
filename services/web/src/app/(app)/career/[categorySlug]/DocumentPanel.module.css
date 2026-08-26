@@ -19,7 +19,7 @@
 }
 
 .headLabel {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
 }
 
@@ -47,7 +47,7 @@
 }
 
 .title {
-  font-size: 21px;
+  font-size: var(--ex-text-2xl);
   font-weight: 600;
   letter-spacing: -0.025em;
   line-height: 1.45;
@@ -75,12 +75,12 @@
 }
 
 .propertyLabelText {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
 }
 
 .propertyValue {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
 }
 
@@ -92,7 +92,7 @@
 }
 
 .chip {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   background: var(--ex-border-inner);
   border-radius: 5px;
@@ -100,7 +100,7 @@
 }
 
 .chipSignature {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
   border-radius: 5px;
@@ -108,7 +108,7 @@
 }
 
 .chipAdd {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-border-firm);
 }
 
@@ -125,13 +125,13 @@
 }
 
 .blockHeading {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
   margin-bottom: 7px;
 }
 
 .blockText {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   line-height: 1.85;
   color: var(--ex-fg-body);
   white-space: pre-wrap;
@@ -149,11 +149,11 @@
 
 .bulletDot {
   color: var(--ex-border-firm);
-  font-size: 13px;
+  font-size: var(--ex-text-md);
 }
 
 .bulletText {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   line-height: 1.8;
   color: var(--ex-fg-body);
 }
@@ -173,13 +173,13 @@
 
 .aiInsightLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.1em;
   color: var(--ex-accent-text);
 }
 
 .aiInsightHint {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
 }
 
@@ -191,7 +191,7 @@
 }
 
 .placeholderText {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   color: var(--ex-border-firm);
 }
 
@@ -210,7 +210,7 @@
 }
 
 .quickAction {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   background: var(--ex-bg-sunken);
   border: none;
@@ -248,7 +248,7 @@
   border: none;
   outline: none;
   background: none;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
 }
 
@@ -281,7 +281,7 @@
 }
 
 .noneText {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.8;
   color: var(--ex-fg-subtle);
 }

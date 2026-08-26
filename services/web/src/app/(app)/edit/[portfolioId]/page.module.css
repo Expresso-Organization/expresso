@@ -6,7 +6,7 @@
   min-width: 1280px;
   background: var(--ex-bg-sunken);
   overflow: hidden;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
 }
 
 /* ① 56px 아이콘 레일 */
@@ -72,7 +72,7 @@
   background: var(--ex-bg-tint-strong);
   display: grid;
   place-items: center;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-fg);
 }
@@ -106,7 +106,7 @@
 }
 
 .toolbarTitle {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
 }
 
@@ -125,7 +125,7 @@
   align-items: center;
   border-radius: 999px;
   padding: 4px 8px;
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -148,7 +148,7 @@
 }
 
 .statusText {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-accent-text);
   white-space: nowrap;
 }
@@ -211,7 +211,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
@@ -222,13 +222,13 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   white-space: nowrap;
 }
 
 .previewButton {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-body);
   background: var(--ex-bg);
@@ -243,7 +243,7 @@
 }
 
 .publishButton {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
@@ -287,7 +287,7 @@
 
 .sectionsLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.12em;
   color: var(--ex-fg-muted);
 }
@@ -295,7 +295,7 @@
 .sectionsCount {
   margin-left: auto;
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-fg-muted);
 }
 
@@ -328,7 +328,7 @@
 }
 
 .sectionTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 500;
   color: var(--ex-fg-body);
   white-space: nowrap;
@@ -346,7 +346,7 @@
 }
 
 .sectionMeta {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   margin-top: 3px;
   white-space: nowrap;
@@ -374,12 +374,12 @@
 }
 
 .suggestionTitle {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
 }
 
 .suggestionBody {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   line-height: 1.65;
   margin-bottom: 10px;
@@ -394,7 +394,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: #354da8;
 }
@@ -403,7 +403,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
@@ -433,7 +433,7 @@
 }
 
 .footLabel {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   flex: 1;
   white-space: nowrap;
@@ -448,7 +448,7 @@
 
 .footValue {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-fg-subtle);
 }
 
@@ -499,7 +499,7 @@
   display: flex;
   justify-content: center;
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
 }
 
@@ -541,7 +541,7 @@
 }
 
 .siteName {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--ex-fg);
@@ -554,7 +554,7 @@
 }
 
 .siteMenuItem {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: #6b6558;
 }
 
@@ -572,7 +572,7 @@
 
 .eyebrow {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.18em;
   color: #ff6f0f;
 }
@@ -585,7 +585,7 @@
 
 .eyebrowMuted {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.18em;
   color: #a39b8c;
 }
@@ -656,13 +656,13 @@
   place-items: center;
   border: none;
   background: none;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
 .sizeValue {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg);
   padding: 0 3px;
 }
@@ -717,7 +717,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
@@ -728,7 +728,7 @@
 }
 
 .heroTitle {
-  font-size: 34px;
+  font-size: var(--ex-text-display-sm);
   font-weight: 700;
   letter-spacing: -0.05em;
   line-height: 1.2;
@@ -736,7 +736,7 @@
 }
 
 .heroLede {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: #5c574c;
   line-height: 1.85;
   max-width: 460px;
@@ -749,7 +749,7 @@
 }
 
 .heroMetricValue {
-  font-size: 44px;
+  font-size: var(--ex-text-display-md);
   font-weight: 700;
   letter-spacing: -0.05em;
   color: var(--ex-fg);
@@ -757,14 +757,14 @@
 }
 
 .heroMetricLabel {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: #8a8377;
   margin-top: 7px;
 }
 
 .sectionLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.16em;
   color: #a39b8c;
   margin-bottom: 11px;
@@ -777,7 +777,7 @@
 }
 
 .incidentTitle {
-  font-size: 16px;
+  font-size: var(--ex-text-xl);
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.55;
@@ -786,7 +786,7 @@
 }
 
 .incidentBody {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: #5c574c;
   line-height: 1.85;
 }
@@ -799,14 +799,14 @@
 }
 
 .incidentStatValue {
-  font-size: 23px;
+  font-size: var(--ex-text-3xl);
   font-weight: 700;
   letter-spacing: -0.04em;
   color: var(--ex-fg);
 }
 
 .incidentStatLabel {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: #8a8377;
   margin-top: 5px;
 }
@@ -821,7 +821,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-fg);
   background: var(--ex-bg);
@@ -838,7 +838,7 @@
 }
 
 .stackSecondary {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: #3e382d;
   background: #efeae0;
   border-radius: 999px;
@@ -856,7 +856,7 @@
 }
 
 .contactTitle {
-  font-size: 14.5px;
+  font-size: var(--ex-text-lg);
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--ex-fg-on-accent);
@@ -865,12 +865,12 @@
 
 .contactMail {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
 }
 
 .contactGhost {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-on-accent);
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 8px;
@@ -880,7 +880,7 @@
 }
 
 .contactPrimary {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-fg);
   background: #ff6f0f;
@@ -908,7 +908,7 @@
 }
 
 .crumb {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
   border: none;
@@ -941,14 +941,14 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-accent-text);
   white-space: nowrap;
 }
 
 .statusViewport {
   margin-left: auto;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
 }
@@ -961,7 +961,7 @@
 
 .zoomValue {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
 }
 
@@ -986,13 +986,13 @@
 }
 
 .panelTitle {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .panelTarget {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -1020,7 +1020,7 @@
 }
 
 .panelTab {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
   padding: 10px 2px 9px;
   border: none;
@@ -1067,7 +1067,7 @@
 
 .chatStampText {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.1em;
   color: var(--ex-fg-subtle);
   white-space: nowrap;
@@ -1094,7 +1094,7 @@
 }
 
 .targetChipText {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -1107,7 +1107,7 @@
   color: var(--ex-fg-on-accent);
   border-radius: 13px 5px 13px 13px;
   padding: 11px 13px;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.65;
 }
 
@@ -1149,7 +1149,7 @@
 }
 
 .aiName {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--ex-accent-ink);
@@ -1158,7 +1158,7 @@
 
 .aiElapsed {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
@@ -1167,7 +1167,7 @@
   background: var(--ex-accent-surface);
   border-radius: 5px 13px 13px 13px;
   padding: 11px 13px;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.7;
   color: var(--ex-accent-ink);
 }
@@ -1190,7 +1190,7 @@
 }
 
 .patchTitle {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--ex-fg-body);
@@ -1202,7 +1202,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: #354da8;
   white-space: nowrap;
 }
@@ -1220,7 +1220,7 @@
 }
 
 .patchLabel {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
 }
@@ -1231,7 +1231,7 @@
   align-items: center;
   gap: 5px;
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   white-space: nowrap;
 }
 
@@ -1260,7 +1260,7 @@
   background: none;
   border-radius: 8px;
   padding: 7px 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   white-space: nowrap;
   transition: background var(--ex-motion-instant);
@@ -1280,7 +1280,7 @@
   border: 1px solid #dfe5f9;
   border-radius: 8px;
   padding: 7px 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: #354da8;
   white-space: nowrap;
@@ -1299,7 +1299,7 @@
 }
 
 .chatHintText {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   line-height: 1.5;
 }
@@ -1317,7 +1317,7 @@
 }
 
 .quick {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: #354da8;
   background: #eef1fc;
   border: none;
@@ -1337,7 +1337,7 @@
   border: none;
   outline: none;
   background: none;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
   margin-bottom: 10px;
 }
@@ -1355,7 +1355,7 @@
 .inputShortcut {
   margin-left: auto;
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
 }
 
@@ -1389,7 +1389,7 @@
 }
 
 .targetName {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -1397,7 +1397,7 @@
 }
 
 .targetPath {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   margin-top: 2px;
   white-space: nowrap;
@@ -1418,7 +1418,7 @@
 
 .propGroupLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.12em;
   color: var(--ex-fg-muted);
   white-space: nowrap;
@@ -1431,7 +1431,7 @@
 }
 
 .propGroupNote {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
@@ -1448,7 +1448,7 @@
 }
 
 .propLabel {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   width: 62px;
   flex-shrink: 0;
@@ -1471,7 +1471,7 @@
   place-items: center;
   border: none;
   background: none;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
   transition: background var(--ex-motion-instant);
 }
@@ -1486,7 +1486,7 @@
 
 .stepperValue {
   font-family: var(--ex-font-mono);
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg);
   padding: 0 6px;
   min-width: 34px;
@@ -1494,13 +1494,13 @@
 }
 
 .stepperUnit {
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   padding-right: 5px;
 }
 
 .propNote {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
@@ -1511,7 +1511,7 @@
   border: 1px solid var(--ex-border-soft);
   border-radius: 8px;
   padding: 6px 9px;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
   background: none;
   outline: none;
@@ -1571,7 +1571,7 @@
 .weightOption {
   flex: 1;
   text-align: center;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   border: none;
   background: none;
@@ -1611,7 +1611,7 @@
 .inherit {
   margin-left: auto;
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   border: none;
   background: none;
@@ -1660,7 +1660,7 @@
 .historyFilter {
   flex: 1;
   text-align: center;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   border: none;
   background: none;
@@ -1678,7 +1678,7 @@
 
 .historyDay {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.12em;
   color: var(--ex-fg-muted);
   margin-bottom: 10px;
@@ -1709,7 +1709,7 @@
   background: var(--ex-bg-tint-strong);
   display: grid;
   place-items: center;
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   font-weight: 600;
   color: var(--ex-fg);
   flex-shrink: 0;
@@ -1721,13 +1721,13 @@
 }
 
 .revisionSummary {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
   line-height: 1.6;
 }
 
 .revisionMeta {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   margin-top: 4px;
 }
@@ -1736,7 +1736,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: #354da8;
   white-space: nowrap;
   flex-shrink: 0;
@@ -1746,7 +1746,7 @@
 .checkpointHead {
   margin-top: 18px;
   margin-bottom: 10px;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
 }
 
@@ -1762,12 +1762,12 @@
 }
 
 .checkpointName {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   color: var(--ex-fg);
 }
 
 .checkpointAt {
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   margin-top: 2px;
 }
@@ -1776,7 +1776,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   color: #354da8;
   white-space: nowrap;
@@ -1795,7 +1795,7 @@
 }
 
 .lockNoteText {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-accent-ink);
   line-height: 1.65;
 }
@@ -1823,7 +1823,7 @@
   border: 1px solid var(--ex-border-soft);
   border-radius: 8px;
   padding: 8px 10px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   line-height: 1.7;
   color: var(--ex-fg);
   resize: vertical;
@@ -1835,7 +1835,7 @@
   background: var(--ex-bg);
   border-radius: 7px;
   padding: 6px 10px;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg);
   white-space: nowrap;
 }
@@ -1846,7 +1846,7 @@
 
 .panelEmpty {
   padding: 26px 18px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
   line-height: 1.7;
   text-align: center;
@@ -1854,7 +1854,7 @@
 
 .panelError {
   margin: 0 16px 10px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-status-danger-text);
   background: var(--ex-status-danger-surface);
   border-radius: 8px;
@@ -1863,7 +1863,7 @@
 }
 
 .lockedTag {
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
   border-radius: 999px;
@@ -1885,7 +1885,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   line-height: 1;
   color: var(--ex-border-firm);
   border-radius: 3px;
@@ -1916,7 +1916,7 @@
 
 .sectionError {
   margin: 8px 14px 0;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-status-danger-text);
   line-height: 1.6;
 }
@@ -1928,7 +1928,7 @@
 }
 
 .statusError {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-status-danger-text);
   white-space: nowrap;
   flex-shrink: 0;
@@ -1938,7 +1938,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-status-danger-text);
   background: var(--ex-status-danger-surface);
   border-radius: 7px;
@@ -1954,7 +1954,7 @@
   color: var(--ex-status-danger-text);
   border-radius: 6px;
   padding: 3px 8px;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   white-space: nowrap;
 }
 
@@ -2000,7 +2000,7 @@
 }
 
 .mediaTitle {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-body);
 }
@@ -2014,7 +2014,7 @@
 .mediaFrameOn {
   flex: 1;
   padding: 6px 0;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   border-radius: 7px;
   border: 1px solid var(--ex-border-soft);
   background: var(--ex-bg);
@@ -2034,7 +2034,7 @@
 
 .mediaAlt {
   padding: 7px 10px;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   border-radius: 7px;
   border: 1px solid var(--ex-border-soft);
   background: var(--ex-bg);
@@ -2045,16 +2045,16 @@
 }
 
 .mediaFile {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
 }
 
 .mediaNote {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-subtle);
 }
 
 .mediaError {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: var(--ex-status-danger-text);
 }
