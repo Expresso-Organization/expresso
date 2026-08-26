@@ -41,7 +41,7 @@ export default async function AccountPage() {
                 <Icon
                   name={TAB_ICONS[index] ?? "gear-six"}
                   size={14}
-                  color={index === 1 ? "var(--ex-ink-900)" : "var(--ex-slate-500)"}
+                  color={index === 1 ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
                 />
                 {tab}
               </button>
@@ -102,7 +102,7 @@ export default async function AccountPage() {
                     <div className={styles.planPrice}>{plan.price}</div>
                     {plan.features.map((feature) => (
                       <div key={feature} className={styles.planFeature}>
-                        <Icon name="check" size={12} color="var(--ex-slate-400)" />
+                        <Icon name="check" size={12} color="var(--ex-fg-subtle)" />
                         {feature}
                       </div>
                     ))}
@@ -202,7 +202,7 @@ export default async function AccountPage() {
 
             {/* 한도는 숨기지 않는다 */}
             <div className={styles.footNote}>
-              <Icon name="info" size={13} color="var(--ex-espresso)" />
+              <Icon name="info" size={13} color="var(--ex-accent-text)" />
               {ACCOUNT.footNote}
             </div>
           </div>

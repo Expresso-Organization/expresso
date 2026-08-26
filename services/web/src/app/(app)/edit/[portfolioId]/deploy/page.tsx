@@ -114,7 +114,7 @@ export default async function DeployPage({
             />
 
             <div className={styles.footNote}>
-              <Icon name="info" size={13} color="var(--ex-slate-400)" />
+              <Icon name="info" size={13} color="var(--ex-fg-subtle)" />
               공개를 중단해도 문서와 기록은 지워지지 않습니다. 주소만 접근할 수 없게 됩니다.
             </div>
           </div>

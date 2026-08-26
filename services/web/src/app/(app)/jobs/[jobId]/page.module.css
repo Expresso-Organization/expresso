@@ -30,7 +30,7 @@
   border-radius: 7px;
   font-size: 12.5px;
   font-weight: 500;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   text-decoration: none;
   transition:
     color var(--ex-motion-quick),
@@ -38,8 +38,8 @@
 }
 
 .backToList:hover {
-  color: var(--ex-ink-900);
-  background: var(--ex-surface-50);
+  color: var(--ex-fg);
+  background: var(--ex-bg-sunken);
 }
 
 .role {
@@ -54,7 +54,7 @@
   align-items: center;
   gap: 10px;
   font-size: 12.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   margin-bottom: 20px;
 }
 
@@ -84,7 +84,7 @@
 .deadline {
   font-family: var(--ex-font-mono);
   font-size: 11px;
-  color: var(--ex-danger-text);
+  color: var(--ex-status-danger-text);
 }
 
 /* 핵심 정보 5칸 */
@@ -106,7 +106,7 @@
 }
 
 .fact:hover {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
 }
 
 .factLabel {
@@ -114,13 +114,13 @@
   align-items: center;
   gap: 7px;
   font-size: 12.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   margin: 0;
 }
 
 .factValue {
   font-size: 13px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   margin: 0;
 }
 
@@ -135,7 +135,7 @@
   font-family: var(--ex-font-mono);
   font-size: 9.5px;
   letter-spacing: 0.14em;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   margin-bottom: 13px;
 }
 
@@ -149,7 +149,7 @@
 
 .blockTitleNote {
   font-size: 11px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .dutyGroup {
@@ -159,7 +159,7 @@
 .dutyGroupTitle {
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   margin-bottom: 8px;
 }
 
@@ -170,14 +170,14 @@
 }
 
 .dutyBullet {
-  color: var(--ex-border-strong);
+  color: var(--ex-border-firm);
   font-size: 13px;
 }
 
 .dutyText {
   font-size: 13px;
   line-height: 1.8;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 .section {
@@ -197,8 +197,8 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: var(--ex-ink-900);
-  background: var(--ex-success-surface);
+  color: var(--ex-fg);
+  background: var(--ex-status-success-surface);
   border-radius: 999px;
   padding: 6px 12px;
   white-space: nowrap;
@@ -206,9 +206,9 @@
 
 .stackMissing {
   font-size: 12px;
-  color: var(--ex-slate-500);
-  background: var(--ex-surface-50);
-  border: 1px solid var(--ex-line-200);
+  color: var(--ex-fg-muted);
+  background: var(--ex-bg-sunken);
+  border: 1px solid var(--ex-border);
   border-radius: 999px;
   padding: 6px 12px;
   white-space: nowrap;
@@ -216,7 +216,7 @@
 
 .stackNote {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 /* 자격 요건 대조 */
@@ -226,41 +226,41 @@
   gap: 11px;
   padding: 11px 13px;
   border-radius: 10px;
-  background: var(--ex-row-hover);
+  background: var(--ex-bg-hover);
   margin-bottom: 7px;
 }
 
 .requirementPartial {
-  background: var(--ex-warning-surface);
+  background: var(--ex-status-warning-surface);
 }
 
 .requirementMissing {
-  background: var(--ex-danger-surface-deep);
+  background: var(--ex-status-danger-surface-deep);
 }
 
 .requirementLabel {
   font-size: 12.5px;
   line-height: 1.65;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   margin-bottom: 5px;
 }
 
 .requirementNote {
   font-size: 11px;
-  color: var(--ex-success-text);
+  color: var(--ex-status-success-text);
 }
 
 .requirementNotePartial {
-  color: var(--ex-warning-text);
+  color: var(--ex-status-warning-text);
 }
 
 .requirementNoteMissing {
-  color: var(--ex-danger-text);
+  color: var(--ex-status-danger-text);
 }
 
 .preferredList {
   display: grid;
-  border-top: 1px solid var(--ex-hairline);
+  border-top: 1px solid var(--ex-border-hair);
 }
 
 .preferredItem {
@@ -273,7 +273,7 @@
 .preferredLabel {
   font-size: 12.5px;
   line-height: 1.6;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   flex: 1;
 }
 
@@ -295,25 +295,25 @@
   align-items: center;
   gap: 8px;
   font-size: 12.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 .processNo {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 1px solid var(--ex-border-quiet);
+  border: 1px solid var(--ex-border-soft);
   display: grid;
   place-items: center;
   font-family: var(--ex-font-mono);
   font-size: 9px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   flex-shrink: 0;
 }
 
 .notice {
   font-size: 11.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   line-height: 1.7;
 }
 
@@ -321,8 +321,8 @@
 .rail {
   width: 316px;
   flex-shrink: 0;
-  border-left: 1px solid var(--ex-line-200);
-  background: var(--ex-white);
+  border-left: 1px solid var(--ex-border);
+  background: var(--ex-bg);
   padding: 26px 24px;
   display: flex;
   flex-direction: column;
@@ -331,7 +331,7 @@
 }
 
 .matchCard {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   border-radius: 14px;
   padding: 17px 19px;
 }
@@ -352,7 +352,7 @@
 
 .matchUnit {
   font-size: 14px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .matchTally {
@@ -366,12 +366,12 @@
   font-size: 34px;
   line-height: 1;
   letter-spacing: -0.03em;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .matchLabel {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 /* 충족 / 미충족 2분할 바 — 위의 숫자를 그대로 쪼갠 것이다. */
@@ -394,11 +394,11 @@
 
 .legendItem {
   font-size: 11px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .legendCovered {
-  color: var(--ex-success-text);
+  color: var(--ex-status-success-text);
 }
 
 .legendDot {
@@ -409,20 +409,20 @@
 
 .matchRank {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   line-height: 1.65;
   margin-top: 11px;
 }
 
 .railCard {
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 14px;
   padding: 16px 18px;
 }
 
 .railCardBrew {
-  background: var(--ex-bean-50);
+  background: var(--ex-accent-surface);
   border-radius: 14px;
   padding: 16px 18px;
 }
@@ -436,11 +436,11 @@
 .railBody {
   font-size: 11.5px;
   line-height: 1.7;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .railBodyBrew {
-  color: var(--ex-bean-ink);
+  color: var(--ex-accent-ink);
 }
 
 .railCta {
@@ -448,8 +448,8 @@
   margin-top: 12px;
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 9px;
   padding: 10px;
@@ -457,7 +457,7 @@
 }
 
 .railCta:hover {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
 }
 
 .palette {
@@ -483,19 +483,19 @@
 .swatchHex {
   font-family: var(--ex-font-mono);
   font-size: 8.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .toneRow {
   display: flex;
   gap: 8px;
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   line-height: 1.65;
 }
 
 .toneKey {
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   flex-shrink: 0;
   width: 34px;
 }
@@ -510,13 +510,13 @@
 .topRecordNo {
   font-family: var(--ex-font-mono);
   font-size: 9.5px;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
   flex-shrink: 0;
 }
 
 .topRecordTitle {
   font-size: 11.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -530,8 +530,8 @@
   margin-top: 12px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 999px;
   padding: 12px;
@@ -542,9 +542,9 @@
 }
 
 .brew:hover {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
   transform: translateY(-1px);
-  color: var(--ex-white);
+  color: var(--ex-fg-on-accent);
 }
 
 /* 문서 헤더의 보조 동작 — 정의서 06b "관심 공고에 담기". */
@@ -556,14 +556,14 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   cursor: pointer;
 }
 
 /* 공고 원문 — 뽑아 놓은 것이 없으면 이게 본문이다 */
 .rawSection {
   margin-top: 26px;
-  border-top: 1px solid var(--ex-line-inner);
+  border-top: 1px solid var(--ex-border-inner);
   padding-top: 18px;
 }
 
@@ -573,7 +573,7 @@
   gap: 10px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   cursor: pointer;
   list-style: none;
 }
@@ -585,7 +585,7 @@
 .rawSummary::before {
   content: "▸";
   font-size: 10px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .rawSection[open] .rawSummary::before {
@@ -595,7 +595,7 @@
 .rawNote {
   font-size: 11.5px;
   font-weight: 400;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .rawBody {

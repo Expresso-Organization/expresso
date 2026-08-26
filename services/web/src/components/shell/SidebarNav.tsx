@@ -51,7 +51,7 @@ export function SidebarNav({ jobCount }: { jobCount?: number | undefined }) {
   return (
     <nav className={styles.primary} aria-label="주요 이동">
       <div className={styles.primaryItem}>
-        <Icon name="magnifying-glass" size={14} color="var(--ex-slate-500)" />
+        <Icon name="magnifying-glass" size={14} color="var(--ex-fg-muted)" />
         <span className={styles.primaryLabel}>검색</span>
         <span className={styles.shortcut}>⌘K</span>
       </div>
@@ -68,7 +68,7 @@ export function SidebarNav({ jobCount }: { jobCount?: number | undefined }) {
             name={item.icon}
             weight={active === item.key ? "fill" : "regular"}
             size={14}
-            color={active === item.key ? "var(--ex-ink-900)" : "var(--ex-slate-500)"}
+            color={active === item.key ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
           />
           <span className={styles.primaryLabel}>{item.label}</span>
           {item.key === "jobs" && jobCount !== undefined ? (

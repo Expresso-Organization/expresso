@@ -14,7 +14,7 @@
 .headDomain {
   font-family: var(--ex-font-mono);
   font-size: 11px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .headState {
@@ -22,8 +22,8 @@
   align-items: center;
   gap: 6px;
   font-size: 11.5px;
-  color: var(--ex-success-text);
-  background: var(--ex-success-surface);
+  color: var(--ex-status-success-text);
+  background: var(--ex-status-success-surface);
   border-radius: 6px;
   padding: 4px 9px;
   white-space: nowrap;
@@ -33,19 +33,19 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--ex-success);
+  background: var(--ex-status-success);
 }
 
 .period {
   display: flex;
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   border-radius: 8px;
   padding: 2px;
 }
 
 .periodItem {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   border: none;
   background: none;
   border-radius: 6px;
@@ -54,16 +54,16 @@
 
 .periodItemActive {
   font-weight: 600;
-  color: var(--ex-ink-900);
-  background: var(--ex-white);
+  color: var(--ex-fg);
+  background: var(--ex-bg);
 }
 
 .headButton {
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--ex-slate-700);
-  background: var(--ex-white);
-  border: 1px solid var(--ex-border-quiet);
+  color: var(--ex-fg-body);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border-soft);
   border-radius: 9px;
   padding: 8px 14px;
   white-space: nowrap;
@@ -71,18 +71,18 @@
 }
 
 .headButton:hover {
-  border-color: var(--ex-border-strong);
+  border-color: var(--ex-border-firm);
 }
 
 .headButtonPrimary {
-  color: var(--ex-white);
-  background: var(--ex-ink-900);
-  border-color: var(--ex-ink-900);
+  color: var(--ex-fg-on-inverse);
+  background: var(--ex-bg-inverse);
+  border-color: var(--ex-fg);
 }
 
 .headButtonPrimary:hover {
-  background: var(--ex-ink-900-hover);
-  border-color: var(--ex-ink-900-hover);
+  background: var(--ex-bg-inverse-hover);
+  border-color: var(--ex-fg-strong);
 }
 
 /* 뷰 탭 줄 */
@@ -90,7 +90,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  border-bottom: 1px solid var(--ex-hairline);
+  border-bottom: 1px solid var(--ex-border-hair);
   flex-shrink: 0;
 }
 
@@ -98,19 +98,19 @@
   border: none;
   background: none;
   font-size: 12.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   padding: 0 2px 9px;
   transition: color var(--ex-motion-quick);
 }
 
 .viewTab:hover {
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .viewTabActive {
   font-weight: 600;
-  color: var(--ex-ink-900);
-  border-bottom: 1.5px solid var(--ex-ink-900);
+  color: var(--ex-fg);
+  border-bottom: 1.5px solid var(--ex-fg);
   margin-bottom: -1px;
 }
 
@@ -127,8 +127,8 @@
   align-items: center;
   gap: 6px;
   font-size: 11.5px;
-  color: var(--ex-slate-700);
-  background: var(--ex-surface-50);
+  color: var(--ex-fg-body);
+  background: var(--ex-bg-sunken);
   border: none;
   border-radius: 999px;
   padding: 5px 11px;
@@ -140,8 +140,8 @@
   align-items: center;
   gap: 5px;
   font-size: 11.5px;
-  color: var(--ex-slate-500);
-  border: 1px dashed var(--ex-border-quiet);
+  color: var(--ex-fg-muted);
+  border: 1px dashed var(--ex-border-soft);
   background: none;
   border-radius: 999px;
   padding: 5px 11px;
@@ -150,7 +150,7 @@
 
 .refreshed {
   font-size: 11px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
 
@@ -163,8 +163,8 @@
 }
 
 .widget {
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 14px;
   padding: 16px 18px;
   position: relative;
@@ -193,8 +193,8 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 8px;
   padding: 2px;
   box-shadow: var(--ex-elevation-raised);
@@ -208,12 +208,12 @@
   place-items: center;
   border: none;
   background: none;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .widgetTool:hover {
-  background: var(--ex-surface-50);
-  color: var(--ex-ink-900);
+  background: var(--ex-bg-sunken);
+  color: var(--ex-fg);
 }
 
 .tileHead {
@@ -225,7 +225,7 @@
 
 .tileLabel {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 
@@ -233,7 +233,7 @@
   margin-left: auto;
   font-family: var(--ex-font-mono);
   font-size: 9.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
 
@@ -254,13 +254,13 @@
 
 .deltaUp {
   font-size: 11.5px;
-  color: var(--ex-success-text);
+  color: var(--ex-status-success-text);
   white-space: nowrap;
 }
 
 .deltaFlat {
   font-size: 11.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
 
@@ -273,12 +273,12 @@
 
 .sparkBar {
   flex: 1;
-  background: #e9edf4;
+  background: var(--ex-bg-muted);
   border-radius: 2px;
 }
 
 .sparkBarHot {
-  background: var(--ex-ink-900);
+  background: var(--ex-bg-inverse);
 }
 
 .compareRow {
@@ -293,7 +293,7 @@
 
 .compareKey {
   font-size: 10.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   width: 26px;
   flex-shrink: 0;
 }
@@ -301,7 +301,7 @@
 .compareTrack {
   flex: 1;
   height: 5px;
-  background: var(--ex-surface-100);
+  background: var(--ex-bg-muted);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -314,12 +314,12 @@
 .compareValue {
   font-family: var(--ex-font-mono);
   font-size: 10px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .tileNote {
   font-size: 10.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   line-height: 1.6;
 }
 
@@ -356,7 +356,7 @@
   align-items: center;
   gap: 5px;
   font-size: 10.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 
@@ -383,7 +383,7 @@
 .axisLabel {
   font-family: var(--ex-font-mono);
   font-size: 9.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .chartDates {
@@ -398,19 +398,19 @@
   gap: 8px;
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px solid var(--ex-hairline);
+  border-top: 1px solid var(--ex-border-hair);
 }
 
 .annotationMark {
   width: 2px;
   height: 12px;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
   flex-shrink: 0;
 }
 
 .annotationText {
   font-size: 11px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   flex: 1;
   min-width: 0;
 }
@@ -420,13 +420,13 @@
   background: none;
   padding: 0;
   font-size: 11px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 
 /* BARISTA'S READ — bean-50 지면 */
 .baristaCard {
-  background: var(--ex-bean-50);
+  background: var(--ex-accent-surface);
   border-radius: 14px;
   padding: 16px 18px;
   display: flex;
@@ -446,7 +446,7 @@
   font-family: var(--ex-font-mono);
   font-size: 9.5px;
   letter-spacing: 0.1em;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
 }
 
 .baristaPin {
@@ -455,21 +455,21 @@
   background: none;
   padding: 0;
   font-size: 10.5px;
-  color: var(--ex-espresso-text);
+  color: var(--ex-accent-text);
   white-space: nowrap;
 }
 
 .baristaBody {
   font-size: 12.5px;
   line-height: 1.8;
-  color: var(--ex-bean-ink);
+  color: var(--ex-accent-ink);
   margin-bottom: 14px;
 }
 
 .suggestionLabel {
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--ex-bean-ink);
+  color: var(--ex-accent-ink);
   margin-bottom: 8px;
 }
 
@@ -483,14 +483,14 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
   flex-shrink: 0;
   margin-top: 7px;
 }
 
 .suggestionText {
   font-size: 11.5px;
-  color: var(--ex-bean-ink);
+  color: var(--ex-accent-ink);
   line-height: 1.65;
 }
 
@@ -503,8 +503,8 @@
   width: 100%;
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 9px;
   padding: 11px;
@@ -512,7 +512,7 @@
 }
 
 .baristaButton:hover {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
 }
 
 /* 3행 */
@@ -532,7 +532,7 @@
 
 .dwellLabel {
   font-size: 11.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   width: 132px;
   flex-shrink: 0;
   white-space: nowrap;
@@ -543,21 +543,21 @@
 .dwellTrack {
   flex: 1;
   height: 5px;
-  background: var(--ex-surface-100);
+  background: var(--ex-bg-muted);
   border-radius: 999px;
   overflow: hidden;
 }
 
 .dwellFill {
   height: 100%;
-  background: var(--ex-ink-900);
+  background: var(--ex-bg-inverse);
   border-radius: 999px;
 }
 
 .dwellTime {
   font-family: var(--ex-font-mono);
   font-size: 10.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   flex-shrink: 0;
 }
 
@@ -585,7 +585,7 @@
 
 .donutLabel {
   font-size: 10px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   margin-top: 3px;
 }
 
@@ -611,7 +611,7 @@
 
 .donutLegendLabel {
   font-size: 11.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -622,15 +622,15 @@
 .donutLegendValue {
   font-family: var(--ex-font-mono);
   font-size: 10.5px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .proBadge {
   font-family: var(--ex-font-mono);
   font-size: 9px;
   letter-spacing: 0.08em;
-  color: var(--ex-espresso-text);
-  background: var(--ex-bean-50);
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
   border-radius: 4px;
   padding: 2px 6px;
 }
@@ -640,7 +640,7 @@
   align-items: center;
   gap: 9px;
   padding: 8px 0;
-  border-bottom: 1px solid var(--ex-hairline);
+  border-bottom: 1px solid var(--ex-border-hair);
 }
 
 .orgRow:last-of-type {
@@ -651,25 +651,25 @@
   width: 22px;
   height: 22px;
   border-radius: 6px;
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   display: grid;
   place-items: center;
   font-family: var(--ex-font-brand);
   font-size: 10px;
   font-weight: 500;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   flex-shrink: 0;
 }
 
 .orgDomain {
   font-family: var(--ex-font-mono);
   font-size: 11px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .orgNote {
   font-size: 10.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   margin-top: 3px;
   white-space: nowrap;
   overflow: hidden;
@@ -679,7 +679,7 @@
 .orgDwell {
   font-family: var(--ex-font-mono);
   font-size: 10.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   flex-shrink: 0;
 }
 
@@ -690,17 +690,17 @@
   gap: 7px;
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px solid var(--ex-hairline);
+  border-top: 1px solid var(--ex-border-hair);
   font-size: 10.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 /* ── 07b 드롭 존 ──────────────────────────────────────────── */
 
 .dropZone {
-  border: 1px dashed var(--ex-border-strong);
+  border: 1px dashed var(--ex-border-firm);
   border-radius: 14px;
-  background: var(--ex-row-hover);
+  background: var(--ex-bg-hover);
   display: grid;
   place-items: center;
   min-height: 110px;
@@ -710,7 +710,7 @@
 
 .dropZoneText {
   font-size: 11.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   line-height: 1.7;
 }
 
@@ -719,8 +719,8 @@
 .drawer {
   width: 400px;
   flex-shrink: 0;
-  background: var(--ex-white);
-  border-left: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border-left: 1px solid var(--ex-border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -729,7 +729,7 @@
 .drawerHead {
   height: 50px;
   flex-shrink: 0;
-  border-bottom: 1px solid var(--ex-line-inner);
+  border-bottom: 1px solid var(--ex-border-inner);
   display: flex;
   align-items: center;
   gap: 9px;
@@ -748,7 +748,7 @@
   padding: 0;
   display: grid;
   place-items: center;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .drawerBody {
@@ -762,7 +762,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  border: 1px solid var(--ex-border-quiet);
+  border: 1px solid var(--ex-border-soft);
   border-radius: 10px;
   padding: 9px 12px;
   margin-bottom: 16px;
@@ -775,11 +775,11 @@
   outline: none;
   background: none;
   font-size: 12.5px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .drawerSearchInput::placeholder {
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .metricGroup {
@@ -797,20 +797,20 @@
   font-family: var(--ex-font-mono);
   font-size: 9px;
   letter-spacing: 0.12em;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 
 .metricGroupRule {
   flex: 1;
   height: 1px;
-  background: var(--ex-hairline);
+  background: var(--ex-border-hair);
 }
 
 .metricGroupCount {
   font-family: var(--ex-font-mono);
   font-size: 9.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .metricRow {
@@ -819,9 +819,9 @@
   gap: 9px;
   width: 100%;
   padding: 9px 11px;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 10px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   text-align: left;
   cursor: grab;
   transition: border-color var(--ex-motion-quick);
@@ -832,20 +832,20 @@
 }
 
 .metricRow:hover {
-  border-color: var(--ex-border-strong);
+  border-color: var(--ex-border-firm);
 }
 
 .metricName {
   font-size: 12.5px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   flex: 1;
   min-width: 0;
 }
 
 .stateUsed {
   font-size: 10px;
-  color: var(--ex-slate-500);
-  background: var(--ex-surface-50);
+  color: var(--ex-fg-muted);
+  background: var(--ex-bg-sunken);
   border-radius: 5px;
   padding: 3px 7px;
   white-space: nowrap;
@@ -853,8 +853,8 @@
 
 .stateNew {
   font-size: 10px;
-  color: var(--ex-ink-900);
-  background: var(--ex-tint-100);
+  color: var(--ex-fg);
+  background: var(--ex-bg-tint-strong);
   border-radius: 5px;
   padding: 3px 7px;
   white-space: nowrap;
@@ -864,8 +864,8 @@
   font-family: var(--ex-font-mono);
   font-size: 9px;
   letter-spacing: 0.08em;
-  color: var(--ex-espresso-text);
-  background: var(--ex-bean-50);
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
   border-radius: 5px;
   padding: 3px 7px;
   white-space: nowrap;
@@ -874,7 +874,7 @@
 .drawerFoot {
   flex-shrink: 0;
   padding: 12px 18px 16px;
-  border-top: 1px solid var(--ex-line-inner);
+  border-top: 1px solid var(--ex-border-inner);
 }
 
 .formulaButton {
@@ -885,20 +885,20 @@
   width: 100%;
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   background: none;
-  border: 1px dashed var(--ex-border-quiet);
+  border: 1px dashed var(--ex-border-soft);
   border-radius: 10px;
   padding: 11px;
 }
 
 .formulaButton:hover {
-  border-color: var(--ex-border-strong);
+  border-color: var(--ex-border-firm);
 }
 
 /* 07c 위젯 설정 */
 .settingPreview {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   border-radius: 12px;
   padding: 16px 18px;
   margin-bottom: 16px;
@@ -926,7 +926,7 @@
 
 .settingLabel {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   width: 70px;
   flex-shrink: 0;
 }
@@ -937,12 +937,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid var(--ex-border-quiet);
+  border: 1px solid var(--ex-border-soft);
   border-radius: 8px;
   padding: 7px 10px;
   background: none;
   font-size: 12px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   text-align: left;
 }
 
@@ -958,29 +958,29 @@
   align-items: center;
   gap: 5px;
   padding: 9px 0;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 9px;
   background: none;
 }
 
 .vizOptionActive {
-  border: 1.5px solid var(--ex-ink-900);
+  border: 1.5px solid var(--ex-fg);
 }
 
 .vizLabel {
   font-size: 10px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .vizOptionActive .vizLabel {
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   font-weight: 600;
 }
 
 .spanRow {
   display: flex;
   gap: 2px;
-  background: var(--ex-line-inner);
+  background: var(--ex-border-inner);
   border-radius: 8px;
   padding: 2px;
 }
@@ -989,7 +989,7 @@
   flex: 1;
   text-align: center;
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   border: none;
   background: none;
   border-radius: 6px;
@@ -998,8 +998,8 @@
 
 .spanOptionActive {
   font-weight: 600;
-  color: var(--ex-ink-900);
-  background: var(--ex-white);
+  color: var(--ex-fg);
+  background: var(--ex-bg);
   box-shadow: 0 1px 2px rgba(22, 34, 58, 0.08);
 }
 
@@ -1012,7 +1012,7 @@
 
 .toggleLabel {
   font-size: 12px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   flex: 1;
 }
 
@@ -1020,7 +1020,7 @@
   width: 34px;
   height: 20px;
   border-radius: 999px;
-  background: #d7deea;
+  background: var(--ex-border-firm);
   border: none;
   padding: 3px;
   display: flex;
@@ -1028,7 +1028,7 @@
 }
 
 .toggleOn {
-  background: var(--ex-ink-900);
+  background: var(--ex-bg-inverse);
   justify-content: flex-end;
 }
 
@@ -1036,7 +1036,7 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--ex-white);
+  background: var(--ex-bg);
 }
 
 .settingActions {
@@ -1048,19 +1048,19 @@
 .settingAction {
   flex: 1;
   font-size: 11.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   background: none;
-  border: 1px solid var(--ex-border-quiet);
+  border: 1px solid var(--ex-border-soft);
   border-radius: 8px;
   padding: 8px 0;
 }
 
 .settingAction:hover {
-  border-color: var(--ex-border-strong);
+  border-color: var(--ex-border-firm);
 }
 
 .settingDelete {
-  color: var(--ex-danger-text);
+  color: var(--ex-status-danger-text);
 }
 
 /* 편집 모드 헤더 */
@@ -1079,12 +1079,12 @@
 /* 줄어든 값 — 늘어난 값(deltaUp)의 반대편 */
 .deltaDown {
   font-size: 11.5px;
-  color: var(--ex-danger-text);
+  color: var(--ex-status-danger-text);
   white-space: nowrap;
 }
 
 .dwellViews {
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 /* 아직 계산되지 않은 날 알림 */
@@ -1093,7 +1093,7 @@
   align-items: center;
   gap: 8px;
   padding: 9px 13px;
-  background: var(--ex-bean-50);
+  background: var(--ex-accent-surface);
   border-radius: 10px;
 }
 
@@ -1101,22 +1101,22 @@
   flex: 1;
   min-width: 0;
   font-size: 11.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   line-height: 1.6;
 }
 
 .noticeAction {
-  border: 1px solid var(--ex-border-strong);
-  background: var(--ex-surface-0);
+  border: 1px solid var(--ex-border-firm);
+  background: var(--ex-bg);
   border-radius: 7px;
   padding: 5px 11px;
   font-size: 11.5px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   white-space: nowrap;
 }
 
 .noticeAction:disabled {
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 /* 해설이 무엇을 보고 한 말인가 */
@@ -1129,15 +1129,15 @@
 
 .evidenceChip {
   font-size: 10px;
-  color: var(--ex-slate-500);
-  background: var(--ex-surface-0);
+  color: var(--ex-fg-muted);
+  background: var(--ex-bg-muted);
   border-radius: 999px;
   padding: 3px 8px;
 }
 
 .baristaError {
   font-size: 11px;
-  color: var(--ex-danger-text);
+  color: var(--ex-status-danger-text);
   line-height: 1.6;
 }
 
@@ -1154,23 +1154,23 @@
 
 .blankTitle {
   font-size: 14px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .blankBody {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   line-height: 1.7;
   max-width: 380px;
 }
 
 .blankAction {
   margin-top: 6px;
-  border: 1px solid var(--ex-border-strong);
+  border: 1px solid var(--ex-border-firm);
   border-radius: 8px;
   padding: 7px 14px;
   font-size: 12px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 /* 12칼럼 위젯 그리드 — 폭은 위젯마다 span으로 붙는다 */
@@ -1192,35 +1192,35 @@
 
 .metricWhat {
   font-size: 10.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   line-height: 1.6;
 }
 
 .metricAdd,
 .metricAddAgain {
-  border: 1px solid var(--ex-border-quiet);
-  background: var(--ex-white);
+  border: 1px solid var(--ex-border-soft);
+  background: var(--ex-bg);
   border-radius: 7px;
   padding: 4px 9px;
   font-size: 10.5px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   white-space: nowrap;
 }
 
 .metricAdd:hover,
 .metricAddAgain:hover {
-  border-color: var(--ex-border-strong);
+  border-color: var(--ex-border-firm);
 }
 
 .metricAddAgain {
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 /* 세고 있지 않은 지표 */
 .stateNone {
   font-size: 10px;
-  color: var(--ex-slate-400);
-  background: var(--ex-surface-50);
+  color: var(--ex-fg-subtle);
+  background: var(--ex-bg-sunken);
   border-radius: 999px;
   padding: 3px 8px;
   white-space: nowrap;
@@ -1229,7 +1229,7 @@
 .settingFixed {
   flex: 1;
   font-size: 11.5px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 /* 끌고 있는 위젯 — 원래 자리는 흐려지고 미리보기가 자리를 잡는다 */

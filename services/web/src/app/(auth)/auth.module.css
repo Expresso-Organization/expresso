@@ -11,7 +11,7 @@
 .frame {
   display: flex;
   min-height: 100dvh;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   overflow: hidden;
   font-size: 13px;
 }
@@ -65,7 +65,7 @@
   font-family: var(--ex-font-mono);
   font-size: 9.5px;
   letter-spacing: 0.16em;
-  color: var(--ex-crema);
+  color: var(--ex-accent-soft);
   margin-bottom: 20px;
 }
 
@@ -81,14 +81,14 @@
   font-weight: 600;
   letter-spacing: -0.035em;
   line-height: 1.45;
-  color: var(--ex-white);
+  color: var(--ex-fg-on-accent);
   margin-bottom: 18px;
 }
 
 .lede {
   font-size: 13.5px;
   line-height: 1.85;
-  color: var(--ex-on-dark-body);
+  color: var(--ex-fg-on-inverse-body);
   max-width: 400px;
 }
 
@@ -103,13 +103,13 @@
   font-family: var(--ex-font-brand);
   font-size: 17px;
   font-weight: 400;
-  color: var(--ex-white);
+  color: var(--ex-fg-on-accent);
   margin-bottom: 4px;
 }
 
 .statLabel {
   font-size: 11px;
-  color: var(--ex-on-dark-muted);
+  color: var(--ex-fg-on-inverse-muted);
   white-space: nowrap;
 }
 
@@ -120,7 +120,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--ex-form-surface);
+  background: var(--ex-bg-form);
   padding: 40px 24px;
 }
 
@@ -137,7 +137,7 @@
 
 .subtitle {
   font-size: 13px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   margin-bottom: 28px;
 }
 
@@ -158,20 +158,20 @@
   gap: 10px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--ex-ink-900);
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  color: var(--ex-fg);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 10px;
   padding: 12px;
   transition: background var(--ex-motion-quick);
 }
 
 .social:hover:not(:disabled) {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
 }
 
 .social:disabled {
-  color: var(--ex-slate-300);
+  color: var(--ex-fg-faint);
   cursor: not-allowed;
 }
 
@@ -185,12 +185,12 @@
 .dividerLine {
   flex: 1;
   height: 1px;
-  background: var(--ex-chrome-border);
+  background: var(--ex-border-chrome);
 }
 
 .dividerLabel {
   font-size: 11.5px;
-  color: var(--ex-slate-300);
+  color: var(--ex-fg-faint);
 }
 
 /* 필드 */
@@ -207,7 +207,7 @@
 .fieldLabel {
   font-size: 12px;
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   white-space: nowrap;
 }
 
@@ -215,48 +215,48 @@
   margin-left: auto;
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
 }
 
 .input {
   width: 100%;
   display: block;
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 10px;
   padding: 12px 14px;
   font-size: 13px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   transition:
     border-color var(--ex-motion-quick),
     box-shadow var(--ex-motion-quick);
 }
 
 .input::placeholder {
-  color: var(--ex-slate-300);
+  color: var(--ex-fg-faint);
 }
 
 /* 값이 채워진 필드는 보더가 진해진다 (화면 정의서의 채워진 입력) */
 .input:hover {
-  border-color: var(--ex-border-strong);
+  border-color: var(--ex-border-firm);
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--ex-ink-900);
+  border-color: var(--ex-fg);
   box-shadow: 0 0 0 3px rgba(22, 34, 58, 0.13);
 }
 
 .inputInvalid,
 .inputInvalid:hover {
-  border-color: var(--ex-danger);
-  background: var(--ex-danger-surface);
+  border-color: var(--ex-status-danger);
+  background: var(--ex-status-danger-surface);
 }
 
 .fieldError {
   margin-top: 7px;
   font-size: 11.5px;
-  color: var(--ex-danger-text);
+  color: var(--ex-status-danger-text);
 }
 
 /* 비밀번호 강도 4칸 */
@@ -270,17 +270,17 @@
   flex: 1;
   height: 3px;
   border-radius: 2px;
-  background: var(--ex-chrome-border);
+  background: var(--ex-border-chrome);
 }
 
 .strengthOn {
-  background: var(--ex-success);
+  background: var(--ex-status-success);
 }
 
 .strengthLabel {
   font-size: 11px;
   font-weight: 600;
-  color: var(--ex-success-text);
+  color: var(--ex-status-success-text);
   white-space: nowrap;
 }
 
@@ -302,8 +302,8 @@
   width: 16px;
   height: 16px;
   border-radius: 5px;
-  border: 1.5px solid var(--ex-border-strong);
-  background: var(--ex-white);
+  border: 1.5px solid var(--ex-border-firm);
+  background: var(--ex-bg);
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -312,18 +312,18 @@
 }
 
 .consentBoxOn {
-  background: var(--ex-espresso);
-  border-color: var(--ex-espresso);
+  background: var(--ex-accent);
+  border-color: var(--ex-accent);
 }
 
 .consentText {
   font-size: 11.5px;
   line-height: 1.65;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .consentLink {
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -333,8 +333,8 @@
   width: 100%;
   font-size: 13.5px;
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 10px;
   padding: 13px;
@@ -342,11 +342,11 @@
 }
 
 .submit:hover:not(:disabled) {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
 }
 
 .submit:disabled {
-  background: var(--ex-slate-300);
+  background: var(--ex-fg-faint);
   cursor: not-allowed;
 }
 
@@ -361,26 +361,26 @@
 .formError {
   margin-bottom: 14px;
   padding: 11px 14px;
-  border: 1px solid var(--ex-danger);
+  border: 1px solid var(--ex-status-danger);
   border-radius: 10px;
-  background: var(--ex-danger-surface);
+  background: var(--ex-status-danger-surface);
   font-size: 12.5px;
-  color: var(--ex-danger-text);
+  color: var(--ex-status-danger-text);
 }
 
 .foot {
   text-align: center;
   font-size: 12.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .footLink {
   font-weight: 600;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
 }
 
 .footLink:hover {
-  color: var(--ex-espresso-hover);
+  color: var(--ex-accent-hover);
 }
 
 /* 1024 미만 — 브랜드 패널을 접는다 (§12) */

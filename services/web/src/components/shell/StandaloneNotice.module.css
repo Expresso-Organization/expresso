@@ -14,7 +14,7 @@
   gap: 10px;
   padding: 40px 24px;
   text-align: center;
-  background: var(--ex-white);
+  background: var(--ex-bg);
 }
 
 .mark {
@@ -24,13 +24,13 @@
 .title {
   font-size: 15px;
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .body {
   font-size: 13px;
   line-height: 1.7;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   max-width: 400px;
 }
 
@@ -45,9 +45,9 @@
   height: 34px;
   padding: 0 16px;
   border-radius: 8px;
-  border: 1px solid var(--ex-ink-900);
-  background: var(--ex-ink-900);
-  color: var(--ex-white);
+  border: 1px solid var(--ex-fg);
+  background: var(--ex-bg-inverse);
+  color: var(--ex-fg-on-inverse);
   font-size: 13px;
   font-weight: 500;
   display: inline-flex;
@@ -56,22 +56,22 @@
 }
 
 .action:hover {
-  background: var(--ex-ink-900-hover);
+  background: var(--ex-bg-inverse-hover);
 }
 
 .actionGhost {
-  border-color: var(--ex-line-200);
-  background: var(--ex-white);
-  color: var(--ex-slate-700);
+  border-color: var(--ex-border);
+  background: var(--ex-bg);
+  color: var(--ex-fg-body);
 }
 
 .actionGhost:hover {
-  background: var(--ex-line-inner);
+  background: var(--ex-border-inner);
 }
 
 .digest {
   font-family: var(--ex-font-mono);
   font-size: 11px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   margin-top: 4px;
 }

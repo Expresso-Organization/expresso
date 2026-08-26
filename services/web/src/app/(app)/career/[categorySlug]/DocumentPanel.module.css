@@ -3,7 +3,7 @@
 .panel {
   width: 452px;
   flex-shrink: 0;
-  border-left: 1px solid var(--ex-chrome-border);
+  border-left: 1px solid var(--ex-border-chrome);
   display: flex;
   flex-direction: column;
 }
@@ -11,7 +11,7 @@
 .head {
   height: 42px;
   flex-shrink: 0;
-  border-bottom: 1px solid var(--ex-hairline);
+  border-bottom: 1px solid var(--ex-border-hair);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -20,7 +20,7 @@
 
 .headLabel {
   font-size: 12px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .headRight {
@@ -36,7 +36,7 @@
   padding: 0;
   display: grid;
   place-items: center;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .body {
@@ -76,12 +76,12 @@
 
 .propertyLabelText {
   font-size: 12px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .propertyValue {
   font-size: 12.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 .propertyChips {
@@ -93,28 +93,28 @@
 
 .chip {
   font-size: 11.5px;
-  color: var(--ex-slate-700);
-  background: var(--ex-line-inner);
+  color: var(--ex-fg-body);
+  background: var(--ex-border-inner);
   border-radius: 5px;
   padding: 4px 9px;
 }
 
 .chipSignature {
   font-size: 11.5px;
-  color: var(--ex-espresso-text);
-  background: var(--ex-bean-50);
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
   border-radius: 5px;
   padding: 4px 9px;
 }
 
 .chipAdd {
   font-size: 12px;
-  color: var(--ex-border-strong);
+  color: var(--ex-border-firm);
 }
 
 .divider {
   height: 1px;
-  background: var(--ex-hairline);
+  background: var(--ex-border-hair);
   margin-bottom: 18px;
 }
 
@@ -133,7 +133,7 @@
 .blockText {
   font-size: 13px;
   line-height: 1.85;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   white-space: pre-wrap;
 }
 
@@ -148,19 +148,19 @@
 }
 
 .bulletDot {
-  color: var(--ex-border-strong);
+  color: var(--ex-border-firm);
   font-size: 13px;
 }
 
 .bulletText {
   font-size: 13px;
   line-height: 1.8;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 /* AI가 정리한 교훈 — crema 좌측 보더 */
 .aiInsight {
-  border-left: 2px solid var(--ex-crema);
+  border-left: 2px solid var(--ex-accent-soft);
   padding: 2px 0 2px 14px;
 }
 
@@ -175,12 +175,12 @@
   font-family: var(--ex-font-mono);
   font-size: 9px;
   letter-spacing: 0.1em;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
 }
 
 .aiInsightHint {
   font-size: 10.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .placeholder {
@@ -192,13 +192,13 @@
 
 .placeholderText {
   font-size: 13px;
-  color: var(--ex-border-strong);
+  color: var(--ex-border-firm);
 }
 
 /* 하단 바리스타 요청 바 */
 .foot {
   flex-shrink: 0;
-  border-top: 1px solid var(--ex-hairline);
+  border-top: 1px solid var(--ex-border-hair);
   padding: 12px 20px;
 }
 
@@ -211,8 +211,8 @@
 
 .quickAction {
   font-size: 11.5px;
-  color: var(--ex-slate-700);
-  background: var(--ex-surface-50);
+  color: var(--ex-fg-body);
+  background: var(--ex-bg-sunken);
   border: none;
   border-radius: 999px;
   padding: 6px 12px;
@@ -221,23 +221,23 @@
 }
 
 .quickAction:hover {
-  background: var(--ex-surface-100);
+  background: var(--ex-bg-muted);
 }
 
 .quickActionSignature {
-  color: var(--ex-espresso-text);
-  background: var(--ex-bean-50);
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
 }
 
 .quickActionSignature:hover {
-  background: var(--ex-bean-100);
+  background: var(--ex-accent-surface-hover);
 }
 
 .composer {
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 10px;
   padding: 10px 13px;
 }
@@ -249,18 +249,18 @@
   outline: none;
   background: none;
   font-size: 12.5px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .composerInput::placeholder {
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .composerSend {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: var(--ex-ink-900);
+  background: var(--ex-bg-inverse);
   border: none;
   display: grid;
   place-items: center;
@@ -268,7 +268,7 @@
 }
 
 .composerSend:hover {
-  background: var(--ex-ink-900-hover);
+  background: var(--ex-bg-inverse-hover);
 }
 
 /* 선택된 기록이 없을 때 */
@@ -283,5 +283,5 @@
 .noneText {
   font-size: 12.5px;
   line-height: 1.8;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }

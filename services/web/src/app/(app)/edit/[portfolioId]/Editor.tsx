@@ -186,14 +186,14 @@ export function Editor({
               name={item.icon}
               weight={item.active ? "fill" : "regular"}
               size={17}
-              color={item.active ? "var(--ex-ink-900)" : "var(--ex-slate-500)"}
+              color={item.active ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
             />
             {item.dot ? <span className={styles.railDot} /> : null}
           </Link>
         ))}
         <div className={styles.railFoot}>
           <button type="button" className={styles.railButton} aria-label="도움말">
-            <Icon name="question" size={17} color="var(--ex-slate-500)" />
+            <Icon name="question" size={17} color="var(--ex-fg-muted)" />
           </button>
           <span className={styles.railAvatar}>{displayName.slice(0, 1)}</span>
         </div>
@@ -239,10 +239,10 @@ export function Editor({
                 aria-pressed="true"
                 className={`${styles.viewportButton} ${styles.viewportButtonActive}`}
               >
-                <Icon name="desktop" size={15} color="var(--ex-ink-900)" />
+                <Icon name="desktop" size={15} color="var(--ex-fg)" />
               </button>
               <button type="button" aria-label="모바일" className={styles.viewportButton}>
-                <Icon name="device-mobile" size={15} color="var(--ex-slate-500)" />
+                <Icon name="device-mobile" size={15} color="var(--ex-fg-muted)" />
               </button>
             </div>
             <span className={styles.toolbarRule} />
@@ -362,7 +362,7 @@ export function Editor({
                     <Icon
                       name={section.visible ? "eye" : "eye-slash"}
                       size={13}
-                      color={section.visible ? "var(--ex-border-strong)" : "var(--ex-slate-400)"}
+                      color={section.visible ? "var(--ex-border-firm)" : "var(--ex-fg-subtle)"}
                     />
                   </button>
                 </div>
@@ -377,7 +377,7 @@ export function Editor({
             <div className={styles.suggestion}>
               <div className={styles.suggestionCard}>
                 <div className={styles.suggestionHead}>
-                  <Icon name="lightbulb" size={14} color="var(--ex-espresso)" />
+                  <Icon name="lightbulb" size={14} color="var(--ex-accent-text)" />
                   <span className={styles.suggestionTitle}>한 가지 제안</span>
                 </div>
                 <div className={styles.suggestionBody}>{EDITOR_SUGGESTION.text}</div>
@@ -394,17 +394,17 @@ export function Editor({
 
             <div className={styles.sectionsFoot}>
               <button type="button" className={styles.footRow}>
-                <Icon name="palette" size={14} color="var(--ex-slate-500)" />
+                <Icon name="palette" size={14} color="var(--ex-fg-muted)" />
                 <span className={styles.footLabel}>테마 · 글꼴</span>
                 <span className={styles.footSwatch} />
               </button>
               <button type="button" className={styles.footRow}>
-                <Icon name="ruler" size={14} color="var(--ex-slate-500)" />
+                <Icon name="ruler" size={14} color="var(--ex-fg-muted)" />
                 <span className={styles.footLabel}>간격 · 여백 기준</span>
                 <span className={styles.footValue}>보통</span>
               </button>
               <button type="button" className={styles.footRow}>
-                <Icon name="code-simple" size={14} color="var(--ex-slate-500)" />
+                <Icon name="code-simple" size={14} color="var(--ex-fg-muted)" />
                 <span className={styles.footLabel}>HTML 직접 보기</span>
               </button>
             </div>
@@ -502,7 +502,7 @@ export function Editor({
                 {chosen ? (
                   <>
                     <span className={styles.crumb}>{chosen.sectionTitle}</span>
-                    <Icon name="caret-right" size={9} color="var(--ex-border-strong)" />
+                    <Icon name="caret-right" size={9} color="var(--ex-border-firm)" />
                     <span className={`${styles.crumb} ${styles.crumbCurrent}`}>
                       {chosen.path.split(" › ")[1]} {BLOCK_LABEL[chosen.block.kind] ?? "블록"}
                     </span>
@@ -520,7 +520,7 @@ export function Editor({
                   disabled={!chosen || chosen.index === 0 || blockPending}
                   onClick={() => chosen && moveBlock(chosen, -1)}
                 >
-                  <Icon name="arrow-up" size={13} color="var(--ex-slate-500)" />
+                  <Icon name="arrow-up" size={13} color="var(--ex-fg-muted)" />
                 </button>
                 <button
                   type="button"
@@ -529,7 +529,7 @@ export function Editor({
                   disabled={!chosen || chosen.index === chosen.siblings.length - 1 || blockPending}
                   onClick={() => chosen && moveBlock(chosen, 1)}
                 >
-                  <Icon name="arrow-down" size={13} color="var(--ex-slate-500)" />
+                  <Icon name="arrow-down" size={13} color="var(--ex-fg-muted)" />
                 </button>
                 <button
                   type="button"
@@ -538,7 +538,7 @@ export function Editor({
                   disabled={!chosen || blockPending}
                   onClick={() => chosen && duplicateBlock(chosen.block.id)}
                 >
-                  <Icon name="copy" size={13} color="var(--ex-slate-500)" />
+                  <Icon name="copy" size={13} color="var(--ex-fg-muted)" />
                 </button>
                 <button
                   type="button"
@@ -547,7 +547,7 @@ export function Editor({
                   disabled={!chosen || blockPending}
                   onClick={() => chosen && deleteBlock(chosen.block.id)}
                 >
-                  <Icon name="trash" size={13} color="var(--ex-slate-500)" />
+                  <Icon name="trash" size={13} color="var(--ex-fg-muted)" />
                 </button>
                 {blockResult.error || styleResult.error ? (
                   <span className={styles.statusError}>
@@ -581,11 +581,11 @@ export function Editor({
               <span className={styles.statusRule} />
               <div className={styles.zoom}>
                 <button type="button" className={styles.iconAction} aria-label="축소">
-                  <Icon name="minus" size={12} color="var(--ex-slate-500)" />
+                  <Icon name="minus" size={12} color="var(--ex-fg-muted)" />
                 </button>
                 <span className={styles.zoomValue}>72%</span>
                 <button type="button" className={styles.iconAction} aria-label="확대">
-                  <Icon name="plus" size={12} color="var(--ex-slate-500)" />
+                  <Icon name="plus" size={12} color="var(--ex-fg-muted)" />
                 </button>
               </div>
             </div>

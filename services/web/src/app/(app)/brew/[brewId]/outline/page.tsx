@@ -109,18 +109,18 @@ export default async function OutlinePage({
     >
       <div className={styles.body}>
         <div className={styles.topBar}>
-          <Icon name="list-checks" weight="fill" size={15} color="var(--ex-espresso)" />
+          <Icon name="list-checks" weight="fill" size={15} color="var(--ex-accent-text)" />
           <span className={styles.topTitle}>
             {plan ? "포트폴리오 설계안 v1" : "컨텍스트 문서"} · 섹션 {recipe.sections.length}개
           </span>
           <span className={styles.topRule} />
           <span className={styles.topLabel}>읽은 것</span>
           <span className={styles.readChip}>
-            <Icon name="file-text" size={10} color="var(--ex-espresso)" />
+            <Icon name="file-text" size={10} color="var(--ex-accent-text)" />
             고른 기록 {brew.materials.selected}건
           </span>
           <span className={styles.readChip}>
-            <Icon name="link-simple" size={10} color="var(--ex-espresso)" />
+            <Icon name="link-simple" size={10} color="var(--ex-accent-text)" />
             근거 {recipe.evidencePaths.length}개
           </span>
           <div className={styles.topRight}>
@@ -175,7 +175,7 @@ export default async function OutlinePage({
           <section className={`${styles.panel} ${styles.document}`} aria-label="컨텍스트 문서">
             <div className={styles.documentHead}>
               <div className={styles.documentTitleRow}>
-                <Icon name="file-text" size={15} color="var(--ex-espresso)" />
+                <Icon name="file-text" size={15} color="var(--ex-accent-text)" />
                 <span className={styles.documentTitle}>{active.title}</span>
               </div>
               <div className={styles.documentSub}>
@@ -186,7 +186,7 @@ export default async function OutlinePage({
                 <span className={styles.documentRefs}>
                   {refsOf(active).map((ref) => (
                     <span key={ref.label} className={styles.readChip}>
-                      <Icon name={ref.icon} size={10} color="var(--ex-espresso)" />
+                      <Icon name={ref.icon} size={10} color="var(--ex-accent-text)" />
                       {ref.label}
                     </span>
                   ))}
@@ -220,7 +220,7 @@ export default async function OutlinePage({
                     <Icon
                       name="dots-six-vertical"
                       size={12}
-                      color="var(--ex-border-quiet)"
+                      color="var(--ex-border-soft)"
                       style={{ flexShrink: 0, marginTop: "3px" }}
                     />
                     <span className={styles.pointText}>{item.pointText}</span>
@@ -230,7 +230,7 @@ export default async function OutlinePage({
                           <Icon
                             name={SOURCE_ICON[path.sourceType]}
                             size={9.5}
-                            color="var(--ex-espresso)"
+                            color="var(--ex-accent-text)"
                           />
                           {path.sourceLabel.slice(0, 24)}
                         </span>
@@ -279,7 +279,7 @@ export default async function OutlinePage({
               ) : null}
 
               <div className={styles.brewNotice}>
-                <Icon name="coffee" weight="fill" size={13} color="var(--ex-espresso)" />
+                <Icon name="coffee" weight="fill" size={13} color="var(--ex-accent-text)" />
                 <span className={styles.brewNoticeText}>
                   다음 단계에서 이 컨텍스트대로 문장이 만들어집니다
                 </span>
@@ -371,7 +371,7 @@ export default async function OutlinePage({
                   </div>
                   {recipe.unusedSources.map((unused) => (
                     <div key={unused.recordId} className={styles.unusedCard}>
-                      <Icon name="file-text" size={13} color="var(--ex-slate-500)" />
+                      <Icon name="file-text" size={13} color="var(--ex-fg-muted)" />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div className={styles.unusedReason}>{unused.reason}</div>
                       </div>

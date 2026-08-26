@@ -1,6 +1,6 @@
 .page {
   min-height: 100vh;
-  background: var(--ex-canvas);
+  background: var(--ex-bg-canvas);
   padding: 32px 28px 64px;
 }
 
@@ -19,7 +19,7 @@
 .note {
   margin: 0;
   font-size: 13px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .grid {
@@ -45,7 +45,7 @@
 .candidateNo {
   font-family: var(--ex-font-mono);
   font-size: 10px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .candidateName {
@@ -57,23 +57,23 @@
   margin-left: auto;
   font-family: var(--ex-font-mono);
   font-size: 10px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .rationale {
   margin: 0;
   font-size: 12.5px;
   line-height: 1.6;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   min-height: 40px;
 }
 
 /* 실제 지면을 축소해 보여준다 — 폭 1080을 카드 폭에 맞춰 줄인다. */
 .frame {
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 14px;
   overflow: hidden;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   height: 560px;
 }
 
@@ -98,7 +98,7 @@
   margin: 0 auto;
   padding: 40px 0;
   font-size: 13.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 /* 고르는 버튼은 미리보기 아래에 붙는다 — 보고 나서 고른다. */
@@ -114,19 +114,19 @@
 }
 
 .choose {
-  border: 1px solid var(--ex-line-200);
-  background: var(--ex-white);
+  border: 1px solid var(--ex-border);
+  background: var(--ex-bg);
   color: var(--ex-ink);
 }
 
 .choose:hover {
-  border-color: var(--ex-espresso);
-  color: var(--ex-espresso);
+  border-color: var(--ex-accent);
+  color: var(--ex-accent-text);
 }
 
 .chosen {
-  border: 1px solid var(--ex-espresso);
-  background: var(--ex-espresso);
-  color: var(--ex-white);
+  border: 1px solid var(--ex-accent);
+  background: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
   cursor: default;
 }

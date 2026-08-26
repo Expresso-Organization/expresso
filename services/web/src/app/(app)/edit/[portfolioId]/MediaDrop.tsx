@@ -67,7 +67,7 @@ export function MediaDrop({
   return (
     <div className={styles.mediaDrop}>
       <div className={styles.mediaHead}>
-        <Icon name="image" size={13} color="var(--ex-slate-500)" />
+        <Icon name="image" size={13} color="var(--ex-fg-muted)" />
         <span className={styles.mediaTitle}>{sectionTitle}에 이미지 놓기</span>
       </div>
 

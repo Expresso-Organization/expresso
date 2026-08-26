@@ -73,10 +73,10 @@ const CONDITION_AXIS: Record<JobSearchCondition["field"], string> = {
  * (§8.1). 요구가 0건인 축은 계산에서 빠지므로 줄도 그리지 않는다.
  */
 const AXIS_LABEL = [
-  ["technology", "기술 스택", "#16223A"],
-  ["impact", "규모 · 지표", "#35455F"],
-  ["role", "역할 · 연차", "#5A6B87"],
-  ["conditions", "근무 조건", "#C7D2E2"],
+  ["technology", "기술 스택", "var(--ex-fg)"],
+  ["impact", "규모 · 지표", "var(--ex-fg-body)"],
+  ["role", "역할 · 연차", "var(--ex-fg-muted)"],
+  ["conditions", "근무 조건", "var(--ex-border-firm)"],
 ] as const;
 
 function matchAxes(postings: readonly JobPostingSummary[]) {
@@ -359,12 +359,12 @@ export default async function JobsPage({
         <>
           <span className={styles.headNote}>{collectionNote(sources)}</span>
           <button type="button" className={styles.headAction}>
-            <Icon name="bookmark-simple" size={14} color="var(--ex-slate-500)" />
+            <Icon name="bookmark-simple" size={14} color="var(--ex-fg-muted)" />
             관심 공고 {watched.summary.total}
           </button>
           <span className={styles.headRule} />
           <button type="button" className={styles.headAction}>
-            <Icon name="bell-simple" size={14} color="var(--ex-slate-500)" />
+            <Icon name="bell-simple" size={14} color="var(--ex-fg-muted)" />
             알림 설정
           </button>
         </>
@@ -540,7 +540,7 @@ function SearchQueryCard({
   return (
     <div className={styles.queryCard}>
       <form className={styles.queryRow} action="/jobs">
-        <Icon name="sparkle" size={18} color="var(--ex-espresso)" />
+        <Icon name="sparkle" size={18} color="var(--ex-accent-text)" />
         <input
           name="q"
           defaultValue={query}
@@ -568,7 +568,7 @@ function SearchQueryCard({
             <Icon
               name={condition.enabled ? "caret-down" : "x"}
               size={10}
-              color={condition.enabled ? undefined : "#C0755F"}
+              color={condition.enabled ? undefined : "var(--ex-accent-text)"}
             />
           </button>
         ))}
@@ -587,7 +587,7 @@ function SearchQueryCard({
 function BrowseSearchBar() {
   return (
     <form className={styles.searchBar} action="/jobs">
-      <Icon name="sparkle" size={18} color="var(--ex-espresso)" />
+      <Icon name="sparkle" size={18} color="var(--ex-accent-text)" />
       <input
         name="q"
         className={styles.searchInput}
@@ -622,13 +622,13 @@ function SearchRail({
     <>
       <div className={styles.railCardBrew}>
         <div className={styles.brewHead}>
-          <Icon name="coffee" weight="fill" size={15} color="var(--ex-espresso)" />
+          <Icon name="coffee" weight="fill" size={15} color="var(--ex-accent-text)" />
           <span className={styles.brewLabel}>이 결과가 요구하는 것</span>
         </div>
         <p className={styles.brewBody}>
           {top ? (
             <>
-              {total}건 중 <b style={{ color: "var(--ex-ink-900)" }}>{top.count}건</b>이{" "}
+              {total}건 중 <b style={{ color: "var(--ex-fg)" }}>{top.count}건</b>이{" "}
               {top.label}을 요구합니다. 지금 기록에는 근거가 없습니다.
             </>
           ) : (
@@ -708,7 +708,7 @@ function SearchRail({
               href={{ pathname: "/jobs", query: { q: search.query } }}
               className={styles.recentRow}
             >
-              <Icon name="clock-counter-clockwise" size={14} color="var(--ex-slate-500)" />
+              <Icon name="clock-counter-clockwise" size={14} color="var(--ex-fg-muted)" />
               <span className={styles.recentText}>{search.query}</span>
               <span className={styles.recentCount}>{search.resultCount}건</span>
             </Link>
@@ -762,7 +762,7 @@ function BrowseRail({
       {gap ? (
         <div className={styles.railCardBrew}>
           <div className={styles.brewHead}>
-            <Icon name="coffee" weight="fill" size={15} color="var(--ex-espresso)" />
+            <Icon name="coffee" weight="fill" size={15} color="var(--ex-accent-text)" />
             <span className={styles.brewLabel}>비어 있는 재료</span>
           </div>
           <div className={styles.brewInnerTitle}>
@@ -811,7 +811,7 @@ function BrowseRail({
           <button
             type="button"
             className={styles.brewCta}
-            style={{ background: "var(--ex-ink-900)" }}
+            style={{ background: "var(--ex-bg-inverse)" }}
           >
             선택한 공고로 포트폴리오 만들기
           </button>

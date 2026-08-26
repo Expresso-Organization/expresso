@@ -60,7 +60,7 @@ export function CommandPalette() {
         >
           <div className={styles.palette} role="dialog" aria-label="통합 검색">
             <div className={styles.queryRow}>
-              <Icon name="magnifying-glass" size={17} color="var(--ex-slate-500)" />
+              <Icon name="magnifying-glass" size={17} color="var(--ex-fg-muted)" />
               <span className={styles.crumb}>홈</span>
               <span className={styles.crumb}>오늘 할 일</span>
               <input

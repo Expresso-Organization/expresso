@@ -54,16 +54,16 @@
 
 /* 밝은 지면 — 정의서 기준값 그대로 */
 .light {
-  --ex-your-rest: var(--ex-ink-900);
-  --ex-your-shift: var(--ex-espresso);
+  --ex-your-rest: var(--ex-fg);
+  --ex-your-shift: var(--ex-accent-text);
 }
 
 .light .lead {
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .light .word {
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
 }
 
 /*
@@ -74,14 +74,14 @@
  * 크레마로 올린다.
  */
 .dark {
-  --ex-your-rest: var(--ex-white);
-  --ex-your-shift: var(--ex-crema);
+  --ex-your-rest: var(--ex-fg-on-accent);
+  --ex-your-shift: var(--ex-accent-soft);
 }
 
 .dark .lead {
-  color: var(--ex-white);
+  color: var(--ex-fg-on-accent);
 }
 
 .dark .word {
-  color: var(--ex-crema);
+  color: var(--ex-accent-soft);
 }

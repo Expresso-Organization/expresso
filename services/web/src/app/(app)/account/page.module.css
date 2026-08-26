@@ -11,7 +11,7 @@
 .nav {
   width: 200px;
   flex-shrink: 0;
-  border-right: 1px solid var(--ex-line-200);
+  border-right: 1px solid var(--ex-border);
   padding: 22px 12px;
   display: grid;
   gap: 1px;
@@ -29,19 +29,19 @@
   width: 100%;
   text-align: left;
   font-size: 12.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   transition: background var(--ex-motion-instant);
 }
 
 .navItem:hover {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
 }
 
 .navItemActive,
 .navItemActive:hover {
-  background: var(--ex-tint-50);
+  background: var(--ex-bg-tint);
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .main {
@@ -61,7 +61,7 @@
 .intro {
   font-size: 13px;
   line-height: 1.75;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   max-width: 640px;
   margin-bottom: 24px;
 }
@@ -70,7 +70,7 @@
   font-family: var(--ex-font-mono);
   font-size: 9px;
   letter-spacing: 0.12em;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   margin-bottom: 12px;
 }
 
@@ -86,8 +86,8 @@
 }
 
 .usageCard {
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 14px;
   padding: 16px 18px;
 }
@@ -101,14 +101,14 @@
 
 .usageLabel {
   font-size: 12px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .usageValue {
   margin-left: auto;
   font-family: var(--ex-font-mono);
   font-size: 12px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .usageSlots {
@@ -121,16 +121,16 @@
   flex: 1;
   height: 5px;
   border-radius: 999px;
-  background: var(--ex-line-200);
+  background: var(--ex-border);
 }
 
 .usageSlotUsed {
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
 }
 
 .usageResets {
   font-size: 10.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 /* 요금제 3단 */
@@ -141,8 +141,8 @@
 }
 
 .plan {
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 16px;
   padding: 20px 22px;
   display: flex;
@@ -151,8 +151,8 @@
 
 /* 사용 중인 플랜만 espresso 보더 — 시그니처 문맥 */
 .planCurrent {
-  border: 1.5px solid var(--ex-espresso);
-  background: #fdf6f1;
+  border: 1.5px solid var(--ex-accent);
+  background: var(--ex-accent-surface);
 }
 
 .planHead {
@@ -173,15 +173,15 @@
   font-family: var(--ex-font-mono);
   font-size: 9px;
   letter-spacing: 0.08em;
-  color: var(--ex-espresso-text);
-  background: var(--ex-bean-50);
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
   border-radius: 4px;
   padding: 2px 6px;
 }
 
 .planPrice {
   font-size: 13px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   margin-bottom: 16px;
 }
 
@@ -191,7 +191,7 @@
   gap: 8px;
   padding: 5px 0;
   font-size: 12px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 .planCta {
@@ -203,26 +203,26 @@
   width: 100%;
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--ex-slate-700);
-  background: var(--ex-white);
-  border: 1px solid var(--ex-border-quiet);
+  color: var(--ex-fg-body);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border-soft);
   border-radius: 9px;
   padding: 10px;
   transition: border-color var(--ex-motion-quick);
 }
 
 .planButton:hover {
-  border-color: var(--ex-border-strong);
+  border-color: var(--ex-border-firm);
 }
 
 .planButtonCurrent {
-  color: var(--ex-espresso-text);
+  color: var(--ex-accent-text);
   background: none;
   border-color: rgba(154, 64, 48, 0.32);
 }
 
 .planButtonCurrent:hover {
-  border-color: var(--ex-espresso);
+  border-color: var(--ex-accent);
 }
 
 /* 결제 내역 */
@@ -231,20 +231,20 @@
   align-items: center;
   gap: 14px;
   padding: 12px 0;
-  border-bottom: 1px solid var(--ex-hairline);
+  border-bottom: 1px solid var(--ex-border-hair);
 }
 
 .billingDate {
   font-family: var(--ex-font-mono);
   font-size: 11px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   width: 92px;
   flex-shrink: 0;
 }
 
 .billingItem {
   font-size: 12.5px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   flex: 1;
   min-width: 0;
 }
@@ -252,13 +252,13 @@
 .billingAmount {
   font-family: var(--ex-font-mono);
   font-size: 12px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .billingState {
   font-size: 11px;
-  color: var(--ex-success-text);
-  background: var(--ex-success-surface);
+  color: var(--ex-status-success-text);
+  background: var(--ex-status-success-surface);
   border-radius: 6px;
   padding: 4px 9px;
   white-space: nowrap;
@@ -269,7 +269,7 @@
   background: none;
   padding: 0;
   font-size: 11.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   white-space: nowrap;
 }
 
@@ -279,9 +279,9 @@
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 12px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
 }
 
 .dataRow + .dataRow {
@@ -291,16 +291,16 @@
 .dataTitle {
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .dataTitleDanger {
-  color: var(--ex-danger-text);
+  color: var(--ex-status-danger-text);
 }
 
 .dataNote {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   margin-top: 4px;
 }
 
@@ -308,9 +308,9 @@
   margin-left: auto;
   font-size: 12px;
   font-weight: 600;
-  color: var(--ex-slate-700);
-  background: var(--ex-white);
-  border: 1px solid var(--ex-border-quiet);
+  color: var(--ex-fg-body);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border-soft);
   border-radius: 9px;
   padding: 8px 14px;
   white-space: nowrap;
@@ -318,7 +318,7 @@
 }
 
 .dataActionDanger {
-  color: var(--ex-danger-text);
+  color: var(--ex-status-danger-text);
   border-color: rgba(226, 84, 58, 0.32);
 }
 
@@ -327,11 +327,11 @@
   align-items: flex-start;
   gap: 9px;
   padding: 13px 15px;
-  background: var(--ex-bean-50);
+  background: var(--ex-accent-surface);
   border-radius: 12px;
   font-size: 11.5px;
   line-height: 1.7;
-  color: var(--ex-bean-ink);
+  color: var(--ex-accent-ink);
 }
 
 /* ── AI 사용 동의 ─────────────────────────────────────────── */
@@ -346,9 +346,9 @@
   align-items: center;
   gap: 16px;
   padding: 14px 16px;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 12px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
 }
 
 .consentName {
@@ -360,13 +360,13 @@
   margin-top: 3px;
   font-size: 12.5px;
   line-height: 1.6;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .consentRenew {
   margin-top: 5px;
   font-size: 12px;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
 }
 
 .consentOn,
@@ -382,20 +382,20 @@
 }
 
 .consentOn {
-  border: 1px solid var(--ex-espresso);
-  background: var(--ex-espresso);
-  color: var(--ex-white);
+  border: 1px solid var(--ex-accent);
+  background: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
 }
 
 .consentOff {
-  border: 1px solid var(--ex-line-200);
-  background: var(--ex-white);
-  color: var(--ex-slate-500);
+  border: 1px solid var(--ex-border);
+  background: var(--ex-bg);
+  color: var(--ex-fg-muted);
 }
 
 .consentNote {
   margin-top: 10px;
   font-size: 12.5px;
   line-height: 1.7;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }

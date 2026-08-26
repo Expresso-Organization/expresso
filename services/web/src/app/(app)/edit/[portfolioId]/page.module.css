@@ -4,7 +4,7 @@
   display: flex;
   height: 100dvh;
   min-width: 1280px;
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   overflow: hidden;
   font-size: 13px;
 }
@@ -13,8 +13,8 @@
 .rail {
   width: 56px;
   flex-shrink: 0;
-  background: var(--ex-chrome-50);
-  border-right: 1px solid var(--ex-chrome-border);
+  background: var(--ex-bg-chrome);
+  border-right: 1px solid var(--ex-border-chrome);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -39,12 +39,12 @@
 }
 
 .railButton:hover {
-  background: #f2f5f9;
+  background: var(--ex-bg-tint);
 }
 
 .railButtonActive,
 .railButtonActive:hover {
-  background: var(--ex-tint-50);
+  background: var(--ex-bg-tint);
 }
 
 .railDot {
@@ -54,7 +54,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
 }
 
 .railFoot {
@@ -69,12 +69,12 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: var(--ex-tint-100);
+  background: var(--ex-bg-tint-strong);
   display: grid;
   place-items: center;
   font-size: 11px;
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .main {
@@ -88,8 +88,8 @@
 .toolbar {
   height: 56px;
   flex-shrink: 0;
-  background: var(--ex-white);
-  border-bottom: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border-bottom: 1px solid var(--ex-border);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -102,7 +102,7 @@
   padding: 0;
   display: grid;
   place-items: center;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .toolbarTitle {
@@ -115,7 +115,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--ex-bean-50);
+  background: var(--ex-accent-surface);
   border-radius: 7px;
   padding: 4px 9px;
 }
@@ -131,25 +131,25 @@
 }
 
 .generationReady {
-  background: #e8f5ec;
-  color: #287a42;
+  background: var(--ex-status-success-surface);
+  color: var(--ex-status-success-text);
 }
 
 .generationFailed {
   background: #fff0e8;
-  color: #a34823;
+  color: var(--ex-accent-text);
 }
 
 .statusDot {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
 }
 
 .statusText {
   font-size: 11px;
-  color: var(--ex-espresso-text);
+  color: var(--ex-accent-text);
   white-space: nowrap;
 }
 
@@ -178,13 +178,13 @@
 }
 
 .viewportButtonActive {
-  background: var(--ex-tint-50);
+  background: var(--ex-bg-tint);
 }
 
 .toolbarRule {
   width: 1px;
   height: 18px;
-  background: var(--ex-track);
+  background: var(--ex-bg-track);
 }
 
 .historyButtons {
@@ -199,11 +199,11 @@
   padding: 0;
   display: grid;
   place-items: center;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 .iconActionDisabled {
-  color: var(--ex-border-strong);
+  color: var(--ex-border-firm);
   cursor: not-allowed;
 }
 
@@ -212,7 +212,7 @@
   align-items: center;
   gap: 6px;
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .themeAction {
@@ -223,30 +223,30 @@
   background: none;
   padding: 0;
   font-size: 11.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   white-space: nowrap;
 }
 
 .previewButton {
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--ex-slate-700);
-  background: var(--ex-white);
-  border: 1px solid var(--ex-border-quiet);
+  color: var(--ex-fg-body);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border-soft);
   border-radius: 9px;
   padding: 8px 14px;
   transition: border-color var(--ex-motion-quick);
 }
 
 .previewButton:hover {
-  border-color: var(--ex-border-strong);
+  border-color: var(--ex-border-firm);
 }
 
 .publishButton {
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 9px;
   padding: 8px 16px;
@@ -257,7 +257,7 @@
 }
 
 .publishButton:hover {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
 }
 
 .stage {
@@ -270,8 +270,8 @@
 .sections {
   width: 244px;
   flex-shrink: 0;
-  background: var(--ex-white);
-  border-right: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border-right: 1px solid var(--ex-border);
   display: flex;
   flex-direction: column;
   padding: 16px 12px;
@@ -289,14 +289,14 @@
   font-family: var(--ex-font-mono);
   font-size: 9px;
   letter-spacing: 0.12em;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .sectionsCount {
   margin-left: auto;
   font-family: var(--ex-font-mono);
   font-size: 9.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .sectionList {
@@ -318,7 +318,7 @@
 }
 
 .sectionRow:hover {
-  background: #f2f5f9;
+  background: var(--ex-bg-tint);
 }
 
 /* 선택된 섹션 — 파랑 지면 */
@@ -330,7 +330,7 @@
 .sectionTitle {
   font-size: 12.5px;
   font-weight: 500;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -342,12 +342,12 @@
 }
 
 .sectionHidden .sectionTitle {
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .sectionMeta {
   font-size: 10.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   margin-top: 3px;
   white-space: nowrap;
   overflow: hidden;
@@ -361,7 +361,7 @@
 }
 
 .suggestionCard {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   border-radius: 11px;
   padding: 13px 14px;
 }
@@ -380,7 +380,7 @@
 
 .suggestionBody {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   line-height: 1.65;
   margin-bottom: 10px;
 }
@@ -404,13 +404,13 @@
   background: none;
   padding: 0;
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .sectionsFoot {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid var(--ex-hairline);
+  border-top: 1px solid var(--ex-border-hair);
   display: grid;
   gap: 1px;
 }
@@ -429,12 +429,12 @@
 }
 
 .footRow:hover {
-  background: #f2f5f9;
+  background: var(--ex-bg-tint);
 }
 
 .footLabel {
   font-size: 12.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   flex: 1;
   white-space: nowrap;
 }
@@ -449,14 +449,14 @@
 .footValue {
   font-family: var(--ex-font-mono);
   font-size: 9.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 /* ④ 캔버스 */
 .canvas {
   flex: 1;
   min-width: 0;
-  background: #ebeff5;
+  background: var(--ex-bg-muted);
   padding: 22px 24px;
   display: flex;
   flex-direction: column;
@@ -469,7 +469,7 @@
   max-width: 700px;
   flex: 1;
   min-height: 0;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(22, 34, 58, 0.1);
   overflow: hidden;
@@ -480,7 +480,7 @@
 .browserChrome {
   height: 34px;
   flex-shrink: 0;
-  border-bottom: 1px solid var(--ex-line-inner);
+  border-bottom: 1px solid var(--ex-border-inner);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -491,7 +491,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--ex-track);
+  background: var(--ex-bg-track);
 }
 
 .browserAddress {
@@ -500,7 +500,7 @@
   justify-content: center;
   font-family: var(--ex-font-mono);
   font-size: 10px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .page {
@@ -544,7 +544,7 @@
   font-size: 12.5px;
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .siteMenu {
@@ -559,7 +559,7 @@
 }
 
 .siteMenuItemActive {
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   font-weight: 600;
 }
 
@@ -604,7 +604,7 @@
   width: 7px;
   height: 7px;
   border-radius: 2px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   border: 1.5px solid #4562ce;
 }
 
@@ -632,8 +632,8 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 10px;
   padding: 5px 7px;
   box-shadow: 0 12px 28px rgba(22, 34, 58, 0.16);
@@ -644,7 +644,7 @@
 .sizeStepper {
   display: flex;
   align-items: center;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 7px;
   overflow: hidden;
 }
@@ -657,20 +657,20 @@
   border: none;
   background: none;
   font-size: 11px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .sizeValue {
   font-family: var(--ex-font-mono);
   font-size: 11px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   padding: 0 3px;
 }
 
 .toolRule {
   width: 1px;
   height: 16px;
-  background: var(--ex-track);
+  background: var(--ex-bg-track);
   margin: 0 2px;
 }
 
@@ -686,7 +686,7 @@
 }
 
 .toolButton:hover {
-  background: #f2f5f9;
+  background: var(--ex-bg-tint);
 }
 
 .toolButtonOn {
@@ -697,9 +697,9 @@
   width: 13px;
   height: 13px;
   border-radius: 4px;
-  background: var(--ex-ink-900);
-  border: 1.5px solid var(--ex-white);
-  box-shadow: 0 0 0 1px var(--ex-border-quiet);
+  background: var(--ex-bg-inverse);
+  border: 1.5px solid var(--ex-bg);
+  box-shadow: 0 0 0 1px var(--ex-border-soft);
 }
 
 .toolHighlight {
@@ -719,8 +719,8 @@
   gap: 6px;
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--ex-espresso-text);
-  background: var(--ex-bean-50);
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
   border: none;
   border-radius: 7px;
   padding: 5px 9px;
@@ -732,7 +732,7 @@
   font-weight: 700;
   letter-spacing: -0.05em;
   line-height: 1.2;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .heroLede {
@@ -752,7 +752,7 @@
   font-size: 44px;
   font-weight: 700;
   letter-spacing: -0.05em;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   line-height: 1;
 }
 
@@ -781,7 +781,7 @@
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.55;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   margin-bottom: 11px;
 }
 
@@ -802,7 +802,7 @@
   font-size: 23px;
   font-weight: 700;
   letter-spacing: -0.04em;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .incidentStatLabel {
@@ -823,8 +823,8 @@
   gap: 6px;
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--ex-ink-900);
-  background: var(--ex-white);
+  color: var(--ex-fg);
+  background: var(--ex-bg);
   border-radius: 999px;
   padding: 7px 13px;
   white-space: nowrap;
@@ -848,7 +848,7 @@
 
 .contactBand {
   margin: 6px -38px 0;
-  background: var(--ex-ink-900);
+  background: var(--ex-bg-inverse);
   padding: 24px 38px;
   display: flex;
   align-items: center;
@@ -859,19 +859,19 @@
   font-size: 14.5px;
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: var(--ex-white);
+  color: var(--ex-fg-on-accent);
   margin-bottom: 7px;
 }
 
 .contactMail {
   font-family: var(--ex-font-mono);
   font-size: 11px;
-  color: #8fa0bf;
+  color: var(--ex-fg-subtle);
 }
 
 .contactGhost {
   font-size: 11.5px;
-  color: var(--ex-white);
+  color: var(--ex-fg-on-accent);
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 8px;
   padding: 8px 14px;
@@ -882,7 +882,7 @@
 .contactPrimary {
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   background: #ff6f0f;
   border: none;
   border-radius: 8px;
@@ -909,7 +909,7 @@
 
 .crumb {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
   border: none;
   background: none;
@@ -917,7 +917,7 @@
 }
 
 .crumbCurrent {
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   font-weight: 600;
 }
 
@@ -931,7 +931,7 @@
 .statusRule {
   width: 1px;
   height: 12px;
-  background: var(--ex-border-quiet);
+  background: var(--ex-border-soft);
 }
 
 .statusAi {
@@ -942,14 +942,14 @@
   background: none;
   padding: 0;
   font-size: 11.5px;
-  color: var(--ex-espresso-text);
+  color: var(--ex-accent-text);
   white-space: nowrap;
 }
 
 .statusViewport {
   margin-left: auto;
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 
@@ -962,15 +962,15 @@
 .zoomValue {
   font-family: var(--ex-font-mono);
   font-size: 11px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 /* ⑤ 우측 패널 320px */
 .panel {
   width: 320px;
   flex-shrink: 0;
-  background: var(--ex-white);
-  border-left: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border-left: 1px solid var(--ex-border);
   display: flex;
   flex-direction: column;
 }
@@ -978,7 +978,7 @@
 .panelHead {
   height: 50px;
   flex-shrink: 0;
-  border-bottom: 1px solid var(--ex-line-inner);
+  border-bottom: 1px solid var(--ex-border-inner);
   display: flex;
   align-items: center;
   gap: 9px;
@@ -993,7 +993,7 @@
 
 .panelTarget {
   font-size: 11px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1006,7 +1006,7 @@
   padding: 0;
   display: grid;
   place-items: center;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   flex-shrink: 0;
 }
 
@@ -1016,12 +1016,12 @@
   align-items: center;
   gap: 14px;
   padding: 0 18px;
-  border-bottom: 1px solid var(--ex-line-inner);
+  border-bottom: 1px solid var(--ex-border-inner);
 }
 
 .panelTab {
   font-size: 12px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   padding: 10px 2px 9px;
   border: none;
   background: none;
@@ -1030,13 +1030,13 @@
 }
 
 .panelTab:hover {
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .panelTabActive {
   font-weight: 600;
-  color: var(--ex-ink-900);
-  border-bottom: 1.5px solid var(--ex-ink-900);
+  color: var(--ex-fg);
+  border-bottom: 1.5px solid var(--ex-fg);
   margin-bottom: -1px;
 }
 
@@ -1062,14 +1062,14 @@
 .chatStampLine {
   height: 1px;
   flex: 1;
-  background: var(--ex-line-inner);
+  background: var(--ex-border-inner);
 }
 
 .chatStampText {
   font-family: var(--ex-font-mono);
   font-size: 9.5px;
   letter-spacing: 0.1em;
-  color: #a8b4c8;
+  color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
 
@@ -1086,8 +1086,8 @@
   align-items: center;
   gap: 5px;
   max-width: 88%;
-  background: #f2f5fa;
-  border: 1px solid #e6ebf4;
+  background: var(--ex-bg-sunken);
+  border: 1px solid var(--ex-border);
   border-radius: 7px;
   padding: 4px 8px;
   overflow: hidden;
@@ -1095,7 +1095,7 @@
 
 .targetChipText {
   font-size: 10.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1104,7 +1104,7 @@
 .userBubble {
   max-width: 88%;
   background: #4562ce;
-  color: var(--ex-white);
+  color: var(--ex-fg-on-accent);
   border-radius: 13px 5px 13px 13px;
   padding: 11px 13px;
   font-size: 12.5px;
@@ -1121,7 +1121,7 @@
   width: 25px;
   height: 25px;
   border-radius: 50%;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -1132,7 +1132,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--ex-bean-50);
+  background: var(--ex-accent-surface);
 }
 
 .aiBody {
@@ -1152,32 +1152,32 @@
   font-size: 11px;
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: #4a2e22;
+  color: var(--ex-accent-ink);
   white-space: nowrap;
 }
 
 .aiElapsed {
   font-family: var(--ex-font-mono);
   font-size: 9.5px;
-  color: #a8b4c8;
+  color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
 
 .aiBubble {
-  background: var(--ex-bean-50);
+  background: var(--ex-accent-surface);
   border-radius: 5px 13px 13px 13px;
   padding: 11px 13px;
   font-size: 12.5px;
   line-height: 1.7;
-  color: #4a2e22;
+  color: var(--ex-accent-ink);
 }
 
 /* 변경 요약 (diff) */
 .patch {
-  border: 1px solid #e6ebf4;
+  border: 1px solid var(--ex-border);
   border-radius: 10px;
   overflow: hidden;
-  background: var(--ex-white);
+  background: var(--ex-bg);
 }
 
 .patchHead {
@@ -1185,15 +1185,15 @@
   align-items: center;
   gap: 6px;
   padding: 7px 11px;
-  background: var(--ex-surface-50);
-  border-bottom: 1px solid #edf1f8;
+  background: var(--ex-bg-sunken);
+  border-bottom: 1px solid var(--ex-border);
 }
 
 .patchTitle {
   font-size: 10.5px;
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   white-space: nowrap;
 }
 
@@ -1221,7 +1221,7 @@
 
 .patchLabel {
   font-size: 11px;
-  color: #6b7a93;
+  color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 
@@ -1236,13 +1236,13 @@
 }
 
 .patchBefore {
-  color: #a8b4c8;
+  color: var(--ex-fg-subtle);
   text-decoration: line-through;
 }
 
 .patchAfter {
   font-weight: 700;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .patchActions {
@@ -1256,18 +1256,18 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  border: 1px solid var(--ex-border-quiet);
+  border: 1px solid var(--ex-border-soft);
   background: none;
   border-radius: 8px;
   padding: 7px 0;
   font-size: 11.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   white-space: nowrap;
   transition: background var(--ex-motion-instant);
 }
 
 .revertButton:hover {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
 }
 
 .keepButton {
@@ -1300,7 +1300,7 @@
 
 .chatHintText {
   font-size: 11.5px;
-  color: #7c8aa0;
+  color: var(--ex-fg-muted);
   line-height: 1.5;
 }
 
@@ -1327,7 +1327,7 @@
 }
 
 .inputBox {
-  border: 1px solid var(--ex-border-quiet);
+  border: 1px solid var(--ex-border-soft);
   border-radius: 12px;
   padding: 11px 13px;
 }
@@ -1338,12 +1338,12 @@
   outline: none;
   background: none;
   font-size: 12.5px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   margin-bottom: 10px;
 }
 
 .input::placeholder {
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .inputActions {
@@ -1356,7 +1356,7 @@
   margin-left: auto;
   font-family: var(--ex-font-mono);
   font-size: 10px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .inputSend {
@@ -1382,7 +1382,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   border-radius: 10px;
   padding: 10px 12px;
   margin-bottom: 14px;
@@ -1398,7 +1398,7 @@
 
 .targetPath {
   font-size: 10.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -1420,19 +1420,19 @@
   font-family: var(--ex-font-mono);
   font-size: 9px;
   letter-spacing: 0.12em;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 
 .propGroupRule {
   flex: 1;
   height: 1px;
-  background: var(--ex-hairline);
+  background: var(--ex-border-hair);
 }
 
 .propGroupNote {
   font-size: 10.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
 
@@ -1449,7 +1449,7 @@
 
 .propLabel {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   width: 62px;
   flex-shrink: 0;
 }
@@ -1458,7 +1458,7 @@
 .stepper {
   display: flex;
   align-items: center;
-  border: 1px solid var(--ex-border-quiet);
+  border: 1px solid var(--ex-border-soft);
   border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
@@ -1472,22 +1472,22 @@
   border: none;
   background: none;
   font-size: 12px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   transition: background var(--ex-motion-instant);
 }
 
 .stepperButton:hover {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
 }
 
 .stepperRight {
-  border-left: 1px solid var(--ex-line-inner);
+  border-left: 1px solid var(--ex-border-inner);
 }
 
 .stepperValue {
   font-family: var(--ex-font-mono);
   font-size: 11.5px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   padding: 0 6px;
   min-width: 34px;
   text-align: center;
@@ -1495,24 +1495,24 @@
 
 .stepperUnit {
   font-size: 10px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   padding-right: 5px;
 }
 
 .propNote {
   font-size: 10.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
 
 .textInput {
   flex: 1;
   min-width: 0;
-  border: 1px solid var(--ex-border-quiet);
+  border: 1px solid var(--ex-border-soft);
   border-radius: 8px;
   padding: 6px 9px;
   font-size: 12px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   background: none;
   outline: none;
 }
@@ -1530,7 +1530,7 @@
   flex: 1;
   height: 4px;
   border-radius: 999px;
-  background: var(--ex-track);
+  background: var(--ex-bg-track);
   position: relative;
   min-width: 0;
 }
@@ -1540,7 +1540,7 @@
   left: 0;
   top: 0;
   bottom: 0;
-  background: var(--ex-ink-900);
+  background: var(--ex-bg-inverse);
   border-radius: 999px;
 }
 
@@ -1551,8 +1551,8 @@
   height: 14px;
   margin-left: -7px;
   border-radius: 50%;
-  background: var(--ex-white);
-  border: 1.5px solid var(--ex-ink-900);
+  background: var(--ex-bg);
+  border: 1.5px solid var(--ex-fg);
   box-shadow: 0 1px 3px rgba(22, 34, 58, 0.18);
 }
 
@@ -1562,7 +1562,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  background: var(--ex-line-inner);
+  background: var(--ex-border-inner);
   border-radius: 8px;
   padding: 2px;
   min-width: 0;
@@ -1572,7 +1572,7 @@
   flex: 1;
   text-align: center;
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   border: none;
   background: none;
   border-radius: 6px;
@@ -1582,8 +1582,8 @@
 
 .weightOptionActive {
   font-weight: 600;
-  color: var(--ex-ink-900);
-  background: var(--ex-white);
+  color: var(--ex-fg);
+  background: var(--ex-bg);
   box-shadow: 0 1px 2px rgba(22, 34, 58, 0.08);
 }
 
@@ -1604,15 +1604,15 @@
 
 .colorSwatchOn {
   box-shadow:
-    0 0 0 1.5px var(--ex-white) inset,
-    0 0 0 2px var(--ex-ink-900);
+    0 0 0 1.5px var(--ex-bg) inset,
+    0 0 0 2px var(--ex-fg);
 }
 
 .inherit {
   margin-left: auto;
   font-family: var(--ex-font-mono);
   font-size: 10px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   border: none;
   background: none;
   padding: 0;
@@ -1635,7 +1635,7 @@
 }
 
 .alignButtonOn {
-  background: var(--ex-tint-50);
+  background: var(--ex-bg-tint);
 }
 
 /* ── 이력 탭 (04c) ────────────────────────────────────────── */
@@ -1651,7 +1651,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  background: var(--ex-line-inner);
+  background: var(--ex-border-inner);
   border-radius: 8px;
   padding: 2px;
   margin-bottom: 14px;
@@ -1661,7 +1661,7 @@
   flex: 1;
   text-align: center;
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   border: none;
   background: none;
   border-radius: 6px;
@@ -1671,8 +1671,8 @@
 
 .historyFilterActive {
   font-weight: 600;
-  color: var(--ex-ink-900);
-  background: var(--ex-white);
+  color: var(--ex-fg);
+  background: var(--ex-bg);
   box-shadow: 0 1px 2px rgba(22, 34, 58, 0.08);
 }
 
@@ -1680,7 +1680,7 @@
   font-family: var(--ex-font-mono);
   font-size: 9px;
   letter-spacing: 0.12em;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   margin-bottom: 10px;
 }
 
@@ -1688,7 +1688,7 @@
   display: flex;
   gap: 10px;
   padding: 10px 0;
-  border-bottom: 1px solid var(--ex-line-inner);
+  border-bottom: 1px solid var(--ex-border-inner);
 }
 
 /* 주체 아바타 — AI는 coffee-fill 원, 사용자는 이니셜 원 */
@@ -1696,7 +1696,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -1706,12 +1706,12 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--ex-tint-100);
+  background: var(--ex-bg-tint-strong);
   display: grid;
   place-items: center;
   font-size: 10px;
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   flex-shrink: 0;
 }
 
@@ -1722,13 +1722,13 @@
 
 .revisionSummary {
   font-size: 12px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   line-height: 1.6;
 }
 
 .revisionMeta {
   font-size: 10.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   margin-top: 4px;
 }
 
@@ -1754,8 +1754,8 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  background: var(--ex-surface-50);
-  border: 1px solid var(--ex-track);
+  background: var(--ex-bg-sunken);
+  border: 1px solid var(--ex-bg-track);
   border-radius: 10px;
   padding: 10px 12px;
   margin-bottom: 8px;
@@ -1763,12 +1763,12 @@
 
 .checkpointName {
   font-size: 12px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .checkpointAt {
   font-size: 10.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   margin-top: 2px;
 }
 
@@ -1790,13 +1790,13 @@
   gap: 9px;
   margin-top: 14px;
   padding: 11px 13px;
-  background: var(--ex-bean-50);
+  background: var(--ex-accent-surface);
   border-radius: 10px;
 }
 
 .lockNoteText {
   font-size: 11.5px;
-  color: var(--ex-bean-ink);
+  color: var(--ex-accent-ink);
   line-height: 1.65;
 }
 
@@ -1808,7 +1808,7 @@
 }
 
 .pickable:hover {
-  outline: 1.5px dashed var(--ex-border-strong);
+  outline: 1.5px dashed var(--ex-border-firm);
 }
 
 .propForm {
@@ -1820,34 +1820,34 @@
 .textArea {
   flex: 1;
   min-width: 0;
-  border: 1px solid var(--ex-border-quiet);
+  border: 1px solid var(--ex-border-soft);
   border-radius: 8px;
   padding: 8px 10px;
   font-size: 11.5px;
   line-height: 1.7;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   resize: vertical;
   font-family: inherit;
 }
 
 .propSave {
-  border: 1px solid var(--ex-border-quiet);
-  background: var(--ex-white);
+  border: 1px solid var(--ex-border-soft);
+  background: var(--ex-bg);
   border-radius: 7px;
   padding: 6px 10px;
   font-size: 11px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   white-space: nowrap;
 }
 
 .propSave:disabled {
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .panelEmpty {
   padding: 26px 18px;
   font-size: 11.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   line-height: 1.7;
   text-align: center;
 }
@@ -1855,8 +1855,8 @@
 .panelError {
   margin: 0 16px 10px;
   font-size: 11.5px;
-  color: var(--ex-danger-text);
-  background: var(--ex-danger-surface);
+  color: var(--ex-status-danger-text);
+  background: var(--ex-status-danger-surface);
   border-radius: 8px;
   padding: 8px 11px;
   line-height: 1.6;
@@ -1864,8 +1864,8 @@
 
 .lockedTag {
   font-size: 10px;
-  color: var(--ex-espresso-text);
-  background: var(--ex-bean-50);
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
   border-radius: 999px;
   padding: 3px 8px;
   white-space: nowrap;
@@ -1887,17 +1887,17 @@
   padding: 0;
   font-size: 10px;
   line-height: 1;
-  color: var(--ex-border-strong);
+  color: var(--ex-border-firm);
   border-radius: 3px;
 }
 
 .sectionMoveButton:hover:not(:disabled) {
-  background: var(--ex-surface-100);
-  color: var(--ex-ink-900);
+  background: var(--ex-bg-muted);
+  color: var(--ex-fg);
 }
 
 .sectionMoveButton:disabled {
-  color: var(--ex-line-200);
+  color: var(--ex-fg-faint);
 }
 
 .sectionEye {
@@ -1911,13 +1911,13 @@
 }
 
 .sectionEye:hover:not(:disabled) {
-  background: var(--ex-surface-100);
+  background: var(--ex-bg-muted);
 }
 
 .sectionError {
   margin: 8px 14px 0;
   font-size: 11px;
-  color: var(--ex-danger-text);
+  color: var(--ex-status-danger-text);
   line-height: 1.6;
 }
 
@@ -1929,7 +1929,7 @@
 
 .statusError {
   font-size: 11px;
-  color: var(--ex-danger-text);
+  color: var(--ex-status-danger-text);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -1939,8 +1939,8 @@
   align-items: center;
   gap: 8px;
   font-size: 11px;
-  color: var(--ex-danger-text);
-  background: var(--ex-danger-surface);
+  color: var(--ex-status-danger-text);
+  background: var(--ex-status-danger-surface);
   border-radius: 7px;
   padding: 4px 9px;
   /* 상태 바는 한 줄이다 — 줄바꿈을 허용하면 글자가 세로로 선다. */
@@ -1949,9 +1949,9 @@
 }
 
 .statusAskGo {
-  border: 1px solid var(--ex-danger-surface-deep);
-  background: var(--ex-white);
-  color: var(--ex-danger-text);
+  border: 1px solid var(--ex-status-danger-surface-deep);
+  background: var(--ex-bg);
+  color: var(--ex-status-danger-text);
   border-radius: 6px;
   padding: 3px 8px;
   font-size: 11px;
@@ -1971,8 +1971,8 @@
 }
 
 .inheritOn {
-  border-color: var(--ex-ink-900);
-  color: var(--ex-ink-900);
+  border-color: var(--ex-fg);
+  color: var(--ex-fg);
   font-weight: 600;
 }
 
@@ -1990,7 +1990,7 @@
   display: grid;
   gap: 8px;
   padding: 14px 16px;
-  border-top: 1px solid var(--ex-hairline);
+  border-top: 1px solid var(--ex-border-hair);
 }
 
 .mediaHead {
@@ -2002,7 +2002,7 @@
 .mediaTitle {
   font-size: 12px;
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 .mediaFrames {
@@ -2016,45 +2016,45 @@
   padding: 6px 0;
   font-size: 11px;
   border-radius: 7px;
-  border: 1px solid var(--ex-border-quiet);
-  background: var(--ex-white);
-  color: var(--ex-slate-500);
+  border: 1px solid var(--ex-border-soft);
+  background: var(--ex-bg);
+  color: var(--ex-fg-muted);
   transition: background var(--ex-motion-quick), color var(--ex-motion-quick);
 }
 
 .mediaFrame:hover {
-  background: var(--ex-tint-50);
+  background: var(--ex-bg-tint);
 }
 
 .mediaFrameOn {
-  border-color: var(--ex-ink-900);
-  background: var(--ex-ink-900);
-  color: var(--ex-white);
+  border-color: var(--ex-fg);
+  background: var(--ex-bg-inverse);
+  color: var(--ex-fg-on-inverse);
 }
 
 .mediaAlt {
   padding: 7px 10px;
   font-size: 12px;
   border-radius: 7px;
-  border: 1px solid var(--ex-border-quiet);
-  background: var(--ex-white);
+  border: 1px solid var(--ex-border-soft);
+  background: var(--ex-bg);
 }
 
 .mediaAlt::placeholder {
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .mediaFile {
   font-size: 11px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .mediaNote {
   font-size: 11px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .mediaError {
   font-size: 11px;
-  color: var(--ex-danger-text);
+  color: var(--ex-status-danger-text);
 }

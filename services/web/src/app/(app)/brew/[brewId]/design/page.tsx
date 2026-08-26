@@ -50,7 +50,7 @@ export default async function DesignPage({
       <BrewFrame brewId={brewId} step="design" portfolioTitle={title} situation="아직 없음" tinted>
         <div className={styles.gate}>
           <div className={styles.gateCard}>
-            <Icon name="list-checks" size={22} color="var(--ex-espresso)" />
+            <Icon name="list-checks" size={22} color="var(--ex-accent-text)" />
             <h1 className={styles.gateTitle}>먼저 레시피를 짭니다</h1>
             <p className={styles.gateNote}>
               디자인은 레시피의 섹션을 채워 보여줍니다. 채울 것이 정해지지 않으면

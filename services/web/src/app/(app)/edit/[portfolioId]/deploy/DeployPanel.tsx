@@ -67,7 +67,7 @@ export function DeployPanel({
         </div>
       ) : said ? (
         <div className={styles.notice}>
-          <Icon name="check-circle" weight="fill" size={14} color="var(--ex-espresso)" />
+          <Icon name="check-circle" weight="fill" size={14} color="var(--ex-accent-text)" />
           {said}
         </div>
       ) : null}
@@ -98,7 +98,7 @@ export function DeployPanel({
                   name={live ? "check-circle" : "circle-dashed"}
                   weight="fill"
                   size={13}
-                  color={live ? "var(--ex-success)" : "var(--ex-slate-400)"}
+                  color={live ? "var(--ex-status-success)" : "var(--ex-fg-subtle)"}
                 />
                 {live ? "사용 중" : "아직 없음"}
               </span>
@@ -129,7 +129,7 @@ export function DeployPanel({
                   name={check.ok ? "check-circle" : "warning-circle"}
                   weight="fill"
                   size={16}
-                  color={check.ok ? "var(--ex-success)" : "var(--ex-danger)"}
+                  color={check.ok ? "var(--ex-status-success)" : "var(--ex-status-danger)"}
                   style={{ flexShrink: 0, marginTop: "1px" }}
                 />
                 <div style={{ minWidth: 0 }}>
@@ -246,7 +246,7 @@ export function DeployPanel({
               <input type="hidden" name="portfolioId" value={portfolio.id} />
               <input type="hidden" name="kind" value={item.kind} />
               <button type="submit" className={styles.exportCard} disabled={!canExport}>
-                <Icon name={item.icon} size={18} color="var(--ex-slate-500)" />
+                <Icon name={item.icon} size={18} color="var(--ex-fg-muted)" />
                 <span className={styles.exportTitle}>{item.title}</span>
                 <span className={styles.exportNote}>
                   {canExport ? item.note : "PRO에서 내보낼 수 있습니다"}

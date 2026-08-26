@@ -21,9 +21,9 @@
   border-radius: 5px;
   background: linear-gradient(
     90deg,
-    var(--ex-line-inner) 0%,
-    var(--ex-line-200) 50%,
-    var(--ex-line-inner) 100%
+    var(--ex-border-inner) 0%,
+    var(--ex-border) 50%,
+    var(--ex-border-inner) 100%
   );
   background-size: 280px 100%;
 }
@@ -53,13 +53,13 @@
 .noticeTitle {
   font-size: 14px;
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .noticeBody {
   font-size: 12.5px;
   line-height: 1.7;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   max-width: 380px;
 }
 
@@ -74,9 +74,9 @@
   height: 32px;
   padding: 0 14px;
   border-radius: 8px;
-  border: 1px solid var(--ex-ink-900);
-  background: var(--ex-ink-900);
-  color: var(--ex-white);
+  border: 1px solid var(--ex-fg);
+  background: var(--ex-bg-inverse);
+  color: var(--ex-fg-on-inverse);
   font-size: 12.5px;
   font-weight: 500;
   display: inline-flex;
@@ -85,23 +85,23 @@
 }
 
 .action:hover {
-  background: var(--ex-ink-900-hover);
+  background: var(--ex-bg-inverse-hover);
 }
 
 .actionGhost {
-  border-color: var(--ex-line-200);
-  background: var(--ex-white);
-  color: var(--ex-slate-700);
+  border-color: var(--ex-border);
+  background: var(--ex-bg);
+  color: var(--ex-fg-body);
 }
 
 .actionGhost:hover {
-  background: var(--ex-line-inner);
+  background: var(--ex-border-inner);
 }
 
 /* 요청 번호 — 문의할 때 이 줄만 알려주면 로그에서 바로 찾는다. */
 .digest {
   font-family: var(--ex-font-mono);
   font-size: 11px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   margin-top: 2px;
 }

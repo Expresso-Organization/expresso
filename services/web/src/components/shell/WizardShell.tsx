@@ -33,7 +33,7 @@ export function WizardHeader({
       <span className={styles.buildLabel}>새 포트폴리오</span>
       <button type="button" className={styles.titleChip}>
         <span className={styles.titleChipText}>{portfolioTitle}</span>
-        <Icon name="pencil-simple" size={11} color="var(--ex-slate-400)" />
+        <Icon name="pencil-simple" size={11} color="var(--ex-fg-subtle)" />
       </button>
       <div className={styles.buildRight}>
         <span className={styles.saveState}>
@@ -77,7 +77,7 @@ export function WizardSteps({
           <>
             <span className={styles.stepMark}>
               {done ? (
-                <Icon name="check" size={11} color="var(--ex-espresso)" />
+                <Icon name="check" size={11} color="var(--ex-accent-text)" />
               ) : (
                 <span className={styles.stepNumber}>
                   {String(index + 1).padStart(2, "0")}

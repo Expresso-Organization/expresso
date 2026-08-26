@@ -7,8 +7,8 @@
 .buildHeader {
   height: 56px;
   flex-shrink: 0;
-  background: var(--ex-white);
-  border-bottom: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border-bottom: 1px solid var(--ex-border);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -21,7 +21,7 @@
   padding: 0;
   display: grid;
   place-items: center;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .buildLabel {
@@ -34,7 +34,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   border: none;
   border-radius: 8px;
   padding: 5px 10px;
@@ -42,7 +42,7 @@
 
 .titleChipText {
   font-size: 12px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 .buildRight {
@@ -57,21 +57,21 @@
   align-items: center;
   gap: 6px;
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .headerRule {
   width: 1px;
   height: 18px;
-  background: var(--ex-track);
+  background: var(--ex-bg-track);
 }
 
 /* ② 스텝 인디케이터 */
 .steps {
   height: 56px;
   flex-shrink: 0;
-  background: var(--ex-white);
-  border-bottom: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border-bottom: 1px solid var(--ex-border);
   display: flex;
   align-items: center;
   padding: 0 26px;
@@ -94,51 +94,51 @@
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  border: 1px solid var(--ex-border-quiet);
+  border: 1px solid var(--ex-border-soft);
 }
 
 .stepNumber {
   font-family: var(--ex-font-mono);
   font-size: 9px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .stepLabel {
   font-size: 12.5px;
   font-weight: 500;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
 
 /* 현재 단계 — espresso 원에 흰 숫자 */
 .stepCurrent .stepMark {
-  background: var(--ex-espresso);
-  border-color: var(--ex-espresso);
+  background: var(--ex-accent);
+  border-color: var(--ex-accent);
 }
 
 .stepCurrent .stepNumber {
-  color: var(--ex-white);
+  color: var(--ex-fg-on-accent);
 }
 
 .stepCurrent .stepLabel {
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 /* 완료 단계 — bean-50 원에 espresso 체크 (정의서 04) */
 .stepDone .stepMark {
-  background: var(--ex-bean-50);
-  border-color: var(--ex-bean-50);
+  background: var(--ex-accent-surface);
+  border-color: var(--ex-accent-surface);
 }
 
 .stepDone .stepLabel {
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 .connector {
   flex: 1;
   height: 1px;
-  background: var(--ex-track);
+  background: var(--ex-bg-track);
   margin: 0 11px;
   min-width: 20px;
 }
@@ -146,7 +146,7 @@
 .situation {
   margin-left: 20px;
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 
@@ -156,9 +156,9 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: var(--ex-white);
+  background: var(--ex-bg);
 }
 
 .stageTinted {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
 }

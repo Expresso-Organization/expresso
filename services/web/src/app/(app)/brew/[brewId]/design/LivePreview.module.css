@@ -52,14 +52,14 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .dot {
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
   animation: ex-live-pulse 1.4s ease-in-out infinite;
 }
 
@@ -89,9 +89,9 @@
   flex: 1;
   min-height: 60vh;
   width: 100%;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 16px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
 }
 
 /*
@@ -106,7 +106,7 @@
   max-width: 34em;
   font-size: 13px;
   line-height: 1.6;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   text-align: center;
   /* 길면 자른다. 줄이 늘었다 줄었다 하면 그 아래 것들이 계속 움직인다. */
   overflow: hidden;

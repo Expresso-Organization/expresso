@@ -19,7 +19,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
   margin-bottom: 4px;
 }
 
@@ -34,7 +34,7 @@
   margin: 0;
   font-size: 13.5px;
   line-height: 1.7;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .stage {
@@ -43,21 +43,21 @@
   gap: 7px;
   font-family: var(--ex-font-mono);
   font-size: 11px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .stageDot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
 }
 
 .failure {
   margin: 0;
   font-size: 13px;
   line-height: 1.6;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
 }
 
 .primary,
@@ -72,13 +72,13 @@
 }
 
 .primary {
-  border: 1px solid var(--ex-espresso);
-  background: var(--ex-espresso);
-  color: var(--ex-white);
+  border: 1px solid var(--ex-accent);
+  background: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
 }
 
 .ghost {
-  border: 1px solid var(--ex-line-200);
-  background: var(--ex-white);
-  color: var(--ex-slate-500);
+  border: 1px solid var(--ex-border);
+  background: var(--ex-bg);
+  color: var(--ex-fg-muted);
 }

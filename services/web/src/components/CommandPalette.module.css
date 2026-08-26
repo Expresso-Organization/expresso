@@ -13,7 +13,7 @@
 .palette {
   width: 640px;
   max-width: calc(100vw - 48px);
-  background: var(--ex-white);
+  background: var(--ex-bg);
   border-radius: 16px;
   box-shadow: var(--ex-elevation-overlay);
   overflow: hidden;
@@ -27,7 +27,7 @@
   align-items: center;
   gap: 12px;
   padding: 15px 20px;
-  border-bottom: 1px solid var(--ex-line-inner);
+  border-bottom: 1px solid var(--ex-border-inner);
 }
 
 .crumb {
@@ -35,8 +35,8 @@
   align-items: center;
   gap: 6px;
   font-size: 11.5px;
-  color: var(--ex-slate-500);
-  background: var(--ex-surface-50);
+  color: var(--ex-fg-muted);
+  background: var(--ex-bg-sunken);
   border-radius: 6px;
   padding: 4px 9px;
   white-space: nowrap;
@@ -49,18 +49,18 @@
   outline: none;
   background: none;
   font-size: 15.5px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .input::placeholder {
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .escape {
   font-family: var(--ex-font-mono);
   font-size: 10px;
-  color: var(--ex-slate-400);
-  background: var(--ex-surface-50);
+  color: var(--ex-fg-subtle);
+  background: var(--ex-bg-sunken);
   border-radius: 5px;
   padding: 4px 7px;
   flex-shrink: 0;
@@ -84,13 +84,13 @@
   font-family: var(--ex-font-mono);
   font-size: 9px;
   letter-spacing: 0.12em;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .groupCount {
   font-family: var(--ex-font-mono);
   font-size: 9.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .item {
@@ -108,12 +108,12 @@
 
 .item:hover,
 .itemActive {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
 }
 
 .itemTitle {
   font-size: 13px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -121,7 +121,7 @@
 
 .itemMeta {
   font-size: 11px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   margin-top: 3px;
   white-space: nowrap;
   overflow: hidden;
@@ -132,8 +132,8 @@
   font-family: var(--ex-font-mono);
   font-size: 8.5px;
   letter-spacing: 0.1em;
-  color: var(--ex-slate-400);
-  background: var(--ex-surface-50);
+  color: var(--ex-fg-subtle);
+  background: var(--ex-bg-sunken);
   border-radius: 4px;
   padding: 3px 6px;
   flex-shrink: 0;
@@ -145,19 +145,19 @@
   align-items: center;
   gap: 14px;
   padding: 10px 20px;
-  border-top: 1px solid var(--ex-line-inner);
+  border-top: 1px solid var(--ex-border-inner);
 }
 
 .shortcut {
   font-size: 10.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
 
 .recent {
   margin-left: auto;
   font-size: 10.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 /* 알림 패널 */
@@ -167,8 +167,8 @@
   right: 26px;
   width: 380px;
   max-height: 70vh;
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 16px;
   box-shadow: var(--ex-elevation-overlay);
   display: flex;
@@ -192,8 +192,8 @@
 .unreadBadge {
   font-family: var(--ex-font-mono);
   font-size: 9.5px;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border-radius: 999px;
   padding: 2px 7px;
 }
@@ -204,7 +204,7 @@
   background: none;
   padding: 0;
   font-size: 11.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 .notificationFilters {
@@ -215,8 +215,8 @@
 
 .notificationFilter {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
-  background: var(--ex-surface-50);
+  color: var(--ex-fg-muted);
+  background: var(--ex-bg-sunken);
   border: none;
   border-radius: 999px;
   padding: 5px 11px;
@@ -224,8 +224,8 @@
 
 .notificationFilterActive {
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-ink-900);
+  color: var(--ex-fg-on-inverse);
+  background: var(--ex-bg-inverse);
 }
 
 .notificationList {
@@ -248,14 +248,14 @@
 }
 
 .notification:hover {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
 }
 
 .unreadDot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
   flex-shrink: 0;
   margin-top: 6px;
 }
@@ -268,18 +268,18 @@
 .notificationItemTitle {
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .notificationBody {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   line-height: 1.6;
   margin-top: 4px;
 }
 
 .notificationAt {
   font-size: 10.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   margin-top: 5px;
 }

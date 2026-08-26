@@ -52,18 +52,18 @@ export default async function CareerCategoryPage({
         crumbs={["내 커리어", category.name]}
         actions={
           <>
-            <span style={{ fontSize: "12px", color: "var(--ex-slate-500)" }}>
+            <span style={{ fontSize: "12px", color: "var(--ex-fg-muted)" }}>
               기록 {category.recordCount}건
             </span>
-            <span style={{ fontSize: "12.5px", color: "var(--ex-slate-700)" }}>
+            <span style={{ fontSize: "12.5px", color: "var(--ex-fg-body)" }}>
               공유
             </span>
             <Icon
               name="clock-counter-clockwise"
               size={16}
-              color="var(--ex-slate-500)"
+              color="var(--ex-fg-muted)"
             />
-            <Icon name="dots-three" size={16} color="var(--ex-slate-500)" />
+            <Icon name="dots-three" size={16} color="var(--ex-fg-muted)" />
           </>
         }
       />

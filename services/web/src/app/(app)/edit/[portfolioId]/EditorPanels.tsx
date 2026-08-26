@@ -86,7 +86,7 @@ export function ChatPanel({
                 {result.patches && result.patches.length > 0 ? (
                   <div className={styles.patch}>
                     <div className={styles.patchHead}>
-                      <Icon name="git-diff" size={11} color="var(--ex-slate-500)" />
+                      <Icon name="git-diff" size={11} color="var(--ex-fg-muted)" />
                       <span className={styles.patchTitle}>
                         바뀐 곳 {result.patches.length}
                       </span>
@@ -97,7 +97,7 @@ export function ChatPanel({
                           <span className={styles.patchLabel}>{row.label}</span>
                           <span className={styles.patchValues}>
                             <span className={styles.patchBefore}>{row.before}</span>
-                            <Icon name="arrow-right" size={9} color="var(--ex-border-strong)" />
+                            <Icon name="arrow-right" size={9} color="var(--ex-border-firm)" />
                             <span className={styles.patchAfter}>{row.after}</span>
                           </span>
                         </div>
@@ -174,7 +174,7 @@ export function ChatPanel({
               aria-label="보내기"
               disabled={pending}
             >
-              <Icon name={pending ? "hourglass" : "arrow-up"} size={14} color="var(--ex-white)" />
+              <Icon name={pending ? "hourglass" : "arrow-up"} size={14} color="var(--ex-fg-on-accent)" />
             </button>
           </div>
         </div>
@@ -338,7 +338,7 @@ export function StyleControls({
         disabled={running}
         onClick={() => set({ weight: style.weight === "semibold" || style.weight === "bold" ? "normal" : "semibold" })}
       >
-        <Icon name="text-b" size={13} color={style.weight === "semibold" || style.weight === "bold" ? "#354DA8" : "var(--ex-slate-700)"} />
+        <Icon name="text-b" size={13} color={style.weight === "semibold" || style.weight === "bold" ? "#354DA8" : "var(--ex-fg-body)"} />
       </button>
       <button
         type="button"
@@ -348,7 +348,7 @@ export function StyleControls({
         disabled={running}
         onClick={() => set({ italic: !style.italic })}
       >
-        <Icon name="text-italic" size={13} color={style.italic ? "#354DA8" : "var(--ex-slate-700)"} />
+        <Icon name="text-italic" size={13} color={style.italic ? "#354DA8" : "var(--ex-fg-body)"} />
       </button>
       <button
         type="button"
@@ -358,7 +358,7 @@ export function StyleControls({
         disabled={running}
         onClick={() => set({ strike: !style.strike })}
       >
-        <Icon name="text-strikethrough" size={13} color={style.strike ? "#354DA8" : "var(--ex-slate-700)"} />
+        <Icon name="text-strikethrough" size={13} color={style.strike ? "#354DA8" : "var(--ex-fg-body)"} />
       </button>
     </>
   );
@@ -456,7 +456,7 @@ export function StyleControls({
               <Icon
                 name={option.icon}
                 size={14}
-                color={style.alignment === option.value ? "var(--ex-ink-900)" : "var(--ex-slate-500)"}
+                color={style.alignment === option.value ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
               />
             </button>
           ))}
@@ -661,7 +661,7 @@ export function HistoryPanel({
         <div key={revision.id} className={styles.revision}>
           {revision.actor === "ai" ? (
             <span className={styles.revisionAi}>
-              <Icon name="coffee" weight="fill" size={11} color="var(--ex-bean-50)" />
+              <Icon name="coffee" weight="fill" size={11} color="var(--ex-accent-surface)" />
             </span>
           ) : (
             <span className={styles.revisionUser}>지</span>
@@ -693,7 +693,7 @@ export function HistoryPanel({
       <div className={styles.checkpointHead}>되돌릴 수 있는 지점</div>
       {checkpoints.map((checkpoint) => (
         <div key={checkpoint.id} className={styles.checkpoint}>
-          <Icon name="flag" size={13} color="var(--ex-slate-500)" />
+          <Icon name="flag" size={13} color="var(--ex-fg-muted)" />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className={styles.checkpointName}>{checkpoint.label}</div>
             <div className={styles.checkpointAt}>
@@ -718,7 +718,7 @@ export function HistoryPanel({
 
       {/* P3 잠금 규칙 */}
       <div className={styles.lockNote}>
-        <Icon name="info" size={13} color="var(--ex-espresso)" />
+        <Icon name="info" size={13} color="var(--ex-accent-text)" />
         <span className={styles.lockNoteText}>
           직접 고친 부분은 AI가 다시 쓸 때 그대로 둡니다. 잠금을 풀면 함께 고칩니다.
         </span>

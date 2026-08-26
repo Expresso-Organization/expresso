@@ -45,7 +45,7 @@ export function OnboardingShell({
                   aria-current={current ? "step" : undefined}
                 >
                   <span className={styles.stepMark}>
-                    {done ? <Icon name="check" size={11} color="var(--ex-espresso)" /> : no}
+                    {done ? <Icon name="check" size={11} color="var(--ex-accent-text)" /> : no}
                   </span>
                   <span className={styles.stepLabel}>{label}</span>
                 </span>

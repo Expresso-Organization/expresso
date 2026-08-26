@@ -3,14 +3,14 @@
 .body {
   font-size: 13px;
   line-height: 1.85;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   word-break: break-word;
 }
 
 .heading {
   font-size: 14px;
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   letter-spacing: -0.01em;
   margin: 22px 0 8px;
 }
@@ -18,7 +18,7 @@
 .subheading {
   font-size: 13px;
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   margin: 16px 0 6px;
 }
 
@@ -48,17 +48,17 @@
 }
 
 .item::marker {
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .rule {
   border: none;
-  border-top: 1px solid var(--ex-line-inner);
+  border-top: 1px solid var(--ex-border-inner);
   margin: 20px 0;
 }
 
 .link {
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -66,13 +66,13 @@
 .code {
   font-family: var(--ex-font-mono);
   font-size: 11.5px;
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   border-radius: 4px;
   padding: 1px 5px;
 }
 
 .pre {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   border-radius: 8px;
   padding: 12px 14px;
   overflow-x: auto;
@@ -87,8 +87,8 @@
 .quote {
   margin: 0 0 12px;
   padding-left: 12px;
-  border-left: 2px solid var(--ex-line-200);
-  color: var(--ex-slate-500);
+  border-left: 2px solid var(--ex-border);
+  color: var(--ex-fg-muted);
 }
 
 .tableWrap {
@@ -103,13 +103,13 @@
 
 .tableHead,
 .tableCell {
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   padding: 6px 10px;
   text-align: left;
 }
 
 .tableHead {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }

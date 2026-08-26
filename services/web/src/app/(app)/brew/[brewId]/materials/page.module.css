@@ -9,7 +9,7 @@
 .left {
   flex: 1;
   min-width: 0;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   padding: 26px 30px;
   display: flex;
   flex-direction: column;
@@ -28,7 +28,7 @@
   width: 34px;
   height: 34px;
   border-radius: 9px;
-  background: var(--ex-bean-50);
+  background: var(--ex-accent-surface);
   display: grid;
   place-items: center;
 }
@@ -42,14 +42,14 @@
 .headNote {
   margin-left: auto;
   font-size: 12px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .blurb {
   flex-shrink: 0;
   font-size: 13px;
   line-height: 1.75;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   margin-bottom: 18px;
   max-width: 640px;
 }
@@ -60,7 +60,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  border-bottom: 1px solid var(--ex-hairline);
+  border-bottom: 1px solid var(--ex-border-hair);
   margin-bottom: 12px;
 }
 
@@ -68,19 +68,19 @@
   border: none;
   background: none;
   font-size: 12.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   padding: 0 2px 9px;
   transition: color var(--ex-motion-quick);
 }
 
 .tab:hover {
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .tabActive {
   font-weight: 600;
-  color: var(--ex-ink-900);
-  border-bottom: 1.5px solid var(--ex-ink-900);
+  color: var(--ex-fg);
+  border-bottom: 1.5px solid var(--ex-fg);
   margin-bottom: -1px;
 }
 
@@ -97,11 +97,11 @@
   background: none;
   padding: 0;
   font-size: 12px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .tabsAction:hover {
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .splitButton {
@@ -109,14 +109,14 @@
   align-items: stretch;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
 }
 
 .splitPrimary {
   font-size: 12px;
   font-weight: 600;
-  color: var(--ex-slate-700);
-  background: var(--ex-white);
+  color: var(--ex-fg-body);
+  background: var(--ex-bg);
   border: none;
   padding: 7px 12px;
   white-space: nowrap;
@@ -124,19 +124,19 @@
 }
 
 .splitPrimary:hover {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
 }
 
 .splitDivider {
   width: 1px;
-  background: var(--ex-line-200);
+  background: var(--ex-border);
 }
 
 .splitAi {
   font-size: 12px;
   font-weight: 600;
-  color: var(--ex-espresso-text);
-  background: var(--ex-bean-50);
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
   border: none;
   padding: 7px 12px;
   display: flex;
@@ -147,14 +147,14 @@
 }
 
 .splitAi:hover {
-  background: var(--ex-bean-100);
+  background: var(--ex-accent-surface-hover);
 }
 
 /* 5열 테이블 */
 .table {
   flex: 1;
   min-height: 0;
-  border: 1px solid var(--ex-hairline);
+  border: 1px solid var(--ex-border-hair);
   border-radius: 10px;
   overflow: auto;
 }
@@ -162,12 +162,12 @@
 .row {
   display: grid;
   grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px;
-  border-bottom: 1px solid var(--ex-hairline);
+  border-bottom: 1px solid var(--ex-border-hair);
   align-items: center;
 }
 
 .headRow {
-  background: var(--ex-table-header);
+  background: var(--ex-bg-header);
   position: sticky;
   top: 0;
   z-index: 1;
@@ -178,7 +178,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  border-left: 1px solid var(--ex-hairline);
+  border-left: 1px solid var(--ex-border-hair);
 }
 
 .headCell:first-child {
@@ -187,7 +187,7 @@
 
 .headLabel {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .bodyRow {
@@ -197,13 +197,13 @@
 }
 
 .bodyRow:hover {
-  background: var(--ex-table-header);
+  background: var(--ex-bg-header);
 }
 
 /* 체크된 행은 surface-50 지면 */
 .bodyRowSelected,
 .bodyRowSelected:hover {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
 }
 
 .titleCell {
@@ -219,19 +219,19 @@
   height: 15px;
   border-radius: 4px;
   flex-shrink: 0;
-  border: 1.5px solid var(--ex-border-quiet);
+  border: 1.5px solid var(--ex-border-soft);
   display: grid;
   place-items: center;
 }
 
 .checkboxOn {
-  background: var(--ex-ink-900);
-  border-color: var(--ex-ink-900);
+  background: var(--ex-bg-inverse);
+  border-color: var(--ex-fg);
 }
 
 .title {
   font-size: 13px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -241,8 +241,8 @@
   font-family: var(--ex-font-mono);
   font-size: 8.5px;
   letter-spacing: 0.08em;
-  color: var(--ex-espresso-text);
-  background: var(--ex-bean-50);
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
   border-radius: 4px;
   padding: 2px 5px;
   white-space: nowrap;
@@ -251,9 +251,9 @@
 
 .cell {
   padding: 9px 12px;
-  border-left: 1px solid var(--ex-hairline);
+  border-left: 1px solid var(--ex-border-hair);
   font-size: 12px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -267,8 +267,8 @@
 
 .tag {
   font-size: 10.5px;
-  color: var(--ex-slate-700);
-  background: var(--ex-line-inner);
+  color: var(--ex-fg-body);
+  background: var(--ex-border-inner);
   border-radius: 5px;
   padding: 3px 8px;
   white-space: nowrap;
@@ -277,7 +277,7 @@
 /* 매칭 게이지 */
 .scoreCell {
   padding: 9px 12px;
-  border-left: 1px solid var(--ex-hairline);
+  border-left: 1px solid var(--ex-border-hair);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -286,7 +286,7 @@
 .scoreTrack {
   flex: 1;
   height: 5px;
-  background: var(--ex-surface-100);
+  background: var(--ex-bg-muted);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -312,20 +312,20 @@
 
 .footNoteText {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .footNoteDot {
   font-size: 11.5px;
-  color: var(--ex-border-strong);
+  color: var(--ex-border-firm);
 }
 
 /* 우측 396px 레일 — 지면이 #F5F8FC */
 .rail {
   width: 396px;
   flex-shrink: 0;
-  background: #f5f8fc;
-  border-left: 1px solid var(--ex-line-200);
+  background: var(--ex-bg-sunken);
+  border-left: 1px solid var(--ex-border);
   padding: 26px 24px;
   display: flex;
   flex-direction: column;
@@ -347,12 +347,12 @@
 .railNote {
   margin-left: auto;
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .mixCard {
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 13px;
   padding: 15px 17px;
 }
@@ -388,21 +388,21 @@
 
 .mixLabel {
   font-size: 12px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   flex: 1;
 }
 
 .mixCount {
   font-family: var(--ex-font-mono);
   font-size: 10.5px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .railSection {
   flex-shrink: 0;
   margin-top: 20px;
   padding-top: 18px;
-  border-top: 1px solid var(--ex-line-200);
+  border-top: 1px solid var(--ex-border);
 }
 
 .railSectionWide {
@@ -421,7 +421,7 @@
   font-family: var(--ex-font-mono);
   font-size: 10px;
   letter-spacing: 0.1em;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
 }
 
 .modeTitle {
@@ -438,8 +438,8 @@
   display: flex;
   align-items: flex-start;
   gap: 11px;
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 12px;
   padding: 13px 15px;
   text-align: left;
@@ -448,20 +448,20 @@
 
 /* 선택된 모드 — 요금제와 함께 espresso 보더를 쓰는 시그니처 문맥 */
 .modeSelected {
-  border: 1.5px solid var(--ex-espresso);
+  border: 1.5px solid var(--ex-accent);
 }
 
 .modeMark {
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  border: 1.5px solid var(--ex-border-quiet);
+  border: 1.5px solid var(--ex-border-soft);
   flex-shrink: 0;
   margin-top: 2px;
 }
 
 .modeSelected .modeMark {
-  border: 4.5px solid var(--ex-espresso);
+  border: 4.5px solid var(--ex-accent);
 }
 
 .modeName {
@@ -476,7 +476,7 @@
 
 .modeDesc {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   line-height: 1.6;
 }
 
@@ -484,8 +484,8 @@
   font-family: var(--ex-font-mono);
   font-size: 9px;
   letter-spacing: 0.1em;
-  color: var(--ex-espresso);
-  background: var(--ex-bean-50);
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
   border-radius: 5px;
   padding: 2px 5px;
   margin-left: 3px;
@@ -505,7 +505,7 @@
 
 .railRowBody {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   line-height: 1.6;
 }
 
@@ -515,7 +515,7 @@
   padding: 0;
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -525,7 +525,7 @@
   width: 40px;
   height: 23px;
   border-radius: 999px;
-  background: var(--ex-ink-900);
+  background: var(--ex-bg-inverse);
   border: none;
   padding: 3px;
   display: flex;
@@ -537,7 +537,7 @@
   width: 17px;
   height: 17px;
   border-radius: 50%;
-  background: var(--ex-white);
+  background: var(--ex-bg);
 }
 
 .reasons {
@@ -555,27 +555,27 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--ex-border-strong);
+  background: var(--ex-border-firm);
   flex-shrink: 0;
 }
 
 .reasonLabel {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   flex: 1;
 }
 
 .reasonCount {
   font-family: var(--ex-font-mono);
   font-size: 10px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 /* 쿼터 + brew CTA */
 .quota {
   margin-top: auto;
   padding-top: 20px;
-  border-top: 1px solid var(--ex-line-200);
+  border-top: 1px solid var(--ex-border);
 }
 
 .quotaHead {
@@ -587,14 +587,14 @@
 
 .quotaLabel {
   font-size: 12px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 .quotaValue {
   margin-left: auto;
   font-family: var(--ex-font-mono);
   font-size: 10.5px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .quotaSlots {
@@ -607,11 +607,11 @@
   flex: 1;
   height: 5px;
   border-radius: 999px;
-  background: var(--ex-line-200);
+  background: var(--ex-border);
 }
 
 .quotaSlotUsed {
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
 }
 
 .brew {
@@ -619,8 +619,8 @@
   width: 100%;
   font-size: 13.5px;
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 999px;
   padding: 13px;
@@ -631,16 +631,16 @@
 }
 
 .brew:hover {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
   transform: translateY(-1px);
-  color: var(--ex-white);
+  color: var(--ex-fg-on-accent);
 }
 
 /* 담을 수 없다고 말해야 할 때 */
 .notice {
   font-size: 11.5px;
-  color: var(--ex-danger-text);
-  background: var(--ex-danger-surface);
+  color: var(--ex-status-danger-text);
+  background: var(--ex-status-danger-surface);
   border-radius: 8px;
   padding: 8px 12px;
   margin-bottom: 10px;
@@ -650,7 +650,7 @@
 .emptyRow {
   padding: 22px 16px;
   font-size: 11.5px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   text-align: center;
 }
 

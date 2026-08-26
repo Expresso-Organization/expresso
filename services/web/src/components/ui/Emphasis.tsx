@@ -19,8 +19,8 @@ export function Emphasis({
       <span
         key={index}
         style={{
-          background: "var(--ex-bean-50)",
-          color: "var(--ex-ink-900)",
+          background: "var(--ex-accent-surface)",
+          color: "var(--ex-fg)",
           borderRadius: "3px",
           padding: "1px 3px",
         }}
@@ -28,7 +28,7 @@ export function Emphasis({
         {part}
       </span>
     ) : (
-      <b key={index} style={{ color: "var(--ex-ink-900)", fontWeight: 600 }}>
+      <b key={index} style={{ color: "var(--ex-fg)", fontWeight: 600 }}>
         {part}
       </b>
     ),

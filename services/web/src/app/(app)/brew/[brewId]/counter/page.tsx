@@ -82,7 +82,7 @@ export default async function CounterPage({
         <div className={styles.card}>
           <div className={styles.head}>
             <span className={styles.avatar}>
-              <Icon name="coffee" weight="fill" size={12} color="var(--ex-bean-50)" />
+              <Icon name="coffee" weight="fill" size={12} color="var(--ex-accent-surface)" />
             </span>
             <span className={styles.headName}>바리스타</span>
             <span className={styles.headNote}>
@@ -127,12 +127,12 @@ export default async function CounterPage({
               <>
                 <div className={styles.aiRow}>
                   <span className={styles.aiAvatar}>
-                    <Icon name="coffee" weight="fill" size={12} color="var(--ex-espresso)" />
+                    <Icon name="coffee" weight="fill" size={12} color="var(--ex-accent-text)" />
                   </span>
                   <div className={styles.aiBubble}>{last.text}</div>
                 </div>
                 <div className={styles.recordChip}>
-                  <Icon name="file-text" size={14} color="var(--ex-slate-500)" />
+                  <Icon name="file-text" size={14} color="var(--ex-fg-muted)" />
                   <span className={styles.recordChipTitle}>답한 내용이 기록으로 남았습니다</span>
                   <Link href="/career/experience" className={styles.recordChipAction}>
                     보기
@@ -144,7 +144,7 @@ export default async function CounterPage({
             {current ? (
               <div className={styles.questionRow}>
                 <span className={`${styles.questionAvatar} ex-anim-bob`}>
-                  <Icon name="coffee" weight="fill" size={12} color="var(--ex-bean-50)" />
+                  <Icon name="coffee" weight="fill" size={12} color="var(--ex-accent-surface)" />
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className={styles.questionNo}>{no(current.order)}</div>
@@ -212,7 +212,7 @@ export default async function CounterPage({
                   <Icon
                     name={current.basis.type === "requirement" ? "target" : "file-text"}
                     size={14}
-                    color="var(--ex-slate-500)"
+                    color="var(--ex-fg-muted)"
                   />
                   <span className={styles.recordTitle}>
                     {current.basis.type === "requirement"
@@ -248,7 +248,7 @@ export default async function CounterPage({
             <div className={styles.finishedList}>
               {answered.map((question) => (
                 <div key={question.id} className={styles.finishedRow}>
-                  <Icon name="check" size={13} color="var(--ex-slate-500)" />
+                  <Icon name="check" size={13} color="var(--ex-fg-muted)" />
                   <span className={styles.finishedTitle}>{question.text}</span>
                 </div>
               ))}

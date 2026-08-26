@@ -19,8 +19,8 @@ export function LogoMark({
   const clip = `ex-logo-clip-${uid}`;
   const mask = `ex-logo-mask-${uid}`;
 
-  const cup = tone === "light" ? "#9A4030" : "#E0B486";
-  const handle = tone === "light" ? "#E0B486" : "#A9793F";
+  const cup = tone === "light" ? "var(--ex-accent)" : "var(--ex-accent-soft)";
+  const handle = tone === "light" ? "var(--ex-accent-soft)" : "#A9793F";
 
   return (
     <svg
@@ -76,13 +76,13 @@ export function Wordmark({
         fontSize: `${size}px`,
         fontWeight: 500,
         letterSpacing: "-.025em",
-        color: tone === "light" ? "var(--ex-ink-900)" : "var(--ex-white)",
+        color: tone === "light" ? "var(--ex-fg)" : "var(--ex-fg-on-accent)",
       }}
     >
       Expre
       <span
         style={{
-          color: tone === "light" ? "var(--ex-espresso)" : "var(--ex-crema)",
+          color: tone === "light" ? "var(--ex-accent-text)" : "var(--ex-accent-soft)",
         }}
       >
         ss

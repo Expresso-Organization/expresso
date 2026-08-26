@@ -167,7 +167,7 @@ export function SignupForm({
                 className={`${styles.consentBox} ${agreed ? styles.consentBoxOn : ""}`}
               >
                 {agreed ? (
-                  <Icon name="check" weight="bold" size={10} color="var(--ex-white)" />
+                  <Icon name="check" weight="bold" size={10} color="var(--ex-fg-on-accent)" />
                 ) : null}
               </button>
               <span className={styles.consentText}>

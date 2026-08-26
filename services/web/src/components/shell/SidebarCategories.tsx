@@ -41,21 +41,21 @@ export function SidebarCategories({
             }`}
             aria-current={isActive ? "page" : undefined}
           >
-            <Icon name="caret-right" size={10} color="var(--ex-border-strong)" />
+            <Icon name="caret-right" size={10} color="var(--ex-border-firm)" />
             <Icon
               name={CATEGORY_ICONS[category.key] ?? "file-text"}
               weight={isActive ? "fill" : "regular"}
               size={14}
-              color={isActive ? "var(--ex-ink-900)" : "var(--ex-slate-500)"}
+              color={isActive ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
             />
             <span className={styles.categoryName}>{category.name}</span>
             <span className={styles.categoryCount}>{category.recordCount}</span>
-            <Icon name="plus" size={11} color="var(--ex-border-strong)" />
+            <Icon name="plus" size={11} color="var(--ex-border-firm)" />
           </Link>
         );
       })}
       <div className={styles.addCategory}>
-        <Icon name="plus" size={13} color="var(--ex-slate-500)" />
+        <Icon name="plus" size={13} color="var(--ex-fg-muted)" />
         <span className={styles.addCategoryLabel}>카테고리 추가</span>
       </div>
     </div>

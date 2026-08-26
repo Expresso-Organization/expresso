@@ -84,7 +84,7 @@ export default async function OnboardingConsentPage() {
               />
               <span className={styles.consentBody}>
                 <span className={styles.consentTitle}>
-                  <Icon name={item.icon} size={14} color="var(--ex-espresso)" />
+                  <Icon name={item.icon} size={14} color="var(--ex-accent-text)" />
                   {item.title}
                   {state ? <Status consent={state} /> : null}
                 </span>

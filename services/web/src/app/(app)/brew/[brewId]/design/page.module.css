@@ -17,8 +17,8 @@
 }
 
 .card {
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 16px;
 }
 
@@ -44,7 +44,7 @@
 
 .pickerNote {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .toneRow {
@@ -56,7 +56,7 @@
 
 .toneLabel {
   font-size: 11.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 /* 기업 톤 토글 34×20 — 색은 미리보기에 구워 나오므로 서버를 다시 부르는 링크다 */
@@ -64,7 +64,7 @@
   width: 34px;
   height: 20px;
   border-radius: 999px;
-  background: var(--ex-line-200);
+  background: var(--ex-border);
   border: none;
   padding: 3px;
   display: flex;
@@ -73,7 +73,7 @@
 }
 
 .toneToggleOn {
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
   justify-content: flex-end;
 }
 
@@ -81,7 +81,7 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--ex-white);
+  background: var(--ex-bg);
 }
 
 /* 레시피 안내 바 */
@@ -89,8 +89,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--ex-surface-50);
-  border: 1px solid var(--ex-track);
+  background: var(--ex-bg-sunken);
+  border: 1px solid var(--ex-bg-track);
   border-radius: 10px;
   padding: 9px 13px;
   margin-bottom: 13px;
@@ -98,14 +98,14 @@
 
 .recipeBarText {
   font-size: 12px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   white-space: nowrap;
 }
 
 .recipeBarSections {
   font-family: var(--ex-font-mono);
   font-size: 10px;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -119,7 +119,7 @@
   padding: 0;
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -135,10 +135,10 @@
 }
 
 .template {
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 14px;
   overflow: hidden;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -149,7 +149,7 @@
 }
 
 .template:hover {
-  border-color: var(--ex-border-strong);
+  border-color: var(--ex-border-firm);
   transform: translateY(-2px);
 }
 
@@ -185,7 +185,7 @@
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: var(--ex-white);
+  color: var(--ex-fg-on-accent);
   white-space: nowrap;
 }
 
@@ -197,7 +197,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
   border-radius: 6px;
   padding: 4px 8px;
 }
@@ -205,7 +205,7 @@
 .templateFoot {
   flex-shrink: 0;
   padding: 12px 14px;
-  border-top: 1px solid var(--ex-line-inner);
+  border-top: 1px solid var(--ex-border-inner);
 }
 
 .templateNameRow {
@@ -227,8 +227,8 @@
   font-family: var(--ex-font-mono);
   font-size: 9px;
   letter-spacing: 0.08em;
-  color: var(--ex-slate-500);
-  background: var(--ex-hairline);
+  color: var(--ex-fg-muted);
+  background: var(--ex-border-hair);
   border-radius: 4px;
   padding: 2px 6px;
 }
@@ -238,15 +238,15 @@
   font-family: var(--ex-font-mono);
   font-size: 9px;
   letter-spacing: 0.08em;
-  color: var(--ex-espresso-text);
-  background: var(--ex-bean-50);
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
   border-radius: 4px;
   padding: 2px 6px;
 }
 
 .templateDesc {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -291,7 +291,7 @@
 
 .chosenLabel {
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   width: 52px;
   flex-shrink: 0;
 }
@@ -310,29 +310,29 @@
 .ciNote {
   margin-left: auto;
   font-size: 11px;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
   white-space: nowrap;
 }
 
 .chosenValue {
   font-size: 12.5px;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .styleSelect {
   min-width: 0;
   flex: 1;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 7px;
-  background: var(--ex-white);
-  color: var(--ex-ink-900);
+  background: var(--ex-bg);
+  color: var(--ex-fg);
   padding: 5px 7px;
   font: inherit;
   font-size: 11.5px;
 }
 
 .styleSelect:focus-visible {
-  outline: 2px solid var(--ex-espresso);
+  outline: 2px solid var(--ex-accent);
   outline-offset: 2px;
 }
 
@@ -355,8 +355,8 @@
   width: 100%;
   font-size: 14px;
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 11px;
   padding: 13px;
@@ -370,15 +370,15 @@
 }
 
 .brew:hover {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
   transform: translateY(-1px);
-  color: var(--ex-white);
+  color: var(--ex-fg-on-accent);
 }
 
 .brewNote {
   text-align: center;
   font-size: 11.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   margin-top: 10px;
 }
 
@@ -433,7 +433,7 @@
   align-items: center;
   gap: 7px;
   padding: 9px 11px;
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   border-radius: 9px;
   margin-bottom: 12px;
 }
@@ -442,20 +442,20 @@
   flex: 1;
   min-width: 0;
   font-size: 11.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 .madeLink {
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
 }
 
 .failure {
   font-size: 12px;
   line-height: 1.7;
-  color: var(--ex-espresso);
-  background: var(--ex-bean-50, #fbf6f1);
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
   border-radius: 9px;
   padding: 9px 11px;
   margin-top: 11px;
@@ -464,7 +464,7 @@
 .gateNoteSmall {
   font-size: 11.5px;
   line-height: 1.7;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   margin-top: 10px;
 }
 
@@ -484,8 +484,8 @@
   gap: 10px;
   text-align: center;
   max-width: 420px;
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 16px;
   padding: 30px 28px 26px;
 }
@@ -494,7 +494,7 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
   display: grid;
   place-items: center;
 }
@@ -508,7 +508,7 @@
 .gateNote {
   font-size: 12.5px;
   line-height: 1.8;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .gateStage {
@@ -517,14 +517,14 @@
   gap: 7px;
   font-family: var(--ex-font-mono);
   font-size: 10.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .gateDot {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
 }
 
 .gateAction {
@@ -535,8 +535,8 @@
   padding: 10px 20px;
   border: none;
   border-radius: 10px;
-  background: var(--ex-espresso);
-  color: var(--ex-white);
+  background: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -545,10 +545,10 @@
 .gateGhost {
   margin-top: 6px;
   padding: 9px 18px;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 10px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   font-size: 12.5px;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   cursor: pointer;
 }

@@ -105,7 +105,7 @@ export default async function AnalyzePage({
           </div>
 
           <div className={styles.sourceCard}>
-            <Icon name="file-text" size={15} color="var(--ex-slate-500)" />
+            <Icon name="file-text" size={15} color="var(--ex-fg-muted)" />
             <span className={styles.sourceTitle}>{brew.posting?.title ?? "공고 없이 시작한 제작"}</span>
             <span className={styles.sourceMeta}>
               {brew.posting?.companyName ?? "목표 없음"}
@@ -173,7 +173,7 @@ export default async function AnalyzePage({
           </div>
 
           <div className={styles.readBar}>
-            <Icon name="books" size={16} color="var(--ex-slate-400)" />
+            <Icon name="books" size={16} color="var(--ex-fg-subtle)" />
             <span className={styles.readBarText}>
               요건은 모두 공고 원문에서 그대로 잘라 왔습니다 — 원문에 없는 인용은 버립니다
               {analysis.analyzedAt
@@ -208,7 +208,7 @@ export default async function AnalyzePage({
               <Icon
                 name="chat-teardrop-dots"
                 size={19}
-                color="var(--ex-espresso)"
+                color="var(--ex-accent-text)"
                 style={{ flexShrink: 0, marginTop: "1px" }}
               />
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -226,10 +226,10 @@ export default async function AnalyzePage({
       </div>
 
       <div className={styles.footer}>
-        <Icon name="target" size={17} color="var(--ex-espresso)" />
+        <Icon name="target" size={17} color="var(--ex-accent-text)" />
         <span className={styles.footerText}>
           이 분석 결과로 {brew.materials.total}건 중{" "}
-          <b style={{ color: "var(--ex-ink-900)" }}>{brew.materials.selected}건</b>을
+          <b style={{ color: "var(--ex-fg)" }}>{brew.materials.selected}건</b>을
           골라두었습니다
         </span>
         <div className={styles.footerActions}>

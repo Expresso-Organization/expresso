@@ -70,7 +70,7 @@ export default async function HomePage() {
         <div className={styles.content}>
           {/* 영역 1 — AI 검색 바 */}
           <form className={styles.searchBar} action="/jobs">
-            <Icon name="sparkle" size={18} color="var(--ex-espresso)" />
+            <Icon name="sparkle" size={18} color="var(--ex-accent-text)" />
             <input
               name="q"
               className={styles.searchInput}
@@ -95,7 +95,7 @@ export default async function HomePage() {
               </Link>
             ))}
             <button type="button" className={styles.savedSearches}>
-              <Icon name="bell-simple" size={14} color="var(--ex-slate-500)" />
+              <Icon name="bell-simple" size={14} color="var(--ex-fg-muted)" />
               저장한 검색
             </button>
           </div>
@@ -149,7 +149,7 @@ export default async function HomePage() {
                     <Icon
                       name={CATEGORY_ICONS[category.key] ?? "file-text"}
                       size={15}
-                      color="var(--ex-slate-500)"
+                      color="var(--ex-fg-muted)"
                     />
                   </span>
                   <span className={styles.categoryCardName}>{category.name}</span>
@@ -306,7 +306,7 @@ async function Portfolios({ accessToken }: { accessToken: string }) {
           ))}
           <Link href="/brew/new" className={styles.newPortfolio}>
             <span className={styles.newPortfolioIcon}>
-              <Icon name="plus" size={18} color="var(--ex-espresso)" />
+              <Icon name="plus" size={18} color="var(--ex-accent-text)" />
             </span>
             <span>
               <span className={styles.newPortfolioTitle}>새 포트폴리오</span>

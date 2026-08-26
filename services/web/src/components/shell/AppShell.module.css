@@ -10,7 +10,7 @@
   display: flex;
   height: 100dvh;
   min-width: 1280px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   overflow: hidden;
   font-size: 13px;
 }
@@ -26,8 +26,8 @@
 .header {
   height: 56px;
   flex-shrink: 0;
-  background: var(--ex-white);
-  border-bottom: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border-bottom: 1px solid var(--ex-border);
   display: flex;
   align-items: center;
   gap: 14px;
@@ -37,7 +37,7 @@
 /* 내 커리어(05)의 헤더 — 46px, breadcrumb, 보더 #F2F5F9 */
 .headerDocument {
   height: 46px;
-  border-bottom: 1px solid var(--ex-hairline);
+  border-bottom: 1px solid var(--ex-border-hair);
   gap: 10px;
   padding: 0 22px;
 }
@@ -49,7 +49,7 @@
 
 .crumb {
   font-size: 12.5px;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 /*
@@ -63,14 +63,14 @@
 }
 
 .crumbLink:hover {
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
 .crumbSeparator {
   font-size: 12.5px;
-  color: var(--ex-border-strong);
+  color: var(--ex-border-firm);
 }
 
 .crumbCurrent {
@@ -99,12 +99,12 @@
   border: none;
   border-radius: 9px;
   background: none;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   transition: background var(--ex-motion-instant);
 }
 
 .iconButton:hover {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
 }
 
 .notificationDot {
@@ -114,8 +114,8 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--ex-espresso);
-  border: 1.5px solid var(--ex-white);
+  background: var(--ex-accent);
+  border: 1.5px solid var(--ex-bg);
 }
 
 .body {

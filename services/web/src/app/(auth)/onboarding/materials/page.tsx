@@ -60,21 +60,21 @@ export default function OnboardingMaterialsPage() {
 
       <div className={styles.importGrid}>
         <div className={styles.dropZone}>
-          <Icon name="upload-simple" size={22} color="var(--ex-slate-400)" />
+          <Icon name="upload-simple" size={22} color="var(--ex-fg-subtle)" />
           <span className={styles.dropTitle}>이력서를 여기에 놓으십시오</span>
           <span className={styles.dropNote}>PDF · DOCX · 최대 10MB</span>
           <div className={styles.uploaded}>
-            <Icon name="file-pdf" size={16} color="var(--ex-espresso)" />
+            <Icon name="file-pdf" size={16} color="var(--ex-accent-text)" />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className={styles.uploadedName}>resume_2026.pdf</div>
               <div className={styles.uploadedMeta}>842KB · 방금 업로드</div>
             </div>
-            <Icon name="check-circle" weight="fill" size={15} color="var(--ex-success)" />
+            <Icon name="check-circle" weight="fill" size={15} color="var(--ex-status-success)" />
           </div>
         </div>
 
         <div className={styles.importCard}>
-          <Icon name="github-logo" weight="fill" size={18} color="var(--ex-slate-700)" />
+          <Icon name="github-logo" weight="fill" size={18} color="var(--ex-fg-body)" />
           <div style={{ minWidth: 0 }}>
             <div className={styles.importTitle}>GitHub 저장소</div>
             <div className={styles.importNote}>공개 저장소에서 프로젝트를 가져옵니다</div>
@@ -83,7 +83,7 @@ export default function OnboardingMaterialsPage() {
         </div>
 
         <div className={styles.importCard}>
-          <Icon name="link-simple" size={18} color="var(--ex-slate-700)" />
+          <Icon name="link-simple" size={18} color="var(--ex-fg-body)" />
           <div style={{ minWidth: 0 }}>
             <div className={styles.importTitle}>링크로 가져오기</div>
             <div className={styles.importNote}>노션 · 블로그 · 발표 자료 주소</div>
@@ -129,10 +129,10 @@ export default function OnboardingMaterialsPage() {
                 style={
                   on
                     ? undefined
-                    : { background: "none", border: "1.5px solid var(--ex-border-quiet)" }
+                    : { background: "none", border: "1.5px solid var(--ex-border-soft)" }
                 }
               >
-                {on ? <Icon name="check" size={10} color="var(--ex-white)" /> : null}
+                {on ? <Icon name="check" size={10} color="var(--ex-fg-on-accent)" /> : null}
               </span>
               <span className={styles.splitCategory}>{row.category}</span>
               <span className={styles.splitName}>{row.name}</span>
@@ -143,7 +143,7 @@ export default function OnboardingMaterialsPage() {
       </div>
 
       <div className={styles.gapNote}>
-        <Icon name="coffee" weight="fill" size={13} color="var(--ex-espresso)" />
+        <Icon name="coffee" weight="fill" size={13} color="var(--ex-accent-text)" />
         숫자가 빈 기록 <b>4건</b>은 나중에 질문으로 채웁니다
       </div>
     </OnboardingShell>

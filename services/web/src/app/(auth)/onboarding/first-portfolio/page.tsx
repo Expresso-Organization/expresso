@@ -126,7 +126,7 @@ export default function OnboardingFirstPortfolioPage() {
       </div>
 
       <div className={styles.altCard}>
-        <Icon name="folder-open" size={18} color="var(--ex-slate-500)" />
+        <Icon name="folder-open" size={18} color="var(--ex-fg-muted)" />
         <div style={{ minWidth: 0 }}>
           <div className={styles.altTitle}>먼저 기록부터 다듬고 싶다면</div>
           <div className={styles.altNote}>내 커리어로 이동해 자유롭게 정리하십시오</div>

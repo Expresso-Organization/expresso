@@ -42,7 +42,7 @@ export default async function PublicSitePage({
   return (
     <div className={styles.page}>
       <div className={styles.ownerBar}>
-        <Icon name="eye" size={15} color="var(--ex-white)" />
+        <Icon name="eye" size={15} color="var(--ex-fg-on-accent)" />
         <span className={styles.ownerLabel}>내 사이트를 보는 중</span>
         <span className={styles.ownerMeta}>
           {deployment ? `v${deployment.version} · ${deployment.subdomain}` : "아직 배포 전"}

@@ -25,13 +25,13 @@ import styles from "./page.module.css";
 /** 매칭 게이지 채움 색은 점수 구간으로 갈린다 (정의서). */
 function fillColor(score: number, top: number): string {
   const ratio = top === 0 ? 0 : score / top;
-  if (ratio >= 0.8) return "var(--ex-ink-900)";
-  if (ratio >= 0.4) return "var(--ex-slate-500)";
-  return "var(--ex-border-strong)";
+  if (ratio >= 0.8) return "var(--ex-fg)";
+  if (ratio >= 0.4) return "var(--ex-fg-muted)";
+  return "var(--ex-border-firm)";
 }
 
 /** 카테고리 띠는 무채색 단계로 나눈다 (§5.4). */
-const MIX_SHADES = ["#16223A", "#5A6B87", "#93A2BA", "#C7D2E2", "#E3E9F2"];
+const MIX_SHADES = ["var(--ex-fg)", "var(--ex-fg-muted)", "var(--ex-fg-subtle)", "var(--ex-border-firm)", "var(--ex-border)"];
 
 const EXCLUSION_LABEL: Record<string, string> = {
   AUTO_LIMIT: "담을 수 있는 수를 넘음",
@@ -129,7 +129,7 @@ export function MaterialPicker({
       <div className={styles.left}>
         <div className={styles.head}>
           <span className={styles.headIcon}>
-            <Icon name="list-checks" weight="fill" size={18} color="var(--ex-espresso)" />
+            <Icon name="list-checks" weight="fill" size={18} color="var(--ex-accent-text)" />
           </span>
           <span className={styles.headTitle}>무엇을 담을까요</span>
           <span className={styles.headNote}>공고 매칭도가 높은 순</span>
@@ -162,7 +162,7 @@ export function MaterialPicker({
                 type="button"
                 className={styles.tabsAction}
                 aria-pressed={sort === option.id}
-                style={sort === option.id ? { color: "var(--ex-ink-900)", fontWeight: 600 } : undefined}
+                style={sort === option.id ? { color: "var(--ex-fg)", fontWeight: 600 } : undefined}
                 onClick={() => setSort(option.id)}
               >
                 {option.label}
@@ -176,23 +176,23 @@ export function MaterialPicker({
         <div className={styles.table}>
           <div className={`${styles.row} ${styles.headRow}`}>
             <div className={styles.headCell}>
-              <Icon name="text-aa" size={12} color="var(--ex-slate-500)" />
+              <Icon name="text-aa" size={12} color="var(--ex-fg-muted)" />
               <span className={styles.headLabel}>제목</span>
             </div>
             <div className={styles.headCell}>
-              <Icon name="folder-simple" size={12} color="var(--ex-slate-500)" />
+              <Icon name="folder-simple" size={12} color="var(--ex-fg-muted)" />
               <span className={styles.headLabel}>카테고리</span>
             </div>
             <div className={styles.headCell}>
-              <Icon name="calendar-blank" size={12} color="var(--ex-slate-500)" />
+              <Icon name="calendar-blank" size={12} color="var(--ex-fg-muted)" />
               <span className={styles.headLabel}>시기</span>
             </div>
             <div className={styles.headCell}>
-              <Icon name="seal-check" size={12} color="var(--ex-slate-500)" />
+              <Icon name="seal-check" size={12} color="var(--ex-fg-muted)" />
               <span className={styles.headLabel}>상태</span>
             </div>
             <div className={styles.headCell}>
-              <Icon name="target" size={12} color="var(--ex-espresso)" />
+              <Icon name="target" size={12} color="var(--ex-accent-text)" />
               <span className={styles.headLabel}>매칭</span>
             </div>
           </div>
@@ -217,9 +217,9 @@ export function MaterialPicker({
               >
                 <div className={styles.titleCell}>
                   <span className={`${styles.checkbox} ${on ? styles.checkboxOn : ""}`}>
-                    {on ? <Icon name="check" size={10} color="var(--ex-white)" /> : null}
+                    {on ? <Icon name="check" size={10} color="var(--ex-fg-on-accent)" /> : null}
                   </span>
-                  <Icon name="file-text" size={14} color="var(--ex-slate-500)" />
+                  <Icon name="file-text" size={14} color="var(--ex-fg-muted)" />
                   <span className={styles.title}>{row.title}</span>
                   {row.origin === "ai" || row.origin === "interview" ? (
                     <span className={styles.aiBadge}>AI</span>
