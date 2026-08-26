@@ -602,3 +602,31 @@
   margin-top: 14px;
 }
 
+
+/*
+ * 좁은 화면 — 원문과 레일을 위아래로 쌓는다.
+ *
+ * 레일에는 "내 기록이 닿는 지점"이 들어 있어 원문을 읽고 나서 보는 것이
+ * 차례에 맞다. 옆에 세우려면 최소 700px이 필요하다.
+ */
+@media (max-width: 1023px) {
+  .body {
+    flex-direction: column;
+  }
+
+  .rail {
+    width: auto;
+    border-left: none;
+    border-top: 1px solid var(--ex-border);
+  }
+}
+
+@media (max-width: 767px) {
+  .left {
+    padding: 18px 14px 26px;
+  }
+
+  .rail {
+    padding: 18px 14px;
+  }
+}

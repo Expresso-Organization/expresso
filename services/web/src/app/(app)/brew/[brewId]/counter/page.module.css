@@ -637,3 +637,26 @@
   border-color: var(--ex-border-firm);
   color: var(--ex-fg-body);
 }
+
+/*
+ * 좁은 화면 — 대화가 먼저, "지금 만들어지는 기록"이 그 아래로.
+ * 답하는 자리가 주인공이라 위에 둔다.
+ */
+@media (max-width: 1023px) {
+  .body {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .side {
+    width: auto;
+    flex-shrink: 1;
+  }
+}
+
+@media (max-width: 767px) {
+  .body {
+    gap: 14px;
+    padding: 14px;
+  }
+}

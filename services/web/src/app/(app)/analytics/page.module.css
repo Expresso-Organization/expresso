@@ -1246,3 +1246,19 @@
 .metricDraggable:active {
   cursor: grabbing;
 }
+
+/*
+ * 좁은 화면의 지표 라이브러리 — 옆에 붙는 대신 지면 위로 올라온다.
+ * 400px을 떼어 주면 대시보드가 남는 자리에서 아무것도 못 읽는다.
+ */
+@media (max-width: 1023px) {
+  .drawer {
+    position: fixed;
+    z-index: 50;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(92vw, 400px);
+    box-shadow: var(--ex-elevation-overlay);
+  }
+}

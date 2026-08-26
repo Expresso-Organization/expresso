@@ -808,3 +808,26 @@
   transform: translateY(-1px);
   color: var(--ex-fg-on-accent);
 }
+
+/*
+ * 좁은 화면 — 구성 · 본문 · 근거 세 열을 위아래로 쌓는다.
+ * 236 + 320이 고정이라 셋을 나란히 세우려면 최소 900px이 필요하다.
+ */
+@media (max-width: 1023px) {
+  .columns {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .sections,
+  .rationale {
+    width: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .body {
+    gap: 12px;
+    padding: 14px;
+  }
+}

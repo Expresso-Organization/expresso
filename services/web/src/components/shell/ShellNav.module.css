@@ -1,0 +1,171 @@
+/*
+ * 좁은 화면의 이동 장치 — 여는 단추 · 서랍 · 하단 탭바.
+ *
+ * 규칙은 모바일 우선입니다. 아무 조건 없는 규칙이 폰의 모습이고, 넓어질수록
+ * 하나씩 물러납니다.
+ */
+
+/* ── 여는 단추 ─────────────────────────────────────────────── */
+
+.trigger {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  /* 손가락이 닿는 최소 크기 */
+  width: 40px;
+  height: 40px;
+  margin-left: -8px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  transition: background var(--ex-motion-instant);
+}
+
+.trigger:hover {
+  background: var(--ex-bg-sunken);
+}
+
+/* ── 서랍 ──────────────────────────────────────────────────── */
+
+/*
+ * 폰과 태블릿에서 사이드바는 지면 위로 올라온다. `translate`로 밀어 두고
+ * 열릴 때 제자리로 오는데, 감추는 데 `display: none`을 쓰지 않는 이유는
+ * 전환이다 — 없던 것은 미끄러져 들어오지 못한다.
+ */
+.drawer {
+  position: fixed;
+  z-index: 60;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(86vw, 300px);
+  display: flex;
+  flex-direction: column;
+  background: var(--ex-bg-chrome);
+  border-right: 1px solid var(--ex-border-chrome);
+  box-shadow: var(--ex-elevation-overlay);
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition:
+    transform var(--ex-motion-panel),
+    visibility var(--ex-motion-panel);
+}
+
+.drawerOn {
+  transform: translateX(0);
+  visibility: visible;
+}
+
+/* 서랍 안의 사이드바는 폭을 서랍에 맡긴다 */
+.drawer > :global(aside) {
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  border-right: none;
+}
+
+.scrim {
+  position: fixed;
+  z-index: 59;
+  inset: 0;
+  background: rgba(11, 18, 32, 0.45);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--ex-motion-panel),
+    visibility var(--ex-motion-panel);
+}
+
+.scrimOn {
+  opacity: 1;
+  visibility: visible;
+}
+
+.close {
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 9px;
+  background: none;
+}
+
+.close:hover {
+  background: var(--ex-bg-muted);
+}
+
+/* ── 하단 탭바 ─────────────────────────────────────────────── */
+
+.tabbar {
+  flex-shrink: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  min-height: var(--ex-tabbar-height);
+  background: var(--ex-bg);
+  border-top: 1px solid var(--ex-border);
+  /* 홈 인디케이터가 있는 기기에서 마지막 줄이 가려지지 않게 */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: none;
+  background: none;
+  padding: 7px 2px;
+  font-size: var(--ex-text-3xs);
+  font-weight: 500;
+  color: var(--ex-fg-muted);
+}
+
+.tabOn {
+  color: var(--ex-fg);
+}
+
+/* ── 넓어지면 하나씩 물러난다 ──────────────────────────────── */
+
+/* 태블릿 세로부터 탭바는 필요 없다 — 서랍 하나로 충분하다 */
+@media (min-width: 768px) {
+  .tabbar {
+    display: none;
+  }
+}
+
+/* 노트북부터 사이드바가 제자리에 서므로 서랍 장치가 통째로 물러난다 */
+@media (min-width: 1024px) {
+  .trigger,
+  .scrim,
+  .close {
+    display: none;
+  }
+
+  .drawer {
+    position: static;
+    width: auto;
+    box-shadow: none;
+    border-right: none;
+    background: none;
+    transform: none;
+    visibility: visible;
+    transition: none;
+  }
+
+  /*
+   * 넓은 화면에서 되돌리는 것은 **폭**뿐이다. 서랍은 세로 방향 flex라
+   * `flex`는 높이를 정한다 — 여기서 `none`으로 되돌리면 사이드바가 내용
+   * 높이만큼 자라서 서랍 밖으로 넘친다.
+   */
+  .drawer > :global(aside) {
+    width: var(--ex-sidebar-width);
+    border-right: 1px solid var(--ex-border-chrome);
+  }
+}

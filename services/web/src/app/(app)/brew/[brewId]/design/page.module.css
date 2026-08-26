@@ -552,3 +552,22 @@
   color: var(--ex-fg-body);
   cursor: pointer;
 }
+
+/* 좁은 화면 — 고른 디자인 요약이 후보 아래로 내려간다 */
+@media (max-width: 1023px) {
+  .body {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .right {
+    width: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .body {
+    gap: 14px;
+    padding: 14px;
+  }
+}

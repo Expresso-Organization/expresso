@@ -424,3 +424,34 @@
 .themeRow > :last-child {
   margin-left: auto;
 }
+
+/*
+ * 좁은 화면의 설정 탭 — 세로 목록 대신 가로 한 줄.
+ *
+ * 200px을 떼어 주면 본문이 160px밖에 남지 않는다. 위로 올려 가로로 훑게
+ * 하면 다섯 항목이 다 닿는 자리에 남는다.
+ */
+@media (max-width: 767px) {
+  .body {
+    flex-direction: column;
+  }
+
+  .nav {
+    width: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--ex-border);
+    padding: 10px 14px;
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .navItem {
+    flex-shrink: 0;
+  }
+
+  .main {
+    padding: 18px 14px 26px;
+  }
+}

@@ -4,7 +4,13 @@
   flex: 1;
   min-width: 0;
   overflow: auto;
-  padding: 26px 30px 0;
+  padding: 18px 14px 0;
+}
+
+@media (min-width: 768px) {
+  .list {
+    padding: 26px 30px 0;
+  }
 }
 
 /* 카테고리 헤더 — 34px 아이콘 타일 + 27px 제목 + 캐럿 */
@@ -550,4 +556,39 @@
 
 .listRow:hover {
   background: var(--ex-bg-header);
+}
+
+/*
+ * 좁은 화면의 표 — 칸을 가로로 늘어놓을 자리가 없다.
+ *
+ * 여섯 칸이 최소 672px을 먹으므로 폰에서는 가로 스크롤이 된다. 대신 한 줄을
+ * **카드 하나**로 접는다 — 제목이 한 줄을 차지하고 나머지는 그 아래로
+ * 흘러간다. 머리글 줄은 각 값이 무엇인지 카드 안에서 알 수 없게 되지만,
+ * 기간·태그·쓰인 횟수는 생김새로 구분된다.
+ */
+@media (max-width: 767px) {
+  .headRow {
+    display: none;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 12px;
+    padding: 10px 12px;
+  }
+
+  .row > * {
+    padding: 0;
+    border-left: none;
+  }
+
+  .titleCell {
+    flex-basis: 100%;
+  }
+
+  .cellAction {
+    margin-left: auto;
+  }
 }

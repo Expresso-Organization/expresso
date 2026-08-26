@@ -452,3 +452,35 @@
   line-height: 1.6;
   flex-shrink: 0;
 }
+
+/*
+ * 좁은 화면 — 본문과 "공고에서 읽은 문장"을 위아래로 쌓는다.
+ * 468px을 떼어 주면 원문 쪽이 못 읽는 폭이 된다.
+ */
+@media (max-width: 1023px) {
+  .body {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .left,
+  .right {
+    overflow: visible;
+  }
+
+  .right {
+    width: auto;
+    border-left: none;
+    border-top: 1px solid var(--ex-bg-track);
+  }
+}
+
+@media (max-width: 767px) {
+  .left {
+    padding: 18px 14px;
+  }
+
+  .right {
+    padding: 18px 14px;
+  }
+}

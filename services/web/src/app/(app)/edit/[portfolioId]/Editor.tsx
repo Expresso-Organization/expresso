@@ -169,6 +169,15 @@ export function Editor({
     ? `${portfolio.deployment.subdomain}.xpresso.me`
     : "아직 주소가 없습니다";
 
+  /*
+   * 좁은 화면에서 지금 보고 있는 칸.
+   *
+   * 1280 이상에서는 56 · 244 · 가변 · 320 네 열이 다 선다. 그보다 좁으면 셋을
+   * 겹쳐 두고 하나씩 본다 — 지면(canvas)이 기본이고 아래 전환 막대로 섹션과
+   * 편집 패널을 불러온다. 넓은 화면에서는 이 값이 아무 일도 하지 않는다.
+   */
+  const [pane, setPane] = useState<"canvas" | "sections" | "panel">("canvas");
+
   return (
     <div className={styles.frame}>
       <nav className={styles.rail} aria-label="주요 이동">
@@ -287,7 +296,7 @@ export function Editor({
           </div>
         </div>
 
-        <div className={styles.stage}>
+        <div className={styles.stage} data-pane={pane}>
           <aside className={styles.sections} aria-label="섹션">
             <div className={styles.sectionsHead}>
               <span className={styles.sectionsLabel}>섹션</span>
@@ -654,10 +663,37 @@ export function Editor({
             ) : null}
           </aside>
         </div>
+
+        {/* 좁은 화면에서만 뜨는 칸 전환. 넓어지면 CSS가 감춘다. */}
+        <div className={styles.paneSwitch} role="tablist" aria-label="편집 화면 전환">
+          {PANES.map((one) => (
+            <button
+              key={one.key}
+              type="button"
+              role="tab"
+              aria-selected={pane === one.key}
+              className={`${styles.paneTab} ${pane === one.key ? styles.paneTabOn : ""}`}
+              onClick={() => setPane(one.key)}
+            >
+              <Icon
+                name={one.icon}
+                size={16}
+                color={pane === one.key ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
+              />
+              {one.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
+
+const PANES = [
+  { key: "sections" as const, label: "섹션", icon: "list-bullets" },
+  { key: "canvas" as const, label: "지면", icon: "browser" },
+  { key: "panel" as const, label: "편집", icon: "sliders-horizontal" },
+];
 
 function generationSummary(page: GeneratedPage): string {
   const usage = page.generationManifest?.usage;

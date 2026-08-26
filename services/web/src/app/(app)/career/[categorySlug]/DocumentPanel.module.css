@@ -6,6 +6,33 @@
   border-left: 1px solid var(--ex-border-chrome);
   display: flex;
   flex-direction: column;
+  background: var(--ex-bg);
+}
+
+/*
+ * 좁은 화면에서는 목록과 문서가 나란히 설 자리가 없다. 고른 기록이 있을 때만
+ * 오른쪽에서 전면 시트로 올라온다 — 목록은 뒤에 그대로 남아 있어 닫으면
+ * 보던 자리로 돌아간다.
+ */
+@media (max-width: 1023px) {
+  .panel {
+    position: fixed;
+    z-index: 50;
+    inset: 0;
+    width: auto;
+    border-left: none;
+    box-shadow: var(--ex-elevation-overlay);
+    transform: translateX(100%);
+    visibility: hidden;
+    transition:
+      transform var(--ex-motion-panel),
+      visibility var(--ex-motion-panel);
+  }
+
+  .panel[data-open="true"] {
+    transform: translateX(0);
+    visibility: visible;
+  }
 }
 
 .head {

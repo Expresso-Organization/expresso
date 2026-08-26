@@ -63,6 +63,21 @@ export function WizardSteps({
 
   return (
     <nav className={styles.steps} aria-label="포트폴리오 제작 단계">
+      {/*
+        좁은 화면에서 여섯 단계를 늘어놓으면 헤더가 화면을 먹는다. 그때는 지금
+        어디쯤인지만 남긴다 — 진행 막대와 "03 / 06". 나머지는 CSS가 감춘다.
+      */}
+      <span className={styles.compact} aria-hidden="true">
+        <span className={styles.compactTrack}>
+          <span
+            className={styles.compactFill}
+            style={{ width: `${((currentIndex + 1) / WIZARD_STEPS.length) * 100}%` }}
+          />
+        </span>
+        <span className={styles.compactCount}>
+          {String(currentIndex + 1).padStart(2, "0")} / {String(WIZARD_STEPS.length).padStart(2, "0")}
+        </span>
+      </span>
       {WIZARD_STEPS.map((step, index) => {
         const done = index < currentIndex;
         const isCurrent = index === currentIndex;

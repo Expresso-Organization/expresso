@@ -658,3 +658,57 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/*
+ * 좁은 화면 — 재료 표와 우측 레일을 쌓고, 표는 카드로 접는다.
+ *
+ * 다섯 칸이 최소 670px을 먹어 폰에서는 가로로 늘어설 수 없다. 제목이 한 줄을
+ * 차지하고 개수·기간·쓰인 곳이 그 아래로 흐른다.
+ */
+@media (max-width: 1023px) {
+  .body {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .left {
+    overflow: visible;
+  }
+
+  .rail {
+    width: auto;
+    border-left: none;
+    border-top: 1px solid var(--ex-border);
+  }
+}
+
+@media (max-width: 767px) {
+  .left {
+    padding: 18px 14px;
+  }
+
+  .rail {
+    padding: 18px 14px;
+  }
+
+  .headRow {
+    display: none;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 12px;
+    padding: 10px 12px;
+  }
+
+  .row > * {
+    padding: 0;
+    border-left: none;
+  }
+
+  .row > :first-child {
+    flex-basis: 100%;
+  }
+}

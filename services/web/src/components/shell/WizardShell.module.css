@@ -1,18 +1,26 @@
 /*
  * 위저드 셸 — 화면 정의서 01–03의 제작 헤더와 스텝 인디케이터.
- * 앱 셸 위에 56px 두 줄이 더해진다.
+ * 넓은 화면에서는 정의서대로 56px 두 줄, 좁아지면 한 줄로 접힌다.
  */
 
 /* ① 제작 헤더 */
 .buildHeader {
-  height: 56px;
+  min-height: 52px;
   flex-shrink: 0;
   background: var(--ex-bg);
   border-bottom: 1px solid var(--ex-border);
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 26px;
+  gap: 10px;
+  padding: 0 14px;
+}
+
+@media (min-width: 768px) {
+  .buildHeader {
+    min-height: 56px;
+    gap: 12px;
+    padding: 0 26px;
+  }
 }
 
 .back {
@@ -68,14 +76,55 @@
 
 /* ② 스텝 인디케이터 */
 .steps {
-  height: 56px;
+  min-height: 46px;
   flex-shrink: 0;
   background: var(--ex-bg);
   border-bottom: 1px solid var(--ex-border);
   display: flex;
   align-items: center;
-  padding: 0 26px;
-  gap: 4px;
+  padding: 0 14px;
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .steps {
+    min-height: 56px;
+    padding: 0 26px;
+    gap: 4px;
+  }
+}
+
+/* 좁은 화면의 축약 표시 — 진행 막대 + "03 / 06" */
+.compact {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.compactTrack {
+  flex: 1;
+  min-width: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--ex-bg-track);
+  overflow: hidden;
+}
+
+.compactFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ex-accent);
+  transition: width var(--ex-motion-panel);
+}
+
+.compactCount {
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
 }
 
 .step {
@@ -108,6 +157,8 @@
   font-weight: 500;
   color: var(--ex-fg-subtle);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 현재 단계 — espresso 원에 흰 숫자 */
@@ -161,4 +212,43 @@
 
 .stageTinted {
   background: var(--ex-bg-sunken);
+}
+
+/*
+ * 좁은 화면 — 여섯 단계 대신 지금 단계 하나와 진행 막대만 남긴다.
+ *
+ * 지나온 단계로 되돌아가는 길은 여기서 사라지지만, 뒤로 가기가 그 일을 하고
+ * 다 늘어놓으면 어차피 글자가 겹쳐 아무 것도 읽히지 않는다.
+ */
+@media (max-width: 767px) {
+  .step:not(.stepCurrent),
+  .connector,
+  .situation,
+  .buildLabel,
+  .headerRule {
+    display: none;
+  }
+
+  .saveState {
+    /* 아이콘만 남긴다 — "자동 저장됨"까지 넣을 자리가 없다 */
+    font-size: 0;
+    gap: 0;
+  }
+
+  .titleChip {
+    min-width: 0;
+  }
+
+  .titleChipText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* 넓어지면 축약 표시가 물러난다 */
+@media (min-width: 768px) {
+  .compact {
+    display: none;
+  }
 }

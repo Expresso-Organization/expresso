@@ -145,13 +145,22 @@
   white-space: nowrap;
 }
 
-/* 본문 2열 — 결과 + 316px 레일 */
+/*
+ * 본문 — 넓으면 결과 + 316px 레일 두 열, 좁으면 한 열로 쌓인다.
+ * 레일은 곁들이는 정보라 결과 아래로 내려가도 읽는 차례가 뒤집히지 않는다.
+ */
 .columns {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 1fr 316px;
+  grid-template-columns: 1fr;
   gap: 16px;
+}
+
+@media (min-width: 1024px) {
+  .columns {
+    grid-template-columns: 1fr var(--ex-rail-width);
+  }
 }
 
 .results {
@@ -249,6 +258,14 @@
 .rowTitle {
   width: 236px;
   flex-shrink: 0;
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .rowTitle {
+    width: auto;
+    flex: 1;
+  }
 }
 
 .rowRole {

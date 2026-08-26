@@ -164,8 +164,9 @@
 .notifications {
   position: fixed;
   top: 62px;
-  right: 26px;
-  width: 380px;
+  right: 14px;
+  /* 좁은 화면에서는 좌우 여백만 남기고 지면을 채운다 */
+  width: min(380px, calc(100vw - 28px));
   max-height: 70vh;
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
@@ -175,6 +176,12 @@
   flex-direction: column;
   overflow: hidden;
   z-index: 60;
+}
+
+@media (min-width: 768px) {
+  .notifications {
+    right: 26px;
+  }
 }
 
 .notificationHead {

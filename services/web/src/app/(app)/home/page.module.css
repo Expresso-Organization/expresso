@@ -719,3 +719,12 @@
   letter-spacing: -0.02em;
   color: var(--ex-fg);
 }
+
+/* 좁은 화면에서 바리스타 읽기는 폭을 고집하지 않는다 */
+@media (max-width: 1023px) {
+  .baristaRead {
+    width: auto;
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+}

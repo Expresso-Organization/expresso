@@ -16,6 +16,7 @@
   font-size: var(--ex-text-md);
 }
 
+
 /* 좌측 브랜드 패널 */
 .aside {
   /*
@@ -25,6 +26,7 @@
    */
   width: 640px;
   flex-shrink: 0;
+  min-width: 0;
   background: linear-gradient(155deg, #16223a 0%, #241c21 58%, #3a2a22 100%);
   padding: 46px 48px;
   display: flex;
@@ -126,11 +128,19 @@
   align-items: center;
   justify-content: center;
   background: var(--ex-bg-form);
-  padding: 40px 24px;
+  padding: 32px 16px;
+}
+
+@media (min-width: 480px) {
+  .formPane {
+    padding: 40px 24px;
+  }
 }
 
 .form {
-  width: 400px;
+  /* 폼은 400px을 넘지 않되, 좁으면 좌우 16px만 남기고 채운다 */
+  width: 100%;
+  max-width: 400px;
 }
 
 .title {

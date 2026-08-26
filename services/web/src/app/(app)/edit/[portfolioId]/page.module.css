@@ -1,9 +1,14 @@
-/* 04 · 04b · 04c 에디터 셸 — 화면 정의서 그대로. 56 / 244 / 가변 / 320 4열. */
+/*
+ * 04 · 04b · 04c 에디터 셸.
+ *
+ * 정의서는 56 / 244 / 가변 / 320 네 열이고, 1280px부터 그대로 섭니다. 그보다
+ * 좁으면 섹션 · 지면 · 편집 셋을 겹쳐 두고 아래 전환 막대로 하나씩 봅니다 —
+ * 네 열을 다 세우면 가운데 지면이 400px도 남지 않습니다.
+ */
 
 .frame {
   display: flex;
   height: 100dvh;
-  min-width: 1280px;
   background: var(--ex-bg-sunken);
   overflow: hidden;
   font-size: var(--ex-text-md);
@@ -2057,4 +2062,75 @@
 .mediaError {
   font-size: var(--ex-text-xs);
   color: var(--ex-status-danger-text);
+}
+
+/* ── 칸 전환 막대 — 1280 미만에서만 뜬다 ─────────────────────── */
+
+.paneSwitch {
+  flex-shrink: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  background: var(--ex-bg);
+  border-top: 1px solid var(--ex-border);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.paneTab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 50px;
+  border: none;
+  background: none;
+  font-size: var(--ex-text-3xs);
+  font-weight: 500;
+  color: var(--ex-fg-muted);
+}
+
+.paneTabOn {
+  color: var(--ex-fg);
+}
+
+/*
+ * 좁은 화면 — 무대의 세 칸 중 고른 하나만 남긴다.
+ *
+ * 아이콘 레일(56px)은 그대로 둔다. 좁아도 56px은 감당할 수 있고, 없으면
+ * 에디터에서 나가는 길이 사라진다.
+ */
+@media (max-width: 1279px) {
+  .sections,
+  .panel {
+    display: none;
+  }
+
+  .stage[data-pane="sections"] .sections,
+  .stage[data-pane="panel"] .panel {
+    display: flex;
+    width: auto;
+    flex: 1;
+    min-width: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .stage[data-pane="sections"] .canvas,
+  .stage[data-pane="panel"] .canvas {
+    display: none;
+  }
+}
+
+/* 넓어지면 전환 막대는 할 일이 없다 */
+@media (min-width: 1280px) {
+  .paneSwitch {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .canvas {
+    padding: 12px;
+  }
 }
