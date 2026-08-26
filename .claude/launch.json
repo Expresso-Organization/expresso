@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "web",
-      "runtimeExecutable": "C:/Users/parkm/AppData/Local/claude-shims/pnpm.cmd",
+      "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@expresso/web", "dev"],
       "port": 3000
     }
