@@ -64,7 +64,7 @@ UUID는 현재 1차 MVP에서 사용하지 않는다.
 | `project_technology_items` | 프로젝트 사용 기술 반복값을 한 항목당 한 행으로 저장한다. | 프로젝트 사용 기술 항목 |
 | `project_achievement_items` | 프로젝트 주요 성과 반복값을 한 항목당 한 행으로 저장한다. | 프로젝트 주요 성과 항목 |
 | `education_careers` | 학력, 재직 경력 및 교육 과정 상세 정보를 저장한다. | 학력·이력 |
-| `education_career_activity_achievement_items` | 학력·이력 주요 활동·성과 반복값을 한 항목당 한 행으로 저장한다. | 학력·이력 주요 활동·성과 항목 |
+| `education_career_highlights` | 학력·이력 주요 활동·성과 반복값을 한 항목당 한 행으로 저장한다. | 학력·이력 주요 활동·성과 항목 |
 | `portfolios` | 사용자에게 귀속되는 독립 Portfolio 결과를 저장한다. | 포트폴리오 |
 | `portfolio_sections` | Portfolio의 순서 있는 콘텐츠를 저장한다. | 포트폴리오 섹션 |
 | `portfolio_sources` | Portfolio 생성에 사용한 CareerRecord 집합을 추적한다. | 포트폴리오 생성 재료 |
@@ -251,7 +251,7 @@ MySQL `ENUM`은 사용하지 않는다. 애플리케이션에서는 Java Enum을
 `status`의 실제 물리 코드와 CHECK 표현은 현재 단계에서 임의로 결정하지 않고 후속
 API 및 도메인 상세 설계에서 검토한다.
 
-### 9.5 `education_career_activity_achievement_items`
+### 9.5 `education_career_highlights`
 
 | 컬럼 | MySQL 타입 | NULL | 키 및 제약 | 의미 |
 | --- | --- | --- | --- | --- |
@@ -391,7 +391,7 @@ DB의 PK와 FK로 다음 조건을 보장할 수 있다.
 | `career_records` | INDEX `(user_id, created_at)` | 사용자별 CareerRecord 최신순 조회 |
 | `project_technology_items` | INDEX `(career_record_id)` | Project별 기술 항목 조회 및 FK 지원 |
 | `project_achievement_items` | INDEX `(career_record_id)` | Project별 성과 항목 조회 및 FK 지원 |
-| `education_career_activity_achievement_items` | INDEX `(career_record_id)` | EducationCareer별 활동·성과 조회 및 FK 지원 |
+| `education_career_highlights` | INDEX `(career_record_id)` | EducationCareer별 활동·성과 조회 및 FK 지원 |
 | `portfolios` | INDEX `(user_id)` | 사용자별 Portfolio 조회 및 FK 지원 |
 | `portfolio_sections` | UNIQUE `(portfolio_id, logical_order)` | Portfolio별 순서 중복 방지 및 정렬 |
 | `portfolio_sources` | PK `(portfolio_id, career_record_id)` | Source 조합 중복 방지와 Portfolio 기준 조회 |
@@ -414,7 +414,7 @@ DB의 PK와 FK로 다음 조건을 보장할 수 있다.
 | `project_technology_items` | `career_record_id` | `projects` | `career_record_id` | 비식별, Project 1 : 항목 0..N |
 | `project_achievement_items` | `career_record_id` | `projects` | `career_record_id` | 비식별, Project 1 : 항목 0..N |
 | `education_careers` | `career_record_id` | `career_records` | `id` | 공유 PK subtype |
-| `education_career_activity_achievement_items` | `career_record_id` | `education_careers` | `career_record_id` | 비식별, EducationCareer 1 : 항목 0..N |
+| `education_career_highlights` | `career_record_id` | `education_careers` | `career_record_id` | 비식별, EducationCareer 1 : 항목 0..N |
 | `portfolios` | `user_id` | `users` | `id` | 비식별, 사용자 1 : Portfolio 0..N |
 | `portfolio_sections` | `portfolio_id` | `portfolios` | `id` | 비식별, Portfolio 1 : Section 1..N |
 | `portfolio_sources` | `portfolio_id` | `portfolios` | `id` | 식별, Portfolio 1 : Source 1..N |
@@ -480,30 +480,7 @@ DB의 PK와 FK로 다음 조건을 보장할 수 있다.
 
 ## 20. 현재 물리 ERD
 
-```text
-users (1)
-├── 비식별 ── career_records (0..N)
-│               PK id
-│               FK user_id
-│               │
-│               └── 전체·상호 배타 특수화
-│                    ├── projects (정확히 0..1, 공유 PK/FK career_record_id)
-│                    │    ├── project_technology_items (0..N)
-│                    │    └── project_achievement_items (0..N)
-│                    │
-│                    └── education_careers (정확히 0..1, 공유 PK/FK career_record_id)
-│                         └── education_career_activity_achievement_items (0..N)
-│
-└── 비식별 ── portfolios (0..N)
-                 PK id
-                 FK user_id
-                 ├── portfolio_sections (1..N)
-                 └── portfolio_sources (1..N, 복합 PK)
-                          └── career_records (각 Source가 정확히 1개 참조)
-
-career_records (1) ── 식별 ── portfolio_sources (0..N)
-portfolios      (1) ── 식별 ── portfolio_sources (1..N)
-```
+![1차 MVP 물리 ERD](./erdcloud/mvp-physical-erd.png)
 
 하나의 CareerRecord는 Project 또는 EducationCareer 중 정확히 하나의 subtype을
 가진다. 위 ASCII의 각 subtype `0..1` 표시는 개별 가지의 수량이며, 두 가지를 합친
