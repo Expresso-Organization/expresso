@@ -811,7 +811,15 @@ function BrowseRail({
           <button
             type="button"
             className={styles.brewCta}
-            style={{ background: "var(--ex-bg-inverse)" }}
+            /*
+             * 이 단추만 시그니처가 아니라 잉크 지면이다. 지면이 어두운 테마에서
+             * 밝아지므로 글자도 함께 뒤집어야 한다 — 배경만 바꾸면 흰 글자가
+             * 흰 지면 위에 남는다.
+             */
+            style={{
+              background: "var(--ex-bg-inverse)",
+              color: "var(--ex-fg-on-inverse)",
+            }}
           >
             선택한 공고로 포트폴리오 만들기
           </button>

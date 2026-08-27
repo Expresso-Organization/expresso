@@ -604,3 +604,21 @@
     gap: 2px;
   }
 }
+
+/*
+ * 보기 막대의 오른쪽 무리(필터 · 정렬 · 속성 · 새로 만들기)는 폰에서 한 줄에
+ * 서지 못한다. 왼쪽 탭 아래로 내려보내고 그 안에서 다시 줄을 넘긴다.
+ */
+@media (max-width: 767px) {
+  .viewBar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .viewBarRight {
+    margin-left: 0;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-bottom: 0;
+  }
+}

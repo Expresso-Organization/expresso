@@ -449,6 +449,8 @@
 
   .navItem {
     flex-shrink: 0;
+    /* 세로 목록에서는 100%가 맞지만 가로 줄에서는 내용만큼만 차지해야 한다 */
+    width: auto;
   }
 
   .main {
