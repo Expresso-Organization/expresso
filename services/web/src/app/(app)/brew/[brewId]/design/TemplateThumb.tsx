@@ -8,12 +8,13 @@ const GAP = { compact: 5, comfortable: 8, spacious: 12 } as const;
 /**
  * 템플릿 썸네일.
  *
- * 서버가 낸 실제 팔레트와 레시피 글에 스타일의 시각적 특징을 적용합니다.
- * 생성 결과의 축소판은 아닙니다. 비어 있는 섹션은 채워 꾸미지 않습니다.
+ * 내용에 영향을 받지 않는 디자인 견본입니다. 서체·색면·간격·경계만 비교합니다.
+ * 문구는 디자인 이름만 씁니다. 레시피 내용은 받지 않습니다.
  * 카드 내부 지면의 색은 앱 테마 토큰이 아니라 선택한 스타일을 따릅니다.
  */
-export function TemplateThumb({ preview }: { preview: TemplatePreview }) {
+export function TemplateThumb({ preview }: { preview: Pick<TemplatePreview, "code" | "name" | "style"> }) {
   const { style } = preview;
+  const longestWord = Math.max(...preview.name.split(/\s+/).map((word) => word.length));
 
   return (
     <span
@@ -26,28 +27,27 @@ export function TemplateThumb({ preview }: { preview: TemplatePreview }) {
         "--thumb-text": style.text,
         "--thumb-accent": style.accent,
         "--thumb-gap": `${GAP[style.density]}px`,
+        "--thumb-title-scale": `${Math.min(18, 125 / longestWord)}cqw`,
+        "--thumb-title-size": preview.name.length > 13 ? "var(--ex-text-3xl)"
+          : preview.name.length > 9 ? "var(--ex-text-4xl)" : "var(--ex-text-display-sm)",
         fontFamily: style.font === "serif" ? "'Noto Serif KR', Georgia, serif"
           : style.font === "mono" ? "var(--ex-font-mono)" : "var(--ex-font-ui)",
       } as CSSProperties}
     >
-      {preview.sections.slice(0, 4).map((section) => (
-        <span key={section.recipeSectionId} className={styles.thumbSection}>
-          <span className={styles.thumbTitle}>
-            {section.title}
-          </span>
-          {section.state === "empty" ? (
-            <span className={styles.thumbEmpty} style={{ borderColor: style.text }}>
-              비어 있음
-            </span>
-          ) : (
-            section.content.slice(0, 2).map((line, index) => (
-              <span key={index} className={styles.thumbLine}>
-                {line}
-              </span>
-            ))
-          )}
+      <span className={styles.thumbSection}>
+        <span className={styles.thumbTitle}>{preview.name}</span>
+      </span>
+      <span className={styles.thumbSection}>
+        <span className={styles.colorStudy}>
+          <span /><span /><span />
         </span>
-      ))}
+        <span className={styles.sampleRule} />
+      </span>
+      <span className={styles.thumbSection}>
+        <span className={styles.weightStudy}>
+          <span /><span /><span />
+        </span>
+      </span>
     </span>
   );
 }

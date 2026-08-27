@@ -44,11 +44,6 @@
   font-weight: 600;
 }
 
-.pickerNote {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-}
-
 .toneRow {
   margin-left: auto;
   display: flex;
@@ -84,46 +79,6 @@
   height: 14px;
   border-radius: 50%;
   background: var(--ex-bg);
-}
-
-/* 레시피 안내 바 */
-.recipeBar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--ex-bg-sunken);
-  border: 1px solid var(--ex-bg-track);
-  border-radius: 10px;
-  padding: 9px 13px;
-  margin-bottom: 13px;
-}
-
-.recipeBarText {
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg-body);
-  white-space: nowrap;
-}
-
-.recipeBarSections {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-subtle);
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.recipeBarAction {
-  margin-left: auto;
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: var(--ex-text-xs);
-  font-weight: 600;
-  color: var(--ex-fg-body);
-  white-space: nowrap;
-  flex-shrink: 0;
 }
 
 /* 3열. 줄 수는 후보 수가 정한다 — 템플릿은 표에 있는 만큼만 있다. */
@@ -620,11 +575,8 @@
     padding: 14px;
   }
 
-  .pickerHead, .recipeBar { flex-wrap: wrap; }
+  .pickerHead { flex-wrap: wrap; }
   .pickerCard { padding: 14px; }
-  .recipeBarText { white-space: normal; }
-  .recipeBarSections { display: none; }
-  .pickerNote { display: none; }
   .toneRow { margin-left: 0; }
 }
 

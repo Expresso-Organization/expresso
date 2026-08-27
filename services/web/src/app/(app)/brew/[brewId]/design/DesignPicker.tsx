@@ -81,7 +81,6 @@ export function DesignPicker({
         <div className={`${styles.card} ${styles.pickerCard}`}>
           <div className={styles.pickerHead}>
             <span className={styles.pickerTitle}>디자인을 고르세요</span>
-            <span className={styles.pickerNote}>04에서 언제든 바꿀 수 있습니다</span>
             {companyName ? (
               <div className={styles.toneRow}>
                 <span className={styles.toneLabel}>{companyName} 색 쓰기</span>
@@ -103,19 +102,6 @@ export function DesignPicker({
             ) : null}
           </div>
 
-          <div className={styles.recipeBar}>
-            <Icon name="list-checks" weight="fill" size={14} color="var(--ex-accent-text)" />
-            <span className={styles.recipeBarText}>
-              레시피 {previews[0]?.sections.length ?? 0}개 섹션을 그대로 채워 보여줍니다
-            </span>
-            <span className={styles.recipeBarSections}>
-              {(previews[0]?.sections ?? []).map((section) => section.title).join(" · ")}
-            </span>
-            <Link href={`/brew/${brewId}/outline` as Route} className={styles.recipeBarAction}>
-              레시피 보기
-            </Link>
-          </div>
-
           <div className={styles.filters} aria-label="스타일 필터">
             {([ ["all", `전체 ${previews.length}`], ["light", "밝게"], ["dark", "어둡게"] ] as const).map(([mode, label]) => (
               <button key={mode} type="button" aria-pressed={modeFilter === mode}
@@ -133,7 +119,6 @@ export function DesignPicker({
           </div>
           <div className={styles.previewNote}>
             <span role="status">{visiblePreviews.length}개 스타일</span>
-            <span>스타일 견본입니다. 최종 구성은 추출할 때 만들어집니다.</span>
           </div>
           <div className={styles.templates} aria-label="디자인 후보">
             {visiblePreviews.map((preview) => {
@@ -154,9 +139,11 @@ export function DesignPicker({
                   className={`${styles.template} ${selected ? styles.templateSelected : ""}`}
                 >
                   <span className={styles.templateCanvas}>
-                    <TemplateThumb preview={selected ? {
-                      ...preview, style: { ...preview.style, font, density, structure },
-                    } : preview} />
+                    <TemplateThumb preview={{
+                      code: preview.code,
+                      name: preview.name,
+                      style: selected ? { ...preview.style, font, density, structure } : preview.style,
+                    }} />
                     {selected ? (
                       <span className={styles.templateCheck}>
                         <Icon name="check" size={11} color="var(--ex-fg-on-accent)" />
@@ -181,7 +168,7 @@ export function DesignPicker({
                         {preview.recommended ? <span className={styles.srOnly}> · 추천</span> : null}
                       </span>
                     </span>
-                    <span id={`design-desc-${preview.templateId}`} className={styles.templateDesc}>{preview.description ?? preview.recommendationReason}</span>
+                    <span id={`design-desc-${preview.templateId}`} className={styles.templateDesc}>{preview.description ?? ""}</span>
                   </span>
                 </button>
               );

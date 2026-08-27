@@ -32,6 +32,9 @@ describe("디자인 선택", () => {
     expect(html).toContain('aria-label="선택한 디자인의 서체"');
     expect(html).toContain(`aria-describedby="design-desc-${previews[0]!.templateId} design-plan-${previews[0]!.templateId}"`);
     expect(html.match(/aria-pressed="(?:true|false)" aria-label=".*? 선택"/g)).toHaveLength(30);
+    expect(html).not.toContain("대표 프로젝트");
+    expect(html).not.toContain("정산 시간을 24분으로 줄였습니다.");
+    expect(html).not.toContain("레시피 1개 섹션");
   });
 
   it("밝기와 서체 필터를 조합하되 원본 후보와 순서를 바꾸지 않는다", () => {
@@ -47,13 +50,24 @@ describe("디자인 선택", () => {
     expect(filterDesignPreviews([signal], "light", "all")).toEqual([]);
   });
 
-  it("썸네일은 스타일·구성과 고정폭을 표시하며 실제 레시피 글을 보존한다", () => {
+  it("디자인 견본은 내용과 무관하게 서체·팔레트·구성만 표시한다", () => {
     const terminal = previews.find((p) => p.name === "Terminal")!;
     const html = renderToStaticMarkup(<TemplateThumb preview={terminal} />);
     expect(html).toContain('data-style="terminal"');
     expect(html).toContain('data-structure="dense-grid"');
     expect(html).toContain('var(--ex-font-mono)');
-    expect(html).toContain("정산 시간을 24분으로 줄였습니다.");
-    expect(renderToStaticMarkup(<TemplateThumb preview={{ ...terminal, sections: [{ ...terminal.sections[0]!, state: "empty", content: [] }] }} />)).toContain("비어 있음");
+    expect(html).toContain("Terminal");
+    expect(html).not.toContain(">Aa<");
+    expect(html).not.toContain("대표 프로젝트");
+    expect(html).not.toContain("정산 시간을 24분으로 줄였습니다.");
+    const otherRecipe = { ...terminal, sections: [{ ...terminal.sections[0]!, title: "다른 내용", state: "empty" as const, content: [] }] };
+    expect(renderToStaticMarkup(<TemplateThumb preview={otherRecipe} />)).toBe(html);
+  });
+
+  it("모든 견본의 서체 문구는 각 디자인의 이름이다", () => {
+    for (const preview of previews) {
+      const html = renderToStaticMarkup(<TemplateThumb preview={preview} />);
+      expect(html.replace(/<[^>]*>/g, "")).toBe(preview.name);
+    }
   });
 });

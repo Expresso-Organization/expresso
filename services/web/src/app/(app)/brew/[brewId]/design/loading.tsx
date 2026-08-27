@@ -6,9 +6,7 @@ import styles from "./page.module.css";
 /**
  * 03b 디자인 선택 — 템플릿 지면과 322px 고른 것 패널. 지면은 surface-50이다.
  *
- * 템플릿은 세 벌이다(`0002_seed.sql` — clarity · signal · editorial). 격자도
- * 3열이라 한 줄에 다 선다. 미리보기는 카드 안에서 높이를 다 쓰므로 뼈대도
- * 캔버스가 자라게 두고 이름 줄만 아래에 붙인다.
+ * 내용 없는 디자인 견본이 들어올 두 줄을 먼저 표시합니다.
  *
  * 오른쪽 고른 것 패널의 다섯 줄 — 팔레트 · 서체 · 밀도 · 구성 문법 ·
  * 글자 대비 — 은 템플릿과 무관하게 늘 같은 순서로 선다.
@@ -21,24 +19,21 @@ export default function Loading() {
           <div className={`${styles.card} ${styles.pickerCard}`}>
             <div className={styles.pickerHead}>
               <Skel w={132} h={15} />
-              <Skel w={168} h={11} />
             </div>
 
-            <div className={styles.recipeBar}>
-              <Skel w={14} h={14} radius={4} />
-              <Skel w={188} h={12} />
-              <Skel w={72} h={11} />
-              <Skel w={62} h={11} style={{ marginLeft: "auto" }} />
+            <div className={styles.filters}>
+              <Skel w={72} h={30} radius={20} />
+              <Skel w={62} h={30} radius={20} />
+              <Skel w={62} h={30} radius={20} />
             </div>
 
             <div className={styles.templates}>
-              {skelKeys(3).map((template) => (
+              {skelKeys(6).map((template) => (
                 <div key={template} className={styles.template}>
                   <Skel
                     className={styles.templateCanvas}
-                    h="auto"
+                    h="calc(var(--ex-editor-sections-width) * 0.75)"
                     radius={0}
-                    style={{ flex: "1 1 0%", minHeight: 0 }}
                   />
                   <span className={styles.templateFoot}>
                     <span className={styles.templateNameRow}>
