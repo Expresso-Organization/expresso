@@ -77,7 +77,6 @@
 .thumb[data-structure="wide-margin"] { padding: 20px 22px; }
 
 /* 명료한 편집, 신문, 스위스 격자 */
-.thumb[data-style="monochrome"] .thumbSection { border-top: 1px solid currentColor; padding-top: 5px; }
 .thumb[data-style="newsprint"] .thumbSection { border-top: 3px double currentColor; padding-top: 5px; }
 .thumb[data-style="newsprint"] .thumbSection:first-child { text-align: center; }
 .thumb[data-style="swiss-minimalist"] .thumbSection { border-top: 1px solid currentColor; padding-top: 5px; }
@@ -85,17 +84,11 @@
 .thumb[data-style="professional"] .thumbSection { border-bottom: 1px solid var(--thumb-accent); padding-bottom: 5px; }
 
 /* 바우하우스·기하·플랫 — 텍스트 뒤로 도형이 겹치지 않게 나눕니다. */
-.thumb[data-style="bauhaus"] .thumbSection:first-child { border-left: 10px solid var(--thumb-accent); padding-left: 8px; }
-.thumb[data-style="bauhaus"] .thumbSection:not(:first-child) { border: 2px solid currentColor; padding: 6px; }
-.thumb[data-style="bauhaus"] .colorStudy > span:nth-child(2) { border-radius: 0; }
-.thumb[data-style="bauhaus"] .colorStudy > span:nth-child(3) { border-radius: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); background: var(--thumb-text); }
 .thumb[data-style="flat-design"] .thumbSection { border-left: 5px solid var(--thumb-accent); padding-left: 8px; }
 .thumb[data-style="playful-geometric"] .thumbSection { border: 1px solid currentColor; border-radius: 14px 4px 14px 4px; padding: 7px; }
 .thumb[data-style="playful-geometric"] .thumbSection:first-child { border-top: 7px solid var(--thumb-accent); }
 
 /* 현대적 면과 경계 */
-.thumb[data-style="modern-dark"] .thumbSection { border: 1px solid color-mix(in srgb, var(--thumb-text) 20%, transparent); border-radius: 9px; padding: 7px; }
-.thumb[data-style="modern-dark"] { background: radial-gradient(at top right, color-mix(in srgb, var(--thumb-accent) 20%, transparent), transparent 70%), var(--thumb-bg); }
 .thumb[data-style="saas"] .thumbSection { border-bottom: 1px solid color-mix(in srgb, var(--thumb-text) 20%, transparent); padding-bottom: 6px; }
 .thumb[data-style="saas"] .thumbSection:first-child { border-left: 3px solid var(--thumb-accent); padding-left: 8px; }
 .thumb[data-style="enterprise"] .thumbSection { border-radius: 8px; padding: 8px; background: color-mix(in srgb, var(--thumb-accent) 8%, var(--thumb-bg)); }
@@ -140,3 +133,89 @@
 .thumb[data-style="sketch"] .thumbTitle { text-decoration: underline wavy var(--thumb-accent); text-underline-offset: 3px; }
 .thumb[data-style="maximalism"] .thumbSection { border: 2px solid var(--thumb-accent); border-radius: 14px 0; padding: 7px; box-shadow: 3px 3px 0 var(--thumb-text); }
 .thumb[data-style="maximalism"] .thumbSection:first-child .thumbTitle { font-weight: 900; }
+
+/* 세 가지 포스터 견본. 바깥 카드와 선택 표시는 기존 화면 정의서를 따릅니다. */
+.thumb.poster {
+  display: flex;
+  padding: 0;
+  gap: 0;
+  isolation: isolate;
+}
+
+.posterTitle {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: auto 10%;
+  font-size: min(22cqw, var(--ex-text-display-md));
+  line-height: var(--ex-leading-none);
+  letter-spacing: -0.055em;
+  color: var(--thumb-text);
+}
+
+/* 흑백 편집 — 넓은 상단 여백과 두 줄 명조만으로 지면을 구성합니다. */
+.poster[data-style="monochrome"] .posterTitle {
+  margin: auto 10% min(19%, var(--ex-text-display-md));
+  font-weight: 400;
+}
+.poster[data-style="monochrome"] .posterTitle > span:last-child { font-style: italic; }
+.poster[data-style="monochrome"]::before {
+  content: "";
+  position: absolute;
+  top: 15%;
+  left: 10%;
+  width: 22%;
+  border-top: 1px solid var(--thumb-accent);
+}
+
+/* 바우하우스 — 이름과 맞물리지 않는 비대칭 원색 면입니다. */
+.poster[data-style="bauhaus"] .posterTitle {
+  margin: min(15%, var(--ex-text-display-sm)) 10% auto;
+  font-size: min(28cqw, var(--ex-text-display-md));
+  font-weight: 850;
+}
+.poster[data-style="bauhaus"]::before {
+  content: "";
+  position: absolute;
+  width: min(70%, calc(var(--ex-editor-sections-width) * 0.5));
+  aspect-ratio: 1;
+  right: -12%;
+  bottom: -22%;
+  border-radius: 50%;
+  background: var(--thumb-accent);
+}
+.poster[data-style="bauhaus"]::after {
+  content: "";
+  position: absolute;
+  right: 12%;
+  top: 15%;
+  width: 12%;
+  height: 30%;
+  background: var(--thumb-text);
+}
+
+/* 어두운 지면 — 글자 뒤는 어둡게 남기고 아래쪽에 빛과 얇은 경계를 둡니다. */
+.poster[data-style="modern-dark"] {
+  background:
+    radial-gradient(ellipse at 80% 115%, color-mix(in srgb, var(--thumb-accent) 70%, transparent), transparent 65%),
+    var(--thumb-bg);
+}
+.poster[data-style="modern-dark"] .posterTitle {
+  margin-inline: 13%;
+  font-size: min(21cqw, var(--ex-text-display-md));
+  font-weight: 550;
+  line-height: 1.1;
+}
+.poster[data-style="modern-dark"] .posterTitle > span:last-child {
+  color: color-mix(in srgb, var(--thumb-accent) 55%, var(--thumb-text));
+}
+.poster[data-style="modern-dark"]::before {
+  content: "";
+  position: absolute;
+  inset: 9% 8%;
+  border: 1px solid color-mix(in srgb, var(--thumb-text) 14%, transparent);
+  border-radius: 6%;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--thumb-text) 4%, transparent), transparent 60%);
+}
