@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { LogoMark, Wordmark } from "@/components/brand/Logo";
@@ -53,9 +54,9 @@ export function OnboardingShell({
             );
           })}
         </nav>
-        <button type="button" className={styles.skip}>
+        <Link href="/home" className={styles.skip}>
           나중에 하기
-        </button>
+        </Link>
       </div>
 
       <div className={styles.body}>
