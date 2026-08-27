@@ -1,221 +1,229 @@
-/* 카드 내부의 지면만 스타일별로 바꿉니다. 팔레트는 계약에서 전달합니다. */
+/* 카드 안에서만 스타일을 표현합니다. 팔레트는 선택한 디자인의 계약 데이터입니다. */
 .thumb {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--thumb-gap);
-  padding: 14px 15px;
   overflow: hidden;
+  isolation: isolate;
+  container-type: inline-size;
   background: var(--thumb-bg);
   color: var(--thumb-text);
   font-size: var(--ex-text-3xs);
-  line-height: 1.55;
-  container-type: inline-size;
 }
 
-.thumbSection {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.thumbTitle {
-  color: var(--thumb-accent);
-  font-size: min(var(--thumb-title-scale), var(--thumb-title-size));
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  white-space: normal;
-  text-wrap: balance;
-  line-height: 1.1;
-}
-
-.colorStudy {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 0;
-}
-.colorStudy > span {
-  width: 1.6em;
-  height: 1.6em;
-  border-radius: 50%;
-  background: var(--thumb-accent);
-}
-.colorStudy > span:nth-child(2) { background: var(--thumb-text); }
-.colorStudy > span:nth-child(3) {
-  background: var(--thumb-bg);
-  border: 1px solid var(--thumb-text);
-}
-.sampleRule {
-  width: 100%;
-  height: 1px;
-  background: currentColor;
-}
-.weightStudy {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 5px 0;
-}
-.weightStudy > span {
-  height: 3px;
-  width: 85%;
-  background: currentColor;
-}
-.weightStudy > span:first-child { width: 55%; height: 6px; background: var(--thumb-accent); }
-.weightStudy > span:last-child { width: 70%; height: 1px; }
-
-.thumb[data-structure="dense-grid"] {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-content: start;
-}
-.thumb[data-structure="dense-grid"] .thumbSection:first-child { grid-column: 1 / -1; }
-.thumb[data-structure="wide-margin"] { padding: 20px 22px; }
-
-/* 명료한 편집, 신문, 스위스 격자 */
-.thumb[data-style="newsprint"] .thumbSection { border-top: 3px double currentColor; padding-top: 5px; }
-.thumb[data-style="newsprint"] .thumbSection:first-child { text-align: center; }
-.thumb[data-style="swiss-minimalist"] .thumbSection { border-top: 1px solid currentColor; padding-top: 5px; }
-.thumb[data-style="swiss-minimalist"] .thumbSection:first-child .thumbTitle { font-weight: 900; }
-.thumb[data-style="professional"] .thumbSection { border-bottom: 1px solid var(--thumb-accent); padding-bottom: 5px; }
-
-/* 바우하우스·기하·플랫 — 텍스트 뒤로 도형이 겹치지 않게 나눕니다. */
-.thumb[data-style="flat-design"] .thumbSection { border-left: 5px solid var(--thumb-accent); padding-left: 8px; }
-.thumb[data-style="playful-geometric"] .thumbSection { border: 1px solid currentColor; border-radius: 14px 4px 14px 4px; padding: 7px; }
-.thumb[data-style="playful-geometric"] .thumbSection:first-child { border-top: 7px solid var(--thumb-accent); }
-
-/* 현대적 면과 경계 */
-.thumb[data-style="saas"] .thumbSection { border-bottom: 1px solid color-mix(in srgb, var(--thumb-text) 20%, transparent); padding-bottom: 6px; }
-.thumb[data-style="saas"] .thumbSection:first-child { border-left: 3px solid var(--thumb-accent); padding-left: 8px; }
-.thumb[data-style="enterprise"] .thumbSection { border-radius: 8px; padding: 8px; background: color-mix(in srgb, var(--thumb-accent) 8%, var(--thumb-bg)); }
-.thumb[data-style="minimal-dark"] .thumbSection { border-bottom: 1px solid color-mix(in srgb, var(--thumb-text) 15%, transparent); padding-bottom: 9px; }
-.thumb[data-style="material-design"] .thumbSection { border-radius: 16px; padding: 9px; background: color-mix(in srgb, var(--thumb-accent) 12%, var(--thumb-bg)); }
-
-/* 큰 제목과 선으로 드러내는 스타일 */
-.thumb[data-style="kinetic"] .thumbSection:first-child .thumbTitle { font-style: italic; letter-spacing: -0.04em; }
-.thumb[data-style="kinetic"] .thumbSection { border-bottom: 2px solid var(--thumb-accent); padding-bottom: 6px; }
-.thumb[data-style="bold-typography"] .thumbSection:first-child .thumbTitle { font-weight: 900; line-height: 1; }
-.thumb[data-style="bold-typography"] .thumbSection:not(:first-child) { border-top: 1px solid var(--thumb-accent); }
-.thumb[data-style="neo-brutalism"] .thumbSection { border: 2px solid currentColor; padding: 7px; box-shadow: 3px 3px 0 var(--thumb-text); background: var(--thumb-bg); }
-.thumb[data-style="neo-brutalism"] .thumbSection:first-child { background: color-mix(in srgb, var(--thumb-accent) 25%, var(--thumb-bg)); }
-
-/* 고전 편집과 금빛 프레임 */
-.thumb[data-style="luxury"] .thumbSection:first-child { border-top: 1px solid var(--thumb-accent); border-bottom: 1px solid var(--thumb-accent); padding: 9px 0; text-align: center; }
-.thumb[data-style="art-deco"] { outline: 3px double var(--thumb-accent); outline-offset: -8px; }
-.thumb[data-style="art-deco"] .thumbSection { text-align: center; }
-.thumb[data-style="art-deco"] .thumbTitle { letter-spacing: 0.08em; }
-.thumb[data-style="academia"] .thumbSection { border-top: 3px double var(--thumb-accent); padding-top: 6px; }
-.thumb[data-style="academia"] .thumbSection:first-child .thumbTitle { font-style: italic; }
-
-/* 터미널·네온·고전 창 */
-.thumb[data-style="terminal"] .thumbTitle::before { content: "> "; }
-.thumb[data-style="terminal"] .thumbSection { border-bottom: 1px dashed var(--thumb-accent); padding-bottom: 7px; }
-.thumb[data-style="cyberpunk"] .thumbSection { border-left: 3px solid var(--thumb-accent); border-bottom: 1px solid var(--thumb-accent); padding: 6px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%); }
-.thumb[data-style="web3"] .thumbSection { border: 1px solid color-mix(in srgb, var(--thumb-accent) 45%, transparent); border-radius: 9px; padding: 7px; background: color-mix(in srgb, var(--thumb-text) 5%, var(--thumb-bg)); }
-.thumb[data-style="vaporwave"] { background: repeating-linear-gradient(0deg, transparent 0 19px, color-mix(in srgb, var(--thumb-accent) 15%, transparent) 19px 20px), var(--thumb-bg); }
-.thumb[data-style="vaporwave"] .thumbSection { background: var(--thumb-bg); border-bottom: 1px solid var(--thumb-accent); }
-.thumb[data-style="vaporwave"] .thumbTitle { text-shadow: 2px 1px color-mix(in srgb, var(--thumb-accent) 45%, transparent); }
-.thumb[data-style="retro"] .thumbSection { border: 2px outset var(--thumb-bg); padding: 4px; }
-.thumb[data-style="retro"] .thumbTitle { background: var(--thumb-accent); color: var(--thumb-bg); padding: 2px 4px; }
-
-/* 곡면과 깊이 */
-.thumb[data-style="claymorphism"] .thumbSection { border-radius: 16px; padding: 10px; box-shadow: inset 2px 2px 5px color-mix(in srgb, var(--thumb-text) 10%, transparent), 3px 3px 6px color-mix(in srgb, var(--thumb-accent) 20%, transparent); }
-.thumb[data-style="neumorphism"] .thumbSection { border-radius: 9px; padding: 9px; box-shadow: 3px 3px 6px color-mix(in srgb, var(--thumb-text) 20%, transparent), -3px -3px 6px color-mix(in srgb, var(--thumb-bg) 70%, white); }
-.thumb[data-style="industrial"] .thumbSection { border: 1px solid color-mix(in srgb, var(--thumb-text) 30%, transparent); border-radius: 4px; padding: 7px; box-shadow: inset 2px 2px 4px color-mix(in srgb, var(--thumb-text) 20%, transparent); }
-.thumb[data-style="industrial"] .thumbTitle { border-bottom: 2px solid var(--thumb-accent); }
-.thumb[data-style="botanical"] .thumbSection:first-child { border: 1px solid var(--thumb-accent); border-radius: 50% 50% 0 0; padding: 14px 9px 7px; text-align: center; }
-.thumb[data-style="organic"] .thumbSection { border-radius: 9px 22px 14px 9px; padding: 9px; background: color-mix(in srgb, var(--thumb-accent) 10%, var(--thumb-bg)); }
-.thumb[data-style="sketch"] .thumbSection { border: 1px dashed currentColor; border-radius: 4px 9px 4px 14px; padding: 7px; }
-.thumb[data-style="sketch"] .thumbTitle { text-decoration: underline wavy var(--thumb-accent); text-underline-offset: 3px; }
-.thumb[data-style="maximalism"] .thumbSection { border: 2px solid var(--thumb-accent); border-radius: 14px 0; padding: 7px; box-shadow: 3px 3px 0 var(--thumb-text); }
-.thumb[data-style="maximalism"] .thumbSection:first-child .thumbTitle { font-weight: 900; }
-
-/* 세 가지 포스터 견본. 바깥 카드와 선택 표시는 기존 화면 정의서를 따릅니다. */
-.thumb.poster {
-  display: flex;
-  padding: 0;
-  gap: 0;
-  isolation: isolate;
-}
-
+/* 좌하단 팔레트와 우상단 선택 배지가 이름에 겹치지 않도록 지면을 나눕니다. */
 .posterTitle {
-  position: relative;
+  position: absolute;
   z-index: 1;
+  inset: 15% 10% 25%;
   display: flex;
   flex-direction: column;
-  min-width: 0;
-  margin: auto 10%;
-  font-size: min(22cqw, var(--ex-text-display-md));
-  line-height: var(--ex-leading-none);
-  letter-spacing: -0.055em;
+  justify-content: center;
+  font-size: min(var(--poster-title-scale), var(--poster-title-max));
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.045em;
   color: var(--thumb-text);
 }
+.posterTitle > span { display: block; }
+.palette {
+  position: absolute;
+  z-index: 2;
+  left: 10%;
+  bottom: 9%;
+  display: flex;
+  gap: 0.35em;
+  pointer-events: none;
+}
+.palette > span {
+  width: 0.8em;
+  height: 0.8em;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--thumb-text) 24%, transparent);
+}
+.palette > [data-color="accent"] { background: var(--thumb-accent); }
+.palette > [data-color="text"] { background: var(--thumb-text); }
+.palette > [data-color="background"] { background: var(--thumb-bg); }
 
-/* 흑백 편집 — 넓은 상단 여백과 두 줄 명조만으로 지면을 구성합니다. */
-.poster[data-style="monochrome"] .posterTitle {
-  margin: auto 10% min(19%, var(--ex-text-display-md));
+/* 흑백 편집 — 승인한 두 줄 명조와 상단 여백을 유지합니다. */
+.thumb[data-style="monochrome"] .posterTitle {
+  justify-content: flex-end;
+  font-size: min(22cqw, var(--poster-title-max));
   font-weight: 400;
 }
-.poster[data-style="monochrome"] .posterTitle > span:last-child { font-style: italic; }
-.poster[data-style="monochrome"]::before {
-  content: "";
-  position: absolute;
-  top: 15%;
-  left: 10%;
-  width: 22%;
+.thumb[data-style="monochrome"] .posterTitle > span:last-child { font-style: italic; }
+.thumb[data-style="monochrome"]::before {
+  content: ""; position: absolute; top: 15%; left: 10%; width: 22%;
   border-top: 1px solid var(--thumb-accent);
 }
 
-/* 바우하우스 — 이름과 맞물리지 않는 비대칭 원색 면입니다. */
-.poster[data-style="bauhaus"] .posterTitle {
-  margin: min(15%, var(--ex-text-display-sm)) 10% auto;
-  font-size: min(28cqw, var(--ex-text-display-md));
+/* 바우하우스 — 원의 크기는 지면 높이에 맞춰 제한합니다. */
+.thumb[data-style="bauhaus"] .posterTitle {
+  justify-content: flex-start;
+  font-size: min(28cqw, var(--poster-title-max));
   font-weight: 850;
 }
-.poster[data-style="bauhaus"]::before {
-  content: "";
-  position: absolute;
+.thumb[data-style="bauhaus"]::before {
+  content: ""; position: absolute;
   width: min(70%, calc(var(--ex-editor-sections-width) * 0.5));
-  aspect-ratio: 1;
-  right: -12%;
-  bottom: -22%;
-  border-radius: 50%;
-  background: var(--thumb-accent);
+  aspect-ratio: 1; right: -12%; bottom: -22%; border-radius: 50%; background: var(--thumb-accent);
 }
-.poster[data-style="bauhaus"]::after {
-  content: "";
-  position: absolute;
-  right: 12%;
-  top: 15%;
-  width: 12%;
-  height: 30%;
-  background: var(--thumb-text);
+.thumb[data-style="bauhaus"]::after {
+  content: ""; position: absolute; right: 12%; top: 15%; width: 12%; height: 30%; background: var(--thumb-text);
 }
 
-/* 어두운 지면 — 글자 뒤는 어둡게 남기고 아래쪽에 빛과 얇은 경계를 둡니다. */
-.poster[data-style="modern-dark"] {
-  background:
-    radial-gradient(ellipse at 80% 115%, color-mix(in srgb, var(--thumb-accent) 70%, transparent), transparent 65%),
-    var(--thumb-bg);
+/* 빛과 유리 — 글자 뒤는 어둡게 남겨 읽기 쉽게 합니다. */
+.thumb[data-style="modern-dark"], .thumb[data-style="web3"] {
+  background: radial-gradient(ellipse at 80% 115%, color-mix(in srgb, var(--thumb-accent) 70%, transparent), transparent 65%), var(--thumb-bg);
 }
-.poster[data-style="modern-dark"] .posterTitle {
-  margin-inline: 13%;
-  font-size: min(21cqw, var(--ex-text-display-md));
-  font-weight: 550;
-  line-height: 1.1;
+.thumb[data-style="modern-dark"] .posterTitle {
+  inset-inline: 13%; font-size: min(21cqw, var(--poster-title-max)); font-weight: 550;
 }
-.poster[data-style="modern-dark"] .posterTitle > span:last-child {
+.thumb[data-style="modern-dark"] .posterTitle > span:last-child {
   color: color-mix(in srgb, var(--thumb-accent) 55%, var(--thumb-text));
 }
-.poster[data-style="modern-dark"]::before {
-  content: "";
-  position: absolute;
-  inset: 9% 8%;
-  border: 1px solid color-mix(in srgb, var(--thumb-text) 14%, transparent);
-  border-radius: 6%;
+.thumb[data-style="modern-dark"]::before, .thumb[data-style="web3"]::before {
+  content: ""; position: absolute; inset: 9% 8% 23%;
+  border: 1px solid color-mix(in srgb, var(--thumb-text) 14%, transparent); border-radius: 6%;
   background: linear-gradient(135deg, color-mix(in srgb, var(--thumb-text) 4%, transparent), transparent 60%);
 }
+.thumb[data-style="web3"] .posterTitle { letter-spacing: -0.065em; font-weight: 700; }
+
+/* 편집 계열 — 선은 구획을 반복하지 않고 지면 가장자리에서만 씁니다. */
+.thumb[data-style="newsprint"] .posterTitle { font-weight: 700; line-height: 0.95; }
+.thumb[data-style="newsprint"]::before {
+  content: ""; position: absolute; inset: 9% 10% 23%; border-block: 3px double var(--thumb-text);
+}
+.thumb[data-style="swiss-minimalist"] .posterTitle { justify-content: flex-end; font-weight: 900; letter-spacing: -0.055em; }
+.thumb[data-style="swiss-minimalist"]::before {
+  content: ""; position: absolute; top: 15%; left: 10%; width: 15%; height: 9%; background: var(--thumb-accent);
+}
+.thumb[data-style="luxury"] .posterTitle, .thumb[data-style="professional"] .posterTitle { font-weight: 400; letter-spacing: -0.035em; }
+.thumb[data-style="luxury"] .posterTitle { text-align: center; font-style: italic; }
+.thumb[data-style="luxury"]::before {
+  content: ""; position: absolute; inset: 20% 10% 30%; border-block: 1px solid color-mix(in srgb, var(--thumb-accent) 60%, transparent);
+}
+.thumb[data-style="professional"]::before {
+  content: ""; position: absolute; top: 14%; right: 10%; width: 25%; border-top: 1px solid var(--thumb-accent);
+}
+.thumb[data-style="academia"] .posterTitle { font-weight: 400; font-style: italic; }
+.thumb[data-style="academia"]::before {
+  content: ""; position: absolute; inset: 14% 10% 26%; border-block: 3px double color-mix(in srgb, var(--thumb-accent) 50%, transparent);
+}
+.thumb[data-style="art-deco"]::before {
+  content: ""; position: absolute; inset: 8% 6% 24%; border: 3px double var(--thumb-accent);
+}
+.thumb[data-style="art-deco"] .posterTitle { text-align: center; font-weight: 400; letter-spacing: 0.025em; color: var(--thumb-accent); }
+
+/* 업무 계열 — 명료한 이름과 절제된 강조 면입니다. */
+.thumb[data-style="saas"] .posterTitle { color: var(--thumb-accent); letter-spacing: -0.065em; font-weight: 650; }
+.thumb[data-style="saas"]::before {
+  content: ""; position: absolute; inset: 10% -20% 38% 65%; border-radius: 50%;
+  background: color-mix(in srgb, var(--thumb-accent) 7%, var(--thumb-bg));
+}
+.thumb[data-style="enterprise"]::before {
+  content: ""; position: absolute; inset: 11% 8% 24%; border-left: 3px solid var(--thumb-accent);
+  background: color-mix(in srgb, var(--thumb-accent) 5%, var(--thumb-bg));
+}
+.thumb[data-style="enterprise"] .posterTitle { inset-inline: 15% 10%; font-weight: 550; }
+.thumb[data-style="minimal-dark"] .posterTitle { font-weight: 400; }
+.thumb[data-style="minimal-dark"]::before {
+  content: ""; position: absolute; top: 15%; left: 10%; width: 13%; border-top: 1px solid var(--thumb-accent);
+}
+
+/* 큰 타이포와 원색 — 이름과 하단 팔레트 사이를 비워 둡니다. */
+.thumb[data-style="kinetic"] .posterTitle { font-weight: 850; font-style: italic; color: var(--thumb-accent); transform: rotate(-7deg); }
+.thumb[data-style="kinetic"]::before {
+  content: ""; position: absolute; right: -10%; bottom: 27%; width: 50%; height: 5%; background: var(--thumb-accent); transform: rotate(-7deg);
+}
+.thumb[data-style="bold-typography"] .posterTitle { font-weight: 900; line-height: 0.95; }
+.thumb[data-style="bold-typography"] .posterTitle > span:last-child { color: var(--thumb-accent); }
+.thumb[data-style="bold-typography"]::before {
+  content: ""; position: absolute; inset: 0 0 0 94%; background: var(--thumb-accent);
+}
+.thumb[data-style="flat-design"] .posterTitle { font-weight: 750; }
+.thumb[data-style="flat-design"]::before {
+  content: ""; position: absolute; right: 0; bottom: 0; width: 25%; height: 35%; background: var(--thumb-accent);
+}
+.thumb[data-style="neo-brutalism"]::before {
+  content: ""; position: absolute; inset: 12% 9% 27%; border: 2px solid var(--thumb-text);
+  background: color-mix(in srgb, var(--thumb-accent) 22%, var(--thumb-bg)); box-shadow: 0.4em 0.4em 0 var(--thumb-text);
+}
+.thumb[data-style="neo-brutalism"] .posterTitle { inset-inline: 14%; font-weight: 900; }
+.thumb[data-style="maximalism"] .posterTitle { font-weight: 900; }
+.thumb[data-style="maximalism"]::before {
+  content: ""; position: absolute; inset: 8% 6% 24%; border: 3px solid var(--thumb-accent);
+  transform: rotate(-4deg); box-shadow: 0.45em 0.45em 0 var(--thumb-text);
+}
+.thumb[data-style="playful-geometric"] .posterTitle { font-weight: 750; transform: rotate(-3deg); }
+.thumb[data-style="playful-geometric"]::before {
+  content: ""; position: absolute; right: -12%; bottom: 15%; width: 42%; height: 32%; border-radius: 50%;
+  background: color-mix(in srgb, var(--thumb-accent) 25%, var(--thumb-bg));
+}
+
+/* 부드러운 면 — 같은 이름 중심 구성을 소재의 차이로 구분합니다. */
+.thumb[data-style="material-design"]::before {
+  content: ""; position: absolute; inset: 10% 8% 24%; border-radius: 18% 18% 40% 18%;
+  background: color-mix(in srgb, var(--thumb-accent) 14%, var(--thumb-bg));
+}
+.thumb[data-style="material-design"] .posterTitle { color: var(--thumb-accent); font-weight: 550; }
+.thumb[data-style="claymorphism"]::before {
+  content: ""; position: absolute; inset: 11% 8% 25%; border-radius: 22%;
+  background: color-mix(in srgb, var(--thumb-accent) 9%, var(--thumb-bg));
+  box-shadow: inset 0.3em 0.3em 0.6em color-mix(in srgb, var(--thumb-bg) 85%, transparent),
+    inset -0.3em -0.3em 0.8em color-mix(in srgb, var(--thumb-accent) 12%, transparent),
+    0.4em 0.5em 0.8em color-mix(in srgb, var(--thumb-accent) 15%, transparent);
+}
+.thumb[data-style="claymorphism"] .posterTitle { font-weight: 700; }
+.thumb[data-style="neumorphism"]::before {
+  content: ""; position: absolute; inset: 12% 9% 27%; border-radius: 12%;
+  box-shadow: 0.35em 0.35em 0.8em color-mix(in srgb, var(--thumb-text) 16%, transparent),
+    -0.35em -0.35em 0.8em color-mix(in srgb, var(--thumb-bg) 75%, var(--thumb-text) 5%);
+}
+.thumb[data-style="neumorphism"] .posterTitle { font-weight: 450; }
+.thumb[data-style="botanical"] .posterTitle { font-weight: 400; font-style: italic; }
+.thumb[data-style="botanical"]::before {
+  content: ""; position: absolute; inset: 10% 12% 24%; border: 1px solid color-mix(in srgb, var(--thumb-accent) 40%, transparent);
+  border-radius: 50% 50% 0 0;
+}
+.thumb[data-style="organic"] .posterTitle { font-weight: 400; }
+.thumb[data-style="organic"]::before {
+  content: ""; position: absolute; inset: 10% 7% 23%; border-radius: 45% 25% 40% 20%;
+  background: color-mix(in srgb, var(--thumb-accent) 13%, var(--thumb-bg));
+}
+.thumb[data-style="sketch"] .posterTitle { font-style: italic; transform: rotate(-3deg); font-weight: 450; }
+.thumb[data-style="sketch"]::before {
+  content: ""; position: absolute; inset: 15% 8% 27%; border: 1px dashed var(--thumb-text); border-radius: 5% 12% 7% 15%; transform: rotate(2deg);
+}
+
+/* 기술·복고 계열 — 창의 경계와 빛만 남기고 가짜 본문은 넣지 않습니다. */
+.thumb[data-style="terminal"] .posterTitle { color: var(--thumb-accent); font-weight: 600; }
+.thumb[data-style="terminal"]::before {
+  content: ""; position: absolute; top: 20%; left: 10%; width: 7%; height: 3%; background: var(--thumb-accent);
+}
+.thumb[data-style="terminal"]::after {
+  content: ""; position: absolute; inset: auto 10% 27%; border-bottom: 1px solid color-mix(in srgb, var(--thumb-accent) 30%, transparent);
+}
+.thumb[data-style="cyberpunk"] .posterTitle { font-weight: 700; color: var(--thumb-accent); }
+.thumb[data-style="cyberpunk"]::before {
+  content: ""; position: absolute; inset: 11% 6% 24%; border-left: 3px solid var(--thumb-accent);
+  background: linear-gradient(135deg, transparent 75%, color-mix(in srgb, var(--thumb-accent) 20%, transparent) 75%);
+}
+.thumb[data-style="vaporwave"] {
+  background: linear-gradient(0deg, color-mix(in srgb, var(--thumb-accent) 18%, transparent), transparent 70%), var(--thumb-bg);
+}
+.thumb[data-style="vaporwave"] .posterTitle { color: var(--thumb-accent); font-weight: 650; font-style: italic; text-shadow: 0.05em 0.04em var(--thumb-text); }
+.thumb[data-style="vaporwave"]::before {
+  content: ""; position: absolute; inset: 65% 0 0; opacity: 0.2;
+  background: repeating-linear-gradient(0deg, transparent 0 0.9em, var(--thumb-accent) 0.9em 1em);
+}
+.thumb[data-style="industrial"]::before {
+  content: ""; position: absolute; inset: 10% 7% 24%; border: 1px solid color-mix(in srgb, var(--thumb-text) 35%, transparent);
+  box-shadow: inset 0.2em 0.2em 0.6em color-mix(in srgb, var(--thumb-text) 15%, transparent);
+}
+.thumb[data-style="industrial"] .posterTitle { font-weight: 750; }
+.thumb[data-style="retro"]::before {
+  content: ""; position: absolute; inset: 12% 8% 25%; border: 3px outset var(--thumb-bg);
+  background: linear-gradient(var(--thumb-accent) 0 12%, transparent 12%);
+  box-shadow: 0.3em 0.3em 0 color-mix(in srgb, var(--thumb-text) 40%, transparent);
+}
+.thumb[data-style="retro"] .posterTitle { inset-block-start: 24%; font-weight: 700; letter-spacing: -0.055em; }

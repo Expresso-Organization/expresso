@@ -3,67 +3,50 @@ import type { CSSProperties } from "react";
 
 import styles from "./template-thumb.module.css";
 
-const GAP = { compact: 5, comfortable: 8, spacious: 12 } as const;
-// 먼저 확인할 세 견본만 이름을 두 줄로 조판합니다. 원문은 생략하지 않습니다.
-const POSTER_BREAKS: Record<string, number> = {
-  "designprompts-monochrome": 4,
-  "designprompts-bauhaus": 3,
-  "designprompts-modern-dark": 7,
-};
+// 이름을 생략하지 않고 조판할 줄바꿈 위치입니다. 목록에 없는 이름도 그대로 표시합니다.
+const TITLE_BREAKS = new Map<string, number[]>([
+  ["monochrome", [4]], ["bauhaus", [3]], ["modern-dark", [7]],
+  ["newsprint", [4]], ["swiss-minimalist", [6]], ["flat-design", [5]],
+  ["art-deco", [4]], ["material-design", [9]], ["neo-brutalism", [4]],
+  ["bold-typography", [5, 9]], ["cyberpunk", [5]],
+  ["playful-geometric", [8, 11]], ["minimal-dark", [8]],
+  ["claymorphism", [4]], ["professional", [6]], ["vaporwave", [5]],
+  ["enterprise", [5]], ["industrial", [5]], ["neumorphism", [3]],
+  ["maximalism", [4]],
+]);
 
-/**
- * 템플릿 썸네일.
- *
- * 내용에 영향을 받지 않는 디자인 견본입니다. 서체·색면·간격·경계만 비교합니다.
- * 문구는 디자인 이름만 씁니다. 레시피 내용은 받지 않습니다.
- * 카드 내부 지면의 색은 앱 테마 토큰이 아니라 선택한 스타일을 따릅니다.
- */
+/** 내용과 무관한 디자인 견본. 이름과 서체·색면·여백만으로 스타일을 비교합니다. */
 export function TemplateThumb({ preview }: { preview: Pick<TemplatePreview, "code" | "name" | "style"> }) {
   const { style } = preview;
-  const longestWord = Math.max(...preview.name.split(/\s+/).map((word) => word.length));
-  const posterBreak = POSTER_BREAKS[preview.code];
+  const styleCode = preview.code.replace(/^designprompts-/, "");
+  const offsets = [0, ...(TITLE_BREAKS.get(styleCode) ?? []), preview.name.length];
+  const lines = offsets.slice(0, -1).map((start, i) => preview.name.slice(start, offsets[i + 1]));
+  const longestLine = Math.max(1, ...lines.map((line) => line.trim().length));
 
   return (
     <span
-      className={posterBreak ? `${styles.thumb} ${styles.poster}` : styles.thumb}
-      data-style={preview.code.replace(/^designprompts-/, "")}
+      className={styles.thumb}
+      data-style={styleCode}
       data-structure={style.structure}
       aria-hidden="true"
       style={{
         "--thumb-bg": style.background,
         "--thumb-text": style.text,
         "--thumb-accent": style.accent,
-        "--thumb-gap": `${GAP[style.density]}px`,
-        "--thumb-title-scale": `${Math.min(18, 125 / longestWord)}cqw`,
-        "--thumb-title-size": preview.name.length > 13 ? "var(--ex-text-3xl)"
-          : preview.name.length > 9 ? "var(--ex-text-4xl)" : "var(--ex-text-display-sm)",
+        "--poster-title-scale": `${Math.min(28, 130 / longestLine)}cqw`,
+        "--poster-title-max": lines.length > 2 ? "var(--ex-text-4xl)" : "var(--ex-text-display-md)",
         fontFamily: style.font === "serif" ? "'Noto Serif KR', Georgia, serif"
           : style.font === "mono" ? "var(--ex-font-mono)" : "var(--ex-font-ui)",
       } as CSSProperties}
     >
-      {posterBreak ? (
-        <span className={styles.posterTitle}>
-          <span>{preview.name.slice(0, posterBreak)}</span>
-          <span>{preview.name.slice(posterBreak)}</span>
-        </span>
-      ) : (
-        <>
-          <span className={styles.thumbSection}>
-            <span className={styles.thumbTitle}>{preview.name}</span>
-          </span>
-          <span className={styles.thumbSection}>
-            <span className={styles.colorStudy}>
-              <span /><span /><span />
-            </span>
-            <span className={styles.sampleRule} />
-          </span>
-          <span className={styles.thumbSection}>
-            <span className={styles.weightStudy}>
-              <span /><span /><span />
-            </span>
-          </span>
-        </>
-      )}
+      <span className={styles.posterTitle}>
+        {lines.map((line, index) => <span key={index}>{line}</span>)}
+      </span>
+      <span className={styles.palette}>
+        <span data-color="accent" />
+        <span data-color="text" />
+        <span data-color="background" />
+      </span>
     </span>
   );
 }
