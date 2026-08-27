@@ -72,11 +72,27 @@ describe("디자인 선택", () => {
     }
   });
 
-  it.each(["Monochrome", "Bauhaus", "Modern Dark"])("%s 포스터는 공통 색상칩과 막대 없이 이름을 온전히 표시한다", (name) => {
-    const preview = previews.find((item) => item.name === name)!;
+  it.each(previews)("$name 포스터는 이름과 현재 팔레트 세 점을 표시한다", (preview) => {
     const html = renderToStaticMarkup(<TemplateThumb preview={preview} />);
-    expect(html.replace(/<[^>]*>/g, "")).toBe(name);
-    expect(html).not.toContain(thumbStyles.colorStudy);
-    expect(html).not.toContain(thumbStyles.weightStudy);
+    expect(html.replace(/<[^>]*>/g, "")).toBe(preview.name);
+    expect(html).toContain(thumbStyles.posterTitle);
+    expect(html.match(/data-color="[^"]+"/g)).toEqual([
+      'data-color="accent"', 'data-color="text"', 'data-color="background"',
+    ]);
+    expect(html).toContain(`--thumb-accent:${preview.style.accent}`);
+    expect(html).toContain(`--thumb-text:${preview.style.text}`);
+    expect(html).toContain(`--thumb-bg:${preview.style.background}`);
+  });
+
+  it("사용자 팔레트와 이전 템플릿도 같은 포스터에 반영한다", () => {
+    const preview = { ...previews[0]!, code: "custom-template", name: "사용자 디자인",
+      style: { ...previews[0]!.style, accent: "#aa3300", text: "#112233", background: "#fff8ee" } };
+    const html = renderToStaticMarkup(<TemplateThumb preview={preview} />);
+    expect(html.replace(/<[^>]*>/g, "")).toBe("사용자 디자인");
+    expect(html).toContain(thumbStyles.posterTitle);
+    expect(html.match(/data-color="[^"]+"/g)).toHaveLength(3);
+    expect(html).toContain("--thumb-accent:#aa3300");
+    expect(html).toContain("--thumb-text:#112233");
+    expect(html).toContain("--thumb-bg:#fff8ee");
   });
 });
