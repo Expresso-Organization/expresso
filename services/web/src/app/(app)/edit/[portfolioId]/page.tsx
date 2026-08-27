@@ -26,6 +26,7 @@ export default async function EditPage({
   let revisions: readonly PortfolioRevision[] = [];
   let checkpoints: { id: string; label: string; createdAt: string }[] = [];
   let generatedPage: GeneratedPage | null = null;
+  let generatedPageHistory: GeneratedPage[] = [];
 
   try {
     const [detail, history] = await Promise.all([
@@ -48,7 +49,12 @@ export default async function EditPage({
   }
 
   try {
-    generatedPage = (await pageApi.latest(session.accessToken, portfolioId)).data;
+    const [latest, history] = await Promise.all([
+      pageApi.latest(session.accessToken, portfolioId),
+      pageApi.history(session.accessToken, portfolioId),
+    ]);
+    generatedPage = latest.data;
+    generatedPageHistory = history.data;
   } catch (error) {
     // 자유 지면은 v1 생성부터 생긴다. 옛 포트폴리오의 404는 정상 호환 경로다.
     if (!(error instanceof ApiError && error.status === 404)) throw error;
@@ -61,6 +67,7 @@ export default async function EditPage({
       revisions={revisions}
       checkpoints={checkpoints}
       generatedPage={generatedPage}
+      generatedPageHistory={generatedPageHistory}
     />
   );
 }

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { AppBody, DocumentHeader } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
 import { ApiError } from "@/lib/api/client";
-import { entitlements, portfolios, publishing } from "@/lib/api/endpoints";
+import { entitlements, page as pageApi, portfolios, publishing } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { DeployPanel } from "./DeployPanel";
@@ -37,34 +37,38 @@ export default async function DeployPage({
     throw error;
   }
 
-  const [{ data: deployments }, exportable] = await Promise.all([
+  const [{ data: deployments }, exportable, generatedPage] = await Promise.all([
     publishing.deployments(session.accessToken, portfolioId),
     entitlements.check(session.accessToken, "export.document"),
+    pageApi.latest(session.accessToken, portfolioId)
+      .then(({ data }) => data)
+      .catch((error: unknown) => {
+        if (error instanceof ApiError && error.status === 404) return null;
+        throw error;
+      }),
   ]);
 
   const nextVersion = (deployments[0]?.version ?? 0) + 1;
-  const empty = portfolio.sections.filter(
-    (section) => section.visible && section.blocks.length === 0,
-  );
+  const attention = generatedPage?.qaReport.checks.filter(({ status }) => status === "fail") ?? [];
   const editor = `/edit/${portfolioId}` as Route;
   const checks = [
     {
-      ok: portfolio.visibleSectionCount > 0,
-      title: portfolio.visibleSectionCount > 0
-        ? `${portfolio.visibleSectionCount}개 섹션이 나갑니다`
-        : "보여줄 섹션이 없습니다",
-      note: `블록 ${portfolio.blockCount}개 · 숨긴 섹션 ${portfolio.sectionCount - portfolio.visibleSectionCount}개`,
-      ...(portfolio.visibleSectionCount > 0 ? {} : { fix: editor }),
+      ok: generatedPage !== null,
+      title: generatedPage
+        ? `자유 HTML 판 ${generatedPage.revision + 1}이 나갑니다`
+        : "배포할 자유 HTML 판이 없습니다",
+      note: generatedPage?.rationale ?? "편집 화면에서 먼저 페이지를 만들어 주세요.",
+      ...(generatedPage ? {} : { fix: editor }),
     },
     {
-      ok: empty.length === 0,
-      title: empty.length === 0
-        ? "모든 섹션에 내용이 있습니다"
-        : `빈 섹션이 ${empty.length}개 있습니다`,
-      note: empty.length === 0
-        ? "빈 채로 나가는 섹션 없음"
-        : empty.map((section) => section.title ?? "제목 없는 섹션").join(" · "),
-      ...(empty.length === 0 ? {} : { fix: editor }),
+      ok: attention.length === 0,
+      title: attention.length === 0
+        ? "편집 주의점이 없습니다"
+        : `확인할 곳이 ${attention.length}개 있습니다`,
+      note: attention.length === 0
+        ? "자동 검사는 페이지를 수정하거나 배포를 막지 않습니다"
+        : attention.map(({ detail }) => detail).join(" · "),
+      ...(attention.length === 0 ? {} : { fix: editor }),
     },
     {
       ok: !portfolio.deployment?.hasUnpublishedChanges,

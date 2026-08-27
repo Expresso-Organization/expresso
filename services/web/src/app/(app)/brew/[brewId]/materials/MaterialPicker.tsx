@@ -100,8 +100,6 @@ export function MaterialPicker({
 
     setBlocked(null);
     setChosen(next);
-    // 0건은 저장하지 않는다 — 서버가 최소 1건을 요구하고, 그게 맞는 규칙이다.
-    if (next.size === 0) return;
     const formData = new FormData();
     formData.set("brewId", brewId);
     for (const id of next) formData.append("recordIds", id);
@@ -135,9 +133,9 @@ export function MaterialPicker({
           <span className={styles.headNote}>공고 매칭도가 높은 순</span>
         </div>
         <p className={styles.blurb}>
-          정리된 기록 {materials.materials.length}건을 이 공고의 요건에 맞춰 줄 세웠습니다.
-          한 번에 {limit}건까지 담을 수 있고, 지금 {chosen.size}건을 골랐습니다. 체크는
-          바꾸는 즉시 저장됩니다.
+          {materials.materials.length === 0
+            ? "정리된 기록이 아직 없습니다. 공고에서 읽은 내용만으로 계속한 뒤, 생성된 포트폴리오를 직접 편집할 수 있습니다."
+            : `정리된 기록 ${materials.materials.length}건을 이 공고의 요건에 맞춰 줄 세웠습니다. 한 번에 ${limit}건까지 담을 수 있고, 지금 ${chosen.size}건을 골랐습니다. 체크는 바꾸는 즉시 저장됩니다.`}
         </p>
 
         <div className={styles.tabs}>
@@ -247,7 +245,11 @@ export function MaterialPicker({
           })}
 
           {rows.length === 0 ? (
-            <div className={styles.emptyRow}>여기에 해당하는 기록이 없습니다.</div>
+            <div className={styles.emptyRow}>
+              {materials.materials.length === 0
+                ? "기록 없이 진행할 수 있습니다. 다음 단계에서 필요한 내용을 답하거나 생성 후 직접 채워 주세요."
+                : "여기에 해당하는 기록이 없습니다."}
+            </div>
           ) : null}
         </div>
 
@@ -391,16 +393,9 @@ export function MaterialPicker({
               )}
             </>
           ) : null}
-          {/* 체크 0건이면 CTA 비활성 (정의서 01b 규칙) */}
-          {chosen.size === 0 ? (
-            <button type="button" className={styles.brew} disabled>
-              최소 1건을 골라주세요
-            </button>
-          ) : (
-            <Link href={`/brew/${brewId}/counter` as Route} className={styles.brew}>
-              AI와 대화 시작
-            </Link>
-          )}
+          <Link href={`/brew/${brewId}/counter` as Route} className={styles.brew}>
+            {chosen.size === 0 ? "기록 없이 계속" : "AI와 대화 시작"}
+          </Link>
         </div>
       </aside>
     </div>

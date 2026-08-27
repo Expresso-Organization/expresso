@@ -42,7 +42,7 @@ export default async function DesignPage({
     throw error;
   }
 
-  const title = brew.posting?.title ?? null;
+  const title = brew.freeTitle ?? brew.posting?.title ?? null;
 
   // 레시피 없이는 뽑을 것이 없다. 03에 직접 들어온 경우다.
   if (!brew.recipeId) {

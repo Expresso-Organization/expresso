@@ -8,7 +8,7 @@ import { ApiError } from "@/lib/api/client";
 import { jobAnalyses } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
-import { refreshAnalysisAction } from "../new-brew-actions";
+import { AnalysisProgress } from "./AnalysisProgress";
 import { StartBrew } from "./StartBrew";
 import styles from "../page.module.css";
 
@@ -73,14 +73,7 @@ export default async function AnalyzingPage({
                   무엇을 요구하는지 뽑아내고 내 기록과 맞춰 봅니다. 이 화면을 닫아도
                   계속됩니다.
                 </p>
-                <div className={styles.waitStage}>
-                  <span className={styles.waitDot} />
-                  <span>{STAGE[analysis.stage]}</span>
-                </div>
-                <form action={refreshAnalysisAction}>
-                  <input type="hidden" name="jobAnalysisId" value={jobAnalysisId} />
-                  <button type="submit" className={styles.waitGhost}>새로고침</button>
-                </form>
+                <AnalysisProgress stage={analysis.stage} label={STAGE[analysis.stage]} />
               </>
             ) : analysis.status === "failed" ? (
               <>
@@ -97,9 +90,8 @@ export default async function AnalyzingPage({
               <>
                 <h1 className={styles.waitTitle}>다 읽었습니다</h1>
                 <p className={styles.waitNote}>
-                  요건 {result.requirements.length}개를 뽑았습니다. 이제 공고에 맞춰
-                  재료 순위를 매깁니다 — 정리된 기록이 한 건도 없으면 시작할 수
-                  없습니다.
+                  요건 {result.requirements.length}개를 뽑았습니다. 제작 공간을 열고
+                  있습니다. 기록이 없어도 공고와 이후 편집을 바탕으로 계속됩니다.
                 </p>
                 <StartBrew jobAnalysisId={jobAnalysisId} lengthPreset={length} />
               </>

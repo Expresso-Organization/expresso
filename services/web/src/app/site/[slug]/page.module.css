@@ -9,6 +9,14 @@
   background: var(--ex-bg-canvas);
 }
 
+.publicDocument {
+  display: block;
+  width: 100%;
+  min-height: 100dvh;
+  border: 0;
+  background: var(--ex-bg);
+}
+
 /* 소유자 바 */
 .ownerBar {
   position: sticky;

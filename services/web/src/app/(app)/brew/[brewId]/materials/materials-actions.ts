@@ -20,7 +20,7 @@ export interface MaterialsResult {
 
 function message(error: unknown): string {
   if (error instanceof ApiError) {
-    if (error.status === 400) return "한 번에 10건까지, 최소 1건은 골라야 합니다.";
+    if (error.status === 400) return "한 번에 10건까지 고를 수 있습니다.";
     if (error.status === 403) return "Cowork 모드는 PRO에서 쓸 수 있습니다.";
     if (error.status === 404) return "이 제작을 찾지 못했습니다.";
     if (error.status === 409) return "고를 수 없는 기록이 섞여 있습니다.";

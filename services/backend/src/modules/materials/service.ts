@@ -3,6 +3,7 @@ import {
   BrewStateSchema,
   type BrewMaterial,
   type CreateBrew,
+  type CreateFreeBrew,
   type UpdateBrew,
 } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/mysql.js";
@@ -122,9 +123,6 @@ export class MaterialsService {
         status: record.status,
         text: `${record.title}\n${record.body_md}\n${JSON.stringify(record.properties)}`,
       })), requirements.map(({ label }) => label)).slice(0, 50);
-      if (ranked.length === 0) {
-        throw new MaterialsError(409, "at least one organized record is required");
-      }
       const brews = await transaction<{ id: string }[]>`
         insert into brew (user_id, job_analysis_id, length_preset)
         values (${userId}, ${input.jobAnalysisId}, ${input.lengthPreset})
@@ -132,6 +130,56 @@ export class MaterialsService {
       `;
       const brew = brews[0];
       if (!brew) throw new Error("brew was not persisted");
+      for (const [index, record] of ranked.entries()) {
+        const selected = index < SELECTION_LIMIT;
+        await transaction`
+          insert into brew_source (
+            user_id, brew_id, record_id, \`rank\`, selected_by,
+            excluded_reason, score, reason_text, is_selected
+          ) values (
+            ${userId}, ${brew.id}, ${record.id}, ${index}, 'auto',
+            ${selected ? null : "AUTO_LIMIT"}, ${record.score}, ${record.reason}, ${selected}
+          )
+        `;
+      }
+      return brew.id;
+    });
+    return this.getMaterials(userId, brewId);
+  }
+
+  async createFreeBrew(userId: string, input: CreateFreeBrew) {
+    const brewId = await this.#sql.begin(async (transaction) => {
+      const analyses = await transaction<{ id: string }[]>`
+        insert into job_analysis (
+          user_id, job_posting_id, input_type, status, progress_stage,
+          analyzed_at, result_version, target_version
+        ) values (
+          ${userId}, null, 'free', 'done', 'done', now(6), 1, 1
+        ) returning id
+      `;
+      const analysis = analyses[0];
+      if (!analysis) throw new Error("free job analysis was not persisted");
+
+      const records = await transaction<RecordRow[]>`
+        select id, title, status, body_md, properties
+        from record
+        where user_id = ${userId}
+          and deleted_at is null
+          and status in ('organized', 'verified')
+      `;
+      const ranked = rankMaterials(records.map((record): MaterialRecord => ({
+        id: record.id,
+        title: record.title,
+        status: record.status,
+        text: `${record.title}\n${record.body_md}\n${JSON.stringify(record.properties)}`,
+      })), [input.brief]).slice(0, 50);
+      const brews = await transaction<{ id: string }[]>`
+        insert into brew (user_id, job_analysis_id, free_title, free_brief, length_preset)
+        values (${userId}, ${analysis.id}, ${input.title}, ${input.brief}, ${input.lengthPreset})
+        returning id
+      `;
+      const brew = brews[0];
+      if (!brew) throw new Error("free brew was not persisted");
       for (const [index, record] of ranked.entries()) {
         const selected = index < SELECTION_LIMIT;
         await transaction`
@@ -160,8 +208,9 @@ export class MaterialsService {
     const brew = (await sql<{
       id: string; job_analysis_id: string; status: string;
       length_preset: "single" | "double" | "triple"; updated_at: Date | string;
+      free_title: string | null; free_brief: string | null;
     }[]>`
-      select id, job_analysis_id, status, length_preset, updated_at
+      select id, job_analysis_id, status, length_preset, free_title, free_brief, updated_at
       from brew where id = ${brewId} and user_id = ${userId}
     `)[0];
     if (!brew) throw new MaterialsError(404, "brew not found");
@@ -220,6 +269,8 @@ export class MaterialsService {
       jobAnalysisId: brew.job_analysis_id,
       status: brew.status,
       lengthPreset: brew.length_preset,
+      freeTitle: brew.free_title,
+      freeBrief: brew.free_brief,
       posting: posting[0]
         ? { title: posting[0].title, companyName: posting[0].company_name }
         : null,
@@ -316,33 +367,41 @@ export class MaterialsService {
         for update
       `)[0];
       if (!brew) throw new MaterialsError(404, "brew not found");
-      const allowed = await transaction<{ record_id: string }[]>`
-        select record_id from brew_source
-        where user_id = ${userId} and brew_id = ${brewId}
-          and record_id in ${transaction(recordIds)}
-      `;
+      const allowed = recordIds.length > 0
+        ? await transaction<{ record_id: string }[]>`
+          select record_id from brew_source
+          where user_id = ${userId} and brew_id = ${brewId}
+            and record_id in ${transaction(recordIds)}
+        `
+        : [];
       if (allowed.length !== recordIds.length) {
         throw new MaterialsError(409, "selection contains an ineligible record");
       }
       // rank는 매칭 순위지 고른 차례가 아니다. 여기서 다시 매기면 목록이 두 가지
       // 뜻을 섞어 정렬되고, 뺀 기록이 고른 기록보다 위로 올라온다.
-      //
-      // 고를 것을 먼저 켜고 나머지를 끈다. 선택이 한순간도 0이 되지 않아야
-      // 「후보가 있으면 선택 하나는 남는다」를 보는 트리거에 걸리지 않는다.
-      await transaction`
-        update brew_source
-        set is_selected = true, selected_by = 'user',
-            excluded_reason = null, updated_at = now(6)
-        where user_id = ${userId} and brew_id = ${brewId}
-          and record_id in ${transaction(recordIds)}
-      `;
-      await transaction`
-        update brew_source
-        set is_selected = false, selected_by = 'user',
-            excluded_reason = 'USER_DESELECTED', updated_at = now(6)
-        where user_id = ${userId} and brew_id = ${brewId}
-          and record_id not in ${transaction(recordIds)}
-      `;
+      if (recordIds.length > 0) {
+        await transaction`
+          update brew_source
+          set is_selected = true, selected_by = 'user',
+              excluded_reason = null, updated_at = now(6)
+          where user_id = ${userId} and brew_id = ${brewId}
+            and record_id in ${transaction(recordIds)}
+        `;
+        await transaction`
+          update brew_source
+          set is_selected = false, selected_by = 'user',
+              excluded_reason = 'USER_DESELECTED', updated_at = now(6)
+          where user_id = ${userId} and brew_id = ${brewId}
+            and record_id not in ${transaction(recordIds)}
+        `;
+      } else {
+        await transaction`
+          update brew_source
+          set is_selected = false, selected_by = 'user',
+              excluded_reason = 'USER_DESELECTED', updated_at = now(6)
+          where user_id = ${userId} and brew_id = ${brewId}
+        `;
+      }
       await transaction`
         update brew set updated_at = now(6)
         where id = ${brewId} and user_id = ${userId}

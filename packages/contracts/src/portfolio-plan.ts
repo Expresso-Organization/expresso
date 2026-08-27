@@ -50,7 +50,8 @@ export const PortfolioRequirementCoverageSchema = z.strictObject({
 export const PortfolioClaimSchema = z.strictObject({
   id: z.string().min(1).max(100),
   intent: z.string().min(1).max(500),
-  evidenceIds: z.array(UuidSchema).min(1).max(10),
+  /** 선택적 출처 연결. 빈 배열도 사용자 검토가 필요한 제안으로 보존한다. */
+  evidenceIds: z.array(UuidSchema).max(10),
   allowedNumbers: z.array(z.string().min(1).max(120)).max(20),
 });
 
@@ -59,10 +60,10 @@ export const PortfolioPlanSectionSchema = z.strictObject({
   title: z.string().min(1).max(300),
   purpose: z.string().min(1).max(1_000),
   takeaway: z.string().min(1).max(500),
-  evidenceIds: z.array(UuidSchema).min(1).max(20),
+  evidenceIds: z.array(UuidSchema).max(20),
   contentPattern: z.enum(["hero", "case-study", "metrics", "timeline", "capabilities", "about", "contact"]),
   interactionOpportunity: z.string().max(300).nullable(),
-  targetLength: z.number().int().positive(),
+  targetLength: z.number().int().nonnegative(),
 });
 
 /**
@@ -75,18 +76,18 @@ export const PortfolioPlanSchema = z.strictObject({
   target: z.strictObject({
     company: z.string().min(1).max(300),
     role: z.string().min(1).max(300),
-    primaryReaders: z.array(z.string().min(1).max(100)).min(1).max(5),
+    primaryReaders: z.array(z.string().min(1).max(100)).max(5),
     decisionGoal: z.string().min(1).max(500),
   }),
   positioning: z.strictObject({
     headlineIntent: z.string().min(1).max(500),
     valueProposition: z.string().min(1).max(500),
-    differentiators: z.array(z.string().min(1).max(300)).min(1).max(5),
+    differentiators: z.array(z.string().min(1).max(300)).max(5),
   }),
   requirementCoverage: z.array(PortfolioRequirementCoverageSchema).max(20),
   narrative: z.strictObject({
     arc: z.string().min(1).max(1_000),
-    sectionOrder: z.array(UuidSchema).min(1).max(10),
+    sectionOrder: z.array(UuidSchema).max(10),
   }),
   sections: z.array(PortfolioPlanSectionSchema).min(1).max(10),
   claims: z.array(PortfolioClaimSchema).max(30),
@@ -104,7 +105,7 @@ export const PortfolioPlanDraftCoreSchema = z.strictObject({
   positioning: z.strictObject({
     headlineIntent: z.string().min(1).max(500),
     valueProposition: z.string().min(1).max(500),
-    differentiators: z.array(z.string().min(1).max(300)).min(1).max(5),
+    differentiators: z.array(z.string().min(1).max(300)).max(5),
   }),
   requirementCoverage: z.array(z.strictObject({
     requirementSource: z.number().int().min(1).max(40),
@@ -116,7 +117,7 @@ export const PortfolioPlanDraftCoreSchema = z.strictObject({
   narrativeArc: z.string().min(1).max(1_000),
   claims: z.array(z.strictObject({
     intent: z.string().min(1).max(500),
-    evidenceSources: z.array(z.number().int().min(1).max(40)).min(1).max(10),
+    evidenceSources: z.array(z.number().int().min(1).max(40)).max(10),
     allowedNumbers: z.array(z.string().min(1).max(120)).max(20),
   })).max(30),
   exclusions: z.array(z.string().min(1).max(500)).max(30),

@@ -23,8 +23,8 @@ import { isOrdinalLabel, ungroundedNumbers } from "../../platform/numbers.js";
  * 낸다. 나눠서 얻던 것들(문장 고정 · 부분 재생성 · 같은 내용 3안 비교)을 포기하는
  * 대신, 모델이 CSS 전부를 쓴다.
  *
- * 우리가 남긴 것은 셋이다 — **소독**(방문자 보호), **근거 대조**(지어낸 성과 차단),
- * 그리고 **프롬프트**. 품질은 이제 거의 전부 마지막 하나에 달려 있다.
+ * 우리가 남긴 것은 셋이다 — **소독**(방문자 보호), **근거 대조 주의점**, 그리고
+ * **프롬프트**. 근거 대조는 사용자의 검토를 돕고 내용을 지우거나 재생성하지 않는다.
  */
 
 export interface PageEvidence {
@@ -50,7 +50,7 @@ export interface PageMedia {
 }
 
 export interface PageGenerationContext {
-  /** 1단계에서 확정한 내용 계약. 원문을 다시 해석하는 대신 이 설계를 표현한다. */
+  /** 1단계에서 보존한 편집 가능한 맥락 초안. */
   portfolioPlan: PortfolioPlan | null;
   /**
    * 사용자가 **생성 전에 고른** 스타일 문법.
@@ -94,8 +94,7 @@ export interface GeneratedPageResult {
   css: string;
   rationale: string;
   /**
-   * 근거에서 확인하지 못한 수. 한 번 수정한 뒤에도 남으면 failed_qa 초안으로
-   * 보존하고 공개 문서 경로에서는 제외한다.
+   * 근거에서 확인하지 못한 수. 사용자 검토용 주의점으로 보존한다.
    */
   ungrounded: string[];
   /** 소독기가 지운 것. 비어 있어야 정상이다. */
@@ -155,9 +154,10 @@ const SYSTEM_KIT = [
   "",
   pagePolicyPrompt(),
   "",
-  "## 사실 — 여기서 어기면 지원자가 다친다",
-  "**주어진 근거에 있는 것만 쓴다.** 근거에 없는 숫자 · 회사명 · 프로젝트를 지어내지 마라.",
-  "숫자는 근거에 적힌 **그 형태 그대로** 옮긴다 — 220분을 '3시간 40분'으로 환산하지 마라.",
+  "## 출처 맥락과 사용자 검토",
+  "주어진 출처는 페이지를 더 구체적으로 만드는 참고 자료다. 출처에 없는 특정 숫자 · 회사명 · 프로젝트를 임의로 지어내지 마라.",
+  "불확실하거나 연결이 약한 자리는 내용을 빼거나 빈칸으로 만들지 말고, 읽히는 완결 초안을 만든다. 수치 대조 결과는 사용자 검토용 주의점으로 저장된다.",
+  "숫자를 쓸 때는 출처의 형태를 존중한다 — 220분을 '3시간 40분'으로 환산하지 마라.",
   "",
   "## 글",
   "- 첫 화면에서 이 사람이 뭘 하는 사람인지 알게 한다.",
@@ -186,9 +186,10 @@ const SYSTEM = [
   "",
   pagePolicyPrompt(),
   "",
-  "## 사실 — 여기서 어기면 지원자가 다친다",
-  "**주어진 근거에 있는 것만 쓴다.** 근거에 없는 숫자 · 회사명 · 프로젝트를 지어내지 마라.",
-  "숫자는 근거에 적힌 **그 형태 그대로** 옮긴다 — 220분을 '3시간 40분'으로 환산하지 마라.",
+  "## 출처 맥락과 사용자 검토",
+  "주어진 출처는 페이지를 더 구체적으로 만드는 참고 자료다. 출처에 없는 특정 숫자 · 회사명 · 프로젝트를 임의로 지어내지 마라.",
+  "불확실하거나 연결이 약한 자리는 내용을 빼거나 빈칸으로 만들지 말고, 읽히는 완결 초안을 만든다. 수치 대조 결과는 사용자 검토용 주의점으로 저장된다.",
+  "숫자를 쓸 때는 출처의 형태를 존중한다 — 220분을 '3시간 40분'으로 환산하지 마라.",
   "",
   "## 내는 것",
   "- `html` — 지면의 몸통. `<!doctype>` · `<html>` · `<head>` · `<body>`는 **쓰지 않는다.**",
@@ -249,23 +250,23 @@ function buildPrompt(context: PageGenerationContext): string {
   }
 
   if (context.portfolioPlan) {
-    lines.push("## 확정된 PortfolioPlan v1 — 내용과 순서를 임의로 바꾸지 않는다");
+    lines.push("## PortfolioPlan v1 — 편집 가능한 구성 맥락");
     lines.push(JSON.stringify(context.portfolioPlan, null, 2));
     lines.push("");
   } else {
     lines.push("## PortfolioPlan");
-    lines.push("옛 레시피라 v1 설계안이 없다. 아래 섹션 설계를 보존하되 새 사실을 추가하지 않는다.");
+    lines.push("옛 레시피라 v1 설계안이 없다. 아래 섹션 설계를 참고해 완결된 초안을 만든다.");
     lines.push("");
   }
 
-  lines.push(`## 근거 ${context.evidence.length}개 — 여기 있는 사실만 쓴다`);
+  lines.push(`## 출처 맥락 ${context.evidence.length}개 — 검토와 구체화를 돕는다`);
   for (const [index, entry] of context.evidence.entries()) {
     lines.push(`### 근거 ${index + 1} — ${entry.label}`);
     lines.push(entry.text);
     lines.push("");
   }
 
-  lines.push(`## 섹션 설계 ${context.sections.length}개 — 이 순서와 의도대로 만든다`);
+  lines.push(`## 섹션 설계 ${context.sections.length}개 — 읽기 흐름을 위한 제안`);
   for (const [index, section] of context.sections.entries()) {
     lines.push(`### ${index + 1}. ${section.title}`);
     lines.push(`- 목적: ${section.purpose}`);
@@ -474,4 +475,3 @@ function pageQa(input: {
     checks,
   };
 }
-

@@ -1,6 +1,7 @@
 import {
   API_PREFIX,
   CreateBrewSchema,
+  CreateFreeBrewSchema,
   UpdateBrewMaterialsSchema,
   UpdateBrewSchema,
 } from "@expresso/contracts";
@@ -29,6 +30,15 @@ export function registerMaterialsRoutes(
     if (!input.success) throw new HttpStatusError(400, "invalid brew request");
     return reply.code(201).send({
       data: await options.materialsService.createBrew(principal.user.id, input.data),
+    });
+  });
+
+  app.post(`${API_PREFIX}/brews/free`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const input = CreateFreeBrewSchema.safeParse(request.body);
+    if (!input.success) throw new HttpStatusError(400, "invalid free brew request");
+    return reply.code(201).send({
+      data: await options.materialsService.createFreeBrew(principal.user.id, input.data),
     });
   });
 

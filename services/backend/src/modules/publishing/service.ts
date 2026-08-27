@@ -3,8 +3,11 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import {
   DeploymentSchema,
   DeploymentSummarySchema,
+  GeneratedPageDeploymentSnapshotSchema,
+  PageStyleGrammarSchema,
   PublicPortfolioSchema,
   SignedAssetSchema,
+  pageDocument,
   type PublishPortfolio,
   type SubmitExport,
 } from "@expresso/contracts";
@@ -109,6 +112,20 @@ export class PublishingService {
       where block.user_id = ${userId} and portfolio_section.portfolio_id = ${portfolioId}
       order by portfolio_section.order_no, block.order_no, block.id
     `;
+    const page = (await transaction<{
+      id: string; revision: number; html: string; css: string; rationale: string; style_spec_snapshot: unknown;
+    }[]>`
+      select id, revision, html, css, rationale, style_spec_snapshot
+      from generated_page
+      where user_id = ${userId} and portfolio_id = ${portfolioId} and quality_status = 'ready'
+      order by revision desc limit 1
+    `)[0];
+    const grammar = page && PageStyleGrammarSchema.safeParse(page.style_spec_snapshot).success
+      ? PageStyleGrammarSchema.parse(page.style_spec_snapshot)
+      : undefined;
+    if (!page) {
+      throw new PublishingError(409, "ready generated page is required for publication");
+    }
     return {
       portfolioId,
       title: portfolio.title,
@@ -125,6 +142,19 @@ export class PublishingService {
           locked: block.locked,
         })),
       })),
+      // 옛 블록 배포는 이 필드 없이도 계속 읽힌다. 새 자유 HTML 판이 있으면
+      // 배포 시점의 완성 문서를 같이 고정해 공개 렌더가 mutable block을 보지 않는다.
+      generatedPage: GeneratedPageDeploymentSnapshotSchema.parse({
+        id: page.id,
+        revision: page.revision,
+        document: pageDocument({
+          html: page.html,
+          css: page.css,
+          title: portfolio.title,
+          description: page.rationale,
+          ...(grammar ? { grammar } : {}),
+        }),
+      }),
     };
   }
 

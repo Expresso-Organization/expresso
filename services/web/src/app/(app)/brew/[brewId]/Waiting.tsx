@@ -1,4 +1,8 @@
+"use client";
+
 import type { BrewJobStatus } from "@expresso/contracts";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
@@ -31,6 +35,13 @@ export function Waiting({
 }) {
   const running = job?.status === "queued" || job?.status === "running";
   const failed = job?.status === "failed";
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!running) return;
+    const timer = window.setInterval(() => router.refresh(), 1_500);
+    return () => window.clearInterval(timer);
+  }, [router, running]);
 
   return (
     <div className={styles.wrap}>
@@ -42,9 +53,14 @@ export function Waiting({
         <p className={styles.note}>{running ? "1분쯤 걸립니다. 이 화면을 닫아도 계속됩니다." : note}</p>
 
         {running ? (
-          <div className={styles.stage}>
-            <span className={styles.stageDot} />
-            <span>{job?.stage === "queued" ? "차례를 기다리는 중" : "쓰는 중"}</span>
+          <div className={styles.progressGroup} aria-live="polite">
+            <div className={styles.progress} role="progressbar" aria-label={`${title} 생성 진행 중`}>
+              <span className={styles.progressFill} />
+            </div>
+            <div className={styles.stage}>
+              <span className={styles.spinner} aria-hidden="true" />
+              <span>{job?.stage === "queued" ? "차례를 기다리는 중" : "쓰는 중"}</span>
+            </div>
           </div>
         ) : null}
 
@@ -56,12 +72,7 @@ export function Waiting({
           </p>
         ) : null}
 
-        {running ? (
-          <form action={action}>
-            <input type="hidden" name="brewId" value={brewId} />
-            <button type="submit" className={styles.ghost}>새로고침</button>
-          </form>
-        ) : (
+        {running ? null : (
           <form action={action}>
             <input type="hidden" name="brewId" value={brewId} />
             <button type="submit" className={styles.primary}>{actionLabel}</button>

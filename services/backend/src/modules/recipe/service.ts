@@ -133,14 +133,13 @@ export class RecipeService {
 
         const sectionEvidenceIds = new Set<string>();
         for (const [itemOrder, item] of section.items.entries()) {
-          // 없는 번호를 가리키는 근거는 버린다. 근거가 하나도 없으면 항목을 버린다 —
-          // 근거 없는 항목은 `recipe_item`의 CHECK가 애초에 받지 않는다.
+          // 유효한 연결만 path로 남긴다. 비어 있거나 잘못된 번호는 사용자 검토용
+          // 빈 evidence 배열로 보존한다 — 항목 자체를 버리면 계획에 구멍이 생긴다.
           const cited = [...new Set(item.sources)]
             .flatMap((number) => {
               const source = context.sources[number - 1];
               return source ? [{ number, source }] : [];
             });
-          if (cited.length === 0) continue;
           for (const { number, source } of cited) {
             citedNumbers.add(number);
             sectionEvidenceIds.add(source.id);
@@ -169,18 +168,16 @@ export class RecipeService {
             )
           `;
         }
-        if (sectionEvidenceIds.size > 0) {
-          plannedSections.push({
-            id: sectionId,
-            title: section.title,
-            purpose: section.purpose,
-            takeaway: section.takeaway,
-            evidenceIds: [...sectionEvidenceIds],
-            contentPattern: section.contentPattern,
-            interactionOpportunity: section.interactionOpportunity,
-            targetLength: section.targetLength,
-          });
-        }
+        plannedSections.push({
+          id: sectionId,
+          title: section.title,
+          purpose: section.purpose,
+          takeaway: section.takeaway,
+          evidenceIds: [...sectionEvidenceIds],
+          contentPattern: section.contentPattern,
+          interactionOpportunity: section.interactionOpportunity,
+          targetLength: section.targetLength,
+        });
       }
 
       // 안 쓴 기록은 이유와 함께 남긴다. 계약이 이유를 냈으면 그걸 쓰고,
@@ -201,10 +198,12 @@ export class RecipeService {
       const portfolioPlan = PortfolioPlanSchema.parse({
         version: 1,
         target: {
-          company: context.company?.name ?? "지원 회사",
-          role: context.jobTitle ?? "지원 직무",
-          primaryReaders: ["채용 담당자", "실무 리드"],
-          decisionGoal: "실제 근거를 바탕으로 인터뷰 대상으로 판단하게 한다",
+          company: context.freeTitle ?? context.company?.name ?? "지원 회사",
+          role: context.freeTitle ? "자유 포트폴리오" : context.jobTitle ?? "지원 직무",
+          primaryReaders: context.freeTitle ? ["일반 방문자"] : ["채용 담당자", "실무 리드"],
+          decisionGoal: context.freeBrief
+            ? context.freeBrief.slice(0, 500)
+            : "실제 근거를 바탕으로 인터뷰 대상으로 판단하게 한다",
         },
         positioning: draft.plan.positioning,
         requirementCoverage: draft.plan.requirementCoverage.flatMap((entry) => {
@@ -294,8 +293,11 @@ export class RecipeService {
    */
   async #plannerContext(userId: string, brewId: string) {
     const sql = this.#sql;
-    const brew = (await sql<{ id: string; job_analysis_id: string; length_preset: keyof typeof TOTAL_LENGTH }[]>`
-      select id, job_analysis_id, length_preset from brew
+    const brew = (await sql<{
+      id: string; job_analysis_id: string; length_preset: keyof typeof TOTAL_LENGTH;
+      free_title: string | null; free_brief: string | null;
+    }[]>`
+      select id, job_analysis_id, length_preset, free_title, free_brief from brew
       where id = ${brewId} and user_id = ${userId}
     `)[0];
     if (!brew) throw new RecipeError(404, "brew not found");
@@ -367,8 +369,6 @@ export class RecipeService {
         label: row.prompt, text: row.transcript,
       })),
     ];
-    if (sources.length < 3) throw new RecipeError(409, "at least three evidence sources are required");
-
     const context: PlannerContext = {
       sources,
       company: subject[0]
@@ -379,6 +379,8 @@ export class RecipeService {
         }
         : null,
       jobTitle: subject[0]?.job_title ?? null,
+      freeTitle: brew.free_title,
+      freeBrief: brew.free_brief,
       requirements: requirements.map(({ label, kind }) => ({ label, kind })),
       companyResearch: companyResearch.map((item) => ({
         id: item.id,

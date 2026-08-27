@@ -7,9 +7,8 @@ import { requireSession } from "@/lib/require-session";
 
 import { grantConsentAction, revokeConsentAction } from "../../consent-actions";
 
+import { AccountNav } from "./AccountNav";
 import styles from "./page.module.css";
-
-const TAB_ICONS = ["user", "receipt", "credit-card", "bell", "database"];
 
 /** 무엇이 나가는지를 먼저 쓴다. 켜고 끄는 스위치보다 그 문장이 중요하다. */
 const CONSENT_COPY = {
@@ -32,22 +31,7 @@ export default async function AccountPage() {
       <DocumentHeader crumbs={["설정", "요금제"]} />
       <AppBody>
         <div className={styles.body}>
-          <nav className={styles.nav} aria-label="설정">
-            {ACCOUNT.tabs.map((tab, index) => (
-              <button
-                key={tab}
-                type="button"
-                className={`${styles.navItem} ${index === 1 ? styles.navItemActive : ""}`}
-              >
-                <Icon
-                  name={TAB_ICONS[index] ?? "gear-six"}
-                  size={14}
-                  color={index === 1 ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
-                />
-                {tab}
-              </button>
-            ))}
-          </nav>
+          <AccountNav />
 
           <div className={styles.main}>
             <h1 className={styles.title}>요금제 · 사용량</h1>

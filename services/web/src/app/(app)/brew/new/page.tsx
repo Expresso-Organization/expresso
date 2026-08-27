@@ -7,6 +7,7 @@ import { jobs } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { analyzePostingAction } from "./new-brew-actions";
+import { CompanyUrlForm, FreeBrewForm, PastePostingForm } from "./NewBrewForms";
 import styles from "./page.module.css";
 
 /**
@@ -60,7 +61,7 @@ export default async function NewBrewPage({
 }: {
   searchParams: Promise<{ mode?: string; q?: string; page?: string }>;
 }) {
-  const session = await requireSession();
+  await requireSession();
   const params = await searchParams;
   const mode = isMode(params.mode) ? params.mode : null;
   const query = params.q?.trim() ?? "";
@@ -78,9 +79,9 @@ export default async function NewBrewPage({
 
           {mode === null ? <ModeCards /> : null}
           {mode === "list" ? <PostingPicker query={query} page={page} /> : null}
-          {mode === "paste" ? <NotBuilt mode="paste" /> : null}
-          {mode === "company" ? <NotBuilt mode="company" /> : null}
-          {mode === "free" ? <NotBuilt mode="free" /> : null}
+          {mode === "paste" ? <PastePostingForm /> : null}
+          {mode === "company" ? <CompanyUrlForm /> : null}
+          {mode === "free" ? <FreeBrewForm /> : null}
         </div>
       </AppBody>
     </>
@@ -214,31 +215,5 @@ async function PostingPicker({ query, page }: { query: string; page: number }) {
         </div>
       ) : null}
     </>
-  );
-}
-
-/**
- * 아직 짓지 않은 갈래.
- *
- * 빈 칸이 누구 사정인지 밝힌다 — 공고가 없어서가 아니라 **우리가 아직 이 길을
- * 놓지 않았다.** 그러니 대신 갈 수 있는 길을 함께 준다.
- */
-function NotBuilt({ mode }: { mode: Mode }) {
-  const reason: Record<string, string> = {
-    paste:
-      "붙여넣기 화면은 아직 짓지 않았습니다. 서버는 이미 받을 준비가 되어 있습니다.",
-    company:
-      "회사 홈페이지를 읽어 채용 중인 자리를 찾는 길은 아직 놓지 않았습니다.",
-    free:
-      "공고 없이 만드는 길은 아직 놓지 않았습니다. 지금은 겨냥할 공고가 있어야 재료 순위를 매길 수 있습니다.",
-  };
-
-  return (
-    <div className={styles.notBuilt}>
-      <p className={styles.notBuiltWhy}>{reason[mode]}</p>
-      <Link href={"/brew/new?mode=list" as Route} className={styles.notBuiltGo}>
-        모아 둔 공고에서 고르기
-      </Link>
-    </div>
   );
 }
