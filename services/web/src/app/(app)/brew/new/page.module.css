@@ -77,6 +77,265 @@
   color: var(--ex-fg-muted);
 }
 
+/* 이 갈래가 지나는 길 — 카드 발치에 화살표로 잇는다 */
+.cardPath {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ex-border-inner);
+}
+
+.cardStop {
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
+  white-space: nowrap;
+}
+
+.cardStop:first-child {
+  color: var(--ex-fg-body);
+  font-weight: 600;
+}
+
+/* ── 만들다 만 것 ────────────────────────────────────── */
+
+.resume {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 1180px;
+  margin-bottom: 12px;
+  padding: 11px 16px;
+  border: 1px solid var(--ex-accent-surface);
+  border-radius: 11px;
+  background: var(--ex-accent-surface);
+  text-decoration: none;
+  transition: border-color var(--ex-motion-instant);
+}
+
+.resume:hover {
+  border-color: var(--ex-accent);
+}
+
+.resumeDot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--ex-accent);
+}
+
+.resumeText {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resumeText b {
+  color: var(--ex-fg);
+  font-weight: 600;
+}
+
+.resumeTime {
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+}
+
+.resumeGo {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+  color: var(--ex-accent-text);
+  white-space: nowrap;
+}
+
+/* ── 고르기 전에 바로 쓸 수 있는 것들 ───────────────── */
+
+.below {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  align-items: start;
+  gap: 12px;
+  max-width: 1180px;
+  margin-top: 12px;
+}
+
+/* 추천이 없어 바로 시작이 서지 않으면 재료 패널이 전체 폭을 쓴다 */
+.below > :only-child {
+  grid-column: 1 / -1;
+}
+
+.panel {
+  border: 1px solid var(--ex-border);
+  border-radius: 11px;
+  background: var(--ex-bg);
+  padding: 16px 18px;
+}
+
+.panelHead {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+
+.panelTitle {
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+  color: var(--ex-fg);
+}
+
+.panelNote {
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+}
+
+.panelLink {
+  margin-left: auto;
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+  color: var(--ex-fg-body);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.panelLink:hover {
+  color: var(--ex-accent-text);
+}
+
+.quickRows {
+  display: grid;
+}
+
+.quickRow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--ex-border-inner);
+}
+
+.quickRows > .quickRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.quickAvatar {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  font-size: var(--ex-text-2xs);
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.quickMain {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.quickRole {
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+  color: var(--ex-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quickCompany {
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quickScore {
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-body);
+  flex-shrink: 0;
+}
+
+.quickScoreHigh {
+  color: var(--ex-status-success-text);
+}
+
+/* ── 내 재료 ─────────────────────────────────────────── */
+
+.materialsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.materialsChip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--ex-border);
+  border-radius: 999px;
+  padding: 6px 11px;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color var(--ex-motion-instant);
+}
+
+.materialsChip:hover {
+  border-color: var(--ex-border-firm);
+}
+
+.materialsCount {
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-muted);
+}
+
+.materialsEmpty {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+
+.materialsEmptyText {
+  margin: 0;
+  font-size: var(--ex-text-xs);
+  line-height: 1.65;
+  color: var(--ex-fg-muted);
+}
+
+.materialsCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 8px;
+  background: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+  padding: 8px 13px;
+  text-decoration: none;
+}
+
 /* ── 고른 뒤의 세그먼트 ──────────────────────────────── */
 
 .tabs {
@@ -460,6 +719,14 @@
     width: 100%;
     overflow-x: auto;
     margin-left: 0;
+  }
+
+  .below {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .resumeTime {
+    display: none;
   }
 
   .fieldGrid,

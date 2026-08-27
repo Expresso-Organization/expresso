@@ -1,5 +1,6 @@
 import { AppBody, AppHeader } from "@/components/shell/AppShell";
 import { Skel, SkelRegion, skelKeys } from "@/components/shell/Skeleton";
+import { WizardSteps } from "@/components/shell/WizardShell";
 
 import styles from "./page.module.css";
 
@@ -14,6 +15,8 @@ export default function Loading() {
   return (
     <>
       <AppHeader title="새 포트폴리오" />
+      {/* 이 자리는 언제나 01 공고 분석의 입구다 — 본 화면과 같은 줄을 세운다 */}
+      <WizardSteps current="analyze" situation="예상 3분" />
       <AppBody>
         <SkelRegion label="불러오는 중" className={styles.page}>
           <div className={styles.head}>
@@ -27,6 +30,7 @@ export default function Loading() {
                 <Skel w={26} h={26} radius={8} />
                 <Skel w="58%" h={13} style={{ marginTop: 4 }} />
                 <Skel w="86%" h={11} />
+                <Skel w="64%" h={9} style={{ marginTop: 10 }} />
               </div>
             ))}
           </div>

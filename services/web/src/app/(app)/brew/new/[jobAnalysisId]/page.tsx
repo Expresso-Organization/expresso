@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AppBody, AppHeader } from "@/components/shell/AppShell";
+import { WizardSteps } from "@/components/shell/WizardShell";
 import { Icon } from "@/components/ui/Icon";
 import { ApiError } from "@/lib/api/client";
 import { jobAnalyses } from "@/lib/api/endpoints";
@@ -54,6 +55,17 @@ export default async function AnalyzingPage({
   return (
     <>
       <AppHeader title="새 포트폴리오" />
+      {/* 01 공고 분석이 도는 동안에도 전체 여정은 계속 보인다 */}
+      <WizardSteps
+        current="analyze"
+        situation={
+          running
+            ? "예상 3분"
+            : analysis.status === "failed"
+              ? "분석 실패"
+              : "다음은 재료 고르기"
+        }
+      />
       <AppBody>
         <div className={styles.wait}>
           <div className={styles.waitCard}>

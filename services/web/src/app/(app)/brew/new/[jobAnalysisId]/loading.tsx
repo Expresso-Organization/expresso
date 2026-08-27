@@ -1,5 +1,6 @@
 import { AppBody, AppHeader } from "@/components/shell/AppShell";
 import { Skel, SkelRegion } from "@/components/shell/Skeleton";
+import { WizardSteps } from "@/components/shell/WizardShell";
 
 import styles from "../page.module.css";
 
@@ -14,6 +15,7 @@ export default function Loading() {
   return (
     <>
       <AppHeader title="새 포트폴리오" />
+      <WizardSteps current="analyze" situation="예상 3분" />
       <AppBody>
         <SkelRegion label="공고 분석 상태를 불러오는 중" className={styles.wait}>
           <div className={styles.waitCard}>
