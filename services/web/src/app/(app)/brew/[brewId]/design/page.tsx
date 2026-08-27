@@ -18,8 +18,8 @@ import styles from "./page.module.css";
  * 여기가 위저드의 **출구**다. 지금까지 이 화면은 템플릿 12종을 코드에 적어 두고
  * "추출하기"에 핸들러가 없었다 — 고를 것도 가짜였고 눌러도 아무 일이 없었다.
  *
- * 이제 후보는 `GET /recipes/:id/template-previews`가 낸다. 미리보기는 **이
- * 레시피의 실제 섹션**으로 그리고, 순서는 기업 톤·업종과 겹치는 순이다.
+ * 후보는 `GET /recipes/:id/template-previews`가 낸다. 카드는 레시피 내용을 넣지 않고
+ * 서체·팔레트·구성의 견본만 그린다. 실제 내용은 레시피를 통해 생성기에 전달된다.
  * 추출은 `POST /generation-jobs`다.
  */
 export default async function DesignPage({
