@@ -59,7 +59,8 @@ describeWithInfrastructure("full release fresh-environment smoke", () => {
     expect(counts).toEqual({
       migrations: (await loadMigrations()).length,
       categories: 7,
-      templates: 3,
+      // 기존 3종은 보존하고 0016의 디자인 카탈로그 30종을 추가한다.
+      templates: 33,
       // job_ingest에서 posting_facts를 떼어 내 8개가 됐다(0054).
       schedules: 8,
     });
