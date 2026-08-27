@@ -48,6 +48,15 @@ CREATE TABLE `users` (
 	`password_hash`	VARCHAR(255)	NOT NULL
 );
 
+CREATE TABLE `portfolio_generation_jobs` (
+	`id`	BIGINT	NOT NULL,
+	`user_id`	BIGINT	NOT NULL,
+	`portfolio_id`	BIGINT	NULL,
+	`status`	VARCHAR(20)	NOT NULL,
+	`created_at`	DATETIME(6)	NOT NULL	DEFAULT CURRENT_TIMESTAMP(6),
+	`completed_at`	DATETIME(6)	NULL
+);
+
 CREATE TABLE `project_technology_items` (
 	`id`	BIGINT	NOT NULL,
 	`career_record_id`	BIGINT	NOT NULL,
@@ -96,6 +105,10 @@ ALTER TABLE `portfolio_sources` ADD CONSTRAINT `PK_PORTFOLIO_SOURCES` PRIMARY KE
 );
 
 ALTER TABLE `users` ADD CONSTRAINT `PK_USERS` PRIMARY KEY (
+	`id`
+);
+
+ALTER TABLE `portfolio_generation_jobs` ADD CONSTRAINT `PK_PORTFOLIO_GENERATION_JOBS` PRIMARY KEY (
 	`id`
 );
 

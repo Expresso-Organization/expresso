@@ -54,7 +54,7 @@ UUID는 현재 1차 MVP에서 사용하지 않는다.
 
 ## 4. 현재 물리 테이블
 
-현재 1차 MVP 물리 모델은 정확히 다음 10개 테이블로 구성한다.
+현재 1차 MVP 물리 모델은 정확히 다음 11개 테이블로 구성한다.
 
 | 테이블 | 역할 | 대응 논리 엔티티 |
 | --- | --- | --- |
@@ -68,6 +68,7 @@ UUID는 현재 1차 MVP에서 사용하지 않는다.
 | `portfolios` | 사용자에게 귀속되는 독립 Portfolio 결과를 저장한다. | 포트폴리오 |
 | `portfolio_sections` | Portfolio의 순서 있는 콘텐츠를 저장한다. | 포트폴리오 섹션 |
 | `portfolio_sources` | Portfolio 생성에 사용한 CareerRecord 집합을 추적한다. | 포트폴리오 생성 재료 |
+| `portfolio_generation_jobs` | 비동기 Portfolio 생성 요청의 상태와 생성 결과를 추적한다. | 포트폴리오 생성 작업 |
 
 현재 물리 설계에는 별도 Master, Category, Asset 또는 Block 테이블을 추가하지
 않는다.
@@ -354,7 +355,36 @@ Portfolio 소유 사용자 = Source CareerRecord 소유 사용자
 선택한 모든 CareerRecord의 존재 여부, 사용자 소유권 및 새로운 생성 재료로 사용할
 수 있는지를 재검증하고 하나의 생성 트랜잭션으로 저장한다.
 
-## 14. 일반화와 특수화
+## 14. 포트폴리오 생성 작업
+
+### 14.1 `portfolio_generation_jobs`
+
+| 컬럼 | MySQL 타입 | NULL | 키 및 제약 | 의미 |
+| --- | --- | --- | --- | --- |
+| `id` | `BIGINT AUTO_INCREMENT` | 불가 | PK | 생성 작업 식별자 |
+| `user_id` | `BIGINT` | 불가 | FK → `users.id` | 생성 요청 사용자 |
+| `status` | `VARCHAR(20)` | 불가 | 허용값 후보 적용 | 생성 작업 상태 |
+| `portfolio_id` | `BIGINT` | 허용 | FK → `portfolios.id` | 생성된 Portfolio |
+| `created_at` | `DATETIME(6)` | 불가 | `DEFAULT CURRENT_TIMESTAMP(6)` | 생성 요청 접수 시점 |
+| `completed_at` | `DATETIME(6)` | 허용 |  | 생성 완료 또는 실패 시점 |
+
+`status`는 `PENDING`, `PROCESSING`, `SUCCEEDED`, `FAILED` 중 하나이다. 실제 DDL
+Import 파일에서는 ERDCloud 호환성을 위해 CHECK로 강제하지 않고 후보 규칙을
+주석으로 기록한다.
+
+생성 요청을 접수하면 생성 작업 행을 먼저 저장한다. 정상 생성된 경우 Portfolio,
+Section 및 Source를 저장하고 `portfolio_id`로 결과를 연결한다. 실패한 경우 정상
+완료된 Portfolio를 저장하지 않는다. 정상 완료 및 실패 시점은 `completed_at`으로
+기록한다.
+
+사용자 FK 지원을 위해 `INDEX(user_id)`를 사용하고 선택 결과 Portfolio FK 지원을
+위해 `INDEX(portfolio_id)`를 사용한다. 사용자별 작업 목록 쿼리가 현재 MVP에
+정의되지 않았으므로 `(user_id, created_at)` 복합 인덱스는 추가하지 않는다.
+
+상세 상태 전이, 재시도, 실패 정보 노출, Queue 및 Worker 구조, Idempotency-Key는
+현재 물리 ERD에서 결정하지 않는다.
+
+## 15. 일반화와 특수화
 
 현재 subtype 구조는 다음과 같다.
 
@@ -383,7 +413,7 @@ DB의 PK와 FK로 다음 조건을 보장할 수 있다.
 검증 후 함께 Commit한다. 이 조건을 위해 Category 컬럼이나 DB Trigger를 현재
 추가하지 않는다.
 
-## 15. 인덱스와 고유 제약
+## 16. 인덱스와 고유 제약
 
 | 테이블 | Index / Constraint | 목적 |
 | --- | --- | --- |
@@ -396,6 +426,8 @@ DB의 PK와 FK로 다음 조건을 보장할 수 있다.
 | `portfolio_sections` | UNIQUE `(portfolio_id, logical_order)` | Portfolio별 순서 중복 방지 및 정렬 |
 | `portfolio_sources` | PK `(portfolio_id, career_record_id)` | Source 조합 중복 방지와 Portfolio 기준 조회 |
 | `portfolio_sources` | INDEX `(career_record_id, portfolio_id)` | CareerRecord 기준 Source 역조회 및 FK 지원 |
+| `portfolio_generation_jobs` | INDEX `(user_id)` | 사용자 FK 지원 |
+| `portfolio_generation_jobs` | INDEX `(portfolio_id)` | 선택 결과 Portfolio FK 지원 |
 
 현재 요구사항 없이 `title`, `role`, `record_type`, `status`, `institution`,
 `start_month`, `end_month`, `is_ongoing`, `technology_value` 또는
@@ -405,7 +437,7 @@ DB의 PK와 FK로 다음 조건을 보장할 수 있다.
 복합 인덱스 컬럼 순서, PK와 UNIQUE 인덱스의 중복 여부 및 쓰기 비용을 함께
 검토하여 선택한다. 구현 후 `EXPLAIN`으로 실제 실행계획을 확인한다.
 
-## 16. FK 관계
+## 17. FK 관계
 
 | 자식 테이블 | FK | 부모 테이블 | 참조 컬럼 | 관계 성격 |
 | --- | --- | --- | --- | --- |
@@ -419,8 +451,10 @@ DB의 PK와 FK로 다음 조건을 보장할 수 있다.
 | `portfolio_sections` | `portfolio_id` | `portfolios` | `id` | 비식별, Portfolio 1 : Section 1..N |
 | `portfolio_sources` | `portfolio_id` | `portfolios` | `id` | 식별, Portfolio 1 : Source 1..N |
 | `portfolio_sources` | `career_record_id` | `career_records` | `id` | 식별, CareerRecord 1 : Source 0..N |
+| `portfolio_generation_jobs` | `user_id` | `users` | `id` | 비식별, 사용자 1 : 생성 작업 0..N |
+| `portfolio_generation_jobs` | `portfolio_id` | `portfolios` | `id` | 비식별, Portfolio 1 : 생성 작업 0..N, 생성 작업 측 선택 참조 |
 
-## 17. 삭제 정책
+## 18. 삭제 정책
 
 현재 1차 MVP 핵심 범위에서는 Career, User 및 Portfolio 삭제의 물리 정책을
 결정하지 않는다. 모든 FK의 `ON DELETE CASCADE`, `RESTRICT` 또는 `SET NULL`을
@@ -434,9 +468,9 @@ DB의 PK와 FK로 다음 조건을 보장할 수 있다.
 
 현재 삭제 정책 미결정은 물리 ERD 문서화를 막지 않는다.
 
-## 18. 기존 개발 포털 DB 참고 결과
+## 19. 기존 개발 포털 DB 참고 결과
 
-### 18.1 수정 후 참고
+### 19.1 수정 후 참고
 
 - 기존 `password_hash` 명칭을 현재 필수 자격정보 컬럼에 맞춰 참고한다.
 - 기존 `media_asset.storage_key` 개념을 단일 `representative_image_key` 컬럼에
@@ -444,7 +478,7 @@ DB의 PK와 FK로 다음 조건을 보장할 수 있다.
 - 기존 Portfolio Section 순서 복합 UNIQUE 경험을 현재
   `(portfolio_id, logical_order)` 제약에 맞춰 참고한다.
 
-### 18.2 사용하지 않음
+### 19.2 사용하지 않음
 
 - UUID 식별자
 - PostgreSQL `citext`의 직접 사용
@@ -457,7 +491,7 @@ DB의 PK와 FK로 다음 조건을 보장할 수 있다.
 
 기존 개발 포털 DB는 현재 물리 설계의 정답이 아니다.
 
-## 19. 현재 보류사항
+## 20. 현재 보류사항
 
 다음 사항은 현재 물리 ERD를 막지 않으며 후속 단계에서 검토한다.
 
@@ -472,13 +506,17 @@ DB의 PK와 FK로 다음 조건을 보장할 수 있다.
 - FK 삭제 정책
 - Career 삭제 이후 Source 보존 방식
 - User와 Portfolio 삭제의 물리 방식
+- 포트폴리오 생성 작업의 상세 상태 전이
+- 생성 작업 재시도와 실패 정보 노출 정책
+- Queue 및 Worker 구조
+- Idempotency-Key 정책
 - JPA 매핑
 - 실제 `EXPLAIN` 결과에 따른 인덱스 조정
 
 프로젝트 링크의 단일 또는 복수 여부는 현재 보류사항이 아니다. 현재 1차 MVP의
 프로젝트 링크는 선택 가능한 단일값이다.
 
-## 20. 현재 물리 ERD
+## 21. 현재 물리 ERD
 
 ![1차 MVP 물리 ERD](./erdcloud/mvp-physical-erd.png)
 
@@ -486,7 +524,7 @@ DB의 PK와 FK로 다음 조건을 보장할 수 있다.
 가진다. 위 ASCII의 각 subtype `0..1` 표시는 개별 가지의 수량이며, 두 가지를 합친
 전체 특수화 수량은 정확히 1이다.
 
-## 21. 현재 1차 MVP E2E 지원
+## 22. 현재 1차 MVP E2E 지원
 
 현재 물리 구조는 다음 1차 MVP 흐름을 지원한다.
 
@@ -496,6 +534,7 @@ DB의 PK와 FK로 다음 조건을 보장할 수 있다.
 - EducationCareer의 복수 주요 활동·성과 저장
 - 서로 다른 Career Category의 Record를 Portfolio 재료 후보로 조회하고 선택
 - Portfolio 생성 직전 선택 CareerRecord 전체의 존재, 소유권 및 사용 가능 상태 검증
+- 비동기 Portfolio 생성 요청의 작업 상태 저장 및 생성 결과 연결
 - 최소 1개 Source와 최소 1개 Section을 가진 Portfolio 생성
 - Portfolio 목록 및 단일 결과 조회
 - Portfolio 제목 수정
@@ -508,7 +547,7 @@ Portfolio의 최소 Source 수와 최소 Section 수, Source 소유권 및 subty
 배타 조건은 단일 행 FK만으로 완전히 보장하기 어려우므로 각 생성 트랜잭션에서
 검증한다.
 
-## 22. 문서 범위 밖
+## 23. 문서 범위 밖
 
 다음 내용은 본 문서에서 작성하지 않는다.
 

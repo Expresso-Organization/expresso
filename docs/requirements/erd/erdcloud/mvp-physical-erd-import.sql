@@ -127,3 +127,23 @@ CREATE TABLE portfolio_sources (
     FOREIGN KEY (portfolio_id) REFERENCES portfolios (id),
     FOREIGN KEY (career_record_id) REFERENCES career_records (id)
 );
+
+CREATE TABLE portfolio_generation_jobs (
+    id BIGINT AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    portfolio_id BIGINT NULL,
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    completed_at DATETIME(6) NULL,
+    PRIMARY KEY (id),
+    INDEX (user_id),
+    INDEX (portfolio_id),
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (portfolio_id) REFERENCES portfolios (id)
+);
+
+-- portfolio_generation_jobs CHECK 후보:
+-- status 허용값은 PENDING, PROCESSING, SUCCEEDED, FAILED이다.
+-- PENDING 또는 PROCESSING 상태에서는 completed_at이 NULL이다.
+-- SUCCEEDED 상태에서는 portfolio_id와 completed_at이 존재한다.
+-- FAILED 상태에서는 정상 완료된 Portfolio를 연결하지 않고 completed_at을 기록한다.
