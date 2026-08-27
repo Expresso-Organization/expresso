@@ -1,18 +1,16 @@
 import type { TemplatePreview } from "@expresso/contracts";
+import type { CSSProperties } from "react";
 
-import styles from "./page.module.css";
+import styles from "./template-thumb.module.css";
 
 const GAP = { compact: 5, comfortable: 8, spacious: 12 } as const;
 
 /**
  * 템플릿 썸네일.
  *
- * 전에는 템플릿마다 손으로 그린 SVG 여섯 장이었다. 그 그림은 어느 레시피에도
- * 매이지 않아서, **무엇이 어떻게 보일지는 알려주지 않고 분위기만 팔았다.**
- *
- * 지금은 서버가 낸 미리보기를 그린다 — 색도 서체도 밀도도 그 템플릿의 실제
- * style이고, 글은 이 레시피의 섹션 제목과 항목이다. 비어 있는 섹션은 비어
- * 있다고 보여준다(`state`). 채워 그리면 고르고 나서 알게 된다.
+ * 서버가 낸 실제 팔레트와 레시피 글에 스타일의 시각적 특징을 적용합니다.
+ * 생성 결과의 축소판은 아닙니다. 비어 있는 섹션은 채워 꾸미지 않습니다.
+ * 카드 내부 지면의 색은 앱 테마 토큰이 아니라 선택한 스타일을 따릅니다.
  */
 export function TemplateThumb({ preview }: { preview: TemplatePreview }) {
   const { style } = preview;
@@ -20,16 +18,21 @@ export function TemplateThumb({ preview }: { preview: TemplatePreview }) {
   return (
     <span
       className={styles.thumb}
+      data-style={preview.code.replace(/^designprompts-/, "")}
+      data-structure={style.structure}
+      aria-hidden="true"
       style={{
-        background: style.background,
-        color: style.text,
-        gap: `${GAP[style.density]}px`,
-        fontFamily: style.font === "serif" ? "'Noto Serif KR', Georgia, serif" : "inherit",
-      }}
+        "--thumb-bg": style.background,
+        "--thumb-text": style.text,
+        "--thumb-accent": style.accent,
+        "--thumb-gap": `${GAP[style.density]}px`,
+        fontFamily: style.font === "serif" ? "'Noto Serif KR', Georgia, serif"
+          : style.font === "mono" ? "var(--ex-font-mono)" : "var(--ex-font-ui)",
+      } as CSSProperties}
     >
       {preview.sections.slice(0, 4).map((section) => (
         <span key={section.recipeSectionId} className={styles.thumbSection}>
-          <span className={styles.thumbTitle} style={{ color: style.accent }}>
+          <span className={styles.thumbTitle}>
             {section.title}
           </span>
           {section.state === "empty" ? (

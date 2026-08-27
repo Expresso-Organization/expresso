@@ -1,6 +1,6 @@
 "use client";
 
-import type { EntitlementUsage, PlanCode, TemplatePreview } from "@expresso/contracts";
+import type { EntitlementUsage, PlanCode, TemplatePreview, TemplateStyle } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
 import { useActionState, useState } from "react";
@@ -8,6 +8,7 @@ import { useActionState, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 
 import { startGenerationAction, type BrewState } from "./design-actions";
+import { filterDesignPreviews, type DesignFontFilter, type DesignModeFilter } from "./design-filters";
 import styles from "./page.module.css";
 import { TemplateThumb } from "./TemplateThumb";
 
@@ -16,9 +17,8 @@ import { TemplateThumb } from "./TemplateThumb";
  *
  * 걷어낸 것과 왜:
  *
- * - **직군 필터**(전체 12 · 개발·데이터 · …) — 템플릿에 직군 열이 없다.
- *   `industries`가 있지만 세 종에 붙은 값으로 거를 만큼 촘촘하지 않다.
- *   대신 추천이 왜 추천인지를 한 줄로 적는다.
+ * - **직군 필터** — 화면 정의서의 같은 자리에 실제 스타일의 밝기·서체 필터를 둡니다.
+ *   필터를 바꿔도 선택과 오른쪽 요약은 유지합니다.
  * - **Style Remix** — 지면을 비트는 계약(`POST /portfolios/:id/layouts/remix`)은
  *   **포트폴리오가 있어야** 돈다. 추출 전에는 비틀 대상이 없다. 04에 있어야 할
  *   기능이라 여기서는 뺐다.
@@ -65,6 +65,14 @@ export function DesignPicker({
   const [structure, setStructure] = useState(initialStyle?.structure ?? "single-column");
   const [density, setDensity] = useState(initialStyle?.density ?? "comfortable");
   const [font, setFont] = useState(initialStyle?.font ?? "sans");
+  const [modeFilter, setModeFilter] = useState<DesignModeFilter>("all");
+  const [fontFilter, setFontFilter] = useState<DesignFontFilter>("all");
+  const visiblePreviews = filterDesignPreviews(previews, modeFilter, fontFilter);
+  const selectionHidden = chosen && !visiblePreviews.some((preview) => preview.templateId === templateId);
+  function resetFilters() {
+    setModeFilter("all");
+    setFontFilter("all");
+  }
   const locked = chosen?.planRequired === "pro" && planCode === "free";
 
   return (
@@ -81,8 +89,8 @@ export function DesignPicker({
                 <Link
                   href={
                     (useCompanyColors
-                      ? `/brew/${brewId}/design`
-                      : `/brew/${brewId}/design?tone=1`) as Route
+                      ? `/brew/${brewId}/design?again=1`
+                      : `/brew/${brewId}/design?again=1&tone=1`) as Route
                   }
                   role="switch"
                   aria-checked={useCompanyColors}
@@ -108,14 +116,35 @@ export function DesignPicker({
             </Link>
           </div>
 
-          <div className={styles.templates}>
-            {previews.map((preview) => {
+          <div className={styles.filters} aria-label="스타일 필터">
+            {([ ["all", `전체 ${previews.length}`], ["light", "밝게"], ["dark", "어둡게"] ] as const).map(([mode, label]) => (
+              <button key={mode} type="button" aria-pressed={modeFilter === mode}
+                className={`${styles.filterChip} ${modeFilter === mode ? styles.filterActive : ""}`}
+                onClick={() => setModeFilter(mode)}>{label}</button>
+            ))}
+            <select className={`${styles.styleSelect} ${styles.fontFilter}`}
+              aria-label="서체로 스타일 찾기" value={fontFilter}
+              onChange={(event) => setFontFilter(event.target.value as DesignFontFilter)}>
+              <option value="all">서체 전체</option>
+              <option value="sans">고딕 계열</option>
+              <option value="serif">명조 계열</option>
+              <option value="mono">고정폭 계열</option>
+            </select>
+          </div>
+          <div className={styles.previewNote}>
+            <span role="status">{visiblePreviews.length}개 스타일</span>
+            <span>스타일 견본입니다. 최종 구성은 추출할 때 만들어집니다.</span>
+          </div>
+          <div className={styles.templates} aria-label="디자인 후보">
+            {visiblePreviews.map((preview) => {
               const selected = preview.templateId === templateId;
               return (
                 <button
                   key={preview.templateId}
                   type="button"
                   aria-pressed={selected}
+                  aria-label={`${preview.name} 선택`}
+                  aria-describedby={`design-desc-${preview.templateId} design-plan-${preview.templateId}`}
                   onClick={() => {
                     setTemplateId(preview.templateId);
                     setStructure(preview.style.structure);
@@ -125,7 +154,9 @@ export function DesignPicker({
                   className={`${styles.template} ${selected ? styles.templateSelected : ""}`}
                 >
                   <span className={styles.templateCanvas}>
-                    <TemplateThumb preview={preview} />
+                    <TemplateThumb preview={selected ? {
+                      ...preview, style: { ...preview.style, font, density, structure },
+                    } : preview} />
                     {selected ? (
                       <span className={styles.templateCheck}>
                         <Icon name="check" size={11} color="var(--ex-fg-on-accent)" />
@@ -141,18 +172,26 @@ export function DesignPicker({
                     <span className={styles.templateNameRow}>
                       <span className={styles.templateName}>{preview.name}</span>
                       <span
+                        id={`design-plan-${preview.templateId}`}
                         className={
                           preview.planRequired === "pro" ? styles.planPro : styles.planFree
                         }
                       >
                         {preview.planRequired.toUpperCase()}
+                        {preview.recommended ? <span className={styles.srOnly}> · 추천</span> : null}
                       </span>
                     </span>
-                    <span className={styles.templateDesc}>{preview.recommendationReason}</span>
+                    <span id={`design-desc-${preview.templateId}`} className={styles.templateDesc}>{preview.description ?? preview.recommendationReason}</span>
                   </span>
                 </button>
               );
             })}
+            {visiblePreviews.length === 0 ? (
+              <div className={styles.emptyResults}>
+                <p>이 조건에 맞는 스타일이 없습니다.</p>
+                <button type="button" className={styles.resetFilters} onClick={resetFilters}>필터 초기화</button>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
@@ -169,6 +208,12 @@ export function DesignPicker({
                 {chosen.planRequired.toUpperCase()}
               </span>
             </div>
+            {selectionHidden ? (
+              <p className={styles.selectionNote}>
+                필터 밖의 디자인을 선택 중입니다.
+                <button type="button" className={styles.resetFilters} onClick={resetFilters}>필터 초기화</button>
+              </p>
+            ) : null}
             <div className={styles.chosenList}>
               <div className={styles.chosenRow}>
                 <span className={styles.chosenLabel}>팔레트</span>
@@ -189,17 +234,20 @@ export function DesignPicker({
                 <span className={styles.chosenLabel}>서체</span>
                 <select
                   className={styles.styleSelect}
+                  aria-label="선택한 디자인의 서체"
                   value={font}
-                  onChange={(event) => setFont(event.target.value as "sans" | "serif")}
+                  onChange={(event) => setFont(event.target.value as TemplateStyle["font"])}
                 >
                   <option value="sans">고딕 계열</option>
                   <option value="serif">명조 계열</option>
+                  <option value="mono">고정폭 계열</option>
                 </select>
               </div>
               <div className={styles.chosenRow}>
                 <span className={styles.chosenLabel}>밀도</span>
                 <select
                   className={styles.styleSelect}
+                  aria-label="선택한 디자인의 밀도"
                   value={density}
                   onChange={(event) => setDensity(
                     event.target.value as "compact" | "comfortable" | "spacious",
@@ -214,6 +262,7 @@ export function DesignPicker({
                 <span className={styles.chosenLabel}>구성 문법</span>
                 <select
                   className={styles.styleSelect}
+                  aria-label="선택한 디자인의 구성 문법"
                   value={structure}
                   onChange={(event) => setStructure(
                     event.target.value as "single-column" | "dense-grid" | "wide-margin",
@@ -256,10 +305,13 @@ export function DesignPicker({
             <input type="hidden" name="structure" value={structure} />
             <input type="hidden" name="density" value={density} />
             <input type="hidden" name="font" value={font} />
+            <input type="hidden" name="background" value={chosen?.style.background ?? ""} />
+            <input type="hidden" name="text" value={chosen?.style.text ?? ""} />
+            <input type="hidden" name="accent" value={chosen?.style.accent ?? ""} />
             <button
               type="submit"
               className={styles.brew}
-              disabled={pending || locked || !allowed}
+              disabled={pending || locked || !allowed || !chosen}
             >
               <Icon name="coffee" weight="fill" size={16} />
               {pending ? "추출을 맡기는 중" : "추출하기"}

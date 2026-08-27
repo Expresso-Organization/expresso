@@ -1,0 +1,117 @@
+/* 카드 내부의 지면만 스타일별로 바꿉니다. 팔레트는 계약에서 전달합니다. */
+.thumb {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--thumb-gap);
+  padding: 14px 15px;
+  overflow: hidden;
+  background: var(--thumb-bg);
+  color: var(--thumb-text);
+  font-size: var(--ex-text-3xs);
+  line-height: 1.55;
+}
+
+.thumbSection {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.thumbTitle {
+  color: var(--thumb-accent);
+  font-size: var(--ex-text-3xs);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thumbSection:first-child .thumbTitle { font-size: var(--ex-text-lg); }
+.thumbLine {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.thumbEmpty {
+  align-self: flex-start;
+  border: 1px dashed currentColor;
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+.thumb[data-structure="dense-grid"] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+}
+.thumb[data-structure="dense-grid"] .thumbSection:first-child { grid-column: 1 / -1; }
+.thumb[data-structure="wide-margin"] { padding: 20px 22px; }
+
+/* 명료한 편집, 신문, 스위스 격자 */
+.thumb[data-style="monochrome"] .thumbSection { border-top: 1px solid currentColor; padding-top: 5px; }
+.thumb[data-style="newsprint"] .thumbSection { border-top: 3px double currentColor; padding-top: 5px; }
+.thumb[data-style="newsprint"] .thumbSection:first-child { text-align: center; }
+.thumb[data-style="swiss-minimalist"] .thumbSection { border-top: 1px solid currentColor; padding-top: 5px; }
+.thumb[data-style="swiss-minimalist"] .thumbSection:first-child .thumbTitle { font-size: var(--ex-text-2xl); }
+.thumb[data-style="professional"] .thumbSection { border-bottom: 1px solid var(--thumb-accent); padding-bottom: 5px; }
+
+/* 바우하우스·기하·플랫 — 텍스트 뒤로 도형이 겹치지 않게 나눕니다. */
+.thumb[data-style="bauhaus"] .thumbSection:first-child { border-left: 10px solid var(--thumb-accent); padding-left: 8px; }
+.thumb[data-style="bauhaus"] .thumbSection:not(:first-child) { border: 2px solid currentColor; padding: 6px; }
+.thumb[data-style="flat-design"] .thumbSection { border-left: 5px solid var(--thumb-accent); padding-left: 8px; }
+.thumb[data-style="playful-geometric"] .thumbSection { border: 1px solid currentColor; border-radius: 14px 4px 14px 4px; padding: 7px; }
+.thumb[data-style="playful-geometric"] .thumbSection:first-child { border-top: 7px solid var(--thumb-accent); }
+
+/* 현대적 면과 경계 */
+.thumb[data-style="modern-dark"] .thumbSection { border: 1px solid color-mix(in srgb, var(--thumb-text) 20%, transparent); border-radius: 9px; padding: 7px; }
+.thumb[data-style="modern-dark"] { background: radial-gradient(at top right, color-mix(in srgb, var(--thumb-accent) 20%, transparent), transparent 70%), var(--thumb-bg); }
+.thumb[data-style="saas"] .thumbSection { border-bottom: 1px solid color-mix(in srgb, var(--thumb-text) 20%, transparent); padding-bottom: 6px; }
+.thumb[data-style="saas"] .thumbSection:first-child { border-left: 3px solid var(--thumb-accent); padding-left: 8px; }
+.thumb[data-style="enterprise"] .thumbSection { border-radius: 8px; padding: 8px; background: color-mix(in srgb, var(--thumb-accent) 8%, var(--thumb-bg)); }
+.thumb[data-style="minimal-dark"] .thumbSection { border-bottom: 1px solid color-mix(in srgb, var(--thumb-text) 15%, transparent); padding-bottom: 9px; }
+.thumb[data-style="material-design"] .thumbSection { border-radius: 16px; padding: 9px; background: color-mix(in srgb, var(--thumb-accent) 12%, var(--thumb-bg)); }
+
+/* 큰 제목과 선으로 드러내는 스타일 */
+.thumb[data-style="kinetic"] .thumbSection:first-child .thumbTitle { font-size: var(--ex-text-2xl); font-style: italic; letter-spacing: -0.04em; }
+.thumb[data-style="kinetic"] .thumbSection { border-bottom: 2px solid var(--thumb-accent); padding-bottom: 6px; }
+.thumb[data-style="bold-typography"] .thumbSection:first-child .thumbTitle { font-size: var(--ex-text-3xl); font-weight: 900; line-height: 1.15; white-space: normal; }
+.thumb[data-style="bold-typography"] .thumbSection:not(:first-child) { border-top: 1px solid var(--thumb-accent); }
+.thumb[data-style="neo-brutalism"] .thumbSection { border: 2px solid currentColor; padding: 7px; box-shadow: 3px 3px 0 var(--thumb-text); background: var(--thumb-bg); }
+.thumb[data-style="neo-brutalism"] .thumbSection:first-child { background: color-mix(in srgb, var(--thumb-accent) 25%, var(--thumb-bg)); }
+
+/* 고전 편집과 금빛 프레임 */
+.thumb[data-style="luxury"] .thumbSection:first-child { border-top: 1px solid var(--thumb-accent); border-bottom: 1px solid var(--thumb-accent); padding: 9px 0; text-align: center; }
+.thumb[data-style="art-deco"] { outline: 3px double var(--thumb-accent); outline-offset: -8px; }
+.thumb[data-style="art-deco"] .thumbSection { text-align: center; }
+.thumb[data-style="art-deco"] .thumbTitle { letter-spacing: 0.08em; }
+.thumb[data-style="academia"] .thumbSection { border-top: 3px double var(--thumb-accent); padding-top: 6px; }
+.thumb[data-style="academia"] .thumbSection:first-child .thumbTitle { font-style: italic; }
+
+/* 터미널·네온·고전 창 */
+.thumb[data-style="terminal"] .thumbTitle::before { content: "> "; }
+.thumb[data-style="terminal"] .thumbSection { border-bottom: 1px dashed var(--thumb-accent); padding-bottom: 7px; }
+.thumb[data-style="cyberpunk"] .thumbSection { border-left: 3px solid var(--thumb-accent); border-bottom: 1px solid var(--thumb-accent); padding: 6px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%); }
+.thumb[data-style="web3"] .thumbSection { border: 1px solid color-mix(in srgb, var(--thumb-accent) 45%, transparent); border-radius: 9px; padding: 7px; background: color-mix(in srgb, var(--thumb-text) 5%, var(--thumb-bg)); }
+.thumb[data-style="vaporwave"] { background: repeating-linear-gradient(0deg, transparent 0 19px, color-mix(in srgb, var(--thumb-accent) 15%, transparent) 19px 20px), var(--thumb-bg); }
+.thumb[data-style="vaporwave"] .thumbSection { background: var(--thumb-bg); border-bottom: 1px solid var(--thumb-accent); }
+.thumb[data-style="vaporwave"] .thumbTitle { text-shadow: 2px 1px color-mix(in srgb, var(--thumb-accent) 45%, transparent); }
+.thumb[data-style="retro"] .thumbSection { border: 2px outset var(--thumb-bg); padding: 4px; }
+.thumb[data-style="retro"] .thumbTitle { background: var(--thumb-accent); color: var(--thumb-bg); padding: 2px 4px; }
+
+/* 곡면과 깊이 */
+.thumb[data-style="claymorphism"] .thumbSection { border-radius: 16px; padding: 10px; box-shadow: inset 2px 2px 5px color-mix(in srgb, var(--thumb-text) 10%, transparent), 3px 3px 6px color-mix(in srgb, var(--thumb-accent) 20%, transparent); }
+.thumb[data-style="neumorphism"] .thumbSection { border-radius: 9px; padding: 9px; box-shadow: 3px 3px 6px color-mix(in srgb, var(--thumb-text) 20%, transparent), -3px -3px 6px color-mix(in srgb, var(--thumb-bg) 70%, white); }
+.thumb[data-style="industrial"] .thumbSection { border: 1px solid color-mix(in srgb, var(--thumb-text) 30%, transparent); border-radius: 4px; padding: 7px; box-shadow: inset 2px 2px 4px color-mix(in srgb, var(--thumb-text) 20%, transparent); }
+.thumb[data-style="industrial"] .thumbTitle { border-bottom: 2px solid var(--thumb-accent); }
+.thumb[data-style="botanical"] .thumbSection:first-child { border: 1px solid var(--thumb-accent); border-radius: 50% 50% 0 0; padding: 14px 9px 7px; text-align: center; }
+.thumb[data-style="organic"] .thumbSection { border-radius: 9px 22px 14px 9px; padding: 9px; background: color-mix(in srgb, var(--thumb-accent) 10%, var(--thumb-bg)); }
+.thumb[data-style="sketch"] .thumbSection { border: 1px dashed currentColor; border-radius: 4px 9px 4px 14px; padding: 7px; }
+.thumb[data-style="sketch"] .thumbTitle { text-decoration: underline wavy var(--thumb-accent); text-underline-offset: 3px; }
+.thumb[data-style="maximalism"] .thumbSection { border: 2px solid var(--thumb-accent); border-radius: 14px 0; padding: 7px; box-shadow: 3px 3px 0 var(--thumb-text); }
+.thumb[data-style="maximalism"] .thumbSection:first-child .thumbTitle { font-size: var(--ex-text-2xl); }
