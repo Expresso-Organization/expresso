@@ -325,6 +325,8 @@ export type PageGenerationManifest = z.infer<typeof PageGenerationManifestSchema
 export const GeneratedPageSchema = z.strictObject({
   id: UuidSchema,
   portfolioId: UuidSchema,
+  /** 이 판을 만든 생성 작업. 옛 판은 연결 전 데이터라 null일 수 있다. */
+  generationJobId: UuidSchema.nullable().default(null),
   /** 지면의 몸통. 소독을 지난 것만 여기 들어온다. */
   html: z.string().min(1).max(PAGE_MAX_BYTES),
   /** `<style>`에 실릴 CSS. 역시 소독을 지난 것이다. */
@@ -341,6 +343,20 @@ export const GeneratedPageSchema = z.strictObject({
   createdAt: TimestampSchema,
 });
 export type GeneratedPage = z.infer<typeof GeneratedPageSchema>;
+
+/**
+ * 배포 순간 고정하는 자유 HTML 판.
+ *
+ * 공개 지면은 mutable block을 다시 읽지 않고 이 사본을 렌더한다. `document`는
+ * 당시 제목·스타일 문법까지 입힌 완성 문서라, 나중에 포트폴리오를 고쳐도 바뀌지
+ * 않는다.
+ */
+export const GeneratedPageDeploymentSnapshotSchema = z.strictObject({
+  id: UuidSchema,
+  revision: z.number().int().nonnegative(),
+  document: z.string().min(1).max(PAGE_MAX_BYTES * 2),
+});
+export type GeneratedPageDeploymentSnapshot = z.infer<typeof GeneratedPageDeploymentSnapshotSchema>;
 
 /** 모델이 내는 모양. 저장본과 달리 식별자와 시각이 없다. */
 export const PageDraftSchema = z.strictObject({

@@ -46,11 +46,57 @@
   color: var(--ex-slate-400);
 }
 
-.stageDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+.progressGroup {
+  width: min(300px, 100%);
+  display: grid;
+  gap: 9px;
+  justify-items: center;
+  margin-top: 4px;
+}
+
+.progress {
+  width: 100%;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--ex-line-200);
+}
+
+.progressFill {
+  display: block;
+  width: 42%;
+  height: 100%;
+  border-radius: inherit;
   background: var(--ex-espresso);
+  animation: waiting-progress 1.2s ease-in-out infinite;
+}
+
+.spinner {
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--ex-line-200);
+  border-top-color: var(--ex-espresso);
+  border-radius: 50%;
+  animation: waiting-spin 700ms linear infinite;
+}
+
+@keyframes waiting-progress {
+  from { transform: translateX(-120%); }
+  to { transform: translateX(340%); }
+}
+
+@keyframes waiting-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressFill {
+    animation-duration: 2.4s;
+  }
+
+  .spinner {
+    animation-duration: 1.4s;
+  }
 }
 
 .failure {

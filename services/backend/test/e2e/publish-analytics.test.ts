@@ -73,6 +73,10 @@ describeWithInfrastructure("publish visit aggregate insight rollback vertical sl
     const sectionId = (await sql<IdRow[]>`insert into portfolio_section (user_id, portfolio_id, order_no) values (${userId}, ${portfolioId}, 0) returning id`)[0]?.id;
     blockId = (sectionId && (await sql<IdRow[]>`insert into block (user_id, portfolio_section_id, kind, content) values (${userId}, ${sectionId}, 'paragraph', ${sql.json({ text: "version one" })}) returning id`)[0]?.id) ?? "";
     if (!blockId) throw new Error("publish E2E portfolio missing");
+    await sql`
+      insert into generated_page (user_id, portfolio_id, html, css, rationale, revision, prompt_version)
+      values (${userId}, ${portfolioId}, '<main>version one</main>', 'main{display:block}', 'publish E2E page', 0, 6)
+    `;
     const publishing = new PublishingService(sql, "publish-e2e-signing-secret");
     const analytics = new AnalyticsService(sql, { visitorSalt: "publish-e2e-visitor-salt", minimumSample: 5 });
     const config: RuntimeConfig = {

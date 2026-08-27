@@ -9,11 +9,14 @@ import { LogoMark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
 import { EDITOR_SUGGESTION } from "@/lib/sample/editor";
 
+import { PagePreview } from "@/components/portfolio/PagePreview";
 import { PortfolioPage } from "@/components/portfolio/PortfolioPage";
 
 import {
   baseStep,
   ChatPanel,
+  FreePageHistoryPanel,
+  FreePageProperties,
   HistoryPanel,
   PropertiesPanel,
   StyleControls,
@@ -62,12 +65,14 @@ export function Editor({
   revisions,
   checkpoints,
   generatedPage,
+  generatedPageHistory,
 }: {
   displayName: string;
   portfolio: PortfolioDetail;
   revisions: readonly PortfolioRevision[];
   checkpoints: readonly EditorCheckpoint[];
   generatedPage: GeneratedPage | null;
+  generatedPageHistory: readonly GeneratedPage[];
 }) {
   const [, startTransition] = useTransition();
   const [tab, setTab] = useState<PanelTab>("chat");
@@ -168,6 +173,7 @@ export function Editor({
   const address = portfolio.deployment
     ? `${portfolio.deployment.subdomain}.xpresso.me`
     : "아직 주소가 없습니다";
+  const attention = generatedPage?.qaReport.checks.find(({ status }) => status === "fail");
 
   return (
     <div className={styles.frame}>
@@ -290,23 +296,26 @@ export function Editor({
         <div className={styles.stage}>
           <aside className={styles.sections} aria-label="섹션">
             <div className={styles.sectionsHead}>
-              <span className={styles.sectionsLabel}>섹션</span>
+              <span className={styles.sectionsLabel}>{generatedPage ? "구성" : "섹션"}</span>
               <span className={styles.sectionsCount}>
-                {portfolio.visibleSectionCount}
+                {generatedPage ? `판 ${generatedPage.revision + 1}` : portfolio.visibleSectionCount}
               </span>
-              <button type="button" className={styles.panelHeadAction} aria-label="섹션 추가">
-                <Icon name="plus" size={13} />
-              </button>
+              {!generatedPage ? (
+                <button type="button" className={styles.panelHeadAction} aria-label="섹션 추가">
+                  <Icon name="plus" size={13} />
+                </button>
+              ) : null}
             </div>
 
             <div className={styles.sectionList}>
               {portfolio.sections.map((section, index) => (
                 <div
                   key={section.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSectionId(section.id)}
+                  role={generatedPage ? undefined : "button"}
+                  tabIndex={generatedPage ? undefined : 0}
+                  onClick={() => { if (!generatedPage) setSectionId(section.id); }}
                   onKeyDown={(event) => {
+                    if (generatedPage) return;
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
                       setSectionId(section.id);
@@ -321,7 +330,7 @@ export function Editor({
                     .join(" ")}
                 >
                   {/* 순서는 지면 전체의 차례를 통째로 보낸다 — 하나만 바꾸면 자리가 부딪힌다. */}
-                  <span className={styles.sectionMove}>
+                  {!generatedPage ? <span className={styles.sectionMove}>
                     <button
                       type="button"
                       className={styles.sectionMoveButton}
@@ -340,7 +349,7 @@ export function Editor({
                     >
                       ↓
                     </button>
-                  </span>
+                  </span> : null}
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span className={styles.sectionTitle} style={{ display: "block" }}>
                       {section.title ?? "제목 없는 섹션"}
@@ -351,7 +360,7 @@ export function Editor({
                         : `숨김 · ${section.hiddenReason ?? "사유 없음"}`}
                     </span>
                   </span>
-                  <button
+                  {!generatedPage ? <button
                     type="button"
                     className={styles.sectionEye}
                     aria-label={section.visible ? "숨기기" : "다시 꺼내기"}
@@ -364,7 +373,7 @@ export function Editor({
                       size={13}
                       color={section.visible ? "var(--ex-border-strong)" : "var(--ex-slate-400)"}
                     />
-                  </button>
+                  </button> : null}
                 </div>
               ))}
             </div>
@@ -380,15 +389,17 @@ export function Editor({
                   <Icon name="lightbulb" size={14} color="var(--ex-espresso)" />
                   <span className={styles.suggestionTitle}>한 가지 제안</span>
                 </div>
-                <div className={styles.suggestionBody}>{EDITOR_SUGGESTION.text}</div>
-                <div className={styles.suggestionActions}>
-                  <button type="button" className={styles.suggestionAccept}>
-                    올리기
-                  </button>
-                  <button type="button" className={styles.suggestionDismiss}>
-                    그대로 두기
-                  </button>
+                <div className={styles.suggestionBody}>
+                  {generatedPage
+                    ? attention?.detail ?? "자동 검사는 참고 정보입니다. 페이지를 바꾸지 않았습니다."
+                    : EDITOR_SUGGESTION.text}
                 </div>
+                {!generatedPage ? (
+                  <div className={styles.suggestionActions}>
+                    <button type="button" className={styles.suggestionAccept}>올리기</button>
+                    <button type="button" className={styles.suggestionDismiss}>그대로 두기</button>
+                  </div>
+                ) : null}
               </div>
             </div>
 
@@ -419,6 +430,13 @@ export function Editor({
                 <span className={styles.browserAddress}>{address}</span>
               </div>
 
+              {generatedPage ? (
+                <PagePreview
+                  page={generatedPage}
+                  title={portfolio.title}
+                  className={styles.freePagePreview!}
+                />
+              ) : (
               <div className={styles.page}>
                 <span className={styles.scrollbar} aria-hidden="true" />
 
@@ -495,11 +513,16 @@ export function Editor({
                   />
                 )}
               </div>
+              )}
             </div>
 
             <div className={styles.statusBar}>
               <div className={styles.crumbs}>
-                {chosen ? (
+                {generatedPage ? (
+                  <span className={`${styles.crumb} ${styles.crumbCurrent}`}>
+                    자유 HTML · 판 {generatedPage.revision + 1}
+                  </span>
+                ) : chosen ? (
                   <>
                     <span className={styles.crumb}>{chosen.sectionTitle}</span>
                     <Icon name="caret-right" size={9} color="var(--ex-border-strong)" />
@@ -511,7 +534,7 @@ export function Editor({
                   <span className={styles.crumb}>고른 것 없음</span>
                 )}
               </div>
-              <div className={styles.elementActions}>
+              {!generatedPage ? <div className={styles.elementActions}>
                 {/* 블록 조작은 고른 것이 있어야 한다. 대상 없는 버튼은 누를 수 없다. */}
                 <button
                   type="button"
@@ -576,7 +599,7 @@ export function Editor({
                 >
                   <Icon name="coffee" weight="fill" size={11} />이 부분만 AI에게
                 </button>
-              </div>
+              </div> : null}
               <span className={styles.statusViewport}>데스크톱 1440</span>
               <span className={styles.statusRule} />
               <div className={styles.zoom}>
@@ -595,7 +618,9 @@ export function Editor({
             <div className={styles.panelHead}>
               <span className={styles.panelTitle}>편집</span>
               <span className={styles.panelTarget}>
-                {panelTarget(tab, revisions.length, chosen?.path ?? null)}
+                {generatedPage
+                  ? (tab === "history" ? `판 ${generatedPageHistory.length}개` : "웹페이지 전체")
+                  : panelTarget(tab, revisions.length, chosen?.path ?? null)}
               </span>
               <button type="button" className={styles.panelHeadAction} aria-label="넓게 보기">
                 <Icon name="arrow-square-out" size={14} />
@@ -620,10 +645,16 @@ export function Editor({
             </div>
 
             {tab === "chat" ? (
-              <ChatPanel portfolioId={portfolio.id} blocks={editableBlocks} />
+              <ChatPanel
+                portfolioId={portfolio.id}
+                blocks={editableBlocks}
+                freePage={generatedPage !== null}
+              />
             ) : null}
             {tab === "properties" ? (
-              <>
+              generatedPage ? (
+                <FreePageProperties page={generatedPage} />
+              ) : <>
                 <PropertiesPanel
                   portfolioId={portfolio.id}
                   block={chosen?.block ?? null}
@@ -646,11 +677,15 @@ export function Editor({
               </>
             ) : null}
             {tab === "history" ? (
-              <HistoryPanel
-                portfolioId={portfolio.id}
-                revisions={revisions}
-                checkpoints={checkpoints}
-              />
+              generatedPage ? (
+                <FreePageHistoryPanel pages={generatedPageHistory} />
+              ) : (
+                <HistoryPanel
+                  portfolioId={portfolio.id}
+                  revisions={revisions}
+                  checkpoints={checkpoints}
+                />
+              )
             ) : null}
           </aside>
         </div>

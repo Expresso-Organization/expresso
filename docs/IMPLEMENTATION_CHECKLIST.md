@@ -137,6 +137,25 @@
 
 ## M4. 생성과 편집
 
+### 2026-08-24 정식 자유 HTML 경로 기준
+
+아래 M4 항목의 체크 표시와 과거 증거는 당시 블록·문장 생성 경로의 완료 보고로
+보존한다. 현재 제품의 정식 경로는 `generated_page` 한 판을 저장한 뒤에만 작업 완료와
+quota 차감을 확정하는 자유 HTML 흐름이다. 근거·수치·분량·중복·계획 이탈은 사용자에게
+보이는 주의점이며, 자동 삭제·빈 칸·전체 재생성·게시 차단 기준이 아니다. 스키마,
+소유권, 소독, CSP, 외부 리소스 안전만 하드 게이트다.
+
+- [x] **M4-FH-01. 자유 HTML 판 우선 생성과 한 번의 사용량 확정을 보장한다.**
+  - 완료 기준: 워커가 portfolio shell을 해소하고 `generated_page`를 작업과 연결해
+    ready 판을 저장한 뒤에만 usage ledger·quota·`generation_job.done`을 같은
+    transaction으로 확정한다. 저장 실패는 failed이며 quota를 차감하지 않는다.
+  - 증거: generation/page 통합 테스트의 저장 전 실패·재전달 멱등성 assertion.
+
+- [x] **M4-FH-02. 자유 HTML 배포 판본을 불변으로 보존한다.**
+  - 완료 기준: 새 배포 snapshot은 ready `generated_page`의 revision과 완성 document를
+    포함하고, 이전 block-only snapshot도 읽고 되돌릴 수 있다.
+  - 증거: publishing 통합 테스트의 frozen document·기존 block snapshot assertion.
+
 - [x] **M4-01. 템플릿 렌더링 계약과 추천을 제공한다.**
   - 완료 기준: 모든 템플릿이 모든 레시피 섹션 유형을 실제 사용자 내용으로 렌더할 수 있고 기업 톤 색 적용 시 본문 대비 4.5:1 미만 값을 자동 보정한다.
   - 증거: 템플릿 conformance fixture, 빈 내용/전체 섹션 테스트, 대비 계산 테스트.

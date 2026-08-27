@@ -8,6 +8,12 @@ export const CreateBrewSchema = z.strictObject({
   lengthPreset: z.enum(["single", "double", "triple"]).default("single"),
 });
 
+export const CreateFreeBrewSchema = z.strictObject({
+  title: z.string().min(1).max(300),
+  brief: z.string().min(1).max(20_000),
+  lengthPreset: z.enum(["single", "double", "triple"]).default("single"),
+});
+
 export const BrewMaterialSchema = z.strictObject({
   recordId: UuidSchema,
   title: z.string().max(300),
@@ -45,7 +51,7 @@ export const UpdateBrewSchema = z.strictObject({
 });
 
 export const UpdateBrewMaterialsSchema = z.strictObject({
-  recordIds: z.array(UuidSchema).min(1).max(10)
+  recordIds: z.array(UuidSchema).max(10)
     .refine((ids) => new Set(ids).size === ids.length, {
       message: "record IDs must be unique",
     }),
@@ -54,6 +60,7 @@ export const UpdateBrewMaterialsSchema = z.strictObject({
 export const BrewMaterialsResponseSchema = z.strictObject({ data: BrewMaterialsSchema });
 
 export type CreateBrew = z.infer<typeof CreateBrewSchema>;
+export type CreateFreeBrew = z.infer<typeof CreateFreeBrewSchema>;
 export type BrewMaterial = z.infer<typeof BrewMaterialSchema>;
 export type BrewMaterials = z.infer<typeof BrewMaterialsSchema>;
 export type UpdateBrewMaterials = z.infer<typeof UpdateBrewMaterialsSchema>;
@@ -70,6 +77,8 @@ export const BrewStateSchema = z.strictObject({
   jobAnalysisId: UuidSchema,
   status: z.enum(["draft", "interviewing", "recipe", "generating", "done"]),
   lengthPreset: z.enum(["single", "double", "triple"]),
+  freeTitle: z.string().min(1).max(300).nullable(),
+  freeBrief: z.string().min(1).max(20_000).nullable(),
   /** 위저드 머리말에 그리는 공고. */
   posting: z.strictObject({
     title: z.string().min(1).max(300),

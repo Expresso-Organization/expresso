@@ -51,7 +51,8 @@ interface SectionRow {
 interface EvidenceRow { source_label: string; source_text: string }
 interface SubjectRow {
   job_title: string | null;
-  company_name: string;
+  free_title: string | null;
+  company_name: string | null;
   industry: string | null;
   tone_summary: string | null;
   brand_colors: string[];
@@ -71,7 +72,7 @@ interface MediaRow {
   variants: number[];
 }
 interface PageRow {
-  id: string; portfolio_id: string; html: string; css: string; rationale: string;
+  id: string; portfolio_id: string; generation_job_id: string | null; html: string; css: string; rationale: string;
   revision: number; prompt_version: number; created_at: Date;
   ungrounded_numbers: string[]; removed: string[];
   quality_status: "ready" | "failed_qa";
@@ -85,6 +86,7 @@ function toPage(row: PageRow): GeneratedPage {
   return GeneratedPageSchema.parse({
     id: row.id,
     portfolioId: row.portfolio_id,
+    generationJobId: row.generation_job_id,
     html: row.html,
     css: row.css,
     rationale: row.rationale,
@@ -125,6 +127,16 @@ export class PageService {
       select * from generated_page
       where user_id = ${userId} and portfolio_id = ${portfolioId}
       order by revision desc limit 1
+    `)[0];
+    return row ? toPage(row) : null;
+  }
+
+  /** 한 생성 잡이 만든 판. 재전달은 이 판을 다시 쓰지 않는다. */
+  async forGenerationJob(userId: string, generationJobId: string): Promise<GeneratedPage | null> {
+    const row = (await this.#sql<PageRow[]>`
+      select * from generated_page
+      where user_id = ${userId} and generation_job_id = ${generationJobId}
+      limit 1
     `)[0];
     return row ? toPage(row) : null;
   }
@@ -247,13 +259,14 @@ export class PageService {
       : undefined;
 
     const subject = (await this.#sql<SubjectRow[]>`
-      select job_posting.title as job_title, company.name as company_name,
-             company.industry, company.tone_summary, company.brand_colors
+      select job_posting.title as job_title, brew.free_title,
+             company.name as company_name, company.industry, company.tone_summary,
+             coalesce(company.brand_colors, json_array()) as brand_colors
       from portfolio
       join brew on brew.id = portfolio.brew_id and brew.user_id = portfolio.user_id
       join job_analysis on job_analysis.id = brew.job_analysis_id
-      join job_posting on job_posting.id = job_analysis.job_posting_id
-      join company on company.id = job_posting.company_id
+      left join job_posting on job_posting.id = job_analysis.job_posting_id
+      left join company on company.id = job_posting.company_id
       where portfolio.user_id = ${userId} and portfolio.id = ${portfolioId}
     `)[0] ?? null;
 
@@ -297,8 +310,8 @@ export class PageService {
         width: row.width,
         height: row.height,
       })),
-      jobTitle: subject?.job_title ?? null,
-      company: subject
+      jobTitle: subject?.job_title ?? subject?.free_title ?? null,
+      company: subject?.company_name
         ? {
           name: subject.company_name,
           industry: subject.industry,
@@ -328,6 +341,8 @@ export class PageService {
     generator: PageGenerator,
     options: {
       instruction?: string | undefined;
+      /** 워커의 정식 생성 판이면 잡과 일대일로 묶는다. */
+      generationJobId?: string | undefined;
       /**
        * 조각이 흐를 자리의 이름.
        *
@@ -343,6 +358,11 @@ export class PageService {
     `)[0];
     if (!owned) throw new PageServiceError(404, "portfolio not found");
 
+    if (options.generationJobId) {
+      const existing = await this.forGenerationJob(userId, options.generationJobId);
+      if (existing) return existing;
+    }
+
     const current = await this.latest(userId, portfolioId);
     const context = await this.#context(
       userId,
@@ -350,10 +370,6 @@ export class PageService {
       options.instruction,
       current ? { html: current.html, css: current.css } : undefined,
     );
-    if (context.evidence.length === 0) {
-      throw new PageServiceError(409, "지면을 만들 근거가 없습니다");
-    }
-
     // 계약을 부르기 전에 문을 지난다. 기록 본문이 통째로 나가는 계약이다.
     await this.#consent?.require(userId, "page_generation");
     /*
@@ -397,12 +413,12 @@ export class PageService {
 
     const row = (await this.#sql<PageRow[]>`
       insert into generated_page (
-        user_id, portfolio_id, html, css, rationale, revision, instruction,
+        user_id, portfolio_id, generation_job_id, html, css, rationale, revision, instruction,
         prompt_version, ungrounded_numbers, removed, quality_status, qa_report,
         generation_manifest, portfolio_plan_snapshot, style_spec_snapshot,
         design_principles_version
       ) values (
-        ${userId}, ${portfolioId}, ${result.html}, ${result.css}, ${result.rationale},
+        ${userId}, ${portfolioId}, ${options.generationJobId ?? null}, ${result.html}, ${result.css}, ${result.rationale},
         ${(current?.revision ?? -1) + 1}, ${options.instruction ?? null},
         ${PAGE_PROMPT_VERSION}, ${result.ungrounded}, ${result.removed},
         ${result.qaReport.status}, ${this.#sql.json(result.qaReport as JSONValue)},

@@ -29,6 +29,7 @@ import {
   ConsentListResponseSchema,
   DeploymentListResponseSchema,
   DeploymentSchema,
+  PublicPortfolioSchema,
   EntitlementDecisionResponseSchema,
   type EntitlementCapability,
   ApplyPortfolioEditResultSchema,
@@ -60,6 +61,7 @@ import {
   TemplatePreviewsResponseSchema,
   GenerationJobStatusResponseSchema,
   type CreateBrew,
+  type CreateFreeBrew,
   type SubmitGeneration,
   type SubmitJobPosting,
   type ListJobPostingsQuery,
@@ -201,6 +203,14 @@ export const entitlements = {
 };
 
 export const publishing = {
+  /** 방문자가 읽는 불변 배포 사본. 인증된 편집본을 다시 읽지 않는다. */
+  public: (slug: string) =>
+    request(
+      `${API_PREFIX}/public/portfolios/${encodeURIComponent(slug)}`,
+      z.strictObject({ data: PublicPortfolioSchema }),
+      { cache: "no-store" },
+    ),
+
   /** 08b 버전 목록. 되돌릴 대상을 여기서 고른다. */
   deployments: (accessToken: string, portfolioId: string) =>
     request(
@@ -277,6 +287,14 @@ export const brews = {
    */
   create: (accessToken: string, input: CreateBrew) =>
     request(`${API_PREFIX}/brews`, BrewMaterialsResponseSchema, {
+      accessToken,
+      method: "POST",
+      body: input,
+    }),
+
+  /** 공고 없이 자유로운 설명만으로 제작을 연다. */
+  createFree: (accessToken: string, input: CreateFreeBrew) =>
+    request(`${API_PREFIX}/brews/free`, BrewMaterialsResponseSchema, {
       accessToken,
       method: "POST",
       body: input,

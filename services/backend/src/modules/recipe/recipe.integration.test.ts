@@ -3,6 +3,7 @@ import { createMysqlResource } from "../../platform/mysql.js";
 
 import type { SqlTag } from "../../platform/mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { RecipeDraftSchema } from "@expresso/contracts";
 
 import { buildApi } from "../../api/build-app.js";
 import { BrewJobService } from "../brew-jobs/service.js";
@@ -10,6 +11,7 @@ import { classifyBrewJobFailure } from "../../worker/processors/brew-jobs.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
 import { IdentityService } from "../identity/service.js";
 import { RecipeService } from "./service.js";
+import type { RecipePlanner } from "./planner.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
@@ -190,6 +192,41 @@ describeWithDatabase("recipe integration", () => {
       sourceCounts: { records: 5, requirements: 3, answers: 1 },
     });
     expect((await app.inject({ method: "GET", url: `/v1/recipes/${recipe.id}`, headers: auth(otherToken) })).statusCode).toBe(404);
+  });
+
+  it("keeps items and sections with empty or invalid advisory source links", async () => {
+    const planner: RecipePlanner = {
+      async plan() {
+        return {
+          draft: RecipeDraftSchema.parse({
+            plan: {
+              positioning: { headlineIntent: "초안", valueProposition: "검토", differentiators: [] },
+              requirementCoverage: [], narrativeArc: "한 페이지", claims: [], exclusions: [], rationale: "사용자 검토",
+            },
+            sections: [{
+              title: "연결 전 경험", purpose: "사용자가 보완할 초안", targetLength: 0, goal: "초안 유지",
+              points: [], metrics: [], tone: "professional", format: "narrative", exclude: [], takeaway: "검토",
+              contentPattern: "hero", interactionOpportunity: null,
+              items: [
+                { pointText: "연결되지 않은 항목", sources: [] },
+                { pointText: "잘못된 번호도 항목은 보존", sources: [40] },
+              ],
+            }],
+            unused: [],
+          }),
+          usage: null,
+          attempts: 1,
+        };
+      },
+    };
+    const advisoryService = new RecipeService(sql, planner);
+    const recipe = await advisoryService.generate(userId, brewId, "recipe-advisory-links-0001");
+
+    expect(recipe.sections).toHaveLength(1);
+    expect(recipe.sections[0]?.items).toHaveLength(2);
+    expect(recipe.sections[0]?.items.every(({ evidence }) => evidence.length === 0)).toBe(true);
+    expect(recipe.evidencePaths).toEqual([]);
+    expect(recipe.portfolioPlan?.sections[0]?.evidenceIds).toEqual([]);
   });
 
   it("returns diffs, locks user edits, restores an item, and retains only 50 revisions", async () => {

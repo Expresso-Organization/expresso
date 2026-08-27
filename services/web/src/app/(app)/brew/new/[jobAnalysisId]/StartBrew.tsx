@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 
 import { startBrewAction, type NewBrewState } from "../new-brew-actions";
 import styles from "../page.module.css";
@@ -17,14 +17,23 @@ export function StartBrew({
     startBrewAction,
     { error: null },
   );
+  const form = useRef<HTMLFormElement>(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    form.current?.requestSubmit();
+  }, []);
 
   return (
     <>
-      <form action={submit}>
+      <form ref={form} action={submit}>
         <input type="hidden" name="jobAnalysisId" value={jobAnalysisId} />
         <input type="hidden" name="lengthPreset" value={lengthPreset} />
         <button type="submit" className={styles.waitAction} disabled={pending}>
-          {pending ? "재료 순위를 매기는 중" : "제작 시작하기"}
+          {state.error ? null : <span className={styles.waitSpinnerLight} aria-hidden="true" />}
+          {state.error ? "다시 시도" : "다음 단계로 이동 중"}
         </button>
       </form>
       {state.error ? <p className={styles.waitError}>{state.error}</p> : null}

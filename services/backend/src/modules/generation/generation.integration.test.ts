@@ -8,6 +8,9 @@ import type { LayoutDesignContext, LayoutDesigner } from "../layout/designer.js"
 import { GenerationService } from "./service.js";
 import { GenerationOutputSchema } from "@expresso/contracts";
 import type { SentenceWriter, WriterContext } from "./writer.js";
+import type { GeneratedPageResult, PageGenerationContext, PageGenerator } from "../page/generator.js";
+import { PageService } from "../page/service.js";
+import { createGenerationProcessor } from "../../worker/processors/generation.js";
 
 /**
  * 계약 없이 파이프라인만 돌리는 대역. 제품에는 이런 폴백을 두지 않는다 —
@@ -32,6 +35,30 @@ class StubSentenceWriter implements SentenceWriter {
   }
 }
 
+class CountingPageGenerator implements PageGenerator {
+  calls = 0;
+  constructor(private readonly failure: Error | null = null) {}
+
+  async generate(_context: PageGenerationContext): Promise<GeneratedPageResult> {
+    this.calls += 1;
+    if (this.failure) throw this.failure;
+    return {
+      html: '<main class="k-page"><h1>Generated page</h1></main>',
+      css: ".k-page{color:#16223a}",
+      rationale: "페이지 우선 생성",
+      ungrounded: [],
+      removed: [],
+      usage: { model: "fixture", inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0, costUsd: 0, durationMs: 0 },
+      qaReport: { status: "ready", checks: [] },
+      manifest: {
+        methodologyVersion: 1, model: "fixture", promptHash: "0".repeat(64),
+        promptVersions: { page: 6, designPrinciples: 1 }, tools: [], sourceUrls: [], attempts: 1, repairCount: 0,
+        usage: { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0, costUsd: 0, durationMs: 0 },
+      },
+    };
+  }
+}
+
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
 interface IdRow { id: string }
@@ -39,6 +66,7 @@ interface IdRow { id: string }
 describeWithDatabase("generation integration", () => {
   const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const service = new GenerationService(sql);
+  const pageService = new PageService(sql);
   const marker = randomUUID();
   const quote = "PostgreSQL 운영 근거";
   let userId = ""; let companyId = ""; let postingId = "";
@@ -196,6 +224,60 @@ describeWithDatabase("generation integration", () => {
       join portfolio_section on portfolio_section.id = block.portfolio_section_id
       where block.user_id = ${userId} and portfolio_section.portfolio_id = ${status.portfolioId}
     `)[0]?.count).toBe(3);
+  }, 30_000);
+
+  it("free HTML 판 저장 뒤에만 완료·차감하고 재전달은 다시 생성하지 않는다", async () => {
+    // 기존 블록 경로의 역사 테스트와 quota를 분리한다.
+    const proPlan = (await sql<IdRow[]>`select id from plan where code = 'pro'`)[0]?.id;
+    if (!proPlan) throw new Error("pro plan seed missing");
+    await sql`update \`user\` set plan_id = ${proPlan} where id = ${userId}`;
+    const generator = new CountingPageGenerator();
+    const submitted = await service.submit(userId, "generation-free-html-0001", {
+      recipeId: await seedRecipe(4), templateId,
+    });
+    const processor = createGenerationProcessor(
+      service,
+      new StubSentenceWriter(),
+      null,
+      { service: pageService, generator },
+    );
+    const job = { data: { generationJobId: submitted.generationJobId, userId } } as never;
+    const first = await processor(job);
+    expect(first).toMatchObject({ status: "done", usageCharged: true, portfolioId: expect.any(String) });
+    const page = await pageService.forGenerationJob(userId, submitted.generationJobId);
+    expect(page).toMatchObject({ generationJobId: submitted.generationJobId, qualityStatus: "ready" });
+    expect(generator.calls).toBe(1);
+
+    const usedAfterFirst = (await sql<{ used: number }[]>`
+      select used from usage_counter where user_id = ${userId}
+    `)[0]?.used;
+    const replay = await processor(job);
+    expect(replay).toMatchObject({ status: "done", usageCharged: true });
+    expect(generator.calls).toBe(1);
+    expect((await sql<{ used: number }[]>`select used from usage_counter where user_id = ${userId}`)[0]?.used)
+      .toBe(usedAfterFirst);
+  }, 30_000);
+
+  it("free HTML 생성 실패는 done이나 quota 차감으로 바뀌지 않는다", async () => {
+    const generator = new CountingPageGenerator(new Error("page provider unavailable"));
+    const submitted = await service.submit(userId, "generation-free-html-failure-0001", {
+      recipeId: await seedRecipe(5), templateId,
+    });
+    const before = (await sql<{ used: number }[]>`select used from usage_counter where user_id = ${userId}`)[0]?.used;
+    const processor = createGenerationProcessor(
+      service,
+      new StubSentenceWriter(),
+      null,
+      { service: pageService, generator },
+    );
+    const result = await processor({ data: { generationJobId: submitted.generationJobId, userId } } as never);
+    expect(result).toMatchObject({
+      status: "failed", usageCharged: false,
+      failure: { code: "PAGE_GENERATION_FAILED", retryable: false },
+    });
+    expect(generator.calls).toBe(1);
+    expect((await sql<{ used: number }[]>`select used from usage_counter where user_id = ${userId}`)[0]?.used)
+      .toBe(before);
   }, 30_000);
 });
 

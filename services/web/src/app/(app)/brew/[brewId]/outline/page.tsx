@@ -75,17 +75,23 @@ export default async function OutlinePage({
   }
 
   const drafting = brew.latestJob?.type === "recipe" && brew.latestJob.status !== "succeeded";
+  const portfolioTitle = brew.freeTitle ?? brew.posting?.title ?? null;
+  const isFreeBrew = brew.freeTitle !== null;
   if (!brew.recipeId || drafting) {
     return (
-      <BrewFrame brewId={brewId} step="outline" portfolioTitle={brew.posting?.title ?? null}
+      <BrewFrame brewId={brewId} step="outline" portfolioTitle={portfolioTitle}
         situation={brew.recipeId ? "다시 짜는 중" : "아직 없음"} tinted>
         <Waiting
           title="레시피"
-          note={`고른 재료 ${brew.materials.selected}건으로 무엇을 어디에 담을지 정합니다.`}
+          note={isFreeBrew
+            ? "적어 둔 내용으로 첫 구성을 만듭니다. 구성과 문장은 다음 단계에서 직접 고칠 수 있습니다."
+            : `고른 재료 ${brew.materials.selected}건으로 무엇을 어디에 담을지 정합니다.`}
           job={brew.latestJob?.type === "recipe" ? brew.latestJob : null}
           action={createRecipeAction}
           actionLabel="레시피 만들기"
-          rejectedNote="재료가 세 건보다 적습니다. 기록을 더 고른 뒤 다시 시도해 주세요."
+          rejectedNote={isFreeBrew
+            ? "입력한 내용을 읽지 못했습니다. 자유 생성 설명을 보완한 뒤 다시 시도해 주세요."
+            : "재료가 세 건보다 적습니다. 기록을 더 고른 뒤 다시 시도해 주세요."}
           brewId={brewId}
         />
       </BrewFrame>
@@ -103,7 +109,7 @@ export default async function OutlinePage({
     <BrewFrame
       brewId={brewId}
       step="outline"
-      portfolioTitle={brew.posting?.title ?? null}
+      portfolioTitle={portfolioTitle}
       situation={`섹션 ${recipe.sections.length}개 · v${recipe.version}`}
       tinted
     >

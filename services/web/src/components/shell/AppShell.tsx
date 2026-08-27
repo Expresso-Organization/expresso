@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { CommandPalette } from "@/components/CommandPalette";
 
+import { Skel } from "./Skeleton";
 import styles from "./AppShell.module.css";
 
 /**
@@ -57,8 +58,11 @@ export function AppHeader({
  * 마지막 조각은 **지금 보고 있는 화면**이라 갈 곳을 줘도 링크로 만들지 않는다 —
  * 제자리로 가는 링크는 눌러도 아무 일이 없고, 그런 링크가 있으면 나머지 조각도
  * 눌러 봐야 아는 것이 된다.
+ *
+ * `null`은 **아직 모르는 조각**이다 — 이름이 응답에서 오는 자리를 `loading.tsx`가
+ * 그릴 때 쓴다. 자리는 지키고 글자만 비운다.
  */
-export type Crumb = string | { label: string; href: Route };
+export type Crumb = string | { label: string; href: Route } | null;
 
 /** 내 커리어(05) 헤더 — 46px, breadcrumb + 편집 시각. */
 export function DocumentHeader({
@@ -72,12 +76,14 @@ export function DocumentHeader({
     <div className={`${styles.header} ${styles.headerDocument}`}>
       {crumbs.map((crumb, index) => {
         const last = index === crumbs.length - 1;
-        const label = typeof crumb === "string" ? crumb : crumb.label;
-        const href = typeof crumb === "string" ? null : crumb.href;
+        const label = crumb === null || typeof crumb === "string" ? crumb : crumb.label;
+        const href = crumb === null || typeof crumb === "string" ? null : crumb.href;
         return (
-          <span key={label} style={{ display: "contents" }}>
+          <span key={index} style={{ display: "contents" }}>
             {index > 0 ? <span className={styles.crumbSeparator}>/</span> : null}
-            {href && !last ? (
+            {label === null ? (
+              <Skel w={104} h={12} />
+            ) : href && !last ? (
               <Link href={href} className={`${styles.crumb} ${styles.crumbLink}`}>
                 {label}
               </Link>

@@ -4,7 +4,7 @@ import type { PortfolioEditPatch } from "@expresso/contracts";
 import { revalidatePath } from "next/cache";
 
 import { ApiError } from "@/lib/api/client";
-import { portfolioEditing, portfolios } from "@/lib/api/endpoints";
+import { page, portfolioEditing, portfolios } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 /**
@@ -24,6 +24,9 @@ export interface EditResult {
   patches?: PortfolioEditPatch[];
   /** 지면 변형은 바로 적용된다 — 되돌리기는 03에서 옛 후보를 고르는 일이다. */
   layoutRationale?: string;
+  /** 자유 HTML은 사용자가 요청했을 때만 새 판으로 쌓인다. */
+  pageRevision?: number;
+  pageRationale?: string;
   error?: string;
 }
 
@@ -52,6 +55,19 @@ export async function instructAction(
   const session = await requireSession();
 
   try {
+    if (target === "page") {
+      const { data } = await page.generate(session.accessToken, portfolioId, {
+        instruction: said,
+      });
+      revalidatePath(`/edit/${portfolioId}`);
+      return {
+        instruction: said,
+        target: "웹페이지 전체",
+        pageRevision: data.revision,
+        pageRationale: data.rationale,
+      };
+    }
+
     if (target === "layout") {
       const { data } = await portfolios.remixLayout(session.accessToken, portfolioId, said);
       const selected = data.candidates.find(({ id }) => id === data.selectedId);

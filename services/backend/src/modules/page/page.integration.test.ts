@@ -283,4 +283,14 @@ describeWithDatabase("free page generation integration", () => {
     expect(response.headers["content-security-policy"]).toContain("script-src 'none'");
     expect(response.headers["x-content-type-options"]).toBe("nosniff");
   });
+
+  it("연결된 근거가 없어도 완결된 페이지 초안을 저장한다", async () => {
+    await sql`delete from recipe_evidence_path where user_id = ${ownerId}`;
+    const page = await service.generate(ownerId, portfolioId, generator, {
+      instruction: "근거 연결 없이도 초안 유지",
+    });
+
+    expect(page.qualityStatus).toBe("ready");
+    expect(generator.seen.at(-1)?.evidence).toEqual([]);
+  });
 });
