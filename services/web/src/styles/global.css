@@ -13,12 +13,25 @@ body {
   height: 100%;
 }
 
+/*
+ * 루트는 브라우저 기본(16px)에 맡깁니다.
+ *
+ * 전에는 여기에 13px이 박혀 있었고 화면들은 전부 절대 px을 썼습니다 — 글자를
+ * 크게 보려고 브라우저 설정을 올린 사람에게 아무 일도 일어나지 않았습니다.
+ * 이제 글자 크기는 `--ex-text-*`(rem)이라 그 설정을 따라갑니다.
+ */
+html {
+  font-size: 100%;
+  /* 폰에서 가로로 돌렸을 때 글자만 제멋대로 커지는 것을 막는다 */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
-  background: var(--ex-canvas);
-  color: var(--ex-ink-900);
+  background: var(--ex-bg-canvas);
+  color: var(--ex-fg);
   font-family: var(--ex-font-ui);
-  /* 화면 정의서의 셸 루트 font-size */
-  font-size: 13px;
+  font-size: var(--ex-text-xs);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -40,12 +53,12 @@ ol {
 }
 
 a {
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   text-decoration: none;
 }
 
 a:hover {
-  color: var(--ex-ink-900-hover);
+  color: var(--ex-fg-strong);
 }
 
 button,

@@ -95,7 +95,7 @@ export default async function HomePage() {
                     <Icon
                       name={CATEGORY_ICONS[category.key] ?? "file-text"}
                       size={15}
-                      color="var(--ex-slate-500)"
+                      color="var(--ex-fg-muted)"
                     />
                   </span>
                   <span className={styles.categoryCardName}>{category.name}</span>
@@ -252,7 +252,7 @@ async function Portfolios({ accessToken }: { accessToken: string }) {
           ))}
           <Link href="/brew/new" className={styles.newPortfolio}>
             <span className={styles.newPortfolioIcon}>
-              <Icon name="plus" size={18} color="var(--ex-espresso)" />
+              <Icon name="plus" size={18} color="var(--ex-accent-text)" />
             </span>
             <span>
               <span className={styles.newPortfolioTitle}>새 포트폴리오</span>

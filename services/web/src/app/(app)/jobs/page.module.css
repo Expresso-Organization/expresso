@@ -4,15 +4,15 @@
   flex: 1;
   min-width: 0;
   overflow: auto;
-  padding: 22px 26px 20px;
+  padding: 16px 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
 .headNote {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
 }
 
 .headAction {
@@ -22,20 +22,20 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 12px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
 }
 
 .headRule {
   width: 1px;
   height: 18px;
-  background: var(--ex-track);
+  background: var(--ex-bg-track);
 }
 
 /* 00b — 질의가 확정된 검색 바는 espresso 보더 + 링 */
 .queryCard {
-  background: var(--ex-white);
-  border: 1.5px solid var(--ex-espresso);
+  background: var(--ex-bg);
+  border: 1.5px solid var(--ex-accent);
   border-radius: 16px;
   box-shadow: 0 0 0 3px rgba(154, 64, 48, 0.07);
   overflow: hidden;
@@ -50,8 +50,8 @@
 }
 
 .queryText {
-  font-size: 15.5px;
-  color: var(--ex-ink-900);
+  font-size: var(--ex-text-lg);
+  color: var(--ex-fg);
   letter-spacing: -0.015em;
   flex: 1;
   min-width: 0;
@@ -66,15 +66,15 @@
   padding: 0;
   display: grid;
   place-items: center;
-  color: var(--ex-border-strong);
+  color: var(--ex-border-firm);
   flex-shrink: 0;
 }
 
 .querySubmit {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 9px;
   padding: 10px 18px;
@@ -83,7 +83,7 @@
 }
 
 .querySubmit:hover {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
 }
 
 /* 해석 칩 줄 — "이렇게 이해했습니다" */
@@ -92,16 +92,16 @@
   align-items: center;
   gap: 8px;
   padding: 11px 20px;
-  background: #fdf8f5;
-  border-top: 1px solid #f1e7e1;
+  background: var(--ex-accent-surface);
+  border-top: 1px solid var(--ex-accent-surface-hover);
   flex-wrap: wrap;
 }
 
 .parsedLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.12em;
-  color: #a88170;
+  color: var(--ex-accent-text);
   margin-right: 4px;
   white-space: nowrap;
 }
@@ -110,12 +110,12 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  background: var(--ex-white);
-  border: 1px solid #e8d6cd;
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-accent-surface-hover);
   border-radius: 999px;
   padding: 6px 12px;
-  font-size: 12px;
-  color: var(--ex-espresso-text);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-accent-text);
   white-space: nowrap;
 }
 
@@ -123,12 +123,12 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  border: 1px dashed #d8c3b8;
+  border: 1px dashed var(--ex-accent-surface-hover);
   background: none;
   border-radius: 999px;
   padding: 6px 12px;
-  font-size: 12px;
-  color: #a88170;
+  font-size: var(--ex-text-sm);
+  color: var(--ex-accent-text);
   white-space: nowrap;
 }
 
@@ -140,23 +140,32 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
-  color: var(--ex-espresso-text);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-accent-text);
   white-space: nowrap;
 }
 
-/* 본문 2열 — 결과 + 316px 레일 */
+/*
+ * 본문 — 넓으면 결과 + 316px 레일 두 열, 좁으면 한 열로 쌓인다.
+ * 레일은 곁들이는 정보라 결과 아래로 내려가도 읽는 차례가 뒤집히지 않는다.
+ */
 .columns {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 1fr 316px;
+  grid-template-columns: 1fr;
   gap: 16px;
 }
 
+@media (min-width: 1024px) {
+  .columns {
+    grid-template-columns: 1fr var(--ex-rail-width);
+  }
+}
+
 .results {
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 16px;
   display: flex;
   flex-direction: column;
@@ -168,19 +177,19 @@
   align-items: center;
   gap: 12px;
   padding: 14px 20px;
-  border-bottom: 1px solid var(--ex-line-inner);
+  border-bottom: 1px solid var(--ex-border-inner);
   flex-shrink: 0;
 }
 
 .resultsCount {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .resultsNote {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 
@@ -195,13 +204,13 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-subtle);
 }
 
 .sortActive {
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 /* 순서 근거 한 줄 */
@@ -218,20 +227,20 @@
   width: 100%;
   padding: 14px 20px;
   border: none;
-  border-bottom: 1px solid var(--ex-line-inner);
+  border-bottom: 1px solid var(--ex-border-inner);
   background: none;
   text-align: left;
   transition: background var(--ex-motion-instant);
 }
 
 .row:hover {
-  background: var(--ex-row-hover);
+  background: var(--ex-bg-hover);
 }
 
 /* 첫 행(가장 잘 맞는 공고)은 시그니처 지면 */
 .rowTop,
 .rowTop:hover {
-  background: #fdf8f5;
+  background: var(--ex-accent-surface);
 }
 
 .avatar {
@@ -241,7 +250,7 @@
   display: grid;
   place-items: center;
   font-family: var(--ex-font-brand);
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 500;
   flex-shrink: 0;
 }
@@ -249,10 +258,18 @@
 .rowTitle {
   width: 236px;
   flex-shrink: 0;
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .rowTitle {
+    width: auto;
+    flex: 1;
+  }
 }
 
 .rowRole {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -260,8 +277,8 @@
 }
 
 .rowCompany {
-  font-size: 11px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   margin-top: 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -275,9 +292,9 @@
 }
 
 .stackChip {
-  font-size: 10.5px;
-  color: var(--ex-slate-700);
-  background: var(--ex-line-inner);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-body);
+  background: var(--ex-border-inner);
   border-radius: 5px;
   padding: 4px 8px;
   white-space: nowrap;
@@ -285,15 +302,15 @@
 
 /* 내 기록에 없는 스택은 경고색 */
 .stackChipMissing {
-  color: var(--ex-warning-text);
-  background: #fbf3df;
+  color: var(--ex-status-warning-text);
+  background: var(--ex-status-warning-surface);
 }
 
 .rowReason {
   flex: 1;
   min-width: 0;
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -310,7 +327,7 @@
 .scoreTrack {
   flex: 1;
   height: 5px;
-  background: var(--ex-surface-100);
+  background: var(--ex-bg-muted);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -322,25 +339,25 @@
 
 .scoreValue {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
 }
 
 .rowDeadline {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   width: 42px;
   text-align: right;
   flex-shrink: 0;
 }
 
 .rowDeadlineAlways {
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 /* D-3 이하 */
 .rowDeadlineUrgent {
-  color: var(--ex-danger-text);
+  color: var(--ex-status-danger-text);
 }
 
 /*
@@ -358,28 +375,28 @@
   align-items: center;
   gap: 12px;
   padding: 14px 20px;
-  border-top: 1px solid var(--ex-line-inner);
+  border-top: 1px solid var(--ex-border-inner);
   flex-shrink: 0;
 }
 
 .footText {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
 }
 
 .footAction {
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 .footQuota {
   justify-self: end;
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
 }
 
 /* 우측 레일 */
@@ -392,15 +409,15 @@
 }
 
 .railCard {
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 16px;
   padding: 17px 20px;
 }
 
 /* 바리스타 카드는 bean-50 지면, 보더 없음 */
 .railCardBrew {
-  background: var(--ex-bean-50);
+  background: var(--ex-accent-surface);
   border: none;
   border-radius: 16px;
   padding: 18px 20px;
@@ -415,15 +432,15 @@
 
 .brewLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.1em;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
 }
 
 .brewBody {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.75;
-  color: var(--ex-bean-ink);
+  color: var(--ex-accent-ink);
   margin-bottom: 14px;
 }
 
@@ -435,9 +452,9 @@
 }
 
 .brewInnerTitle {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
-  color: var(--ex-bean-ink);
+  color: var(--ex-accent-ink);
   margin-bottom: 9px;
 }
 
@@ -452,34 +469,34 @@
 }
 
 .missingDanger {
-  font-size: 11.5px;
-  color: var(--ex-danger-text);
-  background: #fceeea;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-danger-text);
+  background: var(--ex-status-danger-surface-deep);
   border-radius: 999px;
   padding: 3px 9px;
   white-space: nowrap;
 }
 
 .missingWarning {
-  font-size: 11.5px;
-  color: var(--ex-warning-text);
-  background: #fbf3df;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-warning-text);
+  background: var(--ex-status-warning-surface);
   border-radius: 999px;
   padding: 3px 9px;
   white-space: nowrap;
 }
 
 .missingNote {
-  font-size: 11.5px;
-  color: var(--ex-espresso-text);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-accent-text);
 }
 
 .brewCta {
   width: 100%;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 9px;
   padding: 11px;
@@ -487,11 +504,11 @@
 }
 
 .brewCta:hover {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
 }
 
 .railTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   margin-bottom: 12px;
 }
@@ -507,8 +524,8 @@
 }
 
 .axisLabel {
-  font-size: 11.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
   width: 74px;
   flex-shrink: 0;
 }
@@ -516,7 +533,7 @@
 .axisTrack {
   flex: 1;
   height: 5px;
-  background: var(--ex-surface-100);
+  background: var(--ex-bg-muted);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -528,13 +545,13 @@
 
 .axisWeight {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
 }
 
 .railNote {
-  font-size: 11px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-subtle);
   margin-top: 12px;
   line-height: 1.65;
 }
@@ -546,9 +563,9 @@
 }
 
 .railChip {
-  font-size: 11.5px;
-  color: var(--ex-slate-700);
-  background: var(--ex-surface-50);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
+  background: var(--ex-bg-sunken);
   border: none;
   border-radius: 999px;
   padding: 6px 11px;
@@ -563,8 +580,8 @@
 
 .railHeadAction {
   margin-left: auto;
-  font-size: 11.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
   border: none;
   background: none;
   padding: 0;
@@ -587,8 +604,8 @@
 }
 
 .recentText {
-  font-size: 11.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -598,8 +615,8 @@
 
 .recentCount {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
 }
 
 /* ── 06 공고 탐색 전용 ─────────────────────────────────────── */
@@ -609,8 +626,8 @@
   display: flex;
   align-items: center;
   gap: 13px;
-  background: var(--ex-white);
-  border: 1px solid #dcc5b8;
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-accent-surface-hover);
   border-radius: 999px;
   padding: 8px 8px 8px 22px;
   flex-shrink: 0;
@@ -621,7 +638,7 @@
 }
 
 .searchBar:focus-within {
-  border-color: var(--ex-espresso);
+  border-color: var(--ex-accent);
   box-shadow: 0 0 0 3px rgba(154, 64, 48, 0.09);
 }
 
@@ -631,19 +648,19 @@
   border: none;
   outline: none;
   background: none;
-  font-size: 15.5px;
-  color: var(--ex-ink-900);
+  font-size: var(--ex-text-lg);
+  color: var(--ex-fg);
 }
 
 .searchInput::placeholder {
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .searchShortcut {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
-  color: var(--ex-slate-400);
-  background: var(--ex-surface-50);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
+  background: var(--ex-bg-sunken);
   border-radius: 6px;
   padding: 5px 9px;
   flex-shrink: 0;
@@ -654,34 +671,34 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  border-bottom: 1px solid var(--ex-hairline);
+  border-bottom: 1px solid var(--ex-border-hair);
   flex-shrink: 0;
 }
 
 .categoryTab {
   border: none;
   background: none;
-  font-size: 12.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-muted);
   padding: 0 2px 9px;
   transition: color var(--ex-motion-quick);
 }
 
 .categoryTab:hover {
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .categoryTabActive {
   font-weight: 600;
-  color: var(--ex-ink-900);
-  border-bottom: 1.5px solid var(--ex-ink-900);
+  color: var(--ex-fg);
+  border-bottom: 1.5px solid var(--ex-fg);
   margin-bottom: -1px;
 }
 
 .categoryCount {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
   margin-left: 5px;
 }
 
@@ -693,8 +710,8 @@
   gap: 6px;
   border: none;
   background: none;
-  font-size: 12px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-muted);
 }
 
 /* 요구사항 비율 바 */
@@ -709,8 +726,8 @@
 }
 
 .requirementLabel {
-  font-size: 11.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -720,15 +737,15 @@
 
 .requirementCount {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
   flex-shrink: 0;
 }
 
 .requirementTrack {
   width: 74px;
   height: 5px;
-  background: var(--ex-surface-100);
+  background: var(--ex-bg-muted);
   border-radius: 999px;
   overflow: hidden;
   flex-shrink: 0;
@@ -736,7 +753,7 @@
 
 .requirementFill {
   height: 100%;
-  background: var(--ex-ink-900);
+  background: var(--ex-bg-inverse);
   border-radius: 999px;
 }
 
@@ -759,26 +776,26 @@
 }
 
 .watchRow:hover {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
 }
 
 .watchInitial {
   width: 20px;
   height: 20px;
   border-radius: 6px;
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   display: grid;
   place-items: center;
   font-family: var(--ex-font-brand);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   font-weight: 500;
   flex-shrink: 0;
 }
 
 .watchLabel {
-  font-size: 12px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -788,8 +805,8 @@
 
 .watchDeadline {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
 }
 
 .railCtaWrap {
@@ -799,10 +816,10 @@
 /* 06 — 등록된 지 얼마 안 된 공고에 붙는 배지. */
 .rowNew {
   font-family: var(--ex-font-mono);
-  font-size: 8.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.08em;
-  color: var(--ex-success-text);
-  background: var(--ex-success-surface);
+  color: var(--ex-status-success-text);
+  background: var(--ex-status-success-surface);
   border-radius: 4px;
   padding: 2px 5px;
   flex-shrink: 0;
@@ -826,33 +843,33 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
   transition: background var(--ex-motion-quick), color var(--ex-motion-quick);
 }
 
 .pagerArrow:hover,
 .pagerPage:hover {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
 }
 
 .pagerArrowOff {
-  color: var(--ex-line-200);
+  color: var(--ex-fg-faint);
   pointer-events: none;
 }
 
 .pagerPageOn,
 .pagerPageOn:hover {
-  background: var(--ex-espresso);
-  color: var(--ex-white);
+  background: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
   font-weight: 600;
 }
 
 .pagerGap {
   min-width: 16px;
   text-align: center;
-  font-size: 12px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-subtle);
 }
 
 /* 근무지 필터 */
@@ -874,11 +891,11 @@
   gap: 6px;
   height: 28px;
   padding: 0 11px;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 8px;
-  background: var(--ex-white);
-  font-size: 11.5px;
-  color: var(--ex-slate-700);
+  background: var(--ex-bg);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
   white-space: nowrap;
   transition:
     border-color var(--ex-motion-quick),
@@ -887,15 +904,15 @@
 }
 
 .filterButton:hover {
-  border-color: var(--ex-border-strong);
+  border-color: var(--ex-border-firm);
 }
 
 /* 무언가 걸려 있으면 버튼만 봐도 알아야 한다. */
 .filterButtonOn,
 .filterButtonOn:hover {
-  background: var(--ex-ink-900);
-  border-color: var(--ex-ink-900);
-  color: var(--ex-white);
+  background: var(--ex-bg-inverse);
+  border-color: var(--ex-fg);
+  color: var(--ex-fg-on-inverse);
 }
 
 .filterPop {
@@ -908,8 +925,8 @@
   max-height: min(62vh, 520px);
   overflow: auto;
   padding: 6px;
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 11px;
   box-shadow: 0 10px 28px rgb(16 34 58 / 12%);
 }
@@ -918,7 +935,7 @@
 .filterSection + .filterSection {
   margin-top: 5px;
   padding-top: 5px;
-  border-top: 1px solid var(--ex-line-inner);
+  border-top: 1px solid var(--ex-border-inner);
 }
 
 .filterPopTitle {
@@ -926,18 +943,18 @@
   align-items: baseline;
   gap: 7px;
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.12em;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   padding: 5px 9px 6px;
 }
 
 /* "지원할 수 있는 공고" — 수를 어떻게 읽어야 하는지. */
 .filterNote {
   font-family: var(--ex-font-sans);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .filterOption {
@@ -947,23 +964,30 @@
   gap: 14px;
   padding: 7px 9px;
   border-radius: 7px;
-  font-size: 12px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
   transition: background var(--ex-motion-quick), color var(--ex-motion-quick);
 }
 
 .filterOption:hover {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
 }
 
 .filterOptionOn,
 .filterOptionOn:hover {
-  background: var(--ex-ink-900);
-  color: var(--ex-white);
+  background: var(--ex-bg-inverse);
+  color: var(--ex-fg-on-inverse);
 }
 
 .filterCount {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   opacity: 0.7;
+}
+
+/* 넓어지면 정의서의 여백으로 돌아간다 */
+@media (min-width: 768px) {
+  .content {
+    padding: 22px 26px 20px;
+  }
 }

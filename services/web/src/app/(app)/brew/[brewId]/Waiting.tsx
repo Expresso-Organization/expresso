@@ -47,7 +47,7 @@ export function Waiting({
     <div className={styles.wrap}>
       <div className={styles.card}>
         <span className={`${styles.badge} ${running ? "ex-anim-bob" : ""}`}>
-          <Icon name="coffee" weight="fill" size={16} color="var(--ex-bean-50)" />
+          <Icon name="coffee" weight="fill" size={16} color="var(--ex-accent-surface)" />
         </span>
         <h1 className={styles.title}>{running ? `${title} 만드는 중` : title}</h1>
         <p className={styles.note}>{running ? "1분쯤 걸립니다. 이 화면을 닫아도 계속됩니다." : note}</p>

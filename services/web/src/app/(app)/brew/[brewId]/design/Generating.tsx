@@ -49,7 +49,7 @@ export function Generating({
     <div className={styles.gate}>
       <div className={styles.gateCard}>
         <span className={`${styles.gateBadge} ${running ? "ex-anim-bob" : ""}`}>
-          <Icon name="coffee" weight="fill" size={18} color="var(--ex-bean-50)" />
+          <Icon name="coffee" weight="fill" size={18} color="var(--ex-accent-surface)" />
         </span>
         <h1 className={styles.gateTitle}>{running ? "추출하는 중" : "다 뽑혔습니다"}</h1>
         <p className={styles.gateNote}>

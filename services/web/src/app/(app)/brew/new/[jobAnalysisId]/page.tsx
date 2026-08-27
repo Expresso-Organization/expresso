@@ -62,7 +62,7 @@ export default async function AnalyzingPage({
                 name={analysis.status === "failed" ? "warning" : "magnifying-glass"}
                 weight="fill"
                 size={17}
-                color="var(--ex-bean-50, #fbf6f1)"
+                color="var(--ex-accent-surface, #fbf6f1)"
               />
             </span>
 

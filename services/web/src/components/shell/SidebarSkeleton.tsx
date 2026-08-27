@@ -27,7 +27,7 @@ export function SidebarSkeleton() {
           <span className={styles.brandName}>
             <Wordmark />
           </span>
-          <Icon name="caret-up-down" size={13} color="var(--ex-slate-500)" />
+          <Icon name="caret-up-down" size={13} color="var(--ex-fg-muted)" />
         </div>
 
         <SidebarNav />

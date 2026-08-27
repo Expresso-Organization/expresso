@@ -19,7 +19,7 @@ export function NothingPublished() {
       <AppHeader title="분석" />
       <AppBody>
         <div className={styles.blank}>
-          <Icon name="chart-line" size={22} color="var(--ex-slate-400)" />
+          <Icon name="chart-line" size={22} color="var(--ex-fg-subtle)" />
           <p className={styles.blankTitle}>아직 배포한 포트폴리오가 없습니다</p>
           <p className={styles.blankBody}>
             방문 기록은 공개된 주소에서만 쌓입니다. 배포하면 그때부터 누가 어디를

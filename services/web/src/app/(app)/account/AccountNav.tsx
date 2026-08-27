@@ -23,7 +23,7 @@ export function AccountNav() {
           <Icon
             name={TAB_ICONS[index] ?? "gear-six"}
             size={14}
-            color={index === 1 ? "var(--ex-ink-900)" : "var(--ex-slate-500)"}
+            color={index === 1 ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
           />
           {tab}
         </button>

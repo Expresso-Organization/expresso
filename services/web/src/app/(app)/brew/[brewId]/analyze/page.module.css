@@ -2,6 +2,8 @@
 
 .body {
   flex: 1;
+  /* 내용이 넓어도 지면 밖으로 밀지 않는다 — flex 항목의 기본 최소 크기는 내용 크기다 */
+  min-width: 0;
   min-height: 0;
   display: flex;
   overflow: hidden;
@@ -26,7 +28,7 @@
 }
 
 .headTitle {
-  font-size: 17px;
+  font-size: var(--ex-text-xl);
   font-weight: 600;
   letter-spacing: -0.03em;
 }
@@ -35,14 +37,14 @@
 .segment {
   margin-left: auto;
   display: flex;
-  background: var(--ex-hairline);
+  background: var(--ex-border-hair);
   border-radius: 9px;
   padding: 3px;
 }
 
 .segmentItem {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   border: none;
   background: none;
   padding: 5px 11px;
@@ -52,8 +54,8 @@
 
 .segmentItemActive {
   font-weight: 600;
-  color: var(--ex-ink-900);
-  background: var(--ex-white);
+  color: var(--ex-fg);
+  background: var(--ex-bg);
   box-shadow: 0 1px 2px rgba(22, 34, 58, 0.07);
 }
 
@@ -65,15 +67,15 @@
   /* 다시 분석이 남기는 말은 아랫줄로 내려간다 — 한 줄에 끼우면 제목이 잘린다. */
   flex-wrap: wrap;
   gap: 11px;
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   border-radius: 11px;
   padding: 13px 16px;
   margin-bottom: 24px;
 }
 
 .sourceTitle {
-  font-size: 12.5px;
-  color: var(--ex-ink-900);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -81,8 +83,8 @@
 
 .sourceMeta {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 
@@ -91,9 +93,9 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   white-space: nowrap;
 }
 
@@ -111,23 +113,23 @@
 }
 
 .blockTitle {
-  font-size: 15px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
 }
 
 .aiTag {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.1em;
-  color: var(--ex-espresso);
-  background: var(--ex-bean-50);
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
   border-radius: 5px;
   padding: 3px 7px;
 }
 
 .summary {
-  font-size: 13.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-md);
+  color: var(--ex-fg-body);
   line-height: 1.95;
   text-wrap: pretty;
 }
@@ -142,8 +144,8 @@
 
 .requirementsNote {
   margin-left: auto;
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
 }
 
 .requirement {
@@ -151,13 +153,13 @@
   align-items: flex-start;
   gap: 14px;
   padding: 14px 0;
-  border-bottom: 1px solid #f4f7fb;
+  border-bottom: 1px solid var(--ex-border-hair);
 }
 
 .requirementNo {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
-  color: var(--ex-espresso);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-accent-text);
   flex-shrink: 0;
   width: 14px;
   padding-top: 2px;
@@ -176,45 +178,45 @@
 }
 
 .requirementLabel {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .requirementMentions {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
 }
 
 /* 커버리지 배지 — 기록 있음 / 보강 필요 / 기록 없음 */
 .coverage {
   margin-left: auto;
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   border-radius: 6px;
   padding: 4px 9px;
   white-space: nowrap;
 }
 
 .coverageHave {
-  color: var(--ex-success-text);
-  background: var(--ex-success-surface);
+  color: var(--ex-status-success-text);
+  background: var(--ex-status-success-surface);
 }
 
 .coverageWeak {
-  color: var(--ex-espresso-text);
-  background: var(--ex-bean-50);
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
 }
 
 .coverageNone {
-  color: var(--ex-slate-500);
-  background: var(--ex-hairline);
+  color: var(--ex-fg-muted);
+  background: var(--ex-border-hair);
 }
 
 .requirementQuote {
-  font-size: 12.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-muted);
   line-height: 1.65;
 }
 
@@ -228,8 +230,8 @@
 }
 
 .readBarText {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   flex: 1;
   line-height: 1.7;
 }
@@ -238,9 +240,9 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   white-space: nowrap;
 }
 
@@ -248,7 +250,7 @@
 .right {
   width: 468px;
   flex-shrink: 0;
-  border-left: 1px solid var(--ex-track);
+  border-left: 1px solid var(--ex-bg-track);
   padding: 26px 30px;
   display: flex;
   flex-direction: column;
@@ -264,30 +266,30 @@
 }
 
 .rightTitle {
-  font-size: 15px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
 }
 
 .rightCount {
   margin-left: auto;
   font-family: var(--ex-font-mono);
-  font-size: 10px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
 }
 
 .rightNote {
   flex-shrink: 0;
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   margin-bottom: 8px;
 }
 
 .quote {
-  font-size: 12.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
   line-height: 1.95;
   padding: 13px 0;
-  border-bottom: 1px solid #f4f7fb;
+  border-bottom: 1px solid var(--ex-border-hair);
 }
 
 .rightSection {
@@ -296,8 +298,8 @@
 }
 
 .rightSectionLabel {
-  font-size: 12px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-muted);
   margin-bottom: 10px;
 }
 
@@ -308,18 +310,18 @@
 }
 
 .phrase {
-  font-size: 12px;
-  color: var(--ex-slate-700);
-  background: var(--ex-surface-50);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
+  background: var(--ex-bg-sunken);
   border-radius: 999px;
   padding: 7px 13px;
   white-space: nowrap;
 }
 
 .phraseMore {
-  font-size: 12px;
-  color: var(--ex-slate-500);
-  border: 1px dashed var(--ex-border-quiet);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-muted);
+  border: 1px dashed var(--ex-border-soft);
   background: none;
   border-radius: 999px;
   padding: 7px 13px;
@@ -338,8 +340,8 @@
 }
 
 .extraLabel {
-  font-size: 12px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -349,8 +351,8 @@
 
 .extraCount {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
   flex-shrink: 0;
 }
 
@@ -360,20 +362,20 @@
   display: flex;
   align-items: flex-start;
   gap: 14px;
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   border-radius: 13px;
   padding: 16px 18px;
 }
 
 .previewTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
   margin-bottom: 5px;
 }
 
 .previewBody {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   line-height: 1.7;
 }
 
@@ -381,7 +383,7 @@
 .footer {
   height: 76px;
   flex-shrink: 0;
-  border-top: 1px solid var(--ex-line-200);
+  border-top: 1px solid var(--ex-border);
   display: flex;
   align-items: center;
   gap: 16px;
@@ -389,8 +391,8 @@
 }
 
 .footerText {
-  font-size: 12.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
 }
 
 .footerActions {
@@ -401,9 +403,9 @@
 }
 
 .ghost {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 500;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   background: transparent;
   border: none;
   padding: 11px 14px;
@@ -411,15 +413,15 @@
 }
 
 .ghost:hover {
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 /* brew CTA — radius full + espresso */
 .brew {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 999px;
   padding: 13px 26px;
@@ -430,25 +432,57 @@
 }
 
 .brew:hover {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
   transform: translateY(-1px);
-  color: var(--ex-white);
+  color: var(--ex-fg-on-accent);
 }
 
 /* 다시 분석이 남긴 말 · 분석 실패 */
 .sourceNotice {
   flex-basis: 100%;
-  font-size: 11px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   line-height: 1.6;
 }
 
 .failure {
-  font-size: 11.5px;
-  color: var(--ex-danger-text);
-  background: var(--ex-danger-surface);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-danger-text);
+  background: var(--ex-status-danger-surface);
   border-radius: 8px;
   padding: 9px 13px;
   line-height: 1.6;
   flex-shrink: 0;
+}
+
+/*
+ * 좁은 화면 — 본문과 "공고에서 읽은 문장"을 위아래로 쌓는다.
+ * 468px을 떼어 주면 원문 쪽이 못 읽는 폭이 된다.
+ */
+@media (max-width: 1023px) {
+  .body {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .left,
+  .right {
+    overflow: visible;
+  }
+
+  .right {
+    width: auto;
+    border-left: none;
+    border-top: 1px solid var(--ex-bg-track);
+  }
+}
+
+@media (max-width: 767px) {
+  .left {
+    padding: 18px 14px;
+  }
+
+  .right {
+    padding: 18px 14px;
+  }
 }

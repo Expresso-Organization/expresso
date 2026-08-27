@@ -22,7 +22,7 @@ const COVERAGE = {
   covered: {
     icon: "check-circle",
     weight: "fill" as const,
-    color: "var(--ex-success-text)",
+    color: "var(--ex-status-success-text)",
     label: "있음",
     row: "",
     note: "",
@@ -30,7 +30,7 @@ const COVERAGE = {
   partial: {
     icon: "warning-circle",
     weight: "fill" as const,
-    color: "var(--ex-warning-text)",
+    color: "var(--ex-status-warning-text)",
     label: "약함",
     row: styles.requirementPartial ?? "",
     note: styles.requirementNotePartial ?? "",
@@ -38,7 +38,7 @@ const COVERAGE = {
   missing: {
     icon: "circle-dashed",
     weight: "regular" as const,
-    color: "var(--ex-danger-text)",
+    color: "var(--ex-status-danger-text)",
     label: "없음",
     row: styles.requirementMissing ?? "",
     note: styles.requirementNoteMissing ?? "",
@@ -99,11 +99,11 @@ export default async function JobDetailPage({
                 name="bookmark-simple"
                 weight={job.interest ? "fill" : "regular"}
                 size={14}
-                color={job.interest ? "var(--ex-espresso)" : "var(--ex-slate-500)"}
+                color={job.interest ? "var(--ex-accent-text)" : "var(--ex-fg-muted)"}
               />
               {job.interest ? "관심 공고" : "관심 공고에 담기"}
             </button>
-            <Icon name="arrow-square-out" size={16} color="var(--ex-slate-500)" />
+            <Icon name="arrow-square-out" size={16} color="var(--ex-fg-muted)" />
           </>
         }
       />
@@ -145,7 +145,7 @@ export default async function JobDetailPage({
                 {rows.map((fact) => (
                   <div key={fact.label} className={styles.fact}>
                     <dt className={styles.factLabel}>
-                      <Icon name={fact.icon} size={14} color="var(--ex-slate-400)" />
+                      <Icon name={fact.icon} size={14} color="var(--ex-fg-subtle)" />
                       {fact.label}
                     </dt>
                     <dd className={styles.factValue}>{fact.value}</dd>
@@ -178,7 +178,7 @@ export default async function JobDetailPage({
                   {job.technologies.map((tool) =>
                     tool.matched === true ? (
                       <span key={tool.name} className={styles.stackHave}>
-                        <Icon name="check" size={11} color="var(--ex-success-text)" />
+                        <Icon name="check" size={11} color="var(--ex-status-success-text)" />
                         {tool.name}
                       </span>
                     ) : (
@@ -260,7 +260,7 @@ export default async function JobDetailPage({
                       </span>
                       {step.label}
                       {index < job.hiringProcess.length - 1 ? (
-                        <Icon name="caret-right" size={10} color="var(--ex-border-strong)" />
+                        <Icon name="caret-right" size={10} color="var(--ex-border-firm)" />
                       ) : null}
                     </span>
                   ))}
@@ -329,13 +329,13 @@ export default async function JobDetailPage({
                 <div className={styles.matchBar}>
                   <span
                     className={styles.matchSlot}
-                    style={{ flex: job.match.covered, background: "var(--ex-success)" }}
+                    style={{ flex: job.match.covered, background: "var(--ex-status-success)" }}
                   />
                   <span
                     className={styles.matchSlot}
                     style={{
                       flex: job.match.required - job.match.covered,
-                      background: "var(--ex-line-200)",
+                      background: "var(--ex-border)",
                     }}
                   />
                 </div>
@@ -435,7 +435,7 @@ function RequirementRow({ requirement }: { requirement: JobRequirement }) {
         name={state?.icon ?? "circle"}
         weight={state?.weight ?? "regular"}
         size={15}
-        color={state?.color ?? "var(--ex-slate-300)"}
+        color={state?.color ?? "var(--ex-fg-faint)"}
         style={{ flexShrink: 0, marginTop: "1px" }}
       />
       <div style={{ flex: 1, minWidth: 0 }}>

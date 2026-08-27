@@ -57,7 +57,16 @@ export function DocumentPanel({
   const quickActions = QUICK_ACTIONS[categoryKey] ?? QUICK_ACTIONS.experience!;
 
   return (
-    <aside className={styles.panel} aria-label="문서 패널">
+    <aside
+      className={styles.panel}
+      aria-label="문서 패널"
+      /*
+       * 넓은 화면에서 이 패널은 늘 자리에 있고 고른 기록이 없으면 빈 상태를
+       * 보여 준다. 좁은 화면에서는 그럴 자리가 없어 **고른 것이 있을 때만**
+       * 전면 시트로 올라온다. 어느 쪽인지는 CSS가 이 표시를 보고 정한다.
+       */
+      data-open={record ? "true" : "false"}
+    >
       <div className={styles.head}>
         <button type="button" className={styles.headAction} aria-label="넓게 보기">
           <Icon name="arrows-out-simple" size={15} />
@@ -87,7 +96,7 @@ export function DocumentPanel({
             <div className={styles.properties}>
               <div className={styles.propertyRow}>
                 <span className={styles.propertyLabel}>
-                  <Icon name="circle-half" size={13} color="var(--ex-slate-500)" />
+                  <Icon name="circle-half" size={13} color="var(--ex-fg-muted)" />
                   <span className={styles.propertyLabelText}>상태</span>
                 </span>
                 <span>
@@ -105,7 +114,7 @@ export function DocumentPanel({
 
               <div className={styles.propertyRow}>
                 <span className={styles.propertyLabel}>
-                  <Icon name="calendar-blank" size={13} color="var(--ex-slate-500)" />
+                  <Icon name="calendar-blank" size={13} color="var(--ex-fg-muted)" />
                   <span className={styles.propertyLabelText}>시기</span>
                 </span>
                 <span className={styles.propertyValue}>
@@ -115,7 +124,7 @@ export function DocumentPanel({
 
               <div className={styles.propertyRow}>
                 <span className={styles.propertyLabel}>
-                  <Icon name="chat-circle-dots" size={13} color="var(--ex-slate-500)" />
+                  <Icon name="chat-circle-dots" size={13} color="var(--ex-fg-muted)" />
                   <span className={styles.propertyLabelText}>출처</span>
                 </span>
                 <span className={styles.propertyValue}>
@@ -125,7 +134,7 @@ export function DocumentPanel({
 
               <div className={styles.propertyRow}>
                 <span className={styles.propertyLabel}>
-                  <Icon name="link-simple" size={13} color="var(--ex-slate-500)" />
+                  <Icon name="link-simple" size={13} color="var(--ex-fg-muted)" />
                   <span className={styles.propertyLabelText}>사용처</span>
                 </span>
                 <span className={styles.propertyValue}>
@@ -137,7 +146,7 @@ export function DocumentPanel({
               {Object.entries(record.properties).map(([key, value]) => (
                 <div key={key} className={styles.propertyRow}>
                   <span className={styles.propertyLabel}>
-                    <Icon name="tag" size={13} color="var(--ex-slate-500)" />
+                    <Icon name="tag" size={13} color="var(--ex-fg-muted)" />
                     <span className={styles.propertyLabelText}>{key}</span>
                   </span>
                   <span>
@@ -158,7 +167,7 @@ export function DocumentPanel({
 
               <div className={styles.propertyRow}>
                 <span className={styles.propertyLabel}>
-                  <Icon name="plus" size={13} color="var(--ex-border-strong)" />
+                  <Icon name="plus" size={13} color="var(--ex-border-firm)" />
                   <span className={styles.propertyLabelText}>속성 추가</span>
                 </span>
                 <span />
@@ -174,7 +183,7 @@ export function DocumentPanel({
                 <MarkdownBody className={styles.blockText}>{record.bodyMd}</MarkdownBody>
               ) : null}
               <div className={styles.placeholder}>
-                <Icon name="plus" size={14} color="var(--ex-border-strong)" />
+                <Icon name="plus" size={14} color="var(--ex-border-firm)" />
                 <span className={styles.placeholderText}>
                   입력하거나 / 를 눌러 명령어를 사용하세요
                 </span>
@@ -197,14 +206,14 @@ export function DocumentPanel({
               ))}
             </div>
             <div className={styles.composer}>
-              <Icon name="coffee" weight="fill" size={14} color="var(--ex-espresso)" />
+              <Icon name="coffee" weight="fill" size={14} color="var(--ex-accent-text)" />
               <input
                 className={styles.composerInput}
                 placeholder="이 문서에 대해 바리스타에게 요청하기"
                 aria-label="바리스타에게 요청"
               />
               <button type="button" className={styles.composerSend} aria-label="보내기">
-                <Icon name="arrow-up" weight="fill" size={12} color="var(--ex-white)" />
+                <Icon name="arrow-up" weight="fill" size={12} color="var(--ex-fg-on-accent)" />
               </button>
             </div>
           </div>

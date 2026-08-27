@@ -1,18 +1,19 @@
 /*
- * 앱 셸 — 화면 정의서의 1440×940 프레임.
+ * 앱 셸.
  *
- * 정의서는 캔버스 위 목업이라 프레임이 고정 크기 + 그림자였습니다. 실제 앱에서는
- * 뷰포트를 채우되 내부 치수(사이드바 250px, 헤더 높이, 패딩)는 정의서 값을
- * 그대로 씁니다 — 구현 명세서 §4.1의 "높이는 뷰포트에 맞추고 폭만 최소 1280px".
+ * 정의서는 1440×940 캔버스 위의 목업이고, 구현 명세서 §4.1은 "폭만 최소
+ * 1280px"이었습니다. 그 하한을 걷어냈습니다 — 13인치 노트북에서도 가로
+ * 스크롤이 났고 폰에서는 아예 못 쓰는 화면이었습니다.
+ *
+ * 이제 규칙은 **모바일 우선**입니다. 조건 없는 규칙이 폰(360px 이상)의
+ * 모습이고, 넓어질수록 정의서의 치수로 되돌아갑니다.
  */
 
 .frame {
   display: flex;
   height: 100dvh;
-  min-width: 1280px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   overflow: hidden;
-  font-size: 13px;
 }
 
 .main {
@@ -22,34 +23,56 @@
   flex-direction: column;
 }
 
-/* 홈(00)의 헤더 — 56px, 흰 지면, 보더 #E2E9F4 */
+/*
+ * 홈(00)의 헤더 — 정의서는 56px 고정이었습니다.
+ *
+ * `min-height`로 바꾼 이유는 글자입니다. 브라우저 글꼴을 크게 쓰는 사람에게
+ * 상자가 따라 커지지 않으면 제목이 잘립니다.
+ */
 .header {
-  height: 56px;
+  min-height: 52px;
   flex-shrink: 0;
-  background: var(--ex-white);
-  border-bottom: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border-bottom: 1px solid var(--ex-border);
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 26px;
+  gap: 10px;
+  padding: 0 14px;
 }
 
 /* 내 커리어(05)의 헤더 — 46px, breadcrumb, 보더 #F2F5F9 */
 .headerDocument {
-  height: 46px;
-  border-bottom: 1px solid var(--ex-hairline);
-  gap: 10px;
-  padding: 0 22px;
+  min-height: 46px;
+  border-bottom: 1px solid var(--ex-border-hair);
+  gap: 8px;
+  padding: 0 12px;
+}
+
+@media (min-width: 768px) {
+  .header {
+    min-height: 56px;
+    gap: 14px;
+    padding: 0 26px;
+  }
+
+  .headerDocument {
+    gap: 10px;
+    padding: 0 22px;
+  }
 }
 
 .title {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .crumb {
-  font-size: 12.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-muted);
 }
 
 /*
@@ -63,18 +86,18 @@
 }
 
 .crumbLink:hover {
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
 .crumbSeparator {
-  font-size: 12.5px;
-  color: var(--ex-border-strong);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-border-firm);
 }
 
 .crumbCurrent {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 500;
 }
 
@@ -99,12 +122,12 @@
   border: none;
   border-radius: 9px;
   background: none;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   transition: background var(--ex-motion-instant);
 }
 
 .iconButton:hover {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
 }
 
 .notificationDot {
@@ -114,8 +137,28 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--ex-espresso);
-  border: 1.5px solid var(--ex-white);
+  background: var(--ex-accent);
+  border: 1.5px solid var(--ex-bg);
+}
+
+/*
+ * 빵부스러기는 좁아지면 **지금 자리만** 남긴다.
+ *
+ * 줄바꿈이나 가로 스크롤로 버티게 하면 헤더 한 줄이 화면의 절반을 먹는다.
+ * 지나온 자리는 뒤로 가기가 알고 있고, 서랍에도 같은 곳이 있다.
+ */
+@media (max-width: 767px) {
+  .crumb,
+  .crumbSeparator {
+    display: none;
+  }
+
+  .crumbCurrent {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .body {

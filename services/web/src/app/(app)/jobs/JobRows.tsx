@@ -10,9 +10,9 @@ import styles from "./page.module.css";
 
 /** 게이지 채움은 점수 구간으로 갈린다 (정의서 00b). */
 function fillColor(score: number): string {
-  if (score >= 90) return "var(--ex-ink-900)";
-  if (score >= 82) return "var(--ex-slate-700)";
-  return "var(--ex-border-strong)";
+  if (score >= 90) return "var(--ex-fg)";
+  if (score >= 82) return "var(--ex-fg-body)";
+  return "var(--ex-border-firm)";
 }
 
 /**
@@ -132,7 +132,7 @@ export function JobRowList({
             name="bookmark-simple"
             weight={job.interest ? "fill" : "regular"}
             size={15}
-            color={job.interest ? "var(--ex-espresso)" : "var(--ex-border-strong)"}
+            color={job.interest ? "var(--ex-accent-text)" : "var(--ex-border-firm)"}
             style={{ flexShrink: 0 }}
           />
         </Link>

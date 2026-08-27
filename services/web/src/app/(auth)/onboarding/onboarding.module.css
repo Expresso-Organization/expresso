@@ -2,27 +2,43 @@
 
 .frame {
   min-height: 100dvh;
-  background: #f4f6fa;
+  background: var(--ex-bg-sunken);
   display: flex;
   flex-direction: column;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
 }
 
 /* 상단 3단계 인디케이터 */
 .head {
-  height: 62px;
+  min-height: 58px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 26px;
+  gap: 10px;
+  padding: 0 14px;
+}
+
+@media (min-width: 768px) {
+  .head {
+    min-height: 62px;
+    gap: 12px;
+    padding: 0 26px;
+  }
 }
 
 .steps {
-  margin-left: 22px;
+  margin-left: 8px;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+}
+
+@media (min-width: 768px) {
+  .steps {
+    margin-left: 22px;
+    gap: 10px;
+  }
 }
 
 .step {
@@ -38,44 +54,44 @@
   display: grid;
   place-items: center;
   font-family: var(--ex-font-mono);
-  font-size: 10px;
-  background: var(--ex-hairline);
-  color: var(--ex-slate-300);
+  font-size: var(--ex-text-2xs);
+  background: var(--ex-border-hair);
+  color: var(--ex-fg-faint);
   border: 1.5px solid transparent;
 }
 
 .stepCurrent .stepMark {
-  background: var(--ex-bean-50);
-  color: var(--ex-espresso);
-  border-color: var(--ex-espresso);
+  background: var(--ex-accent-surface);
+  color: var(--ex-accent-text);
+  border-color: var(--ex-accent);
 }
 
 .stepDone .stepMark {
-  background: var(--ex-bean-50);
-  color: var(--ex-espresso);
+  background: var(--ex-accent-surface);
+  color: var(--ex-accent-text);
   border-color: transparent;
 }
 
 .stepLabel {
-  font-size: 12px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
 
 .stepCurrent .stepLabel,
 .stepDone .stepLabel {
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 .stepCurrent .stepLabel {
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .connector {
   width: 34px;
   height: 1px;
-  background: var(--ex-line-200);
+  background: var(--ex-border);
 }
 
 .skip {
@@ -83,8 +99,8 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 12px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-muted);
 }
 
 .body {
@@ -92,8 +108,14 @@
   min-height: 0;
   display: flex;
   justify-content: center;
-  padding: 10px 26px 26px;
+  padding: 10px 14px 20px;
   overflow: auto;
+}
+
+@media (min-width: 768px) {
+  .body {
+    padding: 10px 26px 26px;
+  }
 }
 
 .panel {
@@ -107,14 +129,14 @@
 
 .stepLabelMono {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.16em;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
   margin-bottom: 12px;
 }
 
 .title {
-  font-size: 30px;
+  font-size: var(--ex-text-4xl);
   font-weight: 600;
   letter-spacing: -0.035em;
   line-height: 1.35;
@@ -122,9 +144,9 @@
 }
 
 .lede {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   line-height: 1.8;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   margin-bottom: 28px;
   max-width: 560px;
 }
@@ -134,9 +156,9 @@
 }
 
 .fieldLabel {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   margin-bottom: 11px;
 }
 
@@ -147,10 +169,10 @@
 }
 
 .chip {
-  font-size: 12.5px;
-  color: var(--ex-slate-700);
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 999px;
   padding: 8px 15px;
   white-space: nowrap;
@@ -160,13 +182,13 @@
 }
 
 .chip:hover {
-  border-color: var(--ex-border-strong);
+  border-color: var(--ex-border-firm);
 }
 
 .chipOn {
-  color: var(--ex-white);
-  background: var(--ex-ink-900);
-  border-color: var(--ex-ink-900);
+  color: var(--ex-fg-on-inverse);
+  background: var(--ex-bg-inverse);
+  border-color: var(--ex-fg);
 }
 
 /* 경력 슬라이더 */
@@ -177,8 +199,8 @@
 }
 
 .sliderEdge {
-  font-size: 11.5px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-subtle);
   white-space: nowrap;
 }
 
@@ -186,7 +208,7 @@
   flex: 1;
   height: 4px;
   border-radius: 999px;
-  background: var(--ex-track);
+  background: var(--ex-bg-track);
   position: relative;
   cursor: pointer;
   /* 손가락으로 끌 때 지면이 같이 스크롤되지 않게 한다. */
@@ -221,7 +243,7 @@
   top: 0;
   bottom: 0;
   border-radius: 999px;
-  background: var(--ex-ink-900);
+  background: var(--ex-bg-inverse);
 }
 
 .sliderKnob {
@@ -231,17 +253,17 @@
   height: 16px;
   margin-left: -8px;
   border-radius: 50%;
-  background: var(--ex-white);
-  border: 1.5px solid var(--ex-ink-900);
+  background: var(--ex-bg);
+  border: 1.5px solid var(--ex-fg);
   box-shadow: 0 1px 3px rgba(22, 34, 58, 0.18);
 }
 
 .sliderValue {
   font-family: var(--ex-font-brand);
   font-weight: 300;
-  font-size: 22px;
+  font-size: var(--ex-text-3xl);
   letter-spacing: -0.02em;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   width: 60px;
   text-align: right;
 }
@@ -258,39 +280,39 @@
   gap: 12px;
   width: 100%;
   padding: 15px 17px;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 13px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   text-align: left;
   transition: border-color var(--ex-motion-quick);
 }
 
 .goal:hover {
-  border-color: var(--ex-border-strong);
+  border-color: var(--ex-border-firm);
 }
 
 .goalOn {
-  border: 1.5px solid var(--ex-espresso);
-  background: #fdf6f1;
+  border: 1.5px solid var(--ex-accent);
+  background: var(--ex-accent-surface);
 }
 
 .goalMark {
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  border: 1.5px solid var(--ex-border-quiet);
+  border: 1.5px solid var(--ex-border-soft);
   flex-shrink: 0;
   margin-top: 2px;
 }
 
 .goalOn .goalMark {
-  border: 4.5px solid var(--ex-espresso);
+  border: 4.5px solid var(--ex-accent);
 }
 
 .goalTitle {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   font-weight: 500;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   margin-bottom: 5px;
 }
 
@@ -299,27 +321,35 @@
 }
 
 .goalNote {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   line-height: 1.65;
 }
 
 /* 하단 액션 바 */
 .foot {
   flex-shrink: 0;
-  height: 76px;
-  border-top: 1px solid var(--ex-line-200);
-  background: var(--ex-white);
+  min-height: 68px;
+  border-top: 1px solid var(--ex-border);
+  background: var(--ex-bg);
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 26px;
+  gap: 10px;
+  padding: 10px 14px;
+}
+
+@media (min-width: 768px) {
+  .foot {
+    min-height: 76px;
+    gap: 14px;
+    padding: 0 26px;
+  }
 }
 
 .footProgress {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
 }
 
 .footRight {
@@ -333,20 +363,20 @@
   border: none;
   background: none;
   padding: 11px 14px;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 500;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .ghost:hover {
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .primary {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 999px;
   padding: 13px 26px;
@@ -357,9 +387,9 @@
 }
 
 .primary:hover:not(:disabled) {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
   transform: translateY(-1px);
-  color: var(--ex-white);
+  color: var(--ex-fg-on-accent);
 }
 
 /* 저장하는 동안. 두 번 눌러 두 번 보내지 않게 한다. */
@@ -372,11 +402,11 @@
 .formError {
   margin-bottom: 14px;
   padding: 11px 14px;
-  border: 1px solid var(--ex-danger);
+  border: 1px solid var(--ex-status-danger);
   border-radius: 10px;
-  background: var(--ex-danger-surface);
-  font-size: 12.5px;
-  color: var(--ex-danger-text);
+  background: var(--ex-status-danger-surface);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-status-danger-text);
 }
 
 /* ── 10d 재료 채우기 ──────────────────────────────────────── */
@@ -390,9 +420,9 @@
 
 .dropZone {
   grid-column: 1 / -1;
-  border: 1px dashed var(--ex-border-strong);
+  border: 1px dashed var(--ex-border-firm);
   border-radius: 14px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   padding: 26px;
   display: flex;
   flex-direction: column;
@@ -402,14 +432,14 @@
 }
 
 .dropTitle {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .dropNote {
-  font-size: 11.5px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-subtle);
 }
 
 .uploaded {
@@ -418,20 +448,20 @@
   gap: 10px;
   margin-top: 14px;
   padding: 10px 13px;
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   border-radius: 10px;
   width: 100%;
   max-width: 360px;
 }
 
 .uploadedName {
-  font-size: 12.5px;
-  color: var(--ex-ink-900);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg);
 }
 
 .uploadedMeta {
-  font-size: 10.5px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
   margin-top: 3px;
 }
 
@@ -440,39 +470,39 @@
   align-items: center;
   gap: 11px;
   padding: 14px 16px;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 13px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   text-align: left;
 }
 
 .importTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .importNote {
-  font-size: 11px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   margin-top: 4px;
 }
 
 .importState {
   margin-left: auto;
-  font-size: 11px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-subtle);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .importAction {
   margin-left: auto;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   background: none;
-  border: 1px solid var(--ex-border-quiet);
+  border: 1px solid var(--ex-border-soft);
   border-radius: 8px;
   padding: 7px 12px;
   white-space: nowrap;
@@ -483,8 +513,8 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-subtle);
   margin-bottom: 26px;
 }
 
@@ -496,14 +526,14 @@
 }
 
 .splitTitle {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
 }
 
 .splitCount {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
-  color: var(--ex-espresso);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-accent-text);
 }
 
 .splitClear {
@@ -511,13 +541,13 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
 }
 
 .splitList {
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 13px;
   overflow: hidden;
   margin-bottom: 12px;
@@ -530,7 +560,7 @@
   width: 100%;
   padding: 11px 15px;
   border: none;
-  border-bottom: 1px solid var(--ex-hairline);
+  border-bottom: 1px solid var(--ex-border-hair);
   background: none;
   text-align: left;
 }
@@ -543,16 +573,16 @@
   width: 15px;
   height: 15px;
   border-radius: 4px;
-  background: var(--ex-ink-900);
+  background: var(--ex-bg-inverse);
   display: grid;
   place-items: center;
   flex-shrink: 0;
 }
 
 .splitCategory {
-  font-size: 10.5px;
-  color: var(--ex-slate-700);
-  background: var(--ex-line-inner);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-body);
+  background: var(--ex-border-inner);
   border-radius: 5px;
   padding: 3px 8px;
   white-space: nowrap;
@@ -562,8 +592,8 @@
 }
 
 .splitName {
-  font-size: 12.5px;
-  color: var(--ex-ink-900);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg);
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -573,8 +603,8 @@
 
 .splitPeriod {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -584,19 +614,19 @@
   align-items: center;
   gap: 8px;
   padding: 12px 15px;
-  background: var(--ex-bean-50);
+  background: var(--ex-accent-surface);
   border-radius: 11px;
-  font-size: 11.5px;
-  color: var(--ex-bean-ink);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-accent-ink);
   line-height: 1.65;
 }
 
 /* ── 10e 첫 포트폴리오 ────────────────────────────────────── */
 
 .readyTitle {
-  font-size: 15px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
   margin-bottom: 8px;
 }
 
@@ -612,9 +642,9 @@
   gap: 14px;
   width: 100%;
   padding: 16px 18px;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 14px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   text-align: left;
   transition:
     border-color var(--ex-motion-quick),
@@ -622,43 +652,43 @@
 }
 
 .jobCard:hover {
-  border-color: var(--ex-border-strong);
+  border-color: var(--ex-border-firm);
   transform: translateY(-2px);
 }
 
 .jobCardOn {
-  border: 1.5px solid var(--ex-espresso);
-  background: #fdf6f1;
+  border: 1.5px solid var(--ex-accent);
+  background: var(--ex-accent-surface);
 }
 
 .jobAvatar {
   width: 34px;
   height: 34px;
   border-radius: 9px;
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   display: grid;
   place-items: center;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   flex-shrink: 0;
 }
 
 .jobCompany {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .jobRole {
-  font-size: 12px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-muted);
   margin-top: 3px;
 }
 
 .jobReason {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   margin-top: 6px;
 }
 
@@ -670,29 +700,29 @@
 .jobScore {
   font-family: var(--ex-font-brand);
   font-weight: 300;
-  font-size: 28px;
+  font-size: var(--ex-text-4xl);
   line-height: 1;
   letter-spacing: -0.03em;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .jobScoreLabel {
-  font-size: 10.5px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
   margin-top: 5px;
 }
 
 .timeNote {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   margin-bottom: 26px;
 }
 
 .nextLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.16em;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   margin-bottom: 14px;
 }
 
@@ -705,28 +735,28 @@
 
 .nextCard {
   padding: 15px 17px;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 13px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
 }
 
 .nextNo {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
-  color: var(--ex-espresso);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-accent-text);
   margin-bottom: 7px;
 }
 
 .nextTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   margin-bottom: 5px;
 }
 
 .nextNote {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   line-height: 1.65;
 }
 
@@ -735,30 +765,30 @@
   align-items: center;
   gap: 14px;
   padding: 15px 17px;
-  border: 1px dashed var(--ex-border-strong);
+  border: 1px dashed var(--ex-border-firm);
   border-radius: 13px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
 }
 
 .altTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .altNote {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   margin-top: 4px;
 }
 
 .altAction {
   margin-left: auto;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
-  color: var(--ex-slate-700);
-  background: var(--ex-white);
-  border: 1px solid var(--ex-border-quiet);
+  color: var(--ex-fg-body);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border-soft);
   border-radius: 9px;
   padding: 8px 14px;
   white-space: nowrap;
@@ -777,19 +807,19 @@
   display: flex;
   gap: 13px;
   padding: 16px 18px;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 14px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   cursor: pointer;
 }
 
 .consentCard:hover {
-  border-color: var(--ex-espresso);
+  border-color: var(--ex-accent);
 }
 
 .consentCard:has(.consentBox:checked) {
-  border-color: var(--ex-espresso);
-  background: var(--ex-bean-50);
+  border-color: var(--ex-accent);
+  background: var(--ex-accent-surface);
 }
 
 .consentBox {
@@ -797,7 +827,7 @@
   height: 17px;
   margin-top: 2px;
   flex-shrink: 0;
-  accent-color: var(--ex-espresso);
+  accent-color: var(--ex-accent);
 }
 
 .consentBody {
@@ -810,46 +840,46 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 14.5px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
 /* 무엇이 나가는지 — 이 줄이 가장 중요하다. */
 .consentWhat {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   line-height: 1.65;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .consentWhy {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.6;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .consentOn,
 .consentOff,
 .consentRenew {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   padding: 2px 7px;
   border-radius: 999px;
 }
 
 .consentOn {
-  background: var(--ex-bean-50);
-  color: var(--ex-espresso);
+  background: var(--ex-accent-surface);
+  color: var(--ex-accent-text);
 }
 
 .consentOff {
-  background: var(--ex-line-100, #eef1f6);
-  color: var(--ex-slate-500);
+  background: var(--ex-line-100, var(--ex-border-inner));
+  color: var(--ex-fg-muted);
 }
 
 .consentRenew {
-  background: var(--ex-espresso);
-  color: var(--ex-white);
+  background: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
 }
 
 .consentFoot {
@@ -857,13 +887,52 @@
   align-items: flex-start;
   gap: 7px;
   margin-top: 18px;
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.7;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .privacyLink {
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+/* 좁은 화면 — 두 칸으로 나뉜 고르개가 한 줄에 하나씩 */
+@media (max-width: 767px) {
+  .importGrid,
+  .nextGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/*
+ * 좁은 화면의 단계 표시.
+ *
+ * 네 단계에 이름을 다 붙이면 431px이라 360px 지면 밖으로 나간다. 지금 단계의
+ * 이름만 남기고 나머지는 동그라미로 둔다 — 몇 번째인지는 하단의 "3 / 4"가
+ * 다시 말해 준다.
+ */
+@media (max-width: 767px) {
+  .step:not(.stepCurrent) .stepLabel {
+    display: none;
+  }
+
+  .connector {
+    width: 12px;
+  }
+
+  .stepCurrent .stepLabel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* 더 좁아지면 워드마크까지 물러난다 — 마크만으로도 어느 제품인지 안다 */
+@media (max-width: 479px) {
+  .head > :nth-child(2) {
+    display: none;
+  }
 }

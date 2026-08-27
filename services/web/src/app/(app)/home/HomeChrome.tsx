@@ -48,7 +48,7 @@ export function HomeSearch() {
   return (
     <>
       <form className={styles.searchBar} action="/jobs">
-        <Icon name="sparkle" size={18} color="var(--ex-espresso)" />
+        <Icon name="sparkle" size={18} color="var(--ex-accent-text)" />
         <input
           name="q"
           className={styles.searchInput}
@@ -73,7 +73,7 @@ export function HomeSearch() {
           </Link>
         ))}
         <button type="button" className={styles.savedSearches}>
-          <Icon name="bell-simple" size={14} color="var(--ex-slate-500)" />
+          <Icon name="bell-simple" size={14} color="var(--ex-fg-muted)" />
           저장한 검색
         </button>
       </div>

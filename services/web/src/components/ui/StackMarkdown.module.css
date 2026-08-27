@@ -17,10 +17,10 @@
    */
   margin: 0;
   padding: 0 6px 0 5px;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 5px;
-  background: var(--ex-surface-50);
-  color: var(--ex-ink-900);
+  background: var(--ex-bg-sunken);
+  color: var(--ex-fg);
   font-size: 0.94em;
   font-weight: 500;
   line-height: 1.55;

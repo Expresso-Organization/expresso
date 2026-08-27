@@ -175,6 +175,15 @@ export function Editor({
     : "아직 주소가 없습니다";
   const attention = generatedPage?.qaReport.checks.find(({ status }) => status === "fail");
 
+  /*
+   * 좁은 화면에서 지금 보고 있는 칸.
+   *
+   * 1280 이상에서는 56 · 244 · 가변 · 320 네 열이 다 선다. 그보다 좁으면 셋을
+   * 겹쳐 두고 하나씩 본다 — 지면(canvas)이 기본이고 아래 전환 막대로 섹션과
+   * 편집 패널을 불러온다. 넓은 화면에서는 이 값이 아무 일도 하지 않는다.
+   */
+  const [pane, setPane] = useState<"canvas" | "sections" | "panel">("canvas");
+
   return (
     <div className={styles.frame}>
       <nav className={styles.rail} aria-label="주요 이동">
@@ -192,14 +201,14 @@ export function Editor({
               name={item.icon}
               weight={item.active ? "fill" : "regular"}
               size={17}
-              color={item.active ? "var(--ex-ink-900)" : "var(--ex-slate-500)"}
+              color={item.active ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
             />
             {item.dot ? <span className={styles.railDot} /> : null}
           </Link>
         ))}
         <div className={styles.railFoot}>
           <button type="button" className={styles.railButton} aria-label="도움말">
-            <Icon name="question" size={17} color="var(--ex-slate-500)" />
+            <Icon name="question" size={17} color="var(--ex-fg-muted)" />
           </button>
           <span className={styles.railAvatar}>{displayName.slice(0, 1)}</span>
         </div>
@@ -245,10 +254,10 @@ export function Editor({
                 aria-pressed="true"
                 className={`${styles.viewportButton} ${styles.viewportButtonActive}`}
               >
-                <Icon name="desktop" size={15} color="var(--ex-ink-900)" />
+                <Icon name="desktop" size={15} color="var(--ex-fg)" />
               </button>
               <button type="button" aria-label="모바일" className={styles.viewportButton}>
-                <Icon name="device-mobile" size={15} color="var(--ex-slate-500)" />
+                <Icon name="device-mobile" size={15} color="var(--ex-fg-muted)" />
               </button>
             </div>
             <span className={styles.toolbarRule} />
@@ -293,7 +302,7 @@ export function Editor({
           </div>
         </div>
 
-        <div className={styles.stage}>
+        <div className={styles.stage} data-pane={pane}>
           <aside className={styles.sections} aria-label="섹션">
             <div className={styles.sectionsHead}>
               <span className={styles.sectionsLabel}>{generatedPage ? "구성" : "섹션"}</span>
@@ -371,7 +380,7 @@ export function Editor({
                     <Icon
                       name={section.visible ? "eye" : "eye-slash"}
                       size={13}
-                      color={section.visible ? "var(--ex-border-strong)" : "var(--ex-slate-400)"}
+                      color={section.visible ? "var(--ex-border-firm)" : "var(--ex-fg-subtle)"}
                     />
                   </button> : null}
                 </div>
@@ -386,7 +395,7 @@ export function Editor({
             <div className={styles.suggestion}>
               <div className={styles.suggestionCard}>
                 <div className={styles.suggestionHead}>
-                  <Icon name="lightbulb" size={14} color="var(--ex-espresso)" />
+                  <Icon name="lightbulb" size={14} color="var(--ex-accent-text)" />
                   <span className={styles.suggestionTitle}>한 가지 제안</span>
                 </div>
                 <div className={styles.suggestionBody}>
@@ -405,17 +414,17 @@ export function Editor({
 
             <div className={styles.sectionsFoot}>
               <button type="button" className={styles.footRow}>
-                <Icon name="palette" size={14} color="var(--ex-slate-500)" />
+                <Icon name="palette" size={14} color="var(--ex-fg-muted)" />
                 <span className={styles.footLabel}>테마 · 글꼴</span>
                 <span className={styles.footSwatch} />
               </button>
               <button type="button" className={styles.footRow}>
-                <Icon name="ruler" size={14} color="var(--ex-slate-500)" />
+                <Icon name="ruler" size={14} color="var(--ex-fg-muted)" />
                 <span className={styles.footLabel}>간격 · 여백 기준</span>
                 <span className={styles.footValue}>보통</span>
               </button>
               <button type="button" className={styles.footRow}>
-                <Icon name="code-simple" size={14} color="var(--ex-slate-500)" />
+                <Icon name="code-simple" size={14} color="var(--ex-fg-muted)" />
                 <span className={styles.footLabel}>HTML 직접 보기</span>
               </button>
             </div>
@@ -525,7 +534,7 @@ export function Editor({
                 ) : chosen ? (
                   <>
                     <span className={styles.crumb}>{chosen.sectionTitle}</span>
-                    <Icon name="caret-right" size={9} color="var(--ex-border-strong)" />
+                    <Icon name="caret-right" size={9} color="var(--ex-border-firm)" />
                     <span className={`${styles.crumb} ${styles.crumbCurrent}`}>
                       {chosen.path.split(" › ")[1]} {BLOCK_LABEL[chosen.block.kind] ?? "블록"}
                     </span>
@@ -543,7 +552,7 @@ export function Editor({
                   disabled={!chosen || chosen.index === 0 || blockPending}
                   onClick={() => chosen && moveBlock(chosen, -1)}
                 >
-                  <Icon name="arrow-up" size={13} color="var(--ex-slate-500)" />
+                  <Icon name="arrow-up" size={13} color="var(--ex-fg-muted)" />
                 </button>
                 <button
                   type="button"
@@ -552,7 +561,7 @@ export function Editor({
                   disabled={!chosen || chosen.index === chosen.siblings.length - 1 || blockPending}
                   onClick={() => chosen && moveBlock(chosen, 1)}
                 >
-                  <Icon name="arrow-down" size={13} color="var(--ex-slate-500)" />
+                  <Icon name="arrow-down" size={13} color="var(--ex-fg-muted)" />
                 </button>
                 <button
                   type="button"
@@ -561,7 +570,7 @@ export function Editor({
                   disabled={!chosen || blockPending}
                   onClick={() => chosen && duplicateBlock(chosen.block.id)}
                 >
-                  <Icon name="copy" size={13} color="var(--ex-slate-500)" />
+                  <Icon name="copy" size={13} color="var(--ex-fg-muted)" />
                 </button>
                 <button
                   type="button"
@@ -570,7 +579,7 @@ export function Editor({
                   disabled={!chosen || blockPending}
                   onClick={() => chosen && deleteBlock(chosen.block.id)}
                 >
-                  <Icon name="trash" size={13} color="var(--ex-slate-500)" />
+                  <Icon name="trash" size={13} color="var(--ex-fg-muted)" />
                 </button>
                 {blockResult.error || styleResult.error ? (
                   <span className={styles.statusError}>
@@ -604,11 +613,11 @@ export function Editor({
               <span className={styles.statusRule} />
               <div className={styles.zoom}>
                 <button type="button" className={styles.iconAction} aria-label="축소">
-                  <Icon name="minus" size={12} color="var(--ex-slate-500)" />
+                  <Icon name="minus" size={12} color="var(--ex-fg-muted)" />
                 </button>
                 <span className={styles.zoomValue}>72%</span>
                 <button type="button" className={styles.iconAction} aria-label="확대">
-                  <Icon name="plus" size={12} color="var(--ex-slate-500)" />
+                  <Icon name="plus" size={12} color="var(--ex-fg-muted)" />
                 </button>
               </div>
             </div>
@@ -689,10 +698,37 @@ export function Editor({
             ) : null}
           </aside>
         </div>
+
+        {/* 좁은 화면에서만 뜨는 칸 전환. 넓어지면 CSS가 감춘다. */}
+        <div className={styles.paneSwitch} role="tablist" aria-label="편집 화면 전환">
+          {PANES.map((one) => (
+            <button
+              key={one.key}
+              type="button"
+              role="tab"
+              aria-selected={pane === one.key}
+              className={`${styles.paneTab} ${pane === one.key ? styles.paneTabOn : ""}`}
+              onClick={() => setPane(one.key)}
+            >
+              <Icon
+                name={one.icon}
+                size={16}
+                color={pane === one.key ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
+              />
+              {one.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
+
+const PANES = [
+  { key: "sections" as const, label: "섹션", icon: "list-bullets" },
+  { key: "canvas" as const, label: "지면", icon: "browser" },
+  { key: "panel" as const, label: "편집", icon: "sliders-horizontal" },
+];
 
 function generationSummary(page: GeneratedPage): string {
   const usage = page.generationManifest?.usage;

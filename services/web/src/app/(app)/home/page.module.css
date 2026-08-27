@@ -4,7 +4,7 @@
   flex: 1;
   min-width: 0;
   overflow: auto;
-  padding: 26px 26px 20px;
+  padding: 18px 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -15,8 +15,8 @@
   display: flex;
   align-items: center;
   gap: 13px;
-  background: var(--ex-white);
-  border: 1px solid #dcc5b8;
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-accent-surface-hover);
   border-radius: 999px;
   padding: 8px 8px 8px 22px;
   flex-shrink: 0;
@@ -27,7 +27,7 @@
 }
 
 .searchBar:focus-within {
-  border-color: var(--ex-espresso);
+  border-color: var(--ex-accent);
   box-shadow: 0 0 0 3px rgba(154, 64, 48, 0.09);
 }
 
@@ -37,29 +37,29 @@
   border: none;
   outline: none;
   background: none;
-  font-size: 15.5px;
-  color: var(--ex-ink-900);
+  font-size: var(--ex-text-lg);
+  color: var(--ex-fg);
 }
 
 .searchInput::placeholder {
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
 }
 
 .searchShortcut {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
-  color: var(--ex-slate-400);
-  background: var(--ex-surface-50);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
+  background: var(--ex-bg-sunken);
   border-radius: 6px;
   padding: 5px 9px;
   flex-shrink: 0;
 }
 
 .searchSubmit {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 999px;
   padding: 10px 18px;
@@ -69,7 +69,7 @@
 }
 
 .searchSubmit:hover {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
 }
 
 /* 예시 칩 줄 */
@@ -78,19 +78,21 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  /* 예시 질문이 여럿이라 좁은 지면에서는 다음 줄로 넘어가야 한다 */
+  flex-wrap: wrap;
 }
 
 .examplesLabel {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   margin-right: 2px;
 }
 
 .exampleChip {
-  font-size: 12px;
-  color: var(--ex-slate-700);
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 999px;
   padding: 7px 13px;
   white-space: nowrap;
@@ -98,7 +100,7 @@
 }
 
 .exampleChip:hover {
-  border-color: var(--ex-border-strong);
+  border-color: var(--ex-border-firm);
 }
 
 .savedSearches {
@@ -106,8 +108,8 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
   border: none;
   background: none;
   padding: 0;
@@ -122,8 +124,8 @@
 }
 
 .card {
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 16px;
   overflow: hidden;
 }
@@ -133,25 +135,25 @@
   align-items: center;
   gap: 14px;
   padding: 14px 20px;
-  border-bottom: 1px solid var(--ex-line-inner);
+  border-bottom: 1px solid var(--ex-border-inner);
 }
 
 .cardTitle {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .segment {
   display: flex;
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   border-radius: 8px;
   padding: 2px;
 }
 
 .segmentItem {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   border: none;
   background: none;
   border-radius: 6px;
@@ -160,20 +162,20 @@
 
 .segmentItemActive {
   font-weight: 600;
-  color: var(--ex-ink-900);
-  background: var(--ex-white);
+  color: var(--ex-fg);
+  background: var(--ex-bg);
 }
 
 .cardNote {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 
 .cardLink {
   margin-left: auto;
-  font-size: 11.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
   white-space: nowrap;
 }
 
@@ -183,12 +185,12 @@
   align-items: flex-start;
   gap: 13px;
   padding: 13px 20px;
-  border-bottom: 1px solid var(--ex-line-inner);
+  border-bottom: 1px solid var(--ex-border-inner);
   transition: background var(--ex-motion-instant);
 }
 
 .jobRow:hover {
-  background: var(--ex-row-hover);
+  background: var(--ex-bg-hover);
 }
 
 .jobRow:last-child {
@@ -202,7 +204,7 @@
   display: grid;
   place-items: center;
   font-family: var(--ex-font-brand);
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 500;
   flex-shrink: 0;
   margin-top: 2px;
@@ -222,7 +224,7 @@
 }
 
 .jobName {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -231,26 +233,26 @@
 
 .jobScore {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   flex-shrink: 0;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 .jobScoreHigh {
-  color: var(--ex-success-text);
+  color: var(--ex-status-success-text);
 }
 
 .jobDeadline {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
   margin-left: auto;
   flex-shrink: 0;
 }
 
 .jobReason {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   margin-top: 5px;
   white-space: nowrap;
   overflow: hidden;
@@ -258,10 +260,10 @@
 }
 
 .jobCta {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 8px;
   padding: 9px 14px;
@@ -271,18 +273,18 @@
 }
 
 .jobCta:hover {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
 }
 
 .jobCtaQuiet {
-  color: var(--ex-slate-700);
-  background: var(--ex-white);
-  border: 1px solid var(--ex-border-quiet);
+  color: var(--ex-fg-body);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border-soft);
 }
 
 .jobCtaQuiet:hover {
-  background: var(--ex-white);
-  border-color: var(--ex-border-strong);
+  background: var(--ex-bg);
+  border-color: var(--ex-border-firm);
 }
 
 /* 사이드 카드 열 */
@@ -293,8 +295,8 @@
 }
 
 .plainCard {
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 16px;
   padding: 17px 20px;
 }
@@ -311,11 +313,11 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--ex-bean-50);
+  background: var(--ex-accent-surface);
   border-radius: 6px;
   padding: 4px 9px;
-  font-size: 11px;
-  color: var(--ex-espresso-text);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-accent-text);
   white-space: nowrap;
 }
 
@@ -323,26 +325,26 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
 }
 
 .draftDeadline {
   margin-left: auto;
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
-  color: var(--ex-danger-text);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-status-danger-text);
 }
 
 .draftTitle {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
   letter-spacing: -0.02em;
   margin-bottom: 5px;
 }
 
 .draftMeta {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   margin-bottom: 12px;
 }
 
@@ -356,29 +358,29 @@
 .draftTrack {
   flex: 1;
   height: 5px;
-  background: var(--ex-surface-100);
+  background: var(--ex-bg-muted);
   border-radius: 999px;
   overflow: hidden;
 }
 
 .draftFill {
   height: 100%;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
   border-radius: 999px;
 }
 
 .draftCount {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-body);
 }
 
 .draftCta {
   width: 100%;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 9px;
   padding: 11px;
@@ -388,7 +390,7 @@
 }
 
 .draftCta:hover {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
   transform: translateY(-1px);
 }
 
@@ -401,7 +403,7 @@
 }
 
 .savedTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
 }
 
@@ -417,8 +419,8 @@
 }
 
 .savedName {
-  font-size: 11.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -428,13 +430,13 @@
 
 .savedCount {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
-  color: var(--ex-espresso);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-accent-text);
 }
 
 .savedFoot {
-  font-size: 11px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-subtle);
   margin-top: 11px;
   line-height: 1.65;
 }
@@ -448,19 +450,19 @@
 }
 
 .sectionTitle {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
 }
 
 .sectionNote {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
 }
 
 .sectionLink {
   margin-left: auto;
-  font-size: 12px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
 }
 
 .portfolioGrid {
@@ -470,9 +472,9 @@
 }
 
 .newPortfolio {
-  border: 1px dashed var(--ex-border-strong);
+  border: 1px dashed var(--ex-border-firm);
   border-radius: 14px;
-  background: var(--ex-row-hover);
+  background: var(--ex-bg-hover);
   display: flex;
   align-items: center;
   gap: 16px;
@@ -484,15 +486,15 @@
 }
 
 .newPortfolio:hover {
-  border-color: var(--ex-espresso);
-  background: #fdf8f5;
+  border-color: var(--ex-accent);
+  background: var(--ex-accent-surface);
 }
 
 .newPortfolioIcon {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--ex-bean-50);
+  background: var(--ex-accent-surface);
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -500,24 +502,24 @@
 
 .newPortfolioTitle {
   display: block;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   margin-bottom: 6px;
 }
 
 .newPortfolioBody {
   display: block;
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   line-height: 1.65;
 }
 
 /* 영역 5 — 사이트 성과 스트립 */
 .performance {
   flex-shrink: 0;
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 16px;
   padding: 18px 24px;
   display: flex;
@@ -541,19 +543,19 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   border: none;
   border-radius: 6px;
   padding: 3px 8px;
-  font-size: 10.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-body);
   white-space: nowrap;
 }
 
 .performanceRule {
   width: 1px;
   align-self: stretch;
-  background: var(--ex-line-inner);
+  background: var(--ex-border-inner);
   flex-shrink: 0;
 }
 
@@ -563,8 +565,8 @@
 }
 
 .metricLabel {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   margin-bottom: 7px;
   white-space: nowrap;
 }
@@ -578,19 +580,19 @@
 .metricValue {
   font-family: var(--ex-font-brand);
   font-weight: 300;
-  font-size: 22px;
+  font-size: var(--ex-text-3xl);
   line-height: 1;
   letter-spacing: -0.02em;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .metricValueSignature {
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
 }
 
 .metricDelta {
-  font-size: 11px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 
@@ -607,25 +609,25 @@
 }
 
 .baristaText {
-  font-size: 11.5px;
-  color: var(--ex-espresso-text);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-accent-text);
   flex: 1;
   min-width: 0;
   line-height: 1.6;
 }
 
 .baristaLink {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 /* 기록 0건 빈 상태 (§09) */
 .firstRun {
   flex-shrink: 0;
-  border: 1px dashed var(--ex-border-strong);
+  border: 1px dashed var(--ex-border-firm);
   border-radius: 16px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   padding: 34px;
   display: flex;
   flex-direction: column;
@@ -634,23 +636,23 @@
 }
 
 .firstRunTitle {
-  font-size: 17px;
+  font-size: var(--ex-text-xl);
   font-weight: 600;
   letter-spacing: -0.015em;
 }
 
 .firstRunBody {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   line-height: 1.75;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .firstRunCta {
   margin-top: 6px;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 999px;
   padding: 12px 24px;
@@ -661,7 +663,7 @@
 }
 
 .firstRunCta:hover {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
 }
 
 /* 카테고리 요약 그리드 */
@@ -677,9 +679,9 @@
   align-items: center;
   gap: 10px;
   padding: 15px 17px;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 14px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   transition:
     box-shadow 0.2s ease,
     transform 0.2s ease;
@@ -694,16 +696,16 @@
   width: 30px;
   height: 30px;
   border-radius: 8px;
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   display: grid;
   place-items: center;
   flex-shrink: 0;
 }
 
 .categoryCardName {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -714,8 +716,38 @@
 .categoryCardCount {
   font-family: var(--ex-font-brand);
   font-weight: 300;
-  font-size: 22px;
+  font-size: var(--ex-text-3xl);
   line-height: 1;
   letter-spacing: -0.02em;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
+}
+
+/* 좁은 화면에서 바리스타 읽기는 폭을 고집하지 않는다 */
+@media (max-width: 1023px) {
+  .baristaRead {
+    width: auto;
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+}
+
+/* 좁은 화면 — 나란히 선 카드들이 한 줄에 하나씩 */
+@media (max-width: 1023px) {
+  .midRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .portfolioGrid,
+  .categoryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 넓어지면 정의서의 여백으로 돌아간다 */
+@media (min-width: 768px) {
+  .content {
+    padding: 26px 26px 20px;
+  }
 }

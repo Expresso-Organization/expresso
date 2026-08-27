@@ -1,18 +1,26 @@
 /*
  * 위저드 셸 — 화면 정의서 01–03의 제작 헤더와 스텝 인디케이터.
- * 앱 셸 위에 56px 두 줄이 더해진다.
+ * 넓은 화면에서는 정의서대로 56px 두 줄, 좁아지면 한 줄로 접힌다.
  */
 
 /* ① 제작 헤더 */
 .buildHeader {
-  height: 56px;
+  min-height: 52px;
   flex-shrink: 0;
-  background: var(--ex-white);
-  border-bottom: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border-bottom: 1px solid var(--ex-border);
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 26px;
+  gap: 10px;
+  padding: 0 14px;
+}
+
+@media (min-width: 768px) {
+  .buildHeader {
+    min-height: 56px;
+    gap: 12px;
+    padding: 0 26px;
+  }
 }
 
 .back {
@@ -21,11 +29,11 @@
   padding: 0;
   display: grid;
   place-items: center;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .buildLabel {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   font-weight: 600;
 }
 
@@ -34,15 +42,15 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   border: none;
   border-radius: 8px;
   padding: 5px 10px;
 }
 
 .titleChipText {
-  font-size: 12px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
 }
 
 .buildRight {
@@ -56,26 +64,67 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
 }
 
 .headerRule {
   width: 1px;
   height: 18px;
-  background: var(--ex-track);
+  background: var(--ex-bg-track);
 }
 
 /* ② 스텝 인디케이터 */
 .steps {
-  height: 56px;
+  min-height: 46px;
   flex-shrink: 0;
-  background: var(--ex-white);
-  border-bottom: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border-bottom: 1px solid var(--ex-border);
   display: flex;
   align-items: center;
-  padding: 0 26px;
-  gap: 4px;
+  padding: 0 14px;
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .steps {
+    min-height: 56px;
+    padding: 0 26px;
+    gap: 4px;
+  }
+}
+
+/* 좁은 화면의 축약 표시 — 진행 막대 + "03 / 06" */
+.compact {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.compactTrack {
+  flex: 1;
+  min-width: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--ex-bg-track);
+  overflow: hidden;
+}
+
+.compactFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ex-accent);
+  transition: width var(--ex-motion-panel);
+}
+
+.compactCount {
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
 }
 
 .step {
@@ -94,71 +143,123 @@
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  border: 1px solid var(--ex-border-quiet);
+  border: 1px solid var(--ex-border-soft);
 }
 
 .stepNumber {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-subtle);
 }
 
 .stepLabel {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 500;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 현재 단계 — espresso 원에 흰 숫자 */
 .stepCurrent .stepMark {
-  background: var(--ex-espresso);
-  border-color: var(--ex-espresso);
+  background: var(--ex-accent);
+  border-color: var(--ex-accent);
 }
 
 .stepCurrent .stepNumber {
-  color: var(--ex-white);
+  color: var(--ex-fg-on-accent);
 }
 
 .stepCurrent .stepLabel {
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 /* 완료 단계 — bean-50 원에 espresso 체크 (정의서 04) */
 .stepDone .stepMark {
-  background: var(--ex-bean-50);
-  border-color: var(--ex-bean-50);
+  background: var(--ex-accent-surface);
+  border-color: var(--ex-accent-surface);
 }
 
 .stepDone .stepLabel {
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 .connector {
   flex: 1;
   height: 1px;
-  background: var(--ex-track);
+  background: var(--ex-bg-track);
   margin: 0 11px;
   min-width: 20px;
 }
 
 .situation {
   margin-left: 20px;
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 
 /* 본문 — 화면마다 배경이 다르다 (01은 흰 지면, 02·02b는 surface-50) */
 .stage {
   flex: 1;
+  /* 내용이 넓어도 지면 밖으로 밀지 않는다 — flex 항목의 기본 최소 크기는 내용 크기다 */
+  min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: var(--ex-white);
+  background: var(--ex-bg);
 }
 
 .stageTinted {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
+}
+
+/*
+ * 좁은 화면 — 여섯 단계 대신 지금 단계 하나와 진행 막대만 남긴다.
+ *
+ * 지나온 단계로 되돌아가는 길은 여기서 사라지지만, 뒤로 가기가 그 일을 하고
+ * 다 늘어놓으면 어차피 글자가 겹쳐 아무 것도 읽히지 않는다.
+ */
+/*
+ * 상황 문구("남은 질문 2개")는 여섯 단계와 나란히 서려면 1024px이 필요하다.
+ * 그 아래에서는 단계 표시가 먼저다 — 문구는 본문이 다시 말해 준다.
+ */
+@media (max-width: 1023px) {
+  .situation {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .step:not(.stepCurrent),
+  .connector,
+  .buildLabel,
+  .headerRule {
+    display: none;
+  }
+
+  .saveState {
+    /* 아이콘만 남긴다 — "자동 저장됨"까지 넣을 자리가 없다 */
+    font-size: 0;
+    gap: 0;
+  }
+
+  .titleChip {
+    min-width: 0;
+  }
+
+  .titleChipText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* 넓어지면 축약 표시가 물러난다 */
+@media (min-width: 768px) {
+  .compact {
+    display: none;
+  }
 }

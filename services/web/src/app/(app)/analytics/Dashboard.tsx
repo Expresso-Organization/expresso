@@ -71,7 +71,7 @@ const SPANS: { value: 3 | 4 | 8 | 12; label: string }[] = [
 ];
 
 /** 도넛은 4구간 무채색 단계 (§5.4). */
-const DONUT_SHADES = ["#16223A", "#5A6B87", "#93A2BA", "#C7D2E2", "#E3E9F2"];
+const DONUT_SHADES = ["var(--ex-fg)", "var(--ex-fg-muted)", "var(--ex-fg-subtle)", "var(--ex-border-firm)", "var(--ex-border)"];
 
 function formatCount(value: number): string {
   return value.toLocaleString("ko-KR");
@@ -374,7 +374,7 @@ export function Dashboard({
           {/* §2.1의 `?edit=1`로 바로 들어오면 아직 굳지 않은 기본 지면 위에 서 있다. */}
           {editing && !dashboard.customized ? (
             <div className={styles.notice}>
-              <Icon name="info" size={12} color="var(--ex-slate-500)" />
+              <Icon name="info" size={12} color="var(--ex-fg-muted)" />
               <span className={styles.noticeText}>
                 지금 보고 계신 것은 <b>기본 지면</b>입니다. 옮기거나 고치려면 먼저 내 것으로
                 가져와야 합니다 — 라이브러리에서 지표를 하나 놓아도 같이 가져옵니다.
@@ -696,7 +696,7 @@ function Trend({ trend }: { trend: AnalyticsDashboard["trend"] }) {
             <polyline
               points={polyline(trend)}
               fill="none"
-              stroke="#16223A"
+              stroke="var(--ex-fg)"
               strokeWidth="2"
               strokeLinejoin="round"
               strokeLinecap="round"
@@ -782,7 +782,7 @@ function Aggregate({
     <form action={submit} className={styles.notice}>
       <input type="hidden" name="portfolioId" value={portfolioId} />
       <input type="hidden" name="period" value={preset} />
-      <Icon name="info" size={12} color="var(--ex-slate-500)" />
+      <Icon name="info" size={12} color="var(--ex-fg-muted)" />
       <span className={styles.noticeText}>
         {result.error
           ? result.error
@@ -817,7 +817,7 @@ function BaristaRead({
   return (
     <>
       <div className={styles.baristaHead}>
-        <Icon name="coffee" weight="fill" size={14} color="var(--ex-espresso)" />
+        <Icon name="coffee" weight="fill" size={14} color="var(--ex-accent-text)" />
         <span className={styles.baristaLabel}>BARISTA&apos;S READ</span>
       </div>
 
@@ -1044,7 +1044,7 @@ function MetricLibrary({
       </div>
       <div className={styles.drawerBody}>
         <div className={styles.drawerSearch}>
-          <Icon name="magnifying-glass" size={14} color="var(--ex-slate-500)" />
+          <Icon name="magnifying-glass" size={14} color="var(--ex-fg-muted)" />
           <input
             className={styles.drawerSearchInput}
             placeholder="지표 이름으로 찾기"
@@ -1176,7 +1176,7 @@ function WidgetSettings({
                 <Icon
                   name={VISUALIZATION_LABEL[option].icon}
                   size={15}
-                  color={option === widget.visualization ? "var(--ex-ink-900)" : "var(--ex-slate-500)"}
+                  color={option === widget.visualization ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
                 />
                 <span className={styles.vizLabel}>{VISUALIZATION_LABEL[option].label}</span>
               </WidgetForm>

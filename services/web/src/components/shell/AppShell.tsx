@@ -4,6 +4,12 @@ import type { ReactNode } from "react";
 
 import { CommandPalette } from "@/components/CommandPalette";
 
+import {
+  ShellNavDrawer,
+  ShellNavProvider,
+  ShellNavTrigger,
+  ShellTabBar,
+} from "./ShellNav";
 import { Skel } from "./Skeleton";
 import styles from "./AppShell.module.css";
 
@@ -13,6 +19,9 @@ import styles from "./AppShell.module.css";
  * 헤더는 여기 없다. 화면마다 제목·breadcrumb·마법사 단계로 달라지고, 같은
  * 화면 안에서도 상태에 따라 바뀌기 때문이다. 레이아웃은 자식에게 데이터를
  * 넘길 수 없으므로 헤더는 화면이 `AppBody` 앞에 직접 놓는다.
+ *
+ * 좁은 화면에서는 사이드바가 서랍으로 물러나고 아래에 탭바가 붙는다. 무엇이
+ * 언제 나오는지는 `ShellNav`가 안다.
  */
 export function AppShell({
   sidebar,
@@ -22,12 +31,17 @@ export function AppShell({
   children: ReactNode;
 }) {
   return (
-    <div className={styles.frame}>
-      {sidebar}
-      <main className={styles.main}>{children}</main>
-      {/* 00c — ⌘K 검색과 알림은 어느 앱 화면에서든 열린다 */}
-      <CommandPalette />
-    </div>
+    <ShellNavProvider>
+      <div className={styles.frame}>
+        <ShellNavDrawer>{sidebar}</ShellNavDrawer>
+        <main className={styles.main}>
+          {children}
+          <ShellTabBar />
+        </main>
+        {/* 00c — ⌘K 검색과 알림은 어느 앱 화면에서든 열린다 */}
+        <CommandPalette />
+      </div>
+    </ShellNavProvider>
   );
 }
 
@@ -46,6 +60,7 @@ export function AppHeader({
 }) {
   return (
     <div className={styles.header}>
+      <ShellNavTrigger />
       <span className={styles.title}>{title}</span>
       {actions ? <div className={styles.headerActions}>{actions}</div> : null}
     </div>
@@ -74,6 +89,7 @@ export function DocumentHeader({
 }) {
   return (
     <div className={`${styles.header} ${styles.headerDocument}`}>
+      <ShellNavTrigger />
       {crumbs.map((crumb, index) => {
         const last = index === crumbs.length - 1;
         const label = crumb === null || typeof crumb === "string" ? crumb : crumb.label;

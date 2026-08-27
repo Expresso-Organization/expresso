@@ -6,8 +6,8 @@
 .sidebar {
   width: 250px;
   flex-shrink: 0;
-  background: var(--ex-chrome-50);
-  border-right: 1px solid var(--ex-chrome-border);
+  background: var(--ex-bg-chrome);
+  border-right: 1px solid var(--ex-border-chrome);
   padding: 14px 10px;
   display: flex;
   flex-direction: column;
@@ -49,34 +49,34 @@
 }
 
 .primaryItem:hover {
-  background: #f2f5f9;
+  background: var(--ex-bg-tint);
 }
 
 .primaryLabel {
-  font-size: 12.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
   flex: 1;
 }
 
 .primaryItemActive {
-  background: var(--ex-tint-50);
+  background: var(--ex-bg-tint);
 }
 
 .primaryItemActive .primaryLabel {
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .shortcut {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-subtle);
 }
 
 .primaryCount {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-muted);
 }
 
 /* 그룹 라벨 */
@@ -93,9 +93,9 @@
 
 .groupLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.12em;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .groupActions {
@@ -106,8 +106,8 @@
 
 .groupCount {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-muted);
 }
 
 .groupAction {
@@ -116,7 +116,7 @@
   padding: 0;
   display: grid;
   place-items: center;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 /* 내 포트폴리오 */
@@ -136,7 +136,7 @@
 }
 
 .portfolioItem:hover {
-  background: #f2f5f9;
+  background: var(--ex-bg-tint);
 }
 
 /* 미리보기 썸네일 — 사선 줄무늬 위에 상태 점 */
@@ -147,10 +147,10 @@
   border-radius: 4px;
   background: repeating-linear-gradient(
     135deg,
-    #fff 0 5px,
-    var(--ex-track) 5px 10px
+    var(--ex-bg) 0 5px,
+    var(--ex-bg-track) 5px 10px
   );
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   flex-shrink: 0;
 }
 
@@ -161,15 +161,15 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  border: 2px solid var(--ex-chrome-50);
+  border: 2px solid var(--ex-bg-chrome);
 }
 
 .thumbDotPublished {
-  background: var(--ex-success);
+  background: var(--ex-status-success);
 }
 
 .thumbDotDraft {
-  background: var(--ex-crema);
+  background: var(--ex-accent-soft);
 }
 
 .portfolioBody {
@@ -178,8 +178,8 @@
 }
 
 .portfolioName {
-  font-size: 12.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -187,8 +187,8 @@
 
 .portfolioMeta {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -202,25 +202,25 @@
 
 .portfolioVisits {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
-  color: var(--ex-ink-900);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg);
 }
 
 .portfolioDelta {
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   margin-top: 2px;
-  color: var(--ex-success-text);
+  color: var(--ex-status-success-text);
 }
 
 .portfolioDeltaQuiet {
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .draftChip {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
-  color: var(--ex-espresso-text);
-  background: var(--ex-bean-50);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
   border-radius: 4px;
   padding: 3px 6px;
   flex-shrink: 0;
@@ -243,26 +243,26 @@
 }
 
 .interestItem:hover {
-  background: #f2f5f9;
+  background: var(--ex-bg-tint);
 }
 
 .initial {
   width: 18px;
   height: 18px;
   border-radius: 5px;
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   display: grid;
   place-items: center;
   font-family: var(--ex-font-brand);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   font-weight: 500;
   flex-shrink: 0;
 }
 
 .interestName {
-  font-size: 12.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -271,20 +271,20 @@
 
 .score {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
 }
 
 .scoreHigh {
-  color: var(--ex-success-text);
+  color: var(--ex-status-success-text);
 }
 
 .scoreMid {
-  color: var(--ex-warning-text);
+  color: var(--ex-status-warning-text);
 }
 
 .pending {
-  font-size: 10.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 
@@ -305,17 +305,17 @@
 }
 
 .categoryItem:hover {
-  background: #f2f5f9;
+  background: var(--ex-bg-tint);
 }
 
 .categoryItemActive,
 .categoryItemActive:hover {
-  background: var(--ex-tint-50);
+  background: var(--ex-bg-tint);
 }
 
 .categoryName {
-  font-size: 12.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -324,13 +324,13 @@
 
 .categoryItemActive .categoryName {
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .categoryCount {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-muted);
 }
 
 .addCategory {
@@ -344,12 +344,12 @@
 }
 
 .addCategory:hover {
-  background: #f2f5f9;
+  background: var(--ex-bg-tint);
 }
 
 .addCategoryLabel {
-  font-size: 12.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-muted);
 }
 
 /* 푸터 — 항상 하단 고정 */
@@ -360,8 +360,8 @@
 }
 
 .quotaCard {
-  background: var(--ex-white);
-  border: 1px solid var(--ex-chrome-border);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border-chrome);
   border-radius: 10px;
   padding: 12px;
   margin-bottom: 10px;
@@ -375,19 +375,19 @@
 }
 
 .quotaLabel {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
 }
 
 .quotaValue {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
-  color: var(--ex-espresso);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-accent-text);
 }
 
 .quotaTrack {
   height: 4px;
-  background: var(--ex-track);
+  background: var(--ex-bg-track);
   border-radius: 999px;
   overflow: hidden;
   margin-bottom: 9px;
@@ -395,14 +395,14 @@
 
 .quotaFill {
   height: 100%;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
   border-radius: 999px;
 }
 
 .upgradeLink {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
 }
 
 .user {
@@ -416,18 +416,18 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: var(--ex-tint-100);
+  background: var(--ex-bg-tint-strong);
   display: grid;
   place-items: center;
-  font-size: 10.5px;
+  font-size: var(--ex-text-2xs);
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   flex-shrink: 0;
 }
 
 .userName {
-  font-size: 12.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -441,5 +441,5 @@
   padding: 0;
   display: grid;
   place-items: center;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }

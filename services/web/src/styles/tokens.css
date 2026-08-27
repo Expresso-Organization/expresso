@@ -1,16 +1,29 @@
 /*
  * Expresso 디자인 토큰.
  *
- * 값의 출처는 두 곳이고 우선순위가 있습니다 — 구현 명세서 §3이 기준표이고,
- * 화면 정의서(`docs/Expresso Screens.dc.html`)가 실제 사용값입니다.
- * 둘이 어긋나면 **화면 정의서가 기준**입니다(구현 명세서 마지막 줄).
- * 그래서 여기에는 명세서 표에 없지만 화면이 실제로 쓰는 색도 함께 둡니다.
+ * 값의 출처는 구현 명세서 §3과 화면 정의서(`docs/Expresso Screens.dc.html`)이고,
+ * 둘이 어긋나면 화면 정의서가 기준입니다. 타입 스케일 · 브레이크포인트 ·
+ * 다크 팔레트는 `docs/Expresso Design System.dc.html`에 새로 넣은 절에서
+ * 옵니다.
  *
  * 여기에 없는 값을 새로 만들지 않습니다.
+ *
+ * 색은 두 층입니다.
+ *
+ * - **팔레트**는 값을 서술하는 이름입니다(`--ex-white`). 테마와 무관합니다.
+ * - **역할**은 쓰임을 서술하는 이름입니다(`--ex-bg`). 테마마다 값이 다릅니다.
+ *
+ * **화면 CSS는 역할 층만 씁니다.** 팔레트를 직접 쓰면 다크에서 이름이
+ * 거짓말을 합니다 — `--ex-white`가 검정이 되는 식입니다. 정적 가드
+ * (`tokens.test.ts`)가 직접 사용을 막습니다.
+ *
+ * **테마를 타지 않아야 하는 지면**은 그 자리에 `data-theme`을 박아 고정합니다.
+ * 로그인 좌측 패널은 늘 어둡고(`dark`), 공개 포트폴리오는 늘 밝습니다
+ * (`light`). 고정해 두면 그 안쪽은 여느 자리와 똑같이 역할 토큰만 쓰면 됩니다.
  */
 
 :root {
-  /* 색 — 시스템(무채색) */
+  /* ── 팔레트 · 무채색 ─────────────────────────────────────── */
   --ex-ink-900: #16223a;
   --ex-ink-900-hover: #0b1220;
   --ex-slate-700: #35455f;
@@ -41,7 +54,7 @@
   --ex-on-dark-body: #9fb0c9;
   --ex-on-dark-muted: #7c8ba5;
 
-  /* 색 — 시그니처와 상태 */
+  /* ── 팔레트 · 시그니처와 상태 ────────────────────────────── */
   --ex-espresso: #9a4030;
   --ex-espresso-hover: #7e3225;
   --ex-espresso-text: #7e3225;
@@ -59,33 +72,284 @@
   --ex-danger-surface: #fef5f3;
   --ex-danger-surface-deep: #fceeea; /* 06b "없음" 요건 행 */
 
-  /* 타이포그래피 — 3서체 고정 */
-  --ex-font-ui: "Pretendard Variable", Pretendard, -apple-system,
-    BlinkMacSystemFont, system-ui, sans-serif;
-  --ex-font-brand: "Outfit", var(--ex-font-ui);
-  --ex-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
-    monospace;
+  color-scheme: light;
 
-  /* 깊이 */
-  --ex-elevation-raised: 0 2px 10px rgba(22, 34, 58, 0.05);
-  --ex-elevation-overlay: 0 18px 44px rgba(22, 34, 58, 0.11);
-  --ex-elevation-card-hover: 0 14px 32px rgba(22, 34, 58, 0.1);
-  --ex-elevation-frame: 0 22px 54px rgba(22, 34, 58, 0.13);
-  --ex-focus-ring: 0 0 0 3px rgba(22, 34, 58, 0.18);
-
-  /* 모션 */
-  --ex-motion-instant: 140ms ease;
-  --ex-motion-quick: 160ms ease;
-  --ex-motion-panel: 280ms cubic-bezier(0.32, 0.72, 0, 1);
-  --ex-motion-spring: 200ms cubic-bezier(0.34, 1.4, 0.64, 1);
-
-  /* 셸 치수 — 기준 캔버스 1440×940 */
+  /* ── 셸 치수 ─────────────────────────────────────────────── */
   --ex-sidebar-width: 250px;
   --ex-rail-width: 316px;
   --ex-doc-panel-width: 452px;
   --ex-editor-rail-width: 56px;
   --ex-editor-sections-width: 244px;
   --ex-editor-panel-width: 320px;
+  --ex-tabbar-height: 56px; /* `<md` 하단 탭바 */
+
+  /*
+   * 중단점.
+   *
+   * CSS 사용자 정의 속성은 `@media`에서 쓸 수 없습니다. 미디어 쿼리에는 숫자를
+   * 그대로 적고, 같은 경계를 `matchMedia`로 보는 자바스크립트가 이 값을
+   * 씁니다. 둘이 갈리지 않게 `tokens.test.ts`가 미디어 쿼리의 숫자를 이 표와
+   * 대조합니다. 하한은 360px이고 규칙은 모바일 우선입니다.
+   */
+  --ex-bp-sm: 480px; /* 큰 폰 */
+  --ex-bp-md: 768px; /* 태블릿 세로 */
+  --ex-bp-lg: 1024px; /* 태블릿 가로 · 작은 노트북 */
+  --ex-bp-xl: 1280px; /* 데스크톱 — 화면 정의서의 지면 */
+}
+
+/*
+ * 역할 토큰 — 밝은 지면.
+ *
+ * 선택자가 `:root`만이 아닌 이유는 **지면 일부만 밝게 고정**할 자리가 있기
+ * 때문입니다. 공개 포트폴리오(`/site/[slug]`)는 방문자가 볼 지면을 그대로
+ * 보여주는 곳이라 앱이 어두워졌다고 함께 어두워지면 안 됩니다.
+ */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* ── 역할 · 지면 ─────────────────────────────────────────── */
+  --ex-bg-canvas: var(--ex-canvas); /* 앱 바깥 지면 */
+  --ex-bg: var(--ex-white); /* 기본 지면 */
+  --ex-bg-sunken: var(--ex-surface-50); /* 한 겹 내려간 지면 */
+  --ex-bg-muted: var(--ex-surface-100); /* 눌린 지면 · 비활성 */
+  --ex-bg-tint: var(--ex-tint-50); /* 옅은 채움 */
+  --ex-bg-tint-strong: var(--ex-tint-100);
+  --ex-bg-hover: var(--ex-row-hover); /* 행 호버 */
+  --ex-bg-header: var(--ex-table-header); /* 표 헤더 */
+  --ex-bg-chrome: var(--ex-chrome-50); /* 브라우저 크롬 목업 */
+  --ex-bg-track: var(--ex-track); /* 게이지 트랙 */
+  --ex-bg-form: var(--ex-form-surface); /* 로그인 · 가입 폼 지면 */
+  --ex-bg-inverse: var(--ex-ink-900); /* 어두운 지면 */
+  --ex-bg-inverse-hover: var(--ex-ink-900-hover);
+
+  /* ── 역할 · 글자 ─────────────────────────────────────────── */
+  --ex-fg: var(--ex-ink-900);
+  --ex-fg-strong: var(--ex-ink-900-hover);
+  --ex-fg-body: var(--ex-slate-700);
+  --ex-fg-muted: var(--ex-slate-500);
+  --ex-fg-subtle: var(--ex-slate-400);
+  --ex-fg-faint: var(--ex-slate-300);
+  --ex-fg-on-inverse: var(--ex-white); /* --ex-bg-inverse 위의 글자 */
+  --ex-fg-on-accent: var(--ex-white); /* 에스프레소 지면 위 글자 */
+
+  /* ── 역할 · 선 ───────────────────────────────────────────── */
+  --ex-border: var(--ex-line-200);
+  --ex-border-inner: var(--ex-line-inner);
+  --ex-border-hair: var(--ex-hairline);
+  --ex-border-firm: var(--ex-border-strong);
+  --ex-border-soft: var(--ex-border-quiet);
+  --ex-border-chrome: var(--ex-chrome-border);
+
+  /* ── 역할 · 시그니처 ─────────────────────────────────────── */
+  --ex-accent: var(--ex-espresso); /* 지면 · 선으로서의 에스프레소 */
+  --ex-accent-hover: var(--ex-espresso-hover);
+  --ex-accent-text: var(--ex-espresso-text); /* 밝은 지면 위 글자 */
+  --ex-accent-surface: var(--ex-bean-50);
+  --ex-accent-surface-hover: var(--ex-bean-100);
+  --ex-accent-ink: var(--ex-bean-ink); /* bean 지면 위 글자 */
+  --ex-accent-soft: var(--ex-crema);
+
+  /* ── 역할 · 상태 ─────────────────────────────────────────── */
+  --ex-status-success: var(--ex-success);
+  --ex-status-success-text: var(--ex-success-text);
+  --ex-status-success-surface: var(--ex-success-surface);
+  --ex-status-warning-text: var(--ex-warning-text);
+  --ex-status-warning-surface: var(--ex-warning-surface);
+  --ex-status-danger: var(--ex-danger);
+  --ex-status-danger-text: var(--ex-danger-text);
+  --ex-status-danger-surface: var(--ex-danger-surface);
+  --ex-status-danger-surface-deep: var(--ex-danger-surface-deep);
+
+  /* ── 깊이 — 어두운 지면에서는 값이 달라진다 ──────────────── */
+  --ex-elevation-raised: 0 2px 10px rgba(22, 34, 58, 0.05);
+  --ex-elevation-overlay: 0 18px 44px rgba(22, 34, 58, 0.11);
+  --ex-elevation-card-hover: 0 14px 32px rgba(22, 34, 58, 0.1);
+  --ex-elevation-frame: 0 22px 54px rgba(22, 34, 58, 0.13);
+  --ex-focus-ring: 0 0 0 3px rgba(22, 34, 58, 0.18);
+}
+
+/* 테마를 타지 않는 것들 — 서체 · 글자 크기 · 모션. */
+:root {
+  /* ── 타이포그래피 · 3서체 고정 ───────────────────────────── */
+  --ex-font-ui: "Pretendard Variable", Pretendard, -apple-system,
+    BlinkMacSystemFont, system-ui, sans-serif;
+  --ex-font-brand: "Outfit", var(--ex-font-ui);
+  --ex-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+    monospace;
+
+  /*
+   * 글자 크기.
+   *
+   * 루트가 16px이고 단위가 `rem`이라 브라우저 글꼴 크기 설정을 따라갑니다.
+   * 작은 쪽을 많이 올리고 큰 쪽은 거의 두는 압축 스케일입니다 — 제목까지
+   * 같은 비율로 키우면 화면 밀도가 무너집니다.
+   */
+  --ex-text-3xs: 0.6875rem; /* 11px — 배지 · 미세 캡션 */
+  --ex-text-2xs: 0.75rem; /* 12px — 캡션 · 메타 */
+  --ex-text-xs: 0.8125rem; /* 13px — 본문 */
+  --ex-text-sm: 0.875rem; /* 14px — 강조 본문 · 라벨 */
+  --ex-text-md: 0.9375rem; /* 15px — 소제목 */
+  --ex-text-lg: 1rem; /* 16px — 카드 제목 */
+  --ex-text-xl: 1.125rem; /* 18px — 섹션 제목 */
+  --ex-text-2xl: 1.25rem; /* 20px */
+  --ex-text-3xl: 1.5rem; /* 24px — 화면 제목 */
+  --ex-text-4xl: 1.875rem; /* 30px */
+  --ex-text-display-sm: 2.25rem; /* 36px */
+  --ex-text-display-md: 2.75rem; /* 44px */
+  --ex-text-display-lg: 4.125rem; /* 66px — 캐치프레이즈 */
+
+  /*
+   * 글줄 사이.
+   *
+   * 지금 화면들이 쓰는 18종은 문맥마다 고른 것이라 그대로 둡니다. 이 토큰은
+   * **앞으로 쓰는 자리**의 기준입니다.
+   */
+  --ex-leading-none: 1;
+  --ex-leading-tight: 1.3;
+  --ex-leading-snug: 1.45;
+  --ex-leading-normal: 1.6;
+  --ex-leading-relaxed: 1.75;
+
+  /* ── 모션 ────────────────────────────────────────────────── */
+  --ex-motion-instant: 140ms ease;
+  --ex-motion-quick: 160ms ease;
+  --ex-motion-panel: 280ms cubic-bezier(0.32, 0.72, 0, 1);
+  --ex-motion-spring: 200ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+/*
+ * 어두운 지면.
+ *
+ * 팔레트는 그대로 두고 **역할 토큰의 값만** 바꿉니다. 화면 CSS가 역할 층만
+ * 쓰므로 여기 한 곳이 전부입니다.
+ *
+ * 지면은 **중성 진회색**입니다. 색기가 있는 어두운 지면은 오래 보면 눈에
+ * 걸리고, 시그니처(에스프레소)와도 겨룹니다. 채도는 액센트와 상태색에만
+ * 남깁니다 — 디자인 시스템 §01 RULE 01과 같은 이야기입니다.
+ *
+ * 규칙이 두 벌인 이유는 진입이 둘이기 때문입니다. `data-theme`이 없으면 OS
+ * 설정을 따르고, 있으면 그 선택이 이깁니다. 두 벌의 값은 같아야 하고
+ * `tokens.test.ts`가 대조합니다.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --ex-bg-canvas: #0d0d0f;
+    --ex-bg: #171719;
+    --ex-bg-sunken: #101012;
+    --ex-bg-muted: #232326;
+    --ex-bg-tint: #1e1e21;
+    --ex-bg-tint-strong: #2a2a2e;
+    --ex-bg-hover: #1c1c1f;
+    --ex-bg-header: #1b1b1e;
+    --ex-bg-chrome: #19191b;
+    --ex-bg-track: #2a2a2e;
+    --ex-bg-form: #151517;
+    --ex-bg-inverse: #ececed;
+    --ex-bg-inverse-hover: #ffffff;
+
+    --ex-fg: #ededee;
+    --ex-fg-strong: #ffffff;
+    --ex-fg-body: #c9c9cc;
+    --ex-fg-muted: #9d9da3;
+    --ex-fg-subtle: #77777d;
+    --ex-fg-faint: #5b5b61;
+    --ex-fg-on-inverse: #17171a;
+    --ex-fg-on-accent: #ffffff;
+
+    --ex-border: #2e2e32;
+    --ex-border-inner: #232326;
+    --ex-border-hair: #202023;
+    --ex-border-firm: #45454b;
+    --ex-border-soft: #333338;
+    --ex-border-chrome: #292a2d;
+
+    --ex-accent: #b04a37;
+    --ex-accent-hover: #c2543f;
+    --ex-accent-text: #e0937f;
+    --ex-accent-surface: #2c1a15;
+    --ex-accent-surface-hover: #3a221b;
+    --ex-accent-ink: #f0cdbb;
+    --ex-accent-soft: #c99a6d;
+
+    --ex-status-success: #2fb98a;
+    --ex-status-success-text: #46d39f;
+    --ex-status-success-surface: #10291f;
+    --ex-status-warning-text: #d9a441;
+    --ex-status-warning-surface: #2b2312;
+    --ex-status-danger: #e8654c;
+    --ex-status-danger-text: #f08a75;
+    --ex-status-danger-surface: #2c1714;
+    --ex-status-danger-surface-deep: #381c17;
+
+    /* 어두운 지면에서는 그림자가 보이지 않는다 — 훨씬 진하게 */
+    --ex-elevation-raised: 0 2px 10px rgba(0, 0, 0, 0.4);
+    --ex-elevation-overlay: 0 18px 44px rgba(0, 0, 0, 0.55);
+    --ex-elevation-card-hover: 0 14px 32px rgba(0, 0, 0, 0.5);
+    --ex-elevation-frame: 0 22px 54px rgba(0, 0, 0, 0.6);
+    --ex-focus-ring: 0 0 0 3px rgba(222, 222, 226, 0.3);
+  }
+}
+
+/* 손으로 어둡게 고른 사람 · 어둡게 고정한 지면. */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --ex-bg-canvas: #0d0d0f;
+  --ex-bg: #171719;
+  --ex-bg-sunken: #101012;
+  --ex-bg-muted: #232326;
+  --ex-bg-tint: #1e1e21;
+  --ex-bg-tint-strong: #2a2a2e;
+  --ex-bg-hover: #1c1c1f;
+  --ex-bg-header: #1b1b1e;
+  --ex-bg-chrome: #19191b;
+  --ex-bg-track: #2a2a2e;
+  --ex-bg-form: #151517;
+  --ex-bg-inverse: #ececed;
+  --ex-bg-inverse-hover: #ffffff;
+
+  --ex-fg: #ededee;
+  --ex-fg-strong: #ffffff;
+  --ex-fg-body: #c9c9cc;
+  --ex-fg-muted: #9d9da3;
+  --ex-fg-subtle: #77777d;
+  --ex-fg-faint: #5b5b61;
+  --ex-fg-on-inverse: #17171a;
+  --ex-fg-on-accent: #ffffff;
+
+  --ex-border: #2e2e32;
+  --ex-border-inner: #232326;
+  --ex-border-hair: #202023;
+  --ex-border-firm: #45454b;
+  --ex-border-soft: #333338;
+  --ex-border-chrome: #292a2d;
+
+  --ex-accent: #b04a37;
+  --ex-accent-hover: #c2543f;
+  --ex-accent-text: #e0937f;
+  --ex-accent-surface: #2c1a15;
+  --ex-accent-surface-hover: #3a221b;
+  --ex-accent-ink: #f0cdbb;
+  --ex-accent-soft: #c99a6d;
+
+  --ex-status-success: #2fb98a;
+  --ex-status-success-text: #46d39f;
+  --ex-status-success-surface: #10291f;
+  --ex-status-warning-text: #d9a441;
+  --ex-status-warning-surface: #2b2312;
+  --ex-status-danger: #e8654c;
+  --ex-status-danger-text: #f08a75;
+  --ex-status-danger-surface: #2c1714;
+  --ex-status-danger-surface-deep: #381c17;
+
+  --ex-elevation-raised: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --ex-elevation-overlay: 0 18px 44px rgba(0, 0, 0, 0.55);
+  --ex-elevation-card-hover: 0 14px 32px rgba(0, 0, 0, 0.5);
+  --ex-elevation-frame: 0 22px 54px rgba(0, 0, 0, 0.6);
+  --ex-focus-ring: 0 0 0 3px rgba(222, 222, 226, 0.3);
 }
 
 /* §12 모션 감소 */

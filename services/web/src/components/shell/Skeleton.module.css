@@ -9,9 +9,9 @@
 .bar {
   background: linear-gradient(
     90deg,
-    var(--ex-line-inner) 0%,
-    var(--ex-line-200) 50%,
-    var(--ex-line-inner) 100%
+    var(--ex-border-inner) 0%,
+    var(--ex-border) 50%,
+    var(--ex-border-inner) 100%
   );
   background-size: 280px 100%;
   flex: none;
@@ -19,6 +19,6 @@
 
 /* 카드·패널의 테두리까지 닮아야 하는 자리 — 안쪽을 비우고 선만 남긴다. */
 .frame {
-  border: 1px solid var(--ex-line-200);
-  background: var(--ex-white);
+  border: 1px solid var(--ex-border);
+  background: var(--ex-bg);
 }

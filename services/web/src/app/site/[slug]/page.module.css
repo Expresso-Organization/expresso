@@ -6,7 +6,7 @@
 
 .page {
   min-height: 100dvh;
-  background: var(--ex-canvas);
+  background: var(--ex-bg-canvas);
 }
 
 .publicDocument {
@@ -14,7 +14,7 @@
   width: 100%;
   min-height: 100dvh;
   border: 0;
-  background: var(--ex-white);
+  background: var(--ex-bg);
 }
 
 /* 소유자 바 */
@@ -27,19 +27,19 @@
   gap: 12px;
   height: 48px;
   padding: 0 22px;
-  background: var(--ex-ink-900);
-  color: var(--ex-white);
+  background: var(--ex-bg-inverse);
+  color: var(--ex-fg-on-inverse);
 }
 
 .ownerLabel {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
 }
 
 .ownerMeta {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
-  color: #8fa0bf;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-subtle);
 }
 
 .ownerActions {
@@ -50,9 +50,9 @@
 }
 
 .ownerGhost {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
-  color: var(--ex-white);
+  color: var(--ex-fg-on-accent);
   background: none;
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 8px;
@@ -61,10 +61,10 @@
 }
 
 .ownerPrimary {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 8px;
   padding: 7px 13px;
@@ -81,9 +81,9 @@
 
 .sectionLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.16em;
-  color: var(--ex-slate-400);
+  color: var(--ex-fg-subtle);
   align-self: flex-start;
   max-width: 1000px;
   width: 100%;
@@ -107,10 +107,10 @@
 }
 
 .siteName {
-  font-size: 15px;
+  font-size: var(--ex-text-lg);
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .siteMenu {
@@ -120,7 +120,7 @@
 }
 
 .siteMenuItem {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   color: #6b6558;
 }
 
@@ -130,24 +130,24 @@
 
 .eyebrow {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   letter-spacing: 0.18em;
   color: #ff6f0f;
   margin-bottom: 14px;
 }
 
 .headline {
-  font-size: 40px;
+  font-size: var(--ex-text-display-md);
   font-weight: 700;
   letter-spacing: -0.05em;
   line-height: 1.18;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   margin-bottom: 18px;
   max-width: 620px;
 }
 
 .lede {
-  font-size: 14px;
+  font-size: var(--ex-text-lg);
   line-height: 1.9;
   color: #5c574c;
   max-width: 620px;
@@ -160,14 +160,14 @@
 }
 
 .metricValue {
-  font-size: 26px;
+  font-size: var(--ex-text-4xl);
   font-weight: 700;
   letter-spacing: -0.04em;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .metricLabel {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: #8a8377;
   margin-top: 6px;
 }
@@ -178,7 +178,7 @@
 
 .worksLabel {
   font-family: var(--ex-font-mono);
-  font-size: 10px;
+  font-size: var(--ex-text-2xs);
   letter-spacing: 0.18em;
   color: #a39b8c;
   margin-bottom: 18px;
@@ -197,21 +197,21 @@
 }
 
 .workTitle {
-  font-size: 17px;
+  font-size: var(--ex-text-xl);
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .workYear {
   margin-left: auto;
   font-family: var(--ex-font-mono);
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   color: #a39b8c;
 }
 
 .workBody {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   line-height: 1.85;
   color: #5c574c;
   max-width: 620px;
@@ -229,7 +229,7 @@
 
 .phone {
   width: 300px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   border-radius: 22px;
   box-shadow: var(--ex-elevation-frame);
   overflow: hidden;
@@ -241,8 +241,8 @@
   gap: 8px;
   padding: 9px 18px 5px;
   font-family: var(--ex-font-mono);
-  font-size: 10px;
-  color: var(--ex-ink-900);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg);
 }
 
 .phoneStatusRight {
@@ -256,31 +256,31 @@
 }
 
 .phoneName {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .phoneEyebrow {
   font-family: var(--ex-font-mono);
-  font-size: 8px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.18em;
   color: #ff6f0f;
   margin: 14px 0 8px;
 }
 
 .phoneHeadline {
-  font-size: 19px;
+  font-size: var(--ex-text-2xl);
   font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 1.25;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   margin-bottom: 11px;
 }
 
 .phoneLede {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   line-height: 1.8;
   color: #5c574c;
   margin-bottom: 16px;
@@ -289,18 +289,18 @@
 .phoneWork {
   padding: 10px 0;
   border-top: 1px solid #e2dacb;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .phoneCta {
   margin-top: 16px;
   width: 100%;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-ink-900);
+  color: var(--ex-fg-on-inverse);
+  background: var(--ex-bg-inverse);
   border: none;
   border-radius: 9px;
   padding: 10px;
@@ -316,8 +316,8 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
 }
 
 .shareColumn {
@@ -327,8 +327,8 @@
 
 /* 공유 카드 */
 .shareCard {
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 14px;
   overflow: hidden;
 }
@@ -336,23 +336,23 @@
 .shareImage {
   background: #f5f2ec;
   padding: 26px 28px;
-  border-bottom: 1px solid var(--ex-line-200);
+  border-bottom: 1px solid var(--ex-border);
 }
 
 .shareTitle {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.16em;
   color: #a39b8c;
   margin-bottom: 12px;
 }
 
 .shareHeadline {
-  font-size: 22px;
+  font-size: var(--ex-text-3xl);
   font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 1.3;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .shareMeta {
@@ -361,21 +361,21 @@
 
 .shareDomain {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
   margin-bottom: 6px;
 }
 
 .shareOgTitle {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   margin-bottom: 5px;
 }
 
 .shareOgDescription {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   line-height: 1.6;
 }
 
@@ -383,6 +383,6 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-subtle);
 }

@@ -19,31 +19,33 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
   margin-bottom: 4px;
 }
 
 .title {
   margin: 0;
-  font-size: 19px;
+  font-size: var(--ex-text-2xl);
   font-weight: 600;
   letter-spacing: -0.02em;
 }
 
 .note {
   margin: 0;
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   line-height: 1.7;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
-.stage {
+.stage {  /* 내용이 넓어도 지면 밖으로 밀지 않는다 — flex 항목의 기본 최소 크기는 내용 크기다 */
+  min-width: 0;
+
   display: flex;
   align-items: center;
   gap: 7px;
   font-family: var(--ex-font-mono);
-  font-size: 11px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-subtle);
 }
 
 .progressGroup {
@@ -59,7 +61,7 @@
   height: 5px;
   overflow: hidden;
   border-radius: 999px;
-  background: var(--ex-line-200);
+  background: var(--ex-border);
 }
 
 .progressFill {
@@ -67,15 +69,15 @@
   width: 42%;
   height: 100%;
   border-radius: inherit;
-  background: var(--ex-espresso);
+  background: var(--ex-accent);
   animation: waiting-progress 1.2s ease-in-out infinite;
 }
 
 .spinner {
   width: 11px;
   height: 11px;
-  border: 2px solid var(--ex-line-200);
-  border-top-color: var(--ex-espresso);
+  border: 2px solid var(--ex-border);
+  border-top-color: var(--ex-accent);
   border-radius: 50%;
   animation: waiting-spin 700ms linear infinite;
 }
@@ -101,9 +103,9 @@
 
 .failure {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   line-height: 1.6;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
 }
 
 .primary,
@@ -112,19 +114,19 @@
   padding: 9px 18px;
   border-radius: 10px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
   cursor: pointer;
 }
 
 .primary {
-  border: 1px solid var(--ex-espresso);
-  background: var(--ex-espresso);
-  color: var(--ex-white);
+  border: 1px solid var(--ex-accent);
+  background: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
 }
 
 .ghost {
-  border: 1px solid var(--ex-line-200);
-  background: var(--ex-white);
-  color: var(--ex-slate-500);
+  border: 1px solid var(--ex-border);
+  background: var(--ex-bg);
+  color: var(--ex-fg-muted);
 }

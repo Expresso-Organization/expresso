@@ -115,7 +115,7 @@ export function CareerBrowser({
               name={CATEGORY_ICONS[category.key] ?? "file-text"}
               weight="fill"
               size={18}
-              color="var(--ex-espresso)"
+              color="var(--ex-accent-text)"
             />
           </span>
           <span className={styles.categoryName}>{category.name}</span>
@@ -234,27 +234,27 @@ function TableView({
     <div className={styles.table}>
       <div className={`${styles.row} ${styles.headRow}`}>
         <div className={styles.headCell}>
-          <Icon name="text-aa" size={12} color="var(--ex-slate-500)" />
+          <Icon name="text-aa" size={12} color="var(--ex-fg-muted)" />
           <span className={styles.headLabel}>제목</span>
         </div>
         <div className={styles.headCell}>
-          <Icon name="circle-half" size={12} color="var(--ex-slate-500)" />
+          <Icon name="circle-half" size={12} color="var(--ex-fg-muted)" />
           <span className={styles.headLabel}>상태</span>
         </div>
         <div className={styles.headCell}>
-          <Icon name="tag" size={12} color="var(--ex-slate-500)" />
+          <Icon name="tag" size={12} color="var(--ex-fg-muted)" />
           <span className={styles.headLabel}>역량</span>
         </div>
         <div className={styles.headCell}>
-          <Icon name="calendar-blank" size={12} color="var(--ex-slate-500)" />
+          <Icon name="calendar-blank" size={12} color="var(--ex-fg-muted)" />
           <span className={styles.headLabel}>시기</span>
         </div>
         <div className={styles.headCell}>
-          <Icon name="link-simple" size={12} color="var(--ex-slate-500)" />
+          <Icon name="link-simple" size={12} color="var(--ex-fg-muted)" />
           <span className={styles.headLabel}>사용처</span>
         </div>
         <div className={styles.headCellAction}>
-          <Icon name="plus" size={13} color="var(--ex-slate-500)" />
+          <Icon name="plus" size={13} color="var(--ex-fg-muted)" />
         </div>
       </div>
 
@@ -284,7 +284,7 @@ function TableView({
                 size={13}
                 className={styles.rowOnly}
               />
-              <Icon name="file-text" size={14} color="var(--ex-slate-500)" />
+              <Icon name="file-text" size={14} color="var(--ex-fg-muted)" />
               <span className={styles.recordTitle}>
                 {record.title || "제목 없음"}
               </span>
@@ -326,7 +326,7 @@ function TableView({
       })}
 
       <button type="button" className={styles.newRow}>
-        <Icon name="plus" size={13} color="var(--ex-slate-500)" />
+        <Icon name="plus" size={13} color="var(--ex-fg-muted)" />
         <span className={styles.newRowLabel}>새로 만들기</span>
         <span className={styles.newRowOr}>또는</span>
         <span className={styles.newRowAi}>바리스타에게 질문받기</span>
@@ -475,7 +475,7 @@ function ListView({
           className={styles.listRow}
           onClick={() => onSelect(record.id)}
         >
-          <Icon name="file-text" size={14} color="var(--ex-slate-500)" />
+          <Icon name="file-text" size={14} color="var(--ex-fg-muted)" />
           <span className={styles.recordTitle}>
             {record.title || "제목 없음"}
           </span>

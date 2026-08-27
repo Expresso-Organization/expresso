@@ -104,7 +104,7 @@ function ModeCards() {
             className={styles.card}
           >
             <span className={styles.cardIcon}>
-              <Icon name={mode.icon} size={17} color="var(--ex-espresso)" />
+              <Icon name={mode.icon} size={17} color="var(--ex-accent-text)" />
             </span>
             <span className={styles.cardLabel}>{mode.label}</span>
             <span className={styles.cardLede}>{mode.lede}</span>
@@ -155,7 +155,7 @@ async function PostingPicker({ query, page }: { query: string; page: number }) {
     <>
       <form className={styles.search} method="get">
         <input type="hidden" name="mode" value="list" />
-        <Icon name="magnifying-glass" size={15} color="var(--ex-slate-500)" />
+        <Icon name="magnifying-glass" size={15} color="var(--ex-fg-muted)" />
         <input
           className={styles.searchInput}
           name="q"

@@ -11,15 +11,22 @@
 .frame {
   display: flex;
   min-height: 100dvh;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   overflow: hidden;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
 }
+
 
 /* 좌측 브랜드 패널 */
 .aside {
+  /*
+   * 이 패널은 늘 어둡다 — 지면이 그러데이션으로 박혀 있다. 그래서
+   * `AuthAside`가 `data-theme="dark"`로 고정하고, 아래 규칙들은 여느 자리와
+   * 똑같이 역할 토큰만 쓴다.
+   */
   width: 640px;
   flex-shrink: 0;
+  min-width: 0;
   background: linear-gradient(155deg, #16223a 0%, #241c21 58%, #3a2a22 100%);
   padding: 46px 48px;
   display: flex;
@@ -63,9 +70,9 @@
 
 .eyebrow {
   font-family: var(--ex-font-mono);
-  font-size: 9.5px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.16em;
-  color: var(--ex-crema);
+  color: var(--ex-accent-soft);
   margin-bottom: 20px;
 }
 
@@ -77,18 +84,18 @@
  * 둘 다 제한이 할 일이 없고, 남겨 두면 캐치프레이즈만 줄이 바뀐다.
  */
 .headline {
-  font-size: 30px;
+  font-size: var(--ex-text-4xl);
   font-weight: 600;
   letter-spacing: -0.035em;
   line-height: 1.45;
-  color: var(--ex-white);
+  color: var(--ex-fg);
   margin-bottom: 18px;
 }
 
 .lede {
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   line-height: 1.85;
-  color: var(--ex-on-dark-body);
+  color: var(--ex-fg-body);
   max-width: 400px;
 }
 
@@ -101,15 +108,15 @@
 
 .statValue {
   font-family: var(--ex-font-brand);
-  font-size: 17px;
+  font-size: var(--ex-text-xl);
   font-weight: 400;
-  color: var(--ex-white);
+  color: var(--ex-fg);
   margin-bottom: 4px;
 }
 
 .statLabel {
-  font-size: 11px;
-  color: var(--ex-on-dark-muted);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   white-space: nowrap;
 }
 
@@ -120,24 +127,32 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--ex-form-surface);
-  padding: 40px 24px;
+  background: var(--ex-bg-form);
+  padding: 32px 16px;
+}
+
+@media (min-width: 480px) {
+  .formPane {
+    padding: 40px 24px;
+  }
 }
 
 .form {
-  width: 400px;
+  /* 폼은 400px을 넘지 않되, 좁으면 좌우 16px만 남기고 채운다 */
+  width: 100%;
+  max-width: 400px;
 }
 
 .title {
   margin: 0 0 8px;
-  font-size: 27px;
+  font-size: var(--ex-text-4xl);
   font-weight: 600;
   letter-spacing: -0.03em;
 }
 
 .subtitle {
-  font-size: 13px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-md);
+  color: var(--ex-fg-muted);
   margin-bottom: 28px;
 }
 
@@ -156,22 +171,22 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
-  color: var(--ex-ink-900);
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  color: var(--ex-fg);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 10px;
   padding: 12px;
   transition: background var(--ex-motion-quick);
 }
 
 .social:hover:not(:disabled) {
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
 }
 
 .social:disabled {
-  color: var(--ex-slate-300);
+  color: var(--ex-fg-faint);
   cursor: not-allowed;
 }
 
@@ -185,12 +200,12 @@
 .dividerLine {
   flex: 1;
   height: 1px;
-  background: var(--ex-chrome-border);
+  background: var(--ex-border-chrome);
 }
 
 .dividerLabel {
-  font-size: 11.5px;
-  color: var(--ex-slate-300);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-faint);
 }
 
 /* 필드 */
@@ -205,58 +220,58 @@
 }
 
 .fieldLabel {
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
   white-space: nowrap;
 }
 
 .fieldAside {
   margin-left: auto;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
 }
 
 .input {
   width: 100%;
   display: block;
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 10px;
   padding: 12px 14px;
-  font-size: 13px;
-  color: var(--ex-ink-900);
+  font-size: var(--ex-text-md);
+  color: var(--ex-fg);
   transition:
     border-color var(--ex-motion-quick),
     box-shadow var(--ex-motion-quick);
 }
 
 .input::placeholder {
-  color: var(--ex-slate-300);
+  color: var(--ex-fg-faint);
 }
 
 /* 값이 채워진 필드는 보더가 진해진다 (화면 정의서의 채워진 입력) */
 .input:hover {
-  border-color: var(--ex-border-strong);
+  border-color: var(--ex-border-firm);
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--ex-ink-900);
+  border-color: var(--ex-fg);
   box-shadow: 0 0 0 3px rgba(22, 34, 58, 0.13);
 }
 
 .inputInvalid,
 .inputInvalid:hover {
-  border-color: var(--ex-danger);
-  background: var(--ex-danger-surface);
+  border-color: var(--ex-status-danger);
+  background: var(--ex-status-danger-surface);
 }
 
 .fieldError {
   margin-top: 7px;
-  font-size: 11.5px;
-  color: var(--ex-danger-text);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-danger-text);
 }
 
 /* 비밀번호 강도 4칸 */
@@ -270,17 +285,17 @@
   flex: 1;
   height: 3px;
   border-radius: 2px;
-  background: var(--ex-chrome-border);
+  background: var(--ex-border-chrome);
 }
 
 .strengthOn {
-  background: var(--ex-success);
+  background: var(--ex-status-success);
 }
 
 .strengthLabel {
-  font-size: 11px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
-  color: var(--ex-success-text);
+  color: var(--ex-status-success-text);
   white-space: nowrap;
 }
 
@@ -302,8 +317,8 @@
   width: 16px;
   height: 16px;
   border-radius: 5px;
-  border: 1.5px solid var(--ex-border-strong);
-  background: var(--ex-white);
+  border: 1.5px solid var(--ex-border-firm);
+  background: var(--ex-bg);
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -312,18 +327,18 @@
 }
 
 .consentBoxOn {
-  background: var(--ex-espresso);
-  border-color: var(--ex-espresso);
+  background: var(--ex-accent);
+  border-color: var(--ex-accent);
 }
 
 .consentText {
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   line-height: 1.65;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 .consentLink {
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -331,10 +346,10 @@
 /* 제출 — 로그인·가입은 시그니처 색을 쓴다 (화면 정의서) */
 .submit {
   width: 100%;
-  font-size: 13.5px;
+  font-size: var(--ex-text-md);
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 10px;
   padding: 13px;
@@ -342,11 +357,11 @@
 }
 
 .submit:hover:not(:disabled) {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
 }
 
 .submit:disabled {
-  background: var(--ex-slate-300);
+  background: var(--ex-fg-faint);
   cursor: not-allowed;
 }
 
@@ -361,26 +376,26 @@
 .formError {
   margin-bottom: 14px;
   padding: 11px 14px;
-  border: 1px solid var(--ex-danger);
+  border: 1px solid var(--ex-status-danger);
   border-radius: 10px;
-  background: var(--ex-danger-surface);
-  font-size: 12.5px;
-  color: var(--ex-danger-text);
+  background: var(--ex-status-danger-surface);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-status-danger-text);
 }
 
 .foot {
   text-align: center;
-  font-size: 12.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-muted);
 }
 
 .footLink {
   font-weight: 600;
-  color: var(--ex-espresso);
+  color: var(--ex-accent-text);
 }
 
 .footLink:hover {
-  color: var(--ex-espresso-hover);
+  color: var(--ex-accent-hover);
 }
 
 /* 1024 미만 — 브랜드 패널을 접는다 (§12) */

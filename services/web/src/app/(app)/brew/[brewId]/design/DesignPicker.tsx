@@ -96,7 +96,7 @@ export function DesignPicker({
           </div>
 
           <div className={styles.recipeBar}>
-            <Icon name="list-checks" weight="fill" size={14} color="var(--ex-espresso)" />
+            <Icon name="list-checks" weight="fill" size={14} color="var(--ex-accent-text)" />
             <span className={styles.recipeBarText}>
               레시피 {previews[0]?.sections.length ?? 0}개 섹션을 그대로 채워 보여줍니다
             </span>
@@ -128,11 +128,11 @@ export function DesignPicker({
                     <TemplateThumb preview={preview} />
                     {selected ? (
                       <span className={styles.templateCheck}>
-                        <Icon name="check" size={11} color="var(--ex-white)" />
+                        <Icon name="check" size={11} color="var(--ex-fg-on-accent)" />
                       </span>
                     ) : preview.recommended ? (
                       <span className={styles.toneBadge}>
-                        <Icon name="sparkle" weight="fill" size={9} color="var(--ex-white)" />
+                        <Icon name="sparkle" weight="fill" size={9} color="var(--ex-fg-on-accent)" />
                         <span className={styles.toneBadgeText}>추천</span>
                       </span>
                     ) : null}
@@ -235,7 +235,7 @@ export function DesignPicker({
         <div className={`${styles.card} ${styles.actionCard}`}>
           {madePortfolioId ? (
             <div className={styles.madeRow}>
-              <Icon name="info" size={14} color="var(--ex-slate-500)" />
+              <Icon name="info" size={14} color="var(--ex-fg-muted)" />
               <span className={styles.madeText}>이 제작으로 이미 한 번 뽑았습니다.</span>
               <Link href={`/edit/${madePortfolioId}` as Route} className={styles.madeLink}>
                 열기

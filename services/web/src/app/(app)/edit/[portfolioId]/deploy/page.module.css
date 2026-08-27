@@ -4,7 +4,7 @@
   flex: 1;
   min-width: 0;
   overflow: auto;
-  padding: 26px 32px 34px;
+  padding: 18px 14px 26px;
 }
 
 .inner {
@@ -12,16 +12,16 @@
 }
 
 .title {
-  font-size: 24px;
+  font-size: var(--ex-text-3xl);
   font-weight: 600;
   letter-spacing: -0.03em;
   margin-bottom: 8px;
 }
 
 .intro {
-  font-size: 13px;
+  font-size: var(--ex-text-md);
   line-height: 1.75;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   margin-bottom: 26px;
 }
 
@@ -31,15 +31,15 @@
 
 .sectionLabel {
   font-family: var(--ex-font-mono);
-  font-size: 9px;
+  font-size: var(--ex-text-3xs);
   letter-spacing: 0.12em;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
   margin-bottom: 12px;
 }
 
 .card {
-  background: var(--ex-white);
-  border: 1px solid var(--ex-line-200);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
   border-radius: 14px;
   padding: 16px 18px;
 }
@@ -53,25 +53,25 @@
 }
 
 .slugInput {
-  border: 1px solid var(--ex-border-quiet);
+  border: 1px solid var(--ex-border-soft);
   border-right: none;
   border-radius: 9px 0 0 9px;
   padding: 10px 13px;
-  font-size: 13px;
-  color: var(--ex-ink-900);
+  font-size: var(--ex-text-md);
+  color: var(--ex-fg);
   outline: none;
   width: 180px;
 }
 
 .slugSuffix {
-  border: 1px solid var(--ex-border-quiet);
+  border: 1px solid var(--ex-border-soft);
   border-left: none;
   border-radius: 0 9px 9px 0;
   padding: 10px 13px;
   font-family: var(--ex-font-mono);
-  font-size: 12px;
-  color: var(--ex-slate-500);
-  background: var(--ex-surface-50);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-muted);
+  background: var(--ex-bg-sunken);
 }
 
 .slugState {
@@ -79,8 +79,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
-  color: var(--ex-success-text);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-success-text);
 }
 
 .slugAction {
@@ -88,9 +88,9 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
-  color: var(--ex-slate-700);
+  color: var(--ex-fg-body);
 }
 
 .customDomain {
@@ -98,29 +98,29 @@
   align-items: center;
   gap: 10px;
   padding-top: 12px;
-  border-top: 1px solid var(--ex-hairline);
+  border-top: 1px solid var(--ex-border-hair);
 }
 
 .customLabel {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   width: 84px;
   flex-shrink: 0;
 }
 
 .customHost {
   font-family: var(--ex-font-mono);
-  font-size: 12px;
-  color: var(--ex-ink-900);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg);
 }
 
 .customState {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
-  color: var(--ex-warning-text);
-  background: #fbf3df;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-warning-text);
+  background: var(--ex-status-warning-surface);
   border-radius: 6px;
   padding: 4px 9px;
   white-space: nowrap;
@@ -132,7 +132,7 @@
   align-items: flex-start;
   gap: 11px;
   padding: 11px 0;
-  border-bottom: 1px solid var(--ex-hairline);
+  border-bottom: 1px solid var(--ex-border-hair);
 }
 
 .checkRow:last-of-type {
@@ -140,14 +140,14 @@
 }
 
 .checkTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 500;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .checkNote {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   margin-top: 4px;
 }
 
@@ -156,9 +156,9 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   font-weight: 600;
-  color: var(--ex-danger-text);
+  color: var(--ex-status-danger-text);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -168,12 +168,12 @@
   align-items: center;
   gap: 10px;
   padding: 11px 0;
-  border-top: 1px solid var(--ex-hairline);
+  border-top: 1px solid var(--ex-border-hair);
 }
 
 .optionLabel {
-  font-size: 12.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
   flex: 1;
 }
 
@@ -181,7 +181,7 @@
   width: 40px;
   height: 23px;
   border-radius: 999px;
-  background: var(--ex-ink-900);
+  background: var(--ex-bg-inverse);
   border: none;
   padding: 3px;
   display: flex;
@@ -193,19 +193,19 @@
   width: 17px;
   height: 17px;
   border-radius: 50%;
-  background: var(--ex-white);
+  background: var(--ex-bg);
 }
 
 .select {
   display: flex;
   align-items: center;
   gap: 7px;
-  border: 1px solid var(--ex-border-quiet);
+  border: 1px solid var(--ex-border-soft);
   border-radius: 8px;
   padding: 7px 11px;
   background: none;
-  font-size: 12px;
-  color: var(--ex-ink-900);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg);
   white-space: nowrap;
 }
 
@@ -215,7 +215,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 0;
-  border-bottom: 1px solid var(--ex-hairline);
+  border-bottom: 1px solid var(--ex-border-hair);
 }
 
 .versionRow:last-of-type {
@@ -224,27 +224,27 @@
 
 .versionName {
   font-family: var(--ex-font-mono);
-  font-size: 11px;
-  color: var(--ex-ink-900);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg);
   width: 30px;
   flex-shrink: 0;
 }
 
 .versionSummary {
-  font-size: 12.5px;
-  color: var(--ex-ink-900);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg);
 }
 
 .versionAt {
-  font-size: 11px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-subtle);
   margin-top: 4px;
 }
 
 .versionCurrent {
-  font-size: 11px;
-  color: var(--ex-success-text);
-  background: var(--ex-success-surface);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-success-text);
+  background: var(--ex-status-success-surface);
   border-radius: 6px;
   padding: 4px 9px;
   white-space: nowrap;
@@ -255,8 +255,8 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
-  color: var(--ex-slate-700);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -273,26 +273,26 @@
   flex-direction: column;
   gap: 8px;
   padding: 15px 16px;
-  border: 1px solid var(--ex-line-200);
+  border: 1px solid var(--ex-border);
   border-radius: 12px;
-  background: var(--ex-white);
+  background: var(--ex-bg);
   text-align: left;
   transition: border-color var(--ex-motion-quick);
 }
 
 .exportCard:hover {
-  border-color: var(--ex-border-strong);
+  border-color: var(--ex-border-firm);
 }
 
 .exportTitle {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
-  color: var(--ex-ink-900);
+  color: var(--ex-fg);
 }
 
 .exportNote {
-  font-size: 11px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
   line-height: 1.6;
 }
 
@@ -301,34 +301,34 @@
   align-items: flex-start;
   gap: 9px;
   padding: 13px 15px;
-  background: var(--ex-surface-50);
+  background: var(--ex-bg-sunken);
   border-radius: 12px;
-  font-size: 11.5px;
+  font-size: var(--ex-text-xs);
   line-height: 1.7;
-  color: var(--ex-slate-500);
+  color: var(--ex-fg-muted);
 }
 
 /* 헤더 액션 */
 .headSaved {
-  font-size: 11.5px;
-  color: var(--ex-slate-500);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
 }
 
 .headGhost {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
-  color: var(--ex-slate-700);
-  background: var(--ex-white);
-  border: 1px solid var(--ex-border-quiet);
+  color: var(--ex-fg-body);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border-soft);
   border-radius: 9px;
   padding: 8px 14px;
 }
 
 .headPublish {
-  font-size: 12.5px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
-  color: var(--ex-white);
-  background: var(--ex-espresso);
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
   border: none;
   border-radius: 9px;
   padding: 8px 16px;
@@ -339,7 +339,7 @@
 }
 
 .headPublish:hover {
-  background: var(--ex-espresso-hover);
+  background: var(--ex-accent-hover);
 }
 
 /* 켜고 끄는 스위치 — 폼이 값을 실어 보내야 하므로 진짜 체크박스가 안에 있다 */
@@ -356,12 +356,12 @@
 }
 
 .toggleBox:not(:checked) + .toggle {
-  background: var(--ex-border-strong);
+  background: var(--ex-border-firm);
   justify-content: flex-start;
 }
 
 .toggleBox:focus-visible + .toggle {
-  outline: 2px solid var(--ex-ink-900);
+  outline: 2px solid var(--ex-fg);
   outline-offset: 2px;
 }
 
@@ -377,22 +377,22 @@
   gap: 8px;
   padding: 10px 14px;
   border-radius: 10px;
-  background: var(--ex-bean-50);
-  font-size: 12px;
-  color: var(--ex-bean-ink);
+  background: var(--ex-accent-surface);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-accent-ink);
   line-height: 1.6;
   margin-bottom: 14px;
 }
 
 .noticeBad {
-  background: var(--ex-danger-surface);
-  color: var(--ex-danger-text);
+  background: var(--ex-status-danger-surface);
+  color: var(--ex-status-danger-text);
 }
 
 .versionCount {
   font-family: var(--ex-font-mono);
-  font-size: 10.5px;
-  color: var(--ex-slate-400);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
 }
 
 .exportCard:disabled {
@@ -408,11 +408,25 @@
 }
 
 .dangerAction {
-  border: 1px solid var(--ex-danger-surface-deep);
-  background: var(--ex-danger-surface);
-  color: var(--ex-danger-text);
+  border: 1px solid var(--ex-status-danger-surface-deep);
+  background: var(--ex-status-danger-surface);
+  color: var(--ex-status-danger-text);
   border-radius: 8px;
   padding: 7px 12px;
-  font-size: 12px;
+  font-size: var(--ex-text-sm);
   white-space: nowrap;
+}
+
+/* 좁은 화면 — 나란히 선 셋이 한 줄에 하나씩 */
+@media (max-width: 767px) {
+  .exportGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 넓어지면 정의서의 여백으로 돌아간다 */
+@media (min-width: 768px) {
+  .body {
+    padding: 26px 32px 34px;
+  }
 }
