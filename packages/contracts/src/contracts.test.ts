@@ -322,14 +322,15 @@ describe("job analysis contracts", () => {
 });
 
 describe("brew material contracts", () => {
-  it("requires one to ten unique selected records", () => {
+  it("allows none to ten unique selected records", () => {
     expect(CreateBrewSchema.parse({ jobAnalysisId: ids.job })).toMatchObject({
       jobAnalysisId: ids.job,
       lengthPreset: "single",
     });
     expect(UpdateBrewMaterialsSchema.parse({ recordIds: [ids.job] }).recordIds)
       .toEqual([ids.job]);
-    expect(() => UpdateBrewMaterialsSchema.parse({ recordIds: [] })).toThrow();
+    // 재료를 하나도 고르지 않은 채로 진행할 수 있다 — 빈 배열은 계약이 받는다.
+    expect(UpdateBrewMaterialsSchema.parse({ recordIds: [] }).recordIds).toEqual([]);
     expect(() => UpdateBrewMaterialsSchema.parse({
       recordIds: Array.from({ length: 11 }, () => ids.job),
     })).toThrow();
