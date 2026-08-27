@@ -1,4 +1,4 @@
-import { TemplatePreviewsSchema } from "@expresso/contracts";
+import { findPortfolioStyle, TemplatePreviewsSchema } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/mysql.js";
 
 import type { RecipeService } from "../recipe/service.js";
@@ -34,11 +34,19 @@ export class TemplateService {
       from template where is_active order by code
     `;
     const tone = company?.tone_summary?.toLocaleLowerCase("en-US") ?? "";
-    const ranked = templates.map((template) => ({
+    // 기존 템플릿 행은 포트폴리오 참조용으로 남기고 새 목록은 카탈로그로 한정한다.
+    // 아직 마이그레이션 전이면 기존 목록을 계속 보여 준다.
+    const hasCatalog = templates.some(({ code }) => findPortfolioStyle(code));
+    const visible = hasCatalog
+      ? templates.filter(({ code }) => findPortfolioStyle(code) !== undefined)
+      : templates;
+    const ranked = visible.map((template) => ({
       template,
       score: template.tone_tags.filter((tag) => tone.includes(tag.toLocaleLowerCase("en-US"))).length
         + (company?.industry && template.industries.includes(company.industry) ? 1 : 0),
-    })).sort((left, right) => right.score - left.score || left.template.code.localeCompare(right.template.code));
+    })).sort((left, right) => right.score - left.score
+      || (findPortfolioStyle(left.template.code)?.order ?? 1_000) - (findPortfolioStyle(right.template.code)?.order ?? 1_000)
+      || left.template.code.localeCompare(right.template.code));
     const recommendedId = ranked[0]?.template.id;
     const previews = ranked.map(({ template, score }) => renderTemplate({
       templateId: template.id,
