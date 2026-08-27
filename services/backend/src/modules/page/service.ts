@@ -4,6 +4,7 @@ import {
   PageStyleGrammarSchema,
   PortfolioPlanSchema,
   composeTemplateStyle,
+  findPortfolioStyle,
   mediaAssetUrl,
   pageDocument,
   type GeneratedPage,
@@ -58,6 +59,7 @@ interface SubjectRow {
   brand_colors: string[];
 }
 interface TemplateRow {
+  code: string;
   name: string;
   description: string;
   tone_tags: string[];
@@ -217,7 +219,7 @@ export class PageService {
 
     // 사용자가 03에서 고른 스타일 문법. 생성기는 이걸 제약으로 받는다.
     const template = (await this.#sql<TemplateRow[]>`
-      select template.name, template.description, template.tone_tags, template.style,
+      select template.code, template.name, template.description, template.tone_tags, template.style,
              portfolio.style_overrides
       from portfolio join template on template.id = portfolio.template_id
       where portfolio.user_id = ${userId} and portfolio.id = ${portfolioId}
@@ -227,12 +229,18 @@ export class PageService {
     const composed = template
       ? composeTemplateStyle(template.style, template.style_overrides)
       : null;
+    const preset = template ? findPortfolioStyle(template.code) : undefined;
     const style: PageStyleGrammar | undefined = composed && template
       ? {
         name: template.name,
         description: template.description,
         toneTags: template.tone_tags,
         ...composed,
+        ...(preset ? {
+          designReference: {
+            code: preset.code, sourceUrl: preset.sourceUrl, version: preset.version, prompt: preset.prompt,
+          },
+        } : {}),
         composition: composed.structure === "dense-grid"
           ? "evidence-grid"
           : composed.structure === "wide-margin"
@@ -321,10 +329,9 @@ export class PageService {
         : null,
       instruction,
       previous,
-      // 키트가 sonnet을 쓸 수 있게 해 준다. 실측에서 sonnet은 키트가 없으면
-      // 헤매느라 토큰을 더 쓰고(26k), 키트가 붙으면 16k로 내려오면서 품질은
-      // opus와 눈으로 구분되지 않았다.
-      useKit: true,
+      // 새 스타일은 키트의 고정 모서리·그림자·배치를 강제하지 않는다.
+      // 기존 스타일의 키트와 모델 선택은 그대로 유지한다.
+      useKit: !preset,
       modelTier: "sonnet",
     };
   }

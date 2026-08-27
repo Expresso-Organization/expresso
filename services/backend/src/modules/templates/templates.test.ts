@@ -10,6 +10,19 @@ const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
 
 describe("template contrast", () => {
+  it("카탈로그 설명과 출처가 미리보기까지 전달된다", () => {
+    const preview = renderTemplate({
+      templateId: randomUUID(), code: "designprompts-terminal", name: "Terminal",
+      planRequired: "free", supportedSections: ["*"], recommended: false,
+      recommendationReason: "기술 기록", sections: [{ id: randomUUID(), title: "소개", items: [] }],
+      style: { background: "#0a0a0a", text: "#33ff00", accent: "#33ff00", font: "mono", density: "compact" },
+    });
+    expect(preview).toMatchObject({
+      designStyle: { mode: "dark", sourceUrl: "https://www.designprompts.dev/terminal", version: 1 },
+    });
+    expect(preview.description).toContain("고정폭");
+  });
+
   it("keeps compliant colors and corrects company colors below 4.5:1", () => {
     expect(contrastRatio("#000000", "#ffffff")).toBeCloseTo(21, 5);
     const corrected = ensureReadableStyle({
