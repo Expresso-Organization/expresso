@@ -37,7 +37,9 @@
   color: var(--ex-fg-muted);
 }
 
-.stage {
+.stage {  /* 내용이 넓어도 지면 밖으로 밀지 않는다 — flex 항목의 기본 최소 크기는 내용 크기다 */
+  min-width: 0;
+
   display: flex;
   align-items: center;
   gap: 7px;

@@ -204,6 +204,8 @@
 /* 본문 — 화면마다 배경이 다르다 (01은 흰 지면, 02·02b는 surface-50) */
 .stage {
   flex: 1;
+  /* 내용이 넓어도 지면 밖으로 밀지 않는다 — flex 항목의 기본 최소 크기는 내용 크기다 */
+  min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -220,10 +222,19 @@
  * 지나온 단계로 되돌아가는 길은 여기서 사라지지만, 뒤로 가기가 그 일을 하고
  * 다 늘어놓으면 어차피 글자가 겹쳐 아무 것도 읽히지 않는다.
  */
+/*
+ * 상황 문구("남은 질문 2개")는 여섯 단계와 나란히 서려면 1024px이 필요하다.
+ * 그 아래에서는 단계 표시가 먼저다 — 문구는 본문이 다시 말해 준다.
+ */
+@media (max-width: 1023px) {
+  .situation {
+    display: none;
+  }
+}
+
 @media (max-width: 767px) {
   .step:not(.stepCurrent),
   .connector,
-  .situation,
   .buildLabel,
   .headerRule {
     display: none;
