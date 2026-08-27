@@ -7,6 +7,7 @@ vi.mock("./design-actions", () => ({ startGenerationAction: vi.fn() }));
 import { filterDesignPreviews } from "./design-filters";
 import { DesignPicker } from "./DesignPicker";
 import { TemplateThumb } from "./TemplateThumb";
+import thumbStyles from "./template-thumb.module.css";
 
 const previews: TemplatePreview[] = PORTFOLIO_STYLE_PRESETS.map((preset) => ({
   templateId: preset.templateId, code: preset.code, name: preset.name,
@@ -69,5 +70,13 @@ describe("디자인 선택", () => {
       const html = renderToStaticMarkup(<TemplateThumb preview={preview} />);
       expect(html.replace(/<[^>]*>/g, "")).toBe(preview.name);
     }
+  });
+
+  it.each(["Monochrome", "Bauhaus", "Modern Dark"])("%s 포스터는 공통 색상칩과 막대 없이 이름을 온전히 표시한다", (name) => {
+    const preview = previews.find((item) => item.name === name)!;
+    const html = renderToStaticMarkup(<TemplateThumb preview={preview} />);
+    expect(html.replace(/<[^>]*>/g, "")).toBe(name);
+    expect(html).not.toContain(thumbStyles.colorStudy);
+    expect(html).not.toContain(thumbStyles.weightStudy);
   });
 });

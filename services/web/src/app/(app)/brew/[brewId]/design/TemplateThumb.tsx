@@ -4,6 +4,12 @@ import type { CSSProperties } from "react";
 import styles from "./template-thumb.module.css";
 
 const GAP = { compact: 5, comfortable: 8, spacious: 12 } as const;
+// 먼저 확인할 세 견본만 이름을 두 줄로 조판합니다. 원문은 생략하지 않습니다.
+const POSTER_BREAKS: Record<string, number> = {
+  "designprompts-monochrome": 4,
+  "designprompts-bauhaus": 3,
+  "designprompts-modern-dark": 7,
+};
 
 /**
  * 템플릿 썸네일.
@@ -15,10 +21,11 @@ const GAP = { compact: 5, comfortable: 8, spacious: 12 } as const;
 export function TemplateThumb({ preview }: { preview: Pick<TemplatePreview, "code" | "name" | "style"> }) {
   const { style } = preview;
   const longestWord = Math.max(...preview.name.split(/\s+/).map((word) => word.length));
+  const posterBreak = POSTER_BREAKS[preview.code];
 
   return (
     <span
-      className={styles.thumb}
+      className={posterBreak ? `${styles.thumb} ${styles.poster}` : styles.thumb}
       data-style={preview.code.replace(/^designprompts-/, "")}
       data-structure={style.structure}
       aria-hidden="true"
@@ -34,20 +41,29 @@ export function TemplateThumb({ preview }: { preview: Pick<TemplatePreview, "cod
           : style.font === "mono" ? "var(--ex-font-mono)" : "var(--ex-font-ui)",
       } as CSSProperties}
     >
-      <span className={styles.thumbSection}>
-        <span className={styles.thumbTitle}>{preview.name}</span>
-      </span>
-      <span className={styles.thumbSection}>
-        <span className={styles.colorStudy}>
-          <span /><span /><span />
+      {posterBreak ? (
+        <span className={styles.posterTitle}>
+          <span>{preview.name.slice(0, posterBreak)}</span>
+          <span>{preview.name.slice(posterBreak)}</span>
         </span>
-        <span className={styles.sampleRule} />
-      </span>
-      <span className={styles.thumbSection}>
-        <span className={styles.weightStudy}>
-          <span /><span /><span />
-        </span>
-      </span>
+      ) : (
+        <>
+          <span className={styles.thumbSection}>
+            <span className={styles.thumbTitle}>{preview.name}</span>
+          </span>
+          <span className={styles.thumbSection}>
+            <span className={styles.colorStudy}>
+              <span /><span /><span />
+            </span>
+            <span className={styles.sampleRule} />
+          </span>
+          <span className={styles.thumbSection}>
+            <span className={styles.weightStudy}>
+              <span /><span /><span />
+            </span>
+          </span>
+        </>
+      )}
     </span>
   );
 }
