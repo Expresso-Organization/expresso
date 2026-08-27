@@ -381,11 +381,15 @@ export class AiPageGenerator implements PageGenerator {
         promptVersions: {
           page: PAGE_PROMPT_VERSION,
           designPrinciples: DESIGN_PRINCIPLES_VERSION,
+          ...(context.style?.designReference ? { style: context.style.designReference.version } : {}),
         },
-        tools: [],
+        tools: context.style?.designReference ? ["external-reference"] : [],
         sourceUrls: [...new Set(
-          context.portfolioPlan?.companyContext.flatMap(({ sourceUrl }) =>
-            sourceUrl ? [sourceUrl] : []) ?? [],
+          [
+            ...(context.portfolioPlan?.companyContext.flatMap(({ sourceUrl }) =>
+              sourceUrl ? [sourceUrl] : []) ?? []),
+            ...(context.style?.designReference ? [context.style.designReference.sourceUrl] : []),
+          ],
         )],
         // 한 번만 부른다. 남겨 두는 것은 옛 판을 읽기 위해서다.
         attempts: 1,

@@ -2,6 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 
+import { TemplateStyleOverrideSchema } from "@expresso/contracts";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -25,18 +26,23 @@ export async function startGenerationAction(
   const brewId = String(formData.get("brewId") ?? "");
   const recipeId = String(formData.get("recipeId") ?? "");
   const templateId = String(formData.get("templateId") ?? "");
-  const structure = String(formData.get("structure") ?? "single-column") as
-    "single-column" | "dense-grid" | "wide-margin";
-  const density = String(formData.get("density") ?? "comfortable") as
-    "compact" | "comfortable" | "spacious";
-  const font = String(formData.get("font") ?? "sans") as "sans" | "serif";
+  const styleOverrides = TemplateStyleOverrideSchema.safeParse({
+    structure: formData.get("structure") ?? "single-column",
+    density: formData.get("density") ?? "comfortable",
+    font: formData.get("font") ?? "sans",
+    // 기업 색과 대비 보정을 포함해 사용자가 실제로 본 팔레트를 넘깁니다.
+    background: formData.get("background") ?? undefined,
+    text: formData.get("text") ?? undefined,
+    accent: formData.get("accent") ?? undefined,
+  });
 
   if (!templateId) return { error: "디자인을 먼저 골라 주세요." };
+  if (!styleOverrides.success) return { error: "디자인 설정을 확인하고 다시 골라 주세요." };
 
   try {
     await generation.submit(
       session.accessToken,
-      { recipeId, templateId, styleOverrides: { structure, density, font } },
+      { recipeId, templateId, styleOverrides: styleOverrides.data },
       randomUUID(),
     );
   } catch (error) {
