@@ -484,7 +484,12 @@
   border: 1px solid var(--ex-border);
   border-radius: 999px;
   padding: 4px 10px;
-  white-space: nowrap;
+  /*
+   * 짧은 낱말이 들어올 때는 한 줄로 서지만, 여기 담기는 것은 AI가 뽑은
+   * 문장이라 길이가 정해져 있지 않다. 지면보다 길면 줄을 넘긴다.
+   */
+  white-space: normal;
+  max-width: 100%;
 }
 
 .chipNote {
@@ -833,5 +838,18 @@
   .body {
     gap: 12px;
     padding: 14px;
+  }
+}
+
+/* 좁은 화면 — 읽은 것 표시와 「구성 다시 만들기」가 한 줄에 서지 못한다 */
+@media (max-width: 767px) {
+  .topBar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .topRight {
+    margin-left: 0;
   }
 }
