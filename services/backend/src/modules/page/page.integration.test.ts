@@ -216,6 +216,24 @@ describeWithDatabase("free page generation integration", () => {
     });
   });
 
+  it("새 디자인 목록에는 카탈로그만 노출하고 기존 템플릿 행은 보존한다", async () => {
+    const extraId = randomUUID();
+    try {
+      await sql`insert into template (id, code, name, plan_required)
+        values (${extraId}, ${`ui-legacy-${marker}`}, '이전 디자인', 'free')`;
+      const recipe = (await sql<{ id: string }[]>`
+        select recipe.id from recipe join portfolio on portfolio.brew_id = recipe.brew_id
+        where portfolio.id = ${portfolioId}
+      `)[0]!;
+      const result = await new TemplateService(sql, new RecipeService(sql)).previews(ownerId, recipe.id, false);
+      expect(result.previews).toHaveLength(30);
+      expect(result.previews.some(({ templateId }) => templateId === extraId)).toBe(false);
+      expect(await sql`select id from template where id=${extraId}`).toHaveLength(1);
+    } finally {
+      await sql`delete from template where id=${extraId}`;
+    }
+  });
+
   it("30종 스타일의 저장값이 카탈로그와 일치하고 선택 프롬프트가 지면에 보존된다", async () => {
     const rows = await sql<{ id: string; code: string; style: unknown }[]>`
       select id, code, style from template where code like 'designprompts-%' and is_active

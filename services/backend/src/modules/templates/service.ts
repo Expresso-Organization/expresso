@@ -34,11 +34,11 @@ export class TemplateService {
       from template where is_active order by code
     `;
     const tone = company?.tone_summary?.toLocaleLowerCase("en-US") ?? "";
-    // 옛 세 종은 기존 제작·포트폴리오의 참조용으로 남기고 새 목록에서는 숨긴다.
+    // 기존 템플릿 행은 포트폴리오 참조용으로 남기고 새 목록은 카탈로그로 한정한다.
     // 아직 마이그레이션 전이면 기존 목록을 계속 보여 준다.
     const hasCatalog = templates.some(({ code }) => findPortfolioStyle(code));
     const visible = hasCatalog
-      ? templates.filter(({ code }) => !["clarity", "signal", "editorial"].includes(code))
+      ? templates.filter(({ code }) => findPortfolioStyle(code) !== undefined)
       : templates;
     const ranked = visible.map((template) => ({
       template,
