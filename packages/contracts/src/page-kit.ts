@@ -29,6 +29,7 @@ export function pageKitVariables(style: PageStyleGrammar): string {
   const body = { compact: 15, comfortable: 16, spacious: 17 }[style.density];
   const leading = { compact: 1.5, comfortable: 1.7, spacious: 1.9 }[style.density];
   const serif = style.font === "serif";
+  const fontVariable = style.font === "mono" ? "var(--page-mono)" : serif ? "var(--page-serif)" : "var(--page-sans)";
   return `:root{
   --k-bg:${style.background};
   --k-text:${style.text};
@@ -47,8 +48,8 @@ export function pageKitVariables(style: PageStyleGrammar): string {
   --k-section:${(5 * rhythm).toFixed(3)}rem;
   --k-measure:${serif ? 38 : 42}rem;
   --k-wide:74rem;
-  --k-font:${serif ? "var(--page-serif)" : "var(--page-sans)"};
-  --k-font-body:${serif ? "var(--page-serif)" : "var(--page-sans)"};
+  --k-font:${fontVariable};
+  --k-font-body:${fontVariable};
   --k-font-mono:var(--page-mono);
 }`;
 }

@@ -1,4 +1,4 @@
-import { TemplatePreviewSchema, TemplateStyleSchema } from "@expresso/contracts";
+import { findPortfolioStyle, TemplatePreviewSchema, TemplateStyleSchema } from "@expresso/contracts";
 
 interface RenderSection {
   id: string;
@@ -63,10 +63,15 @@ export function renderTemplate(input: RenderTemplateInput) {
     ...(input.companyStyle?.accent ? { accent: input.companyStyle.accent } : {}),
   };
   const readable = ensureReadableStyle(mergedStyle);
+  const preset = findPortfolioStyle(input.code);
   return TemplatePreviewSchema.parse({
     templateId: input.templateId,
     code: input.code,
     name: input.name,
+    ...(preset ? {
+      description: preset.description,
+      designStyle: { mode: preset.mode, sourceUrl: preset.sourceUrl, version: preset.version },
+    } : {}),
     planRequired: input.planRequired,
     recommended: input.recommended,
     recommendationReason: input.recommendationReason,

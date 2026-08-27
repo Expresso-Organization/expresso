@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { z } from "zod";
+import { PageStyleGrammarSchema } from "@expresso/contracts";
 
 import type {
   AiCallOptions,
@@ -39,6 +40,7 @@ const context: PageGenerationContext = {
 class StreamingStubAi implements AiClient {
   readonly streams = true;
   calls = 0;
+  seen: AiCallSpec | undefined;
   constructor(private readonly failFirst: boolean) {}
 
   async complete<T>(
@@ -47,6 +49,7 @@ class StreamingStubAi implements AiClient {
     options: AiCallOptions = {},
   ): Promise<AiResult<T>> {
     this.calls += 1;
+    this.seen = spec;
     // 첫 시도는 QA에 걸릴 것(반응형 규칙이 없다). 그래도 조각은 흘렀다.
     const draft = this.failFirst && this.calls === 1
       ? { ...DRAFT, css: ".k-page{padding:2rem}" }
@@ -78,6 +81,25 @@ function recorder() {
 }
 
 describe("지면 생성 스트리밍", () => {
+  it("참고 스타일 규칙을 생성에 사용하고 출처와 판본을 명세에 남긴다", async () => {
+    const ai = new StreamingStubAi(false);
+    const style = PageStyleGrammarSchema.parse({
+      name: "Terminal", description: "고정폭 지면", toneTags: [],
+      background: "#0a0a0a", text: "#33ff00", accent: "#33ff00",
+      font: "mono", density: "compact", structure: "dense-grid",
+      composition: "evidence-grid", typography: "technical", geometry: "ruled-sections",
+      motion: "minimal", interaction: "comparison", imagery: "typography-first", antiPatterns: [],
+      designReference: { code: "designprompts-terminal", sourceUrl: "https://www.designprompts.dev/terminal",
+        version: 1, prompt: "프로젝트를 터미널 창으로 구분한다." },
+    });
+    const result = await new AiPageGenerator(ai).generate({ ...context, style });
+    expect(ai.seen?.prompt).toContain("프로젝트를 터미널 창으로 구분한다.");
+    expect(result.manifest).toMatchObject({
+      promptVersions: { style: 1 }, tools: ["external-reference"],
+      sourceUrls: ["https://www.designprompts.dev/terminal"],
+    });
+  });
+
   it("조각이 그대로 흘러 나온다", async () => {
     const { sink, events, read } = recorder();
     await new AiPageGenerator(new StreamingStubAi(false)).generate(context, sink);

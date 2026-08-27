@@ -353,6 +353,28 @@ PortfolioPlan
 - 모션의 성격과 인터랙션 방식
 - 표면 문법: 색, 선, 면, 질감, 모서리
 
+### 8.1 Design Prompts 스타일 카탈로그
+
+2026-08-28 기준 [Design Prompts](https://www.designprompts.dev/)의 30종을
+`packages/contracts/src/portfolio-styles.ts`에서 관리한다. 설명과 생성 지시는
+포트폴리오용으로 작성한다. 참고 사이트의 개발 에이전트 역할 지시, SaaS 예시,
+실행 코드는 생성 입력에 넣지 않는다. 실행 중 참고 사이트를 다시 조회하지 않는다.
+
+- `0016_design_prompt_styles.sql`은 새 템플릿을 추가한다. 기존 Clarity·Signal·Editorial의
+  행과 식별자는 보존하며, 새 카탈로그가 있으면 선택 목록에서만 숨긴다.
+- `TemplateStyle`은 색·서체·밀도·구성을 전달한다. 고정폭 서체는 `mono`로 표현한다.
+- 생성 서비스는 템플릿 코드로 카탈로그를 조회해 `designReference`의 코드·출처 URL·
+  적용 버전·프롬프트를 `PageStyleGrammar`에 결합한다. 사용자 요청으로 이 지시를 덮어쓸 수 없다.
+- 새 스타일은 고정 UI 키트를 사용하지 않는다. 고유한 면·선·모서리·모션을 자유 HTML/CSS로
+  표현하되, 공통 보안·접근성·출력 규칙과 사용자가 확정한 조정값을 우선한다.
+- 생성된 페이지의 `style_spec_snapshot`에 프롬프트까지 저장한다. 생성 명세에도
+  `promptVersions.style`, 출처 URL, `external-reference` 사용을 기록한다.
+- Academia·Maximalism은 원 사이트 목록의 밝기 표시와 프롬프트 팔레트가 다르므로,
+  카탈로그와 필터는 실제 적용 팔레트인 어두운 바탕을 기준으로 한다.
+
+이 팔레트는 생성된 포트폴리오에만 적용한다. Expresso 앱의 UI는 화면 정의서와
+`services/web/src/styles/tokens.css`를 계속 따른다. 기존 페이지·배포 스냅샷은 변경하지 않는다.
+
 ## 9. 공통 디자인 원칙
 
 `DesignPrinciples`는 스타일과 분리해 버전 관리한다. 모든 생성에 같은 안정적인 접두
