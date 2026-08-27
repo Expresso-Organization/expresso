@@ -175,19 +175,29 @@ describeWithDatabase("Expresso 스키마", () => {
     ).rejects.toThrow();
   });
 
-  it("근거 없는 레시피 항목은 받지 않는다", async () => {
+  it("레시피 항목의 근거는 배열이기만 하면 된다", async () => {
     const graph = await seedGraph();
+    // 근거는 사용자가 검토할 메타데이터지 항목을 버릴 이유가 아니다 —
+    // 비어 있어도 받는다(0013_recipe_advisory_evidence).
     await expect(
       db.query(
         `insert into recipe_item (id, user_id, recipe_section_id, order_no, point_text, evidence, edited_by)
          values (?, ?, ?, 0, 'Unsupported claim', '[]', 'ai')`,
         [randomUUID(), graph.userId, graph.recipeSectionId],
       ),
+    ).resolves.toBeDefined();
+    // 모양은 여전히 지킨다 — 배열이 아닌 것은 막는다.
+    await expect(
+      db.query(
+        `insert into recipe_item (id, user_id, recipe_section_id, order_no, point_text, evidence, edited_by)
+         values (?, ?, ?, 1, 'Malformed evidence', '{}', 'ai')`,
+        [randomUUID(), graph.userId, graph.recipeSectionId],
+      ),
     ).rejects.toThrow();
     await expect(
       db.query(
         `insert into recipe_item (id, user_id, recipe_section_id, order_no, point_text, evidence, edited_by)
-         values (?, ?, ?, 0, 'Supported claim', ?, 'ai')`,
+         values (?, ?, ?, 2, 'Supported claim', ?, 'ai')`,
         [randomUUID(), graph.userId, graph.recipeSectionId,
           JSON.stringify([{ record_id: graph.recordId, quote: "Evidence" }])],
       ),
