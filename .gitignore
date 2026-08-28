@@ -32,5 +32,7 @@ infra/compose.override.yaml
 # MongoDB 병렬 실행의 머신별 프로필·작업 트리와 잠금 파일
 .codex/agents/pipeline_*.toml
 coordination/agent-mcp-profiles.json
+coordination/mongodb/.codex/agents/pipeline_*.toml
+coordination/mongodb/coordination/agent-mcp-profiles.json
 coordination/mongodb/**/worker-worktrees*.json
 coordination/mongodb/**/*.lock
