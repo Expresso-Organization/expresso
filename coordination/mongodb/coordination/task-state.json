@@ -2,8 +2,8 @@
   "version": 1,
   "project": "Expresso MongoDB migration",
   "dag_version": 1,
-  "revision": 11,
-  "updated_at": "2026-08-28T15:11:08.268170Z",
+  "revision": 12,
+  "updated_at": "2026-08-28T15:23:22.028211Z",
   "pipeline_status": "blocked",
   "context_version": 0,
   "source_spec_revision": 3,
@@ -51,11 +51,12 @@
       "progress": 0,
       "worker": "zero-exec-T01",
       "started_at": "2026-08-28T15:09:56.204367Z",
-      "updated_at": "2026-08-28T15:11:07.829421Z",
+      "updated_at": "2026-08-28T15:23:22.028211Z",
       "finished_at": null,
-      "message": "Windows workspace-write shell rejected by policy; Docker engine unavailable",
+      "message": "Docker and sandbox execution recovered; installed skill read permission awaiting user approval",
       "evidence": [
-        "coordination/mongodb/evidence/T01-RUNTIME-BLOCKER.md"
+        "coordination/mongodb/evidence/T01-RUNTIME-BLOCKER.md",
+        "coordination/mongodb/evidence/RUNTIME-RECOVERY.md"
       ],
       "review_round": 0,
       "fix_round": 0,
@@ -642,6 +643,15 @@
       "type": "pipeline_paused",
       "at": "2026-08-28T15:11:08.268170Z",
       "message": "Awaiting supported isolated worker shell execution and Docker recovery"
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-28T15:23:22.028211Z",
+      "task_id": "T01",
+      "from": "blocked",
+      "to": "blocked",
+      "worker": "zero-exec-T01",
+      "message": "Docker and sandbox execution recovered; installed skill read permission awaiting user approval"
     }
   ],
   "communications": [],
@@ -661,8 +671,8 @@
   "event_log": {
     "schema_version": 1,
     "path": "coordination\\mongodb\\coordination\\pipeline-events.jsonl",
-    "cursor": 11,
-    "head_event_id": "d627d7a0d97d1df697c0d9533f961ae63e5805369a39cd68ff0f70bf625b4dd2",
+    "cursor": 12,
+    "head_event_id": "e99ca18ba6daf43236a50884eef758dd63cd9e051b22e07c3c4984b5326292c8",
     "complete_history": true
   }
 }
