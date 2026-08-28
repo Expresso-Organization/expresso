@@ -26,6 +26,9 @@ importers:
 
   packages/database:
     dependencies:
+      '@expresso/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       mongodb:
         specifier: 7.5.0
         version: 7.5.0

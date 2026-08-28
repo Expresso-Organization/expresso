@@ -16,6 +16,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@expresso/contracts": "workspace:*",
     "mongodb": "7.5.0",
     "mysql2": "^3.23.4"
   },
