@@ -21,13 +21,13 @@ The task contract is generated from the execution spec. Checkbox state is runtim
   - Evidence: coordination/mongodb/briefs/T01.md에 명시된 focused test log, 변경 파일과 독립 검토 verdict.
   - Dependencies: M0-01.
 
-- [ ] **M2-01. 컬렉션·마이그레이션·초기 데이터.**
+- [x] **M2-01. 컬렉션·마이그레이션·초기 데이터.**
   - Task: T02.
   - Completion criteria: briefs/T02.md의 테스트와 완료 기준이 통과하고 검토가 승인된다
   - Evidence: coordination/mongodb/briefs/T02.md에 명시된 focused test log, 변경 파일과 독립 검토 verdict.
   - Dependencies: M1-01.
 
-- [ ] **M3-01. 트랜잭션·Outbox·모듈 공개 경계.**
+- [x] **M3-01. 트랜잭션·Outbox·모듈 공개 경계.**
   - Task: T03.
   - Completion criteria: briefs/T03.md의 테스트와 완료 기준이 통과하고 검토가 승인된다
   - Evidence: coordination/mongodb/briefs/T03.md에 명시된 focused test log, 변경 파일과 독립 검토 verdict.

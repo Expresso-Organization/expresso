@@ -20,3 +20,6 @@ export function createJobSourceAdapters(config: RuntimeConfig): JobSourceAdapter
   if (config.work24ApiKey) adapters.push(new Work24Adapter(config.work24ApiKey));
   return adapters;
 }
+
+import type { JobIngestService } from "./service.js";
+export type JobIngestApi = Pick<JobIngestService, keyof JobIngestService>;

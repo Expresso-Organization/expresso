@@ -1,3 +1,5 @@
+import { MaterialsError } from "./public.js";
+export { MaterialsError } from "./public.js";
 import {
   BrewMaterialsSchema,
   BrewStateSchema,
@@ -9,7 +11,7 @@ import {
 import type { SqlTag } from "../../platform/mysql.js";
 
 import { rankMaterials, type MaterialRecord } from "./ranking.js";
-import { EntitlementService } from "../entitlements/service.js";
+import { EntitlementService } from "../entitlements/index.js";
 
 /** 한 번에 담을 수 있는 재료 수. 자동 선택도 여기까지다. */
 const SELECTION_LIMIT = 10;
@@ -52,16 +54,6 @@ interface SourceRow {
   period_to: string | null;
   origin: "manual" | "ai" | "interview" | "import";
   reason_text: string;
-}
-
-export class MaterialsError extends Error {
-  readonly statusCode: number;
-
-  constructor(statusCode: number, message: string) {
-    super(message);
-    this.name = "MaterialsError";
-    this.statusCode = statusCode;
-  }
 }
 
 function mapSource(row: SourceRow): BrewMaterial {

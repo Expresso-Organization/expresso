@@ -3,7 +3,7 @@ import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import type { TemplateService } from "./service.js";
+import { type TemplateApi } from "./index.js";
 
 const ParamsSchema = z.strictObject({ id: z.uuid() });
 const QuerySchema = z.strictObject({
@@ -12,7 +12,7 @@ const QuerySchema = z.strictObject({
 
 export function registerTemplateRoutes(
   app: FastifyInstance,
-  options: { templateService: TemplateService; authenticateRequest: preHandlerHookHandler },
+  options: { templateService: TemplateApi; authenticateRequest: preHandlerHookHandler },
 ) {
   app.get(`${API_PREFIX}/recipes/:id/template-previews`, { preHandler: options.authenticateRequest }, async (request) => {
     const principal = requireAuth(request);

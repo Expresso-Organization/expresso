@@ -3,14 +3,14 @@ import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import { BrewJobError, type BrewJobService } from "./service.js";
+import { BrewJobError, type BrewJobApi } from "./index.js";
 
 const ParamsSchema = z.strictObject({ id: z.uuid() });
 
 /** 01b · 02b가 진행 상태를 읽는 자리. */
 export function registerBrewJobRoutes(
   app: FastifyInstance,
-  options: { service: BrewJobService; authenticateRequest: preHandlerHookHandler },
+  options: { service: BrewJobApi; authenticateRequest: preHandlerHookHandler },
 ): void {
   app.get(`${API_PREFIX}/brew-jobs/:id`, { preHandler: options.authenticateRequest },
     async (request) => {

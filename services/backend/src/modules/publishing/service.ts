@@ -1,3 +1,5 @@
+import { PublishingError } from "./public.js";
+export { PublishingError } from "./public.js";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 import {
@@ -13,7 +15,7 @@ import {
 } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/mysql.js";
 
-import { EntitlementService } from "../entitlements/service.js";
+import { EntitlementService } from "../entitlements/index.js";
 import { addOutboxEvent } from "../../platform/outbox.js";
 
 interface DeploymentRow {
@@ -50,15 +52,6 @@ interface AssetRow {
   version: number;
   access_nonce: string;
   revoked_at: Date | string | null;
-}
-
-export class PublishingError extends Error {
-  readonly statusCode: number;
-  constructor(statusCode: number, message: string) {
-    super(message);
-    this.name = "PublishingError";
-    this.statusCode = statusCode;
-  }
 }
 
 function iso(value: Date | string): string {

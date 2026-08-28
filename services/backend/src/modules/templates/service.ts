@@ -1,7 +1,7 @@
 import { findPortfolioStyle, TemplatePreviewsSchema } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/mysql.js";
 
-import type { RecipeService } from "../recipe/service.js";
+import { type RecipeApi } from "../recipe/index.js";
 import { renderTemplate } from "./render.js";
 
 interface TemplateRow {
@@ -11,8 +11,8 @@ interface TemplateRow {
 
 export class TemplateService {
   readonly #sql: SqlTag;
-  readonly #recipes: RecipeService;
-  constructor(sql: SqlTag, recipes: RecipeService) {
+  readonly #recipes: RecipeApi;
+  constructor(sql: SqlTag, recipes: RecipeApi) {
     this.#sql = sql; this.#recipes = recipes;
   }
 

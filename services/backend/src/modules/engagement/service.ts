@@ -1,3 +1,5 @@
+import { type NotificationDeliveryProvider, EngagementError } from "./public.js";
+export { type NotificationDeliveryProvider, EngagementError } from "./public.js";
 import { randomUUID } from "node:crypto";
 import { API_PREFIX, HomeReadModelSchema, type NotificationKind, type UnifiedSearchQuery } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/mysql.js";
@@ -10,15 +12,6 @@ interface NotificationRow {
   attempts: number; created_at: Date | string;
 }
 interface SearchRow { id: string; resource_type: "record" | "portfolio" | "job"; title: string; subtitle: string; sort_title: string }
-
-export interface NotificationDeliveryProvider {
-  send(notification: { id: string; userId: string; kind: NotificationKind; targetUrl: string }): Promise<void>;
-}
-
-export class EngagementError extends Error {
-  readonly statusCode: number;
-  constructor(statusCode: number, message: string) { super(message); this.name = "EngagementError"; this.statusCode = statusCode; }
-}
 
 function iso(value: Date | string): string { return new Date(value).toISOString(); }
 function kstDate(at: Date): string { return new Date(at.getTime() + 9 * 60 * 60 * 1_000).toISOString().slice(0, 10); }

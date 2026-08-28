@@ -10,10 +10,10 @@ import {
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import { MediaError, type MediaService } from "./service.js";
+import { MediaError, type MediaApi } from "./index.js";
 
 export interface RegisterMediaRoutesOptions {
-  service: MediaService;
+  service: MediaApi;
   authenticateRequest: preHandlerHookHandler;
 }
 

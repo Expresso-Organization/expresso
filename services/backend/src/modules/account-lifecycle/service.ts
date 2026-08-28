@@ -1,12 +1,9 @@
+import { AccountLifecycleError } from "./public.js";
+export { AccountLifecycleError } from "./public.js";
 import { createHash, randomBytes } from "node:crypto";
 
 import { AccountExportSchema, DeletionRequestSchema } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/mysql.js";
-
-export class AccountLifecycleError extends Error {
-  readonly statusCode: number;
-  constructor(statusCode: number, message: string) { super(message); this.name = "AccountLifecycleError"; this.statusCode = statusCode; }
-}
 
 function tokenHash(value: string): string { return createHash("sha256").update(value).digest("hex"); }
 function iso(value: Date | string): string { return new Date(value).toISOString(); }

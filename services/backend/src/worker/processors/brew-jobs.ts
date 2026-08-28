@@ -1,9 +1,9 @@
 import type { Job } from "bullmq";
 
-import type { BrewJobRunner, BrewJobService } from "../../modules/brew-jobs/service.js";
-import { InterviewError } from "../../modules/interview/service.js";
+import { type BrewJobRunner, type BrewJobApi } from "../../modules/brew-jobs/index.js";
+import { InterviewError } from "../../modules/interview/index.js";
 import { QuestionDraftError } from "../../modules/interview/question-writer.js";
-import { RecipeError } from "../../modules/recipe/service.js";
+import { RecipeError } from "../../modules/recipe/index.js";
 import { RecipePlanError } from "../../modules/recipe/planner.js";
 import { AiError } from "../../platform/ai/client.js";
 
@@ -28,7 +28,7 @@ export function classifyBrewJobFailure(error: unknown): { code: string; retryabl
 }
 
 export function createBrewJobProcessor(
-  service: BrewJobService,
+  service: BrewJobApi,
   runners: { interview: BrewJobRunner; recipe: BrewJobRunner },
 ) {
   return async (job: Job<Record<string, unknown>>) => {

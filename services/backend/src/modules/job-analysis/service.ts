@@ -1,3 +1,5 @@
+import { JobAnalysisNotFoundError } from "./public.js";
+export { JobAnalysisNotFoundError } from "./public.js";
 import {
   JobAnalysisExtractionSchema,
   JobAnalysisResultSchema,
@@ -87,14 +89,6 @@ interface RecordRow {
 interface ImpactRow {
   brew_count: number;
   recipe_count: number;
-}
-
-export class JobAnalysisNotFoundError extends Error {
-  readonly statusCode = 404;
-  constructor() {
-    super("job analysis not found");
-    this.name = "JobAnalysisNotFoundError";
-  }
 }
 
 function mapRequirement(row: RequirementRow) {

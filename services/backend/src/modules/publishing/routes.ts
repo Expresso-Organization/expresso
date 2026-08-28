@@ -10,7 +10,7 @@ import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import type { PublishingService } from "./service.js";
+import { type PublishingApi } from "./index.js";
 
 const PortfolioParams = z.strictObject({ id: z.uuid() });
 const DeploymentParams = z.strictObject({ id: z.uuid(), deploymentId: z.uuid() });
@@ -24,7 +24,7 @@ const AssetQuery = z.strictObject({
 });
 
 export function registerPublishingRoutes(app: FastifyInstance, options: {
-  service: PublishingService;
+  service: PublishingApi;
   authenticateRequest: preHandlerHookHandler;
 }) {
   app.get(`${API_PREFIX}/public/portfolios/:slug`, async (request) => {

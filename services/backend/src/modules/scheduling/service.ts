@@ -1,28 +1,11 @@
+import { SCHEDULED_JOB_KEYS, type ScheduledJobKey } from "./public.js";
+export { SCHEDULED_JOB_KEYS, type ScheduledJobKey } from "./public.js";
 import type { SqlTag } from "../../platform/mysql.js";
 
-import { AccountLifecycleService } from "../account-lifecycle/service.js";
-import { AnalyticsService } from "../analytics/service.js";
-import type { JobIngestService } from "../jobs/ingest/service.js";
+import { AccountLifecycleService, type AccountLifecycleApi } from "../account-lifecycle/index.js";
+import { AnalyticsService, type AnalyticsApi } from "../analytics/index.js";
+import { type JobIngestApi } from "../jobs/ingest/index.js";
 import { addOutboxEvent } from "../../platform/outbox.js";
-
-/**
- * 코드가 다룰 줄 아는 잡. **DB의 `scheduled_job_definition_job_key_check`와
- * 같아야 한다** — 어긋나면 스케줄러가 모르는 키를 집어 든다.
- *
- * 타입이 아니라 값으로 둔다. 타입은 컴파일에 지워져서 시험이 확인할 수 없다.
- */
-export const SCHEDULED_JOB_KEYS = [
-  "saved_searches",
-  "expire_postings",
-  "notification_batch",
-  "analytics_daily",
-  "deletion_grace",
-  "retention",
-  "job_ingest",
-  "posting_facts",
-] as const;
-
-export type ScheduledJobKey = (typeof SCHEDULED_JOB_KEYS)[number];
 
 interface DefinitionRow {
   job_key: ScheduledJobKey; interval_seconds: number; next_run_at: Date | string;
@@ -48,16 +31,16 @@ function runDto(row: RunRow, at = new Date()) {
 
 export class SchedulingService {
   readonly #sql: SqlTag;
-  readonly #analytics: AnalyticsService;
-  readonly #accounts: AccountLifecycleService;
+  readonly #analytics: AnalyticsApi;
+  readonly #accounts: AccountLifecycleApi;
   /** 수집 어댑터는 워커에만 있다. API 프로세스는 이 자리를 비운 채 돈다. */
-  readonly #ingest: JobIngestService | null;
+  readonly #ingest: JobIngestApi | null;
   readonly #overrides: Partial<Record<ScheduledJobKey, (at: Date) => Promise<Record<string, unknown>>>>;
 
   constructor(sql: SqlTag, dependencies: {
-    analytics?: AnalyticsService;
-    accounts?: AccountLifecycleService;
-    ingest?: JobIngestService | null;
+    analytics?: AnalyticsApi;
+    accounts?: AccountLifecycleApi;
+    ingest?: JobIngestApi | null;
     overrides?: Partial<Record<ScheduledJobKey, (at: Date) => Promise<Record<string, unknown>>>>;
   } = {}) {
     this.#sql = sql;

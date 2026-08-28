@@ -1,3 +1,5 @@
+import { PortfolioEditingError } from "./public.js";
+export { PortfolioEditingError } from "./public.js";
 import {
   ApplyPortfolioEditResultSchema,
   PortfolioEditProposalSchema,
@@ -14,7 +16,7 @@ import {
   type BlockEditor,
   type EditContext,
 } from "./editor.js";
-import type { ConsentService } from "../consent/service.js";
+import { type ConsentApi } from "../consent/index.js";
 
 type EditCommand = z.infer<typeof PortfolioEditCommandSchema>;
 
@@ -40,14 +42,6 @@ const OPERATION_SUMMARY: Record<ProposalRow["operation"], string> = {
   insert_record: "기록을 다시 이었습니다",
   instruct: "말로 고친 것을 반영했습니다",
 };
-
-export class PortfolioEditingError extends Error {
-  readonly statusCode: number;
-  readonly publicDetails: Record<string, unknown> | undefined;
-  constructor(statusCode: number, message: string, publicDetails?: Record<string, unknown>) {
-    super(message); this.name = "PortfolioEditingError"; this.statusCode = statusCode; this.publicDetails = publicDetails;
-  }
-}
 
 function blockState(block: BlockRow) {
   return {
@@ -83,9 +77,9 @@ function mapProposal(row: ProposalRow) {
 export class PortfolioEditingService {
   readonly #sql: SqlTag;
   readonly #editor: BlockEditor | null;
-  readonly #consent: ConsentService | null;
+  readonly #consent: ConsentApi | null;
 
-  constructor(sql: SqlTag, editor?: BlockEditor | null, consent?: ConsentService | null) {
+  constructor(sql: SqlTag, editor?: BlockEditor | null, consent?: ConsentApi | null) {
     this.#sql = sql;
     this.#editor = editor ?? null;
     this.#consent = consent ?? null;

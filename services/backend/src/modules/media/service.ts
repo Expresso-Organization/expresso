@@ -1,3 +1,5 @@
+import { MediaError } from "./public.js";
+export { MediaError } from "./public.js";
 import { createHash } from "node:crypto";
 
 import {
@@ -39,15 +41,6 @@ interface VariantRow {
   width: number;
   height: number;
   byte_size: number;
-}
-
-export class MediaError extends Error {
-  readonly statusCode: number;
-  constructor(statusCode: number, message: string) {
-    super(message);
-    this.name = "MediaError";
-    this.statusCode = statusCode;
-  }
 }
 
 function assetDto(row: AssetRow, variants: readonly number[] = []) {

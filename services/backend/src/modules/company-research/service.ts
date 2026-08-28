@@ -1,18 +1,11 @@
+import { CompanyResearchError } from "./public.js";
+export { CompanyResearchError } from "./public.js";
 import {
   CompanyResearchItemSchema,
   type CompanyResearchItem,
   type ReplaceCompanyResearch,
 } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/mysql.js";
-
-export class CompanyResearchError extends Error {
-  readonly statusCode: number;
-  constructor(statusCode: number, message: string) {
-    super(message);
-    this.name = "CompanyResearchError";
-    this.statusCode = statusCode;
-  }
-}
 
 interface ResearchRow {
   id: string;

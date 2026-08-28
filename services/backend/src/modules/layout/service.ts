@@ -1,12 +1,10 @@
-import {
-  LayoutCandidateListResponseSchema,
-  LayoutSpecSchema,
-  type LayoutSpec,
-} from "@expresso/contracts";
+import { LayoutError, parseStoredSpec } from "./public.js";
+export { LayoutError, parseStoredSpec } from "./public.js";
+import { LayoutCandidateListResponseSchema } from "@expresso/contracts";
 import type { SqlTag, JSONValue } from "../../platform/mysql.js";
 
 import { LayoutRemixError, type LayoutRemixer } from "./remixer.js";
-import type { ConsentService } from "../consent/service.js";
+import { type ConsentApi } from "../consent/index.js";
 
 /**
  * 03 지면 고르기.
@@ -28,21 +26,12 @@ interface LayoutRow {
   created_at: Date;
 }
 
-export class LayoutError extends Error {
-  readonly statusCode: number;
-  constructor(statusCode: number, message: string) {
-    super(message);
-    this.name = "LayoutError";
-    this.statusCode = statusCode;
-  }
-}
-
 export class LayoutService {
   readonly #sql: SqlTag;
   readonly #remixer: LayoutRemixer | null;
-  readonly #consent: ConsentService | null;
+  readonly #consent: ConsentApi | null;
 
-  constructor(sql: SqlTag, remixer?: LayoutRemixer | null, consent?: ConsentService | null) {
+  constructor(sql: SqlTag, remixer?: LayoutRemixer | null, consent?: ConsentApi | null) {
     this.#sql = sql;
     this.#remixer = remixer ?? null;
     this.#consent = consent ?? null;
@@ -199,16 +188,4 @@ function mapRow(row: LayoutRow) {
     instruction: row.instruction,
     createdAt: row.created_at.toISOString(),
   };
-}
-
-/**
- * 포트폴리오에 붙은 지면. 없으면 null이고, 그때 화면은 기본 배치로 그린다.
- *
- * 저장된 값이 지금 계약을 벗어나면(어휘를 좁혔거나 검증을 조인 뒤) 그것도
- * null로 본다 — 옛 지면 하나 때문에 포트폴리오가 열리지 않으면 안 된다.
- */
-export function parseStoredSpec(value: unknown): LayoutSpec | null {
-  if (value === null || value === undefined) return null;
-  const parsed = LayoutSpecSchema.safeParse(value);
-  return parsed.success ? parsed.data : null;
 }

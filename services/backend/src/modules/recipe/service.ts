@@ -1,3 +1,5 @@
+import { RecipeError } from "./public.js";
+export { RecipeError } from "./public.js";
 import {
   PortfolioPlanSchema,
   RecipeEditResultSchema,
@@ -14,7 +16,7 @@ import {
   type RecipePlanner,
 } from "./planner.js";
 import { withTimeout } from "../../platform/timeouts.js";
-import type { ConsentService } from "../consent/service.js";
+import { type ConsentApi } from "../consent/index.js";
 
 interface IdRow { id: string }
 interface RecipeRow {
@@ -38,13 +40,6 @@ interface PathRow {
 /** 분량 프리셋이 정하는 전체 글자 수. 섹션 나누기는 계약이 한다. */
 const TOTAL_LENGTH = { single: 900, double: 1_800, triple: 2_700 } as const;
 
-export class RecipeError extends Error {
-  readonly statusCode: number;
-  constructor(statusCode: number, message: string) {
-    super(message); this.name = "RecipeError"; this.statusCode = statusCode;
-  }
-}
-
 const DEFAULT_CONTEXT = {
   goal: "선택한 근거로 핵심 경험을 설명",
   points: [] as string[],
@@ -58,9 +53,9 @@ export class RecipeService {
   readonly #sql: SqlTag;
   readonly #planner: RecipePlanner;
   readonly #promptVersion: number;
-  readonly #consent: ConsentService | null;
+  readonly #consent: ConsentApi | null;
 
-  constructor(sql: SqlTag, planner?: RecipePlanner | null, consent?: ConsentService | null) {
+  constructor(sql: SqlTag, planner?: RecipePlanner | null, consent?: ConsentApi | null) {
     this.#sql = sql;
     this.#consent = consent ?? null;
     // AI가 없으면 규칙 구현이 그대로 쓰인다 — 죽은 코드가 아니라 폴백이다.

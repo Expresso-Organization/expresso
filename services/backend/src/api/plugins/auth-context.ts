@@ -1,6 +1,6 @@
 import type { FastifyRequest, preHandlerHookHandler } from "fastify";
 
-import type { IdentityPrincipal } from "../../modules/identity/service.js";
+import { type IdentityPrincipal } from "../../modules/identity/index.js";
 import { parseBearerAuthorization } from "../../modules/identity/token.js";
 
 declare module "fastify" {

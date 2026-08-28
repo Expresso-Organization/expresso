@@ -3,8 +3,8 @@ import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import type { RecipeService } from "./service.js";
-import { BrewJobError, type BrewJobService } from "../brew-jobs/service.js";
+import { type RecipeApi } from "./index.js";
+import { BrewJobError, type BrewJobApi } from "../brew-jobs/index.js";
 
 const IdParamsSchema = z.strictObject({ id: z.uuid() });
 const RestoreParamsSchema = z.strictObject({ id: z.uuid(), revisionId: z.uuid() });
@@ -13,9 +13,9 @@ const RestoreBodySchema = z.strictObject({ itemId: z.uuid() });
 export function registerRecipeRoutes(
   app: FastifyInstance,
   options: {
-    recipeService: RecipeService;
+    recipeService: RecipeApi;
     /** 레시피 생성도 계약을 부른다. 요청 안에서 돌리지 않는다. */
-    brewJobService: BrewJobService;
+    brewJobService: BrewJobApi;
     authenticateRequest: preHandlerHookHandler;
   },
 ): void {

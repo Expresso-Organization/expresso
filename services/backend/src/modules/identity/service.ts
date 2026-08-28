@@ -1,3 +1,5 @@
+import { type IdentityPrincipal, type IssueIdentitySessionInput, IdentityError } from "./public.js";
+export { type IdentityPrincipal, type IssueIdentitySessionInput, IdentityError } from "./public.js";
 import { randomUUID } from "node:crypto";
 import type {
   AuthSession,
@@ -34,11 +36,6 @@ interface RevokedSessionRow {
   id: string;
 }
 
-export interface IdentityPrincipal {
-  sessionId: string;
-  user: AuthenticatedUser;
-}
-
 function toAuthenticatedUser(row: CredentialRow): AuthenticatedUser {
   return {
     id: row.id,
@@ -48,11 +45,6 @@ function toAuthenticatedUser(row: CredentialRow): AuthenticatedUser {
   };
 }
 
-export interface IssueIdentitySessionInput {
-  userId: string;
-  ttlMs?: number;
-}
-
 interface CredentialRow {
   id: string;
   email: string;
@@ -60,23 +52,6 @@ interface CredentialRow {
   plan_code: PlanCode;
   password_hash: string | null;
   deletion_requested_at: Date | string | null;
-}
-
-export class IdentityError extends Error {
-  readonly statusCode: number;
-  /** 응답의 `error.details`로 나간다. 화면이 다음 행동을 고를 수 있을 때만 채운다. */
-  readonly publicDetails: Record<string, unknown> | undefined;
-
-  constructor(
-    statusCode: number,
-    message: string,
-    publicDetails?: Record<string, unknown>,
-  ) {
-    super(message);
-    this.name = "IdentityError";
-    this.statusCode = statusCode;
-    this.publicDetails = publicDetails;
-  }
 }
 
 /** postgres.js가 유일 제약 위반에 붙이는 SQLSTATE. */

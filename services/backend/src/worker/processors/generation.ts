@@ -1,16 +1,16 @@
 import type { Job } from "bullmq";
 import type { GeneratedPage } from "@expresso/contracts";
 import type { LayoutDesigner } from "../../modules/layout/designer.js";
-import type { GenerationService } from "../../modules/generation/service.js";
+import { type GenerationApi } from "../../modules/generation/index.js";
 import type { SentenceWriter } from "../../modules/generation/writer.js";
 import type { PageGenerator } from "../../modules/page/generator.js";
-import type { PageService } from "../../modules/page/service.js";
+import { type PageApi } from "../../modules/page/index.js";
 
 export function createGenerationProcessor(
-  service: GenerationService,
+  service: GenerationApi,
   writer: SentenceWriter,
   designer?: LayoutDesigner | null,
-  page?: { service: PageService; generator: PageGenerator } | null,
+  page?: { service: PageApi; generator: PageGenerator } | null,
 ) {
   return async (job: Job<Record<string, unknown>>) => {
     const id = job.data.generationJobId;

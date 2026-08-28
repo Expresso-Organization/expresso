@@ -9,10 +9,10 @@ import {
   HttpStatusError,
   requireAuth,
 } from "../../api/plugins/auth-context.js";
-import type { EntitlementService } from "./service.js";
+import { type EntitlementApi } from "./index.js";
 
 export interface RegisterEntitlementRoutesOptions {
-  entitlementService: EntitlementService;
+  entitlementService: EntitlementApi;
   authenticateRequest: preHandlerHookHandler;
 }
 

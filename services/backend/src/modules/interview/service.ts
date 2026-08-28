@@ -1,3 +1,5 @@
+import { InterviewError } from "./public.js";
+export { InterviewError } from "./public.js";
 import { createHash } from "node:crypto";
 
 import {
@@ -22,7 +24,7 @@ import {
 } from "./question-writer.js";
 import { withTimeout } from "../../platform/timeouts.js";
 import { addOutboxEvent } from "../../platform/outbox.js";
-import type { ConsentService } from "../consent/service.js";
+import { type ConsentApi } from "../consent/index.js";
 
 /** 세션에 심을 질문 하나. 규칙이 만들든 계약이 만들든 이 모양이다. */
 interface PlannedQuestion {
@@ -74,15 +76,6 @@ interface ChangeRow {
   source_quote: string;
 }
 
-export class InterviewError extends Error {
-  readonly statusCode: number;
-  constructor(statusCode: number, message: string) {
-    super(message);
-    this.name = "InterviewError";
-    this.statusCode = statusCode;
-  }
-}
-
 /** 정리 계약이 없거나 실패했을 때의 제목. 첫 줄을 자른 것뿐이다. */
 function fallbackTitle(transcript: string): string {
   return transcript.split(/\n/)[0]!.slice(0, 120);
@@ -98,13 +91,13 @@ export class InterviewService {
   readonly #sql: SqlTag;
   readonly #writer: QuestionWriter | null;
   readonly #cleaner: RecordCleaner | null;
-  readonly #consent: ConsentService | null;
+  readonly #consent: ConsentApi | null;
 
   constructor(
     sql: SqlTag,
     writer?: QuestionWriter | null,
     cleaner?: RecordCleaner | null,
-    consent?: ConsentService | null,
+    consent?: ConsentApi | null,
   ) {
     this.#sql = sql;
     this.#consent = consent ?? null;
