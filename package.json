@@ -15,7 +15,10 @@
     "infra:up": "docker compose -f infra/compose.yaml up -d --wait",
     "infra:down": "docker compose -f infra/compose.yaml down",
     "infra:ready": "docker compose -f infra/compose.yaml ps --format json",
-    "test:infra": "TEST_DATABASE_URL=mysql://expresso:expresso@127.0.0.1:53306/expresso TEST_REDIS_URL=redis://127.0.0.1:56379 pnpm --filter @expresso/backend test:infra",
+    "infra:mongodb:up": "docker compose -f infra/compose.mongodb.yaml up -d --wait mongodb && docker compose -f infra/compose.mongodb.yaml run --rm mongodb-init",
+    "infra:mongodb:down": "docker compose -f infra/compose.mongodb.yaml down",
+    "infra:mongodb:ready": "docker compose -f infra/compose.mongodb.yaml ps --format json",
+    "test:infra": "node scripts/test-infra.mjs",
     "dev:backend": "pnpm --filter @expresso/backend dev",
     "dev:worker": "pnpm --filter @expresso/backend dev:worker",
     "dev:web": "pnpm --filter @expresso/web dev"

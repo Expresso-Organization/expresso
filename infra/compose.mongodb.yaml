@@ -1,0 +1,78 @@
+name: expresso-mongodb-local
+
+services:
+  mongodb-keyfile:
+    image: busybox:1.36.1@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    command: ["/bin/sh", "/usr/local/bin/prepare-keyfile.sh"]
+    volumes:
+      - expresso-mongodb-keyfile:/run/mongodb
+      - ./mongodb/prepare-keyfile.sh:/usr/local/bin/prepare-keyfile.sh:ro
+    restart: "no"
+
+  mongodb:
+    image: mongo:8.0@sha256:02a0cc7939f5ed38f30f9bc714ef5f682d49baf9350c54acf302ce833087fe8a
+    depends_on:
+      mongodb-keyfile:
+        condition: service_completed_successfully
+    command:
+      - mongod
+      - --replSet
+      - rs0
+      - --bind_ip_all
+      - --port
+      - "57017"
+      - --auth
+      - --keyFile
+      - /run/mongodb/mongodb-keyfile
+    environment:
+      MONGO_INITDB_DATABASE: ${EXPRESSO_MONGODB_DATABASE:-expresso}
+      MONGO_INITDB_ROOT_USERNAME: ${EXPRESSO_MONGODB_ADMIN_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${EXPRESSO_MONGODB_ADMIN_PASSWORD:-expresso-admin}
+    ports:
+      - "127.0.0.1:57017:57017"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --quiet --host 127.0.0.1 --port 57017
+          --username "$${MONGO_INITDB_ROOT_USERNAME}"
+          --password "$${MONGO_INITDB_ROOT_PASSWORD}"
+          --authenticationDatabase admin
+          --eval "db.adminCommand({ ping: 1 }).ok" | grep -q '^1$'
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - expresso-mongodb-data:/data/db
+      - expresso-mongodb-keyfile:/run/mongodb:ro
+    restart: unless-stopped
+
+  mongodb-init:
+    image: mongo:8.0@sha256:02a0cc7939f5ed38f30f9bc714ef5f682d49baf9350c54acf302ce833087fe8a
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    network_mode: service:mongodb
+    entrypoint: ["mongosh"]
+    command:
+      - --quiet
+      - mongodb://127.0.0.1:57017/admin?directConnection=true
+      - --file
+      - /scripts/init-replica-set.js
+    environment:
+      MONGO_DATABASE: ${EXPRESSO_MONGODB_DATABASE:-expresso}
+      MONGO_INITDB_ROOT_USERNAME: ${EXPRESSO_MONGODB_ADMIN_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${EXPRESSO_MONGODB_ADMIN_PASSWORD:-expresso-admin}
+      MONGO_RUNTIME_USERNAME: ${EXPRESSO_MONGODB_RUNTIME_USERNAME:-expresso_runtime}
+      MONGO_RUNTIME_PASSWORD: ${EXPRESSO_MONGODB_RUNTIME_PASSWORD:-expresso_runtime}
+      MONGO_MIGRATION_USERNAME: ${EXPRESSO_MONGODB_MIGRATION_USERNAME:-expresso_migration}
+      MONGO_MIGRATION_PASSWORD: ${EXPRESSO_MONGODB_MIGRATION_PASSWORD:-expresso_migration}
+      MONGO_REPLICA_SET_NAME: rs0
+      MONGO_REPLICA_SET_MEMBER_HOST: localhost:57017
+    volumes:
+      - ./mongodb/init-replica-set.js:/scripts/init-replica-set.js:ro
+    restart: "no"
+
+volumes:
+  expresso-mongodb-data:
+  expresso-mongodb-keyfile:
