@@ -2,16 +2,16 @@
   "version": 1,
   "project": "Expresso MongoDB migration",
   "dag_version": 1,
-  "revision": 6,
-  "updated_at": "2026-08-28T15:06:24.532843Z",
-  "pipeline_status": "running",
+  "revision": 11,
+  "updated_at": "2026-08-28T15:11:08.268170Z",
+  "pipeline_status": "blocked",
   "context_version": 0,
   "source_spec_revision": 3,
   "source_spec_sha256": "7444e95e55cfb83655368c1ff643c81a67d41fe36fdb5768b2e9f66a23aa8f82",
   "lifecycle": {
-    "status": "running",
+    "status": "paused",
     "started_at": "2026-08-28T15:06:24.222636Z",
-    "paused_at": null,
+    "paused_at": "2026-08-28T15:11:08.268170Z",
     "completed_at": null
   },
   "tasks": {
@@ -47,14 +47,16 @@
       "phase_started_at": null
     },
     "T01": {
-      "status": "ready",
+      "status": "blocked",
       "progress": 0,
-      "worker": null,
-      "started_at": null,
-      "updated_at": "2026-08-28T15:06:24.532843Z",
+      "worker": "zero-exec-T01",
+      "started_at": "2026-08-28T15:09:56.204367Z",
+      "updated_at": "2026-08-28T15:11:07.829421Z",
       "finished_at": null,
-      "message": "Ready to dispatch",
-      "evidence": [],
+      "message": "Windows workspace-write shell rejected by policy; Docker engine unavailable",
+      "evidence": [
+        "coordination/mongodb/evidence/T01-RUNTIME-BLOCKER.md"
+      ],
       "review_round": 0,
       "fix_round": 0,
       "review_budget_exhausted": false,
@@ -63,7 +65,10 @@
       "deferred_findings": [],
       "review_findings": [],
       "correction_lanes": [],
-      "original_implementer": null,
+      "original_implementer": {
+        "agent_handle": "zero-exec-T01",
+        "external_id": null
+      },
       "reopen_reason": null,
       "required_context_version": 0,
       "acknowledged_context_version": 0,
@@ -580,15 +585,84 @@
       "to": "verified",
       "worker": "coordinator",
       "message": "기준선·실행 명세·MCP 격리 검증 기록 완료"
+    },
+    {
+      "type": "action_recorded",
+      "at": "2026-08-28T15:09:35.704514Z",
+      "action_id": "dispatch_implementer:3bfd67438c76159c",
+      "action_type": "dispatch_implementer",
+      "task_id": "T01",
+      "status": "issued",
+      "agent_handle": "zero-exec-T01"
+    },
+    {
+      "type": "phase_started",
+      "at": "2026-08-28T15:09:56.204367Z",
+      "task_id": "T01",
+      "phase": "implementation",
+      "worker": "zero-exec-T01",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-28T15:09:56.204367Z",
+      "task_id": "T01",
+      "from": "ready",
+      "to": "running",
+      "worker": "zero-exec-T01",
+      "message": "Implementation worker launched in verified external worktree, context 0; Docker integration blocked"
+    },
+    {
+      "type": "action_recorded",
+      "at": "2026-08-28T15:11:07.415270Z",
+      "action_id": "dispatch_implementer:3bfd67438c76159c",
+      "action_type": "dispatch_implementer",
+      "task_id": "T01",
+      "status": "failed",
+      "agent_handle": "zero-exec-T01"
+    },
+    {
+      "type": "phase_finished",
+      "at": "2026-08-28T15:11:07.829421Z",
+      "task_id": "T01",
+      "phase": "implementation",
+      "worker": "zero-exec-T01",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-28T15:11:07.829421Z",
+      "task_id": "T01",
+      "from": "running",
+      "to": "blocked",
+      "worker": "zero-exec-T01",
+      "message": "Windows workspace-write shell rejected by policy; Docker engine unavailable"
+    },
+    {
+      "type": "pipeline_paused",
+      "at": "2026-08-28T15:11:08.268170Z",
+      "message": "Awaiting supported isolated worker shell execution and Docker recovery"
     }
   ],
   "communications": [],
-  "actions": [],
+  "actions": [
+    {
+      "action_id": "dispatch_implementer:3bfd67438c76159c",
+      "attempt": 1,
+      "type": "dispatch_implementer",
+      "task_id": "T01",
+      "status": "failed",
+      "agent_handle": "zero-exec-T01",
+      "external_id": "01a048eb-78e0-74b3-b9fa-f6c781b933e3",
+      "message": "First shell process rejected by runtime policy; worker stopped without repository changes",
+      "updated_at": "2026-08-28T15:11:07.415270Z"
+    }
+  ],
   "event_log": {
     "schema_version": 1,
     "path": "coordination\\mongodb\\coordination\\pipeline-events.jsonl",
-    "cursor": 6,
-    "head_event_id": "bd8054590e864b560505f45f5b8180a638dd5703bcf0e43b406f79c700d3c5a1",
+    "cursor": 11,
+    "head_event_id": "d627d7a0d97d1df697c0d9533f961ae63e5805369a39cd68ff0f70bf625b4dd2",
     "complete_history": true
   }
 }
