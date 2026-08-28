@@ -2,12 +2,12 @@
   "version": 1,
   "project": "Expresso MongoDB migration",
   "dag_version": 1,
-  "revision": 44,
-  "updated_at": "2026-08-28T17:33:58.084377Z",
+  "revision": 45,
+  "updated_at": "2026-08-28T17:38:34.371767Z",
   "pipeline_status": "running",
   "context_version": 0,
-  "source_spec_revision": 3,
-  "source_spec_sha256": "7444e95e55cfb83655368c1ff643c81a67d41fe36fdb5768b2e9f66a23aa8f82",
+  "source_spec_revision": 4,
+  "source_spec_sha256": "da7142fa6ab4398046829fe9ab09214c746d72ff967a6e1ddcc9252d908a939b",
   "lifecycle": {
     "status": "running",
     "started_at": "2026-08-28T15:06:24.222636Z",
@@ -1424,8 +1424,8 @@
   "event_log": {
     "schema_version": 1,
     "path": "coordination\\mongodb\\coordination\\pipeline-events.jsonl",
-    "cursor": 44,
-    "head_event_id": "ac766fa3d8ef75bc298cb6a87daeeadac311d56000281af57872a81f28164d4b",
+    "cursor": 45,
+    "head_event_id": "9b08139dd52414ae724fd1a542bb9ba32ba9b54a625ee5c08bf147b18d84156a",
     "complete_history": true
   }
 }

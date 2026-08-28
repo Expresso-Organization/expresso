@@ -1,6 +1,6 @@
 {
   "pipeline_schema_version": 2,
-  "spec_revision": 3,
+  "spec_revision": 4,
   "project": {
     "name": "Expresso MongoDB migration",
     "path": "C:\\code\\expresso-mongodb",
@@ -212,7 +212,9 @@
           "packages/database/src/mongodb-migrations/**",
           "services/backend/test/support/mongodb.ts",
           "packages/database/src/*test.ts",
-          "packages/database/src/index.ts"
+          "packages/database/src/index.ts",
+          "packages/database/package.json",
+          "packages/database/tsconfig.build.json"
         ],
         "read_only_paths": [
           "docs/architecture/mongodb-migration-design.md",

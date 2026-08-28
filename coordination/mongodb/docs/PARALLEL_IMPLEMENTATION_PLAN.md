@@ -1,11 +1,11 @@
-<!-- generated from coordination/execution-spec.json; schema=2 revision=3 sha256=7444e95e55cfb83655368c1ff643c81a67d41fe36fdb5768b2e9f66a23aa8f82 generator=1; do not edit -->
+<!-- generated from coordination/execution-spec.json; schema=2 revision=4 sha256=da7142fa6ab4398046829fe9ab09214c746d72ff967a6e1ddcc9252d908a939b generator=1; do not edit -->
 # Expresso MongoDB migration parallel implementation plan
 
 - Canonical source: [`coordination/execution-spec.json`](../coordination/execution-spec.json)
 - Checklist: [IMPLEMENTATION_CHECKLIST.md](./IMPLEMENTATION_CHECKLIST.md)
 - Machine-readable graph: [`coordination/task-dag.json`](../coordination/task-dag.json)
 - Live state: [`coordination/task-state.json`](../coordination/task-state.json)
-- Execution spec revision: 3
+- Execution spec revision: 4
 
 ## 1. Objective and operating principles
 

@@ -2,8 +2,8 @@
   "version": 1,
   "_generated": {
     "pipeline_schema_version": 2,
-    "spec_revision": 3,
-    "source_sha256": "7444e95e55cfb83655368c1ff643c81a67d41fe36fdb5768b2e9f66a23aa8f82",
+    "spec_revision": 4,
+    "source_sha256": "da7142fa6ab4398046829fe9ab09214c746d72ff967a6e1ddcc9252d908a939b",
     "generator_version": 1
   },
   "project": "Expresso MongoDB migration",
@@ -143,7 +143,9 @@
         "packages/database/src/mongodb-migrations/**",
         "services/backend/test/support/mongodb.ts",
         "packages/database/src/*test.ts",
-        "packages/database/src/index.ts"
+        "packages/database/src/index.ts",
+        "packages/database/package.json",
+        "packages/database/tsconfig.build.json"
       ],
       "read_only_paths": [
         "docs/architecture/mongodb-migration-design.md",

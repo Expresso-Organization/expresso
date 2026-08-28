@@ -1,9 +1,9 @@
-<!-- generated from coordination/execution-spec.json; schema=2 revision=3 sha256=7444e95e55cfb83655368c1ff643c81a67d41fe36fdb5768b2e9f66a23aa8f82 generator=1; do not edit -->
+<!-- generated from coordination/execution-spec.json; schema=2 revision=4 sha256=da7142fa6ab4398046829fe9ab09214c746d72ff967a6e1ddcc9252d908a939b generator=1; do not edit -->
 # Expresso MongoDB migration implementation checklist
 
 - Related plan: [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)
 - Canonical source: [`coordination/execution-spec.json`](../coordination/execution-spec.json)
-- Execution spec revision: 3
+- Execution spec revision: 4
 
 ## Closure rule
 

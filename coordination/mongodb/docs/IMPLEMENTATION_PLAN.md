@@ -1,10 +1,10 @@
-<!-- generated from coordination/execution-spec.json; schema=2 revision=3 sha256=7444e95e55cfb83655368c1ff643c81a67d41fe36fdb5768b2e9f66a23aa8f82 generator=1; do not edit -->
+<!-- generated from coordination/execution-spec.json; schema=2 revision=4 sha256=da7142fa6ab4398046829fe9ab09214c746d72ff967a6e1ddcc9252d908a939b generator=1; do not edit -->
 # Expresso MongoDB migration implementation plan
 
 - Status: implementation
 - Date: 2026-08-29
 - Project path: `C:\code\expresso-mongodb`
-- Execution spec revision: 3
+- Execution spec revision: 4
 
 ## 1. Objective
 
@@ -63,7 +63,7 @@ packages/database가 문서·컬렉션·마이그레이션을 소유하고 API�
 |---|---|---|---|---|---:|---|
 | B0 | 기준선과 실행 계약 동결 | coordinator | None | M0-01 | 15 | coordination/mongodb/** |
 | T01 | 연결과 격리 테스트 환경 | mongodb-01 | B0 | M1-01 | 25 | services/backend/src/platform/mongodb.ts, services/backend/src/platform/mongodb.integration.test.ts, infra/compose.mongodb.yaml, infra/mongodb/**, scripts/test-infra.mjs, services/backend/package.json, packages/database/package.json, package.json, pnpm-lock.yaml, infra/.env.example, infra/README.md |
-| T02 | 컬렉션·마이그레이션·초기 데이터 | mongodb-02 | T01 | M2-01 | 75 | packages/database/src/documents/**, packages/database/src/collections.ts, packages/database/src/collection-specs.ts, packages/database/src/mongo-*.ts, packages/database/src/migration-lease.ts, packages/database/src/mongodb-migrations/**, services/backend/test/support/mongodb.ts, packages/database/src/*test.ts, packages/database/src/index.ts |
+| T02 | 컬렉션·마이그레이션·초기 데이터 | mongodb-02 | T01 | M2-01 | 75 | packages/database/src/documents/**, packages/database/src/collections.ts, packages/database/src/collection-specs.ts, packages/database/src/mongo-*.ts, packages/database/src/migration-lease.ts, packages/database/src/mongodb-migrations/**, services/backend/test/support/mongodb.ts, packages/database/src/*test.ts, packages/database/src/index.ts, packages/database/package.json, packages/database/tsconfig.build.json |
 | T03 | 트랜잭션·Outbox·모듈 공개 경계 | mongodb-03 | T02 | M3-01 | 40 | services/backend/src/platform/mongo-transaction.ts, services/backend/src/platform/mongo-outbox.ts, services/backend/src/platform/*outbox*.test.ts, services/backend/src/platform/queue.integration.test.ts, services/backend/src/modules/**, services/backend/src/api/build-app.ts, services/backend/src/worker/processors/** |
 | T04 | 계정·권한·동의 | mongodb-04 | T03 | M4-01 | 45 | services/backend/src/modules/identity/**, services/backend/src/modules/entitlements/**, services/backend/src/modules/consent/** |
 | T05 | 기록·카테고리·뷰·프로필 | mongodb-05 | T04 | M5-01 | 50 | services/backend/src/modules/career/mongo-service.ts, services/backend/src/modules/career/mongo-records.ts, services/backend/src/modules/career/mongo-categories.ts, services/backend/src/modules/career/*integration.test.ts |
