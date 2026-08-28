@@ -28,3 +28,9 @@ sites/portfolio-qd-demo/
 
 # 서버에만 두는 인프라 override — 포트 바인딩과 비밀번호가 들어간다
 infra/compose.override.yaml
+
+# MongoDB 병렬 실행의 머신별 프로필·작업 트리와 잠금 파일
+.codex/agents/pipeline_*.toml
+coordination/agent-mcp-profiles.json
+coordination/mongodb/**/worker-worktrees*.json
+coordination/mongodb/**/*.lock

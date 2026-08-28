@@ -1,0 +1,1162 @@
+{
+  "version": 1,
+  "_generated": {
+    "pipeline_schema_version": 2,
+    "spec_revision": 3,
+    "source_sha256": "7444e95e55cfb83655368c1ff643c81a67d41fe36fdb5768b2e9f66a23aa8f82",
+    "generator_version": 1
+  },
+  "project": "Expresso MongoDB migration",
+  "worker_runtime": "isolated zero-MCP codex exec using user-configured gpt-5.6-luna xhigh",
+  "concurrency": {
+    "implementers": 2,
+    "reviewers": 1
+  },
+  "parallelization": {
+    "primary_objective": "minimize_verified_wall_clock",
+    "gate_status": "pass",
+    "gate_rationale": "T04 이후 career와 jobs, T07 이후 importer와 사용자 흐름은 경로가 분리되며 단일 reviewer·integrator가 완료 단위마다 즉시 처리한다.",
+    "target_effective_concurrency": 2,
+    "review_capacity": 1,
+    "integration_capacity": 1,
+    "checks": {
+      "ownership_partitioned": true,
+      "contracts_frozen_before_fanout": true,
+      "independent_evidence": true,
+      "review_capacity_planned": true,
+      "integration_capacity_planned": true
+    }
+  },
+  "external_contracts": [
+    "existing-api-contract-v1",
+    "redis-bullmq-v1",
+    "legacy-mysql-source-v1"
+  ],
+  "fixture_owners": {
+    "mongo-fixture-v1": "T02"
+  },
+  "tasks": [
+    {
+      "id": "B0",
+      "kind": "bootstrap",
+      "title": "기준선과 실행 계약 동결",
+      "owner": "coordinator",
+      "dependencies": [],
+      "owned_paths": [
+        "coordination/mongodb/**"
+      ],
+      "read_only_paths": [
+        "**"
+      ],
+      "estimated_duration_minutes": 15,
+      "estimated_review_minutes": 3,
+      "estimated_integration_minutes": 3,
+      "estimated_correction_minutes": 5,
+      "contract_risk_matrix": [],
+      "provides_contracts": [
+        "baseline-v1"
+      ],
+      "consumes_contracts": [],
+      "shared_fixtures": [],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "completion_gate": "기준 리비전, 기존 실패, 실행 명세와 격리 증거가 기록된다",
+      "checklist_ids": [
+        "M0-01"
+      ]
+    },
+    {
+      "id": "T01",
+      "kind": "implementation",
+      "title": "연결과 격리 테스트 환경",
+      "owner": "mongodb-01",
+      "dependencies": [
+        "B0"
+      ],
+      "owned_paths": [
+        "services/backend/src/platform/mongodb.ts",
+        "services/backend/src/platform/mongodb.integration.test.ts",
+        "infra/compose.mongodb.yaml",
+        "infra/mongodb/**",
+        "scripts/test-infra.mjs",
+        "services/backend/package.json",
+        "packages/database/package.json",
+        "package.json",
+        "pnpm-lock.yaml",
+        "infra/.env.example",
+        "infra/README.md"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 25,
+      "estimated_review_minutes": 5,
+      "estimated_integration_minutes": 3,
+      "estimated_correction_minutes": 6,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t01-output-v1"
+      ],
+      "consumes_contracts": [
+        "baseline-v1"
+      ],
+      "shared_fixtures": [],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T01.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T01.md",
+      "checklist_ids": [
+        "M1-01"
+      ]
+    },
+    {
+      "id": "T02",
+      "kind": "implementation",
+      "title": "컬렉션·마이그레이션·초기 데이터",
+      "owner": "mongodb-02",
+      "dependencies": [
+        "T01"
+      ],
+      "owned_paths": [
+        "packages/database/src/documents/**",
+        "packages/database/src/collections.ts",
+        "packages/database/src/collection-specs.ts",
+        "packages/database/src/mongo-*.ts",
+        "packages/database/src/migration-lease.ts",
+        "packages/database/src/mongodb-migrations/**",
+        "services/backend/test/support/mongodb.ts",
+        "packages/database/src/*test.ts",
+        "packages/database/src/index.ts"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 75,
+      "estimated_review_minutes": 15,
+      "estimated_integration_minutes": 8,
+      "estimated_correction_minutes": 19,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t02-output-v1"
+      ],
+      "consumes_contracts": [
+        "t01-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T02.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T02.md",
+      "checklist_ids": [
+        "M2-01"
+      ]
+    },
+    {
+      "id": "T03",
+      "kind": "implementation",
+      "title": "트랜잭션·Outbox·모듈 공개 경계",
+      "owner": "mongodb-03",
+      "dependencies": [
+        "T02"
+      ],
+      "owned_paths": [
+        "services/backend/src/platform/mongo-transaction.ts",
+        "services/backend/src/platform/mongo-outbox.ts",
+        "services/backend/src/platform/*outbox*.test.ts",
+        "services/backend/src/platform/queue.integration.test.ts",
+        "services/backend/src/modules/**",
+        "services/backend/src/api/build-app.ts",
+        "services/backend/src/worker/processors/**"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 40,
+      "estimated_review_minutes": 8,
+      "estimated_integration_minutes": 4,
+      "estimated_correction_minutes": 10,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t03-output-v1"
+      ],
+      "consumes_contracts": [
+        "t02-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T03.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T03.md",
+      "checklist_ids": [
+        "M3-01"
+      ]
+    },
+    {
+      "id": "T04",
+      "kind": "implementation",
+      "title": "계정·권한·동의",
+      "owner": "mongodb-04",
+      "dependencies": [
+        "T03"
+      ],
+      "owned_paths": [
+        "services/backend/src/modules/identity/**",
+        "services/backend/src/modules/entitlements/**",
+        "services/backend/src/modules/consent/**"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 45,
+      "estimated_review_minutes": 9,
+      "estimated_integration_minutes": 4,
+      "estimated_correction_minutes": 11,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t04-output-v1"
+      ],
+      "consumes_contracts": [
+        "t03-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T04.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T04.md",
+      "checklist_ids": [
+        "M4-01"
+      ]
+    },
+    {
+      "id": "T05",
+      "kind": "implementation",
+      "title": "기록·카테고리·뷰·프로필",
+      "owner": "mongodb-05",
+      "dependencies": [
+        "T04"
+      ],
+      "owned_paths": [
+        "services/backend/src/modules/career/mongo-service.ts",
+        "services/backend/src/modules/career/mongo-records.ts",
+        "services/backend/src/modules/career/mongo-categories.ts",
+        "services/backend/src/modules/career/*integration.test.ts"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 50,
+      "estimated_review_minutes": 10,
+      "estimated_integration_minutes": 5,
+      "estimated_correction_minutes": 12,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t05-output-v1"
+      ],
+      "consumes_contracts": [
+        "t04-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T05.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T05.md",
+      "checklist_ids": [
+        "M5-01"
+      ]
+    },
+    {
+      "id": "T06",
+      "kind": "implementation",
+      "title": "기록 참조·삭제 제한·스킬",
+      "owner": "mongodb-06",
+      "dependencies": [
+        "T05"
+      ],
+      "owned_paths": [
+        "services/backend/src/modules/career/mongo-record-guard.ts",
+        "services/backend/src/modules/career/mongo-links.ts",
+        "services/backend/src/modules/career/mongo-skills.ts",
+        "services/backend/src/modules/career/mongo-service.ts",
+        "services/backend/src/modules/career/*.test.ts",
+        "packages/database/src/schema.test.ts",
+        "services/backend/src/modules/career/index.ts"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 40,
+      "estimated_review_minutes": 8,
+      "estimated_integration_minutes": 4,
+      "estimated_correction_minutes": 10,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t06-output-v1"
+      ],
+      "consumes_contracts": [
+        "t05-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T06.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T06.md",
+      "checklist_ids": [
+        "M6-01"
+      ]
+    },
+    {
+      "id": "T07",
+      "kind": "implementation",
+      "title": "공고 원본·수집·검색",
+      "owner": "mongodb-07",
+      "dependencies": [
+        "T04"
+      ],
+      "owned_paths": [
+        "services/backend/src/modules/jobs/**"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 55,
+      "estimated_review_minutes": 11,
+      "estimated_integration_minutes": 6,
+      "estimated_correction_minutes": 14,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t07-output-v1"
+      ],
+      "consumes_contracts": [
+        "t04-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T07.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T07.md",
+      "checklist_ids": [
+        "M7-01"
+      ]
+    },
+    {
+      "id": "T08",
+      "kind": "implementation",
+      "title": "사용자 분석·재료·Brew 작업",
+      "owner": "mongodb-08",
+      "dependencies": [
+        "T06",
+        "T07"
+      ],
+      "owned_paths": [
+        "services/backend/src/modules/job-analysis/**",
+        "services/backend/src/modules/materials/**",
+        "services/backend/src/modules/company-research/**",
+        "services/backend/src/modules/brew-jobs/**",
+        "services/backend/src/modules/jobs/jobs.integration.test.ts"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 60,
+      "estimated_review_minutes": 12,
+      "estimated_integration_minutes": 6,
+      "estimated_correction_minutes": 15,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t08-output-v1"
+      ],
+      "consumes_contracts": [
+        "t06-output-v1",
+        "t07-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T08.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T08.md",
+      "checklist_ids": [
+        "M8-01"
+      ]
+    },
+    {
+      "id": "T09",
+      "kind": "implementation",
+      "title": "인터뷰와 답변의 기록 반영",
+      "owner": "mongodb-09",
+      "dependencies": [
+        "T08"
+      ],
+      "owned_paths": [
+        "services/backend/src/modules/interview/**",
+        "services/backend/src/worker/processors/record-cleanup.ts",
+        "services/backend/test/e2e/career-vertical-slice.test.ts",
+        "services/backend/test/e2e/brewing-flow.test.ts"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 40,
+      "estimated_review_minutes": 8,
+      "estimated_integration_minutes": 4,
+      "estimated_correction_minutes": 10,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t09-output-v1"
+      ],
+      "consumes_contracts": [
+        "t08-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T09.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T09.md",
+      "checklist_ids": [
+        "M9-01"
+      ]
+    },
+    {
+      "id": "T10",
+      "kind": "implementation",
+      "title": "Recipe와 템플릿",
+      "owner": "mongodb-10",
+      "dependencies": [
+        "T09"
+      ],
+      "owned_paths": [
+        "services/backend/src/modules/recipe/**",
+        "services/backend/src/modules/templates/**"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 40,
+      "estimated_review_minutes": 8,
+      "estimated_integration_minutes": 4,
+      "estimated_correction_minutes": 10,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t10-output-v1"
+      ],
+      "consumes_contracts": [
+        "t09-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T10.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T10.md",
+      "checklist_ids": [
+        "M10-01"
+      ]
+    },
+    {
+      "id": "T11",
+      "kind": "implementation",
+      "title": "생성 결과와 사용량 확정",
+      "owner": "mongodb-11",
+      "dependencies": [
+        "T10"
+      ],
+      "owned_paths": [
+        "services/backend/src/modules/generation/**",
+        "services/backend/src/worker/processors/generation.ts",
+        "services/backend/test/e2e/generation-edit.test.ts",
+        "services/backend/test/resilience/fault-injection.test.ts"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 50,
+      "estimated_review_minutes": 10,
+      "estimated_integration_minutes": 5,
+      "estimated_correction_minutes": 12,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t11-output-v1"
+      ],
+      "consumes_contracts": [
+        "t10-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T11.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T11.md",
+      "checklist_ids": [
+        "M11-01"
+      ]
+    },
+    {
+      "id": "T12",
+      "kind": "implementation",
+      "title": "포트폴리오 읽기·편집·레이아웃·지면",
+      "owner": "mongodb-12",
+      "dependencies": [
+        "T11"
+      ],
+      "owned_paths": [
+        "services/backend/src/modules/portfolios/**",
+        "services/backend/src/modules/portfolio-editing/**",
+        "services/backend/src/modules/layout/**",
+        "services/backend/src/modules/page/**",
+        "services/backend/src/platform/snapshot-payload*"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 70,
+      "estimated_review_minutes": 14,
+      "estimated_integration_minutes": 7,
+      "estimated_correction_minutes": 18,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t12-output-v1"
+      ],
+      "consumes_contracts": [
+        "t11-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T12.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T12.md",
+      "checklist_ids": [
+        "M12-01"
+      ]
+    },
+    {
+      "id": "T13",
+      "kind": "implementation",
+      "title": "배포·미디어·내보내기",
+      "owner": "mongodb-13",
+      "dependencies": [
+        "T12"
+      ],
+      "owned_paths": [
+        "services/backend/src/modules/publishing/**",
+        "services/backend/src/modules/media/**",
+        "services/backend/src/worker/processors/export.ts",
+        "services/backend/test/e2e/publish-analytics.test.ts",
+        "services/backend/test/e2e/full-release.test.ts"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 50,
+      "estimated_review_minutes": 10,
+      "estimated_integration_minutes": 5,
+      "estimated_correction_minutes": 12,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t13-output-v1"
+      ],
+      "consumes_contracts": [
+        "t12-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T13.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T13.md",
+      "checklist_ids": [
+        "M13-01"
+      ]
+    },
+    {
+      "id": "T14",
+      "kind": "implementation",
+      "title": "방문 분석·대시보드·알림",
+      "owner": "mongodb-14",
+      "dependencies": [
+        "T13"
+      ],
+      "owned_paths": [
+        "services/backend/src/modules/analytics/**",
+        "services/backend/src/modules/engagement/**",
+        "services/backend/test/e2e/publish-analytics.test.ts",
+        "services/backend/test/e2e/full-release.test.ts"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 60,
+      "estimated_review_minutes": 12,
+      "estimated_integration_minutes": 6,
+      "estimated_correction_minutes": 15,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t14-output-v1"
+      ],
+      "consumes_contracts": [
+        "t13-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T14.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T14.md",
+      "checklist_ids": [
+        "M14-01"
+      ]
+    },
+    {
+      "id": "T15",
+      "kind": "implementation",
+      "title": "계정 삭제와 예약 작업",
+      "owner": "mongodb-15",
+      "dependencies": [
+        "T14"
+      ],
+      "owned_paths": [
+        "services/backend/src/modules/account-lifecycle/**",
+        "services/backend/src/modules/scheduling/**",
+        "services/backend/src/worker/processors/scheduled-jobs.ts",
+        "packages/database/src/collection-specs.ts"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 55,
+      "estimated_review_minutes": 11,
+      "estimated_integration_minutes": 6,
+      "estimated_correction_minutes": 14,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t15-output-v1"
+      ],
+      "consumes_contracts": [
+        "t14-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T15.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T15.md",
+      "checklist_ids": [
+        "M15-01"
+      ]
+    },
+    {
+      "id": "T16",
+      "kind": "implementation",
+      "title": "공고 자산의 선택 이관",
+      "owner": "mongodb-16",
+      "dependencies": [
+        "T07"
+      ],
+      "owned_paths": [
+        "scripts/operations/migrate-mysql-to-mongodb.mjs",
+        "scripts/operations/mongodb-import/**",
+        "packages/database/src/job-import.test.ts",
+        "docs/operations/*MIGRAT*.md",
+        "package.json",
+        "pnpm-lock.yaml"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 60,
+      "estimated_review_minutes": 12,
+      "estimated_integration_minutes": 6,
+      "estimated_correction_minutes": 15,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t16-output-v1"
+      ],
+      "consumes_contracts": [
+        "t07-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T16.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T16.md",
+      "checklist_ids": [
+        "M16-01"
+      ]
+    },
+    {
+      "id": "T17",
+      "kind": "implementation",
+      "title": "전체 런타임 연결과 MySQL 제거",
+      "owner": "mongodb-17",
+      "dependencies": [
+        "T15",
+        "T16"
+      ],
+      "owned_paths": [
+        "services/backend/src/api/**",
+        "services/backend/src/worker/**",
+        "services/backend/src/config/**",
+        "services/backend/src/platform/**",
+        "services/backend/src/modules/**",
+        "services/backend/.env.example",
+        "services/backend/package.json",
+        "packages/database/src/index.ts",
+        "packages/database/src/cli.ts",
+        "packages/database/package.json",
+        "package.json",
+        "scripts/test-infra.mjs",
+        "pnpm-lock.yaml"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 60,
+      "estimated_review_minutes": 12,
+      "estimated_integration_minutes": 6,
+      "estimated_correction_minutes": 15,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t17-output-v1"
+      ],
+      "consumes_contracts": [
+        "t15-output-v1",
+        "t16-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T17.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T17.md",
+      "checklist_ids": [
+        "M17-01"
+      ]
+    },
+    {
+      "id": "T18",
+      "kind": "implementation",
+      "title": "CI·성능·백업·복원 리허설",
+      "owner": "mongodb-18",
+      "dependencies": [
+        "T17"
+      ],
+      "owned_paths": [
+        ".github/workflows/**",
+        "infra/**",
+        "scripts/operations/**",
+        "README.md",
+        "AGENTS.md",
+        "packages/database/README.md",
+        "services/backend/test/**",
+        "docs/operations/**"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 80,
+      "estimated_review_minutes": 16,
+      "estimated_integration_minutes": 8,
+      "estimated_correction_minutes": 20,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t18-output-v1"
+      ],
+      "consumes_contracts": [
+        "t17-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "briefs/T18.md의 테스트와 완료 기준이 통과하고 검토가 승인된다",
+      "brief": "coordination/mongodb/briefs/T18.md",
+      "checklist_ids": [
+        "M18-01"
+      ]
+    },
+    {
+      "id": "T19",
+      "kind": "operator_gate",
+      "title": "운영 전환과 결과 기록",
+      "owner": "coordinator",
+      "dependencies": [
+        "T18"
+      ],
+      "owned_paths": [
+        "docs/operations/MONGODB_CUTOVER.md"
+      ],
+      "read_only_paths": [
+        "docs/architecture/mongodb-migration-design.md",
+        "docs/architecture/mongodb-migration-plan.md",
+        "docs/architecture/mongodb-collection-map.md"
+      ],
+      "estimated_duration_minutes": 25,
+      "estimated_review_minutes": 5,
+      "estimated_integration_minutes": 3,
+      "estimated_correction_minutes": 6,
+      "risk": {
+        "rework_probability": 0.25
+      },
+      "contract_risk_matrix": [
+        {
+          "risk": "기존 API 계약 또는 실패·재시도 동작이 달라진다",
+          "gate": "승인된 계획의 기존 테스트와 부정·경쟁 사례를 같은 fixture에서 실행한다"
+        },
+        {
+          "risk": "다음 작업이 공개 경계가 아닌 내부 구현에 결합한다",
+          "gate": "빌드된 공개 진입점과 소비자 테스트를 실행한다"
+        }
+      ],
+      "provides_contracts": [
+        "t19-output-v1"
+      ],
+      "consumes_contracts": [
+        "t18-output-v1"
+      ],
+      "shared_fixtures": [
+        "mongo-fixture-v1"
+      ],
+      "integration_target": "codex/mongodb-migration",
+      "context_version": 0,
+      "agent_role": "pipeline_implementer",
+      "required_mcp_servers": [],
+      "required_mcp_tools": {},
+      "completion_gate": "운영 전환은 사용자 확인 뒤 실행 기록으로 검증된다",
+      "brief": "coordination/mongodb/briefs/T19.md",
+      "checklist_ids": [
+        "M19-01"
+      ]
+    }
+  ]
+}

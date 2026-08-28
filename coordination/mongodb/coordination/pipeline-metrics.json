@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "project": "Expresso-MongoDB",
+  "updated_at": "2026-08-28T14:58:18.054476Z",
+  "timing": {
+    "measurement_status": "unavailable",
+    "source": null,
+    "event_count": 0,
+    "actual_wall_seconds": null,
+    "serial_equivalent_seconds": null,
+    "observed_active_work_seconds": null,
+    "saved_wall_seconds": null,
+    "speedup": null,
+    "savings_rate": null,
+    "coordination_tax_seconds": null,
+    "user_pause_seconds": null,
+    "queue_delay_seconds": {
+      "ready": null,
+      "review": null,
+      "integration": null
+    },
+    "rework_seconds": null,
+    "integration_drag_seconds": null,
+    "effective_concurrency": null,
+    "peak_concurrency": null,
+    "provisioned_concurrency": null,
+    "concurrency_utilization": null,
+    "parallel_efficiency": null,
+    "relay_latency_seconds": {
+      "report_to_digest_total": null,
+      "report_to_digest_median": null,
+      "digest_to_delivery_total": null,
+      "digest_to_delivery_median": null,
+      "delivery_to_ack_total": null,
+      "delivery_to_ack_median": null
+    },
+    "correction_latency_seconds": {
+      "finding_to_start_total": null,
+      "finding_to_start_median": null,
+      "finding_to_start_count": 0,
+      "active_total": null,
+      "active_median": null,
+      "active_count": 0,
+      "green_to_rereview_total": null,
+      "green_to_rereview_median": null,
+      "green_to_rereview_count": 0
+    },
+    "event_gaps": [],
+    "notes": []
+  },
+  "tokens": {
+    "measurement_status": "unavailable",
+    "expected_sessions_by_role": {
+      "implementer": 0,
+      "reviewer": 0,
+      "coordinator": 0
+    },
+    "records": [],
+    "summary": {
+      "total_tokens": null,
+      "input_tokens": null,
+      "cached_input_tokens": null,
+      "uncached_input_tokens": null,
+      "output_tokens": null,
+      "reasoning_output_tokens": null,
+      "measured_sessions": 0,
+      "expected_sessions": 0,
+      "coverage_rate": null,
+      "by_role": {}
+    }
+  }
+}

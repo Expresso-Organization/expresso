@@ -12,6 +12,8 @@
 
 작성일: 2026-08-28. 조사 기준은 `main`의 `c3db7e5`입니다. 이 문서는 구현 계획이며 작업 체크박스는 아직 완료하지 않았습니다.
 
+2026-08-29부터 [병렬 실행 명세](../../coordination/mongodb/coordination/execution-spec.json), [실행 체크리스트](../../coordination/mongodb/docs/IMPLEMENTATION_CHECKLIST.md), [진행 대시보드](../../coordination/mongodb/coordination/dashboard/index.html)로 구현 상태를 관리합니다. 이 문서의 승인된 요구사항은 작업별 brief에 보존하며, 실제 완료 여부는 실행 체크리스트와 증거를 기준으로 확인합니다.
+
 ## 공통 제약
 
 - 이전 범위는 백엔드 전체입니다. 커리어 블록 편집기, 관계형 프로퍼티·수식·롤업의 새 기능, Yjs와 외부 MCP/API는 포함하지 않습니다.
