@@ -11,6 +11,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
 import { IdentityService } from "./service.js";
+import { MongoIdentityService, type IdentityApi } from "./index.js";
+import { createMongoFixture } from "../../../test/support/mongodb.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
@@ -36,14 +38,28 @@ interface TokenHashRow {
   token_hash: string;
 }
 
-describeWithDatabase("identity HTTP integration", () => {
-  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
-  const identityService = new IdentityService(sql);
-  const app = buildApi({ config, identityService });
+for (const engine of ["mysql", "mongodb"] as const) {
+describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_URL ?? process.env.TEST_MONGODB_ADMIN_URL))(`identity HTTP integration (${engine})`, () => {
+  let sql: SqlTag;
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>> | undefined;
+  let identityService: IdentityApi;
+  let app: ReturnType<typeof buildApi>;
   let firstUserId: string;
   let secondUserId: string;
 
   beforeAll(async () => {
+    if (engine === "mongodb") {
+      fixture = await createMongoFixture("identity");
+      identityService = new MongoIdentityService(fixture.resource);
+      firstUserId = (await identityService.signup({ email: `first-${randomUUID()}@example.com`, displayName: "First", password: "correct-horse-battery" })).user.id;
+      secondUserId = (await identityService.signup({ email: `second-${randomUUID()}@example.com`, displayName: "Second", password: "correct-horse-battery" })).user.id;
+      app = buildApi({ config, identityService });
+      await app.ready();
+      return;
+    }
+    sql = createMysqlResource(databaseUrl!).sql;
+    identityService = new IdentityService(sql);
+    app = buildApi({ config, identityService });
     const plans = await sql<IdRow[]>`select id from plan where code = 'free'`;
     const planId = plans[0]?.id;
     if (!planId) throw new Error("test plan was not available");
@@ -60,14 +76,15 @@ describeWithDatabase("identity HTTP integration", () => {
     firstUserId = first.id;
     secondUserId = second.id;
     await app.ready();
-  });
+  }, 60_000);
 
   afterAll(async () => {
-    if (firstUserId && secondUserId) {
+    await app?.close();
+    if (fixture) { await fixture.dispose(); return; }
+    if (sql && firstUserId && secondUserId) {
       await sql`delete from \`user\` where id in (${firstUserId}, ${secondUserId})`;
     }
-    await app.close();
-    await sql.end({ timeout: 5 });
+    await sql?.end({ timeout: 5 });
   });
 
   it("requires authentication and prevents user A from revoking user B's UUID", async () => {
@@ -94,7 +111,7 @@ describeWithDatabase("identity HTTP integration", () => {
       firstUserId,
     );
 
-    const storedToken = await sql<TokenHashRow[]>`
+    const storedToken = fixture ? [{ token_hash: (await fixture.resource.db.collection("identity_sessions").findOne({ _id: firstSession.sessionId as never }))?.tokenHash }] : await sql<TokenHashRow[]>`
       select token_hash from identity_session where id = ${firstSession.sessionId}
     `;
     expect(storedToken[0]?.token_hash).toMatch(/^[0-9a-f]{64}$/);
@@ -135,3 +152,4 @@ describeWithDatabase("identity HTTP integration", () => {
     expect(revokedCredential.statusCode).toBe(401);
   });
 });
+}

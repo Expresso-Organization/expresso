@@ -23,6 +23,7 @@ export interface UserDoc {
   profile?: CareerProfileDoc | null;
   notificationPreferences?: NotificationPreferenceDoc | null;
   writeVersion?: number;
+  lifecycleVersion?: number;
 }
 
 export interface ConsentDoc {
@@ -32,6 +33,7 @@ export interface ConsentDoc {
   policyVersion: number;
   grantedAt: Date;
   revokedAt?: Date | null;
+  useVersion?: number;
 }
 
 export interface UsageCounterDoc {

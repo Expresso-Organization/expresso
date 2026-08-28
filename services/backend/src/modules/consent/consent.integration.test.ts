@@ -7,28 +7,44 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { CONTRACT_CONSENT, ConsentError, ConsentService } from "./service.js";
 import { AI_CONTRACTS } from "../../platform/ai/client.js";
+import { MongoConsentService, type ConsentApi } from "./index.js";
+import { MongoIdentityService } from "../identity/index.js";
+import { createMongoFixture } from "../../../test/support/mongodb.js";
+import { mongoCollections } from "@expresso/database";
+import { inTransaction } from "../../platform/mongo-transaction.js";
+import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
 
-describeWithDatabase("동의", () => {
-  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
-  const service = new ConsentService(sql);
+for (const engine of ["mysql", "mongodb"] as const) {
+describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_URL ?? process.env.TEST_MONGODB_ADMIN_URL))(`동의 (${engine})`, () => {
+  let sql: SqlTag;
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>> | undefined;
+  let service: ConsentApi;
   const marker = randomUUID();
   let userId = "";
 
   beforeAll(async () => {
+    if (engine === "mongodb") {
+      fixture = await createMongoFixture("consent");
+      service = new MongoConsentService(fixture.resource);
+      userId = (await new MongoIdentityService(fixture.resource).signup({ email: `consent-${marker}@example.com`, displayName: "Consent", password: "correct-horse-battery" })).user.id;
+      return;
+    }
+    sql = createMysqlResource(databaseUrl!).sql;
+    service = new ConsentService(sql);
     const planId = (await sql<{ id: string }[]>`select id from plan where code = 'free'`)[0]?.id ?? "";
     const email = `consent-${marker}@example.com`;
     userId = (await sql<{ id: string }[]>`
       insert into \`user\` (email, display_name, plan_id)
       values (${email}, 'Consent', ${planId}) returning id
     `)[0]?.id ?? "";
-  });
+  }, 60_000);
 
   afterAll(async () => {
-    if (userId) await sql`delete from \`user\` where id = ${userId}`;
-    await sql.end({ timeout: 5 });
+    if (fixture) await fixture.dispose();
+    else if (sql) { if (userId) await sql`delete from \`user\` where id = ${userId}`; await sql.end({ timeout: 5 }); }
   });
 
   it("계약마다 어느 동의가 필요한지 빠짐없이 적혀 있다", () => {
@@ -66,7 +82,7 @@ describeWithDatabase("동의", () => {
 
   it("두 번 눌러도 동의는 하나다", async () => {
     await service.grant(userId, ["job_posting_analysis"], CONSENT_POLICY_VERSION);
-    const rows = await sql<{ count: number }[]>`
+    const rows = fixture ? [{ count: await fixture.resource.db.collection("consents").countDocuments({ userId, scope: "job_posting_analysis", revokedAt: null }) }] : await sql<{ count: number }[]>`
       select count(*) as count from consent
       where user_id = ${userId} and scope = 'job_posting_analysis' and revoked_at is null
     `;
@@ -87,7 +103,7 @@ describeWithDatabase("동의", () => {
   it("문구가 바뀌면 옛 동의는 무효고, 끈 것과 구분해 보여준다", async () => {
     await service.grant(userId, ["career_records"], CONSENT_POLICY_VERSION);
     // 우리가 문구를 고쳐 판을 올린 상황.
-    const bumped = new ConsentService(sql, { policyVersion: CONSENT_POLICY_VERSION + 1 });
+    const bumped = fixture ? new MongoConsentService(fixture.resource, { policyVersion: CONSENT_POLICY_VERSION + 1 }) : new ConsentService(sql, { policyVersion: CONSENT_POLICY_VERSION + 1 });
 
     await expect(bumped.require(userId, "generation")).rejects.toThrow(ConsentError);
     const listed = await bumped.list(userId);
@@ -100,4 +116,35 @@ describeWithDatabase("동의", () => {
       service.grant(userId, ["career_records"], CONSENT_POLICY_VERSION + 1),
     ).rejects.toThrow(/동의 문구가 바뀌었습니다/);
   });
+
+  it.skipIf(engine !== "mongodb")("동시 재동의에도 활성 동의는 하나고 새 정책의 이력은 보존한다", async () => {
+    await Promise.all([service.grant(userId, ["job_posting_analysis"], CONSENT_POLICY_VERSION), service.grant(userId, ["job_posting_analysis"], CONSENT_POLICY_VERSION)]);
+    const collection = mongoCollections(fixture!.resource.db).consents;
+    expect(await collection.countDocuments({ userId, scope: "job_posting_analysis", revokedAt: null })).toBe(1);
+    const bumped = new MongoConsentService(fixture!.resource, { policyVersion: CONSENT_POLICY_VERSION + 1 });
+    await bumped.grant(userId, ["job_posting_analysis"], CONSENT_POLICY_VERSION + 1);
+    expect(await collection.countDocuments({ userId, scope: "job_posting_analysis", revokedAt: null })).toBe(1);
+    expect((await bumped.list(userId)).data.consents.find(row => row.scope === "job_posting_analysis")).toMatchObject({ granted: true, policyVersion: CONSENT_POLICY_VERSION + 1, needsRenewal: false });
+    expect(await collection.countDocuments({ userId, scope: "job_posting_analysis", revokedAt: { $type: "date" } })).toBeGreaterThan(0);
+  });
+
+  it.skipIf(engine !== "mongodb")("철회가 먼저 커밋되면 이전 snapshot으로 작업을 시작할 수 없다", async () => {
+    await service.grant(userId, ["career_records"], CONSENT_POLICY_VERSION);
+    let notify!: () => void;
+    let release!: () => void;
+    const seen = new Promise<void>(resolve => { notify = resolve; });
+    const proceed = new Promise<void>(resolve => { release = resolve; });
+    const startJob = inTransaction(fixture!.resource, async tx => {
+      await mongoCollections(tx.db).consents.findOne({ userId, scope: "career_records" }, { session: tx.session });
+      notify(); await proceed;
+      await new MongoConsentService(tx).require(userId, "generation");
+      await addMongoOutboxEvent(tx, { userId, topic: "generation", payload: {}, idempotencyKey: "must-not-start" });
+    });
+    const rejected = expect(startJob).rejects.toThrow(ConsentError);
+    await seen;
+    try { await service.revoke(userId, "career_records"); } finally { release(); }
+    await rejected;
+    expect(await mongoCollections(fixture!.resource.db).outboxEvents.countDocuments({ idempotencyKey: "must-not-start" })).toBe(0);
+  });
 });
+}
