@@ -371,10 +371,10 @@ export class CareerService {
       join category on category.id = record.category_id
       where ${scope()}
         ${cursor && descending
-          ? sql`and (${sortKey()}, record.id) < (${cursor.key}, ${cursor.id})`
+          ? sql`and (${sortKey()}, record.id) < (json_unquote(${sql.json(cursor.key)}), ${cursor.id})`
           : sql``}
         ${cursor && !descending
-          ? sql`and (${sortKey()}, record.id) > (${cursor.key}, ${cursor.id})`
+          ? sql`and (${sortKey()}, record.id) > (json_unquote(${sql.json(cursor.key)}), ${cursor.id})`
           : sql``}
       order by ${sortKey()} ${descending ? sql`desc` : sql`asc`},
         record.id ${descending ? sql`desc` : sql`asc`}

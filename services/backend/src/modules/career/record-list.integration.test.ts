@@ -12,6 +12,11 @@ import type { RuntimeConfig } from "../../config/runtime-config.js";
 import { IdentityService } from "../identity/service.js";
 import { CareerService } from "./service.js";
 
+import { MongoCareerService } from "./mongo-service.js";
+import { MongoIdentityService, type IdentityApi } from "../identity/index.js";
+import { mongoCollections } from "@expresso/database";
+import { createMongoFixture } from "../../../test/support/mongodb.js";
+
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
 
@@ -37,10 +42,12 @@ interface CategoryKeyRow {
   key: string;
 }
 
-describeWithDatabase("career record list HTTP integration", () => {
-  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
-  const identityService = new IdentityService(sql);
-  const app = buildApi({ config, identityService, careerService: new CareerService(sql) });
+for (const engine of ["mysql", "mongodb"] as const) {
+describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_URL)(`career record list HTTP integration (${engine})`, () => {
+  let sql: SqlTag;
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>> | undefined;
+  let identityService: IdentityApi;
+  let app: ReturnType<typeof buildApi>;
 
   let userId: string;
   let otherUserId: string;
@@ -49,6 +56,31 @@ describeWithDatabase("career record list HTTP integration", () => {
   let projectId: string;
 
   beforeAll(async () => {
+    if (engine === "mongodb") {
+      fixture = await createMongoFixture("career-list");
+      identityService = new MongoIdentityService(fixture.resource);
+      const career = new MongoCareerService(fixture.resource);
+      app = buildApi({ config, identityService, careerService: career });
+      userId = (await identityService.signup({ email: `list-${randomUUID()}@example.com`, displayName: "목록", password: "correct-horse-battery" })).user.id;
+      otherUserId = (await identityService.signup({ email: `list-${randomUUID()}@example.com`, displayName: "다른 사용자", password: "correct-horse-battery" })).user.id;
+      const categories = await career.listCategories(userId);
+      experienceId = categories.find((category) => category.key === "experience")!.id;
+      projectId = categories.find((category) => category.key === "project")!.id;
+      const db = mongoCollections(fixture.resource.db);
+      const pipelineId = randomUUID();
+      const monitoringId = randomUUID();
+      await db.careerRecords.insertMany([
+        { _id: pipelineId, userId, categoryId: experienceId, title: "적재 파이프라인 구축", status: "organized", origin: "manual", properties: { role: "백엔드" }, bodyMd: "3천만 건을 매일 적재했습니다.", periodStart: "2024-01-01", periodEnd: "2024-12-31", updatedAt: new Date("2026-03-01T00:00:00Z"), version: 1 },
+        { _id: randomUUID(), userId, categoryId: experienceId, title: "정산 스케줄러 안정화", status: "draft", origin: "interview", properties: {}, bodyMd: "", periodStart: "2023-01-01", periodEnd: "2023-06-30", updatedAt: new Date("2026-03-01T00:00:00Z"), version: 1 },
+        { _id: randomUUID(), userId, categoryId: experienceId, title: "장애 대응 3일", status: "organized", origin: "ai", properties: {}, bodyMd: "로그 없이 원인을 좁혔습니다.", updatedAt: new Date("2026-04-01T00:00:00Z"), version: 1 },
+        { _id: monitoringId, userId, categoryId: projectId, title: "데이터 품질 모니터링", status: "verified", origin: "manual", properties: {}, bodyMd: "자동화했습니다.", periodStart: "2025-01-01", periodEnd: "2025-08-31", updatedAt: new Date("2026-05-01T00:00:00Z"), version: 1 },
+        { _id: randomUUID(), userId: otherUserId, categoryId: experienceId, title: "남의 기록", status: "organized", origin: "manual", properties: {}, bodyMd: "보이면 안 됩니다.", updatedAt: new Date("2026-06-01T00:00:00Z"), version: 1 },
+      ]);
+      await career.createLink(userId, pipelineId, monitoringId, "related");
+    } else {
+      sql = createMysqlResource(databaseUrl!).sql;
+      identityService = new IdentityService(sql);
+      app = buildApi({ config, identityService, careerService: new CareerService(sql) });
     const plans = await sql<IdRow[]>`select id from plan where code = 'free'`;
     const planId = plans[0]?.id;
     if (!planId) throw new Error("test plan was not available");
@@ -98,17 +130,17 @@ describeWithDatabase("career record list HTTP integration", () => {
       values (${userId}, ${pipeline.id}, ${monitoring.id}, 'related', 'user')
     `;
 
+    }
+
     const session = await identityService.issueSession({ userId });
     authorization = `Bearer ${session.accessToken}`;
     await app.ready();
-  });
+  }, 60_000);
 
   afterAll(async () => {
-    if (userId && otherUserId) {
-      await sql`delete from \`user\` where id in (${userId}, ${otherUserId})`;
-    }
-    await app.close();
-    await sql.end({ timeout: 5 });
+    await app?.close();
+    if (fixture) await fixture.dispose();
+    else if (sql) { await sql`delete from \`user\` where id in (${userId}, ${otherUserId})`; await sql.end({ timeout: 5 }); }
   });
 
   async function list(query: string) {
@@ -228,4 +260,29 @@ describeWithDatabase("career record list HTTP integration", () => {
     const anonymous = await app.inject({ method: "GET", url: "/v1/career/records" });
     expect(anonymous.statusCode).toBe(401);
   });
+
+  it("keeps every sort stable across single-record page boundaries", async () => {
+    for (const sort of ["updated_asc", "updated_desc", "title_asc", "period_asc", "period_desc"]) {
+      const all = CareerRecordListResponseSchema.parse((await list(`?sort=${sort}`)).body);
+      const seen: string[] = [];
+      let cursor: string | null = null;
+      do {
+        const page = CareerRecordListResponseSchema.parse((await list(`?sort=${sort}&limit=1${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`)).body);
+        seen.push(...page.data.map((record) => record.id));
+        expect(page.summary.total).toBe(4);
+        cursor = page.page.nextCursor;
+        if (seen.length > 4) throw new Error(`cursor repeated records (${sort}): ${JSON.stringify({ seen, cursor })}`);
+      } while (cursor);
+      expect(seen).toEqual(all.data.map((record) => record.id));
+      expect(new Set(seen).size).toBe(4);
+    }
+  });
+
+  it("treats search metacharacters as literal text and rejects malformed cursors", async () => {
+    expect(CareerRecordListResponseSchema.parse((await list("?q=.%2B")).body).summary.total).toBe(0);
+    expect((await list("?cursor=not-json")).statusCode).toBe(400);
+    expect((await list("?limit=0")).statusCode).toBe(400);
+  });
 });
+
+}

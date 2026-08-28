@@ -10,7 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { CareerService } from "../career/service.js";
+import { CareerService, MongoCareerService } from "../career/index.js";
 import { IdentityService } from "./service.js";
 import { MongoIdentityService, type IdentityApi } from "./index.js";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
@@ -49,7 +49,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
     if (engine === "mongodb") {
       fixture = await createMongoFixture("auth");
       identityService = new MongoIdentityService(fixture.resource);
-      app = buildApi({ config, identityService });
+      app = buildApi({ config, identityService, careerService: new MongoCareerService(fixture.resource) });
     } else {
       sql = createMysqlResource(databaseUrl!).sql;
       identityService = new IdentityService(sql);
@@ -95,11 +95,6 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
     expect(me.statusCode).toBe(200);
     expect(CurrentUserResponseSchema.parse(me.json()).data.id).toBe(session.user.id);
 
-    // MongoDB 카테고리 HTTP 경로는 T05에서 검증하며 여기서는 계정과 무관한 기본 정의를 확인합니다.
-    if (fixture) {
-      expect(await mongoCollections(fixture.resource.db).careerCategories.countDocuments({ isSystem: true })).toBe(7);
-      return;
-    }
     // 10b — "가입과 동시에 카테고리 7종이 생깁니다"
     const categories = await app.inject({
       method: "GET",

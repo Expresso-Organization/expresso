@@ -2,8 +2,8 @@
   "version": 1,
   "project": "Expresso MongoDB migration",
   "dag_version": 1,
-  "revision": 55,
-  "updated_at": "2026-08-28T18:24:07.798466Z",
+  "revision": 59,
+  "updated_at": "2026-08-28T21:07:02.358443Z",
   "pipeline_status": "running",
   "context_version": 0,
   "source_spec_revision": 4,
@@ -374,23 +374,28 @@
       "phase_started_at": null
     },
     "T05": {
-      "status": "ready",
-      "progress": 0,
-      "worker": null,
-      "started_at": null,
-      "updated_at": "2026-08-28T18:24:07.798466Z",
-      "finished_at": null,
-      "message": "Ready to dispatch",
-      "evidence": [],
+      "status": "verified",
+      "progress": 100,
+      "worker": "coordinator",
+      "started_at": "2026-08-28T20:57:20.046107Z",
+      "updated_at": "2026-08-28T21:07:02.075833Z",
+      "finished_at": "2026-08-28T21:07:02.075833Z",
+      "message": "직접 구현 및 MongoDB/MySQL 회귀 검증 완료",
+      "evidence": [
+        "coordination/mongodb/evidence/T05.md"
+      ],
       "review_round": 0,
       "fix_round": 0,
       "review_budget_exhausted": false,
       "last_review_verdict": null,
-      "final_decision": null,
+      "final_decision": "accept",
       "deferred_findings": [],
       "review_findings": [],
       "correction_lanes": [],
-      "original_implementer": null,
+      "original_implementer": {
+        "agent_handle": "coordinator",
+        "external_id": null
+      },
       "reopen_reason": null,
       "required_context_version": 0,
       "acknowledged_context_version": 0,
@@ -400,23 +405,28 @@
       "phase_started_at": null
     },
     "T06": {
-      "status": "pending",
-      "progress": 0,
-      "worker": null,
-      "started_at": null,
-      "updated_at": "2026-08-28T15:02:55.523941Z",
-      "finished_at": null,
-      "message": "Waiting for dependencies",
-      "evidence": [],
+      "status": "verified",
+      "progress": 100,
+      "worker": "coordinator",
+      "started_at": "2026-08-28T21:07:02.213369Z",
+      "updated_at": "2026-08-28T21:07:02.358443Z",
+      "finished_at": "2026-08-28T21:07:02.358443Z",
+      "message": "공개 API 전체와 인용/삭제/스킬 경합 검증 완료",
+      "evidence": [
+        "coordination/mongodb/evidence/T06.md"
+      ],
       "review_round": 0,
       "fix_round": 0,
       "review_budget_exhausted": false,
       "last_review_verdict": null,
-      "final_decision": null,
+      "final_decision": "accept",
       "deferred_findings": [],
       "review_findings": [],
       "correction_lanes": [],
-      "original_implementer": null,
+      "original_implementer": {
+        "agent_handle": "coordinator",
+        "external_id": null
+      },
       "reopen_reason": null,
       "required_context_version": 0,
       "acknowledged_context_version": 0,
@@ -1134,6 +1144,74 @@
       "to": "verified",
       "worker": "coordinator",
       "message": "직접 구현·검증 완료. MongoDB/Redis 포함 백엔드 268 통과, 기존 Windows 4 실패 동일. MySQL 통합 155 통과."
+    },
+    {
+      "type": "phase_started",
+      "at": "2026-08-28T20:57:20.046107Z",
+      "task_id": "T05",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-28T20:57:20.046107Z",
+      "task_id": "T05",
+      "from": "ready",
+      "to": "running",
+      "worker": "coordinator",
+      "message": "직접 구현: CRUD 및 동시 수정 검증 완료, 목록과 HTTP 통합 검증 진행"
+    },
+    {
+      "type": "phase_finished",
+      "at": "2026-08-28T21:07:02.075833Z",
+      "task_id": "T05",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-28T21:07:02.075833Z",
+      "task_id": "T05",
+      "from": "running",
+      "to": "verified",
+      "worker": "coordinator",
+      "message": "직접 구현 및 MongoDB/MySQL 회귀 검증 완료"
+    },
+    {
+      "type": "phase_started",
+      "at": "2026-08-28T21:07:02.213369Z",
+      "task_id": "T06",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-28T21:07:02.213369Z",
+      "task_id": "T06",
+      "from": "ready",
+      "to": "running",
+      "worker": "coordinator",
+      "message": "T05와 함께 직접 구현 및 참조 경합 검증"
+    },
+    {
+      "type": "phase_finished",
+      "at": "2026-08-28T21:07:02.358443Z",
+      "task_id": "T06",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-28T21:07:02.358443Z",
+      "task_id": "T06",
+      "from": "running",
+      "to": "verified",
+      "worker": "coordinator",
+      "message": "공개 API 전체와 인용/삭제/스킬 경합 검증 완료"
     }
   ],
   "communications": [
@@ -1620,8 +1698,8 @@
   "event_log": {
     "schema_version": 1,
     "path": "coordination\\mongodb\\coordination\\pipeline-events.jsonl",
-    "cursor": 55,
-    "head_event_id": "081544a8470ab28381b00c12555b8b3ab953f58991c344c57eba17394fd2225d",
+    "cursor": 59,
+    "head_event_id": "878c2b62afb7f4f8f0d197c8f8dbb98831c40e45b83a84db8f47ebbf8e18d723",
     "complete_history": true
   }
 }
