@@ -2,8 +2,8 @@
   "version": 1,
   "project": "Expresso MongoDB migration",
   "dag_version": 1,
-  "revision": 12,
-  "updated_at": "2026-08-28T15:23:22.028211Z",
+  "revision": 13,
+  "updated_at": "2026-08-28T15:29:01.533996Z",
   "pipeline_status": "blocked",
   "context_version": 0,
   "source_spec_revision": 3,
@@ -51,9 +51,9 @@
       "progress": 0,
       "worker": "zero-exec-T01",
       "started_at": "2026-08-28T15:09:56.204367Z",
-      "updated_at": "2026-08-28T15:23:22.028211Z",
+      "updated_at": "2026-08-28T15:29:01.533996Z",
       "finished_at": null,
-      "message": "Docker and sandbox execution recovered; installed skill read permission awaiting user approval",
+      "message": "User-approved skill read/execute ACL verified; guard now blocked by Git cross-user repository trust",
       "evidence": [
         "coordination/mongodb/evidence/T01-RUNTIME-BLOCKER.md",
         "coordination/mongodb/evidence/RUNTIME-RECOVERY.md"
@@ -652,6 +652,15 @@
       "to": "blocked",
       "worker": "zero-exec-T01",
       "message": "Docker and sandbox execution recovered; installed skill read permission awaiting user approval"
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-28T15:29:01.533996Z",
+      "task_id": "T01",
+      "from": "blocked",
+      "to": "blocked",
+      "worker": "zero-exec-T01",
+      "message": "User-approved skill read/execute ACL verified; guard now blocked by Git cross-user repository trust"
     }
   ],
   "communications": [],
@@ -671,8 +680,8 @@
   "event_log": {
     "schema_version": 1,
     "path": "coordination\\mongodb\\coordination\\pipeline-events.jsonl",
-    "cursor": 12,
-    "head_event_id": "e99ca18ba6daf43236a50884eef758dd63cd9e051b22e07c3c4984b5326292c8",
+    "cursor": 13,
+    "head_event_id": "afec7d2ef9a3901051e67b1db097a37172f1de7f82a6b64a1c0f9911daaa4319",
     "complete_history": true
   }
 }
