@@ -2,9 +2,9 @@
   "version": 1,
   "project": "Expresso MongoDB migration",
   "dag_version": 1,
-  "revision": 13,
-  "updated_at": "2026-08-28T15:29:01.533996Z",
-  "pipeline_status": "blocked",
+  "revision": 14,
+  "updated_at": "2026-08-28T16:00:38.286417Z",
+  "pipeline_status": "running",
   "context_version": 0,
   "source_spec_revision": 3,
   "source_spec_sha256": "7444e95e55cfb83655368c1ff643c81a67d41fe36fdb5768b2e9f66a23aa8f82",
@@ -47,13 +47,13 @@
       "phase_started_at": null
     },
     "T01": {
-      "status": "blocked",
+      "status": "ready",
       "progress": 0,
       "worker": "zero-exec-T01",
       "started_at": "2026-08-28T15:09:56.204367Z",
-      "updated_at": "2026-08-28T15:29:01.533996Z",
+      "updated_at": "2026-08-28T16:00:38.286417Z",
       "finished_at": null,
-      "message": "User-approved skill read/execute ACL verified; guard now blocked by Git cross-user repository trust",
+      "message": "공통 런타임 구조 개선과 동시 실행 검증 완료; Git 신뢰 예외 불필요. 제품 구현 전 T01별 v3 probe와 의존성 준비 필요",
       "evidence": [
         "coordination/mongodb/evidence/T01-RUNTIME-BLOCKER.md",
         "coordination/mongodb/evidence/RUNTIME-RECOVERY.md"
@@ -661,6 +661,15 @@
       "to": "blocked",
       "worker": "zero-exec-T01",
       "message": "User-approved skill read/execute ACL verified; guard now blocked by Git cross-user repository trust"
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-28T16:00:38.286417Z",
+      "task_id": "T01",
+      "from": "blocked",
+      "to": "ready",
+      "worker": "zero-exec-T01",
+      "message": "공통 런타임 구조 개선과 동시 실행 검증 완료; Git 신뢰 예외 불필요. 제품 구현 전 T01별 v3 probe와 의존성 준비 필요"
     }
   ],
   "communications": [],
@@ -680,8 +689,8 @@
   "event_log": {
     "schema_version": 1,
     "path": "coordination\\mongodb\\coordination\\pipeline-events.jsonl",
-    "cursor": 13,
-    "head_event_id": "afec7d2ef9a3901051e67b1db097a37172f1de7f82a6b64a1c0f9911daaa4319",
+    "cursor": 14,
+    "head_event_id": "43f3a64ce59fdbb7efd5c148010f570a6dc661a65f1505f1fb0e8be12207b644",
     "complete_history": true
   }
 }
