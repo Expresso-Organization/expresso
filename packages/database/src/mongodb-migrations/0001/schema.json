@@ -1,0 +1,7659 @@
+[
+  {
+    "name": "plans",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "code",
+          "generationQuota",
+          "features",
+          "isPublicListed"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "code": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "free",
+              "pro",
+              "team"
+            ]
+          },
+          "generationQuota": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "features": {
+            "bsonType": "object"
+          },
+          "isPublicListed": {
+            "bsonType": "bool"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "plan_code_key",
+        "key": {
+          "code": 1
+        },
+        "unique": true
+      }
+    ]
+  },
+  {
+    "name": "users",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "email",
+          "displayName",
+          "planId",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "email": {
+            "bsonType": "string",
+            "maxLength": 320
+          },
+          "displayName": {
+            "bsonType": "string"
+          },
+          "planId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "deletionRequestedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "passwordHash": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "bsonType": "object",
+                "required": [
+                  "targetRoles",
+                  "experienceYears",
+                  "primaryGoal",
+                  "updatedAt"
+                ],
+                "properties": {
+                  "targetRoles": {
+                    "bsonType": [
+                      "object",
+                      "array",
+                      "string",
+                      "bool",
+                      "int",
+                      "long",
+                      "double",
+                      "null"
+                    ]
+                  },
+                  "experienceYears": {
+                    "bsonType": [
+                      "int",
+                      "long",
+                      "double"
+                    ],
+                    "multipleOf": 1,
+                    "minimum": 0,
+                    "maximum": 12
+                  },
+                  "primaryGoal": {
+                    "bsonType": "string",
+                    "enum": [
+                      "explore",
+                      "build",
+                      "organize"
+                    ]
+                  },
+                  "updatedAt": {
+                    "bsonType": "date"
+                  }
+                }
+              },
+              {
+                "bsonType": "null"
+              }
+            ]
+          },
+          "notificationPreferences": {
+            "anyOf": [
+              {
+                "bsonType": "object",
+                "required": [
+                  "kind",
+                  "enabled",
+                  "updatedAt"
+                ],
+                "properties": {
+                  "kind": {
+                    "bsonType": "string",
+                    "maxLength": 255,
+                    "enum": [
+                      "deadline",
+                      "saved_search",
+                      "generation",
+                      "traffic"
+                    ]
+                  },
+                  "enabled": {
+                    "bsonType": "bool"
+                  },
+                  "updatedAt": {
+                    "bsonType": "date"
+                  }
+                }
+              },
+              {
+                "bsonType": "null"
+              }
+            ]
+          },
+          "writeVersion": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "minimum": 0,
+            "multipleOf": 1
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "user_email_key",
+        "key": {
+          "email": 1
+        },
+        "unique": true,
+        "collation": {
+          "locale": "en",
+          "strength": 1,
+          "normalization": true
+        }
+      },
+      {
+        "name": "user_plan_id_fkey",
+        "key": {
+          "planId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "account_deletion_requests",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "subjectId",
+          "status",
+          "requestedAt",
+          "purgeAfter",
+          "cancellationTokenHash",
+          "restoration",
+          "phase"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "subjectId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "status": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "pending",
+              "cancelled",
+              "purged"
+            ]
+          },
+          "requestedAt": {
+            "bsonType": "date"
+          },
+          "purgeAfter": {
+            "bsonType": "date"
+          },
+          "cancelledAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "purgedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "cancellationTokenHash": {
+            "bsonType": "string",
+            "minLength": 64,
+            "maxLength": 64
+          },
+          "restoration": {
+            "bsonType": "object"
+          },
+          "phase": {
+            "bsonType": "string"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "pending_subject_id_unique",
+        "key": {
+          "subjectId": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "status": "pending"
+        }
+      },
+      {
+        "name": "account_deletion_request_user_id_fkey",
+        "key": {
+          "userId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "account_deletion_events",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "requestId",
+          "phase",
+          "affectedRows",
+          "occurredAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "requestId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "phase": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "affectedRows": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "occurredAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "account_deletion_event_request_id_phase_key",
+        "key": {
+          "requestId": 1,
+          "phase": 1
+        },
+        "unique": true
+      }
+    ]
+  },
+  {
+    "name": "companies",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "name",
+          "brandColors"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "name": {
+            "bsonType": "string"
+          },
+          "domain": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "industry": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "toneSummary": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "dedupeKey": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
+          "tonePalette": {
+            "bsonType": [
+              "object",
+              "null"
+            ]
+          },
+          "avatarBackground": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "avatarColor": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "brandColors": {
+            "bsonType": [
+              "object",
+              "array",
+              "string",
+              "bool",
+              "int",
+              "long",
+              "double",
+              "null"
+            ]
+          },
+          "toneImpression": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "initial": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "logoData": {
+            "bsonType": [
+              "binData",
+              "null"
+            ]
+          },
+          "logoMediaType": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "logoSourceUrl": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "logoChecksum": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "logoReadAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "company_dedupe_key_unique",
+        "key": {
+          "dedupeKey": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "dedupeKey": {
+            "$type": "string"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "job_postings",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "companyId",
+          "source",
+          "title",
+          "descriptionRaw",
+          "requirements",
+          "dedupeHash",
+          "createdAt",
+          "duties",
+          "preferred",
+          "hiringProcess"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "companyId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "source": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "api",
+              "partner",
+              "user_input"
+            ]
+          },
+          "externalId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
+          "title": {
+            "bsonType": "string"
+          },
+          "descriptionRaw": {
+            "bsonType": "string"
+          },
+          "requirements": {
+            "bsonType": [
+              "object",
+              "array",
+              "string",
+              "bool",
+              "int",
+              "long",
+              "double",
+              "null"
+            ]
+          },
+          "expiresAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "dedupeHash": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "sourceUrl": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "normalizedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "location": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "workType": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "experienceLabel": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "employmentType": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "salaryNote": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "jobFamily": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
+          "duties": {
+            "bsonType": "array"
+          },
+          "preferred": {
+            "bsonType": "array"
+          },
+          "hiringProcess": {
+            "bsonType": "array"
+          },
+          "processNote": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "notice": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "team": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "deadlineNote": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "sourceBoard": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "locationRegion": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
+          "experienceNote": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "factsReadAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "experienceMinYears": {
+            "bsonType": [
+              "int",
+              "long",
+              "double",
+              "null"
+            ],
+            "multipleOf": 1
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "job_posting_dedupe_hash_unique",
+        "key": {
+          "dedupeHash": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "job_posting_source_external_id_key",
+        "key": {
+          "source": 1,
+          "externalId": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "externalId": {
+            "$type": "string"
+          }
+        }
+      },
+      {
+        "name": "job_posting_experience_years_idx",
+        "key": {
+          "experienceMinYears": 1
+        }
+      },
+      {
+        "name": "job_posting_expires_at_idx",
+        "key": {
+          "expiresAt": 1
+        }
+      },
+      {
+        "name": "job_posting_facts_pending_idx",
+        "key": {
+          "createdAt": 1
+        }
+      },
+      {
+        "name": "job_posting_family_region_idx",
+        "key": {
+          "jobFamily": 1,
+          "locationRegion": 1
+        }
+      },
+      {
+        "name": "job_posting_job_family_idx",
+        "key": {
+          "jobFamily": 1
+        }
+      },
+      {
+        "name": "job_posting_region_idx",
+        "key": {
+          "locationRegion": 1
+        }
+      },
+      {
+        "name": "job_posting_company_id_fkey",
+        "key": {
+          "companyId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "job_analyses",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "inputType",
+          "status",
+          "attachments",
+          "progressStage",
+          "attempts",
+          "resultVersion",
+          "targetVersion"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "jobPostingId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "inputType": {
+            "bsonType": "string",
+            "enum": [
+              "url",
+              "paste",
+              "file",
+              "board",
+              "free"
+            ]
+          },
+          "status": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "queued",
+              "running",
+              "done",
+              "failed"
+            ]
+          },
+          "attachments": {
+            "bsonType": "array"
+          },
+          "analyzedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "inputIdempotencyKey": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
+          "inputRequestHash": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "progressStage": {
+            "bsonType": "string",
+            "enum": [
+              "queued",
+              "extracting",
+              "validating",
+              "covering",
+              "done",
+              "failed"
+            ]
+          },
+          "attempts": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "resultVersion": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "targetVersion": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "failureCode": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "failureRetryable": {
+            "bsonType": [
+              "bool",
+              "null"
+            ]
+          },
+          "history": {
+            "anyOf": [
+              {
+                "bsonType": "object",
+                "required": [
+                  "userId",
+                  "previousVersion",
+                  "requirements",
+                  "archivedAt"
+                ],
+                "properties": {
+                  "userId": {
+                    "bsonType": "string",
+                    "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                    "maxLength": 36
+                  },
+                  "previousVersion": {
+                    "bsonType": [
+                      "int",
+                      "long",
+                      "double"
+                    ],
+                    "multipleOf": 1,
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "requirements": {
+                    "bsonType": "array"
+                  },
+                  "archivedAt": {
+                    "bsonType": "date"
+                  }
+                }
+              },
+              {
+                "bsonType": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "job_analysis_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "job_analysis_input_idempotency_unique",
+        "key": {
+          "userId": 1,
+          "inputIdempotencyKey": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "inputIdempotencyKey": {
+            "$type": "string"
+          }
+        }
+      },
+      {
+        "name": "job_analysis_user_status_idx",
+        "key": {
+          "userId": 1,
+          "status": 1
+        }
+      },
+      {
+        "name": "job_analysis_job_posting_id_fkey",
+        "key": {
+          "jobPostingId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "brews",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "jobAnalysisId",
+          "mode",
+          "lengthPreset",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "jobAnalysisId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "freeTitle": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "maxLength": 300
+          },
+          "freeBrief": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "mode": {
+            "bsonType": "string",
+            "enum": [
+              "solo",
+              "collab"
+            ]
+          },
+          "lengthPreset": {
+            "bsonType": "string",
+            "enum": [
+              "single",
+              "double",
+              "triple"
+            ]
+          },
+          "status": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "draft",
+              "interviewing",
+              "recipe",
+              "generating",
+              "done"
+            ]
+          },
+          "deadlineAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "resumedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "updatedAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "brew_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "brew_user_status_idx",
+        "key": {
+          "userId": 1,
+          "status": 1
+        }
+      },
+      {
+        "name": "brew_user_id_job_analysis_id_fkey",
+        "key": {
+          "userId": 1,
+          "jobAnalysisId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "templates",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "code",
+          "name",
+          "toneTags",
+          "supportedSections",
+          "planRequired",
+          "description",
+          "rendererVersion",
+          "style",
+          "industries",
+          "isActive"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "code": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "name": {
+            "bsonType": "string"
+          },
+          "toneTags": {
+            "bsonType": [
+              "object",
+              "array",
+              "string",
+              "bool",
+              "int",
+              "long",
+              "double",
+              "null"
+            ]
+          },
+          "supportedSections": {
+            "bsonType": [
+              "object",
+              "array",
+              "string",
+              "bool",
+              "int",
+              "long",
+              "double",
+              "null"
+            ]
+          },
+          "planRequired": {
+            "bsonType": "string",
+            "enum": [
+              "free",
+              "pro"
+            ]
+          },
+          "description": {
+            "bsonType": "string"
+          },
+          "rendererVersion": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "style": {
+            "bsonType": "object"
+          },
+          "industries": {
+            "bsonType": [
+              "object",
+              "array",
+              "string",
+              "bool",
+              "int",
+              "long",
+              "double",
+              "null"
+            ]
+          },
+          "isActive": {
+            "bsonType": "bool"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "template_code_key",
+        "key": {
+          "code": 1
+        },
+        "unique": true
+      }
+    ]
+  },
+  {
+    "name": "portfolios",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "brewId",
+          "templateId",
+          "title",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "styleOverrides"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "brewId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "templateId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "currentDeploymentId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "title": {
+            "bsonType": "string"
+          },
+          "status": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "draft",
+              "published",
+              "unlisted"
+            ]
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "updatedAt": {
+            "bsonType": "date"
+          },
+          "styleOverrides": {
+            "bsonType": "object"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "portfolio_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "portfolio_user_status_idx",
+        "key": {
+          "userId": 1,
+          "status": 1
+        }
+      },
+      {
+        "name": "portfolio_user_updated_idx",
+        "key": {
+          "userId": 1,
+          "updatedAt": -1,
+          "_id": -1
+        }
+      },
+      {
+        "name": "portfolio_current_deployment_fk",
+        "key": {
+          "currentDeploymentId": 1
+        }
+      },
+      {
+        "name": "portfolio_template_id_fkey",
+        "key": {
+          "templateId": 1
+        }
+      },
+      {
+        "name": "portfolio_user_id_brew_id_fkey",
+        "key": {
+          "userId": 1,
+          "brewId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "deployments",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "portfolioId",
+          "version",
+          "subdomain",
+          "seoIndexable",
+          "contactVisibility",
+          "hasUnpublishedChanges",
+          "snapshot",
+          "seo"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "portfolioId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "version": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "subdomain": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "customDomain": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
+          "seoIndexable": {
+            "bsonType": "bool"
+          },
+          "contactVisibility": {
+            "bsonType": "string",
+            "enum": [
+              "public",
+              "on_request",
+              "hidden"
+            ]
+          },
+          "publishedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "hasUnpublishedChanges": {
+            "bsonType": "bool"
+          },
+          "snapshot": {
+            "bsonType": "object"
+          },
+          "seo": {
+            "bsonType": "object"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "deployment_subdomain_key",
+        "key": {
+          "subdomain": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "deployment_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "deployment_user_id_portfolio_id_version_key",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1,
+          "version": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "deployment_custom_domain_key",
+        "key": {
+          "customDomain": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "customDomain": {
+            "$type": "string"
+          }
+        }
+      },
+      {
+        "name": "deployment_portfolio_idx",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1,
+          "version": -1
+        }
+      }
+    ]
+  },
+  {
+    "name": "analytics_event_receipts",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "deploymentId",
+          "eventType",
+          "visitorHash",
+          "payloadHash",
+          "payloadBytes",
+          "occurredAt",
+          "receivedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "deploymentId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "eventType": {
+            "bsonType": "string",
+            "enum": [
+              "visit",
+              "complete",
+              "section_view",
+              "contact_click",
+              "file_download",
+              "link_click"
+            ]
+          },
+          "visitorHash": {
+            "bsonType": "string",
+            "maxLength": 64,
+            "minLength": 64
+          },
+          "payloadHash": {
+            "bsonType": "string",
+            "minLength": 64,
+            "maxLength": 64
+          },
+          "payloadBytes": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 1,
+            "maximum": 8192
+          },
+          "occurredAt": {
+            "bsonType": "date"
+          },
+          "receivedAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "analytics_event_receipt_user_id_event_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "analytics_event_rate_idx",
+        "key": {
+          "visitorHash": 1,
+          "receivedAt": -1
+        }
+      },
+      {
+        "name": "analytics_event_receipt_user_id_deployment_id_fkey",
+        "key": {
+          "userId": 1,
+          "deploymentId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "annotations",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "portfolioId",
+          "date",
+          "label",
+          "note"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "portfolioId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "date": {
+            "bsonType": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "label": {
+            "bsonType": "string"
+          },
+          "note": {
+            "bsonType": "string"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "annotation_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "annotation_user_id_portfolio_id_fkey",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "interview_sessions",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "brewId",
+          "status",
+          "questionCount",
+          "currentOrder",
+          "answeredCount",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "brewId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "status": {
+            "bsonType": "string",
+            "enum": [
+              "open",
+              "paused",
+              "done"
+            ]
+          },
+          "questionCount": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "transcriptUrl": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "inputIdempotencyKey": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
+          "currentOrder": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "answeredCount": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "pausedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "updatedAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "interview_session_user_id_brew_id_key",
+        "key": {
+          "userId": 1,
+          "brewId": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "interview_session_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "interview_session_idempotency_unique",
+        "key": {
+          "userId": 1,
+          "inputIdempotencyKey": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "inputIdempotencyKey": {
+            "$type": "string"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "job_posting_requirements",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "jobPostingId",
+          "orderNo",
+          "label",
+          "kind",
+          "sourceSpan",
+          "extractorVersion",
+          "extractedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "jobPostingId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "orderNo": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "label": {
+            "bsonType": "string"
+          },
+          "kind": {
+            "bsonType": "string",
+            "enum": [
+              "must",
+              "nice",
+              "tone"
+            ]
+          },
+          "sourceSpan": {
+            "bsonType": "object"
+          },
+          "extractorVersion": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "extractedAt": {
+            "bsonType": "date"
+          },
+          "axis": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255,
+            "enum": [
+              "technology",
+              "impact",
+              "role",
+              "conditions",
+              null
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "job_posting_requirement_axis_idx",
+        "key": {
+          "jobPostingId": 1,
+          "axis": 1
+        }
+      },
+      {
+        "name": "job_posting_requirement_posting_idx",
+        "key": {
+          "jobPostingId": 1,
+          "orderNo": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "questions",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "interviewSessionId",
+          "orderNo",
+          "text",
+          "skipped",
+          "basis",
+          "active",
+          "variant",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "interviewSessionId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "requirementId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "replacedFromId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "orderNo": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "text": {
+            "bsonType": "string"
+          },
+          "skipped": {
+            "bsonType": "bool"
+          },
+          "basis": {
+            "bsonType": "object"
+          },
+          "active": {
+            "bsonType": "bool"
+          },
+          "variant": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "rationale": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "question_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "active_order_no_unique",
+        "key": {
+          "userId": 1,
+          "interviewSessionId": 1,
+          "orderNo": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "active": true
+        }
+      },
+      {
+        "name": "question_replaced_from_id_fkey",
+        "key": {
+          "replacedFromId": 1
+        }
+      },
+      {
+        "name": "question_requirement_id_fkey",
+        "key": {
+          "requirementId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "career_categories",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "key",
+          "isSystem",
+          "propertySchema",
+          "sortOrder",
+          "name",
+          "icon",
+          "defaultView",
+          "version",
+          "updatedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "key": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "isSystem": {
+            "bsonType": "bool"
+          },
+          "propertySchema": {
+            "bsonType": "object"
+          },
+          "sortOrder": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1
+          },
+          "name": {
+            "bsonType": "string"
+          },
+          "icon": {
+            "bsonType": "string"
+          },
+          "defaultView": {
+            "bsonType": "string",
+            "enum": [
+              "table",
+              "gallery",
+              "timeline",
+              "board",
+              "list"
+            ]
+          },
+          "version": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "updatedAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "category_user_key_unique",
+        "key": {
+          "userId": 1,
+          "key": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "userId": {
+            "$type": "string"
+          }
+        }
+      },
+      {
+        "name": "system_key_unique",
+        "key": {
+          "key": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "userId": null
+        }
+      }
+    ]
+  },
+  {
+    "name": "career_records",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "categoryId",
+          "title",
+          "status",
+          "origin",
+          "properties",
+          "bodyMd",
+          "version",
+          "updatedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "categoryId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "title": {
+            "bsonType": "string"
+          },
+          "status": {
+            "bsonType": "string",
+            "enum": [
+              "draft",
+              "organized",
+              "verified"
+            ]
+          },
+          "origin": {
+            "bsonType": "string",
+            "enum": [
+              "manual",
+              "ai",
+              "interview",
+              "import"
+            ]
+          },
+          "properties": {
+            "bsonType": "object"
+          },
+          "bodyMd": {
+            "bsonType": "string"
+          },
+          "periodStart": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "periodEnd": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "version": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "updatedAt": {
+            "bsonType": "date"
+          },
+          "deletedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "purgeAfter": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "createIdempotencyKey": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
+          "createRequestHash": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "referenceVersion": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "minimum": 0,
+            "multipleOf": 1
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "record_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "record_create_idempotency_unique",
+        "key": {
+          "userId": 1,
+          "createIdempotencyKey": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "createIdempotencyKey": {
+            "$type": "string"
+          }
+        }
+      },
+      {
+        "name": "record_user_category_idx",
+        "key": {
+          "userId": 1,
+          "categoryId": 1
+        }
+      },
+      {
+        "name": "record_category_id_fkey",
+        "key": {
+          "categoryId": 1
+        }
+      },
+      {
+        "name": "career_owner_category_updated",
+        "key": {
+          "userId": 1,
+          "deletedAt": 1,
+          "categoryId": 1,
+          "updatedAt": -1,
+          "_id": -1
+        }
+      }
+    ]
+  },
+  {
+    "name": "answers",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "questionId",
+          "inputType",
+          "transcript",
+          "version",
+          "updatedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "questionId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "inputType": {
+            "bsonType": "string",
+            "enum": [
+              "text",
+              "voice"
+            ]
+          },
+          "transcript": {
+            "bsonType": "string"
+          },
+          "createdRecordId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "inputIdempotencyKey": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
+          "requestHash": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "updatedAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "answer_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "answer_user_id_question_id_key",
+        "key": {
+          "userId": 1,
+          "questionId": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "answer_idempotency_unique",
+        "key": {
+          "userId": 1,
+          "inputIdempotencyKey": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "inputIdempotencyKey": {
+            "$type": "string"
+          }
+        }
+      },
+      {
+        "name": "answer_created_record_id_fkey",
+        "key": {
+          "createdRecordId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "answer_record_changes",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "answerId",
+          "recordId",
+          "changeType",
+          "changedFields",
+          "sourceQuote",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "answerId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "recordId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "changeType": {
+            "bsonType": "string",
+            "enum": [
+              "created",
+              "strengthened"
+            ]
+          },
+          "changedFields": {
+            "bsonType": "array"
+          },
+          "sourceQuote": {
+            "bsonType": "string"
+          },
+          "createdAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "answer_record_change_user_id_answer_id_key",
+        "key": {
+          "userId": 1,
+          "answerId": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "answer_record_change_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "answer_record_change_user_id_record_id_fkey",
+        "key": {
+          "userId": 1,
+          "recordId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "recipes",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "brewId",
+          "version",
+          "status",
+          "completeness",
+          "generatedAt",
+          "updatedAt",
+          "promptVersion"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "brewId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "version": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "status": {
+            "bsonType": "string",
+            "enum": [
+              "draft",
+              "confirmed"
+            ]
+          },
+          "completeness": {
+            "bsonType": "decimal"
+          },
+          "generatedAt": {
+            "bsonType": "date"
+          },
+          "inputIdempotencyKey": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
+          "updatedAt": {
+            "bsonType": "date"
+          },
+          "promptVersion": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "portfolioPlan": {
+            "bsonType": [
+              "object",
+              "null"
+            ]
+          },
+          "planningManifest": {
+            "bsonType": [
+              "object",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "recipe_user_id_brew_id_version_key",
+        "key": {
+          "userId": 1,
+          "brewId": 1,
+          "version": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "recipe_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "recipe_idempotency_unique",
+        "key": {
+          "userId": 1,
+          "inputIdempotencyKey": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "inputIdempotencyKey": {
+            "$type": "string"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "recipe_sections",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "recipeId",
+          "orderNo",
+          "title",
+          "purpose",
+          "targetLength",
+          "context",
+          "locked",
+          "editedBy",
+          "updatedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "recipeId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "orderNo": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "title": {
+            "bsonType": "string"
+          },
+          "purpose": {
+            "bsonType": "string"
+          },
+          "targetLength": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "context": {
+            "bsonType": "object"
+          },
+          "locked": {
+            "bsonType": "bool"
+          },
+          "editedBy": {
+            "bsonType": "string",
+            "enum": [
+              "ai",
+              "user"
+            ]
+          },
+          "updatedAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "recipe_section_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "recipe_section_user_id_recipe_id_order_no_key",
+        "key": {
+          "userId": 1,
+          "recipeId": 1,
+          "orderNo": 1
+        },
+        "unique": true
+      }
+    ]
+  },
+  {
+    "name": "portfolio_sections",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "portfolioId",
+          "orderNo",
+          "visible"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "portfolioId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "recipeSectionId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "orderNo": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "visible": {
+            "bsonType": "bool"
+          },
+          "hiddenReason": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "portfolio_section_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "portfolio_section_user_id_portfolio_id_order_no_key",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1,
+          "orderNo": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "portfolio_section_portfolio_recipe_section_key",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1,
+          "recipeSectionId": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "recipeSectionId": {
+            "$type": "string"
+          }
+        }
+      },
+      {
+        "name": "portfolio_section_recipe_section_id_fkey",
+        "key": {
+          "recipeSectionId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "blocks",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "portfolioSectionId",
+          "kind",
+          "content",
+          "style",
+          "syncState",
+          "locked",
+          "orderNo"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "portfolioSectionId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "kind": {
+            "bsonType": "string",
+            "enum": [
+              "heading",
+              "paragraph",
+              "list",
+              "metric",
+              "chart",
+              "media"
+            ]
+          },
+          "content": {
+            "bsonType": "object"
+          },
+          "style": {
+            "bsonType": "object"
+          },
+          "sourceRecordId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "syncState": {
+            "bsonType": "string",
+            "enum": [
+              "synced",
+              "stale",
+              "detached"
+            ]
+          },
+          "locked": {
+            "bsonType": "bool"
+          },
+          "orderNo": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "block_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "block_section_order_idx",
+        "key": {
+          "userId": 1,
+          "portfolioSectionId": 1,
+          "orderNo": 1,
+          "_id": 1
+        }
+      },
+      {
+        "name": "block_source_record_idx",
+        "key": {
+          "userId": 1,
+          "sourceRecordId": 1
+        }
+      },
+      {
+        "name": "block_source_record_id_fkey",
+        "key": {
+          "sourceRecordId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "brew_jobs",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "type",
+          "status",
+          "stage",
+          "attempts",
+          "input",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "type": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "interview",
+              "recipe"
+            ]
+          },
+          "status": {
+            "bsonType": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ]
+          },
+          "stage": {
+            "bsonType": "string"
+          },
+          "attempts": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "input": {
+            "bsonType": "object"
+          },
+          "resultId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "errorCode": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "failureRetryable": {
+            "bsonType": [
+              "bool",
+              "null"
+            ]
+          },
+          "inputIdempotencyKey": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "updatedAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "brew_job_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "brew_job_idempotency_unique",
+        "key": {
+          "userId": 1,
+          "inputIdempotencyKey": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "inputIdempotencyKey": {
+            "$type": "string"
+          }
+        }
+      },
+      {
+        "name": "brew_job_recent_idx",
+        "key": {
+          "userId": 1,
+          "type": 1,
+          "createdAt": -1
+        }
+      }
+    ]
+  },
+  {
+    "name": "brew_sources",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "brewId",
+          "recordId",
+          "rank",
+          "selectedBy",
+          "score",
+          "reasonText",
+          "isSelected",
+          "updatedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "brewId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "recordId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "rank": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "selectedBy": {
+            "bsonType": "string",
+            "enum": [
+              "auto",
+              "user"
+            ]
+          },
+          "excludedReason": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "score": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "reasonText": {
+            "bsonType": "string"
+          },
+          "isSelected": {
+            "bsonType": "bool"
+          },
+          "updatedAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "brew_source_user_id_brew_id_record_id_key",
+        "key": {
+          "userId": 1,
+          "brewId": 1,
+          "recordId": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "brew_source_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "selected_rank_unique",
+        "key": {
+          "userId": 1,
+          "brewId": 1,
+          "rank": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "isSelected": true
+        }
+      },
+      {
+        "name": "brew_source_user_id_record_id_fkey",
+        "key": {
+          "userId": 1,
+          "recordId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "career_views",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "categoryId",
+          "name",
+          "viewType",
+          "filters",
+          "sorts",
+          "visibleProperties",
+          "sortOrder",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "categoryId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "name": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "viewType": {
+            "bsonType": "string",
+            "enum": [
+              "table",
+              "gallery",
+              "timeline",
+              "board",
+              "list"
+            ]
+          },
+          "filters": {
+            "bsonType": "array"
+          },
+          "sorts": {
+            "bsonType": "array"
+          },
+          "visibleProperties": {
+            "bsonType": [
+              "object",
+              "array",
+              "string",
+              "bool",
+              "int",
+              "long",
+              "double",
+              "null"
+            ]
+          },
+          "sortOrder": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "createdAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "category_view_user_id_category_id_name_key",
+        "key": {
+          "userId": 1,
+          "categoryId": 1,
+          "name": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "category_view_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "category_view_user_category_idx",
+        "key": {
+          "userId": 1,
+          "categoryId": 1,
+          "sortOrder": 1
+        }
+      },
+      {
+        "name": "category_view_category_id_fkey",
+        "key": {
+          "categoryId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "company_research_items",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "companyId",
+          "kind",
+          "topic",
+          "statement",
+          "capturedAt",
+          "confidence",
+          "basisFactIds"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "companyId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "kind": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "fact",
+              "signal"
+            ]
+          },
+          "topic": {
+            "bsonType": "string"
+          },
+          "statement": {
+            "bsonType": "string"
+          },
+          "sourceUrl": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "publishedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "capturedAt": {
+            "bsonType": "date"
+          },
+          "confidence": {
+            "bsonType": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "basisFactIds": {
+            "bsonType": [
+              "object",
+              "array",
+              "string",
+              "bool",
+              "int",
+              "long",
+              "double",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "company_research_item_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "company_research_lookup_idx",
+        "key": {
+          "userId": 1,
+          "companyId": 1,
+          "kind": 1,
+          "capturedAt": -1
+        }
+      },
+      {
+        "name": "company_research_item_company_id_fkey",
+        "key": {
+          "companyId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "consents",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "scope",
+          "policyVersion",
+          "grantedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "scope": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "job_posting_analysis",
+              "career_records"
+            ]
+          },
+          "policyVersion": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "grantedAt": {
+            "bsonType": "date"
+          },
+          "revokedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "consent_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "active_scope_unique",
+        "key": {
+          "userId": 1,
+          "scope": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "revokedAt": null
+        }
+      },
+      {
+        "name": "consent_lookup_idx",
+        "key": {
+          "userId": 1,
+          "scope": 1,
+          "revokedAt": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "visit_events",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "deploymentId",
+          "sessionId",
+          "isOwner",
+          "startedAt",
+          "completed"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "deploymentId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "sessionId": {
+            "bsonType": "string"
+          },
+          "referrer": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "orgDomain": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "isOwner": {
+            "bsonType": "bool"
+          },
+          "startedAt": {
+            "bsonType": "date"
+          },
+          "eventId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "completed": {
+            "bsonType": "bool"
+          },
+          "durationMs": {
+            "bsonType": [
+              "int",
+              "long",
+              "double",
+              "null"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "visit_event_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "visit_event_event_id_key",
+        "key": {
+          "eventId": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "eventId": {
+            "$type": "string"
+          }
+        }
+      },
+      {
+        "name": "visit_event_deployment_started_idx",
+        "key": {
+          "userId": 1,
+          "deploymentId": 1,
+          "startedAt": -1
+        }
+      }
+    ]
+  },
+  {
+    "name": "conversion_events",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "visitEventId",
+          "kind",
+          "target",
+          "occurredAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "visitEventId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "kind": {
+            "bsonType": "string",
+            "enum": [
+              "contact_click",
+              "file_download",
+              "link_click"
+            ]
+          },
+          "target": {
+            "bsonType": "string"
+          },
+          "eventId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "occurredAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "conversion_event_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "conversion_event_event_id_key",
+        "key": {
+          "eventId": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "eventId": {
+            "$type": "string"
+          }
+        }
+      },
+      {
+        "name": "conversion_event_user_id_visit_event_id_fkey",
+        "key": {
+          "userId": 1,
+          "visitEventId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "dashboard_views",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "portfolioId",
+          "name",
+          "period",
+          "isDefault"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "portfolioId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "name": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "period": {
+            "bsonType": "string",
+            "enum": [
+              "7d",
+              "30d",
+              "all"
+            ]
+          },
+          "isDefault": {
+            "bsonType": "bool"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "dashboard_view_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "dashboard_view_user_id_portfolio_id_name_key",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1,
+          "name": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "default_portfolio_id_unique",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "isDefault": true
+        }
+      }
+    ]
+  },
+  {
+    "name": "deployment_slug_redirects",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "portfolioId",
+          "oldSlug",
+          "newSlug",
+          "createdAt",
+          "expiresAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "portfolioId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "oldSlug": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "newSlug": {
+            "bsonType": "string"
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "expiresAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "deployment_slug_redirect_old_slug_key",
+        "key": {
+          "oldSlug": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "deployment_slug_redirect_lookup_idx",
+        "key": {
+          "oldSlug": 1,
+          "expiresAt": 1
+        }
+      },
+      {
+        "name": "deployment_slug_redirect_user_id_portfolio_id_fkey",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "derived_metrics",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "name",
+          "numeratorKey",
+          "denominatorKey"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "name": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "numeratorKey": {
+            "bsonType": "string"
+          },
+          "denominatorKey": {
+            "bsonType": "string"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "derived_metric_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "derived_metric_user_id_name_key",
+        "key": {
+          "userId": 1,
+          "name": 1
+        },
+        "unique": true
+      }
+    ]
+  },
+  {
+    "name": "export_assets",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "portfolioId",
+          "kind",
+          "fileUrl",
+          "downloadCount",
+          "version",
+          "accessNonce",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "portfolioId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "kind": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "pdf",
+              "deck",
+              "resume_file"
+            ]
+          },
+          "fileUrl": {
+            "bsonType": "string"
+          },
+          "pageFormat": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "letter",
+              "a4",
+              null
+            ]
+          },
+          "downloadCount": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "version": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "accessNonce": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "revokedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "export_asset_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "active_resume_portfolio_id_unique",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "kind": "resume_file",
+          "revokedAt": null
+        }
+      },
+      {
+        "name": "export_asset_user_id_portfolio_id_fkey",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "export_jobs",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "portfolioId",
+          "kind",
+          "status",
+          "attempts",
+          "idempotencyKey",
+          "requestHash",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "portfolioId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "deploymentId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "kind": {
+            "bsonType": "string",
+            "enum": [
+              "pdf",
+              "deck"
+            ]
+          },
+          "pageFormat": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "letter",
+              "a4",
+              null
+            ]
+          },
+          "status": {
+            "bsonType": "string",
+            "enum": [
+              "queued",
+              "running",
+              "done",
+              "failed"
+            ]
+          },
+          "attempts": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "idempotencyKey": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "requestHash": {
+            "bsonType": "string"
+          },
+          "assetId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "errorCode": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "updatedAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "export_job_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "export_job_user_id_idempotency_key_key",
+        "key": {
+          "userId": 1,
+          "idempotencyKey": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "export_job_asset_fk",
+        "key": {
+          "assetId": 1
+        }
+      },
+      {
+        "name": "export_job_user_id_deployment_id_fkey",
+        "key": {
+          "deploymentId": 1
+        }
+      },
+      {
+        "name": "export_job_user_id_portfolio_id_fkey",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "generated_pages",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "portfolioId",
+          "html",
+          "css",
+          "rationale",
+          "revision",
+          "promptVersion",
+          "ungroundedNumbers",
+          "removed",
+          "createdAt",
+          "qualityStatus",
+          "qaReport",
+          "generationManifest",
+          "designPrinciplesVersion"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "portfolioId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "generationJobId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "html": {
+            "bsonType": "string"
+          },
+          "css": {
+            "bsonType": "string"
+          },
+          "rationale": {
+            "bsonType": "string"
+          },
+          "revision": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "instruction": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "promptVersion": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1
+          },
+          "ungroundedNumbers": {
+            "bsonType": [
+              "object",
+              "array",
+              "string",
+              "bool",
+              "int",
+              "long",
+              "double",
+              "null"
+            ]
+          },
+          "removed": {
+            "bsonType": [
+              "object",
+              "array",
+              "string",
+              "bool",
+              "int",
+              "long",
+              "double",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "qualityStatus": {
+            "bsonType": "string",
+            "enum": [
+              "ready",
+              "failed_qa"
+            ]
+          },
+          "qaReport": {
+            "bsonType": "object"
+          },
+          "generationManifest": {
+            "bsonType": "object"
+          },
+          "portfolioPlanSnapshot": {
+            "bsonType": [
+              "object",
+              "null"
+            ]
+          },
+          "styleSpecSnapshot": {
+            "bsonType": [
+              "object",
+              "null"
+            ]
+          },
+          "designPrinciplesVersion": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "generated_page_portfolio_id_revision_key",
+        "key": {
+          "portfolioId": 1,
+          "revision": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "generated_page_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "generated_page_generation_job_unique",
+        "key": {
+          "generationJobId": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "generationJobId": {
+            "$type": "string"
+          }
+        }
+      },
+      {
+        "name": "generated_page_latest_idx",
+        "key": {
+          "portfolioId": 1,
+          "revision": -1
+        }
+      },
+      {
+        "name": "generated_page_user_id_portfolio_id_fkey",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1
+        }
+      },
+      {
+        "name": "generated_page_user_job_idx",
+        "key": {
+          "userId": 1,
+          "generationJobId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "generation_jobs",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "brewId",
+          "recipeId",
+          "templateId",
+          "status",
+          "usageCharged",
+          "stage",
+          "attempts",
+          "createdAt",
+          "updatedAt",
+          "styleOverrides"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "brewId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "recipeId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "templateId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "status": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "queued",
+              "running",
+              "done",
+              "failed"
+            ]
+          },
+          "usageCharged": {
+            "bsonType": "bool"
+          },
+          "errorCode": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "inputIdempotencyKey": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
+          "requestHash": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "stage": {
+            "bsonType": "string",
+            "enum": [
+              "queued",
+              "validating",
+              "materializing",
+              "charging",
+              "done",
+              "failed"
+            ]
+          },
+          "attempts": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "failureRetryable": {
+            "bsonType": [
+              "bool",
+              "null"
+            ]
+          },
+          "portfolioId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "updatedAt": {
+            "bsonType": "date"
+          },
+          "styleOverrides": {
+            "bsonType": "object"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "generation_job_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "generation_job_idempotency_unique",
+        "key": {
+          "userId": 1,
+          "inputIdempotencyKey": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "inputIdempotencyKey": {
+            "$type": "string"
+          }
+        }
+      },
+      {
+        "name": "generation_job_user_status_idx",
+        "key": {
+          "userId": 1,
+          "status": 1
+        }
+      },
+      {
+        "name": "generation_job_portfolio_fk",
+        "key": {
+          "portfolioId": 1
+        }
+      },
+      {
+        "name": "generation_job_template_id_fkey",
+        "key": {
+          "templateId": 1
+        }
+      },
+      {
+        "name": "generation_job_user_id_brew_id_fkey",
+        "key": {
+          "userId": 1,
+          "brewId": 1
+        }
+      },
+      {
+        "name": "generation_job_user_id_recipe_id_fkey",
+        "key": {
+          "userId": 1,
+          "recipeId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "recipe_items",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "recipeSectionId",
+          "orderNo",
+          "pointText",
+          "evidence",
+          "locked",
+          "editedBy",
+          "updatedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "recipeSectionId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "orderNo": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "pointText": {
+            "bsonType": "string"
+          },
+          "evidence": {
+            "bsonType": "array"
+          },
+          "locked": {
+            "bsonType": "bool"
+          },
+          "editedBy": {
+            "bsonType": "string",
+            "enum": [
+              "ai",
+              "user"
+            ]
+          },
+          "updatedAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "recipe_item_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "recipe_item_user_id_recipe_section_id_order_no_key",
+        "key": {
+          "userId": 1,
+          "recipeSectionId": 1,
+          "orderNo": 1
+        },
+        "unique": true
+      }
+    ]
+  },
+  {
+    "name": "recipe_evidence_paths",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "recipeId",
+          "recipeItemId",
+          "sourceType",
+          "sourceId",
+          "sourceLabel",
+          "targetPath",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "recipeId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "recipeItemId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "sourceType": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "requirement",
+              "record",
+              "answer"
+            ]
+          },
+          "sourceId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "sourceLabel": {
+            "bsonType": "string"
+          },
+          "targetPath": {
+            "bsonType": "string"
+          },
+          "createdAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "recipe_evidence_path_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "recipe_evidence_path_user_id_recipe_id_source_type_source_i_key",
+        "key": {
+          "userId": 1,
+          "recipeId": 1,
+          "sourceType": 1,
+          "sourceId": 1,
+          "recipeItemId": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "recipe_evidence_path_user_id_recipe_item_id_fkey",
+        "key": {
+          "userId": 1,
+          "recipeItemId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "generation_sentence_evidence",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "generationJobId",
+          "blockId",
+          "recipeEvidencePathId",
+          "sourceQuote",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "generationJobId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "blockId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "recipeEvidencePathId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "sourceQuote": {
+            "bsonType": "string"
+          },
+          "createdAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "generation_sentence_evidence_user_id_generation_job_id_bloc_key",
+        "key": {
+          "userId": 1,
+          "generationJobId": 1,
+          "blockId": 1,
+          "recipeEvidencePathId": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "generation_sentence_evidence_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "generation_sentence_evidence_recipe_evidence_path_id_fkey",
+        "key": {
+          "recipeEvidencePathId": 1
+        }
+      },
+      {
+        "name": "generation_sentence_evidence_user_id_block_id_fkey",
+        "key": {
+          "userId": 1,
+          "blockId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "usage_counters",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "periodStart",
+          "used",
+          "resetsAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "periodStart": {
+            "bsonType": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "used": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "resetsAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "usage_counter_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "usage_counter_user_id_period_start_key",
+        "key": {
+          "userId": 1,
+          "periodStart": 1
+        },
+        "unique": true
+      }
+    ]
+  },
+  {
+    "name": "generation_usage_ledger",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "generationJobId",
+          "amount",
+          "reason",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "generationJobId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "usageCounterId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "amount": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "enum": [
+              "-1"
+            ]
+          },
+          "reason": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "createdAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "generation_usage_ledger_user_id_generation_job_id_reason_key",
+        "key": {
+          "userId": 1,
+          "generationJobId": 1,
+          "reason": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "generation_usage_ledger_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "generation_usage_ledger_user_id_usage_counter_id_fkey",
+        "key": {
+          "userId": 1,
+          "usageCounterId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "identity_oauth_accounts",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "provider",
+          "providerAccountId",
+          "email",
+          "linkedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "provider": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "providerAccountId": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "email": {
+            "bsonType": "string",
+            "maxLength": 320
+          },
+          "linkedAt": {
+            "bsonType": "date"
+          },
+          "lastLoginAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "identity_oauth_account_provider_provider_account_id_key",
+        "key": {
+          "provider": 1,
+          "providerAccountId": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "identity_oauth_account_user_id_provider_key",
+        "key": {
+          "userId": 1,
+          "provider": 1
+        },
+        "unique": true
+      }
+    ]
+  },
+  {
+    "name": "identity_sessions",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "tokenHash",
+          "expiresAt",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "tokenHash": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "expiresAt": {
+            "bsonType": "date"
+          },
+          "revokedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "lastSeenAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "identity_session_token_hash_key",
+        "key": {
+          "tokenHash": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "identity_session_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "identity_session_active_token_idx",
+        "key": {
+          "tokenHash": 1,
+          "expiresAt": 1
+        }
+      },
+      {
+        "name": "identity_session_user_active_idx",
+        "key": {
+          "userId": 1,
+          "createdAt": -1
+        }
+      },
+      {
+        "name": "session_expiry",
+        "key": {
+          "expiresAt": 1
+        },
+        "expireAfterSeconds": 0
+      }
+    ]
+  },
+  {
+    "name": "insights",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "deploymentId",
+          "narrative",
+          "evidenceMetrics",
+          "suggestions",
+          "generatedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "deploymentId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "periodStart": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "periodEnd": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "narrative": {
+            "bsonType": "string"
+          },
+          "evidenceMetrics": {
+            "bsonType": [
+              "object",
+              "array",
+              "string",
+              "bool",
+              "int",
+              "long",
+              "double",
+              "null"
+            ]
+          },
+          "suggestions": {
+            "bsonType": "array"
+          },
+          "generatedAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "insight_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "insight_user_id_deployment_id_fkey",
+        "key": {
+          "userId": 1,
+          "deploymentId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "interests",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "jobPostingId",
+          "stage",
+          "updatedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "jobPostingId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "stage": {
+            "bsonType": "string",
+            "enum": [
+              "saved",
+              "applied",
+              "closed"
+            ]
+          },
+          "deadlineAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "memo": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "interest_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "interest_user_id_job_posting_id_key",
+        "key": {
+          "userId": 1,
+          "jobPostingId": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "interest_job_posting_id_fkey",
+        "key": {
+          "jobPostingId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "job_sources",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "provider",
+          "token",
+          "displayName",
+          "isActive",
+          "lastSeenCount",
+          "lastAddedCount",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "provider": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "greenhouse",
+              "lever",
+              "ashby",
+              "work24"
+            ]
+          },
+          "token": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "displayName": {
+            "bsonType": "string"
+          },
+          "isActive": {
+            "bsonType": "bool"
+          },
+          "lastRunAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "lastStatus": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "succeeded",
+              "failed",
+              null
+            ]
+          },
+          "lastError": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "lastSeenCount": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "lastAddedCount": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "siteUrl": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "job_source_provider_token_key",
+        "key": {
+          "provider": 1,
+          "token": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "job_source_active_idx",
+        "key": {
+          "provider": 1,
+          "token": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "layout_specs",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "portfolioId",
+          "batchId",
+          "spec",
+          "promptVersion",
+          "editedBy",
+          "orderNo",
+          "selected",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "portfolioId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "batchId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "generationJobId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "seedTemplateId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "spec": {
+            "bsonType": "object"
+          },
+          "promptVersion": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "editedBy": {
+            "bsonType": "string",
+            "enum": [
+              "ai",
+              "user"
+            ]
+          },
+          "orderNo": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "selected": {
+            "bsonType": "bool"
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "instruction": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "layout_spec_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "selected_portfolio_id_unique",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "selected": true
+        }
+      },
+      {
+        "name": "layout_spec_portfolio_recent_idx",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1,
+          "createdAt": -1,
+          "batchId": 1,
+          "orderNo": 1
+        }
+      },
+      {
+        "name": "layout_spec_generation_job_id_fkey",
+        "key": {
+          "generationJobId": 1
+        }
+      },
+      {
+        "name": "layout_spec_seed_template_id_fkey",
+        "key": {
+          "seedTemplateId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "match_scores",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "jobPostingId",
+          "total",
+          "axes",
+          "reasonText",
+          "computedAt",
+          "nextAction"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "jobPostingId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "total": {
+            "bsonType": "decimal"
+          },
+          "axes": {
+            "bsonType": "object"
+          },
+          "reasonText": {
+            "bsonType": "string"
+          },
+          "computedAt": {
+            "bsonType": "date"
+          },
+          "nextAction": {
+            "bsonType": "string"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "match_score_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "match_score_user_id_job_posting_id_key",
+        "key": {
+          "userId": 1,
+          "jobPostingId": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "match_score_job_posting_id_fkey",
+        "key": {
+          "jobPostingId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "media_assets",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "storageKey",
+          "mimeType",
+          "width",
+          "height",
+          "byteSize",
+          "checksum",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "storageKey": {
+            "bsonType": "string"
+          },
+          "mimeType": {
+            "bsonType": "string",
+            "enum": [
+              "image/png",
+              "image/jpeg",
+              "image/webp",
+              "image/gif"
+            ]
+          },
+          "width": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "height": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "byteSize": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "checksum": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "createdAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "media_asset_user_id_checksum_key",
+        "key": {
+          "userId": 1,
+          "checksum": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "media_asset_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "media_asset_user_created_idx",
+        "key": {
+          "userId": 1,
+          "createdAt": -1
+        }
+      }
+    ]
+  },
+  {
+    "name": "media_variants",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "mediaAssetId",
+          "storageKey",
+          "mimeType",
+          "width",
+          "height",
+          "byteSize",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "mediaAssetId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "storageKey": {
+            "bsonType": "string"
+          },
+          "mimeType": {
+            "bsonType": "string"
+          },
+          "width": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "height": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "byteSize": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "createdAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "media_variant_media_asset_id_width_key",
+        "key": {
+          "mediaAssetId": 1,
+          "width": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "media_variant_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "media_variant_asset_idx",
+        "key": {
+          "mediaAssetId": 1,
+          "width": 1
+        }
+      },
+      {
+        "name": "media_variant_user_id_media_asset_id_fkey",
+        "key": {
+          "userId": 1,
+          "mediaAssetId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "metrics_daily",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "deploymentId",
+          "date",
+          "metricKey",
+          "value",
+          "sampleSize"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "deploymentId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "date": {
+            "bsonType": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "metricKey": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "value": {
+            "bsonType": "decimal"
+          },
+          "sampleSize": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "metric_daily_user_id_deployment_id_date_metric_key_key",
+        "key": {
+          "userId": 1,
+          "deploymentId": 1,
+          "date": 1,
+          "metricKey": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "metric_daily_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "metric_daily_lookup_idx",
+        "key": {
+          "userId": 1,
+          "deploymentId": 1,
+          "metricKey": 1,
+          "date": -1
+        }
+      }
+    ]
+  },
+  {
+    "name": "notifications",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "kind",
+          "targetUrl",
+          "dedupeKey",
+          "dedupeDate",
+          "deliveryStatus",
+          "attempts",
+          "nextAttemptAt",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "kind": {
+            "bsonType": "string",
+            "enum": [
+              "deadline",
+              "saved_search",
+              "generation",
+              "traffic"
+            ]
+          },
+          "targetUrl": {
+            "bsonType": "string"
+          },
+          "dedupeKey": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "readAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "dedupeDate": {
+            "bsonType": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "deliveryStatus": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "queued",
+              "sending",
+              "sent",
+              "failed",
+              "suppressed"
+            ]
+          },
+          "attempts": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "nextAttemptAt": {
+            "bsonType": "date"
+          },
+          "lastError": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "deliveredAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "notification_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "notification_daily_dedupe_idx",
+        "key": {
+          "userId": 1,
+          "dedupeKey": 1,
+          "dedupeDate": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "notification_delivery_ready_idx",
+        "key": {
+          "deliveryStatus": 1,
+          "nextAttemptAt": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "outbox_events",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "topic",
+          "payload",
+          "idempotencyKey",
+          "state",
+          "attempts",
+          "availableAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "topic": {
+            "bsonType": "string"
+          },
+          "payload": {
+            "bsonType": "object"
+          },
+          "idempotencyKey": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "state": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "pending",
+              "publishing",
+              "published",
+              "dead_letter"
+            ]
+          },
+          "attempts": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "availableAt": {
+            "bsonType": "date"
+          },
+          "lockedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "publishedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "lastError": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "updatedAt": {
+            "bsonType": "date"
+          },
+          "leaseToken": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "leaseUntil": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "userId": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "platform_outbox_idempotency_key_key",
+        "key": {
+          "idempotencyKey": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "platform_outbox_dispatch_idx",
+        "key": {
+          "availableAt": 1,
+          "createdAt": 1
+        }
+      },
+      {
+        "name": "outbox_available",
+        "key": {
+          "state": 1,
+          "availableAt": 1,
+          "_id": 1
+        }
+      },
+      {
+        "name": "outbox_lease",
+        "key": {
+          "state": 1,
+          "leaseUntil": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "portfolio_edit_proposals",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "portfolioId",
+          "targetPath",
+          "blockId",
+          "operation",
+          "beforeState",
+          "afterState",
+          "status",
+          "createdAt",
+          "expiresAt",
+          "patches"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "portfolioId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "targetPath": {
+            "bsonType": "string"
+          },
+          "blockId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "operation": {
+            "bsonType": "string",
+            "enum": [
+              "update_text",
+              "set_style",
+              "insert_record",
+              "instruct"
+            ]
+          },
+          "beforeState": {
+            "bsonType": "object"
+          },
+          "afterState": {
+            "bsonType": "object"
+          },
+          "sourceRecordId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "status": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "pending",
+              "applied",
+              "rejected",
+              "expired"
+            ]
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "expiresAt": {
+            "bsonType": "date"
+          },
+          "appliedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "patches": {
+            "bsonType": "array"
+          },
+          "instruction": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "portfolio_edit_proposal_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "portfolio_edit_proposal_pending_idx",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1,
+          "status": 1,
+          "expiresAt": 1
+        }
+      },
+      {
+        "name": "portfolio_edit_proposal_user_id_block_id_fkey",
+        "key": {
+          "userId": 1,
+          "blockId": 1
+        }
+      },
+      {
+        "name": "portfolio_edit_proposal_user_id_source_record_id_fkey",
+        "key": {
+          "userId": 1,
+          "sourceRecordId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "portfolio_snapshots",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "portfolioId",
+          "kind",
+          "snapshot",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "portfolioId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "kind": {
+            "bsonType": "string",
+            "enum": [
+              "initial_generation",
+              "edit",
+              "manual"
+            ]
+          },
+          "snapshot": {
+            "bsonType": "object"
+          },
+          "createdAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "portfolio_snapshot_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "portfolio_snapshot_recent_idx",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1,
+          "createdAt": -1,
+          "_id": -1
+        }
+      }
+    ]
+  },
+  {
+    "name": "recent_searches",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "queryText",
+          "conditions",
+          "resultCount",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "queryText": {
+            "bsonType": "string"
+          },
+          "conditions": {
+            "bsonType": "array"
+          },
+          "resultCount": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "createdAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "recent_search_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "recent_search_user_created_idx",
+        "key": {
+          "userId": 1,
+          "createdAt": -1
+        }
+      }
+    ]
+  },
+  {
+    "name": "recipe_revisions",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "recipeId",
+          "actor",
+          "action",
+          "snapshot",
+          "diff",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "recipeId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "actor": {
+            "bsonType": "string",
+            "enum": [
+              "ai",
+              "user"
+            ]
+          },
+          "action": {
+            "bsonType": "string"
+          },
+          "snapshot": {
+            "bsonType": "object"
+          },
+          "diff": {
+            "bsonType": "array"
+          },
+          "createdAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "recipe_revision_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "recipe_revision_recent_idx",
+        "key": {
+          "userId": 1,
+          "recipeId": 1,
+          "createdAt": -1,
+          "_id": -1
+        }
+      }
+    ]
+  },
+  {
+    "name": "recipe_unused_sources",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "recipeId",
+          "recordId",
+          "reason",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "recipeId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "recordId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "reason": {
+            "bsonType": "string"
+          },
+          "createdAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "recipe_unused_source_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "recipe_unused_source_user_id_recipe_id_record_id_key",
+        "key": {
+          "userId": 1,
+          "recipeId": 1,
+          "recordId": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "recipe_unused_source_user_id_record_id_fkey",
+        "key": {
+          "userId": 1,
+          "recordId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "record_links",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "fromRecordId",
+          "toRecordId",
+          "relation",
+          "createdBy"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "fromRecordId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "toRecordId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "relation": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "related",
+              "parent",
+              "duplicate_of"
+            ]
+          },
+          "createdBy": {
+            "bsonType": "string",
+            "enum": [
+              "user",
+              "ai"
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "record_link_user_id_from_record_id_to_record_id_relation_key",
+        "key": {
+          "userId": 1,
+          "fromRecordId": 1,
+          "toRecordId": 1,
+          "relation": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "record_link_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "record_link_to_idx",
+        "key": {
+          "userId": 1,
+          "toRecordId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "record_usages",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "recordId",
+          "blockId",
+          "quotedText",
+          "firstUsedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "recordId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "blockId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "quotedText": {
+            "bsonType": "string"
+          },
+          "firstUsedAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "record_usage_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "record_usage_user_id_record_id_block_id_key",
+        "key": {
+          "userId": 1,
+          "recordId": 1,
+          "blockId": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "record_usage_user_id_block_id_fkey",
+        "key": {
+          "userId": 1,
+          "blockId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "requirement_coverages",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "requirementId",
+          "coverage",
+          "coveredBy",
+          "computedAt"
+        ],
+        "properties": {
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "requirementId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "coverage": {
+            "bsonType": "string",
+            "enum": [
+              "covered",
+              "partial",
+              "missing"
+            ]
+          },
+          "coveredBy": {
+            "bsonType": [
+              "object",
+              "array",
+              "string",
+              "bool",
+              "int",
+              "long",
+              "double",
+              "null"
+            ]
+          },
+          "computedAt": {
+            "bsonType": "date"
+          },
+          "_id": {
+            "bsonType": "string"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "requirement_coverage_user_idx",
+        "key": {
+          "userId": 1
+        }
+      },
+      {
+        "name": "requirement_coverage_requirement_id_fkey",
+        "key": {
+          "requirementId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "revisions",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "portfolioId",
+          "actor",
+          "changeKind",
+          "summary",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "portfolioId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "blockId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "actor": {
+            "bsonType": "string",
+            "enum": [
+              "user",
+              "ai"
+            ]
+          },
+          "before": {
+            "bsonType": [
+              "object",
+              "array",
+              "string",
+              "bool",
+              "int",
+              "long",
+              "double",
+              "null"
+            ]
+          },
+          "after": {
+            "bsonType": [
+              "object",
+              "array",
+              "string",
+              "bool",
+              "int",
+              "long",
+              "double",
+              "null"
+            ]
+          },
+          "restoreLabel": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "proposalId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "revertedRevisionId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "changeKind": {
+            "bsonType": "string",
+            "enum": [
+              "edit",
+              "revert",
+              "restore"
+            ]
+          },
+          "summary": {
+            "bsonType": "string"
+          },
+          "createdAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "revision_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "revision_block_id_fkey",
+        "key": {
+          "blockId": 1
+        }
+      },
+      {
+        "name": "revision_proposal_fk",
+        "key": {
+          "proposalId": 1
+        }
+      },
+      {
+        "name": "revision_reverted_revision_id_fkey",
+        "key": {
+          "revertedRevisionId": 1
+        }
+      },
+      {
+        "name": "revision_user_id_portfolio_id_fkey",
+        "key": {
+          "userId": 1,
+          "portfolioId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "saved_searches",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "queryText",
+          "filters",
+          "notify",
+          "name",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "queryText": {
+            "bsonType": "string"
+          },
+          "filters": {
+            "bsonType": "object"
+          },
+          "notify": {
+            "bsonType": "bool"
+          },
+          "lastRunAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "name": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "createdAt": {
+            "bsonType": "date"
+          },
+          "updatedAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "saved_search_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "saved_search_user_name_unique",
+        "key": {
+          "userId": 1,
+          "name": 1
+        },
+        "unique": true
+      }
+    ]
+  },
+  {
+    "name": "scheduled_job_definitions",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "intervalSeconds",
+          "nextRunAt",
+          "failureCount"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "saved_searches",
+              "expire_postings",
+              "notification_batch",
+              "analytics_daily",
+              "deletion_grace",
+              "retention",
+              "job_ingest",
+              "posting_facts"
+            ]
+          },
+          "intervalSeconds": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 60,
+            "maximum": 604800
+          },
+          "nextRunAt": {
+            "bsonType": "date"
+          },
+          "lastStartedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "lastFinishedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "lastStatus": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "succeeded",
+              "failed",
+              null
+            ]
+          },
+          "failureCount": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "scheduled_job_due_idx",
+        "key": {
+          "nextRunAt": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "scheduled_job_runs",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "jobKey",
+          "scheduledFor",
+          "status",
+          "attempts",
+          "createdAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "jobKey": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "scheduledFor": {
+            "bsonType": "date"
+          },
+          "status": {
+            "bsonType": "string",
+            "maxLength": 255,
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ]
+          },
+          "attempts": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "startedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "finishedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "lastError": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "result": {
+            "bsonType": [
+              "object",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "scheduled_job_run_job_key_scheduled_for_key",
+        "key": {
+          "jobKey": 1,
+          "scheduledFor": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "scheduled_job_run_status_idx",
+        "key": {
+          "status": 1,
+          "scheduledFor": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "section_views",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "visitEventId",
+          "portfolioSectionId",
+          "dwellMs",
+          "scrollDepth",
+          "exited",
+          "occurredAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "visitEventId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "portfolioSectionId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "dwellMs": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "scrollDepth": {
+            "bsonType": "decimal",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "exited": {
+            "bsonType": "bool"
+          },
+          "eventId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "occurredAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "section_view_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "section_view_event_id_key",
+        "key": {
+          "eventId": 1
+        },
+        "unique": true,
+        "partialFilterExpression": {
+          "eventId": {
+            "$type": "string"
+          }
+        }
+      },
+      {
+        "name": "section_view_user_id_portfolio_section_id_fkey",
+        "key": {
+          "userId": 1,
+          "portfolioSectionId": 1
+        }
+      },
+      {
+        "name": "section_view_user_id_visit_event_id_fkey",
+        "key": {
+          "userId": 1,
+          "visitEventId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "skills",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "name",
+          "level",
+          "computedAt",
+          "evidenceCount",
+          "strength"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "name": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "level": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 1,
+            "maximum": 5
+          },
+          "computedAt": {
+            "bsonType": "date"
+          },
+          "demandScore": {
+            "bsonType": [
+              "decimal",
+              "null"
+            ]
+          },
+          "evidenceCount": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ],
+            "multipleOf": 1,
+            "minimum": 0
+          },
+          "lastUsedAt": {
+            "bsonType": [
+              "date",
+              "null"
+            ]
+          },
+          "strength": {
+            "bsonType": "string",
+            "enum": [
+              "weak",
+              "supported",
+              "strong"
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "skill_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "skill_user_id_name_key",
+        "key": {
+          "userId": 1,
+          "name": 1
+        },
+        "unique": true
+      }
+    ]
+  },
+  {
+    "name": "skill_evidence",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "skillId",
+          "recordId",
+          "weight",
+          "extractedSpan"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "skillId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "recordId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "weight": {
+            "bsonType": "decimal"
+          },
+          "extractedSpan": {
+            "bsonType": "object"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "skill_evidence_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "skill_evidence_user_id_skill_id_record_id_key",
+        "key": {
+          "userId": 1,
+          "skillId": 1,
+          "recordId": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "skill_evidence_user_id_record_id_fkey",
+        "key": {
+          "userId": 1,
+          "recordId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "widgets",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "userId",
+          "dashboardViewId",
+          "visualization",
+          "position"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "userId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "dashboardViewId": {
+            "bsonType": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "metricKey": {
+            "bsonType": [
+              "string",
+              "null"
+            ]
+          },
+          "derivedMetricId": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "maxLength": 36
+          },
+          "visualization": {
+            "bsonType": "string",
+            "enum": [
+              "number",
+              "spark",
+              "line",
+              "bar",
+              "donut",
+              "list",
+              "note"
+            ]
+          },
+          "compareTo": {
+            "bsonType": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "prev_period",
+              "other_portfolio",
+              "industry",
+              null
+            ]
+          },
+          "position": {
+            "bsonType": "object"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "widget_user_id_id_key",
+        "key": {
+          "userId": 1,
+          "_id": 1
+        },
+        "unique": true
+      },
+      {
+        "name": "widget_derived_metric_id_fkey",
+        "key": {
+          "derivedMetricId": 1
+        }
+      },
+      {
+        "name": "widget_user_id_dashboard_view_id_fkey",
+        "key": {
+          "userId": 1,
+          "dashboardViewId": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "schema_migrations",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "name",
+          "checksum",
+          "state",
+          "completedSteps"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string"
+          },
+          "name": {
+            "bsonType": "string"
+          },
+          "checksum": {
+            "bsonType": "string"
+          },
+          "state": {
+            "bsonType": "string",
+            "enum": [
+              "applying",
+              "applied"
+            ]
+          },
+          "completedSteps": {
+            "bsonType": "array",
+            "items": {
+              "bsonType": "string"
+            }
+          },
+          "appliedAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": []
+  },
+  {
+    "name": "migration_locks",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "owner",
+          "token",
+          "expiresAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string"
+          },
+          "owner": {
+            "bsonType": "string"
+          },
+          "token": {
+            "bsonType": "string"
+          },
+          "expiresAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": []
+  },
+  {
+    "name": "snapshot_chunks",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "payloadId",
+          "userId",
+          "part",
+          "bytes",
+          "sha256"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string"
+          },
+          "payloadId": {
+            "bsonType": "string"
+          },
+          "userId": {
+            "bsonType": "string"
+          },
+          "part": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ]
+          },
+          "bytes": {
+            "bsonType": "binData"
+          },
+          "sha256": {
+            "bsonType": "string"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "snapshot_part",
+        "key": {
+          "payloadId": 1,
+          "part": 1
+        },
+        "unique": true
+      }
+    ]
+  },
+  {
+    "name": "analytics_rate_limits",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "visitorHash",
+          "targetId",
+          "period",
+          "count",
+          "expiresAt"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string"
+          },
+          "visitorHash": {
+            "bsonType": "string"
+          },
+          "targetId": {
+            "bsonType": "string"
+          },
+          "period": {
+            "bsonType": "string"
+          },
+          "count": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ]
+          },
+          "expiresAt": {
+            "bsonType": "date"
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "rate_expiry",
+        "key": {
+          "expiresAt": 1
+        },
+        "expireAfterSeconds": 0
+      }
+    ]
+  },
+  {
+    "name": "import_runs",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "schemaHash",
+          "tables",
+          "validation",
+          "completed"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string"
+          },
+          "schemaHash": {
+            "bsonType": "string"
+          },
+          "tables": {
+            "bsonType": "object"
+          },
+          "validation": {
+            "bsonType": "object"
+          },
+          "completed": {
+            "bsonType": "bool"
+          }
+        }
+      }
+    },
+    "indexes": []
+  },
+  {
+    "name": "import_checkpoints",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "_id",
+          "runId",
+          "tableName",
+          "processedCount"
+        ],
+        "properties": {
+          "_id": {
+            "bsonType": "string"
+          },
+          "runId": {
+            "bsonType": "string"
+          },
+          "tableName": {
+            "bsonType": "string"
+          },
+          "lastKey": {
+            "bsonType": "string"
+          },
+          "processedCount": {
+            "bsonType": [
+              "int",
+              "long",
+              "double"
+            ]
+          }
+        }
+      }
+    },
+    "indexes": [
+      {
+        "name": "import_table",
+        "key": {
+          "runId": 1,
+          "tableName": 1
+        },
+        "unique": true
+      }
+    ]
+  }
+]

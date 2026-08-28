@@ -6,6 +6,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 import { createMongoResource, type MongoResource } from "./mongodb.js";
+import { createMongoFixture } from "../../test/support/mongodb.js";
 
 const mongoUrl = process.env.TEST_MONGODB_URL ?? (
   process.env.TEST_DATABASE_URL?.startsWith("mongodb")
@@ -65,6 +66,17 @@ describe("MongoDB resource construction", () => {
 });
 
 describeWithInfrastructure("MongoDB resource integration", () => {
+  it("공용 fixture는 서로 다른 DB를 만들고 소유한 DB만 정리한다", async () => {
+    const first = await createMongoFixture("fixture");
+    const second = await createMongoFixture("fixture");
+    try {
+      expect(first.resource.db.databaseName).not.toBe(second.resource.db.databaseName);
+      expect(first.resource.db.databaseName).toMatch(/^expresso_test_fixture_[a-f0-9]{32}$/);
+      await first.dispose();
+      expect(await second.resource.db.collection("plans").countDocuments()).toBe(3);
+      await second.resource.readinessCheck.run();
+    } finally { await first.dispose(); await second.dispose(); }
+  }, 60_000);
   let resource: MongoResource | undefined;
   const databaseName = `expresso_test_t01_${randomUUID().replaceAll("-", "")}`;
 

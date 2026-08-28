@@ -11,7 +11,7 @@
   },
   "scripts": {
     "migrate": "node --env-file-if-exists=../../services/backend/.env --import tsx src/cli.ts",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node src/mongo-build.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },

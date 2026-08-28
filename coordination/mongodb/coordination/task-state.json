@@ -2,8 +2,8 @@
   "version": 1,
   "project": "Expresso MongoDB migration",
   "dag_version": 1,
-  "revision": 45,
-  "updated_at": "2026-08-28T17:38:34.371767Z",
+  "revision": 51,
+  "updated_at": "2026-08-28T18:05:18.410664Z",
   "pipeline_status": "running",
   "context_version": 0,
   "source_spec_revision": 4,
@@ -260,39 +260,65 @@
       "phase_started_at": null
     },
     "T02": {
-      "status": "ready",
-      "progress": 0,
-      "worker": null,
-      "started_at": null,
-      "updated_at": "2026-08-28T17:33:58.084377Z",
-      "finished_at": null,
-      "message": "Ready to dispatch",
-      "evidence": [],
+      "status": "verified",
+      "progress": 100,
+      "worker": "coordinator",
+      "started_at": "2026-08-28T17:44:08.813427Z",
+      "updated_at": "2026-08-28T18:05:18.410664Z",
+      "finished_at": "2026-08-28T18:05:18.410664Z",
+      "message": "직접 구현 완료: 실제 MongoDB 스키마·복구 11개, fixture 5개 및 seed 51행 대조 통과. 기존 Windows 테스트 실패 4개 별도 기록.",
+      "evidence": [
+        "var/mongodb-run/T02-proof.json",
+        "coordination/mongodb/evidence/T02.md"
+      ],
       "review_round": 0,
       "fix_round": 0,
       "review_budget_exhausted": false,
       "last_review_verdict": null,
-      "final_decision": null,
+      "final_decision": "accept",
       "deferred_findings": [],
       "review_findings": [],
       "correction_lanes": [],
-      "original_implementer": null,
+      "original_implementer": {
+        "agent_handle": "zero-exec-T02-v4",
+        "external_id": "01a04978-510b-7eb3-b752-e56269e7d15d"
+      },
       "reopen_reason": null,
       "required_context_version": 0,
       "acknowledged_context_version": 0,
-      "last_progress_report": null,
+      "last_progress_report": {
+        "type": "worker_report",
+        "report_id": "report:T02:inspection",
+        "dedupe_key": null,
+        "at": "2026-08-28T17:51:28.353792Z",
+        "task_id": "T02",
+        "context_version": 0,
+        "progress": 15,
+        "message": "실행 환경·컨텍스트 ACK 확인, 71개 컬렉션과 52개 트리거 매핑 구현 중",
+        "changed_paths": [],
+        "contract_impacts": [],
+        "dependency_updates": [],
+        "collision_risks": [],
+        "blockers": [],
+        "integration_notes": [],
+        "severity": "info",
+        "fixture_impacts": [],
+        "affected_task_ids": [],
+        "requires_pause": false,
+        "requires_contract_decision": false
+      },
       "pending_context_digest": null,
       "active_phase": null,
       "phase_started_at": null
     },
     "T03": {
-      "status": "pending",
+      "status": "ready",
       "progress": 0,
       "worker": null,
       "started_at": null,
-      "updated_at": "2026-08-28T15:02:55.523941Z",
+      "updated_at": "2026-08-28T18:05:18.410664Z",
       "finished_at": null,
-      "message": "Waiting for dependencies",
+      "message": "Ready to dispatch",
       "evidence": [],
       "review_round": 0,
       "fix_round": 0,
@@ -978,6 +1004,58 @@
       "to": "verified",
       "worker": "zero-exec-T01R2",
       "message": "a80d548 통합 검증 완료: Mongo6·MySQL155·typecheck/build, 기존 Codex fixture4 실패 별도 기록"
+    },
+    {
+      "type": "phase_started",
+      "at": "2026-08-28T17:44:08.813427Z",
+      "task_id": "T02",
+      "phase": "implementation",
+      "worker": "zero-exec-T02-v4",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-28T17:44:08.813427Z",
+      "task_id": "T02",
+      "from": "ready",
+      "to": "running",
+      "worker": "zero-exec-T02-v4",
+      "message": "지정 pnpm11.16·실제 runner 샌드박스 검증 후 컬렉션·마이그레이션 구현 시작"
+    },
+    {
+      "type": "action_recorded",
+      "at": "2026-08-28T17:44:09.406792Z",
+      "action_id": "dispatch_implementer:a534f604ac4e7178",
+      "action_type": "dispatch_implementer",
+      "task_id": "T02",
+      "status": "issued",
+      "agent_handle": "zero-exec-T02-v4"
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-28T17:55:19.095564Z",
+      "task_id": "T02",
+      "from": "running",
+      "to": "running",
+      "worker": "coordinator",
+      "message": "사용자 요청으로 외부 작업자 중단. 초안 보존 후 코디네이터 직접 구현·검증으로 전환."
+    },
+    {
+      "type": "phase_finished",
+      "at": "2026-08-28T18:05:18.410664Z",
+      "task_id": "T02",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-28T18:05:18.410664Z",
+      "task_id": "T02",
+      "from": "running",
+      "to": "verified",
+      "worker": "coordinator",
+      "message": "직접 구현 완료: 실제 MongoDB 스키마·복구 11개, fixture 5개 및 seed 51행 대조 통과. 기존 Windows 테스트 실패 4개 별도 기록."
     }
   ],
   "communications": [
@@ -1384,6 +1462,35 @@
       "owner_mode": "coordinator",
       "agent_handle": "coordinator",
       "session_id": null
+    },
+    {
+      "type": "context_ack",
+      "at": "2026-08-28T17:51:28.168292Z",
+      "task_id": "T02",
+      "context_version": 0,
+      "message": "Context digest acknowledged",
+      "digest_id": null
+    },
+    {
+      "type": "worker_report",
+      "report_id": "report:T02:inspection",
+      "dedupe_key": null,
+      "at": "2026-08-28T17:51:28.353792Z",
+      "task_id": "T02",
+      "context_version": 0,
+      "progress": 15,
+      "message": "실행 환경·컨텍스트 ACK 확인, 71개 컬렉션과 52개 트리거 매핑 구현 중",
+      "changed_paths": [],
+      "contract_impacts": [],
+      "dependency_updates": [],
+      "collision_risks": [],
+      "blockers": [],
+      "integration_notes": [],
+      "severity": "info",
+      "fixture_impacts": [],
+      "affected_task_ids": [],
+      "requires_pause": false,
+      "requires_contract_decision": false
     }
   ],
   "actions": [
@@ -1419,13 +1526,24 @@
       "external_id": "01a04969-83c3-7d70-84d3-f5f0f52df26a",
       "message": "approved; 이후 조정자 통합 EOL 수정과 통합 검사 완료",
       "updated_at": "2026-08-28T17:33:57.548312Z"
+    },
+    {
+      "action_id": "dispatch_implementer:a534f604ac4e7178",
+      "attempt": 1,
+      "type": "dispatch_implementer",
+      "task_id": "T02",
+      "status": "issued",
+      "agent_handle": "zero-exec-T02-v4",
+      "external_id": "01a04978-510b-7eb3-b752-e56269e7d15d",
+      "message": "94e52b6 기반 T02 작업자 시작; 프로젝트 package manager 실제명령 사전 검증",
+      "updated_at": "2026-08-28T17:44:09.406792Z"
     }
   ],
   "event_log": {
     "schema_version": 1,
     "path": "coordination\\mongodb\\coordination\\pipeline-events.jsonl",
-    "cursor": 45,
-    "head_event_id": "9b08139dd52414ae724fd1a542bb9ba32ba9b54a625ee5c08bf147b18d84156a",
+    "cursor": 51,
+    "head_event_id": "f2ccbbbef76fc7317001463d735df401de2f039e2c5b66f17cca3ddabd699496",
     "complete_history": true
   }
 }

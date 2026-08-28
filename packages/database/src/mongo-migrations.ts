@@ -1,0 +1,27 @@
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import type { Db } from "mongodb";
+import { initialMigrationSteps } from "./mongodb-migrations/0001/migration.js";
+
+export interface MongoMigrationStep {
+  id: string;
+  run(db: Db): Promise<void>;
+}
+
+export interface MongoMigration {
+  version: string;
+  name: string;
+  checksum: string;
+  steps: readonly MongoMigrationStep[];
+}
+
+/** 원본 TS와 모든 실행 입력의 바이트를 함께 고정합니다. 빌드 산출물은 해시 대상이 아닙니다. */
+export async function loadMongoMigrations(): Promise<MongoMigration[]> {
+  const directory = new URL("./mongodb-migrations/0001/", import.meta.url);
+  const hash = createHash("sha256");
+  for (const name of ["migration.ts", "schema.json", "seeds.json"]) {
+    const source = await readFile(new URL(name, directory));
+    hash.update(`${name}\0${source.byteLength}\0`).update(source);
+  }
+  return [{ version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() }];
+}

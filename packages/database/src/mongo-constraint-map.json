@@ -1,0 +1,2917 @@
+[
+  {
+    "table": "plan",
+    "collection": "plans",
+    "task": "T02",
+    "definition": "CONSTRAINT `plan_code_check` CHECK ((`code` in (_utf8mb4'free',_utf8mb4'pro',_utf8mb4'team')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "plan",
+    "collection": "plans",
+    "task": "T02",
+    "definition": "CONSTRAINT `plan_features_check` CHECK ((json_type(`features`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "plan",
+    "collection": "plans",
+    "task": "T02",
+    "definition": "CONSTRAINT `plan_generation_quota_check` CHECK ((`generation_quota` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "user",
+    "collection": "users",
+    "task": "T04",
+    "definition": "CONSTRAINT `user_plan_id_fkey` FOREIGN KEY (`plan_id`) REFERENCES `plan` (`id`) ON DELETE RESTRICT",
+    "enforcement": "domain"
+  },
+  {
+    "table": "user",
+    "collection": "users",
+    "task": "T04",
+    "definition": "CONSTRAINT `user_password_hash_format` CHECK (((`password_hash` is null) or regexp_like(`password_hash`,_utf8mb4'^scrypt\\\\$[0-9]+\\\\$[0-9]+\\\\$[0-9]+\\\\$[0-9a-f]{32}\\\\$[0-9a-f]{128}$')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "account_deletion_request",
+    "collection": "account_deletion_requests",
+    "task": "T15",
+    "definition": "CONSTRAINT `account_deletion_request_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "account_deletion_request",
+    "collection": "account_deletion_requests",
+    "task": "T15",
+    "definition": "CONSTRAINT `account_deletion_request_cancellation_token_hash_check` CHECK ((char_length(`cancellation_token_hash`) = 64))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "account_deletion_request",
+    "collection": "account_deletion_requests",
+    "task": "T15",
+    "definition": "CONSTRAINT `account_deletion_request_check` CHECK ((`purge_after` = (`requested_at` + interval 30 day)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "account_deletion_request",
+    "collection": "account_deletion_requests",
+    "task": "T15",
+    "definition": "CONSTRAINT `account_deletion_request_restoration_check` CHECK ((json_type(`restoration`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "account_deletion_request",
+    "collection": "account_deletion_requests",
+    "task": "T15",
+    "definition": "CONSTRAINT `account_deletion_request_status_check` CHECK ((`status` in (_utf8mb4'pending',_utf8mb4'cancelled',_utf8mb4'purged')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "account_deletion_event",
+    "collection": "account_deletion_events",
+    "task": "T15",
+    "definition": "CONSTRAINT `account_deletion_event_request_id_fkey` FOREIGN KEY (`request_id`) REFERENCES `account_deletion_request` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "account_deletion_event",
+    "collection": "account_deletion_events",
+    "task": "T15",
+    "definition": "CONSTRAINT `account_deletion_event_affected_rows_check` CHECK ((`affected_rows` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "company",
+    "collection": "companies",
+    "task": "T07",
+    "definition": "CONSTRAINT `company_avatar_background_check` CHECK (regexp_like(`avatar_background`,_utf8mb4'^#[0-9A-Fa-f]{6}$'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "company",
+    "collection": "companies",
+    "task": "T07",
+    "definition": "CONSTRAINT `company_avatar_color_check` CHECK (regexp_like(`avatar_color`,_utf8mb4'^#[0-9A-Fa-f]{6}$'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "company",
+    "collection": "companies",
+    "task": "T07",
+    "definition": "CONSTRAINT `company_brand_colors_check` CHECK ((json_length(`brand_colors`) <= 6))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "company",
+    "collection": "companies",
+    "task": "T07",
+    "definition": "CONSTRAINT `company_initial_check` CHECK (regexp_like(`initial`,_utf8mb4'^[A-Z]$'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "company",
+    "collection": "companies",
+    "task": "T07",
+    "definition": "CONSTRAINT `company_logo_complete_check` CHECK ((((((`logo_data` is not null) + (`logo_media_type` is not null)) + (`logo_source_url` is not null)) + (`logo_checksum` is not null)) in (0,4)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "company",
+    "collection": "companies",
+    "task": "T07",
+    "definition": "CONSTRAINT `company_logo_media_type_check` CHECK (((`logo_media_type` is null) or (`logo_media_type` = _utf8mb4'image/png')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "company",
+    "collection": "companies",
+    "task": "T07",
+    "definition": "CONSTRAINT `company_tone_palette_check` CHECK (((`tone_palette` is null) or (json_type(`tone_palette`) = _utf8mb4'OBJECT')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_posting",
+    "collection": "job_postings",
+    "task": "T07",
+    "definition": "CONSTRAINT `job_posting_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `company` (`id`) ON DELETE RESTRICT",
+    "enforcement": "domain"
+  },
+  {
+    "table": "job_posting",
+    "collection": "job_postings",
+    "task": "T07",
+    "definition": "CONSTRAINT `job_posting_duties_check` CHECK ((json_type(`duties`) = _utf8mb4'ARRAY'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_posting",
+    "collection": "job_postings",
+    "task": "T07",
+    "definition": "CONSTRAINT `job_posting_hiring_process_check` CHECK ((json_type(`hiring_process`) = _utf8mb4'ARRAY'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_posting",
+    "collection": "job_postings",
+    "task": "T07",
+    "definition": "CONSTRAINT `job_posting_preferred_check` CHECK ((json_type(`preferred`) = _utf8mb4'ARRAY'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_posting",
+    "collection": "job_postings",
+    "task": "T07",
+    "definition": "CONSTRAINT `job_posting_source_check` CHECK ((`source` in (_utf8mb4'api',_utf8mb4'partner',_utf8mb4'user_input')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_analysis",
+    "collection": "job_analyses",
+    "task": "T08",
+    "definition": "CONSTRAINT `job_analysis_job_posting_id_fkey` FOREIGN KEY (`job_posting_id`) REFERENCES `job_posting` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "job_analysis",
+    "collection": "job_analyses",
+    "task": "T08",
+    "definition": "CONSTRAINT `job_analysis_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "job_analysis",
+    "collection": "job_analyses",
+    "task": "T08",
+    "definition": "CONSTRAINT `job_analysis_attachments_check` CHECK ((json_type(`attachments`) = _utf8mb4'ARRAY'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_analysis",
+    "collection": "job_analyses",
+    "task": "T08",
+    "definition": "CONSTRAINT `job_analysis_attempts_check` CHECK ((`attempts` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_analysis",
+    "collection": "job_analyses",
+    "task": "T08",
+    "definition": "CONSTRAINT `job_analysis_input_type_check` CHECK ((`input_type` in (_utf8mb4'url',_utf8mb4'paste',_utf8mb4'file',_utf8mb4'board',_utf8mb4'free')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_analysis",
+    "collection": "job_analyses",
+    "task": "T08",
+    "definition": "CONSTRAINT `job_analysis_progress_stage_check` CHECK ((`progress_stage` in (_utf8mb4'queued',_utf8mb4'extracting',_utf8mb4'validating',_utf8mb4'covering',_utf8mb4'done',_utf8mb4'failed')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_analysis",
+    "collection": "job_analyses",
+    "task": "T08",
+    "definition": "CONSTRAINT `job_analysis_result_version_check` CHECK ((`result_version` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_analysis",
+    "collection": "job_analyses",
+    "task": "T08",
+    "definition": "CONSTRAINT `job_analysis_status_check` CHECK ((`status` in (_utf8mb4'queued',_utf8mb4'running',_utf8mb4'done',_utf8mb4'failed')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_analysis",
+    "collection": "job_analyses",
+    "task": "T08",
+    "definition": "CONSTRAINT `job_analysis_target_version_check` CHECK ((`target_version` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "brew",
+    "collection": "brews",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "brew",
+    "collection": "brews",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_user_id_job_analysis_id_fkey` FOREIGN KEY (`user_id`, `job_analysis_id`) REFERENCES `job_analysis` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "brew",
+    "collection": "brews",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_length_preset_check` CHECK ((`length_preset` in (_utf8mb4'single',_utf8mb4'double',_utf8mb4'triple')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "brew",
+    "collection": "brews",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_mode_check` CHECK ((`mode` in (_utf8mb4'solo',_utf8mb4'collab')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "brew",
+    "collection": "brews",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_status_check` CHECK ((`status` in (_utf8mb4'draft',_utf8mb4'interviewing',_utf8mb4'recipe',_utf8mb4'generating',_utf8mb4'done')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "template",
+    "collection": "templates",
+    "task": "T10",
+    "definition": "CONSTRAINT `template_plan_required_check` CHECK ((`plan_required` in (_utf8mb4'free',_utf8mb4'pro')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "template",
+    "collection": "templates",
+    "task": "T10",
+    "definition": "CONSTRAINT `template_renderer_version_check` CHECK ((`renderer_version` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "template",
+    "collection": "templates",
+    "task": "T10",
+    "definition": "CONSTRAINT `template_style_check` CHECK ((json_type(`style`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "template",
+    "collection": "templates",
+    "task": "T10",
+    "definition": "CONSTRAINT `template_style_has_structure` CHECK (((`style` = cast(_utf8mb4'{}' as json)) or (json_contains_path(`style`,_utf8mb4'one',_utf8mb4'$.structure') and (json_unquote(json_extract(`style`,_utf8mb4'$.structure')) in (_utf8mb4'single-column',_utf8mb4'dense-grid',_utf8mb4'wide-margin')))))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "portfolio",
+    "collection": "portfolios",
+    "task": "T11",
+    "definition": "CONSTRAINT `portfolio_current_deployment_fk` FOREIGN KEY (`current_deployment_id`) REFERENCES `deployment` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio",
+    "collection": "portfolios",
+    "task": "T11",
+    "definition": "CONSTRAINT `portfolio_template_id_fkey` FOREIGN KEY (`template_id`) REFERENCES `template` (`id`) ON DELETE RESTRICT",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio",
+    "collection": "portfolios",
+    "task": "T11",
+    "definition": "CONSTRAINT `portfolio_user_id_brew_id_fkey` FOREIGN KEY (`user_id`, `brew_id`) REFERENCES `brew` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio",
+    "collection": "portfolios",
+    "task": "T11",
+    "definition": "CONSTRAINT `portfolio_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio",
+    "collection": "portfolios",
+    "task": "T11",
+    "definition": "CONSTRAINT `portfolio_status_check` CHECK ((`status` in (_utf8mb4'draft',_utf8mb4'published',_utf8mb4'unlisted')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "portfolio",
+    "collection": "portfolios",
+    "task": "T11",
+    "definition": "CONSTRAINT `portfolio_style_overrides_check` CHECK ((json_type(`style_overrides`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "deployment",
+    "collection": "deployments",
+    "task": "T13",
+    "definition": "CONSTRAINT `deployment_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "deployment",
+    "collection": "deployments",
+    "task": "T13",
+    "definition": "CONSTRAINT `deployment_user_id_portfolio_id_fkey` FOREIGN KEY (`user_id`, `portfolio_id`) REFERENCES `portfolio` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "deployment",
+    "collection": "deployments",
+    "task": "T13",
+    "definition": "CONSTRAINT `deployment_contact_visibility_check` CHECK ((`contact_visibility` in (_utf8mb4'public',_utf8mb4'on_request',_utf8mb4'hidden')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "deployment",
+    "collection": "deployments",
+    "task": "T13",
+    "definition": "CONSTRAINT `deployment_seo_check` CHECK ((json_type(`seo`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "deployment",
+    "collection": "deployments",
+    "task": "T13",
+    "definition": "CONSTRAINT `deployment_snapshot_check` CHECK ((json_type(`snapshot`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "deployment",
+    "collection": "deployments",
+    "task": "T13",
+    "definition": "CONSTRAINT `deployment_version_check` CHECK ((`version` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "analytics_event_receipt",
+    "collection": "analytics_event_receipts",
+    "task": "T14",
+    "definition": "CONSTRAINT `analytics_event_receipt_user_id_deployment_id_fkey` FOREIGN KEY (`user_id`, `deployment_id`) REFERENCES `deployment` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "analytics_event_receipt",
+    "collection": "analytics_event_receipts",
+    "task": "T14",
+    "definition": "CONSTRAINT `analytics_event_receipt_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "analytics_event_receipt",
+    "collection": "analytics_event_receipts",
+    "task": "T14",
+    "definition": "CONSTRAINT `analytics_event_receipt_event_type_check` CHECK ((`event_type` in (_utf8mb4'visit',_utf8mb4'complete',_utf8mb4'section_view',_utf8mb4'contact_click',_utf8mb4'file_download',_utf8mb4'link_click')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "analytics_event_receipt",
+    "collection": "analytics_event_receipts",
+    "task": "T14",
+    "definition": "CONSTRAINT `analytics_event_receipt_payload_bytes_check` CHECK (((`payload_bytes` >= 1) and (`payload_bytes` <= 8192)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "analytics_event_receipt",
+    "collection": "analytics_event_receipts",
+    "task": "T14",
+    "definition": "CONSTRAINT `analytics_event_receipt_payload_hash_check` CHECK ((char_length(`payload_hash`) = 64))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "analytics_event_receipt",
+    "collection": "analytics_event_receipts",
+    "task": "T14",
+    "definition": "CONSTRAINT `analytics_event_receipt_visitor_hash_check` CHECK ((char_length(`visitor_hash`) = 64))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "annotation",
+    "collection": "annotations",
+    "task": "T14",
+    "definition": "CONSTRAINT `annotation_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "annotation",
+    "collection": "annotations",
+    "task": "T14",
+    "definition": "CONSTRAINT `annotation_user_id_portfolio_id_fkey` FOREIGN KEY (`user_id`, `portfolio_id`) REFERENCES `portfolio` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "interview_session",
+    "collection": "interview_sessions",
+    "task": "T09",
+    "definition": "CONSTRAINT `interview_session_user_id_brew_id_fkey` FOREIGN KEY (`user_id`, `brew_id`) REFERENCES `brew` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "interview_session",
+    "collection": "interview_sessions",
+    "task": "T09",
+    "definition": "CONSTRAINT `interview_session_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "interview_session",
+    "collection": "interview_sessions",
+    "task": "T09",
+    "definition": "CONSTRAINT `interview_session_answered_count_check` CHECK ((`answered_count` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "interview_session",
+    "collection": "interview_sessions",
+    "task": "T09",
+    "definition": "CONSTRAINT `interview_session_current_order_check` CHECK ((`current_order` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "interview_session",
+    "collection": "interview_sessions",
+    "task": "T09",
+    "definition": "CONSTRAINT `interview_session_question_count_check` CHECK ((`question_count` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "interview_session",
+    "collection": "interview_sessions",
+    "task": "T09",
+    "definition": "CONSTRAINT `interview_session_status_check` CHECK ((`status` in (_utf8mb4'open',_utf8mb4'paused',_utf8mb4'done')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_posting_requirement",
+    "collection": "job_posting_requirements",
+    "task": "T07",
+    "definition": "CONSTRAINT `job_posting_requirement_job_posting_id_fkey` FOREIGN KEY (`job_posting_id`) REFERENCES `job_posting` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "job_posting_requirement",
+    "collection": "job_posting_requirements",
+    "task": "T07",
+    "definition": "CONSTRAINT `job_posting_requirement_axis_check` CHECK ((`axis` in (_utf8mb4'technology',_utf8mb4'impact',_utf8mb4'role',_utf8mb4'conditions')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_posting_requirement",
+    "collection": "job_posting_requirements",
+    "task": "T07",
+    "definition": "CONSTRAINT `job_posting_requirement_extractor_version_check` CHECK ((`extractor_version` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_posting_requirement",
+    "collection": "job_posting_requirements",
+    "task": "T07",
+    "definition": "CONSTRAINT `job_posting_requirement_kind_check` CHECK ((`kind` in (_utf8mb4'must',_utf8mb4'nice',_utf8mb4'tone')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_posting_requirement",
+    "collection": "job_posting_requirements",
+    "task": "T07",
+    "definition": "CONSTRAINT `job_posting_requirement_order_no_check` CHECK ((`order_no` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_posting_requirement",
+    "collection": "job_posting_requirements",
+    "task": "T07",
+    "definition": "CONSTRAINT `job_posting_requirement_source_span_check` CHECK ((json_type(`source_span`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "question",
+    "collection": "questions",
+    "task": "T09",
+    "definition": "CONSTRAINT `question_replaced_from_id_fkey` FOREIGN KEY (`replaced_from_id`) REFERENCES `question` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "question",
+    "collection": "questions",
+    "task": "T09",
+    "definition": "CONSTRAINT `question_requirement_id_fkey` FOREIGN KEY (`requirement_id`) REFERENCES `job_posting_requirement` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "question",
+    "collection": "questions",
+    "task": "T09",
+    "definition": "CONSTRAINT `question_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "question",
+    "collection": "questions",
+    "task": "T09",
+    "definition": "CONSTRAINT `question_user_id_interview_session_id_fkey` FOREIGN KEY (`user_id`, `interview_session_id`) REFERENCES `interview_session` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "question",
+    "collection": "questions",
+    "task": "T09",
+    "definition": "CONSTRAINT `question_basis_check` CHECK ((json_type(`basis`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "question",
+    "collection": "questions",
+    "task": "T09",
+    "definition": "CONSTRAINT `question_order_no_check` CHECK ((`order_no` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "question",
+    "collection": "questions",
+    "task": "T09",
+    "definition": "CONSTRAINT `question_rationale_check` CHECK (((`rationale` is null) or ((char_length(`rationale`) >= 1) and (char_length(`rationale`) <= 300))))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "question",
+    "collection": "questions",
+    "task": "T09",
+    "definition": "CONSTRAINT `question_variant_check` CHECK ((`variant` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "category",
+    "collection": "career_categories",
+    "task": "T05",
+    "definition": "CONSTRAINT `category_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "category",
+    "collection": "career_categories",
+    "task": "T05",
+    "definition": "CONSTRAINT `category_check` CHECK ((((0 <> `is_system`) and (`user_id` is null)) or ((0 = `is_system`) and (`user_id` is not null))))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "category",
+    "collection": "career_categories",
+    "task": "T05",
+    "definition": "CONSTRAINT `category_default_view_check` CHECK ((`default_view` in (_utf8mb4'table',_utf8mb4'gallery',_utf8mb4'timeline',_utf8mb4'board',_utf8mb4'list')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "category",
+    "collection": "career_categories",
+    "task": "T05",
+    "definition": "CONSTRAINT `category_property_schema_check` CHECK ((json_type(`property_schema`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "category",
+    "collection": "career_categories",
+    "task": "T05",
+    "definition": "CONSTRAINT `category_version_check` CHECK ((`version` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "record",
+    "collection": "career_records",
+    "task": "T05",
+    "definition": "CONSTRAINT `record_category_id_fkey` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "record",
+    "collection": "career_records",
+    "task": "T05",
+    "definition": "CONSTRAINT `record_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "record",
+    "collection": "career_records",
+    "task": "T05",
+    "definition": "CONSTRAINT `record_deletion_window_check` CHECK ((((`deleted_at` is null) and (`purge_after` is null)) or ((`deleted_at` is not null) and (`purge_after` = (`deleted_at` + interval 30 day)))))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "record",
+    "collection": "career_records",
+    "task": "T05",
+    "definition": "CONSTRAINT `record_origin_check` CHECK ((`origin` in (_utf8mb4'manual',_utf8mb4'ai',_utf8mb4'interview',_utf8mb4'import')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "record",
+    "collection": "career_records",
+    "task": "T05",
+    "definition": "CONSTRAINT `record_properties_check` CHECK ((json_type(`properties`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "record",
+    "collection": "career_records",
+    "task": "T05",
+    "definition": "CONSTRAINT `record_status_check` CHECK ((`status` in (_utf8mb4'draft',_utf8mb4'organized',_utf8mb4'verified')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "record",
+    "collection": "career_records",
+    "task": "T05",
+    "definition": "CONSTRAINT `record_version_check` CHECK ((`version` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "answer",
+    "collection": "answers",
+    "task": "T09",
+    "definition": "CONSTRAINT `answer_created_record_id_fkey` FOREIGN KEY (`created_record_id`) REFERENCES `record` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "answer",
+    "collection": "answers",
+    "task": "T09",
+    "definition": "CONSTRAINT `answer_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "answer",
+    "collection": "answers",
+    "task": "T09",
+    "definition": "CONSTRAINT `answer_user_id_question_id_fkey` FOREIGN KEY (`user_id`, `question_id`) REFERENCES `question` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "answer",
+    "collection": "answers",
+    "task": "T09",
+    "definition": "CONSTRAINT `answer_input_type_check` CHECK ((`input_type` in (_utf8mb4'text',_utf8mb4'voice')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "answer",
+    "collection": "answers",
+    "task": "T09",
+    "definition": "CONSTRAINT `answer_version_check` CHECK ((`version` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "answer_record_change",
+    "collection": "answer_record_changes",
+    "task": "T09",
+    "definition": "CONSTRAINT `answer_record_change_user_id_answer_id_fkey` FOREIGN KEY (`user_id`, `answer_id`) REFERENCES `answer` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "answer_record_change",
+    "collection": "answer_record_changes",
+    "task": "T09",
+    "definition": "CONSTRAINT `answer_record_change_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "answer_record_change",
+    "collection": "answer_record_changes",
+    "task": "T09",
+    "definition": "CONSTRAINT `answer_record_change_user_id_record_id_fkey` FOREIGN KEY (`user_id`, `record_id`) REFERENCES `record` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "answer_record_change",
+    "collection": "answer_record_changes",
+    "task": "T09",
+    "definition": "CONSTRAINT `answer_record_change_change_type_check` CHECK ((`change_type` in (_utf8mb4'created',_utf8mb4'strengthened')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "answer_record_change",
+    "collection": "answer_record_changes",
+    "task": "T09",
+    "definition": "CONSTRAINT `answer_record_change_changed_fields_check` CHECK (((json_type(`changed_fields`) = _utf8mb4'ARRAY') and (json_length(`changed_fields`) > 0)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "answer_record_change",
+    "collection": "answer_record_changes",
+    "task": "T09",
+    "definition": "CONSTRAINT `answer_record_change_source_quote_check` CHECK ((char_length(`source_quote`) > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe",
+    "collection": "recipes",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_user_id_brew_id_fkey` FOREIGN KEY (`user_id`, `brew_id`) REFERENCES `brew` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "recipe",
+    "collection": "recipes",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "recipe",
+    "collection": "recipes",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_planning_manifest_check` CHECK (((`planning_manifest` is null) or (json_type(`planning_manifest`) = _utf8mb4'OBJECT')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe",
+    "collection": "recipes",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_portfolio_plan_check` CHECK (((`portfolio_plan` is null) or (json_type(`portfolio_plan`) = _utf8mb4'OBJECT')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe",
+    "collection": "recipes",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_prompt_version_check` CHECK ((`prompt_version` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe",
+    "collection": "recipes",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_status_check` CHECK ((`status` in (_utf8mb4'draft',_utf8mb4'confirmed')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe",
+    "collection": "recipes",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_version_check` CHECK ((`version` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe_section",
+    "collection": "recipe_sections",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_section_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "recipe_section",
+    "collection": "recipe_sections",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_section_user_id_recipe_id_fkey` FOREIGN KEY (`user_id`, `recipe_id`) REFERENCES `recipe` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "recipe_section",
+    "collection": "recipe_sections",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_section_context_check` CHECK ((json_type(`context`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe_section",
+    "collection": "recipe_sections",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_section_edited_by_check` CHECK ((`edited_by` in (_utf8mb4'ai',_utf8mb4'user')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe_section",
+    "collection": "recipe_sections",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_section_order_no_check` CHECK ((`order_no` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe_section",
+    "collection": "recipe_sections",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_section_target_length_check` CHECK ((`target_length` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "portfolio_section",
+    "collection": "portfolio_sections",
+    "task": "T11",
+    "definition": "CONSTRAINT `portfolio_section_recipe_section_id_fkey` FOREIGN KEY (`recipe_section_id`) REFERENCES `recipe_section` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio_section",
+    "collection": "portfolio_sections",
+    "task": "T11",
+    "definition": "CONSTRAINT `portfolio_section_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio_section",
+    "collection": "portfolio_sections",
+    "task": "T11",
+    "definition": "CONSTRAINT `portfolio_section_user_id_portfolio_id_fkey` FOREIGN KEY (`user_id`, `portfolio_id`) REFERENCES `portfolio` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio_section",
+    "collection": "portfolio_sections",
+    "task": "T11",
+    "definition": "CONSTRAINT `portfolio_section_order_no_check` CHECK ((`order_no` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "block",
+    "collection": "blocks",
+    "task": "T11",
+    "definition": "CONSTRAINT `block_source_record_id_fkey` FOREIGN KEY (`source_record_id`) REFERENCES `record` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "block",
+    "collection": "blocks",
+    "task": "T11",
+    "definition": "CONSTRAINT `block_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "block",
+    "collection": "blocks",
+    "task": "T11",
+    "definition": "CONSTRAINT `block_user_id_portfolio_section_id_fkey` FOREIGN KEY (`user_id`, `portfolio_section_id`) REFERENCES `portfolio_section` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "block",
+    "collection": "blocks",
+    "task": "T11",
+    "definition": "CONSTRAINT `block_content_check` CHECK ((json_type(`content`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "block",
+    "collection": "blocks",
+    "task": "T11",
+    "definition": "CONSTRAINT `block_kind_check` CHECK ((`kind` in (_utf8mb4'heading',_utf8mb4'paragraph',_utf8mb4'list',_utf8mb4'metric',_utf8mb4'chart',_utf8mb4'media')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "block",
+    "collection": "blocks",
+    "task": "T11",
+    "definition": "CONSTRAINT `block_order_no_check` CHECK ((`order_no` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "block",
+    "collection": "blocks",
+    "task": "T11",
+    "definition": "CONSTRAINT `block_style_check` CHECK ((json_type(`style`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "block",
+    "collection": "blocks",
+    "task": "T11",
+    "definition": "CONSTRAINT `block_sync_state_check` CHECK ((`sync_state` in (_utf8mb4'synced',_utf8mb4'stale',_utf8mb4'detached')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "brew_job",
+    "collection": "brew_jobs",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_job_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "brew_job",
+    "collection": "brew_jobs",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_job_attempts_check` CHECK ((`attempts` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "brew_job",
+    "collection": "brew_jobs",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_job_check` CHECK (((`status` <> _utf8mb4'succeeded') or (`result_id` is not null)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "brew_job",
+    "collection": "brew_jobs",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_job_check1` CHECK (((`status` <> _utf8mb4'failed') or (`error_code` is not null)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "brew_job",
+    "collection": "brew_jobs",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_job_input_check` CHECK ((json_type(`input`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "brew_job",
+    "collection": "brew_jobs",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_job_status_check` CHECK ((`status` in (_utf8mb4'queued',_utf8mb4'running',_utf8mb4'succeeded',_utf8mb4'failed')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "brew_job",
+    "collection": "brew_jobs",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_job_type_check` CHECK ((`type` in (_utf8mb4'interview',_utf8mb4'recipe')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "brew_source",
+    "collection": "brew_sources",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_source_user_id_brew_id_fkey` FOREIGN KEY (`user_id`, `brew_id`) REFERENCES `brew` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "brew_source",
+    "collection": "brew_sources",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_source_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "brew_source",
+    "collection": "brew_sources",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_source_user_id_record_id_fkey` FOREIGN KEY (`user_id`, `record_id`) REFERENCES `record` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "brew_source",
+    "collection": "brew_sources",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_source_rank_check` CHECK ((`rank` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "brew_source",
+    "collection": "brew_sources",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_source_score_check` CHECK ((`score` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "brew_source",
+    "collection": "brew_sources",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_source_selected_by_check` CHECK ((`selected_by` in (_utf8mb4'auto',_utf8mb4'user')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "brew_source",
+    "collection": "brew_sources",
+    "task": "T08",
+    "definition": "CONSTRAINT `brew_source_selection_reason_check` CHECK ((((0 <> `is_selected`) and (`excluded_reason` is null)) or ((0 = `is_selected`) and (`excluded_reason` is not null))))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "category_view",
+    "collection": "career_views",
+    "task": "T05",
+    "definition": "CONSTRAINT `category_view_category_id_fkey` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "category_view",
+    "collection": "career_views",
+    "task": "T05",
+    "definition": "CONSTRAINT `category_view_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "category_view",
+    "collection": "career_views",
+    "task": "T05",
+    "definition": "CONSTRAINT `category_view_filters_check` CHECK ((json_type(`filters`) = _utf8mb4'ARRAY'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "category_view",
+    "collection": "career_views",
+    "task": "T05",
+    "definition": "CONSTRAINT `category_view_sort_order_check` CHECK ((`sort_order` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "category_view",
+    "collection": "career_views",
+    "task": "T05",
+    "definition": "CONSTRAINT `category_view_sorts_check` CHECK ((json_type(`sorts`) = _utf8mb4'ARRAY'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "category_view",
+    "collection": "career_views",
+    "task": "T05",
+    "definition": "CONSTRAINT `category_view_view_type_check` CHECK ((`view_type` in (_utf8mb4'table',_utf8mb4'gallery',_utf8mb4'timeline',_utf8mb4'board',_utf8mb4'list')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "company_research_item",
+    "collection": "company_research_items",
+    "task": "T08",
+    "definition": "CONSTRAINT `company_research_item_company_id_fkey` FOREIGN KEY (`company_id`) REFERENCES `company` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "company_research_item",
+    "collection": "company_research_items",
+    "task": "T08",
+    "definition": "CONSTRAINT `company_research_item_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "company_research_item",
+    "collection": "company_research_items",
+    "task": "T08",
+    "definition": "CONSTRAINT `company_research_item_check` CHECK ((((`kind` = _utf8mb4'fact') and (`source_url` is not null) and (json_length(`basis_fact_ids`) = 0)) or ((`kind` = _utf8mb4'signal') and (json_length(`basis_fact_ids`) > 0))))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "company_research_item",
+    "collection": "company_research_items",
+    "task": "T08",
+    "definition": "CONSTRAINT `company_research_item_confidence_check` CHECK ((`confidence` in (_utf8mb4'low',_utf8mb4'medium',_utf8mb4'high')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "company_research_item",
+    "collection": "company_research_items",
+    "task": "T08",
+    "definition": "CONSTRAINT `company_research_item_kind_check` CHECK ((`kind` in (_utf8mb4'fact',_utf8mb4'signal')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "company_research_item",
+    "collection": "company_research_items",
+    "task": "T08",
+    "definition": "CONSTRAINT `company_research_item_statement_check` CHECK (((char_length(`statement`) >= 1) and (char_length(`statement`) <= 2000)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "company_research_item",
+    "collection": "company_research_items",
+    "task": "T08",
+    "definition": "CONSTRAINT `company_research_item_topic_check` CHECK (((char_length(`topic`) >= 1) and (char_length(`topic`) <= 100)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "consent",
+    "collection": "consents",
+    "task": "T04",
+    "definition": "CONSTRAINT `consent_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "consent",
+    "collection": "consents",
+    "task": "T04",
+    "definition": "CONSTRAINT `consent_check` CHECK (((`revoked_at` is null) or (`revoked_at` >= `granted_at`)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "consent",
+    "collection": "consents",
+    "task": "T04",
+    "definition": "CONSTRAINT `consent_policy_version_check` CHECK ((`policy_version` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "consent",
+    "collection": "consents",
+    "task": "T04",
+    "definition": "CONSTRAINT `consent_scope_check` CHECK ((`scope` in (_utf8mb4'job_posting_analysis',_utf8mb4'career_records')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "visit_event",
+    "collection": "visit_events",
+    "task": "T14",
+    "definition": "CONSTRAINT `visit_event_user_id_deployment_id_fkey` FOREIGN KEY (`user_id`, `deployment_id`) REFERENCES `deployment` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "visit_event",
+    "collection": "visit_events",
+    "task": "T14",
+    "definition": "CONSTRAINT `visit_event_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "visit_event",
+    "collection": "visit_events",
+    "task": "T14",
+    "definition": "CONSTRAINT `visit_event_duration_ms_check` CHECK (((`duration_ms` is null) or (`duration_ms` >= 0)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "conversion_event",
+    "collection": "conversion_events",
+    "task": "T14",
+    "definition": "CONSTRAINT `conversion_event_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "conversion_event",
+    "collection": "conversion_events",
+    "task": "T14",
+    "definition": "CONSTRAINT `conversion_event_user_id_visit_event_id_fkey` FOREIGN KEY (`user_id`, `visit_event_id`) REFERENCES `visit_event` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "conversion_event",
+    "collection": "conversion_events",
+    "task": "T14",
+    "definition": "CONSTRAINT `conversion_event_kind_check` CHECK ((`kind` in (_utf8mb4'contact_click',_utf8mb4'file_download',_utf8mb4'link_click')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "dashboard_view",
+    "collection": "dashboard_views",
+    "task": "T14",
+    "definition": "CONSTRAINT `dashboard_view_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "dashboard_view",
+    "collection": "dashboard_views",
+    "task": "T14",
+    "definition": "CONSTRAINT `dashboard_view_user_id_portfolio_id_fkey` FOREIGN KEY (`user_id`, `portfolio_id`) REFERENCES `portfolio` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "dashboard_view",
+    "collection": "dashboard_views",
+    "task": "T14",
+    "definition": "CONSTRAINT `dashboard_view_period_check` CHECK ((`period` in (_utf8mb4'7d',_utf8mb4'30d',_utf8mb4'all')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "deployment_slug_redirect",
+    "collection": "deployment_slug_redirects",
+    "task": "T13",
+    "definition": "CONSTRAINT `deployment_slug_redirect_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "deployment_slug_redirect",
+    "collection": "deployment_slug_redirects",
+    "task": "T13",
+    "definition": "CONSTRAINT `deployment_slug_redirect_user_id_portfolio_id_fkey` FOREIGN KEY (`user_id`, `portfolio_id`) REFERENCES `portfolio` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "deployment_slug_redirect",
+    "collection": "deployment_slug_redirects",
+    "task": "T13",
+    "definition": "CONSTRAINT `deployment_slug_redirect_check` CHECK ((`old_slug` <> `new_slug`))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "deployment_slug_redirect",
+    "collection": "deployment_slug_redirects",
+    "task": "T13",
+    "definition": "CONSTRAINT `deployment_slug_redirect_check1` CHECK ((`expires_at` > `created_at`))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "derived_metric",
+    "collection": "derived_metrics",
+    "task": "T14",
+    "definition": "CONSTRAINT `derived_metric_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "derived_metric",
+    "collection": "derived_metrics",
+    "task": "T14",
+    "definition": "CONSTRAINT `derived_metric_check` CHECK ((`numerator_key` <> `denominator_key`))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "export_asset",
+    "collection": "export_assets",
+    "task": "T13",
+    "definition": "CONSTRAINT `export_asset_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "export_asset",
+    "collection": "export_assets",
+    "task": "T13",
+    "definition": "CONSTRAINT `export_asset_user_id_portfolio_id_fkey` FOREIGN KEY (`user_id`, `portfolio_id`) REFERENCES `portfolio` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "export_asset",
+    "collection": "export_assets",
+    "task": "T13",
+    "definition": "CONSTRAINT `export_asset_download_count_check` CHECK ((`download_count` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "export_asset",
+    "collection": "export_assets",
+    "task": "T13",
+    "definition": "CONSTRAINT `export_asset_kind_check` CHECK ((`kind` in (_utf8mb4'pdf',_utf8mb4'deck',_utf8mb4'resume_file')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "export_asset",
+    "collection": "export_assets",
+    "task": "T13",
+    "definition": "CONSTRAINT `export_asset_page_format_check` CHECK (((`page_format` is null) or (`page_format` in (_utf8mb4'letter',_utf8mb4'a4'))))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "export_asset",
+    "collection": "export_assets",
+    "task": "T13",
+    "definition": "CONSTRAINT `export_asset_version_check` CHECK ((`version` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "export_job",
+    "collection": "export_jobs",
+    "task": "T13",
+    "definition": "CONSTRAINT `export_job_asset_fk` FOREIGN KEY (`asset_id`) REFERENCES `export_asset` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "export_job",
+    "collection": "export_jobs",
+    "task": "T13",
+    "definition": "CONSTRAINT `export_job_user_id_deployment_id_fkey` FOREIGN KEY (`deployment_id`) REFERENCES `deployment` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "export_job",
+    "collection": "export_jobs",
+    "task": "T13",
+    "definition": "CONSTRAINT `export_job_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "export_job",
+    "collection": "export_jobs",
+    "task": "T13",
+    "definition": "CONSTRAINT `export_job_user_id_portfolio_id_fkey` FOREIGN KEY (`user_id`, `portfolio_id`) REFERENCES `portfolio` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "export_job",
+    "collection": "export_jobs",
+    "task": "T13",
+    "definition": "CONSTRAINT `export_job_attempts_check` CHECK ((`attempts` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "export_job",
+    "collection": "export_jobs",
+    "task": "T13",
+    "definition": "CONSTRAINT `export_job_kind_check` CHECK ((`kind` in (_utf8mb4'pdf',_utf8mb4'deck')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "export_job",
+    "collection": "export_jobs",
+    "task": "T13",
+    "definition": "CONSTRAINT `export_job_page_format_check` CHECK (((`page_format` is null) or (`page_format` in (_utf8mb4'letter',_utf8mb4'a4'))))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "export_job",
+    "collection": "export_jobs",
+    "task": "T13",
+    "definition": "CONSTRAINT `export_job_status_check` CHECK ((`status` in (_utf8mb4'queued',_utf8mb4'running',_utf8mb4'done',_utf8mb4'failed')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "generated_page",
+    "collection": "generated_pages",
+    "task": "T12",
+    "definition": "CONSTRAINT `generated_page_generation_job_id_fkey` FOREIGN KEY (`generation_job_id`) REFERENCES `generation_job` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "generated_page",
+    "collection": "generated_pages",
+    "task": "T12",
+    "definition": "CONSTRAINT `generated_page_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "generated_page",
+    "collection": "generated_pages",
+    "task": "T12",
+    "definition": "CONSTRAINT `generated_page_user_id_portfolio_id_fkey` FOREIGN KEY (`user_id`, `portfolio_id`) REFERENCES `portfolio` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "generated_page",
+    "collection": "generated_pages",
+    "task": "T12",
+    "definition": "CONSTRAINT `generated_page_design_principles_version_check` CHECK ((`design_principles_version` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "generated_page",
+    "collection": "generated_pages",
+    "task": "T12",
+    "definition": "CONSTRAINT `generated_page_generation_manifest_check` CHECK ((json_type(`generation_manifest`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "generated_page",
+    "collection": "generated_pages",
+    "task": "T12",
+    "definition": "CONSTRAINT `generated_page_portfolio_plan_snapshot_check` CHECK (((`portfolio_plan_snapshot` is null) or (json_type(`portfolio_plan_snapshot`) = _utf8mb4'OBJECT')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "generated_page",
+    "collection": "generated_pages",
+    "task": "T12",
+    "definition": "CONSTRAINT `generated_page_qa_report_check` CHECK ((json_type(`qa_report`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "generated_page",
+    "collection": "generated_pages",
+    "task": "T12",
+    "definition": "CONSTRAINT `generated_page_quality_status_check` CHECK ((`quality_status` in (_utf8mb4'ready',_utf8mb4'failed_qa')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "generated_page",
+    "collection": "generated_pages",
+    "task": "T12",
+    "definition": "CONSTRAINT `generated_page_revision_check` CHECK ((`revision` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "generated_page",
+    "collection": "generated_pages",
+    "task": "T12",
+    "definition": "CONSTRAINT `generated_page_style_spec_snapshot_check` CHECK (((`style_spec_snapshot` is null) or (json_type(`style_spec_snapshot`) = _utf8mb4'OBJECT')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "generation_job",
+    "collection": "generation_jobs",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_job_portfolio_fk` FOREIGN KEY (`portfolio_id`) REFERENCES `portfolio` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "generation_job",
+    "collection": "generation_jobs",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_job_template_id_fkey` FOREIGN KEY (`template_id`) REFERENCES `template` (`id`) ON DELETE RESTRICT",
+    "enforcement": "domain"
+  },
+  {
+    "table": "generation_job",
+    "collection": "generation_jobs",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_job_user_id_brew_id_fkey` FOREIGN KEY (`user_id`, `brew_id`) REFERENCES `brew` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "generation_job",
+    "collection": "generation_jobs",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_job_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "generation_job",
+    "collection": "generation_jobs",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_job_user_id_recipe_id_fkey` FOREIGN KEY (`user_id`, `recipe_id`) REFERENCES `recipe` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "generation_job",
+    "collection": "generation_jobs",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_job_attempts_check` CHECK ((`attempts` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "generation_job",
+    "collection": "generation_jobs",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_job_stage_check` CHECK ((`stage` in (_utf8mb4'queued',_utf8mb4'validating',_utf8mb4'materializing',_utf8mb4'charging',_utf8mb4'done',_utf8mb4'failed')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "generation_job",
+    "collection": "generation_jobs",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_job_status_check` CHECK ((`status` in (_utf8mb4'queued',_utf8mb4'running',_utf8mb4'done',_utf8mb4'failed')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "generation_job",
+    "collection": "generation_jobs",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_job_style_overrides_check` CHECK ((json_type(`style_overrides`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe_item",
+    "collection": "recipe_items",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_item_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "recipe_item",
+    "collection": "recipe_items",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_item_user_id_recipe_section_id_fkey` FOREIGN KEY (`user_id`, `recipe_section_id`) REFERENCES `recipe_section` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "recipe_item",
+    "collection": "recipe_items",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_item_edited_by_check` CHECK ((`edited_by` in (_utf8mb4'ai',_utf8mb4'user')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe_item",
+    "collection": "recipe_items",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_item_evidence_check` CHECK ((json_type(`evidence`) = _utf8mb4'ARRAY'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe_item",
+    "collection": "recipe_items",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_item_order_no_check` CHECK ((`order_no` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe_evidence_path",
+    "collection": "recipe_evidence_paths",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_evidence_path_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "recipe_evidence_path",
+    "collection": "recipe_evidence_paths",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_evidence_path_user_id_recipe_id_fkey` FOREIGN KEY (`user_id`, `recipe_id`) REFERENCES `recipe` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "recipe_evidence_path",
+    "collection": "recipe_evidence_paths",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_evidence_path_user_id_recipe_item_id_fkey` FOREIGN KEY (`user_id`, `recipe_item_id`) REFERENCES `recipe_item` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "recipe_evidence_path",
+    "collection": "recipe_evidence_paths",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_evidence_path_source_type_check` CHECK ((`source_type` in (_utf8mb4'requirement',_utf8mb4'record',_utf8mb4'answer')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "generation_sentence_evidence",
+    "collection": "generation_sentence_evidence",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_sentence_evidence_recipe_evidence_path_id_fkey` FOREIGN KEY (`recipe_evidence_path_id`) REFERENCES `recipe_evidence_path` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "generation_sentence_evidence",
+    "collection": "generation_sentence_evidence",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_sentence_evidence_user_id_block_id_fkey` FOREIGN KEY (`user_id`, `block_id`) REFERENCES `block` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "generation_sentence_evidence",
+    "collection": "generation_sentence_evidence",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_sentence_evidence_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "generation_sentence_evidence",
+    "collection": "generation_sentence_evidence",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_sentence_evidence_user_id_generation_job_id_fkey` FOREIGN KEY (`user_id`, `generation_job_id`) REFERENCES `generation_job` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "usage_counter",
+    "collection": "usage_counters",
+    "task": "T04",
+    "definition": "CONSTRAINT `usage_counter_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "usage_counter",
+    "collection": "usage_counters",
+    "task": "T04",
+    "definition": "CONSTRAINT `usage_counter_used_check` CHECK ((`used` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "generation_usage_ledger",
+    "collection": "generation_usage_ledger",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_usage_ledger_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "generation_usage_ledger",
+    "collection": "generation_usage_ledger",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_usage_ledger_user_id_generation_job_id_fkey` FOREIGN KEY (`user_id`, `generation_job_id`) REFERENCES `generation_job` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "generation_usage_ledger",
+    "collection": "generation_usage_ledger",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_usage_ledger_user_id_usage_counter_id_fkey` FOREIGN KEY (`user_id`, `usage_counter_id`) REFERENCES `usage_counter` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "generation_usage_ledger",
+    "collection": "generation_usage_ledger",
+    "task": "T11",
+    "definition": "CONSTRAINT `generation_usage_ledger_amount_check` CHECK ((`amount` in (_utf8mb4'-1',1)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "identity_oauth_account",
+    "collection": "identity_oauth_accounts",
+    "task": "T04",
+    "definition": "CONSTRAINT `identity_oauth_account_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "identity_oauth_account",
+    "collection": "identity_oauth_accounts",
+    "task": "T04",
+    "definition": "CONSTRAINT `identity_oauth_account_provider_account_id_check` CHECK (((char_length(`provider_account_id`) >= 1) and (char_length(`provider_account_id`) <= 255)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "identity_oauth_account",
+    "collection": "identity_oauth_accounts",
+    "task": "T04",
+    "definition": "CONSTRAINT `identity_oauth_account_provider_check` CHECK ((`provider` = _utf8mb4'google'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "identity_session",
+    "collection": "identity_sessions",
+    "task": "T04",
+    "definition": "CONSTRAINT `identity_session_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "identity_session",
+    "collection": "identity_sessions",
+    "task": "T04",
+    "definition": "CONSTRAINT `identity_session_check` CHECK ((`expires_at` > `created_at`))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "identity_session",
+    "collection": "identity_sessions",
+    "task": "T04",
+    "definition": "CONSTRAINT `identity_session_token_hash_check` CHECK (regexp_like(`token_hash`,_utf8mb4'^[0-9a-f]{64}$'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "insight",
+    "collection": "insights",
+    "task": "T14",
+    "definition": "CONSTRAINT `insight_user_id_deployment_id_fkey` FOREIGN KEY (`user_id`, `deployment_id`) REFERENCES `deployment` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "insight",
+    "collection": "insights",
+    "task": "T14",
+    "definition": "CONSTRAINT `insight_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "insight",
+    "collection": "insights",
+    "task": "T14",
+    "definition": "CONSTRAINT `insight_suggestions_check` CHECK (((json_type(`suggestions`) = _utf8mb4'ARRAY') and (json_length(`suggestions`) <= 2)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "interest",
+    "collection": "interests",
+    "task": "T08",
+    "definition": "CONSTRAINT `interest_job_posting_id_fkey` FOREIGN KEY (`job_posting_id`) REFERENCES `job_posting` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "interest",
+    "collection": "interests",
+    "task": "T08",
+    "definition": "CONSTRAINT `interest_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "interest",
+    "collection": "interests",
+    "task": "T08",
+    "definition": "CONSTRAINT `interest_stage_check` CHECK ((`stage` in (_utf8mb4'saved',_utf8mb4'applied',_utf8mb4'closed')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_source",
+    "collection": "job_sources",
+    "task": "T07",
+    "definition": "CONSTRAINT `job_source_last_added_count_check` CHECK ((`last_added_count` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_source",
+    "collection": "job_sources",
+    "task": "T07",
+    "definition": "CONSTRAINT `job_source_last_seen_count_check` CHECK ((`last_seen_count` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_source",
+    "collection": "job_sources",
+    "task": "T07",
+    "definition": "CONSTRAINT `job_source_last_status_check` CHECK (((`last_status` is null) or (`last_status` in (_utf8mb4'succeeded',_utf8mb4'failed'))))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "job_source",
+    "collection": "job_sources",
+    "task": "T07",
+    "definition": "CONSTRAINT `job_source_provider_check` CHECK ((`provider` in (_utf8mb4'greenhouse',_utf8mb4'lever',_utf8mb4'ashby',_utf8mb4'work24')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "layout_spec",
+    "collection": "layout_specs",
+    "task": "T12",
+    "definition": "CONSTRAINT `layout_spec_generation_job_id_fkey` FOREIGN KEY (`generation_job_id`) REFERENCES `generation_job` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "layout_spec",
+    "collection": "layout_specs",
+    "task": "T12",
+    "definition": "CONSTRAINT `layout_spec_seed_template_id_fkey` FOREIGN KEY (`seed_template_id`) REFERENCES `template` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "layout_spec",
+    "collection": "layout_specs",
+    "task": "T12",
+    "definition": "CONSTRAINT `layout_spec_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "layout_spec",
+    "collection": "layout_specs",
+    "task": "T12",
+    "definition": "CONSTRAINT `layout_spec_user_id_portfolio_id_fkey` FOREIGN KEY (`user_id`, `portfolio_id`) REFERENCES `portfolio` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "layout_spec",
+    "collection": "layout_specs",
+    "task": "T12",
+    "definition": "CONSTRAINT `layout_spec_edited_by_check` CHECK ((`edited_by` in (_utf8mb4'ai',_utf8mb4'user')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "layout_spec",
+    "collection": "layout_specs",
+    "task": "T12",
+    "definition": "CONSTRAINT `layout_spec_instruction_check` CHECK (((`instruction` is null) or ((char_length(`instruction`) >= 1) and (char_length(`instruction`) <= 300))))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "layout_spec",
+    "collection": "layout_specs",
+    "task": "T12",
+    "definition": "CONSTRAINT `layout_spec_order_no_check` CHECK ((`order_no` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "layout_spec",
+    "collection": "layout_specs",
+    "task": "T12",
+    "definition": "CONSTRAINT `layout_spec_prompt_version_check` CHECK ((`prompt_version` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "layout_spec",
+    "collection": "layout_specs",
+    "task": "T12",
+    "definition": "CONSTRAINT `layout_spec_spec_check` CHECK ((json_type(`spec`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "match_score",
+    "collection": "match_scores",
+    "task": "T08",
+    "definition": "CONSTRAINT `match_score_job_posting_id_fkey` FOREIGN KEY (`job_posting_id`) REFERENCES `job_posting` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "match_score",
+    "collection": "match_scores",
+    "task": "T08",
+    "definition": "CONSTRAINT `match_score_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "match_score",
+    "collection": "match_scores",
+    "task": "T08",
+    "definition": "CONSTRAINT `match_score_axes_check` CHECK ((json_type(`axes`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "media_asset",
+    "collection": "media_assets",
+    "task": "T13",
+    "definition": "CONSTRAINT `media_asset_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "media_asset",
+    "collection": "media_assets",
+    "task": "T13",
+    "definition": "CONSTRAINT `media_asset_byte_size_check` CHECK ((`byte_size` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "media_asset",
+    "collection": "media_assets",
+    "task": "T13",
+    "definition": "CONSTRAINT `media_asset_height_check` CHECK ((`height` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "media_asset",
+    "collection": "media_assets",
+    "task": "T13",
+    "definition": "CONSTRAINT `media_asset_mime_type_check` CHECK ((`mime_type` in (_utf8mb4'image/png',_utf8mb4'image/jpeg',_utf8mb4'image/webp',_utf8mb4'image/gif')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "media_asset",
+    "collection": "media_assets",
+    "task": "T13",
+    "definition": "CONSTRAINT `media_asset_width_check` CHECK ((`width` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "media_variant",
+    "collection": "media_variants",
+    "task": "T13",
+    "definition": "CONSTRAINT `media_variant_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "media_variant",
+    "collection": "media_variants",
+    "task": "T13",
+    "definition": "CONSTRAINT `media_variant_user_id_media_asset_id_fkey` FOREIGN KEY (`user_id`, `media_asset_id`) REFERENCES `media_asset` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "media_variant",
+    "collection": "media_variants",
+    "task": "T13",
+    "definition": "CONSTRAINT `media_variant_byte_size_check` CHECK ((`byte_size` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "media_variant",
+    "collection": "media_variants",
+    "task": "T13",
+    "definition": "CONSTRAINT `media_variant_height_check` CHECK ((`height` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "media_variant",
+    "collection": "media_variants",
+    "task": "T13",
+    "definition": "CONSTRAINT `media_variant_mime_type_check` CHECK ((`mime_type` = _utf8mb4'image/webp'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "media_variant",
+    "collection": "media_variants",
+    "task": "T13",
+    "definition": "CONSTRAINT `media_variant_width_check` CHECK ((`width` > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "metric_daily",
+    "collection": "metrics_daily",
+    "task": "T14",
+    "definition": "CONSTRAINT `metric_daily_user_id_deployment_id_fkey` FOREIGN KEY (`user_id`, `deployment_id`) REFERENCES `deployment` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "metric_daily",
+    "collection": "metrics_daily",
+    "task": "T14",
+    "definition": "CONSTRAINT `metric_daily_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "metric_daily",
+    "collection": "metrics_daily",
+    "task": "T14",
+    "definition": "CONSTRAINT `metric_daily_sample_size_check` CHECK ((`sample_size` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "notification",
+    "collection": "notifications",
+    "task": "T14",
+    "definition": "CONSTRAINT `notification_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "notification",
+    "collection": "notifications",
+    "task": "T14",
+    "definition": "CONSTRAINT `notification_attempts_check` CHECK ((`attempts` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "notification",
+    "collection": "notifications",
+    "task": "T14",
+    "definition": "CONSTRAINT `notification_delivery_status_check` CHECK ((`delivery_status` in (_utf8mb4'queued',_utf8mb4'sending',_utf8mb4'sent',_utf8mb4'failed',_utf8mb4'suppressed')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "notification",
+    "collection": "notifications",
+    "task": "T14",
+    "definition": "CONSTRAINT `notification_kind_check` CHECK ((`kind` in (_utf8mb4'deadline',_utf8mb4'saved_search',_utf8mb4'generation',_utf8mb4'traffic')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "platform_outbox",
+    "collection": "outbox_events",
+    "task": "T03",
+    "definition": "CONSTRAINT `platform_outbox_attempts_check` CHECK ((`attempts` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "platform_outbox",
+    "collection": "outbox_events",
+    "task": "T03",
+    "definition": "CONSTRAINT `platform_outbox_check` CHECK (((`state` = _utf8mb4'publishing') = (`locked_at` is not null)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "platform_outbox",
+    "collection": "outbox_events",
+    "task": "T03",
+    "definition": "CONSTRAINT `platform_outbox_check1` CHECK (((`state` = _utf8mb4'published') = (`published_at` is not null)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "platform_outbox",
+    "collection": "outbox_events",
+    "task": "T03",
+    "definition": "CONSTRAINT `platform_outbox_idempotency_key_check` CHECK (((char_length(`idempotency_key`) >= 16) and (char_length(`idempotency_key`) <= 128)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "platform_outbox",
+    "collection": "outbox_events",
+    "task": "T03",
+    "definition": "CONSTRAINT `platform_outbox_payload_check` CHECK ((json_type(`payload`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "platform_outbox",
+    "collection": "outbox_events",
+    "task": "T03",
+    "definition": "CONSTRAINT `platform_outbox_state_check` CHECK ((`state` in (_utf8mb4'pending',_utf8mb4'publishing',_utf8mb4'published',_utf8mb4'dead_letter')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "platform_outbox",
+    "collection": "outbox_events",
+    "task": "T03",
+    "definition": "CONSTRAINT `platform_outbox_topic_check` CHECK (regexp_like(`topic`,_utf8mb4'^[a-z][a-z0-9._-]{1,99}$'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "portfolio_edit_proposal",
+    "collection": "portfolio_edit_proposals",
+    "task": "T12",
+    "definition": "CONSTRAINT `portfolio_edit_proposal_user_id_block_id_fkey` FOREIGN KEY (`user_id`, `block_id`) REFERENCES `block` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio_edit_proposal",
+    "collection": "portfolio_edit_proposals",
+    "task": "T12",
+    "definition": "CONSTRAINT `portfolio_edit_proposal_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio_edit_proposal",
+    "collection": "portfolio_edit_proposals",
+    "task": "T12",
+    "definition": "CONSTRAINT `portfolio_edit_proposal_user_id_portfolio_id_fkey` FOREIGN KEY (`user_id`, `portfolio_id`) REFERENCES `portfolio` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio_edit_proposal",
+    "collection": "portfolio_edit_proposals",
+    "task": "T12",
+    "definition": "CONSTRAINT `portfolio_edit_proposal_user_id_source_record_id_fkey` FOREIGN KEY (`user_id`, `source_record_id`) REFERENCES `record` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio_edit_proposal",
+    "collection": "portfolio_edit_proposals",
+    "task": "T12",
+    "definition": "CONSTRAINT `portfolio_edit_proposal_after_state_check` CHECK ((json_type(`after_state`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "portfolio_edit_proposal",
+    "collection": "portfolio_edit_proposals",
+    "task": "T12",
+    "definition": "CONSTRAINT `portfolio_edit_proposal_before_state_check` CHECK ((json_type(`before_state`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "portfolio_edit_proposal",
+    "collection": "portfolio_edit_proposals",
+    "task": "T12",
+    "definition": "CONSTRAINT `portfolio_edit_proposal_instruction_check` CHECK (((`instruction` is null) or ((char_length(`instruction`) >= 1) and (char_length(`instruction`) <= 500))))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "portfolio_edit_proposal",
+    "collection": "portfolio_edit_proposals",
+    "task": "T12",
+    "definition": "CONSTRAINT `portfolio_edit_proposal_instruction_present` CHECK (((`operation` <> _utf8mb4'instruct') or ((`instruction` is not null) and (json_length(`patches`) > 0))))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "portfolio_edit_proposal",
+    "collection": "portfolio_edit_proposals",
+    "task": "T12",
+    "definition": "CONSTRAINT `portfolio_edit_proposal_operation_check` CHECK ((`operation` in (_utf8mb4'update_text',_utf8mb4'set_style',_utf8mb4'insert_record',_utf8mb4'instruct')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "portfolio_edit_proposal",
+    "collection": "portfolio_edit_proposals",
+    "task": "T12",
+    "definition": "CONSTRAINT `portfolio_edit_proposal_patches_check` CHECK ((json_type(`patches`) = _utf8mb4'ARRAY'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "portfolio_edit_proposal",
+    "collection": "portfolio_edit_proposals",
+    "task": "T12",
+    "definition": "CONSTRAINT `portfolio_edit_proposal_status_check` CHECK ((`status` in (_utf8mb4'pending',_utf8mb4'applied',_utf8mb4'rejected',_utf8mb4'expired')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "portfolio_snapshot",
+    "collection": "portfolio_snapshots",
+    "task": "T12",
+    "definition": "CONSTRAINT `portfolio_snapshot_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio_snapshot",
+    "collection": "portfolio_snapshots",
+    "task": "T12",
+    "definition": "CONSTRAINT `portfolio_snapshot_user_id_portfolio_id_fkey` FOREIGN KEY (`user_id`, `portfolio_id`) REFERENCES `portfolio` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio_snapshot",
+    "collection": "portfolio_snapshots",
+    "task": "T12",
+    "definition": "CONSTRAINT `portfolio_snapshot_kind_check` CHECK ((`kind` in (_utf8mb4'initial_generation',_utf8mb4'edit',_utf8mb4'manual')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "portfolio_snapshot",
+    "collection": "portfolio_snapshots",
+    "task": "T12",
+    "definition": "CONSTRAINT `portfolio_snapshot_snapshot_check` CHECK ((json_type(`snapshot`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recent_search",
+    "collection": "recent_searches",
+    "task": "T07",
+    "definition": "CONSTRAINT `recent_search_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "recent_search",
+    "collection": "recent_searches",
+    "task": "T07",
+    "definition": "CONSTRAINT `recent_search_conditions_check` CHECK ((json_type(`conditions`) = _utf8mb4'ARRAY'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recent_search",
+    "collection": "recent_searches",
+    "task": "T07",
+    "definition": "CONSTRAINT `recent_search_result_count_check` CHECK ((`result_count` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe_revision",
+    "collection": "recipe_revisions",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_revision_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "recipe_revision",
+    "collection": "recipe_revisions",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_revision_user_id_recipe_id_fkey` FOREIGN KEY (`user_id`, `recipe_id`) REFERENCES `recipe` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "recipe_revision",
+    "collection": "recipe_revisions",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_revision_actor_check` CHECK ((`actor` in (_utf8mb4'ai',_utf8mb4'user')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe_revision",
+    "collection": "recipe_revisions",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_revision_diff_check` CHECK ((json_type(`diff`) = _utf8mb4'ARRAY'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe_revision",
+    "collection": "recipe_revisions",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_revision_snapshot_check` CHECK ((json_type(`snapshot`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "recipe_unused_source",
+    "collection": "recipe_unused_sources",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_unused_source_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "recipe_unused_source",
+    "collection": "recipe_unused_sources",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_unused_source_user_id_recipe_id_fkey` FOREIGN KEY (`user_id`, `recipe_id`) REFERENCES `recipe` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "recipe_unused_source",
+    "collection": "recipe_unused_sources",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_unused_source_user_id_record_id_fkey` FOREIGN KEY (`user_id`, `record_id`) REFERENCES `record` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "recipe_unused_source",
+    "collection": "recipe_unused_sources",
+    "task": "T10",
+    "definition": "CONSTRAINT `recipe_unused_source_reason_check` CHECK ((char_length(`reason`) > 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "record_link",
+    "collection": "record_links",
+    "task": "T06",
+    "definition": "CONSTRAINT `record_link_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "record_link",
+    "collection": "record_links",
+    "task": "T06",
+    "definition": "CONSTRAINT `record_link_user_id_from_record_id_fkey` FOREIGN KEY (`user_id`, `from_record_id`) REFERENCES `record` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "record_link",
+    "collection": "record_links",
+    "task": "T06",
+    "definition": "CONSTRAINT `record_link_user_id_to_record_id_fkey` FOREIGN KEY (`user_id`, `to_record_id`) REFERENCES `record` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "record_link",
+    "collection": "record_links",
+    "task": "T06",
+    "definition": "CONSTRAINT `record_link_check` CHECK ((`from_record_id` <> `to_record_id`))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "record_link",
+    "collection": "record_links",
+    "task": "T06",
+    "definition": "CONSTRAINT `record_link_created_by_check` CHECK ((`created_by` in (_utf8mb4'user',_utf8mb4'ai')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "record_link",
+    "collection": "record_links",
+    "task": "T06",
+    "definition": "CONSTRAINT `record_link_relation_check` CHECK ((`relation` in (_utf8mb4'related',_utf8mb4'parent',_utf8mb4'duplicate_of')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "record_usage",
+    "collection": "record_usages",
+    "task": "T06",
+    "definition": "CONSTRAINT `record_usage_user_id_block_id_fkey` FOREIGN KEY (`user_id`, `block_id`) REFERENCES `block` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "record_usage",
+    "collection": "record_usages",
+    "task": "T06",
+    "definition": "CONSTRAINT `record_usage_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "record_usage",
+    "collection": "record_usages",
+    "task": "T06",
+    "definition": "CONSTRAINT `record_usage_user_id_record_id_fkey` FOREIGN KEY (`user_id`, `record_id`) REFERENCES `record` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "requirement_coverage",
+    "collection": "requirement_coverages",
+    "task": "T08",
+    "definition": "CONSTRAINT `requirement_coverage_requirement_id_fkey` FOREIGN KEY (`requirement_id`) REFERENCES `job_posting_requirement` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "requirement_coverage",
+    "collection": "requirement_coverages",
+    "task": "T08",
+    "definition": "CONSTRAINT `requirement_coverage_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "requirement_coverage",
+    "collection": "requirement_coverages",
+    "task": "T08",
+    "definition": "CONSTRAINT `requirement_coverage_coverage_check` CHECK ((`coverage` in (_utf8mb4'covered',_utf8mb4'partial',_utf8mb4'missing')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "revision",
+    "collection": "revisions",
+    "task": "T06",
+    "definition": "CONSTRAINT `revision_block_id_fkey` FOREIGN KEY (`block_id`) REFERENCES `block` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "revision",
+    "collection": "revisions",
+    "task": "T06",
+    "definition": "CONSTRAINT `revision_proposal_fk` FOREIGN KEY (`proposal_id`) REFERENCES `portfolio_edit_proposal` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "revision",
+    "collection": "revisions",
+    "task": "T06",
+    "definition": "CONSTRAINT `revision_reverted_revision_id_fkey` FOREIGN KEY (`reverted_revision_id`) REFERENCES `revision` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "revision",
+    "collection": "revisions",
+    "task": "T06",
+    "definition": "CONSTRAINT `revision_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "revision",
+    "collection": "revisions",
+    "task": "T06",
+    "definition": "CONSTRAINT `revision_user_id_portfolio_id_fkey` FOREIGN KEY (`user_id`, `portfolio_id`) REFERENCES `portfolio` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "revision",
+    "collection": "revisions",
+    "task": "T06",
+    "definition": "CONSTRAINT `revision_actor_check` CHECK ((`actor` in (_utf8mb4'user',_utf8mb4'ai')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "revision",
+    "collection": "revisions",
+    "task": "T06",
+    "definition": "CONSTRAINT `revision_change_kind_check` CHECK ((`change_kind` in (_utf8mb4'edit',_utf8mb4'revert',_utf8mb4'restore')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "revision",
+    "collection": "revisions",
+    "task": "T06",
+    "definition": "CONSTRAINT `revision_check` CHECK (((`before` is not null) or (`after` is not null)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "saved_search",
+    "collection": "saved_searches",
+    "task": "T14",
+    "definition": "CONSTRAINT `saved_search_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "saved_search",
+    "collection": "saved_searches",
+    "task": "T14",
+    "definition": "CONSTRAINT `saved_search_filters_check` CHECK ((json_type(`filters`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "scheduled_job_definition",
+    "collection": "scheduled_job_definitions",
+    "task": "T15",
+    "definition": "CONSTRAINT `scheduled_job_definition_failure_count_check` CHECK ((`failure_count` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "scheduled_job_definition",
+    "collection": "scheduled_job_definitions",
+    "task": "T15",
+    "definition": "CONSTRAINT `scheduled_job_definition_interval_seconds_check` CHECK (((`interval_seconds` >= 60) and (`interval_seconds` <= 604800)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "scheduled_job_definition",
+    "collection": "scheduled_job_definitions",
+    "task": "T15",
+    "definition": "CONSTRAINT `scheduled_job_definition_job_key_check` CHECK ((`job_key` in (_utf8mb4'saved_searches',_utf8mb4'expire_postings',_utf8mb4'notification_batch',_utf8mb4'analytics_daily',_utf8mb4'deletion_grace',_utf8mb4'retention',_utf8mb4'job_ingest',_utf8mb4'posting_facts')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "scheduled_job_definition",
+    "collection": "scheduled_job_definitions",
+    "task": "T15",
+    "definition": "CONSTRAINT `scheduled_job_definition_last_status_check` CHECK (((`last_status` is null) or (`last_status` in (_utf8mb4'succeeded',_utf8mb4'failed'))))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "scheduled_job_run",
+    "collection": "scheduled_job_runs",
+    "task": "T15",
+    "definition": "CONSTRAINT `scheduled_job_run_job_key_fkey` FOREIGN KEY (`job_key`) REFERENCES `scheduled_job_definition` (`job_key`) ON DELETE RESTRICT",
+    "enforcement": "domain"
+  },
+  {
+    "table": "scheduled_job_run",
+    "collection": "scheduled_job_runs",
+    "task": "T15",
+    "definition": "CONSTRAINT `scheduled_job_run_attempts_check` CHECK ((`attempts` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "scheduled_job_run",
+    "collection": "scheduled_job_runs",
+    "task": "T15",
+    "definition": "CONSTRAINT `scheduled_job_run_result_check` CHECK (((`result` is null) or (json_type(`result`) = _utf8mb4'OBJECT')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "scheduled_job_run",
+    "collection": "scheduled_job_runs",
+    "task": "T15",
+    "definition": "CONSTRAINT `scheduled_job_run_status_check` CHECK ((`status` in (_utf8mb4'queued',_utf8mb4'running',_utf8mb4'succeeded',_utf8mb4'failed')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "section_view",
+    "collection": "section_views",
+    "task": "T14",
+    "definition": "CONSTRAINT `section_view_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "section_view",
+    "collection": "section_views",
+    "task": "T14",
+    "definition": "CONSTRAINT `section_view_user_id_portfolio_section_id_fkey` FOREIGN KEY (`user_id`, `portfolio_section_id`) REFERENCES `portfolio_section` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "section_view",
+    "collection": "section_views",
+    "task": "T14",
+    "definition": "CONSTRAINT `section_view_user_id_visit_event_id_fkey` FOREIGN KEY (`user_id`, `visit_event_id`) REFERENCES `visit_event` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "section_view",
+    "collection": "section_views",
+    "task": "T14",
+    "definition": "CONSTRAINT `section_view_dwell_ms_check` CHECK ((`dwell_ms` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "section_view",
+    "collection": "section_views",
+    "task": "T14",
+    "definition": "CONSTRAINT `section_view_scroll_depth_check` CHECK (((`scroll_depth` >= 0) and (`scroll_depth` <= 1)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "skill",
+    "collection": "skills",
+    "task": "T06",
+    "definition": "CONSTRAINT `skill_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "skill",
+    "collection": "skills",
+    "task": "T06",
+    "definition": "CONSTRAINT `skill_evidence_count_check` CHECK ((`evidence_count` >= 0))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "skill",
+    "collection": "skills",
+    "task": "T06",
+    "definition": "CONSTRAINT `skill_level_check` CHECK (((`level` >= 1) and (`level` <= 5)))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "skill",
+    "collection": "skills",
+    "task": "T06",
+    "definition": "CONSTRAINT `skill_strength_check` CHECK ((`strength` in (_utf8mb4'weak',_utf8mb4'supported',_utf8mb4'strong')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "skill_evidence",
+    "collection": "skill_evidence",
+    "task": "T06",
+    "definition": "CONSTRAINT `skill_evidence_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "skill_evidence",
+    "collection": "skill_evidence",
+    "task": "T06",
+    "definition": "CONSTRAINT `skill_evidence_user_id_record_id_fkey` FOREIGN KEY (`user_id`, `record_id`) REFERENCES `record` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "skill_evidence",
+    "collection": "skill_evidence",
+    "task": "T06",
+    "definition": "CONSTRAINT `skill_evidence_user_id_skill_id_fkey` FOREIGN KEY (`user_id`, `skill_id`) REFERENCES `skill` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "skill_evidence",
+    "collection": "skill_evidence",
+    "task": "T06",
+    "definition": "CONSTRAINT `skill_evidence_extracted_span_check` CHECK ((json_type(`extracted_span`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "widget",
+    "collection": "widgets",
+    "task": "T14",
+    "definition": "CONSTRAINT `widget_derived_metric_id_fkey` FOREIGN KEY (`derived_metric_id`) REFERENCES `derived_metric` (`id`) ON DELETE SET NULL",
+    "enforcement": "domain"
+  },
+  {
+    "table": "widget",
+    "collection": "widgets",
+    "task": "T14",
+    "definition": "CONSTRAINT `widget_user_id_dashboard_view_id_fkey` FOREIGN KEY (`user_id`, `dashboard_view_id`) REFERENCES `dashboard_view` (`user_id`, `id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "widget",
+    "collection": "widgets",
+    "task": "T14",
+    "definition": "CONSTRAINT `widget_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE",
+    "enforcement": "domain"
+  },
+  {
+    "table": "widget",
+    "collection": "widgets",
+    "task": "T14",
+    "definition": "CONSTRAINT `widget_compare_to_check` CHECK (((`compare_to` is null) or (`compare_to` in (_utf8mb4'prev_period',_utf8mb4'other_portfolio',_utf8mb4'industry'))))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "widget",
+    "collection": "widgets",
+    "task": "T14",
+    "definition": "CONSTRAINT `widget_position_check` CHECK ((json_type(`position`) = _utf8mb4'OBJECT'))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "widget",
+    "collection": "widgets",
+    "task": "T14",
+    "definition": "CONSTRAINT `widget_visualization_check` CHECK ((`visualization` in (_utf8mb4'number',_utf8mb4'spark',_utf8mb4'line',_utf8mb4'bar',_utf8mb4'donut',_utf8mb4'list',_utf8mb4'note')))",
+    "enforcement": "validator-or-domain"
+  },
+  {
+    "table": "answer_record_change",
+    "collection": "answer_record_changes",
+    "task": "T09",
+    "trigger": "answer_record_change_exact_source_insert",
+    "definition": "if not exists (select 1 from answer where id = new.answer_id and user_id = new.user_id\r\n                   and instr(transcript, new.source_quote) > 0)\r\n  then signal sqlstate '45000' set message_text = 'record change source must be an exact answer transcript span';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "answer_record_change",
+    "collection": "answer_record_changes",
+    "task": "T09",
+    "trigger": "answer_record_change_exact_source_update",
+    "definition": "if not exists (select 1 from answer where id = new.answer_id and user_id = new.user_id\r\n                   and instr(transcript, new.source_quote) > 0)\r\n  then signal sqlstate '45000' set message_text = 'record change source must be an exact answer transcript span';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "answer",
+    "collection": "answers",
+    "task": "T09",
+    "trigger": "answer_record_owner_insert",
+    "definition": "if new.created_record_id is not null\r\n     and not exists (select 1 from record where id = new.created_record_id and user_id = new.user_id)\r\n  then signal sqlstate '45000' set message_text = 'created_record_id must reference a record owned by the same user';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "answer",
+    "collection": "answers",
+    "task": "T09",
+    "trigger": "answer_record_owner_update",
+    "definition": "if new.created_record_id is not null\r\n     and not exists (select 1 from record where id = new.created_record_id and user_id = new.user_id)\r\n  then signal sqlstate '45000' set message_text = 'created_record_id must reference a record owned by the same user';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "block",
+    "collection": "blocks",
+    "task": "T11",
+    "trigger": "block_metric_source_insert",
+    "definition": "if new.kind in ('metric', 'chart') and new.source_record_id is null and new.sync_state <> 'detached'\r\n  then signal sqlstate '45000' set message_text = 'metric and chart blocks need a source record';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "block",
+    "collection": "blocks",
+    "task": "T11",
+    "trigger": "block_metric_source_update",
+    "definition": "if new.kind in ('metric', 'chart') and new.source_record_id is null and new.sync_state <> 'detached'\r\n  then signal sqlstate '45000' set message_text = 'metric and chart blocks need a source record';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "block",
+    "collection": "blocks",
+    "task": "T11",
+    "trigger": "block_source_record_owner_insert",
+    "definition": "if new.source_record_id is not null\r\n     and not exists (select 1 from record where id = new.source_record_id and user_id = new.user_id)\r\n  then signal sqlstate '45000' set message_text = 'source_record_id must reference a record owned by the same user';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "block",
+    "collection": "blocks",
+    "task": "T11",
+    "trigger": "block_source_record_owner_update",
+    "definition": "if new.source_record_id is not null\r\n     and not exists (select 1 from record where id = new.source_record_id and user_id = new.user_id)\r\n  then signal sqlstate '45000' set message_text = 'source_record_id must reference a record owned by the same user';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "block",
+    "collection": "blocks",
+    "task": "T11",
+    "trigger": "block_touches_portfolio_delete",
+    "definition": "begin\r\n  update portfolio set updated_at = now(6)\r\n  where id = (select portfolio_id from portfolio_section where id = old.portfolio_section_id);\r\nend",
+    "enforcement": "domain"
+  },
+  {
+    "table": "block",
+    "collection": "blocks",
+    "task": "T11",
+    "trigger": "block_touches_portfolio_insert",
+    "definition": "begin\r\n  update portfolio set updated_at = now(6)\r\n  where id = (select portfolio_id from portfolio_section where id = new.portfolio_section_id);\r\nend",
+    "enforcement": "domain"
+  },
+  {
+    "table": "block",
+    "collection": "blocks",
+    "task": "T11",
+    "trigger": "block_touches_portfolio_update",
+    "definition": "begin\r\n  update portfolio set updated_at = now(6)\r\n  where id = (select portfolio_id from portfolio_section where id = new.portfolio_section_id);\r\nend",
+    "enforcement": "domain"
+  },
+  {
+    "table": "brew_source",
+    "collection": "brew_sources",
+    "task": "T08",
+    "trigger": "brew_source_candidate_guard_insert",
+    "definition": "if not exists (select 1 from brew where id = new.brew_id and user_id = new.user_id)\r\n     or not exists (select 1 from record where id = new.record_id and user_id = new.user_id\r\n                      and deleted_at is null and status in ('organized', 'verified'))\r\n  then signal sqlstate '45000' set message_text = 'brew source must be an active organized record owned by the brew owner';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "brew_source",
+    "collection": "brew_sources",
+    "task": "T08",
+    "trigger": "brew_source_candidate_guard_update",
+    "definition": "if not exists (select 1 from brew where id = new.brew_id and user_id = new.user_id)\r\n     or not exists (select 1 from record where id = new.record_id and user_id = new.user_id\r\n                      and deleted_at is null and status in ('organized', 'verified'))\r\n  then signal sqlstate '45000' set message_text = 'brew source must be an active organized record owned by the brew owner';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "brew_source",
+    "collection": "brew_sources",
+    "task": "T08",
+    "trigger": "brew_source_selected_limit_insert",
+    "definition": "if new.is_selected\r\n     and (select count(*) from brew_source where user_id = new.user_id and brew_id = new.brew_id and is_selected) >= 10\r\n  then signal sqlstate '45000' set message_text = 'a brew can select at most 10 sources';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "brew_source",
+    "collection": "brew_sources",
+    "task": "T08",
+    "trigger": "brew_source_selected_limit_update",
+    "definition": "if new.is_selected and not old.is_selected\r\n     and (select count(*) from brew_source\r\n          where user_id = new.user_id and brew_id = new.brew_id and is_selected and id <> new.id) >= 10\r\n  then signal sqlstate '45000' set message_text = 'a brew can select at most 10 sources';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "category",
+    "collection": "career_categories",
+    "task": "T05",
+    "trigger": "category_property_removal_guard_update",
+    "definition": "begin\r\n  declare index_at int default 0;\r\n  declare key_count int default json_length(json_keys(old.property_schema));\r\n  declare property_key varchar(255);\r\n  declare message varchar(255);\r\n\r\n  -- 이름을 바꾸거나 순서를 옮기는 것도 같은 트리거를 지난다. 정의가 그대로면\r\n  -- 기록을 뒤지지 않는다.\r\n  if new.property_schema <> old.property_schema then\r\n    while index_at < key_count do\r\n      set property_key = json_unquote(json_extract(json_keys(old.property_schema), concat('$[', index_at, ']')));\r\n      if json_contains(json_keys(new.property_schema), json_quote(property_key)) = 0\r\n         and exists (select 1 from record\r\n                     where category_id = old.id and deleted_at is null\r\n                       and json_contains(json_keys(properties), json_quote(property_key)))\r\n      then\r\n        set message = concat('property ', property_key, ' still has record values');\r\n        signal sqlstate '45000' set message_text = message;\r\n      end if;\r\n      set index_at = index_at + 1;\r\n    end while;\r\n  end if;\r\nend",
+    "enforcement": "domain"
+  },
+  {
+    "table": "category",
+    "collection": "career_categories",
+    "task": "T05",
+    "trigger": "category_system_immutable_delete",
+    "definition": "if old.is_system then signal sqlstate '45000' set message_text = 'system category definitions are immutable';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "category",
+    "collection": "career_categories",
+    "task": "T05",
+    "trigger": "category_system_immutable_update",
+    "definition": "if old.is_system then signal sqlstate '45000' set message_text = 'system category definitions are immutable';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "category",
+    "collection": "career_categories",
+    "task": "T05",
+    "trigger": "category_version_on_update",
+    "definition": "begin\r\n  set new.version = old.version + 1, new.updated_at = now(6);\r\nend",
+    "enforcement": "domain"
+  },
+  {
+    "table": "category_view",
+    "collection": "career_views",
+    "task": "T05",
+    "trigger": "category_view_category_scope_insert",
+    "definition": "if not exists (select 1 from category where id = new.category_id and (user_id is null or user_id = new.user_id))\r\n  then signal sqlstate '45000' set message_text = 'category must be a system category or belong to the view owner';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "category_view",
+    "collection": "career_views",
+    "task": "T05",
+    "trigger": "category_view_category_scope_update",
+    "definition": "if not exists (select 1 from category where id = new.category_id and (user_id is null or user_id = new.user_id))\r\n  then signal sqlstate '45000' set message_text = 'category must be a system category or belong to the view owner';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "category_view",
+    "collection": "career_views",
+    "task": "T05",
+    "trigger": "category_view_limit_insert",
+    "definition": "if (select count(*) from category_view where user_id = new.user_id and category_id = new.category_id) >= 8\r\n  then signal sqlstate '45000' set message_text = 'category view limit exceeded';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "dashboard_view",
+    "collection": "dashboard_views",
+    "task": "T14",
+    "trigger": "dashboard_view_limit_insert",
+    "definition": "if (select count(*) from dashboard_view\r\n      where user_id = new.user_id and portfolio_id = new.portfolio_id) >= 6\r\n  then signal sqlstate '45000' set message_text = 'a portfolio can have at most 6 dashboard views';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "deployment",
+    "collection": "deployments",
+    "task": "T13",
+    "trigger": "deployment_snapshot_immutable_update",
+    "definition": "if not (new.user_id <=> old.user_id) or not (new.portfolio_id <=> old.portfolio_id)\r\n     or not (new.version <=> old.version) or not (new.subdomain <=> old.subdomain)\r\n     or not (cast(new.snapshot as char) <=> cast(old.snapshot as char))\r\n     or not (cast(new.seo as char) <=> cast(old.seo as char))\r\n     or not (new.contact_visibility <=> old.contact_visibility)\r\n     or not (new.published_at <=> old.published_at)\r\n  then signal sqlstate '45000' set message_text = 'deployment snapshot is immutable';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "export_job",
+    "collection": "export_jobs",
+    "task": "T13",
+    "trigger": "export_job_owner_insert",
+    "definition": "if (new.asset_id is not null\r\n      and not exists (select 1 from export_asset where id = new.asset_id and user_id = new.user_id))\r\n     or (new.deployment_id is not null\r\n      and not exists (select 1 from deployment where id = new.deployment_id and user_id = new.user_id))\r\n  then signal sqlstate '45000' set message_text = 'export job must reference assets owned by the same user';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "generation_job",
+    "collection": "generation_jobs",
+    "task": "T11",
+    "trigger": "generation_job_portfolio_owner_insert",
+    "definition": "if new.portfolio_id is not null\r\n     and not exists (select 1 from portfolio where id = new.portfolio_id and user_id = new.user_id)\r\n  then signal sqlstate '45000' set message_text = 'generation job must reference a portfolio owned by the same user';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "job_posting",
+    "collection": "job_postings",
+    "task": "T07",
+    "trigger": "job_posting_source_immutable_update",
+    "definition": "if not (new.source <=> old.source) or not (new.external_id <=> old.external_id)\r\n     or not (new.source_url <=> old.source_url) or not (new.description_raw <=> old.description_raw)\r\n     or not (new.dedupe_hash <=> old.dedupe_hash)\r\n  then signal sqlstate '45000' set message_text = 'job posting source fields are immutable';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio",
+    "collection": "portfolios",
+    "task": "T11",
+    "trigger": "portfolio_current_deployment_scope_insert",
+    "definition": "if new.current_deployment_id is not null\r\n     and not exists (select 1 from deployment where id = new.current_deployment_id\r\n                       and user_id = new.user_id and portfolio_id = new.id)\r\n  then signal sqlstate '45000' set message_text = 'current deployment must belong to the same portfolio';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio",
+    "collection": "portfolios",
+    "task": "T11",
+    "trigger": "portfolio_current_deployment_scope_update",
+    "definition": "if new.current_deployment_id is not null\r\n     and not exists (select 1 from deployment where id = new.current_deployment_id\r\n                       and user_id = new.user_id and portfolio_id = new.id)\r\n  then signal sqlstate '45000' set message_text = 'current deployment must belong to the same portfolio';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio_section",
+    "collection": "portfolio_sections",
+    "task": "T11",
+    "trigger": "portfolio_section_recipe_owner_insert",
+    "definition": "if new.recipe_section_id is not null\r\n     and not exists (select 1 from recipe_section where id = new.recipe_section_id and user_id = new.user_id)\r\n  then signal sqlstate '45000' set message_text = 'recipe_section_id must reference a recipe_section owned by the same user';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio_section",
+    "collection": "portfolio_sections",
+    "task": "T11",
+    "trigger": "portfolio_section_recipe_owner_update",
+    "definition": "if new.recipe_section_id is not null\r\n     and not exists (select 1 from recipe_section where id = new.recipe_section_id and user_id = new.user_id)\r\n  then signal sqlstate '45000' set message_text = 'recipe_section_id must reference a recipe_section owned by the same user';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio_section",
+    "collection": "portfolio_sections",
+    "task": "T11",
+    "trigger": "portfolio_section_touches_portfolio_insert",
+    "definition": "begin\r\n  update portfolio set updated_at = now(6) where id = new.portfolio_id;\r\nend",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio_section",
+    "collection": "portfolio_sections",
+    "task": "T11",
+    "trigger": "portfolio_section_touches_portfolio_update",
+    "definition": "update portfolio set updated_at = now(6) where id = new.portfolio_id",
+    "enforcement": "domain"
+  },
+  {
+    "table": "portfolio",
+    "collection": "portfolios",
+    "task": "T11",
+    "trigger": "portfolio_updated_at_on_update",
+    "definition": "begin\r\n  set new.updated_at = now(6);\r\nend",
+    "enforcement": "domain"
+  },
+  {
+    "table": "job_posting_requirement",
+    "collection": "job_posting_requirements",
+    "task": "T07",
+    "trigger": "posting_requirement_span_exact_insert",
+    "definition": "begin\r\n  declare source_text longtext;\r\n  declare span_start int;\r\n  declare span_end int;\r\n  declare span_quote longtext;\r\n\r\n  select description_raw into source_text from job_posting where id = new.job_posting_id;\r\n  if source_text is null then\r\n    signal sqlstate '45000' set message_text = 'requirement source is unavailable';\r\n  end if;\r\n  set span_start = cast(new.source_span ->> '$.start' as signed);\r\n  set span_end = cast(new.source_span ->> '$.end' as signed);\r\n  set span_quote = new.source_span ->> '$.quote';\r\n  if span_start is null or span_end is null or span_quote is null\r\n    or span_start < 0\r\n    or span_end <= span_start\r\n    or span_end - span_start <> char_length(span_quote)\r\n    or substring(source_text, span_start + 1, span_end - span_start) <> span_quote\r\n  then\r\n    signal sqlstate '45000' set message_text = 'requirement source span does not match immutable posting source';\r\n  end if;\r\nend",
+    "enforcement": "domain"
+  },
+  {
+    "table": "job_posting_requirement",
+    "collection": "job_posting_requirements",
+    "task": "T07",
+    "trigger": "posting_requirement_span_exact_update",
+    "definition": "begin\r\n  declare source_text longtext;\r\n  declare span_start int;\r\n  declare span_end int;\r\n  declare span_quote longtext;\r\n\r\n  select description_raw into source_text from job_posting where id = new.job_posting_id;\r\n  if source_text is null then\r\n    signal sqlstate '45000' set message_text = 'requirement source is unavailable';\r\n  end if;\r\n  set span_start = cast(new.source_span ->> '$.start' as signed);\r\n  set span_end = cast(new.source_span ->> '$.end' as signed);\r\n  set span_quote = new.source_span ->> '$.quote';\r\n  if span_start is null or span_end is null or span_quote is null\r\n    or span_start < 0\r\n    or span_end <= span_start\r\n    or span_end - span_start <> char_length(span_quote)\r\n    or substring(source_text, span_start + 1, span_end - span_start) <> span_quote\r\n  then\r\n    signal sqlstate '45000' set message_text = 'requirement source span does not match immutable posting source';\r\n  end if;\r\nend",
+    "enforcement": "domain"
+  },
+  {
+    "table": "question",
+    "collection": "questions",
+    "task": "T09",
+    "trigger": "question_replacement_owner_insert",
+    "definition": "if new.replaced_from_id is not null\r\n     and not exists (select 1 from question where id = new.replaced_from_id and user_id = new.user_id)\r\n  then signal sqlstate '45000' set message_text = 'replaced_from_id must reference a question owned by the same user';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "question",
+    "collection": "questions",
+    "task": "T09",
+    "trigger": "question_replacement_owner_update",
+    "definition": "if new.replaced_from_id is not null\r\n     and not exists (select 1 from question where id = new.replaced_from_id and user_id = new.user_id)\r\n  then signal sqlstate '45000' set message_text = 'replaced_from_id must reference a question owned by the same user';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "question",
+    "collection": "questions",
+    "task": "T09",
+    "trigger": "question_self_replacement_insert",
+    "definition": "if new.replaced_from_id is not null and new.replaced_from_id = new.id\r\n  then signal sqlstate '45000' set message_text = 'a question cannot replace itself';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "record",
+    "collection": "career_records",
+    "task": "T05",
+    "trigger": "record_category_scope_insert",
+    "definition": "if not exists (select 1 from category where id = new.category_id and (user_id is null or user_id = new.user_id))\r\n  then signal sqlstate '45000' set message_text = 'category must be a system category or belong to the record owner';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "record",
+    "collection": "career_records",
+    "task": "T05",
+    "trigger": "record_category_scope_update",
+    "definition": "if not exists (select 1 from category where id = new.category_id and (user_id is null or user_id = new.user_id))\r\n  then signal sqlstate '45000' set message_text = 'category must be a system category or belong to the record owner';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "record",
+    "collection": "career_records",
+    "task": "T05",
+    "trigger": "record_delete_detaches_blocks",
+    "definition": "begin\r\n  update block set source_record_id = null, sync_state = 'detached'\r\n  where user_id = old.user_id and source_record_id = old.id;\r\nend",
+    "enforcement": "domain"
+  },
+  {
+    "table": "record",
+    "collection": "career_records",
+    "task": "T05",
+    "trigger": "record_properties_match_category_insert",
+    "definition": "call validate_record_properties(new.category_id, new.properties)",
+    "enforcement": "domain"
+  },
+  {
+    "table": "record",
+    "collection": "career_records",
+    "task": "T05",
+    "trigger": "record_properties_match_category_update",
+    "definition": "if new.category_id <> old.category_id or new.properties <> old.properties\r\n  then call validate_record_properties(new.category_id, new.properties);\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "record",
+    "collection": "career_records",
+    "task": "T05",
+    "trigger": "record_usage_blocks_delete",
+    "definition": "if exists (select 1 from record_usage where record_id = old.id)\r\n     and exists (select 1 from `user` where id = old.user_id)\r\n  then signal sqlstate '45000'\r\n    set message_text = 'record is still quoted by a portfolio block';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "record",
+    "collection": "career_records",
+    "task": "T05",
+    "trigger": "record_version_on_update",
+    "definition": "begin\r\n  set new.version = old.version + 1, new.updated_at = now(6);\r\nend",
+    "enforcement": "domain"
+  },
+  {
+    "table": "revision",
+    "collection": "revisions",
+    "task": "T06",
+    "trigger": "revision_block_owner_insert",
+    "definition": "if new.block_id is not null\r\n     and not exists (select 1 from block where id = new.block_id and user_id = new.user_id)\r\n  then signal sqlstate '45000' set message_text = 'block_id must reference a block owned by the same user';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "revision",
+    "collection": "revisions",
+    "task": "T06",
+    "trigger": "revision_block_owner_update",
+    "definition": "if new.block_id is not null\r\n     and not exists (select 1 from block where id = new.block_id and user_id = new.user_id)\r\n  then signal sqlstate '45000' set message_text = 'block_id must reference a block owned by the same user';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "widget",
+    "collection": "widgets",
+    "task": "T14",
+    "trigger": "widget_derived_metric_owner_insert",
+    "definition": "if new.derived_metric_id is not null\r\n     and not exists (select 1 from derived_metric where id = new.derived_metric_id and user_id = new.user_id)\r\n  then signal sqlstate '45000' set message_text = 'derived_metric_id must reference a derived_metric owned by the same user';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "widget",
+    "collection": "widgets",
+    "task": "T14",
+    "trigger": "widget_derived_metric_owner_update",
+    "definition": "if new.derived_metric_id is not null\r\n     and not exists (select 1 from derived_metric where id = new.derived_metric_id and user_id = new.user_id)\r\n  then signal sqlstate '45000' set message_text = 'derived_metric_id must reference a derived_metric owned by the same user';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "widget",
+    "collection": "widgets",
+    "task": "T14",
+    "trigger": "widget_metric_choice_insert",
+    "definition": "if (new.metric_key is not null) + (new.derived_metric_id is not null) <> 1\r\n  then signal sqlstate '45000' set message_text = 'a widget needs exactly one of metric_key or derived_metric_id';\r\n  end if",
+    "enforcement": "domain"
+  },
+  {
+    "table": "widget",
+    "collection": "widgets",
+    "task": "T14",
+    "trigger": "widget_metric_choice_update",
+    "definition": "if (new.metric_key is not null) + (new.derived_metric_id is not null) <> 1\r\n  then signal sqlstate '45000' set message_text = 'a widget needs exactly one of metric_key or derived_metric_id';\r\n  end if",
+    "enforcement": "domain"
+  }
+]
