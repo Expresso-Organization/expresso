@@ -4,6 +4,7 @@ import { GreenhouseAdapter } from "./greenhouse.js";
 import { Work24Adapter } from "./work24.js";
 
 export { JobIngestService } from "./service.js";
+export { MongoJobIngestService } from "./mongo-service.js";
 export { JobUrlImporter } from "./url-import.js";
 export { AiFactsReader } from "./facts.js";
 export { BundledMarkReader, SiteMarkReader } from "./logo.js";

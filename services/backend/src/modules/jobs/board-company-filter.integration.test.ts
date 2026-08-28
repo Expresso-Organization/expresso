@@ -10,6 +10,11 @@ import type { RuntimeConfig } from "../../config/runtime-config.js";
 import { IdentityService } from "../identity/service.js";
 import { JobBoardService } from "./board-service.js";
 
+import { MongoIdentityService, type IdentityApi } from "../identity/index.js";
+import { MongoJobBoardService } from "./mongo-board-service.js";
+import { mongoCollections } from "@expresso/database";
+import { createMongoFixture } from "../../../test/support/mongodb.js";
+
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
 
@@ -41,15 +46,12 @@ interface IdRow {
  * 나라 칩에는 이미 같은 고침이 있었고 회사만 빠져 있었다. 기존 시험이 못 잡은
  * 이유는 하나다 — **회사가 하나뿐이었다.** 그러면 비율이 늘 1이다.
  */
-describeWithDatabase("회사 필터", () => {
-  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
-  const identity = new IdentityService(sql);
-  const app = buildApi({
-    config,
-    identityService: identity,
-    jobBoardService: new JobBoardService(sql),
-  });
-
+for (const engine of ["mysql", "mongodb"] as const) {
+describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_URL)(`회사 필터 (${engine})`, () => {
+  let sql: SqlTag;
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>> | undefined;
+  let identity: IdentityApi;
+  let app: ReturnType<typeof buildApi>;
   const marker = randomUUID().slice(0, 8);
   const body = `회사 필터 시험 본문 ${marker}. ${"충분히 긴 설명. ".repeat(10)}`;
   let userId = "";
@@ -58,6 +60,22 @@ describeWithDatabase("회사 필터", () => {
   let bigCompanyId = "";
 
   beforeAll(async () => {
+    if (engine === "mongodb") {
+      fixture = await createMongoFixture("board-company");
+      identity = new MongoIdentityService(fixture.resource);
+      app = buildApi({ config, identityService: identity, jobBoardService: new MongoJobBoardService(fixture.resource) });
+      const account = await identity.signup({ email: `company-${marker}@example.com`, displayName: "회사 필터", password: "correct-horse-battery" });
+      userId = account.user.id; token = account.session.accessToken;
+      const db = mongoCollections(fixture.resource.db);
+      smallCompanyId = randomUUID(); bigCompanyId = randomUUID();
+      for (const [companyId, name, count, prefix] of [[smallCompanyId, "작은회사", 2, "small"], [bigCompanyId, "큰회사", 9, "big"]] as const) {
+        await db.companies.insertOne({ _id: companyId, name: `${name} ${marker}`, brandColors: [] });
+        for (let index = 1; index <= count; index++) await db.jobPostings.insertOne({ _id: randomUUID(), companyId, source: "user_input", title: `${prefix} 엔지니어 ${index}`, descriptionRaw: body, requirements: {}, dedupeHash: `cf-${prefix}-${marker}-${index}`, createdAt: new Date(Date.now() - 60_000), location: "서울", jobFamily: "백엔드 · 데이터", duties: [], preferred: [], hiringProcess: [] });
+      }
+    } else {
+      sql = createMysqlResource(databaseUrl!).sql;
+      identity = new IdentityService(sql);
+      app = buildApi({ config, identityService: identity, jobBoardService: new JobBoardService(sql) });
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("free plan missing");
     userId = (await sql<IdRow[]>`
@@ -95,15 +113,19 @@ describeWithDatabase("회사 필터", () => {
     // 큰 쪽이 작은 쪽보다 많아야 비율이 1을 넘는다.
     await seed(smallCompanyId, 2, "small");
     await seed(bigCompanyId, 9, "big");
+    }
     await app.ready();
-  });
+  }, 60_000);
 
   afterAll(async () => {
-    await sql`delete from job_posting where company_id in (${smallCompanyId}, ${bigCompanyId})`;
-    await sql`delete from company where id in (${smallCompanyId}, ${bigCompanyId})`;
-    await sql`delete from \`user\` where id = ${userId}`;
-    await app.close();
-    await sql.end({ timeout: 5 });
+    await app?.close();
+    if (fixture) await fixture.dispose();
+    else if (sql) {
+      await sql`delete from job_posting where company_id in (${smallCompanyId}, ${bigCompanyId})`;
+      await sql`delete from company where id in (${smallCompanyId}, ${bigCompanyId})`;
+      await sql`delete from \`user\` where id = ${userId}`;
+      await sql.end({ timeout: 5 });
+    }
   });
 
   const list = (extra = "") =>
@@ -135,3 +157,5 @@ describeWithDatabase("회사 필터", () => {
     }
   });
 });
+
+}
