@@ -1,0 +1,94 @@
+{
+  "task_id": "T01",
+  "review_round": 1,
+  "verdict": "changes_requested",
+  "findings": [
+    {
+      "finding_id": "T01-R1-P1-01",
+      "status": "confirmed",
+      "severity": "P1",
+      "criterion_id": "M1-01",
+      "original_path": "infra/compose.mongodb.yaml",
+      "line": "63-65",
+      "summary": "MongoDB 8.0 mongosh does not support --directConnection",
+      "repro_command": "docker run --rm mongo:8.0@sha256:02a0cc7939f5ed38f30f9bc714ef5f682d49baf9350c54acf302ce833087fe8a mongosh --directConnection --version",
+      "expected": "The init command starts successfully.",
+      "actual": "Coordinator verified exit 1: unrecognized option --directConnection.",
+      "correction_lane": "compose-init-wiring"
+    },
+    {
+      "finding_id": "T01-R1-P1-02",
+      "status": "confirmed",
+      "severity": "P1",
+      "criterion_id": "M1-01",
+      "original_path": "infra/mongodb/init-replica-set.js",
+      "line": "20-23",
+      "summary": "mongosh auth result is compared against the wrong type",
+      "repro_command": "node -e 'const authenticated={ok:1}; if(authenticated!==1) process.exit(1)'",
+      "expected": "Valid admin authentication proceeds.",
+      "actual": "Coordinator verified adminDb.auth returns {ok:1}; the script throws.",
+      "correction_lane": "mongodb-init-script"
+    },
+    {
+      "finding_id": "T01-R1-P1-03",
+      "status": "confirmed",
+      "severity": "P1",
+      "criterion_id": "M1-01",
+      "original_path": "infra/mongodb/init-replica-set.js",
+      "line": "48-56",
+      "summary": "rs.status replica name is read from setName instead of set",
+      "repro_command": "node -e 'const result={ok:1,set:\"rs0\"}; if(result.setName!==\"rs0\"){console.error(\"setName=undefined, set=rs0\");process.exit(1)}'",
+      "expected": "The configured rs0 replica set passes validation.",
+      "actual": "The guard sees setName as undefined and rejects the valid configuration.",
+      "correction_lane": "mongodb-init-script"
+    },
+    {
+      "finding_id": "T01-R1-P1-04",
+      "status": "confirmed",
+      "severity": "P1",
+      "criterion_id": "M1-01",
+      "original_path": "infra/mongodb/prepare-keyfile.sh",
+      "line": "13-15",
+      "summary": "Generated keyfile contains raw binary bytes instead of MongoDB keyfile characters",
+      "repro_command": "node -e 'const {randomBytes}=require(\"node:crypto\"); const b=randomBytes(756); const invalid=[...b].filter(x=>!/[A-Za-z0-9+/=\\r\\n]/.test(String.fromCharCode(x))).length; console.log({invalid}); if(invalid===0) process.exit(1)'",
+      "expected": "The generated keyfile contains only valid keyfile characters.",
+      "actual": "Coordinator found 568 invalid non-base64 bytes in the busybox reproduction.",
+      "correction_lane": "keyfile-generation"
+    },
+    {
+      "finding_id": "T01-R1-P1-05",
+      "status": "confirmed",
+      "severity": "P1",
+      "criterion_id": "M1-01",
+      "original_path": "services/backend/src/platform/mongodb.integration.test.ts",
+      "line": "14-82",
+      "summary": "Required process-restart data-persistence test is missing",
+      "repro_command": "node -e 'const fs=require(\"node:fs\"); const s=fs.readFileSync(\"var/review-input/services/backend/src/platform/mongodb.integration.test.ts\",\"utf8\"); const names=[...s.matchAll(/\\bit\\(\"([^\"]+)/g)].map(m=>m[1]); const found=names.some(n=>/restart|reconnect|재시작/i.test(n)); console.log({names,found}); if(!found) process.exit(1)'",
+      "expected": "The suite closes/restarts the resource and verifies persisted data remains available.",
+      "actual": "The four tests cover unavailable, transaction rollback, invalid credentials, and standalone only; no restart test exists.",
+      "correction_lane": "mongodb-integration-coverage"
+    }
+  ],
+  "verified_and_pending": {
+    "verified": [
+      "Runtime preflight passed with ok:true; CONTEXT_ACK=0; MCP surface empty.",
+      "All nine immutable review snapshots were inspected.",
+      "Coordinator evidence: legacy MySQL 153 passed, schema 16 passed, Mongo resource checks 2 passed/2 skipped, Windows runner 1 passed/3 skipped."
+    ],
+    "pending": [
+      "Correction of the five findings.",
+      "Consolidated authenticated rs0, transaction, and restart retest."
+    ]
+  },
+  "scope_notes": {
+    "changed_paths": [],
+    "mcp_surface": {
+      "servers": [],
+      "tools": {}
+    },
+    "static_concerns": [
+      "infra/mongodb/init-replica-set.js:108-115 silently updates existing users; no blocking criterion requires conflict rejection.",
+      "services/backend/src/platform/mongodb.integration.test.ts:31-40 uses collection-wide probe cleanup; concurrent fixture interference was not reproduced."
+    ]
+  }
+}

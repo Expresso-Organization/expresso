@@ -1,7 +1,7 @@
 {
   "version": 1,
   "project": "Expresso-MongoDB",
-  "updated_at": "2026-08-28T14:58:18.054476Z",
+  "updated_at": "2026-08-28T17:33:56.986883Z",
   "timing": {
     "measurement_status": "unavailable",
     "source": null,
@@ -49,24 +49,104 @@
     "notes": []
   },
   "tokens": {
-    "measurement_status": "unavailable",
+    "measurement_status": "partial",
     "expected_sessions_by_role": {
       "implementer": 0,
       "reviewer": 0,
       "coordinator": 0
     },
-    "records": [],
+    "records": [
+      {
+        "record_id": "T01-review1",
+        "role": "reviewer",
+        "task_id": "T01",
+        "wave": "W1",
+        "attempt": 1,
+        "session_id": "01a0495a-0b4f-7021-adff-2f26dc296523",
+        "model": "gpt-5.6-luna",
+        "reasoning_effort": "xhigh",
+        "measurement_status": "exact",
+        "source": "codex_exec_turn_completed_usage",
+        "captured_at": "2026-08-28T17:30:06.470837Z",
+        "usage": {
+          "input_tokens": 795847,
+          "cached_input_tokens": 694272,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 23191,
+          "reasoning_output_tokens": 18580,
+          "total_tokens": 819038
+        }
+      },
+      {
+        "record_id": "T01-review2",
+        "role": "reviewer",
+        "task_id": "T01",
+        "wave": "W1",
+        "attempt": 2,
+        "session_id": "01a04969-83c3-7d70-84d3-f5f0f52df26a",
+        "model": "gpt-5.6-luna",
+        "reasoning_effort": "xhigh",
+        "measurement_status": "exact",
+        "source": "codex_exec_turn_completed_usage",
+        "captured_at": "2026-08-28T17:33:56.986883Z",
+        "usage": {
+          "input_tokens": 79846,
+          "cached_input_tokens": 58368,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 8305,
+          "reasoning_output_tokens": 7002,
+          "total_tokens": 88151
+        }
+      }
+    ],
     "summary": {
-      "total_tokens": null,
-      "input_tokens": null,
-      "cached_input_tokens": null,
-      "uncached_input_tokens": null,
-      "output_tokens": null,
-      "reasoning_output_tokens": null,
-      "measured_sessions": 0,
+      "total_tokens": 907189,
+      "input_tokens": 875693,
+      "cached_input_tokens": 752640,
+      "uncached_input_tokens": 123053,
+      "output_tokens": 31496,
+      "reasoning_output_tokens": 25582,
+      "measured_sessions": 2,
       "expected_sessions": 0,
       "coverage_rate": null,
-      "by_role": {}
+      "by_role": {
+        "reviewer": {
+          "input_tokens": 875693,
+          "cached_input_tokens": 752640,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 31496,
+          "reasoning_output_tokens": 25582,
+          "total_tokens": 907189,
+          "sessions": 2,
+          "expected_sessions": 0,
+          "coverage_rate": null,
+          "uncached_input_tokens": 123053
+        },
+        "implementer": {
+          "input_tokens": 0,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_output_tokens": 0,
+          "total_tokens": 0,
+          "sessions": 0,
+          "expected_sessions": 0,
+          "coverage_rate": null,
+          "uncached_input_tokens": 0
+        },
+        "coordinator": {
+          "input_tokens": 0,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_output_tokens": 0,
+          "total_tokens": 0,
+          "sessions": 0,
+          "expected_sessions": 0,
+          "coverage_rate": null,
+          "uncached_input_tokens": 0
+        }
+      }
     }
   }
 }

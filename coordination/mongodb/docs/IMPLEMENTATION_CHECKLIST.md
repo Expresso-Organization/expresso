@@ -15,7 +15,7 @@ The task contract is generated from the execution spec. Checkbox state is runtim
   - Evidence: baseline-typecheck.log, baseline-test.log, MCP proof와 worktree manifest.
   - Dependencies: None.
 
-- [ ] **M1-01. 연결과 격리 테스트 환경.**
+- [x] **M1-01. 연결과 격리 테스트 환경.**
   - Task: T01.
   - Completion criteria: briefs/T01.md의 테스트와 완료 기준이 통과하고 검토가 승인된다
   - Evidence: coordination/mongodb/briefs/T01.md에 명시된 focused test log, 변경 파일과 독립 검토 verdict.
