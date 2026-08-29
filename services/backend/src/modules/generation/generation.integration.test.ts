@@ -11,6 +11,93 @@ import type { SentenceWriter, WriterContext } from "./writer.js";
 import type { GeneratedPageResult, PageGenerationContext, PageGenerator } from "../page/generator.js";
 import { PageService } from "../page/service.js";
 import { createGenerationProcessor } from "../../worker/processors/generation.js";
+import { MongoGenerationService } from "./mongo-service.js";
+import { MongoIdentityService } from "../identity/index.js";
+import { MongoCareerService } from "../career/index.js";
+import { MongoMaterialsService } from "../materials/index.js";
+import { MongoRecipeService } from "../recipe/index.js";
+import { mongoCollections } from "@expresso/database";
+import { createMongoFixture } from "../../../test/support/mongodb.js";
+
+describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB generation integration", () => {
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
+  let service: MongoGenerationService;
+  let userId = "";
+  let recipeId = "";
+  let templateId = "";
+
+  beforeAll(async () => {
+    fixture = await createMongoFixture("generation");
+    const identity = new MongoIdentityService(fixture.resource);
+    userId = (await identity.signup({ email: `generation-${randomUUID()}@example.com`, displayName: "Generation", password: "correct-horse-battery" })).user.id;
+    const career = new MongoCareerService(fixture.resource);
+    const categoryId = (await career.listCategories(userId)).find(({ key }) => key === "experience")!.id;
+    for (let index = 0; index < 3; index++) {
+      const record = (await career.createRecord(userId, randomUUID(), { categoryId, title: `Grounded ${index}`, properties: {}, bodyMd: `MongoDB 운영 근거 ${index + 1}건` })).record;
+      await mongoCollections(fixture.resource.db).careerRecords.updateOne({ _id: record.id }, { $set: { status: "organized" } });
+    }
+    const brewId = (await new MongoMaterialsService(fixture.resource).createFreeBrew(userId, { title: "Generated portfolio", brief: "MongoDB 운영 근거", lengthPreset: "single" })).brewId;
+    recipeId = (await new MongoRecipeService(fixture.resource).generate(userId, brewId, "mongo-generation-recipe")).id;
+    templateId = (await mongoCollections(fixture.resource.db).templates.findOne({ isActive: true }))!._id;
+    service = new MongoGenerationService(fixture.resource);
+  }, 60_000);
+  afterAll(async () => { await fixture?.dispose(); });
+
+  it("converges concurrent submissions and workers to one materialization and charge", async () => {
+    const submissions = await Promise.all(Array.from({ length: 20 }, () => service.submit(userId, "mongo-generation-submit", { recipeId, templateId })));
+    expect(new Set(submissions.map(({ generationJobId }) => generationJobId)).size).toBe(1);
+    const jobId = submissions[0]!.generationJobId;
+    const results = await Promise.allSettled(Array.from({ length: 5 }, () => service.process(jobId, new StubSentenceWriter())));
+    expect(results.some(({ status }) => status === "fulfilled")).toBe(true);
+    expect(await service.getStatus(userId, jobId)).toMatchObject({ status: "done", usageCharged: true, portfolioId: expect.any(String) });
+    const db = mongoCollections(fixture.resource.db);
+    expect(await db.generationUsageLedger.countDocuments({ userId, generationJobId: jobId, reason: "success" })).toBe(1);
+    expect((await db.usageCounters.findOne({ userId }))?.used).toBe(1);
+    expect(await db.portfolios.countDocuments({ userId })).toBe(1);
+    expect(await db.generationSentenceEvidence.countDocuments({ userId, generationJobId: jobId })).toBeGreaterThan(0);
+    expect(await db.portfolioSnapshots.countDocuments({ userId })).toBe(1);
+  }, 30_000);
+
+  it("rejects ungrounded output and marks provider failures without charging", async () => {
+    const invalid = await service.submit(userId, "mongo-generation-invalid", { recipeId, templateId });
+    await expect(service.process(invalid.generationJobId, { usesContract: false, async write(context) { return { blocks: [{ recipeSectionId: context.sections[0]!.recipeSectionId, kind: "paragraph", text: "매출을 99% 높였습니다", label: null, chart: null, runs: null, items: null, evidencePathIds: [context.evidence[0]!.id] }] }; } })).rejects.toThrow(/ungrounded/);
+    expect(await service.getStatus(userId, invalid.generationJobId)).toMatchObject({ status: "failed", usageCharged: false, failure: { code: "EVIDENCE_INVALID", retryable: false } });
+    const failed = await service.submit(userId, "mongo-generation-provider", { recipeId, templateId });
+    await expect(service.process(failed.generationJobId, { usesContract: false, async write() { throw new Error("provider down"); } })).rejects.toThrow("provider down");
+    expect(await service.getStatus(userId, failed.generationJobId)).toMatchObject({ status: "failed", usageCharged: false, failure: { code: "PROVIDER_FAILED", retryable: true } });
+    expect((await mongoCollections(fixture.resource.db).usageCounters.findOne({ userId }))?.used).toBe(1);
+  });
+
+  it("charges a ready free HTML page once and leaves failures uncharged", async () => {
+    const submitted = await service.submit(userId, "mongo-generation-page", { recipeId, templateId });
+    const prepared = await service.prepareFreeHtml(submitted.generationJobId);
+    await expect(service.completeFreeHtml(submitted.generationJobId, { id: randomUUID(), portfolioId: prepared.portfolioId!, generationJobId: submitted.generationJobId, html: "<main>ready</main>", css: "", rationale: "ready", promptVersion: 1, revision: 1, qualityStatus: "failed_qa", qaReport: { status: "failed_qa", checks: [] }, generationManifest: null, styleSpec: null, createdAt: new Date().toISOString() })).rejects.toMatchObject({ statusCode: 409 });
+    const page = { id: randomUUID(), portfolioId: prepared.portfolioId!, generationJobId: submitted.generationJobId, html: "<main>ready</main>", css: "", rationale: "ready", promptVersion: 1, revision: 1, qualityStatus: "ready" as const, qaReport: { status: "ready" as const, checks: [] }, generationManifest: null, styleSpec: null, createdAt: new Date().toISOString() };
+    const completed = await Promise.all([service.completeFreeHtml(submitted.generationJobId, page), service.completeFreeHtml(submitted.generationJobId, page)]);
+    expect(completed.every(({ status }) => status === "done")).toBe(true);
+    const db = mongoCollections(fixture.resource.db);
+    expect(await db.generationUsageLedger.countDocuments({ userId, generationJobId: submitted.generationJobId, reason: "success" })).toBe(1);
+    const before = (await db.usageCounters.findOne({ userId }))!.used;
+    const failed = await service.submit(userId, "mongo-generation-page-fail", { recipeId, templateId });
+    await service.prepareFreeHtml(failed.generationJobId);
+    expect(await service.failFreeHtml(failed.generationJobId, "PAGE_GENERATION_FAILED")).toMatchObject({ status: "failed", usageCharged: false });
+    expect((await db.usageCounters.findOne({ userId }))!.used).toBe(before);
+  });
+
+  it("rolls materialization back when the charge boundary rejects the transaction", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    await db.usageCounters.updateOne({ userId }, { $set: { used: 3 } });
+    const submitted = await service.submit(userId, "mongo-generation-quota-fault", { recipeId, templateId });
+    await expect(service.process(submitted.generationJobId, new StubSentenceWriter())).rejects.toMatchObject({ statusCode: 409 });
+    const status = await service.getStatus(userId, submitted.generationJobId);
+    expect(status).toMatchObject({ status: "failed", usageCharged: false, portfolioId: expect.any(String) });
+    const portfolioId = status.portfolioId!;
+    expect(await db.portfolioSections.countDocuments({ userId, portfolioId })).toBe(0);
+    expect(await db.portfolioSnapshots.countDocuments({ userId, portfolioId })).toBe(0);
+    expect(await db.generationUsageLedger.countDocuments({ userId, generationJobId: submitted.generationJobId })).toBe(0);
+    expect((await db.usageCounters.findOne({ userId }))?.used).toBe(3);
+  });
+});
 
 /**
  * 계약 없이 파이프라인만 돌리는 대역. 제품에는 이런 폴백을 두지 않는다 —

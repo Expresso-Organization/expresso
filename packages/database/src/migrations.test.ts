@@ -66,9 +66,11 @@ describe("MongoDB migration sources", () => {
     expect(first.map(({ version, checksum }) => ({ version, checksum }))).toEqual(
       second.map(({ version, checksum }) => ({ version, checksum })),
     );
-    expect(first).toHaveLength(1);
-    expect(first[0]?.checksum).toMatch(/^[a-f0-9]{64}$/);
-    expect(new Set(first[0]?.steps.map(({ id }) => id)).size).toBe(first[0]?.steps.length);
+    expect(first).toHaveLength(2);
+    expect(first.every(({ checksum }) => /^[a-f0-9]{64}$/.test(checksum))).toBe(true);
+    for (const migration of first) {
+      expect(new Set(migration.steps.map(({ id }) => id)).size).toBe(migration.steps.length);
+    }
   });
 });
 

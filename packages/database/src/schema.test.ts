@@ -43,7 +43,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await collections.plans.updateOne({ code: "free" }, { $set: { generationQuota: 17 } });
     const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     expect(result.applied).toEqual([]);
-    expect(result.existing).toEqual(["0001_initial_collections"]);
+    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint"]);
     expect((await collections.plans.findOne({ code: "free" }))?.generationQuota).toBe(17);
   });
 
@@ -53,6 +53,14 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await expect(collections.users.insertOne({ ...user, _id: randomUUID(), email: "CAFE@example.com" })).rejects.toMatchObject({ code: 11000 });
     await expect(mongo.collection("plans").insertOne({ _id: randomUUID() as never, code: "invalid", generationQuota: 0, features: {}, isPublicListed: true })).rejects.toMatchObject({ code: 121 });
     await expect(mongo.collection("users").insertOne({ _id: randomUUID() as never })).rejects.toMatchObject({ code: 121 });
+  });
+
+  it("keeps generation usage ledger amounts as signed integers", async () => {
+    const base = { userId: randomUUID(), generationJobId: randomUUID(), reason: "success", createdAt: new Date() };
+    await collections.generationUsageLedger.insertOne({ _id: randomUUID(), ...base, amount: 1 });
+    await collections.generationUsageLedger.insertOne({ _id: randomUUID(), ...base, generationJobId: randomUUID(), amount: -1 });
+    await expect(mongo.collection("generation_usage_ledger").insertOne({ _id: randomUUID() as never, ...base, generationJobId: randomUUID(), amount: 2 })).rejects.toMatchObject({ code: 121 });
+    await expect(mongo.collection("generation_usage_ledger").insertOne({ _id: randomUUID() as never, ...base, generationJobId: randomUUID(), amount: "1" })).rejects.toMatchObject({ code: 121 });
   });
 
   it("distinguishes missing, null and empty values in nullable composite uniqueness", async () => {

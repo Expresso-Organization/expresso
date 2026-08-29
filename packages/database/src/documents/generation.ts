@@ -50,6 +50,8 @@ export interface GenerationJobDoc {
   requestHash?: string | null;
   stage: "queued" | "validating" | "materializing" | "charging" | "done" | "failed";
   attempts: number;
+  /** 실행을 선점한 worker를 구분하는 낙관적 잠금 값입니다. */
+  runToken?: string | null;
   failureRetryable?: boolean | null;
   portfolioId?: string | null;
   createdAt: Date;
@@ -72,7 +74,7 @@ export interface GenerationUsageLedgerDoc {
   userId: string;
   generationJobId: string;
   usageCounterId?: string | null;
-  amount: "-1";
+  amount: -1 | 1;
   reason: string;
   createdAt: Date;
 }

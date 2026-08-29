@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import type { Db } from "mongodb";
 import { initialMigrationSteps } from "./mongodb-migrations/0001/migration.js";
+import { generationLedgerConstraintSteps } from "./mongodb-migrations/0002/migration.js";
 
 export interface MongoMigrationStep {
   id: string;
@@ -23,5 +24,10 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     const source = await readFile(new URL(name, directory));
     hash.update(`${name}\0${source.byteLength}\0`).update(source);
   }
-  return [{ version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() }];
+  const secondSource = await readFile(new URL("./mongodb-migrations/0002/migration.ts", import.meta.url));
+  const secondHash = createHash("sha256").update(`migration.ts\0${secondSource.byteLength}\0`).update(secondSource).digest("hex");
+  return [
+    { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
+    { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
+  ];
 }
