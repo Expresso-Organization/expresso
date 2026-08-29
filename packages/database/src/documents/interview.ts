@@ -2,6 +2,8 @@
 import type { JsonValue, JsonObject } from "./common.js";
 
 export interface InterviewSessionDoc {
+  /** 질문 교체·진행 갱신의 낙관적 잠금 값입니다. */
+  version?: number;
   _id: string;
   userId: string;
   brewId: string;
@@ -33,6 +35,8 @@ export interface QuestionDoc {
 }
 
 export interface AnswerDoc {
+  /** 정리 작업이 덮어써도 되는 기록 version입니다. */
+  recordVersion?: number;
   _id: string;
   userId: string;
   questionId: string;
