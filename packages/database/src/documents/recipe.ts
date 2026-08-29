@@ -17,6 +17,8 @@ export interface TemplateDoc {
 }
 
 export interface RecipeDoc {
+  /** 편집 작업의 낙관적 잠금 값입니다. 생성 version과 구분합니다. */
+  editVersion?: number;
   _id: string;
   userId: string;
   brewId: string;

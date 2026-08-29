@@ -115,7 +115,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
       return { title: "배포 절차 문서화", situation: null, task: null, action: "절차를 문서화했습니다.", result: null, metrics: [], competencies: [] };
     } });
     const processor = createRecordCleanupProcessor(cleanup);
-    const job = { data: { answerId: answer.answer.id, userId } } as Job<Record<string, unknown>>;
+    const job = { data: { answerId: answer.answer.id, userId } } as unknown as Job<Record<string, unknown>>;
     await expect(processor(job)).rejects.toThrow("temporary cleaner failure");
     await expect(processor(job)).resolves.toEqual({});
     expect((await career.getRecord(userId, answer.answer.createdRecordId))).toMatchObject({ title: "배포 절차 문서화", status: "organized" });
