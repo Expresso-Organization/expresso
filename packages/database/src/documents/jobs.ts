@@ -23,6 +23,7 @@ export interface CompanyDoc {
 }
 
 export interface JobPostingDoc {
+  analysisVersion?: number;
   _id: string;
   companyId: string;
   source: "api" | "partner" | "user_input";

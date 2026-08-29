@@ -2,8 +2,8 @@
   "version": 1,
   "project": "Expresso MongoDB migration",
   "dag_version": 1,
-  "revision": 61,
-  "updated_at": "2026-08-28T21:20:08.313462Z",
+  "revision": 63,
+  "updated_at": "2026-08-29T18:41:23.309494Z",
   "pipeline_status": "running",
   "context_version": 0,
   "source_spec_revision": 4,
@@ -467,23 +467,28 @@
       "phase_started_at": null
     },
     "T08": {
-      "status": "ready",
-      "progress": 0,
-      "worker": null,
-      "started_at": null,
-      "updated_at": "2026-08-28T21:20:08.313462Z",
-      "finished_at": null,
-      "message": "Ready to dispatch",
-      "evidence": [],
-      "review_round": 0,
+      "status": "verified",
+      "progress": 100,
+      "worker": "coordinator",
+      "started_at": "2026-08-28T21:27:30.793197Z",
+      "updated_at": "2026-08-29T18:41:23.309494Z",
+      "finished_at": "2026-08-29T18:41:23.309494Z",
+      "message": "분석·재료·Brew 작업 MongoDB 전환과 Worker E2E 검증 완료",
+      "evidence": [
+        "coordination/mongodb/evidence/T08.md"
+      ],
+      "review_round": 1,
       "fix_round": 0,
       "review_budget_exhausted": false,
-      "last_review_verdict": null,
-      "final_decision": null,
+      "last_review_verdict": "approved",
+      "final_decision": "accept",
       "deferred_findings": [],
       "review_findings": [],
       "correction_lanes": [],
-      "original_implementer": null,
+      "original_implementer": {
+        "agent_handle": "coordinator",
+        "external_id": null
+      },
       "reopen_reason": null,
       "required_context_version": 0,
       "acknowledged_context_version": 0,
@@ -493,13 +498,13 @@
       "phase_started_at": null
     },
     "T09": {
-      "status": "pending",
+      "status": "ready",
       "progress": 0,
       "worker": null,
       "started_at": null,
-      "updated_at": "2026-08-28T15:02:55.523941Z",
+      "updated_at": "2026-08-29T18:41:23.309494Z",
       "finished_at": null,
-      "message": "Waiting for dependencies",
+      "message": "Ready to dispatch",
       "evidence": [],
       "review_round": 0,
       "fix_round": 0,
@@ -1251,6 +1256,40 @@
       "to": "verified",
       "worker": "coordinator",
       "message": "직접 구현/공통 테스트/검색 explain/전체 회귀 검증 완료"
+    },
+    {
+      "type": "phase_started",
+      "at": "2026-08-28T21:27:30.793197Z",
+      "task_id": "T08",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-28T21:27:30.793197Z",
+      "task_id": "T08",
+      "from": "ready",
+      "to": "running",
+      "worker": "coordinator",
+      "message": "분석/재료/회사 조사/Brew 작업 직접 구현, 버전 경합 및 기본 통합 통과, 기존 HTTP/Worker 회귀 확장 중"
+    },
+    {
+      "type": "phase_finished",
+      "at": "2026-08-29T18:41:23.309494Z",
+      "task_id": "T08",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-29T18:41:23.309494Z",
+      "task_id": "T08",
+      "from": "running",
+      "to": "verified",
+      "worker": "coordinator",
+      "message": "분석·재료·Brew 작업 MongoDB 전환과 Worker E2E 검증 완료"
     }
   ],
   "communications": [
@@ -1737,8 +1776,8 @@
   "event_log": {
     "schema_version": 1,
     "path": "coordination\\mongodb\\coordination\\pipeline-events.jsonl",
-    "cursor": 61,
-    "head_event_id": "a3061330e447916ce07274f29e301f60d026c00e8c38e8246e261c1a5b23b77e",
+    "cursor": 63,
+    "head_event_id": "188c576d212ad2364cdea6c343399b3a5bc14f8d3588be4e074a8edcf63de778",
     "complete_history": true
   }
 }

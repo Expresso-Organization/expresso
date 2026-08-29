@@ -8,6 +8,71 @@ import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
 import { IdentityService } from "../identity/service.js";
 import { MaterialsService } from "./service.js";
+import { MongoMaterialsService } from "./mongo-service.js";
+import { MongoIdentityService } from "../identity/index.js";
+import { MongoCareerService } from "../career/index.js";
+import { MongoBrewJobService } from "../brew-jobs/mongo-service.js";
+import { mongoCollections } from "@expresso/database";
+import { createMongoFixture } from "../../../test/support/mongodb.js";
+
+describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB brew materials and jobs", () => {
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
+  let materials: MongoMaterialsService;
+  let jobs: MongoBrewJobService;
+  let owner: string;
+  let other: string;
+  let brewId: string;
+  beforeAll(async () => {
+    fixture = await createMongoFixture("brew-materials");
+    materials = new MongoMaterialsService(fixture.resource);
+    jobs = new MongoBrewJobService(fixture.resource);
+    const identity = new MongoIdentityService(fixture.resource);
+    owner = (await identity.signup({ email: `brew-${randomUUID()}@example.com`, displayName: "재료", password: "correct-horse-battery" })).user.id;
+    other = (await identity.signup({ email: `brew-${randomUUID()}@example.com`, displayName: "다른 사용자", password: "correct-horse-battery" })).user.id;
+  }, 60_000);
+  afterAll(async () => { await fixture?.dispose(); });
+
+  it("allows a free brew without records and restores its wizard state", async () => {
+    const brew = await materials.createFreeBrew(owner, { title: "나의 커리어", brief: "경험 정리", lengthPreset: "single" });
+    brewId = brew.brewId;
+    expect(brew.materials).toEqual([]);
+    expect(await materials.getState(owner, brewId)).toMatchObject({ freeTitle: "나의 커리어", posting: null, materials: { total: 0, selected: 0 }, portfolioId: null });
+    await expect(materials.getMaterials(other, brewId)).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("ranks eligible records, allows selecting none, and enforces the maximum", async () => {
+    const career = new MongoCareerService(fixture.resource);
+    const categoryId = (await career.listCategories(owner))[0]!.id;
+    for (let index = 0; index < 12; index++) {
+      const record = (await career.createRecord(owner, randomUUID(), { categoryId, title: `TypeScript ${index}`, properties: {}, bodyMd: "개발 경험" })).record;
+      await mongoCollections(fixture.resource.db).careerRecords.updateOne({ _id: record.id }, { $set: { status: "organized" } });
+    }
+    const brew = await materials.createFreeBrew(owner, { title: "TypeScript", brief: "개발 경험", lengthPreset: "single" });
+    const ids = brew.materials.map((material) => material.recordId);
+    expect(brew.materials.filter((material) => material.selected)).toHaveLength(10);
+    expect((await materials.updateSelection(owner, brew.brewId, [])).materials.every((material) => !material.selected)).toBe(true);
+    await expect(materials.updateSelection(owner, brew.brewId, ids.slice(0, 11))).rejects.toThrow();
+    const selected = await materials.updateSelection(owner, brew.brewId, [ids[5]!, ids[1]!]);
+    expect(selected.materials.map((material) => material.rank)).toEqual(brew.materials.map((material) => material.rank));
+    expect(selected.materials.filter((material) => material.selected)).toHaveLength(2);
+    await expect(materials.updateBrew(owner, brew.brewId, { mode: "collab" })).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("registers one job and outbox atomically and rejects idempotency reuse across job types", async () => {
+    const results = await Promise.all([jobs.submit(owner, "interview", "brew-key-0001", { brewId }), jobs.submit(owner, "interview", "brew-key-0001", { brewId })]);
+    expect(results[0]?.jobId).toBe(results[1]?.jobId);
+    await expect(jobs.submit(owner, "recipe", "brew-key-0001", { brewId })).rejects.toMatchObject({ statusCode: 409 });
+    await expect(jobs.submit(other, "interview", "brew-key-0001", { brewId })).rejects.toMatchObject({ statusCode: 404 });
+    expect(await mongoCollections(fixture.resource.db).outboxEvents.countDocuments({ userId: owner, topic: "interview.draft" })).toBe(1);
+    let calls = 0;
+    const id = randomUUID();
+    const runner = { async run() { calls++; return id; } };
+    const classify = () => ({ code: "FAILED", retryable: true });
+    expect(await jobs.process(results[0]!.jobId, runner, classify)).toMatchObject({ status: "succeeded", resultId: id });
+    await jobs.process(results[0]!.jobId, runner, classify);
+    expect(calls).toBe(1);
+  });
+});
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;

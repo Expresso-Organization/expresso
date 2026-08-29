@@ -13,6 +13,106 @@ import { createJobAnalysisProcessor } from "../../worker/processors/job-analysis
 import { IdentityService } from "../identity/service.js";
 import type { RequirementExtractor } from "./extractor.js";
 import { JobAnalysisService } from "./service.js";
+import { MongoJobAnalysisService } from "./mongo-service.js";
+import { MongoJobMarketService } from "../jobs/index.js";
+import { MongoIdentityService } from "../identity/index.js";
+import { MongoCareerService } from "../career/index.js";
+import { mongoCollections } from "@expresso/database";
+import { createMongoFixture } from "../../../test/support/mongodb.js";
+
+describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB versioned job analysis", () => {
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
+  let service: MongoJobAnalysisService;
+  let market: MongoJobMarketService;
+  let owner: string;
+  let other: string;
+  let analysisId: string;
+  let postingId: string;
+  const quotes = ["MongoDB 데이터베이스를 운영합니다.", "TypeScript API를 개발합니다.", "AWS 장애 대응을 합니다."];
+  const source = "😀 채용 공고\n" + quotes.join("\n") + " 상세한 직무 설명입니다.".repeat(20);
+  let calls = 0;
+  const extractor: RequirementExtractor = { async extract(input) { calls++; return extractionFor(input, quotes); } };
+  beforeAll(async () => {
+    fixture = await createMongoFixture("analysis-version");
+    service = new MongoJobAnalysisService(fixture.resource);
+    market = new MongoJobMarketService(fixture.resource);
+    const identity = new MongoIdentityService(fixture.resource);
+    owner = (await identity.signup({ email: `analysis-${randomUUID()}@example.com`, displayName: "분석", password: "correct-horse-battery" })).user.id;
+    other = (await identity.signup({ email: `analysis-${randomUUID()}@example.com`, displayName: "다른 사용자", password: "correct-horse-battery" })).user.id;
+    const submission = await market.submitPosting(owner, randomUUID(), { companyName: "분석 회사", title: "Backend", descriptionRaw: source });
+    analysisId = submission.jobAnalysisId; postingId = submission.jobPostingId;
+  }, 60_000);
+  afterAll(async () => { await fixture?.dispose(); });
+
+  it("stores validated code-point spans and reuses completed delivery", async () => {
+    const first = await service.process(analysisId, extractor);
+    expect(first.analysis).toMatchObject({ status: "done", resultVersion: 1 });
+    expect(first.requirements).toHaveLength(3);
+    expect((await service.process(analysisId, extractor)).analysis.resultVersion).toBe(1);
+    expect(calls).toBe(1);
+    await expect(service.getResult(other, analysisId)).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("retains only the immediately previous result and does not extract immutable requirements again", async () => {
+    const career = new MongoCareerService(fixture.resource);
+    const categoryId = (await career.listCategories(owner))[0]!.id;
+    for (let index = 0; index < 3; index++) await career.createRecord(owner, randomUUID(), { categoryId, title: quotes[index]!, properties: {}, bodyMd: "typescript postgresql aws reliability backend remote" });
+    expect((await service.requestReanalysis(owner, analysisId)).targetVersion).toBe(2);
+    const second = await service.process(analysisId, extractor);
+    expect(second.previous?.version).toBe(1);
+    expect(second.requirements.some((row) => row.coverage === "covered")).toBe(true);
+    await service.requestReanalysis(owner, analysisId);
+    expect((await service.process(analysisId, extractor)).previous?.version).toBe(2);
+    expect(calls).toBe(1);
+    expect(await mongoCollections(fixture.resource.db).matchScores.countDocuments({ userId: owner, jobPostingId: postingId })).toBe(1);
+  });
+
+  it("rejects invalid evidence without storing a partial result", async () => {
+    const submission = await market.submitPosting(owner, randomUUID(), { companyName: "분석 회사", title: "다른 공고", descriptionRaw: source + "다름" });
+    const invalid: RequirementExtractor = { async extract(input) { const value = extractionFor(input, quotes); value.requirements[0]!.sourceSpan.quote = "없는 문장"; return value; } };
+    await expect(service.process(submission.jobAnalysisId, invalid)).rejects.toThrow();
+    const result = await service.getResult(owner, submission.jobAnalysisId);
+    expect(result.analysis).toMatchObject({ status: "failed", resultVersion: 0, failure: { code: "INVALID_SOURCE_SPAN", retryable: false } });
+    expect(result.requirements).toHaveLength(0);
+  });
+
+  it("does not let an old extraction overwrite a newer completed target", async () => {
+    const submission = await market.submitPosting(owner, randomUUID(), { companyName: "분석 회사", title: "경합 공고", descriptionRaw: source + "경합" });
+    let release!: () => void;
+    let started!: () => void;
+    const wait = new Promise<void>((resolve) => { release = resolve; });
+    const ready = new Promise<void>((resolve) => { started = resolve; });
+    const delayed: RequirementExtractor = { async extract(input) { started(); await wait; return extractionFor(input, quotes); } };
+    const first = service.process(submission.jobAnalysisId, delayed);
+    await ready;
+    try {
+      await service.process(submission.jobAnalysisId, extractor);
+      await service.requestReanalysis(owner, submission.jobAnalysisId);
+      await service.process(submission.jobAnalysisId, extractor);
+    } finally { release(); }
+    await first;
+    expect((await service.getResult(owner, submission.jobAnalysisId)).analysis.resultVersion).toBe(2);
+  });
+
+  it("scores a concurrent reader against the common extraction that actually won", async () => {
+    const career = new MongoCareerService(fixture.resource);
+    const categoryId = (await career.listCategories(other))[0]!.id;
+    for (let i = 0; i < 3; i++) await career.createRecord(other, randomUUID(), { categoryId, title: "TypeScript", properties: {}, bodyMd: "" });
+    const submission = await market.submitPosting(owner, randomUUID(), { companyName: "분석 회사", title: "공통 경쟁", descriptionRaw: source + "공통 경쟁" });
+    const second = await market.analyzePosting(other, submission.jobPostingId);
+    let release!: () => void; let started!: () => void;
+    const wait = new Promise<void>((resolve) => { release = resolve; });
+    const ready = new Promise<void>((resolve) => { started = resolve; });
+    const losing = service.process(second.jobAnalysisId, { async extract(input) { started(); await wait; return { ...extractionFor(input, quotes), normalized: { technologies: ["MongoDB"], impacts: [], roles: [], conditions: [] } }; } });
+    await ready;
+    try { await service.process(submission.jobAnalysisId, { async extract(input) { return { ...extractionFor(input, quotes), normalized: { technologies: ["typescript"], impacts: [], roles: [], conditions: [] } }; } }); }
+    finally { release(); }
+    await losing;
+    const score = await mongoCollections(fixture.resource.db).matchScores.findOne({ userId: other, jobPostingId: submission.jobPostingId });
+    expect(score?.total.toString()).toBe("100");
+    expect(await mongoCollections(fixture.resource.db).jobPostingRequirements.countDocuments({ jobPostingId: submission.jobPostingId })).toBe(3);
+  });
+});
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const redisUrl = process.env.TEST_REDIS_URL;

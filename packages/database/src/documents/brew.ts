@@ -22,6 +22,7 @@ export interface JobAnalysisDoc {
 }
 
 export interface BrewDoc {
+  referenceVersion?: number;
   _id: string;
   userId: string;
   jobAnalysisId: string;
