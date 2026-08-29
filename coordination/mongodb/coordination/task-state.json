@@ -2,8 +2,8 @@
   "version": 1,
   "project": "Expresso MongoDB migration",
   "dag_version": 1,
-  "revision": 70,
-  "updated_at": "2026-08-29T19:13:00.048562Z",
+  "revision": 73,
+  "updated_at": "2026-08-29T19:25:19.017431Z",
   "pipeline_status": "running",
   "context_version": 0,
   "source_spec_revision": 4,
@@ -582,19 +582,21 @@
       "phase_started_at": null
     },
     "T12": {
-      "status": "ready",
-      "progress": 0,
+      "status": "verified",
+      "progress": 100,
       "worker": null,
-      "started_at": null,
-      "updated_at": "2026-08-29T19:13:00.048562Z",
-      "finished_at": null,
-      "message": "Ready to dispatch",
-      "evidence": [],
-      "review_round": 0,
+      "started_at": "2026-08-29T19:25:18.698312Z",
+      "updated_at": "2026-08-29T19:25:19.017431Z",
+      "finished_at": "2026-08-29T19:25:19.017431Z",
+      "message": "포트폴리오 편집 지면 MongoDB 전환 승인",
+      "evidence": [
+        "coordination/mongodb/evidence/T12.md"
+      ],
+      "review_round": 1,
       "fix_round": 0,
       "review_budget_exhausted": false,
-      "last_review_verdict": null,
-      "final_decision": null,
+      "last_review_verdict": "approved",
+      "final_decision": "accept",
       "deferred_findings": [],
       "review_findings": [],
       "correction_lanes": [],
@@ -608,13 +610,13 @@
       "phase_started_at": null
     },
     "T13": {
-      "status": "pending",
+      "status": "ready",
       "progress": 0,
       "worker": null,
       "started_at": null,
-      "updated_at": "2026-08-28T15:02:55.523941Z",
+      "updated_at": "2026-08-29T19:25:19.017431Z",
       "finished_at": null,
-      "message": "Waiting for dependencies",
+      "message": "Ready to dispatch",
       "evidence": [],
       "review_round": 0,
       "fix_round": 0,
@@ -1407,6 +1409,49 @@
       "to": "verified",
       "worker": null,
       "message": "생성 결과와 사용량 MongoDB 전환 승인"
+    },
+    {
+      "type": "phase_started",
+      "at": "2026-08-29T19:25:18.698312Z",
+      "task_id": "T12",
+      "phase": "implementation",
+      "worker": null,
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-29T19:25:18.698312Z",
+      "task_id": "T12",
+      "from": "ready",
+      "to": "running",
+      "worker": null,
+      "message": "포트폴리오·편집·레이아웃·지면 MongoDB 검증 완료"
+    },
+    {
+      "type": "phase_finished",
+      "at": "2026-08-29T19:25:18.856971Z",
+      "task_id": "T12",
+      "phase": "implementation",
+      "worker": null,
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-29T19:25:18.856971Z",
+      "task_id": "T12",
+      "from": "running",
+      "to": "review",
+      "worker": null,
+      "message": "직접 코드·트랜잭션 검토 완료"
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-29T19:25:19.017431Z",
+      "task_id": "T12",
+      "from": "review",
+      "to": "verified",
+      "worker": null,
+      "message": "포트폴리오 편집 지면 MongoDB 전환 승인"
     }
   ],
   "communications": [
@@ -1893,8 +1938,8 @@
   "event_log": {
     "schema_version": 1,
     "path": "coordination\\mongodb\\coordination\\pipeline-events.jsonl",
-    "cursor": 70,
-    "head_event_id": "4a01fc666ffb54d369b9e72f3391208361c4dbc4da2367c41eb329800aac0d0b",
+    "cursor": 73,
+    "head_event_id": "527b9c2d1530b1bf01d91600f79351e44615a2d4dc0e1483d9718f30ff57c457",
     "complete_history": true
   }
 }

@@ -12,6 +12,7 @@ import { DeterministicRecipePlanner, RECIPE_PROMPT_VERSION, type PlannerContext,
 import type { RecipeApi } from "./index.js";
 import { RecipeError } from "./public.js";
 import { addMongoRecipeRevision } from "./mongo-revisions.js";
+import { readSnapshot, snapshotRefFromStored } from "../../platform/snapshot-payload.js";
 
 const TOTAL_LENGTH = { single: 900, double: 1_800, triple: 2_700 } as const;
 const DEFAULT_CONTEXT = { goal: "선택한 근거로 핵심 경험을 설명", points: [] as string[], metrics: [] as string[], format: "narrative", tone: "professional", exclude: ["근거 없는 수치", "출처 없는 주장"], takeaway: "검증된 근거 한 가지", contentPattern: "case-study", interactionOpportunity: null } as const;
@@ -126,5 +127,5 @@ export class MongoRecipeService implements RecipeApi {
 
   async #findItem(tx: MongoTransaction, userId: string, recipeId: string, itemId: string) { const db = mongoCollections(tx.db); const options = { session: tx.session }; const item = await db.recipeItems.findOne({ _id: itemId, userId }, options); if (!item || !await db.recipeSections.findOne({ _id: item.recipeSectionId, userId, recipeId }, options)) throw new RecipeError(404, "recipe item not found"); return item; }
 
-  async restoreItem(userId: string, recipeId: string, revisionId: string, itemId: string) { const revision = await mongoCollections(this.context.db).recipeRevisions.findOne({ _id: revisionId, userId, recipeId }); const snapshot = revision?.snapshot as unknown as { sections?: Array<{ items: Array<{ id: string; pointText: string }> }> }; const previous = snapshot.sections?.flatMap(({ items }) => items).find(({ id }) => id === itemId); if (!previous) throw new RecipeError(404, "item is not present in revision snapshot"); return this.edit(userId, recipeId, { operation: "update_item", itemId, pointText: previous.pointText }); }
+  async restoreItem(userId: string, recipeId: string, revisionId: string, itemId: string) { const revision = await mongoCollections(this.context.db).recipeRevisions.findOne({ _id: revisionId, userId, recipeId }); if (!revision) throw new RecipeError(404, "item is not present in revision snapshot"); const snapshot = await readSnapshot(this.context, snapshotRefFromStored(revision.snapshot)) as { sections?: Array<{ items: Array<{ id: string; pointText: string }> }> }; const previous = snapshot.sections?.flatMap(({ items }) => items).find(({ id }) => id === itemId); if (!previous) throw new RecipeError(404, "item is not present in revision snapshot"); return this.edit(userId, recipeId, { operation: "update_item", itemId, pointText: previous.pointText }); }
 }

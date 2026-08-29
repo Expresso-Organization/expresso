@@ -16,6 +16,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import { withTimeout } from "../../platform/timeouts.js";
+import { writeSnapshot } from "../../platform/snapshot-payload.js";
 import { assertActiveRecordsForWrite } from "../career/index.js";
 import type { ConsentApi } from "../consent/index.js";
 import { requireActiveUser } from "../identity/index.js";
@@ -331,7 +332,8 @@ export class MongoGenerationService {
       await chargeMongoGenerationUsage(tx, job.userId, job._id);
       const storedSections = await db.portfolioSections.find({ userId: job.userId, portfolioId }, options).sort({ orderNo: 1, _id: 1 }).toArray();
       const storedBlocks = await db.blocks.find({ userId: job.userId, portfolioSectionId: { $in: storedSections.map(({ _id }) => _id) } }, options).sort({ orderNo: 1, _id: 1 }).toArray();
-      await db.portfolioSnapshots.insertOne({ _id: randomUUID(), userId: job.userId, portfolioId, kind: "initial_generation", snapshot: mongoPortfolioSnapshot(portfolioId, storedSections, storedBlocks), createdAt: now }, options);
+      const snapshot = await writeSnapshot(tx, job.userId, mongoPortfolioSnapshot(portfolioId, storedSections, storedBlocks));
+      await db.portfolioSnapshots.insertOne({ _id: randomUUID(), userId: job.userId, portfolioId, kind: "initial_generation", snapshot: snapshot as unknown as JsonObject, createdAt: now }, options);
       const completed = await db.generationJobs.updateOne({ _id: job._id, userId: job.userId, status: "running", attempts: job.attempts, runToken }, { $set: { status: "done", stage: "done", usageCharged: true, portfolioId, runToken: null, updatedAt: new Date() } }, options);
       if (completed.matchedCount !== 1) throw new GenerationError(409, "generation ownership was lost");
     });
