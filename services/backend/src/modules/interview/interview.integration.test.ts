@@ -1,16 +1,16 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
-import type { SqlTag } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { IdentityService } from "../identity/service.js";
-import { InterviewService } from "./service.js";
-import { BrewJobService } from "../brew-jobs/service.js";
+import { IdentityService } from "../identity/legacy-mysql-service.js";
+import { InterviewService } from "./legacy-mysql-service.js";
+import { BrewJobService } from "../brew-jobs/legacy-mysql-service.js";
 import { classifyBrewJobFailure } from "../../worker/processors/brew-jobs.js";
-import { MongoInterviewService } from "./mongo-service.js";
+import { MongoInterviewService } from "./service.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { MongoCareerService } from "../career/index.js";
 import { MongoJobMarketService } from "../jobs/index.js";

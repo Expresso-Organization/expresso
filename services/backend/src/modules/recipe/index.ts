@@ -1,5 +1,5 @@
-import type { RecipeService } from "./service.js";
+import type { RecipeService as LegacyRecipeService } from "./legacy-mysql-service.js";
 export { RecipeService } from "./service.js";
-export { MongoRecipeService } from "./mongo-service.js";
-export type RecipeApi = Pick<RecipeService, keyof RecipeService>;
+export { MongoRecipeService } from "./service.js";
+export type RecipeApi = Pick<LegacyRecipeService, keyof LegacyRecipeService>;
 export { RecipeError } from "./public.js";

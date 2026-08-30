@@ -3,14 +3,14 @@ import {
   type PlanCode,
 } from "@expresso/contracts";
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
-import type { SqlTag } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { IdentityService } from "../identity/service.js";
-import { EntitlementService } from "./service.js";
+import { IdentityService } from "../identity/legacy-mysql-service.js";
+import { EntitlementService } from "./legacy-mysql-service.js";
 import { MongoEntitlementService, type EntitlementApi } from "./index.js";
 import { MongoIdentityService, type IdentityApi } from "../identity/index.js";
 import { mongoCollections } from "@expresso/database";

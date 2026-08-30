@@ -1,5 +1,5 @@
-import type { BrewJobService } from "./service.js";
+import type { BrewJobService as LegacyBrewJobService } from "./legacy-mysql-service.js";
 export { BrewJobService } from "./service.js";
-export { MongoBrewJobService } from "./mongo-service.js";
-export type BrewJobApi = Pick<BrewJobService, keyof BrewJobService>;
+export { MongoBrewJobService } from "./service.js";
+export type BrewJobApi = Pick<LegacyBrewJobService, keyof LegacyBrewJobService>;
 export { type BrewJobRunner, BrewJobError, type FailureClassifier } from "./public.js";

@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
 import type { JobAnalysisExtraction } from "@expresso/contracts";
-import type { SqlTag } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
@@ -10,10 +10,10 @@ import type { RuntimeConfig } from "../../config/runtime-config.js";
 import { createReliableQueue } from "../../platform/queue.js";
 import { createQueueWorker } from "../../worker/create-queue-worker.js";
 import { createJobAnalysisProcessor } from "../../worker/processors/job-analysis.js";
-import { IdentityService } from "../identity/service.js";
+import { IdentityService } from "../identity/legacy-mysql-service.js";
 import type { RequirementExtractor } from "./extractor.js";
-import { JobAnalysisService } from "./service.js";
-import { MongoJobAnalysisService } from "./mongo-service.js";
+import { JobAnalysisService } from "./legacy-mysql-service.js";
+import { MongoJobAnalysisService } from "./service.js";
 import { MongoJobMarketService } from "../jobs/index.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { MongoCareerService } from "../career/index.js";

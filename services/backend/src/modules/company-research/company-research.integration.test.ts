@@ -1,16 +1,16 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
-import type { SqlTag } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { CompanyResearchError, CompanyResearchService } from "./service.js";
+import { CompanyResearchError, CompanyResearchService } from "./legacy-mysql-service.js";
 
-import { MongoCompanyResearchService } from "./mongo-service.js";
+import { MongoCompanyResearchService } from "./service.js";
 import type { CompanyResearchApi } from "./index.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { MongoJobMarketService } from "../jobs/index.js";
-import { MongoMaterialsService } from "../materials/mongo-service.js";
+import { MongoMaterialsService } from "../materials/service.js";
 import { mongoCollections } from "@expresso/database";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 

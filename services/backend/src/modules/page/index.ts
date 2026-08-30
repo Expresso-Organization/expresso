@@ -1,5 +1,5 @@
-import type { PageService } from "./service.js";
+import type { PageService as LegacyPageService } from "./legacy-mysql-service.js";
 export { PageService } from "./service.js";
-export { MongoPageService } from "./mongo-service.js";
-export type PageApi = Pick<PageService, keyof PageService>;
+export { MongoPageService } from "./service.js";
+export type PageApi = Pick<LegacyPageService, keyof LegacyPageService>;
 export { PageServiceError } from "./public.js";

@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
-import type { SqlTag } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { IdentityService } from "../identity/service.js";
-import { PortfolioEditingService } from "./service.js";
+import { IdentityService } from "../identity/legacy-mysql-service.js";
+import { PortfolioEditingService } from "./legacy-mysql-service.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;

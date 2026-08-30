@@ -1,22 +1,17 @@
-import { migrate } from "./migrate.js";
+import { migrateMongo as migrate } from "./mongo-migrate.js";
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = process.env.MONGODB_MIGRATE_URL;
 
 if (!databaseUrl) {
-  throw new Error("DATABASE_URL is required");
+  throw new Error("MONGODB_MIGRATE_URL is required");
 }
 
 const result = await migrate({
   databaseUrl,
-  ...(process.env.MIGRATIONS_DIR
-    ? { migrationsDirectory: process.env.MIGRATIONS_DIR }
-    : {}),
+  ...(process.env.MONGODB_DATABASE ? { databaseName: process.env.MONGODB_DATABASE } : {}),
 });
 
-for (const filename of result.applied) {
-  console.info(`applied ${filename}`);
-}
-for (const filename of result.existing) {
-  console.info(`already applied ${filename}`);
+for (const version of result.applied) {
+  console.info(`applied ${version}`);
 }
 

@@ -40,6 +40,10 @@ export function createMongoResource(
         if (hello.setName !== "rs0" || !hello.isWritablePrimary) {
           throw new Error("MongoDB primary is unavailable");
         }
+        const latest = await db.collection<{ _id: string; state: string }>("schema_migrations").findOne({ _id: "0004", state: "applied" });
+        if (!latest) throw new Error("MongoDB schema migration 0004 is not applied");
+        const indexes = await db.collection("analytics_rate_limits").indexExists(["rate_expiry", "analytics_rate_window_key"]);
+        if (!indexes) throw new Error("MongoDB required indexes are missing");
       },
     },
     async close() {

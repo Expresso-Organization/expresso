@@ -15,7 +15,7 @@ import { MongoPageService } from "../page/index.js";
 import type { GeneratedPageResult, PageGenerationContext, PageGenerator } from "../page/generator.js";
 import { MongoPortfolioReadService } from "../portfolios/index.js";
 import { MongoRecipeService } from "../recipe/index.js";
-import { MongoPortfolioEditingService } from "./mongo-service.js";
+import { MongoPortfolioEditingService } from "./service.js";
 
 class Writer implements SentenceWriter {
   readonly usesContract = false;

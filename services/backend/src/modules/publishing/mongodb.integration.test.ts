@@ -19,7 +19,7 @@ import { MongoMediaService } from "../media/index.js";
 import { MongoPageService } from "../page/index.js";
 import type { GeneratedPageResult, PageGenerationContext, PageGenerator } from "../page/generator.js";
 import { MongoRecipeService } from "../recipe/index.js";
-import { MongoPublishingService } from "./mongo-service.js";
+import { MongoPublishingService } from "./service.js";
 
 class Writer implements SentenceWriter { readonly usesContract = false; async write(context: WriterContext) { return GenerationOutputSchema.parse({ blocks: context.sections.flatMap((section) => section.items.map((item) => ({ recipeSectionId: section.recipeSectionId, kind: "paragraph" as const, text: item.pointText, label: null, evidencePathIds: item.sourceNumbers.map((number) => context.evidence[number - 1]?.id).filter((id): id is string => Boolean(id)) }))) }); } }
 class Page implements PageGenerator { async generate(_context: PageGenerationContext): Promise<GeneratedPageResult> { return { html: "<main>frozen Mongo page</main>", css: "main{color:#16223a}", rationale: "frozen", ungrounded: [], removed: [], usage: { model: "fixture", inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0, costUsd: 0, durationMs: 0 }, qaReport: { status: "ready", checks: [] }, manifest: { methodologyVersion: 1, model: "fixture", promptHash: "0".repeat(64), promptVersions: { page: 6, designPrinciples: 1 }, tools: [], sourceUrls: [], attempts: 1, repairCount: 0, usage: { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0, costUsd: 0, durationMs: 0 } } }; } }

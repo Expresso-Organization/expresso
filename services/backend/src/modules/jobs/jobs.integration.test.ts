@@ -1,17 +1,17 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
-import type { SqlTag } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { CareerService } from "../career/service.js";
-import { IdentityService } from "../identity/service.js";
-import { JobMarketService } from "./service.js";
+import { CareerService } from "../career/legacy-mysql-service.js";
+import { IdentityService } from "../identity/legacy-mysql-service.js";
+import { JobMarketService } from "./legacy-mysql-service.js";
 import type { JobMarketApi } from "./index.js";
-import { MongoJobMarketService } from "./mongo-service.js";
-import { MongoJobBoardService } from "./mongo-board-service.js";
+import { MongoJobMarketService } from "./service.js";
+import { MongoJobBoardService } from "./board-service.js";
 import { MongoIdentityService, type IdentityApi } from "../identity/index.js";
 import { MongoCareerService, type CareerApi } from "../career/index.js";
 import { mongoCollections } from "@expresso/database";

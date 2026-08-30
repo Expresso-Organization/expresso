@@ -1,13 +1,13 @@
-import type { SqlTag } from "../../platform/mysql.js";
-import { createMysqlResource } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { IdentityService } from "../identity/service.js";
-import { CareerService } from "./service.js";
+import { IdentityService } from "../identity/legacy-mysql-service.js";
+import { CareerService } from "./legacy-mysql-service.js";
 
-import { MongoCareerService } from "./mongo-service.js";
+import { MongoCareerService } from "./service.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 

@@ -15,7 +15,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "pnpm --filter @expresso/contracts build && pnpm --filter @expresso/database build && vitest run",
     "test:infra": "pnpm --filter @expresso/contracts build && pnpm --filter @expresso/database build && vitest run integration.test.ts",
-    "test:load": "pnpm --filter @expresso/contracts build && pnpm --filter @expresso/database build && EXPRESSO_LOAD_TEST=1 vitest run"
+    "test:load": "pnpm --filter @expresso/contracts build && pnpm --filter @expresso/database build && cross-env EXPRESSO_LOAD_TEST=1 vitest run"
   },
   "dependencies": {
     "@expresso/contracts": "workspace:*",
@@ -23,7 +23,6 @@
     "fastify": "^5.11.3",
     "ioredis": "^6.0.0",
     "mongodb": "7.5.0",
-    "mysql2": "^3.23.4",
     "sanitize-html": "^2.17.6",
     "sharp": "^0.35.3",
     "turndown": "^7.2.4",
@@ -34,6 +33,7 @@
     "@types/node": "^26.2.0",
     "@types/sanitize-html": "^2.16.1",
     "@types/turndown": "^5.0.6",
+    "cross-env": "10.1.0",
     "tsx": "^4.23.11",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"

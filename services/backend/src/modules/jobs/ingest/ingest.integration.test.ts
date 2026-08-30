@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../../platform/mysql.js";
+import { createMysqlResource } from "../../../platform/legacy-mysql.js";
 
-import type { SqlTag } from "../../../platform/mysql.js";
+import type { SqlTag } from "../../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { JobFactsAiOutput } from "@expresso/contracts";
@@ -10,9 +10,9 @@ import type { AiCallSpec, AiClient, AiResult } from "../../../platform/ai/client
 import type { JobSourceAdapter, RawPosting } from "./adapter.js";
 import { AiFactsReader } from "./facts.js";
 import type { CompanyMark, MarkReader } from "./logo.js";
-import { JobIngestService } from "./service.js";
+import { JobIngestService } from "./legacy-mysql-service.js";
 import type { JobIngestApi } from "./index.js";
-import { MongoJobIngestService } from "./mongo-service.js";
+import { MongoJobIngestService } from "./service.js";
 import { mongoCollections } from "@expresso/database";
 import { createMongoFixture } from "../../../../test/support/mongodb.js";
 

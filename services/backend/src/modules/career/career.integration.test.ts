@@ -1,16 +1,16 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
-import type { SqlTag } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { IdentityService } from "../identity/service.js";
+import { IdentityService } from "../identity/legacy-mysql-service.js";
 import { CareerError } from "./errors.js";
-import { CareerService } from "./service.js";
+import { CareerService } from "./legacy-mysql-service.js";
 import type { CareerApi } from "./index.js";
-import { MongoCareerService } from "./mongo-service.js";
+import { MongoCareerService } from "./service.js";
 import { MongoIdentityService, type IdentityApi } from "../identity/index.js";
 import { mongoCollections } from "@expresso/database";
 import { createMongoFixture } from "../../../test/support/mongodb.js";

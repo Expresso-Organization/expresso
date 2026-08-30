@@ -2,22 +2,9 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
 import { MongoClient } from "mongodb";
 
-import { loadMigrations } from "./migrations.js";
 import { loadMongoMigrations } from "./mongo-migrations.js";
 import { migrateMongo } from "./mongo-migrate.js";
 import { acquireMigrationLease, recoverMigrationLease } from "./migration-lease.js";
-
-describe("loadMigrations", () => {
-  it("loads immutable migrations in version order", async () => {
-    const migrations = await loadMigrations();
-
-    expect(migrations.length).toBeGreaterThan(0);
-    expect(migrations.map(({ version }) => version)).toEqual(
-      [...migrations.map(({ version }) => version)].sort(),
-    );
-    expect(migrations.every(({ checksum }) => checksum.length === 64)).toBe(true);
-  });
-});
 
 const mongoUrl = process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL;
 describe.skipIf(!mongoUrl)("MongoDB migration recovery", () => {
@@ -66,7 +53,7 @@ describe("MongoDB migration sources", () => {
     expect(first.map(({ version, checksum }) => ({ version, checksum }))).toEqual(
       second.map(({ version, checksum }) => ({ version, checksum })),
     );
-    expect(first).toHaveLength(2);
+    expect(first).toHaveLength(4);
     expect(first.every(({ checksum }) => /^[a-f0-9]{64}$/.test(checksum))).toBe(true);
     for (const migration of first) {
       expect(new Set(migration.steps.map(({ id }) => id)).size).toBe(migration.steps.length);

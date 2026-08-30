@@ -1,15 +1,15 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "./mysql.js";
+import { createMysqlResource } from "./legacy-mysql.js";
 
 import { migrate } from "@expresso/database";
-import type { SqlTag } from "./mysql.js";
+import type { SqlTag } from "./legacy-mysql.js";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { mongoCollections } from "@expresso/database";
 import { createMongoFixture } from "../../test/support/mongodb.js";
 import { inTransaction } from "./mongo-transaction.js";
 import { addMongoOutboxEvent, MongoOutboxDispatcher } from "./mongo-outbox.js";
 
-import { addOutboxEvent, OutboxDispatcher } from "./outbox.js";
+import { addOutboxEvent, OutboxDispatcher } from "./legacy-mysql-outbox.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;

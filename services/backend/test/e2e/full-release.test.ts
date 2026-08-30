@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import type { SqlTag } from "../../src/platform/mysql.js";
-import { createMysqlResource } from "../../src/platform/mysql.js";
+import type { SqlTag } from "../../src/platform/legacy-mysql.js";
+import { createMysqlResource } from "../../src/platform/legacy-mysql.js";
 
 import { loadMigrations, migrate } from "@expresso/database";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";

@@ -4,7 +4,7 @@ import { GreenhouseAdapter } from "./greenhouse.js";
 import { Work24Adapter } from "./work24.js";
 
 export { JobIngestService } from "./service.js";
-export { MongoJobIngestService } from "./mongo-service.js";
+export { MongoJobIngestService } from "./service.js";
 export { JobUrlImporter } from "./url-import.js";
 export { AiFactsReader } from "./facts.js";
 export { BundledMarkReader, SiteMarkReader } from "./logo.js";
@@ -22,5 +22,5 @@ export function createJobSourceAdapters(config: RuntimeConfig): JobSourceAdapter
   return adapters;
 }
 
-import type { JobIngestService } from "./service.js";
-export type JobIngestApi = Pick<JobIngestService, keyof JobIngestService>;
+import type { JobIngestService as LegacyJobIngestService } from "./legacy-mysql-service.js";
+export type JobIngestApi = Pick<LegacyJobIngestService, keyof LegacyJobIngestService>;

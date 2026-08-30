@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
 import { AnalyticsEventSchema } from "@expresso/contracts";
-import type { SqlTag } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { AnalyticsService, validateInsightDraft } from "./service.js";
-import { EntitlementService } from "../entitlements/service.js";
+import { AnalyticsService, validateInsightDraft } from "./legacy-mysql-service.js";
+import { EntitlementService } from "../entitlements/legacy-mysql-service.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;

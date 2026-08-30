@@ -20,6 +20,8 @@ export interface CompanyDoc {
   logoSourceUrl?: string | null;
   logoChecksum?: string | null;
   logoReadAt?: Date | null;
+  importRunId?: string;
+  sourceHash?: string;
 }
 
 export interface JobPostingDoc {
@@ -54,6 +56,8 @@ export interface JobPostingDoc {
   experienceNote?: string | null;
   factsReadAt?: Date | null;
   experienceMinYears?: number | null;
+  importRunId?: string;
+  sourceHash?: string;
 }
 
 export interface JobPostingRequirementDoc {
@@ -66,6 +70,8 @@ export interface JobPostingRequirementDoc {
   extractorVersion: number;
   extractedAt: Date;
   axis?: "technology" | "impact" | "role" | "conditions" | null;
+  importRunId?: string;
+  sourceHash?: string;
 }
 
 export interface JobSourceDoc {
@@ -81,6 +87,8 @@ export interface JobSourceDoc {
   lastAddedCount: number;
   createdAt: Date;
   siteUrl?: string | null;
+  importRunId?: string;
+  sourceHash?: string;
 }
 
 export interface RecentSearchDoc {

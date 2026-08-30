@@ -17,8 +17,7 @@
   },
   "dependencies": {
     "@expresso/contracts": "workspace:*",
-    "mongodb": "7.5.0",
-    "mysql2": "^3.23.4"
+    "mongodb": "7.5.0"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

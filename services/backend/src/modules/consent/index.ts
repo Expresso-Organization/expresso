@@ -1,5 +1,5 @@
-import type { ConsentService } from "./service.js";
-export { MongoConsentService } from "./mongo-service.js";
+import type { ConsentService as LegacyConsentService } from "./legacy-mysql-service.js";
+export { MongoConsentService } from "./service.js";
 export { ConsentService } from "./service.js";
-export type ConsentApi = Pick<ConsentService, keyof ConsentService>;
+export type ConsentApi = Pick<LegacyConsentService, keyof LegacyConsentService>;
 export { CONTRACT_CONSENT, ConsentError, ConsentPolicyMismatch } from "./public.js";

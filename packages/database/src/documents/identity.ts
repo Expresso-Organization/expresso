@@ -2,7 +2,6 @@
 import type * as Contracts from "@expresso/contracts";
 import type { JsonObject } from "./common.js";
 import type { CareerProfileDoc } from "./career.js";
-import type { NotificationPreferenceDoc } from "./analytics.js";
 
 export interface PlanDoc {
   _id: string;
@@ -21,7 +20,7 @@ export interface UserDoc {
   createdAt: Date;
   passwordHash?: string | null;
   profile?: CareerProfileDoc | null;
-  notificationPreferences?: NotificationPreferenceDoc | null;
+  notificationPreferences?: JsonObject | null;
   writeVersion?: number;
   lifecycleVersion?: number;
 }

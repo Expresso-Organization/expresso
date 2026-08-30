@@ -1,25 +1,25 @@
 import { randomUUID } from "node:crypto";
-import type { SqlTag } from "../../src/platform/mysql.js";
-import { createMysqlResource } from "../../src/platform/mysql.js";
+import type { SqlTag } from "../../src/platform/legacy-mysql.js";
+import { createMysqlResource } from "../../src/platform/legacy-mysql.js";
 
 import { migrate, mongoCollections } from "@expresso/database";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../src/api/build-app.js";
 import type { RuntimeConfig } from "../../src/config/runtime-config.js";
-import { CareerService } from "../../src/modules/career/service.js";
-import { IdentityService } from "../../src/modules/identity/service.js";
-import { InterviewService } from "../../src/modules/interview/service.js";
-import { JobAnalysisService } from "../../src/modules/job-analysis/service.js";
+import { CareerService } from "../../src/modules/career/legacy-mysql-service.js";
+import { IdentityService } from "../../src/modules/identity/legacy-mysql-service.js";
+import { InterviewService } from "../../src/modules/interview/legacy-mysql-service.js";
+import { JobAnalysisService } from "../../src/modules/job-analysis/legacy-mysql-service.js";
 import { StubRequirementExtractor } from "../support/stub-extractor.js";
-import { JobMarketService } from "../../src/modules/jobs/service.js";
-import { MaterialsService } from "../../src/modules/materials/service.js";
-import { RecipeService } from "../../src/modules/recipe/service.js";
-import { OutboxDispatcher } from "../../src/platform/outbox.js";
+import { JobMarketService } from "../../src/modules/jobs/legacy-mysql-service.js";
+import { MaterialsService } from "../../src/modules/materials/legacy-mysql-service.js";
+import { RecipeService } from "../../src/modules/recipe/legacy-mysql-service.js";
+import { OutboxDispatcher } from "../../src/platform/legacy-mysql-outbox.js";
 import { createReliableQueue } from "../../src/platform/queue.js";
 import { createQueueWorker } from "../../src/worker/create-queue-worker.js";
 import { createJobAnalysisProcessor } from "../../src/worker/processors/job-analysis.js";
-import { BrewJobService } from "../../src/modules/brew-jobs/service.js";
+import { BrewJobService } from "../../src/modules/brew-jobs/legacy-mysql-service.js";
 import { createBrewJobProcessor } from "../../src/worker/processors/brew-jobs.js";
 import { createRecordCleanupProcessor } from "../../src/worker/processors/record-cleanup.js";
 import { ISOLATED_DATABASE_TIMEOUT_MS } from "../support/timeouts.js";

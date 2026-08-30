@@ -1,14 +1,14 @@
 import { randomUUID } from "node:crypto";
-import type { SqlTag } from "../../src/platform/mysql.js";
-import { createMysqlResource } from "../../src/platform/mysql.js";
+import type { SqlTag } from "../../src/platform/legacy-mysql.js";
+import { createMysqlResource } from "../../src/platform/legacy-mysql.js";
 
 import { migrate, mongoCollections } from "@expresso/database";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../src/api/build-app.js";
 import type { RuntimeConfig } from "../../src/config/runtime-config.js";
-import { CareerService } from "../../src/modules/career/service.js";
-import { IdentityService } from "../../src/modules/identity/service.js";
+import { CareerService } from "../../src/modules/career/legacy-mysql-service.js";
+import { IdentityService } from "../../src/modules/identity/legacy-mysql-service.js";
 import { MongoCareerService } from "../../src/modules/career/index.js";
 import { MongoIdentityService } from "../../src/modules/identity/index.js";
 import { ISOLATED_DATABASE_TIMEOUT_MS } from "../support/timeouts.js";

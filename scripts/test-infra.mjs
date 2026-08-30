@@ -3,18 +3,13 @@ import { spawn } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 
 const args = process.argv.slice(2);
-const mongoMode = args[0] === "--mongo";
-const vitestFilters = mongoMode ? args.slice(1) : args;
+const mongoFlag = args[0] === "--mongo";
+const vitestFilters = mongoFlag ? args.slice(1) : args;
 const testEnvironment = { ...process.env };
 
-if (mongoMode) {
-  testEnvironment.TEST_MONGODB_URL ??=
-    "mongodb://admin:expresso-admin@127.0.0.1:57017/expresso_test?authSource=admin&replicaSet=rs0";
-  delete testEnvironment.TEST_DATABASE_URL;
-} else {
-  testEnvironment.TEST_DATABASE_URL ??=
-    "mysql://expresso:expresso@127.0.0.1:53306/expresso";
-}
+testEnvironment.TEST_MONGODB_URL ??=
+  "mongodb://admin:expresso-admin@127.0.0.1:57017/expresso_test?authSource=admin&replicaSet=rs0";
+delete testEnvironment.TEST_DATABASE_URL;
 testEnvironment.TEST_REDIS_URL ??= "redis://127.0.0.1:56379";
 
 const testFiles = vitestFilters.length > 0 ? vitestFilters : ["integration.test.ts"];

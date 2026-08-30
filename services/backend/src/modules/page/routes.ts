@@ -36,7 +36,7 @@ export function registerPageRoutes(
     const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
     const { instruction } = RegeneratePageSchema.parse(request.body ?? {});
     const page = await lift(() =>
-      options.service.generate(principal.user.id, portfolioId, options.generator, { instruction }));
+      options.service.generate(principal.user.id, portfolioId, options.generator, instruction === undefined ? {} : { instruction }));
     return reply.code(201).send({ data: page });
   });
 

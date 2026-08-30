@@ -1,5 +1,5 @@
-import type { JobAnalysisService } from "./service.js";
+import type { JobAnalysisService as LegacyJobAnalysisService } from "./legacy-mysql-service.js";
 export { JobAnalysisService } from "./service.js";
-export { MongoJobAnalysisService } from "./mongo-service.js";
-export type JobAnalysisApi = Pick<JobAnalysisService, keyof JobAnalysisService>;
+export { MongoJobAnalysisService } from "./service.js";
+export type JobAnalysisApi = Pick<LegacyJobAnalysisService, keyof LegacyJobAnalysisService>;
 export { JobAnalysisNotFoundError } from "./public.js";

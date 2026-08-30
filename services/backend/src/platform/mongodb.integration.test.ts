@@ -7,6 +7,7 @@ import { promisify } from "node:util";
 
 import { createMongoResource, type MongoResource } from "./mongodb.js";
 import { createMongoFixture } from "../../test/support/mongodb.js";
+import { migrateMongo } from "@expresso/database";
 
 const mongoUrl = process.env.TEST_MONGODB_URL ?? (
   process.env.TEST_DATABASE_URL?.startsWith("mongodb")
@@ -82,10 +83,11 @@ describeWithInfrastructure("MongoDB resource integration", () => {
 
   beforeAll(async () => {
     // 입력 URI의 DB에는 쓰지 않고 테스트 관리 계정으로 임의 DB만 생성합니다.
+    await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     resource = createMongoResource(mongoUrl!, { databaseName });
     await resource.readinessCheck.run();
     await resource.db.createCollection("probe");
-  }, 10_000);
+  }, 60_000);
 
   afterAll(async () => {
     if (!resource) return;

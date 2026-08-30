@@ -1,135 +1,48 @@
+import { randomUUID } from "node:crypto";
+import { CompanyResearchItemSchema, ReplaceCompanyResearchSchema, type ReplaceCompanyResearch } from "@expresso/contracts";
+import { mongoCollections } from "@expresso/database";
+import type { ClientSession } from "mongodb";
+import type { MongoContext } from "../../platform/mongodb.js";
+import { inTransaction } from "../../platform/mongo-transaction.js";
+import { requireActiveUser } from "../identity/index.js";
+import type { CompanyResearchApi } from "./index.js";
 import { CompanyResearchError } from "./public.js";
-export { CompanyResearchError } from "./public.js";
-import {
-  CompanyResearchItemSchema,
-  type CompanyResearchItem,
-  type ReplaceCompanyResearch,
-} from "@expresso/contracts";
-import type { SqlTag } from "../../platform/mysql.js";
 
-interface ResearchRow {
-  id: string;
-  company_id: string;
-  kind: "fact" | "signal";
-  topic: string;
-  statement: string;
-  source_url: string | null;
-  published_at: Date | null;
-  captured_at: Date;
-  confidence: "low" | "medium" | "high";
-  basis_fact_ids: string[];
-}
-
-function toResearchItem(row: ResearchRow): CompanyResearchItem {
-  return CompanyResearchItemSchema.parse({
-    id: row.id,
-    companyId: row.company_id,
-    kind: row.kind,
-    topic: row.topic,
-    statement: row.statement,
-    sourceUrl: row.source_url,
-    publishedAt: row.published_at?.toISOString() ?? null,
-    capturedAt: row.captured_at.toISOString(),
-    confidence: row.confidence,
-    basisFactIds: row.basis_fact_ids,
-  });
-}
-
-/** 검색기는 바뀔 수 있지만 정제된 사실이 들어오는 문은 하나다. */
-export class CompanyResearchService {
-  readonly #sql: SqlTag;
-
-  constructor(sql: SqlTag) {
-    this.#sql = sql;
+export class CompanyResearchService implements CompanyResearchApi {
+  constructor(readonly context: MongoContext) {}
+  async #companyId(userId: string, brewId: string, session?: ClientSession) {
+    const db = mongoCollections(this.context.db); const options = session ? { session } : {};
+    const brew = await db.brews.findOne({ _id: brewId, userId }, options);
+    const analysis = brew ? await db.jobAnalyses.findOne({ _id: brew.jobAnalysisId, userId }, options) : null;
+    const posting = analysis?.jobPostingId ? await db.jobPostings.findOne({ _id: analysis.jobPostingId }, options) : null;
+    if (!posting) throw new CompanyResearchError(404, "brew not found");
+    return posting.companyId;
   }
 
-  async list(userId: string, brewId: string): Promise<CompanyResearchItem[]> {
-    const companyId = await this.#companyId(this.#sql, userId, brewId);
-    const rows = await this.#sql<ResearchRow[]>`
-      select * from company_research_item
-      where user_id = ${userId} and company_id = ${companyId}
-      order by kind, captured_at desc, id
-    `;
-    return rows.map(toResearchItem);
+  async list(userId: string, brewId: string) {
+    const companyId = await this.#companyId(userId, brewId);
+    const rows = await mongoCollections(this.context.db).companyResearchItems.find({ userId, companyId }).sort({ kind: 1, capturedAt: -1, _id: 1 }).toArray();
+    return rows.map((row) => CompanyResearchItemSchema.parse({ id: row._id, companyId, kind: row.kind, topic: row.topic, statement: row.statement, sourceUrl: row.sourceUrl ?? null, publishedAt: row.publishedAt?.toISOString() ?? null, capturedAt: row.capturedAt.toISOString(), confidence: row.confidence, basisFactIds: row.basisFactIds }));
   }
 
-  async replace(
-    userId: string,
-    brewId: string,
-    input: ReplaceCompanyResearch,
-  ): Promise<CompanyResearchItem[]> {
+  async replace(userId: string, brewId: string, inputValue: ReplaceCompanyResearch) {
+    const input = ReplaceCompanyResearchSchema.parse(inputValue);
     for (const [index, item] of input.items.entries()) {
-      if (item.kind === "fact" && !item.sourceUrl) {
-        throw new CompanyResearchError(422, `fact ${index + 1} requires sourceUrl`);
-      }
-      if (item.kind === "fact" && item.basisFactIndexes.length > 0) {
-        throw new CompanyResearchError(422, `fact ${index + 1} cannot reference basis facts`);
-      }
-      if (item.kind === "signal" && item.basisFactIndexes.length === 0) {
-        throw new CompanyResearchError(422, `signal ${index + 1} requires basis facts`);
-      }
-      for (const factIndex of item.basisFactIndexes) {
-        if (input.items[factIndex]?.kind !== "fact") {
-          throw new CompanyResearchError(422, `signal ${index + 1} references a non-fact item`);
-        }
-      }
+      if (item.kind === "fact" && !item.sourceUrl) throw new CompanyResearchError(422, `fact ${index + 1} requires sourceUrl`);
+      if (item.kind === "fact" && item.basisFactIndexes.length) throw new CompanyResearchError(422, `fact ${index + 1} cannot reference basis facts`);
+      if (item.kind === "signal" && !item.basisFactIndexes.length) throw new CompanyResearchError(422, `signal ${index + 1} requires basis facts`);
+      for (const factIndex of item.basisFactIndexes) if (input.items[factIndex]?.kind !== "fact") throw new CompanyResearchError(422, `signal ${index + 1} references a non-fact item`);
     }
-
-    const companyId = await this.#companyId(this.#sql, userId, brewId);
-    await this.#sql.begin(async (transaction) => {
-      await transaction`
-        delete from company_research_item where user_id = ${userId} and company_id = ${companyId}
-      `;
-
-      const factIds = new Map<number, string>();
-      for (const [index, item] of input.items.entries()) {
-        if (item.kind !== "fact") continue;
-        const row = (await transaction<{ id: string }[]>`
-          insert into company_research_item (
-            user_id, company_id, kind, topic, statement, source_url,
-            published_at, confidence, basis_fact_ids
-          ) values (
-            ${userId}, ${companyId}, 'fact', ${item.topic}, ${item.statement},
-            ${item.sourceUrl}, ${item.publishedAt ? new Date(item.publishedAt) : null},
-            ${item.confidence}, '[]'
-          ) returning id
-        `)[0];
-        if (!row) throw new Error("company fact was not persisted");
-        factIds.set(index, row.id);
-      }
-
-      for (const item of input.items) {
-        if (item.kind !== "signal") continue;
-        const basis = item.basisFactIndexes.flatMap((index) => {
-          const id = factIds.get(index);
-          return id ? [id] : [];
-        });
-        await transaction`
-          insert into company_research_item (
-            user_id, company_id, kind, topic, statement, source_url,
-            published_at, confidence, basis_fact_ids
-          ) values (
-            ${userId}, ${companyId}, 'signal', ${item.topic}, ${item.statement},
-            ${item.sourceUrl}, ${item.publishedAt ? new Date(item.publishedAt) : null},
-            ${item.confidence}, ${basis}
-          )
-        `;
-      }
+    await inTransaction(this.context, async (tx) => {
+      await requireActiveUser(tx, userId);
+      const companyId = await this.#companyId(userId, brewId, tx.session);
+      const collection = mongoCollections(tx.db).companyResearchItems;
+      const ids = input.items.map(() => randomUUID());
+      await collection.deleteMany({ userId, companyId }, { session: tx.session });
+      if (input.items.length) await collection.insertMany(input.items.map((item, index) => ({ _id: ids[index]!, userId, companyId, kind: item.kind, topic: item.topic, statement: item.statement, sourceUrl: item.sourceUrl, publishedAt: item.publishedAt ? new Date(item.publishedAt) : null, capturedAt: new Date(), confidence: item.confidence, basisFactIds: item.basisFactIndexes.map((factIndex) => ids[factIndex]!) })), { session: tx.session });
     });
-
     return this.list(userId, brewId);
   }
-
-  async #companyId(sql: SqlTag, userId: string, brewId: string): Promise<string> {
-    const row = (await sql<{ company_id: string }[]>`
-      select job_posting.company_id
-      from brew
-      join job_analysis on job_analysis.id = brew.job_analysis_id
-        and job_analysis.user_id = brew.user_id
-      join job_posting on job_posting.id = job_analysis.job_posting_id
-      where brew.user_id = ${userId} and brew.id = ${brewId}
-    `)[0];
-    if (!row) throw new CompanyResearchError(404, "brew not found");
-    return row.company_id;
-  }
 }
+
+export { CompanyResearchService as MongoCompanyResearchService };

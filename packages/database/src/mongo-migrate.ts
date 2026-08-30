@@ -1,5 +1,4 @@
 import { MongoClient } from "mongodb";
-import type { MigrateResult } from "./migrate.js";
 import type { SchemaMigrationDoc } from "./documents/operations.js";
 import { acquireMigrationLease, releaseMigrationLease, renewMigrationLease } from "./migration-lease.js";
 import { loadMongoMigrations, type MongoMigration } from "./mongo-migrations.js";
@@ -9,6 +8,11 @@ export interface MongoMigrateOptions {
   databaseName?: string;
   /** 동일 실행기의 실패·복구 검증과 명시적인 마이그레이션 등록에 사용합니다. */
   migrations?: readonly MongoMigration[];
+}
+
+export interface MigrateResult {
+  applied: string[];
+  existing: string[];
 }
 
 export async function migrateMongo(options: MongoMigrateOptions): Promise<MigrateResult> {

@@ -1,5 +1,5 @@
-import type { MaterialsService } from "./service.js";
+import type { MaterialsService as LegacyMaterialsService } from "./legacy-mysql-service.js";
 export { MaterialsService } from "./service.js";
-export { MongoMaterialsService } from "./mongo-service.js";
-export type MaterialsApi = Pick<MaterialsService, keyof MaterialsService>;
+export { MongoMaterialsService } from "./service.js";
+export type MaterialsApi = Pick<LegacyMaterialsService, keyof LegacyMaterialsService>;
 export { MaterialsError } from "./public.js";

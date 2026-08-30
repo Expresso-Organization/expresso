@@ -1,14 +1,14 @@
 import { generateKeyPairSync, sign as signWith } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
 import { ApiErrorResponseSchema, SocialAuthSessionResponseSchema } from "@expresso/contracts";
-import type { SqlTag } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
 import { RemoteGoogleIdTokenVerifier } from "./google.js";
-import { IdentityService } from "./service.js";
+import { IdentityService } from "./legacy-mysql-service.js";
 import { MongoIdentityService, type IdentityApi } from "./index.js";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 

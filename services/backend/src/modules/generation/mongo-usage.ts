@@ -4,7 +4,7 @@ import { mongoCollections, type UsageCounterDoc } from "@expresso/database";
 import type { Filter } from "mongodb";
 
 import type { MongoTransaction } from "../../platform/mongo-transaction.js";
-import { MongoEntitlementService } from "../entitlements/mongo-service.js";
+import { MongoEntitlementService } from "../entitlements/service.js";
 import { GenerationError } from "./public.js";
 
 /** 성공한 생성 작업 하나를 정확히 한 번만 차감합니다. */

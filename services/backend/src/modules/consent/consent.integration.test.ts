@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
 import { CONSENT_POLICY_VERSION } from "@expresso/contracts";
-import type { SqlTag } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { CONTRACT_CONSENT, ConsentError, ConsentService } from "./service.js";
+import { CONTRACT_CONSENT, ConsentError, ConsentService } from "./legacy-mysql-service.js";
 import { AI_CONTRACTS } from "../../platform/ai/client.js";
 import { MongoConsentService, type ConsentApi } from "./index.js";
 import { MongoIdentityService } from "../identity/index.js";

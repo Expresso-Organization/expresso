@@ -1,101 +1,33 @@
-import { type KstMonthlyPeriod, kstMonthlyPeriod, capabilityEnabled, EntitlementSubjectNotFoundError, configuredBoolean } from "./public.js";
-export { type KstMonthlyPeriod, kstMonthlyPeriod, capabilityEnabled, EntitlementSubjectNotFoundError } from "./public.js";
-import {
-  EntitlementDecisionSchema,
-  type EntitlementCapability,
-  type EntitlementDecision,
-  type PlanCode,
-} from "@expresso/contracts";
-import type { SqlTag } from "../../platform/mysql.js";
+import { EntitlementDecisionSchema, type EntitlementCapability, type EntitlementDecision } from "@expresso/contracts";
+import { mongoCollections } from "@expresso/database";
+import type { MongoContext } from "../../platform/mongodb.js";
+import type { MongoTransaction } from "../../platform/mongo-transaction.js";
+import type { EntitlementApi } from "./index.js";
+import { capabilityEnabled, configuredBoolean, EntitlementSubjectNotFoundError, kstMonthlyPeriod } from "./public.js";
 
-type DatabaseClient = SqlTag | SqlTag;
+export { capabilityEnabled, kstMonthlyPeriod } from "./public.js";
 
-interface EntitlementSubjectRow {
-  plan_code: PlanCode;
-  generation_quota: number;
-  features: Record<string, unknown>;
-}
+export class EntitlementService implements EntitlementApi {
+  constructor(readonly context: MongoContext) {}
 
-interface UsageRow {
-  used: number;
-}
-
-function generationUnlimited(
-  planCode: PlanCode,
-  features: Record<string, unknown>,
-): boolean {
-  return configuredBoolean(features, "generation.unlimited")
-    ?? planCode !== "free";
-}
-
-export class EntitlementService {
-  readonly #sql: DatabaseClient;
-
-  constructor(sql: DatabaseClient) {
-    this.#sql = sql;
-  }
-
-  async check(
-    userId: string,
-    capability: EntitlementCapability,
-    at = new Date(),
-  ): Promise<EntitlementDecision> {
-    const subjects = await this.#sql<EntitlementSubjectRow[]>`
-      select
-        plan.code as plan_code,
-        plan.generation_quota,
-        plan.features
-      from \`user\` as account
-      join plan on plan.id = account.plan_id
-      where account.id = ${userId}
-        and account.deletion_requested_at is null
-    `;
-    const subject = subjects[0];
-    if (!subject) throw new EntitlementSubjectNotFoundError();
-
-    if (!capabilityEnabled(subject.plan_code, subject.features, capability)) {
-      return EntitlementDecisionSchema.parse({
-        capability,
-        planCode: subject.plan_code,
-        allowed: false,
-        reason: "PLAN_REQUIRED",
-      });
+  async check(userId: string, capability: EntitlementCapability, at = new Date()): Promise<EntitlementDecision> {
+    const collections = mongoCollections(this.context.db);
+    const options = "session" in this.context ? { session: (this.context as MongoTransaction).session } : {};
+    const account = await collections.users.findOne({ _id: userId, deletionRequestedAt: null }, options);
+    const plan = account ? await collections.plans.findOne({ _id: account.planId }, options) : null;
+    if (!plan) throw new EntitlementSubjectNotFoundError();
+    if (!capabilityEnabled(plan.code, plan.features, capability)) {
+      return EntitlementDecisionSchema.parse({ capability, planCode: plan.code, allowed: false, reason: "PLAN_REQUIRED" });
     }
-
-    if (capability !== "portfolio.generate") {
-      return EntitlementDecisionSchema.parse({
-        capability,
-        planCode: subject.plan_code,
-        allowed: true,
-        reason: "ENTITLED",
-      });
-    }
-
+    if (capability !== "portfolio.generate") return EntitlementDecisionSchema.parse({ capability, planCode: plan.code, allowed: true, reason: "ENTITLED" });
     const period = kstMonthlyPeriod(at);
-    const usages = await this.#sql<UsageRow[]>`
-      select used
-      from usage_counter
-      where user_id = ${userId}
-        and period_start = ${period.periodStart}
-    `;
-    const used = usages[0]?.used ?? 0;
-    const unlimited = generationUnlimited(subject.plan_code, subject.features);
-    const limit = unlimited ? null : subject.generation_quota;
-    const remaining = limit === null ? null : Math.max(limit - used, 0);
+    const counter = await collections.usageCounters.findOne({ userId, periodStart: period.periodStart }, options);
+    const used = counter?.used ?? 0;
+    const unlimited = configuredBoolean(plan.features, "generation.unlimited") ?? plan.code !== "free";
+    const limit = unlimited ? null : plan.generationQuota;
     const allowed = limit === null || used < limit;
-
-    return EntitlementDecisionSchema.parse({
-      capability,
-      planCode: subject.plan_code,
-      allowed,
-      reason: allowed ? "ENTITLED" : "QUOTA_EXHAUSTED",
-      usage: {
-        periodStart: period.periodStart,
-        resetsAt: period.resetsAt,
-        used,
-        limit,
-        remaining,
-      },
-    });
+    return EntitlementDecisionSchema.parse({ capability, planCode: plan.code, allowed, reason: allowed ? "ENTITLED" : "QUOTA_EXHAUSTED", usage: { ...period, used, limit, remaining: limit === null ? null : Math.max(limit - used, 0) } });
   }
 }
+
+export { EntitlementService as MongoEntitlementService };

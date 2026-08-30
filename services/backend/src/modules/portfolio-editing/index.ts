@@ -1,5 +1,5 @@
-import type { PortfolioEditingService } from "./service.js";
+import type { PortfolioEditingService as LegacyPortfolioEditingService } from "./legacy-mysql-service.js";
 export { PortfolioEditingService } from "./service.js";
-export { MongoPortfolioEditingService } from "./mongo-service.js";
-export type PortfolioEditingApi = Pick<PortfolioEditingService, keyof PortfolioEditingService>;
+export { MongoPortfolioEditingService } from "./service.js";
+export type PortfolioEditingApi = Pick<LegacyPortfolioEditingService, keyof LegacyPortfolioEditingService>;
 export { PortfolioEditingError } from "./public.js";

@@ -12,15 +12,20 @@
     "build:portfolio-css": "node scripts/build-portfolio-css.mjs",
     "check:portfolio-css": "node scripts/build-portfolio-css.mjs --check",
     "db:migrate": "pnpm --filter @expresso/database migrate",
-    "infra:up": "docker compose -f infra/compose.yaml up -d --wait",
+    "migrate:jobs-to-mongodb": "node scripts/operations/migrate-mysql-to-mongodb.mjs",
+    "infra:up": "docker compose -f infra/compose.yaml up -d --wait mongodb redis && docker compose -f infra/compose.yaml run --rm --no-deps mongodb-init",
     "infra:down": "docker compose -f infra/compose.yaml down",
     "infra:ready": "docker compose -f infra/compose.yaml ps --format json",
-    "infra:mongodb:up": "docker compose -f infra/compose.mongodb.yaml up -d --wait mongodb && docker compose -f infra/compose.mongodb.yaml run --rm mongodb-init",
+    "infra:mongodb:up": "docker compose -f infra/compose.mongodb.yaml up -d --wait mongodb && docker compose -f infra/compose.mongodb.yaml run --rm --no-deps mongodb-init",
     "infra:mongodb:down": "docker compose -f infra/compose.mongodb.yaml down",
     "infra:mongodb:ready": "docker compose -f infra/compose.mongodb.yaml ps --format json",
     "test:infra": "node scripts/test-infra.mjs",
     "dev:backend": "pnpm --filter @expresso/backend dev",
     "dev:worker": "pnpm --filter @expresso/backend dev:worker",
     "dev:web": "pnpm --filter @expresso/web dev"
+  },
+  "devDependencies": {
+    "mongodb": "7.5.0",
+    "mysql2": "^3.23.4"
   }
 }

@@ -1,17 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { PORTFOLIO_STYLE_PRESETS } from "@expresso/contracts";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
-import type { SqlTag } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { IdentityService } from "../identity/service.js";
-import { RecipeService } from "../recipe/service.js";
-import { TemplateService } from "../templates/service.js";
+import { IdentityService } from "../identity/legacy-mysql-service.js";
+import { RecipeService } from "../recipe/legacy-mysql-service.js";
+import { TemplateService } from "../templates/legacy-mysql-service.js";
 import type { GeneratedPageResult, PageGenerationContext, PageGenerator } from "./generator.js";
-import { PageService } from "./service.js";
+import { PageService } from "./legacy-mysql-service.js";
 
 /**
  * 자유 생성 지면이 오가는 길 전체.

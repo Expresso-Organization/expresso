@@ -4,14 +4,15 @@ import {
   CareerCategoriesResponseSchema,
   CurrentUserResponseSchema,
 } from "@expresso/contracts";
-import type { SqlTag } from "../../platform/mysql.js";
-import { createMysqlResource } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { CareerService, MongoCareerService } from "../career/index.js";
-import { IdentityService } from "./service.js";
+import { MongoCareerService } from "../career/index.js";
+import { CareerService } from "../career/legacy-mysql-service.js";
+import { IdentityService } from "./legacy-mysql-service.js";
 import { MongoIdentityService, type IdentityApi } from "./index.js";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { mongoCollections } from "@expresso/database";
