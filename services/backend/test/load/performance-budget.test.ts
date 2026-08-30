@@ -33,7 +33,7 @@ suite("MongoDB release performance and backpressure budget", () => {
     const auth = { authorization: `Bearer ${token}` };
     // shared runner의 JIT·소켓 생성 시간을 정상 상태 p95에 섞지 않는다. 배포 직후
     // burst는 minPoolSize가 맡고, 이 예산은 준비된 API의 반복 처리량을 잰다.
-    const warmup = await Promise.all(Array.from({ length: 20 }, () => app.inject({ method: "GET", url: "/v1/home", headers: auth })));
+    const warmup = await Promise.all(Array.from({ length: 100 }, () => app.inject({ method: "GET", url: "/v1/home", headers: auth })));
     expect([...new Set(warmup.map(({ statusCode }) => statusCode))], "warmup response status codes").toEqual([200]);
     const reads = await Promise.all(Array.from({ length: 100 }, () => timed({ method: "GET", url: "/v1/home", headers: auth }))); const writes = [];
     for (let index = 0; index < 40; index += 1) writes.push(await timed({ method: "POST", url: "/v1/career/records", headers: { ...auth, "idempotency-key": `load-record-${String(index).padStart(8, "0")}` }, payload: { categoryId, title: `Load ${index}`, properties: {}, bodyMd: "Measured write" } }));
