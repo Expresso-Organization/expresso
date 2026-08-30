@@ -77,9 +77,11 @@ export default async function OutlinePage({
   const drafting = brew.latestJob?.type === "recipe" && brew.latestJob.status !== "succeeded";
   const portfolioTitle = brew.freeTitle ?? brew.posting?.title ?? null;
   const isFreeBrew = brew.freeTitle !== null;
+  const usesPortfolioV2 = brew.designSelection !== null;
   if (!brew.recipeId || drafting) {
     return (
-      <BrewFrame brewId={brewId} step="outline" portfolioTitle={portfolioTitle}
+      <BrewFrame brewId={brewId} step={usesPortfolioV2 ? "recipe" : "outline"}
+        flow={usesPortfolioV2 ? "portfolio-v2" : "legacy"} portfolioTitle={portfolioTitle}
         situation={brew.recipeId ? "다시 짜는 중" : "아직 없음"} tinted>
         <Waiting
           title="레시피"
@@ -108,7 +110,8 @@ export default async function OutlinePage({
   return (
     <BrewFrame
       brewId={brewId}
-      step="outline"
+      step={usesPortfolioV2 ? "recipe" : "outline"}
+      flow={usesPortfolioV2 ? "portfolio-v2" : "legacy"}
       portfolioTitle={portfolioTitle}
       situation={`섹션 ${recipe.sections.length}개 · v${recipe.version}`}
       tinted

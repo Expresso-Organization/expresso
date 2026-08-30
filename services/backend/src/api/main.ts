@@ -11,6 +11,7 @@ import { AiFactsReader, createJobSourceAdapters, BundledMarkReader, JobIngestSer
 import { JobBoardService } from "../modules/jobs/board-service.js";
 import { JobAnalysisService } from "../modules/job-analysis/service.js";
 import { MaterialsService } from "../modules/materials/service.js";
+import { DesignSystemService } from "../modules/design-systems/service.js";
 import { InterviewService } from "../modules/interview/service.js";
 import { RecipeService } from "../modules/recipe/service.js";
 import { CompanyResearchService } from "../modules/company-research/service.js";
@@ -51,6 +52,7 @@ const jobUrlImporter = new JobUrlImporter();
 const jobBoardService = new JobBoardService(database.sql);
 const jobAnalysisService = new JobAnalysisService(database.sql);
 const materialsService = new MaterialsService(database.sql);
+const designSystemService = new DesignSystemService(database.sql);
 const interviewService = new InterviewService(database.sql);
 const recipeService = new RecipeService(database.sql);
 const companyResearchService = new CompanyResearchService(database.sql);
@@ -117,6 +119,7 @@ const app = buildApi({
   jobBoardService,
   jobAnalysisService,
   materialsService,
+  designSystemService,
   interviewService,
   recipeService,
   companyResearchService,

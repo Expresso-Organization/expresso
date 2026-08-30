@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TimestampSchema, UuidSchema } from "./common.js";
 
 const HexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 const TextSchema = z.string().trim().min(1).max(500);
@@ -12,13 +13,13 @@ const HttpUrlSchema = z
   );
 
 /** 문서 컴파일러가 CSS에 직접 넣을 수 있는 제한된 길이 값. */
-const CssLengthSchema = z.string().regex(
-  /^(?:0|-?\d+(?:\.\d+)?(?:px|rem|em|ch|vw|vh|%))$/,
-);
+const CssLengthSchema = z
+  .string()
+  .regex(/^(?:0|-?\d+(?:\.\d+)?(?:px|rem|em|ch|vw|vh|%))$/);
 const UnitlessLineHeightSchema = z.string().regex(/^\d+(?:\.\d+)?$/);
-const LetterSpacingSchema = z.string().regex(
-  /^(?:0|-?\d+(?:\.\d+)?(?:px|rem|em))$/,
-);
+const LetterSpacingSchema = z
+  .string()
+  .regex(/^(?:0|-?\d+(?:\.\d+)?(?:px|rem|em))$/);
 const FontStackSchema = z
   .string()
   .trim()
@@ -167,8 +168,14 @@ export const DesignSystemSpecV2Schema = z.strictObject({
   }),
   components: z
     .record(TokenNameSchema, ComponentRuleSchema)
-    .refine((components) => Object.keys(components).length > 0, "At least one component is required")
-    .refine((components) => Object.keys(components).length <= 50, "Too many components"),
+    .refine(
+      (components) => Object.keys(components).length > 0,
+      "At least one component is required",
+    )
+    .refine(
+      (components) => Object.keys(components).length <= 50,
+      "Too many components",
+    ),
   imagery: ImageryRuleSchema,
   motion: MotionRuleSchema,
   rules: z.strictObject({
@@ -213,3 +220,75 @@ export const DesignDocumentModelSchema = z.strictObject({
   sampleEntries: z.array(DesignSampleEntrySchema).length(11),
 });
 export type DesignDocumentModel = z.infer<typeof DesignDocumentModelSchema>;
+
+export const DesignStyleOverridesSchema = z.strictObject({
+  density: z.enum(["compact", "comfortable", "spacious"]).optional(),
+  brightness: z.enum(["light", "dark"]).optional(),
+  accentStrength: z.enum(["subtle", "balanced", "strong"]).optional(),
+  imageIntensity: z.enum(["none", "supporting", "prominent"]).optional(),
+  companyColorMode: z.enum(["off", "adapt"]).optional(),
+});
+export type DesignStyleOverrides = z.infer<typeof DesignStyleOverridesSchema>;
+
+export const DesignSystemCatalogItemSchema = z.strictObject({
+  designSystemId: z.uuid(),
+  revisionId: z.uuid(),
+  code: TokenNameSchema,
+  name: TextSchema,
+  description: TextSchema,
+  origin: DesignSystemSpecV2Schema.shape.origin,
+  traits: z.array(TextSchema),
+  signatureMove: TextSchema,
+  fitReasons: z.array(TextSchema),
+  recommended: z.boolean(),
+  surface: z.enum(["light", "dark"]),
+  density: z.enum(["compact", "comfortable", "spacious"]),
+  typographyCharacter: TextSchema,
+  contentFocus: z.enum(["image", "metrics", "text"]),
+  moods: z.array(TextSchema),
+  roles: z.array(TextSchema),
+  previewHtml: z.string(),
+  markdownSha256: z.string().regex(/^[0-9a-f]{64}$/),
+  legacyTemplateId: UuidSchema.nullable(),
+});
+export const DesignSystemCatalogListSchema = z.strictObject({
+  items: z.array(DesignSystemCatalogItemSchema),
+});
+export const DesignSystemRevisionSchema = z.strictObject({
+  designSystemId: z.uuid(),
+  revisionId: z.uuid(),
+  code: TokenNameSchema,
+  spec: DesignSystemSpecV2Schema,
+  referenceLock: ReferenceLockSchema,
+  designMarkdown: z.string(),
+  designHtml: z.string(),
+  markdownSha256: z.string().regex(/^[0-9a-f]{64}$/),
+  htmlSha256: z.string().regex(/^[0-9a-f]{64}$/),
+  contentHash: z.string().regex(/^[0-9a-f]{64}$/),
+  legacyTemplateId: UuidSchema.nullable(),
+});
+export const SaveDesignSelectionSchema = z.strictObject({
+  revisionId: z.uuid(),
+  overrides: DesignStyleOverridesSchema.optional(),
+});
+export const DesignSelectionSchema = z.strictObject({
+  designSystemRevisionId: z.uuid(),
+  referenceLock: ReferenceLockSchema,
+  styleOverrides: DesignStyleOverridesSchema,
+  selectedAt: TimestampSchema,
+});
+export const DesignSystemCatalogResponseSchema = z.strictObject({
+  data: DesignSystemCatalogListSchema,
+});
+export const DesignSystemRevisionResponseSchema = z.strictObject({
+  data: DesignSystemRevisionSchema,
+});
+export const DesignSelectionResponseSchema = z.strictObject({
+  data: DesignSelectionSchema,
+});
+export type DesignSystemCatalogItem = z.infer<
+  typeof DesignSystemCatalogItemSchema
+>;
+export type DesignSystemRevision = z.infer<typeof DesignSystemRevisionSchema>;
+export type SaveDesignSelection = z.infer<typeof SaveDesignSelectionSchema>;
+export type DesignSelection = z.infer<typeof DesignSelectionSchema>;

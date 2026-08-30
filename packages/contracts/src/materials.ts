@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { TimestampSchema, UuidSchema } from "./common.js";
 import { BrewJobStatusSchema } from "./jobs.js";
+import { DesignSelectionSchema } from "./design-system.js";
 
 export const CreateBrewSchema = z.strictObject({
   jobAnalysisId: UuidSchema,
@@ -112,6 +113,7 @@ export const BrewStateSchema = z.strictObject({
     portfolioId: UuidSchema.nullable(),
     failureCode: z.string().min(1).max(100).nullable(),
   }).nullable(),
+  designSelection: DesignSelectionSchema.nullable(),
   updatedAt: TimestampSchema,
 });
 

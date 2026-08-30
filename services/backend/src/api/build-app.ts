@@ -20,6 +20,8 @@ import type { JobAnalysisService } from "../modules/job-analysis/service.js";
 import { registerJobAnalysisRoutes } from "../modules/job-analysis/routes.js";
 import type { MaterialsService } from "../modules/materials/service.js";
 import { registerMaterialsRoutes } from "../modules/materials/routes.js";
+import type { DesignSystemService } from "../modules/design-systems/service.js";
+import { registerDesignSystemRoutes } from "../modules/design-systems/routes.js";
 import type { InterviewService } from "../modules/interview/service.js";
 import { registerInterviewRoutes } from "../modules/interview/routes.js";
 import type { RecipeService } from "../modules/recipe/service.js";
@@ -74,6 +76,7 @@ export interface BuildApiOptions {
   jobBoardService?: JobBoardService;
   jobAnalysisService?: JobAnalysisService;
   materialsService?: MaterialsService;
+  designSystemService?: DesignSystemService;
   interviewService?: InterviewService;
   recipeService?: RecipeService;
   companyResearchService?: CompanyResearchService;
@@ -158,6 +161,12 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
     if (options.materialsService) {
       registerMaterialsRoutes(app, {
         materialsService: options.materialsService,
+        authenticateRequest: createAuthenticateRequest(options.identityService),
+      });
+    }
+    if (options.designSystemService) {
+      registerDesignSystemRoutes(app, {
+        service: options.designSystemService,
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }

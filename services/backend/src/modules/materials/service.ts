@@ -209,8 +209,13 @@ export class MaterialsService {
       id: string; job_analysis_id: string; status: string;
       length_preset: "single" | "double" | "triple"; updated_at: Date | string;
       free_title: string | null; free_brief: string | null;
+      design_system_revision_id: string | null;
+      reference_lock_snapshot: unknown;
+      design_style_overrides: unknown;
+      design_selected_at: Date | string | null;
     }[]>`
-      select id, job_analysis_id, status, length_preset, free_title, free_brief, updated_at
+      select id, job_analysis_id, status, length_preset, free_title, free_brief, updated_at,
+        design_system_revision_id, reference_lock_snapshot, design_style_overrides, design_selected_at
       from brew where id = ${brewId} and user_id = ${userId}
     `)[0];
     if (!brew) throw new MaterialsError(404, "brew not found");
@@ -301,6 +306,18 @@ export class MaterialsService {
           stage: generation[0].stage,
           portfolioId: generation[0].portfolio_id,
           failureCode: generation[0].error_code,
+        }
+        : null,
+      designSelection: brew.design_system_revision_id && brew.reference_lock_snapshot && brew.design_selected_at
+        ? {
+          designSystemRevisionId: brew.design_system_revision_id,
+          referenceLock: typeof brew.reference_lock_snapshot === "string"
+            ? JSON.parse(brew.reference_lock_snapshot)
+            : brew.reference_lock_snapshot,
+          styleOverrides: typeof brew.design_style_overrides === "string"
+            ? JSON.parse(brew.design_style_overrides)
+            : brew.design_style_overrides,
+          selectedAt: new Date(brew.design_selected_at).toISOString(),
         }
         : null,
       updatedAt: new Date(brew.updated_at).toISOString(),
