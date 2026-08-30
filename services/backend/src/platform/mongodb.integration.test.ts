@@ -56,6 +56,14 @@ describe("MongoDB bootstrap", () => {
 });
 
 describe("MongoDB resource construction", () => {
+  it("초기 요청 burst에서 연결 생성을 직렬화하지 않는다", async () => {
+    const resource = createMongoResource("mongodb://127.0.0.1:1/unused");
+    try {
+      expect(resource.client.options.maxConnecting).toBe(16);
+    } finally {
+      await resource.close();
+    }
+  });
   it("생성 시 연결 실패를 던지지 않고 준비 검사로 보고한다", async () => {
     const resource = createMongoResource("mongodb://127.0.0.1:1/unused");
     try {

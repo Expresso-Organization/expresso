@@ -23,6 +23,8 @@ export function createMongoResource(
 ): MongoResource {
   const client = new MongoClient(uri, {
     serverSelectionTimeoutMS: 3_000,
+    // 기본값 2는 배포 직후 동시 요청에서 pool 생성을 직렬화해 p95를 밀어 올린다.
+    maxConnecting: 16,
   });
   const db = client.db(options?.databaseName);
 
