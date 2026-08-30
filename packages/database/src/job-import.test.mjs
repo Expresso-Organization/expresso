@@ -2,6 +2,18 @@ import { describe, expect, it } from "vitest";
 
 import { assertImportScope, canonicalHash, transformRow } from "../../../scripts/operations/mongodb-import/transform.mjs";
 import { readPage } from "../../../scripts/operations/mongodb-import/source.mjs";
+import { parseImportArgs } from "../../../scripts/operations/mongodb-import/cli.mjs";
+
+describe("job asset import CLI", () => {
+  it("defaults to dry-run and requires an explicit single write mode", () => {
+    expect(parseImportArgs([])).toEqual({ mode: "dry-run", reportPath: undefined });
+    expect(parseImportArgs(["--apply", "--report", "var/import.json"])).toEqual({ mode: "apply", reportPath: "var/import.json" });
+    expect(parseImportArgs(["--verify-only"])).toEqual({ mode: "verify-only", reportPath: undefined });
+    expect(() => parseImportArgs(["--apply", "--dry-run"])).toThrow(/exactly one/);
+    expect(() => parseImportArgs(["--report"])).toThrow(/requires a path/);
+    expect(() => parseImportArgs(["--unsafe"])).toThrow(/unknown/);
+  });
+});
 
 describe("job asset import transform", () => {
   it("rejects user-owned and analysis tables", () => { expect(() => assertImportScope(["job_source", "job_analysis"])).toThrow(/unsupported/); expect(() => assertImportScope(["users"])).toThrow(/unsupported/); });
