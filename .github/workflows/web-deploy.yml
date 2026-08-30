@@ -32,6 +32,8 @@ concurrency:
 
 jobs:
   deploy:
+    # T19 운영 전환을 별도로 승인하기 전에는 MongoDB 런타임 커밋을 자동 배포하지 않는다.
+    if: ${{ vars.MONGODB_CUTOVER_APPROVED == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: production

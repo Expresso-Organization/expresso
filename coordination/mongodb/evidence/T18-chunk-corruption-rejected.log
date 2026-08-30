@@ -1,0 +1,9 @@
+file:///C:/code/expresso-mongodb/scripts/operations/verify-mongodb-restore.mjs:54
+  if (brokenChunks > 0 || brokenChunkSets > 0) throw new Error("snapshot chunk integrity check failed");
+                                                     ^
+
+Error: snapshot chunk integrity check failed
+    at file:///C:/code/expresso-mongodb/scripts/operations/verify-mongodb-restore.mjs:54:54
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+Node.js v24.19.0

@@ -1,0 +1,10 @@
+backup=C:/code/expresso-mongodb/var/mongodb-run/backup-rehearsal-ae0ed9b88ead
+source=expresso_backup_rehearsal_ae0ed9b88ead
+target=127.0.0.1:57117/expresso_restore_rehearsal
+companies=10
+job_postings=11
+job_posting_requirements=14
+job_hashes_match=true
+restore_rehearsal=PASS
+chunk_valid=PASS
+chunk_corruption_rejected=PASS

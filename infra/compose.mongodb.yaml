@@ -52,11 +52,10 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
-    network_mode: service:mongodb
     entrypoint: ["mongosh"]
     command:
       - --quiet
-      - mongodb://127.0.0.1:57017/admin?directConnection=true
+      - mongodb://mongodb:57017/admin?directConnection=true
       - --file
       - /scripts/init-replica-set.js
     environment:

@@ -2,8 +2,8 @@
   "version": 1,
   "project": "Expresso MongoDB migration",
   "dag_version": 1,
-  "revision": 76,
-  "updated_at": "2026-08-29T19:30:07.661274Z",
+  "revision": 96,
+  "updated_at": "2026-08-30T10:59:58.860710Z",
   "pipeline_status": "running",
   "context_version": 0,
   "source_spec_revision": 4,
@@ -638,23 +638,28 @@
       "phase_started_at": null
     },
     "T14": {
-      "status": "ready",
-      "progress": 0,
-      "worker": null,
-      "started_at": null,
-      "updated_at": "2026-08-29T19:30:07.661274Z",
-      "finished_at": null,
-      "message": "Ready to dispatch",
-      "evidence": [],
-      "review_round": 0,
+      "status": "verified",
+      "progress": 100,
+      "worker": "coordinator",
+      "started_at": "2026-08-30T10:59:55.929055Z",
+      "updated_at": "2026-08-30T10:59:56.237170Z",
+      "finished_at": "2026-08-30T10:59:56.237170Z",
+      "message": "분석·대시보드·알림 MongoDB 구현과 실제 인프라 검증 완료",
+      "evidence": [
+        "coordination/mongodb/evidence/T14.md"
+      ],
+      "review_round": 1,
       "fix_round": 0,
       "review_budget_exhausted": false,
-      "last_review_verdict": null,
-      "final_decision": null,
+      "last_review_verdict": "approved",
+      "final_decision": "accept",
       "deferred_findings": [],
       "review_findings": [],
       "correction_lanes": [],
-      "original_implementer": null,
+      "original_implementer": {
+        "agent_handle": "coordinator",
+        "external_id": null
+      },
       "reopen_reason": null,
       "required_context_version": 0,
       "acknowledged_context_version": 0,
@@ -664,23 +669,28 @@
       "phase_started_at": null
     },
     "T15": {
-      "status": "pending",
-      "progress": 0,
-      "worker": null,
-      "started_at": null,
-      "updated_at": "2026-08-28T15:02:55.523941Z",
-      "finished_at": null,
-      "message": "Waiting for dependencies",
-      "evidence": [],
-      "review_round": 0,
+      "status": "verified",
+      "progress": 100,
+      "worker": "coordinator",
+      "started_at": "2026-08-30T10:59:56.561105Z",
+      "updated_at": "2026-08-30T10:59:56.883247Z",
+      "finished_at": "2026-08-30T10:59:56.883247Z",
+      "message": "계정 삭제·예약 작업 MongoDB 구현과 재시도 검증 완료",
+      "evidence": [
+        "coordination/mongodb/evidence/T15.md"
+      ],
+      "review_round": 1,
       "fix_round": 0,
       "review_budget_exhausted": false,
-      "last_review_verdict": null,
-      "final_decision": null,
+      "last_review_verdict": "approved",
+      "final_decision": "accept",
       "deferred_findings": [],
       "review_findings": [],
       "correction_lanes": [],
-      "original_implementer": null,
+      "original_implementer": {
+        "agent_handle": "coordinator",
+        "external_id": null
+      },
       "reopen_reason": null,
       "required_context_version": 0,
       "acknowledged_context_version": 0,
@@ -690,23 +700,28 @@
       "phase_started_at": null
     },
     "T16": {
-      "status": "ready",
-      "progress": 0,
-      "worker": null,
-      "started_at": null,
-      "updated_at": "2026-08-28T21:20:08.313462Z",
-      "finished_at": null,
-      "message": "Ready to dispatch",
-      "evidence": [],
-      "review_round": 0,
+      "status": "verified",
+      "progress": 100,
+      "worker": "coordinator",
+      "started_at": "2026-08-30T10:59:57.202900Z",
+      "updated_at": "2026-08-30T10:59:57.522890Z",
+      "finished_at": "2026-08-30T10:59:57.522890Z",
+      "message": "공고 자산 선택 이관 도구와 실제 멱등 리허설 완료",
+      "evidence": [
+        "coordination/mongodb/evidence/T16.md"
+      ],
+      "review_round": 1,
       "fix_round": 0,
       "review_budget_exhausted": false,
-      "last_review_verdict": null,
-      "final_decision": null,
+      "last_review_verdict": "approved",
+      "final_decision": "accept",
       "deferred_findings": [],
       "review_findings": [],
       "correction_lanes": [],
-      "original_implementer": null,
+      "original_implementer": {
+        "agent_handle": "coordinator",
+        "external_id": null
+      },
       "reopen_reason": null,
       "required_context_version": 0,
       "acknowledged_context_version": 0,
@@ -716,23 +731,28 @@
       "phase_started_at": null
     },
     "T17": {
-      "status": "pending",
-      "progress": 0,
-      "worker": null,
-      "started_at": null,
-      "updated_at": "2026-08-28T15:02:55.523941Z",
-      "finished_at": null,
-      "message": "Waiting for dependencies",
-      "evidence": [],
-      "review_round": 0,
+      "status": "verified",
+      "progress": 100,
+      "worker": "coordinator",
+      "started_at": "2026-08-30T10:59:57.845267Z",
+      "updated_at": "2026-08-30T10:59:58.191159Z",
+      "finished_at": "2026-08-30T10:59:58.191159Z",
+      "message": "API·Worker MongoDB 런타임 전면 연결과 SQL 의존성 제거 완료",
+      "evidence": [
+        "coordination/mongodb/evidence/T17.md"
+      ],
+      "review_round": 1,
       "fix_round": 0,
       "review_budget_exhausted": false,
-      "last_review_verdict": null,
-      "final_decision": null,
+      "last_review_verdict": "approved",
+      "final_decision": "accept",
       "deferred_findings": [],
       "review_findings": [],
       "correction_lanes": [],
-      "original_implementer": null,
+      "original_implementer": {
+        "agent_handle": "coordinator",
+        "external_id": null
+      },
       "reopen_reason": null,
       "required_context_version": 0,
       "acknowledged_context_version": 0,
@@ -742,23 +762,28 @@
       "phase_started_at": null
     },
     "T18": {
-      "status": "pending",
-      "progress": 0,
-      "worker": null,
-      "started_at": null,
-      "updated_at": "2026-08-28T15:02:55.523941Z",
-      "finished_at": null,
-      "message": "Waiting for dependencies",
-      "evidence": [],
-      "review_round": 0,
+      "status": "verified",
+      "progress": 100,
+      "worker": "coordinator",
+      "started_at": "2026-08-30T10:59:58.524816Z",
+      "updated_at": "2026-08-30T10:59:58.860710Z",
+      "finished_at": "2026-08-30T10:59:58.860710Z",
+      "message": "CI·성능·백업·복원·staged rollout 리허설 완료",
+      "evidence": [
+        "coordination/mongodb/evidence/T18.md"
+      ],
+      "review_round": 1,
       "fix_round": 0,
       "review_budget_exhausted": false,
-      "last_review_verdict": null,
-      "final_decision": null,
+      "last_review_verdict": "approved",
+      "final_decision": "accept",
       "deferred_findings": [],
       "review_findings": [],
       "correction_lanes": [],
-      "original_implementer": null,
+      "original_implementer": {
+        "agent_handle": "coordinator",
+        "external_id": null
+      },
       "reopen_reason": null,
       "required_context_version": 0,
       "acknowledged_context_version": 0,
@@ -768,13 +793,13 @@
       "phase_started_at": null
     },
     "T19": {
-      "status": "pending",
+      "status": "ready",
       "progress": 0,
       "worker": null,
       "started_at": null,
-      "updated_at": "2026-08-28T15:02:55.523941Z",
+      "updated_at": "2026-08-30T10:59:58.860710Z",
       "finished_at": null,
-      "message": "Waiting for dependencies",
+      "message": "Ready to dispatch",
       "evidence": [],
       "review_round": 0,
       "fix_round": 0,
@@ -795,111 +820,6 @@
     }
   },
   "events": [
-    {
-      "type": "pipeline_started",
-      "at": "2026-08-28T15:06:24.222636Z",
-      "message": ""
-    },
-    {
-      "type": "phase_started",
-      "at": "2026-08-28T15:06:24.424445Z",
-      "task_id": "B0",
-      "phase": "implementation",
-      "worker": "coordinator",
-      "rework": false
-    },
-    {
-      "type": "task_transition",
-      "at": "2026-08-28T15:06:24.424445Z",
-      "task_id": "B0",
-      "from": "ready",
-      "to": "running",
-      "worker": "coordinator",
-      "message": "기준선과 격리 정책 검증"
-    },
-    {
-      "type": "phase_finished",
-      "at": "2026-08-28T15:06:24.532843Z",
-      "task_id": "B0",
-      "phase": "implementation",
-      "worker": "coordinator",
-      "rework": false
-    },
-    {
-      "type": "task_transition",
-      "at": "2026-08-28T15:06:24.532843Z",
-      "task_id": "B0",
-      "from": "running",
-      "to": "verified",
-      "worker": "coordinator",
-      "message": "기준선·실행 명세·MCP 격리 검증 기록 완료"
-    },
-    {
-      "type": "action_recorded",
-      "at": "2026-08-28T15:09:35.704514Z",
-      "action_id": "dispatch_implementer:3bfd67438c76159c",
-      "action_type": "dispatch_implementer",
-      "task_id": "T01",
-      "status": "issued",
-      "agent_handle": "zero-exec-T01"
-    },
-    {
-      "type": "phase_started",
-      "at": "2026-08-28T15:09:56.204367Z",
-      "task_id": "T01",
-      "phase": "implementation",
-      "worker": "zero-exec-T01",
-      "rework": false
-    },
-    {
-      "type": "task_transition",
-      "at": "2026-08-28T15:09:56.204367Z",
-      "task_id": "T01",
-      "from": "ready",
-      "to": "running",
-      "worker": "zero-exec-T01",
-      "message": "Implementation worker launched in verified external worktree, context 0; Docker integration blocked"
-    },
-    {
-      "type": "action_recorded",
-      "at": "2026-08-28T15:11:07.415270Z",
-      "action_id": "dispatch_implementer:3bfd67438c76159c",
-      "action_type": "dispatch_implementer",
-      "task_id": "T01",
-      "status": "failed",
-      "agent_handle": "zero-exec-T01"
-    },
-    {
-      "type": "phase_finished",
-      "at": "2026-08-28T15:11:07.829421Z",
-      "task_id": "T01",
-      "phase": "implementation",
-      "worker": "zero-exec-T01",
-      "rework": false
-    },
-    {
-      "type": "task_transition",
-      "at": "2026-08-28T15:11:07.829421Z",
-      "task_id": "T01",
-      "from": "running",
-      "to": "blocked",
-      "worker": "zero-exec-T01",
-      "message": "Windows workspace-write shell rejected by policy; Docker engine unavailable"
-    },
-    {
-      "type": "pipeline_paused",
-      "at": "2026-08-28T15:11:08.268170Z",
-      "message": "Awaiting supported isolated worker shell execution and Docker recovery"
-    },
-    {
-      "type": "task_transition",
-      "at": "2026-08-28T15:23:22.028211Z",
-      "task_id": "T01",
-      "from": "blocked",
-      "to": "blocked",
-      "worker": "zero-exec-T01",
-      "message": "Docker and sandbox execution recovered; installed skill read permission awaiting user approval"
-    },
     {
       "type": "task_transition",
       "at": "2026-08-28T15:29:01.533996Z",
@@ -1497,6 +1417,266 @@
       "to": "verified",
       "worker": null,
       "message": "배포 미디어 내보내기 MongoDB 전환 승인"
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:55.777501Z",
+      "task_id": "T14",
+      "from": "ready",
+      "to": "ready",
+      "worker": "coordinator",
+      "message": "분석·대시보드·알림 MongoDB 구현과 실제 인프라 검증 완료"
+    },
+    {
+      "type": "phase_started",
+      "at": "2026-08-30T10:59:55.929055Z",
+      "task_id": "T14",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:55.929055Z",
+      "task_id": "T14",
+      "from": "ready",
+      "to": "running",
+      "worker": "coordinator",
+      "message": "분석·대시보드·알림 MongoDB 구현과 실제 인프라 검증 완료"
+    },
+    {
+      "type": "phase_finished",
+      "at": "2026-08-30T10:59:56.082164Z",
+      "task_id": "T14",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:56.082164Z",
+      "task_id": "T14",
+      "from": "running",
+      "to": "review",
+      "worker": "coordinator",
+      "message": "분석·대시보드·알림 MongoDB 구현과 실제 인프라 검증 완료"
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:56.237170Z",
+      "task_id": "T14",
+      "from": "review",
+      "to": "verified",
+      "worker": "coordinator",
+      "message": "분석·대시보드·알림 MongoDB 구현과 실제 인프라 검증 완료"
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:56.395914Z",
+      "task_id": "T15",
+      "from": "ready",
+      "to": "ready",
+      "worker": "coordinator",
+      "message": "계정 삭제·예약 작업 MongoDB 구현과 재시도 검증 완료"
+    },
+    {
+      "type": "phase_started",
+      "at": "2026-08-30T10:59:56.561105Z",
+      "task_id": "T15",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:56.561105Z",
+      "task_id": "T15",
+      "from": "ready",
+      "to": "running",
+      "worker": "coordinator",
+      "message": "계정 삭제·예약 작업 MongoDB 구현과 재시도 검증 완료"
+    },
+    {
+      "type": "phase_finished",
+      "at": "2026-08-30T10:59:56.725180Z",
+      "task_id": "T15",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:56.725180Z",
+      "task_id": "T15",
+      "from": "running",
+      "to": "review",
+      "worker": "coordinator",
+      "message": "계정 삭제·예약 작업 MongoDB 구현과 재시도 검증 완료"
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:56.883247Z",
+      "task_id": "T15",
+      "from": "review",
+      "to": "verified",
+      "worker": "coordinator",
+      "message": "계정 삭제·예약 작업 MongoDB 구현과 재시도 검증 완료"
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:57.041789Z",
+      "task_id": "T16",
+      "from": "ready",
+      "to": "ready",
+      "worker": "coordinator",
+      "message": "공고 자산 선택 이관 도구와 실제 멱등 리허설 완료"
+    },
+    {
+      "type": "phase_started",
+      "at": "2026-08-30T10:59:57.202900Z",
+      "task_id": "T16",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:57.202900Z",
+      "task_id": "T16",
+      "from": "ready",
+      "to": "running",
+      "worker": "coordinator",
+      "message": "공고 자산 선택 이관 도구와 실제 멱등 리허설 완료"
+    },
+    {
+      "type": "phase_finished",
+      "at": "2026-08-30T10:59:57.364066Z",
+      "task_id": "T16",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:57.364066Z",
+      "task_id": "T16",
+      "from": "running",
+      "to": "review",
+      "worker": "coordinator",
+      "message": "공고 자산 선택 이관 도구와 실제 멱등 리허설 완료"
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:57.522890Z",
+      "task_id": "T16",
+      "from": "review",
+      "to": "verified",
+      "worker": "coordinator",
+      "message": "공고 자산 선택 이관 도구와 실제 멱등 리허설 완료"
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:57.682686Z",
+      "task_id": "T17",
+      "from": "ready",
+      "to": "ready",
+      "worker": "coordinator",
+      "message": "API·Worker MongoDB 런타임 전면 연결과 SQL 의존성 제거 완료"
+    },
+    {
+      "type": "phase_started",
+      "at": "2026-08-30T10:59:57.845267Z",
+      "task_id": "T17",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:57.845267Z",
+      "task_id": "T17",
+      "from": "ready",
+      "to": "running",
+      "worker": "coordinator",
+      "message": "API·Worker MongoDB 런타임 전면 연결과 SQL 의존성 제거 완료"
+    },
+    {
+      "type": "phase_finished",
+      "at": "2026-08-30T10:59:58.009568Z",
+      "task_id": "T17",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:58.009568Z",
+      "task_id": "T17",
+      "from": "running",
+      "to": "review",
+      "worker": "coordinator",
+      "message": "API·Worker MongoDB 런타임 전면 연결과 SQL 의존성 제거 완료"
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:58.191159Z",
+      "task_id": "T17",
+      "from": "review",
+      "to": "verified",
+      "worker": "coordinator",
+      "message": "API·Worker MongoDB 런타임 전면 연결과 SQL 의존성 제거 완료"
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:58.358033Z",
+      "task_id": "T18",
+      "from": "ready",
+      "to": "ready",
+      "worker": "coordinator",
+      "message": "CI·성능·백업·복원·staged rollout 리허설 완료"
+    },
+    {
+      "type": "phase_started",
+      "at": "2026-08-30T10:59:58.524816Z",
+      "task_id": "T18",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:58.524816Z",
+      "task_id": "T18",
+      "from": "ready",
+      "to": "running",
+      "worker": "coordinator",
+      "message": "CI·성능·백업·복원·staged rollout 리허설 완료"
+    },
+    {
+      "type": "phase_finished",
+      "at": "2026-08-30T10:59:58.691294Z",
+      "task_id": "T18",
+      "phase": "implementation",
+      "worker": "coordinator",
+      "rework": false
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:58.691294Z",
+      "task_id": "T18",
+      "from": "running",
+      "to": "review",
+      "worker": "coordinator",
+      "message": "CI·성능·백업·복원·staged rollout 리허설 완료"
+    },
+    {
+      "type": "task_transition",
+      "at": "2026-08-30T10:59:58.860710Z",
+      "task_id": "T18",
+      "from": "review",
+      "to": "verified",
+      "worker": "coordinator",
+      "message": "CI·성능·백업·복원·staged rollout 리허설 완료"
     }
   ],
   "communications": [
@@ -1983,8 +2163,8 @@
   "event_log": {
     "schema_version": 1,
     "path": "coordination\\mongodb\\coordination\\pipeline-events.jsonl",
-    "cursor": 76,
-    "head_event_id": "31b347983420ec835e39bd5e2194e1c9540d437b27e7dea95c3dc7b5d1946219",
+    "cursor": 96,
+    "head_event_id": "0b5644e54518939d25de1f4bd05f2ee70f0b8413806435fbf58fe3df74dd69da",
     "complete_history": true
   }
 }

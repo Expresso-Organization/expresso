@@ -1,0 +1,14 @@
+$ tsc -p tsconfig.build.json
+$ tsc -p tsconfig.build.json && node src/mongo-build.mjs
+$ pnpm --filter @expresso/database migrate
+$ node --env-file-if-exists=../../services/backend/.env --import tsx src/cli.ts
+../../services/backend/.env not found. Continuing without it.
+applied 0001_initial_collections
+applied 0002_generation_ledger_amount_constraint
+applied 0003_analytics_rate_and_notification_preferences
+applied 0004_job_import_metadata
+$ tsc -p tsconfig.build.json
+{"verifiedAt":"2026-08-30T10:26:24.809Z","database":"expresso_staging_rehearsal","replicaSet":"rs0","collectionCount":77,"counts":{"account_deletion_events":0,"account_deletion_requests":0,"analytics_event_receipts":0,"analytics_rate_limits":0,"annotations":0,"answer_record_changes":0,"answers":0,"blocks":0,"brew_jobs":0,"brew_sources":0,"brews":0,"career_categories":7,"career_records":0,"career_views":0,"companies":0,"company_research_items":0,"consents":0,"conversion_events":0,"dashboard_views":0,"deployment_slug_redirects":0,"deployments":0,"derived_metrics":0,"export_assets":0,"export_jobs":0,"generated_pages":0,"generation_jobs":0,"generation_sentence_evidence":0,"generation_usage_ledger":0,"identity_oauth_accounts":0,"identity_sessions":1,"import_checkpoints":0,"import_runs":0,"insights":0,"interests":0,"interview_sessions":0,"job_analyses":0,"job_posting_requirements":0,"job_postings":0,"job_sources":0,"layout_specs":0,"match_scores":0,"media_assets":0,"media_variants":0,"metrics_daily":0,"migration_locks":0,"notifications":0,"outbox_events":8,"plans":3,"portfolio_edit_proposals":0,"portfolio_sections":0,"portfolio_snapshots":0,"portfolios":0,"questions":0,"recent_searches":0,"recipe_evidence_paths":0,"recipe_items":0,"recipe_revisions":0,"recipe_sections":0,"recipe_unused_sources":0,"recipes":0,"record_links":0,"record_usages":0,"requirement_coverages":0,"revisions":0,"saved_searches":0,"scheduled_job_definitions":8,"scheduled_job_runs":8,"schema_migrations":4,"section_views":0,"skill_evidence":0,"skills":0,"snapshot_chunks":0,"templates":33,"usage_counters":0,"users":1,"visit_events":0,"widgets":0},"chunkIntegrity":{"brokenChunks":0,"missingChunkSets":0}}
+queue_prefix=expresso-mongo-rehearsal-1795
+artifacts=/tmp/expresso-mongo-rollout.mOXedT
+staged_rollout_rehearsal=PASS

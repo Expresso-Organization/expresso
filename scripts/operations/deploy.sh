@@ -50,7 +50,18 @@ pnpm install --frozen-lockfile
 pnpm --filter @expresso/contracts build
 pnpm --filter @expresso/database build
 
-# expand-only 마이그레이션만 여기서 돈다. 파괴적 변경은 STAGED_ROLLOUT.md를 따른다.
+# MongoDB replica set과 제한된 runtime/migration 계정을 먼저 준비한다. 기존
+# MySQL volume은 이 절차에서 참조하거나 삭제하지 않는다.
+COMPOSE_ENV_ARGS=()
+if [ -f infra/.env ]; then COMPOSE_ENV_ARGS=(--env-file infra/.env); fi
+docker compose -f infra/compose.server.yaml "${COMPOSE_ENV_ARGS[@]}" up -d --wait mongodb redis
+docker compose -f infra/compose.server.yaml "${COMPOSE_ENV_ARGS[@]}" run --rm mongodb-init
+
+# schema 변경은 migration 계정으로만 수행한다. runtime 계정에는 DDL 권한이 없다.
+if [ -z "${MONGODB_MIGRATE_URL:-}" ] && ! grep -q '^MONGODB_MIGRATE_URL=' services/backend/.env; then
+  echo "services/backend/.env에 MONGODB_MIGRATE_URL이 필요합니다" >&2
+  exit 1
+fi
 pnpm db:migrate
 
 pnpm --filter @expresso/backend build
@@ -62,7 +73,7 @@ NEXT_PUBLIC_API_BASE_URL="$SITE_URL" pnpm --filter @expresso/web build
 sudo systemctl restart expresso-worker
 sudo systemctl restart expresso-api
 
-# API가 실제로 준비될 때까지 기다린다. ready는 MySQL과 Redis를 함께 본다.
+# API가 실제로 준비될 때까지 기다린다. ready는 rs0 primary·schema·Redis를 함께 본다.
 for attempt in $(seq 1 30); do
   # 첫 시도는 아직 안 뜬 API에 붙으므로 거의 늘 실패한다. curl의 오류 문구까지
   # 버린다 — 정상인 자리에 "Connection refused"가 찍히면 배포 로그를 읽는 사람이

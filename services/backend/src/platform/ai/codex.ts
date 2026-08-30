@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdtempSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { delimiter, dirname, extname, join } from "node:path";
 
 import { z } from "zod";
 
@@ -97,9 +97,20 @@ function childEnv(cliPath: string, extra: Record<string, string> = {}): NodeJS.P
   const path = process.env["PATH"] ?? "";
   return {
     ...process.env,
-    PATH: path.split(":").includes(binDir) ? path : `${binDir}:${path}`,
+    PATH: path.split(delimiter).includes(binDir) ? path : `${binDir}${delimiter}${path}`,
     ...extra,
   };
+}
+
+function spawnCodex(cliPath: string, args: string[], options: Parameters<typeof spawn>[2]) {
+  if (process.platform !== "win32" || ![".cmd", ".bat"].includes(extname(cliPath).toLowerCase())) {
+    return spawn(cliPath, args, options);
+  }
+
+  // Windows의 npm 실행 파일은 .cmd 셔임이다. Node는 이를 직접 실행할 수 없으므로
+  // cmd.exe에 파일과 인자를 별도 argv로 넘긴다. cliPath는 운영자가 정한 설정값이다.
+  const commandInterpreter = process.env["ComSpec"] ?? "cmd.exe";
+  return spawn(commandInterpreter, ["/d", "/s", "/c", cliPath, ...args], options);
 }
 
 export class CodexAiClient implements AiClient {
@@ -281,13 +292,19 @@ export class CodexAiClient implements AiClient {
 
   #run(args: string[], spec: AiCallSpec, prompt: string) {
     return new Promise<{ stdout: string; stderr: string; code: number }>((resolve, reject) => {
-      const child = spawn(this.#cliPath, args, {
+      const child = spawnCodex(this.#cliPath, args, {
         cwd: this.#cwd,
         stdio: ["pipe", "pipe", "pipe"],
         env: childEnv(this.#cliPath, this.#home === null ? {} : { CODEX_HOME: this.#home }),
       });
-      child.stdin.on("error", () => undefined);
-      child.stdin.end(prompt, "utf8");
+      const { stdin, stdout: output, stderr: errors } = child;
+      if (!stdin || !output || !errors) {
+        child.kill();
+        reject(new AiError("AI_UNAVAILABLE", spec.contract, "codex process pipes are unavailable", { retryable: false }));
+        return;
+      }
+      stdin.on("error", () => undefined);
+      stdin.end(prompt, "utf8");
       let stdout = "";
       let stderr = "";
       const timer = setTimeout(() => {
@@ -295,8 +312,8 @@ export class CodexAiClient implements AiClient {
         reject(new AiError("AI_TIMEOUT", spec.contract, `${spec.contract} timed out`));
       }, this.#timeoutMs);
 
-      child.stdout.on("data", (chunk: Buffer) => { stdout += chunk.toString("utf8"); });
-      child.stderr.on("data", (chunk: Buffer) => { stderr += chunk.toString("utf8"); });
+      output.on("data", (chunk: Buffer) => { stdout += chunk.toString("utf8"); });
+      errors.on("data", (chunk: Buffer) => { stderr += chunk.toString("utf8"); });
       child.on("error", (error) => {
         clearTimeout(timer);
         reject(new AiError(
