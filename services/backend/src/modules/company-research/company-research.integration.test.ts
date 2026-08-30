@@ -1,19 +1,29 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
-import type { SqlTag } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { CompanyResearchError, CompanyResearchService } from "./service.js";
+import { CompanyResearchError, CompanyResearchService } from "./legacy-mysql-service.js";
+
+import { MongoCompanyResearchService } from "./service.js";
+import type { CompanyResearchApi } from "./index.js";
+import { MongoIdentityService } from "../identity/index.js";
+import { MongoJobMarketService } from "../jobs/index.js";
+import { MongoMaterialsService } from "../materials/service.js";
+import { mongoCollections } from "@expresso/database";
+import { createMongoFixture } from "../../../test/support/mongodb.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
 
 interface IdRow { id: string }
 
-describeWithDatabase("company research normalization", () => {
-  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
-  const service = new CompanyResearchService(sql);
+for (const engine of ["mysql", "mongodb"] as const) {
+describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_URL)(`company research normalization (${engine})`, () => {
+  let sql: SqlTag;
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>> | undefined;
+  let service: CompanyResearchApi;
   const marker = randomUUID();
   let userId = "";
   let otherUserId = "";
@@ -22,6 +32,22 @@ describeWithDatabase("company research normalization", () => {
   let brewId = "";
 
   beforeAll(async () => {
+    if (engine === "mongodb") {
+      fixture = await createMongoFixture("company-research");
+      service = new MongoCompanyResearchService(fixture.resource);
+      const identity = new MongoIdentityService(fixture.resource);
+      userId = (await identity.signup({ email: `research-a-${marker}@example.com`, displayName: "Research A", password: "correct-horse-battery" })).user.id;
+      otherUserId = (await identity.signup({ email: `research-b-${marker}@example.com`, displayName: "Research B", password: "correct-horse-battery" })).user.id;
+      const submission = await new MongoJobMarketService(fixture.resource).submitPosting(userId, marker, { companyName: `Research ${marker}`, title: "Designer", descriptionRaw: "Portfolio ".repeat(30) });
+      postingId = submission.jobPostingId;
+      const db = mongoCollections(fixture.resource.db);
+      companyId = (await db.jobPostings.findOne({ _id: postingId }))!.companyId;
+      await db.jobAnalyses.updateOne({ _id: submission.jobAnalysisId }, { $set: { status: "done", progressStage: "done", resultVersion: 1 } });
+      brewId = (await new MongoMaterialsService(fixture.resource).createBrew(userId, { jobAnalysisId: submission.jobAnalysisId, lengthPreset: "single" })).brewId;
+      return;
+    }
+    sql = createMysqlResource(databaseUrl!).sql;
+    service = new CompanyResearchService(sql);
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("free plan missing");
     const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
@@ -52,9 +78,10 @@ describeWithDatabase("company research normalization", () => {
       insert into brew (user_id, job_analysis_id, length_preset, status)
       values (${userId}, ${analysisId!}, 'single', 'draft') returning id
     `)[0]?.id ?? "";
-  });
+  }, 60_000);
 
   afterAll(async () => {
+    if (fixture) { await fixture.dispose(); return; }
     if (userId || otherUserId) {
       await sql`delete from \`user\` where id in (${userId}, ${otherUserId})`;
     }
@@ -108,3 +135,5 @@ describeWithDatabase("company research normalization", () => {
     })).rejects.toMatchObject({ statusCode: 422 });
   });
 });
+
+}

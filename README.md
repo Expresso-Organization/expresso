@@ -125,7 +125,7 @@ flowchart LR
     PUBLIC --> WEB
 
     WEB -->|REST /v1| API[Fastify API]
-    API --> DB[(MySQL)]
+    API --> DB[(MongoDB)]
     API --> REDIS[(Redis)]
     REDIS -->|BullMQ| WORKER[비동기 Worker]
     WORKER --> DB
@@ -144,16 +144,16 @@ flowchart LR
 | 웹 | Next.js 16, React 19, App Router | 앱 화면, 인증, 에디터, 공개 포트폴리오 |
 | API | Fastify 5, TypeScript | REST API, 인증·권한, 도메인 규칙 |
 | Worker | BullMQ 6, Redis 8 | 공고 분석, 생성, 집계 등 장시간 작업 |
-| 데이터 | MySQL 8.4, SQL 마이그레이션 | 사용자·공고·포트폴리오·분석 데이터 |
+| 데이터 | MongoDB 8.0 replica set, 문서 schema 마이그레이션 | 사용자·공고·포트폴리오·분석 데이터 |
 | 계약 | Zod 4 | 요청·응답 검증과 공유 타입의 단일 출처 |
-| 테스트 | Vitest 4, 실제 MySQL·Redis | 단위·계약·통합 테스트 |
+| 테스트 | Vitest 4, 실제 MongoDB·Redis | 단위·계약·통합 테스트 |
 | 운영 | Docker Compose, nginx, systemd, GitHub Actions | 로컬 인프라와 단일 서버 배포 |
 
 ### 지키는 경계
 
 - **계약이 유일한 출처입니다.** 요청·응답 타입은 `packages/contracts`의 Zod
   스키마에서 파생합니다.
-- **스키마는 데이터베이스 패키지가 소유합니다.** 런타임에서 테이블을 만들지 않고
+- **스키마는 데이터베이스 패키지가 소유합니다.** 런타임에서 collection을 만들지 않고
   `pnpm db:migrate`로 명시적으로 반영합니다.
 - **도메인 모듈은 다른 모듈의 내부를 직접 열지 않습니다.** 공개 진입점과 계약만
   사용합니다.
@@ -175,7 +175,7 @@ flowchart LR
 | --- | --- | --- |
 | Node.js | 24 이상 | 웹·API·Worker 실행 |
 | pnpm | 11.16.0 | 워크스페이스 패키지 관리 |
-| Docker | Compose 지원 버전 | MySQL·Redis 실행 |
+| Docker | Compose 지원 버전 | MongoDB·Redis 실행 |
 | Git | 최신 안정 버전 | 저장소와 변경 이력 관리 |
 
 ### 1. 의존성 설치
@@ -197,7 +197,7 @@ cp services/web/.env.example services/web/.env.local
 pnpm db:migrate
 ```
 
-로컬 인프라는 기존 서비스와 충돌하지 않도록 MySQL `53306`, Redis `56379`를
+로컬 인프라는 기존 서비스와 충돌하지 않도록 MongoDB `57017`, Redis `56379`를
 사용합니다. `pnpm infra:down`은 컨테이너만 내리고 데이터 볼륨은 보존합니다.
 
 ### 3. 개발 서버 실행
@@ -222,8 +222,8 @@ pnpm dev:web
 | 웹 | <http://localhost:3000> | 로그인 또는 앱 화면 표시 |
 | API | <http://127.0.0.1:4000> | Fastify 응답 |
 | Liveness | <http://127.0.0.1:4000/health/live> | 프로세스가 살아 있으면 `200` |
-| Readiness | <http://127.0.0.1:4000/health/ready> | MySQL·Redis까지 준비되면 `200` |
-| MySQL | `127.0.0.1:53306` | Docker healthcheck 통과 |
+| Readiness | <http://127.0.0.1:4000/health/ready> | MongoDB·Redis까지 준비되면 `200` |
+| MongoDB | `127.0.0.1:57017` | Docker healthcheck 통과 |
 | Redis | `127.0.0.1:56379` | Docker healthcheck 통과 |
 
 ```bash
@@ -241,11 +241,11 @@ API 프로세스는 인프라가 없어도 시작할 수 있지만, 준비 상�
 ### 백엔드
 
 `services/backend/.env`는 API와 Worker가 함께 읽습니다. 기본 예제에는 로컬
-MySQL·Redis 주소와 키 없이 동작하는 AI 설정이 들어 있습니다.
+MongoDB·Redis 주소와 키 없이 동작하는 AI 설정이 들어 있습니다.
 
 | 변수 | 기본값 | 설명 |
 | --- | --- | --- |
-| `DATABASE_URL` | `mysql://...@127.0.0.1:53306/expresso` | MySQL 연결 주소 |
+| `MONGODB_URL` | `mongodb://...@127.0.0.1:57017/expresso?authSource=expresso&replicaSet=rs0` | MongoDB 연결 주소 |
 | `REDIS_URL` | `redis://127.0.0.1:56379` | 큐와 캐시 연결 주소 |
 | `AI_PROVIDER` | `off` | AI 실행 모드 |
 | `MEDIA_PROVIDER` | `local` | 미디어 저장 방식 |
@@ -316,7 +316,7 @@ pnpm test
 pnpm build
 ```
 
-백엔드 또는 데이터베이스를 변경했다면 실제 MySQL과 Redis를 사용하는 통합
+백엔드 또는 데이터베이스를 변경했다면 실제 MongoDB와 Redis를 사용하는 통합
 테스트까지 실행합니다.
 
 ```bash
@@ -328,7 +328,7 @@ pnpm test:infra
 | --- | --- |
 | `pnpm typecheck` | 모든 워크스페이스의 TypeScript 타입 검사 |
 | `pnpm test` | 계약·데이터베이스·백엔드·웹 테스트 |
-| `pnpm test:infra` | 실제 MySQL·Redis 기반 백엔드 통합 테스트 |
+| `pnpm test:infra` | 실제 MongoDB·Redis 기반 백엔드 통합 테스트 |
 | `pnpm build` | 배포 가능한 전체 워크스페이스 빌드 |
 | `pnpm check:portfolio-css` | 생성 포트폴리오 CSS 산출물 동기화 검사 |
 
@@ -366,7 +366,7 @@ Expresso/
 | `pnpm dev:web` | 웹 개발 서버를 `3000`번에서 실행 |
 | `pnpm dev:backend` | API 개발 서버를 `4000`번에서 실행 |
 | `pnpm dev:worker` | 큐 소비 Worker 실행 |
-| `pnpm infra:up` | 로컬 MySQL·Redis 시작 및 준비 대기 |
+| `pnpm infra:up` | 로컬 MongoDB·Redis 시작 및 준비 대기 |
 | `pnpm infra:ready` | 로컬 인프라 상태 확인 |
 | `pnpm infra:down` | 컨테이너 종료, 데이터 볼륨 보존 |
 | `pnpm db:migrate` | 미적용 데이터베이스 마이그레이션 실행 |
@@ -375,7 +375,7 @@ Expresso/
 ## 배포
 
 운영 환경은 Oracle Cloud 인스턴스 한 대에서 nginx가 웹·API를 묶고, API·Worker·웹은
-각각 systemd 서비스로 실행됩니다. MySQL과 Redis는 서버 전용 Docker Compose
+각각 systemd 서비스로 실행됩니다. MongoDB와 Redis는 서버 전용 Docker Compose
 구성을 사용합니다.
 
 ```text
@@ -384,7 +384,7 @@ Internet → nginx :443
                └── /*     → Next.js Web :3500
 
 Redis queue → Worker
-API / Worker → MySQL · local media
+API / Worker → MongoDB · local media
 ```
 
 - 제품 코드가 `main`에 반영되면 `.github/workflows/web-deploy.yml`이
@@ -426,7 +426,7 @@ API / Worker → MySQL · local media
 | [포트폴리오 생성 방법론](docs/architecture/portfolio-generation-methodology-v1.md) | 근거 중심 설계와 생성 단계 |
 | [데이터 모델 결정](docs/architecture/data-model-decisions.md) | 스키마 해석과 설계 결정 |
 | [배포 Runbook](docs/operations/DEPLOYMENT.md) | 운영 서버 구성, 배포, 롤백 |
-| [백업과 복구](docs/operations/BACKUP_AND_RESTORE.md) | MySQL과 미디어 백업 |
+| [백업과 복구](docs/operations/BACKUP_AND_RESTORE.md) | MongoDB·Redis·미디어 백업 |
 | [보안 감사](docs/operations/SECURITY_AUDIT.md) | 보안 점검과 남은 위험 |
 | [성능 예산](docs/operations/PERFORMANCE_BUDGET.md) | 성능 목표와 검증 기준 |
 

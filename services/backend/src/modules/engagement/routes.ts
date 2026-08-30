@@ -3,11 +3,11 @@ import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import type { EngagementService } from "./service.js";
+import { type EngagementApi } from "./index.js";
 
 const KindParams = z.strictObject({ kind: NotificationKindSchema });
 
-export function registerEngagementRoutes(app: FastifyInstance, options: { service: EngagementService; authenticateRequest: preHandlerHookHandler }) {
+export function registerEngagementRoutes(app: FastifyInstance, options: { service: EngagementApi; authenticateRequest: preHandlerHookHandler }) {
   app.get(`${API_PREFIX}/notification-preferences`, { preHandler: options.authenticateRequest }, async (request) => ({ data: await options.service.preferences(requireAuth(request).user.id) }));
   app.put(`${API_PREFIX}/notification-preferences/:kind`, { preHandler: options.authenticateRequest }, async (request) => {
     const user = requireAuth(request).user;

@@ -1,6 +1,6 @@
 import type { Job } from "bullmq";
 
-import type { JobAnalysisService } from "../../modules/job-analysis/service.js";
+import { type JobAnalysisApi } from "../../modules/job-analysis/index.js";
 import type { RequirementExtractor } from "../../modules/job-analysis/extractor.js";
 
 export interface JobAnalysisJobPayload extends Record<string, unknown> {
@@ -8,7 +8,7 @@ export interface JobAnalysisJobPayload extends Record<string, unknown> {
 }
 
 export function createJobAnalysisProcessor(
-  service: JobAnalysisService,
+  service: JobAnalysisApi,
   extractor: RequirementExtractor,
 ) {
   return async (job: Job<Record<string, unknown>>) => {

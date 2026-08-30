@@ -23,7 +23,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const MIGRATIONS = resolve(ROOT, "packages/database/migrations");
+const MIGRATIONS = resolve(ROOT, "packages/database/legacy-mysql/migrations");
 const DOC = resolve(ROOT, "docs/Expresso ERD.dc.html");
 const OPEN = "// <erd-v1:auto> — 여기서부터 자동 생성";
 const CLOSE = "// </erd-v1:auto>";

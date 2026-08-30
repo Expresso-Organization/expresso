@@ -1,10 +1,16 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
-import type { SqlTag } from "../../platform/mysql.js";
-import { afterAll, describe, expect, it } from "vitest";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { contrastRatio, ensureReadableStyle, renderTemplate } from "./render.js";
+import { MongoTemplateService } from "./service.js";
+import { MongoRecipeService } from "../recipe/service.js";
+import { MongoIdentityService } from "../identity/index.js";
+import { MongoMaterialsService } from "../materials/index.js";
+import { createMongoFixture } from "../../../test/support/mongodb.js";
+import { mongoCollections } from "@expresso/database";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
@@ -34,6 +40,24 @@ describe("template contrast", () => {
     });
     expect(corrected.colorAdjusted).toBe(true);
     expect(corrected.contrastRatio).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB template catalog", () => {
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
+  beforeAll(async () => { fixture = await createMongoFixture("templates"); }, 60_000);
+  afterAll(async () => { await fixture?.dispose(); });
+
+  it("keeps the 30 design catalog entries and renders all visible previews", async () => {
+    const identity = new MongoIdentityService(fixture.resource);
+    const userId = (await identity.signup({ email: `templates-${randomUUID()}@example.com`, displayName: "Templates", password: "correct-horse-battery" })).user.id;
+    const brewId = (await new MongoMaterialsService(fixture.resource).createFreeBrew(userId, { title: "Portfolio", brief: "소개", lengthPreset: "single" })).brewId;
+    const recipes = new MongoRecipeService(fixture.resource);
+    const recipe = await recipes.generate(userId, brewId, "mongo-template-recipe-0001");
+    const result = await new MongoTemplateService(fixture.resource, recipes).previews(userId, recipe.id, false);
+    expect(await mongoCollections(fixture.resource.db).templates.countDocuments({ code: { $regex: "^designprompts-" } })).toBe(30);
+    expect(result.previews).toHaveLength(30);
+    expect(new Set(result.previews.map(({ designStyle }) => designStyle?.sourceUrl)).size).toBe(30);
   });
 });
 

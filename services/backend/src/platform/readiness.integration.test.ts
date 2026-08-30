@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 
 import { inspectReadiness } from "../modules/system/readiness.js";
-import { createMysqlResource } from "./mysql.js";
+import { createMysqlResource } from "./legacy-mysql.js";
 import { createRedisResource } from "./redis.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;

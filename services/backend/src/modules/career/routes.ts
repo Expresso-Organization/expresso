@@ -28,10 +28,10 @@ import type {
 } from "fastify";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import type { CareerService } from "./service.js";
+import { type CareerApi } from "./index.js";
 
 export interface RegisterCareerRoutesOptions {
-  careerService: CareerService;
+  careerService: CareerApi;
   authenticateRequest: preHandlerHookHandler;
 }
 
@@ -65,7 +65,7 @@ function expectedVersion(request: FastifyRequest): number {
   }
 }
 
-function recordResponse(record: Awaited<ReturnType<CareerService["getRecord"]>>) {
+function recordResponse(record: Awaited<ReturnType<CareerApi["getRecord"]>>) {
   return CareerRecordResponseSchema.parse({
     data: record,
     resource: { version: record.version, updatedAt: record.updatedAt },

@@ -1,28 +1,38 @@
 import { randomUUID } from "node:crypto";
-import type { SqlTag } from "../../src/platform/mysql.js";
-import { createMysqlResource } from "../../src/platform/mysql.js";
+import type { SqlTag } from "../../src/platform/legacy-mysql.js";
+import { createMysqlResource } from "../../src/platform/legacy-mysql.js";
 
-import { migrate } from "@expresso/database";
+import { migrate, mongoCollections } from "@expresso/database";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../src/api/build-app.js";
 import type { RuntimeConfig } from "../../src/config/runtime-config.js";
-import { CareerService } from "../../src/modules/career/service.js";
-import { IdentityService } from "../../src/modules/identity/service.js";
-import { InterviewService } from "../../src/modules/interview/service.js";
-import { JobAnalysisService } from "../../src/modules/job-analysis/service.js";
+import { CareerService } from "../../src/modules/career/legacy-mysql-service.js";
+import { IdentityService } from "../../src/modules/identity/legacy-mysql-service.js";
+import { InterviewService } from "../../src/modules/interview/legacy-mysql-service.js";
+import { JobAnalysisService } from "../../src/modules/job-analysis/legacy-mysql-service.js";
 import { StubRequirementExtractor } from "../support/stub-extractor.js";
-import { JobMarketService } from "../../src/modules/jobs/service.js";
-import { MaterialsService } from "../../src/modules/materials/service.js";
-import { RecipeService } from "../../src/modules/recipe/service.js";
-import { OutboxDispatcher } from "../../src/platform/outbox.js";
+import { JobMarketService } from "../../src/modules/jobs/legacy-mysql-service.js";
+import { MaterialsService } from "../../src/modules/materials/legacy-mysql-service.js";
+import { RecipeService } from "../../src/modules/recipe/legacy-mysql-service.js";
+import { OutboxDispatcher } from "../../src/platform/legacy-mysql-outbox.js";
 import { createReliableQueue } from "../../src/platform/queue.js";
 import { createQueueWorker } from "../../src/worker/create-queue-worker.js";
 import { createJobAnalysisProcessor } from "../../src/worker/processors/job-analysis.js";
-import { BrewJobService } from "../../src/modules/brew-jobs/service.js";
+import { BrewJobService } from "../../src/modules/brew-jobs/legacy-mysql-service.js";
 import { createBrewJobProcessor } from "../../src/worker/processors/brew-jobs.js";
 import { createRecordCleanupProcessor } from "../../src/worker/processors/record-cleanup.js";
 import { ISOLATED_DATABASE_TIMEOUT_MS } from "../support/timeouts.js";
+import { MongoCareerService } from "../../src/modules/career/index.js";
+import { MongoIdentityService } from "../../src/modules/identity/index.js";
+import { MongoInterviewService } from "../../src/modules/interview/index.js";
+import { MongoJobAnalysisService } from "../../src/modules/job-analysis/index.js";
+import { MongoJobMarketService } from "../../src/modules/jobs/index.js";
+import { MongoMaterialsService } from "../../src/modules/materials/index.js";
+import { MongoRecipeService } from "../../src/modules/recipe/index.js";
+import { MongoBrewJobService } from "../../src/modules/brew-jobs/index.js";
+import { MongoOutboxDispatcher } from "../../src/platform/mongo-outbox.js";
+import { createMongoFixture } from "../support/mongodb.js";
 
 const rootDatabaseUrl = process.env.TEST_DATABASE_URL;
 const redisUrl = process.env.TEST_REDIS_URL;
@@ -244,5 +254,78 @@ describeWithInfrastructure("analysis to evidence recipe vertical slice", () => {
     expect((await sql<{ count: number }[]>`
       select count(*) as count from recipe_evidence_path where user_id = (select user_id from brew where id = ${brew.data.brewId}) and recipe_id = ${recipe.data.id}
     `)[0]?.count).toBeGreaterThanOrEqual(3);
+  }, 30_000);
+});
+
+const describeWithMongoInfrastructure = process.env.TEST_MONGODB_URL && redisUrl ? describe : describe.skip;
+
+describeWithMongoInfrastructure("MongoDB analysis to evidence recipe vertical slice", () => {
+  const prefix = `expresso-mongo-brew-e2e-${randomUUID()}`;
+  const jobs = createReliableQueue<Record<string, unknown>>("domain-jobs", redisUrl!, prefix);
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
+  let app: ReturnType<typeof buildApi>;
+  let worker: ReturnType<typeof createQueueWorker<Record<string, unknown>, Record<string, unknown>>>;
+  let dispatcher: MongoOutboxDispatcher;
+  let brewJobProcessor: ReturnType<typeof createBrewJobProcessor>;
+  let origin = "";
+  let token = "";
+
+  beforeAll(async () => {
+    fixture = await createMongoFixture("brewing-e2e");
+    const identity = new MongoIdentityService(fixture.resource);
+    const career = new MongoCareerService(fixture.resource);
+    const jobMarket = new MongoJobMarketService(fixture.resource);
+    const analysis = new MongoJobAnalysisService(fixture.resource);
+    const materials = new MongoMaterialsService(fixture.resource);
+    const interview = new MongoInterviewService(fixture.resource);
+    const recipe = new MongoRecipeService(fixture.resource);
+    const brewJobs = new MongoBrewJobService(fixture.resource);
+    token = (await identity.signup({ email: `brewing-e2e-${randomUUID()}@example.com`, displayName: "Brewing Vertical", password: "correct-horse-battery" })).session.accessToken;
+    const config: RuntimeConfig = { nodeEnv: "test", host: "127.0.0.1", port: 0, logLevel: "silent", databaseUrl: "mysql://127.0.0.1:1/unused", redisUrl: redisUrl!, outboxPollIntervalMs: 1_000, outboxBatchSize: 25, outboxMaxAttempts: 5, queuePrefix: prefix };
+    app = buildApi({ config, identityService: identity, careerService: career, jobMarketService: jobMarket, jobAnalysisService: analysis, materialsService: materials, interviewService: interview, recipeService: recipe, brewJobService: brewJobs });
+    origin = await app.listen({ host: "127.0.0.1", port: 0 });
+    brewJobProcessor = createBrewJobProcessor(brewJobs, {
+      interview: { async run({ userId, brewId, idempotencyKey }) { return (await interview.start(userId, brewId, idempotencyKey)).id; } },
+      recipe: { async run({ userId, brewId, idempotencyKey }) { return (await recipe.generate(userId, brewId, idempotencyKey)).id; } },
+    });
+    worker = createQueueWorker({ queueName: "domain-jobs", redisUrl: redisUrl!, prefix, concurrency: 1, deadLetterQueue: jobs.deadLetterQueue, processor: (job) => {
+      if (job.name === "interview.draft" || job.name === "recipe.draft") return brewJobProcessor(job);
+      if (job.name === "record.cleanup") return createRecordCleanupProcessor(interview)(job);
+      return createJobAnalysisProcessor(analysis, new StubRequirementExtractor())(job);
+    } });
+    dispatcher = new MongoOutboxDispatcher({ context: fixture.resource, queue: jobs.queue });
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
+
+  afterAll(async () => {
+    if (worker) await worker.close();
+    await Promise.allSettled([jobs.queue.obliterate({ force: true }), jobs.deadLetterQueue.obliterate({ force: true })]);
+    await jobs.close(); if (app) await app.close(); await fixture?.dispose();
+  }, ISOLATED_DATABASE_TIMEOUT_MS);
+
+  async function api(path: string, options: { method?: string; headers?: Record<string, string>; body?: unknown } = {}) { return fetch(`${origin}${path}`, { method: options.method ?? "GET", headers: { authorization: `Bearer ${token}`, ...(options.body === undefined ? {} : { "content-type": "application/json" }), ...options.headers }, ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }) }); }
+  async function awaitJob(jobId: string) {
+    expect((await dispatcher.pollOnce()).published).toBeGreaterThanOrEqual(1);
+    let resultId: string | null = null;
+    await waitUntil(async () => { const state = await (await api(`/v1/brew-jobs/${jobId}`)).json() as { data: { status: string; resultId: string | null; failure: { code: string } | null } }; if (state.data.status === "failed") throw new Error(`brew job failed: ${state.data.failure?.code}`); resultId = state.data.resultId; return state.data.status === "succeeded"; });
+    if (!resultId) throw new Error("brew job finished without a result"); return resultId;
+  }
+
+  it("runs analysis, materials, interview answer, and evidence recipe through MongoDB workers", async () => {
+    const categories = await (await api("/v1/career/categories")).json() as { data: Array<{ id: string; key: string }> }; const categoryId = categories.data.find(({ key }) => key === "experience")?.id; if (!categoryId) throw new Error("experience category missing");
+    for (const [index, bodyMd] of ["TypeScript와 MongoDB로 고가용성 backend API를 설계했습니다.", "AWS 장애 대응과 운영 자동화 경험", "제품 팀과 협업한 사용자 연구"].entries()) {
+      const response = await api("/v1/career/records", { method: "POST", headers: { "idempotency-key": `mongo-brew-record-${index}` }, body: { categoryId, title: `Evidence ${index}`, properties: {}, bodyMd } }); const id = (await response.json() as { data: { id: string } }).data.id; await mongoCollections(fixture.resource.db).careerRecords.updateOne({ _id: id }, { $set: { status: "organized" } });
+    }
+    const descriptionRaw = ["TypeScript와 MongoDB로 고가용성 backend API를 설계하고 운영합니다.", "AWS 환경의 장애를 분석하고 reliability를 개선한 경험이 필요합니다.", "제품 팀과 협업하여 고객 impact를 측정하고 공유해야 합니다.", "remote 환경에서 명확한 문서와 코드 리뷰로 품질을 높입니다.", "지원자는 실제 성과와 본인의 역할을 구체적인 근거로 설명해야 합니다."].join(" ");
+    const submitted = await api("/v1/jobs/submissions", { method: "POST", headers: { "idempotency-key": "mongo-brew-job-submit" }, body: { companyName: "Mongo Brewing E2E", title: "Backend Engineer", descriptionRaw } }); const job = await submitted.json() as { data: { jobAnalysisId: string } };
+    expect((await dispatcher.pollOnce()).published).toBe(1);
+    await waitUntil(async () => (await (await api(`/v1/job-analyses/${job.data.jobAnalysisId}`)).json() as { data: { analysis: { status: string } } }).data.analysis.status === "done");
+    const brewResponse = await api("/v1/brews", { method: "POST", body: { jobAnalysisId: job.data.jobAnalysisId, lengthPreset: "single" } }); expect(brewResponse.status).toBe(201); const brew = await brewResponse.json() as { data: { brewId: string } };
+    const sessionResponse = await api(`/v1/brews/${brew.data.brewId}/interview-sessions`, { method: "POST", headers: { "idempotency-key": "mongo-brew-session" } }); expect(sessionResponse.status).toBe(202); const sessionJob = await sessionResponse.json() as { data: { jobId: string } }; const sessionId = await awaitJob(sessionJob.data.jobId);
+    const session = await (await api(`/v1/interview-sessions/${sessionId}`)).json() as { data: { questions: Array<{ id: string }> } }; const questionId = session.data.questions[0]!.id;
+    const answerResponse = await api(`/v1/interview-sessions/${sessionId}/answers/${questionId}`, { method: "PUT", headers: { "idempotency-key": "mongo-brew-answer" }, body: { inputType: "text", transcript: "장애 로그를 분석해 재발 방지 절차를 만들었습니다." } }); expect(answerResponse.status).toBe(200);
+    const recipeResponse = await api(`/v1/brews/${brew.data.brewId}/recipes`, { method: "POST", headers: { "idempotency-key": "mongo-brew-recipe" } }); expect(recipeResponse.status).toBe(202); const recipeJob = await recipeResponse.json() as { data: { jobId: string } }; const recipeId = await awaitJob(recipeJob.data.jobId);
+    const recipe = await (await api(`/v1/recipes/${recipeId}`)).json() as { data: { id: string; sections: Array<{ items: Array<{ id: string }> }>; evidencePaths: unknown[] } }; expect(recipe.data.evidencePaths.length).toBeGreaterThanOrEqual(3); const itemId = recipe.data.sections[0]!.items[0]!.id;
+    const edited = await api(`/v1/recipes/${recipe.data.id}`, { method: "PATCH", body: { operation: "update_item", itemId, pointText: "사용자가 확정한 근거 요점" } }); expect(await edited.json()).toMatchObject({ data: { recipe: { sections: expect.any(Array) } } });
+    expect(await mongoCollections(fixture.resource.db).recipeEvidencePaths.countDocuments({ recipeId })).toBeGreaterThanOrEqual(3);
   }, 30_000);
 });

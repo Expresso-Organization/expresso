@@ -12,8 +12,8 @@ import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import type { IdentityService } from "../identity/service.js";
-import type { AnalyticsService } from "./service.js";
+import { type IdentityApi } from "../identity/index.js";
+import { type AnalyticsApi } from "./index.js";
 
 const IdParams = z.strictObject({ id: z.uuid() });
 const DateBody = z.strictObject({ date: z.iso.date() });
@@ -21,8 +21,8 @@ const InsightQuery = z.strictObject({ start: z.iso.date(), end: z.iso.date() });
 const DerivedQuery = z.strictObject({ date: z.iso.date() }).and(DerivedMetricInputSchema);
 
 export function registerAnalyticsRoutes(app: FastifyInstance, options: {
-  service: AnalyticsService;
-  identityService: IdentityService;
+  service: AnalyticsApi;
+  identityService: IdentityApi;
   authenticateRequest: preHandlerHookHandler;
 }) {
   app.post(`${API_PREFIX}/analytics/events`, async (request, reply) => {

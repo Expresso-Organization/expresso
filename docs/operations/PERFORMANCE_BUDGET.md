@@ -1,38 +1,47 @@
-# 출시 성능·backpressure 보고서
+# MongoDB 성능 예산
 
-## 2026-08-21 · MySQL
+## 기준
 
-- 환경: local Docker MySQL 8.4, Node.js 26, fresh migrated database
-- dataset: home read 100회, record write 40회, anonymous event 60회, aggregate queue registration 40회
+성능 suite는 다른 통합 테스트와 동시에 실행하지 않습니다. 로컬 fixture 결과를
+운영 규모의 보장으로 해석하지 않습니다.
 
-| 경로 | 예산 | 측정 p95 | 결과 |
-|---|---:|---:|---|
-| 대표 read (`GET /v1/home`) | 300ms | 54.9ms | PASS |
-| 대표 write (`POST /v1/career/records`) | 300ms | 2.9ms | PASS |
-| event collection | 150ms | 2.4ms | PASS |
-| queue registration | 200ms | 1.4ms | PASS |
+| 경로 | p95 예산 |
+| --- | ---: |
+| 일반 읽기 | 300ms 미만 |
+| 기록 쓰기 | 300ms 미만 |
+| 방문 이벤트 | 150ms 미만 |
+| 큐 등록 | 200ms 미만 |
 
-측정값은 같은 suite의 가장 최근 verbose 실행에서 올림해 기록했다. 성능 test는 매
-실행마다 p95를 다시 계산해 예산 초과 시 실패한다.
+`services/backend/test/load/performance-budget.test.ts`는 위 네 경로와 hot visitor
+20건 중 10건 수락, 기록 1,000건 query plan을 확인합니다. 공고 전체 필터·정렬,
+큰 snapshot, 생성 완료 경로는 동일한 fixture 크기와 `executionStats`를 함께
+기록합니다.
 
-Backpressure는 visitor hash별 이름 있는 잠금과 rate limit, outbox batch size, BullMQ
-worker concurrency, retry/backoff 및 DLQ로 제한된다. hot visitor 20건 fixture에서
-10건 수락 후 10건을 429로 거부했으며 poison job은 설정된 재시도 뒤 DLQ 한 건으로
-수렴한다.
+```bash
+TEST_MONGODB_URL='mongodb://admin:...@127.0.0.1:57017/?authSource=admin&replicaSet=rs0' \
+TEST_REDIS_URL=redis://127.0.0.1:56379 \
+pnpm --filter @expresso/backend test:load
+```
 
-## 2026-08-09 · PostgreSQL (전환 전)
+보고할 값은 p50/p95, 실행 건수, `totalDocsExamined`, `totalKeysExamined`,
+반환 건수입니다. COLLSCAN이 남으면 대상 건수와 이유를 명시하고 예산을 넘으면
+index 또는 집계를 수정합니다.
 
-- 환경: local Docker PostgreSQL 18.4, Node.js 26, fresh migrated database
-- dataset: home read 100회, record write 40회, anonymous event 60회, aggregate queue registration 40회
+## 2026-08-30 로컬 리허설 결과
 
-| 경로 | 예산 | 측정 p95 | 결과 |
-|---|---:|---:|---|
-| 대표 read (`GET /v1/home`) | 300ms | 50.3ms | PASS |
-| 대표 write (`POST /v1/career/records`) | 300ms | 5.1ms | PASS |
-| event collection | 150ms | 3.1ms | PASS |
-| queue registration | 200ms | 1.4ms | PASS |
+MongoDB 8.0 단일 노드 rs0에서 다른 suite와 분리해 실행했습니다. 이 수치는 운영
+트래픽이나 운영 데이터 크기의 보장이 아니라 회귀 기준입니다.
 
-측정값은 같은 suite의 가장 최근 verbose 실행에서 올림해 기록했다. 성능 test는 매 실행마다 p95를 다시 계산해 예산 초과 시 실패한다.
+| 항목 | 결과 | 예산 |
+| --- | ---: | ---: |
+| 일반 읽기 p95, 100회 | 225.35ms | 300ms |
+| 기록 쓰기 p95, 40회 | 11.05ms | 300ms |
+| 방문 이벤트 p95, 60회 | 7.63ms | 150ms |
+| 큐 등록 p95, 40회 | 7.15ms | 200ms |
+| 공고 1,000건 필터·목록 | 120.43ms | 3,000ms 리허설 상한 |
+| 9MiB snapshot 10조각 쓰기/읽기 | 83.73ms / 61.03ms | 각각 3,000ms |
 
-Backpressure는 visitor hash별 advisory lock과 rate limit, outbox batch size, BullMQ worker concurrency, retry/backoff 및 DLQ로 제한된다. hot visitor 20건 fixture에서 10건 수락 후 10건을 429로 거부했으며 poison job은 설정된 재시도 뒤 DLQ 한 건으로 수렴한다.
-
+공고 인덱스 검사는 50건 반환에 문서 50건·키 50개를 조사했고, 생성 완료 guard는
+문서 1건·키 1개를 조사했습니다. 기록 1,000건 목록과 hot visitor 20건 중
+10건 수락·10건 제한도 같은 suite에서 통과했습니다. 원문 출력은
+`coordination/mongodb/evidence/T18-performance-detailed.log`에 있습니다.

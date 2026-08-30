@@ -1,16 +1,16 @@
 import { randomUUID } from "node:crypto";
-import type { SqlTag } from "../../src/platform/mysql.js";
-import { createMysqlResource } from "../../src/platform/mysql.js";
+import type { SqlTag } from "../../src/platform/legacy-mysql.js";
+import { createMysqlResource } from "../../src/platform/legacy-mysql.js";
 
 import { migrate } from "@expresso/database";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../src/api/build-app.js";
 import type { RuntimeConfig } from "../../src/config/runtime-config.js";
-import { AnalyticsService } from "../../src/modules/analytics/service.js";
-import { IdentityService } from "../../src/modules/identity/service.js";
-import { PublishingService } from "../../src/modules/publishing/service.js";
-import { OutboxDispatcher } from "../../src/platform/outbox.js";
+import { AnalyticsService } from "../../src/modules/analytics/legacy-mysql-service.js";
+import { IdentityService } from "../../src/modules/identity/legacy-mysql-service.js";
+import { PublishingService } from "../../src/modules/publishing/legacy-mysql-service.js";
+import { OutboxDispatcher } from "../../src/platform/legacy-mysql-outbox.js";
 import { createReliableQueue } from "../../src/platform/queue.js";
 import { createQueueWorker } from "../../src/worker/create-queue-worker.js";
 import { createAnalyticsProcessor } from "../../src/worker/processors/analytics.js";

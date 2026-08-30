@@ -1,14 +1,16 @@
 import { generateKeyPairSync, sign as signWith } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
 import { ApiErrorResponseSchema, SocialAuthSessionResponseSchema } from "@expresso/contracts";
-import type { SqlTag } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
 import { RemoteGoogleIdTokenVerifier } from "./google.js";
-import { IdentityService } from "./service.js";
+import { IdentityService } from "./legacy-mysql-service.js";
+import { MongoIdentityService, type IdentityApi } from "./index.js";
+import { createMongoFixture } from "../../../test/support/mongodb.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
@@ -65,10 +67,13 @@ interface IdRow {
   id: string;
 }
 
-describeWithDatabase("Google 로그인 HTTP 통합", () => {
-  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
-  const identityService = new IdentityService(sql);
-  const app = buildApi({
+for (const engine of ["mysql", "mongodb"] as const) {
+describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_URL ?? process.env.TEST_MONGODB_ADMIN_URL))(`Google 로그인 HTTP 통합 (${engine})`, () => {
+  let sql: SqlTag;
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>> | undefined;
+  let identityService: IdentityApi;
+  let app: ReturnType<typeof buildApi>;
+  const createApp = () => buildApi({
     config,
     identityService,
     googleIdTokenVerifier: new RemoteGoogleIdTokenVerifier({
@@ -92,10 +97,18 @@ describeWithDatabase("Google 로그인 HTTP 통합", () => {
   const createdEmails = [freshEmail, passwordEmail];
 
   beforeAll(async () => {
-    await sql`
+    if (engine === "mongodb") {
+      fixture = await createMongoFixture("google");
+      identityService = new MongoIdentityService(fixture.resource);
+    } else {
+      sql = createMysqlResource(databaseUrl!).sql;
+      identityService = new IdentityService(sql);
+      await sql`
       insert into plan (code, generation_quota) values ('free', 3)
       as new on duplicate key update generation_quota = plan.generation_quota
     `;
+    }
+    app = createApp();
     await app.ready();
 
     // 비밀번호로 먼저 가입해 둔 계정. 연결 경로의 상대다.
@@ -109,12 +122,12 @@ describeWithDatabase("Google 로그인 HTTP 통합", () => {
       },
     });
     expect(signup.statusCode).toBe(201);
-  });
+  }, 60_000);
 
   afterAll(async () => {
-    await sql`delete from \`user\` where email in ${sql(createdEmails)}`;
-    await app.close();
-    await sql.end({ timeout: 5 });
+    await app?.close();
+    if (fixture) await fixture.dispose();
+    else if (sql) { await sql`delete from \`user\` where email in ${sql(createdEmails)}`; await sql.end({ timeout: 5 }); }
   });
 
   it("처음 오는 Google 계정으로 가입하고 세션을 받는다", async () => {
@@ -131,7 +144,7 @@ describeWithDatabase("Google 로그인 HTTP 통합", () => {
     expect(body.data.user.displayName).toBe("새 사람");
 
     // 비밀번호 없는 계정이어야 한다.
-    const rows = await sql<{ password_hash: string | null }[]>`
+    const rows = fixture ? [{ password_hash: (await fixture.resource.db.collection("users").findOne({ email: freshEmail }))?.passwordHash }] : await sql<{ password_hash: string | null }[]>`
       select password_hash from \`user\` where email = ${freshEmail}
     `;
     expect(rows[0]?.password_hash).toBeNull();
@@ -192,7 +205,7 @@ describeWithDatabase("Google 로그인 HTTP 통합", () => {
     });
 
     expect(response.statusCode).toBe(401);
-    const rows = await sql`select 1 from \`user\` where email = ${unverified}`;
+    const rows = fixture ? await fixture.resource.db.collection("users").find({ email: unverified }).toArray() : await sql`select 1 from \`user\` where email = ${unverified}`;
     expect(rows).toHaveLength(0);
   });
 
@@ -241,7 +254,17 @@ describeWithDatabase("Google 로그인 HTTP 통합", () => {
     });
     expect(response.statusCode).toBe(401);
   });
+
+  it.skipIf(engine !== "mongodb")("이미 연결된 Google 식별자나 사용자에게 두 번째 연결을 만들지 않는다", async () => {
+    const otherEmail = `second-owner-${suffix}@example.com`;
+    const other = await identityService.signup({ email: otherEmail, displayName: "Other", password: "correct-horse-battery" });
+    const before = await fixture!.resource.db.collection("identity_sessions").countDocuments({ userId: other.user.id });
+    await expect(identityService.linkGoogle({ subject: `sub-${suffix}`, email: otherEmail, emailVerified: true, displayName: "Other" }, "correct-horse-battery")).rejects.toMatchObject({ statusCode: 409 });
+    expect(await fixture!.resource.db.collection("identity_sessions").countDocuments({ userId: other.user.id })).toBe(before);
+    await expect(identityService.linkGoogle({ subject: `second-sub-${suffix}`, email: passwordEmail, emailVerified: true, displayName: "Existing" }, "correct-horse-battery")).rejects.toMatchObject({ statusCode: 409 });
+  });
 });
+}
 
 describe("검증기가 없을 때", () => {
   it("Google 경로는 503으로 답한다 — 조용히 통과시키지 않는다", async () => {

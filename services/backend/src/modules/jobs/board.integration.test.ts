@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
 import {
   ApiErrorResponseSchema,
@@ -7,13 +7,19 @@ import {
   JobPostingListResponseSchema,
   RecentJobSearchListResponseSchema,
 } from "@expresso/contracts";
-import type { SqlTag } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { IdentityService } from "../identity/service.js";
-import { JobBoardService } from "./board-service.js";
+import { IdentityService } from "../identity/legacy-mysql-service.js";
+import { JobBoardService } from "./legacy-mysql-board-service.js";
+
+import { MongoIdentityService, type IdentityApi } from "../identity/index.js";
+import { MongoJobBoardService } from "./board-service.js";
+import { mongoCollections } from "@expresso/database";
+import { Decimal128 } from "mongodb";
+import { createMongoFixture } from "../../../test/support/mongodb.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
@@ -67,15 +73,12 @@ function totalOf(seeded: ReturnType<typeof axes>): number {
   return Math.round((100 * covered) / required);
 }
 
-describeWithDatabase("job board read HTTP integration", () => {
-  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
-  const identity = new IdentityService(sql);
-  const app = buildApi({
-    config,
-    identityService: identity,
-    jobBoardService: new JobBoardService(sql),
-  });
-
+for (const engine of ["mysql", "mongodb"] as const) {
+describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_URL)(`job board read HTTP integration (${engine})`, () => {
+  let sql: SqlTag;
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>> | undefined;
+  let identity: IdentityApi;
+  let app: ReturnType<typeof buildApi>;
   const marker = randomUUID();
   let userId = "";
   let otherUserId = "";
@@ -92,6 +95,45 @@ describeWithDatabase("job board read HTTP integration", () => {
   const scoped = (extra = "") => `q=${marker}${extra}`;
 
   beforeAll(async () => {
+    if (engine === "mongodb") {
+      fixture = await createMongoFixture("board-read");
+      identity = new MongoIdentityService(fixture.resource);
+      app = buildApi({ config, identityService: identity, jobBoardService: new MongoJobBoardService(fixture.resource) });
+      const first = await identity.signup({ email: `board-a-${marker}@example.com`, displayName: "Board A", password: "correct-horse-battery" });
+      const second = await identity.signup({ email: `board-b-${marker}@example.com`, displayName: "Board B", password: "correct-horse-battery" });
+      userId = first.user.id; otherUserId = second.user.id; token = first.session.accessToken; otherToken = second.session.accessToken;
+      const db = mongoCollections(fixture.resource.db);
+      companyId = randomUUID(); urgentId = randomUUID(); laterId = randomUUID(); alwaysId = randomUUID(); analysisId = randomUUID();
+      const now = Date.now();
+      await db.companies.insertOne({ _id: companyId, name: `보드컴퍼니 ${marker}`, domain: "board.example", industry: "핀테크", toneSummary: "담백 · 사실 위주", tonePalette: { accent: "#FF6F0F", ink: "#16223A" }, dedupeKey: `board-${marker}`, avatarBackground: "#EEF2FC", avatarColor: "#2A48B8", brandColors: ["#1B2A4A", "#2E7CF6", "#EFF2F6"], toneImpression: "정확 · 신뢰" });
+      const base = { companyId, source: "user_input" as const, descriptionRaw: DESCRIPTION, duties: [], preferred: [], hiringProcess: [] };
+      await db.jobPostings.insertMany([
+        { ...base, _id: urgentId, title: "데이터 플랫폼 엔지니어", requirements: { technologies: ["Airflow", "Spark"], impacts: [], roles: [], conditions: [] }, expiresAt: new Date(now + 3 * 86_400_000), dedupeHash: `board-urgent-${marker}`, createdAt: new Date(now - 180_000), location: "서울 강남", workType: "리모트 주 2일", experienceLabel: "3년 이상", experienceMinYears: 3, jobFamily: "백엔드 · 데이터", employmentType: "정규직 · 수습 3개월", salaryNote: "8,000만 – 1억 1,000만", duties: [{ group: "적재 파이프라인", items: ["하루 3,000만 건 적재"] }], preferred: ["금융권 데이터 프로젝트 수행 경험", "MLOps 파이프라인 구축"], hiringProcess: ["서류 전형", "직무 · 기술 인터뷰"], processNote: "평균 3주", notice: "수습 3개월 후 정규직 전환 평가가 있습니다" },
+        { ...base, _id: laterId, title: "백엔드 엔지니어", requirements: { technologies: ["Airflow", "Kafka"], impacts: [], roles: [], conditions: [] }, expiresAt: new Date(now + 30 * 86_400_000), dedupeHash: `board-later-${marker}`, createdAt: new Date(now - 120_000), location: "서울", workType: "출근", experienceLabel: "5년 이상", experienceMinYears: 5, jobFamily: "백엔드 · 데이터", employmentType: "정규직", salaryNote: "면접 후 협의" },
+        { ...base, _id: alwaysId, title: "플랫폼 엔지니어", requirements: { technologies: ["Go"], impacts: [], roles: [], conditions: [] }, expiresAt: null, dedupeHash: `board-always-${marker}`, createdAt: new Date(now - 60_000), workType: "리모트", experienceLabel: "경력", jobFamily: "플랫폼 · 인프라" },
+      ]);
+      const urgentAxes = axes({ matched: ["Airflow", "Spark"], missing: [] });
+      const laterAxes = axes({ matched: ["Airflow"], missing: ["Kafka"] });
+      await db.matchScores.insertMany([
+        { _id: randomUUID(), userId, jobPostingId: urgentId, total: Decimal128.fromString("100"), axes: urgentAxes, reasonText: "요건 5개의 근거가 모두 기록에서 확인됩니다.", nextAction: "가장 관련 있는 기록을 검토하세요.", computedAt: new Date() },
+        { _id: randomUUID(), userId, jobPostingId: laterId, total: Decimal128.fromString("80"), axes: laterAxes, reasonText: "기술 스택에서 Kafka 근거가 비어 있습니다.", nextAction: "Kafka를 사용한 기록을 추가하세요.", computedAt: new Date() },
+      ]);
+      await db.interests.insertOne({ _id: randomUUID(), userId, jobPostingId: urgentId, stage: "applied", deadlineAt: new Date(now + 3 * 86_400_000), memo: "지원 완료", updatedAt: new Date() });
+      await db.jobAnalyses.insertOne({ _id: analysisId, userId, jobPostingId: urgentId, inputType: "paste", status: "done", progressStage: "done", analyzedAt: new Date(), attachments: [], attempts: 0, resultVersion: 1, targetVersion: 1 });
+      for (const [orderNo, label, kind, coverage] of [[0, "대용량 처리 경험", "must", "covered"], [1, "금융권 데이터 프로젝트 수행 경험", "nice", "partial"]] as const) {
+        const id = randomUUID();
+        await db.jobPostingRequirements.insertOne({ _id: id, jobPostingId: urgentId, orderNo, label, kind, sourceSpan: { start: QUOTE_START, end: QUOTE_START + QUOTE.length, quote: QUOTE }, extractorVersion: 1, extractedAt: new Date() });
+        await db.requirementCoverages.insertOne({ _id: `${userId}:${id}`, userId, requirementId: id, coverage, coveredBy: [], computedAt: new Date() });
+      }
+      await db.recentSearches.insertMany([
+        { _id: randomUUID(), userId, queryText: "배치 위주로 운영하는 팀", conditions: [], resultCount: 9, createdAt: new Date(now - 7_200_000) },
+        { _id: randomUUID(), userId, queryText: "연봉 협상 가능 · 리모트", conditions: [], resultCount: 14, createdAt: new Date(now - 3_600_000) },
+        { _id: randomUUID(), userId: otherUserId, queryText: "다른 사람 검색", conditions: [], resultCount: 3, createdAt: new Date(now) },
+      ]);
+    } else {
+      sql = createMysqlResource(databaseUrl!).sql;
+      identity = new IdentityService(sql);
+      app = buildApi({ config, identityService: identity, jobBoardService: new JobBoardService(sql) });
     const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
     if (!planId) throw new Error("free plan missing");
 
@@ -227,17 +269,19 @@ describeWithDatabase("job board read HTTP integration", () => {
         (${otherUserId}, '다른 사람 검색', '[]', 3, now(6))
     `;
 
+    }
     await app.ready();
-  });
+  }, 60_000);
 
   afterAll(async () => {
-    if (userId) await sql`delete from \`user\` where id in (${userId}, ${otherUserId})`;
-    if (urgentId) {
-      await sql`delete from job_posting where id in (${urgentId}, ${laterId}, ${alwaysId})`;
+    await app?.close();
+    if (fixture) await fixture.dispose();
+    else if (sql) {
+      if (userId) await sql`delete from \`user\` where id in (${userId}, ${otherUserId})`;
+      if (urgentId) await sql`delete from job_posting where id in (${urgentId}, ${laterId}, ${alwaysId})`;
+      if (companyId) await sql`delete from company where id = ${companyId}`;
+      await sql.end({ timeout: 5 });
     }
-    if (companyId) await sql`delete from company where id = ${companyId}`;
-    await app.close();
-    await sql.end({ timeout: 5 });
   });
 
   it("일치도 순으로 내려주고 점수 없는 공고는 뒤로 보낸다", async () => {
@@ -546,3 +590,5 @@ describeWithDatabase("job board read HTTP integration", () => {
     expect(body.data[0]?.resultCount).toBe(14);
   });
 });
+
+}

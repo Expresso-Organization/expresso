@@ -9,12 +9,12 @@ import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import type { MaterialsService } from "./service.js";
+import { type MaterialsApi } from "./index.js";
 
 const ParamsSchema = z.strictObject({ id: z.uuid() });
 
 export interface RegisterMaterialsRoutesOptions {
-  materialsService: MaterialsService;
+  materialsService: MaterialsApi;
   authenticateRequest: preHandlerHookHandler;
 }
 

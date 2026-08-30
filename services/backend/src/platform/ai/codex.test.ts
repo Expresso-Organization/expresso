@@ -27,10 +27,17 @@ const directories: string[] = [];
 function fakeCodex(source: string): string {
   const directory = mkdtempSync(join(tmpdir(), "expresso-fake-codex-"));
   directories.push(directory);
-  const path = join(directory, "codex");
-  writeFileSync(path, `#!/usr/bin/env node\n${source}\n`, "utf8");
-  chmodSync(path, 0o755);
-  return path;
+  const scriptPath = join(directory, "codex.mjs");
+  writeFileSync(scriptPath, `${source}\n`, "utf8");
+  if (process.platform === "win32") {
+    const commandPath = join(directory, "codex.cmd");
+    writeFileSync(commandPath, `@echo off\r\n"${process.execPath}" "${scriptPath}" %*\r\n`, "utf8");
+    return commandPath;
+  }
+  const executablePath = join(directory, "codex");
+  writeFileSync(executablePath, `#!/usr/bin/env node\nimport ${JSON.stringify(scriptPath)};\n`, "utf8");
+  chmodSync(executablePath, 0o755);
+  return executablePath;
 }
 
 afterAll(() => {

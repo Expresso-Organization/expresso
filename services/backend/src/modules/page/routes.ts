@@ -7,11 +7,11 @@ import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
 import { PageGenerationError, type PageGenerator } from "./generator.js";
-import { PageServiceError, type PageService } from "./service.js";
+import { PageServiceError, type PageApi } from "./index.js";
 import { writePageStream, type PageStream } from "./stream.js";
 
 export interface RegisterPageRoutesOptions {
-  service: PageService;
+  service: PageApi;
   generator: PageGenerator;
   /** 없으면 흘려보내는 자리를 열지 않는다. */
   stream?: PageStream | null;
@@ -36,7 +36,7 @@ export function registerPageRoutes(
     const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
     const { instruction } = RegeneratePageSchema.parse(request.body ?? {});
     const page = await lift(() =>
-      options.service.generate(principal.user.id, portfolioId, options.generator, { instruction }));
+      options.service.generate(principal.user.id, portfolioId, options.generator, instruction === undefined ? {} : { instruction }));
     return reply.code(201).send({ data: page });
   });
 

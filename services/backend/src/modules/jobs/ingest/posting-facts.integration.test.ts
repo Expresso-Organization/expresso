@@ -1,14 +1,19 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../../platform/mysql.js";
+import { createMysqlResource } from "../../../platform/legacy-mysql.js";
 
 import type { JobFactsAiOutput } from "@expresso/contracts";
-import type { SqlTag } from "../../../platform/mysql.js";
+import type { SqlTag } from "../../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { AiCallSpec, AiClient, AiResult } from "../../../platform/ai/client.js";
 import type { JobSourceAdapter, RawPosting } from "./adapter.js";
 import { AiFactsReader } from "./facts.js";
-import { JobIngestService } from "./service.js";
+import { JobIngestService } from "./legacy-mysql-service.js";
+
+import { MongoJobIngestService } from "./service.js";
+import type { JobIngestApi } from "./index.js";
+import { mongoCollections } from "@expresso/database";
+import { createMongoFixture } from "../../../../test/support/mongodb.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
@@ -58,17 +63,20 @@ function posting(marker: string, index: number): RawPosting {
   };
 }
 
-describeWithDatabase("수집과 본문 읽기의 분리", () => {
-  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
+for (const engine of ["mysql", "mongodb"] as const) {
+describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_URL)(`수집과 본문 읽기의 분리 (${engine})`, () => {
+  let sql: SqlTag;
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>> | undefined;
   const marker = randomUUID().slice(0, 8);
   const adapter = new FakeAdapter();
   const model = new CountingAi();
-  const service = new JobIngestService(sql, [adapter], new AiFactsReader(model), null);
+  let service: JobIngestApi;
   /** 읽기 담당이 아예 없는 경우(AI 꺼짐). */
-  const readerless = new JobIngestService(sql, [adapter], null, null);
+  let readerless: JobIngestApi;
   let sourceId = "";
 
   const pendingCount = async () => {
+    if (fixture) return mongoCollections(fixture.resource.db).jobPostings.countDocuments({ factsReadAt: null });
     const [row] = await sql<{ count: string }[]>`
       select count(*) as count from job_posting
       where facts_read_at is null and external_id like ${`%${marker}%`}
@@ -77,6 +85,15 @@ describeWithDatabase("수집과 본문 읽기의 분리", () => {
   };
 
   beforeAll(async () => {
+    if (engine === "mongodb") {
+      fixture = await createMongoFixture("posting-facts");
+      service = new MongoJobIngestService(fixture.resource, [adapter], new AiFactsReader(model));
+      readerless = new MongoJobIngestService(fixture.resource, [adapter]);
+    } else {
+      sql = createMysqlResource(databaseUrl!).sql;
+      service = new JobIngestService(sql, [adapter], new AiFactsReader(model));
+      readerless = new JobIngestService(sql, [adapter]);
+    }
     const source = await service.addSource({
       provider: "greenhouse",
       token: `facts-${marker}`,
@@ -84,9 +101,10 @@ describeWithDatabase("수집과 본문 읽기의 분리", () => {
     });
     sourceId = source.id;
     adapter.postings = [1, 2, 3].map((index) => posting(marker, index));
-  });
+  }, 60_000);
 
   afterAll(async () => {
+    if (fixture) { await fixture.dispose(); return; }
     await sql`delete from job_posting where external_id like ${`%${marker}%`}`;
     await sql`delete from company where name = ${`Facts ${marker}`}`;
     await sql`delete from job_source where id = ${sourceId}`;
@@ -108,7 +126,8 @@ describeWithDatabase("수집과 본문 읽기의 분리", () => {
      * 같은 DB를 쓰는 다른 시험 파일의 공고가 섞이면 배치 크기 시험이 순서에
      * 휘둘린다. 내 것을 확실히 맨 앞에 세워 둔다.
      */
-    await sql`
+    if (fixture) await mongoCollections(fixture.resource.db).jobPostings.updateMany({}, { $set: { createdAt: new Date("2000-01-01T00:00:00Z") } });
+    else await sql`
       update job_posting set created_at = '2000-01-01 00:00:00'
       where external_id like ${`%${marker}%`}
     `;
@@ -132,7 +151,7 @@ describeWithDatabase("수집과 본문 읽기의 분리", () => {
     expect(second.read).toBeGreaterThanOrEqual(1);
     expect(await pendingCount()).toBe(0);
 
-    const [row] = await sql<{ experience_note: string | null }[]>`
+    const [row] = fixture ? [{ experience_note: (await mongoCollections(fixture.resource.db).jobPostings.findOne({ externalId: `greenhouse:facts-${marker}:${marker}-1` }))?.experienceNote }] : await sql<{ experience_note: string | null }[]>`
       select experience_note from job_posting
       where external_id = ${`greenhouse:facts-${marker}:${marker}-1`}
     `;
@@ -147,7 +166,8 @@ describeWithDatabase("수집과 본문 읽기의 분리", () => {
   });
 
   it("모델이 죽으면 실패로 세고 그 공고를 다음에 다시 본다", async () => {
-    await sql`
+    if (fixture) await mongoCollections(fixture.resource.db).jobPostings.updateOne({ externalId: `greenhouse:facts-${marker}:${marker}-1` }, { $set: { factsReadAt: null, experienceNote: null } });
+    else await sql`
       update job_posting set facts_read_at = null, experience_note = null
       where external_id = ${`greenhouse:facts-${marker}:${marker}-1`}
     `;
@@ -170,3 +190,5 @@ describeWithDatabase("수집과 본문 읽기의 분리", () => {
     expect(run.skipped).toBe("reader is not configured");
   });
 });
+
+}

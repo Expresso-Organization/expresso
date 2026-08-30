@@ -1,17 +1,89 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
-import type { SqlTag } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { RecipeDraftSchema } from "@expresso/contracts";
 
 import { buildApi } from "../../api/build-app.js";
-import { BrewJobService } from "../brew-jobs/service.js";
+import { BrewJobService } from "../brew-jobs/legacy-mysql-service.js";
 import { classifyBrewJobFailure } from "../../worker/processors/brew-jobs.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { IdentityService } from "../identity/service.js";
-import { RecipeService } from "./service.js";
+import { IdentityService } from "../identity/legacy-mysql-service.js";
+import { RecipeService } from "./legacy-mysql-service.js";
 import type { RecipePlanner } from "./planner.js";
+import { MongoRecipeService } from "./service.js";
+import { MongoIdentityService } from "../identity/index.js";
+import { MongoCareerService } from "../career/index.js";
+import { MongoMaterialsService } from "../materials/index.js";
+import { mongoCollections } from "@expresso/database";
+import { createMongoFixture } from "../../../test/support/mongodb.js";
+
+describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB recipe integration", () => {
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
+  let service: MongoRecipeService;
+  let userId = "";
+  let otherUserId = "";
+  let brewId = "";
+
+  beforeAll(async () => {
+    fixture = await createMongoFixture("recipe");
+    const identity = new MongoIdentityService(fixture.resource);
+    userId = (await identity.signup({ email: `recipe-${randomUUID()}@example.com`, displayName: "Recipe", password: "correct-horse-battery" })).user.id;
+    otherUserId = (await identity.signup({ email: `recipe-${randomUUID()}@example.com`, displayName: "Other", password: "correct-horse-battery" })).user.id;
+    const career = new MongoCareerService(fixture.resource);
+    const categoryId = (await career.listCategories(userId)).find(({ key }) => key === "experience")!.id;
+    for (let index = 0; index < 5; index++) {
+      const record = (await career.createRecord(userId, randomUUID(), { categoryId, title: `Evidence ${index}`, properties: {}, bodyMd: `MongoDB 성과 ${index + 1}건` })).record;
+      await mongoCollections(fixture.resource.db).careerRecords.updateOne({ _id: record.id }, { $set: { status: "organized" } });
+    }
+    brewId = (await new MongoMaterialsService(fixture.resource).createFreeBrew(userId, { title: "Backend Portfolio", brief: "MongoDB 성과", lengthPreset: "single" })).brewId;
+    service = new MongoRecipeService(fixture.resource);
+  }, 60_000);
+  afterAll(async () => { await fixture?.dispose(); });
+
+  it("generates one idempotent recipe while preserving original evidence ids", async () => {
+    const recipe = await service.generate(userId, brewId, "mongo-recipe-generate-0001");
+    expect(recipe.sections.length).toBeGreaterThan(0);
+    expect(recipe.sections.flatMap(({ items }) => items).every(({ evidence }) => evidence.length > 0)).toBe(true);
+    expect(recipe.evidencePaths.every(({ sourceId }) => typeof sourceId === "string")).toBe(true);
+    expect((await service.generate(userId, brewId, "mongo-recipe-generate-0001")).id).toBe(recipe.id);
+    expect(await mongoCollections(fixture.resource.db).recipes.countDocuments({ userId, brewId })).toBe(1);
+    await expect(service.getRecipe(otherUserId, recipe.id)).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("keeps zero-length items with empty or invalid advisory evidence", async () => {
+    const planner: RecipePlanner = { async plan() { return { draft: RecipeDraftSchema.parse({ plan: { positioning: { headlineIntent: "초안", valueProposition: "검토", differentiators: [] }, requirementCoverage: [], narrativeArc: "한 페이지", claims: [], exclusions: [], rationale: "검토" }, sections: [{ title: "연결 전 경험", purpose: "보완", targetLength: 0, goal: "초안", points: [], metrics: [], tone: "professional", format: "narrative", exclude: [], takeaway: "검토", contentPattern: "hero", interactionOpportunity: null, items: [{ pointText: "빈 연결", sources: [] }, { pointText: "잘못된 연결", sources: [40] }] }], unused: [] }), usage: null, attempts: 1 }; } };
+    const recipe = await new MongoRecipeService(fixture.resource, planner).generate(userId, brewId, "mongo-recipe-advisory-0001");
+    expect(recipe.sections[0]).toMatchObject({ targetLength: 0, items: [{ evidence: [] }, { evidence: [] }] });
+    expect(recipe.evidencePaths).toEqual([]);
+  });
+
+  it("locks user edits, restores snapshots, and retains only 50 revisions", async () => {
+    const recipe = await service.generate(userId, brewId, "mongo-recipe-generate-0001");
+    const item = recipe.sections[0]!.items[0]!;
+    const original = item.pointText;
+    const edited = await service.edit(userId, recipe.id, { operation: "update_item", itemId: item.id, pointText: "사용자가 고친 요점" });
+    expect(edited.recipe.sections.flatMap(({ items }) => items).find(({ id }) => id === item.id)).toMatchObject({ locked: true, editedBy: "user" });
+    await service.restoreItem(userId, recipe.id, edited.revisionId, item.id);
+    expect((await service.getRecipe(userId, recipe.id)).sections.flatMap(({ items }) => items).find(({ id }) => id === item.id)?.pointText).toBe(original);
+    expect((await service.edit(userId, recipe.id, { operation: "move_section", sectionId: recipe.sections[0]!.id, toOrder: 2 })).diff[0]?.path).toBe("sections.order");
+    expect((await service.edit(userId, recipe.id, { operation: "instruction", instruction: "section 1 title: Evidence First" })).recipe.sections[0]?.title).toBe("Evidence First");
+    await expect(service.edit(userId, recipe.id, { operation: "instruction", instruction: "좀 더 멋지게" })).rejects.toMatchObject({ statusCode: 409 });
+    const added = await service.edit(userId, recipe.id, { operation: "add_section", title: "추가 섹션", purpose: "추가 근거 정리" });
+    const section = added.recipe.sections.find(({ title }) => title === "추가 섹션")!;
+    const withItem = await service.edit(userId, recipe.id, { operation: "add_item", sectionId: section.id, pointText: "추가 근거 요점", sourcePathId: recipe.evidencePaths[0]!.id });
+    const addedItem = withItem.recipe.sections.find(({ id }) => id === section.id)!.items[0]!;
+    const withSecondItem = await service.edit(userId, recipe.id, { operation: "add_item", sectionId: section.id, pointText: "두 번째 근거 요점", sourcePathId: recipe.evidencePaths[0]!.id });
+    const secondItem = withSecondItem.recipe.sections.find(({ id }) => id === section.id)!.items[1]!;
+    await service.edit(userId, recipe.id, { operation: "move_item", itemId: addedItem.id, toOrder: 1 });
+    await service.edit(userId, recipe.id, { operation: "delete_item", itemId: addedItem.id });
+    await service.edit(userId, recipe.id, { operation: "delete_item", itemId: secondItem.id });
+    await service.edit(userId, recipe.id, { operation: "delete_section", sectionId: section.id });
+    for (let index = 0; index < 52; index++) await service.edit(userId, recipe.id, { operation: "update_item", itemId: item.id, pointText: `revision ${index}` });
+    expect(await mongoCollections(fixture.resource.db).recipeRevisions.countDocuments({ userId, recipeId: recipe.id })).toBe(50);
+  }, 30_000);
+});
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;

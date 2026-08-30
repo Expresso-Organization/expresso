@@ -1,0 +1,17 @@
+
+ RUN  v4.1.10 C:/code/expresso-mongodb/services/backend
+
+stdout | test/load/performance-budget.test.ts > MongoDB release performance and backpressure budget > keeps read, write, event and queue registration p95 within budgets
+{"performanceBudget":{"readP95Ms":225.34510000000046,"writeP95Ms":11.04529999999977,"eventP95Ms":7.633600000000115,"queueRegistrationP95Ms":7.150700000000143}}
+
+ ✓ test/load/performance-budget.test.ts > MongoDB release performance and backpressure budget > keeps read, write, event and queue registration p95 within budgets 1258ms
+ ✓ test/load/performance-budget.test.ts > MongoDB release performance and backpressure budget > keeps 1,000-record query bounded and limits a hot visitor 150ms
+stdout | test/load/performance-budget.test.ts > MongoDB release performance and backpressure budget > measures a 1,000-posting board, a chunked snapshot and generation completion guards
+{"releaseScaleEvidence":{"boardMs":120.42510000000038,"boardDocsExamined":50,"boardKeysExamined":50,"snapshotWriteMs":83.73059999999987,"snapshotReadMs":61.029999999999745,"snapshotParts":10,"generationDocsExamined":1,"generationKeysExamined":1}}
+
+ ✓ test/load/performance-budget.test.ts > MongoDB release performance and backpressure budget > measures a 1,000-posting board, a chunked snapshot and generation completion guards 317ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  19:33:15
+   Duration  7.15s (transform 1.00s, setup 0ms, import 2.69s, tests 4.32s, environment 0ms)

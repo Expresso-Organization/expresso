@@ -1,0 +1,1045 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Parallel Implementation DAG Monitor</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --surface: rgba(14, 28, 47, 0.88);
+      --surface-strong: #10243b;
+      --surface-soft: rgba(27, 48, 75, 0.62);
+      --border: rgba(148, 180, 217, 0.18);
+      --border-strong: rgba(148, 180, 217, 0.34);
+      --text: #edf6ff;
+      --muted: #9bb0c9;
+      --accent: #55d6be;
+      --accent-2: #6ca8ff;
+      --pending: #718096;
+      --ready: #4ba3ff;
+      --running: #55d6be;
+      --review: #b985ff;
+      --integration: #f6c453;
+      --verified: #46d681;
+      --blocked: #ff9f43;
+      --failed: #ff667a;
+      --shadow: 0 22px 60px rgba(0, 0, 0, 0.26);
+      --radius: 18px;
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(70, 129, 220, 0.22), transparent 34rem),
+        radial-gradient(circle at 86% 20%, rgba(72, 214, 168, 0.14), transparent 28rem),
+        var(--bg);
+    }
+
+    button, input { font: inherit; }
+
+    button {
+      color: var(--text);
+      border: 1px solid var(--border);
+      background: var(--surface-soft);
+      border-radius: 11px;
+      padding: 9px 13px;
+      cursor: pointer;
+      transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+    }
+
+    button:hover { border-color: var(--border-strong); background: var(--surface-strong); }
+    button:active { transform: translateY(1px); }
+    button:focus-visible, input:focus-visible { outline: 3px solid rgba(108, 168, 255, 0.42); outline-offset: 2px; }
+
+    .shell { width: min(1720px, 100%); margin: 0 auto; padding: 28px; }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 22px;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 760;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .live-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 6px rgba(85, 214, 190, .1);
+    }
+
+    .live-dot.stale { background: var(--blocked); box-shadow: 0 0 0 6px rgba(255, 159, 67, .1); }
+    .live-dot.error { background: var(--failed); box-shadow: 0 0 0 6px rgba(255, 102, 122, .1); }
+
+    h1 { margin: 8px 0 4px; font-size: clamp(25px, 3vw, 42px); letter-spacing: -.035em; }
+    .subtitle { color: var(--muted); margin: 0; font-size: 14px; }
+
+    .top-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; }
+    .primary { background: linear-gradient(135deg, #237c78, #2d67a7); border-color: rgba(130, 220, 255, .35); }
+
+    .error-banner {
+      display: none;
+      margin-bottom: 18px;
+      padding: 13px 16px;
+      color: #ffdce2;
+      background: rgba(130, 30, 50, .45);
+      border: 1px solid rgba(255, 102, 122, .4);
+      border-radius: 13px;
+    }
+    .error-banner.visible { display: block; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .metric {
+      min-height: 92px;
+      padding: 15px 16px;
+      background: linear-gradient(160deg, rgba(22, 42, 67, .94), rgba(12, 26, 45, .84));
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, .13);
+    }
+    .metric-label { color: var(--muted); font-size: 12px; font-weight: 680; text-transform: uppercase; letter-spacing: .08em; }
+    .metric-value { margin-top: 7px; font-size: 27px; font-weight: 780; letter-spacing: -.03em; }
+    .metric-note { margin-top: 3px; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .progress-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      padding: 15px 18px;
+      margin-bottom: 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 15px;
+    }
+    .progress-copy { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
+    .progress-copy strong { font-size: 14px; }
+    .progress-copy span { color: var(--muted); font-size: 12px; }
+    .track { height: 8px; overflow: hidden; background: rgba(130, 160, 195, .15); border-radius: 999px; }
+    .track > span { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent-2), var(--accent)); transition: width 260ms ease; }
+    .revision { color: var(--muted); font-size: 12px; text-align: right; }
+    .revision strong { display: block; color: var(--text); font-size: 15px; margin-bottom: 3px; }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding: 12px;
+      margin-bottom: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+    .filters { display: flex; flex-wrap: wrap; gap: 7px; }
+    .filter.active { background: rgba(74, 124, 185, .42); border-color: rgba(115, 179, 255, .62); }
+    .toolbar-right { display: flex; align-items: center; gap: 10px; flex: 1; justify-content: flex-end; }
+    .search {
+      width: min(280px, 100%);
+      min-width: 170px;
+      color: var(--text);
+      background: rgba(5, 15, 28, .52);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 9px 12px;
+    }
+    .search::placeholder { color: #7f94ad; }
+    .toggle { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 13px; white-space: nowrap; }
+    .toggle input { accent-color: var(--accent); }
+
+    .content-grid { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 14px; align-items: start; }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+
+    .graph-panel { overflow: hidden; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+    .panel-title { margin: 0; font-size: 14px; font-weight: 760; }
+    .panel-meta { color: var(--muted); font-size: 12px; }
+    .graph-viewport { position: relative; min-height: 540px; overflow: auto; background-image: radial-gradient(rgba(139, 176, 215, .12) 1px, transparent 1px); background-size: 24px 24px; }
+    .graph { position: relative; min-width: 980px; min-height: 540px; }
+    .edges { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+    .edge { fill: none; stroke: rgba(132, 168, 207, .34); stroke-width: 2; }
+    .edge.active { stroke: rgba(85, 214, 190, .65); }
+    .edge.blocked { stroke: rgba(255, 159, 67, .6); stroke-dasharray: 7 5; }
+
+    .node {
+      position: absolute;
+      width: 270px;
+      min-height: 142px;
+      padding: 13px 14px;
+      text-align: left;
+      color: var(--text);
+      background: linear-gradient(155deg, rgba(29, 52, 80, .98), rgba(13, 29, 49, .98));
+      border: 1px solid var(--border-strong);
+      border-left: 4px solid var(--status-color, var(--pending));
+      border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, .22);
+      transition: opacity 150ms ease, transform 150ms ease, border-color 150ms ease;
+    }
+    .node:hover { transform: translateY(-2px); border-color: rgba(154, 194, 235, .5); }
+    .node.selected { box-shadow: 0 0 0 3px rgba(108, 168, 255, .2), 0 16px 38px rgba(0, 0, 0, .28); }
+    .node.hidden { opacity: .1; pointer-events: none; }
+    .node-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .task-id { font-weight: 790; letter-spacing: .04em; }
+    .status-pill { color: var(--status-color, var(--pending)); background: color-mix(in srgb, var(--status-color, var(--pending)) 14%, transparent); border: 1px solid color-mix(in srgb, var(--status-color, var(--pending)) 35%, transparent); border-radius: 999px; padding: 3px 7px; font-size: 10px; font-weight: 760; text-transform: uppercase; letter-spacing: .06em; }
+    .node-title { margin: 9px 0 8px; min-height: 34px; font-size: 13px; line-height: 1.32; font-weight: 690; }
+    .node-meta { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 11px; }
+    .node-message { margin-top: 9px; color: #bed0e4; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .node-progress { height: 4px; margin-top: 10px; overflow: hidden; background: rgba(140, 170, 205, .14); border-radius: 999px; }
+    .node-progress span { display: block; height: 100%; width: 0; background: var(--status-color, var(--pending)); border-radius: inherit; transition: width 250ms ease; }
+
+    .side-stack { display: grid; gap: 14px; position: sticky; top: 14px; }
+    .detail-body, .activity-body { padding: 16px 18px; }
+    .empty { color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .detail-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 13px; }
+    .detail-heading h2 { margin: 0; font-size: 18px; line-height: 1.25; }
+    .detail-id { color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .08em; }
+    .detail-grid { display: grid; grid-template-columns: 90px 1fr; gap: 8px 10px; font-size: 12px; }
+    .detail-grid dt { color: var(--muted); }
+    .detail-grid dd { margin: 0; overflow-wrap: anywhere; }
+    .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .chip { padding: 3px 7px; color: #bdd3ea; background: rgba(86, 126, 169, .16); border: 1px solid var(--border); border-radius: 999px; font-size: 10px; }
+    .activity-list { display: grid; gap: 10px; max-height: 330px; overflow: auto; }
+    .activity-item { padding-left: 12px; border-left: 2px solid var(--border-strong); }
+    .activity-item strong { font-size: 11px; }
+    .activity-item p { margin: 3px 0; color: #bfd0e1; font-size: 11px; line-height: 1.35; }
+    .activity-item time { color: var(--muted); font-size: 10px; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 9px 14px; padding: 12px 18px; color: var(--muted); font-size: 11px; border-top: 1px solid var(--border); }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 8px; height: 8px; border-radius: 50%; background: var(--legend); }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+    @media (max-width: 1180px) {
+      .summary-grid { grid-template-columns: repeat(3, minmax(130px, 1fr)); }
+      .content-grid { grid-template-columns: 1fr; }
+      .side-stack { position: static; grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      .shell { padding: 18px 12px; }
+      .topbar { flex-direction: column; }
+      .top-actions { justify-content: flex-start; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .progress-panel { grid-template-columns: 1fr; }
+      .revision { text-align: left; }
+      .toolbar-right { justify-content: flex-start; flex-wrap: wrap; }
+      .search { width: 100%; }
+      .side-stack { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #edf4fa;
+        --surface: rgba(255, 255, 255, .9);
+        --surface-strong: #f4f8fc;
+        --surface-soft: rgba(233, 241, 249, .9);
+        --border: rgba(52, 83, 112, .16);
+        --border-strong: rgba(52, 83, 112, .3);
+        --text: #12243a;
+        --muted: #60758b;
+        --shadow: 0 18px 50px rgba(40, 67, 94, .13);
+      }
+      body { background: radial-gradient(circle at 12% 8%, rgba(70, 129, 220, .13), transparent 34rem), radial-gradient(circle at 86% 20%, rgba(72, 214, 168, .1), transparent 28rem), var(--bg); }
+      .metric { background: linear-gradient(160deg, rgba(255, 255, 255, .98), rgba(242, 247, 252, .94)); }
+      .node { background: linear-gradient(155deg, #fff, #f4f8fc); }
+      .node-message, .detail-grid dd, .activity-item p { color: #3e5870; }
+      .search { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow"><span class="live-dot" id="live-dot"></span><span id="connection-label" data-i18n="connection.connecting">Connecting</span></div>
+        <h1 id="project-title" data-testid="project-title">Implementation DAG</h1>
+        <p class="subtitle" id="subtitle" data-i18n="subtitle.loading">Loading task graph and execution state…</p>
+      </div>
+      <div class="top-actions">
+        <button type="button" id="language-toggle" data-testid="language-toggle">한국어</button>
+        <button type="button" id="load-dag" data-i18n="actions.loadDag">Load DAG</button>
+        <button type="button" id="load-state" data-i18n="actions.loadState">Load state</button>
+        <button type="button" class="primary" id="refresh" data-i18n="actions.refresh">Refresh now</button>
+      </div>
+    </header>
+
+    <div class="error-banner" id="error-banner" role="alert"></div>
+    <div class="sr-only" aria-live="polite" id="announcer"></div>
+
+    <section class="summary-grid" aria-label="Pipeline summary" data-i18n-aria-label="aria.pipelineSummary">
+      <article class="metric"><div class="metric-label" data-i18n="metrics.total">Total tasks</div><div class="metric-value" id="metric-total">—</div><div class="metric-note" id="metric-total-note" data-i18n="metrics.waitingDag">Waiting for DAG</div></article>
+      <article class="metric"><div class="metric-label" data-i18n="metrics.ready">Ready</div><div class="metric-value" id="metric-ready">—</div><div class="metric-note" data-i18n="metrics.readyNote">Available to dispatch</div></article>
+      <article class="metric"><div class="metric-label" data-i18n="metrics.active">Active</div><div class="metric-value" id="metric-active">—</div><div class="metric-note" data-i18n="metrics.activeNote">Running, review, integration</div></article>
+      <article class="metric"><div class="metric-label" data-i18n="metrics.verified">Verified</div><div class="metric-value" id="metric-verified">—</div><div class="metric-note" data-i18n="metrics.verifiedNote">Integrated and checked</div></article>
+      <article class="metric"><div class="metric-label" data-i18n="metrics.blocked">Blocked</div><div class="metric-value" id="metric-blocked">—</div><div class="metric-note" data-i18n="metrics.blockedNote">Blocked or failed</div></article>
+      <article class="metric"><div class="metric-label" data-i18n="metrics.workers">Workers</div><div class="metric-value" id="metric-workers">—</div><div class="metric-note" id="metric-workers-note" data-i18n="metrics.noWorkers">No active workers</div></article>
+    </section>
+
+    <section class="summary-grid" aria-label="Pipeline measurements" data-i18n-aria-label="aria.pipelineMeasurements">
+      <article class="metric"><div class="metric-label" data-i18n="measurement.elapsed">Elapsed</div><div class="metric-value" id="metric-elapsed">—</div><div class="metric-note" data-i18n="measurement.elapsedNote">Observed active wall time</div></article>
+      <article class="metric"><div class="metric-label" data-i18n="measurement.saved">Time saved</div><div class="metric-value" id="metric-saved">—</div><div class="metric-note" id="metric-speedup">Measurement unavailable</div></article>
+      <article class="metric"><div class="metric-label" data-i18n="measurement.effectiveConcurrency">Effective concurrency</div><div class="metric-value" id="metric-effective-concurrency">—</div><div class="metric-note" id="metric-concurrency-shape">Measurement unavailable</div></article>
+      <article class="metric"><div class="metric-label" data-i18n="measurement.parallelEfficiency">Parallel efficiency</div><div class="metric-value" id="metric-parallel-efficiency">—</div><div class="metric-note" id="metric-concurrency-utilization">Measurement unavailable</div></article>
+      <article class="metric"><div class="metric-label" data-i18n="measurement.integrationDrag">Integration drag</div><div class="metric-value" id="metric-integration-drag">—</div><div class="metric-note" data-i18n="measurement.integrationDragNote">Queue delay and rework</div></article>
+      <article class="metric"><div class="metric-label" data-i18n="measurement.totalTokens">Total tokens</div><div class="metric-value" id="metric-total-tokens">—</div><div class="metric-note" id="metric-token-coverage">Measurement unavailable</div></article>
+      <article class="metric"><div class="metric-label" data-i18n="measurement.implementer">Implementer</div><div class="metric-value" id="metric-implementer-tokens">—</div><div class="metric-note" data-i18n="measurement.tokens">tokens</div></article>
+      <article class="metric"><div class="metric-label" data-i18n="measurement.reviewer">Reviewer</div><div class="metric-value" id="metric-reviewer-tokens">—</div><div class="metric-note" data-i18n="measurement.tokens">tokens</div></article>
+      <article class="metric"><div class="metric-label" data-i18n="measurement.coordinator">Coordinator</div><div class="metric-value" id="metric-coordinator-tokens">—</div><div class="metric-note" data-i18n="measurement.tokens">tokens</div></article>
+    </section>
+
+    <section class="progress-panel" aria-label="Overall progress" data-i18n-aria-label="aria.overallProgress">
+      <div>
+        <div class="progress-copy"><strong data-i18n="progress.verifiedCompletion">Verified completion</strong><span id="progress-copy">0 of 0 tasks</span></div>
+        <div class="track"><span id="overall-progress"></span></div>
+      </div>
+      <div class="revision"><strong id="pipeline-status">Planned</strong><span id="revision-copy">Revision —</span></div>
+    </section>
+
+    <section class="toolbar" aria-label="Graph controls" data-i18n-aria-label="aria.graphControls">
+      <div class="filters" role="group" aria-label="Status filter" data-i18n-aria-label="aria.statusFilter">
+        <button class="filter active" type="button" data-filter="all" data-i18n="filters.all">All</button>
+        <button class="filter" type="button" data-filter="active" data-i18n="filters.active">Active</button>
+        <button class="filter" type="button" data-filter="blocked" data-i18n="filters.blocked">Blocked</button>
+        <button class="filter" type="button" data-filter="completed" data-i18n="filters.verified">Verified</button>
+        <button class="filter" type="button" data-filter="waiting" data-i18n="filters.waiting">Waiting</button>
+      </div>
+      <div class="toolbar-right">
+        <label class="toggle"><input type="checkbox" id="auto-refresh" checked> <span data-i18n="controls.autoRefresh">Auto refresh</span></label>
+        <input class="search" id="search" type="search" placeholder="Search task, owner, worker…" aria-label="Search tasks" data-i18n-placeholder="controls.searchPlaceholder" data-i18n-aria-label="aria.searchTasks">
+      </div>
+    </section>
+
+    <div class="content-grid">
+      <section class="panel graph-panel">
+        <div class="panel-header">
+          <h2 class="panel-title" data-i18n="graph.title">Dependency graph</h2>
+          <div class="panel-meta" id="graph-meta" data-i18n="graph.noData">No data</div>
+        </div>
+        <div class="graph-viewport" id="graph-viewport">
+          <div class="graph" id="graph" data-testid="dag-graph">
+            <svg class="edges" id="edges" aria-hidden="true"></svg>
+          </div>
+        </div>
+        <div class="legend" id="legend"></div>
+      </section>
+
+      <aside class="side-stack">
+        <section class="panel">
+          <div class="panel-header"><h2 class="panel-title" data-i18n="inspector.title">Task inspector</h2><span class="panel-meta" id="detail-status"></span></div>
+          <div class="detail-body" id="detail"><p class="empty" data-i18n="inspector.empty">Select a task node to inspect dependencies, checklist IDs, owner, worker, progress, and evidence.</p></div>
+        </section>
+        <section class="panel">
+          <div class="panel-header"><h2 class="panel-title" data-i18n="activity.title">Recent activity</h2><span class="panel-meta" id="activity-count">0 events</span></div>
+          <div class="activity-body"><div class="activity-list" id="activity"><p class="empty" data-i18n="activity.empty">No transitions recorded yet.</p></div></div>
+        </section>
+      </aside>
+    </div>
+
+    <input class="sr-only" id="dag-file" type="file" accept="application/json,.json">
+    <input class="sr-only" id="state-file" type="file" accept="application/json,.json">
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const LANGUAGE_STORAGE_KEY = "parallel-implementation-pipeline-language";
+      const I18N = {
+        en: {
+          pageTitle: "Parallel Implementation DAG Monitor",
+          connection: {
+            connecting: "Connecting", refreshError: "Refresh error", manual: "Manual snapshot",
+            waiting: "Waiting for update", live: "Live · {seconds}s"
+          },
+          subtitle: {
+            loading: "Loading task graph and execution state…",
+            content: "{runtime} · Last state update {updated}",
+            runtimeMissing: "Worker runtime not recorded"
+          },
+          actions: { loadDag: "Load DAG", loadState: "Load state", refresh: "Refresh now" },
+          language: { switchLabel: "한국어", aria: "한국어로 전환" },
+          aria: {
+            pipelineSummary: "Pipeline summary", overallProgress: "Overall progress",
+            pipelineMeasurements: "Pipeline measurements", graphControls: "Graph controls", statusFilter: "Status filter", searchTasks: "Search tasks"
+          },
+          metrics: {
+            total: "Total tasks", waitingDag: "Waiting for DAG", ready: "Ready",
+            readyNote: "Available to dispatch", active: "Active", activeNote: "Running, review, integration",
+            verified: "Verified", verifiedNote: "Integrated and checked", blocked: "Blocked",
+            blockedNote: "Blocked or failed", workers: "Workers", noWorkers: "No active workers",
+            concurrency: "{implementers} implementers · {reviewers} reviewers"
+          },
+          measurement: {
+            elapsed: "Elapsed", elapsedNote: "Observed active wall time", saved: "Time saved",
+            effectiveConcurrency: "Effective concurrency", parallelEfficiency: "Parallel efficiency",
+            integrationDrag: "Integration drag", integrationDragNote: "Queue delay and rework",
+            concurrencyShape: "peak {peak} · provisioned {provisioned}", utilization: "{rate}% capacity utilization",
+            totalTokens: "Total tokens", implementer: "Implementer", reviewer: "Reviewer",
+            coordinator: "Coordinator", tokens: "tokens", unavailable: "Measurement unavailable",
+            speedup: "{speedup}× speedup · {rate}% saved", coverage: "Coverage {measured}/{expected} · {rate}%"
+          },
+          progress: {
+            verifiedCompletion: "Verified completion", tasks: "{verified} of {total} tasks · {percent}%",
+            revision: "Revision {revision}"
+          },
+          filters: { all: "All", active: "Active", blocked: "Blocked", verified: "Verified", waiting: "Waiting" },
+          controls: { autoRefresh: "Auto refresh", searchPlaceholder: "Search task, owner, worker…" },
+          graph: {
+            title: "Dependency graph", noData: "No data",
+            meta: "{shown} of {total} tasks · {levels} dependency levels"
+          },
+          inspector: {
+            title: "Task inspector",
+            empty: "Select a task node to inspect dependencies, checklist IDs, owner, worker, progress, and evidence.",
+            owner: "Owner", worker: "Worker", kind: "Kind", progress: "Progress", message: "Message",
+            updated: "Updated", dependsOn: "Depends on", checklist: "Checklist", evidence: "Evidence", gate: "Gate",
+            reviewRound: "Review round", fixRound: "Fix round", reviewBudget: "Review budget",
+            budgetOpen: "Open", budgetExhausted: "Exhausted", decision: "Decision",
+            duration: "Estimated duration", provides: "Provides contracts", consumes: "Consumes contracts",
+            fixtures: "Shared fixtures", integrationTarget: "Integration target", context: "Context version"
+          },
+          activity: {
+            title: "Recent activity", empty: "No transitions recorded yet.",
+            count: "{count} event", countPlural: "{count} events", coordinator: "coordinator", unknownTime: "unknown time"
+          },
+          status: {
+            pending: "Pending", ready: "Ready", running: "Running", review: "Review",
+            integration: "Integration", verified: "Verified", blocked: "Blocked", failed: "Failed"
+          },
+          pipeline: { planned: "Planned", running: "Running", blocked: "Blocked", complete: "Complete" },
+          fallback: {
+            project: "Project", implementationDag: "Implementation DAG", noLiveState: "No live state",
+            untitledTask: "Untitled task", unowned: "unowned", task: "task", noStatusMessage: "No status message",
+            unknown: "unknown"
+          },
+          errors: {
+            dagTasks: "task-dag.json must contain a tasks array",
+            stateTasks: "task-state.json must contain a tasks object",
+            taskId: "Every DAG task requires an id", duplicateTask: "Duplicate DAG task: {id}",
+            dependencies: "Task {id} requires dependencies[]", unknownTask: "State contains unknown task: {id}",
+            refresh: "Live refresh failed: {message}. Serve the project root over HTTP or load both JSON files manually.",
+            loadedOne: "Loaded {kind}; load the other JSON file to render the graph.",
+            loadFile: "Could not load {file}: {message}", dagKind: "DAG", stateKind: "state"
+          }
+        },
+        ko: {
+          pageTitle: "병렬 구현 DAG 모니터",
+          connection: {
+            connecting: "연결 중", refreshError: "새로고침 오류", manual: "수동 스냅샷",
+            waiting: "업데이트 대기 중", live: "실시간 · {seconds}초"
+          },
+          subtitle: {
+            loading: "작업 그래프와 실행 상태를 불러오는 중…",
+            content: "{runtime} · 마지막 상태 업데이트 {updated}",
+            runtimeMissing: "작업자 런타임 미기록"
+          },
+          actions: { loadDag: "DAG 불러오기", loadState: "상태 불러오기", refresh: "지금 새로고침" },
+          language: { switchLabel: "English", aria: "Switch to English" },
+          aria: {
+            pipelineSummary: "파이프라인 요약", overallProgress: "전체 진행률",
+            pipelineMeasurements: "파이프라인 계측", graphControls: "그래프 제어", statusFilter: "상태 필터", searchTasks: "작업 검색"
+          },
+          metrics: {
+            total: "전체 작업", waitingDag: "DAG 대기 중", ready: "준비됨",
+            readyNote: "배정 가능", active: "진행 중", activeNote: "구현, 리뷰, 통합",
+            verified: "검증 완료", verifiedNote: "통합 및 검사 완료", blocked: "차단됨",
+            blockedNote: "차단 또는 실패", workers: "작업자", noWorkers: "활성 작업자 없음",
+            concurrency: "구현자 {implementers}명 · 리뷰어 {reviewers}명"
+          },
+          measurement: {
+            elapsed: "실행 시간", elapsedNote: "관측된 활성 경과 시간", saved: "절약 시간",
+            effectiveConcurrency: "유효 동시성", parallelEfficiency: "병렬 효율",
+            integrationDrag: "통합 손실", integrationDragNote: "큐 지연과 재작업",
+            concurrencyShape: "최대 {peak} · 할당 {provisioned}", utilization: "용량 활용률 {rate}%",
+            totalTokens: "전체 토큰", implementer: "구현자", reviewer: "리뷰어",
+            coordinator: "코디네이터", tokens: "토큰", unavailable: "측정 불가",
+            speedup: "{speedup}배 가속 · {rate}% 절약", coverage: "측정 범위 {measured}/{expected} · {rate}%"
+          },
+          progress: {
+            verifiedCompletion: "검증 완료율", tasks: "전체 {total}개 중 {verified}개 · {percent}%",
+            revision: "리비전 {revision}"
+          },
+          filters: { all: "전체", active: "진행 중", blocked: "차단됨", verified: "검증 완료", waiting: "대기 중" },
+          controls: { autoRefresh: "자동 새로고침", searchPlaceholder: "작업, 담당자, 작업자 검색…" },
+          graph: {
+            title: "의존성 그래프", noData: "데이터 없음",
+            meta: "전체 {total}개 중 {shown}개 표시 · 의존성 {levels}단계"
+          },
+          inspector: {
+            title: "작업 상세",
+            empty: "작업 노드를 선택하면 의존성, 체크리스트 ID, 담당자, 작업자, 진행률과 증거를 확인할 수 있습니다.",
+            owner: "담당자", worker: "작업자", kind: "유형", progress: "진행률", message: "메시지",
+            updated: "업데이트", dependsOn: "의존 작업", checklist: "체크리스트", evidence: "증거", gate: "완료 기준",
+            reviewRound: "리뷰 라운드", fixRound: "수정 라운드", reviewBudget: "리뷰 예산",
+            budgetOpen: "남음", budgetExhausted: "소진됨", decision: "최종 판정",
+            duration: "예상 시간", provides: "제공 계약", consumes: "소비 계약",
+            fixtures: "공유 fixture", integrationTarget: "통합 대상", context: "컨텍스트 버전"
+          },
+          activity: {
+            title: "최근 활동", empty: "아직 기록된 상태 전환이 없습니다.",
+            count: "이벤트 {count}개", countPlural: "이벤트 {count}개", coordinator: "코디네이터", unknownTime: "시간 미상"
+          },
+          status: {
+            pending: "대기", ready: "준비됨", running: "구현 중", review: "리뷰 중",
+            integration: "통합 중", verified: "검증 완료", blocked: "차단됨", failed: "실패"
+          },
+          pipeline: { planned: "계획됨", running: "실행 중", blocked: "차단됨", complete: "완료" },
+          fallback: {
+            project: "프로젝트", implementationDag: "구현 DAG", noLiveState: "실시간 상태 없음",
+            untitledTask: "제목 없는 작업", unowned: "담당자 없음", task: "작업", noStatusMessage: "상태 메시지 없음",
+            unknown: "알 수 없음"
+          },
+          errors: {
+            dagTasks: "task-dag.json에는 tasks 배열이 있어야 합니다",
+            stateTasks: "task-state.json에는 tasks 객체가 있어야 합니다",
+            taskId: "모든 DAG 작업에는 id가 필요합니다", duplicateTask: "중복된 DAG 작업: {id}",
+            dependencies: "작업 {id}에는 dependencies[]가 필요합니다", unknownTask: "상태 파일에 알 수 없는 작업이 있습니다: {id}",
+            refresh: "실시간 새로고침 실패: {message}. 프로젝트 루트를 HTTP로 제공하거나 두 JSON 파일을 수동으로 불러오세요.",
+            loadedOne: "{kind} 파일을 불러왔습니다. 그래프를 표시하려면 나머지 JSON 파일도 불러오세요.",
+            loadFile: "{file} 파일을 불러올 수 없습니다: {message}", dagKind: "DAG", stateKind: "상태"
+          }
+        }
+      };
+
+      const STATUS_COLORS = {
+        pending: "var(--pending)", ready: "var(--ready)", running: "var(--running)",
+        review: "var(--review)", integration: "var(--integration)", verified: "var(--verified)",
+        blocked: "var(--blocked)", failed: "var(--failed)"
+      };
+      const ACTIVE = new Set(["ready", "running", "review", "integration"]);
+      const params = new URLSearchParams(location.search);
+      const dagUrl = params.get("dag") || "../task-dag.json";
+      const stateUrl = params.get("state") || "../task-state.json";
+      const metricsUrl = params.get("metrics") || "../pipeline-metrics.json";
+      const refreshMs = Math.max(500, Math.min(10000, Number(params.get("refresh")) || 1000));
+      const normalizeLanguage = (value) => String(value || "").toLowerCase().startsWith("ko") ? "ko" : String(value || "").toLowerCase().startsWith("en") ? "en" : null;
+      let savedLanguage = null;
+      try { savedLanguage = normalizeLanguage(localStorage.getItem(LANGUAGE_STORAGE_KEY)); } catch (_) { /* storage can be disabled */ }
+      const initialLanguage = normalizeLanguage(params.get("lang")) || savedLanguage || normalizeLanguage(navigator.language) || "en";
+
+      const app = {
+        dag: null,
+        state: null,
+        metrics: null,
+        filter: "all",
+        query: "",
+        selected: null,
+        manual: false,
+        lastSuccessAt: 0,
+        timer: null,
+        language: initialLanguage,
+        connectionMode: "connecting"
+      };
+
+      const $ = (id) => document.getElementById(id);
+      const el = (tag, className, text) => {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+      };
+
+      function t(key, variables = {}) {
+        const lookup = (language) => key.split(".").reduce((value, part) => value?.[part], I18N[language]);
+        const template = lookup(app.language) ?? lookup("en") ?? key;
+        return String(template).replace(/\{(\w+)\}/g, (_, name) => variables[name] ?? `{${name}}`);
+      }
+
+      function statusLabel(value) {
+        const key = String(value || "pending").toLowerCase();
+        const translated = t(`status.${key}`);
+        return translated === `status.${key}` ? titleCase(key) : translated;
+      }
+
+      function pipelineLabel(value) {
+        const key = String(value || "planned").toLowerCase();
+        const translated = t(`pipeline.${key}`);
+        return translated === `pipeline.${key}` ? titleCase(key) : translated;
+      }
+
+      function applyLanguage(language, persist = true) {
+        app.language = normalizeLanguage(language) || "en";
+        document.documentElement.lang = app.language;
+        if (persist) {
+          try { localStorage.setItem(LANGUAGE_STORAGE_KEY, app.language); } catch (_) { /* storage can be disabled */ }
+        }
+        document.querySelectorAll("[data-i18n]").forEach((node) => { node.textContent = t(node.dataset.i18n); });
+        document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => { node.placeholder = t(node.dataset.i18nPlaceholder); });
+        document.querySelectorAll("[data-i18n-aria-label]").forEach((node) => { node.setAttribute("aria-label", t(node.dataset.i18nAriaLabel)); });
+        const toggle = $("language-toggle");
+        toggle.textContent = t("language.switchLabel");
+        toggle.setAttribute("aria-label", t("language.aria"));
+        if (app.dag && app.state) render();
+        else {
+          document.title = t("pageTitle");
+          updateConnection(app.connectionMode);
+        }
+      }
+
+      function fetchJson(url) {
+        const separator = url.includes("?") ? "&" : "?";
+        return fetch(`${url}${separator}_=${Date.now()}`, { cache: "no-store" }).then((response) => {
+          if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
+          return response.json();
+        });
+      }
+
+      function validateData(dag, state) {
+        if (!dag || !Array.isArray(dag.tasks)) throw new Error(t("errors.dagTasks"));
+        if (!state || !state.tasks || Array.isArray(state.tasks)) throw new Error(t("errors.stateTasks"));
+        const ids = new Set();
+        dag.tasks.forEach((task) => {
+          if (!task || typeof task.id !== "string" || !task.id) throw new Error(t("errors.taskId"));
+          if (ids.has(task.id)) throw new Error(t("errors.duplicateTask", { id: task.id }));
+          ids.add(task.id);
+          if (!Array.isArray(task.dependencies)) throw new Error(t("errors.dependencies", { id: task.id }));
+        });
+        Object.keys(state.tasks).forEach((id) => {
+          if (!ids.has(id)) throw new Error(t("errors.unknownTask", { id }));
+        });
+      }
+
+      async function refresh() {
+        if (app.manual) return;
+        try {
+          const [dag, state, metrics] = await Promise.all([
+            fetchJson(dagUrl), fetchJson(stateUrl), fetchJson(metricsUrl).catch(() => null)
+          ]);
+          validateData(dag, state);
+          app.dag = dag;
+          app.state = state;
+          app.metrics = metrics;
+          app.lastSuccessAt = Date.now();
+          app.connectionMode = "live";
+          showError("");
+          render();
+        } catch (error) {
+          showError(t("errors.refresh", { message: error.message }));
+          updateConnection("error");
+        }
+      }
+
+      function showError(message) {
+        const banner = $("error-banner");
+        banner.textContent = message;
+        banner.classList.toggle("visible", Boolean(message));
+      }
+
+      function stateFor(task) {
+        const value = app.state?.tasks?.[task.id];
+        return value || {
+          status: "pending", progress: 0, worker: null, started_at: null,
+          updated_at: null, finished_at: null, message: t("fallback.noLiveState"), evidence: []
+        };
+      }
+
+      function visible(task) {
+        const state = stateFor(task);
+        const status = state.status || "pending";
+        const filterMatch = app.filter === "all"
+          || (app.filter === "active" && ACTIVE.has(status))
+          || (app.filter === "blocked" && ["blocked", "failed"].includes(status))
+          || (app.filter === "completed" && status === "verified")
+          || (app.filter === "waiting" && status === "pending");
+        const haystack = [task.id, task.title, task.owner, task.kind, state.worker, state.message,
+          ...(task.checklist_ids || [])].filter(Boolean).join(" ").toLowerCase();
+        return filterMatch && (!app.query || haystack.includes(app.query));
+      }
+
+      function taskDepths(tasks) {
+        const byId = new Map(tasks.map((task) => [task.id, task]));
+        const memo = new Map();
+        const depth = (id, visiting = new Set()) => {
+          if (memo.has(id)) return memo.get(id);
+          if (visiting.has(id)) return 0;
+          visiting.add(id);
+          const task = byId.get(id);
+          const dependencies = (task?.dependencies || []).filter((item) => byId.has(item));
+          const value = dependencies.length ? Math.max(...dependencies.map((item) => depth(item, visiting))) + 1 : 0;
+          visiting.delete(id);
+          memo.set(id, value);
+          return value;
+        };
+        tasks.forEach((task) => depth(task.id));
+        return memo;
+      }
+
+      function render() {
+        if (!app.dag || !app.state) return;
+        document.title = `${app.dag.project || t("fallback.project")} · ${t("pageTitle")}`;
+        $("project-title").textContent = app.dag.project || app.state.project || t("fallback.implementationDag");
+        const updated = app.state.updated_at ? new Date(app.state.updated_at) : null;
+        $("subtitle").textContent = t("subtitle.content", {
+          runtime: app.dag.worker_runtime || t("subtitle.runtimeMissing"),
+          updated: updated && !Number.isNaN(updated.valueOf()) ? relativeTime(updated) : t("fallback.unknown")
+        });
+        updateConnection();
+        renderMetrics();
+        renderMeasurements();
+        renderGraph();
+        renderActivity();
+        if (app.selected) renderDetail(app.selected);
+      }
+
+      function renderMetrics() {
+        const tasks = app.dag.tasks;
+        const states = tasks.map(stateFor);
+        const count = (statuses) => states.filter((state) => statuses.includes(state.status)).length;
+        const workers = new Set(states.filter((state) => ACTIVE.has(state.status) && state.worker).map((state) => state.worker));
+        const verified = count(["verified"]);
+        $("metric-total").textContent = tasks.length;
+        $("metric-total-note").textContent = t("metrics.concurrency", {
+          implementers: app.dag.concurrency?.implementers ?? "—",
+          reviewers: app.dag.concurrency?.reviewers ?? "—"
+        });
+        $("metric-ready").textContent = count(["ready"]);
+        $("metric-active").textContent = count(["running", "review", "integration"]);
+        $("metric-verified").textContent = verified;
+        $("metric-blocked").textContent = count(["blocked", "failed"]);
+        $("metric-workers").textContent = workers.size;
+        $("metric-workers-note").textContent = workers.size ? [...workers].join(", ") : t("metrics.noWorkers");
+        const percent = tasks.length ? Math.round(verified / tasks.length * 100) : 0;
+        $("overall-progress").style.width = `${percent}%`;
+        $("progress-copy").textContent = t("progress.tasks", { verified, total: tasks.length, percent });
+        $("pipeline-status").textContent = pipelineLabel(app.state.pipeline_status);
+        $("revision-copy").textContent = t("progress.revision", { revision: app.state.revision ?? "—" });
+      }
+
+      function renderMeasurements() {
+        const timing = app.metrics?.timing;
+        const tokenData = app.metrics?.tokens;
+        const summary = tokenData?.summary;
+        const formatTokens = (value) => Number.isFinite(value) ? new Intl.NumberFormat(app.language === "ko" ? "ko-KR" : "en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value) : "—";
+        const formatDuration = (seconds) => {
+          if (!Number.isFinite(seconds)) return "—";
+          if (seconds < 60) return `${Math.round(seconds)}s`;
+          if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
+          return `${(seconds / 3600).toFixed(1)}h`;
+        };
+        $("metric-elapsed").textContent = formatDuration(timing?.actual_wall_seconds);
+        $("metric-saved").textContent = formatDuration(timing?.saved_wall_seconds);
+        $("metric-speedup").textContent = Number.isFinite(timing?.speedup) && Number.isFinite(timing?.savings_rate)
+          ? t("measurement.speedup", { speedup: timing.speedup.toFixed(2), rate: Math.round(timing.savings_rate * 100) })
+          : t("measurement.unavailable");
+        $("metric-effective-concurrency").textContent = Number.isFinite(timing?.effective_concurrency)
+          ? timing.effective_concurrency.toFixed(2)
+          : "—";
+        $("metric-concurrency-shape").textContent = Number.isFinite(timing?.peak_concurrency) && Number.isFinite(timing?.provisioned_concurrency)
+          ? t("measurement.concurrencyShape", { peak: timing.peak_concurrency, provisioned: timing.provisioned_concurrency })
+          : t("measurement.unavailable");
+        $("metric-parallel-efficiency").textContent = Number.isFinite(timing?.parallel_efficiency)
+          ? `${Math.round(timing.parallel_efficiency * 100)}%`
+          : "—";
+        $("metric-concurrency-utilization").textContent = Number.isFinite(timing?.concurrency_utilization)
+          ? t("measurement.utilization", { rate: Math.round(timing.concurrency_utilization * 100) })
+          : t("measurement.unavailable");
+        $("metric-integration-drag").textContent = formatDuration(timing?.integration_drag_seconds);
+        $("metric-total-tokens").textContent = formatTokens(summary?.total_tokens);
+        const measured = summary?.measured_sessions;
+        const expected = summary?.expected_sessions;
+        $("metric-token-coverage").textContent = Number.isFinite(summary?.coverage_rate)
+          ? t("measurement.coverage", { measured, expected, rate: Math.round(summary.coverage_rate * 100) })
+          : t("measurement.unavailable");
+        for (const role of ["implementer", "reviewer", "coordinator"]) {
+          const roleSummary = summary?.by_role?.[role];
+          $(`metric-${role}-tokens`).textContent = formatTokens(roleSummary?.sessions ? roleSummary.total_tokens : null);
+        }
+      }
+
+      function renderGraph() {
+        const graph = $("graph");
+        graph.querySelectorAll(".node").forEach((node) => node.remove());
+        const tasks = app.dag.tasks;
+        const depths = taskDepths(tasks);
+        const columns = new Map();
+        tasks.forEach((task) => {
+          const level = depths.get(task.id) || 0;
+          if (!columns.has(level)) columns.set(level, []);
+          columns.get(level).push(task);
+        });
+        const maxDepth = Math.max(0, ...depths.values());
+        const maxRows = Math.max(1, ...[...columns.values()].map((items) => items.length));
+        const width = Math.max(980, 80 + (maxDepth + 1) * 320);
+        const height = Math.max(540, 70 + maxRows * 178);
+        graph.style.width = `${width}px`;
+        graph.style.height = `${height}px`;
+        $("edges").setAttribute("viewBox", `0 0 ${width} ${height}`);
+        $("edges").innerHTML = "";
+
+        const positions = new Map();
+        [...columns.entries()].sort((a, b) => a[0] - b[0]).forEach(([level, items]) => {
+          items.sort((a, b) => a.id.localeCompare(b.id));
+          const blockHeight = items.length * 178;
+          const offset = Math.max(34, (height - blockHeight) / 2);
+          items.forEach((task, index) => positions.set(task.id, { x: 35 + level * 320, y: offset + index * 178 }));
+        });
+
+        tasks.forEach((task) => {
+          const position = positions.get(task.id);
+          const state = stateFor(task);
+          const node = el("button", "node");
+          node.type = "button";
+          node.dataset.taskId = task.id;
+          node.dataset.testid = `task-${task.id}`;
+          node.style.left = `${position.x}px`;
+          node.style.top = `${position.y}px`;
+          node.style.setProperty("--status-color", STATUS_COLORS[state.status] || STATUS_COLORS.pending);
+          node.classList.toggle("hidden", !visible(task));
+          node.classList.toggle("selected", app.selected === task.id);
+          node.setAttribute("aria-label", `${task.id}, ${task.title}, ${statusLabel(state.status)}`);
+
+          const top = el("div", "node-top");
+          top.append(el("span", "task-id", task.id), el("span", "status-pill", statusLabel(state.status)));
+          node.append(top, el("div", "node-title", task.title || t("fallback.untitledTask")));
+          const meta = el("div", "node-meta");
+          meta.append(el("span", "", task.owner || t("fallback.unowned")), el("span", "", state.worker || task.kind || t("fallback.task")));
+          node.append(meta, el("div", "node-message", state.message || t("fallback.noStatusMessage")));
+          const progress = el("div", "node-progress");
+          const fill = el("span");
+          fill.style.width = `${Number(state.progress) || 0}%`;
+          progress.append(fill);
+          node.append(progress);
+          node.addEventListener("click", () => { app.selected = task.id; renderGraph(); renderDetail(task.id); });
+          graph.append(node);
+        });
+
+        drawEdges(tasks, positions);
+        const shown = tasks.filter(visible).length;
+        $("graph-meta").textContent = t("graph.meta", { shown, total: tasks.length, levels: maxDepth + 1 });
+        renderLegend();
+      }
+
+      function drawEdges(tasks, positions) {
+        const svg = $("edges");
+        tasks.forEach((task) => {
+          (task.dependencies || []).forEach((dependency) => {
+            const source = positions.get(dependency);
+            const target = positions.get(task.id);
+            if (!source || !target) return;
+            const sourceTask = app.dag.tasks.find((item) => item.id === dependency);
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            const x1 = source.x + 270;
+            const y1 = source.y + 71;
+            const x2 = target.x;
+            const y2 = target.y + 71;
+            const bend = Math.max(35, (x2 - x1) * .46);
+            path.setAttribute("d", `M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`);
+            const targetState = stateFor(task).status;
+            path.setAttribute("class", `edge ${ACTIVE.has(targetState) ? "active" : ""} ${["blocked", "failed"].includes(targetState) ? "blocked" : ""}`);
+            path.style.opacity = visible(task) && (!sourceTask || visible(sourceTask)) ? "1" : ".08";
+            svg.append(path);
+          });
+        });
+      }
+
+      function renderLegend() {
+        const legend = $("legend");
+        legend.innerHTML = "";
+        Object.entries(STATUS_COLORS).forEach(([status, color]) => {
+          const item = el("span");
+          const dot = el("i");
+          dot.style.setProperty("--legend", color);
+          item.append(dot, document.createTextNode(statusLabel(status)));
+          legend.append(item);
+        });
+      }
+
+      function renderDetail(taskId) {
+        const task = app.dag.tasks.find((item) => item.id === taskId);
+        if (!task) return;
+        const state = stateFor(task);
+        const detail = $("detail");
+        detail.innerHTML = "";
+        const heading = el("div", "detail-heading");
+        const name = el("div");
+        name.append(el("div", "detail-id", task.id), el("h2", "", task.title || t("fallback.untitledTask")));
+        heading.append(name);
+        detail.append(heading);
+        $("detail-status").textContent = statusLabel(state.status);
+        const list = el("dl", "detail-grid");
+        addDetail(list, t("inspector.owner"), task.owner || "—");
+        addDetail(list, t("inspector.worker"), state.worker || "—");
+        addDetail(list, t("inspector.kind"), task.kind || t("fallback.task"));
+        addDetail(list, t("inspector.progress"), `${state.progress || 0}%`);
+        addDetail(list, t("inspector.message"), state.message || "—");
+        addDetail(list, t("inspector.updated"), state.updated_at ? relativeTime(new Date(state.updated_at)) : "—");
+        addDetail(list, t("inspector.reviewRound"), `${state.review_round ?? 0} / 2`);
+        addDetail(list, t("inspector.fixRound"), `${state.fix_round ?? 0} / 1`);
+        addDetail(list, t("inspector.reviewBudget"), state.review_budget_exhausted
+          ? t("inspector.budgetExhausted")
+          : t("inspector.budgetOpen"));
+        addDetail(list, t("inspector.decision"), state.final_decision || "—");
+        addDetail(list, t("inspector.duration"), Number.isFinite(task.estimated_duration_minutes) ? `${task.estimated_duration_minutes}m` : "—");
+        addDetail(list, t("inspector.provides"), task.provides_contracts || [], true);
+        addDetail(list, t("inspector.consumes"), task.consumes_contracts || [], true);
+        addDetail(list, t("inspector.fixtures"), task.shared_fixtures || [], true);
+        addDetail(list, t("inspector.integrationTarget"), task.integration_target || "—");
+        addDetail(list, t("inspector.context"), `${state.acknowledged_context_version ?? 0} / ${state.required_context_version ?? 0}`);
+        addDetail(list, "Active phase", state.active_phase || "—");
+        const delivery = state.pending_context_digest?.delivery;
+        addDetail(list, "Context delivery", delivery ? `${delivery.status || "pending"} · attempt ${delivery.attempt || 0}` : "—");
+        addDetail(list, t("inspector.dependsOn"), task.dependencies || [], true);
+        addDetail(list, t("inspector.checklist"), task.checklist_ids || [], true);
+        addDetail(list, t("inspector.evidence"), state.evidence || [], true);
+        addDetail(list, t("inspector.gate"), task.completion_gate || "—");
+        detail.append(list);
+      }
+
+      function addDetail(list, label, value, chips = false) {
+        list.append(el("dt", "", label));
+        const description = el("dd");
+        if (chips && Array.isArray(value)) {
+          const container = el("div", "chips");
+          if (!value.length) container.append(el("span", "", "—"));
+          value.forEach((item) => container.append(el("span", "chip", item)));
+          description.append(container);
+        } else {
+          description.textContent = String(value);
+        }
+        list.append(description);
+      }
+
+      function renderActivity() {
+        const activity = $("activity");
+        activity.innerHTML = "";
+        const transitions = Array.isArray(app.state.events) ? app.state.events : [];
+        const communications = Array.isArray(app.state.communications) ? app.state.communications : [];
+        const actions = Array.isArray(app.state.actions)
+          ? app.state.actions.map((item) => ({ ...item, action_type: item.type, type: "coordinator_action", at: item.updated_at }))
+          : [];
+        const events = [...transitions, ...communications, ...actions]
+          .sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")))
+          .slice(0, 20);
+        $("activity-count").textContent = t(events.length === 1 ? "activity.count" : "activity.countPlural", { count: events.length });
+        if (!events.length) {
+          activity.append(el("p", "empty", t("activity.empty")));
+          return;
+        }
+        events.forEach((event) => {
+          const item = el("div", "activity-item");
+          let title;
+          if (event.type === "worker_report") title = `${event.task_id}: worker report · context ${event.context_version}`;
+          else if (event.type === "context_digest") title = `context ${event.context_version} → ${(event.target_task_ids || []).join(", ")}`;
+          else if (event.type === "context_delivery") title = `${event.task_id}: digest ${event.status} · attempt ${event.attempt || 0}`;
+          else if (event.type === "context_ack") title = `${event.task_id}: context ${event.context_version} acknowledged`;
+          else if (event.type === "phase_started" || event.type === "phase_finished") title = `${event.task_id}: ${event.phase} ${event.type === "phase_started" ? "started" : "finished"}`;
+          else if (["pipeline_started", "pipeline_paused", "pipeline_resumed", "pipeline_completed"].includes(event.type)) title = `pipeline: ${event.type.replace("pipeline_", "")}`;
+          else if (event.type === "coordinator_action") title = `${event.task_id || "pipeline"}: ${event.action_type || "action"} ${event.status}`;
+          else title = `${event.task_id}: ${event.from ? statusLabel(event.from) : "—"} → ${event.to ? statusLabel(event.to) : "—"}`;
+          item.append(el("strong", "", title));
+          if (event.message) item.append(el("p", "", event.message));
+          item.append(el("time", "", `${event.worker || t("activity.coordinator")} · ${event.at ? relativeTime(new Date(event.at)) : t("activity.unknownTime")}`));
+          activity.append(item);
+        });
+      }
+
+      function updateConnection(force) {
+        const dot = $("live-dot");
+        const label = $("connection-label");
+        if (force) app.connectionMode = force;
+        dot.className = "live-dot";
+        if (app.connectionMode === "error") {
+          dot.classList.add("error");
+          label.textContent = t("connection.refreshError");
+          return;
+        }
+        if (app.manual) {
+          dot.classList.add("stale");
+          label.textContent = t("connection.manual");
+          return;
+        }
+        if (app.connectionMode === "connecting" && !app.lastSuccessAt) {
+          label.textContent = t("connection.connecting");
+          return;
+        }
+        const stale = !app.lastSuccessAt || Date.now() - app.lastSuccessAt > refreshMs * 3.5;
+        if (stale) dot.classList.add("stale");
+        label.textContent = stale ? t("connection.waiting") : t("connection.live", { seconds: refreshMs / 1000 });
+      }
+
+      function relativeTime(date) {
+        if (!(date instanceof Date) || Number.isNaN(date.valueOf())) return t("fallback.unknown");
+        const seconds = Math.round((date.valueOf() - Date.now()) / 1000);
+        const formatter = new Intl.RelativeTimeFormat(app.language === "ko" ? "ko-KR" : "en-US", { numeric: "auto" });
+        if (Math.abs(seconds) < 60) return formatter.format(seconds, "second");
+        const minutes = Math.round(seconds / 60);
+        if (Math.abs(minutes) < 60) return formatter.format(minutes, "minute");
+        const hours = Math.round(minutes / 60);
+        if (Math.abs(hours) < 24) return formatter.format(hours, "hour");
+        return formatter.format(Math.round(hours / 24), "day");
+      }
+
+      function titleCase(value) {
+        return String(value).replace(/[_-]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+      }
+
+      function loadFile(input, kind) {
+        const file = input.files?.[0];
+        if (!file) return;
+        file.text().then((text) => {
+          const value = JSON.parse(text);
+          if (kind === "dag") app.dag = value;
+          else app.state = value;
+          app.manual = true;
+          if (app.dag && app.state) validateData(app.dag, app.state);
+          showError(app.dag && app.state ? "" : t("errors.loadedOne", { kind: t(kind === "dag" ? "errors.dagKind" : "errors.stateKind") }));
+          if (app.dag && app.state) render();
+        }).catch((error) => showError(t("errors.loadFile", { file: file.name, message: error.message })));
+        input.value = "";
+      }
+
+      document.querySelectorAll(".filter").forEach((button) => {
+        button.addEventListener("click", () => {
+          document.querySelectorAll(".filter").forEach((item) => item.classList.remove("active"));
+          button.classList.add("active");
+          app.filter = button.dataset.filter;
+          renderGraph();
+        });
+      });
+      $("search").addEventListener("input", (event) => { app.query = event.target.value.trim().toLowerCase(); renderGraph(); });
+      $("refresh").addEventListener("click", () => { app.manual = false; refresh(); });
+      $("language-toggle").addEventListener("click", () => applyLanguage(app.language === "en" ? "ko" : "en"));
+      $("load-dag").addEventListener("click", () => $("dag-file").click());
+      $("load-state").addEventListener("click", () => $("state-file").click());
+      $("dag-file").addEventListener("change", (event) => loadFile(event.target, "dag"));
+      $("state-file").addEventListener("change", (event) => loadFile(event.target, "state"));
+
+      app.timer = setInterval(() => {
+        updateConnection();
+        if ($("auto-refresh").checked && !app.manual) refresh();
+      }, refreshMs);
+      window.addEventListener("resize", () => { if (app.dag && app.state) renderGraph(); });
+      applyLanguage(initialLanguage, Boolean(normalizeLanguage(params.get("lang"))));
+      refresh();
+    })();
+  </script>
+</body>
+</html>

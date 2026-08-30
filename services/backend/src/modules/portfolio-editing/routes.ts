@@ -9,7 +9,7 @@ import {
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import type { PortfolioEditingService } from "./service.js";
+import { type PortfolioEditingApi } from "./index.js";
 
 const PortfolioBlockParams = z.strictObject({ id: z.uuid(), blockId: z.uuid() });
 const ProposalParams = z.strictObject({ id: z.uuid() });
@@ -17,7 +17,7 @@ const RevisionParams = z.strictObject({ id: z.uuid() });
 const SectionParams = z.strictObject({ id: z.uuid(), sectionId: z.uuid() });
 const RevertBody = z.strictObject({ confirmConflict: z.boolean().default(false) });
 
-export function registerPortfolioEditingRoutes(app: FastifyInstance, options: { service: PortfolioEditingService; authenticateRequest: preHandlerHookHandler }) {
+export function registerPortfolioEditingRoutes(app: FastifyInstance, options: { service: PortfolioEditingApi; authenticateRequest: preHandlerHookHandler }) {
   app.post(`${API_PREFIX}/portfolios/:id/blocks/:blockId/edit-preview`, { preHandler: options.authenticateRequest }, async (request, reply) => {
     const user = requireAuth(request).user;
     const params = PortfolioBlockParams.safeParse(request.params);

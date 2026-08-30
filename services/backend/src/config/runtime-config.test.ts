@@ -7,11 +7,16 @@ describe("loadRuntimeConfig", () => {
     const config = loadRuntimeConfig({});
 
     expect(config).toMatchObject({
+      mongodbDatabase: "expresso",
       outboxPollIntervalMs: 1_000,
       outboxBatchSize: 25,
       outboxMaxAttempts: 5,
-      queuePrefix: "expresso",
+      queuePrefix: "expresso-mongo-v1",
     });
+  });
+
+  it("rejects non-MongoDB database schemes", () => {
+    expect(() => loadRuntimeConfig({ MONGODB_URL: "mysql://localhost/expresso" })).toThrow(/mongodb/i);
   });
 
   it("rejects unsafe queue prefixes and outbox limits", () => {

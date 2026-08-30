@@ -12,5 +12,10 @@ const loadOnly = process.env.EXPRESSO_LOAD_TEST === "1";
 export default defineConfig({
   test: loadOnly
     ? { include: ["test/load/**/*.test.ts"] }
-    : { exclude: ["**/node_modules/**", "**/dist/**", "test/load/**"] },
+    : {
+        exclude: ["**/node_modules/**", "**/dist/**", "test/load/**"],
+        // 실제 schema fixture는 validator와 index를 74개 collection에 적용합니다.
+        // 로컬 CPU 수만큼 동시에 만들면 10초 hook 기본값을 서로 소진합니다.
+        ...(process.env.TEST_MONGODB_URL ? { maxWorkers: 4, hookTimeout: 60_000 } : {}),
+      },
 });

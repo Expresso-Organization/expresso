@@ -3,14 +3,18 @@ import {
   type PlanCode,
 } from "@expresso/contracts";
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
-import type { SqlTag } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { IdentityService } from "../identity/service.js";
-import { EntitlementService } from "./service.js";
+import { IdentityService } from "../identity/legacy-mysql-service.js";
+import { EntitlementService } from "./legacy-mysql-service.js";
+import { MongoEntitlementService, type EntitlementApi } from "./index.js";
+import { MongoIdentityService, type IdentityApi } from "../identity/index.js";
+import { mongoCollections } from "@expresso/database";
+import { createMongoFixture } from "../../../test/support/mongodb.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
@@ -38,17 +42,40 @@ interface IdRow {
   id: string;
 }
 
-describeWithDatabase("entitlement integration", () => {
-  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
-  const identityService = new IdentityService(sql);
-  const entitlementService = new EntitlementService(sql);
-  const app = buildApi({ config, identityService, entitlementService });
+for (const engine of ["mysql", "mongodb"] as const) {
+describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_URL ?? process.env.TEST_MONGODB_ADMIN_URL))(`entitlement integration (${engine})`, () => {
+  let sql: SqlTag;
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>> | undefined;
+  let identityService: IdentityApi;
+  let entitlementService: EntitlementApi;
+  let app: ReturnType<typeof buildApi>;
   const userIds: Partial<Record<PlanCode, string>> = {};
   let planIds: Record<PlanCode, string>;
   let freeQuota: number;
   let preservedRecordId: string;
 
   beforeAll(async () => {
+    if (engine === "mongodb") {
+      fixture = await createMongoFixture("entitlements");
+      identityService = new MongoIdentityService(fixture.resource);
+      entitlementService = new MongoEntitlementService(fixture.resource);
+      app = buildApi({ config, identityService, entitlementService });
+      const collections = mongoCollections(fixture.resource.db);
+      const plans = await collections.plans.find().toArray();
+      planIds = Object.fromEntries(plans.map(plan => [plan.code, plan._id])) as Record<PlanCode, string>;
+      freeQuota = plans.find(plan => plan.code === "free")!.generationQuota;
+      for (const planCode of ["free", "pro", "team"] as const) {
+        const userId = randomUUID(); userIds[planCode] = userId;
+        await collections.users.insertOne({ _id: userId, email: `${userId}@example.com`, displayName: planCode, planId: planIds[planCode], createdAt: new Date() });
+      }
+      preservedRecordId = randomUUID();
+      await collections.careerRecords.insertOne({ _id: preservedRecordId, userId: userIds.team!, categoryId: "475106fc-bf88-4a73-9c27-66c648733936", title: "Preserved after downgrade", origin: "manual", status: "draft", properties: {}, bodyMd: "", version: 1, updatedAt: new Date() });
+      await app.ready(); return;
+    }
+    sql = createMysqlResource(databaseUrl!).sql;
+    identityService = new IdentityService(sql);
+    entitlementService = new EntitlementService(sql);
+    app = buildApi({ config, identityService, entitlementService });
     const plans = await sql<PlanRow[]>`
       select id, code, generation_quota
       from plan
@@ -99,12 +126,13 @@ describeWithDatabase("entitlement integration", () => {
     if (!recordId) throw new Error("test record was not persisted");
     preservedRecordId = recordId;
     await app.ready();
-  });
+  }, 60_000);
 
   afterAll(async () => {
+    await app?.close();
+    if (fixture) { await fixture.dispose(); return; }
     const ids = Object.values(userIds);
     if (ids.length > 0) await sql`delete from \`user\` where id in ${sql(ids)}`;
-    await app.close();
     await sql.end({ timeout: 5 });
   });
 
@@ -131,7 +159,8 @@ describeWithDatabase("entitlement integration", () => {
   it("resets exhausted generation quota at the KST month boundary", async () => {
     const freeUserId = userIds.free;
     if (!freeUserId) throw new Error("free user is missing");
-    await sql`
+    if (fixture) await mongoCollections(fixture.resource.db).usageCounters.insertOne({ _id: randomUUID(), userId: freeUserId, periodStart: "2026-08-01", used: freeQuota, resetsAt: new Date("2026-08-31T15:00:00Z") });
+    else await sql`
       insert into usage_counter (user_id, period_start, used, resets_at)
       values (${freeUserId}, '2026-08-01', ${freeQuota}, '2026-08-31 15:00:00')
       as new on duplicate key update used = new.used, resets_at = new.resets_at
@@ -167,7 +196,8 @@ describeWithDatabase("entitlement integration", () => {
       entitlementService.check(teamUserId, "analysis.advanced"),
     ).resolves.toMatchObject({ allowed: true, planCode: "team" });
 
-    await sql`
+    if (fixture) await mongoCollections(fixture.resource.db).users.updateOne({ _id: teamUserId }, { $set: { planId: planIds.free } });
+    else await sql`
       update \`user\` set plan_id = ${planIds.free} where id = ${teamUserId}
     `;
 
@@ -178,10 +208,11 @@ describeWithDatabase("entitlement integration", () => {
       planCode: "free",
       reason: "PLAN_REQUIRED",
     });
-    const records = await sql<IdRow[]>`
+    const records = fixture ? (await mongoCollections(fixture.resource.db).careerRecords.find({ _id: preservedRecordId, userId: teamUserId }).toArray()).map(row => ({ id: row._id })) : await sql<IdRow[]>`
       select id from record
       where id = ${preservedRecordId} and user_id = ${teamUserId}
     `;
     expect(records).toEqual([{ id: preservedRecordId }]);
   });
 });
+}
