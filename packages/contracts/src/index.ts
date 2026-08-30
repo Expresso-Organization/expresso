@@ -30,3 +30,4 @@ export * from "./analytics.js";
 export * from "./engagement.js";
 export * from "./account-lifecycle.js";
 export * from "./openapi.js";
+export * from "./design-system.js";
