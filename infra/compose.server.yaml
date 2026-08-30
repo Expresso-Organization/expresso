@@ -65,10 +65,10 @@ services:
       timeout: 3s
       retries: 20
     volumes:
-      - expresso-server-redis:/data
+      - expresso-redis:/data
     restart: unless-stopped
 
 volumes:
   expresso-server-mongodb-data:
   expresso-server-mongodb-keyfile:
-  expresso-server-redis:
+  expresso-redis:
