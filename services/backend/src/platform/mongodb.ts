@@ -25,6 +25,9 @@ export function createMongoResource(
     serverSelectionTimeoutMS: 3_000,
     // 기본값 2는 배포 직후 동시 요청에서 pool 생성을 직렬화해 p95를 밀어 올린다.
     maxConnecting: 16,
+    // readiness 이후에도 작은 준비 pool을 유지해 첫 사용자 burst가 소켓 생성 시간을
+    // 함께 부담하지 않게 한다. API와 Worker를 합쳐도 16개라 단일 서버 한도 안이다.
+    minPoolSize: 8,
   });
   const db = client.db(options?.databaseName);
 

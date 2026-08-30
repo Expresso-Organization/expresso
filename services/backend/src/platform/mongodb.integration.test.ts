@@ -60,6 +60,7 @@ describe("MongoDB resource construction", () => {
     const resource = createMongoResource("mongodb://127.0.0.1:1/unused");
     try {
       expect(resource.client.options.maxConnecting).toBe(16);
+      expect(resource.client.options.minPoolSize).toBe(8);
     } finally {
       await resource.close();
     }
