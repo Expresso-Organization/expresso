@@ -241,7 +241,9 @@ export const PAGE_CSS_FORBIDDEN = [
   { pattern: /@import\b/i, reason: "@import — 바깥 스타일시트를 부른다" },
   { pattern: /expression\s*\(/i, reason: "expression() — 옛 IE에서 코드가 된다" },
   { pattern: /-moz-binding/i, reason: "-moz-binding — 바깥 문서를 실행한다" },
-  { pattern: /\bbehavior\s*:/i, reason: "behavior — 바깥 문서를 실행한다" },
+  // 옛 IE의 `behavior` 선언만 막는다. `scroll-behavior`처럼 이름에 behavior가
+  // 들어가는 표준 속성까지 거절하면 정상 지면이 생성 단계에서 실패한다.
+  { pattern: /(?:^|[;{])\s*behavior\s*:/i, reason: "behavior — 바깥 문서를 실행한다" },
   { pattern: /javascript\s*:/i, reason: "javascript: 주소" },
   { pattern: /<\/?\s*script/i, reason: "style 안에서 태그를 닫고 나가려는 시도" },
 ] as const;
