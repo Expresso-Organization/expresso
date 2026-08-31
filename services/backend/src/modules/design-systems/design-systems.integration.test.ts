@@ -90,6 +90,18 @@ describe("design systems catalog", () => {
       }
     }
 
+    // 선언한 한글 서체를 문서가 실제로 불러오는지 본다. 이름만 적고 링크에
+    // 빠지면 아무 경고 없이 기기의 아무 서체로 그려진다 — 고치기 전 상태다.
+    for (const { item, revision } of entries) {
+      const link = revision.designHtml.match(/href="(https:\/\/fonts\.googleapis\.com[^"]+)"/)?.[1] ?? "";
+      for (const role of ["display", "body"] as const) {
+        const korean = revision.spec.typography[role].fallback.split(",")[0]!.trim();
+        expect(`${item.code} ${role} ${korean}`).toBe(
+          `${item.code} ${role} ${link.includes(korean.replaceAll(" ", "+")) ? korean : "불러오지 않음"}`,
+        );
+      }
+    }
+
     // 서른여덟 벌이 세 벌의 서체를 돌려 쓰면 색만 다른 문서가 된다.
     const typefaces = new Set(entries.map(({ revision }) =>
       `${revision.spec.typography.display.family}/${revision.spec.typography.body.family}`));

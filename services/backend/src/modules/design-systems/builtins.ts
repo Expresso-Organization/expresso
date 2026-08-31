@@ -26,6 +26,8 @@ interface BuiltinConfig {
   displayFont: string;
   bodyFont: string;
   bodyFallback: string;
+  /** 라틴 가족에 없는 한글을 받는 서체. Google Fonts 한글 부분집합 가족이다. */
+  koreanFont: string;
   density: "compact" | "comfortable" | "spacious";
   structure: string;
   sectionGap: number;
@@ -77,12 +79,13 @@ function createSpec(config: BuiltinConfig): DesignSystemSpecV2 {
     typography: {
       display: {
         family: config.displayFont,
-        fallback: config.code === "editorial" ? "serif" : "system-ui",
+        // 라틴 가족 뒤에 한글 서체를 둔다. 그래야 제목의 한글도 이 디자인이 그린다.
+        fallback: config.code === "editorial" ? "Nanum Myeongjo, serif" : `${config.koreanFont}, system-ui`,
         role: "Hero와 섹션 제목",
       },
       body: {
         family: config.bodyFont,
-        fallback: config.bodyFallback,
+        fallback: `${config.koreanFont}, ${config.bodyFallback}`,
         role: "사례 설명과 긴 본문",
       },
       mono: {
@@ -232,6 +235,7 @@ export const builtinDesignSystems = {
       accent: "#2563eb", action: "#2563eb", actionText: "#ffffff",
     },
     displayFont: "Inter", bodyFont: "system-ui", bodyFallback: "sans-serif",
+    koreanFont: "Noto Sans KR",
     density: "comfortable", structure: "single-column", sectionGap: 72,
     contentWidth: 1080, cardRadius: 12, shadowStyle: "soft",
     hierarchy: "역할, 대표 성과, 상세 근거 순서",
@@ -252,6 +256,7 @@ export const builtinDesignSystems = {
       accent: "#22d3ee", action: "#22d3ee", actionText: "#07111f",
     },
     displayFont: "Inter", bodyFont: "system-ui", bodyFallback: "sans-serif",
+    koreanFont: "IBM Plex Sans KR",
     density: "compact", structure: "evidence-grid", sectionGap: 56,
     contentWidth: 1180, cardRadius: 4, shadowStyle: "hairline",
     hierarchy: "대표 수치, 비교 기준, 기술 근거 순서",
@@ -272,6 +277,7 @@ export const builtinDesignSystems = {
       accent: "#9a5b3a", action: "#9a5b3a", actionText: "#ffffff",
     },
     displayFont: "Georgia", bodyFont: "Georgia", bodyFallback: "serif",
+    koreanFont: "Nanum Myeongjo",
     density: "spacious", structure: "wide-margin", sectionGap: 104,
     contentWidth: 980, cardRadius: 8, shadowStyle: "none",
     hierarchy: "프로젝트 제목, 긴 사례, 인용과 아티팩트 순서",

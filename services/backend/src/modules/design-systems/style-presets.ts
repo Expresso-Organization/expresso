@@ -135,15 +135,76 @@ const TYPEFACES: Record<string, { display: string; body: string }> = {
   retro: { display: "Silkscreen", body: "Space Grotesk" },
 };
 
+/**
+ * 스타일별 한글 서체.
+ *
+ * 위의 라틴 가족에는 한글 글리프가 없다. 그대로 두면 제목의 라틴 낱말만 그
+ * 스타일이고 한글은 사용자 기기의 아무 서체로 나온다 — 문서의 절반이 스타일
+ * 바깥에 있는 셈이다. 그래서 대체 사슬에 한글 서체를 끼운다. 브라우저는 라틴
+ * 가족에 없는 글자만 여기로 넘긴다.
+ *
+ * 제목과 본문을 나눈다. Black Han Sans · Gasoek One · Jua · Gaegu 처럼 제목용으로
+ * 만든 얼굴로 본문까지 짜면 작은 라벨이 읽히지 않는다.
+ *
+ * 전부 Google Fonts 의 한글 부분집합 가족 서른여덟 개에서 골랐다(2026-09-01
+ * 확인). Google Fonts 수록 조건이 열린 라이선스라 상업적 사용과 임베딩에
+ * 제한이 없다.
+ */
+const KOREAN: Record<string, { display: string; body: string }> = {
+  monochrome: { display: "Nanum Myeongjo", body: "Nanum Myeongjo" },
+  bauhaus: { display: "Black Han Sans", body: "Noto Sans KR" },
+  "modern-dark": { display: "Noto Sans KR", body: "Noto Sans KR" },
+  newsprint: { display: "Song Myung", body: "Nanum Myeongjo" },
+  saas: { display: "Noto Sans KR", body: "Noto Sans KR" },
+  luxury: { display: "Gowun Batang", body: "Gowun Batang" },
+  terminal: { display: "Nanum Gothic Coding", body: "Nanum Gothic Coding" },
+  "swiss-minimalist": { display: "Gothic A1", body: "Gothic A1" },
+  kinetic: { display: "Black Han Sans", body: "Gothic A1" },
+  "flat-design": { display: "Gothic A1", body: "Gothic A1" },
+  "art-deco": { display: "Diphylleia", body: "Nanum Myeongjo" },
+  "material-design": { display: "Noto Sans KR", body: "Noto Sans KR" },
+  "neo-brutalism": { display: "Black Han Sans", body: "Gothic A1" },
+  "bold-typography": { display: "Gasoek One", body: "Noto Sans KR" },
+  academia: { display: "Nanum Myeongjo", body: "Nanum Myeongjo" },
+  cyberpunk: { display: "Orbit", body: "Gothic A1" },
+  web3: { display: "Gothic A1", body: "Gothic A1" },
+  "playful-geometric": { display: "Jua", body: "Gothic A1" },
+  "minimal-dark": { display: "Gowun Dodum", body: "Gowun Dodum" },
+  claymorphism: { display: "Jua", body: "Gowun Dodum" },
+  professional: { display: "Noto Serif KR", body: "Noto Serif KR" },
+  botanical: { display: "Gowun Batang", body: "Gowun Batang" },
+  vaporwave: { display: "Orbit", body: "Gothic A1" },
+  enterprise: { display: "IBM Plex Sans KR", body: "IBM Plex Sans KR" },
+  sketch: { display: "Gaegu", body: "Gowun Dodum" },
+  industrial: { display: "Do Hyeon", body: "Noto Sans KR" },
+  neumorphism: { display: "Gowun Dodum", body: "Gowun Dodum" },
+  organic: { display: "Gowun Batang", body: "Gowun Batang" },
+  maximalism: { display: "Hahmlet", body: "Hahmlet" },
+  retro: { display: "Do Hyeon", body: "Noto Sans KR" },
+};
+
+/** 갈래별 한글 기본값. 표에 없는 스타일이 받는다. */
+const KOREAN_FALLBACK = {
+  sans: { display: "Noto Sans KR", body: "Noto Sans KR" },
+  serif: { display: "Noto Serif KR", body: "Noto Serif KR" },
+  mono: { display: "Nanum Gothic Coding", body: "Nanum Gothic Coding" },
+} as const;
+
 /** 이 스타일이 쓸 서체. 표에 없으면 갈래의 기본값이다. */
 function typefaceOf(preset: PortfolioStylePreset) {
   const base = FONTS[preset.style.font];
-  const chosen = TYPEFACES[preset.code.replace(/^designprompts-/, "")];
+  const slug = preset.code.replace(/^designprompts-/, "");
+  const chosen = TYPEFACES[slug];
+  const korean = KOREAN[slug] ?? KOREAN_FALLBACK[preset.style.font];
   return {
     display: chosen?.display ?? base.display,
     body: chosen?.body ?? base.body,
     mono: preset.style.font === "mono" ? "JetBrains Mono" : "ui-monospace",
-    fallback: base.fallback,
+    // 한글은 라틴 가족 뒤에 온다. 앞에 두면 라틴 글자까지 한글 서체가 그린다.
+    // 제목과 본문을 나눈다 — Black Han Sans 로 본문까지 짜면 작은 라벨이 뭉갠다.
+    fallback: `${korean.display}, ${base.fallback}`,
+    bodyFallback: `${korean.body}, ${base.fallback}`,
+    monoFallback: preset.style.font === "mono" ? "Nanum Gothic Coding, monospace" : "monospace",
     character: base.character,
   };
 }
@@ -221,8 +282,8 @@ function createSpec(preset: PortfolioStylePreset): DesignSystemSpecV2 {
     },
     typography: {
       display: { family: type.display, fallback: type.fallback, role: "Hero와 섹션 제목" },
-      body: { family: type.body, fallback: type.fallback, role: "사례 설명과 긴 본문" },
-      mono: { family: type.mono, fallback: "monospace", role: "수치, 기간, 기술 메타데이터" },
+      body: { family: type.body, fallback: type.bodyFallback, role: "사례 설명과 긴 본문" },
+      mono: { family: type.mono, fallback: type.monoFallback, role: "수치, 기간, 기술 메타데이터" },
       scale: [
         { name: "body", size: size.body, lineHeight: density === "compact" ? "1.55" : "1.65" },
         { name: "subheading", size: "1.25rem", lineHeight: "1.35" },

@@ -512,10 +512,35 @@ const WEB_FONTS: Record<string, string> = {
   "Source Serif 4": "Source+Serif+4:wght@400;500;600;700",
   "Space Grotesk": "Space+Grotesk:wght@400;500;600;700",
   "Work Sans": "Work+Sans:wght@400;500;600;700",
+
+  // 한글. 라틴 가족에 없는 글자를 받는다. Google Fonts 는 한글을 `unicode-range`
+  // 로 백여 조각으로 갈라 내주므로, 문서에 실제로 쓰인 음절 조각만 내려온다.
+  "Black Han Sans": "Black+Han+Sans",
+  Diphylleia: "Diphylleia",
+  "Do Hyeon": "Do+Hyeon",
+  Gaegu: "Gaegu:wght@400;700",
+  "Gasoek One": "Gasoek+One",
+  "Gothic A1": "Gothic+A1:wght@400;500;600;700",
+  "Gowun Batang": "Gowun+Batang:wght@400;700",
+  "Gowun Dodum": "Gowun+Dodum",
+  Hahmlet: "Hahmlet:wght@400;500;600;700",
+  "IBM Plex Sans KR": "IBM+Plex+Sans+KR:wght@400;500;600;700",
+  Jua: "Jua",
+  "Nanum Gothic Coding": "Nanum+Gothic+Coding:wght@400;700",
+  "Nanum Myeongjo": "Nanum+Myeongjo:wght@400;700",
+  "Noto Sans KR": "Noto+Sans+KR:wght@400;500;600;700",
+  "Noto Serif KR": "Noto+Serif+KR:wght@400;500;600;700",
+  Orbit: "Orbit",
+  "Song Myung": "Song+Myung",
 };
 
 function fontLink(spec: DesignSystemSpecV2): string {
-  const families = [spec.typography.display.family, spec.typography.body.family, spec.typography.mono.family]
+  // 한글 서체는 대체 사슬에 있다 — 라틴 가족 뒤에 와야 라틴 글자를 뺏지 않는다.
+  // 그래서 이름과 대체 사슬을 함께 훑는다.
+  const declared = (["display", "body", "mono"] as const)
+    .flatMap((role) => [spec.typography[role].family, ...spec.typography[role].fallback.split(",")])
+    .map((name) => name.trim());
+  const families = declared
     .map((family) => WEB_FONTS[family])
     .filter((value, index, all): value is string => Boolean(value) && all.indexOf(value) === index);
   if (families.length === 0) return "";

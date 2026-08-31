@@ -40,6 +40,8 @@ interface ReferoStyleDefinition {
     display: string;
     body: string;
     mono: string;
+    /** 라틴 가족에 없는 한글을 받는 서체. Google Fonts 한글 부분집합 가족이다. */
+    korean: string;
     scale: Array<{ name: string; size: string; lineHeight: string }>;
     weights: number[];
     lineHeights: number[];
@@ -117,12 +119,13 @@ function createSpec(definition: ReferoStyleDefinition): DesignSystemSpecV2 {
     typography: {
       display: {
         family: definition.typography.display,
-        fallback: "system-ui",
+        // 라틴 가족 뒤에 한글 서체를 둔다. 그래야 제목의 한글도 이 디자인이 그린다.
+        fallback: `${definition.typography.korean}, system-ui`,
         role: "Hero와 섹션 제목",
       },
       body: {
         family: definition.typography.body,
-        fallback: "sans-serif",
+        fallback: `${definition.typography.korean}, sans-serif`,
         role: "사례 설명과 긴 본문",
       },
       mono: {
@@ -233,6 +236,7 @@ export const referoDesignSystems = {
     },
     typography: {
       display: "Inter", body: "Inter", mono: "ui-monospace",
+      korean: "Noto Sans KR",
       scale: [
         { name: "body", size: "1.0625rem", lineHeight: "1.47" },
         { name: "subheading", size: "2rem", lineHeight: "1.13" },
@@ -279,6 +283,7 @@ export const referoDesignSystems = {
     },
     typography: {
       display: "Inter", body: "Inter", mono: "ui-monospace",
+      korean: "Noto Sans KR",
       scale: [
         { name: "body", size: "1rem", lineHeight: "1.5" },
         { name: "subheading", size: "1.3125rem", lineHeight: "1.35" },
@@ -325,6 +330,7 @@ export const referoDesignSystems = {
     },
     typography: {
       display: "Inter", body: "Inter", mono: "ui-monospace",
+      korean: "Gothic A1",
       scale: [
         { name: "body", size: "0.9375rem", lineHeight: "1.5" },
         { name: "subheading", size: "1.25rem", lineHeight: "1.3" },
@@ -371,6 +377,7 @@ export const referoDesignSystems = {
     },
     typography: {
       display: "Inter", body: "Inter", mono: "ui-monospace",
+      korean: "Gowun Batang",
       scale: [
         { name: "body", size: "1rem", lineHeight: "1.5" },
         { name: "body-lg", size: "1.25rem", lineHeight: "1.35" },
@@ -417,6 +424,7 @@ export const referoDesignSystems = {
     },
     typography: {
       display: "Inter", body: "Inter", mono: "ui-monospace",
+      korean: "Noto Sans KR",
       scale: [
         { name: "body", size: "1rem", lineHeight: "1.55" },
         { name: "subheading", size: "1.5rem", lineHeight: "1.3" },
