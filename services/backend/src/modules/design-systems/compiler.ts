@@ -371,7 +371,7 @@ function renderTypographyRows(spec: DesignSystemSpecV2): string {
 
 function renderComponentPreview(name: string): string {
   if (name === "hero") return `<div class="demo demo-hero"><small>PORTFOLIO / 2026</small><strong>성과를 만드는<br>제품을 설계합니다.</strong><span class="act">작업 보기</span></div>`;
-  if (name === "metric") return `<div class="demo demo-metric"><strong>42%</strong><span>복구 시간 단축</span><small>Q2 대비 · 12개월</small></div>`;
+  if (name === "metric") return `<div class="demo demo-metric"><strong>${WORK[3].metric}</strong><span>${WORK[3].label}</span><small>${WORK[3].period}</small></div>`;
   if (name === "contact") return `<div class="demo demo-contact"><span class="act">프로젝트 열기 ↗</span><span class="act-quiet">hello@example.com</span></div>`;
   return `<div class="demo demo-case"><small>FEATURED CASE · 01</small><strong>복잡한 운영 흐름을<br>한 화면으로</strong><span>Product design · Engineering</span></div>`;
 }
@@ -489,13 +489,59 @@ const DEMO = {
   name: "박민재",
   org: "Expresso",
   period: "2023 — 2026",
-  project: "결제 시스템의 복구 시간을 줄인 과정",
-  problem: "장애 대응 절차가 네 곳에 흩어져 있어 담당자마다 복구 경로가 달랐다",
-  action: "복구 흐름을 한 화면으로 합치고 모든 실행에 로그를 남겼다",
-  result: "복구 시간 42% 단축 · 동일 장애 재발 0건",
-  method: "2025-09 ~ 2026-08 · 운영 로그 1,284건 기준",
   stack: ["TypeScript", "Node 24", "MySQL", "Redis", "BullMQ", "GitHub Actions"],
 } as const;
+
+/**
+ * 고정 샘플 작업 넷. 견본마다 다른 작업을 써서 같은 수치와 같은 이야기가
+ * 스물다섯 칸에 반복되지 않게 한다.
+ */
+const WORK = [
+  {
+    title: "결제 복구 흐름 통합",
+    metric: "42%",
+    label: "복구 시간 단축",
+    period: "2026 · 5개월",
+    stack: "Node · Redis",
+    problem: "장애 대응 절차가 네 곳에 흩어져 담당자마다 복구 경로가 달랐다",
+    action: "복구 흐름을 한 화면으로 합치고 모든 실행에 로그를 남겼다",
+    result: "복구 시간 18분에서 10분 · 동일 장애 재발 0건",
+    method: "2025-09 ~ 2026-08 · 운영 로그 1,284건 기준",
+  },
+  {
+    title: "배포 파이프라인 자동화",
+    metric: "3.1x",
+    label: "배포 빈도",
+    period: "2025 · 3개월",
+    stack: "GitHub Actions",
+    problem: "배포마다 손으로 확인할 것이 많아 주 2회를 넘기지 못했다",
+    action: "계약 빌드를 앞세우고 검증 단계를 순서대로 묶었다",
+    result: "주 2회에서 주 6회 · 실패 배포 되돌리기 4분",
+    method: "2025-04 ~ 2025-12 · 배포 기록 612건 기준",
+  },
+  {
+    title: "알림 규칙 정리",
+    metric: "68%",
+    label: "불필요 알림 감소",
+    period: "2025 · 6주",
+    stack: "BullMQ",
+    problem: "같은 원인에서 나온 알림이 채널 세 곳에 중복으로 쌓였다",
+    action: "원인별로 묶고 반복 알림에 유예 시간을 뒀다",
+    result: "월 1,240건에서 400건 · 대응 시작까지 걸리는 시간 절반",
+    method: "2025-06 ~ 2025-11 · 알림 로그 기준",
+  },
+  {
+    title: "검색 색인 재설계",
+    metric: "90ms",
+    label: "검색 응답",
+    period: "2024 · 4개월",
+    stack: "MySQL",
+    problem: "목록을 여는 동안 화면이 비어 있는 시간이 320ms였다",
+    action: "색인을 다시 설계하고 자주 쓰는 조건을 미리 계산했다",
+    result: "320ms에서 90ms · 색인 크기 절반",
+    method: "2024-09 ~ 2025-01 · 검색 요청 표본 기준",
+  },
+] as const;
 
 function variant(name: string, body: string, kind?: DesignSampleEntry["kind"], wide = false): string {
   const anchor = kind ? ` data-sample-kind="${kind}"` : "";
@@ -518,7 +564,7 @@ function renderHeroVariants(model: DesignDocumentModel): string {
   return [
     variant("큰 문장", `${eyebrow(DEMO.role)}<strong class="v-display">${escapeHtml(hero.value)}</strong><p class="v-lead">문제의 맥락과 선택한 접근, 검증한 결과를 순서대로 남깁니다.</p><div class="v-actions"><span class="act">대표 작업 보기</span><span class="act-quiet">소개 다운로드 ↗</span></div>`, "hero", true),
     variant("좌우 분할", `<div class="v-two"><div>${eyebrow(DEMO.role)}<strong>신뢰를 만드는<br>제품과 시스템</strong></div><div><p class="v-lead">운영에서 반복되던 문제를 구조로 바꾸는 일을 합니다.</p>${metaRow([["기간", DEMO.period], ["소속", DEMO.org], ["분야", "결제 · 플랫폼"]])}</div></div>`),
-    variant("대표 수치 중심", `${eyebrow(DEMO.role)}<strong class="v-number">42%</strong><p class="v-lead">복구 시간 단축 · 지난 12개월</p>${metaRow([["재발", "0건"], ["배포 빈도", "3.1x"]])}`),
+    variant("대표 수치 중심", `${eyebrow(DEMO.role)}<strong class="v-number">${WORK[1].metric}</strong><p class="v-lead">${WORK[1].label} · ${WORK[1].period}</p>${metaRow([["복구 시간", WORK[0].metric], ["검색 응답", WORK[3].metric]])}`),
     variant("이미지 중심", `<div class="v-media-hero">${mediaPlate(spec, `대표 이미지 · ${spec.imagery.aspectRatio}`)}<div>${eyebrow(DEMO.role)}<strong>신뢰를 만드는 제품과 시스템</strong></div></div>`),
   ].join("");
 }
@@ -529,10 +575,10 @@ function renderProjectVariants(model: DesignDocumentModel): string {
   const noImage = sampleOf(model, "no-image");
   const longBody = sampleOf(model, "long-body");
   return [
-    variant("문제-행동-결과", `${eyebrow("Case 01")}<strong>${escapeHtml(caseStudy.value)}</strong><dl class="v-par"><dt>문제</dt><dd>${DEMO.problem}</dd><dt>행동</dt><dd>${DEMO.action}</dd><dt>결과</dt><dd><b>${DEMO.result}</b></dd></dl>`, "no-image"),
+    variant("문제-행동-결과", `${eyebrow("Case · " + WORK[3].period)}<strong>${WORK[3].title}</strong><dl class="v-par"><dt>문제</dt><dd>${WORK[3].problem}</dd><dt>행동</dt><dd>${WORK[3].action}</dd><dt>결과</dt><dd><b>${WORK[3].result}</b></dd></dl>`, "no-image"),
     variant("긴 사례 연구", `${eyebrow("Case 02 · Featured")}<strong>${escapeHtml(caseStudy.value)}</strong><p class="v-body">${escapeHtml(longBody.value)}</p><p class="v-body">의사결정의 기준과 검증 방식까지 남겨 다음 작업에서 다시 사용할 수 있게 했습니다.</p>${metaRow([["역할", "설계 · 구현"], ["기간", "5개월"], ["스택", "Node · Redis"]])}<span class="act-quiet">사례 자세히 보기 ↗</span>`, "case-study", true),
-    variant("수치 중심", `<div class="v-lead-metric"><strong class="v-number">42%</strong><div>${eyebrow("Case 01")}<strong>${escapeHtml(caseStudy.value)}</strong><p class="v-lead">복구 시간 단축</p></div></div>${metaRow([["재발", "0건"], ["대응 인원", "4 → 1명"], ["기간", "5개월"]])}`),
-    variant("여러 프로젝트 비교", `${eyebrow("Selected work")}<table class="v-table v-table-wide"><thead><tr><th>프로젝트</th><th>성과</th><th>스택</th></tr></thead><tbody><tr><td>결제 복구 흐름</td><td><b>42%</b></td><td>Node · Redis</td></tr><tr><td>배포 자동화</td><td><b>3.1x</b></td><td>Actions</td></tr><tr><td>알림 정리</td><td><b>−68%</b></td><td>BullMQ</td></tr></tbody></table>`, undefined, true),
+    variant("수치 중심", `<div class="v-lead-metric"><strong class="v-number">${WORK[2].metric}</strong><div>${eyebrow("Case · " + WORK[2].period)}<strong>${WORK[2].title}</strong><p class="v-lead">${WORK[2].label}</p></div></div>${metaRow([["대응 시작", "절반"], ["스택", WORK[2].stack]])}`),
+    variant("여러 프로젝트 비교", `${eyebrow("Selected work")}<table class="v-table v-table-wide"><thead><tr><th>프로젝트</th><th>성과</th><th>스택</th></tr></thead><tbody>${WORK.map((work) => `<tr><td>${work.title}</td><td><b>${work.metric}</b></td><td>${work.stack}</td></tr>`).join("")}</tbody></table>`, undefined, true),
   ].join("");
 }
 
@@ -540,19 +586,19 @@ function renderMetricVariants(model: DesignDocumentModel): string {
   const metric = sampleOf(model, "metric");
   const beforeAfter = sampleOf(model, "before-after");
   return [
-    variant("큰 숫자 하나", `${eyebrow("Impact")}<strong class="v-number v-number-lg">42%</strong><p class="v-lead">${escapeHtml(metric.value)}</p><small class="v-note">${DEMO.method}</small>`, "metric"),
-    variant("전후 비교", `${eyebrow("Before / After")}<div class="v-before"><div><small>이전</small><strong>18분</strong></div><i>→</i><div><small>이후</small><strong class="v-accent">10분</strong></div></div><p class="v-lead">${escapeHtml(beforeAfter.value)}</p><small class="v-note">${DEMO.method}</small>`, "before-after"),
-    variant("수치 묶음", `${eyebrow("Metrics")}<div class="v-group"><article><strong>42%</strong><small>복구 시간 단축</small></article><article><strong>0건</strong><small>동일 장애 재발</small></article><article><strong>3.1x</strong><small>배포 빈도</small></article><article><strong>1,284</strong><small>분석한 운영 로그</small></article></div>`),
-    variant("막대 비교", `${eyebrow("Recovery time")}<div class="v-bars"><article><small>2024</small><i style="width:100%"></i><b>18분</b></article><article><small>2025</small><i style="width:78%"></i><b>14분</b></article><article><small>2026</small><i class="v-bar-accent" style="width:56%"></i><b>10분</b></article></div><small class="v-note">${DEMO.method}</small>`),
-    variant("도넛 또는 게이지", `${eyebrow("Automation")}<div class="v-gauge"><span class="gauge"><i></i></span><div><strong>75%</strong><small>사람 개입 없이 끝난 복구</small></div></div><small class="v-note">${DEMO.method}</small>`),
+    variant("큰 숫자 하나", `${eyebrow("Impact")}<strong class="v-number v-number-lg">42%</strong><p class="v-lead">${escapeHtml(metric.value)}</p><small class="v-note">${WORK[0].method}</small>`, "metric"),
+    variant("전후 비교", `${eyebrow("Before / After")}<div class="v-before"><div><small>이전</small><strong>320ms</strong></div><i>→</i><div><small>이후</small><strong class="v-accent">90ms</strong></div></div><p class="v-lead">${escapeHtml(beforeAfter.value)}</p><small class="v-note">${WORK[3].method}</small>`, "before-after"),
+    variant("수치 묶음", `${eyebrow("Metrics")}<div class="v-group">${WORK.map((work) => `<article><strong>${work.metric}</strong><small>${work.label}</small></article>`).join("")}</div>`),
+    variant("막대 비교", `${eyebrow("Search response")}<div class="v-bars"><article><small>2024</small><i style="width:100%"></i><b>320ms</b></article><article><small>2025</small><i style="width:56%"></i><b>180ms</b></article><article><small>2026</small><i class="v-bar-accent" style="width:28%"></i><b>90ms</b></article></div><small class="v-note">${WORK[3].method}</small>`),
+    variant("도넛 또는 게이지", `${eyebrow("Automation")}<div class="v-gauge"><span class="gauge"><i></i></span><div><strong>75%</strong><small>사람 개입 없이 끝난 복구</small></div></div><small class="v-note">${WORK[0].method}</small>`),
   ].join("");
 }
 
 function renderCareerVariants(): string {
   return [
-    variant("세로 타임라인", `${eyebrow("Career")}<ol class="v-timeline"><li><b></b><div><small>2026 · ${DEMO.org}</small><span>플랫폼 리드</span><em>결제 신뢰성 전반</em></div></li><li><b></b><div><small>2024 · ${DEMO.org}</small><span>백엔드 엔지니어</span><em>복구 흐름 통합</em></div></li><li><b></b><div><small>2023 · 이전 조직</small><span>소프트웨어 엔지니어</span><em>결제 정산</em></div></li></ol>`),
+    variant("세로 타임라인", `${eyebrow("Career")}<ol class="v-timeline"><li><b></b><div><small>2026 · ${DEMO.org}</small><span>플랫폼 리드</span><em>${WORK[1].title}</em></div></li><li><b></b><div><small>2024 · ${DEMO.org}</small><span>백엔드 엔지니어</span><em>${WORK[0].title}</em></div></li><li><b></b><div><small>2023 · 이전 조직</small><span>소프트웨어 엔지니어</span><em>${WORK[3].title}</em></div></li></ol>`),
     variant("조직별 묶음", `${eyebrow("Organizations")}<article class="v-org"><strong>${DEMO.org}</strong><small>${DEMO.period} · 플랫폼</small><ul class="v-linked"><li>플랫폼 리드 · 2026</li><li>백엔드 엔지니어 · 2024</li></ul></article><article class="v-org"><strong>이전 조직</strong><small>2021 — 2023 · 결제</small><ul class="v-linked"><li>소프트웨어 엔지니어</li></ul></article>`),
-    variant("성과 중심", `${eyebrow("Achievements")}<ul class="v-achieve"><li><b>42%</b><span>복구 시간 단축<em>운영 로그 1,284건 기준</em></span></li><li><b>0건</b><span>동일 장애 재발<em>통합 이후 12개월</em></span></li><li><b>3.1x</b><span>배포 빈도<em>자동화 이후</em></span></li></ul>`),
+    variant("성과 중심", `${eyebrow("Achievements")}<ul class="v-achieve">${[WORK[1], WORK[2], WORK[3]].map((work) => `<li><b>${work.metric}</b><span>${work.label}<em>${work.title} · ${work.period}</em></span></li>`).join("")}</ul>`),
   ].join("");
 }
 
@@ -560,7 +606,7 @@ function renderSkillVariants(model: DesignDocumentModel): string {
   const tags = sampleOf(model, "tags");
   return [
     variant("태그", `${eyebrow("Skills")}<ul class="tag-set"><li>${escapeHtml(tags.value).replaceAll(" · ", "</li><li>")}</li><li>${DEMO.stack.slice(1).join("</li><li>")}</li></ul>`, "tags"),
-    variant("숙련 근거", `${eyebrow("Evidence")}<ul class="v-evidence"><li><strong>TypeScript</strong><span>계약 스키마와 문서 컴파일러를 설계하고 구현</span></li><li><strong>MySQL</strong><span>마이그레이션 순서와 인덱스 설계</span></li><li><strong>Redis</strong><span>복구 흐름의 상태 저장과 큐 소비</span></li></ul>`),
+    variant("숙련 근거", `${eyebrow("Evidence")}<ul class="v-evidence"><li><strong>TypeScript</strong><span>계약 스키마와 문서 컴파일러를 설계하고 구현</span></li><li><strong>MySQL</strong><span>마이그레이션 순서와 인덱스 설계</span></li><li><strong>Redis</strong><span>${WORK[0].title}의 상태 저장과 큐 소비</span></li></ul>`),
     variant("기술 스택 표", `${eyebrow("Stack")}<table class="v-table"><tbody><tr><th>언어</th><td>TypeScript 5</td></tr><tr><th>런타임</th><td>Node 24 · Fastify</td></tr><tr><th>DB</th><td>MySQL 8</td></tr><tr><th>큐</th><td>Redis · BullMQ</td></tr><tr><th>CI</th><td>GitHub Actions</td></tr></tbody></table>`),
   ].join("");
 }
@@ -573,7 +619,7 @@ function renderOtherVariants(model: DesignDocumentModel): string {
   const contact = sampleOf(model, "link-contact");
   const footer = sampleOf(model, "footer");
   return [
-    variant("본문", `${eyebrow("Body")}<p class="v-body">${escapeHtml(longBody.value)}</p><p class="v-body">${DEMO.problem}. ${DEMO.action}.</p><p class="v-body">${DEMO.result}.</p>`, "long-body", true),
+    variant("본문", `${eyebrow("Body")}<p class="v-body">${escapeHtml(longBody.value)}</p><p class="v-body">${WORK[1].problem}. ${WORK[1].action}.</p><p class="v-body">${WORK[1].result}.</p>`, "long-body", true),
     variant("이미지 갤러리", `${eyebrow("Gallery")}<div class="v-gallery">${mediaPlate(spec, escapeHtml(image.value), 1)}${mediaPlate(spec, "복구 대시보드", 2)}${mediaPlate(spec, "장애 리뷰", 3)}</div>`, "image", true),
     variant("인용", `${eyebrow("Quote")}<blockquote class="v-quote">${escapeHtml(quote.value)}</blockquote><div class="v-profile"><i class="avatar"></i><div><strong>함께 일한 동료</strong><small>${DEMO.org} · 제품</small></div></div>`, "quote"),
     variant("프로필", `<div class="v-profile"><i class="avatar avatar-lg"></i><div><strong>${DEMO.name}</strong><small>${DEMO.role}</small></div></div><p class="v-body">운영에서 반복되던 문제를 구조로 바꾸는 일을 합니다. 기록과 검증을 함께 남깁니다.</p>${metaRow([["소속", DEMO.org], ["기간", DEMO.period]])}`),
