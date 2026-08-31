@@ -134,14 +134,14 @@ describe("design system compiler", () => {
     expect(referoDesignSystems.apple.code).toBe("refero-apple");
     expect(referoDesignSystems.apple.spec.identity.name).toBe("Apple");
     expect(referoDesignSystems.apple.referenceLock.primaryDirection.revision).toBe(2);
-    expect(apple.html).toContain('class="preview-nav"');
+    expect(apple.html).toContain('class="doc-section');
+    expect(apple.html).toContain('class="row-label"');
+    expect(apple.html).toContain('class="palette"');
     expect(apple.html).toContain('class="portfolio-browser"');
-    expect(apple.html).toContain('class="cover-plate"');
-    expect(apple.html).toContain('class="spec-table"');
     expect(apple.html).toContain("Live portfolio 보기");
-    expect(mercury.html).not.toContain('class="preview-nav"');
+    expect(mercury.html).not.toContain('class="doc-section');
+    expect(mercury.html).not.toContain('class="row-label"');
     expect(mercury.html).not.toContain('class="portfolio-browser"');
-    expect(mercury.html).not.toContain('class="spec-table"');
     for (const kind of SAMPLE_KINDS) {
       expect(occurrences(apple.html, `data-sample-kind="${kind}"`)).toBe(1);
     }

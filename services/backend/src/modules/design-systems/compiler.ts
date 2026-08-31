@@ -292,9 +292,9 @@ function renderRuleSheet(value: DesignDocumentSection): string {
 }
 
 const COLOR_GROUPS = [
-  { title: "지면과 표면", names: ["canvas", "surface", "elevated"] },
-  { title: "글자와 경계", names: ["text", "muted", "border"] },
-  { title: "강조와 행동", names: ["accent", "action", "actionText"] },
+  { label: "지면과 표면", names: ["canvas", "surface", "elevated"] },
+  { label: "글자와 경계", names: ["text", "muted", "border"] },
+  { label: "강조와 행동", names: ["accent", "action", "actionText"] },
 ] as const;
 
 function pad2(value: number): string {
@@ -302,246 +302,155 @@ function pad2(value: number): string {
 }
 
 /**
- * 절의 큰 문장. 지어내지 않고 계약이 이미 단언한 문장만 그 자리에 놓는다.
- * 해당하는 문장이 없으면 절 제목으로 물러난다.
+ * 문서 전체가 쓰는 단 하나의 골격. 왼쪽에 이름표, 오른쪽에 내용, 위에 실선.
+ * 값과 설명은 상자에 넣지 않는다. 테두리는 실제로 렌더한 견본에만 두른다.
  */
-function sectionHeadline(spec: DesignSystemSpecV2, value: DesignDocumentSection): string {
-  const moves = spec.identity.signatureMoves;
-  const map: Record<string, string | undefined> = {
-    direction: spec.identity.visualThesis,
-    colors: spec.composition.surfaceStrategy,
-    typography: moves[0],
-    spacing: spec.composition.sectionRhythm,
-    shape: spec.components.card?.description,
-    composition: spec.composition.hierarchy,
-    components: spec.components.hero?.description,
-    imagery: spec.imagery.treatment,
-    motion: spec.motion.personality,
-    rules: moves[1] ?? moves[0],
-    "sample-portfolio": "모든 디자인이 같은 내용을 씁니다. 화면의 차이는 전부 디자인에서 옵니다.",
-    "source-revision": spec.origin.attribution ?? undefined,
-  };
-  return map[value.id] ?? value.title;
+function row(label: string, body: string, modifier = ""): string {
+  return `<div class="row${modifier ? ` ${modifier}` : ""}"><div class="row-label">${label}</div><div class="row-body">${body}</div></div>`;
 }
 
-/** 큰 문장 아래 한 줄. 큰 문장과 겹치는 문장은 고르지 않는다. */
-function sectionDeck(spec: DesignSystemSpecV2, id: string): string | null {
-  const map: Record<string, string | null | undefined> = {
-    direction: spec.identity.description,
-    colors: spec.colors.accent.role,
-    typography: spec.typography.body.role,
-    imagery: spec.imagery.fallback,
-    motion: spec.motion.reducedMotion,
-  };
-  return map[id] ?? null;
+function label(name: string, meta?: string): string {
+  return `<strong>${escapeHtml(name)}</strong>${meta ? `<code>${escapeHtml(meta)}</code>` : ""}`;
 }
 
-function renderSpecCard(name: string, figure: string, line: string, modifier = ""): string {
-  return `<article class="spec-card${modifier ? ` ${modifier}` : ""}"><span class="spec-name">${escapeHtml(name)}</span><div class="spec-figure">${figure}</div><span class="spec-line">${escapeHtml(line)}</span></article>`;
+function factList(
+  items: { term: string; value: string; note?: string }[],
+  monoTerm = true,
+): string {
+  return `<ul class="facts">${items.map(
+    (item) => `<li>${monoTerm ? `<code>${escapeHtml(item.term)}</code>` : `<span class="term">${escapeHtml(item.term)}</span>`}<b>${escapeHtml(item.value)}</b>${item.note ? `<span>${escapeHtml(item.note)}</span>` : ""}</li>`,
+  ).join("")}</ul>`;
 }
 
-function renderColorSection(spec: DesignSystemSpecV2): string {
+function renderColorRows(spec: DesignSystemSpecV2): string {
+  const swatches = (names: readonly string[]) => `<div class="swatch-set">${names.map((name) => {
+    const token = spec.colors[name as keyof typeof spec.colors] as { value: string; role: string };
+    return `<article class="swatch" data-token="${name}"><i style="background:var(--${name})"></i><strong>${name}</strong><code>${escapeHtml(token.value)}</code><span>${escapeHtml(token.role)}</span></article>`;
+  }).join("")}</div>`;
+
   const pairs = [
-    { label: "본문", pair: "text / canvas", ratio: contrastRatio(spec.colors.text.value, spec.colors.canvas.value) },
-    { label: "설명", pair: "muted / canvas", ratio: contrastRatio(spec.colors.muted.value, spec.colors.canvas.value) },
-    { label: "표면 위 본문", pair: "text / surface", ratio: contrastRatio(spec.colors.text.value, spec.colors.surface.value) },
-    { label: "주요 행동", pair: "action-text / action", ratio: contrastRatio(spec.colors.actionText.value, spec.colors.action.value) },
+    { term: "text / canvas", ratio: contrastRatio(spec.colors.text.value, spec.colors.canvas.value) },
+    { term: "muted / canvas", ratio: contrastRatio(spec.colors.muted.value, spec.colors.canvas.value) },
+    { term: "text / surface", ratio: contrastRatio(spec.colors.text.value, spec.colors.surface.value) },
+    { term: "action-text / action", ratio: contrastRatio(spec.colors.actionText.value, spec.colors.action.value) },
   ];
 
-  return `${COLOR_GROUPS.map((group) => `<div class="token-group">
-    <h3>${escapeHtml(group.title)}</h3>
-    <div class="swatch-grid">${group.names.map((name) => {
-      const token = spec.colors[name];
-      return `<article class="swatch" data-token="${name}"><i style="background:var(--${name})"></i><strong>${name}</strong><code>${escapeHtml(token.value)}</code><span>${escapeHtml(token.role)}</span></article>`;
-    }).join("")}</div>
-  </div>`).join("")}
-  <div class="token-group">
-    <h3>측정한 명암비</h3>
-    <table class="spec-table"><tbody>${pairs.map(
-      ({ label, pair, ratio }) => `<tr><th>${escapeHtml(label)}</th><td><code>${escapeHtml(pair)}</code></td><td class="numeric">${formatRatio(ratio)}</td><td class="numeric"><b class="${contrastLevel(ratio) === "미달" ? "level-fail" : "level-pass"}">${contrastLevel(ratio)}</b></td></tr>`,
-    ).join("")}</tbody></table>
+  return `${COLOR_GROUPS.map((group) => row(label(group.label), swatches(group.names))).join("")}
+  ${row(label("측정한 명암비", "WCAG 2.1"), factList(pairs.map(({ term, ratio }) => ({ term, value: formatRatio(ratio), note: contrastLevel(ratio) }))))}`;
+}
+
+function renderTypographyRows(spec: DesignSystemSpecV2): string {
+  const ramp = spec.typography.scale.map((step) => row(
+    label(step.name, `${step.size} / ${step.lineHeight}`),
+    `<p class="specimen" style="font-size:var(--type-${step.name});line-height:var(--line-${step.name})">성과가 읽히는 첫 문장</p>`,
+  )).join("");
+
+  // 서체는 역할 문장이 길어 값 표가 아니라 줄 세 개로 둔다.
+  const families = ([
+    ["display", spec.typography.display],
+    ["body", spec.typography.body],
+    ["mono", spec.typography.mono],
+  ] as const).map(([name, font]) => row(
+    label(name, `${font.family} · ${font.fallback}`),
+    `<p class="note">${escapeHtml(font.role)}</p>`,
+    "row-tight",
+  )).join("");
+
+  const weights = `<p class="weight-line">${spec.typography.weights.map(
+    (weight) => `<span style="font-weight:${weight}">Aa 성과<i>${weight}</i></span>`,
+  ).join("")}</p>`;
+
+  const tracking = `<p class="weight-line">${spec.typography.letterSpacing.map(
+    (value) => `<span style="letter-spacing:${value}">성과를 읽는 방식<i>${escapeHtml(value)}</i></span>`,
+  ).join("")}</p>`;
+
+  return `${ramp}
+  ${families}
+  ${row(label("굵기"), weights)}
+  ${row(label("자간"), tracking)}
+  ${row(label("본문 폭", spec.typography.measure), `<p class="measure-proof">${escapeHtml(spec.typography.body.role)}. 본문은 이 폭을 넘지 않게 잡아 한 줄이 눈으로 따라가기 좋은 길이를 유지합니다.</p>`)}`;
+}
+
+function renderComponentPreview(name: string): string {
+  if (name === "hero") return `<div class="demo demo-hero"><small>PORTFOLIO / 2026</small><strong>성과를 만드는<br>제품을 설계합니다.</strong><span class="act">작업 보기</span></div>`;
+  if (name === "metric") return `<div class="demo demo-metric"><strong>42%</strong><span>복구 시간 단축</span><small>Q2 대비 · 12개월</small></div>`;
+  if (name === "contact") return `<div class="demo demo-contact"><span class="act">프로젝트 열기 ↗</span><span class="act-quiet">hello@example.com</span></div>`;
+  return `<div class="demo demo-case"><small>FEATURED CASE · 01</small><strong>복잡한 운영 흐름을<br>한 화면으로</strong><span>Product design · Engineering</span></div>`;
+}
+
+function renderComponentRows(spec: DesignSystemSpecV2): string {
+  const controls = row(
+    label("행동과 태그", `control-radius ${spec.shape.controlRadius}px`),
+    `<div class="frame frame-row"><span class="act">Primary</span><span class="act-secondary">Secondary</span><span class="act-quiet">Text link ↗</span><span class="tag">TypeScript</span></div>`,
+  );
+  const components = Object.entries(spec.components).map(([name, rule]) => row(
+    label(name, rule.tokens.join(" · ")),
+    `<div class="frame">${renderComponentPreview(name)}</div><p class="note">${escapeHtml(rule.description)}</p><p class="note muted">${rule.anatomy.map(escapeHtml).join(" · ")}</p>`,
+  )).join("");
+  return `${controls}${components}`;
+}
+
+function renderArtifact(labelText: string): string {
+  return `<div class="artifact" role="img" aria-label="${escapeHtml(labelText)}">
+    <span class="artifact-window"><i></i><i></i><i></i></span>
+    <span class="artifact-copy"><b></b><b></b><b></b></span>
+    <span class="artifact-chart"><i></i><i></i><i></i><i></i><i></i></span>
+    <span class="artifact-value">42%<small>verified impact</small></span>
   </div>`;
 }
 
-function renderTypographySection(spec: DesignSystemSpecV2): string {
-  const settings = [
-    { label: "굵기", value: spec.typography.weights.join(" · ") },
-    { label: "행간", value: spec.typography.lineHeights.join(" · ") },
-    { label: "자간", value: spec.typography.letterSpacing.join(" · ") },
-    { label: "본문 폭", value: spec.typography.measure },
-    { label: "Display", value: `${spec.typography.display.family} · ${spec.typography.display.fallback}` },
-    { label: "Body", value: `${spec.typography.body.family} · ${spec.typography.body.fallback}` },
-    { label: "Mono", value: `${spec.typography.mono.family} · ${spec.typography.mono.fallback}` },
-  ];
-
-  return `<div class="ramp">${spec.typography.scale.map((step) => `<article class="ramp-row">
-    <div class="ramp-meta"><strong>${escapeHtml(step.name)}</strong><code>${escapeHtml(step.size)} / ${escapeHtml(step.lineHeight)}</code></div>
-    <p class="ramp-specimen" style="font-size:var(--type-${step.name});line-height:var(--line-${step.name})">성과가 읽히는 첫 문장</p>
-  </article>`).join("")}</div>
-  <div class="token-group">
-    <h3>서체 설정</h3>
-    <table class="spec-table"><tbody>${settings.map(
-      ({ label, value }) => `<tr><th>${escapeHtml(label)}</th><td colspan="3"><code>${escapeHtml(value)}</code></td></tr>`,
-    ).join("")}</tbody></table>
-  </div>`;
+function renderImageryRows(spec: DesignSystemSpecV2): string {
+  return `${row(label("아티팩트", spec.imagery.aspectRatio), `<div class="frame frame-plain">${renderArtifact("디자인 이미지 전략 예시")}</div>`)}
+  ${row(label("모드", spec.imagery.mode), `<p class="note">${escapeHtml(spec.imagery.treatment)}</p>`)}
+  ${row(label("이미지가 없을 때"), `<p class="note">${escapeHtml(spec.imagery.fallback)}</p>`)}`;
 }
 
-function renderSpacingSection(spec: DesignSystemSpecV2): string {
+function renderCompositionRows(spec: DesignSystemSpecV2): string {
+  const ratio = Math.max(40, Math.min(100, Math.round((spec.spacing.contentWidth / 1440) * 100)));
+  return `${row(label("골격", `${spec.spacing.contentWidth}px / 1440px`), `<div class="frame frame-plain"><div class="wire"><div class="wire-page" style="width:${ratio}%"><header></header><main><i></i><i></i><i></i></main><footer></footer></div></div></div>`)}
+  ${row(label("구조", spec.composition.structure), `<p class="note">${escapeHtml(spec.composition.hierarchy)}</p>`)}
+  ${row(label("밀도", spec.composition.density), `<p class="note">${escapeHtml(spec.composition.sectionRhythm)}</p>`)}
+  ${row(label("표면 전략"), `<p class="note">${escapeHtml(spec.composition.surfaceStrategy)}</p>`)}`;
+}
+
+function renderSpacingRows(spec: DesignSystemSpecV2): string {
   const steps = [
     { token: "base-unit", value: spec.spacing.baseUnit },
     { token: "element-gap", value: spec.spacing.elementGap },
     { token: "component-gap", value: spec.spacing.componentGap },
     { token: "section-gap", value: spec.spacing.sectionGap },
-    { token: "content-width", value: spec.spacing.contentWidth },
   ];
-  const gaps = steps.filter((step) => step.token !== "content-width");
-  const max = Math.max(...gaps.map((step) => step.value));
-
-  return `<div class="scale-row">${steps.map(
-    (step) => `<article class="scale-chip"><b>${step.value}<i>px</i></b><code>${step.token}</code></article>`,
-  ).join("")}</div>
-  <div class="measure-stage">
-    <div class="measure-bars">${gaps.map(
-      (step) => `<article><code>${step.token}</code><span style="width:${((step.value / max) * 100).toFixed(1)}%"></span><b>${step.value}px</b></article>`,
-    ).join("")}</div>
-    <div class="rhythm-demo">
-      <h3>같은 눈금을 실제 간격으로 둔 모습</h3>
-      <div class="rhythm-row rhythm-element"><i></i><i></i><i></i><em>element-gap</em></div>
-      <div class="rhythm-row rhythm-component"><i></i><i></i><em>component-gap</em></div>
-      <div class="rhythm-row rhythm-section"><i></i><i></i><em>section-gap</em></div>
-    </div>
-  </div>`;
+  const bars = steps.map((step) => row(
+    label(step.token, `${step.value}px`),
+    `<span class="bar" style="width:min(100%,${step.value}px)"></span>`,
+    "row-tight",
+  )).join("");
+  return `${bars}
+  ${row(label("콘텐츠 폭", `${spec.spacing.contentWidth}px`), `<p class="note">본문 폭 ${escapeHtml(spec.typography.measure)}. 지면이 넓어져도 한 줄의 길이는 이 폭에서 멈춥니다.</p>`)}`;
 }
 
-function renderShapeSection(spec: DesignSystemSpecV2): string {
-  const surfaces = [
-    { name: "canvas", role: spec.colors.canvas.role },
-    { name: "surface", role: spec.colors.surface.role },
-    { name: "elevated", role: spec.colors.elevated.role },
-  ];
-
-  return `<div class="scale-row">
-    <article class="scale-chip"><b>${spec.shape.cardRadius}<i>px</i></b><code>card-radius</code></article>
-    <article class="scale-chip"><b>${spec.shape.controlRadius}<i>px</i></b><code>control-radius</code></article>
-    <article class="scale-chip"><b>${spec.shape.borderWidth}<i>px</i></b><code>border-width</code></article>
-    <article class="scale-chip"><b>${escapeHtml(spec.shape.shadowStyle)}</b><code>shadow</code></article>
-  </div>
-  <div class="spec-grid">
-    ${renderSpecCard("card-radius", `<i class="radius-proof radius-card"></i>`, `카드와 이미지 판 · ${spec.shape.cardRadius}px`)}
-    ${renderSpecCard("control-radius", `<i class="radius-proof radius-control"></i>`, `버튼과 태그 · ${spec.shape.controlRadius}px`)}
-    ${renderSpecCard("border-width", `<i class="radius-proof radius-border"></i>`, `경계 두께 · ${spec.shape.borderWidth}px`)}
-    ${renderSpecCard("shadow", `<i class="radius-proof radius-shadow"></i>`, `그림자 · ${spec.shape.shadowStyle}`)}
-  </div>
-  <div class="token-group">
-    <h3>표면 단계</h3>
-    <div class="surface-stack">${surfaces.map(
-      (surface) => `<article class="surface-plate surface-${surface.name}"><strong>${surface.name}</strong><span>${escapeHtml(surface.role)}</span></article>`,
-    ).join("")}</div>
-  </div>`;
+function renderShapeRows(spec: DesignSystemSpecV2): string {
+  return `${row(label("card-radius", `${spec.shape.cardRadius}px`), `<i class="proof proof-card"></i>`, "row-tight")}
+  ${row(label("control-radius", `${spec.shape.controlRadius}px`), `<i class="proof proof-control"></i>`, "row-tight")}
+  ${row(label("border-width", `${spec.shape.borderWidth}px`), `<i class="proof proof-border"></i>`, "row-tight")}
+  ${row(label("shadow", spec.shape.shadowStyle), `<i class="proof proof-shadow"></i>`, "row-tight")}
+  ${row(label("표면 단계"), `<div class="surface-set"><i class="plane plane-canvas"><b>canvas</b></i><i class="plane plane-surface"><b>surface</b></i><i class="plane plane-elevated"><b>elevated</b></i></div>`)}`;
 }
 
-function renderCompositionSection(spec: DesignSystemSpecV2): string {
-  const ratio = Math.max(40, Math.min(100, Math.round((spec.spacing.contentWidth / 1440) * 100)));
-  return `<div class="layout-stage" data-structure="${escapeHtml(spec.composition.structure)}">
-    <div class="layout-viewport">
-      <div class="layout-canvas" style="width:${ratio}%">
-        <header></header>
-        <main><i></i><i></i><i></i></main>
-        <footer></footer>
-      </div>
-    </div>
-    <table class="spec-table"><tbody>
-      <tr><th>구조</th><td colspan="3"><code>${escapeHtml(spec.composition.structure)}</code></td></tr>
-      <tr><th>밀도</th><td colspan="3"><code>${escapeHtml(spec.composition.density)}</code></td></tr>
-      <tr><th>콘텐츠 폭</th><td colspan="3"><code>${spec.spacing.contentWidth}px · 1440px 지면의 ${ratio}%</code></td></tr>
-      <tr><th>섹션 리듬</th><td colspan="3">${escapeHtml(spec.composition.sectionRhythm)}</td></tr>
-    </tbody></table>
-  </div>`;
+function renderMotionRows(spec: DesignSystemSpecV2): string {
+  return `${row(label("reveal", `${spec.motion.duration} · ${spec.motion.easing}`), `<i class="motion motion-rise"></i>`, "row-tight")}
+  ${row(label("focus"), `<i class="motion motion-focus"></i>`, "row-tight")}
+  ${row(label("reduced"), `<i class="motion motion-still"></i>`, "row-tight")}
+  ${row(label("성격"), `<p class="note">${escapeHtml(spec.motion.personality)}</p>`)}
+  ${row(label("모션 감소"), `<p class="note">${escapeHtml(spec.motion.reducedMotion)}</p>`)}`;
 }
 
-function renderComponentPreview(name: string): string {
-  if (name === "hero") return `<div class="preview-hero"><small>PORTFOLIO / 2026</small><strong>성과를 만드는<br>제품을 설계합니다.</strong><span class="action-primary">작업 보기</span></div>`;
-  if (name === "metric") return `<div class="preview-metric"><strong>42%</strong><span>복구 시간 단축</span><small>Q2 대비 · 12개월</small></div>`;
-  if (name === "contact") return `<div class="preview-contact"><span class="action-primary">프로젝트 열기 ↗</span><span class="action-quiet">hello@example.com</span></div>`;
-  return `<div class="preview-case"><small>FEATURED CASE · 01</small><strong>복잡한 운영 흐름을<br>한 화면으로</strong><span>Product design · Engineering</span></div>`;
-}
-
-function renderComponentSection(spec: DesignSystemSpecV2): string {
-  const controls = [
-    { name: "action-primary", figure: `<span class="action-primary">Primary</span>`, line: `${spec.colors.action.value} · ${spec.shape.controlRadius}px 반경` },
-    { name: "action-secondary", figure: `<span class="action-secondary">Secondary</span>`, line: `투명 배경 · ${spec.shape.borderWidth}px 경계` },
-    { name: "action-quiet", figure: `<span class="action-quiet">Text link ↗</span>`, line: `${spec.colors.action.value} 글자만` },
-    { name: "tag", figure: `<span class="tag-chip">TypeScript</span>`, line: `${spec.colors.border.value} 경계 · 알약` },
-  ];
-
-  return `<div class="spec-grid">${controls.map(
-    (control) => renderSpecCard(control.name, control.figure, control.line),
-  ).join("")}</div>
-  <div class="component-grid">${Object.entries(spec.components).map(
-    ([name, rule], index) => `<article class="component-card" data-component="${escapeHtml(name)}">
-      <header><span>${pad2(index + 1)}</span><strong>${escapeHtml(name)}</strong></header>
-      <div class="component-figure">${renderComponentPreview(name)}</div>
-      <div class="component-meta">
-        <p>${escapeHtml(rule.description)}</p>
-        <dl><dt>구조</dt><dd>${rule.anatomy.map(escapeHtml).join(" · ")}</dd><dt>토큰</dt><dd><code>${rule.tokens.map(escapeHtml).join(" · ")}</code></dd></dl>
-      </div>
-    </article>`,
-  ).join("")}</div>`;
-}
-
-function renderArtifactVisual(label: string): string {
-  return `<div class="artifact" role="img" aria-label="${escapeHtml(label)}">
-    <span class="artifact-frame"><i></i><i></i><i></i></span>
-    <span class="artifact-copy"><b></b><b></b><b></b></span>
-    <span class="artifact-chart"><i></i><i></i><i></i><i></i><i></i></span>
-    <span class="artifact-status">42%<small>verified impact</small></span>
-  </div>`;
-}
-
-function renderImagerySection(spec: DesignSystemSpecV2): string {
-  return `<div class="imagery-stage">
-    ${renderArtifactVisual("디자인 이미지 전략 예시")}
-    <table class="spec-table"><tbody>
-      <tr><th>모드</th><td colspan="3"><code>${escapeHtml(spec.imagery.mode)}</code></td></tr>
-      <tr><th>비율</th><td colspan="3"><code>${escapeHtml(spec.imagery.aspectRatio)}</code></td></tr>
-    </tbody></table>
-  </div>`;
-}
-
-function renderMotionSection(spec: DesignSystemSpecV2): string {
-  return `<div class="spec-grid">
-    ${renderSpecCard("reveal", `<i class="motion-block motion-rise"></i>`, `${spec.motion.duration} · ${spec.motion.easing}`)}
-    ${renderSpecCard("focus", `<i class="motion-block motion-focus"></i>`, `상태가 바뀌는 자리에만`)}
-    ${renderSpecCard("reduced", `<i class="motion-block motion-still"></i>`, `모션 감소에서 고정되는 최종 상태`)}
-  </div>
-`;
-}
-
-function renderRulesSection(spec: DesignSystemSpecV2): string {
-  return `<div class="rule-visual">
-    <figure>
-      <figcaption><b>Do</b><span>규칙대로 그린 카드</span></figcaption>
-      <div class="rule-card">
-        <small>FEATURED CASE · 01</small>
-        <h4>복구 시간을 42% 줄인 과정</h4>
-        <p>한 화면에 한 메시지. 강조색은 행동 하나에만 씁니다.</p>
-        <span class="action-primary">사례 보기</span>
-      </div>
-    </figure>
-    <figure>
-      <figcaption><b>Don't</b><span>규칙을 깬 카드</span></figcaption>
-      <div class="rule-card rule-card-broken">
-        <small>FEATURED CASE · 01</small>
-        <h4>복구 시간을 42% 줄인 과정</h4>
-        <p>강조색을 여러 개 쓰고 본문을 촘촘하게 채우면 무엇을 먼저 봐야 하는지가 사라집니다. 제목은 작아지고 카드는 그림자로 떠오릅니다.</p>
-        <div class="broken-actions"><span>사례 보기</span><span>이력서</span><span>블로그</span><span>연락</span></div>
-      </div>
-    </figure>
-  </div>
-  <div class="rule-lists">
-    <div><h3>Do</h3><ul>${spec.rules.do.map((rule) => `<li>${escapeHtml(rule)}</li>`).join("")}</ul></div>
-    <div><h3>Don't</h3><ul>${spec.rules.dont.map((rule) => `<li>${escapeHtml(rule)}</li>`).join("")}</ul></div>
-  </div>`;
+function renderRulesRows(spec: DesignSystemSpecV2): string {
+  const good = `<div class="frame"><div class="demo demo-rule"><small>FEATURED CASE · 01</small><strong>복구 시간을 42% 줄인 과정</strong><p>한 화면에 한 메시지. 강조색은 행동 하나에만 씁니다.</p><span class="act">사례 보기</span></div></div>`;
+  const bad = `<div class="frame"><div class="demo demo-rule demo-rule-broken"><small>FEATURED CASE · 01</small><strong>복구 시간을 42% 줄인 과정</strong><p>강조색을 여러 개 쓰고 본문을 촘촘하게 채우면 무엇을 먼저 봐야 하는지가 사라집니다. 제목은 작아지고 카드는 그림자로 떠오릅니다.</p><span class="broken-actions"><span>사례 보기</span><span>이력서</span><span>블로그</span><span>연락</span></span></div></div>`;
+  const list = (values: string[]) => `<ul class="rule-list">${values.map((value) => `<li>${escapeHtml(value)}</li>`).join("")}</ul>`;
+  return `${row(label("Do", "규칙대로 그린 카드"), `${good}${list(spec.rules.do)}`)}
+  ${row(label("Don't", "규칙을 깬 카드"), `${bad}${list(spec.rules.dont)}`)}`;
 }
 
 function sampleOf(model: DesignDocumentModel, kind: DesignSampleEntry["kind"]): DesignSampleEntry {
@@ -567,28 +476,28 @@ function renderPortfolioSample(model: DesignDocumentModel): string {
     <div class="browser-bar"><span></span><span></span><span></span><b>portfolio.local / selected-work</b></div>
     <div class="portfolio-page">
       <nav class="portfolio-nav"><strong>MP.</strong><span>Work · About · Contact</span></nav>
-      ${render("hero", `<div><p>Product engineer · Seoul</p><h3>${escapeHtml(hero.value)}</h3><div class="hero-actions"><span class="action-primary">대표 작업 보기</span><span class="action-quiet">소개 다운로드 ↗</span></div></div><div class="hero-plate" aria-hidden="true"><i></i></div>`, "header")}
-      <div class="portfolio-tiles">
+      ${render("hero", `<div><p class="role">Product engineer · Seoul</p><h3>${escapeHtml(hero.value)}</h3><div class="hero-actions"><span class="act">대표 작업 보기</span><span class="act-quiet">소개 다운로드 ↗</span></div></div><div class="hero-plate" aria-hidden="true"><i></i></div>`, "header")}
+      <div class="tiles">
         ${render("metric", `<strong>${escapeHtml(metric.value)}</strong><p>지난 12개월 · 운영 기록 기준</p>`)}
         ${render("before-after", `<strong>${escapeHtml(beforeAfter.value)}</strong><p>흩어진 절차를 검증 가능한 흐름으로 통합</p>`)}
       </div>
-      <div class="portfolio-case">
-        ${render("case-study", `<p class="case-index">01 / Featured case</p><h3>${escapeHtml(caseStudy.value)}</h3><p>${escapeHtml(longBody.value)}</p><span class="action-quiet">사례 자세히 보기 ↗</span>`)}
-        ${render("image", `${renderArtifactVisual(image.value)}<p>${escapeHtml(image.value)}</p>`)}
+      <div class="case-row">
+        ${render("case-study", `<p class="index">01 / Featured case</p><h3>${escapeHtml(caseStudy.value)}</h3><p>${escapeHtml(longBody.value)}</p><span class="act-quiet">사례 자세히 보기 ↗</span>`)}
+        ${render("image", `${renderArtifact(image.value)}<p class="caption">${escapeHtml(image.value)}</p>`)}
       </div>
       ${render("long-body", `<h3>문제부터 결과까지 읽히는 기록</h3><p>${escapeHtml(longBody.value)}</p><p>의사결정의 기준과 검증 방식까지 남겨 다음 작업에서 다시 사용할 수 있게 했습니다.</p>`)}
-      <div class="portfolio-tiles">
-        ${render("no-image", `<span class="proof-index">02</span><h3>${escapeHtml(noImage.value)}</h3><p>이미지가 없어도 역할, 선택, 수치 근거가 한 흐름을 만듭니다.</p>`)}
-        ${render("tags", `<h3>사용한 기술과 도구</h3><ul class="tag-list"><li>${escapeHtml(tags.value).replaceAll(" · ", "</li><li>")}</li></ul>`)}
+      <div class="tiles">
+        ${render("no-image", `<p class="index">02</p><h3>${escapeHtml(noImage.value)}</h3><p>이미지가 없어도 역할, 선택, 수치 근거가 한 흐름을 만듭니다.</p>`)}
+        ${render("tags", `<h3>사용한 기술과 도구</h3><ul class="tag-set"><li>${escapeHtml(tags.value).replaceAll(" · ", "</li><li>")}</li></ul>`)}
       </div>
       ${render("quote", `<blockquote>${escapeHtml(quote.value)}</blockquote><p>— 함께 일한 동료의 기록</p>`)}
-      ${render("link-contact", `<div><p>다음 문제를 함께 풀어볼까요?</p><h3>${escapeHtml(contact.value)}</h3></div><span class="action-primary">대화 시작하기 ↗</span>`)}
+      ${render("link-contact", `<div><p>다음 문제를 함께 풀어볼까요?</p><h3>${escapeHtml(contact.value)}</h3></div><span class="act">대화 시작하기 ↗</span>`)}
       ${render("footer", `<strong>MP.</strong><p>${escapeHtml(footer.value)}</p><span>© 2026</span>`, "footer")}
     </div>
   </div>`;
 }
 
-function renderSourceSection(model: DesignDocumentModel, markdownSha256: string): string {
+function renderSourceRows(model: DesignDocumentModel, markdownSha256: string): string {
   const spec = model.spec;
   const lock = model.referenceLock;
   const rows: [string, string][] = [
@@ -600,10 +509,26 @@ function renderSourceSection(model: DesignDocumentModel, markdownSha256: string)
     ["판", lock ? `${lock.primaryDirection.designSystemCode} r${lock.primaryDirection.revision}` : "r1"],
     ["DESIGN.md sha256", markdownSha256],
   ];
+  return rows.map(([name, value]) => row(label(name), `<p class="note mono">${escapeHtml(value)}</p>`, "row-tight")).join("");
+}
 
-  return `<table class="spec-table source-table"><tbody>${rows.map(
-    ([label, value]) => `<tr><th>${escapeHtml(label)}</th><td colspan="3"><code>${escapeHtml(value)}</code></td></tr>`,
-  ).join("")}</tbody></table>`;
+/** 절의 한 문장. 지어내지 않고 계약이 이미 단언한 문장만 그 자리에 놓는다. */
+function sectionSentence(spec: DesignSystemSpecV2, id: string): string | null {
+  const moves = spec.identity.signatureMoves;
+  const map: Record<string, string | null | undefined> = {
+    colors: spec.composition.surfaceStrategy,
+    typography: moves[0],
+    components: spec.components.hero?.description,
+    "sample-portfolio": "모든 디자인이 같은 내용을 씁니다. 화면의 차이는 전부 디자인에서 옵니다.",
+    imagery: spec.imagery.treatment,
+    composition: spec.composition.hierarchy,
+    spacing: spec.composition.sectionRhythm,
+    shape: spec.components.card?.description,
+    motion: spec.motion.personality,
+    rules: moves[1] ?? moves[0],
+    "source-revision": spec.origin.attribution,
+  };
+  return map[id] ?? null;
 }
 
 function renderShowcaseSection(
@@ -615,41 +540,26 @@ function renderShowcaseSection(
   const spec = model.spec;
   let body = "";
 
-  if (value.id === "colors") {
-    body = renderColorSection(spec);
-  } else if (value.id === "typography") {
-    body = renderTypographySection(spec);
-  } else if (value.id === "spacing") {
-    body = renderSpacingSection(spec);
-  } else if (value.id === "shape") {
-    body = renderShapeSection(spec);
-  } else if (value.id === "composition") {
-    body = renderCompositionSection(spec);
-  } else if (value.id === "components") {
-    body = renderComponentSection(spec);
-  } else if (value.id === "imagery") {
-    body = renderImagerySection(spec);
-  } else if (value.id === "motion") {
-    body = renderMotionSection(spec);
-  } else if (value.id === "rules") {
-    body = renderRulesSection(spec);
-  } else if (value.id === "sample-portfolio") {
-    body = renderPortfolioSample(model);
-  } else if (value.id === "source-revision") {
-    body = renderSourceSection(model, markdownSha256);
-  }
+  if (value.id === "colors") body = renderColorRows(spec);
+  else if (value.id === "typography") body = renderTypographyRows(spec);
+  else if (value.id === "components") body = renderComponentRows(spec);
+  else if (value.id === "sample-portfolio") body = row(label("샘플 화면"), renderPortfolioSample(model), "row-wide");
+  else if (value.id === "imagery") body = renderImageryRows(spec);
+  else if (value.id === "composition") body = renderCompositionRows(spec);
+  else if (value.id === "spacing") body = renderSpacingRows(spec);
+  else if (value.id === "shape") body = renderShapeRows(spec);
+  else if (value.id === "motion") body = renderMotionRows(spec);
+  else if (value.id === "rules") body = renderRulesRows(spec);
+  else if (value.id === "source-revision") body = renderSourceRows(model, markdownSha256);
 
-  const deck = sectionDeck(spec, value.id);
-  return `<section id="${value.id}" class="doc-section section-${value.id}" data-design-section="${value.id}">
-    <div class="section-head">
-      <span class="kicker">${pad2(index + 1)}</span>
-      <h2>${escapeHtml(value.title)}</h2>
-      <p class="lede">${escapeHtml(sectionHeadline(spec, value))}</p>
-      ${deck ? `<p class="deck">${escapeHtml(deck)}</p>` : ""}
-    </div>
-    ${body}
-    ${renderRuleSheet(value)}
-  </section>`;
+  const sentence = sectionSentence(spec, value.id);
+  const head = row(
+    `<span class="index">${pad2(index + 1)}</span>`,
+    `<h2>${escapeHtml(value.title)}</h2>${sentence ? `<p class="sentence">${escapeHtml(sentence)}</p>` : ""}`,
+    "row-head",
+  );
+
+  return `<section id="${value.id}" class="doc-section section-${value.id}" data-design-section="${value.id}">${head}${body}${renderRuleSheet(value)}</section>`;
 }
 
 function renderLegacySample(entry: DesignSampleEntry): string {
@@ -741,12 +651,16 @@ function renderAppleShowcaseHtml(
     .filter((value) => value.id !== "direction")
     .map((value, index) => renderShowcaseSection(model, value, index, markdownSha256))
     .join("");
-  const facts = [
-    { value: spec.imagery.mode, label: "이미지 전략" },
-    { value: spec.composition.density, label: "정보 밀도" },
-    { value: `${spec.spacing.contentWidth}px`, label: "콘텐츠 폭" },
-    { value: formatRatio(bodyContrast), label: `본문 대비 · ${contrastLevel(bodyContrast)}` },
-  ];
+
+  const measured = factList([
+    { term: "이미지 전략", value: spec.imagery.mode },
+    { term: "정보 밀도", value: spec.composition.density },
+    { term: "콘텐츠 폭", value: `${spec.spacing.contentWidth}px` },
+    { term: "본문 대비", value: formatRatio(bodyContrast), note: contrastLevel(bodyContrast) },
+  ], false);
+  const moves = `<ol class="moves">${spec.identity.signatureMoves.map(
+    (move, index) => `<li><b>${pad2(index + 1)}</b><span>${escapeHtml(move)}</span></li>`,
+  ).join("")}</ol>`;
 
   return `<!doctype html>
 <html lang="ko">
@@ -759,274 +673,221 @@ function renderAppleShowcaseHtml(
 <title>${title} — DESIGN</title>
 <style>
 /*
-  문서 껍데기는 시스템 자신의 형태를 흉내 내지 않는다. 틀이 견본과 같은 반경·같은
-  크기를 쓰면 어디까지가 문서이고 어디부터가 디자인인지 구분되지 않는다.
-  껍데기는 --doc-* 로 고정하고, --card-radius 같은 시스템 토큰은 견본 안에서만 쓴다.
+  이 문서는 골격 하나로만 이뤄진다 — 왼쪽 이름표, 오른쪽 내용, 위에 실선.
+  값과 설명에는 테두리를 두르지 않는다. 테두리는 실제로 렌더한 견본에만 쓴다.
+  껍데기의 반경과 크기는 --doc-* 로 고정하고, 시스템 토큰은 견본 안에서만 쓴다.
+  틀이 견본과 같은 형태를 쓰면 어디까지가 문서인지 구분되지 않기 때문이다.
 */
-:root{${variables}--hairline:color-mix(in srgb,var(--border) 55%,transparent);--ink-muted:color-mix(in srgb,var(--canvas) 66%,var(--text));--doc-radius:10px;--column:min(calc(100% - 48px),var(--content-width))}
+:root{${variables}--hairline:color-mix(in srgb,var(--border) 50%,transparent);--ink-muted:color-mix(in srgb,var(--canvas) 66%,var(--text));--doc-radius:10px;--column:min(calc(100% - 48px),var(--content-width));--rail:172px;--rail-gap:36px}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
-h1,h2,h3,h4,p,figure,figcaption,blockquote,ol,ul,dl,dd{margin:0;padding:0}
+body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--font-body);font-size:13px;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,ol,ul,dl,blockquote,figure{margin:0;padding:0}
 li{list-style:none}
-table{width:100%;border-collapse:collapse}
 code{font-family:var(--font-mono)}
 
-.preview-nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:26px;height:52px;padding:0 max(24px,calc((100vw - var(--content-width))/2));border-bottom:1px solid var(--hairline);background:color-mix(in srgb,var(--canvas) 88%,transparent);backdrop-filter:saturate(180%) blur(18px)}
-.preview-nav strong{font-family:var(--font-display);font-size:15px;letter-spacing:-.03em}
-.preview-nav ul{display:flex;gap:18px}
-.preview-nav a{color:var(--muted);font-size:11px;text-decoration:none}
-.preview-nav a:hover{color:var(--text)}
-.preview-nav>span{margin-left:auto;color:var(--muted);font-family:var(--font-mono);font-size:10px}
+.nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:24px;height:50px;padding:0 max(24px,calc((100vw - var(--content-width))/2));border-bottom:1px solid var(--hairline);background:color-mix(in srgb,var(--canvas) 88%,transparent);backdrop-filter:saturate(180%) blur(18px)}
+.nav strong{font-family:var(--font-display);font-size:14px;letter-spacing:-.03em}
+.nav ul{display:flex;gap:18px}
+.nav a{color:var(--muted);font-size:11px;text-decoration:none}
+.nav a:hover{color:var(--text)}
+.nav>span{margin-left:auto;color:var(--muted);font-family:var(--font-mono);font-size:10px}
 
-.cover{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.86fr);align-items:center;gap:clamp(32px,5vw,72px);width:var(--column);margin:0 auto;padding:clamp(56px,8vw,112px) 0 clamp(40px,5vw,64px)}
-.cover h1{margin-bottom:16px;font-family:var(--font-display);font-size:clamp(44px,6.5vw,var(--type-example-display));font-weight:600;line-height:.94;letter-spacing:-.05em}
-.cover>div>p{max-width:32ch;color:var(--muted);font-size:16px;line-height:1.55}
-.cover-actions{display:flex;align-items:center;gap:8px;margin-top:26px}
-.action-primary,.action-secondary,.action-quiet{display:inline-flex;align-items:center;justify-content:center;width:max-content;padding:9px 16px;border:var(--border-width) solid transparent;border-radius:var(--control-radius);background:var(--action);color:var(--actionText);font-family:var(--font-body);font-size:12px;text-decoration:none}
-.action-secondary{border-color:var(--action);background:transparent;color:var(--action)}
-.action-quiet{padding-inline:6px;background:transparent;color:var(--action)}
-.cover-plate{display:grid;place-items:center;gap:14px;padding:clamp(28px,4vw,48px);border-radius:var(--card-radius);background:var(--surface)}
-.plate-object{width:56%;aspect-ratio:3 / 4;border-radius:var(--card-radius);background:var(--text);box-shadow:var(--shadow)}
-.cover-plate figcaption{color:var(--muted);font-size:11px}
-.cover-strip{width:var(--column);margin:0 auto;padding-top:22px;border-top:1px solid var(--hairline)}
-.cover-strip .move-list{margin-top:22px}
-.cover-strip .rule-sheet{margin-top:22px}
-.cover-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
-.cover-facts b{display:block;font-size:13px;font-weight:600;letter-spacing:-.01em}
-.cover-facts span{color:var(--muted);font-size:11px}
+.row{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);gap:var(--rail-gap);padding:26px 0;border-top:1px solid var(--hairline)}
+.row-tight{padding:15px 0;align-items:center}
+.row-wide{grid-template-columns:1fr;gap:14px}
+.row-head{padding:0 0 30px;border-top:0}
+.row-label strong{display:block;font-size:12px;font-weight:600;letter-spacing:-.01em}
+.row-label code{display:block;margin-top:4px;color:var(--muted);font-size:10px;line-height:1.5}
+.index{color:var(--muted);font-family:var(--font-mono);font-size:11px;letter-spacing:.1em}
+.row-head h2{font-family:var(--font-display);font-size:clamp(26px,3.2vw,38px);font-weight:600;line-height:1.08;letter-spacing:-.04em}
+.sentence{max-width:44ch;margin-top:14px;color:var(--muted);font-size:15px;line-height:1.55}
+.note{max-width:56ch;font-size:13px;line-height:1.65}
+.note.muted{margin-top:6px;color:var(--muted);font-size:12px}
+.note.mono{font-family:var(--font-mono);font-size:11px;color:var(--text)}
 
-.doc-section{width:var(--column);margin:0 auto;padding:clamp(56px,7vw,100px) 0;border-top:1px solid var(--hairline)}
-.section-head{margin-bottom:clamp(28px,3vw,44px)}
-.kicker{display:block;margin-bottom:16px;color:var(--muted);font-family:var(--font-mono);font-size:11px;letter-spacing:.1em}
-.section-head h2{max-width:20ch;font-family:var(--font-display);font-size:clamp(34px,4.6vw,56px);font-weight:600;line-height:1.02;letter-spacing:-.045em}
-.lede{max-width:34ch;margin-top:18px;font-size:clamp(16px,1.8vw,20px);line-height:1.45;letter-spacing:-.015em}
-.deck{max-width:62ch;margin-top:10px;color:var(--muted);font-size:13px;line-height:1.65}
-.token-group{margin-top:34px}
-.token-group h3,.rhythm-demo h3,.rule-lists h3{margin-bottom:14px;font-size:12px;font-weight:600;letter-spacing:-.01em}
+.cover{width:var(--column);margin:0 auto;display:grid;grid-template-columns:var(--rail) minmax(0,1fr);gap:var(--rail-gap);padding:clamp(60px,9vw,120px) 0 clamp(40px,5vw,64px)}
+.cover>span{color:var(--muted);font-family:var(--font-mono);font-size:10px;letter-spacing:.1em}
+.cover h1{font-family:var(--font-display);font-size:var(--type-example-display);font-weight:600;line-height:.94;letter-spacing:-.05em}
+.cover p{max-width:32ch;margin-top:18px;color:var(--muted);font-size:17px;line-height:1.5}
+.cover-actions{display:flex;align-items:center;gap:8px;margin-top:30px}
+.act,.act-secondary,.act-quiet{display:inline-flex;align-items:center;justify-content:center;width:max-content;padding:9px 16px;border:var(--border-width) solid transparent;border-radius:var(--control-radius);background:var(--action);color:var(--actionText);font-family:var(--font-body);font-size:12px;text-decoration:none}
+.act-secondary{border-color:var(--action);background:transparent;color:var(--action)}
+.act-quiet{padding-inline:6px;background:transparent;color:var(--action)}
+.tag{display:inline-flex;padding:6px 11px;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--muted);font-size:11px}
+.palette{display:flex;height:104px;border-block:1px solid var(--hairline)}
+.palette i{flex:1;border-right:1px solid var(--hairline)}
+.palette i:last-child{border-right:0}
+.cover-rows{width:var(--column);margin:0 auto}
+.traits{font-size:13px;line-height:1.7}
+.moves{display:grid;gap:10px}
+.moves li{display:grid;grid-template-columns:20px minmax(0,1fr);gap:12px}
+.moves b{color:var(--muted);font-family:var(--font-mono);font-size:10px;font-weight:400}
+.moves span{font-size:14px;line-height:1.5;letter-spacing:-.01em}
 
-.spec-table th,.spec-table td{padding:11px 0;border-bottom:1px solid var(--hairline);text-align:left;vertical-align:top}
-.spec-table tr:last-child th,.spec-table tr:last-child td{border-bottom:0}
-.spec-table th{width:150px;color:var(--muted);font-size:11px;font-weight:400}
-.spec-table td{font-size:12px}
-.spec-table code{font-size:11px}
-.spec-table .numeric{width:96px;font-family:var(--font-mono);font-size:11px}
-.spec-table b{padding:3px 8px;border-radius:999px;font-family:var(--font-body);font-size:10px;font-weight:400}
-.level-pass{background:var(--action);color:var(--actionText)}
-.level-fail{border:1px solid var(--border);color:var(--muted)}
-.source-table th{width:170px}
-.source-table code{word-break:break-all}
+.doc-section{width:var(--column);margin:0 auto;padding:clamp(54px,6vw,88px) 0;border-top:1px solid var(--border)}
 
-.swatch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:10px}
-.swatch{padding:10px;border:1px solid var(--hairline);border-radius:var(--doc-radius)}
-.swatch i{display:block;height:46px;margin-bottom:11px;border-radius:6px;box-shadow:inset 0 0 0 1px var(--border)}
-.swatch strong{display:block;font-size:11px;font-weight:600}
+.swatch-set{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:20px}
+.swatch i{display:block;height:68px;border-radius:6px;box-shadow:inset 0 0 0 1px var(--border)}
+.swatch strong{display:block;margin-top:12px;font-size:12px;font-weight:600}
 .swatch code{display:block;margin-top:2px;color:var(--muted);font-size:10px}
-.swatch span{display:block;margin-top:9px;color:var(--muted);font-size:11px;line-height:1.5}
+.swatch span{display:block;margin-top:8px;color:var(--muted);font-size:11px;line-height:1.5}
+.facts{max-width:540px}
+.facts li{display:grid;grid-template-columns:minmax(0,1fr) 92px 56px;gap:12px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--hairline)}
+.facts li:last-child{border-bottom:0}
+.facts code,.facts .term{color:var(--muted);font-size:11px}
+.facts .term{font-family:var(--font-body);font-size:12px;text-align:left}
+.facts b{font-family:var(--font-mono);font-size:12px;font-weight:400}
+.facts span{color:var(--muted);font-size:11px;text-align:right}
 
-.ramp-row{display:grid;grid-template-columns:158px minmax(0,1fr);gap:20px;align-items:baseline;padding:18px 0;border-bottom:1px solid var(--hairline)}
-.ramp-row:first-child{padding-top:0}
-.ramp-meta strong{display:block;font-family:var(--font-mono);font-size:11px;font-weight:400}
-.ramp-meta code{display:block;margin-top:3px;color:var(--muted);font-size:10px}
-.ramp-specimen{font-family:var(--font-display);font-weight:600;letter-spacing:-.03em}
+.specimen{font-family:var(--font-display);font-weight:600;letter-spacing:-.03em}
+.weight-line{display:flex;flex-wrap:wrap;gap:8px 30px;align-items:baseline}
+.weight-line span{font-family:var(--font-display);font-size:21px;letter-spacing:-.02em}
+.weight-line i{margin-left:8px;color:var(--muted);font-family:var(--font-mono);font-size:10px;font-style:normal;font-weight:400;letter-spacing:0}
+.measure-proof{max-width:var(--measure);color:var(--muted);font-size:13px;line-height:1.7}
 
-.scale-row{display:flex;flex-wrap:wrap;gap:8px}
-.scale-chip{padding:12px 14px;border:1px solid var(--hairline);border-radius:var(--doc-radius)}
-.scale-chip b{display:block;font-family:var(--font-display);font-size:19px;font-weight:600;letter-spacing:-.03em}
-.scale-chip i{font-size:11px;font-style:normal;font-weight:400;color:var(--muted)}
-.scale-chip code{display:block;margin-top:3px;color:var(--muted);font-size:10px}
-.measure-stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-top:12px}
-.measure-bars,.rhythm-demo{padding:22px;border:1px solid var(--hairline);border-radius:var(--doc-radius)}
-.measure-bars article{display:grid;grid-template-columns:112px minmax(0,1fr) 56px;align-items:center;gap:12px;padding:9px 0}
-.measure-bars code{color:var(--muted);font-size:10px}
-.measure-bars span{display:block;height:6px;border-radius:999px;background:var(--action)}
-.measure-bars b{font-family:var(--font-mono);font-size:11px;font-weight:400;text-align:right}
-.rhythm-row{display:flex;align-items:center;margin-bottom:14px}
-.rhythm-row i{width:52px;height:40px;border-radius:6px;background:var(--border)}
-.rhythm-row em{margin-left:auto;padding-left:14px;color:var(--muted);font-family:var(--font-mono);font-size:10px;font-style:normal}
-.rhythm-element{gap:var(--element-gap)}
-.rhythm-component{gap:var(--component-gap)}
-.rhythm-section{gap:min(var(--section-gap),140px);margin-bottom:0}
-
-.spec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:10px}
-.spec-card{display:flex;flex-direction:column;padding:12px;border:1px solid var(--hairline);border-radius:var(--doc-radius)}
-.spec-name{font-family:var(--font-mono);font-size:10px;color:var(--text)}
-.spec-figure{display:grid;place-items:center;min-height:88px;margin:12px 0}
-.spec-line{color:var(--muted);font-size:10px;line-height:1.5}
-.radius-proof{display:block;width:60px;height:44px;background:var(--text)}
-.radius-card{border-radius:var(--card-radius)}
-.radius-control{border-radius:var(--control-radius)}
-.radius-border{border:var(--border-width) solid var(--text);border-radius:6px;background:transparent}
-.radius-shadow{border:1px solid var(--hairline);border-radius:6px;background:var(--canvas);box-shadow:var(--shadow)}
-.surface-stack{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.surface-plate{padding:24px;border:1px solid var(--hairline);border-radius:var(--doc-radius)}
-.surface-plate strong{display:block;font-family:var(--font-mono);font-size:11px;font-weight:400}
-.surface-plate span{display:block;margin-top:8px;color:var(--muted);font-size:11px;line-height:1.5}
-.surface-canvas{background:var(--canvas)}
-.surface-surface{background:var(--surface)}
-.surface-elevated{background:var(--elevated);box-shadow:var(--shadow)}
-.tag-chip{display:inline-flex;padding:5px 10px;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--muted);font-size:11px}
-
-.move-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
-.move-list article{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;padding:18px;border:1px solid var(--hairline);border-radius:var(--doc-radius)}
-.move-list b{color:var(--muted);font-family:var(--font-mono);font-size:10px;font-weight:400}
-.move-list p{font-size:13px;line-height:1.5;letter-spacing:-.01em}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
-.chips li{padding:5px 10px;border:1px solid var(--hairline);border-radius:999px;color:var(--muted);font-size:11px;white-space:nowrap}
-
-.layout-viewport{display:flex;justify-content:center;min-height:340px;padding:22px 0;border:1px solid var(--hairline);border-radius:var(--doc-radius);background:var(--surface)}
-.layout-canvas{display:grid;grid-template-rows:32px minmax(0,1fr) 22px;gap:var(--component-gap);padding:var(--component-gap) 0;border-left:1px dashed var(--border);border-right:1px dashed var(--border)}
-.layout-canvas header,.layout-canvas footer{margin:0 var(--element-gap);border-radius:6px;background:var(--border)}
-.layout-canvas main{display:grid;grid-template-columns:1.6fr 1fr;grid-template-rows:1fr .56fr;gap:var(--element-gap);margin:0 var(--element-gap)}
-.layout-canvas i{border-radius:calc(var(--card-radius) * .6);background:var(--canvas)}
-.layout-canvas i:first-child{grid-row:1/-1;background:var(--text)}
-.layout-stage .spec-table{margin-top:20px}
-
-.component-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
-.component-card{overflow:hidden;border:1px solid var(--hairline);border-radius:var(--doc-radius)}
-.component-card>header{display:flex;gap:9px;padding:12px 14px;border-bottom:1px solid var(--hairline)}
-.component-card>header span{color:var(--muted);font-family:var(--font-mono);font-size:10px}
-.component-card>header strong{font-size:11px;font-weight:600}
-.component-figure{padding:26px;background:var(--surface)}
-.preview-hero,.preview-case{display:flex;flex-direction:column;min-height:150px}
-.preview-hero small,.preview-case small{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.1em}
-.preview-hero strong,.preview-case strong{margin:14px 0 auto;font-family:var(--font-display);font-size:26px;line-height:1.1;letter-spacing:-.04em}
-.preview-hero .action-primary{margin-top:16px}
-.preview-case span{margin-top:12px;color:var(--muted);font-size:11px}
-.preview-metric{display:grid;align-content:center;min-height:150px}
-.preview-metric strong{font-family:var(--font-display);font-size:58px;line-height:1;letter-spacing:-.06em}
-.preview-metric span{margin-top:6px;font-size:14px}
-.preview-metric small{color:var(--muted);font-family:var(--font-mono);font-size:10px}
-.preview-contact{display:flex;align-items:center;justify-content:center;gap:12px;min-height:150px}
-.component-meta{padding:14px}
-.component-meta p{font-size:12px;line-height:1.6}
-.component-meta dl{display:grid;grid-template-columns:44px minmax(0,1fr);gap:6px 10px;margin-top:12px}
-.component-meta dt{color:var(--muted);font-size:10px}
-.component-meta dd{color:var(--muted);font-size:11px}
-.component-meta code{font-size:10px}
-
-.imagery-stage{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:24px;align-items:start}
-.artifact{position:relative;min-height:340px;overflow:hidden;border-radius:var(--card-radius);background:var(--surface)}
-.artifact-frame{position:absolute;inset:10% 8%;overflow:hidden;border:6px solid var(--text);border-radius:calc(var(--card-radius) * .8);background:var(--canvas)}
-.artifact-frame i{display:inline-block;width:6px;height:6px;margin:12px 0 0 7px;border-radius:50%;background:var(--muted)}
-.artifact-copy{position:absolute;top:26%;left:16%;display:grid;gap:9px;width:42%}
-.artifact-copy b{height:12px;border-radius:7px;background:var(--text)}
-.artifact-copy b:nth-child(2){width:74%}
-.artifact-copy b:nth-child(3){width:52%;background:var(--action)}
-.artifact-chart{position:absolute;right:15%;bottom:24%;height:30%;display:flex;align-items:flex-end;gap:6px}
-.artifact-chart i{width:13px;background:var(--text)}
-.artifact-chart i:nth-child(1){height:32%}
-.artifact-chart i:nth-child(2){height:52%}
-.artifact-chart i:nth-child(3){height:74%}
-.artifact-chart i:nth-child(4){height:58%}
-.artifact-chart i:nth-child(5){height:100%;background:var(--action)}
-.artifact-status{position:absolute;left:16%;bottom:19%;font-family:var(--font-display);font-size:30px;font-weight:700;letter-spacing:-.05em}
-.artifact-status small{display:block;color:var(--muted);font-family:var(--font-mono);font-size:9px;font-weight:400;letter-spacing:0}
-
-.motion-block{display:block;width:64px;height:64px;border-radius:calc(var(--card-radius) * .7);background:var(--action)}
-.motion-rise{animation:doc-rise calc(var(--motion-duration) * 3) var(--motion-easing) infinite alternate}
-.motion-focus{animation:doc-focus calc(var(--motion-duration) * 3) var(--motion-easing) infinite alternate}
-.motion-still{background:var(--surface);border:1px solid var(--border)}
-@keyframes doc-rise{from{opacity:.25;transform:translateY(14px)}to{opacity:1;transform:none}}
-@keyframes doc-focus{from{transform:scale(.86)}to{transform:scale(1.06)}}
-
-.rule-visual{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.rule-visual figure{display:flex;flex-direction:column}
-.rule-visual .rule-card{flex:1}
-.rule-visual figcaption{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
-.rule-visual figcaption b{font-size:11px;font-weight:600}
-.rule-visual figcaption span{color:var(--muted);font-size:11px}
-.rule-card{display:flex;flex-direction:column;min-height:210px;padding:24px;border:var(--border-width) solid var(--border);border-radius:var(--card-radius)}
-.rule-card small{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.1em}
-.rule-card h4{margin:16px 0 10px;font-family:var(--font-display);font-size:22px;font-weight:600;line-height:1.15;letter-spacing:-.03em}
-.rule-card p{max-width:38ch;color:var(--muted);font-size:12px;line-height:1.6}
-.rule-card .action-primary{margin-top:auto}
-.rule-card-broken{border-color:var(--accent);background:var(--accent);color:var(--actionText);box-shadow:0 16px 36px color-mix(in srgb,var(--text) 32%,transparent)}
-.rule-card-broken small,.rule-card-broken p{color:var(--actionText)}
-.rule-card-broken h4{margin-bottom:6px;font-size:15px;letter-spacing:0}
-.rule-card-broken p{max-width:none;font-size:11px;line-height:1.25}
+.frame{padding:26px;border:1px solid var(--hairline);border-radius:var(--doc-radius);background:var(--surface)}
+.frame-plain{padding:0;border:0;background:transparent}
+.frame-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.demo{display:flex;flex-direction:column;min-height:148px}
+.demo small{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.1em}
+.demo strong{margin:14px 0 auto;font-family:var(--font-display);font-size:26px;font-weight:600;line-height:1.1;letter-spacing:-.04em}
+.demo-hero .act{margin-top:16px}
+.demo-case span{margin-top:12px;color:var(--muted);font-size:11px}
+.demo-metric{justify-content:center}
+.demo-metric strong{margin:0;font-size:56px;line-height:1;letter-spacing:-.06em}
+.demo-metric span{margin-top:6px;font-size:14px}
+.demo-metric small{margin-top:6px}
+.demo-contact{flex-direction:row;align-items:center;justify-content:center;gap:14px}
+.demo-rule{min-height:190px;padding:24px;border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--canvas)}
+.demo-rule strong{font-size:22px}
+.demo-rule p{max-width:38ch;margin-top:10px;color:var(--muted);font-size:12px;line-height:1.6}
+.demo-rule .act{margin-top:auto}
+.demo-rule-broken{border-color:var(--accent);background:var(--accent);color:var(--actionText);box-shadow:0 16px 34px color-mix(in srgb,var(--text) 30%,transparent)}
+.demo-rule-broken small,.demo-rule-broken p{color:var(--actionText)}
+.demo-rule-broken strong{margin-bottom:2px;font-size:15px;letter-spacing:0}
+.demo-rule-broken p{max-width:none;font-size:11px;line-height:1.25}
 .broken-actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto;padding-top:12px}
 .broken-actions span{padding:6px 10px;border-radius:var(--control-radius);background:var(--action);color:var(--actionText);font-size:11px}
 .broken-actions span:nth-child(2){background:var(--text)}
 .broken-actions span:nth-child(3){background:var(--canvas);color:var(--text)}
 .broken-actions span:nth-child(4){background:var(--elevated);color:var(--text)}
-.rule-lists{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}
-.rule-lists li{padding:10px 0;border-bottom:1px solid var(--hairline);font-size:12px;line-height:1.6}
-.rule-lists li:last-child{border-bottom:0}
+.rule-list{margin-top:18px}
+.rule-list li{padding:9px 0;border-bottom:1px solid var(--hairline);font-size:13px;line-height:1.6}
+.rule-list li:last-child{border-bottom:0}
+
+.bar{display:block;height:8px;border-radius:999px;background:var(--action)}
+.proof{display:block;width:64px;height:44px;background:var(--text)}
+.proof-card{border-radius:var(--card-radius)}
+.proof-control{border-radius:var(--control-radius)}
+.proof-border{border:var(--border-width) solid var(--text);border-radius:6px;background:transparent}
+.proof-shadow{border:1px solid var(--hairline);border-radius:6px;background:var(--canvas);box-shadow:var(--shadow)}
+.surface-set{display:flex;gap:10px}
+.plane{display:grid;align-content:end;flex:1;height:92px;padding:12px;border:1px solid var(--hairline);border-radius:var(--doc-radius)}
+.plane b{color:var(--muted);font-family:var(--font-mono);font-size:10px;font-weight:400}
+.plane-canvas{background:var(--canvas)}
+.plane-surface{background:var(--surface)}
+.plane-elevated{background:var(--elevated);box-shadow:var(--shadow)}
+.motion{display:block;width:56px;height:56px;border-radius:calc(var(--card-radius) * .7);background:var(--action)}
+.motion-rise{animation:doc-rise calc(var(--motion-duration) * 3) var(--motion-easing) infinite alternate}
+.motion-focus{animation:doc-focus calc(var(--motion-duration) * 3) var(--motion-easing) infinite alternate}
+.motion-still{background:var(--surface);border:1px solid var(--border)}
+@keyframes doc-rise{from{opacity:.25;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes doc-focus{from{transform:scale(.86)}to{transform:scale(1.06)}}
+
+.wire{display:flex;justify-content:center;min-height:320px;padding:22px 0;border:1px solid var(--hairline);border-radius:var(--doc-radius);background:var(--surface)}
+.wire-page{display:grid;grid-template-rows:30px minmax(0,1fr) 20px;gap:var(--component-gap);padding:var(--component-gap) 0;border-left:1px dashed var(--border);border-right:1px dashed var(--border)}
+.wire-page header,.wire-page footer{margin:0 var(--element-gap);border-radius:5px;background:var(--border)}
+.wire-page main{display:grid;grid-template-columns:1.6fr 1fr;grid-template-rows:1fr .56fr;gap:var(--element-gap);margin:0 var(--element-gap)}
+.wire-page i{border-radius:calc(var(--card-radius) * .6);background:var(--canvas)}
+.wire-page i:first-child{grid-row:1/-1;background:var(--text)}
+
+.artifact{position:relative;min-height:320px;overflow:hidden;border-radius:var(--card-radius);background:var(--surface)}
+.artifact-window{position:absolute;inset:10% 8%;overflow:hidden;border:6px solid var(--text);border-radius:calc(var(--card-radius) * .8);background:var(--canvas)}
+.artifact-window i{display:inline-block;width:6px;height:6px;margin:12px 0 0 7px;border-radius:50%;background:var(--muted)}
+.artifact-copy{position:absolute;top:26%;left:16%;display:grid;gap:9px;width:42%}
+.artifact-copy b{height:11px;border-radius:6px;background:var(--text)}
+.artifact-copy b:nth-child(2){width:74%}
+.artifact-copy b:nth-child(3){width:52%;background:var(--action)}
+.artifact-chart{position:absolute;right:15%;bottom:24%;height:30%;display:flex;align-items:flex-end;gap:6px}
+.artifact-chart i{width:12px;background:var(--text)}
+.artifact-chart i:nth-child(1){height:32%}
+.artifact-chart i:nth-child(2){height:52%}
+.artifact-chart i:nth-child(3){height:74%}
+.artifact-chart i:nth-child(4){height:58%}
+.artifact-chart i:nth-child(5){height:100%;background:var(--action)}
+.artifact-value{position:absolute;left:16%;bottom:19%;font-family:var(--font-display);font-size:28px;font-weight:700;letter-spacing:-.05em}
+.artifact-value small{display:block;color:var(--muted);font-family:var(--font-mono);font-size:9px;font-weight:400;letter-spacing:0}
 
 .portfolio-browser{overflow:hidden;border:1px solid var(--hairline);border-radius:var(--doc-radius);background:var(--canvas)}
-.browser-bar{display:flex;align-items:center;gap:6px;height:38px;padding:0 14px;background:var(--text);color:var(--canvas)}
+.browser-bar{display:flex;align-items:center;gap:6px;height:36px;padding:0 14px;background:var(--text);color:var(--canvas)}
 .browser-bar>span{width:7px;height:7px;border-radius:50%;background:var(--canvas);opacity:.4}
 .browser-bar b{margin-left:10px;font-family:var(--font-mono);font-size:9px;font-weight:400;opacity:.6}
 .portfolio-page{font-size:var(--type-example-body);line-height:var(--line-example-body)}
 .portfolio-page>*{padding-inline:6%}
-.portfolio-page>.portfolio-tiles,.portfolio-page>.sample-quote{padding-inline:0}
-.portfolio-nav{display:flex;align-items:center;height:62px;border-bottom:1px solid var(--hairline)}
+.portfolio-page>.tiles,.portfolio-page>.sample-quote{padding-inline:0}
+.portfolio-nav{display:flex;align-items:center;height:60px;border-bottom:1px solid var(--hairline)}
 .portfolio-nav span{margin-left:auto;color:var(--muted);font-size:11px}
 .sample-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);align-items:center;gap:36px;padding:clamp(44px,6vw,80px) 0;border-bottom:1px solid var(--hairline)}
-.sample-hero>div>p{color:var(--muted);font-size:12px}
+.sample-hero .role{color:var(--muted);font-size:12px}
 .sample-hero h3{max-width:14ch;margin:12px 0 24px;font-family:var(--font-display);font-size:clamp(34px,4.6vw,62px);line-height:.99;letter-spacing:-.05em}
 .hero-actions{display:flex;align-items:center;gap:10px}
-.hero-plate{position:relative;justify-self:end;width:100%;max-width:280px;aspect-ratio:4 / 5;border-radius:var(--card-radius);background:var(--text)}
+.hero-plate{position:relative;justify-self:end;width:100%;max-width:260px;aspect-ratio:4 / 5;border-radius:var(--card-radius);background:var(--text)}
 .hero-plate i{position:absolute;inset:24%;border:1px solid var(--canvas);border-radius:50%;opacity:.28}
-.portfolio-tiles{display:grid;grid-template-columns:1fr 1fr;gap:0}
-.portfolio-tiles>.sample{display:flex;flex-direction:column;min-height:230px;padding:clamp(28px,4vw,52px)}
-.portfolio-tiles>.sample:nth-child(odd){background:var(--surface)}
-.portfolio-tiles>.sample:nth-child(even){background:var(--text);color:var(--canvas)}
-.portfolio-tiles>.sample:nth-child(even) p,.portfolio-tiles>.sample:nth-child(even) .proof-index{color:var(--ink-muted)}
-.portfolio-tiles>.sample:nth-child(even) .tag-list li{border-color:var(--ink-muted);color:var(--ink-muted)}
-.portfolio-tiles strong{display:block;max-width:16ch;margin-top:auto;font-family:var(--font-display);font-size:clamp(22px,3vw,38px);line-height:1.06;letter-spacing:-.04em}
-.portfolio-tiles p{margin-top:10px;color:var(--muted);font-size:12px}
-.portfolio-case{display:grid;grid-template-columns:.85fr 1.15fr;gap:36px;padding:clamp(44px,6vw,76px) 0;border-bottom:1px solid var(--hairline)}
+.tiles{display:grid;grid-template-columns:1fr 1fr}
+.tiles>.sample{display:flex;flex-direction:column;min-height:224px;padding:clamp(26px,4vw,48px)}
+.tiles>.sample:nth-child(odd){background:var(--surface)}
+.tiles>.sample:nth-child(even){background:var(--text);color:var(--canvas)}
+.tiles>.sample:nth-child(even) p,.tiles>.sample:nth-child(even) .index{color:var(--ink-muted)}
+.tiles>.sample:nth-child(even) .tag-set li{border-color:var(--ink-muted);color:var(--ink-muted)}
+.tiles strong,.tiles h3{max-width:18ch;margin-top:auto;font-family:var(--font-display);font-size:clamp(21px,2.8vw,34px);font-weight:600;line-height:1.08;letter-spacing:-.035em}
+.tiles p{margin-top:10px;color:var(--muted);font-size:12px}
+.case-row{display:grid;grid-template-columns:.85fr 1.15fr;gap:36px;padding:clamp(44px,6vw,76px) 0;border-bottom:1px solid var(--hairline)}
 .sample-case-study{display:flex;flex-direction:column;justify-content:center}
-.case-index,.proof-index{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.1em}
-.sample-case-study h3,.sample-long-body h3,.sample-no-image h3,.sample-tags h3{margin:10px 0 14px;font-family:var(--font-display);font-size:26px;line-height:1.12;letter-spacing:-.03em}
-.sample-case-study p,.sample-long-body p,.sample-no-image p{color:var(--muted)}
-.sample-case-study .action-quiet{margin-top:16px;padding-left:0}
-.sample-image>p{margin-top:10px;color:var(--muted);font-size:11px}
-.sample-long-body{max-width:var(--measure);padding:clamp(48px,6vw,88px) 0}
+.index{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.1em}
+.sample-case-study h3,.sample-long-body h3{margin:10px 0 14px;font-family:var(--font-display);font-size:26px;line-height:1.12;letter-spacing:-.03em}
+.sample-case-study p,.sample-long-body p{color:var(--muted)}
+.sample-case-study .act-quiet{margin-top:16px;padding-left:0}
+.caption{margin-top:10px;color:var(--muted);font-size:11px}
+.sample-long-body{max-width:var(--measure);padding-block:clamp(48px,6vw,88px)}
 .sample-long-body p + p{margin-top:14px}
-.sample-no-image h3{margin-bottom:auto}
-.tag-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
-.tag-list li{padding:6px 10px;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--muted);font-size:11px}
+.tag-set{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.tag-set li{padding:6px 10px;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--muted);font-size:11px}
 .sample-quote{display:grid;place-items:center;min-height:300px;padding:clamp(48px,6vw,88px) 12%;background:var(--text);color:var(--canvas);text-align:center}
 .sample-quote blockquote{max-width:20ch;font-family:var(--font-display);font-size:clamp(24px,3.4vw,42px);line-height:1.12;letter-spacing:-.04em}
 .sample-quote p{margin-top:18px;color:var(--ink-muted);font-size:12px}
-.sample-link-contact{display:flex;align-items:center;flex-wrap:wrap;gap:22px;padding:clamp(40px,5vw,68px) 0;border-bottom:1px solid var(--hairline)}
+.sample-link-contact{display:flex;align-items:center;flex-wrap:wrap;gap:22px;padding-block:clamp(40px,5vw,68px);border-bottom:1px solid var(--hairline)}
 .sample-link-contact>div{margin-right:auto}
 .sample-link-contact p{color:var(--muted);font-size:12px}
 .sample-link-contact h3{margin-top:4px;font-family:var(--font-display);font-size:clamp(22px,2.8vw,32px);letter-spacing:-.03em}
-.sample-footer{display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center;min-height:92px}
+.sample-footer{display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center;min-height:90px}
 .sample-footer p{color:var(--muted);font-size:11px}
 .sample-footer span:last-child{color:var(--muted);font-family:var(--font-mono);font-size:10px}
 
-.rule-sheet{margin-top:30px;border-top:1px solid var(--hairline)}
-.rule-sheet summary{display:flex;align-items:center;gap:8px;padding:16px 0;color:var(--muted);font-size:11px;cursor:pointer}
+.rule-sheet{margin-top:28px;border-top:1px solid var(--hairline)}
+.rule-sheet summary{display:flex;align-items:center;gap:8px;padding:15px 0;color:var(--muted);font-size:11px;cursor:pointer}
 .rule-sheet summary span{font-family:var(--font-mono);font-size:10px}
 .doc-lines{display:grid;grid-template-columns:1fr 1fr;gap:0 26px;padding-bottom:18px;color:var(--muted);font-size:11px;line-height:1.55}
 .doc-lines li{padding:7px 0;border-bottom:1px solid var(--hairline)}
 
-@media(max-width:960px){
-.cover,.measure-stage,.imagery-stage,.component-grid,.sample-hero,.portfolio-case{grid-template-columns:1fr}
-.cover-facts{grid-template-columns:1fr 1fr}
-.cover-facts{grid-template-columns:1fr 1fr}
-.surface-stack{grid-template-columns:1fr}
-.hero-plate{justify-self:start;max-width:240px}
-.plate-object{width:42%}
+@media(max-width:900px){
+.row,.cover{grid-template-columns:1fr;gap:14px}
+.row-head{padding-bottom:22px}
+.case-row,.sample-hero,.tiles,.demo-contact{grid-template-columns:1fr}
+.hero-plate{justify-self:start;max-width:220px}
+.surface-set{flex-direction:column}
+.plane{height:64px}
 }
 @media(max-width:640px){
-.preview-nav ul{display:none}
+.nav ul{display:none}
 :root{--column:calc(100% - 36px)}
-.section-head h2{font-size:30px}
-.lede{font-size:16px}
-.ramp-row{grid-template-columns:1fr;gap:8px}
-.spec-table th{width:110px}
-.rule-visual,.rule-lists,.portfolio-tiles,.doc-lines{grid-template-columns:1fr}
-.measure-bars,.rhythm-demo{padding:16px}
-.measure-bars article{grid-template-columns:84px minmax(0,1fr) 46px;gap:8px}
-.rhythm-row i{width:38px;height:32px}
-.rhythm-component{gap:min(var(--component-gap),40px)}
-.rhythm-section{gap:min(var(--section-gap),72px)}
+.cover h1{font-size:15vw}
+.cover p{font-size:15px}
+.row-head h2{font-size:26px}
+.sentence{font-size:14px}
+.facts li{grid-template-columns:1fr;gap:2px}
+.facts span{text-align:left}
+.doc-lines{grid-template-columns:1fr}
 .sample-link-contact{align-items:flex-start;flex-direction:column}
 .sample-footer{grid-template-columns:1fr}
 }
@@ -1034,26 +895,20 @@ code{font-family:var(--font-mono)}
 </style>
 </head>
 <body>
-  <nav class="preview-nav"><strong>${title}</strong><ul><li><a href="#colors">Colors</a></li><li><a href="#typography">Typography</a></li><li><a href="#components">Components</a></li><li><a href="#sample-portfolio">Live portfolio</a></li></ul><span>r${revision}</span></nav>
+  <nav class="nav"><strong>${title}</strong><ul><li><a href="#colors">Colors</a></li><li><a href="#typography">Typography</a></li><li><a href="#components">Components</a></li><li><a href="#sample-portfolio">Live portfolio</a></li></ul><span>r${revision}</span></nav>
   <header class="cover">
+    <span>Portfolio design system</span>
     <div>
       <h1>${title}</h1>
       <p>${thesis}</p>
-      <div class="cover-actions"><a class="action-primary" href="#sample-portfolio">Live portfolio 보기</a><a class="action-quiet" href="#colors">시스템 살펴보기 ↓</a></div>
+      <div class="cover-actions"><a class="act" href="#sample-portfolio">Live portfolio 보기</a><a class="act-quiet" href="#colors">시스템 살펴보기 ↓</a></div>
     </div>
-    <figure class="cover-plate">
-      <div class="plate-object" aria-hidden="true"></div>
-      <figcaption>대표 이미지 자리 · shadow ${escapeHtml(spec.shape.shadowStyle)}</figcaption>
-    </figure>
   </header>
-  <div class="cover-strip" data-design-section="direction">
-    <div class="cover-facts">${facts.map(
-      ({ value, label }) => `<span><b>${escapeHtml(value)}</b><span>${escapeHtml(label)}</span></span>`,
-    ).join("")}</div>
-    <div class="move-list">${spec.identity.signatureMoves.map(
-      (move, moveIndex) => `<article><b>${pad2(moveIndex + 1)}</b><p>${escapeHtml(move)}</p></article>`,
-    ).join("")}</div>
-    <ul class="chips">${spec.identity.traits.map((trait) => `<li>${escapeHtml(trait)}</li>`).join("")}</ul>
+  <div class="palette" aria-hidden="true">${COLOR_NAMES.map((name) => `<i style="background:var(--${name})"></i>`).join("")}</div>
+  <div class="cover-rows" data-design-section="direction">
+    ${row(label("측정값"), measured)}
+    ${row(label("Signature move"), moves)}
+    ${row(label("핵심 특징"), `<p class="traits">${spec.identity.traits.map(escapeHtml).join(" · ")}</p>`)}
     ${renderRuleSheet(direction)}
   </div>
   <main>${sections}</main>
