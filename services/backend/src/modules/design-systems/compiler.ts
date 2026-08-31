@@ -1018,8 +1018,8 @@ code{font-family:var(--font-mono)}
 .variant .frame>*{animation:el-rise var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s)}
 .variant .frame li,.variant .frame tbody tr,.variant .frame .v-group>article,.variant .frame .v-bars>article,.variant .frame .v-par>*{animation:el-rise var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + var(--j) * .07s + .1s)}
 
-/* 제목과 인용은 글이 쓰이듯 왼쪽에서 닦여 나온다. */
-.variant .frame>strong,.variant .frame .v-two strong,.variant .frame .v-quote,.variant .frame .v-org strong{animation-name:el-wipe}
+/* 제목과 인용은 가려진 자리에서 올라온다. 수치보다 멀리, 느리게 놓인다. */
+.variant .frame>strong,.variant .frame .v-two strong,.variant .frame .v-quote,.variant .frame .v-org strong{animation-name:el-title}
 /* 수치는 가려진 자리에서 올라온다. */
 .variant .frame>strong.v-number,.variant .frame .v-lead-metric .v-number,.variant .frame .v-before strong,.variant .frame .v-group strong,.variant .frame .v-achieve b,.variant .frame .v-gauge strong{animation:el-lift var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + var(--j) * .07s + .16s)}
 /* 막대는 0에서 자란다. */
@@ -1036,7 +1036,7 @@ code{font-family:var(--font-mono)}
 .variant .frame .v-timeline b{animation:el-pop var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + var(--j) * .07s + .26s)}
 
 @keyframes el-rise{0%{opacity:0;transform:translateY(14px)}7%,100%{opacity:1;transform:none}}
-@keyframes el-wipe{0%{opacity:0;clip-path:inset(0 100% -12% 0)}3%{opacity:1}13%,100%{opacity:1;clip-path:inset(0 0 -12% 0)}}
+@keyframes el-title{0%{opacity:0;clip-path:inset(102% 0 -14% 0);transform:translateY(18%)}3%{opacity:1}15%,100%{opacity:1;clip-path:inset(-14% 0 -14% 0);transform:none}}
 @keyframes el-lift{0%{opacity:0;clip-path:inset(105% 0 -14% 0);transform:translateY(26%)}3%{opacity:1}12%,100%{opacity:1;clip-path:inset(-14% 0 -14% 0);transform:none}}
 @keyframes el-grow{0%{transform:scaleX(0)}16%,100%{transform:scaleX(1)}}
 @keyframes el-sweep{0%{opacity:0;transform:rotate(-170deg)}4%{opacity:1}18%,100%{opacity:1;transform:rotate(0)}}
