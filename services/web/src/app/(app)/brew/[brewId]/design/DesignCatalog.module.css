@@ -331,18 +331,21 @@
 .palette > [data-color="text"] { background: var(--thumb-text); }
 .palette > [data-color="background"] { background: var(--thumb-bg); }
 
-/* 출처 회사 마크 — 왼쪽 아래 팔레트와 짝을 이루는 자리다. 오른쪽 위 배지와
-   겹치지 않게 아래에 두고, 지면의 글자색을 옅게 써서 포스터의 단색을 지킨다. */
+/* 출처 회사 마크 — 지면 오른쪽 가장자리에 반만 걸친 큰 면이다. 이름 뒤에
+   두고 글자색을 아주 옅게 써서, 지면을 채우되 제목을 읽는 데 걸리지 않는다.
+   `.thumb` 의 overflow 가 나머지 반을 잘라 낸다. */
 .companyMark {
   position: absolute;
-  z-index: 2;
-  right: 10%;
-  bottom: 8%;
-  height: 7.5cqw;
-  max-height: 22px;
+  z-index: 0;
+  top: 42%;
+  right: 0;
+  height: 76cqw;
   width: auto;
+  /* 정확히 반을 자르면 Apple 의 베어 문 자국과 잎처럼 그 마크를 알아보게 하는
+     쪽이 통째로 잘려 나간다. 조금 덜 자른다. */
+  transform: translate(38%, -50%);
   color: var(--thumb-text);
-  opacity: 0.5;
+  opacity: 0.13;
   pointer-events: none;
 }
 
