@@ -394,9 +394,9 @@ function aspectRatio(value: string): string {
   return match ? `aspect-ratio:${match[1]} / ${match[2]};` : "";
 }
 
-/** 이미지가 들어갈 자리. 지어낸 그림 대신 선언한 비율과 반경만 보여 준다. */
-function mediaPlate(spec: DesignSystemSpecV2, note: string): string {
-  return `<div class="media" style="${aspectRatio(spec.imagery.aspectRatio)}" role="img" aria-label="${escapeHtml(note)}"><span>${escapeHtml(note)}</span></div>`;
+/** 이미지 자리. 선언한 비율과 반경으로 자른 고정 샘플 사진을 넣는다. */
+function mediaPlate(spec: DesignSystemSpecV2, note: string, index = 0): string {
+  return `<div class="media" style="${aspectRatio(spec.imagery.aspectRatio)}"><img src="${photoUrl(index, 720)}" alt="${escapeHtml(note)}" loading="lazy"></div>`;
 }
 
 function renderImageryRows(spec: DesignSystemSpecV2): string {
@@ -445,6 +445,39 @@ function renderRulesRows(spec: DesignSystemSpecV2): string {
 
 function sampleOf(model: DesignDocumentModel, kind: DesignSampleEntry["kind"]): DesignSampleEntry {
   return model.sampleEntries.find((entry) => entry.kind === kind)!;
+}
+
+/**
+ * 견본에 쓰는 고정 사진. 모든 디자인이 같은 사진을 써야 차이가 디자인에서만 온다.
+ * Unsplash 라이선스는 표기를 요구하지 않지만 출처는 문서의 출처 절에 남긴다.
+ */
+const SAMPLE_PHOTOS = [
+  { id: "photo-1518455027359-f3f8164ba6bd", by: "James McDonald" },
+  { id: "photo-1505209487757-5114235191e5", by: "Piotr Wilk" },
+  { id: "photo-1587522384446-64daf3e2689a", by: "Andres Jasso" },
+  { id: "photo-1449247709967-d4461a6a6103", by: "Bench Accounting" },
+] as const;
+
+function photoUrl(index: number, width: number): string {
+  const photo = SAMPLE_PHOTOS[index % SAMPLE_PHOTOS.length]!;
+  return `https://images.unsplash.com/${photo.id}?auto=format&fit=crop&w=${width}&q=70`;
+}
+
+/**
+ * 웹폰트로 불러올 수 있는 서체. 계약의 서체 이름은 자유 문자열이라 아는 것만
+ * 싣는다. 목록에 없으면 링크를 걸지 않고 선언한 대체 서체로 그린다.
+ */
+const WEB_FONTS: Record<string, string> = {
+  Inter: "Inter:wght@400;500;600;700",
+};
+
+function fontLink(spec: DesignSystemSpecV2): string {
+  const families = [spec.typography.display.family, spec.typography.body.family]
+    .map((family) => WEB_FONTS[family])
+    .filter((value, index, all): value is string => Boolean(value) && all.indexOf(value) === index);
+  if (families.length === 0) return "";
+  const query = families.map((family) => `family=${family}`).join("&");
+  return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${query}&display=swap">`;
 }
 
 /**
@@ -541,7 +574,7 @@ function renderOtherVariants(model: DesignDocumentModel): string {
   const footer = sampleOf(model, "footer");
   return [
     variant("본문", `${eyebrow("Body")}<p class="v-body">${escapeHtml(longBody.value)}</p><p class="v-body">${DEMO.problem}. ${DEMO.action}.</p><p class="v-body">${DEMO.result}.</p>`, "long-body", true),
-    variant("이미지 갤러리", `${eyebrow("Gallery")}<div class="v-gallery">${mediaPlate(spec, escapeHtml(image.value))}${mediaPlate(spec, "복구 대시보드")}${mediaPlate(spec, "장애 리뷰")}</div>`, "image", true),
+    variant("이미지 갤러리", `${eyebrow("Gallery")}<div class="v-gallery">${mediaPlate(spec, escapeHtml(image.value), 1)}${mediaPlate(spec, "복구 대시보드", 2)}${mediaPlate(spec, "장애 리뷰", 3)}</div>`, "image", true),
     variant("인용", `${eyebrow("Quote")}<blockquote class="v-quote">${escapeHtml(quote.value)}</blockquote><div class="v-profile"><i class="avatar"></i><div><strong>함께 일한 동료</strong><small>${DEMO.org} · 제품</small></div></div>`, "quote"),
     variant("프로필", `<div class="v-profile"><i class="avatar avatar-lg"></i><div><strong>${DEMO.name}</strong><small>${DEMO.role}</small></div></div><p class="v-body">운영에서 반복되던 문제를 구조로 바꾸는 일을 합니다. 기록과 검증을 함께 남깁니다.</p>${metaRow([["소속", DEMO.org], ["기간", DEMO.period]])}`),
     variant("연락", `${eyebrow("Contact")}<strong>다음 문제를 함께 풀어볼까요?</strong><p class="v-lead">${escapeHtml(contact.value)}</p><div class="v-actions"><span class="act">대화 시작하기 ↗</span><span class="act-quiet">이력서 ↗</span></div>`, "link-contact"),
@@ -571,6 +604,7 @@ function renderSourceRows(model: DesignDocumentModel, markdownSha256: string): s
     ["수집 시각", spec.origin.capturedAt ?? "없음"],
     ["판", lock ? `${lock.primaryDirection.designSystemCode} r${lock.primaryDirection.revision}` : "r1"],
     ["DESIGN.md sha256", markdownSha256],
+    ["샘플 사진", `Unsplash · ${SAMPLE_PHOTOS.map((photo) => photo.by).join(" · ")}`],
   ];
   return rows.map(([name, value]) => row(label(name), `<p class="note mono">${escapeHtml(value)}</p>`, "row-tight")).join("");
 }
@@ -847,10 +881,11 @@ function renderAppleShowcaseHtml(
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'sha256-${scriptHash}'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https://images.unsplash.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'sha256-${scriptHash}'">
 <meta name="design-spec-version" content="2">
 <meta name="design-md-sha256" content="${markdownSha256}">
 <title>${title} — DESIGN</title>
+${fontLink(spec)}
 <style>
 /*
   이 문서는 골격 하나로만 이뤄진다 — 왼쪽 이름표, 오른쪽 내용, 위에 실선.
@@ -962,8 +997,8 @@ code{font-family:var(--font-mono)}
 @keyframes doc-rise{from{opacity:.25;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes doc-focus{from{transform:scale(.86)}to{transform:scale(1.06)}}
 
-.media{display:grid;place-items:center;width:100%;border-radius:var(--card-radius);background:var(--surface);box-shadow:inset 0 0 0 var(--border-width) var(--hairline)}
-.media span{color:var(--muted);font-family:var(--font-mono);font-size:10px}
+.media{overflow:hidden;width:100%;border-radius:var(--card-radius);background:var(--surface);box-shadow:inset 0 0 0 var(--border-width) var(--hairline)}
+.media img{display:block;width:100%;height:100%;object-fit:cover}
 .media-set{max-width:440px}
 .media{display:grid;place-items:center;width:100%;border-radius:var(--card-radius);background:var(--surface);box-shadow:inset 0 0 0 var(--border-width) var(--hairline)}
 .media span{color:var(--muted);font-family:var(--font-mono);font-size:10px}
