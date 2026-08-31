@@ -138,7 +138,7 @@ describe("design system compiler", () => {
     expect(apple.html).toContain('class="row-label"');
     expect(apple.html).toContain('class="palette"');
     expect(apple.html).toContain('class="variant-grid"');
-    expect(apple.html).toContain("Live portfolio 보기");
+    expect(apple.html).toContain("요소 견본 보기");
     expect(mercury.html).not.toContain('class="doc-section');
     expect(mercury.html).not.toContain('class="row-label"');
     expect(mercury.html).not.toContain('class="variant-grid"');

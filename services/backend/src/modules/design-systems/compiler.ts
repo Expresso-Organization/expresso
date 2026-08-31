@@ -169,7 +169,7 @@ export function buildDesignDocumentModel(
     section("colors", "색상 토큰과 역할", colorLines),
     section("typography", "타이포그래피 계단", typographyLines),
     section("components", "컴포넌트 규칙", componentLines),
-    section("sample-portfolio", "공통 샘플 포트폴리오", SAMPLE_ENTRIES.map(
+    section("sample-portfolio", "요소와 표시 방식", SAMPLE_ENTRIES.map(
       (entry) => `${entry.label}: ${entry.value}`,
     )),
     section("imagery", "이미지 전략", [
@@ -482,7 +482,7 @@ function fontLink(spec: DesignSystemSpecV2): string {
 
 /**
  * 고정 샘플 문안. 모든 디자인이 같은 내용을 쓰고, 차이는 디자인에서만 오게 한다.
- * 기준 문서 6.6 「공통 샘플 포트폴리오」.
+ * 기준 문서 6.6 「요소와 표시 방식」.
  */
 const DEMO = {
   role: "Product engineer · Seoul",
@@ -1165,13 +1165,13 @@ code{font-family:var(--font-mono)}
 </style>
 </head>
 <body>
-  <nav class="nav"><strong>${title}</strong><ul><li><a href="#colors">Colors</a></li><li><a href="#typography">Typography</a></li><li><a href="#components">Components</a></li><li><a href="#sample-portfolio">Live portfolio</a></li></ul><span>r${revision}</span></nav>
+  <nav class="nav"><strong>${title}</strong><ul><li><a href="#colors">Colors</a></li><li><a href="#typography">Typography</a></li><li><a href="#components">Components</a></li><li><a href="#sample-portfolio">Elements</a></li></ul><span>r${revision}</span></nav>
   <header class="cover">
     <span>Portfolio design system</span>
     <div>
       <h1>${title}</h1>
       <p>${subtitle}</p>
-      <div class="cover-actions"><a class="act" href="#sample-portfolio">Live portfolio 보기</a><a class="act-quiet" href="#colors">시스템 살펴보기 ↓</a></div>
+      <div class="cover-actions"><a class="act" href="#sample-portfolio">요소 견본 보기</a><a class="act-quiet" href="#colors">시스템 살펴보기 ↓</a></div>
     </div>
   </header>
   <div class="palette" aria-hidden="true">${COLOR_NAMES.map((name) => `<i style="background:var(--${name})"></i>`).join("")}</div>
