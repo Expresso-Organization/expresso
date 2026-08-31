@@ -90,6 +90,10 @@ export function DesignCatalog({
   entries: DesignCatalogEntry[];
   initialRevisionId: string | null;
 }) {
+  const firstAvailableRevisionId = initialRevisionId
+    && entries.some((entry) => entry.revisionId === initialRevisionId)
+    ? initialRevisionId
+    : entries[0]?.revisionId ?? null;
   const [actionState, saveSelection, pending] = useActionState<
     DesignSelectionActionState,
     FormData
@@ -103,7 +107,7 @@ export function DesignCatalog({
   const [mood, setMood] = useState("all");
   const [role, setRole] = useState("all");
   const [selectedRevisionId, setSelectedRevisionId] = useState<string | null>(
-    initialRevisionId ?? entries[0]?.revisionId ?? null,
+    firstAvailableRevisionId,
   );
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [inspectorTab, setInspectorTab] = useState<"html" | "markdown" | "source">("html");

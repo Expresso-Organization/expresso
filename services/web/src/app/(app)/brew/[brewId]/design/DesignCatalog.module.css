@@ -776,6 +776,10 @@
   box-shadow: var(--ex-elevation-overlay);
 }
 
+.inspectorFullscreen .inspectorFooter {
+  padding-left: 72px;
+}
+
 .openInspector {
   position: absolute;
   right: 26px;
@@ -911,6 +915,7 @@
 
   .inspectorFooter {
     flex-wrap: wrap;
+    padding-left: 72px;
   }
 
   .selectionSummary {

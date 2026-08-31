@@ -11,7 +11,7 @@ const CAPTURED_AT = "2026-08-31T08:20:00+09:00";
 
 interface ReferoStyleDefinition {
   code:
-    | "refero-apple-cathedral"
+    | "refero-apple"
     | "refero-mercury-alpine"
     | "refero-linear-midnight"
     | "refero-elevenlabs-cream"
@@ -75,6 +75,7 @@ interface ReferoStyleDefinition {
   observedSignals: string[];
   preserve: string[];
   reject: string[];
+  revision?: number;
 }
 
 const token = (value: string, role: string) => ({ value, role });
@@ -173,7 +174,7 @@ function createReferenceLock(definition: ReferoStyleDefinition): ReferenceLock {
     version: 1,
     primaryDirection: {
       designSystemCode: definition.code,
-      revision: 1,
+      revision: definition.revision ?? 1,
     },
     fitReasons: definition.fitReasons,
     preserve: definition.preserve,
@@ -217,9 +218,10 @@ function createReferoStyle(definition: ReferoStyleDefinition) {
 
 export const referoDesignSystems = {
   apple: createReferoStyle({
-    code: "refero-apple-cathedral",
-    name: "Apple Cathedral",
-    sourceName: "Apple (España) — Cathedral of white space",
+    code: "refero-apple",
+    name: "Apple",
+    sourceName: "Apple (España)",
+    revision: 2,
     referoStyleUrl: "https://styles.refero.design/style/c9cabb96-32fa-4896-837a-f2497ce1c856",
     originalUrl: "https://www.apple.com/macbook-neo",
     base: builtinDesignSystems.editorial.spec,
@@ -246,7 +248,7 @@ export const referoDesignSystems = {
     spacing: { elementGap: 10, componentGap: 28, sectionGap: 120, contentWidth: 1200 },
     shape: { cardRadius: 28, controlRadius: 100, borderWidth: 1, shadowStyle: "none" },
     composition: {
-      structure: "cathedral-white-space", density: "spacious",
+      structure: "product-white-space", density: "spacious",
       sectionRhythm: "흰색과 옅은 회색의 큰 섹션을 100–120px 간격으로 교차",
       hierarchy: "거대한 제목, 프로젝트 이미지, 짧은 설명 순서",
       surfaceStrategy: "경계선 대신 #ffffff와 #f5f5f7 표면 교차",

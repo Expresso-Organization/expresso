@@ -7,6 +7,7 @@ import {
   compileDesignDocuments,
   renderDesignHtml,
 } from "./compiler.js";
+import { referoDesignSystems } from "./refero-catalog.js";
 
 const COLOR_TOKENS = [
   "canvas",
@@ -118,6 +119,30 @@ describe("design system compiler", () => {
     expect(new Set(entries.map(({ spec }) => spec.imagery.mode)).size).toBe(3);
     expect(builtinDesignSystems.signal.spec.colors.canvas.value).toBe("#0b1220");
     expect(builtinDesignSystems.editorial.spec.typography.display.family).toBe("Georgia");
+  });
+
+  it("Apple r2만 고품질 Live Preview를 사용한다", () => {
+    const apple = compileDesignDocuments(
+      referoDesignSystems.apple.spec,
+      referoDesignSystems.apple.referenceLock,
+    );
+    const mercury = compileDesignDocuments(
+      referoDesignSystems.mercury.spec,
+      referoDesignSystems.mercury.referenceLock,
+    );
+
+    expect(referoDesignSystems.apple.code).toBe("refero-apple");
+    expect(referoDesignSystems.apple.spec.identity.name).toBe("Apple");
+    expect(referoDesignSystems.apple.referenceLock.primaryDirection.revision).toBe(2);
+    expect(apple.html).toContain('class="preview-nav"');
+    expect(apple.html).toContain('class="portfolio-browser"');
+    expect(apple.html).toContain('class="device-shell"');
+    expect(apple.html).toContain("Live portfolio 보기");
+    expect(mercury.html).not.toContain('class="preview-nav"');
+    expect(mercury.html).not.toContain('class="portfolio-browser"');
+    for (const kind of SAMPLE_KINDS) {
+      expect(occurrences(apple.html, `data-sample-kind="${kind}"`)).toBe(1);
+    }
   });
 
   it("문서 문자열을 HTML로 실행하지 않고 텍스트로 표시한다", () => {

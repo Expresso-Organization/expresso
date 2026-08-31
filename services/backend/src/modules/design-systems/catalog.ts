@@ -49,7 +49,7 @@ const definitions = [
   {
     entry: referoDesignSystems.apple,
     designSystemId: "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1301",
-    revisionId: "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1302",
+    revisionId: "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1303",
     legacyTemplateId: null,
     recommended: false,
     surface: "light",
