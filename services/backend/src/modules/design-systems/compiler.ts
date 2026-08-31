@@ -178,19 +178,17 @@ export function buildDesignDocumentModel(
       `처리: ${spec.imagery.treatment}`,
       `대체 방식: ${spec.imagery.fallback}`,
     ]),
-    section("composition", "구성과 섹션 리듬", [
-      `구조: ${spec.composition.structure}`,
-      `밀도: ${spec.composition.density}`,
-      `섹션 리듬: ${spec.composition.sectionRhythm}`,
-      `위계: ${spec.composition.hierarchy}`,
-      `표면 전략: ${spec.composition.surfaceStrategy}`,
-    ]),
-    section("spacing", "간격과 콘텐츠 폭", [
+    section("spacing", "간격과 구성", [
       `기본 단위: ${spec.spacing.baseUnit}px`,
       `요소 간격: ${spec.spacing.elementGap}px`,
       `컴포넌트 간격: ${spec.spacing.componentGap}px`,
       `섹션 간격: ${spec.spacing.sectionGap}px`,
       `콘텐츠 폭: ${spec.spacing.contentWidth}px`,
+      `구조: ${spec.composition.structure}`,
+      `밀도: ${spec.composition.density}`,
+      `섹션 리듬: ${spec.composition.sectionRhythm}`,
+      `위계: ${spec.composition.hierarchy}`,
+      `표면 전략: ${spec.composition.surfaceStrategy}`,
     ]),
     section("shape", "반경, 테두리, 그림자", [
       `카드 반경: ${spec.shape.cardRadius}px`,
@@ -406,11 +404,6 @@ function renderImageryRows(spec: DesignSystemSpecV2): string {
   ${row(label("이미지가 없을 때"), `<p class="note">${escapeHtml(spec.imagery.fallback)}</p>`)}`;
 }
 
-function renderCompositionRows(spec: DesignSystemSpecV2): string {
-  return `${row(label("섹션 리듬"), `<p class="note">${escapeHtml(spec.composition.sectionRhythm)}</p>`)}
-  ${row(label("표면 전략"), `<p class="note">${escapeHtml(spec.composition.surfaceStrategy)}</p>`)}
-  ${row(label("구성 방식"), `<p class="note mono">${escapeHtml(spec.composition.structure)} · ${escapeHtml(spec.composition.density)} · content-width ${spec.spacing.contentWidth}px</p>`, "row-tight")}`;
-}
 function renderSpacingRows(spec: DesignSystemSpecV2): string {
   const steps = [
     { token: "base-unit", value: spec.spacing.baseUnit },
@@ -424,7 +417,10 @@ function renderSpacingRows(spec: DesignSystemSpecV2): string {
     "row-tight",
   )).join("");
   return `${bars}
-  ${row(label("content-width", `${spec.spacing.contentWidth}px`), `<p class="note mono">본문 폭 ${escapeHtml(spec.typography.measure)}</p>`, "row-tight")}`;
+  ${row(label("content-width", `${spec.spacing.contentWidth}px`), `<p class="note mono">본문 폭 ${escapeHtml(spec.typography.measure)}</p>`, "row-tight")}
+  ${row(label("위계"), `<p class="note">${escapeHtml(spec.composition.hierarchy)}</p>`)}
+  ${row(label("표면 전략"), `<p class="note">${escapeHtml(spec.composition.surfaceStrategy)}</p>`)}
+  ${row(label("구성 방식"), `<p class="note mono">${escapeHtml(spec.composition.structure)} · ${escapeHtml(spec.composition.density)}</p>`, "row-tight")}`;
 }
 
 function renderShapeRows(spec: DesignSystemSpecV2): string {
@@ -587,7 +583,6 @@ function sectionSentence(spec: DesignSystemSpecV2, id: string): string | null {
     typography: moves[0],
     "sample-portfolio": "모든 디자인이 같은 내용을 씁니다. 화면의 차이는 전부 디자인에서 옵니다.",
     imagery: spec.imagery.treatment,
-    composition: spec.composition.hierarchy,
     spacing: spec.composition.sectionRhythm,
     shape: spec.components.card?.description,
     motion: spec.motion.personality,
@@ -611,7 +606,6 @@ function renderShowcaseSection(
   else if (value.id === "components") body = renderComponentRows(spec);
   else if (value.id === "sample-portfolio") body = renderSampleGallery(model);
   else if (value.id === "imagery") body = renderImageryRows(spec);
-  else if (value.id === "composition") body = renderCompositionRows(spec);
   else if (value.id === "spacing") body = renderSpacingRows(spec);
   else if (value.id === "shape") body = renderShapeRows(spec);
   else if (value.id === "motion") body = renderMotionRows(spec);

@@ -216,7 +216,7 @@ export const DesignDocumentModelSchema = z.strictObject({
   version: z.literal(2),
   spec: DesignSystemSpecV2Schema,
   referenceLock: ReferenceLockSchema.nullable(),
-  sections: z.array(DesignDocumentSectionSchema).length(12),
+  sections: z.array(DesignDocumentSectionSchema).length(11),
   sampleEntries: z.array(DesignSampleEntrySchema).length(11),
 });
 export type DesignDocumentModel = z.infer<typeof DesignDocumentModelSchema>;

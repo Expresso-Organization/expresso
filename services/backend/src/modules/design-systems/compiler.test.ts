@@ -59,7 +59,7 @@ describe("design system compiler", () => {
       const second = compileDesignDocuments(entry.spec, entry.referenceLock);
 
       expect(first).toEqual(second);
-      expect(first.model.sections).toHaveLength(12);
+      expect(first.model.sections).toHaveLength(11);
       expect(first.model.sampleEntries).toHaveLength(11);
       expect(first.html).toContain('name="design-spec-version" content="2"');
       expect(first.html).toContain(
