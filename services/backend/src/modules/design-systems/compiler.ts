@@ -390,27 +390,34 @@ function renderComponentRows(spec: DesignSystemSpecV2): string {
   return `${controls}${components}`;
 }
 
-function renderArtifact(labelText: string): string {
-  return `<div class="artifact" role="img" aria-label="${escapeHtml(labelText)}">
-    <span class="artifact-window"><i></i><i></i><i></i></span>
-    <span class="artifact-copy"><b></b><b></b><b></b></span>
-    <span class="artifact-chart"><i></i><i></i><i></i><i></i><i></i></span>
-    <span class="artifact-value">42%<small>verified impact</small></span>
-  </div>`;
+/** 계약이 선언한 비율을 CSS 값으로. 형식을 벗어나면 비율을 강제하지 않는다. */
+function aspectRatio(value: string): string {
+  const match = /^(\d+)\s*:\s*(\d+)$/.exec(value.trim());
+  return match ? `aspect-ratio:${match[1]} / ${match[2]};` : "";
+}
+
+/** 이미지가 들어갈 자리. 지어낸 그림 대신 선언한 비율과 반경만 보여 준다. */
+function mediaPlate(spec: DesignSystemSpecV2, note: string): string {
+  return `<div class="media" style="${aspectRatio(spec.imagery.aspectRatio)}" role="img" aria-label="${escapeHtml(note)}"><span>${escapeHtml(note)}</span></div>`;
 }
 
 function renderImageryRows(spec: DesignSystemSpecV2): string {
-  return `${row(label("아티팩트", spec.imagery.aspectRatio), `<div class="frame frame-plain">${renderArtifact("디자인 이미지 전략 예시")}</div>`)}
+  return `${row(label("비율", spec.imagery.aspectRatio), `<div class="media-set">${mediaPlate(spec, `이미지 자리 · ${spec.imagery.aspectRatio}`)}</div>`)}
   ${row(label("모드", spec.imagery.mode), `<p class="note">${escapeHtml(spec.imagery.treatment)}</p>`)}
-  ${row(label("이미지가 없을 때"), `<p class="note">${escapeHtml(spec.imagery.fallback)}</p>`)}`;
+  ${row(label("이미지가 없을 때"), `<div class="media-set"><div class="frame"><div class="demo demo-case"><small>FEATURED CASE · 01</small><strong>복구 시간을<br>42% 줄인 과정</strong><span>이미지 없이 제목과 사례 하나로 완결</span></div></div></div><p class="note">${escapeHtml(spec.imagery.fallback)}</p>`)}`;
 }
 
 function renderCompositionRows(spec: DesignSystemSpecV2): string {
   const ratio = Math.max(40, Math.min(100, Math.round((spec.spacing.contentWidth / 1440) * 100)));
-  return `${row(label("골격", `${spec.spacing.contentWidth}px / 1440px`), `<div class="frame frame-plain"><div class="wire"><div class="wire-page" style="width:${ratio}%"><header></header><main><i></i><i></i><i></i></main><footer></footer></div></div></div>`)}
+  const rhythm = `<div class="rhythm">
+    <div class="rhythm-column" style="width:${ratio}%">
+      <span class="rhythm-mark">${spec.spacing.contentWidth}px · section-gap ${spec.spacing.sectionGap}px</span>
+      <i></i><i></i><i></i>
+    </div>
+  </div>`;
+  return `${row(label("섹션 리듬", `1440px 지면의 ${ratio}%`), `${rhythm}<p class="note">${escapeHtml(spec.composition.sectionRhythm)}</p>`)}
   ${row(label("구조", spec.composition.structure), `<p class="note">${escapeHtml(spec.composition.hierarchy)}</p>`)}
-  ${row(label("밀도", spec.composition.density), `<p class="note">${escapeHtml(spec.composition.sectionRhythm)}</p>`)}
-  ${row(label("표면 전략"), `<p class="note">${escapeHtml(spec.composition.surfaceStrategy)}</p>`)}`;
+  ${row(label("밀도", spec.composition.density), `<p class="note">${escapeHtml(spec.composition.surfaceStrategy)}</p>`)}`;
 }
 
 function renderSpacingRows(spec: DesignSystemSpecV2): string {
@@ -446,55 +453,123 @@ function renderMotionRows(spec: DesignSystemSpecV2): string {
 }
 
 function renderRulesRows(spec: DesignSystemSpecV2): string {
-  const good = `<div class="frame"><div class="demo demo-rule"><small>FEATURED CASE · 01</small><strong>복구 시간을 42% 줄인 과정</strong><p>한 화면에 한 메시지. 강조색은 행동 하나에만 씁니다.</p><span class="act">사례 보기</span></div></div>`;
-  const bad = `<div class="frame"><div class="demo demo-rule demo-rule-broken"><small>FEATURED CASE · 01</small><strong>복구 시간을 42% 줄인 과정</strong><p>강조색을 여러 개 쓰고 본문을 촘촘하게 채우면 무엇을 먼저 봐야 하는지가 사라집니다. 제목은 작아지고 카드는 그림자로 떠오릅니다.</p><span class="broken-actions"><span>사례 보기</span><span>이력서</span><span>블로그</span><span>연락</span></span></div></div>`;
   const list = (values: string[]) => `<ul class="rule-list">${values.map((value) => `<li>${escapeHtml(value)}</li>`).join("")}</ul>`;
-  return `${row(label("Do", "규칙대로 그린 카드"), `${good}${list(spec.rules.do)}`)}
-  ${row(label("Don't", "규칙을 깬 카드"), `${bad}${list(spec.rules.dont)}`)}`;
+  return `${row(label("Do"), list(spec.rules.do))}
+  ${row(label("Don't"), list(spec.rules.dont))}`;
 }
 
 function sampleOf(model: DesignDocumentModel, kind: DesignSampleEntry["kind"]): DesignSampleEntry {
   return model.sampleEntries.find((entry) => entry.kind === kind)!;
 }
 
-function renderPortfolioSample(model: DesignDocumentModel): string {
-  const render = (kind: DesignSampleEntry["kind"], body: string, tag = "article") =>
-    `<${tag} class="sample sample-${kind}" data-sample-kind="${kind}">${body}</${tag}>`;
+/**
+ * 고정 샘플 문안. 모든 디자인이 같은 내용을 쓰고, 차이는 디자인에서만 오게 한다.
+ * 기준 문서 6.6 「공통 샘플 포트폴리오」.
+ */
+const DEMO = {
+  role: "Product engineer · Seoul",
+  name: "민재",
+  org: "Expresso · 2023–2026",
+  project: "결제 시스템의 복구 시간을 줄인 과정",
+  problem: "장애 대응 절차가 네 곳에 흩어져 있었다",
+  action: "복구 흐름을 한 화면으로 합치고 실행 로그를 남겼다",
+  result: "복구 시간 42% 단축 · 재발 0건",
+  stack: ["TypeScript", "MySQL", "Redis", "BullMQ"],
+} as const;
+
+function variant(name: string, body: string, kind?: DesignSampleEntry["kind"]): string {
+  const anchor = kind ? ` data-sample-kind="${kind}"` : "";
+  return `<figure class="variant"${anchor}><div class="frame">${body}</div><figcaption>${escapeHtml(name)}</figcaption></figure>`;
+}
+
+function renderHeroVariants(model: DesignDocumentModel): string {
+  const spec = model.spec;
   const hero = sampleOf(model, "hero");
+  return [
+    variant("큰 문장", `<div class="v-stack"><small>${DEMO.role}</small><strong class="v-display">${escapeHtml(hero.value)}</strong><span class="act">대표 작업 보기</span></div>`, "hero"),
+    variant("좌우 분할", `<div class="v-split"><div><small>${DEMO.role}</small><strong>신뢰를 만드는 제품</strong></div><p>문제의 맥락과 선택한 접근을 한 문단으로 요약합니다.</p></div>`),
+    variant("대표 수치 중심", `<div class="v-stack"><small>${DEMO.role}</small><strong class="v-number">42%</strong><p>복구 시간 단축 · 지난 12개월</p></div>`),
+    variant("이미지 중심", `<div class="v-stack">${mediaPlate(spec, `대표 이미지 · ${spec.imagery.aspectRatio}`)}<strong>신뢰를 만드는 제품과 시스템</strong></div>`),
+    variant("짧은 프로필 카드", `<div class="v-profile"><i class="avatar"></i><div><strong>${DEMO.name}</strong><small>${DEMO.role}</small></div><span class="act-quiet">연락 ↗</span></div>`),
+  ].join("");
+}
+
+function renderProjectVariants(model: DesignDocumentModel): string {
+  const spec = model.spec;
   const caseStudy = sampleOf(model, "case-study");
-  const longBody = sampleOf(model, "long-body");
+  const noImage = sampleOf(model, "no-image");
+  return [
+    variant("문제-행동-결과", `<dl class="v-par"><dt>문제</dt><dd>${DEMO.problem}</dd><dt>행동</dt><dd>${DEMO.action}</dd><dt>결과</dt><dd>${DEMO.result}</dd></dl>`, "no-image"),
+    variant("긴 사례 연구", `<div class="v-stack"><small>CASE 01</small><strong>${escapeHtml(caseStudy.value)}</strong><p>${escapeHtml(sampleOf(model, "long-body").value)}</p><span class="act-quiet">자세히 보기 ↗</span></div>`, "case-study"),
+    variant("아티팩트 중심", `<div class="v-stack">${mediaPlate(spec, `아티팩트 · ${spec.imagery.aspectRatio}`)}<small>설계 문서 · 대시보드 · 회고</small></div>`),
+    variant("수치 중심", `<div class="v-split-metric"><strong class="v-number">42%</strong><div><strong>${escapeHtml(caseStudy.value)}</strong><p>복구 시간 단축</p></div></div>`),
+    variant("과정 타임라인", `<ol class="v-timeline"><li><b></b><div><small>01</small><span>장애 대응 절차 조사</span></div></li><li><b></b><div><small>02</small><span>복구 흐름 통합</span></div></li><li><b></b><div><small>03</small><span>실행 로그와 검증</span></div></li></ol>`),
+    variant("여러 프로젝트 비교", `<div class="v-compare"><article><strong>결제 복구</strong><span>42%</span></article><article><strong>배포 자동화</strong><span>3.1x</span></article><article><strong>알림 정리</strong><span>−68%</span></article></div>`),
+    variant("이미지 없는 사례", `<div class="v-stack"><small>CASE 02</small><strong>${escapeHtml(noImage.value)}</strong><p>역할, 선택, 수치 근거만으로 한 흐름을 만듭니다.</p></div>`),
+  ].join("");
+}
+
+function renderMetricVariants(model: DesignDocumentModel): string {
   const metric = sampleOf(model, "metric");
   const beforeAfter = sampleOf(model, "before-after");
-  const image = sampleOf(model, "image");
-  const noImage = sampleOf(model, "no-image");
+  return [
+    variant("큰 숫자 하나", `<div class="v-stack"><strong class="v-number">42%</strong><p>${escapeHtml(metric.value)}</p></div>`, "metric"),
+    variant("전후 비교", `<div class="v-before"><div><small>이전</small><strong>18분</strong></div><i>→</i><div><small>이후</small><strong class="v-accent">10분</strong></div><p>${escapeHtml(beforeAfter.value)}</p></div>`, "before-after"),
+    variant("수치 묶음", `<div class="v-group"><article><strong>42%</strong><small>복구 시간</small></article><article><strong>0건</strong><small>재발</small></article><article><strong>3.1x</strong><small>배포 빈도</small></article></div>`),
+    variant("막대 비교", `<div class="v-bars"><article><small>이전</small><i style="width:100%"></i><b>18분</b></article><article><small>이후</small><i class="v-bar-accent" style="width:56%"></i><b>10분</b></article></div>`),
+    variant("도넛 또는 게이지", `<div class="v-gauge"><span class="gauge"><i></i></span><div><strong>75%</strong><small>자동 복구 비율</small></div></div>`),
+    variant("설명이 붙은 지표", `<div class="v-stack"><strong class="v-number">42%</strong><p>복구 시간 단축</p><small>2025-09 ~ 2026-08 · 운영 로그 기준</small></div>`),
+  ].join("");
+}
+
+function renderCareerVariants(): string {
+  return [
+    variant("세로 타임라인", `<ol class="v-timeline"><li><b></b><div><small>2026</small><span>플랫폼 리드</span></div></li><li><b></b><div><small>2024</small><span>백엔드 엔지니어</span></div></li><li><b></b><div><small>2023</small><span>소프트웨어 엔지니어</span></div></li></ol>`),
+    variant("조직별 묶음", `<div class="v-stack"><article class="v-org"><strong>Expresso</strong><small>2023–2026 · 플랫폼</small></article><article class="v-org"><strong>이전 조직</strong><small>2021–2023 · 결제</small></article></div>`),
+    variant("역할 중심", `<dl class="v-par"><dt>역할</dt><dd>결제 신뢰성 전반</dd><dt>범위</dt><dd>설계 · 운영 · 회고</dd><dt>기간</dt><dd>${DEMO.org}</dd></dl>`),
+    variant("성과 중심", `<ul class="v-achieve"><li><b>42%</b><span>복구 시간 단축</span></li><li><b>0건</b><span>동일 장애 재발</span></li><li><b>3.1x</b><span>배포 빈도</span></li></ul>`),
+    variant("프로젝트 연결형", `<div class="v-stack"><article class="v-org"><strong>플랫폼 리드</strong><small>${DEMO.org}</small></article><ul class="v-linked"><li>결제 복구 흐름 통합</li><li>배포 자동화</li></ul></div>`),
+  ].join("");
+}
+
+function renderSkillVariants(model: DesignDocumentModel): string {
   const tags = sampleOf(model, "tags");
+  return [
+    variant("태그", `<ul class="tag-set"><li>${escapeHtml(tags.value).replaceAll(" · ", "</li><li>")}</li></ul>`, "tags"),
+    variant("카테고리 목록", `<dl class="v-par"><dt>언어</dt><dd>TypeScript · SQL</dd><dt>저장소</dt><dd>MySQL · Redis</dd><dt>운영</dt><dd>BullMQ · GitHub Actions</dd></dl>`),
+    variant("숙련 근거", `<ul class="v-evidence"><li><strong>TypeScript</strong><span>계약 스키마와 컴파일러 구현</span></li><li><strong>MySQL</strong><span>마이그레이션과 인덱스 설계</span></li></ul>`),
+    variant("프로젝트 연결", `<ul class="v-evidence"><li><strong>Redis</strong><span>결제 복구 흐름 통합</span></li><li><strong>BullMQ</strong><span>배포 자동화</span></li></ul>`),
+    variant("기술 스택 표", `<table class="v-table"><tbody><tr><th>런타임</th><td>Node 24</td></tr><tr><th>DB</th><td>MySQL 8</td></tr><tr><th>큐</th><td>Redis · BullMQ</td></tr></tbody></table>`),
+  ].join("");
+}
+
+function renderOtherVariants(model: DesignDocumentModel): string {
+  const spec = model.spec;
+  const longBody = sampleOf(model, "long-body");
+  const image = sampleOf(model, "image");
   const quote = sampleOf(model, "quote");
   const contact = sampleOf(model, "link-contact");
   const footer = sampleOf(model, "footer");
+  return [
+    variant("본문", `<p class="v-body">${escapeHtml(longBody.value)}</p>`, "long-body"),
+    variant("이미지 갤러리", `<div class="v-gallery">${mediaPlate(spec, escapeHtml(image.value))}${mediaPlate(spec, "02")}${mediaPlate(spec, "03")}</div>`, "image"),
+    variant("인용", `<blockquote class="v-quote">${escapeHtml(quote.value)}</blockquote><small>— 함께 일한 동료의 기록</small>`, "quote"),
+    variant("프로필", `<div class="v-profile"><i class="avatar"></i><div><strong>${DEMO.name}</strong><small>${DEMO.role}</small></div></div>`),
+    variant("연락", `<div class="v-contact"><div><p>다음 문제를 함께 풀어볼까요?</p><strong>${escapeHtml(contact.value)}</strong></div><span class="act">대화 시작하기 ↗</span></div>`, "link-contact"),
+    variant("푸터", `<div class="v-footer"><strong>MP.</strong><p>${escapeHtml(footer.value)}</p><small>© 2026</small></div>`, "footer"),
+  ].join("");
+}
 
-  return `<div class="portfolio-browser">
-    <div class="browser-bar"><span></span><span></span><span></span><b>portfolio.local / selected-work</b></div>
-    <div class="portfolio-page">
-      <nav class="portfolio-nav"><strong>MP.</strong><span>Work · About · Contact</span></nav>
-      ${render("hero", `<div><p class="role">Product engineer · Seoul</p><h3>${escapeHtml(hero.value)}</h3><div class="hero-actions"><span class="act">대표 작업 보기</span><span class="act-quiet">소개 다운로드 ↗</span></div></div><div class="hero-plate" aria-hidden="true"><i></i></div>`, "header")}
-      <div class="tiles">
-        ${render("metric", `<strong>${escapeHtml(metric.value)}</strong><p>지난 12개월 · 운영 기록 기준</p>`)}
-        ${render("before-after", `<strong>${escapeHtml(beforeAfter.value)}</strong><p>흩어진 절차를 검증 가능한 흐름으로 통합</p>`)}
-      </div>
-      <div class="case-row">
-        ${render("case-study", `<p class="index">01 / Featured case</p><h3>${escapeHtml(caseStudy.value)}</h3><p>${escapeHtml(longBody.value)}</p><span class="act-quiet">사례 자세히 보기 ↗</span>`)}
-        ${render("image", `${renderArtifact(image.value)}<p class="caption">${escapeHtml(image.value)}</p>`)}
-      </div>
-      ${render("long-body", `<h3>문제부터 결과까지 읽히는 기록</h3><p>${escapeHtml(longBody.value)}</p><p>의사결정의 기준과 검증 방식까지 남겨 다음 작업에서 다시 사용할 수 있게 했습니다.</p>`)}
-      <div class="tiles">
-        ${render("no-image", `<p class="index">02</p><h3>${escapeHtml(noImage.value)}</h3><p>이미지가 없어도 역할, 선택, 수치 근거가 한 흐름을 만듭니다.</p>`)}
-        ${render("tags", `<h3>사용한 기술과 도구</h3><ul class="tag-set"><li>${escapeHtml(tags.value).replaceAll(" · ", "</li><li>")}</li></ul>`)}
-      </div>
-      ${render("quote", `<blockquote>${escapeHtml(quote.value)}</blockquote><p>— 함께 일한 동료의 기록</p>`)}
-      ${render("link-contact", `<div><p>다음 문제를 함께 풀어볼까요?</p><h3>${escapeHtml(contact.value)}</h3></div><span class="act">대화 시작하기 ↗</span>`)}
-      ${render("footer", `<strong>MP.</strong><p>${escapeHtml(footer.value)}</p><span>© 2026</span>`, "footer")}
-    </div>
-  </div>`;
+function renderSampleGallery(model: DesignDocumentModel): string {
+  const groups: [string, string, string][] = [
+    ["Hero", "첫 화면", renderHeroVariants(model)],
+    ["프로젝트", "사례", renderProjectVariants(model)],
+    ["수치", "지표", renderMetricVariants(model)],
+    ["경력", "이력", renderCareerVariants()],
+    ["기술", "스택", renderSkillVariants(model)],
+    ["기타", "본문과 마무리", renderOtherVariants(model)],
+  ];
+  return groups.map(([name, meta, body]) => row(label(name, meta), `<div class="variant-grid">${body}</div>`)).join("");
 }
 
 function renderSourceRows(model: DesignDocumentModel, markdownSha256: string): string {
@@ -543,7 +618,7 @@ function renderShowcaseSection(
   if (value.id === "colors") body = renderColorRows(spec);
   else if (value.id === "typography") body = renderTypographyRows(spec);
   else if (value.id === "components") body = renderComponentRows(spec);
-  else if (value.id === "sample-portfolio") body = row(label("샘플 화면"), renderPortfolioSample(model), "row-wide");
+  else if (value.id === "sample-portfolio") body = renderSampleGallery(model);
   else if (value.id === "imagery") body = renderImageryRows(spec);
   else if (value.id === "composition") body = renderCompositionRows(spec);
   else if (value.id === "spacing") body = renderSpacingRows(spec);
@@ -802,68 +877,98 @@ code{font-family:var(--font-mono)}
 .wire-page i{border-radius:calc(var(--card-radius) * .6);background:var(--canvas)}
 .wire-page i:first-child{grid-row:1/-1;background:var(--text)}
 
-.artifact{position:relative;min-height:320px;overflow:hidden;border-radius:var(--card-radius);background:var(--surface)}
-.artifact-window{position:absolute;inset:10% 8%;overflow:hidden;border:6px solid var(--text);border-radius:calc(var(--card-radius) * .8);background:var(--canvas)}
-.artifact-window i{display:inline-block;width:6px;height:6px;margin:12px 0 0 7px;border-radius:50%;background:var(--muted)}
-.artifact-copy{position:absolute;top:26%;left:16%;display:grid;gap:9px;width:42%}
-.artifact-copy b{height:11px;border-radius:6px;background:var(--text)}
-.artifact-copy b:nth-child(2){width:74%}
-.artifact-copy b:nth-child(3){width:52%;background:var(--action)}
-.artifact-chart{position:absolute;right:15%;bottom:24%;height:30%;display:flex;align-items:flex-end;gap:6px}
-.artifact-chart i{width:12px;background:var(--text)}
-.artifact-chart i:nth-child(1){height:32%}
-.artifact-chart i:nth-child(2){height:52%}
-.artifact-chart i:nth-child(3){height:74%}
-.artifact-chart i:nth-child(4){height:58%}
-.artifact-chart i:nth-child(5){height:100%;background:var(--action)}
-.artifact-value{position:absolute;left:16%;bottom:19%;font-family:var(--font-display);font-size:28px;font-weight:700;letter-spacing:-.05em}
-.artifact-value small{display:block;color:var(--muted);font-family:var(--font-mono);font-size:9px;font-weight:400;letter-spacing:0}
-
-.portfolio-browser{overflow:hidden;border:1px solid var(--hairline);border-radius:var(--doc-radius);background:var(--canvas)}
-.browser-bar{display:flex;align-items:center;gap:6px;height:36px;padding:0 14px;background:var(--text);color:var(--canvas)}
-.browser-bar>span{width:7px;height:7px;border-radius:50%;background:var(--canvas);opacity:.4}
-.browser-bar b{margin-left:10px;font-family:var(--font-mono);font-size:9px;font-weight:400;opacity:.6}
-.portfolio-page{font-size:var(--type-example-body);line-height:var(--line-example-body)}
-.portfolio-page>*{padding-inline:6%}
-.portfolio-page>.tiles,.portfolio-page>.sample-quote{padding-inline:0}
-.portfolio-nav{display:flex;align-items:center;height:60px;border-bottom:1px solid var(--hairline)}
-.portfolio-nav span{margin-left:auto;color:var(--muted);font-size:11px}
-.sample-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);align-items:center;gap:36px;padding:clamp(44px,6vw,80px) 0;border-bottom:1px solid var(--hairline)}
-.sample-hero .role{color:var(--muted);font-size:12px}
-.sample-hero h3{max-width:14ch;margin:12px 0 24px;font-family:var(--font-display);font-size:clamp(34px,4.6vw,62px);line-height:.99;letter-spacing:-.05em}
-.hero-actions{display:flex;align-items:center;gap:10px}
-.hero-plate{position:relative;justify-self:end;width:100%;max-width:260px;aspect-ratio:4 / 5;border-radius:var(--card-radius);background:var(--text)}
-.hero-plate i{position:absolute;inset:24%;border:1px solid var(--canvas);border-radius:50%;opacity:.28}
-.tiles{display:grid;grid-template-columns:1fr 1fr}
-.tiles>.sample{display:flex;flex-direction:column;min-height:224px;padding:clamp(26px,4vw,48px)}
-.tiles>.sample:nth-child(odd){background:var(--surface)}
-.tiles>.sample:nth-child(even){background:var(--text);color:var(--canvas)}
-.tiles>.sample:nth-child(even) p,.tiles>.sample:nth-child(even) .index{color:var(--ink-muted)}
-.tiles>.sample:nth-child(even) .tag-set li{border-color:var(--ink-muted);color:var(--ink-muted)}
-.tiles strong,.tiles h3{max-width:18ch;margin-top:auto;font-family:var(--font-display);font-size:clamp(21px,2.8vw,34px);font-weight:600;line-height:1.08;letter-spacing:-.035em}
-.tiles p{margin-top:10px;color:var(--muted);font-size:12px}
-.case-row{display:grid;grid-template-columns:.85fr 1.15fr;gap:36px;padding:clamp(44px,6vw,76px) 0;border-bottom:1px solid var(--hairline)}
-.sample-case-study{display:flex;flex-direction:column;justify-content:center}
-.index{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.1em}
-.sample-case-study h3,.sample-long-body h3{margin:10px 0 14px;font-family:var(--font-display);font-size:26px;line-height:1.12;letter-spacing:-.03em}
-.sample-case-study p,.sample-long-body p{color:var(--muted)}
-.sample-case-study .act-quiet{margin-top:16px;padding-left:0}
-.caption{margin-top:10px;color:var(--muted);font-size:11px}
-.sample-long-body{max-width:var(--measure);padding-block:clamp(48px,6vw,88px)}
-.sample-long-body p + p{margin-top:14px}
-.tag-set{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.media{display:grid;place-items:center;width:100%;border-radius:var(--card-radius);background:var(--surface);box-shadow:inset 0 0 0 var(--border-width) var(--hairline)}
+.media span{color:var(--muted);font-family:var(--font-mono);font-size:10px}
+.media-set{max-width:440px}
+.rhythm{display:flex;justify-content:center;padding:22px 0 26px;border:1px solid var(--hairline);border-radius:var(--doc-radius)}
+.rhythm-column{position:relative;display:grid;gap:var(--section-gap);padding:26px 14px 0;border-inline:1px dashed var(--border)}
+.rhythm-column i{height:78px;border-radius:calc(var(--card-radius) * .5);background:var(--canvas);box-shadow:inset 0 0 0 1px var(--hairline)}
+.rhythm-column i:nth-child(odd){background:var(--surface)}
+.rhythm-mark{position:absolute;top:6px;left:0;color:var(--muted);font-family:var(--font-mono);font-size:10px}
+.variant-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px}
+.variant figcaption{margin-top:8px;color:var(--muted);font-size:11px}
+.variant small{display:block}
+.variant .frame{display:flex;flex-direction:column;justify-content:center;min-height:186px;padding:20px}
+.v-stack{display:flex;flex-direction:column;gap:10px}
+.v-stack small,.demo small{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.08em}
+.v-stack strong,.v-split strong,.v-org strong{font-family:var(--font-display);font-size:17px;font-weight:600;line-height:1.2;letter-spacing:-.025em}
+.v-stack p,.v-split p{color:var(--muted);font-size:12px;line-height:1.55}
+.v-display{font-size:22px!important;line-height:1.12!important}
+.v-number{font-family:var(--font-display);font-size:44px;font-weight:600;line-height:1;letter-spacing:-.05em}
+.v-accent{color:var(--accent)}
+.v-split{display:grid;gap:12px}
+.v-split-metric{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center}
+.v-split-metric>strong{font-family:var(--font-display);font-size:38px;font-weight:600;line-height:1;letter-spacing:-.05em}
+.v-split-metric div strong{font-family:var(--font-display);font-size:15px;font-weight:600;line-height:1.25;letter-spacing:-.02em}
+.v-split-metric p{margin-top:4px;color:var(--muted);font-size:11px}
+.v-profile{display:flex;align-items:center;gap:12px}
+.v-profile div{margin-right:auto}
+.v-profile strong{display:block;font-family:var(--font-display);font-size:15px}
+.v-profile small{color:var(--muted);font-size:11px}
+.avatar{display:block;width:40px;height:40px;border-radius:50%;background:var(--text)}
+.v-par{display:grid;grid-template-columns:46px minmax(0,1fr);gap:8px 12px}
+.v-par dt{color:var(--muted);font-size:10px;padding-top:2px}
+.v-par dd{font-size:12px;line-height:1.5}
+.v-timeline{display:grid;gap:14px}
+.v-timeline li{display:grid;grid-template-columns:10px minmax(0,1fr);gap:12px;align-items:start}
+.v-timeline b{width:8px;height:8px;margin-top:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--surface)}
+.v-timeline small{display:block;color:var(--muted);font-family:var(--font-mono);font-size:9px}
+.v-timeline span{font-size:12px}
+.v-compare{display:grid;gap:8px}
+.v-compare article{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-bottom:8px;border-bottom:1px solid var(--hairline)}
+.v-compare article:last-child{border-bottom:0;padding-bottom:0}
+.v-compare strong{font-size:12px;font-weight:500}
+.v-compare span{font-family:var(--font-display);font-size:16px;letter-spacing:-.02em}
+.v-before{display:grid;grid-template-columns:auto auto auto;gap:14px;align-items:end}
+.v-before small{display:block;color:var(--muted);font-family:var(--font-mono);font-size:9px}
+.v-before strong{font-family:var(--font-display);font-size:26px;letter-spacing:-.04em}
+.v-before i{color:var(--muted);font-style:normal}
+.v-before p{grid-column:1/-1;margin-top:6px;color:var(--muted);font-size:11px;line-height:1.5}
+.v-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.v-group strong{display:block;font-family:var(--font-display);font-size:22px;letter-spacing:-.04em}
+.v-group small{display:block;margin-top:4px;color:var(--muted);font-size:10px}
+.v-bars{display:grid;gap:14px}
+.v-bars article{display:grid;grid-template-columns:34px minmax(0,1fr) 40px;gap:10px;align-items:center}
+.v-bars small{color:var(--muted);font-size:10px}
+.v-bars i{display:block;height:10px;border-radius:999px;background:var(--border)}
+.v-bars i.v-bar-accent{background:var(--accent)}
+.v-bars b{font-family:var(--font-mono);font-size:10px;font-weight:400;text-align:right}
+.v-gauge{display:flex;align-items:center;gap:16px}
+.gauge{position:relative;display:block;width:64px;height:64px;border:7px solid var(--border);border-radius:50%}
+.gauge i{position:absolute;inset:-7px;border:7px solid transparent;border-top-color:var(--accent);border-right-color:var(--accent);border-bottom-color:var(--accent);border-radius:50%}
+.v-gauge strong{display:block;font-family:var(--font-display);font-size:22px;letter-spacing:-.03em}
+.v-gauge small{color:var(--muted);font-size:11px}
+.v-org{display:block;padding-bottom:10px;border-bottom:1px solid var(--hairline)}
+.v-org:last-child{border-bottom:0;padding-bottom:0}
+.v-org small{display:block;margin-top:3px;color:var(--muted);font-size:11px}
+.v-achieve{display:grid;gap:10px}
+.v-achieve li{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;align-items:baseline}
+.v-achieve b{font-family:var(--font-display);font-size:17px;font-weight:600;letter-spacing:-.03em}
+.v-achieve span{color:var(--muted);font-size:12px}
+.v-linked{display:grid;gap:6px;margin-top:12px}
+.v-linked li{color:var(--muted);font-size:12px}
+.v-evidence{display:grid;gap:12px}
+.v-evidence li{display:grid;gap:3px}
+.v-evidence strong{font-size:12px}
+.v-evidence span{color:var(--muted);font-size:11px;line-height:1.5}
+.v-table th,.v-table td{padding:8px 0;border-bottom:1px solid var(--hairline);text-align:left;font-size:11px;font-weight:400}
+.v-table th{width:60px;color:var(--muted)}
+.v-table tr:last-child th,.v-table tr:last-child td{border-bottom:0}
+.v-body{color:var(--muted);font-size:12px;line-height:1.75}
+.v-gallery{display:grid;grid-template-columns:1.6fr 1fr;gap:8px}
+.v-gallery .media:first-child{grid-row:1/3}
+.v-quote{font-family:var(--font-display);font-size:17px;line-height:1.35;letter-spacing:-.02em}
+.v-quote + small{display:block;margin-top:12px;color:var(--muted);font-size:11px}
+.v-contact{display:grid;gap:12px}
+.v-contact p{color:var(--muted);font-size:11px}
+.v-contact strong{display:block;margin-top:4px;font-family:var(--font-display);font-size:17px;letter-spacing:-.02em}
+.v-contact .act{justify-self:start}
+.v-footer{display:grid;gap:6px}
+.v-footer strong{font-family:var(--font-display);font-size:15px}
+.v-footer p{color:var(--muted);font-size:11px}
+.v-footer small{color:var(--muted);font-family:var(--font-mono);font-size:10px}
+.tag-set{display:flex;flex-wrap:wrap;gap:6px}
 .tag-set li{padding:6px 10px;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--muted);font-size:11px}
-.sample-quote{display:grid;place-items:center;min-height:300px;padding:clamp(48px,6vw,88px) 12%;background:var(--text);color:var(--canvas);text-align:center}
-.sample-quote blockquote{max-width:20ch;font-family:var(--font-display);font-size:clamp(24px,3.4vw,42px);line-height:1.12;letter-spacing:-.04em}
-.sample-quote p{margin-top:18px;color:var(--ink-muted);font-size:12px}
-.sample-link-contact{display:flex;align-items:center;flex-wrap:wrap;gap:22px;padding-block:clamp(40px,5vw,68px);border-bottom:1px solid var(--hairline)}
-.sample-link-contact>div{margin-right:auto}
-.sample-link-contact p{color:var(--muted);font-size:12px}
-.sample-link-contact h3{margin-top:4px;font-family:var(--font-display);font-size:clamp(22px,2.8vw,32px);letter-spacing:-.03em}
-.sample-footer{display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center;min-height:90px}
-.sample-footer p{color:var(--muted);font-size:11px}
-.sample-footer span:last-child{color:var(--muted);font-family:var(--font-mono);font-size:10px}
-
 .rule-sheet{margin-top:28px;border-top:1px solid var(--hairline)}
 .rule-sheet summary{display:flex;align-items:center;gap:8px;padding:15px 0;color:var(--muted);font-size:11px;cursor:pointer}
 .rule-sheet summary span{font-family:var(--font-mono);font-size:10px}
@@ -872,9 +977,8 @@ code{font-family:var(--font-mono)}
 
 @media(max-width:900px){
 .row,.cover{grid-template-columns:1fr;gap:14px}
+.demo-contact,.v-gallery{grid-template-columns:1fr}
 .row-head{padding-bottom:22px}
-.case-row,.sample-hero,.tiles,.demo-contact{grid-template-columns:1fr}
-.hero-plate{justify-self:start;max-width:220px}
 .surface-set{flex-direction:column}
 .plane{height:64px}
 }
@@ -888,8 +992,6 @@ code{font-family:var(--font-mono)}
 .facts li{grid-template-columns:1fr;gap:2px}
 .facts span{text-align:left}
 .doc-lines{grid-template-columns:1fr}
-.sample-link-contact{align-items:flex-start;flex-direction:column}
-.sample-footer{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.motion-rise,.motion-focus{animation:none}}
 </style>

@@ -137,11 +137,11 @@ describe("design system compiler", () => {
     expect(apple.html).toContain('class="doc-section');
     expect(apple.html).toContain('class="row-label"');
     expect(apple.html).toContain('class="palette"');
-    expect(apple.html).toContain('class="portfolio-browser"');
+    expect(apple.html).toContain('class="variant-grid"');
     expect(apple.html).toContain("Live portfolio 보기");
     expect(mercury.html).not.toContain('class="doc-section');
     expect(mercury.html).not.toContain('class="row-label"');
-    expect(mercury.html).not.toContain('class="portfolio-browser"');
+    expect(mercury.html).not.toContain('class="variant-grid"');
     for (const kind of SAMPLE_KINDS) {
       expect(occurrences(apple.html, `data-sample-kind="${kind}"`)).toBe(1);
     }
