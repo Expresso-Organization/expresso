@@ -849,13 +849,21 @@ const MOTION_SCRIPT = `(function(){
   for (var o = 0; o < frames.length; o++) io.observe(frames[o]);
 })();`;
 
+/** 표지 부제. 이 문서가 무엇인지부터 밝힌다. 출처 종류에서 끌어온다. */
+function coverSubtitle(spec: DesignSystemSpecV2): string {
+  if (spec.origin.kind === "reference") return `${spec.identity.name} 스타일 레퍼런스 디자인 시스템`;
+  if (spec.origin.kind === "website") return `${spec.identity.name} 웹사이트 기반 디자인 시스템`;
+  if (spec.origin.kind === "generated") return `${spec.identity.name} 생성 디자인 시스템`;
+  return "Expresso 기본 디자인 시스템";
+}
+
 function renderAppleShowcaseHtml(
   model: DesignDocumentModel,
   markdownSha256: string,
 ): string {
   const spec = model.spec;
   const title = escapeHtml(spec.identity.name);
-  const thesis = escapeHtml(spec.identity.visualThesis);
+  const subtitle = escapeHtml(coverSubtitle(spec));
   const variables = cssVariables(spec);
   const revision = model.referenceLock?.primaryDirection.revision ?? 1;
   const bodyContrast = contrastRatio(spec.colors.text.value, spec.colors.canvas.value);
@@ -1162,7 +1170,7 @@ code{font-family:var(--font-mono)}
     <span>Portfolio design system</span>
     <div>
       <h1>${title}</h1>
-      <p>${thesis}</p>
+      <p>${subtitle}</p>
       <div class="cover-actions"><a class="act" href="#sample-portfolio">Live portfolio 보기</a><a class="act-quiet" href="#colors">시스템 살펴보기 ↓</a></div>
     </div>
   </header>
