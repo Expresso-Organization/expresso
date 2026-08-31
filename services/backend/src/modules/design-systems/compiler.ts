@@ -463,6 +463,18 @@ function photoUrl(index: number, width: number): string {
   return `https://images.unsplash.com/${photo.id}?auto=format&fit=crop&w=${width}&q=70`;
 }
 
+/** 인물 자리에 쓰는 고정 사진. 얼굴을 기준으로 정사각형으로 자른다. */
+const PORTRAITS = [
+  { id: "photo-1637325262485-5cf1abb98c05", by: "Teslariu Mihai" },
+  { id: "photo-1532074205216-d0e1f4b87368", by: "Kirill Balobanov" },
+] as const;
+
+function avatar(index: number, large = false): string {
+  const portrait = PORTRAITS[index % PORTRAITS.length]!;
+  const size = large ? 120 : 88;
+  return `<img class="avatar${large ? " avatar-lg" : ""}" src="https://images.unsplash.com/${portrait.id}?auto=format&fit=facearea&facepad=3&w=${size}&h=${size}&q=70" alt="" loading="lazy">`;
+}
+
 /**
  * 웹폰트로 불러올 수 있는 서체. 계약의 서체 이름은 자유 문자열이라 아는 것만
  * 싣는다. 목록에 없으면 링크를 걸지 않고 선언한 대체 서체로 그린다.
@@ -621,8 +633,8 @@ function renderOtherVariants(model: DesignDocumentModel): string {
   return [
     variant("본문", `${eyebrow("Body")}<p class="v-body">${escapeHtml(longBody.value)}</p><p class="v-body">${WORK[1].problem}. ${WORK[1].action}.</p><p class="v-body">${WORK[1].result}.</p>`, "long-body", true),
     variant("이미지 갤러리", `${eyebrow("Gallery")}<div class="v-gallery">${mediaPlate(spec, escapeHtml(image.value), 1)}${mediaPlate(spec, "복구 대시보드", 2)}${mediaPlate(spec, "장애 리뷰", 3)}</div>`, "image", true),
-    variant("인용", `${eyebrow("Quote")}<blockquote class="v-quote">${escapeHtml(quote.value)}</blockquote><div class="v-profile"><i class="avatar"></i><div><strong>함께 일한 동료</strong><small>${DEMO.org} · 제품</small></div></div>`, "quote"),
-    variant("프로필", `<div class="v-profile"><i class="avatar avatar-lg"></i><div><strong>${DEMO.name}</strong><small>${DEMO.role}</small></div></div><p class="v-body">운영에서 반복되던 문제를 구조로 바꾸는 일을 합니다. 기록과 검증을 함께 남깁니다.</p>${metaRow([["소속", DEMO.org], ["기간", DEMO.period]])}`),
+    variant("인용", `${eyebrow("Quote")}<blockquote class="v-quote">${escapeHtml(quote.value)}</blockquote><div class="v-profile">${avatar(1)}<div><strong>함께 일한 동료</strong><small>${DEMO.org} · 제품</small></div></div>`, "quote"),
+    variant("프로필", `<div class="v-profile">${avatar(0, true)}<div><strong>${DEMO.name}</strong><small>${DEMO.role}</small></div></div><p class="v-body">운영에서 반복되던 문제를 구조로 바꾸는 일을 합니다. 기록과 검증을 함께 남깁니다.</p>${metaRow([["소속", DEMO.org], ["기간", DEMO.period]])}`),
     variant("연락", `${eyebrow("Contact")}<strong>다음 문제를 함께 풀어볼까요?</strong><p class="v-lead">${escapeHtml(contact.value)}</p><div class="v-actions"><span class="act">대화 시작하기 ↗</span><span class="act-quiet">이력서 ↗</span></div>`, "link-contact"),
     variant("푸터", `<div class="v-footer"><strong>MP.</strong><p>${escapeHtml(footer.value)}</p></div>${metaRow([["Work", "선택한 작업"], ["About", "소개"], ["Contact", "연락"]])}<small class="v-note">© 2026 ${DEMO.name}</small>`, "footer"),
   ].join("");
@@ -650,7 +662,7 @@ function renderSourceRows(model: DesignDocumentModel, markdownSha256: string): s
     ["수집 시각", spec.origin.capturedAt ?? "없음"],
     ["판", lock ? `${lock.primaryDirection.designSystemCode} r${lock.primaryDirection.revision}` : "r1"],
     ["DESIGN.md sha256", markdownSha256],
-    ["샘플 사진", `Unsplash · ${SAMPLE_PHOTOS.map((photo) => photo.by).join(" · ")}`],
+    ["샘플 사진", `Unsplash · ${[...SAMPLE_PHOTOS, ...PORTRAITS].map((photo) => photo.by).join(" · ")}`],
   ];
   return rows.map(([name, value]) => row(label(name), `<p class="note mono">${escapeHtml(value)}</p>`, "row-tight")).join("");
 }
@@ -1088,7 +1100,7 @@ code{font-family:var(--font-mono)}
 .v-profile{display:flex;align-items:center;gap:14px}
 .v-profile strong{display:block;font-family:var(--font-display);font-size:17px;letter-spacing:-.02em}
 .v-profile small{color:var(--muted);font-size:12px}
-.avatar{display:block;flex:0 0 auto;width:44px;height:44px;border-radius:50%;background:var(--text)}
+.avatar{display:block;flex:0 0 auto;width:44px;height:44px;border-radius:50%;object-fit:cover;background:var(--surface)}
 .avatar-lg{width:60px;height:60px}
 .v-par{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px 16px}
 .v-par dt{color:var(--muted);font-family:var(--font-mono);font-size:10px;padding-top:3px}
