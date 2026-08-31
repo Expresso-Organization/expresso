@@ -724,6 +724,118 @@ function isAppleShowcase(model: DesignDocumentModel): boolean {
   return model.referenceLock?.primaryDirection.designSystemCode === "refero-apple";
 }
 
+/**
+ * 문서에 심는 유일한 스크립트. 계약에서 온 문자열을 단 한 글자도 끼워 넣지 않는
+ * 고정 상수다. CSP 는 이 내용의 sha256 만 script-src 에 허용하므로, 주입된
+ * 스크립트는 해시가 달라 그대로 차단된다.
+ *
+ * 하는 일은 셋이다 — 견본에 transitions-dev 의 클래스를 붙이고, 수치를 자리마다
+ * 굴러 올라오는 릴로 바꾸고, 화면에 들어온 견본만 재생한다.
+ */
+const MOTION_SCRIPT = `(function(){
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) return;
+
+  var root = document.documentElement;
+  function ms(name){ return parseFloat(getComputedStyle(root).getPropertyValue(name)) || 0; }
+  var stagger = ms("--reel-stagger");
+  var cycle = ms("--replay-cycle");
+
+  var REEL = ".v-number,.v-before strong,.v-group strong,.v-achieve b,.v-gauge strong,.v-compare span,.v-bars b,.v-table-wide b";
+  var INNER = ".v-timeline>li,.v-achieve>li,.v-evidence>li,.v-linked>li,.tag-set>li,.v-group>article,.v-bars>article,.v-compare>article,.v-meta>li,.v-par>dt,.v-par>dd,.v-table tbody tr,.v-gallery>*,.v-org";
+
+  /* 26-spinning-counter 의 릴. 목표 숫자 앞 세 칸만 지나가고 멈춘다. */
+  function buildReel(el){
+    var text = el.textContent;
+    var size = parseFloat(getComputedStyle(el).fontSize) || 16;
+    var cell = Math.round(size * 1.1);
+    el.textContent = "";
+    el.classList.add("t-reel");
+    el.style.setProperty("--reel-cell", cell + "px");
+    var strips = [];
+    for (var i = 0; i < text.length; i++){
+      var ch = text.charAt(i);
+      var col = document.createElement("span");
+      col.className = "t-reel-col";
+      var strip = document.createElement("span");
+      strip.className = "t-reel-strip";
+      var cells = [];
+      if (ch >= "0" && ch <= "9"){
+        var target = Number(ch);
+        for (var lead = 3; lead >= 0; lead--) cells.push(String((target - lead + 10) % 10));
+      } else {
+        cells.push(" ", ch);
+      }
+      for (var c = 0; c < cells.length; c++){
+        var digit = document.createElement("span");
+        digit.className = "t-reel-digit";
+        digit.textContent = cells[c];
+        strip.appendChild(digit);
+      }
+      strip.style.setProperty("--reel-travel", -(cells.length - 1) * cell + "px");
+      col.appendChild(strip);
+      el.appendChild(col);
+      strips.push(strip);
+    }
+    el.reelStrips = strips;
+  }
+
+  function rollReel(el){
+    var strips = el.reelStrips || [];
+    for (var i = 0; i < strips.length; i++){
+      var strip = strips[i];
+      strip.style.transition = "none";
+      strip.style.transform = "translateY(0)";
+      void strip.offsetHeight;
+      strip.style.transition = "transform var(--reel-dur) var(--reel-ease) " + (i * stagger) + "ms";
+      strip.style.transform = "translateY(var(--reel-travel))";
+    }
+  }
+
+  var frames = document.querySelectorAll(".variant .frame");
+  for (var f = 0; f < frames.length; f++){
+    var frame = frames[f];
+    frame.classList.add("t-stagger");
+    var lines = frame.children;
+    for (var l = 0; l < lines.length; l++){
+      lines[l].classList.add("t-stagger-line");
+      lines[l].style.setProperty("--i", l);
+    }
+    var inner = frame.querySelectorAll(INNER);
+    for (var n = 0; n < inner.length; n++){
+      inner[n].classList.add("t-stagger-line");
+      inner[n].style.setProperty("--i", n + 1);
+    }
+    var reels = frame.querySelectorAll(REEL);
+    for (var r = 0; r < reels.length; r++) buildReel(reels[r]);
+  }
+
+  function play(frame){
+    frame.classList.remove("is-shown");
+    void frame.offsetHeight;
+    frame.classList.add("is-shown");
+    var reels = frame.querySelectorAll(".t-reel");
+    for (var i = 0; i < reels.length; i++) rollReel(reels[i]);
+  }
+
+  /* 화면에 들어온 견본만 재생하고, 나가면 멈춘다. */
+  var timers = new WeakMap();
+  var io = new IntersectionObserver(function(entries){
+    for (var i = 0; i < entries.length; i++){
+      var frame = entries[i].target;
+      if (entries[i].isIntersecting){
+        if (timers.has(frame)) continue;
+        play(frame);
+        timers.set(frame, setInterval(play.bind(null, frame), cycle));
+      } else if (timers.has(frame)){
+        clearInterval(timers.get(frame));
+        timers["delete"](frame);
+      }
+    }
+  }, { threshold: 0.3 });
+  for (var o = 0; o < frames.length; o++) io.observe(frames[o]);
+})();`;
+
 function renderAppleShowcaseHtml(
   model: DesignDocumentModel,
   markdownSha256: string,
@@ -734,6 +846,7 @@ function renderAppleShowcaseHtml(
   const variables = cssVariables(spec);
   const revision = model.referenceLock?.primaryDirection.revision ?? 1;
   const bodyContrast = contrastRatio(spec.colors.text.value, spec.colors.canvas.value);
+  const scriptHash = createHash("sha256").update(MOTION_SCRIPT).digest("base64");
   const direction = model.sections.find((value) => value.id === "direction")!;
   const sections = model.sections
     .filter((value) => value.id !== "direction")
@@ -755,7 +868,7 @@ function renderAppleShowcaseHtml(
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'sha256-${scriptHash}'">
 <meta name="design-spec-version" content="2">
 <meta name="design-md-sha256" content="${markdownSha256}">
 <title>${title} — DESIGN</title>
@@ -766,7 +879,7 @@ function renderAppleShowcaseHtml(
   껍데기의 반경과 크기는 --doc-* 로 고정하고, 시스템 토큰은 견본 안에서만 쓴다.
   틀이 견본과 같은 형태를 쓰면 어디까지가 문서인지 구분되지 않기 때문이다.
 */
-:root{${variables}--hairline:color-mix(in srgb,var(--border) 50%,transparent);--ink-muted:color-mix(in srgb,var(--canvas) 66%,var(--text));--doc-radius:10px;--column:min(calc(100% - 48px),var(--content-width));--rail:172px;--rail-gap:36px}
+:root{${variables}--duration-micro:80ms;--duration-quick:150ms;--duration-fast:250ms;--duration-slow:400ms;--duration-very-slow:500ms;--ease-smooth-out:cubic-bezier(0.22, 1, 0.36, 1);--ease-in-out:ease-in-out;--stagger-dur:500ms;--stagger-distance:12px;--stagger-stagger:40ms;--stagger-blur:3px;--stagger-ease:cubic-bezier(0.22, 1, 0.36, 1);--reel-dur:900ms;--reel-cell:30px;--reel-stagger:60ms;--reel-ease:cubic-bezier(0.16, 1, 0.3, 1);--replay-cycle:9000ms;--hairline:color-mix(in srgb,var(--border) 50%,transparent);--ink-muted:color-mix(in srgb,var(--canvas) 66%,var(--text));--doc-radius:10px;--column:min(calc(100% - 48px),var(--content-width));--rail:172px;--rail-gap:36px}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--font-body);font-size:13px;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
@@ -935,7 +1048,7 @@ code{font-family:var(--font-mono)}
 .v-par dt{color:var(--muted);font-family:var(--font-mono);font-size:10px;padding-top:3px}
 .v-par dd{font-size:13px;line-height:1.6}
 .v-par b{font-weight:600}
-.v-timeline{display:grid;gap:18px}
+.v-timeline{display:grid;gap:18px;position:relative}
 .v-timeline li{display:grid;grid-template-columns:10px minmax(0,1fr);gap:14px;align-items:start}
 .v-timeline b{width:9px;height:9px;margin-top:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--surface)}
 .v-timeline small{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.06em}
@@ -989,60 +1102,39 @@ code{font-family:var(--font-mono)}
 .tag-set li{padding:8px 13px;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--muted);font-size:12px}
 
 /*
-  등장 애니메이션. 요소가 하는 일에 맞는 움직임을 준다 — 제목은 왼쪽에서 닦여
-  나오고, 수치는 가려진 자리에서 올라오고, 막대는 0에서 자라고, 게이지는 호를
-  그리고, 이미지는 아래에서 걷힌다. 한 주기가 끝나면 한 프레임만 되감아 내용이
-  비어 보이는 구간을 두지 않는다.
-  --v 는 격자에서의 순서, --i 는 카드 안 순서, --j 는 목록 안 순서다.
+  모션은 전부 transitions-dev 카탈로그에서 가져온다. 직접 keyframe 을 쓰지 않는다.
+  텍스트 줄은 18-texts-reveal, 수치는 26-spinning-counter 의 릴 구조를 그대로 쓰고,
+  값은 _root.css 의 토큰 이름으로 읽는다.
+
+  등장은 문서가 열릴 때가 아니라 견본이 화면에 들어올 때 재생하고, 화면 밖으로
+  나가면 멈춘다. 반복 재생이 보이지 않는 곳에서 GPU 를 계속 쓰지 않게 하기 위해서다.
+  스크립트가 막히면 아무 클래스도 붙지 않아 문서는 정지 상태로 온전히 읽힌다.
 */
-.variant{--cycle:9s;--v:0}
-.variant:nth-child(2){--v:1}
-.variant:nth-child(3){--v:2}
-.variant:nth-child(4){--v:3}
-.variant:nth-child(5){--v:4}
-.variant:nth-child(6){--v:5}
-.variant:nth-child(7){--v:6}
-.variant .frame>*{--i:0}
-.variant .frame>*:nth-child(2){--i:1}
-.variant .frame>*:nth-child(3){--i:2}
-.variant .frame>*:nth-child(4){--i:3}
-.variant .frame>*:nth-child(5){--i:4}
-.variant .frame>*:nth-child(6){--i:5}
-.variant .frame li,.variant .frame tbody tr,.variant .frame .v-group>article,.variant .frame .v-bars>article,.variant .frame .v-gallery>*,.variant .frame .v-par>*{--j:0}
-.variant .frame li:nth-child(2),.variant .frame tbody tr:nth-child(2),.variant .frame .v-group>article:nth-child(2),.variant .frame .v-bars>article:nth-child(2),.variant .frame .v-gallery>*:nth-child(2),.variant .frame .v-par>*:nth-child(2){--j:1}
-.variant .frame li:nth-child(3),.variant .frame tbody tr:nth-child(3),.variant .frame .v-group>article:nth-child(3),.variant .frame .v-bars>article:nth-child(3),.variant .frame .v-gallery>*:nth-child(3),.variant .frame .v-par>*:nth-child(3){--j:2}
-.variant .frame li:nth-child(4),.variant .frame tbody tr:nth-child(4),.variant .frame .v-group>article:nth-child(4),.variant .frame .v-par>*:nth-child(4){--j:3}
-.variant .frame li:nth-child(5),.variant .frame tbody tr:nth-child(5),.variant .frame .v-par>*:nth-child(5){--j:4}
-.variant .frame li:nth-child(6),.variant .frame .v-par>*:nth-child(6){--j:5}
+/* 18-texts-reveal */
+.t-stagger-line{opacity:0;transform:translateY(var(--stagger-distance));filter:blur(var(--stagger-blur));transition:opacity var(--stagger-dur) var(--stagger-ease),transform var(--stagger-dur) var(--stagger-ease),filter var(--stagger-dur) var(--stagger-ease);transition-delay:calc(var(--stagger-stagger) * var(--i, 0));will-change:transform,opacity,filter}
+.t-stagger.is-shown .t-stagger-line{opacity:1;transform:translateY(0);filter:blur(0)}
 
-.variant .frame>*{animation:el-rise var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s)}
-.variant .frame li,.variant .frame tbody tr,.variant .frame .v-group>article,.variant .frame .v-bars>article,.variant .frame .v-par>*{animation:el-rise var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + var(--j) * .07s + .1s)}
+/* 26-spinning-counter — 잭팟 연출 대신 한 번만 짧게 굴러 멈추게 조율했다. */
+.variant .t-reel{display:inline-flex;align-items:flex-start;height:var(--reel-cell);font-variant-numeric:tabular-nums}
+.t-reel-col{position:relative;height:var(--reel-cell);overflow:hidden;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 14%,#000 86%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0%,#000 14%,#000 86%,transparent 100%)}
+.t-reel-strip{display:flex;flex-direction:column;will-change:transform}
+.t-reel-digit{height:var(--reel-cell);display:flex;align-items:center;justify-content:center;white-space:pre}
 
-/* 제목과 인용은 가려진 자리에서 올라온다. 수치보다 멀리, 느리게 놓인다. */
-.variant .frame>strong,.variant .frame .v-two strong,.variant .frame .v-quote,.variant .frame .v-org strong{animation-name:el-title}
-/* 수치는 가려진 자리에서 올라온다. */
-.variant .frame>strong.v-number,.variant .frame .v-lead-metric .v-number,.variant .frame .v-before strong,.variant .frame .v-group strong,.variant .frame .v-achieve b,.variant .frame .v-gauge strong{animation:el-lift var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + var(--j) * .07s + .16s)}
-/* 막대는 0에서 자란다. */
-.variant .frame .v-bars i{transform-origin:left;animation:el-grow var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + var(--j) * .07s + .22s)}
-/* 게이지는 호를 그린다. */
-.variant .frame .gauge i{animation:el-sweep var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + .2s)}
-/* 이미지 자리는 아래에서 걷힌다. */
-.variant .frame .media{animation:el-reveal var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + var(--j) * .07s + .12s)}
-/* 아바타와 태그는 제자리에서 튀어 오른다. */
-.variant .frame .avatar,.variant .frame .tag-set li{animation:el-pop var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + var(--j) * .05s + .14s)}
-/* 타임라인은 선이 아래로 그어진 뒤 점이 찍힌다. */
+/* 막대 · 게이지 · 이미지 자리 · 타임라인 선은 카탈로그에 없는 형태라
+   같은 토큰으로 transition 만 건다. keyframe 은 쓰지 않는다. */
+.t-stagger .v-bars i{transform:scaleX(0);transform-origin:left;transition:transform var(--duration-slow) var(--ease-smooth-out);transition-delay:calc(var(--stagger-stagger) * var(--i, 0) + var(--duration-micro))}
+.t-stagger.is-shown .v-bars i{transform:scaleX(1)}
+.t-stagger .gauge i{transform:rotate(-150deg);transition:transform var(--duration-very-slow) var(--ease-smooth-out) var(--duration-micro)}
+.t-stagger.is-shown .gauge i{transform:rotate(0)}
+.t-stagger .media{clip-path:inset(100% 0 0 0);transition:clip-path var(--duration-slow) var(--ease-smooth-out);transition-delay:calc(var(--stagger-stagger) * var(--i, 0))}
+.t-stagger.is-shown .media{clip-path:inset(0 0 0 0)}
 .v-timeline{position:relative}
-.v-timeline::before{content:"";position:absolute;top:8px;bottom:8px;left:4px;width:1px;background:var(--border);transform-origin:top;animation:el-draw var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s)}
-.variant .frame .v-timeline b{animation:el-pop var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + var(--j) * .07s + .26s)}
+.v-timeline::before{content:"";position:absolute;top:8px;bottom:8px;left:4px;width:1px;background:var(--border);transform:scaleY(0);transform-origin:top;transition:transform var(--duration-very-slow) var(--ease-smooth-out)}
+.t-stagger.is-shown .v-timeline::before{transform:scaleY(1)}
 
-@keyframes el-rise{0%{opacity:0;transform:translateY(14px)}7%,100%{opacity:1;transform:none}}
-@keyframes el-title{0%{opacity:0;clip-path:inset(102% 0 -14% 0);transform:translateY(18%)}3%{opacity:1}15%,100%{opacity:1;clip-path:inset(-14% 0 -14% 0);transform:none}}
-@keyframes el-lift{0%{opacity:0;clip-path:inset(105% 0 -14% 0);transform:translateY(26%)}3%{opacity:1}12%,100%{opacity:1;clip-path:inset(-14% 0 -14% 0);transform:none}}
-@keyframes el-grow{0%{transform:scaleX(0)}16%,100%{transform:scaleX(1)}}
-@keyframes el-sweep{0%{opacity:0;transform:rotate(-170deg)}4%{opacity:1}18%,100%{opacity:1;transform:rotate(0)}}
-@keyframes el-reveal{0%{opacity:0;clip-path:inset(100% 0 0 0)}4%{opacity:1}14%,100%{opacity:1;clip-path:inset(0 0 0 0)}}
-@keyframes el-pop{0%{opacity:0;transform:scale(.82)}9%,100%{opacity:1;transform:none}}
-@keyframes el-draw{0%{transform:scaleY(0)}19%,100%{transform:scaleY(1)}}
+@media(prefers-reduced-motion:reduce){
+.t-stagger-line,.t-reel-strip,.t-stagger .v-bars i,.t-stagger .gauge i,.t-stagger .media,.v-timeline::before{transition:none !important;opacity:1;transform:none;filter:none;clip-path:none}
+}
 .rule-sheet{margin-top:28px;border-top:1px solid var(--hairline)}
 .rule-sheet summary{display:flex;align-items:center;gap:8px;padding:15px 0;color:var(--muted);font-size:11px;cursor:pointer}
 .rule-sheet summary span{font-family:var(--font-mono);font-size:10px}
@@ -1069,7 +1161,7 @@ code{font-family:var(--font-mono)}
 .facts span{text-align:left}
 .doc-lines{grid-template-columns:1fr}
 }
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.motion-rise,.motion-focus,.variant .frame *,.variant .frame>*,.v-timeline::before{animation:none}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.motion-rise,.motion-focus{animation:none}}
 </style>
 </head>
 <body>
@@ -1090,6 +1182,7 @@ code{font-family:var(--font-mono)}
     ${renderRuleSheet(direction)}
   </div>
   <main>${sections}</main>
+<script>${MOTION_SCRIPT}</script>
 </body>
 </html>`;
 }

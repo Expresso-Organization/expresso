@@ -147,6 +147,26 @@ describe("design system compiler", () => {
     }
   });
 
+  it("문서에 심는 스크립트를 CSP 해시로 고정한다", () => {
+    const apple = compileDesignDocuments(
+      referoDesignSystems.apple.spec,
+      referoDesignSystems.apple.referenceLock,
+    );
+    const script = apple.html.match(/<script>([\s\S]*?)<\/script>/)![1]!;
+    const hash = createHash("sha256").update(script).digest("base64");
+
+    expect(apple.html).toContain(`script-src 'sha256-${hash}'`);
+    expect(apple.html).not.toContain("'unsafe-inline'; script-src 'unsafe-inline'");
+
+    // 계약에서 온 문자열은 스크립트에 섞이지 않는다. 섞이면 해시가 달라진다.
+    const tainted = structuredClone(referoDesignSystems.apple.spec);
+    tainted.identity.description = "</script><script>alert(1)</script>";
+    const injected = compileDesignDocuments(tainted, referoDesignSystems.apple.referenceLock);
+    expect(injected.html.match(/<script>([\s\S]*?)<\/script>/)![1]).toBe(script);
+    expect(injected.html).toContain(`script-src 'sha256-${hash}'`);
+    expect(injected.html).not.toContain("<script>alert(1)</script>");
+  });
+
   it("문서 문자열을 HTML로 실행하지 않고 텍스트로 표시한다", () => {
     const spec = structuredClone(builtinDesignSystems.clarity.spec);
     spec.identity.description = '<img src=x onerror="alert(1)">';
