@@ -420,12 +420,18 @@ export function DesignCatalog({
                   </button>
                   <span>{selected.markdownSha256.slice(0, 10)}</span>
                 </div>
+                {/*
+                  문서 안의 모션은 스크립트가 돈다. allow-same-origin 은 주지 않아
+                  불투명 출처에 갇히므로 부모 화면·쿠키·저장소에 닿지 못하고, 문서
+                  자신의 CSP 가 script-src 를 해시 하나로 묶는다. 축소 미리보기는
+                  여러 장이 동시에 움직이면 산만해 열지 않는다.
+                */}
                 {htmlMode === "preview" ? (
                   <iframe
                     className={styles.documentFrame}
                     srcDoc={selected.designHtml}
                     title={`${selected.name} DESIGN.html`}
-                    sandbox=""
+                    sandbox="allow-scripts"
                   />
                 ) : (
                   <pre className={styles.codeDocument}><code>{selected.designHtml}</code></pre>

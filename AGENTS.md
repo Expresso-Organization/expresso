@@ -35,6 +35,12 @@ pnpm dev:backend                                # http://127.0.0.1:4000
 `pnpm dev:worker`가 큐 소비자를, `pnpm dev:web`이 3000번에 웹을 띄웁니다.
 인프라가 없어도 API 프로세스는 뜨지만 `/health/ready`는 503을 냅니다.
 
+화면을 확인할 때마다 로그인하지 않으려면 `services/web/.env.local`에
+`DEV_LOGIN=1`과 `DEV_LOGIN_EMAIL` · `DEV_LOGIN_PASSWORD`를 적고
+`/api/dev/session?next=<경로>`를 엽니다. 인증을 우회하지 않고 그 계정으로 제품의
+실제 로그인을 대신 수행합니다. 계정이 없으면 첫 호출에서 한 번 가입합니다.
+셋 중 하나라도 없거나 프로덕션 빌드면 라우트가 404입니다.
+
 **AI 호출은 기본이 `off`입니다** — 키 없이 각 모듈의 규칙 기반 구현으로 돕니다.
 켤 때 고를 수 있는 값과 뜻은 `services/backend/.env.example`에 적혀 있습니다.
 
