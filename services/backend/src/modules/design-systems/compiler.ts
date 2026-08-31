@@ -468,29 +468,41 @@ function sampleOf(model: DesignDocumentModel, kind: DesignSampleEntry["kind"]): 
  */
 const DEMO = {
   role: "Product engineer · Seoul",
-  name: "민재",
-  org: "Expresso · 2023–2026",
+  name: "박민재",
+  org: "Expresso",
+  period: "2023 — 2026",
   project: "결제 시스템의 복구 시간을 줄인 과정",
-  problem: "장애 대응 절차가 네 곳에 흩어져 있었다",
-  action: "복구 흐름을 한 화면으로 합치고 실행 로그를 남겼다",
-  result: "복구 시간 42% 단축 · 재발 0건",
-  stack: ["TypeScript", "MySQL", "Redis", "BullMQ"],
+  problem: "장애 대응 절차가 네 곳에 흩어져 있어 담당자마다 복구 경로가 달랐다",
+  action: "복구 흐름을 한 화면으로 합치고 모든 실행에 로그를 남겼다",
+  result: "복구 시간 42% 단축 · 동일 장애 재발 0건",
+  method: "2025-09 ~ 2026-08 · 운영 로그 1,284건 기준",
+  stack: ["TypeScript", "Node 24", "MySQL", "Redis", "BullMQ", "GitHub Actions"],
 } as const;
 
-function variant(name: string, body: string, kind?: DesignSampleEntry["kind"]): string {
+function variant(name: string, body: string, kind?: DesignSampleEntry["kind"], wide = false): string {
   const anchor = kind ? ` data-sample-kind="${kind}"` : "";
-  return `<figure class="variant"${anchor}><div class="frame">${body}</div><figcaption>${escapeHtml(name)}</figcaption></figure>`;
+  return `<figure class="variant${wide ? " variant-wide" : ""}"${anchor}><div class="frame">${body}</div><figcaption>${escapeHtml(name)}</figcaption></figure>`;
+}
+
+function eyebrow(value: string): string {
+  return `<small class="v-eyebrow">${escapeHtml(value)}</small>`;
+}
+
+function metaRow(items: [string, string][]): string {
+  return `<ul class="v-meta">${items.map(
+    ([term, value]) => `<li><small>${escapeHtml(term)}</small><span>${escapeHtml(value)}</span></li>`,
+  ).join("")}</ul>`;
 }
 
 function renderHeroVariants(model: DesignDocumentModel): string {
   const spec = model.spec;
   const hero = sampleOf(model, "hero");
   return [
-    variant("큰 문장", `<div class="v-stack"><small>${DEMO.role}</small><strong class="v-display">${escapeHtml(hero.value)}</strong><span class="act">대표 작업 보기</span></div>`, "hero"),
-    variant("좌우 분할", `<div class="v-split"><div><small>${DEMO.role}</small><strong>신뢰를 만드는 제품</strong></div><p>문제의 맥락과 선택한 접근을 한 문단으로 요약합니다.</p></div>`),
-    variant("대표 수치 중심", `<div class="v-stack"><small>${DEMO.role}</small><strong class="v-number">42%</strong><p>복구 시간 단축 · 지난 12개월</p></div>`),
-    variant("이미지 중심", `<div class="v-stack">${mediaPlate(spec, `대표 이미지 · ${spec.imagery.aspectRatio}`)}<strong>신뢰를 만드는 제품과 시스템</strong></div>`),
-    variant("짧은 프로필 카드", `<div class="v-profile"><i class="avatar"></i><div><strong>${DEMO.name}</strong><small>${DEMO.role}</small></div><span class="act-quiet">연락 ↗</span></div>`),
+    variant("큰 문장", `${eyebrow(DEMO.role)}<strong class="v-display">${escapeHtml(hero.value)}</strong><p class="v-lead">문제의 맥락과 선택한 접근, 검증한 결과를 순서대로 남깁니다.</p><div class="v-actions"><span class="act">대표 작업 보기</span><span class="act-quiet">소개 다운로드 ↗</span></div>`, "hero", true),
+    variant("좌우 분할", `<div class="v-two"><div>${eyebrow(DEMO.role)}<strong>신뢰를 만드는<br>제품과 시스템</strong></div><div><p class="v-lead">운영에서 반복되던 문제를 구조로 바꾸는 일을 합니다.</p>${metaRow([["기간", DEMO.period], ["소속", DEMO.org], ["분야", "결제 · 플랫폼"]])}</div></div>`),
+    variant("대표 수치 중심", `${eyebrow(DEMO.role)}<strong class="v-number">42%</strong><p class="v-lead">복구 시간 단축 · 지난 12개월</p>${metaRow([["재발", "0건"], ["배포 빈도", "3.1x"]])}`),
+    variant("이미지 중심", `<div class="v-media-hero">${mediaPlate(spec, `대표 이미지 · ${spec.imagery.aspectRatio}`)}<div>${eyebrow(DEMO.role)}<strong>신뢰를 만드는 제품과 시스템</strong></div></div>`),
+    variant("짧은 프로필 카드", `<div class="v-profile"><i class="avatar"></i><div><strong>${DEMO.name}</strong><small>${DEMO.role}</small></div></div><p class="v-lead">${escapeHtml(DEMO.org)} · ${DEMO.period}</p><div class="v-actions"><span class="act-quiet">이력서 ↗</span><span class="act-quiet">GitHub ↗</span></div>`),
   ].join("");
 }
 
@@ -498,14 +510,15 @@ function renderProjectVariants(model: DesignDocumentModel): string {
   const spec = model.spec;
   const caseStudy = sampleOf(model, "case-study");
   const noImage = sampleOf(model, "no-image");
+  const longBody = sampleOf(model, "long-body");
   return [
-    variant("문제-행동-결과", `<dl class="v-par"><dt>문제</dt><dd>${DEMO.problem}</dd><dt>행동</dt><dd>${DEMO.action}</dd><dt>결과</dt><dd>${DEMO.result}</dd></dl>`, "no-image"),
-    variant("긴 사례 연구", `<div class="v-stack"><small>CASE 01</small><strong>${escapeHtml(caseStudy.value)}</strong><p>${escapeHtml(sampleOf(model, "long-body").value)}</p><span class="act-quiet">자세히 보기 ↗</span></div>`, "case-study"),
-    variant("아티팩트 중심", `<div class="v-stack">${mediaPlate(spec, `아티팩트 · ${spec.imagery.aspectRatio}`)}<small>설계 문서 · 대시보드 · 회고</small></div>`),
-    variant("수치 중심", `<div class="v-split-metric"><strong class="v-number">42%</strong><div><strong>${escapeHtml(caseStudy.value)}</strong><p>복구 시간 단축</p></div></div>`),
-    variant("과정 타임라인", `<ol class="v-timeline"><li><b></b><div><small>01</small><span>장애 대응 절차 조사</span></div></li><li><b></b><div><small>02</small><span>복구 흐름 통합</span></div></li><li><b></b><div><small>03</small><span>실행 로그와 검증</span></div></li></ol>`),
-    variant("여러 프로젝트 비교", `<div class="v-compare"><article><strong>결제 복구</strong><span>42%</span></article><article><strong>배포 자동화</strong><span>3.1x</span></article><article><strong>알림 정리</strong><span>−68%</span></article></div>`),
-    variant("이미지 없는 사례", `<div class="v-stack"><small>CASE 02</small><strong>${escapeHtml(noImage.value)}</strong><p>역할, 선택, 수치 근거만으로 한 흐름을 만듭니다.</p></div>`),
+    variant("문제-행동-결과", `${eyebrow("Case 01")}<strong>${escapeHtml(caseStudy.value)}</strong><dl class="v-par"><dt>문제</dt><dd>${DEMO.problem}</dd><dt>행동</dt><dd>${DEMO.action}</dd><dt>결과</dt><dd><b>${DEMO.result}</b></dd></dl>`, "no-image"),
+    variant("긴 사례 연구", `${eyebrow("Case 02 · Featured")}<strong>${escapeHtml(caseStudy.value)}</strong><p class="v-body">${escapeHtml(longBody.value)}</p><p class="v-body">의사결정의 기준과 검증 방식까지 남겨 다음 작업에서 다시 사용할 수 있게 했습니다.</p>${metaRow([["역할", "설계 · 구현"], ["기간", "5개월"], ["스택", "Node · Redis"]])}<span class="act-quiet">사례 자세히 보기 ↗</span>`, "case-study", true),
+    variant("아티팩트 중심", `${eyebrow("Artifacts")}${mediaPlate(spec, `설계 문서 · ${spec.imagery.aspectRatio}`)}${metaRow([["문서", "복구 설계서"], ["대시보드", "복구 현황"], ["회고", "장애 리뷰"]])}`),
+    variant("수치 중심", `<div class="v-lead-metric"><strong class="v-number">42%</strong><div>${eyebrow("Case 01")}<strong>${escapeHtml(caseStudy.value)}</strong><p class="v-lead">복구 시간 단축</p></div></div>${metaRow([["재발", "0건"], ["대응 인원", "4 → 1명"], ["기간", "5개월"]])}`),
+    variant("과정 타임라인", `${eyebrow("Process")}<ol class="v-timeline"><li><b></b><div><small>01 · 조사</small><span>흩어진 대응 절차 네 곳을 추적</span></div></li><li><b></b><div><small>02 · 설계</small><span>복구 흐름을 한 화면으로 합침</span></div></li><li><b></b><div><small>03 · 구현</small><span>모든 실행에 로그와 되돌리기 추가</span></div></li><li><b></b><div><small>04 · 검증</small><span>운영 로그로 복구 시간 재측정</span></div></li></ol>`),
+    variant("여러 프로젝트 비교", `${eyebrow("Selected work")}<table class="v-table v-table-wide"><thead><tr><th>프로젝트</th><th>성과</th><th>스택</th></tr></thead><tbody><tr><td>결제 복구 흐름</td><td><b>42%</b></td><td>Node · Redis</td></tr><tr><td>배포 자동화</td><td><b>3.1x</b></td><td>Actions</td></tr><tr><td>알림 정리</td><td><b>−68%</b></td><td>BullMQ</td></tr></tbody></table>`, undefined, true),
+    variant("이미지 없는 사례", `${eyebrow("Case 03")}<strong>${escapeHtml(noImage.value)}</strong><p class="v-body">이미지가 없어도 역할, 선택, 수치 근거가 한 흐름을 만듭니다.</p><ul class="v-achieve"><li><b>42%</b><span>복구 시간 단축</span></li><li><b>0건</b><span>동일 장애 재발</span></li></ul>`),
   ].join("");
 }
 
@@ -513,33 +526,33 @@ function renderMetricVariants(model: DesignDocumentModel): string {
   const metric = sampleOf(model, "metric");
   const beforeAfter = sampleOf(model, "before-after");
   return [
-    variant("큰 숫자 하나", `<div class="v-stack"><strong class="v-number">42%</strong><p>${escapeHtml(metric.value)}</p></div>`, "metric"),
-    variant("전후 비교", `<div class="v-before"><div><small>이전</small><strong>18분</strong></div><i>→</i><div><small>이후</small><strong class="v-accent">10분</strong></div><p>${escapeHtml(beforeAfter.value)}</p></div>`, "before-after"),
-    variant("수치 묶음", `<div class="v-group"><article><strong>42%</strong><small>복구 시간</small></article><article><strong>0건</strong><small>재발</small></article><article><strong>3.1x</strong><small>배포 빈도</small></article></div>`),
-    variant("막대 비교", `<div class="v-bars"><article><small>이전</small><i style="width:100%"></i><b>18분</b></article><article><small>이후</small><i class="v-bar-accent" style="width:56%"></i><b>10분</b></article></div>`),
-    variant("도넛 또는 게이지", `<div class="v-gauge"><span class="gauge"><i></i></span><div><strong>75%</strong><small>자동 복구 비율</small></div></div>`),
-    variant("설명이 붙은 지표", `<div class="v-stack"><strong class="v-number">42%</strong><p>복구 시간 단축</p><small>2025-09 ~ 2026-08 · 운영 로그 기준</small></div>`),
+    variant("큰 숫자 하나", `${eyebrow("Impact")}<strong class="v-number v-number-lg">42%</strong><p class="v-lead">${escapeHtml(metric.value)}</p><small class="v-note">${DEMO.method}</small>`, "metric"),
+    variant("전후 비교", `${eyebrow("Before / After")}<div class="v-before"><div><small>이전</small><strong>18분</strong></div><i>→</i><div><small>이후</small><strong class="v-accent">10분</strong></div></div><p class="v-lead">${escapeHtml(beforeAfter.value)}</p><small class="v-note">${DEMO.method}</small>`, "before-after"),
+    variant("수치 묶음", `${eyebrow("Metrics")}<div class="v-group"><article><strong>42%</strong><small>복구 시간 단축</small></article><article><strong>0건</strong><small>동일 장애 재발</small></article><article><strong>3.1x</strong><small>배포 빈도</small></article><article><strong>1,284</strong><small>분석한 운영 로그</small></article></div>`),
+    variant("막대 비교", `${eyebrow("Recovery time")}<div class="v-bars"><article><small>2024</small><i style="width:100%"></i><b>18분</b></article><article><small>2025</small><i style="width:78%"></i><b>14분</b></article><article><small>2026</small><i class="v-bar-accent" style="width:56%"></i><b>10분</b></article></div><small class="v-note">${DEMO.method}</small>`),
+    variant("도넛 또는 게이지", `${eyebrow("Automation")}<div class="v-gauge"><span class="gauge"><i></i></span><div><strong>75%</strong><small>사람 개입 없이 끝난 복구</small></div></div><small class="v-note">${DEMO.method}</small>`),
+    variant("설명이 붙은 지표", `${eyebrow("Impact")}<strong class="v-number">42%</strong><p class="v-lead">복구 시간 단축</p><dl class="v-par"><dt>기준</dt><dd>장애 감지부터 서비스 정상화까지</dd><dt>표본</dt><dd>운영 로그 1,284건</dd><dt>기간</dt><dd>2025-09 ~ 2026-08</dd></dl>`),
   ].join("");
 }
 
 function renderCareerVariants(): string {
   return [
-    variant("세로 타임라인", `<ol class="v-timeline"><li><b></b><div><small>2026</small><span>플랫폼 리드</span></div></li><li><b></b><div><small>2024</small><span>백엔드 엔지니어</span></div></li><li><b></b><div><small>2023</small><span>소프트웨어 엔지니어</span></div></li></ol>`),
-    variant("조직별 묶음", `<div class="v-stack"><article class="v-org"><strong>Expresso</strong><small>2023–2026 · 플랫폼</small></article><article class="v-org"><strong>이전 조직</strong><small>2021–2023 · 결제</small></article></div>`),
-    variant("역할 중심", `<dl class="v-par"><dt>역할</dt><dd>결제 신뢰성 전반</dd><dt>범위</dt><dd>설계 · 운영 · 회고</dd><dt>기간</dt><dd>${DEMO.org}</dd></dl>`),
-    variant("성과 중심", `<ul class="v-achieve"><li><b>42%</b><span>복구 시간 단축</span></li><li><b>0건</b><span>동일 장애 재발</span></li><li><b>3.1x</b><span>배포 빈도</span></li></ul>`),
-    variant("프로젝트 연결형", `<div class="v-stack"><article class="v-org"><strong>플랫폼 리드</strong><small>${DEMO.org}</small></article><ul class="v-linked"><li>결제 복구 흐름 통합</li><li>배포 자동화</li></ul></div>`),
+    variant("세로 타임라인", `${eyebrow("Career")}<ol class="v-timeline"><li><b></b><div><small>2026 · ${DEMO.org}</small><span>플랫폼 리드</span><em>결제 신뢰성 전반</em></div></li><li><b></b><div><small>2024 · ${DEMO.org}</small><span>백엔드 엔지니어</span><em>복구 흐름 통합</em></div></li><li><b></b><div><small>2023 · 이전 조직</small><span>소프트웨어 엔지니어</span><em>결제 정산</em></div></li></ol>`),
+    variant("조직별 묶음", `${eyebrow("Organizations")}<article class="v-org"><strong>${DEMO.org}</strong><small>${DEMO.period} · 플랫폼</small><ul class="v-linked"><li>플랫폼 리드 · 2026</li><li>백엔드 엔지니어 · 2024</li></ul></article><article class="v-org"><strong>이전 조직</strong><small>2021 — 2023 · 결제</small><ul class="v-linked"><li>소프트웨어 엔지니어</li></ul></article>`),
+    variant("역할 중심", `${eyebrow("Role")}<strong>플랫폼 리드</strong><dl class="v-par"><dt>범위</dt><dd>결제 신뢰성 설계 · 운영 · 회고</dd><dt>기간</dt><dd>${DEMO.org} · ${DEMO.period}</dd><dt>협업</dt><dd>제품 · 운영 · 고객 지원</dd></dl>`),
+    variant("성과 중심", `${eyebrow("Achievements")}<ul class="v-achieve"><li><b>42%</b><span>복구 시간 단축<em>운영 로그 1,284건 기준</em></span></li><li><b>0건</b><span>동일 장애 재발<em>통합 이후 12개월</em></span></li><li><b>3.1x</b><span>배포 빈도<em>자동화 이후</em></span></li></ul>`),
+    variant("프로젝트 연결형", `${eyebrow("Role → Projects")}<article class="v-org"><strong>플랫폼 리드</strong><small>${DEMO.org} · ${DEMO.period}</small></article><ul class="v-evidence"><li><strong>결제 복구 흐름 통합</strong><span>복구 시간 42% 단축</span></li><li><strong>배포 자동화</strong><span>배포 빈도 3.1배</span></li><li><strong>알림 정리</strong><span>불필요 알림 68% 감소</span></li></ul>`),
   ].join("");
 }
 
 function renderSkillVariants(model: DesignDocumentModel): string {
   const tags = sampleOf(model, "tags");
   return [
-    variant("태그", `<ul class="tag-set"><li>${escapeHtml(tags.value).replaceAll(" · ", "</li><li>")}</li></ul>`, "tags"),
-    variant("카테고리 목록", `<dl class="v-par"><dt>언어</dt><dd>TypeScript · SQL</dd><dt>저장소</dt><dd>MySQL · Redis</dd><dt>운영</dt><dd>BullMQ · GitHub Actions</dd></dl>`),
-    variant("숙련 근거", `<ul class="v-evidence"><li><strong>TypeScript</strong><span>계약 스키마와 컴파일러 구현</span></li><li><strong>MySQL</strong><span>마이그레이션과 인덱스 설계</span></li></ul>`),
-    variant("프로젝트 연결", `<ul class="v-evidence"><li><strong>Redis</strong><span>결제 복구 흐름 통합</span></li><li><strong>BullMQ</strong><span>배포 자동화</span></li></ul>`),
-    variant("기술 스택 표", `<table class="v-table"><tbody><tr><th>런타임</th><td>Node 24</td></tr><tr><th>DB</th><td>MySQL 8</td></tr><tr><th>큐</th><td>Redis · BullMQ</td></tr></tbody></table>`),
+    variant("태그", `${eyebrow("Skills")}<ul class="tag-set"><li>${escapeHtml(tags.value).replaceAll(" · ", "</li><li>")}</li><li>${DEMO.stack.slice(1).join("</li><li>")}</li></ul>`, "tags"),
+    variant("카테고리 목록", `${eyebrow("By category")}<dl class="v-par"><dt>언어</dt><dd>TypeScript · SQL</dd><dt>런타임</dt><dd>Node 24 · Fastify</dd><dt>저장소</dt><dd>MySQL 8 · Redis</dd><dt>운영</dt><dd>BullMQ · GitHub Actions</dd></dl>`),
+    variant("숙련 근거", `${eyebrow("Evidence")}<ul class="v-evidence"><li><strong>TypeScript</strong><span>계약 스키마와 문서 컴파일러를 설계하고 구현</span></li><li><strong>MySQL</strong><span>마이그레이션 순서와 인덱스 설계</span></li><li><strong>Redis</strong><span>복구 흐름의 상태 저장과 큐 소비</span></li></ul>`),
+    variant("프로젝트 연결", `${eyebrow("Skill → Project")}<ul class="v-evidence"><li><strong>Redis</strong><span>결제 복구 흐름 통합 · 복구 시간 42% 단축</span></li><li><strong>BullMQ</strong><span>배포 자동화 · 배포 빈도 3.1배</span></li><li><strong>GitHub Actions</strong><span>계약 빌드 선행 · CI 실패율 감소</span></li></ul>`),
+    variant("기술 스택 표", `${eyebrow("Stack")}<table class="v-table"><tbody><tr><th>언어</th><td>TypeScript 5</td></tr><tr><th>런타임</th><td>Node 24 · Fastify</td></tr><tr><th>DB</th><td>MySQL 8</td></tr><tr><th>큐</th><td>Redis · BullMQ</td></tr><tr><th>CI</th><td>GitHub Actions</td></tr></tbody></table>`),
   ].join("");
 }
 
@@ -551,25 +564,25 @@ function renderOtherVariants(model: DesignDocumentModel): string {
   const contact = sampleOf(model, "link-contact");
   const footer = sampleOf(model, "footer");
   return [
-    variant("본문", `<p class="v-body">${escapeHtml(longBody.value)}</p>`, "long-body"),
-    variant("이미지 갤러리", `<div class="v-gallery">${mediaPlate(spec, escapeHtml(image.value))}${mediaPlate(spec, "02")}${mediaPlate(spec, "03")}</div>`, "image"),
-    variant("인용", `<blockquote class="v-quote">${escapeHtml(quote.value)}</blockquote><small>— 함께 일한 동료의 기록</small>`, "quote"),
-    variant("프로필", `<div class="v-profile"><i class="avatar"></i><div><strong>${DEMO.name}</strong><small>${DEMO.role}</small></div></div>`),
-    variant("연락", `<div class="v-contact"><div><p>다음 문제를 함께 풀어볼까요?</p><strong>${escapeHtml(contact.value)}</strong></div><span class="act">대화 시작하기 ↗</span></div>`, "link-contact"),
-    variant("푸터", `<div class="v-footer"><strong>MP.</strong><p>${escapeHtml(footer.value)}</p><small>© 2026</small></div>`, "footer"),
+    variant("본문", `${eyebrow("Body")}<p class="v-body">${escapeHtml(longBody.value)}</p><p class="v-body">${DEMO.problem}. ${DEMO.action}.</p><p class="v-body">${DEMO.result}.</p>`, "long-body", true),
+    variant("이미지 갤러리", `${eyebrow("Gallery")}<div class="v-gallery">${mediaPlate(spec, escapeHtml(image.value))}${mediaPlate(spec, "복구 대시보드")}${mediaPlate(spec, "장애 리뷰")}</div>`, "image", true),
+    variant("인용", `${eyebrow("Quote")}<blockquote class="v-quote">${escapeHtml(quote.value)}</blockquote><div class="v-profile"><i class="avatar"></i><div><strong>함께 일한 동료</strong><small>${DEMO.org} · 제품</small></div></div>`, "quote"),
+    variant("프로필", `<div class="v-profile"><i class="avatar avatar-lg"></i><div><strong>${DEMO.name}</strong><small>${DEMO.role}</small></div></div><p class="v-body">운영에서 반복되던 문제를 구조로 바꾸는 일을 합니다. 기록과 검증을 함께 남깁니다.</p>${metaRow([["소속", DEMO.org], ["기간", DEMO.period]])}`),
+    variant("연락", `${eyebrow("Contact")}<strong>다음 문제를 함께 풀어볼까요?</strong><p class="v-lead">${escapeHtml(contact.value)}</p><div class="v-actions"><span class="act">대화 시작하기 ↗</span><span class="act-quiet">이력서 ↗</span></div>`, "link-contact"),
+    variant("푸터", `<div class="v-footer"><strong>MP.</strong><p>${escapeHtml(footer.value)}</p></div>${metaRow([["Work", "선택한 작업"], ["About", "소개"], ["Contact", "연락"]])}<small class="v-note">© 2026 ${DEMO.name}</small>`, "footer"),
   ].join("");
 }
 
 function renderSampleGallery(model: DesignDocumentModel): string {
   const groups: [string, string, string][] = [
-    ["Hero", "첫 화면", renderHeroVariants(model)],
-    ["프로젝트", "사례", renderProjectVariants(model)],
-    ["수치", "지표", renderMetricVariants(model)],
-    ["경력", "이력", renderCareerVariants()],
-    ["기술", "스택", renderSkillVariants(model)],
-    ["기타", "본문과 마무리", renderOtherVariants(model)],
+    ["Hero", "첫 화면 · 5", renderHeroVariants(model)],
+    ["프로젝트", "사례 · 7", renderProjectVariants(model)],
+    ["수치", "지표 · 6", renderMetricVariants(model)],
+    ["경력", "이력 · 5", renderCareerVariants()],
+    ["기술", "스택 · 5", renderSkillVariants(model)],
+    ["기타", "본문과 마무리 · 6", renderOtherVariants(model)],
   ];
-  return groups.map(([name, meta, body]) => row(label(name, meta), `<div class="variant-grid">${body}</div>`)).join("");
+  return groups.map(([name, meta, body]) => row(label(name, meta), `<div class="variant-grid">${body}</div>`, "row-wide")).join("");
 }
 
 function renderSourceRows(model: DesignDocumentModel, markdownSha256: string): string {
@@ -885,90 +898,113 @@ code{font-family:var(--font-mono)}
 .rhythm-column i{height:78px;border-radius:calc(var(--card-radius) * .5);background:var(--canvas);box-shadow:inset 0 0 0 1px var(--hairline)}
 .rhythm-column i:nth-child(odd){background:var(--surface)}
 .rhythm-mark{position:absolute;top:6px;left:0;color:var(--muted);font-family:var(--font-mono);font-size:10px}
-.variant-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px}
-.variant figcaption{margin-top:8px;color:var(--muted);font-size:11px}
+.variant-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:18px}
+.variant-wide{grid-column:1/-1}
+.variant figcaption{margin-top:10px;color:var(--muted);font-size:12px}
 .variant small{display:block}
-.variant .frame{display:flex;flex-direction:column;justify-content:center;min-height:186px;padding:20px}
-.v-stack{display:flex;flex-direction:column;gap:10px}
-.v-stack small,.demo small{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.08em}
-.v-stack strong,.v-split strong,.v-org strong{font-family:var(--font-display);font-size:17px;font-weight:600;line-height:1.2;letter-spacing:-.025em}
-.v-stack p,.v-split p{color:var(--muted);font-size:12px;line-height:1.55}
-.v-display{font-size:22px!important;line-height:1.12!important}
-.v-number{font-family:var(--font-display);font-size:44px;font-weight:600;line-height:1;letter-spacing:-.05em}
+.variant .frame{display:flex;flex-direction:column;gap:16px;min-height:308px;padding:34px;overflow:hidden}
+.variant .frame>strong:not([class]){font-family:var(--font-display);font-size:23px;font-weight:600;line-height:1.2;letter-spacing:-.03em}
+.v-eyebrow{color:var(--muted);font-family:var(--font-mono);font-size:10px;letter-spacing:.1em}
+.v-display{font-family:var(--font-display);font-size:clamp(28px,3.2vw,42px);font-weight:600;line-height:1.06;letter-spacing:-.045em}
+.v-number{font-family:var(--font-display);font-size:56px;font-weight:600;line-height:1;letter-spacing:-.05em}
+.v-number-lg{font-size:78px}
 .v-accent{color:var(--accent)}
-.v-split{display:grid;gap:12px}
-.v-split-metric{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center}
-.v-split-metric>strong{font-family:var(--font-display);font-size:38px;font-weight:600;line-height:1;letter-spacing:-.05em}
-.v-split-metric div strong{font-family:var(--font-display);font-size:15px;font-weight:600;line-height:1.25;letter-spacing:-.02em}
-.v-split-metric p{margin-top:4px;color:var(--muted);font-size:11px}
-.v-profile{display:flex;align-items:center;gap:12px}
-.v-profile div{margin-right:auto}
-.v-profile strong{display:block;font-family:var(--font-display);font-size:15px}
-.v-profile small{color:var(--muted);font-size:11px}
-.avatar{display:block;width:40px;height:40px;border-radius:50%;background:var(--text)}
-.v-par{display:grid;grid-template-columns:46px minmax(0,1fr);gap:8px 12px}
-.v-par dt{color:var(--muted);font-size:10px;padding-top:2px}
-.v-par dd{font-size:12px;line-height:1.5}
-.v-timeline{display:grid;gap:14px}
-.v-timeline li{display:grid;grid-template-columns:10px minmax(0,1fr);gap:12px;align-items:start}
-.v-timeline b{width:8px;height:8px;margin-top:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--surface)}
-.v-timeline small{display:block;color:var(--muted);font-family:var(--font-mono);font-size:9px}
-.v-timeline span{font-size:12px}
-.v-compare{display:grid;gap:8px}
-.v-compare article{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-bottom:8px;border-bottom:1px solid var(--hairline)}
-.v-compare article:last-child{border-bottom:0;padding-bottom:0}
-.v-compare strong{font-size:12px;font-weight:500}
-.v-compare span{font-family:var(--font-display);font-size:16px;letter-spacing:-.02em}
-.v-before{display:grid;grid-template-columns:auto auto auto;gap:14px;align-items:end}
-.v-before small{display:block;color:var(--muted);font-family:var(--font-mono);font-size:9px}
-.v-before strong{font-family:var(--font-display);font-size:26px;letter-spacing:-.04em}
-.v-before i{color:var(--muted);font-style:normal}
-.v-before p{grid-column:1/-1;margin-top:6px;color:var(--muted);font-size:11px;line-height:1.5}
-.v-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.v-group strong{display:block;font-family:var(--font-display);font-size:22px;letter-spacing:-.04em}
-.v-group small{display:block;margin-top:4px;color:var(--muted);font-size:10px}
-.v-bars{display:grid;gap:14px}
-.v-bars article{display:grid;grid-template-columns:34px minmax(0,1fr) 40px;gap:10px;align-items:center}
-.v-bars small{color:var(--muted);font-size:10px}
-.v-bars i{display:block;height:10px;border-radius:999px;background:var(--border)}
+.v-lead{max-width:34ch;color:var(--muted);font-size:15px;line-height:1.55}
+.v-body{max-width:var(--measure);color:var(--muted);font-size:13px;line-height:1.8}
+.v-note{color:var(--muted);font-family:var(--font-mono);font-size:10px;line-height:1.6}
+.v-meta{display:flex;flex-wrap:wrap;gap:12px 26px}
+.v-meta small{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.08em}
+.v-meta span{display:block;margin-top:3px;font-size:13px}
+.v-actions{display:flex;align-items:center;gap:12px;margin-top:auto}
+.v-two{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+.v-two strong{font-family:var(--font-display);font-size:26px;font-weight:600;line-height:1.14;letter-spacing:-.035em}
+.v-two .v-meta{margin-top:14px;gap:10px 20px}
+.v-media-hero{display:grid;gap:18px}
+.v-media-hero .media,.variant .frame>.media{max-width:320px}
+.v-media-hero strong{display:block;margin-top:10px;font-family:var(--font-display);font-size:24px;font-weight:600;letter-spacing:-.03em}
+.v-lead-metric{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:center}
+.v-lead-metric strong{font-family:var(--font-display);font-size:19px;font-weight:600;line-height:1.2;letter-spacing:-.025em}
+.v-lead-metric .v-number{font-size:62px}
+.v-lead-metric .v-lead{margin-top:6px;font-size:13px}
+.v-profile{display:flex;align-items:center;gap:14px}
+.v-profile strong{display:block;font-family:var(--font-display);font-size:17px;letter-spacing:-.02em}
+.v-profile small{color:var(--muted);font-size:12px}
+.avatar{display:block;flex:0 0 auto;width:44px;height:44px;border-radius:50%;background:var(--text)}
+.avatar-lg{width:60px;height:60px}
+.v-par{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px 16px}
+.v-par dt{color:var(--muted);font-family:var(--font-mono);font-size:10px;padding-top:3px}
+.v-par dd{font-size:13px;line-height:1.6}
+.v-par b{font-weight:600}
+.v-timeline{display:grid;gap:18px}
+.v-timeline li{display:grid;grid-template-columns:10px minmax(0,1fr);gap:14px;align-items:start}
+.v-timeline b{width:9px;height:9px;margin-top:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--surface)}
+.v-timeline small{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.06em}
+.v-timeline span{display:block;margin-top:3px;font-size:14px;font-weight:500}
+.v-timeline em{display:block;margin-top:2px;color:var(--muted);font-size:12px;font-style:normal}
+.v-before{display:grid;grid-template-columns:auto auto auto;gap:20px;align-items:end;justify-content:start}
+.v-before small{color:var(--muted);font-family:var(--font-mono);font-size:9px}
+.v-before strong{display:block;margin-top:4px;font-family:var(--font-display);font-size:40px;line-height:1;letter-spacing:-.05em}
+.v-before i{padding-bottom:8px;color:var(--muted);font-style:normal}
+.v-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.v-group strong{display:block;font-family:var(--font-display);font-size:30px;line-height:1;letter-spacing:-.045em}
+.v-group small{margin-top:6px;color:var(--muted);font-size:12px}
+.v-bars{display:grid;gap:16px}
+.v-bars article{display:grid;grid-template-columns:44px minmax(0,1fr) 46px;gap:14px;align-items:center}
+.v-bars small{color:var(--muted);font-family:var(--font-mono);font-size:10px}
+.v-bars i{display:block;height:14px;border-radius:999px;background:var(--border)}
 .v-bars i.v-bar-accent{background:var(--accent)}
-.v-bars b{font-family:var(--font-mono);font-size:10px;font-weight:400;text-align:right}
-.v-gauge{display:flex;align-items:center;gap:16px}
-.gauge{position:relative;display:block;width:64px;height:64px;border:7px solid var(--border);border-radius:50%}
-.gauge i{position:absolute;inset:-7px;border:7px solid transparent;border-top-color:var(--accent);border-right-color:var(--accent);border-bottom-color:var(--accent);border-radius:50%}
-.v-gauge strong{display:block;font-family:var(--font-display);font-size:22px;letter-spacing:-.03em}
-.v-gauge small{color:var(--muted);font-size:11px}
-.v-org{display:block;padding-bottom:10px;border-bottom:1px solid var(--hairline)}
-.v-org:last-child{border-bottom:0;padding-bottom:0}
-.v-org small{display:block;margin-top:3px;color:var(--muted);font-size:11px}
-.v-achieve{display:grid;gap:10px}
-.v-achieve li{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;align-items:baseline}
-.v-achieve b{font-family:var(--font-display);font-size:17px;font-weight:600;letter-spacing:-.03em}
-.v-achieve span{color:var(--muted);font-size:12px}
+.v-bars b{font-family:var(--font-mono);font-size:11px;font-weight:400;text-align:right}
+.v-gauge{display:flex;align-items:center;gap:22px}
+.gauge{position:relative;display:block;flex:0 0 auto;width:88px;height:88px;border:9px solid var(--border);border-radius:50%}
+.gauge i{position:absolute;inset:-9px;border:9px solid transparent;border-top-color:var(--accent);border-right-color:var(--accent);border-bottom-color:var(--accent);border-radius:50%}
+.v-gauge strong{display:block;font-family:var(--font-display);font-size:34px;letter-spacing:-.04em}
+.v-gauge small{margin-top:4px;color:var(--muted);font-size:12px}
+.v-org{display:block;padding-bottom:16px;border-bottom:1px solid var(--hairline)}
+.v-org:last-of-type{border-bottom:0;padding-bottom:0}
+.v-org strong{font-family:var(--font-display);font-size:18px;letter-spacing:-.02em}
+.v-org small{margin-top:3px;color:var(--muted);font-size:12px}
+.v-achieve{display:grid;gap:16px}
+.v-achieve li{display:grid;grid-template-columns:66px minmax(0,1fr);gap:16px;align-items:baseline}
+.v-achieve b{font-family:var(--font-display);font-size:24px;font-weight:600;letter-spacing:-.04em}
+.v-achieve span{font-size:13px}
+.v-achieve em{display:block;margin-top:3px;color:var(--muted);font-size:11px;font-style:normal}
 .v-linked{display:grid;gap:6px;margin-top:12px}
 .v-linked li{color:var(--muted);font-size:12px}
-.v-evidence{display:grid;gap:12px}
-.v-evidence li{display:grid;gap:3px}
-.v-evidence strong{font-size:12px}
-.v-evidence span{color:var(--muted);font-size:11px;line-height:1.5}
-.v-table th,.v-table td{padding:8px 0;border-bottom:1px solid var(--hairline);text-align:left;font-size:11px;font-weight:400}
-.v-table th{width:60px;color:var(--muted)}
-.v-table tr:last-child th,.v-table tr:last-child td{border-bottom:0}
-.v-body{color:var(--muted);font-size:12px;line-height:1.75}
-.v-gallery{display:grid;grid-template-columns:1.6fr 1fr;gap:8px}
+.v-evidence{display:grid;gap:16px}
+.v-evidence li{display:grid;gap:4px}
+.v-evidence strong{font-size:13px;font-weight:600}
+.v-evidence span{color:var(--muted);font-size:12px;line-height:1.55}
+.v-table th,.v-table td{padding:11px 0;border-bottom:1px solid var(--hairline);text-align:left;font-size:12px;font-weight:400}
+.v-table th{width:74px;color:var(--muted)}
+.v-table tbody tr:last-child th,.v-table tbody tr:last-child td{border-bottom:0}
+.v-table-wide th{width:auto;color:var(--muted);font-family:var(--font-mono);font-size:10px}
+.v-table-wide b{font-family:var(--font-display);font-size:15px;letter-spacing:-.02em}
+.v-gallery{display:grid;grid-template-columns:1.7fr 1fr;gap:12px}
 .v-gallery .media:first-child{grid-row:1/3}
-.v-quote{font-family:var(--font-display);font-size:17px;line-height:1.35;letter-spacing:-.02em}
-.v-quote + small{display:block;margin-top:12px;color:var(--muted);font-size:11px}
-.v-contact{display:grid;gap:12px}
-.v-contact p{color:var(--muted);font-size:11px}
-.v-contact strong{display:block;margin-top:4px;font-family:var(--font-display);font-size:17px;letter-spacing:-.02em}
-.v-contact .act{justify-self:start}
-.v-footer{display:grid;gap:6px}
-.v-footer strong{font-family:var(--font-display);font-size:15px}
-.v-footer p{color:var(--muted);font-size:11px}
-.v-footer small{color:var(--muted);font-family:var(--font-mono);font-size:10px}
-.tag-set{display:flex;flex-wrap:wrap;gap:6px}
-.tag-set li{padding:6px 10px;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--muted);font-size:11px}
+.v-quote{max-width:24ch;font-family:var(--font-display);font-size:24px;line-height:1.3;letter-spacing:-.025em}
+.v-footer{display:grid;gap:8px}
+.v-footer strong{font-family:var(--font-display);font-size:18px}
+.v-footer p{color:var(--muted);font-size:12px}
+.tag-set{display:flex;flex-wrap:wrap;gap:8px}
+.tag-set li{padding:8px 13px;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--muted);font-size:12px}
+
+/*
+  등장 애니메이션. 카드 안의 요소가 시차를 두고 올라오고, 한 주기가 끝나면 다시 돈다.
+  틀은 움직이지 않으므로 지면이 흔들리지 않는다. --v 는 격자에서의 순서다.
+*/
+.variant{--v:0}
+.variant:nth-child(2){--v:1}
+.variant:nth-child(3){--v:2}
+.variant:nth-child(4){--v:3}
+.variant:nth-child(5){--v:4}
+.variant:nth-child(6){--v:5}
+.variant:nth-child(7){--v:6}
+.variant .frame>*{animation:element-enter 9s var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .16s)}
+.variant .frame>*:nth-child(2){animation-delay:calc(var(--v) * .16s + .12s)}
+.variant .frame>*:nth-child(3){animation-delay:calc(var(--v) * .16s + .24s)}
+.variant .frame>*:nth-child(4){animation-delay:calc(var(--v) * .16s + .36s)}
+.variant .frame>*:nth-child(5){animation-delay:calc(var(--v) * .16s + .48s)}
+@keyframes element-enter{0%{opacity:0;transform:translateY(14px)}7%,100%{opacity:1;transform:none}}
 .rule-sheet{margin-top:28px;border-top:1px solid var(--hairline)}
 .rule-sheet summary{display:flex;align-items:center;gap:8px;padding:15px 0;color:var(--muted);font-size:11px;cursor:pointer}
 .rule-sheet summary span{font-family:var(--font-mono);font-size:10px}
@@ -977,7 +1013,9 @@ code{font-family:var(--font-mono)}
 
 @media(max-width:900px){
 .row,.cover{grid-template-columns:1fr;gap:14px}
-.demo-contact,.v-gallery{grid-template-columns:1fr}
+.demo-contact,.v-gallery,.v-two,.v-group{grid-template-columns:1fr}
+.variant-grid{grid-template-columns:1fr}
+.variant .frame{padding:24px;min-height:0}
 .row-head{padding-bottom:22px}
 .surface-set{flex-direction:column}
 .plane{height:64px}
@@ -993,7 +1031,7 @@ code{font-family:var(--font-mono)}
 .facts span{text-align:left}
 .doc-lines{grid-template-columns:1fr}
 }
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.motion-rise,.motion-focus{animation:none}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.motion-rise,.motion-focus,.variant .frame>*{animation:none}}
 </style>
 </head>
 <body>
