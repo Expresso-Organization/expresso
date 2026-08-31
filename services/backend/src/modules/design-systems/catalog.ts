@@ -109,6 +109,28 @@ const definitions = [
   },
 ] as const;
 
+/**
+ * 참고 디자인이 어느 회사 사이트에서 왔는지. 참고 잠금의 출처 가운데 이 표에
+ * 걸리는 호스트가 그 디자인의 출처 회사다. Refero 같은 중개 자리는 표에 없으니
+ * 걸러진다. 마크 그림은 웹이 가진다 — 여기서 정하는 것은 이름뿐이다.
+ */
+const COMPANY_HOSTS: Record<string, string> = {
+  "apple.com": "apple",
+  "mercury.com": "mercury",
+  "linear.app": "linear",
+  "elevenlabs.io": "elevenlabs",
+  "stripe.com": "stripe",
+};
+
+/** 출처 URL 들에서 아는 회사를 찾는다. 없으면 null. */
+function companyMark(sources: ReadonlyArray<{ url: string | null }>): string | null {
+  for (const { url } of sources) {
+    const host = url === null ? null : URL.parse(url)?.hostname.replace(/^www\./, "");
+    if (host && COMPANY_HOSTS[host]) return COMPANY_HOSTS[host];
+  }
+  return null;
+}
+
 /** 30종 스타일 프리셋을 카탈로그 정의와 같은 모양으로 편다. */
 const presetDefinitions = stylePresetDesignSystems.map((preset) => ({
   entry: { code: preset.code, spec: preset.spec, referenceLock: preset.referenceLock },
@@ -171,6 +193,7 @@ function buildCatalog() {
         accent: entry.spec.colors.accent.value,
         displayFamily: entry.spec.typography.display.family,
         displayFallback: entry.spec.typography.display.fallback,
+        mark: companyMark(entry.referenceLock.sources),
       },
       markdownSha256: compiled.markdownSha256,
       legacyTemplateId: definition.legacyTemplateId,

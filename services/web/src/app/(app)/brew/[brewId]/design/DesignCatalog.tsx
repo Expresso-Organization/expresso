@@ -13,6 +13,7 @@ import {
   type DesignDocument,
   type DesignSelectionActionState,
 } from "./design-selection-actions";
+import { COMPANY_MARKS, markAspectRatio } from "./company-marks";
 import styles from "./DesignCatalog.module.css";
 
 /**
@@ -52,6 +53,8 @@ function DesignThumb({ code, name, preview }: {
     : name.split(/\s+/).filter(Boolean);
   const longestLine = Math.max(1, ...lines.map((line) => line.trim().length));
 
+  const mark = preview.mark === null ? null : COMPANY_MARKS[preview.mark] ?? null;
+
   return (
     <span
       className={styles.thumb}
@@ -75,6 +78,18 @@ function DesignThumb({ code, name, preview }: {
         <span data-color="text" />
         <span data-color="background" />
       </span>
+      {mark ? (
+        <svg
+          className={styles.companyMark}
+          viewBox={mark.viewBox}
+          focusable="false"
+          style={{ aspectRatio: markAspectRatio(mark) }}
+        >
+          {mark.paths.map((path, index) => (
+            <path key={index} d={path} fill="currentColor" fillRule={mark.fillRule} />
+          ))}
+        </svg>
+      ) : null}
     </span>
   );
 }
@@ -110,6 +125,7 @@ export interface DesignCatalogEntry {
     accent: string;
     displayFamily: string;
     displayFallback: string;
+    mark: string | null;
   };
   legacyTemplateId: string | null;
 }

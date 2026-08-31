@@ -59,6 +59,10 @@ describe("design systems catalog", () => {
     // 같은 판 식별자가 두 번 나오면 인스펙터가 엉뚱한 문서를 연다.
     expect(new Set(entries.map(({ item }) => item.revisionId)).size).toBe(entries.length);
     expect(entries.filter(({ item }) => item.recommended)).toHaveLength(1);
+    // 출처 회사 마크는 참고 디자인에만 붙는다. 모르는 호스트는 null 이다.
+    expect(entries.filter(({ item }) => item.preview.mark !== null)
+      .map(({ item }) => item.preview.mark))
+      .toEqual(["apple", "mercury", "linear", "elevenlabs", "stripe"]);
     for (const { item, revision } of entries) {
       expect(item.markdownSha256).toBe(revision.markdownSha256);
       expect(revision.contentHash).toMatch(/^[0-9a-f]{64}$/);

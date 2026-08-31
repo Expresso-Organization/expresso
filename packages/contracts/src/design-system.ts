@@ -254,6 +254,8 @@ export const DesignSystemCatalogItemSchema = z.strictObject({
     accent: HexColorSchema,
     displayFamily: FontStackSchema,
     displayFallback: FontStackSchema,
+    /** 출처 회사 마크의 이름. 그림은 화면이 가진다. 아는 회사가 아니면 null. */
+    mark: TokenNameSchema.nullable(),
   }),
   markdownSha256: z.string().regex(/^[0-9a-f]{64}$/),
   legacyTemplateId: UuidSchema.nullable(),
