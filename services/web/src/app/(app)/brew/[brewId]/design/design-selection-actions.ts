@@ -1,6 +1,10 @@
 "use server";
 
-import { SaveDesignSelectionSchema } from "@expresso/contracts";
+import {
+  SaveDesignSelectionSchema,
+  type DesignSystemSpecV2,
+  type ReferenceLock,
+} from "@expresso/contracts";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -48,6 +52,40 @@ export async function saveDesignSelectionAction(
       }
       return { ...previous, error: "디자인을 저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요." };
     }
+    throw error;
+  }
+}
+
+export type DesignDocument = {
+  designHtml: string;
+  designMarkdown: string;
+  markdownSha256: string;
+  contentHash: string;
+  spec: DesignSystemSpecV2;
+  referenceLock: ReferenceLock | null;
+};
+
+/**
+ * 문서는 고른 판 하나만 불러온다. 목록이 서른여덟 벌을 다 싣던 것을 걷어낸 자리다.
+ */
+export async function loadDesignDocumentAction(
+  revisionId: string,
+): Promise<DesignDocument | null> {
+  const parsed = z.uuid().safeParse(revisionId);
+  if (!parsed.success) return null;
+  const session = await requireSession();
+  try {
+    const { data } = await designSystems.revision(session.accessToken, parsed.data);
+    return {
+      designHtml: data.designHtml,
+      designMarkdown: data.designMarkdown,
+      markdownSha256: data.markdownSha256,
+      contentHash: data.contentHash,
+      spec: data.spec,
+      referenceLock: data.referenceLock,
+    };
+  } catch (error) {
+    if (error instanceof ApiError) return null;
     throw error;
   }
 }

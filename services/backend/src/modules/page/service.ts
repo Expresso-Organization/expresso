@@ -233,6 +233,8 @@ export class PageService {
         description: template.description,
         toneTags: template.tone_tags,
         ...composed,
+        // 지면 문법은 명조와 고딕만 안다. 고정폭 스타일은 고딕으로 내려 둔다.
+        font: composed.font === "serif" ? "serif" : "sans",
         composition: composed.structure === "dense-grid"
           ? "evidence-grid"
           : composed.structure === "wide-margin"

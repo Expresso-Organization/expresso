@@ -37,17 +37,27 @@ interface IdRow { id: string }
 describe("design systems catalog", () => {
   it("기본 디자인의 template 연결과 컴파일 hash를 고정한다", () => {
     const entries = catalogEntries();
-    expect(entries).toHaveLength(8);
+    // Expresso 기본 3 · Refero 참고 5 · Design Prompts 스타일 30
+    expect(entries).toHaveLength(38);
     expect(entries.slice(0, 3).map(({ item }) => item.legacyTemplateId)).toEqual([
       "c42de58e-a0d3-4118-ab68-1a057324f7f1",
       "e1f697a4-ab3a-436a-913e-d214a65be422",
       "a3702f97-24e0-44ad-aff9-af895601dea1",
     ]);
-    expect(entries.slice(3).every(({ item }) =>
+    expect(entries.slice(3, 8).every(({ item }) =>
       item.origin.kind === "reference"
       && item.origin.sourceUrl?.startsWith("https://styles.refero.design/style/")
       && item.legacyTemplateId === null
     )).toBe(true);
+    const presets = entries.slice(8);
+    expect(presets).toHaveLength(30);
+    expect(presets.every(({ item }) =>
+      item.origin.kind === "builtin"
+      && item.code.startsWith("designprompts-")
+      && item.legacyTemplateId !== null
+    )).toBe(true);
+    // 같은 판 식별자가 두 번 나오면 인스펙터가 엉뚱한 문서를 연다.
+    expect(new Set(entries.map(({ item }) => item.revisionId)).size).toBe(entries.length);
     expect(entries.filter(({ item }) => item.recommended)).toHaveLength(1);
     for (const { item, revision } of entries) {
       expect(item.markdownSha256).toBe(revision.markdownSha256);

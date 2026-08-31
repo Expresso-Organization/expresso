@@ -82,15 +82,9 @@ export default async function DesignPage({
     );
   }
 
+  // 목록은 카드가 그리는 값만 받는다. 문서는 고른 판 하나만 따로 불러온다.
   const catalog = await designSystems.list(session.accessToken);
-  const revisions = await Promise.all(
-    catalog.data.items.map((item) => designSystems.revision(session.accessToken, item.revisionId)),
-  );
-  const revisionById = new Map(revisions.map(({ data }) => [data.revisionId, data]));
-  const entries: DesignCatalogEntry[] = catalog.data.items.flatMap((item) => {
-    const revision = revisionById.get(item.revisionId);
-    if (!revision) return [];
-    return [{
+  const entries: DesignCatalogEntry[] = catalog.data.items.map((item) => ({
       designSystemId: item.designSystemId,
       revisionId: item.revisionId,
       code: item.code,
@@ -113,15 +107,9 @@ export default async function DesignPage({
         moods: item.moods,
         roles: item.roles,
       },
-      designHtml: revision.designHtml,
-      designMarkdown: revision.designMarkdown,
-      markdownSha256: revision.markdownSha256,
-      contentHash: revision.contentHash,
-      spec: revision.spec,
-      referenceLock: revision.referenceLock,
-      legacyTemplateId: revision.legacyTemplateId,
-    }];
-  });
+      preview: item.preview,
+      legacyTemplateId: item.legacyTemplateId,
+  }));
 
   return (
     <BrewFrame

@@ -247,7 +247,14 @@ export const DesignSystemCatalogItemSchema = z.strictObject({
   contentFocus: z.enum(["image", "metrics", "text"]),
   moods: z.array(TextSchema),
   roles: z.array(TextSchema),
-  previewHtml: z.string(),
+  /** 카드 썸네일이 쓰는 값. 문서 전체는 판을 따로 불러와 읽는다. */
+  preview: z.strictObject({
+    canvas: HexColorSchema,
+    text: HexColorSchema,
+    accent: HexColorSchema,
+    displayFamily: FontStackSchema,
+    displayFallback: FontStackSchema,
+  }),
   markdownSha256: z.string().regex(/^[0-9a-f]{64}$/),
   legacyTemplateId: UuidSchema.nullable(),
 });

@@ -8,7 +8,9 @@ import { useActionState, useEffect, useMemo, useState, type CSSProperties } from
 import { Icon } from "@/components/ui/Icon";
 
 import {
+  loadDesignDocumentAction,
   saveDesignSelectionAction,
+  type DesignDocument,
   type DesignSelectionActionState,
 } from "./design-selection-actions";
 import styles from "./DesignCatalog.module.css";
@@ -25,24 +27,44 @@ import styles from "./DesignCatalog.module.css";
  * 원본의 스타일별 색면 · 선 · 도형은 옛 30종 코드에 하나씩 손으로 맞춘 것이라
  * 우리 코드에는 걸리지 않는다. 근거 없이 새로 지어내지 않고 두었다.
  */
-function DesignThumb({ name, spec }: { name: string; spec: DesignSystemSpecV2 }) {
-  const { colors, typography } = spec;
-  // 긴 이름은 잘라 내지 않고 낱말 경계에서 접는다.
-  const lines = name.split(/\s+/).filter(Boolean);
-  const longestLine = Math.max(1, ...lines.map((line) => line.length));
+// 낱말 경계가 없는 이름을 접는 자리. 여기 없는 이름은 공백에서 접는다.
+const TITLE_BREAKS = new Map<string, number[]>([
+  ["monochrome", [4]], ["bauhaus", [3]], ["newsprint", [4]],
+  ["art-deco", [4]], ["neo-brutalism", [4]], ["cyberpunk", [5]],
+  ["claymorphism", [4]], ["professional", [6]], ["vaporwave", [5]],
+  ["enterprise", [5]], ["industrial", [5]], ["neumorphism", [3]],
+  ["maximalism", [4]], ["academia", [4]], ["botanical", [4]],
+  ["luxury", [3]], ["terminal", [4]], ["kinetic", [3]],
+  ["web3", [3]], ["sketch", [3]], ["organic", [3]], ["retro", [3]],
+]);
+
+function DesignThumb({ code, name, preview }: {
+  code: string;
+  name: string;
+  preview: DesignCatalogEntry["preview"];
+}) {
+  const styleCode = code.replace(/^designprompts-/, "");
+  // 긴 이름은 잘라 내지 않고 접는 자리에서, 없으면 낱말 경계에서 접는다.
+  const breaks = TITLE_BREAKS.get(styleCode);
+  const lines = breaks
+    ? [0, ...breaks, name.length].slice(0, -1)
+      .map((start, i) => name.slice(start, [0, ...breaks, name.length][i + 1]))
+    : name.split(/\s+/).filter(Boolean);
+  const longestLine = Math.max(1, ...lines.map((line) => line.trim().length));
 
   return (
     <span
       className={styles.thumb}
+      data-style={styleCode}
       aria-hidden="true"
       style={{
-        "--thumb-bg": colors.canvas.value,
-        "--thumb-text": colors.text.value,
-        "--thumb-accent": colors.accent.value,
+        "--thumb-bg": preview.canvas,
+        "--thumb-text": preview.text,
+        "--thumb-accent": preview.accent,
         "--poster-title-scale": `${Math.min(28, 130 / longestLine)}cqw`,
         "--poster-title-max":
           lines.length > 2 ? "var(--ex-text-4xl)" : "var(--ex-text-display-md)",
-        fontFamily: `${typography.display.family}, ${typography.display.fallback}`,
+        fontFamily: `${preview.displayFamily}, ${preview.displayFallback}`,
       } as CSSProperties}
     >
       <span className={styles.posterTitle}>
@@ -82,12 +104,13 @@ export interface DesignCatalogEntry {
     moods: string[];
     roles: string[];
   };
-  designHtml: string;
-  designMarkdown: string;
-  markdownSha256: string;
-  contentHash: string;
-  spec: DesignSystemSpecV2;
-  referenceLock: ReferenceLock;
+  preview: {
+    canvas: string;
+    text: string;
+    accent: string;
+    displayFamily: string;
+    displayFallback: string;
+  };
   legacyTemplateId: string | null;
 }
 
@@ -157,6 +180,8 @@ export function DesignCatalog({
   const [inspectorTab, setInspectorTab] = useState<"html" | "markdown" | "source">("html");
   const [htmlMode, setHtmlMode] = useState<"preview" | "code">("preview");
   const [fullscreen, setFullscreen] = useState(false);
+  const [designDoc, setDesignDoc] = useState<DesignDocument | null>(null);
+  const [documentPending, setDocumentPending] = useState(false);
 
   const focusOptions = useMemo(
     () => [...new Set(entries.flatMap((entry) => entry.filters.contentFocus))],
@@ -195,6 +220,18 @@ export function DesignCatalog({
     });
   }, [category, density, entries, focus, mood, query, role, surface, typography]);
   const selected = entries.find((entry) => entry.revisionId === selectedRevisionId) ?? null;
+
+  // 고른 판의 문서만 불러온다. 목록에는 들어 있지 않다.
+  useEffect(() => {
+    if (!selectedRevisionId) { setDesignDoc(null); return; }
+    let live = true;
+    setDesignDoc(null);
+    setDocumentPending(true);
+    loadDesignDocumentAction(selectedRevisionId)
+      .then((loaded) => { if (live) setDesignDoc(loaded); })
+      .finally(() => { if (live) setDocumentPending(false); });
+    return () => { live = false; };
+  }, [selectedRevisionId]);
   const selectedIsSaved = selected?.revisionId === actionState.savedRevisionId;
 
   useEffect(() => {
@@ -221,7 +258,7 @@ export function DesignCatalog({
   const gridStateKey = [category, density, focus, mood, query, role, surface, typography].join(":");
 
   return (
-    <div className={styles.catalogLayout}>
+    <div className={styles.catalogLayout} data-inspector={selected && inspectorOpen ? "open" : "closed"}>
       <section className={styles.catalogPane} aria-label="디자인 카탈로그">
         <div className={styles.catalogHeader}>
           <div>
@@ -328,7 +365,7 @@ export function DesignCatalog({
                   className={`${styles.designCard} ${isSelected ? styles.designCardSelected : ""}`}
                 >
                   <span className={styles.cardPreview} aria-hidden="true">
-                    <DesignThumb name={entry.name} spec={entry.spec} />
+                    <DesignThumb code={entry.code} name={entry.name} preview={entry.preview} />
                     {isSelected ? (
                       <span className={styles.cardCheck}><Icon name="check" size={12} /></span>
                     ) : entry.recommended ? (
@@ -393,7 +430,7 @@ export function DesignCatalog({
               <span className={styles.inspectorEyebrow}>{ORIGIN_LABEL[selected.originKind]}</span>
               <div className={styles.inspectorNameRow}>
                 <h2>{selected.name}</h2>
-                <span>r{selected.referenceLock.primaryDirection.revision}</span>
+                <span>{designDoc ? `r${designDoc.referenceLock?.primaryDirection.revision ?? 1}` : ""}</span>
               </div>
               <p>{selected.signatureMove}</p>
             </div>
@@ -452,7 +489,7 @@ export function DesignCatalog({
                   >
                     <Icon name="code" size={13} /> 코드 보기
                   </button>
-                  <span>{selected.markdownSha256.slice(0, 10)}</span>
+                  <span>{designDoc?.markdownSha256.slice(0, 10) ?? ""}</span>
                 </div>
                 {/*
                   문서 안의 모션은 스크립트가 돈다. allow-same-origin 은 주지 않아
@@ -463,18 +500,18 @@ export function DesignCatalog({
                 {htmlMode === "preview" ? (
                   <iframe
                     className={styles.documentFrame}
-                    srcDoc={selected.designHtml}
+                    srcDoc={designDoc?.designHtml ?? ""}
                     title={`${selected.name} DESIGN.html`}
                     sandbox="allow-scripts"
                   />
                 ) : (
-                  <pre className={styles.codeDocument}><code>{selected.designHtml}</code></pre>
+                  <pre className={styles.codeDocument}><code>{designDoc?.designHtml ?? ""}</code></pre>
                 )}
               </div>
             ) : null}
 
             {inspectorTab === "markdown" ? (
-              <pre className={styles.markdownDocument}><code>{selected.designMarkdown}</code></pre>
+              <pre className={styles.markdownDocument}><code>{documentPending ? "문서를 불러오는 중" : designDoc?.designMarkdown ?? ""}</code></pre>
             ) : null}
 
             {inspectorTab === "source" ? (
@@ -492,9 +529,9 @@ export function DesignCatalog({
                       Refero 스타일 열기 <Icon name="arrow-square-out" size={12} />
                     </a>
                   ) : null}
-                  {selected.referenceLock.sources.length > 0 ? (
+                  {designDoc && designDoc.referenceLock && designDoc.referenceLock.sources.length > 0 ? (
                     <ul className={styles.sourceLinks}>
-                      {selected.referenceLock.sources.map((source) => (
+                      {designDoc.referenceLock.sources.map((source) => (
                         <li key={`${source.name}-${source.url ?? "none"}`}>
                           {source.url ? (
                             <a href={source.url} target="_blank" rel="noreferrer">
@@ -517,11 +554,11 @@ export function DesignCatalog({
                   <h3>적용 규칙</h3>
                   <div className={styles.ruleGroup}>
                     <strong>보존</strong>
-                    <ul>{selected.referenceLock.preserve.map((rule) => <li key={rule}>{rule}</li>)}</ul>
+                    <ul>{(designDoc?.referenceLock?.preserve ?? []).map((rule) => <li key={rule}>{rule}</li>)}</ul>
                   </div>
                   <div className={styles.ruleGroup}>
                     <strong>제외</strong>
-                    <ul>{selected.referenceLock.reject.map((rule) => <li key={rule}>{rule}</li>)}</ul>
+                    <ul>{(designDoc?.referenceLock?.reject ?? []).map((rule) => <li key={rule}>{rule}</li>)}</ul>
                   </div>
                 </section>
               </div>

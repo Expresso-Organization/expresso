@@ -13,11 +13,27 @@ export const TEMPLATE_STRUCTURES = ["single-column", "dense-grid", "wide-margin"
 export const TemplateStructureSchema = z.enum(TEMPLATE_STRUCTURES);
 export type TemplateStructure = z.infer<typeof TemplateStructureSchema>;
 
+export const TemplateFontSchema = z.enum(["sans", "serif", "mono"]);
+
+export const PortfolioStyleMetadataSchema = z.strictObject({
+  mode: z.enum(["light", "dark"]),
+  sourceUrl: z.string().url().max(2_000),
+  version: z.number().int().positive(),
+});
+
+/** 서버가 관리하는 스타일 원문 판본. 사용자 조정 요청에는 포함하지 않는다. */
+export const PortfolioDesignReferenceSchema = z.strictObject({
+  code: z.string().min(1).max(100),
+  sourceUrl: z.string().url().max(2_000),
+  version: z.number().int().positive(),
+  prompt: z.string().min(1).max(12_000),
+});
+
 export const TemplateStyleSchema = z.strictObject({
   background: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   text: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   accent: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  font: z.enum(["sans", "serif"]),
+  font: TemplateFontSchema,
   density: z.enum(["compact", "comfortable", "spacious"]),
   // 옛 행에는 없을 수 있다. 0047이 채우지만 계약이 먼저 무너지지는 않게 한다.
   structure: TemplateStructureSchema.default("single-column"),
@@ -55,6 +71,8 @@ export const TemplatePreviewSchema = z.strictObject({
   templateId: UuidSchema,
   code: z.string().min(1).max(100),
   name: z.string().min(1).max(200),
+  description: z.string().max(1_000).optional(),
+  designStyle: PortfolioStyleMetadataSchema.optional(),
   planRequired: z.enum(["free", "pro"]),
   recommended: z.boolean(),
   recommendationReason: z.string().min(1).max(500),

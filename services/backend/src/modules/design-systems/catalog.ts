@@ -8,6 +8,7 @@ import {
 import { builtinDesignSystems } from "./builtins.js";
 import { compileDesignDocuments } from "./compiler.js";
 import { referoDesignSystems } from "./refero-catalog.js";
+import { stylePresetDesignSystems } from "./style-presets.js";
 
 const definitions = [
   {
@@ -108,8 +109,30 @@ const definitions = [
   },
 ] as const;
 
+/** 30종 스타일 프리셋을 카탈로그 정의와 같은 모양으로 편다. */
+const presetDefinitions = stylePresetDesignSystems.map((preset) => ({
+  entry: { code: preset.code, spec: preset.spec, referenceLock: preset.referenceLock },
+  designSystemId: preset.designSystemId,
+  revisionId: preset.revisionId,
+  legacyTemplateId: preset.legacyTemplateId,
+  recommended: false,
+  surface: preset.surface,
+  typographyCharacter: preset.typographyCharacter,
+  contentFocus: preset.contentFocus,
+  moods: [] as string[],
+  roles: [] as string[],
+}));
+
+/** 문서 컴파일은 결정적이므로 한 번만 한다. 요청마다 서른여덟 벌을 다시 짓지 않는다. */
+let cached: ReturnType<typeof buildCatalog> | null = null;
+
 export function catalogEntries() {
-  return definitions.map((definition) => {
+  cached ??= buildCatalog();
+  return cached;
+}
+
+function buildCatalog() {
+  return [...definitions, ...presetDefinitions].map((definition) => {
     const { entry } = definition;
     const compiled = compileDesignDocuments(entry.spec, entry.referenceLock);
     const revision = DesignSystemRevisionSchema.parse({
@@ -142,7 +165,13 @@ export function catalogEntries() {
       contentFocus: definition.contentFocus,
       moods: definition.moods,
       roles: definition.roles,
-      previewHtml: compiled.html,
+      preview: {
+        canvas: entry.spec.colors.canvas.value,
+        text: entry.spec.colors.text.value,
+        accent: entry.spec.colors.accent.value,
+        displayFamily: entry.spec.typography.display.family,
+        displayFallback: entry.spec.typography.display.fallback,
+      },
       markdownSha256: compiled.markdownSha256,
       legacyTemplateId: definition.legacyTemplateId,
     });
