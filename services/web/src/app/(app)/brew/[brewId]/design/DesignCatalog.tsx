@@ -13,6 +13,61 @@ import {
 } from "./design-selection-actions";
 import styles from "./DesignCatalog.module.css";
 
+/**
+ * 카드 썸네일.
+ *
+ * 전에는 1200px 문서를 276px 카드에 0.265배로 우겨 넣었다. 그 그림은 무엇도
+ * 읽히지 않았다. 옛 목록(`TemplateThumb`)이 하던 대로, 축소 대신 그 디자인의
+ * 실제 색 · 서체 · 반경으로 읽히는 크기의 견본을 직접 그린다.
+ */
+function DesignThumb({ spec }: { spec: DesignSystemSpecV2 }) {
+  const { colors, typography, shape } = spec;
+  const swatches = [colors.surface, colors.text, colors.muted, colors.border, colors.accent];
+
+  return (
+    <span
+      className={styles.thumb}
+      style={{
+        background: colors.canvas.value,
+        color: colors.text.value,
+        fontFamily: `${typography.display.family}, ${typography.display.fallback}`,
+      }}
+    >
+      <span className={styles.thumbHead}>
+        <span className={styles.thumbAa}>Aa</span>
+        <span
+          className={styles.thumbAction}
+          style={{
+            background: colors.action.value,
+            color: colors.actionText.value,
+            borderRadius: `${Math.min(shape.controlRadius, 999)}px`,
+          }}
+        >
+          행동
+        </span>
+      </span>
+      <span className={styles.thumbLines}>
+        <i style={{ background: colors.text.value }} />
+        <i style={{ background: colors.muted.value }} />
+        <i style={{ background: colors.muted.value }} />
+      </span>
+      <span
+        className={styles.thumbCard}
+        style={{
+          background: colors.surface.value,
+          borderRadius: `${shape.cardRadius}px`,
+          border: `${shape.borderWidth}px solid ${colors.border.value}`,
+        }}
+      />
+      <span className={styles.thumbPalette}>
+        {swatches.map((token) => (
+          <i key={token.value + token.role} style={{ background: token.value }} />
+        ))}
+      </span>
+    </span>
+  );
+}
+
 type CatalogCategory = "recommended" | "builtin" | "reference" | "personal" | "company";
 
 export interface DesignCatalogEntry {
@@ -284,13 +339,7 @@ export function DesignCatalog({
                   className={`${styles.designCard} ${isSelected ? styles.designCardSelected : ""}`}
                 >
                   <span className={styles.cardPreview} aria-hidden="true">
-                    <iframe
-                      srcDoc={entry.designHtml}
-                      title={`${entry.name} 축소 미리보기`}
-                      sandbox=""
-                      tabIndex={-1}
-                      loading="lazy"
-                    />
+                    <DesignThumb spec={entry.spec} />
                     {isSelected ? (
                       <span className={styles.cardCheck}><Icon name="check" size={12} /></span>
                     ) : entry.recommended ? (
@@ -316,11 +365,7 @@ export function DesignCatalog({
                       <strong>{entry.name}</strong>
                       <span className={styles.originBadge}>{ORIGIN_LABEL[entry.originKind]}</span>
                     </span>
-                    <span className={styles.cardDescription}>{entry.description}</span>
-                    <span className={styles.cardTraits}>{entry.traits.slice(0, 3).join(" · ")}</span>
-                    <span className={styles.cardFitReason}>
-                      <strong>추천 이유</strong> {entry.fitReasons[0]}
-                    </span>
+                    <span className={styles.cardFitReason}>{entry.fitReasons[0]}</span>
                   </span>
                 </article>
               );
