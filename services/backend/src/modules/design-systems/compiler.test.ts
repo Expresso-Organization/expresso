@@ -136,10 +136,12 @@ describe("design system compiler", () => {
     expect(referoDesignSystems.apple.referenceLock.primaryDirection.revision).toBe(2);
     expect(apple.html).toContain('class="preview-nav"');
     expect(apple.html).toContain('class="portfolio-browser"');
-    expect(apple.html).toContain('class="device-shell"');
+    expect(apple.html).toContain('class="cover-plate"');
+    expect(apple.html).toContain('class="spec-table"');
     expect(apple.html).toContain("Live portfolio 보기");
     expect(mercury.html).not.toContain('class="preview-nav"');
     expect(mercury.html).not.toContain('class="portfolio-browser"');
+    expect(mercury.html).not.toContain('class="spec-table"');
     for (const kind of SAMPLE_KINDS) {
       expect(occurrences(apple.html, `data-sample-kind="${kind}"`)).toBe(1);
     }
