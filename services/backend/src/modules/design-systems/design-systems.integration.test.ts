@@ -34,6 +34,20 @@ const config: RuntimeConfig = {
 
 interface IdRow { id: string }
 
+/** WCAG 2.1 상대 휘도. */
+function luminance(hex: string): number {
+  const c = [1, 3, 5]
+    .map((i) => Number.parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)) as number[];
+  return 0.2126 * c[0]! + 0.7152 * c[1]! + 0.0722 * c[2]!;
+}
+
+/** 두 색의 명암비. */
+function contrast(a: string, b: string): number {
+  const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+  return (high + 0.05) / (low + 0.05);
+}
+
 describe("design systems catalog", () => {
   it("기본 디자인의 template 연결과 컴파일 hash를 고정한다", () => {
     const entries = catalogEntries();
@@ -59,6 +73,27 @@ describe("design systems catalog", () => {
     // 같은 판 식별자가 두 번 나오면 인스펙터가 엉뚱한 문서를 연다.
     expect(new Set(entries.map(({ item }) => item.revisionId)).size).toBe(entries.length);
     expect(entries.filter(({ item }) => item.recommended)).toHaveLength(1);
+
+    // 글자를 얹는 자리는 모두 WCAG 2.1 본문 기준을 넘는다. 서른여덟 벌 전부다.
+    // 예전에는 밝기 임계로 흑 · 백을 갈라서 스물일곱 벌이 이 선 아래에 있었다.
+    for (const { item, revision } of entries) {
+      const { colors } = revision.spec;
+      const pairs: Array<[string, number]> = [
+        ["본문", contrast(colors.text.value, colors.canvas.value)],
+        ["설명", contrast(colors.muted.value, colors.canvas.value)],
+        ["행동 글자", contrast(colors.actionText.value, colors.action.value)],
+      ];
+      for (const [name, ratio] of pairs) {
+        expect(`${item.code} ${name} ${ratio.toFixed(2)}`).toBe(
+          `${item.code} ${name} ${Math.max(ratio, 4.5).toFixed(2)}`,
+        );
+      }
+    }
+
+    // 서른여덟 벌이 세 벌의 서체를 돌려 쓰면 색만 다른 문서가 된다.
+    const typefaces = new Set(entries.map(({ revision }) =>
+      `${revision.spec.typography.display.family}/${revision.spec.typography.body.family}`));
+    expect(typefaces.size).toBeGreaterThanOrEqual(20);
     // 출처 회사 마크는 참고 디자인에만 붙는다. 모르는 호스트는 null 이다.
     expect(entries.filter(({ item }) => item.preview.mark !== null)
       .map(({ item }) => item.preview.mark))

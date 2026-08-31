@@ -39,16 +39,114 @@ function luminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-/** 강조 위에 올릴 글자색. 흰색과 검정 중 대비가 큰 쪽을 고른다. */
-function readableOn(hex: string): string {
-  return luminance(hex) > 0.45 ? "#111111" : "#ffffff";
+/** 두 색의 명암비. WCAG 2.1 정의다. */
+function contrast(a: string, b: string): number {
+  const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+  return (high + 0.05) / (low + 0.05);
 }
 
+/** WCAG 2.1 본문 최소 대비. */
+const BODY_CONTRAST = 4.5;
+
+/**
+ * 강조 위에 올릴 글자색. 밝기 임계로 가르지 않고 흑 · 백 각각의 대비를 재서
+ * 큰 쪽을 고른다. 임계로 가르면 Luxury 의 금빛(#b09a7a) 처럼 중간 밝기의 면에서
+ * 대비 2.71 짜리 흰 글자가 나온다.
+ */
+function readableOn(hex: string): string {
+  return contrast("#111111", hex) >= contrast("#ffffff", hex) ? "#111111" : "#ffffff";
+}
+
+/**
+ * 설명색. 본문에서 지면 쪽으로 물리되 지면과의 대비가 본문 기준 아래로 내려가지
+ * 않는 만큼만 물린다. 고정 비율로 물리면 대비가 낮은 배색에서 설명이 사라진다.
+ */
+/**
+ * 행동 면과 그 위의 글자. 강조색을 그대로 쓰되 글자가 본문 기준에 닿지 않으면
+ * 닿을 때까지 반대쪽으로 민다. 강조는 정체성이고 행동은 글자를 얹는 자리라서,
+ * 계약이 `accent` 와 `action` 을 다른 역할로 나눠 두었다.
+ */
+function actionOn(accent: string): { background: string; text: string } {
+  const text = readableOn(accent);
+  const toward = text === "#ffffff" ? "#000000" : "#ffffff";
+  for (let ratio = 0; ratio <= 0.5; ratio += 0.02) {
+    const background = mix(accent, toward, ratio);
+    if (contrast(text, background) >= BODY_CONTRAST) return { background, text };
+  }
+  return { background: mix(accent, toward, 0.5), text };
+}
+
+function mutedOn(text: string, canvas: string): string {
+  for (let ratio = 0.42; ratio > 0; ratio -= 0.02) {
+    const value = mix(text, canvas, ratio);
+    if (contrast(value, canvas) >= BODY_CONTRAST) return value;
+  }
+  return text;
+}
+
+/** 서체 갈래별 기본값. 아래 표에 없는 스타일이 받는 것이다. */
 const FONTS = {
-  sans: { display: "Inter", body: "system-ui", fallback: "sans-serif", character: "산세리프" },
-  serif: { display: "Georgia", body: "Georgia", fallback: "serif", character: "세리프" },
-  mono: { display: "ui-monospace", body: "ui-monospace", fallback: "monospace", character: "고정폭" },
+  sans: { display: "Inter", body: "Inter", fallback: "sans-serif", character: "산세리프" },
+  serif: { display: "Source Serif 4", body: "Source Serif 4", fallback: "serif", character: "세리프" },
+  mono: { display: "JetBrains Mono", body: "JetBrains Mono", fallback: "monospace", character: "고정폭" },
 } as const;
+
+/**
+ * 스타일별 서체.
+ *
+ * 서른 종이 세 벌만 쓰면 색만 다른 서른 장이 된다 — Bauhaus 와 Art Deco 와
+ * Newsprint 가 같은 글자로 나온다. 이름은 2026-09-01 Google Fonts 목록(1,946
+ * 가족)에서 실재와 지원 굵기를 확인했다. 굵기 요청은 `compiler.ts` 의
+ * `WEB_FONTS` 가 가족마다 가진 값으로 나간다.
+ *
+ * 한글 글리프는 이 가족들에 없다. 한글은 갈래별 대체 서체가 받고, 이 표는
+ * 제목 · 라틴 견본 · 수치의 인상을 정한다.
+ */
+const TYPEFACES: Record<string, { display: string; body: string }> = {
+  monochrome: { display: "Playfair Display", body: "Source Serif 4" },
+  bauhaus: { display: "Archivo Black", body: "Archivo" },
+  "modern-dark": { display: "Inter", body: "Inter" },
+  newsprint: { display: "Playfair Display", body: "Newsreader" },
+  saas: { display: "Inter", body: "Inter" },
+  luxury: { display: "Cormorant Garamond", body: "Lora" },
+  terminal: { display: "JetBrains Mono", body: "JetBrains Mono" },
+  "swiss-minimalist": { display: "Archivo", body: "Archivo" },
+  kinetic: { display: "Anton", body: "Archivo" },
+  "flat-design": { display: "Poppins", body: "Poppins" },
+  "art-deco": { display: "Poiret One", body: "Cormorant Garamond" },
+  "material-design": { display: "Roboto", body: "Roboto" },
+  "neo-brutalism": { display: "Archivo Black", body: "Space Grotesk" },
+  "bold-typography": { display: "Anton", body: "Inter" },
+  academia: { display: "EB Garamond", body: "EB Garamond" },
+  cyberpunk: { display: "Rajdhani", body: "JetBrains Mono" },
+  web3: { display: "Space Grotesk", body: "Space Grotesk" },
+  "playful-geometric": { display: "Quicksand", body: "Nunito" },
+  "minimal-dark": { display: "Inter", body: "Inter" },
+  claymorphism: { display: "Nunito", body: "Nunito" },
+  professional: { display: "Source Serif 4", body: "Source Serif 4" },
+  botanical: { display: "Cormorant Garamond", body: "Lora" },
+  vaporwave: { display: "Orbitron", body: "Space Grotesk" },
+  enterprise: { display: "IBM Plex Sans", body: "IBM Plex Sans" },
+  sketch: { display: "Caveat", body: "Work Sans" },
+  industrial: { display: "Oswald", body: "Chivo" },
+  neumorphism: { display: "Manrope", body: "Manrope" },
+  organic: { display: "Fraunces", body: "Lora" },
+  maximalism: { display: "Abril Fatface", body: "Playfair Display" },
+  retro: { display: "Silkscreen", body: "Space Grotesk" },
+};
+
+/** 이 스타일이 쓸 서체. 표에 없으면 갈래의 기본값이다. */
+function typefaceOf(preset: PortfolioStylePreset) {
+  const base = FONTS[preset.style.font];
+  const chosen = TYPEFACES[preset.code.replace(/^designprompts-/, "")];
+  return {
+    display: chosen?.display ?? base.display,
+    body: chosen?.body ?? base.body,
+    mono: preset.style.font === "mono" ? "JetBrains Mono" : "ui-monospace",
+    fallback: base.fallback,
+    character: base.character,
+  };
+}
 
 const DENSITY = {
   compact: { elementGap: 10, componentGap: 20, sectionGap: 56, contentWidth: 1180, cardRadius: 4, body: "0.9375rem", display: "3.25rem" },
@@ -81,11 +179,12 @@ function directives(prompt: string): string[] {
 
 function createSpec(preset: PortfolioStylePreset): DesignSystemSpecV2 {
   const { background, text, accent, font, density, structure } = preset.style;
-  const type = FONTS[font];
+  const type = typefaceOf(preset);
   const size = DENSITY[density];
   const dark = preset.mode === "dark";
   const moves = directives(preset.prompt);
   const avoid = prohibitions(preset.prompt);
+  const action = actionOn(accent);
 
   return DesignSystemSpecV2Schema.parse({
     version: 2,
@@ -109,11 +208,11 @@ function createSpec(preset: PortfolioStylePreset): DesignSystemSpecV2 {
       surface: token(mix(background, text, dark ? 0.06 : 0.04), "기본 섹션과 카드 표면"),
       elevated: token(mix(background, text, dark ? 0.11 : 0.08), "한 단계 올라온 정보 표면"),
       text: token(text, "제목과 본문"),
-      muted: token(mix(text, background, 0.42), "설명과 메타데이터"),
+      muted: token(mutedOn(text, background), "설명과 메타데이터"),
       border: token(mix(text, background, dark ? 0.72 : 0.8), "정보 구획의 경계"),
       accent: token(accent, "대표 성과와 현재 상태"),
-      action: token(accent, "주요 행동 배경"),
-      actionText: token(readableOn(accent), "주요 행동 위 글자"),
+      action: token(action.background, "주요 행동 배경"),
+      actionText: token(action.text, "주요 행동 위 글자"),
       roles: [
         { token: "accent", role: "강조", usage: "대표 성과와 선택 상태" },
         { token: "action", role: "주요 행동", usage: "페이지의 핵심 연락 행동" },
@@ -123,7 +222,7 @@ function createSpec(preset: PortfolioStylePreset): DesignSystemSpecV2 {
     typography: {
       display: { family: type.display, fallback: type.fallback, role: "Hero와 섹션 제목" },
       body: { family: type.body, fallback: type.fallback, role: "사례 설명과 긴 본문" },
-      mono: { family: "ui-monospace", fallback: "monospace", role: "수치, 기간, 기술 메타데이터" },
+      mono: { family: type.mono, fallback: "monospace", role: "수치, 기간, 기술 메타데이터" },
       scale: [
         { name: "body", size: size.body, lineHeight: density === "compact" ? "1.55" : "1.65" },
         { name: "subheading", size: "1.25rem", lineHeight: "1.35" },

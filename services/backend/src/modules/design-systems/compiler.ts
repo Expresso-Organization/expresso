@@ -478,13 +478,44 @@ function avatar(index: number, large = false): string {
 /**
  * 웹폰트로 불러올 수 있는 서체. 계약의 서체 이름은 자유 문자열이라 아는 것만
  * 싣는다. 목록에 없으면 링크를 걸지 않고 선언한 대체 서체로 그린다.
+ *
+ * 굵기는 가족마다 실제로 있는 것만 적는다 — 2026-09-01 Google Fonts 목록에서
+ * 확인했다. 없는 굵기를 섞어 요청하면 응답이 오류가 되어 서체가 통째로 빠진다.
+ * Anton · Archivo Black · Poiret One · Abril Fatface 는 한 굵기뿐이라 축을 뺀다.
  */
 const WEB_FONTS: Record<string, string> = {
+  "Abril Fatface": "Abril+Fatface",
+  Anton: "Anton",
+  Archivo: "Archivo:wght@400;500;600;700",
+  "Archivo Black": "Archivo+Black",
+  Caveat: "Caveat:wght@400;500;600;700",
+  Chivo: "Chivo:wght@400;500;600;700",
+  "Cormorant Garamond": "Cormorant+Garamond:wght@400;500;600;700",
+  "EB Garamond": "EB+Garamond:wght@400;500;600;700",
+  Fraunces: "Fraunces:wght@400;500;600;700",
+  "IBM Plex Sans": "IBM+Plex+Sans:wght@400;500;600;700",
   Inter: "Inter:wght@400;500;600;700",
+  "JetBrains Mono": "JetBrains+Mono:wght@400;500;600;700",
+  Lora: "Lora:wght@400;500;600;700",
+  Manrope: "Manrope:wght@400;500;600;700",
+  Newsreader: "Newsreader:wght@400;500;600;700",
+  Nunito: "Nunito:wght@400;500;600;700",
+  Orbitron: "Orbitron:wght@400;500;600;700",
+  Oswald: "Oswald:wght@400;500;600;700",
+  "Playfair Display": "Playfair+Display:wght@400;500;600;700",
+  "Poiret One": "Poiret+One",
+  Poppins: "Poppins:wght@400;500;600;700",
+  Quicksand: "Quicksand:wght@400;500;600;700",
+  Rajdhani: "Rajdhani:wght@400;500;600;700",
+  Roboto: "Roboto:wght@400;500;600;700",
+  Silkscreen: "Silkscreen:wght@400;700",
+  "Source Serif 4": "Source+Serif+4:wght@400;500;600;700",
+  "Space Grotesk": "Space+Grotesk:wght@400;500;600;700",
+  "Work Sans": "Work+Sans:wght@400;500;600;700",
 };
 
 function fontLink(spec: DesignSystemSpecV2): string {
-  const families = [spec.typography.display.family, spec.typography.body.family]
+  const families = [spec.typography.display.family, spec.typography.body.family, spec.typography.mono.family]
     .map((family) => WEB_FONTS[family])
     .filter((value, index, all): value is string => Boolean(value) && all.indexOf(value) === index);
   if (families.length === 0) return "";
@@ -714,50 +745,17 @@ function renderShowcaseSection(
   return `<section id="${value.id}" class="doc-section section-${value.id}" data-design-section="${value.id}">${head}${body}${renderRuleSheet(value)}</section>`;
 }
 
-function renderLegacySample(entry: DesignSampleEntry): string {
-  const label = escapeHtml(entry.label);
-  const value = escapeHtml(entry.value);
-  const body = entry.kind === "tags"
-    ? `<ul class="tags"><li>${value.replaceAll(" · ", "</li><li>")}</li></ul>`
-    : entry.kind === "quote"
-      ? `<blockquote>${value}</blockquote>`
-      : entry.kind === "link-contact"
-        ? `<span class="contact-action">${value}</span>`
-        : entry.kind === "image"
-          ? `<div class="image-placeholder" role="img" aria-label="${value}">${value}</div>`
-          : `<p>${value}</p>`;
-  return `<article class="sample sample-${entry.kind}" data-sample-kind="${entry.kind}"><h3>${label}</h3>${body}</article>`;
-}
+/** CSS 가 그대로 읽을 수 있는 이름은 그대로 둔다. `ui-monospace` 같은 갈래말이다. */
+const BARE_FAMILIES = new Set(["ui-monospace", "ui-sans-serif", "ui-serif", "system-ui", "serif", "sans-serif", "monospace", "cursive"]);
 
-function renderLegacySection(
-  model: DesignDocumentModel,
-  value: DesignDocumentSection,
-): string {
-  const lines = `<ul class="doc-lines">${value.body.map(
-    (line) => `<li>${escapeHtml(line)}</li>`,
-  ).join("")}</ul>`;
-  const example = value.id === "colors"
-    ? `<div class="token-grid">${COLOR_NAMES.map(
-      (name) => `<div class="swatch" data-token="${name}"><span style="background:var(--${name})"></span><b>${name}</b></div>`,
-    ).join("")}</div>`
-    : value.id === "typography"
-      ? `<div class="type-sample"><strong>성과가 읽히는 첫 문장</strong><p>문제와 선택, 결과를 차분하게 연결하는 본문입니다.</p><code>recovery_time -42%</code></div>`
-      : value.id === "spacing"
-        ? `<div class="spacing-sample"><i></i><i></i><i></i></div>`
-        : value.id === "shape"
-          ? `<div class="shape-sample"><span>Card</span><button type="button">Control</button></div>`
-          : value.id === "components"
-            ? `<div class="component-sample"><article><b>대표 성과</b><p>복구 시간을 42% 줄였습니다.</p></article><span class="contact-action">프로젝트 보기</span></div>`
-            : value.id === "imagery"
-              ? `<div class="image-placeholder" role="img" aria-label="디자인 이미지 전략 예시">4:3 project artifact</div>`
-              : value.id === "motion"
-                ? `<div class="motion-sample">상태 변화에만 쓰는 모션</div>`
-                : value.id === "rules"
-                  ? `<div class="rule-comparison"><span>Do</span><span>Don't</span></div>`
-                  : value.id === "sample-portfolio"
-                    ? `<div class="sample-grid">${model.sampleEntries.map(renderLegacySample).join("")}</div>`
-                    : "";
-  return `<section id="${value.id}" data-design-section="${value.id}"><h2>${escapeHtml(value.title)}</h2>${lines}${example}</section>`;
+/**
+ * 서체 이름을 CSS 값으로. 갈래말이 아니면 따옴표로 묶는다 — `Source Serif 4`
+ * 처럼 숫자로 시작하는 낱말이 섞이면 따옴표 없이는 선언 전체가 무효가 된다.
+ * 계약의 서체 이름은 자유 문자열이므로 큰따옴표는 미리 걷어낸다.
+ */
+function cssFamily(family: string): string {
+  if (BARE_FAMILIES.has(family)) return family;
+  return `"${family.replaceAll('"', "")}"`;
 }
 
 function cssVariables(spec: DesignSystemSpecV2): string {
@@ -766,7 +764,7 @@ function cssVariables(spec: DesignSystemSpecV2): string {
   ).join("");
   const fonts = ["display", "body", "mono"].map((name) => {
     const font = spec.typography[name as keyof Pick<typeof spec.typography, "display" | "body" | "mono">];
-    return `--font-${name}:${font.family},${font.fallback};`;
+    return `--font-${name}:${cssFamily(font.family)},${font.fallback};`;
   }).join("");
   const steps = spec.typography.scale.map(
     (step) => `--type-${step.name}:${step.size};--line-${step.name}:${step.lineHeight};`,
@@ -782,10 +780,6 @@ function cssVariables(spec: DesignSystemSpecV2): string {
     layered: "0 2px 4px color-mix(in srgb,var(--text) 8%,transparent),0 18px 40px color-mix(in srgb,var(--text) 12%,transparent)",
   }[spec.shape.shadowStyle];
   return `${colors}${fonts}${steps}${exampleSteps}--measure:${spec.typography.measure};--base-unit:${spec.spacing.baseUnit}px;--element-gap:${spec.spacing.elementGap}px;--component-gap:${spec.spacing.componentGap}px;--section-gap:${spec.spacing.sectionGap}px;--content-width:${spec.spacing.contentWidth}px;--card-radius:${spec.shape.cardRadius}px;--control-radius:${spec.shape.controlRadius}px;--border-width:${spec.shape.borderWidth}px;--motion-duration:${spec.motion.duration};--motion-easing:${spec.motion.easing};--shadow:${shadow};`;
-}
-
-function isAppleShowcase(model: DesignDocumentModel): boolean {
-  return model.referenceLock?.primaryDirection.designSystemCode === "refero-apple";
 }
 
 /**
@@ -915,7 +909,7 @@ function coverSubtitle(spec: DesignSystemSpecV2): string {
   return "Expresso 기본 디자인 시스템";
 }
 
-function renderAppleShowcaseHtml(
+function renderShowcaseHtml(
   model: DesignDocumentModel,
   markdownSha256: string,
 ): string {
@@ -1243,57 +1237,17 @@ code{font-family:var(--font-mono)}
 </html>`;
 }
 
+/**
+ * 모든 디자인이 같은 문서를 받는다. 틀은 하나이고 그 안의 견본만 그 디자인의
+ * 색 · 서체 · 간격 · 형태로 그려진다. 틀까지 달라지면 서른여덟 벌을 나란히 두고
+ * 비교할 수 없다 — 이 카탈로그가 있는 이유가 비교다.
+ */
 export function renderDesignHtml(
   modelInput: DesignDocumentModel,
   markdownSha256: string,
 ): string {
   const model = DesignDocumentModelSchema.parse(modelInput);
-  const hash = zodHash(markdownSha256);
-  if (isAppleShowcase(model)) return renderAppleShowcaseHtml(model, hash);
-  const sections = model.sections.map((value) => renderLegacySection(model, value)).join("");
-  const title = escapeHtml(model.spec.identity.name);
-  const thesis = escapeHtml(model.spec.identity.visualThesis);
-  const variables = cssVariables(model.spec);
-
-  return `<!doctype html>
-<html lang="ko">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
-<meta name="design-spec-version" content="2">
-<meta name="design-md-sha256" content="${hash}">
-<title>${title} — DESIGN</title>
-<style>
-:root{${variables}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--font-body);font-size:var(--type-example-body);line-height:var(--line-example-body);word-break:keep-all;overflow-wrap:anywhere}
-main{width:min(calc(100% - 40px),var(--content-width));margin:auto;padding-block:var(--section-gap)}
-.cover{padding:clamp(48px,10vw,120px) 0;border-bottom:var(--border-width) solid var(--border)}
-.cover p{max-width:var(--measure);font-size:1.2rem;color:var(--muted)}
-h1,h2,h3{font-family:var(--font-display)}h1{font-size:var(--type-example-display);line-height:var(--line-example-display);margin:0}h2{font-size:var(--type-example-heading);line-height:var(--line-example-heading);margin:0 0 var(--component-gap)}
-section{padding-block:var(--section-gap);border-bottom:var(--border-width) solid var(--border)}
-.doc-lines{display:grid;gap:8px;padding:0;margin:0 0 var(--component-gap);list-style:none;color:var(--muted)}
-.token-grid,.sample-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--element-gap)}
-.swatch,.sample,.component-sample article{padding:var(--element-gap);background:var(--surface);border:var(--border-width) solid var(--border);border-radius:var(--card-radius)}
-.swatch span{display:block;height:72px;margin-bottom:10px;border-radius:calc(var(--card-radius) / 2);border:var(--border-width) solid var(--border)}
-.type-sample,.component-sample,.shape-sample{display:grid;gap:var(--element-gap);padding:var(--component-gap);background:var(--elevated);border-radius:var(--card-radius);box-shadow:var(--shadow)}
-.type-sample strong{font-family:var(--font-display);font-size:var(--type-example-display);line-height:var(--line-example-display)}.type-sample code,.sample-metric p{font-family:var(--font-mono);color:var(--accent)}
-.spacing-sample{display:flex;align-items:end;gap:var(--element-gap)}.spacing-sample i{display:block;width:30%;height:var(--element-gap);background:var(--accent)}.spacing-sample i:nth-child(2){height:var(--component-gap)}.spacing-sample i:nth-child(3){height:var(--section-gap)}
-.shape-sample{grid-template-columns:1fr auto;align-items:center}.shape-sample span{padding:var(--component-gap);background:var(--surface);border-radius:var(--card-radius);box-shadow:var(--shadow)}button,.contact-action{display:inline-flex;width:max-content;padding:10px 16px;border:0;border-radius:var(--control-radius);background:var(--action);color:var(--actionText);font:inherit}
-.component-sample{grid-template-columns:minmax(0,1fr) auto;align-items:center}.sample h3{margin-top:0}.sample p{color:var(--muted)}
-.image-placeholder{display:grid;place-items:center;min-height:180px;background:var(--elevated);border:var(--border-width) dashed var(--border);border-radius:var(--card-radius);color:var(--muted)}
-.tags{display:flex;flex-wrap:wrap;gap:8px;padding:0;list-style:none}.tags li{padding:4px 9px;border:var(--border-width) solid var(--border);border-radius:999px;font-family:var(--font-mono)}
-blockquote{margin:0;padding-left:16px;border-left:3px solid var(--accent);font-family:var(--font-display)}
-.motion-sample{width:max-content;padding:var(--component-gap);background:var(--accent);color:var(--actionText);border-radius:var(--card-radius);animation:design-rise var(--motion-duration) var(--motion-easing) both}
-@keyframes design-rise{from{opacity:.2;transform:translateY(12px)}to{opacity:1;transform:none}}
-.rule-comparison{display:grid;grid-template-columns:1fr 1fr;gap:var(--element-gap)}.rule-comparison span{padding:var(--component-gap);border:var(--border-width) solid var(--border);border-radius:var(--card-radius)}.rule-comparison span:first-child{border-color:var(--accent)}
-@media(max-width:640px){main{width:min(calc(100% - 24px),var(--content-width))}.shape-sample,.component-sample{grid-template-columns:1fr}.sample-grid{grid-template-columns:1fr}}
-@media(prefers-reduced-motion:reduce){.motion-sample{animation:none}}
-</style>
-</head>
-<body><main><header class="cover"><h1>${title}</h1><p>${thesis}</p></header>${sections}</main></body>
-</html>`;
+  return renderShowcaseHtml(model, zodHash(markdownSha256));
 }
 
 function zodHash(value: string): string {

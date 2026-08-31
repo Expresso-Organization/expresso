@@ -52,6 +52,13 @@ function occurrences(value: string, pattern: string): number {
   return value.split(pattern).length - 1;
 }
 
+/** 문서 CSP 가 이름 지은 바깥 호스트. 이 밖으로 나가는 참조는 없어야 한다. */
+const CSP_HOSTS = [
+  "https://fonts.googleapis.com",
+  "https://fonts.gstatic.com",
+  "https://images.unsplash.com",
+];
+
 describe("design system compiler", () => {
   it("기본 디자인 세 종을 같은 모델에서 결정적으로 컴파일한다", () => {
     for (const entry of Object.values(builtinDesignSystems)) {
@@ -102,10 +109,15 @@ describe("design system compiler", () => {
         expect(first.html).toContain(escapeHtml(role.usage));
       }
 
-      expect(first.html).not.toMatch(/<script\b/i);
-      expect(first.html).not.toMatch(/(?:src|href)=["']https?:/i);
+      // 스크립트는 CSP 가 해시로 고정한 그 하나뿐이다.
+      expect(occurrences(first.html, "<script>")).toBe(1);
+      // 바깥을 향하는 참조는 CSP 가 이름 지은 호스트에만 간다.
+      for (const [, host] of first.html.matchAll(/(?:src|href)=["'](https?:\/\/[^/"']+)/gi)) {
+        expect(CSP_HOSTS).toContain(host);
+      }
       expect(first.html).not.toMatch(/@import\b/i);
-      expect(first.html).not.toMatch(/gradient\(/i);
+      // 면을 칠하는 그러데이션은 쓰지 않는다. 릴을 흐리는 mask 는 장식이 아니다.
+      expect(first.html).not.toMatch(/background(?:-image)?:[^;}]*gradient\(/i);
       expect(first.html).toContain("overflow-wrap:anywhere");
       expect(first.html).toContain("font-size:var(--type-example-display)");
       expect(first.html).toContain("Content-Security-Policy");
@@ -121,30 +133,29 @@ describe("design system compiler", () => {
     expect(builtinDesignSystems.editorial.spec.typography.display.family).toBe("Georgia");
   });
 
-  it("Apple r2만 고품질 Live Preview를 사용한다", () => {
-    const apple = compileDesignDocuments(
-      referoDesignSystems.apple.spec,
-      referoDesignSystems.apple.referenceLock,
-    );
-    const mercury = compileDesignDocuments(
-      referoDesignSystems.mercury.spec,
-      referoDesignSystems.mercury.referenceLock,
-    );
+  it("모든 디자인이 같은 고품질 문서 골격을 쓴다", () => {
+    // 틀은 하나다. 밝은 지면 · 어두운 지면 · 세리프 · 고정폭이 같은 골격을 받고,
+    // 그 안의 견본만 각자의 색 · 서체로 그려진다. 그래야 나란히 두고 비교한다.
+    const samples = [
+      ...Object.values(builtinDesignSystems),
+      referoDesignSystems.apple,
+      referoDesignSystems.mercury,
+    ];
+
+    for (const entry of samples) {
+      const { html } = compileDesignDocuments(entry.spec, entry.referenceLock);
+      expect(html).toContain('class="doc-section');
+      expect(html).toContain('class="row-label"');
+      expect(html).toContain('class="palette"');
+      expect(html).toContain('class="variant-grid"');
+      expect(html).toContain("요소 견본 보기");
+      for (const kind of SAMPLE_KINDS) {
+        expect(occurrences(html, `data-sample-kind="${kind}"`)).toBe(1);
+      }
+    }
 
     expect(referoDesignSystems.apple.code).toBe("refero-apple");
-    expect(referoDesignSystems.apple.spec.identity.name).toBe("Apple");
     expect(referoDesignSystems.apple.referenceLock.primaryDirection.revision).toBe(2);
-    expect(apple.html).toContain('class="doc-section');
-    expect(apple.html).toContain('class="row-label"');
-    expect(apple.html).toContain('class="palette"');
-    expect(apple.html).toContain('class="variant-grid"');
-    expect(apple.html).toContain("요소 견본 보기");
-    expect(mercury.html).not.toContain('class="doc-section');
-    expect(mercury.html).not.toContain('class="row-label"');
-    expect(mercury.html).not.toContain('class="variant-grid"');
-    for (const kind of SAMPLE_KINDS) {
-      expect(occurrences(apple.html, `data-sample-kind="${kind}"`)).toBe(1);
-    }
   });
 
   it("문서에 심는 스크립트를 CSP 해시로 고정한다", () => {
