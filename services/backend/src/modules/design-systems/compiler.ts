@@ -402,9 +402,8 @@ function mediaPlate(spec: DesignSystemSpecV2, note: string): string {
 }
 
 function renderImageryRows(spec: DesignSystemSpecV2): string {
-  return `${row(label("비율", spec.imagery.aspectRatio), `<div class="media-set">${mediaPlate(spec, `이미지 자리 · ${spec.imagery.aspectRatio}`)}</div>`)}
-  ${row(label("모드", spec.imagery.mode), `<p class="note">${escapeHtml(spec.imagery.treatment)}</p>`)}
-  ${row(label("이미지가 없을 때"), `<div class="media-set"><div class="frame"><div class="demo demo-case"><small>FEATURED CASE · 01</small><strong>복구 시간을<br>42% 줄인 과정</strong><span>이미지 없이 제목과 사례 하나로 완결</span></div></div></div><p class="note">${escapeHtml(spec.imagery.fallback)}</p>`)}`;
+  return `${row(label(spec.imagery.mode, spec.imagery.aspectRatio), `<div class="media-set">${mediaPlate(spec, `이미지 자리 · ${spec.imagery.aspectRatio}`)}</div>`)}
+  ${row(label("이미지가 없을 때"), `<p class="note">${escapeHtml(spec.imagery.fallback)}</p>`)}`;
 }
 
 function renderCompositionRows(spec: DesignSystemSpecV2): string {
@@ -415,9 +414,10 @@ function renderCompositionRows(spec: DesignSystemSpecV2): string {
       <i></i><i></i><i></i>
     </div>
   </div>`;
-  return `${row(label("섹션 리듬", `1440px 지면의 ${ratio}%`), `${rhythm}<p class="note">${escapeHtml(spec.composition.sectionRhythm)}</p>`)}
-  ${row(label("구조", spec.composition.structure), `<p class="note">${escapeHtml(spec.composition.hierarchy)}</p>`)}
-  ${row(label("밀도", spec.composition.density), `<p class="note">${escapeHtml(spec.composition.surfaceStrategy)}</p>`)}`;
+  return row(
+    label(spec.composition.structure, `${spec.composition.density} · 1440px 지면의 ${ratio}%`),
+    `${rhythm}<p class="note">${escapeHtml(spec.composition.sectionRhythm)}</p>`,
+  );
 }
 
 function renderSpacingRows(spec: DesignSystemSpecV2): string {
@@ -433,22 +433,20 @@ function renderSpacingRows(spec: DesignSystemSpecV2): string {
     "row-tight",
   )).join("");
   return `${bars}
-  ${row(label("콘텐츠 폭", `${spec.spacing.contentWidth}px`), `<p class="note">본문 폭 ${escapeHtml(spec.typography.measure)}. 지면이 넓어져도 한 줄의 길이는 이 폭에서 멈춥니다.</p>`)}`;
+  ${row(label("content-width", `${spec.spacing.contentWidth}px`), `<p class="note mono">본문 폭 ${escapeHtml(spec.typography.measure)}</p>`, "row-tight")}`;
 }
 
 function renderShapeRows(spec: DesignSystemSpecV2): string {
   return `${row(label("card-radius", `${spec.shape.cardRadius}px`), `<i class="proof proof-card"></i>`, "row-tight")}
   ${row(label("control-radius", `${spec.shape.controlRadius}px`), `<i class="proof proof-control"></i>`, "row-tight")}
   ${row(label("border-width", `${spec.shape.borderWidth}px`), `<i class="proof proof-border"></i>`, "row-tight")}
-  ${row(label("shadow", spec.shape.shadowStyle), `<i class="proof proof-shadow"></i>`, "row-tight")}
-  ${row(label("표면 단계"), `<div class="surface-set"><i class="plane plane-canvas"><b>canvas</b></i><i class="plane plane-surface"><b>surface</b></i><i class="plane plane-elevated"><b>elevated</b></i></div>`)}`;
+  ${row(label("shadow", spec.shape.shadowStyle), `<i class="proof proof-shadow"></i>`, "row-tight")}`;
 }
 
 function renderMotionRows(spec: DesignSystemSpecV2): string {
   return `${row(label("reveal", `${spec.motion.duration} · ${spec.motion.easing}`), `<i class="motion motion-rise"></i>`, "row-tight")}
   ${row(label("focus"), `<i class="motion motion-focus"></i>`, "row-tight")}
   ${row(label("reduced"), `<i class="motion motion-still"></i>`, "row-tight")}
-  ${row(label("성격"), `<p class="note">${escapeHtml(spec.motion.personality)}</p>`)}
   ${row(label("모션 감소"), `<p class="note">${escapeHtml(spec.motion.reducedMotion)}</p>`)}`;
 }
 
@@ -502,7 +500,6 @@ function renderHeroVariants(model: DesignDocumentModel): string {
     variant("좌우 분할", `<div class="v-two"><div>${eyebrow(DEMO.role)}<strong>신뢰를 만드는<br>제품과 시스템</strong></div><div><p class="v-lead">운영에서 반복되던 문제를 구조로 바꾸는 일을 합니다.</p>${metaRow([["기간", DEMO.period], ["소속", DEMO.org], ["분야", "결제 · 플랫폼"]])}</div></div>`),
     variant("대표 수치 중심", `${eyebrow(DEMO.role)}<strong class="v-number">42%</strong><p class="v-lead">복구 시간 단축 · 지난 12개월</p>${metaRow([["재발", "0건"], ["배포 빈도", "3.1x"]])}`),
     variant("이미지 중심", `<div class="v-media-hero">${mediaPlate(spec, `대표 이미지 · ${spec.imagery.aspectRatio}`)}<div>${eyebrow(DEMO.role)}<strong>신뢰를 만드는 제품과 시스템</strong></div></div>`),
-    variant("짧은 프로필 카드", `<div class="v-profile"><i class="avatar"></i><div><strong>${DEMO.name}</strong><small>${DEMO.role}</small></div></div><p class="v-lead">${escapeHtml(DEMO.org)} · ${DEMO.period}</p><div class="v-actions"><span class="act-quiet">이력서 ↗</span><span class="act-quiet">GitHub ↗</span></div>`),
   ].join("");
 }
 
@@ -514,11 +511,8 @@ function renderProjectVariants(model: DesignDocumentModel): string {
   return [
     variant("문제-행동-결과", `${eyebrow("Case 01")}<strong>${escapeHtml(caseStudy.value)}</strong><dl class="v-par"><dt>문제</dt><dd>${DEMO.problem}</dd><dt>행동</dt><dd>${DEMO.action}</dd><dt>결과</dt><dd><b>${DEMO.result}</b></dd></dl>`, "no-image"),
     variant("긴 사례 연구", `${eyebrow("Case 02 · Featured")}<strong>${escapeHtml(caseStudy.value)}</strong><p class="v-body">${escapeHtml(longBody.value)}</p><p class="v-body">의사결정의 기준과 검증 방식까지 남겨 다음 작업에서 다시 사용할 수 있게 했습니다.</p>${metaRow([["역할", "설계 · 구현"], ["기간", "5개월"], ["스택", "Node · Redis"]])}<span class="act-quiet">사례 자세히 보기 ↗</span>`, "case-study", true),
-    variant("아티팩트 중심", `${eyebrow("Artifacts")}${mediaPlate(spec, `설계 문서 · ${spec.imagery.aspectRatio}`)}${metaRow([["문서", "복구 설계서"], ["대시보드", "복구 현황"], ["회고", "장애 리뷰"]])}`),
     variant("수치 중심", `<div class="v-lead-metric"><strong class="v-number">42%</strong><div>${eyebrow("Case 01")}<strong>${escapeHtml(caseStudy.value)}</strong><p class="v-lead">복구 시간 단축</p></div></div>${metaRow([["재발", "0건"], ["대응 인원", "4 → 1명"], ["기간", "5개월"]])}`),
-    variant("과정 타임라인", `${eyebrow("Process")}<ol class="v-timeline"><li><b></b><div><small>01 · 조사</small><span>흩어진 대응 절차 네 곳을 추적</span></div></li><li><b></b><div><small>02 · 설계</small><span>복구 흐름을 한 화면으로 합침</span></div></li><li><b></b><div><small>03 · 구현</small><span>모든 실행에 로그와 되돌리기 추가</span></div></li><li><b></b><div><small>04 · 검증</small><span>운영 로그로 복구 시간 재측정</span></div></li></ol>`),
     variant("여러 프로젝트 비교", `${eyebrow("Selected work")}<table class="v-table v-table-wide"><thead><tr><th>프로젝트</th><th>성과</th><th>스택</th></tr></thead><tbody><tr><td>결제 복구 흐름</td><td><b>42%</b></td><td>Node · Redis</td></tr><tr><td>배포 자동화</td><td><b>3.1x</b></td><td>Actions</td></tr><tr><td>알림 정리</td><td><b>−68%</b></td><td>BullMQ</td></tr></tbody></table>`, undefined, true),
-    variant("이미지 없는 사례", `${eyebrow("Case 03")}<strong>${escapeHtml(noImage.value)}</strong><p class="v-body">이미지가 없어도 역할, 선택, 수치 근거가 한 흐름을 만듭니다.</p><ul class="v-achieve"><li><b>42%</b><span>복구 시간 단축</span></li><li><b>0건</b><span>동일 장애 재발</span></li></ul>`),
   ].join("");
 }
 
@@ -531,7 +525,6 @@ function renderMetricVariants(model: DesignDocumentModel): string {
     variant("수치 묶음", `${eyebrow("Metrics")}<div class="v-group"><article><strong>42%</strong><small>복구 시간 단축</small></article><article><strong>0건</strong><small>동일 장애 재발</small></article><article><strong>3.1x</strong><small>배포 빈도</small></article><article><strong>1,284</strong><small>분석한 운영 로그</small></article></div>`),
     variant("막대 비교", `${eyebrow("Recovery time")}<div class="v-bars"><article><small>2024</small><i style="width:100%"></i><b>18분</b></article><article><small>2025</small><i style="width:78%"></i><b>14분</b></article><article><small>2026</small><i class="v-bar-accent" style="width:56%"></i><b>10분</b></article></div><small class="v-note">${DEMO.method}</small>`),
     variant("도넛 또는 게이지", `${eyebrow("Automation")}<div class="v-gauge"><span class="gauge"><i></i></span><div><strong>75%</strong><small>사람 개입 없이 끝난 복구</small></div></div><small class="v-note">${DEMO.method}</small>`),
-    variant("설명이 붙은 지표", `${eyebrow("Impact")}<strong class="v-number">42%</strong><p class="v-lead">복구 시간 단축</p><dl class="v-par"><dt>기준</dt><dd>장애 감지부터 서비스 정상화까지</dd><dt>표본</dt><dd>운영 로그 1,284건</dd><dt>기간</dt><dd>2025-09 ~ 2026-08</dd></dl>`),
   ].join("");
 }
 
@@ -539,9 +532,7 @@ function renderCareerVariants(): string {
   return [
     variant("세로 타임라인", `${eyebrow("Career")}<ol class="v-timeline"><li><b></b><div><small>2026 · ${DEMO.org}</small><span>플랫폼 리드</span><em>결제 신뢰성 전반</em></div></li><li><b></b><div><small>2024 · ${DEMO.org}</small><span>백엔드 엔지니어</span><em>복구 흐름 통합</em></div></li><li><b></b><div><small>2023 · 이전 조직</small><span>소프트웨어 엔지니어</span><em>결제 정산</em></div></li></ol>`),
     variant("조직별 묶음", `${eyebrow("Organizations")}<article class="v-org"><strong>${DEMO.org}</strong><small>${DEMO.period} · 플랫폼</small><ul class="v-linked"><li>플랫폼 리드 · 2026</li><li>백엔드 엔지니어 · 2024</li></ul></article><article class="v-org"><strong>이전 조직</strong><small>2021 — 2023 · 결제</small><ul class="v-linked"><li>소프트웨어 엔지니어</li></ul></article>`),
-    variant("역할 중심", `${eyebrow("Role")}<strong>플랫폼 리드</strong><dl class="v-par"><dt>범위</dt><dd>결제 신뢰성 설계 · 운영 · 회고</dd><dt>기간</dt><dd>${DEMO.org} · ${DEMO.period}</dd><dt>협업</dt><dd>제품 · 운영 · 고객 지원</dd></dl>`),
     variant("성과 중심", `${eyebrow("Achievements")}<ul class="v-achieve"><li><b>42%</b><span>복구 시간 단축<em>운영 로그 1,284건 기준</em></span></li><li><b>0건</b><span>동일 장애 재발<em>통합 이후 12개월</em></span></li><li><b>3.1x</b><span>배포 빈도<em>자동화 이후</em></span></li></ul>`),
-    variant("프로젝트 연결형", `${eyebrow("Role → Projects")}<article class="v-org"><strong>플랫폼 리드</strong><small>${DEMO.org} · ${DEMO.period}</small></article><ul class="v-evidence"><li><strong>결제 복구 흐름 통합</strong><span>복구 시간 42% 단축</span></li><li><strong>배포 자동화</strong><span>배포 빈도 3.1배</span></li><li><strong>알림 정리</strong><span>불필요 알림 68% 감소</span></li></ul>`),
   ].join("");
 }
 
@@ -549,9 +540,7 @@ function renderSkillVariants(model: DesignDocumentModel): string {
   const tags = sampleOf(model, "tags");
   return [
     variant("태그", `${eyebrow("Skills")}<ul class="tag-set"><li>${escapeHtml(tags.value).replaceAll(" · ", "</li><li>")}</li><li>${DEMO.stack.slice(1).join("</li><li>")}</li></ul>`, "tags"),
-    variant("카테고리 목록", `${eyebrow("By category")}<dl class="v-par"><dt>언어</dt><dd>TypeScript · SQL</dd><dt>런타임</dt><dd>Node 24 · Fastify</dd><dt>저장소</dt><dd>MySQL 8 · Redis</dd><dt>운영</dt><dd>BullMQ · GitHub Actions</dd></dl>`),
     variant("숙련 근거", `${eyebrow("Evidence")}<ul class="v-evidence"><li><strong>TypeScript</strong><span>계약 스키마와 문서 컴파일러를 설계하고 구현</span></li><li><strong>MySQL</strong><span>마이그레이션 순서와 인덱스 설계</span></li><li><strong>Redis</strong><span>복구 흐름의 상태 저장과 큐 소비</span></li></ul>`),
-    variant("프로젝트 연결", `${eyebrow("Skill → Project")}<ul class="v-evidence"><li><strong>Redis</strong><span>결제 복구 흐름 통합 · 복구 시간 42% 단축</span></li><li><strong>BullMQ</strong><span>배포 자동화 · 배포 빈도 3.1배</span></li><li><strong>GitHub Actions</strong><span>계약 빌드 선행 · CI 실패율 감소</span></li></ul>`),
     variant("기술 스택 표", `${eyebrow("Stack")}<table class="v-table"><tbody><tr><th>언어</th><td>TypeScript 5</td></tr><tr><th>런타임</th><td>Node 24 · Fastify</td></tr><tr><th>DB</th><td>MySQL 8</td></tr><tr><th>큐</th><td>Redis · BullMQ</td></tr><tr><th>CI</th><td>GitHub Actions</td></tr></tbody></table>`),
   ].join("");
 }
@@ -575,12 +564,12 @@ function renderOtherVariants(model: DesignDocumentModel): string {
 
 function renderSampleGallery(model: DesignDocumentModel): string {
   const groups: [string, string, string][] = [
-    ["Hero", "첫 화면 · 5", renderHeroVariants(model)],
-    ["프로젝트", "사례 · 7", renderProjectVariants(model)],
-    ["수치", "지표 · 6", renderMetricVariants(model)],
-    ["경력", "이력 · 5", renderCareerVariants()],
-    ["기술", "스택 · 5", renderSkillVariants(model)],
-    ["기타", "본문과 마무리 · 6", renderOtherVariants(model)],
+    ["Hero", "첫 화면", renderHeroVariants(model)],
+    ["프로젝트", "사례", renderProjectVariants(model)],
+    ["수치", "지표", renderMetricVariants(model)],
+    ["경력", "이력", renderCareerVariants()],
+    ["기술", "스택", renderSkillVariants(model)],
+    ["기타", "본문과 마무리", renderOtherVariants(model)],
   ];
   return groups.map(([name, meta, body]) => row(label(name, meta), `<div class="variant-grid">${body}</div>`, "row-wide")).join("");
 }
@@ -593,7 +582,6 @@ function renderSourceRows(model: DesignDocumentModel, markdownSha256: string): s
     ["원본", `${spec.origin.sourceName ?? "Expresso"} · ${spec.origin.kind}`],
     ["원본 URL", spec.origin.sourceUrl ?? "없음"],
     ["수집 시각", spec.origin.capturedAt ?? "없음"],
-    ["출처 표기", spec.origin.attribution ?? "없음"],
     ["판", lock ? `${lock.primaryDirection.designSystemCode} r${lock.primaryDirection.revision}` : "r1"],
     ["DESIGN.md sha256", markdownSha256],
   ];
@@ -606,7 +594,6 @@ function sectionSentence(spec: DesignSystemSpecV2, id: string): string | null {
   const map: Record<string, string | null | undefined> = {
     colors: spec.composition.surfaceStrategy,
     typography: moves[0],
-    components: spec.components.hero?.description,
     "sample-portfolio": "모든 디자인이 같은 내용을 씁니다. 화면의 차이는 전부 디자인에서 옵니다.",
     imagery: spec.imagery.treatment,
     composition: spec.composition.hierarchy,
@@ -962,7 +949,6 @@ code{font-family:var(--font-mono)}
 .measure-proof{max-width:var(--measure);color:var(--muted);font-size:13px;line-height:1.7}
 
 .frame{padding:26px;border:1px solid var(--hairline);border-radius:var(--doc-radius)}
-.frame-plain{padding:0;border:0;background:transparent}
 .frame-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .demo{display:flex;flex-direction:column;min-height:148px}
 .demo small{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.1em}
@@ -974,19 +960,6 @@ code{font-family:var(--font-mono)}
 .demo-metric span{margin-top:6px;font-size:14px}
 .demo-metric small{margin-top:6px}
 .demo-contact{flex-direction:row;align-items:center;justify-content:center;gap:14px}
-.demo-rule{min-height:190px;padding:24px;border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--canvas)}
-.demo-rule strong{font-size:22px}
-.demo-rule p{max-width:38ch;margin-top:10px;color:var(--muted);font-size:12px;line-height:1.6}
-.demo-rule .act{margin-top:auto}
-.demo-rule-broken{border-color:var(--accent);background:var(--accent);color:var(--actionText);box-shadow:0 16px 34px color-mix(in srgb,var(--text) 30%,transparent)}
-.demo-rule-broken small,.demo-rule-broken p{color:var(--actionText)}
-.demo-rule-broken strong{margin-bottom:2px;font-size:15px;letter-spacing:0}
-.demo-rule-broken p{max-width:none;font-size:11px;line-height:1.25}
-.broken-actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto;padding-top:12px}
-.broken-actions span{padding:6px 10px;border-radius:var(--control-radius);background:var(--action);color:var(--actionText);font-size:11px}
-.broken-actions span:nth-child(2){background:var(--text)}
-.broken-actions span:nth-child(3){background:var(--canvas);color:var(--text)}
-.broken-actions span:nth-child(4){background:var(--elevated);color:var(--text)}
 .rule-list{margin-top:18px}
 .rule-list li{padding:9px 0;border-bottom:1px solid var(--hairline);font-size:13px;line-height:1.6}
 .rule-list li:last-child{border-bottom:0}
@@ -997,25 +970,12 @@ code{font-family:var(--font-mono)}
 .proof-control{border-radius:var(--control-radius)}
 .proof-border{border:var(--border-width) solid var(--text);border-radius:6px;background:transparent}
 .proof-shadow{border:1px solid var(--hairline);border-radius:6px;background:var(--canvas);box-shadow:var(--shadow)}
-.surface-set{display:flex;gap:10px}
-.plane{display:grid;align-content:end;flex:1;height:92px;padding:12px;border:1px solid var(--hairline);border-radius:var(--doc-radius)}
-.plane b{color:var(--muted);font-family:var(--font-mono);font-size:10px;font-weight:400}
-.plane-canvas{background:var(--canvas)}
-.plane-surface{background:var(--surface)}
-.plane-elevated{background:var(--elevated);box-shadow:var(--shadow)}
 .motion{display:block;width:56px;height:56px;border-radius:calc(var(--card-radius) * .7);background:var(--action)}
 .motion-rise{animation:doc-rise calc(var(--motion-duration) * 3) var(--motion-easing) infinite alternate}
 .motion-focus{animation:doc-focus calc(var(--motion-duration) * 3) var(--motion-easing) infinite alternate}
 .motion-still{background:var(--surface);border:1px solid var(--border)}
 @keyframes doc-rise{from{opacity:.25;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes doc-focus{from{transform:scale(.86)}to{transform:scale(1.06)}}
-
-.wire{display:flex;justify-content:center;min-height:320px;padding:22px 0;border:1px solid var(--hairline);border-radius:var(--doc-radius);background:var(--surface)}
-.wire-page{display:grid;grid-template-rows:30px minmax(0,1fr) 20px;gap:var(--component-gap);padding:var(--component-gap) 0;border-left:1px dashed var(--border);border-right:1px dashed var(--border)}
-.wire-page header,.wire-page footer{margin:0 var(--element-gap);border-radius:5px;background:var(--border)}
-.wire-page main{display:grid;grid-template-columns:1.6fr 1fr;grid-template-rows:1fr .56fr;gap:var(--element-gap);margin:0 var(--element-gap)}
-.wire-page i{border-radius:calc(var(--card-radius) * .6);background:var(--canvas)}
-.wire-page i:first-child{grid-row:1/-1;background:var(--text)}
 
 .media{display:grid;place-items:center;width:100%;border-radius:var(--card-radius);background:var(--surface);box-shadow:inset 0 0 0 var(--border-width) var(--hairline)}
 .media span{color:var(--muted);font-family:var(--font-mono);font-size:10px}
@@ -1162,8 +1122,6 @@ code{font-family:var(--font-mono)}
 .variant-grid{grid-template-columns:1fr}
 .variant .frame{padding:24px;min-height:0}
 .row-head{padding-bottom:22px}
-.surface-set{flex-direction:column}
-.plane{height:64px}
 }
 @media(max-width:640px){
 .nav ul{display:none}
