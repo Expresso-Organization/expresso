@@ -441,8 +441,7 @@ Stripe, Notion, Apple, ElevenLabs, Duolingo, Raycast, Mercury 등은 초기 후�
 - 원본과의 차이를 만든 결정
 
 Expresso에는 관찰한 색상 역할, 타이포그래피, 간격, 구성, 표면, 이미지 처리, 모션
-성격을 v2 계약으로 재구성해 적용한다. 원본 로고, 제품 이미지, 마케팅 카피, 고유
-일러스트레이션, HTML/CSS는 출처 쪽에 둔다.
+성격을 v2 계약으로 재구성해 적용한다.
 
 Refero의 공개 스타일과 조사 방법론은 초기 조사에 사용할 수 있다. 고객 대상 자동
 연동은 Refero의 별도 사업 계약과 사용 조건을 확인한 뒤 `ReferoDesignProvider`로

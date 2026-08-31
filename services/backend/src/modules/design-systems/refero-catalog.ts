@@ -161,10 +161,7 @@ function createSpec(definition: ReferoStyleDefinition): DesignSystemSpecV2 {
         ...definition.preserve,
         "Refero에서 관찰한 시스템을 Expresso 콘텐츠와 토큰 역할로 다시 구성한다",
       ],
-      dont: [
-        ...definition.reject,
-        "원본 로고, 제품 이미지, 마케팅 카피, HTML과 CSS를 가져오지 않는다",
-      ],
+      dont: [...definition.reject],
     },
   });
 }
