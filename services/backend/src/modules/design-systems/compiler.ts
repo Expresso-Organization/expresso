@@ -989,22 +989,60 @@ code{font-family:var(--font-mono)}
 .tag-set li{padding:8px 13px;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--muted);font-size:12px}
 
 /*
-  등장 애니메이션. 카드 안의 요소가 시차를 두고 올라오고, 한 주기가 끝나면 다시 돈다.
-  틀은 움직이지 않으므로 지면이 흔들리지 않는다. --v 는 격자에서의 순서다.
+  등장 애니메이션. 요소가 하는 일에 맞는 움직임을 준다 — 제목은 왼쪽에서 닦여
+  나오고, 수치는 가려진 자리에서 올라오고, 막대는 0에서 자라고, 게이지는 호를
+  그리고, 이미지는 아래에서 걷힌다. 한 주기가 끝나면 한 프레임만 되감아 내용이
+  비어 보이는 구간을 두지 않는다.
+  --v 는 격자에서의 순서, --i 는 카드 안 순서, --j 는 목록 안 순서다.
 */
-.variant{--v:0}
+.variant{--cycle:9s;--v:0}
 .variant:nth-child(2){--v:1}
 .variant:nth-child(3){--v:2}
 .variant:nth-child(4){--v:3}
 .variant:nth-child(5){--v:4}
 .variant:nth-child(6){--v:5}
 .variant:nth-child(7){--v:6}
-.variant .frame>*{animation:element-enter 9s var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .16s)}
-.variant .frame>*:nth-child(2){animation-delay:calc(var(--v) * .16s + .12s)}
-.variant .frame>*:nth-child(3){animation-delay:calc(var(--v) * .16s + .24s)}
-.variant .frame>*:nth-child(4){animation-delay:calc(var(--v) * .16s + .36s)}
-.variant .frame>*:nth-child(5){animation-delay:calc(var(--v) * .16s + .48s)}
-@keyframes element-enter{0%{opacity:0;transform:translateY(14px)}7%,100%{opacity:1;transform:none}}
+.variant .frame>*{--i:0}
+.variant .frame>*:nth-child(2){--i:1}
+.variant .frame>*:nth-child(3){--i:2}
+.variant .frame>*:nth-child(4){--i:3}
+.variant .frame>*:nth-child(5){--i:4}
+.variant .frame>*:nth-child(6){--i:5}
+.variant .frame li,.variant .frame tbody tr,.variant .frame .v-group>article,.variant .frame .v-bars>article,.variant .frame .v-gallery>*,.variant .frame .v-par>*{--j:0}
+.variant .frame li:nth-child(2),.variant .frame tbody tr:nth-child(2),.variant .frame .v-group>article:nth-child(2),.variant .frame .v-bars>article:nth-child(2),.variant .frame .v-gallery>*:nth-child(2),.variant .frame .v-par>*:nth-child(2){--j:1}
+.variant .frame li:nth-child(3),.variant .frame tbody tr:nth-child(3),.variant .frame .v-group>article:nth-child(3),.variant .frame .v-bars>article:nth-child(3),.variant .frame .v-gallery>*:nth-child(3),.variant .frame .v-par>*:nth-child(3){--j:2}
+.variant .frame li:nth-child(4),.variant .frame tbody tr:nth-child(4),.variant .frame .v-group>article:nth-child(4),.variant .frame .v-par>*:nth-child(4){--j:3}
+.variant .frame li:nth-child(5),.variant .frame tbody tr:nth-child(5),.variant .frame .v-par>*:nth-child(5){--j:4}
+.variant .frame li:nth-child(6),.variant .frame .v-par>*:nth-child(6){--j:5}
+
+.variant .frame>*{animation:el-rise var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s)}
+.variant .frame li,.variant .frame tbody tr,.variant .frame .v-group>article,.variant .frame .v-bars>article,.variant .frame .v-par>*{animation:el-rise var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + var(--j) * .07s + .1s)}
+
+/* 제목과 인용은 글이 쓰이듯 왼쪽에서 닦여 나온다. */
+.variant .frame>strong,.variant .frame .v-two strong,.variant .frame .v-quote,.variant .frame .v-org strong{animation-name:el-wipe}
+/* 수치는 가려진 자리에서 올라온다. */
+.variant .frame>strong.v-number,.variant .frame .v-lead-metric .v-number,.variant .frame .v-before strong,.variant .frame .v-group strong,.variant .frame .v-achieve b,.variant .frame .v-gauge strong{animation:el-lift var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + var(--j) * .07s + .16s)}
+/* 막대는 0에서 자란다. */
+.variant .frame .v-bars i{transform-origin:left;animation:el-grow var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + var(--j) * .07s + .22s)}
+/* 게이지는 호를 그린다. */
+.variant .frame .gauge i{animation:el-sweep var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + .2s)}
+/* 이미지 자리는 아래에서 걷힌다. */
+.variant .frame .media{animation:el-reveal var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + var(--j) * .07s + .12s)}
+/* 아바타와 태그는 제자리에서 튀어 오른다. */
+.variant .frame .avatar,.variant .frame .tag-set li{animation:el-pop var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + var(--j) * .05s + .14s)}
+/* 타임라인은 선이 아래로 그어진 뒤 점이 찍힌다. */
+.v-timeline{position:relative}
+.v-timeline::before{content:"";position:absolute;top:8px;bottom:8px;left:4px;width:1px;background:var(--border);transform-origin:top;animation:el-draw var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s)}
+.variant .frame .v-timeline b{animation:el-pop var(--cycle) var(--motion-easing) infinite both;animation-delay:calc(var(--v) * .14s + var(--i) * .1s + var(--j) * .07s + .26s)}
+
+@keyframes el-rise{0%{opacity:0;transform:translateY(14px)}7%,100%{opacity:1;transform:none}}
+@keyframes el-wipe{0%{opacity:0;clip-path:inset(0 100% -12% 0)}3%{opacity:1}13%,100%{opacity:1;clip-path:inset(0 0 -12% 0)}}
+@keyframes el-lift{0%{opacity:0;clip-path:inset(105% 0 -14% 0);transform:translateY(26%)}3%{opacity:1}12%,100%{opacity:1;clip-path:inset(-14% 0 -14% 0);transform:none}}
+@keyframes el-grow{0%{transform:scaleX(0)}16%,100%{transform:scaleX(1)}}
+@keyframes el-sweep{0%{opacity:0;transform:rotate(-170deg)}4%{opacity:1}18%,100%{opacity:1;transform:rotate(0)}}
+@keyframes el-reveal{0%{opacity:0;clip-path:inset(100% 0 0 0)}4%{opacity:1}14%,100%{opacity:1;clip-path:inset(0 0 0 0)}}
+@keyframes el-pop{0%{opacity:0;transform:scale(.82)}9%,100%{opacity:1;transform:none}}
+@keyframes el-draw{0%{transform:scaleY(0)}19%,100%{transform:scaleY(1)}}
 .rule-sheet{margin-top:28px;border-top:1px solid var(--hairline)}
 .rule-sheet summary{display:flex;align-items:center;gap:8px;padding:15px 0;color:var(--muted);font-size:11px;cursor:pointer}
 .rule-sheet summary span{font-family:var(--font-mono);font-size:10px}
@@ -1031,7 +1069,7 @@ code{font-family:var(--font-mono)}
 .facts span{text-align:left}
 .doc-lines{grid-template-columns:1fr}
 }
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.motion-rise,.motion-focus,.variant .frame>*{animation:none}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.motion-rise,.motion-focus,.variant .frame *,.variant .frame>*,.v-timeline::before{animation:none}}
 </style>
 </head>
 <body>
