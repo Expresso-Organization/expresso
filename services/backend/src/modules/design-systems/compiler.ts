@@ -168,6 +168,23 @@ export function buildDesignDocumentModel(
     ]),
     section("colors", "색상 토큰과 역할", colorLines),
     section("typography", "타이포그래피 계단", typographyLines),
+    section("components", "컴포넌트 규칙", componentLines),
+    section("sample-portfolio", "공통 샘플 포트폴리오", SAMPLE_ENTRIES.map(
+      (entry) => `${entry.label}: ${entry.value}`,
+    )),
+    section("imagery", "이미지 전략", [
+      `모드: ${spec.imagery.mode}`,
+      `비율: ${spec.imagery.aspectRatio}`,
+      `처리: ${spec.imagery.treatment}`,
+      `대체 방식: ${spec.imagery.fallback}`,
+    ]),
+    section("composition", "구성과 섹션 리듬", [
+      `구조: ${spec.composition.structure}`,
+      `밀도: ${spec.composition.density}`,
+      `섹션 리듬: ${spec.composition.sectionRhythm}`,
+      `위계: ${spec.composition.hierarchy}`,
+      `표면 전략: ${spec.composition.surfaceStrategy}`,
+    ]),
     section("spacing", "간격과 콘텐츠 폭", [
       `기본 단위: ${spec.spacing.baseUnit}px`,
       `요소 간격: ${spec.spacing.elementGap}px`,
@@ -181,20 +198,6 @@ export function buildDesignDocumentModel(
       `테두리 두께: ${spec.shape.borderWidth}px`,
       `그림자: ${spec.shape.shadowStyle}`,
     ]),
-    section("composition", "구성과 섹션 리듬", [
-      `구조: ${spec.composition.structure}`,
-      `밀도: ${spec.composition.density}`,
-      `섹션 리듬: ${spec.composition.sectionRhythm}`,
-      `위계: ${spec.composition.hierarchy}`,
-      `표면 전략: ${spec.composition.surfaceStrategy}`,
-    ]),
-    section("components", "컴포넌트 규칙", componentLines),
-    section("imagery", "이미지 전략", [
-      `모드: ${spec.imagery.mode}`,
-      `비율: ${spec.imagery.aspectRatio}`,
-      `처리: ${spec.imagery.treatment}`,
-      `대체 방식: ${spec.imagery.fallback}`,
-    ]),
     section("motion", "모션 규칙", [
       `성격: ${spec.motion.personality}`,
       `시간: ${spec.motion.duration}`,
@@ -206,9 +209,6 @@ export function buildDesignDocumentModel(
       ...spec.rules.dont.map((value) => `Don't: ${value}`),
       ...spec.rules.tokenRoles.map((role) => tokenRoleLine("규칙 토큰 역할", role)),
     ]),
-    section("sample-portfolio", "공통 샘플 포트폴리오", SAMPLE_ENTRIES.map(
-      (entry) => `${entry.label}: ${entry.value}`,
-    )),
     section("source-revision", "출처와 판 정보", sourceLines(spec, referenceLock)),
   ];
 
@@ -568,7 +568,7 @@ function renderPortfolioSample(model: DesignDocumentModel): string {
     <div class="portfolio-page">
       <nav class="portfolio-nav"><strong>MP.</strong><span>Work · About · Contact</span></nav>
       ${render("hero", `<div><p>Product engineer · Seoul</p><h3>${escapeHtml(hero.value)}</h3><div class="hero-actions"><span class="action-primary">대표 작업 보기</span><span class="action-quiet">소개 다운로드 ↗</span></div></div><div class="hero-plate" aria-hidden="true"><i></i></div>`, "header")}
-      <div class="portfolio-metrics">
+      <div class="portfolio-tiles">
         ${render("metric", `<strong>${escapeHtml(metric.value)}</strong><p>지난 12개월 · 운영 기록 기준</p>`)}
         ${render("before-after", `<strong>${escapeHtml(beforeAfter.value)}</strong><p>흩어진 절차를 검증 가능한 흐름으로 통합</p>`)}
       </div>
@@ -577,7 +577,7 @@ function renderPortfolioSample(model: DesignDocumentModel): string {
         ${render("image", `${renderArtifactVisual(image.value)}<p>${escapeHtml(image.value)}</p>`)}
       </div>
       ${render("long-body", `<h3>문제부터 결과까지 읽히는 기록</h3><p>${escapeHtml(longBody.value)}</p><p>의사결정의 기준과 검증 방식까지 남겨 다음 작업에서 다시 사용할 수 있게 했습니다.</p>`)}
-      <div class="portfolio-proof">
+      <div class="portfolio-tiles">
         ${render("no-image", `<span class="proof-index">02</span><h3>${escapeHtml(noImage.value)}</h3><p>이미지가 없어도 역할, 선택, 수치 근거가 한 흐름을 만듭니다.</p>`)}
         ${render("tags", `<h3>사용한 기술과 도구</h3><ul class="tag-list"><li>${escapeHtml(tags.value).replaceAll(" · ", "</li><li>")}</li></ul>`)}
       </div>
@@ -615,12 +615,7 @@ function renderShowcaseSection(
   const spec = model.spec;
   let body = "";
 
-  if (value.id === "direction") {
-    body = `<div class="move-list">${spec.identity.signatureMoves.map(
-      (move, moveIndex) => `<article><b>${pad2(moveIndex + 1)}</b><p>${escapeHtml(move)}</p></article>`,
-    ).join("")}</div>
-    <ul class="chips">${spec.identity.traits.map((trait) => `<li>${escapeHtml(trait)}</li>`).join("")}</ul>`;
-  } else if (value.id === "colors") {
+  if (value.id === "colors") {
     body = renderColorSection(spec);
   } else if (value.id === "typography") {
     body = renderTypographySection(spec);
@@ -741,7 +736,9 @@ function renderAppleShowcaseHtml(
   const variables = cssVariables(spec);
   const revision = model.referenceLock?.primaryDirection.revision ?? 1;
   const bodyContrast = contrastRatio(spec.colors.text.value, spec.colors.canvas.value);
+  const direction = model.sections.find((value) => value.id === "direction")!;
   const sections = model.sections
+    .filter((value) => value.id !== "direction")
     .map((value, index) => renderShowcaseSection(model, value, index, markdownSha256))
     .join("");
   const facts = [
@@ -792,7 +789,10 @@ code{font-family:var(--font-mono)}
 .cover-plate{display:grid;place-items:center;gap:14px;padding:clamp(28px,4vw,48px);border-radius:var(--card-radius);background:var(--surface)}
 .plate-object{width:56%;aspect-ratio:3 / 4;border-radius:var(--card-radius);background:var(--text);box-shadow:var(--shadow)}
 .cover-plate figcaption{color:var(--muted);font-size:11px}
-.cover-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;width:var(--column);margin:0 auto;padding-top:20px;border-top:1px solid var(--hairline)}
+.cover-strip{width:var(--column);margin:0 auto;padding-top:22px;border-top:1px solid var(--hairline)}
+.cover-strip .move-list{margin-top:22px}
+.cover-strip .rule-sheet{margin-top:22px}
+.cover-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
 .cover-facts b{display:block;font-size:13px;font-weight:600;letter-spacing:-.01em}
 .cover-facts span{color:var(--muted);font-size:11px}
 
@@ -958,7 +958,9 @@ code{font-family:var(--font-mono)}
 .browser-bar{display:flex;align-items:center;gap:6px;height:38px;padding:0 14px;background:var(--text);color:var(--canvas)}
 .browser-bar>span{width:7px;height:7px;border-radius:50%;background:var(--canvas);opacity:.4}
 .browser-bar b{margin-left:10px;font-family:var(--font-mono);font-size:9px;font-weight:400;opacity:.6}
-.portfolio-page{padding:0 6%;font-size:var(--type-example-body);line-height:var(--line-example-body)}
+.portfolio-page{font-size:var(--type-example-body);line-height:var(--line-example-body)}
+.portfolio-page>*{padding-inline:6%}
+.portfolio-page>.portfolio-tiles,.portfolio-page>.sample-quote{padding-inline:0}
 .portfolio-nav{display:flex;align-items:center;height:62px;border-bottom:1px solid var(--hairline)}
 .portfolio-nav span{margin-left:auto;color:var(--muted);font-size:11px}
 .sample-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);align-items:center;gap:36px;padding:clamp(44px,6vw,80px) 0;border-bottom:1px solid var(--hairline)}
@@ -967,11 +969,14 @@ code{font-family:var(--font-mono)}
 .hero-actions{display:flex;align-items:center;gap:10px}
 .hero-plate{position:relative;justify-self:end;width:100%;max-width:280px;aspect-ratio:4 / 5;border-radius:var(--card-radius);background:var(--text)}
 .hero-plate i{position:absolute;inset:24%;border:1px solid var(--canvas);border-radius:50%;opacity:.28}
-.portfolio-metrics{display:grid;grid-template-columns:1fr 1.4fr;border-bottom:1px solid var(--hairline)}
-.portfolio-metrics .sample{padding:36px 0}
-.portfolio-metrics .sample + .sample{padding-left:36px;border-left:1px solid var(--hairline)}
-.portfolio-metrics strong{display:block;max-width:16ch;font-family:var(--font-display);font-size:clamp(24px,3.2vw,42px);line-height:1.04;letter-spacing:-.045em}
-.portfolio-metrics p{margin-top:10px;color:var(--muted);font-size:12px}
+.portfolio-tiles{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.portfolio-tiles>.sample{display:flex;flex-direction:column;min-height:230px;padding:clamp(28px,4vw,52px)}
+.portfolio-tiles>.sample:nth-child(odd){background:var(--surface)}
+.portfolio-tiles>.sample:nth-child(even){background:var(--text);color:var(--canvas)}
+.portfolio-tiles>.sample:nth-child(even) p,.portfolio-tiles>.sample:nth-child(even) .proof-index{color:var(--ink-muted)}
+.portfolio-tiles>.sample:nth-child(even) .tag-list li{border-color:var(--ink-muted);color:var(--ink-muted)}
+.portfolio-tiles strong{display:block;max-width:16ch;margin-top:auto;font-family:var(--font-display);font-size:clamp(22px,3vw,38px);line-height:1.06;letter-spacing:-.04em}
+.portfolio-tiles p{margin-top:10px;color:var(--muted);font-size:12px}
 .portfolio-case{display:grid;grid-template-columns:.85fr 1.15fr;gap:36px;padding:clamp(44px,6vw,76px) 0;border-bottom:1px solid var(--hairline)}
 .sample-case-study{display:flex;flex-direction:column;justify-content:center}
 .case-index,.proof-index{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.1em}
@@ -981,12 +986,10 @@ code{font-family:var(--font-mono)}
 .sample-image>p{margin-top:10px;color:var(--muted);font-size:11px}
 .sample-long-body{max-width:var(--measure);padding:clamp(48px,6vw,88px) 0}
 .sample-long-body p + p{margin-top:14px}
-.portfolio-proof{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-bottom:clamp(44px,6vw,76px)}
-.portfolio-proof>.sample{display:flex;flex-direction:column;min-height:220px;padding:28px;border-radius:var(--card-radius);background:var(--surface)}
 .sample-no-image h3{margin-bottom:auto}
 .tag-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
 .tag-list li{padding:6px 10px;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--muted);font-size:11px}
-.sample-quote{display:grid;place-items:center;min-height:300px;padding:clamp(48px,6vw,88px) 8%;border-radius:var(--card-radius);background:var(--text);color:var(--canvas);text-align:center}
+.sample-quote{display:grid;place-items:center;min-height:300px;padding:clamp(48px,6vw,88px) 12%;background:var(--text);color:var(--canvas);text-align:center}
 .sample-quote blockquote{max-width:20ch;font-family:var(--font-display);font-size:clamp(24px,3.4vw,42px);line-height:1.12;letter-spacing:-.04em}
 .sample-quote p{margin-top:18px;color:var(--ink-muted);font-size:12px}
 .sample-link-contact{display:flex;align-items:center;flex-wrap:wrap;gap:22px;padding:clamp(40px,5vw,68px) 0;border-bottom:1px solid var(--hairline)}
@@ -1006,6 +1009,7 @@ code{font-family:var(--font-mono)}
 @media(max-width:960px){
 .cover,.measure-stage,.imagery-stage,.component-grid,.sample-hero,.portfolio-case{grid-template-columns:1fr}
 .cover-facts{grid-template-columns:1fr 1fr}
+.cover-facts{grid-template-columns:1fr 1fr}
 .surface-stack{grid-template-columns:1fr}
 .hero-plate{justify-self:start;max-width:240px}
 .plate-object{width:42%}
@@ -1017,13 +1021,12 @@ code{font-family:var(--font-mono)}
 .lede{font-size:16px}
 .ramp-row{grid-template-columns:1fr;gap:8px}
 .spec-table th{width:110px}
-.rule-visual,.rule-lists,.portfolio-metrics,.portfolio-proof,.doc-lines{grid-template-columns:1fr}
+.rule-visual,.rule-lists,.portfolio-tiles,.doc-lines{grid-template-columns:1fr}
 .measure-bars,.rhythm-demo{padding:16px}
 .measure-bars article{grid-template-columns:84px minmax(0,1fr) 46px;gap:8px}
 .rhythm-row i{width:38px;height:32px}
 .rhythm-component{gap:min(var(--component-gap),40px)}
 .rhythm-section{gap:min(var(--section-gap),72px)}
-.portfolio-metrics .sample + .sample{padding-left:0;border-left:0;border-top:1px solid var(--hairline)}
 .sample-link-contact{align-items:flex-start;flex-direction:column}
 .sample-footer{grid-template-columns:1fr}
 }
@@ -1043,9 +1046,16 @@ code{font-family:var(--font-mono)}
       <figcaption>대표 이미지 자리 · shadow ${escapeHtml(spec.shape.shadowStyle)}</figcaption>
     </figure>
   </header>
-  <div class="cover-facts">${facts.map(
-    ({ value, label }) => `<span><b>${escapeHtml(value)}</b><span>${escapeHtml(label)}</span></span>`,
-  ).join("")}</div>
+  <div class="cover-strip" data-design-section="direction">
+    <div class="cover-facts">${facts.map(
+      ({ value, label }) => `<span><b>${escapeHtml(value)}</b><span>${escapeHtml(label)}</span></span>`,
+    ).join("")}</div>
+    <div class="move-list">${spec.identity.signatureMoves.map(
+      (move, moveIndex) => `<article><b>${pad2(moveIndex + 1)}</b><p>${escapeHtml(move)}</p></article>`,
+    ).join("")}</div>
+    <ul class="chips">${spec.identity.traits.map((trait) => `<li>${escapeHtml(trait)}</li>`).join("")}</ul>
+    ${renderRuleSheet(direction)}
+  </div>
   <main>${sections}</main>
 </body>
 </html>`;
