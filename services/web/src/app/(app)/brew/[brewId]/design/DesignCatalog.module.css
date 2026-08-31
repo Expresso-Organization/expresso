@@ -291,7 +291,7 @@
 }
 
 .thumbAa {
-  font-size: 34px;
+  font-size: var(--ex-text-display-sm);
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.04em;
@@ -301,7 +301,7 @@
   flex-shrink: 0;
   padding: 5px 11px;
   font-family: var(--ex-font-sans);
-  font-size: 10px;
+  font-size: var(--ex-text-3xs);
   line-height: 1.2;
 }
 
