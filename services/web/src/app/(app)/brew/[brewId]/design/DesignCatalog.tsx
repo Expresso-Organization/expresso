@@ -3,7 +3,7 @@
 import type { DesignSystemSpecV2, ReferenceLock } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState, type CSSProperties } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
@@ -14,55 +14,44 @@ import {
 import styles from "./DesignCatalog.module.css";
 
 /**
- * 카드 썸네일.
+ * 카드 썸네일 — 포스터.
  *
- * 전에는 1200px 문서를 276px 카드에 0.265배로 우겨 넣었다. 그 그림은 무엇도
- * 읽히지 않았다. 옛 목록(`TemplateThumb`)이 하던 대로, 축소 대신 그 디자인의
- * 실제 색 · 서체 · 반경으로 읽히는 크기의 견본을 직접 그린다.
+ * 96f2ccc 의 `TemplateThumb` 를 옮겨 왔다. 그 개정의 근거는
+ * `docs/architecture/portfolio-style-ui-plan.md` 에 있다 — 카드 견본은 최종
+ * 생성 결과가 아니라 스타일을 설명하는 미리보기이므로, 레시피 문장 · 제목 ·
+ * 성과 수치를 넣지 않고 **디자인 이름을 그 디자인의 서체로 조판**한다. 이름은
+ * 생략하지 않고 줄로 접는다.
+ *
+ * 원본의 스타일별 색면 · 선 · 도형은 옛 30종 코드에 하나씩 손으로 맞춘 것이라
+ * 우리 코드에는 걸리지 않는다. 근거 없이 새로 지어내지 않고 두었다.
  */
-function DesignThumb({ spec }: { spec: DesignSystemSpecV2 }) {
-  const { colors, typography, shape } = spec;
-  const swatches = [colors.surface, colors.text, colors.muted, colors.border, colors.accent];
+function DesignThumb({ name, spec }: { name: string; spec: DesignSystemSpecV2 }) {
+  const { colors, typography } = spec;
+  // 긴 이름은 잘라 내지 않고 낱말 경계에서 접는다.
+  const lines = name.split(/\s+/).filter(Boolean);
+  const longestLine = Math.max(1, ...lines.map((line) => line.length));
 
   return (
     <span
       className={styles.thumb}
+      aria-hidden="true"
       style={{
-        background: colors.canvas.value,
-        color: colors.text.value,
+        "--thumb-bg": colors.canvas.value,
+        "--thumb-text": colors.text.value,
+        "--thumb-accent": colors.accent.value,
+        "--poster-title-scale": `${Math.min(28, 130 / longestLine)}cqw`,
+        "--poster-title-max":
+          lines.length > 2 ? "var(--ex-text-4xl)" : "var(--ex-text-display-md)",
         fontFamily: `${typography.display.family}, ${typography.display.fallback}`,
-      }}
+      } as CSSProperties}
     >
-      <span className={styles.thumbHead}>
-        <span className={styles.thumbAa}>Aa</span>
-        <span
-          className={styles.thumbAction}
-          style={{
-            background: colors.action.value,
-            color: colors.actionText.value,
-            borderRadius: `${Math.min(shape.controlRadius, 999)}px`,
-          }}
-        >
-          행동
-        </span>
+      <span className={styles.posterTitle}>
+        {lines.map((line, index) => <span key={index}>{line}</span>)}
       </span>
-      <span className={styles.thumbLines}>
-        <i style={{ background: colors.text.value }} />
-        <i style={{ background: colors.muted.value }} />
-        <i style={{ background: colors.muted.value }} />
-      </span>
-      <span
-        className={styles.thumbCard}
-        style={{
-          background: colors.surface.value,
-          borderRadius: `${shape.cardRadius}px`,
-          border: `${shape.borderWidth}px solid ${colors.border.value}`,
-        }}
-      />
-      <span className={styles.thumbPalette}>
-        {swatches.map((token) => (
-          <i key={token.value + token.role} style={{ background: token.value }} />
-        ))}
+      <span className={styles.palette}>
+        <span data-color="accent" />
+        <span data-color="text" />
+        <span data-color="background" />
       </span>
     </span>
   );
@@ -339,7 +328,7 @@ export function DesignCatalog({
                   className={`${styles.designCard} ${isSelected ? styles.designCardSelected : ""}`}
                 >
                   <span className={styles.cardPreview} aria-hidden="true">
-                    <DesignThumb spec={entry.spec} />
+                    <DesignThumb name={entry.name} spec={entry.spec} />
                     {isSelected ? (
                       <span className={styles.cardCheck}><Icon name="check" size={12} /></span>
                     ) : entry.recommended ? (
