@@ -860,15 +860,15 @@ function renderAppleShowcaseHtml(
     .map((value, index) => renderShowcaseSection(model, value, index, markdownSha256))
     .join("");
 
-  const measured = factList([
-    { term: "이미지 전략", value: spec.imagery.mode },
-    { term: "정보 밀도", value: spec.composition.density },
-    { term: "콘텐츠 폭", value: `${spec.spacing.contentWidth}px` },
-    { term: "본문 대비", value: formatRatio(bodyContrast), note: contrastLevel(bodyContrast) },
-  ], false);
-  const moves = `<ol class="moves">${spec.identity.signatureMoves.map(
-    (move, index) => `<li><b>${pad2(index + 1)}</b><span>${escapeHtml(move)}</span></li>`,
-  ).join("")}</ol>`;
+  // 이 디자인이 어떻게 생겼는지는 값을 적어서가 아니라 그려서 보여 준다.
+  // 네 칸이 서체 · 지면 · 행동 · 형태를 실제 크기와 실제 색으로 그린다.
+  const displayStep = spec.typography.scale.at(-1)!;
+  const glance = `<div class="glance">
+    <figure><div class="glance-figure glance-type"><span>Aa</span></div><figcaption>${escapeHtml(spec.typography.display.family)} · ${escapeHtml(displayStep.size)} / ${escapeHtml(displayStep.lineHeight)}</figcaption></figure>
+    <figure><div class="glance-figure glance-ground"><i><b></b><b></b></i><i><b></b><b></b></i></div><figcaption>${escapeHtml(spec.colors.canvas.value)} / ${escapeHtml(spec.colors.surface.value)} 교차 · 본문 대비 ${formatRatio(bodyContrast)} ${contrastLevel(bodyContrast)}</figcaption></figure>
+    <figure><div class="glance-figure glance-action"><span class="act">행동 하나</span></div><figcaption>${escapeHtml(spec.colors.action.value)} · 반경 ${spec.shape.controlRadius}px</figcaption></figure>
+    <figure><div class="glance-figure glance-shape"><i></i></div><figcaption>카드 반경 ${spec.shape.cardRadius}px · 경계 ${spec.shape.borderWidth}px · shadow ${escapeHtml(spec.shape.shadowStyle)}</figcaption></figure>
+  </div>`;
 
   return `<!doctype html>
 <html lang="ko">
@@ -927,11 +927,18 @@ code{font-family:var(--font-mono)}
 .palette i{flex:1;border-right:1px solid var(--hairline)}
 .palette i:last-child{border-right:0}
 .cover-rows{width:var(--column);margin:0 auto}
-.traits{font-size:13px;line-height:1.7}
-.moves{display:grid;gap:10px}
-.moves li{display:grid;grid-template-columns:20px minmax(0,1fr);gap:12px}
-.moves b{color:var(--muted);font-family:var(--font-mono);font-size:10px;font-weight:400}
-.moves span{font-size:14px;line-height:1.5;letter-spacing:-.01em}
+.glance{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.glance figure{overflow:hidden;border:1px solid var(--hairline);border-radius:var(--doc-radius)}
+.glance-figure{display:grid;place-items:center;height:152px;overflow:hidden}
+.glance figcaption{padding:12px 14px;border-top:1px solid var(--hairline);color:var(--muted);font-family:var(--font-mono);font-size:10px;line-height:1.6}
+.glance-type span{font-family:var(--font-display);font-size:var(--type-example-display);font-weight:600;line-height:1;letter-spacing:-.05em;white-space:nowrap}
+.glance-ground{display:block}
+.glance-ground i{display:grid;align-content:center;gap:8px;width:100%;height:50%;padding:0 22px}
+.glance-ground i:first-child{background:var(--canvas);border-bottom:1px solid var(--hairline)}
+.glance-ground i:last-child{background:var(--surface)}
+.glance-ground b{display:block;height:7px;border-radius:4px;background:var(--text)}
+.glance-ground b:last-child{width:58%;background:var(--muted)}
+.glance-shape i{display:block;width:58%;height:58%;border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface);box-shadow:var(--shadow)}
 
 .doc-section{width:var(--column);margin:0 auto;padding:clamp(54px,6vw,88px) 0;border-top:1px solid var(--border)}
 
@@ -1150,6 +1157,7 @@ code{font-family:var(--font-mono)}
 
 @media(max-width:900px){
 .row,.cover{grid-template-columns:1fr;gap:14px}
+.glance{grid-template-columns:1fr 1fr}
 .demo-contact,.v-gallery,.v-two,.v-group{grid-template-columns:1fr}
 .variant-grid{grid-template-columns:1fr}
 .variant .frame{padding:24px;min-height:0}
@@ -1165,6 +1173,7 @@ code{font-family:var(--font-mono)}
 .row-head h2{font-size:26px}
 .sentence{font-size:14px}
 .facts li{grid-template-columns:1fr;gap:2px}
+.glance{grid-template-columns:1fr}
 .facts span{text-align:left}
 .doc-lines{grid-template-columns:1fr}
 }
@@ -1183,9 +1192,7 @@ code{font-family:var(--font-mono)}
   </header>
   <div class="palette" aria-hidden="true">${COLOR_NAMES.map((name) => `<i style="background:var(--${name})"></i>`).join("")}</div>
   <div class="cover-rows" data-design-section="direction">
-    ${row(label("측정값"), measured)}
-    ${row(label("Signature move"), moves)}
-    ${row(label("핵심 특징"), `<p class="traits">${spec.identity.traits.map(escapeHtml).join(" · ")}</p>`)}
+    ${row(label("한눈에"), glance)}
     ${renderRuleSheet(direction)}
   </div>
   <main>${sections}</main>
