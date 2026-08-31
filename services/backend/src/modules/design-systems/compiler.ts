@@ -402,24 +402,15 @@ function mediaPlate(spec: DesignSystemSpecV2, note: string): string {
 }
 
 function renderImageryRows(spec: DesignSystemSpecV2): string {
-  return `${row(label(spec.imagery.mode, spec.imagery.aspectRatio), `<div class="media-set">${mediaPlate(spec, `이미지 자리 · ${spec.imagery.aspectRatio}`)}</div>`)}
+  return `${row(label("이미지 자리", `${spec.imagery.mode} · ${spec.imagery.aspectRatio}`), `<div class="media-set">${mediaPlate(spec, `이미지 자리 · ${spec.imagery.aspectRatio}`)}</div>`)}
   ${row(label("이미지가 없을 때"), `<p class="note">${escapeHtml(spec.imagery.fallback)}</p>`)}`;
 }
 
 function renderCompositionRows(spec: DesignSystemSpecV2): string {
-  const ratio = Math.max(40, Math.min(100, Math.round((spec.spacing.contentWidth / 1440) * 100)));
-  const rhythm = `<div class="rhythm">
-    <div class="rhythm-column" style="width:${ratio}%">
-      <span class="rhythm-mark">${spec.spacing.contentWidth}px · section-gap ${spec.spacing.sectionGap}px</span>
-      <i></i><i></i><i></i>
-    </div>
-  </div>`;
-  return row(
-    label(spec.composition.structure, `${spec.composition.density} · 1440px 지면의 ${ratio}%`),
-    `${rhythm}<p class="note">${escapeHtml(spec.composition.sectionRhythm)}</p>`,
-  );
+  return `${row(label("섹션 리듬"), `<p class="note">${escapeHtml(spec.composition.sectionRhythm)}</p>`)}
+  ${row(label("표면 전략"), `<p class="note">${escapeHtml(spec.composition.surfaceStrategy)}</p>`)}
+  ${row(label("구성 방식"), `<p class="note mono">${escapeHtml(spec.composition.structure)} · ${escapeHtml(spec.composition.density)} · content-width ${spec.spacing.contentWidth}px</p>`, "row-tight")}`;
 }
-
 function renderSpacingRows(spec: DesignSystemSpecV2): string {
   const steps = [
     { token: "base-unit", value: spec.spacing.baseUnit },
@@ -980,11 +971,9 @@ code{font-family:var(--font-mono)}
 .media{display:grid;place-items:center;width:100%;border-radius:var(--card-radius);background:var(--surface);box-shadow:inset 0 0 0 var(--border-width) var(--hairline)}
 .media span{color:var(--muted);font-family:var(--font-mono);font-size:10px}
 .media-set{max-width:440px}
-.rhythm{display:flex;justify-content:center;padding:22px 0 26px;border:1px solid var(--hairline);border-radius:var(--doc-radius)}
-.rhythm-column{position:relative;display:grid;gap:var(--section-gap);padding:26px 14px 0;border-inline:1px dashed var(--border)}
-.rhythm-column i{height:78px;border-radius:calc(var(--card-radius) * .5);background:var(--canvas);box-shadow:inset 0 0 0 1px var(--hairline)}
-.rhythm-column i:nth-child(odd){background:var(--surface)}
-.rhythm-mark{position:absolute;top:6px;left:0;color:var(--muted);font-family:var(--font-mono);font-size:10px}
+.media{display:grid;place-items:center;width:100%;border-radius:var(--card-radius);background:var(--surface);box-shadow:inset 0 0 0 var(--border-width) var(--hairline)}
+.media span{color:var(--muted);font-family:var(--font-mono);font-size:10px}
+.media-set{max-width:440px}
 .variant-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:18px}
 .variant-wide{grid-column:1/-1}
 .variant figcaption{margin-top:10px;color:var(--muted);font-size:12px}
