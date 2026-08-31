@@ -792,9 +792,11 @@ const MOTION_SCRIPT = `(function(){
     }
   }
 
-  var frames = document.querySelectorAll(".variant .frame");
-  for (var f = 0; f < frames.length; f++){
-    var frame = frames[f];
+  /* 숨김 클래스는 재생 직전에만 붙인다. 미리 붙여 두면 관찰자가 한 번이라도
+     어긋난 카드가 빈 상자로 남는다. */
+  function prepare(frame){
+    if (frame.getAttribute("data-motion") === "ready") return;
+    frame.setAttribute("data-motion", "ready");
     frame.classList.add("t-stagger");
     var lines = frame.children;
     for (var l = 0; l < lines.length; l++){
@@ -810,7 +812,10 @@ const MOTION_SCRIPT = `(function(){
     for (var r = 0; r < reels.length; r++) buildReel(reels[r]);
   }
 
+  var frames = document.querySelectorAll(".variant .frame");
+
   function play(frame){
+    prepare(frame);
     frame.classList.remove("is-shown");
     void frame.offsetHeight;
     frame.classList.add("is-shown");
@@ -819,6 +824,8 @@ const MOTION_SCRIPT = `(function(){
   }
 
   /* 화면에 들어온 견본만 재생하고, 나가면 멈춘다. */
+  if (typeof IntersectionObserver !== "function") return;
+
   var timers = new WeakMap();
   var io = new IntersectionObserver(function(entries){
     for (var i = 0; i < entries.length; i++){
@@ -947,7 +954,7 @@ code{font-family:var(--font-mono)}
 .weight-line i{margin-left:8px;color:var(--muted);font-family:var(--font-mono);font-size:10px;font-style:normal;font-weight:400;letter-spacing:0}
 .measure-proof{max-width:var(--measure);color:var(--muted);font-size:13px;line-height:1.7}
 
-.frame{padding:26px;border:1px solid var(--hairline);border-radius:var(--doc-radius);background:var(--surface)}
+.frame{padding:26px;border:1px solid var(--hairline);border-radius:var(--doc-radius)}
 .frame-plain{padding:0;border:0;background:transparent}
 .frame-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .demo{display:flex;flex-direction:column;min-height:148px}
@@ -1015,7 +1022,7 @@ code{font-family:var(--font-mono)}
 .variant-wide{grid-column:1/-1}
 .variant figcaption{margin-top:10px;color:var(--muted);font-size:12px}
 .variant small{display:block}
-.variant .frame{display:flex;flex-direction:column;gap:16px;min-height:308px;padding:34px;overflow:hidden}
+.variant .frame{display:flex;flex-direction:column;gap:16px;min-height:288px;padding:32px;overflow:hidden}
 .variant .frame>strong:not([class]){font-family:var(--font-display);font-size:23px;font-weight:600;line-height:1.2;letter-spacing:-.03em}
 .v-eyebrow{color:var(--muted);font-family:var(--font-mono);font-size:10px;letter-spacing:.1em}
 .v-display{font-family:var(--font-display);font-size:clamp(28px,3.2vw,42px);font-weight:600;line-height:1.06;letter-spacing:-.045em}
@@ -1050,7 +1057,7 @@ code{font-family:var(--font-mono)}
 .v-par b{font-weight:600}
 .v-timeline{display:grid;gap:18px;position:relative}
 .v-timeline li{display:grid;grid-template-columns:10px minmax(0,1fr);gap:14px;align-items:start}
-.v-timeline b{width:9px;height:9px;margin-top:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--surface)}
+.v-timeline b{width:9px;height:9px;margin-top:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--canvas)}
 .v-timeline small{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.06em}
 .v-timeline span{display:block;margin-top:3px;font-size:14px;font-weight:500}
 .v-timeline em{display:block;margin-top:2px;color:var(--muted);font-size:12px;font-style:normal}
