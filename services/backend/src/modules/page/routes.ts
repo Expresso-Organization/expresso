@@ -8,7 +8,8 @@ import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
 import { PageGenerationError, type PageGenerator } from "./generator.js";
 import { PageServiceError, type PageApi } from "./index.js";
-import { writePageStream, type PageStream } from "./stream.js";
+import { writeDraftStream } from "../../platform/draft-stream.js";
+import type { PageStream } from "./stream.js";
 
 export interface RegisterPageRoutesOptions {
   service: PageApi;
@@ -76,7 +77,7 @@ export function registerPageRoutes(
     if (!await options.service.owns(principal.user.id, portfolioId)) {
       throw new HttpStatusError(404, "portfolio not found");
     }
-    await writePageStream(request, reply, stream, portfolioId);
+    await writeDraftStream(request, reply, stream, portfolioId);
   });
 
   app.get(`${path}/history`, { preHandler: options.authenticateRequest }, async (request) => {

@@ -30,6 +30,7 @@ import { PublishingService } from "../modules/publishing/index.js";
 import { MediaService } from "../modules/media/index.js";
 import { PageService } from "../modules/page/index.js";
 import { PageStream } from "../modules/page/stream.js";
+import { RecipeStream } from "../modules/recipe/stream.js";
 import { AiPageGenerator } from "../modules/page/generator.js";
 import { createMediaStorage } from "../platform/storage/create-storage.js";
 import { AnalyticsService } from "../modules/analytics/index.js";
@@ -94,6 +95,10 @@ const mediaService = new MediaService(database, createMediaStorage(config));
 const pageStream = new PageStream(createStreamRedis(config.redisUrl), {
   prefix: config.queuePrefix,
 });
+// 짜이는 레시피가 지나는 길. 여기서는 읽기만 한다 — 쓰는 쪽은 워커다.
+const recipeStream = new RecipeStream(createStreamRedis(config.redisUrl), {
+  prefix: config.queuePrefix,
+});
 const pageService = new PageService(database, consentService, pageStream);
 // AI가 꺼져 있으면 지면을 만들 길이 없다. 규칙 폴백을 두지 않는다 —
 // 이 경로의 산출물은 **모델이 쓴 마크업 그 자체**여서 흉내 낼 것이 없다.
@@ -137,6 +142,7 @@ const app = buildApi({
   mediaService,
   pageService,
   pageStream,
+  recipeStream,
   ...(pageGenerator ? { pageGenerator } : {}),
   analyticsService,
   engagementService,

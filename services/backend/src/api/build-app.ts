@@ -49,6 +49,7 @@ import { type MediaApi } from "../modules/media/index.js";
 import { registerMediaRoutes } from "../modules/media/routes.js";
 import { registerPageRoutes } from "../modules/page/routes.js";
 import type { PageStream } from "../modules/page/stream.js";
+import type { RecipeStream } from "../modules/recipe/stream.js";
 import type { PageGenerator } from "../modules/page/generator.js";
 import { type PageApi } from "../modules/page/index.js";
 import { type AnalyticsApi } from "../modules/analytics/index.js";
@@ -97,6 +98,7 @@ export interface BuildApiOptions {
   pageGenerator?: PageGenerator;
   /** 만들어지는 지면을 흘려보내는 통로. 없으면 그 자리가 503이다. */
   pageStream?: PageStream | null;
+  recipeStream?: RecipeStream | null;
   analyticsService?: AnalyticsApi;
   engagementService?: EngagementApi;
   accountLifecycleService?: AccountLifecycleApi;
@@ -176,6 +178,7 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
     if (options.brewJobService) {
       registerBrewJobRoutes(app, {
         service: options.brewJobService,
+        recipeStream: options.recipeStream ?? null,
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
       if (options.interviewService) {

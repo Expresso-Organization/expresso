@@ -2,7 +2,8 @@ import { API_PREFIX, IdempotencyKeySchema, SubmitGenerationSchema } from "@expre
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import { writePageStream, type PageStream } from "../page/stream.js";
+import { writeDraftStream } from "../../platform/draft-stream.js";
+import type { PageStream } from "../page/stream.js";
 import { type GenerationApi } from "./index.js";
 
 const ParamsSchema = z.strictObject({ id: z.uuid() });
@@ -36,6 +37,6 @@ export function registerGenerationRoutes(app: FastifyInstance, options: { genera
     if (!params.success) throw new HttpStatusError(400, "invalid generation job ID");
     if (!options.pageStream) throw new HttpStatusError(503, "지면 스트림이 꺼져 있습니다");
     await options.generationService.getStatus(principal.user.id, params.data.id);
-    await writePageStream(request, reply, options.pageStream, params.data.id);
+    await writeDraftStream(request, reply, options.pageStream, params.data.id);
   });
 }

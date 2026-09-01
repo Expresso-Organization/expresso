@@ -36,6 +36,7 @@ import { AiFactsReader, createJobSourceAdapters, BundledMarkReader, JobIngestSer
 import { createScheduledJobProcessor } from "./processors/scheduled-jobs.js";
 import { PageService } from "../modules/page/index.js";
 import { PageStream } from "../modules/page/stream.js";
+import { RecipeStream } from "../modules/recipe/stream.js";
 import { createStreamRedis } from "../platform/redis.js";
 import { AiPageGenerator } from "../modules/page/generator.js";
 
@@ -84,7 +85,11 @@ const interviewService = new InterviewService(
   ai ? new AiRecordCleaner(ai) : null,
   consentService,
 );
-const recipeService = new RecipeService(database, ai ? new AiRecipePlanner(ai) : null, consentService);
+// 레시피를 짜는 쪽도 여기다 — 조각은 전부 이 프로세스에서 나간다.
+const recipeStream = new RecipeStream(createStreamRedis(config.redisUrl), {
+  prefix: config.queuePrefix,
+});
+const recipeService = new RecipeService(database, ai ? new AiRecipePlanner(ai) : null, consentService, recipeStream);
 const brewJobProcessor = createBrewJobProcessor(brewJobService, {
   interview: {
     async run({ userId, brewId, idempotencyKey }) {
@@ -92,8 +97,9 @@ const brewJobProcessor = createBrewJobProcessor(brewJobService, {
     },
   },
   recipe: {
-    async run({ userId, brewId, idempotencyKey }) {
-      return (await recipeService.generate(userId, brewId, idempotencyKey)).id;
+    async run({ userId, brewId, jobId, idempotencyKey }) {
+      // 짜이는 동안은 잡을 열쇠로 흐른다 — 레시피 id는 다 끝나야 생긴다.
+      return (await recipeService.generate(userId, brewId, idempotencyKey, { streamId: jobId })).id;
     },
   },
 });

@@ -125,6 +125,7 @@ export class BrewJobService {
       const resultId = await runner.run({
         userId: job.user_id,
         brewId,
+        jobId: job.id,
         // 잡 하나에 결과 하나. 재시도해도 같은 것을 가리킨다.
         idempotencyKey: `brew-job:${job.id}`,
       });

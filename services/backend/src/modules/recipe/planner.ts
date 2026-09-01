@@ -55,8 +55,19 @@ export interface PlannerContext {
   totalLength: number;
 }
 
+/**
+ * 짜이는 동안 흘려보낼 곳.
+ *
+ * 넘어오는 것은 완성된 값이 아니라 **끝나지 않은 JSON 조각**이다. 프로바이더가
+ * 조각을 못 내면 여기로 아무것도 안 온다 — 흉내 내지 않는다(`AiClient.streams`).
+ */
+export interface RecipePlanSink {
+  delta(text: string): void;
+  thinking(tokens: number): void;
+}
+
 export interface RecipePlanner {
-  plan(context: PlannerContext): Promise<RecipePlanResult>;
+  plan(context: PlannerContext, sink?: RecipePlanSink | null): Promise<RecipePlanResult>;
 }
 
 export interface RecipePlanResult {
@@ -163,7 +174,7 @@ export class AiRecipePlanner implements RecipePlanner {
     this.#ai = ai;
   }
 
-  async plan(context: PlannerContext): Promise<RecipePlanResult> {
+  async plan(context: PlannerContext, sink: RecipePlanSink | null = null): Promise<RecipePlanResult> {
     const prompt = buildPrompt(context);
     // 편집 판단과 근거 평가는 사용자에게 남긴다. 이 단계는 스키마로 읽을 수 있는
     // 한 번의 설계안을 저장할 뿐, 문체·중복·수치 같은 편집 이유로 통째로 다시 묻지 않는다.
@@ -175,6 +186,9 @@ export class AiRecipePlanner implements RecipePlanner {
         promptVersion: RECIPE_PROMPT_VERSION,
       },
       RecipeDraftSchema,
+      sink
+        ? { onPartial: (text) => sink.delta(text), onThinking: (tokens) => sink.thinking(tokens) }
+        : {},
     );
     return { draft: data, usage, attempts: 1 };
   }

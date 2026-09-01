@@ -93,3 +93,194 @@
     animation: none;
   }
 }
+
+/* ── 짜이는 동안의 문서 ─────────────────────────────────────
+ *
+ * 뼈대는 `Workbench.module.css`의 문서와 같다 — 같은 자리에 같은 크기로 서야
+ * 다 됐을 때 화면이 튀지 않고, 사용자는 **이미 자기 레시피를 읽고 있다.**
+ * 다른 점은 여기 있는 것이 아직 고칠 수 없는 글자라는 것뿐이다.
+ */
+
+.live {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--ex-bg);
+  overflow: hidden;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--ex-border);
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-3xs);
+}
+
+.barCount {
+  margin-left: auto;
+  color: var(--ex-fg-faint);
+  font-family: var(--ex-font-mono);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ex-accent);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+.sheet {
+  min-width: 0;
+  min-height: 0;
+  padding: 26px 28px 72px;
+  background: var(--ex-bg-sunken);
+  overflow-y: auto;
+}
+
+.doc {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.section {
+  padding: 22px 0 24px;
+  border-top: 1px solid var(--ex-border);
+}
+
+.section:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sectionNo {
+  flex-shrink: 0;
+  color: var(--ex-fg-faint);
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-2xs);
+}
+
+.sectionTitle {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 4px 7px;
+  color: var(--ex-fg);
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* 제목이 아직 한 글자도 안 왔다. 자리만 잡아 두면 다음 줄이 안 튄다. */
+.pending {
+  display: inline-block;
+  width: 8em;
+  height: 0.75em;
+  border-radius: 5px;
+  background: var(--ex-bg-track);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.sectionPurpose {
+  margin: 2px 0 0 26px;
+  padding: 3px 7px;
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-2xs);
+}
+
+.takeawayRow {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin: 4px 0 0 26px;
+}
+
+.takeawayRow > span:first-child {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--ex-accent-surface);
+  color: var(--ex-accent-text);
+  font-size: var(--ex-text-3xs);
+}
+
+.takeaway {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 7px;
+  color: var(--ex-fg-body);
+  font-size: var(--ex-text-2xs);
+}
+
+.items {
+  list-style: none;
+  margin: 12px 0 0 26px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 5px 7px 5px 0;
+}
+
+.itemMark {
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  margin: 12px 0 0 7px;
+  border-radius: 50%;
+  background: var(--ex-border-firm);
+}
+
+.itemText {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 7px;
+  color: var(--ex-fg);
+  font-size: var(--ex-text-xs);
+  line-height: 1.65;
+}
+
+/* 지금 글자가 붙고 있는 자리. 이것 하나가 "돌고 있다"를 대신한다. */
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--ex-accent);
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot,
+  .pending,
+  .caret {
+    animation: none;
+  }
+}

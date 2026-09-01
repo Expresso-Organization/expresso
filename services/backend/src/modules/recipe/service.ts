@@ -9,6 +9,7 @@ import { requireActiveUser } from "../identity/index.js";
 import { assertActiveRecordsForWrite } from "../career/index.js";
 import type { ConsentApi } from "../consent/index.js";
 import { DeterministicRecipePlanner, RECIPE_PROMPT_VERSION, type PlannerContext, type PlannerSource, type RecipePlanner } from "./planner.js";
+import type { RecipeStream } from "./stream.js";
 import type { RecipeApi } from "./index.js";
 import { RecipeError } from "./public.js";
 import { addMongoRecipeRevision } from "./mongo-revisions.js";
@@ -20,9 +21,21 @@ const DEFAULT_CONTEXT = { goal: "선택한 근거로 핵심 경험을 설명", p
 export class RecipeService implements RecipeApi {
   readonly planner: RecipePlanner;
   readonly promptVersion: number;
-  constructor(readonly context: MongoContext, planner?: RecipePlanner | null, readonly consent: ConsentApi | null = null) {
+  readonly #stream: RecipeStream | null;
+  constructor(readonly context: MongoContext, planner?: RecipePlanner | null, readonly consent: ConsentApi | null = null, stream: RecipeStream | null = null) {
     this.planner = planner ?? new DeterministicRecipePlanner();
     this.promptVersion = planner ? RECIPE_PROMPT_VERSION : 0;
+    this.#stream = stream;
+  }
+
+  /**
+   * 흘려보내다 넘어져도 레시피를 잃지 않는다.
+   *
+   * Redis가 잠깐 없는 것은 짜던 것을 버릴 이유가 아니다 — 화면이 조용해질 뿐이고,
+   * 다 되면 잡의 상태로 넘어간다.
+   */
+  async #publish(work: Promise<void> | undefined): Promise<void> {
+    await work?.catch(() => undefined);
   }
 
   async #plannerContext(userId: string, brewId: string) {
@@ -61,12 +74,20 @@ export class RecipeService implements RecipeApi {
     return { plannerContext, brew, recordIds: orderedRecords.map(({ _id }) => _id) };
   }
 
-  async generate(userId: string, brewId: string, idempotencyKey: string) {
+  /**
+   * `streamId`가 있으면 짜이는 동안을 그리로 흘린다 — 잡의 id다(`RecipeStream`).
+   */
+  async generate(userId: string, brewId: string, idempotencyKey: string, options: { streamId?: string } = {}) {
     const existing = await mongoCollections(this.context.db).recipes.findOne({ userId, inputIdempotencyKey: idempotencyKey });
     if (existing) return this.getRecipe(userId, existing._id);
     if (this.promptVersion > 0) await this.consent?.require(userId, "recipe_draft");
     const { plannerContext, brew, recordIds } = await this.#plannerContext(userId, brewId);
-    const planned = await withTimeout(this.planner.plan(plannerContext), 420_000, "recipe planner");
+    const stream = options.streamId ? this.#stream : null; const streamId = options.streamId ?? "";
+    const sink = stream ? { delta: (text: string) => { void this.#publish(stream.delta(streamId, text)); }, thinking: (tokens: number) => { void this.#publish(stream.thinking(streamId, tokens)); } } : null;
+    await this.#publish(stream?.begin(streamId));
+    // 넘어지면 그 자리에서 알린다 — 안 알리면 화면은 끝난 줄도 모르고 계속 기다린다.
+    const abandon = async (error: unknown) => { await this.#publish(stream?.failed(streamId, error instanceof Error ? error.name : "RECIPE_PLAN_FAILED")); throw error; };
+    const planned = await withTimeout(this.planner.plan(plannerContext, sink), 420_000, "recipe planner").catch(abandon);
     const recipeId = await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId); const db = mongoCollections(tx.db); const options = { session: tx.session };
       const replay = await db.recipes.findOne({ userId, inputIdempotencyKey: idempotencyKey }, options); if (replay) return replay._id;
@@ -93,7 +114,9 @@ export class RecipeService implements RecipeApi {
       await db.recipes.insertOne(recipe, options); if (sections.length) await db.recipeSections.insertMany(sections, options); if (items.length) await db.recipeItems.insertMany(items, options); if (paths.length) await db.recipeEvidencePaths.insertMany(paths, options);
       const unusedReasons = new Map(planned.draft.unused.map(({ source, reason }) => [source, reason])); const unused = plannerContext.sources.flatMap((source, index) => source.type === "record" && !citedNumbers.has(index + 1) ? [{ _id: randomUUID(), userId, recipeId: recipe._id, recordId: source.id, reason: unusedReasons.get(index + 1) ?? "이번 공고에서 우선순위가 높은 근거를 먼저 배치함", createdAt: now }] : []); if (unused.length) await db.recipeUnusedSources.insertMany(unused, options);
       return recipe._id;
-    });
+    }).catch(abandon);
+    // 마지막에 알린다 — 이걸 받은 화면은 곧바로 진짜 문서를 다시 읽는다.
+    await this.#publish(stream?.done(streamId, recipeId));
     return this.getRecipe(userId, recipeId);
   }
 

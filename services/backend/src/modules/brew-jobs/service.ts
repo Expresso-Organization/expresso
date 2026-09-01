@@ -43,7 +43,7 @@ export class BrewJobService implements BrewJobApi {
     if (job.status === "succeeded") return this.getStatus(job.userId, jobId);
     try {
       if (typeof job.input.brewId !== "string") throw new Error("brew job input is missing brewId");
-      const resultId = await runner.run({ userId: job.userId, brewId: job.input.brewId, idempotencyKey: `brew-job:${jobId}` });
+      const resultId = await runner.run({ userId: job.userId, brewId: job.input.brewId, jobId, idempotencyKey: `brew-job:${jobId}` });
       await inTransaction(this.context, async (tx) => {
         await requireActiveUser(tx, job.userId);
         await mongoCollections(tx.db).brewJobs.updateOne({ _id: jobId, userId: job.userId, status: "running", attempts: job.attempts }, { $set: { status: "succeeded", stage: "done", resultId, updatedAt: new Date() } }, { session: tx.session });
