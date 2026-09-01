@@ -215,6 +215,76 @@ const DENSITY = {
   spacious: { elementGap: 16, componentGap: 32, sectionGap: 104, contentWidth: 980, cardRadius: 14, body: "1.0625rem", display: "4.5rem" },
 } as const;
 
+/**
+ * 스타일별 형태.
+ *
+ * 밀도에서만 뽑으면 Neo Brutalism 과 Claymorphism 이 같은 반경 10 · 경계 1 ·
+ * hairline 상자로 나온다. 값은 지어내지 않고 각 프리셋의 지시문에 적힌 문장에서
+ * 가져온다 — 뒤의 주석이 그 문장이다. 지시문이 형태를 말하지 않는 스타일은 표에
+ * 넣지 않고 밀도 기본값을 쓴다.
+ */
+const SHAPES: Record<string, {
+  cardRadius: number;
+  controlRadius: number;
+  borderWidth: number;
+  shadowStyle: DesignSystemSpecV2["shape"]["shadowStyle"];
+}> = {
+  // 모서리는 직각이고 그림자는 없다.
+  monochrome: { cardRadius: 0, controlRadius: 0, borderWidth: 1, shadowStyle: "none" },
+  // 굵은 검정 선을 구성의 기본으로 삼는다 · 흐린 그림자와 유리 효과를 피하고.
+  bauhaus: { cardRadius: 0, controlRadius: 0, borderWidth: 2, shadowStyle: "none" },
+  // 얇은 반투명 경계를 대표 프로젝트 주변에 제한해서 쓴다.
+  "modern-dark": { cardRadius: 12, controlRadius: 8, borderWidth: 1, shadowStyle: "soft" },
+  // 모서리와 경계는 직각이며 그림자와 유리 효과는 쓰지 않는다.
+  newsprint: { cardRadius: 0, controlRadius: 0, borderWidth: 1, shadowStyle: "none" },
+  // 부드러운 라운드와 짧은 상태 전환을 사용한다.
+  saas: { cardRadius: 12, controlRadius: 8, borderWidth: 1, shadowStyle: "soft" },
+  // 가는 선과 절제된 금빛 표식만 사용하고 버튼·배지를 남발하지 않는다.
+  luxury: { cardRadius: 2, controlRadius: 2, borderWidth: 1, shadowStyle: "none" },
+  // 테두리가 얇은 터미널 창 · 모서리는 직각이고 그림자는 없다.
+  terminal: { cardRadius: 0, controlRadius: 0, borderWidth: 1, shadowStyle: "none" },
+  // 모서리는 직각이며 그림자·곡선 장식을 피한다.
+  "swiss-minimalist": { cardRadius: 0, controlRadius: 0, borderWidth: 1, shadowStyle: "none" },
+  // 그림자·입체 경사·질감·그라데이션 없이 평면으로 구성한다 · 호버는 색과 테두리로.
+  "flat-design": { cardRadius: 4, controlRadius: 4, borderWidth: 2, shadowStyle: "none" },
+  // 계단형 경계 · 금빛 가는 선.
+  "art-deco": { cardRadius: 0, controlRadius: 0, borderWidth: 1, shadowStyle: "none" },
+  // 넉넉한 라운드로 친근한 지면 · 그림자는 인터랙션의 역할을 설명할 때만.
+  "material-design": { cardRadius: 16, controlRadius: 20, borderWidth: 0, shadowStyle: "layered" },
+  // 굵은 검정 경계와 흐림 없는 어긋난 그림자로 면을 분리한다.
+  "neo-brutalism": { cardRadius: 0, controlRadius: 0, borderWidth: 3, shadowStyle: "offset" },
+  // 주석과 구획선 · 고전 서재.
+  academia: { cardRadius: 2, controlRadius: 2, borderWidth: 1, shadowStyle: "none" },
+  // 잘린 모서리 · 보조색은 경계나 상태 표식에 제한한다.
+  cyberpunk: { cardRadius: 0, controlRadius: 0, borderWidth: 1, shadowStyle: "none" },
+  // 얇은 경계의 반투명 면을 겹치고.
+  web3: { cardRadius: 12, controlRadius: 8, borderWidth: 1, shadowStyle: "soft" },
+  // 흐림 없는 작은 그림자로 스티커 느낌을 낸다.
+  "playful-geometric": { cardRadius: 14, controlRadius: 100, borderWidth: 2, shadowStyle: "offset" },
+  // 큰 라운드와 여러 겹의 부드러운 바깥·안쪽 그림자로 점토 같은 부피를 표현한다.
+  claymorphism: { cardRadius: 24, controlRadius: 20, borderWidth: 0, shadowStyle: "relief" },
+  // 정중한 판면 · 절제된 구획.
+  professional: { cardRadius: 4, controlRadius: 4, borderWidth: 1, shadowStyle: "hairline" },
+  // 식물선 장식은 작게 제한하고.
+  botanical: { cardRadius: 12, controlRadius: 12, borderWidth: 1, shadowStyle: "none" },
+  // 색 번짐·그라데이션은 제목이나 경계에 제한하고 본문은 단색의 안정된 면에.
+  vaporwave: { cardRadius: 4, controlRadius: 4, borderWidth: 1, shadowStyle: "none" },
+  // 부드러운 라운드와 은은한 그림자를 사용하되 전체를 같은 카드로 만들지 않는다.
+  enterprise: { cardRadius: 8, controlRadius: 6, borderWidth: 1, shadowStyle: "soft" },
+  // 종이 위 메모처럼 약간 불규칙한 테두리 · 흐림 없는 그림자를 사용한다.
+  sketch: { cardRadius: 6, controlRadius: 6, borderWidth: 1, shadowStyle: "offset" },
+  // 빛의 방향을 통일한 경사·안쪽 그림자 · 얇은 경계.
+  industrial: { cardRadius: 2, controlRadius: 2, borderWidth: 1, shadowStyle: "inset" },
+  // 바탕과 같은 계열의 면에 밝은 그림자와 어두운 그림자를 짝지어 돌출과 음각을 만든다.
+  neumorphism: { cardRadius: 18, controlRadius: 14, borderWidth: 0, shadowStyle: "relief" },
+  // 섹션 경계를 지나치게 딱딱하게 만들지 않는다 · 자연색 그림자는 낮은 강도로.
+  organic: { cardRadius: 20, controlRadius: 16, borderWidth: 0, shadowStyle: "soft" },
+  // 다채로운 겹침 · 굵은 테두리와 어긋난 그림자.
+  maximalism: { cardRadius: 0, controlRadius: 0, borderWidth: 3, shadowStyle: "offset" },
+  // 밝고 어두운 경사 테두리로 고전 데스크톱 창을 표현한다.
+  retro: { cardRadius: 0, controlRadius: 0, borderWidth: 2, shadowStyle: "bevel" },
+};
+
 const token = (value: string, role: string) => ({ value, role });
 
 /** 지시문을 문장으로 가른다. 프리셋의 prompt 는 모두 `…다.` 로 끝나는 서술문이다. */
@@ -246,6 +316,7 @@ function createSpec(preset: PortfolioStylePreset): DesignSystemSpecV2 {
   const moves = directives(preset.prompt);
   const avoid = prohibitions(preset.prompt);
   const action = actionOn(accent);
+  const slug = preset.code.replace(/^designprompts-/, "");
 
   return DesignSystemSpecV2Schema.parse({
     version: 2,
@@ -302,7 +373,7 @@ function createSpec(preset: PortfolioStylePreset): DesignSystemSpecV2 {
       sectionGap: size.sectionGap,
       contentWidth: size.contentWidth,
     },
-    shape: {
+    shape: SHAPES[slug] ?? {
       cardRadius: size.cardRadius,
       controlRadius: density === "compact" ? 4 : 8,
       borderWidth: 1,
@@ -310,6 +381,8 @@ function createSpec(preset: PortfolioStylePreset): DesignSystemSpecV2 {
     },
     composition: {
       structure,
+      // 프리셋의 structure 가 이미 배치 축의 세 값이다.
+      layout: structure,
       density,
       sectionRhythm: `${size.sectionGap}px 간격으로 섹션을 나눈다`,
       hierarchy: "역할과 대표 성과를 먼저, 근거를 그 아래에 둔다",

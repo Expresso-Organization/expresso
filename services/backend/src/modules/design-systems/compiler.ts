@@ -613,7 +613,7 @@ const WORK = [
 
 function variant(name: string, body: string, kind?: DesignSampleEntry["kind"], wide = false): string {
   const anchor = kind ? ` data-sample-kind="${kind}"` : "";
-  return `<figure class="variant${wide ? " variant-wide" : ""}"${anchor}><div class="frame">${body}</div><figcaption>${escapeHtml(name)}</figcaption></figure>`;
+  return `<figure class="variant${wide ? " variant-wide" : ""}"${anchor}><div class="card">${body}</div><figcaption>${escapeHtml(name)}</figcaption></figure>`;
 }
 
 function eyebrow(value: string): string {
@@ -798,11 +798,16 @@ function cssVariables(spec: DesignSystemSpecV2): string {
   const headingStep = spec.typography.scale[Math.max(0, spec.typography.scale.length - 2)]!;
   const displayStep = spec.typography.scale.at(-1)!;
   const exampleSteps = `--type-example-body:${bodyStep.size};--line-example-body:${bodyStep.lineHeight};--type-example-heading:${headingStep.size};--line-example-heading:${headingStep.lineHeight};--type-example-display:${displayStep.size};--line-example-display:${displayStep.lineHeight};`;
+  // 지면 색에서 계산하므로 밝은 지면과 어두운 지면이 같은 규칙으로 자기 깊이를 얻는다.
   const shadow = {
     none: "none",
     hairline: "0 1px 0 var(--border)",
     soft: "0 12px 30px color-mix(in srgb,var(--text) 10%,transparent)",
     layered: "0 2px 4px color-mix(in srgb,var(--text) 8%,transparent),0 18px 40px color-mix(in srgb,var(--text) 12%,transparent)",
+    offset: "6px 6px 0 var(--text)",
+    inset: "inset 0 2px 6px color-mix(in srgb,var(--text) 22%,transparent),inset 0 -1px 0 color-mix(in srgb,var(--canvas) 60%,transparent)",
+    relief: "8px 8px 20px color-mix(in srgb,var(--text) 16%,transparent),-8px -8px 20px color-mix(in srgb,var(--canvas) 90%,white)",
+    bevel: "inset 2px 2px 0 color-mix(in srgb,var(--canvas) 55%,white),inset -2px -2px 0 color-mix(in srgb,var(--text) 45%,transparent),3px 3px 0 color-mix(in srgb,var(--text) 35%,transparent)",
   }[spec.shape.shadowStyle];
   return `${colors}${fonts}${steps}${exampleSteps}--measure:${spec.typography.measure};--base-unit:${spec.spacing.baseUnit}px;--element-gap:${spec.spacing.elementGap}px;--component-gap:${spec.spacing.componentGap}px;--section-gap:${spec.spacing.sectionGap}px;--content-width:${spec.spacing.contentWidth}px;--card-radius:${spec.shape.cardRadius}px;--control-radius:${spec.shape.controlRadius}px;--border-width:${spec.shape.borderWidth}px;--motion-duration:${spec.motion.duration};--motion-easing:${spec.motion.easing};--shadow:${shadow};`;
 }
@@ -895,7 +900,7 @@ const MOTION_SCRIPT = `(function(){
     for (var r = 0; r < reels.length; r++) buildReel(reels[r]);
   }
 
-  var frames = document.querySelectorAll(".variant .frame");
+  var frames = document.querySelectorAll(".variant .card");
 
   function play(frame){
     prepare(frame);
@@ -1088,79 +1093,81 @@ code{font-family:var(--font-mono)}
 .media{display:grid;place-items:center;width:100%;border-radius:var(--card-radius);background:var(--surface);box-shadow:inset 0 0 0 var(--border-width) var(--hairline)}
 .media span{color:var(--muted);font-family:var(--font-mono);font-size:10px}
 .media-set{max-width:440px}
-.variant-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:18px}
+.variant-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:var(--component-gap)}
 .variant-wide{grid-column:1/-1}
 .variant figcaption{margin-top:10px;color:var(--muted);font-size:12px}
 .variant small{display:block}
-.variant .frame{display:flex;flex-direction:column;gap:16px;min-height:288px;padding:32px;overflow:hidden}
-.variant .frame>strong:not([class]){font-family:var(--font-display);font-size:23px;font-weight:600;line-height:1.2;letter-spacing:-.03em}
+/* 견본은 껍데기가 아니라 그 디자인의 형태를 입는다 — 반경 · 경계 · 그림자 ·
+   표면이 모두 계약에서 온다. 껍데기의 .frame 과 클래스를 나눠야 상속이 끊긴다. */
+.variant .card{display:flex;flex-direction:column;gap:var(--element-gap);min-height:288px;padding:calc(var(--component-gap) * 1.35);overflow:hidden;border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface);box-shadow:var(--shadow)}
+.variant .card>strong:not([class]){font-family:var(--font-display);font-size:calc(var(--type-example-heading) * .72);font-weight:600;line-height:var(--line-example-heading);letter-spacing:-.03em}
 .v-eyebrow{color:var(--muted);font-family:var(--font-mono);font-size:10px;letter-spacing:.1em}
-.v-display{font-family:var(--font-display);font-size:clamp(28px,3.2vw,42px);font-weight:600;line-height:1.06;letter-spacing:-.045em}
-.v-number{font-family:var(--font-display);font-size:56px;font-weight:600;line-height:1;letter-spacing:-.05em}
-.v-number-lg{font-size:78px}
+.v-display{font-family:var(--font-display);font-size:min(var(--type-example-display) * .66, 3.2vw + 14px);font-weight:600;line-height:var(--line-example-display);letter-spacing:-.045em}
+.v-number{font-family:var(--font-display);font-size:calc(var(--type-example-display) * .88);font-weight:600;line-height:1;letter-spacing:-.05em}
+.v-number-lg{font-size:calc(var(--type-example-display) * 1.22)}
 .v-accent{color:var(--accent)}
-.v-lead{max-width:34ch;color:var(--muted);font-size:15px;line-height:1.55}
-.v-body{max-width:var(--measure);color:var(--muted);font-size:13px;line-height:1.8}
+.v-lead{max-width:34ch;color:var(--muted);font-size:var(--type-example-body);line-height:var(--line-example-body)}
+.v-body{max-width:var(--measure);color:var(--muted);font-size:calc(var(--type-example-body) * .88);line-height:var(--line-example-body)}
 .v-note{color:var(--muted);font-family:var(--font-mono);font-size:10px;line-height:1.6}
-.v-meta{display:flex;flex-wrap:wrap;gap:12px 26px}
+.v-meta{display:flex;flex-wrap:wrap;gap:var(--element-gap) var(--component-gap)}
 .v-meta small{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.08em}
 .v-meta span{display:block;margin-top:3px;font-size:13px}
-.v-actions{display:flex;align-items:center;gap:12px;margin-top:auto}
-.v-two{display:grid;grid-template-columns:1fr 1fr;gap:26px}
-.v-two strong{font-family:var(--font-display);font-size:26px;font-weight:600;line-height:1.14;letter-spacing:-.035em}
+.v-actions{display:flex;align-items:center;gap:var(--element-gap);margin-top:auto}
+.v-two{display:grid;grid-template-columns:1fr 1fr;gap:var(--component-gap)}
+.v-two strong{font-family:var(--font-display);font-size:calc(var(--type-example-heading) * .82);font-weight:600;line-height:var(--line-example-heading);letter-spacing:-.035em}
 .v-two .v-meta{margin-top:14px;gap:10px 20px}
-.v-media-hero{display:grid;gap:18px}
-.v-media-hero .media,.variant .frame>.media{max-width:320px}
-.v-media-hero strong{display:block;margin-top:10px;font-family:var(--font-display);font-size:24px;font-weight:600;letter-spacing:-.03em}
-.v-lead-metric{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:center}
-.v-lead-metric strong{font-family:var(--font-display);font-size:19px;font-weight:600;line-height:1.2;letter-spacing:-.025em}
-.v-lead-metric .v-number{font-size:62px}
+.v-media-hero{display:grid;gap:var(--component-gap)}
+.v-media-hero .media,.variant .card>.media{max-width:320px}
+.v-media-hero strong{display:block;margin-top:10px;font-family:var(--font-display);font-size:calc(var(--type-example-heading) * .75);font-weight:600;letter-spacing:-.03em}
+.v-lead-metric{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--component-gap);align-items:center}
+.v-lead-metric strong{font-family:var(--font-display);font-size:calc(var(--type-example-heading) * .6);font-weight:600;line-height:var(--line-example-heading);letter-spacing:-.025em}
+.v-lead-metric .v-number{font-size:calc(var(--type-example-display) * .97)}
 .v-lead-metric .v-lead{margin-top:6px;font-size:13px}
-.v-profile{display:flex;align-items:center;gap:14px}
+.v-profile{display:flex;align-items:center;gap:var(--element-gap)}
 .v-profile strong{display:block;font-family:var(--font-display);font-size:17px;letter-spacing:-.02em}
 .v-profile small{color:var(--muted);font-size:12px}
 .avatar{display:block;flex:0 0 auto;width:44px;height:44px;border-radius:50%;object-fit:cover;background:var(--surface)}
 .avatar-lg{width:60px;height:60px}
-.v-par{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px 16px}
+.v-par{display:grid;grid-template-columns:52px minmax(0,1fr);gap:var(--element-gap) calc(var(--element-gap) * 1.2)}
 .v-par dt{color:var(--muted);font-family:var(--font-mono);font-size:10px;padding-top:3px}
 .v-par dd{font-size:13px;line-height:1.6}
 .v-par b{font-weight:600}
-.v-timeline{display:grid;gap:18px;position:relative}
-.v-timeline li{display:grid;grid-template-columns:10px minmax(0,1fr);gap:14px;align-items:start}
+.v-timeline{display:grid;gap:var(--component-gap);position:relative}
+.v-timeline li{display:grid;grid-template-columns:10px minmax(0,1fr);gap:var(--element-gap);align-items:start}
 .v-timeline b{width:9px;height:9px;margin-top:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--canvas)}
 .v-timeline small{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.06em}
 .v-timeline span{display:block;margin-top:3px;font-size:14px;font-weight:500}
 .v-timeline em{display:block;margin-top:2px;color:var(--muted);font-size:12px;font-style:normal}
-.v-before{display:grid;grid-template-columns:auto auto auto;gap:20px;align-items:end;justify-content:start}
+.v-before{display:grid;grid-template-columns:auto auto auto;gap:var(--component-gap);align-items:end;justify-content:start}
 .v-before small{color:var(--muted);font-family:var(--font-mono);font-size:9px}
-.v-before strong{display:block;margin-top:4px;font-family:var(--font-display);font-size:40px;line-height:1;letter-spacing:-.05em}
+.v-before strong{display:block;margin-top:4px;font-family:var(--font-display);font-size:calc(var(--type-example-display) * .62);line-height:1;letter-spacing:-.05em}
 .v-before i{padding-bottom:8px;color:var(--muted);font-style:normal}
-.v-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
-.v-group strong{display:block;font-family:var(--font-display);font-size:30px;line-height:1;letter-spacing:-.045em}
+.v-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--component-gap)}
+.v-group strong{display:block;font-family:var(--font-display);font-size:calc(var(--type-example-display) * .47);line-height:1;letter-spacing:-.045em}
 .v-group small{margin-top:6px;color:var(--muted);font-size:12px}
-.v-bars{display:grid;gap:16px}
-.v-bars article{display:grid;grid-template-columns:44px minmax(0,1fr) 46px;gap:14px;align-items:center}
+.v-bars{display:grid;gap:var(--element-gap)}
+.v-bars article{display:grid;grid-template-columns:44px minmax(0,1fr) 46px;gap:var(--element-gap);align-items:center}
 .v-bars small{color:var(--muted);font-family:var(--font-mono);font-size:10px}
 .v-bars i{display:block;height:14px;border-radius:999px;background:var(--border)}
 .v-bars i.v-bar-accent{background:var(--accent)}
 .v-bars b{font-family:var(--font-mono);font-size:11px;font-weight:400;text-align:right}
-.v-gauge{display:flex;align-items:center;gap:22px}
+.v-gauge{display:flex;align-items:center;gap:var(--component-gap)}
 .gauge{position:relative;display:block;flex:0 0 auto;width:88px;height:88px;border:9px solid var(--border);border-radius:50%}
 .gauge i{position:absolute;inset:-9px;border:9px solid transparent;border-top-color:var(--accent);border-right-color:var(--accent);border-bottom-color:var(--accent);border-radius:50%}
-.v-gauge strong{display:block;font-family:var(--font-display);font-size:34px;letter-spacing:-.04em}
+.v-gauge strong{display:block;font-family:var(--font-display);font-size:calc(var(--type-example-display) * .53);letter-spacing:-.04em}
 .v-gauge small{margin-top:4px;color:var(--muted);font-size:12px}
 .v-org{display:block;padding-bottom:16px;border-bottom:1px solid var(--hairline)}
 .v-org:last-of-type{border-bottom:0;padding-bottom:0}
 .v-org strong{font-family:var(--font-display);font-size:18px;letter-spacing:-.02em}
 .v-org small{margin-top:3px;color:var(--muted);font-size:12px}
-.v-achieve{display:grid;gap:16px}
-.v-achieve li{display:grid;grid-template-columns:66px minmax(0,1fr);gap:16px;align-items:baseline}
-.v-achieve b{font-family:var(--font-display);font-size:24px;font-weight:600;letter-spacing:-.04em}
+.v-achieve{display:grid;gap:var(--element-gap)}
+.v-achieve li{display:grid;grid-template-columns:66px minmax(0,1fr);gap:var(--element-gap);align-items:baseline}
+.v-achieve b{font-family:var(--font-display);font-size:calc(var(--type-example-display) * .38);font-weight:600;letter-spacing:-.04em}
 .v-achieve span{font-size:13px}
 .v-achieve em{display:block;margin-top:3px;color:var(--muted);font-size:11px;font-style:normal}
 .v-linked{display:grid;gap:6px;margin-top:12px}
 .v-linked li{color:var(--muted);font-size:12px}
-.v-evidence{display:grid;gap:16px}
+.v-evidence{display:grid;gap:var(--element-gap)}
 .v-evidence li{display:grid;gap:4px}
 .v-evidence strong{font-size:13px;font-weight:600}
 .v-evidence span{color:var(--muted);font-size:12px;line-height:1.55}
@@ -1169,14 +1176,57 @@ code{font-family:var(--font-mono)}
 .v-table tbody tr:last-child th,.v-table tbody tr:last-child td{border-bottom:0}
 .v-table-wide th{width:auto;color:var(--muted);font-family:var(--font-mono);font-size:10px}
 .v-table-wide b{font-family:var(--font-display);font-size:15px;letter-spacing:-.02em}
-.v-gallery{display:grid;grid-template-columns:1.7fr 1fr;gap:12px}
+.v-gallery{display:grid;grid-template-columns:1.7fr 1fr;gap:var(--element-gap)}
 .v-gallery .media:first-child{grid-row:1/3}
-.v-quote{max-width:24ch;font-family:var(--font-display);font-size:24px;line-height:1.3;letter-spacing:-.025em}
+.v-quote{max-width:24ch;font-family:var(--font-display);font-size:calc(var(--type-example-heading) * .75);line-height:1.3;letter-spacing:-.025em}
 .v-footer{display:grid;gap:8px}
 .v-footer strong{font-family:var(--font-display);font-size:18px}
 .v-footer p{color:var(--muted);font-size:12px}
-.tag-set{display:flex;flex-wrap:wrap;gap:8px}
+.tag-set{display:flex;flex-wrap:wrap;gap:calc(var(--element-gap) * .6)}
 .tag-set li{padding:8px 13px;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--muted);font-size:12px}
+
+/*
+  배치 — 계약의 composition.layout 이 요소를 어떤 열과 여백으로 앉힐지 정한다.
+  같은 마크업, 같은 문안이지만 짜임이 달라진다. 문안까지 달라지면 무엇 때문에
+  달라 보이는지 알 수 없으므로 바꾸는 것은 짜임뿐이다.
+*/
+
+/* 여백이 지면을 지배한다 — 열을 넓게 잡아 화면당 견본 수를 줄이고,
+   글줄을 짧게 끊고, 두 단은 비대칭으로 앉힌다. */
+[data-layout="wide-margin"] .variant-grid{grid-template-columns:repeat(auto-fill,minmax(540px,1fr))}
+[data-layout="wide-margin"] .variant .card{padding:calc(var(--component-gap) * 2);min-height:340px}
+[data-layout="wide-margin"] .v-lead,[data-layout="wide-margin"] .v-body{max-width:28ch}
+[data-layout="wide-margin"] .v-two{grid-template-columns:5fr 6fr;gap:calc(var(--component-gap) * 1.6)}
+[data-layout="wide-margin"] .v-two>div:last-child{padding-top:calc(var(--component-gap) * 1.2)}
+[data-layout="wide-margin"] .v-group{grid-template-columns:repeat(2,minmax(0,1fr));gap:calc(var(--component-gap) * 1.5)}
+[data-layout="wide-margin"] .v-gallery{grid-template-columns:1fr;gap:var(--component-gap)}
+[data-layout="wide-margin"] .v-gallery .media:first-child{grid-row:auto}
+[data-layout="wide-margin"] .v-actions{margin-top:calc(var(--component-gap) * 1.5)}
+
+/* 정보를 촘촘히 붙인다 — 열을 좁게 잡아 여러 벌을 나란히 두고, 행 사이에
+   구획선을 넣고, 수치 묶음을 한 줄로 편다. */
+[data-layout="dense-grid"] .variant-grid{grid-template-columns:repeat(auto-fill,minmax(360px,1fr))}
+[data-layout="dense-grid"] .variant .card{padding:var(--component-gap);min-height:250px}
+[data-layout="dense-grid"] .v-lead,[data-layout="dense-grid"] .v-body{max-width:42ch}
+[data-layout="dense-grid"] .v-group{grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--element-gap)}
+[data-layout="dense-grid"] .v-group article{padding-right:var(--element-gap);border-right:1px solid var(--hairline)}
+[data-layout="dense-grid"] .v-group article:last-child{border-right:0}
+[data-layout="dense-grid"] .v-meta{gap:var(--element-gap) calc(var(--element-gap) * 1.2)}
+[data-layout="dense-grid"] .v-timeline li{padding-bottom:var(--element-gap);border-bottom:1px solid var(--hairline)}
+[data-layout="dense-grid"] .v-timeline li:last-child{padding-bottom:0;border-bottom:0}
+[data-layout="dense-grid"] .v-evidence li{padding-bottom:var(--element-gap);border-bottom:1px solid var(--hairline)}
+[data-layout="dense-grid"] .v-evidence li:last-child{padding-bottom:0;border-bottom:0}
+[data-layout="dense-grid"] .v-gallery{grid-template-columns:repeat(3,1fr)}
+[data-layout="dense-grid"] .v-gallery .media:first-child{grid-row:auto}
+
+/* 한 줄기로 읽는다 — 카드 안의 모든 단을 접어 읽는 순서를 하나로 만든다. */
+[data-layout="single-column"] .variant-grid{grid-template-columns:repeat(auto-fill,minmax(440px,1fr))}
+[data-layout="single-column"] .v-two,[data-layout="single-column"] .v-lead-metric,[data-layout="single-column"] .v-gallery{grid-template-columns:minmax(0,1fr)}
+[data-layout="single-column"] .v-gallery .media:first-child{grid-row:auto}
+[data-layout="single-column"] .v-before{grid-template-columns:auto;justify-items:start;gap:var(--element-gap)}
+[data-layout="single-column"] .v-before i{display:none}
+[data-layout="single-column"] .v-group{grid-template-columns:minmax(0,1fr);gap:var(--element-gap)}
+[data-layout="single-column"] .v-lead,[data-layout="single-column"] .v-body{max-width:var(--measure)}
 
 /*
   모션은 전부 transitions-dev 카탈로그에서 가져온다. 직접 keyframe 을 쓰지 않는다.
@@ -1223,7 +1273,7 @@ code{font-family:var(--font-mono)}
 .glance{grid-template-columns:1fr 1fr}
 .demo-contact,.v-gallery,.v-two,.v-group{grid-template-columns:1fr}
 .variant-grid{grid-template-columns:1fr}
-.variant .frame{padding:24px;min-height:0}
+.variant .card{padding:24px;min-height:0}
 .row-head{padding-bottom:22px}
 }
 @media(max-width:640px){
@@ -1241,7 +1291,7 @@ code{font-family:var(--font-mono)}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.motion-rise,.motion-focus{animation:none}}
 </style>
 </head>
-<body>
+<body data-layout="${escapeHtml(spec.composition.layout)}">
   <nav class="nav"><strong>${title}</strong><ul><li><a href="#colors">Colors</a></li><li><a href="#typography">Typography</a></li><li><a href="#components">Components</a></li><li><a href="#sample-portfolio">Elements</a></li></ul><span>r${revision}</span></nav>
   <header class="cover">
     <span>Portfolio design system</span>

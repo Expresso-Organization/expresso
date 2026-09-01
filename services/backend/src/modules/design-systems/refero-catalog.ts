@@ -62,6 +62,7 @@ interface ReferoStyleDefinition {
   };
   composition: {
     structure: string;
+    layout: "single-column" | "dense-grid" | "wide-margin";
     density: "compact" | "comfortable" | "spacious";
     sectionRhythm: string;
     hierarchy: string;
@@ -249,7 +250,7 @@ export const referoDesignSystems = {
     spacing: { elementGap: 10, componentGap: 28, sectionGap: 120, contentWidth: 1200 },
     shape: { cardRadius: 28, controlRadius: 100, borderWidth: 1, shadowStyle: "none" },
     composition: {
-      structure: "product-white-space", density: "spacious",
+      structure: "product-white-space", layout: "wide-margin", density: "spacious",
       sectionRhythm: "흰색과 옅은 회색의 큰 섹션을 100–120px 간격으로 교차",
       hierarchy: "거대한 제목, 프로젝트 이미지, 짧은 설명 순서",
       surfaceStrategy: "경계선 대신 #ffffff와 #f5f5f7 표면 교차",
@@ -296,7 +297,7 @@ export const referoDesignSystems = {
     spacing: { elementGap: 12, componentGap: 24, sectionGap: 96, contentWidth: 1160 },
     shape: { cardRadius: 12, controlRadius: 100, borderWidth: 1, shadowStyle: "none" },
     composition: {
-      structure: "midnight-gallery", density: "comfortable",
+      structure: "midnight-gallery", layout: "wide-margin", density: "comfortable",
       sectionRhythm: "큰 사진과 조용한 그래파이트 카드가 긴 호흡으로 교차",
       hierarchy: "대표 장면, 핵심 판단, 세부 근거 순서",
       surfaceStrategy: "온닉스 바탕과 한 단계 밝은 그래파이트 카드",
@@ -343,7 +344,7 @@ export const referoDesignSystems = {
     spacing: { elementGap: 8, componentGap: 12, sectionGap: 64, contentWidth: 1180 },
     shape: { cardRadius: 6, controlRadius: 6, borderWidth: 0.5, shadowStyle: "none" },
     composition: {
-      structure: "precision-instrument", density: "compact",
+      structure: "precision-instrument", layout: "dense-grid", density: "compact",
       sectionRhythm: "8–12px 내부 간격의 정밀한 정보 구획을 반복",
       hierarchy: "현재 상태, 핵심 수치, 기술 근거 순서",
       surfaceStrategy: "#08090a/#0f1011/#161718 표면을 0.5px 선으로 구분",
@@ -390,7 +391,7 @@ export const referoDesignSystems = {
     spacing: { elementGap: 12, componentGap: 24, sectionGap: 88, contentWidth: 1120 },
     shape: { cardRadius: 20, controlRadius: 100, borderWidth: 1, shadowStyle: "hairline" },
     composition: {
-      structure: "warm-editorial-studio", density: "comfortable",
+      structure: "warm-editorial-studio", layout: "single-column", density: "comfortable",
       sectionRhythm: "웜 화이트와 타우프 표면을 긴 문장과 제품 순간 사이에 교차",
       hierarchy: "가는 제목, 긴 사례, 제품 시각 순서",
       surfaceStrategy: "웜 화이트와 타우프의 한 단계 차이, 1px 경계",
@@ -437,7 +438,7 @@ export const referoDesignSystems = {
     spacing: { elementGap: 12, componentGap: 24, sectionGap: 96, contentWidth: 1200 },
     shape: { cardRadius: 4, controlRadius: 4, borderWidth: 1, shadowStyle: "none" },
     composition: {
-      structure: "frosted-ledger", density: "comfortable",
+      structure: "frosted-ledger", layout: "dense-grid", density: "comfortable",
       sectionRhythm: "큰 주장, 신뢰 수치, 시스템 사례를 넓은 간격으로 반복",
       hierarchy: "핵심 주장, 수치, 시스템 근거 순서",
       surfaceStrategy: "흰색에서 #f8fafd와 #e5edf5로 이어지는 표면 농도",

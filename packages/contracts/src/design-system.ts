@@ -157,10 +157,25 @@ export const DesignSystemSpecV2Schema = z.strictObject({
     cardRadius: z.number().nonnegative().max(100),
     controlRadius: z.number().nonnegative().max(100),
     borderWidth: z.number().nonnegative().max(12),
-    shadowStyle: z.enum(["none", "hairline", "soft", "layered"]),
+    /**
+     * 면에 깊이를 주는 방식.
+     *
+     * 앞의 넷만으로는 표현되지 않는 스타일이 있다 — Neo Brutalism 의 흐림 없이
+     * 어긋난 그림자, Claymorphism · Neumorphism 의 밝고 어두운 그림자를 짝지은
+     * 부피, Industrial 의 눌린 안쪽 면, Retro 의 경사 테두리다.
+     */
+    shadowStyle: z.enum([
+      "none", "hairline", "soft", "layered", "offset", "inset", "relief", "bevel",
+    ]),
   }),
   composition: z.strictObject({
+    /** 사람이 읽는 이름. `product-white-space` 처럼 디자인마다 다르다. */
     structure: TextSchema,
+    /**
+     * 지면을 짜는 방식. `structure` 는 자유 문자열이라 화면이 걸 수 없다.
+     * 요소를 어떤 열과 여백으로 앉힐지는 이 세 값이 정한다.
+     */
+    layout: z.enum(["single-column", "dense-grid", "wide-margin"]),
     density: z.enum(["compact", "comfortable", "spacious"]),
     sectionRhythm: TextSchema,
     hierarchy: TextSchema,

@@ -102,6 +102,28 @@ describe("design systems catalog", () => {
       }
     }
 
+    // 견본은 껍데기가 아니라 그 디자인의 형태를 입는다. 이 두 토큰이 빠지면
+    // 서른여덟 벌이 같은 반경 10 · 헤어라인 상자로 되돌아간다.
+    for (const { item, revision } of entries) {
+      const card = revision.designHtml.match(/\.variant \.card\{[^}]*\}/)?.[0] ?? "";
+      expect(`${item.code} ${card.includes("var(--card-radius)")}`).toBe(`${item.code} true`);
+      expect(`${item.code} ${card.includes("var(--shadow)")}`).toBe(`${item.code} true`);
+      expect(`${item.code} ${card.includes("var(--element-gap)")}`).toBe(`${item.code} true`);
+    }
+
+    // 배치 축이 지면에 실려야 CSS 가 걸 수 있다.
+    for (const { item, revision } of entries) {
+      expect(`${item.code} ${revision.designHtml.includes(`<body data-layout="${revision.spec.composition.layout}">`)}`)
+        .toBe(`${item.code} true`);
+    }
+
+    // 형태가 밀도에서만 나오면 Neo Brutalism 과 Claymorphism 이 같은 상자가 된다.
+    const shapes = new Set(entries.map(({ revision }) => {
+      const s = revision.spec.shape;
+      return `${s.cardRadius}/${s.controlRadius}/${s.borderWidth}/${s.shadowStyle}`;
+    }));
+    expect(shapes.size).toBeGreaterThanOrEqual(18);
+
     // 서른여덟 벌이 세 벌의 서체를 돌려 쓰면 색만 다른 문서가 된다.
     const typefaces = new Set(entries.map(({ revision }) =>
       `${revision.spec.typography.display.family}/${revision.spec.typography.body.family}`));

@@ -30,6 +30,7 @@ interface BuiltinConfig {
   koreanFont: string;
   density: "compact" | "comfortable" | "spacious";
   structure: string;
+  layout: "single-column" | "dense-grid" | "wide-margin";
   sectionGap: number;
   contentWidth: number;
   cardRadius: number;
@@ -119,6 +120,7 @@ function createSpec(config: BuiltinConfig): DesignSystemSpecV2 {
     },
     composition: {
       structure: config.structure,
+      layout: config.layout,
       density: config.density,
       sectionRhythm: config.code === "signal"
         ? "짧은 정보 묶음과 정밀한 구획을 반복"
@@ -236,7 +238,7 @@ export const builtinDesignSystems = {
     },
     displayFont: "Inter", bodyFont: "system-ui", bodyFallback: "sans-serif",
     koreanFont: "Noto Sans KR",
-    density: "comfortable", structure: "single-column", sectionGap: 72,
+    density: "comfortable", structure: "single-column", layout: "single-column", sectionGap: 72,
     contentWidth: 1080, cardRadius: 12, shadowStyle: "soft",
     hierarchy: "역할, 대표 성과, 상세 근거 순서",
     surfaceStrategy: "밝은 바탕 위에 얕은 카드 표면",
@@ -257,7 +259,7 @@ export const builtinDesignSystems = {
     },
     displayFont: "Inter", bodyFont: "system-ui", bodyFallback: "sans-serif",
     koreanFont: "IBM Plex Sans KR",
-    density: "compact", structure: "evidence-grid", sectionGap: 56,
+    density: "compact", structure: "evidence-grid", layout: "dense-grid", sectionGap: 56,
     contentWidth: 1180, cardRadius: 4, shadowStyle: "hairline",
     hierarchy: "대표 수치, 비교 기준, 기술 근거 순서",
     surfaceStrategy: "어두운 표면 단계를 얇은 선으로 구분",
@@ -278,7 +280,7 @@ export const builtinDesignSystems = {
     },
     displayFont: "Georgia", bodyFont: "Georgia", bodyFallback: "serif",
     koreanFont: "Nanum Myeongjo",
-    density: "spacious", structure: "wide-margin", sectionGap: 104,
+    density: "spacious", structure: "wide-margin", layout: "wide-margin", sectionGap: 104,
     contentWidth: 980, cardRadius: 8, shadowStyle: "none",
     hierarchy: "프로젝트 제목, 긴 사례, 인용과 아티팩트 순서",
     surfaceStrategy: "테두리보다 여백과 따뜻한 표면 차이로 구분",
