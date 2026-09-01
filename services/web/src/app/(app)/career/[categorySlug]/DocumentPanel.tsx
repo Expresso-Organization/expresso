@@ -3,7 +3,7 @@
 import type { CareerRecordListItem } from "@expresso/contracts";
 
 import { Icon } from "@/components/ui/Icon";
-import { MarkdownBody } from "@/components/ui/Markdown";
+import { CareerDocumentEditor } from "@/features/career-editor/editor/CareerDocumentEditor";
 
 import styles from "./DocumentPanel.module.css";
 
@@ -177,17 +177,7 @@ export function DocumentPanel({
             <div className={styles.divider} />
 
             <div className={styles.blocks}>
-              {/* 기록 본문은 마크다운이다(`record.body_md`). 평문으로 그리면
-                  STAR로 정리된 제목과 항목이 한 덩어리로 붙는다. */}
-              {record.bodyMd ? (
-                <MarkdownBody className={styles.blockText}>{record.bodyMd}</MarkdownBody>
-              ) : null}
-              <div className={styles.placeholder}>
-                <Icon name="plus" size={14} color="var(--ex-border-firm)" />
-                <span className={styles.placeholderText}>
-                  입력하거나 / 를 눌러 명령어를 사용하세요
-                </span>
-              </div>
+              <CareerDocumentEditor recordId={record.id} mode="peek" />
             </div>
           </div>
 

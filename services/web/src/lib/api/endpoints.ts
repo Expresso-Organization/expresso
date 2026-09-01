@@ -22,6 +22,7 @@ import {
   type SaveCareerProfile,
   CareerRecordListResponseSchema,
   CareerRecordResponseSchema,
+  CareerDocumentBootstrapSchema,
   CurrentUserResponseSchema,
   HomeReadModelSchema,
   JobPostingDetailResponseSchema,
@@ -858,6 +859,13 @@ export const career = {
     request(
       `${API_PREFIX}/career/records/${recordId}`,
       CareerRecordResponseSchema,
+      { accessToken, cache: "no-store" },
+    ),
+
+  document: (accessToken: string, recordId: string) =>
+    request(
+      `${API_PREFIX}/career/records/${recordId}/document`,
+      CareerDocumentBootstrapSchema,
       { accessToken, cache: "no-store" },
     ),
 };
