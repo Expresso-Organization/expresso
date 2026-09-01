@@ -23,6 +23,146 @@ type Item = RecipeV2["sections"][number]["items"][number];
 
 const SOURCE_LABEL = { record: "기록", requirement: "공고 요건", answer: "대화 답변" } as const;
 
+type Binding = Item["sourceBindings"][number];
+
+/**
+ * 섹션이 참고한 기록.
+ *
+ * 근거를 문장마다 달아 두면 읽는 눈이 한 줄 걸러 한 번씩 멈춘다. 문장은 문장끼리
+ * 이어 읽고, 무엇에 기댔는지는 섹션이 끝나는 자리에서 한 번에 본다.
+ *
+ * **연결은 여전히 문장 단위다.** 카드는 섹션 전체를 훑어 모은 것이고, 문장을
+ * 고르면 그 문장이 건 카드만 진해진다. 그 상태에서 카드를 누르면 고른 문장에
+ * 붙고 떨어진다 — 계약(`bind_source`)이 받는 것도 그대로 `itemId`다.
+ */
+function SectionSources({
+  items,
+  selectedId,
+  records,
+  recordById,
+  pending,
+  pickerOpen,
+  onTogglePicker,
+  onClosePicker,
+  run,
+}: {
+  items: Item[];
+  selectedId: string | null;
+  records: RecordCard[];
+  recordById: Map<string, RecordCard>;
+  pending: boolean;
+  pickerOpen: boolean;
+  onTogglePicker: () => void;
+  onClosePicker: () => void;
+  run: (edit: RecipeV2Edit) => Promise<void>;
+}) {
+  // 문장 여럿이 같은 기록을 걸어도 카드는 하나다. 순서는 먼저 나온 쪽이다.
+  const sources = new Map<string, Binding>();
+  for (const item of items) {
+    for (const binding of item.sourceBindings) {
+      const key = `${binding.sourceType}:${binding.sourceId}`;
+      if (!sources.has(key)) sources.set(key, binding);
+    }
+  }
+
+  const selected = items.find(({ id }) => id === selectedId) ?? null;
+  // 아무것도 없고 고른 문장도 없으면 제목만 남는다 — 그런 줄은 띄우지 않는다.
+  if (sources.size === 0 && !selected) return null;
+
+  const bound = new Set(selected?.sourceBindings.map(({ sourceId }) => sourceId) ?? []);
+  const primary = selected?.sourceBindings.find(({ role }) => role === "primary")?.sourceId ?? null;
+  const unbound = records.filter(({ recordId }) => !bound.has(recordId));
+
+  return (
+    <div className={styles.sources}>
+      <span className={styles.sourcesHead}>
+        참고한 기록
+        <em>{selected ? "카드를 누르면 고른 문장에 붙고 떨어집니다" : "문장을 고르면 그 문장이 건 것이 진해집니다"}</em>
+      </span>
+      <div className={styles.sourceCards}>
+        {[...sources.values()].map((source) => {
+          const record = source.sourceType === "record" ? recordById.get(source.sourceId) : undefined;
+          const on = bound.has(source.sourceId);
+          const body = (
+            <>
+              <Icon name={record?.categoryIcon ?? "quotes"} size={13} />
+              <b>{record?.title ?? SOURCE_LABEL[source.sourceType]}</b>
+              <em>{record ? record.categoryName : SOURCE_LABEL[source.sourceType]}</em>
+            </>
+          );
+          const key = `${source.sourceType}:${source.sourceId}`;
+          if (!selected) return <span key={key} className={styles.sourceCard}>{body}</span>;
+          return (
+            <button
+              key={key}
+              type="button"
+              className={styles.sourceCard}
+              data-on={on ? "1" : undefined}
+              data-primary={source.sourceId === primary ? "1" : undefined}
+              disabled={pending}
+              aria-pressed={on}
+              onClick={() => void run(on
+                ? { operation: "unbind_source", itemId: selected.id, sourceId: source.sourceId }
+                : {
+                    operation: "bind_source",
+                    itemId: selected.id,
+                    sourceType: source.sourceType,
+                    sourceId: source.sourceId,
+                    // 중심 근거는 하나다. 이미 있으면 새로 붙는 것은 보조다.
+                    role: primary ? "supporting" : "primary",
+                  })}
+            >
+              {body}
+            </button>
+          );
+        })}
+        {selected ? (
+          <span className={styles.addSource}>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onTogglePicker();
+              }}
+              aria-expanded={pickerOpen}
+            >
+              <Icon name="plus" size={11} /> 기록
+            </button>
+            {pickerOpen ? (
+              <span className={styles.sourceMenu} onClick={(event) => event.stopPropagation()}>
+                {unbound.length === 0 ? (
+                  <em>고른 기록을 이 문장에 모두 걸었습니다.</em>
+                ) : (
+                  unbound.map((record) => (
+                    <button
+                      key={record.recordId}
+                      type="button"
+                      onClick={() => {
+                        onClosePicker();
+                        void run({
+                          operation: "bind_source",
+                          itemId: selected.id,
+                          sourceType: "record",
+                          sourceId: record.recordId,
+                          role: primary ? "supporting" : "primary",
+                        });
+                      }}
+                      disabled={pending}
+                    >
+                      <Icon name={record.categoryIcon} size={12} />
+                      {record.title}
+                    </button>
+                  ))
+                )}
+              </span>
+            ) : null}
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function no(order: number): string {
   return String(order + 1).padStart(2, "0");
 }
@@ -392,69 +532,6 @@ export function Workbench({
                             if (text !== item.text) void run({ operation: "update_item", itemId: item.id, text });
                           }}
                         />
-                        <span className={styles.chips}>
-                          {item.sourceBindings.map((binding) => (
-                            <span
-                              key={binding.sourceId}
-                              className={styles.sourceChip}
-                              data-primary={binding.role === "primary" ? "1" : undefined}
-                            >
-                              {binding.sourceType === "record"
-                                ? recordById.get(binding.sourceId)?.title ?? "지난 기록"
-                                : SOURCE_LABEL[binding.sourceType]}
-                              <button
-                                type="button"
-                                onClick={() => run({ operation: "unbind_source", itemId: item.id, sourceId: binding.sourceId })}
-                                disabled={pending}
-                                aria-label="근거 떼기"
-                              >
-                                <Icon name="x" size={9} />
-                              </button>
-                            </span>
-                          ))}
-                          <span className={styles.addSource}>
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                setSourcePickerFor(sourcePickerFor === item.id ? null : item.id);
-                              }}
-                              aria-expanded={sourcePickerFor === item.id}
-                            >
-                              <Icon name="plus" size={9} /> 근거
-                            </button>
-                            {sourcePickerFor === item.id ? (
-                              <span className={styles.sourceMenu} onClick={(event) => event.stopPropagation()}>
-                                {records.filter((record) => !item.sourceBindings.some(({ sourceId }) => sourceId === record.recordId)).length === 0 ? (
-                                  <em>고른 기록을 모두 걸었습니다.</em>
-                                ) : (
-                                  records
-                                    .filter((record) => !item.sourceBindings.some(({ sourceId }) => sourceId === record.recordId))
-                                    .map((record) => (
-                                      <button
-                                        key={record.recordId}
-                                        type="button"
-                                        onClick={() => {
-                                          setSourcePickerFor(null);
-                                          void run({
-                                            operation: "bind_source",
-                                            itemId: item.id,
-                                            sourceType: "record",
-                                            sourceId: record.recordId,
-                                            role: item.sourceBindings.some(({ role }) => role === "primary") ? "supporting" : "primary",
-                                          });
-                                        }}
-                                        disabled={pending}
-                                      >
-                                        <Icon name={record.categoryIcon} size={12} />
-                                        {record.title}
-                                      </button>
-                                    ))
-                                )}
-                              </span>
-                            ) : null}
-                          </span>
-                        </span>
                       </div>
                       <span className={styles.itemTools}>
                         <button type="button" onClick={() => moveItem(sectionIndex, itemIndex, -1)} disabled={pending} aria-label="위로">
@@ -482,6 +559,18 @@ export function Workbench({
                 >
                   <Icon name="plus" size={12} /> 내용 추가
                 </button>
+
+                <SectionSources
+                  items={section.items}
+                  selectedId={selectedId}
+                  records={records}
+                  recordById={recordById}
+                  pending={pending}
+                  pickerOpen={sourcePickerFor === section.id}
+                  onTogglePicker={() => setSourcePickerFor(sourcePickerFor === section.id ? null : section.id)}
+                  onClosePicker={() => setSourcePickerFor(null)}
+                  run={run}
+                />
               </section>
             ))}
 

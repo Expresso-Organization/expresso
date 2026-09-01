@@ -547,48 +547,6 @@
   overflow: hidden;
 }
 
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding-left: 7px;
-}
-
-.sourceChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  max-width: 260px;
-  padding: 2px 4px 2px 8px;
-  border: 1px solid var(--ex-border);
-  border-radius: 999px;
-  background: var(--ex-bg);
-  color: var(--ex-fg-muted);
-  font-size: var(--ex-text-3xs);
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.sourceChip[data-primary="1"] {
-  border-color: var(--ex-accent-soft);
-  background: var(--ex-accent-surface);
-  color: var(--ex-accent-ink);
-  font-weight: 600;
-}
-
-.sourceChip button {
-  display: inline-flex;
-  padding: 2px;
-  border: 0;
-  border-radius: 50%;
-  background: none;
-  color: inherit;
-  cursor: pointer;
-  opacity: 0.55;
-}
-
-.sourceChip button:hover:not(:disabled) { opacity: 1; }
-
 .itemTools {
   flex-shrink: 0;
   display: flex;
@@ -758,4 +716,105 @@
   color: var(--ex-fg-subtle);
   font-size: var(--ex-text-3xs);
   font-style: normal;
+}
+
+/* ── 섹션이 참고한 기록 ──────────────────────────────────────
+ *
+ * 근거가 문장마다 달려 있으면 읽는 눈이 한 줄 걸러 한 번씩 멈춘다. 문장은
+ * 문장끼리 이어 읽고, 무엇에 기댔는지는 섹션이 끝나는 자리에서 한 번에 본다.
+ *
+ * 카드는 섹션 전체가 건 것을 모은 것이고 **연결은 여전히 문장 단위다**. 문장을
+ * 고르면 그 문장이 건 카드만 진해지고, 그 상태에서 눌러 붙이고 뗀다.
+ */
+
+.sources {
+  margin: 14px 0 0 33px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--ex-border);
+}
+
+.sourcesHead {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--ex-fg-subtle);
+  font-size: var(--ex-text-3xs);
+  font-weight: 600;
+}
+
+.sourcesHead em {
+  color: var(--ex-fg-faint);
+  font-style: normal;
+  font-weight: 400;
+}
+
+.sourceCards {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.sourceCard {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 300px;
+  padding: 8px 12px;
+  border: 1px solid var(--ex-border);
+  border-radius: 9px;
+  background: var(--ex-bg);
+  color: var(--ex-fg-muted);
+  font-family: inherit;
+  font-size: var(--ex-text-3xs);
+  text-align: left;
+}
+
+button.sourceCard { cursor: pointer; }
+
+button.sourceCard:hover:not(:disabled) { border-color: var(--ex-accent-soft); }
+
+.sourceCard b {
+  min-width: 0;
+  color: var(--ex-fg-body);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sourceCard em {
+  flex-shrink: 0;
+  color: var(--ex-fg-faint);
+  font-style: normal;
+}
+
+/*
+ * 고른 문장이 건 것.
+ *
+ * 왼쪽 띠는 `box-shadow`다 — 테두리로 그리면 그 카드만 3px 넓어져 줄이
+ * 어긋난다.
+ */
+.sourceCard[data-on="1"] {
+  border-color: var(--ex-accent-soft);
+  background: var(--ex-accent-surface);
+  color: var(--ex-accent-ink);
+  box-shadow: inset 3px 0 0 var(--ex-accent-soft);
+}
+
+.sourceCard[data-on="1"] b { color: var(--ex-accent-text); }
+
+.sourceCard[data-on="1"] em { color: var(--ex-accent-ink); }
+
+/* 중심 근거는 하나다. 띠가 진해지는 것으로 표시한다. */
+.sourceCard[data-primary="1"] { box-shadow: inset 3px 0 0 var(--ex-accent); }
+
+/* 카드 줄에 서는 「+ 기록」은 카드 높이에 맞춘다. */
+.sourceCards .addSource > button {
+  height: 100%;
+  padding: 8px 12px;
+  border-radius: 9px;
+  font-size: var(--ex-text-3xs);
 }
