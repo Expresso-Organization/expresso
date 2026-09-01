@@ -296,7 +296,8 @@ export function Setup({
           <button type="submit" className={styles.primary} disabled={busy}>
             {busy ? "짜는 중" : <><Icon name="sparkle" size={14} /> 레시피 만들기</>}
           </button>
-          <span>1분쯤 걸립니다. 이 화면을 닫아도 계속됩니다.</span>
+          {/* 실측 144초 · 158초(기록 10건 · sonnet). 다음 화면이 적는 값과 같아야 한다. */}
+          <span>2~3분 걸립니다. 이 화면을 닫아도 계속됩니다.</span>
         </footer>
       </form>
 
