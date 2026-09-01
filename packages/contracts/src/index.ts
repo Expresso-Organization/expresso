@@ -1,5 +1,25 @@
 export * from "./common.js";
 export * from "./career.js";
+export * from "./career-editor.js";
+export {
+  CareerPropertyTypeV2Schema,
+  CareerPropertyValueV2Schema,
+  CareerPropertyDefinitionV2Schema,
+  CareerFormulaDiagnosticSchema,
+  CareerRelationDefinitionSchema,
+  CareerRelationSchema,
+  CareerCategoryMovePreviewSchema,
+  CareerCategoryMoveCommitSchema,
+  CareerFormulaSchema,
+  CareerRollupAggregationSchema,
+  CareerRollupSchema,
+} from "./career-properties.js";
+export {
+  CareerViewFilterV2Schema,
+  CareerSortV2Schema,
+  CareerViewConfigurationSchema,
+} from "./career-views.js";
+export * from "./career-ai.js";
 export * from "./entitlements.js";
 export * from "./identity.js";
 export * from "./consent.js";

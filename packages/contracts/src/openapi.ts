@@ -1,4 +1,15 @@
 import { z } from "zod";
+import { CareerDocumentBootstrapSchema } from "./career-editor.js";
+import {
+  CareerCategoryMovePreviewSchema,
+  CareerFormulaSchema,
+  CareerPropertyDefinitionV2Schema,
+  CareerPropertyValueV2Schema,
+  CareerRelationSchema,
+  CareerRollupSchema,
+} from "./career-properties.js";
+import { CareerViewConfigurationSchema } from "./career-views.js";
+import { AiEditProposalSchema } from "./career-ai.js";
 
 import {
   ApiErrorResponseSchema,
@@ -124,7 +135,42 @@ export const expressoOpenApiDocument = {
     title: "Expresso API",
     version: "1.0.0",
   },
-  paths: {},
+  paths: {
+    "/v1/career/records/{recordId}/document": {
+      get: { responses: { "200": { description: "Career editor bootstrap" } } },
+    },
+    "/v1/career/records/{recordId}/document/updates": {
+      post: { responses: { "200": { description: "Career document update acknowledgement" } } },
+    },
+    "/v1/career/records/{recordId}/session": {
+      get: { responses: { "101": { description: "Authenticated career document session" } } },
+    },
+    "/v1/career/categories/{categoryId}/properties": {
+      post: { responses: { "200": { description: "Career property schema mutation" } } },
+    },
+    "/v1/career/views": {
+      get: { responses: { "200": { description: "Saved career views" } } },
+      post: { responses: { "201": { description: "Saved career view" } } },
+    },
+    "/v1/career/records/{recordId}/relations": {
+      put: { responses: { "200": { description: "Career relation replacement" } } },
+    },
+    "/v1/career/records/{recordId}/move/preview": {
+      post: { responses: { "200": { description: "Career category move preview" } } },
+    },
+    "/v1/career/records/{recordId}/move": {
+      post: { responses: { "200": { description: "Committed career category move" } } },
+    },
+    "/v1/career/formulas/preview": {
+      post: { responses: { "200": { description: "Career formula diagnostics" } } },
+    },
+    "/v1/career/rollups/preview": {
+      post: { responses: { "200": { description: "Career rollup preview" } } },
+    },
+    "/v1/career/records/{recordId}/ai-proposals": {
+      post: { responses: { "202": { description: "Career AI edit proposal" } } },
+    },
+  },
   components: {
     schemas: {
       ApiErrorResponse: jsonSchema(ApiErrorResponseSchema),
@@ -154,6 +200,15 @@ export const expressoOpenApiDocument = {
       RecomputeCareerSkill: jsonSchema(RecomputeCareerSkillSchema),
       CareerSkill: jsonSchema(CareerSkillSchema),
       CareerSkillEvidenceResponse: jsonSchema(CareerSkillEvidenceResponseSchema),
+      CareerDocumentBootstrap: jsonSchema(CareerDocumentBootstrapSchema),
+      CareerPropertyDefinitionV2: jsonSchema(CareerPropertyDefinitionV2Schema),
+      CareerPropertyValueV2: jsonSchema(CareerPropertyValueV2Schema),
+      CareerRelation: jsonSchema(CareerRelationSchema),
+      CareerCategoryMovePreview: jsonSchema(CareerCategoryMovePreviewSchema),
+      CareerFormula: jsonSchema(CareerFormulaSchema),
+      CareerRollup: jsonSchema(CareerRollupSchema),
+      CareerViewConfiguration: jsonSchema(CareerViewConfigurationSchema),
+      AiEditProposal: jsonSchema(AiEditProposalSchema),
       SubmitJobPosting: jsonSchema(SubmitJobPostingSchema),
       SubmittedJobPosting: jsonSchema(SubmittedJobPostingSchema),
       JobSearchCondition: jsonSchema(JobSearchConditionSchema),
