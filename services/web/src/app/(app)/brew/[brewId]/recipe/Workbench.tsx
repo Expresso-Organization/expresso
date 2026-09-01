@@ -75,10 +75,7 @@ function SectionSources({
 
   return (
     <div className={styles.sources}>
-      <span className={styles.sourcesHead}>
-        참고한 기록
-        <em>{selected ? "카드를 누르면 고른 문장에 붙고 떨어집니다" : "문장을 고르면 그 문장이 건 것이 진해집니다"}</em>
-      </span>
+      <span className={styles.sourcesHead}>참고한 기록</span>
       <div className={styles.sourceCards}>
         {[...sources.values()].map((source) => {
           const record = source.sourceType === "record" ? recordById.get(source.sourceId) : undefined;
