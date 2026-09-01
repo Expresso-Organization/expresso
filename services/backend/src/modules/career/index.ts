@@ -3,6 +3,7 @@ import type { CareerPropertySchemaService } from "./property-schema.js";
 import type { CareerViewService } from "./views.js";
 import type { CategoryMoveService } from "./category-move.js";
 import type { RelationService } from "./relations.js";
+import type { CareerComputationService } from "../career-computation/index.js";
 export { CareerService } from "./service.js";
 export { MongoCareerService } from "./service.js";
 export { assertActiveRecordsForWrite, purgeTrashedCareerRecord } from "./mongo-record-guard.js";
@@ -24,4 +25,6 @@ export interface CareerApi extends Pick<LegacyCareerService, keyof LegacyCareerS
   removeRelationTargetsForRecord?: RelationService["removeForRecord"];
   previewCategoryMove?: CategoryMoveService["preview"];
   commitCategoryMove?: CategoryMoveService["commit"];
+  previewFormula?: CareerComputationService["previewFormula"];
+  previewRollup?: CareerComputationService["previewRollup"];
 }

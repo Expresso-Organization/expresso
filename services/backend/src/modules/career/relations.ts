@@ -144,7 +144,7 @@ export class MongoRelationService implements RelationService {
       if (definition.inversePropertyId) for (const target of targets) {
         await addMongoOutboxEvent(tx, {
           userId, topic: "career.computation", idempotencyKey: `career-relation:${recordId}:${input.propertyId}:${target._id}:v${updated.version}`,
-          payload: { userId, recordId: target._id, changedPropertyIds: [definition.inversePropertyId], sourceRecordVersion: updated.version },
+          payload: { userId, recordId: target._id, changedPropertyIds: [definition.inversePropertyId], sourceRecordVersion: target.version },
         });
       }
       return mapMongoRecord(updated);

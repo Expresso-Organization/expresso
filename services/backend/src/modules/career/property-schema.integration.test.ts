@@ -14,6 +14,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
   let otherUserId: string;
   let categoryId: string;
   let propertyId: string;
+  let formulaId: string;
   let recordIds: string[];
 
   beforeAll(async () => {
@@ -23,6 +24,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     userId = (await identity.signup({ email: `schema-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "스키마" })).user.id;
     otherUserId = (await identity.signup({ email: `schema-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "다른 사용자" })).user.id;
     propertyId = randomUUID();
+    formulaId = randomUUID();
     const category = await service.createCategory(userId, {
       key: `schema_${randomUUID().replaceAll("-", "")}`, name: "스키마", icon: "folder", defaultView: "table",
       propertySchema: { score: { id: propertyId, label: "점수", type: "text", required: false, system: false } },
@@ -31,7 +33,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const db = mongoCollections(fixture.resource.db);
     await db.careerCategories.updateOne({ _id: categoryId }, { $set: { schemaVersion: 1, propertySchemaV2: [
       { id: propertyId, key: "score", name: "점수", type: "text", required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null },
-      { id: randomUUID(), key: "formula", name: "수식", type: "formula", required: false, system: false, config: { propertyId }, order: 1, version: 1, deletedAt: null },
+      { id: formulaId, key: "formula", name: "수식", type: "formula", required: false, system: false, config: { source: `prop("${propertyId}")`, ast: { expression: { propertyId } }, diagnostics: [] }, order: 1, version: 1, deletedAt: null },
       { id: randomUUID(), key: "rollup", name: "롤업", type: "rollup", required: false, system: false, config: { targetPropertyId: propertyId }, order: 2, version: 1, deletedAt: null },
     ] } });
     const first = await service.createRecord(userId, randomUUID(), { categoryId, title: "첫째", properties: { score: "42" }, bodyMd: "" });
@@ -61,19 +63,33 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await expect(service.previewChange(otherUserId, categoryId, change)).rejects.toMatchObject({ statusCode: 404 });
   });
 
+  it("previews and atomically updates a validated computed configuration", async () => {
+    const config = { source: `prop("${propertyId}") + 1`, ast: null, diagnostics: [] };
+    const change = { kind: "configure" as const, propertyId: formulaId, config };
+    const preview = await service.previewChange(userId, categoryId, change);
+    expect(preview.impact.affectedRecordCount).toBe(2);
+    const applied = await service.applyChange(userId, categoryId, 2, randomUUID(), { change, previewToken: preview.previewToken, confirmLossy: false });
+    expect(applied.version).toBe(3);
+    expect(applied.propertySchemaV2?.find((item) => item.id === formulaId)?.config).toEqual(config);
+    expect(await mongoCollections(fixture.resource.db).outboxEvents.countDocuments({ topic: "career.computation", "payload.changedPropertyIds": formulaId, "payload.sourcePropertyVersions": { [formulaId]: 2 } })).toBe(2);
+    const invalid = { kind: "configure" as const, propertyId: formulaId, config: { source: "1 + true", ast: null, diagnostics: [{ code: "invalid_operator", message: "오류", severity: "error", start: 0, end: 8 }] } };
+    const invalidPreview = await service.previewChange(userId, categoryId, invalid);
+    await expect(service.applyChange(userId, categoryId, 3, randomUUID(), { change: invalid, previewToken: invalidPreview.previewToken, confirmLossy: false })).rejects.toMatchObject({ statusCode: 400 });
+  });
+
   it("tombstones values on delete and restores the same property ID and values", async () => {
     const deletion = { kind: "delete" as const, propertyId };
     const preview = await service.previewChange(userId, categoryId, deletion);
-    await expect(service.applyChange(userId, categoryId, 2, randomUUID(), { change: deletion, previewToken: preview.previewToken, confirmLossy: false })).rejects.toMatchObject({ statusCode: 409 });
-    const deleted = await service.applyChange(userId, categoryId, 2, randomUUID(), { change: deletion, previewToken: preview.previewToken, confirmLossy: true });
-    expect(deleted).toMatchObject({ version: 3, schemaVersion: 3 });
+    await expect(service.applyChange(userId, categoryId, 3, randomUUID(), { change: deletion, previewToken: preview.previewToken, confirmLossy: false })).rejects.toMatchObject({ statusCode: 409 });
+    const deleted = await service.applyChange(userId, categoryId, 3, randomUUID(), { change: deletion, previewToken: preview.previewToken, confirmLossy: true });
+    expect(deleted).toMatchObject({ version: 4, schemaVersion: 4 });
     const afterDelete = await mongoCollections(fixture.resource.db).careerRecords.findOne({ _id: recordIds[0]! });
     expect(afterDelete?.properties.score).toBeUndefined();
     expect(afterDelete?.propertyValueTombstones?.[propertyId]).toBeDefined();
     const restoration = { kind: "restore" as const, propertyId };
     const restorePreview = await service.previewChange(userId, categoryId, restoration);
-    const restored = await service.applyChange(userId, categoryId, 3, randomUUID(), { change: restoration, previewToken: restorePreview.previewToken, confirmLossy: false });
-    expect(restored).toMatchObject({ version: 4, schemaVersion: 4 });
+    const restored = await service.applyChange(userId, categoryId, 4, randomUUID(), { change: restoration, previewToken: restorePreview.previewToken, confirmLossy: false });
+    expect(restored).toMatchObject({ version: 5, schemaVersion: 5 });
     const rows = await mongoCollections(fixture.resource.db).careerRecords.find({ _id: { $in: recordIds } }).toArray();
     expect(rows.map((row) => row.properties.score)).toEqual(expect.arrayContaining([{ type: "number", value: 7 }, { type: "number", value: 42 }]));
     expect(rows.every((row) => row.propertyValueTombstones?.[propertyId] === undefined)).toBe(true);

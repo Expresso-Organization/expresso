@@ -52,4 +52,22 @@
 .relationResults { position: absolute; z-index: 8; top: 36px; right: 0; left: 0; max-height: 220px; overflow: auto; margin: 0; border: 1px solid var(--ex-border-soft); border-radius: 8px; background: var(--ex-bg); padding: 4px; box-shadow: var(--ex-elevation-overlay); list-style: none; }
 .relationResults button { width: 100%; border: 0; border-radius: 5px; background: transparent; padding: 7px 8px; color: var(--ex-fg-body); text-align: left; }
 .relationResults button:hover, .relationResults button:focus { background: var(--ex-bg-hover); }
+.formulaEditor, .rollupEditor { display: grid; gap: 10px; padding: 10px; border: 1px solid var(--ex-border-soft); border-radius: 8px; background: var(--ex-bg-muted); }
+.formulaEditor > label, .rollupEditor label { display: grid; gap: 4px; color: var(--ex-fg-body); font-size: var(--ex-text-xs); }
+.formulaSource { min-height: 112px; resize: vertical; border: 1px solid var(--ex-border-soft); border-radius: 6px; background: var(--ex-bg); padding: 8px; color: var(--ex-fg-strong); font: var(--ex-text-sm)/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.formulaSource:focus, .rollupEditor select:focus { border-color: var(--ex-accent); outline: 2px solid var(--ex-focus-ring); outline-offset: 1px; }
+.propertyAutocomplete { display: flex; gap: 6px; overflow-x: auto; }
+.propertyAutocomplete button { display: grid; flex: 0 0 auto; justify-items: start; border: 1px solid var(--ex-border-soft); border-radius: 6px; background: var(--ex-bg); padding: 5px 7px; color: var(--ex-fg-body); font-size: var(--ex-text-xs); }
+.propertyAutocomplete small { max-width: 120px; overflow: hidden; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); text-overflow: ellipsis; }
+.formulaActions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.formulaActions span { margin-right: auto; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); }
+.formulaActions button { min-height: 30px; border: 1px solid var(--ex-border-soft); border-radius: 6px; background: var(--ex-bg); padding: 5px 8px; color: var(--ex-fg-body); }
+.formulaDiagnostics { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.formulaDiagnostics li { display: flex; gap: 5px; color: var(--ex-status-danger-text); font-size: var(--ex-text-xs); }
+.formulaDiagnostics li[data-severity="warning"] { color: var(--ex-status-warning-text); }
+.formulaDiagnostics li span { margin-left: auto; color: var(--ex-fg-muted); }
+.formulaValid { margin: 0; color: var(--ex-status-success-text); font-size: var(--ex-text-xs); }
+.computedPreview { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px; }
+.computedPreview > span { color: var(--ex-fg-muted); font-size: var(--ex-text-xs); }
+.rollupEditor select { width: 100%; min-height: 32px; border: 1px solid var(--ex-border-soft); border-radius: 6px; background: var(--ex-bg); padding: 5px 7px; color: var(--ex-fg-strong); }
 @media (max-width: 767px) { .dialogBackdrop { padding: 0; align-items: end; } .dialog { width: 100%; max-height: 92dvh; border-radius: 12px 12px 0 0; } .dialogBody { grid-template-columns: 1fr; } .dialog nav { display: flex; gap: 4px; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--ex-border-soft); } .schemaItem, .schemaItemActive { min-width: 132px; } .propertyRow { grid-template-columns: 88px minmax(0, 1fr); } .dateFields { grid-template-columns: 1fr; } }

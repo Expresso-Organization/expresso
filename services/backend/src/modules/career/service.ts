@@ -4,6 +4,7 @@ import { CareerPropertySchemaSchema, CareerProfileSchema, CreateCareerCategorySc
 import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc, type CareerViewDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
+import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
 import { validateCareerProperties } from "./properties.js";
@@ -19,6 +20,7 @@ import { MongoCareerPropertySchemaService } from "./property-schema.js";
 import { CareerViewService } from "./views.js";
 import { MongoCategoryMoveService } from "./category-move.js";
 import { MongoRelationService } from "./relations.js";
+import { MongoCareerComputationService } from "../career-computation/index.js";
 
 const duplicate = (error: unknown) => (error as { code?: number })?.code === 11000;
 
@@ -41,6 +43,8 @@ export class CareerService implements CareerApi {
   removeRelationTargetsForRecord(userId: string, recordId: string) { return new MongoRelationService(this.context).removeForRecord(userId, recordId); }
   previewCategoryMove(userId: string, recordId: string, targetCategoryId: string) { return new MongoCategoryMoveService(this.context).preview(userId, recordId, targetCategoryId); }
   commitCategoryMove(userId: string, recordId: string, input: unknown) { return new MongoCategoryMoveService(this.context).commit(userId, recordId, input); }
+  previewFormula(userId: string, input: import("@expresso/contracts").PreviewCareerFormula) { return new MongoCareerComputationService(this.context).previewFormula(userId, input); }
+  previewRollup(userId: string, input: import("@expresso/contracts").PreviewCareerRollup) { return new MongoCareerComputationService(this.context).previewRollup(userId, input); }
 
   createLink(userId: string, recordId: string, toRecordId: string, relation: "related" | "parent" | "duplicate_of") { return createMongoLink(this.context, userId, recordId, toRecordId, relation); }
   listLinks(userId: string, recordId: string) { return listMongoLinks(this.context, userId, recordId); }
@@ -159,6 +163,11 @@ export class CareerService implements CareerApi {
       const category = await requireCareerCategory(tx, userId, existing.categoryId, tx.session);
       const properties = input.properties ?? existing.properties;
       validateCareerProperties(category.propertySchema, properties, category.propertySchemaV2);
+      const computationDefinitions = category.propertySchemaV2?.filter((definition) => definition.deletedAt === null) ?? [];
+      const changedPropertyIds = computationDefinitions.filter((definition) => {
+        if (definition.type === "title") return input.title !== undefined && input.title !== existing.title;
+        return JSON.stringify(existing.properties[definition.key] ?? null) !== JSON.stringify(properties[definition.key] ?? null);
+      }).map((definition) => definition.id);
       const updated = await records.findOneAndUpdate({ _id: recordId, userId, deletedAt: null, version: expectedVersion }, { $set: { title: input.title ?? existing.title, status: input.status ?? existing.status, bodyMd: input.bodyMd ?? existing.bodyMd, properties, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
       if (!updated) throw new CareerError(412, "career record version is stale");
       if (input.bodyMd !== undefined) {
@@ -183,6 +192,13 @@ export class CareerService implements CareerApi {
         await records.updateOne({ _id: recordId, userId, documentVersion: next }, { $set: { latestSnapshotId: snapshotId } }, { session: tx.session });
         await repository.insertRevision({ _id: randomUUID(), userId, recordId, actor: "user", summary: "레거시 본문 저장", beforeVersion: current, afterVersion: next, snapshotId, createdAt: new Date() }, tx.session);
       }
+      if (changedPropertyIds.length > 0) await addMongoOutboxEvent(tx, {
+        userId, topic: "career.computation", idempotencyKey: `career-record:${recordId}:v${updated.version}`,
+        payload: {
+          userId, recordId, changedPropertyIds, sourceRecordVersion: updated.version,
+          sourcePropertyVersions: Object.fromEntries(computationDefinitions.filter((definition) => changedPropertyIds.includes(definition.id)).map((definition) => [definition.id, definition.version])),
+        },
+      });
       return mapMongoRecord(updated);
     });
   }

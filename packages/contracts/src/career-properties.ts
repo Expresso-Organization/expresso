@@ -82,10 +82,27 @@ export const CareerRollupAggregationSchema = z.enum([
 export const CareerRollupSchema = z.strictObject({
   relationPropertyId: UuidSchema, targetPropertyId: UuidSchema, aggregation: CareerRollupAggregationSchema,
 });
+export const PreviewCareerFormulaSchema = z.strictObject({
+  categoryId: UuidSchema, propertyId: UuidSchema.optional(), recordId: UuidSchema.optional(),
+  source: z.string().max(4_000),
+});
+export const CareerFormulaPreviewSchema = z.strictObject({
+  source: z.string().max(4_000), ast: z.unknown().nullable(),
+  diagnostics: z.array(CareerFormulaDiagnosticSchema).max(50),
+  value: CareerPropertyValueV2Schema.nullable(), dependencies: z.array(UuidSchema).max(200),
+});
+export const PreviewCareerRollupSchema = CareerRollupSchema.extend({ categoryId: UuidSchema, recordId: UuidSchema.optional() });
+export const CareerRollupPreviewSchema = z.strictObject({
+  diagnostics: z.array(CareerFormulaDiagnosticSchema).max(50), value: CareerPropertyValueV2Schema.nullable(),
+});
 
 export type CareerPropertyDefinitionV2 = z.infer<typeof CareerPropertyDefinitionV2Schema>;
 export type CareerPropertyValueV2 = z.infer<typeof CareerPropertyValueV2Schema>;
 export type CareerRollupAggregation = z.infer<typeof CareerRollupAggregationSchema>;
+export type PreviewCareerFormula = z.infer<typeof PreviewCareerFormulaSchema>;
+export type CareerFormulaPreview = z.infer<typeof CareerFormulaPreviewSchema>;
+export type PreviewCareerRollup = z.infer<typeof PreviewCareerRollupSchema>;
+export type CareerRollupPreview = z.infer<typeof CareerRollupPreviewSchema>;
 export type CareerCategoryMovePreview = z.infer<typeof CareerCategoryMovePreviewSchema>;
 export type CareerRelationDefinition = z.infer<typeof CareerRelationDefinitionSchema>;
 export type CareerRelationTarget = z.infer<typeof CareerRelationTargetSchema>;
@@ -98,6 +115,7 @@ export const CareerPropertySchemaChangeSchema = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("reorder"), propertyId: UuidSchema, order: z.number().int().nonnegative() }),
   z.strictObject({ kind: z.literal("rename"), propertyId: UuidSchema, name: z.string().trim().min(1).max(80) }),
   z.strictObject({ kind: z.literal("type-change"), propertyId: UuidSchema, type: CareerPropertyTypeV2Schema, config: z.record(z.string(), z.unknown()).optional() }),
+  z.strictObject({ kind: z.literal("configure"), propertyId: UuidSchema, config: z.record(z.string(), z.unknown()) }),
   z.strictObject({ kind: z.literal("delete"), propertyId: UuidSchema }),
   z.strictObject({ kind: z.literal("restore"), propertyId: UuidSchema }),
 ]);

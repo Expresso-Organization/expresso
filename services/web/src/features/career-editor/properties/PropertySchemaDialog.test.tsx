@@ -41,4 +41,21 @@ describe("PropertySchemaDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "변경 적용" }));
     await waitFor(() => expect(onConflict).toHaveBeenCalled());
   });
+
+  it("keeps a formula draft while a validated configuration waits for schema approval", async () => {
+    const formula = { ...definition, type: "formula" as const, config: { source: "1", ast: null, diagnostics: [] } };
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.includes("/formulas/preview")) return new Response(JSON.stringify({ data: { source: "1 + 2", ast: { version: 1 }, diagnostics: [], value: { type: "formula", value: 3, diagnostics: [] }, dependencies: [] } }), { status: 200, headers: { "content-type": "application/json" } });
+      const change = JSON.parse(String(init?.body));
+      return new Response(JSON.stringify(preview(change)), { status: 200, headers: { "content-type": "application/json" } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<PropertySchemaDialog open categoryId={categoryId} version={1} definitions={[formula]} onClose={() => undefined} onDefinitionsChange={onChange} onVersionConflict={onConflict} />);
+    fireEvent.change(screen.getByLabelText("수식"), { target: { value: "1 + 2" } });
+    fireEvent.click(screen.getByRole("button", { name: "수식 저장" }));
+    expect(await screen.findByText(/영향 확인/)).toBeTruthy();
+    expect((screen.getByLabelText("수식") as HTMLTextAreaElement).value).toBe("1 + 2");
+    const schemaPreview = fetchMock.mock.calls.find(([url]) => String(url).includes("property-schema/preview"));
+    expect(JSON.parse(String(schemaPreview?.[1]?.body))).toEqual(expect.objectContaining({ kind: "configure", propertyId }));
+  });
 });

@@ -103,6 +103,8 @@ export const CareerRecordSchema = z.strictObject({
   status: CareerRecordStatusSchema,
   origin: CareerRecordOriginSchema,
   properties: CareerPropertiesSchema,
+  /** 수식·롤업 Worker가 확정한 읽기 전용 projection입니다. 내부 계산 메타데이터는 포함하지 않습니다. */
+  computedProperties: z.record(z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/), CareerPropertyValueV2Schema).optional(),
   bodyMd: z.string().max(200_000),
   version: z.number().int().positive(),
   updatedAt: TimestampSchema,

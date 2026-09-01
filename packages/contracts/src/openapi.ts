@@ -3,10 +3,14 @@ import { CareerDocumentBootstrapSchema } from "./career-editor.js";
 import {
   CareerCategoryMovePreviewSchema,
   CareerFormulaSchema,
+  CareerFormulaPreviewSchema,
+  PreviewCareerFormulaSchema,
   CareerPropertyDefinitionV2Schema,
   CareerPropertyValueV2Schema,
   CareerRelationSchema,
   CareerRollupSchema,
+  CareerRollupPreviewSchema,
+  PreviewCareerRollupSchema,
 } from "./career-properties.js";
 import { CareerViewConfigurationSchema } from "./career-views.js";
 import { AiEditProposalSchema } from "./career-ai.js";
@@ -206,7 +210,11 @@ export const expressoOpenApiDocument = {
       CareerRelation: jsonSchema(CareerRelationSchema),
       CareerCategoryMovePreview: jsonSchema(CareerCategoryMovePreviewSchema),
       CareerFormula: jsonSchema(CareerFormulaSchema),
+      PreviewCareerFormula: jsonSchema(PreviewCareerFormulaSchema),
+      CareerFormulaPreview: jsonSchema(CareerFormulaPreviewSchema),
       CareerRollup: jsonSchema(CareerRollupSchema),
+      PreviewCareerRollup: jsonSchema(PreviewCareerRollupSchema),
+      CareerRollupPreview: jsonSchema(CareerRollupPreviewSchema),
       CareerViewConfiguration: jsonSchema(CareerViewConfigurationSchema),
       AiEditProposal: jsonSchema(AiEditProposalSchema),
       SubmitJobPosting: jsonSchema(SubmitJobPostingSchema),

@@ -39,7 +39,7 @@ describe("career property schema v2", () => {
   });
 
   it("accepts every mutation kind and rejects unknown fields", () => {
-    for (const change of [{ kind: "reorder", propertyId, order: 0 }, { kind: "rename", propertyId, name: "이름" }, { kind: "delete", propertyId }, { kind: "restore", propertyId }, { kind: "type-change", propertyId, type: "text" }]) expect(CareerPropertySchemaChangeSchema.parse(change)).toEqual(change);
+    for (const change of [{ kind: "reorder", propertyId, order: 0 }, { kind: "rename", propertyId, name: "이름" }, { kind: "delete", propertyId }, { kind: "restore", propertyId }, { kind: "type-change", propertyId, type: "text" }, { kind: "configure", propertyId, config: { source: "1" } }]) expect(CareerPropertySchemaChangeSchema.parse(change)).toEqual(change);
     expect(() => CareerPropertySchemaChangeSchema.parse({ kind: "delete", propertyId, force: true })).toThrow();
   });
 });

@@ -4,6 +4,8 @@ import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc } from "
 import {
   ApplyCareerPropertyChangeSchema,
   CareerPropertyChangePreviewSchema,
+  CareerFormulaSchema,
+  CareerRollupSchema,
   CareerPropertySchemaChangeSchema,
   CareerPropertyValueV2Schema,
   type ApplyCareerPropertyChange,
@@ -143,6 +145,15 @@ function affectedFilter(userId: string, categoryId: string, key: string): Filter
 }
 
 function validateConfiguration(type: CareerPropertyDefinitionV2["type"], config: Record<string, unknown>): void {
+  if (type === "formula") {
+    const parsed = CareerFormulaSchema.safeParse(config);
+    if (!parsed.success || parsed.data.diagnostics.some((diagnostic) => diagnostic.severity === "error")) throw new CareerError(400, "formula property configuration is invalid");
+    return;
+  }
+  if (type === "rollup") {
+    if (!CareerRollupSchema.safeParse(config).success) throw new CareerError(400, "rollup property configuration is invalid");
+    return;
+  }
   if (type !== "select" && type !== "multi_select") return;
   const options = config.options;
   if (!Array.isArray(options)) throw new CareerError(400, "select properties require options");
@@ -176,7 +187,8 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     if (propertyId && !source) throw new CareerError(404, "property not found");
     const filter = source ? affectedFilter(userId, categoryId, source.key) : undefined;
     const createHasDefault = change.kind === "create" && Object.hasOwn(change.property.config, "defaultValue");
-    const affectedRecordCount = filter ? await db.careerRecords.countDocuments(filter) : createHasDefault ? await db.careerRecords.countDocuments({ userId, categoryId, deletedAt: null }) : 0;
+    const configuresComputed = change.kind === "configure" && source && (source.type === "formula" || source.type === "rollup");
+    const affectedRecordCount = configuresComputed ? await db.careerRecords.countDocuments({ userId, categoryId, deletedAt: null }) : filter ? await db.careerRecords.countDocuments(filter) : createHasDefault ? await db.careerRecords.countDocuments({ userId, categoryId, deletedAt: null }) : 0;
     const sampleRows = filter ? await db.careerRecords.find(filter).limit(PREVIEW_EXAMPLE_LIMIT).toArray() : [];
     let convertibleCount = affectedRecordCount;
     const lossyExamples: CareerPropertyChangePreview["impact"]["lossyExamples"] = [];
@@ -221,6 +233,7 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
       const now = new Date();
       const next = definitions(category).map((definition) => ({ ...definition, config: { ...definition.config } }));
       const change = input.change;
+      let recomputePropertyId: string | null = null;
       if (change.kind === "create") {
         if (change.property.system) throw new CareerError(403, "system properties cannot be created by users");
         validateConfiguration(change.property.type, change.property.config);
@@ -228,12 +241,18 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
         const created = { ...change.property, id: change.property.id ?? randomUUID(), order: change.property.order ?? next.length, version: 1, deletedAt: null };
         await this.seedCreatedValues(tx.session, userId, categoryId, created, now);
         next.push(created);
+        if (created.type === "formula" || created.type === "rollup") recomputePropertyId = created.id;
       } else {
         const source = next.find((definition) => definition.id === change.propertyId);
         if (!source) throw new CareerError(404, "property not found");
         if (source.system && change.kind !== "restore") throw new CareerError(403, "system property cannot be changed");
         if (change.kind === "rename") { source.name = change.name; source.version += 1; }
         if (change.kind === "reorder") { source.order = change.order; source.version += 1; }
+        if (change.kind === "configure") {
+          if (source.type !== "formula" && source.type !== "rollup") throw new CareerError(400, "only computed properties can be configured");
+          validateConfiguration(source.type, change.config); source.config = change.config; source.version += 1;
+          recomputePropertyId = source.id;
+        }
         if (change.kind === "delete") { if (source.deletedAt !== null) throw new CareerError(409, "property is already deleted"); await this.deleteValues(tx.session, userId, categoryId, source, input.confirmLossy, now); source.deletedAt = now.toISOString(); source.version += 1; }
         if (change.kind === "restore") { if (source.deletedAt === null) throw new CareerError(409, "property is not deleted"); await this.restoreValues(tx.session, userId, categoryId, source, now); source.deletedAt = null; source.version += 1; }
         if (change.kind === "type-change") { if (READ_ONLY_TYPES.has(source.type) || READ_ONLY_TYPES.has(change.type)) throw new CareerError(403, "property type is protected"); const config = change.config ?? source.config; validateConfiguration(change.type, config); await this.convertValues(tx.session, userId, categoryId, source, change.type, input.confirmLossy, now); source.type = change.type; source.config = config; source.version += 1; }
@@ -245,6 +264,15 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
         { $set: { propertySchemaV2: next, schemaVersion, updatedAt: now, [`propertyMutationResults.${idempotencyField}`]: { category: mapped, requestHash } }, $inc: { version: 1 } }, { session: tx.session },
       );
       if (update.modifiedCount !== 1) throw new CareerError(409, "category version is stale");
+      if (recomputePropertyId) {
+        const computedDefinition = next.find((definition) => definition.id === recomputePropertyId)!;
+        const records = await db.careerRecords.find({ userId, categoryId, deletedAt: null }, { session: tx.session }).project({ _id: 1, version: 1 }).limit(10_001).toArray();
+        if (records.length > 10_000) throw new CareerError(409, "computed property recomputation exceeds the category limit");
+        for (const record of records) await addMongoOutboxEvent(tx, {
+          userId, topic: "career.computation", idempotencyKey: `career-computed-schema:${categoryId}:${recomputePropertyId}:v${schemaVersion}:${record._id}`,
+          payload: { userId, recordId: record._id, changedPropertyIds: [recomputePropertyId], sourceRecordVersion: record.version, sourcePropertyVersions: { [recomputePropertyId]: computedDefinition.version } },
+        });
+      }
       return mapped;
     });
   }

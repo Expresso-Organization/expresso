@@ -29,6 +29,10 @@ import {
   ListCareerRelationTargetsQuerySchema,
   PreviewCareerCategoryMoveSchema,
   ReplaceCareerRelationTargetsSchema,
+  PreviewCareerFormulaSchema,
+  CareerFormulaPreviewSchema,
+  PreviewCareerRollupSchema,
+  CareerRollupPreviewSchema,
   formatResourceEtag,
   parseResourceEtag,
   UuidSchema,
@@ -416,6 +420,20 @@ export function registerCareerRoutes(
     if (!options.careerService.commitCategoryMove) throw new HttpStatusError(501, "career category move is unavailable");
     const record = await options.careerService.commitCategoryMove(principal.user.id, recordId, input);
     return reply.header("etag", formatResourceEtag(record.version)).send(recordResponse(record));
+  });
+
+  app.post(`${API_PREFIX}/career/formulas/preview`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const input = parseBody(PreviewCareerFormulaSchema, request);
+    if (!options.careerService.previewFormula) throw new HttpStatusError(501, "career formula preview is unavailable");
+    return { data: CareerFormulaPreviewSchema.parse(await options.careerService.previewFormula(principal.user.id, input)) };
+  });
+
+  app.post(`${API_PREFIX}/career/rollups/preview`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const input = parseBody(PreviewCareerRollupSchema, request);
+    if (!options.careerService.previewRollup) throw new HttpStatusError(501, "career rollup preview is unavailable");
+    return { data: CareerRollupPreviewSchema.parse(await options.careerService.previewRollup(principal.user.id, input)) };
   });
 
   app.post(

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AiProposalApplyRequestSchema } from "./career-ai.js";
 import { CareerDocumentBootstrapSchema, CareerSocketClientMessageSchema } from "./career-editor.js";
-import { CareerFormulaSchema, CareerPropertyDefinitionV2Schema, CareerPropertyValueV2Schema, CareerRollupAggregationSchema } from "./career-properties.js";
+import { CareerFormulaPreviewSchema, CareerFormulaSchema, CareerPropertyDefinitionV2Schema, CareerPropertySchemaChangeSchema, CareerPropertyValueV2Schema, CareerRollupAggregationSchema, PreviewCareerFormulaSchema, PreviewCareerRollupSchema } from "./career-properties.js";
 import { CareerViewConfigurationSchema } from "./career-views.js";
 import { expressoOpenApiDocument } from "./openapi.js";
 
@@ -21,6 +21,14 @@ describe("career editor contracts", () => {
   it("uses the approved formula and rollup boundaries", () => {
     expect(() => CareerFormulaSchema.parse({ source: "eval('x')", ast: null, diagnostics: [] })).toThrow(/unsafe/);
     expect(CareerRollupAggregationSchema.options).toEqual(["count", "unique_count", "sum", "average", "min", "max", "earliest", "latest", "percent_checked", "show_unique"]);
+  });
+
+  it("contracts formula and rollup previews and computed configuration updates", () => {
+    const id = "00000000-0000-4000-8000-000000000001";
+    expect(PreviewCareerFormulaSchema.parse({ categoryId: id, source: "1 + 2" }).source).toBe("1 + 2");
+    expect(CareerFormulaPreviewSchema.parse({ source: "1 + 2", ast: null, diagnostics: [], value: { type: "formula", value: 3, diagnostics: [] }, dependencies: [] }).value?.value).toBe(3);
+    expect(PreviewCareerRollupSchema.parse({ categoryId: id, relationPropertyId: id, targetPropertyId: id, aggregation: "count" }).aggregation).toBe("count");
+    expect(CareerPropertySchemaChangeSchema.parse({ kind: "configure", propertyId: id, config: { source: "1 + 2" } }).kind).toBe("configure");
   });
 
   it("rejects AI changes outside allowed stable IDs", () => {

@@ -224,7 +224,7 @@ export class CareerViewService {
     return {
       data: pageRows.map((row) => CareerRecordSchema.parse({
         id: String(row._id), categoryId: row.categoryId, title: row.title, status: row.status, origin: row.origin,
-        properties: row.properties ?? {}, bodyMd: row.bodyMd ?? "", version: row.version, updatedAt: new Date(row.updatedAt).toISOString(),
+        properties: row.properties ?? {}, computedProperties: Object.fromEntries(Object.entries(row.computedProperties ?? {}).filter(([key]) => key !== "__expressoComputation")), bodyMd: row.bodyMd ?? "", version: row.version, updatedAt: new Date(row.updatedAt).toISOString(),
       })),
       page: { hasNextPage, nextCursor },
     };
