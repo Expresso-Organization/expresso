@@ -24,6 +24,8 @@ export const CareerPropertyTypeSchema = z.enum([
 ]);
 
 export const CareerPropertyDefinitionSchema = z.strictObject({
+  /** MongoDB 전환 뒤 부여되는 안정 식별자입니다. 기존 생성 요청은 생략할 수 있습니다. */
+  id: UuidSchema.optional(),
   label: z.string().trim().min(1).max(80),
   type: CareerPropertyTypeSchema,
   required: z.boolean().default(false),

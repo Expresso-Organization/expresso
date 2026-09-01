@@ -1,6 +1,7 @@
 export type * from "./analytics.js";
 export type * from "./brew.js";
 export type * from "./career.js";
+export type * from "./career-editor.js";
 export type * from "./generation.js";
 export type * from "./identity.js";
 export type * from "./interview.js";

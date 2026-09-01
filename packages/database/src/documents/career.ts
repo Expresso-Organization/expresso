@@ -3,6 +3,8 @@ import type * as Contracts from "@expresso/contracts";
 import type { Decimal128 } from "mongodb";
 import type { JsonValue, JsonObject } from "./common.js";
 
+export type CareerPropertyDefinitionDoc = Contracts.CareerPropertyDefinition;
+
 export interface CareerCategoryDoc {
   _id: string;
   userId?: string | null;
@@ -35,6 +37,12 @@ export interface CareerRecordDoc {
   createIdempotencyKey?: string | null;
   createRequestHash?: string | null;
   referenceVersion?: number;
+  documentSchemaVersion?: number | null;
+  documentVersion?: number | null;
+  latestSnapshotId?: string | null;
+  computedProperties?: JsonObject | null;
+  unmappedProperties?: JsonObject | null;
+  editorMigratedAt?: Date | null;
 }
 
 export interface CareerProfileDoc {
