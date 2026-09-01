@@ -43,7 +43,7 @@ export class JobIngestService implements JobIngestApi {
       try {
         if (!adapter) throw new Error("adapter not configured");
         // 외부 HTTP 호출은 트랜잭션 밖에서 한 번만 실행합니다.
-        const postings = await adapter.fetch(source.token);
+        const postings = await adapter.fetch(source.token, source.displayName);
         seen = postings.length;
         for (const posting of postings) {
           if (posting.descriptionRaw.length < 200 || !isOpening(posting)) continue;
