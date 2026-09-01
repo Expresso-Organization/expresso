@@ -53,7 +53,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB recipe integration", () 
   });
 
   it("keeps zero-length items with empty or invalid advisory evidence", async () => {
-    const planner: RecipePlanner = { async plan() { return { draft: RecipeDraftSchema.parse({ plan: { positioning: { headlineIntent: "초안", valueProposition: "검토", differentiators: [] }, requirementCoverage: [], narrativeArc: "한 페이지", claims: [], exclusions: [], rationale: "검토" }, sections: [{ title: "연결 전 경험", purpose: "보완", targetLength: 0, goal: "초안", points: [], metrics: [], tone: "professional", format: "narrative", exclude: [], takeaway: "검토", contentPattern: "hero", interactionOpportunity: null, items: [{ pointText: "빈 연결", sources: [] }, { pointText: "잘못된 연결", sources: [40] }] }], unused: [] }), usage: null, attempts: 1 }; } };
+    const planner: RecipePlanner = { async plan() { return { draft: RecipeDraftSchema.parse({ sections: [{ title: "연결 전 경험", purpose: "보완", targetLength: 0, goal: "초안", points: [], metrics: [], tone: "professional", format: "narrative", exclude: [], takeaway: "검토", contentPattern: "hero", interactionOpportunity: null, items: [{ pointText: "빈 연결", sources: [] }, { pointText: "잘못된 연결", sources: [40] }] }], unused: [] }), usage: null, attempts: 1 }; } };
     const recipe = await new MongoRecipeService(fixture.resource, planner).generate(userId, brewId, "mongo-recipe-advisory-0001");
     expect(recipe.sections[0]).toMatchObject({ targetLength: 0, items: [{ evidence: [] }, { evidence: [] }] });
     expect(recipe.evidencePaths).toEqual([]);
