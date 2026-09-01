@@ -49,7 +49,12 @@ export const RecipeV2SectionSchema = z.strictObject({
   title: z.string().max(300),
   /** 이 섹션을 왜 두는지. */
   purpose: z.string().max(1_000),
-  /** 읽고 나면 남는 한 줄. 03 생성이 이 섹션에서 지켜야 할 것. */
+  /**
+   * 핵심 메시지 — 이 섹션을 읽고 나면 남아야 하는 한 문장.
+   *
+   * 03 생성이 이 섹션에서 지켜야 할 기준으로 읽는다. 목적(`purpose`)은 왜 두는지고
+   * 이것은 무엇이 남는지다.
+   */
   takeaway: z.string().max(500),
   items: z.array(RecipeV2ItemSchema).max(60),
 });

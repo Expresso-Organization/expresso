@@ -458,11 +458,12 @@ export function Workbench({
                     if (purpose !== section.purpose) void run({ operation: "update_section", sectionId: section.id, purpose });
                   }}
                 />
+                {/* 기획서 §7.8 의 이름 그대로. 풀어 쓰지 않는다. */}
                 <label className={styles.takeawayRow}>
-                  <span>남길 것</span>
+                  <span>핵심 메시지</span>
                   <input
                     defaultValue={section.takeaway}
-                    placeholder="읽고 나면 남는 한 줄"
+                    placeholder="이 섹션을 읽고 나면 남아야 하는 한 문장"
                     maxLength={500}
                     onBlur={(event) => {
                       const takeaway = event.target.value.trim();
