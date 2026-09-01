@@ -71,6 +71,10 @@ export default async function RecipePage({
       title: material.title,
       categoryName: material.categoryName,
       categoryIcon: material.categoryIcon,
+      status: material.status,
+      origin: material.origin,
+      periodFrom: material.periodFrom,
+      periodTo: material.periodTo,
       selected: material.selected,
       reason: material.reason,
     }));

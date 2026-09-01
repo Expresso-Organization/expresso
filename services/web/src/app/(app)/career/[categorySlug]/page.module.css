@@ -149,158 +149,33 @@
 }
 
 /* 테이블 */
-.table {
-  border: 1px solid var(--ex-border-hair);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
+/*
+ * 표 뼈대는 `components/career/record-table.module.css` 한 곳에 있다.
+ * 여기서 얹는 것은 이 화면의 열 너비뿐이다.
+ */
+.table { composes: table from "../../../../components/career/record-table.module.css"; }
 .row {
-  display: grid;
+  composes: row from "../../../../components/career/record-table.module.css";
   grid-template-columns: minmax(300px, 1fr) 74px 110px 80px 74px 34px;
-  border-bottom: 1px solid var(--ex-border-hair);
-  align-items: center;
 }
-
-.headRow {
-  background: var(--ex-bg-header);
-}
-
-.headCell {
-  padding: 9px 12px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  border-left: 1px solid var(--ex-border-hair);
-}
-
-.headCell:first-child {
-  border-left: none;
-}
-
-.headLabel {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-}
-
-.headCellAction {
-  padding: 9px 8px;
-  border-left: 1px solid var(--ex-border-hair);
-  display: grid;
-  place-items: center;
-}
-
-.bodyRow {
-  cursor: pointer;
-  transition: background var(--ex-motion-instant);
-  color: inherit;
-}
-
-.bodyRow:hover {
-  background: var(--ex-bg-header);
-  color: inherit;
-}
-
-.bodyRowSelected,
-.bodyRowSelected:hover {
-  background: var(--ex-bg-sunken);
-}
-
-.titleCell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 12px;
-  min-width: 0;
-}
-
-.recordTitle {
-  font-size: var(--ex-text-md);
-  color: var(--ex-fg);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 드래그 핸들과 행 메뉴는 호버한 행에서만 보인다 */
-.rowOnly {
-  color: transparent;
-}
-
-.bodyRow:hover .rowOnly,
-.bodyRowSelected .rowOnly {
-  color: var(--ex-border-firm);
-}
-
-.bodyRow:hover .rowMenu,
-.bodyRowSelected .rowMenu {
-  color: var(--ex-fg-muted);
-}
-
-.cell {
-  padding: 9px 12px;
-  border-left: 1px solid var(--ex-border-hair);
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg-muted);
-  white-space: nowrap;
-}
-
-.cellStrong {
-  color: var(--ex-fg-body);
-}
-
-.cellTags {
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
-}
-
-.cellAction {
-  padding: 9px 8px;
-  border-left: 1px solid var(--ex-border-hair);
-  display: grid;
-  place-items: center;
-}
-
-/* 배지 */
-.aiBadge {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
-  letter-spacing: 0.08em;
-  color: var(--ex-accent-text);
-  background: var(--ex-accent-surface);
-  border-radius: 4px;
-  padding: 2px 5px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.statusOrganized {
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-accent-text);
-  background: var(--ex-accent-surface);
-  border-radius: 5px;
-  padding: 3px 8px;
-  white-space: nowrap;
-}
-
-.statusPlain {
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-body);
-  background: var(--ex-border-inner);
-  border-radius: 5px;
-  padding: 3px 8px;
-  white-space: nowrap;
-}
-
-.tag {
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-body);
-  background: var(--ex-border-inner);
-  border-radius: 5px;
-  padding: 3px 8px;
-  white-space: nowrap;
-}
+.headRow { composes: headRow from "../../../../components/career/record-table.module.css"; }
+.headCell { composes: headCell from "../../../../components/career/record-table.module.css"; }
+.headLabel { composes: headLabel from "../../../../components/career/record-table.module.css"; }
+.headCellAction { composes: headCellAction from "../../../../components/career/record-table.module.css"; }
+.bodyRow { composes: bodyRow from "../../../../components/career/record-table.module.css"; }
+.bodyRowSelected { composes: bodyRowSelected from "../../../../components/career/record-table.module.css"; }
+.titleCell { composes: titleCell from "../../../../components/career/record-table.module.css"; }
+.recordTitle { composes: recordTitle from "../../../../components/career/record-table.module.css"; }
+.rowOnly { composes: rowOnly from "../../../../components/career/record-table.module.css"; }
+.rowMenu { composes: rowMenu from "../../../../components/career/record-table.module.css"; }
+.cell { composes: cell from "../../../../components/career/record-table.module.css"; }
+.cellStrong { composes: cellStrong from "../../../../components/career/record-table.module.css"; }
+.cellTags { composes: cellTags from "../../../../components/career/record-table.module.css"; }
+.cellAction { composes: cellAction from "../../../../components/career/record-table.module.css"; }
+.aiBadge { composes: aiBadge from "../../../../components/career/record-table.module.css"; }
+.statusOrganized { composes: statusOrganized from "../../../../components/career/record-table.module.css"; }
+.statusPlain { composes: statusPlain from "../../../../components/career/record-table.module.css"; }
+.tag { composes: tag from "../../../../components/career/record-table.module.css"; }
 
 /* 마지막 행 — 새로 만들기 또는 바리스타에게 질문받기 */
 .newRow {

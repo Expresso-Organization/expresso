@@ -9,6 +9,8 @@ import { Icon } from "@/components/ui/Icon";
 
 import { JobPostingPicker } from "./JobPostingPicker";
 import { editRecipeAction, saveMaterialsAction } from "./recipe-actions";
+import table from "@/components/career/record-table.module.css";
+
 import styles from "./Setup.module.css";
 
 export type SetupRecord = {
@@ -16,9 +18,25 @@ export type SetupRecord = {
   title: string;
   categoryName: string;
   categoryIcon: string;
+  status: "organized" | "verified";
+  origin: "manual" | "ai" | "interview" | "import";
+  periodFrom: string | null;
+  periodTo: string | null;
   selected: boolean;
+  /** 순위를 매긴 근거. 공고 요건과 겹친 말이다. */
   reason: string;
 };
+
+const STATUS_LABEL = { organized: "정리됨", verified: "확인됨" } as const;
+
+/** 화면 정의서 05 의 「시기」 칸. 모르면 비운다 — 없는 기간을 지어내지 않는다. */
+function periodText(record: SetupRecord): string {
+  const from = record.periodFrom?.slice(0, 7).replace("-", ".");
+  const to = record.periodTo?.slice(0, 7).replace("-", ".");
+  if (!from && !to) return "—";
+  if (from && to && from !== to) return `${from} – ${to}`;
+  return from ?? to ?? "—";
+}
 
 /** 고르기 상한. 계약(`UpdateBrewMaterialsSchema`)이 정한 값과 같다. */
 const LIMIT = 10;
@@ -143,29 +161,66 @@ export function Setup({
               레시피가 되려면 <Link href={"/career/project" as Route}>기록을 먼저 적어</Link> 주세요.
             </p>
           ) : (
-            <ul className={styles.records}>
+            /* 화면 정의서 05 「내 커리어」의 표. 맨 앞 칸만 고르기로 바뀐다. */
+            <div className={table.table}>
+              <div className={`${styles.row} ${table.headRow}`}>
+                <div className={table.headCell}>
+                  <Icon name="check-square" size={12} color="var(--ex-fg-muted)" />
+                  <span className={table.headLabel}>쓸 기록</span>
+                </div>
+                <div className={table.headCell}>
+                  <Icon name="circle-half" size={12} color="var(--ex-fg-muted)" />
+                  <span className={table.headLabel}>상태</span>
+                </div>
+                <div className={table.headCell}>
+                  <Icon name="tag" size={12} color="var(--ex-fg-muted)" />
+                  <span className={table.headLabel}>분류</span>
+                </div>
+                <div className={table.headCell}>
+                  <Icon name="calendar-blank" size={12} color="var(--ex-fg-muted)" />
+                  <span className={table.headLabel}>시기</span>
+                </div>
+                <div className={table.headCell}>
+                  <Icon name="target" size={12} color="var(--ex-fg-muted)" />
+                  <span className={table.headLabel}>순위 이유</span>
+                </div>
+              </div>
+
               {records.map((record) => {
                 const on = chosen.includes(record.recordId);
+                const ai = record.origin === "ai" || record.origin === "interview";
                 return (
-                  <li key={record.recordId}>
-                    <label className={styles.record} data-on={on ? "1" : undefined}>
+                  <label
+                    key={record.recordId}
+                    className={`${styles.row} ${table.bodyRow} ${on ? table.bodyRowSelected : ""}`}
+                    data-off={!on && full ? "1" : undefined}
+                  >
+                    <span className={table.titleCell}>
                       <input
                         type="checkbox"
+                        className={styles.check}
                         checked={on}
                         disabled={!on && full}
                         onChange={() => toggle(record.recordId)}
                       />
-                      <Icon name={record.categoryIcon} size={14} />
-                      <span className={styles.recordText}>
-                        <strong>{record.title}</strong>
-                        <small>{record.categoryName}</small>
+                      <Icon name={record.categoryIcon} size={14} color="var(--ex-fg-muted)" />
+                      <span className={table.recordTitle}>{record.title}</span>
+                      {ai ? <span className={table.aiBadge}>AI</span> : null}
+                    </span>
+                    <span className={table.cell}>
+                      <span className={record.status === "verified" ? table.statusOrganized : table.statusPlain}>
+                        {STATUS_LABEL[record.status]}
                       </span>
-                      <em>{record.reason}</em>
-                    </label>
-                  </li>
+                    </span>
+                    <span className={`${table.cell} ${table.cellTags}`}>
+                      <span className={table.tag}>{record.categoryName}</span>
+                    </span>
+                    <span className={table.cell}>{periodText(record)}</span>
+                    <span className={`${table.cell} ${styles.reason}`}>{record.reason}</span>
+                  </label>
                 );
               })}
-            </ul>
+            </div>
           )}
         </section>
 
