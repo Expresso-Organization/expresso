@@ -4,7 +4,9 @@ import {
   type DesignSelection,
   type SaveDesignSelection,
 } from "@expresso/contracts";
-import type { SqlTag } from "../../platform/mysql.js";
+import { mongoCollections } from "@expresso/database";
+
+import type { MongoContext } from "../../platform/mongodb.js";
 import { catalogEntries } from "./catalog.js";
 
 export class DesignSystemError extends Error {
@@ -16,10 +18,7 @@ export class DesignSystemError extends Error {
 }
 
 export class DesignSystemService {
-  readonly #sql: SqlTag;
-  constructor(sql: SqlTag) {
-    this.#sql = sql;
-  }
+  constructor(readonly context: MongoContext) {}
   list() {
     return catalogEntries().map(({ item }) => item);
   }
@@ -46,13 +45,20 @@ export class DesignSystemService {
     const revision = this.getRevision(input.revisionId);
     const overrides = DesignStyleOverridesSchema.parse(input.overrides ?? {});
     const lock = revision.referenceLock;
-    const rows = await this.#sql<
-      { id: string }[]
-    >`select id from brew where id = ${brewId} and user_id = ${userId}`;
-    if (!rows[0]) throw new DesignSystemError(404, "brew not found");
     const selectedAt = new Date();
-    await this
-      .#sql`update brew set design_system_revision_id = ${revision.revisionId}, reference_lock_snapshot = ${this.#sql.json(lock)}, design_style_overrides = ${this.#sql.json(overrides)}, design_selected_at = ${selectedAt}, updated_at = ${selectedAt} where id = ${brewId} and user_id = ${userId}`;
+    const result = await mongoCollections(this.context.db).brews.updateOne(
+      { _id: brewId, userId },
+      {
+        $set: {
+          designSystemRevisionId: revision.revisionId,
+          referenceLockSnapshot: lock,
+          designStyleOverrides: overrides,
+          designSelectedAt: selectedAt,
+          updatedAt: selectedAt,
+        },
+      },
+    );
+    if (result.matchedCount === 0) throw new DesignSystemError(404, "brew not found");
     return DesignSelectionSchema.parse({
       designSystemRevisionId: revision.revisionId,
       referenceLock: lock,

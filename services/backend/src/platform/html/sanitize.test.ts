@@ -131,6 +131,15 @@ describe("바깥을 부르지 않는다", () => {
     expect(() => sanitizeCss(`.x{width:expression(alert(1))}`)).toThrow(PageSanitizeError);
   });
 
+  it("옛 IE behavior 속성만 거절하고 표준 scroll-behavior는 허용한다", () => {
+    expect(() => sanitizeCss(`.x{behavior:url(/v1/media/unsafe.htc)}`))
+      .toThrow(PageSanitizeError);
+    expect(sanitizeCss(`html{scroll-behavior:smooth}`).css)
+      .toBe(`html{scroll-behavior:smooth}`);
+    expect(clean(`<main style="scroll-behavior:smooth">글</main>`).html)
+      .toContain(`style="scroll-behavior:smooth"`);
+  });
+
   it("style을 닫고 나가려는 시도는 거절한다", () => {
     expect(() => sanitizeCss(`.x{}</style><script>alert(1)</script>`)).toThrow(PageSanitizeError);
   });

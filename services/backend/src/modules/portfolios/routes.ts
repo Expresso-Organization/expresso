@@ -8,10 +8,10 @@ import {
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import type { PortfolioReadService } from "./service.js";
+import { type PortfolioReadApi } from "./index.js";
 
 export interface RegisterPortfolioRoutesOptions {
-  service: PortfolioReadService;
+  service: PortfolioReadApi;
   authenticateRequest: preHandlerHookHandler;
 }
 

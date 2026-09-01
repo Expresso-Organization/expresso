@@ -8,31 +8,28 @@ import {
 } from "@expresso/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import { mongoCollections } from "@expresso/database";
+
+import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { createMysqlResource } from "../../platform/mysql.js";
-import { IdentityService } from "../identity/service.js";
-import { MaterialsService } from "../materials/service.js";
+import { MongoIdentityService } from "../identity/index.js";
+import { MongoMaterialsService } from "../materials/index.js";
 import { catalogEntries } from "./catalog.js";
 import { DesignSystemService } from "./service.js";
-
-const databaseUrl = process.env.TEST_DATABASE_URL;
-const describeWithDatabase = databaseUrl ? describe : describe.skip;
 
 const config: RuntimeConfig = {
   nodeEnv: "test",
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
+  databaseUrl: "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
   outboxMaxAttempts: 5,
   queuePrefix: "expresso-design-systems-test",
 };
-
-interface IdRow { id: string }
 
 /** WCAG 2.1 상대 휘도. */
 function luminance(hex: string): number {
@@ -155,63 +152,57 @@ describe("design systems catalog", () => {
   });
 });
 
-describeWithDatabase("design selection integration", () => {
-  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
-  const identityService = new IdentityService(sql);
-  const materialsService = new MaterialsService(sql);
-  const designSystemService = new DesignSystemService(sql);
-  const app = buildApi({ config, identityService, materialsService, designSystemService });
-  const marker = randomUUID();
-  let ownerId = "";
-  let otherId = "";
+describe.skipIf(!process.env.TEST_MONGODB_URL)("design selection integration", () => {
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
+  let app: ReturnType<typeof buildApi>;
   let ownerToken = "";
   let otherToken = "";
   let ownerBrewId = "";
   let otherBrewId = "";
 
+  /** 브루 하나를 가진 사용자를 만든다. 디자인 선택은 브루에 붙는다. */
+  async function seed(label: string) {
+    const identity = new MongoIdentityService(fixture.resource);
+    const { user, session } = await identity.signup({
+      email: `design-${label}-${randomUUID()}@example.com`,
+      displayName: `Design ${label}`,
+      password: "correct-horse-battery",
+    });
+    const db = mongoCollections(fixture.resource.db);
+    const analysisId = randomUUID();
+    const brewId = randomUUID();
+    const now = new Date();
+    await db.jobAnalyses.insertOne({
+      _id: analysisId, userId: user.id, jobPostingId: null, inputType: "free",
+      status: "done", progressStage: "done", analyzedAt: now,
+      resultVersion: 1, targetVersion: 1, attempts: 0, attachments: [],
+    });
+    await db.brews.insertOne({
+      _id: brewId, userId: user.id, jobAnalysisId: analysisId,
+      freeTitle: `${label} portfolio`, freeBrief: "Design test", mode: "solo",
+      lengthPreset: "single", status: "draft", createdAt: now, updatedAt: now,
+    });
+    return { accessToken: session.accessToken, brewId };
+  }
+
   beforeAll(async () => {
-    const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
-    if (!planId) throw new Error("free plan seed missing");
-    ownerId = randomUUID();
-    otherId = randomUUID();
-    await sql`
-      insert into \`user\` (id, email, display_name, plan_id)
-      values
-        (${ownerId}, ${`design-owner-${marker}@example.com`}, 'Design Owner', ${planId}),
-        (${otherId}, ${`design-other-${marker}@example.com`}, 'Design Other', ${planId})
-    `;
-    const ownerAnalysisId = (await sql<IdRow[]>`
-      insert into job_analysis (
-        user_id, input_type, status, progress_stage, result_version, target_version, analyzed_at
-      ) values (${ownerId}, 'free', 'done', 'done', 1, 1, now(6)) returning id
-    `)[0]?.id;
-    const otherAnalysisId = (await sql<IdRow[]>`
-      insert into job_analysis (
-        user_id, input_type, status, progress_stage, result_version, target_version, analyzed_at
-      ) values (${otherId}, 'free', 'done', 'done', 1, 1, now(6)) returning id
-    `)[0]?.id;
-    if (!ownerAnalysisId || !otherAnalysisId) throw new Error("analysis fixture missing");
-    ownerBrewId = (await sql<IdRow[]>`
-      insert into brew (user_id, job_analysis_id, free_title, free_brief, length_preset)
-      values (${ownerId}, ${ownerAnalysisId}, 'Owner portfolio', 'Design test', 'single')
-      returning id
-    `)[0]?.id ?? "";
-    otherBrewId = (await sql<IdRow[]>`
-      insert into brew (user_id, job_analysis_id, free_title, free_brief, length_preset)
-      values (${otherId}, ${otherAnalysisId}, 'Other portfolio', 'Design test', 'single')
-      returning id
-    `)[0]?.id ?? "";
-    ownerToken = (await identityService.issueSession({ userId: ownerId })).accessToken;
-    otherToken = (await identityService.issueSession({ userId: otherId })).accessToken;
+    fixture = await createMongoFixture("designsystems");
+    app = buildApi({
+      config,
+      identityService: new MongoIdentityService(fixture.resource),
+      materialsService: new MongoMaterialsService(fixture.resource),
+      designSystemService: new DesignSystemService(fixture.resource),
+    });
+    const owner = await seed("owner");
+    const other = await seed("other");
+    ownerToken = owner.accessToken; ownerBrewId = owner.brewId;
+    otherToken = other.accessToken; otherBrewId = other.brewId;
     await app.ready();
   });
 
   afterAll(async () => {
-    if (ownerId && otherId) {
-      await sql`delete from \`user\` where id in (${ownerId}, ${otherId})`;
-    }
-    await app.close();
-    await sql.end({ timeout: 5 });
+    await app?.close();
+    await fixture?.dispose();
   });
 
   const auth = (token = ownerToken) => ({ authorization: `Bearer ${token}` });
@@ -227,7 +218,7 @@ describeWithDatabase("design selection integration", () => {
     });
     expect(listResponse.statusCode).toBe(200);
     const list = DesignSystemCatalogResponseSchema.parse(listResponse.json()).data.items;
-    expect(list).toHaveLength(8);
+    expect(list).toHaveLength(38);
 
     const designResponse = await app.inject({
       method: "GET",
@@ -276,17 +267,10 @@ describeWithDatabase("design selection integration", () => {
     const state = BrewStateResponseSchema.parse(stateResponse.json()).data;
     expect(state.designSelection).toEqual(selected);
 
-    const stored = (await sql<{
-      design_system_revision_id: string | null;
-      reference_lock_snapshot: unknown;
-      design_style_overrides: unknown;
-    }[]>`
-      select design_system_revision_id, reference_lock_snapshot, design_style_overrides
-      from brew where id = ${ownerBrewId}
-    `)[0];
-    expect(stored).toMatchObject({ design_system_revision_id: revision.revisionId });
-    expect(stored?.reference_lock_snapshot).toEqual(revision.referenceLock);
-    expect(stored?.design_style_overrides).toEqual({ density: "compact", accentStrength: "strong" });
+    const stored = await mongoCollections(fixture.resource.db).brews.findOne({ _id: ownerBrewId });
+    expect(stored).toMatchObject({ designSystemRevisionId: revision.revisionId });
+    expect(stored?.referenceLockSnapshot).toEqual(revision.referenceLock);
+    expect(stored?.designStyleOverrides).toEqual({ density: "compact", accentStrength: "strong" });
   });
 
   it("알 수 없는 revision과 다른 사용자의 brew를 같은 404 경계에서 막는다", async () => {
@@ -305,10 +289,8 @@ describeWithDatabase("design selection integration", () => {
       payload: { revisionId: catalogEntries()[0]!.revision.revisionId },
     });
     expect(foreignResponse.statusCode).toBe(404);
-    const otherSelection = (await sql<{ design_system_revision_id: string | null }[]>`
-      select design_system_revision_id from brew where id = ${otherBrewId}
-    `)[0];
-    expect(otherSelection?.design_system_revision_id).toBeNull();
+    const otherBrew = await mongoCollections(fixture.resource.db).brews.findOne({ _id: otherBrewId });
+    expect(otherBrew?.designSystemRevisionId ?? null).toBeNull();
 
     const otherCanSelectOwn = await app.inject({
       method: "POST",

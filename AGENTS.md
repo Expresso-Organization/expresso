@@ -26,7 +26,7 @@ Node 24 이상, pnpm 11입니다.
 
 ```bash
 pnpm install
-pnpm infra:up                                   # MySQL 53306 · Redis 56379
+pnpm infra:up                                   # MongoDB 57017 · Redis 56379
 cp services/backend/.env.example services/backend/.env
 pnpm db:migrate
 pnpm dev:backend                                # http://127.0.0.1:4000
@@ -56,7 +56,7 @@ pnpm test
   짓게 되어 있고, CI와 `scripts/operations/deploy.sh`도 같은 순서입니다. 순서가
   갈리면 한쪽에서만 깨집니다.
 - 백엔드를 고쳤으면 실제 인프라까지 씁니다 — `pnpm test:infra`. 루트 스크립트가
-  `TEST_DATABASE_URL`과 `TEST_REDIS_URL`을 `infra:up`이 띄운 포트로 넘깁니다.
+  `TEST_MONGODB_URL`과 `TEST_REDIS_URL`을 `infra:up`이 띄운 포트로 넘깁니다.
 - CI가 도는 순서는 `.github/workflows/backend-ci.yml` · `web-ci.yml`에 있습니다 —
   계약·스키마 빌드 → 마이그레이션 → 타입 검사 → 테스트 → 통합 테스트 → 빌드.
 

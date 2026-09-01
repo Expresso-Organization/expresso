@@ -2,624 +2,361 @@ import { createHash, randomUUID } from "node:crypto";
 
 import {
   GenerationJobStatusSchema,
-  GenerationOutputSchema,
-  type GenerationOutput,
   type GeneratedPage,
+  type GenerationOutput,
   type SubmitGeneration,
 } from "@expresso/contracts";
-import type { SqlTag, JSONValue } from "../../platform/mysql.js";
+import {
+  mongoCollections,
+  type GenerationJobDoc,
+  type JsonObject,
+} from "@expresso/database";
 
-import { EntitlementService } from "../entitlements/service.js";
-import { addOutboxEvent } from "../../platform/outbox.js";
+import type { MongoContext } from "../../platform/mongodb.js";
+import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
+import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
+import { withTimeout } from "../../platform/timeouts.js";
+import { writeSnapshot } from "../../platform/snapshot-payload.js";
+import { assertActiveRecordsForWrite } from "../career/index.js";
+import type { ConsentApi } from "../consent/index.js";
+import { requireActiveUser } from "../identity/index.js";
 import {
   LAYOUT_PROMPT_VERSION,
   toLayoutSpecs,
   type LayoutDesignContext,
   type LayoutDesigner,
-} from "../layout/designer.js";
-import { GenerationValidationError, validateGenerationOutput } from "./validator.js";
+} from "../layout/index.js";
+import { mongoBlockContent, mongoPortfolioSnapshot } from "./mongo-completion.js";
+import { chargeMongoGenerationUsage } from "./mongo-usage.js";
 import {
-  SentenceWriterUnavailableError,
-  type SentenceWriter,
-  type WriterContext,
-  type WriterSection,
-} from "./writer.js";
-import { withTimeout } from "../../platform/timeouts.js";
-import type { ConsentService } from "../consent/service.js";
+  GenerationError,
+  buildWriterContext,
+  type BrewSubjectRow,
+  type ContextRow,
+  type PathRow,
+} from "./public.js";
+import { GenerationValidationError, validateGenerationOutput } from "./validator.js";
+import { SentenceWriterUnavailableError, type SentenceWriter, type WriterContext } from "./writer.js";
 
-interface JobRow {
-  id: string; user_id: string; brew_id: string; recipe_id: string; template_id: string;
-  status: "queued" | "running" | "done" | "failed"; stage: string; attempts: number;
-  usage_charged: boolean; error_code: string | null; failure_retryable: boolean | null;
-  portfolio_id: string | null; request_hash: string | null;
-  style_overrides: unknown;
-}
-interface PathRow {
-  id: string; recipe_item_id: string;
-  source_type: "record" | "requirement" | "answer";
-  source_id: string; source_label: string;
-  /** 근거 원문. 수치가 실제로 적혀 있는 곳이라 검증기가 이걸 본다. */
-  source_text: string;
-}
-interface SectionContext {
-  goal?: string; points?: string[]; metrics?: string[];
-  format?: string; tone?: string; exclude?: string[];
-}
-interface ContextRow {
-  section_id: string; section_title: string; section_purpose: string; target_length: number;
-  item_id: string; point_text: string; context: SectionContext;
-}
-interface BrewSubjectRow {
-  job_title: string | null; job_family: string | null;
-  free_title: string | null; company_name: string | null; industry: string | null; tone_summary: string | null;
-  brand_colors: string[];
-}
-
-export class GenerationError extends Error {
-  readonly statusCode: number;
-  constructor(statusCode: number, message: string) { super(message); this.name = "GenerationError"; this.statusCode = statusCode; }
-}
-
-function requestHash(input: SubmitGeneration) {
+function requestHash(input: SubmitGeneration): string {
   return createHash("sha256").update(JSON.stringify(input)).digest("hex");
 }
 
-/**
- * 레시피 행들을 문장 계약의 입력으로 편다.
- *
- * 섹션과 근거에 **번호**를 매기는 곳이다. 배열 순서가 곧 번호(1부터)이고,
- * 모델은 그 번호로만 가리킨다 — UUID를 옮겨 적게 하지 않는다.
- */
-export function buildWriterContext(input: {
-  items: ContextRow[];
-  evidence: PathRow[];
-  subject: BrewSubjectRow | null;
-  lockedTexts: string[];
-}): WriterContext {
-  const numberOf = new Map(input.evidence.map((path, index) => [path.id, index + 1]));
-  const sections: WriterSection[] = [];
-  const bySection = new Map<string, WriterSection>();
-
-  for (const row of input.items) {
-    let section = bySection.get(row.section_id);
-    if (!section) {
-      section = {
-        recipeSectionId: row.section_id,
-        title: row.section_title,
-        purpose: row.section_purpose,
-        targetLength: row.target_length,
-        goal: row.context.goal ?? "",
-        points: row.context.points ?? [],
-        metrics: row.context.metrics ?? [],
-        tone: row.context.tone ?? "",
-        format: row.context.format ?? "",
-        exclude: row.context.exclude ?? [],
-        items: [],
-      };
-      bySection.set(row.section_id, section);
-      sections.push(section);
-    }
-    section.items.push({
-      pointText: row.point_text,
-      sourceNumbers: input.evidence
-        .filter(({ recipe_item_id }) => recipe_item_id === row.item_id)
-        .flatMap((path) => {
-          const number = numberOf.get(path.id);
-          return number === undefined ? [] : [number];
-        }),
-    });
-  }
-
-  return {
-    sections,
-    evidence: input.evidence.map((path) => ({
-      id: path.id,
-      sourceType: path.source_type,
-      label: path.source_label,
-      text: path.source_text,
-    })),
-    company: input.subject?.company_name
-      ? {
-        name: input.subject.company_name,
-        industry: input.subject.industry,
-        toneSummary: input.subject.tone_summary,
-      }
-      : null,
-    jobTitle: input.subject?.job_title ?? input.subject?.free_title ?? null,
-    lockedTexts: input.lockedTexts,
-  };
-}
-
-/** 블록 종류마다 담기는 것이 다르다. 지면 렌더러가 이 모양을 읽는다. */
-function blockContent(block: GenerationOutput["blocks"][number]): Record<string, unknown> {
-  if (block.kind === "list") {
-    // 쌍으로 낸 목록은 쌍 그대로 둔다 — 지면이 이름과 값을 다르게 세운다.
-    const items = block.items
-      ?? block.text.split("\n").map((line) => line.trim()).filter(Boolean);
-    return { items };
-  }
-  if (block.kind === "metric") return { value: block.text, label: block.label ?? "" };
-  // 그림은 content가 곧 그림이다. 렌더러가 이 모양을 그대로 읽는다.
-  if (block.kind === "chart" && block.chart) return { ...block.chart };
-  // 평문은 늘 함께 둔다 — 편집 · 검색 · 잠금 비교가 이걸 본다.
-  return block.runs ? { text: block.text, runs: block.runs } : { text: block.text };
-}
-
 export class GenerationService {
-  readonly #sql: SqlTag;
-  readonly #consent: ConsentService | null;
-  constructor(sql: SqlTag, consent?: ConsentService | null) {
-    this.#sql = sql;
+  readonly #consent: ConsentApi | null;
+  constructor(readonly context: MongoContext, consent?: ConsentApi | null) {
     this.#consent = consent ?? null;
   }
 
   async submit(userId: string, idempotencyKey: string, input: SubmitGeneration) {
     const hash = requestHash(input);
-    const jobId = await this.#sql.begin(async (transaction) => {
-      const recipe = (await transaction<{ id: string; brew_id: string }[]>`
-        select id, brew_id from recipe where id = ${input.recipeId} and user_id = ${userId}
-      `)[0];
+    const jobId = await inTransaction(this.context, async (tx) => {
+      await requireActiveUser(tx, userId);
+      const db = mongoCollections(tx.db); const options = { session: tx.session };
+      const recipe = await db.recipes.findOne({ _id: input.recipeId, userId }, options);
       if (!recipe) throw new GenerationError(404, "recipe not found");
-      const template = (await transaction<{ id: string }[]>`select id from template where id = ${input.templateId} and is_active`)[0];
-      if (!template) throw new GenerationError(404, "template not found");
-      await transaction`
-        insert ignore into generation_job (
-          user_id, brew_id, recipe_id, template_id, status,
-          input_idempotency_key, request_hash, style_overrides
-        ) values (
-          ${userId}, ${recipe.brew_id}, ${input.recipeId}, ${input.templateId}, 'queued',
-          ${idempotencyKey}, ${hash},
-          ${transaction.json((input.styleOverrides ?? {}) as JSONValue)}
-        )
-      `;
-      const inserted = (await transaction<{ id: string; request_hash: string }[]>`
-        select id, request_hash from generation_job
-        where user_id = ${userId} and input_idempotency_key = ${idempotencyKey}
-      `)[0];
-      if (!inserted) throw new Error("generation job missing");
-      if (inserted.request_hash !== hash) throw new GenerationError(409, "idempotency key reused for another generation");
-      await addOutboxEvent(transaction, {
-        topic: "portfolio.generate",
-        payload: { generationJobId: inserted.id, userId },
-        idempotencyKey: `portfolio-generation:${inserted.id}`,
+      if (!await db.templates.findOne({ _id: input.templateId, isActive: true }, options)) {
+        throw new GenerationError(404, "template not found");
+      }
+      const existing = await db.generationJobs.findOne({ userId, inputIdempotencyKey: idempotencyKey }, options);
+      if (existing) {
+        if (existing.requestHash !== hash) throw new GenerationError(409, "idempotency key reused for another generation");
+        return existing._id;
+      }
+      const now = new Date(); const id = randomUUID();
+      await db.generationJobs.insertOne({
+        _id: id, userId, brewId: recipe.brewId, recipeId: recipe._id, templateId: input.templateId,
+        status: "queued", usageCharged: false, stage: "queued", attempts: 0,
+        inputIdempotencyKey: idempotencyKey, requestHash: hash, portfolioId: null,
+        errorCode: null, failureRetryable: null, runToken: null,
+        createdAt: now, updatedAt: now,
+        styleOverrides: (input.styleOverrides ?? {}) as JsonObject,
+      }, options);
+      await addMongoOutboxEvent(tx, {
+        userId, topic: "portfolio.generate", payload: { generationJobId: id, userId },
+        idempotencyKey: `portfolio-generation:${id}`,
       });
-      return inserted.id;
+      return id;
     });
     return this.getStatus(userId, jobId);
   }
 
-  /** 이 추출이 누구에게 보내는 것인지. 문장과 지면이 같은 값을 본다. */
-  async #subject(job: JobRow): Promise<BrewSubjectRow | null> {
-    return (await this.#sql<BrewSubjectRow[]>`
-      select job_posting.title as job_title, job_posting.job_family, brew.free_title,
-             company.name as company_name, company.industry, company.tone_summary,
-             coalesce(company.brand_colors, json_array()) as brand_colors
-      from brew
-      join job_analysis on job_analysis.id = brew.job_analysis_id
-        and job_analysis.user_id = brew.user_id
-      left join job_posting on job_posting.id = job_analysis.job_posting_id
-      left join company on company.id = job_posting.company_id
-      where brew.user_id = ${job.user_id} and brew.id = ${job.brew_id}
-    `)[0] ?? null;
+  async getStatus(userId: string, jobId: string) {
+    const job = await mongoCollections(this.context.db).generationJobs.findOne({ _id: jobId, userId });
+    if (!job) throw new GenerationError(404, "generation job not found");
+    return GenerationJobStatusSchema.parse({
+      generationJobId: job._id, status: job.status, stage: job.stage, attempts: job.attempts,
+      usageCharged: job.usageCharged, portfolioId: job.portfolioId ?? null,
+      failure: job.errorCode ? { code: job.errorCode, retryable: job.failureRetryable ?? false } : null,
+    });
   }
 
-  /**
-   * 지면 초안을 받아 온다. **실패해도 던지지 않는다** — 지면이 없으면 기본
-   * 배치로 그려지지만, 여기서 던지면 문장까지 통째로 날아간다.
-   */
-  async #design(
-    designer: LayoutDesigner,
-    job: JobRow,
-    subject: BrewSubjectRow | null,
-    context: WriterContext,
-    output: GenerationOutput,
-    sectionIds: string[],
-  ) {
+  async prepareFreeHtml(jobId: string) {
+    const prepared = await inTransaction(this.context, async (tx) => {
+      const db = mongoCollections(tx.db); const options = { session: tx.session };
+      const job = await db.generationJobs.findOne({ _id: jobId }, options);
+      if (!job) throw new GenerationError(404, "generation job not found");
+      await requireActiveUser(tx, job.userId);
+      if (job.status === "done" || job.status === "failed") return { job, portfolioId: job.portfolioId ?? null };
+      let portfolioId = job.portfolioId ?? null;
+      if (!portfolioId) {
+        portfolioId = randomUUID(); const now = new Date();
+        const brew = await db.brews.findOne({ _id: job.brewId, userId: job.userId }, options);
+        await db.portfolios.insertOne({
+          _id: portfolioId, userId: job.userId, brewId: job.brewId, templateId: job.templateId,
+          title: brew?.freeTitle ?? "Generated portfolio", status: "draft", styleOverrides: job.styleOverrides,
+          createdAt: now, updatedAt: now,
+        }, options);
+      }
+      const attempts = job.attempts + 1;
+      await db.generationJobs.updateOne({ _id: jobId, attempts: job.attempts }, { $set: {
+        status: "running", stage: "materializing", attempts, portfolioId,
+        errorCode: null, failureRetryable: null, updatedAt: new Date(),
+      } }, options);
+      return { job: { ...job, status: "running" as const, attempts, portfolioId }, portfolioId };
+    });
+    return { userId: prepared.job.userId, portfolioId: prepared.portfolioId, status: await this.getStatus(prepared.job.userId, jobId) };
+  }
+
+  async completeFreeHtml(jobId: string, page: GeneratedPage) {
+    const userId = await inTransaction(this.context, async (tx) => {
+      const db = mongoCollections(tx.db); const options = { session: tx.session };
+      const job = await db.generationJobs.findOne({ _id: jobId }, options);
+      if (!job) throw new GenerationError(404, "generation job not found");
+      await requireActiveUser(tx, job.userId);
+      if (job.status === "done" || job.status === "failed") return job.userId;
+      if (!job.portfolioId || page.generationJobId !== job._id || page.portfolioId !== job.portfolioId || page.qualityStatus !== "ready") {
+        throw new GenerationError(409, "ready generated page is required before completion");
+      }
+      await db.generationJobs.updateOne({ _id: jobId, attempts: job.attempts }, { $set: { stage: "charging", updatedAt: new Date() } }, options);
+      await chargeMongoGenerationUsage(tx, job.userId, job._id);
+      await db.generationJobs.updateOne({ _id: jobId, attempts: job.attempts, status: { $ne: "done" } }, { $set: {
+        status: "done", stage: "done", usageCharged: true, updatedAt: new Date(), runToken: null,
+      } }, options);
+      return job.userId;
+    });
+    return this.getStatus(userId, jobId);
+  }
+
+  async failFreeHtml(jobId: string, code: "PAGE_GENERATION_FAILED" | "PAGE_OUTPUT_INVALID" | "GENERATION_REJECTED") {
+    const userId = await inTransaction(this.context, async (tx) => {
+      const db = mongoCollections(tx.db); const options = { session: tx.session };
+      const job = await db.generationJobs.findOne({ _id: jobId }, options);
+      if (!job) throw new GenerationError(404, "generation job not found");
+      await requireActiveUser(tx, job.userId);
+      if (job.status !== "done") await db.generationJobs.updateOne({ _id: jobId, attempts: job.attempts }, { $set: {
+        status: "failed", stage: "failed", errorCode: code, failureRetryable: false, updatedAt: new Date(), runToken: null,
+      } }, options);
+      return job.userId;
+    });
+    return this.getStatus(userId, jobId);
+  }
+
+  async #subject(job: GenerationJobDoc): Promise<BrewSubjectRow | null> {
+    const db = mongoCollections(this.context.db);
+    const brew = await db.brews.findOne({ _id: job.brewId, userId: job.userId });
+    if (!brew) return null;
+    const analysis = await db.jobAnalyses.findOne({ _id: brew.jobAnalysisId, userId: job.userId });
+    const posting = analysis?.jobPostingId ? await db.jobPostings.findOne({ _id: analysis.jobPostingId }) : null;
+    const company = posting ? await db.companies.findOne({ _id: posting.companyId }) : null;
+    return {
+      job_title: posting?.title ?? null, job_family: posting?.jobFamily ?? null,
+      free_title: brew.freeTitle ?? null, company_name: company?.name ?? null,
+      industry: company?.industry ?? null, tone_summary: company?.toneSummary ?? null,
+      brand_colors: Array.isArray(company?.brandColors) ? company.brandColors.filter((v): v is string => typeof v === "string") : [],
+    };
+  }
+
+  async #design(designer: LayoutDesigner, job: GenerationJobDoc, subject: BrewSubjectRow | null, context: WriterContext, output: GenerationOutput, sectionIds: string[]) {
     try {
       const titles = new Map(context.sections.map((section) => [section.recipeSectionId, section.title]));
       const design: LayoutDesignContext = {
-        // 블록 번호는 `output.blocks`의 자리다 — 아래 적재 순서와 같아야
-        // 초안이 가리킨 번호가 실제 블록에 닿는다.
         sections: sectionIds.map((sectionId) => ({
           title: titles.get(sectionId) ?? "",
-          blocks: output.blocks.flatMap((block, index) =>
-            block.recipeSectionId === sectionId
-              ? [{
-                number: index + 1,
-                kind: block.kind,
-                preview: block.chart ? block.chart.caption : block.text,
-                length: [...block.text].length,
-              }]
-              : []),
+          blocks: output.blocks.flatMap((block, index) => block.recipeSectionId === sectionId ? [{
+            number: index + 1, kind: block.kind,
+            preview: block.chart ? block.chart.caption : block.text, length: [...block.text].length,
+          }] : []),
         })),
-        company: subject?.company_name
-          ? {
-            name: subject.company_name,
-            industry: subject.industry,
-            toneSummary: subject.tone_summary,
-            brandColors: subject.brand_colors,
-          }
-          : null,
-        jobTitle: subject?.job_title ?? subject?.free_title ?? null,
-        jobFamily: subject?.job_family ?? null,
+        company: subject?.company_name ? { name: subject.company_name, industry: subject.industry, toneSummary: subject.tone_summary, brandColors: subject.brand_colors } : null,
+        jobTitle: subject?.job_title ?? subject?.free_title ?? null, jobFamily: subject?.job_family ?? null,
       };
-
-      // 이 값은 지연 예산이 아니라 **멈춘 프로바이더**를 막는 backstop이다.
-      // 실제 한계는 어댑터가 쥐고 있고(claude-code 기본 180초), 재시도까지
-      // 하면 두 배가 되므로 여기서 먼저 끊으면 재시도가 잘린다.
-      await this.#consent?.require(job.user_id, "layout_draft");
+      await this.#consent?.require(job.userId, "layout_draft");
       return await withTimeout(designer.design(design), 420_000, "layout designer");
     } catch (error) {
-      console.error(JSON.stringify({
-        level: "warn",
-        event: "layout.design_failed",
-        generationJobId: job.id,
-        message: error instanceof Error ? error.message : String(error),
-      }));
+      console.error(JSON.stringify({ level: "warn", event: "layout.design_failed", generationJobId: job._id, message: error instanceof Error ? error.message : String(error) }));
       return [];
     }
   }
 
-  async getStatus(userId: string, jobId: string) {
-    const job = (await this.#sql<JobRow[]>`select * from generation_job where id = ${jobId} and user_id = ${userId}`)[0];
-    if (!job) throw new GenerationError(404, "generation job not found");
-    return GenerationJobStatusSchema.parse({
-      generationJobId: job.id, status: job.status, stage: job.stage,
-      attempts: job.attempts, usageCharged: job.usage_charged,
-      portfolioId: job.portfolio_id,
-      failure: job.error_code ? { code: job.error_code, retryable: job.failure_retryable ?? false } : null,
+  async #context(job: GenerationJobDoc) {
+    const db = mongoCollections(this.context.db);
+    const sections = await db.recipeSections.find({ userId: job.userId, recipeId: job.recipeId }).sort({ orderNo: 1, _id: 1 }).toArray();
+    const sectionIds = sections.map(({ _id }) => _id);
+    const items = await db.recipeItems.find({ userId: job.userId, recipeSectionId: { $in: sectionIds } }).sort({ orderNo: 1, _id: 1 }).toArray();
+    const contextRows: ContextRow[] = sections.flatMap((section) => items
+      .filter((item) => item.recipeSectionId === section._id)
+      .map((item) => ({
+        section_id: section._id, section_title: section.title, section_purpose: section.purpose,
+        target_length: section.targetLength, item_id: item._id, point_text: item.pointText,
+        context: section.context,
+      }) as ContextRow));
+    const paths = await db.recipeEvidencePaths.find({ userId: job.userId, recipeId: job.recipeId }).sort({ createdAt: 1, _id: 1 }).toArray();
+    const [records, answers, requirements] = await Promise.all([
+      db.careerRecords.find({ _id: { $in: paths.filter((p) => p.sourceType === "record").map((p) => p.sourceId) }, userId: job.userId }).toArray(),
+      db.answers.find({ _id: { $in: paths.filter((p) => p.sourceType === "answer").map((p) => p.sourceId) }, userId: job.userId }).toArray(),
+      db.jobPostingRequirements.find({ _id: { $in: paths.filter((p) => p.sourceType === "requirement").map((p) => p.sourceId) } }).toArray(),
+    ]);
+    const recordById = new Map(records.map((row) => [row._id, row]));
+    const answerById = new Map(answers.map((row) => [row._id, row]));
+    const requirementById = new Map(requirements.map((row) => [row._id, row]));
+    const evidence: PathRow[] = paths.map((path) => {
+      const record = recordById.get(path.sourceId); const answer = answerById.get(path.sourceId); const requirement = requirementById.get(path.sourceId);
+      const quote = requirement && typeof requirement.sourceSpan.quote === "string" ? requirement.sourceSpan.quote : "";
+      return {
+        id: path._id, recipe_item_id: path.recipeItemId, source_type: path.sourceType,
+        source_id: path.sourceId, source_label: path.sourceLabel,
+        source_text: record ? `${record.title}\n${record.bodyMd}` : answer?.transcript ?? (requirement ? `${requirement.label}\n${quote}` : ""),
+      };
     });
+    let lockedTexts: string[] = [];
+    if (job.portfolioId) {
+      const portfolioSections = await db.portfolioSections.find({ userId: job.userId, portfolioId: job.portfolioId }).toArray();
+      const locked = await db.blocks.find({ userId: job.userId, portfolioSectionId: { $in: portfolioSections.map(({ _id }) => _id) }, locked: true }).toArray();
+      lockedTexts = locked.flatMap(({ content }) => typeof content.text === "string" ? [content.text] : []);
+    }
+    return { contextRows, evidence, lockedTexts, recipeEditVersion: (await db.recipes.findOne({ _id: job.recipeId, userId: job.userId }))?.editVersion ?? 0 };
   }
 
-  /**
-   * 자유 HTML 정식 경로의 포트폴리오 껍데기를 먼저 만든다.
-   *
-   * 문장·블록 산출물은 이전 편집기 호환 경로에만 남긴다. 이 경로는 페이지 판이
-   * 저장되기 전에는 사용량도 완료 상태도 만들지 않는다.
-   */
-  async prepareFreeHtml(jobId: string) {
-    const prepared = await this.#sql.begin(async (transaction) => {
-      const job = (await transaction<JobRow[]>`
-        select * from generation_job where id = ${jobId} for update
-      `)[0];
-      if (!job) throw new GenerationError(404, "generation job not found");
-      if (job.status === "done" || job.status === "failed") return { job, portfolioId: job.portfolio_id };
-
-      let portfolioId = job.portfolio_id;
-      if (!portfolioId) {
-        const subject = (await transaction<{ free_title: string | null }[]>`
-          select brew.free_title
-          from brew
-          where brew.id = ${job.brew_id} and brew.user_id = ${job.user_id}
-        `)[0];
-        portfolioId = (await transaction<{ id: string }[]>`
-          insert into portfolio (
-            user_id, brew_id, template_id, title, status, style_overrides
-          ) values (
-            ${job.user_id}, ${job.brew_id}, ${job.template_id},
-            ${subject?.free_title ?? "Generated portfolio"}, 'draft',
-            ${transaction.json((job.style_overrides ?? {}) as JSONValue)}
-          ) returning id
-        `)[0]?.id ?? null;
-      }
-      if (!portfolioId) throw new Error("portfolio missing");
-      await transaction`
-        update generation_job
-        set status = 'running', stage = 'materializing', attempts = attempts + 1,
-            error_code = null, failure_retryable = null, portfolio_id = ${portfolioId}, updated_at = now(6)
-        where id = ${jobId}
-      `;
-      return { job: { ...job, status: "running" as const, portfolio_id: portfolioId }, portfolioId };
-    });
-    return {
-      userId: prepared.job.user_id,
-      portfolioId: prepared.portfolioId,
-      status: await this.getStatus(prepared.job.user_id, jobId),
-    };
-  }
-
-  /** 저장된 ready 지면을 확인한 뒤에만 quota와 완료 상태를 한 transaction으로 확정한다. */
-  async completeFreeHtml(jobId: string, page: GeneratedPage) {
-    const userId = await this.#sql.begin(async (transaction) => {
-      const job = (await transaction<JobRow[]>`
-        select * from generation_job where id = ${jobId} for update
-      `)[0];
-      if (!job) throw new GenerationError(404, "generation job not found");
-      if (job.status === "done") return job.user_id;
-      if (job.status === "failed") return job.user_id;
-      if (
-        !job.portfolio_id
-        || page.generationJobId !== job.id
-        || page.portfolioId !== job.portfolio_id
-        || page.qualityStatus !== "ready"
-      ) throw new GenerationError(409, "ready generated page is required before completion");
-
-      await transaction`select id from \`user\` where id = ${job.user_id} for update`;
-      const decision = await new EntitlementService(transaction).check(job.user_id, "portfolio.generate");
-      if (!decision.allowed || !decision.usage) throw new GenerationError(409, "generation quota is exhausted");
-      await transaction`update generation_job set stage = 'charging' where id = ${jobId}`;
-      await transaction`
-        insert into usage_counter (user_id, period_start, used, resets_at)
-        values (${job.user_id}, ${decision.usage.periodStart}, 1, ${decision.usage.resetsAt})
-        as new on duplicate key update used = usage_counter.used + 1, resets_at = new.resets_at
-      `;
-      const usage = (await transaction<{ id: string }[]>`
-        select id from usage_counter
-        where user_id = ${job.user_id} and period_start = ${decision.usage.periodStart}
-      `)[0];
-      if (!usage) throw new Error("usage counter missing");
-      await transaction`
-        insert ignore into generation_usage_ledger (user_id, generation_job_id, usage_counter_id, amount, reason)
-        values (${job.user_id}, ${jobId}, ${usage.id}, 1, 'success')
-      `;
-      await transaction`
-        update generation_job
-        set status = 'done', stage = 'done', usage_charged = true, updated_at = now(6)
-        where id = ${jobId}
-      `;
-      return job.user_id;
-    });
-    return this.getStatus(userId, jobId);
-  }
-
-  /** 페이지 호출·보안 검증 실패는 결과와 이유만 남기고 quota를 건드리지 않는다. */
-  async failFreeHtml(
-    jobId: string,
-    code: "PAGE_GENERATION_FAILED" | "PAGE_OUTPUT_INVALID" | "GENERATION_REJECTED",
-  ) {
-    const userId = await this.#sql.begin(async (transaction) => {
-      const job = (await transaction<JobRow[]>`
-        select * from generation_job where id = ${jobId} for update
-      `)[0];
-      if (!job) throw new GenerationError(404, "generation job not found");
-      if (job.status === "done") return job.user_id;
-      await transaction`
-        update generation_job
-        set status = 'failed', stage = 'failed', error_code = ${code}, failure_retryable = false,
-            updated_at = now(6)
-        where id = ${jobId}
-      `;
-      return job.user_id;
-    });
-    return this.getStatus(userId, jobId);
-  }
-
-  /**
-   * 추출 한 번이 **문장과 지면을 함께** 만든다(§8.3). 지면 쪽은 없어도 되는
-   * 것이라 `designer`가 없거나 실패하면 문장만 남기고 넘어간다 — 지면이 없는
-   * 포트폴리오는 기본 배치로 그려지지만, 생성 자체가 실패하면 아무것도 남지
-   * 않는다.
-   */
   async process(jobId: string, writer: SentenceWriter, designer?: LayoutDesigner | null) {
+    let claimed: GenerationJobDoc | null = null;
     try {
-      const job = await this.#sql.begin(async (transaction) => {
-        const locked = (await transaction<JobRow[]>`select * from generation_job where id = ${jobId} for update`)[0];
-        if (!locked) throw new GenerationError(404, "generation job not found");
-        if (locked.status === "done") return locked;
-        await transaction`update generation_job set status = 'running', stage = 'validating', attempts = attempts + 1, error_code = null, failure_retryable = null, updated_at = now(6) where id = ${jobId}`;
-        return { ...locked, attempts: locked.attempts + 1 };
+      const runToken = randomUUID();
+      claimed = await inTransaction(this.context, async (tx) => {
+        const db = mongoCollections(tx.db); const options = { session: tx.session };
+        const job = await db.generationJobs.findOne({ _id: jobId }, options);
+        if (!job) throw new GenerationError(404, "generation job not found");
+        await requireActiveUser(tx, job.userId);
+        if (job.status === "done") return job;
+        if (job.status === "running") throw new GenerationError(409, "generation job is already running");
+        const attempts = job.attempts + 1;
+        const result = await db.generationJobs.updateOne({ _id: jobId, attempts: job.attempts, status: job.status }, { $set: {
+          status: "running", stage: "validating", attempts, runToken,
+          errorCode: null, failureRetryable: null, updatedAt: new Date(),
+        } }, options);
+        if (result.matchedCount !== 1) throw new GenerationError(409, "generation job is already running");
+        return { ...job, status: "running" as const, stage: "validating" as const, attempts, runToken };
       });
-      if (job.status === "done") return this.getStatus(job.user_id, job.id);
-      const items = await this.#sql<ContextRow[]>`
-        select recipe_section.id as section_id, recipe_section.title as section_title,
-               recipe_section.purpose as section_purpose, recipe_section.target_length,
-               recipe_item.id as item_id, recipe_item.point_text, recipe_section.context
-        from recipe_section join recipe_item on recipe_item.recipe_section_id = recipe_section.id
-        where recipe_section.user_id = ${job.user_id} and recipe_section.recipe_id = ${job.recipe_id}
-        order by recipe_section.order_no, recipe_item.order_no
-      `;
-      // 근거는 라벨만으로 부족하다 — 수치는 기록 본문에 있고, 검증기가 그걸 본다.
-      const evidence = await this.#sql<PathRow[]>`
-        select path.id, path.recipe_item_id, path.source_type, path.source_id, path.source_label,
-               coalesce(
-                 nullif(concat_ws('\n', record.title, record.body_md), ''),
-                 answer.transcript,
-                 nullif(concat_ws('\n', requirement.label, requirement.source_span ->> '$.quote'), ''),
-                 ''
-               ) as source_text
-        from recipe_evidence_path path
-        left join record
-          on record.id = path.source_id and path.source_type = 'record'
-        left join answer
-          on answer.id = path.source_id and path.source_type = 'answer'
-        left join job_posting_requirement requirement
-          on requirement.id = path.source_id and path.source_type = 'requirement'
-        where path.user_id = ${job.user_id} and path.recipe_id = ${job.recipe_id}
-        order by path.created_at, path.id
-      `;
-      const locked = job.portfolio_id ? await this.#sql<{ text: string }[]>`
-        select block.content ->> '$.text' as text from block
-        join portfolio_section on portfolio_section.id = block.portfolio_section_id
-        where block.user_id = ${job.user_id} and portfolio_section.portfolio_id = ${job.portfolio_id} and block.locked
-      ` : [];
-      // 계약을 부르는 경로에만 문이 있다. 규칙 폴백은 지나지 않는다.
-      if (writer.usesContract) await this.#consent?.require(job.user_id, "generation");
-      const subject = await this.#subject(job);
-      const context = buildWriterContext({
-        items,
-        evidence,
-        subject,
-        lockedTexts: locked.flatMap(({ text }) => (text ? [text] : [])),
-      });
+      if (claimed.status === "done") return this.getStatus(claimed.userId, claimed._id);
+      const prepared = await this.#context(claimed);
+      if (writer.usesContract) await this.#consent?.require(claimed.userId, "generation");
+      const subject = await this.#subject(claimed);
+      const context = buildWriterContext({ items: prepared.contextRows, evidence: prepared.evidence, subject, lockedTexts: prepared.lockedTexts });
       const output = validateGenerationOutput(
         await withTimeout(writer.write(context), 420_000, "sentence writer"),
-        evidence.map(({ id, source_type, source_label, source_text }) => ({
-          id, sourceType: source_type, sourceLabel: source_label, sourceText: source_text,
-        })),
-        items.flatMap(({ context: sectionContext }) => sectionContext.exclude ?? []),
-        context.lockedTexts,
+        prepared.evidence.map(({ id, source_type, source_label, source_text }) => ({ id, sourceType: source_type, sourceLabel: source_label, sourceText: source_text })),
+        prepared.contextRows.flatMap(({ context: sectionContext }) => sectionContext.exclude ?? []), context.lockedTexts,
       );
-      // 섹션 순서는 여기서 정해진다 — 아래 txn이 이 순서로 portfolio_section을
-      // 만들고, 지면 초안의 섹션 번호도 이 순서를 가리킨다.
-      const sectionIds = [...new Set(output.blocks.map(({ recipeSectionId }) => recipeSectionId))];
-      const layouts = designer
-        ? await this.#design(designer, job, subject, context, output, sectionIds)
-        : [];
-      await this.#sql.begin(async (transaction) => {
-        const current = (await transaction<JobRow[]>`select * from generation_job where id = ${jobId} for update`)[0];
-        if (!current || current.status === "done") return;
-        await transaction`select id from \`user\` where id = ${current.user_id} for update`;
-        const decision = await new EntitlementService(transaction).check(current.user_id, "portfolio.generate");
-        if (!decision.allowed || !decision.usage) throw new GenerationError(409, "generation quota is exhausted");
-        await transaction`update generation_job set stage = 'materializing' where id = ${jobId}`;
-        let portfolioId = current.portfolio_id;
-        if (!portfolioId) {
-          portfolioId = (await transaction<{ id: string }[]>`
-            insert into portfolio (
-              user_id, brew_id, template_id, title, status, style_overrides
-            ) values (
-              ${current.user_id}, ${current.brew_id}, ${current.template_id},
-              'Generated portfolio', 'draft',
-              ${transaction.json((current.style_overrides ?? {}) as JSONValue)}
-            ) returning id
-          `)[0]?.id ?? null;
-        }
-        if (!portfolioId) throw new Error("portfolio missing");
-        const lockedCount = Number((await transaction<{ count: number }[]>`
-          select count(*) as count from block join portfolio_section on portfolio_section.id = block.portfolio_section_id
-          where block.user_id = ${current.user_id} and portfolio_section.portfolio_id = ${portfolioId} and block.locked
-        `)[0]?.count ?? 0);
-        if (lockedCount === 0) await transaction`delete from portfolio_section where user_id = ${current.user_id} and portfolio_id = ${portfolioId}`;
-        const sectionMap = new Map<string, string>();
-        for (const [order, recipeSectionId] of sectionIds.entries()) {
-          await transaction`
-            insert into portfolio_section (user_id, portfolio_id, recipe_section_id, order_no)
-            values (${current.user_id}, ${portfolioId}, ${recipeSectionId}, ${order})
-            as new on duplicate key update order_no = new.order_no
-          `;
-          const id = (await transaction<{ id: string }[]>`
-            select id from portfolio_section
-            where user_id = ${current.user_id} and portfolio_id = ${portfolioId}
-              and recipe_section_id = ${recipeSectionId}
-          `)[0]?.id;
-          if (id) sectionMap.set(recipeSectionId, id);
-        }
-        // 초안이 가리키는 블록 번호(1부터)를 실제 식별자로 되돌릴 표.
-        // 자리를 비워 두는 것이 중요하다 — 적재하지 못한 블록이 있어도 뒤
-        // 블록의 번호가 밀리면 안 된다.
-        const blockIds: (string | null)[] = output.blocks.map(() => null);
-        for (const [blockOrder, generated] of output.blocks.entries()) {
-          const portfolioSectionId = sectionMap.get(generated.recipeSectionId);
-          if (!portfolioSectionId) continue;
-          const paths = evidence.filter(({ id }) => generated.evidencePathIds.includes(id));
-          const recordPath = paths.find(({ source_type }) => source_type === "record");
-          const blockId = (await transaction<{ id: string }[]>`
-            insert into block (user_id, portfolio_section_id, kind, content, source_record_id, order_no)
-            values (${current.user_id}, ${portfolioSectionId}, ${generated.kind},
-                    ${transaction.json(blockContent(generated) as JSONValue)},
-                    ${recordPath?.source_id ?? null}, ${blockOrder}) returning id
-          `)[0]?.id;
-          if (!blockId) throw new Error("block missing");
-          blockIds[blockOrder] = blockId;
-          for (const path of paths) await transaction`
-            insert into generation_sentence_evidence (user_id, generation_job_id, block_id, recipe_evidence_path_id, source_quote)
-            values (${current.user_id}, ${jobId}, ${blockId}, ${path.id}, ${path.source_label})
-          `;
-          if (recordPath) await transaction`
-            insert ignore into record_usage (user_id, record_id, block_id, quoted_text)
-            values (${current.user_id}, ${recordPath.source_id}, ${blockId}, ${recordPath.source_label})   
-          `;
-        }
-        // 지면 후보를 남긴다. 03이 셋을 나란히 놓고, 고를 때까지는 1안이 붙는다.
-        if (layouts.length > 0) {
-          const specs = toLayoutSpecs(
-            layouts,
-            sectionIds.map((id) => sectionMap.get(id) ?? ""),
-            blockIds,
-          );
-          const batchId = randomUUID();
-          // 새 배치가 자리를 넘겨받는다. 옛 후보는 지우지 않고 선택만 내려놓는다.
-          await transaction`
-            update layout_spec set selected = false
-            where user_id = ${current.user_id} and portfolio_id = ${portfolioId} and selected
-          `;
-          for (const [order, spec] of specs.entries()) await transaction`
-            insert into layout_spec (
-              user_id, portfolio_id, batch_id, generation_job_id, spec, prompt_version,
-              order_no, selected
-            ) values (
-              ${current.user_id}, ${portfolioId}, ${batchId}, ${jobId},
-              ${transaction.json(spec as unknown as JSONValue)},
-              ${LAYOUT_PROMPT_VERSION}, ${order}, ${order === 0}
-            )
-          `;
-        }
-        await transaction`update generation_job set stage = 'charging' where id = ${jobId}`;
-        await transaction`
-          insert into usage_counter (user_id, period_start, used, resets_at)
-          values (${current.user_id}, ${decision.usage.periodStart}, 1, ${decision.usage.resetsAt})
-          as new on duplicate key update used = usage_counter.used + 1, resets_at = new.resets_at
-        `;
-        const usage = (await transaction<{ id: string }[]>`
-          select id from usage_counter
-          where user_id = ${current.user_id} and period_start = ${decision.usage.periodStart}
-        `)[0];
-        if (!usage) throw new Error("usage counter missing");
-        await transaction`
-          insert ignore into generation_usage_ledger (user_id, generation_job_id, usage_counter_id, amount, reason)
-          values (${current.user_id}, ${jobId}, ${usage.id}, 1, 'success')   
-        `;
-        const snapshotSections = await transaction<{
-          id: string; recipe_section_id: string | null; order_no: number; visible: boolean;
-        }[]>`
-          select id, recipe_section_id, order_no, visible from portfolio_section
-          where user_id = ${current.user_id} and portfolio_id = ${portfolioId}
-          order by order_no
-        `;
-        const snapshotBlocks = await transaction<{
-          id: string; portfolio_section_id: string; kind: string;
-          content: Record<string, unknown>; style: Record<string, unknown>;
-          source_record_id: string | null; sync_state: string; locked: boolean;
-        }[]>`
-          select block.* from block join portfolio_section on portfolio_section.id = block.portfolio_section_id
-          where block.user_id = ${current.user_id} and portfolio_section.portfolio_id = ${portfolioId}
-          order by portfolio_section.order_no, block.order_no, block.id
-        `;
-        const snapshot = {
-          portfolioId,
-          sections: snapshotSections.map((section) => ({
-            id: section.id,
-            recipeSectionId: section.recipe_section_id,
-            order: section.order_no,
-            visible: section.visible,
-            blocks: snapshotBlocks.filter((block) => block.portfolio_section_id === section.id).map((block) => ({
-              id: block.id, kind: block.kind, content: block.content, style: block.style,
-              sourceRecordId: block.source_record_id, syncState: block.sync_state,
-              locked: block.locked,
-            })),
-          })),
-        };
-        await transaction`insert into portfolio_snapshot (user_id, portfolio_id, kind, snapshot) values (${current.user_id}, ${portfolioId}, 'initial_generation', ${transaction.json(snapshot as JSONValue)})`;
-        await transaction`update generation_job set status = 'done', stage = 'done', usage_charged = true, portfolio_id = ${portfolioId}, updated_at = now(6) where id = ${jobId}`;
-      });
-      return this.getStatus(job.user_id, job.id);
+      const recipeSectionIds = [...new Set(output.blocks.map(({ recipeSectionId }) => recipeSectionId))];
+      const layouts = designer ? await this.#design(designer, claimed, subject, context, output, recipeSectionIds) : [];
+      await this.#complete(claimed, prepared.recipeEditVersion, output, prepared.evidence, recipeSectionIds, layouts);
+      return this.getStatus(claimed.userId, claimed._id);
     } catch (error) {
-      const retryable = !(error instanceof GenerationValidationError
-        || error instanceof GenerationError
-        || error instanceof SentenceWriterUnavailableError);
-      const code = error instanceof GenerationValidationError
-        ? "EVIDENCE_INVALID"
-        : error instanceof GenerationError
-          ? "GENERATION_REJECTED"
-          // 다시 시도해도 같다 — 프로바이더가 켜지기 전에는 쓸 방법이 없다.
-          : error instanceof SentenceWriterUnavailableError
-            ? "WRITER_UNAVAILABLE"
-            : "PROVIDER_FAILED";
-      await this.#sql.begin(async (transaction) => {
-        const job = (await transaction<JobRow[]>`select * from generation_job where id = ${jobId} for update`)[0];
-        if (!job || job.status === "done") return;
-        let portfolioId = job.portfolio_id;
-        if (!portfolioId) portfolioId = (await transaction<{ id: string }[]>`
-          insert into portfolio (
-            user_id, brew_id, template_id, title, status, style_overrides
-          ) values (
-            ${job.user_id}, ${job.brew_id}, ${job.template_id}, 'Failed generation draft',
-            'draft', ${transaction.json((job.style_overrides ?? {}) as JSONValue)}
-          ) returning id
-        `)[0]?.id ?? null;
-        await transaction`update generation_job set status = 'failed', stage = 'failed', error_code = ${code}, failure_retryable = ${retryable}, portfolio_id = ${portfolioId}, updated_at = now(6) where id = ${jobId}`;
-      }).catch(() => undefined);
+      if (claimed?.status === "running" && claimed.runToken) await this.#recordFailure(claimed, error).catch(() => undefined);
       throw error;
     }
   }
+
+  async #complete(job: GenerationJobDoc, recipeEditVersion: number, output: GenerationOutput, evidence: PathRow[], recipeSectionIds: string[], layouts: Awaited<ReturnType<LayoutDesigner["design"]>>) {
+    const runToken = job.runToken;
+    if (!runToken) throw new GenerationError(409, "generation ownership was lost");
+    await inTransaction(this.context, async (tx) => {
+      const db = mongoCollections(tx.db); const options = { session: tx.session };
+      await requireActiveUser(tx, job.userId);
+      const current = await db.generationJobs.findOne({ _id: job._id, userId: job.userId, status: "running", attempts: job.attempts, runToken }, options);
+      if (!current) {
+        if (await db.generationJobs.findOne({ _id: job._id, userId: job.userId, status: "done" }, options)) return;
+        throw new GenerationError(409, "generation ownership was lost");
+      }
+      const recipe = await db.recipes.findOne({ _id: job.recipeId, userId: job.userId, editVersion: recipeEditVersion }, options);
+      if (!recipe) throw new GenerationError(409, "recipe changed during generation");
+      const recordIds = evidence.filter(({ source_type }) => source_type === "record").map(({ source_id }) => source_id);
+      await assertActiveRecordsForWrite(tx, job.userId, recordIds);
+      if (!await db.templates.findOne({ _id: job.templateId, isActive: true }, options)) throw new GenerationError(409, "template changed during generation");
+      await db.generationJobs.updateOne({ _id: job._id, attempts: job.attempts, runToken }, { $set: { stage: "materializing", updatedAt: new Date() } }, options);
+
+      let portfolioId = current.portfolioId ?? null; const now = new Date();
+      if (!portfolioId) {
+        portfolioId = randomUUID();
+        await db.portfolios.insertOne({ _id: portfolioId, userId: job.userId, brewId: job.brewId, templateId: job.templateId, title: "Generated portfolio", status: "draft", styleOverrides: job.styleOverrides, createdAt: now, updatedAt: now }, options);
+      }
+      const oldSections = await db.portfolioSections.find({ userId: job.userId, portfolioId }, options).toArray();
+      const lockedCount = await db.blocks.countDocuments({ userId: job.userId, portfolioSectionId: { $in: oldSections.map(({ _id }) => _id) }, locked: true }, options);
+      if (lockedCount === 0 && oldSections.length > 0) {
+        const oldBlockIds = (await db.blocks.find({ userId: job.userId, portfolioSectionId: { $in: oldSections.map(({ _id }) => _id) } }, options).toArray()).map(({ _id }) => _id);
+        await db.generationSentenceEvidence.deleteMany({ userId: job.userId, blockId: { $in: oldBlockIds } }, options);
+        await db.recordUsages.deleteMany({ userId: job.userId, blockId: { $in: oldBlockIds } }, options);
+        await db.blocks.deleteMany({ userId: job.userId, _id: { $in: oldBlockIds } }, options);
+        await db.portfolioSections.deleteMany({ userId: job.userId, portfolioId }, options);
+      }
+      const remainingSections = lockedCount === 0 ? [] : oldSections;
+      const sectionMap = new Map<string, string>();
+      for (const [orderNo, recipeSectionId] of recipeSectionIds.entries()) {
+        const existing = remainingSections.find((section) => section.recipeSectionId === recipeSectionId);
+        const sectionId = existing?._id ?? randomUUID();
+        if (existing) {
+          await db.portfolioSections.updateOne({ _id: sectionId, userId: job.userId }, { $set: { orderNo } }, options);
+        } else {
+          await db.portfolioSections.insertOne({ _id: sectionId, userId: job.userId, portfolioId, recipeSectionId, orderNo, visible: true, hiddenReason: null }, options);
+        }
+        sectionMap.set(recipeSectionId, sectionId);
+      }
+      const blockIds: (string | null)[] = output.blocks.map(() => null);
+      for (const [orderNo, generated] of output.blocks.entries()) {
+        const portfolioSectionId = sectionMap.get(generated.recipeSectionId);
+        if (!portfolioSectionId) continue;
+        const paths = evidence.filter(({ id }) => generated.evidencePathIds.includes(id));
+        const recordPath = paths.find(({ source_type }) => source_type === "record");
+        const blockId = randomUUID(); blockIds[orderNo] = blockId;
+        await db.blocks.insertOne({ _id: blockId, userId: job.userId, portfolioSectionId, kind: generated.kind, content: mongoBlockContent(generated), style: {}, sourceRecordId: recordPath?.source_id ?? null, syncState: "synced", locked: false, orderNo }, options);
+        if (paths.length > 0) await db.generationSentenceEvidence.insertMany(paths.map((path) => ({ _id: randomUUID(), userId: job.userId, generationJobId: job._id, blockId, recipeEvidencePathId: path.id, sourceQuote: path.source_label, createdAt: now })), options);
+        if (recordPath) await db.recordUsages.updateOne({ userId: job.userId, recordId: recordPath.source_id, blockId }, { $setOnInsert: { _id: randomUUID(), userId: job.userId, recordId: recordPath.source_id, blockId, quotedText: recordPath.source_label, firstUsedAt: now } }, { ...options, upsert: true });
+      }
+      if (layouts.length > 0) {
+        const specs = toLayoutSpecs(layouts, recipeSectionIds.map((id) => sectionMap.get(id) ?? ""), blockIds);
+        const batchId = randomUUID();
+        await db.layoutSpecs.updateMany({ userId: job.userId, portfolioId, selected: true }, { $set: { selected: false } }, options);
+        await db.layoutSpecs.insertMany(specs.map((spec, orderNo) => ({ _id: randomUUID(), userId: job.userId, portfolioId, batchId, generationJobId: job._id, seedTemplateId: null, spec: spec as unknown as JsonObject, promptVersion: LAYOUT_PROMPT_VERSION, editedBy: "ai" as const, orderNo, selected: orderNo === 0, createdAt: now, instruction: null })), options);
+      }
+      await db.generationJobs.updateOne({ _id: job._id, attempts: job.attempts, runToken }, { $set: { stage: "charging", updatedAt: new Date() } }, options);
+      await chargeMongoGenerationUsage(tx, job.userId, job._id);
+      const storedSections = await db.portfolioSections.find({ userId: job.userId, portfolioId }, options).sort({ orderNo: 1, _id: 1 }).toArray();
+      const storedBlocks = await db.blocks.find({ userId: job.userId, portfolioSectionId: { $in: storedSections.map(({ _id }) => _id) } }, options).sort({ orderNo: 1, _id: 1 }).toArray();
+      const snapshot = await writeSnapshot(tx, job.userId, mongoPortfolioSnapshot(portfolioId, storedSections, storedBlocks));
+      await db.portfolioSnapshots.insertOne({ _id: randomUUID(), userId: job.userId, portfolioId, kind: "initial_generation", snapshot: snapshot as unknown as JsonObject, createdAt: now }, options);
+      const completed = await db.generationJobs.updateOne({ _id: job._id, userId: job.userId, status: "running", attempts: job.attempts, runToken }, { $set: { status: "done", stage: "done", usageCharged: true, portfolioId, runToken: null, updatedAt: new Date() } }, options);
+      if (completed.matchedCount !== 1) throw new GenerationError(409, "generation ownership was lost");
+    });
+  }
+
+  async #recordFailure(job: GenerationJobDoc, error: unknown) {
+    const runToken = job.runToken;
+    if (!runToken) return;
+    const retryable = !(error instanceof GenerationValidationError || error instanceof GenerationError || error instanceof SentenceWriterUnavailableError);
+    const code = error instanceof GenerationValidationError ? "EVIDENCE_INVALID" : error instanceof GenerationError ? "GENERATION_REJECTED" : error instanceof SentenceWriterUnavailableError ? "WRITER_UNAVAILABLE" : "PROVIDER_FAILED";
+    await inTransaction(this.context, async (tx: MongoTransaction) => {
+      const db = mongoCollections(tx.db); const options = { session: tx.session };
+      await requireActiveUser(tx, job.userId);
+      const current = await db.generationJobs.findOne({ _id: job._id, userId: job.userId, status: "running", attempts: job.attempts, runToken }, options);
+      if (!current) return;
+      let portfolioId = current.portfolioId ?? null; const now = new Date();
+      if (!portfolioId) {
+        portfolioId = randomUUID();
+        await db.portfolios.insertOne({ _id: portfolioId, userId: job.userId, brewId: job.brewId, templateId: job.templateId, title: "Failed generation draft", status: "draft", styleOverrides: job.styleOverrides, createdAt: now, updatedAt: now }, options);
+      }
+      await db.generationJobs.updateOne({ _id: job._id, status: "running", attempts: job.attempts, runToken }, { $set: { status: "failed", stage: "failed", errorCode: code, failureRetryable: retryable, portfolioId, runToken: null, updatedAt: now } }, options);
+    });
+  }
 }
+
+export { GenerationService as MongoGenerationService };

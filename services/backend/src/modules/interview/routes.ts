@@ -7,16 +7,16 @@ import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import type { InterviewService } from "./service.js";
-import { BrewJobError, type BrewJobService } from "../brew-jobs/service.js";
+import { type InterviewApi } from "./index.js";
+import { BrewJobError, type BrewJobApi } from "../brew-jobs/index.js";
 
 const IdParamsSchema = z.strictObject({ id: z.uuid() });
 const QuestionParamsSchema = z.strictObject({ id: z.uuid(), questionId: z.uuid() });
 
 export interface RegisterInterviewRoutesOptions {
-  interviewService: InterviewService;
+  interviewService: InterviewApi;
   /** 질문 생성은 계약을 부르느라 1분쯤 걸린다. 요청 안에서 돌리지 않는다. */
-  brewJobService: BrewJobService;
+  brewJobService: BrewJobApi;
   authenticateRequest: preHandlerHookHandler;
 }
 

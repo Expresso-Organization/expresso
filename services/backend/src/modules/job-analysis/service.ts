@@ -1,474 +1,155 @@
-import {
-  JobAnalysisExtractionSchema,
-  JobAnalysisResultSchema,
-  JobAnalysisStatusSchema,
-  ReanalysisRequestResultSchema,
-  type ExtractedRequirement,
-  type JobAnalysisExtraction,
-} from "@expresso/contracts";
-import type { SqlTag, JSONValue } from "../../platform/mysql.js";
-
-import { addOutboxEvent } from "../../platform/outbox.js";
+import { randomUUID } from "node:crypto";
+import { Decimal128, type ClientSession } from "mongodb";
+import { JobAnalysisExtractionSchema, JobAnalysisResultSchema, ReanalysisRequestResultSchema, RequirementCoverageSchema, type JobAnalysisExtraction } from "@expresso/contracts";
+import { mongoCollections, type JobAnalysisDoc, type JobPostingRequirementDoc, type RequirementCoverageDoc } from "@expresso/database";
+import type { MongoContext } from "../../platform/mongodb.js";
+import { inTransaction } from "../../platform/mongo-transaction.js";
+import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
+import { requireActiveUser } from "../identity/index.js";
+import { assertActiveRecordsForWrite } from "../career/index.js";
+import { calculateExplainableMatch } from "../jobs/index.js";
+import type { JobAnalysisApi } from "./index.js";
+import { JobAnalysisNotFoundError } from "./public.js";
 import { calculateRequirementCoverage } from "./coverage.js";
-import {
-  RequirementExtractorUnavailableError,
-  type RequirementExtractor,
-} from "./extractor.js";
+import { RequirementExtractorUnavailableError, type RequirementExtractor } from "./extractor.js";
 import { AnalysisEvidenceError, validateExtractionSource } from "./source-span.js";
 
-interface AnalysisRow {
-  id: string;
-  user_id: string;
-  job_posting_id: string;
-  status: "queued" | "running" | "done" | "failed";
-  progress_stage: "queued" | "extracting" | "validating" | "covering" | "done" | "failed";
-  attempts: number;
-  result_version: number;
-  target_version: number;
-  failure_code: string | null;
-  failure_retryable: boolean | null;
-  analyzed_at: Date | string | null;
-  description_raw: string;
-}
-
-interface RequirementRow {
-  id: string;
-  label: string;
-  kind: "must" | "nice" | "tone";
-  /** 어느 축에도 확실히 안 붙으면 null. "other"는 DB에 null로 들어간다. */
-  axis: "technology" | "impact" | "role" | "conditions" | null;
-  source_span: ExtractedRequirement["sourceSpan"];
-  coverage: "covered" | "partial" | "missing";
-  covered_by: string[];
-}
-
-/**
- * 추출기를 갈아 끼울 때만 올린다. 공고 원문은 불변이라, 같은 추출기로 다시
- * 뽑아도 같은 요건이 나온다 — 그래서 재분석은 요건을 다시 뽑지 않고 내
- * 커버리지만 다시 잰다.
- *
- * 이 값을 올리면 그 공고의 요건이 통째로 교체되고, 다른 사람의 커버리지도
- * 함께 지워진다(각자 다음 분석에서 다시 채워진다).
- *
- * 2 — 규칙 기반 추출기를 걷어냈다. 올리지 않으면 규칙이 잘라 둔 회사 비전
- * 문구가 그 공고의 "요건"으로 영원히 남는다(캐시가 공고에 붙어 있다).
- */
 const EXTRACTOR_VERSION = 2;
+const failureOf = (error: unknown) => error instanceof AnalysisEvidenceError ? { code: "INVALID_SOURCE_SPAN", retryable: false }
+  : error instanceof RequirementExtractorUnavailableError ? { code: "EXTRACTOR_UNAVAILABLE", retryable: false } : { code: "EXTRACTION_FAILED", retryable: true };
 
-interface StoredRequirementRow {
-  id: string;
-  order_no: number;
-  label: string;
-  kind: "must" | "nice" | "tone";
-  axis: "technology" | "impact" | "role" | "conditions" | null;
-  source_span: ExtractedRequirement["sourceSpan"];
-}
+export class JobAnalysisService implements JobAnalysisApi {
+  constructor(readonly context: MongoContext) {}
 
-interface HistoryRow {
-  previous_version: number;
-  requirements: Array<{
-    requirementId: string;
-    label: string;
-    kind: "must" | "nice" | "tone";
-    sourceSpan: ExtractedRequirement["sourceSpan"];
-    coverage: "covered" | "partial" | "missing";
-    coveredBy: string[];
-  }>;
-  archived_at: Date | string;
-}
-
-interface RecordRow {
-  id: string;
-  title: string;
-  body_md: string;
-  properties: Record<string, unknown>;
-}
-
-interface ImpactRow {
-  brew_count: number;
-  recipe_count: number;
-}
-
-export class JobAnalysisNotFoundError extends Error {
-  readonly statusCode = 404;
-  constructor() {
-    super("job analysis not found");
-    this.name = "JobAnalysisNotFoundError";
-  }
-}
-
-function mapRequirement(row: RequirementRow) {
-  return {
-    requirementId: row.id,
-    label: row.label,
-    kind: row.kind,
-    axis: row.axis,
-    sourceSpan: row.source_span,
-    coverage: row.coverage,
-    coveredBy: row.covered_by,
-  };
-}
-
-function safeFailure(error: unknown): { code: string; retryable: boolean } {
-  if (error instanceof AnalysisEvidenceError) {
-    return { code: "INVALID_SOURCE_SPAN", retryable: false };
-  }
-  // 다시 시도해도 같다 — 프로바이더가 켜지기 전에는 뽑을 방법이 없다.
-  if (error instanceof RequirementExtractorUnavailableError) {
-    return { code: "EXTRACTOR_UNAVAILABLE", retryable: false };
-  }
-  return { code: "EXTRACTION_FAILED", retryable: true };
-}
-
-export class JobAnalysisService {
-  readonly #sql: SqlTag;
-
-  constructor(sql: SqlTag) {
-    this.#sql = sql;
-  }
-
-  /**
-   * 내 분석 결과가 보여주는 요건. 요건은 공고에 붙고 커버리지만 사용자별인데,
-   * 여기서는 **내가 대조를 끝낸 것만** 보여준다 — 다른 사람이 뽑아 둔 요건을
-   * 내 커버리지인 양 "없음"으로 채우면 대조한 적 없는 것과 구별되지 않는다.
-   * 그래서 left join이 아니라 inner join이다.
-   */
-  #requirementSelect(userId: string, jobPostingId: string) {
-    return this.#sql`
-      select
-        job_posting_requirement.id,
-        job_posting_requirement.label,
-        job_posting_requirement.kind,
-        job_posting_requirement.axis,
-        job_posting_requirement.source_span,
-        requirement_coverage.coverage,
-        requirement_coverage.covered_by
-      from job_posting_requirement
-      join requirement_coverage
-        on requirement_coverage.requirement_id = job_posting_requirement.id
-        and requirement_coverage.user_id = ${userId}
-      where job_posting_requirement.job_posting_id = ${jobPostingId}
-        and job_posting_requirement.extractor_version = ${EXTRACTOR_VERSION}
-      order by job_posting_requirement.order_no, job_posting_requirement.id
-    `;
+  async #requirements(userId: string, jobPostingId: string, session?: ClientSession) {
+    const rows = await mongoCollections(this.context.db).jobPostingRequirements.aggregate<JobPostingRequirementDoc & { coverage: RequirementCoverageDoc }>([
+      { $match: { jobPostingId, extractorVersion: EXTRACTOR_VERSION } }, { $sort: { orderNo: 1, _id: 1 } },
+      { $lookup: { from: "requirement_coverages", localField: "_id", foreignField: "requirementId", pipeline: [{ $match: { userId } }], as: "coverage" } }, { $unwind: "$coverage" },
+    ], session ? { session } : {}).toArray();
+    return rows.map((row) => RequirementCoverageSchema.parse({ requirementId: row._id, label: row.label, kind: row.kind, axis: row.axis ?? null, sourceSpan: row.sourceSpan, coverage: row.coverage.coverage, coveredBy: row.coverage.coveredBy }));
   }
 
   async process(jobAnalysisId: string, extractor: RequirementExtractor) {
-    let source = "";
-    let targetVersion = 0;
+    let claimed: JobAnalysisDoc | undefined;
     try {
-      const start = await this.#sql.begin(async (transaction) => {
-        const rows = await transaction<AnalysisRow[]>`
-          select job_analysis.*, job_posting.description_raw
-          from job_analysis
-          join job_posting on job_posting.id = job_analysis.job_posting_id
-          where job_analysis.id = ${jobAnalysisId}
-          for update of job_analysis
-        `;
-        const analysis = rows[0];
-        if (!analysis) throw new JobAnalysisNotFoundError();
-        if (
-          analysis.status === "done"
-          && analysis.result_version >= analysis.target_version
-        ) {
-          return { alreadyComplete: true, source: analysis.description_raw, target: analysis.target_version };
-        }
-        await transaction`
-          update job_analysis
-          set status = 'running', progress_stage = 'extracting',
-              attempts = attempts + 1, failure_code = null, failure_retryable = null
-          where id = ${jobAnalysisId}
-        `;
-        return { alreadyComplete: false, source: analysis.description_raw, target: analysis.target_version };
+      const start = await inTransaction(this.context, async (tx) => {
+        const db = mongoCollections(tx.db); const options = { session: tx.session };
+        const analysis = await db.jobAnalyses.findOne({ _id: jobAnalysisId }, options);
+        if (!analysis?.jobPostingId) throw new JobAnalysisNotFoundError();
+        await requireActiveUser(tx, analysis.userId);
+        const posting = await db.jobPostings.findOne({ _id: analysis.jobPostingId }, options);
+        if (!posting) throw new JobAnalysisNotFoundError();
+        if (analysis.status === "done" && analysis.resultVersion >= analysis.targetVersion) return { analysis, posting, complete: true };
+        const next = await db.jobAnalyses.findOneAndUpdate({ _id: jobAnalysisId, targetVersion: analysis.targetVersion }, { $set: { status: "running", progressStage: "extracting", failureCode: null, failureRetryable: null }, $inc: { attempts: 1 } }, { ...options, returnDocument: "after" });
+        if (!next) throw new JobAnalysisNotFoundError();
+        return { analysis: next, posting, complete: false };
       });
-      source = start.source;
-      targetVersion = start.target;
-      if (start.alreadyComplete) return this.getResultById(jobAnalysisId);
-
-      const analysisRows = await this.#sql<Pick<AnalysisRow, "user_id" | "job_posting_id">[]>`
-        select user_id, job_posting_id from job_analysis where id = ${jobAnalysisId}
-      `;
-      const userId = analysisRows[0]?.user_id;
-      const jobPostingId = analysisRows[0]?.job_posting_id;
-      if (!userId || !jobPostingId) throw new JobAnalysisNotFoundError();
-
-      // 요건은 공고에 붙는다. 이미 뽑혀 있으면 다시 뽑지 않는다 — 원문이
-      // 불변이라 같은 추출기로 다시 돌려도 같은 결과가 나온다.
-      const stored = await this.#sql<StoredRequirementRow[]>`
-        select id, order_no, label, kind, axis, source_span
-        from job_posting_requirement
-        where job_posting_id = ${jobPostingId}
-          and extractor_version = ${EXTRACTOR_VERSION}
-        order by order_no, id
-      `;
-      let extraction: JobAnalysisExtraction | null = null;
-      if (stored.length === 0) {
-        extraction = JobAnalysisExtractionSchema.parse(await extractor.extract(source));
-        await this.#sql`
-          update job_analysis set progress_stage = 'validating'
-          where id = ${jobAnalysisId} and result_version < target_version
-        `;
-        validateExtractionSource(source, extraction);
+      if (start.complete) return this.getResultById(jobAnalysisId);
+      claimed = start.analysis;
+      const userId = claimed.userId;
+      const jobPostingId = start.posting._id;
+      const targetVersion = claimed.targetVersion;
+      const attempt = claimed.attempts;
+      const stored = await mongoCollections(this.context.db).jobPostingRequirements.find({ jobPostingId, extractorVersion: EXTRACTOR_VERSION }).sort({ orderNo: 1, _id: 1 }).toArray();
+      // 외부 호출은 상태를 먼저 확정한 뒤 트랜잭션 밖에서 실행합니다.
+      const extraction: JobAnalysisExtraction | null = stored.length ? null : JobAnalysisExtractionSchema.parse(await extractor.extract(start.posting.descriptionRaw));
+      if (extraction) {
+        await this.#progress(claimed, "validating");
+        validateExtractionSource(start.posting.descriptionRaw, extraction);
       }
-      const requirements: ExtractedRequirement[] = extraction
-        ? extraction.requirements
-        : stored.map((row) => ({
-            label: row.label,
-            kind: row.kind,
-            axis: row.axis ?? ("other" as const),
-            sourceSpan: row.source_span,
-          }));
+      await this.#progress(claimed, "covering");
 
-      const records = await this.#sql<RecordRow[]>`
-        select id, title, body_md, properties
-        from record where user_id = ${userId} and deleted_at is null
-      `;
-      const recordTexts = records.map((record) => ({
-        id: record.id,
-        text: `${record.title}\n${record.body_md}\n${JSON.stringify(record.properties)}`,
-      }));
-      await this.#sql`
-        update job_analysis set progress_stage = 'covering'
-        where id = ${jobAnalysisId} and result_version < target_version
-      `;
-
-      await this.#sql.begin(async (transaction) => {
-        const locks = await transaction<AnalysisRow[]>`
-          select job_analysis.*, job_posting.description_raw
-          from job_analysis
-          join job_posting on job_posting.id = job_analysis.job_posting_id
-          where job_analysis.id = ${jobAnalysisId}
-          for update of job_analysis
-        `;
-        const analysis = locks[0];
-        if (!analysis) throw new JobAnalysisNotFoundError();
-        if (analysis.result_version >= targetVersion) return;
-
-        const previousRows = await transaction<RequirementRow[]>`
-          ${this.#requirementSelect(analysis.user_id, analysis.job_posting_id)}
-        `;
-        if (analysis.result_version > 0) {
-          await transaction`
-            insert into job_analysis_history (
-              job_analysis_id, user_id, previous_version, requirements, archived_at
-            ) values (
-              ${jobAnalysisId}, ${analysis.user_id}, ${analysis.result_version},
-              ${transaction.json(previousRows.map(mapRequirement) as JSONValue)}, now(6)
-            )
-            as new on duplicate key update previous_version = new.previous_version,
-              requirements = new.requirements,
-              archived_at = new.archived_at
-          `;
-        }
-        // 같은 공고를 두 사람이 동시에 처음 읽으면 요건이 두 벌 들어간다.
-        // 공고 하나에 한 번만 쓰이도록 잠근다.
-        await transaction`
-          select get_lock(left(concat('ja:', ${analysis.job_posting_id}), 64), 10)
-        `;
-
-        // 요건은 처음 뽑을 때만 쓴다. 이미 있으면 그대로 두고, 그래서 다른
-        // 사람이 이미 재 둔 커버리지도 지워지지 않는다.
-        let targets: StoredRequirementRow[] = [...await transaction<StoredRequirementRow[]>`
-          select id, order_no, label, kind, axis, source_span
-          from job_posting_requirement
-          where job_posting_id = ${analysis.job_posting_id}
-            and extractor_version = ${EXTRACTOR_VERSION}
-          order by order_no, id
-        `];
-        if (targets.length === 0 && extraction) {
-          const inserted: StoredRequirementRow[] = [];
-          for (const [order, requirement] of extraction.requirements.entries()) {
-            const row = (await transaction<{ id: string }[]>`
-              insert into job_posting_requirement (
-                job_posting_id, order_no, label, kind, axis, source_span,
-                extractor_version
-              ) values (
-                ${analysis.job_posting_id}, ${order}, ${requirement.label},
-                ${requirement.kind},
-                ${requirement.axis === "other" ? null : requirement.axis},
-                ${transaction.json(requirement.sourceSpan as JSONValue)},
-                ${EXTRACTOR_VERSION}
-              )
-              returning id
-            `)[0];
-            if (!row) throw new Error("job posting requirement was not persisted");
-            inserted.push({
-              id: row.id,
-              order_no: order,
-              label: requirement.label,
-              kind: requirement.kind,
-              axis: requirement.axis === "other" ? null : requirement.axis,
-              source_span: requirement.sourceSpan,
-            });
+      await inTransaction(this.context, async (tx) => {
+        await requireActiveUser(tx, userId);
+        const db = mongoCollections(tx.db); const options = { session: tx.session };
+        const analysis = await db.jobAnalyses.findOne({ _id: jobAnalysisId, userId, status: "running", targetVersion, attempts: attempt, resultVersion: { $lt: targetVersion } }, options);
+        if (!analysis) return;
+        // 공통 요구사항은 공고 문서의 쓰기 충돌로 직렬화합니다. 다른 사용자가 먼저 저장했으면 재시도 후 그 결과를 씁니다.
+        const posting = await db.jobPostings.findOneAndUpdate({ _id: jobPostingId }, { $inc: { analysisVersion: 1 } }, { ...options, returnDocument: "after" });
+        if (!posting) throw new JobAnalysisNotFoundError();
+        let normalized = posting.requirements;
+        const previous = analysis.resultVersion > 0 ? await this.#requirements(userId, jobPostingId, tx.session) : null;
+        let targets = await db.jobPostingRequirements.find({ jobPostingId, extractorVersion: EXTRACTOR_VERSION }, options).sort({ orderNo: 1, _id: 1 }).toArray();
+        if (!targets.length && extraction) {
+          const oldIds = (await db.jobPostingRequirements.find({ jobPostingId }, options).project<{ _id: string }>({ _id: 1 }).toArray()).map((row) => row._id);
+          if (oldIds.length) {
+            await db.requirementCoverages.deleteMany({ requirementId: { $in: oldIds } }, options);
+            await db.jobPostingRequirements.deleteMany({ jobPostingId }, options);
           }
-          targets = inserted;
-          await transaction`
-            update job_posting
-            set requirements = ${transaction.json(extraction.normalized as JSONValue)},
-                normalized_at = now(6)
-            where id = ${analysis.job_posting_id}
-          `;
+          targets = extraction.requirements.map((requirement, orderNo) => ({ _id: randomUUID(), jobPostingId, orderNo, label: requirement.label, kind: requirement.kind, axis: requirement.axis === "other" ? null : requirement.axis, sourceSpan: requirement.sourceSpan, extractorVersion: EXTRACTOR_VERSION, extractedAt: new Date() }));
+          await db.jobPostingRequirements.insertMany(targets, options);
+          await db.jobPostings.updateOne({ _id: jobPostingId }, { $set: { requirements: extraction.normalized, normalizedAt: new Date() } }, options);
+          normalized = extraction.normalized;
         }
-
-        // 커버리지는 **실제로 저장된 요건**에 맞춰 다시 잰다. 라벨로 짝을
-        // 맞추면 추출기가 같은 문장을 두 번 뽑았을 때 어긋난다.
-        await transaction`
-          delete from requirement_coverage
-          where user_id = ${analysis.user_id}
-            and requirement_id in (
-              select id from job_posting_requirement
-              where job_posting_id = ${analysis.job_posting_id}
-            )
-        `;
+        const records = await db.careerRecords.find({ userId, deletedAt: null }, options).toArray();
+        await assertActiveRecordsForWrite(tx, userId, records.map((record) => record._id));
+        const recordTexts = records.map((record) => ({ id: record._id, text: `${record.title}\n${record.bodyMd}\n${JSON.stringify(record.properties)}` }));
+        const targetIds = targets.map((target) => target._id);
+        await db.requirementCoverages.deleteMany({ userId, requirementId: { $in: targetIds } }, options);
         for (const target of targets) {
-          const result = calculateRequirementCoverage(
-            {
-              label: target.label,
-              kind: target.kind,
-              axis: target.axis ?? "other",
-              sourceSpan: target.source_span,
-            },
-            recordTexts,
-          );
-          await transaction`
-            insert into requirement_coverage (
-              user_id, requirement_id, coverage, covered_by, computed_at
-            ) values (
-              ${analysis.user_id}, ${target.id}, ${result.coverage},
-              ${result.coveredBy}, now(6)
-            )
-          `;
+          const requirement = { label: target.label, kind: target.kind, axis: target.axis ?? "other" as const, sourceSpan: RequirementCoverageSchema.shape.sourceSpan.parse(target.sourceSpan) };
+          const coverage = calculateRequirementCoverage(requirement, recordTexts);
+          await db.requirementCoverages.insertOne({ _id: `${userId}:${target._id}`, userId, requirementId: target._id, ...coverage, computedAt: new Date() }, options);
         }
-        await transaction`
-          update job_analysis
-          set status = 'done', progress_stage = 'done',
-              result_version = ${targetVersion}, analyzed_at = now(6),
-              failure_code = null, failure_retryable = null
-          where id = ${jobAnalysisId}
-        `;
+        // 커버리지와 일치도를 같은 기록 snapshot으로 저장합니다. 근거가 부족하면 이전 점수를 남기지 않습니다.
+        const normalizedInput = JobAnalysisExtractionSchema.shape.normalized.parse(normalized);
+        const match = records.length >= 3 ? calculateExplainableMatch(jobPostingId, normalizedInput, recordTexts.map((record) => record.text).join("\n"), new Date()) : null;
+        if (match) await db.matchScores.updateOne({ userId, jobPostingId }, { $set: { total: Decimal128.fromString(String(match.total)), axes: match.axes, reasonText: match.reason, nextAction: match.nextAction, computedAt: new Date(match.computedAt) }, $setOnInsert: { _id: randomUUID(), userId, jobPostingId } }, { ...options, upsert: true });
+        else await db.matchScores.deleteOne({ userId, jobPostingId }, options);
+        await db.jobAnalyses.updateOne({ _id: jobAnalysisId, userId, status: "running", targetVersion, attempts: attempt }, { $set: { status: "done", progressStage: "done", resultVersion: targetVersion, analyzedAt: new Date(), failureCode: null, failureRetryable: null, ...(previous ? { history: { userId, previousVersion: analysis.resultVersion, requirements: previous, archivedAt: new Date() } } : {}) } }, options);
       });
       return this.getResultById(jobAnalysisId);
     } catch (error) {
-      const failure = safeFailure(error);
-      await this.#sql`
-        update job_analysis
-        set status = 'failed', progress_stage = 'failed',
-            failure_code = ${failure.code}, failure_retryable = ${failure.retryable}
-        where id = ${jobAnalysisId}
-          and result_version < target_version
-      `.catch(() => undefined);
+      if (claimed) {
+        const current = claimed; const failure = failureOf(error);
+        await inTransaction(this.context, async (tx) => {
+          await requireActiveUser(tx, current.userId);
+          await mongoCollections(tx.db).jobAnalyses.updateOne({ _id: jobAnalysisId, userId: current.userId, status: "running", targetVersion: current.targetVersion, attempts: current.attempts, resultVersion: { $lt: current.targetVersion } }, { $set: { status: "failed", progressStage: "failed", failureCode: failure.code, failureRetryable: failure.retryable } }, { session: tx.session });
+        }).catch(() => undefined);
+      }
       throw error;
     }
   }
 
-  async getResult(userId: string, jobAnalysisId: string) {
-    const results = await this.#getResult(userId, jobAnalysisId);
-    if (!results) throw new JobAnalysisNotFoundError();
-    return results;
-  }
-
-  async getResultById(jobAnalysisId: string) {
-    const users = await this.#sql<{ user_id: string }[]>`
-      select user_id from job_analysis where id = ${jobAnalysisId}
-    `;
-    const userId = users[0]?.user_id;
-    if (!userId) throw new JobAnalysisNotFoundError();
-    const result = await this.#getResult(userId, jobAnalysisId);
-    if (!result) throw new JobAnalysisNotFoundError();
-    return result;
-  }
-
-  async #getResult(userId: string, jobAnalysisId: string) {
-    const analyses = await this.#sql<AnalysisRow[]>`
-      select job_analysis.*, job_posting.description_raw
-      from job_analysis
-      left join job_posting on job_posting.id = job_analysis.job_posting_id
-      where job_analysis.id = ${jobAnalysisId} and job_analysis.user_id = ${userId}
-    `;
-    const analysis = analyses[0];
-    if (!analysis) return null;
-    const requirements = analysis.job_posting_id
-      ? await this.#sql<RequirementRow[]>`
-          ${this.#requirementSelect(userId, analysis.job_posting_id)}
-        `
-      : [];
-    const histories = await this.#sql<HistoryRow[]>`
-      select previous_version, requirements, archived_at
-      from job_analysis_history
-      where user_id = ${userId} and job_analysis_id = ${jobAnalysisId}
-    `;
-    const history = histories[0];
-    return JobAnalysisResultSchema.parse({
-      analysis: JobAnalysisStatusSchema.parse({
-        jobAnalysisId,
-        status: analysis.status,
-        stage: analysis.progress_stage,
-        attempts: analysis.attempts,
-        resultVersion: analysis.result_version,
-        failure: analysis.failure_code
-          ? { code: analysis.failure_code, retryable: analysis.failure_retryable ?? false }
-          : null,
-        analyzedAt: analysis.analyzed_at
-          ? new Date(analysis.analyzed_at).toISOString()
-          : null,
-      }),
-      requirements: requirements.map(mapRequirement),
-      previous: history
-        ? {
-            version: history.previous_version,
-            requirements: history.requirements,
-            archivedAt: new Date(history.archived_at).toISOString(),
-          }
-        : null,
+  async #progress(analysis: JobAnalysisDoc, progressStage: "validating" | "covering") {
+    await inTransaction(this.context, async (tx) => {
+      await requireActiveUser(tx, analysis.userId);
+      await mongoCollections(tx.db).jobAnalyses.updateOne({ _id: analysis._id, userId: analysis.userId, status: "running", targetVersion: analysis.targetVersion, attempts: analysis.attempts }, { $set: { progressStage } }, { session: tx.session });
     });
+  }
+
+  async getResult(userId: string, jobAnalysisId: string) {
+    return inTransaction(this.context, async (tx) => {
+    const analysis = await mongoCollections(tx.db).jobAnalyses.findOne({ _id: jobAnalysisId, userId }, { session: tx.session });
+    if (!analysis) throw new JobAnalysisNotFoundError();
+    return JobAnalysisResultSchema.parse({
+      analysis: { jobAnalysisId, status: analysis.status, stage: analysis.progressStage, attempts: analysis.attempts, resultVersion: analysis.resultVersion, failure: analysis.failureCode ? { code: analysis.failureCode, retryable: analysis.failureRetryable ?? false } : null, analyzedAt: analysis.analyzedAt?.toISOString() ?? null },
+      requirements: analysis.jobPostingId ? await this.#requirements(userId, analysis.jobPostingId, tx.session) : [],
+      previous: analysis.history ? { version: analysis.history.previousVersion, requirements: analysis.history.requirements, archivedAt: analysis.history.archivedAt.toISOString() } : null,
+    });
+    });
+  }
+  async getResultById(jobAnalysisId: string) {
+    const analysis = await mongoCollections(this.context.db).jobAnalyses.findOne({ _id: jobAnalysisId });
+    if (!analysis) throw new JobAnalysisNotFoundError();
+    return this.getResult(analysis.userId, jobAnalysisId);
   }
 
   async requestReanalysis(userId: string, jobAnalysisId: string) {
-    return this.#sql.begin(async (transaction) => {
-      const rows = await transaction<AnalysisRow[]>`
-        select job_analysis.*, job_posting.description_raw
-        from job_analysis
-        left join job_posting on job_posting.id = job_analysis.job_posting_id
-        where job_analysis.id = ${jobAnalysisId} and job_analysis.user_id = ${userId}
-        for update of job_analysis
-      `;
-      const analysis = rows[0];
+    return inTransaction(this.context, async (tx) => {
+      await requireActiveUser(tx, userId);
+      const db = mongoCollections(tx.db); const options = { session: tx.session };
+      const analysis = await db.jobAnalyses.findOne({ _id: jobAnalysisId, userId }, options);
       if (!analysis) throw new JobAnalysisNotFoundError();
-      if (analysis.status !== "done") {
-        const error = new Error("only completed analysis can be reanalyzed") as Error & { statusCode: number };
-        error.statusCode = 409;
-        throw error;
-      }
-      const impacts = await transaction<ImpactRow[]>`
-        select
-          count(distinct brew.id) as brew_count,
-          count(distinct recipe.id) as recipe_count
-        from brew
-        left join recipe on recipe.brew_id = brew.id and recipe.user_id = brew.user_id
-        where brew.user_id = ${userId} and brew.job_analysis_id = ${jobAnalysisId}
-      `;
-      const targetVersion = analysis.result_version + 1;
-      await transaction`
-        update job_analysis
-        set status = 'queued', progress_stage = 'queued',
-            target_version = ${targetVersion}, failure_code = null,
-            failure_retryable = null
-        where id = ${jobAnalysisId} and user_id = ${userId}
-      `;
-      await addOutboxEvent(transaction, {
-        topic: "job.normalize",
-        payload: { jobAnalysisId, userId, targetVersion },
-        idempotencyKey: `job-reanalysis:${jobAnalysisId}:v${targetVersion}`,
-      });
-      return ReanalysisRequestResultSchema.parse({
-        jobAnalysisId,
-        status: "queued",
-        targetVersion,
-        impact: {
-          brewCount: Number(impacts[0]?.brew_count ?? 0),
-          recipeCount: Number(impacts[0]?.recipe_count ?? 0),
-        },
-      });
+      if (analysis.status !== "done") throw Object.assign(new Error("only completed analysis can be reanalyzed"), { statusCode: 409 });
+      const brewIds = (await db.brews.find({ userId, jobAnalysisId }, options).project<{ _id: string }>({ _id: 1 }).toArray()).map((brew) => brew._id);
+      const recipeCount = await db.recipes.countDocuments({ userId, brewId: { $in: brewIds } }, options);
+      const targetVersion = analysis.resultVersion + 1;
+      await db.jobAnalyses.updateOne({ _id: jobAnalysisId, userId, status: "done", resultVersion: analysis.resultVersion }, { $set: { status: "queued", progressStage: "queued", targetVersion, failureCode: null, failureRetryable: null } }, options);
+      await addMongoOutboxEvent(tx, { userId, topic: "job.normalize", payload: { jobAnalysisId, userId, targetVersion }, idempotencyKey: `job-reanalysis:${jobAnalysisId}:v${targetVersion}` });
+      return ReanalysisRequestResultSchema.parse({ jobAnalysisId, status: "queued", targetVersion, impact: { brewCount: brewIds.length, recipeCount } });
     });
   }
 }
+
+export { JobAnalysisService as MongoJobAnalysisService };

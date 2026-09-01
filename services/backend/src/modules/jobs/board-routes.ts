@@ -8,7 +8,7 @@ import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import type { JobBoardService } from "./board-service.js";
+import { type JobBoardApi } from "./index.js";
 
 const RecentSearchQuerySchema = z.strictObject({
   limit: z.coerce.number().int().min(1).max(20).default(10),
@@ -17,7 +17,7 @@ const RecentSearchQuerySchema = z.strictObject({
 const CompanyIdParamsSchema = z.strictObject({ id: z.uuid() });
 
 export interface RegisterJobBoardRoutesOptions {
-  service: JobBoardService;
+  service: JobBoardApi;
   authenticateRequest: preHandlerHookHandler;
 }
 

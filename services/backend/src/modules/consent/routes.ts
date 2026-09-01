@@ -6,12 +6,12 @@ import {
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import { ConsentPolicyMismatch, type ConsentService } from "./service.js";
+import { ConsentPolicyMismatch, type ConsentApi } from "./index.js";
 
 /** 10d 온보딩에서 묻고, 09 설정에서 끈다. */
 export function registerConsentRoutes(
   app: FastifyInstance,
-  options: { service: ConsentService; authenticateRequest: preHandlerHookHandler },
+  options: { service: ConsentApi; authenticateRequest: preHandlerHookHandler },
 ): void {
   const preHandler = options.authenticateRequest;
 

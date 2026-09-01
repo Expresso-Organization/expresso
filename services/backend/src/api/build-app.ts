@@ -3,58 +3,58 @@ import Fastify, { LogController, type FastifyInstance } from "fastify";
 import type { RuntimeConfig } from "../config/runtime-config.js";
 import type { ReadinessCheck } from "../modules/system/readiness.js";
 import { registerSystemRoutes } from "../modules/system/routes.js";
-import type { IdentityService } from "../modules/identity/service.js";
+import { type IdentityApi } from "../modules/identity/index.js";
 import { registerIdentityRoutes } from "../modules/identity/routes.js";
 import type { GoogleIdTokenVerifier } from "../modules/identity/google.js";
-import type { EntitlementService } from "../modules/entitlements/service.js";
+import { type EntitlementApi } from "../modules/entitlements/index.js";
 import { registerEntitlementRoutes } from "../modules/entitlements/routes.js";
 import { createAuthenticateRequest } from "./plugins/auth-context.js";
-import type { CareerService } from "../modules/career/service.js";
+import { type CareerApi } from "../modules/career/index.js";
 import { registerCareerRoutes } from "../modules/career/routes.js";
-import type { JobMarketService } from "../modules/jobs/service.js";
+import { type JobMarketApi } from "../modules/jobs/index.js";
 import { registerJobMarketRoutes } from "../modules/jobs/routes.js";
-import type { JobIngestService, JobUrlImporter } from "../modules/jobs/ingest/index.js";
-import type { JobBoardService } from "../modules/jobs/board-service.js";
+import { type JobIngestApi, type JobUrlImporter } from "../modules/jobs/ingest/index.js";
+import { type JobBoardApi } from "../modules/jobs/index.js";
 import { registerJobBoardRoutes } from "../modules/jobs/board-routes.js";
-import type { JobAnalysisService } from "../modules/job-analysis/service.js";
+import { type JobAnalysisApi } from "../modules/job-analysis/index.js";
 import { registerJobAnalysisRoutes } from "../modules/job-analysis/routes.js";
-import type { MaterialsService } from "../modules/materials/service.js";
+import { type MaterialsApi } from "../modules/materials/index.js";
 import { registerMaterialsRoutes } from "../modules/materials/routes.js";
-import type { DesignSystemService } from "../modules/design-systems/service.js";
-import { registerDesignSystemRoutes } from "../modules/design-systems/routes.js";
-import type { InterviewService } from "../modules/interview/service.js";
+import { type InterviewApi } from "../modules/interview/index.js";
 import { registerInterviewRoutes } from "../modules/interview/routes.js";
-import type { RecipeService } from "../modules/recipe/service.js";
-import type { CompanyResearchService } from "../modules/company-research/service.js";
+import { type RecipeApi } from "../modules/recipe/index.js";
+import { type CompanyResearchApi } from "../modules/company-research/index.js";
 import { registerCompanyResearchRoutes } from "../modules/company-research/routes.js";
-import type { BrewJobService } from "../modules/brew-jobs/service.js";
+import { type BrewJobApi } from "../modules/brew-jobs/index.js";
 import { registerBrewJobRoutes } from "../modules/brew-jobs/routes.js";
 import { registerRecipeRoutes } from "../modules/recipe/routes.js";
-import type { TemplateService } from "../modules/templates/service.js";
+import type { DesignSystemService } from "../modules/design-systems/service.js";
+import { registerDesignSystemRoutes } from "../modules/design-systems/routes.js";
+import { type TemplateApi } from "../modules/templates/index.js";
 import { registerTemplateRoutes } from "../modules/templates/routes.js";
-import type { GenerationService } from "../modules/generation/service.js";
+import { type GenerationApi } from "../modules/generation/index.js";
 import { registerGenerationRoutes } from "../modules/generation/routes.js";
-import type { PortfolioEditingService } from "../modules/portfolio-editing/service.js";
+import { type PortfolioEditingApi } from "../modules/portfolio-editing/index.js";
 import { registerPortfolioEditingRoutes } from "../modules/portfolio-editing/routes.js";
-import type { PortfolioReadService } from "../modules/portfolios/service.js";
+import { type PortfolioReadApi } from "../modules/portfolios/index.js";
 import { registerPortfolioRoutes } from "../modules/portfolios/routes.js";
-import type { LayoutService } from "../modules/layout/service.js";
-import type { ConsentService } from "../modules/consent/service.js";
+import { type LayoutApi } from "../modules/layout/index.js";
+import { type ConsentApi } from "../modules/consent/index.js";
 import { registerConsentRoutes } from "../modules/consent/routes.js";
 import { registerLayoutRoutes } from "../modules/layout/routes.js";
-import type { PublishingService } from "../modules/publishing/service.js";
+import { type PublishingApi } from "../modules/publishing/index.js";
 import { registerPublishingRoutes } from "../modules/publishing/routes.js";
-import type { MediaService } from "../modules/media/service.js";
+import { type MediaApi } from "../modules/media/index.js";
 import { registerMediaRoutes } from "../modules/media/routes.js";
 import { registerPageRoutes } from "../modules/page/routes.js";
 import type { PageStream } from "../modules/page/stream.js";
 import type { PageGenerator } from "../modules/page/generator.js";
-import type { PageService } from "../modules/page/service.js";
-import type { AnalyticsService } from "../modules/analytics/service.js";
+import { type PageApi } from "../modules/page/index.js";
+import { type AnalyticsApi } from "../modules/analytics/index.js";
 import { registerAnalyticsRoutes } from "../modules/analytics/routes.js";
-import type { EngagementService } from "../modules/engagement/service.js";
+import { type EngagementApi } from "../modules/engagement/index.js";
 import { registerEngagementRoutes } from "../modules/engagement/routes.js";
-import type { AccountLifecycleService } from "../modules/account-lifecycle/service.js";
+import { type AccountLifecycleApi } from "../modules/account-lifecycle/index.js";
 import { registerAccountLifecycleRoutes } from "../modules/account-lifecycle/routes.js";
 import {
   createLoggerOptions,
@@ -65,38 +65,38 @@ import { registerErrorHandler } from "./error-handler.js";
 export interface BuildApiOptions {
   config: RuntimeConfig;
   readinessChecks?: readonly ReadinessCheck[];
-  identityService?: IdentityService;
+  identityService?: IdentityApi;
   /** 없으면 Google 로그인 경로가 503으로 답한다. */
   googleIdTokenVerifier?: GoogleIdTokenVerifier;
-  entitlementService?: EntitlementService;
-  careerService?: CareerService;
-  jobMarketService?: JobMarketService;
-  jobIngestService?: JobIngestService;
+  entitlementService?: EntitlementApi;
+  careerService?: CareerApi;
+  jobMarketService?: JobMarketApi;
+  jobIngestService?: JobIngestApi;
   jobUrlImporter?: JobUrlImporter;
-  jobBoardService?: JobBoardService;
-  jobAnalysisService?: JobAnalysisService;
-  materialsService?: MaterialsService;
+  jobBoardService?: JobBoardApi;
+  jobAnalysisService?: JobAnalysisApi;
+  materialsService?: MaterialsApi;
+  interviewService?: InterviewApi;
+  recipeService?: RecipeApi;
+  companyResearchService?: CompanyResearchApi;
+  brewJobService?: BrewJobApi;
   designSystemService?: DesignSystemService;
-  interviewService?: InterviewService;
-  recipeService?: RecipeService;
-  companyResearchService?: CompanyResearchService;
-  brewJobService?: BrewJobService;
-  templateService?: TemplateService;
-  generationService?: GenerationService;
-  portfolioEditingService?: PortfolioEditingService;
-  portfolioReadService?: PortfolioReadService;
-  layoutService?: LayoutService;
-  consentService?: ConsentService;
-  publishingService?: PublishingService;
-  mediaService?: MediaService;
-  pageService?: PageService;
+  templateService?: TemplateApi;
+  generationService?: GenerationApi;
+  portfolioEditingService?: PortfolioEditingApi;
+  portfolioReadService?: PortfolioReadApi;
+  layoutService?: LayoutApi;
+  consentService?: ConsentApi;
+  publishingService?: PublishingApi;
+  mediaService?: MediaApi;
+  pageService?: PageApi;
   /** 자유 생성 지면을 쓰려면 서비스와 생성기가 **둘 다** 있어야 한다. */
   pageGenerator?: PageGenerator;
   /** 만들어지는 지면을 흘려보내는 통로. 없으면 그 자리가 503이다. */
   pageStream?: PageStream | null;
-  analyticsService?: AnalyticsService;
-  engagementService?: EngagementService;
-  accountLifecycleService?: AccountLifecycleService;
+  analyticsService?: AnalyticsApi;
+  engagementService?: EngagementApi;
+  accountLifecycleService?: AccountLifecycleApi;
 }
 
 export function buildApi(options: BuildApiOptions): FastifyInstance {
@@ -164,12 +164,6 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }
-    if (options.designSystemService) {
-      registerDesignSystemRoutes(app, {
-        service: options.designSystemService,
-        authenticateRequest: createAuthenticateRequest(options.identityService),
-      });
-    }
     if (options.companyResearchService) {
       registerCompanyResearchRoutes(app, {
         service: options.companyResearchService,
@@ -195,6 +189,12 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
           authenticateRequest: createAuthenticateRequest(options.identityService),
         });
       }
+    }
+    if (options.designSystemService) {
+      registerDesignSystemRoutes(app, {
+        service: options.designSystemService,
+        authenticateRequest: createAuthenticateRequest(options.identityService),
+      });
     }
     if (options.templateService) {
       registerTemplateRoutes(app, {

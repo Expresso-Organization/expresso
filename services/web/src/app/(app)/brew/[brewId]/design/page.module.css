@@ -44,11 +44,6 @@
   font-weight: 600;
 }
 
-.pickerNote {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-}
-
 .toneRow {
   margin-left: auto;
   display: flex;
@@ -86,54 +81,101 @@
   background: var(--ex-bg);
 }
 
-/* 레시피 안내 바 */
-.recipeBar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--ex-bg-sunken);
-  border: 1px solid var(--ex-bg-track);
-  border-radius: 10px;
-  padding: 9px 13px;
-  margin-bottom: 13px;
-}
-
-.recipeBarText {
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg-body);
-  white-space: nowrap;
-}
-
-.recipeBarSections {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-subtle);
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.recipeBarAction {
-  margin-left: auto;
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: var(--ex-text-xs);
-  font-weight: 600;
-  color: var(--ex-fg-body);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
 /* 3열. 줄 수는 후보 수가 정한다 — 템플릿은 표에 있는 만큼만 있다. */
 .templates {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-auto-rows: minmax(0, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: max-content;
+  align-content: start;
   gap: 14px;
+  overflow-y: auto;
+  padding: 3px;
+}
+
+/* 화면 정의서의 필터 칩 — 밝기와 서체만 실제 데이터로 바꿉니다. */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.filterChip {
+  border: 1px solid var(--ex-border);
+  border-radius: 999px;
+  padding: 6px 13px;
+  background: var(--ex-bg);
+  color: var(--ex-fg-body);
+  font-size: var(--ex-text-xs);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.filterActive {
+  background: var(--ex-bg-inverse);
+  color: var(--ex-fg-on-inverse);
+  border-color: var(--ex-bg-inverse);
+  font-weight: 600;
+}
+
+.fontFilter { margin-left: auto; }
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.previewNote {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+}
+
+.emptyResults {
+  grid-column: 1 / -1;
+  padding: 30px 14px;
+  text-align: center;
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-muted);
+}
+
+.resetFilters {
+  border: 0;
+  padding: 6px 0;
+  background: none;
+  color: var(--ex-accent-text);
+  font-size: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.selectionNote {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 0 0 14px;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+}
+
+.filterChip:focus-visible,
+.template:focus-visible,
+.resetFilters:focus-visible,
+.styleSelect:focus-visible {
+  outline: 2px solid var(--ex-fg);
+  outline-offset: 2px;
 }
 
 .template {
@@ -164,8 +206,9 @@
 }
 
 .templateCanvas {
-  flex: 1;
-  min-height: 0;
+  /* 후보가 늘어나도 견본을 찌그러뜨리지 않습니다. */
+  height: calc(var(--ex-editor-sections-width) * 0.75);
+  flex-shrink: 0;
   position: relative;
   overflow: hidden;
 }
@@ -247,9 +290,13 @@
 }
 
 .templateDesc {
+  display: -webkit-box;
   font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
-  white-space: nowrap;
+  line-height: 1.6;
+  min-height: 3.2em;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -382,51 +429,6 @@
   font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   margin-top: 10px;
-}
-
-/* 썸네일 — 서버가 낸 미리보기를 그대로 그린다 */
-.thumb {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  padding: 14px 15px;
-  overflow: hidden;
-  font-size: var(--ex-text-3xs);
-  line-height: 1.55;
-}
-
-.thumbSection {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.thumbTitle {
-  font-size: var(--ex-text-3xs);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.thumbLine {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  opacity: 0.82;
-}
-
-.thumbEmpty {
-  align-self: flex-start;
-  border: 1px dashed currentColor;
-  border-radius: 4px;
-  padding: 1px 4px;
-  font-size: var(--ex-text-3xs);
-  opacity: 0.45;
 }
 
 /* 오른쪽 레일 — 이미 뽑은 것 · 실패 · 잠김 */
@@ -572,11 +574,21 @@
     gap: 14px;
     padding: 14px;
   }
+
+  .pickerHead { flex-wrap: wrap; }
+  .pickerCard { padding: 14px; }
+  .toneRow { margin-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .template, .brew { transition: none; transform: none; }
 }
 
 /* 좁은 화면 — 디자인 후보를 한 줄에 하나씩 본다. 셋을 늘어놓으면 미리보기가 안 보인다 */
 @media (max-width: 1023px) {
   .templates {
     grid-template-columns: minmax(0, 1fr);
+    /* 30개 후보를 모두 지나야 요약에 닿는 일이 없게 목록만 스크롤합니다. */
+    max-height: 50dvh;
   }
 }

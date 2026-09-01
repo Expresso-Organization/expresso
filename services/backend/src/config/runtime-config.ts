@@ -7,14 +7,13 @@ const runtimeConfigSchema = z.object({
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
     .default("info"),
-  DATABASE_URL: z
-    .url()
-    .default("mysql://expresso:expresso@127.0.0.1:53306/expresso"),
+  MONGODB_URL: z.url().refine((value) => ["mongodb:", "mongodb+srv:"].includes(new URL(value).protocol), "MONGODB_URL must use mongodb:// or mongodb+srv://").default("mongodb://admin:expresso-admin@127.0.0.1:57017/expresso?authSource=admin&replicaSet=rs0"),
+  MONGODB_DATABASE: z.string().regex(/^[A-Za-z0-9_-]{1,63}$/).default("expresso"),
   REDIS_URL: z.url().default("redis://127.0.0.1:6379"),
   OUTBOX_POLL_INTERVAL_MS: z.coerce.number().int().min(100).max(60_000).default(1_000),
   OUTBOX_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(25),
   OUTBOX_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(20).default(5),
-  QUEUE_PREFIX: z.string().regex(/^[a-z][a-z0-9-]{1,30}$/).default("expresso"),
+  QUEUE_PREFIX: z.string().regex(/^[a-z][a-z0-9-]{1,30}$/).default("expresso-mongo-v1"),
   ASSET_SIGNING_SECRET: z.string().min(16).default("expresso-local-asset-signing-secret"),
   MEDIA_PROVIDER: z.enum(["local", "s3"]).default("local"),
   MEDIA_DIR: z.string().min(1).default("var/media"),
@@ -94,7 +93,10 @@ export interface RuntimeConfig {
   host: string;
   port: number;
   logLevel: z.infer<typeof runtimeConfigSchema>["LOG_LEVEL"];
-  databaseUrl: string;
+  mongodbUrl?: string;
+  mongodbDatabase?: string;
+  /** SQL 비교 테스트만 쓰는 과도기 입력입니다. 런타임 로더는 이 값을 만들지 않습니다. */
+  databaseUrl?: string;
   redisUrl: string;
   outboxPollIntervalMs: number;
   outboxBatchSize: number;
@@ -133,7 +135,8 @@ export function loadRuntimeConfig(
     host: result.HOST,
     port: result.PORT,
     logLevel: result.LOG_LEVEL,
-    databaseUrl: result.DATABASE_URL,
+    mongodbUrl: result.MONGODB_URL,
+    mongodbDatabase: result.MONGODB_DATABASE,
     redisUrl: result.REDIS_URL,
     outboxPollIntervalMs: result.OUTBOX_POLL_INTERVAL_MS,
     outboxBatchSize: result.OUTBOX_BATCH_SIZE,

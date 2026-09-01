@@ -13,8 +13,8 @@ import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import type { JobMarketService } from "./service.js";
-import type { JobIngestService } from "./ingest/service.js";
+import { type JobMarketApi } from "./index.js";
+import { type JobIngestApi } from "./ingest/index.js";
 import type { JobUrlImporter } from "./ingest/url-import.js";
 
 const IdParamsSchema = z.strictObject({ id: z.uuid() });
@@ -23,9 +23,9 @@ const DemandSummaryRequestSchema = z.strictObject({
 });
 
 export interface RegisterJobMarketRoutesOptions {
-  jobMarketService: JobMarketService;
+  jobMarketService: JobMarketApi;
   /** 수집은 워커가 한다. API에는 목록과 수동 실행만 있으면 된다. */
-  jobIngestService?: JobIngestService | undefined;
+  jobIngestService?: JobIngestApi | undefined;
   jobUrlImporter?: JobUrlImporter | undefined;
   authenticateRequest: preHandlerHookHandler;
 }

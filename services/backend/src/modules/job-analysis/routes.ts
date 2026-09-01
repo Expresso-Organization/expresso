@@ -3,12 +3,12 @@ import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import type { JobAnalysisService } from "./service.js";
+import { type JobAnalysisApi } from "./index.js";
 
 const ParamsSchema = z.strictObject({ id: z.uuid() });
 
 export interface RegisterJobAnalysisRoutesOptions {
-  jobAnalysisService: JobAnalysisService;
+  jobAnalysisService: JobAnalysisApi;
   authenticateRequest: preHandlerHookHandler;
 }
 

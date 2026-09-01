@@ -14,6 +14,7 @@ export * from "./recipe.js";
 export * from "./portfolio-plan.js";
 export * from "./portfolio-styles.js";
 export * from "./templates.js";
+export * from "./portfolio-styles.js";
 export * from "./layout-vocabulary.js";
 export * from "./layout-classes.js";
 export * from "./layout.js";

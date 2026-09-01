@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
-import type { SqlTag } from "../../src/platform/mysql.js";
-import { createMysqlResource } from "../../src/platform/mysql.js";
+import type { SqlTag } from "../../src/platform/legacy-mysql.js";
+import { createMysqlResource } from "../../src/platform/legacy-mysql.js";
 
 import { migrate } from "@expresso/database";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { addOutboxEvent, OutboxDispatcher } from "../../src/platform/outbox.js";
+import { addOutboxEvent, OutboxDispatcher } from "../../src/platform/legacy-mysql-outbox.js";
 import { OperationTimeoutError, withTimeout } from "../../src/platform/timeouts.js";
 import { ISOLATED_DATABASE_TIMEOUT_MS } from "../support/timeouts.js";
 

@@ -1,14 +1,17 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { PORTFOLIO_STYLE_PRESETS } from "@expresso/contracts";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
-import type { SqlTag } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { IdentityService } from "../identity/service.js";
+import { IdentityService } from "../identity/legacy-mysql-service.js";
+import { RecipeService } from "../recipe/legacy-mysql-service.js";
+import { TemplateService } from "../templates/legacy-mysql-service.js";
 import type { GeneratedPageResult, PageGenerationContext, PageGenerator } from "./generator.js";
-import { PageService } from "./service.js";
+import { PageService } from "./legacy-mysql-service.js";
 
 /**
  * 자유 생성 지면이 오가는 길 전체.
@@ -126,7 +129,8 @@ describeWithDatabase("free page generation integration", () => {
     const sectionId = (await sql<IdRow[]>`
       insert into recipe_section (user_id, recipe_id, title, purpose, target_length, order_no, context)
       values (${ownerId}, ${recipeId!}, '정산 배치 재설계', '가장 큰 성과를 보인다', 480, 0,
-              ${sql.json({ goal: "220분을 24분으로", points: ["원인", "한 일", "결과"] })})
+              ${sql.json({ goal: "220분을 24분으로", points: ["원인", "한 일", "결과"],
+                metrics: [], format: "narrative", tone: "professional", exclude: [] })})
       returning id
     `)[0]?.id;
     const itemId = (await sql<IdRow[]>`
@@ -210,6 +214,65 @@ describeWithDatabase("free page generation integration", () => {
       interaction: "evidence-exploration",
       imagery: "typography-first",
     });
+  });
+
+  it("새 디자인 목록에는 카탈로그만 노출하고 기존 템플릿 행은 보존한다", async () => {
+    const extraId = randomUUID();
+    try {
+      await sql`insert into template (id, code, name, plan_required)
+        values (${extraId}, ${`ui-legacy-${marker}`}, '이전 디자인', 'free')`;
+      const recipe = (await sql<{ id: string }[]>`
+        select recipe.id from recipe join portfolio on portfolio.brew_id = recipe.brew_id
+        where portfolio.id = ${portfolioId}
+      `)[0]!;
+      const result = await new TemplateService(sql, new RecipeService(sql)).previews(ownerId, recipe.id, false);
+      expect(result.previews).toHaveLength(30);
+      expect(result.previews.some(({ templateId }) => templateId === extraId)).toBe(false);
+      expect(await sql`select id from template where id=${extraId}`).toHaveLength(1);
+    } finally {
+      await sql`delete from template where id=${extraId}`;
+    }
+  });
+
+  it("30종 스타일의 저장값이 카탈로그와 일치하고 선택 프롬프트가 지면에 보존된다", async () => {
+    const rows = await sql<{ id: string; code: string; style: unknown }[]>`
+      select id, code, style from template where code like 'designprompts-%' and is_active
+    `;
+    expect(rows).toHaveLength(30);
+    for (const preset of PORTFOLIO_STYLE_PRESETS) {
+      expect(rows.find(({ code }) => code === preset.code))
+        .toMatchObject({ id: preset.templateId, style: preset.style });
+    }
+    const recipe = (await sql<{ id: string }[]>`
+      select recipe.id from recipe join portfolio on portfolio.brew_id = recipe.brew_id
+      where portfolio.id = ${portfolioId}
+    `)[0]!;
+    const choices = await new TemplateService(sql, new RecipeService(sql)).previews(ownerId, recipe.id, false);
+    expect(choices.previews).toHaveLength(30);
+    expect(choices.previews[0]?.code).toBe("designprompts-monochrome");
+    expect(choices.previews.some(({ code }) => code === "clarity")).toBe(false);
+    const terminal = rows.find(({ code }) => code === "designprompts-terminal")!;
+    const previous = (await sql<{ template_id: string; style_overrides: Record<string, string> }[]>`
+      select template_id, style_overrides from portfolio where id = ${portfolioId}
+    `)[0]!;
+    try {
+      await sql`update portfolio set template_id = ${terminal.id},
+        style_overrides = ${sql.json({ density: "spacious" })} where id = ${portfolioId}`;
+      const page = await service.generate(ownerId, portfolioId, generator);
+      const received = generator.seen.at(-1)!.style;
+      expect(generator.seen.at(-1)!.useKit).toBe(false);
+      expect(received).toMatchObject({
+        name: "Terminal", font: "mono", density: "spacious",
+        designReference: { code: "designprompts-terminal", version: 1,
+          sourceUrl: "https://www.designprompts.dev/terminal" },
+      });
+      expect(received?.designReference?.prompt).toContain("터미널");
+      expect(page.styleSpec).toEqual(received);
+      expect((await service.latest(ownerId, portfolioId))?.styleSpec).toEqual(received);
+    } finally {
+      await sql`update portfolio set template_id = ${previous.template_id}, style_overrides = ${sql.json(previous.style_overrides)}
+        where id = ${portfolioId}`;
+    }
   });
 
   it("다시 뽑아도 앞 판이 남는다", async () => {

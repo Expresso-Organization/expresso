@@ -3,10 +3,10 @@ import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
 import { writePageStream, type PageStream } from "../page/stream.js";
-import type { GenerationService } from "./service.js";
+import { type GenerationApi } from "./index.js";
 
 const ParamsSchema = z.strictObject({ id: z.uuid() });
-export function registerGenerationRoutes(app: FastifyInstance, options: { generationService: GenerationService; pageStream?: PageStream | null; authenticateRequest: preHandlerHookHandler }) {
+export function registerGenerationRoutes(app: FastifyInstance, options: { generationService: GenerationApi; pageStream?: PageStream | null; authenticateRequest: preHandlerHookHandler }) {
   app.post(`${API_PREFIX}/generation-jobs`, { preHandler: options.authenticateRequest }, async (request, reply) => {
     const principal = requireAuth(request);
     const input = SubmitGenerationSchema.safeParse(request.body);

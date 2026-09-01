@@ -7,10 +7,10 @@ import {
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import { LayoutError, type LayoutService } from "./service.js";
+import { LayoutError, type LayoutApi } from "./index.js";
 
 export interface RegisterLayoutRoutesOptions {
-  service: LayoutService;
+  service: LayoutApi;
   authenticateRequest: preHandlerHookHandler;
 }
 

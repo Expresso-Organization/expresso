@@ -11,12 +11,13 @@
   },
   "scripts": {
     "migrate": "node --env-file-if-exists=../../services/backend/.env --import tsx src/cli.ts",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node src/mongo-build.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
-    "mysql2": "^3.23.4"
+    "@expresso/contracts": "workspace:*",
+    "mongodb": "7.5.0"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

@@ -1,15 +1,127 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
-import type { SqlTag } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { IdentityService } from "../identity/service.js";
-import { InterviewService } from "./service.js";
-import { BrewJobService } from "../brew-jobs/service.js";
+import { IdentityService } from "../identity/legacy-mysql-service.js";
+import { InterviewService } from "./legacy-mysql-service.js";
+import { BrewJobService } from "../brew-jobs/legacy-mysql-service.js";
 import { classifyBrewJobFailure } from "../../worker/processors/brew-jobs.js";
+import { MongoInterviewService } from "./service.js";
+import { MongoIdentityService } from "../identity/index.js";
+import { MongoCareerService } from "../career/index.js";
+import { MongoJobMarketService } from "../jobs/index.js";
+import { MongoMaterialsService } from "../materials/index.js";
+import { mongoCollections } from "@expresso/database";
+import { createMongoFixture } from "../../../test/support/mongodb.js";
+import { createRecordCleanupProcessor } from "../../worker/processors/record-cleanup.js";
+import type { Job } from "bullmq";
+
+describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", () => {
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
+  let service: MongoInterviewService;
+  let career: MongoCareerService;
+  let userId = "";
+  let otherUserId = "";
+  let brewId = "";
+  let sessionId = "";
+
+  beforeAll(async () => {
+    fixture = await createMongoFixture("interview");
+    const identity = new MongoIdentityService(fixture.resource);
+    userId = (await identity.signup({ email: `interview-${randomUUID()}@example.com`, displayName: "Interview", password: "correct-horse-battery" })).user.id;
+    otherUserId = (await identity.signup({ email: `interview-${randomUUID()}@example.com`, displayName: "Other", password: "correct-horse-battery" })).user.id;
+    career = new MongoCareerService(fixture.resource);
+    const categoryId = (await career.listCategories(userId)).find(({ key }) => key === "experience")!.id;
+    const recordIds: string[] = [];
+    for (const title of ["Migration project", "Incident response"]) {
+      const record = (await career.createRecord(userId, randomUUID(), { categoryId, title, properties: {}, bodyMd: "Led a database migration" })).record;
+      recordIds.push(record.id);
+      await mongoCollections(fixture.resource.db).careerRecords.updateOne({ _id: record.id }, { $set: { status: "organized" } });
+    }
+    const source = "PostgreSQL 장애 대응 경험이 필요합니다. TypeScript API 성과를 수치로 설명해야 합니다. 원격 협업 경험을 우대합니다." + " 상세 직무와 팀 협업 방식을 설명합니다.".repeat(8);
+    const submission = await new MongoJobMarketService(fixture.resource).submitPosting(userId, randomUUID(), { companyName: "Interview Company", title: "Backend Engineer", descriptionRaw: source });
+    const db = mongoCollections(fixture.resource.db);
+    await db.jobAnalyses.updateOne({ _id: submission.jobAnalysisId }, { $set: { status: "done", progressStage: "done", resultVersion: 1 } });
+    let cursor = 0;
+    for (const [orderNo, quote] of ["PostgreSQL 장애 대응 경험이 필요합니다.", "TypeScript API 성과를 수치로 설명해야 합니다.", "원격 협업 경험을 우대합니다."].entries()) {
+      const start = Array.from(source.slice(0, source.indexOf(quote, cursor))).length;
+      cursor = source.indexOf(quote, cursor) + quote.length;
+      const requirementId = randomUUID();
+      await db.jobPostingRequirements.insertOne({ _id: requirementId, jobPostingId: submission.jobPostingId, orderNo, label: quote, kind: "must", sourceSpan: { start, end: start + Array.from(quote).length, quote }, extractorVersion: 1, extractedAt: new Date() });
+      await db.requirementCoverages.insertOne({ _id: `${userId}:${requirementId}`, userId, requirementId, coverage: orderNo === 0 ? "missing" : orderNo === 1 ? "partial" : "covered", coveredBy: [], computedAt: new Date() });
+    }
+    const materials = new MongoMaterialsService(fixture.resource);
+    brewId = (await materials.createBrew(userId, { jobAnalysisId: submission.jobAnalysisId, lengthPreset: "single" })).brewId;
+    await db.brewSources.updateMany({ userId, brewId, recordId: { $in: recordIds } }, { $set: { isSelected: true } });
+    service = new MongoInterviewService(fixture.resource);
+  }, 60_000);
+  afterAll(async () => { await fixture?.dispose(); });
+
+  it("preserves grounded assignment, replacement, pause, and session boundaries", async () => {
+    const started = await service.start(userId, brewId, "mongo-interview-start-0001");
+    sessionId = started.id;
+    expect(started.questions).toHaveLength(4);
+    expect(started.questions.every(({ basis }) => ["requirement", "record_gap"].includes(basis.type))).toBe(true);
+    const original = started.questions[0]!;
+    const replaced = await service.replaceQuestion(userId, sessionId, original.id);
+    expect(replaced.questions.find(({ order }) => order === original.order)).toMatchObject({ replacedFromId: original.id, basis: original.basis });
+    expect((await service.setPaused(userId, sessionId, true)).status).toBe("paused");
+    expect((await service.setPaused(userId, sessionId, false)).status).toBe("open");
+    await expect(service.getSession(otherUserId, sessionId)).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("saves one answer, record change, and cleanup outbox for idempotent delivery", async () => {
+    const questionId = (await service.getSession(userId, sessionId)).questions[1]!.id;
+    const input = { inputType: "text" as const, transcript: "장애 원인을 로그에서 찾아 배포 절차를 개선했습니다." };
+    const first = await service.saveAnswer(userId, sessionId, questionId, "mongo-answer-0001", input);
+    const replay = await service.saveAnswer(userId, sessionId, questionId, "mongo-answer-0001", input);
+    expect(replay.answer.id).toBe(first.answer.id);
+    const db = mongoCollections(fixture.resource.db);
+    expect(await db.answers.countDocuments({ userId, questionId })).toBe(1);
+    expect(await db.answerRecordChanges.countDocuments({ userId, answerId: first.answer.id })).toBe(1);
+    expect(await db.outboxEvents.countDocuments({ userId, topic: "record.cleanup" })).toBe(1);
+    const strengthened = await service.saveAnswer(userId, sessionId, questionId, "mongo-answer-0002", { ...input, transcript: `${input.transcript} 재발도 막았습니다.` });
+    expect(strengthened).toMatchObject({ answer: { id: first.answer.id, version: 2 }, recordChange: { type: "strengthened" } });
+    await expect(service.saveAnswer(userId, randomUUID(), questionId, "mongo-answer-wrong-session", input)).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("does not overwrite a record edited while cleanup is running", async () => {
+    const questionId = (await service.getSession(userId, sessionId)).questions[2]!.id;
+    const answer = await service.saveAnswer(userId, sessionId, questionId, "mongo-answer-cleanup", { inputType: "text", transcript: "실제 답변에는 수치가 없습니다." });
+    let started!: () => void; let release!: () => void;
+    const ready = new Promise<void>((resolve) => { started = resolve; });
+    const wait = new Promise<void>((resolve) => { release = resolve; });
+    const cleanup = new MongoInterviewService(fixture.resource, null, { async clean() { started(); await wait; return { title: "AI 정리", situation: "상황", task: "과제", action: "행동", result: "결과", metrics: [], competencies: [] }; } });
+    const running = cleanup.cleanupAnswer(userId, answer.answer.id);
+    await ready;
+    const current = await career.getRecord(userId, answer.answer.createdRecordId);
+    await career.updateRecord(userId, current.id, current.version, { title: "사용자 편집" });
+    release();
+    await running;
+    expect((await career.getRecord(userId, current.id)).title).toBe("사용자 편집");
+  });
+
+  it("retries the record-cleanup worker without duplicating the derived change", async () => {
+    const questionId = (await service.getSession(userId, sessionId)).questions[3]!.id;
+    const answer = await service.saveAnswer(userId, sessionId, questionId, "mongo-answer-worker", { inputType: "text", transcript: "배포 절차를 문서화했습니다." });
+    let calls = 0;
+    const cleanup = new MongoInterviewService(fixture.resource, null, { async clean() {
+      calls += 1;
+      if (calls === 1) throw new Error("temporary cleaner failure");
+      return { title: "배포 절차 문서화", situation: null, task: null, action: "절차를 문서화했습니다.", result: null, metrics: [], competencies: [] };
+    } });
+    const processor = createRecordCleanupProcessor(cleanup);
+    const job = { data: { answerId: answer.answer.id, userId } } as unknown as Job<Record<string, unknown>>;
+    await expect(processor(job)).rejects.toThrow("temporary cleaner failure");
+    await expect(processor(job)).resolves.toEqual({});
+    expect((await career.getRecord(userId, answer.answer.createdRecordId))).toMatchObject({ title: "배포 절차 문서화", status: "organized" });
+    expect(await mongoCollections(fixture.resource.db).answerRecordChanges.countDocuments({ userId, answerId: answer.answer.id })).toBe(1);
+  });
+});
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;

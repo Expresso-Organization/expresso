@@ -1,55 +1,57 @@
-# MySQL 백업·복구 runbook
+# MongoDB 백업과 복원
 
-## 백업
+## 백업 경계
 
-저장 위치를 명시해 논리 백업을 만든다. 트리거와 저장 프로시저까지 함께 담는다 —
-규칙이 스키마 안에 들어 있어서, 빼고 받으면 복구한 데이터베이스가 잘못된 데이터를
-받아들인다.
+백업 전에 API, Worker, 수집기와 예약 발행기를 모두 중단합니다. Redis를 비우지
+않고 기존 MySQL volume도 지우지 않습니다. 백업 위치는 서버와 다른 승인된
+저장소여야 합니다.
 
-```bash
-scripts/operations/backup-mysql.sh /secure/path/expresso-$(date +%Y%m%dT%H%M%S).sql
+```mermaid
+flowchart LR
+    STOP["쓰기 중단"] --> DB["mongodump archive"]
+    STOP --> REDIS["Redis RDB"]
+    STOP --> FILES["미디어 파일"]
+    DB --> META["commit · image digest<br/>prefix · config version"]
+    REDIS --> META
+    FILES --> META
+    META --> OFFSITE["서버 밖 승인 저장소"]
 ```
 
-서버에서 받을 때는 `EXPRESSO_COMPOSE_FILE=infra/compose.server.yaml` 과
-`EXPRESSO_MYSQL_PASSWORD` 를 함께 넘긴다.
+MongoDB Database Tools 설정 파일에는 URI를 적고 권한을 `600`으로 제한합니다.
+비밀번호를 명령 인자나 백업 이름에 넣지 않습니다.
 
-백업 파일은 애플리케이션 checkout 밖의 암호화 저장소로 옮기고 접근 권한과 보존
-기간을 따로 적용한다.
-
-## 격리 복구 검증
-
-아래 명령은 고정 이름 `expresso_restore_rehearsal` 데이터베이스만 새로 만들고
-끝날 때 지운다. 운영 `expresso` 데이터베이스와 볼륨은 건드리지 않는다.
-
-```bash
-scripts/operations/rehearse-mysql-restore.sh /secure/path/expresso-TIMESTAMP.sql
+```yaml
+uri: mongodb://backup-user:REDACTED@127.0.0.1:57017/expresso?authSource=expresso&replicaSet=rs0
 ```
 
-복구한 뒤 마이그레이션 수, 사용자·기록·배포 줄 수, 배포 스냅샷 체크섬을 원본과
-견준다. `restore_rehearsal=PASS` 가 나오기 전에는 그 백업을 복구할 수 있다고
-판정하지 않는다.
+```bash
+export EXPRESSO_WRITES_STOPPED=1
+export MONGODB_TOOLS_CONFIG=/secure/mongodb-backup.yml
+export MONGODB_DATABASE=expresso
+export QUEUE_PREFIX=expresso-mongo-v1
+export EXPRESSO_CONFIG_VERSION=mongodb-v1
+scripts/operations/backup-mongodb.sh /approved/off-host/expresso-20260830T120000Z
+```
 
-## 장애 복구 순서
+결과에는 `mongodb.archive`, `redis.rdb`, 선택적인 `media.tar.gz`,
+`metadata.json`, `SHA256SUMS`가 들어갑니다. dump에는 collection validator,
+index, `snapshot_chunks`를 포함한 모든 문서가 들어갑니다.
 
-1. 쓰기 트래픽과 Worker를 멈추고 마지막 outbox·queue lag를 적어 둔다.
-2. 새 MySQL 환경에 검증된 백업을 복원한다.
-3. API와 Worker가 쓰는 `DATABASE_URL`을 새 환경으로 바꾼다.
-4. 마이그레이션 체크섬, 핵심 줄 수, 배포 스냅샷 체크섬을 다시 확인한다.
-5. API가 준비되면 Worker를 한 인스턴스로 먼저 띄워 outbox가 겹쳐 돌지 않는지 본다.
-6. API 트래픽을 단계적으로 열고 오류율·queue lag·quota ledger를 지켜본다.
+## 복원 리허설
 
-## 마이그레이션 rollback 원칙
+복원은 원본과 다른 hostname 또는 port의 별도 rs0 인스턴스에서만 실행합니다.
+대상 DB 이름은 원본과 다르고 `restore` 또는 `rehearsal`을 포함해야 합니다.
+스크립트는 이 경계를 확인한 뒤에만 `--drop`을 사용합니다.
 
-운영 마이그레이션은 기존 열을 지우거나 뜻을 바꾸지 않는 expand 단계로만 배포한다.
-장애가 나면 데이터베이스를 되돌리는 대신 이전 API·Worker 이미지를 다시 배포한다.
-파괴적인 contract 단계는 별도 백업과 호환 기간을 둔 뒤 다음 릴리스에서 한다.
+```bash
+export MONGODB_TOOLS_CONFIG=/secure/mongodb-restore.yml
+export MONGODB_RESTORE_URL='mongodb://restore-user:...@127.0.0.1:57117/?authSource=admin&replicaSet=rs0'
+export MONGODB_RESTORE_HOST=127.0.0.1
+export MONGODB_RESTORE_PORT=57117
+export MONGODB_RESTORE_DATABASE=expresso_restore_rehearsal
+scripts/operations/rehearse-mongodb-restore.sh /approved/off-host/expresso-20260830T120000Z
+```
 
-## MySQL 에서 달라지는 것
-
-- **트리거와 저장 프로시저를 함께 받는다.** `mysqldump --routines --triggers` 다.
-  받는 사람에게 `SHOW_ROUTINE` 권한이 필요하다.
-- **DDL 은 문장마다 커밋한다.** 마이그레이션 파일 하나가 중간에 실패하면 그때까지
-  적용된 문장이 남는다. 마이그레이션은 파일 하나를 되돌릴 수 있는 크기로 쓴다.
-- **바이너리 로그가 켜져 있으면 트리거를 만들 때 SUPER 를 요구한다.**
-  `infra/compose.server.yaml` 이 `--log-bin-trust-function-creators=1` 로 그 검사를
-  끈다. 새 환경을 세울 때 같은 설정을 넣는다.
+복원 검증은 rs0 primary, migration version, collection별 건수, 공고 자산의
+SHA-256과 snapshot chunk 연결을 확인하고 `restore-report.json`을 남깁니다. Redis는 별도 prefix에서,
+미디어는 별도 디렉터리에서 검증한 뒤 운영 경로로 승격합니다.

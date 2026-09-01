@@ -1,15 +1,34 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
-import type { SqlTag } from "../../platform/mysql.js";
-import { afterAll, describe, expect, it } from "vitest";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { contrastRatio, ensureReadableStyle, renderTemplate } from "./render.js";
+import { MongoTemplateService } from "./service.js";
+import { MongoRecipeService } from "../recipe/service.js";
+import { MongoIdentityService } from "../identity/index.js";
+import { MongoMaterialsService } from "../materials/index.js";
+import { createMongoFixture } from "../../../test/support/mongodb.js";
+import { mongoCollections } from "@expresso/database";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
 
 describe("template contrast", () => {
+  it("카탈로그 설명과 출처가 미리보기까지 전달된다", () => {
+    const preview = renderTemplate({
+      templateId: randomUUID(), code: "designprompts-terminal", name: "Terminal",
+      planRequired: "free", supportedSections: ["*"], recommended: false,
+      recommendationReason: "기술 기록", sections: [{ id: randomUUID(), title: "소개", items: [] }],
+      style: { background: "#0a0a0a", text: "#33ff00", accent: "#33ff00", font: "mono", density: "compact" },
+    });
+    expect(preview).toMatchObject({
+      designStyle: { mode: "dark", sourceUrl: "https://www.designprompts.dev/terminal", version: 1 },
+    });
+    expect(preview.description).toContain("고정폭");
+  });
+
   it("keeps compliant colors and corrects company colors below 4.5:1", () => {
     expect(contrastRatio("#000000", "#ffffff")).toBeCloseTo(21, 5);
     const corrected = ensureReadableStyle({
@@ -21,6 +40,24 @@ describe("template contrast", () => {
     });
     expect(corrected.colorAdjusted).toBe(true);
     expect(corrected.contrastRatio).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB template catalog", () => {
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
+  beforeAll(async () => { fixture = await createMongoFixture("templates"); }, 60_000);
+  afterAll(async () => { await fixture?.dispose(); });
+
+  it("keeps the 30 design catalog entries and renders all visible previews", async () => {
+    const identity = new MongoIdentityService(fixture.resource);
+    const userId = (await identity.signup({ email: `templates-${randomUUID()}@example.com`, displayName: "Templates", password: "correct-horse-battery" })).user.id;
+    const brewId = (await new MongoMaterialsService(fixture.resource).createFreeBrew(userId, { title: "Portfolio", brief: "소개", lengthPreset: "single" })).brewId;
+    const recipes = new MongoRecipeService(fixture.resource);
+    const recipe = await recipes.generate(userId, brewId, "mongo-template-recipe-0001");
+    const result = await new MongoTemplateService(fixture.resource, recipes).previews(userId, recipe.id, false);
+    expect(await mongoCollections(fixture.resource.db).templates.countDocuments({ code: { $regex: "^designprompts-" } })).toBe(30);
+    expect(result.previews).toHaveLength(30);
+    expect(new Set(result.previews.map(({ designStyle }) => designStyle?.sourceUrl)).size).toBe(30);
   });
 });
 

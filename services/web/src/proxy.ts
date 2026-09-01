@@ -35,7 +35,8 @@ export const config = {
     "/account/:path*",
     "/brew/:path*",
     "/edit/:path*",
-    "/site/:path*",
+    // 발행된 `/site/:slug`는 누구나 읽는다. 소유자 후보자 화면만 세션이 필요하다.
+    "/site/:slug/candidates/:path*",
     "/onboarding/consent",
   ],
 };

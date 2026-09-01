@@ -1,135 +1,74 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 
 import { AccountExportSchema, DeletionRequestSchema } from "@expresso/contracts";
-import type { SqlTag } from "../../platform/mysql.js";
+import { mongoCollections, type AccountDeletionRequestDoc } from "@expresso/database";
 
-export class AccountLifecycleError extends Error {
-  readonly statusCode: number;
-  constructor(statusCode: number, message: string) { super(message); this.name = "AccountLifecycleError"; this.statusCode = statusCode; }
-}
+import type { MongoContext } from "../../platform/mongodb.js";
+import { inTransaction } from "../../platform/mongo-transaction.js";
+import { AccountLifecycleError } from "./public.js";
+import { purgePhase } from "./mongo-purge.js";
 
-function tokenHash(value: string): string { return createHash("sha256").update(value).digest("hex"); }
-function iso(value: Date | string): string { return new Date(value).toISOString(); }
-
-interface DeletionRow {
-  id: string; user_id: string | null; subject_id: string; status: "pending" | "cancelled" | "purged";
-  requested_at: Date | string; purge_after: Date | string; restoration: {
-    portfolios?: Array<{ id: string; status: string }>;
-    assets?: Array<{ id: string }>;
-  };
-}
+const tokenHash = (value: string) => createHash("sha256").update(value).digest("hex");
+const iso = (value: Date) => value.toISOString();
+function row(value: Record<string, unknown>) { return Object.fromEntries(Object.entries(value).map(([key, item]) => [key === "_id" ? "id" : key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`), item])); }
 
 export class AccountLifecycleService {
-  readonly #sql: SqlTag;
-  constructor(sql: SqlTag) { this.#sql = sql; }
+  constructor(readonly context: MongoContext) {}
 
   async exportData(userId: string, at = new Date()) {
-    const account = (await this.#sql<Record<string, unknown>[]>`
-      select id, email, display_name, created_at from \`user\` where id = ${userId}
-    `)[0];
+    const db = mongoCollections(this.context.db); const account = await db.users.findOne({ _id: userId });
     if (!account) throw new AccountLifecycleError(404, "account not found");
     const [categories, records, skills, analyses, savedSearches, interests, brews, recipes, portfolios, deployments, assets, metrics, insights] = await Promise.all([
-      this.#sql<Record<string, unknown>[]>`select id, \`key\`, name, property_schema, sort_order from category where user_id = ${userId} order by sort_order, id`,
-      this.#sql<Record<string, unknown>[]>`select id, category_id, title, status, origin, properties, body_md, period_start, period_end, updated_at, deleted_at from record where user_id = ${userId} order by id`,
-      this.#sql<Record<string, unknown>[]>`select id, name, level, evidence_count, last_used_at, strength from skill where user_id = ${userId} order by name, id`,
-      this.#sql<Record<string, unknown>[]>`select id, job_posting_id, input_type, status, analyzed_at from job_analysis where user_id = ${userId} order by id`,
-      this.#sql<Record<string, unknown>[]>`select id, query_text, filters, notify, last_run_at from saved_search where user_id = ${userId} order by id`,
-      this.#sql<Record<string, unknown>[]>`select id, job_posting_id, stage, deadline_at, memo from interest where user_id = ${userId} order by id`,
-      this.#sql<Record<string, unknown>[]>`select id, job_analysis_id, mode, length_preset, status, deadline_at, updated_at from brew where user_id = ${userId} order by id`,
-      this.#sql<Record<string, unknown>[]>`select id, brew_id, version, status, completeness from recipe where user_id = ${userId} order by id`,
-      this.#sql<Record<string, unknown>[]>`select id, brew_id, template_id, current_deployment_id, title, status from portfolio where user_id = ${userId} order by id`,
-      this.#sql<Record<string, unknown>[]>`select id, portfolio_id, version, subdomain, contact_visibility, published_at, snapshot, seo from deployment where user_id = ${userId} order by portfolio_id, version`,
-      this.#sql<Record<string, unknown>[]>`select id, portfolio_id, kind, file_url, page_format, version, revoked_at, created_at from export_asset where user_id = ${userId} order by created_at, id`,
-      this.#sql<Record<string, unknown>[]>`select deployment_id, date, metric_key, value, sample_size from metric_daily where user_id = ${userId} order by date, metric_key`,
-      this.#sql<Record<string, unknown>[]>`select deployment_id, period_start, period_end, narrative, evidence_metrics, suggestions, generated_at from insight where user_id = ${userId} order by generated_at, id`,
+      db.careerCategories.find({ userId }).sort({ sortOrder: 1, _id: 1 }).toArray(), db.careerRecords.find({ userId }).sort({ _id: 1 }).toArray(), db.skills.find({ userId }).sort({ name: 1, _id: 1 }).toArray(),
+      db.jobAnalyses.find({ userId }).sort({ _id: 1 }).toArray(), db.savedSearches.find({ userId }).sort({ _id: 1 }).toArray(), db.interests.find({ userId }).sort({ _id: 1 }).toArray(),
+      db.brews.find({ userId }).sort({ _id: 1 }).toArray(), db.recipes.find({ userId }).sort({ _id: 1 }).toArray(), db.portfolios.find({ userId }).sort({ _id: 1 }).toArray(),
+      db.deployments.find({ userId }).sort({ portfolioId: 1, version: 1 }).toArray(), db.exportAssets.find({ userId }).sort({ createdAt: 1, _id: 1 }).toArray(), db.metricsDaily.find({ userId }).sort({ date: 1, metricKey: 1 }).toArray(), db.insights.find({ userId }).sort({ generatedAt: 1, _id: 1 }).toArray(),
     ]);
-    return AccountExportSchema.parse(JSON.parse(JSON.stringify({
-      schemaVersion: 1, generatedAt: at.toISOString(), account,
-      career: { categories, records, skills }, jobs: { analyses, savedSearches, interests },
-      brewing: { brews, recipes }, publishing: { portfolios, deployments, assets }, analytics: { metrics, insights },
-    })));
+    return AccountExportSchema.parse(JSON.parse(JSON.stringify({ schemaVersion: 1, generatedAt: at.toISOString(), account: row(account), career: { categories: categories.map(row), records: records.map(row), skills: skills.map(row) }, jobs: { analyses: analyses.map(row), savedSearches: savedSearches.map(row), interests: interests.map(row) }, brewing: { brews: brews.map(row), recipes: recipes.map(row) }, publishing: { portfolios: portfolios.map(row), deployments: deployments.map(row), assets: assets.map(row) }, analytics: { metrics: metrics.map(row), insights: insights.map(row) } })));
   }
 
   async requestDeletion(userId: string, at = new Date()) {
     const cancellationToken = randomBytes(32).toString("base64url");
-    const row = await this.#sql.begin(async (transaction) => {
-      const account = (await transaction<{ id: string; deletion_requested_at: Date | string | null }[]>`
-        select id, deletion_requested_at from \`user\` where id = ${userId} for update
-      `)[0];
-      if (!account) throw new AccountLifecycleError(404, "account not found");
-      if (account.deletion_requested_at) throw new AccountLifecycleError(409, "account deletion already requested");
-      const portfolios = await transaction<{ id: string; status: string }[]>`select id, status from portfolio where user_id = ${userId} order by id`;
-      const assets = await transaction<{ id: string }[]>`select id from export_asset where user_id = ${userId} and revoked_at is null order by id`;
-      const purgeAfter = new Date(at.getTime() + 30 * 24 * 60 * 60 * 1_000);
-      const request = (await transaction<DeletionRow[]>`
-        insert into account_deletion_request (
-          user_id, subject_id, status, requested_at, purge_after, cancellation_token_hash, restoration
-        ) values (
-          ${userId}, ${userId}, 'pending', ${at}, ${purgeAfter}, ${tokenHash(cancellationToken)},
-          ${transaction.json({ portfolios, assets } as never)}
-        ) returning *
-      `)[0];
-      if (!request) throw new Error("deletion request missing");
-      await transaction`update \`user\` set deletion_requested_at = ${at} where id = ${userId}`;
-      await transaction`update portfolio set status = 'unlisted' where user_id = ${userId} and status = 'published'`;
-      await transaction`update export_asset set revoked_at = ${at} where user_id = ${userId} and revoked_at is null`;
-      await transaction`insert into account_deletion_event (request_id, phase, affected_rows, occurred_at) values (${request.id}, 'access_revoked', ${portfolios.length + assets.length}, ${at})`;
-      return request;
+    const request = await inTransaction(this.context, async (tx) => {
+      const db = mongoCollections(tx.db); const options = { session: tx.session };
+      const account = await db.users.findOneAndUpdate({ _id: userId, deletionRequestedAt: null }, { $set: { deletionRequestedAt: at }, $inc: { lifecycleVersion: 1 } }, { ...options, returnDocument: "before" });
+      if (!account) { if (await db.users.findOne({ _id: userId }, options)) throw new AccountLifecycleError(409, "account deletion already requested"); throw new AccountLifecycleError(404, "account not found"); }
+      const [portfolios, assets] = await Promise.all([db.portfolios.find({ userId }, options).project({ _id: 1, status: 1 }).toArray(), db.exportAssets.find({ userId, revokedAt: null }, options).project({ _id: 1 }).toArray()]);
+      const doc: AccountDeletionRequestDoc = { _id: randomUUID(), userId, subjectId: userId, status: "pending", requestedAt: at, purgeAfter: new Date(at.getTime() + 30 * 86_400_000), cancellationTokenHash: tokenHash(cancellationToken), restoration: { portfolios: portfolios.map(({ _id, status }) => ({ id: _id, status })), assets: assets.map(({ _id }) => ({ id: _id })) }, phase: "access_revoked" };
+      await db.accountDeletionRequests.insertOne(doc, options); await db.portfolios.updateMany({ userId, status: "published" }, { $set: { status: "unlisted" } }, options); await db.exportAssets.updateMany({ userId, revokedAt: null }, { $set: { revokedAt: at } }, options); await db.identitySessions.updateMany({ userId, revokedAt: null }, { $set: { revokedAt: at } }, options);
+      await db.accountDeletionEvents.insertOne({ _id: randomUUID(), requestId: doc._id, phase: "access_revoked", affectedRows: portfolios.length + assets.length, occurredAt: at }, options); return doc;
     });
-    return DeletionRequestSchema.parse({ requestId: row.id, status: row.status, requestedAt: iso(row.requested_at), purgeAfter: iso(row.purge_after), cancellationToken });
+    return DeletionRequestSchema.parse({ requestId: request._id, status: request.status, requestedAt: iso(request.requestedAt), purgeAfter: iso(request.purgeAfter), cancellationToken });
   }
 
   async cancelDeletion(cancellationToken: string, at = new Date()) {
-    const row = await this.#sql.begin(async (transaction) => {
-      const request = (await transaction<DeletionRow[]>`
-        select * from account_deletion_request where cancellation_token_hash = ${tokenHash(cancellationToken)} and status = 'pending' for update
-      `)[0];
-      if (!request || !request.user_id) throw new AccountLifecycleError(404, "pending deletion request not found");
-      if (new Date(request.purge_after) <= at) throw new AccountLifecycleError(409, "deletion grace period expired");
-      await transaction`update \`user\` set deletion_requested_at = null where id = ${request.user_id}`;
-      for (const portfolio of request.restoration.portfolios ?? []) await transaction`
-        update portfolio set status = ${portfolio.status} where id = ${portfolio.id} and user_id = ${request.user_id}
-      `;
-      const assetIds = (request.restoration.assets ?? []).map(({ id }) => id);
-      if (assetIds.length > 0) await transaction`
-        update export_asset set revoked_at = null, access_nonce = uuid()
-        where user_id = ${request.user_id} and id in ${transaction(assetIds)}
-      `;
-      await transaction`update account_deletion_request set status = 'cancelled', cancelled_at = ${at}, phase = 'cancelled' where id = ${request.id}`;
-      await transaction`insert into account_deletion_event (request_id, phase, occurred_at) values (${request.id}, 'cancelled', ${at})`;
-      return { ...request, status: "cancelled" as const };
+    const request = await inTransaction(this.context, async (tx) => {
+      const db = mongoCollections(tx.db); const options = { session: tx.session }; const hash = tokenHash(cancellationToken);
+      const current = await db.accountDeletionRequests.findOne({ cancellationTokenHash: hash, status: "pending" }, options);
+      if (!current || !current.userId) throw new AccountLifecycleError(404, "pending deletion request not found");
+      if (current.purgeAfter <= at) throw new AccountLifecycleError(409, "deletion grace period expired");
+      const changed = await db.accountDeletionRequests.updateOne({ _id: current._id, status: "pending", phase: "access_revoked" }, { $set: { status: "cancelled", cancelledAt: at, phase: "cancelled" } }, options);
+      if (!changed.matchedCount) throw new AccountLifecycleError(409, "account purge already started");
+      await db.users.updateOne({ _id: current.userId, deletionRequestedAt: { $ne: null } }, { $set: { deletionRequestedAt: null }, $inc: { lifecycleVersion: 1 } }, options);
+      const restoration = current.restoration as { portfolios?: Array<{ id: string; status: "draft" | "published" | "unlisted" }>; assets?: Array<{ id: string }> };
+      for (const portfolio of restoration.portfolios ?? []) await db.portfolios.updateOne({ _id: portfolio.id, userId: current.userId }, { $set: { status: portfolio.status } }, options);
+      const assetIds = (restoration.assets ?? []).map(({ id }) => id); if (assetIds.length) await db.exportAssets.updateMany({ _id: { $in: assetIds }, userId: current.userId }, { $set: { revokedAt: null, accessNonce: randomUUID() } }, options);
+      await db.accountDeletionEvents.updateOne({ requestId: current._id, phase: "cancelled" }, { $setOnInsert: { _id: randomUUID(), requestId: current._id, phase: "cancelled", affectedRows: 0, occurredAt: at } }, { ...options, upsert: true }); return current;
     });
-    return DeletionRequestSchema.parse({ requestId: row.id, status: "cancelled", requestedAt: iso(row.requested_at), purgeAfter: iso(row.purge_after) });
+    return DeletionRequestSchema.parse({ requestId: request._id, status: "cancelled", requestedAt: iso(request.requestedAt), purgeAfter: iso(request.purgeAfter) });
   }
 
   async purgeExpired(at = new Date(), limit = 100) {
-    const ids = await this.#sql<{ id: string }[]>`
-      select id from account_deletion_request where status = 'pending' and purge_after <= ${at}
-      order by purge_after, id limit ${limit}
-    `;
-    const purged: string[] = [];
-    for (const { id } of ids) {
-      const didPurge = await this.#sql.begin(async (transaction) => {
-        const request = (await transaction<DeletionRow[]>`select * from account_deletion_request where id = ${id} and status = 'pending' and purge_after <= ${at} for update`)[0];
-        if (!request || !request.user_id) return false;
-        const rawCount = Number((await transaction<{ count: number }[]>`select count(*) as count from analytics_event_receipt where user_id = ${request.user_id}`)[0]?.count ?? 0);
-        await transaction`delete from analytics_event_receipt where user_id = ${request.user_id}`;
-        await transaction`delete from visit_event where user_id = ${request.user_id}`;
-        await transaction`insert ignore into account_deletion_event (request_id, phase, affected_rows, occurred_at) values (${id}, 'analytics_raw_purged', ${rawCount}, ${at})   `;
-        const aggregateCount = Number((await transaction<{ count: number }[]>`
-          select (select count(*) from metric_daily where user_id = ${request.user_id})
-            + (select count(*) from insight where user_id = ${request.user_id}) as count
-        `)[0]?.count ?? 0);
-        await transaction`delete from metric_daily where user_id = ${request.user_id}`;
-        await transaction`delete from insight where user_id = ${request.user_id}`;
-        await transaction`insert ignore into account_deletion_event (request_id, phase, affected_rows, occurred_at) values (${id}, 'analytics_aggregate_purged', ${aggregateCount}, ${at})   `;
-        await transaction`delete from \`user\` where id = ${request.user_id}`;
-        await transaction`update account_deletion_request set status = 'purged', purged_at = ${at}, phase = 'complete' where id = ${id}`;
-        await transaction`insert ignore into account_deletion_event (request_id, phase, affected_rows, occurred_at) values (${id}, 'account_purged', 1, ${at})   `;
-        return true;
-      });
-      if (didPurge) purged.push(id);
+    const candidates = await mongoCollections(this.context.db).accountDeletionRequests.find({ status: "pending", purgeAfter: { $lte: at } }).sort({ purgeAfter: 1, _id: 1 }).limit(limit).toArray(); const purged: string[] = [];
+    for (const candidate of candidates) {
+      while (true) {
+        const current = await mongoCollections(this.context.db).accountDeletionRequests.findOne({ _id: candidate._id, status: "pending" }); if (!current?.userId) break;
+        if (current.phase === "complete") { await inTransaction(this.context, async (tx) => { const db = mongoCollections(tx.db); const options = { session: tx.session }; const changed = await db.accountDeletionRequests.updateOne({ _id: current._id, status: "pending", phase: "complete" }, { $set: { status: "purged", purgedAt: at, userId: null, restoration: {} } }, options); if (changed.matchedCount) await db.accountDeletionEvents.updateOne({ requestId: current._id, phase: "account_purged" }, { $setOnInsert: { _id: randomUUID(), requestId: current._id, phase: "account_purged", affectedRows: 1, occurredAt: at } }, { ...options, upsert: true }); }); purged.push(current._id); break; }
+        const advanced = await inTransaction(this.context, (tx) => purgePhase(tx, current._id, current.userId!, current.phase, at)); if (!advanced) break;
+      }
     }
     return { purged };
   }
 }
+
+export { AccountLifecycleService as MongoAccountLifecycleService };

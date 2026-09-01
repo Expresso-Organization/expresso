@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../../platform/mysql.js";
+import { createMysqlResource } from "../../../platform/legacy-mysql.js";
 
-import type { SqlTag } from "../../../platform/mysql.js";
+import type { SqlTag } from "../../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { JobFactsAiOutput } from "@expresso/contracts";
@@ -10,7 +10,11 @@ import type { AiCallSpec, AiClient, AiResult } from "../../../platform/ai/client
 import type { JobSourceAdapter, RawPosting } from "./adapter.js";
 import { AiFactsReader } from "./facts.js";
 import type { CompanyMark, MarkReader } from "./logo.js";
-import { JobIngestService } from "./service.js";
+import { JobIngestService } from "./legacy-mysql-service.js";
+import type { JobIngestApi } from "./index.js";
+import { MongoJobIngestService } from "./service.js";
+import { mongoCollections } from "@expresso/database";
+import { createMongoFixture } from "../../../../test/support/mongodb.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
@@ -74,25 +78,30 @@ function posting(marker: string, index: number, body = "충분히 긴 공고 본
   };
 }
 
-describeWithDatabase("job ingest integration", () => {
-  const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
+for (const engine of ["mysql", "mongodb"] as const) {
+describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_URL)(`job ingest integration (${engine})`, () => {
+  let sql: SqlTag;
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>> | undefined;
   const marker = randomUUID().slice(0, 8);
   const adapter = new FakeAdapter();
   const model = new FakeAi();
   const marks = new FakeMarks();
-  const service = new JobIngestService(sql, [adapter], new AiFactsReader(model), marks);
+  let service: JobIngestApi;
   let sourceId = "";
 
   beforeAll(async () => {
+    if (engine === "mongodb") { fixture = await createMongoFixture("ingest-parity"); service = new MongoJobIngestService(fixture.resource, [adapter], new AiFactsReader(model), marks); }
+    else { sql = createMysqlResource(databaseUrl!).sql; service = new JobIngestService(sql, [adapter], new AiFactsReader(model), marks); }
     const source = await service.addSource({
       provider: "greenhouse",
       token: `ingest-${marker}`,
       displayName: `수집 ${marker}`,
     });
     sourceId = source.id;
-  });
+  }, 60_000);
 
   afterAll(async () => {
+    if (fixture) { await fixture.dispose(); return; }
     await sql`delete from job_posting where company_id in (
       select id from company where name like ${`Ingest ${marker}%`}
     )`;
@@ -114,7 +123,7 @@ describeWithDatabase("job ingest integration", () => {
     expect(second.sources.find((one) => one.sourceId === sourceId))
       .toMatchObject({ seen: 3, added: 0, skipped: 3, error: null });
 
-    const stored = await sql<{
+    const stored = fixture ? (await mongoCollections(fixture.resource.db).jobPostings.find({ externalId: { $regex: `^greenhouse:ingest-${marker}:` } }).sort({ externalId: 1 }).toArray()).map((row) => ({ source: row.source, external_id: row.externalId, source_board: row.sourceBoard, location: row.location, employment_type: row.employmentType, team: row.team })) : await sql<{
       source: string; external_id: string; source_board: string;
       location: string; employment_type: string; team: string;
     }[]>`
@@ -138,7 +147,7 @@ describeWithDatabase("job ingest integration", () => {
     const run = await service.run(new Date(), [sourceId]);
     expect(run.sources.find((one) => one.sourceId === sourceId))
       .toMatchObject({ seen: 1, added: 0 });
-    expect((await sql<CountRow[]>`
+    expect((fixture ? [{ count: await mongoCollections(fixture.resource.db).jobPostings.countDocuments({ externalId: `greenhouse:ingest-${marker}:${marker}-90` }) }] : await sql<CountRow[]>`
       select count(*) as count from job_posting
       where external_id = ${`greenhouse:ingest-${marker}:${marker}-90`}
     `)[0]?.count).toBe(0);
@@ -155,11 +164,12 @@ describeWithDatabase("job ingest integration", () => {
 
     expect(run.totals.failedSources).toBe(2);
     for (const row of run.sources) expect(row.error).toContain("HTTP 500");
-    expect((await sql<{ last_status: string; last_error: string }[]>`
+    expect((fixture ? (await service.listSources()).filter((row) => row.id === alt.id).map((row) => ({ last_status: row.lastStatus, last_error: row.lastError })) : await sql<{ last_status: string; last_error: string }[]>`
       select last_status, last_error from job_source where id = ${alt.id}
     `)[0]).toMatchObject({ last_status: "failed", last_error: "boards-api returned HTTP 500" });
 
-    await sql`delete from job_source where id = ${alt.id}`;
+    if (fixture) await mongoCollections(fixture.resource.db).jobSources.deleteOne({ _id: alt.id });
+    else await sql`delete from job_source where id = ${alt.id}`;
   });
 
   it("어댑터가 없는 프로바이더는 켤 수 없다 — 매일 조용히 실패한다", async () => {
@@ -179,12 +189,13 @@ describeWithDatabase("job ingest integration", () => {
 
     expect(run.sources.find((one) => one.sourceId === duplicate.id))
       .toMatchObject({ seen: 1, added: 0, skipped: 1 });
-    expect((await sql<CountRow[]>`
+    expect((fixture ? [{ count: await mongoCollections(fixture.resource.db).jobPostings.countDocuments({ descriptionRaw: { $regex: `^${marker}-1` } }) }] : await sql<CountRow[]>`
       select count(*) as count from job_posting
       where description_raw like ${`${marker}-1%`}
     `)[0]?.count).toBe(1);
 
-    await sql`delete from job_source where id = ${duplicate.id}`;
+    if (fixture) await mongoCollections(fixture.resource.db).jobSources.deleteOne({ _id: duplicate.id });
+    else await sql`delete from job_source where id = ${duplicate.id}`;
     adapter.postings = [];
   });
 
@@ -196,7 +207,7 @@ describeWithDatabase("job ingest integration", () => {
   });
 
   it("존재하지 않는 출처 id는 만들어지지 않는다", async () => {
-    const rows = await sql<IdRow[]>`select id from job_source where id = ${sourceId}`;
+    const rows = fixture ? await mongoCollections(fixture.resource.db).jobSources.find({ _id: sourceId }).toArray() : await sql<IdRow[]>`select id from job_source where id = ${sourceId}`;
     expect(rows).toHaveLength(1);
   });
 
@@ -224,7 +235,8 @@ The base pay for this position ranges from $174,00/year to $299,000/year.`;
     // 읽기는 수집이 하지 않는다. 나눠 둔 두 번째 걸음이 한다.
     await service.readPendingFacts();
 
-    const [row] = await sql<{
+    const document = fixture ? await mongoCollections(fixture.resource.db).jobPostings.findOne({ externalId: `greenhouse:ingest-${marker}:${marker}-7` }) : null;
+    const [row] = fixture ? [{ salary_note: document?.salaryNote ?? null, experience_note: document?.experienceNote ?? null, work_type: document?.workType ?? null, facts_read_at: document?.factsReadAt ?? null }] : await sql<{
       salary_note: string | null; experience_note: string | null;
       work_type: string | null; facts_read_at: Date | null;
     }[]>`
@@ -247,30 +259,35 @@ The base pay for this position ranges from $174,00/year to $299,000/year.`;
      * `#store`가 회사를 건드리기 전에 빠져나갔다. 로고는 `domain`이 있는
      * 회사만 받으러 가므로, 영영 한 번도 시도하지 않았다.
      */
-    await sql`update job_source set site_url = null where id = ${sourceId}`;
-    await sql`update company set domain = null where name = ${`Ingest ${marker}`}`;
+    if (fixture) await mongoCollections(fixture.resource.db).jobSources.updateOne({ _id: sourceId }, { $set: { siteUrl: null } });
+    else await sql`update job_source set site_url = null where id = ${sourceId}`;
+    if (fixture) await mongoCollections(fixture.resource.db).companies.updateOne({ name: `Ingest ${marker}` }, { $set: { domain: null } });
+    else await sql`update company set domain = null where name = ${`Ingest ${marker}`}`;
     adapter.postings = [posting(marker, 42)];
     await service.run(new Date(), [sourceId]);
 
-    const before = await sql<{ domain: string | null }[]>`
+    const before = fixture ? [{ domain: (await mongoCollections(fixture.resource.db).companies.findOne({ name: `Ingest ${marker}` }))?.domain ?? null }] : await sql<{ domain: string | null }[]>`
       select domain from company where name = ${`Ingest ${marker}`}
     `;
     expect(before[0]?.domain).toBeNull();
 
     // 설정만 바꾸고, 새 공고는 하나도 없이 다시 돌린다.
-    await sql`update job_source set site_url = 'https://later.example' where id = ${sourceId}`;
+    if (fixture) await mongoCollections(fixture.resource.db).jobSources.updateOne({ _id: sourceId }, { $set: { siteUrl: "https://later.example" } });
+    else await sql`update job_source set site_url = 'https://later.example' where id = ${sourceId}`;
     const rerun = await service.run(new Date(), [sourceId]);
     expect(rerun.totals.added).toBe(0);
 
-    const after = await sql<{ domain: string | null }[]>`
+    const after = fixture ? [{ domain: (await mongoCollections(fixture.resource.db).companies.findOne({ name: `Ingest ${marker}` }))?.domain ?? null }] : await sql<{ domain: string | null }[]>`
       select domain from company where name = ${`Ingest ${marker}`}
     `;
     expect(after[0]?.domain).toBe("later.example");
   });
 
   it("출처에 사이트를 적어 두면 회사 로고를 받아 담는다", async () => {
-    await sql`update job_source set site_url = 'https://example.test' where id = ${sourceId}`;
-    await sql`update company set domain = null, logo_read_at = null
+    if (fixture) await mongoCollections(fixture.resource.db).jobSources.updateOne({ _id: sourceId }, { $set: { siteUrl: "https://example.test" } });
+    else await sql`update job_source set site_url = 'https://example.test' where id = ${sourceId}`;
+    if (fixture) await mongoCollections(fixture.resource.db).companies.updateOne({ name: `Ingest ${marker}` }, { $set: { domain: null, logoReadAt: null } });
+    else await sql`update company set domain = null, logo_read_at = null
               where name = ${`Ingest ${marker}`}`;
     marks.mark = {
       bytes: Buffer.from([0x89, 0x50, 0x4e, 0x47]),
@@ -281,7 +298,8 @@ The base pay for this position ranges from $174,00/year to $299,000/year.`;
     adapter.postings = [posting(marker, 8)];
     await service.run(new Date(), [sourceId]);
 
-    const [row] = await sql<{
+    const document = fixture ? await mongoCollections(fixture.resource.db).companies.findOne({ name: `Ingest ${marker}` }) : null;
+    const [row] = fixture ? [{ domain: document?.domain ?? null, logo_media_type: document?.logoMediaType ?? null, logo_source_url: document?.logoSourceUrl ?? null, logo_read_at: document?.logoReadAt ?? null }] : await sql<{
       domain: string | null; logo_media_type: string | null;
       logo_source_url: string | null; logo_read_at: Date | null;
     }[]>`
@@ -299,7 +317,8 @@ The base pay for this position ranges from $174,00/year to $299,000/year.`;
   });
 
   it("못 받아도 다시 두드리지 않는다 — 시도한 사실을 남긴다", async () => {
-    await sql`update company set logo_data = null, logo_media_type = null,
+    if (fixture) await mongoCollections(fixture.resource.db).companies.updateOne({ name: `Ingest ${marker}` }, { $set: { logoData: null, logoMediaType: null, logoSourceUrl: null, logoChecksum: null, logoReadAt: null } });
+    else await sql`update company set logo_data = null, logo_media_type = null,
               logo_source_url = null, logo_checksum = null, logo_read_at = null
               where name = ${`Ingest ${marker}`}`;
     marks.mark = null;
@@ -307,7 +326,8 @@ The base pay for this position ranges from $174,00/year to $299,000/year.`;
     adapter.postings = [];
     await service.run(new Date(), [sourceId]);
 
-    const [row] = await sql<{ logo_data: Buffer | null; logo_read_at: Date | null }[]>`
+    const document = fixture ? await mongoCollections(fixture.resource.db).companies.findOne({ name: `Ingest ${marker}` }) : null;
+    const [row] = fixture ? [{ logo_data: document?.logoData ?? null, logo_read_at: document?.logoReadAt ?? null }] : await sql<{ logo_data: Buffer | null; logo_read_at: Date | null }[]>`
       select logo_data, logo_read_at from company where name = ${`Ingest ${marker}`}
     `;
     expect(row?.logo_data).toBeNull();
@@ -319,3 +339,57 @@ The base pay for this position ranges from $174,00/year to $299,000/year.`;
     expect(marks.asked).toEqual([]);
   });
 });
+
+}
+
+describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB job ingestion", () => {
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
+  let service: MongoJobIngestService;
+  const adapter = new FakeAdapter();
+  const model = new FakeAi();
+  const marks = new FakeMarks();
+  const marker = randomUUID();
+  let sourceId: string;
+  beforeAll(async () => {
+    fixture = await createMongoFixture("job-ingest");
+    service = new MongoJobIngestService(fixture.resource, [adapter], new AiFactsReader(model), marks);
+    sourceId = (await service.addSource({ provider: "greenhouse", token: marker, displayName: "채용", siteUrl: "https://example.com" })).id;
+  }, 60_000);
+  afterAll(async () => { await fixture?.dispose(); });
+
+  it("preserves original text, identifiers and extracted arrays on repeated ingestion", async () => {
+    adapter.postings = [posting(marker, 1, "多言語 😀 본문 ".repeat(1000))];
+    expect((await service.run(new Date(), [sourceId])).totals.added).toBe(1);
+    const db = mongoCollections(fixture.resource.db);
+    const original = (await db.jobPostings.findOne({ externalId: `greenhouse:${marker}:${marker}-1` }))!;
+    await db.jobPostings.updateOne({ _id: original._id }, { $set: { duties: [], preferred: [], hiringProcess: [], requirements: { technologies: ["MongoDB"] } } });
+    adapter.postings = [{ ...adapter.postings[0]!, descriptionRaw: "교체하지 않는 본문 ".repeat(40), expiresAt: new Date("2026-12-31T00:00:00Z") }];
+    expect((await service.run(new Date(), [sourceId])).totals.added).toBe(0);
+    expect(await db.jobPostings.findOne({ _id: original._id })).toMatchObject({ companyId: original.companyId, descriptionRaw: original.descriptionRaw, dedupeHash: original.dedupeHash, requirements: { technologies: ["MongoDB"] }, duties: [], preferred: [], expiresAt: new Date("2026-12-31T00:00:00Z") });
+    expect((await service.addSource({ provider: "greenhouse", token: marker, displayName: "새 이름" })).id).toBe(sourceId);
+    expect(await db.companies.countDocuments({})).toBe(1);
+  });
+
+  it("deduplicates concurrent collection and skips short or irrelevant postings", async () => {
+    adapter.postings = [posting(marker, 2), posting(marker, 3, "짧음"), { ...posting(marker, 4), title: "Talent pool" }];
+    const results = await Promise.all([service.run(new Date(), [sourceId]), service.run(new Date(), [sourceId])]);
+    expect(results.reduce((sum, result) => sum + result.totals.added, 0)).toBe(1);
+    expect(results.every((result) => result.totals.failedSources === 0)).toBe(true);
+    expect(await mongoCollections(fixture.resource.db).jobPostings.countDocuments({})).toBe(2);
+  });
+
+  it("separates fact reading from collection and keeps source facts on recomputation", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    const row = (await db.jobPostings.findOne({ externalId: `greenhouse:${marker}:${marker}-2` }))!;
+    expect(model.calls).toBe(0);
+    await db.jobPostings.updateOne({ _id: row._id }, { $set: { salaryNote: "출처 급여" } });
+    model.answer = { salary: null, experience: null, workType: null };
+    const facts = await service.readPendingFacts(1);
+    expect(facts.read).toBe(1);
+    expect(facts.pending).toBe(1);
+    await service.readPendingFacts(25);
+    const noReader = new MongoJobIngestService(fixture.resource, [adapter]);
+    expect((await noReader.readPendingFacts()).skipped).toBe("reader is not configured");
+  });
+});
+

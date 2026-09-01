@@ -22,10 +22,10 @@ import {
   GoogleSignInUnavailableError,
   UnavailableGoogleIdTokenVerifier,
 } from "./google.js";
-import type { IdentityService } from "./service.js";
+import { type IdentityApi } from "./index.js";
 
 export interface RegisterIdentityRoutesOptions {
-  identityService: IdentityService;
+  identityService: IdentityApi;
   /** 없으면 Google 경로는 503으로 답한다. 검증 없이 통과하는 길은 만들지 않는다. */
   googleIdTokenVerifier?: GoogleIdTokenVerifier;
 }

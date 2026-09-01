@@ -1,410 +1,95 @@
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
-import {
-  DeploymentSchema,
-  DeploymentSummarySchema,
-  GeneratedPageDeploymentSnapshotSchema,
-  PageStyleGrammarSchema,
-  PublicPortfolioSchema,
-  SignedAssetSchema,
-  pageDocument,
-  type PublishPortfolio,
-  type SubmitExport,
-} from "@expresso/contracts";
-import type { SqlTag } from "../../platform/mysql.js";
+import { DeploymentSchema, DeploymentSummarySchema, GeneratedPageDeploymentSnapshotSchema, PageStyleGrammarSchema, PublicPortfolioSchema, SignedAssetSchema, pageDocument, type PublishPortfolio, type SubmitExport } from "@expresso/contracts";
+import { mongoCollections, type DeploymentDoc, type ExportAssetDoc, type ExportJobDoc, type JsonObject } from "@expresso/database";
 
-import { EntitlementService } from "../entitlements/service.js";
-import { addOutboxEvent } from "../../platform/outbox.js";
+import type { MongoContext } from "../../platform/mongodb.js";
+import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
+import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
+import { readSnapshot, snapshotRefFromStored, writeSnapshot } from "../../platform/snapshot-payload.js";
+import { MongoEntitlementService } from "../entitlements/index.js";
+import { requireActiveUser } from "../identity/index.js";
+import { PublishingError } from "./public.js";
 
-interface DeploymentRow {
-  id: string;
-  portfolio_id: string;
-  version: number;
-  subdomain: string;
-  snapshot: Record<string, unknown>;
-  seo: Record<string, unknown>;
-  contact_visibility: "public" | "on_request" | "hidden";
-  published_at: Date | string;
-}
-
-interface ExportJobRow {
-  id: string;
-  user_id: string;
-  portfolio_id: string;
-  deployment_id: string | null;
-  kind: "pdf" | "deck";
-  page_format: "letter" | "a4" | null;
-  status: "queued" | "running" | "done" | "failed";
-  attempts: number;
-  asset_id: string | null;
-  error_code: string | null;
-  request_hash: string;
-}
-
-interface AssetRow {
-  id: string;
-  user_id: string;
-  portfolio_id: string;
-  kind: "pdf" | "deck" | "resume_file";
-  file_url: string;
-  version: number;
-  access_nonce: string;
-  revoked_at: Date | string | null;
-}
-
-export class PublishingError extends Error {
-  readonly statusCode: number;
-  constructor(statusCode: number, message: string) {
-    super(message);
-    this.name = "PublishingError";
-    this.statusCode = statusCode;
-  }
-}
-
-function iso(value: Date | string): string {
-  return new Date(value).toISOString();
-}
-
-function deploymentDto(row: DeploymentRow) {
-  return DeploymentSchema.parse({
-    id: row.id,
-    portfolioId: row.portfolio_id,
-    version: row.version,
-    slug: row.subdomain,
-    snapshot: row.snapshot,
-    seo: row.seo,
-    contactVisibility: row.contact_visibility,
-    publishedAt: iso(row.published_at),
-  });
-}
-
-function digest(value: unknown): string {
-  return createHash("sha256").update(JSON.stringify(value)).digest("hex");
-}
-
-function isUniqueViolation(error: unknown): boolean {
-  return typeof error === "object" && error !== null && "code" in error && error.code === "23505";
-}
+const digest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
+const duplicate = (error: unknown) => typeof error === "object" && error !== null && "code" in error && error.code === 11000;
 
 export class PublishingService {
-  readonly #sql: SqlTag;
   readonly #signingSecret: string;
+  constructor(readonly context: MongoContext, signingSecret = "expresso-local-asset-signing-secret") { if (signingSecret.length < 16) throw new Error("asset signing secret must be at least 16 characters"); this.#signingSecret = signingSecret; }
 
-  constructor(sql: SqlTag, signingSecret = "expresso-local-asset-signing-secret") {
-    if (signingSecret.length < 16) throw new Error("asset signing secret must be at least 16 characters");
-    this.#sql = sql;
-    this.#signingSecret = signingSecret;
+  async #snapshot(tx: MongoTransaction, userId: string, portfolioId: string) {
+    const db = mongoCollections(tx.db); const options = { session: tx.session };
+    const portfolio = await db.portfolios.findOne({ _id: portfolioId, userId }, options); if (!portfolio) throw new PublishingError(404, "portfolio not found");
+    const sections = await db.portfolioSections.find({ userId, portfolioId }, options).sort({ orderNo: 1, _id: 1 }).toArray();
+    const blocks = await db.blocks.find({ userId, portfolioSectionId: { $in: sections.map(({ _id }) => _id) } }, options).sort({ orderNo: 1, _id: 1 }).toArray();
+    const page = await db.generatedPages.find({ userId, portfolioId, qualityStatus: "ready" }, options).sort({ revision: -1 }).limit(1).next();
+    if (!page) throw new PublishingError(409, "ready generated page is required for publication");
+    const grammar = PageStyleGrammarSchema.safeParse(page.styleSpecSnapshot).success ? PageStyleGrammarSchema.parse(page.styleSpecSnapshot) : undefined;
+    return { portfolioId, title: portfolio.title, templateId: portfolio.templateId, sections: sections.map((section) => ({ id: section._id, order: section.orderNo, visible: section.visible, blocks: blocks.filter(({ portfolioSectionId: id }) => id === section._id).map((block) => ({ id: block._id, kind: block.kind, content: block.content, style: block.style, locked: block.locked })) })), generatedPage: GeneratedPageDeploymentSnapshotSchema.parse({ id: page._id, revision: page.revision, document: pageDocument({ html: page.html, css: page.css, title: portfolio.title, description: page.rationale, ...(grammar ? { grammar } : {}) }) }) };
   }
 
-  async #snapshot(transaction: SqlTag, userId: string, portfolioId: string) {
-    const portfolio = (await transaction<{ id: string; title: string; template_id: string }[]>`
-      select id, title, template_id from portfolio where id = ${portfolioId} and user_id = ${userId} for update
-    `)[0];
-    if (!portfolio) throw new PublishingError(404, "portfolio not found");
-    const sections = await transaction<{ id: string; order_no: number; visible: boolean }[]>`
-      select id, order_no, visible from portfolio_section
-      where user_id = ${userId} and portfolio_id = ${portfolioId}
-      order by order_no, id
-    `;
-    const blocks = await transaction<{ id: string; portfolio_section_id: string; kind: string; content: Record<string, unknown>; style: Record<string, unknown>; locked: boolean }[]>`
-      select block.id, block.portfolio_section_id, block.kind, block.content, block.style, block.locked
-      from block join portfolio_section on portfolio_section.id = block.portfolio_section_id
-      where block.user_id = ${userId} and portfolio_section.portfolio_id = ${portfolioId}
-      order by portfolio_section.order_no, block.order_no, block.id
-    `;
-    const page = (await transaction<{
-      id: string; revision: number; html: string; css: string; rationale: string; style_spec_snapshot: unknown;
-    }[]>`
-      select id, revision, html, css, rationale, style_spec_snapshot
-      from generated_page
-      where user_id = ${userId} and portfolio_id = ${portfolioId} and quality_status = 'ready'
-      order by revision desc limit 1
-    `)[0];
-    const grammar = page && PageStyleGrammarSchema.safeParse(page.style_spec_snapshot).success
-      ? PageStyleGrammarSchema.parse(page.style_spec_snapshot)
-      : undefined;
-    if (!page) {
-      throw new PublishingError(409, "ready generated page is required for publication");
-    }
-    return {
-      portfolioId,
-      title: portfolio.title,
-      templateId: portfolio.template_id,
-      sections: sections.map((section) => ({
-        id: section.id,
-        order: section.order_no,
-        visible: section.visible,
-        blocks: blocks.filter((block) => block.portfolio_section_id === section.id).map((block) => ({
-          id: block.id,
-          kind: block.kind,
-          content: block.content,
-          style: block.style,
-          locked: block.locked,
-        })),
-      })),
-      // 옛 블록 배포는 이 필드 없이도 계속 읽힌다. 새 자유 HTML 판이 있으면
-      // 배포 시점의 완성 문서를 같이 고정해 공개 렌더가 mutable block을 보지 않는다.
-      generatedPage: GeneratedPageDeploymentSnapshotSchema.parse({
-        id: page.id,
-        revision: page.revision,
-        document: pageDocument({
-          html: page.html,
-          css: page.css,
-          title: portfolio.title,
-          description: page.rationale,
-          ...(grammar ? { grammar } : {}),
-        }),
-      }),
-    };
+  async #dto(row: DeploymentDoc) {
+    const snapshot = await readSnapshot(this.context, snapshotRefFromStored(row.snapshot));
+    return DeploymentSchema.parse({ id: row._id, portfolioId: row.portfolioId, version: row.version, slug: row.subdomain, snapshot, seo: row.seo, contactVisibility: row.contactVisibility, publishedAt: row.publishedAt!.toISOString() });
   }
 
   async publish(userId: string, portfolioId: string, input: PublishPortfolio, at = new Date()) {
     try {
-      return await this.#sql.begin(async (transaction) => {
-        const snapshot = await this.#snapshot(transaction, userId, portfolioId);
-        const current = (await transaction<{ subdomain: string }[]>`
-          select deployment.subdomain from portfolio
-          left join deployment on deployment.id = portfolio.current_deployment_id
-          where portfolio.id = ${portfolioId} and portfolio.user_id = ${userId}
-        `)[0];
-        const version = Number((await transaction<{ version: number }[]>`
-          select coalesce(max(version), 0) + 1 as version
-          from deployment where user_id = ${userId} and portfolio_id = ${portfolioId}
-        `)[0]?.version ?? 1);
-        const row = (await transaction<DeploymentRow[]>`
-          insert into deployment (
-            user_id, portfolio_id, version, subdomain, seo_indexable,
-            contact_visibility, published_at, snapshot, seo
-          ) values (
-            ${userId}, ${portfolioId}, ${version}, ${input.slug}, ${input.seo.indexable},
-            ${input.contactVisibility}, ${at}, ${transaction.json(snapshot as never)}, ${transaction.json(input.seo)}
-          ) returning *
-        `)[0];
-        if (!row) throw new Error("deployment insert failed");
-        await transaction`
-          update portfolio set current_deployment_id = ${row.id}, status = 'published'
-          where id = ${portfolioId} and user_id = ${userId}
-        `;
-        if (current?.subdomain && current.subdomain !== input.slug) {
-          const expiresAt = new Date(at.getTime() + 30 * 24 * 60 * 60 * 1_000);
-          await transaction`
-            update deployment_slug_redirect set new_slug = ${input.slug}
-            where user_id = ${userId} and portfolio_id = ${portfolioId} and expires_at > ${at}
-          `;
-          await transaction`
-            insert into deployment_slug_redirect (user_id, portfolio_id, old_slug, new_slug, created_at, expires_at)
-            values (${userId}, ${portfolioId}, ${current.subdomain}, ${input.slug}, ${at}, ${expiresAt})
-            as new on duplicate key update new_slug = new.new_slug, created_at = new.created_at, expires_at = new.expires_at
-          `;
+      const row = await inTransaction(this.context, async (tx) => {
+        await requireActiveUser(tx, userId); const db = mongoCollections(tx.db); const options = { session: tx.session };
+        const portfolio = await db.portfolios.findOne({ _id: portfolioId, userId }, options); if (!portfolio) throw new PublishingError(404, "portfolio not found");
+        const snapshotValue = await this.#snapshot(tx, userId, portfolioId); const snapshot = await writeSnapshot(tx, userId, snapshotValue);
+        const current = portfolio.currentDeploymentId ? await db.deployments.findOne({ _id: portfolio.currentDeploymentId, userId, portfolioId }, options) : null;
+        const previous = await db.deployments.find({ userId, portfolioId }, options).sort({ version: -1 }).limit(1).next();
+        const deployment: DeploymentDoc = { _id: randomUUID(), userId, portfolioId, version: (previous?.version ?? 0) + 1, subdomain: input.slug, customDomain: null, seoIndexable: input.seo.indexable, contactVisibility: input.contactVisibility, publishedAt: at, hasUnpublishedChanges: false, snapshot: snapshot as unknown as JsonObject, seo: input.seo as JsonObject };
+        await db.deployments.insertOne(deployment, options);
+        const changed = await db.portfolios.updateOne({ _id: portfolioId, userId }, { $set: { currentDeploymentId: deployment._id, status: "published", updatedAt: at } }, options); if (changed.matchedCount !== 1) throw new PublishingError(404, "portfolio not found");
+        if (current && current.subdomain !== input.slug) {
+          const expiresAt = new Date(at.getTime() + 30 * 24 * 60 * 60 * 1000);
+          await db.deploymentSlugRedirects.updateMany({ userId, portfolioId, expiresAt: { $gt: at } }, { $set: { newSlug: input.slug } }, options);
+          await db.deploymentSlugRedirects.updateOne({ oldSlug: current.subdomain }, { $set: { userId, portfolioId, oldSlug: current.subdomain, newSlug: input.slug, createdAt: at, expiresAt }, $setOnInsert: { _id: randomUUID() } }, { ...options, upsert: true });
         }
-        return deploymentDto(row);
+        return deployment;
       });
-    } catch (error) {
-      if (isUniqueViolation(error)) throw new PublishingError(409, "slug is already reserved");
-      throw error;
-    }
+      return this.#dto(row);
+    } catch (error) { if (duplicate(error)) throw new PublishingError(409, "slug is already reserved"); throw error; }
   }
 
-  /**
-   * 08b가 읽는 배포 이력.
-   *
-   * 되돌릴 대상을 고르려면 목록이 있어야 한다. 사본(`snapshot`)은 통째로 무거워서
-   * 내보내지 않고, **그 버전이 무엇을 담았는지만** 세어 준다.
-   */
   async listDeployments(userId: string, portfolioId: string) {
-    const portfolio = (await this.#sql<{ current_deployment_id: string | null }[]>`
-      select current_deployment_id from portfolio
-      where id = ${portfolioId} and user_id = ${userId}
-    `)[0];
-    if (!portfolio) throw new PublishingError(404, "portfolio not found");
-
-    const rows = await this.#sql<(DeploymentRow & { seo_indexable: boolean })[]>`
-      select * from deployment
-      where user_id = ${userId} and portfolio_id = ${portfolioId}
-      order by version desc limit 50
-    `;
-    return rows.map((row) => {
-      const sections = (row.snapshot as { sections?: { blocks?: unknown[] }[] }).sections ?? [];
-      return DeploymentSummarySchema.parse({
-        id: row.id,
-        version: row.version,
-        slug: row.subdomain,
-        publishedAt: iso(row.published_at),
-        isCurrent: portfolio.current_deployment_id === row.id,
-        seoIndexable: row.seo_indexable,
-        contactVisibility: row.contact_visibility,
-        sectionCount: sections.length,
-        blockCount: sections.reduce((sum, section) => sum + (section.blocks?.length ?? 0), 0),
-      });
-    });
+    const db = mongoCollections(this.context.db); const portfolio = await db.portfolios.findOne({ _id: portfolioId, userId }); if (!portfolio) throw new PublishingError(404, "portfolio not found");
+    const rows = await db.deployments.find({ userId, portfolioId }).sort({ version: -1 }).limit(50).toArray();
+    return Promise.all(rows.map(async (row) => { const snapshot = await readSnapshot(this.context, snapshotRefFromStored(row.snapshot)); const sections = snapshot.sections as Array<{ blocks?: unknown[] }> | undefined ?? []; return DeploymentSummarySchema.parse({ id: row._id, version: row.version, slug: row.subdomain, publishedAt: row.publishedAt!.toISOString(), isCurrent: portfolio.currentDeploymentId === row._id, seoIndexable: row.seoIndexable, contactVisibility: row.contactVisibility, sectionCount: sections.length, blockCount: sections.reduce((sum, section) => sum + (section.blocks?.length ?? 0), 0) }); }));
   }
 
   async getPublic(slug: string, at = new Date()) {
-    const direct = (await this.#sql<DeploymentRow[]>`
-      select deployment.* from deployment
-      join portfolio on portfolio.current_deployment_id = deployment.id
-      where deployment.subdomain = ${slug} and portfolio.status = 'published'
-    `)[0];
-    if (direct) return PublicPortfolioSchema.parse({ kind: "portfolio", deployment: deploymentDto(direct) });
-    const redirect = (await this.#sql<{ old_slug: string; new_slug: string; expires_at: Date | string }[]>`
-      select redirect.old_slug, redirect.new_slug, redirect.expires_at
-      from deployment_slug_redirect as redirect
-      join portfolio on portfolio.id = redirect.portfolio_id and portfolio.user_id = redirect.user_id
-      join deployment on deployment.id = portfolio.current_deployment_id
-        and deployment.subdomain = redirect.new_slug
-      where redirect.old_slug = ${slug} and redirect.expires_at > ${at}
-        and portfolio.status = 'published'
-    `)[0];
-    if (redirect) return PublicPortfolioSchema.parse({
-      kind: "redirect", from: redirect.old_slug, to: redirect.new_slug, expiresAt: iso(redirect.expires_at),
-    });
+    const db = mongoCollections(this.context.db); const direct = await db.deployments.findOne({ subdomain: slug });
+    if (direct) { const portfolio = await db.portfolios.findOne({ _id: direct.portfolioId, currentDeploymentId: direct._id, status: "published" }); if (portfolio) return PublicPortfolioSchema.parse({ kind: "portfolio", deployment: await this.#dto(direct) }); }
+    const redirect = await db.deploymentSlugRedirects.findOne({ oldSlug: slug, expiresAt: { $gt: at } });
+    if (redirect) { const portfolio = await db.portfolios.findOne({ _id: redirect.portfolioId, userId: redirect.userId, status: "published" }); const deployment = portfolio?.currentDeploymentId ? await db.deployments.findOne({ _id: portfolio.currentDeploymentId, subdomain: redirect.newSlug }) : null; if (deployment) return PublicPortfolioSchema.parse({ kind: "redirect", from: redirect.oldSlug, to: redirect.newSlug, expiresAt: redirect.expiresAt.toISOString() }); }
     throw new PublishingError(404, "published portfolio not found");
   }
 
-  async unpublish(userId: string, portfolioId: string) {
-    const rows = await this.#sql<{ id: string }[]>`
-      update portfolio set status = 'unlisted'
-      where id = ${portfolioId} and user_id = ${userId} and current_deployment_id is not null
-      returning id
-    `;
-    if (!rows[0]) throw new PublishingError(404, "published portfolio not found");
-    return { portfolioId, status: "unlisted" as const };
-  }
+  async unpublish(userId: string, portfolioId: string) { const result = await inTransaction(this.context, async (tx) => { await requireActiveUser(tx, userId); return mongoCollections(tx.db).portfolios.updateOne({ _id: portfolioId, userId, currentDeploymentId: { $ne: null } }, { $set: { status: "unlisted", updatedAt: new Date() } }, { session: tx.session }); }); if (result.matchedCount !== 1) throw new PublishingError(404, "published portfolio not found"); return { portfolioId, status: "unlisted" as const }; }
+  async rollback(userId: string, portfolioId: string, deploymentId: string) { const row = await inTransaction(this.context, async (tx) => { await requireActiveUser(tx, userId); const db = mongoCollections(tx.db); const options = { session: tx.session }; const target = await db.deployments.findOne({ _id: deploymentId, userId, portfolioId }, options); if (!target) throw new PublishingError(404, "deployment not found"); const changed = await db.portfolios.updateOne({ _id: portfolioId, userId }, { $set: { currentDeploymentId: target._id, status: "published", updatedAt: new Date() } }, options); if (changed.matchedCount !== 1) throw new PublishingError(404, "portfolio not found"); return target; }); return this.#dto(row); }
 
-  async rollback(userId: string, portfolioId: string, deploymentId: string) {
-    const row = await this.#sql.begin(async (transaction) => {
-      const target = (await transaction<DeploymentRow[]>`
-        select * from deployment where id = ${deploymentId} and portfolio_id = ${portfolioId} and user_id = ${userId}
-      `)[0];
-      if (!target) throw new PublishingError(404, "deployment not found");
-      await transaction`
-        update portfolio set current_deployment_id = ${deploymentId}, status = 'published'
-        where id = ${portfolioId} and user_id = ${userId}
-      `;
-      return target;
-    });
-    return deploymentDto(row);
-  }
-
+  #exportDto(row: ExportJobDoc) { return { id: row._id, portfolioId: row.portfolioId, kind: row.kind, pageFormat: row.pageFormat ?? null, status: row.status, attempts: row.attempts, assetId: row.assetId ?? null, errorCode: row.errorCode ?? null }; }
   async submitExport(userId: string, portfolioId: string, key: string, input: SubmitExport) {
-    const decision = await new EntitlementService(this.#sql).check(userId, "export.document");
-    if (!decision.allowed) throw new PublishingError(403, "document export entitlement required");
-    const hash = digest(input);
-    const row = await this.#sql.begin(async (transaction) => {
-      const portfolio = (await transaction<{ current_deployment_id: string | null }[]>`
-        select current_deployment_id from portfolio where id = ${portfolioId} and user_id = ${userId}
-      `)[0];
-      if (!portfolio) throw new PublishingError(404, "portfolio not found");
-      await transaction`
-        insert ignore into export_job (user_id, portfolio_id, deployment_id, kind, page_format, idempotency_key, request_hash)
-        values (${userId}, ${portfolioId}, ${portfolio.current_deployment_id}, ${input.kind}, ${input.pageFormat}, ${key}, ${hash})
-      `;
-      const inserted = (await transaction<ExportJobRow[]>`
-        select * from export_job where user_id = ${userId} and idempotency_key = ${key}
-      `)[0];
-      if (!inserted) throw new Error("export job missing");
-      if (inserted.request_hash !== hash) throw new PublishingError(409, "idempotency key reused for another export");
-      await addOutboxEvent(transaction, {
-        topic: "portfolio.export",
-        payload: { exportJobId: inserted.id, userId },
-        idempotencyKey: `portfolio-export:${inserted.id}`,
-      });
-      return inserted;
-    });
-    return this.#exportJobDto(row);
+    const hash = digest(input); const row = await inTransaction(this.context, async (tx) => {
+      await requireActiveUser(tx, userId); const entitlement = await new MongoEntitlementService(tx).check(userId, "export.document"); if (!entitlement.allowed) throw new PublishingError(403, "document export entitlement required");
+      const db = mongoCollections(tx.db); const options = { session: tx.session }; const portfolio = await db.portfolios.findOne({ _id: portfolioId, userId }, options); if (!portfolio) throw new PublishingError(404, "portfolio not found");
+      const existing = await db.exportJobs.findOne({ userId, idempotencyKey: key }, options); if (existing) { if (existing.requestHash !== hash) throw new PublishingError(409, "idempotency key reused for another export"); return existing; }
+      const now = new Date(); const job: ExportJobDoc = { _id: randomUUID(), userId, portfolioId, deploymentId: portfolio.currentDeploymentId ?? null, kind: input.kind, pageFormat: input.pageFormat ?? null, status: "queued", attempts: 0, idempotencyKey: key, requestHash: hash, assetId: null, errorCode: null, createdAt: now, updatedAt: now };
+      await db.exportJobs.insertOne(job, options); await addMongoOutboxEvent(tx, { userId, topic: "portfolio.export", payload: { exportJobId: job._id, userId }, idempotencyKey: `portfolio-export:${job._id}` }); return job;
+    }); return this.#exportDto(row);
   }
+  async getExport(userId: string, id: string) { const row = await mongoCollections(this.context.db).exportJobs.findOne({ _id: id, userId }); if (!row) throw new PublishingError(404, "export job not found"); return this.#exportDto(row); }
+  async processExport(id: string) { await inTransaction(this.context, async (tx) => { const db = mongoCollections(tx.db); const options = { session: tx.session }; const job = await db.exportJobs.findOne({ _id: id }, options); if (!job) throw new PublishingError(404, "export job not found"); await requireActiveUser(tx, job.userId); if (job.status === "done") return; const asset: ExportAssetDoc = { _id: randomUUID(), userId: job.userId, portfolioId: job.portfolioId, kind: job.kind, fileUrl: `exports/${job.userId}/${id}.${job.kind}`, pageFormat: job.pageFormat ?? null, downloadCount: 0, version: 1, accessNonce: randomUUID(), revokedAt: null, createdAt: new Date() }; await db.exportAssets.insertOne(asset, options); await db.exportJobs.updateOne({ _id: id, attempts: job.attempts, status: { $ne: "done" } }, { $set: { status: "done", attempts: job.attempts + 1, assetId: asset._id, errorCode: null, updatedAt: new Date() } }, options); }); const row = await mongoCollections(this.context.db).exportJobs.findOne({ _id: id }); if (!row) throw new Error("export job missing"); return this.#exportDto(row); }
 
-  async getExport(userId: string, id: string) {
-    const row = (await this.#sql<ExportJobRow[]>`select * from export_job where id = ${id} and user_id = ${userId}`)[0];
-    if (!row) throw new PublishingError(404, "export job not found");
-    return this.#exportJobDto(row);
-  }
-
-  #exportJobDto(row: ExportJobRow) {
-    return {
-      id: row.id, portfolioId: row.portfolio_id, kind: row.kind, pageFormat: row.page_format,
-      status: row.status, attempts: row.attempts, assetId: row.asset_id, errorCode: row.error_code,
-    };
-  }
-
-  async processExport(id: string) {
-    await this.#sql.begin(async (transaction) => {
-      const job = (await transaction<ExportJobRow[]>`select * from export_job where id = ${id} for update`)[0];
-      if (!job) throw new PublishingError(404, "export job not found");
-      if (job.status === "done") return;
-      await transaction`update export_job set status = 'running', attempts = attempts + 1, updated_at = now(6) where id = ${id}`;
-      const asset = (await transaction<{ id: string }[]>`
-        insert into export_asset (user_id, portfolio_id, kind, file_url, page_format)
-        values (${job.user_id}, ${job.portfolio_id}, ${job.kind}, ${`exports/${job.user_id}/${id}.${job.kind}`}, ${job.page_format})
-        returning id
-      `)[0];
-      if (!asset) throw new Error("export asset missing");
-      await transaction`update export_job set status = 'done', asset_id = ${asset.id}, error_code = null, updated_at = now(6) where id = ${id}`;
-    });
-    const row = (await this.#sql<ExportJobRow[]>`select * from export_job where id = ${id}`)[0];
-    if (!row) throw new Error("export job missing");
-    return this.#exportJobDto(row);
-  }
-
-  async replaceResume(userId: string, portfolioId: string, fileUrl: string) {
-    const decision = await new EntitlementService(this.#sql).check(userId, "export.document");
-    if (!decision.allowed) throw new PublishingError(403, "resume asset entitlement required");
-    return this.#sql.begin(async (transaction) => {
-      const portfolio = (await transaction<{ id: string }[]>`
-        select id from portfolio where id = ${portfolioId} and user_id = ${userId} for update
-      `)[0];
-      if (!portfolio) throw new PublishingError(404, "portfolio not found");
-      const previous = (await transaction<{ version: number }[]>`
-        select version from export_asset where user_id = ${userId} and portfolio_id = ${portfolioId}
-          and kind = 'resume_file' and revoked_at is null for update
-      `)[0];
-      await transaction`
-        update export_asset set revoked_at = now(6)
-        where user_id = ${userId} and portfolio_id = ${portfolioId} and kind = 'resume_file' and revoked_at is null
-      `;
-      const asset = (await transaction<AssetRow[]>`
-        insert into export_asset (user_id, portfolio_id, kind, file_url, version)
-        values (${userId}, ${portfolioId}, 'resume_file', ${fileUrl}, ${Number(previous?.version ?? 0) + 1})
-        returning *
-      `)[0];
-      if (!asset) throw new Error("resume asset missing");
-      return { id: asset.id, portfolioId, kind: asset.kind, version: asset.version };
-    });
-  }
-
-  #signature(asset: AssetRow, expiresEpoch: number): string {
-    return createHmac("sha256", this.#signingSecret)
-      .update(`${asset.id}:${asset.version}:${asset.access_nonce}:${expiresEpoch}`)
-      .digest("hex");
-  }
-
-  async signAsset(userId: string, assetId: string, ttlSeconds = 300, at = new Date()) {
-    const decision = await new EntitlementService(this.#sql).check(userId, "export.document");
-    if (!decision.allowed) throw new PublishingError(403, "asset entitlement required");
-    const asset = (await this.#sql<AssetRow[]>`
-      select * from export_asset where id = ${assetId} and user_id = ${userId} and revoked_at is null
-    `)[0];
-    if (!asset) throw new PublishingError(404, "asset not found");
-    const expiresEpoch = Math.floor(at.getTime() / 1_000) + ttlSeconds;
-    const signature = this.#signature(asset, expiresEpoch);
-    return SignedAssetSchema.parse({
-      assetId,
-      url: `/v1/public/assets/${assetId}?version=${asset.version}&expires=${expiresEpoch}&signature=${signature}`,
-      expiresAt: new Date(expiresEpoch * 1_000).toISOString(),
-    });
-  }
-
-  async resolveAsset(assetId: string, version: number, expiresEpoch: number, signature: string, at = new Date()) {
-    if (expiresEpoch <= Math.floor(at.getTime() / 1_000)) throw new PublishingError(403, "asset link expired");
-    const asset = (await this.#sql<AssetRow[]>`select * from export_asset where id = ${assetId} and revoked_at is null`)[0];
-    if (!asset || asset.version !== version) throw new PublishingError(404, "asset not found");
-    const expected = this.#signature(asset, expiresEpoch);
-    const actualBuffer = Buffer.from(signature);
-    const expectedBuffer = Buffer.from(expected);
-    if (actualBuffer.length !== expectedBuffer.length || !timingSafeEqual(actualBuffer, expectedBuffer)) {
-      throw new PublishingError(403, "invalid asset signature");
-    }
-    await this.#sql`update export_asset set download_count = download_count + 1 where id = ${assetId}`;
-    return { assetId: asset.id, kind: asset.kind, fileUrl: asset.file_url };
-  }
+  async replaceResume(userId: string, portfolioId: string, fileUrl: string) { return inTransaction(this.context, async (tx) => { await requireActiveUser(tx, userId); const entitlement = await new MongoEntitlementService(tx).check(userId, "export.document"); if (!entitlement.allowed) throw new PublishingError(403, "resume asset entitlement required"); const db = mongoCollections(tx.db); const options = { session: tx.session }; if (!await db.portfolios.findOne({ _id: portfolioId, userId }, options)) throw new PublishingError(404, "portfolio not found"); const previous = await db.exportAssets.find({ userId, portfolioId, kind: "resume_file" }).sort({ version: -1 }).limit(1).next(); await db.exportAssets.updateMany({ userId, portfolioId, kind: "resume_file", revokedAt: null }, { $set: { revokedAt: new Date(), accessNonce: randomUUID() } }, options); const asset: ExportAssetDoc = { _id: randomUUID(), userId, portfolioId, kind: "resume_file", fileUrl, pageFormat: null, downloadCount: 0, version: (previous?.version ?? 0) + 1, accessNonce: randomUUID(), revokedAt: null, createdAt: new Date() }; await db.exportAssets.insertOne(asset, options); return { id: asset._id, portfolioId, kind: asset.kind, version: asset.version }; }); }
+  #signature(asset: ExportAssetDoc, expires: number) { return createHmac("sha256", this.#signingSecret).update(`${asset._id}:${asset.version}:${asset.accessNonce}:${expires}`).digest("hex"); }
+  async signAsset(userId: string, assetId: string, ttlSeconds = 300, at = new Date()) { const entitlement = await new MongoEntitlementService(this.context).check(userId, "export.document"); if (!entitlement.allowed) throw new PublishingError(403, "asset entitlement required"); const asset = await mongoCollections(this.context.db).exportAssets.findOne({ _id: assetId, userId, revokedAt: null }); if (!asset) throw new PublishingError(404, "asset not found"); const expires = Math.floor(at.getTime() / 1000) + ttlSeconds; return SignedAssetSchema.parse({ assetId, url: `/v1/public/assets/${assetId}?version=${asset.version}&expires=${expires}&signature=${this.#signature(asset, expires)}`, expiresAt: new Date(expires * 1000).toISOString() }); }
+  async resolveAsset(assetId: string, version: number, expires: number, signature: string, at = new Date()) { if (expires <= Math.floor(at.getTime() / 1000)) throw new PublishingError(403, "asset link expired"); const db = mongoCollections(this.context.db); const asset = await db.exportAssets.findOne({ _id: assetId, revokedAt: null }); if (!asset || asset.version !== version) throw new PublishingError(404, "asset not found"); const expected = this.#signature(asset, expires); const actual = Buffer.from(signature); const expectedBytes = Buffer.from(expected); if (actual.length !== expectedBytes.length || !timingSafeEqual(actual, expectedBytes)) throw new PublishingError(403, "invalid asset signature"); await db.exportAssets.updateOne({ _id: assetId, version, revokedAt: null }, { $inc: { downloadCount: 1 } }); return { assetId: asset._id, kind: asset.kind, fileUrl: asset.fileUrl }; }
 }
+
+export { PublishingService as MongoPublishingService };

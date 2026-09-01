@@ -36,20 +36,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
-      mysql:
-        image: mysql:8.4
-        env:
-          MYSQL_DATABASE: expresso
-          MYSQL_USER: expresso
-          MYSQL_PASSWORD: expresso
-          MYSQL_ROOT_PASSWORD: expresso
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd "mysqladmin ping -h 127.0.0.1 -uexpresso -pexpresso"
-          --health-interval 2s
-          --health-timeout 3s
-          --health-retries 30
       redis:
         image: redis:8.2.1-alpine
         ports:
@@ -61,8 +47,10 @@ jobs:
           --health-retries 20
 
     env:
-      DATABASE_URL: mysql://expresso:expresso@127.0.0.1:3306/expresso
-      TEST_DATABASE_URL: mysql://expresso:expresso@127.0.0.1:3306/expresso
+      MONGODB_URL: mongodb://expresso_runtime:expresso_runtime@127.0.0.1:57017/expresso?authSource=expresso&replicaSet=rs0
+      MONGODB_MIGRATE_URL: mongodb://expresso_migration:expresso_migration@127.0.0.1:57017/expresso?authSource=expresso&replicaSet=rs0
+      MONGODB_DATABASE: expresso
+      TEST_MONGODB_URL: mongodb://admin:expresso-admin@127.0.0.1:57017/?authSource=admin&replicaSet=rs0
       TEST_REDIS_URL: redis://127.0.0.1:6379
 
     steps:
@@ -81,6 +69,9 @@ jobs:
       - name: 의존성 설치
         run: pnpm install --frozen-lockfile
 
+      - name: MongoDB replica set 준비
+        run: pnpm infra:mongodb:up
+
       # 테스트는 계약과 스키마를 dist로 불러온다. 지어 두지 않으면 vitest가
       # @expresso/contracts를 찾지 못한다. 순서는 deploy.sh와 같다 — 배포와
       # CI가 다른 순서로 지으면 한쪽에서만 깨진다.
@@ -88,23 +79,6 @@ jobs:
         run: |
           pnpm --filter @expresso/contracts build
           pnpm --filter @expresso/database build
-
-      # 두 가지를 여기서 연다. 서비스 컨테이너에는 명령 인자를 넘길 수 없어
-      # 설정 파일 대신 켜는 자리다.
-      #
-      #   · 바이너리 로그가 켜져 있으면 MySQL 은 트리거와 저장 프로시저를 만드는
-      #     사람에게 SUPER 를 요구한다. 8.4 는 행 단위로만 기록하므로 되감을
-      #     문장이 없고, 그 검사만 끈다(운영은 infra/compose.server.yaml).
-      #   · 통합 테스트는 파일마다 격리 데이터베이스를 새로 만들고 지운다.
-      #     공식 이미지가 주는 권한은 expresso 하나뿐이라 그 자리를 넓힌다.
-      #     버리는 컨테이너에서만 그렇게 한다.
-      - name: 테스트용 데이터베이스 권한
-        run: |
-          docker run --rm --network host mysql:8.4 \
-            mysql -h 127.0.0.1 -P 3306 -uroot -pexpresso -e "
-              set global log_bin_trust_function_creators = 1;
-              grant all privileges on *.* to 'expresso'@'%';
-              flush privileges;"
 
       - name: 마이그레이션
         run: pnpm db:migrate

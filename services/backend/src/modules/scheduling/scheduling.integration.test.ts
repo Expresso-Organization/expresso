@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/mysql.js";
+import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
 import { migrate } from "@expresso/database";
-import type { SqlTag } from "../../platform/mysql.js";
+import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { SCHEDULED_JOB_KEYS, SchedulingService, type ScheduledJobKey } from "./service.js";
+import { SCHEDULED_JOB_KEYS, SchedulingService, type ScheduledJobKey } from "./legacy-mysql-service.js";
 
 const rootDatabaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = rootDatabaseUrl ? describe : describe.skip;

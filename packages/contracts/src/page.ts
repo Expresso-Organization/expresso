@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { TimestampSchema, UuidSchema } from "./common.js";
 import { PAGE_KIT_CSS, pageKitVariables } from "./page-kit.js";
+import { PortfolioDesignReferenceSchema, TemplateFontSchema } from "./templates.js";
 
 /**
  * 자유 생성 지면.
@@ -44,7 +45,7 @@ import { PAGE_KIT_CSS, pageKitVariables } from "./page-kit.js";
  * 그 값이 `template.style`에 이미 있는데 생성기가 안 읽고 있었다. 문법을
  * 제약으로 넘긴다 — 흔들리던 축을 사용자가 쥔다.
  */
-export const PAGE_PROMPT_VERSION = 6;
+export const PAGE_PROMPT_VERSION = 7;
 
 /**
  * 한 지면의 상한.
@@ -240,7 +241,9 @@ export const PAGE_CSS_FORBIDDEN = [
   { pattern: /@import\b/i, reason: "@import — 바깥 스타일시트를 부른다" },
   { pattern: /expression\s*\(/i, reason: "expression() — 옛 IE에서 코드가 된다" },
   { pattern: /-moz-binding/i, reason: "-moz-binding — 바깥 문서를 실행한다" },
-  { pattern: /\bbehavior\s*:/i, reason: "behavior — 바깥 문서를 실행한다" },
+  // 옛 IE의 `behavior` 선언만 막는다. `scroll-behavior`처럼 이름에 behavior가
+  // 들어가는 표준 속성까지 거절하면 정상 지면이 생성 단계에서 실패한다.
+  { pattern: /(?:^|[;{])\s*behavior\s*:/i, reason: "behavior — 바깥 문서를 실행한다" },
   { pattern: /javascript\s*:/i, reason: "javascript: 주소" },
   { pattern: /<\/?\s*script/i, reason: "style 안에서 태그를 닫고 나가려는 시도" },
 ] as const;
@@ -264,7 +267,7 @@ export const PageStyleGrammarSchema = z.strictObject({
   background: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   text: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   accent: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  font: z.enum(["sans", "serif"]),
+  font: TemplateFontSchema,
   density: z.enum(["compact", "comfortable", "spacious"]),
   structure: z.enum(["single-column", "dense-grid", "wide-margin"]),
   composition: z.enum(["linear-story", "asymmetric-editorial", "evidence-grid"]),
@@ -274,6 +277,7 @@ export const PageStyleGrammarSchema = z.strictObject({
   interaction: z.enum(["evidence-exploration", "linear-reading", "comparison"]),
   imagery: z.enum(["project-artifacts-first", "data-visual-first", "typography-first"]),
   antiPatterns: z.array(z.string().min(1).max(200)).max(20),
+  designReference: PortfolioDesignReferenceSchema.optional(),
 });
 export type PageStyleGrammar = z.infer<typeof PageStyleGrammarSchema>;
 
@@ -306,6 +310,7 @@ export const PageGenerationManifestSchema = z.strictObject({
   promptVersions: z.strictObject({
     page: z.number().int().positive(),
     designPrinciples: z.number().int().positive(),
+    style: z.number().int().positive().optional(),
   }),
   tools: z.array(z.enum(["web-search", "product-design", "imagegen", "external-reference"])),
   sourceUrls: z.array(z.string().url().max(2_000)).max(100),
@@ -535,6 +540,26 @@ const STRUCTURE_RULE: Record<PageStyleGrammar["structure"], string> = {
  * 한 단어는 모델마다 다르게 읽히지만 "본문 15px, 줄간 1.5"는 그렇지 않다.
  */
 export function pageStyleGrammarPrompt(style: PageStyleGrammar): string {
+  if (style.designReference) {
+    return [
+      "## 사용자가 선택한 포트폴리오 스타일",
+      `고른 것: **${style.name}** — ${style.description}`,
+      `참고: ${style.designReference.sourceUrl} · Expresso 적용 프롬프트 v${style.designReference.version}`,
+      "아래는 참고 스타일의 시각 규칙이다. 내용은 PortfolioPlan과 사용자 근거에서만 가져온다.",
+      "보안·접근성·출력 형식 규칙이 우선하며, 참고 사이트의 예시 인물·상품·수치는 가져오지 않는다.",
+      "",
+      style.designReference.prompt,
+      "",
+      "### 확정된 사용자 선택값 — 위 규칙과 겹치면 이 값이 우선한다",
+      `바탕 ${style.background} · 본문 ${style.text} · 강조 ${style.accent}.`,
+      "보조색은 위 스타일에서 지정한 용도로만 사용한다. 본문과 행동의 명도 대비를 유지한다.",
+      `주 서체 계열: ${style.font === "mono" ? "고정폭" : style.font === "serif" ? "명조" : "고딕"}. 한국어 대체 서체를 함께 지정한다.`,
+      `밀도: ${DENSITY_RULE[style.density]}`,
+      `구성: ${style.structure}. 단일 흐름·근거 격자·넓은 여백이라는 읽기 순서를 지키되, 선·모서리·그림자는 위 스타일을 따른다.`,
+      "사용자가 조정한 색·서체·밀도·구성 때문에 다른 스타일로 바꾸지는 않는다.",
+      "모션은 CSS로 구현하고, 모션 감소 설정에서는 모든 핵심 내용을 정적으로 읽을 수 있게 한다.",
+    ].join("\n");
+  }
   return [
     "## 스타일 문법 — 사용자가 **생성 전에 이미 골랐다.** 지키는 것이 네 일이다",
     `고른 것: **${style.name}** — ${style.description}`,
@@ -543,8 +568,8 @@ export function pageStyleGrammarPrompt(style: PageStyleGrammar): string {
     `- 바탕 \`${style.background}\` · 본문 글자 \`${style.text}\` · 강조 \`${style.accent}\`.`,
     "  **이 세 색이 지면의 뼈대다.** 명도를 조절한 변주(옅은 면, 테두리, 보조 글자색)는",
     "  만들어 써도 되지만 계열 밖의 새 색을 들이지 마라.",
-    `- 서체: ${style.font === "serif" ? "세리프를 제목과 본문의 중심에 둔다" : "산세리프를 중심에 둔다"}.`,
-    `  고정폭은 수치와 라벨에만 쓴다.`,
+    `- 서체: ${style.font === "mono" ? "고정폭을 제목과 본문의 중심에 둔다" : style.font === "serif" ? "세리프를 제목과 본문의 중심에 둔다" : "산세리프를 중심에 둔다"}.`,
+    style.font === "mono" ? "" : "  고정폭은 수치와 라벨에만 쓴다.",
     `- 밀도: ${DENSITY_RULE[style.density]}`,
     `- 골격: ${STRUCTURE_RULE[style.structure]}`,
     `- 구성: ${style.composition} · 타이포그래피: ${style.typography} · 면 구성: ${style.geometry}.`,

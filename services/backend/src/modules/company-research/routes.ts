@@ -6,12 +6,12 @@ import {
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import { CompanyResearchError, type CompanyResearchService } from "./service.js";
+import { CompanyResearchError, type CompanyResearchApi } from "./index.js";
 
 export function registerCompanyResearchRoutes(
   app: FastifyInstance,
   options: {
-    service: CompanyResearchService;
+    service: CompanyResearchApi;
     authenticateRequest: preHandlerHookHandler;
   },
 ): void {
