@@ -7,16 +7,26 @@ import { TimestampSchema, UuidSchema } from "./common.js";
  *
  * 우리가 모으는 곳은 세 갈래다.
  *
- * - **ATS 공개 채용 API**(`greenhouse` · `lever` · `ashby`) — 그 회사가 자기
- *   채용 페이지를 붙이라고 열어 둔 엔드포인트다. 인증이 없고 본문이 통째로 온다.
- * - **공공 API**(`work24`) — 고용24/워크넷. 무료·정식이지만 IT 공고가 얇다.
+ * - **ATS 공개 채용 보드**(`greenhouse` · `lever` · `ashby` · `workable` ·
+ *   `greeting`) — 그 회사가 자기 채용 페이지를 붙이라고 열어 둔 자리다. 인증이
+ *   없고 본문이 통째로 온다. 국내 스타트업은 `greeting`(그리팅)이 가장 많다.
+ * - **공공 API**(`work24`) — 어댑터가 실제로 부르는 곳은 워크넷이 아니라
+ *   **공공기관 채용정보**(재정경제부, `apis.data.go.kr/1051000`)다. 워크넷
+ *   채용정보 API는 고용24 기업회원 전용이고, 공공데이터포털의 워크넷 API는
+ *   전부 `LINK` 유형이라 포털을 거쳐도 같은 벽으로 돌아온다.
+ * - **고용24 채용정보 화면**(`work24web`) — 위 API가 막혀 있어 공개 목록을
+ *   직접 읽는다. IT 직종만 4,761건으로 가장 넓지만, 90%가 사람인·잡코리아·
+ *   인크루트에서 연계된 요약본이라 본문이 얇다(중앙값 441자).
  * - **사용자가 준 주소 한 건**(아래 `ImportJobPostingSchema`) — 출처를 우리가
  *   고르지 않으므로 `job_source`에 서지 않는다.
  *
- * 채용 사이트를 훑는 크롤러는 여기 없다(구현 명세서 비범위). 원티드는 봇을
- * 막고, 잡코리아는 robots.txt에서 AI 크롤러를 이름으로 지목해 제한한다.
+ * 민간 채용 사이트를 직접 훑지는 않는다. 원티드는 봇을 막고, 잡코리아는
+ * robots.txt에서 AI 크롤러를 이름으로 지목해 제한한다. `work24web`이 읽는
+ * 것은 정부가 한자리에 모아 공개한 목록이다.
  */
-export const JobSourceProviderSchema = z.enum(["greenhouse", "lever", "ashby", "work24"]);
+export const JobSourceProviderSchema = z.enum([
+  "greenhouse", "lever", "ashby", "workable", "greeting", "work24", "work24web",
+]);
 
 export const JobSourceSchema = z.strictObject({
   id: UuidSchema,

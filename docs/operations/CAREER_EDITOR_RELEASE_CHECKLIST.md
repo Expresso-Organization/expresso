@@ -20,23 +20,25 @@
 | 순서 | 명령 | 결과 | 실제 시간 |
 | ---: | --- | --- | ---: |
 | 1 | `pnpm install --frozen-lockfile` | 통과, lockfile 변경 없음 | 0.52초 |
-| 2 | `pnpm typecheck` | 5개 workspace 통과 | 2.59초 |
-| 3 | `pnpm test` | editor 55, contracts 60, database 6, web 170, backend 264 통과 | 10.09초 |
+| 2 | `pnpm typecheck` | 5개 workspace 통과 | 2.75초 |
+| 3 | `pnpm test` | editor 55, contracts 60, database 6, web 170, backend 304 통과 | 13.71초 |
 | 4 | `pnpm infra:up` | MongoDB rs0·Redis healthy | 2.52초 |
-| 5a | `MONGODB_MIGRATE_URL=... MONGODB_DATABASE=expresso_career_gate_20260901 pnpm db:migrate` | 빈 DB에 0001–0006 통과 | 2.91초 |
-| 5b | `MONGODB_MIGRATE_URL=... MONGODB_DATABASE=expresso_career_migration_clone_20260901 pnpm db:migrate` | 개발 데이터 복제본에 0001–0006 통과. 실행 잠금 행은 복제 대상에서 제외 | 6.50초 |
-| 6 | `pnpm test:infra` | 실제 MongoDB/Redis 39 files, 199 tests 통과 | 43.98초 |
-| 7 | `pnpm --filter @expresso/web exec playwright test` | Chromium 4개 시나리오 통과 | 34.05초 |
-| 8 | `pnpm build` | editor/contracts/database/backend와 Next production build 통과 | 6.17초 |
-| 9 | `node scripts/operations/backfill-career-documents.mjs --dry-run` | 아래 결과와 동일, 쓰기 0 | 0.18초 |
-| 10 | 같은 dry-run 재실행 | 결과 동일, 쓰기 0 | 0.16초 |
-| 11 | `node scripts/operations/verify-career-editor-restore.mjs /tmp/career-editor-restore-report.json --restore-copy` | 별도 rs0 DB 복원·projection 재구축·체크섬 통과 | 0.34초 |
-| 12 | `EXPRESSO_LOAD_TEST=1 ... vitest run src/modules/career-editor/performance.test.ts --maxWorkers=1` | 7개 예산 통과 | 6.61초 |
+| 5a | `MONGODB_MIGRATE_URL=... MONGODB_DATABASE=expresso_career_gate_20260901 pnpm db:migrate` | 빈 DB에 0001–0008 통과 | 3.17초 |
+| 5b | `MONGODB_MIGRATE_URL=... MONGODB_DATABASE=expresso_career_migration_clone_20260901 pnpm db:migrate` | 개발 데이터 복제본에 0001–0008 통과. 실행 잠금 행은 복제 대상에서 제외 | 6.53초 |
+| 6 | `pnpm test:infra` | 실제 MongoDB/Redis 39 files, 199 tests 통과 | 54.80초 |
+| 7 | `pnpm --filter @expresso/web exec playwright test` | Chromium 4개 시나리오 통과 | 30.74초 |
+| 8 | `pnpm build` | editor/contracts/database/backend와 Next production build 통과 | 6.51초 |
+| 9 | `node scripts/operations/backfill-career-documents.mjs --dry-run` | 아래 결과와 동일, 쓰기 0 | 0.20초 |
+| 10 | 같은 dry-run 재실행 | 결과 동일, 쓰기 0 | 0.18초 |
+| 11 | `node scripts/operations/verify-career-editor-restore.mjs /tmp/career-editor-restore-report.json --restore-copy` | 별도 rs0 DB 복원·projection 재구축·체크섬 통과 | 0.36초 |
+| 12 | `EXPRESSO_LOAD_TEST=1 ... vitest run src/modules/career-editor/performance.test.ts --maxWorkers=1` | 7개 예산 통과 | 6.83초 |
 
 로컬 `services/backend/.env`는 저장소에 두지 않는다. 위 migration·backfill·restore
 명령의 `...`에는 로컬 compose의 admin 또는 migration URL을 환경 변수로 전달했다.
-개발 DB의 과거 `0005` 체크섬은 구현 도중 실행한 초안과 달라 불변성 검사가 중단했으며,
-그 이력을 수정하지 않았다. 빈 DB와 개발 데이터 복제본에서 최종 migration을 검증했다.
+개발 DB에는 통합 전 브랜치가 커리어 migration을 `0005`로 실행한 이력이 있어 최신
+`main`의 공고 출처 `0005`와 충돌한다. 그 이력을 수정하지 않았다. 통합 뒤 커리어
+원장은 `0006`, 저장 뷰는 `0008`로 확정했고 빈 DB와 개발 데이터 복제본에서 최종
+migration을 검증한다.
 
 ### backfill dry-run
 
@@ -52,26 +54,26 @@
 
 ## 복원 리허설
 
-원본은 Playwright가 만든 격리 DB `expresso_career_editor_e2e_81186`, 대상은
+원본은 Playwright가 만든 격리 DB `expresso_career_editor_e2e_89999`, 대상은
 `expresso_career_editor_restore_20260901`이었다. 원본에는 문서 편집, AI revision,
 관계, 다섯 저장 뷰, 수식과 롤업 결과가 들어 있다. 검사기는 대상 DB 이름에
 `restore`가 포함되고 `MONGODB_RESTORE_ALLOW_REPLACE=1`일 때만 복사한다.
 
 | 컬렉션 | 건수 | SHA-256 |
 | --- | ---: | --- |
-| `career_categories` | 8 | `025fe0abb959c161c79bcce7e328489a9fb7e4bfd888ebec0bf286f8e2d8b5da` |
-| `career_records` | 4 | `bc29ce26e912146ec9171b7a189406dc8578bce7c0181ab4ff00b5e2d97924f4` |
-| `career_document_snapshots` | 6 | `b80ae9409e661f46bdad1616534929137918a45bbe70542d1adf91b4f7c866db` |
-| `career_document_updates` | 19 | `6aa45fd967f20a31a1d0e28ec1378deb7e21b8e5111fe76e89050d569897dc0e` |
-| `career_record_revisions` | 2 | `f4854c0f022ff480ab681e6b1cd381d479b3ba7db7a05b5accc22c41f2e08343` |
-| `career_record_relations` | 1 | `05883e5d56adbf338a9449fb8b0f3879b12fdeffc8be1f893f8b012b54f12941` |
-| `career_views` | 5 | `780d4fca03eebc83ebdc618aae7e52268de0edfa0a30445eacd517ccf2806870` |
-| `career_ai_proposals` | 1 | `591a6a87d1b32ae1574b25e0cac62da68aa48391c597474cc9d77a5773153171` |
+| `career_categories` | 8 | `a212ec988144d4e9aae05a77fb2247d6d479150adf46caf0b3642bc36218a8a5` |
+| `career_records` | 4 | `6d0ec92cd76e0669687ebabb3ab3cc7b342f5d5cef585ad525d976772fe93f77` |
+| `career_document_snapshots` | 6 | `57df80f9df5eaca3dc09178fa8301cf430f2f39ac818cceccc524efc5a41c2ef` |
+| `career_document_updates` | 19 | `af9531b5a711422b57e964d9cfba364f4ca3b4c7d039d4d01d00180a0977a3d7` |
+| `career_record_revisions` | 2 | `a2c16995dad714606097d4bd1f23d0bd66a733bf9a446c87898372ec71040f8a` |
+| `career_record_relations` | 1 | `4b62dea88a7e0fb20e3342b7d799fdbdc53f564e7f1013f36c8f9cd96709e6df` |
+| `career_views` | 5 | `4f46edd7a7898ac9f4417abe819a0717e51afd5cdf78094236e7cc5d9a645b53` |
+| `career_ai_proposals` | 1 | `d12bc1dd916cd78d8f75e472e7235ec453512378df5b201cd6d6733f8e28ccb1` |
 
 소유자·카테고리별 기록 집계는 3행,
-`8762565082734143d20efdddbcabbf8e7ad3f1b9cf4c9746d017070a54da76a5`였다.
+`0e3fdf942de54ed412d2ec8a86a60cb33a43fba428e414559fe200786d4acd14`였다.
 계산 projection 4행의 체크섬은
-`3fcc190c3f5b42c92bf8ab68bafa1fd14b62a154a787b3efed31cadf094237c1`였고,
+`d56049b7766f131b86977c97b087e526742eabf2a229d032adbd491c6afc5a6e`였고,
 수식·롤업이 있는 기록 2건을 비운 뒤 재계산해 불일치 0건을 확인했다.
 
 ## 성능
@@ -80,13 +82,13 @@
 
 | 항목 | p50 | p75 | p95 | 판정 기준 |
 | --- | ---: | ---: | ---: | --- |
-| 200KB bootstrap | 9.28 | 10.44 | 12.59 | p95 ≤ 300 |
-| 키 입력 계산 | 0.09 | 0.11 | 0.12 | p95 ≤ 50 |
-| side peek 첫 편집 가능 | 9.52 | 10.92 | 16.08 | p75 ≤ 1,500 |
-| 100개 기록 뷰 | 2.72 | 3.02 | 3.20 | p95 ≤ 300 |
-| 관계 롤업 100건 | 6.05 | 6.29 | 6.97 | p95 ≤ 1,000 |
-| 1MB snapshot 복원 | 0.60 | 0.67 | 1.18 | p95 ≤ 2,000 |
-| autosave ack | 48.16 | 61.65 | 72.11 | p95 ≤ 500 |
+| 200KB bootstrap | 9.77 | 11.06 | 14.78 | p95 ≤ 300 |
+| 키 입력 계산 | 0.03 | 0.03 | 0.04 | p95 ≤ 50 |
+| side peek 첫 편집 가능 | 9.49 | 10.84 | 15.31 | p75 ≤ 1,500 |
+| 100개 기록 뷰 | 2.96 | 3.20 | 3.55 | p95 ≤ 300 |
+| 관계 롤업 100건 | 6.01 | 6.37 | 7.80 | p95 ≤ 1,000 |
+| 1MB snapshot 복원 | 0.52 | 0.62 | 0.97 | p95 ≤ 2,000 |
+| autosave ack | 50.45 | 66.15 | 76.33 | p95 ≤ 500 |
 
 ## 브라우저·화면 정의서
 

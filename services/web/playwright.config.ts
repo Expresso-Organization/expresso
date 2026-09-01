@@ -33,7 +33,7 @@ export default defineConfig({
       url: "http://127.0.0.1:4101/health/live", timeout: 60_000, reuseExistingServer: !process.env.CI,
     },
     {
-      command: `REDIS_URL=${redisURL} QUEUE_PREFIX=${queuePrefix} ${mongoEnvironment} CAREER_EDITOR_V2_ENABLED=true CAREER_AI_DETERMINISTIC_TEST=true pnpm --filter @expresso/backend dev:worker`,
+      command: `REDIS_URL=${redisURL} QUEUE_PREFIX=${queuePrefix} ${mongoEnvironment} CAREER_EDITOR_V2_ENABLED=true CAREER_AI_DETERMINISTIC_TEST=true SCHEDULED_JOBS_ENABLED=false pnpm --filter @expresso/backend dev:worker`,
       timeout: 60_000, reuseExistingServer: !process.env.CI,
     },
     {

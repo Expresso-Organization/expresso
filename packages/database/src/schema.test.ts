@@ -31,7 +31,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await collections.plans.updateOne({ code: "free" }, { $set: { generationQuota: 17 } });
     const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     expect(result.applied).toEqual([]);
-    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_career_record_editor", "0006_career_view_configurations"]);
+    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations"]);
     expect((await collections.plans.findOne({ code: "free" }))?.generationQuota).toBe(17);
   });
 

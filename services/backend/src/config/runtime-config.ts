@@ -24,6 +24,8 @@ const runtimeConfigSchema = z.object({
   CAREER_EDITOR_V2_ENABLED: z.stringbool().default(false),
   /** E2E 전용. 운영에서 fixture 제안을 노출하지 않는다. */
   CAREER_AI_DETERMINISTIC_TEST: z.stringbool().default(false),
+  /** 격리 E2E와 복구 점검에서 외부 수집 예약을 만들지 않는다. 운영 기본값은 true다. */
+  SCHEDULED_JOBS_ENABLED: z.stringbool().default(true),
 
   /**
    * Google 로그인의 클라이언트 ID. **검증에만 쓴다** — ID 토큰의 `aud`가 우리
@@ -116,6 +118,7 @@ export interface RuntimeConfig {
   careerSocketAllowedOrigin?: string;
   careerEditorV2Enabled?: boolean;
   careerAiDeterministicTest?: boolean;
+  scheduledJobsEnabled?: boolean;
   /** 없으면 Google 로그인 경로를 열지 않는다. */
   googleClientId?: string | undefined;
   /** 없으면 `off`. 키도 로그인도 없이 앱 전체가 돌아야 한다. */
@@ -158,6 +161,7 @@ export function loadRuntimeConfig(
     careerSocketAllowedOrigin: result.CAREER_SOCKET_ALLOWED_ORIGIN,
     careerEditorV2Enabled: result.CAREER_EDITOR_V2_ENABLED,
     careerAiDeterministicTest: result.CAREER_AI_DETERMINISTIC_TEST,
+    scheduledJobsEnabled: result.SCHEDULED_JOBS_ENABLED,
     googleClientId: result.GOOGLE_CLIENT_ID,
     aiProvider: result.AI_PROVIDER,
     ...(result.AI_PROVIDER_PAGE_GENERATION

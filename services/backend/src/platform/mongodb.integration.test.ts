@@ -86,7 +86,11 @@ describeWithInfrastructure("MongoDB resource integration", () => {
       expect(await second.resource.db.collection("plans").countDocuments()).toBe(3);
       await second.resource.readinessCheck.run();
     } finally { await first.dispose(); await second.dispose(); }
-  }, 60_000);
+    // fixture 하나가 74개 collection 에 validator 와 index 를 건다. 이 시험은
+    // 그것을 **두 번** 하는데, 다른 훅은 한 번에 60초를 받는다(vitest.config.ts).
+    // 같은 일에 같은 여유를 주려면 두 배여야 한다 — 러너가 붐빌 때 여기만
+    // 먼저 깨졌다.
+  }, 120_000);
   let resource: MongoResource | undefined;
   const databaseName = `expresso_test_t01_${randomUUID().replaceAll("-", "")}`;
 

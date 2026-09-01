@@ -14,6 +14,7 @@ describe("loadRuntimeConfig", () => {
       queuePrefix: "expresso-mongo-v1",
       careerSocketAllowedOrigin: "http://127.0.0.1:3000",
       careerEditorV2Enabled: false,
+      scheduledJobsEnabled: true,
     });
   });
 
@@ -25,6 +26,10 @@ describe("loadRuntimeConfig", () => {
   it("allows deterministic AI only outside production", () => {
     expect(loadRuntimeConfig({ CAREER_AI_DETERMINISTIC_TEST: "true" }).careerAiDeterministicTest).toBe(true);
     expect(() => loadRuntimeConfig({ NODE_ENV: "production", CAREER_AI_DETERMINISTIC_TEST: "true" })).toThrow(/forbidden/);
+  });
+
+  it("allows isolated workers to skip creating scheduled external jobs", () => {
+    expect(loadRuntimeConfig({ SCHEDULED_JOBS_ENABLED: "false" }).scheduledJobsEnabled).toBe(false);
   });
 
   it("reads the allowed career socket origin", () => {

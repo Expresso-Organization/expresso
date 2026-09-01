@@ -73,7 +73,7 @@ flowchart TD
 | --- | --- | --- |
 | 문서 코어 | `packages/editor/src/document.ts`, `commands.ts`, `markdown.ts`, `yjs.ts` | 중립 JSON, 검증, 명령 적용, Markdown 왕복, Yjs 변환 |
 | 공용 계약 | `packages/contracts/src/career-editor.ts`, `career-properties.ts`, `career-views.ts`, `career-ai.ts` | HTTP·WebSocket 요청과 응답, 오류 코드 |
-| MongoDB | `packages/database/src/documents/career-editor.ts`, `mongodb-migrations/0005/migration.ts` | 네 컬렉션, 인덱스, validator, 안정적인 property UUID |
+| MongoDB | `packages/database/src/documents/career-editor.ts`, `mongodb-migrations/0006/migration.ts` | 네 컬렉션, 인덱스, validator, 안정적인 property UUID |
 | 본문 Backend | `services/backend/src/modules/career-editor/*` | bootstrap, update 중복 제거, snapshot, revision, WebSocket |
 | 메타 Backend | `services/backend/src/modules/career/*` | 프로퍼티, 뷰, 관계, 카테고리 이동과 목록 query |
 | 계산 | `services/backend/src/modules/career-computation/*`, `worker/processors/career-computation.ts` | 수식 AST, 의존성 그래프, rollup, materialized 결과 |
@@ -188,11 +188,11 @@ export const CareerDocumentBootstrapSchema = z.strictObject({
 
 ## 마일스톤 2 — MongoDB 원장, 본문 저장과 전환
 
-### Task 4: 편집기 컬렉션과 migration 0005
+### Task 4: 편집기 컬렉션과 migration 0006
 
 **Files:**
 - Create: `packages/database/src/documents/career-editor.ts`
-- Create: `packages/database/src/mongodb-migrations/0005/migration.ts`
+- Create: `packages/database/src/mongodb-migrations/0006/migration.ts`
 - Modify: `packages/database/src/documents/career.ts`
 - Modify: `packages/database/src/documents/index.ts`
 - Modify: `packages/database/src/collections.ts`
@@ -220,10 +220,10 @@ export interface CareerDocumentUpdateDocument {
 ```
 
 - [ ] **Step 1: Add failing migration tests.** Assert four collections, JSON validators, unique update key `{recordId, clientId, clientSequence}`, unique relation key `{userId, sourceRecordId, sourcePropertyId, targetRecordId}`, snapshot index `{recordId, version:-1}`, update compaction index `{recordId, serverSequence:1}`, and revision TTL policy only for expired AI proposals rather than user revisions.
-- [ ] **Step 2: Run `pnpm --filter @expresso/database test -- migrations.test.ts schema.test.ts`; expect version 0005 to be absent.**
+- [ ] **Step 2: Run `pnpm --filter @expresso/database test -- migrations.test.ts schema.test.ts`; expect version 0006 to be absent.**
 - [ ] **Step 3: Add document interfaces and collection names.** Store update bytes as BSON Binary and enforce `byteLength <= 1_048_576`; store snapshots as canonical JSON plus state vector, schema version, server sequence, checksum and actor.
 - [ ] **Step 4: Implement idempotent migration steps.** Create or `collMod` validators and indexes; add nullable editor fields to the validator without looping through records; give legacy property definitions deterministic UUIDv5 values derived from category ID and old key.
-- [ ] **Step 5: Register `0005/career_record_editor` and include its source in the checksum.**
+- [ ] **Step 5: Register `0006/career_record_editor` and include its source in the checksum.**
 - [ ] **Step 6: Run database tests twice against an empty database with `pnpm infra:up`, `pnpm db:migrate`, `pnpm db:migrate`, then `pnpm --filter @expresso/database test`; expect the second migration run to make no changes.**
 - [ ] **Step 7: Commit.** Run `git add packages/database && git commit -m "feat: 커리어 문서 MongoDB 원장 추가"`.
 

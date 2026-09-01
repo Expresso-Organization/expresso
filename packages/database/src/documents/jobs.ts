@@ -76,7 +76,8 @@ export interface JobPostingRequirementDoc {
 
 export interface JobSourceDoc {
   _id: string;
-  provider: "greenhouse" | "lever" | "ashby" | "work24";
+  provider:
+    | "greenhouse" | "lever" | "ashby" | "workable" | "greeting" | "work24" | "work24web";
   token: string;
   displayName: string;
   isActive: boolean;

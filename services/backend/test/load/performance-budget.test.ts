@@ -35,7 +35,18 @@ suite("MongoDB release performance and backpressure budget", () => {
     // burst는 minPoolSize가 맡고, 이 예산은 준비된 API의 반복 처리량을 잰다.
     const warmup = await Promise.all(Array.from({ length: 100 }, () => app.inject({ method: "GET", url: "/v1/home", headers: auth })));
     expect([...new Set(warmup.map(({ statusCode }) => statusCode))], "warmup response status codes").toEqual([200]);
-    const reads = await Promise.all(Array.from({ length: 100 }, () => timed({ method: "GET", url: "/v1/home", headers: auth }))); const writes = [];
+    // **하나씩 잰다.** 100개를 한꺼번에 던지고 각자의 시간을 재면, 95번째의
+    // "지연"은 앞선 99개 뒤에서 기다린 시간이다. 실측에서 그 p95(134.4ms)가
+    // burst 전체 소요(135.1ms)와 사실상 같았다 — 지연이 아니라 처리량을 재고
+    // 있었고, 그래서 러너 속도에 따라 300ms 예산을 넘나들었다(공유 러너에서
+    // 302~336ms). 하나씩 재면 5.8ms로 아래 셋과 같은 자리에 온다.
+    const reads = []; for (let index = 0; index < 100; index += 1) reads.push(await timed({ method: "GET", url: "/v1/home", headers: auth }));
+    // 동시에 몰릴 때의 처리량은 제 이름으로 따로 잰다. 지연과 섞지 않는다.
+    const burstStarted = performance.now();
+    const burst = await Promise.all(Array.from({ length: 100 }, () => app.inject({ method: "GET", url: "/v1/home", headers: auth })));
+    const readBurstMs = performance.now() - burstStarted;
+    expect([...new Set(burst.map(({ statusCode }) => statusCode))], "burst response status codes").toEqual([200]);
+    const writes = [];
     for (let index = 0; index < 40; index += 1) writes.push(await timed({ method: "POST", url: "/v1/career/records", headers: { ...auth, "idempotency-key": `load-record-${String(index).padStart(8, "0")}` }, payload: { categoryId, title: `Load ${index}`, properties: {}, bodyMd: "Measured write" } }));
     const events = []; for (let index = 0; index < 60; index += 1) events.push(await timed({ method: "POST", url: "/v1/analytics/events", payload: { eventId: randomUUID(), slug, sessionId: `load-session-${String(index).padStart(4, "0")}`, type: "visit", occurredAt: "2026-08-09T00:00:00.000Z" } }));
     const queues = []; for (let index = 0; index < 40; index += 1) queues.push(await timed({ method: "POST", url: `/v1/deployments/${deploymentId}/analytics/aggregate`, headers: auth, payload: { date: "2026-08-09" } }));
@@ -44,7 +55,10 @@ suite("MongoDB release performance and backpressure budget", () => {
     expect(statusCodes(writes), "write response status codes").toEqual([201]);
     expect(statusCodes(events), "event response status codes").toEqual([202]);
     expect(statusCodes(queues), "queue response status codes").toEqual([202]);
-    const result = { readP95Ms: percentile(reads.map(({ ms }) => ms), .95), writeP95Ms: percentile(writes.map(({ ms }) => ms), .95), eventP95Ms: percentile(events.map(({ ms }) => ms), .95), queueRegistrationP95Ms: percentile(queues.map(({ ms }) => ms), .95) }; console.info(JSON.stringify({ performanceBudget: result })); expect(result.readP95Ms).toBeLessThan(300); expect(result.writeP95Ms).toBeLessThan(300); expect(result.eventP95Ms).toBeLessThan(150); expect(result.queueRegistrationP95Ms).toBeLessThan(200);
+    const result = { readP95Ms: percentile(reads.map(({ ms }) => ms), .95), readBurstMs, writeP95Ms: percentile(writes.map(({ ms }) => ms), .95), eventP95Ms: percentile(events.map(({ ms }) => ms), .95), queueRegistrationP95Ms: percentile(queues.map(({ ms }) => ms), .95) }; console.info(JSON.stringify({ performanceBudget: result })); expect(result.readP95Ms, "read p95").toBeLessThan(300);
+    // 처리량 예산. 로컬 135ms · 공유 러너 302~336ms 를 봤으니 세 배 남짓 여유를
+    // 둔다 — 러너 편차로 깨지지 않으면서 처리량이 세 배 나빠지면 잡는다.
+    expect(result.readBurstMs, "100-request read burst").toBeLessThan(1_000); expect(result.writeP95Ms).toBeLessThan(300); expect(result.eventP95Ms).toBeLessThan(150); expect(result.queueRegistrationP95Ms).toBeLessThan(200);
   }, 60_000);
   it("keeps 1,000-record query bounded and limits a hot visitor", async () => {
     const db = mongoCollections(fixture.resource.db); const now = new Date(); await db.careerRecords.insertMany(Array.from({ length: 1_000 }, (_, index) => ({ _id: randomUUID(), userId, categoryId, title: `Scale ${String(index).padStart(4, "0")}`, status: "draft" as const, origin: "manual" as const, properties: {}, bodyMd: "scale", periodStart: null, periodEnd: null, deletedAt: null, purgeAfter: null, createdAt: now, updatedAt: now, version: 1 })));

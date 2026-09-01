@@ -22,6 +22,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
   let relationId: string;
   let inverseRelationId: string;
   let singleRelationId: string;
+  let formulaId: string;
   let sourceRecordId: string;
   let targetRecordIds: string[];
   let lostPropertyId: string;
@@ -35,7 +36,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const source = await service.createCategory(userId, { key: `source_${randomUUID().replaceAll("-", "")}`, name: "원본", icon: "folder", defaultView: "table", propertySchema: { exact: legacy("exact", "text"), numberText: legacy("numberText", "text"), tags: legacy("tags", "tags"), lost: legacy("lost", "text") } });
     const target = await service.createCategory(userId, { key: `target_${randomUUID().replaceAll("-", "")}`, name: "대상", icon: "folder", defaultView: "table", propertySchema: { exact: legacy("exact", "text"), numberText: legacy("numberText", "number"), tags: legacy("tags", "text") } });
     sourceCategoryId = source.id; targetCategoryId = target.id;
-    relationId = randomUUID(); inverseRelationId = randomUUID(); singleRelationId = randomUUID(); lostPropertyId = randomUUID();
+    relationId = randomUUID(); inverseRelationId = randomUUID(); singleRelationId = randomUUID(); lostPropertyId = randomUUID(); formulaId = randomUUID();
     const exactId = randomUUID(); const numberId = randomUUID(); const tagsId = randomUUID();
     const targetExactId = randomUUID(); const targetNumberId = randomUUID(); const targetTagsId = randomUUID();
     const db = mongoCollections(fixture.resource.db);
@@ -43,6 +44,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       definition(exactId, "exact", "text"), definition(numberId, "numberText", "text"), definition(tagsId, "tags", "multi_select"), definition(lostPropertyId, "lost", "text"),
       definition(relationId, "related", "relation", { targetCategoryId, inversePropertyId: inverseRelationId, cardinality: "multiple", deletePolicy: "restrict" }),
       definition(singleRelationId, "singleRelated", "relation", { targetCategoryId, inversePropertyId: null, cardinality: "single", deletePolicy: "restrict" }),
+      definition(formulaId, "constant", "formula", { source: "1 + 2", ast: null, diagnostics: [] }),
     ] } });
     await db.careerCategories.updateOne({ _id: targetCategoryId }, { $set: { schemaVersion: 1, propertySchemaV2: [
       definition(targetExactId, "exact", "text"), definition(targetNumberId, "numberText", "number"), definition(targetTagsId, "tags", "select"),
@@ -63,6 +65,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(await db.careerRecordRelations.countDocuments({ userId, sourceRecordId, sourcePropertyId: relationId })).toBe(2);
     expect(await db.careerRecordRelations.countDocuments({ userId, targetRecordId: sourceRecordId, sourcePropertyId: inverseRelationId })).toBe(2);
     expect(await service.listRelationTargets(userId, sourceRecordId, relationId)).toEqual(expect.arrayContaining([{ recordId: targetRecordIds[0]!, title: "대상 A" }, { recordId: targetRecordIds[1]!, title: "대상 B" }]));
+    expect((await db.outboxEvents.findOne({ idempotencyKey: `career-relation:${sourceRecordId}:${relationId}:${sourceRecordId}:v2` }))?.payload).toMatchObject({ changedPropertyIds: expect.arrayContaining([relationId, formulaId]), sourcePropertyVersions: { [relationId]: 1, [formulaId]: 1 } });
     await expect(service.listRelationTargets(otherUserId, sourceRecordId, relationId)).rejects.toMatchObject({ statusCode: 404 });
     expect((await service.replaceTargets(userId, sourceRecordId, relationId, targetRecordIds, 2)).version).toBe(2);
     await expect(service.replaceTargets(userId, sourceRecordId, singleRelationId, targetRecordIds, 2)).rejects.toMatchObject({ statusCode: 400 });

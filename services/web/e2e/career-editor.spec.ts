@@ -35,10 +35,11 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   await expect(page.getByLabel("제목")).toHaveValue("E2E 저장된 경험");
   await expect(page.getByLabel("커리어 기록 본문")).toContainText("재연결 전 본문");
 
+  const beforeOffline = await api<{ documentVersion: number }>(page, "GET", `/v1/career/records/${record.id}/document`);
   await context.setOffline(true);
   await page.getByLabel("커리어 기록 본문").click(); await page.keyboard.press("End"); await page.keyboard.type(" 오프라인 입력");
   await context.setOffline(false);
-  await expect(page.getByRole("status").filter({ hasText: "저장됨" })).toBeVisible({ timeout: 15_000 });
+  await expect.poll(async () => { const current = await api<{ documentVersion: number; document: unknown }>(page, "GET", `/v1/career/records/${record.id}/document`); return current.documentVersion > beforeOffline.documentVersion && JSON.stringify(current.document).includes("오프라인 입력"); }, { timeout: 15_000 }).toBe(true);
   await page.reload();
   await expect(page.getByLabel("커리어 기록 본문")).toContainText("오프라인 입력");
 

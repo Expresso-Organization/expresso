@@ -1,65 +1,36 @@
-import { createHash } from "node:crypto";
-import type { Db, Document, IndexDescription } from "mongodb";
+import type { Document } from "mongodb";
 import type { MongoMigrationStep } from "../../mongo-migrations.js";
-const UUID = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
-const id = { bsonType: "string", pattern: UUID, maxLength: 36 };
-const date = { bsonType: "date" };
-const integer = { bsonType: ["int", "long", "double"], multipleOf: 1, minimum: 0 };
-const binary = { bsonType: "binData" };
-const validator = (required: string[], properties: Document): Document => ({
-  $jsonSchema: { bsonType: "object", required, properties },
-});
-const specs: Array<{ name: string; validator: Document; indexes: IndexDescription[] }> = [
- { name: "career_document_snapshots", validator: validator(["_id","userId","recordId","documentVersion","schemaVersion","content","stateVector","serverSequence","checksum","actor","createdAt"], { _id:id,userId:id,recordId:id,documentVersion:integer,version:integer,schemaVersion:integer,content:{},stateVector:binary,serverSequence:integer,checksum:{bsonType:"string",pattern:"^[a-f0-9]{64}$"},actor:{bsonType:"string",enum:["user","ai","migration"]},createdAt:date }), indexes:[{name:"career_snapshot_record_version",key:{recordId:1,version:-1}}] },
- { name: "career_document_updates", validator: validator(["_id","recordId","userId","clientId","clientSequence","serverSequence","update","byteLength","updateHash","actor","receivedAt","compactedAt"], { _id:id,recordId:id,userId:id,clientId:{bsonType:"string",minLength:1,maxLength:128},clientSequence:integer,serverSequence:integer,update:binary,byteLength:{...integer,maximum:1048576},updateHash:{bsonType:"string",pattern:"^[a-f0-9]{64}$"},actor:{bsonType:"string",enum:["user","ai","migration"]},receivedAt:date,compactedAt:{bsonType:["date","null"]} }), indexes:[{name:"career_update_client_key",key:{recordId:1,clientId:1,clientSequence:1},unique:true},{name:"career_update_compaction",key:{recordId:1,serverSequence:1}}] },
- { name: "career_record_revisions", validator: validator(["_id","userId","recordId","actor","summary","beforeVersion","afterVersion","createdAt"], { _id:id,userId:id,recordId:id,actor:{bsonType:"string",enum:["user","ai","migration"]},summary:{bsonType:"string",maxLength:2000},beforeVersion:integer,afterVersion:integer,snapshotId:{bsonType:["string","null"]},proposalId:{bsonType:["string","null"]},expiresAt:{bsonType:["date","null"]},createdAt:date }), indexes:[{name:"career_revision_record_created",key:{recordId:1,createdAt:-1}}] },
- { name: "career_record_relations", validator: validator(["_id","userId","sourceRecordId","sourcePropertyId","targetRecordId","cardinality","deletePolicy","createdBy","createdAt","updatedAt"], { _id:id,userId:id,sourceRecordId:id,sourcePropertyId:id,targetRecordId:id,inversePropertyId:{bsonType:["string","null"]},cardinality:{bsonType:"string",enum:["single","multiple"]},deletePolicy:{bsonType:"string",enum:["restrict","nullify"]},createdBy:{bsonType:"string",enum:["user","ai"]},createdAt:date,updatedAt:date }), indexes:[{name:"career_relation_unique",key:{userId:1,sourceRecordId:1,sourcePropertyId:1,targetRecordId:1},unique:true},{name:"career_relation_target",key:{userId:1,targetRecordId:1}}] },
- { name: "career_ai_proposals", validator: validator(["_id","userId","recordId","status","baseDocumentVersion","selection","prompt","summary","commands","propertyChanges","progress","beforeSnapshotId","afterSnapshotId","beforeChecksum","afterChecksum","revisionId","appliedDocumentVersion","expiresAt","createdAt","updatedAt"], { _id:id,userId:id,recordId:id,status:{bsonType:"string",enum:["draft","streaming","ready","applied","rejected","cancelled","expired","conflicted"]},baseDocumentVersion:integer,selection:{bsonType:"object"},prompt:{bsonType:"string",maxLength:4000},summary:{bsonType:["string","null"],maxLength:2000},commands:{bsonType:"array",maxItems:100},propertyChanges:{bsonType:"array",maxItems:50},progress:{bsonType:["object","null"]},beforeSnapshotId:{bsonType:["string","null"]},afterSnapshotId:{bsonType:["string","null"]},beforeChecksum:{bsonType:["string","null"]},afterChecksum:{bsonType:["string","null"]},revisionId:{bsonType:["string","null"]},appliedDocumentVersion:{bsonType:["int","long","double","null"],minimum:0,multipleOf:1},expiresAt:date,createdAt:date,updatedAt:date }), indexes:[{name:"career_ai_proposal_user_id",key:{userId:1,_id:1},unique:true},{name:"career_ai_proposal_record_status",key:{userId:1,recordId:1,status:1}},{name:"career_ai_proposal_expiry",key:{expiresAt:1},expireAfterSeconds:0}] },
+
+/**
+ * 공고 출처를 다섯 갈래 더 받는다.
+ *
+ * 국내 스타트업이 가장 많이 쓰는 ATS는 그리팅(`greeting`)이고, Workable도 같은
+ * 성격의 공개 보드다. `work24web`은 고용24 채용정보 화면을 직접 읽는 출처로,
+ * 기존 `work24`(공공기관 채용정보 API)와 가져오는 것이 다르다 — 한 이름 아래
+ * 두면 어느 쪽이 무엇을 모았는지 `job_sources`에서 구분할 수 없다.
+ *
+ * 0001의 `schema.json`을 고치지 않는다. 그 파일은 체크섬에 묶여 있어 손대면
+ * 이미 적용된 마이그레이션이 어긋난다 — 살아 있는 검증기만 바꾼다.
+ */
+const PROVIDERS = [
+  "greenhouse", "lever", "ashby", "workable", "greeting", "work24", "work24web",
 ];
-function uuidV5(categoryId: string, key: string): string {
-  const digest = createHash("sha1")
-    .update(Buffer.from("6ba7b8109dad11d180b400c04fd430c8", "hex"))
-    .update(`${categoryId}:${key}`)
-    .digest();
-  digest[6] = (digest[6]! & 15) | 80;
-  digest[8] = (digest[8]! & 63) | 128;
-  const hex = digest.subarray(0, 16).toString("hex");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-export async function careerEditorLedgerSteps(): Promise<MongoMigrationStep[]> {
-  return [
-    ...specs.map((spec): MongoMigrationStep => ({
-      id: `collection:${spec.name}`,
-      async run(db: Db) {
-        if (await db.listCollections({ name: spec.name }, { nameOnly: true }).hasNext()) {
-          await db.command({ collMod: spec.name, validator: spec.validator, validationLevel: "strict", validationAction: "error" });
-        } else {
-          await db.createCollection(spec.name, { validator: spec.validator, validationLevel: "strict", validationAction: "error" });
-        }
-        await db.collection(spec.name).createIndexes(spec.indexes);
-      },
-    })),
-    {
-      id: "career_records:editor_fields",
-      async run(db: Db) {
-        const info = await db.listCollections({ name: "career_records" }, { nameOnly: false }).next() as Document | null;
-        if (!info) throw new Error("career_records collection is missing");
-        const current = structuredClone((info.options.validator ?? {}) as Document);
-        const properties = (current.$jsonSchema as Document).properties as Document;
-        Object.assign(properties, { documentSchemaVersion: { bsonType: ["int", "long", "double", "null"], minimum: 0, multipleOf: 1 }, documentVersion: { bsonType: ["int", "long", "double", "null"], minimum: 0, multipleOf: 1 }, latestSnapshotId: { bsonType: ["string", "null"] }, computedProperties: { bsonType: ["object", "null"] }, unmappedProperties: { bsonType: ["object", "null"] }, propertyValueTombstones: { bsonType: ["object", "null"] }, editorMigratedAt: { bsonType: ["date", "null"] } });
-        await db.command({ collMod: "career_records", validator: current, validationLevel: "strict", validationAction: "error" });
-      },
+
+export async function jobSourceProviderSteps(): Promise<MongoMigrationStep[]> {
+  return [{
+    id: "job_sources:provider_enum",
+    async run(db) {
+      const name = "job_sources";
+      const info = await db.listCollections({ name }, { nameOnly: false }).next() as Document | null;
+      if (!info) throw new Error(`${name} collection is missing`);
+      const validator = structuredClone((info.options.validator ?? {}) as Document);
+      const properties = (validator["$jsonSchema"] as Document | undefined)?.["properties"] as Document | undefined;
+      const provider = properties?.["provider"] as Document | undefined;
+      if (!provider) throw new Error(`${name} validator has no provider`);
+      provider["enum"] = PROVIDERS;
+      await db.command({
+        collMod: name, validator, validationLevel: "strict", validationAction: "error",
+      });
     },
-    {
-      id: "career_categories:property_ids",
-      async run(db: Db) {
-        const cursor = db.collection("career_categories").find({}, { projection: { _id: 1, propertySchema: 1 } });
-        for await (const category of cursor) {
-          const next: Document = {};
-          for (const [key, definition] of Object.entries(category.propertySchema ?? {}) as Array<[string, Document]>) next[key] = { ...definition, id: definition.id ?? uuidV5(String(category._id), key) };
-          await db.collection("career_categories").updateOne({ _id: category._id }, { $set: { propertySchema: next } });
-        }
-      },
-    },
-  ];
+  }];
 }

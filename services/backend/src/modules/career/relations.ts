@@ -139,9 +139,11 @@ export class MongoRelationService implements RelationService {
         { session: tx.session, returnDocument: "after" },
       );
       if (!updated) throw new CareerError(412, "career record version is stale");
+      const computationDefinitions = careerCategoryDefinitions(sourceCategory).filter((item) => item.deletedAt === null);
+      const changedPropertyIds = [...new Set([input.propertyId, ...computationDefinitions.filter((item) => item.type === "formula" || item.type === "rollup").map((item) => item.id)])];
       await addMongoOutboxEvent(tx, {
         userId, topic: "career.computation", idempotencyKey: `career-relation:${recordId}:${input.propertyId}:${recordId}:v${updated.version}`,
-        payload: { userId, recordId, changedPropertyIds: [input.propertyId], sourceRecordVersion: updated.version },
+        payload: { userId, recordId, changedPropertyIds, sourceRecordVersion: updated.version, sourcePropertyVersions: Object.fromEntries(computationDefinitions.filter((item) => changedPropertyIds.includes(item.id)).map((item) => [item.id, item.version])) },
       });
       if (definition.inversePropertyId) for (const target of targets) {
         await addMongoOutboxEvent(tx, {

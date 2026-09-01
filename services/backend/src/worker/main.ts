@@ -181,7 +181,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 
 while (!abortController.signal.aborted) {
   try {
-    await schedulingService.scheduleDue();
+    if (config.scheduledJobsEnabled !== false) await schedulingService.scheduleDue();
     const result = await dispatcher.pollOnce();
     if (result.published || result.retried || result.deadLettered) {
       console.info(
