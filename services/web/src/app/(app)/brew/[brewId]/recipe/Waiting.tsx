@@ -4,9 +4,11 @@ import { partialRecipeSections, type BrewJobStatus, type PartialRecipeSection } 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { Icon } from "@/components/ui/Icon";
+import { ReadingPanel, type Reading, type ReadingCompany } from "./Brewing";
 
 import styles from "./Waiting.module.css";
+
+export type { Reading, ReadingCompany };
 
 /**
  * 레시피가 짜이는 동안.
@@ -22,9 +24,16 @@ import styles from "./Waiting.module.css";
  * **프로바이더가 조각을 못 내면 아무것도 안 흐른다.** 그때는 아래 카드가 끝까지
  * 남고 잡의 상태를 물어 넘어간다. 진행률을 지어내지 않는다.
  */
-export function Waiting({ job }: { job: BrewJobStatus }) {
+export function Waiting({ job, reading }: { job: BrewJobStatus; reading: Reading }) {
   const router = useRouter();
   const [buffer, setBuffer] = useState("");
+  /**
+   * 시작한 지 얼마나 됐는가.
+   *
+   * 남은 시간이 아니다 — 그건 모르고, 모르는 것을 막대로 그리면 거짓말이 된다.
+   * 이건 **돌고 있다는 사실**이고, 그건 안다.
+   */
+  const [elapsed, setElapsed] = useState(0);
   /**
    * 어느 단계인가.
    *
@@ -74,51 +83,54 @@ export function Waiting({ job }: { job: BrewJobStatus }) {
     return () => window.clearInterval(timer);
   }, [router, stage]);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => setElapsed((now) => now + 1), 1_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const sections = partialRecipeSections(buffer);
 
-  if (sections.length === 0) {
-    return (
-      <div className={styles.wrap}>
-        <div className={styles.card}>
-          <span className={`${styles.badge} ex-anim-bob`}>
-            <Icon name="coffee" weight="fill" size={16} color="var(--ex-accent-surface)" />
-          </span>
-          <h1>레시피를 짜는 중</h1>
-          <p>고른 기록과 공고를 읽고 무엇을 어떤 순서로 담을지 정합니다. 2~3분 걸리고, 이 화면을 닫아도 계속됩니다.</p>
-          <div className={styles.progress} role="progressbar" aria-label="레시피 생성 진행 중">
-            <span className={styles.fill} />
-          </div>
-          <span className={styles.stage} aria-live="polite">
-            <span className={styles.spinner} aria-hidden="true" />
-            {job.status === "queued" ? "차례를 기다리는 중" : stage === "thinking" ? "구상하는 중" : "읽는 중"}
-          </span>
-        </div>
-      </div>
-    );
-  }
+  const writing = sections.length > 0;
 
   return (
     <div className={styles.live}>
       <div className={styles.bar}>
         <span className={styles.dot} aria-hidden="true" />
-        <span>레시피를 짜는 중</span>
-        <span className={styles.barCount}>섹션 {sections.length}</span>
+        <span aria-live="polite">
+          {job.status === "queued"
+            ? "차례를 기다리는 중"
+            : writing ? "레시피를 짜는 중" : stage === "thinking" ? "구상하는 중" : "재료를 읽는 중"}
+        </span>
+        <span className={styles.barCount}>
+          {writing ? `섹션 ${sections.length} · ` : ""}{clock(elapsed)}
+        </span>
       </div>
       <div className={styles.sheet}>
-        <div className={styles.doc} aria-live="polite" aria-busy="true">
-          {sections.map((section, index) => (
-            <Section
-              key={index}
-              section={section}
-              order={index}
-              // 커서는 맨 마지막 자리에만 선다 — 지금 써지는 곳이 거기다.
-              writing={index === sections.length - 1}
-            />
-          ))}
-        </div>
+        {writing ? (
+          <div className={styles.doc} aria-live="polite" aria-busy="true">
+            {sections.map((section, index) => (
+              <Section
+                key={index}
+                section={section}
+                order={index}
+                // 커서는 맨 마지막 자리에만 선다 — 지금 써지는 곳이 거기다.
+                writing={index === sections.length - 1}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className={styles.doc}>
+            <ReadingPanel queued={job.status === "queued"} reading={reading} />
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+/** 흐른 시간. 분이 넘어가기 전에는 초만 쓴다. */
+function clock(seconds: number): string {
+  return seconds < 60 ? `${seconds}초` : `${Math.floor(seconds / 60)}분 ${seconds % 60}초`;
 }
 
 /** 아직 짜이는 중인 섹션 하나. 안 온 것은 자리만 잡는다. */
@@ -181,3 +193,4 @@ function Section({
 function Caret() {
   return <span className={styles.caret} aria-hidden="true" />;
 }
+

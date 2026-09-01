@@ -1,98 +1,10 @@
-.wrap {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: var(--ex-bg-sunken);
-  overflow-y: auto;
-}
-
-.card {
-  max-width: 420px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  text-align: center;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: var(--ex-accent);
-}
-
-.card h1 {
-  margin: 4px 0 0;
-  color: var(--ex-fg);
-  font-family: var(--ex-font-brand);
-  font-size: var(--ex-text-xl);
-  font-weight: 600;
-}
-
-.card p {
-  margin: 0;
-  color: var(--ex-fg-muted);
-  font-size: var(--ex-text-2xs);
-  line-height: 1.75;
-}
-
-.progress {
-  width: 100%;
-  height: 4px;
-  margin-top: 8px;
-  border-radius: 999px;
-  background: var(--ex-bg-track);
-  overflow: hidden;
-}
-
-.fill {
-  display: block;
-  width: 40%;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--ex-accent);
-  animation: slide 1.6s ease-in-out infinite;
-}
-
-@keyframes slide {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(250%); }
-}
-
-.stage {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--ex-fg-subtle);
-  font-size: var(--ex-text-3xs);
-}
-
-.spinner {
-  width: 11px;
-  height: 11px;
-  border: 2px solid var(--ex-border);
-  border-top-color: var(--ex-accent);
-  border-radius: 50%;
-  animation: spin 700ms linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .fill,
-  .spinner {
-    animation: none;
-  }
-}
+/*
+ * 02 레시피가 짜이는 동안.
+ *
+ * 두 상태가 **같은 껍데기**를 쓴다 — 위의 한 줄과 아래의 문서 칸. 기다리는
+ * 동안은 그 칸에 「무엇을 읽고 있는지」가 있고, 조각이 오기 시작하면 같은
+ * 자리에 레시피가 자란다. 껍데기가 같아서 넘어갈 때 화면이 안 튄다.
+ */
 
 /* ── 짜이는 동안의 문서 ─────────────────────────────────────
  *

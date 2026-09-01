@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
-import { brews, designSystems, recipeV2 } from "@/lib/api/endpoints";
+import { brews, designSystems, jobs, recipeV2 } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { BrewFrame } from "../BrewFrame";
 import { Setup, type SetupRecord } from "./Setup";
-import { Waiting } from "./Waiting";
+import { Waiting, type ReadingCompany } from "./Waiting";
 import { Workbench, type RecordCard } from "./Workbench";
 import { draftRecipeAction } from "./recipe-actions";
 
@@ -58,9 +58,45 @@ export default async function RecipePage({
   const drafting = job !== null && (job.status === "queued" || job.status === "running");
 
   if (drafting) {
+    /*
+     * 회사의 마크.
+     *
+     * 레시피가 들고 있는 공고에는 이름만 있다(`RecipeV2JobPosting`). 마크는
+     * 공고 상세가 알고, 여기서만 필요하니 여기서 묻는다 — 기다리는 화면에서만
+     * 그리는 것 때문에 계약을 넓히면 이 값이 쓰이지 않는 화면까지 따라다닌다.
+     *
+     * 못 읽어도 화면은 선다. 이름은 이미 손에 있고, `CompanyAvatar` 는 마크가
+     * 없으면 이니셜을 그린다.
+     */
+    let company: ReadingCompany = { name: "" };
+    if (recipe.jobPosting) {
+      company = { name: recipe.jobPosting.companyName };
+      try {
+        const { data } = await jobs.posting(session.accessToken, recipe.jobPosting.jobPostingId);
+        const { name, initial, avatarBackground, avatarColor, logoUrl } = data.company;
+        company = { name, initial, avatarBackground, avatarColor, logoUrl };
+      } catch (error) {
+        if (!(error instanceof ApiError)) throw error;
+      }
+    }
+
+    // 기다리는 동안 보여 줄 수 있는 것은 **모델에게 지금 가 있는 것**뿐이다.
+    // 모델은 생각이 끝나야 한 글자라도 내놓는다(`Waiting`의 `Reading`).
     return (
       <BrewFrame brewId={brewId} step="recipe" portfolioTitle={title} situation="짜는 중" flow="portfolio-v2" tinted>
-        <Waiting job={job} />
+        <Waiting
+          job={job}
+          reading={{
+            posting: recipe.jobPosting
+              ? { title: recipe.jobPosting.title, company }
+              : null,
+            records: materials.materials
+              .filter(({ selected }) => selected)
+              .map(({ recordId, title: name, categoryIcon, reason }) => ({
+                recordId, title: name, categoryIcon, reason,
+              })),
+          }}
+        />
       </BrewFrame>
     );
   }
