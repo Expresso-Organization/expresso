@@ -3,4 +3,4 @@ export { RecipeService } from "./service.js";
 export { MongoRecipeService } from "./service.js";
 export type RecipeApi = Pick<LegacyRecipeService, keyof LegacyRecipeService>;
 export { RecipeError } from "./public.js";
-export { BlueprintService } from "./blueprint-service.js";
+export { RecipeV2Service } from "./recipe-v2-service.js";

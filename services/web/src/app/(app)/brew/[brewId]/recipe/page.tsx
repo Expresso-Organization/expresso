@@ -1,18 +1,23 @@
 import { notFound } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
-import { blueprints, brews, designSystems } from "@/lib/api/endpoints";
+import { brews, designSystems, recipeV2 } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { BrewFrame } from "../BrewFrame";
-import { Workbench, type DesignFace, type RecordCard } from "./Workbench";
+import { Waiting } from "../Waiting";
+import { Workbench, type RecordCard } from "./Workbench";
+import { draftRecipeAction } from "./recipe-actions";
 
 /**
- * 02 레시피 — 블루프린트 작업대.
+ * 02 레시피.
  *
- * 사용자가 정하는 것은 **무엇을 어떤 순서로, 어떤 근거로, 어떤 모양으로**
- * 보여줄지다. 완성 문장과 픽셀은 03 생성이 쓴다
+ * 사용자가 정하는 것은 **어떤 내용이 어떤 순서로 들어갈지**다. 지면의 모양은
+ * 01에서 고른 디자인 안에서 03 생성이 정한다
  * (`docs/architecture/portfolio-creation-flow-v2.md` §7).
+ *
+ * 첫 화면은 빈 지면이 아니라 AI가 만든 초안이다 — 사용자가 하는 일은 조립이
+ * 아니라 고치기다.
  */
 export default async function RecipePage({
   params,
@@ -30,30 +35,49 @@ export default async function RecipePage({
     throw error;
   }
 
-  // 블루프린트는 이 화면이 열릴 때 태어난다. 이미 있으면 그것을 돌려받는다.
-  const [blueprint, materials] = await Promise.all([
-    blueprints.open(session.accessToken, brewId).then(({ data }) => data),
+  const [recipe, materials] = await Promise.all([
+    recipeV2.open(session.accessToken, brewId).then(({ data }) => data),
     brews.materials(session.accessToken, brewId).then(({ data }) => data),
   ]);
 
-  // 고른 디자인의 낯. 캔버스가 강조색과 제목 서체만 빌려 쓴다(§7.6).
-  // 목록은 백엔드가 한 번 지어 두고 재사용하므로 이름 하나에 판 전체를
-  // 내려받지 않는다.
-  let design: DesignFace | null = null;
-  if (blueprint.designSystemRevisionId) {
+  // 고른 디자인의 이름. 목록은 백엔드가 한 번 지어 두고 재사용한다.
+  let designName: string | null = null;
+  if (recipe.designSystemRevisionId) {
     const catalog = await designSystems.list(session.accessToken);
-    const item = catalog.data.items.find(
-      ({ revisionId }) => revisionId === blueprint.designSystemRevisionId,
+    designName = catalog.data.items.find(
+      ({ revisionId }) => revisionId === recipe.designSystemRevisionId,
+    )?.name ?? null;
+  }
+
+  const title = recipe.title || brew.freeTitle || brew.posting?.title || null;
+  const drafting = brew.latestJob?.type === "recipe" && brew.latestJob.status !== "succeeded";
+
+  // 초안이 없거나 만들어지는 중이면 기다림 화면이다. 빈 지면을 주지 않는다.
+  if (recipe.sections.length === 0 || drafting) {
+    return (
+      <BrewFrame
+        brewId={brewId}
+        step="recipe"
+        portfolioTitle={title}
+        situation={drafting ? "짜는 중" : "아직 없음"}
+        flow="portfolio-v2"
+        tinted
+      >
+        <Waiting
+          title="레시피"
+          note={
+            materials.materials.some(({ selected }) => selected)
+              ? `고른 기록 ${materials.materials.filter(({ selected }) => selected).length}건으로 무엇을 어떤 순서로 담을지 짭니다. 짜인 뒤에 직접 고칠 수 있습니다.`
+              : "적어 둔 내용으로 무엇을 어떤 순서로 담을지 짭니다. 짜인 뒤에 직접 고칠 수 있습니다."
+          }
+          job={brew.latestJob?.type === "recipe" ? brew.latestJob : null}
+          action={draftRecipeAction}
+          actionLabel="AI에게 초안 맡기기"
+          rejectedNote="입력을 읽지 못했습니다. 재료를 더 고르거나 제작 의도를 적은 뒤 다시 시도해 주세요."
+          brewId={brewId}
+        />
+      </BrewFrame>
     );
-    if (item) {
-      design = {
-        name: item.name,
-        accent: item.preview.accent,
-        text: item.preview.text,
-        displayFamily: item.preview.displayFamily,
-        displayFallback: item.preview.displayFallback,
-      };
-    }
   }
 
   const records: RecordCard[] = materials.materials.map((material) => ({
@@ -63,28 +87,24 @@ export default async function RecipePage({
     categoryIcon: material.categoryIcon,
     periodFrom: material.periodFrom,
     periodTo: material.periodTo,
-    selected: material.selected,
     reason: material.reason,
   }));
-
-  // 단계 줄의 상황 문구는 서버가 한 번 그리고 끝난다. 편집하며 바뀌는 수는
-  // 작업대 상단이 직접 센다 — 여기에 두면 새로 고칠 때까지 어긋난 수가 남는다.
-  const situation = design ? design.name : "디자인 없음";
 
   return (
     <BrewFrame
       brewId={brewId}
       step="recipe"
-      portfolioTitle={blueprint.title || brew.freeTitle || brew.posting?.title || null}
-      situation={situation}
+      portfolioTitle={title}
+      situation={designName ?? "디자인 없음"}
       flow="portfolio-v2"
       tinted
     >
       <Workbench
         brewId={brewId}
-        initialBlueprint={blueprint}
+        initialRecipe={recipe}
         records={records}
-        design={design}
+        designName={designName}
+        draftAction={draftRecipeAction}
       />
     </BrewFrame>
   );

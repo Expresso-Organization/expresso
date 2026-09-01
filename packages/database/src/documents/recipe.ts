@@ -38,14 +38,19 @@ export interface RecipeDoc {
   /** §7.4 제작 의도. 고른 채용 공고도 여기 들어간다. */
   intent?: JsonObject | null;
   title?: string | null;
+  /** 이 판이 데려온 v1 초안. 새 초안이 오면 그때 다시 얹는다. */
+  adoptedRecipeId?: string | null;
 }
 
 /**
- * Recipe v2 블루프린트의 요소.
+ * Recipe v2 의 내용 항목.
  *
- * v1 의 `recipe_items` 와 나란히 산다 — v1 은 「무슨 말을 할지」의 목록이고,
- * 요소는 「무엇을 어떤 모양으로 보여줄지」다. v1 레시피를 읽을 때는 어댑터가
- * 항목을 요소 모양으로 바꾼다.
+ * v1 의 `recipe_items` 와 나란히 산다 — v1 은 근거 경로를 문자열 자리표로
+ * 이어 붙였고, v2 는 항목마다 중심·보조 근거를 제 표에 둔다. v1 레시피를
+ * 읽을 때는 어댑터가 항목을 이 모양으로 바꾼다.
+ *
+ * 표시 방식 · 종류 · 폭 같은 지면의 결정은 여기 없다. 레시피는 내용과 순서만
+ * 정한다.
  */
 export interface RecipeElementDoc {
   _id: string;
@@ -53,15 +58,8 @@ export interface RecipeElementDoc {
   recipeId: string;
   recipeSectionId: string;
   orderNo: number;
-  kind: string;
-  intent: string;
-  takeaway: string;
-  presentationVariant: string;
-  emphasis: "primary" | "secondary" | "supporting";
-  width: "narrow" | "content" | "wide" | "full";
-  targetLength: number;
-  settings: JsonObject;
-  note: string;
+  /** 이 자리에서 무엇을 말할지. */
+  text: string;
   updatedAt: Date;
 }
 
@@ -72,18 +70,8 @@ export interface RecipeElementSourceDoc {
   recipeElementId: string;
   sourceType: "record" | "answer" | "requirement";
   sourceId: string;
-  /** 중심 근거는 요소마다 하나다. 보조는 수를 제한하지 않는다. */
+  /** 중심 근거는 항목마다 하나다. 보조는 수를 제한하지 않는다. */
   role: "primary" | "supporting";
-  orderNo: number;
-  createdAt: Date;
-}
-
-export interface RecipeElementMediaDoc {
-  _id: string;
-  userId: string;
-  recipeId: string;
-  recipeElementId: string;
-  mediaId: string;
   orderNo: number;
   createdAt: Date;
 }

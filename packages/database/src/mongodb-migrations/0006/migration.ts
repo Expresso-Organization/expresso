@@ -2,10 +2,10 @@ import type { Document } from "mongodb";
 import type { MongoMigrationStep } from "../../mongo-migrations.js";
 
 /**
- * Recipe v2 블루프린트 — 요소와 그 연결.
+ * Recipe v2 — 내용 항목과 그 근거.
  *
  * v1 의 `recipe_items` · `recipe_evidence_paths` 는 그대로 둔다. 두 판이
- * 나란히 살고, v1 레시피를 읽을 때는 어댑터가 항목을 요소 모양으로 바꾼다
+ * 나란히 살고, v1 레시피를 읽을 때는 어댑터가 항목을 이 모양으로 바꾼다
  * (`docs/architecture/portfolio-creation-flow-v2.md` §10.4).
  */
 
@@ -36,7 +36,7 @@ async function extendValidator(
   await db.command({ collMod: name, validator, validationLevel: "strict", validationAction: "error" });
 }
 
-export async function blueprintElementSteps(): Promise<MongoMigrationStep[]> {
+export async function recipeV2ItemSteps(): Promise<MongoMigrationStep[]> {
   return [
     {
       id: "recipes:blueprint_fields",
@@ -46,6 +46,7 @@ export async function blueprintElementSteps(): Promise<MongoMigrationStep[]> {
           designSystemRevisionId: { anyOf: [UUID, { bsonType: "null" }] },
           intent: { anyOf: [{ bsonType: "object" }, { bsonType: "null" }] },
           title: { anyOf: [{ bsonType: "string", maxLength: 300 }, { bsonType: "null" }] },
+          adoptedRecipeId: { anyOf: [UUID, { bsonType: "null" }] },
         });
         await db.collection("recipes").createIndex(
           { userId: 1, brewId: 1, schemaVersion: 1 },
@@ -64,22 +65,14 @@ export async function blueprintElementSteps(): Promise<MongoMigrationStep[]> {
       async run(db) {
         await db.createCollection("recipe_elements", {
           validator: schema(
-            ["_id", "userId", "recipeId", "recipeSectionId", "orderNo", "kind", "intent", "takeaway", "presentationVariant", "emphasis", "width", "targetLength", "settings", "note", "updatedAt"],
+            ["_id", "userId", "recipeId", "recipeSectionId", "orderNo", "text", "updatedAt"],
             {
               _id: UUID,
               userId: UUID,
               recipeId: UUID,
               recipeSectionId: UUID,
               orderNo: ORDER_NO,
-              kind: { bsonType: "string", maxLength: 40 },
-              intent: { bsonType: "string", maxLength: 1_000 },
-              takeaway: { bsonType: "string", maxLength: 500 },
-              presentationVariant: { bsonType: "string", maxLength: 60 },
-              emphasis: { bsonType: "string", enum: ["primary", "secondary", "supporting"] },
-              width: { bsonType: "string", enum: ["narrow", "content", "wide", "full"] },
-              targetLength: { bsonType: ["int", "long", "double"], multipleOf: 1, minimum: 0 },
-              settings: { bsonType: "object" },
-              note: { bsonType: "string", maxLength: 1_000 },
+              text: { bsonType: "string", maxLength: 2_000 },
               updatedAt: { bsonType: "date" },
             },
           ),
@@ -116,35 +109,9 @@ export async function blueprintElementSteps(): Promise<MongoMigrationStep[]> {
         });
         await db.collection("recipe_element_sources").createIndexes([
           { name: "recipe_element_source_user_id_id_key", key: { userId: 1, _id: 1 }, unique: true },
-          // 같은 근거를 한 요소에 두 번 걸지 않는다.
+          // 같은 근거를 한 항목에 두 번 걸지 않는다.
           { name: "recipe_element_source_element_source_key", key: { userId: 1, recipeElementId: 1, sourceId: 1 }, unique: true },
           { name: "recipe_element_source_user_id_recipe_id_fkey", key: { userId: 1, recipeId: 1 } },
-        ]);
-      },
-    },
-    {
-      id: "recipe_element_media:create",
-      async run(db) {
-        await db.createCollection("recipe_element_media", {
-          validator: schema(
-            ["_id", "userId", "recipeId", "recipeElementId", "mediaId", "orderNo", "createdAt"],
-            {
-              _id: UUID,
-              userId: UUID,
-              recipeId: UUID,
-              recipeElementId: UUID,
-              mediaId: UUID,
-              orderNo: ORDER_NO,
-              createdAt: { bsonType: "date" },
-            },
-          ),
-          validationLevel: "strict",
-          validationAction: "error",
-        });
-        await db.collection("recipe_element_media").createIndexes([
-          { name: "recipe_element_media_user_id_id_key", key: { userId: 1, _id: 1 }, unique: true },
-          { name: "recipe_element_media_element_media_key", key: { userId: 1, recipeElementId: 1, mediaId: 1 }, unique: true },
-          { name: "recipe_element_media_user_id_recipe_id_fkey", key: { userId: 1, recipeId: 1 } },
         ]);
       },
     },

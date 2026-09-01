@@ -1,23 +1,19 @@
 import { randomUUID } from "node:crypto";
 
 import {
-  BlueprintEditSchema,
-  BlueprintReorderSchema,
   PortfolioIntentSchema,
+  RecipeV2EditSchema,
+  RecipeV2ReorderSchema,
   RecipeV2Schema,
-  defaultPresentationVariant,
-  presentationVariantsFor,
-  type BlueprintEdit,
-  type BlueprintElementKind,
-  type BlueprintReorder,
   type PortfolioIntent,
   type RecipeV2,
+  type RecipeV2Edit,
+  type RecipeV2Reorder,
 } from "@expresso/contracts";
 import {
   mongoCollections,
   type JsonObject,
   type JsonValue,
-  type RecipeElementDoc,
   type RecipeSectionDoc,
 } from "@expresso/database";
 import { Decimal128 } from "mongodb";
@@ -29,11 +25,11 @@ import { addMongoRecipeRevision } from "./mongo-revisions.js";
 import { RecipeError } from "./public.js";
 
 /**
- * 02 레시피 — Recipe v2 블루프린트.
+ * 02 레시피 — 어떤 내용이 어떤 순서로.
  *
- * v1 서비스(`service.ts`)와 나란히 산다. v1은 「무슨 말을 할지」의 목록을
- * 만들고, 여기는 「무엇을 어떤 모양으로 어떤 근거로 보여줄지」를 저장한다.
- * 기준은 `docs/architecture/portfolio-creation-flow-v2.md` §7 이다.
+ * v1 서비스(`service.ts`)가 모델을 불러 초안을 만들고, 여기는 그 초안을
+ * 사용자가 고칠 수 있는 판으로 들고 있는다. 표시 방식 · 폭 · 강조 같은 지면의
+ * 결정은 저장하지 않는다 — 그건 03 생성이 고른 디자인 안에서 정한다.
  */
 
 const SCHEMA_VERSION = 2;
@@ -50,34 +46,19 @@ const EMPTY_INTENT: PortfolioIntent = {
   extraRequest: "", jobPostingId: null,
 };
 
-/** 요소 종류가 처음 놓일 때의 크기와 무게. 종류가 뜻하는 자리에 맞춘다. */
-const ELEMENT_DEFAULTS: Record<BlueprintElementKind, { emphasis: RecipeV2["sections"][number]["elements"][number]["emphasis"]; width: RecipeV2["sections"][number]["elements"][number]["width"]; targetLength: number }> = {
-  hero: { emphasis: "primary", width: "full", targetLength: 160 },
-  project: { emphasis: "primary", width: "wide", targetLength: 400 },
-  metric: { emphasis: "secondary", width: "narrow", targetLength: 60 },
-  chart: { emphasis: "secondary", width: "content", targetLength: 80 },
-  timeline: { emphasis: "secondary", width: "content", targetLength: 240 },
-  skills: { emphasis: "supporting", width: "content", targetLength: 120 },
-  text: { emphasis: "secondary", width: "content", targetLength: 320 },
-  gallery: { emphasis: "secondary", width: "wide", targetLength: 80 },
-  quote: { emphasis: "supporting", width: "content", targetLength: 120 },
-  profile: { emphasis: "supporting", width: "narrow", targetLength: 160 },
-  contact: { emphasis: "supporting", width: "full", targetLength: 120 },
-};
-
 function intentOf(stored: unknown): PortfolioIntent {
   const parsed = PortfolioIntentSchema.safeParse(stored);
   return parsed.success ? parsed.data : EMPTY_INTENT;
 }
 
-export class BlueprintService {
+export class RecipeV2Service {
   constructor(readonly context: MongoContext) {}
 
   /**
-   * 02 화면이 열릴 때 부른다. 이 제작의 v2 블루프린트가 없으면 만든다.
+   * 02 화면이 열릴 때 부른다. 이 제작의 v2 레시피가 없으면 만든다.
    *
-   * v1 레시피가 이미 있으면 그것을 요소 모양으로 옮겨 온다 — 공고 기반으로
-   * 시작한 제작이 02에서 빈 지면을 만나지 않게 한다(§10.4 legacy adapter).
+   * 이미 v1 초안이 있으면 그것을 옮겨 온다 — 사용자가 02에서 만나는 것은 빈
+   * 지면이 아니라 고칠 수 있는 초안이어야 한다(§10.4 legacy adapter).
    */
   async open(userId: string, brewId: string): Promise<RecipeV2> {
     const db = mongoCollections(this.context.db);
@@ -88,15 +69,13 @@ export class BlueprintService {
       .sort({ version: -1, _id: -1 })
       .limit(1)
       .next();
-    if (existing) return this.#load(userId, existing._id);
+    if (existing) {
+      // 화면을 연 사이에 새 v1 초안이 만들어졌으면 그것도 데려온다.
+      await this.#adoptNewer(userId, brewId, existing._id);
+      return this.#load(userId, existing._id);
+    }
 
-    const legacy = await db.recipes
-      .find({ userId, brewId, schemaVersion: { $exists: false } })
-      .sort({ version: -1, _id: -1 })
-      .limit(1)
-      .next();
     const analysis = await db.jobAnalyses.findOne({ _id: brew.jobAnalysisId, userId });
-
     const recipeId = await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const scoped = mongoCollections(tx.db);
@@ -125,23 +104,62 @@ export class BlueprintService {
         } as unknown as JsonObject,
       }, options);
 
-      if (legacy) await this.#adoptLegacy(tx, userId, legacy._id, id);
+      const legacy = await this.#latestLegacy(tx, userId, brewId);
+      if (legacy) await this.#adopt(tx, userId, legacy, id);
       return id;
     });
     return this.#load(userId, recipeId);
   }
 
-  /** v1 레시피의 섹션과 항목을 v2 섹션·요소로 옮긴다. 원본은 그대로 둔다. */
-  async #adoptLegacy(tx: MongoTransaction, userId: string, legacyRecipeId: string, recipeId: string): Promise<void> {
+  /** 아직 옮겨 오지 않은 v1 초안이 있으면 지금 판에 얹는다. */
+  async #adoptNewer(userId: string, brewId: string, recipeId: string): Promise<void> {
+    const db = mongoCollections(this.context.db);
+    const current = await db.recipes.findOne({ _id: recipeId, userId });
+    const legacy = await db.recipes
+      .find({ userId, brewId, schemaVersion: { $exists: false } })
+      .sort({ version: -1, _id: -1 })
+      .limit(1)
+      .next();
+    if (!legacy || current?.adoptedRecipeId === legacy._id) return;
+    await inTransaction(this.context, async (tx) => {
+      await requireActiveUser(tx, userId);
+      const scoped = mongoCollections(tx.db);
+      const options = { session: tx.session };
+      const guard = await scoped.recipes.findOne({ _id: recipeId, userId }, options);
+      if (!guard || guard.adoptedRecipeId === legacy._id) return;
+      // 초안이 새로 왔으면 이전 초안 자리를 비우고 새것을 얹는다.
+      const sections = await scoped.recipeSections.find({ userId, recipeId }, options).project<{ _id: string }>({ _id: 1 }).toArray();
+      if (sections.length) {
+        await scoped.recipeElementSources.deleteMany({ userId, recipeId }, options);
+        await scoped.recipeElements.deleteMany({ userId, recipeId }, options);
+        await scoped.recipeSections.deleteMany({ userId, recipeId }, options);
+      }
+      await this.#adopt(tx, userId, legacy._id, recipeId);
+      await scoped.recipes.updateOne({ _id: recipeId, userId }, { $set: { adoptedRecipeId: legacy._id, updatedAt: new Date() } }, options);
+    });
+  }
+
+  async #latestLegacy(tx: MongoTransaction, userId: string, brewId: string): Promise<string | null> {
+    const legacy = await mongoCollections(tx.db).recipes
+      .find({ userId, brewId, schemaVersion: { $exists: false } }, { session: tx.session })
+      .sort({ version: -1, _id: -1 })
+      .limit(1)
+      .next();
+    return legacy?._id ?? null;
+  }
+
+  /** v1 레시피의 섹션과 항목을 v2로 옮긴다. 원본은 그대로 둔다. */
+  async #adopt(tx: MongoTransaction, userId: string, legacyRecipeId: string, recipeId: string): Promise<void> {
     const db = mongoCollections(tx.db);
     const options = { session: tx.session };
     const sections = await db.recipeSections.find({ userId, recipeId: legacyRecipeId }, options).sort({ orderNo: 1, _id: 1 }).toArray();
     if (!sections.length) return;
     const items = await db.recipeItems.find({ userId, recipeSectionId: { $in: sections.map(({ _id }) => _id) } }, options).sort({ orderNo: 1, _id: 1 }).toArray();
     const paths = await db.recipeEvidencePaths.find({ userId, recipeId: legacyRecipeId }, options).toArray();
+    const unused = await db.recipeUnusedSources.find({ userId, recipeId: legacyRecipeId }, options).toArray();
     const now = new Date();
     const newSections: RecipeSectionDoc[] = [];
-    const elements: RecipeElementDoc[] = [];
+    const elements: Array<{ _id: string; userId: string; recipeId: string; recipeSectionId: string; orderNo: number; text: string; updatedAt: Date }> = [];
     const sources: Array<{ _id: string; userId: string; recipeId: string; recipeElementId: string; sourceType: "record" | "answer" | "requirement"; sourceId: string; role: "primary" | "supporting"; orderNo: number; createdAt: Date }> = [];
 
     for (const [order, section] of sections.entries()) {
@@ -153,24 +171,21 @@ export class BlueprintService {
         context: { ...V1_SECTION_CONTEXT } as unknown as JsonObject,
         locked: false, editedBy: "ai", updatedAt: now,
       });
-      const own = items.filter(({ recipeSectionId }) => recipeSectionId === section._id);
-      for (const [elementOrder, item] of own.entries()) {
-        // v1 항목은 「무슨 말을 할지」다. 종류는 아직 모르니 본문으로 앉히고
-        // 사용자가 02에서 바꾼다. 없는 판단을 지어내지 않는다.
-        const kind: BlueprintElementKind = "text";
+      for (const [itemOrder, item] of items.filter(({ recipeSectionId }) => recipeSectionId === section._id).entries()) {
         const elementId = randomUUID();
         elements.push({
-          _id: elementId, userId, recipeId, recipeSectionId: sectionId, orderNo: elementOrder,
-          kind, intent: item.pointText.slice(0, 1_000), takeaway: "",
-          presentationVariant: defaultPresentationVariant(kind),
-          ...ELEMENT_DEFAULTS[kind], settings: {}, note: "", updatedAt: now,
+          _id: elementId, userId, recipeId, recipeSectionId: sectionId,
+          orderNo: itemOrder, text: item.pointText.slice(0, 2_000), updatedAt: now,
         });
         const bound = paths.filter(({ recipeItemId }) => recipeItemId === item._id);
-        for (const [sourceOrder, path] of bound.entries()) {
+        const seen = new Set<string>();
+        for (const path of bound) {
+          if (seen.has(path.sourceId)) continue;
+          seen.add(path.sourceId);
           sources.push({
             _id: randomUUID(), userId, recipeId, recipeElementId: elementId,
             sourceType: path.sourceType, sourceId: path.sourceId,
-            role: sourceOrder === 0 ? "primary" : "supporting", orderNo: sourceOrder, createdAt: now,
+            role: seen.size === 1 ? "primary" : "supporting", orderNo: seen.size - 1, createdAt: now,
           });
         }
       }
@@ -178,6 +193,13 @@ export class BlueprintService {
     await db.recipeSections.insertMany(newSections, options);
     if (elements.length) await db.recipeElements.insertMany(elements, options);
     if (sources.length) await db.recipeElementSources.insertMany(sources, options);
+    if (unused.length) {
+      await db.recipeUnusedSources.deleteMany({ userId, recipeId }, options);
+      await db.recipeUnusedSources.insertMany(
+        unused.map(({ recordId, reason }) => ({ _id: randomUUID(), userId, recipeId, recordId, reason, createdAt: now })),
+        options,
+      );
+    }
   }
 
   async get(userId: string, recipeId: string): Promise<RecipeV2> {
@@ -187,12 +209,11 @@ export class BlueprintService {
   async #load(userId: string, recipeId: string): Promise<RecipeV2> {
     const db = mongoCollections(this.context.db);
     const recipe = await db.recipes.findOne({ _id: recipeId, userId });
-    if (!recipe || recipe.schemaVersion !== SCHEMA_VERSION) throw new RecipeError(404, "blueprint not found");
-    const [sections, elements, sources, media, unused, brewSources] = await Promise.all([
+    if (!recipe || recipe.schemaVersion !== SCHEMA_VERSION) throw new RecipeError(404, "recipe not found");
+    const [sections, elements, sources, unused, brewSources] = await Promise.all([
       db.recipeSections.find({ userId, recipeId }).sort({ orderNo: 1, _id: 1 }).toArray(),
       db.recipeElements.find({ userId, recipeId }).sort({ orderNo: 1, _id: 1 }).toArray(),
       db.recipeElementSources.find({ userId, recipeId }).sort({ orderNo: 1, _id: 1 }).toArray(),
-      db.recipeElementMedia.find({ userId, recipeId }).sort({ orderNo: 1, _id: 1 }).toArray(),
       db.recipeUnusedSources.find({ userId, recipeId }).sort({ recordId: 1 }).toArray(),
       db.brewSources.find({ userId, brewId: recipe.brewId, isSelected: true }).sort({ rank: 1, recordId: 1 }).toArray(),
     ]);
@@ -224,26 +245,15 @@ export class BlueprintService {
         title: section.title,
         purpose: section.purpose,
         takeaway: section.takeaway ?? "",
-        elements: elements
+        items: elements
           .filter(({ recipeSectionId }) => recipeSectionId === section._id)
           .map((element) => ({
             id: element._id,
             order: element.orderNo,
-            kind: element.kind,
-            intent: element.intent,
-            takeaway: element.takeaway,
-            presentationVariant: element.presentationVariant,
-            emphasis: element.emphasis,
-            width: element.width,
-            targetLength: element.targetLength,
+            text: element.text,
             sourceBindings: sources
               .filter(({ recipeElementId }) => recipeElementId === element._id)
               .map(({ sourceType, sourceId, role, orderNo }) => ({ sourceType, sourceId, role, order: orderNo })),
-            mediaBindings: media
-              .filter(({ recipeElementId }) => recipeElementId === element._id)
-              .map(({ mediaId, orderNo }) => ({ mediaId, order: orderNo })),
-            settings: element.settings,
-            note: element.note,
           })),
       })),
       unusedSources: unused.map(({ recordId, reason }) => ({ recordId, reason })),
@@ -257,18 +267,18 @@ export class BlueprintService {
     const db = mongoCollections(tx.db);
     const options = { session: tx.session };
     const recipe = await db.recipes.findOne({ _id: recipeId, userId }, options);
-    if (!recipe || recipe.schemaVersion !== SCHEMA_VERSION) throw new RecipeError(404, "blueprint not found");
+    if (!recipe || recipe.schemaVersion !== SCHEMA_VERSION) throw new RecipeError(404, "recipe not found");
     const guard = await db.recipes.updateOne(
       { _id: recipeId, userId, editVersion: recipe.editVersion ?? 1 },
       { $set: { updatedAt: new Date() }, $inc: { editVersion: 1 } },
       options,
     );
-    if (!guard.matchedCount) throw new RecipeError(409, "blueprint changed concurrently");
+    if (!guard.matchedCount) throw new RecipeError(409, "recipe changed concurrently");
     return recipe;
   }
 
-  async edit(userId: string, recipeId: string, editValue: BlueprintEdit) {
-    const edit = BlueprintEditSchema.parse(editValue);
+  async edit(userId: string, recipeId: string, editValue: RecipeV2Edit) {
+    const edit = RecipeV2EditSchema.parse(editValue);
     const before = await this.#load(userId, recipeId);
     let revisionId = "";
     await inTransaction(this.context, async (tx) => {
@@ -283,7 +293,7 @@ export class BlueprintService {
     return { recipe: await this.#load(userId, recipeId), revisionId };
   }
 
-  async #apply(tx: MongoTransaction, userId: string, recipeId: string, edit: BlueprintEdit): Promise<void> {
+  async #apply(tx: MongoTransaction, userId: string, recipeId: string, edit: RecipeV2Edit): Promise<void> {
     const db = mongoCollections(tx.db);
     const options = { session: tx.session };
     const now = new Date();
@@ -310,7 +320,7 @@ export class BlueprintService {
     }
     if (edit.operation === "update_section") {
       const section = await db.recipeSections.findOne({ _id: edit.sectionId, userId, recipeId }, options);
-      if (!section) throw new RecipeError(404, "blueprint section not found");
+      if (!section) throw new RecipeError(404, "recipe section not found");
       const patch: Partial<RecipeSectionDoc> = { editedBy: "user", locked: true, updatedAt: now };
       if (edit.title !== undefined) patch.title = edit.title;
       if (edit.purpose !== undefined) patch.purpose = edit.purpose;
@@ -320,20 +330,19 @@ export class BlueprintService {
     }
     if (edit.operation === "delete_section") {
       const section = await db.recipeSections.findOne({ _id: edit.sectionId, userId, recipeId }, options);
-      if (!section) throw new RecipeError(404, "blueprint section not found");
-      const elementIds = (await db.recipeElements.find({ userId, recipeSectionId: section._id }, options).project<{ _id: string }>({ _id: 1 }).toArray()).map(({ _id }) => _id);
-      if (elementIds.length) {
-        await db.recipeElementSources.deleteMany({ userId, recipeElementId: { $in: elementIds } }, options);
-        await db.recipeElementMedia.deleteMany({ userId, recipeElementId: { $in: elementIds } }, options);
-        await db.recipeElements.deleteMany({ userId, _id: { $in: elementIds } }, options);
+      if (!section) throw new RecipeError(404, "recipe section not found");
+      const itemIds = (await db.recipeElements.find({ userId, recipeSectionId: section._id }, options).project<{ _id: string }>({ _id: 1 }).toArray()).map(({ _id }) => _id);
+      if (itemIds.length) {
+        await db.recipeElementSources.deleteMany({ userId, recipeElementId: { $in: itemIds } }, options);
+        await db.recipeElements.deleteMany({ userId, _id: { $in: itemIds } }, options);
       }
       await db.recipeSections.deleteOne({ _id: section._id, userId }, options);
       await this.#renumberSections(tx, userId, recipeId);
       return;
     }
-    if (edit.operation === "add_element") {
+    if (edit.operation === "add_item") {
       if (!await db.recipeSections.findOne({ _id: edit.sectionId, userId, recipeId }, options)) {
-        throw new RecipeError(404, "blueprint section not found");
+        throw new RecipeError(404, "recipe section not found");
       }
       const siblings = await db.recipeElements.find({ userId, recipeSectionId: edit.sectionId }, options).sort({ orderNo: 1, _id: 1 }).toArray();
       const at = Math.min(edit.order ?? siblings.length, siblings.length);
@@ -341,90 +350,66 @@ export class BlueprintService {
       const ids = siblings.map(({ _id }) => _id);
       ids.splice(at, 0, id);
       await db.recipeElements.insertOne({
-        _id: id, userId, recipeId, recipeSectionId: edit.sectionId, orderNo: siblings.length + 1_000,
-        kind: edit.kind, intent: "", takeaway: "",
-        presentationVariant: defaultPresentationVariant(edit.kind),
-        ...ELEMENT_DEFAULTS[edit.kind], settings: {}, note: "", updatedAt: now,
+        _id: id, userId, recipeId, recipeSectionId: edit.sectionId,
+        orderNo: siblings.length + 1_000, text: edit.text ?? "", updatedAt: now,
       }, options);
       await this.#writeOrder(tx, userId, edit.sectionId, ids);
       return;
     }
-    if (edit.operation === "update_element") {
-      const element = await db.recipeElements.findOne({ _id: edit.elementId, userId, recipeId }, options);
-      if (!element) throw new RecipeError(404, "blueprint element not found");
-      const patch: Partial<RecipeElementDoc> = { updatedAt: now };
-      if (edit.kind !== undefined) {
-        patch.kind = edit.kind;
-        // 종류가 바뀌면 표시 방식의 갈래도 바뀐다. 같은 요청에서 함께 오지
-        // 않았고 지금 값이 새 갈래에 없으면 그 갈래의 첫 번째로 내린다.
-        const allowed = presentationVariantsFor(edit.kind);
-        const next = edit.presentationVariant ?? element.presentationVariant;
-        patch.presentationVariant = allowed.some(({ id }) => id === next) ? next : defaultPresentationVariant(edit.kind);
-      } else if (edit.presentationVariant !== undefined) {
-        const allowed = presentationVariantsFor(element.kind as BlueprintElementKind);
-        if (!allowed.some(({ id }) => id === edit.presentationVariant)) {
-          throw new RecipeError(409, "element kind does not support this presentation variant");
-        }
-        patch.presentationVariant = edit.presentationVariant;
-      }
-      if (edit.intent !== undefined) patch.intent = edit.intent;
-      if (edit.takeaway !== undefined) patch.takeaway = edit.takeaway;
-      if (edit.emphasis !== undefined) patch.emphasis = edit.emphasis;
-      if (edit.width !== undefined) patch.width = edit.width;
-      if (edit.targetLength !== undefined) patch.targetLength = edit.targetLength;
-      if (edit.note !== undefined) patch.note = edit.note;
-      await db.recipeElements.updateOne({ _id: element._id, userId }, { $set: patch }, options);
+    if (edit.operation === "update_item") {
+      const item = await db.recipeElements.findOne({ _id: edit.itemId, userId, recipeId }, options);
+      if (!item) throw new RecipeError(404, "recipe item not found");
+      await db.recipeElements.updateOne({ _id: item._id, userId }, { $set: { text: edit.text, updatedAt: now } }, options);
       return;
     }
-    if (edit.operation === "duplicate_element") {
-      const element = await db.recipeElements.findOne({ _id: edit.elementId, userId, recipeId }, options);
-      if (!element) throw new RecipeError(404, "blueprint element not found");
-      const siblings = await db.recipeElements.find({ userId, recipeSectionId: element.recipeSectionId }, options).sort({ orderNo: 1, _id: 1 }).toArray();
+    if (edit.operation === "duplicate_item") {
+      const item = await db.recipeElements.findOne({ _id: edit.itemId, userId, recipeId }, options);
+      if (!item) throw new RecipeError(404, "recipe item not found");
+      const siblings = await db.recipeElements.find({ userId, recipeSectionId: item.recipeSectionId }, options).sort({ orderNo: 1, _id: 1 }).toArray();
       const id = randomUUID();
       const ids = siblings.map(({ _id }) => _id);
-      ids.splice(ids.indexOf(element._id) + 1, 0, id);
-      await db.recipeElements.insertOne({ ...element, _id: id, orderNo: siblings.length + 1_000, updatedAt: now }, options);
-      const bound = await db.recipeElementSources.find({ userId, recipeElementId: element._id }, options).sort({ orderNo: 1 }).toArray();
+      ids.splice(ids.indexOf(item._id) + 1, 0, id);
+      await db.recipeElements.insertOne({ ...item, _id: id, orderNo: siblings.length + 1_000, updatedAt: now }, options);
+      const bound = await db.recipeElementSources.find({ userId, recipeElementId: item._id }, options).sort({ orderNo: 1 }).toArray();
       if (bound.length) {
         await db.recipeElementSources.insertMany(
           bound.map((source) => ({ ...source, _id: randomUUID(), recipeElementId: id, createdAt: now })),
           options,
         );
       }
-      await this.#writeOrder(tx, userId, element.recipeSectionId, ids);
+      await this.#writeOrder(tx, userId, item.recipeSectionId, ids);
       return;
     }
-    if (edit.operation === "delete_element") {
-      const element = await db.recipeElements.findOne({ _id: edit.elementId, userId, recipeId }, options);
-      if (!element) throw new RecipeError(404, "blueprint element not found");
-      await db.recipeElementSources.deleteMany({ userId, recipeElementId: element._id }, options);
-      await db.recipeElementMedia.deleteMany({ userId, recipeElementId: element._id }, options);
-      await db.recipeElements.deleteOne({ _id: element._id, userId }, options);
-      const rest = await db.recipeElements.find({ userId, recipeSectionId: element.recipeSectionId }, options).sort({ orderNo: 1, _id: 1 }).toArray();
-      await this.#writeOrder(tx, userId, element.recipeSectionId, rest.map(({ _id }) => _id));
+    if (edit.operation === "delete_item") {
+      const item = await db.recipeElements.findOne({ _id: edit.itemId, userId, recipeId }, options);
+      if (!item) throw new RecipeError(404, "recipe item not found");
+      await db.recipeElementSources.deleteMany({ userId, recipeElementId: item._id }, options);
+      await db.recipeElements.deleteOne({ _id: item._id, userId }, options);
+      const rest = await db.recipeElements.find({ userId, recipeSectionId: item.recipeSectionId }, options).sort({ orderNo: 1, _id: 1 }).toArray();
+      await this.#writeOrder(tx, userId, item.recipeSectionId, rest.map(({ _id }) => _id));
       return;
     }
     if (edit.operation === "bind_source") {
-      const element = await db.recipeElements.findOne({ _id: edit.elementId, userId, recipeId }, options);
-      if (!element) throw new RecipeError(404, "blueprint element not found");
-      const bound = await db.recipeElementSources.find({ userId, recipeElementId: element._id }, options).sort({ orderNo: 1 }).toArray();
-      if (bound.some(({ sourceId }) => sourceId === edit.sourceId)) throw new RecipeError(409, "source is already bound to this element");
+      const item = await db.recipeElements.findOne({ _id: edit.itemId, userId, recipeId }, options);
+      if (!item) throw new RecipeError(404, "recipe item not found");
+      const bound = await db.recipeElementSources.find({ userId, recipeElementId: item._id }, options).sort({ orderNo: 1 }).toArray();
+      if (bound.some(({ sourceId }) => sourceId === edit.sourceId)) throw new RecipeError(409, "source is already bound to this item");
       // 중심 근거는 하나다. 새 중심이 오면 앞의 중심은 보조로 내려간다.
       if (edit.role === "primary") {
-        await db.recipeElementSources.updateMany({ userId, recipeElementId: element._id, role: "primary" }, { $set: { role: "supporting" } }, options);
+        await db.recipeElementSources.updateMany({ userId, recipeElementId: item._id, role: "primary" }, { $set: { role: "supporting" } }, options);
       }
       await db.recipeElementSources.insertOne({
-        _id: randomUUID(), userId, recipeId, recipeElementId: element._id,
+        _id: randomUUID(), userId, recipeId, recipeElementId: item._id,
         sourceType: edit.sourceType, sourceId: edit.sourceId, role: edit.role,
         orderNo: bound.length, createdAt: now,
       }, options);
       return;
     }
-    const element = await db.recipeElements.findOne({ _id: edit.elementId, userId, recipeId }, options);
-    if (!element) throw new RecipeError(404, "blueprint element not found");
-    const removed = await db.recipeElementSources.findOneAndDelete({ userId, recipeElementId: element._id, sourceId: edit.sourceId }, options);
+    const item = await db.recipeElements.findOne({ _id: edit.itemId, userId, recipeId }, options);
+    if (!item) throw new RecipeError(404, "recipe item not found");
+    const removed = await db.recipeElementSources.findOneAndDelete({ userId, recipeElementId: item._id, sourceId: edit.sourceId }, options);
     if (!removed) throw new RecipeError(404, "source binding not found");
-    const rest = await db.recipeElementSources.find({ userId, recipeElementId: element._id }, options).sort({ orderNo: 1, _id: 1 }).toArray();
+    const rest = await db.recipeElementSources.find({ userId, recipeElementId: item._id }, options).sort({ orderNo: 1, _id: 1 }).toArray();
     for (const [orderNo, source] of rest.entries()) {
       await db.recipeElementSources.updateOne({ _id: source._id, userId }, { $set: { orderNo } }, options);
     }
@@ -434,11 +419,11 @@ export class BlueprintService {
    * §11.3 — drop 한 번에 저장 한 번.
    *
    * 보낸 배열이 곧 최종 순서다. 자리 번호에 유일 인덱스가 걸려 있어 옮기기
-   * 전에 전부 1000씩 밀어 둔다 — 그러지 않으면 옮기는 도중에 두 요소가 같은
-   * 자리를 갖는 순간이 생긴다.
+   * 전에 전부 밀어 둔다 — 그러지 않으면 옮기는 도중에 두 항목이 같은 자리를
+   * 갖는 순간이 생긴다.
    */
-  async reorder(userId: string, recipeId: string, inputValue: BlueprintReorder): Promise<RecipeV2> {
-    const input = BlueprintReorderSchema.parse(inputValue);
+  async reorder(userId: string, recipeId: string, inputValue: RecipeV2Reorder): Promise<RecipeV2> {
+    const input = RecipeV2ReorderSchema.parse(inputValue);
     await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       await this.#guard(tx, userId, recipeId);
@@ -447,25 +432,25 @@ export class BlueprintService {
       const sections = await db.recipeSections.find({ userId, recipeId }, options).toArray();
       const known = new Set(sections.map(({ _id }) => _id));
       if (input.sections.length !== sections.length || input.sections.some(({ sectionId }) => !known.has(sectionId))) {
-        throw new RecipeError(409, "reorder must list every section of the blueprint");
+        throw new RecipeError(409, "reorder must list every section of the recipe");
       }
       const elements = await db.recipeElements.find({ userId, recipeId }, options).toArray();
-      const listed = input.sections.flatMap(({ elementIds }) => elementIds);
+      const listed = input.sections.flatMap(({ itemIds }) => itemIds);
       if (listed.length !== elements.length || new Set(listed).size !== listed.length) {
-        throw new RecipeError(409, "reorder must list every element exactly once");
+        throw new RecipeError(409, "reorder must list every item exactly once");
       }
-      const elementIds = new Set(elements.map(({ _id }) => _id));
-      if (listed.some((id) => !elementIds.has(id))) throw new RecipeError(409, "reorder lists an unknown element");
+      const itemIds = new Set(elements.map(({ _id }) => _id));
+      if (listed.some((id) => !itemIds.has(id))) throw new RecipeError(409, "reorder lists an unknown item");
 
       await db.recipeSections.updateMany({ userId, recipeId }, { $inc: { orderNo: 1_000 } }, options);
       await db.recipeElements.updateMany({ userId, recipeId }, { $inc: { orderNo: 1_000 } }, options);
       const now = new Date();
-      for (const [orderNo, { sectionId, elementIds: ids }] of input.sections.entries()) {
+      for (const [orderNo, { sectionId, itemIds: ids }] of input.sections.entries()) {
         await db.recipeSections.updateOne({ _id: sectionId, userId }, { $set: { orderNo, editedBy: "user", locked: true, updatedAt: now } }, options);
-        for (const [elementOrder, id] of ids.entries()) {
+        for (const [itemOrder, id] of ids.entries()) {
           await db.recipeElements.updateOne(
             { _id: id, userId },
-            { $set: { recipeSectionId: sectionId, orderNo: elementOrder, updatedAt: now } },
+            { $set: { recipeSectionId: sectionId, orderNo: itemOrder, updatedAt: now } },
             options,
           );
         }

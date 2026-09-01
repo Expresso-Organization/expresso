@@ -1,19 +1,19 @@
 "use server";
 
 import {
-  BlueprintEditSchema,
-  BlueprintReorderSchema,
+  RecipeV2EditSchema,
+  RecipeV2ReorderSchema,
   SubmitJobPostingSchema,
-  type BlueprintEdit,
-  type BlueprintReorder,
-  type JobPostingSummary,
   type RecipeV2,
+  type RecipeV2Edit,
+  type RecipeV2Reorder,
 } from "@expresso/contracts";
 import { randomUUID } from "node:crypto";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { ApiError } from "@/lib/api/client";
-import { blueprints, jobs } from "@/lib/api/endpoints";
+import { brews, jobs, recipeV2 } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 /**
@@ -23,11 +23,11 @@ import { requireSession } from "@/lib/require-session";
  * 그대로 다시 그린다 — 낙관적 반영이 남긴 차이를 손으로 되돌리지 않는다.
  */
 
-export type BlueprintResult =
+export type RecipeResult =
   | { ok: true; recipe: RecipeV2 }
   | { ok: false; error: string };
 
-function failure(error: unknown): BlueprintResult {
+function failure(error: unknown): RecipeResult {
   if (error instanceof ApiError) {
     if (error.status === 409) return { ok: false, error: "다른 곳에서 먼저 바뀌었습니다. 화면을 새로 열어 주세요." };
     if (error.status === 404) return { ok: false, error: "고치려던 자리를 찾지 못했습니다." };
@@ -36,72 +36,57 @@ function failure(error: unknown): BlueprintResult {
   throw error;
 }
 
-export async function editBlueprintAction(
-  blueprintId: string,
-  edit: BlueprintEdit,
-): Promise<BlueprintResult> {
-  const id = z.uuid().safeParse(blueprintId);
-  const parsed = BlueprintEditSchema.safeParse(edit);
+export async function editRecipeAction(recipeId: string, edit: RecipeV2Edit): Promise<RecipeResult> {
+  const id = z.uuid().safeParse(recipeId);
+  const parsed = RecipeV2EditSchema.safeParse(edit);
   if (!id.success || !parsed.success) return { ok: false, error: "요청을 읽지 못했습니다." };
   const session = await requireSession();
   try {
-    const { data } = await blueprints.edit(session.accessToken, id.data, parsed.data);
+    const { data } = await recipeV2.edit(session.accessToken, id.data, parsed.data);
     return { ok: true, recipe: data.recipe };
   } catch (error) {
     return failure(error);
   }
 }
 
-export async function reorderBlueprintAction(
-  blueprintId: string,
-  input: BlueprintReorder,
-): Promise<BlueprintResult> {
-  const id = z.uuid().safeParse(blueprintId);
-  const parsed = BlueprintReorderSchema.safeParse(input);
+export async function reorderRecipeAction(recipeId: string, input: RecipeV2Reorder): Promise<RecipeResult> {
+  const id = z.uuid().safeParse(recipeId);
+  const parsed = RecipeV2ReorderSchema.safeParse(input);
   if (!id.success || !parsed.success) return { ok: false, error: "요청을 읽지 못했습니다." };
   const session = await requireSession();
   try {
-    const { data } = await blueprints.reorder(session.accessToken, id.data, parsed.data);
+    const { data } = await recipeV2.reorder(session.accessToken, id.data, parsed.data);
     return { ok: true, recipe: data };
   } catch (error) {
     return failure(error);
   }
 }
 
-// ── 지원할 채용 공고 고르기 ──────────────────────────────────────
-
-export type PostingSearchResult =
-  | { ok: true; postings: JobPostingSummary[]; total: number }
-  | { ok: false; error: string };
-
-/** 모아 둔 공고에서 찾는다. 검색어가 비면 최근 순 앞쪽을 보여준다. */
-export async function searchPostingsAction(query: string): Promise<PostingSearchResult> {
+/**
+ * 초안을 새로 만든다.
+ *
+ * 멱등성 키에 지금 초안의 식별자를 넣는다 — 만들어지는 동안 두 번 눌러도 같은
+ * 잡이고, 만들어진 뒤에 누르면 새 초안이다.
+ */
+export async function draftRecipeAction(formData: FormData): Promise<void> {
+  const brewId = formData.get("brewId");
+  const previousRecipeId = formData.get("previousRecipeId");
+  if (typeof brewId !== "string") return;
   const session = await requireSession();
-  const q = query.trim();
-  try {
-    const result = await jobs.postings(session.accessToken, {
-      ...(q ? { q } : {}),
-      sort: "recent",
-      page: 1,
-      limit: 12,
-    });
-    return { ok: true, postings: result.data, total: result.summary.total };
-  } catch (error) {
-    if (error instanceof ApiError) return { ok: false, error: "공고를 불러오지 못했습니다." };
-    throw error;
-  }
+  await brews.createRecipe(
+    session.accessToken,
+    brewId,
+    `recipe:${brewId}:${typeof previousRecipeId === "string" && previousRecipeId ? previousRecipeId : "first"}`,
+  );
+  revalidatePath(`/brew/${brewId}/recipe`);
 }
+
+// ── 목록에 없는 공고를 원문으로 ─────────────────────────────────
 
 export type PostingSubmitResult =
   | { ok: true; jobPostingId: string }
   | { ok: false; error: string };
 
-/**
- * 목록에 없는 공고를 원문으로 넣는다.
- *
- * 공고와 분석이 함께 생긴다(202). 요건을 뽑는 것은 워커가 하는 일이라 여기서는
- * 공고 식별자만 받아 의도에 적는다.
- */
 export async function submitPostingAction(
   _previous: PostingSubmitResult | null,
   formData: FormData,

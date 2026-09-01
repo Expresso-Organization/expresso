@@ -12,7 +12,7 @@ import { JobBoardService } from "../modules/jobs/index.js";
 import { JobAnalysisService } from "../modules/job-analysis/index.js";
 import { MaterialsService } from "../modules/materials/index.js";
 import { InterviewService } from "../modules/interview/index.js";
-import { BlueprintService, RecipeService } from "../modules/recipe/index.js";
+import { RecipeService, RecipeV2Service } from "../modules/recipe/index.js";
 import { CompanyResearchService } from "../modules/company-research/index.js";
 import { BrewJobService } from "../modules/brew-jobs/index.js";
 import { ConsentService } from "../modules/consent/index.js";
@@ -55,7 +55,7 @@ const jobAnalysisService = new JobAnalysisService(database);
 const materialsService = new MaterialsService(database);
 const interviewService = new InterviewService(database);
 const recipeService = new RecipeService(database);
-const blueprintService = new BlueprintService(database);
+const recipeV2Service = new RecipeV2Service(database);
 const companyResearchService = new CompanyResearchService(database);
 const designSystemService = new DesignSystemService(database);
 const templateService = new TemplateService(database, recipeService);
@@ -123,7 +123,7 @@ const app = buildApi({
   materialsService,
   interviewService,
   recipeService,
-  blueprintService,
+  recipeV2Service,
   companyResearchService,
   brewJobService,
   designSystemService,

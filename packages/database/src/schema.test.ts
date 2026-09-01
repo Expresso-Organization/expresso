@@ -16,7 +16,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
   afterAll(async () => { try { await mongo.dropDatabase(); } finally { await client.close(); } });
 
   it("creates every product collection and preserves the seeded IDs and all 30 additional designs", async () => {
-    expect(await mongo.listCollections({}, { nameOnly: true }).toArray()).toHaveLength(80);
+    expect(await mongo.listCollections({}, { nameOnly: true }).toArray()).toHaveLength(79);
     expect(await collections.plans.countDocuments()).toBe(3);
     expect((await collections.plans.findOne({ code: "free" }))?._id).toBe("aa09f35f-bde6-4e18-b9cd-7b32759bf43b");
     expect(await collections.careerCategories.countDocuments({ isSystem: true })).toBe(7);
@@ -31,7 +31,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await collections.plans.updateOne({ code: "free" }, { $set: { generationQuota: 17 } });
     const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     expect(result.applied).toEqual([]);
-    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0006_blueprint_elements"]);
+    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0006_recipe_v2_items"]);
     expect((await collections.plans.findOne({ code: "free" }))?.generationQuota).toBe(17);
   });
 

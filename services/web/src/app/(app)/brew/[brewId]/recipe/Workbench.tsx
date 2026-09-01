@@ -1,21 +1,14 @@
 "use client";
 
-import {
-  presentationVariantsFor,
-  type BlueprintEdit,
-  type BlueprintElementKind,
-  type PortfolioIntent,
-  type RecipeV2,
-} from "@expresso/contracts";
+import type { PortfolioIntent, RecipeV2, RecipeV2Edit } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
-import { ElementSketch } from "./ElementSketch";
 import { JobPostingPicker } from "./JobPostingPicker";
-import { editBlueprintAction, reorderBlueprintAction } from "./blueprint-actions";
+import { editRecipeAction, reorderRecipeAction } from "./recipe-actions";
 import styles from "./Workbench.module.css";
 
 export type RecordCard = {
@@ -25,67 +18,12 @@ export type RecordCard = {
   categoryIcon: string;
   periodFrom: string | null;
   periodTo: string | null;
-  selected: boolean;
   reason: string;
 };
 
-/** 캔버스가 빌려 쓰는 디자인의 낯. 지면 전체를 흉내 내지 않는다(§7.6). */
-export type DesignFace = {
-  name: string;
-  accent: string;
-  text: string;
-  displayFamily: string;
-  displayFallback: string;
-};
+type Item = RecipeV2["sections"][number]["items"][number];
 
-type Element = RecipeV2["sections"][number]["elements"][number];
-
-const KIND_LABEL: Record<BlueprintElementKind, string> = {
-  hero: "히어로",
-  project: "프로젝트",
-  metric: "수치",
-  chart: "차트",
-  timeline: "경력",
-  skills: "기술",
-  text: "본문",
-  gallery: "갤러리",
-  quote: "인용",
-  profile: "프로필",
-  contact: "연락",
-};
-
-const KIND_ICON: Record<BlueprintElementKind, string> = {
-  hero: "text-h-one",
-  project: "cards",
-  metric: "number-square-four",
-  chart: "chart-bar",
-  timeline: "git-commit",
-  skills: "tag",
-  text: "text-align-left",
-  gallery: "images",
-  quote: "quotes",
-  profile: "user",
-  contact: "paper-plane-tilt",
-};
-
-/** 요소를 놓는 차례. 지면에서 만나는 순서에 가깝게 세운다. */
-const KIND_ORDER: BlueprintElementKind[] = [
-  "hero", "project", "metric", "chart", "timeline",
-  "skills", "gallery", "text", "quote", "profile", "contact",
-];
-
-const EMPHASIS = [
-  { value: "primary", label: "중심" },
-  { value: "secondary", label: "보조" },
-  { value: "supporting", label: "배경" },
-] as const;
-
-const WIDTH = [
-  { value: "narrow", label: "1/3" },
-  { value: "content", label: "2/3" },
-  { value: "wide", label: "5/6" },
-  { value: "full", label: "전체" },
-] as const;
+const SOURCE_LABEL = { record: "기록", requirement: "공고 요건", answer: "대화 답변" } as const;
 
 function no(order: number): string {
   return String(order + 1).padStart(2, "0");
@@ -96,25 +34,27 @@ function period(from: string | null, to: string | null): string {
   return `${from?.slice(0, 7) ?? "?"} — ${to?.slice(0, 7) ?? "현재"}`;
 }
 
-function variantLabel(element: Element): string {
-  return (
-    presentationVariantsFor(element.kind).find(({ id }) => id === element.presentationVariant)?.label ??
-    element.presentationVariant
-  );
-}
-
+/**
+ * 02 레시피.
+ *
+ * 여기서 정하는 것은 **어떤 내용이 어떤 순서로 들어갈지**뿐이다. 지면의 모양은
+ * 01에서 고른 디자인 안에서 03 생성이 정한다.
+ */
 export function Workbench({
   brewId,
-  initialBlueprint,
+  initialRecipe,
   records,
-  design,
+  designName,
+  draftAction,
 }: {
   brewId: string;
-  initialBlueprint: RecipeV2;
+  initialRecipe: RecipeV2;
   records: RecordCard[];
-  design: DesignFace | null;
+  designName: string | null;
+  /** 「초안 다시 만들기」. 잡을 걸고 화면은 서버 상태를 다시 읽는다. */
+  draftAction: (formData: FormData) => Promise<void>;
 }) {
-  const [blueprint, setBlueprint] = useState(initialBlueprint);
+  const [recipe, setRecipe] = useState(initialRecipe);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -122,16 +62,13 @@ export function Workbench({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [postingMenu, setPostingMenu] = useState(false);
   const [intentOpen, setIntentOpen] = useState(false);
-  const [paletteFor, setPaletteFor] = useState<string | null>(null);
-  /** 좁은 화면에서 두 레일은 서랍이 된다(§7.3). */
-  const [drawer, setDrawer] = useState<"records" | "inspector" | null>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const [railOpen, setRailOpen] = useState(false);
 
   const placed = useMemo(
-    () => blueprint.sections.flatMap((section) => section.elements.map((element) => ({ section, element }))),
-    [blueprint],
+    () => recipe.sections.flatMap((section) => section.items.map((item) => ({ section, item }))),
+    [recipe],
   );
-  const selected = placed.find(({ element }) => element.id === selectedId) ?? null;
+  const selected = placed.find(({ item }) => item.id === selectedId) ?? null;
   const recordById = useMemo(() => new Map(records.map((record) => [record.recordId, record])), [records]);
 
   const shown = useMemo(() => {
@@ -143,11 +80,11 @@ export function Workbench({
     );
   }, [records, query]);
 
-  /** 어느 기록이 지면의 어디에 쓰이는지(§7.5). */
+  /** 어느 기록이 레시피의 어디에 쓰이는지(§7.5). */
   const usage = useMemo(() => {
     const map = new Map<string, string[]>();
-    for (const { section, element } of placed) {
-      for (const binding of element.sourceBindings) {
+    for (const { section, item } of placed) {
+      for (const binding of item.sourceBindings) {
         if (binding.sourceType !== "record") continue;
         const at = `${no(section.order)} ${section.title || "이름 없는 섹션"}`;
         map.set(binding.sourceId, [...new Set([...(map.get(binding.sourceId) ?? []), at])]);
@@ -159,40 +96,38 @@ export function Workbench({
   useEffect(() => {
     function close(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
-      setPaletteFor(null);
-      setDrawer(null);
       setPostingMenu(false);
+      setRailOpen(false);
     }
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
   }, []);
 
-  async function run(edit: BlueprintEdit) {
+  async function run(edit: RecipeV2Edit) {
     setPending(true);
     setError(null);
-    const result = await editBlueprintAction(blueprint.id, edit);
-    if (result.ok) setBlueprint(result.recipe);
+    const result = await editRecipeAction(recipe.id, edit);
+    if (result.ok) setRecipe(result.recipe);
     else setError(result.error);
     setPending(false);
-    return result.ok;
   }
 
   async function saveOrder(sections: RecipeV2["sections"]) {
     setPending(true);
     setError(null);
-    const result = await reorderBlueprintAction(blueprint.id, {
+    const result = await reorderRecipeAction(recipe.id, {
       sections: sections.map((section) => ({
         sectionId: section.id,
-        elementIds: section.elements.map(({ id }) => id),
+        itemIds: section.items.map(({ id }) => id),
       })),
     });
-    if (result.ok) setBlueprint(result.recipe);
+    if (result.ok) setRecipe(result.recipe);
     else setError(result.error);
     setPending(false);
   }
 
   function moveSection(index: number, delta: number) {
-    const next = [...blueprint.sections];
+    const next = [...recipe.sections];
     const target = index + delta;
     if (target < 0 || target >= next.length) return;
     [next[index], next[target]] = [next[target]!, next[index]!];
@@ -200,45 +135,32 @@ export function Workbench({
   }
 
   /** 섹션 안에서 옮기고, 끝을 넘으면 이웃 섹션으로 넘긴다. */
-  function moveElement(sectionIndex: number, elementIndex: number, delta: number) {
-    const sections = blueprint.sections.map((section) => ({ ...section, elements: [...section.elements] }));
+  function moveItem(sectionIndex: number, itemIndex: number, delta: number) {
+    const sections = recipe.sections.map((section) => ({ ...section, items: [...section.items] }));
     const from = sections[sectionIndex]!;
-    const target = elementIndex + delta;
-    if (target >= 0 && target < from.elements.length) {
-      [from.elements[elementIndex], from.elements[target]] = [from.elements[target]!, from.elements[elementIndex]!];
+    const target = itemIndex + delta;
+    if (target >= 0 && target < from.items.length) {
+      [from.items[itemIndex], from.items[target]] = [from.items[target]!, from.items[itemIndex]!];
       void saveOrder(sections);
       return;
     }
     const neighbourIndex = sectionIndex + delta;
     if (neighbourIndex < 0 || neighbourIndex >= sections.length) return;
-    const [moved] = from.elements.splice(elementIndex, 1);
+    const [moved] = from.items.splice(itemIndex, 1);
     const neighbour = sections[neighbourIndex]!;
-    neighbour.elements.splice(delta < 0 ? neighbour.elements.length : 0, 0, moved!);
+    neighbour.items.splice(delta < 0 ? neighbour.items.length : 0, 0, moved!);
     void saveOrder(sections);
   }
 
-  /** 목차에서 고른 자리로 지면을 데려간다. */
-  function reveal(id: string) {
-    document.getElementById(id)?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }
-
   function saveIntent(patch: Partial<PortfolioIntent>) {
-    const intent = { ...blueprint.intent, ...patch };
-    if (JSON.stringify(intent) === JSON.stringify(blueprint.intent)) return;
+    const intent = { ...recipe.intent, ...patch };
+    if (JSON.stringify(intent) === JSON.stringify(recipe.intent)) return;
     void run({ operation: "update_intent", intent });
   }
 
-  function update(patch: Omit<Extract<BlueprintEdit, { operation: "update_element" }>, "operation" | "elementId">) {
-    if (!selected) return;
-    void run({ operation: "update_element", elementId: selected.element.id, ...patch });
+  function reveal(id: string) {
+    document.getElementById(id)?.scrollIntoView({ block: "center", behavior: "smooth" });
   }
-
-  const face = design
-    ? ({
-        "--sketch-accent": design.accent,
-        "--sketch-display": `"${design.displayFamily}", ${design.displayFallback}`,
-      } as React.CSSProperties)
-    : undefined;
 
   return (
     <div className={styles.workbench} data-pending={pending ? "1" : undefined}>
@@ -247,19 +169,19 @@ export function Workbench({
         <button
           type="button"
           className={styles.railToggle}
-          onClick={() => setDrawer(drawer === "records" ? null : "records")}
-          aria-label="커리어 기록"
+          onClick={() => setRailOpen((open) => !open)}
+          aria-label="목차와 기록"
         >
-          <Icon name="files" size={15} />
+          <Icon name="list" size={15} />
         </button>
         <input
           className={styles.title}
-          defaultValue={blueprint.title}
+          defaultValue={recipe.title}
           placeholder="포트폴리오 제목"
           maxLength={300}
           onBlur={(event) => {
             const title = event.target.value.trim();
-            if (title !== blueprint.title) void run({ operation: "update_title", title });
+            if (title !== recipe.title) void run({ operation: "update_title", title });
           }}
         />
         <button
@@ -271,15 +193,7 @@ export function Workbench({
           <Icon name="sliders-horizontal" size={12} /> 제작 의도
         </button>
         <Link href={`/brew/${brewId}/design` as Route} className={styles.chip}>
-          {design ? (
-            <>
-              <i className={styles.swatch} style={{ background: design.accent }} /> {design.name}
-            </>
-          ) : (
-            <>
-              <Icon name="palette" size={12} /> 디자인 고르기
-            </>
-          )}
+          <Icon name="palette" size={12} /> {designName ?? "디자인 고르기"}
         </Link>
         <span className={styles.chipMenu}>
           <button
@@ -291,8 +205,8 @@ export function Workbench({
           >
             <Icon name="target" size={12} />
             <span className={styles.chipText}>
-              {blueprint.jobPosting
-                ? `${blueprint.jobPosting.companyName} · ${blueprint.jobPosting.title}`
+              {recipe.jobPosting
+                ? `${recipe.jobPosting.companyName} · ${recipe.jobPosting.title}`
                 : "지원할 공고"}
             </span>
             <Icon name="caret-down" size={10} />
@@ -310,10 +224,7 @@ export function Workbench({
               <button
                 type="button"
                 className={styles.menuItem}
-                onClick={() => {
-                  setPostingMenu(false);
-                  setPickerOpen(true);
-                }}
+                onClick={() => { setPostingMenu(false); setPickerOpen(true); }}
               >
                 <Icon name="clipboard-text" size={13} />
                 <span>
@@ -321,14 +232,11 @@ export function Workbench({
                   목록에 없는 공고를 원문으로 넣습니다
                 </span>
               </button>
-              {blueprint.jobPosting ? (
+              {recipe.jobPosting ? (
                 <button
                   type="button"
                   className={styles.menuItem}
-                  onClick={() => {
-                    setPostingMenu(false);
-                    saveIntent({ jobPostingId: null });
-                  }}
+                  onClick={() => { setPostingMenu(false); saveIntent({ jobPostingId: null }); }}
                 >
                   <Icon name="x" size={13} />
                   <span>
@@ -340,17 +248,14 @@ export function Workbench({
             </div>
           ) : null}
         </span>
-        <span className={styles.counts}>
-          섹션 {blueprint.sections.length} · 요소 {placed.length}
-        </span>
-        <button
-          type="button"
-          className={styles.railToggle}
-          onClick={() => setDrawer(drawer === "inspector" ? null : "inspector")}
-          aria-label="요소 설정"
-        >
-          <Icon name="sidebar-simple" size={15} />
-        </button>
+        <span className={styles.counts}>섹션 {recipe.sections.length} · 내용 {placed.length}</span>
+        <form action={draftAction} className={styles.redraft}>
+          <input type="hidden" name="brewId" value={brewId} />
+          <input type="hidden" name="previousRecipeId" value={recipe.id} />
+          <button type="submit" title="지금 내용을 버리고 AI가 다시 짭니다">
+            <Icon name="sparkle" size={12} /> 초안 다시
+          </button>
+        </form>
       </header>
 
       {intentOpen ? (
@@ -358,7 +263,7 @@ export function Workbench({
           <label className={styles.field}>
             <span>보여주고 싶은 역할 · 분야</span>
             <input
-              defaultValue={blueprint.intent.role}
+              defaultValue={recipe.intent.role}
               maxLength={200}
               placeholder="예: 결제 플랫폼 백엔드"
               onBlur={(event) => saveIntent({ role: event.target.value.trim() })}
@@ -367,7 +272,7 @@ export function Workbench({
           <label className={styles.field}>
             <span>주요 독자</span>
             <input
-              defaultValue={blueprint.intent.audience}
+              defaultValue={recipe.intent.audience}
               maxLength={200}
               placeholder="예: 채용 담당자 · 실무 리드"
               onBlur={(event) => saveIntent({ audience: event.target.value.trim() })}
@@ -376,7 +281,7 @@ export function Workbench({
           <label className={styles.field}>
             <span>원하는 분량</span>
             <select
-              defaultValue={blueprint.intent.lengthPreset}
+              defaultValue={recipe.intent.lengthPreset}
               onChange={(event) =>
                 saveIntent({ lengthPreset: event.target.value as PortfolioIntent["lengthPreset"] })
               }
@@ -389,20 +294,20 @@ export function Workbench({
           <label className={styles.field}>
             <span>가장 강조할 경험</span>
             <textarea
-              defaultValue={blueprint.intent.highlight}
+              defaultValue={recipe.intent.highlight}
               maxLength={1_000}
               rows={2}
-              placeholder="비워 두면 고른 기록과 디자인만으로 만듭니다."
+              placeholder="비워 두면 고른 기록만으로 짭니다."
               onBlur={(event) => saveIntent({ highlight: event.target.value.trim() })}
             />
           </label>
           <label className={styles.field}>
             <span>추가 요청</span>
             <textarea
-              defaultValue={blueprint.intent.extraRequest}
+              defaultValue={recipe.intent.extraRequest}
               maxLength={2_000}
               rows={2}
-              placeholder="구성이나 표현에 바라는 것이 있으면 적어 주세요."
+              placeholder="담고 싶은 내용이나 순서에 바라는 것이 있으면 적어 주세요."
               onBlur={(event) => saveIntent({ extraRequest: event.target.value.trim() })}
             />
           </label>
@@ -411,483 +316,274 @@ export function Workbench({
 
       {error ? <p className={styles.error} role="alert">{error}</p> : null}
 
-      <div className={styles.panes} data-drawer={drawer ?? undefined}>
-        {/* ── 왼쪽 · 커리어 기록 ───────────────────────────── */}
-        <aside className={styles.rail} data-open={drawer === "records" ? "1" : undefined}>
-          <section className={styles.railBlock} data-part="outline">
+      <div className={styles.panes}>
+        {/* ── 왼쪽 · 목차와 기록 ───────────────────────────── */}
+        <aside className={styles.rail} data-open={railOpen ? "1" : undefined}>
+          <section className={styles.railBlock}>
             <div className={styles.railHead}>
-              <h2>포트폴리오 목차</h2>
-              <span>{blueprint.sections.length} · {placed.length}</span>
+              <h2>목차</h2>
+              <span>{recipe.sections.length}</span>
             </div>
-            {blueprint.sections.length === 0 ? (
-              <p className={styles.railEmpty}>아직 띠가 없습니다. 지면에서 첫 띠를 두면 여기에 섭니다.</p>
+            {recipe.sections.length === 0 ? (
+              <p className={styles.railEmpty}>아직 섹션이 없습니다.</p>
             ) : (
               <ol className={styles.outline}>
-                {blueprint.sections.map((section) => (
+                {recipe.sections.map((section) => (
                   <li key={section.id}>
                     <button
                       type="button"
-                      className={styles.outlineBand}
-                      onClick={() => {
-                        reveal(`band-${section.id}`);
-                        setDrawer(null);
-                      }}
+                      className={styles.outlineSection}
+                      onClick={() => { reveal(`section-${section.id}`); setRailOpen(false); }}
                     >
                       <span className={styles.outlineNo}>{no(section.order)}</span>
-                      <span className={styles.outlineName}>{section.title || "이름 없는 띠"}</span>
-                      <i>{section.elements.length}</i>
+                      <span className={styles.outlineName}>{section.title || "이름 없는 섹션"}</span>
+                      <i>{section.items.length}</i>
                     </button>
-                    {section.elements.length ? (
-                      <ul className={styles.outlineElements}>
-                        {section.elements.map((element) => (
-                          <li key={element.id}>
-                            <button
-                              type="button"
-                              className={styles.outlineElement}
-                              data-selected={element.id === selectedId ? "1" : undefined}
-                              onClick={() => {
-                                setSelectedId(element.id);
-                                reveal(`element-${element.id}`);
-                                setDrawer(null);
-                              }}
-                            >
-                              <Icon name={KIND_ICON[element.kind]} size={11} />
-                              <span className={styles.outlineName}>
-                                {element.intent || `${KIND_LABEL[element.kind]} · ${variantLabel(element)}`}
-                              </span>
-                              {element.sourceBindings.length ? (
-                                <i><Icon name="link-simple" size={9} /> {element.sourceBindings.length}</i>
-                              ) : null}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
                   </li>
                 ))}
               </ol>
             )}
           </section>
 
-          <section className={styles.railBlock} data-part="records">
-          <div className={styles.railHead}>
-            <h2>커리어 기록</h2>
-            <span>{records.length}</span>
-          </div>
-          <input
-            className={styles.search}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="검색"
-          />
-          {records.length === 0 ? (
-            <p className={styles.railEmpty}>
-              걸린 기록이 없습니다. 기록 없이도 요소를 두고 의도를 적어 만들 수 있습니다.
+          <section className={styles.railBlock} data-grow="1">
+            <div className={styles.railHead}>
+              <h2>커리어 기록</h2>
+              <span>{records.length}</span>
+            </div>
+            <input
+              className={styles.search}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="검색"
+            />
+            <p className={styles.railHint}>
+              {selected ? "누르면 고른 내용의 근거가 됩니다." : "내용을 먼저 고르면 근거로 붙일 수 있습니다."}
             </p>
-          ) : (
-            <ul className={styles.recordList}>
-              {shown.map((record) => {
-                const used = usage.get(record.recordId) ?? [];
-                const bound =
-                  selected?.element.sourceBindings.some(({ sourceId }) => sourceId === record.recordId) ?? false;
-                return (
-                  <li key={record.recordId}>
-                    <button
-                      type="button"
-                      className={styles.recordRow}
-                      data-bound={bound ? "1" : undefined}
-                      data-used={used.length ? "1" : undefined}
-                      disabled={!selected || bound || pending}
-                      title={
-                        bound
-                          ? "고른 요소에 이미 연결되어 있습니다"
-                          : selected
-                            ? "고른 요소에 연결"
-                            : "요소를 먼저 고르세요"
-                      }
-                      onClick={() =>
-                        selected &&
-                        run({
-                          operation: "bind_source",
-                          elementId: selected.element.id,
-                          sourceType: "record",
-                          sourceId: record.recordId,
-                          role: selected.element.sourceBindings.some(({ role }) => role === "primary")
-                            ? "supporting"
-                            : "primary",
-                        })
-                      }
-                    >
-                      <Icon name={record.categoryIcon} size={13} />
-                      <span className={styles.recordText}>
-                        <strong>{record.title}</strong>
-                        <small>{record.categoryName} · {period(record.periodFrom, record.periodTo)}</small>
-                        {used.length ? <em>{used.join(" · ")}</em> : null}
-                      </span>
-                      <Icon name={bound ? "check" : "plus"} size={12} />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+            {records.length === 0 ? (
+              <p className={styles.railEmpty}>
+                걸린 기록이 없습니다. 근거 없이도 무엇을 말할지 적어 만들 수 있습니다.
+              </p>
+            ) : (
+              <ul className={styles.recordList}>
+                {shown.map((record) => {
+                  const used = usage.get(record.recordId) ?? [];
+                  const bound = selected?.item.sourceBindings.some(({ sourceId }) => sourceId === record.recordId) ?? false;
+                  return (
+                    <li key={record.recordId}>
+                      <button
+                        type="button"
+                        className={styles.recordRow}
+                        data-bound={bound ? "1" : undefined}
+                        data-used={used.length ? "1" : undefined}
+                        disabled={!selected || bound || pending}
+                        onClick={() =>
+                          selected &&
+                          run({
+                            operation: "bind_source",
+                            itemId: selected.item.id,
+                            sourceType: "record",
+                            sourceId: record.recordId,
+                            role: selected.item.sourceBindings.some(({ role }) => role === "primary")
+                              ? "supporting"
+                              : "primary",
+                          })
+                        }
+                      >
+                        <Icon name={record.categoryIcon} size={13} />
+                        <span className={styles.recordText}>
+                          <strong>{record.title}</strong>
+                          <small>{record.categoryName} · {period(record.periodFrom, record.periodTo)}</small>
+                          {used.length ? <em>{used.join(" · ")}</em> : null}
+                        </span>
+                        <Icon name={bound ? "check" : "plus"} size={12} />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            {recipe.unusedSources.length ? (
+              <div className={styles.unused}>
+                <h3>이번엔 안 쓴 기록</h3>
+                <ul>
+                  {recipe.unusedSources.map(({ recordId, reason }) => (
+                    <li key={recordId}>
+                      <strong>{recordById.get(recordId)?.title ?? "지난 기록"}</strong>
+                      <span>{reason}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </section>
         </aside>
 
-        {/* ── 가운데 · 지면 ────────────────────────────────── */}
-        <main className={styles.canvas} ref={canvasRef} onClick={() => setPaletteFor(null)}>
-          <div className={styles.sheet} style={face}>
-            {blueprint.sections.length === 0 ? (
-              <div className={styles.sheetEmpty}>
-                <h2>지면이 비어 있습니다</h2>
-                <p>
-                  섹션은 지면의 한 띠입니다. 그 안에 요소를 놓고 무엇을 말할지와 어떤
-                  모양으로 보여줄지를 정하면, 03 생성이 이 도면을 그대로 씁니다.
-                </p>
+        {/* ── 가운데 · 레시피 ──────────────────────────────── */}
+        <main className={styles.sheet}>
+          <div className={styles.doc}>
+            {recipe.sections.map((section, sectionIndex) => (
+              <section key={section.id} id={`section-${section.id}`} className={styles.section}>
+                <div className={styles.sectionHead}>
+                  <span className={styles.sectionNo}>{no(section.order)}</span>
+                  <input
+                    className={styles.sectionTitle}
+                    defaultValue={section.title}
+                    placeholder="섹션 이름"
+                    maxLength={300}
+                    onBlur={(event) => {
+                      const title = event.target.value.trim();
+                      if (title !== section.title) void run({ operation: "update_section", sectionId: section.id, title });
+                    }}
+                  />
+                  <span className={styles.sectionTools}>
+                    <button type="button" onClick={() => moveSection(sectionIndex, -1)} disabled={pending || sectionIndex === 0} aria-label="섹션 위로">
+                      <Icon name="arrow-up" size={12} />
+                    </button>
+                    <button type="button" onClick={() => moveSection(sectionIndex, 1)} disabled={pending || sectionIndex === recipe.sections.length - 1} aria-label="섹션 아래로">
+                      <Icon name="arrow-down" size={12} />
+                    </button>
+                    <button type="button" onClick={() => run({ operation: "delete_section", sectionId: section.id })} disabled={pending} aria-label="섹션 지우기">
+                      <Icon name="trash" size={12} />
+                    </button>
+                  </span>
+                </div>
+                <input
+                  className={styles.sectionPurpose}
+                  defaultValue={section.purpose}
+                  placeholder="이 섹션을 왜 두는지"
+                  maxLength={1_000}
+                  onBlur={(event) => {
+                    const purpose = event.target.value.trim();
+                    if (purpose !== section.purpose) void run({ operation: "update_section", sectionId: section.id, purpose });
+                  }}
+                />
+                <label className={styles.takeawayRow}>
+                  <span>남길 것</span>
+                  <input
+                    defaultValue={section.takeaway}
+                    placeholder="읽고 나면 남는 한 줄"
+                    maxLength={500}
+                    onBlur={(event) => {
+                      const takeaway = event.target.value.trim();
+                      if (takeaway !== section.takeaway) void run({ operation: "update_section", sectionId: section.id, takeaway });
+                    }}
+                  />
+                </label>
+
+                <ul className={styles.items}>
+                  {section.items.map((item, itemIndex) => (
+                    <li
+                      key={item.id}
+                      className={styles.item}
+                      data-selected={item.id === selectedId ? "1" : undefined}
+                      onFocusCapture={() => setSelectedId(item.id)}
+                      onClick={() => setSelectedId(item.id)}
+                    >
+                      <span className={styles.itemMark} aria-hidden="true" />
+                      <div className={styles.itemBody}>
+                        <textarea
+                          className={styles.itemText}
+                          defaultValue={item.text}
+                          rows={1}
+                          maxLength={2_000}
+                          placeholder="여기서 무엇을 말할지"
+                          onInput={(event) => {
+                            const area = event.currentTarget;
+                            area.style.height = "auto";
+                            area.style.height = `${area.scrollHeight}px`;
+                          }}
+                          onBlur={(event) => {
+                            const text = event.target.value.trim();
+                            if (text !== item.text) void run({ operation: "update_item", itemId: item.id, text });
+                          }}
+                        />
+                        <SourceChips
+                          item={item}
+                          recordById={recordById}
+                          pending={pending}
+                          onUnbind={(sourceId) => run({ operation: "unbind_source", itemId: item.id, sourceId })}
+                        />
+                      </div>
+                      <span className={styles.itemTools}>
+                        <button type="button" onClick={() => moveItem(sectionIndex, itemIndex, -1)} disabled={pending} aria-label="위로">
+                          <Icon name="arrow-up" size={11} />
+                        </button>
+                        <button type="button" onClick={() => moveItem(sectionIndex, itemIndex, 1)} disabled={pending} aria-label="아래로">
+                          <Icon name="arrow-down" size={11} />
+                        </button>
+                        <button type="button" onClick={() => run({ operation: "duplicate_item", itemId: item.id })} disabled={pending} aria-label="복제">
+                          <Icon name="copy" size={11} />
+                        </button>
+                        <button type="button" onClick={() => run({ operation: "delete_item", itemId: item.id })} disabled={pending} aria-label="지우기">
+                          <Icon name="trash" size={11} />
+                        </button>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
                 <button
                   type="button"
-                  onClick={() => run({ operation: "add_section", title: "", purpose: "" })}
+                  className={styles.addItem}
+                  onClick={() => run({ operation: "add_item", sectionId: section.id })}
                   disabled={pending}
                 >
-                  <Icon name="plus" size={13} /> 첫 띠 두기
+                  <Icon name="plus" size={12} /> 내용 추가
                 </button>
-              </div>
-            ) : (
-              blueprint.sections.map((section, sectionIndex) => (
-                <section key={section.id} id={`band-${section.id}`} className={styles.band}>
-                  <div className={styles.bandHead}>
-                    <span className={styles.bandNo}>{no(section.order)}</span>
-                    <input
-                      className={styles.bandTitle}
-                      defaultValue={section.title}
-                      placeholder="띠 이름"
-                      maxLength={300}
-                      onBlur={(event) => {
-                        const title = event.target.value.trim();
-                        if (title !== section.title) {
-                          void run({ operation: "update_section", sectionId: section.id, title });
-                        }
-                      }}
-                    />
-                    <input
-                      className={styles.bandPurpose}
-                      defaultValue={section.purpose}
-                      placeholder="여기서 읽는 사람이 무엇을 알게 되는지"
-                      maxLength={1_000}
-                      onBlur={(event) => {
-                        const purpose = event.target.value.trim();
-                        if (purpose !== section.purpose) {
-                          void run({ operation: "update_section", sectionId: section.id, purpose });
-                        }
-                      }}
-                    />
-                    <span className={styles.bandTools}>
-                      <button type="button" onClick={() => moveSection(sectionIndex, -1)} disabled={pending || sectionIndex === 0} aria-label="띠 위로">
-                        <Icon name="arrow-up" size={12} />
-                      </button>
-                      <button type="button" onClick={() => moveSection(sectionIndex, 1)} disabled={pending || sectionIndex === blueprint.sections.length - 1} aria-label="띠 아래로">
-                        <Icon name="arrow-down" size={12} />
-                      </button>
-                      <button type="button" onClick={() => run({ operation: "delete_section", sectionId: section.id })} disabled={pending} aria-label="띠 지우기">
-                        <Icon name="trash" size={12} />
-                      </button>
-                    </span>
-                  </div>
+              </section>
+            ))}
 
-                  <div className={styles.grid}>
-                    {section.elements.map((element, elementIndex) => (
-                      <div
-                        key={element.id}
-                        id={`element-${element.id}`}
-                        className={styles.block}
-                        data-width={element.width}
-                        data-emphasis={element.emphasis}
-                        data-selected={element.id === selectedId ? "1" : undefined}
-                      >
-                        <button
-                          type="button"
-                          className={styles.blockHit}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setSelectedId(element.id);
-                            setDrawer(null);
-                          }}
-                          aria-label={`${KIND_LABEL[element.kind]} · ${variantLabel(element)}`}
-                        >
-                          <ElementSketch element={element} />
-                        </button>
-                        <span className={styles.blockTag}>
-                          <Icon name={KIND_ICON[element.kind]} size={11} />
-                          {KIND_LABEL[element.kind]} · {variantLabel(element)}
-                          {element.sourceBindings.length ? (
-                            <i><Icon name="link-simple" size={10} /> {element.sourceBindings.length}</i>
-                          ) : null}
-                        </span>
-                        <span className={styles.blockTools}>
-                          <button type="button" onClick={() => moveElement(sectionIndex, elementIndex, -1)} disabled={pending} aria-label="앞으로">
-                            <Icon name="arrow-up" size={11} />
-                          </button>
-                          <button type="button" onClick={() => moveElement(sectionIndex, elementIndex, 1)} disabled={pending} aria-label="뒤로">
-                            <Icon name="arrow-down" size={11} />
-                          </button>
-                          <button type="button" onClick={() => run({ operation: "duplicate_element", elementId: element.id })} disabled={pending} aria-label="복제">
-                            <Icon name="copy" size={11} />
-                          </button>
-                          <button type="button" onClick={() => run({ operation: "delete_element", elementId: element.id })} disabled={pending} aria-label="지우기">
-                            <Icon name="trash" size={11} />
-                          </button>
-                        </span>
-                      </div>
-                    ))}
-
-                    <div className={styles.slot}>
-                      <button
-                        type="button"
-                        className={styles.slotButton}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setPaletteFor(paletteFor === section.id ? null : section.id);
-                        }}
-                        aria-expanded={paletteFor === section.id}
-                      >
-                        <Icon name="plus" size={13} /> 요소
-                      </button>
-                      {paletteFor === section.id ? (
-                        <div className={styles.palette} onClick={(event) => event.stopPropagation()}>
-                          {KIND_ORDER.map((kind) => (
-                            <button
-                              key={kind}
-                              type="button"
-                              onClick={async () => {
-                                setPaletteFor(null);
-                                await run({ operation: "add_element", sectionId: section.id, kind });
-                              }}
-                              disabled={pending}
-                            >
-                              <Icon name={KIND_ICON[kind]} size={14} />
-                              {KIND_LABEL[kind]}
-                            </button>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                </section>
-              ))
-            )}
-
-            {blueprint.sections.length > 0 ? (
-              <button
-                type="button"
-                className={styles.addBand}
-                onClick={() => run({ operation: "add_section", title: "", purpose: "" })}
-                disabled={pending}
-              >
-                <Icon name="plus" size={13} /> 띠 추가
-              </button>
-            ) : null}
+            <button
+              type="button"
+              className={styles.addSection}
+              onClick={() => run({ operation: "add_section", title: "", purpose: "" })}
+              disabled={pending}
+            >
+              <Icon name="plus" size={13} /> 섹션 추가
+            </button>
           </div>
         </main>
 
-        {/* ── 오른쪽 · 요소 설정 ───────────────────────────── */}
-        <aside className={styles.inspector} data-open={drawer === "inspector" ? "1" : undefined}>
-          {selected ? (
-            <>
-              <div className={styles.railHead}>
-                <h2>
-                  <Icon name={KIND_ICON[selected.element.kind]} size={13} /> {KIND_LABEL[selected.element.kind]}
-                </h2>
-                <span>{no(selected.section.order)}</span>
-              </div>
-
-              <div className={styles.inspectorBody}>
-                <div className={styles.group}>
-                  <span className={styles.groupLabel}>표시 방식</span>
-                  <div className={styles.variantGrid}>
-                    {presentationVariantsFor(selected.element.kind).map((variant) => (
-                      <button
-                        key={variant.id}
-                        type="button"
-                        data-active={variant.id === selected.element.presentationVariant ? "1" : undefined}
-                        onClick={() => update({ presentationVariant: variant.id })}
-                        disabled={pending}
-                      >
-                        {variant.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className={styles.group}>
-                  <span className={styles.groupLabel}>이 자리에서 무엇을 말하나</span>
-                  <textarea
-                    key={`intent-${selected.element.id}`}
-                    className={styles.quietInput}
-                    defaultValue={selected.element.intent}
-                    rows={3}
-                    maxLength={1_000}
-                    placeholder="적으면 지면의 그 자리에 그대로 나타납니다."
-                    onBlur={(event) => {
-                      const intent = event.target.value.trim();
-                      if (intent !== selected.element.intent) update({ intent });
-                    }}
-                  />
-                </div>
-
-                <div className={styles.group}>
-                  <span className={styles.groupLabel}>핵심 메시지</span>
-                  <input
-                    key={`takeaway-${selected.element.id}`}
-                    className={styles.quietInput}
-                    defaultValue={selected.element.takeaway}
-                    maxLength={500}
-                    placeholder="읽고 나면 남는 한 줄"
-                    onBlur={(event) => {
-                      const takeaway = event.target.value.trim();
-                      if (takeaway !== selected.element.takeaway) update({ takeaway });
-                    }}
-                  />
-                </div>
-
-                <div className={styles.group}>
-                  <span className={styles.groupLabel}>강조</span>
-                  <div className={styles.segmented}>
-                    {EMPHASIS.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        data-active={option.value === selected.element.emphasis ? "1" : undefined}
-                        onClick={() => update({ emphasis: option.value })}
-                        disabled={pending}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className={styles.group}>
-                  <span className={styles.groupLabel}>폭</span>
-                  <div className={styles.segmented}>
-                    {WIDTH.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        data-active={option.value === selected.element.width ? "1" : undefined}
-                        onClick={() => update({ width: option.value })}
-                        disabled={pending}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className={styles.group}>
-                  <span className={styles.groupLabel}>
-                    근거
-                    <i>{selected.element.sourceBindings.length}건</i>
-                  </span>
-                  {selected.element.sourceBindings.length === 0 ? (
-                    <p className={styles.railEmpty}>
-                      왼쪽에서 기록을 눌러 연결합니다. 없어도 의도만으로 만들 수 있습니다.
-                    </p>
-                  ) : (
-                    <ul className={styles.bindings}>
-                      {selected.element.sourceBindings.map((binding) => (
-                        <li key={binding.sourceId}>
-                          <b data-primary={binding.role === "primary" ? "1" : undefined}>
-                            {binding.role === "primary" ? "중심" : "보조"}
-                          </b>
-                          <span>{recordById.get(binding.sourceId)?.title ?? "이 제작 밖의 근거"}</span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              run({
-                                operation: "unbind_source",
-                                elementId: selected.element.id,
-                                sourceId: binding.sourceId,
-                              })
-                            }
-                            disabled={pending}
-                            aria-label="연결 끊기"
-                          >
-                            <Icon name="x" size={11} />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-
-                <div className={styles.groupRow}>
-                  <label className={styles.field}>
-                    <span>종류 바꾸기</span>
-                    <select
-                      value={selected.element.kind}
-                      onChange={(event) => update({ kind: event.target.value as BlueprintElementKind })}
-                    >
-                      {KIND_ORDER.map((kind) => (
-                        <option key={kind} value={kind}>{KIND_LABEL[kind]}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className={styles.field}>
-                    <span>글자 수 제안</span>
-                    <input
-                      key={`length-${selected.element.id}`}
-                      type="number"
-                      min={0}
-                      max={4_000}
-                      defaultValue={selected.element.targetLength}
-                      onBlur={(event) => {
-                        const targetLength = Number(event.target.value);
-                        if (Number.isInteger(targetLength) && targetLength !== selected.element.targetLength) {
-                          update({ targetLength });
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
-
-                <div className={styles.group}>
-                  <span className={styles.groupLabel}>메모</span>
-                  <textarea
-                    key={`note-${selected.element.id}`}
-                    className={styles.quietInput}
-                    defaultValue={selected.element.note}
-                    rows={2}
-                    maxLength={1_000}
-                    placeholder="나만 보는 메모"
-                    onBlur={(event) => {
-                      const note = event.target.value.trim();
-                      if (note !== selected.element.note) update({ note });
-                    }}
-                  />
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className={styles.inspectorEmpty}>
-              <Icon name="cursor-click" size={22} color="var(--ex-fg-faint)" />
-              <p>지면에서 요소를 고르면 표시 방식과 근거를 여기서 정합니다.</p>
-            </div>
-          )}
-        </aside>
-
-        {drawer ? <button type="button" className={styles.scrim} onClick={() => setDrawer(null)} aria-label="닫기" /> : null}
+        {railOpen ? <button type="button" className={styles.scrim} onClick={() => setRailOpen(false)} aria-label="닫기" /> : null}
       </div>
 
       {pickerOpen ? (
         <JobPostingPicker
-          current={blueprint.jobPosting}
+          current={recipe.jobPosting}
           onClose={() => setPickerOpen(false)}
-          onPick={(jobPostingId) => {
-            setPickerOpen(false);
-            saveIntent({ jobPostingId });
-          }}
+          onPick={(jobPostingId) => { setPickerOpen(false); saveIntent({ jobPostingId }); }}
         />
       ) : null}
     </div>
+  );
+}
+
+/** 이 내용이 딛는 근거. 중심 하나와 보조들. */
+function SourceChips({
+  item,
+  recordById,
+  pending,
+  onUnbind,
+}: {
+  item: Item;
+  recordById: Map<string, RecordCard>;
+  pending: boolean;
+  onUnbind: (sourceId: string) => void;
+}) {
+  if (item.sourceBindings.length === 0) return null;
+  return (
+    <span className={styles.chips}>
+      {item.sourceBindings.map((binding) => (
+        <span key={binding.sourceId} className={styles.sourceChip} data-primary={binding.role === "primary" ? "1" : undefined}>
+          {binding.sourceType === "record"
+            ? recordById.get(binding.sourceId)?.title ?? "지난 기록"
+            : SOURCE_LABEL[binding.sourceType]}
+          <button type="button" onClick={() => onUnbind(binding.sourceId)} disabled={pending} aria-label="근거 떼기">
+            <Icon name="x" size={9} />
+          </button>
+        </span>
+      ))}
+    </span>
   );
 }

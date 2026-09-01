@@ -1,11 +1,11 @@
 "use client";
 
-import type { BlueprintJobPosting } from "@expresso/contracts";
+import type { RecipeV2JobPosting } from "@expresso/contracts";
 import { useActionState, useEffect } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
-import { submitPostingAction, type PostingSubmitResult } from "./blueprint-actions";
+import { submitPostingAction, type PostingSubmitResult } from "./recipe-actions";
 import styles from "./JobPostingPicker.module.css";
 
 /**
@@ -20,7 +20,7 @@ export function JobPostingPicker({
   onClose,
   onPick,
 }: {
-  current: BlueprintJobPosting | null;
+  current: RecipeV2JobPosting | null;
   onClose: () => void;
   onPick: (jobPostingId: string) => void;
 }) {

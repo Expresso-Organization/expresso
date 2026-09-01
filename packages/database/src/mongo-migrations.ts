@@ -5,7 +5,7 @@ import { initialMigrationSteps } from "./mongodb-migrations/0001/migration.js";
 import { generationLedgerConstraintSteps } from "./mongodb-migrations/0002/migration.js";
 import { analyticsAndPreferenceSteps } from "./mongodb-migrations/0003/migration.js";
 import { jobImportMetadataSteps } from "./mongodb-migrations/0004/migration.js";
-import { blueprintElementSteps } from "./mongodb-migrations/0006/migration.js";
+import { recipeV2ItemSteps } from "./mongodb-migrations/0006/migration.js";
 
 export interface MongoMigrationStep {
   id: string;
@@ -40,6 +40,6 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
     { version: "0003", name: "analytics_rate_and_notification_preferences", checksum: thirdHash, steps: await analyticsAndPreferenceSteps() },
     { version: "0004", name: "job_import_metadata", checksum: fourthHash, steps: await jobImportMetadataSteps() },
-    { version: "0006", name: "blueprint_elements", checksum: sixthHash, steps: await blueprintElementSteps() },
+    { version: "0006", name: "recipe_v2_items", checksum: sixthHash, steps: await recipeV2ItemSteps() },
   ];
 }

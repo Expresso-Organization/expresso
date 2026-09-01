@@ -43,7 +43,6 @@ export interface MongoCollections {
   recipeItems: Collection<Docs.RecipeItemDoc>;
   recipeElements: Collection<Docs.RecipeElementDoc>;
   recipeElementSources: Collection<Docs.RecipeElementSourceDoc>;
-  recipeElementMedia: Collection<Docs.RecipeElementMediaDoc>;
   recipeEvidencePaths: Collection<Docs.RecipeEvidencePathDoc>;
   generationSentenceEvidence: Collection<Docs.GenerationSentenceEvidenceDoc>;
   usageCounters: Collection<Docs.UsageCounterDoc>;
@@ -127,7 +126,6 @@ export function mongoCollections(db: Db): MongoCollections {
     recipeItems: db.collection<Docs.RecipeItemDoc>("recipe_items"),
     recipeElements: db.collection<Docs.RecipeElementDoc>("recipe_elements"),
     recipeElementSources: db.collection<Docs.RecipeElementSourceDoc>("recipe_element_sources"),
-    recipeElementMedia: db.collection<Docs.RecipeElementMediaDoc>("recipe_element_media"),
     recipeEvidencePaths: db.collection<Docs.RecipeEvidencePathDoc>("recipe_evidence_paths"),
     generationSentenceEvidence: db.collection<Docs.GenerationSentenceEvidenceDoc>("generation_sentence_evidence"),
     usageCounters: db.collection<Docs.UsageCounterDoc>("usage_counters"),

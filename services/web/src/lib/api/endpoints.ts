@@ -1,9 +1,9 @@
 import {
-  BlueprintEditResultSchema,
-  BlueprintReorderSchema,
+  RecipeV2EditResultSchema,
+  RecipeV2ReorderSchema,
   RecipeV2ResponseSchema,
-  type BlueprintEdit,
-  type BlueprintReorder,
+  type RecipeV2Edit,
+  type RecipeV2Reorder,
   AnalyticsAggregationResponseSchema,
   MediaAssetResponseSchema,
   GeneratedPageSchema,
@@ -728,39 +728,39 @@ export const recipes = {
 };
 
 /**
- * 02 레시피 — Recipe v2 블루프린트.
+ * 02 레시피 — Recipe v2.
  *
  * v1 레시피(`recipes`)와 주소가 갈린다. `/v1/recipes/:id` 는 v1 이 이미 쓰고
- * 있어 v2 는 `/v1/blueprints/:id` 로 선다.
+ * 있어 v2 는 `/v1/recipe-v2/:id` 로 선다.
  */
-export const blueprints = {
-  /** 02 화면이 열릴 때. 이 제작의 블루프린트가 없으면 만들어 돌려준다. */
+export const recipeV2 = {
+  /** 02 화면이 열릴 때. 없으면 만들고, AI 초안이 있으면 데려와 돌려준다. */
   open: (accessToken: string, brewId: string) =>
-    request(`${API_PREFIX}/brews/${brewId}/blueprint`, RecipeV2ResponseSchema, {
+    request(`${API_PREFIX}/brews/${brewId}/recipe-v2`, RecipeV2ResponseSchema, {
       accessToken,
       method: "POST",
       cache: "no-store",
     }),
 
-  get: (accessToken: string, blueprintId: string) =>
-    request(`${API_PREFIX}/blueprints/${blueprintId}`, RecipeV2ResponseSchema, {
+  get: (accessToken: string, recipeId: string) =>
+    request(`${API_PREFIX}/recipe-v2/${recipeId}`, RecipeV2ResponseSchema, {
       accessToken,
       cache: "no-store",
     }),
 
-  edit: (accessToken: string, blueprintId: string, edit: BlueprintEdit) =>
+  edit: (accessToken: string, recipeId: string, edit: RecipeV2Edit) =>
     request(
-      `${API_PREFIX}/blueprints/${blueprintId}`,
-      z.strictObject({ data: BlueprintEditResultSchema }),
+      `${API_PREFIX}/recipe-v2/${recipeId}`,
+      z.strictObject({ data: RecipeV2EditResultSchema }),
       { accessToken, method: "PATCH", body: edit },
     ),
 
   /** drop 한 번에 저장 한 번. 보낸 배열이 곧 최종 순서다. */
-  reorder: (accessToken: string, blueprintId: string, input: BlueprintReorder) =>
-    request(`${API_PREFIX}/blueprints/${blueprintId}/reorder`, RecipeV2ResponseSchema, {
+  reorder: (accessToken: string, recipeId: string, input: RecipeV2Reorder) =>
+    request(`${API_PREFIX}/recipe-v2/${recipeId}/reorder`, RecipeV2ResponseSchema, {
       accessToken,
       method: "POST",
-      body: BlueprintReorderSchema.parse(input),
+      body: RecipeV2ReorderSchema.parse(input),
     }),
 };
 
