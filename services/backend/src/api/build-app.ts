@@ -22,12 +22,13 @@ import { type MaterialsApi } from "../modules/materials/index.js";
 import { registerMaterialsRoutes } from "../modules/materials/routes.js";
 import { type InterviewApi } from "../modules/interview/index.js";
 import { registerInterviewRoutes } from "../modules/interview/routes.js";
-import { type RecipeApi } from "../modules/recipe/index.js";
+import { type BlueprintService, type RecipeApi } from "../modules/recipe/index.js";
 import { type CompanyResearchApi } from "../modules/company-research/index.js";
 import { registerCompanyResearchRoutes } from "../modules/company-research/routes.js";
 import { type BrewJobApi } from "../modules/brew-jobs/index.js";
 import { registerBrewJobRoutes } from "../modules/brew-jobs/routes.js";
 import { registerRecipeRoutes } from "../modules/recipe/routes.js";
+import { registerBlueprintRoutes } from "../modules/recipe/blueprint-routes.js";
 import type { DesignSystemService } from "../modules/design-systems/service.js";
 import { registerDesignSystemRoutes } from "../modules/design-systems/routes.js";
 import { type TemplateApi } from "../modules/templates/index.js";
@@ -78,6 +79,8 @@ export interface BuildApiOptions {
   materialsService?: MaterialsApi;
   interviewService?: InterviewApi;
   recipeService?: RecipeApi;
+  /** 02 레시피 — Recipe v2 블루프린트. v1 레시피 서비스와 나란히 선다. */
+  blueprintService?: BlueprintService;
   companyResearchService?: CompanyResearchApi;
   brewJobService?: BrewJobApi;
   designSystemService?: DesignSystemService;
@@ -186,6 +189,12 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
         registerRecipeRoutes(app, {
           recipeService: options.recipeService,
           brewJobService: options.brewJobService,
+          authenticateRequest: createAuthenticateRequest(options.identityService),
+        });
+      }
+      if (options.blueprintService) {
+        registerBlueprintRoutes(app, {
+          service: options.blueprintService,
           authenticateRequest: createAuthenticateRequest(options.identityService),
         });
       }

@@ -31,6 +31,61 @@ export interface RecipeDoc {
   promptVersion: number;
   portfolioPlan?: JsonObject | null;
   planningManifest?: JsonObject | null;
+  /** v2 블루프린트로 저장된 레시피만 2다. 없으면 v1 이다. */
+  schemaVersion?: number;
+  /** 01에서 고른 디자인 판. v1 레시피에는 없다. */
+  designSystemRevisionId?: string | null;
+  /** §7.4 제작 의도. 고른 채용 공고도 여기 들어간다. */
+  intent?: JsonObject | null;
+  title?: string | null;
+}
+
+/**
+ * Recipe v2 블루프린트의 요소.
+ *
+ * v1 의 `recipe_items` 와 나란히 산다 — v1 은 「무슨 말을 할지」의 목록이고,
+ * 요소는 「무엇을 어떤 모양으로 보여줄지」다. v1 레시피를 읽을 때는 어댑터가
+ * 항목을 요소 모양으로 바꾼다.
+ */
+export interface RecipeElementDoc {
+  _id: string;
+  userId: string;
+  recipeId: string;
+  recipeSectionId: string;
+  orderNo: number;
+  kind: string;
+  intent: string;
+  takeaway: string;
+  presentationVariant: string;
+  emphasis: "primary" | "secondary" | "supporting";
+  width: "narrow" | "content" | "wide" | "full";
+  targetLength: number;
+  settings: JsonObject;
+  note: string;
+  updatedAt: Date;
+}
+
+export interface RecipeElementSourceDoc {
+  _id: string;
+  userId: string;
+  recipeId: string;
+  recipeElementId: string;
+  sourceType: "record" | "answer" | "requirement";
+  sourceId: string;
+  /** 중심 근거는 요소마다 하나다. 보조는 수를 제한하지 않는다. */
+  role: "primary" | "supporting";
+  orderNo: number;
+  createdAt: Date;
+}
+
+export interface RecipeElementMediaDoc {
+  _id: string;
+  userId: string;
+  recipeId: string;
+  recipeElementId: string;
+  mediaId: string;
+  orderNo: number;
+  createdAt: Date;
 }
 
 export interface RecipeSectionDoc {
@@ -41,6 +96,8 @@ export interface RecipeSectionDoc {
   title: string;
   purpose: string;
   targetLength: number;
+  /** v2 섹션이 제 자리에 두는 핵심 메시지. v1 은 `context.takeaway` 에 있다. */
+  takeaway?: string;
   context: JsonObject;
   locked: boolean;
   editedBy: "ai" | "user";

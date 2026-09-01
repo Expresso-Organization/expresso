@@ -11,6 +11,7 @@ export * from "./job-analysis.js";
 export * from "./materials.js";
 export * from "./interview.js";
 export * from "./recipe.js";
+export * from "./recipe-v2.js";
 export * from "./portfolio-plan.js";
 export * from "./portfolio-styles.js";
 export * from "./templates.js";
