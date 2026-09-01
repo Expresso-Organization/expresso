@@ -26,6 +26,7 @@ __pycache__/
 # 독립 실험 저장소 — 자체 Git 이력으로 관리한다.
 sites/portfolio-qd-demo/
 .archive/
+.worktree/
 .worktrees/
 
 # 서버에만 두는 인프라 override — 포트 바인딩과 비밀번호가 들어간다
