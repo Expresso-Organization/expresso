@@ -11,7 +11,7 @@
     "test": "pnpm --recursive --if-present test",
     "build:portfolio-css": "node scripts/build-portfolio-css.mjs",
     "check:portfolio-css": "node scripts/build-portfolio-css.mjs --check",
-    "ml:data:test": "node --test scripts/ml-data/*.test.mjs && uv run --with duckdb python scripts/ml-data/profile_lib_test.py && uv run python scripts/ml-data/synthetic_profile_test.py && uv run python scripts/ml-data/retrieval_baselines_test.py && uv run python scripts/ml-data/ranking_evaluation_test.py",
+    "ml:data:test": "node --test scripts/ml-data/*.test.mjs && uv run --with duckdb python scripts/ml-data/profile_lib_test.py && uv run python scripts/ml-data/synthetic_profile_test.py && uv run python scripts/ml-data/synthetic_profile_batch_test.py && uv run python scripts/ml-data/retrieval_baselines_test.py && uv run python scripts/ml-data/ranking_evaluation_test.py",
     "ml:data:collect": "node scripts/ml-data/collect.mjs",
     "ml:data:profile": "uv run --with duckdb python scripts/ml-data/profile.py",
     "ml:eval": "uv run python scripts/ml-data/evaluate_retrieval.py",
