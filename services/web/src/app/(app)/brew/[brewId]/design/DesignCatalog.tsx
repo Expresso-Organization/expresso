@@ -31,9 +31,10 @@ import styles from "./DesignCatalog.module.css";
 /**
  * 낱말 경계가 없는 이름을 접는 자리.
  *
- * **합성어의 경계에서만 접는다** — Mono|chrome, Bau|haus, Clay|morphism 처럼
- * 두 조각이 각자 뜻을 갖는 자리다. Lux|ury, Term|inal 처럼 한 낱말을 가운데서
- * 자르면 오타로 읽힌다. 경계가 없는 이름은 표에 넣지 않고 한 줄로 둔다 —
+ * **두 조각이 각자 뜻을 갖는 자리에서만 접는다** — Mono|chrome, Bau|haus,
+ * Clay|morphism 이 그렇다. Lux|ury, Term|inal 처럼 한 낱말을 가운데서 자르면
+ * 오타로 읽히고, Neu|morphism 처럼 앞 조각이 홀로 서지 못하는 접두사면 잘린
+ * 것처럼 보인다. 접을 자리가 없는 이름은 표에 넣지 않고 한 줄로 둔다 —
  * 글자 크기가 줄 길이에 맞춰 줄어든다.
  */
 const TITLE_BREAKS = new Map<string, number[]>([
@@ -45,7 +46,6 @@ const TITLE_BREAKS = new Map<string, number[]>([
   ["cyberpunk", [5]],     // Cyber + punk
   ["claymorphism", [4]],  // Clay + morphism
   ["vaporwave", [5]],     // Vapor + wave
-  ["neumorphism", [3]],   // Neu + morphism
   ["web3", [3]],          // Web + 3
 ]);
 
