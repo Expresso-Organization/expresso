@@ -53,7 +53,7 @@
 .quickFilters button:hover { background:var(--ex-bg-hover); color:var(--ex-fg); }
 .quickFilters button[aria-pressed="true"] { border-color:var(--ex-border); background:var(--ex-bg-muted); color:var(--ex-fg-strong); }
 .quickFilters small { min-width:18px; border-radius:999px; padding:1px 5px; background:var(--ex-bg-tint); color:var(--ex-fg-subtle); font-family:var(--ex-font-mono); font-size:var(--ex-text-3xs); text-align:center; }
-.bulk { position:sticky; top:53px; z-index:4; padding:8px 16px; border-bottom:1px solid var(--ex-border-soft); background:var(--ex-accent-soft); }
+.bulk { position:sticky; top:53px; z-index:4; padding:8px 16px; border-top:1px solid var(--ex-border-soft); border-bottom:1px solid var(--ex-border-soft); background:var(--ex-bg-muted); color:var(--ex-fg-muted); }
 .message { margin:8px 16px; color:var(--ex-fg-muted); font-size:var(--ex-text-sm); }
 .emptyFilter { display:grid; min-height:260px; place-items:center; align-content:center; gap:12px; color:var(--ex-fg-muted); }
 .emptyFilter strong { color:var(--ex-fg-body); font-size:var(--ex-text-sm); }
