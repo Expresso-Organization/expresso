@@ -111,8 +111,8 @@ function unwrapStoredValue(value: Document | string): Document {
 
 function fieldExpression(definition: CareerPropertyDefinitionV2): Document | string {
   if (definition.type === "title") return "$title";
-  if (definition.type === "created_time") return "$createdAt";
-  if (definition.type === "updated_time") return "$updatedAt";
+  if (definition.type === "created_time" && definition.system) return { $ifNull: ["$createdAt", "$updatedAt"] };
+  if (definition.type === "updated_time" && definition.system) return "$updatedAt";
   const raw = definition.type === "formula" || definition.type === "rollup"
     ? { $getField: { input: { $ifNull: ["$computedProperties", {}] }, field: definition.key } }
     : { $getField: { input: { $ifNull: ["$properties", {}] }, field: definition.key } };
@@ -248,7 +248,8 @@ export class CareerViewQuery {
 
     const projectionKeys = [...new Set(referencedPropertyIds(view)
       .map((id) => definitions.get(id)!)
-      .filter((definition) => !["title", "created_time", "updated_time", "formula", "rollup"].includes(definition.type))
+      .filter((definition) => !["title", "formula", "rollup"].includes(definition.type)
+        && !(["created_time", "updated_time"].includes(definition.type) && definition.system))
       .map((definition) => definition.key))];
     const projection: Document = {
       _id: 1, title: 1, status: 1, origin: 1, categoryId: 1, bodyMd: 1, version: 1, updatedAt: 1,

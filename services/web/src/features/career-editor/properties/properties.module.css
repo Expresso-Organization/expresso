@@ -46,7 +46,7 @@
 .listHeading button { border: 0; border-radius: 6px; background: transparent; color: var(--ex-fg-body); font: inherit; cursor: pointer; }
 .listHeading button:hover { background: var(--ex-bg-hover); }
 .propertyRow { display: grid; grid-template-columns: minmax(88px, 0.35fr) minmax(0, 1fr); align-items: start; gap: 12px; min-height: 34px; }
-.propertyRow > label { display:flex; min-width:0; align-items:center; gap:6px; padding-top:8px; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); white-space:nowrap; }
+.propertyRow > label { display:flex; min-width:0; min-height:32px; align-items:center; gap:6px; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); white-space:nowrap; }
 .propertyRow > label > i { flex:0 0 auto; }
 .propertyName { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .fieldEditor, .assetEditor, .dateFields { display: grid; gap: 4px; min-width: 0; }
@@ -55,6 +55,7 @@
 .input:focus { border-color: var(--ex-accent); outline: 2px solid var(--ex-focus-ring); outline-offset: 1px; background: var(--ex-bg); }
 .issue { color: var(--ex-status-danger-text); font-size: var(--ex-text-xs); }
 .helpText, .emptyValue { color: var(--ex-fg-muted); font-size: var(--ex-text-xs); }
+.emptyValue { display:flex; min-height:32px; align-items:center; padding:0 8px; }
 .checkboxLabel, .optionCheck { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; color: var(--ex-fg-body); font-size: var(--ex-text-sm); }
 .multiSelect { display: flex; flex-wrap: wrap; gap: 8px 12px; }
 .dateFields { grid-template-columns: 1fr 1fr; }

@@ -12,10 +12,12 @@ const ids = {
   tag: "00000000-0000-4000-8000-000000000004",
   date: "00000000-0000-4000-8000-000000000005",
   deleted: "00000000-0000-4000-8000-000000000006",
+  customTime: "00000000-0000-4000-8000-000000000007",
+  systemTime: "00000000-0000-4000-8000-000000000008",
 };
 
-function definition(id: string, key: string, type: CareerPropertyDefinitionV2["type"], order: number, deletedAt: string | null = null): CareerPropertyDefinitionV2 {
-  return { id, key, name: key, type, required: false, system: false, config: {}, order, version: 1, deletedAt };
+function definition(id: string, key: string, type: CareerPropertyDefinitionV2["type"], order: number, deletedAt: string | null = null, system = false): CareerPropertyDefinitionV2 {
+  return { id, key, name: key, type, required: false, system, config: {}, order, version: 1, deletedAt };
 }
 
 const category: CareerCategory = {
@@ -25,6 +27,8 @@ const category: CareerCategory = {
     definition(ids.title, "title", "title", 0), definition(ids.score, "score", "number", 1),
     definition(ids.tag, "tag", "multi_select", 2), definition(ids.date, "date", "date", 3),
     definition(ids.deleted, "removed", "text", 4, "2026-09-01T00:00:00.000Z"),
+    definition(ids.customTime, "custom_time", "created_time", 5),
+    definition(ids.systemTime, "system_time", "updated_time", 6, null, true),
   ], schemaVersion: 1, sortOrder: 0, recordCount: 0, version: 1,
 };
 
@@ -74,6 +78,15 @@ describe("career saved view pipeline compiler", () => {
       visiblePropertyIds: [ids.score], propertyOrder: [ids.score], groupPropertyId: null,
       gallery: null, board: null, filter: { propertyId: ids.score, operator: "gte", operand: { type: "number", value: 0 } },
     })).projectionKeys).toEqual(["score"]);
+  });
+
+  it("queries user-defined timestamps from properties and system timestamps from record metadata", () => {
+    const custom = new CareerViewQuery().compile(category, view({ sorts: [{ propertyId: ids.customTime, direction: "asc", nulls: "last" }], visiblePropertyIds: [ids.customTime], propertyOrder: [ids.customTime], groupPropertyId: null, gallery: null, board: null }));
+    expect(custom.projectionKeys).toContain("custom_time");
+    expect(JSON.stringify(custom.pipeline)).toContain("custom_time");
+    const system = new CareerViewQuery().compile(category, view({ sorts: [{ propertyId: ids.systemTime, direction: "asc", nulls: "last" }], visiblePropertyIds: [ids.systemTime], propertyOrder: [ids.systemTime], groupPropertyId: null, gallery: null, board: null }));
+    expect(system.projectionKeys).not.toContain("system_time");
+    expect(JSON.stringify(system.pipeline)).toContain("$updatedAt");
   });
 
   it("keeps signed cursor bindings opaque and rejects a tampered cursor", () => {

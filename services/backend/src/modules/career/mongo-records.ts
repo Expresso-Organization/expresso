@@ -10,7 +10,7 @@ export function mapMongoRecord(record: CareerRecordDoc, bodyMd = record.bodyMd) 
     const parsed = CareerPropertyValueV2Schema.safeParse(value);
     return key === "__expressoComputation" || !parsed.success || (parsed.data.type !== "formula" && parsed.data.type !== "rollup") ? [] : [[key, parsed.data]];
   }));
-  return CareerRecordSchema.parse({ id: record._id, categoryId: record.categoryId, title: record.title, status: record.status, origin: record.origin, properties: record.properties, ...(Object.keys(computedProperties).length ? { computedProperties } : {}), bodyMd, version: record.version, updatedAt: record.updatedAt.toISOString() });
+  return CareerRecordSchema.parse({ id: record._id, categoryId: record.categoryId, title: record.title, status: record.status, origin: record.origin, properties: record.properties, ...(Object.keys(computedProperties).length ? { computedProperties } : {}), bodyMd, version: record.version, createdAt: (record.createdAt ?? record.updatedAt).toISOString(), updatedAt: record.updatedAt.toISOString() });
 }
 
 export function careerRequestHash(input: CreateCareerRecord) {

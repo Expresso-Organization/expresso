@@ -38,6 +38,9 @@ describe("career property validation", () => {
     expect(() => validateCareerProperties({}, { rating: { type: "number", value: 4.5 } }, definitions)).not.toThrow();
     expect(() => validateCareerProperties({}, { rating: { type: "text", value: "4.5" } }, definitions)).toThrow(CareerError);
     expect(() => validateCareerProperties({}, { formula: { type: "formula", value: 1, diagnostics: [] } }, [{ ...definitions[0]!, key: "formula", type: "formula" }])).toThrow(CareerError);
+    const timestamp = { ...definitions[0]!, key: "timestamp", type: "created_time" as const };
+    expect(() => validateCareerProperties({}, { timestamp: { type: "created_time", value: "2026-09-01T00:00:00.000Z" } }, [timestamp])).not.toThrow();
+    expect(() => validateCareerProperties({}, { timestamp: { type: "created_time", value: "2026-09-01T00:00:00.000Z" } }, [{ ...timestamp, system: true }])).toThrow(CareerError);
   });
 });
 

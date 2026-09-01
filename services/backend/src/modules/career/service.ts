@@ -125,7 +125,8 @@ export class CareerService implements CareerApi {
         if (existing.createRequestHash !== hash) throw new CareerError(409, "idempotency key was reused with another request");
         return { record: mapMongoRecord(existing), created: false };
       }
-      const record: CareerRecordDoc = { _id: randomUUID(), userId, ...input, status: "draft", origin: "manual", version: 1, updatedAt: new Date(), deletedAt: null, purgeAfter: null, createIdempotencyKey: idempotencyKey, createRequestHash: hash };
+      const now = new Date();
+      const record: CareerRecordDoc = { _id: randomUUID(), userId, ...input, status: "draft", origin: "manual", version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null, createIdempotencyKey: idempotencyKey, createRequestHash: hash };
       await records.insertOne(record, { session: tx.session });
       const definitions = category.propertySchemaV2?.filter((definition) => definition.deletedAt === null) ?? [];
       const changedPropertyIds = definitions.filter((definition) => definition.type === "formula" || definition.type === "rollup" || Object.hasOwn(input.properties, definition.key) || (definition.type === "title" && input.title !== "")).map((definition) => definition.id);

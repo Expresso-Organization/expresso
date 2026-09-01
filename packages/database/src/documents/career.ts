@@ -35,6 +35,7 @@ export interface CareerRecordDoc {
   periodStart?: string | null;
   periodEnd?: string | null;
   version: Contracts.CareerRecord["version"];
+  createdAt?: Date;
   updatedAt: Date;
   deletedAt?: Date | null;
   purgeAfter?: Date | null;

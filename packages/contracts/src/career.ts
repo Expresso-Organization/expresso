@@ -107,6 +107,7 @@ export const CareerRecordSchema = z.strictObject({
   computedProperties: z.record(z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/), CareerPropertyValueV2Schema).optional(),
   bodyMd: z.string().max(200_000),
   version: z.number().int().positive(),
+  createdAt: TimestampSchema.optional(),
   updatedAt: TimestampSchema,
 });
 

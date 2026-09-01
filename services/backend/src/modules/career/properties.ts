@@ -24,7 +24,8 @@ export function validateCareerProperties(
     const parsedV2 = CareerPropertyValueV2Schema.safeParse(value);
     if (parsedV2.success) {
       if (!definitionV2 || parsedV2.data.type !== definitionV2.type) throw new CareerError(400, `invalid value for category property: ${key}`);
-      if (["formula", "rollup", "created_time", "updated_time"].includes(definitionV2.type)) throw new CareerError(400, `computed category property is read-only: ${key}`);
+      const protectedTime = ["created_time", "updated_time"].includes(definitionV2.type) && definitionV2.system;
+      if (["formula", "rollup"].includes(definitionV2.type) || protectedTime) throw new CareerError(400, `computed category property is read-only: ${key}`);
       continue;
     }
 

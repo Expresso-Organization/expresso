@@ -13,11 +13,16 @@ export interface PropertyValueEditorProps {
   disabled?: boolean;
 }
 
-const readOnlyTypes = new Set(["formula", "rollup", "created_time", "updated_time", "relation"]);
+const readOnlyTypes = new Set(["formula", "rollup", "relation"]);
 
 function initialDraft(value: CareerPropertyValueV2 | null): string {
   if (!value) return "";
   if (value.type === "date") return value.value.start;
+  if (value.type === "created_time" || value.type === "updated_time") {
+    const timestamp = new Date(value.value);
+    const local = new Date(timestamp.getTime() - timestamp.getTimezoneOffset() * 60_000);
+    return local.toISOString().slice(0, 16).replace("T", " ");
+  }
   if (Array.isArray(value.value)) return "";
   return String(value.value ?? "");
 }
@@ -40,7 +45,18 @@ export function PropertyValueEditor({ definition, value, onCommit, disabled = fa
     finally { setSaving(false); }
   }
 
-  if (readOnlyTypes.has(definition.type)) return <ReadOnlyValue value={value} />;
+  if (readOnlyTypes.has(definition.type) || ((definition.type === "created_time" || definition.type === "updated_time") && definition.system)) return <ReadOnlyValue value={value} />;
+  if (definition.type === "created_time" || definition.type === "updated_time") {
+    const timestampType = definition.type;
+    const commitTimestamp = (nextDraft: string) => {
+      if (!nextDraft) return void commit(null);
+      if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(nextDraft)) return;
+      const timestamp = new Date(nextDraft.replace(" ", "T"));
+      if (Number.isNaN(timestamp.getTime())) { setIssue("날짜와 시간을 확인해 주세요."); return; }
+      void commit({ type: timestampType, value: timestamp.toISOString() });
+    };
+    return <div className={styles.fieldEditor}><input className={styles.input} aria-label={definition.name} type="text" inputMode="numeric" placeholder="YYYY-MM-DD HH:mm" value={draft} disabled={disabled || saving} onChange={(event) => { const nextDraft = event.target.value; setDraft(nextDraft); setIssue(null); commitTimestamp(nextDraft); }} onBlur={() => { if (draft && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(draft)) setIssue("YYYY-MM-DD HH:mm 형식으로 입력해 주세요."); }} />{saving ? <span className={styles.helpText}>저장 중</span> : null}{issue ? <span className={styles.issue} role="alert">{issue}</span> : null}</div>;
+  }
   if (definition.type === "checkbox") {
     return <label className={styles.checkboxLabel}><input aria-label={definition.name} type="checkbox" checked={value?.type === "checkbox" ? value.value : false} disabled={disabled || saving} onChange={(event) => void commit({ type: "checkbox", value: event.target.checked })} /><span>{value?.type === "checkbox" && value.value ? "예" : "아니요"}</span></label>;
   }
