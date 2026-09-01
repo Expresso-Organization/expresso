@@ -150,7 +150,7 @@ const CATEGORIES: Array<{ key: CatalogCategory; label: string }> = [
 
 const ORIGIN_LABEL: Record<DesignCatalogEntry["originKind"], string> = {
   builtin: "Expresso 기본",
-  reference: "Refero 참고",
+  reference: "유명 웹사이트",
   generated: "내 디자인",
   website: "회사 웹사이트",
 };
@@ -523,13 +523,16 @@ export function DesignCatalog({
                   자신의 CSP 가 script-src 를 해시 하나로 묶는다. 축소 미리보기는
                   여러 장이 동시에 움직이면 산만해 열지 않는다.
                 */}
-                {htmlMode === "preview" ? (
+                {htmlMode === "preview" && designDoc ? (
                   <iframe
+                    key={designDoc.markdownSha256}
                     className={styles.documentFrame}
-                    srcDoc={designDoc?.designHtml ?? ""}
+                    srcDoc={designDoc.designHtml}
                     title={`${selected.name} DESIGN.html`}
                     sandbox="allow-scripts"
                   />
+                ) : htmlMode === "preview" ? (
+                  <p className={styles.documentLoading}>문서를 불러오는 중</p>
                 ) : (
                   <pre className={styles.codeDocument}><code>{designDoc?.designHtml ?? ""}</code></pre>
                 )}

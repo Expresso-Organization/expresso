@@ -36,8 +36,9 @@ pnpm dev:backend                                # http://127.0.0.1:4000
 인프라가 없어도 API 프로세스는 뜨지만 `/health/ready`는 503을 냅니다.
 
 화면을 확인할 때마다 로그인하지 않으려면 `services/web/.env.local`에
-`DEV_LOGIN=1`과 `DEV_LOGIN_EMAIL` · `DEV_LOGIN_PASSWORD`를 적고
-`/api/dev/session?next=<경로>`를 엽니다. 인증을 우회하지 않고 그 계정으로 제품의
+`DEV_LOGIN=1`과 `DEV_LOGIN_EMAIL` · `DEV_LOGIN_PASSWORD`를 적습니다. 그러면
+세션이 없는 요청이 로그인 대신 개발 로그인으로 가고 보려던 자리로 돌아옵니다 —
+주소를 그냥 열면 됩니다. 인증을 우회하지 않고 그 계정으로 제품의
 실제 로그인을 대신 수행합니다. 계정이 없으면 첫 호출에서 한 번 가입합니다.
 셋 중 하나라도 없거나 프로덕션 빌드면 라우트가 404입니다.
 

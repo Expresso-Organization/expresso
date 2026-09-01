@@ -828,9 +828,20 @@
 .documentFrame {
   width: 100%;
   flex: 1;
-  min-height: 0;
+  /* 문서는 수만 픽셀이다. 창이 좁으면 읽을 수 없으니 바닥을 둔다. */
+  min-height: 420px;
   border: 0;
   background: var(--ex-bg);
+}
+
+.documentLoading {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  min-height: 420px;
+  margin: 0;
+  color: var(--ex-text-muted);
+  font-size: var(--ex-text-sm);
 }
 
 .codeDocument,
