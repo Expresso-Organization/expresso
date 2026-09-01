@@ -1,11 +1,12 @@
 "use client";
 
-import type { CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
+import type { CareerCategory, CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
 import type { CSSProperties, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
+import { PropertyHeaderMenu } from "./PropertyHeaderMenu";
 import type { CareerViewRendererProps } from "./view-types";
 import { displayValue, keyboardActivate, propertyKey, propertyName, rawValue } from "./view-types";
 import styles from "./views.module.css";
@@ -44,7 +45,7 @@ function cellValue(record: CareerRecord, key: string | null) {
   return label === "—" ? <span className={styles.emptyCell}>—</span> : <span>{label}</span>;
 }
 
-export function TableView(props: CareerViewRendererProps) {
+export function TableView(props: CareerViewRendererProps & { onCategoryChange(nextCategory: CareerCategory, nextView?: CareerViewConfiguration): void }) {
   const columns = useMemo(() => orderedPropertyIds(props), [props.category, props.view.propertyOrder, props.view.visiblePropertyIds]);
   const titleId = props.category.propertySchemaV2?.find((definition) => definition.key === "title" && definition.deletedAt === null)?.id ?? props.view.visiblePropertyIds.find((id) => propertyKey(props.category, id) === "title") ?? null;
   const [previewWidths, setPreviewWidths] = useState<Record<string, number>>(props.view.columnWidths);
@@ -112,16 +113,12 @@ export function TableView(props: CareerViewRendererProps) {
     commitWidth(propertyId, next);
   }
 
-  function toggleSort(propertyId: string) {
-    const current = props.view.sorts.find((sort) => sort.propertyId === propertyId);
-    props.onViewChange({ ...props.view, sorts: [{ propertyId, direction: current?.direction === "asc" ? "desc" : "asc", nulls: "last" }] });
-  }
-
   const header = (propertyId: string, label: string, fallback: number) => {
     const currentSort = props.view.sorts.find((sort) => sort.propertyId === propertyId);
     const currentWidth = width(propertyId, fallback);
+    const definition = props.category.propertySchemaV2?.find((item) => item.id === propertyId && item.deletedAt === null);
     return <span key={propertyId} className={styles.tableColumnHeader} role="columnheader" aria-sort={currentSort ? (currentSort.direction === "asc" ? "ascending" : "descending") : "none"}>
-      <button type="button" onClick={() => toggleSort(propertyId)}>{label}{currentSort ? <Icon name={currentSort.direction === "asc" ? "sort-ascending" : "sort-descending"} size={12} /> : null}</button>
+      {definition ? <PropertyHeaderMenu category={props.category} definition={definition} view={props.view} sortDirection={currentSort?.direction ?? null} onViewChange={props.onViewChange} onCategoryChange={props.onCategoryChange} /> : <button type="button">{label}<Icon name="caret-down" size={11} /></button>}
       <div className={styles.columnResize} role="separator" aria-label={`${label} 열 너비 조절`} aria-orientation="vertical" aria-valuemin={80} aria-valuemax={720} aria-valuenow={Math.round(currentWidth)} tabIndex={0} onPointerDown={(event) => startResize(event, propertyId, currentWidth)} onKeyDown={(event) => resizeFromKeyboard(event, propertyId, currentWidth)} />
     </span>;
   };

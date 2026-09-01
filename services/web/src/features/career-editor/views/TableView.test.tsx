@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { CareerCategory, CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TableView } from "./TableView";
@@ -25,17 +25,34 @@ const records: CareerRecord[] = [
 ];
 
 describe("TableView", () => {
-  afterEach(cleanup);
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
   it("renders every ordered property with tags, summaries, sorting and accessible resizing", () => {
     const onViewChange = vi.fn();
-    render(<TableView records={records} view={view} category={category} activeId={records[0]!.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={onViewChange} />);
+    render(<TableView records={records} view={view} category={category} activeId={records[0]!.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={onViewChange} onCategoryChange={() => undefined} />);
     expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual(["선택", "제목", "기술", "성과", "역할", "점수"]);
     expect(screen.getByText("React")).toBeTruthy();
     expect(screen.getByText("Go")).toBeTruthy();
     expect(screen.getByText("2개 기록")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "성과" }));
+    expect(screen.getByRole("dialog", { name: "성과 속성 편집" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "오름차순 정렬" }));
     expect(onViewChange).toHaveBeenLastCalledWith(expect.objectContaining({ sorts: [{ propertyId: outcomeId, direction: "asc", nulls: "last" }] }));
     fireEvent.keyDown(screen.getByRole("separator", { name: "기술 열 너비 조절" }), { key: "ArrowRight" });
     expect(onViewChange).toHaveBeenLastCalledWith(expect.objectContaining({ columnWidths: expect.objectContaining({ [technologiesId]: 176 }) }));
+  });
+
+  it("renames a custom property through preview and apply", async () => {
+    const editableCategory = { ...category, isSystem: false };
+    const renamed = { ...editableCategory, version: 2, propertySchemaV2: editableCategory.propertySchemaV2?.map((item) => item.id === roleId ? { ...item, name: "담당 역할", version: 2 } : item) };
+    const onCategoryChange = vi.fn();
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { categoryId, categoryVersion: 1, change: { kind: "rename", propertyId: roleId, name: "담당 역할" }, impact: { affectedRecordCount: 0, convertibleCount: 0, lossyExamples: [], dependentViews: [], dependentFormulas: [], dependentRollups: [] }, previewToken: "x".repeat(40) } }), { status: 200, headers: { "content-type": "application/json" } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: renamed }), { status: 200, headers: { "content-type": "application/json" } })));
+    render(<TableView records={records} view={view} category={editableCategory} activeId={records[0]!.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={() => undefined} onCategoryChange={onCategoryChange} />);
+    fireEvent.click(screen.getByRole("button", { name: "역할" }));
+    const input = screen.getByRole("textbox", { name: "속성 이름" });
+    fireEvent.change(input, { target: { value: "담당 역할" } });
+    fireEvent.blur(input);
+    await waitFor(() => expect(onCategoryChange).toHaveBeenCalledWith(renamed, undefined));
   });
 });

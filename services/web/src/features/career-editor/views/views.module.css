@@ -66,6 +66,34 @@
 .tableColumnHeader { position:relative; display:flex; height:42px; align-items:center; padding:0!important; overflow:visible!important; }
 .tableColumnHeader>button { display:flex; width:100%; height:100%; min-width:0; align-items:center; gap:5px; border:0; background:transparent; padding:8px 18px 8px 12px; color:inherit; font:inherit; text-align:left; cursor:pointer; }
 .tableColumnHeader>button:hover { background:var(--ex-bg-hover); color:var(--ex-fg); }
+.tableColumnHeader>button>span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tableColumnHeader>button>i:last-child { margin-left:auto; flex:0 0 auto; }
+.columnMenu { position:fixed; z-index:130; display:grid; gap:7px; overflow-y:auto; border:1px solid var(--ex-border); border-radius:11px; background:var(--ex-bg); padding:8px; box-shadow:var(--ex-elevation-overlay); }
+.columnMenuNameRow { display:grid; grid-template-columns:34px minmax(0,1fr); align-items:center; gap:6px; }
+.columnMenuNameRow>span { display:grid; width:34px; height:34px; place-items:center; border:1px solid var(--ex-border-soft); border-radius:7px; background:var(--ex-bg-muted); color:var(--ex-fg-muted); }
+.columnMenuNameRow>input { width:100%; height:34px; min-width:0; box-sizing:border-box; border:1px solid var(--ex-border-soft); border-radius:7px; background:var(--ex-bg-tint); padding:6px 9px; color:var(--ex-fg-strong); font:inherit; font-size:var(--ex-text-sm); font-weight:600; }
+.columnMenuNameRow>input:focus { border-color:var(--ex-border-firm); outline:0; box-shadow:var(--ex-focus-ring); }
+.columnMenuNameRow>input:disabled { color:var(--ex-fg-muted); cursor:not-allowed; }
+.columnMenuTypeRow { display:grid; grid-template-columns:20px minmax(52px,auto) minmax(140px,1fr); align-items:center; gap:7px; min-height:38px; padding:2px 4px; color:var(--ex-fg-body); font-size:var(--ex-text-sm); }
+.columnMenuTypeRow>i { color:var(--ex-fg-muted); }
+.columnMenuSection { display:grid; gap:1px; border-top:1px solid var(--ex-border-soft); padding-top:6px; }
+.columnMenuAction { display:grid; min-height:34px; grid-template-columns:20px minmax(0,1fr) auto; align-items:center; gap:7px; border:0; border-radius:7px; background:transparent; padding:6px 8px; color:var(--ex-fg-body); font:inherit; font-size:var(--ex-text-sm); text-align:left; cursor:pointer; }
+.columnMenuAction:hover:not(:disabled),.columnMenuAction:focus-visible { outline:0; background:var(--ex-bg-hover); color:var(--ex-fg-strong); }
+.columnMenuAction>i { color:var(--ex-fg-muted); }
+.columnMenuAction>span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.columnMenuAction>small { color:var(--ex-fg-subtle); font-size:var(--ex-text-2xs); }
+.columnMenuAction[data-danger="true"] { color:var(--ex-status-danger-text); }
+.columnMenuAction[data-danger="true"]>i { color:inherit; }
+.columnMenuAction:disabled { opacity:.42; cursor:not-allowed; }
+.columnMenuConfirm { display:grid; gap:7px; border:1px solid var(--ex-border); border-radius:8px; background:var(--ex-bg-muted); padding:10px; }
+.columnMenuConfirm strong { color:var(--ex-fg-strong); font-size:var(--ex-text-sm); }
+.columnMenuConfirm p { margin:0; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); line-height:var(--ex-leading-relaxed); }
+.columnMenuConfirm>div { display:flex; justify-content:flex-end; gap:5px; }
+.columnMenuConfirm button { min-height:30px; border:1px solid var(--ex-border-soft); border-radius:6px; background:var(--ex-bg); padding:5px 9px; color:var(--ex-fg-body); font:inherit; font-size:var(--ex-text-xs); cursor:pointer; }
+.columnMenuConfirm button:last-child { border-color:color-mix(in srgb,var(--ex-status-danger-text) 35%,var(--ex-border-soft)); color:var(--ex-status-danger-text); }
+.columnMenuStatus,.columnMenuIssue { margin:0; padding:5px 8px; font-size:var(--ex-text-xs); }
+.columnMenuStatus { color:var(--ex-fg-muted); }
+.columnMenuIssue { color:var(--ex-status-danger-text); }
 .columnResize { position:absolute; z-index:2; top:6px; right:-4px; width:8px; height:30px; cursor:col-resize; touch-action:none; }
 .columnResize::after { position:absolute; top:5px; right:3px; width:1px; height:20px; background:var(--ex-border); content:""; }
 .columnResize:hover::after,.columnResize:focus-visible::after { width:2px; background:var(--ex-accent); }

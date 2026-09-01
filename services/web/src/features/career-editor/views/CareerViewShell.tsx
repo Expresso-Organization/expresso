@@ -94,8 +94,9 @@ function matchesSavedFilter(record: CareerRecordListItem, filter: unknown, categ
   return true;
 }
 
-export function CareerViewShell({ category, initialView, initialPage }: CareerViewShellProps) {
+export function CareerViewShell({ category: initialCategory, initialView, initialPage }: CareerViewShellProps) {
   const router = useRouter();
+  const [category, setCategory] = useState(initialCategory);
   const [view, setView] = useState(initialView);
   const [records, setRecords] = useState(() => initialPage.data.map(listItem));
   const [page, setPage] = useState(initialPage.page);
@@ -147,12 +148,12 @@ export function CareerViewShell({ category, initialView, initialPage }: CareerVi
     setAiRequest({ id: crypto.randomUUID(), recordId: current.targetId, prompt: result.prompt, displayPrompt: "인터뷰 답변으로 성과 구체화" });
   }
 
-  async function updateView(next: CareerViewConfiguration) {
+  async function updateView(next: CareerViewConfiguration, categoryVersion = category.version) {
     const previous = view;
     setView(next);
     const body = { name: next.name, type: next.type, filter: next.filter, sorts: next.sorts, groupPropertyId: next.groupPropertyId, groupOrder: next.groupOrder, visiblePropertyIds: next.visiblePropertyIds, propertyOrder: next.propertyOrder, columnWidths: next.columnWidths, gallery: next.gallery, board: next.board, timeline: next.timeline };
     const local = next.id.startsWith("local-");
-    const response = await fetch(local ? `/api/career/categories/${category.id}/view-configurations` : `/api/career/view-configurations/${next.id}`, { method: local ? "POST" : "PATCH", headers: { "content-type": "application/json", "if-match": `"v${local ? category.version : previous.version}"` }, body: JSON.stringify(body) });
+    const response = await fetch(local ? `/api/career/categories/${category.id}/view-configurations` : `/api/career/view-configurations/${next.id}`, { method: local ? "POST" : "PATCH", headers: { "content-type": "application/json", "if-match": `"v${local ? categoryVersion : previous.version}"` }, body: JSON.stringify(body) });
     if (!response.ok) { setView(previous); setMessage("뷰 변경을 저장하지 못했습니다."); return; }
     const payload = await response.json() as { data: CareerViewConfiguration };
     setView(payload.data);
@@ -181,7 +182,7 @@ export function CareerViewShell({ category, initialView, initialPage }: CareerVi
     setPage(payload.page);
   }
 
-  const renderer = view.type === "table" ? <TableView {...common} /> : view.type === "list" ? <ListView {...common} /> : view.type === "gallery" ? <GalleryView {...common} /> : view.type === "board" ? <BoardView {...common} /> : <TimelineView {...common} />;
+  const renderer = view.type === "table" ? <TableView {...common} onCategoryChange={(nextCategory, nextView) => { setCategory(nextCategory); if (nextView) void updateView(nextView, nextCategory.version); }} /> : view.type === "list" ? <ListView {...common} /> : view.type === "gallery" ? <GalleryView {...common} /> : view.type === "board" ? <BoardView {...common} /> : <TimelineView {...common} />;
 
   return <div className={styles.shell}>
     <main className={styles.viewArea}>
