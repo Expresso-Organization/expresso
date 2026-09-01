@@ -7,7 +7,7 @@ import { inTransaction } from "../../../platform/mongo-transaction.js";
 import type { JobIngestApi } from "./index.js";
 import { JobMarketError } from "../errors.js";
 import { escapeSearch, experienceMinYears, postingDedupeHash, sha256 } from "../mongo-queries.js";
-import type { JobSourceAdapter, RawPosting } from "./adapter.js";
+import { readFetchOutcome, type FetchScope, type JobSourceAdapter, type PostingRefresh, type RawPosting } from "./adapter.js";
 import type { FactsReader } from "./facts.js";
 import { publicUrl, type MarkReader } from "./logo.js";
 import { classifyFamily, isOpening, normalizeRegion, TARGET_FAMILIES, type JobFamily } from "./classify.js";
@@ -43,8 +43,14 @@ export class JobIngestService implements JobIngestApi {
       try {
         if (!adapter) throw new Error("adapter not configured");
         // 외부 HTTP 호출은 트랜잭션 밖에서 한 번만 실행합니다.
-        const postings = await adapter.fetch(source.token);
-        seen = postings.length;
+        const scope = await this.#fetchScope(source);
+        const { postings, refresh, skippedUnwanted } = readFetchOutcome(
+          await adapter.fetch(source.token, source.displayName, scope),
+        );
+        // 건너뛴 것까지 센다. 이 수가 `lastSeenCount`로 남아 화면이 어디서
+        // 모으는지 고르는 데 쓰인다 — 증분으로 줄어들면 그 문구가 흔들린다.
+        seen = postings.length + refresh.length + skippedUnwanted;
+        for (const entry of refresh) await this.#refresh(source, entry);
         for (const posting of postings) {
           if (posting.descriptionRaw.length < 200 || !isOpening(posting)) continue;
           const family = classifyFamily(posting.title, posting.team);
@@ -62,6 +68,59 @@ export class JobIngestService implements JobIngestApi {
     }
     const logosRead = await this.#readLogos();
     return JobIngestRunSchema.parse({ startedAt: at.toISOString(), finishedAt: new Date().toISOString(), sources: results, totals: { seen: results.reduce((sum, item) => sum + item.seen, 0), added: results.reduce((sum, item) => sum + item.added, 0), failedSources: results.filter((item) => item.error !== null).length, logosRead } });
+  }
+
+  /**
+   * 어댑터가 상세를 열기 전에 물어볼 것.
+   *
+   * 이미 들인 `externalId`와, 제목·직무만으로 들일 생각이 있는지를 준다.
+   * 저장소는 앞에 `provider:token:`을 붙여 두므로 떼어서 넘긴다 — 어댑터는
+   * 자기가 내놓은 모양으로만 자기 공고를 안다.
+   */
+  async #fetchScope(source: JobSourceDoc): Promise<FetchScope> {
+    const prefix = `${source.provider}:${source.token}:`;
+    const ids = await mongoCollections(this.context.db).jobPostings.distinct("externalId", {
+      externalId: { $regex: `^${escapeSearch(prefix)}` },
+    });
+    const bare = new Set(ids.map((id) => String(id).slice(prefix.length)));
+    return {
+      // **들인 것만 안다.** 제목은 통과했는데 본문이 짧아 버려진 공고는 여기
+      // 없어서 다음 실행에 다시 상세를 연다. 실측(고용24 소프트웨어 직종)에서
+      // 두 번째 실행이 78회였고 그중 73회가 이것이다. 더 줄이려면 "봤지만
+      // 안 들였다"를 따로 남겨야 하는데, 그건 저장소가 늘어나는 일이라
+      // 여기서는 하지 않는다 — 하루 한 번에 78회면 충분히 낮다.
+      isKnown: (externalId) => bare.has(externalId),
+      // 아래 저장 경로가 거는 것과 **같은 규칙**이다. 여기서 갈리면 상세를
+      // 받아 놓고 버리거나, 받아야 할 것을 건너뛴다.
+      wants: (title, team) => {
+        if (!isOpening({ title, team, location: null })) return false;
+        const family = classifyFamily(title, team);
+        return family !== null && TARGET_FAMILIES.includes(family);
+      },
+    };
+  }
+
+  /**
+   * 이미 들인 공고에 분류를 다시 붙인다.
+   *
+   * 본문은 건드리지 않는다 — 한 번 넣으면 고칠 수 없고(0002), 요건의 근거
+   * 구간이 그 글의 문자 위치를 가리킨다. **갈래와 지역은 우리 규칙이 읽은
+   * 값**이라 규칙이 나아지면 따라와야 하고, 마감은 사실이라 바뀌면 따라간다.
+   */
+  async #refresh(source: JobSourceDoc, entry: PostingRefresh): Promise<void> {
+    const family = classifyFamily(entry.title, entry.team);
+    if (!family || !TARGET_FAMILIES.includes(family)) return;
+    const externalId = `${source.provider}:${source.token}:${entry.externalId}`;
+    await mongoCollections(this.context.db).jobPostings.updateOne(
+      { source: "api", externalId },
+      {
+        $set: {
+          jobFamily: family,
+          ...(entry.location === null ? {} : { locationRegion: normalizeRegion(entry.location) }),
+          ...(entry.expiresAt === null ? {} : { expiresAt: entry.expiresAt }),
+        },
+      },
+    );
   }
 
   async #store(source: JobSourceDoc, posting: RawPosting, family: JobFamily): Promise<boolean> {

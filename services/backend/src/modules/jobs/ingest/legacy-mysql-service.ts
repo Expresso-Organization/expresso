@@ -11,7 +11,7 @@ import {
 import type { SqlTag } from "../../../platform/legacy-mysql.js";
 
 import { JobMarketError } from "../errors.js";
-import type { JobSourceAdapter, RawPosting } from "./adapter.js";
+import { readFetchOutcome, type JobSourceAdapter, type RawPosting } from "./adapter.js";
 import type { FactsReader, PostingFacts } from "./facts.js";
 import { publicUrl, type CompanyMark, type MarkReader } from "./logo.js";
 import {
@@ -172,7 +172,11 @@ export class JobIngestService {
         continue;
       }
       try {
-        const postings = await adapter.fetch(source.token);
+        // 증분은 Mongo 쪽에만 있다. 여기는 늘 전량을 받는다.
+        const { postings } = readFetchOutcome(
+          await adapter.fetch(source.token, source.display_name,
+            { isKnown: () => false, wants: () => true }),
+        );
         let added = 0;
         for (const posting of postings) {
           if (posting.descriptionRaw.length < MINIMUM_BODY_LENGTH) continue;

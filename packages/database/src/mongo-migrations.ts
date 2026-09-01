@@ -5,6 +5,7 @@ import { initialMigrationSteps } from "./mongodb-migrations/0001/migration.js";
 import { generationLedgerConstraintSteps } from "./mongodb-migrations/0002/migration.js";
 import { analyticsAndPreferenceSteps } from "./mongodb-migrations/0003/migration.js";
 import { jobImportMetadataSteps } from "./mongodb-migrations/0004/migration.js";
+import { jobSourceProviderSteps } from "./mongodb-migrations/0005/migration.js";
 
 export interface MongoMigrationStep {
   id: string;
@@ -32,10 +33,13 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const thirdHash = createHash("sha256").update(`migration.ts\0${thirdSource.byteLength}\0`).update(thirdSource).digest("hex");
   const fourthSource = await readFile(new URL("./mongodb-migrations/0004/migration.ts", import.meta.url));
   const fourthHash = createHash("sha256").update(`migration.ts\0${fourthSource.byteLength}\0`).update(fourthSource).digest("hex");
+  const fifthSource = await readFile(new URL("./mongodb-migrations/0005/migration.ts", import.meta.url));
+  const fifthHash = createHash("sha256").update(`migration.ts\0${fifthSource.byteLength}\0`).update(fifthSource).digest("hex");
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
     { version: "0003", name: "analytics_rate_and_notification_preferences", checksum: thirdHash, steps: await analyticsAndPreferenceSteps() },
     { version: "0004", name: "job_import_metadata", checksum: fourthHash, steps: await jobImportMetadataSteps() },
+    { version: "0005", name: "job_source_ats_providers", checksum: fifthHash, steps: await jobSourceProviderSteps() },
   ];
 }

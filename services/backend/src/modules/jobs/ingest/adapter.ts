@@ -23,16 +23,96 @@ export interface RawPosting {
   expiresAt: Date | null;
 }
 
+/**
+ * 상세를 열기 전에 물어보는 창구.
+ *
+ * 공고 하나가 요청 하나인 출처가 있다(그리팅 · 고용24). 그런 곳에서 **버릴
+ * 공고의 본문까지 받는 것**이 가장 큰 낭비다 — 실측에서 그리팅 803건 중
+ * 저장되는 것은 92건뿐이었다. 들일 생각이 있는지, 이미 들였는지를 목록만
+ * 보고 먼저 가른다.
+ *
+ * 판정은 수집 서비스가 한다. 어댑터는 도메인 규칙을 모른다.
+ */
+export interface FetchScope {
+  /**
+   * 이미 들여 둔 공고인가.
+   *
+   * `externalId`는 어댑터가 내놓는 **그대로**다 — 저장소가 앞에 붙이는
+   * `provider:token:`은 수집 서비스가 떼어 준다.
+   */
+  isKnown(externalId: string): boolean;
+  /** 제목과 직무만 보고, 이 공고를 들일 생각이 있는가. */
+  wants(title: string, team: string | null): boolean;
+}
+
+/**
+ * 이미 들인 공고에 다시 붙일 것.
+ *
+ * 본문은 한 번 넣으면 고칠 수 없다(0002). 그래서 다시 읽지 않는다. 하지만
+ * **갈래와 지역은 우리 규칙이 읽은 값**이라 규칙이 나아지면 이미 들인 공고도
+ * 따라와야 하고, 마감은 근거가 아니라 사실이라 바뀌면 따라가야 한다.
+ *
+ * 목록만으로 채울 수 있는 칸이다 — 상세를 열지 않는다.
+ */
+export interface PostingRefresh {
+  externalId: string;
+  title: string;
+  team: string | null;
+  location: string | null;
+  expiresAt: Date | null;
+}
+
+/**
+ * 증분으로 읽는 어댑터가 내놓는 것.
+ *
+ * `postings`만 돌려주면 **출처가 몇 건을 내놓았는지 알 수 없다.** 그 수는
+ * `job_source.lastSeenCount`로 남아 화면이 "어디서 모으는지"를 고르는 데
+ * 쓰이므로, 건너뛴 것까지 세어 함께 넘긴다.
+ */
+export interface FetchResult {
+  /** 본문까지 읽어 온 것. 처음 보는 공고다. */
+  postings: RawPosting[];
+  /** 이미 들여 둔 공고. 상세를 열지 않고 분류만 다시 붙인다. */
+  refresh: PostingRefresh[];
+  /**
+   * 목록에는 있었지만 상세를 열지 않은 공고 수.
+   *
+   * 들일 생각이 없어 건너뛴 것이다. `seen`을 바로 세우는 데 쓴다 — 출처가
+   * 몇 건을 내놓았는지가 화면에 남는다.
+   */
+  skippedUnwanted: number;
+}
+
+/** 한 번에 다 가져오는 출처는 배열만 돌려줘도 된다. */
+export type FetchOutcome = RawPosting[] | FetchResult;
+
+/** 어느 모양으로 왔든 같은 자리로 편다. */
+export function readFetchOutcome(value: FetchOutcome): FetchResult {
+  return Array.isArray(value) ? { postings: value, refresh: [], skippedUnwanted: 0 } : value;
+}
+
 /** 출처 하나를 읽는 방법. 프로바이더마다 하나씩. */
 export interface JobSourceAdapter {
   readonly provider: JobSourceProvider;
   /**
    * `token`이 가리키는 출처의 공고를 모두 가져온다.
    *
+   * `displayName`은 **회사 이름이 응답에 없을 때만** 쓴다. Lever는 회사 이름을
+   * 아예 주지 않고 Greenhouse도 `company_name`이 비는 보드가 있는데, 그때
+   * `token`으로 메우면 화면에 `zoyi` 같은 슬러그가 회사 이름으로 선다.
+   *
+   * `scope`는 **상세를 열 값어치가 있는지** 묻는 자리다. 공고 하나가 요청
+   * 하나인 출처는 목록만 보고 먼저 가른다 — 들일 생각이 없거나 이미 들인
+   * 공고의 본문을 받는 것이 이 수집에서 가장 큰 낭비다.
+   *
    * 실패는 던진다 — 수집 서비스가 출처별로 받아 `last_error`에 적는다.
    * 한 출처가 죽어도 나머지는 계속 돌아야 한다.
    */
-  fetch(token: string): Promise<RawPosting[]>;
+  fetch(
+    token: string,
+    displayName: string,
+    scope: FetchScope,
+  ): Promise<FetchOutcome>;
 }
 
 /**
@@ -126,3 +206,106 @@ export async function fetchJson(url: string, timeoutMs = 15_000): Promise<unknow
 
 /** 우리가 누구인지 밝힌다. 막고 싶은 쪽이 막을 수 있어야 한다. */
 export const USER_AGENT = "ExpressoBot/0.1 (+https://xpresso.me/bot)";
+
+/**
+ * 글로 오는 출처를 읽는다.
+ *
+ * 보드가 JSON API를 열어 두지 않고 자기 채용 페이지만 세워 둔 곳이 있다
+ * (그리팅). 그런 곳은 페이지를 받아 안에 실린 데이터를 꺼내야 한다.
+ */
+export async function fetchText(url: string, timeoutMs = 20_000): Promise<string> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { accept: "text/html,application/json", "user-agent": USER_AGENT },
+    });
+    if (!response.ok) throw new HttpError(response.status, retryAfterMs(response));
+    return await response.text();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * 상태 코드를 들고 다니는 실패.
+ *
+ * `HTTP 503` 같은 문자열로 뭉개면 **막힌 것과 그냥 실패한 것을 가를 수 없다.**
+ * 상대가 밀어내는 중이면 계속 두드리는 대신 멈춰야 한다.
+ */
+export class HttpError extends Error {
+  constructor(readonly status: number, readonly retryAfterMs: number | null = null) {
+    super(`HTTP ${status}`);
+    this.name = "HttpError";
+  }
+
+  /** 상대가 "그만 보내라"고 말한 것인가. */
+  get isBackpressure(): boolean {
+    return this.status === 429 || this.status === 503 || this.status === 509;
+  }
+}
+
+/** `Retry-After`는 초 또는 날짜로 온다. 둘 다 읽는다. */
+function retryAfterMs(response: Response): number | null {
+  const raw = response.headers.get("retry-after");
+  if (!raw) return null;
+  const seconds = Number(raw);
+  if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+  const at = Date.parse(raw);
+  return Number.isNaN(at) ? null : Math.max(0, at - Date.now());
+}
+
+/**
+ * 요청 사이의 최소 간격을 지킨다.
+ *
+ * **동시성 제한만으로는 폭주를 막지 못한다.** 레인 셋이 각각 50ms 만에 끝나면
+ * 초당 60번을 던진다. 남의 서버가 보는 것은 우리의 레인 수가 아니라 초당 몇
+ * 번이냐다. 시작 시각을 줄 세워 그 수를 묶는다.
+ */
+export function createPacer(minIntervalMs: number): () => Promise<void> {
+  let next = 0;
+  return async () => {
+    const now = Date.now();
+    const at = Math.max(now, next);
+    next = at + minIntervalMs;
+    if (at > now) await new Promise((resolve) => setTimeout(resolve, at - now));
+  };
+}
+
+/**
+ * 한 번에 몇 개까지만 겹쳐 부른다.
+ *
+ * 간격을 두는 일은 `createPacer`가 맡는다 — 둘을 함께 써야 순간 폭주와 총량이
+ * 같이 잡힌다.
+ *
+ * 공고 하나가 페이지 하나인 보드가 있어서(그리팅) 한 출처를 읽는 데 수십~수백
+ * 번을 부른다. 전부 한꺼번에 던지면 남의 서버에 순간 부하를 주고 우리도 막힌다.
+ * 실패한 항목은 `null`로 남기고 나머지는 계속 간다 — 공고 하나 때문에 보드
+ * 전체를 잃지 않는다.
+ */
+export async function mapWithLimit<In, Out>(
+  items: readonly In[],
+  limit: number,
+  run: (item: In) => Promise<Out>,
+): Promise<(Out | null)[]> {
+  const results: (Out | null)[] = new Array(items.length).fill(null);
+  let cursor = 0;
+  const lanes = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    for (;;) {
+      const index = cursor;
+      cursor += 1;
+      if (index >= items.length) return;
+      try {
+        results[index] = await run(items[index] as In);
+      } catch (error) {
+        // 상대가 밀어내는 중이면 나머지도 같은 답을 받는다. 끝까지 두드려
+        // 놓고 "몇 건 모았다"고 적는 대신, 출처 하나를 통째로 실패로 남긴다.
+        if (error instanceof HttpError && error.isBackpressure) throw error;
+        results[index] = null;
+      }
+    }
+  });
+  await Promise.all(lanes);
+  return results;
+}
