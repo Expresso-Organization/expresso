@@ -1,9 +1,9 @@
 import Link from "next/link";
 
-import { LogoMark, Wordmark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
 
 import { Skel, SkelRegion, skelKeys } from "./Skeleton";
+import { SidebarFrame } from "./SidebarFrame";
 import { SidebarNav } from "./SidebarNav";
 import styles from "./Sidebar.module.css";
 
@@ -20,51 +20,53 @@ import styles from "./Sidebar.module.css";
  */
 export function SidebarSkeleton() {
   return (
-    <aside className={styles.sidebar}>
-      <div className={styles.scroll}>
-        <div className={styles.brand}>
-          <LogoMark size={22} />
-          <span className={styles.brandName}>
-            <Wordmark />
-          </span>
-          <Icon name="caret-up-down" size={13} color="var(--ex-fg-muted)" />
-        </div>
+    <SidebarFrame
+      footer={
+        <>
+          <div className={styles.quotaSlot}>
+            <div className={`${styles.copy} ${styles.quotaCard}`}>
+              <div className={styles.quotaHead}>
+                <span className={styles.quotaLabel}>이번 달 추출</span>
+                <Skel w={44} h={10} />
+              </div>
+              <div className={styles.quotaTrack} />
+              <Link href="/account" className={styles.upgradeLink}>
+                Double Shot 추가
+              </Link>
+            </div>
+          </div>
+          <Link href="/account" className={`${styles.row} ${styles.userLink}`} title="설정">
+            <span className={styles.avatar} />
+            <span className={`${styles.copy} ${styles.userName}`}>
+              <Skel w={92} h={12} />
+            </span>
+            <span className={`${styles.copy} ${styles.userAction}`}>
+              <Icon name="gear-six" size={14} />
+            </span>
+          </Link>
+        </>
+      }
+    >
+      <SidebarNav />
 
-        <SidebarNav />
-
-        <div className={styles.groupHead}>
+      <div className={styles.groupHead}>
+        <div className={`${styles.copy} ${styles.groupHeadRow}`}>
           <span className={styles.groupLabel}>내 커리어</span>
         </div>
-        <SkelRegion label="사이드바를 불러오는 중" className={styles.categories}>
-          {/* 기본 분류 7개 — `0002_seed.sql` */}
-          {skelKeys(7).map((row) => (
-            <div key={row} className={styles.categoryItem}>
+      </div>
+      <SkelRegion label="사이드바를 불러오는 중" className={styles.categories}>
+        {/* 기본 분류 7개 — `0002_seed.sql` */}
+        {skelKeys(7).map((row) => (
+          <div key={row} className={`${styles.row} ${styles.categoryItem}`}>
+            <span className={styles.rowLead}>
               <Skel w={14} h={14} radius={4} />
+            </span>
+            <span className={`${styles.copy} ${styles.categoryName}`}>
               <Skel w={`${74 - (row % 4) * 11}%`} h={11} />
-            </div>
-          ))}
-        </SkelRegion>
-      </div>
-
-      <div className={styles.footer}>
-        <div className={styles.quotaCard}>
-          <div className={styles.quotaHead}>
-            <span className={styles.quotaLabel}>이번 달 추출</span>
-            <Skel w={44} h={10} />
+            </span>
           </div>
-          <div className={styles.quotaTrack} />
-          <Link href="/account" className={styles.upgradeLink}>
-            Double Shot 추가
-          </Link>
-        </div>
-        <div className={styles.user}>
-          <Skel w={24} circle />
-          <Skel w={92} h={12} />
-          <Link href="/account" className={styles.userAction} aria-label="설정">
-            <Icon name="gear-six" size={14} />
-          </Link>
-        </div>
-      </div>
-    </aside>
+        ))}
+      </SkelRegion>
+    </SidebarFrame>
   );
 }

@@ -10,6 +10,7 @@ import {
   ShellNavTrigger,
   ShellTabBar,
 } from "./ShellNav";
+import { SidebarCollapseProvider } from "./SidebarCollapse";
 import { Skel } from "./Skeleton";
 import styles from "./AppShell.module.css";
 
@@ -21,7 +22,8 @@ import styles from "./AppShell.module.css";
  * 넘길 수 없으므로 헤더는 화면이 `AppBody` 앞에 직접 놓는다.
  *
  * 좁은 화면에서는 사이드바가 서랍으로 물러나고 아래에 탭바가 붙는다. 무엇이
- * 언제 나오는지는 `ShellNav`가 안다.
+ * 언제 나오는지는 `ShellNav`가 안다. 사이드바를 접어 두었는가는
+ * `SidebarCollapse`가 안다 — 서랍으로 물러난 폭에서는 접지 않는다.
  */
 export function AppShell({
   sidebar,
@@ -32,15 +34,17 @@ export function AppShell({
 }) {
   return (
     <ShellNavProvider>
-      <div className={styles.frame}>
-        <ShellNavDrawer>{sidebar}</ShellNavDrawer>
-        <main className={styles.main}>
-          {children}
-          <ShellTabBar />
-        </main>
-        {/* 00c — ⌘K 검색과 알림은 어느 앱 화면에서든 열린다 */}
-        <CommandPalette />
-      </div>
+      <SidebarCollapseProvider>
+        <div className={styles.frame}>
+          <ShellNavDrawer>{sidebar}</ShellNavDrawer>
+          <main className={styles.main}>
+            {children}
+            <ShellTabBar />
+          </main>
+          {/* 00c — ⌘K 검색과 알림은 어느 앱 화면에서든 열린다 */}
+          <CommandPalette />
+        </div>
+      </SidebarCollapseProvider>
     </ShellNavProvider>
   );
 }
