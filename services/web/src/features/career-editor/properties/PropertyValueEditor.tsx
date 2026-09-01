@@ -55,7 +55,7 @@ export function PropertyValueEditor({ definition, value, onCommit, disabled = fa
       if (Number.isNaN(timestamp.getTime())) { setIssue("날짜와 시간을 확인해 주세요."); return; }
       void commit({ type: timestampType, value: timestamp.toISOString() });
     };
-    return <div className={styles.fieldEditor}><input className={styles.input} aria-label={definition.name} type="text" inputMode="numeric" placeholder="YYYY-MM-DD HH:mm" value={draft} disabled={disabled || saving} onChange={(event) => { const nextDraft = event.target.value; setDraft(nextDraft); setIssue(null); commitTimestamp(nextDraft); }} onBlur={() => { if (draft && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(draft)) setIssue("YYYY-MM-DD HH:mm 형식으로 입력해 주세요."); }} />{saving ? <span className={styles.helpText}>저장 중</span> : null}{issue ? <span className={styles.issue} role="alert">{issue}</span> : null}</div>;
+    return <div className={styles.fieldEditor}><input className={styles.input} aria-label={definition.name} type="text" inputMode="numeric" placeholder="YYYY-MM-DD HH:mm" value={draft} disabled={disabled || saving} onChange={(event) => { const nextDraft = event.target.value; setDraft(nextDraft); setIssue(null); commitTimestamp(nextDraft); }} onBlur={() => { if (draft && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(draft)) setIssue("YYYY-MM-DD HH:mm 형식으로 입력해 주세요."); }} />{issue ? <span className={styles.issue} role="alert">{issue}</span> : null}</div>;
   }
   if (definition.type === "checkbox") {
     return <label className={styles.checkboxLabel}><input aria-label={definition.name} type="checkbox" checked={value?.type === "checkbox" ? value.value : false} disabled={disabled || saving} onChange={(event) => void commit({ type: "checkbox", value: event.target.checked })} /><span>{value?.type === "checkbox" && value.value ? "예" : "아니요"}</span></label>;
@@ -87,5 +87,5 @@ export function PropertyValueEditor({ definition, value, onCommit, disabled = fa
     const type = definition.type === "title" ? "title" : definition.type === "url" ? "url" : definition.type === "email" ? "email" : definition.type === "phone" ? "phone" : "text";
     return void commit({ type, value: draft });
   };
-  return <div className={styles.fieldEditor}><input className={styles.input} aria-label={definition.name} type={inputType} inputMode={definition.type === "number" ? "decimal" : undefined} value={draft} disabled={disabled || saving} onChange={(event) => { setDraft(event.target.value); setIssue(null); }} onBlur={commitDraft} onKeyDown={(event) => commitOnEnter(event, commitDraft)} />{saving ? <span className={styles.helpText}>저장 중</span> : null}{issue ? <span className={styles.issue} role="alert">{issue}</span> : null}</div>;
+  return <div className={styles.fieldEditor}><input className={styles.input} aria-label={definition.name} type={inputType} inputMode={definition.type === "number" ? "decimal" : undefined} value={draft} disabled={disabled || saving} onChange={(event) => { setDraft(event.target.value); setIssue(null); }} onBlur={commitDraft} onKeyDown={(event) => commitOnEnter(event, commitDraft)} />{issue ? <span className={styles.issue} role="alert">{issue}</span> : null}</div>;
 }
