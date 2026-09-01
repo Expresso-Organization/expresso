@@ -28,6 +28,8 @@ import { registerCompanyResearchRoutes } from "../modules/company-research/route
 import { type BrewJobApi } from "../modules/brew-jobs/index.js";
 import { registerBrewJobRoutes } from "../modules/brew-jobs/routes.js";
 import { registerRecipeRoutes } from "../modules/recipe/routes.js";
+import type { DesignSystemService } from "../modules/design-systems/service.js";
+import { registerDesignSystemRoutes } from "../modules/design-systems/routes.js";
 import { type TemplateApi } from "../modules/templates/index.js";
 import { registerTemplateRoutes } from "../modules/templates/routes.js";
 import { type GenerationApi } from "../modules/generation/index.js";
@@ -78,6 +80,7 @@ export interface BuildApiOptions {
   recipeService?: RecipeApi;
   companyResearchService?: CompanyResearchApi;
   brewJobService?: BrewJobApi;
+  designSystemService?: DesignSystemService;
   templateService?: TemplateApi;
   generationService?: GenerationApi;
   portfolioEditingService?: PortfolioEditingApi;
@@ -186,6 +189,12 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
           authenticateRequest: createAuthenticateRequest(options.identityService),
         });
       }
+    }
+    if (options.designSystemService) {
+      registerDesignSystemRoutes(app, {
+        service: options.designSystemService,
+        authenticateRequest: createAuthenticateRequest(options.identityService),
+      });
     }
     if (options.templateService) {
       registerTemplateRoutes(app, {

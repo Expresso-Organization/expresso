@@ -97,7 +97,7 @@ export async function createFreeBrewAction(
       brief,
       lengthPreset: lengthPreset(formData),
     });
-    redirect(`/brew/${created.data.brewId}/outline`);
+    redirect(`/brew/${created.data.brewId}/design`);
   } catch (error) {
     if (error instanceof ApiError) {
       return { error: "자유 제작을 시작하지 못했습니다. 잠시 뒤 다시 눌러 주세요." };
