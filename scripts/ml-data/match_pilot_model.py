@@ -16,6 +16,7 @@ from typing import Any, Iterable
 
 MODEL_NAME = "intfloat/multilingual-e5-base"
 MODEL_REVISION = "d128750597153bb5987e10b1c3493a34e5a4502a"
+FROZEN_E5_COSINE_ID = "frozen-e5-cosine-v1"
 MODEL_ID = "match-pilot-mlp-v1"
 DEFAULT_OUTPUT = Path("var/ml-data/experiments/match-pilot-v0")
 DEFAULT_SEED = 42
@@ -221,6 +222,12 @@ def score_candidates(ranker: Any, profile_embeddings: Any, job_embeddings: Any) 
         return ranker(features).reshape(-1).cpu()
 
 
+def frozen_e5_cosine_scores(profile_embeddings: Any, job_embeddings: Any) -> Any:
+    if profile_embeddings.shape != job_embeddings.shape:
+        raise ValueError("profile and job embeddings must have the same shape")
+    return (profile_embeddings * job_embeddings).sum(dim=1)
+
+
 def load_checkpoint(path: Path, *, embedding_dimension: int, hidden_dimension: int = 256) -> Any:
     torch = _torch()
     payload = torch.load(path, map_location="cpu", weights_only=True)
@@ -320,12 +327,13 @@ def write_candidate_scores(
     model: str,
     pairs: Iterable[tuple[str, str]],
     scores: Any,
+    append: bool = False,
 ) -> None:
     pair_rows = list(pairs)
     if len(pair_rows) != len(scores):
         raise ValueError("candidate score count differs from pair count")
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="\n") as handle:
+    with path.open("a" if append else "w", encoding="utf-8", newline="\n") as handle:
         for (profile_id, job_id), score in zip(pair_rows, scores):
             handle.write(
                 json.dumps(
@@ -460,15 +468,28 @@ def run(arguments: argparse.Namespace) -> dict[str, Any]:
         [{**row, "scoreLabel": row["teacherLabel"]} for row in labels],
         profile_vectors, job_vectors, label_field="scoreLabel",
     )
+    cosine_scores = frozen_e5_cosine_scores(all_profile_vectors, all_job_vectors)
     scores = score_candidates(ranker, all_profile_vectors, all_job_vectors)
     scores_path = output / "candidate-scores" / "candidate-scores.jsonl"
-    write_candidate_scores(scores_path, model=MODEL_ID, pairs=pair_rows, scores=scores)
+    write_candidate_scores(
+        scores_path,
+        model=FROZEN_E5_COSINE_ID,
+        pairs=pair_rows,
+        scores=cosine_scores,
+    )
+    write_candidate_scores(
+        scores_path,
+        model=MODEL_ID,
+        pairs=pair_rows,
+        scores=scores,
+        append=True,
+    )
     manifest = _manifest(
         torch=torch,
         device=device,
         model_revision=encoder.model_revision,
         inputs=[arguments.jth_pairs, arguments.profiles, arguments.jobs, arguments.labels],
-        counts={"jthPretrainPairs": len(jth_pairs), "expressoFineTunePairs": len(train_labels), "candidateScores": len(pair_rows)},
+        counts={"jthPretrainPairs": len(jth_pairs), "expressoFineTunePairs": len(train_labels), "candidateScores": len(pair_rows) * 2},
         arguments=arguments,
     )
     output.mkdir(parents=True, exist_ok=True)

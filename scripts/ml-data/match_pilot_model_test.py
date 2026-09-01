@@ -36,6 +36,7 @@ class MatchPilotModelTest(unittest.TestCase):
     def test_ranker_training_checkpoint_and_scores_are_deterministic(self):
         from match_pilot_model import (
             create_ranker,
+            frozen_e5_cosine_scores,
             load_checkpoint,
             score_candidates,
             train_ranker,
@@ -53,6 +54,15 @@ class MatchPilotModelTest(unittest.TestCase):
         first_scores = score_candidates(first, profile_embeddings, job_embeddings)
         second_scores = score_candidates(second, profile_embeddings, job_embeddings)
         self.assertTrue(torch.allclose(first_scores, second_scores))
+        self.assertTrue(
+            torch.allclose(
+                frozen_e5_cosine_scores(
+                    profile_embeddings,
+                    torch.tensor([[1.0, 0.0], [1.0, 0.0]]),
+                ),
+                torch.tensor([1.0, 0.0]),
+            )
+        )
 
         with tempfile.TemporaryDirectory() as directory:
             checkpoint = Path(directory) / "ranker.pt"
@@ -91,8 +101,9 @@ class MatchPilotModelTest(unittest.TestCase):
 
         self.assertEqual(arguments.model_revision, "d128750597153bb5987e10b1c3493a34e5a4502a")
 
-    def test_run_writes_checkpoint_candidate_scores_and_manifest(self):
+    def test_run_writes_validated_full_score_sets_for_e5_and_mlp(self):
         from match_pilot_model import FrozenE5Encoder, build_parser, run
+        from ranking_evaluation import validate_dataset
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -119,16 +130,22 @@ class MatchPilotModelTest(unittest.TestCase):
                 jobs,
                 [
                     {"jobId": "j-1", "text": "python", "split": "train", "duplicateGroupId": "g-1"},
-                    {"jobId": "j-2", "text": "java", "split": "valid", "duplicateGroupId": "g-2"},
-                    {"jobId": "j-3", "text": "go", "split": "test", "duplicateGroupId": "g-3"},
+                    {"jobId": "j-2", "text": "typescript", "split": "train", "duplicateGroupId": "g-2"},
+                    {"jobId": "j-v1", "text": "java", "split": "valid", "duplicateGroupId": "g-v1"},
+                    {"jobId": "j-v2", "text": "kotlin", "split": "valid", "duplicateGroupId": "g-v2"},
+                    {"jobId": "j-t1", "text": "go", "split": "test", "duplicateGroupId": "g-t1"},
+                    {"jobId": "j-t2", "text": "rust", "split": "test", "duplicateGroupId": "g-t2"},
                 ],
             )
             self._write_jsonl(
                 labels,
                 [
                     {"profileId": "p-1", "jobId": "j-1", "split": "train", "teacherLabel": 3, "humanLabel": None, "reasonCodes": ["FIXTURE"]},
-                    {"profileId": "p-2", "jobId": "j-2", "split": "valid", "teacherLabel": 2, "humanLabel": None, "reasonCodes": ["FIXTURE"]},
-                    {"profileId": "p-3", "jobId": "j-3", "split": "test", "teacherLabel": 1, "humanLabel": None, "reasonCodes": ["FIXTURE"]},
+                    {"profileId": "p-1", "jobId": "j-2", "split": "train", "teacherLabel": 0, "humanLabel": None, "reasonCodes": ["FIXTURE"]},
+                    {"profileId": "p-2", "jobId": "j-v1", "split": "valid", "teacherLabel": 2, "humanLabel": None, "reasonCodes": ["FIXTURE"]},
+                    {"profileId": "p-2", "jobId": "j-v2", "split": "valid", "teacherLabel": 0, "humanLabel": None, "reasonCodes": ["FIXTURE"]},
+                    {"profileId": "p-3", "jobId": "j-t1", "split": "test", "teacherLabel": 1, "humanLabel": None, "reasonCodes": ["FIXTURE"]},
+                    {"profileId": "p-3", "jobId": "j-t2", "split": "test", "teacherLabel": 3, "humanLabel": None, "reasonCodes": ["FIXTURE"]},
                 ],
             )
             arguments = build_parser().parse_args(
@@ -139,10 +156,23 @@ class MatchPilotModelTest(unittest.TestCase):
 
             self.assertTrue(result["checkpoint"].is_file())
             score_rows = [json.loads(line) for line in result["candidateScores"].read_text(encoding="utf-8").splitlines()]
-            self.assertEqual([row["model"] for row in score_rows], ["match-pilot-mlp-v1"] * 3)
+            self.assertEqual(
+                {row["model"] for row in score_rows},
+                {"frozen-e5-cosine-v1", "match-pilot-mlp-v1"},
+            )
+            self.assertEqual(
+                {model: sum(row["model"] == model for row in score_rows) for model in {row["model"] for row in score_rows}},
+                {"frozen-e5-cosine-v1": 6, "match-pilot-mlp-v1": 6},
+            )
+            validate_dataset(
+                [json.loads(line) for line in profiles.read_text(encoding="utf-8").splitlines()],
+                [json.loads(line) for line in jobs.read_text(encoding="utf-8").splitlines()],
+                [json.loads(line) for line in labels.read_text(encoding="utf-8").splitlines()],
+                score_rows,
+            )
             manifest = json.loads(result["manifest"].read_text(encoding="utf-8"))
             self.assertEqual(manifest["model"], {"name": "intfloat/multilingual-e5-base", "revision": "fixture-revision", "frozen": True})
-            self.assertEqual(manifest["counts"], {"jthPretrainPairs": 2, "expressoFineTunePairs": 1, "candidateScores": 3})
+            self.assertEqual(manifest["counts"], {"jthPretrainPairs": 2, "expressoFineTunePairs": 2, "candidateScores": 12})
 
     @staticmethod
     def _write_jsonl(path, rows):
