@@ -9,7 +9,7 @@ import { createQueueWorker } from "./create-queue-worker.js";
 import { JobAnalysisService } from "../modules/job-analysis/index.js";
 import { UnavailableRequirementExtractor } from "../modules/job-analysis/extractor.js";
 import { AiRequirementExtractor } from "../modules/job-analysis/ai-extractor.js";
-import { createAiClient } from "../platform/ai/create-client.js";
+import { createAiClient, createPostingFactsAiClient } from "../platform/ai/create-client.js";
 import { createJobAnalysisProcessor } from "./processors/job-analysis.js";
 import { GenerationService } from "../modules/generation/index.js";
 import { AiSentenceWriter, UnavailableSentenceWriter } from "../modules/generation/writer.js";
@@ -56,6 +56,8 @@ const dispatcher = new MongoOutboxDispatcher({
 const abortController = new AbortController();
 // AI가 꺼져 있으면(`AI_PROVIDER=off`) 요건 추출과 문장 생성은 멈춘다.
 const ai = createAiClient(config);
+// 요건 읽기는 따로 잠근다 — 사람이 아니라 스케줄러가 돌리는 자리다.
+const factsAi = createPostingFactsAiClient(config);
 // 계약을 부르기 전에 지나는 문. 워커에서 도는 계약도 예외가 아니다.
 const consentService = new ConsentService(database);
 const jobAnalysisService = new JobAnalysisService(database);
@@ -111,7 +113,7 @@ const jobIngestService = new JobIngestService(
   createJobSourceAdapters(config),
   // AI가 꺼져 있으면 본문을 읽지 않는다. 규칙 폴백을 두지 않는 이유는
   // 정확도가 조용히 갈리기 때문이다 — 화면은 그 둘을 구분해 말할 수 없다.
-  ai ? new AiFactsReader(ai) : null,
+  factsAi ? new AiFactsReader(factsAi) : null,
   // 회사 로고는 AI와 무관하다 — 회사가 자기 사이트에 걸어 둔 아이콘을 받는다.
   // 저장소에 넣어 둔 파일이 있으면 그것이 먼저다(받아 올 수 없는 회사가 있다).
   new BundledMarkReader(new SiteMarkReader()),
