@@ -3,7 +3,7 @@
 import type { PortfolioIntent, RecipeV2, RecipeV2Edit } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
@@ -482,19 +482,12 @@ export function Workbench({
                     >
                       <span className={styles.itemMark} aria-hidden="true" />
                       <div className={styles.itemBody}>
-                        <textarea
+                        <AutoTextarea
                           className={styles.itemText}
-                          defaultValue={item.text}
-                          rows={1}
+                          value={item.text}
                           maxLength={2_000}
                           placeholder="여기서 무엇을 말할지"
-                          onInput={(event) => {
-                            const area = event.currentTarget;
-                            area.style.height = "auto";
-                            area.style.height = `${area.scrollHeight}px`;
-                          }}
-                          onBlur={(event) => {
-                            const text = event.target.value.trim();
+                          onCommit={(text) => {
                             if (text !== item.text) void run({ operation: "update_item", itemId: item.id, text });
                           }}
                         />
@@ -556,6 +549,55 @@ export function Workbench({
         />
       ) : null}
     </div>
+  );
+}
+
+/**
+ * 내용 한 줄. 글이 길어지면 칸이 따라 자란다.
+ *
+ * 높이는 **붙는 순간에도** 재야 한다 — 입력할 때만 재면 서버가 그려 준 항목이
+ * 한 줄로 접힌 채 남는다. AI 초안은 전부 그 경우다.
+ */
+function AutoTextarea({
+  value,
+  onCommit,
+  className,
+  maxLength,
+  placeholder,
+}: {
+  value: string;
+  onCommit: (text: string) => void;
+  className?: string | undefined;
+  maxLength?: number | undefined;
+  placeholder?: string | undefined;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  function fit(area: HTMLTextAreaElement | null) {
+    if (!area) return;
+    area.style.height = "auto";
+    area.style.height = `${area.scrollHeight}px`;
+  }
+
+  // 값이 밖에서 바뀌어도(초안 교체 · 순서 변경) 다시 맞춘다.
+  useLayoutEffect(() => {
+    const area = ref.current;
+    if (!area) return;
+    if (document.activeElement !== area) area.value = value;
+    fit(area);
+  }, [value]);
+
+  return (
+    <textarea
+      ref={ref}
+      className={className}
+      defaultValue={value}
+      rows={1}
+      maxLength={maxLength}
+      placeholder={placeholder}
+      onInput={(event) => fit(event.currentTarget)}
+      onBlur={(event) => onCommit(event.target.value.trim())}
+    />
   );
 }
 
