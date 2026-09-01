@@ -83,6 +83,15 @@ export function ReadingPanel({ queued, reading }: { queued: boolean; reading: Re
       <Brewing records={reading.records} />
       <div className={styles.readingHead}>
         <h1>레시피를 짜는 중</h1>
+        {/* 제목이 「짜는 중」이면 바로 아래가 그 「중」이 지금 뭘 하고 있는지다. */}
+        <p className={styles.stageRow}>
+          <span className={styles.stage}>
+            <span className={styles.spinner} aria-hidden="true" />
+            {queued
+              ? "차례를 기다리는 중입니다"
+              : <Stage aiming={reading.posting !== null} />}
+          </span>
+        </p>
         {reading.posting ? (
           <span className={styles.posting}>
             <CompanyAvatar
@@ -118,14 +127,6 @@ export function ReadingPanel({ queued, reading }: { queued: boolean; reading: Re
           {" "}2~3분 걸립니다. 이 화면을 닫아도 계속됩니다.
         </p>
       </div>
-      <p className={styles.stageRow}>
-        <span className={styles.stage}>
-          <span className={styles.spinner} aria-hidden="true" />
-          {queued
-            ? "차례를 기다리는 중입니다"
-            : <Stage aiming={reading.posting !== null} />}
-        </span>
-      </p>
     </>
   );
 }

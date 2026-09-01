@@ -18,10 +18,9 @@
   animation: spin 700ms linear infinite;
 }
 
-/* 그림도 글도 가운데다. 이 줄만 왼쪽에 붙으면 축이 둘이 된다. */
+/* 제목 바로 밑에 붙는다 — 가운데 정렬은 `.readingHead`가 이미 걸어 둔다. */
 .stageRow {
-  margin: 22px 0 0;
-  text-align: center;
+  margin: 7px 0 0;
 }
 
 .stage {
