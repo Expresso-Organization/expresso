@@ -11,7 +11,11 @@ export const CreateBrewSchema = z.strictObject({
 
 export const CreateFreeBrewSchema = z.strictObject({
   title: z.string().min(1).max(300),
-  brief: z.string().min(1).max(20_000),
+  /**
+   * 무엇을 만들 것인지. 비워도 된다 — v2 는 디자인부터 고르고 설명은 나중에
+   * 편집기에서 받는다. 비면 재료 순위는 정리 상태만 보고 매겨진다.
+   */
+  brief: z.string().max(20_000),
   lengthPreset: z.enum(["single", "double", "triple"]).default("single"),
 });
 
@@ -79,7 +83,8 @@ export const BrewStateSchema = z.strictObject({
   status: z.enum(["draft", "interviewing", "recipe", "generating", "done"]),
   lengthPreset: z.enum(["single", "double", "triple"]),
   freeTitle: z.string().min(1).max(300).nullable(),
-  freeBrief: z.string().min(1).max(20_000).nullable(),
+  /** 비어 있을 수 있다 — v2 는 디자인부터 고르고 설명은 나중에 받는다. */
+  freeBrief: z.string().max(20_000).nullable(),
   /** 위저드 머리말에 그리는 공고. */
   posting: z.strictObject({
     title: z.string().min(1).max(300),

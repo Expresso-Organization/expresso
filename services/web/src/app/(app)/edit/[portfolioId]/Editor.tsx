@@ -40,7 +40,7 @@ function panelTarget(tab: PanelTab, revisionCount: number, chosen: string | null
 
 const RAIL_ITEMS = [
   { icon: "house", label: "홈", href: "/home" as const, active: false, dot: false },
-  { icon: "coffee", label: "새 포트폴리오", href: "/brew/new" as const, active: true, dot: false },
+  { icon: "coffee", label: "새 포트폴리오", href: "/portfolio/new" as const, active: true, dot: false },
   { icon: "target", label: "공고 탐색", href: "/jobs" as const, active: false, dot: false },
   { icon: "chart-bar", label: "분석", href: "/analytics" as const, active: false, dot: true },
 ];

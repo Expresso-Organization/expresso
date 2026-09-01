@@ -22,7 +22,7 @@ const PRIMARY_ITEMS: readonly {
   icon: string;
 }[] = [
   { key: "home", label: "홈", href: "/home", icon: "house" },
-  { key: "new-portfolio", label: "새 포트폴리오", href: "/brew/new", icon: "coffee" },
+  { key: "new-portfolio", label: "새 포트폴리오", href: "/portfolio/new", icon: "coffee" },
   { key: "jobs", label: "공고 탐색", href: "/jobs", icon: "target" },
   { key: "analytics", label: "분석", href: "/analytics", icon: "chart-bar" },
 ];
