@@ -47,7 +47,6 @@
 
 .title:focus {
   outline: none;
-  border-color: var(--ex-border-firm);
   background: var(--ex-bg-sunken);
 }
 
@@ -222,8 +221,6 @@
 .field select:focus,
 .field textarea:focus {
   outline: none;
-  border-color: var(--ex-border-firm);
-  box-shadow: var(--ex-focus-ring);
 }
 
 .error {
@@ -422,7 +419,6 @@
 .takeawayRow input:focus,
 .itemText:focus {
   outline: none;
-  border-color: var(--ex-border-firm);
   background: var(--ex-bg);
 }
 

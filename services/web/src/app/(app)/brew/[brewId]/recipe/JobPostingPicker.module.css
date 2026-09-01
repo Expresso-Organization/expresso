@@ -123,8 +123,6 @@
 .pasteForm input:focus,
 .pasteForm textarea:focus {
   outline: none;
-  border-color: var(--ex-border-firm);
-  box-shadow: var(--ex-focus-ring);
 }
 
 .submit {

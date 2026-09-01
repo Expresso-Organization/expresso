@@ -155,10 +155,6 @@
   color: var(--ex-fg-muted);
 }
 
-.searchField:focus-within {
-  border-color: var(--ex-fg);
-  box-shadow: var(--ex-focus-ring);
-}
 
 .searchField input {
   min-width: 0;

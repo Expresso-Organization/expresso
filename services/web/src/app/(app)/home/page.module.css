@@ -26,10 +26,6 @@
     box-shadow var(--ex-motion-quick);
 }
 
-.searchBar:focus-within {
-  border-color: var(--ex-accent);
-  box-shadow: 0 0 0 3px rgba(154, 64, 48, 0.09);
-}
 
 .searchInput {
   flex: 1;

@@ -275,9 +275,7 @@
 .intentFields select:focus,
 .intentFields textarea:focus {
   outline: none;
-  border-color: var(--ex-border-firm);
   background: var(--ex-bg);
-  box-shadow: var(--ex-focus-ring);
 }
 
 /* ── 만들기 ──────────────────────────────────────────────── */
