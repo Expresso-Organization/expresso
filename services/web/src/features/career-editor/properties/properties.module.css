@@ -9,7 +9,9 @@
 .listHeading button, .dialog button, .tombstones button { border: 0; border-radius: 6px; background: transparent; color: var(--ex-fg-body); font: inherit; cursor: pointer; }
 .listHeading button:hover, .dialog button:hover { background: var(--ex-bg-hover); }
 .propertyRow { display: grid; grid-template-columns: minmax(88px, 0.35fr) minmax(0, 1fr); align-items: start; gap: 12px; min-height: 34px; }
-.propertyRow > label { display:flex; align-items:center; gap:6px; padding-top: 8px; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); overflow: hidden; text-overflow: ellipsis; }
+.propertyRow > label { display:flex; min-width:0; align-items:center; gap:6px; padding-top:8px; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); white-space:nowrap; }
+.propertyRow > label > svg { flex:0 0 auto; }
+.propertyName { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .fieldEditor, .assetEditor, .dateFields { display: grid; gap: 4px; min-width: 0; }
 .input { width: 100%; min-height: 32px; box-sizing: border-box; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 6px 8px; color: var(--ex-fg-strong); font: inherit; }
 .input:hover { border-color: var(--ex-border-soft); background: var(--ex-bg-hover); }

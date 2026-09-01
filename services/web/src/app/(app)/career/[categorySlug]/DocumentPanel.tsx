@@ -11,6 +11,8 @@ import { useCareerEditorSession } from "@/features/career-editor/session/useCare
 
 import styles from "./DocumentPanel.module.css";
 
+const DEFAULT_PANEL_WIDTH = 560;
+
 export function DocumentPanel({
   record,
   category,
@@ -26,7 +28,7 @@ export function DocumentPanel({
   aiRequest?: AiPromptRequest | null | undefined;
   onAiRequestHandled?: (() => void) | undefined;
 }) {
-  const [width, setWidth] = useState(452);
+  const [width, setWidth] = useState(DEFAULT_PANEL_WIDTH);
   const [visibleRecord, setVisibleRecord] = useState(record);
   const [resizing, setResizing] = useState(false);
   const [editorAiRequest, setEditorAiRequest] = useState<AiPromptRequest | null>(null);
