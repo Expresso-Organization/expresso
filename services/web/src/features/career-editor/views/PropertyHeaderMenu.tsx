@@ -12,6 +12,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 
 import { Icon } from "@/components/ui/Icon";
 import { PropertySelect } from "@/features/career-editor/properties/PropertySelect";
+import { nextNumberedPropertyName, propertyNameBase } from "@/features/career-editor/properties/property-name";
 
 import styles from "./views.module.css";
 
@@ -83,7 +84,8 @@ export function PropertyHeaderMenu({ category, definition, view, sortDirection, 
   const nameRef = useRef<HTMLInputElement>(null);
   const meta = typeMeta(definition.type);
   const editableType = TYPES.some((item) => item.value === definition.type);
-  const schemaEditable = !category.isSystem && !definition.system && editableType;
+  const schemaEditable = !category.isSystem && !definition.system;
+  const typeEditable = schemaEditable && editableType;
 
   useEffect(() => setName(definition.name), [definition.name]);
 
@@ -169,7 +171,7 @@ export function PropertyHeaderMenu({ category, definition, view, sortDirection, 
   }
 
   async function changeType(type: string) {
-    if (!schemaEditable || type === definition.type || !TYPES.some((item) => item.value === type)) return;
+    if (!typeEditable || type === definition.type || !TYPES.some((item) => item.value === type)) return;
     await run(async () => {
       const preview = await previewChange({ kind: "type-change", propertyId: definition.id, type: type as EditableType, config: configForType(type as EditableType) });
       const lossy = preview.impact.lossyExamples.length > 0 || preview.impact.convertibleCount < preview.impact.affectedRecordCount;
@@ -193,12 +195,16 @@ export function PropertyHeaderMenu({ category, definition, view, sortDirection, 
       const id = crypto.randomUUID();
       const duplicate = kind === "duplicate";
       const type = duplicate ? definition.type : "text";
+      const definitions = category.propertySchemaV2 ?? [];
+      const generatedName = duplicate
+        ? nextNumberedPropertyName(propertyNameBase(definition.name), definitions)
+        : nextNumberedPropertyName("텍스트", definitions);
       const change: CareerPropertySchemaChange = {
         kind: "create",
         property: {
           id,
           key: `property_${crypto.randomUUID().replaceAll("-", "").slice(0, 24)}`,
-          name: duplicate ? `${definition.name} 복사본` : "새 속성",
+          name: generatedName,
           type,
           required: false,
           system: false,
@@ -262,7 +268,7 @@ export function PropertyHeaderMenu({ category, definition, view, sortDirection, 
     <div className={styles.columnMenuTypeRow}>
       <Icon name="arrows-left-right" size={17} />
       <span>유형</span>
-      <PropertySelect label="속성 유형" value={editableType ? definition.type : ""} placeholder={meta.label} disabled={!schemaEditable || busy} options={TYPES.map((item) => ({ value: item.value, label: item.label }))} onChange={(type) => void changeType(type)} />
+      <PropertySelect label="속성 유형" value={editableType ? definition.type : ""} placeholder={meta.label} disabled={!typeEditable || busy} options={TYPES.map((item) => ({ value: item.value, label: item.label }))} onChange={(type) => void changeType(type)} />
     </div>
     <div className={styles.columnMenuSection}>
       <MenuAction icon="funnel" disabled={busy} onClick={() => { onViewChange({ ...view, filter: { propertyId: definition.id, operator: "is_not_empty", operand: null } }); setOpen(false); }}>필터</MenuAction>

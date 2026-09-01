@@ -69,7 +69,8 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   await page.getByText("E2E 저장된 경험", { exact: true }).click();
   await api(page, "POST", `/v1/career/records/${record.id}/move/preview`, { targetCategoryId: project.id });
   await page.getByRole("button", { name: "카테고리 이동" }).click();
-  await page.getByLabel("옮길 카테고리").selectOption(project.id);
+  await page.getByRole("button", { name: "옮길 카테고리" }).click();
+  await page.getByRole("option", { name: project.name, exact: true }).click();
   const moveResponse = page.waitForResponse((response) => response.url().includes(`/api/career/records/${record.id}/move/preview`));
   await page.getByRole("button", { name: "영향 확인" }).click(); expect((await moveResponse).ok()).toBe(true);
   await expect(page.getByText("본문과 관계는 그대로 유지됩니다.")).toBeVisible();
@@ -90,11 +91,11 @@ test("renders every property family, five saved views and relation hydration", a
   const option = randomUUID();
   for (const type of ["text", "number", "select", "multi_select", "date", "checkbox", "url", "email", "phone", "file", "media", "created_time", "updated_time"] as const) {
     const config = type === "select" || type === "multi_select" ? { options: [{ id: option, name: "선택 A" }] } : {};
-    await createProperty(page, category, { id: ids[type]!, key: `field_${type}`, name: `속성 ${type}`, type, config });
+    await createProperty(page, category, { id: ids[type]!, key: `field_${type}`, name: `${type} 1`, type, config });
   }
-  await createProperty(page, category, { id: ids.relation!, key: "field_relation", name: "속성 relation", type: "relation", config: { targetCategoryId: category.id, inversePropertyId: null, cardinality: "multiple", deletePolicy: "nullify" } });
-  await createProperty(page, category, { id: ids.formula!, key: "field_formula", name: "속성 formula", type: "formula", config: { source: "1 + 2", ast: null, diagnostics: [] } });
-  await createProperty(page, category, { id: ids.rollup!, key: "field_rollup", name: "속성 rollup", type: "rollup", config: { relationPropertyId: ids.relation, targetPropertyId: ids.number, aggregation: "sum" } });
+  await createProperty(page, category, { id: ids.relation!, key: "field_relation", name: "relation 1", type: "relation", config: { targetCategoryId: category.id, inversePropertyId: null, cardinality: "multiple", deletePolicy: "nullify" } });
+  await createProperty(page, category, { id: ids.formula!, key: "field_formula", name: "formula 1", type: "formula", config: { source: "1 + 2", ast: null, diagnostics: [] } });
+  await createProperty(page, category, { id: ids.rollup!, key: "field_rollup", name: "rollup 1", type: "rollup", config: { relationPropertyId: ids.relation, targetPropertyId: ids.number, aggregation: "sum" } });
   const visible = Object.values(ids);
   const viewBody = (type: "table" | "list" | "gallery" | "board" | "timeline") => ({ name: `E2E ${type}`, type, filter: null, sorts: [], groupPropertyId: null, groupOrder: [], visiblePropertyIds: visible, propertyOrder: visible, columnWidths: {}, gallery: type === "gallery" ? { coverPropertyId: null, previewPropertyIds: [ids.text] } : null, board: type === "board" ? { hiddenGroupIds: [], cardOrder: {} } : null, timeline: type === "timeline" ? { startPropertyId: ids.date, endPropertyId: null, axisStart: null, axisEnd: null } : null });
   for (const type of ["table", "list", "gallery", "board", "timeline"] as const) await api(page, "POST", `/v1/career/categories/${category.id}/view-configurations`, viewBody(type), { "if-match": `"v${category.version}"` });
@@ -110,11 +111,11 @@ test("renders every property family, five saved views and relation hydration", a
   await page.goto(`/career/${key}`);
   await page.getByText("모든 속성", { exact: true }).click();
   const propertyList = page.getByLabel("문서 속성");
-  for (const type of Object.keys(ids)) await expect(propertyList.getByText(`속성 ${type}`, { exact: true })).toBeVisible();
+  for (const type of Object.keys(ids)) await expect(propertyList.getByText(`${type} 1`, { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "관계 대상 ×" })).toBeVisible();
   await expect(propertyList.getByText("3", { exact: true })).toBeVisible();
   await expect(propertyList.getByText("2", { exact: true })).toBeVisible();
-  const customTime = propertyList.getByLabel("속성 created_time", { exact: true });
+  const customTime = propertyList.getByLabel("created_time 1", { exact: true });
   await expect(customTime).toHaveAttribute("placeholder", "YYYY-MM-DD HH:mm");
   const timestampSave = page.waitForResponse((response) => response.url().includes(`/api/career/records/${record.id}`) && response.request().method() === "PATCH" && response.ok());
   await customTime.fill("2026-09-02 14:30");

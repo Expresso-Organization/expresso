@@ -13,6 +13,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { Icon } from "@/components/ui/Icon";
 
 import { FormulaEditor } from "./FormulaEditor";
+import { nextNumberedPropertyName } from "./property-name";
 import { PropertySelect } from "./PropertySelect";
 import { RollupEditor, type RollupConfiguration } from "./RollupEditor";
 import styles from "./properties.module.css";
@@ -131,7 +132,8 @@ export function PropertyCreatePopover({ categoryId, definitions, disabled, onDef
   }
 
   function propertyName(type: CreatableType): string {
-    return name.trim() || PROPERTY_TYPES.find((option) => option.value === type)?.label || "새 속성";
+    const base = PROPERTY_TYPES.find((option) => option.value === type)?.label ?? "속성";
+    return name.trim() || nextNumberedPropertyName(base, activeDefinitions);
   }
 
   async function createProperty(type: CreatableType, config: Record<string, unknown>) {

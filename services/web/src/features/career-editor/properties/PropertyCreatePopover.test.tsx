@@ -8,6 +8,7 @@ import { PropertyCreatePopover } from "./PropertyCreatePopover";
 
 const categoryId = "00000000-0000-4000-8000-000000000010";
 const definition: CareerPropertyDefinitionV2 = { id: "00000000-0000-4000-8000-000000000011", key: "note", name: "메모", type: "text", required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null };
+const existingSelect: CareerPropertyDefinitionV2 = { id: "00000000-0000-4000-8000-000000000012", key: "choice", name: "선택 1", type: "select", required: false, system: false, config: { options: [] }, order: 1, version: 1, deletedAt: null };
 const category: CareerCategory = { id: categoryId, key: "test", name: "테스트", icon: "folder", defaultView: "table", isSystem: false, propertySchema: {}, propertySchemaV2: [definition], schemaVersion: 1, sortOrder: 0, recordCount: 1, version: 1 };
 
 describe("PropertyCreatePopover", () => {
@@ -47,14 +48,14 @@ describe("PropertyCreatePopover", () => {
       return new Response(JSON.stringify({ data: { propertySchemaV2: [definition] } }), { status: 200, headers: { "content-type": "application/json" } });
     });
     vi.stubGlobal("fetch", fetchMock);
-    render(<PropertyCreatePopover categoryId={categoryId} definitions={[definition]} disabled={false} onDefinitionsChange={onChange} onVersionConflict={onConflict} />);
+    render(<PropertyCreatePopover categoryId={categoryId} definitions={[definition, existingSelect]} disabled={false} onDefinitionsChange={onChange} onVersionConflict={onConflict} />);
 
     fireEvent.click(screen.getByRole("button", { name: "속성 추가" }));
     fireEvent.click(screen.getByRole("option", { name: "선택" }));
 
     await waitFor(() => expect(onChange).toHaveBeenCalledOnce());
     const previewBody = JSON.parse(String(fetchMock.mock.calls.find(([url]) => String(url).includes("/preview"))?.[1]?.body));
-    expect(previewBody.property).toMatchObject({ name: "선택", type: "select", config: { options: [] } });
+    expect(previewBody.property).toMatchObject({ name: "선택 2", type: "select", config: { options: [] } });
   });
 
   it("keeps relation setup inside the popover", async () => {
