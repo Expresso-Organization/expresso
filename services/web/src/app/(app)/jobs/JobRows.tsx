@@ -6,6 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { detailHref } from "./list-query";
+import { pickPostingForBrewAction } from "./pick-actions";
 import styles from "./page.module.css";
 
 /** 게이지 채움은 점수 구간으로 갈린다 (정의서 00b). */
@@ -56,35 +57,18 @@ function companyLine(job: JobPostingSummary, tail: "workType" | "experience"): s
     .join(" · ");
 }
 
-export function JobRowList({
-  jobs,
-  highlightFirst = false,
-  tail = "workType",
+/** 한 줄의 속. 상세로 가는 줄과 고르는 줄이 같은 것을 그린다. */
+function RowBody({
+  job,
+  tail,
   now,
-  listQuery = "",
 }: {
-  jobs: readonly JobPostingSummary[];
-  /** 00b는 가장 잘 맞는 첫 행에 시그니처 지면을 깐다. */
-  highlightFirst?: boolean;
-  tail?: "workType" | "experience";
-  /** NEW 배지 기준 시각. 서버에서 한 번 정해 넘긴다. */
+  job: JobPostingSummary;
+  tail: "workType" | "experience";
   now: number;
-  /**
-   * 지금 목록이 걸고 있는 조건. 상세로 실어 보내 **돌아올 때 그대로 되살린다.**
-   * 비어 있으면 안 싣는다 — 조건 없는 목록에서 `?from=`은 짐일 뿐이다.
-   */
-  listQuery?: string;
 }) {
   return (
-    <div className={styles.rows}>
-      {jobs.map((job, index) => (
-        <Link
-          key={job.id}
-          href={detailHref(job.id, listQuery)}
-          className={`${styles.row} ${
-            highlightFirst && index === 0 ? styles.rowTop : ""
-          }`}
-        >
+    <>
           <CompanyAvatar company={job.company} className={styles.avatar} />
           <span className={styles.rowTitle}>
             <span className={styles.rowRole} style={{ display: "block" }}>
@@ -135,8 +119,57 @@ export function JobRowList({
             color={job.interest ? "var(--ex-accent-text)" : "var(--ex-border-firm)"}
             style={{ flexShrink: 0 }}
           />
-        </Link>
-      ))}
+    </>
+  );
+}
+
+export function JobRowList({
+  jobs,
+  highlightFirst = false,
+  tail = "workType",
+  now,
+  listQuery = "",
+  pickForBrewId = null,
+}: {
+  jobs: readonly JobPostingSummary[];
+  /** 00b는 가장 잘 맞는 첫 행에 시그니처 지면을 깐다. */
+  highlightFirst?: boolean;
+  tail?: "workType" | "experience";
+  /** NEW 배지 기준 시각. 서버에서 한 번 정해 넘긴다. */
+  now: number;
+  /**
+   * 지금 목록이 걸고 있는 조건. 상세로 실어 보내 **돌아올 때 그대로 되살린다.**
+   * 비어 있으면 안 싣는다 — 조건 없는 목록에서 `?from=`은 짐일 뿐이다.
+   */
+  listQuery?: string;
+  /**
+   * 02 레시피에서 「지원할 공고」를 고르러 왔다. 줄이 상세로 가는 대신 그
+   * 제작의 제작 의도에 공고를 적고 레시피로 돌아간다.
+   */
+  pickForBrewId?: string | null;
+}) {
+  return (
+    <div className={styles.rows}>
+      {jobs.map((job, index) => {
+        const className = `${styles.row} ${highlightFirst && index === 0 ? styles.rowTop : ""}`;
+        if (pickForBrewId) {
+          return (
+            <form key={job.id} action={pickPostingForBrewAction} className={styles.pickForm}>
+              <input type="hidden" name="brewId" value={pickForBrewId} />
+              <input type="hidden" name="jobPostingId" value={job.id} />
+              <button type="submit" className={`${className} ${styles.rowPick}`}>
+                <RowBody job={job} tail={tail} now={now} />
+                <span className={styles.pickMark}>이 공고로</span>
+              </button>
+            </form>
+          );
+        }
+        return (
+          <Link key={job.id} href={detailHref(job.id, listQuery)} className={className}>
+            <RowBody job={job} tail={tail} now={now} />
+          </Link>
+        );
+      })}
     </div>
   );
 }

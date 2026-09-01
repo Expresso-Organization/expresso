@@ -1,0 +1,147 @@
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(22, 34, 58, 0.42);
+}
+
+.panel {
+  width: min(680px, 100%);
+  max-height: min(760px, 92vh);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ex-border);
+  border-radius: 16px;
+  background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-overlay);
+  overflow: hidden;
+}
+
+.head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--ex-border-hair);
+}
+
+.head h2 {
+  margin: 0;
+  color: var(--ex-fg);
+  font-size: var(--ex-text-md);
+  font-weight: 600;
+}
+
+.head button {
+  display: inline-flex;
+  padding: 6px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--ex-fg-muted);
+  cursor: pointer;
+}
+
+.head button:hover {
+  background: var(--ex-bg-muted);
+  color: var(--ex-fg);
+}
+
+.current {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 9px 18px;
+  background: var(--ex-accent-surface);
+  color: var(--ex-accent-ink);
+  font-size: var(--ex-text-2xs);
+}
+
+
+.pasteForm {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px 18px;
+  overflow-y: auto;
+}
+
+.lede {
+  margin: 0;
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-2xs);
+  line-height: 1.7;
+}
+
+.pasteRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.error {
+  margin: 0;
+  font-size: var(--ex-text-2xs);
+  line-height: 1.7;
+  padding: 8px 11px;
+  border: 1px solid var(--ex-status-danger);
+  border-radius: 9px;
+  background: var(--ex-status-danger-surface);
+  color: var(--ex-status-danger-text);
+}
+
+.pasteForm label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pasteForm label > span {
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-3xs);
+}
+
+.pasteForm input,
+.pasteForm textarea {
+  padding: 7px 10px;
+  border: 1px solid var(--ex-border);
+  border-radius: 9px;
+  background: var(--ex-bg);
+  color: var(--ex-fg);
+  font-family: inherit;
+  font-size: var(--ex-text-xs);
+  resize: vertical;
+}
+
+.pasteForm input:focus,
+.pasteForm textarea:focus {
+  outline: none;
+  border-color: var(--ex-border-firm);
+  box-shadow: var(--ex-focus-ring);
+}
+
+.submit {
+  margin-top: 4px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
+  font-family: inherit;
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submit:disabled {
+  background: var(--ex-bg-muted);
+  color: var(--ex-fg-faint);
+  cursor: default;
+}

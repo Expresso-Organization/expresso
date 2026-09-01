@@ -183,6 +183,19 @@ export default async function JobsPage({
    * 어디서 왔는지 모르므로, 이걸 안 주면 돌아올 때 필터가 풀린다.
    */
   const listQuery = currentListQuery(params);
+  /**
+   * 02 레시피가 「지원할 공고」를 고르러 보냈다.
+   *
+   * 고르는 화면을 따로 만들지 않는다 — 필터도 일치도도 마감도 이 화면이 이미
+   * 가지고 있다. 여기서는 줄이 상세 대신 그 제작으로 돌아가고, 조건을 바꿔도
+   * 고르는 상태가 풀리지 않게 모든 링크가 `pick`을 데리고 다닌다.
+   */
+  const pick = typeof params.pick === "string"
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.pick)
+    ? params.pick
+    : null;
+  const withPick = (href: string): Route =>
+    (pick ? `${href}${href.includes("?") ? "&" : "?"}pick=${pick}` : href) as Route;
   const session = await requireSession();
   const now = Date.now();
 
@@ -260,7 +273,7 @@ export default async function JobsPage({
     if (nextCompany) search.set("company", nextCompany);
 
     const query = search.toString();
-    return (query ? `/jobs?${query}` : "/jobs") as Route;
+    return withPick(query ? `/jobs?${query}` : "/jobs");
   };
 
   /** 쪽만 바꾸고 나머지 조건은 그대로 들고 간다. 필터가 풀리면 다른 목록이 된다. */
@@ -275,7 +288,7 @@ export default async function JobsPage({
     if (sort !== "match") search.set("sort", sort);
     if (next > 1) search.set("page", String(next));
     const query = search.toString();
-    return (query ? `/jobs?${query}` : "/jobs") as Route;
+    return withPick(query ? `/jobs?${query}` : "/jobs");
   };
   /**
    * 필터에 세울 것들. 구획마다 `전체`가 맨 위고, 그 아래로 **걸린 것이 있는
@@ -377,6 +390,18 @@ export default async function JobsPage({
       {header}
       <AppBody>
         <div className={styles.content}>
+          {pick ? (
+            <div className={styles.pickBanner}>
+              <Icon name="target" size={15} color="var(--ex-accent-text)" />
+              <span className={styles.pickBannerText}>
+                <strong>지원할 공고를 고르는 중</strong>
+                고른 공고는 만들던 포트폴리오의 제작 의도에 적히고, 바로 레시피로 돌아갑니다.
+              </span>
+              <Link href={`/brew/${pick}/recipe` as Route} className={styles.pickBannerBack}>
+                레시피로 돌아가기
+              </Link>
+            </div>
+          ) : null}
           {q ? (
             <SearchQueryCard query={q} conditions={interpreted?.conditions ?? []} />
           ) : (
@@ -388,7 +413,7 @@ export default async function JobsPage({
               {listing.summary.categories.map((chip) => (
                 <Link
                   key={chip.key}
-                  href={chipHref(chip)}
+                  href={withPick(chipHref(chip))}
                   className={`${styles.categoryTab} ${
                     (category ?? "all") === chip.key ? styles.categoryTabActive : ""
                   }`}
@@ -423,11 +448,11 @@ export default async function JobsPage({
                       ).map(([key, label]) => (
                         <Link
                           key={key}
-                          href={
-                            (key === "match"
+                          href={withPick(
+                            key === "match"
                               ? `/jobs?q=${encodeURIComponent(q)}`
-                              : `/jobs?q=${encodeURIComponent(q)}&sort=${key}`) as Route
-                          }
+                              : `/jobs?q=${encodeURIComponent(q)}&sort=${key}`,
+                          )}
                           className={`${styles.sort} ${sort === key ? styles.sortActive : ""}`}
                         >
                           {label}
@@ -441,10 +466,11 @@ export default async function JobsPage({
 
               <JobRowList
                 jobs={postings}
-                highlightFirst={Boolean(q)}
+                highlightFirst={Boolean(q) && !pick}
                 tail={q ? "workType" : "experience"}
                 now={now}
                 listQuery={listQuery}
+                pickForBrewId={pick}
               />
 
               <div className={styles.resultsFoot}>
@@ -525,8 +551,8 @@ function categoryFilter(key: string | undefined) {
   return {};
 }
 
-function chipHref(chip: JobPostingCategory): Route {
-  return (chip.key === "all" ? "/jobs" : `/jobs?category=${encodeURIComponent(chip.key)}`) as Route;
+function chipHref(chip: JobPostingCategory): string {
+  return chip.key === "all" ? "/jobs" : `/jobs?category=${encodeURIComponent(chip.key)}`;
 }
 
 /** 순서를 정한 근거는 가장 잘 맞은 공고의 일치 기술에서 나온다. */

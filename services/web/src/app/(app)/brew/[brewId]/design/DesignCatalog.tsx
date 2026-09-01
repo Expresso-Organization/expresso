@@ -601,7 +601,7 @@ export function DesignCatalog({
             </div>
             {selectedIsSaved ? (
               <Link
-                href={`/brew/${brewId}/outline` as Route}
+                href={`/brew/${brewId}/recipe` as Route}
                 className={styles.continueLink}
               >
                 레시피로 계속 <Icon name="arrow-right" size={13} />

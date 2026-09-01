@@ -1,7 +1,7 @@
 import type { Recipe } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { Icon } from "@/components/ui/Icon";
 import { ApiError } from "@/lib/api/client";
@@ -60,10 +60,10 @@ export default async function OutlinePage({
   searchParams,
 }: {
   params: Promise<{ brewId: string }>;
-  searchParams: Promise<{ section?: string }>;
+  searchParams: Promise<{ section?: string; legacy?: string }>;
 }) {
   const { brewId } = await params;
-  const { section: sectionParam } = await searchParams;
+  const { section: sectionParam, legacy } = await searchParams;
   const session = await requireSession();
 
   let brew;
@@ -78,6 +78,9 @@ export default async function OutlinePage({
   const portfolioTitle = brew.freeTitle ?? brew.posting?.title ?? null;
   const isFreeBrew = brew.freeTitle !== null;
   const usesPortfolioV2 = brew.designSelection !== null;
+  // §12 — 디자인을 고른 제작의 레시피는 02 블루프린트 작업대다. 진행 중인
+  // 옛 제작은 `?legacy=1`로 이 화면을 계속 쓴다.
+  if (usesPortfolioV2 && legacy !== "1") redirect(`/brew/${brewId}/recipe`);
   if (!brew.recipeId || drafting) {
     return (
       <BrewFrame brewId={brewId} step={usesPortfolioV2 ? "recipe" : "outline"}
