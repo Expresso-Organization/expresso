@@ -143,8 +143,8 @@
   flex-shrink: 0;
   padding: 2px 7px;
   border-radius: 999px;
-  background: var(--ex-accent-surface);
-  color: var(--ex-accent-text);
+  background: var(--ex-bg-muted);
+  color: var(--ex-fg-muted);
   font-size: var(--ex-text-3xs);
 }
 

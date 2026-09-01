@@ -119,8 +119,8 @@
 }
 
 .menuItem:hover {
-  background: var(--ex-accent-surface);
-  color: var(--ex-accent-text);
+  background: var(--ex-bg-hover);
+  color: var(--ex-fg);
 }
 
 .menuItem > span {
@@ -138,7 +138,7 @@
   font-weight: 600;
 }
 
-.menuItem:hover strong { color: var(--ex-accent-text); }
+.menuItem:hover strong { color: var(--ex-fg); }
 
 .counts {
   margin-left: auto;
@@ -164,8 +164,8 @@
 }
 
 .redraft button:hover {
-  border-color: var(--ex-accent);
-  color: var(--ex-accent-text);
+  border-color: var(--ex-border-firm);
+  color: var(--ex-fg-body);
 }
 
 .railToggle {
@@ -433,8 +433,8 @@
   flex-shrink: 0;
   padding: 2px 7px;
   border-radius: 999px;
-  background: var(--ex-accent-surface);
-  color: var(--ex-accent-text);
+  background: var(--ex-bg-muted);
+  color: var(--ex-fg-muted);
   font-size: var(--ex-text-3xs);
 }
 
@@ -505,8 +505,9 @@
 
 .item:hover { background: var(--ex-bg-hover); }
 
+/* 고른 줄. 지면 한 겹으로 표시한다 — 여기는 시그니처 색을 쓰는 자리가 아니다. */
 .item[data-selected="1"] {
-  background: var(--ex-accent-surface);
+  background: var(--ex-bg-muted);
 }
 
 .itemMark {
@@ -518,7 +519,7 @@
   background: var(--ex-border-firm);
 }
 
-.item[data-selected="1"] .itemMark { background: var(--ex-accent); }
+.item[data-selected="1"] .itemMark { background: var(--ex-fg-subtle); }
 
 .itemBody {
   flex: 1;
@@ -577,7 +578,7 @@
 
 .addItem:hover {
   background: var(--ex-bg-hover);
-  color: var(--ex-accent-text);
+  color: var(--ex-fg-body);
 }
 
 .addSection {
@@ -591,8 +592,8 @@
 }
 
 .addSection:hover {
-  border-color: var(--ex-accent);
-  color: var(--ex-accent-text);
+  border-color: var(--ex-border-firm);
+  color: var(--ex-fg-body);
 }
 
 .scrim { display: none; }
@@ -666,8 +667,8 @@
 }
 
 .addSource > button:hover {
-  border-color: var(--ex-accent);
-  color: var(--ex-accent-text);
+  border-color: var(--ex-border-firm);
+  color: var(--ex-fg-body);
 }
 
 .sourceMenu {
@@ -703,8 +704,8 @@
 }
 
 .sourceMenu button:hover:not(:disabled) {
-  background: var(--ex-accent-surface);
-  color: var(--ex-accent-text);
+  background: var(--ex-bg-hover);
+  color: var(--ex-fg);
 }
 
 .sourceMenu em {
@@ -807,7 +808,3 @@ button.sourceCard:hover:not(:disabled) { border-color: var(--ex-border-firm); }
   font-size: var(--ex-text-3xs);
 }
 
-.sourceCards .addSource > button:hover {
-  border-color: var(--ex-border-firm);
-  color: var(--ex-fg-muted);
-}

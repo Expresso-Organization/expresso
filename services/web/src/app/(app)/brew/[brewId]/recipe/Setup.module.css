@@ -84,7 +84,7 @@
 }
 
 .blockHead span[data-full="1"] {
-  color: var(--ex-accent-text);
+  color: var(--ex-fg);
 }
 
 .blockNote {
@@ -98,16 +98,21 @@
   color: var(--ex-accent-text);
 }
 
-/* ── 지원할 공고 ─────────────────────────────────────────── */
+/* ── 지원할 공고 ───────────────────────────────────────────
+ *
+ * 고른 공고를 담아 두는 칸이다. 골랐다는 것을 시그니처 색으로 말하지 않는다 —
+ * 지면 위에 뜬 칸 하나면 충분하고, 다음 화면(`Brewing`의 공고 칩)도 같은
+ * 중립이라 두 화면이 같은 물건으로 읽힌다.
+ */
 
 .posting {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 11px 13px;
-  border: 1px solid var(--ex-accent-soft);
+  border: 1px solid var(--ex-border);
   border-radius: 10px;
-  background: var(--ex-accent-surface);
+  background: var(--ex-bg);
 }
 
 .posting > span {
@@ -116,12 +121,12 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  color: var(--ex-accent-ink);
+  color: var(--ex-fg-muted);
   font-size: var(--ex-text-3xs);
 }
 
 .posting strong {
-  color: var(--ex-accent-text);
+  color: var(--ex-fg);
   font-size: var(--ex-text-2xs);
   font-weight: 600;
   overflow: hidden;
@@ -132,10 +137,10 @@
 .posting > button {
   flex-shrink: 0;
   padding: 5px 10px;
-  border: 1px solid var(--ex-accent-soft);
+  border: 1px solid var(--ex-border);
   border-radius: 7px;
   background: var(--ex-bg);
-  color: var(--ex-accent-text);
+  color: var(--ex-fg-body);
   font-family: inherit;
   font-size: var(--ex-text-3xs);
   cursor: pointer;
@@ -164,8 +169,8 @@
 }
 
 .ghostButton:hover {
-  border-color: var(--ex-accent);
-  color: var(--ex-accent-text);
+  border-color: var(--ex-border-firm);
+  color: var(--ex-fg-body);
 }
 
 /* ── 쓸 기록 — 화면 정의서 05 의 표 ─────────────────────── */
@@ -188,7 +193,7 @@
   flex-shrink: 0;
   width: 15px;
   height: 15px;
-  accent-color: var(--ex-accent);
+  accent-color: var(--ex-fg);
   cursor: pointer;
 }
 
