@@ -14,4 +14,14 @@ describe("Yjs reconstruction", () => {
     const next = encodeDocumentAsYUpdate(second, [snapshot]);
     expect(reconstructYDocument([snapshot, next]).content[0]!.text?.[0]?.text).toBe("누적");
   });
+
+  it("treats returning to an earlier JSON value as a new transition", () => {
+    const first = createEmptyCareerDocument();
+    first.content[0]!.text = [{ text: "처음" }];
+    const second = structuredClone(first); second.content[0]!.text = [{ text: "변경" }];
+    const snapshot = encodeDocumentAsYUpdate(first);
+    const changed = encodeDocumentAsYUpdate(second, [snapshot], "user:1");
+    const restored = encodeDocumentAsYUpdate(first, [snapshot, changed], "user:2");
+    expect(reconstructYDocument([snapshot, changed, restored]).content[0]!.text?.[0]?.text).toBe("처음");
+  });
 });

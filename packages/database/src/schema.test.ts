@@ -16,7 +16,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
   afterAll(async () => { try { await mongo.dropDatabase(); } finally { await client.close(); } });
 
   it("creates every product collection and preserves the seeded IDs and all 30 additional designs", async () => {
-    expect(await mongo.listCollections({}, { nameOnly: true }).toArray()).toHaveLength(81);
+    expect(await mongo.listCollections({}, { nameOnly: true }).toArray()).toHaveLength(82);
     expect(await collections.plans.countDocuments()).toBe(3);
     expect((await collections.plans.findOne({ code: "free" }))?._id).toBe("aa09f35f-bde6-4e18-b9cd-7b32759bf43b");
     expect(await collections.careerCategories.countDocuments({ isSystem: true })).toBe(7);
@@ -31,7 +31,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await collections.plans.updateOne({ code: "free" }, { $set: { generationQuota: 17 } });
     const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     expect(result.applied).toEqual([]);
-    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_career_record_editor"]);
+    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_career_record_editor", "0006_career_view_configurations"]);
     expect((await collections.plans.findOne({ code: "free" }))?.generationQuota).toBe(17);
   });
 
@@ -96,15 +96,17 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
   });
 
   it("creates the editor ledger with exact indexes and bounded, non-TTL history", async () => {
-    const names = ["career_document_snapshots", "career_document_updates", "career_record_revisions", "career_record_relations"];
+    const names = ["career_document_snapshots", "career_document_updates", "career_record_revisions", "career_record_relations", "career_ai_proposals"];
     const listed = await mongo.listCollections({ name: { $in: names } }, { nameOnly: false }).toArray();
-    expect(listed).toHaveLength(4);
+    expect(listed).toHaveLength(5);
     const indexes = async (name: string) => (await mongo.collection(name).listIndexes().toArray()).map((entry) => ({ key: entry.key, unique: entry.unique, expireAfterSeconds: entry.expireAfterSeconds }));
     expect(await indexes("career_document_snapshots")).toContainEqual({ key: { recordId: 1, version: -1 }, unique: undefined, expireAfterSeconds: undefined });
     expect(await indexes("career_document_updates")).toContainEqual({ key: { recordId: 1, clientId: 1, clientSequence: 1 }, unique: true, expireAfterSeconds: undefined });
     expect(await indexes("career_document_updates")).toContainEqual({ key: { recordId: 1, serverSequence: 1 }, unique: undefined, expireAfterSeconds: undefined });
     expect(await indexes("career_record_relations")).toContainEqual({ key: { userId: 1, sourceRecordId: 1, sourcePropertyId: 1, targetRecordId: 1 }, unique: true, expireAfterSeconds: undefined });
     expect((await indexes("career_record_revisions")).every((entry) => entry.expireAfterSeconds === undefined)).toBe(true);
+    expect(await indexes("career_ai_proposals")).toContainEqual({ key: { userId: 1, _id: 1 }, unique: true, expireAfterSeconds: undefined });
+    expect(await indexes("career_ai_proposals")).toContainEqual({ key: { expiresAt: 1 }, unique: undefined, expireAfterSeconds: 0 });
     const update = { _id: randomUUID(), recordId: randomUUID(), userId: randomUUID(), clientId: "test", clientSequence: 1, serverSequence: 1, update: new Binary(Buffer.alloc(0)), byteLength: 1_048_577, updateHash: "a".repeat(64), actor: "user" as const, receivedAt: new Date(), compactedAt: null };
     await expect(collections.careerDocumentUpdates.insertOne(update)).rejects.toMatchObject({ code: 121 });
     const category = await collections.careerCategories.findOne({ key: "experience", isSystem: true });

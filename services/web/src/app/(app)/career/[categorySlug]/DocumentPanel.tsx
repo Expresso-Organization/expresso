@@ -4,19 +4,10 @@ import type { CareerCategory, CareerRecordListItem } from "@expresso/contracts";
 
 import { Icon } from "@/components/ui/Icon";
 import { CareerDocumentEditor } from "@/features/career-editor/editor/CareerDocumentEditor";
+import { AiProposalPanel } from "@/features/career-editor/ai/AiProposalPanel";
+import { useCareerEditorSession } from "@/features/career-editor/session/useCareerEditorSession";
 
 import styles from "./DocumentPanel.module.css";
-
-/** 05 카테고리별 빠른 액션. 첫 항목만 시그니처 지면을 쓴다. */
-const QUICK_ACTIONS: Record<string, readonly string[]> = {
-  experience: ["이어서 질문받기", "성과를 숫자로", "문장 다듬기", "STAR로 재구성"],
-  project: ["성과를 숫자로", "기술 선택 이유 추가", "회고 쓰기"],
-  education_history: ["성과 물어보기", "이력서 문장으로", "영문으로 번역"],
-  certification_award: ["증빙 연결하기", "유효기간 확인", "영문 표기 정리"],
-  academic_writing: ["스킬로 올리기", "요약 3문장", "영문으로 번역"],
-  activity_leadership: ["성과를 숫자로", "규모 적어두기", "문장 다듬기"],
-  skill_tool: ["숫자 연결하기", "비슷한 스킬 묶기", "영문 표기 정리"],
-};
 
 export function DocumentPanel({
   record,
@@ -29,8 +20,6 @@ export function DocumentPanel({
   onClose: () => void;
   onExpand?: () => void;
 }) {
-  const quickActions = QUICK_ACTIONS[category.key] ?? QUICK_ACTIONS.experience!;
-
   return (
     <aside
       className={styles.panel}
@@ -67,38 +56,20 @@ export function DocumentPanel({
         <>
           <div className={styles.body}>
             <div className={styles.blocks}>
-              <CareerDocumentEditor recordId={record.id} mode="peek" record={record} category={category} />
+              <CareerDocumentEditor recordId={record.id} mode="peek" record={record} category={category} showAiProposal={false} />
             </div>
           </div>
 
           <div className={styles.foot}>
-            <div className={styles.quickActions}>
-              {quickActions.map((action, index) => (
-                <button
-                  key={action}
-                  type="button"
-                  className={`${styles.quickAction} ${
-                    index === 0 ? styles.quickActionSignature : ""
-                  }`}
-                >
-                  {action}
-                </button>
-              ))}
-            </div>
-            <div className={styles.composer}>
-              <Icon name="coffee" weight="fill" size={14} color="var(--ex-accent-text)" />
-              <input
-                className={styles.composerInput}
-                placeholder="이 문서에 대해 바리스타에게 요청하기"
-                aria-label="바리스타에게 요청"
-              />
-              <button type="button" className={styles.composerSend} aria-label="보내기">
-                <Icon name="arrow-up" weight="fill" size={12} color="var(--ex-fg-on-accent)" />
-              </button>
-            </div>
+            <DocumentPanelAiDock recordId={record.id} />
           </div>
         </>
       )}
     </aside>
   );
+}
+
+function DocumentPanelAiDock({ recordId }: { recordId: string }) {
+  const { snapshot, document } = useCareerEditorSession(recordId);
+  return <AiProposalPanel recordId={recordId} documentVersion={snapshot.documentVersion} selectedBlockIds={document?.content[0]?.id ? [document.content[0].id] : []} announcedProposal={snapshot.proposal} />;
 }

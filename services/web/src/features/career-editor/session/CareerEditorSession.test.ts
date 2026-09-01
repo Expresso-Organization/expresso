@@ -86,6 +86,8 @@ describe("CareerEditorSession", () => {
     socket.receive({ protocolVersion: 1, recordId, sessionId: sync.sessionId, type: "update", sequence: 1, updateBase64: Buffer.from(update).toString("base64"), actor: "user" });
     expect(session.getDocument()?.content[0]?.text?.[0]?.text).toBe("remote");
     expect(session.getSnapshot().lastAckSequence).toBe(1);
+    socket.receive({ protocolVersion: 1, recordId, sessionId: sync.sessionId, type: "proposal", proposalId: serverId, baseDocumentVersion: 1, status: "streaming", progress: { phase: "generating", completed: 1, total: 3 } });
+    expect(session.getSnapshot().proposal).toEqual({ proposalId: serverId, baseDocumentVersion: 1, status: "streaming", progress: { phase: "generating", completed: 1, total: 3 } });
     socket.receive({ protocolVersion: 1, recordId, sessionId: sync.sessionId, type: "error", code: "VERSION_CONFLICT", message: "stale" });
     expect(session.getSnapshot().status).toBe("conflict");
     session.dispose();

@@ -22,7 +22,7 @@ export class InMemoryCareerDocumentSessionRegistry implements CareerDocumentSess
   }
   publish(recordId: string, message: CareerSocketServerMessage, exceptSessionId?: string) {
     for (const session of this.sessions.values()) {
-      if (session.recordId === recordId && session.sessionId !== exceptSessionId) session.send(message);
+      if (session.recordId === recordId && session.sessionId !== exceptSessionId) session.send({ ...message, sessionId: session.sessionId });
     }
   }
   count(userId: string, recordId: string) {

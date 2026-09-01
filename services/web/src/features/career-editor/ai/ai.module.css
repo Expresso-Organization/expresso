@@ -1,0 +1,28 @@
+.panel { display: grid; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--ex-border-soft); }
+.panel header { display: flex; align-items: center; gap: 8px; }
+.panel header div { display: grid; gap: 2px; }
+.panel header strong { color: var(--ex-fg-strong); font-size: var(--ex-text-sm); }
+.panel header small, .review small { color: var(--ex-fg-muted); font-size: var(--ex-text-xs); }
+.aiMark { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--ex-accent-soft); color: var(--ex-accent); }
+.quickActions { display: flex; flex-wrap: wrap; gap: 6px; }
+.quickActions button { border: 1px solid var(--ex-border-soft); border-radius: 999px; background: var(--ex-bg); padding: 5px 9px; color: var(--ex-fg-body); font-size: var(--ex-text-xs); }
+.composer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 6px; padding: 7px; border: 1px solid var(--ex-border-soft); border-radius: 9px; background: var(--ex-bg); }
+.composer:focus-within { border-color: var(--ex-accent); outline: 2px solid var(--ex-focus-ring); outline-offset: 1px; }
+.composer textarea { min-height: 42px; resize: vertical; border: 0; outline: 0; background: transparent; color: var(--ex-fg-strong); font: inherit; }
+.composer button, .progress button, .reviewActions button { min-height: 30px; border: 1px solid var(--ex-border-soft); border-radius: 6px; background: var(--ex-bg-muted); padding: 5px 8px; color: var(--ex-fg-body); }
+.progress { display: flex; align-items: center; gap: 7px; color: var(--ex-fg-body); font-size: var(--ex-text-xs); }
+.progress button { margin-left: auto; }
+.spinner { width: 13px; height: 13px; border: 2px solid var(--ex-border-soft); border-top-color: var(--ex-accent); border-radius: 50%; animation: ai-spin .8s linear infinite; }
+.review { display: grid; gap: 9px; padding: 10px; border-radius: 8px; background: var(--ex-bg-muted); }
+.review > div:first-child { display: grid; gap: 3px; }
+.diff { display: grid; gap: 5px; }
+.diffItem { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 7px; padding: 7px; border: 1px solid var(--ex-border-soft); border-radius: 6px; background: var(--ex-bg); }
+.diffItem span { display: grid; gap: 2px; min-width: 0; }
+.diffItem strong { color: var(--ex-fg-body); font-size: var(--ex-text-xs); }
+.diffItem small { overflow: hidden; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.reviewActions { display: flex; justify-content: flex-end; gap: 6px; }
+.reviewActions button:last-child { border-color: var(--ex-accent); background: var(--ex-accent); color: var(--ex-on-accent); }
+.issue { margin: 0; color: var(--ex-status-danger-text); font-size: var(--ex-text-xs); }
+.result { margin: 0; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); }
+@keyframes ai-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }

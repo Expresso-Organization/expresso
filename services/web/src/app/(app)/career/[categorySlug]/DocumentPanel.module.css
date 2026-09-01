@@ -229,6 +229,8 @@
   padding: 12px 20px;
 }
 
+.foot > section { margin: 0; padding-top: 0; border-top: 0; }
+
 .quickActions {
   display: flex;
   gap: 7px;

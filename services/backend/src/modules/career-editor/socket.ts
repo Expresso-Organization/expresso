@@ -45,6 +45,15 @@ function send(socket: WebSocket, message: CareerSocketServerMessage) {
 
 export function registerCareerDocumentSocket(app: FastifyInstance, options: CareerSocketOptions) {
   const registry = options.registry ?? new InMemoryCareerDocumentSessionRegistry();
+  options.service.setAiProposalPublisher((recordId, proposal) => registry.publish(recordId, {
+    type: "proposal", protocolVersion: 1, recordId, sessionId: EMPTY_SESSION_ID,
+    proposalId: proposal.proposalId, baseDocumentVersion: proposal.baseDocumentVersion,
+    status: proposal.status, progress: proposal.progress,
+  }));
+  options.service.setAiUpdatePublisher((recordId, updateBase64, sequence) => registry.publish(recordId, {
+    type: "update", protocolVersion: 1, recordId, sessionId: EMPTY_SESSION_ID,
+    sequence, updateBase64, actor: "ai",
+  }));
   app.get("/v1/career/records/:recordId/session", { websocket: true }, (socket, request) => {
     // 인증 조회 중 브라우저가 곧바로 보낸 첫 sync를 잃지 않게 먼저 큐를 연결합니다.
     const earlyMessages: RawData[] = [];

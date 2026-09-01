@@ -12,11 +12,12 @@ function stableClientId(canonicalJson: string): number {
   return (hash >>> 0) || 1;
 }
 
-export function encodeDocumentAsYUpdate(document: CareerDocument, baseUpdates: readonly Uint8Array[] = []): Uint8Array {
+export function encodeDocumentAsYUpdate(document: CareerDocument, baseUpdates: readonly Uint8Array[] = [], transitionId?: string): Uint8Array {
   const canonicalJson = JSON.stringify(parseCareerDocument(document));
   const yDocument = new Y.Doc();
   // JSON snapshot을 다시 열어도 같은 Yjs base identity를 만들어 pending update의 인과 기준을 유지합니다.
-  yDocument.clientID = stableClientId(canonicalJson);
+  // 이미 등장했던 값으로 되돌리는 편집 update는 고유 transition ID를 섞어 새 CRDT item으로 남깁니다.
+  yDocument.clientID = stableClientId(transitionId ? `${canonicalJson}:${transitionId}` : canonicalJson);
   for (const update of baseUpdates) Y.applyUpdate(yDocument, update);
   yDocument.getMap<string>(DOCUMENT_MAP).set("json", canonicalJson);
   return Y.encodeStateAsUpdate(yDocument);

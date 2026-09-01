@@ -61,3 +61,26 @@ export interface CareerRecordRelationDoc {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface CareerAiProposalDoc {
+  _id: string;
+  userId: string;
+  recordId: string;
+  status: "draft" | "streaming" | "ready" | "applied" | "rejected" | "cancelled" | "expired" | "conflicted";
+  baseDocumentVersion: number;
+  selection: { blockIds: string[]; from?: number; to?: number };
+  prompt: string;
+  summary: string | null;
+  commands: JsonValue[];
+  propertyChanges: JsonValue[];
+  progress: { phase: "preparing" | "generating" | "validating"; completed: number; total?: number } | null;
+  beforeSnapshotId: string | null;
+  afterSnapshotId: string | null;
+  beforeChecksum: string | null;
+  afterChecksum: string | null;
+  revisionId: string | null;
+  appliedDocumentVersion: number | null;
+  expiresAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}

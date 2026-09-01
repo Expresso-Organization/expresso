@@ -9,12 +9,15 @@ describe("career document session registry", () => {
     const registry = new InMemoryCareerDocumentSessionRegistry();
     const recordId = randomUUID();
     const received: unknown[][] = [[], []];
-    const leaveA = registry.join({ sessionId: randomUUID(), userId: "u", recordId, send: (m) => received[0]!.push(m) });
-    const leaveB = registry.join({ sessionId: randomUUID(), userId: "u", recordId, send: (m) => received[1]!.push(m) });
+    const sessionA = randomUUID(); const sessionB = randomUUID();
+    const leaveA = registry.join({ sessionId: sessionA, userId: "u", recordId, send: (m) => received[0]!.push(m) });
+    const leaveB = registry.join({ sessionId: sessionB, userId: "u", recordId, send: (m) => received[1]!.push(m) });
     const message = { type: "awareness" as const, protocolVersion: 1 as const, recordId, sessionId: randomUUID(), actor: "user" as const, payload: { cursor: 1 } };
     registry.publish(recordId, CareerSocketServerMessageSchema.parse(message));
     expect(received[0]).toHaveLength(1);
     expect(received[1]).toHaveLength(1);
+    expect(received[0]?.[0]).toMatchObject({ sessionId: sessionA });
+    expect(received[1]?.[0]).toMatchObject({ sessionId: sessionB });
     leaveA();
     expect(registry.count("u", recordId)).toBe(1);
     leaveB();

@@ -14,6 +14,8 @@ import {
   type CareerDocumentBootstrap,
   type CareerRevision,
   type CareerUpdateAck,
+  type AiEditProposalDetail,
+  type CreateAiEditProposal,
 } from "@expresso/contracts";
 import type { CareerRecordRevisionDoc, JsonValue } from "@expresso/database";
 import { Binary } from "mongodb";
@@ -28,6 +30,8 @@ import {
   hashUpdate,
   type CareerDocumentRepository,
 } from "./repository.js";
+import { AiProposalService } from "./ai-proposals.js";
+import type { AiProposalAdapter } from "./ai-adapter.js";
 
 type CreateRevisionInput = CareerRevision & { userId: string };
 
@@ -40,10 +44,19 @@ export interface CareerDocumentApi {
   restoreRevision(userId: string, revisionId: string, expectedVersion: number, expectedRecordId?: string): Promise<CareerDocumentBootstrap>;
   listRevisions(userId: string, recordId: string): Promise<CareerRevision[]>;
   updatesSince(userId: string, recordId: string, afterSequence: number): Promise<Array<{ serverSequence: number; updateBase64: string; actor: "user" | "ai" | "migration" }>>;
+  createAiProposal(userId: string, recordId: string, input: CreateAiEditProposal): Promise<AiEditProposalDetail>;
+  getAiProposal(userId: string, recordId: string, proposalId: string): Promise<AiEditProposalDetail>;
+  applyAiProposal(userId: string, recordId: string, input: unknown): Promise<AiEditProposalDetail>;
+  rejectAiProposal(userId: string, recordId: string, input: unknown): Promise<void>;
+  cancelAiProposal(userId: string, recordId: string, input: unknown): Promise<void>;
+  undoAiProposal(userId: string, recordId: string, input: unknown): Promise<CareerDocumentBootstrap>;
+  setAiProposalPublisher(publisher: (recordId: string, proposal: AiEditProposalDetail) => void): void;
+  setAiUpdatePublisher(publisher: (recordId: string, updateBase64: string, serverSequence: number) => void): void;
 }
 
 export class CareerDocumentService implements CareerDocumentApi {
   private readonly repository: CareerDocumentRepository;
+  private aiProposals?: AiProposalService;
 
   constructor(
     private readonly context: MongoContext,
@@ -53,6 +66,16 @@ export class CareerDocumentService implements CareerDocumentApi {
   ) {
     this.repository = repository ?? new MongoCareerDocumentRepository(context);
   }
+
+  private proposalService(adapter?: AiProposalAdapter) { return this.aiProposals ??= new AiProposalService(this.context, this, adapter); }
+  setAiProposalPublisher(publisher: (recordId: string, proposal: AiEditProposalDetail) => void) { this.proposalService().setPublisher(publisher); }
+  setAiUpdatePublisher(publisher: (recordId: string, updateBase64: string, serverSequence: number) => void) { this.proposalService().setUpdatePublisher(publisher); }
+  createAiProposal(userId: string, recordId: string, input: CreateAiEditProposal) { return this.proposalService().create(userId, recordId, input); }
+  getAiProposal(userId: string, recordId: string, proposalId: string) { return this.proposalService().get(userId, recordId, proposalId); }
+  applyAiProposal(userId: string, recordId: string, input: unknown) { return this.proposalService().apply(userId, recordId, input); }
+  rejectAiProposal(userId: string, recordId: string, input: unknown) { return this.proposalService().reject(userId, recordId, input); }
+  cancelAiProposal(userId: string, recordId: string, input: unknown) { return this.proposalService().reject(userId, recordId, input, "cancelled"); }
+  undoAiProposal(userId: string, recordId: string, input: unknown) { return this.proposalService().undo(userId, recordId, input); }
 
   private token(userId: string, recordId: string) {
     const body = `${userId}.${recordId}.${Date.now() + 15 * 60_000}`;

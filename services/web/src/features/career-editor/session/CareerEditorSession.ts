@@ -18,7 +18,7 @@ export interface CareerEditorSnapshot {
   status: SessionStatus;
   documentVersion: number;
   lastAckSequence: number;
-  proposal: { proposalId: string; baseDocumentVersion: number } | null;
+  proposal: { proposalId: string; baseDocumentVersion: number; status: "draft" | "streaming" | "ready" | "applied" | "rejected" | "cancelled" | "expired" | "conflicted"; progress: { phase: "preparing" | "generating" | "validating"; completed: number; total?: number | undefined } | null } | null;
 }
 export interface CareerEditorSessionOptions {
   fetch?: typeof globalThis.fetch;
@@ -81,8 +81,8 @@ export class CareerEditorSession {
   updateDocument = (next: CareerDocument) => {
     if (this.disposed) return;
     const parsed = CareerDocumentBootstrapSchema.shape.document.parse(next);
-    const update = encodeDocumentAsYUpdate(parsed, this.updates);
     const clientSequence = this.nextSequence++;
+    const update = encodeDocumentAsYUpdate(parsed, this.updates, `${this.clientId}:${clientSequence}`);
     const updateBase64 = encode(update);
     this.updates.push(update);
     this.document = reconstructYDocument(this.updates);
@@ -151,7 +151,7 @@ export class CareerEditorSession {
         this.snapshot = { ...this.snapshot, status: this.pending.size ? "saving" : "saved", documentVersion: message.documentVersion, lastAckSequence: Math.max(this.snapshot.lastAckSequence, message.sequence) };
         this.emit(); return;
       }
-      if (message.type === "proposal") { this.setSnapshot({ proposal: { proposalId: message.proposalId, baseDocumentVersion: message.baseDocumentVersion } }); return; }
+      if (message.type === "proposal") { this.setSnapshot({ proposal: { proposalId: message.proposalId, baseDocumentVersion: message.baseDocumentVersion, status: message.status, progress: message.progress } }); return; }
       if (message.type === "error") this.setSnapshot({ status: message.code === "VERSION_CONFLICT" ? "conflict" : "offline" });
     } catch { this.setSnapshot({ status: "conflict" }); }
   }

@@ -24,6 +24,7 @@ export interface MongoCollections {
   careerDocumentUpdates: Collection<Docs.CareerDocumentUpdateDoc>;
   careerRecordRevisions: Collection<Docs.CareerRecordRevisionDoc>;
   careerRecordRelations: Collection<Docs.CareerRecordRelationDoc>;
+  careerAiProposals: Collection<Docs.CareerAiProposalDoc>;
   answers: Collection<Docs.AnswerDoc>;
   answerRecordChanges: Collection<Docs.AnswerRecordChangeDoc>;
   recipes: Collection<Docs.RecipeDoc>;
@@ -109,6 +110,7 @@ export function mongoCollections(db: Db): MongoCollections {
     careerDocumentUpdates: db.collection<Docs.CareerDocumentUpdateDoc>("career_document_updates"),
     careerRecordRevisions: db.collection<Docs.CareerRecordRevisionDoc>("career_record_revisions"),
     careerRecordRelations: db.collection<Docs.CareerRecordRelationDoc>("career_record_relations"),
+    careerAiProposals: db.collection<Docs.CareerAiProposalDoc>("career_ai_proposals"),
     answers: db.collection<Docs.AnswerDoc>("answers"),
     answerRecordChanges: db.collection<Docs.AnswerRecordChangeDoc>("answer_record_changes"),
     recipes: db.collection<Docs.RecipeDoc>("recipes"),

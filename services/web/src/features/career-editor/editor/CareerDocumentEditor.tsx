@@ -15,6 +15,7 @@ import {
 import { SelectionToolbar } from "./SelectionToolbar";
 import { SlashMenu } from "./SlashMenu";
 import { PropertyList } from "../properties/PropertyList";
+import { AiProposalPanel } from "../ai/AiProposalPanel";
 
 const statusLabel = {
   loading: "불러오는 중",
@@ -29,11 +30,13 @@ export function CareerDocumentEditor({
   mode,
   record,
   category,
+  showAiProposal = true,
 }: {
   recordId: string;
   mode: "peek" | "page";
   record?: CareerRecordListItem;
   category?: CareerCategory;
+  showAiProposal?: boolean;
 }) {
   const { snapshot, document, updateDocument } = useCareerEditorSession(recordId);
   const [slashOpen, setSlashOpen] = useState(false);
@@ -94,8 +97,16 @@ export function CareerDocumentEditor({
         <EditorContent editor={editor} />
         <SlashMenu editor={editor} open={slashOpen} onClose={() => setSlashOpen(false)} />
       </div>
+      {showAiProposal ? <AiProposalPanel recordId={recordId} documentVersion={snapshot.documentVersion} selectedBlockIds={selectedBlockIds(editor, document.content[0]?.id)} announcedProposal={snapshot.proposal} /> : null}
     </section>
   );
+}
+
+function selectedBlockIds(editor: NonNullable<ReturnType<typeof useEditor>>, fallback?: string): string[] {
+  const ids = new Set<string>();
+  const { from, to } = editor.state.selection;
+  editor.state.doc.nodesBetween(from, to, (node) => { if (typeof node.attrs.id === "string") ids.add(node.attrs.id); });
+  return ids.size ? [...ids] : fallback ? [fallback] : [];
 }
 
 function categoryDefinitions(category: CareerCategory): CareerPropertyDefinitionV2[] {
