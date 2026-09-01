@@ -91,7 +91,7 @@ function ProjectGallery(props: CareerViewRendererProps) {
       </ul>
       <footer className={styles.projectGalleryFooter}>
         <span>{props.records.length}개 · 성과 수치 없음 {missingOutcome.length}</span>
-        <button type="button" disabled={!missingOutcome[0]} onClick={() => missingOutcome[0] && props.onActivate(missingOutcome[0].id)}>비어 있는 성과 채우기</button>
+        <button type="button" disabled={!missingOutcome[0]} onClick={() => missingOutcome[0] && props.onFillMissing(missingOutcome[0].id)}>비어 있는 성과 채우기</button>
       </footer>
     </section>
   );

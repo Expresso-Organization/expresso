@@ -9,6 +9,7 @@ test("matches the screen-definition layout at 375, 768, 1280 and 1440 widths", a
   else await page.getByRole("row").nth(1).click();
   await expect(page.getByLabel("커리어 문서 편집기")).toBeVisible();
   await expect(page.getByText("문서를 불러오고 있습니다.")).toHaveCount(0);
+  await expect(page.getByRole("toolbar", { name: "빠른 필터" })).toBeVisible();
   for (const width of [375, 768, 1280, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await expect(page.getByRole("complementary", { name: "문서 패널" })).toBeVisible();

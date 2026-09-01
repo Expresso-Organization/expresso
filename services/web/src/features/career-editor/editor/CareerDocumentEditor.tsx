@@ -15,7 +15,7 @@ import {
 import { SelectionToolbar } from "./SelectionToolbar";
 import { SlashMenu } from "./SlashMenu";
 import { PropertyList } from "../properties/PropertyList";
-import { AiProposalPanel } from "../ai/AiProposalPanel";
+import { AiProposalPanel, type AiPromptRequest } from "../ai/AiProposalPanel";
 
 const statusLabel = {
   loading: "불러오는 중",
@@ -31,15 +31,18 @@ export function CareerDocumentEditor({
   record,
   category,
   showAiProposal = true,
+  onAiRequest,
 }: {
   recordId: string;
   mode: "peek" | "page";
   record?: CareerRecordListItem;
   category?: CareerCategory;
   showAiProposal?: boolean;
+  onAiRequest?: ((request: AiPromptRequest) => void) | undefined;
 }) {
   const { snapshot, document, updateDocument } = useCareerEditorSession(recordId);
   const [slashOpen, setSlashOpen] = useState(false);
+  const [aiRequest, setAiRequest] = useState<AiPromptRequest | null>(null);
   const applyingRemote = useRef(false);
   const loadedVersion = useRef(-1);
   const editor = useEditor({
@@ -90,14 +93,14 @@ export function CareerDocumentEditor({
         </span>
       </div>
       <div className={styles.toolbarRow}>
-        <SelectionToolbar editor={editor} />
+        <SelectionToolbar editor={editor} onAiRequest={(prompt, blockIds) => { const request = { id: crypto.randomUUID(), recordId, prompt, blockIds }; if (onAiRequest) onAiRequest(request); else setAiRequest(request); }} />
         <BlockHandle editor={editor} />
       </div>
       <div className={styles.content}>
         <EditorContent editor={editor} />
         <SlashMenu editor={editor} open={slashOpen} onClose={() => setSlashOpen(false)} />
       </div>
-      {showAiProposal ? <AiProposalPanel recordId={recordId} documentVersion={snapshot.documentVersion} selectedBlockIds={selectedBlockIds(editor, document.content[0]?.id)} announcedProposal={snapshot.proposal} /> : null}
+      {showAiProposal ? <AiProposalPanel recordId={recordId} documentVersion={snapshot.documentVersion} selectedBlockIds={selectedBlockIds(editor, document.content[0]?.id)} announcedProposal={snapshot.proposal} requestedPrompt={aiRequest} onRequestHandled={() => setAiRequest(null)} document={document} definitions={category ? categoryDefinitions(category) : []} /> : null}
     </section>
   );
 }
@@ -105,7 +108,7 @@ export function CareerDocumentEditor({
 function selectedBlockIds(editor: NonNullable<ReturnType<typeof useEditor>>, fallback?: string): string[] {
   const ids = new Set<string>();
   const { from, to } = editor.state.selection;
-  editor.state.doc.nodesBetween(from, to, (node) => { if (typeof node.attrs.id === "string") ids.add(node.attrs.id); });
+  editor.state.doc.nodesBetween(from, to, (node) => { if (typeof node.attrs.careerId === "string") ids.add(node.attrs.careerId); });
   return ids.size ? [...ids] : fallback ? [fallback] : [];
 }
 

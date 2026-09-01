@@ -54,11 +54,11 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
 
   await page.getByRole("button", { name: "문장 다듬기", exact: true }).click();
   await expect(page.getByLabel("AI 제안 변경 목록")).toBeVisible();
-  await page.getByRole("button", { name: "선택한 변경 적용" }).click();
+  await page.getByRole("button", { name: /개 변경 적용/ }).click();
   await expect(page.getByRole("button", { name: "변경 되돌리기" })).toBeVisible();
   await page.getByRole("button", { name: "변경 되돌리기" }).click();
   await page.getByRole("button", { name: "되돌리기 확인" }).click();
-  await expect(page.getByRole("button", { name: "선택한 변경 적용" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /개 변경 적용/ })).toBeVisible();
 
   await page.getByRole("button", { name: "넓게 보기" }).click();
   await expect(page).toHaveURL(new RegExp(`/career/records/${record.id}$`));

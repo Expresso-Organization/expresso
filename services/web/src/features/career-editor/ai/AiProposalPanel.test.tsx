@@ -24,7 +24,7 @@ describe("AiProposalPanel", () => {
     resolve(proposal);
     expect(await screen.findByText(proposal.summary)).toBeTruthy();
     const checks = screen.getAllByRole("checkbox"); fireEvent.click(checks[1]!);
-    fireEvent.click(screen.getByRole("button", { name: "선택한 변경 적용" }));
+    fireEvent.click(screen.getByRole("button", { name: /개 변경 적용/ }));
     await waitFor(() => expect(api.apply).toHaveBeenCalledWith(recordId, proposalId, { expectedDocumentVersion: 3, commandIndexes: [0], propertyChangeIndexes: [] }));
   });
 
@@ -33,7 +33,7 @@ describe("AiProposalPanel", () => {
     const api = client({ apply });
     render(<AiProposalPanel recordId={recordId} documentVersion={4} announcedProposal={{ proposalId, baseDocumentVersion: 3 }} client={api} />);
     expect(await screen.findByText(proposal.summary)).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "선택한 변경 적용" }));
+    fireEvent.click(screen.getByRole("button", { name: /개 변경 적용/ }));
     expect((await screen.findByRole("alert")).textContent).toContain("충돌");
     expect(screen.getByText(proposal.summary)).toBeTruthy();
     cleanup();
@@ -41,11 +41,11 @@ describe("AiProposalPanel", () => {
     render(<AiProposalPanel recordId={recordId} documentVersion={4} selectedBlockIds={[blockId]} client={undoApi} />);
     fireEvent.click(screen.getByRole("button", { name: "문장 다듬기" }));
     expect(await screen.findByText(proposal.summary)).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "선택한 변경 적용" }));
+    fireEvent.click(screen.getByRole("button", { name: /개 변경 적용/ }));
     expect(await screen.findByRole("button", { name: "변경 되돌리기" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "변경 되돌리기" }));
     fireEvent.click(screen.getByRole("button", { name: "되돌리기 확인" }));
-    expect(await screen.findByRole("button", { name: "선택한 변경 적용" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /개 변경 적용/ })).toBeTruthy();
     expect(undoApi.undo).toHaveBeenCalledWith(recordId, proposalId, 4);
   });
 
@@ -65,5 +65,15 @@ describe("AiProposalPanel", () => {
     expect(await screen.findByText(/제안 작성 중/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "취소" }));
     await waitFor(() => expect(cancelApi.cancel).toHaveBeenCalledWith(recordId, proposalId));
+  });
+
+  it("starts a requested selection action once and shows human-readable before and after values", async () => {
+    const api = client();
+    const handled = vi.fn();
+    render(<AiProposalPanel recordId={recordId} documentVersion={3} selectedBlockIds={[blockId]} requestedPrompt={{ id: "request-1", recordId, prompt: "선택한 문장을 짧게" }} onRequestHandled={handled} document={{ schemaVersion: 1, type: "doc", content: [{ id: blockId, type: "paragraph", attrs: {}, text: [{ text: "사용자 10% 증가" }] }] }} definitions={[{ id: propertyId, key: "outcome", name: "성과 수치", type: "number", required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null }]} client={api} />);
+    await waitFor(() => expect(api.create).toHaveBeenCalledWith(recordId, { prompt: "선택한 문장을 짧게", selection: { blockIds: [blockId] } }));
+    expect(await screen.findByText("사용자 10% 증가")).toBeTruthy();
+    expect(screen.getByText("성과 수치 변경")).toBeTruthy();
+    expect(handled).toHaveBeenCalledOnce();
   });
 });

@@ -11,7 +11,9 @@ export interface CareerViewRendererProps {
   selectedIds: ReadonlySet<string>;
   onActivate(recordId: string): void;
   onCreate(): void;
+  onFillMissing(recordId: string): void;
   onToggle(recordId: string): void;
+  onViewChange(next: CareerViewConfiguration): void;
 }
 
 export function propertyKey(category: CareerCategory, propertyId: string): string | null {

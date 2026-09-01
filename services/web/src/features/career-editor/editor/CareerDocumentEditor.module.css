@@ -38,12 +38,14 @@
   background: var(--ex-bg);
 }
 
+.selectionArea,
 .selectionToolbar,
 .blockHandle {
   display: flex;
   align-items: center;
   gap: 4px;
 }
+.selectionArea { min-width:0; }
 
 .blockHandle {
   margin-left: auto;
@@ -82,6 +84,15 @@
   box-shadow: var(--ex-focus-ring);
 }
 
+.aiSelection { position:relative; margin-left:4px; border-left:1px solid var(--ex-border-soft); padding-left:8px; }
+.aiSelectionToggle { display:inline-flex; min-height:30px; align-items:center; gap:5px; border:1px solid transparent; border-radius:6px; background:transparent; padding:0 8px; color:var(--ex-accent-text); font:inherit; font-size:var(--ex-text-2xs); font-weight:600; cursor:pointer; }
+.aiSelectionToggle:hover:not(:disabled),.aiSelectionToggle[aria-expanded="true"] { border-color:var(--ex-border); background:var(--ex-accent-surface); }
+.aiSelectionToggle:disabled { color:var(--ex-fg-faint); cursor:not-allowed; }
+.aiSelectionToggle:focus-visible,.aiSelectionActions button:focus-visible { outline:none; box-shadow:var(--ex-focus-ring); }
+.aiSelectionActions { position:absolute; z-index:8; top:36px; left:8px; display:flex; width:max-content; max-width:min(620px,calc(100vw - 48px)); flex-wrap:wrap; gap:3px; border:1px solid var(--ex-border); border-radius:9px; padding:5px; background:var(--ex-bg); box-shadow:var(--ex-elevation-overlay); }
+.aiSelectionActions button { display:inline-flex; min-height:30px; align-items:center; gap:5px; border:0; border-radius:6px; background:transparent; padding:5px 8px; color:var(--ex-fg-body); font:inherit; font-size:var(--ex-text-2xs); white-space:nowrap; cursor:pointer; }
+.aiSelectionActions button:hover { background:var(--ex-bg-hover); color:var(--ex-fg-strong); }
+
 .content {
   position: relative;
   max-width: 760px;
@@ -91,6 +102,8 @@
 
 .editor[data-mode="peek"] .blockHandle { display: none; }
 .editor[data-mode="peek"] .content { padding-top: 28px; padding-right: 32px; padding-left: 32px; }
+.editor[data-mode="peek"] .aiSelection { position:static; }
+.editor[data-mode="peek"] .aiSelectionActions { top:100%; right:20px; left:20px; width:auto; max-width:none; }
 
 .content :global(.tiptap) {
   min-height: 420px;
@@ -157,6 +170,7 @@
   .toolbarRow { overflow-x: auto; }
   .content { padding: 32px 22px 96px; }
   .blockHandle { display: none; }
+  .aiSelectionActions { position:fixed; top:auto; right:12px; bottom:12px; left:12px; width:auto; max-width:none; }
   .slashMenu { left: 22px; }
 }
 
