@@ -19,6 +19,7 @@ const runtimeConfigSchema = z.object({
   MEDIA_DIR: z.string().min(1).default("var/media"),
   ANALYTICS_VISITOR_SALT: z.string().min(16).default("expresso-local-analytics-salt"),
   REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).default(30_000),
+  CAREER_SOCKET_ALLOWED_ORIGIN: z.url().default("http://127.0.0.1:3000"),
 
   /**
    * Google 로그인의 클라이언트 ID. **검증에만 쓴다** — ID 토큰의 `aud`가 우리
@@ -108,6 +109,7 @@ export interface RuntimeConfig {
   mediaDir?: string;
   analyticsVisitorSalt?: string;
   requestTimeoutMs?: number;
+  careerSocketAllowedOrigin?: string;
   /** 없으면 Google 로그인 경로를 열지 않는다. */
   googleClientId?: string | undefined;
   /** 없으면 `off`. 키도 로그인도 없이 앱 전체가 돌아야 한다. */
@@ -147,6 +149,7 @@ export function loadRuntimeConfig(
     mediaDir: result.MEDIA_DIR,
     analyticsVisitorSalt: result.ANALYTICS_VISITOR_SALT,
     requestTimeoutMs: result.REQUEST_TIMEOUT_MS,
+    careerSocketAllowedOrigin: result.CAREER_SOCKET_ALLOWED_ORIGIN,
     googleClientId: result.GOOGLE_CLIENT_ID,
     aiProvider: result.AI_PROVIDER,
     ...(result.AI_PROVIDER_PAGE_GENERATION

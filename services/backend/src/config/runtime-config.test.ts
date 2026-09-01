@@ -12,7 +12,13 @@ describe("loadRuntimeConfig", () => {
       outboxBatchSize: 25,
       outboxMaxAttempts: 5,
       queuePrefix: "expresso-mongo-v1",
+      careerSocketAllowedOrigin: "http://127.0.0.1:3000",
     });
+  });
+
+  it("reads the allowed career socket origin", () => {
+    expect(loadRuntimeConfig({ CAREER_SOCKET_ALLOWED_ORIGIN: "https://app.example.com" }).careerSocketAllowedOrigin)
+      .toBe("https://app.example.com");
   });
 
   it("rejects non-MongoDB database schemes", () => {

@@ -63,6 +63,8 @@ import {
 import { registerErrorHandler } from "./error-handler.js";
 import type { CareerDocumentApi } from "../modules/career-editor/index.js";
 import { registerCareerDocumentRoutes } from "../modules/career-editor/routes.js";
+import websocket from "@fastify/websocket";
+import { registerCareerDocumentSocket } from "../modules/career-editor/socket.js";
 
 export interface BuildApiOptions {
   config: RuntimeConfig;
@@ -116,6 +118,8 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
   });
 
   registerErrorHandler(app);
+  // WebSocket 플러그인은 HTTP 라우트보다 먼저 등록해야 업그레이드 훅을 잡는다.
+  void app.register(websocket);
 
   void app.register(registerSystemRoutes, {
     readinessChecks: options.readinessChecks ?? [],
@@ -141,6 +145,12 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
       });
     }
     if (options.careerDocumentService) registerCareerDocumentRoutes(app, { service: options.careerDocumentService, authenticateRequest: createAuthenticateRequest(options.identityService) });
+    if (options.careerDocumentService) registerCareerDocumentSocket(app, {
+      service: options.careerDocumentService,
+      identityService: options.identityService,
+      signingSecret: options.config.assetSigningSecret ?? "expresso-local-asset-signing-secret",
+      ...(options.config.careerSocketAllowedOrigin ? { allowedOrigin: options.config.careerSocketAllowedOrigin } : {}),
+    });
     if (options.jobMarketService) {
       registerJobMarketRoutes(app, {
         jobMarketService: options.jobMarketService,

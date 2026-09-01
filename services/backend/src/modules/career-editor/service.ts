@@ -1,4 +1,4 @@
-import { createHmac, randomUUID } from "node:crypto";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
 import {
   encodeDocumentAsYUpdate,
@@ -32,12 +32,14 @@ import {
 type CreateRevisionInput = CareerRevision & { userId: string };
 
 export interface CareerDocumentApi {
+  verifySessionToken(userId: string, recordId: string, token: string): boolean;
   bootstrap(userId: string, recordId: string): Promise<CareerDocumentBootstrap>;
   appendUpdate(userId: string, input: AppendCareerUpdate): Promise<CareerUpdateAck>;
   compact(recordId: string, expectedSequence: number): Promise<unknown>;
   createRevision(input: CreateRevisionInput): Promise<CareerRevision>;
   restoreRevision(userId: string, revisionId: string, expectedVersion: number, expectedRecordId?: string): Promise<CareerDocumentBootstrap>;
   listRevisions(userId: string, recordId: string): Promise<CareerRevision[]>;
+  updatesSince(userId: string, recordId: string, afterSequence: number): Promise<Array<{ serverSequence: number; updateBase64: string; actor: "user" | "ai" | "migration" }>>;
 }
 
 export class CareerDocumentService implements CareerDocumentApi {
@@ -55,6 +57,17 @@ export class CareerDocumentService implements CareerDocumentApi {
   private token(userId: string, recordId: string) {
     const body = `${userId}.${recordId}.${Date.now() + 15 * 60_000}`;
     return `${body}.${createHmac("sha256", this.signingSecret).update(body).digest("hex")}`;
+  }
+
+  /** WebSocket 첫 sync에서만 확인하는 짧은 수명 기록 전용 서명이다. */
+  verifySessionToken(userId: string, recordId: string, token: string): boolean {
+    const parts = token.split(".");
+    if (parts.length !== 4 || parts[0] !== userId || parts[1] !== recordId) return false;
+    const expiresAt = Number(parts[2]);
+    const signature = parts[3];
+    if (!Number.isFinite(expiresAt) || expiresAt < Date.now() || !signature) return false;
+    const expected = createHmac("sha256", this.signingSecret).update(`${parts[0]}.${parts[1]}.${parts[2]}`).digest("hex");
+    return signature.length === expected.length && timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
   }
 
   async bootstrap(userId: string, recordId: string): Promise<CareerDocumentBootstrap> {
@@ -168,6 +181,16 @@ export class CareerDocumentService implements CareerDocumentApi {
       }
     }
     return acknowledgement;
+  }
+
+  async updatesSince(userId: string, recordId: string, afterSequence: number) {
+    const record = await this.repository.record(userId, recordId);
+    if (!record) throw new CareerDocumentError(404, "career record not found");
+    return (await this.repository.updates(recordId, afterSequence)).map((row) => ({
+      serverSequence: row.serverSequence,
+      updateBase64: Buffer.from(binaryBytes(row.update)).toString("base64"),
+      actor: row.actor,
+    }));
   }
 
   compact(recordId: string, expectedSequence: number) {

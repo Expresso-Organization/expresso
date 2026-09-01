@@ -20,6 +20,7 @@ export const CareerSocketServerMessageSchema = z.discriminatedUnion("type", [
   SocketEnvelopeSchema.extend({ type: z.literal("update"), sequence: z.number().int().nonnegative(), updateBase64: z.string().base64().max(1_398_104), actor: z.enum(["user", "ai", "migration"]) }),
   SocketEnvelopeSchema.extend({ type: z.literal("ack"), sequence: z.number().int().nonnegative(), documentVersion: z.number().int().nonnegative() }),
   SocketEnvelopeSchema.extend({ type: z.literal("proposal"), proposalId: UuidSchema, baseDocumentVersion: z.number().int().nonnegative() }),
+  SocketEnvelopeSchema.extend({ type: z.literal("awareness"), actor: z.enum(["user", "ai"]), payload: z.record(z.string(), z.unknown()) }),
   SocketEnvelopeSchema.extend({ type: z.literal("error"), code: z.enum(["AUTH", "ORIGIN", "PROTOCOL", "SIZE", "RATE_LIMIT", "VERSION_CONFLICT"]), message: z.string().min(1).max(500) }),
 ]);
 export { CareerEditCommandSchema };
