@@ -16,6 +16,7 @@ import { recomputeMongoSkill, listMongoSkills, listMongoSkillEvidence } from "./
 import { MongoCareerDocumentRepository, hashUpdate } from "../career-editor/repository.js";
 import { Binary } from "mongodb";
 import { MongoCareerPropertySchemaService } from "./property-schema.js";
+import { CareerViewService } from "./views.js";
 
 const duplicate = (error: unknown) => (error as { code?: number })?.code === 11000;
 
@@ -25,6 +26,14 @@ export class CareerService implements CareerApi {
   previewChange(userId: string, categoryId: string, change: import("@expresso/contracts").CareerPropertySchemaChange) { return new MongoCareerPropertySchemaService(this.context).previewChange(userId, categoryId, change); }
   applyChange(userId: string, categoryId: string, expectedVersion: number, idempotencyKey: string, input: import("@expresso/contracts").ApplyCareerPropertyChange) { return new MongoCareerPropertySchemaService(this.context).applyChange(userId, categoryId, expectedVersion, idempotencyKey, input); }
   restoreProperty(userId: string, categoryId: string, propertyId: string, expectedVersion: number) { return new MongoCareerPropertySchemaService(this.context).restoreProperty(userId, categoryId, propertyId, expectedVersion); }
+
+  listViewConfigurations(userId: string, categoryId: string) { return new CareerViewService(this.context).list(userId, categoryId); }
+  createViewConfiguration(userId: string, categoryId: string, expectedCategoryVersion: number, input: import("./views.js").CreateCareerViewConfiguration) { return new CareerViewService(this.context).create(userId, categoryId, expectedCategoryVersion, input); }
+  updateViewConfiguration(userId: string, viewId: string, expectedVersion: number, input: import("./views.js").UpdateCareerViewConfiguration) { return new CareerViewService(this.context).update(userId, viewId, expectedVersion, input); }
+  duplicateViewConfiguration(userId: string, viewId: string, expectedVersion: number, name: string) { return new CareerViewService(this.context).duplicate(userId, viewId, expectedVersion, name); }
+  deleteViewConfiguration(userId: string, viewId: string, expectedVersion: number) { return new CareerViewService(this.context).delete(userId, viewId, expectedVersion); }
+  reorderViewConfigurations(userId: string, categoryId: string, expectedCategoryVersion: number, orderedIds: readonly string[]) { return new CareerViewService(this.context).reorder(userId, categoryId, expectedCategoryVersion, orderedIds); }
+  queryViewConfiguration(userId: string, viewId: string, cursor: string | null, limit: number) { return new CareerViewService(this.context).query(userId, viewId, cursor, limit); }
 
   createLink(userId: string, recordId: string, toRecordId: string, relation: "related" | "parent" | "duplicate_of") { return createMongoLink(this.context, userId, recordId, toRecordId, relation); }
   listLinks(userId: string, recordId: string) { return listMongoLinks(this.context, userId, recordId); }

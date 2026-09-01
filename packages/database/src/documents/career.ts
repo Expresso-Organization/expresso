@@ -62,13 +62,16 @@ export interface CareerViewDoc {
   _id: string;
   userId: string;
   categoryId: string;
-  name: string;
-  viewType: "table" | "gallery" | "timeline" | "board" | "list";
-  filters: JsonValue[];
-  sorts: JsonValue[];
-  visibleProperties: JsonValue;
-  sortOrder: number;
+  /** 기존 화면이 읽는 평면 뷰 필드입니다. 전환 기간 동안 유지합니다. */
+  name?: string;
+  viewType?: "table" | "gallery" | "timeline" | "board" | "list";
+  filters?: JsonValue[];
+  sorts?: JsonValue[];
+  visibleProperties?: JsonValue;
+  sortOrder?: number;
   createdAt: Date;
+  /** v2는 property UUID만 저장해 이름 변경에도 필터가 유지됩니다. */
+  configuration?: Contracts.CareerViewConfiguration;
 }
 
 export interface RecordLinkDoc {

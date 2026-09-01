@@ -24,6 +24,7 @@ export {
   CareerSortV2Schema,
   CareerViewConfigurationSchema,
 } from "./career-views.js";
+export type { CareerViewConfiguration } from "./career-views.js";
 export * from "./career-ai.js";
 export * from "./entitlements.js";
 export * from "./identity.js";
