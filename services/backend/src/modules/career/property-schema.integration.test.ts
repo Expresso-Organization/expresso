@@ -56,7 +56,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(applied.propertySchemaV2?.find((item) => item.id === propertyId)?.type).toBe("number");
     expect(await service.applyChange(userId, categoryId, 1, key, input)).toEqual(applied);
     const rows = await mongoCollections(fixture.resource.db).careerRecords.find({ _id: { $in: recordIds } }).toArray();
-    expect(rows.map((row) => row.properties.score).sort((left, right) => Number(left) - Number(right))).toEqual([7, 42]);
+    expect(rows.map((row) => row.properties.score)).toEqual(expect.arrayContaining([{ type: "number", value: 7 }, { type: "number", value: 42 }]));
     await expect(service.applyChange(userId, categoryId, 1, "another-key", input)).rejects.toMatchObject({ statusCode: 409 });
     await expect(service.previewChange(otherUserId, categoryId, change)).rejects.toMatchObject({ statusCode: 404 });
   });
@@ -75,7 +75,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const restored = await service.applyChange(userId, categoryId, 3, randomUUID(), { change: restoration, previewToken: restorePreview.previewToken, confirmLossy: false });
     expect(restored).toMatchObject({ version: 4, schemaVersion: 4 });
     const rows = await mongoCollections(fixture.resource.db).careerRecords.find({ _id: { $in: recordIds } }).toArray();
-    expect(rows.map((row) => row.properties.score).sort((left, right) => Number(left) - Number(right))).toEqual([7, 42]);
+    expect(rows.map((row) => row.properties.score)).toEqual(expect.arrayContaining([{ type: "number", value: 7 }, { type: "number", value: 42 }]));
     expect(rows.every((row) => row.propertyValueTombstones?.[propertyId] === undefined)).toBe(true);
   });
 });

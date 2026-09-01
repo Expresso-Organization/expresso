@@ -23,6 +23,10 @@ import {
   CareerRecordListResponseSchema,
   CareerRecordResponseSchema,
   CareerDocumentBootstrapSchema,
+  CareerCategorySchema,
+  CareerPropertyChangePreviewSchema,
+  type CareerPropertySchemaChange,
+  type ApplyCareerPropertyChange,
   CurrentUserResponseSchema,
   HomeReadModelSchema,
   JobPostingDetailResponseSchema,
@@ -867,6 +871,27 @@ export const career = {
       `${API_PREFIX}/career/records/${recordId}/document`,
       CareerDocumentBootstrapSchema,
       { accessToken, cache: "no-store" },
+    ),
+
+  previewPropertyChange: (accessToken: string, categoryId: string, change: CareerPropertySchemaChange) =>
+    request(
+      `${API_PREFIX}/career/categories/${categoryId}/property-schema/preview`,
+      z.strictObject({ data: CareerPropertyChangePreviewSchema }),
+      { accessToken, method: "POST", body: change },
+    ),
+
+  applyPropertyChange: (accessToken: string, categoryId: string, version: number, idempotencyKey: string, input: ApplyCareerPropertyChange) =>
+    request(
+      `${API_PREFIX}/career/categories/${categoryId}/property-schema/apply`,
+      z.strictObject({ data: CareerCategorySchema }),
+      { accessToken, method: "POST", body: input, ifMatch: `"v${version}"`, idempotencyKey },
+    ),
+
+  restoreProperty: (accessToken: string, categoryId: string, propertyId: string, version: number) =>
+    request(
+      `${API_PREFIX}/career/categories/${categoryId}/property-schema/${propertyId}/restore`,
+      z.strictObject({ data: CareerCategorySchema }),
+      { accessToken, method: "POST", ifMatch: `"v${version}"` },
     ),
 };
 

@@ -1,0 +1,75 @@
+"use client";
+
+import { CareerPropertyValueV2Schema, type CareerPropertyDefinitionV2, type CareerPropertyValueV2 } from "@expresso/contracts";
+import { useEffect, useMemo, useState } from "react";
+
+import { commitOnEnter, propertyOptions, ReadOnlyValue } from "./property-editors";
+import styles from "./properties.module.css";
+
+export interface PropertyValueEditorProps {
+  definition: CareerPropertyDefinitionV2;
+  value: CareerPropertyValueV2 | null;
+  onCommit(value: CareerPropertyValueV2 | null): Promise<void>;
+  disabled?: boolean;
+}
+
+const readOnlyTypes = new Set(["formula", "rollup", "created_time", "updated_time", "relation"]);
+
+function initialDraft(value: CareerPropertyValueV2 | null): string {
+  if (!value) return "";
+  if (value.type === "date") return value.value.start;
+  if (Array.isArray(value.value)) return "";
+  return String(value.value ?? "");
+}
+
+export function PropertyValueEditor({ definition, value, onCommit, disabled = false }: PropertyValueEditorProps) {
+  const [draft, setDraft] = useState(() => initialDraft(value));
+  const [dateEnd, setDateEnd] = useState(() => value?.type === "date" ? value.value.end ?? "" : "");
+  const [issue, setIssue] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const options = useMemo(() => propertyOptions(definition), [definition]);
+  useEffect(() => { setDraft(initialDraft(value)); setDateEnd(value?.type === "date" ? value.value.end ?? "" : ""); setIssue(null); }, [value]);
+
+  async function commit(next: CareerPropertyValueV2 | null) {
+    if (next === null) { setSaving(true); setIssue(null); try { await onCommit(null); } catch (error) { setIssue(error instanceof Error ? error.message : "저장하지 못했습니다."); } finally { setSaving(false); } return; }
+    const parsed = CareerPropertyValueV2Schema.safeParse(next);
+    if (!parsed.success) { setIssue(parsed.error.issues[0]?.message ?? "값을 확인해 주세요."); return; }
+    setSaving(true); setIssue(null);
+    try { await onCommit(parsed.data); }
+    catch (error) { setIssue(error instanceof Error ? error.message : "저장하지 못했습니다."); }
+    finally { setSaving(false); }
+  }
+
+  if (readOnlyTypes.has(definition.type)) return <ReadOnlyValue value={value} />;
+  if (definition.type === "checkbox") {
+    return <label className={styles.checkboxLabel}><input aria-label={definition.name} type="checkbox" checked={value?.type === "checkbox" ? value.value : false} disabled={disabled || saving} onChange={(event) => void commit({ type: "checkbox", value: event.target.checked })} /><span>{value?.type === "checkbox" && value.value ? "예" : "아니요"}</span></label>;
+  }
+  if (definition.type === "select") {
+    return <select className={styles.input} aria-label={definition.name} value={value?.type === "select" ? value.value ?? "" : ""} disabled={disabled || saving} onChange={(event) => void commit({ type: "select", value: event.target.value || null })}><option value="">선택 안 함</option>{options.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}</select>;
+  }
+  if (definition.type === "multi_select") {
+    const selected = new Set(value?.type === "multi_select" ? value.value : []);
+    return <div className={styles.multiSelect} aria-label={definition.name}>{options.map((option) => <label key={option.id} className={styles.optionCheck}><input type="checkbox" checked={selected.has(option.id)} disabled={disabled || saving} onChange={() => { const next = new Set(selected); if (next.has(option.id)) next.delete(option.id); else next.add(option.id); void commit({ type: "multi_select", value: [...next] }); }} />{option.name}</label>)}</div>;
+  }
+  if (definition.type === "date") {
+    const commitDate = () => draft ? void commit({ type: "date", value: { start: draft, end: dateEnd || null, timezone: null } }) : void commit(null);
+    return <div className={styles.dateFields}><label><span>시작</span><input className={styles.input} aria-label={`${definition.name} 시작`} type="date" value={draft} disabled={disabled || saving} onChange={(event) => setDraft(event.target.value)} onBlur={commitDate} /></label><label><span>종료</span><input className={styles.input} aria-label={`${definition.name} 종료`} type="date" value={dateEnd} disabled={disabled || saving} onChange={(event) => setDateEnd(event.target.value)} onBlur={commitDate} /></label>{issue ? <span className={styles.issue} role="alert">{issue}</span> : null}</div>;
+  }
+  if (definition.type === "file" || definition.type === "media") {
+    const assetType = definition.type;
+    const ids = value?.type === assetType ? value.value : [];
+    return <div className={styles.assetEditor}><div className={styles.assetList}>{ids.map((id) => <button key={id} type="button" disabled={disabled || saving} onClick={() => void commit({ type: assetType, value: ids.filter((item) => item !== id) })}>{id.slice(0, 8)} ×</button>)}</div><input className={styles.input} aria-label={`${definition.name} ID 추가`} placeholder="파일 ID를 붙여 넣고 Enter" value={draft} disabled={disabled || saving} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => commitOnEnter(event, () => { void commit({ type: assetType, value: [...ids, draft] }); setDraft(""); })} />{issue ? <span className={styles.issue} role="alert">{issue}</span> : null}</div>;
+  }
+
+  const inputType = definition.type === "email" ? "email" : definition.type === "url" ? "url" : definition.type === "phone" ? "tel" : "text";
+  const commitDraft = () => {
+    if (!draft && !definition.required) return void commit(null);
+    if (definition.type === "number") {
+      if (draft.trim() === "" || !Number.isFinite(Number(draft))) { setIssue("숫자를 입력해 주세요."); return; }
+      return void commit({ type: "number", value: Number(draft) });
+    }
+    const type = definition.type === "title" ? "title" : definition.type === "url" ? "url" : definition.type === "email" ? "email" : definition.type === "phone" ? "phone" : "text";
+    return void commit({ type, value: draft });
+  };
+  return <div className={styles.fieldEditor}><input className={styles.input} aria-label={definition.name} type={inputType} inputMode={definition.type === "number" ? "decimal" : undefined} value={draft} disabled={disabled || saving} onChange={(event) => { setDraft(event.target.value); setIssue(null); }} onBlur={commitDraft} onKeyDown={(event) => commitOnEnter(event, commitDraft)} />{saving ? <span className={styles.helpText}>저장 중</span> : null}{issue ? <span className={styles.issue} role="alert">{issue}</span> : null}</div>;
+}

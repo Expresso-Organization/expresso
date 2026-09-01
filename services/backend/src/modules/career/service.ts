@@ -104,7 +104,7 @@ export class CareerService implements CareerApi {
     return inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const category = await requireCareerCategory(tx, userId, input.categoryId, tx.session);
-      validateCareerProperties(category.propertySchema, input.properties);
+      validateCareerProperties(category.propertySchema, input.properties, category.propertySchemaV2);
       const records = mongoCollections(tx.db).careerRecords;
       const existing = await records.findOne({ userId, createIdempotencyKey: idempotencyKey }, { session: tx.session });
       if (existing) {
@@ -151,7 +151,7 @@ export class CareerService implements CareerApi {
       }
       const category = await requireCareerCategory(tx, userId, existing.categoryId, tx.session);
       const properties = input.properties ?? existing.properties;
-      validateCareerProperties(category.propertySchema, properties);
+      validateCareerProperties(category.propertySchema, properties, category.propertySchemaV2);
       const updated = await records.findOneAndUpdate({ _id: recordId, userId, deletedAt: null, version: expectedVersion }, { $set: { title: input.title ?? existing.title, bodyMd: input.bodyMd ?? existing.bodyMd, properties, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
       if (!updated) throw new CareerError(412, "career record version is stale");
       if (input.bodyMd !== undefined) {

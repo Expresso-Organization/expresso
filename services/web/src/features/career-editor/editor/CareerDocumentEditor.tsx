@@ -1,6 +1,7 @@
 "use client";
 
 import { EditorContent, useEditor } from "@tiptap/react";
+import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecordListItem } from "@expresso/contracts";
 import { useEffect, useRef, useState } from "react";
 
 import { useCareerEditorSession } from "../session/useCareerEditorSession";
@@ -13,6 +14,7 @@ import {
 } from "./extensions";
 import { SelectionToolbar } from "./SelectionToolbar";
 import { SlashMenu } from "./SlashMenu";
+import { PropertyList } from "../properties/PropertyList";
 
 const statusLabel = {
   loading: "불러오는 중",
@@ -25,9 +27,13 @@ const statusLabel = {
 export function CareerDocumentEditor({
   recordId,
   mode,
+  record,
+  category,
 }: {
   recordId: string;
   mode: "peek" | "page";
+  record?: CareerRecordListItem;
+  category?: CareerCategory;
 }) {
   const { snapshot, document, updateDocument } = useCareerEditorSession(recordId);
   const [slashOpen, setSlashOpen] = useState(false);
@@ -73,6 +79,7 @@ export function CareerDocumentEditor({
 
   return (
     <section className={styles.editor} data-mode={mode} aria-label="커리어 문서 편집기">
+      {record && category ? <PropertyList record={record} definitions={categoryDefinitions(category)} categoryId={category.id} categoryVersion={category.version} schemaMutable={!category.isSystem} /> : null}
       <div className={styles.statusBar}>
         <span>본문 편집</span>
         <span className={styles.saveState} data-status={snapshot.status} role="status" aria-live="polite">
@@ -89,4 +96,14 @@ export function CareerDocumentEditor({
       </div>
     </section>
   );
+}
+
+function categoryDefinitions(category: CareerCategory): CareerPropertyDefinitionV2[] {
+  if (category.propertySchemaV2) return category.propertySchemaV2;
+  return Object.entries(category.propertySchema).map(([key, definition], order) => ({
+    id: definition.id ?? `00000000-0000-4000-8000-${String(order + 1).padStart(12, "0")}`,
+    key, name: definition.label,
+    type: definition.type === "boolean" ? "checkbox" : definition.type === "tags" ? "multi_select" : definition.type,
+    required: definition.required, system: definition.system, config: {}, order, version: 1, deletedAt: null,
+  }));
 }

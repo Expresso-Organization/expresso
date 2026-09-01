@@ -1,6 +1,6 @@
 "use client";
 
-import type { CareerRecordListItem } from "@expresso/contracts";
+import type { CareerCategory, CareerRecordListItem } from "@expresso/contracts";
 
 import { Icon } from "@/components/ui/Icon";
 import { CareerDocumentEditor } from "@/features/career-editor/editor/CareerDocumentEditor";
@@ -45,16 +45,14 @@ const ORIGIN_LABEL: Record<string, string> = {
 
 export function DocumentPanel({
   record,
-  categoryKey,
-  categoryName,
+  category,
   onClose,
 }: {
   record: CareerRecordListItem | null;
-  categoryKey: string;
-  categoryName: string;
+  category: CareerCategory;
   onClose: () => void;
 }) {
-  const quickActions = QUICK_ACTIONS[categoryKey] ?? QUICK_ACTIONS.experience!;
+  const quickActions = QUICK_ACTIONS[category.key] ?? QUICK_ACTIONS.experience!;
 
   return (
     <aside
@@ -71,7 +69,7 @@ export function DocumentPanel({
         <button type="button" className={styles.headAction} aria-label="넓게 보기">
           <Icon name="arrows-out-simple" size={15} />
         </button>
-        <span className={styles.headLabel}>{categoryName} · 문서</span>
+        <span className={styles.headLabel}>{category.name} · 문서</span>
         <div className={styles.headRight}>
           <span className={styles.headLabel}>{record ? "저장됨" : ""}</span>
           <button type="button" className={styles.headAction} aria-label="닫기" onClick={onClose}>
@@ -91,8 +89,6 @@ export function DocumentPanel({
       ) : (
         <>
           <div className={styles.body}>
-            <div className={styles.title}>{record.title || "제목 없음"}</div>
-
             <div className={styles.properties}>
               <div className={styles.propertyRow}>
                 <span className={styles.propertyLabel}>
@@ -142,42 +138,12 @@ export function DocumentPanel({
                 </span>
               </div>
 
-              {/* 카테고리 스키마가 정의한 속성만 보여준다 */}
-              {Object.entries(record.properties).map(([key, value]) => (
-                <div key={key} className={styles.propertyRow}>
-                  <span className={styles.propertyLabel}>
-                    <Icon name="tag" size={13} color="var(--ex-fg-muted)" />
-                    <span className={styles.propertyLabelText}>{key}</span>
-                  </span>
-                  <span>
-                    {Array.isArray(value) ? (
-                      <span className={styles.propertyChips}>
-                        {value.map((item) => (
-                          <span key={item} className={styles.chip}>
-                            {item}
-                          </span>
-                        ))}
-                      </span>
-                    ) : (
-                      <span className={styles.propertyValue}>{String(value)}</span>
-                    )}
-                  </span>
-                </div>
-              ))}
-
-              <div className={styles.propertyRow}>
-                <span className={styles.propertyLabel}>
-                  <Icon name="plus" size={13} color="var(--ex-border-firm)" />
-                  <span className={styles.propertyLabelText}>속성 추가</span>
-                </span>
-                <span />
-              </div>
             </div>
 
             <div className={styles.divider} />
 
             <div className={styles.blocks}>
-              <CareerDocumentEditor recordId={record.id} mode="peek" />
+              <CareerDocumentEditor recordId={record.id} mode="peek" record={record} category={category} />
             </div>
           </div>
 

@@ -1,0 +1,43 @@
+.propertyList { display: grid; gap: 8px; padding: 12px 0 16px; border-bottom: 1px solid var(--ex-border-soft); }
+.listHeading { display: flex; align-items: center; justify-content: space-between; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); font-weight: 600; }
+.listHeading button, .dialog button, .tombstones button { border: 0; border-radius: 6px; background: transparent; color: var(--ex-fg-body); font: inherit; cursor: pointer; }
+.listHeading button:hover, .dialog button:hover { background: var(--ex-bg-hover); }
+.propertyRow { display: grid; grid-template-columns: minmax(88px, 0.35fr) minmax(0, 1fr); align-items: start; gap: 12px; min-height: 34px; }
+.propertyRow > label { padding-top: 8px; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); overflow: hidden; text-overflow: ellipsis; }
+.fieldEditor, .assetEditor, .dateFields { display: grid; gap: 4px; min-width: 0; }
+.input { width: 100%; min-height: 32px; box-sizing: border-box; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 6px 8px; color: var(--ex-fg-strong); font: inherit; }
+.input:hover { border-color: var(--ex-border-soft); background: var(--ex-bg-hover); }
+.input:focus { border-color: var(--ex-accent); outline: 2px solid var(--ex-focus-ring); outline-offset: 1px; background: var(--ex-bg); }
+.issue { color: var(--ex-status-danger-text); font-size: var(--ex-text-xs); }
+.helpText, .emptyValue { color: var(--ex-fg-muted); font-size: var(--ex-text-xs); }
+.checkboxLabel, .optionCheck { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; color: var(--ex-fg-body); font-size: var(--ex-text-sm); }
+.multiSelect { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+.dateFields { grid-template-columns: 1fr 1fr; }
+.dateFields label { display: grid; gap: 4px; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); }
+.readOnlyValue { display: block; min-height: 32px; padding: 7px 8px; color: var(--ex-fg-muted); font-size: var(--ex-text-sm); overflow-wrap: anywhere; }
+.assetList { display: flex; flex-wrap: wrap; gap: 4px; }
+.assetList button { border: 1px solid var(--ex-border-soft); border-radius: 999px; background: var(--ex-bg-muted); padding: 3px 8px; color: var(--ex-fg-body); }
+.dialogBackdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 16px; background: color-mix(in srgb, var(--ex-fg-strong) 28%, transparent); }
+.dialog { width: min(760px, 100%); max-height: min(720px, calc(100dvh - 32px)); overflow: hidden; border: 1px solid var(--ex-border-soft); border-radius: 12px; background: var(--ex-bg); box-shadow: var(--ex-elevation-overlay); }
+.dialog header { display: flex; align-items: flex-start; justify-content: space-between; padding: 16px; border-bottom: 1px solid var(--ex-border-soft); }
+.dialog h2 { margin: 0; color: var(--ex-fg-strong); font-size: var(--ex-text-lg); }
+.dialog header p { margin: 4px 0 0; color: var(--ex-fg-muted); font-size: var(--ex-text-sm); }
+.dialog header > button { width: 32px; height: 32px; font-size: var(--ex-text-lg); }
+.dialogBody { display: grid; grid-template-columns: minmax(180px, 0.38fr) minmax(0, 1fr); min-height: 430px; max-height: calc(100dvh - 150px); overflow: auto; }
+.dialog nav { padding: 12px; border-right: 1px solid var(--ex-border-soft); }
+.schemaItem, .schemaItemActive { display: flex; align-items: center; border-radius: 6px; }
+.schemaItemActive { background: var(--ex-accent-soft); }
+.schemaItem:focus-visible, .schemaItemActive:focus-visible { outline: 2px solid var(--ex-focus-ring); }
+.schemaItem button, .schemaItemActive button { display: grid; flex: 1; justify-items: start; padding: 8px; text-align: left; }
+.schemaItem small, .schemaItemActive small { color: var(--ex-fg-muted); }
+.schemaForm { display: grid; align-content: start; gap: 12px; padding: 16px; }
+.schemaForm > label, .impact label { display: grid; gap: 4px; color: var(--ex-fg-body); font-size: var(--ex-text-sm); }
+.schemaForm > button, .impact > button, .tombstones button { min-height: 34px; padding: 7px 10px; border: 1px solid var(--ex-border-soft); background: var(--ex-bg-muted); }
+.schemaForm button:disabled { cursor: not-allowed; opacity: .5; }
+.schemaForm .dangerButton { color: var(--ex-status-danger-text); }
+.impact { display: grid; gap: 8px; margin-top: 8px; padding: 12px; border-radius: 8px; background: var(--ex-bg-muted); }
+.impact p { margin: 0; color: var(--ex-fg-muted); font-size: var(--ex-text-sm); }
+.impact code { padding: 5px 7px; border-radius: 6px; background: var(--ex-bg); color: var(--ex-fg-strong); }
+.tombstones { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--ex-border-soft); }
+.message { margin: 0; color: var(--ex-fg-body); font-size: var(--ex-text-sm); }
+@media (max-width: 767px) { .dialogBackdrop { padding: 0; align-items: end; } .dialog { width: 100%; max-height: 92dvh; border-radius: 12px 12px 0 0; } .dialogBody { grid-template-columns: 1fr; } .dialog nav { display: flex; gap: 4px; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--ex-border-soft); } .schemaItem, .schemaItemActive { min-width: 132px; } .propertyRow { grid-template-columns: 88px minmax(0, 1fr); } .dateFields { grid-template-columns: 1fr; } }

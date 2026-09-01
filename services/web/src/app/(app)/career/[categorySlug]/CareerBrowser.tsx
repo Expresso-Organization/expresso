@@ -213,8 +213,7 @@ export function CareerBrowser({
 
       <DocumentPanel
         record={selected}
-        categoryKey={category.key}
-        categoryName={category.name}
+        category={category}
         onClose={() => setSelectedId(null)}
       />
     </>
