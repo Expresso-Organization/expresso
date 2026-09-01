@@ -1,6 +1,7 @@
 .propertyList { display: grid; gap: 8px; padding: 12px 0 16px; border-bottom: 1px solid var(--ex-border-soft); }
 .titleEditor { padding: 4px 0 10px; }
 .titleEditor input { min-height: 48px; padding: 4px 0; border: 0; font-size: var(--ex-text-xl); font-weight: 600; line-height: var(--ex-leading-tight); letter-spacing: -.025em; }
+.titleEditor input:focus { border-color:transparent; outline:none; background:transparent; box-shadow:none; }
 .metaValue { min-height: 32px; padding: 8px; color: var(--ex-fg-body); font-size: var(--ex-text-sm); }
 .propertyActions { display:flex; align-items:center; justify-content:space-between; padding-top:4px; }
 .propertyActions button { display:inline-flex; align-items:center; gap:6px; border:0; background:transparent; padding:6px 0; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); cursor:pointer; }
