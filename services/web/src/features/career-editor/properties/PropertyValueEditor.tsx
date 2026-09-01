@@ -4,6 +4,7 @@ import { CareerPropertyValueV2Schema, type CareerPropertyDefinitionV2, type Care
 import { useEffect, useMemo, useState } from "react";
 
 import { commitOnEnter, propertyOptions, ReadOnlyValue } from "./property-editors";
+import { PropertySelect } from "./PropertySelect";
 import styles from "./properties.module.css";
 
 export interface PropertyValueEditorProps {
@@ -61,7 +62,14 @@ export function PropertyValueEditor({ definition, value, onCommit, disabled = fa
     return <label className={styles.checkboxLabel}><input aria-label={definition.name} type="checkbox" checked={value?.type === "checkbox" ? value.value : false} disabled={disabled || saving} onChange={(event) => void commit({ type: "checkbox", value: event.target.checked })} /><span>{value?.type === "checkbox" && value.value ? "예" : "아니요"}</span></label>;
   }
   if (definition.type === "select") {
-    return <select className={styles.input} aria-label={definition.name} value={value?.type === "select" ? value.value ?? "" : ""} disabled={disabled || saving} onChange={(event) => void commit({ type: "select", value: event.target.value || null })}><option value="">선택 안 함</option>{options.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}</select>;
+    return <PropertySelect
+      label={definition.name}
+      value={value?.type === "select" ? value.value ?? "" : ""}
+      placeholder="선택 안 함"
+      disabled={disabled || saving}
+      options={[{ value: "", label: "선택 안 함" }, ...options.map((option) => ({ value: option.id, label: option.name }))]}
+      onChange={(next) => void commit({ type: "select", value: next || null })}
+    />;
   }
   if (definition.type === "multi_select") {
     const selected = new Set(value?.type === "multi_select" ? value.value : []);

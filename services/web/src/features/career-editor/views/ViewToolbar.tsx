@@ -2,7 +2,10 @@
 
 import type { CareerCategory, CareerViewConfiguration } from "@expresso/contracts";
 import { useState } from "react";
+
 import { Icon } from "@/components/ui/Icon";
+import { PropertySelect } from "@/features/career-editor/properties/PropertySelect";
+
 import styles from "./views.module.css";
 
 const LABELS = { table: "테이블", list: "목록", gallery: "갤러리", board: "보드", timeline: "타임라인" } as const;
@@ -14,9 +17,41 @@ const OFFERED: Record<string, readonly CareerViewConfiguration["type"][]> = {
 const SPECIAL: Record<string, string> = { skill_tool: "수요 비교", academic_writing: "인용 지표" };
 
 export function ViewToolbar({ category, view, onChange, onCreate, onAiCreate, onDuplicate }: { category: CareerCategory; view: CareerViewConfiguration; onChange(next: CareerViewConfiguration): Promise<void>; onCreate(): void; onAiCreate(): void; onDuplicate(): Promise<void> }) {
-  const [settings, setSettings] = useState(false); const definitions = (category.propertySchemaV2 ?? []).filter((item) => item.deletedAt === null);
+  const [settings, setSettings] = useState(false);
+  const definitions = (category.propertySchemaV2 ?? []).filter((item) => item.deletedAt === null);
+  const definitionOptions = definitions.map((item) => ({ value: item.id, label: item.name }));
   const filterPropertyId = view.filter && typeof view.filter === "object" && !Array.isArray(view.filter) && "propertyId" in view.filter ? String((view.filter as { propertyId: string }).propertyId) : "";
   const offered = OFFERED[category.key] ?? ["table", "list", "gallery", "board", "timeline"];
   const patch = (next: Partial<CareerViewConfiguration>) => void onChange({ ...view, ...next });
-  return <div className={styles.toolbar}><div className={styles.viewTabs} role="tablist" aria-label="저장 뷰">{offered.map((type) => <button role="tab" aria-selected={view.type === type} key={type} onClick={() => patch({ type })}>{LABELS[type]}</button>)}{SPECIAL[category.key] ? <button type="button" aria-disabled="true" title="후속 분석 뷰">{SPECIAL[category.key]}</button> : null}<button type="button" onClick={() => void onDuplicate()}>＋ 뷰 추가</button></div><div className={styles.toolbarActions}><button type="button" onClick={() => setSettings((value) => !value)} aria-expanded={settings}><Icon name="funnel" size={12} />필터</button><button type="button" onClick={() => setSettings((value) => !value)}><Icon name="sort-ascending" size={12} />정렬</button><button type="button" onClick={() => setSettings((value) => !value)}><Icon name="sliders-horizontal" size={12} />속성</button><span className={styles.createSplit}><button type="button" onClick={onCreate}>새로 만들기</button><button type="button" onClick={onAiCreate}><Icon name="coffee" size={12} />AI로 만들기</button></span></div>{settings ? <section className={styles.settings} aria-label="뷰 설정"><label>필터 속성<select value={filterPropertyId} onChange={(event) => patch({ filter: event.target.value ? { propertyId: event.target.value, operator: "is_not_empty", operand: null } : null })}><option value="">필터 없음</option>{definitions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>정렬 속성<select value={view.sorts[0]?.propertyId ?? ""} onChange={(event) => patch({ sorts: event.target.value ? [{ propertyId: event.target.value, direction: "asc", nulls: "last" }] : [] })}><option value="">정렬 없음</option>{definitions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><fieldset><legend>표시 속성</legend>{definitions.map((item) => <label key={item.id}><input type="checkbox" checked={view.visiblePropertyIds.includes(item.id)} onChange={() => patch({ visiblePropertyIds: view.visiblePropertyIds.includes(item.id) ? view.visiblePropertyIds.filter((id) => id !== item.id) : [...view.visiblePropertyIds, item.id], propertyOrder: view.propertyOrder.includes(item.id) ? view.propertyOrder : [...view.propertyOrder, item.id] })} />{item.name}</label>)}</fieldset><label>그룹 속성<select value={view.groupPropertyId ?? ""} onChange={(event) => patch({ groupPropertyId: event.target.value || null })}><option value="">그룹 없음</option>{definitions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>그룹 순서<input value={view.groupOrder.join(", ")} onChange={(event) => patch({ groupOrder: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} /></label>{view.type === "gallery" ? <label>갤러리 표지<select value={view.gallery?.coverPropertyId ?? ""} onChange={(event) => patch({ gallery: { coverPropertyId: event.target.value || null, previewPropertyIds: view.gallery?.previewPropertyIds ?? [] } })}><option value="">표지 없음</option>{definitions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label> : null}{view.type === "board" ? <label>숨긴 보드 그룹<input value={view.board?.hiddenGroupIds.join(", ") ?? ""} onChange={(event) => patch({ board: { hiddenGroupIds: event.target.value.split(",").map((item) => item.trim()).filter(Boolean), cardOrder: view.board?.cardOrder ?? {} } })} /></label> : null}{view.type === "timeline" ? <><label>시작 날짜<select value={view.timeline?.startPropertyId ?? ""} onChange={(event) => { if (event.target.value) patch({ timeline: { startPropertyId: event.target.value, endPropertyId: null, axisStart: null, axisEnd: null } }); }}><option value="">선택</option>{definitions.filter((item) => item.type === "date").map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>축 시작<input type="date" value={view.timeline?.axisStart ?? ""} onChange={(event) => view.timeline && patch({ timeline: { ...view.timeline, axisStart: event.target.value || null } })} /></label></> : null}<button type="button" onClick={() => void onDuplicate()}>현재 뷰 복제</button></section> : null}</div>;
+
+  return <div className={styles.toolbar}>
+    <div className={styles.viewTabs} role="tablist" aria-label="저장 뷰">
+      {offered.map((type) => <button role="tab" aria-selected={view.type === type} key={type} onClick={() => patch({ type })}>{LABELS[type]}</button>)}
+      {SPECIAL[category.key] ? <button type="button" aria-disabled="true" title="후속 분석 뷰">{SPECIAL[category.key]}</button> : null}
+      <button type="button" onClick={() => void onDuplicate()}>＋ 뷰 추가</button>
+    </div>
+    <div className={styles.toolbarActions}>
+      <button type="button" onClick={() => setSettings((value) => !value)} aria-expanded={settings}><Icon name="funnel" size={12} />필터</button>
+      <button type="button" onClick={() => setSettings((value) => !value)}><Icon name="sort-ascending" size={12} />정렬</button>
+      <button type="button" onClick={() => setSettings((value) => !value)}><Icon name="sliders-horizontal" size={12} />속성</button>
+      <span className={styles.createSplit}>
+        <button type="button" onClick={onCreate}>새로 만들기</button>
+        <button type="button" onClick={onAiCreate}><Icon name="coffee" size={12} />AI로 만들기</button>
+      </span>
+    </div>
+    {settings ? <section className={styles.settings} aria-label="뷰 설정">
+      <label>필터 속성<PropertySelect label="필터 속성" value={filterPropertyId} placeholder="필터 없음" options={[{ value: "", label: "필터 없음" }, ...definitionOptions]} onChange={(propertyId) => patch({ filter: propertyId ? { propertyId, operator: "is_not_empty", operand: null } : null })} /></label>
+      <label>정렬 속성<PropertySelect label="정렬 속성" value={view.sorts[0]?.propertyId ?? ""} placeholder="정렬 없음" options={[{ value: "", label: "정렬 없음" }, ...definitionOptions]} onChange={(propertyId) => patch({ sorts: propertyId ? [{ propertyId, direction: "asc", nulls: "last" }] : [] })} /></label>
+      <fieldset><legend>표시 속성</legend>{definitions.map((item) => <label key={item.id}><input type="checkbox" checked={view.visiblePropertyIds.includes(item.id)} onChange={() => patch({ visiblePropertyIds: view.visiblePropertyIds.includes(item.id) ? view.visiblePropertyIds.filter((id) => id !== item.id) : [...view.visiblePropertyIds, item.id], propertyOrder: view.propertyOrder.includes(item.id) ? view.propertyOrder : [...view.propertyOrder, item.id] })} />{item.name}</label>)}</fieldset>
+      <label>그룹 속성<PropertySelect label="그룹 속성" value={view.groupPropertyId ?? ""} placeholder="그룹 없음" options={[{ value: "", label: "그룹 없음" }, ...definitionOptions]} onChange={(propertyId) => patch({ groupPropertyId: propertyId || null })} /></label>
+      <label>그룹 순서<input value={view.groupOrder.join(", ")} onChange={(event) => patch({ groupOrder: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} /></label>
+      {view.type === "gallery" ? <label>갤러리 표지<PropertySelect label="갤러리 표지" value={view.gallery?.coverPropertyId ?? ""} placeholder="표지 없음" options={[{ value: "", label: "표지 없음" }, ...definitionOptions]} onChange={(propertyId) => patch({ gallery: { coverPropertyId: propertyId || null, previewPropertyIds: view.gallery?.previewPropertyIds ?? [] } })} /></label> : null}
+      {view.type === "board" ? <label>숨긴 보드 그룹<input value={view.board?.hiddenGroupIds.join(", ") ?? ""} onChange={(event) => patch({ board: { hiddenGroupIds: event.target.value.split(",").map((item) => item.trim()).filter(Boolean), cardOrder: view.board?.cardOrder ?? {} } })} /></label> : null}
+      {view.type === "timeline" ? <>
+        <label>시작 날짜<PropertySelect label="시작 날짜" value={view.timeline?.startPropertyId ?? ""} placeholder="선택" options={[{ value: "", label: "선택" }, ...definitions.filter((item) => item.type === "date").map((item) => ({ value: item.id, label: item.name }))]} onChange={(propertyId) => { if (propertyId) patch({ timeline: { startPropertyId: propertyId, endPropertyId: null, axisStart: null, axisEnd: null } }); }} /></label>
+        <label>축 시작<input type="date" value={view.timeline?.axisStart ?? ""} onChange={(event) => view.timeline && patch({ timeline: { ...view.timeline, axisStart: event.target.value || null } })} /></label>
+      </> : null}
+      <button type="button" onClick={() => void onDuplicate()}>현재 뷰 복제</button>
+    </section> : null}
+  </div>;
 }
