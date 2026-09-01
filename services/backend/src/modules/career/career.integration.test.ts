@@ -1,4 +1,5 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { encodeDocumentAsYUpdate } from "@expresso/editor";
 import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
 import type { SqlTag } from "../../platform/legacy-mysql.js";
@@ -16,6 +17,7 @@ import { mongoCollections } from "@expresso/database";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { assertActiveRecordsForWrite, purgeTrashedCareerRecord } from "./mongo-record-guard.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
+import { CareerDocumentService } from "../career-editor/index.js";
 
 describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
   let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
@@ -53,6 +55,38 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
     expect(results.find((result) => result.status === "rejected")).toMatchObject({ reason: { statusCode: 412 } });
     expect((await service.getRecord(userId, record.id)).version).toBe(2);
     await expect(service.updateRecord(otherId, record.id, 2, { title: "침입" })).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("projects editor documents to legacy bodyMd and rejects a legacy overwrite with pending Yjs updates", async () => {
+    const { record } = await service.createRecord(userId, randomUUID(), {
+      categoryId,
+      title: "호환",
+      properties: {},
+      bodyMd: "# 초기",
+    });
+    const legacySaved = await service.updateRecord(userId, record.id, record.version, { bodyMd: "# 레거시 저장" });
+    expect(legacySaved.bodyMd).toBe("# 레거시 저장");
+    const collections = mongoCollections(fixture.resource.db);
+    expect(await collections.careerDocumentSnapshots.countDocuments({ recordId: record.id })).toBe(1);
+    expect(await collections.careerRecordRevisions.countDocuments({ recordId: record.id, summary: "레거시 본문 저장" })).toBe(1);
+
+    const documentService = new CareerDocumentService(fixture.resource, "legacy-compatibility-secret");
+    const bootstrap = await documentService.bootstrap(userId, record.id);
+    const next = structuredClone(bootstrap.document);
+    next.content[0]!.text = [{ text: "Yjs 변경" }];
+    const base = encodeDocumentAsYUpdate(bootstrap.document);
+    const update = encodeDocumentAsYUpdate(next, [base]);
+    await documentService.appendUpdate(userId, {
+      recordId: record.id,
+      clientId: randomUUID(),
+      clientSequence: 1,
+      expectedSequence: bootstrap.documentVersion,
+      updateBase64: Buffer.from(update).toString("base64"),
+      checksum: createHash("sha256").update(update).digest("hex"),
+    });
+    expect((await service.getRecord(userId, record.id)).bodyMd).toContain("Yjs 변경");
+    await expect(service.updateRecord(userId, record.id, legacySaved.version, { bodyMd: "# 덮어쓰기" }))
+      .rejects.toMatchObject({ statusCode: 409 });
   });
 
   it("requires confirmation to remove populated properties and protects system fields", async () => {

@@ -5,8 +5,8 @@ import type { Document } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { CareerError } from "./errors.js";
 
-export function mapMongoRecord(record: CareerRecordDoc) {
-  return CareerRecordSchema.parse({ id: record._id, categoryId: record.categoryId, title: record.title, status: record.status, origin: record.origin, properties: record.properties, bodyMd: record.bodyMd, version: record.version, updatedAt: record.updatedAt.toISOString() });
+export function mapMongoRecord(record: CareerRecordDoc, bodyMd = record.bodyMd) {
+  return CareerRecordSchema.parse({ id: record._id, categoryId: record.categoryId, title: record.title, status: record.status, origin: record.origin, properties: record.properties, bodyMd, version: record.version, updatedAt: record.updatedAt.toISOString() });
 }
 
 export function careerRequestHash(input: CreateCareerRecord) {
