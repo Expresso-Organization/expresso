@@ -172,7 +172,7 @@ export class JobIngestService {
         continue;
       }
       try {
-        const postings = await adapter.fetch(source.token);
+        const postings = await adapter.fetch(source.token, source.display_name);
         let added = 0;
         for (const posting of postings) {
           if (posting.descriptionRaw.length < MINIMUM_BODY_LENGTH) continue;

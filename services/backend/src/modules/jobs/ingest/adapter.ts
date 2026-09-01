@@ -29,10 +29,15 @@ export interface JobSourceAdapter {
   /**
    * `token`이 가리키는 출처의 공고를 모두 가져온다.
    *
+   * `displayName`은 **회사 이름이 응답에 없을 때만** 쓴다. Lever는 회사 이름을
+   * 아예 주지 않고 Greenhouse도 `company_name`이 비는 보드가 있는데, 그때
+   * `token`으로 메우면 화면에 `zoyi` 같은 슬러그가 회사 이름으로 선다
+   * (`company.name`이 `RawPosting.companyName` 그대로 들어간다).
+   *
    * 실패는 던진다 — 수집 서비스가 출처별로 받아 `last_error`에 적는다.
    * 한 출처가 죽어도 나머지는 계속 돌아야 한다.
    */
-  fetch(token: string): Promise<RawPosting[]>;
+  fetch(token: string, displayName: string): Promise<RawPosting[]>;
 }
 
 /**
@@ -126,3 +131,55 @@ export async function fetchJson(url: string, timeoutMs = 15_000): Promise<unknow
 
 /** 우리가 누구인지 밝힌다. 막고 싶은 쪽이 막을 수 있어야 한다. */
 export const USER_AGENT = "ExpressoBot/0.1 (+https://xpresso.me/bot)";
+
+/**
+ * 글로 오는 출처를 읽는다.
+ *
+ * 보드가 JSON API를 열어 두지 않고 자기 채용 페이지만 세워 둔 곳이 있다
+ * (그리팅). 그런 곳은 페이지를 받아 안에 실린 데이터를 꺼내야 한다.
+ */
+export async function fetchText(url: string, timeoutMs = 20_000): Promise<string> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { accept: "text/html,application/json", "user-agent": USER_AGENT },
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.text();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * 한 번에 몇 개까지만 겹쳐 부른다.
+ *
+ * 공고 하나가 페이지 하나인 보드가 있어서(그리팅) 한 출처를 읽는 데 수십~수백
+ * 번을 부른다. 전부 한꺼번에 던지면 남의 서버에 순간 부하를 주고 우리도 막힌다.
+ * 실패한 항목은 `null`로 남기고 나머지는 계속 간다 — 공고 하나 때문에 보드
+ * 전체를 잃지 않는다.
+ */
+export async function mapWithLimit<In, Out>(
+  items: readonly In[],
+  limit: number,
+  run: (item: In) => Promise<Out>,
+): Promise<(Out | null)[]> {
+  const results: (Out | null)[] = new Array(items.length).fill(null);
+  let cursor = 0;
+  const lanes = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    for (;;) {
+      const index = cursor;
+      cursor += 1;
+      if (index >= items.length) return;
+      try {
+        results[index] = await run(items[index] as In);
+      } catch {
+        results[index] = null;
+      }
+    }
+  });
+  await Promise.all(lanes);
+  return results;
+}

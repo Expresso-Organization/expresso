@@ -50,7 +50,7 @@ function metaValue(job: GreenhouseJob, keys: string[]): string | null {
 export class GreenhouseAdapter implements JobSourceAdapter {
   readonly provider: JobSourceProvider = "greenhouse";
 
-  async fetch(token: string): Promise<RawPosting[]> {
+  async fetch(token: string, displayName: string): Promise<RawPosting[]> {
     const payload = await fetchJson(
       `https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(token)}/jobs?content=true`,
     ) as { jobs?: GreenhouseJob[] };
@@ -68,8 +68,9 @@ export class GreenhouseAdapter implements JobSourceAdapter {
       return [{
         externalId: String(id),
         title: title.slice(0, 300),
-        // `company_name`이 비어 있으면 출처 이름이 회사 이름이다.
-        companyName: (job.company_name?.trim() || token).slice(0, 200),
+        // `company_name`이 비어 있으면 출처에 적어 둔 이름이 회사 이름이다.
+        // `token`으로 메우면 화면에 보드 슬러그가 회사로 선다.
+        companyName: (job.company_name?.trim() || displayName).slice(0, 200),
         descriptionRaw: body,
         sourceUrl: job.absolute_url?.trim() ?? null,
         location: job.location?.name?.trim().slice(0, 120) ?? null,
