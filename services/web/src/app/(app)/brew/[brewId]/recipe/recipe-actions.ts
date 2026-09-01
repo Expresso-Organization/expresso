@@ -10,6 +10,7 @@ import {
 } from "@expresso/contracts";
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { ApiError } from "@/lib/api/client";
@@ -88,20 +89,29 @@ export async function saveMaterialsAction(
 /**
  * 초안을 새로 만든다.
  *
- * 멱등성 키에 지금 초안의 식별자를 넣는다 — 만들어지는 동안 두 번 눌러도 같은
- * 잡이고, 만들어진 뒤에 누르면 새 초안이다.
+ * 멱등성 키에 **직전 시도의 잡**을 넣는다 — 한 화면에서 두 번 눌러도 같은
+ * 잡이고, 그 잡이 끝난 뒤에 누르면 화면이 새 잡을 물고 있으므로 새 초안이다.
  */
 export async function draftRecipeAction(formData: FormData): Promise<void> {
   const brewId = formData.get("brewId");
-  const previousRecipeId = formData.get("previousRecipeId");
+  const previousJobId = formData.get("previousJobId");
   if (typeof brewId !== "string") return;
   const session = await requireSession();
   await brews.createRecipe(
     session.accessToken,
     brewId,
-    `recipe:${brewId}:${typeof previousRecipeId === "string" && previousRecipeId ? previousRecipeId : "first"}`,
+    `recipe:${brewId}:${typeof previousJobId === "string" && previousJobId ? previousJobId : "first"}`,
   );
   revalidatePath(`/brew/${brewId}/recipe`);
+  /*
+   * 고르기를 떠난다.
+   *
+   * 「재료 다시 고르기」로 들어오면 주소에 `?setup=1`이 남고, 그 값은 화면을
+   * 고르기로 되돌리는 스위치다. 그대로 두면 2분 넘게 짜이는 것을 지켜본 끝에
+   * **다 된 레시피 대신 재료 목록**이 나온다 — 누른 순간 그 스위치는 할 일을
+   * 다 했다.
+   */
+  redirect(`/brew/${brewId}/recipe`);
 }
 
 // ── 목록에 없는 공고를 원문으로 ─────────────────────────────────

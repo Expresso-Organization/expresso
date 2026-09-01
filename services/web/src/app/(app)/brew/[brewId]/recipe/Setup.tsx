@@ -52,6 +52,7 @@ export function Setup({
   recipe,
   records,
   designName,
+  previousJobId,
   failureNote,
   draftAction,
 }: {
@@ -59,6 +60,8 @@ export function Setup({
   recipe: RecipeV2;
   records: SetupRecord[];
   designName: string | null;
+  /** 직전 시도의 잡. 「다시 짜기」가 새 잡이 되는 근거가 이것이다. */
+  previousJobId: string | null;
   /** 직전 시도가 거절됐으면 그 이유. */
   failureNote: string | null;
   draftAction: (formData: FormData) => Promise<void>;
@@ -105,7 +108,14 @@ export function Setup({
     <div className={styles.setup}>
       <form action={submit} className={styles.sheet}>
         <input type="hidden" name="brewId" value={brewId} />
-        <input type="hidden" name="previousRecipeId" value={recipe.id} />
+        {/*
+          * 이 시도를 가리키는 값.
+          *
+          * 레시피 id를 쓰면 안 된다 — 새 초안을 물려받아도 **그 id는 그대로**라
+          * 멱등성 키가 영영 같고, 한 번 만든 뒤로 「레시피 만들기」는 이미 끝난
+          * 잡을 돌려받는 죽은 버튼이 된다. 실제로 그랬다.
+          */}
+        <input type="hidden" name="previousJobId" value={previousJobId ?? ""} />
 
         <header className={styles.head}>
           <h1>레시피 만들기</h1>

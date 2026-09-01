@@ -92,6 +92,7 @@ export default async function RecipePage({
           recipe={recipe}
           records={records}
           designName={designName}
+          previousJobId={job?.jobId ?? null}
           failureNote={
             job?.status === "failed"
               ? job.failure?.code === "BREW_INPUT_REJECTED"
