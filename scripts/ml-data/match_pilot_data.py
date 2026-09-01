@@ -12,7 +12,45 @@ from typing import Any, Iterable
 
 
 SPLITS = ("train", "valid", "test")
-PROTECTED_CANDIDATE_COLUMNS = {"llm_sex", "llm_nationality", "llm_age_bucket"}
+JTH_CANDIDATE_TEXT_FIELDS = {
+    "skills",
+    "expertise_area",
+    "job_category",
+    "years_experience",
+    "contract_type",
+    "llm_languages_spoken",
+    "llm_highest_diploma",
+    "llm_years_of_work_experience",
+    "llm_number_of_previous_positions",
+    "llm_number_of_unique_employers",
+    "llm_management_experience",
+    "llm_years_of_management_roles",
+    "llm_industry_domains",
+    "llm_entrepreneurial_experience",
+    "llm_startup_experience",
+    "llm_large_company_experience",
+    "llm_freelance_experience",
+    "llm_contract_experience",
+    "llm_international_work_experience",
+    "llm_remote_work_experience",
+    "llm_average_job_duration_months",
+    "llm_leadership_experience",
+    "llm_hard_skills",
+    "llm_soft_skills",
+    "llm_programming_languages",
+    "llm_tools_technologies",
+    "llm_certifications",
+    "llm_volunteer_experience",
+    "llm_has_publications",
+    "llm_has_patents",
+    "llm_has_portfolio_or_github_or_website",
+    "llm_participated_in_competitions",
+    "llm_expertise_area",
+    "llm_job_category",
+    "llm_client_facing_role",
+    "llm_values",
+    "llm_seniority_level",
+}
 STAGE_LABELS = {
     "application made": 1,
     "resume sent": 1,
@@ -84,9 +122,12 @@ def _write_jsonl(path: Path, rows: Iterable[dict[str, Any]]) -> None:
             target.write("\n")
 
 
-def _row_text(row: dict[str, str], excluded: set[str]) -> str:
+def _row_text(
+    row: dict[str, str], excluded: set[str], allowed: set[str] | None = None
+) -> str:
     parts = []
-    for key in sorted(row):
+    keys = set(row) if allowed is None else set(row) & allowed
+    for key in sorted(keys):
         if key in excluded:
             continue
         value = str(row[key] or "").strip()
@@ -129,7 +170,9 @@ def build_jth_pretrain(
     }
     for candidate_id in sorted(positives_by_candidate):
         split = stable_split(candidate_id)
-        candidate_text = _row_text(candidates[candidate_id], {"candidate_id", *PROTECTED_CANDIDATE_COLUMNS})
+        candidate_text = _row_text(
+            candidates[candidate_id], {"candidate_id"}, JTH_CANDIDATE_TEXT_FIELDS
+        )
         if not candidate_text:
             raise ValueError(f"JTH candidate has no usable text: {candidate_id}")
         positives = sorted(positives_by_candidate[candidate_id])

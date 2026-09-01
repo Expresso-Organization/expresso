@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -92,6 +93,23 @@ class MatchPilotModelTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "CUDA is required"):
             require_device(torch, require_cuda=True, cuda_available=False)
 
+    def test_seed_enables_cuda_deterministic_algorithms(self):
+        from match_pilot_model import set_seed
+
+        previous = torch.are_deterministic_algorithms_enabled()
+        previous_workspace = os.environ.pop("CUBLAS_WORKSPACE_CONFIG", None)
+        try:
+            torch.use_deterministic_algorithms(False)
+            set_seed(torch, 42)
+            self.assertTrue(torch.are_deterministic_algorithms_enabled())
+            self.assertEqual(os.environ["CUBLAS_WORKSPACE_CONFIG"], ":4096:8")
+        finally:
+            torch.use_deterministic_algorithms(previous)
+            if previous_workspace is None:
+                os.environ.pop("CUBLAS_WORKSPACE_CONFIG", None)
+            else:
+                os.environ["CUBLAS_WORKSPACE_CONFIG"] = previous_workspace
+
     def test_default_model_revision_is_pinned(self):
         from match_pilot_model import build_parser
 
@@ -100,6 +118,26 @@ class MatchPilotModelTest(unittest.TestCase):
         )
 
         self.assertEqual(arguments.model_revision, "d128750597153bb5987e10b1c3493a34e5a4502a")
+
+    def test_training_dataset_rejects_label_split_tampering(self):
+        from match_pilot_model import validate_training_dataset
+        from ranking_evaluation import DatasetValidationError
+
+        profiles = [{"profileId": "p-test", "text": "python", "split": "test", "sourceAtomIds": ["a-test"]}]
+        jobs = [{"jobId": "j-test", "text": "python", "split": "test", "duplicateGroupId": "j-test"}]
+        labels = [
+            {
+                "profileId": "p-test",
+                "jobId": "j-test",
+                "split": "train",
+                "teacherLabel": 2,
+                "humanLabel": None,
+                "reasonCodes": ["TAMPERED"],
+            }
+        ]
+
+        with self.assertRaisesRegex(DatasetValidationError, "split differs"):
+            validate_training_dataset(profiles, jobs, labels)
 
     def test_run_writes_validated_full_score_sets_for_e5_and_mlp(self):
         from match_pilot_model import FrozenE5Encoder, build_parser, run
@@ -111,6 +149,7 @@ class MatchPilotModelTest(unittest.TestCase):
             profiles = root / "profiles.jsonl"
             jobs = root / "jobs.jsonl"
             labels = root / "labels.jsonl"
+            candidates = root / "candidate-manifest.jsonl"
             self._write_jsonl(
                 jth_pairs,
                 [
@@ -148,8 +187,15 @@ class MatchPilotModelTest(unittest.TestCase):
                     {"profileId": "p-3", "jobId": "j-t2", "split": "test", "teacherLabel": 3, "humanLabel": None, "reasonCodes": ["FIXTURE"]},
                 ],
             )
+            self._write_jsonl(
+                candidates,
+                [
+                    {"profileId": row["profileId"], "jobId": row["jobId"], "split": row["split"]}
+                    for row in [json.loads(line) for line in labels.read_text(encoding="utf-8").splitlines()]
+                ],
+            )
             arguments = build_parser().parse_args(
-                ["--jth-pairs", str(jth_pairs), "--profiles", str(profiles), "--jobs", str(jobs), "--labels", str(labels), "--output", str(root / "output"), "--pretrain-epochs", "1", "--fine-tune-epochs", "1", "--hidden-dimension", "4"]
+                ["--jth-pairs", str(jth_pairs), "--profiles", str(profiles), "--jobs", str(jobs), "--labels", str(labels), "--candidate-manifest", str(candidates), "--output", str(root / "output"), "--pretrain-epochs", "1", "--fine-tune-epochs", "1", "--hidden-dimension", "4"]
             )
             with patch.object(FrozenE5Encoder, "from_pretrained", return_value=self.encoder):
                 result = run(arguments)
@@ -173,6 +219,15 @@ class MatchPilotModelTest(unittest.TestCase):
             manifest = json.loads(result["manifest"].read_text(encoding="utf-8"))
             self.assertEqual(manifest["model"], {"name": "intfloat/multilingual-e5-base", "revision": "fixture-revision", "frozen": True})
             self.assertEqual(manifest["counts"], {"jthPretrainPairs": 2, "expressoFineTunePairs": 2, "candidateScores": 12})
+            self.assertEqual(
+                manifest["splitCounts"],
+                {
+                    "profiles": {"train": 1, "valid": 1, "test": 1},
+                    "jobs": {"train": 2, "valid": 2, "test": 2},
+                    "pairs": {"train": 2, "valid": 2, "test": 2},
+                },
+            )
+            self.assertIn(str(candidates), manifest["inputSha256"])
 
     @staticmethod
     def _write_jsonl(path, rows):

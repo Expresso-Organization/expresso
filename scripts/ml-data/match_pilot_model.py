@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import hashlib
 import importlib
 import json
+import os
 from pathlib import Path
 import platform
 import random
@@ -66,13 +67,17 @@ def require_device(torch: Any, *, require_cuda: bool, cuda_available: bool | Non
 
 
 def set_seed(torch: Any, seed: int) -> None:
+    os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
     random.seed(seed)
     torch.manual_seed(seed)
+    torch.use_deterministic_algorithms(True)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
     if hasattr(torch.backends, "cudnn"):
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
+    if hasattr(torch.backends, "cuda"):
+        torch.backends.cuda.matmul.allow_tf32 = False
 
 
 def _mean_pool_normalize(torch: Any, hidden: Any, attention_mask: Any) -> Any:
@@ -366,6 +371,31 @@ def _jth_rows(path: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]], l
     return list(profiles.values()), list(jobs.values()), pairs
 
 
+def validate_training_dataset(
+    profiles: list[dict[str, Any]],
+    jobs: list[dict[str, Any]],
+    labels: list[dict[str, Any]],
+) -> None:
+    """학습 split을 선택하기 전에 공통 평가 계약과 누수 규칙을 검증한다."""
+    from ranking_evaluation import validate_dataset
+
+    validate_dataset(profiles, jobs, labels)
+
+
+def validate_candidate_manifest(
+    candidates: list[dict[str, Any]], labels: list[dict[str, Any]]
+) -> None:
+    expected_fields = {"profileId", "jobId", "split"}
+    if any(set(row) != expected_fields for row in candidates):
+        raise ValueError("candidate manifest fields must be profileId, jobId, split")
+    candidate_pairs = {
+        (row["profileId"], row["jobId"], row["split"]) for row in candidates
+    }
+    label_pairs = {(row["profileId"], row["jobId"], row["split"]) for row in labels}
+    if len(candidate_pairs) != len(candidates) or candidate_pairs != label_pairs:
+        raise ValueError("candidate manifest pairs differ from labels")
+
+
 def _manifest(
     *,
     torch: Any,
@@ -373,6 +403,7 @@ def _manifest(
     model_revision: str | None,
     inputs: list[Path],
     counts: dict[str, int],
+    split_counts: dict[str, dict[str, int]],
     arguments: argparse.Namespace,
 ) -> dict[str, Any]:
     return {
@@ -389,6 +420,7 @@ def _manifest(
         },
         "inputSha256": {str(path): _sha256(path) for path in inputs},
         "counts": counts,
+        "splitCounts": split_counts,
         "hyperparameters": {
             "embeddingDimension": 768,
             "hiddenDimension": arguments.hidden_dimension,
@@ -407,6 +439,11 @@ def run(arguments: argparse.Namespace) -> dict[str, Any]:
     profiles = _load_jsonl(arguments.profiles)
     jobs = _load_jsonl(arguments.jobs)
     labels = _load_jsonl(arguments.labels)
+    validate_training_dataset(profiles, jobs, labels)
+    input_paths = [arguments.jth_pairs, arguments.profiles, arguments.jobs, arguments.labels]
+    if arguments.candidate_manifest is not None:
+        validate_candidate_manifest(_load_jsonl(arguments.candidate_manifest), labels)
+        input_paths.append(arguments.candidate_manifest)
     train_labels = [row for row in labels if row["split"] == "train"]
     jth_profiles, jth_jobs, jth_pairs = _jth_rows(arguments.jth_pairs)
     encoder = FrozenE5Encoder.from_pretrained(
@@ -488,8 +525,22 @@ def run(arguments: argparse.Namespace) -> dict[str, Any]:
         torch=torch,
         device=device,
         model_revision=encoder.model_revision,
-        inputs=[arguments.jth_pairs, arguments.profiles, arguments.jobs, arguments.labels],
+        inputs=input_paths,
         counts={"jthPretrainPairs": len(jth_pairs), "expressoFineTunePairs": len(train_labels), "candidateScores": len(pair_rows) * 2},
+        split_counts={
+            "profiles": {
+                split: sum(row["split"] == split for row in profiles)
+                for split in ("train", "valid", "test")
+            },
+            "jobs": {
+                split: sum(row["split"] == split for row in jobs)
+                for split in ("train", "valid", "test")
+            },
+            "pairs": {
+                split: sum(row["split"] == split for row in labels)
+                for split in ("train", "valid", "test")
+            },
+        },
         arguments=arguments,
     )
     output.mkdir(parents=True, exist_ok=True)
@@ -505,6 +556,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--profiles", type=Path, required=True)
     parser.add_argument("--jobs", type=Path, required=True)
     parser.add_argument("--labels", type=Path, required=True)
+    parser.add_argument("--candidate-manifest", type=Path)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--model-revision", default=MODEL_REVISION)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)

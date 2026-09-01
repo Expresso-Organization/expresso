@@ -16,6 +16,9 @@ smoke test다.
 - Expresso 후보: 프로필당 서로 다른 공고 20개, 총 600쌍
 - 공고는 한 split에만 속하게 뽑아 평가 누수를 막는다.
 
+JTH 후보자 encoder 입력은 직무·기술·경력 필드 allow-list만 직렬화한다. 성별·국적·나이뿐
+아니라 우편번호, 급여, 졸업 시점, 취미와 알 수 없는 신규 열은 기본적으로 제외한다.
+
 JTH 단계 라벨은 다음 하나의 규칙으로 고정한다.
 
 | 라벨 | 의미 | JTH 단계 |
@@ -61,6 +64,10 @@ synthetic test에서 기준선을 이겨도 제품 품질이나 일반화의 증
 특히 프로필은 한국어, JTH 공고는 영어이므로 lexical 기준선 대비 우위는 교차언어
 encoder의 구조적 이점이 섞인 결과다.
 
+수집 후 `label-coverage.json`에 라벨 분포와 valid/test 프로필별 class 3 존재 여부를
+기록한다. class 3가 빠지면 MRR@10과 AUC는 정의되지 않는 것으로 보고하며, 이 파일럿은
+그 상태에서도 모델 경로 smoke test를 위해 실행할 수 있다.
+
 ## 재현성과 산출물
 
 seed 42, 모델 revision, 입력 SHA-256, CUDA/Python/PyTorch 버전, 분할 수량과 학습
@@ -68,3 +75,14 @@ hyperparameter를 `run-manifest.json`에 저장한다. 산출물은
 `var/ml-data/experiments/match-pilot-v0/` 아래 데이터셋, embedding cache, checkpoint,
 candidate scores, metrics, summary로 분리한다.
 
+Luna 응답 수집 뒤 학습과 평가는 다음 단일 CLI 경계로 실행한다.
+
+```powershell
+python scripts/ml-data/run_match_pilot.py train-evaluate `
+  --jth-pairs var/ml-data/experiments/match-pilot-v0/data/jth-pretrain.jsonl `
+  --profiles var/ml-data/experiments/match-pilot-v0/data/profiles.jsonl `
+  --jobs var/ml-data/experiments/match-pilot-v0/data/jobs.jsonl `
+  --labels var/ml-data/experiments/match-pilot-v0/data/labels.jsonl `
+  --candidate-manifest var/ml-data/experiments/match-pilot-v0/data/candidate-manifest.jsonl `
+  --output var/ml-data/experiments/match-pilot-v0 --require-cuda
+```

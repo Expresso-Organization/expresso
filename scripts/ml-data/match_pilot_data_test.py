@@ -51,11 +51,20 @@ class MatchPilotDataTest(unittest.TestCase):
             output = root / "pretrain.jsonl"
             _write_csv(
                 candidates,
-                ["candidate_id", "skills", "job_category", "llm_sex", "llm_age_bucket"],
                 [
-                    {"candidate_id": "c-0", "skills": "python", "job_category": "backend", "llm_sex": "Male", "llm_age_bucket": "20-29"},
-                    {"candidate_id": "c-2", "skills": "sql", "job_category": "data", "llm_sex": "Female", "llm_age_bucket": "30-39"},
-                    {"candidate_id": "c-9", "skills": "react", "job_category": "frontend", "llm_sex": "Other", "llm_age_bucket": "40-49"},
+                    "candidate_id",
+                    "skills",
+                    "job_category",
+                    "llm_sex",
+                    "llm_age_bucket",
+                    "zipcode",
+                    "llm_graduation_recency",
+                    "unexpected_future_demographic",
+                ],
+                [
+                    {"candidate_id": "c-0", "skills": "python", "job_category": "backend", "llm_sex": "Male", "llm_age_bucket": "20-29", "zipcode": "75001", "llm_graduation_recency": "0-2", "unexpected_future_demographic": "secret-proxy"},
+                    {"candidate_id": "c-2", "skills": "sql", "job_category": "data", "llm_sex": "Female", "llm_age_bucket": "30-39", "zipcode": "13001", "llm_graduation_recency": "5-10", "unexpected_future_demographic": "secret-proxy"},
+                    {"candidate_id": "c-9", "skills": "react", "job_category": "frontend", "llm_sex": "Other", "llm_age_bucket": "40-49", "zipcode": "59000", "llm_graduation_recency": "10+", "unexpected_future_demographic": "secret-proxy"},
                 ],
             )
             _write_csv(
@@ -109,6 +118,9 @@ class MatchPilotDataTest(unittest.TestCase):
             self.assertTrue(all((record["profileId"], record["jobId"]) not in observed_pairs for record in negatives))
             self.assertTrue(all(record["split"] in {"train", "valid", "test"} for record in records))
             self.assertTrue(all("Male" not in record["profileText"] and "20-29" not in record["profileText"] for record in records))
+            self.assertTrue(all("zipcode:" not in record["profileText"] for record in records))
+            self.assertTrue(all("graduation_recency" not in record["profileText"] for record in records))
+            self.assertTrue(all("secret-proxy" not in record["profileText"] for record in records))
 
     def test_expresso_builder_assigns_30_profiles_to_20_leak_free_candidates_each(self) -> None:
         # profile/job split 또는 후보 수가 달라지면 teacher와 평가 후보군이 불안정해진다.
