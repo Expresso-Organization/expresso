@@ -82,7 +82,7 @@ function ProjectGallery(props: CareerViewRendererProps) {
           );
         })}
         <li>
-          <button type="button" className={styles.projectAdd} onClick={props.onCreate}>
+          <button type="button" className={styles.projectAdd} onClick={() => props.onCreate()}>
             <span aria-hidden="true">＋</span>
             <strong>프로젝트 추가</strong>
             <small>또는 AI로 만들기</small>

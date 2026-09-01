@@ -118,14 +118,14 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
     openId: activeId,
     selectedIds: selected,
     onActivate: setActiveId,
-    onCreate: () => void create(),
+    onCreate: (initialProperties?: Record<string, unknown>) => void create(initialProperties ? { properties: initialProperties } : {}),
     onFillMissing: (recordId: string) => setInterview({ mode: "fill", targetId: recordId }),
     onToggle: (id: string) => setSelected((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; }),
     onViewChange: (next: CareerViewConfiguration) => void updateView(next),
   };
 
-  async function create(draft: { title?: string; bodyMd?: string } = {}): Promise<CareerRecordListItem | null> {
-    const response = await fetch("/api/career/records", { method: "POST", headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() }, body: JSON.stringify({ categoryId: category.id, title: draft.title ?? "", properties: {}, bodyMd: draft.bodyMd ?? "" }) });
+  async function create(draft: { title?: string; bodyMd?: string; properties?: Record<string, unknown> } = {}): Promise<CareerRecordListItem | null> {
+    const response = await fetch("/api/career/records", { method: "POST", headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() }, body: JSON.stringify({ categoryId: category.id, title: draft.title ?? "", properties: draft.properties ?? {}, bodyMd: draft.bodyMd ?? "" }) });
     if (!response.ok) { setMessage("기록을 만들지 못했습니다."); return null; }
     const payload = await response.json() as { data: CareerRecord };
     const item = listItem(payload.data);

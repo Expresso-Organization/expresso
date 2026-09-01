@@ -10,7 +10,7 @@ export interface CareerViewRendererProps {
   openId: string | null;
   selectedIds: ReadonlySet<string>;
   onActivate(recordId: string): void;
-  onCreate(): void;
+  onCreate(initialProperties?: Record<string, unknown>): void;
   onFillMissing(recordId: string): void;
   onToggle(recordId: string): void;
   onViewChange(next: CareerViewConfiguration): void;

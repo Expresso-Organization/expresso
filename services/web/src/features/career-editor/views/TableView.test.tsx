@@ -55,4 +55,28 @@ describe("TableView", () => {
     fireEvent.blur(input);
     await waitFor(() => expect(onCategoryChange).toHaveBeenCalledWith(renamed, undefined));
   });
+
+  it("resizes the implicit title column in a custom category", () => {
+    const onViewChange = vi.fn();
+    const customCategory = { ...category, isSystem: false, propertySchemaV2: category.propertySchemaV2?.filter((item) => item.id !== titleId) };
+    const customView = { ...view, visiblePropertyIds: view.visiblePropertyIds.filter((id) => id !== titleId), propertyOrder: view.propertyOrder.filter((id) => id !== titleId) };
+    render(<TableView records={records} view={customView} category={customCategory} activeId={records[0]!.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={onViewChange} onCategoryChange={() => undefined} />);
+    fireEvent.keyDown(screen.getByRole("separator", { name: "제목 열 너비 조절" }), { key: "ArrowLeft" });
+    expect(onViewChange).toHaveBeenCalledWith(expect.objectContaining({ columnWidths: expect.objectContaining({ [categoryId]: 244 }) }));
+  });
+
+  it("renders collapsible table sections for grouped multi-select values", () => {
+    const groupedView = { ...view, groupPropertyId: technologiesId };
+    const onCreate = vi.fn();
+    render(<TableView records={records} view={groupedView} category={category} activeId={records[0]!.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={onCreate} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={() => undefined} onCategoryChange={() => undefined} />);
+    expect(screen.getByRole("region", { name: "기술 없음 그룹" })).toBeTruthy();
+    expect(screen.getByRole("grid", { name: "React 그룹 테이블" })).toBeTruthy();
+    expect(screen.getByRole("grid", { name: "Go 그룹 테이블" })).toBeTruthy();
+    expect(screen.getAllByRole("gridcell", { name: "두 번째" })).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "React 그룹에 새 기록" }));
+    expect(onCreate).toHaveBeenCalledWith({ technologies: { type: "multi_select", value: ["React"] } });
+    fireEvent.click(screen.getByRole("button", { name: "React 그룹 접기" }));
+    expect(screen.queryByRole("grid", { name: "React 그룹 테이블" })).toBeNull();
+    expect(screen.getByRole("button", { name: "React 그룹 펼치기" })).toBeTruthy();
+  });
 });

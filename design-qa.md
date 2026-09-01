@@ -42,6 +42,73 @@ final result: passed
 
 ---
 
+# Career grouped table design QA
+
+- Source visual truth: `/var/folders/wy/zrbg0t692zq6smx73mhzsdhr0000gn/T/codex-clipboard-02ad4eb2-3ce4-4808-ab50-39024558bc0a.png`
+- Implementation screenshot: `/tmp/expresso-grouped-table-final.png`
+- Focused comparison: `/tmp/expresso-grouped-table-final-comparison.png`
+- Route: `http://127.0.0.1:3200/career/e2e_properties_a86af0b5652a4e9bb9efe8f3344c2f85`
+- Viewport: 1433 × 1027 CSS px, dark theme
+- Source pixels: 1934 × 1502
+- Implementation pixels: 1433 × 1027 at the browser viewport density
+- Normalization: the grouped-table regions were cropped and normalized to 680 px width in the focused comparison.
+- State: table view grouped by `select 1`, empty and `선택 A` groups expanded
+
+## Full-view comparison evidence
+
+The implementation keeps the Expresso navigation and toolbar while replacing the flat table with value-based sections. Group headers, repeated column headers, rows, and per-group creation controls remain inside the existing table content area without shifting the sidebar or toolbar.
+
+## Focused region comparison evidence
+
+The focused comparison covers the group header, repeated table header, record row, and group creation row. Both the source and implementation repeat the same columns for every expanded group and place a creation action immediately after each group table.
+
+## Required fidelity surfaces
+
+- Fonts and typography: group names use the existing UI font and semibold hierarchy; counts and creation actions use smaller muted text.
+- Spacing and layout rhythm: groups use 20 px vertical separation, compact 32 px group headers, 42 px table rows, and rounded table surfaces consistent with the existing career view.
+- Colors and visual tokens: all surfaces, borders, pills, hover states, and muted labels use `--ex-*` tokens. Large accent-filled group backgrounds were avoided.
+- Image quality and asset fidelity: the target contains no raster assets inside the grouped component. Carets and property icons use the existing Phosphor icon component.
+- Copy and content: empty groups use `{속성명} 없음`; option groups use the resolved option name; every group exposes `새 기록` and its record count.
+- Accessibility and interaction: group toggles expose expanded state and explicit fold/unfold names; each expanded group is a labelled grid; title and property resize separators remain keyboard reachable.
+
+## Findings
+
+No actionable P0, P1, or P2 mismatch remains.
+
+Accepted product adaptations:
+
+- The implementation uses the two records available in the E2E category, while the reference contains more sample groups and rows.
+- Group pills use Expresso neutral tokens instead of copying the reference's arbitrary option colors.
+- The group creation label is `새 기록`, matching the product's career terminology.
+
+## Comparison history
+
+- Pass 1 found the missing per-group creation action.
+- The implementation added a working `새 기록` row that pre-fills select and multi-select group values.
+- Pass 2 compared the revised expanded groups and found no remaining P0–P2 difference.
+
+## Interactions verified
+
+- `select 1` produces `select 1 없음` and `선택 A` sections.
+- Group sections repeat the table header and contain only their matching records.
+- Collapse removes the group grid and exposes the corresponding expand control.
+- Each group exposes a working creation button; focused tests verify multi-select prefill.
+- An implicit title column exposes a resize separator in every expanded group.
+
+## Implementation checklist
+
+- [x] Saved `groupPropertyId` drives table rendering.
+- [x] Empty, select, multi-select, and general value groups are supported.
+- [x] Multi-select records may appear in multiple matching groups.
+- [x] Group order respects saved keys or labels.
+- [x] Groups are collapsible and keyboard accessible.
+- [x] Group creation pre-fills select and multi-select values.
+- [x] Browser capture and focused comparison completed.
+
+final result: passed
+
+---
+
 # Career property header menu design QA
 
 - Source visual truth: `/var/folders/wy/zrbg0t692zq6smx73mhzsdhr0000gn/T/codex-clipboard-023f9c86-e463-4abd-8002-758e8997638a.png`

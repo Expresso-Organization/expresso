@@ -1,10 +1,11 @@
 "use client";
 
-import type { CareerCategory, CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
+import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
 import type { CSSProperties, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
+import { propertyOptions } from "@/features/career-editor/properties/property-editors";
 
 import { PropertyHeaderMenu } from "./PropertyHeaderMenu";
 import type { CareerViewRendererProps } from "./view-types";
@@ -17,6 +18,9 @@ const PROPERTY_WIDTH = 160;
 const ROW_HEIGHT = 42;
 const WINDOW_ROWS = 22;
 const OVERSCAN = 5;
+const EMPTY_GROUP = "__empty__";
+
+interface TableGroup { key: string; label: string; records: CareerRecord[]; empty: boolean; optionOrder: number }
 
 function orderedPropertyIds(props: CareerViewRendererProps): string[] {
   const visible = new Set(props.view.visiblePropertyIds);
@@ -30,35 +34,79 @@ function propertyWidth(view: CareerViewConfiguration, propertyId: string | null,
   return view.columnWidths[propertyId] ?? fallback;
 }
 
-function cellValue(record: CareerRecord, key: string | null) {
-  if (!key) return <span className={styles.emptyCell}>—</span>;
-  const value = rawValue(record, key);
+function cellValue(record: CareerRecord, definition: CareerPropertyDefinitionV2 | undefined) {
+  if (!definition) return <span className={styles.emptyCell}>—</span>;
+  const value = rawValue(record, definition.key);
+  const optionLabels = new Map(propertyOptions(definition).map((option) => [option.id, option.name]));
   if (Array.isArray(value)) {
     const labels = value.flatMap((item) => {
-      if (typeof item === "string" || typeof item === "number") return [String(item)];
+      if (typeof item === "string" || typeof item === "number") return [optionLabels.get(String(item)) ?? String(item)];
       if (item && typeof item === "object" && "title" in item) return [String(item.title)];
       return [];
     });
     return labels.length ? <span className={styles.tableTags}>{labels.slice(0, 4).map((label) => <small key={label}>{label}</small>)}</span> : <span className={styles.emptyCell}>—</span>;
   }
-  const label = displayValue(value);
+  const label = typeof value === "string" ? optionLabels.get(value) ?? displayValue(value) : displayValue(value);
   return label === "—" ? <span className={styles.emptyCell}>—</span> : <span>{label}</span>;
+}
+
+function groupedRecords(records: readonly CareerRecord[], category: CareerCategory, propertyId: string, groupOrder: readonly string[]): TableGroup[] {
+  const definition = category.propertySchemaV2?.find((item) => item.id === propertyId && item.deletedAt === null);
+  const key = propertyKey(category, propertyId);
+  if (!key) return [];
+  const options = definition ? propertyOptions(definition) : [];
+  const optionLabels = new Map(options.map((option) => [option.id, option.name]));
+  const optionOrder = new Map(options.map((option, index) => [option.id, index]));
+  const groups = new Map<string, TableGroup>();
+  const emptyLabel = `${definition?.name ?? "속성"} 없음`;
+  const add = (groupKey: string, label: string, record: CareerRecord, empty = false) => {
+    const group = groups.get(groupKey) ?? { key: groupKey, label, records: [], empty, optionOrder: empty ? -1 : optionOrder.get(groupKey) ?? Number.MAX_SAFE_INTEGER };
+    group.records.push(record);
+    groups.set(groupKey, group);
+  };
+
+  for (const record of records) {
+    const raw = key === "title" ? record.title : rawValue(record, key);
+    if (Array.isArray(raw)) {
+      const values = [...new Set(raw.flatMap((item) => typeof item === "string" || typeof item === "number" ? [String(item)] : item && typeof item === "object" && "id" in item ? [String(item.id)] : []))];
+      if (!values.length) add(EMPTY_GROUP, emptyLabel, record, true);
+      else for (const value of values) add(value, optionLabels.get(value) ?? value, record);
+      continue;
+    }
+    if (raw === null || raw === undefined || raw === "") { add(EMPTY_GROUP, emptyLabel, record, true); continue; }
+    const value = String(raw);
+    add(value, optionLabels.get(value) ?? displayValue(raw), record);
+  }
+
+  return [...groups.values()].sort((left, right) => {
+    const leftManual = groupOrder.findIndex((item) => item === left.key || item === left.label);
+    const rightManual = groupOrder.findIndex((item) => item === right.key || item === right.label);
+    if (leftManual >= 0 || rightManual >= 0) return (leftManual < 0 ? Number.MAX_SAFE_INTEGER : leftManual) - (rightManual < 0 ? Number.MAX_SAFE_INTEGER : rightManual);
+    if (left.optionOrder !== right.optionOrder) return left.optionOrder - right.optionOrder;
+    return left.label.localeCompare(right.label, "ko");
+  });
 }
 
 export function TableView(props: CareerViewRendererProps & { onCategoryChange(nextCategory: CareerCategory, nextView?: CareerViewConfiguration): void }) {
   const columns = useMemo(() => orderedPropertyIds(props), [props.category, props.view.propertyOrder, props.view.visiblePropertyIds]);
+  const definitionsById = useMemo(() => new Map((props.category.propertySchemaV2 ?? []).filter((definition) => definition.deletedAt === null).map((definition) => [definition.id, definition])), [props.category.propertySchemaV2]);
   const titleId = props.category.propertySchemaV2?.find((definition) => definition.key === "title" && definition.deletedAt === null)?.id ?? props.view.visiblePropertyIds.find((id) => propertyKey(props.category, id) === "title") ?? null;
+  const titleColumnId = titleId ?? props.category.id;
   const [previewWidths, setPreviewWidths] = useState<Record<string, number>>(props.view.columnWidths);
   const [scrollTop, setScrollTop] = useState(0);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const drag = useRef<{ propertyId: string; width: number } | null>(null);
   const resizeCleanup = useRef<(() => void) | null>(null);
+  const groupDefinition = props.view.groupPropertyId ? definitionsById.get(props.view.groupPropertyId) : undefined;
+  const groups = useMemo(() => props.view.groupPropertyId ? groupedRecords(props.records, props.category, props.view.groupPropertyId, props.view.groupOrder) : [], [props.category, props.records, props.view.groupOrder, props.view.groupPropertyId]);
 
   useEffect(() => setPreviewWidths(props.view.columnWidths), [props.view.columnWidths]);
+  useEffect(() => setCollapsedGroups(new Set()), [props.view.groupPropertyId]);
   useEffect(() => () => resizeCleanup.current?.(), []);
 
   const width = (propertyId: string | null, fallback: number) => propertyId ? previewWidths[propertyId] ?? propertyWidth(props.view, propertyId, fallback) : fallback;
-  const template = `${SELECT_WIDTH}px ${width(titleId, TITLE_WIDTH)}px ${columns.map((id) => `${width(id, PROPERTY_WIDTH)}px`).join(" ")}`;
-  const totalWidth = SELECT_WIDTH + width(titleId, TITLE_WIDTH) + columns.reduce((total, id) => total + width(id, PROPERTY_WIDTH), 0);
+  const template = `${SELECT_WIDTH}px ${width(titleColumnId, TITLE_WIDTH)}px ${columns.map((id) => `${width(id, PROPERTY_WIDTH)}px`).join(" ")}`;
+  const totalWidth = SELECT_WIDTH + width(titleColumnId, TITLE_WIDTH) + columns.reduce((total, id) => total + width(id, PROPERTY_WIDTH), 0);
   const windowed = props.records.length > WINDOW_ROWS + OVERSCAN * 2;
   const start = windowed ? Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN) : 0;
   const end = windowed ? Math.min(props.records.length, start + WINDOW_ROWS + OVERSCAN * 2) : props.records.length;
@@ -118,34 +166,69 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     const currentWidth = width(propertyId, fallback);
     const definition = props.category.propertySchemaV2?.find((item) => item.id === propertyId && item.deletedAt === null);
     return <span key={propertyId} className={styles.tableColumnHeader} role="columnheader" aria-sort={currentSort ? (currentSort.direction === "asc" ? "ascending" : "descending") : "none"}>
-      {definition ? <PropertyHeaderMenu category={props.category} definition={definition} view={props.view} sortDirection={currentSort?.direction ?? null} onViewChange={props.onViewChange} onCategoryChange={props.onCategoryChange} /> : <button type="button">{label}<Icon name="caret-down" size={11} /></button>}
+      {definition ? <PropertyHeaderMenu category={props.category} definition={definition} view={props.view} sortDirection={currentSort?.direction ?? null} onViewChange={props.onViewChange} onCategoryChange={props.onCategoryChange} /> : <span className={styles.tableColumnLabel}>{label}</span>}
       <div className={styles.columnResize} role="separator" aria-label={`${label} 열 너비 조절`} aria-orientation="vertical" aria-valuemin={80} aria-valuemax={720} aria-valuenow={Math.round(currentWidth)} tabIndex={0} onPointerDown={(event) => startResize(event, propertyId, currentWidth)} onKeyDown={(event) => resizeFromKeyboard(event, propertyId, currentWidth)} />
     </span>;
   };
 
-  return <div className={styles.tableViewport} onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}>
-    <div className={styles.table} role="grid" aria-label="커리어 테이블" aria-rowcount={props.records.length + 2} style={{ minWidth: `${Math.max(totalWidth, 700)}px` } as CSSProperties}>
-      <div className={styles.tableHead} role="row" style={{ gridTemplateColumns: template }}>
-        <span role="columnheader">선택</span>
-        {titleId ? header(titleId, "제목", TITLE_WIDTH) : <span role="columnheader">제목</span>}
-        {columns.map((id) => header(id, propertyName(props.category, id), PROPERTY_WIDTH))}
-      </div>
-      {start > 0 ? <div className={styles.tableSpacer} aria-hidden="true" style={{ height: `${start * ROW_HEIGHT}px` }} /> : null}
-      {rows.map((record, index) => <div className={record.id === props.openId ? styles.rowActive : styles.tableRow} role="row" aria-rowindex={start + index + 2} key={record.id} tabIndex={record.id === props.activeId ? 0 : -1} style={{ gridTemplateColumns: template }} onKeyDown={(event) => keyboardActivate(event, record.id, props.records, props.onActivate)} onDoubleClick={() => props.onActivate(record.id)}>
-        <span role="gridcell"><input aria-label={`${record.title || "제목 없음"} 선택`} type="checkbox" checked={props.selectedIds.has(record.id)} onChange={() => props.onToggle(record.id)} /></span>
-        <button type="button" role="gridcell" onClick={() => props.onActivate(record.id)}>{record.title || "제목 없음"}</button>
-        {columns.map((id) => <span role="gridcell" key={id}>{cellValue(record, propertyKey(props.category, id))}</span>)}
-      </div>)}
-      {end < props.records.length ? <div className={styles.tableSpacer} aria-hidden="true" style={{ height: `${(props.records.length - end) * ROW_HEIGHT}px` }} /> : null}
-      <div className={styles.tableSummary} role="row" style={{ gridTemplateColumns: template }}>
-        <span role="gridcell" />
-        <strong role="gridcell">{props.records.length}개 기록</strong>
-        {columns.map((id) => {
-          const key = propertyKey(props.category, id);
-          const missing = key ? props.records.filter((record) => displayValue(rawValue(record, key)) === "—").length : props.records.length;
-          return <span role="gridcell" key={id}>{missing ? `빈 값 ${missing}` : "모두 입력됨"}</span>;
+  const tableHeader = () => <div className={styles.tableHead} role="row" style={{ gridTemplateColumns: template }}>
+    <span role="columnheader">선택</span>
+    {header(titleColumnId, "제목", TITLE_WIDTH)}
+    {columns.map((id) => header(id, propertyName(props.category, id), PROPERTY_WIDTH))}
+  </div>;
+
+  const tableRows = (items: readonly CareerRecord[], rowOffset: number, keyboardRecords: readonly CareerRecord[]) => items.map((record, index) => <div className={record.id === props.openId ? styles.rowActive : styles.tableRow} role="row" aria-rowindex={rowOffset + index} key={record.id} tabIndex={record.id === props.activeId ? 0 : -1} style={{ gridTemplateColumns: template }} onKeyDown={(event) => keyboardActivate(event, record.id, keyboardRecords, props.onActivate)} onDoubleClick={() => props.onActivate(record.id)}>
+    <span role="gridcell"><input aria-label={`${record.title || "제목 없음"} 선택`} type="checkbox" checked={props.selectedIds.has(record.id)} onChange={() => props.onToggle(record.id)} /></span>
+    <button type="button" role="gridcell" onClick={() => props.onActivate(record.id)}>{record.title || "제목 없음"}</button>
+    {columns.map((id) => <span role="gridcell" key={id}>{cellValue(record, definitionsById.get(id))}</span>)}
+  </div>);
+
+  const tableSummary = <div className={styles.tableSummary} role="row" style={{ gridTemplateColumns: template }}>
+    <span role="gridcell" />
+    <strong role="gridcell">{props.records.length}개 기록</strong>
+    {columns.map((id) => {
+      const key = propertyKey(props.category, id);
+      const missing = key ? props.records.filter((record) => displayValue(rawValue(record, key)) === "—").length : props.records.length;
+      return <span role="gridcell" key={id}>{missing ? `빈 값 ${missing}` : "모두 입력됨"}</span>;
+    })}
+  </div>;
+
+  const groupInitialProperties = (group: TableGroup): Record<string, unknown> | undefined => {
+    if (!groupDefinition || group.empty) return undefined;
+    if (groupDefinition.type === "select") return { [groupDefinition.key]: { type: "select", value: group.key } };
+    if (groupDefinition.type === "multi_select") return { [groupDefinition.key]: { type: "multi_select", value: [group.key] } };
+    return undefined;
+  };
+
+  if (props.view.groupPropertyId) {
+    return <div className={styles.tableViewport} data-grouped="true">
+      <div className={styles.tableGroups} style={{ minWidth: `${Math.max(totalWidth, 700)}px` } as CSSProperties}>
+        {groups.map((group) => {
+          const collapsed = collapsedGroups.has(group.key);
+          return <section className={styles.tableGroup} aria-label={`${group.label} 그룹`} key={group.key}>
+            <button type="button" className={styles.tableGroupHeader} aria-expanded={!collapsed} aria-label={`${group.label} 그룹 ${collapsed ? "펼치기" : "접기"}`} onClick={() => setCollapsedGroups((current) => { const next = new Set(current); if (next.has(group.key)) next.delete(group.key); else next.add(group.key); return next; })}>
+              <Icon name={collapsed ? "caret-right" : "caret-down"} size={13} />
+              <span data-empty={group.empty ? "true" : "false"}>{group.label}</span>
+              <small>{group.records.length}</small>
+            </button>
+            {!collapsed ? <div className={styles.groupTable} role="grid" aria-label={`${group.label} 그룹 테이블`} aria-rowcount={group.records.length + 1}>
+              {tableHeader()}
+              {tableRows(group.records, 2, group.records)}
+              <div className={styles.tableGroupFooter}><button type="button" aria-label={`${group.label} 그룹에 새 기록`} onClick={() => props.onCreate(groupInitialProperties(group))}>＋ 새 기록</button><span>{group.records.length}개 기록</span></div>
+            </div> : null}
+          </section>;
         })}
       </div>
+    </div>;
+  }
+
+  return <div className={styles.tableViewport} onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}>
+    <div className={styles.table} role="grid" aria-label="커리어 테이블" aria-rowcount={props.records.length + 2} style={{ minWidth: `${Math.max(totalWidth, 700)}px` } as CSSProperties}>
+      {tableHeader()}
+      {start > 0 ? <div className={styles.tableSpacer} aria-hidden="true" style={{ height: `${start * ROW_HEIGHT}px` }} /> : null}
+      {tableRows(rows, start + 2, props.records)}
+      {end < props.records.length ? <div className={styles.tableSpacer} aria-hidden="true" style={{ height: `${(props.records.length - end) * ROW_HEIGHT}px` }} /> : null}
+      {tableSummary}
     </div>
   </div>;
 }
