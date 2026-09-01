@@ -32,27 +32,37 @@ export const TARGET_FAMILIES: readonly JobFamily[] = FAMILIES;
  *
  * "Machine Learning Platform Engineer"는 ML이면서 플랫폼이다. 둘 중 하나를
  * 골라야 한다면 더 좁은 쪽이 낫다: 그 사람이 찾는 말이 그쪽이다.
+ *
+ * **한글은 `\b(...)` 안에 두지 않는다.** JavaScript의 `\w`는 ASCII라 한글
+ * 앞뒤에 단어 경계가 서지 않는다 — `/\b(보안)\b/.test("보안")`이 `false`다.
+ * 그래서 `보안`·`인프라`·`데이터`가 규칙에 적혀 있는데도 한 번도 발화하지
+ * 않았다. 한글 낱말은 괄호 밖에 두고, 필요하면 뒤따르는 말로 좁힌다.
+ *
+ * 영문도 닫는 경계를 조심한다. `\b(data analy)\b`는 "Data Analyst"를 못
+ * 잡는다 — 경계가 `analy` 뒤라 `s`가 오면 성립하지 않는다.
  */
 const FAMILY_RULES: { family: JobFamily; pattern: RegExp }[] = [
-  { family: "ML · AI", pattern: /\b(machine learning|ml engineer|ml scientist|deep learning|nlp|computer vision|llm|generative ai|research scientist)\b|머신\s?러닝|딥\s?러닝|인공지능/i },
-  { family: "데이터", pattern: /\b(data engineer|data scientist|data analy|analytics engineer|bi engineer|data platform|데이터)\b|데이터\s?(엔지니어|사이언|분석)/i },
-  { family: "보안", pattern: /\b(security engineer|appsec|infosec|penetration|보안)\b/i },
-  { family: "QA", pattern: /\b(qa engineer|quality assurance|sdet|test engineer|automation engineer)\b|품질\s?보증/i },
-  { family: "인프라 · 플랫폼", pattern: /\b(sre|site reliability|devops|infrastructure|platform engineer|cloud engineer|network engineer|systems engineer|인프라|플랫폼\s?엔지니어)\b/i },
+  { family: "ML · AI", pattern: /\b(machine learning|ml engineer|ml scientist|mlops|deep learning|nlp|computer vision|llm|generative ai|research scientist|ai engineer|applied ai|foundation model)\b|머신\s?러닝|딥\s?러닝|인공지능|ai\s?엔지니어/i },
+  { family: "데이터", pattern: /\b(data engineer|data scientist|data analyst|data analytics|analytics engineer|bi engineer|data platform)\b|데이터\s?(엔지니어|사이언|분석|플랫폼)/i },
+  { family: "보안", pattern: /\b(security engineer|security architect|appsec|infosec|penetration)\b|보안\s?(엔지니어|개발|아키텍)|정보\s?보안/i },
+  { family: "QA", pattern: /\b(qa engineer|qa ops|quality assurance|sdet|test engineer|test automation|automation engineer)\b|qa\s?엔지니어|품질\s?보증/i },
+  { family: "인프라 · 플랫폼", pattern: /\b(sre|site reliability|devops|infrastructure|platform engineer|cloud engineer|network engineer|systems engineer|dba)\b|인프라\s?(엔지니어|개발)|플랫폼\s?엔지니어/i },
   { family: "모바일", pattern: /\b(ios|android|mobile engineer|mobile developer|flutter|react native)\b|모바일\s?(개발|엔지니어)/i },
-  { family: "프론트엔드", pattern: /\b(frontend|front-end|front end|web engineer|ui engineer)\b|프론트\s?엔드/i },
-  { family: "백엔드", pattern: /\b(backend|back-end|back end|server engineer|server developer|api engineer)\b|백\s?엔드|서버\s?(개발|엔지니어)/i },
+  { family: "프론트엔드", pattern: /\b(frontend|front-end|front end|web engineer|ui engineer)\b|프론트\s?[엔앤]드|퍼블리셔/i },
+  { family: "백엔드", pattern: /\b(backend|back-end|back end|server engineer|server developer|api engineer)\b|백\s?[엔앤]드|서버\s?(개발|엔지니어|프로그래머)/i },
   // 위에 안 걸렸지만 개발자인 것들. 마지막에 둔다.
-  { family: "개발 그 외", pattern: /\b(software engineer|software developer|swe|full ?stack|game (client|server)|graphics engineer|embedded|firmware|compiler|architect)\b|소프트웨어\s?(개발|엔지니어)|개발자/i },
+  { family: "개발 그 외", pattern: /\b(software engineer|software developer|swe|full ?stack|game (client|server|engineering)|graphics engineer|embedded|firmware|compiler|architect)\b|소프트웨어\s?(개발|엔지니어)|개발자|프로그래머/i },
 ];
 
 /**
  * 개발 직무가 아닌데 개발 낱말이 들어간 제목을 막는다.
  *
  * "Sales Engineer" · "Solutions Engineer"는 영업이고, "설비보전 엔지니어"는
- * 시설이다. `engineer`만 보고 들이면 목록이 다시 흐려진다.
+ * 시설이다. `engineer`만 보고 들이면 목록이 다시 흐려진다. `프로그래머`를
+ * 들이면서 "가공프로그래머(5축)"이 따라 들어와 여기에 함께 적었다 — CNC
+ * 가공이지 소프트웨어가 아니다.
  */
-const NOT_SOFTWARE = /\b(sales engineer|solutions? engineer|solution architect|customer engineer|field engineer|industrial|mechanical|civil|chemical|facilit|maintenance|hvac)\b|설비|보전|정비|시설|생산\s?기술|품질\s?관리(?!\s?자동화)/i;
+const NOT_SOFTWARE = /\b(sales engineer|solutions? engineer|solution architect|customer engineer|field engineer|industrial|mechanical|civil|chemical|facilit|maintenance|hvac)\b|설비|보전|정비|시설|생산\s?기술|가공\s?프로그래머|품질\s?관리(?!\s?자동화)/i;
 
 /**
  * 지원할 수 있는 자리가 아닌 것.
@@ -62,14 +72,21 @@ const NOT_SOFTWARE = /\b(sales engineer|solutions? engineer|solution architect|c
  * 세우면 눌러 본 사람이 지원할 수 없는 자리를 만난다.
  */
 const NOT_AN_OPENING = /^(zz-|z-Test)|evergreen requisition|templates only/i;
-const TALENT_POOL = /인재\s?풀|talent pool|인재풀\s?등록/i;
+/**
+ * 인재풀. 한영을 섞어 쓰고, 제목 대신 **팀 이름**에만 적어 두기도 한다 —
+ * 실측에서 네오위즈가 제목 `[네오위즈] 인재 Pool`, 팀 `Talent Pool` 이었다.
+ * 제목만 보면 팀 쪽이 통과한다.
+ */
+const TALENT_POOL = /인재\s?(풀|pool)|talent\s?pool/i;
 
 export function isOpening(input: {
   title: string;
   team: string | null;
   location: string | null;
 }): boolean {
-  if (TALENT_POOL.test(input.title)) return false;
+  for (const value of [input.title, input.team, input.location]) {
+    if (value && TALENT_POOL.test(value)) return false;
+  }
   for (const value of [input.team, input.location]) {
     if (value && NOT_AN_OPENING.test(value)) return false;
   }
