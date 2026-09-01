@@ -1,38 +1,36 @@
-import type { Route } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { Icon } from "@/components/ui/Icon";
 import { ApiError } from "@/lib/api/client";
-import { brews, entitlements, templates as templateApi } from "@/lib/api/endpoints";
+import {
+  brews,
+  designSystems,
+  entitlements,
+  templates as templateApi,
+} from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { BrewFrame } from "../BrewFrame";
+import { DesignCatalog, type DesignCatalogEntry } from "./DesignCatalog";
 import { DesignPicker } from "./DesignPicker";
 import { Generating } from "./Generating";
-import styles from "./page.module.css";
 
 /**
- * 03 디자인 고르기 · 추출.
+ * 01 디자인 선택.
  *
- * 여기가 위저드의 **출구**다. 지금까지 이 화면은 템플릿 12종을 코드에 적어 두고
- * "추출하기"에 핸들러가 없었다 — 고를 것도 가짜였고 눌러도 아무 일이 없었다.
- *
- * 후보는 `GET /recipes/:id/template-previews`가 낸다. 카드는 레시피 내용을 넣지 않고
- * 서체·팔레트·구성의 견본만 그린다. 실제 내용은 레시피를 통해 생성기에 전달된다.
- * 추출은 `POST /generation-jobs`다.
+ * v2는 레시피보다 먼저 디자인을 고른다. 이미 레시피가 있는 이전 제작은
+ * `legacy=1`에서 기존 추출 화면을 계속 쓸 수 있고, 진행 중인 생성도 같은
+ * 기다림 화면으로 돌아간다.
  */
 export default async function DesignPage({
   params,
   searchParams,
 }: {
   params: Promise<{ brewId: string }>;
-  searchParams: Promise<{ tone?: string; again?: string }>;
+  searchParams: Promise<{ tone?: string; again?: string; legacy?: string }>;
 }) {
   const session = await requireSession();
   const { brewId } = await params;
   const query = await searchParams;
-  const useCompanyColors = query.tone === "1";
 
   let brew;
   try {
@@ -43,36 +41,13 @@ export default async function DesignPage({
   }
 
   const title = brew.freeTitle ?? brew.posting?.title ?? null;
-
-  // 레시피 없이는 뽑을 것이 없다. 03에 직접 들어온 경우다.
-  if (!brew.recipeId) {
-    return (
-      <BrewFrame brewId={brewId} step="design" portfolioTitle={title} situation="아직 없음" tinted>
-        <div className={styles.gate}>
-          <div className={styles.gateCard}>
-            <Icon name="list-checks" size={22} color="var(--ex-accent-text)" />
-            <h1 className={styles.gateTitle}>먼저 레시피를 짭니다</h1>
-            <p className={styles.gateNote}>
-              디자인은 레시피의 섹션을 채워 보여줍니다. 채울 것이 정해지지 않으면
-              고른 디자인이 무엇을 보여줄지 알 수 없습니다.
-            </p>
-            <Link href={`/brew/${brewId}/outline` as Route} className={styles.gateAction}>
-              레시피로 가기
-            </Link>
-          </div>
-        </div>
-      </BrewFrame>
-    );
-  }
-
   const generation = brew.latestGeneration;
   const running = generation?.status === "queued" || generation?.status === "running";
-  // 다 뽑힌 제작으로 돌아오면 만든 것을 여는 게 먼저다. 다시 뽑는 길은 그 카드가 연다.
   const again = query.again === "1";
 
   if (running || (generation?.status === "done" && !again)) {
     return (
-      <BrewFrame brewId={brewId} step="design" portfolioTitle={title} situation="추출" tinted>
+      <BrewFrame brewId={brewId} step="design" portfolioTitle={title} situation="생성" tinted>
         <Generating
           brewId={brewId}
           generation={generation}
@@ -83,25 +58,72 @@ export default async function DesignPage({
     );
   }
 
-  const [previews, quota] = await Promise.all([
-    templateApi.previews(session.accessToken, brew.recipeId, useCompanyColors),
-    entitlements.check(session.accessToken, "portfolio.generate"),
-  ]);
+  if (query.legacy === "1" && brew.recipeId) {
+    const useCompanyColors = query.tone === "1";
+    const [previews, quota] = await Promise.all([
+      templateApi.previews(session.accessToken, brew.recipeId, useCompanyColors),
+      entitlements.check(session.accessToken, "portfolio.generate"),
+    ]);
+    return (
+      <BrewFrame brewId={brewId} step="design" portfolioTitle={title} situation="기존 생성" tinted>
+        <DesignPicker
+          brewId={brewId}
+          recipeId={brew.recipeId}
+          previews={previews.data.previews}
+          planCode={quota.data.planCode}
+          usage={quota.data.usage ?? null}
+          allowed={quota.data.allowed}
+          companyName={brew.posting?.companyName ?? null}
+          useCompanyColors={useCompanyColors}
+          madePortfolioId={brew.portfolioId}
+          failureCode={generation?.status === "failed" ? generation.failureCode : null}
+        />
+      </BrewFrame>
+    );
+  }
+
+  // 목록은 카드가 그리는 값만 받는다. 문서는 고른 판 하나만 따로 불러온다.
+  const catalog = await designSystems.list(session.accessToken);
+  const entries: DesignCatalogEntry[] = catalog.data.items.map((item) => ({
+      designSystemId: item.designSystemId,
+      revisionId: item.revisionId,
+      code: item.code,
+      name: item.name,
+      description: item.description,
+      originKind: item.origin.kind,
+      sourceName: item.origin.sourceName,
+      sourceUrl: item.origin.sourceUrl,
+      capturedAt: item.origin.capturedAt,
+      attribution: item.origin.attribution,
+      traits: item.traits,
+      signatureMove: item.signatureMove,
+      fitReasons: item.fitReasons,
+      recommended: item.recommended,
+      filters: {
+        surface: item.surface,
+        density: item.density,
+        typography: item.typographyCharacter,
+        contentFocus: [item.contentFocus],
+        moods: item.moods,
+        roles: item.roles,
+      },
+      preview: item.preview,
+      legacyTemplateId: item.legacyTemplateId,
+  }));
 
   return (
-    <BrewFrame brewId={brewId} step="design" portfolioTitle={title} situation="예상 3분" tinted>
-      <DesignPicker
+    <BrewFrame
+      brewId={brewId}
+      step="design"
+      portfolioTitle={title}
+      situation={`${entries.length}개 디자인`}
+      flow="portfolio-v2"
+      tinted
+    >
+      <DesignCatalog
         brewId={brewId}
-        recipeId={brew.recipeId}
-        previews={previews.data.previews}
-        planCode={quota.data.planCode}
-        usage={quota.data.usage ?? null}
-        allowed={quota.data.allowed}
-        companyName={brew.posting?.companyName ?? null}
-        useCompanyColors={useCompanyColors}
-        /** 다시 뽑는 경우다. 지난번에 만든 것이 있다는 사실을 감추지 않는다. */
-        madePortfolioId={brew.portfolioId}
-        failureCode={generation?.status === "failed" ? generation.failureCode : null}
+        entries={entries}
+        initialRevisionId={brew.designSelection?.designSystemRevisionId ?? null}
       />
     </BrewFrame>
   );

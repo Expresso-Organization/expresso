@@ -33,6 +33,12 @@ export interface BrewDoc {
   status: "draft" | "interviewing" | "recipe" | "generating" | "done";
   deadlineAt?: Date | null;
   resumedAt?: Date | null;
+  /** 고른 디자인 판. 고르기 전에는 없다. */
+  designSystemRevisionId?: string | null;
+  /** 고른 시점의 참고 잠금 스냅숏. 판이 바뀌어도 만들던 것은 그대로 둔다. */
+  referenceLockSnapshot?: unknown;
+  designStyleOverrides?: unknown;
+  designSelectedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

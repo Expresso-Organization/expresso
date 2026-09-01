@@ -15,8 +15,28 @@ import { SESSION_COOKIE } from "@/lib/session";
  * 거기서 로그인으로 보낸다. 프록시는 모든 요청(프리페치 포함)에서 도므로
  * 쿠키 유무만 본다 — 문서가 경고하는 대로 여기서 백엔드를 부르지 않는다.
  */
+/**
+ * 개발 로그인이 켜져 있으면 로그인 대신 그 문으로 보낸다.
+ *
+ * 화면을 볼 때마다 손으로 로그인하지 않으려고 만든 문인데, 여기서 먼저
+ * `/login` 으로 돌려 버리면 주소를 직접 열 때마다 여전히 막힌다. 켜져 있을
+ * 때는 보려던 자리를 `next` 로 넘겨 로그인 뒤 그 자리로 돌아오게 한다.
+ *
+ * 판단은 `/api/dev/session` 이 다시 한다 — 프로덕션이거나 계정 정보가 없으면
+ * 그 라우트가 404 다. 여기서 보는 것은 스위치 하나뿐이다.
+ */
+function devLoginEnabled(): boolean {
+  return process.env.NODE_ENV !== "production" && process.env.DEV_LOGIN === "1";
+}
+
 export function proxy(request: NextRequest) {
   if (request.cookies.has(SESSION_COOKIE)) return NextResponse.next();
+
+  if (devLoginEnabled()) {
+    const dev = new URL("/api/dev/session", request.url);
+    dev.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
+    return NextResponse.redirect(dev);
+  }
 
   const login = new URL("/login", request.url);
   return NextResponse.redirect(login);

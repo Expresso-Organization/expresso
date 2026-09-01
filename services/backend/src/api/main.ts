@@ -20,6 +20,7 @@ import { AiBlockEditor } from "../modules/portfolio-editing/editor.js";
 import { AiLayoutRemixer } from "../modules/layout/remixer.js";
 import { AiInsightWriter } from "../modules/analytics/writer.js";
 import { createAiClient } from "../platform/ai/create-client.js";
+import { DesignSystemService } from "../modules/design-systems/service.js";
 import { TemplateService } from "../modules/templates/index.js";
 import { GenerationService } from "../modules/generation/index.js";
 import { PortfolioEditingService } from "../modules/portfolio-editing/index.js";
@@ -55,6 +56,7 @@ const materialsService = new MaterialsService(database);
 const interviewService = new InterviewService(database);
 const recipeService = new RecipeService(database);
 const companyResearchService = new CompanyResearchService(database);
+const designSystemService = new DesignSystemService(database);
 const templateService = new TemplateService(database, recipeService);
 const generationService = new GenerationService(database);
 // 04b "말로 고치기"만 요청 안에서 계약을 부른다 — 사용자가 결과를 보고
@@ -122,6 +124,7 @@ const app = buildApi({
   recipeService,
   companyResearchService,
   brewJobService,
+  designSystemService,
   templateService,
   generationService,
   portfolioEditingService,

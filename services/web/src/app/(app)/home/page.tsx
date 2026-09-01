@@ -250,7 +250,7 @@ async function Portfolios({ accessToken }: { accessToken: string }) {
               </span>
             </Link>
           ))}
-          <Link href="/brew/new" className={styles.newPortfolio}>
+          <Link href={"/portfolio/new" as Route} className={styles.newPortfolio}>
             <span className={styles.newPortfolioIcon}>
               <Icon name="plus" size={18} color="var(--ex-accent-text)" />
             </span>

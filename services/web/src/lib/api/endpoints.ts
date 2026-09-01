@@ -59,11 +59,15 @@ import {
   JobSourceListResponseSchema,
   SubmittedJobPostingResponseSchema,
   TemplatePreviewsResponseSchema,
+  DesignSystemCatalogResponseSchema,
+  DesignSystemRevisionResponseSchema,
+  DesignSelectionResponseSchema,
   GenerationJobStatusResponseSchema,
   type CreateBrew,
   type CreateFreeBrew,
   type SubmitGeneration,
   type SubmitJobPosting,
+  type SaveDesignSelection,
   type ListJobPostingsQuery,
   type ListPortfolioRevisionsQuery,
   type ListCareerRecordsQuery,
@@ -363,6 +367,40 @@ export const templates = {
         cache: "no-store",
         query: { useCompanyColors: String(useCompanyColors) },
       },
+    ),
+};
+
+export const designSystems = {
+  /** M2 카탈로그. 레시피보다 먼저 열리므로 brew 입력에 기대지 않는다. */
+  list: (accessToken: string) =>
+    request(`${API_PREFIX}/design-systems`, DesignSystemCatalogResponseSchema, {
+      accessToken,
+      cache: "no-store",
+    }),
+
+  get: (accessToken: string, designSystemId: string) =>
+    request(
+      `${API_PREFIX}/design-systems/${designSystemId}`,
+      z.strictObject({ data: DesignSystemCatalogResponseSchema.shape.data.shape.items.element }),
+      { accessToken, cache: "no-store" },
+    ),
+
+  revision: (accessToken: string, revisionId: string) =>
+    request(
+      `${API_PREFIX}/design-system-revisions/${revisionId}`,
+      DesignSystemRevisionResponseSchema,
+      { accessToken, cache: "no-store" },
+    ),
+
+  select: (
+    accessToken: string,
+    brewId: string,
+    input: SaveDesignSelection,
+  ) =>
+    request(
+      `${API_PREFIX}/brews/${brewId}/design-selection`,
+      DesignSelectionResponseSchema,
+      { accessToken, method: "POST", body: input },
     ),
 };
 

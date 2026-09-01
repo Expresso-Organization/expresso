@@ -1,0 +1,1416 @@
+import { createHash } from "node:crypto";
+
+import {
+  DesignDocumentModelSchema,
+  DesignSystemSpecV2Schema,
+  ReferenceLockSchema,
+  type DesignDocumentModel,
+  type DesignDocumentSection,
+  type DesignSampleEntry,
+  type DesignSystemSpecV2,
+  type ReferenceLock,
+  type TokenRole,
+} from "@expresso/contracts";
+
+const SAMPLE_ENTRIES: DesignSampleEntry[] = [
+  { kind: "hero", label: "Hero", value: "신뢰를 만드는 제품과 시스템을 설계합니다." },
+  { kind: "case-study", label: "프로젝트 사례", value: "결제 시스템의 복구 시간을 줄인 과정" },
+  { kind: "long-body", label: "긴 본문", value: "문제의 맥락, 선택한 접근, 검증한 결과를 순서대로 설명하는 사례 본문입니다." },
+  { kind: "metric", label: "대표 수치", value: "복구 시간 42% 단축" },
+  { kind: "before-after", label: "전후 비교", value: "분산된 대응 절차 → 한 화면의 복구 흐름" },
+  { kind: "image", label: "이미지 사례", value: "프로젝트 아티팩트 자리" },
+  { kind: "no-image", label: "이미지 없는 사례", value: "문제와 성과만으로 완결되는 텍스트 사례" },
+  { kind: "tags", label: "기술 태그", value: "TypeScript · MySQL · 운영 자동화" },
+  { kind: "quote", label: "인용", value: "중요한 일이 분명하게 읽히도록 만듭니다." },
+  { kind: "link-contact", label: "연락 행동", value: "hello@example.com" },
+  { kind: "footer", label: "Footer", value: "관찰하고, 설계하고, 검증한 작업" },
+];
+
+const COLOR_NAMES = [
+  "canvas",
+  "surface",
+  "elevated",
+  "text",
+  "muted",
+  "border",
+  "accent",
+  "action",
+  "actionText",
+] as const;
+
+function normalizeLine(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function listLine(label: string, values: string[]): string {
+  return `${label}: ${values.length > 0 ? values.map(normalizeLine).join(" · ") : "없음"}`;
+}
+
+function tokenRoleLine(prefix: string, value: TokenRole): string {
+  return `${prefix} ${value.token}: ${normalizeLine(value.role)} — ${normalizeLine(value.usage)}`;
+}
+
+function section(id: string, title: string, body: string[]): DesignDocumentSection {
+  return { id, title, body: body.map(normalizeLine) };
+}
+
+function sourceLines(spec: DesignSystemSpecV2, lock: ReferenceLock | null): string[] {
+  const lines = [
+    `원본 종류: ${spec.origin.kind}`,
+    `원본 이름: ${spec.origin.sourceName ?? "없음"}`,
+    `원본 URL: ${spec.origin.sourceUrl ?? "없음"}`,
+    `수집 시각: ${spec.origin.capturedAt ?? "없음"}`,
+    `출처 표기: ${spec.origin.attribution ?? "없음"}`,
+  ];
+
+  if (!lock) return [...lines, "ReferenceLock: 없음"];
+
+  lines.push(
+    `ReferenceLock: v${lock.version}`,
+    `기준 디자인: ${lock.primaryDirection.designSystemCode} r${lock.primaryDirection.revision}`,
+    listLine("적합한 이유", lock.fitReasons),
+    listLine("보존할 특징", lock.preserve),
+    listLine("빌린 세부 결정", lock.borrowedDetails),
+    ...lock.tokenRoles.map((role) => tokenRoleLine("고정 토큰 역할", role)),
+    `미디어 전략: ${lock.mediaStrategy.mode} — ${lock.mediaStrategy.fallback}`,
+    `Signature Move: ${lock.signatureMove}`,
+    listLine("제외 패턴", lock.reject),
+  );
+
+  if (lock.sources.length === 0) lines.push("ReferenceLock 출처: 없음");
+  for (const [index, source] of lock.sources.entries()) {
+    lines.push(
+      `ReferenceLock 출처 ${index + 1}: ${source.name}`,
+      `출처 ${index + 1} URL: ${source.url ?? "없음"}`,
+      `출처 ${index + 1} 수집 시각: ${source.capturedAt ?? "없음"}`,
+      `출처 ${index + 1} 관찰 신호: ${source.signal}`,
+      `출처 ${index + 1} 표기: ${source.attribution ?? "없음"}`,
+    );
+  }
+  return lines;
+}
+
+function assertDeclaredTokenReferences(
+  spec: DesignSystemSpecV2,
+  referenceLock: ReferenceLock | null,
+): void {
+  const declared = new Set([
+    ...COLOR_NAMES.map((name) => name.replace(/[A-Z]/g, (value) => `-${value.toLowerCase()}`)),
+    "display",
+    "body",
+    "mono",
+    "base-unit",
+    "element-gap",
+    "component-gap",
+    "section-gap",
+    "content-width",
+    "card-radius",
+    "control-radius",
+    "border-width",
+    ...spec.typography.scale.map((step) => `type-${step.name}`),
+  ]);
+  const references = [
+    ...spec.colors.roles.map(({ token }) => token),
+    ...spec.rules.tokenRoles.map(({ token }) => token),
+    ...Object.values(spec.components).flatMap(({ tokens }) => tokens),
+    ...(referenceLock?.tokenRoles.map(({ token }) => token) ?? []),
+  ];
+  const unknown = references.find((token) => !declared.has(token));
+  if (unknown) throw new Error(`Unknown design token reference: ${unknown}`);
+}
+
+export function buildDesignDocumentModel(
+  input: DesignSystemSpecV2,
+  referenceLockInput: ReferenceLock | null = null,
+): DesignDocumentModel {
+  const spec = DesignSystemSpecV2Schema.parse(input);
+  const referenceLock = referenceLockInput
+    ? ReferenceLockSchema.parse(referenceLockInput)
+    : null;
+  assertDeclaredTokenReferences(spec, referenceLock);
+
+  const colorLines = COLOR_NAMES.map((name) => {
+    const token = spec.colors[name];
+    return `${name}: ${token.value} — ${token.role}`;
+  });
+  colorLines.push(
+    ...spec.colors.roles.map((role) => tokenRoleLine("색상 역할", role)),
+  );
+
+  const typographyLines = [
+    `Display: ${spec.typography.display.family}, ${spec.typography.display.fallback} — ${spec.typography.display.role}`,
+    `Body: ${spec.typography.body.family}, ${spec.typography.body.fallback} — ${spec.typography.body.role}`,
+    `Mono: ${spec.typography.mono.family}, ${spec.typography.mono.fallback} — ${spec.typography.mono.role}`,
+    ...spec.typography.scale.map(
+      (step) => `타입 계단 ${step.name}: ${step.size} / ${step.lineHeight}`,
+    ),
+    listLine("굵기", spec.typography.weights.map(String)),
+    listLine("행간", spec.typography.lineHeights.map(String)),
+    listLine("자간", spec.typography.letterSpacing),
+    `본문 폭: ${spec.typography.measure}`,
+  ];
+
+  const componentLines = Object.entries(spec.components).flatMap(([name, rule]) => [
+    `${name}: ${rule.description}`,
+    listLine(`${name} 구조`, rule.anatomy),
+    listLine(`${name} 토큰`, rule.tokens),
+    listLine(`${name} Do`, rule.do),
+    listLine(`${name} Don't`, rule.dont),
+  ]);
+
+  const sections = [
+    section("direction", "디자인 이름과 시각 방향", [
+      `이름: ${spec.identity.name}`,
+      `설명: ${spec.identity.description}`,
+      `시각 방향: ${spec.identity.visualThesis}`,
+      listLine("핵심 특징", spec.identity.traits),
+      listLine("Signature Move", spec.identity.signatureMoves),
+    ]),
+    section("colors", "색상 토큰과 역할", colorLines),
+    section("typography", "타이포그래피 계단", typographyLines),
+    section("components", "컴포넌트 규칙", componentLines),
+    section("sample-portfolio", "요소와 표시 방식", SAMPLE_ENTRIES.map(
+      (entry) => `${entry.label}: ${entry.value}`,
+    )),
+    section("imagery", "이미지 전략", [
+      `모드: ${spec.imagery.mode}`,
+      `비율: ${spec.imagery.aspectRatio}`,
+      `처리: ${spec.imagery.treatment}`,
+      `대체 방식: ${spec.imagery.fallback}`,
+    ]),
+    section("spacing", "간격과 구성", [
+      `기본 단위: ${spec.spacing.baseUnit}px`,
+      `요소 간격: ${spec.spacing.elementGap}px`,
+      `컴포넌트 간격: ${spec.spacing.componentGap}px`,
+      `섹션 간격: ${spec.spacing.sectionGap}px`,
+      `콘텐츠 폭: ${spec.spacing.contentWidth}px`,
+      `구조: ${spec.composition.structure}`,
+      `밀도: ${spec.composition.density}`,
+      `섹션 리듬: ${spec.composition.sectionRhythm}`,
+      `위계: ${spec.composition.hierarchy}`,
+      `표면 전략: ${spec.composition.surfaceStrategy}`,
+    ]),
+    section("shape", "반경, 테두리, 그림자", [
+      `카드 반경: ${spec.shape.cardRadius}px`,
+      `컨트롤 반경: ${spec.shape.controlRadius}px`,
+      `테두리 두께: ${spec.shape.borderWidth}px`,
+      `그림자: ${spec.shape.shadowStyle}`,
+    ]),
+    section("motion", "모션 규칙", [
+      `성격: ${spec.motion.personality}`,
+      `시간: ${spec.motion.duration}`,
+      `감속: ${spec.motion.easing}`,
+      `모션 감소: ${spec.motion.reducedMotion}`,
+    ]),
+    section("rules", "Do와 Don't", [
+      ...spec.rules.do.map((value) => `Do: ${value}`),
+      ...spec.rules.dont.map((value) => `Don't: ${value}`),
+      ...spec.rules.tokenRoles.map((role) => tokenRoleLine("규칙 토큰 역할", role)),
+    ]),
+    section("source-revision", "출처와 판 정보", sourceLines(spec, referenceLock)),
+  ];
+
+  return DesignDocumentModelSchema.parse({
+    version: 2,
+    spec,
+    referenceLock,
+    sections,
+    sampleEntries: SAMPLE_ENTRIES,
+  });
+}
+
+function escapeMarkdown(value: string): string {
+  return value.replace(/([\\`*_{}\[\]<>#])/g, "\\$1");
+}
+
+export function renderDesignMarkdown(modelInput: DesignDocumentModel): string {
+  const model = DesignDocumentModelSchema.parse(modelInput);
+  const lines = [
+    `# ${escapeMarkdown(model.spec.identity.name)}`,
+    "",
+    escapeMarkdown(model.spec.identity.visualThesis),
+    "",
+  ];
+
+  for (const value of model.sections) {
+    lines.push(
+      `## ${escapeMarkdown(value.title)}`,
+      "",
+      ...value.body.map((line) => `- ${escapeMarkdown(line)}`),
+      "",
+    );
+  }
+  return lines.join("\n");
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * WCAG 2.1 상대 휘도. 문서가 적는 명암비를 주장이 아니라 계산으로 만들기 위해 쓴다.
+ * 임계값 0.03928은 WCAG 2.1 「relative luminance」 정의를 그대로 따른다.
+ */
+function relativeLuminance(hex: string): number {
+  const channels = [1, 3, 5].map((index) => {
+    const channel = Number.parseInt(hex.slice(index, index + 2), 16) / 255;
+    return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * channels[0]! + 0.7152 * channels[1]! + 0.0722 * channels[2]!;
+}
+
+/** 두 색 토큰의 명암비. 계약이 6자리 16진값만 허용하므로 언제나 계산할 수 있다. */
+function contrastRatio(foreground: string, background: string): number {
+  const first = relativeLuminance(foreground);
+  const second = relativeLuminance(background);
+  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+}
+
+/** WCAG 2.1 본문 기준. 3:1은 큰 글자에만 통과하므로 따로 적는다. */
+function contrastLevel(ratio: number): string {
+  if (ratio >= 7) return "AAA";
+  if (ratio >= 4.5) return "AA";
+  if (ratio >= 3) return "AA Large";
+  return "미달";
+}
+
+function formatRatio(ratio: number): string {
+  return `${ratio.toFixed(2)}:1`;
+}
+
+function renderRuleSheet(value: DesignDocumentSection): string {
+  return `<details class="rule-sheet"><summary>전체 규칙 보기 <span>${value.body.length}</span></summary><ul class="doc-lines">${value.body.map(
+    (line) => `<li>${escapeHtml(line)}</li>`,
+  ).join("")}</ul></details>`;
+}
+
+const COLOR_GROUPS = [
+  { label: "지면과 표면", names: ["canvas", "surface", "elevated"] },
+  { label: "글자와 경계", names: ["text", "muted", "border"] },
+  { label: "강조와 행동", names: ["accent", "action", "actionText"] },
+] as const;
+
+function pad2(value: number): string {
+  return String(value).padStart(2, "0");
+}
+
+/**
+ * 문서 전체가 쓰는 단 하나의 골격. 왼쪽에 이름표, 오른쪽에 내용, 위에 실선.
+ * 값과 설명은 상자에 넣지 않는다. 테두리는 실제로 렌더한 견본에만 두른다.
+ */
+function row(label: string, body: string, modifier = ""): string {
+  return `<div class="row${modifier ? ` ${modifier}` : ""}"><div class="row-label">${label}</div><div class="row-body">${body}</div></div>`;
+}
+
+function label(name: string, meta?: string): string {
+  return `<strong>${escapeHtml(name)}</strong>${meta ? `<code>${escapeHtml(meta)}</code>` : ""}`;
+}
+
+function factList(
+  items: { term: string; value: string; note?: string }[],
+  monoTerm = true,
+): string {
+  return `<ul class="facts">${items.map(
+    (item) => `<li>${monoTerm ? `<code>${escapeHtml(item.term)}</code>` : `<span class="term">${escapeHtml(item.term)}</span>`}<b>${escapeHtml(item.value)}</b>${item.note ? `<span>${escapeHtml(item.note)}</span>` : ""}</li>`,
+  ).join("")}</ul>`;
+}
+
+function renderColorRows(spec: DesignSystemSpecV2): string {
+  const swatches = (names: readonly string[]) => `<div class="swatch-set">${names.map((name) => {
+    const token = spec.colors[name as keyof typeof spec.colors] as { value: string; role: string };
+    return `<article class="swatch" data-token="${name}"><i style="background:var(--${name})"></i><strong>${name}</strong><code>${escapeHtml(token.value)}</code><span>${escapeHtml(token.role)}</span></article>`;
+  }).join("")}</div>`;
+
+  const pairs = [
+    { term: "text / canvas", ratio: contrastRatio(spec.colors.text.value, spec.colors.canvas.value) },
+    { term: "muted / canvas", ratio: contrastRatio(spec.colors.muted.value, spec.colors.canvas.value) },
+    { term: "text / surface", ratio: contrastRatio(spec.colors.text.value, spec.colors.surface.value) },
+    { term: "action-text / action", ratio: contrastRatio(spec.colors.actionText.value, spec.colors.action.value) },
+  ];
+
+  return `${COLOR_GROUPS.map((group) => row(label(group.label), swatches(group.names))).join("")}
+  ${row(label("측정한 명암비", "WCAG 2.1"), factList(pairs.map(({ term, ratio }) => ({ term, value: formatRatio(ratio), note: contrastLevel(ratio) }))))}`;
+}
+
+function renderTypographyRows(spec: DesignSystemSpecV2): string {
+  const ramp = spec.typography.scale.map((step) => row(
+    label(step.name, `${step.size} / ${step.lineHeight}`),
+    `<p class="specimen" style="font-size:var(--type-${step.name});line-height:var(--line-${step.name})">성과가 읽히는 첫 문장</p>`,
+  )).join("");
+
+  // 서체는 역할 문장이 길어 값 표가 아니라 줄 세 개로 둔다.
+  const families = ([
+    ["display", spec.typography.display],
+    ["body", spec.typography.body],
+    ["mono", spec.typography.mono],
+  ] as const).map(([name, font]) => row(
+    label(name, `${font.family} · ${font.fallback}`),
+    `<p class="note">${escapeHtml(font.role)}</p>`,
+    "row-tight",
+  )).join("");
+
+  const weights = `<p class="weight-line">${spec.typography.weights.map(
+    (weight) => `<span style="font-weight:${weight}">Aa 성과<i>${weight}</i></span>`,
+  ).join("")}</p>`;
+
+  const tracking = `<p class="weight-line">${spec.typography.letterSpacing.map(
+    (value) => `<span style="letter-spacing:${value}">성과를 읽는 방식<i>${escapeHtml(value)}</i></span>`,
+  ).join("")}</p>`;
+
+  return `${ramp}
+  ${families}
+  ${row(label("굵기"), weights)}
+  ${row(label("자간"), tracking)}
+  ${row(label("본문 폭", spec.typography.measure), `<p class="measure-proof">${escapeHtml(spec.typography.body.role)}. 본문은 이 폭을 넘지 않게 잡아 한 줄이 눈으로 따라가기 좋은 길이를 유지합니다.</p>`)}`;
+}
+
+function renderComponentPreview(name: string): string {
+  if (name === "hero") return `<div class="demo demo-hero"><small>PORTFOLIO / 2026</small><strong>성과를 만드는<br>제품을 설계합니다.</strong><span class="act">작업 보기</span></div>`;
+  if (name === "metric") return `<div class="demo demo-metric"><strong>${WORK[3].metric}</strong><span>${WORK[3].label}</span><small>${WORK[3].period}</small></div>`;
+  if (name === "contact") return `<div class="demo demo-contact"><span class="act">프로젝트 열기 ↗</span><span class="act-quiet">hello@example.com</span></div>`;
+  return `<div class="demo demo-case"><small>FEATURED CASE · 01</small><strong>복잡한 운영 흐름을<br>한 화면으로</strong><span>Product design · Engineering</span></div>`;
+}
+
+function renderComponentRows(spec: DesignSystemSpecV2): string {
+  const controls = row(
+    label("행동과 태그", `control-radius ${spec.shape.controlRadius}px`),
+    `<div class="frame frame-row"><span class="act">Primary</span><span class="act-secondary">Secondary</span><span class="act-quiet">Text link ↗</span><span class="tag">TypeScript</span></div>`,
+  );
+  const components = Object.entries(spec.components).map(([name, rule]) => row(
+    label(name, rule.tokens.join(" · ")),
+    `<div class="frame">${renderComponentPreview(name)}</div><p class="note">${escapeHtml(rule.description)}</p><p class="note muted">${rule.anatomy.map(escapeHtml).join(" · ")}</p>`,
+  )).join("");
+  return `${controls}${components}`;
+}
+
+/** 계약이 선언한 비율을 CSS 값으로. 형식을 벗어나면 비율을 강제하지 않는다. */
+function aspectRatio(value: string): string {
+  const match = /^(\d+)\s*:\s*(\d+)$/.exec(value.trim());
+  return match ? `aspect-ratio:${match[1]} / ${match[2]};` : "";
+}
+
+/** 이미지 자리. 선언한 비율과 반경으로 자른 고정 샘플 사진을 넣는다. */
+function mediaPlate(spec: DesignSystemSpecV2, note: string, index = 0): string {
+  return `<div class="media" style="${aspectRatio(spec.imagery.aspectRatio)}"><img src="${photoUrl(index, 720)}" alt="${escapeHtml(note)}" loading="lazy"></div>`;
+}
+
+function renderImageryRows(spec: DesignSystemSpecV2): string {
+  return `${row(label("이미지 자리", `${spec.imagery.mode} · ${spec.imagery.aspectRatio}`), `<div class="media-set">${mediaPlate(spec, `이미지 자리 · ${spec.imagery.aspectRatio}`)}</div>`)}
+  ${row(label("이미지가 없을 때"), `<p class="note">${escapeHtml(spec.imagery.fallback)}</p>`)}`;
+}
+
+function renderSpacingRows(spec: DesignSystemSpecV2): string {
+  const steps = [
+    { token: "base-unit", value: spec.spacing.baseUnit },
+    { token: "element-gap", value: spec.spacing.elementGap },
+    { token: "component-gap", value: spec.spacing.componentGap },
+    { token: "section-gap", value: spec.spacing.sectionGap },
+  ];
+  const bars = steps.map((step) => row(
+    label(step.token, `${step.value}px`),
+    `<span class="bar" style="width:min(100%,${step.value}px)"></span>`,
+    "row-tight",
+  )).join("");
+  return `${bars}
+  ${row(label("content-width", `${spec.spacing.contentWidth}px`), `<p class="note mono">본문 폭 ${escapeHtml(spec.typography.measure)}</p>`, "row-tight")}
+  ${row(label("위계"), `<p class="note">${escapeHtml(spec.composition.hierarchy)}</p>`)}
+  ${row(label("표면 전략"), `<p class="note">${escapeHtml(spec.composition.surfaceStrategy)}</p>`)}
+  ${row(label("구성 방식"), `<p class="note mono">${escapeHtml(spec.composition.structure)} · ${escapeHtml(spec.composition.density)}</p>`, "row-tight")}`;
+}
+
+function renderShapeRows(spec: DesignSystemSpecV2): string {
+  return `${row(label("card-radius", `${spec.shape.cardRadius}px`), `<i class="proof proof-card"></i>`, "row-tight")}
+  ${row(label("control-radius", `${spec.shape.controlRadius}px`), `<i class="proof proof-control"></i>`, "row-tight")}
+  ${row(label("border-width", `${spec.shape.borderWidth}px`), `<i class="proof proof-border"></i>`, "row-tight")}
+  ${row(label("shadow", spec.shape.shadowStyle), `<i class="proof proof-shadow"></i>`, "row-tight")}`;
+}
+
+function renderMotionRows(spec: DesignSystemSpecV2): string {
+  return `${row(label("reveal", `${spec.motion.duration} · ${spec.motion.easing}`), `<i class="motion motion-rise"></i>`, "row-tight")}
+  ${row(label("focus"), `<i class="motion motion-focus"></i>`, "row-tight")}
+  ${row(label("reduced"), `<i class="motion motion-still"></i>`, "row-tight")}
+  ${row(label("모션 감소"), `<p class="note">${escapeHtml(spec.motion.reducedMotion)}</p>`)}`;
+}
+
+function renderRulesRows(spec: DesignSystemSpecV2): string {
+  const list = (values: string[]) => `<ul class="rule-list">${values.map((value) => `<li>${escapeHtml(value)}</li>`).join("")}</ul>`;
+  return `${row(label("Do"), list(spec.rules.do))}
+  ${row(label("Don't"), list(spec.rules.dont))}`;
+}
+
+function sampleOf(model: DesignDocumentModel, kind: DesignSampleEntry["kind"]): DesignSampleEntry {
+  return model.sampleEntries.find((entry) => entry.kind === kind)!;
+}
+
+/**
+ * 견본에 쓰는 고정 사진. 모든 디자인이 같은 사진을 써야 차이가 디자인에서만 온다.
+ * Unsplash 라이선스는 표기를 요구하지 않지만 출처는 문서의 출처 절에 남긴다.
+ */
+const SAMPLE_PHOTOS = [
+  { id: "photo-1518455027359-f3f8164ba6bd", by: "James McDonald" },
+  { id: "photo-1505209487757-5114235191e5", by: "Piotr Wilk" },
+  { id: "photo-1587522384446-64daf3e2689a", by: "Andres Jasso" },
+  { id: "photo-1449247709967-d4461a6a6103", by: "Bench Accounting" },
+] as const;
+
+function photoUrl(index: number, width: number): string {
+  const photo = SAMPLE_PHOTOS[index % SAMPLE_PHOTOS.length]!;
+  return `https://images.unsplash.com/${photo.id}?auto=format&fit=crop&w=${width}&q=70`;
+}
+
+/** 인물 자리에 쓰는 고정 사진. 얼굴을 기준으로 정사각형으로 자른다. */
+const PORTRAITS = [
+  { id: "photo-1637325262485-5cf1abb98c05", by: "Teslariu Mihai" },
+  { id: "photo-1532074205216-d0e1f4b87368", by: "Kirill Balobanov" },
+] as const;
+
+function avatar(index: number, large = false): string {
+  const portrait = PORTRAITS[index % PORTRAITS.length]!;
+  const size = large ? 120 : 88;
+  return `<img class="avatar${large ? " avatar-lg" : ""}" src="https://images.unsplash.com/${portrait.id}?auto=format&fit=facearea&facepad=3&w=${size}&h=${size}&q=70" alt="" loading="lazy">`;
+}
+
+/**
+ * 웹폰트로 불러올 수 있는 서체. 계약의 서체 이름은 자유 문자열이라 아는 것만
+ * 싣는다. 목록에 없으면 링크를 걸지 않고 선언한 대체 서체로 그린다.
+ *
+ * 굵기는 가족마다 실제로 있는 것만 적는다 — 2026-09-01 Google Fonts 목록에서
+ * 확인했다. 없는 굵기를 섞어 요청하면 응답이 오류가 되어 서체가 통째로 빠진다.
+ * Anton · Archivo Black · Poiret One · Abril Fatface 는 한 굵기뿐이라 축을 뺀다.
+ */
+const WEB_FONTS: Record<string, string> = {
+  "Abril Fatface": "Abril+Fatface",
+  Anton: "Anton",
+  Archivo: "Archivo:wght@400;500;600;700",
+  "Archivo Black": "Archivo+Black",
+  Caveat: "Caveat:wght@400;500;600;700",
+  Chivo: "Chivo:wght@400;500;600;700",
+  "Cormorant Garamond": "Cormorant+Garamond:wght@400;500;600;700",
+  "EB Garamond": "EB+Garamond:wght@400;500;600;700",
+  Fraunces: "Fraunces:wght@400;500;600;700",
+  "IBM Plex Sans": "IBM+Plex+Sans:wght@400;500;600;700",
+  Inter: "Inter:wght@400;500;600;700",
+  "JetBrains Mono": "JetBrains+Mono:wght@400;500;600;700",
+  Lora: "Lora:wght@400;500;600;700",
+  Manrope: "Manrope:wght@400;500;600;700",
+  Newsreader: "Newsreader:wght@400;500;600;700",
+  Nunito: "Nunito:wght@400;500;600;700",
+  Orbitron: "Orbitron:wght@400;500;600;700",
+  Oswald: "Oswald:wght@400;500;600;700",
+  "Playfair Display": "Playfair+Display:wght@400;500;600;700",
+  "Poiret One": "Poiret+One",
+  Poppins: "Poppins:wght@400;500;600;700",
+  Quicksand: "Quicksand:wght@400;500;600;700",
+  Rajdhani: "Rajdhani:wght@400;500;600;700",
+  Roboto: "Roboto:wght@400;500;600;700",
+  Silkscreen: "Silkscreen:wght@400;700",
+  "Source Serif 4": "Source+Serif+4:wght@400;500;600;700",
+  "Space Grotesk": "Space+Grotesk:wght@400;500;600;700",
+  "Work Sans": "Work+Sans:wght@400;500;600;700",
+
+  // 한글. 라틴 가족에 없는 글자를 받는다. Google Fonts 는 한글을 `unicode-range`
+  // 로 백여 조각으로 갈라 내주므로, 문서에 실제로 쓰인 음절 조각만 내려온다.
+  "Black Han Sans": "Black+Han+Sans",
+  Diphylleia: "Diphylleia",
+  "Do Hyeon": "Do+Hyeon",
+  Gaegu: "Gaegu:wght@400;700",
+  "Gasoek One": "Gasoek+One",
+  "Gothic A1": "Gothic+A1:wght@400;500;600;700",
+  "Gowun Batang": "Gowun+Batang:wght@400;700",
+  "Gowun Dodum": "Gowun+Dodum",
+  Hahmlet: "Hahmlet:wght@400;500;600;700",
+  "IBM Plex Sans KR": "IBM+Plex+Sans+KR:wght@400;500;600;700",
+  Jua: "Jua",
+  "Nanum Gothic Coding": "Nanum+Gothic+Coding:wght@400;700",
+  "Nanum Myeongjo": "Nanum+Myeongjo:wght@400;700",
+  "Noto Sans KR": "Noto+Sans+KR:wght@400;500;600;700",
+  "Noto Serif KR": "Noto+Serif+KR:wght@400;500;600;700",
+  Orbit: "Orbit",
+  "Song Myung": "Song+Myung",
+};
+
+function fontLink(spec: DesignSystemSpecV2): string {
+  // 한글 서체는 대체 사슬에 있다 — 라틴 가족 뒤에 와야 라틴 글자를 뺏지 않는다.
+  // 그래서 이름과 대체 사슬을 함께 훑는다.
+  const declared = (["display", "body", "mono"] as const)
+    .flatMap((role) => [spec.typography[role].family, ...spec.typography[role].fallback.split(",")])
+    .map((name) => name.trim());
+  const families = declared
+    .map((family) => WEB_FONTS[family])
+    .filter((value, index, all): value is string => Boolean(value) && all.indexOf(value) === index);
+  if (families.length === 0) return "";
+  const query = families.map((family) => `family=${family}`).join("&");
+  return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${query}&display=swap">`;
+}
+
+/**
+ * 고정 샘플 문안. 모든 디자인이 같은 내용을 쓰고, 차이는 디자인에서만 오게 한다.
+ * 기준 문서 6.6 「요소와 표시 방식」.
+ */
+const DEMO = {
+  role: "Product engineer · Seoul",
+  name: "박민재",
+  org: "Expresso",
+  period: "2023 — 2026",
+  stack: ["TypeScript", "Node 24", "MySQL", "Redis", "BullMQ", "GitHub Actions"],
+} as const;
+
+/**
+ * 고정 샘플 작업 넷. 견본마다 다른 작업을 써서 같은 수치와 같은 이야기가
+ * 스물다섯 칸에 반복되지 않게 한다.
+ */
+const WORK = [
+  {
+    title: "결제 복구 흐름 통합",
+    metric: "42%",
+    label: "복구 시간 단축",
+    period: "2026 · 5개월",
+    stack: "Node · Redis",
+    problem: "장애 대응 절차가 네 곳에 흩어져 담당자마다 복구 경로가 달랐다",
+    action: "복구 흐름을 한 화면으로 합치고 모든 실행에 로그를 남겼다",
+    result: "복구 시간 18분에서 10분 · 동일 장애 재발 0건",
+    method: "2025-09 ~ 2026-08 · 운영 로그 1,284건 기준",
+  },
+  {
+    title: "배포 파이프라인 자동화",
+    metric: "3.1x",
+    label: "배포 빈도",
+    period: "2025 · 3개월",
+    stack: "GitHub Actions",
+    problem: "배포마다 손으로 확인할 것이 많아 주 2회를 넘기지 못했다",
+    action: "계약 빌드를 앞세우고 검증 단계를 순서대로 묶었다",
+    result: "주 2회에서 주 6회 · 실패 배포 되돌리기 4분",
+    method: "2025-04 ~ 2025-12 · 배포 기록 612건 기준",
+  },
+  {
+    title: "알림 규칙 정리",
+    metric: "68%",
+    label: "불필요 알림 감소",
+    period: "2025 · 6주",
+    stack: "BullMQ",
+    problem: "같은 원인에서 나온 알림이 채널 세 곳에 중복으로 쌓였다",
+    action: "원인별로 묶고 반복 알림에 유예 시간을 뒀다",
+    result: "월 1,240건에서 400건 · 대응 시작까지 걸리는 시간 절반",
+    method: "2025-06 ~ 2025-11 · 알림 로그 기준",
+  },
+  {
+    title: "검색 색인 재설계",
+    metric: "90ms",
+    label: "검색 응답",
+    period: "2024 · 4개월",
+    stack: "MySQL",
+    problem: "목록을 여는 동안 화면이 비어 있는 시간이 320ms였다",
+    action: "색인을 다시 설계하고 자주 쓰는 조건을 미리 계산했다",
+    result: "320ms에서 90ms · 색인 크기 절반",
+    method: "2024-09 ~ 2025-01 · 검색 요청 표본 기준",
+  },
+] as const;
+
+function variant(name: string, body: string, kind?: DesignSampleEntry["kind"], wide = false): string {
+  const anchor = kind ? ` data-sample-kind="${kind}"` : "";
+  return `<figure class="variant${wide ? " variant-wide" : ""}"${anchor}><div class="card">${body}</div><figcaption>${escapeHtml(name)}</figcaption></figure>`;
+}
+
+function eyebrow(value: string): string {
+  return `<small class="v-eyebrow">${escapeHtml(value)}</small>`;
+}
+
+function metaRow(items: [string, string][]): string {
+  return `<ul class="v-meta">${items.map(
+    ([term, value]) => `<li><small>${escapeHtml(term)}</small><span>${escapeHtml(value)}</span></li>`,
+  ).join("")}</ul>`;
+}
+
+function renderHeroVariants(model: DesignDocumentModel): string {
+  const spec = model.spec;
+  const hero = sampleOf(model, "hero");
+  return [
+    variant("큰 문장", `${eyebrow(DEMO.role)}<strong class="v-display">${escapeHtml(hero.value)}</strong><p class="v-lead">문제의 맥락과 선택한 접근, 검증한 결과를 순서대로 남깁니다.</p><div class="v-actions"><span class="act">대표 작업 보기</span><span class="act-quiet">소개 다운로드 ↗</span></div>`, "hero", true),
+    variant("좌우 분할", `<div class="v-two"><div>${eyebrow(DEMO.role)}<strong>신뢰를 만드는<br>제품과 시스템</strong></div><div><p class="v-lead">운영에서 반복되던 문제를 구조로 바꾸는 일을 합니다.</p>${metaRow([["기간", DEMO.period], ["소속", DEMO.org], ["분야", "결제 · 플랫폼"]])}</div></div>`),
+    variant("대표 수치 중심", `${eyebrow(DEMO.role)}<strong class="v-number">${WORK[1].metric}</strong><p class="v-lead">${WORK[1].label} · ${WORK[1].period}</p>${metaRow([["복구 시간", WORK[0].metric], ["검색 응답", WORK[3].metric]])}`),
+    variant("이미지 중심", `<div class="v-media-hero">${mediaPlate(spec, `대표 이미지 · ${spec.imagery.aspectRatio}`)}<div>${eyebrow(DEMO.role)}<strong>신뢰를 만드는 제품과 시스템</strong></div></div>`),
+  ].join("");
+}
+
+function renderProjectVariants(model: DesignDocumentModel): string {
+  const spec = model.spec;
+  const caseStudy = sampleOf(model, "case-study");
+  const noImage = sampleOf(model, "no-image");
+  const longBody = sampleOf(model, "long-body");
+  return [
+    variant("문제-행동-결과", `${eyebrow("Case · " + WORK[3].period)}<strong>${WORK[3].title}</strong><dl class="v-par"><dt>문제</dt><dd>${WORK[3].problem}</dd><dt>행동</dt><dd>${WORK[3].action}</dd><dt>결과</dt><dd><b>${WORK[3].result}</b></dd></dl>`, "no-image"),
+    variant("긴 사례 연구", `${eyebrow("Case 02 · Featured")}<strong>${escapeHtml(caseStudy.value)}</strong><p class="v-body">${escapeHtml(longBody.value)}</p><p class="v-body">의사결정의 기준과 검증 방식까지 남겨 다음 작업에서 다시 사용할 수 있게 했습니다.</p>${metaRow([["역할", "설계 · 구현"], ["기간", "5개월"], ["스택", "Node · Redis"]])}<span class="act-quiet">사례 자세히 보기 ↗</span>`, "case-study", true),
+    variant("수치 중심", `<div class="v-lead-metric"><strong class="v-number">${WORK[2].metric}</strong><div>${eyebrow("Case · " + WORK[2].period)}<strong>${WORK[2].title}</strong><p class="v-lead">${WORK[2].label}</p></div></div>${metaRow([["대응 시작", "절반"], ["스택", WORK[2].stack]])}`),
+    variant("여러 프로젝트 비교", `${eyebrow("Selected work")}<table class="v-table v-table-wide"><thead><tr><th>프로젝트</th><th>성과</th><th>스택</th></tr></thead><tbody>${WORK.map((work) => `<tr><td>${work.title}</td><td><b>${work.metric}</b></td><td>${work.stack}</td></tr>`).join("")}</tbody></table>`, undefined, true),
+  ].join("");
+}
+
+function renderMetricVariants(model: DesignDocumentModel): string {
+  const metric = sampleOf(model, "metric");
+  const beforeAfter = sampleOf(model, "before-after");
+  return [
+    variant("큰 숫자 하나", `${eyebrow("Impact")}<strong class="v-number v-number-lg">42%</strong><p class="v-lead">${escapeHtml(metric.value)}</p><small class="v-note">${WORK[0].method}</small>`, "metric"),
+    variant("전후 비교", `${eyebrow("Before / After")}<div class="v-before"><div><small>이전</small><strong>320ms</strong></div><i>→</i><div><small>이후</small><strong class="v-accent">90ms</strong></div></div><p class="v-lead">${escapeHtml(beforeAfter.value)}</p><small class="v-note">${WORK[3].method}</small>`, "before-after"),
+    variant("수치 묶음", `${eyebrow("Metrics")}<div class="v-group">${WORK.map((work) => `<article><strong>${work.metric}</strong><small>${work.label}</small></article>`).join("")}</div>`),
+    variant("막대 비교", `${eyebrow("Search response")}<div class="v-bars"><article><small>2024</small><i style="width:100%"></i><b>320ms</b></article><article><small>2025</small><i style="width:56%"></i><b>180ms</b></article><article><small>2026</small><i class="v-bar-accent" style="width:28%"></i><b>90ms</b></article></div><small class="v-note">${WORK[3].method}</small>`),
+    variant("도넛 또는 게이지", `${eyebrow("Automation")}<div class="v-gauge"><span class="gauge"><i></i></span><div><strong>75%</strong><small>사람 개입 없이 끝난 복구</small></div></div><small class="v-note">${WORK[0].method}</small>`),
+  ].join("");
+}
+
+function renderCareerVariants(): string {
+  return [
+    variant("세로 타임라인", `${eyebrow("Career")}<ol class="v-timeline"><li><b></b><div><small>2026 · ${DEMO.org}</small><span>플랫폼 리드</span><em>${WORK[1].title}</em></div></li><li><b></b><div><small>2024 · ${DEMO.org}</small><span>백엔드 엔지니어</span><em>${WORK[0].title}</em></div></li><li><b></b><div><small>2023 · 이전 조직</small><span>소프트웨어 엔지니어</span><em>${WORK[3].title}</em></div></li></ol>`),
+    variant("조직별 묶음", `${eyebrow("Organizations")}<article class="v-org"><strong>${DEMO.org}</strong><small>${DEMO.period} · 플랫폼</small><ul class="v-linked"><li>플랫폼 리드 · 2026</li><li>백엔드 엔지니어 · 2024</li></ul></article><article class="v-org"><strong>이전 조직</strong><small>2021 — 2023 · 결제</small><ul class="v-linked"><li>소프트웨어 엔지니어</li></ul></article>`),
+    variant("성과 중심", `${eyebrow("Achievements")}<ul class="v-achieve">${[WORK[1], WORK[2], WORK[3]].map((work) => `<li><b>${work.metric}</b><span>${work.label}<em>${work.title} · ${work.period}</em></span></li>`).join("")}</ul>`),
+  ].join("");
+}
+
+function renderSkillVariants(model: DesignDocumentModel): string {
+  const tags = sampleOf(model, "tags");
+  return [
+    variant("태그", `${eyebrow("Skills")}<ul class="tag-set"><li>${escapeHtml(tags.value).replaceAll(" · ", "</li><li>")}</li><li>${DEMO.stack.slice(1).join("</li><li>")}</li></ul>`, "tags"),
+    variant("숙련 근거", `${eyebrow("Evidence")}<ul class="v-evidence"><li><strong>TypeScript</strong><span>계약 스키마와 문서 컴파일러를 설계하고 구현</span></li><li><strong>MySQL</strong><span>마이그레이션 순서와 인덱스 설계</span></li><li><strong>Redis</strong><span>${WORK[0].title}의 상태 저장과 큐 소비</span></li></ul>`),
+    variant("기술 스택 표", `${eyebrow("Stack")}<table class="v-table"><tbody><tr><th>언어</th><td>TypeScript 5</td></tr><tr><th>런타임</th><td>Node 24 · Fastify</td></tr><tr><th>DB</th><td>MySQL 8</td></tr><tr><th>큐</th><td>Redis · BullMQ</td></tr><tr><th>CI</th><td>GitHub Actions</td></tr></tbody></table>`),
+  ].join("");
+}
+
+function renderOtherVariants(model: DesignDocumentModel): string {
+  const spec = model.spec;
+  const longBody = sampleOf(model, "long-body");
+  const image = sampleOf(model, "image");
+  const quote = sampleOf(model, "quote");
+  const contact = sampleOf(model, "link-contact");
+  const footer = sampleOf(model, "footer");
+  return [
+    variant("본문", `${eyebrow("Body")}<p class="v-body">${escapeHtml(longBody.value)}</p><p class="v-body">${WORK[1].problem}. ${WORK[1].action}.</p><p class="v-body">${WORK[1].result}.</p>`, "long-body", true),
+    variant("이미지 갤러리", `${eyebrow("Gallery")}<div class="v-gallery">${mediaPlate(spec, escapeHtml(image.value), 1)}${mediaPlate(spec, "복구 대시보드", 2)}${mediaPlate(spec, "장애 리뷰", 3)}</div>`, "image", true),
+    variant("인용", `${eyebrow("Quote")}<blockquote class="v-quote">${escapeHtml(quote.value)}</blockquote><div class="v-profile">${avatar(1)}<div><strong>함께 일한 동료</strong><small>${DEMO.org} · 제품</small></div></div>`, "quote"),
+    variant("프로필", `<div class="v-profile">${avatar(0, true)}<div><strong>${DEMO.name}</strong><small>${DEMO.role}</small></div></div><p class="v-body">운영에서 반복되던 문제를 구조로 바꾸는 일을 합니다. 기록과 검증을 함께 남깁니다.</p>${metaRow([["소속", DEMO.org], ["기간", DEMO.period]])}`),
+    variant("연락", `${eyebrow("Contact")}<strong>다음 문제를 함께 풀어볼까요?</strong><p class="v-lead">${escapeHtml(contact.value)}</p><div class="v-actions"><span class="act">대화 시작하기 ↗</span><span class="act-quiet">이력서 ↗</span></div>`, "link-contact"),
+    variant("푸터", `<div class="v-footer"><strong>MP.</strong><p>${escapeHtml(footer.value)}</p></div>${metaRow([["Work", "선택한 작업"], ["About", "소개"], ["Contact", "연락"]])}<small class="v-note">© 2026 ${DEMO.name}</small>`, "footer"),
+  ].join("");
+}
+
+function renderSampleGallery(model: DesignDocumentModel): string {
+  const groups: [string, string, string][] = [
+    ["Hero", "첫 화면", renderHeroVariants(model)],
+    ["프로젝트", "사례", renderProjectVariants(model)],
+    ["수치", "지표", renderMetricVariants(model)],
+    ["경력", "이력", renderCareerVariants()],
+    ["기술", "스택", renderSkillVariants(model)],
+    ["기타", "본문과 마무리", renderOtherVariants(model)],
+  ];
+  return groups.map(([name, meta, body]) => row(label(name, meta), `<div class="variant-grid">${body}</div>`, "row-wide")).join("");
+}
+
+function renderSourceRows(model: DesignDocumentModel, markdownSha256: string): string {
+  const spec = model.spec;
+  const lock = model.referenceLock;
+  const rows: [string, string][] = [
+    ["디자인 시스템", `${spec.identity.name} · Specification v${spec.version}`],
+    ["원본", `${spec.origin.sourceName ?? "Expresso"} · ${spec.origin.kind}`],
+    ["원본 URL", spec.origin.sourceUrl ?? "없음"],
+    ["수집 시각", spec.origin.capturedAt ?? "없음"],
+    ["판", lock ? `${lock.primaryDirection.designSystemCode} r${lock.primaryDirection.revision}` : "r1"],
+    ["DESIGN.md sha256", markdownSha256],
+    ["샘플 사진", `Unsplash · ${[...SAMPLE_PHOTOS, ...PORTRAITS].map((photo) => photo.by).join(" · ")}`],
+  ];
+  return rows.map(([name, value]) => row(label(name), `<p class="note mono">${escapeHtml(value)}</p>`, "row-tight")).join("");
+}
+
+/** 절의 한 문장. 지어내지 않고 계약이 이미 단언한 문장만 그 자리에 놓는다. */
+function sectionSentence(spec: DesignSystemSpecV2, id: string): string | null {
+  const moves = spec.identity.signatureMoves;
+  const map: Record<string, string | null | undefined> = {
+    colors: spec.composition.surfaceStrategy,
+    typography: moves[0],
+    "sample-portfolio": "모든 디자인이 같은 내용을 씁니다. 화면의 차이는 전부 디자인에서 옵니다.",
+    imagery: spec.imagery.treatment,
+    spacing: spec.composition.sectionRhythm,
+    shape: spec.components.card?.description,
+    motion: spec.motion.personality,
+    rules: moves[1] ?? moves[0],
+    "source-revision": spec.origin.attribution,
+  };
+  return map[id] ?? null;
+}
+
+function renderShowcaseSection(
+  model: DesignDocumentModel,
+  value: DesignDocumentSection,
+  index: number,
+  markdownSha256: string,
+): string {
+  const spec = model.spec;
+  let body = "";
+
+  if (value.id === "colors") body = renderColorRows(spec);
+  else if (value.id === "typography") body = renderTypographyRows(spec);
+  else if (value.id === "components") body = renderComponentRows(spec);
+  else if (value.id === "sample-portfolio") body = renderSampleGallery(model);
+  else if (value.id === "imagery") body = renderImageryRows(spec);
+  else if (value.id === "spacing") body = renderSpacingRows(spec);
+  else if (value.id === "shape") body = renderShapeRows(spec);
+  else if (value.id === "motion") body = renderMotionRows(spec);
+  else if (value.id === "rules") body = renderRulesRows(spec);
+  else if (value.id === "source-revision") body = renderSourceRows(model, markdownSha256);
+
+  const sentence = sectionSentence(spec, value.id);
+  const head = row(
+    `<span class="index">${pad2(index + 1)}</span>`,
+    `<h2>${escapeHtml(value.title)}</h2>${sentence ? `<p class="sentence">${escapeHtml(sentence)}</p>` : ""}`,
+    "row-head",
+  );
+
+  return `<section id="${value.id}" class="doc-section section-${value.id}" data-design-section="${value.id}">${head}${body}${renderRuleSheet(value)}</section>`;
+}
+
+/** CSS 가 그대로 읽을 수 있는 이름은 그대로 둔다. `ui-monospace` 같은 갈래말이다. */
+const BARE_FAMILIES = new Set(["ui-monospace", "ui-sans-serif", "ui-serif", "system-ui", "serif", "sans-serif", "monospace", "cursive"]);
+
+/**
+ * 서체 이름을 CSS 값으로. 갈래말이 아니면 따옴표로 묶는다 — `Source Serif 4`
+ * 처럼 숫자로 시작하는 낱말이 섞이면 따옴표 없이는 선언 전체가 무효가 된다.
+ * 계약의 서체 이름은 자유 문자열이므로 큰따옴표는 미리 걷어낸다.
+ */
+function cssFamily(family: string): string {
+  if (BARE_FAMILIES.has(family)) return family;
+  return `"${family.replaceAll('"', "")}"`;
+}
+
+function cssVariables(spec: DesignSystemSpecV2): string {
+  const colors = COLOR_NAMES.map(
+    (name) => `--${name}:${spec.colors[name].value};`,
+  ).join("");
+  const fonts = ["display", "body", "mono"].map((name) => {
+    const font = spec.typography[name as keyof Pick<typeof spec.typography, "display" | "body" | "mono">];
+    return `--font-${name}:${cssFamily(font.family)},${font.fallback};`;
+  }).join("");
+  const steps = spec.typography.scale.map(
+    (step) => `--type-${step.name}:${step.size};--line-${step.name}:${step.lineHeight};`,
+  ).join("");
+  const bodyStep = spec.typography.scale[0]!;
+  const headingStep = spec.typography.scale[Math.max(0, spec.typography.scale.length - 2)]!;
+  const displayStep = spec.typography.scale.at(-1)!;
+  const exampleSteps = `--type-example-body:${bodyStep.size};--line-example-body:${bodyStep.lineHeight};--type-example-heading:${headingStep.size};--line-example-heading:${headingStep.lineHeight};--type-example-display:${displayStep.size};--line-example-display:${displayStep.lineHeight};`;
+  // 지면 색에서 계산하므로 밝은 지면과 어두운 지면이 같은 규칙으로 자기 깊이를 얻는다.
+  const shadow = {
+    none: "none",
+    hairline: "0 1px 0 var(--border)",
+    soft: "0 12px 30px color-mix(in srgb,var(--text) 10%,transparent)",
+    layered: "0 2px 4px color-mix(in srgb,var(--text) 8%,transparent),0 18px 40px color-mix(in srgb,var(--text) 12%,transparent)",
+    offset: "6px 6px 0 var(--text)",
+    inset: "inset 0 2px 6px color-mix(in srgb,var(--text) 22%,transparent),inset 0 -1px 0 color-mix(in srgb,var(--canvas) 60%,transparent)",
+    relief: "8px 8px 20px color-mix(in srgb,var(--text) 16%,transparent),-8px -8px 20px color-mix(in srgb,var(--canvas) 90%,white)",
+    bevel: "inset 2px 2px 0 color-mix(in srgb,var(--canvas) 55%,white),inset -2px -2px 0 color-mix(in srgb,var(--text) 45%,transparent),3px 3px 0 color-mix(in srgb,var(--text) 35%,transparent)",
+  }[spec.shape.shadowStyle];
+  return `${colors}${fonts}${steps}${exampleSteps}--measure:${spec.typography.measure};--base-unit:${spec.spacing.baseUnit}px;--element-gap:${spec.spacing.elementGap}px;--component-gap:${spec.spacing.componentGap}px;--section-gap:${spec.spacing.sectionGap}px;--content-width:${spec.spacing.contentWidth}px;--card-radius:${spec.shape.cardRadius}px;--control-radius:${spec.shape.controlRadius}px;--border-width:${spec.shape.borderWidth}px;--motion-duration:${spec.motion.duration};--motion-easing:${spec.motion.easing};--shadow:${shadow};`;
+}
+
+/**
+ * 문서에 심는 유일한 스크립트. 계약에서 온 문자열을 단 한 글자도 끼워 넣지 않는
+ * 고정 상수다. CSP 는 이 내용의 sha256 만 script-src 에 허용하므로, 주입된
+ * 스크립트는 해시가 달라 그대로 차단된다.
+ *
+ * 하는 일은 셋이다 — 견본에 transitions-dev 의 클래스를 붙이고, 수치를 자리마다
+ * 굴러 올라오는 릴로 바꾸고, 화면에 들어온 견본만 재생한다.
+ */
+const MOTION_SCRIPT = `(function(){
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) return;
+
+  var root = document.documentElement;
+  function ms(name){ return parseFloat(getComputedStyle(root).getPropertyValue(name)) || 0; }
+  var stagger = ms("--reel-stagger");
+  var cycle = ms("--replay-cycle");
+
+  var REEL = ".v-number,.v-before strong,.v-group strong,.v-achieve b,.v-gauge strong,.v-compare span,.v-bars b,.v-table-wide b";
+  var INNER = ".v-timeline>li,.v-achieve>li,.v-evidence>li,.v-linked>li,.tag-set>li,.v-group>article,.v-bars>article,.v-compare>article,.v-meta>li,.v-par>dt,.v-par>dd,.v-table tbody tr,.v-gallery>*,.v-org";
+
+  /* 26-spinning-counter 의 릴. 목표 숫자 앞 세 칸만 지나가고 멈춘다. */
+  function buildReel(el){
+    var text = el.textContent;
+    var size = parseFloat(getComputedStyle(el).fontSize) || 16;
+    var cell = Math.round(size * 1.1);
+    el.textContent = "";
+    el.classList.add("t-reel");
+    el.style.setProperty("--reel-cell", cell + "px");
+    var strips = [];
+    for (var i = 0; i < text.length; i++){
+      var ch = text.charAt(i);
+      var col = document.createElement("span");
+      col.className = "t-reel-col";
+      var strip = document.createElement("span");
+      strip.className = "t-reel-strip";
+      var cells = [];
+      if (ch >= "0" && ch <= "9"){
+        var target = Number(ch);
+        for (var lead = 3; lead >= 0; lead--) cells.push(String((target - lead + 10) % 10));
+      } else {
+        cells.push(" ", ch);
+      }
+      for (var c = 0; c < cells.length; c++){
+        var digit = document.createElement("span");
+        digit.className = "t-reel-digit";
+        digit.textContent = cells[c];
+        strip.appendChild(digit);
+      }
+      strip.style.setProperty("--reel-travel", -(cells.length - 1) * cell + "px");
+      col.appendChild(strip);
+      el.appendChild(col);
+      strips.push(strip);
+    }
+    el.reelStrips = strips;
+  }
+
+  function rollReel(el){
+    var strips = el.reelStrips || [];
+    for (var i = 0; i < strips.length; i++){
+      var strip = strips[i];
+      strip.style.transition = "none";
+      strip.style.transform = "translateY(0)";
+      void strip.offsetHeight;
+      strip.style.transition = "transform var(--reel-dur) var(--reel-ease) " + (i * stagger) + "ms";
+      strip.style.transform = "translateY(var(--reel-travel))";
+    }
+  }
+
+  /* 숨김 클래스는 재생 직전에만 붙인다. 미리 붙여 두면 관찰자가 한 번이라도
+     어긋난 카드가 빈 상자로 남는다. */
+  function prepare(frame){
+    if (frame.getAttribute("data-motion") === "ready") return;
+    frame.setAttribute("data-motion", "ready");
+    frame.classList.add("t-stagger");
+    var lines = frame.children;
+    for (var l = 0; l < lines.length; l++){
+      lines[l].classList.add("t-stagger-line");
+      lines[l].style.setProperty("--i", l);
+    }
+    var inner = frame.querySelectorAll(INNER);
+    for (var n = 0; n < inner.length; n++){
+      inner[n].classList.add("t-stagger-line");
+      inner[n].style.setProperty("--i", n + 1);
+    }
+    var reels = frame.querySelectorAll(REEL);
+    for (var r = 0; r < reels.length; r++) buildReel(reels[r]);
+  }
+
+  var frames = document.querySelectorAll(".variant .card");
+
+  function play(frame){
+    prepare(frame);
+    frame.classList.remove("is-shown");
+    void frame.offsetHeight;
+    frame.classList.add("is-shown");
+    var reels = frame.querySelectorAll(".t-reel");
+    for (var i = 0; i < reels.length; i++) rollReel(reels[i]);
+  }
+
+  /* 화면에 들어온 견본만 재생하고, 나가면 멈춘다. */
+  if (typeof IntersectionObserver !== "function") return;
+
+  var timers = new WeakMap();
+  var io = new IntersectionObserver(function(entries){
+    for (var i = 0; i < entries.length; i++){
+      var frame = entries[i].target;
+      if (entries[i].isIntersecting){
+        if (timers.has(frame)) continue;
+        play(frame);
+        timers.set(frame, setInterval(play.bind(null, frame), cycle));
+      } else if (timers.has(frame)){
+        clearInterval(timers.get(frame));
+        timers["delete"](frame);
+      }
+    }
+  }, { threshold: 0.3 });
+  for (var o = 0; o < frames.length; o++) io.observe(frames[o]);
+})();`;
+
+/** 표지 부제. 이 문서가 무엇인지부터 밝힌다. 출처 종류에서 끌어온다. */
+function coverSubtitle(spec: DesignSystemSpecV2): string {
+  if (spec.origin.kind === "reference") return `${spec.identity.name} 스타일 레퍼런스 디자인 시스템`;
+  if (spec.origin.kind === "website") return `${spec.identity.name} 웹사이트 기반 디자인 시스템`;
+  if (spec.origin.kind === "generated") return `${spec.identity.name} 생성 디자인 시스템`;
+  return "Expresso 기본 디자인 시스템";
+}
+
+function renderShowcaseHtml(
+  model: DesignDocumentModel,
+  markdownSha256: string,
+): string {
+  const spec = model.spec;
+  const title = escapeHtml(spec.identity.name);
+  const subtitle = escapeHtml(coverSubtitle(spec));
+  const variables = cssVariables(spec);
+  const revision = model.referenceLock?.primaryDirection.revision ?? 1;
+  const bodyContrast = contrastRatio(spec.colors.text.value, spec.colors.canvas.value);
+  const scriptHash = createHash("sha256").update(MOTION_SCRIPT).digest("base64");
+  const direction = model.sections.find((value) => value.id === "direction")!;
+  const sections = model.sections
+    .filter((value) => value.id !== "direction")
+    .map((value, index) => renderShowcaseSection(model, value, index, markdownSha256))
+    .join("");
+
+  // 이 디자인이 어떻게 생겼는지는 값을 적어서가 아니라 그려서 보여 준다.
+  // 네 칸이 서체 · 지면 · 행동 · 형태를 실제 크기와 실제 색으로 그린다.
+  const displayStep = spec.typography.scale.at(-1)!;
+  const glance = `<div class="glance">
+    <figure><div class="glance-figure glance-type"><span>Aa</span></div><figcaption>${escapeHtml(spec.typography.display.family)} · ${escapeHtml(displayStep.size)} / ${escapeHtml(displayStep.lineHeight)}</figcaption></figure>
+    <figure><div class="glance-figure glance-ground"><i><b></b><b></b></i><i><b></b><b></b></i></div><figcaption>${escapeHtml(spec.colors.canvas.value)} / ${escapeHtml(spec.colors.surface.value)} 교차 · 본문 대비 ${formatRatio(bodyContrast)} ${contrastLevel(bodyContrast)}</figcaption></figure>
+    <figure><div class="glance-figure glance-action"><span class="act">행동 하나</span></div><figcaption>${escapeHtml(spec.colors.action.value)} · 반경 ${spec.shape.controlRadius}px</figcaption></figure>
+    <figure><div class="glance-figure glance-shape"><i></i></div><figcaption>카드 반경 ${spec.shape.cardRadius}px · 경계 ${spec.shape.borderWidth}px · shadow ${escapeHtml(spec.shape.shadowStyle)}</figcaption></figure>
+  </div>`;
+
+  return `<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https://images.unsplash.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'sha256-${scriptHash}'">
+<meta name="design-spec-version" content="2">
+<meta name="design-md-sha256" content="${markdownSha256}">
+<title>${title} — DESIGN</title>
+${fontLink(spec)}
+<style>
+/*
+  이 문서는 골격 하나로만 이뤄진다 — 왼쪽 이름표, 오른쪽 내용, 위에 실선.
+  값과 설명에는 테두리를 두르지 않는다. 테두리는 실제로 렌더한 견본에만 쓴다.
+  껍데기의 반경과 크기는 --doc-* 로 고정하고, 시스템 토큰은 견본 안에서만 쓴다.
+  틀이 견본과 같은 형태를 쓰면 어디까지가 문서인지 구분되지 않기 때문이다.
+*/
+:root{${variables}--duration-micro:80ms;--duration-quick:150ms;--duration-fast:250ms;--duration-slow:400ms;--duration-very-slow:500ms;--ease-smooth-out:cubic-bezier(0.22, 1, 0.36, 1);--ease-in-out:ease-in-out;--stagger-dur:500ms;--stagger-distance:12px;--stagger-stagger:40ms;--stagger-blur:3px;--stagger-ease:cubic-bezier(0.22, 1, 0.36, 1);--reel-dur:900ms;--reel-cell:30px;--reel-stagger:60ms;--reel-ease:cubic-bezier(0.16, 1, 0.3, 1);--replay-cycle:9000ms;--hairline:color-mix(in srgb,var(--border) 50%,transparent);--ink-muted:color-mix(in srgb,var(--canvas) 66%,var(--text));--doc-radius:10px;--column:min(calc(100% - 48px),var(--content-width));--rail:172px;--rail-gap:36px}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--font-body);font-size:13px;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,ol,ul,dl,blockquote,figure{margin:0;padding:0}
+li{list-style:none}
+code{font-family:var(--font-mono)}
+
+.nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:24px;height:50px;padding:0 max(24px,calc((100vw - var(--content-width))/2));border-bottom:1px solid var(--hairline);background:color-mix(in srgb,var(--canvas) 88%,transparent);backdrop-filter:saturate(180%) blur(18px)}
+.nav strong{font-family:var(--font-display);font-size:14px;letter-spacing:-.03em}
+.nav ul{display:flex;gap:18px}
+.nav a{color:var(--muted);font-size:11px;text-decoration:none}
+.nav a:hover{color:var(--text)}
+.nav>span{margin-left:auto;color:var(--muted);font-family:var(--font-mono);font-size:10px}
+
+.row{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);gap:var(--rail-gap);padding:26px 0;border-top:1px solid var(--hairline)}
+.row-tight{padding:15px 0;align-items:center}
+.row-wide{grid-template-columns:1fr;gap:14px}
+.row-head{padding:0 0 30px;border-top:0}
+.row-label strong{display:block;font-size:12px;font-weight:600;letter-spacing:-.01em}
+.row-label code{display:block;margin-top:4px;color:var(--muted);font-size:10px;line-height:1.5}
+.index{color:var(--muted);font-family:var(--font-mono);font-size:11px;letter-spacing:.1em}
+.row-head h2{font-family:var(--font-display);font-size:clamp(26px,3.2vw,38px);font-weight:600;line-height:1.08;letter-spacing:-.04em}
+.sentence{max-width:44ch;margin-top:14px;color:var(--muted);font-size:15px;line-height:1.55}
+.note{max-width:56ch;font-size:13px;line-height:1.65}
+.note.muted{margin-top:6px;color:var(--muted);font-size:12px}
+.note.mono{font-family:var(--font-mono);font-size:11px;color:var(--text)}
+
+.cover{width:var(--column);margin:0 auto;display:grid;grid-template-columns:var(--rail) minmax(0,1fr);gap:var(--rail-gap);padding:clamp(60px,9vw,120px) 0 clamp(40px,5vw,64px)}
+.cover>span{color:var(--muted);font-family:var(--font-mono);font-size:10px;letter-spacing:.1em}
+.cover h1{font-family:var(--font-display);font-size:var(--type-example-display);font-weight:600;line-height:.94;letter-spacing:-.05em}
+.cover p{max-width:32ch;margin-top:18px;color:var(--muted);font-size:17px;line-height:1.5}
+.cover-actions{display:flex;align-items:center;gap:8px;margin-top:30px}
+.act,.act-secondary,.act-quiet{display:inline-flex;align-items:center;justify-content:center;width:max-content;padding:9px 16px;border:var(--border-width) solid transparent;border-radius:var(--control-radius);background:var(--action);color:var(--actionText);font-family:var(--font-body);font-size:12px;text-decoration:none}
+.act-secondary{border-color:var(--action);background:transparent;color:var(--action)}
+.act-quiet{padding-inline:6px;background:transparent;color:var(--action)}
+.tag{display:inline-flex;padding:6px 11px;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--muted);font-size:11px}
+.palette{display:flex;height:104px;border-block:1px solid var(--hairline)}
+.palette i{flex:1;border-right:1px solid var(--hairline)}
+.palette i:last-child{border-right:0}
+.cover-rows{width:var(--column);margin:0 auto}
+.glance{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.glance figure{overflow:hidden;border:1px solid var(--hairline);border-radius:var(--doc-radius)}
+.glance-figure{display:grid;place-items:center;height:152px;overflow:hidden}
+.glance figcaption{padding:12px 14px;border-top:1px solid var(--hairline);color:var(--muted);font-family:var(--font-mono);font-size:10px;line-height:1.6}
+.glance-type span{font-family:var(--font-display);font-size:var(--type-example-display);font-weight:600;line-height:1;letter-spacing:-.05em;white-space:nowrap}
+.glance-ground{display:block}
+.glance-ground i{display:grid;align-content:center;gap:8px;width:100%;height:50%;padding:0 22px}
+.glance-ground i:first-child{background:var(--canvas);border-bottom:1px solid var(--hairline)}
+.glance-ground i:last-child{background:var(--surface)}
+.glance-ground b{display:block;height:7px;border-radius:4px;background:var(--text)}
+.glance-ground b:last-child{width:58%;background:var(--muted)}
+.glance-shape i{display:block;width:58%;height:58%;border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface);box-shadow:var(--shadow)}
+
+.doc-section{width:var(--column);margin:0 auto;padding:clamp(54px,6vw,88px) 0;border-top:1px solid var(--border)}
+
+.swatch-set{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:20px}
+.swatch i{display:block;height:68px;border-radius:6px;box-shadow:inset 0 0 0 1px var(--border)}
+.swatch strong{display:block;margin-top:12px;font-size:12px;font-weight:600}
+.swatch code{display:block;margin-top:2px;color:var(--muted);font-size:10px}
+.swatch span{display:block;margin-top:8px;color:var(--muted);font-size:11px;line-height:1.5}
+.facts{max-width:540px}
+.facts li{display:grid;grid-template-columns:minmax(0,1fr) 92px 56px;gap:12px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--hairline)}
+.facts li:last-child{border-bottom:0}
+.facts code,.facts .term{color:var(--muted);font-size:11px}
+.facts .term{font-family:var(--font-body);font-size:12px;text-align:left}
+.facts b{font-family:var(--font-mono);font-size:12px;font-weight:400}
+.facts span{color:var(--muted);font-size:11px;text-align:right}
+
+.specimen{font-family:var(--font-display);font-weight:600;letter-spacing:-.03em}
+.weight-line{display:flex;flex-wrap:wrap;gap:8px 30px;align-items:baseline}
+.weight-line span{font-family:var(--font-display);font-size:21px;letter-spacing:-.02em}
+.weight-line i{margin-left:8px;color:var(--muted);font-family:var(--font-mono);font-size:10px;font-style:normal;font-weight:400;letter-spacing:0}
+.measure-proof{max-width:var(--measure);color:var(--muted);font-size:13px;line-height:1.7}
+
+.frame{padding:26px;border:1px solid var(--hairline);border-radius:var(--doc-radius)}
+.frame-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.demo{display:flex;flex-direction:column;min-height:148px}
+.demo small{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.1em}
+.demo strong{margin:14px 0 auto;font-family:var(--font-display);font-size:26px;font-weight:600;line-height:1.1;letter-spacing:-.04em}
+.demo-hero .act{margin-top:16px}
+.demo-case span{margin-top:12px;color:var(--muted);font-size:11px}
+.demo-metric{justify-content:center}
+.demo-metric strong{margin:0;font-size:56px;line-height:1;letter-spacing:-.06em}
+.demo-metric span{margin-top:6px;font-size:14px}
+.demo-metric small{margin-top:6px}
+.demo-contact{flex-direction:row;align-items:center;justify-content:center;gap:14px}
+.rule-list{margin-top:18px}
+.rule-list li{padding:9px 0;border-bottom:1px solid var(--hairline);font-size:13px;line-height:1.6}
+.rule-list li:last-child{border-bottom:0}
+
+.bar{display:block;height:8px;border-radius:999px;background:var(--action)}
+.proof{display:block;width:64px;height:44px;background:var(--text)}
+.proof-card{border-radius:var(--card-radius)}
+.proof-control{border-radius:var(--control-radius)}
+.proof-border{border:var(--border-width) solid var(--text);border-radius:6px;background:transparent}
+.proof-shadow{border:1px solid var(--hairline);border-radius:6px;background:var(--canvas);box-shadow:var(--shadow)}
+.motion{display:block;width:56px;height:56px;border-radius:calc(var(--card-radius) * .7);background:var(--action)}
+.motion-rise{animation:doc-rise calc(var(--motion-duration) * 3) var(--motion-easing) infinite alternate}
+.motion-focus{animation:doc-focus calc(var(--motion-duration) * 3) var(--motion-easing) infinite alternate}
+.motion-still{background:var(--surface);border:1px solid var(--border)}
+@keyframes doc-rise{from{opacity:.25;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes doc-focus{from{transform:scale(.86)}to{transform:scale(1.06)}}
+
+.media{overflow:hidden;width:100%;border-radius:var(--card-radius);background:var(--surface);box-shadow:inset 0 0 0 var(--border-width) var(--hairline)}
+.media img{display:block;width:100%;height:100%;object-fit:cover}
+.media-set{max-width:440px}
+.media{display:grid;place-items:center;width:100%;border-radius:var(--card-radius);background:var(--surface);box-shadow:inset 0 0 0 var(--border-width) var(--hairline)}
+.media span{color:var(--muted);font-family:var(--font-mono);font-size:10px}
+.media-set{max-width:440px}
+.variant-grid{counter-reset:variant;display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:var(--component-gap)}
+.variant-wide{grid-column:1/-1}
+.variant{counter-increment:variant}
+.variant figcaption{margin-top:10px;color:var(--muted);font-size:12px}
+.variant small{display:block}
+/* 견본은 껍데기가 아니라 그 디자인의 형태를 입는다 — 반경 · 경계 · 그림자 ·
+   표면이 모두 계약에서 온다. 껍데기의 .frame 과 클래스를 나눠야 상속이 끊긴다. */
+.variant .card{display:flex;flex-direction:column;gap:var(--element-gap);min-height:288px;padding:calc(var(--component-gap) * 1.35);overflow:hidden;border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface);box-shadow:var(--shadow)}
+.variant .card>strong:not([class]){font-family:var(--font-display);font-size:calc(var(--type-example-heading) * .72);font-weight:600;line-height:var(--line-example-heading);letter-spacing:-.03em}
+.v-eyebrow{color:var(--muted);font-family:var(--font-mono);font-size:10px;letter-spacing:.1em}
+.v-display{font-family:var(--font-display);font-size:min(var(--type-example-display) * .66, 3.2vw + 14px);font-weight:600;line-height:var(--line-example-display);letter-spacing:-.045em}
+.v-number{font-family:var(--font-display);font-size:calc(var(--type-example-display) * .88);font-weight:600;line-height:1;letter-spacing:-.05em}
+.v-number-lg{font-size:calc(var(--type-example-display) * 1.22)}
+.v-accent{color:var(--accent)}
+.v-lead{max-width:34ch;color:var(--muted);font-size:var(--type-example-body);line-height:var(--line-example-body)}
+.v-body{max-width:var(--measure);color:var(--muted);font-size:calc(var(--type-example-body) * .88);line-height:var(--line-example-body)}
+.v-note{color:var(--muted);font-family:var(--font-mono);font-size:10px;line-height:1.6}
+.v-meta{display:flex;flex-wrap:wrap;gap:var(--element-gap) var(--component-gap)}
+.v-meta small{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.08em}
+.v-meta span{display:block;margin-top:3px;font-size:13px}
+.v-actions{display:flex;align-items:center;gap:var(--element-gap);margin-top:auto}
+.v-two{display:grid;grid-template-columns:1fr 1fr;gap:var(--component-gap)}
+.v-two strong{font-family:var(--font-display);font-size:calc(var(--type-example-heading) * .82);font-weight:600;line-height:var(--line-example-heading);letter-spacing:-.035em}
+.v-two .v-meta{margin-top:14px;gap:10px 20px}
+.v-media-hero{display:grid;gap:var(--component-gap)}
+.v-media-hero .media,.variant .card>.media{max-width:320px}
+.v-media-hero strong{display:block;margin-top:10px;font-family:var(--font-display);font-size:calc(var(--type-example-heading) * .75);font-weight:600;letter-spacing:-.03em}
+.v-lead-metric{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--component-gap);align-items:center}
+.v-lead-metric strong{font-family:var(--font-display);font-size:calc(var(--type-example-heading) * .6);font-weight:600;line-height:var(--line-example-heading);letter-spacing:-.025em}
+.v-lead-metric .v-number{font-size:calc(var(--type-example-display) * .97)}
+.v-lead-metric .v-lead{margin-top:6px;font-size:13px}
+.v-profile{display:flex;align-items:center;gap:var(--element-gap)}
+.v-profile strong{display:block;font-family:var(--font-display);font-size:17px;letter-spacing:-.02em}
+.v-profile small{color:var(--muted);font-size:12px}
+.avatar{display:block;flex:0 0 auto;width:44px;height:44px;border-radius:50%;object-fit:cover;background:var(--surface)}
+.avatar-lg{width:60px;height:60px}
+.v-par{display:grid;grid-template-columns:52px minmax(0,1fr);gap:var(--element-gap) calc(var(--element-gap) * 1.2)}
+.v-par dt{color:var(--muted);font-family:var(--font-mono);font-size:10px;padding-top:3px}
+.v-par dd{font-size:13px;line-height:1.6}
+.v-par b{font-weight:600}
+.v-timeline{display:grid;gap:var(--component-gap);position:relative}
+.v-timeline li{display:grid;grid-template-columns:10px minmax(0,1fr);gap:var(--element-gap);align-items:start}
+.v-timeline b{width:9px;height:9px;margin-top:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--canvas)}
+.v-timeline small{color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:.06em}
+.v-timeline span{display:block;margin-top:3px;font-size:14px;font-weight:500}
+.v-timeline em{display:block;margin-top:2px;color:var(--muted);font-size:12px;font-style:normal}
+.v-before{display:grid;grid-template-columns:auto auto auto;gap:var(--component-gap);align-items:end;justify-content:start}
+.v-before small{color:var(--muted);font-family:var(--font-mono);font-size:9px}
+.v-before strong{display:block;margin-top:4px;font-family:var(--font-display);font-size:calc(var(--type-example-display) * .62);line-height:1;letter-spacing:-.05em}
+.v-before i{padding-bottom:8px;color:var(--muted);font-style:normal}
+.v-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--component-gap)}
+.v-group strong{display:block;font-family:var(--font-display);font-size:calc(var(--type-example-display) * .47);line-height:1;letter-spacing:-.045em}
+.v-group small{margin-top:6px;color:var(--muted);font-size:12px}
+.v-bars{display:grid;gap:var(--element-gap)}
+.v-bars article{display:grid;grid-template-columns:44px minmax(0,1fr) 46px;gap:var(--element-gap);align-items:center}
+.v-bars small{color:var(--muted);font-family:var(--font-mono);font-size:10px}
+.v-bars i{display:block;height:14px;border-radius:999px;background:var(--border)}
+.v-bars i.v-bar-accent{background:var(--accent)}
+.v-bars b{font-family:var(--font-mono);font-size:11px;font-weight:400;text-align:right}
+.v-gauge{display:flex;align-items:center;gap:var(--component-gap)}
+.gauge{position:relative;display:block;flex:0 0 auto;width:88px;height:88px;border:9px solid var(--border);border-radius:50%}
+.gauge i{position:absolute;inset:-9px;border:9px solid transparent;border-top-color:var(--accent);border-right-color:var(--accent);border-bottom-color:var(--accent);border-radius:50%}
+.v-gauge strong{display:block;font-family:var(--font-display);font-size:calc(var(--type-example-display) * .53);letter-spacing:-.04em}
+.v-gauge small{margin-top:4px;color:var(--muted);font-size:12px}
+.v-org{display:block;padding-bottom:16px;border-bottom:1px solid var(--hairline)}
+.v-org:last-of-type{border-bottom:0;padding-bottom:0}
+.v-org strong{font-family:var(--font-display);font-size:18px;letter-spacing:-.02em}
+.v-org small{margin-top:3px;color:var(--muted);font-size:12px}
+.v-achieve{display:grid;gap:var(--element-gap)}
+.v-achieve li{display:grid;grid-template-columns:66px minmax(0,1fr);gap:var(--element-gap);align-items:baseline}
+.v-achieve b{font-family:var(--font-display);font-size:calc(var(--type-example-display) * .38);font-weight:600;letter-spacing:-.04em}
+.v-achieve span{font-size:13px}
+.v-achieve em{display:block;margin-top:3px;color:var(--muted);font-size:11px;font-style:normal}
+.v-linked{display:grid;gap:6px;margin-top:12px}
+.v-linked li{color:var(--muted);font-size:12px}
+.v-evidence{display:grid;gap:var(--element-gap)}
+.v-evidence li{display:grid;gap:4px}
+.v-evidence strong{font-size:13px;font-weight:600}
+.v-evidence span{color:var(--muted);font-size:12px;line-height:1.55}
+.v-table th,.v-table td{padding:11px 0;border-bottom:1px solid var(--hairline);text-align:left;font-size:12px;font-weight:400}
+.v-table th{width:74px;color:var(--muted)}
+.v-table tbody tr:last-child th,.v-table tbody tr:last-child td{border-bottom:0}
+.v-table-wide th{width:auto;color:var(--muted);font-family:var(--font-mono);font-size:10px}
+.v-table-wide b{font-family:var(--font-display);font-size:15px;letter-spacing:-.02em}
+.v-gallery{display:grid;grid-template-columns:1.7fr 1fr;gap:var(--element-gap)}
+.v-gallery .media:first-child{grid-row:1/3}
+.v-quote{max-width:24ch;font-family:var(--font-display);font-size:calc(var(--type-example-heading) * .75);line-height:1.3;letter-spacing:-.025em}
+.v-footer{display:grid;gap:8px}
+.v-footer strong{font-family:var(--font-display);font-size:18px}
+.v-footer p{color:var(--muted);font-size:12px}
+.tag-set{display:flex;flex-wrap:wrap;gap:calc(var(--element-gap) * .6)}
+.tag-set li{padding:8px 13px;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--muted);font-size:12px}
+
+/*
+  배치 — 계약의 composition.layout 이 요소를 어떤 열과 여백으로 앉힐지 정한다.
+  같은 마크업, 같은 문안이지만 짜임이 달라진다. 문안까지 달라지면 무엇 때문에
+  달라 보이는지 알 수 없으므로 바꾸는 것은 짜임뿐이다.
+*/
+
+/* 여백이 지면을 지배한다 — 열을 넓게 잡아 화면당 견본 수를 줄이고,
+   글줄을 짧게 끊고, 두 단은 비대칭으로 앉힌다. */
+[data-layout="wide-margin"] .variant-grid{grid-template-columns:repeat(auto-fill,minmax(540px,1fr))}
+[data-layout="wide-margin"] .variant .card{padding:calc(var(--component-gap) * 2);min-height:340px}
+[data-layout="wide-margin"] .v-lead,[data-layout="wide-margin"] .v-body{max-width:28ch}
+[data-layout="wide-margin"] .v-two{grid-template-columns:5fr 6fr;gap:calc(var(--component-gap) * 1.6)}
+[data-layout="wide-margin"] .v-two>div:last-child{padding-top:calc(var(--component-gap) * 1.2)}
+[data-layout="wide-margin"] .v-group{grid-template-columns:repeat(2,minmax(0,1fr));gap:calc(var(--component-gap) * 1.5)}
+[data-layout="wide-margin"] .v-gallery{grid-template-columns:1fr;gap:var(--component-gap)}
+[data-layout="wide-margin"] .v-gallery .media:first-child{grid-row:auto}
+[data-layout="wide-margin"] .v-actions{margin-top:calc(var(--component-gap) * 1.5)}
+
+/* 정보를 촘촘히 붙인다 — 열을 좁게 잡아 여러 벌을 나란히 두고, 행 사이에
+   구획선을 넣고, 수치 묶음을 한 줄로 편다. */
+[data-layout="dense-grid"] .variant-grid{grid-template-columns:repeat(auto-fill,minmax(360px,1fr))}
+[data-layout="dense-grid"] .variant .card{padding:var(--component-gap);min-height:250px}
+[data-layout="dense-grid"] .v-lead,[data-layout="dense-grid"] .v-body{max-width:42ch}
+[data-layout="dense-grid"] .v-group{grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--element-gap)}
+[data-layout="dense-grid"] .v-group article{padding-right:var(--element-gap);border-right:1px solid var(--hairline)}
+[data-layout="dense-grid"] .v-group article:last-child{border-right:0}
+[data-layout="dense-grid"] .v-meta{gap:var(--element-gap) calc(var(--element-gap) * 1.2)}
+[data-layout="dense-grid"] .v-timeline li{padding-bottom:var(--element-gap);border-bottom:1px solid var(--hairline)}
+[data-layout="dense-grid"] .v-timeline li:last-child{padding-bottom:0;border-bottom:0}
+[data-layout="dense-grid"] .v-evidence li{padding-bottom:var(--element-gap);border-bottom:1px solid var(--hairline)}
+[data-layout="dense-grid"] .v-evidence li:last-child{padding-bottom:0;border-bottom:0}
+[data-layout="dense-grid"] .v-gallery{grid-template-columns:repeat(3,1fr)}
+[data-layout="dense-grid"] .v-gallery .media:first-child{grid-row:auto}
+
+/* 한 줄기로 읽는다 — 카드 안의 모든 단을 접어 읽는 순서를 하나로 만든다. */
+[data-layout="single-column"] .variant-grid{grid-template-columns:repeat(auto-fill,minmax(440px,1fr))}
+[data-layout="single-column"] .v-two,[data-layout="single-column"] .v-lead-metric,[data-layout="single-column"] .v-gallery{grid-template-columns:minmax(0,1fr)}
+[data-layout="single-column"] .v-gallery .media:first-child{grid-row:auto}
+[data-layout="single-column"] .v-before{grid-template-columns:auto;justify-items:start;gap:var(--element-gap)}
+[data-layout="single-column"] .v-before i{display:none}
+[data-layout="single-column"] .v-group{grid-template-columns:minmax(0,1fr);gap:var(--element-gap)}
+[data-layout="single-column"] .v-lead,[data-layout="single-column"] .v-body{max-width:var(--measure)}
+
+/*
+  컴포넌트 설계 — 계약의 componentKit 네 축이 요소의 골격을 정한다.
+  색과 서체만 갈아 끼우면 서른여덟 벌이 같은 상자를 재탕한다. 여기서 바뀌는
+  것은 껍데기가 아니라 요소 자체의 짜임이다.
+*/
+
+/* ── chrome · 면을 두르는 방식 ───────────────────────────── */
+
+/* 창 — 제목 표시줄이 붙는다. Terminal · Cyberpunk · Vaporwave · Retro. */
+[data-chrome="window"] .variant .card{position:relative;padding-top:calc(var(--component-gap) * 1.35 + 32px)}
+[data-chrome="window"] .variant .card::before{content:"";position:absolute;inset:0 0 auto;height:32px;background:var(--elevated);border-bottom:var(--border-width) solid var(--border)}
+[data-chrome="window"] .variant .card::after{content:"";position:absolute;top:12px;left:14px;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:15px 0 0 var(--border),30px 0 0 var(--border)}
+
+/* 제호 — 위에 이중선, 아래에 마감선. Newsprint · Monochrome · Academia. */
+[data-chrome="masthead"] .variant .card{position:relative;padding-top:calc(var(--component-gap) * 1.35 + 16px);padding-bottom:calc(var(--component-gap) * 1.35 + 12px)}
+[data-chrome="masthead"] .variant .card::before{content:"";position:absolute;inset:12px calc(var(--component-gap) * 1.35) auto;border-top:3px double var(--text)}
+[data-chrome="masthead"] .variant .card::after{content:"";position:absolute;inset:auto calc(var(--component-gap) * 1.35) 12px;border-top:1px solid var(--border)}
+
+/* 스티커 — 살짝 어긋나게 앉는다. Neo Brutalism · Kinetic · Maximalism. */
+[data-chrome="sticker"] .variant{padding:4px 8px 8px 4px}
+[data-chrome="sticker"] .variant .card{transform:rotate(-1.1deg)}
+[data-chrome="sticker"] .variant:nth-child(2n) .card{transform:rotate(.9deg)}
+[data-chrome="sticker"] .variant:nth-child(3n) .card{transform:rotate(-.4deg)}
+
+/* 패널 — 위쪽에 빛을 한 줄 얹고 오른쪽 위에 번호를 새긴다. Industrial · Web3. */
+[data-chrome="panel"] .variant .card{position:relative}
+[data-chrome="panel"] .variant .card::before{content:"";position:absolute;inset:0 0 auto;height:1px;background:color-mix(in srgb,var(--canvas) 55%,white);pointer-events:none}
+[data-chrome="panel"] .variant .card::after{content:counter(variant,decimal-leading-zero);position:absolute;top:10px;right:14px;color:var(--muted);font-family:var(--font-mono);font-size:10px;letter-spacing:.1em}
+
+/* 액자 — 안쪽에 선을 한 겹 더 두르고 가운데로 모은다. Art Deco · Luxury. */
+[data-chrome="frame"] .variant .card{position:relative;text-align:center}
+[data-chrome="frame"] .variant .card::before{content:"";position:absolute;inset:8px;border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);pointer-events:none}
+[data-chrome="frame"] .v-lead,[data-chrome="frame"] .v-body{margin-inline:auto}
+[data-chrome="frame"] .v-actions,[data-chrome="frame"] .v-meta,[data-chrome="frame"] .v-profile{justify-content:center}
+/* 대칭은 한 덩어리로 읽는 요소에서만 쓴다. 여러 단을 가운데로 모으면 글줄이 뭉갠다. */
+[data-chrome="frame"] .v-two,[data-chrome="frame"] .v-lead-metric,[data-chrome="frame"] .v-table,
+[data-chrome="frame"] .v-timeline,[data-chrome="frame"] .v-achieve,[data-chrome="frame"] .v-evidence,
+[data-chrome="frame"] .v-par,[data-chrome="frame"] .v-bars,[data-chrome="frame"] .v-org{text-align:left}
+[data-chrome="frame"] .v-two .v-meta{justify-content:flex-start}
+
+/* 덩어리 — 네 귀가 서로 다르게 부푼다. Claymorphism · Neumorphism · Organic. */
+[data-chrome="blob"] .variant .card{border-radius:calc(var(--card-radius) * 2.1) calc(var(--card-radius) * .8) calc(var(--card-radius) * 2.1) calc(var(--card-radius) * .8)}
+
+/* ── marker · 라벨 앞 표식 ──────────────────────────────── */
+[data-marker="prompt"] .v-eyebrow::before{content:"$ ";color:var(--accent)}
+[data-marker="bullet"] .v-eyebrow::before{content:"■  ";color:var(--accent)}
+[data-marker="bracket"] .v-eyebrow::before{content:"[ ";color:var(--accent)}
+[data-marker="bracket"] .v-eyebrow::after{content:" ]";color:var(--accent)}
+[data-marker="rule"] .v-eyebrow::before{content:"";display:inline-block;width:20px;margin-right:9px;border-top:1px solid var(--accent);vertical-align:middle}
+[data-marker="numbered"] .v-eyebrow::before{content:counter(variant,decimal-leading-zero) "  ";color:var(--accent)}
+
+/* ── emphasis · 대표 수치를 세우는 방식 ─────────────────── */
+[data-emphasis="boxed"] .v-number{display:inline-block;width:max-content;padding:.08em .28em;border:var(--border-width) solid var(--text);border-radius:var(--control-radius)}
+[data-emphasis="underlined"] .v-number{display:inline-block;width:max-content;padding-bottom:.06em;border-bottom:.09em solid var(--accent)}
+[data-emphasis="oversized"] .v-number{font-size:calc(var(--type-example-display) * 1.18);letter-spacing:-.06em}
+[data-emphasis="oversized"] .v-number-lg{font-size:calc(var(--type-example-display) * 1.6)}
+[data-emphasis="bar"] .v-number{position:relative;display:inline-block;width:max-content;padding-left:.34em}
+[data-emphasis="bar"] .v-number::before{content:"";position:absolute;inset:.1em auto .1em 0;width:.1em;background:var(--accent)}
+
+/* ── divider · 항목을 가르는 선 ─────────────────────────── */
+[data-divider="none"] .v-table th,[data-divider="none"] .v-table td,[data-divider="none"] .v-org,[data-divider="none"] .rule-list li{border-bottom:0}
+[data-divider="double"] .v-table th,[data-divider="double"] .v-table td{border-bottom:3px double var(--border)}
+[data-divider="double"] .v-org{border-bottom:3px double var(--border)}
+[data-divider="dashed"] .v-table th,[data-divider="dashed"] .v-table td,[data-divider="dashed"] .v-org{border-bottom-style:dashed}
+[data-divider="dotted"] .v-table th,[data-divider="dotted"] .v-table td,[data-divider="dotted"] .v-org{border-bottom-style:dotted}
+[data-divider="thick"] .v-table th,[data-divider="thick"] .v-table td,[data-divider="thick"] .v-org{border-bottom:2px solid var(--text)}
+[data-divider="thick"] .v-table tbody tr:last-child th,[data-divider="thick"] .v-table tbody tr:last-child td{border-bottom:0}
+
+/*
+  모션은 전부 transitions-dev 카탈로그에서 가져온다. 직접 keyframe 을 쓰지 않는다.
+  텍스트 줄은 18-texts-reveal, 수치는 26-spinning-counter 의 릴 구조를 그대로 쓰고,
+  값은 _root.css 의 토큰 이름으로 읽는다.
+
+  등장은 문서가 열릴 때가 아니라 견본이 화면에 들어올 때 재생하고, 화면 밖으로
+  나가면 멈춘다. 반복 재생이 보이지 않는 곳에서 GPU 를 계속 쓰지 않게 하기 위해서다.
+  스크립트가 막히면 아무 클래스도 붙지 않아 문서는 정지 상태로 온전히 읽힌다.
+*/
+/* 18-texts-reveal */
+.t-stagger-line{opacity:0;transform:translateY(var(--stagger-distance));filter:blur(var(--stagger-blur));transition:opacity var(--stagger-dur) var(--stagger-ease),transform var(--stagger-dur) var(--stagger-ease),filter var(--stagger-dur) var(--stagger-ease);transition-delay:calc(var(--stagger-stagger) * var(--i, 0));will-change:transform,opacity,filter}
+.t-stagger.is-shown .t-stagger-line{opacity:1;transform:translateY(0);filter:blur(0)}
+
+/* 26-spinning-counter — 잭팟 연출 대신 한 번만 짧게 굴러 멈추게 조율했다. */
+.variant .t-reel{display:inline-flex;align-items:flex-start;height:var(--reel-cell);font-variant-numeric:tabular-nums}
+.t-reel-col{position:relative;height:var(--reel-cell);overflow:hidden;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 14%,#000 86%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0%,#000 14%,#000 86%,transparent 100%)}
+.t-reel-strip{display:flex;flex-direction:column;will-change:transform}
+.t-reel-digit{height:var(--reel-cell);display:flex;align-items:center;justify-content:center;white-space:pre}
+
+/* 막대 · 게이지 · 이미지 자리 · 타임라인 선은 카탈로그에 없는 형태라
+   같은 토큰으로 transition 만 건다. keyframe 은 쓰지 않는다. */
+.t-stagger .v-bars i{transform:scaleX(0);transform-origin:left;transition:transform var(--duration-slow) var(--ease-smooth-out);transition-delay:calc(var(--stagger-stagger) * var(--i, 0) + var(--duration-micro))}
+.t-stagger.is-shown .v-bars i{transform:scaleX(1)}
+.t-stagger .gauge i{transform:rotate(-150deg);transition:transform var(--duration-very-slow) var(--ease-smooth-out) var(--duration-micro)}
+.t-stagger.is-shown .gauge i{transform:rotate(0)}
+.t-stagger .media{clip-path:inset(100% 0 0 0);transition:clip-path var(--duration-slow) var(--ease-smooth-out);transition-delay:calc(var(--stagger-stagger) * var(--i, 0))}
+.t-stagger.is-shown .media{clip-path:inset(0 0 0 0)}
+.v-timeline{position:relative}
+.v-timeline::before{content:"";position:absolute;top:8px;bottom:8px;left:4px;width:1px;background:var(--border);transform:scaleY(0);transform-origin:top;transition:transform var(--duration-very-slow) var(--ease-smooth-out)}
+.t-stagger.is-shown .v-timeline::before{transform:scaleY(1)}
+
+@media(prefers-reduced-motion:reduce){
+.t-stagger-line,.t-reel-strip,.t-stagger .v-bars i,.t-stagger .gauge i,.t-stagger .media,.v-timeline::before{transition:none !important;opacity:1;transform:none;filter:none;clip-path:none}
+}
+.rule-sheet{margin-top:28px;border-top:1px solid var(--hairline)}
+.rule-sheet summary{display:flex;align-items:center;gap:8px;padding:15px 0;color:var(--muted);font-size:11px;cursor:pointer}
+.rule-sheet summary span{font-family:var(--font-mono);font-size:10px}
+.doc-lines{display:grid;grid-template-columns:1fr 1fr;gap:0 26px;padding-bottom:18px;color:var(--muted);font-size:11px;line-height:1.55}
+.doc-lines li{padding:7px 0;border-bottom:1px solid var(--hairline)}
+
+@media(max-width:900px){
+.row,.cover{grid-template-columns:1fr;gap:14px}
+.glance{grid-template-columns:1fr 1fr}
+.demo-contact,.v-gallery,.v-two,.v-group{grid-template-columns:1fr}
+.variant-grid{grid-template-columns:1fr}
+.variant .card{padding:24px;min-height:0}
+.row-head{padding-bottom:22px}
+}
+@media(max-width:640px){
+.nav ul{display:none}
+:root{--column:calc(100% - 36px)}
+.cover h1{font-size:15vw}
+.cover p{font-size:15px}
+.row-head h2{font-size:26px}
+.sentence{font-size:14px}
+.facts li{grid-template-columns:1fr;gap:2px}
+.glance{grid-template-columns:1fr}
+.facts span{text-align:left}
+.doc-lines{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.motion-rise,.motion-focus{animation:none}}
+</style>
+</head>
+<body data-layout="${escapeHtml(spec.composition.layout)}" data-chrome="${escapeHtml(spec.componentKit.chrome)}" data-marker="${escapeHtml(spec.componentKit.marker)}" data-emphasis="${escapeHtml(spec.componentKit.emphasis)}" data-divider="${escapeHtml(spec.componentKit.divider)}">
+  <nav class="nav"><strong>${title}</strong><ul><li><a href="#colors">Colors</a></li><li><a href="#typography">Typography</a></li><li><a href="#components">Components</a></li><li><a href="#sample-portfolio">Elements</a></li></ul><span>r${revision}</span></nav>
+  <header class="cover">
+    <span>Portfolio design system</span>
+    <div>
+      <h1>${title}</h1>
+      <p>${subtitle}</p>
+      <div class="cover-actions"><a class="act" href="#sample-portfolio">요소 견본 보기</a><a class="act-quiet" href="#colors">시스템 살펴보기 ↓</a></div>
+    </div>
+  </header>
+  <div class="palette" aria-hidden="true">${COLOR_NAMES.map((name) => `<i style="background:var(--${name})"></i>`).join("")}</div>
+  <div class="cover-rows" data-design-section="direction">
+    ${row(label("한눈에"), glance)}
+    ${renderRuleSheet(direction)}
+  </div>
+  <main>${sections}</main>
+<script>${MOTION_SCRIPT}</script>
+</body>
+</html>`;
+}
+
+/**
+ * 모든 디자인이 같은 문서를 받는다. 틀은 하나이고 그 안의 견본만 그 디자인의
+ * 색 · 서체 · 간격 · 형태로 그려진다. 틀까지 달라지면 서른여덟 벌을 나란히 두고
+ * 비교할 수 없다 — 이 카탈로그가 있는 이유가 비교다.
+ */
+export function renderDesignHtml(
+  modelInput: DesignDocumentModel,
+  markdownSha256: string,
+): string {
+  const model = DesignDocumentModelSchema.parse(modelInput);
+  return renderShowcaseHtml(model, zodHash(markdownSha256));
+}
+
+function zodHash(value: string): string {
+  if (!/^[0-9a-f]{64}$/.test(value)) {
+    throw new Error("markdownSha256 must be a lowercase SHA-256 digest");
+  }
+  return value;
+}
+
+export function compileDesignDocuments(
+  input: DesignSystemSpecV2,
+  referenceLock: ReferenceLock | null = null,
+) {
+  const model = buildDesignDocumentModel(input, referenceLock);
+  const markdown = renderDesignMarkdown(model);
+  const markdownSha256 = createHash("sha256").update(markdown).digest("hex");
+  const html = renderDesignHtml(model, markdownSha256);
+  const contentHash = createHash("sha256")
+    .update(`${markdown}\0${html}`)
+    .digest("hex");
+  return { model, markdown, html, markdownSha256, contentHash };
+}

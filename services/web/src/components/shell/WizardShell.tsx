@@ -6,8 +6,8 @@ import { Icon } from "@/components/ui/Icon";
 
 import styles from "./WizardShell.module.css";
 
-/** §4.2 6단계 — 순서는 고정이다. */
-export const WIZARD_STEPS = [
+/** 기존 제작의 6단계. 진행 중인 brew가 돌아올 수 있어 호환 경로에서 유지한다. */
+export const LEGACY_WIZARD_STEPS = [
   { key: "analyze", label: "공고 분석", segment: "analyze" },
   { key: "materials", label: "재료 고르기", segment: "materials" },
   { key: "counter", label: "AI 대화", segment: "counter" },
@@ -16,7 +16,20 @@ export const WIZARD_STEPS = [
   { key: "edit", label: "다듬기", segment: "edit" },
 ] as const;
 
-export type WizardStepKey = (typeof WIZARD_STEPS)[number]["key"];
+/** 이전 진입점이 재개 위치를 계산할 때 읽는 호환 이름. */
+export const WIZARD_STEPS = LEGACY_WIZARD_STEPS;
+
+/** 포트폴리오 제작 흐름 v2의 세 단계. */
+export const PORTFOLIO_V2_STEPS = [
+  { key: "design", label: "디자인", segment: "design" },
+  { key: "recipe", label: "레시피", segment: "recipe" },
+  { key: "generate", label: "생성", segment: "generate" },
+] as const;
+
+export type WizardFlow = "legacy" | "portfolio-v2";
+export type WizardStepKey =
+  | (typeof LEGACY_WIZARD_STEPS)[number]["key"]
+  | (typeof PORTFOLIO_V2_STEPS)[number]["key"];
 
 export function WizardHeader({
   portfolioTitle,
@@ -60,15 +73,18 @@ export function WizardSteps({
   brewId = null,
   current = null,
   situation,
+  flow = "legacy",
 }: {
   brewId?: string | null;
   current?: WizardStepKey | null;
   /** 우측 끝 상황 문구 — "예상 3분", "남은 질문 2개", "초안 완성 · 섹션 6개". */
   situation: ReactNode;
+  flow?: WizardFlow;
 }) {
+  const steps = flow === "portfolio-v2" ? PORTFOLIO_V2_STEPS : LEGACY_WIZARD_STEPS;
   const currentIndex = current === null
     ? -1
-    : WIZARD_STEPS.findIndex((step) => step.key === current);
+    : steps.findIndex((step) => step.key === current);
 
   return (
     <nav className={styles.steps} aria-label="포트폴리오 제작 단계">
@@ -80,14 +96,14 @@ export function WizardSteps({
         <span className={styles.compactTrack}>
           <span
             className={styles.compactFill}
-            style={{ width: `${((currentIndex + 1) / WIZARD_STEPS.length) * 100}%` }}
+            style={{ width: `${((currentIndex + 1) / steps.length) * 100}%` }}
           />
         </span>
         <span className={styles.compactCount}>
-          {String(currentIndex + 1).padStart(2, "0")} / {String(WIZARD_STEPS.length).padStart(2, "0")}
+          {String(currentIndex + 1).padStart(2, "0")} / {String(steps.length).padStart(2, "0")}
         </span>
       </span>
-      {WIZARD_STEPS.map((step, index) => {
+      {steps.map((step, index) => {
         const done = index < currentIndex;
         const isCurrent = index === currentIndex;
         const className = [
