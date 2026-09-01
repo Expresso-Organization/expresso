@@ -80,6 +80,9 @@ importers:
       '@expresso/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@expresso/editor':
+        specifier: workspace:*
+        version: link:../../packages/editor
       bullmq:
         specifier: ^6.0.9
         version: 6.0.9(ioredis@6.0.0)

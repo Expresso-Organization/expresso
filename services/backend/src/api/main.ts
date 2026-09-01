@@ -35,6 +35,8 @@ import { createMediaStorage } from "../platform/storage/create-storage.js";
 import { AnalyticsService } from "../modules/analytics/index.js";
 import { EngagementService } from "../modules/engagement/index.js";
 import { AccountLifecycleService } from "../modules/account-lifecycle/index.js";
+import { CareerDocumentService } from "../modules/career-editor/index.js";
+import { createReliableQueue } from "../platform/queue.js";
 
 const config = loadRuntimeConfig();
 if (!config.mongodbUrl || !config.mongodbDatabase) throw new Error("MongoDB runtime configuration is missing");
@@ -107,6 +109,23 @@ const analyticsService = new AnalyticsService(database, {
 });
 const engagementService = new EngagementService(database);
 const accountLifecycleService = new AccountLifecycleService(database);
+const careerDocumentJobs = createReliableQueue<Record<string, unknown>>(
+  "domain-jobs",
+  config.redisUrl,
+  config.queuePrefix,
+);
+const careerDocumentService = new CareerDocumentService(
+  database,
+  config.assetSigningSecret,
+  undefined,
+  async (recordId, expectedSequence) => {
+    await careerDocumentJobs.queue.add(
+      "career.document.compact",
+      { recordId, expectedSequence },
+      { jobId: `career-document-compact-${recordId}-${expectedSequence}`, priority: 100 },
+    );
+  },
+);
 const app = buildApi({
   config,
   readinessChecks: [database.readinessCheck, redis.readinessCheck],
@@ -114,6 +133,7 @@ const app = buildApi({
   ...(googleIdTokenVerifier ? { googleIdTokenVerifier } : {}),
   entitlementService,
   careerService,
+  careerDocumentService,
   jobMarketService,
   jobIngestService,
   jobUrlImporter,
@@ -149,7 +169,7 @@ async function stop(signal: NodeJS.Signals): Promise<void> {
 
   app.log.info({ signal }, "stopping API");
   await app.close();
-  await Promise.allSettled([database.close(), redis.close()]);
+  await Promise.allSettled([database.close(), redis.close(), careerDocumentJobs.close()]);
 }
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
@@ -165,6 +185,6 @@ try {
   await app.listen({ host: config.host, port: config.port });
 } catch (error) {
   app.log.error({ error }, "failed to start API");
-  await Promise.allSettled([app.close(), database.close(), redis.close()]);
+  await Promise.allSettled([app.close(), database.close(), redis.close(), careerDocumentJobs.close()]);
   process.exitCode = 1;
 }

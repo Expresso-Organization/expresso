@@ -61,6 +61,8 @@ import {
   createRequestId,
 } from "../platform/observability.js";
 import { registerErrorHandler } from "./error-handler.js";
+import type { CareerDocumentApi } from "../modules/career-editor/index.js";
+import { registerCareerDocumentRoutes } from "../modules/career-editor/routes.js";
 
 export interface BuildApiOptions {
   config: RuntimeConfig;
@@ -97,6 +99,7 @@ export interface BuildApiOptions {
   analyticsService?: AnalyticsApi;
   engagementService?: EngagementApi;
   accountLifecycleService?: AccountLifecycleApi;
+  careerDocumentService?: CareerDocumentApi;
 }
 
 export function buildApi(options: BuildApiOptions): FastifyInstance {
@@ -137,6 +140,7 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }
+    if (options.careerDocumentService) registerCareerDocumentRoutes(app, { service: options.careerDocumentService, authenticateRequest: createAuthenticateRequest(options.identityService) });
     if (options.jobMarketService) {
       registerJobMarketRoutes(app, {
         jobMarketService: options.jobMarketService,

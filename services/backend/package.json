@@ -18,6 +18,7 @@
     "test:load": "pnpm --filter @expresso/contracts build && pnpm --filter @expresso/database build && cross-env EXPRESSO_LOAD_TEST=1 vitest run"
   },
   "dependencies": {
+    "@expresso/editor": "workspace:*",
     "@expresso/contracts": "workspace:*",
     "bullmq": "^6.0.9",
     "fastify": "^5.11.3",
