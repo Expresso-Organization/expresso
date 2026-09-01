@@ -109,6 +109,64 @@ class RankingMetricsTest(unittest.TestCase):
         self.assertEqual(result["perProfile"]["p"]["ranking"], ["j-a", "j-b"])
         self.assertEqual(result["metrics"]["ndcgAt10"], 1.0)
 
+    def test_mrr_is_zero_when_exact_match_is_below_rank_ten(self):
+        labels = [
+            {
+                "profileId": "p",
+                "jobId": f"j-{index:02d}",
+                "split": "test",
+                "teacherLabel": 3 if index == 10 else 0,
+                "humanLabel": None,
+                "reasonCodes": [],
+            }
+            for index in range(11)
+        ]
+        scores = {"p": {f"j-{index:02d}": float(11 - index) for index in range(11)}}
+
+        result = evaluate_ranking(scores, labels, split="test", label_field="teacherLabel")
+
+        self.assertEqual(result["metrics"]["mrrAt10"], 0.0)
+
+    def test_mrr_is_undefined_when_candidate_set_has_no_exact_match(self):
+        labels = [
+            {
+                "profileId": "p",
+                "jobId": f"j-{index}",
+                "split": "test",
+                "teacherLabel": label,
+                "humanLabel": None,
+                "reasonCodes": [],
+            }
+            for index, label in enumerate((2, 0))
+        ]
+        result = evaluate_ranking(
+            {"p": {"j-0": 1.0, "j-1": 0.0}},
+            labels,
+            split="test",
+            label_field="teacherLabel",
+        )
+        self.assertIsNone(result["metrics"]["mrrAt10"])
+
+    def test_hard_negative_tie_gets_no_credit(self):
+        labels = [
+            {
+                "profileId": "p",
+                "jobId": f"j-{index}",
+                "split": "test",
+                "teacherLabel": label,
+                "humanLabel": None,
+                "reasonCodes": [],
+            }
+            for index, label in enumerate((2, 0))
+        ]
+        result = evaluate_ranking(
+            {"p": {"j-0": 1.0, "j-1": 1.0}},
+            labels,
+            split="test",
+            label_field="teacherLabel",
+        )
+        self.assertEqual(result["metrics"]["hardNegativeAccuracy"], 0.0)
+
 
 class DatasetValidationTest(unittest.TestCase):
     def test_rejects_source_atom_crossing_splits(self):
@@ -152,6 +210,13 @@ class DatasetValidationTest(unittest.TestCase):
         with self.assertRaisesRegex(DatasetValidationError, "valid and test"):
             validate_dataset(profiles, jobs, labels)
 
+    def test_rejects_non_string_split_as_input_error(self):
+        profiles, jobs, labels = sample_dataset()
+        profiles[0]["split"] = []
+
+        with self.assertRaisesRegex(DatasetValidationError, "profile.split"):
+            validate_dataset(profiles, jobs, labels)
+
 
 class ComparisonAndGateTest(unittest.TestCase):
     def test_paired_bootstrap_is_deterministic(self):
@@ -167,6 +232,9 @@ class ComparisonAndGateTest(unittest.TestCase):
 
     def test_cohen_kappa_is_one_for_identical_labels(self):
         self.assertEqual(cohen_kappa([(0, 0), (1, 1), (2, 2), (3, 3)]), 1.0)
+
+    def test_cohen_kappa_is_undefined_for_constant_identical_labels(self):
+        self.assertIsNone(cohen_kappa([(3, 3), (3, 3), (3, 3)]))
 
     def test_gate_requires_three_hundred_human_labels(self):
         gate = self._passing_gate(human_label_count=299)
@@ -267,6 +335,31 @@ class EvaluationCliTest(unittest.TestCase):
 
         profiles, jobs, labels = sample_dataset()
         jobs[4]["duplicateGroupId"] = jobs[0]["duplicateGroupId"]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_jsonl(root / "profiles.jsonl", profiles)
+            self._write_jsonl(root / "jobs.jsonl", jobs)
+            self._write_jsonl(root / "labels.jsonl", labels)
+            with contextlib.redirect_stderr(io.StringIO()):
+                exit_code = main(
+                    [
+                        "--profiles",
+                        str(root / "profiles.jsonl"),
+                        "--jobs",
+                        str(root / "jobs.jsonl"),
+                        "--labels",
+                        str(root / "labels.jsonl"),
+                        "--output",
+                        str(root / "results"),
+                    ]
+                )
+            self.assertEqual(exit_code, 2)
+
+    def test_cli_returns_two_for_non_string_split(self):
+        from evaluate_retrieval import main
+
+        profiles, jobs, labels = sample_dataset()
+        profiles[0]["split"] = []
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self._write_jsonl(root / "profiles.jsonl", profiles)

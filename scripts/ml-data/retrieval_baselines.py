@@ -14,7 +14,7 @@ ScoreMap = dict[str, dict[str, float]]
 
 
 def normalize_text(text: str) -> str:
-    normalized = unicodedata.normalize("NFKC", text).casefold()
+    normalized = unicodedata.normalize("NFKC", text).lower()
     return " ".join(normalized.split())
 
 

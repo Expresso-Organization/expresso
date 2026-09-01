@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from bisect import bisect_left, bisect_right
 from collections import Counter, defaultdict
 import math
 import random
@@ -49,6 +50,12 @@ def _require_label(value: Any, field: str, nullable: bool = False) -> None:
         raise DatasetValidationError(f"{field} must be an integer from 0 to 3")
 
 
+def _require_split(value: Any, field: str) -> str:
+    if not isinstance(value, str) or value not in SPLITS:
+        raise DatasetValidationError(f"{field} must be train, valid, or test")
+    return value
+
+
 def _validate_string_list(value: Any, field: str) -> None:
     if not isinstance(value, list) or any(
         not isinstance(item, str) or not item.strip() for item in value
@@ -78,8 +85,7 @@ def validate_dataset(
         _require_exact_fields(profile, PROFILE_FIELDS, "profile")
         profile_id = _require_string(profile["profileId"], "profileId")
         _require_string(profile["text"], "profile.text")
-        if profile["split"] not in SPLITS:
-            raise DatasetValidationError(f"invalid profile split: {profile['split']}")
+        _require_split(profile["split"], "profile.split")
         _validate_string_list(profile["sourceAtomIds"], "sourceAtomIds")
         if profile_id in profile_by_id:
             raise DatasetValidationError(f"duplicate profileId: {profile_id}")
@@ -97,8 +103,7 @@ def validate_dataset(
         _require_exact_fields(job, JOB_FIELDS, "job")
         job_id = _require_string(job["jobId"], "jobId")
         _require_string(job["text"], "job.text")
-        if job["split"] not in SPLITS:
-            raise DatasetValidationError(f"invalid job split: {job['split']}")
+        _require_split(job["split"], "job.split")
         _require_string(job["duplicateGroupId"], "duplicateGroupId")
         if job_id in job_by_id:
             raise DatasetValidationError(f"duplicate jobId: {job_id}")
@@ -114,8 +119,7 @@ def validate_dataset(
         if profile_id not in profile_by_id or job_id not in job_by_id:
             raise DatasetValidationError(f"label references unknown pair: {profile_id}/{job_id}")
         split = label["split"]
-        if split not in SPLITS:
-            raise DatasetValidationError(f"invalid label split: {split}")
+        _require_split(split, "label.split")
         if split != profile_by_id[profile_id]["split"] or split != job_by_id[job_id]["split"]:
             raise DatasetValidationError(f"label split differs for pair: {profile_id}/{job_id}")
         _require_label(label["teacherLabel"], "teacherLabel")
@@ -174,6 +178,20 @@ def _average(values: Iterable[float | None]) -> float | None:
     return sum(defined) / len(defined) if defined else None
 
 
+def _pairwise_higher_fraction(
+    positive_scores: list[float], negative_scores: list[float], tie_credit: float
+) -> float | None:
+    if not positive_scores or not negative_scores:
+        return None
+    sorted_negatives = sorted(negative_scores)
+    credit = 0.0
+    for score in positive_scores:
+        lower = bisect_left(sorted_negatives, score)
+        equal = bisect_right(sorted_negatives, score) - lower
+        credit += lower + tie_credit * equal
+    return credit / (len(positive_scores) * len(negative_scores))
+
+
 def _profile_metrics(ranked: list[tuple[str, float, int]]) -> dict[str, float | None]:
     labels = [label for _, _, label in ranked]
     ideal = sorted(labels, reverse=True)
@@ -194,26 +212,19 @@ def _profile_metrics(ranked: list[tuple[str, float, int]]) -> dict[str, float | 
         else None
     )
 
+    has_exact = any(label == 3 for label in labels)
     first_exact = next((index for index, label in enumerate(labels[:10], 1) if label == 3), None)
-    mrr = 1 / first_exact if first_exact is not None else None
+    mrr = None if not has_exact else 1 / first_exact if first_exact is not None else 0.0
 
-    positives = [(score, job_id) for job_id, score, label in ranked if label == 3]
-    negatives = [(score, job_id) for job_id, score, label in ranked if label != 3]
-    auc_pairs = [
-        1.0 if positive_score > negative_score else 0.5 if positive_score == negative_score else 0.0
-        for positive_score, _ in positives
-        for negative_score, _ in negatives
-    ]
-    auc = sum(auc_pairs) / len(auc_pairs) if auc_pairs else None
+    positives = [score for _, score, label in ranked if label == 3]
+    negatives = [score for _, score, label in ranked if label != 3]
+    auc = _pairwise_higher_fraction(positives, negatives, tie_credit=0.5)
 
     relevant_scores = [score for _, score, label in ranked if label >= 2]
     negative_scores = [score for _, score, label in ranked if label <= 1]
-    hard_pairs = [
-        1.0 if relevant_score > negative_score else 0.5 if relevant_score == negative_score else 0.0
-        for relevant_score in relevant_scores
-        for negative_score in negative_scores
-    ]
-    hard_accuracy = sum(hard_pairs) / len(hard_pairs) if hard_pairs else None
+    hard_accuracy = _pairwise_higher_fraction(
+        relevant_scores, negative_scores, tie_credit=0.0
+    )
     return {
         "ndcgAt10": ndcg,
         "map": average_precision,
@@ -293,7 +304,7 @@ def cohen_kappa(label_pairs: Iterable[tuple[int, int]]) -> float | None:
         for label in range(4)
     )
     if expected == 1.0:
-        return 1.0 if observed == 1.0 else 0.0
+        return None
     return (observed - expected) / (1 - expected)
 
 
