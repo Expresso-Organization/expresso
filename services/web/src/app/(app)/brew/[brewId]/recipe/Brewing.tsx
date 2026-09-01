@@ -76,22 +76,29 @@ export interface Reading {
   records: { recordId: string; title: string; categoryIcon: string; reason: string }[];
 }
 
-/** 아직 한 글자도 안 왔을 때. 그림과, 그 그림이 무엇인지 적은 글. */
+/**
+ * 아직 한 글자도 안 왔을 때. 그림과, 그 그림이 무엇인지 적은 글.
+ *
+ * 지면을 위아래로 나눠 쓴다 — 잔과 제목은 화면 가운데, 겨냥한 공고와 안내는
+ * 바닥이다. 2분 넘게 볼 화면에서 눈이 머무는 곳은 움직이는 잔이고, 한 번
+ * 읽고 마는 글이 그 옆에 붙어 있으면 둘 다 어중간해진다.
+ *
+ * 세로로 늘어나는 일은 담는 칸(`.readingDoc`)이 한다.
+ */
 export function ReadingPanel({ queued, reading }: { queued: boolean; reading: Reading }) {
   return (
     <>
-      <Brewing records={reading.records} />
-      <div className={styles.readingHead}>
-        <h1>레시피를 짜는 중</h1>
+      <div className={styles.readingMain}>
+        <Brewing records={reading.records} />
+        <h1 className={styles.readingTitle}>레시피를 짜는 중</h1>
         {/* 제목이 「짜는 중」이면 바로 아래가 그 「중」이 지금 뭘 하고 있는지다. */}
         <p className={styles.stageRow}>
-          <span className={styles.stage}>
-            <span className={styles.spinner} aria-hidden="true" />
-            {queued
-              ? "차례를 기다리는 중입니다"
-              : <Stage aiming={reading.posting !== null} />}
-          </span>
+          {queued
+            ? <span className={styles.stage}>차례를 기다리는 중입니다</span>
+            : <Stage aiming={reading.posting !== null} />}
         </p>
+      </div>
+      <div className={styles.readingFoot}>
         {reading.posting ? (
           <span className={styles.posting}>
             <CompanyAvatar
@@ -120,7 +127,7 @@ export function ReadingPanel({ queued, reading }: { queued: boolean; reading: Re
             </span>
           </span>
         ) : null}
-        <p>
+        <p className={styles.readingNote}>
           {reading.posting
             ? <>고른 기록 {reading.records.length}건을 이 공고에 맞춰 무엇을 어떤 순서로 담을지 정합니다.</>
             : <>고른 기록 {reading.records.length}건을 읽고 무엇을 어떤 순서로 담을지 정합니다.</>}
@@ -134,8 +141,14 @@ export function ReadingPanel({ queued, reading }: { queued: boolean; reading: Re
 /**
  * 구상하는 동안의 한 줄. `STAGES`를 돈다.
  *
+ * **다섯 줄을 다 그린다.** 한 줄만 두고 글을 갈아 끼우면 말이 바뀔 때마다
+ * 줄의 폭이 달라지고, 가운데 정렬이라 그만큼 좌우로 튄다. 겹쳐 두면 칸의
+ * 폭을 가장 긴 줄이 잡아 아무것도 움직이지 않고 투명도만 오간다
+ * (`Brewing.module.css`의 `.stage`).
+ *
  * 살아 있는 자리를 읽어 주는 곳(`aria-live`)은 위의 상태 줄 하나다. 같은
  * 사실을 다른 말로 적은 이 줄까지 소리 내면 4.5초마다 같은 말이 반복된다.
+ * 겹쳐 둔 나머지 넷은 눈에만 없는 것이 아니라 읽는 쪽에도 없어야 한다.
  */
 function Stage({ aiming }: { aiming: boolean }) {
   const [at, setAt] = useState(0);
@@ -146,9 +159,22 @@ function Stage({ aiming }: { aiming: boolean }) {
     return () => window.clearInterval(timer);
   }, []);
 
-  const line = lines[at % lines.length]!.text;
-  // 글이 곧 열쇠다 — 바뀔 때만 새로 태어나고, 그때 한 번 들어오는 결이 돈다.
-  return <span key={line} className={styles.stageLine}>{line}</span>;
+  const on = at % lines.length;
+
+  return (
+    <span className={styles.stage}>
+      {lines.map(({ text }, index) => (
+        <span
+          key={text}
+          className={styles.stageLine}
+          data-on={index === on ? "" : undefined}
+          aria-hidden={index === on ? undefined : "true"}
+        >
+          {text}
+        </span>
+      ))}
+    </span>
+  );
 }
 
 /**

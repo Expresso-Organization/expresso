@@ -119,7 +119,7 @@ export function Waiting({ job, reading }: { job: BrewJobStatus; reading: Reading
             ))}
           </div>
         ) : (
-          <div className={styles.doc}>
+          <div className={styles.readingDoc}>
             <ReadingPanel queued={job.status === "queued"} reading={reading} />
           </div>
         )}

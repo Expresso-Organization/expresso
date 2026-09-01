@@ -65,6 +65,21 @@
   margin: 0 auto;
 }
 
+/*
+ * 아직 문서가 없을 때의 칸.
+ *
+ * 레시피가 자라기 시작하면 이 칸은 글로 채워지지만, 그 전까지는 비어 있다.
+ * 위에서부터 쌓으면 아래가 통째로 빈 화면이 되므로 지면 높이를 다 쓰고
+ * 세로로 나눈다 — 무엇이 어디 서는지는 `Brewing.module.css`가 정한다.
+ */
+.readingDoc {
+  max-width: 720px;
+  margin: 0 auto;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .section {
   padding: 22px 0 24px;
   border-top: 1px solid var(--ex-border);

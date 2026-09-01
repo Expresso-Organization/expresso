@@ -5,52 +5,59 @@
  * 쓰고, `/dev/brewing`이 같은 것을 기다리지 않고 띄운다.
  */
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.spinner {
-  width: 11px;
-  height: 11px;
-  border: 2px solid var(--ex-border);
-  border-top-color: var(--ex-accent);
-  border-radius: 50%;
-  animation: spin 700ms linear infinite;
-}
-
-/* 제목 바로 밑에 붙는다 — 가운데 정렬은 `.readingHead`가 이미 걸어 둔다. */
+/* 제목 바로 밑에 붙는다 — 가운데 정렬은 `.readingMain`이 이미 걸어 둔다. */
 .stageRow {
   margin: 7px 0 0;
 }
 
+/*
+ * 다섯 줄이 한 칸에 겹쳐 선다.
+ *
+ * 칸의 폭을 **가장 긴 줄**이 잡는다. 한 줄만 두고 글을 갈아 끼우면 말이 바뀔
+ * 때마다 폭이 달라지고, 가운데 정렬이라 그때마다 줄 전체가 좌우로 튄다.
+ * 겹쳐 두면 폭이 고정이라 자리는 그대로 있고 투명도만 오간다.
+ */
 .stage {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
+  display: inline-grid;
+  justify-items: center;
   color: var(--ex-fg-subtle);
   font-size: var(--ex-text-3xs);
 }
 
-/* 말이 바뀌는 결. 흐려졌다 또렷해지며 올라온다 — 글자라서 아주 조금만. */
+/* 나가는 말과 들어오는 말이 겹친다 — 끊기는 자리가 없어야 튀지 않는다. */
 .stageLine {
-  display: inline-block;
-  animation: stageIn 520ms ease-out 1;
+  grid-area: 1 / 1;
+  opacity: 0;
+  filter: blur(3px);
+  transform: translateY(3px);
+  transition:
+    opacity 460ms ease,
+    filter 460ms ease,
+    transform 460ms ease;
 }
 
-@keyframes stageIn {
-  0% { opacity: 0; filter: blur(3px); transform: translateY(3px); }
-  100% { opacity: 1; filter: blur(0); transform: translateY(0); }
+.stageLine[data-on] {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0);
 }
 
 /* ── 기다리는 동안 · 무엇을 읽고 있는가 ────────────────────── */
 
-/* 그림이 가운데라 글도 가운데다. 한쪽만 왼쪽에 붙으면 축이 둘이 된다. */
-.readingHead {
+/*
+ * 잔과 제목. 남는 자리 한가운데 선다.
+ *
+ * 위아래 `auto`가 남는 높이를 반씩 나눠 갖는다. 그래서 화면이 길어지면 잔은
+ * 가운데에 있고 아래 글은 바닥에 붙은 채로 사이만 벌어진다.
+ */
+.readingMain {
+  margin: auto 0;
   padding: 4px 0 0;
   text-align: center;
 }
 
-.readingHead h1 {
+/* 그림이 가운데라 글도 가운데다. 한쪽만 왼쪽에 붙으면 축이 둘이 된다. */
+.readingTitle {
   margin: 12px 0 0;
   color: var(--ex-fg);
   font-family: var(--ex-font-brand);
@@ -59,7 +66,13 @@
   letter-spacing: -0.02em;
 }
 
-.readingHead p {
+/* 겨냥한 공고와 안내. 한 번 읽고 마는 것이라 바닥이다. */
+.readingFoot {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.readingNote {
   margin: 8px auto 0;
   max-width: 46ch;
   color: var(--ex-fg-muted);
@@ -312,9 +325,12 @@
 
   .bloom,
   .receiveA,
-  .receiveB,
-  .stageLine {
+  .receiveB {
     animation: none;
+  }
+
+  .stageLine {
+    transition: none;
   }
 
   .mark svg > rect {
