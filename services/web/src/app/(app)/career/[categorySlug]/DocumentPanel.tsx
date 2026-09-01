@@ -11,7 +11,8 @@ import { useCareerEditorSession } from "@/features/career-editor/session/useCare
 
 import styles from "./DocumentPanel.module.css";
 
-const DEFAULT_PANEL_WIDTH = 560;
+const DEFAULT_PANEL_WIDTH = 680;
+const MAX_PANEL_WIDTH = 900;
 
 export function DocumentPanel({
   record,
@@ -47,8 +48,8 @@ export function DocumentPanel({
   };
 
   const clampWidth = useCallback((next: number) => {
-    const viewportLimit = typeof window === "undefined" ? 720 : window.innerWidth - 64;
-    return Math.round(Math.min(Math.max(next, 360), Math.max(360, Math.min(720, viewportLimit))));
+    const viewportLimit = typeof window === "undefined" ? MAX_PANEL_WIDTH : window.innerWidth - 64;
+    return Math.round(Math.min(Math.max(next, 360), Math.max(360, Math.min(MAX_PANEL_WIDTH, viewportLimit))));
   }, []);
 
   useEffect(() => {
@@ -81,7 +82,7 @@ export function DocumentPanel({
     if (event.key === "ArrowLeft") setWidth((current) => clampWidth(current + 24));
     else if (event.key === "ArrowRight") setWidth((current) => clampWidth(current - 24));
     else if (event.key === "Home") setWidth(360);
-    else if (event.key === "End") setWidth(clampWidth(720));
+    else if (event.key === "End") setWidth(clampWidth(MAX_PANEL_WIDTH));
     else return;
     event.preventDefault();
   };
@@ -108,7 +109,7 @@ export function DocumentPanel({
         aria-label="문서 패널 너비 조절"
         aria-orientation="vertical"
         aria-valuemin={360}
-        aria-valuemax={720}
+        aria-valuemax={MAX_PANEL_WIDTH}
         aria-valuenow={width}
         tabIndex={record ? 0 : -1}
         onKeyDown={resizeFromKeyboard}

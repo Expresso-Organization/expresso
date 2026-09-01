@@ -10,7 +10,7 @@ import styles from "./[categorySlug]/page.module.css";
  * 어느 카테고리인지는 여기서 알 수 없다 — `loading.tsx`는 params를 받지 않는다
  * (Next 16 `loading.js` 규약). 그래서 이름·설명·뷰 이름은 비우고, 카테고리가
  * 무엇이든 같은 **두 단 구조**만 미리 세운다. 오른쪽 문서 패널은 고른 기록이
- * 없어도 560px로 서 있으므로 여기서도 자리를 지킨다.
+ * 없어도 680px로 서 있으므로 여기서도 자리를 지킨다.
  */
 export default function Loading() {
   return (
