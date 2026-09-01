@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import { TimestampSchema, UuidSchema } from "./common.js";
 import {
-  PortfolioPlanDraftCoreSchema,
   PortfolioPlanningManifestSchema,
   PortfolioPlanSchema,
 } from "./portfolio-plan.js";
@@ -60,7 +59,13 @@ export const RecipeSchema = z.strictObject({
     recordId: UuidSchema,
     reason: z.string().min(1).max(500),
   })),
-  /** 옛 레시피는 null, v1 planner가 만든 레시피는 완전한 설계안을 가진다. */
+  /**
+   * 설계안은 더 이상 레시피 단계에서 만들지 않는다 — 새 레시피는 null이다.
+   *
+   * 레시피가 정하는 것은 무엇을 어떤 순서로 담을지고, 자리매김 · 요건 대응 ·
+   * 주장 같은 지면의 판단은 03 생성이 지면을 쓰면서 한다. 예전에 만들어 둔
+   * 레시피는 그 설계안을 그대로 들고 있다.
+   */
   portfolioPlan: PortfolioPlanSchema.nullable().default(null),
   planningManifest: PortfolioPlanningManifestSchema.nullable().default(null),
   updatedAt: TimestampSchema,
@@ -141,7 +146,6 @@ export const RecipeDraftSectionSchema = z.strictObject({
 });
 
 export const RecipeDraftSchema = z.strictObject({
-  plan: PortfolioPlanDraftCoreSchema,
   /** 한 페이지를 만들 최소 구조만 둔다. 제목 중복은 편집 판단으로 남긴다. */
   sections: z.array(RecipeDraftSectionSchema).min(1).max(20),
   /** 쓰지 않은 기록과 그 이유. 02b의 "이건 왜 안 썼나"가 이걸 읽는다. */

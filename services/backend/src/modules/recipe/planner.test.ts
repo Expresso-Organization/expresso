@@ -59,28 +59,6 @@ function section(over: Partial<RecipeDraft["sections"][number]> = {}) {
 }
 
 const plan: RecipeDraft = {
-  plan: {
-    positioning: {
-      headlineIntent: "대규모 데이터 처리 경험",
-      valueProposition: "배치 안정성과 처리량 개선",
-      differentiators: ["수치로 확인되는 운영 경험"],
-    },
-    requirementCoverage: [{
-      requirementSource: 4,
-      priority: 1,
-      evidenceSources: [1, 2],
-      coverage: "covered",
-      reason: "두 기록이 대규모 처리와 안정성을 뒷받침",
-    }],
-    narrativeArc: "대규모 처리에서 장애 대응과 공고 적합성으로 진행",
-    claims: [{
-      intent: "대규모 처리 경험",
-      evidenceSources: [1],
-      allowedNumbers: ["1,200만"],
-    }],
-    exclusions: ["근거 없는 수치"],
-    rationale: "공고의 핵심 요건과 가장 직접적인 기록을 먼저 배치",
-  },
   sections: [
     section(),
     section({ title: "장애 대응", items: [{ pointText: "새벽 적재 중단 · 복구 절차", sources: [2, 5] }] }),
@@ -124,12 +102,6 @@ describe("레시피 생성 계약", () => {
   it("재료가 없어도 한 번의 편집 가능한 계획을 반환한다", async () => {
     const emptyPlan = {
       ...plan,
-      plan: {
-        ...plan.plan,
-        positioning: { ...plan.plan.positioning, differentiators: [] },
-        requirementCoverage: [],
-        claims: [],
-      },
       sections: [{
         ...section(),
         targetLength: 0,
@@ -227,12 +199,11 @@ describe("레시피 생성 계약", () => {
     expect(prompt).toContain("회사 조사 — 맥락과 우선순위에만 쓴다");
     expect(prompt).toContain("https://example.com/company");
 
+    // 회사 조사에서 나온 말을 사용자 근거인 것처럼 쓰면 안 된다 — 그 판단은
+    // 이제 항목의 재료 번호에서 본다.
     const misused = {
       ...plan,
-      plan: {
-        ...plan.plan,
-        claims: [{ intent: "회사 제품 운영", evidenceSources: [4], allowedNumbers: [] }],
-      },
+      sections: [section({ items: [{ pointText: "회사 제품 운영", sources: [4] }] })],
     };
     const invalid = new StubAiClient([misused]);
     await new AiRecipePlanner(invalid).plan(companyContext);

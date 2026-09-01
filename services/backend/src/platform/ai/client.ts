@@ -47,7 +47,15 @@ export type AiModelTier = (typeof AI_MODEL_TIERS)[number];
  */
 export const DEFAULT_MODEL_TIER: Record<AiContract, AiModelTier> = {
   job_analysis: "opus",
-  recipe_draft: "opus",
+  /*
+   * 레시피는 **계획이지 글이 아니다.** 문장은 03 생성이 쓰고, 여기서 정하는
+   * 것은 무엇을 어떤 순서로 담고 어느 근거에 걸지다.
+   *
+   * 그리고 이 호출의 출력이 크다 — 실측 12,990 토큰이라 티어가 그대로 사용자
+   * 대기 시간이 된다. opus로 8건이 171초였고 10건은 서비스 상한 420초를
+   * 넘겼다. 문장 품질을 사는 자리가 아닌데 그 값을 대기로 치르고 있었다.
+   */
+  recipe_draft: "sonnet",
   layout_draft: "opus",
   // 한 번 뽑아서 오래 쓰는 것 중에서도 가장 그렇다 — 이 호출의 결과가 곧
   // 사람들이 보는 페이지 전체이고, 여기서 아낀 값은 바로 지면 품질로 나온다.

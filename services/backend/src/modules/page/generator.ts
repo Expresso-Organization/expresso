@@ -249,13 +249,17 @@ function buildPrompt(context: PageGenerationContext): string {
     lines.push("");
   }
 
+  /*
+   * 설계안은 이제 여기서 정한다.
+   *
+   * 예전에는 레시피 단계가 자리매김 · 요건 대응 · 주장까지 모델에게 시켜 두고
+   * 그 JSON을 여기 실었다. 레시피가 정할 일이 아니고(사용자는 그 앞에서
+   * 기다린다), 지면을 쓰는 쪽이 지면을 짜면서 함께 판단하는 편이 낫다.
+   * 예전에 그 설계안을 받아 둔 레시피는 계속 그대로 싣는다.
+   */
   if (context.portfolioPlan) {
-    lines.push("## PortfolioPlan v1 — 편집 가능한 구성 맥락");
+    lines.push("## PortfolioPlan v1 — 예전 레시피가 남긴 구성 맥락");
     lines.push(JSON.stringify(context.portfolioPlan, null, 2));
-    lines.push("");
-  } else {
-    lines.push("## PortfolioPlan");
-    lines.push("옛 레시피라 v1 설계안이 없다. 아래 섹션 설계를 참고해 완결된 초안을 만든다.");
     lines.push("");
   }
 
@@ -467,9 +471,9 @@ function pageQa(input: {
   );
   check(
     "portfolio-plan",
-    input.portfolioPlan !== null,
+    true,
     "warning",
-    input.portfolioPlan ? "PortfolioPlan v1 사용" : "옛 레시피 호환 경로",
+    input.portfolioPlan ? "예전 레시피의 설계안을 함께 읽음" : "레시피의 섹션과 근거로 구성",
   );
 
   return {

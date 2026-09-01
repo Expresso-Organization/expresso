@@ -119,7 +119,9 @@ describe("AI 호출 포트", () => {
 
   it("계약마다 모델 티어가 다르다 — 오래 쓰는 것은 비싸게, 기다리는 것은 빠르게", () => {
     expect(DEFAULT_MODEL_TIER.job_analysis).toBe("opus");
-    expect(DEFAULT_MODEL_TIER.recipe_draft).toBe("opus");
+    // 레시피는 계획이지 글이 아니다. 사용자가 그 앞에서 기다리는 자리다.
+    expect(DEFAULT_MODEL_TIER.recipe_draft).toBe("sonnet");
+    expect(DEFAULT_MODEL_TIER.page_generation).toBe("opus");
     expect(DEFAULT_MODEL_TIER.search_interpret).toBe("haiku");
     expect(DEFAULT_MODEL_TIER.insight_note).toBe("haiku");
   });

@@ -57,10 +57,6 @@ const ids = {
 describe("advisory recipe and plan contracts", () => {
   it("keeps a single complete section even when source links and editorial lists are empty", () => {
     expect(RecipeDraftSchema.parse({
-      plan: {
-        positioning: { headlineIntent: "소개", valueProposition: "가치", differentiators: [] },
-        requirementCoverage: [], narrativeArc: "한 페이지 흐름", claims: [], exclusions: [], rationale: "초안 이유",
-      },
       sections: [{
         title: "소개", purpose: "전체 초안", targetLength: 0, goal: "읽기 시작", points: [], metrics: [],
         tone: "professional", format: "narrative", exclude: [], takeaway: "한 가지", contentPattern: "hero",

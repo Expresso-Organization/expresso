@@ -104,10 +104,9 @@ const SYSTEM = [
   "- contentPattern: hero · case-study · metrics · timeline · capabilities · about · contact 중 하나.",
   "- interactionOpportunity: 내용을 더 잘 이해시키는 상호작용. 필요 없으면 null.",
   "",
-  "## 설계안 맥락",
-  "- positioning, requirementCoverage, evidenceSources, claims는 사용자가 검토·편집할 연결 제안이다.",
-  "- missing 요건과 빈 evidenceSources는 그대로 남길 수 있다. 채우려고 특정 경험을 지어내지 않는다.",
-  "- 특정 숫자·회사명·프로젝트를 임의로 만들지 않고, 회사 조사 fact와 signal은 맥락으로 구분한다.",
+  "## 지어내지 않는다",
+  "- 특정 숫자·회사명·프로젝트를 임의로 만들지 않는다. 회사 조사 fact와 signal은 맥락으로 구분한다.",
+  "- 재료가 닿지 않는 요건은 비워 둔다. 채우려고 없는 경험을 만들지 않는다.",
 ].join("\n");
 
 const SOURCE_KIND: Record<PlannerSourceType, string> = {
@@ -199,42 +198,6 @@ export class DeterministicRecipePlanner implements RecipePlanner {
     const cited = new Set(used.map(({ number }) => number));
 
     const draft = RecipeDraftSchema.parse({
-      plan: {
-        positioning: {
-          headlineIntent: context.jobTitle
-            ? `${context.jobTitle}에 연결되는 검증된 경험을 먼저 제시`
-            : context.freeTitle
-              ? `${context.freeTitle}에 맞는 검증된 경험을 먼저 제시`
-              : "검증된 경험을 먼저 제시",
-          valueProposition: "선택한 기록의 행동과 결과로 기여 가능성을 설명",
-          differentiators: ["근거가 연결된 실제 프로젝트"],
-        },
-        requirementCoverage: context.sources.flatMap((source, index) => {
-          if (source.type !== "requirement") return [];
-          const evidence = used.filter(({ source: usedSource }) =>
-            usedSource.type === "record" || usedSource.type === "answer");
-          return [{
-            requirementSource: index + 1,
-            priority: source === context.sources.find((entry) => entry.type === "requirement") ? 1 : 0.7,
-            evidenceSources: evidence.slice(0, 2).map(({ number }) => number),
-            coverage: evidence.length > 0 ? "partial" as const : "missing" as const,
-            reason: evidence.length > 0
-              ? "선택된 사용자 근거와 함께 검토 필요"
-              : "연결할 사용자 근거가 없음",
-          }];
-        }),
-        narrativeArc: "지원 직무와 연결되는 경험에서 구체적인 실행과 결과로 진행",
-        claims: used.flatMap(({ source, number }) =>
-          source.type === "record" || source.type === "answer"
-            ? [{
-              intent: source.label.slice(0, 500),
-              evidenceSources: [number],
-              allowedNumbers: [],
-            }]
-            : []),
-        exclusions: ["근거 없는 수치", "출처 없는 주장", "회사 조사로 만든 사용자 경험"],
-        rationale: "공고 요건과 선택된 사용자 근거를 우선 배치한 규칙 기반 설계안",
-      },
       sections: titles.map((title, index) => ({
         title,
         purpose: `${title}에 맞는 근거를 배치`,

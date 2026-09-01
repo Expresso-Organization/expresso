@@ -189,59 +189,6 @@ export class RecipeService {
         `;
       }
 
-      const sourceAt = (number: number) => context.sources[number - 1];
-      const portfolioPlan = PortfolioPlanSchema.parse({
-        version: 1,
-        target: {
-          company: context.freeTitle ?? context.company?.name ?? "지원 회사",
-          role: context.freeTitle ? "자유 포트폴리오" : context.jobTitle ?? "지원 직무",
-          primaryReaders: context.freeTitle ? ["일반 방문자"] : ["채용 담당자", "실무 리드"],
-          decisionGoal: context.freeBrief
-            ? context.freeBrief.slice(0, 500)
-            : "실제 근거를 바탕으로 인터뷰 대상으로 판단하게 한다",
-        },
-        positioning: draft.plan.positioning,
-        requirementCoverage: draft.plan.requirementCoverage.flatMap((entry) => {
-          const requirement = sourceAt(entry.requirementSource);
-          if (!requirement || requirement.type !== "requirement") return [];
-          return [{
-            requirementId: requirement.id,
-            requirementLabel: requirement.label,
-            priority: entry.priority,
-            evidenceIds: entry.evidenceSources.flatMap((number) => {
-              const source = sourceAt(number);
-              return source && (source.type === "record" || source.type === "answer")
-                ? [source.id]
-                : [];
-            }),
-            coverage: entry.coverage,
-            reason: entry.reason,
-          }];
-        }),
-        narrative: {
-          arc: draft.plan.narrativeArc,
-          sectionOrder: plannedSections.map(({ id }) => id),
-        },
-        sections: plannedSections,
-        claims: draft.plan.claims.map((claim, index) => ({
-          id: `claim-${index + 1}`,
-          intent: claim.intent,
-          evidenceIds: claim.evidenceSources.flatMap((number) => {
-            const source = sourceAt(number);
-            return source && (source.type === "record" || source.type === "answer")
-              ? [source.id]
-              : [];
-          }),
-          allowedNumbers: claim.allowedNumbers,
-        })),
-        exclusions: draft.plan.exclusions,
-        unusedEvidence: draft.unused.flatMap(({ source, reason }) => {
-          const entry = sourceAt(source);
-          return entry?.type === "record" ? [{ evidenceId: entry.id, reason }] : [];
-        }),
-        companyContext: context.companyResearch,
-        rationale: draft.plan.rationale,
-      });
       const planningManifest = {
         methodologyVersion: 1 as const,
         model: planned.usage?.model ?? null,
@@ -268,7 +215,6 @@ export class RecipeService {
       };
       await transaction`
         update recipe set
-          portfolio_plan = ${transaction.json(portfolioPlan as JSONValue)},
           planning_manifest = ${transaction.json(planningManifest as JSONValue)}
         where user_id = ${userId} and id = ${recipe.id}
       `;
