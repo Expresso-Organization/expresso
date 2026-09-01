@@ -1,0 +1,442 @@
+openapi: 3.1.0
+info:
+  title: Expresso CareerRecord Spring Slice 1 API
+  version: 1.0.0
+  description: >-
+    CareerRecord의 첫 Spring vertical slice를 위한 언어 중립 계약이다.
+    title, propertyValues, blockBody만 새 기록 데이터의 canonical source로 다룬다.
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+security:
+  - bearerAuth: []
+tags:
+  - name: Career
+
+paths:
+  /v1/career/categories:
+    get:
+      tags: [Career]
+      operationId: listCareerCategories
+      summary: 기록 생성에 사용할 카테고리와 TEXT 프로퍼티 정의 조회
+      responses:
+        "200":
+          description: 카테고리 목록
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CareerCategoriesResponse"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+
+  /v1/career/records:
+    post:
+      tags: [Career]
+      operationId: createCareerRecord
+      summary: 빈 CareerRecord 생성
+      description: >-
+        처음 처리하는 Idempotency-Key와 요청은 201을 반환한다. 같은 인증 사용자에게서
+        같은 key와 같은 요청이 재전송되면 같은 Record를 200으로 반환하고, 같은 key에
+        다른 요청을 보내면 409를 반환한다.
+      x-idempotency:
+        scope: authenticated-user
+        header: Idempotency-Key
+        sameKeySameRequest: return-same-record
+        sameKeyDifferentRequest: "409"
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCareerRecordRequest"
+      responses:
+        "201":
+          $ref: "#/components/responses/CareerRecordCreated"
+        "200":
+          $ref: "#/components/responses/CareerRecordReplayed"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "409":
+          $ref: "#/components/responses/IdempotencyConflict"
+
+  /v1/career/records/{recordId}:
+    parameters:
+      - $ref: "#/components/parameters/RecordIdPath"
+    get:
+      tags: [Career]
+      operationId: getCareerRecord
+      summary: CareerRecord 단건 조회
+      responses:
+        "200":
+          $ref: "#/components/responses/CareerRecordOk"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          $ref: "#/components/responses/RecordNotFound"
+    patch:
+      tags: [Career]
+      operationId: patchCareerRecord
+      summary: CareerRecord canonical 필드 수정
+      description: >-
+        If-Match가 현재 version과 일치할 때만 수정한다. 오래된 version이면 412를
+        반환한다. 다른 사용자가 소유한 Record도 존재 여부를 숨기기 위해 404를 반환한다.
+      parameters:
+        - $ref: "#/components/parameters/IfMatchHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchCareerRecordRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/CareerRecordOk"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          $ref: "#/components/responses/RecordNotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  parameters:
+    RecordIdPath:
+      name: recordId
+      in: path
+      required: true
+      description: 조회하거나 수정할 CareerRecord ID
+      schema:
+        $ref: "#/components/schemas/Uuid"
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: 인증 사용자 범위에서 생성 요청을 식별하는 키
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+        pattern: '^[A-Za-z0-9._~:+\-/]+$'
+    IfMatchHeader:
+      name: If-Match
+      in: header
+      required: true
+      description: '현재 Record version을 나타내는 strong ETag. 예: "v3"'
+      schema:
+        $ref: "#/components/schemas/RecordEtag"
+
+  headers:
+    RecordETag:
+      description: '응답 data.version에서 만든 strong ETag. 형식: "v{version}"'
+      schema:
+        $ref: "#/components/schemas/RecordEtag"
+
+  responses:
+    CareerRecordCreated:
+      description: 처음 생성된 CareerRecord
+      headers:
+        ETag:
+          $ref: "#/components/headers/RecordETag"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CareerRecordResponse"
+    CareerRecordReplayed:
+      description: 같은 Idempotency-Key와 같은 요청에 대해 처음 생성했던 CareerRecord
+      headers:
+        ETag:
+          $ref: "#/components/headers/RecordETag"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CareerRecordResponse"
+    CareerRecordOk:
+      description: 현재 CareerRecord
+      headers:
+        ETag:
+          $ref: "#/components/headers/RecordETag"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CareerRecordResponse"
+    BadRequest:
+      description: 헤더, 경로 또는 본문이 계약에 맞지 않음
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    AuthenticationRequired:
+      description: 유효한 Bearer 인증이 필요함
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    RecordNotFound:
+      description: Record가 없거나 인증 사용자가 소유하지 않아 존재 여부를 숨김
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    IdempotencyConflict:
+      description: 같은 Idempotency-Key가 다른 생성 요청에 이미 사용됨
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    PreconditionFailed:
+      description: If-Match version이 현재 CareerRecord version보다 오래됨
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+
+    Timestamp:
+      type: string
+      format: date-time
+
+    RecordEtag:
+      type: string
+      pattern: '^"v[1-9][0-9]*"$'
+      examples: ['"v1"', '"v3"']
+
+    TextPropertyDefinition:
+      type: object
+      additionalProperties: false
+      description: >-
+        ID는 생성 후 바뀌지 않으며 PropertyValue가 참조하는 유일한 식별자다.
+        title은 별도 root field이므로 이 목록에 PropertyDefinition으로 중복하지 않는다.
+      required: [id, key, label, type, required, system]
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        key:
+          type: string
+          pattern: '^[A-Za-z][A-Za-z0-9_]{0,63}$'
+        label:
+          type: string
+          minLength: 1
+          maxLength: 80
+        type:
+          type: string
+          const: text
+        required:
+          type: boolean
+        system:
+          type: boolean
+
+    CareerCategory:
+      type: object
+      additionalProperties: false
+      required: [id, key, name, propertyDefinitions]
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        key:
+          type: string
+          minLength: 1
+          maxLength: 80
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        propertyDefinitions:
+          type: array
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/TextPropertyDefinition"
+
+    CareerCategoriesResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CareerCategory"
+
+    TextPropertyValue:
+      type: object
+      additionalProperties: false
+      required: [propertyDefinitionId, type, value]
+      properties:
+        propertyDefinitionId:
+          $ref: "#/components/schemas/Uuid"
+        type:
+          type: string
+          const: text
+        value:
+          type: string
+          maxLength: 5000
+
+    PropertyValues:
+      type: array
+      maxItems: 50
+      uniqueItems: true
+      x-expresso-uniqueBy: propertyDefinitionId
+      description: >-
+        같은 propertyDefinitionId는 한 번만 나타나야 한다. uniqueItems는 완전히 같은
+        객체의 중복만 거절하므로, x-expresso-uniqueBy는 application/domain validation이
+        서로 다른 value를 가진 같은 ID도 거절해야 한다는 invariant를 전달하는
+        metadata다. 이 extension 자체가 런타임 validation을 수행하지 않는다. 첫
+        Slice에서는 TEXT 값만 입력할 수 있으며 key 기반 객체는 허용하지 않는다.
+      items:
+        $ref: "#/components/schemas/TextPropertyValue"
+
+    TextSpan:
+      type: object
+      additionalProperties: false
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 200000
+
+    ParagraphBlock:
+      type: object
+      additionalProperties: false
+      required: [id, type, attrs, text]
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        type:
+          type: string
+          const: paragraph
+        attrs:
+          type: object
+          additionalProperties: false
+        text:
+          type: array
+          items:
+            $ref: "#/components/schemas/TextSpan"
+
+    BlockBody:
+      type: object
+      additionalProperties: false
+      required: [schemaVersion, type, content]
+      properties:
+        schemaVersion:
+          type: integer
+          const: 1
+        type:
+          type: string
+          const: doc
+        content:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ParagraphBlock"
+
+    CareerRecord:
+      type: object
+      additionalProperties: false
+      description: >-
+        title, propertyValues, blockBody가 새 기록의 canonical 데이터다. status와 bodyMd는
+        이 계약에 포함하지 않는다.
+      required:
+        - id
+        - categoryId
+        - title
+        - propertyValues
+        - blockBody
+        - version
+        - updatedAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        categoryId:
+          $ref: "#/components/schemas/Uuid"
+        title:
+          type: string
+          maxLength: 300
+        propertyValues:
+          $ref: "#/components/schemas/PropertyValues"
+        blockBody:
+          $ref: "#/components/schemas/BlockBody"
+        version:
+          type: integer
+          minimum: 1
+          description: 성공한 변경마다 증가하며 ETag의 숫자와 일치함
+        updatedAt:
+          $ref: "#/components/schemas/Timestamp"
+
+    CreateCareerRecordRequest:
+      type: object
+      additionalProperties: false
+      required: [categoryId]
+      properties:
+        categoryId:
+          $ref: "#/components/schemas/Uuid"
+
+    PatchCareerRecordRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      maxProperties: 3
+      properties:
+        title:
+          type: string
+          maxLength: 300
+        propertyValues:
+          $ref: "#/components/schemas/PropertyValues"
+        blockBody:
+          $ref: "#/components/schemas/BlockBody"
+
+    CareerRecordResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/CareerRecord"
+
+    ApiError:
+      type: object
+      additionalProperties: false
+      required: [code, message, requestId]
+      properties:
+        code:
+          type: string
+          enum:
+            - AUTH_REQUIRED
+            - NOT_FOUND
+            - VALIDATION_ERROR
+            - CONFLICT
+            - PRECONDITION_FAILED
+            - INTERNAL_ERROR
+        message:
+          type: string
+          minLength: 1
+          maxLength: 500
+        requestId:
+          type: string
+          minLength: 8
+          maxLength: 128
+        details:
+          type: object
+          additionalProperties: true
+
+    ApiErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          $ref: "#/components/schemas/ApiError"
