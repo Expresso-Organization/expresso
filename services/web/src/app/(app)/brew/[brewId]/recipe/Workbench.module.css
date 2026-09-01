@@ -290,33 +290,11 @@
   font-size: var(--ex-text-3xs);
 }
 
-.railHint,
 .railEmpty {
-  margin: 0 0 8px;
-  color: var(--ex-fg-subtle);
+  margin: 0;
+  color: var(--ex-fg-muted);
   font-size: var(--ex-text-3xs);
   line-height: 1.65;
-}
-
-.railEmpty { color: var(--ex-fg-muted); }
-
-.search {
-  flex-shrink: 0;
-  width: 100%;
-  margin-bottom: 8px;
-  padding: 6px 9px;
-  border: 1px solid var(--ex-border);
-  border-radius: 8px;
-  background: var(--ex-bg-sunken);
-  color: var(--ex-fg);
-  font-family: inherit;
-  font-size: var(--ex-text-2xs);
-}
-
-.search:focus {
-  outline: none;
-  border-color: var(--ex-border-firm);
-  background: var(--ex-bg);
 }
 
 /* ── 목차 ────────────────────────────────────────────────── */
@@ -366,116 +344,6 @@
   font-family: var(--ex-font-mono);
   font-size: var(--ex-text-3xs);
   font-style: normal;
-}
-
-/* ── 기록 줄 ─────────────────────────────────────────────── */
-
-.recordList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.recordRow {
-  width: 100%;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 8px;
-  border: 0;
-  border-radius: 8px;
-  background: none;
-  color: var(--ex-fg-muted);
-  text-align: left;
-  font-family: inherit;
-  cursor: pointer;
-}
-
-.recordRow:hover:not(:disabled) {
-  background: var(--ex-accent-surface);
-  color: var(--ex-accent-text);
-}
-
-.recordRow:disabled { cursor: default; }
-
-.recordText {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.recordText strong {
-  color: var(--ex-fg);
-  font-size: var(--ex-text-2xs);
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.recordText small {
-  color: var(--ex-fg-subtle);
-  font-size: var(--ex-text-3xs);
-}
-
-.recordText em {
-  color: var(--ex-accent-text);
-  font-size: var(--ex-text-3xs);
-  font-style: normal;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.recordRow[data-used="1"] .recordText strong { color: var(--ex-accent-ink); }
-
-.recordRow[data-bound="1"] {
-  background: var(--ex-accent-surface);
-  color: var(--ex-accent-text);
-}
-
-.unused {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--ex-border-hair);
-}
-
-.unused h3 {
-  margin: 0 0 6px;
-  color: var(--ex-fg-muted);
-  font-size: var(--ex-text-3xs);
-  font-weight: 500;
-}
-
-.unused ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.unused li {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.unused strong {
-  color: var(--ex-fg-body);
-  font-size: var(--ex-text-3xs);
-  font-weight: 500;
-}
-
-.unused span {
-  color: var(--ex-fg-subtle);
-  font-size: var(--ex-text-3xs);
-  line-height: 1.55;
 }
 
 /* ── 레시피 ──────────────────────────────────────────────── */
@@ -820,4 +688,74 @@
   .rail,
   .itemTools,
   .sectionTools { transition: none; }
+}
+
+/* ── 항목에 근거 더하기 ──────────────────────────────────── */
+
+.addSource {
+  position: relative;
+  display: inline-flex;
+}
+
+.addSource > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border: 1px dashed var(--ex-border-firm);
+  border-radius: 999px;
+  background: none;
+  color: var(--ex-fg-faint);
+  font-family: inherit;
+  font-size: var(--ex-text-3xs);
+  cursor: pointer;
+}
+
+.addSource > button:hover {
+  border-color: var(--ex-accent);
+  color: var(--ex-accent-text);
+}
+
+.sourceMenu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 5px);
+  left: 0;
+  width: 280px;
+  max-height: 260px;
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+  border: 1px solid var(--ex-border);
+  border-radius: 11px;
+  background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-overlay);
+  overflow-y: auto;
+}
+
+.sourceMenu button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--ex-fg);
+  font-family: inherit;
+  font-size: var(--ex-text-2xs);
+  text-align: left;
+  cursor: pointer;
+}
+
+.sourceMenu button:hover:not(:disabled) {
+  background: var(--ex-accent-surface);
+  color: var(--ex-accent-text);
+}
+
+.sourceMenu em {
+  padding: 8px 9px;
+  color: var(--ex-fg-subtle);
+  font-size: var(--ex-text-3xs);
+  font-style: normal;
 }

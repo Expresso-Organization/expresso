@@ -11,14 +11,12 @@ import { JobPostingPicker } from "./JobPostingPicker";
 import { editRecipeAction, reorderRecipeAction } from "./recipe-actions";
 import styles from "./Workbench.module.css";
 
+/** 문서에서 근거로 걸 수 있는 것 — 이 제작에 고른 기록. */
 export type RecordCard = {
   recordId: string;
   title: string;
   categoryName: string;
   categoryIcon: string;
-  periodFrom: string | null;
-  periodTo: string | null;
-  reason: string;
 };
 
 type Item = RecipeV2["sections"][number]["items"][number];
@@ -45,22 +43,20 @@ export function Workbench({
   initialRecipe,
   records,
   designName,
-  draftAction,
 }: {
   brewId: string;
   initialRecipe: RecipeV2;
   records: RecordCard[];
   designName: string | null;
-  /** 「초안 다시 만들기」. 잡을 걸고 화면은 서버 상태를 다시 읽는다. */
-  draftAction: (formData: FormData) => Promise<void>;
 }) {
   const [recipe, setRecipe] = useState(initialRecipe);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const [query, setQuery] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [postingMenu, setPostingMenu] = useState(false);
+  /** 「+ 근거」를 연 항목. 고른 기록 중에서 고른다. */
+  const [sourcePickerFor, setSourcePickerFor] = useState<string | null>(null);
   const [intentOpen, setIntentOpen] = useState(false);
   const [railOpen, setRailOpen] = useState(false);
 
@@ -71,33 +67,13 @@ export function Workbench({
   const selected = placed.find(({ item }) => item.id === selectedId) ?? null;
   const recordById = useMemo(() => new Map(records.map((record) => [record.recordId, record])), [records]);
 
-  const shown = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return records;
-    return records.filter(
-      (record) =>
-        record.title.toLowerCase().includes(needle) || record.categoryName.toLowerCase().includes(needle),
-    );
-  }, [records, query]);
-
-  /** 어느 기록이 레시피의 어디에 쓰이는지(§7.5). */
-  const usage = useMemo(() => {
-    const map = new Map<string, string[]>();
-    for (const { section, item } of placed) {
-      for (const binding of item.sourceBindings) {
-        if (binding.sourceType !== "record") continue;
-        const at = `${no(section.order)} ${section.title || "이름 없는 섹션"}`;
-        map.set(binding.sourceId, [...new Set([...(map.get(binding.sourceId) ?? []), at])]);
-      }
-    }
-    return map;
-  }, [placed]);
 
   useEffect(() => {
     function close(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
       setPostingMenu(false);
       setRailOpen(false);
+      setSourcePickerFor(null);
     }
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
@@ -249,13 +225,9 @@ export function Workbench({
           ) : null}
         </span>
         <span className={styles.counts}>섹션 {recipe.sections.length} · 내용 {placed.length}</span>
-        <form action={draftAction} className={styles.redraft}>
-          <input type="hidden" name="brewId" value={brewId} />
-          <input type="hidden" name="previousRecipeId" value={recipe.id} />
-          <button type="submit" title="지금 내용을 버리고 AI가 다시 짭니다">
-            <Icon name="sparkle" size={12} /> 초안 다시
-          </button>
-        </form>
+        <Link href={`/brew/${brewId}/recipe?setup=1` as Route} className={styles.chip}>
+          <Icon name="arrow-counter-clockwise" size={12} /> 재료 다시 고르기
+        </Link>
       </header>
 
       {intentOpen ? (
@@ -319,7 +291,7 @@ export function Workbench({
       <div className={styles.panes}>
         {/* ── 왼쪽 · 목차와 기록 ───────────────────────────── */}
         <aside className={styles.rail} data-open={railOpen ? "1" : undefined}>
-          <section className={styles.railBlock}>
+          <section className={styles.railBlock} data-grow="1">
             <div className={styles.railHead}>
               <h2>목차</h2>
               <span>{recipe.sections.length}</span>
@@ -345,78 +317,6 @@ export function Workbench({
             )}
           </section>
 
-          <section className={styles.railBlock} data-grow="1">
-            <div className={styles.railHead}>
-              <h2>커리어 기록</h2>
-              <span>{records.length}</span>
-            </div>
-            <input
-              className={styles.search}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="검색"
-            />
-            <p className={styles.railHint}>
-              {selected ? "누르면 고른 내용의 근거가 됩니다." : "내용을 먼저 고르면 근거로 붙일 수 있습니다."}
-            </p>
-            {records.length === 0 ? (
-              <p className={styles.railEmpty}>
-                걸린 기록이 없습니다. 근거 없이도 무엇을 말할지 적어 만들 수 있습니다.
-              </p>
-            ) : (
-              <ul className={styles.recordList}>
-                {shown.map((record) => {
-                  const used = usage.get(record.recordId) ?? [];
-                  const bound = selected?.item.sourceBindings.some(({ sourceId }) => sourceId === record.recordId) ?? false;
-                  return (
-                    <li key={record.recordId}>
-                      <button
-                        type="button"
-                        className={styles.recordRow}
-                        data-bound={bound ? "1" : undefined}
-                        data-used={used.length ? "1" : undefined}
-                        disabled={!selected || bound || pending}
-                        onClick={() =>
-                          selected &&
-                          run({
-                            operation: "bind_source",
-                            itemId: selected.item.id,
-                            sourceType: "record",
-                            sourceId: record.recordId,
-                            role: selected.item.sourceBindings.some(({ role }) => role === "primary")
-                              ? "supporting"
-                              : "primary",
-                          })
-                        }
-                      >
-                        <Icon name={record.categoryIcon} size={13} />
-                        <span className={styles.recordText}>
-                          <strong>{record.title}</strong>
-                          <small>{record.categoryName} · {period(record.periodFrom, record.periodTo)}</small>
-                          {used.length ? <em>{used.join(" · ")}</em> : null}
-                        </span>
-                        <Icon name={bound ? "check" : "plus"} size={12} />
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-
-            {recipe.unusedSources.length ? (
-              <div className={styles.unused}>
-                <h3>이번엔 안 쓴 기록</h3>
-                <ul>
-                  {recipe.unusedSources.map(({ recordId, reason }) => (
-                    <li key={recordId}>
-                      <strong>{recordById.get(recordId)?.title ?? "지난 기록"}</strong>
-                      <span>{reason}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </section>
         </aside>
 
         {/* ── 가운데 · 레시피 ──────────────────────────────── */}
@@ -492,12 +392,69 @@ export function Workbench({
                             if (text !== item.text) void run({ operation: "update_item", itemId: item.id, text });
                           }}
                         />
-                        <SourceChips
-                          item={item}
-                          recordById={recordById}
-                          pending={pending}
-                          onUnbind={(sourceId) => run({ operation: "unbind_source", itemId: item.id, sourceId })}
-                        />
+                        <span className={styles.chips}>
+                          {item.sourceBindings.map((binding) => (
+                            <span
+                              key={binding.sourceId}
+                              className={styles.sourceChip}
+                              data-primary={binding.role === "primary" ? "1" : undefined}
+                            >
+                              {binding.sourceType === "record"
+                                ? recordById.get(binding.sourceId)?.title ?? "지난 기록"
+                                : SOURCE_LABEL[binding.sourceType]}
+                              <button
+                                type="button"
+                                onClick={() => run({ operation: "unbind_source", itemId: item.id, sourceId: binding.sourceId })}
+                                disabled={pending}
+                                aria-label="근거 떼기"
+                              >
+                                <Icon name="x" size={9} />
+                              </button>
+                            </span>
+                          ))}
+                          <span className={styles.addSource}>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setSourcePickerFor(sourcePickerFor === item.id ? null : item.id);
+                              }}
+                              aria-expanded={sourcePickerFor === item.id}
+                            >
+                              <Icon name="plus" size={9} /> 근거
+                            </button>
+                            {sourcePickerFor === item.id ? (
+                              <span className={styles.sourceMenu} onClick={(event) => event.stopPropagation()}>
+                                {records.filter((record) => !item.sourceBindings.some(({ sourceId }) => sourceId === record.recordId)).length === 0 ? (
+                                  <em>고른 기록을 모두 걸었습니다.</em>
+                                ) : (
+                                  records
+                                    .filter((record) => !item.sourceBindings.some(({ sourceId }) => sourceId === record.recordId))
+                                    .map((record) => (
+                                      <button
+                                        key={record.recordId}
+                                        type="button"
+                                        onClick={() => {
+                                          setSourcePickerFor(null);
+                                          void run({
+                                            operation: "bind_source",
+                                            itemId: item.id,
+                                            sourceType: "record",
+                                            sourceId: record.recordId,
+                                            role: item.sourceBindings.some(({ role }) => role === "primary") ? "supporting" : "primary",
+                                          });
+                                        }}
+                                        disabled={pending}
+                                      >
+                                        <Icon name={record.categoryIcon} size={12} />
+                                        {record.title}
+                                      </button>
+                                    ))
+                                )}
+                              </span>
+                            ) : null}
+                          </span>
+                        </span>
                       </div>
                       <span className={styles.itemTools}>
                         <button type="button" onClick={() => moveItem(sectionIndex, itemIndex, -1)} disabled={pending} aria-label="위로">
@@ -599,34 +556,5 @@ function AutoTextarea({
       onInput={(event) => fit(event.currentTarget)}
       onBlur={(event) => onCommit(event.target.value.trim())}
     />
-  );
-}
-
-/** 이 내용이 딛는 근거. 중심 하나와 보조들. */
-function SourceChips({
-  item,
-  recordById,
-  pending,
-  onUnbind,
-}: {
-  item: Item;
-  recordById: Map<string, RecordCard>;
-  pending: boolean;
-  onUnbind: (sourceId: string) => void;
-}) {
-  if (item.sourceBindings.length === 0) return null;
-  return (
-    <span className={styles.chips}>
-      {item.sourceBindings.map((binding) => (
-        <span key={binding.sourceId} className={styles.sourceChip} data-primary={binding.role === "primary" ? "1" : undefined}>
-          {binding.sourceType === "record"
-            ? recordById.get(binding.sourceId)?.title ?? "지난 기록"
-            : SOURCE_LABEL[binding.sourceType]}
-          <button type="button" onClick={() => onUnbind(binding.sourceId)} disabled={pending} aria-label="근거 떼기">
-            <Icon name="x" size={9} />
-          </button>
-        </span>
-      ))}
-    </span>
   );
 }

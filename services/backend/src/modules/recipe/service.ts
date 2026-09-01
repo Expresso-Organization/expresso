@@ -30,7 +30,9 @@ export class RecipeService implements RecipeApi {
     if (!brew) throw new RecipeError(404, "brew not found");
     const analysis = await db.jobAnalyses.findOne({ _id: brew.jobAnalysisId, userId });
     if (!analysis) throw new RecipeError(404, "job analysis not found");
-    const brewSources = await db.brewSources.find({ userId, brewId, isSelected: true }).sort({ rank: 1, _id: 1 }).limit(8).toArray();
+    // 고른 재료는 전부 모델에게 간다. 상한은 고르기 쪽 상한(`UpdateBrewMaterialsSchema`)과 같은 10이다 —
+    // 8로 잘려 있던 동안, 10건을 고른 사용자의 2건은 레시피에도 「안 쓴 기록」에도 없이 사라졌다.
+    const brewSources = await db.brewSources.find({ userId, brewId, isSelected: true }).sort({ rank: 1, _id: 1 }).limit(10).toArray();
     const records = await db.careerRecords.find({ userId, _id: { $in: brewSources.map(({ recordId }) => recordId) }, deletedAt: null }).toArray();
     const byId = new Map(records.map((record) => [record._id, record])); const orderedRecords = brewSources.flatMap(({ recordId }) => byId.get(recordId) ? [byId.get(recordId)!] : []);
     const requirements = analysis.jobPostingId ? await db.jobPostingRequirements.find({ jobPostingId: analysis.jobPostingId }).sort({ orderNo: 1, _id: 1 }).toArray() : [];

@@ -1,0 +1,368 @@
+/*
+ * 레시피를 만들기 전에 고르는 화면.
+ *
+ * 고르는 일이 한 화면을 다 쓴다. 레일에 접어 넣으면 글자가 빽빽해지고, 무엇을
+ * 고르는 자리인지 알아보기 어려워진다.
+ */
+
+.setup {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 28px 24px 72px;
+  background: var(--ex-bg-sunken);
+  overflow-y: auto;
+}
+
+.sheet {
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.head h1 {
+  margin: 0;
+  color: var(--ex-fg);
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-3xl);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.head p {
+  margin: 8px 0 0;
+  max-width: 52ch;
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-xs);
+  line-height: 1.75;
+}
+
+.head b {
+  color: var(--ex-fg-body);
+  font-weight: 600;
+}
+
+.failure {
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--ex-status-danger);
+  border-radius: 10px;
+  background: var(--ex-status-danger-surface);
+  color: var(--ex-status-danger-text);
+  font-size: var(--ex-text-2xs);
+  line-height: 1.65;
+}
+
+.block {
+  padding: 18px 20px 20px;
+  border: 1px solid var(--ex-border);
+  border-radius: 14px;
+  background: var(--ex-bg);
+}
+
+.blockHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.blockHead h2 {
+  margin: 0;
+  color: var(--ex-fg);
+  font-size: var(--ex-text-md);
+  font-weight: 600;
+}
+
+.blockHead span {
+  color: var(--ex-fg-subtle);
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-3xs);
+}
+
+.blockHead span[data-full="1"] {
+  color: var(--ex-accent-text);
+}
+
+.blockNote {
+  margin: 0;
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-2xs);
+  line-height: 1.75;
+}
+
+.blockNote a {
+  color: var(--ex-accent-text);
+}
+
+/* ── 지원할 공고 ─────────────────────────────────────────── */
+
+.posting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 1px solid var(--ex-accent-soft);
+  border-radius: 10px;
+  background: var(--ex-accent-surface);
+}
+
+.posting > span {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--ex-accent-ink);
+  font-size: var(--ex-text-3xs);
+}
+
+.posting strong {
+  color: var(--ex-accent-text);
+  font-size: var(--ex-text-2xs);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.posting > button {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  border: 1px solid var(--ex-accent-soft);
+  border-radius: 7px;
+  background: var(--ex-bg);
+  color: var(--ex-accent-text);
+  font-family: inherit;
+  font-size: var(--ex-text-3xs);
+  cursor: pointer;
+}
+
+.postingActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.ghostButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--ex-border);
+  border-radius: 8px;
+  background: var(--ex-bg);
+  color: var(--ex-fg-body);
+  font-family: inherit;
+  font-size: var(--ex-text-2xs);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ghostButton:hover {
+  border-color: var(--ex-accent);
+  color: var(--ex-accent-text);
+}
+
+/* ── 쓸 기록 ─────────────────────────────────────────────── */
+
+.records {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.record {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  color: var(--ex-fg-muted);
+  cursor: pointer;
+}
+
+.record:hover {
+  background: var(--ex-bg-hover);
+}
+
+.record[data-on="1"] {
+  color: var(--ex-accent-text);
+}
+
+.record input {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  accent-color: var(--ex-accent);
+  cursor: pointer;
+}
+
+.record input:disabled {
+  cursor: default;
+}
+
+.recordText {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.recordText strong {
+  color: var(--ex-fg);
+  font-size: var(--ex-text-xs);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recordText small {
+  flex-shrink: 0;
+  color: var(--ex-fg-subtle);
+  font-size: var(--ex-text-3xs);
+}
+
+.record em {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  color: var(--ex-fg-faint);
+  font-size: var(--ex-text-3xs);
+  font-style: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 제작 의도 ───────────────────────────────────────────── */
+
+.intentToggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ex-fg);
+  font-family: inherit;
+  font-size: var(--ex-text-md);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.intentToggle > span {
+  color: var(--ex-fg-subtle);
+  font-size: var(--ex-text-3xs);
+  font-weight: 400;
+}
+
+.intentFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+  margin-top: 14px;
+}
+
+.wide {
+  grid-column: span 2;
+}
+
+.intentFields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.intentFields label > span {
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-3xs);
+}
+
+.intentFields input,
+.intentFields select,
+.intentFields textarea {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--ex-border);
+  border-radius: 8px;
+  background: var(--ex-bg-sunken);
+  color: var(--ex-fg);
+  font-family: inherit;
+  font-size: var(--ex-text-xs);
+  resize: vertical;
+}
+
+.intentFields input:focus,
+.intentFields select:focus,
+.intentFields textarea:focus {
+  outline: none;
+  border-color: var(--ex-border-firm);
+  background: var(--ex-bg);
+  box-shadow: var(--ex-focus-ring);
+}
+
+/* ── 만들기 ──────────────────────────────────────────────── */
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.foot > span {
+  color: var(--ex-fg-subtle);
+  font-size: var(--ex-text-3xs);
+}
+
+.primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 22px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
+  font-family: inherit;
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--ex-accent-hover);
+}
+
+.primary:disabled {
+  background: var(--ex-bg-muted);
+  color: var(--ex-fg-faint);
+  cursor: default;
+}
+
+@media (max-width: 767px) {
+  .setup {
+    padding: 20px 16px 64px;
+  }
+
+  .intentFields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wide {
+    grid-column: span 1;
+  }
+
+  .record em {
+    display: none;
+  }
+}

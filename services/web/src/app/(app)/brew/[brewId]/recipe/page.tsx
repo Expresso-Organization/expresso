@@ -5,27 +5,31 @@ import { brews, designSystems, recipeV2 } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { BrewFrame } from "../BrewFrame";
-import { Waiting } from "../Waiting";
+import { Setup, type SetupRecord } from "./Setup";
+import { Waiting } from "./Waiting";
 import { Workbench, type RecordCard } from "./Workbench";
 import { draftRecipeAction } from "./recipe-actions";
 
 /**
  * 02 레시피.
  *
- * 사용자가 정하는 것은 **어떤 내용이 어떤 순서로 들어갈지**다. 지면의 모양은
- * 01에서 고른 디자인 안에서 03 생성이 정한다
- * (`docs/architecture/portfolio-creation-flow-v2.md` §7).
+ * 두 화면이다. 들어오면 **무엇을 겨냥하고 무엇을 쓸지 고르고**, 「레시피
+ * 만들기」를 누르면 AI가 짠 문서가 나온다. 그 뒤로는 문서를 고치는 화면이다.
  *
- * 첫 화면은 빈 지면이 아니라 AI가 만든 초안이다 — 사용자가 하는 일은 조립이
- * 아니라 고치기다.
+ * 정하는 것은 어떤 내용이 어떤 순서로 들어갈지뿐이다. 지면의 모양은 01에서
+ * 고른 디자인 안에서 03 생성이 정한다
+ * (`docs/architecture/portfolio-creation-flow-v2.md` §7).
  */
 export default async function RecipePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ brewId: string }>;
+  searchParams: Promise<{ setup?: string }>;
 }) {
   const session = await requireSession();
   const { brewId } = await params;
+  const query = await searchParams;
 
   let brew;
   try {
@@ -50,45 +54,62 @@ export default async function RecipePage({
   }
 
   const title = recipe.title || brew.freeTitle || brew.posting?.title || null;
-  const drafting = brew.latestJob?.type === "recipe" && brew.latestJob.status !== "succeeded";
+  const job = brew.latestJob?.type === "recipe" ? brew.latestJob : null;
+  const drafting = job !== null && (job.status === "queued" || job.status === "running");
 
-  // 초안이 없거나 만들어지는 중이면 기다림 화면이다. 빈 지면을 주지 않는다.
-  if (recipe.sections.length === 0 || drafting) {
+  if (drafting) {
+    return (
+      <BrewFrame brewId={brewId} step="recipe" portfolioTitle={title} situation="짜는 중" flow="portfolio-v2" tinted>
+        <Waiting job={job} />
+      </BrewFrame>
+    );
+  }
+
+  if (recipe.sections.length === 0 || query.setup === "1") {
+    const records: SetupRecord[] = materials.materials.map((material) => ({
+      recordId: material.recordId,
+      title: material.title,
+      categoryName: material.categoryName,
+      categoryIcon: material.categoryIcon,
+      selected: material.selected,
+      reason: material.reason,
+    }));
     return (
       <BrewFrame
         brewId={brewId}
         step="recipe"
         portfolioTitle={title}
-        situation={drafting ? "짜는 중" : "아직 없음"}
+        situation={recipe.sections.length === 0 ? "아직 없음" : "다시 짜기"}
         flow="portfolio-v2"
         tinted
       >
-        <Waiting
-          title="레시피"
-          note={
-            materials.materials.some(({ selected }) => selected)
-              ? `고른 기록 ${materials.materials.filter(({ selected }) => selected).length}건으로 무엇을 어떤 순서로 담을지 짭니다. 짜인 뒤에 직접 고칠 수 있습니다.`
-              : "적어 둔 내용으로 무엇을 어떤 순서로 담을지 짭니다. 짜인 뒤에 직접 고칠 수 있습니다."
-          }
-          job={brew.latestJob?.type === "recipe" ? brew.latestJob : null}
-          action={draftRecipeAction}
-          actionLabel="AI에게 초안 맡기기"
-          rejectedNote="입력을 읽지 못했습니다. 재료를 더 고르거나 제작 의도를 적은 뒤 다시 시도해 주세요."
+        <Setup
           brewId={brewId}
+          recipe={recipe}
+          records={records}
+          designName={designName}
+          failureNote={
+            job?.status === "failed"
+              ? job.failure?.code === "BREW_INPUT_REJECTED"
+                ? "입력을 읽지 못했습니다. 기록을 더 고르거나 제작 의도를 적은 뒤 다시 시도해 주세요."
+                : "레시피를 짜지 못했습니다. 잠시 뒤 다시 시도해 주세요."
+              : null
+          }
+          draftAction={draftRecipeAction}
         />
       </BrewFrame>
     );
   }
 
-  const records: RecordCard[] = materials.materials.map((material) => ({
-    recordId: material.recordId,
-    title: material.title,
-    categoryName: material.categoryName,
-    categoryIcon: material.categoryIcon,
-    periodFrom: material.periodFrom,
-    periodTo: material.periodTo,
-    reason: material.reason,
-  }));
+  // 문서 화면은 고른 기록만 안다 — 근거를 더할 때 그중에서 고른다.
+  const records: RecordCard[] = materials.materials
+    .filter(({ selected }) => selected)
+    .map((material) => ({
+      recordId: material.recordId,
+      title: material.title,
+      categoryName: material.categoryName,
+      categoryIcon: material.categoryIcon,
+    }));
 
   return (
     <BrewFrame
@@ -99,13 +120,7 @@ export default async function RecipePage({
       flow="portfolio-v2"
       tinted
     >
-      <Workbench
-        brewId={brewId}
-        initialRecipe={recipe}
-        records={records}
-        designName={designName}
-        draftAction={draftRecipeAction}
-      />
+      <Workbench brewId={brewId} initialRecipe={recipe} records={records} designName={designName} />
     </BrewFrame>
   );
 }

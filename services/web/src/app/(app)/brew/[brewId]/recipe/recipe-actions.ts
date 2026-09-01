@@ -62,6 +62,29 @@ export async function reorderRecipeAction(recipeId: string, input: RecipeV2Reord
   }
 }
 
+export type MaterialsResult = { ok: true } | { ok: false; error: string };
+
+/** 레시피를 만들기 전에 무엇을 쓸지 고른다. 보낸 목록이 곧 고른 것 전부다. */
+export async function saveMaterialsAction(
+  brewId: string,
+  recordIds: string[],
+): Promise<MaterialsResult> {
+  const id = z.uuid().safeParse(brewId);
+  const ids = z.array(z.uuid()).max(10).safeParse(recordIds);
+  if (!id.success || !ids.success) return { ok: false, error: "고른 기록을 읽지 못했습니다." };
+  const session = await requireSession();
+  try {
+    await brews.selectMaterials(session.accessToken, id.data, ids.data);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      if (error.status === 409) return { ok: false, error: "고를 수 없는 기록이 섞여 있습니다. 목록을 새로 열어 주세요." };
+      return { ok: false, error: "고른 기록을 저장하지 못했습니다." };
+    }
+    throw error;
+  }
+}
+
 /**
  * 초안을 새로 만든다.
  *
