@@ -9,8 +9,9 @@
 .promptMenu p { margin:0; padding:10px; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); }
 .promptMenu[data-menu="scope"] { right:64px; left:auto; width:190px; }
 .composer { display:grid; min-height:48px; grid-template-columns:28px minmax(0,1fr) auto 28px 32px; align-items:center; gap:4px; border:2px solid var(--ex-border); border-radius:999px; padding:6px 7px 6px 9px; background:var(--ex-bg-tint); box-shadow:var(--ex-elevation-raised); transition:border-color var(--ex-motion-instant); }
-.composer:focus-within { border-color:var(--ex-border-firm); box-shadow:var(--ex-elevation-raised); }
-.composer textarea { width:100%; min-height:28px; max-height:104px; resize:none; border:0; outline:0; background:transparent; padding:4px 5px; color:var(--ex-fg-body); font:inherit; font-size:var(--ex-text-md); line-height:20px; overflow-wrap:anywhere; }
+.composer:focus-within { border-color:var(--ex-border); box-shadow:var(--ex-elevation-raised); }
+.composer textarea { width:100%; min-height:28px; max-height:104px; resize:none; appearance:none; border:0; outline:0; background:transparent; padding:4px 5px; color:var(--ex-fg-body); font:inherit; font-size:var(--ex-text-md); line-height:20px; overflow-wrap:anywhere; }
+.composer textarea:focus,.composer textarea:focus-visible { border:0; outline:none; background:transparent; box-shadow:none; }
 .composer textarea::placeholder { color:var(--ex-fg-subtle); }
 .contextButton,.dictationButton,.sendButton { display:grid; place-items:center; border:0; padding:0; font:inherit; cursor:pointer; transition:background var(--ex-motion-instant),color var(--ex-motion-instant),transform var(--ex-motion-instant); }
 .contextButton,.dictationButton { width:28px; height:28px; border-radius:8px; }

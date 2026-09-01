@@ -267,7 +267,7 @@
 .foot {
   flex-shrink: 0;
   max-height: 58dvh;
-  padding: 12px 14px;
+  padding: 10px 20px 20px;
   background: var(--ex-bg);
 }
 
