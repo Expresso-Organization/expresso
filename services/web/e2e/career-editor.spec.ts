@@ -115,6 +115,15 @@ test("renders every property family, five saved views and relation hydration", a
   await expect(propertyList.getByText("3", { exact: true })).toBeVisible();
   await expect(propertyList.getByText("2", { exact: true })).toBeVisible();
   await expect(page.getByRole("tab")).toHaveCount(5);
+
+  await propertyList.getByRole("button", { name: "속성 추가", exact: true }).click();
+  const propertyPopover = page.getByLabel("속성 추가", { exact: true });
+  await expect(propertyPopover).toBeVisible();
+  await expect(page.getByText("속성 관리", { exact: true })).toHaveCount(0);
+  await propertyPopover.getByLabel("속성 이름", { exact: true }).fill("팝오버 생성 속성");
+  await propertyPopover.getByRole("option", { name: "텍스트", exact: true }).click();
+  await expect(propertyList.getByText("팝오버 생성 속성", { exact: true })).toBeVisible();
+  await expect(propertyPopover).toBeHidden();
 });
 
 test("keeps legacy page and API while v2 routes stay closed when the flag is false", async ({ browser }) => {

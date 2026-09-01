@@ -77,7 +77,7 @@ export function CareerDocumentEditor({
 
   return (
     <section className={styles.editor} data-mode={mode} aria-label="커리어 문서 편집기">
-      {record && category ? <PropertyList record={record} definitions={categoryDefinitions(category)} categoryId={category.id} categoryVersion={category.version} schemaMutable={!category.isSystem} /> : null}
+      {record && category ? <PropertyList record={record} definitions={categoryDefinitions(category)} categoryId={category.id} schemaMutable={!category.isSystem} /> : null}
       <div className={styles.toolbarRow}>
         <SelectionToolbar editor={editor} onAiRequest={(prompt, blockIds) => { const request = { id: crypto.randomUUID(), recordId, prompt, blockIds }; if (onAiRequest) onAiRequest(request); else setAiRequest(request); }} />
         <BlockHandle editor={editor} />

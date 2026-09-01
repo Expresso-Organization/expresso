@@ -9,7 +9,7 @@ import {
 } from "@expresso/contracts";
 import { useMemo, useState } from "react";
 
-import { PropertySchemaDialog } from "./PropertySchemaDialog";
+import { PropertyCreatePopover } from "./PropertyCreatePopover";
 import { PropertyValueEditor } from "./PropertyValueEditor";
 import { RelationEditor, type CareerRelationDefinition } from "./RelationEditor";
 import { MoveCategoryDialog } from "../move/MoveCategoryDialog";
@@ -32,17 +32,14 @@ export function PropertyList({
   record,
   definitions,
   categoryId,
-  categoryVersion,
   schemaMutable = true,
 }: {
   record: CareerRecordListItem;
   definitions: readonly CareerPropertyDefinitionV2[];
   categoryId: string;
-  categoryVersion: number;
   schemaMutable?: boolean;
 }) {
   const [current, setCurrent] = useState(record);
-  const [schemaOpen, setSchemaOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
   const [categories, setCategories] = useState<CareerCategory[]>([]);
   const [items, setItems] = useState(() => [...definitions]);
@@ -67,8 +64,7 @@ export function PropertyList({
     {visible.map((definition) => <div className={styles.propertyRow} key={definition.id}><label title={definition.name}><Icon name={propertyIcon(definition.type)} size={13}/><span className={styles.propertyName}>{definition.name}</span></label>{definition.type==="relation"?<RelationEditor recordId={current.id} propertyId={definition.id} definition={definition.config as unknown as CareerRelationDefinition} value={asV2Value(definition,current.properties[definition.key])?.type==="relation"?(asV2Value(definition,current.properties[definition.key]) as Extract<CareerPropertyValueV2,{type:"relation"}>).value:[]} onConflict={()=>window.location.reload()} onCommit={async targetIds=>{const response=await fetch(`/api/career/records/${current.id}/relations`,{method:"PUT",headers:{"content-type":"application/json","if-match":`"v${current.version}"`},body:JSON.stringify({propertyId:definition.id,targetIds})});if(!response.ok)throw new Error(`${response.status} 관계를 저장하지 못했습니다.`);const payload=await response.json() as {data:CareerRecordListItem};setCurrent(previous=>({...previous,...payload.data}));}}/>:<PropertyValueEditor definition={definition} value={asV2Value(definition, definition.type === "formula" || definition.type === "rollup" ? current.computedProperties?.[definition.key] : current.properties[definition.key])} onCommit={async (value) => { const properties = { ...current.properties, [definition.key]: value }; if (value === null) delete properties[definition.key]; await savePatch({ properties }); }} />}</div>)}
     <div className={styles.propertyRow}><label><Icon name="chat-circle-dots" size={13}/><span className={styles.propertyName}>출처</span></label><span className={styles.metaValue}>{current.origin === "manual" ? "직접 작성" : current.origin === "ai" ? "AI 정리" : current.origin === "interview" ? "AI 대화" : "가져오기"}</span></div>
     <div className={styles.propertyRow}><label><Icon name="link-simple" size={13}/><span className={styles.propertyName}>사용처</span></label><span className={styles.metaValue}>{current.usedInCount > 0 ? `${current.usedInCount}곳` : "—"}</span></div>
-    <div className={styles.propertyActions}><button type="button" disabled={!schemaMutable} title={schemaMutable ? "속성 추가·관리" : "기본 카테고리의 속성 구성은 고정되어 있습니다."} onClick={() => setSchemaOpen(true)}><Icon name="plus" size={13}/>속성 추가</button><button type="button" onClick={async()=>{const response=await fetch("/api/career/categories");if(response.ok){const payload=await response.json() as {data:CareerCategory[]};setCategories(payload.data);setMoveOpen(true);}}}>카테고리 이동</button></div>
-    <PropertySchemaDialog open={schemaOpen} categoryId={categoryId} version={categoryVersion} definitions={items} onClose={() => setSchemaOpen(false)} onDefinitionsChange={setItems} onVersionConflict={() => window.location.reload()} />
+    <div className={styles.propertyActions}><PropertyCreatePopover categoryId={categoryId} definitions={items} disabled={!schemaMutable} onDefinitionsChange={setItems} onVersionConflict={() => window.location.reload()} /><button type="button" onClick={async()=>{const response=await fetch("/api/career/categories");if(response.ok){const payload=await response.json() as {data:CareerCategory[]};setCategories(payload.data);setMoveOpen(true);}}}>카테고리 이동</button></div>
     <MoveCategoryDialog open={moveOpen} recordId={current.id} currentCategoryId={categoryId} recordVersion={current.version} categories={categories} onClose={()=>setMoveOpen(false)} onMoved={()=>window.location.reload()}/>
   </section>;
 }
