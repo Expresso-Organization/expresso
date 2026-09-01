@@ -18,31 +18,6 @@ const QUICK_ACTIONS: Record<string, readonly string[]> = {
   skill_tool: ["숫자 연결하기", "비슷한 스킬 묶기", "영문 표기 정리"],
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  draft: "초안",
-  organized: "정리됨",
-  verified: "검증됨",
-};
-
-function statusLabel(record: CareerRecordListItem): string {
-  if (record.isEmpty) return "비어 있음";
-  return STATUS_LABEL[record.status] ?? record.status;
-}
-
-function periodText(record: CareerRecordListItem): string | null {
-  if (!record.periodFrom) return null;
-  const from = record.periodFrom.slice(0, 7).replace("-", ".");
-  if (!record.periodTo) return `${from} – 현재`;
-  return `${from} – ${record.periodTo.slice(0, 7).replace("-", ".")}`;
-}
-
-const ORIGIN_LABEL: Record<string, string> = {
-  manual: "직접 작성",
-  ai: "AI 정리",
-  interview: "AI 대화",
-  import: "가져오기",
-};
-
 export function DocumentPanel({
   record,
   category,
@@ -91,59 +66,6 @@ export function DocumentPanel({
       ) : (
         <>
           <div className={styles.body}>
-            <div className={styles.properties}>
-              <div className={styles.propertyRow}>
-                <span className={styles.propertyLabel}>
-                  <Icon name="circle-half" size={13} color="var(--ex-fg-muted)" />
-                  <span className={styles.propertyLabelText}>상태</span>
-                </span>
-                <span>
-                  <span
-                    className={
-                      record.status === "draft" || record.isEmpty
-                        ? styles.chip
-                        : styles.chipSignature
-                    }
-                  >
-                    {statusLabel(record)}
-                  </span>
-                </span>
-              </div>
-
-              <div className={styles.propertyRow}>
-                <span className={styles.propertyLabel}>
-                  <Icon name="calendar-blank" size={13} color="var(--ex-fg-muted)" />
-                  <span className={styles.propertyLabelText}>시기</span>
-                </span>
-                <span className={styles.propertyValue}>
-                  {periodText(record) ?? "—"}
-                </span>
-              </div>
-
-              <div className={styles.propertyRow}>
-                <span className={styles.propertyLabel}>
-                  <Icon name="chat-circle-dots" size={13} color="var(--ex-fg-muted)" />
-                  <span className={styles.propertyLabelText}>출처</span>
-                </span>
-                <span className={styles.propertyValue}>
-                  {ORIGIN_LABEL[record.origin] ?? record.origin}
-                </span>
-              </div>
-
-              <div className={styles.propertyRow}>
-                <span className={styles.propertyLabel}>
-                  <Icon name="link-simple" size={13} color="var(--ex-fg-muted)" />
-                  <span className={styles.propertyLabelText}>사용처</span>
-                </span>
-                <span className={styles.propertyValue}>
-                  {record.usedInCount > 0 ? `${record.usedInCount}곳` : "—"}
-                </span>
-              </div>
-
-            </div>
-
-            <div className={styles.divider} />
-
             <div className={styles.blocks}>
               <CareerDocumentEditor recordId={record.id} mode="peek" record={record} category={category} />
             </div>

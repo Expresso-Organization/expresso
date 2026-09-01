@@ -1,9 +1,15 @@
 .propertyList { display: grid; gap: 8px; padding: 12px 0 16px; border-bottom: 1px solid var(--ex-border-soft); }
+.titleEditor { padding: 4px 0 10px; }
+.titleEditor input { min-height: 48px; padding: 4px 0; border: 0; font-size: var(--ex-text-xl); font-weight: 600; line-height: var(--ex-leading-tight); letter-spacing: -.025em; }
+.metaValue { min-height: 32px; padding: 8px; color: var(--ex-fg-body); font-size: var(--ex-text-sm); }
+.propertyActions { display:flex; align-items:center; justify-content:space-between; padding-top:4px; }
+.propertyActions button { display:inline-flex; align-items:center; gap:6px; border:0; background:transparent; padding:6px 0; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); cursor:pointer; }
+.propertyActions button:first-child { color:var(--ex-fg-body); }
 .listHeading { display: flex; align-items: center; justify-content: space-between; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); font-weight: 600; }
 .listHeading button, .dialog button, .tombstones button { border: 0; border-radius: 6px; background: transparent; color: var(--ex-fg-body); font: inherit; cursor: pointer; }
 .listHeading button:hover, .dialog button:hover { background: var(--ex-bg-hover); }
 .propertyRow { display: grid; grid-template-columns: minmax(88px, 0.35fr) minmax(0, 1fr); align-items: start; gap: 12px; min-height: 34px; }
-.propertyRow > label { padding-top: 8px; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); overflow: hidden; text-overflow: ellipsis; }
+.propertyRow > label { display:flex; align-items:center; gap:6px; padding-top: 8px; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); overflow: hidden; text-overflow: ellipsis; }
 .fieldEditor, .assetEditor, .dateFields { display: grid; gap: 4px; min-width: 0; }
 .input { width: 100%; min-height: 32px; box-sizing: border-box; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 6px 8px; color: var(--ex-fg-strong); font: inherit; }
 .input:hover { border-color: var(--ex-border-soft); background: var(--ex-bg-hover); }
@@ -40,4 +46,10 @@
 .impact code { padding: 5px 7px; border-radius: 6px; background: var(--ex-bg); color: var(--ex-fg-strong); }
 .tombstones { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--ex-border-soft); }
 .message { margin: 0; color: var(--ex-fg-body); font-size: var(--ex-text-sm); }
+.relationEditor { position: relative; display: grid; gap: 6px; }
+.propertyChips { display: flex; flex-wrap: wrap; gap: 4px; }
+.propertyChips button { border: 1px solid var(--ex-border-soft); border-radius: 999px; background: var(--ex-bg-muted); padding: 4px 8px; color: var(--ex-fg-body); }
+.relationResults { position: absolute; z-index: 8; top: 36px; right: 0; left: 0; max-height: 220px; overflow: auto; margin: 0; border: 1px solid var(--ex-border-soft); border-radius: 8px; background: var(--ex-bg); padding: 4px; box-shadow: var(--ex-elevation-overlay); list-style: none; }
+.relationResults button { width: 100%; border: 0; border-radius: 5px; background: transparent; padding: 7px 8px; color: var(--ex-fg-body); text-align: left; }
+.relationResults button:hover, .relationResults button:focus { background: var(--ex-bg-hover); }
 @media (max-width: 767px) { .dialogBackdrop { padding: 0; align-items: end; } .dialog { width: 100%; max-height: 92dvh; border-radius: 12px 12px 0 0; } .dialogBody { grid-template-columns: 1fr; } .dialog nav { display: flex; gap: 4px; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--ex-border-soft); } .schemaItem, .schemaItemActive { min-width: 132px; } .propertyRow { grid-template-columns: 88px minmax(0, 1fr); } .dateFields { grid-template-columns: 1fr; } }

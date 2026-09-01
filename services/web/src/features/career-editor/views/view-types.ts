@@ -13,6 +13,9 @@ export interface CareerViewRendererProps {
 export function propertyKey(category: CareerCategory, propertyId: string): string | null {
   return category.propertySchemaV2?.find((item) => item.id === propertyId)?.key ?? Object.entries(category.propertySchema).find(([, item]) => item.id === propertyId)?.[0] ?? null;
 }
+export function propertyName(category: CareerCategory, propertyId: string): string {
+  return category.propertySchemaV2?.find((item) => item.id === propertyId)?.name ?? Object.entries(category.propertySchema).find(([, item]) => item.id === propertyId)?.[1].label ?? propertyId.slice(0, 8);
+}
 
 export function rawValue(record: CareerRecord, key: string): unknown {
   const stored = record.properties[key];

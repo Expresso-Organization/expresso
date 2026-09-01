@@ -20,6 +20,15 @@ const SORTS: Record<string, CareerRecordSort> = {
 function defaultSortFor(view: string): CareerRecordSort {
   return view === "timeline" ? "period_desc" : "updated_desc";
 }
+function editedLabel(updatedAt: string | undefined): string {
+  if (!updatedAt) return "아직 편집 없음";
+  const minutes = Math.max(0, Math.floor((Date.now() - new Date(updatedAt).getTime()) / 60_000));
+  if (minutes < 1) return "방금 편집";
+  if (minutes < 60) return `${minutes}분 전 편집`;
+  if (minutes < 1_440) return `${Math.floor(minutes / 60)}시간 전 편집`;
+  if (minutes < 2_880) return "어제 편집";
+  return `${Math.floor(minutes / 1_440)}일 전 편집`;
+}
 
 function fallbackView(category: CareerCategory): CareerViewConfiguration {
   const definitions = category.propertySchemaV2 ?? Object.entries(category.propertySchema).flatMap(([key, item], order) => item.id ? [{ id: item.id, key, name: item.label, type: item.type === "tags" ? "multi_select" as const : item.type === "boolean" ? "checkbox" as const : item.type, required: item.required, system: item.system, config: {}, order, version: 1, deletedAt: null }] : []);
@@ -61,9 +70,7 @@ export default async function CareerCategoryPage({
         crumbs={["내 커리어", category.name]}
         actions={
           <>
-            <span style={{ fontSize: "12px", color: "var(--ex-fg-muted)" }}>
-              기록 {category.recordCount}건
-            </span>
+            <span style={{ fontSize: "12px", color: "var(--ex-fg-muted)" }}>{editedLabel(records.data[0]?.updatedAt)}</span>
             <span style={{ fontSize: "12.5px", color: "var(--ex-fg-body)" }}>
               공유
             </span>
