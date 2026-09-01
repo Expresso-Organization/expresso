@@ -5,6 +5,7 @@ import type { z } from "zod";
 import { useMemo, useState } from "react";
 
 import { ReadOnlyValue } from "./property-editors";
+import { PropertySelect } from "./PropertySelect";
 import styles from "./properties.module.css";
 
 type FormulaDiagnostic = z.infer<typeof CareerFormulaDiagnosticSchema>;
@@ -48,9 +49,9 @@ export function RollupEditor({ configuration, properties, targetProperties, prev
   }
 
   return <div className={styles.rollupEditor}>
-    <label>관계<select value={draft.relationPropertyId} onChange={(event) => { const relationPropertyId = event.target.value; const available = typeof targetProperties === "function" ? targetProperties(relationPropertyId) : targetProperties; setDraft((current) => ({ ...current, relationPropertyId, targetPropertyId: available.find((property) => property.deletedAt === null && !["relation", "rollup"].includes(property.type))?.id ?? "" })); }}><option value="">관계를 선택하세요</option>{relations.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select></label>
-    <label>대상 속성<select value={draft.targetPropertyId} onChange={(event) => setDraft((current) => ({ ...current, targetPropertyId: event.target.value }))}><option value="">속성을 선택하세요</option>{targets.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select></label>
-    <label>집계<select value={draft.aggregation} onChange={(event) => setDraft((current) => ({ ...current, aggregation: event.target.value as CareerRollupAggregation }))}>{AGGREGATIONS.map((aggregation) => <option key={aggregation.value} value={aggregation.value}>{aggregation.label}</option>)}</select></label>
+    <label>관계<PropertySelect label="관계" value={draft.relationPropertyId} placeholder="관계를 선택하세요" options={relations.map((property) => ({ value: property.id, label: property.name }))} onChange={(relationPropertyId) => { const available = typeof targetProperties === "function" ? targetProperties(relationPropertyId) : targetProperties; setDraft((current) => ({ ...current, relationPropertyId, targetPropertyId: available.find((property) => property.deletedAt === null && !["relation", "rollup"].includes(property.type))?.id ?? "" })); }} /></label>
+    <label>대상 속성<PropertySelect label="대상 속성" value={draft.targetPropertyId} placeholder="속성을 선택하세요" options={targets.map((property) => ({ value: property.id, label: property.name }))} onChange={(targetPropertyId) => setDraft((current) => ({ ...current, targetPropertyId }))} /></label>
+    <label>집계<PropertySelect label="집계" value={draft.aggregation} placeholder="집계를 선택하세요" options={AGGREGATIONS} onChange={(aggregation) => setDraft((current) => ({ ...current, aggregation: aggregation as CareerRollupAggregation }))} /></label>
     <div className={styles.formulaActions}><button type="button" disabled={busy || !complete} onClick={() => void validate(false)}>미리 보기</button><button type="button" disabled={busy || !complete} onClick={() => void validate(true)}>롤업 저장</button></div>
     {result.diagnostics.length > 0 ? <ul className={styles.formulaDiagnostics} aria-label="롤업 진단">{result.diagnostics.map((diagnostic, index) => <li key={`${diagnostic.code}-${index}`} data-severity={diagnostic.severity}>{diagnostic.message}</li>)}</ul> : null}
     {result.value ? <div className={styles.computedPreview}><span>계산 결과</span><ReadOnlyValue value={result.value} /></div> : null}

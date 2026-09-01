@@ -41,8 +41,9 @@ describe("formula and rollup editors", () => {
     const preview = vi.fn(async () => ({ diagnostics: [], value: { type: "rollup" as const, value: 2, diagnostics: [] } }));
     const commit = vi.fn(async () => undefined);
     render(<RollupEditor configuration={null} properties={[property(relationId, "프로젝트", "relation")]} targetProperties={[property(propertyId, "매출", "number")]} preview={preview} onCommit={commit} />);
+    fireEvent.click(screen.getByRole("button", { name: "집계" }));
     expect(screen.getAllByRole("option").filter((option) => ["개수", "고유 값 개수", "합계", "평균", "최솟값", "최댓값", "가장 이른 날짜", "가장 늦은 날짜", "체크 비율", "고유 값 표시"].includes(option.textContent ?? ""))).toHaveLength(10);
-    fireEvent.change(screen.getByLabelText("집계"), { target: { value: "sum" } });
+    fireEvent.click(screen.getByRole("option", { name: "합계" }));
     fireEvent.click(screen.getByRole("button", { name: "롤업 저장" }));
     await waitFor(() => expect(commit).toHaveBeenCalledWith({ relationPropertyId: relationId, targetPropertyId: propertyId, aggregation: "sum" }));
     expect(screen.getByText("2")).toBeTruthy();

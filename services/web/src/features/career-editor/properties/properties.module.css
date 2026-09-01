@@ -19,10 +19,25 @@
 .propertyTypeList button:disabled { opacity:.5; cursor:wait; }
 .propertyTypeList button>i:first-child { color:var(--ex-fg-muted); }
 .propertyTypeList button>i:last-child { justify-self:end; color:var(--ex-fg-subtle); }
+.propertySelect { display:flex; width:100%; min-height:34px; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--ex-border-soft); border-radius:7px; background:var(--ex-bg-tint); padding:6px 9px; color:var(--ex-fg-strong); font:inherit; font-size:var(--ex-text-sm); text-align:left; cursor:pointer; }
+.propertySelect:hover,.propertySelect[aria-expanded="true"] { border-color:var(--ex-border-firm); background:var(--ex-bg-hover); }
+.propertySelect:focus-visible { outline:0; border-color:var(--ex-border-firm); box-shadow:var(--ex-focus-ring); }
+.propertySelect:disabled { opacity:.5; cursor:not-allowed; }
+.propertySelect>span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.propertySelect>span[data-placeholder="true"] { color:var(--ex-fg-subtle); }
+.propertySelect>i { flex:0 0 auto; color:var(--ex-fg-muted); }
+.propertySelectMenu { position:fixed; z-index:120; display:grid; gap:2px; overflow-y:auto; border:1px solid var(--ex-border); border-radius:9px; padding:4px; background:var(--ex-bg); box-shadow:var(--ex-elevation-overlay); }
+.propertySelectMenu button { display:flex; min-height:34px; align-items:center; justify-content:space-between; gap:10px; border:0; border-radius:6px; background:transparent; padding:6px 9px; color:var(--ex-fg-body); font:inherit; font-size:var(--ex-text-sm); text-align:left; cursor:pointer; }
+.propertySelectMenu button:hover,.propertySelectMenu button[data-active="true"] { background:var(--ex-bg-hover); color:var(--ex-fg-strong); }
+.propertySelectMenu button[aria-selected="true"] { background:var(--ex-accent-surface); color:var(--ex-accent-text); }
+.propertySelectMenu button:focus-visible { outline:0; box-shadow:inset var(--ex-focus-ring); }
+.propertySelectMenu button>span { display:grid; min-width:0; gap:1px; }
+.propertySelectMenu strong { overflow:hidden; font-weight:500; text-overflow:ellipsis; white-space:nowrap; }
+.propertySelectMenu small { overflow:hidden; color:var(--ex-fg-muted); font-size:var(--ex-text-2xs); text-overflow:ellipsis; white-space:nowrap; }
+.propertySelectMenu button>i { flex:0 0 auto; }
 .propertyCreateSetup { display:grid; gap:9px; padding:4px 2px 2px; }
 .propertyCreateSetup>strong { padding:2px 6px; color:var(--ex-fg-strong); font-size:var(--ex-text-sm); }
 .propertyCreateSetup>label { display:grid; gap:5px; padding:0 6px; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); }
-.propertyCreateSetup select { width:100%; min-height:34px; border:1px solid var(--ex-border-soft); border-radius:7px; background:var(--ex-bg-tint); padding:5px 8px; color:var(--ex-fg-strong); font:inherit; }
 .propertyCreateBack { justify-self:start; border:0; background:transparent; padding:5px 6px; color:var(--ex-fg-muted); font:inherit; font-size:var(--ex-text-xs); cursor:pointer; }
 .propertyCreateCommit { min-height:34px; border:0; border-radius:7px; background:var(--ex-accent); padding:7px 10px; color:var(--ex-on-accent); font:inherit; cursor:pointer; }
 .propertyCreateCommit:disabled { opacity:.45; cursor:not-allowed; }
@@ -56,7 +71,7 @@
 .formulaEditor, .rollupEditor { display: grid; gap: 10px; padding: 10px; border: 1px solid var(--ex-border-soft); border-radius: 8px; background: var(--ex-bg-muted); }
 .formulaEditor > label, .rollupEditor label { display: grid; gap: 4px; color: var(--ex-fg-body); font-size: var(--ex-text-xs); }
 .formulaSource { min-height: 112px; resize: vertical; border: 1px solid var(--ex-border-soft); border-radius: 6px; background: var(--ex-bg); padding: 8px; color: var(--ex-fg-strong); font: var(--ex-text-sm)/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
-.formulaSource:focus, .rollupEditor select:focus { border-color: var(--ex-accent); outline: 2px solid var(--ex-focus-ring); outline-offset: 1px; }
+.formulaSource:focus { border-color: var(--ex-accent); outline: 2px solid var(--ex-focus-ring); outline-offset: 1px; }
 .propertyAutocomplete { display: flex; gap: 6px; overflow-x: auto; }
 .propertyAutocomplete button { display: grid; flex: 0 0 auto; justify-items: start; border: 1px solid var(--ex-border-soft); border-radius: 6px; background: var(--ex-bg); padding: 5px 7px; color: var(--ex-fg-body); font-size: var(--ex-text-xs); }
 .propertyAutocomplete small { max-width: 120px; overflow: hidden; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); text-overflow: ellipsis; }
@@ -70,5 +85,4 @@
 .formulaValid { margin: 0; color: var(--ex-status-success-text); font-size: var(--ex-text-xs); }
 .computedPreview { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px; }
 .computedPreview > span { color: var(--ex-fg-muted); font-size: var(--ex-text-xs); }
-.rollupEditor select { width: 100%; min-height: 32px; border: 1px solid var(--ex-border-soft); border-radius: 6px; background: var(--ex-bg); padding: 5px 7px; color: var(--ex-fg-strong); }
 @media (max-width: 767px) { .propertyRow { grid-template-columns: 88px minmax(0, 1fr); } .dateFields { grid-template-columns: 1fr; } }

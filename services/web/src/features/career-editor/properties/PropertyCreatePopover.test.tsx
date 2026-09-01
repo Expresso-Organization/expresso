@@ -71,7 +71,12 @@ describe("PropertyCreatePopover", () => {
     fireEvent.change(screen.getByLabelText("속성 이름"), { target: { value: "연결 기록" } });
     fireEvent.click(screen.getByRole("option", { name: "관계" }));
     await screen.findByRole("button", { name: "관계 속성 추가" });
-    await waitFor(() => expect((screen.getByLabelText("대상 카테고리") as HTMLSelectElement).value).toBe(categoryId));
+    await waitFor(() => expect(screen.getByRole("button", { name: "대상 카테고리" }).textContent).toContain("테스트"));
+    const categorySelect = screen.getByRole("button", { name: "대상 카테고리" });
+    fireEvent.click(categorySelect);
+    fireEvent.keyDown(categorySelect, { key: "Escape" });
+    expect(screen.getByRole("dialog", { name: "속성 추가" })).toBeTruthy();
+    expect(screen.queryByRole("listbox", { name: "대상 카테고리 선택" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "관계 속성 추가" }));
 
     await waitFor(() => expect(onChange).toHaveBeenCalledOnce());

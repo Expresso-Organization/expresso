@@ -13,6 +13,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { Icon } from "@/components/ui/Icon";
 
 import { FormulaEditor } from "./FormulaEditor";
+import { PropertySelect } from "./PropertySelect";
 import { RollupEditor, type RollupConfiguration } from "./RollupEditor";
 import styles from "./properties.module.css";
 
@@ -86,6 +87,7 @@ export function PropertyCreatePopover({ categoryId, definitions, disabled, onDef
     const reposition = () => positionPopover();
     const closeOutside = (event: PointerEvent) => {
       const target = event.target as Node;
+      if (target instanceof Element && target.closest("[data-property-floating-layer]")) return;
       if (!triggerRef.current?.contains(target) && !popoverRef.current?.contains(target)) setOpen(false);
     };
     const closeWithEscape = (event: KeyboardEvent) => {
@@ -218,8 +220,8 @@ export function PropertyCreatePopover({ categoryId, definitions, disabled, onDef
       <button type="button" className={styles.propertyCreateBack} onClick={() => { setSetupType(null); setIssue(null); }}><Icon name="caret-left" size={14} />유형 선택</button>
       <strong>{PROPERTY_TYPES.find((option) => option.value === setupType)?.label} 설정</strong>
       {setupType === "relation" ? <>
-        <label>대상 카테고리<select value={targetCategoryId} onChange={(event) => setTargetCategoryId(event.target.value)}><option value="">카테고리를 선택하세요</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
-        <label>연결 방식<select value={cardinality} onChange={(event) => setCardinality(event.target.value as "single" | "multiple")}><option value="multiple">여러 기록</option><option value="single">한 기록</option></select></label>
+        <label>대상 카테고리<PropertySelect label="대상 카테고리" value={targetCategoryId} placeholder="카테고리를 선택하세요" options={categories.map((category) => ({ value: category.id, label: category.name }))} onChange={setTargetCategoryId} /></label>
+        <label>연결 방식<PropertySelect label="연결 방식" value={cardinality} placeholder="연결 방식을 선택하세요" options={[{ value: "multiple", label: "여러 기록" }, { value: "single", label: "한 기록" }]} onChange={(value) => setCardinality(value as "single" | "multiple")} /></label>
         <button type="button" className={styles.propertyCreateCommit} disabled={!targetCategoryId || busyType !== null} onClick={() => void createProperty("relation", { targetCategoryId, inversePropertyId: null, cardinality, deletePolicy: "nullify" })}>관계 속성 추가</button>
       </> : null}
       {setupType === "formula" ? <FormulaEditor source="" properties={activeDefinitions} preview={previewFormula} onCommit={async (source) => { const formula = await previewFormula(source); await createProperty("formula", { source, ast: formula.ast, diagnostics: formula.diagnostics }); }} /> : null}
