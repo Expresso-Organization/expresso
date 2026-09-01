@@ -1,0 +1,9 @@
+server:
+  port: ${SERVER_PORT:4100}
+
+spring:
+  application:
+    name: backend-spring
+
+  mongodb:
+    uri: ${MONGODB_URL}
