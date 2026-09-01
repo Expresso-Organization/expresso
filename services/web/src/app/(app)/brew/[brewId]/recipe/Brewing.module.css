@@ -18,13 +18,29 @@
   animation: spin 700ms linear infinite;
 }
 
-.stage {
+/* 그림도 글도 가운데다. 이 줄만 왼쪽에 붙으면 축이 둘이 된다. */
+.stageRow {
   margin: 22px 0 0;
+  text-align: center;
+}
+
+.stage {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   color: var(--ex-fg-subtle);
   font-size: var(--ex-text-3xs);
+}
+
+/* 말이 바뀌는 결. 흐려졌다 또렷해지며 올라온다 — 글자라서 아주 조금만. */
+.stageLine {
+  display: inline-block;
+  animation: stageIn 520ms ease-out 1;
+}
+
+@keyframes stageIn {
+  0% { opacity: 0; filter: blur(3px); transform: translateY(3px); }
+  100% { opacity: 1; filter: blur(0); transform: translateY(0); }
 }
 
 /* ── 기다리는 동안 · 무엇을 읽고 있는가 ────────────────────── */
@@ -297,7 +313,8 @@
 
   .bloom,
   .receiveA,
-  .receiveB {
+  .receiveB,
+  .stageLine {
     animation: none;
   }
 

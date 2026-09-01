@@ -35,6 +35,31 @@ const FILL_LAP = 3;
  * 벗어나면 기록이 들어오는 순간에 잔이 비어 둘이 부딪친다.
  */
 const DRAIN_AT = 1_150;
+/**
+ * 아래 한 줄이 바뀌는 간격.
+ *
+ * 다섯 줄이 한 바퀴 도는 데 22.5초다. 첫 글자가 오기까지 실측 68~95초이므로
+ * 서너 바퀴 돈다 — 더 빠르면 읽기도 전에 넘어가고, 더 느리면 화면이 멈춘 것
+ * 같아진다.
+ */
+const STAGE_MS = 4_500;
+
+/**
+ * 구상하는 동안 아래에 서는 말.
+ *
+ * **단계가 아니다.** 모델이 어디까지 왔는지 우리는 모르고, 모르는 것을 순서로
+ * 그리면 그건 지어낸 진행률이다. 이 다섯은 우리가 시킨 **한 가지 일**을 다섯
+ * 갈래로 적은 것이고 — 무엇을 담을지 · 어떤 순서로 · 무슨 메시지로 · 무엇을
+ * 빼는지(`RecipeV2Section` · `unusedSources`) — 어느 것이 떠 있든 그 순간
+ * 사실이다.
+ */
+const STAGES: { text: string; needsPosting?: true }[] = [
+  { text: "무엇을 담을지 구상하는 중입니다" },
+  { text: "고른 기록을 공고 요건과 맞춰 보는 중입니다", needsPosting: true },
+  { text: "어떤 순서로 놓을지 재는 중입니다" },
+  { text: "섹션마다 핵심 메시지를 고르는 중입니다" },
+  { text: "안 쓸 기록을 가려내는 중입니다" },
+];
 
 /** 회사 자리. `CompanyAvatar` 가 읽는 모양 그대로다 — 마크가 있으면 마크다. */
 export interface ReadingCompany {
@@ -65,9 +90,24 @@ export function ReadingPanel({ queued, reading }: { queued: boolean; reading: Re
               className={styles.postingMark}
               fit="line"
             />
-            {/* 이 저장소가 공고 한 줄을 적는 꼴 그대로 — 회사 · 제목. */}
+            {/*
+              * 마크가 있으면 이름을 적지 않는다 — 워드마크는 그 자체가 회사
+              * 이름이라 옆에 또 쓰면 같은 말이 두 번 들어가고, 칩의 좁은 폭을
+              * 두 번 쓰는 셈이다. 마크가 없는 회사는 이름이 유일한 표시라 이
+              * 저장소가 공고를 적는 꼴 그대로 「회사 · 제목」을 쓴다.
+              *
+              * 마크의 `alt` 는 비어 있다(장식) — 눈으로 읽지 않는 쪽에는 회사가
+              * 통째로 사라지므로 이름을 숨겨서 남긴다.
+              */}
             <span className={styles.postingText}>
-              <b>{reading.posting.company.name}</b> · {reading.posting.title}
+              {reading.posting.company.logoUrl ? (
+                <>
+                  <span className="ex-sr-only">{reading.posting.company.name} · </span>
+                  {reading.posting.title}
+                </>
+              ) : (
+                <><b>{reading.posting.company.name}</b> · {reading.posting.title}</>
+              )}
             </span>
           </span>
         ) : null}
@@ -75,17 +115,39 @@ export function ReadingPanel({ queued, reading }: { queued: boolean; reading: Re
           {reading.posting
             ? <>고른 기록 {reading.records.length}건을 이 공고에 맞춰 무엇을 어떤 순서로 담을지 정합니다.</>
             : <>고른 기록 {reading.records.length}건을 읽고 무엇을 어떤 순서로 담을지 정합니다.</>}
-          {" "}2~3분 걸리고, 이 화면을 닫아도 계속됩니다.
+          {" "}2~3분 걸립니다. 이 화면을 닫아도 계속됩니다.
         </p>
       </div>
       <p className={styles.stageRow}>
         <span className={styles.stage}>
           <span className={styles.spinner} aria-hidden="true" />
-          {queued ? "차례를 기다리는 중입니다" : "무엇을 담을지 구상하는 중입니다"}
+          {queued
+            ? "차례를 기다리는 중입니다"
+            : <Stage aiming={reading.posting !== null} />}
         </span>
       </p>
     </>
   );
+}
+
+/**
+ * 구상하는 동안의 한 줄. `STAGES`를 돈다.
+ *
+ * 살아 있는 자리를 읽어 주는 곳(`aria-live`)은 위의 상태 줄 하나다. 같은
+ * 사실을 다른 말로 적은 이 줄까지 소리 내면 4.5초마다 같은 말이 반복된다.
+ */
+function Stage({ aiming }: { aiming: boolean }) {
+  const [at, setAt] = useState(0);
+  const lines = STAGES.filter(({ needsPosting }) => !needsPosting || aiming);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setAt((n) => n + 1), STAGE_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const line = lines[at % lines.length]!.text;
+  // 글이 곧 열쇠다 — 바뀔 때만 새로 태어나고, 그때 한 번 들어오는 결이 돈다.
+  return <span key={line} className={styles.stageLine}>{line}</span>;
 }
 
 /**
