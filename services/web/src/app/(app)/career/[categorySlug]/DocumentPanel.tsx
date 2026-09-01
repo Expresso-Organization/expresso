@@ -47,10 +47,12 @@ export function DocumentPanel({
   record,
   category,
   onClose,
+  onExpand,
 }: {
   record: CareerRecordListItem | null;
   category: CareerCategory;
   onClose: () => void;
+  onExpand?: () => void;
 }) {
   const quickActions = QUICK_ACTIONS[category.key] ?? QUICK_ACTIONS.experience!;
 
@@ -66,7 +68,7 @@ export function DocumentPanel({
       data-open={record ? "true" : "false"}
     >
       <div className={styles.head}>
-        <button type="button" className={styles.headAction} aria-label="넓게 보기">
+        <button type="button" className={styles.headAction} aria-label="넓게 보기" disabled={!record || !onExpand} onClick={onExpand}>
           <Icon name="arrows-out-simple" size={15} />
         </button>
         <span className={styles.headLabel}>{category.name} · 문서</span>

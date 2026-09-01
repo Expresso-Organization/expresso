@@ -35,7 +35,7 @@ function release(recordId: string, session: CareerEditorSession) {
         pool.delete(recordId);
       }
     });
-  }, 0);
+  }, 30_000);
 }
 
 export function useCareerEditorSession(recordId: string) {

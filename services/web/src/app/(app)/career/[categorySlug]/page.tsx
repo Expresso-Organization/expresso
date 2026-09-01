@@ -1,4 +1,4 @@
-import type { CareerRecordSort } from "@expresso/contracts";
+import type { CareerCategory, CareerRecordSort, CareerViewConfiguration } from "@expresso/contracts";
 import { notFound } from "next/navigation";
 
 import { AppBody, DocumentHeader } from "@/components/shell/AppShell";
@@ -19,6 +19,14 @@ const SORTS: Record<string, CareerRecordSort> = {
 /** §6.3 뷰에 맞는 기본 정렬 — 타임라인은 기간 순이다. */
 function defaultSortFor(view: string): CareerRecordSort {
   return view === "timeline" ? "period_desc" : "updated_desc";
+}
+
+function fallbackView(category: CareerCategory): CareerViewConfiguration {
+  const definitions = category.propertySchemaV2 ?? Object.entries(category.propertySchema).flatMap(([key, item], order) => item.id ? [{ id: item.id, key, name: item.label, type: item.type === "tags" ? "multi_select" as const : item.type === "boolean" ? "checkbox" as const : item.type, required: item.required, system: item.system, config: {}, order, version: 1, deletedAt: null }] : []);
+  const date = definitions.find((item) => item.type === "date");
+  const type = category.defaultView === "timeline" && !date ? "table" : category.defaultView;
+  const now = new Date().toISOString();
+  return { id: `local-${category.id}`, categoryId: category.id, name: "기본 뷰", type, version: 1, order: 0, filter: null, sorts: [], groupPropertyId: null, groupOrder: [], visiblePropertyIds: definitions.map((item) => item.id), propertyOrder: definitions.map((item) => item.id), columnWidths: {}, gallery: type === "gallery" ? { coverPropertyId: null, previewPropertyIds: definitions.slice(0, 3).map((item) => item.id) } : null, board: type === "board" ? { hiddenGroupIds: [], cardOrder: {} } : null, timeline: type === "timeline" && date ? { startPropertyId: date.id, endPropertyId: null, axisStart: null, axisEnd: null } : null, createdAt: now, updatedAt: now };
 }
 
 export default async function CareerCategoryPage({
@@ -45,6 +53,7 @@ export default async function CareerCategoryPage({
     ...(search ? { q: search } : {}),
     limit: 50,
   });
+  const savedViews = await career.viewConfigurations(session.accessToken, category.id);
 
   return (
     <>
@@ -71,7 +80,7 @@ export default async function CareerCategoryPage({
         <CareerBrowser
           category={category}
           records={records.data}
-          summary={records.summary}
+          initialView={savedViews.data[0] ?? fallbackView(category)}
         />
       </AppBody>
     </>

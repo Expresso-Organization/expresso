@@ -25,8 +25,10 @@ import {
   CareerDocumentBootstrapSchema,
   CareerCategorySchema,
   CareerPropertyChangePreviewSchema,
+  CareerViewConfigurationSchema,
   type CareerPropertySchemaChange,
   type ApplyCareerPropertyChange,
+  type CareerViewConfiguration,
   CurrentUserResponseSchema,
   HomeReadModelSchema,
   JobPostingDetailResponseSchema,
@@ -893,6 +895,23 @@ export const career = {
       z.strictObject({ data: CareerCategorySchema }),
       { accessToken, method: "POST", ifMatch: `"v${version}"` },
     ),
+
+  viewConfigurations: (accessToken: string, categoryId: string) => request(
+    `${API_PREFIX}/career/categories/${categoryId}/view-configurations`,
+    z.strictObject({ data: z.array(CareerViewConfigurationSchema) }),
+    { accessToken, cache: "no-store" },
+  ),
+
+  queryView: (accessToken: string, viewId: string, cursor?: string, limit = 50) => request(
+    `${API_PREFIX}/career/view-configurations/${viewId}/query`,
+    z.strictObject({ data: z.array(CareerRecordResponseSchema.shape.data), page: z.strictObject({ hasNextPage: z.boolean(), nextCursor: z.string().nullable() }) }),
+    { accessToken, cache: "no-store", query: { ...(cursor ? { cursor } : {}), limit } },
+  ),
+
+  createViewConfiguration: (accessToken: string, categoryId: string, categoryVersion: number, input: Omit<CareerViewConfiguration, "id" | "categoryId" | "version" | "order" | "createdAt" | "updatedAt">) => request(
+    `${API_PREFIX}/career/categories/${categoryId}/view-configurations`, z.strictObject({ data: CareerViewConfigurationSchema }),
+    { accessToken, method: "POST", ifMatch: `"v${categoryVersion}"`, body: input },
+  ),
 };
 
 /**

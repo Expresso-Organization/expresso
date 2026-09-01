@@ -123,6 +123,7 @@ export const CreateCareerRecordSchema = z.strictObject({
 export const UpdateCareerRecordSchema = z
   .strictObject({
     title: z.string().trim().max(300).optional(),
+    status: CareerRecordStatusSchema.optional(),
     properties: CareerPropertiesSchema.optional(),
     bodyMd: z.string().max(200_000).optional(),
   })
