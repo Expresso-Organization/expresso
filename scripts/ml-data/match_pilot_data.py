@@ -138,14 +138,12 @@ def build_jth_pretrain(
             if not job_text:
                 raise ValueError(f"JTH job has no usable text: {job_id}")
             rows.append({
-                "candidateId": candidate_id,
-                "candidateSplit": split,
-                "candidateText": candidate_text,
-                "jobId": job_id,
-                "jobSplit": split,
+                "profileId": f"jth-candidate-{candidate_id}",
+                "profileText": candidate_text,
+                "jobId": f"jth-job-{job_id}",
                 "jobText": job_text,
                 "split": split,
-                "stageLabel": stage,
+                "label": stage,
             })
         split_jobs = job_ids_by_split[split]
         available_negative_count = len(split_jobs) - len(observed_split_jobs[candidate_id])
@@ -161,20 +159,18 @@ def build_jth_pretrain(
                     break
         for job_id in negative_jobs:
             rows.append({
-                "candidateId": candidate_id,
-                "candidateSplit": split,
-                "candidateText": candidate_text,
-                "jobId": job_id,
-                "jobSplit": split,
+                "profileId": f"jth-candidate-{candidate_id}",
+                "profileText": candidate_text,
+                "jobId": f"jth-job-{job_id}",
                 "jobText": _row_text(jobs[job_id], {"job_id"}),
                 "split": split,
-                "stageLabel": 0,
+                "label": 0,
             })
-    rows.sort(key=lambda row: (row["split"], row["candidateId"], row["stageLabel"] == 0, row["jobId"]))
+    rows.sort(key=lambda row: (row["split"], row["profileId"], row["label"] == 0, row["jobId"]))
     _write_jsonl(output_path, rows)
     return {
-        "negativePairs": sum(row["stageLabel"] == 0 for row in rows),
-        "positivePairs": sum(row["stageLabel"] > 0 for row in rows),
+        "negativePairs": sum(row["label"] == 0 for row in rows),
+        "positivePairs": sum(row["label"] > 0 for row in rows),
         "totalPairs": len(rows),
     }
 

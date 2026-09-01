@@ -41,7 +41,7 @@ class MatchPilotDataTest(unittest.TestCase):
         self.assertEqual(map_jth_stage("4th Interview"), 3)
         self.assertEqual(map_jth_stage("Offer Accepted"), 3)
 
-    def test_jth_builder_merges_highest_stage_and_writes_same_split_negatives(self) -> None:
+    def test_jth_builder_uses_frozen_shape_and_same_split_negatives(self) -> None:
         # 중복 stage 병합 또는 split 필터가 빠지면 행동 사전학습의 평가 누수가 생긴다.
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -89,18 +89,26 @@ class MatchPilotDataTest(unittest.TestCase):
             self.assertEqual(first, second)
             self.assertEqual(_read_jsonl(output), _read_jsonl(second_output))
             records = _read_jsonl(output)
-            positives = [record for record in records if record["stageLabel"] > 0]
-            negatives = [record for record in records if record["stageLabel"] == 0]
+            self.assertTrue(all(
+                set(record) == {"profileId", "profileText", "jobId", "jobText", "label", "split"}
+                for record in records
+            ))
+            positives = [record for record in records if record["label"] > 0]
+            negatives = [record for record in records if record["label"] == 0]
             self.assertEqual(len(positives), 3)
             self.assertEqual(len(negatives), 3)
             self.assertEqual(
-                {(record["candidateId"], record["jobId"]): record["stageLabel"] for record in positives},
-                {("c-0", "j-0"): 3, ("c-2", "j-5"): 2, ("c-9", "j-19"): 1},
+                {(record["profileId"], record["jobId"]): record["label"] for record in positives},
+                {
+                    ("jth-candidate-c-0", "jth-job-j-0"): 3,
+                    ("jth-candidate-c-2", "jth-job-j-5"): 2,
+                    ("jth-candidate-c-9", "jth-job-j-19"): 1,
+                },
             )
-            observed_pairs = {(record["candidateId"], record["jobId"]) for record in positives}
-            self.assertTrue(all((record["candidateId"], record["jobId"]) not in observed_pairs for record in negatives))
-            self.assertTrue(all(record["candidateSplit"] == record["jobSplit"] == record["split"] for record in records))
-            self.assertTrue(all("Male" not in record["candidateText"] and "20-29" not in record["candidateText"] for record in records))
+            observed_pairs = {(record["profileId"], record["jobId"]) for record in positives}
+            self.assertTrue(all((record["profileId"], record["jobId"]) not in observed_pairs for record in negatives))
+            self.assertTrue(all(record["split"] in {"train", "valid", "test"} for record in records))
+            self.assertTrue(all("Male" not in record["profileText"] and "20-29" not in record["profileText"] for record in records))
 
     def test_expresso_builder_assigns_30_profiles_to_20_leak_free_candidates_each(self) -> None:
         # profile/job split 또는 후보 수가 달라지면 teacher와 평가 후보군이 불안정해진다.
