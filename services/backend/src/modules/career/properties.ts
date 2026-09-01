@@ -2,6 +2,7 @@ import type {
   CareerProperties,
   CareerPropertySchema,
 } from "@expresso/contracts";
+import { CareerPropertyValueV2Schema } from "@expresso/contracts";
 
 import { CareerError } from "./errors.js";
 
@@ -36,4 +37,9 @@ export function validateCareerProperties(
       throw new CareerError(400, `required category property is missing: ${key}`);
     }
   }
+}
+
+/** v2 값은 저장 전에 타입별 Zod 계약으로 검증해 임의 JSON이 스키마를 우회하지 못하게 합니다. */
+export function validateCareerPropertyValueV2(value: unknown) {
+  return CareerPropertyValueV2Schema.parse(value);
 }

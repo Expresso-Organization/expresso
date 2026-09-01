@@ -13,7 +13,12 @@ export {
   CareerFormulaSchema,
   CareerRollupAggregationSchema,
   CareerRollupSchema,
+  CareerPropertySchemaChangeSchema,
+  CareerPropertyChangeImpactSchema,
+  CareerPropertyChangePreviewSchema,
+  ApplyCareerPropertyChangeSchema,
 } from "./career-properties.js";
+export type { CareerPropertySchemaChange, CareerPropertyChangePreview, ApplyCareerPropertyChange, CareerPropertyDefinitionV2, CareerPropertyValueV2, CareerRollupAggregation } from "./career-properties.js";
 export {
   CareerViewFilterV2Schema,
   CareerSortV2Schema,

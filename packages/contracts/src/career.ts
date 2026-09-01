@@ -6,6 +6,7 @@ import {
   TimestampSchema,
   UuidSchema,
 } from "./common.js";
+import { CareerPropertyDefinitionV2Schema } from "./career-properties.js";
 
 export const CareerViewTypeSchema = z.enum([
   "table",
@@ -57,6 +58,8 @@ export const CareerCategorySchema = z.strictObject({
   defaultView: CareerViewTypeSchema,
   isSystem: z.boolean(),
   propertySchema: CareerPropertySchemaSchema,
+  propertySchemaV2: z.array(CareerPropertyDefinitionV2Schema).optional(),
+  schemaVersion: z.number().int().positive().optional(),
   sortOrder: z.number().int().nonnegative(),
   recordCount: z.number().int().nonnegative(),
   version: z.number().int().positive(),

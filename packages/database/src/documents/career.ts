@@ -17,6 +17,10 @@ export interface CareerCategoryDoc {
   defaultView: Contracts.CareerViewType;
   version: number;
   updatedAt: Date;
+  propertySchemaV2?: Contracts.CareerPropertyDefinitionV2[];
+  schemaVersion?: number;
+  propertySchemaTombstones?: Contracts.CareerPropertyDefinitionV2[];
+  propertyMutationResults?: Record<string, unknown>;
 }
 
 export interface CareerRecordDoc {
@@ -42,6 +46,8 @@ export interface CareerRecordDoc {
   latestSnapshotId?: string | null;
   computedProperties?: JsonObject | null;
   unmappedProperties?: JsonObject | null;
+  /** 삭제한 프로퍼티의 값을 안정 ID 아래 보존해 같은 프로퍼티 복원 때 되살립니다. */
+  propertyValueTombstones?: JsonObject | null;
   editorMigratedAt?: Date | null;
 }
 

@@ -74,3 +74,22 @@ export const CareerRollupSchema = z.strictObject({
 export type CareerPropertyDefinitionV2 = z.infer<typeof CareerPropertyDefinitionV2Schema>;
 export type CareerPropertyValueV2 = z.infer<typeof CareerPropertyValueV2Schema>;
 export type CareerRollupAggregation = z.infer<typeof CareerRollupAggregationSchema>;
+
+export const CareerPropertySchemaChangeSchema = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("create"), property: CareerPropertyDefinitionV2Schema.omit({ id: true, version: true, deletedAt: true, order: true }).extend({ id: UuidSchema.optional(), order: z.number().int().nonnegative().optional() }) }),
+  z.strictObject({ kind: z.literal("reorder"), propertyId: UuidSchema, order: z.number().int().nonnegative() }),
+  z.strictObject({ kind: z.literal("rename"), propertyId: UuidSchema, name: z.string().trim().min(1).max(80) }),
+  z.strictObject({ kind: z.literal("type-change"), propertyId: UuidSchema, type: CareerPropertyTypeV2Schema, config: z.record(z.string(), z.unknown()).optional() }),
+  z.strictObject({ kind: z.literal("delete"), propertyId: UuidSchema }),
+  z.strictObject({ kind: z.literal("restore"), propertyId: UuidSchema }),
+]);
+export const CareerPropertyChangeImpactSchema = z.strictObject({
+  affectedRecordCount: z.number().int().nonnegative(), convertibleCount: z.number().int().nonnegative(),
+  lossyExamples: z.array(z.strictObject({ recordId: UuidSchema, before: z.unknown(), after: z.unknown().optional() })).max(20),
+  dependentViews: z.array(UuidSchema).max(100), dependentFormulas: z.array(UuidSchema).max(100), dependentRollups: z.array(UuidSchema).max(100),
+});
+export const CareerPropertyChangePreviewSchema = z.strictObject({ categoryId: UuidSchema, categoryVersion: z.number().int().positive(), change: CareerPropertySchemaChangeSchema, impact: CareerPropertyChangeImpactSchema, previewToken: z.string().min(32).max(4096) });
+export const ApplyCareerPropertyChangeSchema = z.strictObject({ change: CareerPropertySchemaChangeSchema, previewToken: z.string().min(32).max(4096), confirmLossy: z.boolean().default(false) });
+export type CareerPropertySchemaChange = z.infer<typeof CareerPropertySchemaChangeSchema>;
+export type CareerPropertyChangePreview = z.infer<typeof CareerPropertyChangePreviewSchema>;
+export type ApplyCareerPropertyChange = z.infer<typeof ApplyCareerPropertyChangeSchema>;

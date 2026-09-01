@@ -15,11 +15,16 @@ import { createMongoLink, listMongoLinks, mongoDeleteImpact, trashMongoRecord, r
 import { recomputeMongoSkill, listMongoSkills, listMongoSkillEvidence } from "./mongo-skills.js";
 import { MongoCareerDocumentRepository, hashUpdate } from "../career-editor/repository.js";
 import { Binary } from "mongodb";
+import { MongoCareerPropertySchemaService } from "./property-schema.js";
 
 const duplicate = (error: unknown) => (error as { code?: number })?.code === 11000;
 
 export class CareerService implements CareerApi {
   constructor(readonly context: MongoContext) {}
+
+  previewChange(userId: string, categoryId: string, change: import("@expresso/contracts").CareerPropertySchemaChange) { return new MongoCareerPropertySchemaService(this.context).previewChange(userId, categoryId, change); }
+  applyChange(userId: string, categoryId: string, expectedVersion: number, idempotencyKey: string, input: import("@expresso/contracts").ApplyCareerPropertyChange) { return new MongoCareerPropertySchemaService(this.context).applyChange(userId, categoryId, expectedVersion, idempotencyKey, input); }
+  restoreProperty(userId: string, categoryId: string, propertyId: string, expectedVersion: number) { return new MongoCareerPropertySchemaService(this.context).restoreProperty(userId, categoryId, propertyId, expectedVersion); }
 
   createLink(userId: string, recordId: string, toRecordId: string, relation: "related" | "parent" | "duplicate_of") { return createMongoLink(this.context, userId, recordId, toRecordId, relation); }
   listLinks(userId: string, recordId: string) { return listMongoLinks(this.context, userId, recordId); }
@@ -49,7 +54,8 @@ export class CareerService implements CareerApi {
       return await inTransaction(this.context, async (tx) => {
         await requireActiveUser(tx, userId);
         const categories = mongoCollections(tx.db).careerCategories;
-        const category: CareerCategoryDoc = { _id: randomUUID(), userId, ...input, isSystem: false, sortOrder: 7 + await categories.countDocuments({ userId }, { session: tx.session }), version: 1, updatedAt: new Date() };
+        const propertySchema = Object.fromEntries(Object.entries(input.propertySchema).map(([key, definition]) => [key, { ...definition, id: definition.id ?? randomUUID() }]));
+        const category: CareerCategoryDoc = { _id: randomUUID(), userId, ...input, propertySchema, isSystem: false, sortOrder: 7 + await categories.countDocuments({ userId }, { session: tx.session }), version: 1, updatedAt: new Date() };
         await categories.insertOne(category, { session: tx.session });
         return mapMongoCategory(category);
       });
@@ -64,7 +70,8 @@ export class CareerService implements CareerApi {
       const category = await db.careerCategories.findOne({ _id: categoryId, userId, isSystem: false }, { session: tx.session });
       if (!category) throw new CareerError(404, "career category not found");
       if (category.version !== expectedVersion) throw new CareerError(412, "category version is stale");
-      const removed = Object.keys(category.propertySchema).filter((key) => !Object.hasOwn(nextSchema, key));
+      const normalizedSchema = Object.fromEntries(Object.entries(nextSchema).map(([key, definition]) => [key, { ...definition, id: definition.id ?? category.propertySchema[key]?.id ?? randomUUID() }]));
+      const removed = Object.keys(category.propertySchema).filter((key) => !Object.hasOwn(normalizedSchema, key));
       const protectedProperties = removed.filter((key) => category.propertySchema[key]?.system);
       if (protectedProperties.length) throw new CareerError(403, "system properties cannot be removed", { protectedProperties });
       const propertyValueCounts: Record<string, number> = {};
@@ -76,7 +83,7 @@ export class CareerService implements CareerApi {
       for (const key of Object.keys(propertyValueCounts)) {
         await db.careerRecords.updateMany({ userId, categoryId, [`properties.${key}`]: { $exists: true } }, { $unset: { [`properties.${key}`]: "" }, $inc: { version: 1 }, $set: { updatedAt: new Date() } }, { session: tx.session });
       }
-      const updated = await db.careerCategories.findOneAndUpdate({ _id: categoryId, userId, version: expectedVersion }, { $set: { propertySchema: nextSchema, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
+      const updated = await db.careerCategories.findOneAndUpdate({ _id: categoryId, userId, version: expectedVersion }, { $set: { propertySchema: normalizedSchema, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
       if (!updated) throw new CareerError(412, "category version is stale");
       return mapMongoCategory(updated);
     });

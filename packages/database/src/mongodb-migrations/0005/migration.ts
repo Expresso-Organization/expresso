@@ -45,7 +45,7 @@ export async function careerEditorLedgerSteps(): Promise<MongoMigrationStep[]> {
         if (!info) throw new Error("career_records collection is missing");
         const current = structuredClone((info.options.validator ?? {}) as Document);
         const properties = (current.$jsonSchema as Document).properties as Document;
-        Object.assign(properties, { documentSchemaVersion: { bsonType: ["int", "long", "double", "null"], minimum: 0, multipleOf: 1 }, documentVersion: { bsonType: ["int", "long", "double", "null"], minimum: 0, multipleOf: 1 }, latestSnapshotId: { bsonType: ["string", "null"] }, computedProperties: { bsonType: ["object", "null"] }, unmappedProperties: { bsonType: ["object", "null"] }, editorMigratedAt: { bsonType: ["date", "null"] } });
+        Object.assign(properties, { documentSchemaVersion: { bsonType: ["int", "long", "double", "null"], minimum: 0, multipleOf: 1 }, documentVersion: { bsonType: ["int", "long", "double", "null"], minimum: 0, multipleOf: 1 }, latestSnapshotId: { bsonType: ["string", "null"] }, computedProperties: { bsonType: ["object", "null"] }, unmappedProperties: { bsonType: ["object", "null"] }, propertyValueTombstones: { bsonType: ["object", "null"] }, editorMigratedAt: { bsonType: ["date", "null"] } });
         await db.command({ collMod: "career_records", validator: current, validationLevel: "strict", validationAction: "error" });
       },
     },

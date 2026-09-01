@@ -18,8 +18,12 @@ import {
   RecomputeCareerSkillSchema,
   UpdateCareerPropertySchemaSchema,
   UpdateCareerRecordSchema,
+  CareerPropertySchemaChangeSchema,
+  ApplyCareerPropertyChangeSchema,
+  CareerPropertyChangePreviewSchema,
   formatResourceEtag,
   parseResourceEtag,
+  UuidSchema,
 } from "@expresso/contracts";
 import type {
   FastifyInstance,
@@ -138,6 +142,33 @@ export function registerCareerRoutes(
       });
     },
   );
+
+  app.post(`${API_PREFIX}/career/categories/:categoryId/property-schema/preview`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    const change = parseBody(CareerPropertySchemaChangeSchema, request);
+    if (!options.careerService.previewChange) throw new HttpStatusError(501, "property schema v2 is unavailable");
+    const preview = await options.careerService.previewChange(principal.user.id, categoryId, change);
+    return { data: CareerPropertyChangePreviewSchema.parse(preview) };
+  });
+  app.post(`${API_PREFIX}/career/categories/:categoryId/property-schema/apply`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    const key = IdempotencyKeySchema.safeParse(request.headers["idempotency-key"]);
+    if (!key.success) throw new HttpStatusError(400, "Idempotency-Key is required");
+    const input = parseBody(ApplyCareerPropertyChangeSchema, request);
+    if (!options.careerService.applyChange) throw new HttpStatusError(501, "property schema v2 is unavailable");
+    const category = await options.careerService.applyChange(principal.user.id, categoryId, expectedVersion(request), key.data, input);
+    return reply.header("etag", formatResourceEtag(category.version)).send({ data: category });
+  });
+  app.post(`${API_PREFIX}/career/categories/:categoryId/property-schema/:propertyId/restore`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    const params = parseParams(CareerCategoryIdParamsSchema.extend({ propertyId: UuidSchema }), request);
+    if (!options.careerService.restoreProperty) throw new HttpStatusError(501, "property schema v2 is unavailable");
+    const category = await options.careerService.restoreProperty(principal.user.id, categoryId, params.propertyId, expectedVersion(request));
+    return reply.header("etag", formatResourceEtag(category.version)).send({ data: category });
+  });
 
   app.get(
     `${API_PREFIX}/career/categories/:categoryId/views`,

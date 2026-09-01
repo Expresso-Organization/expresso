@@ -5,7 +5,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { CareerError } from "./errors.js";
 
 export function mapMongoCategory(category: CareerCategoryDoc, recordCount = 0) {
-  return CareerCategorySchema.parse({ id: category._id, key: category.key, name: category.name, icon: category.icon, defaultView: category.defaultView, isSystem: category.isSystem, propertySchema: category.propertySchema, sortOrder: category.sortOrder, version: category.version, recordCount });
+  return CareerCategorySchema.parse({ id: category._id, key: category.key, name: category.name, icon: category.icon, defaultView: category.defaultView, isSystem: category.isSystem, propertySchema: category.propertySchema, propertySchemaV2: category.propertySchemaV2, schemaVersion: category.schemaVersion, sortOrder: category.sortOrder, version: category.version, recordCount });
 }
 export function mapMongoView(view: CareerViewDoc) {
   return CareerViewSchema.parse({ id: view._id, categoryId: view.categoryId, name: view.name, viewType: view.viewType, filters: view.filters, sorts: view.sorts, visibleProperties: view.visibleProperties, sortOrder: view.sortOrder });
