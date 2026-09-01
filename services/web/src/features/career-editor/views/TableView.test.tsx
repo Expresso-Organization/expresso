@@ -60,6 +60,23 @@ describe("TableView", () => {
     expect(screen.getByRole("checkbox", { name: "두 번째 선택" }).parentElement?.dataset.checked).toBe("true");
   });
 
+  it("reorders property columns with drag and keyboard input", () => {
+    const onViewChange = vi.fn();
+    render(<TableView records={records} view={view} category={category} activeId={records[0]!.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={onViewChange} onCategoryChange={() => undefined} />);
+    const dataTransfer = { effectAllowed: "none", dropEffect: "none", setData: vi.fn() };
+    const outcomeHeader = screen.getByRole("columnheader", { name: /성과 성과 열 너비 조절/ });
+    const technologyHeader = screen.getByRole("columnheader", { name: /기술 기술 열 너비 조절/ });
+    technologyHeader.getBoundingClientRect = () => ({ left: 0, width: 160 } as DOMRect);
+    fireEvent.dragStart(outcomeHeader, { dataTransfer });
+    fireEvent.dragOver(technologyHeader, { dataTransfer, clientX: 20 });
+    fireEvent.drop(technologyHeader, { dataTransfer, clientX: 20 });
+    expect(onViewChange).toHaveBeenCalledWith(expect.objectContaining({ propertyOrder: [titleId, outcomeId, technologiesId, roleId, scoreId] }));
+    expect(dataTransfer.setData).toHaveBeenCalledWith("text/plain", outcomeId);
+
+    fireEvent.keyDown(technologyHeader, { key: "ArrowRight", altKey: true });
+    expect(onViewChange).toHaveBeenLastCalledWith(expect.objectContaining({ propertyOrder: [titleId, outcomeId, technologiesId, roleId, scoreId] }));
+  });
+
   it("renames a custom property through preview and apply", async () => {
     const editableCategory = { ...category, isSystem: false };
     const renamed = { ...editableCategory, version: 2, propertySchemaV2: editableCategory.propertySchemaV2?.map((item) => item.id === roleId ? { ...item, name: "담당 역할", version: 2 } : item) };

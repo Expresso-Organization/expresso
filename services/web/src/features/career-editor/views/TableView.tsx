@@ -97,7 +97,9 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
   const [scrollTop, setScrollTop] = useState(0);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [rowDrag, setRowDrag] = useState<{ sourceId: string; targetId: string | null; placement: DropPlacement }>({ sourceId: "", targetId: null, placement: "before" });
+  const [columnDrag, setColumnDrag] = useState<{ sourceId: string; targetId: string | null; placement: DropPlacement }>({ sourceId: "", targetId: null, placement: "before" });
   const drag = useRef<{ propertyId: string; width: number } | null>(null);
+  const suppressColumnClick = useRef(false);
   const resizeCleanup = useRef<(() => void) | null>(null);
   const groupDefinition = props.view.groupPropertyId ? definitionsById.get(props.view.groupPropertyId) : undefined;
   const groups = useMemo(() => props.view.groupPropertyId ? groupedRecords(props.records, props.category, props.view.groupPropertyId, props.view.groupOrder) : [], [props.category, props.records, props.view.groupOrder, props.view.groupPropertyId]);
@@ -214,11 +216,67 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     setRowDrag({ sourceId: "", targetId: null, placement: "before" });
   }
 
-  const header = (propertyId: string, label: string, fallback: number) => {
+  function commitColumnOrder(sourceId: string, targetId: string, placement: DropPlacement) {
+    if (sourceId === targetId) return;
+    const reordered = [...columns];
+    const sourceIndex = reordered.indexOf(sourceId);
+    const targetIndex = reordered.indexOf(targetId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+    reordered.splice(sourceIndex, 1);
+    const nextTargetIndex = reordered.indexOf(targetId);
+    reordered.splice(nextTargetIndex + (placement === "after" ? 1 : 0), 0, sourceId);
+
+    const visibleIds = new Set(reordered);
+    let visibleIndex = 0;
+    const merged = props.view.propertyOrder.map((id) => visibleIds.has(id) ? reordered[visibleIndex++]! : id);
+    merged.push(...reordered.slice(visibleIndex));
+    props.onViewChange({ ...props.view, propertyOrder: [...new Set(merged)] });
+  }
+
+  function startColumnDrag(event: ReactDragEvent<HTMLSpanElement>, propertyId: string) {
+    suppressColumnClick.current = true;
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", propertyId);
+    setColumnDrag({ sourceId: propertyId, targetId: null, placement: "before" });
+  }
+
+  function setColumnDropTarget(event: ReactDragEvent<HTMLSpanElement>, propertyId: string) {
+    if (!columnDrag.sourceId || columnDrag.sourceId === propertyId) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    const rect = event.currentTarget.getBoundingClientRect();
+    const placement = event.clientX >= rect.left + rect.width / 2 ? "after" : "before";
+    if (columnDrag.targetId !== propertyId || columnDrag.placement !== placement) setColumnDrag((current) => ({ ...current, targetId: propertyId, placement }));
+  }
+
+  function finishColumnDrop(event: ReactDragEvent<HTMLSpanElement>, propertyId: string) {
+    if (!columnDrag.sourceId || columnDrag.sourceId === propertyId) return;
+    event.preventDefault();
+    const rect = event.currentTarget.getBoundingClientRect();
+    const placement = event.clientX >= rect.left + rect.width / 2 ? "after" : "before";
+    commitColumnOrder(columnDrag.sourceId, propertyId, placement);
+    finishColumnDrag();
+  }
+
+  function finishColumnDrag() {
+    setColumnDrag({ sourceId: "", targetId: null, placement: "before" });
+    window.setTimeout(() => { suppressColumnClick.current = false; }, 0);
+  }
+
+  function moveColumnFromKeyboard(event: KeyboardEvent<HTMLElement>, propertyId: string) {
+    if (!event.altKey || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const index = columns.indexOf(propertyId);
+    const target = columns[index + (event.key === "ArrowLeft" ? -1 : 1)];
+    if (target) commitColumnOrder(propertyId, target, event.key === "ArrowLeft" ? "before" : "after");
+  }
+
+  const header = (propertyId: string, label: string, fallback: number, reorderable = true) => {
     const currentSort = props.view.sorts.find((sort) => sort.propertyId === propertyId);
     const currentWidth = width(propertyId, fallback);
     const definition = props.category.propertySchemaV2?.find((item) => item.id === propertyId && item.deletedAt === null);
-    return <span key={propertyId} className={styles.tableColumnHeader} role="columnheader" aria-sort={currentSort ? (currentSort.direction === "asc" ? "ascending" : "descending") : "none"}>
+    return <span key={propertyId} className={styles.tableColumnHeader} role="columnheader" aria-sort={currentSort ? (currentSort.direction === "asc" ? "ascending" : "descending") : "none"} draggable={reorderable} data-column-draggable={reorderable ? "true" : undefined} data-column-dragging={columnDrag.sourceId === propertyId ? "true" : undefined} data-drop-position={columnDrag.targetId === propertyId ? columnDrag.placement : undefined} title={reorderable ? "끌어서 열 이동 · Alt + 좌우 화살표" : undefined} onClickCapture={(event) => { if (suppressColumnClick.current) { event.preventDefault(); event.stopPropagation(); } }} onKeyDownCapture={(event) => { if (reorderable) moveColumnFromKeyboard(event, propertyId); }} onDragStart={(event) => { if (reorderable) startColumnDrag(event, propertyId); }} onDragOver={(event) => { if (reorderable) setColumnDropTarget(event, propertyId); }} onDrop={(event) => { if (reorderable) finishColumnDrop(event, propertyId); }} onDragEnd={finishColumnDrag}>
       {definition ? <PropertyHeaderMenu category={props.category} definition={definition} view={props.view} sortDirection={currentSort?.direction ?? null} onViewChange={props.onViewChange} onCategoryChange={props.onCategoryChange} /> : <span className={styles.tableColumnLabel}>{label}</span>}
       <div className={styles.columnResize} role="separator" aria-label={`${label} 열 너비 조절`} aria-orientation="vertical" aria-valuemin={80} aria-valuemax={720} aria-valuenow={Math.round(currentWidth)} tabIndex={0} onPointerDown={(event) => startResize(event, propertyId, currentWidth)} onKeyDown={(event) => resizeFromKeyboard(event, propertyId, currentWidth)} />
     </span>;
@@ -226,7 +284,7 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
 
   const tableHeader = () => <div className={styles.tableHead} role="row" style={{ gridTemplateColumns: template }}>
     <span role="columnheader" aria-label="행 작업" />
-    {header(titleColumnId, "제목", TITLE_WIDTH)}
+    {header(titleColumnId, "제목", TITLE_WIDTH, false)}
     {columns.map((id) => header(id, propertyName(props.category, id), PROPERTY_WIDTH))}
   </div>;
 
