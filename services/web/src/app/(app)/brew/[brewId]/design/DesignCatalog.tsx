@@ -28,15 +28,25 @@ import styles from "./DesignCatalog.module.css";
  * 원본의 스타일별 색면 · 선 · 도형은 옛 30종 코드에 하나씩 손으로 맞춘 것이라
  * 우리 코드에는 걸리지 않는다. 근거 없이 새로 지어내지 않고 두었다.
  */
-// 낱말 경계가 없는 이름을 접는 자리. 여기 없는 이름은 공백에서 접는다.
+/**
+ * 낱말 경계가 없는 이름을 접는 자리.
+ *
+ * **합성어의 경계에서만 접는다** — Mono|chrome, Bau|haus, Clay|morphism 처럼
+ * 두 조각이 각자 뜻을 갖는 자리다. Lux|ury, Term|inal 처럼 한 낱말을 가운데서
+ * 자르면 오타로 읽힌다. 경계가 없는 이름은 표에 넣지 않고 한 줄로 둔다 —
+ * 글자 크기가 줄 길이에 맞춰 줄어든다.
+ */
 const TITLE_BREAKS = new Map<string, number[]>([
-  ["monochrome", [4]], ["bauhaus", [3]], ["newsprint", [4]],
-  ["art-deco", [4]], ["neo-brutalism", [4]], ["cyberpunk", [5]],
-  ["claymorphism", [4]], ["professional", [6]], ["vaporwave", [5]],
-  ["enterprise", [5]], ["industrial", [5]], ["neumorphism", [3]],
-  ["maximalism", [4]], ["academia", [4]], ["botanical", [4]],
-  ["luxury", [3]], ["terminal", [4]], ["kinetic", [3]],
-  ["web3", [3]], ["sketch", [3]], ["organic", [3]], ["retro", [3]],
+  ["monochrome", [4]],    // Mono + chrome
+  ["bauhaus", [3]],       // Bau + haus
+  ["newsprint", [4]],     // News + print
+  ["art-deco", [4]],      // Art + Deco
+  ["neo-brutalism", [4]], // Neo + Brutalism
+  ["cyberpunk", [5]],     // Cyber + punk
+  ["claymorphism", [4]],  // Clay + morphism
+  ["vaporwave", [5]],     // Vapor + wave
+  ["neumorphism", [3]],   // Neu + morphism
+  ["web3", [3]],          // Web + 3
 ]);
 
 function DesignThumb({ code, name, preview }: {
