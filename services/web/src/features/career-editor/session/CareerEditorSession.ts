@@ -6,11 +6,13 @@ import {
 } from "@expresso/contracts";
 import {
   createEmptyCareerDocument,
+  type CareerDocument,
+} from "@expresso/editor/document";
+import {
   encodeDocumentAsYUpdate,
   encodeDocumentStateVector,
   reconstructYDocument,
-  type CareerDocument,
-} from "@expresso/editor";
+} from "@expresso/editor/yjs";
 
 const EMPTY_STATE_VECTOR = "";
 type SessionStatus = "loading" | "saving" | "saved" | "offline" | "conflict";

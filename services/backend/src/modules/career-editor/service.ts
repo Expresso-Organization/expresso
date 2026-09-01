@@ -63,11 +63,12 @@ export class CareerDocumentService implements CareerDocumentApi {
     private readonly signingSecret = "expresso-career-editor-secret",
     repository?: CareerDocumentRepository,
     private readonly enqueueCompaction?: (recordId: string, expectedSequence: number) => Promise<void>,
+    private readonly aiProposalAdapter?: AiProposalAdapter,
   ) {
     this.repository = repository ?? new MongoCareerDocumentRepository(context);
   }
 
-  private proposalService(adapter?: AiProposalAdapter) { return this.aiProposals ??= new AiProposalService(this.context, this, adapter); }
+  private proposalService(adapter?: AiProposalAdapter) { return this.aiProposals ??= new AiProposalService(this.context, this, adapter ?? this.aiProposalAdapter); }
   setAiProposalPublisher(publisher: (recordId: string, proposal: AiEditProposalDetail) => void) { this.proposalService().setPublisher(publisher); }
   setAiUpdatePublisher(publisher: (recordId: string, updateBase64: string, serverSequence: number) => void) { this.proposalService().setUpdatePublisher(publisher); }
   createAiProposal(userId: string, recordId: string, input: CreateAiEditProposal) { return this.proposalService().create(userId, recordId, input); }
@@ -122,6 +123,7 @@ export class CareerDocumentService implements CareerDocumentApi {
         await this.repository.insertSnapshot(snapshot, tx.session);
       }
       const pending = await this.repository.updates(recordId, snapshot.serverSequence, tx.session);
+      if (pending.length > 10_000) throw new CareerDocumentError(503, "document compaction is required before bootstrap");
       let document;
       try {
         document = reconstructYDocument([
@@ -209,7 +211,9 @@ export class CareerDocumentService implements CareerDocumentApi {
   async updatesSince(userId: string, recordId: string, afterSequence: number) {
     const record = await this.repository.record(userId, recordId);
     if (!record) throw new CareerDocumentError(404, "career record not found");
-    return (await this.repository.updates(recordId, afterSequence)).map((row) => ({
+    const updates = await this.repository.updates(recordId, afterSequence);
+    if (updates.length > 10_000) throw new CareerDocumentError(503, "document compaction is required before synchronization");
+    return updates.map((row) => ({
       serverSequence: row.serverSequence,
       updateBase64: Buffer.from(binaryBytes(row.update)).toString("base64"),
       actor: row.actor,

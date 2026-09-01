@@ -64,6 +64,12 @@ if [ -z "${MONGODB_MIGRATE_URL:-}" ] && ! grep -q '^MONGODB_MIGRATE_URL=' servic
 fi
 pnpm db:migrate
 
+# 새 편집기는 명시적으로 true를 넣기 전까지 API·WebSocket 등록을 열지 않는다.
+# 기존 서버의 .env에는 이 줄이 없을 수 있으므로 배포 중 기본값을 안전하게 보완한다.
+if ! grep -q '^CAREER_EDITOR_V2_ENABLED=' services/backend/.env; then
+  echo 'CAREER_EDITOR_V2_ENABLED=false' >> services/backend/.env
+fi
+
 pnpm --filter @expresso/backend build
 
 # NEXT_PUBLIC_* 은 빌드 시점에 번들로 치환돼 들어간다. start 앞에 붙이면 늦다.

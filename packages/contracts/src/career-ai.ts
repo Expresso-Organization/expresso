@@ -1,4 +1,4 @@
-import { CareerEditCommandSchema } from "@expresso/editor";
+import { CareerEditCommandSchema } from "@expresso/editor/commands";
 import { z } from "zod";
 import { TimestampSchema, UuidSchema } from "./common.js";
 import { CareerPropertyValueV2Schema } from "./career-properties.js";

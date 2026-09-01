@@ -251,8 +251,9 @@ export class MongoCareerComputationService implements CareerComputationService {
   private async rollupForRecord(userId: string, record: CareerRecordDoc, sourceDefinitions: readonly CareerPropertyDefinitionV2[], relationPropertyId: string, targetPropertyId: string, aggregation: string, repository = this.repository): Promise<FormulaPropertyValue | null> {
     const relation = sourceDefinitions.find((definition) => definition.id === relationPropertyId && definition.type === "relation");
     if (!relation) return null;
-    const edges = await repository.relations().find({ userId, sourceRecordId: record._id, sourcePropertyId: relationPropertyId }, repository.options()).toArray();
-    const targets = edges.length ? await repository.records().find({ _id: { $in: edges.map((edge) => edge.targetRecordId) }, userId, deletedAt: null }, repository.options()).toArray() : [];
+    const edges = await repository.relations().find({ userId, sourceRecordId: record._id, sourcePropertyId: relationPropertyId }, repository.options()).limit(1_001).toArray();
+    if (edges.length > 1_000) throw new Error("career rollup relation target limit exceeded");
+    const targets = edges.length ? await repository.records().find({ _id: { $in: edges.map((edge) => edge.targetRecordId) }, userId, deletedAt: null }, repository.options()).limit(1_000).toArray() : [];
     const categories = new Map<string, CareerCategoryDoc>();
     for (const target of targets) if (!categories.has(target.categoryId)) {
       const category = await repository.readableCategory(userId, target.categoryId);
@@ -286,7 +287,8 @@ export class MongoCareerComputationService implements CareerComputationService {
 
   private async fanout(tx: MongoContext & { session: import("mongodb").ClientSession }, record: CareerRecordDoc, _category: CareerCategoryDoc, changedPropertyIds: readonly string[]): Promise<void> {
     const repository = new MongoCareerComputationRepository(tx);
-    const incoming = await repository.relations().find({ userId: record.userId, targetRecordId: record._id }, { session: tx.session }).toArray();
+    const incoming = await repository.relations().find({ userId: record.userId, targetRecordId: record._id }, { session: tx.session }).limit(10_001).toArray();
+    if (incoming.length > 10_000) throw new Error("career rollup fanout limit exceeded");
     for (const edge of incoming) {
       const source = await repository.activeRecord(record.userId, edge.sourceRecordId, tx.session);
       if (!source) continue;

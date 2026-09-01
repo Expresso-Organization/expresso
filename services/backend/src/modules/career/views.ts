@@ -85,6 +85,7 @@ export class CareerViewService {
     const views = await mongoCollections(this.context.db).careerViews
       .find({ userId, categoryId, configuration: { $exists: true } })
       .sort({ "configuration.order": 1, _id: 1 })
+      .limit(20)
       .toArray();
     return views.map(configuration);
   }
@@ -185,7 +186,7 @@ export class CareerViewService {
       if (!category) throw new CareerError(404, "career category not found");
       if (category.version !== expectedCategoryVersion) throw versionConflict();
       const views = mongoCollections(tx.db).careerViews;
-      const rows = await views.find({ userId, categoryId, configuration: { $exists: true } }, { session: tx.session }).toArray();
+      const rows = await views.find({ userId, categoryId, configuration: { $exists: true } }, { session: tx.session }).limit(21).toArray();
       const actual = new Set(rows.map((row) => row._id));
       if (new Set(parsed.orderedIds).size !== parsed.orderedIds.length || parsed.orderedIds.length !== actual.size || parsed.orderedIds.some((id) => !actual.has(id))) {
         throw new CareerError(400, "view reorder must contain every category view exactly once");
@@ -194,7 +195,7 @@ export class CareerViewService {
       if (bulk.length) await views.bulkWrite(bulk, { session: tx.session });
       const changed = await categories.findOneAndUpdate({ _id: categoryId, version: expectedCategoryVersion }, { $inc: { version: 1 }, $set: { updatedAt: new Date() } }, { session: tx.session, returnDocument: "after" });
       if (!changed) throw versionConflict();
-      return (await views.find({ _id: { $in: parsed.orderedIds }, userId }, { session: tx.session }).toArray()).map(configuration).sort((left, right) => left.order - right.order);
+      return (await views.find({ _id: { $in: parsed.orderedIds }, userId }, { session: tx.session }).limit(20).toArray()).map(configuration).sort((left, right) => left.order - right.order);
     });
   }
 

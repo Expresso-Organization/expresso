@@ -1,6 +1,7 @@
 "use client";
 
 import type { CareerCategory, CareerRecordListItem } from "@expresso/contracts";
+import { useEffect, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 import { CareerDocumentEditor } from "@/features/career-editor/editor/CareerDocumentEditor";
@@ -71,5 +72,7 @@ export function DocumentPanel({
 
 function DocumentPanelAiDock({ recordId }: { recordId: string }) {
   const { snapshot, document } = useCareerEditorSession(recordId);
-  return <AiProposalPanel recordId={recordId} documentVersion={snapshot.documentVersion} selectedBlockIds={document?.content[0]?.id ? [document.content[0].id] : []} announcedProposal={snapshot.proposal} />;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return <AiProposalPanel recordId={recordId} documentVersion={snapshot.documentVersion} selectedBlockIds={mounted && document?.content[0]?.id ? [document.content[0].id] : []} announcedProposal={mounted ? snapshot.proposal : null} />;
 }

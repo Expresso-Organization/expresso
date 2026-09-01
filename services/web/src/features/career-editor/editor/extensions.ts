@@ -16,7 +16,7 @@ import {
   type CareerBlock,
   type CareerDocument,
   type CareerTextSpan,
-} from "@expresso/editor";
+} from "@expresso/editor/document";
 
 const knownTypes = new Set<string>(CAREER_BLOCK_TYPES);
 
@@ -41,9 +41,14 @@ const CareerIds = Extension.create({
         if (!transactions.some((transaction) => transaction.docChanged)) return null;
         const transaction = nextState.tr;
         let changed = false;
+        const seen = new Set<string>();
         nextState.doc.descendants((node, position) => {
-          if (node.type.name !== "doc" && Object.hasOwn(node.attrs, "careerId") && !node.attrs.careerId) {
-            transaction.setNodeMarkup(position, undefined, { ...node.attrs, careerId: crypto.randomUUID() });
+          if (node.type.name !== "doc" && Object.hasOwn(node.attrs, "careerId")) {
+            const current = typeof node.attrs.careerId === "string" ? node.attrs.careerId : null;
+            if (current && !seen.has(current)) { seen.add(current); return; }
+            // split·paste가 attrs를 복제해도 안정 ID는 문서 안에서 한 번만 사용합니다.
+            const nextId = crypto.randomUUID(); seen.add(nextId);
+            transaction.setNodeMarkup(position, undefined, { ...node.attrs, careerId: nextId });
             changed = true;
           }
         });
@@ -149,10 +154,12 @@ function spans(node: JSONContent): CareerTextSpan[] | undefined {
   return values?.length ? values : undefined;
 }
 
-function tiptapToBlock(node: JSONContent): CareerBlock {
-  if (node.type === "careerCompatibility" && node.attrs?.original) return node.attrs.original as CareerBlock;
-  const blockId = id(node.attrs?.careerId);
-  const content = node.content?.filter((child) => child.type !== "text").map(tiptapToBlock);
+function tiptapToBlock(node: JSONContent, seen: Set<string>): CareerBlock {
+  let blockId = id(node.attrs?.careerId);
+  if (seen.has(blockId)) blockId = crypto.randomUUID();
+  seen.add(blockId);
+  if (node.type === "careerCompatibility" && node.attrs?.original) return { ...(node.attrs.original as CareerBlock), id: blockId };
+  const content = node.content?.filter((child) => child.type !== "text").map((child) => tiptapToBlock(child, seen));
   const base = { id: blockId, attrs: {}, ...(content?.length ? { content } : {}), ...(spans(node) ? { text: spans(node) } : {}) };
   if (node.type === "heading") return { ...base, type: `heading${node.attrs?.level ?? 1}` };
   if (node.type === "codeBlock") return { ...base, type: "code", attrs: { language: node.attrs?.language ?? null } };
@@ -163,5 +170,6 @@ function tiptapToBlock(node: JSONContent): CareerBlock {
 }
 
 export function tiptapToCareerDocument(content: JSONContent): CareerDocument {
-  return parseCareerDocument({ schemaVersion: 1, type: "doc", content: (content.content ?? []).map(tiptapToBlock) });
+  const seen = new Set<string>();
+  return parseCareerDocument({ schemaVersion: 1, type: "doc", content: (content.content ?? []).map((node) => tiptapToBlock(node, seen)) });
 }

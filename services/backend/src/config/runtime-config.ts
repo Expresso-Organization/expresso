@@ -20,6 +20,10 @@ const runtimeConfigSchema = z.object({
   ANALYTICS_VISITOR_SALT: z.string().min(16).default("expresso-local-analytics-salt"),
   REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).default(30_000),
   CAREER_SOCKET_ALLOWED_ORIGIN: z.url().default("http://127.0.0.1:3000"),
+  /** 출시 후보 검증 전까지 새 문서·실시간 API를 닫아 기존 career API를 보존한다. */
+  CAREER_EDITOR_V2_ENABLED: z.stringbool().default(false),
+  /** E2E 전용. 운영에서 fixture 제안을 노출하지 않는다. */
+  CAREER_AI_DETERMINISTIC_TEST: z.stringbool().default(false),
 
   /**
    * Google 로그인의 클라이언트 ID. **검증에만 쓴다** — ID 토큰의 `aud`가 우리
@@ -87,7 +91,7 @@ const runtimeConfigSchema = z.object({
   AI_MODEL_PARTIAL_EDIT: z.string().min(1).optional(),
   AI_MODEL_STYLE_REMIX: z.string().min(1).optional(),
   AI_MODEL_INSIGHT_NOTE: z.string().min(1).optional(),
-});
+}).refine((value) => value.NODE_ENV !== "production" || !value.CAREER_AI_DETERMINISTIC_TEST, { message: "CAREER_AI_DETERMINISTIC_TEST is forbidden in production", path: ["CAREER_AI_DETERMINISTIC_TEST"] });
 
 export interface RuntimeConfig {
   nodeEnv: z.infer<typeof runtimeConfigSchema>["NODE_ENV"];
@@ -110,6 +114,8 @@ export interface RuntimeConfig {
   analyticsVisitorSalt?: string;
   requestTimeoutMs?: number;
   careerSocketAllowedOrigin?: string;
+  careerEditorV2Enabled?: boolean;
+  careerAiDeterministicTest?: boolean;
   /** 없으면 Google 로그인 경로를 열지 않는다. */
   googleClientId?: string | undefined;
   /** 없으면 `off`. 키도 로그인도 없이 앱 전체가 돌아야 한다. */
@@ -150,6 +156,8 @@ export function loadRuntimeConfig(
     analyticsVisitorSalt: result.ANALYTICS_VISITOR_SALT,
     requestTimeoutMs: result.REQUEST_TIMEOUT_MS,
     careerSocketAllowedOrigin: result.CAREER_SOCKET_ALLOWED_ORIGIN,
+    careerEditorV2Enabled: result.CAREER_EDITOR_V2_ENABLED,
+    careerAiDeterministicTest: result.CAREER_AI_DETERMINISTIC_TEST,
     googleClientId: result.GOOGLE_CLIENT_ID,
     aiProvider: result.AI_PROVIDER,
     ...(result.AI_PROVIDER_PAGE_GENERATION

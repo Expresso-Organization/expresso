@@ -18,10 +18,11 @@ import { CareerError } from "./errors.js";
 import { requireCareerCategory } from "./mongo-categories.js";
 import { assertActiveRecordsForWrite } from "./mongo-record-guard.js";
 import { mapMongoRecord } from "./mongo-records.js";
+import { stablePropertyId } from "./property-schema.js";
 
 export function careerCategoryDefinitions(category: CareerCategoryDoc) {
   return category.propertySchemaV2 ?? Object.entries(category.propertySchema).map(([key, property], order) => ({
-    id: property.id ?? key,
+    id: property.id ?? stablePropertyId(category._id, key),
     key,
     name: property.label,
     type: property.type === "boolean" ? "checkbox" : property.type === "tags" ? "multi_select" : property.type,
@@ -67,11 +68,12 @@ export class MongoRelationService implements RelationService {
       const definition = relationDefinition(sourceCategory, input.propertyId);
       if (definition.cardinality === "single" && targetIds.length > 1) throw new CareerError(400, "single relation accepts one target");
 
-      const targets = targetIds.length === 0 ? [] : await db.careerRecords.find({ _id: { $in: targetIds }, userId, deletedAt: null }, { session: tx.session }).toArray();
+      const targets = targetIds.length === 0 ? [] : await db.careerRecords.find({ _id: { $in: targetIds }, userId, deletedAt: null }, { session: tx.session }).limit(1_000).toArray();
       if (targets.length !== targetIds.length) throw new CareerError(404, "relation target was not found");
       if (targets.some((target) => target.categoryId !== definition.targetCategoryId)) throw new CareerError(400, "relation target category does not match");
 
-      const existing = await db.careerRecordRelations.find({ userId, sourceRecordId: recordId, sourcePropertyId: input.propertyId }, { session: tx.session }).toArray();
+      const existing = await db.careerRecordRelations.find({ userId, sourceRecordId: recordId, sourcePropertyId: input.propertyId }, { session: tx.session }).limit(1_001).toArray();
+      if (existing.length > 1_000) throw new CareerError(409, "relation target limit exceeded");
       const existingIds = existing.map((edge) => edge.targetRecordId).sort();
       if (existingIds.length === targetIds.length && existingIds.every((id, index) => id === targetIds[index])) return mapMongoRecord(source);
 
@@ -167,9 +169,10 @@ export class MongoRelationService implements RelationService {
     if (!source) throw new CareerError(404, "career record not found");
     const sourceCategory = await requireCareerCategory(this.context, userId, source.categoryId);
     relationDefinition(sourceCategory, propertyId);
-    const edges = await db.careerRecordRelations.find({ userId, sourceRecordId: recordId, sourcePropertyId: propertyId }).sort({ targetRecordId: 1 }).toArray();
+    const edges = await db.careerRecordRelations.find({ userId, sourceRecordId: recordId, sourcePropertyId: propertyId }).sort({ targetRecordId: 1 }).limit(1_001).toArray();
+    if (edges.length > 1_000) throw new CareerError(409, "relation target limit exceeded");
     if (edges.length === 0) return [];
-    const records = await db.careerRecords.find({ _id: { $in: edges.map((edge) => edge.targetRecordId) }, userId, deletedAt: null }).project({ _id: 1, title: 1 }).toArray();
+    const records = await db.careerRecords.find({ _id: { $in: edges.map((edge) => edge.targetRecordId) }, userId, deletedAt: null }).project({ _id: 1, title: 1 }).limit(1_000).toArray();
     const titles = new Map(records.map((record) => [record._id, record.title]));
     return edges.flatMap((edge) => {
       const title = titles.get(edge.targetRecordId);

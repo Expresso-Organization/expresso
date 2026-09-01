@@ -13,7 +13,18 @@ describe("loadRuntimeConfig", () => {
       outboxMaxAttempts: 5,
       queuePrefix: "expresso-mongo-v1",
       careerSocketAllowedOrigin: "http://127.0.0.1:3000",
+      careerEditorV2Enabled: false,
     });
+  });
+
+  it("keeps the editor v2 gate closed unless an explicit boolean enables it", () => {
+    expect(loadRuntimeConfig({ CAREER_EDITOR_V2_ENABLED: "true" }).careerEditorV2Enabled).toBe(true);
+    expect(() => loadRuntimeConfig({ CAREER_EDITOR_V2_ENABLED: "enable-it" })).toThrow();
+  });
+
+  it("allows deterministic AI only outside production", () => {
+    expect(loadRuntimeConfig({ CAREER_AI_DETERMINISTIC_TEST: "true" }).careerAiDeterministicTest).toBe(true);
+    expect(() => loadRuntimeConfig({ NODE_ENV: "production", CAREER_AI_DETERMINISTIC_TEST: "true" })).toThrow(/forbidden/);
   });
 
   it("reads the allowed career socket origin", () => {

@@ -25,6 +25,7 @@ import { mapMongoCategory } from "./mongo-categories.js";
 const PREVIEW_LIFETIME_MS = 15 * 60_000;
 const INLINE_MUTATION_LIMIT = 100;
 const PREVIEW_EXAMPLE_LIMIT = 20;
+const PREVIEW_SCAN_LIMIT = 10_000;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const READ_ONLY_TYPES = new Set(["formula", "rollup", "created_time", "updated_time"]);
 
@@ -50,7 +51,7 @@ function digest(value: unknown): string {
   return createHash("sha256").update(canonical(value)).digest("hex");
 }
 
-function stablePropertyId(categoryId: string, key: string): string {
+export function stablePropertyId(categoryId: string, key: string): string {
   const bytes = createHash("sha1").update(Buffer.from("6ba7b8109dad11d180b400c04fd430c8", "hex")).update(`${categoryId}:${key}`).digest();
   bytes[6] = (bytes[6]! & 15) | 80;
   bytes[8] = (bytes[8]! & 63) | 128;
@@ -193,7 +194,8 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     let convertibleCount = affectedRecordCount;
     const lossyExamples: CareerPropertyChangePreview["impact"]["lossyExamples"] = [];
     if (source && change.kind === "type-change") {
-      const rows = await db.careerRecords.find(filter!).project({ _id: 1, properties: 1 }).toArray();
+      if (affectedRecordCount > PREVIEW_SCAN_LIMIT) throw new CareerError(413, "property preview scan limit exceeded");
+      const rows = await db.careerRecords.find(filter!).project({ _id: 1, properties: 1 }).limit(PREVIEW_SCAN_LIMIT + 1).toArray();
       convertibleCount = 0;
       for (const row of rows) {
         const before = row.properties[source.key];
@@ -204,7 +206,7 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     } else if (source && change.kind === "delete") {
       for (const row of sampleRows) lossyExamples.push({ recordId: row._id, before: row.properties[source.key] });
     }
-    const views = propertyId ? await db.careerViews.find({ userId, categoryId }).toArray() : [];
+    const views = propertyId ? await db.careerViews.find({ userId, categoryId }).limit(21).toArray() : [];
     const dependentViews = views.filter((view) => containsReference(view, propertyId!)).map((view) => view._id).slice(0, 100);
     const dependentFormulas = propertyId ? current.filter((definition) => definition.type === "formula" && containsReference(definition.config, propertyId)).map((definition) => definition.id).slice(0, 100) : [];
     const dependentRollups = propertyId ? current.filter((definition) => definition.type === "rollup" && containsReference(definition.config, propertyId)).map((definition) => definition.id).slice(0, 100) : [];
@@ -281,7 +283,7 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     const db = mongoCollections(this.context.db); const filter = affectedFilter(userId, categoryId, source.key);
     const count = await db.careerRecords.countDocuments(filter, { session });
     if (count > INLINE_MUTATION_LIMIT) { await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-conversion", idempotencyKey: `career-property:${categoryId}:${source.id}:${source.version + 1}`, payload: { categoryId, propertyId: source.id, sourceType: source.type, targetType } }); return; }
-    const rows = await db.careerRecords.find(filter, { session }).toArray();
+    const rows = await db.careerRecords.find(filter, { session }).limit(INLINE_MUTATION_LIMIT + 1).toArray();
     const conversions = rows.map((row) => ({ row, result: convertCareerPropertyValue(row.properties[source.key], source.type, targetType) }));
     if (conversions.some(({ result }) => result.kind === "unmapped")) throw new CareerError(409, "some property values cannot be converted");
     if (!confirmLossy && conversions.some(({ result }) => result.kind === "lossy")) throw new CareerError(409, "lossy conversion requires confirmation");
@@ -313,7 +315,7 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     const count = await db.careerRecords.countDocuments(filter, { session });
     if (count > 0 && !confirmLossy) throw new CareerError(409, "property deletion requires confirmation");
     if (count > INLINE_MUTATION_LIMIT) { await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-deletion", idempotencyKey: `career-property-delete:${categoryId}:${source.id}:${source.version + 1}`, payload: { categoryId, propertyId: source.id, propertyKey: source.key } }); return; }
-    const rows = await db.careerRecords.find(filter, { session }).toArray();
+    const rows = await db.careerRecords.find(filter, { session }).limit(INLINE_MUTATION_LIMIT + 1).toArray();
     if (rows.length > 0) await db.careerRecords.bulkWrite(rows.map((row) => ({ updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { [`propertyValueTombstones.${source.id}`]: row.properties[source.key], updatedAt: now }, $unset: { [`properties.${source.key}`]: "" }, $inc: { version: 1 } } } })), { session });
   }
 
@@ -322,7 +324,7 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     const filter = { userId, categoryId, deletedAt: null, [path]: { $exists: true } } as Filter<CareerRecordDoc>;
     const count = await db.careerRecords.countDocuments(filter, { session });
     if (count > INLINE_MUTATION_LIMIT) { await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-restoration", idempotencyKey: `career-property-restore:${categoryId}:${source.id}:${source.version + 1}`, payload: { categoryId, propertyId: source.id, propertyKey: source.key } }); return; }
-    const rows = await db.careerRecords.find(filter, { session }).toArray();
+    const rows = await db.careerRecords.find(filter, { session }).limit(INLINE_MUTATION_LIMIT + 1).toArray();
     if (rows.length > 0) await db.careerRecords.bulkWrite(rows.map((row) => ({ updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { [`properties.${source.key}`]: row.propertyValueTombstones?.[source.id], updatedAt: now }, $unset: { [path]: "" }, $inc: { version: 1 } } } })), { session });
   }
 

@@ -36,6 +36,7 @@ import { AnalyticsService } from "../modules/analytics/index.js";
 import { EngagementService } from "../modules/engagement/index.js";
 import { AccountLifecycleService } from "../modules/account-lifecycle/index.js";
 import { CareerDocumentService } from "../modules/career-editor/index.js";
+import { AiClientProposalAdapter, SelectedBlockTextAiProposalAdapter } from "../modules/career-editor/ai-adapter.js";
 import { createReliableQueue } from "../platform/queue.js";
 
 const config = loadRuntimeConfig();
@@ -125,6 +126,7 @@ const careerDocumentService = new CareerDocumentService(
       { jobId: `career-document-compact-${recordId}-${expectedSequence}`, priority: 100 },
     );
   },
+  config.careerAiDeterministicTest ? new SelectedBlockTextAiProposalAdapter() : ai ? new AiClientProposalAdapter(ai) : undefined,
 );
 const app = buildApi({
   config,
@@ -133,7 +135,7 @@ const app = buildApi({
   ...(googleIdTokenVerifier ? { googleIdTokenVerifier } : {}),
   entitlementService,
   careerService,
-  careerDocumentService,
+  ...(config.careerEditorV2Enabled ? { careerDocumentService } : {}),
   jobMarketService,
   jobIngestService,
   jobUrlImporter,

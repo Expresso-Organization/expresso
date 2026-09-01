@@ -24,7 +24,7 @@ export async function recomputeMongoSkill(context: MongoContext, userId: string,
     await assertActiveRecordsForWrite(tx, userId, ids);
     const db = mongoCollections(tx.db);
     const options = { session: tx.session };
-    const records = await db.careerRecords.find({ userId, _id: { $in: ids }, deletedAt: null }, options).toArray();
+    const records = await db.careerRecords.find({ userId, _id: { $in: ids }, deletedAt: null }, options).limit(1_000).toArray();
     for (const record of records) {
       if (!await db.careerCategories.findOne({ _id: record.categoryId, isSystem: true }, options)) throw new CareerError(404, "skill evidence record not found");
     }
@@ -46,7 +46,7 @@ export async function recomputeMongoSkill(context: MongoContext, userId: string,
 }
 
 export async function listMongoSkills(context: MongoContext, userId: string) {
-  return (await mongoCollections(context.db).skills.find({ userId, evidenceCount: { $gt: 0 } }).sort({ level: -1, evidenceCount: -1, name: 1 }).toArray()).map(mapSkill);
+  return (await mongoCollections(context.db).skills.find({ userId, evidenceCount: { $gt: 0 } }).sort({ level: -1, evidenceCount: -1, name: 1 }).limit(1_000).toArray()).map(mapSkill);
 }
 
 export async function listMongoSkillEvidence(context: MongoContext, userId: string, skillId: string) {
@@ -55,7 +55,7 @@ export async function listMongoSkillEvidence(context: MongoContext, userId: stri
   const evidence = await db.skillEvidence.aggregate<SkillEvidenceDoc & { record: CareerRecordDoc }>([
     { $match: { userId, skillId } },
     { $lookup: { from: "career_records", localField: "recordId", foreignField: "_id", pipeline: [{ $match: { userId, deletedAt: null } }], as: "record" } },
-    { $unwind: "$record" }, { $sort: { "record.updatedAt": -1, recordId: 1 } },
+    { $unwind: "$record" }, { $sort: { "record.updatedAt": -1, recordId: 1 } }, { $limit: 1_000 },
   ]).toArray();
   return evidence.map((item) => ({ recordId: item.recordId, recordTitle: item.record.title, span: RecomputeCareerSkillSchema.shape.evidence.element.shape.span.parse(item.extractedSpan) }));
 }

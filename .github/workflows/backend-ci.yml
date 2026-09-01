@@ -4,7 +4,9 @@ on:
   pull_request:
     paths:
       - "services/backend/**"
+      - "services/web/**"
       - "packages/contracts/**"
+      - "packages/editor/**"
       - "packages/database/**"
       - "infra/**"
       - "package.json"
@@ -15,7 +17,9 @@ on:
     branches: [main]
     paths:
       - "services/backend/**"
+      - "services/web/**"
       - "packages/contracts/**"
+      - "packages/editor/**"
       - "packages/database/**"
       - "infra/**"
       - "package.json"
@@ -77,6 +81,7 @@ jobs:
       # CI가 다른 순서로 지으면 한쪽에서만 깨진다.
       - name: 계약 · 스키마 빌드
         run: |
+          pnpm --filter @expresso/editor build
           pnpm --filter @expresso/contracts build
           pnpm --filter @expresso/database build
 
@@ -92,10 +97,23 @@ jobs:
       - name: 실제 인프라 통합 테스트
         run: pnpm --filter @expresso/backend test:infra
 
+      - name: WebSocket · AI deterministic 통합 테스트
+        run: pnpm --filter @expresso/backend exec vitest run src/modules/career-editor/socket.integration.test.ts src/modules/career-editor/ai-proposals.integration.test.ts
+
+      - name: 수식 보안 source scan
+        run: |
+          ! rg -n 'eval\(|new Function|Function\(' packages/editor/src/formula
+
       # 다른 파일이 같은 데이터베이스를 두드리는 동안 잰 p95 는 그 경로의 값이
       # 아니다. 혼자 돌린다.
       - name: 성능 예산
         run: pnpm --filter @expresso/backend test:load
+
+      - name: Chromium 설치
+        run: pnpm --filter @expresso/web exec playwright install --with-deps chromium
+
+      - name: 커리어 편집기 브라우저 E2E
+        run: pnpm --filter @expresso/web exec playwright test
 
       - name: 빌드
         run: pnpm build

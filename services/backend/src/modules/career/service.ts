@@ -59,6 +59,7 @@ export class CareerService implements CareerApi {
     const rows = await mongoCollections(this.context.db).careerCategories.aggregate<CareerCategoryDoc & { counts: { total: number }[] }>([
       { $match: { $or: [{ userId: null }, { userId }] } },
       { $sort: { isSystem: -1, sortOrder: 1, _id: 1 } },
+      { $limit: 107 },
       { $lookup: { from: "career_records", let: { categoryId: "$_id" }, pipeline: [{ $match: { userId, deletedAt: null, $expr: { $eq: ["$categoryId", "$$categoryId"] } } }, { $count: "total" }], as: "counts" } },
     ]).toArray();
     const keys = new Set(rows.filter((row) => row.isSystem).map((row) => row.key));
@@ -74,8 +75,10 @@ export class CareerService implements CareerApi {
       return await inTransaction(this.context, async (tx) => {
         await requireActiveUser(tx, userId);
         const categories = mongoCollections(tx.db).careerCategories;
+        const customCount = await categories.countDocuments({ userId }, { session: tx.session });
+        if (customCount >= 100) throw new CareerError(409, "career category limit exceeded");
         const propertySchema = Object.fromEntries(Object.entries(input.propertySchema).map(([key, definition]) => [key, { ...definition, id: definition.id ?? randomUUID() }]));
-        const category: CareerCategoryDoc = { _id: randomUUID(), userId, ...input, propertySchema, isSystem: false, sortOrder: 7 + await categories.countDocuments({ userId }, { session: tx.session }), version: 1, updatedAt: new Date() };
+        const category: CareerCategoryDoc = { _id: randomUUID(), userId, ...input, propertySchema, isSystem: false, sortOrder: 7 + customCount, version: 1, updatedAt: new Date() };
         await categories.insertOne(category, { session: tx.session });
         return mapMongoCategory(category);
       });
@@ -124,6 +127,12 @@ export class CareerService implements CareerApi {
       }
       const record: CareerRecordDoc = { _id: randomUUID(), userId, ...input, status: "draft", origin: "manual", version: 1, updatedAt: new Date(), deletedAt: null, purgeAfter: null, createIdempotencyKey: idempotencyKey, createRequestHash: hash };
       await records.insertOne(record, { session: tx.session });
+      const definitions = category.propertySchemaV2?.filter((definition) => definition.deletedAt === null) ?? [];
+      const changedPropertyIds = definitions.filter((definition) => definition.type === "formula" || definition.type === "rollup" || Object.hasOwn(input.properties, definition.key) || (definition.type === "title" && input.title !== "")).map((definition) => definition.id);
+      if (changedPropertyIds.length > 0) await addMongoOutboxEvent(tx, {
+        userId, topic: "career.computation", idempotencyKey: `career-record-create:${record._id}:v1`,
+        payload: { userId, recordId: record._id, changedPropertyIds, sourceRecordVersion: 1, sourcePropertyVersions: Object.fromEntries(definitions.filter((definition) => changedPropertyIds.includes(definition.id)).map((definition) => [definition.id, definition.version])) },
+      });
       return { record: mapMongoRecord(record), created: true };
     });
   }
@@ -134,7 +143,8 @@ export class CareerService implements CareerApi {
     const snapshot = await mongoCollections(this.context.db).careerDocumentSnapshots.findOne({ recordId }, { sort: { documentVersion: -1 } });
     if (!snapshot) return mapMongoRecord(record);
     try {
-      const updates = await mongoCollections(this.context.db).careerDocumentUpdates.find({ recordId, serverSequence: { $gt: snapshot.serverSequence }, compactedAt: null }).sort({ serverSequence: 1 }).toArray();
+      const updates = await mongoCollections(this.context.db).careerDocumentUpdates.find({ recordId, serverSequence: { $gt: snapshot.serverSequence }, compactedAt: null }).sort({ serverSequence: 1 }).limit(10_001).toArray();
+      if (updates.length > 10_000) throw new CareerError(503, "document compaction is required before legacy projection");
       const document = reconstructYDocument([encodeDocumentAsYUpdate(parseCareerDocument(snapshot.content)), ...updates.map((row) => new Uint8Array(row.update.buffer))]);
       return mapMongoRecord(record, careerDocumentToMarkdown(document));
     }
@@ -226,7 +236,7 @@ export class CareerService implements CareerApi {
 
   async listViews(userId: string, categoryId: string) {
     await requireCareerCategory(this.context, userId, categoryId);
-    return (await mongoCollections(this.context.db).careerViews.find({ userId, categoryId }).sort({ sortOrder: 1, _id: 1 }).toArray()).map(mapMongoView);
+    return (await mongoCollections(this.context.db).careerViews.find({ userId, categoryId }).sort({ sortOrder: 1, _id: 1 }).limit(100).toArray()).map(mapMongoView);
   }
 
   async getProfile(userId: string) {

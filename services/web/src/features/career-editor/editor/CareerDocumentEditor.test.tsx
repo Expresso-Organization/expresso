@@ -38,6 +38,16 @@ describe("CareerDocumentEditor", () => {
     expect(result.content[1]).toEqual(unknown);
   });
 
+  it("repairs duplicated career IDs created by split or paste before serialization", () => {
+    const duplicate = crypto.randomUUID();
+    const result = tiptapToCareerDocument({ type: "doc", content: [
+      { type: "paragraph", attrs: { careerId: duplicate }, content: [{ type: "text", text: "첫째" }] },
+      { type: "paragraph", attrs: { careerId: duplicate }, content: [{ type: "text", text: "둘째" }] },
+    ] });
+    expect(result.content[0]?.id).toBe(duplicate);
+    expect(result.content[1]?.id).not.toBe(duplicate);
+  });
+
   it("opens the keyboard slash menu and restores focus on escape", async () => {
     render(<CareerDocumentEditor recordId="11111111-1111-4111-8111-111111111111" mode="peek" />);
     const editor = await screen.findByLabelText("커리어 기록 본문");

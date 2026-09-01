@@ -59,6 +59,7 @@ export class MongoCareerDocumentRepository implements CareerDocumentRepository {
     return this.collections().careerDocumentUpdates
       .find({ recordId, serverSequence: { $gt: afterSequence }, compactedAt: null }, this.options(session))
       .sort({ serverSequence: 1 })
+      .limit(10_001)
       .toArray();
   }
   byClient(recordId: string, clientId: string, clientSequence: number, session?: ClientSession) {
@@ -120,6 +121,7 @@ export class MongoCareerDocumentRepository implements CareerDocumentRepository {
     return this.collections().careerRecordRevisions
       .find({ userId, recordId }, this.options(session))
       .sort({ createdAt: -1 })
+      .limit(100)
       .toArray();
   }
   revision(id: string, userId: string, session?: ClientSession) {
