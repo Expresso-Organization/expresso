@@ -4,6 +4,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { GlideMenu } from "@/components/ui/GlideMenu";
 import { Icon } from "@/components/ui/Icon";
 
 import styles from "./Sidebar.module.css";
@@ -49,33 +50,47 @@ export function SidebarNav({ jobCount }: { jobCount?: number | undefined }) {
   const active = sectionForPath(usePathname());
 
   return (
-    <nav className={styles.primary} aria-label="주요 이동">
-      <div className={styles.primaryItem}>
-        <Icon name="magnifying-glass" size={14} color="var(--ex-fg-muted)" />
-        <span className={styles.primaryLabel}>검색</span>
-        <span className={styles.shortcut}>⌘K</span>
-      </div>
-      {PRIMARY_ITEMS.map((item) => (
-        <Link
-          key={item.key}
-          href={item.href}
-          className={`${styles.primaryItem} ${
-            active === item.key ? styles.primaryItemActive : ""
-          }`}
-          aria-current={active === item.key ? "page" : undefined}
-        >
-          <Icon
-            name={item.icon}
-            weight={active === item.key ? "fill" : "regular"}
-            size={14}
-            color={active === item.key ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
-          />
-          <span className={styles.primaryLabel}>{item.label}</span>
-          {item.key === "jobs" && jobCount !== undefined ? (
-            <span className={styles.primaryCount}>{jobCount}</span>
-          ) : null}
-        </Link>
-      ))}
+    <nav aria-label="주요 이동">
+      <GlideMenu className={`${styles.primary} ${styles.navGroup}`}>
+        <div className={`${styles.row} ${styles.primaryItem}`} data-row title="검색">
+          <span className={styles.rowLead}>
+            <Icon name="magnifying-glass" size={14} color="var(--ex-fg-muted)" />
+          </span>
+          <span className={`${styles.copy} ${styles.primaryLabel}`}>검색</span>
+          <span className={`${styles.copy} ${styles.shortcut}`}>⌘K</span>
+        </div>
+        {PRIMARY_ITEMS.map((item) => (
+          <Link
+            key={item.key}
+            href={item.href}
+            data-row
+            title={item.label}
+            className={`${styles.row} ${styles.primaryItem} ${
+              active === item.key
+                ? `${styles.rowActive} ${styles.primaryItemActive}`
+                : ""
+            }`}
+            aria-current={active === item.key ? "page" : undefined}
+          >
+            <span className={styles.rowLead}>
+              <Icon
+                name={item.icon}
+                weight={active === item.key ? "fill" : "regular"}
+                size={14}
+                color={active === item.key ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
+              />
+            </span>
+            <span className={`${styles.copy} ${styles.primaryLabel}`}>
+              {item.label}
+            </span>
+            {item.key === "jobs" && jobCount !== undefined ? (
+              <span className={`${styles.copy} ${styles.primaryCount}`}>
+                {jobCount}
+              </span>
+            ) : null}
+          </Link>
+        ))}
+      </GlideMenu>
     </nav>
   );
 }

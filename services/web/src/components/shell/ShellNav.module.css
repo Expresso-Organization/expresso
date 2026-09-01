@@ -160,12 +160,12 @@
   }
 
   /*
-   * 넓은 화면에서 되돌리는 것은 **폭**뿐이다. 서랍은 세로 방향 flex라
+   * 폭은 사이드바가 스스로 정한다 — 접혀 있으면 레일 폭이고 펼쳐져 있으면
+   * 250px다. 여기서 되돌리는 것은 보더뿐이다. 서랍은 세로 방향 flex라
    * `flex`는 높이를 정한다 — 여기서 `none`으로 되돌리면 사이드바가 내용
    * 높이만큼 자라서 서랍 밖으로 넘친다.
    */
   .drawer > :global(aside) {
-    width: var(--ex-sidebar-width);
     border-right: 1px solid var(--ex-border-chrome);
   }
 }
