@@ -217,6 +217,7 @@ class MatchPilotModelTest(unittest.TestCase):
                 score_rows,
             )
             manifest = json.loads(result["manifest"].read_text(encoding="utf-8"))
+            self.assertRegex(manifest["gitCommit"], r"^[0-9a-f]{40}$")
             self.assertEqual(manifest["model"], {"name": "intfloat/multilingual-e5-base", "revision": "fixture-revision", "frozen": True})
             self.assertEqual(manifest["counts"], {"jthPretrainPairs": 2, "expressoFineTunePairs": 2, "candidateScores": 12})
             self.assertEqual(

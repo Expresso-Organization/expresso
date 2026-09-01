@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import platform
 import random
+import subprocess
 import sys
 from typing import Any, Iterable
 
@@ -21,6 +22,19 @@ FROZEN_E5_COSINE_ID = "frozen-e5-cosine-v1"
 MODEL_ID = "match-pilot-mlp-v1"
 DEFAULT_OUTPUT = Path("var/ml-data/experiments/match-pilot-v0")
 DEFAULT_SEED = 42
+
+
+def _git_commit() -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
 
 
 def _load_stdlib_profile() -> None:
@@ -409,6 +423,7 @@ def _manifest(
     return {
         "schemaVersion": "match-pilot-run-manifest-v1",
         "createdAt": datetime.now(timezone.utc).isoformat(),
+        "gitCommit": _git_commit(),
         "seed": arguments.seed,
         "model": {"name": MODEL_NAME, "revision": model_revision, "frozen": True},
         "device": device,
