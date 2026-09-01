@@ -65,17 +65,17 @@
  * 회사 마크다.
  */
 .posting {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  width: fit-content;
+  gap: 7px;
   max-width: 100%;
-  margin: 14px auto 4px;
-  padding: 9px 14px 9px 11px;
+  margin: 13px 0 3px;
+  padding: 4px 13px 4px 6px;
   border: 1px solid var(--ex-border);
-  border-radius: 10px;
+  /* 칩이라 끝이 둥글다. 값이 높이보다 크기만 하면 되므로 하나로 족하다. */
+  border-radius: 999px;
   background: var(--ex-bg);
-  text-align: left;
+  vertical-align: middle;
 }
 
 /*
@@ -85,34 +85,36 @@
  */
 .postingMark {
   flex-shrink: 0;
-  height: 22px;
-  min-width: 22px;
+  /* 글줄과 나란히 선다 — 글자보다 크면 회사가 문장을 눌러 버린다. */
+  height: 15px;
+  min-width: 15px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 6px;
+  /*
+   * 칩은 둥글어도 마크는 아니다. 워드마크를 쓰는 회사는 폭이 높이의 네 배라
+   * (`fit="line"`) 끝을 둥글게 자르면 첫 글자와 끝 글자가 깎인다.
+   */
+  border-radius: 4px;
   font-family: var(--ex-font-brand);
-  font-size: var(--ex-text-2xs);
+  font-size: var(--ex-text-3xs);
   font-weight: 500;
 }
 
-.posting > span {
+/* 한 줄이다. 넘치면 접지 않고 자른다 — 칩이 두 줄이 되면 칩이 아니다. */
+.postingText {
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  color: var(--ex-fg-muted);
-  font-size: var(--ex-text-3xs);
-}
-
-.posting strong {
-  color: var(--ex-fg);
-  font-size: var(--ex-text-2xs);
-  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-2xs);
+}
+
+.postingText b {
+  color: var(--ex-fg);
+  font-weight: 600;
 }
 
 /* ── 내려지는 중 ────────────────────────────────────────────

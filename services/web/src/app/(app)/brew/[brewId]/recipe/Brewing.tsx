@@ -59,17 +59,17 @@ export function ReadingPanel({ queued, reading }: { queued: boolean; reading: Re
       <div className={styles.readingHead}>
         <h1>레시피를 짜는 중</h1>
         {reading.posting ? (
-          <div className={styles.posting}>
+          <span className={styles.posting}>
             <CompanyAvatar
               company={reading.posting.company}
               className={styles.postingMark}
               fit="line"
             />
-            <span>
-              <strong>{reading.posting.title}</strong>
-              {reading.posting.company.name}
+            {/* 이 저장소가 공고 한 줄을 적는 꼴 그대로 — 회사 · 제목. */}
+            <span className={styles.postingText}>
+              <b>{reading.posting.company.name}</b> · {reading.posting.title}
             </span>
-          </div>
+          </span>
         ) : null}
         <p>
           {reading.posting
