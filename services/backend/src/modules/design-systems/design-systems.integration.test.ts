@@ -111,11 +111,26 @@ describe("design systems catalog", () => {
       expect(`${item.code} ${card.includes("var(--element-gap)")}`).toBe(`${item.code} true`);
     }
 
-    // 배치 축이 지면에 실려야 CSS 가 걸 수 있다.
+    // 배치와 컴포넌트 어휘가 지면에 실려야 CSS 가 걸 수 있다.
     for (const { item, revision } of entries) {
-      expect(`${item.code} ${revision.designHtml.includes(`<body data-layout="${revision.spec.composition.layout}">`)}`)
-        .toBe(`${item.code} true`);
+      const body = revision.designHtml.match(/<body [^>]*>/)![0];
+      const kit = revision.spec.componentKit;
+      for (const [name, value] of [
+        ["layout", revision.spec.composition.layout],
+        ["chrome", kit.chrome], ["marker", kit.marker],
+        ["emphasis", kit.emphasis], ["divider", kit.divider],
+      ] as const) {
+        expect(`${item.code} ${name} ${body.includes(`data-${name}="${value}"`)}`)
+          .toBe(`${item.code} ${name} true`);
+      }
     }
+
+    // 어휘 조합이 겹치면 요소가 같은 골격을 재탕한다.
+    const kits = new Set(entries.map(({ revision }) => {
+      const k = revision.spec.componentKit;
+      return `${k.chrome}/${k.marker}/${k.emphasis}/${k.divider}`;
+    }));
+    expect(kits.size).toBeGreaterThanOrEqual(20);
 
     // 형태가 밀도에서만 나오면 Neo Brutalism 과 Claymorphism 이 같은 상자가 된다.
     const shapes = new Set(entries.map(({ revision }) => {

@@ -30,6 +30,7 @@ interface BuiltinConfig {
   koreanFont: string;
   density: "compact" | "comfortable" | "spacious";
   structure: string;
+  componentKit: DesignSystemSpecV2["componentKit"];
   layout: "single-column" | "dense-grid" | "wide-margin";
   sectionGap: number;
   contentWidth: number;
@@ -77,6 +78,7 @@ function createSpec(config: BuiltinConfig): DesignSystemSpecV2 {
         { token: "muted", role: "보조 정보", usage: "기간, 역할, 설명" },
       ],
     },
+    componentKit: config.componentKit,
     typography: {
       display: {
         family: config.displayFont,
@@ -237,6 +239,7 @@ export const builtinDesignSystems = {
       accent: "#2563eb", action: "#2563eb", actionText: "#ffffff",
     },
     displayFont: "Inter", bodyFont: "system-ui", bodyFallback: "sans-serif",
+    componentKit: { chrome: "plain", marker: "plain", emphasis: "plain", divider: "hairline" },
     koreanFont: "Noto Sans KR",
     density: "comfortable", structure: "single-column", layout: "single-column", sectionGap: 72,
     contentWidth: 1080, cardRadius: 12, shadowStyle: "soft",
@@ -258,6 +261,7 @@ export const builtinDesignSystems = {
       accent: "#22d3ee", action: "#22d3ee", actionText: "#07111f",
     },
     displayFont: "Inter", bodyFont: "system-ui", bodyFallback: "sans-serif",
+    componentKit: { chrome: "plain", marker: "numbered", emphasis: "bar", divider: "hairline" },
     koreanFont: "IBM Plex Sans KR",
     density: "compact", structure: "evidence-grid", layout: "dense-grid", sectionGap: 56,
     contentWidth: 1180, cardRadius: 4, shadowStyle: "hairline",
@@ -279,6 +283,7 @@ export const builtinDesignSystems = {
       accent: "#9a5b3a", action: "#9a5b3a", actionText: "#ffffff",
     },
     displayFont: "Georgia", bodyFont: "Georgia", bodyFallback: "serif",
+    componentKit: { chrome: "masthead", marker: "rule", emphasis: "plain", divider: "double" },
     koreanFont: "Nanum Myeongjo",
     density: "spacious", structure: "wide-margin", layout: "wide-margin", sectionGap: 104,
     contentWidth: 980, cardRadius: 8, shadowStyle: "none",

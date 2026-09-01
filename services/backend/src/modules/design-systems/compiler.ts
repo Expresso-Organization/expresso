@@ -1093,8 +1093,9 @@ code{font-family:var(--font-mono)}
 .media{display:grid;place-items:center;width:100%;border-radius:var(--card-radius);background:var(--surface);box-shadow:inset 0 0 0 var(--border-width) var(--hairline)}
 .media span{color:var(--muted);font-family:var(--font-mono);font-size:10px}
 .media-set{max-width:440px}
-.variant-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:var(--component-gap)}
+.variant-grid{counter-reset:variant;display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:var(--component-gap)}
 .variant-wide{grid-column:1/-1}
+.variant{counter-increment:variant}
 .variant figcaption{margin-top:10px;color:var(--muted);font-size:12px}
 .variant small{display:block}
 /* 견본은 껍데기가 아니라 그 디자인의 형태를 입는다 — 반경 · 경계 · 그림자 ·
@@ -1229,6 +1230,74 @@ code{font-family:var(--font-mono)}
 [data-layout="single-column"] .v-lead,[data-layout="single-column"] .v-body{max-width:var(--measure)}
 
 /*
+  컴포넌트 설계 — 계약의 componentKit 네 축이 요소의 골격을 정한다.
+  색과 서체만 갈아 끼우면 서른여덟 벌이 같은 상자를 재탕한다. 여기서 바뀌는
+  것은 껍데기가 아니라 요소 자체의 짜임이다.
+*/
+
+/* ── chrome · 면을 두르는 방식 ───────────────────────────── */
+
+/* 창 — 제목 표시줄이 붙는다. Terminal · Cyberpunk · Vaporwave · Retro. */
+[data-chrome="window"] .variant .card{position:relative;padding-top:calc(var(--component-gap) * 1.35 + 32px)}
+[data-chrome="window"] .variant .card::before{content:"";position:absolute;inset:0 0 auto;height:32px;background:var(--elevated);border-bottom:var(--border-width) solid var(--border)}
+[data-chrome="window"] .variant .card::after{content:"";position:absolute;top:12px;left:14px;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:15px 0 0 var(--border),30px 0 0 var(--border)}
+
+/* 제호 — 위에 이중선, 아래에 마감선. Newsprint · Monochrome · Academia. */
+[data-chrome="masthead"] .variant .card{position:relative;padding-top:calc(var(--component-gap) * 1.35 + 16px);padding-bottom:calc(var(--component-gap) * 1.35 + 12px)}
+[data-chrome="masthead"] .variant .card::before{content:"";position:absolute;inset:12px calc(var(--component-gap) * 1.35) auto;border-top:3px double var(--text)}
+[data-chrome="masthead"] .variant .card::after{content:"";position:absolute;inset:auto calc(var(--component-gap) * 1.35) 12px;border-top:1px solid var(--border)}
+
+/* 스티커 — 살짝 어긋나게 앉는다. Neo Brutalism · Kinetic · Maximalism. */
+[data-chrome="sticker"] .variant{padding:4px 8px 8px 4px}
+[data-chrome="sticker"] .variant .card{transform:rotate(-1.1deg)}
+[data-chrome="sticker"] .variant:nth-child(2n) .card{transform:rotate(.9deg)}
+[data-chrome="sticker"] .variant:nth-child(3n) .card{transform:rotate(-.4deg)}
+
+/* 패널 — 위쪽에 빛을 한 줄 얹고 오른쪽 위에 번호를 새긴다. Industrial · Web3. */
+[data-chrome="panel"] .variant .card{position:relative}
+[data-chrome="panel"] .variant .card::before{content:"";position:absolute;inset:0 0 auto;height:1px;background:color-mix(in srgb,var(--canvas) 55%,white);pointer-events:none}
+[data-chrome="panel"] .variant .card::after{content:counter(variant,decimal-leading-zero);position:absolute;top:10px;right:14px;color:var(--muted);font-family:var(--font-mono);font-size:10px;letter-spacing:.1em}
+
+/* 액자 — 안쪽에 선을 한 겹 더 두르고 가운데로 모은다. Art Deco · Luxury. */
+[data-chrome="frame"] .variant .card{position:relative;text-align:center}
+[data-chrome="frame"] .variant .card::before{content:"";position:absolute;inset:8px;border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);pointer-events:none}
+[data-chrome="frame"] .v-lead,[data-chrome="frame"] .v-body{margin-inline:auto}
+[data-chrome="frame"] .v-actions,[data-chrome="frame"] .v-meta,[data-chrome="frame"] .v-profile{justify-content:center}
+/* 대칭은 한 덩어리로 읽는 요소에서만 쓴다. 여러 단을 가운데로 모으면 글줄이 뭉갠다. */
+[data-chrome="frame"] .v-two,[data-chrome="frame"] .v-lead-metric,[data-chrome="frame"] .v-table,
+[data-chrome="frame"] .v-timeline,[data-chrome="frame"] .v-achieve,[data-chrome="frame"] .v-evidence,
+[data-chrome="frame"] .v-par,[data-chrome="frame"] .v-bars,[data-chrome="frame"] .v-org{text-align:left}
+[data-chrome="frame"] .v-two .v-meta{justify-content:flex-start}
+
+/* 덩어리 — 네 귀가 서로 다르게 부푼다. Claymorphism · Neumorphism · Organic. */
+[data-chrome="blob"] .variant .card{border-radius:calc(var(--card-radius) * 2.1) calc(var(--card-radius) * .8) calc(var(--card-radius) * 2.1) calc(var(--card-radius) * .8)}
+
+/* ── marker · 라벨 앞 표식 ──────────────────────────────── */
+[data-marker="prompt"] .v-eyebrow::before{content:"$ ";color:var(--accent)}
+[data-marker="bullet"] .v-eyebrow::before{content:"■  ";color:var(--accent)}
+[data-marker="bracket"] .v-eyebrow::before{content:"[ ";color:var(--accent)}
+[data-marker="bracket"] .v-eyebrow::after{content:" ]";color:var(--accent)}
+[data-marker="rule"] .v-eyebrow::before{content:"";display:inline-block;width:20px;margin-right:9px;border-top:1px solid var(--accent);vertical-align:middle}
+[data-marker="numbered"] .v-eyebrow::before{content:counter(variant,decimal-leading-zero) "  ";color:var(--accent)}
+
+/* ── emphasis · 대표 수치를 세우는 방식 ─────────────────── */
+[data-emphasis="boxed"] .v-number{display:inline-block;width:max-content;padding:.08em .28em;border:var(--border-width) solid var(--text);border-radius:var(--control-radius)}
+[data-emphasis="underlined"] .v-number{display:inline-block;width:max-content;padding-bottom:.06em;border-bottom:.09em solid var(--accent)}
+[data-emphasis="oversized"] .v-number{font-size:calc(var(--type-example-display) * 1.18);letter-spacing:-.06em}
+[data-emphasis="oversized"] .v-number-lg{font-size:calc(var(--type-example-display) * 1.6)}
+[data-emphasis="bar"] .v-number{position:relative;display:inline-block;width:max-content;padding-left:.34em}
+[data-emphasis="bar"] .v-number::before{content:"";position:absolute;inset:.1em auto .1em 0;width:.1em;background:var(--accent)}
+
+/* ── divider · 항목을 가르는 선 ─────────────────────────── */
+[data-divider="none"] .v-table th,[data-divider="none"] .v-table td,[data-divider="none"] .v-org,[data-divider="none"] .rule-list li{border-bottom:0}
+[data-divider="double"] .v-table th,[data-divider="double"] .v-table td{border-bottom:3px double var(--border)}
+[data-divider="double"] .v-org{border-bottom:3px double var(--border)}
+[data-divider="dashed"] .v-table th,[data-divider="dashed"] .v-table td,[data-divider="dashed"] .v-org{border-bottom-style:dashed}
+[data-divider="dotted"] .v-table th,[data-divider="dotted"] .v-table td,[data-divider="dotted"] .v-org{border-bottom-style:dotted}
+[data-divider="thick"] .v-table th,[data-divider="thick"] .v-table td,[data-divider="thick"] .v-org{border-bottom:2px solid var(--text)}
+[data-divider="thick"] .v-table tbody tr:last-child th,[data-divider="thick"] .v-table tbody tr:last-child td{border-bottom:0}
+
+/*
   모션은 전부 transitions-dev 카탈로그에서 가져온다. 직접 keyframe 을 쓰지 않는다.
   텍스트 줄은 18-texts-reveal, 수치는 26-spinning-counter 의 릴 구조를 그대로 쓰고,
   값은 _root.css 의 토큰 이름으로 읽는다.
@@ -1291,7 +1360,7 @@ code{font-family:var(--font-mono)}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.motion-rise,.motion-focus{animation:none}}
 </style>
 </head>
-<body data-layout="${escapeHtml(spec.composition.layout)}">
+<body data-layout="${escapeHtml(spec.composition.layout)}" data-chrome="${escapeHtml(spec.componentKit.chrome)}" data-marker="${escapeHtml(spec.componentKit.marker)}" data-emphasis="${escapeHtml(spec.componentKit.emphasis)}" data-divider="${escapeHtml(spec.componentKit.divider)}">
   <nav class="nav"><strong>${title}</strong><ul><li><a href="#colors">Colors</a></li><li><a href="#typography">Typography</a></li><li><a href="#components">Components</a></li><li><a href="#sample-portfolio">Elements</a></li></ul><span>r${revision}</span></nav>
   <header class="cover">
     <span>Portfolio design system</span>

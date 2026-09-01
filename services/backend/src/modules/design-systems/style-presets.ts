@@ -285,6 +285,81 @@ const SHAPES: Record<string, {
   retro: { cardRadius: 0, controlRadius: 0, borderWidth: 2, shadowStyle: "bevel" },
 };
 
+/**
+ * 스타일별 컴포넌트 설계.
+ *
+ * 네 축의 조합이 그 스타일의 요소가 어떤 골격으로 서는지 정한다. 값은 각
+ * 프리셋의 지시문에서 가져왔고 뒤 주석이 그 문장이다. 표에 없는 스타일은
+ * 아무 표식 없는 기본 조합을 받는다.
+ */
+const KITS: Record<string, DesignSystemSpecV2["componentKit"]> = {
+  // 굵기가 다른 가로선과 넓은 여백으로 섹션을 구분한다.
+  monochrome: { chrome: "masthead", marker: "rule", emphasis: "underlined", divider: "thick" },
+  // 원·사각형·삼각형과 굵은 검정 선을 구성의 기본으로 삼는다.
+  bauhaus: { chrome: "plain", marker: "bullet", emphasis: "boxed", divider: "thick" },
+  // 메타정보는 작은 고정폭 라벨로 정렬한다.
+  "modern-dark": { chrome: "plain", marker: "plain", emphasis: "plain", divider: "hairline" },
+  // 신문의 제호 · 가로선과 세로선으로 열의 관계를 보인다.
+  newsprint: { chrome: "masthead", marker: "numbered", emphasis: "underlined", divider: "double" },
+  // 명료한 정보 위계.
+  saas: { chrome: "plain", marker: "plain", emphasis: "plain", divider: "hairline" },
+  // 가는 선과 절제된 금빛 표식만 사용한다.
+  luxury: { chrome: "frame", marker: "rule", emphasis: "plain", divider: "hairline" },
+  // 테두리가 얇은 터미널 창 · 제목 앞에 > 또는 $ 표식 · 정렬된 텍스트 막대.
+  terminal: { chrome: "window", marker: "prompt", emphasis: "bar", divider: "dashed" },
+  // 일관된 격자와 왼쪽 정렬 · 제목·번호·본문의 위치를 맞춘다.
+  "swiss-minimalist": { chrome: "plain", marker: "numbered", emphasis: "oversized", divider: "thick" },
+  // 짧은 강점 문장을 포스터처럼 크게 두고 굵은 제목과 빈 면을 교차시킨다.
+  kinetic: { chrome: "sticker", marker: "plain", emphasis: "oversized", divider: "none" },
+  // 평면 색면 · 호버와 포커스는 색과 테두리로 분명히 표시한다.
+  "flat-design": { chrome: "plain", marker: "bullet", emphasis: "boxed", divider: "none" },
+  // 계단형 경계 · 부채꼴이나 마름모 표식 · 대칭 기하.
+  "art-deco": { chrome: "frame", marker: "rule", emphasis: "plain", divider: "double" },
+  // 부드러운 반응 · 그림자는 역할을 설명할 때만.
+  "material-design": { chrome: "plain", marker: "plain", emphasis: "plain", divider: "hairline" },
+  // 굵은 검정 경계와 흐림 없는 어긋난 그림자로 면을 분리한다.
+  "neo-brutalism": { chrome: "sticker", marker: "bracket", emphasis: "boxed", divider: "thick" },
+  // 첫 화면의 강점 문장을 가장 큰 시각 요소로 삼는다.
+  "bold-typography": { chrome: "plain", marker: "plain", emphasis: "oversized", divider: "none" },
+  // 주석과 구획선 · 고전 서재.
+  academia: { chrome: "masthead", marker: "numbered", emphasis: "plain", divider: "double" },
+  // 기술 라벨 · 잘린 모서리 · 네온 강조.
+  cyberpunk: { chrome: "window", marker: "bracket", emphasis: "bar", divider: "dashed" },
+  // 어두운 유리 면 · 정밀한 숫자.
+  web3: { chrome: "panel", marker: "bracket", emphasis: "bar", divider: "hairline" },
+  // 스티커 표식 · 밝은 도형.
+  "playful-geometric": { chrome: "sticker", marker: "bullet", emphasis: "boxed", divider: "none" },
+  // 차분한 어두운 여백.
+  "minimal-dark": { chrome: "plain", marker: "rule", emphasis: "plain", divider: "hairline" },
+  // 부드러운 입체 면 · 둥근 제목.
+  claymorphism: { chrome: "blob", marker: "plain", emphasis: "plain", divider: "none" },
+  // 정중한 판면 · 절제된 구획.
+  professional: { chrome: "plain", marker: "numbered", emphasis: "plain", divider: "hairline" },
+  // 식물선 장식은 작게 제한한다.
+  botanical: { chrome: "blob", marker: "rule", emphasis: "plain", divider: "dotted" },
+  // 색 번짐은 제목이나 경계에 제한 · 복고 창.
+  vaporwave: { chrome: "window", marker: "bracket", emphasis: "bar", divider: "dashed" },
+  // 프로젝트별 역할·기여·성과를 쉽게 찾도록 라벨을 반복한다.
+  enterprise: { chrome: "panel", marker: "numbered", emphasis: "boxed", divider: "hairline" },
+  // 종이 위 메모처럼 약간 불규칙한 테두리.
+  sketch: { chrome: "plain", marker: "bullet", emphasis: "underlined", divider: "dashed" },
+  // 얇은 경계와 작은 번호 라벨 · 안쪽 그림자.
+  industrial: { chrome: "panel", marker: "numbered", emphasis: "bar", divider: "thick" },
+  // 바탕과 같은 계열의 면에 돌출과 음각을 만든다.
+  neumorphism: { chrome: "blob", marker: "plain", emphasis: "plain", divider: "none" },
+  // 섹션 경계를 지나치게 딱딱하게 만들지 않는다.
+  organic: { chrome: "blob", marker: "rule", emphasis: "plain", divider: "dotted" },
+  // 다채로운 겹침 · 굵은 테두리와 어긋난 그림자.
+  maximalism: { chrome: "sticker", marker: "bracket", emphasis: "oversized", divider: "thick" },
+  // 밝고 어두운 경사 테두리로 고전 데스크톱 창을 표현한다.
+  retro: { chrome: "window", marker: "bracket", emphasis: "boxed", divider: "thick" },
+};
+
+/** 표에 없는 스타일이 받는 조합. 표식 없이 면과 얇은 선만 쓴다. */
+const PLAIN_KIT: DesignSystemSpecV2["componentKit"] = {
+  chrome: "plain", marker: "plain", emphasis: "plain", divider: "hairline",
+};
+
 const token = (value: string, role: string) => ({ value, role });
 
 /** 지시문을 문장으로 가른다. 프리셋의 prompt 는 모두 `…다.` 로 끝나는 서술문이다. */
@@ -373,6 +448,7 @@ function createSpec(preset: PortfolioStylePreset): DesignSystemSpecV2 {
       sectionGap: size.sectionGap,
       contentWidth: size.contentWidth,
     },
+    componentKit: KITS[slug] ?? PLAIN_KIT,
     shape: SHAPES[slug] ?? {
       cardRadius: size.cardRadius,
       controlRadius: density === "compact" ? 4 : 8,

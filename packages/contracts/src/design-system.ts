@@ -168,6 +168,26 @@ export const DesignSystemSpecV2Schema = z.strictObject({
       "none", "hairline", "soft", "layered", "offset", "inset", "relief", "bevel",
     ]),
   }),
+  /**
+   * 컴포넌트 어휘.
+   *
+   * 색과 서체만 갈아 끼우면 서른여덟 벌이 같은 상자를 재탕한다. 요소의 **골격**
+   * 이 스타일마다 달라야 한다 — Terminal 은 터미널 창, Newsprint 는 제호와
+   * 이중선, Retro 는 고전 데스크톱 창, Neo Brutalism 은 어긋난 스티커다.
+   *
+   * 네 축의 조합이 그 스타일의 컴포넌트 설계다. 축마다 값을 늘리면 표현이
+   * 늘어나고, 스타일마다 950벌을 손으로 그리지 않아도 된다.
+   */
+  componentKit: z.strictObject({
+    /** 면을 두르는 방식. 제목 표시줄 · 제호선 · 이중 테두리처럼 골격을 바꾼다. */
+    chrome: z.enum(["plain", "window", "masthead", "sticker", "panel", "frame", "blob"]),
+    /** 라벨 앞에 붙는 표식. */
+    marker: z.enum(["plain", "prompt", "numbered", "rule", "bullet", "bracket"]),
+    /** 대표 수치를 세우는 방식. */
+    emphasis: z.enum(["plain", "boxed", "underlined", "oversized", "bar"]),
+    /** 항목을 가르는 선. */
+    divider: z.enum(["none", "hairline", "double", "dashed", "dotted", "thick"]),
+  }),
   composition: z.strictObject({
     /** 사람이 읽는 이름. `product-white-space` 처럼 디자인마다 다르다. */
     structure: TextSchema,

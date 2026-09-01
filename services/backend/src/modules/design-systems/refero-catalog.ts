@@ -36,6 +36,7 @@ interface ReferoStyleDefinition {
     action: string;
     actionText: string;
   };
+  componentKit: DesignSystemSpecV2["componentKit"];
   typography: {
     display: string;
     body: string;
@@ -117,6 +118,7 @@ function createSpec(definition: ReferoStyleDefinition): DesignSystemSpecV2 {
         { token: "muted", role: "보조 정보", usage: "기간, 역할, 설명" },
       ],
     },
+    componentKit: definition.componentKit,
     typography: {
       display: {
         family: definition.typography.display,
@@ -224,6 +226,7 @@ export const referoDesignSystems = {
     sourceName: "Apple (España)",
     revision: 2,
     referoStyleUrl: "https://styles.refero.design/style/c9cabb96-32fa-4896-837a-f2497ce1c856",
+    componentKit: { chrome: "plain", marker: "plain", emphasis: "oversized", divider: "hairline" },
     originalUrl: "https://www.apple.com/macbook-neo",
     base: builtinDesignSystems.editorial.spec,
     description: "거대한 제목, 넓은 흰 여백, 제품 이미지에만 남기는 색으로 한 프로젝트를 집중시키는 방향",
@@ -271,6 +274,7 @@ export const referoDesignSystems = {
     name: "Mercury Alpine",
     sourceName: "Mercury — Alpine banking at blue hour",
     referoStyleUrl: "https://styles.refero.design/style/3172cd4d-118a-4a16-a259-6b634d32322e",
+    componentKit: { chrome: "panel", marker: "rule", emphasis: "plain", divider: "hairline" },
     originalUrl: "https://mercury.com/",
     base: builtinDesignSystems.signal.spec,
     description: "어두운 온닉스 지면, 조용한 그래파이트 카드, 코발트 행동 하나로 리더십 사례를 묵직하게 보여주는 방향",
@@ -318,6 +322,7 @@ export const referoDesignSystems = {
     name: "Linear Midnight",
     sourceName: "Linear — Midnight precision instrument",
     referoStyleUrl: "https://styles.refero.design/style/90ce5883-bb24-4466-93f7-801cd617b0d1",
+    componentKit: { chrome: "plain", marker: "numbered", emphasis: "bar", divider: "hairline" },
     originalUrl: "https://linear.app/",
     base: builtinDesignSystems.signal.spec,
     description: "거의 검은 표면, 0.5px 경계, 산성 라임 행동으로 개발·제품 작업을 정밀하게 배열하는 방향",
@@ -365,6 +370,7 @@ export const referoDesignSystems = {
     name: "ElevenLabs Cream",
     sourceName: "ElevenLabs — Warm cream editorial",
     referoStyleUrl: "https://styles.refero.design/style/031056ff-7af1-46db-8daa-115f731c5d26",
+    componentKit: { chrome: "masthead", marker: "rule", emphasis: "plain", divider: "hairline" },
     originalUrl: "https://elevenlabs.io/",
     base: builtinDesignSystems.editorial.spec,
     description: "달걀 껍질 같은 웜 화이트, 가는 제목, 타우프 카드로 연구·창작 사례를 조용하게 보여주는 방향",
@@ -412,6 +418,7 @@ export const referoDesignSystems = {
     name: "Stripe Ledger",
     sourceName: "Stripe — Indigo-ink ledger on frosted glass",
     referoStyleUrl: "https://styles.refero.design/style/48e5de76-05d5-4c4e-a269-c7c245b291ec",
+    componentKit: { chrome: "panel", marker: "bracket", emphasis: "boxed", divider: "hairline" },
     originalUrl: "https://stripe.com/",
     base: builtinDesignSystems.clarity.spec,
     description: "쿨 화이트 지면, 딥 네이비 글, 인디고 행동으로 수치와 시스템 근거를 레저처럼 정리하는 방향",
