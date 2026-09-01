@@ -100,3 +100,23 @@ as new on duplicate key update
   display_name = new.display_name,
   site_url = coalesce(job_source.site_url, new.site_url),
   is_active = true;
+
+-- 고용24 채용정보 화면. token 은 직종코드이고, 여러 개면 `|`로 잇는다.
+--
+-- **직종을 하나씩 나눠 둔다.** 한 출처가 목록 50장(5,000건)을 넘으면 어댑터가
+-- 던진다 — 조용히 자르지 않기 위해서다. IT 다섯 직종을 합치면 4,761건이라
+-- 한 줄로 묶어도 지금은 들어가지만, 늘어나면 그날 통째로 실패한다.
+--
+-- 직종코드는 공통코드 API 로 받는다(`target=CMCD&dtlGb=2`).
+-- 회사가 여럿이라 `site_url` 은 비운다 — 로고는 공고마다 회사가 다르다.
+insert into job_source (provider, token, display_name, site_url)
+values
+  ('work24web', '022', '고용24 · 컴퓨터하드웨어·통신공학',   null),
+  ('work24web', '023', '고용24 · 컴퓨터시스템',              null),
+  ('work24web', '024', '고용24 · 소프트웨어',                null),
+  ('work24web', '025', '고용24 · 네트워크·정보보안',         null),
+  ('work24web', '026', '고용24 · 데이터·정보시스템·웹운영',  null)
+as new on duplicate key update
+  display_name = new.display_name,
+  site_url = coalesce(job_source.site_url, new.site_url),
+  is_active = true;

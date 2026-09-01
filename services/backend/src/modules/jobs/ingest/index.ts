@@ -5,6 +5,7 @@ import { GreetingAdapter } from "./greeting.js";
 import { LeverAdapter } from "./lever.js";
 import { WorkableAdapter } from "./workable.js";
 import { Work24Adapter } from "./work24.js";
+import { Work24WebAdapter } from "./work24-web.js";
 
 export { JobIngestService } from "./service.js";
 export { JobUrlImporter } from "./url-import.js";
@@ -25,6 +26,7 @@ export function createJobSourceAdapters(config: RuntimeConfig): JobSourceAdapter
     new GreetingAdapter(),
     new LeverAdapter(),
     new WorkableAdapter(),
+    new Work24WebAdapter(),
   ];
   if (config.work24ApiKey) adapters.push(new Work24Adapter(config.work24ApiKey));
   return adapters;
