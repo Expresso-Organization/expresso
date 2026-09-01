@@ -1,7 +1,7 @@
 import type { JobSourceProvider } from "@expresso/contracts";
 
 import {
-  fetchText, htmlToMarkdown, mapWithLimit,
+  createPacer, fetchText, htmlToMarkdown, mapWithLimit,
   type JobSourceAdapter, type RawPosting,
 } from "./adapter.js";
 
@@ -26,7 +26,16 @@ import {
 const HOST_SUFFIX = ".career.greetinghr.com";
 
 /** 본문 읽기를 동시에 몇 개까지 겹칠지. 남의 서버다. */
-const DETAIL_LANES = 4;
+const DETAIL_LANES = 3;
+
+/**
+ * 요청 사이 최소 간격.
+ *
+ * 보드가 클수록 상세 요청이 그만큼 늘어난다 — 실측에서 올리브영이 214건,
+ * 무신사가 104건이었다. 동시성만 묶으면 응답이 빠른 보드에서 초당 수십 번이
+ * 나가므로, 시작 시각을 줄 세워 초당 다섯 번으로 묶는다.
+ */
+const MIN_INTERVAL_MS = 200;
 
 interface GreetingPlace { location?: string | null }
 interface GreetingCareer {
@@ -123,22 +132,40 @@ function detailOf(payload: unknown): string | null {
   return null;
 }
 
+/** 붙는 세기를 부르는 쪽이 정할 수 있게 열어 둔다. 기본값이 안전한 값이다. */
+export interface GreetingOptions {
+  /** 요청 사이 최소 간격(ms). 기본 200ms — 초당 다섯 번. */
+  minIntervalMs?: number;
+  /** 본문 읽기를 동시에 몇 개까지. 기본 3. */
+  detailLanes?: number;
+}
+
 export class GreetingAdapter implements JobSourceAdapter {
   readonly provider: JobSourceProvider = "greeting";
+  readonly #minIntervalMs: number;
+  readonly #detailLanes: number;
+
+  constructor(options: GreetingOptions = {}) {
+    this.#minIntervalMs = options.minIntervalMs ?? MIN_INTERVAL_MS;
+    this.#detailLanes = options.detailLanes ?? DETAIL_LANES;
+  }
 
   async fetch(token: string, displayName: string): Promise<RawPosting[]> {
     const base = `https://${encodeURIComponent(token)}${HOST_SUFFIX}`;
+    const pace = createPacer(this.#minIntervalMs);
+    await pace();
     const openings = openingsOf(nextData(await fetchText(`${base}/ko/home`)));
 
     const built = await mapWithLimit(
       openings,
-      DETAIL_LANES,
+      this.#detailLanes,
       async (opening): Promise<RawPosting | null> => {
         const id = opening.openingId;
         const title = opening.title?.trim();
         if (!id || !title) return null;
 
         const url = `${base}/ko/o/${id}`;
+        await pace();
         const detail = detailOf(nextData(await fetchText(url)));
         // 본문이 없으면 들이지 않는다. 짧은 본문을 거르는 것은 수집 서비스의
         // 일이지만, **아예 못 읽은 것**은 여기서 끝내야 그 공고가 왜 없는지

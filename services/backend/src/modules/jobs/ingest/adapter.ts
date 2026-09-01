@@ -145,7 +145,7 @@ export async function fetchText(url: string, timeoutMs = 20_000): Promise<string
       signal: controller.signal,
       headers: { accept: "text/html,application/json", "user-agent": USER_AGENT },
     });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) throw new HttpError(response.status, retryAfterMs(response));
     return await response.text();
   } finally {
     clearTimeout(timer);
@@ -153,7 +153,55 @@ export async function fetchText(url: string, timeoutMs = 20_000): Promise<string
 }
 
 /**
+ * 상태 코드를 들고 다니는 실패.
+ *
+ * `HTTP 503` 같은 문자열로 뭉개면 **막힌 것과 그냥 실패한 것을 가를 수 없다.**
+ * 상대가 밀어내는 중이면 계속 두드리는 대신 멈춰야 한다.
+ */
+export class HttpError extends Error {
+  constructor(readonly status: number, readonly retryAfterMs: number | null = null) {
+    super(`HTTP ${status}`);
+    this.name = "HttpError";
+  }
+
+  /** 상대가 "그만 보내라"고 말한 것인가. */
+  get isBackpressure(): boolean {
+    return this.status === 429 || this.status === 503 || this.status === 509;
+  }
+}
+
+/** `Retry-After`는 초 또는 날짜로 온다. 둘 다 읽는다. */
+function retryAfterMs(response: Response): number | null {
+  const raw = response.headers.get("retry-after");
+  if (!raw) return null;
+  const seconds = Number(raw);
+  if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+  const at = Date.parse(raw);
+  return Number.isNaN(at) ? null : Math.max(0, at - Date.now());
+}
+
+/**
+ * 요청 사이의 최소 간격을 지킨다.
+ *
+ * **동시성 제한만으로는 폭주를 막지 못한다.** 레인 셋이 각각 50ms 만에 끝나면
+ * 초당 60번을 던진다. 남의 서버가 보는 것은 우리의 레인 수가 아니라 초당 몇
+ * 번이냐다. 시작 시각을 줄 세워 그 수를 묶는다.
+ */
+export function createPacer(minIntervalMs: number): () => Promise<void> {
+  let next = 0;
+  return async () => {
+    const now = Date.now();
+    const at = Math.max(now, next);
+    next = at + minIntervalMs;
+    if (at > now) await new Promise((resolve) => setTimeout(resolve, at - now));
+  };
+}
+
+/**
  * 한 번에 몇 개까지만 겹쳐 부른다.
+ *
+ * 간격을 두는 일은 `createPacer`가 맡는다 — 둘을 함께 써야 순간 폭주와 총량이
+ * 같이 잡힌다.
  *
  * 공고 하나가 페이지 하나인 보드가 있어서(그리팅) 한 출처를 읽는 데 수십~수백
  * 번을 부른다. 전부 한꺼번에 던지면 남의 서버에 순간 부하를 주고 우리도 막힌다.
@@ -174,7 +222,10 @@ export async function mapWithLimit<In, Out>(
       if (index >= items.length) return;
       try {
         results[index] = await run(items[index] as In);
-      } catch {
+      } catch (error) {
+        // 상대가 밀어내는 중이면 나머지도 같은 답을 받는다. 끝까지 두드려
+        // 놓고 "몇 건 모았다"고 적는 대신, 출처 하나를 통째로 실패로 남긴다.
+        if (error instanceof HttpError && error.isBackpressure) throw error;
         results[index] = null;
       }
     }

@@ -1,7 +1,7 @@
 import type { JobSourceProvider } from "@expresso/contracts";
 
 import {
-  fetchText, htmlToMarkdown, mapWithLimit,
+  createPacer, fetchText, htmlToMarkdown, mapWithLimit,
   type JobSourceAdapter, type RawPosting,
 } from "./adapter.js";
 
@@ -36,16 +36,46 @@ const LIST_PATH = "/wk/a/b/1200/retriveDtlEmpSrchList.do";
 const PAGE_SIZE = 100;
 
 /**
- * 한 출처가 넘길 목록 장수의 상한.
+ * 며칠치를 볼 것인가.
  *
- * 50장이면 5,000건이라 IT 직종(4,761건)은 통째로 들어온다. 여기에 걸린다는
- * 것은 **한 출처에 너무 넓은 직종을 묶었다**는 뜻이다 — 조용히 자르는 대신
- * 던져서 출처를 쪼개게 한다. 전 직종(132,677건)을 한 줄로 두면 안 된다.
+ * 목록은 **등록일 내림차순**이다(실측: 1쪽 오늘 · 10쪽 6일 전 · 40쪽 한 달 전).
+ * 수집은 하루 한 번 돌므로 매번 전량을 훑을 이유가 없다 — 창을 벗어난 줄을
+ * 만나면 거기서 멈춘다. 이미 들인 공고는 `dedupe_hash`에서 걸리므로 겹쳐 보는
+ * 값은 요청 한 번뿐이다.
+ *
+ * 3일이면 실행을 이틀 걸러도 빠지는 공고가 없다. IT 직종 다섯을 한 출처로 묶어
+ * 실측하면 이렇게 줄어든다.
+ *
+ *   창 없음   목록 48장 · 상세 4,761건
+ *   7일       목록 14장 · 상세 1,344건
+ *   3일       목록  6장 · 상세   529건
  */
-const MAX_PAGES = 50;
+const RECENT_DAYS = 3;
 
-/** 상세를 동시에 몇 개까지. 남의 서버이고, 정부 서비스다. */
-const DETAIL_LANES = 3;
+/**
+ * 창이 무너졌을 때를 막는 뒷벽.
+ *
+ * 정렬이 바뀌거나 등록일을 못 읽으면 창이 듣지 않는다. 그때 48쪽을 끝까지
+ * 넘기는 대신 던진다 — 조용히 자르는 것보다 실패로 남는 편이 낫다.
+ *
+ * 3일 창이 실측 6장에서 닫히므로 세 배 남짓 여유를 둔다. 여기 걸린다는 것은
+ * 창이 듣지 않는다는 뜻이지, 공고가 많다는 뜻이 아니다.
+ */
+const MAX_PAGES = 20;
+
+/**
+ * 상세를 동시에 몇 개까지. 남의 서버이고, 정부 서비스다.
+ */
+const DETAIL_LANES = 2;
+
+/**
+ * 요청 사이 최소 간격.
+ *
+ * 동시성만 묶으면 응답이 빠를 때 초당 수십 번이 나간다. 이 값이 실제 상한을
+ * 정한다 — 400ms면 초당 2.5번을 넘지 않는다. 목록 10장에 상세 1,000건이면
+ * 한 번 도는 데 7분쯤 걸리고, 하루 한 번이라 그 정도가 맞다.
+ */
+const MIN_INTERVAL_MS = 400;
 
 /** 검색 화면이 실제로 넘기는 값. 비우면 목록이 열 건만 온다. */
 function listUrl(occupation: string, page: number): string {
@@ -71,6 +101,8 @@ export interface ListRow {
   title: string;
   detailUrl: string;
   expiresAt: Date | null;
+  /** 등록일. 목록이 이 순서로 내려온다 — 어디서 멈출지 정하는 값이다. */
+  postedOn: string | null;
 }
 
 /**
@@ -97,11 +129,23 @@ function decode(value: string): string {
 }
 
 /**
+ * 목록 한 장에 줄이 몇 개 실렸나.
+ *
+ * `parseList`가 돌려준 수로 마지막 장을 가늠하면 **틀린다** — 상세 링크가 없는
+ * 줄이 섞여 100줄짜리 장이 99건으로 파싱된다(실측). 그걸 "덜 찬 장"으로 읽으면
+ * 첫 장에서 멈춰 버린다. 끝 판정은 표에 실린 줄 수로 한다.
+ */
+
+/**
  * 목록 한 장에서 줄을 꺼낸다.
  *
  * 체크박스가 `공고번호|정보구분|회사명|공고명`을 한 칸에 담아 둔다 — 화면의
  * 표를 헤아리는 것보다 이쪽이 흔들리지 않는다.
  */
+export function countListRows(html: string): number {
+  return html.split(/<tr id="list\d+">/).length - 1;
+}
+
 export function parseList(html: string): ListRow[] {
   const rows: ListRow[] = [];
   for (const chunk of html.split(/<tr id="list\d+">/).slice(1)) {
@@ -118,12 +162,15 @@ export function parseList(html: string): ListRow[] {
       ? new Date(`${due[1]}-${due[2]}-${due[3]}T23:59:59+09:00`)
       : null;
 
+    const posted = /등록일\s*:\s*(\d{4}-\d{2}-\d{2})/.exec(chunk);
+
     rows.push({
       wantedAuthNo,
       companyName: decode(companyName).trim(),
       title: decode(title).trim(),
       detailUrl: ORIGIN + decode(href),
       expiresAt: expiresAt && !Number.isNaN(expiresAt.getTime()) ? expiresAt : null,
+      postedOn: posted?.[1] ?? null,
     });
   }
   return rows;
@@ -156,28 +203,64 @@ export function field(html: string, label: string): string | null {
   return value ? value : null;
 }
 
+/** 붙는 세기를 부르는 쪽이 정할 수 있게 열어 둔다. 기본값이 안전한 값이다. */
+export interface Work24WebOptions {
+  /** 며칠치를 볼지. 기본 7일. */
+  recentDays?: number;
+  /** 요청 사이 최소 간격(ms). 기본 400ms — 초당 2.5번. */
+  minIntervalMs?: number;
+  /** 상세를 동시에 몇 개까지. 기본 2. */
+  detailLanes?: number;
+}
+
 export class Work24WebAdapter implements JobSourceAdapter {
   readonly provider: JobSourceProvider = "work24web";
+  readonly #recentDays: number;
+  readonly #minIntervalMs: number;
+  readonly #detailLanes: number;
+
+  constructor(options: Work24WebOptions = {}) {
+    this.#recentDays = options.recentDays ?? RECENT_DAYS;
+    this.#minIntervalMs = options.minIntervalMs ?? MIN_INTERVAL_MS;
+    this.#detailLanes = options.detailLanes ?? DETAIL_LANES;
+  }
 
   /** `token`은 직종코드다. 여러 개면 `|`로 잇는다 — 화면이 쓰는 그대로. */
   async fetch(token: string): Promise<RawPosting[]> {
+    const pace = createPacer(this.#minIntervalMs);
+    const cutoff = new Date(Date.now() - this.#recentDays * 86_400_000)
+      .toISOString().slice(0, 10);
+
     const rows: ListRow[] = [];
-    for (let page = 1; page <= MAX_PAGES; page += 1) {
-      const found = parseList(await fetchText(listUrl(token, page), 30_000));
-      if (found.length === 0) break;
-      rows.push(...found);
-      if (found.length < PAGE_SIZE) break;
-      if (page === MAX_PAGES) {
+    let reachedCutoff = false;
+    for (let page = 1; page <= MAX_PAGES && !reachedCutoff; page += 1) {
+      await pace();
+      const html = await fetchText(listUrl(token, page), 30_000);
+      const onPage = countListRows(html);
+      if (onPage === 0) break;
+
+      for (const row of parseList(html)) {
+        // 등록일을 못 읽은 줄은 남긴다 — 우리가 못 읽은 것을 "오래된 것"으로
+        // 바꿔 말하면 그 공고는 영영 들어오지 않는다.
+        if (row.postedOn !== null && row.postedOn < cutoff) { reachedCutoff = true; break; }
+        rows.push(row);
+      }
+      // 표에 실린 줄로 끝을 가늠한다. 파싱된 수로 보면 한 줄만 빠져도
+      // 마지막 장으로 오해한다.
+      if (onPage < PAGE_SIZE) break;
+      if (page === MAX_PAGES && !reachedCutoff) {
+        // 창이 듣지 않았다. 정렬이 바뀌었거나 등록일을 못 읽고 있다.
         throw new Error(
-          `occupation ${token} exceeds ${MAX_PAGES * PAGE_SIZE} postings — split the source`,
+          `occupation ${token}: ${this.#recentDays}일 창이 ${MAX_PAGES}장 안에서 닫히지 않았다`,
         );
       }
     }
 
     const built = await mapWithLimit(
       rows,
-      DETAIL_LANES,
+      this.#detailLanes,
       async (row): Promise<RawPosting | null> => {
+        await pace();
         const detail = await fetchText(row.detailUrl, 30_000);
         const body = parseBody(detail);
         // 본문이 없는 공고가 흔하다 — 자사 채용 페이지로 넘기는 자리다.
