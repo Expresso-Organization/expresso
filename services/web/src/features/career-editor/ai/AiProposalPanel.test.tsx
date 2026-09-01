@@ -39,7 +39,8 @@ describe("AiProposalPanel", () => {
     cleanup();
     const undoApi = client();
     render(<AiProposalPanel recordId={recordId} documentVersion={4} selectedBlockIds={[blockId]} client={undoApi} />);
-    fireEvent.click(screen.getByRole("button", { name: "문장 다듬기" }));
+    fireEvent.change(screen.getByLabelText("AI에게 편집 요청"), { target: { value: "문장 다듬기" } });
+    fireEvent.click(screen.getByRole("button", { name: "제안 만들기" }));
     expect(await screen.findByText(proposal.summary)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /개 변경 적용/ }));
     expect(await screen.findByRole("button", { name: "변경 되돌리기" })).toBeTruthy();
@@ -53,7 +54,8 @@ describe("AiProposalPanel", () => {
     const api = client();
     render(<><button type="button">본문 포커스</button><AiProposalPanel recordId={recordId} documentVersion={3} selectedBlockIds={[blockId]} client={api} /></>);
     const editorFocus = screen.getByRole("button", { name: "본문 포커스" }); editorFocus.focus();
-    const quick = screen.getByRole("button", { name: "성과를 더 구체적으로" }); fireEvent.pointerDown(quick); quick.focus(); fireEvent.click(quick);
+    fireEvent.change(screen.getByLabelText("AI에게 편집 요청"), { target: { value: "성과를 더 구체적으로" } });
+    const send = screen.getByRole("button", { name: "제안 만들기" }); fireEvent.pointerDown(send); send.focus(); fireEvent.click(send);
     expect(await screen.findByText(proposal.summary)).toBeTruthy();
     await waitFor(() => expect(document.activeElement).toBe(editorFocus));
     fireEvent.click(screen.getByRole("button", { name: "거절" }));
@@ -75,5 +77,18 @@ describe("AiProposalPanel", () => {
     expect(await screen.findByText("사용자 10% 증가")).toBeTruthy();
     expect(screen.getByText("성과 수치 변경")).toBeTruthy();
     expect(handled).toHaveBeenCalledOnce();
+  });
+
+  it("adds record context and expands slash commands from the prompt dock", () => {
+    render(<AiProposalPanel recordId={recordId} documentVersion={3} selectedBlockIds={[blockId]} client={client()} />);
+    fireEvent.click(screen.getByRole("button", { name: "AI 컨텍스트 추가" }));
+    expect(screen.getByRole("listbox", { name: "AI 컨텍스트" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("option", { name: /현재 기록/ }));
+    const input = screen.getByLabelText("AI에게 편집 요청") as HTMLTextAreaElement;
+    expect(input.value).toBe("@현재기록 ");
+    fireEvent.change(input, { target: { value: "/다" } });
+    expect(screen.getByRole("listbox", { name: "AI 빠른 명령" })).toBeTruthy();
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(input.value).toBe("문장 다듬기 ");
   });
 });

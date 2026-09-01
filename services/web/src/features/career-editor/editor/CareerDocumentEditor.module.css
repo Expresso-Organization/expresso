@@ -6,29 +6,9 @@
   font-family: var(--ex-font-ui);
 }
 
-.statusBar {
-  position: sticky;
-  top: 0;
-  z-index: 4;
-  display: flex;
-  min-height: 40px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  border-bottom: 1px solid var(--ex-border-hair);
-  background: var(--ex-bg);
-  color: var(--ex-fg-muted);
-  font-size: var(--ex-text-2xs);
-  white-space: nowrap;
-}
-
-.saveState[data-status="saved"] { color: var(--ex-status-success-text); }
-.saveState[data-status="offline"],
-.saveState[data-status="conflict"] { color: var(--ex-status-danger-text); }
-
 .toolbarRow {
   position: sticky;
-  top: 40px;
+  top: 0;
   z-index: 3;
   display: flex;
   align-items: center;
@@ -166,7 +146,7 @@
 .error { background: var(--ex-status-danger-surface); color: var(--ex-status-danger-text); }
 
 @media (max-width: 767px) {
-  .statusBar, .toolbarRow { padding-right: 14px; padding-left: 14px; }
+  .toolbarRow { padding-right: 14px; padding-left: 14px; }
   .toolbarRow { overflow-x: auto; }
   .content { padding: 32px 22px 96px; }
   .blockHandle { display: none; }

@@ -17,14 +17,6 @@ import { SlashMenu } from "./SlashMenu";
 import { PropertyList } from "../properties/PropertyList";
 import { AiProposalPanel, type AiPromptRequest } from "../ai/AiProposalPanel";
 
-const statusLabel = {
-  loading: "불러오는 중",
-  saving: "저장 중",
-  saved: "저장됨",
-  offline: "오프라인",
-  conflict: "충돌 확인 필요",
-} as const;
-
 export function CareerDocumentEditor({
   recordId,
   mode,
@@ -86,12 +78,6 @@ export function CareerDocumentEditor({
   return (
     <section className={styles.editor} data-mode={mode} aria-label="커리어 문서 편집기">
       {record && category ? <PropertyList record={record} definitions={categoryDefinitions(category)} categoryId={category.id} categoryVersion={category.version} schemaMutable={!category.isSystem} /> : null}
-      <div className={styles.statusBar}>
-        <span>본문 편집</span>
-        <span className={styles.saveState} data-status={snapshot.status} role="status" aria-live="polite">
-          {statusLabel[snapshot.status]}
-        </span>
-      </div>
       <div className={styles.toolbarRow}>
         <SelectionToolbar editor={editor} onAiRequest={(prompt, blockIds) => { const request = { id: crypto.randomUUID(), recordId, prompt, blockIds }; if (onAiRequest) onAiRequest(request); else setAiRequest(request); }} />
         <BlockHandle editor={editor} />

@@ -266,80 +266,12 @@
 /* 하단 바리스타 요청 바 */
 .foot {
   flex-shrink: 0;
-  border-top: 1px solid var(--ex-border-hair);
-  padding: 12px 20px;
+  max-height: 58dvh;
+  padding: 12px 14px;
+  background: var(--ex-bg);
 }
 
 .foot > section { margin: 0; padding-top: 0; border-top: 0; }
-
-.quickActions {
-  display: flex;
-  gap: 7px;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
-}
-
-.quickAction {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-body);
-  background: var(--ex-bg-sunken);
-  border: none;
-  border-radius: 999px;
-  padding: 6px 12px;
-  white-space: nowrap;
-  transition: background var(--ex-motion-quick);
-}
-
-.quickAction:hover {
-  background: var(--ex-bg-muted);
-}
-
-.quickActionSignature {
-  color: var(--ex-accent-text);
-  background: var(--ex-accent-surface);
-}
-
-.quickActionSignature:hover {
-  background: var(--ex-accent-surface-hover);
-}
-
-.composer {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid var(--ex-border);
-  border-radius: 10px;
-  padding: 10px 13px;
-}
-
-.composerInput {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  outline: none;
-  background: none;
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg);
-}
-
-.composerInput::placeholder {
-  color: var(--ex-fg-muted);
-}
-
-.composerSend {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--ex-bg-inverse);
-  border: none;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-}
-
-.composerSend:hover {
-  background: var(--ex-bg-inverse-hover);
-}
 
 @media (max-width: 767px) {
   .panel { width: 100%; border-left: 0; }

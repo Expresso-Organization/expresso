@@ -30,7 +30,7 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   await title.fill("E2E 저장된 경험");
   await Promise.all([page.waitForResponse((response) => response.url().includes(`/api/career/records/${record.id}`) && response.request().method() === "PATCH" && response.ok()), title.blur()]);
   await editor.click(); await page.keyboard.press("ControlOrMeta+A"); await page.keyboard.type("재연결 전 본문");
-  await expect(page.getByRole("status").filter({ hasText: "저장됨" })).toBeVisible();
+  await expect.poll(async () => JSON.stringify((await api<{ document: unknown }>(page, "GET", `/v1/career/records/${record.id}/document`)).document).includes("재연결 전 본문")).toBe(true);
   await page.reload();
   await page.getByText("E2E 저장된 경험", { exact: true }).click();
   await expect(page.getByLabel("제목")).toHaveValue("E2E 저장된 경험");
@@ -52,7 +52,8 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   await expect(slash).toBeHidden();
   await expect(editor).toBeFocused();
 
-  await page.getByRole("button", { name: "문장 다듬기", exact: true }).click();
+  await page.getByLabel("AI에게 편집 요청").fill("문장 다듬기");
+  await page.getByRole("button", { name: "제안 만들기" }).click();
   await expect(page.getByLabel("AI 제안 변경 목록")).toBeVisible();
   await page.getByRole("button", { name: /개 변경 적용/ }).click();
   await expect(page.getByRole("button", { name: "변경 되돌리기" })).toBeVisible();

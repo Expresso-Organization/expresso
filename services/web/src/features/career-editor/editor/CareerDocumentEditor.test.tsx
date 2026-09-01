@@ -58,9 +58,9 @@ describe("CareerDocumentEditor", () => {
     await waitFor(() => expect(screen.queryByRole("menu", { name: "블록 명령" })).toBeNull());
   });
 
-  it("exposes save state and accessible formatting controls", async () => {
+  it("removes the redundant body status bar and keeps accessible formatting controls", async () => {
     render(<CareerDocumentEditor recordId="11111111-1111-4111-8111-111111111111" mode="page" />);
-    expect((await screen.findByRole("status")).textContent).toContain("저장됨");
+    expect(screen.queryByText("본문 편집")).toBeNull();
     expect(screen.getByRole("toolbar", { name: "텍스트 서식" })).toBeTruthy();
     const bold = screen.getByRole("button", { name: "굵게" });
     expect(bold.getAttribute("aria-pressed")).toBe("false");
