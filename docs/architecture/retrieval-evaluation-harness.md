@@ -192,7 +192,7 @@ bootstrap 비교는 사람 라벨 후보군의 프로필별 NDCG@10을 사용합
 | `insufficient_human_labels` | test 사람 라벨이 300쌍 미만 |
 | `teacher_untrusted` | 사람 라벨 300쌍 이상이고 teacher–human kappa가 0.6 미만 |
 | `baseline_not_beaten` | 후보 NDCG 상대 개선이 5% 미만이거나 bootstrap 하한이 0 이하 |
-| `metric_threshold_failed` | 사람 기준 NDCG@10 0.80, AUC 0.85 또는 규칙 baseline 대비 상대 개선 20% 미달 |
+| `metric_threshold_failed` | 사람 기준 NDCG@10 0.80, AUC 0.85, 규칙 baseline 대비 상대 개선 20% 또는 프로필당 사람 라벨 후보 10개 미달 |
 | `passed` | 위 실패 조건이 없고 기존 설계서의 사람 기준 개선 조건도 충족 |
 
 사람 라벨이 부족해도 합성 라벨 기준 지표와 baseline 비교값은 기록합니다. 다만 공식 통과
