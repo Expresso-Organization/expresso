@@ -38,7 +38,7 @@ function fallbackView(category: CareerCategory): CareerViewConfiguration {
   const date = definitions.find((item) => item.type === "date");
   const type = category.defaultView === "timeline" && !date ? "table" : category.defaultView;
   const now = new Date().toISOString();
-  return { id: `local-${category.id}`, categoryId: category.id, name: "기본 뷰", type, version: 1, order: 0, filter: null, sorts: [], groupPropertyId: null, groupOrder: [], visiblePropertyIds: definitions.map((item) => item.id), propertyOrder: definitions.map((item) => item.id), columnWidths: {}, gallery: type === "gallery" ? { coverPropertyId: null, previewPropertyIds: definitions.slice(0, 3).map((item) => item.id) } : null, board: type === "board" ? { hiddenGroupIds: [], cardOrder: {} } : null, timeline: type === "timeline" && date ? { startPropertyId: date.id, endPropertyId: null, axisStart: null, axisEnd: null } : null, createdAt: now, updatedAt: now };
+  return { id: `local-${category.id}`, categoryId: category.id, name: "기본 뷰", type, version: 1, order: 0, filter: null, sorts: [], groupPropertyId: null, groupOrder: [], recordOrder: [], visiblePropertyIds: definitions.map((item) => item.id), propertyOrder: definitions.map((item) => item.id), columnWidths: {}, gallery: type === "gallery" ? { coverPropertyId: null, previewPropertyIds: definitions.slice(0, 3).map((item) => item.id) } : null, board: type === "board" ? { hiddenGroupIds: [], cardOrder: {} } : null, timeline: type === "timeline" && date ? { startPropertyId: date.id, endPropertyId: null, axisStart: null, axisEnd: null } : null, createdAt: now, updatedAt: now };
 }
 
 export default async function CareerCategoryPage({

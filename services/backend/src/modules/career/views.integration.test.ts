@@ -54,7 +54,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     name: "점수순", type: "table" as const,
     filter: { propertyId: scoreId, operator: "gte" as const, operand: { type: "number" as const, value: 0 } },
     sorts: [{ propertyId: scoreId, direction: "asc" as const, nulls: "last" as const }],
-    groupPropertyId: null, groupOrder: [], visiblePropertyIds: [titleId, scoreId], propertyOrder: [titleId, scoreId],
+    groupPropertyId: null, groupOrder: [], recordOrder: [], visiblePropertyIds: [titleId, scoreId], propertyOrder: [titleId, scoreId],
     columnWidths: { [scoreId]: 140 }, gallery: null, board: null, timeline: null,
   });
 

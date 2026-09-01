@@ -42,6 +42,71 @@ final result: passed
 
 ---
 
+# Career table row controls design QA
+
+- Source visual truth: `/var/folders/wy/zrbg0t692zq6smx73mhzsdhr0000gn/T/codex-clipboard-1556a70d-d73c-4c81-8cf4-40ebbc0a9bd5.png`
+- Implementation screenshot: `/tmp/expresso-notion-row-controls.png`
+- Focused comparison: `/tmp/expresso-notion-row-controls-comparison.png`
+- Route: `http://127.0.0.1:3200/career/e2e_properties_a86af0b5652a4e9bb9efe8f3344c2f85`
+- Viewport: 1433 × 1027 CSS px, dark theme
+- Source pixels: 782 × 318 at approximately 2× density
+- Implementation pixels: 1433 × 1027 at browser viewport density
+- Normalization: the source was reduced to 390 × 159 before comparing the row-control region at matching CSS density.
+- State: grouped table, `모든 속성` row controls visible; selected checkbox state checked separately
+
+## Full-view comparison evidence
+
+The source is a focused Notion database crop, so the implementation was checked in its full Expresso screen first to confirm that the wider row-control column did not shift the sidebar, toolbar, grouped-table boundaries, or horizontal scrolling behavior.
+
+## Focused region comparison evidence
+
+The normalized comparison places the source and implementation row regions together. Both use the same left-to-right order: add, six-dot drag handle, selection checkbox, page icon, and title. The controls share the compact 16–18 px optical scale after source-density normalization and appear only while the row is hovered, focused, active, or selected.
+
+## Required fidelity surfaces
+
+- Fonts and typography: existing Expresso table text remains at its established size and weight; the row controls contain icons only.
+- Spacing and layout rhythm: the action column is 96 px, with 24 px add and drag targets, a 16 px checkbox, and 3 px internal gaps. The title starts after a page icon with an 8 px gap.
+- Colors and visual tokens: inactive controls use muted foreground and neutral borders; hover, focus, checked, drag, and drop states use existing `--ex-*` tokens.
+- Image quality and asset fidelity: all visible controls use the existing Phosphor icon set. No raster placeholder, handcrafted SVG, CSS icon, or text glyph was introduced.
+- Copy and content: row titles and existing property values remain unchanged. Accessible labels describe add, reorder, and selection actions.
+- Accessibility and interaction: selection stays a native checkbox input behind the custom visual; the drag handle supports pointer drag and arrow-key reorder; drop position is visible; manual movement clears property sorting and persists the record order in the saved view.
+
+## Findings
+
+No actionable P0, P1, or P2 mismatch remains within the requested row-handle and selection-control scope.
+
+Accepted product adaptations:
+
+- The source `열기` pill is outside this change's handle-and-checkbox scope; Expresso continues opening a record through its title and double-click behavior.
+- Expresso keeps its existing grouped-table frame and density around the matched row controls.
+
+## Comparison history
+
+- Pass 1 found that the original table exposed only a browser checkbox and had no row drag affordance.
+- The implementation added the Notion control sequence, neutral custom checkbox, page icon, hover/focus states, drag feedback, keyboard movement, and saved `recordOrder`.
+- Pass 2 normalized the 2× source density and found no remaining P0–P2 difference in the requested control region.
+
+## Interactions verified
+
+- Browser: row controls appear together when the drag handle receives focus.
+- Browser: selecting the custom checkbox shows the checked state and the bulk toolbar; deselecting restores the row.
+- Browser: arrow-key movement saves without a view-change error.
+- Focused tests: pointer drag and arrow-key reorder both emit persisted manual order and clear conflicting property sorts.
+- Backend test: saved record order compiles into a stable Mongo sort with `_id` tie-breaking.
+
+## Implementation checklist
+
+- [x] Add and six-dot drag controls use the product icon library.
+- [x] Checkbox visuals match the reference without browser-native chrome.
+- [x] Hover, focus, checked, dragging, and drop-target states are present.
+- [x] Pointer and keyboard reordering update the saved view.
+- [x] Existing saved views default missing `recordOrder` to an empty list.
+- [x] Browser capture and density-normalized focused comparison completed.
+
+final result: passed
+
+---
+
 # Career grouped table design QA
 
 - Source visual truth: `/var/folders/wy/zrbg0t692zq6smx73mhzsdhr0000gn/T/codex-clipboard-02ad4eb2-3ce4-4808-ab50-39024558bc0a.png`

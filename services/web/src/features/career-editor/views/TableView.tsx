@@ -1,7 +1,7 @@
 "use client";
 
 import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
-import type { CSSProperties, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
+import type { CSSProperties, DragEvent as ReactDragEvent, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
@@ -12,7 +12,7 @@ import type { CareerViewRendererProps } from "./view-types";
 import { displayValue, keyboardActivate, propertyKey, propertyName, rawValue } from "./view-types";
 import styles from "./views.module.css";
 
-const SELECT_WIDTH = 52;
+const SELECT_WIDTH = 96;
 const TITLE_WIDTH = 260;
 const PROPERTY_WIDTH = 160;
 const ROW_HEIGHT = 42;
@@ -21,6 +21,7 @@ const OVERSCAN = 5;
 const EMPTY_GROUP = "__empty__";
 
 interface TableGroup { key: string; label: string; records: CareerRecord[]; empty: boolean; optionOrder: number }
+type DropPlacement = "before" | "after";
 
 function orderedPropertyIds(props: CareerViewRendererProps): string[] {
   const visible = new Set(props.view.visiblePropertyIds);
@@ -95,6 +96,7 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
   const [previewWidths, setPreviewWidths] = useState<Record<string, number>>(props.view.columnWidths);
   const [scrollTop, setScrollTop] = useState(0);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [rowDrag, setRowDrag] = useState<{ sourceId: string; targetId: string | null; placement: DropPlacement }>({ sourceId: "", targetId: null, placement: "before" });
   const drag = useRef<{ propertyId: string; width: number } | null>(null);
   const resizeCleanup = useRef<(() => void) | null>(null);
   const groupDefinition = props.view.groupPropertyId ? definitionsById.get(props.view.groupPropertyId) : undefined;
@@ -161,6 +163,57 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     commitWidth(propertyId, next);
   }
 
+  function commitRecordOrder(sourceId: string, targetId: string, placement: DropPlacement) {
+    if (sourceId === targetId) return;
+    const reordered = props.records.map((record) => record.id);
+    const sourceIndex = reordered.indexOf(sourceId);
+    const targetIndex = reordered.indexOf(targetId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+    reordered.splice(sourceIndex, 1);
+    const nextTargetIndex = reordered.indexOf(targetId);
+    reordered.splice(nextTargetIndex + (placement === "after" ? 1 : 0), 0, sourceId);
+
+    const visibleIds = new Set(reordered);
+    let visibleIndex = 0;
+    const merged = props.view.recordOrder.map((id) => visibleIds.has(id) ? reordered[visibleIndex++]! : id);
+    merged.push(...reordered.slice(visibleIndex));
+    props.onViewChange({ ...props.view, sorts: [], recordOrder: [...new Set(merged)] });
+  }
+
+  function moveRecordFromKeyboard(event: KeyboardEvent<HTMLButtonElement>, recordId: string) {
+    event.stopPropagation();
+    if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+    event.preventDefault();
+    const index = props.records.findIndex((record) => record.id === recordId);
+    const target = props.records[index + (event.key === "ArrowUp" ? -1 : 1)];
+    if (target) commitRecordOrder(recordId, target.id, event.key === "ArrowUp" ? "before" : "after");
+  }
+
+  function startRecordDrag(event: ReactDragEvent<HTMLButtonElement>, recordId: string) {
+    event.stopPropagation();
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", recordId);
+    setRowDrag({ sourceId: recordId, targetId: null, placement: "before" });
+  }
+
+  function setRecordDropTarget(event: ReactDragEvent<HTMLDivElement>, recordId: string) {
+    if (!rowDrag.sourceId || rowDrag.sourceId === recordId) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    const rect = event.currentTarget.getBoundingClientRect();
+    const placement = event.clientY >= rect.top + rect.height / 2 ? "after" : "before";
+    if (rowDrag.targetId !== recordId || rowDrag.placement !== placement) setRowDrag((current) => ({ ...current, targetId: recordId, placement }));
+  }
+
+  function finishRecordDrop(event: ReactDragEvent<HTMLDivElement>, recordId: string) {
+    if (!rowDrag.sourceId || rowDrag.sourceId === recordId) return;
+    event.preventDefault();
+    const rect = event.currentTarget.getBoundingClientRect();
+    const placement = event.clientY >= rect.top + rect.height / 2 ? "after" : "before";
+    commitRecordOrder(rowDrag.sourceId, recordId, placement);
+    setRowDrag({ sourceId: "", targetId: null, placement: "before" });
+  }
+
   const header = (propertyId: string, label: string, fallback: number) => {
     const currentSort = props.view.sorts.find((sort) => sort.propertyId === propertyId);
     const currentWidth = width(propertyId, fallback);
@@ -172,14 +225,21 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
   };
 
   const tableHeader = () => <div className={styles.tableHead} role="row" style={{ gridTemplateColumns: template }}>
-    <span role="columnheader">선택</span>
+    <span role="columnheader" aria-label="행 작업" />
     {header(titleColumnId, "제목", TITLE_WIDTH)}
     {columns.map((id) => header(id, propertyName(props.category, id), PROPERTY_WIDTH))}
   </div>;
 
-  const tableRows = (items: readonly CareerRecord[], rowOffset: number, keyboardRecords: readonly CareerRecord[]) => items.map((record, index) => <div className={record.id === props.openId ? styles.rowActive : styles.tableRow} role="row" aria-rowindex={rowOffset + index} key={record.id} tabIndex={record.id === props.activeId ? 0 : -1} style={{ gridTemplateColumns: template }} onKeyDown={(event) => keyboardActivate(event, record.id, keyboardRecords, props.onActivate)} onDoubleClick={() => props.onActivate(record.id)}>
-    <span role="gridcell"><input aria-label={`${record.title || "제목 없음"} 선택`} type="checkbox" checked={props.selectedIds.has(record.id)} onChange={() => props.onToggle(record.id)} /></span>
-    <button type="button" role="gridcell" onClick={() => props.onActivate(record.id)}>{record.title || "제목 없음"}</button>
+  const tableRows = (items: readonly CareerRecord[], rowOffset: number, keyboardRecords: readonly CareerRecord[]) => items.map((record, index) => <div className={record.id === props.openId ? styles.rowActive : styles.tableRow} role="row" aria-rowindex={rowOffset + index} key={record.id} tabIndex={record.id === props.activeId ? 0 : -1} data-dragging={rowDrag.sourceId === record.id ? "true" : undefined} data-drop-position={rowDrag.targetId === record.id ? rowDrag.placement : undefined} style={{ gridTemplateColumns: template }} onKeyDown={(event) => keyboardActivate(event, record.id, keyboardRecords, props.onActivate)} onDoubleClick={() => props.onActivate(record.id)} onDragOver={(event) => setRecordDropTarget(event, record.id)} onDrop={(event) => finishRecordDrop(event, record.id)}>
+    <span className={styles.rowControls} role="gridcell">
+      <button type="button" className={styles.rowAddButton} aria-label={`${record.title || "제목 없음"} 아래에 새 기록`} onClick={(event) => { event.stopPropagation(); props.onCreate(); }}><Icon name="plus" size={17} /></button>
+      <button type="button" className={styles.rowDragHandle} aria-label={`${record.title || "제목 없음"} 순서 변경`} title="끌어서 이동 · 위아래 화살표로 이동" draggable onClick={(event) => event.stopPropagation()} onKeyDown={(event) => moveRecordFromKeyboard(event, record.id)} onDragStart={(event) => startRecordDrag(event, record.id)} onDragEnd={() => setRowDrag({ sourceId: "", targetId: null, placement: "before" })}><Icon name="dots-six-vertical" size={18} weight="bold" /></button>
+      <label className={styles.rowCheckbox} data-checked={props.selectedIds.has(record.id) ? "true" : "false"} onClick={(event) => event.stopPropagation()}>
+        <input aria-label={`${record.title || "제목 없음"} 선택`} type="checkbox" checked={props.selectedIds.has(record.id)} onChange={() => props.onToggle(record.id)} />
+        <span aria-hidden="true">{props.selectedIds.has(record.id) ? <Icon name="check" size={11} weight="bold" /> : null}</span>
+      </label>
+    </span>
+    <button type="button" className={styles.rowTitle} role="gridcell" onClick={() => props.onActivate(record.id)}><Icon name="file" size={18} /><span>{record.title || "제목 없음"}</span></button>
     {columns.map((id) => <span role="gridcell" key={id}>{cellValue(record, definitionsById.get(id))}</span>)}
   </div>);
 

@@ -36,7 +36,7 @@ describe("career editor contracts", () => {
   });
 
   it("strictly parses all five saved view types and registers the API matrix", () => {
-    const base = { id: crypto.randomUUID(), categoryId: crypto.randomUUID(), name: "기본", version: 1, order: 0, filter: null, sorts: [], groupPropertyId: null, groupOrder: [], visiblePropertyIds: [], propertyOrder: [], columnWidths: {}, gallery: null, board: null, timeline: null, createdAt: "2026-09-01T00:00:00Z", updatedAt: "2026-09-01T00:00:00Z" };
+    const base = { id: crypto.randomUUID(), categoryId: crypto.randomUUID(), name: "기본", version: 1, order: 0, filter: null, sorts: [], groupPropertyId: null, groupOrder: [], recordOrder: [], visiblePropertyIds: [], propertyOrder: [], columnWidths: {}, gallery: null, board: null, timeline: null, createdAt: "2026-09-01T00:00:00Z", updatedAt: "2026-09-01T00:00:00Z" };
     for (const type of ["table", "list", "gallery", "board", "timeline"] as const) expect(CareerViewConfigurationSchema.parse({ ...base, type }).type).toBe(type);
     expect(Object.keys(expressoOpenApiDocument.paths)).toEqual(expect.arrayContaining(["/v1/career/records/{recordId}/document", "/v1/career/views", "/v1/career/records/{recordId}/ai-proposals"]));
   });

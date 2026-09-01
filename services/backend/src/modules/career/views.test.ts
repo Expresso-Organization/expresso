@@ -43,7 +43,7 @@ function view(overrides: Record<string, unknown> = {}) {
       ] },
     ] },
     sorts: [{ propertyId: ids.score, direction: "desc", nulls: "last" }], groupPropertyId: ids.tag,
-    groupOrder: ["doing", "done"], visiblePropertyIds: [ids.title, ids.score], propertyOrder: [ids.title, ids.score],
+    groupOrder: ["doing", "done"], recordOrder: [], visiblePropertyIds: [ids.title, ids.score], propertyOrder: [ids.title, ids.score],
     columnWidths: { [ids.score]: 160 }, gallery: { coverPropertyId: null, previewPropertyIds: [ids.score] },
     board: { hiddenGroupIds: ["hidden"], cardOrder: { doing: [] } },
     timeline: null, createdAt: "2026-09-01T00:00:00.000Z", updatedAt: "2026-09-01T00:00:00.000Z", ...overrides,
@@ -59,6 +59,17 @@ describe("career saved view pipeline compiler", () => {
     const sort = compiled.pipeline.find((stage) => "$sort" in stage)?.$sort as Record<string, number>;
     expect(sort).toMatchObject({ __careerViewNull0: 1, __careerViewSort0: -1, _id: 1 });
     expect(compiled.projectionKeys).toEqual(expect.arrayContaining(["score", "tag"]));
+  });
+
+  it("uses saved record order when no property sort is active", () => {
+    const first = randomUUID();
+    const second = randomUUID();
+    const compiled = new CareerViewQuery().compile(category, view({ sorts: [], recordOrder: [second, first] }));
+    const serialized = JSON.stringify(compiled.pipeline);
+    expect(serialized).toContain("__careerViewManualOrder");
+    expect(serialized).toContain(second);
+    const sort = compiled.pipeline.find((stage) => "$sort" in stage)?.$sort as Record<string, number>;
+    expect(sort).toMatchObject({ __careerViewManualOrder: 1, _id: 1 });
   });
 
   it("rejects a deleted property and a filter tree above the global limit", () => {

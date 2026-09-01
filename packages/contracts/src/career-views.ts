@@ -16,6 +16,7 @@ export const CareerViewConfigurationSchema = z.strictObject({
   type: z.enum(["table", "list", "gallery", "board", "timeline"]), version: z.number().int().positive(),
   order: z.number().int().nonnegative(), filter: CareerViewFilterV2Schema.nullable(),
   sorts: z.array(CareerSortV2Schema).max(10), groupPropertyId: UuidSchema.nullable(), groupOrder: z.array(z.string().max(200)).max(100),
+  recordOrder: z.array(UuidSchema).max(2_000).default([]),
   visiblePropertyIds: z.array(UuidSchema).max(100), propertyOrder: z.array(UuidSchema).max(100),
   columnWidths: z.record(UuidSchema, z.number().int().min(80).max(2_000)),
   gallery: z.strictObject({ coverPropertyId: UuidSchema.nullable(), previewPropertyIds: z.array(UuidSchema).max(10) }).nullable(),

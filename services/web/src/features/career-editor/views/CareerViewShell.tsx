@@ -50,7 +50,18 @@ function comparable(value: unknown): string | number | null {
 }
 
 function sortedRecords(records: CareerRecordListItem[], view: CareerViewConfiguration, category: CareerCategory): CareerRecordListItem[] {
-  if (!view.sorts.length) return records;
+  if (!view.sorts.length) {
+    if (!view.recordOrder.length) return records;
+    const rank = new Map(view.recordOrder.map((id, index) => [id, index]));
+    return records.map((record, index) => ({ record, index })).sort((left, right) => {
+      const leftRank = rank.get(left.record.id);
+      const rightRank = rank.get(right.record.id);
+      if (leftRank === undefined && rightRank === undefined) return left.index - right.index;
+      if (leftRank === undefined) return 1;
+      if (rightRank === undefined) return -1;
+      return leftRank - rightRank;
+    }).map(({ record }) => record);
+  }
   return [...records].sort((left, right) => {
     for (const sort of view.sorts) {
       const key = propertyKey(category, sort.propertyId);
@@ -151,7 +162,7 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
   async function updateView(next: CareerViewConfiguration, categoryVersion = category.version) {
     const previous = view;
     setView(next);
-    const body = { name: next.name, type: next.type, filter: next.filter, sorts: next.sorts, groupPropertyId: next.groupPropertyId, groupOrder: next.groupOrder, visiblePropertyIds: next.visiblePropertyIds, propertyOrder: next.propertyOrder, columnWidths: next.columnWidths, gallery: next.gallery, board: next.board, timeline: next.timeline };
+    const body = { name: next.name, type: next.type, filter: next.filter, sorts: next.sorts, groupPropertyId: next.groupPropertyId, groupOrder: next.groupOrder, recordOrder: next.recordOrder, visiblePropertyIds: next.visiblePropertyIds, propertyOrder: next.propertyOrder, columnWidths: next.columnWidths, gallery: next.gallery, board: next.board, timeline: next.timeline };
     const local = next.id.startsWith("local-");
     const response = await fetch(local ? `/api/career/categories/${category.id}/view-configurations` : `/api/career/view-configurations/${next.id}`, { method: local ? "POST" : "PATCH", headers: { "content-type": "application/json", "if-match": `"v${local ? categoryVersion : previous.version}"` }, body: JSON.stringify(body) });
     if (!response.ok) { setView(previous); setMessage("뷰 변경을 저장하지 못했습니다."); return; }

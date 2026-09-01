@@ -232,6 +232,13 @@ export class CareerViewQuery {
     const computed: Document = {};
     const sort: Document = {};
     const sortParts: SortPart[] = [];
+    if (!view.sorts.length && view.recordOrder.length) {
+      const valueField = "__careerViewManualOrder";
+      const index = { $indexOfArray: [view.recordOrder, "$_id"] };
+      computed[valueField] = { $cond: [{ $gte: [index, 0] }, index, view.recordOrder.length] };
+      sort[valueField] = 1;
+      sortParts.push({ field: valueField, direction: 1 });
+    }
     for (const [index, configured] of view.sorts.entries()) {
       const valueField = `__careerViewSort${index}`;
       const nullField = `__careerViewNull${index}`;

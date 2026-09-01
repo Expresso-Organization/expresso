@@ -118,6 +118,24 @@
 .tableRow:hover { background:var(--ex-bg-hover); }
 .rowActive { background:var(--ex-bg-hover); }
 .tableRow:focus-visible,.rowActive:focus-visible { box-shadow:inset var(--ex-focus-ring); }
+.rowControls { display:grid; grid-template-columns:24px 24px 18px; align-items:center; gap:3px; padding:0 8px!important; overflow:visible!important; }
+.rowAddButton,.rowDragHandle { display:grid; width:24px; height:28px; place-items:center; border-radius:5px!important; padding:0!important; color:var(--ex-fg-muted)!important; opacity:0; }
+.rowAddButton:hover,.rowDragHandle:hover,.rowAddButton:focus-visible,.rowDragHandle:focus-visible { background:var(--ex-bg-muted)!important; color:var(--ex-fg-strong)!important; }
+.rowDragHandle { cursor:grab!important; }
+.rowDragHandle:active { cursor:grabbing!important; }
+.rowCheckbox { position:relative; display:grid; width:18px; height:28px; place-items:center; opacity:0; cursor:pointer; }
+.rowCheckbox input { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+.rowCheckbox>span { display:grid; width:16px; height:16px; box-sizing:border-box; place-items:center; border:1px solid var(--ex-border-firm); border-radius:3px; background:var(--ex-bg); color:var(--ex-bg); }
+.rowCheckbox[data-checked="true"] { opacity:1; }
+.rowCheckbox[data-checked="true"]>span { border-color:var(--ex-fg-strong); background:var(--ex-fg-strong); }
+.rowCheckbox:focus-within>span { box-shadow:var(--ex-focus-ring); }
+.tableRow:hover .rowAddButton,.tableRow:hover .rowDragHandle,.tableRow:hover .rowCheckbox,.rowActive .rowAddButton,.rowActive .rowDragHandle,.rowActive .rowCheckbox,.rowControls:focus-within .rowAddButton,.rowControls:focus-within .rowDragHandle,.rowControls:focus-within .rowCheckbox { opacity:1; }
+.rowTitle { display:flex; min-width:0; align-items:center; gap:8px; }
+.rowTitle>i { flex:0 0 auto; color:var(--ex-fg-muted); }
+.rowTitle>span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tableRow[data-dragging="true"],.rowActive[data-dragging="true"] { opacity:.48; }
+.tableRow[data-drop-position="before"],.rowActive[data-drop-position="before"] { box-shadow:inset 0 2px var(--ex-accent); }
+.tableRow[data-drop-position="after"],.rowActive[data-drop-position="after"] { box-shadow:inset 0 -2px var(--ex-accent); }
 .tableTags { display:flex; gap:4px; overflow:hidden; }
 .tableTags small { overflow:hidden; border-radius:4px; padding:3px 6px; background:var(--ex-bg-tint); color:var(--ex-fg-body); font-size:var(--ex-text-2xs); text-overflow:ellipsis; }
 .emptyCell { color:var(--ex-fg-faint); }

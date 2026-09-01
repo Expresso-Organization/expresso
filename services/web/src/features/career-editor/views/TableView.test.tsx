@@ -18,7 +18,7 @@ const category: CareerCategory = {
     { id: scoreId, key: "score", name: "점수", type: "number", required: false, system: false, config: {}, order: 4, version: 1, deletedAt: null },
   ],
 };
-const view: CareerViewConfiguration = { id: categoryId, categoryId, name: "기본", type: "table", version: 1, order: 0, filter: null, sorts: [], groupPropertyId: null, groupOrder: [], visiblePropertyIds: [titleId, roleId, outcomeId, technologiesId, scoreId], propertyOrder: [titleId, technologiesId, outcomeId, roleId, scoreId], columnWidths: {}, gallery: null, board: null, timeline: null, createdAt: "2026-09-01T00:00:00.000Z", updatedAt: "2026-09-01T00:00:00.000Z" };
+const view: CareerViewConfiguration = { id: categoryId, categoryId, name: "기본", type: "table", version: 1, order: 0, filter: null, sorts: [], groupPropertyId: null, groupOrder: [], recordOrder: [], visiblePropertyIds: [titleId, roleId, outcomeId, technologiesId, scoreId], propertyOrder: [titleId, technologiesId, outcomeId, roleId, scoreId], columnWidths: {}, gallery: null, board: null, timeline: null, createdAt: "2026-09-01T00:00:00.000Z", updatedAt: "2026-09-01T00:00:00.000Z" };
 const records: CareerRecord[] = [
   { id: ids[0]!, categoryId, title: "두 번째", status: "draft", origin: "manual", bodyMd: "", properties: { role: { type: "text", value: "개발" }, outcome: { type: "text", value: "20% 개선" }, technologies: { type: "multi_select", value: ["React", "Go"] }, score: { type: "number", value: 2 } }, version: 1, updatedAt: "2026-09-01T00:00:00.000Z" },
   { id: ids[1]!, categoryId, title: "첫 번째", status: "verified", origin: "manual", bodyMd: "", properties: {}, version: 1, updatedAt: "2026-09-01T00:00:00.000Z" },
@@ -29,7 +29,7 @@ describe("TableView", () => {
   it("renders every ordered property with tags, summaries, sorting and accessible resizing", () => {
     const onViewChange = vi.fn();
     render(<TableView records={records} view={view} category={category} activeId={records[0]!.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={onViewChange} onCategoryChange={() => undefined} />);
-    expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual(["선택", "제목", "기술", "성과", "역할", "점수"]);
+    expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual(["", "제목", "기술", "성과", "역할", "점수"]);
     expect(screen.getByText("React")).toBeTruthy();
     expect(screen.getByText("Go")).toBeTruthy();
     expect(screen.getByText("2개 기록")).toBeTruthy();
@@ -39,6 +39,25 @@ describe("TableView", () => {
     expect(onViewChange).toHaveBeenLastCalledWith(expect.objectContaining({ sorts: [{ propertyId: outcomeId, direction: "asc", nulls: "last" }] }));
     fireEvent.keyDown(screen.getByRole("separator", { name: "기술 열 너비 조절" }), { key: "ArrowRight" });
     expect(onViewChange).toHaveBeenLastCalledWith(expect.objectContaining({ columnWidths: expect.objectContaining({ [technologiesId]: 176 }) }));
+  });
+
+  it("reorders rows from the Notion-style drag handle and keeps the custom selection control accessible", () => {
+    const onViewChange = vi.fn();
+    const { rerender } = render(<TableView records={records} view={{ ...view, sorts: [{ propertyId: scoreId, direction: "asc", nulls: "last" }] }} category={category} activeId={records[0]!.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={onViewChange} onCategoryChange={() => undefined} />);
+    const dataTransfer = { effectAllowed: "none", dropEffect: "none", setData: vi.fn() };
+    fireEvent.dragStart(screen.getByRole("button", { name: "첫 번째 순서 변경" }), { dataTransfer });
+    const targetRow = screen.getByRole("row", { name: /두 번째 선택/ });
+    targetRow.getBoundingClientRect = () => ({ top: 0, height: 42 } as DOMRect);
+    fireEvent.dragOver(targetRow, { dataTransfer, clientY: 32 });
+    fireEvent.drop(targetRow, { dataTransfer, clientY: 32 });
+    expect(onViewChange).toHaveBeenCalledWith(expect.objectContaining({ sorts: [], recordOrder: [records[1]!.id, records[0]!.id] }));
+    expect(dataTransfer.setData).toHaveBeenCalledWith("text/plain", records[1]!.id);
+
+    fireEvent.keyDown(screen.getByRole("button", { name: "두 번째 순서 변경" }), { key: "ArrowDown" });
+    expect(onViewChange).toHaveBeenLastCalledWith(expect.objectContaining({ sorts: [], recordOrder: [records[1]!.id, records[0]!.id] }));
+
+    rerender(<TableView records={records} view={view} category={category} activeId={records[0]!.id} openId={null} selectedIds={new Set([records[0]!.id])} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={onViewChange} onCategoryChange={() => undefined} />);
+    expect(screen.getByRole("checkbox", { name: "두 번째 선택" }).parentElement?.dataset.checked).toBe("true");
   });
 
   it("renames a custom property through preview and apply", async () => {
