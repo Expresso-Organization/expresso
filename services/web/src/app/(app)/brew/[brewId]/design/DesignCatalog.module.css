@@ -681,15 +681,6 @@
   flex: 1;
 }
 
-.inspectorEyebrow {
-  display: block;
-  margin-bottom: 5px;
-  color: var(--ex-accent-text);
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
-  letter-spacing: 0.08em;
-}
-
 .inspectorNameRow {
   display: flex;
   align-items: baseline;

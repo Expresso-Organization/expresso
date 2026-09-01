@@ -453,7 +453,6 @@ export function DesignCatalog({
         >
           <header className={styles.inspectorHeader}>
             <div className={styles.inspectorIdentity}>
-              <span className={styles.inspectorEyebrow}>{ORIGIN_LABEL[selected.originKind]}</span>
               <div className={styles.inspectorNameRow}>
                 <h2>{selected.name}</h2>
                 <span>{designDoc ? `r${designDoc.referenceLock?.primaryDirection.revision ?? 1}` : ""}</span>
