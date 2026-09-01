@@ -4,9 +4,13 @@ export interface CareerViewRendererProps {
   records: readonly CareerRecord[];
   view: CareerViewConfiguration;
   category: CareerCategory;
+  /** roving tabindex가 머무는 기록 */
   activeId: string | null;
+  /** 드로워에 실제로 열린 기록 */
+  openId: string | null;
   selectedIds: ReadonlySet<string>;
   onActivate(recordId: string): void;
+  onCreate(): void;
   onToggle(recordId: string): void;
 }
 

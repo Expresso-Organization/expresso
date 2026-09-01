@@ -1,38 +1,79 @@
-/* 문서 패널 — 화면 정의서 05의 우측 452px 패널을 그대로 옮긴 것 */
+/* 문서 패널 — 닫혀 있다가 기록을 고르면 우측에서 열리는 side peek */
 
 .panel {
-  width: 452px;
-  flex-shrink: 0;
-  border-left: 1px solid var(--ex-border-chrome);
+  --panel-open-dur: 400ms;
+  --panel-close-dur: 350ms;
+  --panel-translate-x: 100%;
+  --panel-blur: 2px;
+  --panel-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  position: absolute;
+  z-index: 20;
+  inset: 0 0 0 auto;
   display: flex;
+  width: min(var(--career-drawer-width, 452px), calc(100vw - 48px));
+  max-width: 100%;
   flex-direction: column;
+  border-left: 1px solid var(--ex-border-chrome);
   background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-overlay);
+  transform: translateX(var(--panel-translate-x));
+  opacity: 0;
+  filter: blur(var(--panel-blur));
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    transform var(--panel-close-dur) var(--panel-ease),
+    opacity var(--panel-close-dur) var(--panel-ease),
+    filter var(--panel-close-dur) var(--panel-ease),
+    visibility 0s linear var(--panel-close-dur);
+  will-change: transform, opacity, filter;
 }
 
-/*
- * 좁은 화면에서는 목록과 문서가 나란히 설 자리가 없다. 고른 기록이 있을 때만
- * 오른쪽에서 전면 시트로 올라온다 — 목록은 뒤에 그대로 남아 있어 닫으면
- * 보던 자리로 돌아간다.
- */
-@media (max-width: 1023px) {
-  .panel {
-    position: fixed;
-    z-index: 50;
-    inset: 0;
-    width: auto;
-    border-left: none;
-    box-shadow: var(--ex-elevation-overlay);
-    transform: translateX(100%);
-    visibility: hidden;
-    transition:
-      transform var(--ex-motion-panel),
-      visibility var(--ex-motion-panel);
-  }
+.panel[data-open="true"] {
+  transform: translateX(0);
+  opacity: 1;
+  filter: blur(0);
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    transform var(--panel-open-dur) var(--panel-ease),
+    opacity var(--panel-open-dur) var(--panel-ease),
+    filter var(--panel-open-dur) var(--panel-ease),
+    visibility 0s linear 0s;
+}
 
-  .panel[data-open="true"] {
-    transform: translateX(0);
-    visibility: visible;
-  }
+.panel[data-resizing="true"] {
+  user-select: none;
+  transition: none;
+}
+
+.resizeHandle {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  left: -5px;
+  width: 10px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.resizeHandle::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 1px;
+  background: var(--ex-border-chrome);
+  content: "";
+  transition: background var(--ex-motion-quick), width var(--ex-motion-quick);
+}
+
+.resizeHandle:hover::after,
+.resizeHandle:focus-visible::after {
+  width: 2px;
+  background: var(--ex-fg-muted);
 }
 
 .head {
@@ -300,17 +341,11 @@
   background: var(--ex-bg-inverse-hover);
 }
 
-/* 선택된 기록이 없을 때 */
-.none {
-  flex: 1;
-  display: grid;
-  place-items: center;
-  padding: 26px;
-  text-align: center;
+@media (max-width: 767px) {
+  .panel { width: 100%; border-left: 0; }
+  .resizeHandle { display: none; }
 }
 
-.noneText {
-  font-size: var(--ex-text-sm);
-  line-height: 1.8;
-  color: var(--ex-fg-subtle);
+@media (prefers-reduced-motion: reduce) {
+  .panel { filter: none; transition: none !important; }
 }

@@ -1,4 +1,5 @@
 import type { CareerCategory, CareerRecordSort, CareerViewConfiguration } from "@expresso/contracts";
+import type { Route } from "next";
 import { notFound } from "next/navigation";
 
 import { AppBody, DocumentHeader } from "@/components/shell/AppShell";
@@ -70,7 +71,7 @@ export default async function CareerCategoryPage({
   return (
     <>
       <DocumentHeader
-        crumbs={["내 커리어", category.name]}
+        crumbs={[{ label: "내 커리어", href: "/career/experience" as Route }, category.name]}
         actions={
           <>
             <span style={{ fontSize: "12px", color: "var(--ex-fg-muted)" }}>{v2Enabled ? editedLabel(records.data[0]?.updatedAt) : `기록 ${category.recordCount}건`}</span>

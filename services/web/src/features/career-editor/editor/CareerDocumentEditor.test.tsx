@@ -62,6 +62,9 @@ describe("CareerDocumentEditor", () => {
     render(<CareerDocumentEditor recordId="11111111-1111-4111-8111-111111111111" mode="page" />);
     expect((await screen.findByRole("status")).textContent).toContain("저장됨");
     expect(screen.getByRole("toolbar", { name: "텍스트 서식" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "굵게" }).getAttribute("aria-pressed")).toBe("false");
+    const bold = screen.getByRole("button", { name: "굵게" });
+    expect(bold.getAttribute("aria-pressed")).toBe("false");
+    expect(bold.textContent).toBe("");
+    expect(bold.querySelector(".ph-text-b")).toBeTruthy();
   });
 });

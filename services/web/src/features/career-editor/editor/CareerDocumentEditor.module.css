@@ -51,10 +51,14 @@
 
 .formatButton,
 .handleButton {
+  display: grid;
+  width: 30px;
+  min-width: 30px;
   min-height: 30px;
+  place-items: center;
   border: 1px solid transparent;
   border-radius: 6px;
-  padding: 0 9px;
+  padding: 0;
   color: var(--ex-fg-muted);
   background: transparent;
   font: inherit;
@@ -91,8 +95,15 @@
 .content :global(.tiptap) {
   min-height: 420px;
   outline: none;
+  box-shadow: none;
   font-size: var(--ex-text-md);
   line-height: var(--ex-leading-relaxed);
+}
+
+.content :global(.tiptap:focus),
+.content :global(.tiptap:focus-visible) {
+  outline: none;
+  box-shadow: none;
 }
 
 .content :global(.tiptap > *) { margin: 0 0 14px; }

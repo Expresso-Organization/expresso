@@ -20,13 +20,13 @@
 | 순서 | 명령 | 결과 | 실제 시간 |
 | ---: | --- | --- | ---: |
 | 1 | `pnpm install --frozen-lockfile` | 통과, lockfile 변경 없음 | 0.52초 |
-| 2 | `pnpm typecheck` | 5개 workspace 통과 | 2.75초 |
-| 3 | `pnpm test` | editor 55, contracts 60, database 6, web 170, backend 304 통과 | 13.71초 |
+| 2 | `pnpm typecheck` | 5개 workspace 통과 | 3.10초 |
+| 3 | `pnpm test` | editor 55, contracts 60, database 6, web 175, backend 304 통과 | 11.74초 |
 | 4 | `pnpm infra:up` | MongoDB rs0·Redis healthy | 2.52초 |
 | 5a | `MONGODB_MIGRATE_URL=... MONGODB_DATABASE=expresso_career_gate_20260901 pnpm db:migrate` | 빈 DB에 0001–0008 통과 | 3.17초 |
 | 5b | `MONGODB_MIGRATE_URL=... MONGODB_DATABASE=expresso_career_migration_clone_20260901 pnpm db:migrate` | 개발 데이터 복제본에 0001–0008 통과. 실행 잠금 행은 복제 대상에서 제외 | 6.53초 |
 | 6 | `pnpm test:infra` | 실제 MongoDB/Redis 39 files, 199 tests 통과 | 54.80초 |
-| 7 | `pnpm --filter @expresso/web exec playwright test` | Chromium 4개 시나리오 통과 | 30.74초 |
+| 7 | `pnpm --filter @expresso/web exec playwright test` | Chromium 4개 시나리오 통과 | 39.80초 |
 | 8 | `pnpm build` | editor/contracts/database/backend와 Next production build 통과 | 6.51초 |
 | 9 | `node scripts/operations/backfill-career-documents.mjs --dry-run` | 아래 결과와 동일, 쓰기 0 | 0.20초 |
 | 10 | 같은 dry-run 재실행 | 결과 동일, 쓰기 0 | 0.18초 |
@@ -98,6 +98,9 @@ migration을 검증한다.
 - AI preview, 선택 적용, undo 확인, side peek와 full-page를 확인했다.
 - slash menu를 키보드로 열고 닫은 뒤 편집기 focus가 복원되는지 확인했다.
 - 기본 카테고리 이동 preview와 commit, 본문·관계 보존 안내를 확인했다.
+- 문서 패널은 기본 닫힘 상태에서 우측으로 열리고, 마우스·키보드로 360–720px 폭을 조절하며, 닫힌 뒤 목록이 전체 폭을 사용하는지 확인했다.
+- 프로젝트 갤러리는 화면 정의서 05b의 3열 카드, 큰 미리보기, 제목·요약·기술·기간·성과 계층과 추가 카드를 따른다.
+- 본문 포커스 테두리 제거, 아이콘형 서식 도구, 링크형 브레드크럼과 절제된 선택·생성 강조색을 확인했다.
 - 375/768/1280/1440px에서 편집기가 로드된 뒤 스크린샷을 비교하고 가로 overflow 0을 확인했다.
 - `CAREER_EDITOR_V2_ENABLED=false`에서 기존 목록이 열리고 v2 문서 API가 404인지 확인했다.
 
