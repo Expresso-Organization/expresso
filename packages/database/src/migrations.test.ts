@@ -1,10 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
-import { MongoClient } from "mongodb";
+import { MongoClient, type Document } from "mongodb";
 
 import { loadMongoMigrations } from "./mongo-migrations.js";
 import { migrateMongo } from "./mongo-migrate.js";
 import { acquireMigrationLease, recoverMigrationLease } from "./migration-lease.js";
+import { careerRecordSliceSteps } from "./mongodb-migrations/0009/migration.js";
 
 const mongoUrl = process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL;
 describe.skipIf(!mongoUrl)("MongoDB migration recovery", () => {
@@ -53,10 +54,85 @@ describe("MongoDB migration sources", () => {
     expect(first.map(({ version, checksum }) => ({ version, checksum }))).toEqual(
       second.map(({ version, checksum }) => ({ version, checksum })),
     );
-    expect(first).toHaveLength(8);
+    expect(first).toHaveLength(9);
+    expect(first.at(-1)).toMatchObject({
+      version: "0009",
+      name: "career_record_slice",
+    });
     expect(first.every(({ checksum }) => /^[a-f0-9]{64}$/.test(checksum))).toBe(true);
     for (const migration of first) {
       expect(new Set(migration.steps.map(({ id }) => id)).size).toBe(migration.steps.length);
     }
   });
+});
+describe.skipIf(!mongoUrl)("Career record slice migration 0009", () => {
+  it("assigns stable UUIDv5 property IDs without rewriting healthy data", async () => {
+    const databaseName = `expresso_test_career_slice_${randomUUID().replaceAll("-", "")}`;
+    const client = new MongoClient(mongoUrl!, { serverSelectionTimeoutMS: 3_000 });
+    const migrations = await loadMongoMigrations();
+    const db = client.db(databaseName);
+    try {
+      await client.connect();
+      await migrateMongo({ databaseUrl: mongoUrl!, databaseName, migrations: migrations.slice(0, 8) });
+      const legacyRecord = {
+        _id: randomUUID(), userId: randomUUID(), categoryId: "475106fc-bf88-4a73-9c27-66c648733936",
+        title: "Legacy", status: "draft", origin: "manual", properties: { role: "Backend" },
+        bodyMd: "Legacy body", version: 1, updatedAt: new Date("2026-09-01T00:00:00.000Z"),
+      };
+      const records = db.collection<Document & { _id: string }>("career_records");
+      await records.insertOne(legacyRecord);
+
+      await migrateMongo({ databaseUrl: mongoUrl!, databaseName, migrations });
+      const categories = db.collection<Document & { _id: string }>("career_categories");
+      const experience = await categories.findOne({ _id: "475106fc-bf88-4a73-9c27-66c648733936" });
+      const project = await categories.findOne({ _id: "af5510dc-9717-4f1e-b0f9-4afd79aafe0f" });
+      expect(experience?.["propertyDefinitions"]).toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: "1c768bad-2c1f-5cee-86c5-a43574f0e256", key: "role" }),
+        expect.objectContaining({ id: "d8ad6b64-6417-5e5a-967b-dca084c1892e", key: "organization" }),
+      ]));
+      expect(project?.["propertyDefinitions"]).toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: "07e3e4c1-b357-542a-9f48-4e5afa65f57d", key: "role" }),
+      ]));
+
+      const healthyCategories = await categories.find({ isSystem: true }).sort({ _id: 1 }).toArray();
+      const healthyRecord = await records.findOne({ _id: legacyRecord._id });
+      for (const step of await careerRecordSliceSteps()) await step.run(db);
+      expect(await categories.find({ isSystem: true }).sort({ _id: 1 }).toArray()).toEqual(healthyCategories);
+      expect(await records.findOne({ _id: legacyRecord._id })).toEqual(healthyRecord);
+
+      const reversedSchema = Object.fromEntries(Object.entries(experience?.["propertySchema"] as Document).reverse());
+      await categories.updateOne({ _id: experience!._id }, { $set: { propertySchema: reversedSchema } });
+      for (const step of await careerRecordSliceSteps()) await step.run(db);
+      expect((await categories.findOne({ _id: experience!._id }))?.["propertyDefinitions"])
+        .toEqual(experience?.["propertyDefinitions"]);
+    } finally {
+      try { await db.dropDatabase(); } finally { await client.close(); }
+    }
+  }, 60_000);
+
+  it("rejects conflicting existing property definitions instead of overwriting them", async () => {
+    const databaseName = `expresso_test_career_conflict_${randomUUID().replaceAll("-", "")}`;
+    const client = new MongoClient(mongoUrl!, { serverSelectionTimeoutMS: 3_000 });
+    const migrations = await loadMongoMigrations();
+    const db = client.db(databaseName);
+    try {
+      await client.connect();
+      await migrateMongo({ databaseUrl: mongoUrl!, databaseName, migrations: migrations.slice(0, 8) });
+      const categories = db.collection<Document & { _id: string }>("career_categories");
+      const conflicting = [{
+        id: randomUUID(), key: "role", label: "충돌", type: "text", required: false, system: false,
+      }];
+      await categories.updateOne(
+        { _id: "475106fc-bf88-4a73-9c27-66c648733936" },
+        { $set: { propertyDefinitions: conflicting } },
+      );
+
+      await expect(migrateMongo({ databaseUrl: mongoUrl!, databaseName, migrations }))
+        .rejects.toThrow(/conflicting propertyDefinitions.*475106fc-bf88-4a73-9c27-66c648733936/i);
+      expect((await categories.findOne({ _id: "475106fc-bf88-4a73-9c27-66c648733936" }))?.["propertyDefinitions"])
+        .toEqual(conflicting);
+    } finally {
+      try { await db.dropDatabase(); } finally { await client.close(); }
+    }
+  }, 60_000);
 });

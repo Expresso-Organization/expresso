@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MongoClient, Decimal128, Binary } from "mongodb";
+import { MongoClient, Decimal128, Binary, type Document } from "mongodb";
 import { migrateMongo } from "./mongo-migrate.js";
 import { mongoCollections } from "./collections.js";
 const mongoUrl = process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL;
@@ -31,7 +31,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await collections.plans.updateOne({ code: "free" }, { $set: { generationQuota: 17 } });
     const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     expect(result.applied).toEqual([]);
-    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations"]);
+    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_career_record_slice"]);
     expect((await collections.plans.findOne({ code: "free" }))?.generationQuota).toBe(17);
   });
 
@@ -63,6 +63,14 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
   it("enforces system category uniqueness independently of user category keys", async () => {
     const category = await collections.careerCategories.findOne({ key: "experience", isSystem: true });
     expect(category).not.toBeNull();
+    const categoryDocuments = mongo.collection<Document & { _id: string }>("career_categories");
+    await expect(categoryDocuments.updateOne(
+      { _id: category!._id },
+      { $set: { propertyDefinitions: [{ id: "not-a-uuid", key: "role", label: "역할", type: "text", required: false, system: false }] } },
+    )).rejects.toMatchObject({ code: 121 });
+    await expect(categoryDocuments.updateOne(
+      { _id: category!._id }, { $unset: { propertySchema: "" } },
+    )).rejects.toMatchObject({ code: 121 });
     await expect(collections.careerCategories.insertOne({ ...category!, _id: randomUUID() })).rejects.toMatchObject({ code: 11000 });
     const userId = randomUUID();
     await collections.careerCategories.insertOne({ ...category!, _id: randomUUID(), isSystem: false, userId });
@@ -116,5 +124,34 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     const rerunCategory = await collections.careerCategories.findOne({ _id: category!._id });
     expect(Object.fromEntries(Object.entries(rerunCategory!.propertySchema).map(([key, value]) => [key, value.id]))).toEqual(ids);
+  });
+
+  it("accepts optional canonical career fields without relaxing Fastify legacy requirements", async () => {
+    const propertyDefinitionId = "1c768bad-2c1f-5cee-86c5-a43574f0e256";
+    const record = {
+      _id: randomUUID(), userId: randomUUID(), categoryId: "475106fc-bf88-4a73-9c27-66c648733936",
+      title: "Canonical", status: "draft", origin: "manual", properties: {}, bodyMd: "",
+      propertyValues: [{ propertyDefinitionId, type: "text", value: "Backend" }],
+      blockBody: {
+        schemaVersion: 1, type: "doc",
+        content: [{ id: randomUUID(), type: "paragraph", attrs: {}, text: [{ text: "본문" }] }],
+      },
+      editorSchemaVersion: 1, version: 1, updatedAt: new Date(),
+    };
+    const recordDocuments = mongo.collection<Document & { _id: string }>("career_records");
+    await recordDocuments.insertOne(record);
+    await expect(recordDocuments.insertOne({ ...record, _id: randomUUID(), properties: undefined }))
+      .rejects.toMatchObject({ code: 121 });
+    await expect(recordDocuments.insertOne({ ...record, _id: randomUUID(), bodyMd: undefined }))
+      .rejects.toMatchObject({ code: 121 });
+    await expect(recordDocuments.insertOne({
+      ...record, _id: randomUUID(), blockBody: { ...record.blockBody, type: "unknown" },
+    })).rejects.toMatchObject({ code: 121 });
+    await expect(recordDocuments.insertOne({
+      ...record, _id: randomUUID(), propertyValues: [{ propertyDefinitionId, type: "text", value: 42 }],
+    })).rejects.toMatchObject({ code: 121 });
+    await expect(recordDocuments.insertOne({
+      ...record, _id: randomUUID(), editorSchemaVersion: 2,
+    })).rejects.toMatchObject({ code: 121 });
   });
 });
