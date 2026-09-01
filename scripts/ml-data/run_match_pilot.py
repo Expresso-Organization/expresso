@@ -147,24 +147,34 @@ def teacher_label_coverage(labels: list[dict[str, Any]]) -> dict[str, Any]:
     label_counts = Counter(int(row["teacherLabel"]) for row in labels)
     profiles_by_split: dict[str, set[str]] = defaultdict(set)
     profiles_with_class_three: dict[str, set[str]] = defaultdict(set)
+    profiles_with_non_class_three: dict[str, set[str]] = defaultdict(set)
     for row in labels:
         split = row["split"]
         profile_id = row["profileId"]
         profiles_by_split[split].add(profile_id)
         if row["teacherLabel"] == 3:
             profiles_with_class_three[split].add(profile_id)
+        else:
+            profiles_with_non_class_three[split].add(profile_id)
     profiles_without_class_three = {
         split: sorted(profiles_by_split[split] - profiles_with_class_three[split])
         for split in ("valid", "test")
     }
+    profiles_without_non_class_three = {
+        split: sorted(profiles_by_split[split] - profiles_with_non_class_three[split])
+        for split in ("valid", "test")
+    }
     eval_metrics_ready = all(
-        profiles_by_split[split] and not profiles_without_class_three[split]
+        profiles_by_split[split]
+        and not profiles_without_class_three[split]
+        and not profiles_without_non_class_three[split]
         for split in ("valid", "test")
     )
     return {
         "schemaVersion": "match-pilot-label-coverage-v1",
         "labelCounts": {str(label): label_counts.get(label, 0) for label in range(4)},
         "profilesWithoutClass3": profiles_without_class_three,
+        "profilesWithoutNonClass3": profiles_without_non_class_three,
         "evalMetricsReady": bool(eval_metrics_ready),
         "undefinedWhenFalse": ["mrrAt10", "auc"],
     }
@@ -245,12 +255,17 @@ def train_and_evaluate(
         model_arguments.append("--require-cuda")
     model_result = run_model(build_model_parser().parse_args(model_arguments))
     candidate_scores_path = model_result["candidateScores"]
+    profile_rows = _load_jsonl(profiles_path)
+    job_rows = _load_jsonl(jobs_path)
+    label_rows = _load_jsonl(labels_path)
+    candidate_rows = _load_jsonl(candidate_manifest_path)
+    score_rows = _load_jsonl(candidate_scores_path)
     validation = validate_pilot_artifacts(
-        profiles=_load_jsonl(profiles_path),
-        jobs=_load_jsonl(jobs_path),
-        labels=_load_jsonl(labels_path),
-        candidate_manifest=_load_jsonl(candidate_manifest_path),
-        candidate_scores=_load_jsonl(candidate_scores_path),
+        profiles=profile_rows,
+        jobs=job_rows,
+        labels=label_rows,
+        candidate_manifest=candidate_rows,
+        candidate_scores=score_rows,
         expected_profiles=expected_profiles,
         expected_pairs=expected_pairs,
     )
@@ -260,13 +275,26 @@ def train_and_evaluate(
         labels_path=labels_path,
         candidate_scores_path=candidate_scores_path,
     )
+    coverage = teacher_label_coverage(label_rows)
+    evaluation["labelCoverage"] = coverage
+    if not coverage["evalMetricsReady"]:
+        evaluation["warnings"].append(
+            "teacher label coverage is incomplete; MRR@10 and AUC are not evaluation-ready"
+        )
     evaluation_dir = output_dir / "evaluation"
     write_results(evaluation, evaluation_dir)
+    coverage_path = output_dir / "data" / "label-coverage.json"
+    coverage_path.parent.mkdir(parents=True, exist_ok=True)
+    coverage_path.write_text(
+        json.dumps(coverage, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     return {
+        "status": "ready" if coverage["evalMetricsReady"] else "incomplete_label_coverage",
         "checkpoint": str(model_result["checkpoint"]),
         "candidateScores": str(candidate_scores_path),
         "metrics": str(evaluation_dir / "metrics.json"),
         "summary": str(evaluation_dir / "summary.md"),
+        "labelCoverage": str(coverage_path),
         "validation": validation,
     }
 

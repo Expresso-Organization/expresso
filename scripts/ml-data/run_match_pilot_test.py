@@ -126,6 +126,7 @@ class RunMatchPilotTest(unittest.TestCase):
                     expected_pairs=40,
                 )
             self.assertEqual(result["validation"]["pairs"], 40)
+            self.assertEqual(result["status"], "ready")
             evaluate.assert_called_once()
             write_results.assert_called_once()
 
@@ -145,6 +146,14 @@ class RunMatchPilotTest(unittest.TestCase):
 
         self.assertFalse(coverage["evalMetricsReady"])
         self.assertEqual(coverage["profilesWithoutClass3"], {"valid": ["p-valid"], "test": ["p-test"]})
+
+        all_three = [{**row, "teacherLabel": 3} for row in rows]
+        all_three_coverage = teacher_label_coverage(all_three)
+        self.assertFalse(all_three_coverage["evalMetricsReady"])
+        self.assertEqual(
+            all_three_coverage["profilesWithoutNonClass3"],
+            {"valid": ["p-valid"], "test": ["p-test"]},
+        )
 
 
 if __name__ == "__main__":
