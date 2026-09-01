@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import {
   AiError,
+  DEFAULT_EFFORT,
   DEFAULT_MODEL_TIER,
   parseToolOutput,
   logAiFailure,
@@ -115,6 +116,7 @@ export class ClaudeCodeAiClient implements AiClient {
     const model = this.#models[spec.contract]
       ?? spec.modelTier
       ?? DEFAULT_MODEL_TIER[spec.contract];
+    const effort = spec.effort ?? DEFAULT_EFFORT[spec.contract];
     const args = [
       // 프롬프트는 stdin으로 간다 — 위치 인자를 주지 않는다.
       "-p",
@@ -135,6 +137,8 @@ export class ClaudeCodeAiClient implements AiClient {
       "--strict-mcp-config",
       "--mcp-config", '{"mcpServers":{}}',
       "--allowedTools", "",
+      // 재 본 계약만 사고량을 정한다. 나머지는 CLI 기본값이다(`DEFAULT_EFFORT`).
+      ...(effort ? ["--effort", effort] : []),
     ];
 
     const started = Date.now();

@@ -37,6 +37,39 @@ export type AiContract = (typeof AI_CONTRACTS)[number];
 export const AI_MODEL_TIERS = ["haiku", "sonnet", "opus"] as const;
 export type AiModelTier = (typeof AI_MODEL_TIERS)[number];
 
+export const AI_EFFORT_LEVELS = ["low", "medium", "high", "xhigh", "max"] as const;
+export type AiEffort = (typeof AI_EFFORT_LEVELS)[number];
+
+/**
+ * 계약별 사고량. **재 본 계약만 적는다.**
+ *
+ * 안 적은 계약은 CLI 기본값으로 돈다. 재 보지 않은 자리에 숫자를 채우면 그
+ * 값이 어디서 왔는지 아무도 답할 수 없게 된다.
+ *
+ * 레시피는 `medium`이다. 같은 입력(기록 10건 · 쿠팡 공고 · sonnet)으로 잰 값:
+ *
+ * | effort | 첫 조각 | 전체 | 항목 | 근거 | 본문 |
+ * |---|---|---|---|---|---|
+ * | 기본 | 150.2s | 184.0s | 21 | 22 | 815자 |
+ * | medium ① | 65.6s | 100.9s | 22 | 23 | 1,207자 |
+ * | medium ② | 48.6s | 143.9s | 16 | 16 | 618자 |
+ * | low | 14.5s | 97.1s | 18 | 19 | 904자 |
+ *
+ * **고른 근거는 지연이다.** `medium`은 두 번 다 기본값보다 빨랐다. 분량은 같은
+ * 입력인데도 회차 편차가 커서(medium 두 번이 1,207자와 618자) 품질이 나아졌다고
+ * 말하지 않는다 — 회차를 더 쌓으면 그때 다시 적을 자리다.
+ *
+ * `low`는 한 번의 실행에서 항목 없는 빈 섹션(「연락처」)을 만들었고,
+ * StructuredOutput 블록을 두 번 열어 보이던 글이 58.7초부터 97.1초까지 멈춰
+ * 있었다. 14.5초라는 첫 조각을 그 값에 사지 않는다.
+ *
+ * 03 지면 생성에는 이 값을 옮기지 않는다 — 거기서 `low`는 지면 대신 없는 파일을
+ * 가리켰다(`claude-code.ts`). 계약마다 따로 재야 한다.
+ */
+export const DEFAULT_EFFORT: Partial<Record<AiContract, AiEffort>> = {
+  recipe_draft: "medium",
+};
+
 /**
  * 계약별 기본 모델.
  *
@@ -83,6 +116,8 @@ export interface AiCallSpec {
   promptVersion: number;
   /** 티어 기본값을 덮어쓸 때만. */
   modelTier?: AiModelTier;
+  /** 계약 기본값을 덮어쓸 때만. 프로바이더가 사고량을 받을 때만 쓰인다. */
+  effort?: AiEffort;
 }
 
 export interface AiUsage {
@@ -315,6 +350,8 @@ export function callKey(spec: AiCallSpec, schema: z.ZodType): string {
     spec.contract,
     String(spec.promptVersion),
     spec.modelTier ?? DEFAULT_MODEL_TIER[spec.contract],
+    // 사고량이 다르면 결과도 다르다 — 같은 픽스처를 재생하면 안 된다.
+    spec.effort ?? DEFAULT_EFFORT[spec.contract] ?? "",
     spec.system,
     spec.prompt,
     shape,
