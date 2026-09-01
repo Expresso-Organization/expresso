@@ -23,6 +23,12 @@ import {
   CareerPropertySchemaChangeSchema,
   ApplyCareerPropertyChangeSchema,
   CareerPropertyChangePreviewSchema,
+  CareerCategoryMoveCommitSchema,
+  CommitCareerCategoryMoveRequestSchema,
+  CareerCategoryMovePreviewSchema,
+  ListCareerRelationTargetsQuerySchema,
+  PreviewCareerCategoryMoveSchema,
+  ReplaceCareerRelationTargetsSchema,
   formatResourceEtag,
   parseResourceEtag,
   UuidSchema,
@@ -375,6 +381,42 @@ export function registerCareerRoutes(
         .send(recordResponse(record));
     },
   );
+
+  app.put(`${API_PREFIX}/career/records/:recordId/relations`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { recordId } = parseParams(CareerRecordIdParamsSchema, request);
+    const input = parseBody(ReplaceCareerRelationTargetsSchema, request);
+    if (!options.careerService.replaceTargets) throw new HttpStatusError(501, "career relations are unavailable");
+    const record = await options.careerService.replaceTargets(principal.user.id, recordId, input.propertyId, input.targetIds, expectedVersion(request));
+    return reply.header("etag", formatResourceEtag(record.version)).send(recordResponse(record));
+  });
+
+  app.get(`${API_PREFIX}/career/records/:recordId/relations`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const { recordId } = parseParams(CareerRecordIdParamsSchema, request);
+    const query = ListCareerRelationTargetsQuerySchema.safeParse(request.query);
+    if (!query.success) throw new HttpStatusError(400, "invalid relation target query");
+    if (!options.careerService.listRelationTargets) throw new HttpStatusError(501, "career relations are unavailable");
+    return { data: await options.careerService.listRelationTargets(principal.user.id, recordId, query.data.propertyId) };
+  });
+
+  app.post(`${API_PREFIX}/career/records/:recordId/move/preview`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const { recordId } = parseParams(CareerRecordIdParamsSchema, request);
+    const input = parseBody(PreviewCareerCategoryMoveSchema, request);
+    if (!options.careerService.previewCategoryMove) throw new HttpStatusError(501, "career category move is unavailable");
+    return { data: CareerCategoryMovePreviewSchema.parse(await options.careerService.previewCategoryMove(principal.user.id, recordId, input.targetCategoryId)) };
+  });
+
+  app.post(`${API_PREFIX}/career/records/:recordId/move`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { recordId } = parseParams(CareerRecordIdParamsSchema, request);
+    const input = CareerCategoryMoveCommitSchema.parse({ ...parseBody(CommitCareerCategoryMoveRequestSchema, request), recordId });
+    if (expectedVersion(request) !== input.expectedVersion) throw new HttpStatusError(400, "If-Match and expectedVersion must agree");
+    if (!options.careerService.commitCategoryMove) throw new HttpStatusError(501, "career category move is unavailable");
+    const record = await options.careerService.commitCategoryMove(principal.user.id, recordId, input);
+    return reply.header("etag", formatResourceEtag(record.version)).send(recordResponse(record));
+  });
 
   app.post(
     `${API_PREFIX}/career/records/:recordId/links`,

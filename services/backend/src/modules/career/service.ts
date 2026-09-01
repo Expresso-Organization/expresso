@@ -17,6 +17,8 @@ import { MongoCareerDocumentRepository, hashUpdate } from "../career-editor/repo
 import { Binary } from "mongodb";
 import { MongoCareerPropertySchemaService } from "./property-schema.js";
 import { CareerViewService } from "./views.js";
+import { MongoCategoryMoveService } from "./category-move.js";
+import { MongoRelationService } from "./relations.js";
 
 const duplicate = (error: unknown) => (error as { code?: number })?.code === 11000;
 
@@ -34,6 +36,11 @@ export class CareerService implements CareerApi {
   deleteViewConfiguration(userId: string, viewId: string, expectedVersion: number) { return new CareerViewService(this.context).delete(userId, viewId, expectedVersion); }
   reorderViewConfigurations(userId: string, categoryId: string, expectedCategoryVersion: number, orderedIds: readonly string[]) { return new CareerViewService(this.context).reorder(userId, categoryId, expectedCategoryVersion, orderedIds); }
   queryViewConfiguration(userId: string, viewId: string, cursor: string | null, limit: number) { return new CareerViewService(this.context).query(userId, viewId, cursor, limit); }
+  replaceTargets(userId: string, recordId: string, propertyId: string, targetIds: readonly string[], expectedVersion: number) { return new MongoRelationService(this.context).replaceTargets(userId, recordId, propertyId, targetIds, expectedVersion); }
+  listRelationTargets(userId: string, recordId: string, propertyId: string) { return new MongoRelationService(this.context).listTargets(userId, recordId, propertyId); }
+  removeRelationTargetsForRecord(userId: string, recordId: string) { return new MongoRelationService(this.context).removeForRecord(userId, recordId); }
+  previewCategoryMove(userId: string, recordId: string, targetCategoryId: string) { return new MongoCategoryMoveService(this.context).preview(userId, recordId, targetCategoryId); }
+  commitCategoryMove(userId: string, recordId: string, input: unknown) { return new MongoCategoryMoveService(this.context).commit(userId, recordId, input); }
 
   createLink(userId: string, recordId: string, toRecordId: string, relation: "related" | "parent" | "duplicate_of") { return createMongoLink(this.context, userId, recordId, toRecordId, relation); }
   listLinks(userId: string, recordId: string) { return listMongoLinks(this.context, userId, recordId); }

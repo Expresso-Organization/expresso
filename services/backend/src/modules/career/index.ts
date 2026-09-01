@@ -1,6 +1,8 @@
 import type { CareerService as LegacyCareerService } from "./legacy-mysql-service.js";
 import type { CareerPropertySchemaService } from "./property-schema.js";
 import type { CareerViewService } from "./views.js";
+import type { CategoryMoveService } from "./category-move.js";
+import type { RelationService } from "./relations.js";
 export { CareerService } from "./service.js";
 export { MongoCareerService } from "./service.js";
 export { assertActiveRecordsForWrite, purgeTrashedCareerRecord } from "./mongo-record-guard.js";
@@ -17,4 +19,9 @@ export interface CareerApi extends Pick<LegacyCareerService, keyof LegacyCareerS
   deleteViewConfiguration?: CareerViewService["delete"];
   reorderViewConfigurations?: CareerViewService["reorder"];
   queryViewConfiguration?: CareerViewService["query"];
+  replaceTargets?: RelationService["replaceTargets"];
+  listRelationTargets?: RelationService["listTargets"];
+  removeRelationTargetsForRecord?: RelationService["removeForRecord"];
+  previewCategoryMove?: CategoryMoveService["preview"];
+  commitCategoryMove?: CategoryMoveService["commit"];
 }

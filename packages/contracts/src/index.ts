@@ -5,9 +5,14 @@ export {
   CareerPropertyTypeV2Schema,
   CareerPropertyValueV2Schema,
   CareerPropertyDefinitionV2Schema,
+  CareerRelationTargetSchema,
   CareerFormulaDiagnosticSchema,
   CareerRelationDefinitionSchema,
   CareerRelationSchema,
+  ReplaceCareerRelationTargetsSchema,
+  ListCareerRelationTargetsQuerySchema,
+  PreviewCareerCategoryMoveSchema,
+  CommitCareerCategoryMoveRequestSchema,
   CareerCategoryMovePreviewSchema,
   CareerCategoryMoveCommitSchema,
   CareerFormulaSchema,
@@ -18,7 +23,7 @@ export {
   CareerPropertyChangePreviewSchema,
   ApplyCareerPropertyChangeSchema,
 } from "./career-properties.js";
-export type { CareerPropertySchemaChange, CareerPropertyChangePreview, ApplyCareerPropertyChange, CareerPropertyDefinitionV2, CareerPropertyValueV2, CareerRollupAggregation } from "./career-properties.js";
+export type { CareerPropertySchemaChange, CareerPropertyChangePreview, ApplyCareerPropertyChange, CareerPropertyDefinitionV2, CareerPropertyValueV2, CareerRollupAggregation, CareerRelationDefinition, CareerRelationTarget, ReplaceCareerRelationTargets, PreviewCareerCategoryMove, CommitCareerCategoryMoveRequest, CareerCategoryMovePreview } from "./career-properties.js";
 export {
   CareerViewFilterV2Schema,
   CareerSortV2Schema,

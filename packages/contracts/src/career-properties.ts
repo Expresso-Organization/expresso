@@ -18,6 +18,7 @@ const DateRangeSchema = z.strictObject({
   end: z.union([z.iso.date(), z.iso.datetime({ offset: true })]).nullable(),
   timezone: z.string().min(1).max(64).nullable(),
 }).refine((value) => value.end === null || value.end >= value.start, { message: "date end must follow start" });
+export const CareerRelationTargetSchema = z.strictObject({ recordId: UuidSchema, title: z.string().max(300) });
 export const CareerPropertyValueV2Schema = z.discriminatedUnion("type", [
   z.strictObject({ type: z.literal("title"), value: z.string().max(300) }),
   z.strictObject({ type: z.literal("text"), value: z.string().max(50_000) }),
@@ -28,7 +29,7 @@ export const CareerPropertyValueV2Schema = z.discriminatedUnion("type", [
   z.strictObject({ type: z.literal("checkbox"), value: z.boolean() }),
   z.strictObject({ type: z.enum(["url", "email", "phone"]), value: z.string().max(2_000) }),
   z.strictObject({ type: z.enum(["file", "media"]), value: z.array(UuidSchema).max(100) }),
-  z.strictObject({ type: z.literal("relation"), value: z.array(z.strictObject({ recordId: UuidSchema, title: z.string().max(300) })).max(1_000) }),
+  z.strictObject({ type: z.literal("relation"), value: z.array(CareerRelationTargetSchema).max(1_000) }),
   z.strictObject({ type: z.enum(["formula", "rollup"]), value: CareerComputedValueSchema, diagnostics: z.array(CareerFormulaDiagnosticSchema).max(50) }),
   z.strictObject({ type: z.enum(["created_time", "updated_time"]), value: TimestampSchema }),
 ]);
@@ -47,6 +48,15 @@ export const CareerRelationSchema = z.strictObject({
   id: UuidSchema, sourceRecordId: UuidSchema, sourcePropertyId: UuidSchema,
   targetRecordId: UuidSchema, inversePropertyId: UuidSchema.nullable(), version: z.number().int().positive(),
 });
+/** 한 관계형 프로퍼티의 대상 목록을 통째로 교체한다. */
+export const ReplaceCareerRelationTargetsSchema = z.strictObject({
+  propertyId: UuidSchema,
+  targetIds: z.array(UuidSchema).max(1_000),
+});
+export const ListCareerRelationTargetsQuerySchema = z.strictObject({ propertyId: UuidSchema });
+export const PreviewCareerCategoryMoveSchema = z.strictObject({
+  targetCategoryId: UuidSchema,
+});
 export const CareerPropertyConversionSchema = z.strictObject({
   sourcePropertyId: UuidSchema, targetPropertyId: UuidSchema.nullable(),
   kind: z.enum(["exact", "safe", "lossy", "unmapped"]), sampleBefore: z.unknown().optional(), sampleAfter: z.unknown().optional(),
@@ -61,6 +71,8 @@ export const CareerCategoryMoveCommitSchema = z.strictObject({
   recordId: UuidSchema, targetCategoryId: UuidSchema, previewToken: z.string().min(32).max(4096),
   expectedVersion: z.number().int().positive(), discardUnmappedPropertyIds: z.array(UuidSchema).max(200).default([]),
 });
+/** recordId는 route parameter에서 주입한다. 웹 클라이언트 body에는 포함하지 않는다. */
+export const CommitCareerCategoryMoveRequestSchema = CareerCategoryMoveCommitSchema.omit({ recordId: true });
 export const CareerFormulaSchema = z.strictObject({
   source: z.string().max(4_000), ast: z.unknown().nullable(), diagnostics: z.array(CareerFormulaDiagnosticSchema).max(50),
 }).refine((value) => !/\b(?:eval|Function|import|require)\s*\(/u.test(value.source), { message: "unsafe formula expression" });
@@ -74,6 +86,12 @@ export const CareerRollupSchema = z.strictObject({
 export type CareerPropertyDefinitionV2 = z.infer<typeof CareerPropertyDefinitionV2Schema>;
 export type CareerPropertyValueV2 = z.infer<typeof CareerPropertyValueV2Schema>;
 export type CareerRollupAggregation = z.infer<typeof CareerRollupAggregationSchema>;
+export type CareerCategoryMovePreview = z.infer<typeof CareerCategoryMovePreviewSchema>;
+export type CareerRelationDefinition = z.infer<typeof CareerRelationDefinitionSchema>;
+export type CareerRelationTarget = z.infer<typeof CareerRelationTargetSchema>;
+export type ReplaceCareerRelationTargets = z.infer<typeof ReplaceCareerRelationTargetsSchema>;
+export type PreviewCareerCategoryMove = z.infer<typeof PreviewCareerCategoryMoveSchema>;
+export type CommitCareerCategoryMoveRequest = z.infer<typeof CommitCareerCategoryMoveRequestSchema>;
 
 export const CareerPropertySchemaChangeSchema = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("create"), property: CareerPropertyDefinitionV2Schema.omit({ id: true, version: true, deletedAt: true, order: true }).extend({ id: UuidSchema.optional(), order: z.number().int().nonnegative().optional() }) }),
