@@ -2,7 +2,8 @@ import type { JobSourceProvider } from "@expresso/contracts";
 
 import {
   createPacer, fetchText, htmlToMarkdown, mapWithLimit,
-  type JobSourceAdapter, type RawPosting,
+  type FetchResult, type FetchScope, type JobSourceAdapter,
+  type PostingRefresh, type RawPosting,
 } from "./adapter.js";
 
 /**
@@ -226,7 +227,7 @@ export class Work24WebAdapter implements JobSourceAdapter {
   }
 
   /** `token`은 직종코드다. 여러 개면 `|`로 잇는다 — 화면이 쓰는 그대로. */
-  async fetch(token: string): Promise<RawPosting[]> {
+  async fetch(token: string, _displayName: string, scope: FetchScope): Promise<FetchResult> {
     const pace = createPacer(this.#minIntervalMs);
     const cutoff = new Date(Date.now() - this.#recentDays * 86_400_000)
       .toISOString().slice(0, 10);
@@ -256,8 +257,29 @@ export class Work24WebAdapter implements JobSourceAdapter {
       }
     }
 
+    // 창 안의 대부분은 이미 들였거나 들일 생각이 없는 공고다. 목록만 보고
+    // 먼저 가른다 — 상세는 공고 하나에 요청 하나다.
+    const fresh: ListRow[] = [];
+    const refresh: PostingRefresh[] = [];
+    let skippedUnwanted = 0;
+    for (const row of rows) {
+      if (scope.isKnown(row.wantedAuthNo)) {
+        refresh.push({
+          externalId: row.wantedAuthNo,
+          title: row.title.slice(0, 300),
+          // 고용24 목록은 부서도 근무지도 주지 않는다. 짐작해서 채우지 않는다.
+          team: null,
+          location: null,
+          expiresAt: row.expiresAt,
+        });
+        continue;
+      }
+      if (!scope.wants(row.title, null)) { skippedUnwanted += 1; continue; }
+      fresh.push(row);
+    }
+
     const built = await mapWithLimit(
-      rows,
+      fresh,
       this.#detailLanes,
       async (row): Promise<RawPosting | null> => {
         await pace();
@@ -283,6 +305,10 @@ export class Work24WebAdapter implements JobSourceAdapter {
       },
     );
 
-    return built.filter((one): one is RawPosting => one !== null);
+    return {
+      postings: built.filter((one): one is RawPosting => one !== null),
+      refresh,
+      skippedUnwanted,
+    };
   }
 }

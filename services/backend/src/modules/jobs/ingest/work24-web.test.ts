@@ -2,6 +2,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Work24WebAdapter } from "./work24-web.js";
 
+/** 아직 아무것도 안 들였고, 전부 들일 생각이 있는 상태. */
+const ALL = { isKnown: () => false, wants: () => true };
+
 /** 목록 한 줄. 체크박스 한 칸에 네 값이 `|`로 들어 있다. */
 function row(
   index: number, no: string, type: string, company: string, title: string,
@@ -52,7 +55,7 @@ describe("고용24 채용정보 목록 읽기", () => {
       "wantedAuthNo=K1": detail("<p>서버를 만듭니다</p>"),
       "wantedAuthNo=K2": detail("<p>화면을 만듭니다</p>"),
     });
-    const postings = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024");
+    const { postings } = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024", "고용24", ALL);
     expect(postings.map((one) => one.companyName))
       .toEqual(["사람인연계회사", "잡코리아연계회사"]);
   });
@@ -62,7 +65,7 @@ describe("고용24 채용정보 목록 읽기", () => {
       "currentPageNo=1": `<html>${row(1, "K1", "CSI", "회사", "개발자")}</html>`,
       "wantedAuthNo=K1": detail("<p>서버를 만듭니다</p>"),
     });
-    const [posting] = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024");
+    const { postings: [posting] } = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024", "고용24", ALL);
     expect(posting?.descriptionRaw).toContain("서버를 만듭니다");
     expect(posting?.descriptionRaw).not.toContain("담당자 연락처");
   });
@@ -74,7 +77,7 @@ describe("고용24 채용정보 목록 읽기", () => {
       "wantedAuthNo=K1": detail("<p>서버를 만듭니다</p>"),
       "wantedAuthNo=K2": detail(null),
     });
-    const postings = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024");
+    const { postings } = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024", "고용24", ALL);
     expect(postings.map((one) => one.externalId)).toEqual(["K1"]);
   });
 
@@ -83,7 +86,7 @@ describe("고용24 채용정보 목록 읽기", () => {
       "currentPageNo=1": `<html>${row(1, "K1", "CSI", "회사", "개발자", "2026-09-15")}</html>`,
       "wantedAuthNo=K1": detail("<p>본문</p>"),
     });
-    const [posting] = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024");
+    const { postings: [posting] } = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024", "고용24", ALL);
     // 한국 시간 23:59:59 → UTC 14:59:59
     expect(posting?.expiresAt?.toISOString()).toBe("2026-09-15T14:59:59.000Z");
   });
@@ -95,7 +98,7 @@ describe("고용24 채용정보 목록 읽기", () => {
         경력: "관계없음", 지역: "서울특별시 강남구", 고용형태: "기간의 정함이 없는 근로계약",
       }),
     });
-    const [posting] = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024");
+    const { postings: [posting] } = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024", "고용24", ALL);
     expect(posting?.location).toBe("서울특별시 강남구");
     expect(posting?.employmentType).toBe("기간의 정함이 없는 근로계약");
     expect(posting?.experienceLabel).toBe("관계없음");
@@ -118,7 +121,7 @@ describe("고용24 채용정보 목록 읽기", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const postings = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024");
+    const { postings } = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024", "고용24", ALL);
     const listCalls = fetchMock.mock.calls
       .filter((call) => String(call[0]).includes("retriveDtlEmpSrchList"));
     // 2쪽에서 창을 벗어났다 — 3쪽은 부르지 않는다.
@@ -131,7 +134,7 @@ describe("고용24 채용정보 목록 읽기", () => {
       "currentPageNo=1": `<html>${row(1, "K1", "CSI", "회사", "개발자")}</html>`,
       "wantedAuthNo=K1": detail("<p>본문</p>"),
     });
-    const postings = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024");
+    const { postings } = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024", "고용24", ALL);
     expect(postings.map((one) => one.externalId)).toEqual(["K1"]);
   });
 
@@ -149,9 +152,67 @@ describe("고용24 채용정보 목록 읽기", () => {
       return new Response("too many", { status: 429, headers: { "retry-after": "60" } });
     }));
 
-    await expect(new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024")).rejects.toThrow("HTTP 429");
+    await expect(new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024", "고용24", ALL)).rejects.toThrow("HTTP 429");
     // 스무 건을 끝까지 두드리지 않는다.
     expect(details).toBeLessThan(20);
+  });
+
+
+  it("이미 들인 공고는 상세를 열지 않는다", async () => {
+    const details: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      const text = String(url);
+      if (text.includes("retriveDtlEmpSrchList")) {
+        const rows = [
+          row(0, "OLD", "CSI", "회사", "이미 들인 개발자", "2026-09-15", daysAgo(1)),
+          row(1, "NEW", "CSI", "회사", "처음 보는 개발자", undefined, daysAgo(1)),
+        ].join("");
+        return new Response(`<html>${rows}</html>`, { status: 200 });
+      }
+      details.push(/wantedAuthNo=([A-Z0-9]+)/.exec(text)?.[1] ?? "?");
+      return new Response(detail("<p>본문</p>"), { status: 200 });
+    }));
+
+    const known = { isKnown: (id: string) => id === "OLD", wants: () => true };
+    const result = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024", "고용24", known);
+
+    expect(details).toEqual(["NEW"]);
+    expect(result.postings.map((one) => one.externalId)).toEqual(["NEW"]);
+    // 건너뛴 것도 되짚어 온다 — 갈래와 마감을 다시 붙일 수 있어야 한다.
+    expect(result.refresh).toEqual([{
+      externalId: "OLD",
+      title: "이미 들인 개발자",
+      team: null,
+      location: null,
+      expiresAt: new Date("2026-09-15T14:59:59.000Z"),
+    }]);
+  });
+
+
+  it("들일 생각이 없는 공고는 상세를 열지 않는다", async () => {
+    // 상세는 공고 하나에 요청 하나다. 제목만으로 가릴 수 있는 것을 받아 놓고
+    // 버리는 것이 이 수집에서 가장 큰 낭비다.
+    const opened: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      const text = String(url);
+      if (text.includes("retriveDtlEmpSrchList")) {
+        const rows = [
+          row(0, "DEV", "CSI", "회사", "백엔드 개발자", undefined, daysAgo(1)),
+          row(1, "COOK", "CSI", "회사", "조리원 모집", undefined, daysAgo(1)),
+        ].join("");
+        return new Response(`<html>${rows}</html>`, { status: 200 });
+      }
+      opened.push(/wantedAuthNo=([A-Z0-9]+)/.exec(text)?.[1] ?? "?");
+      return new Response(detail("<p>본문</p>"), { status: 200 });
+    }));
+
+    const scope = { isKnown: () => false, wants: (title: string) => title.includes("개발자") };
+    const result = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024", "고용24", scope);
+
+    expect(opened).toEqual(["DEV"]);
+    expect(result.postings.map((one) => one.externalId)).toEqual(["DEV"]);
+    // 건너뛴 것도 센다 — 출처가 몇 건을 내놓았는지가 화면에 남는다.
+    expect(result.skippedUnwanted).toBe(1);
   });
 
   it("두 겹으로 이스케이프된 제목을 끝까지 푼다", async () => {
@@ -161,7 +222,7 @@ describe("고용24 채용정보 목록 읽기", () => {
       "currentPageNo=1": `<html>${row(1, "K1", "CSI", "회사", "WPF 클라이언트 &amp;amp; 풀스택")}</html>`,
       "wantedAuthNo=K1": detail("<p>본문</p>"),
     });
-    const [posting] = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024");
+    const { postings: [posting] } = await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024", "고용24", ALL);
     expect(posting?.title).toBe("WPF 클라이언트 & 풀스택");
   });
 
@@ -183,7 +244,7 @@ describe("고용24 채용정보 목록 읽기", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024");
+    await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024", "고용24", ALL);
     const listCalls = fetchMock.mock.calls
       .filter((call) => String(call[0]).includes("retriveDtlEmpSrchList"));
     // 2쪽까지 갔다가 창 밖을 만나 멈춘다. 1쪽에서 끝나지 않는다.
@@ -198,7 +259,7 @@ describe("고용24 채용정보 목록 읽기", () => {
       { status: 200, headers: { "content-type": "text/html" } },
     ));
     vi.stubGlobal("fetch", fetchMock);
-    await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024");
+    await new Work24WebAdapter({ minIntervalMs: 0 }).fetch("024", "고용24", ALL);
     const listCalls = fetchMock.mock.calls
       .filter((call) => String(call[0]).includes("retriveDtlEmpSrchList"));
     expect(listCalls).toHaveLength(1);

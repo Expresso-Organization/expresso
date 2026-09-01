@@ -2,7 +2,8 @@ import type { JobSourceProvider } from "@expresso/contracts";
 
 import {
   createPacer, fetchText, htmlToMarkdown, mapWithLimit,
-  type JobSourceAdapter, type RawPosting,
+  type FetchResult, type FetchScope, type JobSourceAdapter,
+  type PostingRefresh, type RawPosting,
 } from "./adapter.js";
 
 /**
@@ -123,6 +124,24 @@ function openingsOf(payload: unknown): GreetingOpening[] {
   return [];
 }
 
+
+/** 직무는 좁은 쪽(`job`)이 먼저다. 없으면 넓은 쪽(`occupation`). */
+function teamOf(opening: GreetingOpening): string | null {
+  const position = opening.openingJobPosition?.openingJobPositions?.[0] ?? null;
+  return (position?.workspaceJob?.job ?? position?.workspaceOccupation?.occupation)
+    ?.trim().slice(0, 120) ?? null;
+}
+
+function placeOf(opening: GreetingOpening): string | null {
+  const position = opening.openingJobPosition?.openingJobPositions?.[0] ?? null;
+  return position?.workspacePlace?.location?.trim().slice(0, 120) ?? null;
+}
+
+function dueOf(opening: GreetingOpening): Date | null {
+  const due = opening.dueDate ? new Date(opening.dueDate) : null;
+  return due && !Number.isNaN(due.getTime()) ? due : null;
+}
+
 /** 상세에서 본문만 꺼낸다. */
 function detailOf(payload: unknown): string | null {
   for (const data of queryData(payload)) {
@@ -150,14 +169,43 @@ export class GreetingAdapter implements JobSourceAdapter {
     this.#detailLanes = options.detailLanes ?? DETAIL_LANES;
   }
 
-  async fetch(token: string, displayName: string): Promise<RawPosting[]> {
+  async fetch(
+    token: string,
+    displayName: string,
+    scope: FetchScope,
+  ): Promise<FetchResult> {
     const base = `https://${encodeURIComponent(token)}${HOST_SUFFIX}`;
     const pace = createPacer(this.#minIntervalMs);
     await pace();
     const openings = openingsOf(nextData(await fetchText(`${base}/ko/home`)));
 
+    // 상세는 공고 하나에 요청 하나다. 목록만 보고 먼저 가른다 — 들일 생각이
+    // 없거나 이미 들인 공고의 본문을 받는 것이 여기서 가장 큰 낭비다.
+    const fresh: GreetingOpening[] = [];
+    const refresh: PostingRefresh[] = [];
+    let skippedUnwanted = 0;
+    for (const opening of openings) {
+      const id = opening.openingId;
+      const title = opening.title?.trim();
+      if (!id || !title) continue;
+
+      if (scope.isKnown(String(id))) {
+        // 본문은 고칠 수 없다. 갈래와 마감만 다시 붙이면 된다.
+        refresh.push({
+          externalId: String(id),
+          title: title.slice(0, 300),
+          team: teamOf(opening),
+          location: placeOf(opening),
+          expiresAt: dueOf(opening),
+        });
+        continue;
+      }
+      if (!scope.wants(title, teamOf(opening))) { skippedUnwanted += 1; continue; }
+      fresh.push(opening);
+    }
+
     const built = await mapWithLimit(
-      openings,
+      fresh,
       this.#detailLanes,
       async (opening): Promise<RawPosting | null> => {
         const id = opening.openingId;
@@ -174,7 +222,6 @@ export class GreetingAdapter implements JobSourceAdapter {
 
         const position = opening.openingJobPosition?.openingJobPositions?.[0] ?? null;
         const employment = position?.jobPositionEmployment?.employmentType ?? null;
-        const due = opening.dueDate ? new Date(opening.dueDate) : null;
 
         return {
           externalId: String(id),
@@ -182,19 +229,21 @@ export class GreetingAdapter implements JobSourceAdapter {
           companyName: (opening.group?.name?.trim() || displayName).slice(0, 200),
           descriptionRaw: htmlToMarkdown(detail),
           sourceUrl: url,
-          location: position?.workspacePlace?.location?.trim().slice(0, 120) ?? null,
+          location: placeOf(opening),
           employmentType: employment
             ? (EMPLOYMENT_LABELS[employment] ?? employment).slice(0, 60)
             : null,
           experienceLabel: experienceLabel(position?.jobPositionCareer)?.slice(0, 60) ?? null,
-          // 직무는 좁은 쪽(`job`)이 먼저다. 없으면 넓은 쪽(`occupation`).
-          team: (position?.workspaceJob?.job ?? position?.workspaceOccupation?.occupation)
-            ?.trim().slice(0, 120) ?? null,
-          expiresAt: due && !Number.isNaN(due.getTime()) ? due : null,
+          team: teamOf(opening),
+          expiresAt: dueOf(opening),
         };
       },
     );
 
-    return built.filter((one): one is RawPosting => one !== null);
+    return {
+      postings: built.filter((one): one is RawPosting => one !== null),
+      refresh,
+      skippedUnwanted,
+    };
   }
 }

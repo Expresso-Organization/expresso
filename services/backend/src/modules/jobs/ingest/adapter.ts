@@ -23,6 +23,74 @@ export interface RawPosting {
   expiresAt: Date | null;
 }
 
+/**
+ * 상세를 열기 전에 물어보는 창구.
+ *
+ * 공고 하나가 요청 하나인 출처가 있다(그리팅 · 고용24). 그런 곳에서 **버릴
+ * 공고의 본문까지 받는 것**이 가장 큰 낭비다 — 실측에서 그리팅 803건 중
+ * 저장되는 것은 92건뿐이었다. 들일 생각이 있는지, 이미 들였는지를 목록만
+ * 보고 먼저 가른다.
+ *
+ * 판정은 수집 서비스가 한다. 어댑터는 도메인 규칙을 모른다.
+ */
+export interface FetchScope {
+  /**
+   * 이미 들여 둔 공고인가.
+   *
+   * `externalId`는 어댑터가 내놓는 **그대로**다 — 저장소가 앞에 붙이는
+   * `provider:token:`은 수집 서비스가 떼어 준다.
+   */
+  isKnown(externalId: string): boolean;
+  /** 제목과 직무만 보고, 이 공고를 들일 생각이 있는가. */
+  wants(title: string, team: string | null): boolean;
+}
+
+/**
+ * 이미 들인 공고에 다시 붙일 것.
+ *
+ * 본문은 한 번 넣으면 고칠 수 없다(0002). 그래서 다시 읽지 않는다. 하지만
+ * **갈래와 지역은 우리 규칙이 읽은 값**이라 규칙이 나아지면 이미 들인 공고도
+ * 따라와야 하고, 마감은 근거가 아니라 사실이라 바뀌면 따라가야 한다.
+ *
+ * 목록만으로 채울 수 있는 칸이다 — 상세를 열지 않는다.
+ */
+export interface PostingRefresh {
+  externalId: string;
+  title: string;
+  team: string | null;
+  location: string | null;
+  expiresAt: Date | null;
+}
+
+/**
+ * 증분으로 읽는 어댑터가 내놓는 것.
+ *
+ * `postings`만 돌려주면 **출처가 몇 건을 내놓았는지 알 수 없다.** 그 수는
+ * `job_source.lastSeenCount`로 남아 화면이 "어디서 모으는지"를 고르는 데
+ * 쓰이므로, 건너뛴 것까지 세어 함께 넘긴다.
+ */
+export interface FetchResult {
+  /** 본문까지 읽어 온 것. 처음 보는 공고다. */
+  postings: RawPosting[];
+  /** 이미 들여 둔 공고. 상세를 열지 않고 분류만 다시 붙인다. */
+  refresh: PostingRefresh[];
+  /**
+   * 목록에는 있었지만 상세를 열지 않은 공고 수.
+   *
+   * 들일 생각이 없어 건너뛴 것이다. `seen`을 바로 세우는 데 쓴다 — 출처가
+   * 몇 건을 내놓았는지가 화면에 남는다.
+   */
+  skippedUnwanted: number;
+}
+
+/** 한 번에 다 가져오는 출처는 배열만 돌려줘도 된다. */
+export type FetchOutcome = RawPosting[] | FetchResult;
+
+/** 어느 모양으로 왔든 같은 자리로 편다. */
+export function readFetchOutcome(value: FetchOutcome): FetchResult {
+  return Array.isArray(value) ? { postings: value, refresh: [], skippedUnwanted: 0 } : value;
+}
+
 /** 출처 하나를 읽는 방법. 프로바이더마다 하나씩. */
 export interface JobSourceAdapter {
   readonly provider: JobSourceProvider;
@@ -33,10 +101,18 @@ export interface JobSourceAdapter {
    * 아예 주지 않고 Greenhouse도 `company_name`이 비는 보드가 있는데, 그때
    * `token`으로 메우면 화면에 `zoyi` 같은 슬러그가 회사 이름으로 선다.
    *
+   * `scope`는 **상세를 열 값어치가 있는지** 묻는 자리다. 공고 하나가 요청
+   * 하나인 출처는 목록만 보고 먼저 가른다 — 들일 생각이 없거나 이미 들인
+   * 공고의 본문을 받는 것이 이 수집에서 가장 큰 낭비다.
+   *
    * 실패는 던진다 — 수집 서비스가 출처별로 받아 `last_error`에 적는다.
    * 한 출처가 죽어도 나머지는 계속 돌아야 한다.
    */
-  fetch(token: string, displayName: string): Promise<RawPosting[]>;
+  fetch(
+    token: string,
+    displayName: string,
+    scope: FetchScope,
+  ): Promise<FetchOutcome>;
 }
 
 /**
