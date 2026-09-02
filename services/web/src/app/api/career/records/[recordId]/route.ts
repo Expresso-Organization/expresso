@@ -23,3 +23,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ re
   try { return Response.json(CareerRecordResponseSchema.parse(await upstream.json()), { headers: { "cache-control": "no-store", etag: upstream.headers.get("etag") ?? "" } }); }
   catch { return new Response("백엔드 응답이 계약과 다릅니다", { status: 502 }); }
 }
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ recordId: string }> }): Promise<Response> {
+  const accessToken = await readAccessToken();
+  if (!accessToken) return new Response("로그인이 필요합니다", { status: 401 });
+  const { recordId } = await params;
+  const upstream = await fetch(`${API_BASE_URL}${API_PREFIX}/career/records/${encodeURIComponent(recordId)}`, { method: "DELETE", headers: { authorization: `Bearer ${accessToken}`, accept: "application/json" }, signal: request.signal, cache: "no-store" });
+  if (!upstream.ok) return new Response(null, { status: upstream.status });
+  return new Response(null, { status: 204 });
+}

@@ -1,4 +1,4 @@
-import type { CareerCategory, CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
+import type { CareerCategory, CareerPropertyDefinitionV2, CareerPropertyValueV2, CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
 
 export interface CareerViewRendererProps {
   records: readonly CareerRecord[];
@@ -10,10 +10,15 @@ export interface CareerViewRendererProps {
   openId: string | null;
   selectedIds: ReadonlySet<string>;
   onActivate(recordId: string): void;
-  onCreate(initialProperties?: Record<string, unknown>): void;
+  onCreate(initialProperties?: Record<string, unknown>, options?: { open?: boolean }): Promise<CareerRecord | null> | void;
   onFillMissing(recordId: string): void;
   onToggle(recordId: string): void;
   onViewChange(next: CareerViewConfiguration): void;
+  onCellCommit?(recordId: string, definition: CareerPropertyDefinitionV2, value: CareerPropertyValueV2 | null): Promise<void>;
+  onCellRetry?(recordId: string, propertyId: string): void;
+  onDuplicateRecord?(recordId: string): Promise<CareerRecord | null>;
+  onDeleteRecord?(recordId: string): Promise<void>;
+  cellIssues?: ReadonlyMap<string, string>;
 }
 
 export function propertyKey(category: CareerCategory, propertyId: string): string | null {

@@ -78,6 +78,9 @@
 .tableHead,.tableRow,.rowActive,.tableSummary { display:grid; align-items:center; min-height:42px; border-bottom:1px solid var(--ex-border-soft); }
 .tableHead { position:sticky; top:0; z-index:3; background:var(--ex-bg-muted); color:var(--ex-fg-muted); font-size:var(--ex-text-xs); }
 .tableHead>* ,.tableRow>* ,.rowActive>* ,.tableSummary>* { min-width:0; padding:8px 12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tableHead>:first-child,.tableRow>:first-child,.rowActive>:first-child,.tableSummary>:first-child { position:sticky; z-index:2; left:0; background:inherit; }
+.tableHead>:nth-child(2),.tableRow>:nth-child(2),.rowActive>:nth-child(2),.tableSummary>:nth-child(2) { position:sticky; z-index:2; left:96px; background:inherit; box-shadow:1px 0 var(--ex-border-soft); }
+.tableHead>:first-child,.tableHead>:nth-child(2) { z-index:4; }
 .tableColumnHeader { position:relative; display:flex; height:42px; align-items:center; padding:0!important; overflow:visible!important; }
 .tableColumnHeader[data-column-draggable="true"] { cursor:grab; }
 .tableColumnHeader[data-column-draggable="true"]:active { cursor:grabbing; }
@@ -138,11 +141,53 @@
 .rowTitle { display:flex; min-width:0; align-items:center; gap:8px; }
 .rowTitle>i { flex:0 0 auto; color:var(--ex-fg-muted); }
 .rowTitle>span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tableCell { position:relative; display:flex; height:42px; box-sizing:border-box; align-items:center; gap:6px; cursor:default; }
+.tableCell[data-active="true"] { box-shadow:inset 0 0 0 1px var(--ex-accent); }
+.tableCell[data-editing="true"] { overflow:visible!important; background:var(--ex-bg); box-shadow:inset 0 0 0 2px var(--ex-accent); }
+.tableCell[data-issue="true"]::after { position:absolute; top:0; right:0; width:0; height:0; border-top:7px solid var(--ex-status-danger); border-left:7px solid transparent; content:""; }
+.cellInput { width:100%; height:100%; min-width:0; box-sizing:border-box; border:0!important; outline:0!important; background:transparent; padding:0; color:var(--ex-fg-strong); font:inherit; box-shadow:none!important; }
+.cellInput:focus,.cellInput:focus-visible { border:0!important; outline:0!important; box-shadow:none!important; }
+.cellOpenButton { display:inline-flex; min-height:26px; flex:0 0 auto; align-items:center; gap:4px; margin-left:auto; border:1px solid var(--ex-border)!important; border-radius:6px; background:var(--ex-bg-muted)!important; padding:3px 7px; color:var(--ex-fg-body)!important; font-size:var(--ex-text-xs); }
+.tableTitleValue { display:flex; min-width:0; align-items:center; gap:8px; }
+.tableTitleValue>i { flex:0 0 auto; color:var(--ex-fg-muted); }
+.tableTitleValue>span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tableBoolean { display:inline-flex; align-items:center; gap:7px; color:var(--ex-fg-muted); }
+.tableBoolean>span { display:grid; width:14px; height:14px; place-items:center; border:1px solid var(--ex-border-firm); border-radius:3px; color:var(--ex-fg-on-accent); }
+.tableBoolean[data-checked="true"]>span { border-color:var(--ex-accent); background:var(--ex-accent); }
 .tableRow[data-dragging="true"],.rowActive[data-dragging="true"] { opacity:.48; }
 .tableRow[data-drop-position="before"],.rowActive[data-drop-position="before"] { box-shadow:inset 0 2px var(--ex-accent); }
 .tableRow[data-drop-position="after"],.rowActive[data-drop-position="after"] { box-shadow:inset 0 -2px var(--ex-accent); }
 .tableTags { display:flex; gap:4px; overflow:hidden; }
 .tableTags small { overflow:hidden; border-radius:4px; padding:3px 6px; background:var(--ex-bg-tint); color:var(--ex-fg-body); font-size:var(--ex-text-2xs); text-overflow:ellipsis; }
+.cellPopout,.cellContextMenu { position:fixed; z-index:90; display:grid; overflow:auto; border:1px solid var(--ex-border); border-radius:10px; background:var(--ex-bg); padding:6px; box-shadow:var(--ex-elevation-overlay); }
+.cellPopout { max-height:270px; gap:2px; }
+.cellPopoutTitle { display:flex; align-items:center; gap:8px; padding:7px 8px 9px; color:var(--ex-fg-strong); font-size:var(--ex-text-sm); }
+.cellPopout>button,.cellContextMenu>button { display:flex; min-height:34px; align-items:center; gap:9px; border:0; border-radius:7px; background:transparent; padding:6px 9px; color:var(--ex-fg-body); font:inherit; font-size:var(--ex-text-sm); text-align:left; cursor:pointer; }
+.cellPopout>button:hover,.cellPopout>button[aria-selected="true"],.cellContextMenu>button:hover { background:var(--ex-bg-hover); color:var(--ex-fg-strong); }
+.cellPopout>button>i:last-child { margin-left:auto; color:var(--ex-accent-text); }
+.cellPopout>button:disabled,.cellContextMenu>button:disabled { opacity:.4; cursor:not-allowed; }
+.optionDot { width:8px; height:8px; flex:0 0 auto; border-radius:999px; background:var(--ex-accent); opacity:.72; }
+.datePopout { overflow:visible; padding:8px; }
+.dateFieldsInline { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.dateFieldsInline>button { display:grid; gap:2px; border:1px solid var(--ex-border-soft); border-radius:7px; background:var(--ex-bg-muted); padding:6px 8px; color:var(--ex-fg-body); font:inherit; text-align:left; cursor:pointer; }
+.dateFieldsInline>button[aria-pressed="true"] { border-color:var(--ex-accent); }
+.dateFieldsInline small { color:var(--ex-fg-muted); font-size:var(--ex-text-3xs); }
+.dateFieldsInline span { overflow:hidden; font-size:var(--ex-text-xs); text-overflow:ellipsis; white-space:nowrap; }
+.calendarHead { display:grid; grid-template-columns:28px 1fr 28px; align-items:center; margin-top:6px; }
+.calendarHead strong { color:var(--ex-fg-strong); font-size:var(--ex-text-sm); text-align:center; }
+.calendarHead button { display:grid; width:28px; height:28px; place-items:center; border:0; border-radius:6px; background:transparent; color:var(--ex-fg-muted); cursor:pointer; }
+.calendarHead button:hover { background:var(--ex-bg-hover); }
+.calendarGrid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.calendarGrid>small { padding:4px 0; color:var(--ex-fg-subtle); font-size:var(--ex-text-3xs); text-align:center; }
+.calendarGrid>button { aspect-ratio:1; border:0; border-radius:6px; background:transparent; color:var(--ex-fg-body); font:inherit; font-size:var(--ex-text-xs); cursor:pointer; }
+.calendarGrid>button:hover { background:var(--ex-bg-hover); }
+.calendarGrid>button[data-selected="true"] { background:var(--ex-accent); color:var(--ex-fg-on-accent); }
+.cellPopoutFoot { display:flex; justify-content:flex-end; gap:4px; margin-top:4px; border-top:1px solid var(--ex-border-soft); padding-top:6px; }
+.cellPopoutFoot button { min-height:28px; border:0; border-radius:6px; background:transparent; padding:4px 8px; color:var(--ex-fg-muted); font:inherit; font-size:var(--ex-text-xs); cursor:pointer; }
+.cellPopoutFoot button:hover { background:var(--ex-bg-hover); color:var(--ex-fg-strong); }
+.cellContextMenu { width:218px; }
+.cellContextMenu hr { width:100%; height:1px; margin:5px 0; border:0; background:var(--ex-border-soft); }
+.cellContextMenu .dangerMenuItem { color:var(--ex-status-danger-text); }
 .emptyCell { color:var(--ex-fg-faint); }
 .tableSpacer { width:100%; }
 .tableSummary { position:sticky; bottom:0; z-index:2; border-top:1px solid var(--ex-border); border-bottom:0; background:color-mix(in srgb,var(--ex-bg) 96%,transparent); color:var(--ex-fg-muted); font-size:var(--ex-text-2xs); backdrop-filter:blur(8px); }

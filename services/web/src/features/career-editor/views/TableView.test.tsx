@@ -77,6 +77,56 @@ describe("TableView", () => {
     expect(onViewChange).toHaveBeenLastCalledWith(expect.objectContaining({ propertyOrder: [titleId, outcomeId, technologiesId, roleId, scoreId] }));
   });
 
+  it("edits text cells directly, moves with the keyboard and exposes cell actions", async () => {
+    const onCellCommit = vi.fn().mockResolvedValue(undefined);
+    const onDuplicateRecord = vi.fn().mockResolvedValue({ ...records[0], id: ids[5] });
+    render(<TableView records={records} view={view} category={category} activeId={records[0]!.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={() => undefined} onCategoryChange={() => undefined} onCellCommit={onCellCommit} onDuplicateRecord={onDuplicateRecord} onDeleteRecord={vi.fn()} />);
+    const roleCell = screen.getByRole("gridcell", { name: "개발" });
+    fireEvent.click(roleCell);
+    fireEvent.click(roleCell);
+    const input = screen.getByRole("textbox", { name: "역할 셀 편집" });
+    fireEvent.change(input, { target: { value: "리드 개발" } });
+    fireEvent.keyDown(input, { key: "Tab" });
+    await waitFor(() => expect(onCellCommit).toHaveBeenCalledWith(records[0]!.id, expect.objectContaining({ id: roleId }), { type: "text", value: "리드 개발" }));
+    fireEvent.contextMenu(screen.getByRole("gridcell", { name: "개발" }), { clientX: 120, clientY: 90 });
+    expect(screen.getByRole("menu", { name: "역할 셀 메뉴" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("menuitem", { name: "기록 복제" }));
+    await waitFor(() => expect(onDuplicateRecord).toHaveBeenCalledWith(records[0]!.id));
+  });
+
+  it("focuses a new row title without opening the document drawer", async () => {
+    const created = { ...records[0]!, id: "00000000-0000-4000-8000-000000000010", title: "" };
+    const onCreate = vi.fn().mockResolvedValue(created);
+    const { rerender } = render(<TableView records={records} view={view} category={category} activeId={records[0]!.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={onCreate} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={() => undefined} onCategoryChange={() => undefined} onCellCommit={vi.fn().mockResolvedValue(undefined)} />);
+    fireEvent.click(screen.getByRole("button", { name: "두 번째 아래에 새 기록" }));
+    await waitFor(() => expect(onCreate).toHaveBeenCalledWith(undefined, { open: false }));
+    rerender(<TableView records={[created, ...records]} view={view} category={category} activeId={records[0]!.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={onCreate} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={() => undefined} onCategoryChange={() => undefined} onCellCommit={vi.fn().mockResolvedValue(undefined)} />);
+    expect(await screen.findByRole("textbox", { name: "제목 셀 편집" })).toBeTruthy();
+  });
+
+  it("uses custom multi-select and calendar popouts without browser-native widgets", async () => {
+    const dateProperty = { id: "00000000-0000-4000-8000-000000000009", key: "period", name: "기간", type: "date" as const, required: false, system: false, config: {}, order: 5, version: 1, deletedAt: null };
+    const optionA = "00000000-0000-4000-8000-000000000007", optionB = "00000000-0000-4000-8000-000000000008";
+    const technologies = { ...category.propertySchemaV2![3]!, config: { options: [{ id: optionA, name: "React" }, { id: optionB, name: "Go" }] } };
+    const popupCategory = { ...category, propertySchemaV2: [...category.propertySchemaV2!.slice(0, 3), technologies, category.propertySchemaV2![4]!, dateProperty] };
+    const popupView = { ...view, visiblePropertyIds: [...view.visiblePropertyIds, dateProperty.id], propertyOrder: [...view.propertyOrder, dateProperty.id] };
+    const popupRecord = { ...records[0]!, properties: { ...records[0]!.properties, technologies: { type: "multi_select" as const, value: [optionA] }, period: { type: "date" as const, value: { start: "2026-09-01", end: null, timezone: null } } } };
+    const onCellCommit = vi.fn().mockResolvedValue(undefined);
+    render(<TableView records={[popupRecord]} view={popupView} category={popupCategory} activeId={popupRecord.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={() => undefined} onCategoryChange={() => undefined} onCellCommit={onCellCommit} />);
+    const tags = screen.getByRole("gridcell", { name: "React" });
+    tags.getBoundingClientRect = () => ({ top: 100, bottom: 142, left: 300, right: 460, width: 160, height: 42 } as DOMRect);
+    fireEvent.click(tags); fireEvent.click(tags);
+    expect(screen.getByRole("listbox", { hidden: true }).getAttribute("aria-label")).toBe("기술 값 선택");
+    fireEvent.click(screen.getByText("Go"));
+    expect(onCellCommit).toHaveBeenCalledWith(popupRecord.id, expect.objectContaining({ id: technologiesId }), { type: "multi_select", value: [optionA, optionB] });
+    fireEvent.pointerDown(document.body);
+    const dateCell = screen.getByRole("gridcell", { name: "2026-09-01" });
+    dateCell.getBoundingClientRect = () => ({ top: 100, bottom: 142, left: 620, right: 780, width: 160, height: 42 } as DOMRect);
+    fireEvent.click(dateCell); fireEvent.click(dateCell);
+    expect(screen.getByRole("dialog", { hidden: true }).getAttribute("aria-label")).toBe("기간 날짜 선택");
+    expect(document.querySelector('input[type="date"]')).toBeNull();
+  });
+
   it("renames a custom property through preview and apply", async () => {
     const editableCategory = { ...category, isSystem: false };
     const renamed = { ...editableCategory, version: 2, propertySchemaV2: editableCategory.propertySchemaV2?.map((item) => item.id === roleId ? { ...item, name: "담당 역할", version: 2 } : item) };
@@ -109,8 +159,12 @@ describe("TableView", () => {
     expect(screen.getByRole("grid", { name: "React 그룹 테이블" })).toBeTruthy();
     expect(screen.getByRole("grid", { name: "Go 그룹 테이블" })).toBeTruthy();
     expect(screen.getAllByRole("gridcell", { name: "두 번째" })).toHaveLength(2);
+    const duplicatedCells = screen.getAllByRole("gridcell", { name: "ReactGo" });
+    fireEvent.click(duplicatedCells[0]!); fireEvent.click(duplicatedCells[0]!);
+    expect(screen.getAllByRole("listbox", { hidden: true })).toHaveLength(1);
+    fireEvent.pointerDown(document.body);
     fireEvent.click(screen.getByRole("button", { name: "React 그룹에 새 기록" }));
-    expect(onCreate).toHaveBeenCalledWith({ technologies: { type: "multi_select", value: ["React"] } });
+    expect(onCreate).toHaveBeenCalledWith({ technologies: { type: "multi_select", value: ["React"] } }, { open: false });
     fireEvent.click(screen.getByRole("button", { name: "React 그룹 접기" }));
     expect(screen.queryByRole("grid", { name: "React 그룹 테이블" })).toBeNull();
     expect(screen.getByRole("button", { name: "React 그룹 펼치기" })).toBeTruthy();

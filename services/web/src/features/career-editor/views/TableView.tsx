@@ -1,12 +1,14 @@
 "use client";
 
 import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
-import type { CSSProperties, DragEvent as ReactDragEvent, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
+import { createPortal } from "react-dom";
+import type { CSSProperties, DragEvent as ReactDragEvent, KeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 import { propertyOptions } from "@/features/career-editor/properties/property-editors";
 
+import { CareerTableCell, type TableCellValue } from "./CareerTableCell";
 import { PropertyHeaderMenu } from "./PropertyHeaderMenu";
 import type { CareerViewRendererProps } from "./view-types";
 import { displayValue, keyboardActivate, propertyKey, propertyName, rawValue } from "./view-types";
@@ -22,6 +24,8 @@ const EMPTY_GROUP = "__empty__";
 
 interface TableGroup { key: string; label: string; records: CareerRecord[]; empty: boolean; optionOrder: number }
 type DropPlacement = "before" | "after";
+interface ActiveCell { recordId: string; propertyId: string; instanceKey: string }
+interface CellMenu extends ActiveCell { x: number; y: number }
 
 function orderedPropertyIds(props: CareerViewRendererProps): string[] {
   const visible = new Set(props.view.visiblePropertyIds);
@@ -33,22 +37,6 @@ function orderedPropertyIds(props: CareerViewRendererProps): string[] {
 function propertyWidth(view: CareerViewConfiguration, propertyId: string | null, fallback: number): number {
   if (!propertyId) return fallback;
   return view.columnWidths[propertyId] ?? fallback;
-}
-
-function cellValue(record: CareerRecord, definition: CareerPropertyDefinitionV2 | undefined) {
-  if (!definition) return <span className={styles.emptyCell}>—</span>;
-  const value = rawValue(record, definition.key);
-  const optionLabels = new Map(propertyOptions(definition).map((option) => [option.id, option.name]));
-  if (Array.isArray(value)) {
-    const labels = value.flatMap((item) => {
-      if (typeof item === "string" || typeof item === "number") return [optionLabels.get(String(item)) ?? String(item)];
-      if (item && typeof item === "object" && "title" in item) return [String(item.title)];
-      return [];
-    });
-    return labels.length ? <span className={styles.tableTags}>{labels.slice(0, 4).map((label) => <small key={label}>{label}</small>)}</span> : <span className={styles.emptyCell}>—</span>;
-  }
-  const label = typeof value === "string" ? optionLabels.get(value) ?? displayValue(value) : displayValue(value);
-  return label === "—" ? <span className={styles.emptyCell}>—</span> : <span>{label}</span>;
 }
 
 function groupedRecords(records: readonly CareerRecord[], category: CareerCategory, propertyId: string, groupOrder: readonly string[]): TableGroup[] {
@@ -93,20 +81,38 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
   const definitionsById = useMemo(() => new Map((props.category.propertySchemaV2 ?? []).filter((definition) => definition.deletedAt === null).map((definition) => [definition.id, definition])), [props.category.propertySchemaV2]);
   const titleId = props.category.propertySchemaV2?.find((definition) => definition.key === "title" && definition.deletedAt === null)?.id ?? props.view.visiblePropertyIds.find((id) => propertyKey(props.category, id) === "title") ?? null;
   const titleColumnId = titleId ?? props.category.id;
+  const titleDefinition = useMemo<CareerPropertyDefinitionV2>(() => props.category.propertySchemaV2?.find((definition) => definition.id === titleId) ?? { id: titleColumnId, key: "title", name: "제목", type: "title", required: true, system: true, config: {}, order: 0, version: 1, deletedAt: null }, [props.category.propertySchemaV2, titleColumnId, titleId]);
   const [previewWidths, setPreviewWidths] = useState<Record<string, number>>(props.view.columnWidths);
   const [scrollTop, setScrollTop] = useState(0);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [rowDrag, setRowDrag] = useState<{ sourceId: string; targetId: string | null; placement: DropPlacement }>({ sourceId: "", targetId: null, placement: "before" });
   const [columnDrag, setColumnDrag] = useState<{ sourceId: string; targetId: string | null; placement: DropPlacement }>({ sourceId: "", targetId: null, placement: "before" });
+  const [activeCell, setActiveCell] = useState<ActiveCell | null>(null);
+  const [editingCell, setEditingCell] = useState<ActiveCell | null>(null);
+  const [cellMenu, setCellMenu] = useState<CellMenu | null>(null);
   const drag = useRef<{ propertyId: string; width: number } | null>(null);
   const suppressColumnClick = useRef(false);
   const resizeCleanup = useRef<(() => void) | null>(null);
+  const cellRefs = useRef(new Map<string, HTMLElement>());
   const groupDefinition = props.view.groupPropertyId ? definitionsById.get(props.view.groupPropertyId) : undefined;
   const groups = useMemo(() => props.view.groupPropertyId ? groupedRecords(props.records, props.category, props.view.groupPropertyId, props.view.groupOrder) : [], [props.category, props.records, props.view.groupOrder, props.view.groupPropertyId]);
 
   useEffect(() => setPreviewWidths(props.view.columnWidths), [props.view.columnWidths]);
   useEffect(() => setCollapsedGroups(new Set()), [props.view.groupPropertyId]);
   useEffect(() => () => resizeCleanup.current?.(), []);
+  useEffect(() => {
+    if (!activeCell) return;
+    if (editingCell?.recordId === activeCell.recordId && editingCell.propertyId === activeCell.propertyId && editingCell.instanceKey === activeCell.instanceKey) return;
+    cellRefs.current.get(`${activeCell.instanceKey}:${cellKey(activeCell.recordId, activeCell.propertyId)}`)?.focus();
+  }, [activeCell, editingCell, props.records]);
+  useEffect(() => {
+    if (!cellMenu) return;
+    const close = (event?: Event) => { if (event?.target instanceof Element && event.target.closest("[data-cell-context-menu]")) return; setCellMenu(null); };
+    window.addEventListener("resize", close);
+    window.addEventListener("scroll", close, true);
+    document.addEventListener("pointerdown", close);
+    return () => { window.removeEventListener("resize", close); window.removeEventListener("scroll", close, true); document.removeEventListener("pointerdown", close); };
+  }, [cellMenu]);
 
   const width = (propertyId: string | null, fallback: number) => propertyId ? previewWidths[propertyId] ?? propertyWidth(props.view, propertyId, fallback) : fallback;
   const template = `${SELECT_WIDTH}px ${width(titleColumnId, TITLE_WIDTH)}px ${columns.map((id) => `${width(id, PROPERTY_WIDTH)}px`).join(" ")}`;
@@ -115,6 +121,45 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
   const start = windowed ? Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN) : 0;
   const end = windowed ? Math.min(props.records.length, start + WINDOW_ROWS + OVERSCAN * 2) : props.records.length;
   const rows = props.records.slice(start, end);
+
+  const cellKey = (recordId: string, propertyId: string) => `${recordId}:${propertyId}`;
+  const propertyIds = [titleColumnId, ...columns];
+
+  function focusCell(recordId: string, propertyId: string, edit = false, instanceKey = "main") {
+    const next = { recordId, propertyId, instanceKey };
+    setActiveCell(next);
+    setEditingCell(edit ? next : null);
+    queueMicrotask(() => cellRefs.current.get(`${instanceKey}:${cellKey(recordId, propertyId)}`)?.focus());
+  }
+
+  function moveCell(recordId: string, propertyId: string, direction: "left" | "right" | "up" | "down" | "next" | "previous", instanceKey: string, keyboardRecords: readonly CareerRecord[]) {
+    const rowIndex = keyboardRecords.findIndex((record) => record.id === recordId);
+    const columnIndex = propertyIds.indexOf(propertyId);
+    if (rowIndex < 0 || columnIndex < 0) return;
+    let nextRow = rowIndex;
+    let nextColumn = columnIndex;
+    if (direction === "left") nextColumn--;
+    if (direction === "right") nextColumn++;
+    if (direction === "up") nextRow--;
+    if (direction === "down") nextRow++;
+    if (direction === "next") { nextColumn++; if (nextColumn >= propertyIds.length) { nextColumn = 0; nextRow++; } }
+    if (direction === "previous") { nextColumn--; if (nextColumn < 0) { nextColumn = propertyIds.length - 1; nextRow--; } }
+    nextRow = Math.max(0, Math.min(keyboardRecords.length - 1, nextRow));
+    nextColumn = Math.max(0, Math.min(propertyIds.length - 1, nextColumn));
+    focusCell(keyboardRecords[nextRow]?.id ?? recordId, propertyIds[nextColumn] ?? propertyId, false, instanceKey);
+  }
+
+  async function createAndFocus(initialProperties?: Record<string, unknown>, instanceKey = "main") {
+    const created = await props.onCreate(initialProperties, { open: false });
+    if (created) focusCell(created.id, titleColumnId, true, instanceKey);
+  }
+
+  function showCellMenu(event: ReactMouseEvent<HTMLElement>, recordId: string, propertyId: string, instanceKey: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    focusCell(recordId, propertyId, false, instanceKey);
+    setCellMenu({ recordId, propertyId, instanceKey, x: event.clientX, y: event.clientY });
+  }
 
   function commitWidth(propertyId: string, nextWidth: number) {
     const clamped = Math.max(80, Math.min(720, Math.round(nextWidth)));
@@ -288,17 +333,29 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     {columns.map((id) => header(id, propertyName(props.category, id), PROPERTY_WIDTH))}
   </div>;
 
-  const tableRows = (items: readonly CareerRecord[], rowOffset: number, keyboardRecords: readonly CareerRecord[]) => items.map((record, index) => <div className={record.id === props.openId ? styles.rowActive : styles.tableRow} role="row" aria-rowindex={rowOffset + index} key={record.id} tabIndex={record.id === props.activeId ? 0 : -1} data-dragging={rowDrag.sourceId === record.id ? "true" : undefined} data-drop-position={rowDrag.targetId === record.id ? rowDrag.placement : undefined} style={{ gridTemplateColumns: template }} onKeyDown={(event) => keyboardActivate(event, record.id, keyboardRecords, props.onActivate)} onDoubleClick={() => props.onActivate(record.id)} onDragOver={(event) => setRecordDropTarget(event, record.id)} onDrop={(event) => finishRecordDrop(event, record.id)}>
+  const tableCell = (record: CareerRecord, definition: CareerPropertyDefinitionV2, instanceKey: string, keyboardRecords: readonly CareerRecord[]) => {
+    const key = cellKey(record.id, definition.id);
+    const refKey = `${instanceKey}:${key}`;
+    const active = activeCell?.recordId === record.id && activeCell.propertyId === definition.id && activeCell.instanceKey === instanceKey;
+    const editing = editingCell?.recordId === record.id && editingCell.propertyId === definition.id && editingCell.instanceKey === instanceKey;
+    const issue = props.cellIssues?.get(key);
+    return <CareerTableCell key={definition.id} record={record} definition={definition} active={active} editing={editing} {...(issue ? { issue } : {})} cellRef={(node) => { if (node) cellRefs.current.set(refKey, node); else cellRefs.current.delete(refKey); }} onFocus={() => setActiveCell({ recordId: record.id, propertyId: definition.id, instanceKey })} onEdit={() => { const next = { recordId: record.id, propertyId: definition.id, instanceKey }; setActiveCell(next); setEditingCell(next); }} onCommit={(value: TableCellValue) => {
+      if (!["multi_select", "date"].includes(definition.type)) setEditingCell(null);
+      void props.onCellCommit?.(record.id, definition, value);
+    }} onCancel={() => setEditingCell(null)} onMove={(direction) => moveCell(record.id, definition.id, direction, instanceKey, keyboardRecords)} onContextMenu={(event) => showCellMenu(event, record.id, definition.id, instanceKey)} onOpenRecord={() => props.onActivate(record.id)} />;
+  };
+
+  const tableRows = (items: readonly CareerRecord[], rowOffset: number, keyboardRecords: readonly CareerRecord[], instanceKey = "main") => items.map((record, index) => <div className={record.id === props.openId ? styles.rowActive : styles.tableRow} role="row" aria-rowindex={rowOffset + index} key={record.id} tabIndex={activeCell ? -1 : record.id === props.activeId ? 0 : -1} data-dragging={rowDrag.sourceId === record.id ? "true" : undefined} data-drop-position={rowDrag.targetId === record.id ? rowDrag.placement : undefined} style={{ gridTemplateColumns: template }} onKeyDown={(event) => keyboardActivate(event, record.id, keyboardRecords, props.onActivate)} onDoubleClick={(event) => { if (event.target === event.currentTarget) props.onActivate(record.id); }} onDragOver={(event) => setRecordDropTarget(event, record.id)} onDrop={(event) => finishRecordDrop(event, record.id)}>
     <span className={styles.rowControls} role="gridcell">
-      <button type="button" className={styles.rowAddButton} aria-label={`${record.title || "제목 없음"} 아래에 새 기록`} onClick={(event) => { event.stopPropagation(); props.onCreate(); }}><Icon name="plus" size={17} /></button>
+      <button type="button" className={styles.rowAddButton} aria-label={`${record.title || "제목 없음"} 아래에 새 기록`} onClick={(event) => { event.stopPropagation(); void createAndFocus(); }}><Icon name="plus" size={17} /></button>
       <button type="button" className={styles.rowDragHandle} aria-label={`${record.title || "제목 없음"} 순서 변경`} title="끌어서 이동 · 위아래 화살표로 이동" draggable onClick={(event) => event.stopPropagation()} onKeyDown={(event) => moveRecordFromKeyboard(event, record.id)} onDragStart={(event) => startRecordDrag(event, record.id)} onDragEnd={() => setRowDrag({ sourceId: "", targetId: null, placement: "before" })}><Icon name="dots-six-vertical" size={18} weight="bold" /></button>
       <label className={styles.rowCheckbox} data-checked={props.selectedIds.has(record.id) ? "true" : "false"} onClick={(event) => event.stopPropagation()}>
         <input aria-label={`${record.title || "제목 없음"} 선택`} type="checkbox" checked={props.selectedIds.has(record.id)} onChange={() => props.onToggle(record.id)} />
         <span aria-hidden="true">{props.selectedIds.has(record.id) ? <Icon name="check" size={11} weight="bold" /> : null}</span>
       </label>
     </span>
-    <button type="button" className={styles.rowTitle} role="gridcell" onClick={() => props.onActivate(record.id)}><Icon name="file" size={18} /><span>{record.title || "제목 없음"}</span></button>
-    {columns.map((id) => <span role="gridcell" key={id}>{cellValue(record, definitionsById.get(id))}</span>)}
+    {tableCell(record, titleDefinition, instanceKey, keyboardRecords)}
+    {columns.map((id) => definitionsById.get(id)).filter((definition): definition is CareerPropertyDefinitionV2 => Boolean(definition)).map((definition) => tableCell(record, definition, instanceKey, keyboardRecords))}
   </div>);
 
   const tableSummary = <div className={styles.tableSummary} role="row" style={{ gridTemplateColumns: template }}>
@@ -318,8 +375,27 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     return undefined;
   };
 
+  const contextMenu = cellMenu ? (() => {
+    const record = props.records.find((item) => item.id === cellMenu.recordId);
+    const definition = cellMenu.propertyId === titleColumnId ? titleDefinition : definitionsById.get(cellMenu.propertyId);
+    if (!record || !definition) return null;
+    const raw = definition.key === "title" ? record.title : rawValue(record, definition.key);
+    const canEdit = !["formula", "rollup", "relation", "file", "media"].includes(definition.type) && !(definition.system && ["created_time", "updated_time"].includes(definition.type));
+    const close = () => setCellMenu(null);
+    return createPortal(<section className={styles.cellContextMenu} data-cell-context-menu role="menu" aria-label={`${definition.name} 셀 메뉴`} style={{ top: Math.min(cellMenu.y, window.innerHeight - 270), left: Math.min(cellMenu.x, window.innerWidth - 230) }} onContextMenu={(event) => event.preventDefault()}>
+      <button type="button" role="menuitem" disabled={!canEdit} onClick={() => { close(); focusCell(record.id, definition.id, true, cellMenu.instanceKey); }}><Icon name="pencil-simple" size={15} />셀 편집</button>
+      <button type="button" role="menuitem" onClick={() => { void navigator.clipboard?.writeText(displayValue(raw)); close(); }}><Icon name="copy" size={15} />값 복사</button>
+      <button type="button" role="menuitem" disabled={!canEdit} onClick={() => { void props.onCellCommit?.(record.id, definition, definition.type === "checkbox" ? { type: "checkbox", value: false } : definition.type === "multi_select" ? { type: "multi_select", value: [] } : definition.type === "select" ? { type: "select", value: null } : null); close(); }}><Icon name="eraser" size={15} />값 지우기</button>
+      {props.cellIssues?.has(cellKey(record.id, definition.id)) ? <button type="button" role="menuitem" onClick={() => { props.onCellRetry?.(record.id, definition.id); close(); }}><Icon name="arrow-clockwise" size={15} />다시 저장</button> : null}
+      <hr />
+      <button type="button" role="menuitem" onClick={() => { props.onActivate(record.id); close(); }}><Icon name="arrow-square-out" size={15} />기록 열기</button>
+      <button type="button" role="menuitem" onClick={() => { close(); const duplicated = props.onDuplicateRecord?.(record.id); if (duplicated) void duplicated.then((created) => { if (created) focusCell(created.id, titleColumnId, true, cellMenu.instanceKey); }); }}><Icon name="copy-simple" size={15} />기록 복제</button>
+      <button type="button" role="menuitem" className={styles.dangerMenuItem} onClick={() => { close(); void props.onDeleteRecord?.(record.id); }}><Icon name="trash" size={15} />기록 삭제</button>
+    </section>, document.body);
+  })() : null;
+
   if (props.view.groupPropertyId) {
-    return <div className={styles.tableViewport} data-grouped="true">
+    return <><div className={styles.tableViewport} data-grouped="true">
       <div className={styles.tableGroups} style={{ minWidth: `${Math.max(totalWidth, 700)}px` } as CSSProperties}>
         {groups.map((group) => {
           const collapsed = collapsedGroups.has(group.key);
@@ -331,16 +407,16 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
             </button>
             {!collapsed ? <div className={styles.groupTable} role="grid" aria-label={`${group.label} 그룹 테이블`} aria-rowcount={group.records.length + 1}>
               {tableHeader()}
-              {tableRows(group.records, 2, group.records)}
-              <div className={styles.tableGroupFooter}><button type="button" aria-label={`${group.label} 그룹에 새 기록`} onClick={() => props.onCreate(groupInitialProperties(group))}>＋ 새 기록</button><span>{group.records.length}개 기록</span></div>
+              {tableRows(group.records, 2, group.records, group.key)}
+              <div className={styles.tableGroupFooter}><button type="button" aria-label={`${group.label} 그룹에 새 기록`} onClick={() => void createAndFocus(groupInitialProperties(group), group.key)}>＋ 새 기록</button><span>{group.records.length}개 기록</span></div>
             </div> : null}
           </section>;
         })}
       </div>
-    </div>;
+    </div>{contextMenu}</>;
   }
 
-  return <div className={styles.tableViewport} onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}>
+  return <><div className={styles.tableViewport} onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}>
     <div className={styles.table} role="grid" aria-label="커리어 테이블" aria-rowcount={props.records.length + 2} style={{ minWidth: `${Math.max(totalWidth, 700)}px` } as CSSProperties}>
       {tableHeader()}
       {start > 0 ? <div className={styles.tableSpacer} aria-hidden="true" style={{ height: `${start * ROW_HEIGHT}px` }} /> : null}
@@ -348,5 +424,5 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
       {end < props.records.length ? <div className={styles.tableSpacer} aria-hidden="true" style={{ height: `${(props.records.length - end) * ROW_HEIGHT}px` }} /> : null}
       {tableSummary}
     </div>
-  </div>;
+  </div>{contextMenu}</>;
 }

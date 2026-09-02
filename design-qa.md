@@ -42,6 +42,79 @@ final result: passed
 
 ---
 
+# Career table cell editing design QA
+
+- Source visual truth: `/tmp/reui-data-grid-audit/02-text-cell-edit.png`, `/tmp/reui-data-grid-audit/04-date-cell-popout.png`, `/tmp/reui-data-grid-audit/05-status-cell-popout.png`, `/tmp/reui-data-grid-audit/09-cell-context-menu.png`
+- Implementation screenshots: `/tmp/reui-data-grid-audit/13-expresso-text-cell-edit.png`, `/tmp/reui-data-grid-audit/14-expresso-select-popout.png`, `/tmp/reui-data-grid-audit/16-expresso-date-popout-fixed.png`, `/tmp/reui-data-grid-audit/17-expresso-cell-context-menu.png`
+- Focused comparisons: `/tmp/reui-data-grid-audit/compare-text-edit.png`, `/tmp/reui-data-grid-audit/compare-date-popout.png`, `/tmp/reui-data-grid-audit/compare-context-menu.png`
+- Route: `http://127.0.0.1:3200/career/e2e_properties_a86af0b5652a4e9bb9efe8f3344c2f85`
+- Source viewport and pixels: 1280 × 720 CSS px and 1280 × 720 pixels
+- Implementation viewport and pixels: 1433 × 1027 CSS px and 1433 × 1027 pixels
+- Density normalization: both sources use device scale factor 1. Focused table, calendar, and context-menu regions were cropped and fit into equal comparison frames. The full views retain their original dimensions.
+- State: dark Expresso table; text cell editing, select popout, date popout, and cell context menu
+
+## Full-view comparison evidence
+
+The implementation keeps the existing Expresso sidebar, category header, saved-view controls, quick filters, and table density. Direct editing stays inside the table surface. Fixed row controls and the title column preserve record context during horizontal movement. The rendered page has no new layout overflow around the persistent app controls.
+
+## Focused region comparison evidence
+
+The combined comparisons place each ReUI state and the corresponding Expresso state in one image. Text and number editors fill the selected cell. The date control is anchored to its cell and presents a custom calendar. The context menu follows the same cell actions and row actions in a compact floating surface. Expresso tokens, Korean labels, range dates, and the product icon set provide the intended product adaptation.
+
+## Required fidelity surfaces
+
+- Fonts and typography: existing Expresso UI fonts, weights, and small table labels remain unchanged. Editor values inherit the cell typography. Long labels and cell values retain truncation.
+- Spacing and layout rhythm: 42 px rows, compact cell padding, 10 px floating-surface radii, and 34 px menu actions match the surrounding career editor. Popouts stay within the viewport.
+- Colors and visual tokens: selection, focus, danger, surface, border, and elevation colors use existing `--ex-*` tokens. No white browser focus border appears on cell inputs.
+- Image quality and asset fidelity: the interaction contains no raster imagery. All action, calendar, navigation, and state icons use the existing Phosphor set.
+- Copy and content: table values and category data remain unchanged. Menus use career-record terminology: `셀 편집`, `값 복사`, `값 지우기`, `기록 열기`, `기록 복제`, `기록 삭제`.
+- Accessibility and interaction: cells use grid semantics and roving focus. Enter/F2 opens an editor; arrows and Tab move between cells; Escape cancels. Select and multi-select use listbox semantics, the date editor uses a labelled dialog, and the context menu uses menu semantics.
+
+## Findings
+
+No actionable P0, P1, or P2 mismatch remains in the adopted interaction scope.
+
+Accepted product adaptations:
+
+- The ReUI light palette maps to Expresso dark tokens and espresso accent states.
+- The date popout includes start and end fields because the career property contract supports ranges.
+- The row context section includes `기록 열기`; this gives users a direct path to the existing document drawer.
+- File, media, relation, formula, rollup, and system timestamps stay read-only in table cells and remain editable or inspectable through their established surfaces.
+
+## Comparison history
+
+- Pass 1 found that the date popout used a wider range layout while its horizontal clamp still used the narrower generic-popout width. The right edge could leave the viewport.
+- The date popout now clamps against its actual rendered width.
+- Pass 2 captured the corrected state and confirmed that the calendar, actions, and range fields remain inside the viewport. No P0–P2 visual issue remains.
+
+## Primary interactions verified
+
+- Browser: a selected text cell opens its flush editor on the second click and saves through Enter.
+- Browser: the saved text value appeared immediately, persisted in the background, and was restored after the QA mutation.
+- Browser: select cells open a custom anchored listbox.
+- Browser: date cells open a custom calendar and render no `input[type=date]` browser widget.
+- Browser: right-click opens the cell and record action menu.
+- Tests: optimistic saves, successful background persistence, per-cell rollback, retry marking, grouped duplicate rendering, keyboard navigation, and custom popouts are covered.
+- Console: the final reloaded screen produced no current runtime error; only development-mode information and hot-reload logs remained.
+
+## Implementation checklist
+
+- [x] Direct text, title, number, URL, email, phone, and editable timestamp input
+- [x] Custom select, multi-select, and range-date popouts
+- [x] Immediate checkbox toggle
+- [x] Arrow, Tab, Enter, F2, and Escape behavior
+- [x] Optimistic background save with serialized record writes
+- [x] Conflict refresh and one retry
+- [x] Failed-cell rollback, marker, and retry action
+- [x] Cell context menu with record actions
+- [x] Sticky row controls and title column
+- [x] New-row title focus without opening the drawer
+- [x] Browser capture, focused comparison, and console review
+
+final result: passed
+
+---
+
 # Career table row controls design QA
 
 - Source visual truth: `/var/folders/wy/zrbg0t692zq6smx73mhzsdhr0000gn/T/codex-clipboard-1556a70d-d73c-4c81-8cf4-40ebbc0a9bd5.png`
