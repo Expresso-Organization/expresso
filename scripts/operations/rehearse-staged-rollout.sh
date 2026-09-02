@@ -24,6 +24,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
+pnpm --filter @expresso/editor build
 pnpm --filter @expresso/contracts build
 pnpm --filter @expresso/database build
 MONGODB_MIGRATE_URL="$database_url" MONGODB_DATABASE="$database_name" pnpm db:migrate
