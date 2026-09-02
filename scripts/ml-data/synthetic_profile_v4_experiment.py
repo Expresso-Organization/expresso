@@ -13,7 +13,12 @@ from pathlib import Path
 from typing import Any
 
 from synthetic_profile import load_seed_categories
-from synthetic_profile_v4 import assemble_profile, prepare_pilot_inputs, validate_draft
+from synthetic_profile_v4 import (
+    assemble_profile,
+    body_min_length_for_prompt,
+    prepare_pilot_inputs,
+    validate_draft,
+)
 
 
 SCRIPT_DIR = Path(__file__).parent
@@ -41,6 +46,33 @@ CLICHES = (
     "체계적으로",
     "협업 문화를",
 )
+CLAIM_MARKERS = (
+    ("기여", ("기여",)),
+    ("성과", ("성과",)),
+    ("효율", ("효율",)),
+    ("높이", ("높이", "높였")),
+    ("향상", ("향상",)),
+    ("강화", ("강화",)),
+    ("개선", ("개선",)),
+    ("확보", ("확보",)),
+    ("신뢰", ("신뢰",)),
+    ("안정성", ("안정성",)),
+    ("일관성", ("일관성",)),
+    ("품질", ("품질",)),
+    ("역량", ("역량",)),
+    ("능력", ("능력",)),
+    ("습득", ("습득",)),
+    ("익히", ("익히", "익혔")),
+    ("이해", ("이해",)),
+    ("기반", ("기반",)),
+    ("체계적", ("체계적",)),
+    ("성장", ("성장",)),
+    ("주도", ("주도",)),
+    ("유지", ("유지",)),
+    ("감소", ("감소",)),
+    ("줄이", ("줄이", "줄였")),
+)
+REPETITIVE_META_PATTERNS = ("시점은", "기간은", "대상은", "담당 업무는", "사용 도구는")
 
 
 def _property_schema(property_type: str) -> dict[str, Any]:
@@ -53,7 +85,7 @@ def _property_schema(property_type: str) -> dict[str, Any]:
     raise ValueError(f"unsupported property type: {property_type}")
 
 
-def build_output_schema(input_payload: dict[str, Any]) -> dict[str, Any]:
+def build_output_schema(input_payload: dict[str, Any], *, body_min_length: int = 40) -> dict[str, Any]:
     """입력별 사건 순서와 프로퍼티 계획을 디코딩 문법에 고정한다."""
     record_schemas = []
     for index, event in enumerate(input_payload["events"], start=1):
@@ -75,7 +107,7 @@ def build_output_schema(input_payload: dict[str, Any]) -> dict[str, Any]:
                         "required": planned,
                         "properties": {key: _property_schema(category_schema[key]) for key in planned},
                     },
-                    "bodyMd": {"type": "string", "minLength": 40, "maxLength": 450},
+                    "bodyMd": {"type": "string", "minLength": body_min_length, "maxLength": 450},
                 },
             }
         )
@@ -132,14 +164,83 @@ def _similarity(left: str, right: str) -> float:
     return len(left_parts & right_parts) / len(union) if union else 0.0
 
 
+def find_unsupported_claims(input_payload: dict[str, Any], draft: Any) -> list[dict[str, Any]]:
+    if not isinstance(draft, dict) or not isinstance(draft.get("records"), list):
+        return []
+    event_by_id = {event["eventId"]: event for event in input_payload["events"]}
+    unsupported = []
+    for index, record in enumerate(draft["records"], start=1):
+        if not isinstance(record, dict):
+            continue
+        event = event_by_id.get(record.get("eventId"))
+        if not event:
+            continue
+        visible = _visible_record_text(record)
+        facts = " ".join(event.get("facts", []))
+        markers = [
+            label
+            for label, variants in CLAIM_MARKERS
+            if any(variant in visible for variant in variants)
+            and not any(variant in facts for variant in variants)
+        ]
+        if markers:
+            unsupported.append({"eventId": event["eventId"], "recordIndex": index, "markers": markers})
+    return unsupported
+
+
+def _find_repetitive_meta(draft: Any) -> list[dict[str, Any]]:
+    if not isinstance(draft, dict) or not isinstance(draft.get("records"), list):
+        return []
+    repetitive = []
+    for index, record in enumerate(draft["records"], start=1):
+        if not isinstance(record, dict):
+            continue
+        body = str(record.get("bodyMd", ""))
+        matches = [pattern for pattern in REPETITIVE_META_PATTERNS if pattern in body]
+        if matches:
+            repetitive.append(
+                {"eventId": record.get("eventId"), "recordIndex": index, "patterns": matches}
+            )
+    return repetitive
+
+
+def validate_renderer_output(
+    input_payload: dict[str, Any],
+    draft: Any,
+    *,
+    enforce_grounding: bool = False,
+    body_min_length: int = 40,
+) -> dict[str, Any]:
+    validation = validate_draft(input_payload, draft, body_min_length=body_min_length)
+    unsupported = find_unsupported_claims(input_payload, draft) if enforce_grounding else []
+    repetitive = _find_repetitive_meta(draft) if enforce_grounding else []
+    errors = list(validation["errors"])
+    errors.extend(
+        f"record_{item['recordIndex']}_unsupported_claim:{','.join(item['markers'])}"
+        for item in unsupported
+    )
+    errors.extend(
+        f"record_{item['recordIndex']}_repetitive_meta:{','.join(item['patterns'])}"
+        for item in repetitive
+    )
+    return {
+        **validation,
+        "valid": not errors,
+        "errors": errors,
+        "unsupportedClaims": unsupported,
+        "repetitiveMeta": repetitive,
+    }
+
+
 def score_draft(
     input_payload: dict[str, Any],
     draft: Any,
     *,
     elapsed_seconds: float | None = None,
     output_tokens: int | None = None,
+    body_min_length: int = 40,
 ) -> dict[str, Any]:
-    validation = validate_draft(input_payload, draft)
+    validation = validate_draft(input_payload, draft, body_min_length=body_min_length)
     records = draft.get("records", []) if isinstance(draft, dict) and isinstance(draft.get("records"), list) else []
     event_by_id = {event["eventId"]: event for event in input_payload["events"]}
     coverage_values = []
@@ -166,6 +267,9 @@ def score_draft(
         body_lengths.append(len(body))
         cliche_count += sum(body.count(marker) for marker in CLICHES)
 
+    unsupported_claims = find_unsupported_claims(input_payload, draft)
+    repetitive_meta = _find_repetitive_meta(draft)
+
     duplicate_pairs = sum(
         _similarity(str(left.get("bodyMd", "")), str(right.get("bodyMd", ""))) >= 0.65
         for left, right in combinations([record for record in records if isinstance(record, dict)], 2)
@@ -183,6 +287,11 @@ def score_draft(
         "inventedNumbers": invented_numbers,
         "duplicateRecordPairs": duplicate_pairs,
         "clicheCount": cliche_count,
+        "groundingValid": not unsupported_claims,
+        "unsupportedClaims": unsupported_claims,
+        "unsupportedClaimCount": sum(len(item["markers"]) for item in unsupported_claims),
+        "repetitiveMeta": repetitive_meta,
+        "repetitiveMetaCount": sum(len(item["patterns"]) for item in repetitive_meta),
         "bodyLengthMean": round(statistics.fmean(body_lengths), 2) if body_lengths else 0.0,
         "bodyLengthStd": round(statistics.pstdev(body_lengths), 2) if len(body_lengths) > 1 else 0.0,
         "elapsedSeconds": elapsed_seconds,
@@ -208,14 +317,18 @@ def generate_qwen(
     model: str,
     base_url: str,
     timeout: int,
+    prompt_version: str = "synthetic-profile-v4",
+    enforce_grounding: bool = False,
 ) -> list[Path]:
-    prompt = PROMPT_PATH.read_text(encoding="utf-8")
+    prompt_path = SCRIPT_DIR / "prompts" / f"{prompt_version}.md"
+    prompt = prompt_path.read_text(encoding="utf-8")
     output_dir.mkdir(parents=True, exist_ok=True)
     metadata = []
     paths = []
     for input_path in input_paths:
         input_payload = json.loads(input_path.read_text(encoding="utf-8"))
-        schema = build_output_schema(input_payload)
+        body_min_length = body_min_length_for_prompt(prompt_version)
+        schema = build_output_schema(input_payload, body_min_length=body_min_length)
         messages = [
             {"role": "system", "content": prompt},
             {"role": "user", "content": json.dumps(input_payload, ensure_ascii=False)},
@@ -248,7 +361,12 @@ def generate_qwen(
             except (json.JSONDecodeError, TypeError) as exc:
                 parsed = None
                 parse_error = str(exc)
-            validation = validate_draft(input_payload, parsed)
+            validation = validate_renderer_output(
+                input_payload,
+                parsed,
+                enforce_grounding=enforce_grounding,
+                body_min_length=body_min_length,
+            )
             validation_errors = validation["errors"]
             if validation["valid"]:
                 break
@@ -281,6 +399,8 @@ def generate_qwen(
                 ) if response.get("eval_duration") else None,
                 "parseError": parse_error,
                 "validationErrors": validation_errors,
+                "promptVersion": prompt_version,
+                "unsupportedClaims": validation.get("unsupportedClaims", []),
             }
         )
         print(f"{input_payload['profileSeed']}: attempts={attempts} valid={not validation_errors} elapsed={elapsed:.1f}s", flush=True)
@@ -295,6 +415,7 @@ def assemble_directory(
     *,
     generator_model: str,
     seeds_path: Path,
+    prompt_version: str = "synthetic-profile-v4",
 ) -> list[Path]:
     categories = load_seed_categories(seeds_path)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -306,6 +427,7 @@ def assemble_directory(
             json.loads(draft_path.read_text(encoding="utf-8")),
             categories,
             generator_model=generator_model,
+            prompt_version=prompt_version,
         )
         output_path = output_dir / input_path.name
         output_path.write_text(json.dumps(profile, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -342,6 +464,9 @@ def compare_directories(input_dir: Path, model_dirs: dict[str, Path]) -> dict[st
                     draft,
                     elapsed_seconds=run.get("elapsedSeconds"),
                     output_tokens=run.get("outputTokens"),
+                    body_min_length=body_min_length_for_prompt(
+                        run.get("promptVersion", "synthetic-profile-v4")
+                    ),
                 )
             )
         results["models"][model_name] = {
@@ -352,6 +477,9 @@ def compare_directories(input_dir: Path, model_dirs: dict[str, Path]) -> dict[st
             "inventedNumberCount": sum(len(item["inventedNumbers"]) for item in profile_scores),
             "duplicateRecordPairs": sum(item["duplicateRecordPairs"] for item in profile_scores),
             "clicheCount": sum(item["clicheCount"] for item in profile_scores),
+            "groundingPassRate": round(sum(item["groundingValid"] for item in profile_scores) / len(profile_scores), 4),
+            "unsupportedClaimCount": sum(item["unsupportedClaimCount"] for item in profile_scores),
+            "repetitiveMetaCount": sum(item["repetitiveMetaCount"] for item in profile_scores),
             "bodyLengthMean": round(statistics.fmean(item["bodyLengthMean"] for item in profile_scores), 2),
             "elapsedSecondsTotal": round(sum(item["elapsedSeconds"] or 0 for item in profile_scores), 2),
         }
@@ -370,12 +498,15 @@ def main() -> None:
     qwen_parser.add_argument("--model", default="qwen3:30b-a3b-instruct-2507-q4_K_M")
     qwen_parser.add_argument("--base-url", default="http://127.0.0.1:11434")
     qwen_parser.add_argument("--timeout", type=int, default=900)
+    qwen_parser.add_argument("--prompt-version", default="synthetic-profile-v4")
+    qwen_parser.add_argument("--enforce-grounding", action="store_true")
     assemble_parser = subparsers.add_parser("assemble")
     assemble_parser.add_argument("input_dir", type=Path)
     assemble_parser.add_argument("draft_dir", type=Path)
     assemble_parser.add_argument("output_dir", type=Path)
     assemble_parser.add_argument("--model", required=True)
     assemble_parser.add_argument("--seeds", type=Path, default=DEFAULT_SEEDS_PATH)
+    assemble_parser.add_argument("--prompt-version", default="synthetic-profile-v4")
     compare_parser = subparsers.add_parser("compare")
     compare_parser.add_argument("input_dir", type=Path)
     compare_parser.add_argument("output", type=Path)
@@ -386,9 +517,24 @@ def main() -> None:
         for path in prepare_pilot_inputs(args.output_dir, load_seed_categories(args.seeds)):
             print(path)
     elif args.command == "qwen":
-        generate_qwen(sorted(args.input_dir.glob("*.json")), args.output_dir, model=args.model, base_url=args.base_url, timeout=args.timeout)
+        generate_qwen(
+            sorted(args.input_dir.glob("*.json")),
+            args.output_dir,
+            model=args.model,
+            base_url=args.base_url,
+            timeout=args.timeout,
+            prompt_version=args.prompt_version,
+            enforce_grounding=args.enforce_grounding,
+        )
     elif args.command == "assemble":
-        assemble_directory(args.input_dir, args.draft_dir, args.output_dir, generator_model=args.model, seeds_path=args.seeds)
+        assemble_directory(
+            args.input_dir,
+            args.draft_dir,
+            args.output_dir,
+            generator_model=args.model,
+            seeds_path=args.seeds,
+            prompt_version=args.prompt_version,
+        )
     elif args.command == "compare":
         model_dirs = {}
         for item in args.model_dir:

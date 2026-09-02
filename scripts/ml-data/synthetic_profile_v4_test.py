@@ -161,6 +161,16 @@ class DraftValidationTests(unittest.TestCase):
         self.assertFalse(result["valid"])
         self.assertIn("record_1_protected_text", result["errors"])
 
+    def test_accepts_short_notional_note_when_v41_minimum_is_selected(self):
+        draft = valid_draft()
+        draft["records"][0]["bodyMd"] = "정보통신 전공 과정을 2020년 3월에 시작했다."
+
+        v4 = validate_draft(input_payload(), draft)
+        v41 = validate_draft(input_payload(), draft, body_min_length=20)
+
+        self.assertFalse(v4["valid"])
+        self.assertTrue(v41["valid"])
+
 
 class AssemblyTests(unittest.TestCase):
     def test_assembles_expresso_profile_with_external_event_provenance(self):
@@ -186,6 +196,41 @@ class AssemblyTests(unittest.TestCase):
         self.assertEqual(profile["provenance"]["recordLineage"][1]["narrativeEvidence"], ["aih-71592-example"])
         self.assertEqual(profile["recordLinks"], [])
         self.assertEqual(profile["skills"], [])
+
+    def test_records_selected_prompt_version_and_uses_it_in_profile_identity(self):
+        v4 = assemble_profile(
+            input_payload(),
+            valid_draft(),
+            SEED_CATEGORIES,
+            generator_model="qwen",
+            prompt_version="synthetic-profile-v4",
+            created_at="2026-09-02T00:00:00Z",
+        )
+        v41 = assemble_profile(
+            input_payload(),
+            valid_draft(),
+            SEED_CATEGORIES,
+            generator_model="qwen",
+            prompt_version="synthetic-profile-v4.1",
+            created_at="2026-09-02T00:00:00Z",
+        )
+
+        self.assertEqual(v41["datasetMeta"]["promptVersion"], "synthetic-profile-v4.1")
+        self.assertNotEqual(v4["syntheticProfileId"], v41["syntheticProfileId"])
+
+    def test_v41_assembly_accepts_short_fact_only_note(self):
+        draft = valid_draft()
+        draft["records"][0]["bodyMd"] = "정보통신 전공 과정을 2020년 3월에 시작했다."
+        profile = assemble_profile(
+            input_payload(),
+            draft,
+            SEED_CATEGORIES,
+            generator_model="qwen",
+            prompt_version="synthetic-profile-v4.1",
+            created_at="2026-09-02T00:00:00Z",
+        )
+
+        self.assertEqual(profile["records"][0]["bodyMd"], draft["records"][0]["bodyMd"])
 
     def test_assembly_refuses_invalid_draft(self):
         draft = valid_draft()

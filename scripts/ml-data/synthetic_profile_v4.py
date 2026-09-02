@@ -41,6 +41,10 @@ PROMPT_VERSION = "synthetic-profile-v4"
 PROMPT_PATH = Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.md"
 
 
+def body_min_length_for_prompt(prompt_version: str) -> int:
+    return 20 if prompt_version == "synthetic-profile-v4.1" else 40
+
+
 def _stable_uuid(*parts: str) -> str:
     return str(uuid.uuid5(UUID_NAMESPACE, ":".join(parts)))
 
@@ -184,7 +188,7 @@ def prepare_pilot_inputs(output_dir: str | Path, seed_categories: list[dict[str,
     return paths
 
 
-def validate_draft(input_payload: dict[str, Any], draft: Any) -> dict[str, Any]:
+def validate_draft(input_payload: dict[str, Any], draft: Any, *, body_min_length: int = 40) -> dict[str, Any]:
     """모델 초안이 코드가 결정한 사건·프로퍼티 계획을 그대로 따르는지 검사한다."""
     errors: list[str] = []
     if not isinstance(draft, dict):
@@ -233,7 +237,7 @@ def validate_draft(input_payload: dict[str, Any], draft: Any) -> dict[str, Any]:
         body = record.get("bodyMd")
         if not isinstance(title, str) or not 1 <= len(title.strip()) <= 100:
             errors.append(f"{prefix}_title")
-        if not isinstance(body, str) or not 40 <= len(body.strip()) <= 450:
+        if not isinstance(body, str) or not body_min_length <= len(body.strip()) <= 450:
             errors.append(f"{prefix}_body")
         visible_text = f"{title or ''} {body or ''}"
         if PROTECTED_TEXT.search(visible_text):
@@ -261,10 +265,15 @@ def assemble_profile(
     seed_categories: list[dict[str, Any]],
     *,
     generator_model: str,
+    prompt_version: str = PROMPT_VERSION,
     created_at: str | None = None,
 ) -> dict[str, Any]:
     """검증된 v4 초안을 실제 Expresso 합성 프로필 객체로 바꾼다."""
-    validation = validate_draft(input_payload, draft)
+    validation = validate_draft(
+        input_payload,
+        draft,
+        body_min_length=body_min_length_for_prompt(prompt_version),
+    )
     if not validation["valid"]:
         raise ValueError(", ".join(validation["errors"]))
     if {category["key"] for category in seed_categories} != set(CATEGORY_KEYS):
@@ -319,17 +328,19 @@ def assemble_profile(
         }
         for category in sorted(seed_categories, key=lambda item: item["sortOrder"])
     ]
-    prompt_sha = hashlib.sha256(PROMPT_PATH.read_bytes()).hexdigest() if PROMPT_PATH.exists() else None
+    prompt_path = Path(__file__).parent / "prompts" / f"{prompt_version}.md"
+    prompt_sha = hashlib.sha256(prompt_path.read_bytes()).hexdigest() if prompt_path.exists() else None
+    profile_identity = generator_model if prompt_version == PROMPT_VERSION else f"{generator_model}:{prompt_version}"
     return {
         "schemaVersion": 1,
-        "syntheticProfileId": _stable_uuid(profile_seed, "profile", generator_model),
+        "syntheticProfileId": _stable_uuid(profile_seed, "profile", profile_identity),
         "datasetMeta": {
             "sourceDataset": input_payload.get("sourceDataset", "YP2021-AGGREGATE+AIHUB-71592"),
             "profileSeed": profile_seed,
             "profileFamily": input_payload.get("profileFamily"),
             "split": input_payload.get("split"),
             "generatorModel": generator_model,
-            "promptVersion": PROMPT_VERSION,
+            "promptVersion": prompt_version,
             "promptSha256": prompt_sha,
             "targetRecordCount": input_payload["targetRecordCount"],
             "actualRecordCount": len(records),
