@@ -715,6 +715,7 @@ class RecordRepairTests(unittest.TestCase):
 
     def test_profile_mean_error_targets_every_record_when_count_is_known(self):
         self.assertEqual(invalid_record_indexes(["body_length_mean"], record_count=3), [0, 1, 2])
+        self.assertEqual(invalid_record_indexes(["body_length_band"], record_count=3), [0, 1, 2])
 
     def test_profile_length_error_is_forwarded_to_each_record_repair_prompt(self):
         planned = payload()
@@ -729,6 +730,9 @@ class RecordRepairTests(unittest.TestCase):
             "toleranceChars": 57,
             "band": "moderately_long",
         }
+        for event in planned["events"]:
+            event["skeletonLead"] = ". ".join(event["facts"]) + "."
+            event["bodyLengthTarget"] = {"targetChars": 380, "minChars": 342, "maxChars": 437}
         calls = []
 
         def unchanged_post_json(url, request_payload, timeout):
@@ -750,6 +754,13 @@ class RecordRepairTests(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         self.assertTrue(
             all("평균 본문 길이를 380자" in call["messages"][0]["content"] for call in calls)
+        )
+        repair_input = json.loads(calls[0]["messages"][1]["content"])
+        self.assertIn("body_length_band", repair_input["validationErrors"])
+        self.assertGreater(repair_input["outputContract"]["detailLength"]["minChars"], 0)
+        self.assertGreater(
+            repair_input["outputContract"]["detailLength"]["targetChars"],
+            repair_input["outputContract"]["detailLength"]["minChars"],
         )
 
     def test_builds_repair_schema_for_one_existing_record(self):

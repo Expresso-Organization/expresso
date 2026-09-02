@@ -35,7 +35,8 @@
 - 사건마다 `bodyLengthTarget.targetChars`, `minChars`, `maxChars`가 주어진다. 해당 사건의 본문은
   반드시 그 `minChars~maxChars` 범위에 맞춘다.
 - 최종 본문 길이는 코드가 앞에 붙일 `skeletonLead`까지 포함한 길이다. `detailMd`는 그 길이를
-  뺀 나머지만 작성한다. 제공된 JSON Schema의 길이 범위를 우선한다.
+  뺀 나머지만 작성한다. `outputContract.detailLength`의 `minChars`, `targetChars`, `maxChars`는
+  모델이 직접 작성할 `detailMd`만의 길이 계약이다. 특히 `minChars`보다 짧게 쓰지 않는다.
 - `very_short`는 facts를 첫 문장에 모두 쓰고 창작 세부는 하나만 덧붙인 한두 개의 짧은
   문장으로 끝낸다. 회고와 교훈은 생략한다. `moderately_short`는 한두 문단, `moderately_long`은 과정이
   드러나는 여러 문단, `very_long`은 상황부터 회고까지 충분히 적은 상세 기록으로 쓴다.

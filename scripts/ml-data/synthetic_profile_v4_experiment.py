@@ -486,7 +486,7 @@ def build_revision_instruction(
 ) -> str:
     instruction = "출력이 계약을 위반했다. 다음 오류만 고쳐 전체 JSON을 다시 출력하라: "
     instruction += json.dumps(errors, ensure_ascii=False)
-    if "body_length_mean" in errors and body_length_plan:
+    if {"body_length_mean", "body_length_band"} & set(errors) and body_length_plan:
         instruction += (
             f" 프로필의 평균 본문 길이를 {body_length_plan.get('targetMeanChars')}자에 맞춰라."
             " 입력 사건의 뼈대는 유지하면서 상황·과정·판단·협업 세부를 자연스럽게 확장하라."
@@ -526,7 +526,7 @@ def invalid_record_indexes(errors: list[str], *, record_count: int | None = None
             for error in errors
             if (match := re.match(r"record_(\d+)_", error))
     }
-    if "body_length_mean" in errors and record_count is not None:
+    if {"body_length_mean", "body_length_band"} & set(errors) and record_count is not None:
         indexes.update(range(record_count))
     return sorted(indexes)
 
@@ -609,6 +609,17 @@ def _post_json(url: str, payload: dict[str, Any], timeout: int) -> dict[str, Any
         return json.loads(response.read().decode("utf-8"))
 
 
+def _detail_length_contract(event: dict[str, Any]) -> dict[str, int]:
+    target = event.get("bodyLengthTarget", {})
+    lead = str(event.get("skeletonLead", "")).strip()
+    separator = 1 if lead else 0
+    return {
+        "minChars": max(0, int(target.get("minChars", 0)) - len(lead) - separator),
+        "targetChars": max(0, int(target.get("targetChars", 0)) - len(lead) - separator),
+        "maxChars": max(0, int(target.get("maxChars", 0)) - len(lead) - separator),
+    }
+
+
 def _record_candidate_valid(event: dict[str, Any], index: int, candidate: Any) -> bool:
     fields = {"draftId", "eventId", "categoryKey", "title", "properties", "detailMd"}
     return (
@@ -679,6 +690,7 @@ def generate_qwen_by_record(
                                         "categoryKey": event["categoryKey"],
                                         "propertyKeys": event["propertyKeys"],
                                         "propertyValues": event.get("propertyValues", {}),
+                                        "detailLength": _detail_length_contract(event),
                                         "fields": [
                                             "draftId",
                                             "eventId",
@@ -792,8 +804,9 @@ def repair_qwen_records(
             record_errors = [
                 error for error in validation["errors"] if error.startswith(f"record_{index + 1}_")
             ]
-            if "body_length_mean" in validation["errors"]:
-                record_errors.append("body_length_mean")
+            for profile_error in ("body_length_mean", "body_length_band"):
+                if profile_error in validation["errors"]:
+                    record_errors.append(profile_error)
             event = input_payload["events"][index]
             repair_prompt = (
                 prompt
@@ -823,6 +836,7 @@ def repair_qwen_records(
                                         "categoryKey": event["categoryKey"],
                                         "propertyKeys": event["propertyKeys"],
                                         "propertyValues": event.get("propertyValues", {}),
+                                        "detailLength": _detail_length_contract(event),
                                         "fields": [
                                             "draftId",
                                             "eventId",
