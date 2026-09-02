@@ -48,6 +48,15 @@ def body_min_length_for_prompt(prompt_version: str) -> int:
     return 20 if prompt_version in {"synthetic-profile-v4.1", "synthetic-profile-v4.2"} else 40
 
 
+def body_mean_tolerance(plan: dict[str, Any], record_count: int) -> int | float:
+    """완결 문장 선택 오차가 희소 프로필 평균을 지배하지 않도록 허용폭을 계산한다."""
+    configured = plan.get("toleranceChars", 0)
+    if not isinstance(configured, (int, float)) or configured < 0:
+        return configured
+    count = max(1, record_count)
+    return max(configured, (60 + count - 1) // count)
+
+
 def build_body_length_plans(
     profile_count: int,
     *,
@@ -488,7 +497,7 @@ def validate_draft(input_payload: dict[str, Any], draft: Any, *, body_min_length
     body_length_mean = round(fmean(body_lengths), 2) if body_lengths else 0.0
     if length_plan is not None:
         target = length_plan.get("targetMeanChars")
-        tolerance = length_plan.get("toleranceChars")
+        tolerance = body_mean_tolerance(length_plan, len(body_lengths))
         if not isinstance(target, (int, float)) or not isinstance(tolerance, (int, float)) or tolerance < 0:
             errors.append("body_length_plan")
         elif abs(body_length_mean - target) > tolerance:
@@ -499,6 +508,9 @@ def validate_draft(input_payload: dict[str, Any], draft: Any, *, body_min_length
         "errors": list(dict.fromkeys(errors)),
         "propertyCounts": dict(property_counts),
         "bodyLengthMean": body_length_mean,
+        "bodyLengthTolerance": (
+            body_mean_tolerance(length_plan, len(body_lengths)) if length_plan is not None else None
+        ),
     }
 
 

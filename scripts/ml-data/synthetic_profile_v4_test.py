@@ -8,6 +8,7 @@ from synthetic_profile_v4 import (
     _attach_record_length_targets,
     assign_body_length_plans,
     assemble_profile,
+    body_mean_tolerance,
     build_body_length_plans,
     build_length_pilot_inputs,
     build_pilot_inputs,
@@ -429,6 +430,10 @@ class PilotInputTests(unittest.TestCase):
         self.assertTrue(planned["bodyLengthPlan"]["feasibilityAdjusted"])
         self.assertGreaterEqual(planned["bodyLengthPlan"]["targetMeanChars"], round(statistics.fmean(lead_lengths)))
         self.assertTrue(all(target >= lead for target, lead in zip(targets, lead_lengths, strict=True)))
+
+    def test_sparse_profile_tolerance_accounts_for_sentence_granularity(self):
+        self.assertEqual(body_mean_tolerance({"toleranceChars": 14}, 3), 20)
+        self.assertEqual(body_mean_tolerance({"toleranceChars": 15}, 10), 15)
 
     def test_rejects_record_that_does_not_start_with_skeleton_lead(self):
         planned_input = input_payload()

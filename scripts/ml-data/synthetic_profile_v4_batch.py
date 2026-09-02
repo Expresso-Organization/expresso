@@ -22,6 +22,7 @@ from synthetic_profile import load_seed_categories
 from synthetic_profile_v4 import (
     assign_body_length_plans,
     assemble_profile,
+    body_mean_tolerance,
     basic_property_schema,
     body_min_length_for_prompt,
 )
@@ -872,7 +873,7 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
         bands[plan.get("band")] += 1
         actual = meta.get("actualBodyLengthMean")
         target = plan.get("targetMeanChars")
-        tolerance = plan.get("toleranceChars")
+        tolerance = body_mean_tolerance(plan, len(profile.get("records", [])))
         if isinstance(actual, (int, float)) and isinstance(target, (int, float)):
             actual_means.append(actual)
             target_means.append(target)
