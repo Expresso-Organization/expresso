@@ -122,6 +122,7 @@ HYPOTHETICAL_MARKERS = (
     "지원자님", "지원자분", "면접자님", "설명 드리겠습니다", "설명드리겠습니다",
     "면접", "회사에 들어가고 싶", "상향 지원", "지원하게 된", "지원한 이유",
     "말씀드리", "궁금합니다",
+    "싶습니다", "할 수 있", "될 수 있",
 )
 ACTION_MARKERS = (
     "했습니다", "하였습니다", "했으며", "맡았", "진행했", "수행했", "참여했", "개발했",
@@ -131,6 +132,14 @@ ACTION_MARKERS = (
 )
 EXPERIENCE_QUESTION_MARKERS = (
     "경험", "수행", "해결", "담당", "사례", "성과", "프로젝트", "어려웠던", "이룬",
+)
+CAREER_CONTEXT_MARKERS = (
+    "프로젝트", "인턴", "직장", "회사", "업무", "실무", "연구", "학업", "학교", "대학",
+    "수업", "과제", "동아리", "대외 활동", "대외활동", "공모전", "교육", "훈련", "자격",
+    "시험", "수상", "조직", "팀원", "팀", "고객", "거래처", "매출", "영업", "보고서",
+    "기안", "문서", "개발", "생산", "공정", "품질", "실험", "장비", "설계", "데이터",
+    "프로그램", "시스템", "서비스", "기관", "봉사", "활동", "근무", "취업", "창업",
+    "사업", "부서", "상사", "동료", "직원", "발표", "논문", "포트폴리오",
 )
 PROTECTED_PATTERNS = (
     re.compile(r"\b(?:sampid|hid)\b", re.IGNORECASE),
@@ -432,10 +441,12 @@ def scan_aihub_atoms(zip_root: str | Path) -> dict[str, list[dict[str, Any]]]:
                 asks_for_experience = any(marker in question for marker in EXPERIENCE_QUESTION_MARKERS)
                 minimum_length = 15 if asks_for_experience else 25
                 has_past_action = any(marker in summary for marker in ACTION_MARKERS)
+                has_career_context = any(marker in summary for marker in CAREER_CONTEXT_MARKERS)
                 if (
                     len(summary) < minimum_length
                     or not asks_for_experience
                     or not has_past_action
+                    or not has_career_context
                     or any(marker in summary for marker in HYPOTHETICAL_MARKERS)
                 ):
                     continue

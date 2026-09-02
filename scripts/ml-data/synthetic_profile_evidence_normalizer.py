@@ -22,15 +22,27 @@ from synthetic_profile_v4_batch import (
     PROTECTED_PATTERNS,
     scan_aihub_atoms,
 )
-from synthetic_profile_v4_experiment import EVIDENCE_ANCHOR_GROUPS
-
-
-PROMPT_VERSION = "synthetic-profile-evidence-normalizer-v1"
+PROMPT_VERSION = "synthetic-profile-evidence-normalizer-v1.4"
 PROMPT_PATH = Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.md"
 DEFAULT_MODEL = "qwen3:30b-a3b-instruct-2507-q4_K_M"
 NUMBER_PATTERN = re.compile(r"\d+(?:[.,]\d+)?")
 PAST_MARKERS = ACTION_MARKERS + (
     "했다", "였다", "있었다", "되었다", "맡았다", "담당했다", "마쳤다", "끝냈다", "해냈다",
+)
+NORMALIZATION_ANCHOR_GROUPS = {
+    "failure": ("실패", "탈락", "떨어", "불합격", "못하", "못 했", "못했"),
+    "credential_success": ("합격", "수상", "취득"),
+    "achievement": ("성공", "달성"),
+    "selection": ("채택", "선정"),
+    "completion": ("완료", "완수", "마무리", "마쳤", "끝냈", "졸업"),
+    "improvement": ("개선", "향상", "효율", "안정화", "기여"),
+    "departure": ("퇴사", "이직", "그만두", "그만뒀"),
+    "leadership": ("총괄", "리더", "팀장", "주도"),
+    "responsibility": ("담당", "맡"),
+}
+WORK_CONTEXT_MARKERS = ("회사", "직장", "업무", "실무", "부서", "상사", "직원", "근무", "인턴")
+NON_WORK_ACTIVITY_MARKERS = (
+    "동아리", "대외 활동", "대외활동", "봉사", "학생회", "학회", "모임", "행사", "캠페인",
 )
 
 
@@ -57,7 +69,7 @@ def _stable_int(*parts: Any) -> int:
 def required_anchors(source_text: str) -> dict[str, list[str]]:
     return {
         label: list(variants)
-        for label, variants in EVIDENCE_ANCHOR_GROUPS.items()
+        for label, variants in NORMALIZATION_ANCHOR_GROUPS.items()
         if any(variant in source_text for variant in variants)
     }
 
@@ -81,6 +93,12 @@ def validate_result(atom: dict[str, Any], result: Any) -> list[str]:
 
     source = atom["summary"]
     errors = []
+    if (
+        result["categoryKey"] == "activity_leadership"
+        and any(marker in source for marker in WORK_CONTEXT_MARKERS)
+        and not any(marker in source for marker in NON_WORK_ACTIVITY_MARKERS)
+    ):
+        errors.append("category_context")
     if not 20 <= len(fact.strip()) <= 140 or not re.search(r"[.!?]$", fact.strip()):
         errors.append("fact_spine_length_or_sentence")
     if not any(marker in fact for marker in PAST_MARKERS):
@@ -89,6 +107,8 @@ def validate_result(atom: dict[str, Any], result: Any) -> list[str]:
         errors.append("interview_style")
     if any(pattern.search(fact) for pattern in PROTECTED_PATTERNS):
         errors.append("protected_text")
+    if re.search(r"[\u4e00-\u9fff]", fact):
+        errors.append("foreign_script")
     source_numbers = set(NUMBER_PATTERN.findall(source))
     invented_numbers = set(NUMBER_PATTERN.findall(fact)) - source_numbers
     if invented_numbers:
@@ -96,6 +116,13 @@ def validate_result(atom: dict[str, Any], result: Any) -> list[str]:
     anchors = required_anchors(source)
     if any(not any(variant in fact for variant in variants) for variants in anchors.values()):
         errors.append("missing_anchor")
+    invented_anchor_groups = [
+        label
+        for label, variants in NORMALIZATION_ANCHOR_GROUPS.items()
+        if label not in anchors and any(variant in fact for variant in variants)
+    ]
+    if invented_anchor_groups:
+        errors.append("invented_anchor")
     if len(source) >= 40 and source.rstrip(".") in fact:
         errors.append("verbatim_copy")
     return list(dict.fromkeys(errors))

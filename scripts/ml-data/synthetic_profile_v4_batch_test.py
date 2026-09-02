@@ -194,6 +194,36 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
                         ensure_ascii=False,
                     ),
                 )
+                archive.writestr(
+                    "ckmk_d_rnd_m_n_100010.json",
+                    json.dumps(
+                        payload(
+                            "지하철에서 환승을 어려워하는 외국인을 목적지까지 안내했습니다.",
+                            "다른 사람을 도운 경험을 말씀해 주세요.",
+                        ),
+                        ensure_ascii=False,
+                    ),
+                )
+                archive.writestr(
+                    "ckmk_d_rnd_m_n_100011.json",
+                    json.dumps(
+                        payload(
+                            "집 창문의 외풍을 막으려고 비닐과 벨크로를 사용해 해결했습니다.",
+                            "창의적으로 문제를 해결한 경험을 말씀해 주세요.",
+                        ),
+                        ensure_ascii=False,
+                    ),
+                )
+                archive.writestr(
+                    "ckmk_d_rnd_m_n_100012.json",
+                    json.dumps(
+                        payload(
+                            "회사 프로그램 개발에 참여했고 시간이 지나면 안정화될 수 있습니다.",
+                            "수행한 프로젝트 경험을 말씀해 주세요.",
+                        ),
+                        ensure_ascii=False,
+                    ),
+                )
 
             atoms = scan_aihub_atoms(temp_dir)
 
@@ -201,15 +231,11 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
             {item["atomId"] for item in atoms["RND"]},
             {
                 "aih-71592-ckmk_d_rnd_m_n_100001",
-                "aih-71592-ckmk_d_rnd_m_n_100005",
                 "aih-71592-ckmk_d_rnd_m_n_100007",
-                "aih-71592-ckmk_d_rnd_m_n_100008",
             },
         )
         echoed = next(item for item in atoms["RND"] if item["atomId"].endswith("100007"))
         self.assertEqual(echoed["summary"], "보고서 초안을 작성하고 검토를 마무리했습니다.")
-        paraphrased = next(item for item in atoms["RND"] if item["atomId"].endswith("100008"))
-        self.assertEqual(paraphrased["summary"], "일정표를 작성하고 역할 조율을 맡았습니다.")
 
     def test_aihub_events_are_rewritten_instead_of_prefixed_verbatim(self):
         specs = build_profile_specs(
