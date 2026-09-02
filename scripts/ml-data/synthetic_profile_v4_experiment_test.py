@@ -249,19 +249,30 @@ class ScoreDraftTests(unittest.TestCase):
 
     def test_counts_meta_sentence_that_repeats_the_same_fact(self):
         changed = draft()
+        changed["records"][0]["bodyMd"] += " 확인 대상은 원본 데이터였다."
         changed["records"][1]["bodyMd"] += " 확인 대상은 오류 목록이었다."
 
         result = score_draft(payload(), changed)
 
-        self.assertEqual(result.get("repetitiveMetaCount"), 1)
+        self.assertEqual(result.get("repetitiveMetaCount"), 2)
 
-    def test_grounding_gate_rejects_meta_sentence_that_repeats_the_same_fact(self):
+    def test_allows_one_natural_use_of_a_meta_phrase(self):
         changed = draft()
         changed["records"][1]["bodyMd"] += " 확인 대상은 오류 목록이었다."
 
         result = validate_renderer_output(payload(), changed, enforce_grounding=True)
 
+        self.assertTrue(result["valid"])
+
+    def test_grounding_gate_rejects_meta_sentence_that_repeats_the_same_fact(self):
+        changed = draft()
+        changed["records"][0]["bodyMd"] += " 확인 대상은 원본 데이터였다."
+        changed["records"][1]["bodyMd"] += " 확인 대상은 오류 목록이었다."
+
+        result = validate_renderer_output(payload(), changed, enforce_grounding=True)
+
         self.assertFalse(result["valid"])
+        self.assertIn("record_1_repetitive_meta:대상은", result["errors"])
         self.assertIn("record_2_repetitive_meta:대상은", result["errors"])
 
     def test_detects_the_claim_families_seen_in_resume_style_expansion(self):

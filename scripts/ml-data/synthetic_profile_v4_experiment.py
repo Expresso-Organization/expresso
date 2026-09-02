@@ -476,17 +476,26 @@ def find_evidence_anchor_conflicts(input_payload: dict[str, Any], draft: Any) ->
 def _find_repetitive_meta(draft: Any) -> list[dict[str, Any]]:
     if not isinstance(draft, dict) or not isinstance(draft.get("records"), list):
         return []
-    repetitive = []
+    occurrences = []
     for index, record in enumerate(draft["records"], start=1):
         if not isinstance(record, dict):
             continue
         body = str(record.get("bodyMd", ""))
         matches = [pattern for pattern in REPETITIVE_META_PATTERNS if pattern in body]
         if matches:
-            repetitive.append(
+            occurrences.append(
                 {"eventId": record.get("eventId"), "recordIndex": index, "patterns": matches}
             )
-    return repetitive
+    repeated_patterns = {
+        pattern
+        for pattern in REPETITIVE_META_PATTERNS
+        if sum(pattern in item["patterns"] for item in occurrences) >= 2
+    }
+    return [
+        {**item, "patterns": [pattern for pattern in item["patterns"] if pattern in repeated_patterns]}
+        for item in occurrences
+        if any(pattern in repeated_patterns for pattern in item["patterns"])
+    ]
 
 
 def _find_style_violations(input_payload: dict[str, Any], draft: Any) -> list[dict[str, Any]]:
