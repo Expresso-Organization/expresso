@@ -127,6 +127,16 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
                         ensure_ascii=False,
                     ),
                 )
+                archive.writestr(
+                    "ckmk_d_rnd_m_n_100006.json",
+                    json.dumps(
+                        payload(
+                            "협업을 제안하는 것이 가장 좋은 방법인 것 같습니다. 그래서 팀장 역할을 맡았습니다.",
+                            "문제를 해결한 경험을 말씀해 주세요.",
+                        ),
+                        ensure_ascii=False,
+                    ),
+                )
 
             atoms = scan_aihub_atoms(temp_dir)
 

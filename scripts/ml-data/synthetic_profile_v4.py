@@ -43,7 +43,7 @@ UUID_NAMESPACE = uuid.UUID("535f1110-bd33-4606-8bd8-a9ca3bbb0e7d")
 PROMPT_VERSION = "synthetic-profile-v4"
 PROMPT_PATH = Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.md"
 INTERVIEW_STYLE_MARKERS = (
-    "할 것 같습니다",
+    "것 같습니다",
     "해야 되겠습니다",
     "하게 된다면",
     "하게 되면",
