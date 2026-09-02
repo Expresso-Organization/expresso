@@ -34,6 +34,12 @@ export async function createRecord(page: Page, categoryId: string, title: string
   return (await api<{ data: { id: string; version: number; title: string } }>(page, "POST", "/v1/career/records", { categoryId, title, properties, bodyMd: "" }, { "idempotency-key": `e2e-${randomUUID()}` })).data;
 }
 
+export async function openRecordDrawer(page: Page, title: string) {
+  const row = page.getByRole("row").filter({ has: page.getByText(title, { exact: true }) }).first();
+  const titleCell = row.getByRole("gridcell").nth(1);
+  await titleCell.click();
+}
+
 const block = (type: string, text?: string, attrs: Record<string, unknown> = {}, content?: CareerBlock[]): CareerBlock => ({ id: randomUUID(), type, attrs, ...(text === undefined ? {} : { text: [{ text }] }), ...(content ? { content } : {}) });
 export function allBlockDocument(): CareerDocument {
   const paragraph = (text: string) => block("paragraph", text);

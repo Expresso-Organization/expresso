@@ -1,12 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-import { login } from "./fixtures";
+import { login, openRecordDrawer } from "./fixtures";
 
 test("matches the screen-definition layout at 375, 768, 1280 and 1440 widths", async ({ page }) => {
   await login(page);
   await page.goto("/career/experience");
   if (await page.getByRole("row").count() < 2) await page.getByRole("button", { name: "새로 만들기", exact: true }).click();
-  else await page.getByRole("row").nth(1).click();
+  else {
+    const title = await page.getByRole("row").nth(1).getByRole("gridcell").nth(1).innerText();
+    await openRecordDrawer(page, title.trim());
+  }
   await expect(page.getByLabel("커리어 문서 편집기")).toBeVisible();
   await expect(page.getByText("문서를 불러오고 있습니다.")).toHaveCount(0);
   await expect(page.getByRole("toolbar", { name: "빠른 필터" })).toBeVisible();

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { expect, test } from "@playwright/test";
 
-import { allBlockDocument, api, categories, createProperty, createRecord, login, replaceDocument } from "./fixtures";
+import { allBlockDocument, api, categories, createProperty, createRecord, login, openRecordDrawer, replaceDocument } from "./fixtures";
 
 test.describe.configure({ mode: "serial" });
 
@@ -14,7 +14,7 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   const record = await createRecord(page, experience.id, "E2E 전체 블록 경험");
   await replaceDocument(page, record.id, allBlockDocument());
   await page.goto("/career/experience");
-  await page.getByText("E2E 전체 블록 경험", { exact: true }).click();
+  await openRecordDrawer(page, "E2E 전체 블록 경험");
   const editor = page.getByLabel("커리어 기록 본문");
   await expect(editor.getByRole("heading", { name: "제목 1" })).toBeVisible();
   await expect(editor.locator("ul:not([data-type=taskList])").first()).toContainText("글머리");
@@ -26,14 +26,14 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   await expect(editor.locator("table")).toContainText("셀");
   await expect(editor.getByRole("note")).toHaveCount(4);
 
-  const title = page.getByLabel("제목");
+  const title = page.getByRole("textbox", { name: "제목", exact: true });
   await title.fill("E2E 저장된 경험");
   await Promise.all([page.waitForResponse((response) => response.url().includes(`/api/career/records/${record.id}`) && response.request().method() === "PATCH" && response.ok()), title.blur()]);
   await editor.click(); await page.keyboard.press("ControlOrMeta+A"); await page.keyboard.type("재연결 전 본문");
   await expect.poll(async () => JSON.stringify((await api<{ document: unknown }>(page, "GET", `/v1/career/records/${record.id}/document`)).document).includes("재연결 전 본문")).toBe(true);
   await page.reload();
-  await page.getByText("E2E 저장된 경험", { exact: true }).click();
-  await expect(page.getByLabel("제목")).toHaveValue("E2E 저장된 경험");
+  await openRecordDrawer(page, "E2E 저장된 경험");
+  await expect(page.getByRole("textbox", { name: "제목", exact: true })).toHaveValue("E2E 저장된 경험");
   await expect(page.getByLabel("커리어 기록 본문")).toContainText("재연결 전 본문");
 
   const beforeOffline = await api<{ documentVersion: number }>(page, "GET", `/v1/career/records/${record.id}/document`);
@@ -42,7 +42,7 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   await context.setOffline(false);
   await expect.poll(async () => { const current = await api<{ documentVersion: number; document: unknown }>(page, "GET", `/v1/career/records/${record.id}/document`); return current.documentVersion > beforeOffline.documentVersion && JSON.stringify(current.document).includes("오프라인 입력"); }, { timeout: 15_000 }).toBe(true);
   await page.reload();
-  await page.getByText("E2E 저장된 경험", { exact: true }).click();
+  await openRecordDrawer(page, "E2E 저장된 경험");
   await expect(page.getByLabel("커리어 기록 본문")).toContainText("오프라인 입력");
 
   await page.getByLabel("커리어 기록 본문").click(); await page.keyboard.press("Enter"); await page.keyboard.type("/");
@@ -66,7 +66,7 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   await expect(page.getByLabel("커리어 기록 본문")).toBeVisible();
   await page.goBack();
 
-  await page.getByText("E2E 저장된 경험", { exact: true }).click();
+  await openRecordDrawer(page, "E2E 저장된 경험");
   await api(page, "POST", `/v1/career/records/${record.id}/move/preview`, { targetCategoryId: project.id });
   await page.getByRole("button", { name: "카테고리 이동" }).click();
   await page.getByRole("button", { name: "옮길 카테고리" }).click();
@@ -109,7 +109,7 @@ test("renders every property family, five saved views and relation hydration", a
   await expect.poll(async () => (await api<{ data: { computedProperties?: Record<string, { value: unknown }> } }>(page, "GET", `/v1/career/records/${record.id}`)).data.computedProperties?.field_rollup?.value).toBe(2);
   expect((await api<{ data: unknown[] }>(page, "GET", `/v1/career/categories/${category.id}/view-configurations`)).data).toHaveLength(5);
   await page.goto(`/career/${key}`);
-  await page.getByText("모든 속성", { exact: true }).click();
+  await openRecordDrawer(page, "모든 속성");
   const propertyList = page.getByLabel("문서 속성");
   for (const type of Object.keys(ids)) await expect(propertyList.getByText(`${type} 1`, { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "관계 대상 ×" })).toBeVisible();
