@@ -1085,7 +1085,21 @@ def render_profile(
             body_min_length=body_min_length_for_prompt(PROMPT_VERSION),
         )
     if not validation["valid"]:
-        raise ValueError("renderer validation failed: " + ", ".join(validation["errors"]))
+        record_lengths = [len(str(record.get("bodyMd", "")).strip()) for record in draft.get("records", [])]
+        raise ValueError(
+            "renderer validation failed: "
+            + ", ".join(validation["errors"])
+            + " | "
+            + json.dumps(
+                {
+                    "actualMean": validation.get("bodyLengthMean"),
+                    "targetMean": payload.get("bodyLengthPlan", {}).get("targetMeanChars"),
+                    "targetBand": payload.get("bodyLengthPlan", {}).get("band"),
+                    "recordLengths": record_lengths,
+                },
+                ensure_ascii=False,
+            )
+        )
     profile = assemble_profile(
         payload,
         draft,

@@ -210,13 +210,37 @@ class DraftValidationTests(unittest.TestCase):
             "populationStdChars": 60,
             "targetMeanChars": round(actual_mean),
             "toleranceChars": 2,
-            "band": "moderately_short",
+            "band": "very_short",
         }
 
         result = validate_draft(planned_input, draft)
 
         self.assertTrue(result["valid"])
         self.assertEqual(result.get("bodyLengthMean"), actual_mean)
+
+    def test_rejects_profile_that_crosses_its_planned_length_band(self):
+        draft = valid_draft()
+        actual_mean = round(
+            statistics.fmean(len(record["bodyMd"].strip()) for record in draft["records"]),
+            2,
+        )
+        planned_input = input_payload()
+        planned_input["bodyLengthPlan"] = {
+            "distributionVersion": "clipped-normal-v2",
+            "targetMinChars": 40,
+            "targetMaxChars": 800,
+            "recordMaxChars": 1000,
+            "populationMeanChars": 300,
+            "populationStdChars": 160,
+            "targetMeanChars": 145,
+            "toleranceChars": 100,
+            "band": "moderately_short",
+        }
+
+        result = validate_draft(planned_input, draft)
+
+        self.assertLess(actual_mean, 140)
+        self.assertIn("body_length_band", result["errors"])
 
     def test_does_not_reject_individual_record_below_event_length_guidance(self):
         draft = valid_draft()
@@ -231,7 +255,7 @@ class DraftValidationTests(unittest.TestCase):
             "populationStdChars": 160,
             "targetMeanChars": actual_mean,
             "toleranceChars": 2,
-            "band": "moderately_short",
+            "band": "very_short",
         }
         for event in planned_input["events"]:
             event["bodyLengthTarget"] = {
@@ -316,7 +340,7 @@ class AssemblyTests(unittest.TestCase):
             "populationStdChars": 60,
             "targetMeanChars": round(actual_mean),
             "toleranceChars": 2,
-            "band": "moderately_short",
+            "band": "very_short",
         }
 
         profile = assemble_profile(

@@ -533,6 +533,14 @@ def validate_draft(input_payload: dict[str, Any], draft: Any, *, body_min_length
             errors.append("body_length_plan")
         elif abs(body_length_mean - target) > tolerance:
             errors.append("body_length_mean")
+        planned_band = length_plan.get("band")
+        if (
+            planned_band in {"very_short", "moderately_short", "moderately_long", "very_long"}
+            and isinstance(length_plan.get("populationMeanChars"), (int, float))
+            and isinstance(length_plan.get("populationStdChars"), (int, float))
+            and body_length_band(body_length_mean, length_plan) != planned_band
+        ):
+            errors.append("body_length_band")
 
     return {
         "valid": not errors,
