@@ -87,6 +87,8 @@ def _property_schema(property_type: str) -> dict[str, Any]:
 
 def build_output_schema(input_payload: dict[str, Any], *, body_min_length: int = 40) -> dict[str, Any]:
     """입력별 사건 순서와 프로퍼티 계획을 디코딩 문법에 고정한다."""
+    length_plan = input_payload.get("bodyLengthPlan", {})
+    body_max_length = length_plan.get("upperBoundChars", 450) if isinstance(length_plan, dict) else 450
     record_schemas = []
     for index, event in enumerate(input_payload["events"], start=1):
         category_schema = input_payload["propertySchema"][event["categoryKey"]]
@@ -107,7 +109,11 @@ def build_output_schema(input_payload: dict[str, Any], *, body_min_length: int =
                         "required": planned,
                         "properties": {key: _property_schema(category_schema[key]) for key in planned},
                     },
-                    "bodyMd": {"type": "string", "minLength": body_min_length, "maxLength": 450},
+                    "bodyMd": {
+                        "type": "string",
+                        "minLength": body_min_length,
+                        "maxLength": body_max_length,
+                    },
                 },
             }
         )

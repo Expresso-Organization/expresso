@@ -1,10 +1,13 @@
 import json
+import statistics
 import tempfile
 import unittest
 from pathlib import Path
 
 from synthetic_profile_v4 import (
+    assign_body_length_plans,
     assemble_profile,
+    build_body_length_plans,
     build_pilot_inputs,
     prepare_pilot_inputs,
     validate_draft,
@@ -171,6 +174,42 @@ class DraftValidationTests(unittest.TestCase):
         self.assertFalse(v4["valid"])
         self.assertTrue(v41["valid"])
 
+    def test_rejects_profile_mean_outside_assigned_body_length_tolerance(self):
+        planned_input = input_payload()
+        planned_input["bodyLengthPlan"] = {
+            "distributionVersion": "truncated-normal-v1",
+            "upperBoundChars": 300,
+            "populationMeanChars": 135,
+            "populationStdChars": 60,
+            "targetMeanChars": 30,
+            "toleranceChars": 5,
+            "band": "very_short",
+        }
+
+        result = validate_draft(planned_input, valid_draft())
+
+        self.assertFalse(result["valid"])
+        self.assertIn("body_length_mean", result["errors"])
+
+    def test_accepts_profile_mean_within_assigned_body_length_tolerance(self):
+        draft = valid_draft()
+        actual_mean = round(statistics.fmean(len(record["bodyMd"].strip()) for record in draft["records"]), 2)
+        planned_input = input_payload()
+        planned_input["bodyLengthPlan"] = {
+            "distributionVersion": "truncated-normal-v1",
+            "upperBoundChars": 300,
+            "populationMeanChars": 135,
+            "populationStdChars": 60,
+            "targetMeanChars": round(actual_mean),
+            "toleranceChars": 2,
+            "band": "moderately_short",
+        }
+
+        result = validate_draft(planned_input, draft)
+
+        self.assertTrue(result["valid"])
+        self.assertEqual(result.get("bodyLengthMean"), actual_mean)
+
 
 class AssemblyTests(unittest.TestCase):
     def test_assembles_expresso_profile_with_external_event_provenance(self):
@@ -232,6 +271,32 @@ class AssemblyTests(unittest.TestCase):
 
         self.assertEqual(profile["records"][0]["bodyMd"], draft["records"][0]["bodyMd"])
 
+    def test_preserves_body_length_plan_and_actual_mean_in_dataset_metadata(self):
+        draft = valid_draft()
+        actual_mean = round(statistics.fmean(len(record["bodyMd"].strip()) for record in draft["records"]), 2)
+        planned_input = input_payload()
+        planned_input["bodyLengthPlan"] = {
+            "distributionVersion": "truncated-normal-v1",
+            "upperBoundChars": 300,
+            "populationMeanChars": 135,
+            "populationStdChars": 60,
+            "targetMeanChars": round(actual_mean),
+            "toleranceChars": 2,
+            "band": "moderately_short",
+        }
+
+        profile = assemble_profile(
+            planned_input,
+            draft,
+            SEED_CATEGORIES,
+            generator_model="qwen",
+            prompt_version="synthetic-profile-v4.1",
+            created_at="2026-09-02T00:00:00Z",
+        )
+
+        self.assertEqual(profile["datasetMeta"].get("bodyLengthPlan"), planned_input["bodyLengthPlan"])
+        self.assertEqual(profile["datasetMeta"].get("actualBodyLengthMean"), actual_mean)
+
     def test_assembly_refuses_invalid_draft(self):
         draft = valid_draft()
         draft["records"].pop()
@@ -271,6 +336,46 @@ class PilotInputTests(unittest.TestCase):
         )
         self.assertNotIn("task", str(payloads))
         self.assertNotIn("outcome", str(payloads))
+
+
+class BodyLengthPlanTests(unittest.TestCase):
+    def test_assigns_four_bands_from_clipped_normal_quantiles(self):
+        plans = build_body_length_plans(30, upper_bound_chars=300, seed=42)
+
+        targets = [plan["targetMeanChars"] for plan in plans]
+        bands = ("very_short", "moderately_short", "moderately_long", "very_long")
+        band_counts = {band: sum(plan["band"] == band for plan in plans) for band in bands}
+        self.assertEqual(
+            band_counts,
+            {"very_short": 5, "moderately_short": 10, "moderately_long": 10, "very_long": 5},
+        )
+        self.assertGreaterEqual(min(targets), 20)
+        self.assertLessEqual(max(targets), 300)
+        self.assertAlmostEqual(statistics.fmean(targets), 135, delta=2)
+        self.assertAlmostEqual(statistics.pstdev(targets), 60, delta=3)
+
+    def test_seed_changes_assignment_order_without_changing_distribution(self):
+        first = build_body_length_plans(30, upper_bound_chars=300, seed=1)
+        second = build_body_length_plans(30, upper_bound_chars=300, seed=2)
+
+        self.assertNotEqual(first, second)
+        self.assertEqual(
+            sorted(plan["targetMeanChars"] for plan in first),
+            sorted(plan["targetMeanChars"] for plan in second),
+        )
+
+    def test_attaches_one_plan_to_each_profile_without_mutating_inputs(self):
+        payloads = [{"profileSeed": f"profile-{index:03d}"} for index in range(30)]
+
+        planned = assign_body_length_plans(payloads, upper_bound_chars=300, seed=42)
+
+        self.assertEqual(len(planned), 30)
+        self.assertTrue(all("bodyLengthPlan" in payload for payload in planned))
+        self.assertTrue(all("bodyLengthPlan" not in payload for payload in payloads))
+        self.assertEqual(
+            {payload["bodyLengthPlan"]["band"] for payload in planned},
+            {"very_short", "moderately_short", "moderately_long", "very_long"},
+        )
 
 
 if __name__ == "__main__":

@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import random
 import re
 import uuid
+from copy import deepcopy
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
+from statistics import NormalDist, fmean
 from typing import Any
 
 
@@ -43,6 +46,67 @@ PROMPT_PATH = Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.md"
 
 def body_min_length_for_prompt(prompt_version: str) -> int:
     return 20 if prompt_version == "synthetic-profile-v4.1" else 40
+
+
+def build_body_length_plans(
+    profile_count: int,
+    *,
+    upper_bound_chars: int = 300,
+    seed: int = 42,
+) -> list[dict[str, Any]]:
+    if profile_count < 1:
+        raise ValueError("profile_count must be positive")
+    if upper_bound_chars < 50:
+        raise ValueError("upper_bound_chars must be at least 50")
+
+    lower_bound = 20
+    population_mean = round(upper_bound_chars * 0.45)
+    population_std = round(upper_bound_chars * 0.20)
+    distribution = NormalDist(population_mean, population_std)
+    plans = []
+    for index in range(profile_count):
+        quantile = (index + 0.5) / profile_count
+        target = round(distribution.inv_cdf(quantile))
+        target = max(lower_bound, min(upper_bound_chars, target))
+        if target < population_mean - population_std:
+            band = "very_short"
+        elif target < population_mean:
+            band = "moderately_short"
+        elif target < population_mean + population_std:
+            band = "moderately_long"
+        else:
+            band = "very_long"
+        plans.append(
+            {
+                "distributionVersion": "truncated-normal-v1",
+                "upperBoundChars": upper_bound_chars,
+                "populationMeanChars": population_mean,
+                "populationStdChars": population_std,
+                "targetMeanChars": target,
+                "toleranceChars": max(10, round(target * 0.15)),
+                "band": band,
+            }
+        )
+    random.Random(seed).shuffle(plans)
+    return plans
+
+
+def assign_body_length_plans(
+    input_payloads: list[dict[str, Any]],
+    *,
+    upper_bound_chars: int = 300,
+    seed: int = 42,
+) -> list[dict[str, Any]]:
+    """배치의 각 프로필 입력에 서로 다른 평균 본문 길이 계획을 붙인다."""
+    plans = build_body_length_plans(
+        len(input_payloads),
+        upper_bound_chars=upper_bound_chars,
+        seed=seed,
+    )
+    planned_payloads = deepcopy(input_payloads)
+    for payload, plan in zip(planned_payloads, plans, strict=True):
+        payload["bodyLengthPlan"] = plan
+    return planned_payloads
 
 
 def _stable_uuid(*parts: str) -> str:
@@ -215,6 +279,24 @@ def validate_draft(input_payload: dict[str, Any], draft: Any, *, body_min_length
         errors.append("event_sequence")
 
     property_counts = Counter({"0": 0, "1": 0, "2": 0})
+    body_lengths: list[int] = []
+    length_plan = input_payload.get("bodyLengthPlan")
+    body_max_length = 450
+    if length_plan is not None:
+        required_length_fields = {
+            "distributionVersion",
+            "upperBoundChars",
+            "populationMeanChars",
+            "populationStdChars",
+            "targetMeanChars",
+            "toleranceChars",
+            "band",
+        }
+        if not isinstance(length_plan, dict) or not required_length_fields.issubset(length_plan):
+            errors.append("body_length_plan")
+            length_plan = None
+        elif isinstance(length_plan.get("upperBoundChars"), int):
+            body_max_length = length_plan["upperBoundChars"]
     event_by_id = {event.get("eventId"): event for event in events}
     property_schema = input_payload.get("propertySchema", {})
     for index, record in enumerate(records, start=1):
@@ -237,8 +319,10 @@ def validate_draft(input_payload: dict[str, Any], draft: Any, *, body_min_length
         body = record.get("bodyMd")
         if not isinstance(title, str) or not 1 <= len(title.strip()) <= 100:
             errors.append(f"{prefix}_title")
-        if not isinstance(body, str) or not body_min_length <= len(body.strip()) <= 450:
+        if not isinstance(body, str) or not body_min_length <= len(body.strip()) <= body_max_length:
             errors.append(f"{prefix}_body")
+        elif isinstance(body, str):
+            body_lengths.append(len(body.strip()))
         visible_text = f"{title or ''} {body or ''}"
         if PROTECTED_TEXT.search(visible_text):
             errors.append(f"{prefix}_protected_text")
@@ -256,7 +340,21 @@ def validate_draft(input_payload: dict[str, Any], draft: Any, *, body_min_length
             if key not in category_schema or not _property_value_valid(value, category_schema.get(key)):
                 errors.append(f"{prefix}_property_{key}")
 
-    return {"valid": not errors, "errors": list(dict.fromkeys(errors)), "propertyCounts": dict(property_counts)}
+    body_length_mean = round(fmean(body_lengths), 2) if body_lengths else 0.0
+    if length_plan is not None:
+        target = length_plan.get("targetMeanChars")
+        tolerance = length_plan.get("toleranceChars")
+        if not isinstance(target, (int, float)) or not isinstance(tolerance, (int, float)) or tolerance < 0:
+            errors.append("body_length_plan")
+        elif abs(body_length_mean - target) > tolerance:
+            errors.append("body_length_mean")
+
+    return {
+        "valid": not errors,
+        "errors": list(dict.fromkeys(errors)),
+        "propertyCounts": dict(property_counts),
+        "bodyLengthMean": body_length_mean,
+    }
 
 
 def assemble_profile(
@@ -344,6 +442,8 @@ def assemble_profile(
             "promptSha256": prompt_sha,
             "targetRecordCount": input_payload["targetRecordCount"],
             "actualRecordCount": len(records),
+            "bodyLengthPlan": input_payload.get("bodyLengthPlan"),
+            "actualBodyLengthMean": validation["bodyLengthMean"],
             "createdAt": created_at,
         },
         "careerProfile": {**draft["persona"], "updatedAt": created_at},

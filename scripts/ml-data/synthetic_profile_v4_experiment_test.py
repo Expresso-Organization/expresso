@@ -215,6 +215,20 @@ class OutputSchemaTests(unittest.TestCase):
         first_record = schema["properties"]["records"]["prefixItems"][0]
         self.assertEqual(first_record["properties"]["bodyMd"]["minLength"], 20)
 
+    def test_uses_profile_body_length_upper_bound_in_each_record_schema(self):
+        planned_payload = payload()
+        planned_payload["bodyLengthPlan"] = {
+            "upperBoundChars": 300,
+            "targetMeanChars": 135,
+            "toleranceChars": 20,
+            "band": "moderately_long",
+        }
+
+        schema = build_output_schema(planned_payload, body_min_length=20)
+
+        first_record = schema["properties"]["records"]["prefixItems"][0]
+        self.assertEqual(first_record["properties"]["bodyMd"]["maxLength"], 300)
+
 
 class RunMetadataTests(unittest.TestCase):
     def test_normalizes_luna_profile_map_and_qwen_row_list(self):
