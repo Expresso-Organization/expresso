@@ -22,6 +22,7 @@ from synthetic_profile import load_seed_categories
 from synthetic_profile_v4 import (
     assign_body_length_plans,
     assemble_profile,
+    body_length_band,
     body_mean_tolerance,
     basic_property_schema,
     body_min_length_for_prompt,
@@ -862,6 +863,7 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
     atom_splits: dict[str, set[str]] = defaultdict(set)
     source_family_splits: dict[str, set[str]] = defaultdict(set)
     length_errors = 0
+    length_band_errors = 0
     properties = Counter()
     bands = Counter()
     actual_means = []
@@ -879,6 +881,8 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
             target_means.append(target)
             if not isinstance(tolerance, (int, float)) or abs(actual - target) > tolerance:
                 length_errors += 1
+            if body_length_band(actual, plan) != plan.get("band"):
+                length_band_errors += 1
         for record in profile.get("records", []):
             properties[len(record.get("properties", {}))] += 1
         for lineage in profile.get("provenance", {}).get("recordLineage", []):
@@ -900,6 +904,7 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
         },
         "length": {
             "profileToleranceFailures": length_errors,
+            "profileBandFailures": length_band_errors,
             "targetMean": round(statistics.fmean(target_means), 2) if target_means else None,
             "actualMean": round(statistics.fmean(actual_means), 2) if actual_means else None,
             "targetStd": round(statistics.pstdev(target_means), 2) if len(target_means) > 1 else None,
@@ -914,6 +919,7 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
         "missingProfileSeeds": missing,
         "gatePassed": completed == len(selected)
         and length_errors == 0
+        and length_band_errors == 0
         and not any(len(splits) > 1 for splits in family_splits.values())
         and not any(len(splits) > 1 for splits in atom_splits.values())
         and not any(len(splits) > 1 for splits in source_family_splits.values()),

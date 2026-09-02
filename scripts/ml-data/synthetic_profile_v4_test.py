@@ -8,6 +8,7 @@ from synthetic_profile_v4 import (
     _attach_record_length_targets,
     assign_body_length_plans,
     assemble_profile,
+    body_length_band,
     body_mean_tolerance,
     build_body_length_plans,
     build_length_pilot_inputs,
@@ -188,7 +189,7 @@ class DraftValidationTests(unittest.TestCase):
             "upperBoundChars": 300,
             "populationMeanChars": 135,
             "populationStdChars": 60,
-            "targetMeanChars": 30,
+            "targetMeanChars": 1,
             "toleranceChars": 5,
             "band": "very_short",
         }
@@ -432,8 +433,15 @@ class PilotInputTests(unittest.TestCase):
         self.assertTrue(all(target >= lead for target, lead in zip(targets, lead_lengths, strict=True)))
 
     def test_sparse_profile_tolerance_accounts_for_sentence_granularity(self):
-        self.assertEqual(body_mean_tolerance({"toleranceChars": 14}, 3), 20)
-        self.assertEqual(body_mean_tolerance({"toleranceChars": 15}, 10), 15)
+        self.assertEqual(body_mean_tolerance({"toleranceChars": 14}, 3), 30)
+        self.assertEqual(body_mean_tolerance({"toleranceChars": 15}, 10), 30)
+
+    def test_body_length_band_uses_population_boundaries(self):
+        plan = {"populationMeanChars": 300, "populationStdChars": 160}
+        self.assertEqual(body_length_band(116.33, plan), "very_short")
+        self.assertEqual(body_length_band(160, plan), "moderately_short")
+        self.assertEqual(body_length_band(380, plan), "moderately_long")
+        self.assertEqual(body_length_band(520, plan), "very_long")
 
     def test_rejects_record_that_does_not_start_with_skeleton_lead(self):
         planned_input = input_payload()

@@ -53,8 +53,20 @@ def body_mean_tolerance(plan: dict[str, Any], record_count: int) -> int | float:
     configured = plan.get("toleranceChars", 0)
     if not isinstance(configured, (int, float)) or configured < 0:
         return configured
-    count = max(1, record_count)
-    return max(configured, (60 + count - 1) // count)
+    return max(configured, 30)
+
+
+def body_length_band(value: int | float, plan: dict[str, Any]) -> str:
+    """배치 길이 계획과 동일한 경계로 실제 평균의 구간을 계산한다."""
+    population_mean = plan["populationMeanChars"]
+    population_std = plan["populationStdChars"]
+    if value < population_mean - population_std:
+        return "very_short"
+    if value < population_mean:
+        return "moderately_short"
+    if value < population_mean + population_std:
+        return "moderately_long"
+    return "very_long"
 
 
 def build_body_length_plans(
@@ -161,14 +173,7 @@ def _attach_record_length_targets(payload: dict[str, Any]) -> None:
     plan["feasibilityAdjusted"] = effective_target_mean != sampled_target_mean
     population_mean = plan["populationMeanChars"]
     population_std = plan["populationStdChars"]
-    if effective_target_mean < population_mean - population_std:
-        plan["band"] = "very_short"
-    elif effective_target_mean < population_mean:
-        plan["band"] = "moderately_short"
-    elif effective_target_mean < population_mean + population_std:
-        plan["band"] = "moderately_long"
-    else:
-        plan["band"] = "very_long"
+    plan["band"] = body_length_band(effective_target_mean, plan)
     for event, target in zip(events, targets, strict=True):
         minimum = max(20, round(target * 0.90))
         maximum = min(plan["recordMaxChars"], max(minimum + 20, round(target * 1.15)))
@@ -502,6 +507,11 @@ def validate_draft(input_payload: dict[str, Any], draft: Any, *, body_min_length
             errors.append("body_length_plan")
         elif abs(body_length_mean - target) > tolerance:
             errors.append("body_length_mean")
+        if (
+            length_plan.get("distributionVersion") == "clipped-normal-v2"
+            and body_length_band(body_length_mean, length_plan) != length_plan.get("band")
+        ):
+            errors.append("body_length_band")
 
     return {
         "valid": not errors,
