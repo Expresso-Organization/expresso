@@ -44,6 +44,14 @@ git fetch origin main
 git checkout --detach "$TARGET"
 echo "배포 대상 $(git rev-parse HEAD)"
 
+# 커밋 사이에서 워크스페이스가 추가되면 pnpm이 기존 importer 연결을 그대로 둔 채
+# 설치 완료로 판단할 수 있다. 공용 저장소는 유지하고 다시 만들 수 있는 연결만 비운다.
+rm -rf -- \
+  "$ROOT/packages/contracts/node_modules" \
+  "$ROOT/packages/database/node_modules" \
+  "$ROOT/packages/editor/node_modules" \
+  "$ROOT/services/backend/node_modules" \
+  "$ROOT/services/web/node_modules"
 pnpm install --frozen-lockfile
 
 # 계약이 편집기의 문서 타입을, 웹과 백엔드가 계약의 타입을 그대로 쓴다.
