@@ -220,6 +220,8 @@ def sanitize_creative_record(
     event: dict[str, Any],
     record: dict[str, Any],
     category_property_schema: dict[str, str],
+    *,
+    allow_below_minimum: bool = False,
 ) -> dict[str, Any]:
     """창작 세부를 사실 안전성과 목표 길이에 맞춰 문장 단위로 정리한다."""
     sanitized = copy.deepcopy(record)
@@ -279,11 +281,15 @@ def sanitize_creative_record(
     if isinstance(target, (int, float)):
         candidates = [""] + [" ".join(usable[:count]) for count in range(1, len(usable) + 1)]
         minimum = event.get("bodyLengthTarget", {}).get("minChars", 1)
-        eligible = [
-            candidate
-            for candidate in candidates
-            if len(" ".join(part for part in (lead, candidate) if part)) >= minimum
-        ]
+        eligible = (
+            candidates
+            if allow_below_minimum
+            else [
+                candidate
+                for candidate in candidates
+                if len(" ".join(part for part in (lead, candidate) if part)) >= minimum
+            ]
+        )
         required_anchors = evidence_anchor_requirements(event)
         anchored = [
             candidate
@@ -313,12 +319,18 @@ def compose_skeleton_bodies(input_payload: dict[str, Any], draft: Any) -> Any:
     composed = copy.deepcopy(draft)
     events = {event.get("eventId"): event for event in input_payload.get("events", [])}
     property_schema = input_payload.get("propertySchema", {})
+    allow_below_minimum = input_payload.get("bodyLengthPlan", {}).get("band") == "very_short"
     for index, record in enumerate(composed["records"]):
         if not isinstance(record, dict):
             continue
         event = events.get(record.get("eventId"), {})
         category_schema = property_schema.get(event.get("categoryKey"), {})
-        record = sanitize_creative_record(event, record, category_schema)
+        record = sanitize_creative_record(
+            event,
+            record,
+            category_schema,
+            allow_below_minimum=allow_below_minimum,
+        )
         record["properties"] = copy.deepcopy(event["propertyValues"])
         composed["records"][index] = record
         lead = str(event.get("skeletonLead", "")).strip()
@@ -571,6 +583,8 @@ def build_revision_instruction(
     errors: list[str],
     body_length_plan: dict[str, Any] | None,
     input_payload: dict[str, Any] | None = None,
+    *,
+    record_length_context: dict[str, int] | None = None,
 ) -> str:
     instruction = "출력이 계약을 위반했다. 다음 오류만 고쳐 전체 JSON을 다시 출력하라: "
     instruction += json.dumps(errors, ensure_ascii=False)
@@ -580,6 +594,15 @@ def build_revision_instruction(
             " 입력 사건의 뼈대는 유지하면서 상황·과정·판단·협업 세부를 자연스럽게 확장하라."
             " 새 날짜·수치·기관·자격·핵심 성과를 만들지는 마라."
         )
+        if record_length_context:
+            instruction += (
+                f" 현재 최종 본문은 {record_length_context['currentBodyChars']}자다."
+                f" 이 기록의 최종 본문을 {record_length_context['targetBodyChars']}자에 가깝게,"
+                f" 반드시 {record_length_context['minBodyChars']}~"
+                f"{record_length_context['maxBodyChars']}자 안으로 작성하라."
+                f" 고정 뼈대 {record_length_context['skeletonChars']}자를 제외한 나머지만"
+                " detailMd에 여러 완결 문장과 자연스러운 문단으로 작성하라."
+            )
     if any("missing_number" in error for error in errors):
         instruction += (
             " 빠진 뼈대 수치는 해당 사건의 facts를 확인해 본문 첫 문장에 모두 넣어라."
@@ -627,6 +650,58 @@ def invalid_record_indexes(errors: list[str], *, record_count: int | None = None
     if {"body_length_mean", "body_length_band"} & set(errors) and record_count is not None:
         indexes.update(range(record_count))
     return sorted(indexes)
+
+
+def repair_record_indexes(
+    input_payload: dict[str, Any],
+    draft: dict[str, Any],
+    errors: list[str],
+) -> list[int]:
+    """프로필 평균 오류는 목표 반대편에 있는 기록만 골라 교정한다."""
+    records = draft.get("records", [])
+    explicit = set(invalid_record_indexes(errors))
+    if not ({"body_length_mean", "body_length_band"} & set(errors)):
+        return sorted(explicit)
+    if not isinstance(records, list) or not records:
+        return sorted(explicit)
+
+    target_mean = input_payload.get("bodyLengthPlan", {}).get("targetMeanChars")
+    if not isinstance(target_mean, (int, float)):
+        return sorted(explicit)
+    current_lengths = [
+        len(str(record.get("bodyMd", "")).strip()) if isinstance(record, dict) else 0
+        for record in records
+    ]
+    current_mean = statistics.fmean(current_lengths)
+    deltas = []
+    for index, current in enumerate(current_lengths):
+        events = input_payload.get("events", [])
+        event_target = (
+            events[index].get("bodyLengthTarget", {}).get("targetChars", target_mean)
+            if index < len(events)
+            else target_mean
+        )
+        deltas.append((index, current - event_target))
+
+    if current_mean > target_mean:
+        candidates = sorted(
+            (item for item in deltas if item[1] > 0),
+            key=lambda item: item[1],
+            reverse=True,
+        )
+    else:
+        candidates = sorted(
+            (item for item in deltas if item[1] < 0),
+            key=lambda item: item[1],
+        )
+    if not candidates:
+        candidates = sorted(
+            deltas,
+            key=lambda item: item[1],
+            reverse=current_mean > target_mean,
+        )[:1]
+    explicit.update(index for index, _ in candidates)
+    return sorted(explicit)
 
 
 def score_draft(
@@ -903,10 +978,7 @@ def repair_qwen_records(
         body_min_length=body_min_length,
     )
     while not validation["valid"] and rounds < max_rounds:
-        indexes = invalid_record_indexes(
-            validation["errors"],
-            record_count=len(working.get("records", [])),
-        )
+        indexes = repair_record_indexes(input_payload, working, validation["errors"])
         if not indexes:
             break
         rounds += 1
@@ -918,11 +990,25 @@ def repair_qwen_records(
                 if profile_error in validation["errors"]:
                     record_errors.append(profile_error)
             event = input_payload["events"][index]
+            current_body = str(working["records"][index].get("bodyMd", "")).strip()
+            body_target = event.get("bodyLengthTarget", {})
+            record_length_context = {
+                "currentBodyChars": len(current_body),
+                "targetBodyChars": int(body_target.get("targetChars", len(current_body))),
+                "minBodyChars": int(body_target.get("minChars", 20)),
+                "maxBodyChars": int(body_target.get("maxChars", 1000)),
+                "skeletonChars": len(str(event.get("skeletonLead", "")).strip()),
+            }
             repair_prompt = (
                 prompt
                 + "\n# 단일 기록 교정 모드\n"
                 + "아래 사건 하나의 record JSON 객체만 출력한다. 다른 기록은 출력하지 않는다.\n"
-                + build_revision_instruction(record_errors, input_payload.get("bodyLengthPlan"), input_payload)
+                + build_revision_instruction(
+                    record_errors,
+                    input_payload.get("bodyLengthPlan"),
+                    input_payload,
+                    record_length_context=record_length_context,
+                )
             )
             calls += 1
             try:
@@ -940,6 +1026,7 @@ def repair_qwen_records(
                                     "persona": input_payload["persona"],
                                     "event": event,
                                     "validationErrors": record_errors,
+                                    "currentBodyChars": len(current_body),
                                     "outputContract": {
                                         "draftId": f"r{index + 1}",
                                         "eventId": event["eventId"],

@@ -14,6 +14,7 @@ from synthetic_profile_v4_experiment import (
     generate_qwen_by_record,
     normalize_run_metadata,
     repair_qwen_records,
+    repair_record_indexes,
     sanitize_creative_record,
     score_draft,
     invalid_record_indexes,
@@ -601,6 +602,34 @@ class SkeletonCompositionTests(unittest.TestCase):
 
         self.assertGreaterEqual(len(final_body), event["bodyLengthTarget"]["minChars"])
 
+    def test_very_short_profile_can_keep_only_the_skeleton_when_it_is_closest(self):
+        event = {
+            "eventId": "ev1",
+            "categoryKey": "project",
+            "skeletonLead": "자료를 비교하고 정리 기준을 문서화했다.",
+            "bodyLengthTarget": {"targetChars": 47, "minChars": 42, "maxChars": 67},
+        }
+        record = {
+            "draftId": "r1",
+            "eventId": "ev1",
+            "categoryKey": "project",
+            "title": "정리 기준 문서화",
+            "properties": {},
+            "detailMd": (
+                "먼저 서로 다른 자료 형식을 하나씩 확인하고 판단 근거와 확인 순서를 "
+                "개인 메모에 모두 정리한 뒤 다시 처음부터 비교했다."
+            ),
+        }
+
+        sanitized = sanitize_creative_record(
+            event,
+            record,
+            {},
+            allow_below_minimum=True,
+        )
+
+        self.assertEqual(sanitized["detailMd"], "")
+
     def test_compares_detail_against_each_skeleton_sentence_and_can_keep_only_skeleton(self):
         event = {
             "eventId": "ev1",
@@ -793,6 +822,24 @@ class RevisionInstructionTests(unittest.TestCase):
         self.assertIn("상황·과정·판단·협업", instruction)
         self.assertIn("새 날짜·수치", instruction)
 
+    def test_length_retry_states_the_current_and_record_specific_target(self):
+        instruction = build_revision_instruction(
+            ["body_length_mean"],
+            {"targetMeanChars": 505, "toleranceChars": 76, "band": "very_long"},
+            record_length_context={
+                "currentBodyChars": 238,
+                "targetBodyChars": 520,
+                "minBodyChars": 468,
+                "maxBodyChars": 598,
+                "skeletonChars": 41,
+            },
+        )
+
+        self.assertIn("현재 최종 본문은 238자", instruction)
+        self.assertIn("이 기록의 최종 본문을 520자", instruction)
+        self.assertIn("468~598자", instruction)
+        self.assertIn("detailMd", instruction)
+
     def test_number_retry_explains_how_to_preserve_skeleton_without_shortening(self):
         instruction = build_revision_instruction(
             ["record_1_missing_number:2017", "record_3_invented_number:30,90"],
@@ -820,6 +867,23 @@ class RecordRepairTests(unittest.TestCase):
     def test_profile_mean_error_targets_every_record_when_count_is_known(self):
         self.assertEqual(invalid_record_indexes(["body_length_mean"], record_count=3), [0, 1, 2])
         self.assertEqual(invalid_record_indexes(["body_length_band"], record_count=3), [0, 1, 2])
+
+    def test_profile_mean_error_repairs_only_records_on_the_wrong_side_of_target(self):
+        planned = payload()
+        planned["bodyLengthPlan"] = {"targetMeanChars": 50}
+        for event, target in zip(planned["events"], (45, 55), strict=True):
+            event["bodyLengthTarget"] = {
+                "targetChars": target,
+                "minChars": max(20, target - 10),
+                "maxChars": target + 15,
+            }
+        too_long = draft()
+        too_long["records"][0]["bodyMd"] = "가" * 90
+        too_long["records"][1]["bodyMd"] = "나" * 52
+
+        indexes = repair_record_indexes(planned, too_long, ["body_length_mean"])
+
+        self.assertEqual(indexes, [0])
 
     def test_profile_length_error_is_forwarded_to_each_record_repair_prompt(self):
         planned = payload()
