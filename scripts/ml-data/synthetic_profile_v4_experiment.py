@@ -251,10 +251,14 @@ def sanitize_creative_record(
     for sentence in sentences:
         if not re.search(r"[.!?。！？)]$", sentence):
             continue
-        allowed_numbers = {
-            _normalize_number(value)
-            for value in NUMBER_PATTERN.findall(" ".join(event.get("facts", [])))
-        }
+        allowed_numbers = (
+            {
+                _normalize_number(value)
+                for value in NUMBER_PATTERN.findall(" ".join(event.get("facts", [])))
+            }
+            if event.get("renderMode") == "rewrite_evidence"
+            else set()
+        )
         sentence_numbers = {
             _normalize_number(value) for value in NUMBER_PATTERN.findall(sentence)
         }
