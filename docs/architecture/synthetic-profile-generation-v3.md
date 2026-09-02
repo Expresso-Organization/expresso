@@ -1,5 +1,9 @@
 # 합성 프로필 생성 v3
 
+> 이 문서는 AI Hub 단독 30개 파일럿의 계약을 보존한다. 다음 생성 배치는 청년패널 기반 경력
+> 골격, 정규분포 기록 수, 본문 중심·희소 프로퍼티를 정의한
+> [`synthetic-profile-generation-v4.md`](./synthetic-profile-generation-v4.md)를 따른다.
+
 ## 목적
 
 AI Hub 채용면접 답변에서 실제 수행 경험과 실제 학습만 골라 Expresso 경력 기록으로

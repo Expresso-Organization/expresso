@@ -1,5 +1,9 @@
 # 채용 추천 모델 파일럿 v0
 
+> 이 문서는 30개 프로필·0~3 라벨로 실행한 smoke test를 보존한다. 후속 모델은 단일 0~100
+> 경력 근거 적합도와 요구사항 분해·Top-K cross-encoder를 정의한
+> [`match-score-cross-encoder-v1.md`](./match-score-cross-encoder-v1.md)를 따른다.
+
 ## 목적
 
 30개 합성 프로필만 있는 초기 단계에서, 프로필과 공고 임베딩을 입력받는 작은 랭커가

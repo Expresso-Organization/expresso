@@ -1,5 +1,9 @@
 # 공고 추천 baseline·평가 harness
 
+> 이 문서의 0~3 `teacherLabel`은 초기 검색 파일럿 계약이다. 후속 공고 적합도 평가는
+> [`match-score-cross-encoder-v1.md`](./match-score-cross-encoder-v1.md)의 단일 0~100
+> 경력 근거 적합도 계약으로 교체한다.
+
 ## 목적
 
 합성 프로필과 채용 공고의 관련성 점수를 내는 후보 모델이 단순 검색 방식보다 실제로
