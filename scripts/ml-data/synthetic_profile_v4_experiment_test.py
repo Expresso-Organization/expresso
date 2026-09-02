@@ -885,6 +885,7 @@ class RevisionInstructionTests(unittest.TestCase):
         self.assertIn("이 기록의 최종 본문을 520자", instruction)
         self.assertIn("468~598자", instruction)
         self.assertIn("detailMd", instruction)
+        self.assertIn("현재 detailMd를 유지", instruction)
 
     def test_number_retry_explains_how_to_preserve_skeleton_without_shortening(self):
         instruction = build_revision_instruction(
@@ -970,6 +971,7 @@ class RecordRepairTests(unittest.TestCase):
             all("평균 본문 길이를 380자" in call["messages"][0]["content"] for call in calls)
         )
         repair_input = json.loads(calls[0]["messages"][1]["content"])
+        self.assertIn("currentDetailMd", repair_input)
         self.assertGreater(repair_input["outputContract"]["detailLength"]["minChars"], 0)
         self.assertGreater(
             repair_input["outputContract"]["detailLength"]["targetChars"],

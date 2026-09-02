@@ -603,6 +603,18 @@ def build_revision_instruction(
                 f" 고정 뼈대 {record_length_context['skeletonChars']}자를 제외한 나머지만"
                 " detailMd에 여러 완결 문장과 자연스러운 문단으로 작성하라."
             )
+            if (
+                record_length_context["currentBodyChars"]
+                < record_length_context["targetBodyChars"]
+            ):
+                instruction += (
+                    " 입력의 현재 detailMd를 유지하고, 같은 내용을 반복하지 않는 새로운"
+                    " 상황·작업·판단·협업 문장을 뒤에 추가한 전체 detailMd를 출력하라."
+                )
+            else:
+                instruction += (
+                    " 입력의 현재 detailMd에서 반복되거나 덜 중요한 문장만 덜어내 목표 길이에 맞춰라."
+                )
     if any("missing_number" in error for error in errors):
         instruction += (
             " 빠진 뼈대 수치는 해당 사건의 facts를 확인해 본문 첫 문장에 모두 넣어라."
@@ -1016,6 +1028,12 @@ def repair_qwen_records(
                     record_errors.append(profile_error)
             event = input_payload["events"][index]
             current_body = str(working["records"][index].get("bodyMd", "")).strip()
+            skeleton_lead = str(event.get("skeletonLead", "")).strip()
+            current_detail = (
+                current_body[len(skeleton_lead) :].strip()
+                if skeleton_lead and current_body.startswith(skeleton_lead)
+                else current_body
+            )
             body_target = event.get("bodyLengthTarget", {})
             record_length_context = {
                 "currentBodyChars": len(current_body),
@@ -1052,6 +1070,7 @@ def repair_qwen_records(
                                     "event": event,
                                     "validationErrors": record_errors,
                                     "currentBodyChars": len(current_body),
+                                    "currentDetailMd": current_detail,
                                     "outputContract": {
                                         "draftId": f"r{index + 1}",
                                         "eventId": event["eventId"],
