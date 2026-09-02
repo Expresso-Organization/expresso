@@ -36,7 +36,7 @@ from synthetic_profile_v4_experiment import (
 )
 
 
-PROMPT_VERSION = "synthetic-profile-v4.4.1"
+PROMPT_VERSION = "synthetic-profile-v4.4.2"
 DEFAULT_MODEL = "qwen3:30b-a3b-instruct-2507-q4_K_M"
 DEFAULT_SEEDS_PATH = (
     Path(__file__).parents[2]
@@ -867,8 +867,6 @@ def build_synthetic_inputs(
                     "targetRoles": spec["targetRoles"],
                     "experienceYears": spec["experienceYears"],
                     "primaryGoal": spec["primaryGoal"],
-                    "anchorFact": atom["summary"],
-                    "sourceExperienceLevel": atom.get("experienceLevel"),
                 },
                 "targetRecordCount": target,
                 "propertySchema": property_schema,

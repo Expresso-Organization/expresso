@@ -354,6 +354,10 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
             self.assertEqual(payload["renderingPolicy"], "skeleton-grounded-creative-v1")
             self.assertEqual(set(payload["propertySchema"]), set(PROPERTY_SCHEMA))
             self.assertEqual(
+                set(payload["persona"]),
+                {"targetRoles", "experienceYears", "primaryGoal"},
+            )
+            self.assertEqual(
                 sum(bool(event["provenance"]["narrativeEvidence"]) for event in payload["events"]),
                 1,
             )
@@ -409,7 +413,7 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
                     "profileSeed": payload["profileSeed"],
                     "profileFamily": payload["profileFamily"],
                     "split": payload["split"],
-                    "promptVersion": "synthetic-profile-v4.4.1",
+                    "promptVersion": "synthetic-profile-v4.4.2",
                     "targetRecordCount": payload["targetRecordCount"],
                     "actualRecordCount": payload["targetRecordCount"],
                     "bodyLengthPlan": payload["bodyLengthPlan"],
@@ -457,7 +461,7 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
                         "profileSeed": spec["profileSeed"],
                         "profileFamily": spec["profileFamily"],
                         "split": spec["split"],
-                        "promptVersion": "synthetic-profile-v4.4.1",
+                        "promptVersion": "synthetic-profile-v4.4.2",
                         "actualBodyLengthMean": spec["bodyLengthPlan"]["targetMeanChars"],
                         "bodyLengthPlan": spec["bodyLengthPlan"],
                     },
