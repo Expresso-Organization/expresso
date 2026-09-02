@@ -53,7 +53,10 @@ CLICHES = (
 )
 EVIDENCE_ANCHOR_GROUPS = {
     "failure": ("실패", "탈락", "떨어", "불합격", "못하", "못 했", "못했"),
-    "success": ("성공", "완료", "마무리", "합격", "수상", "취득", "달성", "해결", "복구"),
+    "success": (
+        "성공", "완료", "마무리", "합격", "수상", "취득", "달성", "해결", "복구",
+        "개선", "극복", "해소", "풀었", "풀어", "마쳤", "끝냈", "성과",
+    ),
     "departure": ("퇴사", "이직", "그만두", "그만뒀"),
     "leadership": ("총괄", "리더", "팀장", "주도"),
     "responsibility": ("담당", "맡"),
@@ -277,6 +280,14 @@ def sanitize_creative_record(
             for candidate in candidates
             if len(" ".join(part for part in (lead, candidate) if part)) >= minimum
         ]
+        required_anchors = evidence_anchor_requirements(event)
+        anchored = [
+            candidate
+            for candidate in eligible
+            if all(any(variant in candidate for variant in variants) for variants in required_anchors.values())
+        ]
+        if anchored:
+            eligible = anchored
         detail = min(
             eligible or candidates,
             key=lambda candidate: abs(len(" ".join(part for part in (lead, candidate) if part)) - target),
@@ -700,6 +711,8 @@ def _detail_length_contract(event: dict[str, Any]) -> dict[str, int]:
 
 def _record_candidate_valid(event: dict[str, Any], index: int, candidate: Any) -> bool:
     fields = {"draftId", "eventId", "categoryKey", "title", "properties", "detailMd"}
+    detail = candidate.get("detailMd", "") if isinstance(candidate, dict) else ""
+    required_anchors = evidence_anchor_requirements(event)
     return (
         isinstance(candidate, dict)
         and set(candidate) == fields
@@ -711,6 +724,15 @@ def _record_candidate_valid(event: dict[str, Any], index: int, candidate: Any) -
         and isinstance(candidate.get("properties"), dict)
         and set(candidate["properties"]) == set(event.get("propertyKeys", []))
         and isinstance(candidate.get("detailMd"), str)
+        and not any(marker in detail for marker in INTERVIEW_STYLE_MARKERS)
+        and all(any(variant in detail for variant in variants) for variants in required_anchors.values())
+        and not (
+            event.get("renderMode") == "rewrite_evidence"
+            and any(
+                len(str(fact).strip()) >= 40 and str(fact).strip().rstrip(".") in detail
+                for fact in event.get("facts", [])
+            )
+        )
     )
 
 
