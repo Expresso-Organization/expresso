@@ -533,6 +533,7 @@ def assemble_profile(
                 "eventId": record["eventId"],
                 "surveyCalibration": provenance["surveyCalibration"],
                 "narrativeEvidence": provenance["narrativeEvidence"],
+                "sourceFamilies": provenance.get("sourceFamilies", []),
                 "syntheticFields": provenance["syntheticFields"],
             }
         )
