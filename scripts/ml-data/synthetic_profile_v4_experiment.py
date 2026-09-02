@@ -795,7 +795,13 @@ def _detail_length_contract(event: dict[str, Any]) -> dict[str, int]:
     }
 
 
-def _record_candidate_valid(event: dict[str, Any], index: int, candidate: Any) -> bool:
+def _record_candidate_valid(
+    event: dict[str, Any],
+    index: int,
+    candidate: Any,
+    *,
+    minimum_detail_ratio: float = 0.6,
+) -> bool:
     fields = {"draftId", "eventId", "categoryKey", "title", "properties", "detailMd"}
     detail = candidate.get("detailMd", "") if isinstance(candidate, dict) else ""
     detail_contract = _detail_length_contract(event)
@@ -809,8 +815,9 @@ def _record_candidate_valid(event: dict[str, Any], index: int, candidate: Any) -
     long_detail_valid = (
         detail_contract["minChars"] < 120
         or (
-            len(detail.strip()) >= detail_contract["minChars"]
-            and complete_sentences >= detail_contract["minSentences"]
+            len(detail.strip()) >= round(detail_contract["minChars"] * minimum_detail_ratio)
+            and complete_sentences
+            >= max(1, round(detail_contract["minSentences"] * minimum_detail_ratio))
         )
     )
     required_anchors = evidence_anchor_requirements(event)
@@ -1090,7 +1097,12 @@ def repair_qwen_records(
                 repaired_record = json.loads(content)
                 if (
                     input_payload.get("renderingPolicy") == "skeleton-grounded-creative-v1"
-                    and not _record_candidate_valid(event, index, repaired_record)
+                    and not _record_candidate_valid(
+                        event,
+                        index,
+                        repaired_record,
+                        minimum_detail_ratio=0.9,
+                    )
                 ):
                     continue
                 repaired_draft = compose_skeleton_bodies(

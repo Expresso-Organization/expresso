@@ -653,6 +653,29 @@ class SkeletonCompositionTests(unittest.TestCase):
         self.assertGreaterEqual(contract["minSentences"], 7)
         self.assertFalse(_record_candidate_valid(event, 0, candidate))
 
+    def test_long_initial_draft_can_be_shorter_than_record_minimum_but_strict_repair_cannot(self):
+        event = {
+            "eventId": "ev1",
+            "categoryKey": "experience",
+            "propertyKeys": [],
+            "skeletonLead": "여러 요청의 우선순위를 정하고 처리 상태를 동료와 공유했다.",
+            "bodyLengthTarget": {"targetChars": 599, "minChars": 539, "maxChars": 689},
+        }
+        sentence = "요청 내용을 읽고 서로 영향을 주는 항목을 분리해 판단 근거를 개인 메모에 남겼다."
+        candidate = {
+            "draftId": "r1",
+            "eventId": "ev1",
+            "categoryKey": "experience",
+            "title": "요청 우선순위 관리",
+            "properties": {},
+            "detailMd": " ".join([sentence] * 7),
+        }
+
+        self.assertTrue(_record_candidate_valid(event, 0, candidate))
+        self.assertFalse(
+            _record_candidate_valid(event, 0, candidate, minimum_detail_ratio=0.9)
+        )
+
     def test_compares_detail_against_each_skeleton_sentence_and_can_keep_only_skeleton(self):
         event = {
             "eventId": "ev1",
