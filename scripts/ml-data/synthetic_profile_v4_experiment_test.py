@@ -3,6 +3,8 @@ import unittest
 import urllib.error
 
 from synthetic_profile_v4_experiment import (
+    _detail_length_contract,
+    _record_candidate_valid,
     build_output_schema,
     build_cli_parser,
     build_record_repair_schema,
@@ -629,6 +631,27 @@ class SkeletonCompositionTests(unittest.TestCase):
         )
 
         self.assertEqual(sanitized["detailMd"], "")
+
+    def test_long_record_contract_requires_enough_raw_detail_and_sentences(self):
+        event = {
+            "eventId": "ev1",
+            "categoryKey": "project",
+            "propertyKeys": [],
+            "skeletonLead": "자료를 비교하고 정리 기준을 문서화했다.",
+            "bodyLengthTarget": {"targetChars": 520, "minChars": 468, "maxChars": 598},
+        }
+        contract = _detail_length_contract(event)
+        candidate = {
+            "draftId": "r1",
+            "eventId": "ev1",
+            "categoryKey": "project",
+            "title": "정리 기준 문서화",
+            "properties": {},
+            "detailMd": "확인 순서를 메모했다. 빠진 항목을 다시 살폈다.",
+        }
+
+        self.assertGreaterEqual(contract["minSentences"], 7)
+        self.assertFalse(_record_candidate_valid(event, 0, candidate))
 
     def test_compares_detail_against_each_skeleton_sentence_and_can_keep_only_skeleton(self):
         event = {

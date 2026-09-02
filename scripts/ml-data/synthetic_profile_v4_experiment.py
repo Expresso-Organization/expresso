@@ -786,16 +786,33 @@ def _detail_length_contract(event: dict[str, Any]) -> dict[str, int]:
     target = event.get("bodyLengthTarget", {})
     lead = str(event.get("skeletonLead", "")).strip()
     separator = 1 if lead else 0
+    minimum = max(0, int(target.get("minChars", 0)) - len(lead) - separator)
     return {
-        "minChars": max(0, int(target.get("minChars", 0)) - len(lead) - separator),
+        "minChars": minimum,
         "targetChars": max(0, int(target.get("targetChars", 0)) - len(lead) - separator),
         "maxChars": max(0, int(target.get("maxChars", 0)) - len(lead) - separator),
+        "minSentences": max(1, (minimum + 54) // 55),
     }
 
 
 def _record_candidate_valid(event: dict[str, Any], index: int, candidate: Any) -> bool:
     fields = {"draftId", "eventId", "categoryKey", "title", "properties", "detailMd"}
     detail = candidate.get("detailMd", "") if isinstance(candidate, dict) else ""
+    detail_contract = _detail_length_contract(event)
+    complete_sentences = len(
+        [
+            sentence
+            for sentence in re.split(r"(?<=[.!?。！？])\s+", detail.strip())
+            if sentence.strip() and re.search(r"[.!?。！？)]$", sentence.strip())
+        ]
+    )
+    long_detail_valid = (
+        detail_contract["minChars"] < 120
+        or (
+            len(detail.strip()) >= detail_contract["minChars"]
+            and complete_sentences >= detail_contract["minSentences"]
+        )
+    )
     required_anchors = evidence_anchor_requirements(event)
     return (
         isinstance(candidate, dict)
@@ -808,6 +825,7 @@ def _record_candidate_valid(event: dict[str, Any], index: int, candidate: Any) -
         and isinstance(candidate.get("properties"), dict)
         and set(candidate["properties"]) == set(event.get("propertyKeys", []))
         and isinstance(candidate.get("detailMd"), str)
+        and long_detail_valid
         and not any(marker in detail for marker in INTERVIEW_STYLE_MARKERS)
         and all(any(variant in detail for variant in variants) for variants in required_anchors.values())
         and not (
