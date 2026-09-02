@@ -1,4 +1,5 @@
 import json
+import random
 import tempfile
 import unittest
 import zipfile
@@ -6,6 +7,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from synthetic_profile_v4_batch import (
+    _backbone_events,
     band_distribution_max_deviation,
     build_profile_specs,
     build_shards,
@@ -71,6 +73,18 @@ YP_CALIBRATION = {
 
 
 class SyntheticProfileV4BatchTest(unittest.TestCase):
+    def test_work_backbone_includes_honestly_synthetic_skill_record(self):
+        events = _backbone_events(
+            {"domain": "ICT", "experienceYears": 2},
+            YP_CALIBRATION,
+            random.Random(7),
+        )
+
+        skill = next(event for event in events if event["categoryKey"] == "skill_tool")
+        self.assertTrue(skill["provenance"]["surveyCalibration"])
+        self.assertEqual(skill["provenance"]["narrativeEvidence"], [])
+        self.assertIn("tool_usage", skill["provenance"]["syntheticFields"])
+
     def test_loads_only_accepted_normalized_fact_spines(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

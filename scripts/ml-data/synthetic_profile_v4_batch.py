@@ -604,6 +604,15 @@ def _backbone_events(spec: dict[str, Any], calibration: dict[str, Any], rng: ran
                     synthetic=["organization"],
                 )
             )
+        tool = config["tools"][rng.randrange(len(config["tools"]))]
+        events.append(
+            _event(
+                "skill_tool",
+                [f"{config['role']} 업무에서 {tool}을 활용했다"],
+                survey=[f"{calibration['version']}:industry-occupation:{pair[0]}-{pair[1]}"],
+                synthetic=["tool_usage"],
+            )
+        )
     if int(_weighted_choice(calibration["trainingCount"], rng)) > 0:
         training_start = max(2013, graduation - 1)
         events.append(
