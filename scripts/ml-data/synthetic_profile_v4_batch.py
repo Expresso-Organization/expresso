@@ -29,6 +29,7 @@ from synthetic_profile_v4 import (
     INTERVIEW_STYLE_MARKERS,
 )
 from synthetic_profile_v4_experiment import (
+    find_evidence_anchor_conflicts,
     generate_qwen_by_record,
     repair_qwen_records,
     validate_renderer_output,
@@ -119,6 +120,8 @@ HYPOTHETICAL_MARKERS = (
     "필요합니다", "중요합니다", "바랍니다", "지원하고", "생각합니다",
     "것 같습니다", "해야 되겠습니다", "하게 된다면", "하게 되면", "하시겠",
     "지원자님", "지원자분", "면접자님", "설명 드리겠습니다", "설명드리겠습니다",
+    "면접", "회사에 들어가고 싶", "상향 지원", "지원하게 된", "지원한 이유",
+    "말씀드리", "궁금합니다",
 )
 ACTION_MARKERS = (
     "했습니다", "하였습니다", "했으며", "맡았", "진행했", "수행했", "참여했", "개발했",
@@ -132,6 +135,19 @@ EXPERIENCE_QUESTION_MARKERS = (
 PROTECTED_PATTERNS = (
     re.compile(r"\b(?:sampid|hid)\b", re.IGNORECASE),
     re.compile(r"(?:연봉|월급|급여|소득|자산|부채)"),
+    re.compile(
+        r"(?:부모|어머니|아버지|엄마|아빠|가족|배우자|남편|아내|자녀|육아|임신|출산|"
+        r"건강|질병|병원|장애|우울|정신질환|성별|나이)"
+    ),
+)
+QUESTION_ECHO_MARKERS = (
+    "말씀해",
+    "말씀드리",
+    "설명해",
+    "설명드리",
+    "이야기해",
+    "궁금합니다",
+    "알고 싶습니다",
 )
 
 
@@ -369,6 +385,21 @@ def _atom_score(text: str) -> int:
     )
 
 
+def _strip_question_echo(summary: str, question: str) -> str:
+    """요약 앞에 그대로 붙은 면접 질문을 제거하고 답변 부분만 남긴다."""
+    normalized_question = question.strip().rstrip(".?!。！？").strip()
+    if normalized_question and summary.startswith(normalized_question):
+        summary = summary[len(normalized_question) :].lstrip(" .?!。！？")
+    sentences = [
+        sentence.strip()
+        for sentence in re.split(r"(?<=[.!?。！？])\s+", summary)
+        if sentence.strip()
+    ]
+    while sentences and any(marker in sentences[0] for marker in QUESTION_ECHO_MARKERS):
+        sentences.pop(0)
+    return " ".join(sentences)
+
+
 def scan_aihub_atoms(zip_root: str | Path) -> dict[str, list[dict[str, Any]]]:
     """원본 ZIP을 보존한 채 사실 경험 서술 atom 카탈로그를 메모리에 만든다."""
     zip_root = Path(zip_root)
@@ -396,6 +427,7 @@ def scan_aihub_atoms(zip_root: str | Path) -> dict[str, list[dict[str, Any]]]:
                     ).strip()
                 except (json.JSONDecodeError, KeyError, TypeError, UnicodeDecodeError):
                     continue
+                summary = _strip_question_echo(summary, question)
                 factual_score = _atom_score(summary)
                 asks_for_experience = any(marker in question for marker in EXPERIENCE_QUESTION_MARKERS)
                 minimum_length = 15 if asks_for_experience else 25
@@ -934,6 +966,7 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
     length_band_errors = 0
     interview_style_failures = 0
     verbatim_evidence_copies = 0
+    evidence_anchor_failures = 0
     properties = Counter()
     bands = Counter()
     actual_bands = Counter()
@@ -944,6 +977,20 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
         input_path = output_root / "inputs" / f"{meta['profileSeed']}.json"
         input_payload = (
             json.loads(input_path.read_text(encoding="utf-8")) if input_path.exists() else {"events": []}
+        )
+        draft_for_content_gate = {
+            "records": [
+                {
+                    "eventId": event.get("eventId"),
+                    "bodyMd": record.get("bodyMd", ""),
+                }
+                for record, event in zip(
+                    profile.get("records", []), input_payload.get("events", []), strict=False
+                )
+            ]
+        }
+        evidence_anchor_failures += len(
+            find_evidence_anchor_conflicts(input_payload, draft_for_content_gate)
         )
         family_splits[meta["profileFamily"]].add(meta["split"])
         plan = meta.get("bodyLengthPlan") or {}
@@ -1001,6 +1048,7 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
         "content": {
             "interviewStyleFailures": interview_style_failures,
             "verbatimEvidenceCopies": verbatim_evidence_copies,
+            "evidenceAnchorFailures": evidence_anchor_failures,
         },
         "properties": {str(key): value for key, value in sorted(properties.items())},
         "leakage": {
@@ -1014,6 +1062,7 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
         and band_distribution_deviation <= 0.05
         and interview_style_failures == 0
         and verbatim_evidence_copies == 0
+        and evidence_anchor_failures == 0
         and not any(len(splits) > 1 for splits in family_splits.values())
         and not any(len(splits) > 1 for splits in atom_splits.values())
         and not any(len(splits) > 1 for splits in source_family_splits.values()),

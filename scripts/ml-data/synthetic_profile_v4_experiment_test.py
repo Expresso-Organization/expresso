@@ -8,6 +8,8 @@ from synthetic_profile_v4_experiment import (
     build_record_repair_schema,
     build_revision_instruction,
     compose_skeleton_bodies,
+    evidence_anchor_requirements,
+    find_evidence_anchor_conflicts,
     find_unsupported_claims,
     generate_qwen_by_record,
     normalize_run_metadata,
@@ -71,6 +73,26 @@ def draft():
 
 
 class ScoreDraftTests(unittest.TestCase):
+    def test_evidence_rewrite_requires_failure_and_success_outcomes_from_source(self):
+        changed_payload = payload()
+        changed_payload["events"][1]["renderMode"] = "rewrite_evidence"
+        changed_payload["events"][1]["facts"] = [
+            "노무사 시험 일 차는 합격했지만 이 차에서 떨어졌고 자격 취득은 못했습니다"
+        ]
+        changed = draft()
+        changed["records"][1]["bodyMd"] = "노무사 시험을 준비하며 노동 관련 법률을 공부했다."
+
+        self.assertEqual(
+            set(evidence_anchor_requirements(changed_payload["events"][1])),
+            {"failure", "success"},
+        )
+        self.assertEqual(
+            find_evidence_anchor_conflicts(changed_payload, changed),
+            [{"eventId": "ev2", "recordIndex": 2, "missing": ["failure", "success"]}],
+        )
+        result = validate_renderer_output(changed_payload, changed, enforce_skeleton=True)
+        self.assertIn("record_2_missing_anchor:failure,success", result["errors"])
+
     def test_scores_valid_draft_without_invented_numbers(self):
         result = score_draft(payload(), draft(), elapsed_seconds=12.5, output_tokens=400)
 

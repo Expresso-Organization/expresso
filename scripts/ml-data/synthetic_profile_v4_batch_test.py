@@ -128,6 +128,36 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
                     ),
                 )
                 archive.writestr(
+                    "ckmk_d_rnd_m_n_100007.json",
+                    json.dumps(
+                        payload(
+                            "직접 수행한 경험을 말씀해 주세요. 보고서 초안을 작성하고 검토를 마무리했습니다.",
+                            "직접 수행한 경험을 말씀해 주세요.",
+                        ),
+                        ensure_ascii=False,
+                    ),
+                )
+                archive.writestr(
+                    "ckmk_d_rnd_m_n_100008.json",
+                    json.dumps(
+                        payload(
+                            "협업 중 어려움을 해결한 경험을 말씀해 보세요. 일정표를 작성하고 역할 조율을 맡았습니다.",
+                            "협업 경험이 있나요.",
+                        ),
+                        ensure_ascii=False,
+                    ),
+                )
+                archive.writestr(
+                    "ckmk_d_rnd_m_n_100009.json",
+                    json.dumps(
+                        payload(
+                            "부모님과 대화하며 힘든 일을 해결했습니다.",
+                            "어려움을 해결한 경험을 말씀해 주세요.",
+                        ),
+                        ensure_ascii=False,
+                    ),
+                )
+                archive.writestr(
                     "ckmk_d_rnd_m_n_100006.json",
                     json.dumps(
                         payload(
@@ -145,8 +175,14 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
             {
                 "aih-71592-ckmk_d_rnd_m_n_100001",
                 "aih-71592-ckmk_d_rnd_m_n_100005",
+                "aih-71592-ckmk_d_rnd_m_n_100007",
+                "aih-71592-ckmk_d_rnd_m_n_100008",
             },
         )
+        echoed = next(item for item in atoms["RND"] if item["atomId"].endswith("100007"))
+        self.assertEqual(echoed["summary"], "보고서 초안을 작성하고 검토를 마무리했습니다.")
+        paraphrased = next(item for item in atoms["RND"] if item["atomId"].endswith("100008"))
+        self.assertEqual(paraphrased["summary"], "일정표를 작성하고 역할 조율을 맡았습니다.")
 
     def test_aihub_events_are_rewritten_instead_of_prefixed_verbatim(self):
         specs = build_profile_specs(

@@ -51,6 +51,13 @@ CLICHES = (
     "체계적으로",
     "협업 문화를",
 )
+EVIDENCE_ANCHOR_GROUPS = {
+    "failure": ("실패", "탈락", "떨어", "불합격", "못하", "못 했", "못했"),
+    "success": ("성공", "완료", "마무리", "합격", "수상", "취득", "달성", "해결", "복구"),
+    "departure": ("퇴사", "이직", "그만두", "그만뒀"),
+    "leadership": ("총괄", "리더", "팀장", "주도"),
+    "responsibility": ("담당", "맡"),
+}
 CLAIM_MARKERS = (
     ("기여", ("기여",)),
     ("성과", ("성과",)),
@@ -403,6 +410,37 @@ def find_number_conflicts(input_payload: dict[str, Any], draft: Any) -> list[dic
     return conflicts
 
 
+def evidence_anchor_requirements(event: dict[str, Any]) -> dict[str, list[str]]:
+    """재서술에서 반드시 보존해야 할 결과·역할 의미군을 계산한다."""
+    if event.get("renderMode") != "rewrite_evidence":
+        return {}
+    facts = " ".join(event.get("facts", []))
+    return {
+        label: list(variants)
+        for label, variants in EVIDENCE_ANCHOR_GROUPS.items()
+        if any(variant in facts for variant in variants)
+    }
+
+
+def find_evidence_anchor_conflicts(input_payload: dict[str, Any], draft: Any) -> list[dict[str, Any]]:
+    if not isinstance(draft, dict) or not isinstance(draft.get("records"), list):
+        return []
+    event_by_id = {event["eventId"]: event for event in input_payload.get("events", [])}
+    conflicts = []
+    for index, record in enumerate(draft["records"], start=1):
+        if not isinstance(record, dict):
+            continue
+        event = event_by_id.get(record.get("eventId"), {})
+        required = evidence_anchor_requirements(event)
+        body = str(record.get("bodyMd", ""))
+        missing = [
+            label for label, variants in required.items() if not any(variant in body for variant in variants)
+        ]
+        if missing:
+            conflicts.append({"eventId": event.get("eventId"), "recordIndex": index, "missing": missing})
+    return conflicts
+
+
 def _find_repetitive_meta(draft: Any) -> list[dict[str, Any]]:
     if not isinstance(draft, dict) or not isinstance(draft.get("records"), list):
         return []
@@ -473,6 +511,7 @@ def validate_renderer_output(
     repetitive = _find_repetitive_meta(draft) if enforce_grounding or enforce_skeleton else []
     number_conflicts = find_number_conflicts(input_payload, draft) if enforce_skeleton else []
     style_violations = _find_style_violations(input_payload, draft) if enforce_skeleton else []
+    anchor_conflicts = find_evidence_anchor_conflicts(input_payload, draft) if enforce_skeleton else []
     errors = list(validation["errors"])
     errors.extend(
         f"record_{item['recordIndex']}_unsupported_claim:{','.join(item['markers'])}"
@@ -492,6 +531,10 @@ def validate_renderer_output(
         for item in style_violations
         for kind in item["kinds"]
     )
+    errors.extend(
+        f"record_{item['recordIndex']}_missing_anchor:{','.join(item['missing'])}"
+        for item in anchor_conflicts
+    )
     return {
         **validation,
         "valid": not errors,
@@ -500,6 +543,7 @@ def validate_renderer_output(
         "repetitiveMeta": repetitive,
         "numberConflicts": number_conflicts,
         "styleViolations": style_violations,
+        "evidenceAnchorConflicts": anchor_conflicts,
     }
 
 
@@ -530,6 +574,11 @@ def build_revision_instruction(
         instruction += (
             " 면접 답변의 가정형·포부·지원자 호칭을 제거하고 실제로 끝난 행동만 과거형 개인 기록으로 다시 써라."
             " 원문 전체 문장을 그대로 복사하지 말고 핵심 사건만 보존해 재서술하라."
+        )
+    if any("missing_anchor" in error for error in errors):
+        instruction += (
+            " 원문 경험의 핵심 결과와 역할 의미를 빠뜨리지 마라."
+            " outputContract.requiredEvidenceAnchors의 각 의미군을 본문에 자연스럽게 한 번 이상 반영하라."
         )
     if input_payload and any("_number" in error for error in errors):
         record_indexes = {
@@ -720,6 +769,7 @@ def generate_qwen_by_record(
                                         "propertyKeys": event["propertyKeys"],
                                         "propertyValues": event.get("propertyValues", {}),
                                         "detailLength": _detail_length_contract(event),
+                                        "requiredEvidenceAnchors": evidence_anchor_requirements(event),
                                         "fields": [
                                             "draftId",
                                             "eventId",
@@ -866,6 +916,7 @@ def repair_qwen_records(
                                         "propertyKeys": event["propertyKeys"],
                                         "propertyValues": event.get("propertyValues", {}),
                                         "detailLength": _detail_length_contract(event),
+                                        "requiredEvidenceAnchors": evidence_anchor_requirements(event),
                                         "fields": [
                                             "draftId",
                                             "eventId",
