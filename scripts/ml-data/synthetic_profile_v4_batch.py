@@ -473,6 +473,35 @@ def scan_aihub_atoms(zip_root: str | Path) -> dict[str, list[dict[str, Any]]]:
     return dict(atoms)
 
 
+def load_normalized_atoms(normalized_root: str | Path) -> dict[str, list[dict[str, Any]]]:
+    """정규화 단계가 승인한 짧은 사실 골격만 프로필 샘플러 입력으로 읽는다."""
+    atoms: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for path in sorted((Path(normalized_root) / "accepted").glob("*.json")):
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        result = payload.get("result", {})
+        if result.get("status") != "accepted" or not str(result.get("factSpine", "")).strip():
+            continue
+        domain = payload["occupation"]
+        atoms[domain].append(
+            {
+                "atomId": payload["atomId"],
+                "sourceFamilyId": payload["sourceFamilyId"],
+                "occupation": domain,
+                "experienceLevel": payload["experienceLevel"],
+                "summary": result["factSpine"].strip(),
+                "question": "",
+                "factualScore": 1,
+                "sourceZip": payload["sourceZip"],
+                "sourceEntry": payload["sourceEntry"],
+                "normalizedCategoryKey": result["categoryKey"],
+                "normalized": True,
+            }
+        )
+    for domain, domain_atoms in atoms.items():
+        domain_atoms.sort(key=lambda item: _stable_int("normalized-atom-order", item["atomId"]))
+    return dict(atoms)
+
+
 def _classify_atom(summary: str) -> str:
     if (
         any(marker in summary for marker in ("자격", "수상", "상장", "인증"))
@@ -679,12 +708,13 @@ def build_synthetic_inputs(
             atom_offsets[queue_key] += 1
             events.append(
                 _event(
-                    _classify_atom(f"{atom.get('question', '')} {atom['summary']}"),
+                    atom.get("normalizedCategoryKey")
+                    or _classify_atom(f"{atom.get('question', '')} {atom['summary']}"),
                     [atom["summary"].rstrip(". ")],
                     narrative=[atom["atomId"]],
                     source_families=[atom.get("sourceFamilyId", atom["atomId"])],
                     synthetic=["situation_detail", "work_process", "reflection"],
-                    render_mode="rewrite_evidence",
+                    render_mode="fixed_skeleton" if atom.get("normalized") else "rewrite_evidence",
                 )
             )
         raw_payloads.append(
@@ -1078,7 +1108,14 @@ def prepare_batch(args: argparse.Namespace) -> None:
         if args.yp_calibration is not None
         else build_yp2021_calibration(args.yp_dta)
     )
-    atoms = scan_aihub_atoms(args.aihub_root)
+    atoms = (
+        load_normalized_atoms(args.normalized_atoms)
+        if args.normalized_atoms is not None
+        else scan_aihub_atoms(args.aihub_root)
+    )
+    missing_domains = set(DOMAIN_CONFIG) - set(atoms)
+    if missing_domains:
+        raise ValueError(f"normalized atom catalog is missing domains: {sorted(missing_domains)}")
     specs = build_profile_specs(profile_count=args.profile_count, family_size=args.family_size, seed=args.seed)
     payloads = build_synthetic_inputs(specs, atoms, calibration, property_schema, seed=args.seed)
     shards = build_shards(specs, shard_size=args.shard_size, device_weights={"windows": args.windows_weight, "mac": 1 - args.windows_weight})
@@ -1117,7 +1154,9 @@ def build_parser() -> argparse.ArgumentParser:
     yp_source = prepare.add_mutually_exclusive_group(required=True)
     yp_source.add_argument("--yp-dta", type=Path)
     yp_source.add_argument("--yp-calibration", type=Path)
-    prepare.add_argument("--aihub-root", type=Path, required=True)
+    atom_source = prepare.add_mutually_exclusive_group(required=True)
+    atom_source.add_argument("--aihub-root", type=Path)
+    atom_source.add_argument("--normalized-atoms", type=Path)
     prepare.add_argument("--seeds", type=Path, default=DEFAULT_SEEDS_PATH)
     prepare.add_argument("--profile-count", type=int, default=3000)
     prepare.add_argument("--family-size", type=int, default=10)

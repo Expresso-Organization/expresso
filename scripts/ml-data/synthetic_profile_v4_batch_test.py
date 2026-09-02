@@ -11,6 +11,7 @@ from synthetic_profile_v4_batch import (
     build_shards,
     build_synthetic_inputs,
     inspect_batch,
+    load_normalized_atoms,
     run_shard,
     scan_aihub_atoms,
 )
@@ -70,6 +71,32 @@ YP_CALIBRATION = {
 
 
 class SyntheticProfileV4BatchTest(unittest.TestCase):
+    def test_loads_only_accepted_normalized_fact_spines(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            accepted = root / "accepted"
+            accepted.mkdir()
+            payload = {
+                "atomId": "aih-1",
+                "sourceFamilyId": "family-1",
+                "occupation": "ICT",
+                "experienceLevel": "NEW",
+                "sourceZip": "source.zip",
+                "sourceEntry": "source.json",
+                "result": {
+                    "status": "accepted",
+                    "categoryKey": "project",
+                    "factSpine": "팀 프로젝트에서 데이터 정리를 맡아 마무리했다.",
+                },
+            }
+            (accepted / "aih-1.json").write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+            atoms = load_normalized_atoms(root)
+
+        self.assertEqual(atoms["ICT"][0]["summary"], payload["result"]["factSpine"])
+        self.assertEqual(atoms["ICT"][0]["normalizedCategoryKey"], "project")
+        self.assertTrue(atoms["ICT"][0]["normalized"])
+
     def test_band_distribution_gate_uses_batch_ratios_not_individual_crossings(self):
         self.assertEqual(
             band_distribution_max_deviation(
