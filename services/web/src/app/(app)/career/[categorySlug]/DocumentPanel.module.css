@@ -1,38 +1,79 @@
-/* 문서 패널 — 화면 정의서 05의 우측 452px 패널을 그대로 옮긴 것 */
+/* 문서 패널 — 닫혀 있다가 기록을 고르면 우측에서 열리는 side peek */
 
 .panel {
-  width: 452px;
-  flex-shrink: 0;
-  border-left: 1px solid var(--ex-border-chrome);
+  --panel-open-dur: 400ms;
+  --panel-close-dur: 350ms;
+  --panel-translate-x: 100%;
+  --panel-blur: 2px;
+  --panel-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  position: absolute;
+  z-index: 20;
+  inset: 0 0 0 auto;
   display: flex;
+  width: min(var(--career-drawer-width, var(--ex-doc-panel-width)), calc(100vw - 48px));
+  max-width: 100%;
   flex-direction: column;
+  border-left: 1px solid var(--ex-border-chrome);
   background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-overlay);
+  transform: translateX(var(--panel-translate-x));
+  opacity: 0;
+  filter: blur(var(--panel-blur));
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    transform var(--panel-close-dur) var(--panel-ease),
+    opacity var(--panel-close-dur) var(--panel-ease),
+    filter var(--panel-close-dur) var(--panel-ease),
+    visibility 0s linear var(--panel-close-dur);
+  will-change: transform, opacity, filter;
 }
 
-/*
- * 좁은 화면에서는 목록과 문서가 나란히 설 자리가 없다. 고른 기록이 있을 때만
- * 오른쪽에서 전면 시트로 올라온다 — 목록은 뒤에 그대로 남아 있어 닫으면
- * 보던 자리로 돌아간다.
- */
-@media (max-width: 1023px) {
-  .panel {
-    position: fixed;
-    z-index: 50;
-    inset: 0;
-    width: auto;
-    border-left: none;
-    box-shadow: var(--ex-elevation-overlay);
-    transform: translateX(100%);
-    visibility: hidden;
-    transition:
-      transform var(--ex-motion-panel),
-      visibility var(--ex-motion-panel);
-  }
+.panel[data-open="true"] {
+  transform: translateX(0);
+  opacity: 1;
+  filter: blur(0);
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    transform var(--panel-open-dur) var(--panel-ease),
+    opacity var(--panel-open-dur) var(--panel-ease),
+    filter var(--panel-open-dur) var(--panel-ease),
+    visibility 0s linear 0s;
+}
 
-  .panel[data-open="true"] {
-    transform: translateX(0);
-    visibility: visible;
-  }
+.panel[data-resizing="true"] {
+  user-select: none;
+  transition: none;
+}
+
+.resizeHandle {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  left: -5px;
+  width: 10px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.resizeHandle::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 1px;
+  background: var(--ex-border-chrome);
+  content: "";
+  transition: background var(--ex-motion-quick), width var(--ex-motion-quick);
+}
+
+.resizeHandle:hover::after,
+.resizeHandle:focus-visible::after {
+  width: 2px;
+  background: var(--ex-fg-muted);
 }
 
 .head {
@@ -225,90 +266,18 @@
 /* 하단 바리스타 요청 바 */
 .foot {
   flex-shrink: 0;
-  border-top: 1px solid var(--ex-border-hair);
-  padding: 12px 20px;
+  max-height: 58dvh;
+  padding: 10px 20px 20px;
+  background: var(--ex-bg);
 }
 
-.quickActions {
-  display: flex;
-  gap: 7px;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
+.foot > section { margin: 0; padding-top: 0; border-top: 0; }
+
+@media (max-width: 767px) {
+  .panel { width: 100%; border-left: 0; }
+  .resizeHandle { display: none; }
 }
 
-.quickAction {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-body);
-  background: var(--ex-bg-sunken);
-  border: none;
-  border-radius: 999px;
-  padding: 6px 12px;
-  white-space: nowrap;
-  transition: background var(--ex-motion-quick);
-}
-
-.quickAction:hover {
-  background: var(--ex-bg-muted);
-}
-
-.quickActionSignature {
-  color: var(--ex-accent-text);
-  background: var(--ex-accent-surface);
-}
-
-.quickActionSignature:hover {
-  background: var(--ex-accent-surface-hover);
-}
-
-.composer {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid var(--ex-border);
-  border-radius: 10px;
-  padding: 10px 13px;
-}
-
-.composerInput {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  outline: none;
-  background: none;
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg);
-}
-
-.composerInput::placeholder {
-  color: var(--ex-fg-muted);
-}
-
-.composerSend {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--ex-bg-inverse);
-  border: none;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-}
-
-.composerSend:hover {
-  background: var(--ex-bg-inverse-hover);
-}
-
-/* 선택된 기록이 없을 때 */
-.none {
-  flex: 1;
-  display: grid;
-  place-items: center;
-  padding: 26px;
-  text-align: center;
-}
-
-.noneText {
-  font-size: var(--ex-text-sm);
-  line-height: 1.8;
-  color: var(--ex-fg-subtle);
+@media (prefers-reduced-motion: reduce) {
+  .panel { filter: none; transition: none !important; }
 }

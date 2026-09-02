@@ -1,0 +1,2 @@
+.page { width: min(920px, calc(100% - 32px)); margin: 0 auto; padding: 24px 0 64px; }
+@media (max-width: 767px) { .page { width: calc(100% - 24px); padding-top: 12px; } }

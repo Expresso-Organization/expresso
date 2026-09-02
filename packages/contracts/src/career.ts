@@ -6,6 +6,7 @@ import {
   TimestampSchema,
   UuidSchema,
 } from "./common.js";
+import { CareerPropertyDefinitionV2Schema, CareerPropertyValueV2Schema } from "./career-properties.js";
 
 export const CareerViewTypeSchema = z.enum([
   "table",
@@ -24,6 +25,8 @@ export const CareerPropertyTypeSchema = z.enum([
 ]);
 
 export const CareerPropertyDefinitionSchema = z.strictObject({
+  /** MongoDB 전환 뒤 부여되는 안정 식별자입니다. 기존 생성 요청은 생략할 수 있습니다. */
+  id: UuidSchema.optional(),
   label: z.string().trim().min(1).max(80),
   type: CareerPropertyTypeSchema,
   required: z.boolean().default(false),
@@ -40,6 +43,7 @@ export const CareerPropertyValueSchema = z.union([
   z.number().finite(),
   z.boolean(),
   z.array(z.string().max(200)).max(100),
+  CareerPropertyValueV2Schema,
 ]);
 
 export const CareerPropertiesSchema = z.record(
@@ -55,6 +59,8 @@ export const CareerCategorySchema = z.strictObject({
   defaultView: CareerViewTypeSchema,
   isSystem: z.boolean(),
   propertySchema: CareerPropertySchemaSchema,
+  propertySchemaV2: z.array(CareerPropertyDefinitionV2Schema).optional(),
+  schemaVersion: z.number().int().positive().optional(),
   sortOrder: z.number().int().nonnegative(),
   recordCount: z.number().int().nonnegative(),
   version: z.number().int().positive(),
@@ -97,8 +103,11 @@ export const CareerRecordSchema = z.strictObject({
   status: CareerRecordStatusSchema,
   origin: CareerRecordOriginSchema,
   properties: CareerPropertiesSchema,
+  /** 수식·롤업 Worker가 확정한 읽기 전용 projection입니다. 내부 계산 메타데이터는 포함하지 않습니다. */
+  computedProperties: z.record(z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/), CareerPropertyValueV2Schema).optional(),
   bodyMd: z.string().max(200_000),
   version: z.number().int().positive(),
+  createdAt: TimestampSchema.optional(),
   updatedAt: TimestampSchema,
 });
 
@@ -117,6 +126,7 @@ export const CreateCareerRecordSchema = z.strictObject({
 export const UpdateCareerRecordSchema = z
   .strictObject({
     title: z.string().trim().max(300).optional(),
+    status: CareerRecordStatusSchema.optional(),
     properties: CareerPropertiesSchema.optional(),
     bodyMd: z.string().max(200_000).optional(),
   })

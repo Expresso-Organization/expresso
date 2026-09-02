@@ -1,5 +1,40 @@
 export * from "./common.js";
 export * from "./career.js";
+export * from "./career-editor.js";
+export {
+  CareerPropertyTypeV2Schema,
+  CareerPropertyValueV2Schema,
+  CareerPropertyDefinitionV2Schema,
+  CareerRelationTargetSchema,
+  CareerFormulaDiagnosticSchema,
+  CareerRelationDefinitionSchema,
+  CareerRelationSchema,
+  ReplaceCareerRelationTargetsSchema,
+  ListCareerRelationTargetsQuerySchema,
+  PreviewCareerCategoryMoveSchema,
+  CommitCareerCategoryMoveRequestSchema,
+  CareerCategoryMovePreviewSchema,
+  CareerCategoryMoveCommitSchema,
+  CareerFormulaSchema,
+  PreviewCareerFormulaSchema,
+  CareerFormulaPreviewSchema,
+  CareerRollupAggregationSchema,
+  CareerRollupSchema,
+  PreviewCareerRollupSchema,
+  CareerRollupPreviewSchema,
+  CareerPropertySchemaChangeSchema,
+  CareerPropertyChangeImpactSchema,
+  CareerPropertyChangePreviewSchema,
+  ApplyCareerPropertyChangeSchema,
+} from "./career-properties.js";
+export type { CareerPropertySchemaChange, CareerPropertyChangePreview, ApplyCareerPropertyChange, CareerPropertyDefinitionV2, CareerPropertyValueV2, CareerRollupAggregation, PreviewCareerFormula, CareerFormulaPreview, PreviewCareerRollup, CareerRollupPreview, CareerRelationDefinition, CareerRelationTarget, ReplaceCareerRelationTargets, PreviewCareerCategoryMove, CommitCareerCategoryMoveRequest, CareerCategoryMovePreview } from "./career-properties.js";
+export {
+  CareerViewFilterV2Schema,
+  CareerSortV2Schema,
+  CareerViewConfigurationSchema,
+} from "./career-views.js";
+export type { CareerViewConfiguration } from "./career-views.js";
+export * from "./career-ai.js";
 export * from "./entitlements.js";
 export * from "./identity.js";
 export * from "./consent.js";

@@ -5,6 +5,7 @@ on:
     paths:
       - "services/web/**"
       - "packages/contracts/**"
+      - "packages/editor/**"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
@@ -15,6 +16,7 @@ on:
     paths:
       - "services/web/**"
       - "packages/contracts/**"
+      - "packages/editor/**"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
@@ -51,11 +53,16 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # 웹은 contracts의 타입을 그대로 쓰므로 계약이 먼저 빌드되어야 한다.
-      - name: 계약 빌드
-        run: pnpm --filter @expresso/contracts build
+      - name: 계약 · 편집기 빌드
+        run: |
+          pnpm --filter @expresso/editor build
+          pnpm --filter @expresso/contracts build
 
       - name: 타입 검사
         run: pnpm --filter @expresso/web typecheck
+
+      - name: 웹 단위 테스트
+        run: pnpm --filter @expresso/web test
 
       - name: 빌드
         run: pnpm --filter @expresso/web build

@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 /**
  * 지면 컴포넌트를 테스트에서 실제로 그리려면 두 가지가 필요합니다.
@@ -13,6 +13,7 @@ import { defineConfig } from "vitest/config";
  * paths에만 적혀 있어 번들러에게 따로 알려야 합니다.
  */
 export default defineConfig({
+  test: { exclude: [...configDefaults.exclude, "e2e/**"] },
   oxc: { jsx: { runtime: "automatic" } },
   resolve: {
     alias: {

@@ -20,6 +20,11 @@ export interface MongoCollections {
   questions: Collection<Docs.QuestionDoc>;
   careerCategories: Collection<Docs.CareerCategoryDoc>;
   careerRecords: Collection<Docs.CareerRecordDoc>;
+  careerDocumentSnapshots: Collection<Docs.CareerDocumentSnapshotDoc>;
+  careerDocumentUpdates: Collection<Docs.CareerDocumentUpdateDoc>;
+  careerRecordRevisions: Collection<Docs.CareerRecordRevisionDoc>;
+  careerRecordRelations: Collection<Docs.CareerRecordRelationDoc>;
+  careerAiProposals: Collection<Docs.CareerAiProposalDoc>;
   answers: Collection<Docs.AnswerDoc>;
   answerRecordChanges: Collection<Docs.AnswerRecordChangeDoc>;
   recipes: Collection<Docs.RecipeDoc>;
@@ -101,6 +106,11 @@ export function mongoCollections(db: Db): MongoCollections {
     questions: db.collection<Docs.QuestionDoc>("questions"),
     careerCategories: db.collection<Docs.CareerCategoryDoc>("career_categories"),
     careerRecords: db.collection<Docs.CareerRecordDoc>("career_records"),
+    careerDocumentSnapshots: db.collection<Docs.CareerDocumentSnapshotDoc>("career_document_snapshots"),
+    careerDocumentUpdates: db.collection<Docs.CareerDocumentUpdateDoc>("career_document_updates"),
+    careerRecordRevisions: db.collection<Docs.CareerRecordRevisionDoc>("career_record_revisions"),
+    careerRecordRelations: db.collection<Docs.CareerRecordRelationDoc>("career_record_relations"),
+    careerAiProposals: db.collection<Docs.CareerAiProposalDoc>("career_ai_proposals"),
     answers: db.collection<Docs.AnswerDoc>("answers"),
     answerRecordChanges: db.collection<Docs.AnswerRecordChangeDoc>("answer_record_changes"),
     recipes: db.collection<Docs.RecipeDoc>("recipes"),

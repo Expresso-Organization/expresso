@@ -6,7 +6,9 @@ import { generationLedgerConstraintSteps } from "./mongodb-migrations/0002/migra
 import { analyticsAndPreferenceSteps } from "./mongodb-migrations/0003/migration.js";
 import { jobImportMetadataSteps } from "./mongodb-migrations/0004/migration.js";
 import { jobSourceProviderSteps } from "./mongodb-migrations/0005/migration.js";
+import { careerEditorLedgerSteps } from "./mongodb-migrations/0006/migration.js";
 import { jobSourceSeedSteps } from "./mongodb-migrations/0007/migration.js";
+import { careerViewConfigurationSteps } from "./mongodb-migrations/0008/migration.js";
 
 export interface MongoMigrationStep {
   id: string;
@@ -36,14 +38,20 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const fourthHash = createHash("sha256").update(`migration.ts\0${fourthSource.byteLength}\0`).update(fourthSource).digest("hex");
   const fifthSource = await readFile(new URL("./mongodb-migrations/0005/migration.ts", import.meta.url));
   const fifthHash = createHash("sha256").update(`migration.ts\0${fifthSource.byteLength}\0`).update(fifthSource).digest("hex");
-  const sixthSource = await readFile(new URL("./mongodb-migrations/0007/migration.ts", import.meta.url));
+  const sixthSource = await readFile(new URL("./mongodb-migrations/0006/migration.ts", import.meta.url));
   const sixthHash = createHash("sha256").update(`migration.ts\0${sixthSource.byteLength}\0`).update(sixthSource).digest("hex");
+  const seventhSource = await readFile(new URL("./mongodb-migrations/0007/migration.ts", import.meta.url));
+  const seventhHash = createHash("sha256").update(`migration.ts\0${seventhSource.byteLength}\0`).update(seventhSource).digest("hex");
+  const eighthSource = await readFile(new URL("./mongodb-migrations/0008/migration.ts", import.meta.url));
+  const eighthHash = createHash("sha256").update(`migration.ts\0${eighthSource.byteLength}\0`).update(eighthSource).digest("hex");
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
     { version: "0003", name: "analytics_rate_and_notification_preferences", checksum: thirdHash, steps: await analyticsAndPreferenceSteps() },
     { version: "0004", name: "job_import_metadata", checksum: fourthHash, steps: await jobImportMetadataSteps() },
     { version: "0005", name: "job_source_ats_providers", checksum: fifthHash, steps: await jobSourceProviderSteps() },
-    { version: "0007", name: "job_source_boards", checksum: sixthHash, steps: await jobSourceSeedSteps() },
+    { version: "0006", name: "career_record_editor", checksum: sixthHash, steps: await careerEditorLedgerSteps() },
+    { version: "0007", name: "job_source_boards", checksum: seventhHash, steps: await jobSourceSeedSteps() },
+    { version: "0008", name: "career_view_configurations", checksum: eighthHash, steps: await careerViewConfigurationSteps() },
   ];
 }

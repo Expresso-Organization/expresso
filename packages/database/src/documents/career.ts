@@ -3,6 +3,8 @@ import type * as Contracts from "@expresso/contracts";
 import type { Decimal128 } from "mongodb";
 import type { JsonValue, JsonObject } from "./common.js";
 
+export type CareerPropertyDefinitionDoc = Contracts.CareerPropertyDefinition;
+
 export interface CareerCategoryDoc {
   _id: string;
   userId?: string | null;
@@ -15,6 +17,10 @@ export interface CareerCategoryDoc {
   defaultView: Contracts.CareerViewType;
   version: number;
   updatedAt: Date;
+  propertySchemaV2?: Contracts.CareerPropertyDefinitionV2[];
+  schemaVersion?: number;
+  propertySchemaTombstones?: Contracts.CareerPropertyDefinitionV2[];
+  propertyMutationResults?: Record<string, unknown>;
 }
 
 export interface CareerRecordDoc {
@@ -29,12 +35,21 @@ export interface CareerRecordDoc {
   periodStart?: string | null;
   periodEnd?: string | null;
   version: Contracts.CareerRecord["version"];
+  createdAt?: Date;
   updatedAt: Date;
   deletedAt?: Date | null;
   purgeAfter?: Date | null;
   createIdempotencyKey?: string | null;
   createRequestHash?: string | null;
   referenceVersion?: number;
+  documentSchemaVersion?: number | null;
+  documentVersion?: number | null;
+  latestSnapshotId?: string | null;
+  computedProperties?: JsonObject | null;
+  unmappedProperties?: JsonObject | null;
+  /** 삭제한 프로퍼티의 값을 안정 ID 아래 보존해 같은 프로퍼티 복원 때 되살립니다. */
+  propertyValueTombstones?: JsonObject | null;
+  editorMigratedAt?: Date | null;
 }
 
 export interface CareerProfileDoc {
@@ -48,13 +63,16 @@ export interface CareerViewDoc {
   _id: string;
   userId: string;
   categoryId: string;
-  name: string;
-  viewType: "table" | "gallery" | "timeline" | "board" | "list";
-  filters: JsonValue[];
-  sorts: JsonValue[];
-  visibleProperties: JsonValue;
-  sortOrder: number;
+  /** 기존 화면이 읽는 평면 뷰 필드입니다. 전환 기간 동안 유지합니다. */
+  name?: string;
+  viewType?: "table" | "gallery" | "timeline" | "board" | "list";
+  filters?: JsonValue[];
+  sorts?: JsonValue[];
+  visibleProperties?: JsonValue;
+  sortOrder?: number;
   createdAt: Date;
+  /** v2는 property UUID만 저장해 이름 변경에도 필터가 유지됩니다. */
+  configuration?: Contracts.CareerViewConfiguration;
 }
 
 export interface RecordLinkDoc {

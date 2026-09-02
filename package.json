@@ -13,6 +13,7 @@
     "check:portfolio-css": "node scripts/build-portfolio-css.mjs --check",
     "db:migrate": "pnpm --filter @expresso/database migrate",
     "migrate:jobs-to-mongodb": "node scripts/operations/migrate-mysql-to-mongodb.mjs",
+    "backfill:career-documents": "pnpm --filter @expresso/editor build && pnpm --filter @expresso/database build && node scripts/operations/backfill-career-documents.mjs",
     "infra:up": "docker compose -f infra/compose.yaml up -d --wait mongodb redis && docker compose -f infra/compose.yaml run --rm --no-deps mongodb-init",
     "infra:down": "docker compose -f infra/compose.yaml down",
     "infra:ready": "docker compose -f infra/compose.yaml ps --format json",

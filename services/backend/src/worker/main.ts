@@ -38,6 +38,10 @@ import { PageService } from "../modules/page/index.js";
 import { PageStream } from "../modules/page/stream.js";
 import { createStreamRedis } from "../platform/redis.js";
 import { AiPageGenerator } from "../modules/page/generator.js";
+import { CareerDocumentService } from "../modules/career-editor/index.js";
+import { createCareerDocumentCompactionProcessor } from "./processors/career-document-compaction.js";
+import { MongoCareerComputationService } from "../modules/career-computation/index.js";
+import { createCareerComputationProcessor } from "./processors/career-computation.js";
 
 const config = loadRuntimeConfig();
 if (!config.mongodbUrl || !config.mongodbDatabase) throw new Error("MongoDB runtime configuration is missing");
@@ -105,6 +109,9 @@ const analyticsProcessor = createAnalyticsProcessor(analyticsService);
 const engagementService = new EngagementService(database);
 const notificationProcessor = createNotificationProcessor(engagementService, new ConsoleNotificationProvider());
 const accountLifecycleService = new AccountLifecycleService(database);
+const careerDocumentService = new CareerDocumentService(database, config.assetSigningSecret);
+const careerDocumentCompactionProcessor = createCareerDocumentCompactionProcessor(careerDocumentService);
+const careerComputationProcessor = createCareerComputationProcessor(new MongoCareerComputationService(database));
 // 수집은 여기서만 돈다 — 바깥을 부르는 일은 요청 경로가 아니라 워커의 일이다.
 const jobIngestService = new JobIngestService(
   database,
@@ -133,6 +140,8 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
     if (job.name === "analytics.aggregate") return analyticsProcessor(job);
     if (job.name === "notification.deliver") return notificationProcessor(job);
     if (job.name === "scheduled.execute") return scheduledJobProcessor(job);
+    if (job.name === "career.document.compact") return careerDocumentCompactionProcessor(job) as Promise<Record<string, unknown>>;
+    if (job.name === "career.computation") return careerComputationProcessor(job) as unknown as Promise<Record<string, unknown>>;
     throw new Error(`Unsupported domain job: ${job.name}`);
   },
   onDeadLetterError(error) {
@@ -172,7 +181,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 
 while (!abortController.signal.aborted) {
   try {
-    await schedulingService.scheduleDue();
+    if (config.scheduledJobsEnabled !== false) await schedulingService.scheduleDue();
     const result = await dispatcher.pollOnce();
     if (result.published || result.retried || result.deadLettered) {
       console.info(

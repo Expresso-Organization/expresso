@@ -25,7 +25,7 @@ export async function createMongoLink(context: MongoContext, userId: string, rec
 export async function listMongoLinks(context: MongoContext, userId: string, recordId: string) {
   const db = mongoCollections(context.db);
   if (!await db.careerRecords.findOne({ _id: recordId, userId, deletedAt: null })) throw new CareerError(404, "career record not found");
-  return (await db.recordLinks.find({ userId, $or: [{ fromRecordId: recordId }, { toRecordId: recordId }] }).sort({ _id: 1 }).toArray()).map((link) => ({
+  return (await db.recordLinks.find({ userId, $or: [{ fromRecordId: recordId }, { toRecordId: recordId }] }).sort({ _id: 1 }).limit(1_000).toArray()).map((link) => ({
     id: link._id, recordId, relatedRecordId: link.fromRecordId === recordId ? link.toRecordId : link.fromRecordId, relation: link.relation, direction: link.fromRecordId === recordId ? "outgoing" as const : "incoming" as const,
   }));
 }

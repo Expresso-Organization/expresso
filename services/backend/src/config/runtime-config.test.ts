@@ -12,7 +12,29 @@ describe("loadRuntimeConfig", () => {
       outboxBatchSize: 25,
       outboxMaxAttempts: 5,
       queuePrefix: "expresso-mongo-v1",
+      careerSocketAllowedOrigin: "http://127.0.0.1:3000",
+      careerEditorV2Enabled: false,
+      scheduledJobsEnabled: true,
     });
+  });
+
+  it("keeps the editor v2 gate closed unless an explicit boolean enables it", () => {
+    expect(loadRuntimeConfig({ CAREER_EDITOR_V2_ENABLED: "true" }).careerEditorV2Enabled).toBe(true);
+    expect(() => loadRuntimeConfig({ CAREER_EDITOR_V2_ENABLED: "enable-it" })).toThrow();
+  });
+
+  it("allows deterministic AI only outside production", () => {
+    expect(loadRuntimeConfig({ CAREER_AI_DETERMINISTIC_TEST: "true" }).careerAiDeterministicTest).toBe(true);
+    expect(() => loadRuntimeConfig({ NODE_ENV: "production", CAREER_AI_DETERMINISTIC_TEST: "true" })).toThrow(/forbidden/);
+  });
+
+  it("allows isolated workers to skip creating scheduled external jobs", () => {
+    expect(loadRuntimeConfig({ SCHEDULED_JOBS_ENABLED: "false" }).scheduledJobsEnabled).toBe(false);
+  });
+
+  it("reads the allowed career socket origin", () => {
+    expect(loadRuntimeConfig({ CAREER_SOCKET_ALLOWED_ORIGIN: "https://app.example.com" }).careerSocketAllowedOrigin)
+      .toBe("https://app.example.com");
   });
 
   it("rejects non-MongoDB database schemes", () => {

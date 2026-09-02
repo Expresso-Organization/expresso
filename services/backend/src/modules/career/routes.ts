@@ -9,6 +9,8 @@ import {
   SaveCareerProfileSchema,
   CareerSkillIdParamsSchema,
   CareerRecordResponseSchema,
+  CareerRecordSchema,
+  CareerViewConfigurationSchema,
   CreateCareerCategorySchema,
   CreateCareerRecordLinkSchema,
   CreateCareerRecordSchema,
@@ -18,17 +20,47 @@ import {
   RecomputeCareerSkillSchema,
   UpdateCareerPropertySchemaSchema,
   UpdateCareerRecordSchema,
+  CareerPropertySchemaChangeSchema,
+  ApplyCareerPropertyChangeSchema,
+  CareerPropertyChangePreviewSchema,
+  CareerCategoryMoveCommitSchema,
+  CommitCareerCategoryMoveRequestSchema,
+  CareerCategoryMovePreviewSchema,
+  ListCareerRelationTargetsQuerySchema,
+  PreviewCareerCategoryMoveSchema,
+  ReplaceCareerRelationTargetsSchema,
+  PreviewCareerFormulaSchema,
+  CareerFormulaPreviewSchema,
+  PreviewCareerRollupSchema,
+  CareerRollupPreviewSchema,
   formatResourceEtag,
   parseResourceEtag,
+  UuidSchema,
 } from "@expresso/contracts";
 import type {
   FastifyInstance,
   FastifyRequest,
   preHandlerHookHandler,
 } from "fastify";
+import { z } from "zod";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
 import { type CareerApi } from "./index.js";
+import {
+  CareerViewCreateSchema,
+  CareerViewDuplicateSchema,
+  CareerViewQueryInputSchema,
+  CareerViewReorderSchema,
+  CareerViewUpdateSchema,
+} from "./views.js";
+
+const CareerViewIdParamsSchema = z.strictObject({ viewId: UuidSchema });
+const CareerViewResponseSchema = z.strictObject({ data: CareerViewConfigurationSchema });
+const CareerViewListResponseSchema = z.strictObject({ data: z.array(CareerViewConfigurationSchema) });
+const CareerViewPageResponseSchema = z.strictObject({
+  data: z.array(CareerRecordSchema),
+  page: z.strictObject({ hasNextPage: z.boolean(), nextCursor: z.string().nullable() }),
+});
 
 export interface RegisterCareerRoutesOptions {
   careerService: CareerApi;
@@ -139,6 +171,33 @@ export function registerCareerRoutes(
     },
   );
 
+  app.post(`${API_PREFIX}/career/categories/:categoryId/property-schema/preview`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    const change = parseBody(CareerPropertySchemaChangeSchema, request);
+    if (!options.careerService.previewChange) throw new HttpStatusError(501, "property schema v2 is unavailable");
+    const preview = await options.careerService.previewChange(principal.user.id, categoryId, change);
+    return { data: CareerPropertyChangePreviewSchema.parse(preview) };
+  });
+  app.post(`${API_PREFIX}/career/categories/:categoryId/property-schema/apply`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    const key = IdempotencyKeySchema.safeParse(request.headers["idempotency-key"]);
+    if (!key.success) throw new HttpStatusError(400, "Idempotency-Key is required");
+    const input = parseBody(ApplyCareerPropertyChangeSchema, request);
+    if (!options.careerService.applyChange) throw new HttpStatusError(501, "property schema v2 is unavailable");
+    const category = await options.careerService.applyChange(principal.user.id, categoryId, expectedVersion(request), key.data, input);
+    return reply.header("etag", formatResourceEtag(category.version)).send({ data: category });
+  });
+  app.post(`${API_PREFIX}/career/categories/:categoryId/property-schema/:propertyId/restore`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    const params = parseParams(CareerCategoryIdParamsSchema.extend({ propertyId: UuidSchema }), request);
+    if (!options.careerService.restoreProperty) throw new HttpStatusError(501, "property schema v2 is unavailable");
+    const category = await options.careerService.restoreProperty(principal.user.id, categoryId, params.propertyId, expectedVersion(request));
+    return reply.header("etag", formatResourceEtag(category.version)).send({ data: category });
+  });
+
   app.get(
     `${API_PREFIX}/career/categories/:categoryId/views`,
     { preHandler },
@@ -166,6 +225,66 @@ export function registerCareerRoutes(
       return reply.code(201).send({ data: view });
     },
   );
+
+  // 기존 `/views` 응답은 전환 기간 동안 그대로 둔다. 새 화면은 UUID 기반 설정 API만 사용한다.
+  app.get(`${API_PREFIX}/career/categories/:categoryId/view-configurations`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    if (!options.careerService.listViewConfigurations) throw new HttpStatusError(501, "career view configurations are unavailable");
+    return CareerViewListResponseSchema.parse({ data: await options.careerService.listViewConfigurations(principal.user.id, categoryId) });
+  });
+
+  app.post(`${API_PREFIX}/career/categories/:categoryId/view-configurations`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    const input = parseBody(CareerViewCreateSchema, request);
+    if (!options.careerService.createViewConfiguration) throw new HttpStatusError(501, "career view configurations are unavailable");
+    const view = await options.careerService.createViewConfiguration(principal.user.id, categoryId, expectedVersion(request), input);
+    return reply.code(201).header("etag", formatResourceEtag(view.version)).send(CareerViewResponseSchema.parse({ data: view }));
+  });
+
+  app.post(`${API_PREFIX}/career/categories/:categoryId/view-configurations/reorder`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    const input = parseBody(CareerViewReorderSchema, request);
+    if (!options.careerService.reorderViewConfigurations) throw new HttpStatusError(501, "career view configurations are unavailable");
+    return CareerViewListResponseSchema.parse({ data: await options.careerService.reorderViewConfigurations(principal.user.id, categoryId, expectedVersion(request), input.orderedIds) });
+  });
+
+  app.patch(`${API_PREFIX}/career/view-configurations/:viewId`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { viewId } = parseParams(CareerViewIdParamsSchema, request);
+    const input = parseBody(CareerViewUpdateSchema, request);
+    if (!options.careerService.updateViewConfiguration) throw new HttpStatusError(501, "career view configurations are unavailable");
+    const view = await options.careerService.updateViewConfiguration(principal.user.id, viewId, expectedVersion(request), input);
+    return reply.header("etag", formatResourceEtag(view.version)).send(CareerViewResponseSchema.parse({ data: view }));
+  });
+
+  app.post(`${API_PREFIX}/career/view-configurations/:viewId/duplicate`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { viewId } = parseParams(CareerViewIdParamsSchema, request);
+    const input = parseBody(CareerViewDuplicateSchema, request);
+    if (!options.careerService.duplicateViewConfiguration) throw new HttpStatusError(501, "career view configurations are unavailable");
+    const view = await options.careerService.duplicateViewConfiguration(principal.user.id, viewId, expectedVersion(request), input.name);
+    return reply.code(201).header("etag", formatResourceEtag(view.version)).send(CareerViewResponseSchema.parse({ data: view }));
+  });
+
+  app.delete(`${API_PREFIX}/career/view-configurations/:viewId`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { viewId } = parseParams(CareerViewIdParamsSchema, request);
+    if (!options.careerService.deleteViewConfiguration) throw new HttpStatusError(501, "career view configurations are unavailable");
+    await options.careerService.deleteViewConfiguration(principal.user.id, viewId, expectedVersion(request));
+    return reply.code(204).send();
+  });
+
+  app.get(`${API_PREFIX}/career/view-configurations/:viewId/query`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const { viewId } = parseParams(CareerViewIdParamsSchema, request);
+    const input = CareerViewQueryInputSchema.safeParse(request.query);
+    if (!input.success) throw new HttpStatusError(400, "invalid career view query");
+    if (!options.careerService.queryViewConfiguration) throw new HttpStatusError(501, "career view configurations are unavailable");
+    return CareerViewPageResponseSchema.parse(await options.careerService.queryViewConfiguration(principal.user.id, viewId, input.data.cursor, input.data.limit));
+  });
 
   app.get(`${API_PREFIX}/career/records`, { preHandler }, async (request) => {
     const principal = requireAuth(request);
@@ -266,6 +385,56 @@ export function registerCareerRoutes(
         .send(recordResponse(record));
     },
   );
+
+  app.put(`${API_PREFIX}/career/records/:recordId/relations`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { recordId } = parseParams(CareerRecordIdParamsSchema, request);
+    const input = parseBody(ReplaceCareerRelationTargetsSchema, request);
+    if (!options.careerService.replaceTargets) throw new HttpStatusError(501, "career relations are unavailable");
+    const record = await options.careerService.replaceTargets(principal.user.id, recordId, input.propertyId, input.targetIds, expectedVersion(request));
+    return reply.header("etag", formatResourceEtag(record.version)).send(recordResponse(record));
+  });
+
+  app.get(`${API_PREFIX}/career/records/:recordId/relations`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const { recordId } = parseParams(CareerRecordIdParamsSchema, request);
+    const query = ListCareerRelationTargetsQuerySchema.safeParse(request.query);
+    if (!query.success) throw new HttpStatusError(400, "invalid relation target query");
+    if (!options.careerService.listRelationTargets) throw new HttpStatusError(501, "career relations are unavailable");
+    return { data: await options.careerService.listRelationTargets(principal.user.id, recordId, query.data.propertyId) };
+  });
+
+  app.post(`${API_PREFIX}/career/records/:recordId/move/preview`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const { recordId } = parseParams(CareerRecordIdParamsSchema, request);
+    const input = parseBody(PreviewCareerCategoryMoveSchema, request);
+    if (!options.careerService.previewCategoryMove) throw new HttpStatusError(501, "career category move is unavailable");
+    return { data: CareerCategoryMovePreviewSchema.parse(await options.careerService.previewCategoryMove(principal.user.id, recordId, input.targetCategoryId)) };
+  });
+
+  app.post(`${API_PREFIX}/career/records/:recordId/move`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { recordId } = parseParams(CareerRecordIdParamsSchema, request);
+    const input = CareerCategoryMoveCommitSchema.parse({ ...parseBody(CommitCareerCategoryMoveRequestSchema, request), recordId });
+    if (expectedVersion(request) !== input.expectedVersion) throw new HttpStatusError(400, "If-Match and expectedVersion must agree");
+    if (!options.careerService.commitCategoryMove) throw new HttpStatusError(501, "career category move is unavailable");
+    const record = await options.careerService.commitCategoryMove(principal.user.id, recordId, input);
+    return reply.header("etag", formatResourceEtag(record.version)).send(recordResponse(record));
+  });
+
+  app.post(`${API_PREFIX}/career/formulas/preview`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const input = parseBody(PreviewCareerFormulaSchema, request);
+    if (!options.careerService.previewFormula) throw new HttpStatusError(501, "career formula preview is unavailable");
+    return { data: CareerFormulaPreviewSchema.parse(await options.careerService.previewFormula(principal.user.id, input)) };
+  });
+
+  app.post(`${API_PREFIX}/career/rollups/preview`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const input = parseBody(PreviewCareerRollupSchema, request);
+    if (!options.careerService.previewRollup) throw new HttpStatusError(501, "career rollup preview is unavailable");
+    return { data: CareerRollupPreviewSchema.parse(await options.careerService.previewRollup(principal.user.id, input)) };
+  });
 
   app.post(
     `${API_PREFIX}/career/records/:recordId/links`,

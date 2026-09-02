@@ -1,224 +1,153 @@
 "use client";
 
-import type { CareerRecordListItem } from "@expresso/contracts";
+import type { CareerCategory, CareerRecordListItem } from "@expresso/contracts";
+import type { CSSProperties, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
-import { MarkdownBody } from "@/components/ui/Markdown";
+import { CareerDocumentEditor } from "@/features/career-editor/editor/CareerDocumentEditor";
+import { AiProposalPanel, type AiPromptRequest } from "@/features/career-editor/ai/AiProposalPanel";
+import { useCareerEditorSession } from "@/features/career-editor/session/useCareerEditorSession";
 
 import styles from "./DocumentPanel.module.css";
 
-/** 05 카테고리별 빠른 액션. 첫 항목만 시그니처 지면을 쓴다. */
-const QUICK_ACTIONS: Record<string, readonly string[]> = {
-  experience: ["이어서 질문받기", "성과를 숫자로", "문장 다듬기", "STAR로 재구성"],
-  project: ["성과를 숫자로", "기술 선택 이유 추가", "회고 쓰기"],
-  education_history: ["성과 물어보기", "이력서 문장으로", "영문으로 번역"],
-  certification_award: ["증빙 연결하기", "유효기간 확인", "영문 표기 정리"],
-  academic_writing: ["스킬로 올리기", "요약 3문장", "영문으로 번역"],
-  activity_leadership: ["성과를 숫자로", "규모 적어두기", "문장 다듬기"],
-  skill_tool: ["숫자 연결하기", "비슷한 스킬 묶기", "영문 표기 정리"],
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  draft: "초안",
-  organized: "정리됨",
-  verified: "검증됨",
-};
-
-function statusLabel(record: CareerRecordListItem): string {
-  if (record.isEmpty) return "비어 있음";
-  return STATUS_LABEL[record.status] ?? record.status;
-}
-
-function periodText(record: CareerRecordListItem): string | null {
-  if (!record.periodFrom) return null;
-  const from = record.periodFrom.slice(0, 7).replace("-", ".");
-  if (!record.periodTo) return `${from} – 현재`;
-  return `${from} – ${record.periodTo.slice(0, 7).replace("-", ".")}`;
-}
-
-const ORIGIN_LABEL: Record<string, string> = {
-  manual: "직접 작성",
-  ai: "AI 정리",
-  interview: "AI 대화",
-  import: "가져오기",
-};
+const DEFAULT_PANEL_WIDTH = 680;
+const MAX_PANEL_WIDTH = 900;
 
 export function DocumentPanel({
   record,
-  categoryKey,
-  categoryName,
+  category,
   onClose,
+  onExpand,
+  aiRequest,
+  onAiRequestHandled,
 }: {
   record: CareerRecordListItem | null;
-  categoryKey: string;
-  categoryName: string;
+  category: CareerCategory;
   onClose: () => void;
+  onExpand?: () => void;
+  aiRequest?: AiPromptRequest | null | undefined;
+  onAiRequestHandled?: (() => void) | undefined;
 }) {
-  const quickActions = QUICK_ACTIONS[categoryKey] ?? QUICK_ACTIONS.experience!;
+  const [width, setWidth] = useState(DEFAULT_PANEL_WIDTH);
+  const [visibleRecord, setVisibleRecord] = useState(record);
+  const [resizing, setResizing] = useState(false);
+  const [editorAiRequest, setEditorAiRequest] = useState<AiPromptRequest | null>(null);
+  const drag = useRef<{ pointerId: number; startX: number; startWidth: number } | null>(null);
+  const panelRecord = record ?? visibleRecord;
+
+  useEffect(() => {
+    if (record) setVisibleRecord(record);
+    setEditorAiRequest(null);
+  }, [record]);
+
+  const requestedPrompt = editorAiRequest ?? aiRequest;
+  const handleAiRequest = () => {
+    if (requestedPrompt?.id === aiRequest?.id) onAiRequestHandled?.();
+    setEditorAiRequest(null);
+  };
+
+  const clampWidth = useCallback((next: number) => {
+    const viewportLimit = typeof window === "undefined" ? MAX_PANEL_WIDTH : window.innerWidth - 64;
+    return Math.round(Math.min(Math.max(next, 360), Math.max(360, Math.min(MAX_PANEL_WIDTH, viewportLimit))));
+  }, []);
+
+  useEffect(() => {
+    if (!resizing) return;
+    const previousCursor = document.body.style.cursor;
+    const previousUserSelect = document.body.style.userSelect;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    const move = (event: PointerEvent) => {
+      if (!drag.current) return;
+      setWidth(clampWidth(drag.current.startWidth + drag.current.startX - event.clientX));
+    };
+    const finish = () => {
+      drag.current = null;
+      setResizing(false);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", finish, { once: true });
+    window.addEventListener("pointercancel", finish, { once: true });
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", finish);
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousUserSelect;
+    };
+  }, [clampWidth, resizing]);
+
+  const resizeFromKeyboard = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "ArrowLeft") setWidth((current) => clampWidth(current + 24));
+    else if (event.key === "ArrowRight") setWidth((current) => clampWidth(current - 24));
+    else if (event.key === "Home") setWidth(360);
+    else if (event.key === "End") setWidth(clampWidth(MAX_PANEL_WIDTH));
+    else return;
+    event.preventDefault();
+  };
+
+  const startResize = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    drag.current = { pointerId: event.pointerId, startX: event.clientX, startWidth: width };
+    setResizing(true);
+  };
 
   return (
     <aside
       className={styles.panel}
       aria-label="문서 패널"
-      /*
-       * 넓은 화면에서 이 패널은 늘 자리에 있고 고른 기록이 없으면 빈 상태를
-       * 보여 준다. 좁은 화면에서는 그럴 자리가 없어 **고른 것이 있을 때만**
-       * 전면 시트로 올라온다. 어느 쪽인지는 CSS가 이 표시를 보고 정한다.
-       */
+      aria-hidden={record ? undefined : true}
       data-open={record ? "true" : "false"}
+      data-resizing={resizing ? "true" : "false"}
+      style={{ "--career-drawer-width": `${width}px` } as CSSProperties}
     >
+      <div
+        className={styles.resizeHandle}
+        role="separator"
+        aria-label="문서 패널 너비 조절"
+        aria-orientation="vertical"
+        aria-valuemin={360}
+        aria-valuemax={MAX_PANEL_WIDTH}
+        aria-valuenow={width}
+        tabIndex={record ? 0 : -1}
+        onKeyDown={resizeFromKeyboard}
+        onPointerDown={startResize}
+      />
       <div className={styles.head}>
-        <button type="button" className={styles.headAction} aria-label="넓게 보기">
+        <button type="button" className={styles.headAction} aria-label="넓게 보기" disabled={!panelRecord || !onExpand} onClick={onExpand}>
           <Icon name="arrows-out-simple" size={15} />
         </button>
-        <span className={styles.headLabel}>{categoryName} · 문서</span>
+        <span className={styles.headLabel}>{category.name} · 문서</span>
         <div className={styles.headRight}>
-          <span className={styles.headLabel}>{record ? "저장됨" : ""}</span>
+          <span className={styles.headLabel}>{panelRecord ? "저장됨" : ""}</span>
           <button type="button" className={styles.headAction} aria-label="닫기" onClick={onClose}>
             <Icon name="x" size={15} />
           </button>
         </div>
       </div>
 
-      {record === null ? (
-        <div className={styles.none}>
-          <p className={styles.noneText}>
-            목록에서 기록을 고르면
-            <br />
-            여기에서 바로 고칠 수 있습니다
-          </p>
-        </div>
-      ) : (
+      {panelRecord ? (
         <>
           <div className={styles.body}>
-            <div className={styles.title}>{record.title || "제목 없음"}</div>
-
-            <div className={styles.properties}>
-              <div className={styles.propertyRow}>
-                <span className={styles.propertyLabel}>
-                  <Icon name="circle-half" size={13} color="var(--ex-fg-muted)" />
-                  <span className={styles.propertyLabelText}>상태</span>
-                </span>
-                <span>
-                  <span
-                    className={
-                      record.status === "draft" || record.isEmpty
-                        ? styles.chip
-                        : styles.chipSignature
-                    }
-                  >
-                    {statusLabel(record)}
-                  </span>
-                </span>
-              </div>
-
-              <div className={styles.propertyRow}>
-                <span className={styles.propertyLabel}>
-                  <Icon name="calendar-blank" size={13} color="var(--ex-fg-muted)" />
-                  <span className={styles.propertyLabelText}>시기</span>
-                </span>
-                <span className={styles.propertyValue}>
-                  {periodText(record) ?? "—"}
-                </span>
-              </div>
-
-              <div className={styles.propertyRow}>
-                <span className={styles.propertyLabel}>
-                  <Icon name="chat-circle-dots" size={13} color="var(--ex-fg-muted)" />
-                  <span className={styles.propertyLabelText}>출처</span>
-                </span>
-                <span className={styles.propertyValue}>
-                  {ORIGIN_LABEL[record.origin] ?? record.origin}
-                </span>
-              </div>
-
-              <div className={styles.propertyRow}>
-                <span className={styles.propertyLabel}>
-                  <Icon name="link-simple" size={13} color="var(--ex-fg-muted)" />
-                  <span className={styles.propertyLabelText}>사용처</span>
-                </span>
-                <span className={styles.propertyValue}>
-                  {record.usedInCount > 0 ? `${record.usedInCount}곳` : "—"}
-                </span>
-              </div>
-
-              {/* 카테고리 스키마가 정의한 속성만 보여준다 */}
-              {Object.entries(record.properties).map(([key, value]) => (
-                <div key={key} className={styles.propertyRow}>
-                  <span className={styles.propertyLabel}>
-                    <Icon name="tag" size={13} color="var(--ex-fg-muted)" />
-                    <span className={styles.propertyLabelText}>{key}</span>
-                  </span>
-                  <span>
-                    {Array.isArray(value) ? (
-                      <span className={styles.propertyChips}>
-                        {value.map((item) => (
-                          <span key={item} className={styles.chip}>
-                            {item}
-                          </span>
-                        ))}
-                      </span>
-                    ) : (
-                      <span className={styles.propertyValue}>{String(value)}</span>
-                    )}
-                  </span>
-                </div>
-              ))}
-
-              <div className={styles.propertyRow}>
-                <span className={styles.propertyLabel}>
-                  <Icon name="plus" size={13} color="var(--ex-border-firm)" />
-                  <span className={styles.propertyLabelText}>속성 추가</span>
-                </span>
-                <span />
-              </div>
-            </div>
-
-            <div className={styles.divider} />
-
             <div className={styles.blocks}>
-              {/* 기록 본문은 마크다운이다(`record.body_md`). 평문으로 그리면
-                  STAR로 정리된 제목과 항목이 한 덩어리로 붙는다. */}
-              {record.bodyMd ? (
-                <MarkdownBody className={styles.blockText}>{record.bodyMd}</MarkdownBody>
-              ) : null}
-              <div className={styles.placeholder}>
-                <Icon name="plus" size={14} color="var(--ex-border-firm)" />
-                <span className={styles.placeholderText}>
-                  입력하거나 / 를 눌러 명령어를 사용하세요
-                </span>
-              </div>
+              <CareerDocumentEditor key={panelRecord.id} recordId={panelRecord.id} mode="peek" record={panelRecord} category={category} showAiProposal={false} onAiRequest={setEditorAiRequest} />
             </div>
           </div>
 
           <div className={styles.foot}>
-            <div className={styles.quickActions}>
-              {quickActions.map((action, index) => (
-                <button
-                  key={action}
-                  type="button"
-                  className={`${styles.quickAction} ${
-                    index === 0 ? styles.quickActionSignature : ""
-                  }`}
-                >
-                  {action}
-                </button>
-              ))}
-            </div>
-            <div className={styles.composer}>
-              <Icon name="coffee" weight="fill" size={14} color="var(--ex-accent-text)" />
-              <input
-                className={styles.composerInput}
-                placeholder="이 문서에 대해 바리스타에게 요청하기"
-                aria-label="바리스타에게 요청"
-              />
-              <button type="button" className={styles.composerSend} aria-label="보내기">
-                <Icon name="arrow-up" weight="fill" size={12} color="var(--ex-fg-on-accent)" />
-              </button>
-            </div>
+            <DocumentPanelAiDock key={panelRecord.id} recordId={panelRecord.id} category={category} aiRequest={requestedPrompt} onAiRequestHandled={handleAiRequest} />
           </div>
         </>
-      )}
+      ) : null}
     </aside>
   );
+}
+
+function DocumentPanelAiDock({ recordId, category, aiRequest, onAiRequestHandled }: { recordId: string; category: CareerCategory; aiRequest?: AiPromptRequest | null | undefined; onAiRequestHandled?: (() => void) | undefined }) {
+  const { snapshot, document } = useCareerEditorSession(recordId);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return <AiProposalPanel recordId={recordId} documentVersion={snapshot.documentVersion} selectedBlockIds={mounted && document?.content[0]?.id ? [document.content[0].id] : []} announcedProposal={mounted ? snapshot.proposal : null} requestedPrompt={mounted ? aiRequest : null} onRequestHandled={onAiRequestHandled} document={mounted ? document : null} definitions={category.propertySchemaV2 ?? []} />;
 }

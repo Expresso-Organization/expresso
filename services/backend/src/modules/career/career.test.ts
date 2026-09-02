@@ -31,6 +31,17 @@ describe("career property validation", () => {
       unknown: true,
     })).toThrow(CareerError);
   });
+
+  it("accepts matching v2 values and keeps computed fields read-only", () => {
+    const propertyId = "00000000-0000-4000-8000-000000000001";
+    const definitions = [{ id: propertyId, key: "rating", name: "평점", type: "number" as const, required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null }];
+    expect(() => validateCareerProperties({}, { rating: { type: "number", value: 4.5 } }, definitions)).not.toThrow();
+    expect(() => validateCareerProperties({}, { rating: { type: "text", value: "4.5" } }, definitions)).toThrow(CareerError);
+    expect(() => validateCareerProperties({}, { formula: { type: "formula", value: 1, diagnostics: [] } }, [{ ...definitions[0]!, key: "formula", type: "formula" }])).toThrow(CareerError);
+    const timestamp = { ...definitions[0]!, key: "timestamp", type: "created_time" as const };
+    expect(() => validateCareerProperties({}, { timestamp: { type: "created_time", value: "2026-09-01T00:00:00.000Z" } }, [timestamp])).not.toThrow();
+    expect(() => validateCareerProperties({}, { timestamp: { type: "created_time", value: "2026-09-01T00:00:00.000Z" } }, [{ ...timestamp, system: true }])).toThrow(CareerError);
+  });
 });
 
 describe("record-grounded skills", () => {
