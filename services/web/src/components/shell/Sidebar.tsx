@@ -1,11 +1,12 @@
 import type { CareerCategory } from "@expresso/contracts";
 import Link from "next/link";
 
-import { LogoMark, Wordmark } from "@/components/brand/Logo";
+import { GlideMenu } from "@/components/ui/GlideMenu";
 import { Icon } from "@/components/ui/Icon";
 
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { SidebarCategories } from "./SidebarCategories";
+import { SidebarFrame } from "./SidebarFrame";
 import { SidebarNav, type SidebarSection } from "./SidebarNav";
 import styles from "./Sidebar.module.css";
 
@@ -56,21 +57,57 @@ export function Sidebar({
   const quotaRatio = !quotaLimit ? 0 : Math.min(1, quotaUsed / quotaLimit);
 
   return (
-    <aside className={styles.sidebar}>
-      <div className={styles.scroll}>
-        <div className={styles.brand}>
-          <LogoMark size={22} />
-          <span className={styles.brandName}>
-            <Wordmark />
-          </span>
-          <Icon name="caret-up-down" size={13} color="var(--ex-fg-muted)" />
-        </div>
+    <SidebarFrame
+      footer={
+        <>
+          <div className={styles.quotaSlot}>
+            <div className={`${styles.copy} ${styles.quotaCard}`}>
+              <div className={styles.quotaHead}>
+                <span className={styles.quotaLabel}>이번 달 추출</span>
+                <span className={styles.quotaValue}>
+                  {quotaUsed} / {quotaLimit ?? "무제한"}
+                </span>
+              </div>
+              <div
+                className={styles.quotaTrack}
+                role="meter"
+                aria-valuenow={quotaUsed}
+                aria-valuemin={0}
+                aria-valuemax={quotaLimit ?? undefined}
+                aria-label={quotaLimit === null
+                  ? `이번 달 추출 ${quotaUsed}회 · 상한 없음`
+                  : `이번 달 추출 ${quotaLimit}회 중 ${quotaUsed}회 사용`}
+              >
+                <div
+                  className={styles.quotaFill}
+                  style={{ width: `${quotaRatio * 100}%` }}
+                />
+              </div>
+              <Link href="/account" className={styles.upgradeLink}>
+                Double Shot 추가
+              </Link>
+            </div>
+          </div>
+          <Link
+            href="/account"
+            className={`${styles.row} ${styles.userLink}`}
+            title={`${displayName} · 설정`}
+          >
+            <span className={styles.avatar}>{displayName.slice(0, 1)}</span>
+            <span className={`${styles.copy} ${styles.userName}`}>{displayName}</span>
+            <span className={`${styles.copy} ${styles.userAction}`}>
+              <Icon name="gear-six" size={14} />
+            </span>
+          </Link>
+        </>
+      }
+    >
+      <SidebarNav jobCount={jobCount} />
 
-        <SidebarNav jobCount={jobCount} />
-
-        {portfolios.length > 0 ? (
-          <>
-            <div className={`${styles.groupHead} ${styles.groupHeadFirst}`}>
+      {portfolios.length > 0 ? (
+        <>
+          <div className={`${styles.groupHead} ${styles.groupHeadFirst}`}>
+            <div className={`${styles.copy} ${styles.groupHeadRow}`}>
               <span className={styles.groupLabel}>내 포트폴리오</span>
               <div className={styles.groupActions}>
                 <span className={styles.groupCount}>{portfolios.length}</span>
@@ -79,49 +116,56 @@ export function Sidebar({
                 </button>
               </div>
             </div>
-            <div className={styles.portfolios}>
-              {portfolios.map((portfolio) => (
-                <div key={portfolio.id} className={styles.portfolioItem}>
-                  <span className={styles.thumb}>
-                    <span
-                      className={`${styles.thumbDot} ${
-                        portfolio.status === "published"
-                          ? styles.thumbDotPublished
-                          : styles.thumbDotDraft
-                      }`}
-                    />
-                  </span>
-                  <div className={styles.portfolioBody}>
-                    <div className={styles.portfolioName}>{portfolio.name}</div>
-                    <div className={styles.portfolioMeta}>{portfolio.meta}</div>
-                  </div>
-                  {portfolio.status === "draft" ? (
-                    <span className={styles.draftChip}>초안</span>
-                  ) : (
-                    <div className={styles.portfolioStat}>
-                      <div className={styles.portfolioVisits}>
-                        {portfolio.visits?.toLocaleString("ko-KR") ?? "—"}
-                      </div>
-                      <div
-                        className={`${styles.portfolioDelta} ${
-                          portfolio.deltaTone === "quiet"
-                            ? styles.portfolioDeltaQuiet
-                            : ""
-                        }`}
-                      >
-                        {portfolio.delta}
-                      </div>
-                    </div>
-                  )}
+          </div>
+          <GlideMenu className={`${styles.portfolios} ${styles.navGroup}`}>
+            {portfolios.map((portfolio) => (
+              <div
+                key={portfolio.id}
+                data-row
+                title={portfolio.name}
+                className={`${styles.row} ${styles.portfolioItem}`}
+              >
+                <span className={styles.thumb}>
+                  <span
+                    className={`${styles.thumbDot} ${
+                      portfolio.status === "published"
+                        ? styles.thumbDotPublished
+                        : styles.thumbDotDraft
+                    }`}
+                  />
+                </span>
+                <div className={`${styles.copy} ${styles.portfolioBody}`}>
+                  <div className={styles.portfolioName}>{portfolio.name}</div>
+                  <div className={styles.portfolioMeta}>{portfolio.meta}</div>
                 </div>
-              ))}
-            </div>
-          </>
-        ) : null}
+                {portfolio.status === "draft" ? (
+                  <span className={`${styles.copy} ${styles.draftChip}`}>초안</span>
+                ) : (
+                  <div className={`${styles.copy} ${styles.portfolioStat}`}>
+                    <div className={styles.portfolioVisits}>
+                      {portfolio.visits?.toLocaleString("ko-KR") ?? "—"}
+                    </div>
+                    <div
+                      className={`${styles.portfolioDelta} ${
+                        portfolio.deltaTone === "quiet"
+                          ? styles.portfolioDeltaQuiet
+                          : ""
+                      }`}
+                    >
+                      {portfolio.delta}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </GlideMenu>
+        </>
+      ) : null}
 
-        {interests.length > 0 ? (
-          <>
-            <div className={styles.groupHead}>
+      {interests.length > 0 ? (
+        <>
+          <div className={styles.groupHead}>
+            <div className={`${styles.copy} ${styles.groupHeadRow}`}>
               <span className={styles.groupLabel}>관심 공고</span>
               <div className={styles.groupActions}>
                 <span className={styles.groupCount}>{interests.length}</span>
@@ -130,36 +174,45 @@ export function Sidebar({
                 </button>
               </div>
             </div>
-            <div className={styles.interests}>
-              {interests.map((interest) => (
-                <div key={interest.id} className={styles.interestItem}>
-                  <CompanyAvatar
-                    company={{
-                      name: interest.company,
-                      initial: interest.initial,
-                      logoUrl: interest.logoUrl,
-                    }}
-                    className={styles.initial}
-                  />
-                  <span className={styles.interestName}>{interest.label}</span>
-                  {interest.score === null ? (
-                    <span className={styles.pending}>분석 대기</span>
-                  ) : (
-                    <span
-                      className={`${styles.score} ${
-                        interest.score >= 85 ? styles.scoreHigh : styles.scoreMid
-                      }`}
-                    >
-                      {interest.score}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </>
-        ) : null}
+          </div>
+          <GlideMenu className={`${styles.interests} ${styles.navGroup}`}>
+            {interests.map((interest) => (
+              <div
+                key={interest.id}
+                data-row
+                title={interest.label}
+                className={`${styles.row} ${styles.interestItem}`}
+              >
+                <CompanyAvatar
+                  company={{
+                    name: interest.company,
+                    initial: interest.initial,
+                    logoUrl: interest.logoUrl,
+                  }}
+                  className={styles.initial}
+                />
+                <span className={`${styles.copy} ${styles.interestName}`}>
+                  {interest.label}
+                </span>
+                {interest.score === null ? (
+                  <span className={`${styles.copy} ${styles.pending}`}>분석 대기</span>
+                ) : (
+                  <span
+                    className={`${styles.copy} ${styles.score} ${
+                      interest.score >= 85 ? styles.scoreHigh : styles.scoreMid
+                    }`}
+                  >
+                    {interest.score}
+                  </span>
+                )}
+              </div>
+            ))}
+          </GlideMenu>
+        </>
+      ) : null}
 
-        <div className={styles.groupHead}>
+      <div className={styles.groupHead}>
+        <div className={`${styles.copy} ${styles.groupHeadRow}`}>
           <span className={styles.groupLabel}>내 커리어</span>
           <div className={styles.groupActions}>
             <button type="button" className={styles.groupAction} aria-label="카테고리 더 보기">
@@ -170,44 +223,8 @@ export function Sidebar({
             </button>
           </div>
         </div>
-        <SidebarCategories categories={categories} />
       </div>
-
-      <div className={styles.footer}>
-        <div className={styles.quotaCard}>
-          <div className={styles.quotaHead}>
-            <span className={styles.quotaLabel}>이번 달 추출</span>
-            <span className={styles.quotaValue}>
-              {quotaUsed} / {quotaLimit ?? "무제한"}
-            </span>
-          </div>
-          <div
-            className={styles.quotaTrack}
-            role="meter"
-            aria-valuenow={quotaUsed}
-            aria-valuemin={0}
-            aria-valuemax={quotaLimit ?? undefined}
-            aria-label={quotaLimit === null
-              ? `이번 달 추출 ${quotaUsed}회 · 상한 없음`
-              : `이번 달 추출 ${quotaLimit}회 중 ${quotaUsed}회 사용`}
-          >
-            <div
-              className={styles.quotaFill}
-              style={{ width: `${quotaRatio * 100}%` }}
-            />
-          </div>
-          <Link href="/account" className={styles.upgradeLink}>
-            Double Shot 추가
-          </Link>
-        </div>
-        <div className={styles.user}>
-          <span className={styles.avatar}>{displayName.slice(0, 1)}</span>
-          <span className={styles.userName}>{displayName}</span>
-          <Link href="/account" className={styles.userAction} aria-label="설정">
-            <Icon name="gear-six" size={14} />
-          </Link>
-        </div>
-      </div>
-    </aside>
+      <SidebarCategories categories={categories} />
+    </SidebarFrame>
   );
 }

@@ -1,0 +1,40 @@
+/*
+ * 줄 사이를 미끄러지는 호버 하이라이트.
+ *
+ * 줄마다 배경을 켜고 끄면 목록 위로 손을 옮길 때 배경이 깜빡깜빡 갈아입는다.
+ * 하이라이트를 **묶음당 하나만** 두고 그것이 자리를 옮기면, 손이 가는 길과
+ * 배경이 가는 길이 같아진다.
+ */
+
+.group {
+  position: relative;
+}
+
+/*
+ * 폭은 부르는 쪽이 정한다. 사이드바처럼 줄이 좁아지는 자리는 이 변수를 함께
+ * 바꿔서 하이라이트가 줄 밖으로 삐져나가지 않게 한다.
+ */
+.highlight {
+  position: absolute;
+  left: 0;
+  width: var(--ex-glide-width, 100%);
+  z-index: 0;
+  border-radius: 7px;
+  background: var(--ex-bg-tint);
+  pointer-events: none;
+  transition:
+    top var(--ex-motion-glide),
+    height var(--ex-motion-glide),
+    width var(--ex-motion-quick),
+    opacity var(--ex-motion-quick);
+}
+
+/*
+ * 처음 나타날 때는 옮겨 오지 않는다.
+ *
+ * 보이지 않던 하이라이트가 `top: 0`에서 출발하면, 목록 가운데 줄에 손을 얹었을
+ * 뿐인데 맨 위에서 무언가가 미끄러져 내려온다.
+ */
+.highlightIdle {
+  transition: opacity var(--ex-motion-quick);
+}
