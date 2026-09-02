@@ -716,6 +716,42 @@ class RecordRepairTests(unittest.TestCase):
     def test_profile_mean_error_targets_every_record_when_count_is_known(self):
         self.assertEqual(invalid_record_indexes(["body_length_mean"], record_count=3), [0, 1, 2])
 
+    def test_profile_length_error_is_forwarded_to_each_record_repair_prompt(self):
+        planned = payload()
+        planned["bodyLengthPlan"] = {
+            "distributionVersion": "clipped-normal-v2",
+            "targetMinChars": 40,
+            "targetMaxChars": 800,
+            "recordMaxChars": 1000,
+            "populationMeanChars": 300,
+            "populationStdChars": 160,
+            "targetMeanChars": 380,
+            "toleranceChars": 57,
+            "band": "moderately_long",
+        }
+        calls = []
+
+        def unchanged_post_json(url, request_payload, timeout):
+            calls.append(request_payload)
+            repair_input = json.loads(request_payload["messages"][1]["content"])
+            index = 0 if repair_input["event"]["eventId"] == "ev1" else 1
+            return {"message": {"content": json.dumps(draft()["records"][index], ensure_ascii=False)}}
+
+        repair_qwen_records(
+            planned,
+            draft(),
+            model="qwen-test",
+            base_url="http://localhost:11434",
+            timeout=30,
+            max_rounds=1,
+            post_json=unchanged_post_json,
+        )
+
+        self.assertEqual(len(calls), 2)
+        self.assertTrue(
+            all("평균 본문 길이를 380자" in call["messages"][0]["content"] for call in calls)
+        )
+
     def test_builds_repair_schema_for_one_existing_record(self):
         changed_payload = payload()
         changed_payload["events"][1]["bodyLengthTarget"] = {

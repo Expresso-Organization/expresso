@@ -792,6 +792,8 @@ def repair_qwen_records(
             record_errors = [
                 error for error in validation["errors"] if error.startswith(f"record_{index + 1}_")
             ]
+            if "body_length_mean" in validation["errors"]:
+                record_errors.append("body_length_mean")
             event = input_payload["events"][index]
             repair_prompt = (
                 prompt
