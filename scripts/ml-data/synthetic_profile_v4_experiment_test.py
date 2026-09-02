@@ -532,6 +532,30 @@ class SkeletonCompositionTests(unittest.TestCase):
         self.assertLessEqual(abs(final_length - 120), 30)
         self.assertRegex(sanitized["detailMd"], r"[.!?]$")
 
+    def test_sanitizer_removes_partial_paraphrase_of_long_skeleton(self):
+        event = {
+            "eventId": "ev1",
+            "categoryKey": "experience",
+            "skeletonLead": (
+                "보험회사 영업 지점장으로 근무하며 마케팅 프로젝트를 수행했고, "
+                "군 생활 중 소대장으로 구성원을 관리했다."
+            ),
+            "bodyLengthTarget": {"targetChars": 220, "minChars": 120, "maxChars": 260},
+        }
+        record = {
+            "title": "영업 프로젝트 수행",
+            "properties": {},
+            "detailMd": (
+                "보험회사 영업 지점장으로 근무하며 고객 유치 프로젝트를 기획하고 실행했다. "
+                "초기에는 고객 요구를 분류하고 팀이 확인할 항목을 문서로 정리했다."
+            ),
+        }
+
+        sanitized = sanitize_creative_record(event, record, {})
+
+        self.assertNotIn("보험회사 영업 지점장으로 근무하며", sanitized["detailMd"])
+        self.assertIn("고객 요구를 분류", sanitized["detailMd"])
+
     def test_discards_unfinished_detail_tail_before_length_selection(self):
         event = {
             "eventId": "ev1",

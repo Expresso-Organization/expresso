@@ -8,6 +8,7 @@ from pathlib import Path
 
 from synthetic_profile_v4_batch import (
     _backbone_events,
+    _infer_minimum_experience_years,
     band_distribution_max_deviation,
     build_profile_specs,
     build_shards,
@@ -73,6 +74,20 @@ YP_CALIBRATION = {
 
 
 class SyntheticProfileV4BatchTest(unittest.TestCase):
+    def test_infers_minimum_experience_from_source_fact(self):
+        self.assertEqual(
+            _infer_minimum_experience_years(
+                {"summary": "이십 년간 회사 업무를 맡았다.", "experienceLevel": "NEW"}
+            ),
+            20,
+        )
+        self.assertEqual(
+            _infer_minimum_experience_years(
+                {"summary": "회사에서 팀장 역할을 맡았다.", "experienceLevel": "NEW"}
+            ),
+            6,
+        )
+
     def test_work_backbone_includes_honestly_synthetic_skill_record(self):
         events = _backbone_events(
             {"domain": "ICT", "experienceYears": 2},
@@ -271,7 +286,7 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
         self.assertTrue(all(event["renderMode"] == "rewrite_evidence" for event in source_events))
         self.assertTrue(all(event["skeletonLead"] == "" for event in source_events))
 
-    def test_sparse_domain_reuses_same_domain_atoms_without_cross_domain_fallback(self):
+    def test_each_profile_uses_one_domain_atom_and_reuses_only_when_pool_is_sparse(self):
         specs = build_profile_specs(
             profile_count=10,
             family_size=10,
@@ -282,7 +297,9 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
             spec["domain"] = "RND"
             spec["targetRoles"] = ["ML · AI", "데이터"]
             spec["targetRecordCount"] = 20
-        rnd_atoms = _atoms(100)["RND"]
+        rnd_atoms = _atoms(3)["RND"]
+        for index, atom in enumerate(rnd_atoms):
+            atom["sourceFamilyId"] = f"aih-family-rnd-sparse-{index}"
 
         payloads = build_synthetic_inputs(
             specs,
@@ -298,7 +315,8 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
             for event in payload["events"]
             for atom in event["provenance"]["narrativeEvidence"]
         ]
-        self.assertTrue(used)
+        self.assertEqual(len(used), len(payloads))
+        self.assertTrue(all(sum(bool(event["provenance"]["narrativeEvidence"]) for event in payload["events"]) == 1 for payload in payloads))
         self.assertTrue(all("-rnd-" in atom for atom in used))
         self.assertGreater(len(used), len(set(used)))
 
@@ -335,6 +353,10 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
             self.assertEqual(payload["targetRecordCount"], len(payload["events"]))
             self.assertEqual(payload["renderingPolicy"], "skeleton-grounded-creative-v1")
             self.assertEqual(set(payload["propertySchema"]), set(PROPERTY_SCHEMA))
+            self.assertEqual(
+                sum(bool(event["provenance"]["narrativeEvidence"]) for event in payload["events"]),
+                1,
+            )
             for event in payload["events"]:
                 self.assertEqual(set(event["propertyKeys"]), set(event["propertyValues"]))
                 property_counts[len(event["propertyKeys"])] += 1
@@ -346,6 +368,7 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
                 self.assertTrue(
                     event["provenance"]["surveyCalibration"]
                     or event["provenance"]["narrativeEvidence"]
+                    or event["provenance"]["syntheticFields"]
                 )
 
         self.assertTrue(all(len(splits) == 1 for splits in atom_splits.values()))
@@ -386,7 +409,7 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
                     "profileSeed": payload["profileSeed"],
                     "profileFamily": payload["profileFamily"],
                     "split": payload["split"],
-                    "promptVersion": "synthetic-profile-v4.3.1",
+                    "promptVersion": "synthetic-profile-v4.4",
                     "targetRecordCount": payload["targetRecordCount"],
                     "actualRecordCount": payload["targetRecordCount"],
                     "bodyLengthPlan": payload["bodyLengthPlan"],
@@ -434,7 +457,7 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
                         "profileSeed": spec["profileSeed"],
                         "profileFamily": spec["profileFamily"],
                         "split": spec["split"],
-                        "promptVersion": "synthetic-profile-v4.3.1",
+                        "promptVersion": "synthetic-profile-v4.4",
                         "actualBodyLengthMean": spec["bodyLengthPlan"]["targetMeanChars"],
                         "bodyLengthPlan": spec["bodyLengthPlan"],
                     },

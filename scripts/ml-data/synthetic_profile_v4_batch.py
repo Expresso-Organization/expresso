@@ -1,4 +1,4 @@
-"""YP2021·AI Hub 기반 합성 프로필 v4.2 대규모 배치 도구."""
+"""YP2021·AI Hub 기반 합성 프로필 v4.4 대규모 배치 도구."""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ from synthetic_profile_v4_experiment import (
 )
 
 
-PROMPT_VERSION = "synthetic-profile-v4.3.1"
+PROMPT_VERSION = "synthetic-profile-v4.4"
 DEFAULT_MODEL = "qwen3:30b-a3b-instruct-2507-q4_K_M"
 DEFAULT_SEEDS_PATH = (
     Path(__file__).parents[2]
@@ -542,6 +542,58 @@ def _month_offset(year: int, month: int, offset: int) -> str:
     return f"{absolute // 12:04d}-{absolute % 12 + 1:02d}"
 
 
+def _korean_number(value: str) -> int | None:
+    digits = {"일": 1, "이": 2, "삼": 3, "사": 4, "오": 5, "육": 6, "칠": 7, "팔": 8, "구": 9}
+    if value in digits:
+        return digits[value]
+    if value == "십":
+        return 10
+    if "십" in value:
+        left, right = value.split("십", 1)
+        tens = digits.get(left, 1) if left else 1
+        ones = digits.get(right, 0) if right else 0
+        return tens * 10 + ones
+    return None
+
+
+def _infer_minimum_experience_years(atom: dict[str, Any]) -> int:
+    """경력 골격과 프로필의 경력 연수가 정면으로 충돌하지 않게 하한을 추정한다."""
+    text = str(atom.get("summary", ""))
+    years = [
+        int(value)
+        for value in re.findall(r"(?<!\d)(\d{1,2})\s*(?:여\s*)?년", text)
+        if 0 < int(value) <= 40
+    ]
+    for value in re.findall(r"([일이삼사오육칠팔구십]{1,3})\s*(?:여\s*)?년", text):
+        parsed = _korean_number(value)
+        if parsed is not None and parsed <= 40:
+            years.append(parsed)
+    minimum = max(years, default=0)
+    if atom.get("experienceLevel") == "EXPERIENCED":
+        minimum = max(minimum, 3)
+    if any(marker in text for marker in ("회사", "직장", "근무", "업무", "인턴")):
+        minimum = max(minimum, 1)
+    if any(marker in text for marker in ("팀장", "지점장", "총괄", "관리자", "임원")):
+        minimum = max(minimum, 6)
+    return minimum
+
+
+def _career_stage(experience_years: int) -> str:
+    if experience_years <= 0:
+        return "new"
+    if experience_years <= 3:
+        return "early"
+    if experience_years <= 6:
+        return "mid"
+    return "experienced"
+
+
+def _object_with_particle(value: str) -> str:
+    last = value.rstrip()[-1]
+    has_batchim = "가" <= last <= "힣" and (ord(last) - ord("가")) % 28 != 0
+    return value + ("을" if has_batchim or not ("가" <= last <= "힣") else "를")
+
+
 def _event(
     category: str,
     facts: list[str],
@@ -608,7 +660,7 @@ def _backbone_events(spec: dict[str, Any], calibration: dict[str, Any], rng: ran
         events.append(
             _event(
                 "skill_tool",
-                [f"{config['role']} 업무에서 {tool}을 활용했다"],
+                [f"{config['role']} 업무에서 {_object_with_particle(tool)} 활용했다"],
                 survey=[f"{calibration['version']}:industry-occupation:{pair[0]}-{pair[1]}"],
                 synthetic=["tool_usage"],
             )
@@ -634,6 +686,64 @@ def _backbone_events(spec: dict[str, Any], calibration: dict[str, Any], rng: ran
             )
         )
     return events
+
+
+def _coherent_synthetic_events(spec: dict[str, Any]) -> list[dict[str, Any]]:
+    """한 직무권 안에서만 움직이는 보조 기록 골격을 만들고 합성임을 명시한다."""
+    config = DOMAIN_CONFIG[spec["domain"]]
+    area = config["industry"]
+    role = config["role"]
+    first_tool, second_tool = config["tools"][:2]
+    if spec["experienceYears"] <= 0:
+        templates = [
+            ("project", f"{area} 분야 수업에서 팀 과제의 요구사항 정리와 일정 관리를 맡았다"),
+            ("skill_tool", f"{role} 관련 과제를 수행하며 {_object_with_particle(first_tool)} 활용했다"),
+            ("education_history", f"{role} 기초 과정을 수강하고 학습 내용을 개인 노트로 정리했다"),
+            ("project", f"{area} 분야 사례를 조사해 문제와 해결 방향을 발표 자료로 만들었다"),
+            ("activity_leadership", f"직무 관련 스터디에서 자료 조사와 회의 기록을 담당했다"),
+            ("academic_writing", f"{area} 분야 사례를 비교해 짧은 분석 보고서를 작성했다"),
+            ("project", "팀 과제에서 구성원의 의견을 모아 작업 순서와 역할을 정리했다"),
+            ("skill_tool", f"반복 과제를 정리하기 위해 {_object_with_particle(second_tool)} 익혀 활용했다"),
+            ("activity_leadership", "교내 활동에서 일정과 준비 항목을 정리해 구성원에게 공유했다"),
+            ("academic_writing", "수업에서 다룬 자료의 근거를 확인하고 참고 내용을 문서로 남겼다"),
+            ("project", "과제 결과물의 오류를 점검하고 수정 사항을 팀원과 나누어 반영했다"),
+            ("skill_tool", f"{first_tool}으로 자료를 정리하고 결과를 검토하는 연습을 했다"),
+            ("activity_leadership", "스터디 구성원이 맡을 주제를 나누고 발표 순서를 조율했다"),
+            ("education_history", f"{role} 관련 실습 과정을 마치고 작업 과정을 회고로 정리했다"),
+            ("project", "제한된 일정 안에서 핵심 기능을 먼저 완성하는 방식으로 팀 과제를 진행했다"),
+            ("academic_writing", "과제 수행 중 확인한 문제와 수정 과정을 보고서에 기록했다"),
+            ("activity_leadership", "직무 사례 발표에서 질문을 모아 답변 자료를 정리했다"),
+            ("skill_tool", f"{second_tool}으로 여러 자료를 한 형식으로 정리했다"),
+            ("project", "기존 결과물의 사용 흐름을 살펴보고 불편한 부분을 수정하는 과제를 수행했다"),
+            ("education_history", "팀 피드백을 반영해 과제 결과물을 수정하고 제출 과정을 마쳤다"),
+        ]
+    else:
+        templates = [
+            ("experience", "업무를 시작한 뒤 반복되는 요청과 처리 순서를 개인 문서로 정리했다"),
+            ("project", f"{area} 분야의 작업 자료를 정리하는 내부 개선 과제에 참여했다"),
+            ("skill_tool", f"{role} 업무에서 {_object_with_particle(first_tool)} 활용해 자료를 작성하고 검토했다"),
+            ("project", "동료와 요구사항을 나누고 결과물을 함께 검토하는 협업 과제를 수행했다"),
+            ("activity_leadership", "직무 관련 사내 학습 모임에 참여해 사례를 정리하고 공유했다"),
+            ("academic_writing", f"{area} 분야의 업무 사례를 조사해 내부 보고서를 작성했다"),
+            ("experience", "업무 인수인계를 위해 절차와 주의사항을 문서로 정리했다"),
+            ("project", "반복되는 오류를 확인하고 점검 기준을 만드는 개선 작업에 참여했다"),
+            ("activity_leadership", "새 구성원에게 작업 절차를 공유하고 질문을 정리해 전달했다"),
+            ("skill_tool", f"{second_tool}으로 진행 상황과 검토 결과를 정리했다"),
+            ("experience", "여러 요청의 우선순위를 정하고 처리 상태를 동료와 공유했다"),
+            ("project", "흩어진 자료의 형식을 맞추고 팀이 함께 사용할 작업 기준을 만들었다"),
+            ("academic_writing", "업무 중 확인한 사례와 판단 근거를 비교해 문서로 남겼다"),
+            ("activity_leadership", "직무 학습 시간에 실무 사례를 준비해 동료들과 토론했다"),
+            ("skill_tool", f"{first_tool}과 {second_tool}을 함께 사용해 결과물을 점검했다"),
+            ("project", "중간 피드백을 반영해 작업 범위와 완료 기준을 다시 정리했다"),
+            ("experience", "처리 과정에서 발견한 문제를 기록하고 다음 업무 때 확인할 항목을 만들었다"),
+            ("activity_leadership", "팀 지식 공유 자리에서 작업 사례와 주의사항을 발표했다"),
+            ("project", "업무 흐름에서 시간이 오래 걸리는 단계를 찾아 정리 방식을 바꾸었다"),
+            ("experience", "완료한 업무의 결과와 남은 확인 사항을 다음 담당자에게 전달했다"),
+        ]
+    return [
+        _event(category, [fact], synthetic=["event_skeleton", "situation_detail", "work_process", "reflection"])
+        for category, fact in templates
+    ]
 
 
 def _weighted_choice_row(rows: list[dict[str, Any]], rng: random.Random) -> dict[str, Any]:
@@ -712,31 +822,39 @@ def build_synthetic_inputs(
     atom_offsets: Counter[tuple[str, str]] = Counter()
     raw_payloads = []
     for spec in specs:
-        rng = random.Random(_stable_int(seed, spec["profileSeed"]))
-        backbone = _backbone_events(spec, yp_calibration, rng)
-        target = spec["targetRecordCount"]
-        events = backbone[:target]
-        while len(events) < target:
-            queue_key = (spec["domain"], spec["split"])
-            queue = atom_queues.get(queue_key, [])
-            if not queue:
-                raise ValueError(
-                    f"no AI Hub atoms for domain {spec['domain']} and split {spec['split']}"
-                )
-            offset = atom_offsets[queue_key]
-            atom = queue[offset % len(queue)]
-            atom_offsets[queue_key] += 1
-            events.append(
-                _event(
-                    atom.get("normalizedCategoryKey")
-                    or _classify_atom(f"{atom.get('question', '')} {atom['summary']}"),
-                    [atom["summary"].rstrip(". ")],
-                    narrative=[atom["atomId"]],
-                    source_families=[atom.get("sourceFamilyId", atom["atomId"])],
-                    synthetic=["situation_detail", "work_process", "reflection"],
-                    render_mode="fixed_skeleton" if atom.get("normalized") else "rewrite_evidence",
-                )
+        queue_key = (spec["domain"], spec["split"])
+        queue = atom_queues.get(queue_key, [])
+        if not queue:
+            raise ValueError(
+                f"no AI Hub atoms for domain {spec['domain']} and split {spec['split']}"
             )
+        offset = atom_offsets[queue_key]
+        atom = queue[offset % len(queue)]
+        atom_offsets[queue_key] += 1
+        inferred_years = _infer_minimum_experience_years(atom)
+        if inferred_years > spec["experienceYears"]:
+            spec["experienceYears"] = inferred_years
+            spec["careerStage"] = _career_stage(inferred_years)
+
+        rng = random.Random(_stable_int(seed, spec["profileSeed"]))
+        primary_event = _event(
+            atom.get("normalizedCategoryKey")
+            or _classify_atom(f"{atom.get('question', '')} {atom['summary']}"),
+            [atom["summary"].rstrip(". ")],
+            narrative=[atom["atomId"]],
+            source_families=[atom.get("sourceFamilyId", atom["atomId"])],
+            synthetic=["situation_detail", "work_process", "reflection"],
+            render_mode="fixed_skeleton" if atom.get("normalized") else "rewrite_evidence",
+        )
+        event_candidates = [
+            primary_event,
+            *_backbone_events(spec, yp_calibration, rng),
+            *_coherent_synthetic_events(spec),
+        ]
+        target = spec["targetRecordCount"]
+        events = event_candidates[:target]
+        if len(events) != target:
+            raise ValueError(f"insufficient coherent events for {spec['profileSeed']}")
         raw_payloads.append(
             {
                 "schemaVersion": 4,
@@ -749,6 +867,8 @@ def build_synthetic_inputs(
                     "targetRoles": spec["targetRoles"],
                     "experienceYears": spec["experienceYears"],
                     "primaryGoal": spec["primaryGoal"],
+                    "anchorFact": atom["summary"],
+                    "sourceExperienceLevel": atom.get("experienceLevel"),
                 },
                 "targetRecordCount": target,
                 "propertySchema": property_schema,

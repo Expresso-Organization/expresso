@@ -368,7 +368,12 @@ def _similarity(left: str, right: str) -> float:
     left_parts = _trigrams(left)
     right_parts = _trigrams(right)
     union = left_parts | right_parts
-    return len(left_parts & right_parts) / len(union) if union else 0.0
+    if not union:
+        return 0.0
+    intersection = len(left_parts & right_parts)
+    jaccard = intersection / len(union)
+    containment = intersection / min(len(left_parts), len(right_parts))
+    return max(jaccard, containment)
 
 
 def find_unsupported_claims(input_payload: dict[str, Any], draft: Any) -> list[dict[str, Any]]:
