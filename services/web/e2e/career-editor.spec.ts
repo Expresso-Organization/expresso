@@ -45,7 +45,7 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   await openRecordDrawer(page, "E2E 저장된 경험");
   await expect(page.getByLabel("커리어 기록 본문")).toContainText("오프라인 입력");
 
-  await page.getByLabel("커리어 기록 본문").click(); await page.keyboard.press("Enter"); await page.keyboard.type("/");
+  await page.getByLabel("커리어 기록 본문").click(); await page.keyboard.press("ControlOrMeta+End"); await page.keyboard.press("Enter"); await page.keyboard.type("/");
   const slash = page.getByRole("menu", { name: "블록 명령" });
   await expect(slash.getByRole("menuitem")).toHaveCount(9);
   await page.keyboard.press("ArrowDown"); await page.keyboard.press("Escape");
