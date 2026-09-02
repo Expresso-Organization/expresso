@@ -46,7 +46,9 @@ echo "배포 대상 $(git rev-parse HEAD)"
 
 pnpm install --frozen-lockfile
 
-# 웹과 백엔드가 계약의 타입을 그대로 쓴다. 순서를 바꾸면 빌드가 깨진다.
+# 계약이 편집기의 문서 타입을, 웹과 백엔드가 계약의 타입을 그대로 쓴다.
+# 이 의존 순서를 바꾸면 깨끗한 서버 체크아웃에서 빌드가 깨진다.
+pnpm --filter @expresso/editor build
 pnpm --filter @expresso/contracts build
 pnpm --filter @expresso/database build
 
