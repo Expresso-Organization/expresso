@@ -473,12 +473,36 @@ class SkeletonCompositionTests(unittest.TestCase):
         self.assertNotIn("멈춘 상태", sanitized["detailMd"])
         self.assertRegex(sanitized["detailMd"], r"[.!?]$")
 
+    def test_short_record_keeps_enough_detail_to_reach_its_minimum(self):
+        event = {
+            "eventId": "ev1",
+            "categoryKey": "project",
+            "skeletonLead": "자료를 정리했다.",
+            "bodyLengthTarget": {"targetChars": 40, "minChars": 36, "maxChars": 60},
+        }
+        record = {
+            "draftId": "r1",
+            "eventId": "ev1",
+            "categoryKey": "project",
+            "title": "자료 정리",
+            "properties": {},
+            "detailMd": (
+                "먼저 빠진 항목과 서로 다른 자료 형식을 하나씩 확인하고 판단 근거와 확인 순서를 "
+                "개인 메모에 모두 정리한 뒤 다시 처음부터 비교했다."
+            ),
+        }
+
+        sanitized = sanitize_creative_record(event, record, {})
+        final_body = " ".join(part for part in (event["skeletonLead"], sanitized["detailMd"]) if part)
+
+        self.assertGreaterEqual(len(final_body), event["bodyLengthTarget"]["minChars"])
+
     def test_compares_detail_against_each_skeleton_sentence_and_can_keep_only_skeleton(self):
         event = {
             "eventId": "ev1",
             "categoryKey": "project",
             "skeletonLead": "현장 흐름을 조사했다. 조사 결과로 공간 변화안을 기획하고 완성까지 참여했다.",
-            "bodyLengthTarget": {"targetChars": 55, "minChars": 45, "maxChars": 65},
+            "bodyLengthTarget": {"targetChars": 55, "minChars": 40, "maxChars": 65},
         }
         record = {
             "draftId": "r1",

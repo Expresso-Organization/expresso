@@ -45,7 +45,7 @@ PROMPT_PATH = Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.md"
 
 
 def body_min_length_for_prompt(prompt_version: str) -> int:
-    return 20 if prompt_version == "synthetic-profile-v4.1" else 40
+    return 20 if prompt_version in {"synthetic-profile-v4.1", "synthetic-profile-v4.2"} else 40
 
 
 def build_body_length_plans(
@@ -132,17 +132,36 @@ def _attach_record_length_targets(payload: dict[str, Any]) -> None:
         return
     validate_creative_property_values(payload)
     plan = payload["bodyLengthPlan"]
-    target_mean = plan["targetMeanChars"]
+    sampled_target_mean = plan.get("sampledTargetMeanChars", plan["targetMeanChars"])
+    plan["sampledTargetMeanChars"] = sampled_target_mean
+    for event in events:
+        event["skeletonLead"] = " ".join(
+            f"{str(fact).strip().rstrip('.')}." for fact in event.get("facts", [])
+        )
     seed_bytes = hashlib.sha256(f"{payload['profileSeed']}:body-length".encode()).digest()[:8]
     rng = random.Random(int.from_bytes(seed_bytes, "big"))
     weights = [rng.uniform(0.85, 1.15) for _ in events]
     weight_mean = fmean(weights)
-    targets = [round(target_mean * weight / weight_mean) for weight in weights]
+    targets = [
+        max(20, len(event["skeletonLead"]), round(sampled_target_mean * weight / weight_mean))
+        for event, weight in zip(events, weights, strict=True)
+    ]
+    effective_target_mean = round(fmean(targets))
+    plan["targetMeanChars"] = effective_target_mean
+    plan["toleranceChars"] = max(10, round(effective_target_mean * 0.15))
+    plan["feasibilityAdjusted"] = effective_target_mean != sampled_target_mean
+    population_mean = plan["populationMeanChars"]
+    population_std = plan["populationStdChars"]
+    if effective_target_mean < population_mean - population_std:
+        plan["band"] = "very_short"
+    elif effective_target_mean < population_mean:
+        plan["band"] = "moderately_short"
+    elif effective_target_mean < population_mean + population_std:
+        plan["band"] = "moderately_long"
+    else:
+        plan["band"] = "very_long"
     for event, target in zip(events, targets, strict=True):
-        event["skeletonLead"] = " ".join(
-            f"{str(fact).strip().rstrip('.')}." for fact in event.get("facts", [])
-        )
-        minimum = max(40, round(target * 0.90))
+        minimum = max(20, round(target * 0.90))
         maximum = min(plan["recordMaxChars"], max(minimum + 20, round(target * 1.15)))
         event["bodyLengthTarget"] = {
             "targetChars": target,

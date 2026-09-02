@@ -249,8 +249,14 @@ def sanitize_creative_record(
     target = event.get("bodyLengthTarget", {}).get("targetChars")
     if isinstance(target, (int, float)):
         candidates = [""] + [" ".join(usable[:count]) for count in range(1, len(usable) + 1)]
+        minimum = event.get("bodyLengthTarget", {}).get("minChars", 1)
+        eligible = [
+            candidate
+            for candidate in candidates
+            if len(" ".join(part for part in (lead, candidate) if part)) >= minimum
+        ]
         detail = min(
-            candidates,
+            eligible or candidates,
             key=lambda candidate: abs(len(" ".join(part for part in (lead, candidate) if part)) - target),
         )
     else:

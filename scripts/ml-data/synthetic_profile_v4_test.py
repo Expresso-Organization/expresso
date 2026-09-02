@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from synthetic_profile_v4 import (
+    _attach_record_length_targets,
     assign_body_length_plans,
     assemble_profile,
     build_body_length_plans,
@@ -404,6 +405,30 @@ class PilotInputTests(unittest.TestCase):
                 )
             )
             self.assertTrue(all(event["skeletonLead"].endswith(".") for event in payload["events"]))
+
+    def test_raises_infeasible_short_profile_target_to_skeleton_mean(self):
+        planned = input_payload()
+        planned["bodyLengthPlan"] = {
+            "distributionVersion": "clipped-normal-v2",
+            "targetMinChars": 40,
+            "targetMaxChars": 800,
+            "recordMaxChars": 1000,
+            "populationMeanChars": 300,
+            "populationStdChars": 160,
+            "targetMeanChars": 40,
+            "toleranceChars": 10,
+            "band": "very_short",
+        }
+        planned["events"][0]["facts"] = ["긴 골격 문장 " * 12]
+
+        _attach_record_length_targets(planned)
+
+        lead_lengths = [len(event["skeletonLead"]) for event in planned["events"]]
+        targets = [event["bodyLengthTarget"]["targetChars"] for event in planned["events"]]
+        self.assertEqual(planned["bodyLengthPlan"]["sampledTargetMeanChars"], 40)
+        self.assertTrue(planned["bodyLengthPlan"]["feasibilityAdjusted"])
+        self.assertGreaterEqual(planned["bodyLengthPlan"]["targetMeanChars"], round(statistics.fmean(lead_lengths)))
+        self.assertTrue(all(target >= lead for target, lead in zip(targets, lead_lengths, strict=True)))
 
     def test_rejects_record_that_does_not_start_with_skeleton_lead(self):
         planned_input = input_payload()
