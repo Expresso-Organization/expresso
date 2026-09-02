@@ -22,6 +22,7 @@ from synthetic_profile_v4 import (
     prepare_pilot_inputs,
     validate_creative_property_values,
     validate_draft,
+    INTERVIEW_STYLE_MARKERS,
 )
 
 
@@ -123,7 +124,11 @@ def build_output_schema(input_payload: dict[str, Any], *, body_min_length: int =
                 "type": "string",
                 "minLength": max(1, record_min_length - lead_chars),
                 "maxLength": max(1, record_max_length - lead_chars),
-                "pattern": "^[^0-9一-鿿]*$",
+                "pattern": (
+                    "^[^一-鿿]*$"
+                    if event.get("renderMode") == "rewrite_evidence"
+                    else "^[^0-9一-鿿]*$"
+                ),
             }
             content_field = "detailMd"
             content_schema = detail_schema
@@ -236,7 +241,17 @@ def sanitize_creative_record(
     for sentence in sentences:
         if not re.search(r"[.!?。！？)]$", sentence):
             continue
-        if NUMBER_PATTERN.search(sentence) or re.search(r"[\u4e00-\u9fff]", sentence):
+        allowed_numbers = {
+            _normalize_number(value)
+            for value in NUMBER_PATTERN.findall(" ".join(event.get("facts", [])))
+        }
+        sentence_numbers = {
+            _normalize_number(value) for value in NUMBER_PATTERN.findall(sentence)
+        }
+        if (
+            (sentence_numbers and not sentence_numbers.issubset(allowed_numbers))
+            or re.search(r"[\u4e00-\u9fff]", sentence)
+        ):
             continue
         if any(_similarity(lead_sentence, sentence) >= 0.45 for lead_sentence in lead_sentences):
             continue
@@ -404,10 +419,11 @@ def _find_repetitive_meta(draft: Any) -> list[dict[str, Any]]:
     return repetitive
 
 
-def _find_style_violations(draft: Any) -> list[dict[str, Any]]:
+def _find_style_violations(input_payload: dict[str, Any], draft: Any) -> list[dict[str, Any]]:
     if not isinstance(draft, dict) or not isinstance(draft.get("records"), list):
         return []
     violations = []
+    event_by_id = {event["eventId"]: event for event in input_payload.get("events", [])}
     for index, record in enumerate(draft["records"], start=1):
         if not isinstance(record, dict):
             continue
@@ -431,6 +447,14 @@ def _find_style_violations(draft: Any) -> list[dict[str, Any]]:
             kinds.append("repeated_sentence")
         if re.search(r"[\u4e00-\u9fff]", visible):
             kinds.append("foreign_script")
+        if any(marker in body for marker in INTERVIEW_STYLE_MARKERS):
+            kinds.append("interview_style")
+        event = event_by_id.get(record.get("eventId"), {})
+        if event.get("renderMode") == "rewrite_evidence" and any(
+            len(str(fact).strip()) >= 40 and str(fact).strip().rstrip(".") in body
+            for fact in event.get("facts", [])
+        ):
+            kinds.append("source_verbatim_copy")
         if kinds:
             violations.append({"recordIndex": index, "kinds": kinds})
     return violations
@@ -448,7 +472,7 @@ def validate_renderer_output(
     unsupported = find_unsupported_claims(input_payload, draft) if enforce_grounding else []
     repetitive = _find_repetitive_meta(draft) if enforce_grounding or enforce_skeleton else []
     number_conflicts = find_number_conflicts(input_payload, draft) if enforce_skeleton else []
-    style_violations = _find_style_violations(draft) if enforce_skeleton else []
+    style_violations = _find_style_violations(input_payload, draft) if enforce_skeleton else []
     errors = list(validation["errors"])
     errors.extend(
         f"record_{item['recordIndex']}_unsupported_claim:{','.join(item['markers'])}"
@@ -501,6 +525,11 @@ def build_revision_instruction(
         instruction += (
             " 입력에 없는 수치 표현은 숫자를 제거하고 '여러', '대부분', '눈에 띄게' 같은"
             " 정성 표현으로 바꿔라. 본문 길이는 유지하라."
+        )
+    if any("interview_style" in error or "source_verbatim_copy" in error for error in errors):
+        instruction += (
+            " 면접 답변의 가정형·포부·지원자 호칭을 제거하고 실제로 끝난 행동만 과거형 개인 기록으로 다시 써라."
+            " 원문 전체 문장을 그대로 복사하지 말고 핵심 사건만 보존해 재서술하라."
         )
     if input_payload and any("_number" in error for error in errors):
         record_indexes = {

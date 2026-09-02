@@ -42,10 +42,28 @@ PROTECTED_TEXT = re.compile(
 UUID_NAMESPACE = uuid.UUID("535f1110-bd33-4606-8bd8-a9ca3bbb0e7d")
 PROMPT_VERSION = "synthetic-profile-v4"
 PROMPT_PATH = Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.md"
+INTERVIEW_STYLE_MARKERS = (
+    "할 것 같습니다",
+    "해야 되겠습니다",
+    "하게 된다면",
+    "하게 되면",
+    "하시겠습니까",
+    "하겠습니다",
+    "하고 싶습니다",
+    "지원자님",
+    "지원자분",
+    "면접자님",
+    "말씀드리겠습니다",
+    "설명드리겠습니다",
+)
 
 
 def body_min_length_for_prompt(prompt_version: str) -> int:
-    return 20 if prompt_version in {"synthetic-profile-v4.1", "synthetic-profile-v4.2"} else 40
+    return 20 if prompt_version in {
+        "synthetic-profile-v4.1",
+        "synthetic-profile-v4.2",
+        "synthetic-profile-v4.3",
+    } else 40
 
 
 def body_mean_tolerance(plan: dict[str, Any], record_count: int) -> int | float:
@@ -156,8 +174,10 @@ def _attach_record_length_targets(payload: dict[str, Any]) -> None:
     sampled_target_mean = plan.get("sampledTargetMeanChars", plan["targetMeanChars"])
     plan["sampledTargetMeanChars"] = sampled_target_mean
     for event in events:
-        event["skeletonLead"] = " ".join(
-            f"{str(fact).strip().rstrip('.')}." for fact in event.get("facts", [])
+        event["skeletonLead"] = (
+            ""
+            if event.get("renderMode") == "rewrite_evidence"
+            else " ".join(f"{str(fact).strip().rstrip('.')}." for fact in event.get("facts", []))
         )
     seed_bytes = hashlib.sha256(f"{payload['profileSeed']}:body-length".encode()).digest()[:8]
     rng = random.Random(int.from_bytes(seed_bytes, "big"))
@@ -480,8 +500,10 @@ def validate_draft(input_payload: dict[str, Any], draft: Any, *, body_min_length
         elif isinstance(body, str):
             body_lengths.append(len(body.strip()))
             skeleton_lead = event.get("skeletonLead")
-            if isinstance(skeleton_lead, str) and not body.strip().startswith(skeleton_lead):
+            if isinstance(skeleton_lead, str) and skeleton_lead and not body.strip().startswith(skeleton_lead):
                 errors.append(f"{prefix}_skeleton_lead")
+            if any(marker in body for marker in INTERVIEW_STYLE_MARKERS):
+                errors.append(f"{prefix}_interview_style")
         visible_text = f"{title or ''} {body or ''}"
         if PROTECTED_TEXT.search(visible_text):
             errors.append(f"{prefix}_protected_text")
@@ -507,11 +529,6 @@ def validate_draft(input_payload: dict[str, Any], draft: Any, *, body_min_length
             errors.append("body_length_plan")
         elif abs(body_length_mean - target) > tolerance:
             errors.append("body_length_mean")
-        if (
-            length_plan.get("distributionVersion") == "clipped-normal-v2"
-            and body_length_band(body_length_mean, length_plan) != length_plan.get("band")
-        ):
-            errors.append("body_length_band")
 
     return {
         "valid": not errors,

@@ -26,6 +26,7 @@ from synthetic_profile_v4 import (
     body_mean_tolerance,
     basic_property_schema,
     body_min_length_for_prompt,
+    INTERVIEW_STYLE_MARKERS,
 )
 from synthetic_profile_v4_experiment import (
     generate_qwen_by_record,
@@ -34,7 +35,7 @@ from synthetic_profile_v4_experiment import (
 )
 
 
-PROMPT_VERSION = "synthetic-profile-v4.2"
+PROMPT_VERSION = "synthetic-profile-v4.3"
 DEFAULT_MODEL = "qwen3:30b-a3b-instruct-2507-q4_K_M"
 DEFAULT_SEEDS_PATH = (
     Path(__file__).parents[2]
@@ -116,11 +117,14 @@ HYPOTHETICAL_MARKERS = (
     "입사하게 된다면", "입사한다면", "된다면", "만약", "지원 동기", "희망 부서",
     "앞으로", "하고 싶", "하고자", "할 예정", "할 것입니다", "하겠습니다", "해야 합니다",
     "필요합니다", "중요합니다", "바랍니다", "지원하고", "생각합니다",
+    "할 것 같습니다", "해야 되겠습니다", "하게 된다면", "하게 되면", "하시겠",
+    "지원자님", "지원자분", "면접자님", "설명 드리겠습니다", "설명드리겠습니다",
 )
 ACTION_MARKERS = (
     "했습니다", "하였습니다", "했으며", "맡았", "진행했", "수행했", "참여했", "개발했",
     "제작했", "분석했", "관리했", "작성했", "정리했", "사용했", "해결했", "근무했",
     "취득했", "수상했", "이끌었", "마무리했", "완료했", "배웠습니다", "익혔습니다",
+    "해냈습니다", "해냈다", "끝냈습니다", "끝냈다",
 )
 EXPERIENCE_QUESTION_MARKERS = (
     "경험", "수행", "해결", "담당", "사례", "성과", "프로젝트", "어려웠던", "이룬",
@@ -193,14 +197,43 @@ def build_profile_specs(
     domains = tuple(DOMAIN_CONFIG)
     stages = ("new", "early", "mid", "experienced")
     family_numbers = list(range(1, family_count + 1))
-    random.Random(seed).shuffle(family_numbers)
+    families_by_domain = {
+        domain: [number for number in family_numbers if domains[(number - 1) % len(domains)] == domain]
+        for domain in domains
+    }
+    for domain, numbers in families_by_domain.items():
+        random.Random(_stable_int(seed, "profile-domain-split", domain)).shuffle(numbers)
     split_by_family: dict[int, str] = {}
-    cursor = 0
+    remaining_by_domain = {domain: list(numbers) for domain, numbers in families_by_domain.items()}
     for split in SPLIT_ORDER:
         split_family_count = split_counts[split] // family_size
-        for family_number in family_numbers[cursor : cursor + split_family_count]:
-            split_by_family[family_number] = split
-        cursor += split_family_count
+        if split_family_count == 0:
+            continue
+        remaining_total = sum(len(numbers) for numbers in remaining_by_domain.values())
+        if split == SPLIT_ORDER[-1]:
+            allocation = {domain: len(numbers) for domain, numbers in remaining_by_domain.items()}
+        else:
+            exact = {
+                domain: split_family_count * len(numbers) / remaining_total
+                for domain, numbers in remaining_by_domain.items()
+            }
+            allocation = {domain: min(len(remaining_by_domain[domain]), math.floor(value)) for domain, value in exact.items()}
+            shortfall = split_family_count - sum(allocation.values())
+            ranked = sorted(
+                domains,
+                key=lambda domain: (-(exact[domain] - allocation[domain]), _stable_int(seed, split, domain)),
+            )
+            for domain in ranked:
+                if shortfall == 0:
+                    break
+                if allocation[domain] < len(remaining_by_domain[domain]):
+                    allocation[domain] += 1
+                    shortfall -= 1
+        for domain in domains:
+            selected = remaining_by_domain[domain][: allocation[domain]]
+            remaining_by_domain[domain] = remaining_by_domain[domain][allocation[domain] :]
+            for family_number in selected:
+                split_by_family[family_number] = split
 
     record_counts = _quantile_integer_plans(
         profile_count, mean=9, std=4, minimum=1, maximum=20, seed=seed + 1
@@ -366,7 +399,13 @@ def scan_aihub_atoms(zip_root: str | Path) -> dict[str, list[dict[str, Any]]]:
                 factual_score = _atom_score(summary)
                 asks_for_experience = any(marker in question for marker in EXPERIENCE_QUESTION_MARKERS)
                 minimum_length = 15 if asks_for_experience else 25
-                if len(summary) < minimum_length or any(marker in summary for marker in HYPOTHETICAL_MARKERS):
+                has_past_action = any(marker in summary for marker in ACTION_MARKERS)
+                if (
+                    len(summary) < minimum_length
+                    or not asks_for_experience
+                    or not has_past_action
+                    or any(marker in summary for marker in HYPOTHETICAL_MARKERS)
+                ):
                     continue
                 if (
                     factual_score <= 0
@@ -439,12 +478,14 @@ def _event(
     narrative: list[str] | None = None,
     source_families: list[str] | None = None,
     synthetic: list[str] | None = None,
+    render_mode: str = "fixed_skeleton",
 ) -> dict[str, Any]:
     return {
         "categoryKey": category,
         "facts": facts,
         "propertyKeys": [],
         "propertyValues": {},
+        "renderMode": render_mode,
         "provenance": {
             "surveyCalibration": survey or [],
             "narrativeEvidence": narrative or [],
@@ -565,12 +606,26 @@ def build_synthetic_inputs(
 ) -> list[dict[str, Any]]:
     """집계 골격과 중복 없는 AI Hub atom을 결합해 렌더러 입력을 만든다."""
     atom_queues: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    split_weights = {"train": 0.8, "valid": 0.1, "test": 0.1}
     for domain, atoms in atoms_by_domain.items():
+        families: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for atom in atoms:
-            source_family = atom.get("sourceFamilyId", atom["atomId"])
-            split_point = _stable_int("source-family-split", source_family) % 10
-            source_split = "train" if split_point < 8 else "valid" if split_point == 8 else "test"
-            atom_queues[(domain, source_split)].append(atom)
+            families[atom.get("sourceFamilyId", atom["atomId"])].append(atom)
+        assigned_counts = Counter({split: 0 for split in SPLIT_ORDER})
+        ordered_families = sorted(
+            families.items(),
+            key=lambda item: _stable_int("source-family-order", domain, item[0]),
+        )
+        for _source_family, family_atoms in ordered_families:
+            source_split = min(
+                SPLIT_ORDER,
+                key=lambda split: (
+                    assigned_counts[split] / split_weights[split],
+                    _stable_int("source-family-tie", domain, _source_family, split),
+                ),
+            )
+            atom_queues[(domain, source_split)].extend(family_atoms)
+            assigned_counts[source_split] += len(family_atoms)
     for queue in atom_queues.values():
         queue.sort(key=lambda item: (-item.get("factualScore", 1), _stable_int("atom-queue", item["atomId"])))
     atom_offsets: Counter[tuple[str, str]] = Counter()
@@ -597,6 +652,7 @@ def build_synthetic_inputs(
                     narrative=[atom["atomId"]],
                     source_families=[atom.get("sourceFamilyId", atom["atomId"])],
                     synthetic=["situation_detail", "work_process", "reflection"],
+                    render_mode="rewrite_evidence",
                 )
             )
         raw_payloads.append(
@@ -849,6 +905,18 @@ def render_profile(
     return profile, metadata, draft
 
 
+def band_distribution_max_deviation(planned: Counter, actual: Counter) -> float:
+    total_planned = sum(planned.values())
+    total_actual = sum(actual.values())
+    if total_planned == 0 or total_actual == 0:
+        return 0.0
+    keys = set(planned) | set(actual)
+    return round(
+        max(abs(planned[key] / total_planned - actual[key] / total_actual) for key in keys),
+        4,
+    )
+
+
 def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint: int) -> dict[str, Any]:
     selected = [item for item in specs if item["sequenceIndex"] <= checkpoint]
     profiles = []
@@ -864,12 +932,19 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
     source_family_splits: dict[str, set[str]] = defaultdict(set)
     length_errors = 0
     length_band_errors = 0
+    interview_style_failures = 0
+    verbatim_evidence_copies = 0
     properties = Counter()
     bands = Counter()
+    actual_bands = Counter()
     actual_means = []
     target_means = []
     for profile in profiles:
         meta = profile["datasetMeta"]
+        input_path = output_root / "inputs" / f"{meta['profileSeed']}.json"
+        input_payload = (
+            json.loads(input_path.read_text(encoding="utf-8")) if input_path.exists() else {"events": []}
+        )
         family_splits[meta["profileFamily"]].add(meta["split"])
         plan = meta.get("bodyLengthPlan") or {}
         bands[plan.get("band")] += 1
@@ -883,14 +958,25 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
                 length_errors += 1
             if body_length_band(actual, plan) != plan.get("band"):
                 length_band_errors += 1
-        for record in profile.get("records", []):
+            actual_bands[body_length_band(actual, plan)] += 1
+        for record, event in zip(profile.get("records", []), input_payload.get("events", []), strict=False):
             properties[len(record.get("properties", {}))] += 1
+            body = str(record.get("bodyMd", ""))
+            if any(marker in body for marker in INTERVIEW_STYLE_MARKERS):
+                interview_style_failures += 1
+            if event.get("renderMode") == "rewrite_evidence":
+                if any(
+                    len(str(fact).strip()) >= 40 and str(fact).strip().rstrip(".") in body
+                    for fact in event.get("facts", [])
+                ):
+                    verbatim_evidence_copies += 1
         for lineage in profile.get("provenance", {}).get("recordLineage", []):
             for atom in lineage.get("narrativeEvidence", []):
                 atom_splits[atom].add(meta["split"])
             for source_family in lineage.get("sourceFamilies", []):
                 source_family_splits[source_family].add(meta["split"])
     completed = len(profiles)
+    band_distribution_deviation = band_distribution_max_deviation(bands, actual_bands)
     return {
         "schemaVersion": 1,
         "checkpoint": checkpoint,
@@ -901,14 +987,20 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
             "missing": len(missing),
             "split": dict(Counter(profile["datasetMeta"]["split"] for profile in profiles)),
             "bands": dict(bands),
+            "actualBands": dict(actual_bands),
         },
         "length": {
             "profileToleranceFailures": length_errors,
             "profileBandFailures": length_band_errors,
+            "bandDistributionMaxDeviation": band_distribution_deviation,
             "targetMean": round(statistics.fmean(target_means), 2) if target_means else None,
             "actualMean": round(statistics.fmean(actual_means), 2) if actual_means else None,
             "targetStd": round(statistics.pstdev(target_means), 2) if len(target_means) > 1 else None,
             "actualStd": round(statistics.pstdev(actual_means), 2) if len(actual_means) > 1 else None,
+        },
+        "content": {
+            "interviewStyleFailures": interview_style_failures,
+            "verbatimEvidenceCopies": verbatim_evidence_copies,
         },
         "properties": {str(key): value for key, value in sorted(properties.items())},
         "leakage": {
@@ -919,7 +1011,9 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
         "missingProfileSeeds": missing,
         "gatePassed": completed == len(selected)
         and length_errors == 0
-        and length_band_errors == 0
+        and band_distribution_deviation <= 0.05
+        and interview_style_failures == 0
+        and verbatim_evidence_copies == 0
         and not any(len(splits) > 1 for splits in family_splits.values())
         and not any(len(splits) > 1 for splits in atom_splits.values())
         and not any(len(splits) > 1 for splits in source_family_splits.values()),
@@ -930,7 +1024,11 @@ def prepare_batch(args: argparse.Namespace) -> None:
     output_root = args.output_root.resolve()
     seeds = load_seed_categories(args.seeds)
     property_schema = basic_property_schema(seeds)
-    calibration = build_yp2021_calibration(args.yp_dta)
+    calibration = (
+        json.loads(args.yp_calibration.read_text(encoding="utf-8"))
+        if args.yp_calibration is not None
+        else build_yp2021_calibration(args.yp_dta)
+    )
     atoms = scan_aihub_atoms(args.aihub_root)
     specs = build_profile_specs(profile_count=args.profile_count, family_size=args.family_size, seed=args.seed)
     payloads = build_synthetic_inputs(specs, atoms, calibration, property_schema, seed=args.seed)
@@ -967,7 +1065,9 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     prepare = subparsers.add_parser("prepare")
     prepare.add_argument("output_root", type=Path)
-    prepare.add_argument("--yp-dta", type=Path, required=True)
+    yp_source = prepare.add_mutually_exclusive_group(required=True)
+    yp_source.add_argument("--yp-dta", type=Path)
+    yp_source.add_argument("--yp-calibration", type=Path)
     prepare.add_argument("--aihub-root", type=Path, required=True)
     prepare.add_argument("--seeds", type=Path, default=DEFAULT_SEEDS_PATH)
     prepare.add_argument("--profile-count", type=int, default=3000)

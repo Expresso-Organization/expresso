@@ -204,6 +204,24 @@ class ScoreDraftTests(unittest.TestCase):
         self.assertFalse(result["valid"])
         self.assertIn("record_2_foreign_script", result["errors"])
 
+    def test_evidence_rewrite_gate_rejects_interview_tone_and_verbatim_source(self):
+        changed_payload = payload()
+        changed_payload["events"][1]["renderMode"] = "rewrite_evidence"
+        changed_payload["events"][1]["facts"] = [
+            "오류 확인 절차를 체크리스트로 정리했고 이후 같은 순서로 확인하며 누락된 항목을 기록했습니다"
+        ]
+        changed = draft()
+        changed["records"][1]["bodyMd"] = (
+            "오류 확인 절차를 체크리스트로 정리했고 이후 같은 순서로 확인하며 누락된 항목을 기록했습니다. "
+            "앞으로도 이렇게 하겠습니다."
+        )
+
+        result = validate_renderer_output(changed_payload, changed, enforce_skeleton=True)
+
+        self.assertFalse(result["valid"])
+        self.assertIn("record_2_interview_style", result["errors"])
+        self.assertIn("record_2_source_verbatim_copy", result["errors"])
+
     def test_counts_meta_sentence_that_repeats_the_same_fact(self):
         changed = draft()
         changed["records"][1]["bodyMd"] += " 확인 대상은 오류 목록이었다."
@@ -379,8 +397,48 @@ class OutputSchemaTests(unittest.TestCase):
         self.assertEqual(detail["maxLength"], 437 - lead_length - 1)
         self.assertEqual(record["properties"]["title"]["pattern"], "^[^0-9]*$")
 
+    def test_evidence_rewrite_schema_allows_source_numbers_in_full_body(self):
+        planned_payload = payload()
+        planned_payload["renderingPolicy"] = "skeleton-grounded-creative-v1"
+        planned_payload["bodyLengthPlan"] = {"recordMaxChars": 1000, "band": "moderately_long"}
+        planned_payload["events"][0]["renderMode"] = "rewrite_evidence"
+        planned_payload["events"][0]["skeletonLead"] = ""
+        planned_payload["events"][0]["bodyLengthTarget"] = {
+            "targetChars": 300,
+            "minChars": 270,
+            "maxChars": 345,
+        }
+
+        schema = build_output_schema(planned_payload, body_min_length=20)
+        detail = schema["properties"]["records"]["prefixItems"][0]["properties"]["detailMd"]
+
+        self.assertEqual(detail["pattern"], "^[^一-鿿]*$")
+
 
 class SkeletonCompositionTests(unittest.TestCase):
+    def test_evidence_rewrite_uses_generated_text_as_the_whole_body(self):
+        planned_payload = payload()
+        planned_payload["renderingPolicy"] = "skeleton-grounded-creative-v1"
+        planned_payload["events"][0]["renderMode"] = "rewrite_evidence"
+        planned_payload["events"][0]["skeletonLead"] = ""
+        planned_payload["events"][0]["bodyLengthTarget"] = {
+            "targetChars": 90,
+            "minChars": 60,
+            "maxChars": 120,
+        }
+        generated = draft()
+        generated["records"][0]["detailMd"] = (
+            "Python으로 데이터 20건을 정리했다. 형식이 다른 자료를 비교한 뒤 확인 기준을 메모했다."
+        )
+        del generated["records"][0]["bodyMd"]
+
+        composed = compose_skeleton_bodies(planned_payload, {"records": [generated["records"][0]]})
+
+        self.assertEqual(
+            composed["records"][0]["bodyMd"],
+            "Python으로 데이터 20건을 정리했다. 형식이 다른 자료를 비교한 뒤 확인 기준을 메모했다.",
+        )
+
     def test_composes_final_body_from_fixed_skeleton_and_generated_detail(self):
         planned_payload = payload()
         planned_payload["renderingPolicy"] = "skeleton-grounded-creative-v1"
@@ -756,7 +814,6 @@ class RecordRepairTests(unittest.TestCase):
             all("평균 본문 길이를 380자" in call["messages"][0]["content"] for call in calls)
         )
         repair_input = json.loads(calls[0]["messages"][1]["content"])
-        self.assertIn("body_length_band", repair_input["validationErrors"])
         self.assertGreater(repair_input["outputContract"]["detailLength"]["minChars"], 0)
         self.assertGreater(
             repair_input["outputContract"]["detailLength"]["targetChars"],

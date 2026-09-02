@@ -6,6 +6,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from synthetic_profile_v4_batch import (
+    band_distribution_max_deviation,
     build_profile_specs,
     build_shards,
     build_synthetic_inputs,
@@ -69,6 +70,22 @@ YP_CALIBRATION = {
 
 
 class SyntheticProfileV4BatchTest(unittest.TestCase):
+    def test_band_distribution_gate_uses_batch_ratios_not_individual_crossings(self):
+        self.assertEqual(
+            band_distribution_max_deviation(
+                Counter({"very_short": 50, "moderately_short": 50}),
+                Counter({"very_short": 48, "moderately_short": 52}),
+            ),
+            0.02,
+        )
+        self.assertEqual(
+            band_distribution_max_deviation(
+                Counter({"very_short": 50, "moderately_short": 50}),
+                Counter({"very_short": 40, "moderately_short": 60}),
+            ),
+            0.1,
+        )
+
     def test_atom_scan_keeps_factual_past_experience_but_excludes_future_intent(self):
         def payload(summary, question=""):
             return {
@@ -83,7 +100,13 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
             with zipfile.ZipFile(zip_path, "w") as archive:
                 archive.writestr(
                     "ckmk_d_rnd_m_n_100001.json",
-                    json.dumps(payload("학교 프로젝트에서 맡은 일을 끝까지 마무리하고 과정을 돌아보았습니다."), ensure_ascii=False),
+                    json.dumps(
+                        payload(
+                            "학교 프로젝트에서 맡은 일을 끝까지 마무리했습니다.",
+                            "직접 수행한 프로젝트 경험을 말씀해 주세요.",
+                        ),
+                        ensure_ascii=False,
+                    ),
                 )
                 archive.writestr(
                     "ckmk_d_rnd_m_n_100002.json",
@@ -111,10 +134,29 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
             {item["atomId"] for item in atoms["RND"]},
             {
                 "aih-71592-ckmk_d_rnd_m_n_100001",
-                "aih-71592-ckmk_d_rnd_m_n_100004",
                 "aih-71592-ckmk_d_rnd_m_n_100005",
             },
         )
+
+    def test_aihub_events_are_rewritten_instead_of_prefixed_verbatim(self):
+        specs = build_profile_specs(
+            profile_count=10,
+            family_size=10,
+            split_counts={"train": 10, "valid": 0, "test": 0},
+            seed=17,
+        )
+        payloads = build_synthetic_inputs(specs, _atoms(), YP_CALIBRATION, PROPERTY_SCHEMA, seed=17)
+
+        source_events = [
+            event
+            for payload in payloads
+            for event in payload["events"]
+            if event["provenance"]["narrativeEvidence"]
+        ]
+
+        self.assertTrue(source_events)
+        self.assertTrue(all(event["renderMode"] == "rewrite_evidence" for event in source_events))
+        self.assertTrue(all(event["skeletonLead"] == "" for event in source_events))
 
     def test_sparse_domain_reuses_same_domain_atoms_without_cross_domain_fallback(self):
         specs = build_profile_specs(
@@ -231,7 +273,7 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
                     "profileSeed": payload["profileSeed"],
                     "profileFamily": payload["profileFamily"],
                     "split": payload["split"],
-                    "promptVersion": "synthetic-profile-v4.2",
+                    "promptVersion": "synthetic-profile-v4.3",
                     "targetRecordCount": payload["targetRecordCount"],
                     "actualRecordCount": payload["targetRecordCount"],
                     "bodyLengthPlan": payload["bodyLengthPlan"],
@@ -279,7 +321,7 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
                         "profileSeed": spec["profileSeed"],
                         "profileFamily": spec["profileFamily"],
                         "split": spec["split"],
-                        "promptVersion": "synthetic-profile-v4.2",
+                        "promptVersion": "synthetic-profile-v4.3",
                         "actualBodyLengthMean": spec["bodyLengthPlan"]["targetMeanChars"],
                         "bodyLengthPlan": spec["bodyLengthPlan"],
                     },
