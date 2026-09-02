@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import re
 import statistics
 import time
+import urllib.error
 import urllib.request
 from itertools import combinations
 from pathlib import Path
@@ -16,7 +18,9 @@ from synthetic_profile import load_seed_categories
 from synthetic_profile_v4 import (
     assemble_profile,
     body_min_length_for_prompt,
+    prepare_length_pilot_inputs,
     prepare_pilot_inputs,
+    validate_creative_property_values,
     validate_draft,
 )
 
@@ -75,11 +79,17 @@ CLAIM_MARKERS = (
 REPETITIVE_META_PATTERNS = ("시점은", "기간은", "대상은", "담당 업무는", "사용 도구는")
 
 
-def _property_schema(property_type: str) -> dict[str, Any]:
+def _property_schema(property_type: str, *, forbid_digits: bool = False) -> dict[str, Any]:
     if property_type == "text":
-        return {"type": "string", "minLength": 1}
+        schema: dict[str, Any] = {"type": "string", "minLength": 1}
+        if forbid_digits:
+            schema["pattern"] = "^[^0-9]*$"
+        return schema
     if property_type == "tags":
-        return {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+        item_schema: dict[str, Any] = {"type": "string", "minLength": 1}
+        if forbid_digits:
+            item_schema["pattern"] = "^[^0-9]*$"
+        return {"type": "array", "minItems": 1, "items": item_schema}
     if property_type == "date":
         return {"type": "string", "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])$"}
     raise ValueError(f"unsupported property type: {property_type}")
@@ -88,32 +98,79 @@ def _property_schema(property_type: str) -> dict[str, Any]:
 def build_output_schema(input_payload: dict[str, Any], *, body_min_length: int = 40) -> dict[str, Any]:
     """입력별 사건 순서와 프로퍼티 계획을 디코딩 문법에 고정한다."""
     length_plan = input_payload.get("bodyLengthPlan", {})
-    body_max_length = length_plan.get("upperBoundChars", 450) if isinstance(length_plan, dict) else 450
+    body_max_length = (
+        length_plan.get("recordMaxChars", length_plan.get("upperBoundChars", 450))
+        if isinstance(length_plan, dict)
+        else 450
+    )
     record_schemas = []
+    creative_details = input_payload.get("renderingPolicy") == "skeleton-grounded-creative-v1"
     for index, event in enumerate(input_payload["events"], start=1):
         category_schema = input_payload["propertySchema"][event["categoryKey"]]
         planned = event["propertyKeys"]
+        record_length_target = event.get("bodyLengthTarget", {})
+        record_min_length = record_length_target.get("minChars", body_min_length)
+        record_max_length = (
+            record_length_target.get("maxChars", body_max_length)
+            if creative_details
+            or (isinstance(length_plan, dict) and length_plan.get("band") == "very_short")
+            else body_max_length
+        )
+        skeleton_lead = event.get("skeletonLead")
+        if creative_details:
+            lead_chars = len(skeleton_lead.strip()) + 1 if isinstance(skeleton_lead, str) else 0
+            detail_schema: dict[str, Any] = {
+                "type": "string",
+                "minLength": max(1, record_min_length - lead_chars),
+                "maxLength": max(1, record_max_length - lead_chars),
+                "pattern": "^[^0-9一-鿿]*$",
+            }
+            content_field = "detailMd"
+            content_schema = detail_schema
+        else:
+            body_schema: dict[str, Any] = {
+                "type": "string",
+                "minLength": record_min_length,
+                "maxLength": record_max_length,
+            }
+            has_fact_numbers = NUMBER_PATTERN.search(" ".join(event.get("facts", []))) is not None
+            if isinstance(skeleton_lead, str):
+                body_schema["pattern"] = "^" + re.escape(skeleton_lead)
+                if not has_fact_numbers:
+                    body_schema["pattern"] += "[^0-9]*$"
+            elif not has_fact_numbers:
+                body_schema["pattern"] = "^[^0-9]*$"
+            content_field = "bodyMd"
+            content_schema = body_schema
         record_schemas.append(
             {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["draftId", "eventId", "categoryKey", "title", "properties", "bodyMd"],
+                "required": ["draftId", "eventId", "categoryKey", "title", "properties", content_field],
                 "properties": {
                     "draftId": {"const": f"r{index}"},
                     "eventId": {"const": event["eventId"]},
                     "categoryKey": {"const": event["categoryKey"]},
-                    "title": {"type": "string", "minLength": 1, "maxLength": 100},
+                    "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100,
+                        **({"pattern": "^[^0-9]*$"} if creative_details else {}),
+                    },
                     "properties": {
                         "type": "object",
                         "additionalProperties": False,
                         "required": planned,
-                        "properties": {key: _property_schema(category_schema[key]) for key in planned},
+                        "properties": {
+                            key: (
+                                {"const": event["propertyValues"][key]}
+                                if creative_details and key in event.get("propertyValues", {})
+                                else _property_schema(category_schema[key], forbid_digits=creative_details)
+                            )
+                            for key in planned
+                        },
                     },
-                    "bodyMd": {
-                        "type": "string",
-                        "minLength": body_min_length,
-                        "maxLength": body_max_length,
-                    },
+                    content_field: content_schema,
                 },
             }
         )
@@ -134,6 +191,107 @@ def build_output_schema(input_payload: dict[str, Any], *, body_min_length: int =
             },
         },
     }
+
+
+def _without_numbers(value: str) -> str:
+    return re.sub(r"\s+", " ", NUMBER_PATTERN.sub("", value)).strip()
+
+
+def _without_numbers_or_han(value: str) -> str:
+    return re.sub(r"\s+", " ", re.sub(r"[\u4e00-\u9fff]", "", _without_numbers(value))).strip()
+
+
+def sanitize_creative_record(
+    event: dict[str, Any],
+    record: dict[str, Any],
+    category_property_schema: dict[str, str],
+) -> dict[str, Any]:
+    """창작 세부를 사실 안전성과 목표 길이에 맞춰 문장 단위로 정리한다."""
+    sanitized = copy.deepcopy(record)
+    sanitized["title"] = _without_numbers_or_han(str(sanitized.get("title", ""))) or "경력 기록"
+
+    properties = sanitized.get("properties")
+    if isinstance(properties, dict):
+        for key, value in list(properties.items()):
+            if category_property_schema.get(key) == "date":
+                continue
+            if isinstance(value, str):
+                properties[key] = _without_numbers_or_han(value)
+            elif isinstance(value, list):
+                properties[key] = [_without_numbers_or_han(str(item)) for item in value]
+
+    lead = str(event.get("skeletonLead", "")).strip()
+    lead_sentences = [
+        sentence.strip()
+        for sentence in re.split(r"(?<=[.!?。！？])\s+", lead)
+        if sentence.strip()
+    ]
+    raw_detail = re.sub(r"\s+", " ", str(sanitized.get("detailMd", ""))).strip()
+    sentences = [
+        sentence.strip()
+        for sentence in re.split(r"(?<=[.!?。！？])\s+", raw_detail)
+        if sentence.strip()
+    ]
+    usable: list[str] = []
+    for sentence in sentences:
+        if not re.search(r"[.!?。！？)]$", sentence):
+            continue
+        if NUMBER_PATTERN.search(sentence) or re.search(r"[\u4e00-\u9fff]", sentence):
+            continue
+        if any(_similarity(lead_sentence, sentence) >= 0.45 for lead_sentence in lead_sentences):
+            continue
+        if any(_similarity(previous, sentence) >= 0.75 for previous in usable):
+            continue
+        usable.append(sentence)
+
+    if not usable:
+        usable = ["작업 과정에서 확인한 내용과 판단 근거를 개인 기록으로 남겼다."]
+    target = event.get("bodyLengthTarget", {}).get("targetChars")
+    if isinstance(target, (int, float)):
+        candidates = [""] + [" ".join(usable[:count]) for count in range(1, len(usable) + 1)]
+        detail = min(
+            candidates,
+            key=lambda candidate: abs(len(" ".join(part for part in (lead, candidate) if part)) - target),
+        )
+    else:
+        detail = " ".join(usable)
+    sanitized["detailMd"] = detail
+    return sanitized
+
+
+def compose_skeleton_bodies(input_payload: dict[str, Any], draft: Any) -> Any:
+    """코드가 고정 사실을 붙여 최종 Expresso 본문을 만든다."""
+    if input_payload.get("renderingPolicy") != "skeleton-grounded-creative-v1":
+        return copy.deepcopy(draft)
+    validate_creative_property_values(input_payload)
+    if not isinstance(draft, dict) or not isinstance(draft.get("records"), list):
+        return copy.deepcopy(draft)
+
+    composed = copy.deepcopy(draft)
+    events = {event.get("eventId"): event for event in input_payload.get("events", [])}
+    property_schema = input_payload.get("propertySchema", {})
+    for index, record in enumerate(composed["records"]):
+        if not isinstance(record, dict):
+            continue
+        event = events.get(record.get("eventId"), {})
+        category_schema = property_schema.get(event.get("categoryKey"), {})
+        record = sanitize_creative_record(event, record, category_schema)
+        record["properties"] = copy.deepcopy(event["propertyValues"])
+        composed["records"][index] = record
+        lead = str(event.get("skeletonLead", "")).strip()
+        detail = str(record.pop("detailMd", "")).strip()
+        record["bodyMd"] = " ".join(part for part in (lead, detail) if part)
+    return composed
+
+
+def build_record_repair_schema(
+    input_payload: dict[str, Any],
+    record_index: int,
+    *,
+    body_min_length: int = 40,
+) -> dict[str, Any]:
+    records = build_output_schema(input_payload, body_min_length=body_min_length)["properties"]["records"]
+    return records["prefixItems"][record_index]
 
 
 def _tokens(text: str) -> set[str]:
@@ -194,6 +352,36 @@ def find_unsupported_claims(input_payload: dict[str, Any], draft: Any) -> list[d
     return unsupported
 
 
+def find_number_conflicts(input_payload: dict[str, Any], draft: Any) -> list[dict[str, Any]]:
+    """경력 골격의 정밀 수치가 빠지거나 새로 생긴 기록을 찾는다."""
+    if not isinstance(draft, dict) or not isinstance(draft.get("records"), list):
+        return []
+    event_by_id = {event["eventId"]: event for event in input_payload["events"]}
+    conflicts = []
+    for index, record in enumerate(draft["records"], start=1):
+        if not isinstance(record, dict):
+            continue
+        event = event_by_id.get(record.get("eventId"))
+        if not event:
+            continue
+        facts = " ".join(event.get("facts", []))
+        visible = _visible_record_text(record)
+        expected = {_normalize_number(value) for value in NUMBER_PATTERN.findall(facts)}
+        actual = {_normalize_number(value) for value in NUMBER_PATTERN.findall(visible)}
+        missing = sorted(expected - actual)
+        invented = sorted(actual - expected)
+        if missing or invented:
+            conflicts.append(
+                {
+                    "eventId": event["eventId"],
+                    "recordIndex": index,
+                    "missing": missing,
+                    "invented": invented,
+                }
+            )
+    return conflicts
+
+
 def _find_repetitive_meta(draft: Any) -> list[dict[str, Any]]:
     if not isinstance(draft, dict) or not isinstance(draft.get("records"), list):
         return []
@@ -210,16 +398,51 @@ def _find_repetitive_meta(draft: Any) -> list[dict[str, Any]]:
     return repetitive
 
 
+def _find_style_violations(draft: Any) -> list[dict[str, Any]]:
+    if not isinstance(draft, dict) or not isinstance(draft.get("records"), list):
+        return []
+    violations = []
+    for index, record in enumerate(draft["records"], start=1):
+        if not isinstance(record, dict):
+            continue
+        body = str(record.get("bodyMd", "")).strip()
+        visible = " ".join(
+            (
+                str(record.get("title", "")),
+                body,
+                json.dumps(record.get("properties", {}), ensure_ascii=False),
+            )
+        )
+        kinds = []
+        if body and not re.search(r"[.!?。！？)]$", body):
+            kinds.append("incomplete_sentence")
+        sentences = [
+            re.sub(r"\s+", " ", sentence.strip())
+            for sentence in re.split(r"(?<=[.!?。！？])\s+", body)
+            if len(sentence.strip()) >= 10
+        ]
+        if len(sentences) != len(set(sentences)):
+            kinds.append("repeated_sentence")
+        if re.search(r"[\u4e00-\u9fff]", visible):
+            kinds.append("foreign_script")
+        if kinds:
+            violations.append({"recordIndex": index, "kinds": kinds})
+    return violations
+
+
 def validate_renderer_output(
     input_payload: dict[str, Any],
     draft: Any,
     *,
     enforce_grounding: bool = False,
+    enforce_skeleton: bool = False,
     body_min_length: int = 40,
 ) -> dict[str, Any]:
     validation = validate_draft(input_payload, draft, body_min_length=body_min_length)
     unsupported = find_unsupported_claims(input_payload, draft) if enforce_grounding else []
-    repetitive = _find_repetitive_meta(draft) if enforce_grounding else []
+    repetitive = _find_repetitive_meta(draft) if enforce_grounding or enforce_skeleton else []
+    number_conflicts = find_number_conflicts(input_payload, draft) if enforce_skeleton else []
+    style_violations = _find_style_violations(draft) if enforce_skeleton else []
     errors = list(validation["errors"])
     errors.extend(
         f"record_{item['recordIndex']}_unsupported_claim:{','.join(item['markers'])}"
@@ -229,13 +452,77 @@ def validate_renderer_output(
         f"record_{item['recordIndex']}_repetitive_meta:{','.join(item['patterns'])}"
         for item in repetitive
     )
+    for item in number_conflicts:
+        if item["missing"]:
+            errors.append(f"record_{item['recordIndex']}_missing_number:{','.join(item['missing'])}")
+        if item["invented"]:
+            errors.append(f"record_{item['recordIndex']}_invented_number:{','.join(item['invented'])}")
+    errors.extend(
+        f"record_{item['recordIndex']}_{kind}"
+        for item in style_violations
+        for kind in item["kinds"]
+    )
     return {
         **validation,
         "valid": not errors,
         "errors": errors,
         "unsupportedClaims": unsupported,
         "repetitiveMeta": repetitive,
+        "numberConflicts": number_conflicts,
+        "styleViolations": style_violations,
     }
+
+
+def build_revision_instruction(
+    errors: list[str],
+    body_length_plan: dict[str, Any] | None,
+    input_payload: dict[str, Any] | None = None,
+) -> str:
+    instruction = "출력이 계약을 위반했다. 다음 오류만 고쳐 전체 JSON을 다시 출력하라: "
+    instruction += json.dumps(errors, ensure_ascii=False)
+    if "body_length_mean" in errors and body_length_plan:
+        instruction += (
+            f" 프로필의 평균 본문 길이를 {body_length_plan.get('targetMeanChars')}자에 맞춰라."
+            " 입력 사건의 뼈대는 유지하면서 상황·과정·판단·협업 세부를 자연스럽게 확장하라."
+            " 새 날짜·수치·기관·자격·핵심 성과를 만들지는 마라."
+        )
+    if any("missing_number" in error for error in errors):
+        instruction += (
+            " 빠진 뼈대 수치는 해당 사건의 facts를 확인해 본문 첫 문장에 모두 넣어라."
+            " 문장을 끝에 덧붙이지 말고 기존 세부 문장 일부를 줄여 그 자리에 교체하라."
+        )
+    if any("invented_number" in error for error in errors):
+        instruction += (
+            " 입력에 없는 수치 표현은 숫자를 제거하고 '여러', '대부분', '눈에 띄게' 같은"
+            " 정성 표현으로 바꿔라. 본문 길이는 유지하라."
+        )
+    if input_payload and any("_number" in error for error in errors):
+        record_indexes = {
+            int(match.group(1)) - 1
+            for error in errors
+            if (match := re.match(r"record_(\d+)_", error))
+        }
+        relevant_facts = [
+            {
+                "eventId": input_payload["events"][index]["eventId"],
+                "facts": input_payload["events"][index]["facts"],
+            }
+            for index in sorted(record_indexes)
+            if 0 <= index < len(input_payload.get("events", []))
+        ]
+        instruction += " 교정 대상 사건의 원문 facts: " + json.dumps(relevant_facts, ensure_ascii=False)
+    return instruction
+
+
+def invalid_record_indexes(errors: list[str], *, record_count: int | None = None) -> list[int]:
+    indexes = {
+            int(match.group(1)) - 1
+            for error in errors
+            if (match := re.match(r"record_(\d+)_", error))
+    }
+    if "body_length_mean" in errors and record_count is not None:
+        indexes.update(range(record_count))
+    return sorted(indexes)
 
 
 def score_draft(
@@ -316,6 +603,285 @@ def _post_json(url: str, payload: dict[str, Any], timeout: int) -> dict[str, Any
         return json.loads(response.read().decode("utf-8"))
 
 
+def _record_candidate_valid(event: dict[str, Any], index: int, candidate: Any) -> bool:
+    fields = {"draftId", "eventId", "categoryKey", "title", "properties", "detailMd"}
+    return (
+        isinstance(candidate, dict)
+        and set(candidate) == fields
+        and candidate.get("draftId") == f"r{index + 1}"
+        and candidate.get("eventId") == event.get("eventId")
+        and candidate.get("categoryKey") == event.get("categoryKey")
+        and isinstance(candidate.get("title"), str)
+        and bool(candidate["title"].strip())
+        and isinstance(candidate.get("properties"), dict)
+        and set(candidate["properties"]) == set(event.get("propertyKeys", []))
+        and isinstance(candidate.get("detailMd"), str)
+    )
+
+
+def generate_qwen_by_record(
+    input_payload: dict[str, Any],
+    *,
+    model: str,
+    base_url: str,
+    timeout: int,
+    prompt_version: str = "synthetic-profile-v4.2",
+    max_attempts: int = 3,
+    post_json: Any = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """긴 프로필을 기록별 짧은 호출로 생성해 실패 범위와 재시도 비용을 제한한다."""
+    validate_creative_property_values(input_payload)
+    post_json = post_json or _post_json
+    prompt = (SCRIPT_DIR / "prompts" / f"{prompt_version}.md").read_text(encoding="utf-8")
+    body_min_length = body_min_length_for_prompt(prompt_version)
+    records = []
+    record_calls = 0
+    parse_failures = 0
+    transport_failures = 0
+    contract_failures = 0
+    output_tokens = 0
+    eval_duration = 0
+    done_reasons = []
+
+    for index, event in enumerate(input_payload["events"]):
+        parsed_record = None
+        for attempt in range(max_attempts):
+            record_calls += 1
+            try:
+                response = post_json(
+                    f"{base_url.rstrip('/')}/api/chat",
+                    {
+                    "model": model,
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": prompt
+                            + "\n# 단일 기록 생성 모드\n"
+                            + "아래 사건 하나의 record JSON 객체만 출력한다. 프로필 루트나 다른 기록은 출력하지 않는다.",
+                        },
+                        {
+                            "role": "user",
+                            "content": json.dumps(
+                                {
+                                    "profileSeed": input_payload["profileSeed"],
+                                    "persona": input_payload["persona"],
+                                    "bodyLengthPlan": input_payload.get("bodyLengthPlan"),
+                                    "event": event,
+                                    "outputContract": {
+                                        "draftId": f"r{index + 1}",
+                                        "eventId": event["eventId"],
+                                        "categoryKey": event["categoryKey"],
+                                        "propertyKeys": event["propertyKeys"],
+                                        "propertyValues": event.get("propertyValues", {}),
+                                        "fields": [
+                                            "draftId",
+                                            "eventId",
+                                            "categoryKey",
+                                            "title",
+                                            "properties",
+                                            "detailMd",
+                                        ],
+                                    },
+                                },
+                                ensure_ascii=False,
+                            ),
+                        },
+                    ],
+                    "stream": False,
+                    "format": "json",
+                    "think": False,
+                    "keep_alive": "15m",
+                    "options": {
+                        "temperature": 0,
+                        "seed": 42 + index + attempt,
+                        "num_ctx": 8192,
+                        "num_predict": 1536,
+                    },
+                    },
+                    timeout,
+                )
+            except (urllib.error.URLError, TimeoutError):
+                transport_failures += 1
+                continue
+            output_tokens += response.get("eval_count", 0) or 0
+            eval_duration += response.get("eval_duration", 0) or 0
+            done_reasons.append(response.get("done_reason"))
+            content = response.get("message", {}).get("content", "")
+            try:
+                candidate = json.loads(content)
+            except (json.JSONDecodeError, TypeError):
+                parse_failures += 1
+                continue
+            if _record_candidate_valid(event, index, candidate):
+                parsed_record = candidate
+                break
+            contract_failures += 1
+
+        if parsed_record is None:
+            parsed_record = {
+                "draftId": f"r{index + 1}",
+                "eventId": event["eventId"],
+                "categoryKey": event["categoryKey"],
+                "title": "생성 실패",
+                "properties": copy.deepcopy(event.get("propertyValues", {})),
+                "detailMd": "",
+                "generationFailure": True,
+            }
+        records.append(parsed_record)
+
+    raw_draft = {
+        "status": "generated",
+        "profileSeed": input_payload["profileSeed"],
+        "persona": input_payload["persona"],
+        "records": records,
+    }
+    return compose_skeleton_bodies(input_payload, raw_draft), {
+        "recordCalls": record_calls,
+        "parseFailures": parse_failures,
+        "transportFailures": transport_failures,
+        "contractFailures": contract_failures,
+        "outputTokens": output_tokens,
+        "evalDuration": eval_duration,
+        "doneReasons": done_reasons,
+    }
+
+
+def repair_qwen_records(
+    input_payload: dict[str, Any],
+    draft: dict[str, Any],
+    *,
+    model: str,
+    base_url: str,
+    timeout: int,
+    prompt_version: str = "synthetic-profile-v4.2",
+    max_rounds: int = 2,
+    post_json: Any = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """전체 프로필 재생성 후에도 남은 오류 기록만 좁은 컨텍스트로 교정한다."""
+    post_json = post_json or _post_json
+    prompt = (SCRIPT_DIR / "prompts" / f"{prompt_version}.md").read_text(encoding="utf-8")
+    body_min_length = body_min_length_for_prompt(prompt_version)
+    working = copy.deepcopy(draft)
+    repairs = 0
+    rounds = 0
+    calls = 0
+    output_tokens = 0
+    eval_duration = 0
+    transport_failures = 0
+    validation = validate_renderer_output(
+        input_payload,
+        working,
+        enforce_skeleton=True,
+        body_min_length=body_min_length,
+    )
+    while not validation["valid"] and rounds < max_rounds:
+        indexes = invalid_record_indexes(
+            validation["errors"],
+            record_count=len(working.get("records", [])),
+        )
+        if not indexes:
+            break
+        rounds += 1
+        for index in indexes:
+            record_errors = [
+                error for error in validation["errors"] if error.startswith(f"record_{index + 1}_")
+            ]
+            event = input_payload["events"][index]
+            repair_prompt = (
+                prompt
+                + "\n# 단일 기록 교정 모드\n"
+                + "아래 사건 하나의 record JSON 객체만 출력한다. 다른 기록은 출력하지 않는다.\n"
+                + build_revision_instruction(record_errors, input_payload.get("bodyLengthPlan"), input_payload)
+            )
+            calls += 1
+            try:
+                response = post_json(
+                    f"{base_url.rstrip('/')}/api/chat",
+                    {
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": repair_prompt},
+                        {
+                            "role": "user",
+                            "content": json.dumps(
+                                {
+                                    "profileSeed": input_payload["profileSeed"],
+                                    "persona": input_payload["persona"],
+                                    "event": event,
+                                    "validationErrors": record_errors,
+                                    "outputContract": {
+                                        "draftId": f"r{index + 1}",
+                                        "eventId": event["eventId"],
+                                        "categoryKey": event["categoryKey"],
+                                        "propertyKeys": event["propertyKeys"],
+                                        "propertyValues": event.get("propertyValues", {}),
+                                        "fields": [
+                                            "draftId",
+                                            "eventId",
+                                            "categoryKey",
+                                            "title",
+                                            "properties",
+                                            "detailMd",
+                                        ],
+                                    },
+                                },
+                                ensure_ascii=False,
+                            ),
+                        },
+                    ],
+                    "stream": False,
+                    "format": "json",
+                    "think": False,
+                    "keep_alive": "15m",
+                    "options": {
+                        "temperature": 0,
+                        "seed": 42 + rounds,
+                        "num_ctx": 16384,
+                        "num_predict": 4096,
+                    },
+                    },
+                    timeout,
+                )
+            except (urllib.error.URLError, TimeoutError):
+                transport_failures += 1
+                continue
+            output_tokens += response.get("eval_count", 0) or 0
+            eval_duration += response.get("eval_duration", 0) or 0
+            content = response.get("message", {}).get("content", "")
+            try:
+                repaired_record = json.loads(content)
+                if (
+                    input_payload.get("renderingPolicy") == "skeleton-grounded-creative-v1"
+                    and not _record_candidate_valid(event, index, repaired_record)
+                ):
+                    continue
+                repaired_draft = compose_skeleton_bodies(
+                    input_payload,
+                    {"records": [repaired_record]},
+                )
+                working["records"][index] = repaired_draft["records"][0]
+                repairs += 1
+            except (json.JSONDecodeError, TypeError):
+                continue
+        validation = validate_renderer_output(
+            input_payload,
+            working,
+            enforce_skeleton=True,
+            body_min_length=body_min_length,
+        )
+    return working, {
+        "valid": validation["valid"],
+        "errors": validation["errors"],
+        "rounds": rounds,
+        "repairs": repairs,
+        "calls": calls,
+        "transportFailures": transport_failures,
+        "outputTokens": output_tokens,
+        "evalDuration": eval_duration,
+        "bodyLengthMean": validation.get("bodyLengthMean"),
+    }
+
+
 def generate_qwen(
     input_paths: list[Path],
     output_dir: Path,
@@ -325,6 +891,8 @@ def generate_qwen(
     timeout: int,
     prompt_version: str = "synthetic-profile-v4",
     enforce_grounding: bool = False,
+    enforce_skeleton: bool = False,
+    max_attempts: int = 3,
 ) -> list[Path]:
     prompt_path = SCRIPT_DIR / "prompts" / f"{prompt_version}.md"
     prompt = prompt_path.read_text(encoding="utf-8")
@@ -334,58 +902,108 @@ def generate_qwen(
     for input_path in input_paths:
         input_payload = json.loads(input_path.read_text(encoding="utf-8"))
         body_min_length = body_min_length_for_prompt(prompt_version)
-        schema = build_output_schema(input_payload, body_min_length=body_min_length)
-        messages = [
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": json.dumps(input_payload, ensure_ascii=False)},
-        ]
         parsed = None
         response: dict[str, Any] = {}
         started = time.perf_counter()
         attempts = 0
         parse_error = None
         validation_errors: list[str] = []
-        while attempts < 2:
-            attempts += 1
-            response = _post_json(
-                f"{base_url.rstrip('/')}/api/chat",
-                {
-                    "model": model,
-                    "messages": messages,
-                    "stream": False,
-                    "format": schema,
-                    "think": False,
-                    "keep_alive": "15m",
-                    "options": {"temperature": 0, "seed": 42, "num_ctx": 32768, "num_predict": 8192},
-                },
-                timeout,
+        if input_payload.get("renderingPolicy") == "skeleton-grounded-creative-v1":
+            parsed, record_run = generate_qwen_by_record(
+                input_payload,
+                model=model,
+                base_url=base_url,
+                timeout=timeout,
+                prompt_version=prompt_version,
+                max_attempts=max_attempts,
             )
-            content = response.get("message", {}).get("content", "")
-            try:
-                parsed = json.loads(content)
-                parse_error = None
-            except (json.JSONDecodeError, TypeError) as exc:
-                parsed = None
-                parse_error = str(exc)
+            attempts = record_run["recordCalls"]
+            response = {
+                "done_reason": "record_calls",
+                "eval_count": record_run["outputTokens"],
+                "eval_duration": record_run["evalDuration"],
+            }
             validation = validate_renderer_output(
                 input_payload,
                 parsed,
                 enforce_grounding=enforce_grounding,
+                enforce_skeleton=enforce_skeleton,
                 body_min_length=body_min_length,
             )
             validation_errors = validation["errors"]
-            if validation["valid"]:
-                break
-            messages.extend(
-                [
-                    {"role": "assistant", "content": content},
+            parse_error = f"record_parse_failures:{record_run['parseFailures']}" if record_run["parseFailures"] else None
+            if validation_errors and max_attempts > 1:
+                parsed, repair_run = repair_qwen_records(
+                    input_payload,
+                    parsed,
+                    model=model,
+                    base_url=base_url,
+                    timeout=timeout,
+                    prompt_version=prompt_version,
+                    max_rounds=max_attempts - 1,
+                )
+                attempts += repair_run["calls"]
+                response["eval_count"] += repair_run["outputTokens"]
+                response["eval_duration"] += repair_run["evalDuration"]
+                validation = validate_renderer_output(
+                    input_payload,
+                    parsed,
+                    enforce_grounding=enforce_grounding,
+                    enforce_skeleton=enforce_skeleton,
+                    body_min_length=body_min_length,
+                )
+                validation_errors = validation["errors"]
+        else:
+            schema = build_output_schema(input_payload, body_min_length=body_min_length)
+            messages = [
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": json.dumps(input_payload, ensure_ascii=False)},
+            ]
+            while attempts < max_attempts:
+                attempts += 1
+                response = _post_json(
+                    f"{base_url.rstrip('/')}/api/chat",
                     {
-                        "role": "user",
-                        "content": "출력이 계약을 위반했다. 다음 오류만 고쳐 전체 JSON을 다시 출력하라: "
-                        + json.dumps(validation_errors, ensure_ascii=False),
+                        "model": model,
+                        "messages": messages,
+                        "stream": False,
+                        "format": schema,
+                        "think": False,
+                        "keep_alive": "15m",
+                        "options": {"temperature": 0, "seed": 42, "num_ctx": 32768, "num_predict": 8192},
                     },
-                ]
-            )
+                    timeout,
+                )
+                content = response.get("message", {}).get("content", "")
+                try:
+                    parsed = json.loads(content)
+                    parse_error = None
+                except (json.JSONDecodeError, TypeError) as exc:
+                    parsed = None
+                    parse_error = str(exc)
+                validation = validate_renderer_output(
+                    input_payload,
+                    parsed,
+                    enforce_grounding=enforce_grounding,
+                    enforce_skeleton=enforce_skeleton,
+                    body_min_length=body_min_length,
+                )
+                validation_errors = validation["errors"]
+                if validation["valid"]:
+                    break
+                messages.extend(
+                    [
+                        {"role": "assistant", "content": content},
+                        {
+                            "role": "user",
+                            "content": build_revision_instruction(
+                                validation_errors,
+                                input_payload.get("bodyLengthPlan"),
+                                input_payload,
+                            ),
+                        },
+                    ]
+                )
         elapsed = time.perf_counter() - started
         if parsed is None:
             parsed = {"status": "invalid", "parseError": parse_error}
@@ -492,37 +1110,62 @@ def compare_directories(input_dir: Path, model_dirs: dict[str, Path]) -> dict[st
     return results
 
 
-def main() -> None:
+def _add_qwen_arguments(parser: argparse.ArgumentParser, *, prompt_version: str) -> None:
+    parser.add_argument("input_dir", type=Path)
+    parser.add_argument("output_dir", type=Path)
+    parser.add_argument("--model", default="qwen3:30b-a3b-instruct-2507-q4_K_M")
+    parser.add_argument("--base-url", default="http://127.0.0.1:11434")
+    parser.add_argument("--timeout", type=int, default=900)
+    parser.add_argument("--prompt-version", default=prompt_version)
+    parser.add_argument("--max-attempts", type=int, default=3)
+
+
+def _add_assemble_arguments(parser: argparse.ArgumentParser, *, prompt_version: str) -> None:
+    parser.add_argument("input_dir", type=Path)
+    parser.add_argument("draft_dir", type=Path)
+    parser.add_argument("output_dir", type=Path)
+    parser.add_argument("--model", required=True)
+    parser.add_argument("--seeds", type=Path, default=DEFAULT_SEEDS_PATH)
+    parser.add_argument("--prompt-version", default=prompt_version)
+
+
+def build_cli_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
     prepare_parser = subparsers.add_parser("prepare")
     prepare_parser.add_argument("output_dir", type=Path)
     prepare_parser.add_argument("--seeds", type=Path, default=DEFAULT_SEEDS_PATH)
+    prepare_v42_parser = subparsers.add_parser("prepare-v4.2")
+    prepare_v42_parser.add_argument("output_dir", type=Path)
+    prepare_v42_parser.add_argument("--seeds", type=Path, default=DEFAULT_SEEDS_PATH)
     qwen_parser = subparsers.add_parser("qwen")
-    qwen_parser.add_argument("input_dir", type=Path)
-    qwen_parser.add_argument("output_dir", type=Path)
-    qwen_parser.add_argument("--model", default="qwen3:30b-a3b-instruct-2507-q4_K_M")
-    qwen_parser.add_argument("--base-url", default="http://127.0.0.1:11434")
-    qwen_parser.add_argument("--timeout", type=int, default=900)
-    qwen_parser.add_argument("--prompt-version", default="synthetic-profile-v4")
+    _add_qwen_arguments(qwen_parser, prompt_version="synthetic-profile-v4")
     qwen_parser.add_argument("--enforce-grounding", action="store_true")
+    qwen_parser.add_argument("--enforce-skeleton", action="store_true")
+    qwen_v42_parser = subparsers.add_parser("qwen-v4.2")
+    _add_qwen_arguments(qwen_v42_parser, prompt_version="synthetic-profile-v4.2")
+    qwen_v42_parser.set_defaults(enforce_grounding=False, enforce_skeleton=True)
     assemble_parser = subparsers.add_parser("assemble")
-    assemble_parser.add_argument("input_dir", type=Path)
-    assemble_parser.add_argument("draft_dir", type=Path)
-    assemble_parser.add_argument("output_dir", type=Path)
-    assemble_parser.add_argument("--model", required=True)
-    assemble_parser.add_argument("--seeds", type=Path, default=DEFAULT_SEEDS_PATH)
-    assemble_parser.add_argument("--prompt-version", default="synthetic-profile-v4")
+    _add_assemble_arguments(assemble_parser, prompt_version="synthetic-profile-v4")
+    assemble_v42_parser = subparsers.add_parser("assemble-v4.2")
+    _add_assemble_arguments(assemble_v42_parser, prompt_version="synthetic-profile-v4.2")
     compare_parser = subparsers.add_parser("compare")
     compare_parser.add_argument("input_dir", type=Path)
     compare_parser.add_argument("output", type=Path)
     compare_parser.add_argument("--model-dir", action="append", required=True)
-    args = parser.parse_args()
+    return parser
+
+
+def main() -> None:
+    args = build_cli_parser().parse_args()
 
     if args.command == "prepare":
         for path in prepare_pilot_inputs(args.output_dir, load_seed_categories(args.seeds)):
             print(path)
-    elif args.command == "qwen":
+    elif args.command == "prepare-v4.2":
+        for path in prepare_length_pilot_inputs(args.output_dir, load_seed_categories(args.seeds)):
+            print(path)
+    elif args.command in {"qwen", "qwen-v4.2"}:
         generate_qwen(
             sorted(args.input_dir.glob("*.json")),
             args.output_dir,
@@ -531,8 +1174,10 @@ def main() -> None:
             timeout=args.timeout,
             prompt_version=args.prompt_version,
             enforce_grounding=args.enforce_grounding,
+            enforce_skeleton=args.enforce_skeleton,
+            max_attempts=args.max_attempts,
         )
-    elif args.command == "assemble":
+    elif args.command in {"assemble", "assemble-v4.2"}:
         assemble_directory(
             args.input_dir,
             args.draft_dir,

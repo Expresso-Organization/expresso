@@ -8,7 +8,9 @@ from synthetic_profile_v4 import (
     assign_body_length_plans,
     assemble_profile,
     build_body_length_plans,
+    build_length_pilot_inputs,
     build_pilot_inputs,
+    prepare_length_pilot_inputs,
     prepare_pilot_inputs,
     validate_draft,
 )
@@ -59,6 +61,7 @@ def input_payload():
                 "timeOrder": 1,
                 "facts": ["정보통신 전공 과정을 이수했다", "2020-03에 시작했다"],
                 "propertyKeys": ["institution", "startMonth"],
+                "propertyValues": {"institution": "가상 대학교", "startMonth": "2020-03"},
                 "provenance": {
                     "surveyCalibration": ["yp2021:v1:education_to_first_job"],
                     "narrativeEvidence": [],
@@ -71,6 +74,7 @@ def input_payload():
                 "timeOrder": 2,
                 "facts": ["Python으로 공공데이터 정제 프로젝트를 수행했다", "결측값 처리 기준을 문서화했다"],
                 "propertyKeys": ["technologies"],
+                "propertyValues": {"technologies": ["Python"]},
                 "provenance": {
                     "surveyCalibration": [],
                     "narrativeEvidence": ["aih-71592-example"],
@@ -83,6 +87,7 @@ def input_payload():
                 "timeOrder": 3,
                 "facts": ["데이터 운영 업무를 담당했다", "반복 확인 절차를 체크리스트로 정리했다"],
                 "propertyKeys": [],
+                "propertyValues": {},
                 "provenance": {
                     "surveyCalibration": ["yp2021:v1:first_job_role"],
                     "narrativeEvidence": ["aih-71592-work"],
@@ -210,6 +215,32 @@ class DraftValidationTests(unittest.TestCase):
         self.assertTrue(result["valid"])
         self.assertEqual(result.get("bodyLengthMean"), actual_mean)
 
+    def test_does_not_reject_individual_record_below_event_length_guidance(self):
+        draft = valid_draft()
+        actual_mean = round(statistics.fmean(len(record["bodyMd"].strip()) for record in draft["records"]), 2)
+        planned_input = input_payload()
+        planned_input["bodyLengthPlan"] = {
+            "distributionVersion": "truncated-normal-v2",
+            "targetMinChars": 40,
+            "targetMaxChars": 800,
+            "recordMaxChars": 1000,
+            "populationMeanChars": 300,
+            "populationStdChars": 160,
+            "targetMeanChars": actual_mean,
+            "toleranceChars": 2,
+            "band": "moderately_short",
+        }
+        for event in planned_input["events"]:
+            event["bodyLengthTarget"] = {
+                "targetChars": 300,
+                "minChars": 290,
+                "maxChars": 310,
+            }
+
+        result = validate_draft(planned_input, draft)
+
+        self.assertTrue(result["valid"])
+
 
 class AssemblyTests(unittest.TestCase):
     def test_assembles_expresso_profile_with_external_event_provenance(self):
@@ -316,7 +347,12 @@ class PilotInputTests(unittest.TestCase):
             for event in item["events"]:
                 property_counts[str(len(event["propertyKeys"]))] += 1
                 self.assertTrue(any(event["provenance"].values()))
+                self.assertEqual(set(event["propertyKeys"]), set(event["propertyValues"]))
         self.assertEqual(property_counts, {"0": 18, "1": 8, "2": 2})
+
+        first_education = inputs[0]["events"][0]
+        self.assertNotIn("institution", first_education["propertyKeys"])
+        self.assertEqual(first_education["propertyValues"]["startMonth"], "2018-03")
 
     def test_pilot_inputs_exclude_protected_source_identifiers(self):
         serialized = str(build_pilot_inputs(input_payload()["propertySchema"])).lower()
@@ -337,10 +373,58 @@ class PilotInputTests(unittest.TestCase):
         self.assertNotIn("task", str(payloads))
         self.assertNotIn("outcome", str(payloads))
 
+    def test_builds_one_creative_length_pilot_for_each_band(self):
+        payloads = build_length_pilot_inputs({key: {} for key in ()})
+
+        self.assertEqual(
+            [payload["bodyLengthPlan"]["band"] for payload in payloads],
+            ["very_short", "moderately_short", "moderately_long", "very_long"],
+        )
+        self.assertEqual(
+            [payload["bodyLengthPlan"]["targetMeanChars"] for payload in payloads],
+            [100, 220, 380, 520],
+        )
+        self.assertTrue(
+            all(payload["renderingPolicy"] == "skeleton-grounded-creative-v1" for payload in payloads)
+        )
+        for payload in payloads:
+            targets = [event["bodyLengthTarget"]["targetChars"] for event in payload["events"]]
+            self.assertAlmostEqual(
+                statistics.fmean(targets),
+                payload["bodyLengthPlan"]["targetMeanChars"],
+                delta=1,
+            )
+            self.assertGreater(len(set(targets)), 1)
+            maxima = [event["bodyLengthTarget"]["maxChars"] for event in payload["events"]]
+            self.assertTrue(all(maximum < 800 for maximum in maxima))
+            self.assertTrue(
+                all(
+                    maximum <= round(target * 1.15) + 20
+                    for maximum, target in zip(maxima, targets, strict=True)
+                )
+            )
+            self.assertTrue(all(event["skeletonLead"].endswith(".") for event in payload["events"]))
+
+    def test_rejects_record_that_does_not_start_with_skeleton_lead(self):
+        planned_input = input_payload()
+        planned_input["events"][0]["skeletonLead"] = "2019년에 교육 과정을 시작했다."
+
+        result = validate_draft(planned_input, valid_draft())
+
+        self.assertFalse(result["valid"])
+        self.assertIn("record_1_skeleton_lead", result["errors"])
+
+    def test_writes_four_creative_length_pilot_inputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = prepare_length_pilot_inputs(Path(directory), SEED_CATEGORIES)
+
+            self.assertEqual(len(paths), 4)
+            self.assertTrue(all(path.exists() for path in paths))
+
 
 class BodyLengthPlanTests(unittest.TestCase):
     def test_assigns_four_bands_from_clipped_normal_quantiles(self):
-        plans = build_body_length_plans(30, upper_bound_chars=300, seed=42)
+        plans = build_body_length_plans(30, seed=42)
 
         targets = [plan["targetMeanChars"] for plan in plans]
         bands = ("very_short", "moderately_short", "moderately_long", "very_long")
@@ -349,14 +433,16 @@ class BodyLengthPlanTests(unittest.TestCase):
             band_counts,
             {"very_short": 5, "moderately_short": 10, "moderately_long": 10, "very_long": 5},
         )
-        self.assertGreaterEqual(min(targets), 20)
-        self.assertLessEqual(max(targets), 300)
-        self.assertAlmostEqual(statistics.fmean(targets), 135, delta=2)
-        self.assertAlmostEqual(statistics.pstdev(targets), 60, delta=3)
+        self.assertGreaterEqual(min(targets), 40)
+        self.assertLessEqual(max(targets), 800)
+        self.assertAlmostEqual(statistics.fmean(targets), 300, delta=5)
+        self.assertAlmostEqual(statistics.pstdev(targets), 160, delta=10)
+        self.assertTrue(all(plan["recordMaxChars"] == 1000 for plan in plans))
+        self.assertTrue(all(plan["distributionVersion"] == "clipped-normal-v2" for plan in plans))
 
     def test_seed_changes_assignment_order_without_changing_distribution(self):
-        first = build_body_length_plans(30, upper_bound_chars=300, seed=1)
-        second = build_body_length_plans(30, upper_bound_chars=300, seed=2)
+        first = build_body_length_plans(30, seed=1)
+        second = build_body_length_plans(30, seed=2)
 
         self.assertNotEqual(first, second)
         self.assertEqual(
@@ -367,7 +453,7 @@ class BodyLengthPlanTests(unittest.TestCase):
     def test_attaches_one_plan_to_each_profile_without_mutating_inputs(self):
         payloads = [{"profileSeed": f"profile-{index:03d}"} for index in range(30)]
 
-        planned = assign_body_length_plans(payloads, upper_bound_chars=300, seed=42)
+        planned = assign_body_length_plans(payloads, seed=42)
 
         self.assertEqual(len(planned), 30)
         self.assertTrue(all("bodyLengthPlan" in payload for payload in planned))
@@ -376,6 +462,16 @@ class BodyLengthPlanTests(unittest.TestCase):
             {payload["bodyLengthPlan"]["band"] for payload in planned},
             {"very_short", "moderately_short", "moderately_long", "very_long"},
         )
+        self.assertTrue(
+            all(payload["renderingPolicy"] == "skeleton-grounded-creative-v1" for payload in planned)
+        )
+
+    def test_rejects_creative_plan_when_property_values_are_not_fixed(self):
+        payload = input_payload()
+        del payload["events"][0]["propertyValues"]
+
+        with self.assertRaisesRegex(ValueError, "propertyValues"):
+            assign_body_length_plans([payload], seed=42)
 
 
 if __name__ == "__main__":
