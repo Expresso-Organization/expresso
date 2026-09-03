@@ -285,6 +285,20 @@ h2 em { font-style: normal; color: var(--ex-espresso); }
 .flow h3 { font-size: 26px; font-weight: 600; letter-spacing: -.02em; line-height: 1.35; margin-bottom: 12px; word-break: keep-all; }
 .flow p { font-size: 18px; line-height: 1.7; color: var(--ex-slate-500); word-break: keep-all; }
 
+/* 구조 그림 — docs/expresso-소개.html 의 .map 을 그대로 씁니다. 흰 상자가
+   실제로 있는 것, 점선 상자는 곁들이는 메모, 시그니처는 그 장에서 강조할 하나. */
+.map .box { fill: var(--ex-white); stroke: var(--ex-line-200); }
+.map .ghost { fill: var(--ex-tint-50); stroke: var(--ex-line-200); }
+.map .alt { fill: none; stroke: var(--ex-slate-300); stroke-dasharray: 5 4; }
+.map .sig { fill: var(--ex-bean-50); stroke: var(--ex-espresso); stroke-opacity: .45; }
+.map .l { font-family: var(--ex-font-mono); font-size: 13px; letter-spacing: .12em; fill: var(--ex-slate-400); }
+.map .ko { font-family: var(--ex-font-ui); font-size: 14px; fill: var(--ex-slate-500); }
+.map .t { font-family: var(--ex-font-ui); font-size: 16px; font-weight: 600; fill: var(--ex-ink-900); }
+.map .m { font-family: var(--ex-font-mono); font-size: 13px; fill: var(--ex-slate-500); }
+.map .flow { stroke: var(--ex-slate-300); stroke-width: 2; fill: none; }
+.map .flow-sig { stroke: var(--ex-espresso); stroke-width: 2; stroke-opacity: .6; fill: none; }
+.map .icon { fill: var(--ex-espresso); }
+
 /* 세로 타임라인 */
 .tl { display: grid; gap: 0; }
 .tl .row {
@@ -758,8 +772,8 @@ svg [data-morph] { transform-box: fill-box; }
       <div class="kicker">8월 27일</div>
       <h2>화면 결함 정비</h2>
     </div>
-    <div class="body">
-      <div class="cols c-3">
+    <div class="body" style="justify-content: center">
+      <div class="cols c-3" style="align-items: start; flex: none">
         <div class="panel">
           <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--ex-bean-50); display: grid; place-items: center; margin-bottom: 20px"><i class="ph ph-moon" style="font-size: 22px; color: var(--ex-espresso)"></i></div>
           <h3>다크 모드 정비</h3>
@@ -833,45 +847,57 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ============================================================
      06 · 03 MongoDB 백엔드 전환 — 파이프라인
      ============================================================ -->
-<section class="slide" data-title="03 MongoDB 백엔드 전환" data-kind="FLOW">
+<section class="slide" data-title="03 MongoDB 백엔드 전환" data-kind="ARCHITECTURE">
   <div class="frame">
     <div class="rail"><span class="now">03 · MIGRATION</span><span class="end count">06 / 14</span></div>
-    <div class="head">
-      <div class="kicker">8월 28일 — 8월 30일</div>
+    <div class="head" style="padding-top: 40px">
+      <div class="kicker">EXTRACT · TRANSFORM · LOAD</div>
       <h2>MongoDB 백엔드 전환</h2>
     </div>
-    <div class="body">
-      <div class="flow">
-        <div class="step">
-          <div class="n">01</div>
-          <i class="ph ph-note-pencil" style="font-size: 26px; color: var(--ex-slate-400); margin-bottom: 18px; display: block"></i>
-          <h3>설계</h3>
-          <p>컬렉션 구조 · 이관 계획 설계</p>
-        </div>
-        <div class="step">
-          <div class="n">02</div>
-          <i class="ph ph-git-branch" style="font-size: 26px; color: var(--ex-slate-400); margin-bottom: 18px; display: block"></i>
-          <h3>병렬 구현</h3>
-          <p>여러 모듈 동시 구현</p>
-        </div>
-        <div class="step">
-          <div class="n">03</div>
-          <i class="ph ph-swap" style="font-size: 26px; color: var(--ex-slate-400); margin-bottom: 18px; display: block"></i>
-          <h3>모듈 전환</h3>
-          <p>계정 권한부터 배포 미디어까지 순차 전환</p>
-        </div>
-        <div class="step">
-          <div class="n">04</div>
-          <i class="ph ph-plugs-connected" style="font-size: 26px; color: var(--ex-slate-400); margin-bottom: 18px; display: block"></i>
-          <h3>런타임 연결</h3>
-          <p>백엔드 전체 MongoDB 연결</p>
-        </div>
-        <div class="step on">
-          <div class="n">05 · DONE</div>
-          <i class="ph ph-check-circle" style="font-size: 26px; color: var(--ex-espresso); margin-bottom: 18px; display: block"></i>
-          <h3>운영 컷오버</h3>
-          <p>레거시 경로 정리, 운영 전환 완료</p>
-        </div>
+    <div class="body" style="padding-top: 20px">
+      <div class="plot">
+        <svg class="map" viewBox="0 0 1600 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MySQL 을 소스로 packages/database 가 스키마를 옮기고 모듈을 전환한 뒤 MongoDB 런타임에 연결, 운영 컷오버로 끝납니다">
+          <rect class="box" x="0" y="150" width="220" height="100" rx="12"></rect>
+          <text class="t" x="20" y="188" style="font-size: 17px">MySQL</text>
+          <text class="ko" x="20" y="212" style="font-size: 12.5px">운영 중이던 소스</text>
+          <text class="ko" x="20" y="230" style="font-size: 12.5px">company · job_posting</text>
+
+          <line class="flow" x1="220" y1="200" x2="350" y2="200"></line>
+          <text class="m" x="285" y="188" text-anchor="middle" style="font-size: 12px; fill: var(--ex-espresso)">EXTRACT</text>
+
+          <rect class="alt" x="360" y="40" width="500" height="330" rx="16"></rect>
+          <text class="m" x="610" y="26" text-anchor="middle" style="font-size: 13px">packages/database</text>
+
+          <rect class="box" x="390" y="76" width="440" height="72" rx="10"></rect>
+          <text class="t" x="408" y="108" style="font-size: 15px">스키마 마이그레이션</text>
+          <text class="ko" x="408" y="130" style="font-size: 12.5px">0001_initial_collections → 0008_career_view_configurations</text>
+
+          <rect class="box" x="390" y="164" width="440" height="72" rx="10"></rect>
+          <text class="t" x="408" y="196" style="font-size: 15px">모듈별 전환</text>
+          <text class="ko" x="408" y="218" style="font-size: 12.5px">계정 권한 · 커리어 기록 · 공고 수집 · Recipe · 배포 미디어</text>
+
+          <rect class="box" x="390" y="252" width="440" height="72" rx="10"></rect>
+          <text class="t" x="408" y="284" style="font-size: 15px">런타임 연결</text>
+          <text class="ko" x="408" y="306" style="font-size: 12.5px">services/backend → MONGODB_URL 전면 연결</text>
+
+          <line class="flow" x1="860" y1="200" x2="990" y2="200"></line>
+          <text class="m" x="925" y="188" text-anchor="middle" style="font-size: 12px; fill: var(--ex-espresso)">LOAD</text>
+
+          <rect class="sig" x="1000" y="150" width="240" height="100" rx="12"></rect>
+          <text class="t" x="1020" y="188" style="font-size: 17px">MongoDB</text>
+          <text class="ko" x="1020" y="212" style="font-size: 12.5px">expresso · replicaSet rs0</text>
+          <text class="ko" x="1020" y="230" style="font-size: 12.5px; fill: var(--ex-espresso)">운영 컷오버 완료</text>
+
+          <rect class="alt" x="0" y="330" width="500" height="70" rx="10"></rect>
+          <text class="ko" x="16" y="358" style="font-size: 12.5px">레거시 MySQL 운영 도구 경로 복구</text>
+          <text class="ko" x="16" y="378" style="font-size: 12.5px">Redis 볼륨 이름 보존</text>
+
+          <rect class="alt" x="1000" y="330" width="500" height="70" rx="10"></rect>
+          <text class="ko" x="1016" y="358" style="font-size: 12.5px">초기 연결 풀 준비</text>
+          <text class="ko" x="1016" y="378" style="font-size: 12.5px">홈 조회 왕복 축소</text>
+
+          <text class="ko" x="0" y="450" style="font-size: 13px">8월 28일 설계 → 병렬 구현 → 8월 30일 운영 컷오버. 사흘 사이에 끝냈습니다.</text>
+        </svg>
       </div>
     </div>
     <div class="foot">
@@ -882,46 +908,133 @@ svg [data-morph] { transform-box: fill-box; }
 </section>
 
 <!-- ============================================================
-     07 · 04 공고 수집 어댑터 확장 — 4카드
+     07 · 04 공고 수집 어댑터 확장 — 수집 경로 구조도
+
+     26쪽 「데이터 파이프라인 구조」(docs/expresso-소개.html)와 같은 .map
+     구조도인데, 이 지면의 주제가 출처가 늘어난 것이라 출처를 가로로 세우고
+     한 줄로 모아 MongoDB 로 내려보내는 배치로 바꿨습니다. 이번 주에 붙인
+     넷만 .sig 로 두어 무엇이 늘었는지가 색으로 보입니다.
+
+     로고는 각 서비스가 배포하는 파일을 그대로 받아 assets 에 두었습니다
+     (그리팅 · Lever · Workable · 고용24). Greenhouse · Node.js · MongoDB 는
+     Simple Icons 경로입니다. 상표는 소유자의 것이고, 여기서는 그 서비스를
+     가리키는 용도로만 씁니다.
      ============================================================ -->
-<section class="slide" data-title="04 공고 수집 어댑터 확장" data-kind="3-CARD">
+<section class="slide" data-title="04 공고 수집 어댑터 확장" data-kind="ARCHITECTURE">
   <div class="frame">
     <div class="rail"><span class="now">04 · SOURCING</span><span class="end count">07 / 14</span></div>
-    <div class="head">
-      <div class="kicker">9월 1일</div>
+    <div class="head" style="padding-top: 36px">
+      <div class="kicker">FETCH · SELECT · LOAD</div>
       <h2>공고 수집 어댑터 확장</h2>
     </div>
-    <div class="body">
-      <div class="cols c-4">
-        <div class="panel">
-          <div style="width: 44px; height: 44px; border-radius: 11px; background: var(--ex-bean-50); display: grid; place-items: center; margin-bottom: 18px"><i class="ph ph-link-simple" style="font-size: 20px; color: var(--ex-espresso)"></i></div>
-          <h3 style="font-size: 24px">그리팅</h3>
-          <p class="grow" style="font-size: 18px">신규 어댑터</p>
-        </div>
-        <div class="panel">
-          <div style="width: 44px; height: 44px; border-radius: 11px; background: var(--ex-bean-50); display: grid; place-items: center; margin-bottom: 18px"><i class="ph ph-link-simple" style="font-size: 20px; color: var(--ex-espresso)"></i></div>
-          <h3 style="font-size: 24px">Lever</h3>
-          <p class="grow" style="font-size: 18px">신규 어댑터</p>
-        </div>
-        <div class="panel">
-          <div style="width: 44px; height: 44px; border-radius: 11px; background: var(--ex-bean-50); display: grid; place-items: center; margin-bottom: 18px"><i class="ph ph-link-simple" style="font-size: 20px; color: var(--ex-espresso)"></i></div>
-          <h3 style="font-size: 24px">Workable</h3>
-          <p class="grow" style="font-size: 18px">신규 어댑터</p>
-        </div>
-        <div class="panel">
-          <div style="width: 44px; height: 44px; border-radius: 11px; background: var(--ex-bean-50); display: grid; place-items: center; margin-bottom: 18px"><i class="ph ph-link-simple" style="font-size: 20px; color: var(--ex-espresso)"></i></div>
-          <h3 style="font-size: 24px">고용24</h3>
-          <p class="grow" style="font-size: 18px">신규 어댑터</p>
-        </div>
-      </div>
-      <div style="margin-top: 40px; display: flex; gap: 14px; flex-wrap: wrap">
-        <span class="badge">출처 33곳 시드</span>
-        <span class="badge">요청 속도 · 수집 범위 제한</span>
-        <span class="badge">한국 직무명 분류 정비</span>
+    <div class="body" style="padding-top: 16px">
+      <div class="plot">
+        <svg class="map" viewBox="0 0 1600 570" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="그리팅 · Lever · Workable · 고용24 네 어댑터를 새로 붙여 출처 33곳을 읽고, 수집 서비스가 목록만 보고 상세 요청을 선별해 마크다운으로 옮긴 뒤 MongoDB 에 적재합니다">
+          <text class="m" x="644" y="18" text-anchor="middle" style="font-size: 12px; fill: var(--ex-espresso)">이번 주 추가한 넷</text>
+          <text class="m" x="1424" y="18" text-anchor="middle" style="font-size: 12px">기존</text>
+
+          <!-- 그리팅 -->
+          <rect class="sig" x="32" y="30" width="288" height="112" rx="12"></rect>
+          <image href="assets/이번주-진행상황-공유/logo-greeting.png" x="52" y="46" width="40" height="40" aria-label="그리팅"></image>
+          <text class="t" x="104" y="74" style="font-size: 16px">그리팅</text>
+          <text class="m" x="300" y="74" text-anchor="end" style="font-size: 11px; fill: var(--ex-espresso)">20곳</text>
+          <text class="m" x="52" y="106" style="font-size: 10.5px">{token}.career.greetinghr.com</text>
+          <text class="ko" x="52" y="126" style="font-size: 11.5px">목록 1회 · 상세 선별 요청</text>
+
+          <!-- Lever -->
+          <rect class="sig" x="344" y="30" width="288" height="112" rx="12"></rect>
+          <image href="assets/이번주-진행상황-공유/logo-lever.png" x="364" y="46" width="40" height="40" aria-label="Lever"></image>
+          <text class="t" x="416" y="74" style="font-size: 16px">Lever</text>
+          <text class="m" x="612" y="74" text-anchor="end" style="font-size: 11px; fill: var(--ex-espresso)">2곳</text>
+          <text class="m" x="364" y="106" style="font-size: 10.5px">api.lever.co/v0/postings</text>
+          <text class="ko" x="364" y="126" style="font-size: 11.5px">본문 포함 전량 응답</text>
+
+          <!-- Workable -->
+          <rect class="sig" x="656" y="30" width="288" height="112" rx="12"></rect>
+          <image href="assets/이번주-진행상황-공유/logo-workable.png" x="676" y="46" width="40" height="40" aria-label="Workable"></image>
+          <text class="t" x="728" y="74" style="font-size: 16px">Workable</text>
+          <text class="m" x="924" y="74" text-anchor="end" style="font-size: 11px; fill: var(--ex-espresso)">1곳</text>
+          <text class="m" x="676" y="106" style="font-size: 10.5px">apply.workable.com/api/v1</text>
+          <text class="ko" x="676" y="126" style="font-size: 11.5px">본문 포함 전량 응답</text>
+
+          <!-- 고용24 -->
+          <rect class="sig" x="968" y="30" width="288" height="112" rx="12"></rect>
+          <image href="assets/이번주-진행상황-공유/logo-work24.png" x="988" y="46" width="40" height="40" aria-label="고용24"></image>
+          <text class="t" x="1040" y="74" style="font-size: 16px">고용24</text>
+          <text class="m" x="1236" y="74" text-anchor="end" style="font-size: 11px; fill: var(--ex-espresso)">직종 5</text>
+          <text class="m" x="988" y="106" style="font-size: 10.5px">work24.go.kr · data.go.kr</text>
+          <text class="ko" x="988" y="126" style="font-size: 11.5px">3일 창 · 목록 20장 상한</text>
+
+          <!-- Greenhouse. 원래 있던 출처 -->
+          <rect class="ghost" x="1280" y="30" width="288" height="112" rx="12"></rect>
+          <g transform="translate(1300, 46) scale(1.66667)" aria-hidden="true"><title>Greenhouse</title><path d="M16.279 7.13c0 1.16-.49 2.185-1.293 2.987-.891.891-2.184 1.114-2.184 1.872 0 1.025 1.65.713 3.231 2.295 1.048 1.047 1.694 2.43 1.694 4.034C17.727 21.482 15.187 24 12 24c-3.187 0-5.727-2.518-5.727-5.68 0-1.607.646-2.989 1.694-4.036 1.582-1.582 3.23-1.27 3.23-2.295 0-.758-1.292-.98-2.183-1.872-.802-.802-1.293-1.827-1.293-3.03 0-2.318 1.895-4.19 4.212-4.19.446 0 .847.067 1.181.067.602 0 .914-.268.914-.691 0-.245-.112-.557-.112-.891 0-.758.647-1.382 1.427-1.382s1.404.646 1.404 1.426c0 .825-.647 1.204-1.137 1.382-.401.134-.713.312-.713.713 0 .758 1.382 1.493 1.382 3.61zm-.446 11.19c0-2.206-1.627-3.99-3.833-3.99-2.206 0-3.833 1.784-3.833 3.99 0 2.184 1.627 3.989 3.833 3.989 2.206 0 3.833-1.808 3.833-3.99zM14.518 7.086c0-1.404-1.136-2.562-2.518-2.562S9.482 5.682 9.482 7.086 10.618 9.65 12 9.65s2.518-1.159 2.518-2.563z" fill="#24A47F" fill-opacity=".55"></path></g>
+          <text class="t" x="1352" y="74" style="font-size: 16px; fill: var(--ex-slate-500)">Greenhouse</text>
+          <text class="m" x="1548" y="74" text-anchor="end" style="font-size: 11px">5곳</text>
+          <text class="m" x="1300" y="106" style="font-size: 10.5px">boards-api.greenhouse.io</text>
+          <text class="ko" x="1300" y="126" style="font-size: 11.5px">본문 포함 전량 응답</text>
+
+          <!-- 다섯 출처를 한 줄로 모아 수집 서비스로 -->
+          <line class="flow-sig" x1="176" y1="142" x2="176" y2="190"></line>
+          <line class="flow-sig" x1="488" y1="142" x2="488" y2="190"></line>
+          <line class="flow-sig" x1="800" y1="142" x2="800" y2="190"></line>
+          <line class="flow-sig" x1="1112" y1="142" x2="1112" y2="190"></line>
+          <line class="flow" x1="1424" y1="142" x2="1424" y2="190"></line>
+          <line class="flow" x1="176" y1="190" x2="1424" y2="190"></line>
+          <line class="flow" x1="800" y1="190" x2="800" y2="232"></line>
+          <text class="m" x="818" y="220" style="font-size: 12px; fill: var(--ex-espresso)">FETCH</text>
+
+          <!-- 수집 서비스 -->
+          <rect class="alt" x="250" y="232" width="1100" height="142" rx="14"></rect>
+          <g transform="translate(274, 240) scale(0.91667)" aria-hidden="true"><title>Node.js</title><path d="M11.998,24c-0.321,0-0.641-0.084-0.922-0.247l-2.936-1.737c-0.438-0.245-0.224-0.332-0.08-0.383 c0.585-0.203,0.703-0.25,1.328-0.604c0.065-0.037,0.151-0.023,0.218,0.017l2.256,1.339c0.082,0.045,0.197,0.045,0.272,0l8.795-5.076 c0.082-0.047,0.134-0.141,0.134-0.238V6.921c0-0.099-0.053-0.192-0.137-0.242l-8.791-5.072c-0.081-0.047-0.189-0.047-0.271,0 L3.075,6.68C2.99,6.729,2.936,6.825,2.936,6.921v10.15c0,0.097,0.054,0.189,0.139,0.235l2.409,1.392 c1.307,0.654,2.108-0.116,2.108-0.89V7.787c0-0.142,0.114-0.253,0.256-0.253h1.115c0.139,0,0.255,0.112,0.255,0.253v10.021 c0,1.745-0.95,2.745-2.604,2.745c-0.508,0-0.909,0-2.026-0.551L2.28,18.675c-0.57-0.329-0.922-0.945-0.922-1.604V6.921 c0-0.659,0.353-1.275,0.922-1.603l8.795-5.082c0.557-0.315,1.296-0.315,1.848,0l8.794,5.082c0.57,0.329,0.924,0.944,0.924,1.603 v10.15c0,0.659-0.354,1.273-0.924,1.604l-8.794,5.078C12.643,23.916,12.324,24,11.998,24z M19.099,13.993 c0-1.9-1.284-2.406-3.987-2.763c-2.731-0.361-3.009-0.548-3.009-1.187c0-0.528,0.235-1.233,2.258-1.233 c1.807,0,2.473,0.389,2.747,1.607c0.024,0.115,0.129,0.199,0.247,0.199h1.141c0.071,0,0.138-0.031,0.186-0.081 c0.048-0.054,0.074-0.123,0.067-0.196c-0.177-2.098-1.571-3.076-4.388-3.076c-2.508,0-4.004,1.058-4.004,2.833 c0,1.925,1.488,2.457,3.895,2.695c2.88,0.282,3.103,0.703,3.103,1.269c0,0.983-0.789,1.402-2.642,1.402 c-2.327,0-2.839-0.584-3.011-1.742c-0.02-0.124-0.126-0.215-0.253-0.215h-1.137c-0.141,0-0.254,0.112-0.254,0.253 c0,1.482,0.806,3.248,4.655,3.248C17.501,17.007,19.099,15.91,19.099,13.993z" fill="#5FA04E"></path></g>
+          <text class="t" x="306" y="258" style="font-size: 14px">backend-worker</text>
+          <text class="m" x="432" y="258" style="font-size: 11.5px">modules/jobs/ingest</text>
+
+          <rect class="box" x="281" y="274" width="326" height="86" rx="10"></rect>
+          <text class="t" x="299" y="302" style="font-size: 14px">목록 조회</text>
+          <text class="ko" x="299" y="324" style="font-size: 11.5px">출처별 어댑터로 JSON · HTML 파싱</text>
+          <text class="ko" x="299" y="344" style="font-size: 11.5px">고용24 목록 100건/장 · 등록일 내림차순</text>
+
+          <line class="flow" x1="607" y1="317" x2="637" y2="317"></line>
+
+          <rect class="sig" x="637" y="274" width="326" height="86" rx="10"></rect>
+          <text class="t" x="655" y="302" style="font-size: 14px">상세 요청 선별</text>
+          <text class="ko" x="655" y="324" style="font-size: 11.5px">이미 들인 공고 갱신 · 대상 외 생략</text>
+          <text class="ko" x="655" y="344" style="font-size: 11.5px; fill: var(--ex-espresso)">그리팅 실측 803건 → 상세 92건</text>
+
+          <line class="flow" x1="963" y1="317" x2="993" y2="317"></line>
+
+          <rect class="box" x="993" y="274" width="326" height="86" rx="10"></rect>
+          <text class="t" x="1011" y="302" style="font-size: 14px">본문 변환</text>
+          <text class="ko" x="1011" y="324" style="font-size: 11.5px">HTML → 마크다운 · 근거 좌표 보존</text>
+          <text class="ko" x="1011" y="344" style="font-size: 11.5px">출처 무관 단일 규칙 적용</text>
+
+          <line class="flow" x1="800" y1="374" x2="800" y2="414"></line>
+          <text class="m" x="818" y="400" style="font-size: 12px; fill: var(--ex-espresso)">LOAD</text>
+
+          <!-- 적재 -->
+          <rect class="box" x="560" y="412" width="480" height="98" rx="12"></rect>
+          <g transform="translate(586, 442) scale(1.5)" aria-hidden="true"><title>MongoDB</title><path d="M17.193 9.555c-1.264-5.58-4.252-7.414-4.573-8.115-.28-.394-.53-.954-.735-1.44-.036.495-.055.685-.523 1.184-.723.566-4.438 3.682-4.74 10.02-.282 5.912 4.27 9.435 4.888 9.884l.07.05A73.49 73.49 0 0111.91 24h.481c.114-1.032.284-2.056.51-3.07.417-.296.604-.463.85-.693a11.342 11.342 0 003.639-8.464c.01-.814-.103-1.662-.197-2.218zm-5.336 8.195s0-8.291.275-8.29c.213 0 .49 10.695.49 10.695-.381-.045-.765-1.76-.765-2.405z" fill="#47A248"></path></g>
+          <text class="t" x="636" y="452" style="font-size: 18px">MongoDB</text>
+          <text class="ko" x="636" y="476" style="font-size: 12.5px">job_postings · companies</text>
+          <text class="ko" x="636" y="496" style="font-size: 12.5px">job_sources 에 결과 · 실패 기록</text>
+
+          <!-- 주석 -->
+          <rect class="alt" x="32" y="412" width="460" height="98" rx="10"></rect>
+          <text class="ko" x="52" y="444" style="font-size: 12.5px">요청 간격 그리팅 200ms · 고용24 400ms</text>
+          <text class="ko" x="52" y="466" style="font-size: 12.5px">상세 동시 요청 그리팅 3 · 고용24 2 레인</text>
+          <text class="ko" x="52" y="488" style="font-size: 12.5px">429 · 503 · 509 응답 시 해당 출처 중단</text>
+
+          <rect class="alt" x="1108" y="412" width="460" height="98" rx="10"></rect>
+          <text class="ko" x="1128" y="444" style="font-size: 12.5px">출처별 실패 격리</text>
+          <text class="ko" x="1128" y="466" style="font-size: 12.5px">건너뛴 건수 포함 집계</text>
+          <text class="ko" x="1128" y="488" style="font-size: 12.5px">한국 직무명 분류 교정</text>
+
+          <text class="ko" x="32" y="546" style="font-size: 13px">본문 길이 — ATS 보드 3,000~15,000자 · 고용24 중앙값 441자. 보드가 깊이, 고용24가 넓이입니다.</text>
+        </svg>
       </div>
     </div>
     <div class="foot">
-      <p></p>
+      <p>PR #12 · #13.</p>
       <span class="pg">07</span>
     </div>
   </div>
@@ -971,43 +1084,61 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ============================================================
      09 · 06 채용 적합도 추천 모델 — 파이프라인
      ============================================================ -->
-<section class="slide" data-title="06 채용 적합도 추천 모델" data-kind="FLOW">
+<section class="slide" data-title="06 채용 적합도 추천 모델" data-kind="ARCHITECTURE">
   <div class="frame">
     <div class="rail"><span class="now">06 · IN PROGRESS</span><span class="end count">09 / 14</span></div>
-    <div class="head">
-      <div class="kicker">9월 1일 — 지금</div>
+    <div class="head" style="padding-top: 40px">
+      <div class="kicker">FETCH · EVALUATE · GENERATE</div>
       <h2>채용 적합도 추천 모델</h2>
     </div>
-    <div class="body">
-      <div class="flow">
-        <div class="step">
-          <div class="n">01</div>
-          <i class="ph ph-funnel" style="font-size: 26px; color: var(--ex-slate-400); margin-bottom: 18px; display: block"></i>
-          <h3>공고 수집 확장</h3>
-          <p>그리팅 · Lever · Workable · 고용24</p>
-        </div>
-        <div class="step">
-          <div class="n">02</div>
-          <i class="ph ph-chart-line" style="font-size: 26px; color: var(--ex-slate-400); margin-bottom: 18px; display: block"></i>
-          <h3>평가 기반 마련</h3>
-          <p>baseline harness · 매치 파일럿 데이터셋</p>
-        </div>
-        <div class="step">
-          <div class="n">03</div>
-          <i class="ph ph-sparkle" style="font-size: 26px; color: var(--ex-slate-400); margin-bottom: 18px; display: block"></i>
-          <h3>합성 프로필 보정</h3>
-          <p>근거 · 길이 · 다양성 게이트로 v3 → v4.5</p>
-        </div>
-        <div class="step on">
-          <div class="n">04 · 진행 중</div>
-          <i class="ph ph-cpu" style="font-size: 26px; color: var(--ex-espresso); margin-bottom: 18px; display: block"></i>
-          <h3>분산 실행</h3>
-          <p>Qwen Luna 패밀리로 샤드 분산 실행</p>
-        </div>
+    <div class="body" style="padding-top: 20px">
+      <div class="plot">
+        <svg class="map" viewBox="0 0 1600 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="네 곳에서 모은 공고로 baseline 을 재고, 합성 프로필을 v3 에서 v4.5 로 반복 보정한 뒤 Qwen Luna 로 분산 실행합니다. 지금도 진행 중입니다">
+          <rect class="box" x="0" y="150" width="220" height="100" rx="12"></rect>
+          <text class="t" x="20" y="188" style="font-size: 17px">공고 수집</text>
+          <text class="ko" x="20" y="212" style="font-size: 12.5px">그리팅 · Lever · Workable</text>
+          <text class="ko" x="20" y="230" style="font-size: 12.5px">고용24</text>
+
+          <line class="flow" x1="220" y1="200" x2="350" y2="200"></line>
+          <text class="m" x="285" y="188" text-anchor="middle" style="font-size: 12px; fill: var(--ex-espresso)">FETCH</text>
+
+          <rect class="alt" x="360" y="40" width="500" height="330" rx="16"></rect>
+          <text class="m" x="610" y="26" text-anchor="middle" style="font-size: 13px">매치 파일럿</text>
+
+          <rect class="box" x="390" y="76" width="440" height="72" rx="10"></rect>
+          <text class="t" x="408" y="108" style="font-size: 15px">baseline 평가 harness</text>
+          <text class="ko" x="408" y="130" style="font-size: 12.5px">동결 E5 랭커로 기준선 측정</text>
+
+          <rect class="box" x="390" y="164" width="440" height="72" rx="10"></rect>
+          <text class="t" x="408" y="196" style="font-size: 15px">매치 파일럿 데이터셋</text>
+          <text class="ko" x="408" y="218" style="font-size: 12.5px">데이터셋 생성기 · 라벨 커버리지 검증</text>
+
+          <rect class="box" x="390" y="252" width="440" height="72" rx="10"></rect>
+          <text class="t" x="408" y="284" style="font-size: 15px">합성 프로필 보정</text>
+          <text class="ko" x="408" y="306" style="font-size: 12.5px">근거 · 길이 · 다양성 게이트로 v3 → v4.5</text>
+
+          <line class="flow-sig" x1="860" y1="200" x2="990" y2="200"></line>
+          <text class="m" x="925" y="188" text-anchor="middle" style="font-size: 12px; fill: var(--ex-espresso)">GENERATE</text>
+
+          <rect class="sig" x="1000" y="150" width="260" height="100" rx="12"></rect>
+          <text class="t" x="1020" y="188" style="font-size: 17px">분산 실행</text>
+          <text class="ko" x="1020" y="212" style="font-size: 12.5px">Qwen Luna 패밀리 · 샤드 분산</text>
+          <text class="ko" x="1020" y="230" style="font-size: 12.5px; fill: var(--ex-espresso)">진행 중 · 오늘 15:30 커밋</text>
+
+          <rect class="alt" x="0" y="330" width="500" height="70" rx="10"></rect>
+          <text class="ko" x="16" y="358" style="font-size: 12.5px">PR #12 · #13</text>
+          <text class="ko" x="16" y="378" style="font-size: 12.5px">공고 출처 33곳 시드</text>
+
+          <rect class="alt" x="1000" y="330" width="500" height="70" rx="10"></rect>
+          <text class="ko" x="1016" y="358" style="font-size: 12.5px">합성 프로필 3천 건 분산 배치</text>
+          <text class="ko" x="1016" y="378" style="font-size: 12.5px">길이 구간 반복 보정</text>
+
+          <text class="ko" x="0" y="450" style="font-size: 13px">9월 1일 시작, main 에 직접 커밋되며 지금도 이어지는 작업입니다.</text>
+        </svg>
       </div>
     </div>
     <div class="foot">
-      <p>PR #12 · #13 · 최근 커밋 오늘 15:30.</p>
+      <p></p>
       <span class="pg">09</span>
     </div>
   </div>
@@ -1023,8 +1154,8 @@ svg [data-morph] { transform-box: fill-box; }
       <div class="kicker">9월 2일 — 9월 3일</div>
       <h2>운영 배포 안정화</h2>
     </div>
-    <div class="body">
-      <div class="cols c-2">
+    <div class="body" style="justify-content: center">
+      <div class="cols c-2" style="align-items: start; flex: none; max-width: 1200px">
         <div class="panel">
           <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--ex-surface-100); display: grid; place-items: center; margin-bottom: 20px"><i class="ph ph-package" style="font-size: 22px; color: var(--ex-slate-700)"></i></div>
           <h3>패키지 빌드 순서</h3>
