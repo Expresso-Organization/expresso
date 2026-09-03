@@ -330,9 +330,12 @@ def sentence_boost_for_body_mean(
     actual_mean: float,
     target_mean: float,
     tolerance: float,
+    band_mismatch: bool = False,
 ) -> int:
     difference = target_mean - actual_mean
     if abs(difference) <= tolerance:
+        if band_mismatch:
+            return 2 if difference >= 0 else -2
         return 0
     if difference > 0:
         return min(6, max(1, math.ceil(difference / 45)))
@@ -504,14 +507,15 @@ def generate_with_luna_profile(
                     draft["records"]
                 )
                 plan = payload["bodyLengthPlan"]
+                flat_errors = [str(error) for error in validation_errors[seed]]
                 boost = sentence_boost_for_body_mean(
                     actual_mean=actual_mean,
                     target_mean=plan["targetMeanChars"],
                     tolerance=plan["toleranceChars"],
+                    band_mismatch=any(
+                        "body_length_band" in error for error in flat_errors
+                    ),
                 )
-                flat_errors = [str(error) for error in validation_errors[seed]]
-                if boost == 0 and any("body_length_band" in error for error in flat_errors):
-                    boost = 1 if actual_mean < plan["targetMeanChars"] else -1
                 retry_profile = copy.deepcopy(profile_context)
                 retry_profile["retryDirective"] = {
                     "round": repair_round + 1,

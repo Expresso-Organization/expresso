@@ -210,6 +210,17 @@ class SyntheticProfileLunaWorkerTest(unittest.TestCase):
             0,
         )
 
+    def test_uses_larger_boost_when_length_band_still_mismatches_inside_tolerance(self):
+        self.assertEqual(
+            sentence_boost_for_body_mean(
+                actual_mean=286,
+                target_mean=315,
+                tolerance=47,
+                band_mismatch=True,
+            ),
+            2,
+        )
+
     def test_extracts_the_last_agent_json_bundle_from_codex_jsonl(self):
         stream = "\n".join(
             [
