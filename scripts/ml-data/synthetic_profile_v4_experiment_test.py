@@ -833,6 +833,80 @@ class SkeletonCompositionTests(unittest.TestCase):
         self.assertGreater(first_profile_temperature, 0)
         self.assertNotEqual(first_profile_seed, second_profile_seed)
 
+    def test_passes_corpus_forbidden_sentences_to_each_qwen_record(self):
+        planned_payload = payload()
+        planned_payload["generationControls"] = {
+            "forbiddenExactSentences": ["이미 두 프로필에서 사용된 완결 문장이다"]
+        }
+        planned_payload["renderingPolicy"] = "skeleton-grounded-creative-v1"
+        for event in planned_payload["events"]:
+            event["skeletonLead"] = ". ".join(event["facts"]) + "."
+            event["bodyLengthTarget"] = {"targetChars": 100, "minChars": 60, "maxChars": 140}
+        requests = []
+
+        def fake_post_json(url, request_payload, timeout):
+            requests.append(request_payload)
+            event = json.loads(request_payload["messages"][1]["content"])["event"]
+            index = 1 if event["eventId"] == "ev1" else 2
+            record = draft()["records"][index - 1]
+            record["detailMd"] = "현재 사건에만 맞는 작업 흐름과 판단 근거를 개인 기록으로 구체적으로 남겼다."
+            del record["bodyMd"]
+            return {"message": {"content": json.dumps(record, ensure_ascii=False)}}
+
+        generate_qwen_by_record(
+            planned_payload,
+            model="qwen-test",
+            base_url="http://localhost:11434",
+            timeout=30,
+            max_attempts=1,
+            post_json=fake_post_json,
+        )
+
+        contexts = [json.loads(item["messages"][1]["content"]) for item in requests]
+        self.assertTrue(
+            all(
+                context.get("sentencePolicy", {}).get("forbiddenExactSentences")
+                == ["이미 두 프로필에서 사용된 완결 문장이다"]
+                for context in contexts
+            )
+        )
+
+    def test_regeneration_attempt_changes_qwen_sampling_seed(self):
+        requests = []
+
+        def generate_for(generation_attempt):
+            planned_payload = payload()
+            planned_payload["generationControls"] = {"samplingAttempt": generation_attempt}
+            planned_payload["renderingPolicy"] = "skeleton-grounded-creative-v1"
+            for event in planned_payload["events"]:
+                event["skeletonLead"] = ". ".join(event["facts"]) + "."
+                event["bodyLengthTarget"] = {"targetChars": 100, "minChars": 60, "maxChars": 140}
+
+            def fake_post_json(url, request_payload, timeout):
+                requests.append(request_payload)
+                event = json.loads(request_payload["messages"][1]["content"])["event"]
+                index = 1 if event["eventId"] == "ev1" else 2
+                record = draft()["records"][index - 1]
+                record["detailMd"] = "현재 사건에만 맞는 작업 흐름과 판단 근거를 개인 기록으로 구체적으로 남겼다."
+                del record["bodyMd"]
+                return {"message": {"content": json.dumps(record, ensure_ascii=False)}}
+
+            generate_qwen_by_record(
+                planned_payload,
+                model="qwen-test",
+                base_url="http://localhost:11434",
+                timeout=30,
+                max_attempts=1,
+                post_json=fake_post_json,
+            )
+
+        generate_for(0)
+        first_seed = requests[0]["options"]["seed"]
+        generate_for(1)
+        second_seed = requests[2]["options"]["seed"]
+
+        self.assertNotEqual(first_seed, second_seed)
+
     def test_retries_one_record_after_transient_ollama_error(self):
         planned_payload = payload()
         planned_payload["renderingPolicy"] = "skeleton-grounded-creative-v1"

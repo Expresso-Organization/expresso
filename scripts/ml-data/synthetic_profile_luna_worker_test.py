@@ -7,6 +7,7 @@ from unittest.mock import patch
 from synthetic_profile_luna_worker import (
     _author_luna_profiles,
     build_luna_event_context,
+    commit_bundle,
     find_cross_profile_sentence_repetitions,
     find_intra_profile_sentence_repetitions,
     materialize_luna_draft,
@@ -33,6 +34,105 @@ def _profile(seed: str, *bodies: str) -> dict:
 
 
 class SyntheticProfileLunaWorkerTest(unittest.TestCase):
+    def test_commit_preserves_valid_profiles_when_a_sibling_profile_fails(self):
+        def input_payload(seed):
+            return {
+                "profileSeed": seed,
+                "profileFamily": "family-1",
+                "split": "train",
+                "persona": {"targetRoles": ["기획"], "experienceYears": 1},
+                "targetRecordCount": 1,
+                "renderingPolicy": "skeleton-grounded-creative-v1",
+                "bodyLengthPlan": {
+                    "distributionVersion": "truncated-normal-v2",
+                    "targetMinChars": 20,
+                    "targetMaxChars": 1000,
+                    "targetMeanChars": 70,
+                    "toleranceChars": 20,
+                    "band": "very_short",
+                    "populationMeanChars": 300,
+                    "populationStdChars": 100,
+                    "recordMaxChars": 1000,
+                },
+                "propertySchema": {"project": {}},
+                "events": [
+                    {
+                        "eventId": "ev1",
+                        "categoryKey": "project",
+                        "facts": ["자료 분류 기준을 정리했다"],
+                        "propertyKeys": [],
+                        "propertyValues": {},
+                        "renderMode": "rewrite_evidence",
+                        "skeletonLead": "",
+                        "bodyLengthTarget": {
+                            "targetChars": 70,
+                            "minChars": 40,
+                            "maxChars": 100,
+                        },
+                        "provenance": {
+                            "surveyCalibration": [],
+                            "narrativeEvidence": [],
+                            "sourceFamilies": [],
+                            "syntheticFields": ["detail"],
+                        },
+                    }
+                ],
+            }
+
+        manifest = {
+            "promptVersion": "synthetic-profile-v4.5.1",
+            "shards": [{"shardId": "s1", "profiles": ["p1", "p2"]}],
+        }
+        bundle = {
+            "shardId": "s1",
+            "profiles": [
+                {
+                    "profileSeed": "p1",
+                    "records": [
+                        {
+                            "eventId": "ev1",
+                            "title": "자료 분류 기준",
+                            "detailMd": (
+                                "서로 다른 자료 형식을 비교해 공통 분류 기준을 정리했다. "
+                                "빠진 항목은 원본과 다시 맞춰 개인 메모에 판단 이유를 남겼다."
+                            ),
+                        }
+                    ],
+                },
+                {
+                    "profileSeed": "p2",
+                    "records": [{"eventId": "ev1", "title": "자료 분류 기준", "detailMd": ""}],
+                },
+            ],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "inputs").mkdir()
+            (root / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+            (root / "bundle.json").write_text(json.dumps(bundle, ensure_ascii=False), encoding="utf-8")
+            for seed in ("p1", "p2"):
+                (root / "inputs" / f"{seed}.json").write_text(
+                    json.dumps(input_payload(seed), ensure_ascii=False),
+                    encoding="utf-8",
+                )
+
+            with self.assertRaises(ValueError):
+                commit_bundle(root / "manifest.json", "s1", root / "bundle.json")
+
+            state_path = root / "states" / "s1.json"
+            self.assertTrue(state_path.is_file())
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                state["profiles"]["p1"]["status"],
+                "complete",
+                json.dumps(state["profiles"]["p1"], ensure_ascii=False),
+            )
+            self.assertTrue((root / "profiles" / "train" / "p1.json").is_file())
+            self.assertFalse((root / "profiles" / "train" / "p2.json").exists())
+            self.assertEqual(state["completed"], 1)
+            self.assertEqual(state["failed"], 1)
+            self.assertEqual(state["profiles"]["p2"]["status"], "failed")
+
     def test_authorship_group_keeps_agent_profile_name_separate_from_profile_rows(self):
         context = {
             "shardId": "s1",
@@ -137,14 +237,24 @@ class SyntheticProfileLunaWorkerTest(unittest.TestCase):
         self.assertEqual(summary["completedShards"], 1)
         self.assertEqual(summary["failedShards"], 1)
 
-    def test_length_repairs_increase_sentence_requirement_cumulatively(self):
+    def test_length_repairs_never_request_more_sentences_than_the_length_contract_allows(self):
         self.assertEqual(
-            minimum_sentences_for_repair_round(base=5, boost=2, round_number=1),
+            minimum_sentences_for_repair_round(
+                base=5,
+                boost=2,
+                round_number=1,
+                maximum=7,
+            ),
             7,
         )
         self.assertEqual(
-            minimum_sentences_for_repair_round(base=5, boost=2, round_number=3),
-            11,
+            minimum_sentences_for_repair_round(
+                base=5,
+                boost=2,
+                round_number=3,
+                maximum=7,
+            ),
+            7,
         )
 
     def test_partitions_profiles_by_expected_detail_characters(self):

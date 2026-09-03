@@ -347,8 +347,10 @@ def minimum_sentences_for_repair_round(
     base: int,
     boost: int,
     round_number: int,
+    maximum: int | None = None,
 ) -> int:
-    return max(1, base + boost * max(1, round_number))
+    requested = max(1, base + boost * max(1, round_number))
+    return min(requested, maximum) if maximum is not None else requested
 
 
 def _run_luna_group(
@@ -529,10 +531,15 @@ def generate_with_luna_profile(
                     ),
                 }
                 for event in retry_profile["events"]:
+                    maximum_sentences = max(
+                        event["minimumSentences"],
+                        int(event["detailLength"]["maxChars"]) // 45,
+                    )
                     event["minimumSentences"] = minimum_sentences_for_repair_round(
                         base=event["minimumSentences"],
                         boost=boost,
                         round_number=repair_round + 1,
+                        maximum=maximum_sentences,
                     )
                 retry_profiles.append(retry_profile)
             if not retry_profiles:
@@ -579,10 +586,20 @@ def repair_luna_bundle(
             continue
         boosted = copy.deepcopy(profile_context)
         boosted["retryDirective"] = (
-            "이전 출력은 목표 본문 길이보다 짧았다. 각 기록을 처음부터 다시 쓰고 최소 문장 수와 글자 수를 모두 지켜라."
+            "이전 출력은 검증을 통과하지 못했다. 각 기록을 처음부터 다시 쓰고, 짧은 문장으로 "
+            "문장 수만 채우지 말고 문장마다 구체적인 맥락과 행동을 담아 detailLength의 목표 글자 수를 지켜라."
         )
         for event in boosted["events"]:
-            event["minimumSentences"] += sentence_boost
+            maximum_sentences = max(
+                event["minimumSentences"],
+                int(event["detailLength"]["maxChars"]) // 45,
+            )
+            event["minimumSentences"] = minimum_sentences_for_repair_round(
+                base=event["minimumSentences"],
+                boost=sentence_boost,
+                round_number=1,
+                maximum=maximum_sentences,
+            )
         retry_profiles.append(boosted)
     if {item["profileSeed"] for item in retry_profiles} != selected:
         raise ValueError("invalid_seeds contains a profile outside the shard")
@@ -724,7 +741,7 @@ def commit_bundle(manifest_path: Path, shard_id: str, bundle_path: Path) -> dict
         for seed in shard["profiles"]
         if seed not in errors
     }
-    if len(assembled) == len(shard["profiles"]):
+    if assembled:
         existing = _load_existing_profiles(output_root, excluded_seeds=expected_seeds)
         compared_profiles = existing + list(assembled.values())
         compared_seeds = {_profile_seed(profile, "") for profile in compared_profiles}
@@ -734,15 +751,23 @@ def commit_bundle(manifest_path: Path, shard_id: str, bundle_path: Path) -> dict
             ignored_sentences_by_profile=_load_ignored_skeletons(output_root, compared_seeds),
         )
         for issue in cross:
-            candidate_owners = expected_seeds.intersection(issue["profileSeeds"])
+            candidate_owners = set(assembled).intersection(issue["profileSeeds"])
             for seed in candidate_owners:
                 errors[seed].append({"crossProfileSentenceRepetition": issue})
 
-    if errors:
-        raise ValueError(json.dumps({"validationErrors": errors}, ensure_ascii=False))
-
     state_profiles = {}
     for seed in shard["profiles"]:
+        if seed in errors:
+            error = {
+                "profileSeed": seed,
+                "shardId": shard_id,
+                "errorType": "LunaValidationError",
+                "validationErrors": errors[seed],
+                "failedAt": _utc_now(),
+            }
+            _atomic_write_json(output_root / "errors" / f"{seed}.json", error)
+            state_profiles[seed] = {"status": "failed", "error": error}
+            continue
         payload = payloads[seed]
         draft = drafts[seed]
         profile = assembled[seed]
@@ -767,18 +792,22 @@ def commit_bundle(manifest_path: Path, shard_id: str, bundle_path: Path) -> dict
             },
         )
         state_profiles[seed] = {"status": "complete", "path": str(profile_path)}
+    completed = sum(item["status"] == "complete" for item in state_profiles.values())
+    failed = sum(item["status"] == "failed" for item in state_profiles.values())
     state = {
         "schemaVersion": 1,
         "shardId": shard_id,
         "device": "codex-agent-profile",
         "generator": "luna",
         "updatedAt": _utc_now(),
-        "completed": len(state_profiles),
-        "failed": 0,
+        "completed": completed,
+        "failed": failed,
         "profiles": state_profiles,
     }
     _atomic_write_json(output_root / "states" / f"{shard_id}.json", state)
-    return {"shardId": shard_id, "completed": len(state_profiles), "failed": 0}
+    if errors:
+        raise ValueError(json.dumps({"validationErrors": errors}, ensure_ascii=False))
+    return {"shardId": shard_id, "completed": completed, "failed": failed}
 
 
 def audit_corpus(manifest_path: Path, *, checkpoint: int) -> dict[str, Any]:

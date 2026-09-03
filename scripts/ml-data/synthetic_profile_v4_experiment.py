@@ -916,6 +916,12 @@ def generate_qwen_by_record(
     output_tokens = 0
     eval_duration = 0
     done_reasons = []
+    generation_controls = input_payload.get("generationControls", {})
+    forbidden_sentences = list(generation_controls.get("forbiddenExactSentences", []))
+    sampling_seed_profile = (
+        f"{input_payload['profileSeed']}:regeneration-"
+        f"{int(generation_controls.get('samplingAttempt', 0))}"
+    )
 
     for index, event in enumerate(input_payload["events"]):
         parsed_record = None
@@ -941,6 +947,10 @@ def generate_qwen_by_record(
                                     "persona": input_payload["persona"],
                                     "bodyLengthPlan": input_payload.get("bodyLengthPlan"),
                                     "event": event,
+                                    "sentencePolicy": {
+                                        "forbiddenExactSentences": forbidden_sentences,
+                                        "instruction": "목록의 완결 문장을 그대로 쓰지 않는다.",
+                                    },
                                     "outputContract": {
                                         "draftId": f"r{index + 1}",
                                         "eventId": event["eventId"],
@@ -970,7 +980,7 @@ def generate_qwen_by_record(
                     "options": {
                         "temperature": 0.6,
                         "seed": _profile_sampling_seed(
-                            input_payload["profileSeed"], index, attempt
+                            sampling_seed_profile, index, attempt
                         ),
                         "num_ctx": 8192,
                         "num_predict": 1536,
@@ -1046,6 +1056,12 @@ def repair_qwen_records(
     output_tokens = 0
     eval_duration = 0
     transport_failures = 0
+    generation_controls = input_payload.get("generationControls", {})
+    forbidden_sentences = list(generation_controls.get("forbiddenExactSentences", []))
+    sampling_seed_profile = (
+        f"{input_payload['profileSeed']}:regeneration-"
+        f"{int(generation_controls.get('samplingAttempt', 0))}"
+    )
     validation = validate_renderer_output(
         input_payload,
         working,
@@ -1109,6 +1125,10 @@ def repair_qwen_records(
                                     "validationErrors": record_errors,
                                     "currentBodyChars": len(current_body),
                                     "currentDetailMd": current_detail,
+                                    "sentencePolicy": {
+                                        "forbiddenExactSentences": forbidden_sentences,
+                                        "instruction": "목록의 완결 문장을 그대로 쓰지 않는다.",
+                                    },
                                     "outputContract": {
                                         "draftId": f"r{index + 1}",
                                         "eventId": event["eventId"],
@@ -1138,7 +1158,7 @@ def repair_qwen_records(
                     "options": {
                         "temperature": 0.4,
                         "seed": _profile_sampling_seed(
-                            input_payload["profileSeed"], index, rounds
+                            sampling_seed_profile, index, rounds
                         ),
                         "num_ctx": 16384,
                         "num_predict": 4096,
