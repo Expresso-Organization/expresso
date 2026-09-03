@@ -1,6 +1,7 @@
 package com.expresso.backend.career.infrastructure.mongo;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import org.bson.Document;
 import org.springframework.dao.DuplicateKeyException;
@@ -9,6 +10,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 
+import com.expresso.backend.career.application.CareerRecordDataIntegrityException;
 import com.expresso.backend.career.application.CareerRecordIdempotencyConflictException;
 import com.expresso.backend.career.application.CareerRecordRepository;
 import com.expresso.backend.career.domain.CareerRecord;
@@ -46,11 +48,36 @@ public class MongoCareerRecordRepository implements CareerRecordRepository {
 		}
 	}
 
+	@Override
+	public Optional<CareerRecord> findOwnedCanonicalById(String ownerId, String recordId) {
+		var query = Query.query(Criteria.where("_id").is(recordId)
+				.and("userId").is(ownerId)
+				.and("deletedAt").is(null));
+		var document = mongoTemplate.findOne(query, Document.class, COLLECTION);
+		if (document == null || isLegacyOnly(document)) {
+			return Optional.empty();
+		}
+		return Optional.of(projectCanonicalData(document));
+	}
+
 	private CreateResult replay(Document existing, String requestHash) {
 		if (!requestHash.equals(existing.getString("createRequestHash"))) {
 			throw new CareerRecordIdempotencyConflictException();
 		}
 		return new CreateResult(projector.project(existing), false);
+	}
+
+	private CareerRecord projectCanonicalData(Document document) {
+		try {
+			return projector.project(document);
+		}
+		catch (RuntimeException projectionError) {
+			throw new CareerRecordDataIntegrityException(projectionError);
+		}
+	}
+
+	private static boolean isLegacyOnly(Document document) {
+		return !document.containsKey("propertyValues") && !document.containsKey("blockBody");
 	}
 
 	private Document findByIdempotencyKey(String ownerId, String idempotencyKey) {
