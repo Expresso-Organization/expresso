@@ -7,8 +7,10 @@ from synthetic_profile_luna_worker import (
     materialize_luna_draft,
     merge_luna_bundles,
     parse_codex_bundle_jsonl,
+    parse_codex_bundle_attempts,
     partition_luna_profiles,
     replace_luna_profiles,
+    sentence_boost_for_body_mean,
 )
 
 
@@ -68,6 +70,24 @@ class SyntheticProfileLunaWorkerTest(unittest.TestCase):
         self.assertEqual(merged["profiles"][0]["records"][0]["title"], "keep")
         self.assertEqual(merged["profiles"][1]["records"][0]["title"], "new")
 
+    def test_increases_sentence_count_for_an_underlength_profile(self):
+        self.assertEqual(
+            sentence_boost_for_body_mean(actual_mean=267, target_mean=315, tolerance=47),
+            2,
+        )
+
+    def test_reduces_sentence_count_for_an_overlength_profile(self):
+        self.assertEqual(
+            sentence_boost_for_body_mean(actual_mean=834, target_mean=666, tolerance=100),
+            -2,
+        )
+
+    def test_keeps_sentence_count_when_profile_is_inside_tolerance(self):
+        self.assertEqual(
+            sentence_boost_for_body_mean(actual_mean=630, target_mean=666, tolerance=100),
+            0,
+        )
+
     def test_extracts_the_last_agent_json_bundle_from_codex_jsonl(self):
         stream = "\n".join(
             [
@@ -78,6 +98,14 @@ class SyntheticProfileLunaWorkerTest(unittest.TestCase):
         )
 
         bundle = parse_codex_bundle_jsonl(stream)
+
+        self.assertEqual(bundle, {"shardId": "s1", "profiles": []})
+
+    def test_uses_the_next_codex_attempt_after_malformed_json(self):
+        malformed = '{"type":"item.completed","item":{"type":"agent_message","text":"{bad json}"}}'
+        valid = '{"type":"item.completed","item":{"type":"agent_message","text":"{\\"shardId\\":\\"s1\\",\\"profiles\\":[]}"}}'
+
+        bundle = parse_codex_bundle_attempts([malformed, valid])
 
         self.assertEqual(bundle, {"shardId": "s1", "profiles": []})
 

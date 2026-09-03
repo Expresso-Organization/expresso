@@ -6,11 +6,12 @@ import argparse
 import concurrent.futures
 import copy
 import json
+import math
 import re
 import subprocess
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from synthetic_profile import load_seed_categories
 from synthetic_profile_v4 import assemble_profile, body_min_length_for_prompt
@@ -218,6 +219,18 @@ def parse_codex_bundle_jsonl(stream: str) -> dict[str, Any]:
     return bundle
 
 
+def parse_codex_bundle_attempts(streams: Iterable[str]) -> dict[str, Any]:
+    last_error: ValueError | None = None
+    for stream in streams:
+        try:
+            return parse_codex_bundle_jsonl(stream)
+        except (json.JSONDecodeError, ValueError) as exc:
+            last_error = exc
+    if last_error is not None:
+        raise last_error
+    raise ValueError("no Codex output attempts were provided")
+
+
 def partition_luna_profiles(
     profiles: list[dict[str, Any]],
     *,
@@ -288,6 +301,20 @@ def replace_luna_profiles(
     }
 
 
+def sentence_boost_for_body_mean(
+    *,
+    actual_mean: float,
+    target_mean: float,
+    tolerance: float,
+) -> int:
+    difference = target_mean - actual_mean
+    if abs(difference) <= tolerance:
+        return 0
+    if difference > 0:
+        return min(6, max(1, math.ceil(difference / 45)))
+    return max(-6, min(-1, round(difference / 80)))
+
+
 def _run_luna_group(
     *,
     codex_path: Path,
@@ -348,22 +375,22 @@ def _author_luna_profiles(
             + json.dumps(group_context, ensure_ascii=False)
             + "\n\nJSON 객체 하나만 출력하라.\n"
         )
-        stdout, stderr = _run_luna_group(
-            codex_path=codex_path,
-            profile=profile,
-            request=request,
-            timeout_seconds=timeout_seconds,
-        )
         part = index + 1
-        (output_root / f"luna-profile-{log_label}-part-{part:02d}.jsonl").write_text(
-            stdout,
-            encoding="utf-8",
-        )
-        (output_root / f"luna-profile-{log_label}-part-{part:02d}.err.log").write_text(
-            stderr,
-            encoding="utf-8",
-        )
-        return parse_codex_bundle_jsonl(stdout)
+
+        def attempts() -> Iterable[str]:
+            for attempt in range(1, 4):
+                stdout, stderr = _run_luna_group(
+                    codex_path=codex_path,
+                    profile=profile,
+                    request=request,
+                    timeout_seconds=timeout_seconds,
+                )
+                prefix = f"luna-profile-{log_label}-part-{part:02d}-attempt-{attempt:02d}"
+                (output_root / f"{prefix}.jsonl").write_text(stdout, encoding="utf-8")
+                (output_root / f"{prefix}.err.log").write_text(stderr, encoding="utf-8")
+                yield stdout
+
+        return parse_codex_bundle_attempts(attempts())
 
     bundles: list[dict[str, Any] | None] = [None] * len(groups)
     with concurrent.futures.ThreadPoolExecutor(max_workers=min(max_workers, len(groups))) as executor:
@@ -390,6 +417,7 @@ def generate_with_luna_profile(
     timeout_seconds: int = 3600,
     max_target_chars: int = 6000,
     max_workers: int = 3,
+    max_repair_rounds: int = 3,
 ) -> dict[str, Any]:
     manifest_path = Path(manifest_path).resolve()
     output_root = manifest_path.parent
@@ -408,8 +436,75 @@ def generate_with_luna_profile(
         log_label=shard_id,
     )
     bundle_path = output_root / "staging" / f"{shard_id}.bundle.json"
-    _atomic_write_json(bundle_path, bundle)
-    return commit_bundle(manifest_path, shard_id, bundle_path)
+    payloads = {
+        item["profileSeed"]: json.loads(
+            (output_root / "inputs" / f"{item['profileSeed']}.json").read_text(encoding="utf-8")
+        )
+        for item in context["profiles"]
+    }
+    for repair_round in range(max_repair_rounds + 1):
+        _atomic_write_json(bundle_path, bundle)
+        try:
+            return commit_bundle(manifest_path, shard_id, bundle_path)
+        except ValueError as exc:
+            if repair_round >= max_repair_rounds:
+                raise
+            try:
+                validation_errors = json.loads(str(exc))["validationErrors"]
+            except (json.JSONDecodeError, KeyError, TypeError) as parse_error:
+                raise exc from parse_error
+            authored_by_seed = {
+                item["profileSeed"]: item for item in bundle["profiles"]
+            }
+            retry_profiles = []
+            for profile_context in context["profiles"]:
+                seed = profile_context["profileSeed"]
+                if seed not in validation_errors:
+                    continue
+                payload = payloads[seed]
+                draft = materialize_luna_draft(payload, authored_by_seed[seed])
+                actual_mean = sum(len(record["bodyMd"]) for record in draft["records"]) / len(
+                    draft["records"]
+                )
+                plan = payload["bodyLengthPlan"]
+                boost = sentence_boost_for_body_mean(
+                    actual_mean=actual_mean,
+                    target_mean=plan["targetMeanChars"],
+                    tolerance=plan["toleranceChars"],
+                )
+                flat_errors = [str(error) for error in validation_errors[seed]]
+                if boost == 0 and any("body_length_band" in error for error in flat_errors):
+                    boost = 1 if actual_mean < plan["targetMeanChars"] else -1
+                retry_profile = copy.deepcopy(profile_context)
+                retry_profile["retryDirective"] = {
+                    "round": repair_round + 1,
+                    "errors": validation_errors[seed],
+                    "previousBodyMeanChars": round(actual_mean, 1),
+                    "targetBodyMeanChars": plan["targetMeanChars"],
+                    "instruction": (
+                        "이전 출력 전체를 다시 쓰고 입력에 없는 수치나 고유명사를 만들지 않는다. "
+                        "조정된 minimumSentences와 detailLength를 모두 지킨다."
+                    ),
+                }
+                for event in retry_profile["events"]:
+                    event["minimumSentences"] = max(1, event["minimumSentences"] + boost)
+                retry_profiles.append(retry_profile)
+            if not retry_profiles:
+                raise
+            retry_context = {**context, "profiles": retry_profiles}
+            replacements = _author_luna_profiles(
+                context=retry_context,
+                output_root=output_root,
+                codex_path=codex_path,
+                profile=profile,
+                base_prompt=base_prompt,
+                timeout_seconds=timeout_seconds,
+                max_target_chars=max_target_chars,
+                max_workers=max_workers,
+                log_label=f"{shard_id}-auto-repair-{repair_round + 1:02d}",
+            )
+            bundle = replace_luna_profiles(bundle, replacements)
+    raise RuntimeError("unreachable")
 
 
 def repair_luna_bundle(
@@ -695,6 +790,7 @@ def build_parser() -> argparse.ArgumentParser:
     generate.add_argument("--timeout", type=int, default=3600)
     generate.add_argument("--max-target-chars", type=int, default=6000)
     generate.add_argument("--max-workers", type=int, default=3)
+    generate.add_argument("--repair-rounds", type=int, default=3)
     repair = subparsers.add_parser("repair")
     repair.add_argument("manifest", type=Path)
     repair.add_argument("shard_id")
@@ -729,6 +825,7 @@ def main() -> None:
                     timeout_seconds=args.timeout,
                     max_target_chars=args.max_target_chars,
                     max_workers=args.max_workers,
+                    max_repair_rounds=args.repair_rounds,
                 ),
                 ensure_ascii=False,
             )
