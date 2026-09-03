@@ -342,6 +342,47 @@ class SyntheticProfileLunaWorkerTest(unittest.TestCase):
             },
         )
 
+    def test_materialization_trims_overlong_luna_detail_to_event_target(self):
+        payload = {
+            "profileSeed": "p1",
+            "persona": {},
+            "targetRecordCount": 1,
+            "renderingPolicy": "skeleton-grounded-creative-v1",
+            "bodyLengthPlan": {"band": "moderately_short"},
+            "propertySchema": {"project": {}},
+            "events": [
+                {
+                    "eventId": "ev1",
+                    "categoryKey": "project",
+                    "facts": ["자료 분류 기준을 정리했다"],
+                    "propertyKeys": [],
+                    "propertyValues": {},
+                    "renderMode": "rewrite_evidence",
+                    "skeletonLead": "",
+                    "bodyLengthTarget": {"targetChars": 80, "minChars": 40, "maxChars": 100},
+                }
+            ],
+        }
+        authored = {
+            "profileSeed": "p1",
+            "records": [
+                {
+                    "eventId": "ev1",
+                    "title": "자료 분류 기준",
+                    "detailMd": (
+                        "자료의 분류 기준을 먼저 확인하고 서로 다른 항목을 같은 기준으로 다시 묶었다. "
+                        "검토 과정에서 빠진 항목을 찾아 표시하고 판단 이유를 별도 메모로 남겼다. "
+                        "마지막에는 전체 목록을 처음부터 읽으며 표현이 어긋난 부분도 다시 고쳤다."
+                    ),
+                }
+            ],
+        }
+
+        draft = materialize_luna_draft(payload, authored)
+
+        self.assertLessEqual(len(draft["records"][0]["bodyMd"]), 100)
+        self.assertNotIn("마지막에는", draft["records"][0]["bodyMd"])
+
     def test_rejects_luna_records_in_the_wrong_event_order(self):
         payload = {
             "profileSeed": "p1",

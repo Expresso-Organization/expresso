@@ -22,6 +22,7 @@ from synthetic_profile_v4_batch import (
     _utc_now,
 )
 from synthetic_profile_v4_experiment import (
+    compose_skeleton_bodies,
     evidence_anchor_requirements,
     validate_renderer_output,
 )
@@ -175,27 +176,31 @@ def materialize_luna_draft(
         detail = str(authored.get("detailMd", "")).strip()
         if event.get("renderMode") == "fixed_skeleton" and lead and detail.startswith(lead):
             detail = detail[len(lead) :].lstrip()
-        body = (
-            f"{lead} {detail}".strip()
-            if event.get("renderMode") == "fixed_skeleton"
-            else detail
-        )
-        records.append(
-            {
-                "draftId": f"r{index}",
-                "eventId": event["eventId"],
-                "categoryKey": event["categoryKey"],
-                "title": str(authored.get("title", "")).strip(),
-                "properties": event.get("propertyValues", {}),
-                "bodyMd": body,
-            }
-        )
-    return {
+        record = {
+            "draftId": f"r{index}",
+            "eventId": event["eventId"],
+            "categoryKey": event["categoryKey"],
+            "title": str(authored.get("title", "")).strip(),
+            "properties": event.get("propertyValues", {}),
+        }
+        if payload.get("renderingPolicy") == "skeleton-grounded-creative-v1":
+            record["detailMd"] = detail
+        else:
+            record["bodyMd"] = (
+                f"{lead} {detail}".strip()
+                if event.get("renderMode") == "fixed_skeleton"
+                else detail
+            )
+        records.append(record)
+    draft = {
         "status": "generated",
         "profileSeed": payload["profileSeed"],
         "persona": payload["persona"],
         "records": records,
     }
+    if payload.get("renderingPolicy") == "skeleton-grounded-creative-v1":
+        return compose_skeleton_bodies(payload, draft)
+    return draft
 
 
 def parse_codex_bundle_jsonl(stream: str) -> dict[str, Any]:
