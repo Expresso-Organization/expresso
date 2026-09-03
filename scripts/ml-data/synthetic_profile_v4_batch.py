@@ -1044,6 +1044,94 @@ def build_shards(
     return shards
 
 
+def build_generator_shards(
+    specs: list[dict[str, Any]],
+    *,
+    family_size: int = FAMILY_SIZE,
+    qwen_ratio: float = 0.70,
+    checkpoints: tuple[int, ...] = (300, 1000),
+    seed: int = 20260903,
+) -> list[dict[str, Any]]:
+    """family와 체크포인트를 자르지 않고 Qwen·Luna 생성량을 배정한다."""
+    if not 0 < qwen_ratio < 1:
+        raise ValueError("qwen_ratio must be between zero and one")
+    if family_size < 1 or len(specs) % family_size:
+        raise ValueError("spec count must be divisible by family_size")
+    boundaries = sorted({*checkpoints, len(specs)})
+    if any(boundary <= 0 or boundary > len(specs) or boundary % family_size for boundary in boundaries):
+        raise ValueError("checkpoints must be family-aligned and within the profile count")
+
+    specs_by_family: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for spec in specs:
+        specs_by_family[spec["profileFamily"]].append(spec)
+    family_rows = []
+    for profile_family, family_specs in specs_by_family.items():
+        ordered = sorted(family_specs, key=lambda item: item["sequenceIndex"])
+        if len(ordered) != family_size or len({item["split"] for item in ordered}) != 1:
+            raise ValueError("every profile family must have one split and exactly family_size profiles")
+        if ordered[-1]["sequenceIndex"] - ordered[0]["sequenceIndex"] + 1 != family_size:
+            raise ValueError("profile families must be contiguous")
+        family_rows.append(
+            {
+                "profileFamily": profile_family,
+                "split": ordered[0]["split"],
+                "startIndex": ordered[0]["sequenceIndex"],
+                "endIndex": ordered[-1]["sequenceIndex"],
+                "profiles": [item["profileSeed"] for item in ordered],
+            }
+        )
+    family_rows.sort(key=lambda item: item["startIndex"])
+
+    generator_by_family: dict[str, str] = {}
+    segment_start = 1
+    luna_ratio = 1 - qwen_ratio
+    for boundary in boundaries:
+        segment = [
+            row
+            for row in family_rows
+            if row["startIndex"] >= segment_start and row["endIndex"] <= boundary
+        ]
+        if sum(len(row["profiles"]) for row in segment) != boundary - segment_start + 1:
+            raise ValueError("a checkpoint cuts through a profile family")
+        rows_by_split: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for row in segment:
+            rows_by_split[row["split"]].append(row)
+        for split, split_rows in rows_by_split.items():
+            ordered = sorted(
+                split_rows,
+                key=lambda row: _stable_int(
+                    seed,
+                    "generator-family-order",
+                    segment_start,
+                    boundary,
+                    split,
+                    row["profileFamily"],
+                ),
+            )
+            luna_count = round(len(ordered) * luna_ratio)
+            for index, row in enumerate(ordered):
+                generator_by_family[row["profileFamily"]] = (
+                    "luna" if index < luna_count else "qwen_windows"
+                )
+        segment_start = boundary + 1
+
+    shards = []
+    for shard_index, row in enumerate(family_rows, start=1):
+        generator = generator_by_family[row["profileFamily"]]
+        shards.append(
+            {
+                "shardId": f"family-shard-{shard_index:04d}",
+                "generator": generator,
+                "device": "windows" if generator == "qwen_windows" else "codex-agent",
+                "profileFamilies": [row["profileFamily"]],
+                "startIndex": row["startIndex"],
+                "endIndex": row["endIndex"],
+                "profiles": row["profiles"],
+            }
+        )
+    return shards
+
+
 def _complete_profile(path: Path, payload: dict[str, Any]) -> bool:
     try:
         profile = json.loads(path.read_text(encoding="utf-8"))
@@ -1394,7 +1482,29 @@ def prepare_batch(args: argparse.Namespace) -> None:
         raise ValueError(f"normalized atom catalog is missing domains: {sorted(missing_domains)}")
     specs = build_profile_specs(profile_count=args.profile_count, family_size=args.family_size, seed=args.seed)
     payloads = build_synthetic_inputs(specs, atoms, calibration, property_schema, seed=args.seed)
-    shards = build_shards(specs, shard_size=args.shard_size, device_weights={"windows": args.windows_weight, "mac": 1 - args.windows_weight})
+    if args.luna_ratio is None:
+        shards = build_shards(
+            specs,
+            shard_size=args.shard_size,
+            device_weights={"windows": args.windows_weight, "mac": 1 - args.windows_weight},
+        )
+        allocation = {
+            "allocationMode": "windows-mac",
+            "deviceWeights": {"windows": args.windows_weight, "mac": 1 - args.windows_weight},
+        }
+    else:
+        shards = build_generator_shards(
+            specs,
+            family_size=args.family_size,
+            qwen_ratio=1 - args.luna_ratio,
+            checkpoints=(300, 1000),
+            seed=args.seed,
+        )
+        allocation = {
+            "allocationMode": "qwen-windows-luna",
+            "generatorWeights": {"qwen_windows": 1 - args.luna_ratio, "luna": args.luna_ratio},
+            "excludedDevices": ["mac"],
+        }
     for payload in payloads:
         _atomic_write_json(output_root / "inputs" / f"{payload['profileSeed']}.json", payload)
     _atomic_write_json(output_root / "calibration" / "yp2021-w04-aggregate-v1.json", calibration)
@@ -1402,9 +1512,7 @@ def prepare_batch(args: argparse.Namespace) -> None:
         output_root / "atom-catalog-summary.json",
         {"counts": {domain: len(items) for domain, items in atoms.items()}},
     )
-    _atomic_write_json(
-        output_root / "manifest.json",
-        {
+    manifest = {
             "schemaVersion": 1,
             "batchId": output_root.name,
             "createdAt": _utc_now(),
@@ -1414,11 +1522,11 @@ def prepare_batch(args: argparse.Namespace) -> None:
             "promptVersion": PROMPT_VERSION,
             "model": args.model,
             "checkpoints": [300, 1000, args.profile_count],
-            "deviceWeights": {"windows": args.windows_weight, "mac": 1 - args.windows_weight},
             "profiles": specs,
             "shards": shards,
-        },
-    )
+        }
+    manifest.update(allocation)
+    _atomic_write_json(output_root / "manifest.json", manifest)
     print(json.dumps({"profiles": len(specs), "shards": len(shards), "outputRoot": str(output_root)}, ensure_ascii=False))
 
 
@@ -1438,12 +1546,15 @@ def build_parser() -> argparse.ArgumentParser:
     prepare.add_argument("--family-size", type=int, default=10)
     prepare.add_argument("--shard-size", type=int, default=25)
     prepare.add_argument("--windows-weight", type=float, default=0.31)
+    prepare.add_argument("--luna-ratio", type=float)
     prepare.add_argument("--seed", type=int, default=20260903)
     prepare.add_argument("--model", default=DEFAULT_MODEL)
 
     run = subparsers.add_parser("run")
     run.add_argument("manifest", type=Path)
-    run.add_argument("--device", choices=("windows", "mac"), required=True)
+    executor = run.add_mutually_exclusive_group(required=True)
+    executor.add_argument("--device", choices=("windows", "mac"))
+    executor.add_argument("--generator", choices=("qwen_windows",))
     run.add_argument("--checkpoint", type=int, default=300)
     run.add_argument("--shard-id")
     run.add_argument("--output-root", type=Path)
@@ -1484,10 +1595,11 @@ def main() -> None:
         timeout=args.timeout,
         max_attempts=args.max_attempts,
     )
+    executor_name = args.generator or args.device
     shards = [
         shard
         for shard in manifest["shards"]
-        if shard["device"] == args.device
+        if shard.get("generator", shard.get("device")) == executor_name
         and shard["endIndex"] <= args.checkpoint
         and (args.shard_id is None or shard["shardId"] == args.shard_id)
     ]

@@ -6,6 +6,7 @@ import zipfile
 from collections import Counter, defaultdict
 from pathlib import Path
 
+import synthetic_profile_v4_batch as batch_module
 from synthetic_profile_v4_batch import (
     PROMPT_VERSION,
     _backbone_events,
@@ -429,6 +430,51 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
         self.assertEqual(first_counts, {"mac": 8, "windows": 4})
         total_counts = Counter(item["device"] for item in shards)
         self.assertEqual(total_counts, {"mac": 83, "windows": 37})
+
+    def test_generator_shards_are_family_aligned_and_keep_seventy_thirty_quotas(self):
+        specs = build_profile_specs(profile_count=3000, family_size=10, seed=20260903)
+        builder = getattr(batch_module, "build_generator_shards", lambda *args, **kwargs: [])
+
+        shards = builder(
+            specs,
+            family_size=10,
+            qwen_ratio=0.70,
+            checkpoints=(300, 1000),
+            seed=20260903,
+        )
+
+        self.assertEqual(len(shards), 300)
+        self.assertTrue(all(len(shard["profiles"]) == 10 for shard in shards))
+        self.assertTrue(all(len(shard["profileFamilies"]) == 1 for shard in shards))
+        self.assertEqual(
+            Counter(shard["generator"] for shard in shards if shard["endIndex"] <= 300),
+            {"qwen_windows": 21, "luna": 9},
+        )
+        self.assertEqual(
+            Counter(shard["generator"] for shard in shards if shard["endIndex"] <= 1000),
+            {"qwen_windows": 70, "luna": 30},
+        )
+        self.assertEqual(
+            Counter(shard["generator"] for shard in shards),
+            {"qwen_windows": 210, "luna": 90},
+        )
+        spec_by_seed = {spec["profileSeed"]: spec for spec in specs}
+        generator_by_split = Counter(
+            (spec_by_seed[profile_seed]["split"], shard["generator"])
+            for shard in shards
+            for profile_seed in shard["profiles"]
+        )
+        self.assertEqual(
+            generator_by_split,
+            {
+                ("train", "qwen_windows"): 1680,
+                ("train", "luna"): 720,
+                ("valid", "qwen_windows"): 210,
+                ("valid", "luna"): 90,
+                ("test", "qwen_windows"): 210,
+                ("test", "luna"): 90,
+            },
+        )
 
     def test_run_shard_is_atomic_resumable_and_keeps_failures_local(self):
         specs = build_profile_specs(profile_count=20, family_size=10, split_counts={"train": 10, "valid": 10, "test": 0}, seed=3)
