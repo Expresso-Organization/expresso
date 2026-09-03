@@ -36,7 +36,7 @@ from synthetic_profile_v4_experiment import (
 )
 
 
-PROMPT_VERSION = "synthetic-profile-v4.4.3"
+PROMPT_VERSION = "synthetic-profile-v4.4.4"
 DEFAULT_MODEL = "qwen3:30b-a3b-instruct-2507-q4_K_M"
 DEFAULT_SEEDS_PATH = (
     Path(__file__).parents[2]
@@ -109,6 +109,110 @@ DOMAIN_CONFIG = {
         "tools": ["공정 자료", "품질 기록"],
     },
 }
+SYNTHETIC_CONTEXTS = (
+    "초기 준비",
+    "첫 검토",
+    "중간 점검",
+    "마감 준비",
+    "요구사항 정리",
+    "자료 통합",
+    "시범 운영",
+    "결과 회고",
+    "인수인계 준비",
+    "정기 운영",
+    "사용자 의견 반영",
+    "협업 조율",
+    "품질 확인",
+    "업무 개선",
+    "변경 사항 반영",
+    "후속 작업 준비",
+)
+SYNTHETIC_OBJECTS = (
+    "요구사항 문서",
+    "진행 일정",
+    "검토 기록",
+    "작업 결과물",
+    "참고 자료",
+    "요청 목록",
+    "품질 기준",
+    "공유 문서",
+    "업무 절차",
+    "회의 안건",
+    "이슈 목록",
+    "사용자 의견",
+    "성과 자료",
+    "인수인계 내용",
+    "작업 템플릿",
+    "점검 항목",
+)
+SYNTHETIC_PROBLEMS = (
+    "최신 버전이 구분되지 않는 문제",
+    "담당자마다 판단 기준이 다른 문제",
+    "필수 항목이 자주 빠지는 문제",
+    "처리 순서가 공유되지 않은 문제",
+    "진행 상태를 한눈에 알기 어려운 문제",
+    "같은 확인 작업이 반복되는 문제",
+    "요청 의도가 중간에 달라지는 문제",
+    "예외 사례가 기록되지 않는 문제",
+    "파일 이름만으로 내용을 찾기 어려운 문제",
+    "수정 근거가 남지 않는 문제",
+    "인수인계 때 맥락이 끊기는 문제",
+    "검토 의견이 여러 채널에 흩어지는 문제",
+    "완료 기준이 모호한 문제",
+    "작업 우선순위가 충돌하는 문제",
+    "중간 결과를 비교하기 어려운 문제",
+    "후속 조치가 누락되는 문제",
+)
+SYNTHETIC_ACTIONS = (
+    "핵심 항목을 유형별로 다시 분류",
+    "공통 확인 순서를 정리",
+    "예외 사례를 별도 표로 기록",
+    "담당 구간과 마감 기준을 명시",
+    "이전 결과와 달라진 점을 비교",
+    "필수 입력값을 체크리스트로 구성",
+    "검토 의견을 한 문서에 통합",
+    "작업 단계를 작은 단위로 분리",
+    "우선순위 판단 기준을 합의",
+    "반복 작업을 템플릿으로 묶어 정리",
+    "중간 검토 시점을 일정에 반영",
+    "누락 항목을 역순으로 점검",
+    "사용 흐름을 단계별로 시각화",
+    "관련 자료의 이름 규칙을 통일",
+    "완료 후 확인 절차를 추가",
+    "후속 담당자가 볼 요약을 작성",
+)
+SYNTHETIC_OUTCOMES = (
+    "검토 순서가 명확해졌다",
+    "팀이 같은 기준으로 작업할 수 있었다",
+    "누락 항목을 앞 단계에서 찾을 수 있었다",
+    "수정 이유를 나중에도 추적할 수 있었다",
+    "담당자 사이의 재확인이 줄었다",
+    "다음 작업의 시작점을 빠르게 찾을 수 있었다",
+    "중간 결과를 비교하기 쉬워졌다",
+    "예외 상황을 처리하는 기준이 생겼다",
+    "공유 자료를 다시 찾는 시간이 줄었다",
+    "완료 여부를 한눈에 확인할 수 있었다",
+    "후속 담당자가 맥락을 이어갈 수 있었다",
+    "피드백 반영 여부가 분명해졌다",
+    "작업 범위를 놓고 생기던 혼선이 줄었다",
+    "중요한 요청부터 처리할 수 있었다",
+    "같은 문제를 다시 확인하는 일이 줄었다",
+    "남은 조치를 빠짐없이 전달할 수 있었다",
+)
+SYNTHETIC_CATEGORIES_NEW = (
+    "project",
+    "skill_tool",
+    "education_history",
+    "activity_leadership",
+    "academic_writing",
+)
+SYNTHETIC_CATEGORIES_EXPERIENCED = (
+    "experience",
+    "project",
+    "skill_tool",
+    "activity_leadership",
+    "academic_writing",
+)
 FACTUAL_MARKERS = (
     "프로젝트", "경험", "업무", "성과", "달성", "공부", "학습", "자격", "수상",
     "활동", "연구", "개발", "분석", "제작", "참여", "수행", "근무", "사용", "해결",
@@ -688,62 +792,58 @@ def _backbone_events(spec: dict[str, Any], calibration: dict[str, Any], rng: ran
     return events
 
 
-def _coherent_synthetic_events(spec: dict[str, Any]) -> list[dict[str, Any]]:
-    """한 직무권 안에서만 움직이는 보조 기록 골격을 만들고 합성임을 명시한다."""
+def _coherent_synthetic_events(spec: dict[str, Any], *, seed: int) -> list[dict[str, Any]]:
+    """프로필마다 고유한 보조 사건 골격을 만들고 완전 합성임을 명시한다."""
     config = DOMAIN_CONFIG[spec["domain"]]
     area = config["industry"]
     role = config["role"]
-    first_tool, second_tool = config["tools"][:2]
-    if spec["experienceYears"] <= 0:
-        templates = [
-            ("project", f"{area} 분야 수업에서 팀 과제의 요구사항 정리와 일정 관리를 맡았다"),
-            ("skill_tool", f"{role} 관련 과제를 수행하며 {_object_with_particle(first_tool)} 활용했다"),
-            ("education_history", f"{role} 기초 과정을 수강하고 학습 내용을 개인 노트로 정리했다"),
-            ("project", f"{area} 분야 사례를 조사해 문제와 해결 방향을 발표 자료로 만들었다"),
-            ("activity_leadership", f"직무 관련 스터디에서 자료 조사와 회의 기록을 담당했다"),
-            ("academic_writing", f"{area} 분야 사례를 비교해 짧은 분석 보고서를 작성했다"),
-            ("project", "팀 과제에서 구성원의 의견을 모아 작업 순서와 역할을 정리했다"),
-            ("skill_tool", f"반복 과제를 정리하기 위해 {_object_with_particle(second_tool)} 익혀 활용했다"),
-            ("activity_leadership", "교내 활동에서 일정과 준비 항목을 정리해 구성원에게 공유했다"),
-            ("academic_writing", "수업에서 다룬 자료의 근거를 확인하고 참고 내용을 문서로 남겼다"),
-            ("project", "과제 결과물의 오류를 점검하고 수정 사항을 팀원과 나누어 반영했다"),
-            ("skill_tool", f"{first_tool}으로 자료를 정리하고 결과를 검토하는 연습을 했다"),
-            ("activity_leadership", "스터디 구성원이 맡을 주제를 나누고 발표 순서를 조율했다"),
-            ("education_history", f"{role} 관련 실습 과정을 마치고 작업 과정을 회고로 정리했다"),
-            ("project", "제한된 일정 안에서 핵심 기능을 먼저 완성하는 방식으로 팀 과제를 진행했다"),
-            ("academic_writing", "과제 수행 중 확인한 문제와 수정 과정을 보고서에 기록했다"),
-            ("activity_leadership", "직무 사례 발표에서 질문을 모아 답변 자료를 정리했다"),
-            ("skill_tool", f"{second_tool}으로 여러 자료를 한 형식으로 정리했다"),
-            ("project", "기존 결과물의 사용 흐름을 살펴보고 불편한 부분을 수정하는 과제를 수행했다"),
-            ("education_history", "팀 피드백을 반영해 과제 결과물을 수정하고 제출 과정을 마쳤다"),
-        ]
-    else:
-        templates = [
-            ("experience", "업무를 시작한 뒤 반복되는 요청과 처리 순서를 개인 문서로 정리했다"),
-            ("project", f"{area} 분야의 작업 자료를 정리하는 내부 개선 과제에 참여했다"),
-            ("skill_tool", f"{role} 업무에서 {_object_with_particle(first_tool)} 활용해 자료를 작성하고 검토했다"),
-            ("project", "동료와 요구사항을 나누고 결과물을 함께 검토하는 협업 과제를 수행했다"),
-            ("activity_leadership", "직무 관련 사내 학습 모임에 참여해 사례를 정리하고 공유했다"),
-            ("academic_writing", f"{area} 분야의 업무 사례를 조사해 내부 보고서를 작성했다"),
-            ("experience", "업무 인수인계를 위해 절차와 주의사항을 문서로 정리했다"),
-            ("project", "반복되는 오류를 확인하고 점검 기준을 만드는 개선 작업에 참여했다"),
-            ("activity_leadership", "새 구성원에게 작업 절차를 공유하고 질문을 정리해 전달했다"),
-            ("skill_tool", f"{second_tool}으로 진행 상황과 검토 결과를 정리했다"),
-            ("experience", "여러 요청의 우선순위를 정하고 처리 상태를 동료와 공유했다"),
-            ("project", "흩어진 자료의 형식을 맞추고 팀이 함께 사용할 작업 기준을 만들었다"),
-            ("academic_writing", "업무 중 확인한 사례와 판단 근거를 비교해 문서로 남겼다"),
-            ("activity_leadership", "직무 학습 시간에 실무 사례를 준비해 동료들과 토론했다"),
-            ("skill_tool", f"{first_tool}과 {second_tool}을 함께 사용해 결과물을 점검했다"),
-            ("project", "중간 피드백을 반영해 작업 범위와 완료 기준을 다시 정리했다"),
-            ("experience", "처리 과정에서 발견한 문제를 기록하고 다음 업무 때 확인할 항목을 만들었다"),
-            ("activity_leadership", "팀 지식 공유 자리에서 작업 사례와 주의사항을 발표했다"),
-            ("project", "업무 흐름에서 시간이 오래 걸리는 단계를 찾아 정리 방식을 바꾸었다"),
-            ("experience", "완료한 업무의 결과와 남은 확인 사항을 다음 담당자에게 전달했다"),
-        ]
-    return [
-        _event(category, [fact], synthetic=["event_skeleton", "situation_detail", "work_process", "reflection"])
-        for category, fact in templates
-    ]
+    categories = (
+        SYNTHETIC_CATEGORIES_NEW
+        if spec["experienceYears"] <= 0
+        else SYNTHETIC_CATEGORIES_EXPERIENCED
+    )
+    category_scopes = {
+        "experience": f"{role} 업무",
+        "project": f"{area} 프로젝트",
+        "education_history": f"{role} 실습 과정",
+        "academic_writing": f"{area} 사례 조사",
+        "activity_leadership": f"{role} 학습 모임",
+        "skill_tool": f"{config['tools'][0]} 활용",
+    }
+    patterns = (
+        "{scope}의 {context}에서 {object_particle} 다루며 {problem}를 확인해 {action}했고, {outcome}.",
+        "{scope}의 {context}에서 {object_particle} 검토하다 {problem}를 발견해 {action}했고, 그 결과 {outcome}.",
+        "{problem} 때문에 {scope}의 {context}에서 {object} 처리가 지연되어 {action}했고, 이후 {outcome}.",
+        "{scope}의 {context}에 {object_particle} 맡아 {action}하는 과정에서 {problem}를 해결했고, {outcome}.",
+    )
+    offset = _stable_int(seed, "synthetic-combination") % (16 ** 4)
+    events = []
+    for slot in range(20):
+        ordinal = (spec["sequenceIndex"] - 1) * 20 + slot
+        mixed = (ordinal * 7919 + offset) % (16 ** 4)
+        context_index = mixed % 16
+        object_index = (mixed // 16) % 16
+        problem_index = (mixed // (16 ** 2)) % 16
+        action_index = (mixed // (16 ** 3)) % 16
+        category = categories[(slot + mixed) % len(categories)]
+        object_name = SYNTHETIC_OBJECTS[object_index]
+        fact = patterns[(slot + mixed) % len(patterns)].format(
+            scope=category_scopes[category],
+            context=SYNTHETIC_CONTEXTS[context_index],
+            object=object_name,
+            object_particle=_object_with_particle(object_name),
+            problem=SYNTHETIC_PROBLEMS[problem_index],
+            action=SYNTHETIC_ACTIONS[action_index],
+            outcome=SYNTHETIC_OUTCOMES[(mixed + slot) % 16],
+        )
+        events.append(
+            _event(
+                category,
+                [fact],
+                synthetic=["event_skeleton", "situation_detail", "work_process", "reflection"],
+            )
+        )
+    return events
 
 
 def _weighted_choice_row(rows: list[dict[str, Any]], rng: random.Random) -> dict[str, Any]:
@@ -849,7 +949,7 @@ def build_synthetic_inputs(
         event_candidates = [
             primary_event,
             *_backbone_events(spec, yp_calibration, rng),
-            *_coherent_synthetic_events(spec),
+            *_coherent_synthetic_events(spec, seed=seed),
         ]
         target = spec["targetRecordCount"]
         events = event_candidates[:target]
@@ -1152,6 +1252,8 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
     properties = Counter()
     bands = Counter()
     actual_bands = Counter()
+    synthetic_facts = Counter()
+    synthetic_openings = Counter()
     actual_means = []
     target_means = []
     for profile in profiles:
@@ -1191,6 +1293,15 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
         for record, event in zip(profile.get("records", []), input_payload.get("events", []), strict=False):
             properties[len(record.get("properties", {}))] += 1
             body = str(record.get("bodyMd", ""))
+            if "event_skeleton" in event.get("provenance", {}).get("syntheticFields", []):
+                for fact in event.get("facts", []):
+                    normalized_fact = re.sub(r"\s+", " ", str(fact)).strip()
+                    if normalized_fact:
+                        synthetic_facts[normalized_fact] += 1
+                opening = re.split(r"(?<=[.!?。！？])\s+", body.strip(), maxsplit=1)[0]
+                normalized_opening = re.sub(r"\s+", " ", opening).strip()
+                if normalized_opening:
+                    synthetic_openings[normalized_opening] += 1
             if any(marker in body for marker in INTERVIEW_STYLE_MARKERS):
                 interview_style_failures += 1
             if event.get("renderMode") == "rewrite_evidence":
@@ -1233,6 +1344,17 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
             "evidenceAnchorFailures": evidence_anchor_failures,
         },
         "properties": {str(key): value for key, value in sorted(properties.items())},
+        "diversity": {
+            "syntheticEventCount": sum(synthetic_facts.values()),
+            "uniqueSyntheticFacts": len(synthetic_facts),
+            "maxSyntheticFactReuse": max(synthetic_facts.values(), default=0),
+            "reusedSyntheticFacts3Plus": sum(count >= 3 for count in synthetic_facts.values()),
+            "uniqueSyntheticOpenings": len(synthetic_openings),
+            "maxSyntheticOpeningReuse": max(synthetic_openings.values(), default=0),
+            "repeatedSyntheticOpenings3Plus": sum(
+                count >= 3 for count in synthetic_openings.values()
+            ),
+        },
         "leakage": {
             "profileFamilies": sum(len(splits) > 1 for splits in family_splits.values()),
             "sourceAtoms": sum(len(splits) > 1 for splits in atom_splits.values()),
@@ -1245,6 +1367,8 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
         and interview_style_failures == 0
         and verbatim_evidence_copies == 0
         and evidence_anchor_failures == 0
+        and max(synthetic_facts.values(), default=0) <= 2
+        and max(synthetic_openings.values(), default=0) <= 2
         and not any(len(splits) > 1 for splits in family_splits.values())
         and not any(len(splits) > 1 for splits in atom_splits.values())
         and not any(len(splits) > 1 for splits in source_family_splits.values()),

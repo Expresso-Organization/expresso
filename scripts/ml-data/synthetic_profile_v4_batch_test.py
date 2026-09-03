@@ -7,7 +7,9 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from synthetic_profile_v4_batch import (
+    PROMPT_VERSION,
     _backbone_events,
+    _coherent_synthetic_events,
     _infer_minimum_experience_years,
     band_distribution_max_deviation,
     build_profile_specs,
@@ -74,6 +76,11 @@ YP_CALIBRATION = {
 
 
 class SyntheticProfileV4BatchTest(unittest.TestCase):
+    def test_current_prompt_version_has_a_renderer_prompt(self):
+        prompt_path = Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.md"
+
+        self.assertTrue(prompt_path.is_file(), f"missing renderer prompt: {prompt_path}")
+
     def test_infers_minimum_experience_from_source_fact(self):
         self.assertEqual(
             _infer_minimum_experience_years(
@@ -384,6 +391,32 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
         self.assertAlmostEqual(property_counts[2] / total, 0.05, delta=0.01)
         self.assertEqual(property_counts[3], 0)
 
+    def test_synthetic_event_spines_are_unique_across_profiles(self):
+        specs = build_profile_specs(profile_count=300, family_size=10, seed=7)
+        payloads = build_synthetic_inputs(specs, _atoms(), YP_CALIBRATION, PROPERTY_SCHEMA, seed=7)
+
+        synthetic_facts = [
+            fact
+            for payload in payloads
+            for event in payload["events"]
+            if "event_skeleton" in event["provenance"]["syntheticFields"]
+            for fact in event["facts"]
+        ]
+
+        self.assertGreater(len(synthetic_facts), 1000)
+        self.assertEqual(len(synthetic_facts), len(set(synthetic_facts)))
+
+    def test_all_three_thousand_profile_event_combinations_are_unique(self):
+        specs = build_profile_specs(profile_count=3000, family_size=10, seed=20260903)
+        synthetic_facts = [
+            event["facts"][0]
+            for spec in specs
+            for event in _coherent_synthetic_events(spec, seed=20260903)
+        ]
+
+        self.assertEqual(len(synthetic_facts), 60000)
+        self.assertEqual(len(synthetic_facts), len(set(synthetic_facts)))
+
     def test_shards_are_checkpoint_aligned_and_weighted_toward_mac(self):
         specs = build_profile_specs(profile_count=3000, family_size=10, seed=9)
         shards = build_shards(specs, shard_size=25, device_weights={"windows": 0.31, "mac": 0.69})
@@ -413,7 +446,7 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
                     "profileSeed": payload["profileSeed"],
                     "profileFamily": payload["profileFamily"],
                     "split": payload["split"],
-                    "promptVersion": "synthetic-profile-v4.4.3",
+                    "promptVersion": PROMPT_VERSION,
                     "targetRecordCount": payload["targetRecordCount"],
                     "actualRecordCount": payload["targetRecordCount"],
                     "bodyLengthPlan": payload["bodyLengthPlan"],
@@ -486,6 +519,65 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
             self.assertEqual(report["leakage"]["sourceAtoms"], 0)
             self.assertEqual(report["leakage"]["sourceFamilies"], 1)
             self.assertFalse(report["gatePassed"])
+
+    def test_inspection_rejects_a_synthetic_opening_reused_by_three_profiles(self):
+        specs = build_profile_specs(
+            profile_count=10,
+            family_size=10,
+            split_counts={"train": 10, "valid": 0, "test": 0},
+            seed=13,
+        )
+        opening = "반복되는 요청과 처리 순서를 개인 문서로 정리했다."
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for index, spec in enumerate(specs[:3], start=1):
+                input_path = root / "inputs" / f"{spec['profileSeed']}.json"
+                input_path.parent.mkdir(parents=True, exist_ok=True)
+                input_path.write_text(
+                    json.dumps(
+                        {
+                            "events": [
+                                {
+                                    "eventId": "ev1",
+                                    "facts": [f"서로 다른 합성 사건 {index}"],
+                                    "provenance": {"syntheticFields": ["event_skeleton"]},
+                                }
+                            ]
+                        },
+                        ensure_ascii=False,
+                    ),
+                    encoding="utf-8",
+                )
+                profile_path = root / "profiles" / spec["split"] / f"{spec['profileSeed']}.json"
+                profile_path.parent.mkdir(parents=True, exist_ok=True)
+                profile_path.write_text(
+                    json.dumps(
+                        {
+                            "datasetMeta": {
+                                "profileSeed": spec["profileSeed"],
+                                "profileFamily": spec["profileFamily"],
+                                "split": spec["split"],
+                                "actualBodyLengthMean": spec["bodyLengthPlan"]["targetMeanChars"],
+                                "bodyLengthPlan": spec["bodyLengthPlan"],
+                            },
+                            "records": [
+                                {
+                                    "properties": {},
+                                    "bodyMd": f"{opening} 프로필 {index}의 세부 수행 과정은 서로 다르다.",
+                                }
+                            ],
+                            "provenance": {"recordLineage": []},
+                        },
+                        ensure_ascii=False,
+                    ),
+                    encoding="utf-8",
+                )
+
+            report = inspect_batch(specs, output_root=root, checkpoint=3)
+
+        self.assertEqual(report["diversity"]["maxSyntheticOpeningReuse"], 3)
+        self.assertEqual(report["diversity"]["repeatedSyntheticOpenings3Plus"], 1)
+        self.assertFalse(report["gatePassed"])
 
 
 if __name__ == "__main__":
