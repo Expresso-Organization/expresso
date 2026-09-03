@@ -142,8 +142,23 @@
       <div style="display: flex; align-items: center; gap: 14px; padding: 10px 32px; background: #fff; border-bottom: 1px solid #E2E9F4; flex-shrink: 0">
         <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .12em; color: #9A4030">{{ viewerTag }}</span>
         <span style="font-size: 13.5px; font-weight: 600; white-space: nowrap">{{ viewerTitle }}</span>
-        <button onClick="{{ goFull }}" style="margin-left: auto; font-family: inherit; font-size: 12px; font-weight: 600; color: #35455F; background: #fff; border: 1px solid #E2E9F4; border-radius: 8px; padding: 6px 13px; cursor: pointer" style-hover="border-color: #C58C78; color: #9A4030">{{ fullLabel }}</button>
-        <a href="{{ viewerSrc }}" style="font-size: 12px; font-weight: 600; color: #5A6B87">새 창에서 열기 ↗</a>
+        <sc-if value="{{ deckSwitchOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; align-items: center; gap: 3px; min-width: 0; padding-left: 14px; border-left: 1px solid #E2E9F4; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none">
+            <span onClick="{{ backToDecks }}" style="font-size: 11.5px; font-weight: 600; color: #5A6B87; padding: 5px 9px; border-radius: 7px; white-space: nowrap; flex-shrink: 0; cursor: pointer" style-hover="background: #F1F5FB; color: #9A4030">← 목록</span>
+            <sc-for list="{{ deckSwitch }}" as="d" hint-placeholder-count="4">
+              <span onClick="{{ d.onClick }}" style="font-size: 11.5px; font-weight: {{ d.weight }}; color: {{ d.color }}; background: {{ d.bg }}; padding: 5px 10px; border-radius: 7px; white-space: nowrap; flex-shrink: 0; cursor: pointer" style-hover="background: #F1F5FB">{{ d.label }}</span>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div style="flex: 1 1 auto; min-width: 8px"></div>
+
+        <sc-if value="{{ deckFrameOpen }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; align-items: center; gap: 14px; flex-shrink: 0">
+            <button onClick="{{ goFull }}" style="font-family: inherit; font-size: 12px; font-weight: 600; color: #35455F; background: #fff; border: 1px solid #E2E9F4; border-radius: 8px; padding: 6px 13px; cursor: pointer" style-hover="border-color: #C58C78; color: #9A4030">{{ fullLabel }}</button>
+            <a href="{{ viewerSrc }}" style="font-size: 12px; font-weight: 600; color: #5A6B87">새 창에서 열기 ↗</a>
+          </div>
+        </sc-if>
         <button onClick="{{ closeViewer }}" style="font-family: inherit; font-size: 12px; font-weight: 600; color: #fff; background: #16223A; border: none; border-radius: 8px; padding: 7px 14px; cursor: pointer">닫기</button>
       </div>
       <div style="display: flex; align-items: flex-start">
@@ -161,7 +176,39 @@
             </sc-for>
           </div>
         </sc-if>
-        <iframe id="docframe" src="{{ viewerSrc }}" allowfullscreen allow="fullscreen" style="display: block; flex: 1 1 auto; width: auto; height: {{ frameH }}; border: none; background: #fff"></iframe>
+        <sc-if value="{{ deckFrameOpen }}" hint-placeholder-val="{{ true }}">
+          <iframe id="docframe" src="{{ viewerSrc }}" allowfullscreen allow="fullscreen" style="display: block; flex: 1 1 auto; width: auto; height: {{ frameH }}; border: none; background: #fff"></iframe>
+        </sc-if>
+
+        <sc-if value="{{ deckListOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="flex: 1 1 auto; min-width: 0; height: {{ frameH }}; overflow-y: auto; background: #F7FAFE; padding: 26px 32px 60px">
+            <sc-for list="{{ deckGroups }}" as="g" hint-placeholder-count="2">
+              <div style="margin-bottom: 34px">
+                <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .12em; color: #93A2BA">{{ g.tag }}</span>
+                  <span style="font-size: 13px; font-weight: 600; color: #16223A">{{ g.label }}</span>
+                  <span style="font-size: 11.5px; color: #93A2BA">{{ g.note }}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px">
+                  <sc-for list="{{ g.items }}" as="d" hint-placeholder-count="3">
+                    <div onClick="{{ d.onOpen }}" style="background: #fff; border: 1px solid #E2E9F4; border-radius: 12px; overflow: hidden; cursor: pointer" style-hover="border-color: #C58C78; box-shadow: 0 10px 26px rgba(16,26,46,.10)">
+                      <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; background: #16223A; border-bottom: 1px solid #E2E9F4">
+                        <iframe id="{{ d.shotId }}" src="{{ d.shotSrc }}" scrolling="no" tabindex="-1" aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: none; pointer-events: none"></iframe>
+                      </div>
+                      <div style="padding: 12px 14px 13px">
+                        <div style="display: flex; align-items: baseline; gap: 10px">
+                          <span style="font-size: 14px; font-weight: 600; color: #16223A">{{ d.title }}</span>
+                          <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #AFBACB; flex-shrink: 0">{{ d.count }}</span>
+                        </div>
+                        <div style="margin-top: 5px; font-size: 11.5px; line-height: 1.6; color: #7C8CA6">{{ d.desc }}</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
       </div>
     </div>
   </sc-if>
@@ -787,7 +834,9 @@ const DM = 'Expresso 데이터 모델 명세서.dc.html', ERD = 'Expresso ERD.dc
 const MAP = 'Expresso 기능 지도.dc.html', DS = 'Expresso Design System.dc.html', IC = 'Expresso Icons.dc.html';
 const LD = 'Expresso Landing.dc.html', HH = 'Expresso Home Hero Options.dc.html';
 const GD = '졸업작품-설계서.html', DECK = 'expresso-소개.html';
-const url = f => './' + encodeURIComponent(f);
+// 세그먼트마다 인코딩한다 — 발표 양식은 templates/ 아래 있어, 통째로 인코딩하면
+// 슬래시까지 %2F 가 되어 경로가 깨진다.
+const url = f => './' + String(f).split('/').map(encodeURIComponent).join('/');
 
 // [id, name, does, pts, status, screens, tables, blockers, features[[name,status,band,tasks]]]
 const D = [
@@ -1019,6 +1068,34 @@ const BSTYLE = {
   hr: { size: 13, weight: 400, lh: 1, ls: '0', color: '#C6CEDD', pad: '14px' }
 };
 
+// ── 발표 자료 ───────────────────────────────────────────────
+// 프리젠테이션 탭이 여는 목록. [파일, 제목, 설명, 구획]
+//
+// 장수는 여기 적지 않습니다. 미리보기가 그 자료의 지면을 직접 세므로, 장을 넣거나
+// 빼도 숫자가 따라옵니다 — 손으로 적어 두면 고칠 때마다 낡습니다.
+//
+// 새 발표 자료를 만들었으면 여기에 한 줄 더합니다. 목록에 없으면 포털에서 찾지
+// 못합니다 — docs/index.html 과 같은 규칙입니다.
+const DECK_TAB = '프리젠테이션';
+const DECKS = [
+  ['expresso-소개.html', '제품 소개', '제품이 무엇인지 · 만드는 여섯 단계 · 저장소 구조 · 지금 위치', 'deck'],
+  ['이번주-진행상황-공유.html', '이번 주 진행 상황', '8/27 — 9/3 · 화면과 배포 정비 · MongoDB 전환 · 채용 추천 모델', 'deck'],
+  ['portfolio-generation-pipeline.html', '포트폴리오 생성 파이프라인', '생성 방법론 v1 · 수집에서 수정까지 여덟 단계', 'deck'],
+  ['templates/expresso-deck.html', '발표 양식', '1920×1080 · 배치 31종 — 새 자료는 이 파일을 복사해 시작합니다', 'form'],
+  ['templates/expresso-visuals.html', '시각 요소', '차트 · 다이어그램 · 아이콘 · 전면 지면 46종 — 골라서 복사합니다', 'form']
+];
+
+// 주소에 실을 이름. templates/ 는 떼어 낸다 — 딥링크의 / 와 부딪힌다.
+const DECK_SLUG = {}, DECK_OF_SLUG = {};
+DECKS.forEach(d => {
+  const slug = d[0].replace(/^templates\//, '').replace(/\.html$/, '');
+  DECK_SLUG[d[0]] = slug;
+  DECK_OF_SLUG[slug] = d[0];
+});
+
+// 프리젠테이션 탭에서만 자료 선택을 읽는다 — 다른 문서로 옮겨 가면 저절로 풀린다.
+const deckOf = s => (s.doc === DECK_TAB && s.deck && DECK_SLUG[s.deck]) ? s.deck : null;
+
 const NAV = [
   ['HOME', '개발 포털', 'Expresso 개발 포털.dc.html', '#fff', 1],
 
@@ -1066,6 +1143,8 @@ NAV.forEach(n => { FILE_NAV[n[2]] = n[1]; });
 //   #/board/kanban/EXP-3     보드 · 열려 있는 티켓
 //   #/wiki/PG-2              위키 · 문서
 //   #/doc/spec               뷰어 · NAV 문서(태그 소문자)
+//   #/doc/deck               발표 자료 목록
+//   #/doc/deck/expresso-소개  그중 한 편
 //
 // 티켓과 위키 문서는 각자 브라우저(localStorage)에 있습니다 — 주소를 받은
 // 사람에게 그 id가 없으면 보드·위키까지만 열고 선택은 비웁니다(applyRoute).
@@ -1074,7 +1153,11 @@ NAV.forEach(n => { if (!n[4]) { DOC_SLUG[n[1]] = n[0].toLowerCase(); DOC_OF_SLUG
 const BVIEW = { kanban: 1, sprint: 1, timeline: 1 };
 
 function routeOf(s) {
-  if (s.doc) return '#/doc/' + (DOC_SLUG[s.doc] || encodeURIComponent(s.doc));
+  if (s.doc) {
+    const deck = deckOf(s);
+    return '#/doc/' + (DOC_SLUG[s.doc] || encodeURIComponent(s.doc)) +
+      (deck ? '/' + encodeURIComponent(DECK_SLUG[deck]) : '');
+  }
   if (s.section === 'board') return '#/board/' + (BVIEW[s.bview] ? s.bview : 'kanban') + (s.tsel ? '/' + encodeURIComponent(s.tsel) : '');
   if (s.section === 'page') return '#/wiki' + (s.psel ? '/' + encodeURIComponent(s.psel) : '');
   return '#/domain/' + s.sel;
@@ -1089,7 +1172,10 @@ function parseRoute(hash) {
   const head = part[0].toLowerCase();
   if (head === 'doc') {
     const label = DOC_OF_SLUG[(part[1] || '').toLowerCase()];
-    return label ? { doc: label, view: 'console', section: 'domain', toc: [], tocAt: -1 } : null;
+    if (!label) return null;
+    // 목록에 없는 자료를 가리키는 주소는 목록까지만 연다
+    const deck = (label === DECK_TAB && part[2]) ? (DECK_OF_SLUG[part[2]] || null) : null;
+    return { doc: label, deck, view: 'console', section: 'domain', toc: [], tocAt: -1 };
   }
   if (head === 'board') {
     return { doc: null, full: false, view: 'board', section: 'board', bview: BVIEW[part[1]] ? part[1] : 'kanban', tsel: part[2] || null };
@@ -1129,7 +1215,7 @@ function tasksOf(d) {
 
 class Component extends DCLogic {
   state = {
-    sel: 'D1', q: '', role: 'all', status: 'all', prog: {}, doc: null, toc: [], tocAt: -1, tocMiss: null,
+    sel: 'D1', q: '', role: 'all', status: 'all', prog: {}, doc: null, deck: null, slides: {}, toc: [], tocAt: -1, tocMiss: null,
     view: 'console', section: 'domain', bview: 'kanban', tickets: [], seq: 1, tsel: null, member: 'all',
     impDomain: 'D1', form: { title: '', assignee: '', due: '', effort: 'M', domain: '' },
     pages: [], comments: [], wseq: 1, psel: null, editing: false, block: -1, draft: '', me: '', newTpl: 'blank',
@@ -1420,8 +1506,35 @@ class Component extends DCLogic {
     window.removeEventListener('hashchange', this._onHash);
   }
 
+  // 발표 자료 목록이 열린 순간을 잡는다 — 미리보기가 실려 온 뒤에 세야 한다.
+  watchDeckList() {
+    const open = this.state.doc === DECK_TAB && !deckOf(this.state);
+    if (this._deckList === open) return;
+    this._deckList = open;
+    if (open) setTimeout(() => this.countSlides(8), 400);
+  }
+
+  // 미리보기 안의 지면을 세어 둔다. 목록에 숫자를 적어 두면 자료를 고칠 때마다
+  // 낡으므로 자료에게 직접 묻는다. 아직 실리지 않은 것은 다시 본다.
+  countSlides(tries) {
+    if (this.state.doc !== DECK_TAB || deckOf(this.state)) return;
+    const next = Object.assign({}, this.state.slides);
+    let changed = false, pending = 0;
+    DECKS.forEach(d => {
+      if (next[d[0]]) return;
+      const fr = document.getElementById('deckshot-' + DECK_SLUG[d[0]]);
+      let doc = null;
+      try { doc = fr && fr.contentDocument; } catch (e) { doc = null; }
+      const c = doc ? doc.querySelectorAll('.slide').length : 0;
+      if (c) { next[d[0]] = c; changed = true; } else pending++;
+    });
+    if (changed) this.setState({ slides: next });
+    if (pending && tries > 0) setTimeout(() => this.countSlides(tries - 1), 500);
+  }
+
   componentDidUpdate() {
     this.syncRoute();
+    this.watchDeckList();
     if (this._prevDoc === this.state.doc) return;
     this._prevDoc = this.state.doc;
     if (!this.state.doc || !NAV_TOC[this.state.doc]) return;   // 목차를 붙일 문서만 훑는다
@@ -1565,7 +1678,7 @@ class Component extends DCLogic {
       if (!nav) { window.location.href = h.href; return; }   // NAV 에 없는 문서는 새로 열어 준다
       this._frame = null;
       // 소속 도메인도 함께 맞춰 둔다 — 뷰어를 닫으면 관련 도메인이 열려 있다
-      const next = { doc: nav, view: 'console', section: 'domain', toc: [], tocAt: -1, q: '', sopen: false, scur: -1 };
+      const next = { doc: nav, deck: null, view: 'console', section: 'domain', toc: [], tocAt: -1, q: '', sopen: false, scur: -1 };
       if (h.dom) next.sel = h.dom;
       this.setState(next);
       window.scrollTo(0, 0);
@@ -1688,6 +1801,18 @@ class Component extends DCLogic {
       return React.createElement('span', null, inline(b.text));
     };
 
+    // 발표 자료 — 고른 것이 있으면 그 자료를, 없으면 목록을 뷰어 자리에 놓는다
+    const deckFile = deckOf(s);
+    const curDeck = deckFile ? DECKS.find(d => d[0] === deckFile) : null;
+    const deckList = s.doc === DECK_TAB && !curDeck;
+    const deckCard = d => ({
+      title: d[1], desc: d[2],
+      shotId: 'deckshot-' + DECK_SLUG[d[0]],
+      shotSrc: url(d[0]) + '?preview',
+      count: s.slides[d[0]] ? s.slides[d[0]] + '장' : '',
+      onOpen: () => { this._frame = null; this.setState({ deck: d[0], full: false }); window.scrollTo(0, 0); }
+    });
+
     const impD = D.find(x => x[0] === s.impDomain);
     const haveTasks = {};
     tickets.forEach(t => { if (t.task) haveTasks[t.task] = 1; });
@@ -1708,7 +1833,9 @@ class Component extends DCLogic {
         const VIEW = { 1: 'console', 2: 'board', 3: 'wiki' };
         const active = n[4] ? (!s.doc && s.view === VIEW[n[4]]) : s.doc === n[1];
         return {
-          tag: n[0], label: n[1], href: url(n[2]), tagColor: n[3],
+          tag: n[0], label: n[1], tagColor: n[3],
+          // 프리젠테이션은 자료 하나가 아니라 목록이다 — ⌘클릭도 목록으로 간다
+          href: n[1] === DECK_TAB ? '#/doc/' + DOC_SLUG[DECK_TAB] : url(n[2]),
           color: active ? '#fff' : '#C6CEDD',
           weight: active ? 600 : 400,
           bg: active ? 'rgba(255,255,255,.07)' : 'transparent',
@@ -1719,6 +1846,7 @@ class Component extends DCLogic {
             this._frame = null;
             this.setState({
               doc: n[4] ? null : n[1],
+              deck: null,
               view: n[4] ? VIEW[n[4]] : 'console',
               toc: [], tocAt: -1
             });
@@ -1745,10 +1873,32 @@ class Component extends DCLogic {
         this.saveWiki(s.pages.concat([{ id, title: t[0], body: t[1], author: s.me || '미지정', updatedAt: new Date().toISOString() }]), null, s.wseq + 1);
         this.setState({ psel: id, editing: true, block: -1, section: 'page' });
       },
-      viewerTitle: s.doc || '',
-      viewerTag: (NAV_TAG[s.doc] || 'DOC'),
-      viewerSrc: s.doc ? url(NAV_FILE[s.doc]) : '',
-      closeViewer: () => { this._frame = null; this.setState({ doc: null, toc: [], tocAt: -1, full: false }); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); },
+      viewerTitle: curDeck ? curDeck[1] : (s.doc || ''),
+      viewerTag: curDeck ? 'DECK' : (NAV_TAG[s.doc] || 'DOC'),
+      viewerSrc: curDeck ? url(curDeck[0]) : (s.doc ? url(NAV_FILE[s.doc]) : ''),
+      closeViewer: () => { this._frame = null; this.setState({ doc: null, deck: null, toc: [], tocAt: -1, full: false }); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); },
+
+      // ── 발표 자료 ─────────────────────────────────────────
+      // 프리젠테이션 탭은 자료 하나가 아니라 목록입니다. 고르면 같은 뷰어에
+      // 그 자료가 들어오고, 헤더의 전환 줄로 목록을 거치지 않고 옆으로 갑니다.
+      deckListOpen: deckList,
+      deckFrameOpen: !!s.doc && !deckList,
+      deckSwitchOpen: !!curDeck,
+      backToDecks: () => { this._frame = null; this.setState({ deck: null, full: false }); },
+      deckGroups: [
+        ['deck', 'DECKS', '발표 자료', '표지를 눌러 그 자리에서 넘겨 봅니다'],
+        ['form', 'FORM', '양식과 부품', '새 발표 자료는 양식을 복사해 시작합니다']
+      ].map(g => ({
+        tag: g[1], label: g[2], note: g[3],
+        items: DECKS.filter(d => d[3] === g[0]).map(deckCard)
+      })),
+      deckSwitch: DECKS.map(d => ({
+        label: d[1],
+        weight: s.deck === d[0] ? 600 : 400,
+        color: s.deck === d[0] ? '#9A4030' : '#5A6B87',
+        bg: s.deck === d[0] ? '#FBEEE4' : 'transparent',
+        onClick: () => { this._frame = null; this.setState({ deck: d[0] }); }
+      })),
 
       // 전체화면은 두 겹이다. 바깥 겹은 뷰어를 창 전체로 펴는 CSS 이고, 이것은 어디서나
       // 돈다. 안쪽 겹은 브라우저의 Fullscreen API 라 사용자 제스처가 있어야 열리고
