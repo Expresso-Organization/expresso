@@ -57,6 +57,12 @@
 (() => {
   'use strict';
 
+  /* 축소판은 이 자료를 `?preview` 로 그대로 띄웁니다. 넘겨 보는 자리도 고치는
+     자리도 아니므로 도구가 아예 서지 않습니다 — 서면 툴바가 지면을 가리고,
+     도구가 다는 자리 표시가 축소판에 그대로 찍힙니다. 컨트롤러도 같은 표시를
+     보고 조작 장치를 걷습니다. */
+  if (new URLSearchParams(location.search).has('preview')) return;
+
   const CFG = Object.assign(
     {
       slides: null,
