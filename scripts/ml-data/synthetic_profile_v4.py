@@ -67,6 +67,9 @@ def body_min_length_for_prompt(prompt_version: str) -> int:
         "synthetic-profile-v4.3.1",
         "synthetic-profile-v4.4.2",
         "synthetic-profile-v4.4.3",
+        "synthetic-profile-v4.4.5",
+        "synthetic-profile-v4.5.0",
+        "synthetic-profile-v4.5.1",
     } else 40
 
 

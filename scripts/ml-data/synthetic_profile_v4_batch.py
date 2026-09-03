@@ -36,7 +36,7 @@ from synthetic_profile_v4_experiment import (
 )
 
 
-PROMPT_VERSION = "synthetic-profile-v4.4.5"
+PROMPT_VERSION = "synthetic-profile-v4.5.1"
 DEFAULT_MODEL = "qwen3:30b-a3b-instruct-2507-q4_K_M"
 DEFAULT_SEEDS_PATH = (
     Path(__file__).parents[2]
@@ -198,6 +198,22 @@ SYNTHETIC_OUTCOMES = (
     "중요한 요청부터 처리할 수 있었다",
     "같은 문제를 다시 확인하는 일이 줄었다",
     "남은 조치를 빠짐없이 전달할 수 있었다",
+    "필요한 자료의 위치를 바로 확인할 수 있었다",
+    "논의가 필요한 항목만 따로 모을 수 있었다",
+    "변경 전후의 차이를 설명하기 쉬워졌다",
+    "작업을 넘겨받는 사람이 먼저 볼 지점이 분명해졌다",
+    "보류된 이유와 재개 조건이 기록에 남았다",
+    "각 단계의 책임 범위를 구분할 수 있었다",
+    "검토하지 않은 항목이 드러났다",
+    "일정 변경의 영향을 미리 확인할 수 있었다",
+    "자료 간 기준 차이를 빠르게 발견할 수 있었다",
+    "요청별 처리 상태를 이어서 관리할 수 있었다",
+    "회의 후 남은 결정 사항이 명확해졌다",
+    "반복 점검이 필요한 구간을 좁힐 수 있었다",
+    "결과를 다시 재현하는 절차가 남았다",
+    "우선 확인할 위험 요소를 구분할 수 있었다",
+    "의견 충돌의 근거를 항목별로 비교할 수 있었다",
+    "다음 검토에서 확인할 질문이 정리됐다",
 )
 SYNTHETIC_CATEGORIES_NEW = (
     "project",
@@ -810,13 +826,11 @@ def _coherent_synthetic_events(spec: dict[str, Any], *, seed: int) -> list[dict[
         "activity_leadership": f"{role} 학습 모임",
         "skill_tool": f"{config['tools'][0]} 활용",
     }
-    patterns = (
-        "{scope}의 {context}에서 {object_particle} 다루며 {problem}를 확인해 {action}했고, {outcome}.",
-        "{scope}의 {context}에서 {object_particle} 검토하다 {problem}를 발견해 {action}했고, 그 결과 {outcome}.",
-        "{problem} 때문에 {scope}의 {context}에서 {object} 처리가 지연되어 {action}했고, 이후 {outcome}.",
-        "{scope}의 {context}에 {object_particle} 맡아 {action}하는 과정에서 {problem}를 해결했고, {outcome}.",
-    )
     offset = _stable_int(seed, "synthetic-combination") % (16 ** 4)
+    outcome_offset = (
+        _stable_int(seed, spec["profileSeed"], "synthetic-outcomes")
+        % len(SYNTHETIC_OUTCOMES)
+    )
     events = []
     for slot in range(20):
         ordinal = (spec["sequenceIndex"] - 1) * 20 + slot
@@ -827,20 +841,19 @@ def _coherent_synthetic_events(spec: dict[str, Any], *, seed: int) -> list[dict[
         action_index = (mixed // (16 ** 3)) % 16
         category = categories[(slot + mixed) % len(categories)]
         object_name = SYNTHETIC_OBJECTS[object_index]
-        fact = patterns[(slot + mixed) % len(patterns)].format(
-            scope=category_scopes[category],
-            context=SYNTHETIC_CONTEXTS[context_index],
-            object=object_name,
-            object_particle=_object_with_particle(object_name),
-            problem=SYNTHETIC_PROBLEMS[problem_index],
-            action=SYNTHETIC_ACTIONS[action_index],
-            outcome=SYNTHETIC_OUTCOMES[(mixed + slot) % 16],
+        fact = (
+            f"사건 골격 | 맥락: {category_scopes[category]} / "
+            f"{SYNTHETIC_CONTEXTS[context_index]} | 대상: {object_name} | "
+            f"문제: {SYNTHETIC_PROBLEMS[problem_index]} | "
+            f"행동: {SYNTHETIC_ACTIONS[action_index]} | "
+            f"결과: {SYNTHETIC_OUTCOMES[(outcome_offset + slot * 5) % len(SYNTHETIC_OUTCOMES)]}"
         )
         events.append(
             _event(
                 category,
                 [fact],
                 synthetic=["event_skeleton", "situation_detail", "work_process", "reflection"],
+                render_mode="rewrite_evidence",
             )
         )
     return events
@@ -1342,6 +1355,8 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
     actual_bands = Counter()
     synthetic_facts = Counter()
     synthetic_openings = Counter()
+    max_synthetic_outcome_reuse_within_profile = 0
+    profiles_with_repeated_synthetic_outcomes = 0
     actual_means = []
     target_means = []
     for profile in profiles:
@@ -1378,6 +1393,7 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
             if body_length_band(actual, plan) != plan.get("band"):
                 length_band_errors += 1
             actual_bands[body_length_band(actual, plan)] += 1
+        profile_synthetic_outcomes = Counter()
         for record, event in zip(profile.get("records", []), input_payload.get("events", []), strict=False):
             properties[len(record.get("properties", {}))] += 1
             body = str(record.get("bodyMd", ""))
@@ -1386,6 +1402,9 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
                     normalized_fact = re.sub(r"\s+", " ", str(fact)).strip()
                     if normalized_fact:
                         synthetic_facts[normalized_fact] += 1
+                    outcome_match = re.search(r"\|\s*결과\s*[:：]\s*(.+)$", normalized_fact)
+                    if outcome_match:
+                        profile_synthetic_outcomes[outcome_match.group(1).strip()] += 1
                 opening = re.split(r"(?<=[.!?。！？])\s+", body.strip(), maxsplit=1)[0]
                 normalized_opening = re.sub(r"\s+", " ", opening).strip()
                 if normalized_opening:
@@ -1398,6 +1417,13 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
                     for fact in event.get("facts", [])
                 ):
                     verbatim_evidence_copies += 1
+        profile_max_outcome_reuse = max(profile_synthetic_outcomes.values(), default=0)
+        max_synthetic_outcome_reuse_within_profile = max(
+            max_synthetic_outcome_reuse_within_profile,
+            profile_max_outcome_reuse,
+        )
+        if profile_max_outcome_reuse > 1:
+            profiles_with_repeated_synthetic_outcomes += 1
         for lineage in profile.get("provenance", {}).get("recordLineage", []):
             for atom in lineage.get("narrativeEvidence", []):
                 atom_splits[atom].add(meta["split"])
@@ -1442,6 +1468,8 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
             "repeatedSyntheticOpenings3Plus": sum(
                 count >= 3 for count in synthetic_openings.values()
             ),
+            "maxSyntheticOutcomeReuseWithinProfile": max_synthetic_outcome_reuse_within_profile,
+            "profilesWithRepeatedSyntheticOutcomes": profiles_with_repeated_synthetic_outcomes,
         },
         "leakage": {
             "profileFamilies": sum(len(splits) > 1 for splits in family_splits.values()),
@@ -1457,6 +1485,7 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
         and evidence_anchor_failures == 0
         and max(synthetic_facts.values(), default=0) <= 2
         and max(synthetic_openings.values(), default=0) <= 2
+        and max_synthetic_outcome_reuse_within_profile <= 1
         and not any(len(splits) > 1 for splits in family_splits.values())
         and not any(len(splits) > 1 for splits in atom_splits.values())
         and not any(len(splits) > 1 for splits in source_family_splits.values()),

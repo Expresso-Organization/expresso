@@ -22,6 +22,7 @@ from synthetic_profile_v4_experiment import (
     invalid_record_indexes,
     validate_renderer_output,
 )
+from synthetic_profile_v4 import body_min_length_for_prompt
 
 
 def payload():
@@ -76,6 +77,18 @@ def draft():
 
 
 class ScoreDraftTests(unittest.TestCase):
+    def test_structured_spine_anchor_detection_uses_result_not_context_label(self):
+        event = {
+            "renderMode": "rewrite_evidence",
+            "facts": [
+                "사건 골격 | 맥락: 업무 개선 / 사례 조사 | 대상: 품질 기준 | "
+                "문제: 최신 버전이 섞임 | 행동: 변경 내용을 요약함 | "
+                "결과: 중요한 요청부터 처리할 수 있었다"
+            ],
+        }
+
+        self.assertEqual(evidence_anchor_requirements(event), {})
+
     def test_evidence_rewrite_requires_failure_and_success_outcomes_from_source(self):
         changed_payload = payload()
         changed_payload["events"][1]["renderMode"] = "rewrite_evidence"
@@ -247,6 +260,24 @@ class ScoreDraftTests(unittest.TestCase):
         self.assertIn("record_2_interview_style", result["errors"])
         self.assertIn("record_2_source_verbatim_copy", result["errors"])
 
+    def test_structured_spine_gate_rejects_internal_field_labels_in_output(self):
+        changed_payload = payload()
+        changed_payload["events"][1]["renderMode"] = "rewrite_evidence"
+        changed_payload["events"][1]["facts"] = [
+            "사건 골격 | 맥락: 학습 모임 / 발표 준비 | 대상: 자료 목록 | "
+            "문제: 기준이 섞임 | 행동: 항목을 다시 분류함 | 결과: 빠진 내용을 보완함"
+        ]
+        changed = draft()
+        changed["records"][1]["bodyMd"] = (
+            "맥락: 발표를 준비하던 학습 모임이었다. 자료 목록의 기준이 섞여 있어 항목을 다시 "
+            "분류했고, 빠진 내용을 찾아 보완했다."
+        )
+
+        result = validate_renderer_output(changed_payload, changed, enforce_skeleton=True)
+
+        self.assertFalse(result["valid"])
+        self.assertIn("record_2_structured_spine_label", result["errors"])
+
     def test_counts_meta_sentence_that_repeats_the_same_fact(self):
         changed = draft()
         changed["records"][0]["bodyMd"] += " 확인 대상은 원본 데이터였다."
@@ -313,6 +344,9 @@ class ScoreDraftTests(unittest.TestCase):
 
 
 class OutputSchemaTests(unittest.TestCase):
+    def test_v451_allows_twenty_character_records_for_very_short_profiles(self):
+        self.assertEqual(body_min_length_for_prompt("synthetic-profile-v4.5.1"), 20)
+
     def test_specializes_record_sequence_and_property_plan_for_each_input(self):
         schema = build_output_schema(payload())
         records = schema["properties"]["records"]
@@ -733,7 +767,10 @@ class SkeletonCompositionTests(unittest.TestCase):
                 if candidate["eventId"] == event["eventId"]
             )
             record = draft()["records"][index - 1]
-            record["detailMd"] = "당시 확인한 흐름과 선택한 작업 순서를 개인 노트처럼 구체적으로 남겼다."
+            record["detailMd"] = (
+                "당시 확인한 흐름과 선택한 작업 순서를 개인 노트처럼 구체적으로 남겼다. "
+                "빠진 항목은 원본과 다시 맞춰 보고 판단 이유를 덧붙였다."
+            )
             del record["bodyMd"]
             return {"message": {"content": json.dumps(record, ensure_ascii=False)}, "eval_count": 20}
 
@@ -812,7 +849,10 @@ class SkeletonCompositionTests(unittest.TestCase):
             event = json.loads(request_payload["messages"][1]["content"])["event"]
             index = 1 if event["eventId"] == "ev1" else 2
             record = draft()["records"][index - 1]
-            record["detailMd"] = "작업 과정에서 확인한 내용을 정리해 개인 기록으로 남겼다."
+            record["detailMd"] = (
+                "작업 과정에서 확인한 내용을 정리해 개인 기록으로 남겼다. "
+                "빠진 항목은 원본과 맞춰 본 뒤 처리 순서를 다시 적었다."
+            )
             del record["bodyMd"]
             return {"message": {"content": json.dumps(record, ensure_ascii=False)}}
 
@@ -869,7 +909,10 @@ class SkeletonCompositionTests(unittest.TestCase):
             event = json.loads(request_payload["messages"][1]["content"])["event"]
             index = 1 if event["eventId"] == "ev1" else 2
             record = draft()["records"][index - 1]
-            record["detailMd"] = "작업 과정에서 확인한 판단과 진행 순서를 개인 노트로 남겼다."
+            record["detailMd"] = (
+                "작업 과정에서 확인한 판단과 진행 순서를 개인 노트로 남겼다. "
+                "빠진 항목은 원본과 맞춰 본 뒤 처리 순서를 다시 적었다."
+            )
             del record["bodyMd"]
             return {"message": {"content": json.dumps(record, ensure_ascii=False)}}
 

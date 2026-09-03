@@ -89,6 +89,9 @@ CLAIM_MARKERS = (
     ("줄이", ("줄이", "줄였")),
 )
 REPETITIVE_META_PATTERNS = ("시점은", "기간은", "대상은", "담당 업무는", "사용 도구는")
+STRUCTURED_SPINE_LABEL_PATTERN = re.compile(
+    r"(?:사건\s*골격|맥락|대상|문제|행동|결과)\s*[:：]"
+)
 
 
 def _profile_sampling_seed(profile_seed: str, record_index: int, attempt: int) -> int:
@@ -455,7 +458,17 @@ def evidence_anchor_requirements(event: dict[str, Any]) -> dict[str, list[str]]:
     """재서술에서 반드시 보존해야 할 결과·역할 의미군을 계산한다."""
     if event.get("renderMode") != "rewrite_evidence":
         return {}
-    facts = " ".join(event.get("facts", []))
+    raw_facts = [str(fact) for fact in event.get("facts", [])]
+    structured_facts = [fact for fact in raw_facts if fact.strip().startswith("사건 골격 |")]
+    if structured_facts:
+        outcomes = []
+        for fact in structured_facts:
+            match = re.search(r"\|\s*결과\s*[:：]\s*(.+)$", fact)
+            if match:
+                outcomes.append(match.group(1))
+        facts = " ".join(outcomes)
+    else:
+        facts = " ".join(raw_facts)
     return {
         label: list(variants)
         for label, variants in EVIDENCE_ANCHOR_GROUPS.items()
@@ -538,6 +551,11 @@ def _find_style_violations(input_payload: dict[str, Any], draft: Any) -> list[di
         if any(marker in body for marker in INTERVIEW_STYLE_MARKERS):
             kinds.append("interview_style")
         event = event_by_id.get(record.get("eventId"), {})
+        structured_spine = any(
+            str(fact).strip().startswith("사건 골격 |") for fact in event.get("facts", [])
+        )
+        if structured_spine and STRUCTURED_SPINE_LABEL_PATTERN.search(visible):
+            kinds.append("structured_spine_label")
         if event.get("renderMode") == "rewrite_evidence" and any(
             len(str(fact).strip()) >= 40 and str(fact).strip().rstrip(".") in body
             for fact in event.get("facts", [])

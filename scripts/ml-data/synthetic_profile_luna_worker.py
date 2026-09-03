@@ -28,7 +28,7 @@ from synthetic_profile_v4_experiment import (
 
 
 MIN_SENTENCE_CHARS = 25
-LUNA_PROMPT_PATH = Path(__file__).parent / "prompts" / "synthetic-profile-luna-v4.4.5.md"
+LUNA_PROMPT_PATH = Path(__file__).parent / "prompts" / "synthetic-profile-luna-v4.5.1.md"
 
 
 def _sentences(body: str) -> list[str]:
@@ -315,6 +315,15 @@ def sentence_boost_for_body_mean(
     return max(-6, min(-1, round(difference / 80)))
 
 
+def minimum_sentences_for_repair_round(
+    *,
+    base: int,
+    boost: int,
+    round_number: int,
+) -> int:
+    return max(1, base + boost * max(1, round_number))
+
+
 def _run_luna_group(
     *,
     codex_path: Path,
@@ -482,12 +491,17 @@ def generate_with_luna_profile(
                     "previousBodyMeanChars": round(actual_mean, 1),
                     "targetBodyMeanChars": plan["targetMeanChars"],
                     "instruction": (
-                        "이전 출력 전체를 다시 쓰고 입력에 없는 수치나 고유명사를 만들지 않는다. "
-                        "조정된 minimumSentences와 detailLength를 모두 지킨다."
+                        "이전 출력 전체를 다시 쓴다. 각 detailMd를 해당 event의 detailLength.minChars "
+                        "이상 detailLength.maxChars 이하로 직접 세고, 조정된 minimumSentences도 지킨다. "
+                        "누락된 anchor는 그 event 본문에 명시하되 입력에 없는 수치나 고유명사는 만들지 않는다."
                     ),
                 }
                 for event in retry_profile["events"]:
-                    event["minimumSentences"] = max(1, event["minimumSentences"] + boost)
+                    event["minimumSentences"] = minimum_sentences_for_repair_round(
+                        base=event["minimumSentences"],
+                        boost=boost,
+                        round_number=repair_round + 1,
+                    )
                 retry_profiles.append(retry_profile)
             if not retry_profiles:
                 raise
@@ -768,6 +782,104 @@ def audit_corpus(manifest_path: Path, *, checkpoint: int) -> dict[str, Any]:
     }
 
 
+def select_pending_luna_shards(
+    manifest: dict[str, Any],
+    *,
+    output_root: Path,
+    checkpoint: int,
+) -> list[dict[str, Any]]:
+    profile_specs = {
+        str(item["profileSeed"]): item for item in manifest.get("profiles", [])
+    }
+    prompt_version = str(manifest.get("promptVersion", ""))
+
+    def profile_complete(seed: str) -> bool:
+        spec = profile_specs.get(seed)
+        if not spec:
+            return False
+        path = Path(output_root) / "profiles" / str(spec["split"]) / f"{seed}.json"
+        try:
+            profile = json.loads(path.read_text(encoding="utf-8"))
+            meta = profile["datasetMeta"]
+        except (OSError, json.JSONDecodeError, KeyError, TypeError):
+            return False
+        if meta.get("profileSeed") != seed or meta.get("promptVersion") != prompt_version:
+            return False
+        target_count = spec.get("targetRecordCount")
+        return target_count is None or (
+            meta.get("actualRecordCount") == target_count
+            and len(profile.get("records", [])) == target_count
+        )
+
+    return [
+        shard
+        for shard in manifest.get("shards", [])
+        if shard.get("generator") == "luna"
+        and int(shard.get("endIndex", 0)) <= checkpoint
+        and not all(profile_complete(str(seed)) for seed in shard.get("profiles", []))
+    ]
+
+
+def run_luna_checkpoint(
+    manifest_path: Path,
+    *,
+    checkpoint: int,
+    codex_path: Path,
+    profile: str = "synthetic-profile-generator",
+    timeout_seconds: int = 3600,
+    max_target_chars: int = 6000,
+    max_workers: int = 3,
+    max_repair_rounds: int = 3,
+    generate_shard: Any = None,
+    emit: Any = None,
+) -> dict[str, Any]:
+    manifest_path = Path(manifest_path).resolve()
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    eligible = [
+        shard
+        for shard in manifest.get("shards", [])
+        if shard.get("generator") == "luna"
+        and int(shard.get("endIndex", 0)) <= checkpoint
+    ]
+    pending = select_pending_luna_shards(
+        manifest,
+        output_root=manifest_path.parent,
+        checkpoint=checkpoint,
+    )
+    generator = generate_shard or generate_with_luna_profile
+    failures: dict[str, dict[str, str]] = {}
+    completed = 0
+    for shard in pending:
+        shard_id = str(shard["shardId"])
+        try:
+            result = generator(
+                manifest_path,
+                shard_id,
+                codex_path=codex_path,
+                profile=profile,
+                timeout_seconds=timeout_seconds,
+                max_target_chars=max_target_chars,
+                max_workers=max_workers,
+                max_repair_rounds=max_repair_rounds,
+            )
+            completed += 1
+            if emit:
+                emit({"event": "shard_complete", "shardId": shard_id, "result": result})
+        except Exception as exc:  # keep the overnight queue moving after a local shard failure
+            failures[shard_id] = {"type": type(exc).__name__, "message": str(exc)}
+            if emit:
+                emit({"event": "shard_failed", "shardId": shard_id, "error": failures[shard_id]})
+    return {
+        "checkpoint": checkpoint,
+        "plannedShards": len(eligible),
+        "pendingShards": len(pending),
+        "skippedShards": len(eligible) - len(pending),
+        "completedShards": completed,
+        "failedShards": len(failures),
+        "failures": failures,
+    }
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -791,6 +903,15 @@ def build_parser() -> argparse.ArgumentParser:
     generate.add_argument("--max-target-chars", type=int, default=6000)
     generate.add_argument("--max-workers", type=int, default=3)
     generate.add_argument("--repair-rounds", type=int, default=3)
+    run_checkpoint = subparsers.add_parser("run-checkpoint")
+    run_checkpoint.add_argument("manifest", type=Path)
+    run_checkpoint.add_argument("--checkpoint", type=int, required=True)
+    run_checkpoint.add_argument("--codex", type=Path, required=True)
+    run_checkpoint.add_argument("--profile", default="synthetic-profile-generator")
+    run_checkpoint.add_argument("--timeout", type=int, default=3600)
+    run_checkpoint.add_argument("--max-target-chars", type=int, default=6000)
+    run_checkpoint.add_argument("--max-workers", type=int, default=3)
+    run_checkpoint.add_argument("--repair-rounds", type=int, default=3)
     repair = subparsers.add_parser("repair")
     repair.add_argument("manifest", type=Path)
     repair.add_argument("shard_id")
@@ -831,6 +952,21 @@ def main() -> None:
             )
         )
         return
+    if args.command == "run-checkpoint":
+        emit = lambda payload: print(json.dumps(payload, ensure_ascii=False), flush=True)
+        summary = run_luna_checkpoint(
+            args.manifest,
+            checkpoint=args.checkpoint,
+            codex_path=args.codex,
+            profile=args.profile,
+            timeout_seconds=args.timeout,
+            max_target_chars=args.max_target_chars,
+            max_workers=args.max_workers,
+            max_repair_rounds=args.repair_rounds,
+            emit=emit,
+        )
+        print(json.dumps(summary, ensure_ascii=False), flush=True)
+        raise SystemExit(0 if summary["failedShards"] == 0 else 1)
     if args.command == "repair":
         print(
             json.dumps(

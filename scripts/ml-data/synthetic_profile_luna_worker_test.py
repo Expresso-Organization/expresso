@@ -1,4 +1,7 @@
+import json
+import tempfile
 import unittest
+from pathlib import Path
 
 from synthetic_profile_luna_worker import (
     build_luna_event_context,
@@ -6,10 +9,13 @@ from synthetic_profile_luna_worker import (
     find_intra_profile_sentence_repetitions,
     materialize_luna_draft,
     merge_luna_bundles,
+    minimum_sentences_for_repair_round,
     parse_codex_bundle_jsonl,
     parse_codex_bundle_attempts,
     partition_luna_profiles,
     replace_luna_profiles,
+    run_luna_checkpoint,
+    select_pending_luna_shards,
     sentence_boost_for_body_mean,
 )
 
@@ -25,6 +31,87 @@ def _profile(seed: str, *bodies: str) -> dict:
 
 
 class SyntheticProfileLunaWorkerTest(unittest.TestCase):
+    def test_selects_only_pending_luna_shards_inside_checkpoint(self):
+        manifest = {
+            "promptVersion": "synthetic-profile-test",
+            "profiles": [
+                {"profileSeed": "p1", "split": "test"},
+                {"profileSeed": "p2", "split": "test"},
+                {"profileSeed": "p3", "split": "test"},
+                {"profileSeed": "p4", "split": "test"},
+            ],
+            "shards": [
+                {"shardId": "s1", "generator": "luna", "endIndex": 10, "profiles": ["p1"]},
+                {"shardId": "s2", "generator": "qwen_windows", "endIndex": 20, "profiles": ["p2"]},
+                {"shardId": "s3", "generator": "luna", "endIndex": 30, "profiles": ["p3"]},
+                {"shardId": "s4", "generator": "luna", "endIndex": 40, "profiles": ["p4"]},
+            ],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            complete = root / "profiles" / "test" / "p1.json"
+            complete.parent.mkdir(parents=True)
+            complete.write_text(
+                json.dumps(
+                    {
+                        "datasetMeta": {
+                            "profileSeed": "p1",
+                            "promptVersion": "synthetic-profile-test",
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            pending = select_pending_luna_shards(manifest, output_root=root, checkpoint=30)
+
+        self.assertEqual([shard["shardId"] for shard in pending], ["s3"])
+
+    def test_checkpoint_runner_continues_after_one_luna_shard_fails(self):
+        manifest = {
+            "promptVersion": "synthetic-profile-test",
+            "profiles": [
+                {"profileSeed": "p1", "split": "test"},
+                {"profileSeed": "p2", "split": "test"},
+            ],
+            "shards": [
+                {"shardId": "s1", "generator": "luna", "endIndex": 10, "profiles": ["p1"]},
+                {"shardId": "s2", "generator": "luna", "endIndex": 20, "profiles": ["p2"]},
+            ],
+        }
+        calls = []
+
+        def fake_generate(manifest_path, shard_id, **kwargs):
+            calls.append(shard_id)
+            if shard_id == "s1":
+                raise ValueError("bad shard")
+            return {"shardId": shard_id, "completed": 1, "failed": 0}
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            manifest_path = Path(temp_dir) / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            summary = run_luna_checkpoint(
+                manifest_path,
+                checkpoint=20,
+                codex_path=Path("codex"),
+                generate_shard=fake_generate,
+            )
+
+        self.assertEqual(calls, ["s1", "s2"])
+        self.assertEqual(summary["completedShards"], 1)
+        self.assertEqual(summary["failedShards"], 1)
+
+    def test_length_repairs_increase_sentence_requirement_cumulatively(self):
+        self.assertEqual(
+            minimum_sentences_for_repair_round(base=5, boost=2, round_number=1),
+            7,
+        )
+        self.assertEqual(
+            minimum_sentences_for_repair_round(base=5, boost=2, round_number=3),
+            11,
+        )
+
     def test_partitions_profiles_by_expected_detail_characters(self):
         profiles = [
             {"profileSeed": "p1", "events": [{"detailLength": {"targetChars": 60}}]},

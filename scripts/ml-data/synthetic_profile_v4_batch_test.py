@@ -80,7 +80,16 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
     def test_current_prompt_version_has_a_renderer_prompt(self):
         prompt_path = Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.md"
 
+        self.assertEqual(PROMPT_VERSION, "synthetic-profile-v4.5.1")
         self.assertTrue(prompt_path.is_file(), f"missing renderer prompt: {prompt_path}")
+
+    def test_renderer_prompt_requires_structured_spines_to_be_hidden(self):
+        prompt_path = Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.md"
+        prompt = prompt_path.read_text(encoding="utf-8")
+
+        self.assertIn("사건 골격", prompt)
+        self.assertIn("필드 라벨", prompt)
+        self.assertIn("본문에 복사하지 않는다", prompt)
 
     def test_infers_minimum_experience_from_source_fact(self):
         self.assertEqual(
@@ -407,6 +416,34 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
         self.assertGreater(len(synthetic_facts), 1000)
         self.assertEqual(len(synthetic_facts), len(set(synthetic_facts)))
 
+    def test_synthetic_events_are_structured_spines_that_the_model_must_rewrite(self):
+        spec = build_profile_specs(
+            profile_count=10,
+            family_size=10,
+            split_counts={"train": 10, "valid": 0, "test": 0},
+            seed=17,
+        )[0]
+
+        events = _coherent_synthetic_events(spec, seed=20260903)
+
+        self.assertTrue(all(event["renderMode"] == "rewrite_evidence" for event in events))
+        self.assertTrue(all(event["facts"][0].startswith("사건 골격 | 맥락:") for event in events))
+        self.assertTrue(all("그 결과" not in event["facts"][0] for event in events))
+
+    def test_synthetic_events_rotate_outcomes_within_each_profile(self):
+        spec = build_profile_specs(
+            profile_count=10,
+            family_size=10,
+            split_counts={"train": 10, "valid": 0, "test": 0},
+            seed=17,
+        )[0]
+
+        events = _coherent_synthetic_events(spec, seed=20260903)
+        outcomes = [event["facts"][0].split("| 결과: ", 1)[1] for event in events]
+
+        self.assertEqual(len(outcomes), 20)
+        self.assertEqual(len(set(outcomes)), 20)
+
     def test_all_three_thousand_profile_event_combinations_are_unique(self):
         specs = build_profile_specs(profile_count=3000, family_size=10, seed=20260903)
         synthetic_facts = [
@@ -623,6 +660,60 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
 
         self.assertEqual(report["diversity"]["maxSyntheticOpeningReuse"], 3)
         self.assertEqual(report["diversity"]["repeatedSyntheticOpenings3Plus"], 1)
+        self.assertFalse(report["gatePassed"])
+
+    def test_inspection_rejects_repeated_structured_outcomes_within_a_profile(self):
+        specs = build_profile_specs(
+            profile_count=10,
+            family_size=10,
+            split_counts={"train": 10, "valid": 0, "test": 0},
+            seed=19,
+        )
+        spec = specs[0]
+        repeated_outcome = "팀이 같은 기준으로 작업할 수 있었다"
+        events = [
+            {
+                "eventId": f"ev{index}",
+                "facts": [
+                    f"사건 골격 | 맥락: 상황 {index} | 대상: 대상 {index} | "
+                    f"문제: 문제 {index} | 행동: 행동 {index} | 결과: {repeated_outcome}"
+                ],
+                "provenance": {"syntheticFields": ["event_skeleton"]},
+            }
+            for index in range(1, 4)
+        ]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            input_path = root / "inputs" / f"{spec['profileSeed']}.json"
+            input_path.parent.mkdir(parents=True, exist_ok=True)
+            input_path.write_text(json.dumps({"events": events}, ensure_ascii=False), encoding="utf-8")
+            profile_path = root / "profiles" / spec["split"] / f"{spec['profileSeed']}.json"
+            profile_path.parent.mkdir(parents=True, exist_ok=True)
+            profile_path.write_text(
+                json.dumps(
+                    {
+                        "datasetMeta": {
+                            "profileSeed": spec["profileSeed"],
+                            "profileFamily": spec["profileFamily"],
+                            "split": spec["split"],
+                            "actualBodyLengthMean": spec["bodyLengthPlan"]["targetMeanChars"],
+                            "bodyLengthPlan": spec["bodyLengthPlan"],
+                        },
+                        "records": [
+                            {"properties": {}, "bodyMd": f"서로 다른 사건 {index}을 기록했다."}
+                            for index in range(1, 4)
+                        ],
+                        "provenance": {"recordLineage": []},
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            report = inspect_batch(specs, output_root=root, checkpoint=1)
+
+        self.assertEqual(report["diversity"]["maxSyntheticOutcomeReuseWithinProfile"], 3)
+        self.assertEqual(report["diversity"]["profilesWithRepeatedSyntheticOutcomes"], 1)
         self.assertFalse(report["gatePassed"])
 
 
