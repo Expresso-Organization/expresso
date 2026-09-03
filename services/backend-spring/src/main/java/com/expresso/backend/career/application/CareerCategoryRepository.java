@@ -8,4 +8,6 @@ public interface CareerCategoryRepository {
 
 	List<CareerCategory> findSystemCategories();
 
+	boolean existsSystemCategory(String categoryId);
+
 }
