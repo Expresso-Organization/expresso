@@ -7,8 +7,11 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.expresso.backend.career.application.CreateCareerRecordUseCase;
+import com.expresso.backend.career.application.GetCareerRecordUseCase;
 import com.expresso.backend.career.domain.BlockBody;
 import com.expresso.backend.career.domain.CareerRecord;
 import com.expresso.backend.career.domain.ParagraphBlock;
@@ -29,9 +33,13 @@ public class CareerRecordController {
 	private static final Pattern IDEMPOTENCY_KEY_PATTERN = Pattern.compile("^[A-Za-z0-9._~:+\\-/]{16,128}$");
 
 	private final CreateCareerRecordUseCase createCareerRecord;
+	private final GetCareerRecordUseCase getCareerRecord;
 
-	public CareerRecordController(CreateCareerRecordUseCase createCareerRecord) {
+	public CareerRecordController(
+			CreateCareerRecordUseCase createCareerRecord,
+			GetCareerRecordUseCase getCareerRecord) {
 		this.createCareerRecord = createCareerRecord;
+		this.getCareerRecord = getCareerRecord;
 	}
 
 	@PostMapping
@@ -42,10 +50,16 @@ public class CareerRecordController {
 		validateIdempotencyKey(idempotencyKey);
 		var categoryId = readCategoryId(body);
 		var result = createCareerRecord.create(principal.userId(), categoryId, idempotencyKey);
-		var response = new CareerRecordResponse(CareerRecordData.from(result.record()));
-		return ResponseEntity.status(result.created() ? 201 : 200)
-				.header(HttpHeaders.ETAG, "\"v" + result.record().version() + "\"")
-				.body(response);
+		return recordResponse(result.record(), result.created() ? HttpStatus.CREATED : HttpStatus.OK);
+	}
+
+	@GetMapping("/{recordId}")
+	public ResponseEntity<CareerRecordResponse> get(
+			@AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+			@PathVariable String recordId) {
+		var normalizedRecordId = normalizeUuid(recordId, "recordId");
+		var record = getCareerRecord.get(principal.userId(), normalizedRecordId);
+		return recordResponse(record, HttpStatus.OK);
 	}
 
 	private static void validateIdempotencyKey(String idempotencyKey) {
@@ -62,16 +76,27 @@ public class CareerRecordController {
 		if (!(body.get("categoryId") instanceof String categoryId)) {
 			throw new CareerRecordRequestValidationException("categoryId는 UUID 문자열이어야 합니다");
 		}
+		return normalizeUuid(categoryId, "categoryId");
+	}
+
+	private static String normalizeUuid(String value, String fieldName) {
 		try {
-			var parsedCategoryId = UUID.fromString(categoryId);
-			if (!parsedCategoryId.toString().equalsIgnoreCase(categoryId)) {
-				throw new CareerRecordRequestValidationException("categoryId는 올바른 UUID여야 합니다");
+			var parsedValue = UUID.fromString(value);
+			if (!parsedValue.toString().equalsIgnoreCase(value)) {
+				throw new CareerRecordRequestValidationException(fieldName + "는 올바른 UUID여야 합니다");
 			}
-			return parsedCategoryId.toString();
+			return parsedValue.toString();
 		}
 		catch (IllegalArgumentException error) {
-			throw new CareerRecordRequestValidationException("categoryId는 올바른 UUID여야 합니다");
+			throw new CareerRecordRequestValidationException(fieldName + "는 올바른 UUID여야 합니다");
 		}
+	}
+
+	private static ResponseEntity<CareerRecordResponse> recordResponse(CareerRecord record, HttpStatus status) {
+		var response = new CareerRecordResponse(CareerRecordData.from(record));
+		return ResponseEntity.status(status)
+				.header(HttpHeaders.ETAG, "\"v" + record.version() + "\"")
+				.body(response);
 	}
 
 	public record CareerRecordResponse(CareerRecordData data) {
