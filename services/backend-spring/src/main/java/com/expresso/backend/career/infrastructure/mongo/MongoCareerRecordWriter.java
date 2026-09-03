@@ -1,6 +1,7 @@
 package com.expresso.backend.career.infrastructure.mongo;
 
 import java.util.Date;
+import java.util.List;
 
 import org.bson.Document;
 
@@ -16,9 +17,7 @@ final class MongoCareerRecordWriter {
 				.append("userId", record.ownerId())
 				.append("categoryId", record.categoryId())
 				.append("title", record.title())
-				.append("propertyValues", record.propertyValues().stream()
-						.map(MongoCareerRecordWriter::writePropertyValue)
-						.toList())
+				.append("propertyValues", writePropertyValues(record.propertyValues()))
 				.append("blockBody", writeBlockBody(record.blockBody()))
 				.append("editorSchemaVersion", 1)
 				.append("version", record.version())
@@ -34,13 +33,17 @@ final class MongoCareerRecordWriter {
 				.append("createRequestHash", requestHash);
 	}
 
+	static List<Document> writePropertyValues(List<TextPropertyValue> values) {
+		return values.stream().map(MongoCareerRecordWriter::writePropertyValue).toList();
+	}
+
 	private static Document writePropertyValue(TextPropertyValue value) {
 		return new Document("propertyDefinitionId", value.propertyDefinitionId())
 				.append("type", "text")
 				.append("value", value.value());
 	}
 
-	private static Document writeBlockBody(BlockBody body) {
+	static Document writeBlockBody(BlockBody body) {
 		return new Document("schemaVersion", 1)
 				.append("type", "doc")
 				.append("content", body.paragraphs().stream()

@@ -10,6 +10,8 @@ public interface CareerRecordRepository {
 
 	Optional<CareerRecord> findOwnedCanonicalById(String ownerId, String recordId);
 
+	Optional<CareerRecord> updateOwnedCanonical(CareerRecord currentRecord, CareerRecord updatedRecord);
+
 	record CreateResult(CareerRecord record, boolean created) {
 	}
 

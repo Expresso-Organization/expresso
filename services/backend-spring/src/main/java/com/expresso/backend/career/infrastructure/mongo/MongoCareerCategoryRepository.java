@@ -1,6 +1,7 @@
 package com.expresso.backend.career.infrastructure.mongo;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.bson.Document;
 import org.springframework.data.domain.Sort;
@@ -39,6 +40,14 @@ public class MongoCareerCategoryRepository implements CareerCategoryRepository {
 		var query = Query.query(Criteria.where("_id").is(categoryId)
 				.and("isSystem").is(true));
 		return mongoTemplate.exists(query, COLLECTION);
+	}
+
+	@Override
+	public Optional<CareerCategory> findSystemCategoryById(String categoryId) {
+		var query = Query.query(Criteria.where("_id").is(categoryId)
+				.and("isSystem").is(true));
+		var document = mongoTemplate.findOne(query, Document.class, COLLECTION);
+		return Optional.ofNullable(document).map(MongoCareerCategoryRepository::mapCategory);
 	}
 
 	private static CareerCategory mapCategory(Document document) {

@@ -14,12 +14,15 @@ import com.expresso.backend.career.application.CareerRecordCategoryNotAllowedExc
 import com.expresso.backend.career.application.CareerRecordDataIntegrityException;
 import com.expresso.backend.career.application.CareerRecordIdempotencyConflictException;
 import com.expresso.backend.career.application.CareerRecordNotFoundException;
+import com.expresso.backend.career.application.CareerRecordPreconditionFailedException;
+import com.expresso.backend.career.application.CareerRecordValidationException;
 
 @RestControllerAdvice(assignableTypes = CareerRecordController.class)
 public class CareerRecordExceptionHandler {
 
 	@ExceptionHandler({ CareerRecordRequestValidationException.class,
 			CareerRecordCategoryNotAllowedException.class,
+			CareerRecordValidationException.class,
 			HttpMessageNotReadableException.class })
 	ResponseEntity<ApiErrorResponse> badRequest(HttpServletRequest request) {
 		return error(request, HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Request validation failed");
@@ -38,6 +41,11 @@ public class CareerRecordExceptionHandler {
 	@ExceptionHandler(CareerRecordDataIntegrityException.class)
 	ResponseEntity<ApiErrorResponse> internalError(HttpServletRequest request) {
 		return error(request, HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "Internal server error");
+	}
+
+	@ExceptionHandler(CareerRecordPreconditionFailedException.class)
+	ResponseEntity<ApiErrorResponse> preconditionFailed(HttpServletRequest request) {
+		return error(request, HttpStatus.PRECONDITION_FAILED, "PRECONDITION_FAILED", "Precondition failed");
 	}
 
 	private static ResponseEntity<ApiErrorResponse> error(
