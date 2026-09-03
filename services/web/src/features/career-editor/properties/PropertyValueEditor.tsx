@@ -3,6 +3,8 @@
 import { CareerPropertyValueV2Schema, type CareerPropertyDefinitionV2, type CareerPropertyValueV2 } from "@expresso/contracts";
 import { useEffect, useMemo, useState } from "react";
 
+import { Icon } from "@/components/ui/Icon";
+
 import { commitOnEnter, propertyOptions, ReadOnlyValue } from "./property-editors";
 import { PropertySelect } from "./PropertySelect";
 import styles from "./properties.module.css";
@@ -15,6 +17,11 @@ export interface PropertyValueEditorProps {
 }
 
 const readOnlyTypes = new Set(["formula", "rollup", "relation"]);
+
+function IssueBadge({ issue }: { issue: string | null }) {
+  if (!issue) return null;
+  return <span className={styles.issueIcon} role="alert" aria-label={issue} title={issue}><Icon name="warning" size={14} /></span>;
+}
 
 function initialDraft(value: CareerPropertyValueV2 | null): string {
   if (!value) return "";
@@ -56,7 +63,7 @@ export function PropertyValueEditor({ definition, value, onCommit, disabled = fa
       if (Number.isNaN(timestamp.getTime())) { setIssue("날짜와 시간을 확인해 주세요."); return; }
       void commit({ type: timestampType, value: timestamp.toISOString() });
     };
-    return <div className={styles.fieldEditor}><input className={styles.input} aria-label={definition.name} type="text" inputMode="numeric" placeholder="YYYY-MM-DD HH:mm" value={draft} disabled={disabled || saving} onChange={(event) => { const nextDraft = event.target.value; setDraft(nextDraft); setIssue(null); commitTimestamp(nextDraft); }} onBlur={() => { if (draft && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(draft)) setIssue("YYYY-MM-DD HH:mm 형식으로 입력해 주세요."); }} />{issue ? <span className={styles.issue} role="alert">{issue}</span> : null}</div>;
+    return <div className={styles.fieldEditor}><div className={styles.fieldRow}><input className={styles.input} aria-label={definition.name} type="text" inputMode="numeric" placeholder="YYYY-MM-DD HH:mm" value={draft} disabled={disabled || saving} onChange={(event) => { const nextDraft = event.target.value; setDraft(nextDraft); setIssue(null); commitTimestamp(nextDraft); }} onBlur={() => { if (draft && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(draft)) setIssue("YYYY-MM-DD HH:mm 형식으로 입력해 주세요."); }} /><IssueBadge issue={issue} /></div></div>;
   }
   if (definition.type === "checkbox") {
     return <label className={styles.checkboxLabel}><input aria-label={definition.name} type="checkbox" checked={value?.type === "checkbox" ? value.value : false} disabled={disabled || saving} onChange={(event) => void commit({ type: "checkbox", value: event.target.checked })} /><span>{value?.type === "checkbox" && value.value ? "예" : "아니요"}</span></label>;
@@ -77,12 +84,12 @@ export function PropertyValueEditor({ definition, value, onCommit, disabled = fa
   }
   if (definition.type === "date") {
     const commitDate = () => draft ? void commit({ type: "date", value: { start: draft, end: dateEnd || null, timezone: null } }) : void commit(null);
-    return <div className={styles.dateFields}><label><span>시작</span><input className={styles.input} aria-label={`${definition.name} 시작`} type="date" value={draft} disabled={disabled || saving} onChange={(event) => setDraft(event.target.value)} onBlur={commitDate} /></label><label><span>종료</span><input className={styles.input} aria-label={`${definition.name} 종료`} type="date" value={dateEnd} disabled={disabled || saving} onChange={(event) => setDateEnd(event.target.value)} onBlur={commitDate} /></label>{issue ? <span className={styles.issue} role="alert">{issue}</span> : null}</div>;
+    return <div className={styles.dateFields}><label><span>시작</span><input className={styles.input} aria-label={`${definition.name} 시작`} type="date" value={draft} disabled={disabled || saving} onChange={(event) => setDraft(event.target.value)} onBlur={commitDate} /></label><label><span>종료</span><div className={styles.fieldRow}><input className={styles.input} aria-label={`${definition.name} 종료`} type="date" value={dateEnd} disabled={disabled || saving} onChange={(event) => setDateEnd(event.target.value)} onBlur={commitDate} /><IssueBadge issue={issue} /></div></label></div>;
   }
   if (definition.type === "file" || definition.type === "media") {
     const assetType = definition.type;
     const ids = value?.type === assetType ? value.value : [];
-    return <div className={styles.assetEditor}><div className={styles.assetList}>{ids.map((id) => <button key={id} type="button" disabled={disabled || saving} onClick={() => void commit({ type: assetType, value: ids.filter((item) => item !== id) })}>{id.slice(0, 8)} ×</button>)}</div><input className={styles.input} aria-label={`${definition.name} ID 추가`} placeholder="파일 ID를 붙여 넣고 Enter" value={draft} disabled={disabled || saving} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => commitOnEnter(event, () => { void commit({ type: assetType, value: [...ids, draft] }); setDraft(""); })} />{issue ? <span className={styles.issue} role="alert">{issue}</span> : null}</div>;
+    return <div className={styles.assetEditor}><div className={styles.assetList}>{ids.map((id) => <button key={id} type="button" disabled={disabled || saving} onClick={() => void commit({ type: assetType, value: ids.filter((item) => item !== id) })}>{id.slice(0, 8)} ×</button>)}</div><div className={styles.fieldRow}><input className={styles.input} aria-label={`${definition.name} ID 추가`} placeholder="파일 ID를 붙여 넣고 Enter" value={draft} disabled={disabled || saving} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => commitOnEnter(event, () => { void commit({ type: assetType, value: [...ids, draft] }); setDraft(""); })} /><IssueBadge issue={issue} /></div></div>;
   }
 
   const inputType = definition.type === "email" ? "email" : definition.type === "url" ? "url" : definition.type === "phone" ? "tel" : "text";
@@ -95,5 +102,5 @@ export function PropertyValueEditor({ definition, value, onCommit, disabled = fa
     const type = definition.type === "title" ? "title" : definition.type === "url" ? "url" : definition.type === "email" ? "email" : definition.type === "phone" ? "phone" : "text";
     return void commit({ type, value: draft });
   };
-  return <div className={styles.fieldEditor}><input className={styles.input} aria-label={definition.name} type={inputType} inputMode={definition.type === "number" ? "decimal" : undefined} value={draft} disabled={disabled || saving} onChange={(event) => { setDraft(event.target.value); setIssue(null); }} onBlur={commitDraft} onKeyDown={(event) => commitOnEnter(event, commitDraft)} />{issue ? <span className={styles.issue} role="alert">{issue}</span> : null}</div>;
+  return <div className={styles.fieldEditor}><div className={styles.fieldRow}><input className={styles.input} aria-label={definition.name} type={inputType} inputMode={definition.type === "number" ? "decimal" : undefined} value={draft} disabled={disabled || saving} onChange={(event) => { setDraft(event.target.value); setIssue(null); }} onBlur={commitDraft} onKeyDown={(event) => commitOnEnter(event, commitDraft)} /><IssueBadge issue={issue} /></div></div>;
 }
