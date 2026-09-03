@@ -1,0 +1,760 @@
+"""생성 전용 Luna agent와 배치 저장 형식 사이의 얇은 I/O 경계."""
+
+from __future__ import annotations
+
+import argparse
+import concurrent.futures
+import copy
+import json
+import re
+import subprocess
+from collections import Counter, defaultdict
+from pathlib import Path
+from typing import Any
+
+from synthetic_profile import load_seed_categories
+from synthetic_profile_v4 import assemble_profile, body_min_length_for_prompt
+from synthetic_profile_v4_batch import (
+    DEFAULT_SEEDS_PATH,
+    PROMPT_VERSION,
+    _atomic_write_json,
+    _utc_now,
+)
+from synthetic_profile_v4_experiment import (
+    evidence_anchor_requirements,
+    validate_renderer_output,
+)
+
+
+MIN_SENTENCE_CHARS = 25
+LUNA_PROMPT_PATH = Path(__file__).parent / "prompts" / "synthetic-profile-luna-v4.4.5.md"
+
+
+def _sentences(body: str) -> list[str]:
+    sentences = []
+    for part in re.split(r"(?<=[.!?])\s+|\n+", str(body).strip()):
+        normalized = re.sub(r"\s+", " ", part).strip(" -*#\t\r\n")
+        normalized = normalized.rstrip(".!?").strip()
+        if len(normalized) >= MIN_SENTENCE_CHARS:
+            sentences.append(normalized)
+    return sentences
+
+
+def _profile_seed(profile: dict[str, Any], fallback: str) -> str:
+    return str(
+        profile.get("profileSeed")
+        or profile.get("datasetMeta", {}).get("profileSeed")
+        or fallback
+    )
+
+
+def find_intra_profile_sentence_repetitions(profile: dict[str, Any]) -> list[dict[str, Any]]:
+    counts = Counter(
+        sentence
+        for record in profile.get("records", [])
+        for sentence in _sentences(record.get("bodyMd", ""))
+    )
+    return [
+        {"sentence": sentence, "occurrences": count}
+        for sentence, count in counts.most_common()
+        if count >= 2
+    ]
+
+
+def find_cross_profile_sentence_repetitions(
+    profiles: list[dict[str, Any]],
+    *,
+    threshold: int = 3,
+    ignored_sentences_by_profile: dict[str, set[str]] | None = None,
+) -> list[dict[str, Any]]:
+    if threshold < 2:
+        raise ValueError("threshold must be at least two")
+    occurrences: Counter[str] = Counter()
+    owners: dict[str, set[str]] = defaultdict(set)
+    for index, profile in enumerate(profiles):
+        seed = _profile_seed(profile, f"profile-{index + 1}")
+        ignored = (ignored_sentences_by_profile or {}).get(seed, set())
+        for record in profile.get("records", []):
+            for sentence in _sentences(record.get("bodyMd", "")):
+                if sentence in ignored:
+                    continue
+                occurrences[sentence] += 1
+                owners[sentence].add(seed)
+    issues = [
+        {
+            "sentence": sentence,
+            "occurrences": occurrences[sentence],
+            "profileCount": len(profile_seeds),
+            "profileSeeds": sorted(profile_seeds),
+        }
+        for sentence, profile_seeds in owners.items()
+        if len(profile_seeds) >= threshold
+    ]
+    return sorted(issues, key=lambda item: (-item["profileCount"], -item["occurrences"], item["sentence"]))
+
+
+def _load_manifest_and_shard(manifest_path: Path, shard_id: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+    shard = next((item for item in manifest["shards"] if item["shardId"] == shard_id), None)
+    if shard is None:
+        raise ValueError(f"unknown shard: {shard_id}")
+    return manifest, shard
+
+
+def _load_existing_profiles(output_root: Path, *, excluded_seeds: set[str]) -> list[dict[str, Any]]:
+    profiles = []
+    for path in (output_root / "profiles").rglob("*.json"):
+        if path.stem in excluded_seeds:
+            continue
+        try:
+            profiles.append(json.loads(path.read_text(encoding="utf-8")))
+        except (OSError, json.JSONDecodeError):
+            continue
+    return profiles
+
+
+def _load_ignored_skeletons(output_root: Path, seeds: set[str]) -> dict[str, set[str]]:
+    ignored: dict[str, set[str]] = {}
+    for seed in seeds:
+        path = output_root / "inputs" / f"{seed}.json"
+        if not path.exists():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        ignored[seed] = {
+            sentence
+            for event in payload.get("events", [])
+            if event.get("renderMode") == "fixed_skeleton"
+            for sentence in _sentences(event.get("skeletonLead", ""))
+        }
+    return ignored
+
+
+def build_luna_event_context(event: dict[str, Any]) -> dict[str, Any]:
+    """Luna에는 창작에 필요한 사실과 글자 수 계약만 전달한다."""
+    lead = str(event.get("skeletonLead", "")).strip()
+    reserve = len(lead) + 1 if event.get("renderMode") == "fixed_skeleton" and lead else 0
+    target = event.get("bodyLengthTarget", {})
+    detail_length = {
+        key: max(1, int(target.get(key, 1)) - reserve)
+        for key in ("targetChars", "minChars", "maxChars")
+    }
+    return {
+        "eventId": event["eventId"],
+        "categoryKey": event["categoryKey"],
+        "facts": event.get("facts", []),
+        "propertyValues": event.get("propertyValues", {}),
+        "skeletonLead": lead,
+        "renderMode": event.get("renderMode"),
+        "detailLength": detail_length,
+        "minimumSentences": max(1, (detail_length["minChars"] + 44) // 45),
+        "requiredEvidenceAnchors": evidence_anchor_requirements(event),
+    }
+
+
+def materialize_luna_draft(
+    payload: dict[str, Any],
+    authored_profile: dict[str, Any],
+) -> dict[str, Any]:
+    """Luna가 쓴 제목/세부 본문에 입력의 구조 필드를 결정적으로 결합한다."""
+    seed = str(authored_profile.get("profileSeed", ""))
+    if seed != payload["profileSeed"]:
+        raise ValueError(f"profileSeed mismatch: expected={payload['profileSeed']}, actual={seed}")
+    authored_records = authored_profile.get("records")
+    if not isinstance(authored_records, list) or len(authored_records) != payload["targetRecordCount"]:
+        raise ValueError("authored record count does not match targetRecordCount")
+
+    records = []
+    for index, (event, authored) in enumerate(zip(payload["events"], authored_records), start=1):
+        if authored.get("eventId") != event["eventId"]:
+            raise ValueError(f"event order mismatch at record {index}")
+        lead = str(event.get("skeletonLead", "")).strip()
+        detail = str(authored.get("detailMd", "")).strip()
+        if event.get("renderMode") == "fixed_skeleton" and lead and detail.startswith(lead):
+            detail = detail[len(lead) :].lstrip()
+        body = (
+            f"{lead} {detail}".strip()
+            if event.get("renderMode") == "fixed_skeleton"
+            else detail
+        )
+        records.append(
+            {
+                "draftId": f"r{index}",
+                "eventId": event["eventId"],
+                "categoryKey": event["categoryKey"],
+                "title": str(authored.get("title", "")).strip(),
+                "properties": event.get("propertyValues", {}),
+                "bodyMd": body,
+            }
+        )
+    return {
+        "status": "generated",
+        "profileSeed": payload["profileSeed"],
+        "persona": payload["persona"],
+        "records": records,
+    }
+
+
+def parse_codex_bundle_jsonl(stream: str) -> dict[str, Any]:
+    messages = []
+    for line in stream.splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        item = event.get("item", {})
+        if event.get("type") == "item.completed" and item.get("type") == "agent_message":
+            messages.append(str(item.get("text", "")))
+    if not messages:
+        raise ValueError("Codex output did not contain an agent_message bundle")
+    text = messages[-1].strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.IGNORECASE)
+    bundle = json.loads(text)
+    if not isinstance(bundle, dict):
+        raise ValueError("Luna bundle must be a JSON object")
+    return bundle
+
+
+def partition_luna_profiles(
+    profiles: list[dict[str, Any]],
+    *,
+    max_target_chars: int,
+) -> list[list[dict[str, Any]]]:
+    if max_target_chars < 1:
+        raise ValueError("max_target_chars must be positive")
+    groups: list[list[dict[str, Any]]] = []
+    current: list[dict[str, Any]] = []
+    current_chars = 0
+    for profile in profiles:
+        profile_chars = sum(
+            int(event.get("detailLength", {}).get("targetChars", 0))
+            for event in profile.get("events", [])
+        )
+        if current and current_chars + profile_chars > max_target_chars:
+            groups.append(current)
+            current = []
+            current_chars = 0
+        current.append(profile)
+        current_chars += profile_chars
+    if current:
+        groups.append(current)
+    return groups
+
+
+def merge_luna_bundles(
+    bundles: list[dict[str, Any]],
+    *,
+    shard_id: str,
+    expected_seeds: list[str],
+) -> dict[str, Any]:
+    by_seed: dict[str, dict[str, Any]] = {}
+    for bundle in bundles:
+        if bundle.get("shardId") != shard_id:
+            raise ValueError("partial bundle shardId mismatch")
+        for profile in bundle.get("profiles", []):
+            seed = str(profile.get("profileSeed", ""))
+            if not seed or seed in by_seed:
+                raise ValueError("partial bundles contain a missing or duplicate profileSeed")
+            by_seed[seed] = profile
+    if set(by_seed) != set(expected_seeds):
+        raise ValueError("partial bundle profileSeeds do not match the shard")
+    return {"shardId": shard_id, "profiles": [by_seed[seed] for seed in expected_seeds]}
+
+
+def replace_luna_profiles(
+    existing: dict[str, Any],
+    replacements: dict[str, Any],
+) -> dict[str, Any]:
+    if existing.get("shardId") != replacements.get("shardId"):
+        raise ValueError("replacement bundle shardId mismatch")
+    replacement_by_seed = {
+        str(profile.get("profileSeed", "")): profile
+        for profile in replacements.get("profiles", [])
+    }
+    if not replacement_by_seed or "" in replacement_by_seed:
+        raise ValueError("replacement bundle has no valid profiles")
+    existing_seeds = {str(profile.get("profileSeed", "")) for profile in existing.get("profiles", [])}
+    if not set(replacement_by_seed).issubset(existing_seeds):
+        raise ValueError("replacement bundle contains an unknown profileSeed")
+    return {
+        "shardId": existing["shardId"],
+        "profiles": [
+            replacement_by_seed.get(str(profile.get("profileSeed", "")), profile)
+            for profile in existing["profiles"]
+        ],
+    }
+
+
+def _run_luna_group(
+    *,
+    codex_path: Path,
+    profile: str,
+    request: str,
+    timeout_seconds: int,
+) -> tuple[str, str]:
+    process = subprocess.run(
+        [
+            str(codex_path),
+            "-p",
+            profile,
+            "--strict-config",
+            "exec",
+            "--ephemeral",
+            "--skip-git-repo-check",
+            "--json",
+            "-",
+        ],
+        cwd=Path(__file__).parents[2],
+        input=request,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=timeout_seconds,
+        check=False,
+    )
+    if process.returncode != 0:
+        raise RuntimeError(
+            f"Codex profile failed with exit code {process.returncode}: {process.stderr[-1000:]}"
+        )
+    return process.stdout, process.stderr
+
+
+def _author_luna_profiles(
+    *,
+    context: dict[str, Any],
+    output_root: Path,
+    codex_path: Path,
+    profile: str,
+    base_prompt: str,
+    timeout_seconds: int,
+    max_target_chars: int,
+    max_workers: int,
+    log_label: str,
+) -> dict[str, Any]:
+    groups = partition_luna_profiles(
+        context["profiles"],
+        max_target_chars=max_target_chars,
+    )
+
+    def run_group(index: int, group: list[dict[str, Any]]) -> dict[str, Any]:
+        group_context = {**context, "profiles": group}
+        request = (
+            base_prompt
+            + "\n\n# 입력 context\n"
+            + json.dumps(group_context, ensure_ascii=False)
+            + "\n\nJSON 객체 하나만 출력하라.\n"
+        )
+        stdout, stderr = _run_luna_group(
+            codex_path=codex_path,
+            profile=profile,
+            request=request,
+            timeout_seconds=timeout_seconds,
+        )
+        part = index + 1
+        (output_root / f"luna-profile-{log_label}-part-{part:02d}.jsonl").write_text(
+            stdout,
+            encoding="utf-8",
+        )
+        (output_root / f"luna-profile-{log_label}-part-{part:02d}.err.log").write_text(
+            stderr,
+            encoding="utf-8",
+        )
+        return parse_codex_bundle_jsonl(stdout)
+
+    bundles: list[dict[str, Any] | None] = [None] * len(groups)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(max_workers, len(groups))) as executor:
+        futures = {
+            executor.submit(run_group, index, group): index
+            for index, group in enumerate(groups)
+        }
+        for future in concurrent.futures.as_completed(futures):
+            bundles[futures[future]] = future.result()
+    return merge_luna_bundles(
+        [bundle for bundle in bundles if bundle is not None],
+        shard_id=context["shardId"],
+        expected_seeds=[item["profileSeed"] for item in context["profiles"]],
+    )
+
+
+def generate_with_luna_profile(
+    manifest_path: Path,
+    shard_id: str,
+    *,
+    codex_path: Path,
+    profile: str,
+    prompt_path: Path = LUNA_PROMPT_PATH,
+    timeout_seconds: int = 3600,
+    max_target_chars: int = 6000,
+    max_workers: int = 3,
+) -> dict[str, Any]:
+    manifest_path = Path(manifest_path).resolve()
+    output_root = manifest_path.parent
+    context_path = prepare_context(manifest_path, shard_id)
+    context = json.loads(context_path.read_text(encoding="utf-8"))
+    base_prompt = Path(prompt_path).read_text(encoding="utf-8")
+    bundle = _author_luna_profiles(
+        context=context,
+        output_root=output_root,
+        codex_path=codex_path,
+        profile=profile,
+        base_prompt=base_prompt,
+        timeout_seconds=timeout_seconds,
+        max_target_chars=max_target_chars,
+        max_workers=max_workers,
+        log_label=shard_id,
+    )
+    bundle_path = output_root / "staging" / f"{shard_id}.bundle.json"
+    _atomic_write_json(bundle_path, bundle)
+    return commit_bundle(manifest_path, shard_id, bundle_path)
+
+
+def repair_luna_bundle(
+    manifest_path: Path,
+    shard_id: str,
+    bundle_path: Path,
+    invalid_seeds: list[str],
+    *,
+    codex_path: Path,
+    profile: str,
+    timeout_seconds: int = 3600,
+    max_target_chars: int = 6000,
+    max_workers: int = 3,
+    sentence_boost: int = 2,
+) -> dict[str, Any]:
+    manifest_path = Path(manifest_path).resolve()
+    output_root = manifest_path.parent
+    context_path = prepare_context(manifest_path, shard_id)
+    context = json.loads(context_path.read_text(encoding="utf-8"))
+    selected = set(invalid_seeds)
+    if not selected:
+        raise ValueError("invalid_seeds must not be empty")
+    retry_profiles = []
+    for profile_context in context["profiles"]:
+        if profile_context["profileSeed"] not in selected:
+            continue
+        boosted = copy.deepcopy(profile_context)
+        boosted["retryDirective"] = (
+            "이전 출력은 목표 본문 길이보다 짧았다. 각 기록을 처음부터 다시 쓰고 최소 문장 수와 글자 수를 모두 지켜라."
+        )
+        for event in boosted["events"]:
+            event["minimumSentences"] += sentence_boost
+        retry_profiles.append(boosted)
+    if {item["profileSeed"] for item in retry_profiles} != selected:
+        raise ValueError("invalid_seeds contains a profile outside the shard")
+    retry_context = {**context, "profiles": retry_profiles}
+    replacements = _author_luna_profiles(
+        context=retry_context,
+        output_root=output_root,
+        codex_path=codex_path,
+        profile=profile,
+        base_prompt=Path(LUNA_PROMPT_PATH).read_text(encoding="utf-8"),
+        timeout_seconds=timeout_seconds,
+        max_target_chars=max_target_chars,
+        max_workers=max_workers,
+        log_label=f"{shard_id}-repair",
+    )
+    existing = json.loads(Path(bundle_path).read_text(encoding="utf-8"))
+    bundle = replace_luna_profiles(existing, replacements)
+    _atomic_write_json(Path(bundle_path), bundle)
+    return commit_bundle(manifest_path, shard_id, Path(bundle_path))
+
+
+def prepare_context(manifest_path: Path, shard_id: str, output_path: Path | None = None) -> Path:
+    manifest_path = Path(manifest_path).resolve()
+    _, shard = _load_manifest_and_shard(manifest_path, shard_id)
+    output_root = manifest_path.parent
+    full_payloads = [
+        json.loads((output_root / "inputs" / f"{seed}.json").read_text(encoding="utf-8"))
+        for seed in shard["profiles"]
+    ]
+    payloads = [
+        {
+            "profileSeed": payload["profileSeed"],
+            "persona": payload["persona"],
+            "targetRecordCount": payload["targetRecordCount"],
+            "bodyLengthPlan": payload["bodyLengthPlan"],
+            "events": [build_luna_event_context(event) for event in payload["events"]],
+        }
+        for payload in full_payloads
+    ]
+    existing = _load_existing_profiles(output_root, excluded_seeds=set(shard["profiles"]))
+    existing_seeds = {_profile_seed(profile, "") for profile in existing}
+    existing_repetitions = find_cross_profile_sentence_repetitions(
+        existing,
+        threshold=2,
+        ignored_sentences_by_profile=_load_ignored_skeletons(output_root, existing_seeds),
+    )
+    context = {
+        "schemaVersion": 1,
+        "shardId": shard_id,
+        "promptVersion": PROMPT_VERSION,
+        "profiles": payloads,
+        "outputBundleSchema": {
+            "shardId": shard_id,
+            "profiles": [
+                {
+                    "profileSeed": "must match input profileSeed",
+                    "records": [
+                        {
+                            "eventId": "must match the input event at the same index",
+                            "title": "short noun phrase",
+                            "detailMd": "newly authored details only",
+                        }
+                    ],
+                }
+            ],
+        },
+        "sentencePolicy": {
+            "minimumComparedChars": MIN_SENTENCE_CHARS,
+            "sameProfileMaximumOccurrences": 1,
+            "corpusMaximumProfileCount": 2,
+            "forbiddenSentencesAlreadyUsedByTwoProfiles": [
+                item["sentence"] for item in existing_repetitions
+            ],
+        },
+    }
+    output_path = output_path or output_root / "tasks" / f"{shard_id}.context.json"
+    _atomic_write_json(output_path, context)
+    return output_path
+
+
+def _authored_profiles_from_bundle(bundle: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    profiles: dict[str, dict[str, Any]] = {}
+    for item in bundle.get("profiles", []):
+        seed = str(item.get("profileSeed", ""))
+        if not seed or seed in profiles:
+            raise ValueError("bundle contains a missing or duplicate profileSeed")
+        profiles[seed] = item
+    return profiles
+
+
+def commit_bundle(manifest_path: Path, shard_id: str, bundle_path: Path) -> dict[str, Any]:
+    manifest_path = Path(manifest_path).resolve()
+    _, shard = _load_manifest_and_shard(manifest_path, shard_id)
+    output_root = manifest_path.parent
+    bundle = json.loads(Path(bundle_path).read_text(encoding="utf-8"))
+    if bundle.get("shardId") != shard_id:
+        raise ValueError("bundle shardId does not match the requested shard")
+    authored_profiles = _authored_profiles_from_bundle(bundle)
+    expected_seeds = set(shard["profiles"])
+    if set(authored_profiles) != expected_seeds:
+        missing = sorted(expected_seeds - set(authored_profiles))
+        extra = sorted(set(authored_profiles) - expected_seeds)
+        raise ValueError(f"bundle seed mismatch: missing={missing}, extra={extra}")
+
+    payloads = {
+        seed: json.loads((output_root / "inputs" / f"{seed}.json").read_text(encoding="utf-8"))
+        for seed in shard["profiles"]
+    }
+    drafts = {
+        seed: materialize_luna_draft(payloads[seed], authored_profiles[seed])
+        for seed in shard["profiles"]
+    }
+    validations: dict[str, dict[str, Any]] = {}
+    errors: dict[str, list[Any]] = defaultdict(list)
+    for seed in shard["profiles"]:
+        draft = drafts[seed]
+        validation = validate_renderer_output(
+            payloads[seed],
+            draft,
+            enforce_skeleton=True,
+            body_min_length=body_min_length_for_prompt(PROMPT_VERSION),
+        )
+        validations[seed] = validation
+        if not validation["valid"]:
+            errors[seed].extend(validation["errors"])
+        intra = find_intra_profile_sentence_repetitions(draft)
+        if intra:
+            errors[seed].append({"intraProfileSentenceRepetitions": intra})
+
+    seed_categories = load_seed_categories(DEFAULT_SEEDS_PATH)
+    assembled = {
+        seed: assemble_profile(
+            payloads[seed],
+            drafts[seed],
+            seed_categories,
+            generator_model="gpt-5.6-luna",
+            prompt_version=PROMPT_VERSION,
+        )
+        for seed in shard["profiles"]
+        if seed not in errors
+    }
+    if len(assembled) == len(shard["profiles"]):
+        existing = _load_existing_profiles(output_root, excluded_seeds=expected_seeds)
+        compared_profiles = existing + list(assembled.values())
+        compared_seeds = {_profile_seed(profile, "") for profile in compared_profiles}
+        cross = find_cross_profile_sentence_repetitions(
+            compared_profiles,
+            threshold=3,
+            ignored_sentences_by_profile=_load_ignored_skeletons(output_root, compared_seeds),
+        )
+        for issue in cross:
+            candidate_owners = expected_seeds.intersection(issue["profileSeeds"])
+            for seed in candidate_owners:
+                errors[seed].append({"crossProfileSentenceRepetition": issue})
+
+    if errors:
+        raise ValueError(json.dumps({"validationErrors": errors}, ensure_ascii=False))
+
+    state_profiles = {}
+    for seed in shard["profiles"]:
+        payload = payloads[seed]
+        draft = drafts[seed]
+        profile = assembled[seed]
+        profile_path = output_root / "profiles" / payload["split"] / f"{seed}.json"
+        _atomic_write_json(output_root / "drafts" / payload["split"] / f"{seed}.json", draft)
+        _atomic_write_json(profile_path, profile)
+        _atomic_write_json(
+            output_root / "metadata" / f"{seed}.json",
+            {
+                "profileSeed": seed,
+                "model": "gpt-5.6-luna",
+                "promptVersion": PROMPT_VERSION,
+                "generationMethod": "agent-profile-direct",
+                "validation": {
+                    **validations[seed],
+                    "intraProfileSentenceRepetitions": [],
+                    "crossProfileSentenceRepetitions": [],
+                },
+                "actualRecordCount": len(profile["records"]),
+                "targetRecordCount": payload["targetRecordCount"],
+                "bodyLengthPlan": payload["bodyLengthPlan"],
+            },
+        )
+        state_profiles[seed] = {"status": "complete", "path": str(profile_path)}
+    state = {
+        "schemaVersion": 1,
+        "shardId": shard_id,
+        "device": "codex-agent-profile",
+        "generator": "luna",
+        "updatedAt": _utc_now(),
+        "completed": len(state_profiles),
+        "failed": 0,
+        "profiles": state_profiles,
+    }
+    _atomic_write_json(output_root / "states" / f"{shard_id}.json", state)
+    return {"shardId": shard_id, "completed": len(state_profiles), "failed": 0}
+
+
+def audit_corpus(manifest_path: Path, *, checkpoint: int) -> dict[str, Any]:
+    manifest_path = Path(manifest_path).resolve()
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    output_root = manifest_path.parent
+    selected = {
+        item["profileSeed"]
+        for item in manifest["profiles"]
+        if item["sequenceIndex"] <= checkpoint
+    }
+    profiles = _load_existing_profiles(output_root, excluded_seeds=set())
+    profiles = [profile for profile in profiles if _profile_seed(profile, "") in selected]
+    intra = {
+        _profile_seed(profile, ""): find_intra_profile_sentence_repetitions(profile)
+        for profile in profiles
+        if find_intra_profile_sentence_repetitions(profile)
+    }
+    cross = find_cross_profile_sentence_repetitions(
+        profiles,
+        threshold=3,
+        ignored_sentences_by_profile=_load_ignored_skeletons(
+            output_root,
+            {_profile_seed(profile, "") for profile in profiles},
+        ),
+    )
+    return {
+        "checkpoint": checkpoint,
+        "profileCount": len(profiles),
+        "valid": not intra and not cross,
+        "intraProfileRepetitions": intra,
+        "crossProfileRepetitions": cross,
+    }
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    prepare = subparsers.add_parser("prepare")
+    prepare.add_argument("manifest", type=Path)
+    prepare.add_argument("shard_id")
+    prepare.add_argument("--output", type=Path)
+    commit = subparsers.add_parser("commit")
+    commit.add_argument("manifest", type=Path)
+    commit.add_argument("shard_id")
+    commit.add_argument("bundle", type=Path)
+    audit = subparsers.add_parser("audit")
+    audit.add_argument("manifest", type=Path)
+    audit.add_argument("--checkpoint", type=int, required=True)
+    generate = subparsers.add_parser("generate")
+    generate.add_argument("manifest", type=Path)
+    generate.add_argument("shard_id")
+    generate.add_argument("--codex", type=Path, required=True)
+    generate.add_argument("--profile", default="synthetic-profile-generator")
+    generate.add_argument("--timeout", type=int, default=3600)
+    generate.add_argument("--max-target-chars", type=int, default=6000)
+    generate.add_argument("--max-workers", type=int, default=3)
+    repair = subparsers.add_parser("repair")
+    repair.add_argument("manifest", type=Path)
+    repair.add_argument("shard_id")
+    repair.add_argument("bundle", type=Path)
+    repair.add_argument("--seeds", required=True)
+    repair.add_argument("--codex", type=Path, required=True)
+    repair.add_argument("--profile", default="synthetic-profile-generator")
+    repair.add_argument("--timeout", type=int, default=3600)
+    repair.add_argument("--max-target-chars", type=int, default=6000)
+    repair.add_argument("--max-workers", type=int, default=3)
+    repair.add_argument("--sentence-boost", type=int, default=2)
+    return parser
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+    if args.command == "prepare":
+        path = prepare_context(args.manifest, args.shard_id, args.output)
+        print(json.dumps({"context": str(path)}, ensure_ascii=False))
+        return
+    if args.command == "commit":
+        print(json.dumps(commit_bundle(args.manifest, args.shard_id, args.bundle), ensure_ascii=False))
+        return
+    if args.command == "generate":
+        print(
+            json.dumps(
+                generate_with_luna_profile(
+                    args.manifest,
+                    args.shard_id,
+                    codex_path=args.codex,
+                    profile=args.profile,
+                    timeout_seconds=args.timeout,
+                    max_target_chars=args.max_target_chars,
+                    max_workers=args.max_workers,
+                ),
+                ensure_ascii=False,
+            )
+        )
+        return
+    if args.command == "repair":
+        print(
+            json.dumps(
+                repair_luna_bundle(
+                    args.manifest,
+                    args.shard_id,
+                    args.bundle,
+                    [seed for seed in args.seeds.split(",") if seed],
+                    codex_path=args.codex,
+                    profile=args.profile,
+                    timeout_seconds=args.timeout,
+                    max_target_chars=args.max_target_chars,
+                    max_workers=args.max_workers,
+                    sentence_boost=args.sentence_boost,
+                ),
+                ensure_ascii=False,
+            )
+        )
+        return
+    print(json.dumps(audit_corpus(args.manifest, checkpoint=args.checkpoint), ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()
