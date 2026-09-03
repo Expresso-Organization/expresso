@@ -699,7 +699,7 @@ svg [data-morph] { transform-box: fill-box; }
       <div class="cols" style="grid-template-columns: repeat(3, 1fr); grid-auto-rows: auto; row-gap: 34px; column-gap: 48px">
         <div class="in dl-3" style="display: flex; align-items: center; gap: 16px">
           <span style="flex: none; width: 40px; height: 40px; border-radius: 10px; background: var(--ex-bean-50); display: grid; place-items: center"><i class="ph ph-bug" style="font-size: 19px; color: var(--ex-espresso)"></i></span>
-          <span><span style="display: block; font-family: var(--ex-font-mono); font-size: 13px; color: var(--ex-slate-400)">01</span><span style="font-size: 21px; font-weight: 600; letter-spacing: -.015em">화면 결함 정비</span></span>
+          <span><span style="display: block; font-family: var(--ex-font-mono); font-size: 13px; color: var(--ex-slate-400)">01</span><span style="font-size: 21px; font-weight: 600; letter-spacing: -.015em">프론트엔드 폴리싱 작업</span></span>
         </div>
         <div class="in dl-3" style="display: flex; align-items: center; gap: 16px">
           <span style="flex: none; width: 40px; height: 40px; border-radius: 10px; background: var(--ex-bean-50); display: grid; place-items: center"><i class="ph ph-palette" style="font-size: 19px; color: var(--ex-espresso)"></i></span>
@@ -768,34 +768,40 @@ svg [data-morph] { transform-box: fill-box; }
 </section>
 
 <!-- ============================================================
-     04 · 01 화면 결함 정비 — 3카드 + 아이콘
+     04 · 01 프론트엔드 폴리싱 작업 — 2 + 1
+
+     셋을 같은 크기 칸에 넣지 않았습니다. 사이드바 리워크만 안에 항목이
+     둘이라, 같은 칸에 담으면 앞의 둘이 빈 카드가 됩니다.
      ============================================================ -->
-<section class="slide" data-title="01 화면 결함 정비" data-kind="3-CARD">
+<section class="slide" data-title="01 프론트엔드 폴리싱 작업" data-kind="2+1">
   <div class="frame">
-    <div class="rail"><span class="now">01 · FIXED</span><span class="end count">04 / 15</span></div>
+    <div class="rail"><span class="now">01 · POLISH</span><span class="end count">04 / 10</span></div>
     <div class="head">
-      <div class="kicker">8월 27일</div>
-      <h2>화면 결함 정비</h2>
+      <div class="kicker">8월 27일 — 9월 2일</div>
+      <h2>프론트엔드 폴리싱 작업</h2>
     </div>
     <div class="body" style="justify-content: center">
-      <div class="cols c-3" style="align-items: start; flex: none">
-        <div class="panel">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--ex-bean-50); display: grid; place-items: center; margin-bottom: 20px"><i class="ph ph-moon" style="font-size: 22px; color: var(--ex-espresso)"></i></div>
-          <h3>다크 모드 정비</h3>
-          <p class="grow">좁은 화면 · 다크 지면 색상 결함 정비</p>
-          <div style="margin-top: 20px"><span class="badge done">완료</span></div>
+      <div class="cols c-46" style="align-items: start; flex: none">
+        <div style="display: grid; gap: 32px">
+          <div class="panel">
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--ex-bean-50); display: grid; place-items: center; margin-bottom: 20px"><i class="ph ph-moon" style="font-size: 22px; color: var(--ex-espresso)"></i></div>
+            <h3>다크 모드 · 반응형 디자인 폴리싱</h3>
+            <div style="margin-top: 20px"><span class="badge done">완료</span></div>
+          </div>
+          <div class="panel">
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--ex-bean-50); display: grid; place-items: center; margin-bottom: 20px"><i class="ph ph-cursor-click" style="font-size: 22px; color: var(--ex-espresso)"></i></div>
+            <h3>에디터 UI 폴리싱</h3>
+            <div style="margin-top: 20px"><span class="badge done">완료</span></div>
+          </div>
         </div>
-        <div class="panel">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--ex-bean-50); display: grid; place-items: center; margin-bottom: 20px"><i class="ph ph-cursor-click" style="font-size: 22px; color: var(--ex-espresso)"></i></div>
-          <h3>에디터 UI 정비</h3>
-          <p class="grow">브루 마법사 · 툴바 · 상태 바 넘침 정비</p>
-          <div style="margin-top: 20px"><span class="badge done">완료</span></div>
-        </div>
-        <div class="panel">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--ex-bean-50); display: grid; place-items: center; margin-bottom: 20px"><i class="ph ph-git-merge" style="font-size: 22px; color: var(--ex-espresso)"></i></div>
-          <h3>배포 경로 통합</h3>
-          <p class="grow">생성 · 편집 · 배포를 한 경로로 정리</p>
-          <div style="margin-top: 20px"><span class="badge done">완료</span></div>
+        <div class="panel sig">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--ex-white); display: grid; place-items: center; margin-bottom: 20px"><i class="ph ph-sidebar-simple" style="font-size: 22px; color: var(--ex-espresso)"></i></div>
+          <h3>사이드바 리워크</h3>
+          <ul style="margin-top: 18px">
+            <li class="on">접기 · 펼치기 구현</li>
+            <li class="on">인디케이터 애니메이션 추가</li>
+          </ul>
+          <div style="margin-top: 26px; display: flex; gap: 10px"><span class="badge done">완료</span><span class="badge pro">PR #15</span></div>
         </div>
       </div>
     </div>
@@ -1198,7 +1204,7 @@ svg [data-morph] { transform-box: fill-box; }
             <span style="flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--ex-espresso); color: #fff; display: grid; place-items: center; font-family: var(--ex-font-mono); font-size: 14px">4</span>
             <span style="font-size: 20px; line-height: 1.6; color: var(--ex-slate-700); word-break: keep-all">AI 변경 제안과 되돌리기</span>
           </div>
-          <div style="margin-top: 6px"><span class="badge pro">PR #15 · #16</span></div>
+          <div style="margin-top: 6px"><span class="badge pro">PR #16</span></div>
         </div>
       </div>
     </div>
