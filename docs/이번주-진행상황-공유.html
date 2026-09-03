@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
-<head>
+<html lang="ko"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
@@ -38,8 +37,8 @@
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
 <!-- 아이콘 — 이모지 대신 씁니다. Regular만, Bold는 쓰지 않습니다. -->
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 
@@ -626,9 +625,20 @@ svg [data-morph] { transform-box: fill-box; }
 <div class="deck-stage" id="deckStage">
 
 <!-- ============================================================
+<!-- ============================================================
      01 · 표지
      ============================================================ -->
 <section class="slide dark" data-title="표지" data-kind="COVER">
+  <svg class="bg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <clipPath id="dk-cup"><circle cx="1560" cy="540" r="430"/></clipPath>
+      <mask id="dk-mask"><rect width="1920" height="1080" fill="#fff"/><circle cx="1560" cy="540" r="555" fill="#000"/></mask>
+    </defs>
+    <rect width="1920" height="1080" fill="var(--ex-ink-900)"/>
+    <circle cx="1968" cy="540" r="236" fill="none" stroke="var(--ex-crema-deep)" stroke-width="101" mask="url(#dk-mask)" opacity=".5"/>
+    <rect x="1130" y="599" width="860" height="481" fill="var(--ex-crema)" clip-path="url(#dk-cup)" opacity=".22"/>
+    <circle cx="1560" cy="540" r="430" fill="none" stroke="var(--ex-crema)" stroke-width="119" opacity=".22"/>
+  </svg>
   <div class="frame">
     <div class="rail in in-fade dl-1" style="border: none">
       <span class="brandline">
@@ -641,8 +651,8 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="body mid">
       <div class="kicker in dl-2" style="color: var(--ex-crema)">WEEKLY · 진행 상황</div>
       <div class="display in in-settle dl-3">Brewed this <em>week.</em></div>
-      <h2 class="in dl-5" style="color: #fff; margin-top: 26px">이번 주 진행 상황</h2>
-      <p class="sub in dl-6" style="max-width: 1100px">8월 27일부터 9월 3일까지 main에 병합된 작업을 갈래별로 나눕니다.</p>
+      <h2 class="in dl-5" style="color: #fff; margin-top: 26px">이번 주 개발 진행 현황 공유</h2>
+      <p class="sub in dl-6" style="max-width: 1100px">8월 27일부터 9월 3일까지 main에 병합된 작업을 공유합니다.</p>
     </div>
 
     <div class="foot in in-fade dl-7">
@@ -657,35 +667,52 @@ svg [data-morph] { transform-box: fill-box; }
 </section>
 
 <!-- ============================================================
-     02 · 목차
+     02 · 목차 — 9갈래
      ============================================================ -->
 <section class="slide" data-title="오늘 이야기할 것" data-kind="AGENDA">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">AGENDA</span><span class="end count">02 / 13</span></div>
+    <div class="rail in in-fade dl-1"><span class="now">AGENDA</span><span class="end count">02 / 14</span></div>
     <div class="head in dl-2">
       <h2>오늘 이야기할 것</h2>
+      <p class="sub">아홉 갈래로 나눠 하나씩 짚습니다.</p>
     </div>
-    <div class="body">
-      <div class="cols c-4" style="align-items: start; align-content: center">
-        <div class="in dl-3">
-          <div class="bignum">01</div>
-          <h3 style="font-size: 27px; font-weight: 600; margin-top: 24px; letter-spacing: -.02em">화면과 배포</h3>
-          <p style="font-size: 19px; line-height: 1.7; color: var(--ex-slate-500); margin-top: 10px">실사용 결함 정비 · 배포 파이프라인 안정화</p>
+    <div class="body" style="justify-content: center">
+      <div class="cols" style="grid-template-columns: repeat(3, 1fr); grid-auto-rows: auto; row-gap: 30px; column-gap: 48px">
+        <div class="in dl-3" style="display: flex; align-items: baseline; gap: 16px">
+          <span style="font-family: var(--ex-font-mono); font-size: 22px; color: var(--ex-espresso)">01</span>
+          <span style="font-size: 23px; font-weight: 600; letter-spacing: -.015em">화면 결함 정비</span>
         </div>
-        <div class="in dl-4">
-          <div class="bignum" style="color: var(--ex-slate-300)">02</div>
-          <h3 style="font-size: 27px; font-weight: 600; margin-top: 24px; letter-spacing: -.02em">데이터베이스 전환</h3>
-          <p style="font-size: 19px; line-height: 1.7; color: var(--ex-slate-500); margin-top: 10px">MySQL에서 MongoDB로</p>
+        <div class="in dl-3" style="display: flex; align-items: baseline; gap: 16px">
+          <span style="font-family: var(--ex-font-mono); font-size: 22px; color: var(--ex-espresso)">02</span>
+          <span style="font-size: 23px; font-weight: 600; letter-spacing: -.015em">포트폴리오 디자인 카탈로그</span>
         </div>
-        <div class="in dl-5">
-          <div class="bignum" style="color: var(--ex-slate-300)">03</div>
-          <h3 style="font-size: 27px; font-weight: 600; margin-top: 24px; letter-spacing: -.02em">새 기능</h3>
-          <p style="font-size: 19px; line-height: 1.7; color: var(--ex-slate-500); margin-top: 10px">디자인 카탈로그 · 커리어 기록 편집기</p>
+        <div class="in dl-3" style="display: flex; align-items: baseline; gap: 16px">
+          <span style="font-family: var(--ex-font-mono); font-size: 22px; color: var(--ex-espresso)">03</span>
+          <span style="font-size: 23px; font-weight: 600; letter-spacing: -.015em">MongoDB 백엔드 전환</span>
         </div>
-        <div class="in dl-6">
-          <div class="bignum" style="color: var(--ex-slate-300)">04</div>
-          <h3 style="font-size: 27px; font-weight: 600; margin-top: 24px; letter-spacing: -.02em">채용 추천 모델</h3>
-          <p style="font-size: 19px; line-height: 1.7; color: var(--ex-slate-500); margin-top: 10px">공고 수집 확장 · 합성 프로필</p>
+        <div class="in dl-4" style="display: flex; align-items: baseline; gap: 16px">
+          <span style="font-family: var(--ex-font-mono); font-size: 22px; color: var(--ex-espresso)">04</span>
+          <span style="font-size: 23px; font-weight: 600; letter-spacing: -.015em">공고 수집 어댑터 확장</span>
+        </div>
+        <div class="in dl-4" style="display: flex; align-items: baseline; gap: 16px">
+          <span style="font-family: var(--ex-font-mono); font-size: 22px; color: var(--ex-espresso)">05</span>
+          <span style="font-size: 23px; font-weight: 600; letter-spacing: -.015em">커리어 기록 편집기</span>
+        </div>
+        <div class="in dl-4" style="display: flex; align-items: baseline; gap: 16px">
+          <span style="font-family: var(--ex-font-mono); font-size: 22px; color: var(--ex-espresso)">06</span>
+          <span style="font-size: 23px; font-weight: 600; letter-spacing: -.015em">채용 적합도 추천 모델</span>
+        </div>
+        <div class="in dl-5" style="display: flex; align-items: baseline; gap: 16px">
+          <span style="font-family: var(--ex-font-mono); font-size: 22px; color: var(--ex-espresso)">07</span>
+          <span style="font-size: 23px; font-weight: 600; letter-spacing: -.015em">운영 배포 안정화</span>
+        </div>
+        <div class="in dl-5" style="display: flex; align-items: baseline; gap: 16px">
+          <span style="font-family: var(--ex-font-mono); font-size: 22px; color: var(--ex-espresso)">08</span>
+          <span style="font-size: 23px; font-weight: 600; letter-spacing: -.015em">P5 학과 연구 데이터 수집</span>
+        </div>
+        <div class="in dl-5" style="display: flex; align-items: baseline; gap: 16px">
+          <span style="font-family: var(--ex-font-mono); font-size: 22px; color: var(--ex-espresso)">09</span>
+          <span style="font-size: 23px; font-weight: 600; letter-spacing: -.015em">AI Hub 면접 라벨 · 합성 프로필 도구</span>
         </div>
       </div>
     </div>
@@ -701,16 +728,17 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="이번 주 숫자로" data-kind="METRICS">
   <div class="frame">
-    <div class="rail"><span class="now">NUMBERS</span><span class="end count">03 / 13</span></div>
+    <div class="rail"><span class="now">NUMBERS</span><span class="end count">03 / 14</span></div>
     <div class="head">
       <div class="kicker">MEASURED · 2026-09-03</div>
       <h2>이번 주를 숫자로</h2>
     </div>
     <div class="body">
-      <div class="cols c-3" style="align-items: start">
+      <div class="cols c-4" style="align-items: start">
         <div class="stat"><div class="k">병합된 PR</div><div class="v">11</div></div>
         <div class="stat"><div class="k">main 브랜치 커밋</div><div class="v">174</div></div>
         <div class="stat"><div class="k">작업 기간</div><div class="v">7<span style="font-size: 44px">일</span></div></div>
+        <div class="stat"><div class="k">다룬 갈래</div><div class="v">9</div></div>
       </div>
     </div>
     <div class="foot">
@@ -721,51 +749,42 @@ svg [data-morph] { transform-box: fill-box; }
 </section>
 
 <!-- ============================================================
-     04 · 섹션 표지 01
+     04 · 01 화면 결함 정비
      ============================================================ -->
-<section class="slide dark" data-title="01 화면과 배포" data-kind="DIVIDER">
+<section class="slide" data-title="01 화면 결함 정비" data-kind="STATEMENT">
   <div class="frame">
-    <div class="rail in in-fade dl-1" style="border: none"><span class="now" style="color: var(--ex-crema)">SECTION</span><span class="end">01 / 04</span></div>
-    <div class="body split">
-      <div class="bignum in in-numeral dl-2" style="font-size: 300px">01</div>
-      <div class="in dl-4">
-        <h2 style="color: #fff; font-size: 76px">화면과 배포</h2>
-        <p class="sub" style="font-size: 28px; margin-top: 22px">실사용 결함부터 배포 파이프라인까지</p>
-      </div>
+    <div class="rail"><span class="now">01 · FIXED</span><span class="end count">04 / 14</span></div>
+    <div class="head">
+      <div class="kicker">8월 27일</div>
+      <h2>화면 결함 정비</h2>
     </div>
-    <div class="foot in in-fade dl-5"><p></p><span class="pg" style="color: var(--ex-on-dark-muted)">04</span></div>
+    <div class="body" style="justify-content: center">
+      <p style="font-size: 27px; line-height: 1.85; color: var(--ex-slate-700); max-width: 1500px; word-break: keep-all; text-wrap: pretty">8월 27일, 실사용 데이터로 드러난 결함을 한 번에 정리했습니다. 좁은 화면과 다크 모드에서 깨지던 브루 마법사, 에디터 툴바와 상태 바 넘침을 고쳤습니다. 자유 HTML 생성 · 편집 · 배포가 각기 다른 경로를 타던 것도 이날 하나로 합쳤습니다.</p>
+      <div style="margin-top: 32px"><span class="badge done">완료 · 8/27</span></div>
+    </div>
+    <div class="foot">
+      <p></p>
+      <span class="pg">04</span>
+    </div>
   </div>
 </section>
 
 <!-- ============================================================
-     05 · 화면 · 배포 정비
+     05 · 02 포트폴리오 디자인 카탈로그 (화면)
      ============================================================ -->
-<section class="slide" data-title="화면 · 배포 정비" data-kind="3-CARD">
+<section class="slide" data-title="02 포트폴리오 디자인 카탈로그" data-kind="SCREEN">
   <div class="frame">
-    <div class="rail"><span class="now">FIXED</span><span class="end count">05 / 13</span></div>
-    <div class="head">
-      <div class="kicker">8월 27일 — 9월 3일</div>
-      <h2>화면 · 배포 정비</h2>
-    </div>
-    <div class="body">
-      <div class="cols c-3">
-        <div class="panel">
-          <div class="lab">화면</div>
-          <h3>반응형 · 다크 모드 정비</h3>
-          <p class="grow">실사용 데이터로 드러난 좁은 화면 · 다크 지면 결함을 정비했습니다. 브루 마법사, 에디터 툴바 · 상태 바 넘침을 포함합니다.</p>
-          <div style="margin-top: 24px"><span class="badge done">완료 · 8/27</span></div>
+    <div class="rail"><span class="now">02 · SCREEN</span><span class="end count">05 / 14</span></div>
+    <div class="head" style="padding-top: 40px"><h2>포트폴리오 디자인 카탈로그</h2></div>
+    <div class="body" style="padding-top: 26px">
+      <div class="cols c-64">
+        <div class="shot">
+          <div class="bar"><i></i><i></i><i></i><span class="url">expresso.app/brew/&hellip;/design</span></div>
+          <div class="plate" style="background: var(--ex-white)"><img src="assets/이번주-진행상황-공유/디자인-카탈로그.png" alt="포트폴리오 디자인 카탈로그 화면 — 38개 디자인 중 Clarity를 고른 상태와 오른쪽 미리보기 패널" style="width: 100%; height: 100%; object-fit: cover; object-position: top left; display: block"></div>
         </div>
-        <div class="panel">
-          <div class="lab">화면</div>
-          <h3>생성 · 편집 · 배포 경로 통합</h3>
-          <p class="grow">자유 HTML 생성 · 편집 · 배포가 각자 다른 경로를 타던 것을 하나로 정리했습니다.</p>
-          <div style="margin-top: 24px"><span class="badge done">완료 · 8/27</span></div>
-        </div>
-        <div class="panel">
-          <div class="lab">배포</div>
-          <h3>배포 파이프라인 안정화</h3>
-          <p class="grow">편집기 패키지 빌드 순서, 운영 배포 워크스페이스 연결을 바로잡았습니다.</p>
-          <div style="margin-top: 24px"><span class="badge">PR #17 · #18</span></div>
+        <div style="display: grid; align-content: center; gap: 26px">
+          <p style="font-size: 22px; line-height: 1.8; color: var(--ex-slate-700); word-break: keep-all">포트폴리오를 새로 만들 때 고르는 디자인 스타일을 30종에서 38종으로 늘렸습니다. 스타일마다 포스터형 미리보기와 전용 프롬프트를 새로 짰고, DESIGN.html 문서로 색상 · 타이포그래피 · 컴포넌트 규칙을 스타일별로 정리했습니다. 같은 시기에 Refero 기반 디자인 선택 화면과 디자인 시스템 v2 계약, 문서 컴파일러도 함께 만들어 확장을 뒷받침했습니다.</p>
+          <div><span class="badge">PR #11</span></div>
         </div>
       </div>
     </div>
@@ -777,119 +796,86 @@ svg [data-morph] { transform-box: fill-box; }
 </section>
 
 <!-- ============================================================
-     06 · 섹션 표지 02
+     06 · 03 MongoDB 백엔드 전환
      ============================================================ -->
-<section class="slide dark" data-title="02 데이터베이스 전환" data-kind="DIVIDER">
+<section class="slide" data-title="03 MongoDB 백엔드 전환" data-kind="STATEMENT">
   <div class="frame">
-    <div class="rail in in-fade dl-1" style="border: none"><span class="now" style="color: var(--ex-crema)">SECTION</span><span class="end">02 / 04</span></div>
-    <div class="body split">
-      <div class="bignum in in-numeral dl-2" style="font-size: 300px">02</div>
-      <div class="in dl-4">
-        <h2 style="color: #fff; font-size: 76px">데이터베이스 전환</h2>
-        <p class="sub" style="font-size: 28px; margin-top: 22px">MySQL에서 MongoDB로, 컷오버까지 완료</p>
-      </div>
+    <div class="rail"><span class="now">03 · MIGRATION</span><span class="end count">06 / 14</span></div>
+    <div class="head">
+      <div class="kicker">8월 28일 — 8월 30일</div>
+      <h2>MongoDB 백엔드 전환</h2>
     </div>
-    <div class="foot in in-fade dl-5"><p></p><span class="pg" style="color: var(--ex-on-dark-muted)">06</span></div>
+    <div class="body" style="justify-content: center">
+      <p style="font-size: 27px; line-height: 1.85; color: var(--ex-slate-700); max-width: 1500px; word-break: keep-all; text-wrap: pretty">백엔드가 쓰던 MySQL을 MongoDB로 옮겼습니다. 설계 문서를 먼저 쓰고, 계정 권한부터 배포 미디어까지 모듈을 나눠 병렬로 전환한 뒤 백엔드 런타임을 MongoDB에 전면 연결하고 운영 컷오버까지 마쳤습니다. 이관 직후에는 레거시 MySQL 운영 도구 경로와 Redis 볼륨 이름을 되돌리는 후속 수정이 이어졌고, 초기 연결 풀과 홈 화면 조회 왕복을 줄이는 성능 작업도 같은 주에 끝냈습니다.</p>
+      <div style="margin-top: 32px"><span class="badge">PR #7 · #8 · #9 · #10</span></div>
+    </div>
+    <div class="foot">
+      <p></p>
+      <span class="pg">06</span>
+    </div>
   </div>
 </section>
 
 <!-- ============================================================
-     07 · MongoDB 전환 파이프라인
+     07 · 04 공고 수집 어댑터 확장
      ============================================================ -->
-<section class="slide" data-title="설계에서 컷오버까지" data-kind="FLOW">
+<section class="slide" data-title="04 공고 수집 어댑터 확장" data-kind="STATEMENT">
   <div class="frame">
-    <div class="rail"><span class="now">MIGRATION</span><span class="end count">07 / 13</span></div>
+    <div class="rail"><span class="now">04 · SOURCING</span><span class="end count">07 / 14</span></div>
     <div class="head">
-      <div class="kicker">MYSQL → MONGODB</div>
-      <h2>설계에서 컷오버까지</h2>
+      <div class="kicker">9월 1일</div>
+      <h2>공고 수집 어댑터 확장</h2>
     </div>
-    <div class="body">
-      <div class="flow">
-        <div class="step">
-          <div class="n">01</div><div class="dot"></div>
-          <h3>설계</h3>
-          <p>컬렉션 구조 · 이관 계획 설계</p>
-        </div>
-        <div class="step">
-          <div class="n">02</div><div class="dot"></div>
-          <h3>병렬 구현</h3>
-          <p>여러 모듈 동시 구현</p>
-        </div>
-        <div class="step">
-          <div class="n">03</div><div class="dot"></div>
-          <h3>모듈 전환</h3>
-          <p>계정 권한부터 배포 미디어까지 순차 전환</p>
-        </div>
-        <div class="step">
-          <div class="n">04</div><div class="dot"></div>
-          <h3>런타임 연결</h3>
-          <p>백엔드 전체 MongoDB 연결</p>
-        </div>
-        <div class="step on">
-          <div class="n">05 · DONE</div><div class="dot"></div>
-          <h3>운영 컷오버</h3>
-          <p>레거시 경로 정리, 운영 전환 완료</p>
-        </div>
-      </div>
+    <div class="body" style="justify-content: center">
+      <p style="font-size: 27px; line-height: 1.85; color: var(--ex-slate-700); max-width: 1500px; word-break: keep-all; text-wrap: pretty">채용 공고를 모아 오는 경로를 넓혔습니다. 그리팅 · Lever · Workable · 고용24 네 곳의 어댑터를 새로 붙였고, 각 출처의 요청 속도와 수집 범위에 제한을 걸었습니다. 함께 한국 직무명 분류 규칙을 바로잡고 공고 출처 33곳을 시드 마이그레이션으로 심었습니다.</p>
+      <div style="margin-top: 32px"><span class="badge">PR #12 · #13</span></div>
     </div>
     <div class="foot">
-      <p>PR #7 · #8 · #9 · #10.</p>
+      <p></p>
       <span class="pg">07</span>
     </div>
   </div>
 </section>
 
 <!-- ============================================================
-     08 · 섹션 표지 03
+     08 · 05 커리어 기록 편집기 (화면)
      ============================================================ -->
-<section class="slide dark" data-title="03 새 기능" data-kind="DIVIDER">
+<section class="slide" data-title="05 커리어 기록 편집기" data-kind="SCREEN">
   <div class="frame">
-    <div class="rail in in-fade dl-1" style="border: none"><span class="now" style="color: var(--ex-crema)">SECTION</span><span class="end">03 / 04</span></div>
-    <div class="body split">
-      <div class="bignum in in-numeral dl-2" style="font-size: 300px">03</div>
-      <div class="in dl-4">
-        <h2 style="color: #fff; font-size: 76px">새 기능</h2>
-        <p class="sub" style="font-size: 28px; margin-top: 22px">포트폴리오 디자인 카탈로그와 커리어 기록 편집기</p>
+    <div class="rail"><span class="now">05 · SCREEN</span><span class="end count">08 / 14</span></div>
+    <div class="head" style="padding-top: 40px"><h2>커리어 기록 편집기</h2></div>
+    <div class="body" style="padding-top: 26px">
+      <div class="cols c-64">
+        <div class="shot">
+          <div class="bar"><i></i><i></i><i></i><span class="url">expresso.app/career/records/&hellip;</span></div>
+          <div class="plate" style="background: var(--ex-white)"><img src="assets/이번주-진행상황-공유/커리어-기록-편집기.png" alt="커리어 기록 편집기 화면 — 노션형 문서 속성 패널과 본문 편집 영역" style="width: 100%; height: 100%; object-fit: cover; object-position: top right; display: block"></div>
+        </div>
+        <div style="display: grid; align-content: center; gap: 26px">
+          <p style="font-size: 22px; line-height: 1.8; color: var(--ex-slate-700); word-break: keep-all">이번 주 가장 큰 신규 기능입니다. 노션형 블록 문서 코어와 공용 계약을 설계해 커리어 기록을 문서로 관리할 수 있게 했고, 실시간 편집 세션을 붙여 여러 창에서 같은 기록을 동시에 고칠 수 있게 했습니다. 테이블 보기에 그룹화 · 정렬 · 드래그 재정렬 · 셀 편집을 넣었고, AI가 제안한 변경을 사람이 검토해 되돌리거나 받아들이는 흐름도 만들었습니다.</p>
+          <div><span class="badge pro">PR #15 · #16</span></div>
+        </div>
       </div>
     </div>
-    <div class="foot in in-fade dl-5"><p></p><span class="pg" style="color: var(--ex-on-dark-muted)">08</span></div>
+    <div class="foot">
+      <p></p>
+      <span class="pg">08</span>
+    </div>
   </div>
 </section>
 
 <!-- ============================================================
-     09 · 새로 생긴 화면
+     09 · 06 채용 적합도 추천 모델
      ============================================================ -->
-<section class="slide" data-title="새로 생긴 화면" data-kind="2-COL">
+<section class="slide" data-title="06 채용 적합도 추천 모델" data-kind="STATEMENT">
   <div class="frame">
-    <div class="rail"><span class="now">SHIPPED</span><span class="end count">09 / 13</span></div>
+    <div class="rail"><span class="now">06 · IN PROGRESS</span><span class="end count">09 / 14</span></div>
     <div class="head">
-      <div class="kicker">8월 28일 — 9월 2일</div>
-      <h2>새로 생긴 화면</h2>
+      <div class="kicker">9월 1일 — 지금</div>
+      <h2>채용 적합도 추천 모델</h2>
     </div>
-    <div class="body">
-      <div class="cols c-2">
-        <div class="panel quiet">
-          <div class="lab">PORTFOLIO</div>
-          <h3>포트폴리오 디자인 카탈로그</h3>
-          <ul>
-            <li>스타일 30종에서 38종으로 확장</li>
-            <li>포스터형 미리보기 · 스타일별 프롬프트 정비</li>
-            <li>디자인 시스템 v2 계약 · 문서 컴파일러 신설</li>
-          </ul>
-          <div style="margin-top: 24px"><span class="badge">PR #11</span></div>
-        </div>
-        <div class="panel sig">
-          <div class="lab">CAREER RECORD</div>
-          <h3>커리어 기록 편집기</h3>
-          <ul>
-            <li class="on">블록 문서 코어 · 공용 계약 신설</li>
-            <li class="on">실시간 편집 세션 연결</li>
-            <li class="on">테이블 그룹화 · 드래그 재정렬 · 셀 편집</li>
-            <li class="on">AI 변경 제안과 되돌리기</li>
-          </ul>
-          <div style="margin-top: 24px"><span class="badge pro">PR #15 · #16</span></div>
-        </div>
-      </div>
+    <div class="body" style="justify-content: center">
+      <p style="font-size: 27px; line-height: 1.85; color: var(--ex-slate-700); max-width: 1500px; word-break: keep-all; text-wrap: pretty">채용 공고와 커리어 기록을 이어 주는 추천 모델입니다. baseline 평가 harness와 매치 파일럿 데이터셋을 먼저 만들고, 합성 프로필을 v3에서 v4.5까지 반복하며 근거 · 길이 · 다양성 게이트를 하나씩 추가했습니다. 지금은 Qwen Luna 패밀리로 샤드를 나눠 분산 실행하는 단계이고, 가장 최근 커밋은 오늘 오후 3시 30분에 올라온 길이 구간 보정입니다.</p>
+      <div style="margin-top: 32px"><span class="badge live">진행 중 · main 직접 커밋</span></div>
     </div>
     <div class="foot">
       <p></p>
@@ -899,69 +885,74 @@ svg [data-morph] { transform-box: fill-box; }
 </section>
 
 <!-- ============================================================
-     10 · 섹션 표지 04
+     10 · 07 운영 배포 안정화
      ============================================================ -->
-<section class="slide dark" data-title="04 채용 추천 모델" data-kind="DIVIDER">
+<section class="slide" data-title="07 운영 배포 안정화" data-kind="STATEMENT">
   <div class="frame">
-    <div class="rail in in-fade dl-1" style="border: none"><span class="now" style="color: var(--ex-crema)">SECTION</span><span class="end">04 / 04</span></div>
-    <div class="body split">
-      <div class="bignum in in-numeral dl-2" style="font-size: 300px">04</div>
-      <div class="in dl-4">
-        <h2 style="color: #fff; font-size: 76px">채용 추천 모델</h2>
-        <p class="sub" style="font-size: 28px; margin-top: 22px">공고 수집부터 합성 프로필까지, 지금도 진행 중</p>
-      </div>
+    <div class="rail"><span class="now">07 · DEPLOY</span><span class="end count">10 / 14</span></div>
+    <div class="head">
+      <div class="kicker">9월 2일 — 9월 3일</div>
+      <h2>운영 배포 안정화</h2>
     </div>
-    <div class="foot in in-fade dl-5"><p></p><span class="pg" style="color: var(--ex-on-dark-muted)">10</span></div>
+    <div class="body" style="justify-content: center">
+      <p style="font-size: 27px; line-height: 1.85; color: var(--ex-slate-700); max-width: 1500px; word-break: keep-all; text-wrap: pretty">커리어 기록 편집기를 운영에 배포하는 과정에서 문제가 드러났습니다. 편집기 패키지의 빌드 순서가 어긋나 있었고, 운영 배포 워크스페이스 연결이 끊겨 있었습니다. 둘 다 9월 2일과 3일 사이에 바로잡아 운영 배포가 다시 정상적으로 돕니다.</p>
+      <div style="margin-top: 32px"><span class="badge">PR #17 · #18</span></div>
+    </div>
+    <div class="foot">
+      <p></p>
+      <span class="pg">10</span>
+    </div>
   </div>
 </section>
 
 <!-- ============================================================
-     11 · 채용 추천 모델 파이프라인
+     11 · 08 P5 학과 연구 데이터 수집
      ============================================================ -->
-<section class="slide" data-title="공고 수집에서 합성 프로필까지" data-kind="FLOW">
+<section class="slide" data-title="08 P5 학과 연구 데이터 수집" data-kind="STATEMENT">
   <div class="frame">
-    <div class="rail"><span class="now">IN PROGRESS</span><span class="end count">11 / 13</span></div>
+    <div class="rail"><span class="now">08 · RESEARCH</span><span class="end count">11 / 14</span></div>
     <div class="head">
-      <div class="kicker">RECOMMENDATION MODEL</div>
-      <h2>공고 수집에서 합성 프로필까지</h2>
+      <div class="kicker">8월 27일 · 9월 1일</div>
+      <h2>P5 학과 연구 데이터 수집</h2>
     </div>
-    <div class="body">
-      <div class="flow">
-        <div class="step">
-          <div class="n">01</div><div class="dot"></div>
-          <h3>공고 수집 확장</h3>
-          <p>그리팅 · Lever · Workable · 고용24 어댑터 추가</p>
-        </div>
-        <div class="step">
-          <div class="n">02</div><div class="dot"></div>
-          <h3>평가 기반 마련</h3>
-          <p>baseline 평가 harness · 매치 파일럿 데이터셋 구성</p>
-        </div>
-        <div class="step">
-          <div class="n">03</div><div class="dot"></div>
-          <h3>합성 프로필 보정</h3>
-          <p>근거 · 길이 · 다양성 게이트로 v3에서 v4.5까지 반복 보정</p>
-        </div>
-        <div class="step on">
-          <div class="n">04 · 진행 중</div><div class="dot"></div>
-          <h3>분산 실행</h3>
-          <p>Qwen Luna 패밀리로 샤드 분산 실행</p>
-        </div>
-      </div>
+    <div class="body" style="justify-content: center">
+      <p style="font-size: 27px; line-height: 1.85; color: var(--ex-slate-700); max-width: 1500px; word-break: keep-all; text-wrap: pretty">학과 연구를 위한 데이터 수집 기반을 추가했습니다. 무엇을 어떻게 모을지 계획 문서를 먼저 쓰고, 그 계획에 맞춘 수집 기반을 코드로 만들었습니다. 8월 27일에 계획을, 9월 1일에 구현을 올렸습니다.</p>
+      <div style="margin-top: 32px"><span class="badge done">완료</span></div>
     </div>
     <div class="foot">
-      <p>PR #12 · #13.</p>
+      <p></p>
       <span class="pg">11</span>
     </div>
   </div>
 </section>
 
 <!-- ============================================================
-     12 · 마무리 — 지금도 이어지는 것
+     12 · 09 AI Hub 면접 라벨 · 합성 프로필 조립 도구
+     ============================================================ -->
+<section class="slide" data-title="09 AI Hub 면접 라벨 · 합성 프로필 조립 도구" data-kind="STATEMENT">
+  <div class="frame">
+    <div class="rail"><span class="now">09 · RESEARCH</span><span class="end count">12 / 14</span></div>
+    <div class="head">
+      <div class="kicker">9월 2일</div>
+      <h2>AI Hub 면접 라벨 · 합성 프로필 조립 도구</h2>
+    </div>
+    <div class="body" style="justify-content: center">
+      <p style="font-size: 27px; line-height: 1.85; color: var(--ex-slate-700); max-width: 1500px; word-break: keep-all; text-wrap: pretty">AI Hub에서 면접 라벨 데이터를 모은 결과를 기록하고, 이를 바탕으로 합성 프로필을 조립하는 도구를 추가했습니다. 9월 2일 새벽에 두 작업이 연달아 올라갔고, 이후 채용 적합도 추천 모델의 합성 프로필 파이프라인이 이를 이어받아 v3부터 발전시켰습니다.</p>
+      <div style="margin-top: 32px"><span class="badge done">완료</span></div>
+    </div>
+    <div class="foot">
+      <p></p>
+      <span class="pg">12</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     13 · 마무리 — 지금도 이어지는 것
      ============================================================ -->
 <section class="slide dark" data-title="지금도 이어지는 것" data-kind="CLOSING">
   <div class="frame">
-    <div class="rail" style="border: none"><span class="now" style="color: var(--ex-crema)">NOW</span><span class="end count">12 / 13</span></div>
+    <div class="rail" style="border: none"><span class="now" style="color: var(--ex-crema)">NOW</span><span class="end count">13 / 14</span></div>
     <div class="head">
       <h2 style="color: #fff">지금도 이어지는 것</h2>
       <p class="sub">9월 3일 오후까지 계속 보정 중인 작업입니다.</p>
@@ -976,13 +967,13 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="foot">
       <p></p>
-      <span class="pg" style="color: var(--ex-on-dark-muted)">12</span>
+      <span class="pg" style="color: var(--ex-on-dark-muted)">13</span>
     </div>
   </div>
 </section>
 
 <!-- ============================================================
-     13 · 끝장 · 인사
+     14 · 끝장 · 인사
      ============================================================ -->
 <section class="slide dark" data-title="끝장 · 인사" data-kind="END">
   <svg class="bg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -1003,7 +994,7 @@ svg [data-morph] { transform-box: fill-box; }
         <svg width="26" height="26" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><clipPath id="ec"><circle cx="44" cy="54" r="36"/></clipPath><mask id="em"><rect width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="46.5" fill="#000"/></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#A9793F" stroke-width="8.5" mask="url(#em)"/><rect y="58.96" width="108" height="49.04" fill="#E0B486" clip-path="url(#ec)"/><circle cx="44" cy="54" r="36" stroke="#E0B486" stroke-width="10"/></svg>
         <span class="word" style="color: #fff; font-size: 22px">Expre<em>ss</em>o</span>
       </span>
-      <span class="end count">13 / 13</span>
+      <span class="end count">14 / 14</span>
     </div>
 
     <div class="body mid" style="align-items: flex-end; text-align: right">
@@ -1013,16 +1004,11 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
 
     <div class="foot" style="align-items: stretch">
-      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 380px)); gap: 60px">
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 380px)); gap: 60px">
         <div>
           <div style="font-family: var(--ex-font-mono); font-size: 14px; letter-spacing: .14em; color: var(--ex-crema); margin-bottom: 10px">자료</div>
           <div style="font-family: var(--ex-font-mono); font-size: 18px; color: #fff">docs/이번주-진행상황-공유.html</div>
           <div style="font-size: 16px; color: var(--ex-on-dark-muted); margin-top: 6px">저장소 docs/ 아래 · 오늘 갱신</div>
-        </div>
-        <div>
-          <div style="font-family: var(--ex-font-mono); font-size: 14px; letter-spacing: .14em; color: var(--ex-crema); margin-bottom: 10px">묻는 곳</div>
-          <div style="font-size: 19px; color: #fff">이 자료를 만든 사람에게</div>
-          <div style="font-size: 16px; color: var(--ex-on-dark-muted); margin-top: 6px">급한 것은 직접, 나머지는 코멘트로</div>
         </div>
         <div>
           <div style="font-family: var(--ex-font-mono); font-size: 14px; letter-spacing: .14em; color: var(--ex-crema); margin-bottom: 10px">다음 자리</div>
@@ -1030,7 +1016,7 @@ svg [data-morph] { transform-box: fill-box; }
           <div style="font-size: 16px; color: var(--ex-on-dark-muted); margin-top: 6px">그 사이 진행은 docs/ 에서 갱신</div>
         </div>
       </div>
-      <span class="pg" style="color: var(--ex-on-dark-muted); align-self: flex-end">13</span>
+      <span class="pg" style="color: var(--ex-on-dark-muted); align-self: flex-end">14</span>
     </div>
   </div>
 </section>
@@ -1040,17 +1026,17 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- 크롬 — 무대 바깥. 슬라이드 색이 무엇이든 같은 모습입니다. -->
 <div class="deck-controls">
   <a class="home" href="/" title="작업대로 (H)" aria-label="작업대로">
-    <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1.4"/><rect x="9" y="1" width="6" height="6" rx="1.4"/><rect x="1" y="9" width="6" height="6" rx="1.4"/><rect x="9" y="9" width="6" height="6" rx="1.4"/></svg>
+    <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1.4"></rect><rect x="9" y="1" width="6" height="6" rx="1.4"></rect><rect x="1" y="9" width="6" height="6" rx="1.4"></rect><rect x="9" y="9" width="6" height="6" rx="1.4"></rect></svg>
   </a>
   <span class="sep"></span>
   <button id="prevBtn" type="button" aria-label="이전 슬라이드">←</button>
-  <span class="counter" id="counter">01 / 14</span>
+  <span class="counter" id="counter">01 / 13</span>
   <button id="nextBtn" type="button" aria-label="다음 슬라이드">→</button>
   <button id="mapBtn" type="button" aria-label="슬라이드 목록">☰</button>
 </div>
 <div class="deck-progress" id="progress"></div>
 
-<div class="overview" id="overview" hidden>
+<div class="overview" id="overview" hidden="">
   <div class="sheet">
     <div class="lab">SLIDES<a class="back" href="/">← 작업대 (H)</a></div>
     <ol id="mapList"></ol>
@@ -1461,7 +1447,4 @@ window.deck = new Deck();
     tag.setAttribute('data-deck-editor', '');
     document.head.appendChild(tag);
   })();
-</script>
-
-</body>
-</html>
+</script></body></html>
