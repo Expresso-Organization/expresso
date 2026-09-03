@@ -1,0 +1,362 @@
+package com.expresso.backend.career;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.Instant;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+import org.bson.Document;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+
+import com.expresso.backend.TestcontainersConfiguration;
+
+@Import(TestcontainersConfiguration.class)
+@AutoConfigureMockMvc
+@SpringBootTest
+class CareerRecordPatchHttpIntegrationTest {
+
+	private static final String RECORDS = "career_records";
+	private static final String CATEGORIES = "career_categories";
+	private static final String SESSIONS = "identity_sessions";
+	private static final String USERS = "users";
+	private static final String USER_ID = "bc2f9791-0bb1-4a31-a23d-ea720f31284d";
+	private static final String OTHER_USER_ID = "945969f8-c8e5-469b-8119-bab71fa5aa60";
+	private static final String ACCESS_TOKEN = "exps_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+	private static final String TOKEN_HASH = "74b2c367c4d415397a6bc46772e8af855235d2c0866bc7dbefdbc2105fde56fc";
+	private static final String RECORD_ID = "10ecce84-8d6b-4b76-87de-ec76729f9b90";
+	private static final String MISSING_RECORD_ID = "45e37ac7-076e-4cd0-a932-e723a7c650af";
+	private static final String CATEGORY_ID = "475106fc-bf88-4a73-9c27-66c648733936";
+	private static final String PROPERTY_DEFINITION_ID = "fd1061b5-d8db-5a5a-8855-51530c98db3f";
+	private static final String UNKNOWN_PROPERTY_DEFINITION_ID = "6ae7a3c3-e0f0-4b88-8fe8-da3da27d0dd8";
+	private static final String PARAGRAPH_ID = "fb122c86-7db8-41c3-a9d9-7a12c4758b08";
+	private static final Instant UPDATED_AT = Instant.parse("2026-09-01T08:15:30.123Z");
+
+	@Autowired
+	private MockMvc mockMvc;
+
+	@Autowired
+	private MongoTemplate mongoTemplate;
+
+	@BeforeEach
+	void prepareDatabase() {
+		for (var collection : List.of(RECORDS, CATEGORIES, SESSIONS, USERS)) {
+			mongoTemplate.getCollection(collection).deleteMany(new Document());
+		}
+		insertIdentity(USER_ID, TOKEN_HASH);
+		insertSystemCategory();
+	}
+
+	@Test
+	void updatesTitleAtomicallyAndReturnsTheNextEtag() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+		mongoTemplate.getCollection(CATEGORIES).deleteMany(new Document());
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", "{\"title\":\"Updated title\"}")
+				.andExpect(status().isOk())
+				.andExpect(header().string(HttpHeaders.ETAG, "\"v2\""))
+				.andExpect(jsonPath("$.data.title").value("Updated title"))
+				.andExpect(jsonPath("$.data.version").value(2));
+
+		var stored = mongoTemplate.getCollection(RECORDS).find(new Document("_id", RECORD_ID)).first();
+		assertThat(stored).isNotNull();
+		assertThat(stored.getString("title")).isEqualTo("Updated title");
+		assertThat(stored.getInteger("version")).isEqualTo(2);
+		assertThat(stored.getDate("updatedAt").toInstant()).isAfter(UPDATED_AT);
+		assertThat(stored.get("properties", Document.class)).isEqualTo(new Document("legacy", "keep"));
+		assertThat(stored.getString("bodyMd")).isEqualTo("legacy body stays");
+	}
+
+	@Test
+	void updatesPropertyValuesOnlyWhenEveryDefinitionBelongsToTheSystemCategory() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+		var body = "{\"propertyValues\":[{\"propertyDefinitionId\":\"" + PROPERTY_DEFINITION_ID
+				+ "\",\"type\":\"text\",\"value\":\"Updated property\"}]}";
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", body)
+				.andExpect(status().isOk())
+				.andExpect(header().string(HttpHeaders.ETAG, "\"v2\""))
+				.andExpect(jsonPath("$.data.propertyValues[0].value").value("Updated property"));
+
+		var stored = mongoTemplate.getCollection(RECORDS).find(new Document("_id", RECORD_ID)).first();
+		assertThat(stored).isNotNull();
+		assertThat(stored.getList("propertyValues", Document.class).getFirst().getString("value"))
+				.isEqualTo("Updated property");
+		assertThat(stored.get("properties", Document.class)).isEqualTo(new Document("legacy", "keep"));
+	}
+
+	@Test
+	void rejectsPropertyValueOutsideTheCurrentSystemCategory() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+		var body = "{\"propertyValues\":[{\"propertyDefinitionId\":\"" + UNKNOWN_PROPERTY_DEFINITION_ID
+				+ "\",\"type\":\"text\",\"value\":\"Unknown\"}]}";
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", body)
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+
+		assertStoredVersionAndTitle(1, "Original title");
+	}
+
+	@Test
+	void updatesBlockBodyWithoutChangingLegacyBodyMd() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+		var body = "{\"blockBody\":{"
+				+ "\"schemaVersion\":1,\"type\":\"doc\",\"content\":[{"
+				+ "\"id\":\"" + PARAGRAPH_ID + "\",\"type\":\"paragraph\",\"attrs\":{},"
+				+ "\"text\":[{\"text\":\"Updated body\"}]}]}}";
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", body)
+				.andExpect(status().isOk())
+				.andExpect(header().string(HttpHeaders.ETAG, "\"v2\""))
+				.andExpect(jsonPath("$.data.blockBody.content[0].text[0].text").value("Updated body"));
+
+		var stored = mongoTemplate.getCollection(RECORDS).find(new Document("_id", RECORD_ID)).first();
+		assertThat(stored).isNotNull();
+		assertThat(stored.get("blockBody", Document.class)
+				.getList("content", Document.class).getFirst()
+				.getList("text", Document.class).getFirst().getString("text")).isEqualTo("Updated body");
+		assertThat(stored.getString("bodyMd")).isEqualTo("legacy body stays");
+	}
+
+	@Test
+	void changesThreeCanonicalFieldsWithOneVersionIncrement() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 4));
+		var body = "{"
+				+ "\"title\":\"All updated\","
+				+ "\"propertyValues\":[],"
+				+ "\"blockBody\":{\"schemaVersion\":1,\"type\":\"doc\",\"content\":[{"
+				+ "\"id\":\"" + PARAGRAPH_ID + "\",\"type\":\"paragraph\",\"attrs\":{},\"text\":[]}]}}";
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v4\"", body)
+				.andExpect(status().isOk())
+				.andExpect(header().string(HttpHeaders.ETAG, "\"v5\""))
+				.andExpect(jsonPath("$.data.title").value("All updated"))
+				.andExpect(jsonPath("$.data.propertyValues.length()").value(0))
+				.andExpect(jsonPath("$.data.blockBody.content[0].text.length()").value(0))
+				.andExpect(jsonPath("$.data.version").value(5));
+	}
+
+	@Test
+	void keepsVersionAndUpdatedAtForAnActualNoOp() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 3));
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v3\"", "{\"title\":\"Original title\"}")
+				.andExpect(status().isOk())
+				.andExpect(header().string(HttpHeaders.ETAG, "\"v3\""))
+				.andExpect(jsonPath("$.data.version").value(3))
+				.andExpect(jsonPath("$.data.updatedAt").value(UPDATED_AT.toString()));
+
+		var stored = mongoTemplate.getCollection(RECORDS).find(new Document("_id", RECORD_ID)).first();
+		assertThat(stored).isNotNull();
+		assertThat(stored.getInteger("version")).isEqualTo(3);
+		assertThat(stored.getDate("updatedAt").toInstant()).isEqualTo(UPDATED_AT);
+	}
+
+	@Test
+	void rejectsStaleVersionWithoutChangingData() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 2));
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", "{\"title\":\"Stale update\"}")
+				.andExpect(status().isPreconditionFailed())
+				.andExpect(jsonPath("$.error.code").value("PRECONDITION_FAILED"));
+
+		assertStoredVersionAndTitle(2, "Original title");
+	}
+
+	@Test
+	void hidesMissingOtherUsersAndLegacyOnlyRecordsAsNotFound() throws Exception {
+		patchRecord(ACCESS_TOKEN, MISSING_RECORD_ID, "\"v1\"", "{\"title\":\"Missing\"}")
+				.andExpect(status().isNotFound());
+
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(OTHER_USER_ID, 1));
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", "{\"title\":\"Other user\"}")
+				.andExpect(status().isNotFound());
+
+		mongoTemplate.getCollection(RECORDS).deleteMany(new Document());
+		var legacyOnly = canonicalRecord(USER_ID, 1);
+		legacyOnly.remove("propertyValues");
+		legacyOnly.remove("blockBody");
+		mongoTemplate.getCollection(RECORDS).insertOne(legacyOnly);
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", "{\"title\":\"Legacy\"}")
+				.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void returnsInternalErrorForMalformedCanonicalData() throws Exception {
+		var malformed = canonicalRecord(USER_ID, 1);
+		malformed.get("blockBody", Document.class).put("schemaVersion", 2);
+		mongoTemplate.getCollection(RECORDS).insertOne(malformed);
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", "{\"title\":\"Malformed\"}")
+				.andExpect(status().isInternalServerError())
+				.andExpect(jsonPath("$.error.code").value("INTERNAL_ERROR"));
+	}
+
+	@Test
+	void rejectsInvalidRecordIdEtagAndBodyAndRequiresAuthentication() throws Exception {
+		patchRecord(ACCESS_TOKEN, "not-a-uuid", "\"v1\"", "{\"title\":\"Invalid\"}")
+				.andExpect(status().isBadRequest());
+		patchRecord(ACCESS_TOKEN, RECORD_ID, null, "{\"title\":\"Invalid\"}")
+				.andExpect(status().isBadRequest());
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "v1", "{\"title\":\"Invalid\"}")
+				.andExpect(status().isBadRequest());
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v0\"", "{\"title\":\"Invalid\"}")
+				.andExpect(status().isBadRequest());
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", "{}")
+				.andExpect(status().isBadRequest());
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", "{\"categoryId\":\"" + CATEGORY_ID + "\"}")
+				.andExpect(status().isBadRequest());
+
+		mockMvc.perform(patch("/v1/career/records/{recordId}", RECORD_ID)
+				.header(HttpHeaders.IF_MATCH, "\"v1\"")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"title\":\"No authentication\"}"))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.error.code").value("AUTH_REQUIRED"));
+	}
+
+	@Test
+	void letsOnlyOneConcurrentRequestWinForTheSameVersion() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+		var first = CompletableFuture.supplyAsync(() -> patchWithoutCheckedException("Concurrent A"));
+		var second = CompletableFuture.supplyAsync(() -> patchWithoutCheckedException("Concurrent B"));
+
+		var results = List.of(await(first), await(second));
+		assertThat(results).extracting(result -> result.getResponse().getStatus())
+				.containsExactlyInAnyOrder(200, 412);
+		assertThat(mongoTemplate.getCollection(RECORDS).countDocuments()).isEqualTo(1);
+		var stored = mongoTemplate.getCollection(RECORDS).find(new Document("_id", RECORD_ID)).first();
+		assertThat(stored).isNotNull();
+		assertThat(stored.getInteger("version")).isEqualTo(2);
+		assertThat(stored.getString("title")).isIn("Concurrent A", "Concurrent B");
+	}
+
+	private static Document canonicalRecord(String ownerId, int version) {
+		return new Document("_id", RECORD_ID)
+				.append("userId", ownerId)
+				.append("categoryId", CATEGORY_ID)
+				.append("title", "Original title")
+				.append("status", "draft")
+				.append("origin", "manual")
+				.append("propertyValues", List.of(new Document()
+						.append("propertyDefinitionId", PROPERTY_DEFINITION_ID)
+						.append("type", "text")
+						.append("value", "Original property")))
+				.append("blockBody", blockBody("Original body"))
+				.append("editorSchemaVersion", 1)
+				.append("properties", new Document("legacy", "keep"))
+				.append("bodyMd", "legacy body stays")
+				.append("version", version)
+				.append("updatedAt", Date.from(UPDATED_AT))
+				.append("deletedAt", null)
+				.append("purgeAfter", null);
+	}
+
+	private static Document blockBody(String text) {
+		return new Document("schemaVersion", 1)
+				.append("type", "doc")
+				.append("content", List.of(new Document()
+						.append("id", PARAGRAPH_ID)
+						.append("type", "paragraph")
+						.append("attrs", new Document())
+						.append("text", List.of(new Document("text", text)))));
+	}
+
+	private org.springframework.test.web.servlet.ResultActions patchRecord(
+			String token,
+			String recordId,
+			String ifMatch,
+			String body) throws Exception {
+		var request = patch("/v1/career/records/{recordId}", recordId)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(body);
+		if (ifMatch != null) {
+			request.header(HttpHeaders.IF_MATCH, ifMatch);
+		}
+		return mockMvc.perform(request);
+	}
+
+	private MvcResult patchWithoutCheckedException(String title) {
+		try {
+			return patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", "{\"title\":\"" + title + "\"}")
+					.andReturn();
+		}
+		catch (Exception error) {
+			throw new IllegalStateException("동시 PATCH HTTP 요청을 실행할 수 없습니다", error);
+		}
+	}
+
+	private static MvcResult await(CompletableFuture<MvcResult> future) throws Exception {
+		try {
+			return future.get();
+		}
+		catch (ExecutionException error) {
+			if (error.getCause() instanceof Exception cause) {
+				throw cause;
+			}
+			throw error;
+		}
+	}
+
+	private void assertStoredVersionAndTitle(int version, String title) {
+		var stored = mongoTemplate.getCollection(RECORDS).find(new Document("_id", RECORD_ID)).first();
+		assertThat(stored).isNotNull();
+		assertThat(stored.getInteger("version")).isEqualTo(version);
+		assertThat(stored.getString("title")).isEqualTo(title);
+	}
+
+	private void insertSystemCategory() {
+		mongoTemplate.getCollection(CATEGORIES).insertOne(new Document("_id", CATEGORY_ID)
+				.append("key", "experience")
+				.append("name", "경력")
+				.append("isSystem", true)
+				.append("sortOrder", 0)
+				.append("propertyDefinitions", List.of(new Document()
+						.append("id", PROPERTY_DEFINITION_ID)
+						.append("key", "role")
+						.append("label", "역할")
+						.append("type", "text")
+						.append("required", false)
+						.append("system", true)))
+				.append("propertySchema", new Document())
+				.append("icon", "briefcase")
+				.append("defaultView", "table"));
+	}
+
+	private void insertIdentity(String userId, String tokenHash) {
+		mongoTemplate.getCollection(USERS).insertOne(new Document("_id", userId)
+				.append("email", userId + "@example.com")
+				.append("displayName", "수정 테스트 사용자")
+				.append("planId", "ea9b17b9-0a6a-42c3-8f0c-86801bc9e313")
+				.append("passwordHash", null)
+				.append("deletionRequestedAt", null)
+				.append("createdAt", new Date())
+				.append("lifecycleVersion", 0));
+		mongoTemplate.getCollection(SESSIONS).insertOne(new Document("_id", java.util.UUID.randomUUID().toString())
+				.append("userId", userId)
+				.append("tokenHash", tokenHash)
+				.append("expiresAt", Date.from(Instant.now().plusSeconds(600)))
+				.append("revokedAt", null)
+				.append("lastSeenAt", null)
+				.append("createdAt", new Date()));
+	}
+
+}

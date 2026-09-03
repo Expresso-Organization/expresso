@@ -5,9 +5,11 @@ import java.util.Optional;
 
 import org.bson.Document;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
 import com.expresso.backend.career.application.CareerRecordDataIntegrityException;
@@ -58,6 +60,36 @@ public class MongoCareerRecordRepository implements CareerRecordRepository {
 			return Optional.empty();
 		}
 		return Optional.of(projectCanonicalData(document));
+	}
+
+	@Override
+	public Optional<CareerRecord> updateOwnedCanonical(CareerRecord currentRecord, CareerRecord updatedRecord) {
+		var query = Query.query(Criteria.where("_id").is(currentRecord.id())
+				.and("userId").is(currentRecord.ownerId())
+				.and("deletedAt").is(null)
+				.and("version").is(currentRecord.version()));
+		if (currentRecord.equals(updatedRecord)) {
+			var unchanged = mongoTemplate.findOne(query, Document.class, COLLECTION);
+			return unchanged == null ? Optional.empty() : Optional.of(projectCanonicalData(unchanged));
+		}
+		var update = new Update();
+		if (!currentRecord.title().equals(updatedRecord.title())) {
+			update.set("title", updatedRecord.title());
+		}
+		if (!currentRecord.propertyValues().equals(updatedRecord.propertyValues())) {
+			update.set("propertyValues", MongoCareerRecordWriter.writePropertyValues(updatedRecord.propertyValues()));
+		}
+		if (!currentRecord.blockBody().equals(updatedRecord.blockBody())) {
+			update.set("blockBody", MongoCareerRecordWriter.writeBlockBody(updatedRecord.blockBody()));
+		}
+		update.set("updatedAt", java.util.Date.from(updatedRecord.updatedAt())).inc("version", 1);
+		var document = mongoTemplate.findAndModify(
+				query,
+				update,
+				FindAndModifyOptions.options().returnNew(true),
+				Document.class,
+				COLLECTION);
+		return document == null ? Optional.empty() : Optional.of(projectCanonicalData(document));
 	}
 
 	private CreateResult replay(Document existing, String requestHash) {
