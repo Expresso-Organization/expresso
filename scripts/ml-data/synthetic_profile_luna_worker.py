@@ -421,7 +421,7 @@ def _author_luna_profiles(
         return parse_codex_bundle_attempts(
             attempts(),
             expected_shard_id=context["shardId"],
-            expected_profile_seeds=[profile["profileSeed"] for profile in group],
+            expected_profile_seeds=[profile_row["profileSeed"] for profile_row in group],
         )
 
     bundles: list[dict[str, Any] | None] = [None] * len(groups)

@@ -2,8 +2,10 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from synthetic_profile_luna_worker import (
+    _author_luna_profiles,
     build_luna_event_context,
     find_cross_profile_sentence_repetitions,
     find_intra_profile_sentence_repetitions,
@@ -31,6 +33,39 @@ def _profile(seed: str, *bodies: str) -> dict:
 
 
 class SyntheticProfileLunaWorkerTest(unittest.TestCase):
+    def test_authorship_group_keeps_agent_profile_name_separate_from_profile_rows(self):
+        context = {
+            "shardId": "s1",
+            "profiles": [
+                {
+                    "profileSeed": "p1",
+                    "events": [{"detailLength": {"targetChars": 10}}],
+                }
+            ],
+        }
+        stream = (
+            '{"type":"item.completed","item":{"type":"agent_message","text":'
+            '"{\\"shardId\\":\\"s1\\",\\"profiles\\":[{\\"profileSeed\\":\\"p1\\",\\"records\\":[]}]}"}}'
+        )
+        with tempfile.TemporaryDirectory() as temp_dir, patch(
+            "synthetic_profile_luna_worker._run_luna_group",
+            return_value=(stream, ""),
+        ) as run_group:
+            bundle = _author_luna_profiles(
+                context=context,
+                output_root=Path(temp_dir),
+                codex_path=Path("codex"),
+                profile="synthetic-profile-generator",
+                base_prompt="prompt",
+                timeout_seconds=30,
+                max_target_chars=100,
+                max_workers=1,
+                log_label="test",
+            )
+
+        self.assertEqual(bundle["profiles"][0]["profileSeed"], "p1")
+        self.assertEqual(run_group.call_args.kwargs["profile"], "synthetic-profile-generator")
+
     def test_selects_only_pending_luna_shards_inside_checkpoint(self):
         manifest = {
             "promptVersion": "synthetic-profile-test",
