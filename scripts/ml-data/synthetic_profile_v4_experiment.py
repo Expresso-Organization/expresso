@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 import re
 import statistics
@@ -88,6 +89,14 @@ CLAIM_MARKERS = (
     ("줄이", ("줄이", "줄였")),
 )
 REPETITIVE_META_PATTERNS = ("시점은", "기간은", "대상은", "담당 업무는", "사용 도구는")
+
+
+def _profile_sampling_seed(profile_seed: str, record_index: int, attempt: int) -> int:
+    base = int.from_bytes(
+        hashlib.sha256(profile_seed.encode("utf-8")).digest()[:4],
+        "big",
+    )
+    return (base + record_index * 97 + attempt) % 2_147_483_647
 
 
 def _property_schema(property_type: str, *, forbid_digits: bool = False) -> dict[str, Any]:
@@ -941,8 +950,10 @@ def generate_qwen_by_record(
                     "think": False,
                     "keep_alive": "15m",
                     "options": {
-                        "temperature": 0,
-                        "seed": 42 + index + attempt,
+                        "temperature": 0.6,
+                        "seed": _profile_sampling_seed(
+                            input_payload["profileSeed"], index, attempt
+                        ),
                         "num_ctx": 8192,
                         "num_predict": 1536,
                     },
@@ -1107,8 +1118,10 @@ def repair_qwen_records(
                     "think": False,
                     "keep_alive": "15m",
                     "options": {
-                        "temperature": 0,
-                        "seed": 42 + rounds,
+                        "temperature": 0.4,
+                        "seed": _profile_sampling_seed(
+                            input_payload["profileSeed"], index, rounds
+                        ),
                         "num_ctx": 16384,
                         "num_predict": 4096,
                     },

@@ -758,6 +758,44 @@ class SkeletonCompositionTests(unittest.TestCase):
         )
         self.assertNotIn("detailMd", generated["records"][0])
 
+    def test_uses_profile_specific_stochastic_sampling_for_creative_records(self):
+        requests = []
+
+        def generate_for(profile_seed):
+            planned_payload = payload()
+            planned_payload["profileSeed"] = profile_seed
+            planned_payload["renderingPolicy"] = "skeleton-grounded-creative-v1"
+            for event in planned_payload["events"]:
+                event["skeletonLead"] = ". ".join(event["facts"]) + "."
+                event["bodyLengthTarget"] = {"targetChars": 100, "minChars": 60, "maxChars": 140}
+
+            def fake_post_json(url, request_payload, timeout):
+                requests.append(request_payload)
+                event = json.loads(request_payload["messages"][1]["content"])["event"]
+                index = 1 if event["eventId"] == "ev1" else 2
+                record = draft()["records"][index - 1]
+                record["detailMd"] = "작업 중 확인한 맥락과 선택한 처리 순서를 개인 기록으로 구체적으로 남겼다."
+                del record["bodyMd"]
+                return {"message": {"content": json.dumps(record, ensure_ascii=False)}}
+
+            generate_qwen_by_record(
+                planned_payload,
+                model="qwen-test",
+                base_url="http://localhost:11434",
+                timeout=30,
+                max_attempts=1,
+                post_json=fake_post_json,
+            )
+
+        generate_for("profile-a")
+        first_profile_seed = requests[0]["options"]["seed"]
+        first_profile_temperature = requests[0]["options"]["temperature"]
+        generate_for("profile-b")
+        second_profile_seed = requests[2]["options"]["seed"]
+
+        self.assertGreater(first_profile_temperature, 0)
+        self.assertNotEqual(first_profile_seed, second_profile_seed)
+
     def test_retries_one_record_after_transient_ollama_error(self):
         planned_payload = payload()
         planned_payload["renderingPolicy"] = "skeleton-grounded-creative-v1"
@@ -1049,7 +1087,9 @@ class RecordRepairTests(unittest.TestCase):
         )
 
         self.assertFalse(metadata["valid"])
-        self.assertEqual([call["options"]["seed"] for call in calls], [43, 44])
+        repair_seeds = [call["options"]["seed"] for call in calls]
+        self.assertEqual(len(repair_seeds), 2)
+        self.assertNotEqual(repair_seeds[0], repair_seeds[1])
 
 
 class RunMetadataTests(unittest.TestCase):
