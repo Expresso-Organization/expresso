@@ -219,11 +219,30 @@ def parse_codex_bundle_jsonl(stream: str) -> dict[str, Any]:
     return bundle
 
 
-def parse_codex_bundle_attempts(streams: Iterable[str]) -> dict[str, Any]:
+def parse_codex_bundle_attempts(
+    streams: Iterable[str],
+    *,
+    expected_shard_id: str | None = None,
+    expected_profile_seeds: list[str] | None = None,
+) -> dict[str, Any]:
     last_error: ValueError | None = None
     for stream in streams:
         try:
-            return parse_codex_bundle_jsonl(stream)
+            bundle = parse_codex_bundle_jsonl(stream)
+            if expected_shard_id is not None and bundle.get("shardId") != expected_shard_id:
+                raise ValueError("partial bundle shardId does not match the shard")
+            if expected_profile_seeds is not None:
+                profiles = bundle.get("profiles")
+                if not isinstance(profiles, list):
+                    raise ValueError("partial bundle profiles must be a list")
+                actual_seeds = [
+                    str(item.get("profileSeed", ""))
+                    for item in profiles
+                    if isinstance(item, dict)
+                ]
+                if Counter(actual_seeds) != Counter(expected_profile_seeds):
+                    raise ValueError("partial bundle profileSeeds do not match the group")
+            return bundle
         except (json.JSONDecodeError, ValueError) as exc:
             last_error = exc
     if last_error is not None:
@@ -399,7 +418,11 @@ def _author_luna_profiles(
                 (output_root / f"{prefix}.err.log").write_text(stderr, encoding="utf-8")
                 yield stdout
 
-        return parse_codex_bundle_attempts(attempts())
+        return parse_codex_bundle_attempts(
+            attempts(),
+            expected_shard_id=context["shardId"],
+            expected_profile_seeds=[profile["profileSeed"] for profile in group],
+        )
 
     bundles: list[dict[str, Any] | None] = [None] * len(groups)
     with concurrent.futures.ThreadPoolExecutor(max_workers=min(max_workers, len(groups))) as executor:

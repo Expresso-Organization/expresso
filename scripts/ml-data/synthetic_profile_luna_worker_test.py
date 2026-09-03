@@ -196,6 +196,24 @@ class SyntheticProfileLunaWorkerTest(unittest.TestCase):
 
         self.assertEqual(bundle, {"shardId": "s1", "profiles": []})
 
+    def test_uses_next_attempt_when_partial_bundle_has_wrong_profile_seed(self):
+        wrong = (
+            '{"type":"item.completed","item":{"type":"agent_message","text":'
+            '"{\\"shardId\\":\\"s1\\",\\"profiles\\":[{\\"profileSeed\\":\\"wrong\\",\\"records\\":[]}]}"}}'
+        )
+        correct = (
+            '{"type":"item.completed","item":{"type":"agent_message","text":'
+            '"{\\"shardId\\":\\"s1\\",\\"profiles\\":[{\\"profileSeed\\":\\"p1\\",\\"records\\":[]}]}"}}'
+        )
+
+        bundle = parse_codex_bundle_attempts(
+            [wrong, correct],
+            expected_shard_id="s1",
+            expected_profile_seeds=["p1"],
+        )
+
+        self.assertEqual(bundle["profiles"][0]["profileSeed"], "p1")
+
     def test_builds_a_compact_authorship_contract_with_detail_length(self):
         event = {
             "eventId": "ev1",
