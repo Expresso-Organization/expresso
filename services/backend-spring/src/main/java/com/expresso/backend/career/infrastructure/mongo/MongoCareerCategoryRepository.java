@@ -34,6 +34,13 @@ public class MongoCareerCategoryRepository implements CareerCategoryRepository {
 				.toList();
 	}
 
+	@Override
+	public boolean existsSystemCategory(String categoryId) {
+		var query = Query.query(Criteria.where("_id").is(categoryId)
+				.and("isSystem").is(true));
+		return mongoTemplate.exists(query, COLLECTION);
+	}
+
 	private static CareerCategory mapCategory(Document document) {
 		return new CareerCategory(
 				document.getString("_id"),
