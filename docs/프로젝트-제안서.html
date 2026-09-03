@@ -622,7 +622,33 @@ svg [data-morph] { transform-box: fill-box; }
 /* 뒤집히는 카드 — 앞면은 서비스가 하는 일, 뒷면은 그 서비스의 한계.
    무대가 통째로 축소되므로 카드마다 자기 perspective 를 답니다.
    두 면을 겹쳐 놓기 때문에 높이는 긴 쪽에 맞춰 고정합니다. */
-.flip { perspective: 1800px; cursor: pointer; }
+/* 카드 기울이기 — 포인터를 따라 3D 로 기웁니다. 출처는 transitions.dev 의
+   card hover tilt 입니다.
+   포인터는 기울지 않는 바깥(.t-tilt)에서 읽습니다 — 기우는 요소에서 읽으면
+   회전한 모서리가 커서 밑에서 빠져나가 hover 가 깜빡입니다.
+   빛 반사(glare)는 넣지 않았습니다. 장식용 그러데이션을 쓰지 않는 것이
+   이 저장소의 선이고, 반사를 지우면 원본의 radial-gradient 세 겹도 함께
+   빠집니다.
+   기울기와 뒤집기는 층을 나눕니다 — 한 요소에 두 회전을 겹치면 전환 시간이
+   하나로 묶여 기울기가 뒤집기 속도를 따라갑니다. */
+.flip {
+  perspective: 1800px; cursor: pointer; touch-action: none;
+  --tilt-return: 1000ms;
+  --tilt-return-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --tilt-follow: 400ms;
+  --tilt-follow-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+.t-tilt-card {
+  position: relative;
+  transform: rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg));
+  transform-style: preserve-3d;
+  transition: transform var(--tilt-return) var(--tilt-return-ease);
+  will-change: transform;
+}
+.t-tilt-card.is-tilting { transition: transform var(--tilt-follow) var(--tilt-follow-ease); }
+@media (prefers-reduced-motion: reduce) {
+  .t-tilt-card { transform: none !important; transition: none !important; }
+}
 .flip .fc {
   position: relative; width: 100%; min-height: 430px;
   transform-style: preserve-3d;
@@ -653,7 +679,7 @@ svg [data-morph] { transform-box: fill-box; }
 
 /* 인쇄와 장 목록에서는 뒤집지 못하므로 두 면을 위아래로 폅니다. */
 @media print {
-  .flip .fc { min-height: 0; transform: none !important; }
+  .flip .fc, .t-tilt-card { min-height: 0; transform: none !important; }
   .flip .face { position: static; opacity: 1 !important; transition: none; }
   .flip .front { transform: none; }
   .flip .back { transform: none; margin-top: 14px; }
@@ -929,7 +955,8 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="body">
       <div class="cols c-3" style="align-items: start; align-content: center">
-        <div class="flip in dl-3">
+        <div class="flip t-tilt in dl-3">
+          <div class="t-tilt-card">
           <div class="fc">
             <div class="face front panel">
               <div class="lab">국내 · AI 맞춤</div>
@@ -950,8 +977,10 @@ svg [data-morph] { transform-box: fill-box; }
               <i class="ph ph-arrows-clockwise turn" aria-hidden="true"></i>
             </div>
           </div>
+          </div>
         </div>
-        <div class="flip in dl-4">
+        <div class="flip t-tilt in dl-4">
+          <div class="t-tilt-card">
           <div class="fc">
             <div class="face front panel">
               <div class="lab">국내 · 지면과 공유</div>
@@ -972,8 +1001,10 @@ svg [data-morph] { transform-box: fill-box; }
               <i class="ph ph-arrows-clockwise turn" aria-hidden="true"></i>
             </div>
           </div>
+          </div>
         </div>
-        <div class="flip in dl-5">
+        <div class="flip t-tilt in dl-5">
+          <div class="t-tilt-card">
           <div class="fc">
             <div class="face front panel">
               <div class="lab">해외 · 공고 연결</div>
@@ -993,6 +1024,7 @@ svg [data-morph] { transform-box: fill-box; }
               <div style="margin-top: 24px"><span class="badge hold">근거 검증 없음</span></div>
               <i class="ph ph-arrows-clockwise turn" aria-hidden="true"></i>
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -2490,11 +2522,56 @@ window.deck = new Deck();
     if (card) card.classList.toggle('on');
   });
 
+  /* 기울이기 — 포인터 위치를 각도로 바꿔 카드에 씁니다.
+     각도는 (위치 - 0.5) × MAX 이므로 모서리에서의 실제 기울기는 MAX 의
+     절반입니다. 원본이 「은은한」 범위로 두는 8도를 얻으려고 16 을 씁니다. */
+  var MAX = 16;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function reset(tilt) {
+    var card = tilt.querySelector('.t-tilt-card');
+    if (!card) return;
+    card.classList.remove('is-tilting');
+    card.style.setProperty('--tilt-rx', '0deg');
+    card.style.setProperty('--tilt-ry', '0deg');
+  }
+
+  function track(e) {
+    var tilt = e.currentTarget;
+    var card = tilt.querySelector('.t-tilt-card');
+    if (!card || (reduce && reduce.matches)) return;
+    var r = tilt.getBoundingClientRect();
+    var px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    var py = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+    card.classList.add('is-tilting');
+    card.style.setProperty('--tilt-ry', ((px - 0.5) * MAX).toFixed(2) + 'deg');
+    card.style.setProperty('--tilt-rx', ((0.5 - py) * MAX).toFixed(2) + 'deg');
+  }
+
+  var tilts = document.querySelectorAll('.t-tilt');
+  for (var t = 0; t < tilts.length; t++) {
+    (function (tilt) {
+      tilt.addEventListener('pointerdown', function (e) {
+        if (e.pointerType !== 'mouse') {
+          try { tilt.setPointerCapture(e.pointerId); } catch (_) {}
+        }
+      });
+      tilt.addEventListener('pointermove', track);
+      tilt.addEventListener('pointerup', function () { reset(tilt); });
+      tilt.addEventListener('pointercancel', function () { reset(tilt); });
+      tilt.addEventListener('pointerleave', function (e) {
+        if (e.pointerType === 'mouse') reset(tilt);
+      });
+    })(tilts[t]);
+  }
+
   var stage = document.getElementById('deckStage');
   if (stage && window.MutationObserver) {
     new MutationObserver(function () {
       var off = document.querySelectorAll('.slide:not(.active) .flip.on');
       for (var i = 0; i < off.length; i++) off[i].classList.remove('on');
+      var away = document.querySelectorAll('.slide:not(.active) .t-tilt');
+      for (var j = 0; j < away.length; j++) reset(away[j]);
     }).observe(stage, { subtree: true, attributes: true, attributeFilter: ['class'] });
   }
 })();
