@@ -627,13 +627,24 @@ svg [data-morph] { transform-box: fill-box; }
   position: relative; width: 100%; min-height: 430px;
   transform-style: preserve-3d;
   transition: transform 640ms cubic-bezier(.4, 0, .2, 1);
+  will-change: transform;   /* 첫 클릭에서 레이어를 만드느라 한 박자 늦는 것을 막습니다 */
 }
 .flip.on .fc { transform: rotateY(180deg); }
+
+/* 두 면을 z 축으로 갈라 놓습니다. 같은 평면에 겹쳐 두면 회전이 90도를 지날 때
+   어느 면을 위에 그릴지 GPU 렌더 순서에 달리고, 그 순서가 매번 같지 않아
+   뒷면이 늦게 나타납니다.
+   backface-visibility 가 듣지 않는 자리를 대비해 회전 절반에서 불투명도도
+   함께 바꿉니다 — 둘 중 하나만 들어도 면이 제때 바뀝니다. */
 .flip .face {
   position: absolute; inset: 0;
   backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  transition: opacity 0s linear 320ms;
 }
-.flip .back { transform: rotateY(180deg); }
+.flip .front { transform: translateZ(2px); }
+.flip .back { transform: rotateY(180deg) translateZ(2px); opacity: 0; }
+.flip.on .front { opacity: 0; }
+.flip.on .back { opacity: 1; }
 .flip .turn {
   position: absolute; right: 26px; bottom: 22px;
   font-size: 24px; color: var(--ex-slate-300); transition: color 180ms;
@@ -643,7 +654,8 @@ svg [data-morph] { transform-box: fill-box; }
 /* 인쇄와 장 목록에서는 뒤집지 못하므로 두 면을 위아래로 폅니다. */
 @media print {
   .flip .fc { min-height: 0; transform: none !important; }
-  .flip .face { position: static; }
+  .flip .face { position: static; opacity: 1 !important; transition: none; }
+  .flip .front { transform: none; }
   .flip .back { transform: none; margin-top: 14px; }
   .flip .turn { display: none; }
 }
