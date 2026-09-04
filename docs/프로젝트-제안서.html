@@ -2619,6 +2619,9 @@ window.deck = new Deck();
   function reset(tilt) {
     var card = tilt.querySelector('.t-tilt-card');
     if (!card) return;
+    /* 이미 제자리인 카드에는 아무것도 쓰지 않습니다. 없는 클래스를 지워도
+       class 속성은 다시 쓰이고, 그 기록을 보는 쪽이 있으면 되풀이가 됩니다. */
+    if (!card.classList.contains('is-tilting')) return;
     card.classList.remove('is-tilting');
     card.style.setProperty('--tilt-rx', '0deg');
     card.style.setProperty('--tilt-ry', '0deg');
@@ -2653,14 +2656,19 @@ window.deck = new Deck();
     })(tilts[t]);
   }
 
-  var stage = document.getElementById('deckStage');
-  if (stage && window.MutationObserver) {
-    new MutationObserver(function () {
-      var off = document.querySelectorAll('.slide:not(.active) .flip.on');
-      for (var i = 0; i < off.length; i++) off[i].classList.remove('on');
-      var away = document.querySelectorAll('.slide:not(.active) .t-tilt');
-      for (var j = 0; j < away.length; j++) reset(away[j]);
-    }).observe(stage, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  /* 장을 옮길 때 되돌립니다 — 컨트롤러의 `show` 를 감쌉니다.
+     무대의 class 변화를 MutationObserver 로 지켜보지 않습니다. 감시기의
+     콜백이 class 를 다시 쓰면 그 기록이 감시기를 또 부르고, 방향키 한 번이
+     끝나지 않는 되풀이가 되어 화면이 멈춥니다. 필요한 건 「장이 바뀔 때」
+     하나뿐이고, 그 자리는 컨트롤러가 이미 갖고 있습니다. */
+  if (window.deck && typeof window.deck.show === 'function') {
+    var show = window.deck.show.bind(window.deck);
+    window.deck.show = function (n) {
+      var on = document.querySelectorAll('.flip.on');
+      for (var i = 0; i < on.length; i++) on[i].classList.remove('on');
+      for (var j = 0; j < tilts.length; j++) reset(tilts[j]);
+      return show(n);
+    };
   }
 })();
 </script></body></html>
