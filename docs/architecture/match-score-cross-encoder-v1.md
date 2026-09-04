@@ -102,6 +102,9 @@ basic properties
 후보군 안의 pairwise ranking 손실을 함께 사용할 수 있지만, 제품에는 보정된 단일 점수만
 내보낸다. 0~3 라벨을 0~100으로 단순 선형 변환하지 않고 새 rubric으로 다시 라벨링한다.
 
+교사 라벨의 요구사항별 판정, 축 비중, 출력 계약과 pairwise 확장 방식은
+[`llm-suitability-labeling-v1.md`](./llm-suitability-labeling-v1.md)를 단일 기준으로 사용한다.
+
 점수 기준은 다음 anchor로 고정한다.
 
 | 구간 | 의미 |
@@ -173,4 +176,3 @@ basic properties
 5. BGE cross-encoder를 회귀+순위 손실로 학습하고 score를 보정한다.
 6. 긴 프로필, 빈 프로필, hard negative에서 오류를 분석한다.
 7. Top-K와 최대 기록 수를 품질·지연 곡선으로 결정한다.
-
