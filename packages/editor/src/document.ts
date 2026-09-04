@@ -1,5 +1,3 @@
-import { randomUUID } from "node:crypto";
-
 import { z } from "zod";
 
 export const JsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
@@ -74,5 +72,5 @@ export const CareerDocumentSchema: z.ZodType<CareerDocument> = z.strictObject({
 
 export function parseCareerDocument(input: unknown): CareerDocument { return CareerDocumentSchema.parse(input); }
 export function createEmptyCareerDocument(): CareerDocument {
-  return { schemaVersion: 1, type: "doc", content: [{ id: randomUUID(), type: "paragraph", attrs: {}, text: [] }] };
+  return { schemaVersion: 1, type: "doc", content: [{ id: globalThis.crypto.randomUUID(), type: "paragraph", attrs: {}, text: [] }] };
 }
