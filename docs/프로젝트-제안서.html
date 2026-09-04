@@ -642,7 +642,6 @@ svg [data-morph] { transform-box: fill-box; }
   transform: rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg));
   transform-style: preserve-3d;
   transition: transform var(--tilt-return) var(--tilt-return-ease);
-  will-change: transform;
 }
 .t-tilt-card.is-tilting { transition: transform var(--tilt-follow) var(--tilt-follow-ease); }
 @media (prefers-reduced-motion: reduce) {
@@ -652,7 +651,6 @@ svg [data-morph] { transform-box: fill-box; }
   position: relative; width: 100%; min-height: 430px;
   transform-style: preserve-3d;
   transition: transform 640ms cubic-bezier(.4, 0, .2, 1);
-  will-change: transform;   /* 첫 클릭에서 레이어를 만드느라 한 박자 늦는 것을 막습니다 */
 }
 .flip.on .fc { transform: rotateY(180deg); }
 
@@ -703,13 +701,11 @@ svg [data-morph] { transform-box: fill-box; }
   font-family: var(--ex-font-brand); font-weight: 300; font-size: 110px;
   line-height: 160px; letter-spacing: -.03em; color: var(--ex-white);
 }
-.catch .your { display: inline-block; will-change: transform; }
+.catch .your { display: inline-block; }
 .catch .roller {
   height: 160px; overflow: hidden; margin-left: 30px;
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 17%, #000 83%, transparent 100%);
-  mask-image: linear-gradient(180deg, transparent 0%, #000 17%, #000 83%, transparent 100%);
 }
-.catch .stack { --ex-roll-step: 160px; will-change: transform; }
+.catch .stack { --ex-roll-step: 160px; }
 .catch .word {
   height: 160px; line-height: 160px;
   font-family: var(--ex-font-brand); font-weight: 300; font-size: 110px;
@@ -720,9 +716,17 @@ svg [data-morph] { transform-box: fill-box; }
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
-.ex-anim-roll  { animation: ex-roll 6s linear infinite; }
-.ex-anim-merge { animation: ex-merge 6s linear infinite; }
-.ex-anim-your  { animation: ex-your 6s linear infinite; }
+/* 한 바퀴만 굴리고 마지막 단어에 세웁니다.
+   제품 웹은 이 모션을 무한히 돌리지만 여기서는 그럴 수 없습니다. ex-your 가
+   transform 과 color 를 함께 움직이는데 color 는 합성으로 처리되지 않아 매
+   프레임 메인 스레드가 글자를 다시 그립니다. 제품은 66px 글자에 무대 축소가
+   없어 감당되지만, 이 무대는 1920×1080 을 통째로 축소하고 33장이 한 문서에
+   함께 있어 화면 전체가 멈춥니다.
+   한 번만 돌면 표지가 뜰 때 work. → idea. → self. → work. 를 지나 마지막
+   work. 에 서고, 그 뒤로는 아무것도 돌지 않습니다. */
+.slide.active .ex-anim-roll  { animation: ex-roll 6s linear 1 both; }
+.slide.active .ex-anim-merge { animation: ex-merge 6s linear 1 both; }
+.slide.active .ex-anim-your  { animation: ex-your 6s linear 1 both; }
 
 @keyframes ex-roll {
   0%     { transform: translate3d(0, 0, 0); }
