@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
-<head>
+<html lang="ko"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
@@ -38,8 +37,8 @@
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
 <!-- 아이콘 — 이모지 대신 씁니다. Regular만, Bold는 쓰지 않습니다. -->
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 
@@ -685,6 +684,71 @@ svg [data-morph] { transform-box: fill-box; }
   .flip .back { transform: none; margin-top: 14px; }
   .flip .turn { display: none; }
 }
+
+/* 브랜드 캐치프레이즈 — 제품 웹이 헤더에 쓰는 그 문장을 그대로 옮겼습니다.
+   출처는 services/web/src/components/brand/Catchphrase.{tsx,module.css} 와
+   services/web/src/styles/global.css 의 keyframes 입니다.
+
+   모션 값(6s · 9px · 되감기용 마지막 work.)은 손대지 않았고, 글자 크기와
+   굴림 걸음만 이 무대에 맞춰 키웠습니다. 제품은 66px 글자에 96px 걸음이고,
+   그 비율(1.45배)을 지켜야 위아래 마스크가 글자를 자르지 않습니다.
+
+   모션이 두 조각인 것이 요점입니다 — `your` 는 오른쪽으로 밀리고 굴림통은
+   왼쪽으로 당겨집니다. 한쪽에만 붙이면 그냥 미끄러집니다. */
+.catch { display: flex; align-items: center; flex-wrap: wrap;
+  --ex-your-rest: var(--ex-white); --ex-your-shift: var(--ex-crema);
+  /* 서로 다가가는 거리 — 간격의 절반씩이어야 단어가 붙는다 */
+  --ex-merge-shift: 15px; }
+.catch .lead {
+  font-family: var(--ex-font-brand); font-weight: 300; font-size: 110px;
+  line-height: 160px; letter-spacing: -.03em; color: var(--ex-white);
+}
+.catch .your { display: inline-block; will-change: transform; }
+.catch .roller {
+  height: 160px; overflow: hidden; margin-left: 30px;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 17%, #000 83%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 17%, #000 83%, transparent 100%);
+}
+.catch .stack { --ex-roll-step: 160px; will-change: transform; }
+.catch .word {
+  height: 160px; line-height: 160px;
+  font-family: var(--ex-font-brand); font-weight: 300; font-size: 110px;
+  letter-spacing: -.03em; color: var(--ex-crema);
+}
+.ex-sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.ex-anim-roll  { animation: ex-roll 6s linear infinite; }
+.ex-anim-merge { animation: ex-merge 6s linear infinite; }
+.ex-anim-your  { animation: ex-your 6s linear infinite; }
+
+@keyframes ex-roll {
+  0%     { transform: translate3d(0, 0, 0); }
+  22.3%  { transform: translate3d(0, 0, 0); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  33.3%  { transform: translate3d(0, calc(var(--ex-roll-step) * -1), 0); }
+  55.6%  { transform: translate3d(0, calc(var(--ex-roll-step) * -1), 0); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  66.6%  { transform: translate3d(0, calc(var(--ex-roll-step) * -2), 0); }
+  89%    { transform: translate3d(0, calc(var(--ex-roll-step) * -2), 0); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  100%   { transform: translate3d(0, calc(var(--ex-roll-step) * -3), 0); }
+}
+@keyframes ex-merge {
+  0%, 55.6%   { transform: translate3d(0, 0, 0); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  66.6%, 89%  { transform: translate3d(calc(var(--ex-merge-shift, 9px) * -1), 0, 0); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  100%        { transform: translate3d(0, 0, 0); }
+}
+@keyframes ex-your {
+  0%, 55.6%   { transform: translate3d(0, 0, 0); color: var(--ex-your-rest); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  66.6%, 89%  { transform: translate3d(var(--ex-merge-shift, 9px), 0, 0); color: var(--ex-your-shift); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  100%        { transform: translate3d(0, 0, 0); color: var(--ex-your-rest); }
+}
+
+/* 여섯 초짜리 무한 반복이라 그대로 두면 보는 내내 표지가 움직입니다.
+   멈추면 굴림통은 첫 단어에 서고 문장은 「Express your work.」로 남습니다. */
+@media (prefers-reduced-motion: reduce) {
+  .ex-anim-roll, .ex-anim-merge, .ex-anim-your { animation: none !important; }
+}
 </style>
 </head>
 
@@ -698,19 +762,30 @@ svg [data-morph] { transform-box: fill-box; }
 <section class="slide dark" data-title="표지" data-kind="COVER / MARK">
   <svg class="bg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <defs>
-      <clipPath id="dk-cup"><circle cx="1560" cy="540" r="430"/></clipPath>
-      <mask id="dk-mask"><rect width="1920" height="1080" fill="#fff"/><circle cx="1560" cy="540" r="555" fill="#000"/></mask>
+      <clipPath id="dk-cup"><circle cx="1560" cy="540" r="430"></circle></clipPath>
+      <mask id="dk-mask"><rect width="1920" height="1080" fill="#fff"></rect><circle cx="1560" cy="540" r="555" fill="#000"></circle></mask>
     </defs>
-    <rect width="1920" height="1080" fill="var(--ex-ink-900)"/>
-    <circle cx="1968" cy="540" r="236" fill="none" stroke="var(--ex-crema-deep)" stroke-width="101" mask="url(#dk-mask)" opacity=".5"/>
-    <rect x="1130" y="599" width="860" height="481" fill="var(--ex-crema)" clip-path="url(#dk-cup)" opacity=".22"/>
-    <circle cx="1560" cy="540" r="430" fill="none" stroke="var(--ex-crema)" stroke-width="119" opacity=".22"/>
+    <rect width="1920" height="1080" fill="var(--ex-ink-900)"></rect>
+    <circle cx="1968" cy="540" r="236" fill="none" stroke="var(--ex-crema-deep)" stroke-width="101" mask="url(#dk-mask)" opacity=".5"></circle>
+    <rect x="1130" y="599" width="860" height="481" fill="var(--ex-crema)" clip-path="url(#dk-cup)" opacity=".22"></rect>
+    <circle cx="1560" cy="540" r="430" fill="none" stroke="var(--ex-crema)" stroke-width="119" opacity=".22"></circle>
   </svg>
   <div class="frame">
     <div class="rail in in-fade dl-1" style="border: none"><span class="now" style="color: var(--ex-crema)">EXPRESSO</span><span class="end">심화전공프로젝트 · 제안서</span></div>
     <div class="body mid" style="max-width: 1040px">
       <div class="kicker in dl-2" style="color: var(--ex-crema)">PROJECT PROPOSAL</div>
-      <div class="display in in-settle dl-3">Prove your <em>work.</em></div>
+      <div class="catch in in-settle dl-3">
+        <span class="lead">Express <span class="your ex-anim-your">your</span></span>
+        <div class="roller ex-anim-merge" aria-hidden="true">
+          <div class="stack ex-anim-roll">
+            <div class="word">work.</div>
+            <div class="word">idea.</div>
+            <div class="word">self.</div>
+            <div class="word">work.</div>
+          </div>
+        </div>
+        <span class="ex-sr-only">work. idea. self.</span>
+      </div>
       <h2 class="in dl-5" style="color: #fff; margin-top: 26px">커리어 기록 기반 채용 공고 맞춤 포트폴리오 생성 서비스</h2>
       <p class="sub in dl-6" style="max-width: 1000px">공고가 요구하는 것과 사용자가 실제로 한 일을 먼저 잇고, 그 근거 안에서만 포트폴리오를 만듭니다.</p>
     </div>
@@ -718,7 +793,7 @@ svg [data-morph] { transform-box: fill-box; }
       <div class="covermeta">
         <div><div class="k">TEAM</div><div class="v">박민재 · 심민규 · 오시건 · 채서현 · 윤규현</div></div>
         <div><div class="k">DATE</div><div class="v">2026-09-04</div></div>
-        <div><div class="k">STAGE</div><div class="v">착수 심사 · 2주차</div></div>
+        <div><div class="k">STAGE</div><div class="v">2주차 발표</div></div>
       </div>
       <span class="pg" style="color: var(--ex-on-dark-muted)">01</span>
     </div>
@@ -730,7 +805,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="목차" data-kind="AGENDA">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">AGENDA</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now">AGENDA</span><span class="end count">02 / 33</span></div>
     <div class="head in dl-2"><h2>목차</h2></div>
     <div class="body">
       <div class="cols c-4" style="align-items: start; align-content: center">
@@ -793,9 +868,9 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="Ⅰ. 프로젝트 제안 개요" data-kind="DIVIDER / NUMERAL">
   <svg class="bg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <rect width="1920" height="1080" fill="var(--ex-surface-50)"/>
+    <rect width="1920" height="1080" fill="var(--ex-surface-50)"></rect>
     <text x="1900" y="1180" text-anchor="end" style="font-family: var(--ex-font-brand); font-weight: 300; font-size: 1180px; letter-spacing: -.05em; fill: var(--ex-tint-100)">01</text>
-    <rect y="1076" width="1920" height="4" fill="var(--ex-espresso)"/>
+    <rect y="1076" width="1920" height="4" fill="var(--ex-espresso)"></rect>
   </svg>
   <div class="frame">
     <div class="rail in in-fade dl-1"><span class="end">01 / 04</span></div>
@@ -812,7 +887,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="기획 배경 — 지원 서류 작성 부담" data-kind="CHART / READ">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅰ. 프로젝트 제안 개요</span><span>·</span><span class="ko">교육의봄 · 2026-07 · 청년 515명</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅰ. 프로젝트 제안 개요</span><span>·</span><span class="ko">교육의봄 · 2026-07 · 청년 515명</span><span class="end count">04 / 33</span></div>
     <div class="head in dl-2">
       <h2>기획 배경 — 지원 서류 작성 부담</h2>
     </div>
@@ -828,24 +903,23 @@ svg [data-morph] { transform-box: fill-box; }
               .sig { fill: var(--ex-espresso); }
               .cap { font-family: var(--ex-font-ui); font-size: 14px; fill: var(--ex-slate-500); }
             </style>
-            <circle cx="150" cy="150" r="96" fill="none" stroke="var(--ex-track)" stroke-width="26"/>
-            <circle cx="150" cy="150" r="96" fill="none" stroke="var(--ex-espresso)" stroke-width="26" stroke-linecap="round"
-                    stroke-dasharray="494.7 603.2" transform="rotate(-90 150 150)"/>
+            <circle cx="150" cy="150" r="96" fill="none" stroke="var(--ex-track)" stroke-width="26"></circle>
+            <circle cx="150" cy="150" r="96" fill="none" stroke="var(--ex-espresso)" stroke-width="26" stroke-linecap="round" stroke-dasharray="494.7 603.2" transform="rotate(-90 150 150)"></circle>
             <text class="vn" x="150" y="162" text-anchor="middle">82.0%</text>
             <text class="vs" x="150" y="192" text-anchor="middle">요구 항목이 많다</text>
             <text class="lb" x="150" y="278" text-anchor="middle">매우 많다 38.1 · 많다 43.9</text>
 
             <text class="cap" x="330" y="86">직무 관련성이 낮은데 써야 했던 항목</text>
-            <rect class="bar" x="330" y="104" width="196" height="26" rx="4"/>
-            <rect class="sig" x="330" y="104" width="196" height="26" rx="4"/>
+            <rect class="bar" x="330" y="104" width="196" height="26" rx="4"></rect>
+            <rect class="sig" x="330" y="104" width="196" height="26" rx="4"></rect>
             <text class="lb" x="536" y="122">학점 58.1%</text>
-            <rect class="bar" x="330" y="146" width="143" height="26" rx="4"/>
+            <rect class="bar" x="330" y="146" width="143" height="26" rx="4"></rect>
             <text class="lb" x="483" y="164">어학점수 42.3%</text>
-            <rect class="bar" x="330" y="188" width="129" height="26" rx="4"/>
+            <rect class="bar" x="330" y="188" width="129" height="26" rx="4"></rect>
             <text class="lb" x="469" y="206">출신학교 38.1%</text>
 
             <text class="cap" x="330" y="262">채용공고 · 입사지원서 양식</text>
-            <rect class="bar" x="330" y="280" width="151" height="26" rx="4"/>
+            <rect class="bar" x="330" y="280" width="151" height="26" rx="4"></rect>
             <text class="lb" x="491" y="298">불만족 44.7%</text>
           </svg>
         </div>
@@ -868,7 +942,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="기획 배경 — 생성형 AI 확산과 신뢰" data-kind="METRICS">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅰ. 프로젝트 제안 개요</span><span>·</span><span class="ko">무하유 프리즘 2024년 분석 · 레주메지니어스 채용 담당자 1,000명</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅰ. 프로젝트 제안 개요</span><span>·</span><span class="ko">무하유 프리즘 2024년 분석 · 레주메지니어스 채용 담당자 1,000명</span><span class="end count">05 / 33</span></div>
     <div class="head in dl-2">
       <h2>기획 배경 — 생성형 AI 확산과 신뢰</h2>
     </div>
@@ -905,17 +979,17 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="문제 정의" data-kind="STATEMENT / RIPPLE">
   <svg class="bg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <rect width="1920" height="1080" fill="var(--ex-surface-50)"/>
+    <rect width="1920" height="1080" fill="var(--ex-surface-50)"></rect>
     <g fill="none" stroke="var(--ex-line-200)" stroke-width="2">
-      <circle cx="1450" cy="560" r="140"/><circle cx="1450" cy="560" r="280"/>
-      <circle cx="1450" cy="560" r="420"/><circle cx="1450" cy="560" r="700"/>
-      <circle cx="1450" cy="560" r="840"/><circle cx="1450" cy="560" r="980"/>
+      <circle cx="1450" cy="560" r="140"></circle><circle cx="1450" cy="560" r="280"></circle>
+      <circle cx="1450" cy="560" r="420"></circle><circle cx="1450" cy="560" r="700"></circle>
+      <circle cx="1450" cy="560" r="840"></circle><circle cx="1450" cy="560" r="980"></circle>
     </g>
-    <circle cx="1450" cy="560" r="560" fill="none" stroke="var(--ex-espresso)" stroke-width="2.5"/>
-    <circle cx="1450" cy="560" r="14" fill="var(--ex-espresso)"/>
+    <circle cx="1450" cy="560" r="560" fill="none" stroke="var(--ex-espresso)" stroke-width="2.5"></circle>
+    <circle cx="1450" cy="560" r="14" fill="var(--ex-espresso)"></circle>
   </svg>
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅰ. 프로젝트 제안 개요</span><span>·</span><span class="ko">문제 정의</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅰ. 프로젝트 제안 개요</span><span>·</span><span class="ko">문제 정의</span><span class="end count">06 / 33</span></div>
     <div class="body mid">
       <div class="oneline in dl-3" style="max-width: 1120px">부담 때문에 AI를 쓰고, AI가 <em>하지 않은 일</em>을 적습니다.</div>
     </div>
@@ -928,7 +1002,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="아이디어 소개" data-kind="FLOW">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅰ. 프로젝트 제안 개요</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅰ. 프로젝트 제안 개요</span><span class="end count">07 / 33</span></div>
     <div class="head in dl-2">
       <h2>아이디어 소개</h2>
       <p class="sub">기록에서 공개 포트폴리오까지</p>
@@ -971,7 +1045,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="벤치마킹 사례와 한계" data-kind="3-CARD / FLIP">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅰ. 프로젝트 제안 개요</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅰ. 프로젝트 제안 개요</span><span class="end count">08 / 33</span></div>
     <div class="head in dl-2">
       <h2>벤치마킹 사례와 한계</h2>
       <p class="sub">겹치는 축이 서로 다른 서비스</p>
@@ -1058,7 +1132,7 @@ svg [data-morph] { transform-box: fill-box; }
 
 <section class="slide" data-title="기존 서비스와의 차별점" data-kind="TABLE">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅰ. 프로젝트 제안 개요</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅰ. 프로젝트 제안 개요</span><span class="end count">09 / 33</span></div>
     <div class="head in dl-2">
       <h2>기존 서비스와의 차별점</h2>
     </div>
@@ -1078,7 +1152,7 @@ svg [data-morph] { transform-box: fill-box; }
         </table>
       </div>
     </div>
-    <div class="foot in in-fade dl-5"><p></p><span class="pg">10</span></div>
+    <div class="foot in in-fade dl-5"><p></p><span class="pg">09</span></div>
   </div>
 </section>
 
@@ -1087,7 +1161,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="기대 효과" data-kind="3-CARD">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅰ. 프로젝트 제안 개요</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅰ. 프로젝트 제안 개요</span><span class="end count">10 / 33</span></div>
     <div class="head in dl-2">
       <h2>기대 효과</h2>
     </div>
@@ -1110,7 +1184,7 @@ svg [data-morph] { transform-box: fill-box; }
         </div>
       </div>
     </div>
-    <div class="foot in in-fade dl-7"><p></p><span class="pg">11</span></div>
+    <div class="foot in in-fade dl-7"><p></p><span class="pg">10</span></div>
   </div>
 </section>
 
@@ -1119,7 +1193,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="비즈니스 모델" data-kind="2-COL">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅰ. 프로젝트 제안 개요</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅰ. 프로젝트 제안 개요</span><span class="end count">11 / 33</span></div>
     <div class="head in dl-2">
       <h2>비즈니스 모델</h2>
     </div>
@@ -1145,7 +1219,7 @@ svg [data-morph] { transform-box: fill-box; }
         </div>
       </div>
     </div>
-    <div class="foot in in-fade dl-7"><p></p><span class="pg">12</span></div>
+    <div class="foot in in-fade dl-7"><p></p><span class="pg">11</span></div>
   </div>
 </section>
 
@@ -1155,9 +1229,9 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="Ⅱ. 프로젝트 개발 내용" data-kind="DIVIDER / NUMERAL">
   <svg class="bg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <rect width="1920" height="1080" fill="var(--ex-surface-50)"/>
+    <rect width="1920" height="1080" fill="var(--ex-surface-50)"></rect>
     <text x="1900" y="1180" text-anchor="end" style="font-family: var(--ex-font-brand); font-weight: 300; font-size: 1180px; letter-spacing: -.05em; fill: var(--ex-tint-100)">02</text>
-    <rect y="1076" width="1920" height="4" fill="var(--ex-espresso)"/>
+    <rect y="1076" width="1920" height="4" fill="var(--ex-espresso)"></rect>
   </svg>
   <div class="frame">
     <div class="rail in in-fade dl-1"><span class="end">02 / 04</span></div>
@@ -1165,7 +1239,7 @@ svg [data-morph] { transform-box: fill-box; }
       <h2 class="in dl-3" style="font-size: 76px">Ⅱ. 프로젝트 개발 내용</h2>
       <p class="sub in dl-4" style="font-size: 28px">기능 범위 · 시스템 구성 · 추천 모델</p>
     </div>
-    <div class="foot in in-fade dl-5"><p></p><span class="pg">13</span></div>
+    <div class="foot in in-fade dl-5"><p></p><span class="pg">12</span></div>
   </div>
 </section>
 
@@ -1174,7 +1248,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="개발 목표" data-kind="ARCHITECTURE">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span class="end count">13 / 33</span></div>
     <div class="head in dl-2" style="padding-top: 40px">
       <h2>개발 목표</h2>
     </div>
@@ -1190,42 +1264,42 @@ svg [data-morph] { transform-box: fill-box; }
             .cx { font-family: var(--ex-font-ui); font-size: 11px; fill: var(--ex-slate-600); }
             .ar { stroke: var(--ex-slate-400); stroke-width: 1.4; fill: none; marker-end: url(#pah); }
           </style>
-          <defs><marker id="pah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--ex-slate-400)"/></marker></defs>
+          <defs><marker id="pah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--ex-slate-400)"></path></marker></defs>
 
-          <rect class="gp" x="0" y="40" width="104" height="200" rx="12"/>
+          <rect class="gp" x="0" y="40" width="104" height="200" rx="12"></rect>
           <text class="lb" x="14" y="62">CLIENT</text>
-          <rect class="bx" x="14" y="76" width="76" height="34" rx="8"/><text class="cx" x="52" y="97" text-anchor="middle">웹</text>
-          <rect class="bx" x="14" y="118" width="76" height="34" rx="8"/><text class="cx" x="52" y="139" text-anchor="middle">모바일</text>
-          <rect class="bx" x="14" y="160" width="76" height="34" rx="8"/><text class="cx" x="52" y="181" text-anchor="middle">데스크톱</text>
+          <rect class="bx" x="14" y="76" width="76" height="34" rx="8"></rect><text class="cx" x="52" y="97" text-anchor="middle">웹</text>
+          <rect class="bx" x="14" y="118" width="76" height="34" rx="8"></rect><text class="cx" x="52" y="139" text-anchor="middle">모바일</text>
+          <rect class="bx" x="14" y="160" width="76" height="34" rx="8"></rect><text class="cx" x="52" y="181" text-anchor="middle">데스크톱</text>
 
-          <line class="ar" x1="106" y1="140" x2="140" y2="140"/>
+          <line class="ar" x1="106" y1="140" x2="140" y2="140"></line>
 
-          <rect class="gp" x="146" y="0" width="330" height="320" rx="14"/>
+          <rect class="gp" x="146" y="0" width="330" height="320" rx="14"></rect>
           <text class="lb" x="162" y="24">SERVER · 도메인 모듈</text>
-          <rect class="bx" x="162" y="38" width="140" height="40" rx="9"/><text class="tt" x="232" y="63" text-anchor="middle">커리어 기록</text>
-          <rect class="gs" x="316" y="38" width="144" height="40" rx="9"/><text class="tt" x="388" y="63" text-anchor="middle">공고 수집 · 분석</text>
-          <rect class="gs" x="162" y="90" width="140" height="40" rx="9"/><text class="tt" x="232" y="115" text-anchor="middle">재료 선정</text>
-          <rect class="bx" x="316" y="90" width="144" height="40" rx="9"/><text class="tt" x="388" y="115" text-anchor="middle">AI 인터뷰</text>
-          <rect class="bx" x="162" y="142" width="140" height="40" rx="9"/><text class="tt" x="232" y="167" text-anchor="middle">레시피</text>
-          <rect class="bx" x="316" y="142" width="144" height="40" rx="9"/><text class="tt" x="388" y="167" text-anchor="middle">생성 · 편집</text>
-          <rect class="bx" x="162" y="194" width="140" height="40" rx="9"/><text class="tt" x="232" y="219" text-anchor="middle">배포 · 공개 사이트</text>
-          <rect class="bx" x="316" y="194" width="144" height="40" rx="9"/><text class="tt" x="388" y="219" text-anchor="middle">통계 분석</text>
-          <rect class="bx" x="162" y="246" width="140" height="40" rx="9"/><text class="tt" x="232" y="271" text-anchor="middle">홈 · 내비게이션</text>
-          <rect class="bx" x="316" y="246" width="144" height="40" rx="9"/><text class="tt" x="388" y="271" text-anchor="middle">계정 · 요금제</text>
+          <rect class="bx" x="162" y="38" width="140" height="40" rx="9"></rect><text class="tt" x="232" y="63" text-anchor="middle">커리어 기록</text>
+          <rect class="gs" x="316" y="38" width="144" height="40" rx="9"></rect><text class="tt" x="388" y="63" text-anchor="middle">공고 수집 · 분석</text>
+          <rect class="gs" x="162" y="90" width="140" height="40" rx="9"></rect><text class="tt" x="232" y="115" text-anchor="middle">재료 선정</text>
+          <rect class="bx" x="316" y="90" width="144" height="40" rx="9"></rect><text class="tt" x="388" y="115" text-anchor="middle">AI 인터뷰</text>
+          <rect class="bx" x="162" y="142" width="140" height="40" rx="9"></rect><text class="tt" x="232" y="167" text-anchor="middle">레시피</text>
+          <rect class="bx" x="316" y="142" width="144" height="40" rx="9"></rect><text class="tt" x="388" y="167" text-anchor="middle">생성 · 편집</text>
+          <rect class="bx" x="162" y="194" width="140" height="40" rx="9"></rect><text class="tt" x="232" y="219" text-anchor="middle">배포 · 공개 사이트</text>
+          <rect class="bx" x="316" y="194" width="144" height="40" rx="9"></rect><text class="tt" x="388" y="219" text-anchor="middle">통계 분석</text>
+          <rect class="bx" x="162" y="246" width="140" height="40" rx="9"></rect><text class="tt" x="232" y="271" text-anchor="middle">홈 · 내비게이션</text>
+          <rect class="bx" x="316" y="246" width="144" height="40" rx="9"></rect><text class="tt" x="388" y="271" text-anchor="middle">계정 · 요금제</text>
 
-          <line class="ar" x1="478" y1="140" x2="512" y2="140"/>
+          <line class="ar" x1="478" y1="140" x2="512" y2="140"></line>
 
-          <rect class="gp" x="518" y="40" width="122" height="200" rx="12"/>
+          <rect class="gp" x="518" y="40" width="122" height="200" rx="12"></rect>
           <text class="lb" x="532" y="62">DATA · AI</text>
-          <rect class="bx" x="532" y="76" width="94" height="34" rx="8"/><text class="cx" x="579" y="97" text-anchor="middle">MongoDB</text>
-          <rect class="bx" x="532" y="118" width="94" height="34" rx="8"/><text class="cx" x="579" y="139" text-anchor="middle">Redis</text>
-          <rect class="gs" x="532" y="160" width="94" height="34" rx="8"/><text class="cx" x="579" y="181" text-anchor="middle">추천 모델</text>
+          <rect class="bx" x="532" y="76" width="94" height="34" rx="8"></rect><text class="cx" x="579" y="97" text-anchor="middle">MongoDB</text>
+          <rect class="bx" x="532" y="118" width="94" height="34" rx="8"></rect><text class="cx" x="579" y="139" text-anchor="middle">Redis</text>
+          <rect class="gs" x="532" y="160" width="94" height="34" rx="8"></rect><text class="cx" x="579" y="181" text-anchor="middle">추천 모델</text>
         </svg>
       </div>
     </div>
     <div class="foot in in-fade dl-5">
       <p>색이 들어간 자리를 규칙 기반에서 학습 모델로 교체합니다. 나머지는 이미 동작하는 범위입니다.</p>
-      <span class="pg">14</span>
+      <span class="pg">13</span>
     </div>
   </div>
 </section>
@@ -1235,7 +1309,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="시스템 구성" data-kind="ARCHITECTURE">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span class="end count">14 / 33</span></div>
     <div class="head in dl-2" style="padding-top: 40px">
       <h2>시스템 구성</h2>
     </div>
@@ -1249,30 +1323,30 @@ svg [data-morph] { transform-box: fill-box; }
             .cp { fill: var(--ex-white); stroke: var(--ex-line-200); }
             .cx { font-family: var(--ex-font-mono); font-size: 11px; fill: var(--ex-slate-500); }
           </style>
-          <rect class="ly" x="0" y="0" width="640" height="64" rx="14"/>
+          <rect class="ly" x="0" y="0" width="640" height="64" rx="14"></rect>
           <text class="lb" x="20" y="26">L1</text><text class="tt" x="20" y="48">클라이언트</text>
-          <rect class="cp" x="320" y="18" width="88" height="28" rx="8"/><text class="cx" x="364" y="37" text-anchor="middle">web</text>
-          <rect class="cp" x="418" y="18" width="88" height="28" rx="8"/><text class="cx" x="462" y="37" text-anchor="middle">mobile</text>
-          <rect class="cp" x="516" y="18" width="104" height="28" rx="8"/><text class="cx" x="568" y="37" text-anchor="middle">desktop</text>
-          <rect class="ly" x="0" y="78" width="640" height="64" rx="14"/>
+          <rect class="cp" x="320" y="18" width="88" height="28" rx="8"></rect><text class="cx" x="364" y="37" text-anchor="middle">web</text>
+          <rect class="cp" x="418" y="18" width="88" height="28" rx="8"></rect><text class="cx" x="462" y="37" text-anchor="middle">mobile</text>
+          <rect class="cp" x="516" y="18" width="104" height="28" rx="8"></rect><text class="cx" x="568" y="37" text-anchor="middle">desktop</text>
+          <rect class="ly" x="0" y="78" width="640" height="64" rx="14"></rect>
           <text class="lb" x="20" y="104">L2</text><text class="tt" x="20" y="126">계약 · 스키마</text>
-          <rect class="cp" x="418" y="96" width="88" height="28" rx="8"/><text class="cx" x="462" y="115" text-anchor="middle">contracts</text>
-          <rect class="cp" x="516" y="96" width="104" height="28" rx="8"/><text class="cx" x="568" y="115" text-anchor="middle">database</text>
-          <rect x="0" y="156" width="640" height="64" rx="14" fill="var(--ex-bean-50)"/>
+          <rect class="cp" x="418" y="96" width="88" height="28" rx="8"></rect><text class="cx" x="462" y="115" text-anchor="middle">contracts</text>
+          <rect class="cp" x="516" y="96" width="104" height="28" rx="8"></rect><text class="cx" x="568" y="115" text-anchor="middle">database</text>
+          <rect x="0" y="156" width="640" height="64" rx="14" fill="var(--ex-bean-50)"></rect>
           <text class="lb" x="20" y="182" style="fill: var(--ex-espresso)">L3</text><text class="tt" x="20" y="204">서비스</text>
-          <rect class="cp" x="320" y="174" width="88" height="28" rx="8"/><text class="cx" x="364" y="193" text-anchor="middle">api</text>
-          <rect class="cp" x="418" y="174" width="88" height="28" rx="8"/><text class="cx" x="462" y="193" text-anchor="middle">worker</text>
-          <rect class="cp" x="516" y="174" width="104" height="28" rx="8" style="stroke: var(--ex-espresso)"/><text class="cx" x="568" y="193" text-anchor="middle" style="fill: var(--ex-espresso)">model</text>
-          <rect class="ly" x="0" y="234" width="640" height="64" rx="14"/>
+          <rect class="cp" x="320" y="174" width="88" height="28" rx="8"></rect><text class="cx" x="364" y="193" text-anchor="middle">api</text>
+          <rect class="cp" x="418" y="174" width="88" height="28" rx="8"></rect><text class="cx" x="462" y="193" text-anchor="middle">worker</text>
+          <rect class="cp" x="516" y="174" width="104" height="28" rx="8" style="stroke: var(--ex-espresso)"></rect><text class="cx" x="568" y="193" text-anchor="middle" style="fill: var(--ex-espresso)">model</text>
+          <rect class="ly" x="0" y="234" width="640" height="64" rx="14"></rect>
           <text class="lb" x="20" y="260">L4</text><text class="tt" x="20" y="282">저장소</text>
-          <rect class="cp" x="418" y="252" width="88" height="28" rx="8"/><text class="cx" x="462" y="271" text-anchor="middle">redis</text>
-          <rect class="cp" x="516" y="252" width="104" height="28" rx="8"/><text class="cx" x="568" y="271" text-anchor="middle">mongodb</text>
+          <rect class="cp" x="418" y="252" width="88" height="28" rx="8"></rect><text class="cx" x="462" y="271" text-anchor="middle">redis</text>
+          <rect class="cp" x="516" y="252" width="104" height="28" rx="8"></rect><text class="cx" x="568" y="271" text-anchor="middle">mongodb</text>
         </svg>
       </div>
     </div>
     <div class="foot in in-fade dl-5">
       <p>요청·응답 타입은 계약의 스키마에서 파생합니다. 계약을 어기면 화면이 그 자리에서 멈춥니다.</p>
-      <span class="pg">15</span>
+      <span class="pg">14</span>
     </div>
   </div>
 </section>
@@ -1282,7 +1356,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="서비스 시나리오" data-kind="SEQUENCE">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span>·</span><span class="ko">포트폴리오 제작</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span>·</span><span class="ko">포트폴리오 제작</span><span class="end count">15 / 33</span></div>
     <div class="head in dl-2">
       <h2>서비스 시나리오</h2>
     </div>
@@ -1298,24 +1372,24 @@ svg [data-morph] { transform-box: fill-box; }
               .rt { stroke: var(--ex-slate-300); stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
               .lb { font-family: var(--ex-font-mono); font-size: 10.5px; fill: var(--ex-slate-500); }
             </style>
-            <rect class="ac" x="8" y="0" width="122" height="38" rx="11"/><text class="an" x="69" y="24" text-anchor="middle">사용자 · 웹</text>
-            <rect class="ac" x="182" y="0" width="122" height="38" rx="11"/><text class="an" x="243" y="24" text-anchor="middle">API</text>
-            <rect class="ac" x="356" y="0" width="122" height="38" rx="11"/><text class="an" x="417" y="24" text-anchor="middle">Worker</text>
-            <rect class="ac" x="510" y="0" width="122" height="38" rx="11" style="stroke: var(--ex-espresso)"/><text class="an" x="571" y="24" text-anchor="middle" style="fill: var(--ex-espresso)">추천 모델</text>
-            <line class="ll" x1="69" y1="46" x2="69" y2="300"/>
-            <line class="ll" x1="243" y1="46" x2="243" y2="300"/>
-            <line class="ll" x1="417" y1="46" x2="417" y2="300"/>
-            <line class="ll" x1="571" y1="46" x2="571" y2="300"/>
+            <rect class="ac" x="8" y="0" width="122" height="38" rx="11"></rect><text class="an" x="69" y="24" text-anchor="middle">사용자 · 웹</text>
+            <rect class="ac" x="182" y="0" width="122" height="38" rx="11"></rect><text class="an" x="243" y="24" text-anchor="middle">API</text>
+            <rect class="ac" x="356" y="0" width="122" height="38" rx="11"></rect><text class="an" x="417" y="24" text-anchor="middle">Worker</text>
+            <rect class="ac" x="510" y="0" width="122" height="38" rx="11" style="stroke: var(--ex-espresso)"></rect><text class="an" x="571" y="24" text-anchor="middle" style="fill: var(--ex-espresso)">추천 모델</text>
+            <line class="ll" x1="69" y1="46" x2="69" y2="300"></line>
+            <line class="ll" x1="243" y1="46" x2="243" y2="300"></line>
+            <line class="ll" x1="417" y1="46" x2="417" y2="300"></line>
+            <line class="ll" x1="571" y1="46" x2="571" y2="300"></line>
             <text class="lb" x="78" y="76">공고 선택 · 제작 시작</text>
-            <line class="ms" x1="69" y1="84" x2="243" y2="84"/>
+            <line class="ms" x1="69" y1="84" x2="243" y2="84"></line>
             <text class="lb" x="252" y="122">제작 세션 등록</text>
-            <line class="ms" x1="243" y1="130" x2="417" y2="130"/>
+            <line class="ms" x1="243" y1="130" x2="417" y2="130"></line>
             <text class="lb" x="426" y="168">기록 순위 · 근거 요청</text>
-            <line class="ms" x1="417" y1="176" x2="571" y2="176"/>
+            <line class="ms" x1="417" y1="176" x2="571" y2="176"></line>
             <text class="lb" x="426" y="214">선택안 · 근거 span</text>
-            <line class="rt" x1="571" y1="222" x2="417" y2="222"/>
+            <line class="rt" x1="571" y1="222" x2="417" y2="222"></line>
             <text class="lb" x="78" y="262">단계별 진행률</text>
-            <line class="rt" x1="417" y1="270" x2="69" y2="270"/>
+            <line class="rt" x1="417" y1="270" x2="69" y2="270"></line>
           </svg>
         </div>
         <div class="panel quiet in dl-5">
@@ -1329,7 +1403,7 @@ svg [data-morph] { transform-box: fill-box; }
         </div>
       </div>
     </div>
-    <div class="foot in in-fade dl-7"><p></p><span class="pg">16</span></div>
+    <div class="foot in in-fade dl-7"><p></p><span class="pg">15</span></div>
   </div>
 </section>
 
@@ -1338,7 +1412,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="사용자 기능" data-kind="3-CARD">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span class="end count">16 / 33</span></div>
     <div class="head in dl-2">
       <h2>사용자 기능</h2>
     </div>
@@ -1366,7 +1440,7 @@ svg [data-morph] { transform-box: fill-box; }
         </div>
       </div>
     </div>
-    <div class="foot in in-fade dl-7"><p></p><span class="pg">17</span></div>
+    <div class="foot in in-fade dl-7"><p></p><span class="pg">16</span></div>
   </div>
 </section>
 
@@ -1375,7 +1449,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="운영 기능" data-kind="3-CARD">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span class="end count">17 / 33</span></div>
     <div class="head in dl-2">
       <h2>운영 기능</h2>
     </div>
@@ -1403,7 +1477,7 @@ svg [data-morph] { transform-box: fill-box; }
         </div>
       </div>
     </div>
-    <div class="foot in in-fade dl-7"><p></p><span class="pg">18</span></div>
+    <div class="foot in in-fade dl-7"><p></p><span class="pg">17</span></div>
   </div>
 </section>
 
@@ -1413,7 +1487,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="AI 모델 구성" data-kind="ARCHITECTURE">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span class="end count">18 / 33</span></div>
     <div class="head in dl-2" style="padding-top: 36px">
       <h2>AI 모델 구성</h2>
       <p class="sub">공통 표현 모델과 추천 모델의 관계</p>
@@ -1430,42 +1504,42 @@ svg [data-morph] { transform-box: fill-box; }
             .cx { font-family: var(--ex-font-ui); font-size: 11px; fill: var(--ex-slate-600); }
             .ar { stroke: var(--ex-slate-400); stroke-width: 1.4; fill: none; marker-end: url(#mah); }
           </style>
-          <defs><marker id="mah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--ex-slate-400)"/></marker></defs>
+          <defs><marker id="mah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--ex-slate-400)"></path></marker></defs>
 
-          <rect class="bx" x="0" y="30" width="118" height="36" rx="9"/><text class="cx" x="59" y="52" text-anchor="middle">채용 공고</text>
-          <rect class="bx" x="0" y="86" width="118" height="36" rx="9"/><text class="cx" x="59" y="108" text-anchor="middle">커리어 기록</text>
+          <rect class="bx" x="0" y="30" width="118" height="36" rx="9"></rect><text class="cx" x="59" y="52" text-anchor="middle">채용 공고</text>
+          <rect class="bx" x="0" y="86" width="118" height="36" rx="9"></rect><text class="cx" x="59" y="108" text-anchor="middle">커리어 기록</text>
 
-          <line class="ar" x1="120" y1="48" x2="152" y2="66"/>
-          <line class="ar" x1="120" y1="104" x2="152" y2="86"/>
+          <line class="ar" x1="120" y1="48" x2="152" y2="66"></line>
+          <line class="ar" x1="120" y1="104" x2="152" y2="86"></line>
 
-          <rect class="sh" x="158" y="46" width="150" height="60" rx="11"/>
+          <rect class="sh" x="158" y="46" width="150" height="60" rx="11"></rect>
           <text class="lb" x="172" y="68">SHARED</text>
           <text class="tt" x="172" y="90">공통 표현 모델</text>
 
-          <line class="ar" x1="310" y1="76" x2="324" y2="64"/>
-          <line class="ar" x1="310" y1="76" x2="342" y2="140"/>
+          <line class="ar" x1="310" y1="76" x2="324" y2="64"></line>
+          <line class="ar" x1="310" y1="76" x2="342" y2="140"></line>
 
-          <rect class="bx" x="330" y="34" width="128" height="52" rx="10"/>
+          <rect class="bx" x="330" y="34" width="128" height="52" rx="10"></rect>
           <text class="lb" x="344" y="54">PROFILE</text>
           <text class="tt" x="344" y="74">프로필 집계</text>
 
-          <line class="ar" x1="460" y1="60" x2="490" y2="60"/>
+          <line class="ar" x1="460" y1="60" x2="490" y2="60"></line>
 
-          <rect class="gs" x="496" y="34" width="144" height="52" rx="10"/>
+          <rect class="gs" x="496" y="34" width="144" height="52" rx="10"></rect>
           <text class="lb" x="510" y="54" style="fill: var(--ex-espresso)">MODEL A</text>
           <text class="tt" x="510" y="74">채용 공고 추천</text>
 
-          <rect class="gs" x="348" y="120" width="292" height="52" rx="10"/>
+          <rect class="gs" x="348" y="120" width="292" height="52" rx="10"></rect>
           <text class="lb" x="362" y="140" style="fill: var(--ex-espresso)">MODEL B</text>
           <text class="tt" x="362" y="160">커리어 기록 추천 — 요건별 근거 연결과 세트 선택</text>
 
-          <rect class="sh" x="0" y="206" width="640" height="56" rx="11" stroke-dasharray="5 4"/>
+          <rect class="sh" x="0" y="206" width="640" height="56" rx="11" stroke-dasharray="5 4"></rect>
           <text class="lb" x="18" y="228">EXTERNAL LLM · 학습과 설명에만 사용</text>
           <text class="cx" x="18" y="250">합성 커리어 프로필 생성 · 교사 라벨 부여 · 요건 충족 판정과 사용자용 설명 생성</text>
         </svg>
       </div>
     </div>
-    <div class="foot in in-fade dl-6"><p></p><span class="pg">19</span></div>
+    <div class="foot in in-fade dl-6"><p></p><span class="pg">18</span></div>
   </div>
 </section>
 
@@ -1474,7 +1548,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="채용 공고 추천 모델" data-kind="2-COL">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span>·</span><span class="ko">홈 · 공고 탐색</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span>·</span><span class="ko">홈 · 공고 탐색</span><span class="end count">19 / 33</span></div>
     <div class="head in dl-2">
       <h2>채용 공고 추천 모델</h2>
       <p class="sub">프로필 표현 집계에서 최종 순위까지</p>
@@ -1503,7 +1577,7 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="foot in in-fade dl-7">
       <p>원시 순위 점수는 내부 값입니다. 사람 라벨로 확률 보정을 마친 모델만 화면에 적합도를 표시합니다.</p>
-      <span class="pg">20</span>
+      <span class="pg">19</span>
     </div>
   </div>
 </section>
@@ -1513,7 +1587,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="커리어 기록 추천 모델" data-kind="2-COL">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span>·</span><span class="ko">재료 고르기</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span>·</span><span class="ko">재료 고르기</span><span class="end count">20 / 33</span></div>
     <div class="head in dl-2">
       <h2>커리어 기록 추천 모델</h2>
       <p class="sub">요건별 근거 연결과 중복을 줄이는 조합 선택</p>
@@ -1546,7 +1620,7 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="foot in in-fade dl-7">
       <p>근거 문장 위치가 비면 그 항목은 저장하지 않습니다. 생성 단계가 인용할 원문이 없기 때문입니다.</p>
-      <span class="pg">21</span>
+      <span class="pg">20</span>
     </div>
   </div>
 </section>
@@ -1556,7 +1630,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="학습 데이터 수집과 구성" data-kind="TABLE">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span class="end count">21 / 33</span></div>
     <div class="head in dl-2">
       <h2>학습 데이터 수집과 구성</h2>
     </div>
@@ -1596,7 +1670,7 @@ svg [data-morph] { transform-box: fill-box; }
         </div>
       </div>
     </div>
-    <div class="foot in in-fade dl-7"><p></p><span class="pg">22</span></div>
+    <div class="foot in in-fade dl-7"><p></p><span class="pg">21</span></div>
   </div>
 </section>
 
@@ -1605,7 +1679,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="평가 지표와 배포 기준" data-kind="TABLE">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span class="end count">22 / 33</span></div>
     <div class="head in dl-2">
       <h2>평가 지표와 배포 기준</h2>
     </div>
@@ -1637,7 +1711,7 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="foot in in-fade dl-7">
       <p>기준선을 웃도는 지표와 함께 오류 사례를 남깁니다. 개선 폭이 작으면 다음 단계의 기본 모델에서 제외합니다.</p>
-      <span class="pg">23</span>
+      <span class="pg">22</span>
     </div>
   </div>
 </section>
@@ -1647,7 +1721,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="구현 현황" data-kind="SCREEN">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span>·</span><span class="ko">2026-09-04 기준</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅱ. 프로젝트 개발 내용</span><span>·</span><span class="ko">2026-09-04 기준</span><span class="end count">23 / 33</span></div>
     <div class="head in dl-2" style="padding-top: 36px">
       <h2>구현 현황</h2>
     </div>
@@ -1675,7 +1749,7 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="foot in in-fade dl-7">
       <p>제품 주소 expresso.ai.kr · 개발 포털 dev.expresso.ai.kr</p>
-      <span class="pg">24</span>
+      <span class="pg">23</span>
     </div>
   </div>
 </section>
@@ -1686,9 +1760,9 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="Ⅲ. 프로젝트 개발 전략" data-kind="DIVIDER / NUMERAL">
   <svg class="bg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <rect width="1920" height="1080" fill="var(--ex-surface-50)"/>
+    <rect width="1920" height="1080" fill="var(--ex-surface-50)"></rect>
     <text x="1900" y="1180" text-anchor="end" style="font-family: var(--ex-font-brand); font-weight: 300; font-size: 1180px; letter-spacing: -.05em; fill: var(--ex-tint-100)">03</text>
-    <rect y="1076" width="1920" height="4" fill="var(--ex-espresso)"/>
+    <rect y="1076" width="1920" height="4" fill="var(--ex-espresso)"></rect>
   </svg>
   <div class="frame">
     <div class="rail in in-fade dl-1"><span class="end">03 / 04</span></div>
@@ -1696,7 +1770,7 @@ svg [data-morph] { transform-box: fill-box; }
       <h2 class="in dl-3" style="font-size: 76px">Ⅲ. 프로젝트 개발 전략</h2>
       <p class="sub in dl-4" style="font-size: 28px">팀 역할 · 15주 일정 · 개발 환경</p>
     </div>
-    <div class="foot in in-fade dl-5"><p></p><span class="pg">25</span></div>
+    <div class="foot in in-fade dl-5"><p></p><span class="pg">24</span></div>
   </div>
 </section>
 
@@ -1705,7 +1779,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="개발팀 구성 및 역할" data-kind="OWNERS">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅲ. 프로젝트 개발 전략</span><span>·</span><span class="ko">5인</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅲ. 프로젝트 개발 전략</span><span>·</span><span class="ko">5인</span><span class="end count">25 / 33</span></div>
     <div class="head in dl-2">
       <h2>개발팀 구성 및 역할</h2>
     </div>
@@ -1753,7 +1827,7 @@ svg [data-morph] { transform-box: fill-box; }
         </div>
       </div>
     </div>
-    <div class="foot in in-fade dl-8"><p></p><span class="pg">26</span></div>
+    <div class="foot in in-fade dl-8"><p></p><span class="pg">25</span></div>
   </div>
 </section>
 
@@ -1762,7 +1836,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="개발 일정 및 계획" data-kind="TIMELINE">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅲ. 프로젝트 개발 전략</span><span>·</span><span class="ko">15주 · 현재 2주차</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅲ. 프로젝트 개발 전략</span><span>·</span><span class="ko">15주 · 현재 2주차</span><span class="end count">26 / 33</span></div>
     <div class="head in dl-2">
       <h2>개발 일정 및 계획</h2>
     </div>
@@ -1777,7 +1851,7 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="foot in in-fade dl-5">
       <p>각 단계는 앞선 기준선을 웃도는 지표와 오류 사례를 함께 남깁니다.</p>
-      <span class="pg">27</span>
+      <span class="pg">26</span>
     </div>
   </div>
 </section>
@@ -1787,7 +1861,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="CI / CD 파이프라인" data-kind="FLOW">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅲ. 프로젝트 개발 전략</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅲ. 프로젝트 개발 전략</span><span class="end count">27 / 33</span></div>
     <div class="head in dl-2">
       <h2>CI / CD 파이프라인</h2>
       <p class="sub">푸시에서 배포까지의 검증 단계</p>
@@ -1828,7 +1902,7 @@ svg [data-morph] { transform-box: fill-box; }
         <img src="assets/프로젝트-제안서/cloudflare.svg" alt="Cloudflare" style="height: 34px">
       </div>
     </div>
-    <div class="foot in in-fade dl-8"><p></p><span class="pg">28</span></div>
+    <div class="foot in in-fade dl-8"><p></p><span class="pg">27</span></div>
   </div>
 </section>
 
@@ -1837,7 +1911,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="기술 스택" data-kind="3-CARD">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅲ. 프로젝트 개발 전략</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅲ. 프로젝트 개발 전략</span><span class="end count">28 / 33</span></div>
     <div class="head in dl-2">
       <h2>기술 스택</h2>
       <p class="sub">서버 · 화면 · 데이터 · 학습 스택</p>
@@ -1882,7 +1956,7 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="foot in in-fade dl-8">
       <p>인코더 후보 — KURE · BGE-M3 · Qwen3 Embedding. 같은 시험 데이터에서 비교해 정합니다.</p>
-      <span class="pg">29</span>
+      <span class="pg">28</span>
     </div>
   </div>
 </section>
@@ -1892,9 +1966,9 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="Ⅳ. 개발 성과 및 평가" data-kind="DIVIDER / NUMERAL">
   <svg class="bg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <rect width="1920" height="1080" fill="var(--ex-surface-50)"/>
+    <rect width="1920" height="1080" fill="var(--ex-surface-50)"></rect>
     <text x="1900" y="1180" text-anchor="end" style="font-family: var(--ex-font-brand); font-weight: 300; font-size: 1180px; letter-spacing: -.05em; fill: var(--ex-tint-100)">04</text>
-    <rect y="1076" width="1920" height="4" fill="var(--ex-espresso)"/>
+    <rect y="1076" width="1920" height="4" fill="var(--ex-espresso)"></rect>
   </svg>
   <div class="frame">
     <div class="rail in in-fade dl-1"><span class="end">04 / 04</span></div>
@@ -1902,7 +1976,7 @@ svg [data-morph] { transform-box: fill-box; }
       <h2 class="in dl-3" style="font-size: 76px">Ⅳ. 개발 성과 및 평가</h2>
       <p class="sub in dl-4" style="font-size: 28px">학기 산출물과 남은 위험</p>
     </div>
-    <div class="foot in in-fade dl-5"><p></p><span class="pg">30</span></div>
+    <div class="foot in in-fade dl-5"><p></p><span class="pg">29</span></div>
   </div>
 </section>
 
@@ -1911,7 +1985,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="개발 산출물" data-kind="3-CARD">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅳ. 개발 성과 및 평가</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅳ. 개발 성과 및 평가</span><span class="end count">30 / 33</span></div>
     <div class="head in dl-2">
       <h2>개발 산출물</h2>
     </div>
@@ -1946,7 +2020,7 @@ svg [data-morph] { transform-box: fill-box; }
         </div>
       </div>
     </div>
-    <div class="foot in in-fade dl-7"><p></p><span class="pg">31</span></div>
+    <div class="foot in in-fade dl-7"><p></p><span class="pg">30</span></div>
   </div>
 </section>
 
@@ -1955,7 +2029,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="기대 성과" data-kind="METRICS">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅳ. 개발 성과 및 평가</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅳ. 개발 성과 및 평가</span><span class="end count">31 / 33</span></div>
     <div class="head in dl-2">
       <h2>기대 성과</h2>
     </div>
@@ -1988,7 +2062,7 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="foot in in-fade dl-5">
       <p>목표 수치는 기준선을 재현한 뒤 확정합니다. 지금 숫자를 적으면 근거 없는 값이 됩니다.</p>
-      <span class="pg">32</span>
+      <span class="pg">31</span>
     </div>
   </div>
 </section>
@@ -1998,7 +2072,7 @@ svg [data-morph] { transform-box: fill-box; }
      ============================================================ -->
 <section class="slide" data-title="남은 과제" data-kind="3-CARD">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now ko">Ⅳ. 개발 성과 및 평가</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now ko">Ⅳ. 개발 성과 및 평가</span><span class="end count">32 / 33</span></div>
     <div class="head in dl-2">
       <h2>남은 과제</h2>
     </div>
@@ -2024,7 +2098,7 @@ svg [data-morph] { transform-box: fill-box; }
         </div>
       </div>
     </div>
-    <div class="foot in in-fade dl-7"><p></p><span class="pg">33</span></div>
+    <div class="foot in in-fade dl-7"><p></p><span class="pg">32</span></div>
   </div>
 </section>
 
@@ -2034,23 +2108,23 @@ svg [data-morph] { transform-box: fill-box; }
 <section class="slide dark" data-title="끝장 · 인사" data-kind="END">
   <svg class="bg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <defs>
-      <clipPath id="dk2-cup"><circle cx="1560" cy="540" r="430"/></clipPath>
-      <mask id="dk2-mask"><rect width="1920" height="1080" fill="#fff"/><circle cx="1560" cy="540" r="555" fill="#000"/></mask>
+      <clipPath id="dk2-cup"><circle cx="1560" cy="540" r="430"></circle></clipPath>
+      <mask id="dk2-mask"><rect width="1920" height="1080" fill="#fff"></rect><circle cx="1560" cy="540" r="555" fill="#000"></circle></mask>
     </defs>
-    <rect width="1920" height="1080" fill="var(--ex-ink-900)"/>
+    <rect width="1920" height="1080" fill="var(--ex-ink-900)"></rect>
     <g transform="translate(1920,0) scale(-1,1)">
-      <circle cx="1968" cy="540" r="236" fill="none" stroke="var(--ex-crema-deep)" stroke-width="101" mask="url(#dk2-mask)" opacity=".38"/>
-      <rect x="1130" y="599" width="860" height="481" fill="var(--ex-crema)" clip-path="url(#dk2-cup)" opacity=".16"/>
-      <circle cx="1560" cy="540" r="430" fill="none" stroke="var(--ex-crema)" stroke-width="119" opacity=".16"/>
+      <circle cx="1968" cy="540" r="236" fill="none" stroke="var(--ex-crema-deep)" stroke-width="101" mask="url(#dk2-mask)" opacity=".38"></circle>
+      <rect x="1130" y="599" width="860" height="481" fill="var(--ex-crema)" clip-path="url(#dk2-cup)" opacity=".16"></rect>
+      <circle cx="1560" cy="540" r="430" fill="none" stroke="var(--ex-crema)" stroke-width="119" opacity=".16"></circle>
     </g>
   </svg>
   <div class="frame">
     <div class="rail in in-fade dl-1" style="border: none">
       <span class="brandline">
-        <svg width="26" height="26" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><clipPath id="ec"><circle cx="44" cy="54" r="36"/></clipPath><mask id="em"><rect width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="46.5" fill="#000"/></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#A9793F" stroke-width="8.5" mask="url(#em)"/><rect y="58.96" width="108" height="49.04" fill="#E0B486" clip-path="url(#ec)"/><circle cx="44" cy="54" r="36" stroke="#E0B486" stroke-width="10"/></svg>
+        <svg width="26" height="26" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><clipPath id="ec"><circle cx="44" cy="54" r="36"></circle></clipPath><mask id="em"><rect width="108" height="108" fill="#fff"></rect><circle cx="44" cy="54" r="46.5" fill="#000"></circle></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#A9793F" stroke-width="8.5" mask="url(#em)"></circle><rect y="58.96" width="108" height="49.04" fill="#E0B486" clip-path="url(#ec)"></rect><circle cx="44" cy="54" r="36" stroke="#E0B486" stroke-width="10"></circle></svg>
         <span class="word" style="color: #fff; font-size: 22px">Expre<em>ss</em>o</span>
       </span>
-      <span class="end count"></span>
+      <span class="end count">33 / 33</span>
     </div>
     <div class="body mid in dl-3" style="align-items: flex-end; text-align: right">
       <div class="kicker ko" style="color: var(--ex-crema)">감사합니다</div>
@@ -2075,7 +2149,7 @@ svg [data-morph] { transform-box: fill-box; }
           <div style="font-size: 16px; color: var(--ex-on-dark-muted); margin-top: 6px">평가셋과 봉인 시험셋을 함께 제출합니다</div>
         </div>
       </div>
-      <span class="pg" style="color: var(--ex-on-dark-muted); align-self: flex-end">34</span>
+      <span class="pg" style="color: var(--ex-on-dark-muted); align-self: flex-end">33</span>
     </div>
   </div>
 </section>
@@ -2086,17 +2160,17 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- 크롬 — 무대 바깥. 슬라이드 색이 무엇이든 같은 모습입니다. -->
 <div class="deck-controls">
   <a class="home" href="/" title="작업대로 (H)" aria-label="작업대로">
-    <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1.4"/><rect x="9" y="1" width="6" height="6" rx="1.4"/><rect x="1" y="9" width="6" height="6" rx="1.4"/><rect x="9" y="9" width="6" height="6" rx="1.4"/></svg>
+    <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1.4"></rect><rect x="9" y="1" width="6" height="6" rx="1.4"></rect><rect x="1" y="9" width="6" height="6" rx="1.4"></rect><rect x="9" y="9" width="6" height="6" rx="1.4"></rect></svg>
   </a>
   <span class="sep"></span>
   <button id="prevBtn" type="button" aria-label="이전 슬라이드">←</button>
-  <span class="counter" id="counter">01 / 14</span>
+  <span class="counter" id="counter">01 / 33</span>
   <button id="nextBtn" type="button" aria-label="다음 슬라이드">→</button>
   <button id="mapBtn" type="button" aria-label="슬라이드 목록">☰</button>
 </div>
 <div class="deck-progress" id="progress"></div>
 
-<div class="overview" id="overview" hidden>
+<div class="overview" id="overview" hidden="">
   <div class="sheet">
     <div class="lab">SLIDES<a class="back" href="/">← 작업대 (H)</a></div>
     <ol id="mapList"></ol>
@@ -2573,7 +2647,4 @@ window.deck = new Deck();
     }).observe(stage, { subtree: true, attributes: true, attributeFilter: ['class'] });
   }
 })();
-</script>
-
-</body>
-</html>
+</script></body></html>
