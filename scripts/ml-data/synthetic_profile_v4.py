@@ -42,6 +42,8 @@ PROTECTED_TEXT = re.compile(
 UUID_NAMESPACE = uuid.UUID("535f1110-bd33-4606-8bd8-a9ca3bbb0e7d")
 PROMPT_VERSION = "synthetic-profile-v4"
 PROMPT_PATH = Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.md"
+SEMANTIC_REWRITE_POLICY = "semantic-rewrite-creative-v2"
+LAYOUT_MODES = ("compact_note", "single_paragraph", "multi_paragraph", "checklist")
 INTERVIEW_STYLE_MARKERS = (
     "것 같습니다",
     "해야 되겠습니다",
@@ -70,6 +72,7 @@ def body_min_length_for_prompt(prompt_version: str) -> int:
         "synthetic-profile-v4.4.5",
         "synthetic-profile-v4.5.0",
         "synthetic-profile-v4.5.1",
+        "synthetic-profile-v4.5.2",
     } else 40
 
 
@@ -153,6 +156,7 @@ def assign_body_length_plans(
     population_std_chars: int = 160,
     record_max_chars: int = 1000,
     seed: int = 42,
+    rendering_policy: str = "skeleton-grounded-creative-v1",
 ) -> list[dict[str, Any]]:
     """배치의 각 프로필 입력에 서로 다른 평균 본문 길이 계획을 붙인다."""
     plans = build_body_length_plans(
@@ -167,9 +171,20 @@ def assign_body_length_plans(
     planned_payloads = deepcopy(input_payloads)
     for payload, plan in zip(planned_payloads, plans, strict=True):
         payload["bodyLengthPlan"] = plan
-        payload["renderingPolicy"] = "skeleton-grounded-creative-v1"
+        payload["renderingPolicy"] = rendering_policy
         _attach_record_length_targets(payload)
     return planned_payloads
+
+
+def _layout_mode_for_event(profile_seed: str, event_id: str, band: str) -> str:
+    choices = {
+        "very_short": ("compact_note", "single_paragraph"),
+        "moderately_short": ("single_paragraph", "multi_paragraph"),
+        "moderately_long": ("multi_paragraph", "checklist", "single_paragraph"),
+        "very_long": ("multi_paragraph", "checklist"),
+    }.get(band, LAYOUT_MODES)
+    value = hashlib.sha256(f"{profile_seed}:{event_id}:layout".encode()).digest()[0]
+    return choices[value % len(choices)]
 
 
 def _attach_record_length_targets(payload: dict[str, Any]) -> None:
@@ -180,12 +195,22 @@ def _attach_record_length_targets(payload: dict[str, Any]) -> None:
     plan = payload["bodyLengthPlan"]
     sampled_target_mean = plan.get("sampledTargetMeanChars", plan["targetMeanChars"])
     plan["sampledTargetMeanChars"] = sampled_target_mean
+    semantic_rewrite = payload.get("renderingPolicy") == SEMANTIC_REWRITE_POLICY
     for event in events:
-        event["skeletonLead"] = (
-            ""
-            if event.get("renderMode") == "rewrite_evidence"
-            else " ".join(f"{str(fact).strip().rstrip('.')}." for fact in event.get("facts", []))
-        )
+        if semantic_rewrite:
+            event["renderMode"] = "rewrite_evidence"
+            event["skeletonLead"] = ""
+            event["layoutMode"] = _layout_mode_for_event(
+                str(payload.get("profileSeed", "profile")),
+                str(event.get("eventId", "event")),
+                str(plan.get("band", "")),
+            )
+        else:
+            event["skeletonLead"] = (
+                ""
+                if event.get("renderMode") == "rewrite_evidence"
+                else " ".join(f"{str(fact).strip().rstrip('.')}." for fact in event.get("facts", []))
+            )
     seed_bytes = hashlib.sha256(f"{payload['profileSeed']}:body-length".encode()).digest()[:8]
     rng = random.Random(int.from_bytes(seed_bytes, "big"))
     weights = [rng.uniform(0.85, 1.15) for _ in events]

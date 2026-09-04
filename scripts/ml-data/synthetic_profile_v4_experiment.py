@@ -24,6 +24,7 @@ from synthetic_profile_v4 import (
     validate_creative_property_values,
     validate_draft,
     INTERVIEW_STYLE_MARKERS,
+    SEMANTIC_REWRITE_POLICY,
 )
 
 
@@ -127,7 +128,10 @@ def build_output_schema(input_payload: dict[str, Any], *, body_min_length: int =
         else 450
     )
     record_schemas = []
-    creative_details = input_payload.get("renderingPolicy") == "skeleton-grounded-creative-v1"
+    creative_details = input_payload.get("renderingPolicy") in {
+        "skeleton-grounded-creative-v1",
+        SEMANTIC_REWRITE_POLICY,
+    }
     for index, event in enumerate(input_payload["events"], start=1):
         category_schema = input_payload["propertySchema"][event["categoryKey"]]
         planned = event["propertyKeys"]
@@ -261,18 +265,18 @@ def sanitize_creative_record(
         for sentence in re.split(r"(?<=[.!?。！？])\s+", raw_detail)
         if sentence.strip()
     ]
+    allowed_numbers = (
+        {
+            _normalize_number(value)
+            for value in NUMBER_PATTERN.findall(" ".join(event.get("facts", [])))
+        }
+        if event.get("renderMode") == "rewrite_evidence"
+        else set()
+    )
     usable: list[str] = []
     for sentence in sentences:
         if not re.search(r"[.!?。！？)]$", sentence):
             continue
-        allowed_numbers = (
-            {
-                _normalize_number(value)
-                for value in NUMBER_PATTERN.findall(" ".join(event.get("facts", [])))
-            }
-            if event.get("renderMode") == "rewrite_evidence"
-            else set()
-        )
         sentence_numbers = {
             _normalize_number(value) for value in NUMBER_PATTERN.findall(sentence)
         }
@@ -287,11 +291,26 @@ def sanitize_creative_record(
             continue
         usable.append(sentence)
 
+    if allowed_numbers:
+        # 목표 길이로 자를 때 뒤쪽의 날짜 문장이 사라지지 않도록 숫자 근거 문장을
+        # 후보 앞쪽에 둔다. 문장 자체는 Luna가 작성한 표현을 그대로 유지한다.
+        numeric_sentences = [
+            sentence
+            for sentence in usable
+            if {
+                _normalize_number(value) for value in NUMBER_PATTERN.findall(sentence)
+            }
+        ]
+        usable = numeric_sentences + [sentence for sentence in usable if sentence not in numeric_sentences]
+
     if not usable:
         usable = ["작업 과정에서 확인한 내용과 판단 근거를 개인 기록으로 남겼다."]
     target = event.get("bodyLengthTarget", {}).get("targetChars")
     if isinstance(target, (int, float)):
-        candidates = [""] + [" ".join(usable[:count]) for count in range(1, len(usable) + 1)]
+        candidates = [""] + [
+            _format_detail_layout(usable[:count], str(event.get("layoutMode", "single_paragraph")))
+            for count in range(1, len(usable) + 1)
+        ]
         minimum = event.get("bodyLengthTarget", {}).get("minChars", 1)
         eligible = (
             candidates
@@ -315,14 +334,34 @@ def sanitize_creative_record(
             key=lambda candidate: abs(len(" ".join(part for part in (lead, candidate) if part)) - target),
         )
     else:
-        detail = " ".join(usable)
+        detail = _format_detail_layout(usable, str(event.get("layoutMode", "single_paragraph")))
     sanitized["detailMd"] = detail
     return sanitized
 
 
+def _format_detail_layout(sentences: list[str], layout_mode: str) -> str:
+    if not sentences:
+        return ""
+    if layout_mode == "checklist" and len(sentences) >= 2:
+        return "\n".join(f"- {sentence}" for sentence in sentences)
+    if layout_mode == "multi_paragraph" and len(sentences) >= 2:
+        if len(sentences) >= 6:
+            first = max(1, len(sentences) // 3)
+            second = max(first + 1, (len(sentences) * 2) // 3)
+            groups = (sentences[:first], sentences[first:second], sentences[second:])
+        else:
+            split = max(1, len(sentences) // 2)
+            groups = (sentences[:split], sentences[split:])
+        return "\n\n".join(" ".join(group) for group in groups if group)
+    return " ".join(sentences)
+
+
 def compose_skeleton_bodies(input_payload: dict[str, Any], draft: Any) -> Any:
     """코드가 고정 사실을 붙여 최종 Expresso 본문을 만든다."""
-    if input_payload.get("renderingPolicy") != "skeleton-grounded-creative-v1":
+    if input_payload.get("renderingPolicy") not in {
+        "skeleton-grounded-creative-v1",
+        SEMANTIC_REWRITE_POLICY,
+    }:
         return copy.deepcopy(draft)
     validate_creative_property_values(input_payload)
     if not isinstance(draft, dict) or not isinstance(draft.get("records"), list):
@@ -1175,7 +1214,10 @@ def repair_qwen_records(
             try:
                 repaired_record = json.loads(content)
                 if (
-                    input_payload.get("renderingPolicy") == "skeleton-grounded-creative-v1"
+                    input_payload.get("renderingPolicy") in {
+                        "skeleton-grounded-creative-v1",
+                        SEMANTIC_REWRITE_POLICY,
+                    }
                     and not _record_candidate_valid(
                         event,
                         index,

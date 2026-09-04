@@ -27,6 +27,7 @@ from synthetic_profile_v4 import (
     basic_property_schema,
     body_min_length_for_prompt,
     INTERVIEW_STYLE_MARKERS,
+    SEMANTIC_REWRITE_POLICY,
 )
 from synthetic_profile_v4_experiment import (
     find_evidence_anchor_conflicts,
@@ -36,7 +37,7 @@ from synthetic_profile_v4_experiment import (
 )
 
 
-PROMPT_VERSION = "synthetic-profile-v4.5.1"
+PROMPT_VERSION = "synthetic-profile-v4.5.2"
 DEFAULT_MODEL = "qwen3:30b-a3b-instruct-2507-q4_K_M"
 DEFAULT_SEEDS_PATH = (
     Path(__file__).parents[2]
@@ -722,7 +723,7 @@ def _event(
     narrative: list[str] | None = None,
     source_families: list[str] | None = None,
     synthetic: list[str] | None = None,
-    render_mode: str = "fixed_skeleton",
+    render_mode: str = "rewrite_evidence",
 ) -> dict[str, Any]:
     return {
         "categoryKey": category,
@@ -957,7 +958,7 @@ def build_synthetic_inputs(
             narrative=[atom["atomId"]],
             source_families=[atom.get("sourceFamilyId", atom["atomId"])],
             synthetic=["situation_detail", "work_process", "reflection"],
-            render_mode="fixed_skeleton" if atom.get("normalized") else "rewrite_evidence",
+            render_mode="rewrite_evidence",
         )
         event_candidates = [
             primary_event,
@@ -1024,7 +1025,11 @@ def build_synthetic_inputs(
         selected = candidates[: property_budget.get(index, 0)]
         event["propertyKeys"] = [key for key, _ in selected]
         event["propertyValues"] = {key: value for key, value in selected}
-    return assign_body_length_plans(raw_payloads, seed=seed + 2)
+    return assign_body_length_plans(
+        raw_payloads,
+        seed=seed + 2,
+        rendering_policy=SEMANTIC_REWRITE_POLICY,
+    )
 
 
 def build_shards(
@@ -1332,6 +1337,26 @@ def band_distribution_max_deviation(planned: Counter, actual: Counter) -> float:
     )
 
 
+def _final_sentences(body: str) -> list[str]:
+    return [
+        re.sub(r"\s+", " ", sentence).strip(" -*#\t\r\n").rstrip(".!?。！？").strip()
+        for sentence in re.split(r"(?<=[.!?。！？])\s+|\n+", str(body).strip())
+        if len(re.sub(r"\s+", " ", sentence).strip(" -*#\t\r\n")) >= 18
+    ]
+
+
+def _layout_matches(body: str, layout_mode: str | None) -> bool:
+    if not layout_mode:
+        return True
+    if layout_mode == "multi_paragraph":
+        return "\n\n" in body
+    if layout_mode == "checklist":
+        return bool(re.search(r"(^|\n)\s*[-*]\s+", body))
+    if layout_mode in {"compact_note", "single_paragraph"}:
+        return "\n" not in body
+    return False
+
+
 def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint: int) -> dict[str, Any]:
     selected = [item for item in specs if item["sequenceIndex"] <= checkpoint]
     profiles = []
@@ -1359,8 +1384,15 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
     profiles_with_repeated_synthetic_outcomes = 0
     actual_means = []
     target_means = []
+    prompt_version_failures = 0
+    layout_failures = 0
+    final_sentence_occurrences: Counter[str] = Counter()
+    final_sentence_profiles: dict[str, set[str]] = defaultdict(set)
+    final_title_profiles: dict[str, set[str]] = defaultdict(set)
     for profile in profiles:
         meta = profile["datasetMeta"]
+        if meta.get("promptVersion") != PROMPT_VERSION:
+            prompt_version_failures += 1
         input_path = output_root / "inputs" / f"{meta['profileSeed']}.json"
         input_payload = (
             json.loads(input_path.read_text(encoding="utf-8")) if input_path.exists() else {"events": []}
@@ -1397,6 +1429,15 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
         for record, event in zip(profile.get("records", []), input_payload.get("events", []), strict=False):
             properties[len(record.get("properties", {}))] += 1
             body = str(record.get("bodyMd", ""))
+            profile_seed = str(meta.get("profileSeed", ""))
+            for sentence in _final_sentences(body):
+                final_sentence_occurrences[sentence] += 1
+                final_sentence_profiles[sentence].add(profile_seed)
+            title = re.sub(r"\s+", " ", str(record.get("title", ""))).strip()
+            if title and event.get("categoryKey") != "education_history":
+                final_title_profiles[title].add(profile_seed)
+            if not _layout_matches(body, event.get("layoutMode")):
+                layout_failures += 1
             if "event_skeleton" in event.get("provenance", {}).get("syntheticFields", []):
                 for fact in event.get("facts", []):
                     normalized_fact = re.sub(r"\s+", " ", str(fact)).strip()
@@ -1431,6 +1472,31 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
                 source_family_splits[source_family].add(meta["split"])
     completed = len(profiles)
     band_distribution_deviation = band_distribution_max_deviation(bands, actual_bands)
+    repeated_final_sentences = {
+        sentence: owners
+        for sentence, owners in final_sentence_profiles.items()
+        if len(owners) >= 3
+    }
+    repeated_final_titles = {
+        title: owners for title, owners in final_title_profiles.items() if len(owners) >= 3
+    }
+    content_gate_passed = (
+        length_errors == 0
+        and band_distribution_deviation <= 0.05
+        and interview_style_failures == 0
+        and verbatim_evidence_copies == 0
+        and evidence_anchor_failures == 0
+        and prompt_version_failures == 0
+        and layout_failures == 0
+        and not repeated_final_sentences
+        and not repeated_final_titles
+        and max(synthetic_facts.values(), default=0) <= 2
+        and max(synthetic_openings.values(), default=0) <= 2
+        and max_synthetic_outcome_reuse_within_profile <= 1
+        and not any(len(splits) > 1 for splits in family_splits.values())
+        and not any(len(splits) > 1 for splits in atom_splits.values())
+        and not any(len(splits) > 1 for splits in source_family_splits.values())
+    )
     return {
         "schemaVersion": 1,
         "checkpoint": checkpoint,
@@ -1453,12 +1519,28 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
             "actualStd": round(statistics.pstdev(actual_means), 2) if len(actual_means) > 1 else None,
         },
         "content": {
+            "promptVersionFailures": prompt_version_failures,
+            "layoutFailures": layout_failures,
             "interviewStyleFailures": interview_style_failures,
             "verbatimEvidenceCopies": verbatim_evidence_copies,
             "evidenceAnchorFailures": evidence_anchor_failures,
         },
         "properties": {str(key): value for key, value in sorted(properties.items())},
         "diversity": {
+            "maxFinalSentenceReuse": max(
+                (len(owners) for owners in final_sentence_profiles.values()),
+                default=0,
+            ),
+            "repeatedFinalSentences3Plus": len(repeated_final_sentences),
+            "repeatedFinalSentenceOccurrences": sum(
+                final_sentence_occurrences[sentence]
+                for sentence in repeated_final_sentences
+            ),
+            "maxNonEducationTitleReuse": max(
+                (len(owners) for owners in final_title_profiles.values()),
+                default=0,
+            ),
+            "repeatedNonEducationTitles3Plus": len(repeated_final_titles),
             "syntheticEventCount": sum(synthetic_facts.values()),
             "uniqueSyntheticFacts": len(synthetic_facts),
             "maxSyntheticFactReuse": max(synthetic_facts.values(), default=0),
@@ -1477,18 +1559,8 @@ def inspect_batch(specs: list[dict[str, Any]], *, output_root: Path, checkpoint:
             "sourceFamilies": sum(len(splits) > 1 for splits in source_family_splits.values()),
         },
         "missingProfileSeeds": missing,
-        "gatePassed": completed == len(selected)
-        and length_errors == 0
-        and band_distribution_deviation <= 0.05
-        and interview_style_failures == 0
-        and verbatim_evidence_copies == 0
-        and evidence_anchor_failures == 0
-        and max(synthetic_facts.values(), default=0) <= 2
-        and max(synthetic_openings.values(), default=0) <= 2
-        and max_synthetic_outcome_reuse_within_profile <= 1
-        and not any(len(splits) > 1 for splits in family_splits.values())
-        and not any(len(splits) > 1 for splits in atom_splits.values())
-        and not any(len(splits) > 1 for splits in source_family_splits.values()),
+        "contentGatePassed": content_gate_passed,
+        "gatePassed": completed == len(selected) and content_gate_passed,
     }
 
 

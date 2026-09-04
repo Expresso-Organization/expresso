@@ -1,5 +1,7 @@
 import json
 import tempfile
+import threading
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -18,6 +20,7 @@ from synthetic_profile_luna_worker import (
     partition_luna_profiles,
     replace_luna_profiles,
     run_luna_checkpoint,
+    select_pending_luna_profile_seeds,
     select_pending_luna_shards,
     sentence_boost_for_body_mean,
 )
@@ -166,6 +169,247 @@ class SyntheticProfileLunaWorkerTest(unittest.TestCase):
         self.assertEqual(bundle["profiles"][0]["profileSeed"], "p1")
         self.assertEqual(run_group.call_args.kwargs["profile"], "synthetic-profile-generator")
 
+    def test_commit_can_defer_cross_profile_diversity_to_the_corpus_gate(self):
+        payload = {
+            "profileSeed": "p1",
+            "profileFamily": "f1",
+            "familyVariant": 1,
+            "split": "train",
+            "domain": "ICT",
+            "careerStage": "new",
+            "persona": {"targetRoles": ["백엔드"], "experienceYears": 1},
+            "targetRecordCount": 1,
+            "renderingPolicy": "semantic-rewrite-creative-v2",
+            "bodyLengthPlan": {
+                "distributionVersion": "clipped-normal-v2",
+                "targetMinChars": 40,
+                "targetMaxChars": 800,
+                "targetMeanChars": 100,
+                "toleranceChars": 100,
+                "band": "very_short",
+                "populationMeanChars": 300,
+                "populationStdChars": 160,
+                "recordMaxChars": 1000,
+            },
+            "propertySchema": {"experience": {}},
+            "events": [
+                {
+                    "eventId": "ev1",
+                    "categoryKey": "experience",
+                    "facts": ["개발 업무를 맡았다"],
+                    "propertyKeys": [],
+                    "propertyValues": {},
+                    "renderMode": "rewrite_evidence",
+                    "skeletonLead": "",
+                    "layoutMode": "single_paragraph",
+                    "bodyLengthTarget": {"targetChars": 100, "minChars": 40, "maxChars": 180},
+                    "provenance": {"surveyCalibration": [], "narrativeEvidence": [], "sourceFamilies": [], "syntheticFields": []},
+                }
+            ],
+        }
+        manifest = {
+            "promptVersion": "synthetic-profile-v4.5.2",
+            "profiles": [{"profileSeed": "p1", "split": "train", "targetRecordCount": 1}],
+            "shards": [{"shardId": "s1", "profiles": ["p1"]}],
+        }
+        bundle = {
+            "shardId": "s1",
+            "profiles": [{"profileSeed": "p1", "records": [{"eventId": "ev1", "title": "개발 담당", "detailMd": "개발 요청을 맡아 처리 흐름과 판단 근거를 개인 기록으로 정리했다."}]}],
+        }
+        issue = {"sentence": "반복 문장", "profileSeeds": ["p1", "p2", "p3"]}
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "inputs").mkdir()
+            (root / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+            (root / "inputs" / "p1.json").write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            (root / "bundle.json").write_text(json.dumps(bundle, ensure_ascii=False), encoding="utf-8")
+            with patch("synthetic_profile_luna_worker.find_cross_profile_sentence_repetitions", return_value=[issue]):
+                result = commit_bundle(
+                    root / "manifest.json",
+                    "s1",
+                    root / "bundle.json",
+                    defer_cross_profile_diversity=True,
+                )
+
+            self.assertEqual(result["completed"], 1)
+            self.assertTrue((root / "profiles" / "train" / "p1.json").is_file())
+
+    def test_authorship_reuses_valid_group_logs_and_calls_luna_only_for_missing_groups(self):
+        context = {
+            "shardId": "s1",
+            "profiles": [
+                {
+                    "profileSeed": "p1",
+                    "events": [{"detailLength": {"targetChars": 80}}],
+                },
+                {
+                    "profileSeed": "p2",
+                    "events": [{"detailLength": {"targetChars": 80}}],
+                },
+            ],
+        }
+
+        def stream_for(seed: str) -> str:
+            payload = {
+                "shardId": "s1",
+                "profiles": [{"profileSeed": seed, "records": []}],
+            }
+            return json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "type": "agent_message",
+                        "text": json.dumps(payload, ensure_ascii=False),
+                    },
+                },
+                ensure_ascii=False,
+            )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_root = Path(temp_dir)
+            (output_root / "luna-profile-test-part-01-attempt-01.jsonl").write_text(
+                stream_for("p1"),
+                encoding="utf-8",
+            )
+            with patch(
+                "synthetic_profile_luna_worker._run_luna_group",
+                return_value=(stream_for("p2"), ""),
+            ) as run_group:
+                bundle = _author_luna_profiles(
+                    context=context,
+                    output_root=output_root,
+                    codex_path=Path("codex"),
+                    profile="synthetic-profile-generator",
+                    base_prompt="prompt",
+                    timeout_seconds=30,
+                    max_target_chars=100,
+                    max_workers=2,
+                    log_label="test",
+                )
+
+        self.assertEqual(
+            [profile["profileSeed"] for profile in bundle["profiles"]],
+            ["p1", "p2"],
+        )
+        self.assertEqual(run_group.call_count, 1)
+
+    def test_authorship_splits_a_group_when_luna_repeatedly_omits_profiles(self):
+        context = {
+            "shardId": "s1",
+            "profiles": [
+                {
+                    "profileSeed": "p1",
+                    "events": [{"detailLength": {"targetChars": 10}}],
+                },
+                {
+                    "profileSeed": "p2",
+                    "events": [{"detailLength": {"targetChars": 10}}],
+                },
+            ],
+        }
+
+        def stream_for(*seeds: str) -> str:
+            payload = {
+                "shardId": "s1",
+                "profiles": [
+                    {"profileSeed": seed, "records": []}
+                    for seed in seeds
+                ],
+            }
+            return json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "type": "agent_message",
+                        "text": json.dumps(payload, ensure_ascii=False),
+                    },
+                },
+                ensure_ascii=False,
+            )
+
+        responses = [
+            (stream_for("p1"), ""),
+            (stream_for("p1"), ""),
+            (stream_for("p1"), ""),
+            (stream_for("p1"), ""),
+            (stream_for("p2"), ""),
+        ]
+        with tempfile.TemporaryDirectory() as temp_dir, patch(
+            "synthetic_profile_luna_worker._run_luna_group",
+            side_effect=responses,
+        ) as run_group:
+            bundle = _author_luna_profiles(
+                context=context,
+                output_root=Path(temp_dir),
+                codex_path=Path("codex"),
+                profile="synthetic-profile-generator",
+                base_prompt="prompt",
+                timeout_seconds=30,
+                max_target_chars=100,
+                max_workers=1,
+                log_label="test",
+            )
+
+        self.assertEqual(
+            [profile["profileSeed"] for profile in bundle["profiles"]],
+            ["p1", "p2"],
+        )
+        self.assertEqual(run_group.call_count, 5)
+
+    def test_authorship_immediately_splits_a_group_with_three_cached_failures(self):
+        context = {
+            "shardId": "s1",
+            "profiles": [
+                {"profileSeed": "p1", "events": [{"detailLength": {"targetChars": 10}}]},
+                {"profileSeed": "p2", "events": [{"detailLength": {"targetChars": 10}}]},
+            ],
+        }
+
+        def stream_for(seed: str) -> str:
+            payload = {
+                "shardId": "s1",
+                "profiles": [{"profileSeed": seed, "records": []}],
+            }
+            return json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "type": "agent_message",
+                        "text": json.dumps(payload, ensure_ascii=False),
+                    },
+                },
+                ensure_ascii=False,
+            )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_root = Path(temp_dir)
+            for attempt in range(1, 4):
+                (output_root / f"luna-profile-test-part-01-attempt-{attempt:02d}.jsonl").write_text(
+                    stream_for("p1"),
+                    encoding="utf-8",
+                )
+            with patch(
+                "synthetic_profile_luna_worker._run_luna_group",
+                side_effect=[(stream_for("p1"), ""), (stream_for("p2"), "")],
+            ) as run_group:
+                bundle = _author_luna_profiles(
+                    context=context,
+                    output_root=output_root,
+                    codex_path=Path("codex"),
+                    profile="synthetic-profile-generator",
+                    base_prompt="prompt",
+                    timeout_seconds=30,
+                    max_target_chars=100,
+                    max_workers=1,
+                    log_label="test",
+                )
+
+        self.assertEqual(
+            [profile["profileSeed"] for profile in bundle["profiles"]],
+            ["p1", "p2"],
+        )
+        self.assertEqual(run_group.call_count, 2)
+
     def test_selects_only_pending_luna_shards_inside_checkpoint(self):
         manifest = {
             "promptVersion": "synthetic-profile-test",
@@ -236,6 +480,95 @@ class SyntheticProfileLunaWorkerTest(unittest.TestCase):
         self.assertEqual(calls, ["s1", "s2"])
         self.assertEqual(summary["completedShards"], 1)
         self.assertEqual(summary["failedShards"], 1)
+
+    def test_checkpoint_runner_generates_only_missing_profiles_inside_a_partial_shard(self):
+        manifest = {
+            "promptVersion": "synthetic-profile-test",
+            "profiles": [
+                {"profileSeed": "p1", "split": "test"},
+                {"profileSeed": "p2", "split": "test"},
+            ],
+            "shards": [
+                {"shardId": "s1", "generator": "luna", "endIndex": 10, "profiles": ["p1", "p2"]},
+            ],
+        }
+        calls = []
+
+        def fake_generate(manifest_path, shard_id, **kwargs):
+            calls.append(kwargs["profile_seeds"])
+            return {"shardId": shard_id, "completed": len(kwargs["profile_seeds"]), "failed": 0}
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            complete = root / "profiles" / "test" / "p1.json"
+            complete.parent.mkdir(parents=True)
+            complete.write_text(
+                json.dumps(
+                    {"datasetMeta": {"profileSeed": "p1", "promptVersion": "synthetic-profile-test"}}
+                ),
+                encoding="utf-8",
+            )
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            self.assertEqual(
+                select_pending_luna_profile_seeds(
+                    manifest,
+                    manifest["shards"][0],
+                    output_root=root,
+                ),
+                ["p2"],
+            )
+            summary = run_luna_checkpoint(
+                manifest_path,
+                checkpoint=10,
+                codex_path=Path("codex"),
+                generate_shard=fake_generate,
+            )
+
+        self.assertEqual(calls, [["p2"]])
+        self.assertEqual(summary["completedProfiles"], 1)
+
+    def test_checkpoint_runner_can_generate_independent_shards_in_parallel(self):
+        manifest = {
+            "promptVersion": "synthetic-profile-test",
+            "profiles": [
+                {"profileSeed": "p1", "split": "test"},
+                {"profileSeed": "p2", "split": "test"},
+            ],
+            "shards": [
+                {"shardId": "s1", "generator": "luna", "endIndex": 10, "profiles": ["p1"]},
+                {"shardId": "s2", "generator": "luna", "endIndex": 20, "profiles": ["p2"]},
+            ],
+        }
+        lock = threading.Lock()
+        active = 0
+        peak = 0
+
+        def fake_generate(manifest_path, shard_id, **kwargs):
+            nonlocal active, peak
+            with lock:
+                active += 1
+                peak = max(peak, active)
+            time.sleep(0.05)
+            with lock:
+                active -= 1
+            return {"shardId": shard_id, "completed": 1, "failed": 0}
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            manifest_path = Path(temp_dir) / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            summary = run_luna_checkpoint(
+                manifest_path,
+                checkpoint=20,
+                codex_path=Path("codex"),
+                generate_shard=fake_generate,
+                max_shard_workers=2,
+                max_workers=1,
+            )
+
+        self.assertEqual(peak, 2)
+        self.assertEqual(summary["completedShards"], 2)
 
     def test_length_repairs_never_request_more_sentences_than_the_length_contract_allows(self):
         self.assertEqual(
@@ -403,6 +736,40 @@ class SyntheticProfileLunaWorkerTest(unittest.TestCase):
 
         self.assertEqual(context["detailLength"]["minChars"], 110)
         self.assertEqual(context["minimumSentences"], 3)
+
+    def test_overwrites_rewrite_evidence_with_a_post_sanitize_length_buffer(self):
+        event = {
+            "eventId": "ev1",
+            "categoryKey": "experience",
+            "facts": ["2023년부터 개발 업무를 맡았다"],
+            "propertyValues": {},
+            "renderMode": "rewrite_evidence",
+            "skeletonLead": "",
+            "bodyLengthTarget": {"targetChars": 120, "minChars": 80, "maxChars": 150},
+        }
+
+        context = build_luna_event_context(event)
+
+        self.assertEqual(context["postSanitizeLength"]["targetChars"], 120)
+        self.assertEqual(context["detailLength"], {"targetChars": 184, "minChars": 120, "maxChars": 232})
+        self.assertEqual(context["minimumSentences"], 11)
+        self.assertEqual(context["requiredNumbers"], ["2023"])
+        self.assertEqual(context["numericFacts"], ["2023년부터 개발 업무를 맡았다"])
+
+    def test_expands_year_month_facts_into_required_date_phrases(self):
+        event = {
+            "eventId": "ev1",
+            "categoryKey": "education_history",
+            "facts": ["2018-02에 학사 과정을 마쳤다"],
+            "propertyValues": {},
+            "renderMode": "rewrite_evidence",
+            "skeletonLead": "",
+            "bodyLengthTarget": {"targetChars": 120, "minChars": 80, "maxChars": 150},
+        }
+
+        context = build_luna_event_context(event)
+
+        self.assertEqual(context["requiredDatePhrases"], ["2018년 2월"])
 
     def test_materializes_structural_fields_from_input_instead_of_luna_output(self):
         payload = {
@@ -579,8 +946,8 @@ class SyntheticProfileLunaWorkerTest(unittest.TestCase):
 
         self.assertEqual(issues, [])
 
-    def test_ignores_a_repeated_sentence_when_it_is_an_input_skeleton(self):
-        repeated = "사업 기획 분야에서 일정 관리 업무를 맡았다."
+    def test_rejects_a_repeated_sentence_even_when_it_is_an_input_skeleton(self):
+        repeated = "사업 기획 분야에서 일정 관리와 요청 검토 업무를 함께 맡았다."
         profiles = [
             _profile("p1", repeated + " 첫 번째 세부 작업을 기록했다."),
             _profile("p2", repeated + " 두 번째 세부 작업을 기록했다."),
@@ -597,7 +964,8 @@ class SyntheticProfileLunaWorkerTest(unittest.TestCase):
             },
         )
 
-        self.assertEqual(issues, [])
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0]["profileCount"], 3)
 
     def test_rejects_same_sentence_in_two_records_of_one_profile(self):
         repeated = "검토 기준을 표로 정리해 다음 담당자가 바로 확인할 수 있게 했다."

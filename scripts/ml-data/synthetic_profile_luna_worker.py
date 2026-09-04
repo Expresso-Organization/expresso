@@ -28,8 +28,11 @@ from synthetic_profile_v4_experiment import (
 )
 
 
+LUNA_AUTHORING_REVISION = "v452-length-buffer-v3"
+
+
 MIN_SENTENCE_CHARS = 25
-LUNA_PROMPT_PATH = Path(__file__).parent / "prompts" / "synthetic-profile-luna-v4.5.1.md"
+LUNA_PROMPT_PATH = Path(__file__).parent / "prompts" / "synthetic-profile-luna-v4.5.2.md"
 
 
 def _sentences(body: str) -> list[str]:
@@ -75,11 +78,8 @@ def find_cross_profile_sentence_repetitions(
     owners: dict[str, set[str]] = defaultdict(set)
     for index, profile in enumerate(profiles):
         seed = _profile_seed(profile, f"profile-{index + 1}")
-        ignored = (ignored_sentences_by_profile or {}).get(seed, set())
         for record in profile.get("records", []):
             for sentence in _sentences(record.get("bodyMd", "")):
-                if sentence in ignored:
-                    continue
                 occurrences[sentence] += 1
                 owners[sentence].add(seed)
     issues = [
@@ -139,21 +139,51 @@ def build_luna_event_context(event: dict[str, Any]) -> dict[str, Any]:
     lead = str(event.get("skeletonLead", "")).strip()
     reserve = len(lead) + 1 if event.get("renderMode") == "fixed_skeleton" and lead else 0
     target = event.get("bodyLengthTarget", {})
+    facts_text = " ".join(str(fact) for fact in event.get("facts", []))
+    required_date_phrases = sorted(
+        {
+            f"{year}년 {int(month)}월"
+            for year, month in re.findall(r"(\d{4})[-./](\d{1,2})", facts_text)
+        }
+    )
     detail_length = {
         key: max(1, int(target.get(key, 1)) - reserve)
         for key in ("targetChars", "minChars", "maxChars")
     }
-    return {
+    context = {
         "eventId": event["eventId"],
         "categoryKey": event["categoryKey"],
         "facts": event.get("facts", []),
         "propertyValues": event.get("propertyValues", {}),
         "skeletonLead": lead,
         "renderMode": event.get("renderMode"),
+        "layoutMode": event.get("layoutMode", "single_paragraph"),
         "detailLength": detail_length,
         "minimumSentences": max(1, (detail_length["minChars"] + 44) // 45),
+        "requiredNumbers": sorted(
+            set(re.findall(r"\d+(?:[.,]\d+)?", " ".join(event.get("facts", []))))
+        ),
+        "numericFacts": [
+            fact for fact in event.get("facts", []) if re.search(r"\d+(?:[.,]\d+)?", str(fact))
+        ],
+        "requiredDatePhrases": required_date_phrases,
         "requiredEvidenceAnchors": evidence_anchor_requirements(event),
     }
+    if event.get("renderMode") == "rewrite_evidence":
+        post_sanitize_length = detail_length
+        buffered_target = max(
+            post_sanitize_length["targetChars"] + 64,
+            round(post_sanitize_length["targetChars"] * 1.25),
+        )
+        detail_length = {
+            "targetChars": buffered_target,
+            "minChars": post_sanitize_length["targetChars"],
+            "maxChars": max(post_sanitize_length["maxChars"], buffered_target + 48),
+        }
+        context["postSanitizeLength"] = post_sanitize_length
+        context["detailLength"] = detail_length
+        context["minimumSentences"] = max(1, (buffered_target + 17) // 18)
+    return context
 
 
 def materialize_luna_draft(
@@ -183,7 +213,10 @@ def materialize_luna_draft(
             "title": str(authored.get("title", "")).strip(),
             "properties": event.get("propertyValues", {}),
         }
-        if payload.get("renderingPolicy") == "skeleton-grounded-creative-v1":
+        if payload.get("renderingPolicy") in {
+            "skeleton-grounded-creative-v1",
+            "semantic-rewrite-creative-v2",
+        }:
             record["detailMd"] = detail
         else:
             record["bodyMd"] = (
@@ -198,7 +231,10 @@ def materialize_luna_draft(
         "persona": payload["persona"],
         "records": records,
     }
-    if payload.get("renderingPolicy") == "skeleton-grounded-creative-v1":
+    if payload.get("renderingPolicy") in {
+        "skeleton-grounded-creative-v1",
+        "semantic-rewrite-creative-v2",
+    }:
         return compose_skeleton_bodies(payload, draft)
     return draft
 
@@ -406,33 +442,88 @@ def _author_luna_profiles(
     )
 
     def run_group(index: int, group: list[dict[str, Any]]) -> dict[str, Any]:
-        group_context = {**context, "profiles": group}
-        request = (
-            base_prompt
-            + "\n\n# 입력 context\n"
-            + json.dumps(group_context, ensure_ascii=False)
-            + "\n\nJSON 객체 하나만 출력하라.\n"
-        )
         part = index + 1
 
-        def attempts() -> Iterable[str]:
-            for attempt in range(1, 4):
-                stdout, stderr = _run_luna_group(
-                    codex_path=codex_path,
-                    profile=profile,
-                    request=request,
-                    timeout_seconds=timeout_seconds,
-                )
-                prefix = f"luna-profile-{log_label}-part-{part:02d}-attempt-{attempt:02d}"
-                (output_root / f"{prefix}.jsonl").write_text(stdout, encoding="utf-8")
-                (output_root / f"{prefix}.err.log").write_text(stderr, encoding="utf-8")
-                yield stdout
+        def author_segment(
+            segment: list[dict[str, Any]],
+            segment_label: str,
+        ) -> dict[str, Any]:
+            group_context = {**context, "profiles": segment}
+            request = (
+                base_prompt
+                + "\n\n# 입력 context\n"
+                + json.dumps(group_context, ensure_ascii=False)
+                + "\n\nJSON 객체 하나만 출력하라.\n"
+            )
+            expected_profile_seeds = [
+                profile_row["profileSeed"] for profile_row in segment
+            ]
 
-        return parse_codex_bundle_attempts(
-            attempts(),
-            expected_shard_id=context["shardId"],
-            expected_profile_seeds=[profile_row["profileSeed"] for profile_row in group],
-        )
+            def split_segment() -> dict[str, Any]:
+                midpoint = len(segment) // 2
+                left = author_segment(
+                    segment[:midpoint],
+                    f"{segment_label}-sub-01",
+                )
+                right = author_segment(
+                    segment[midpoint:],
+                    f"{segment_label}-sub-02",
+                )
+                return merge_luna_bundles(
+                    [left, right],
+                    shard_id=context["shardId"],
+                    expected_seeds=expected_profile_seeds,
+                )
+
+            log_prefix = f"luna-profile-{log_label}-part-{segment_label}-attempt-"
+            cached_logs = sorted(output_root.glob(f"{log_prefix}*.jsonl"))
+            if cached_logs:
+                try:
+                    return parse_codex_bundle_attempts(
+                        (path.read_text(encoding="utf-8") for path in cached_logs),
+                        expected_shard_id=context["shardId"],
+                        expected_profile_seeds=expected_profile_seeds,
+                    )
+                except (ValueError, json.JSONDecodeError):
+                    if len(cached_logs) >= 3 and len(segment) > 1:
+                        return split_segment()
+
+            next_attempt = len(cached_logs) + 1
+
+            def attempts() -> Iterable[str]:
+                for attempt in range(next_attempt, next_attempt + 3):
+                    stdout, stderr = _run_luna_group(
+                        codex_path=codex_path,
+                        profile=profile,
+                        request=request,
+                        timeout_seconds=timeout_seconds,
+                    )
+                    prefix = (
+                        f"luna-profile-{log_label}-part-{segment_label}"
+                        f"-attempt-{attempt:02d}"
+                    )
+                    (output_root / f"{prefix}.jsonl").write_text(
+                        stdout,
+                        encoding="utf-8",
+                    )
+                    (output_root / f"{prefix}.err.log").write_text(
+                        stderr,
+                        encoding="utf-8",
+                    )
+                    yield stdout
+
+            try:
+                return parse_codex_bundle_attempts(
+                    attempts(),
+                    expected_shard_id=context["shardId"],
+                    expected_profile_seeds=expected_profile_seeds,
+                )
+            except (ValueError, json.JSONDecodeError):
+                if len(segment) == 1:
+                    raise
+                return split_segment()
+
+        return author_segment(group, f"{part:02d}")
 
     bundles: list[dict[str, Any] | None] = [None] * len(groups)
     with concurrent.futures.ThreadPoolExecutor(max_workers=min(max_workers, len(groups))) as executor:
@@ -460,10 +551,11 @@ def generate_with_luna_profile(
     max_target_chars: int = 6000,
     max_workers: int = 3,
     max_repair_rounds: int = 3,
+    profile_seeds: list[str] | None = None,
 ) -> dict[str, Any]:
     manifest_path = Path(manifest_path).resolve()
     output_root = manifest_path.parent
-    context_path = prepare_context(manifest_path, shard_id)
+    context_path = prepare_context(manifest_path, shard_id, profile_seeds=profile_seeds)
     context = json.loads(context_path.read_text(encoding="utf-8"))
     base_prompt = Path(prompt_path).read_text(encoding="utf-8")
     bundle = _author_luna_profiles(
@@ -475,7 +567,7 @@ def generate_with_luna_profile(
         timeout_seconds=timeout_seconds,
         max_target_chars=max_target_chars,
         max_workers=max_workers,
-        log_label=shard_id,
+        log_label=f"{shard_id}-{LUNA_AUTHORING_REVISION}",
     )
     bundle_path = output_root / "staging" / f"{shard_id}.bundle.json"
     payloads = {
@@ -487,7 +579,13 @@ def generate_with_luna_profile(
     for repair_round in range(max_repair_rounds + 1):
         _atomic_write_json(bundle_path, bundle)
         try:
-            return commit_bundle(manifest_path, shard_id, bundle_path)
+            return commit_bundle(
+                manifest_path,
+                shard_id,
+                bundle_path,
+                expected_seeds=set(profile_seeds) if profile_seeds is not None else None,
+                defer_cross_profile_diversity=True,
+            )
         except ValueError as exc:
             if repair_round >= max_repair_rounds:
                 raise
@@ -554,7 +652,10 @@ def generate_with_luna_profile(
                 timeout_seconds=timeout_seconds,
                 max_target_chars=max_target_chars,
                 max_workers=max_workers,
-                log_label=f"{shard_id}-auto-repair-{repair_round + 1:02d}",
+                log_label=(
+                    f"{shard_id}-{LUNA_AUTHORING_REVISION}"
+                    f"-auto-repair-{repair_round + 1:02d}"
+                ),
             )
             bundle = replace_luna_profiles(bundle, replacements)
     raise RuntimeError("unreachable")
@@ -613,7 +714,7 @@ def repair_luna_bundle(
         timeout_seconds=timeout_seconds,
         max_target_chars=max_target_chars,
         max_workers=max_workers,
-        log_label=f"{shard_id}-repair",
+        log_label=f"{shard_id}-{LUNA_AUTHORING_REVISION}-repair",
     )
     existing = json.loads(Path(bundle_path).read_text(encoding="utf-8"))
     bundle = replace_luna_profiles(existing, replacements)
@@ -621,13 +722,22 @@ def repair_luna_bundle(
     return commit_bundle(manifest_path, shard_id, Path(bundle_path))
 
 
-def prepare_context(manifest_path: Path, shard_id: str, output_path: Path | None = None) -> Path:
+def prepare_context(
+    manifest_path: Path,
+    shard_id: str,
+    output_path: Path | None = None,
+    *,
+    profile_seeds: list[str] | None = None,
+) -> Path:
     manifest_path = Path(manifest_path).resolve()
     _, shard = _load_manifest_and_shard(manifest_path, shard_id)
     output_root = manifest_path.parent
+    selected_seeds = list(profile_seeds) if profile_seeds is not None else list(shard["profiles"])
+    if not set(selected_seeds).issubset(set(shard["profiles"])):
+        raise ValueError("profile_seeds contains a profile outside the shard")
     full_payloads = [
         json.loads((output_root / "inputs" / f"{seed}.json").read_text(encoding="utf-8"))
-        for seed in shard["profiles"]
+        for seed in selected_seeds
     ]
     payloads = [
         {
@@ -639,7 +749,7 @@ def prepare_context(manifest_path: Path, shard_id: str, output_path: Path | None
         }
         for payload in full_payloads
     ]
-    existing = _load_existing_profiles(output_root, excluded_seeds=set(shard["profiles"]))
+    existing = _load_existing_profiles(output_root, excluded_seeds=set(selected_seeds))
     existing_seeds = {_profile_seed(profile, "") for profile in existing}
     existing_repetitions = find_cross_profile_sentence_repetitions(
         existing,
@@ -690,7 +800,14 @@ def _authored_profiles_from_bundle(bundle: dict[str, Any]) -> dict[str, dict[str
     return profiles
 
 
-def commit_bundle(manifest_path: Path, shard_id: str, bundle_path: Path) -> dict[str, Any]:
+def commit_bundle(
+    manifest_path: Path,
+    shard_id: str,
+    bundle_path: Path,
+    *,
+    expected_seeds: set[str] | None = None,
+    defer_cross_profile_diversity: bool = False,
+) -> dict[str, Any]:
     manifest_path = Path(manifest_path).resolve()
     _, shard = _load_manifest_and_shard(manifest_path, shard_id)
     output_root = manifest_path.parent
@@ -698,7 +815,9 @@ def commit_bundle(manifest_path: Path, shard_id: str, bundle_path: Path) -> dict
     if bundle.get("shardId") != shard_id:
         raise ValueError("bundle shardId does not match the requested shard")
     authored_profiles = _authored_profiles_from_bundle(bundle)
-    expected_seeds = set(shard["profiles"])
+    expected_seeds = set(shard["profiles"]) if expected_seeds is None else set(expected_seeds)
+    if not expected_seeds.issubset(set(shard["profiles"])):
+        raise ValueError("expected_seeds contains a profile outside the shard")
     if set(authored_profiles) != expected_seeds:
         missing = sorted(expected_seeds - set(authored_profiles))
         extra = sorted(set(authored_profiles) - expected_seeds)
@@ -706,15 +825,15 @@ def commit_bundle(manifest_path: Path, shard_id: str, bundle_path: Path) -> dict
 
     payloads = {
         seed: json.loads((output_root / "inputs" / f"{seed}.json").read_text(encoding="utf-8"))
-        for seed in shard["profiles"]
+        for seed in expected_seeds
     }
     drafts = {
         seed: materialize_luna_draft(payloads[seed], authored_profiles[seed])
-        for seed in shard["profiles"]
+        for seed in expected_seeds
     }
     validations: dict[str, dict[str, Any]] = {}
     errors: dict[str, list[Any]] = defaultdict(list)
-    for seed in shard["profiles"]:
+    for seed in expected_seeds:
         draft = drafts[seed]
         validation = validate_renderer_output(
             payloads[seed],
@@ -738,17 +857,16 @@ def commit_bundle(manifest_path: Path, shard_id: str, bundle_path: Path) -> dict
             generator_model="gpt-5.6-luna",
             prompt_version=PROMPT_VERSION,
         )
-        for seed in shard["profiles"]
+        for seed in expected_seeds
         if seed not in errors
     }
-    if assembled:
+    if assembled and not defer_cross_profile_diversity:
         existing = _load_existing_profiles(output_root, excluded_seeds=expected_seeds)
         compared_profiles = existing + list(assembled.values())
         compared_seeds = {_profile_seed(profile, "") for profile in compared_profiles}
         cross = find_cross_profile_sentence_repetitions(
             compared_profiles,
             threshold=3,
-            ignored_sentences_by_profile=_load_ignored_skeletons(output_root, compared_seeds),
         )
         for issue in cross:
             candidate_owners = set(assembled).intersection(issue["profileSeeds"])
@@ -756,7 +874,7 @@ def commit_bundle(manifest_path: Path, shard_id: str, bundle_path: Path) -> dict
                 errors[seed].append({"crossProfileSentenceRepetition": issue})
 
     state_profiles = {}
-    for seed in shard["profiles"]:
+    for seed in expected_seeds:
         if seed in errors:
             error = {
                 "profileSeed": seed,
@@ -881,6 +999,45 @@ def select_pending_luna_shards(
     ]
 
 
+def select_pending_luna_profile_seeds(
+    manifest: dict[str, Any],
+    shard: dict[str, Any],
+    *,
+    output_root: Path,
+) -> list[str]:
+    specs = {str(item["profileSeed"]): item for item in manifest.get("profiles", [])}
+    prompt_version = str(manifest.get("promptVersion", ""))
+    pending = []
+    for seed_value in shard.get("profiles", []):
+        seed = str(seed_value)
+        spec = specs.get(seed)
+        if spec is None:
+            pending.append(seed)
+            continue
+        path = Path(output_root) / "profiles" / str(spec["split"]) / f"{seed}.json"
+        try:
+            profile = json.loads(path.read_text(encoding="utf-8"))
+            meta = profile["datasetMeta"]
+        except (OSError, json.JSONDecodeError, KeyError, TypeError):
+            pending.append(seed)
+            continue
+        target_count = spec.get("targetRecordCount")
+        complete = (
+            meta.get("profileSeed") == seed
+            and meta.get("promptVersion") == prompt_version
+            and (
+                target_count is None
+                or (
+                    meta.get("actualRecordCount") == target_count
+                    and len(profile.get("records", [])) == target_count
+                )
+            )
+        )
+        if not complete:
+            pending.append(seed)
+    return pending
+
+
 def run_luna_checkpoint(
     manifest_path: Path,
     *,
@@ -890,6 +1047,7 @@ def run_luna_checkpoint(
     timeout_seconds: int = 3600,
     max_target_chars: int = 6000,
     max_workers: int = 3,
+    max_shard_workers: int = 1,
     max_repair_rounds: int = 3,
     generate_shard: Any = None,
     emit: Any = None,
@@ -908,10 +1066,13 @@ def run_luna_checkpoint(
         checkpoint=checkpoint,
     )
     generator = generate_shard or generate_with_luna_profile
-    failures: dict[str, dict[str, str]] = {}
-    completed = 0
-    for shard in pending:
+    def run_one(shard: dict[str, Any]) -> tuple[str, int, dict[str, Any] | None, Exception | None]:
         shard_id = str(shard["shardId"])
+        pending_seeds = select_pending_luna_profile_seeds(
+            manifest,
+            shard,
+            output_root=manifest_path.parent,
+        )
         try:
             result = generator(
                 manifest_path,
@@ -922,20 +1083,44 @@ def run_luna_checkpoint(
                 max_target_chars=max_target_chars,
                 max_workers=max_workers,
                 max_repair_rounds=max_repair_rounds,
+                profile_seeds=pending_seeds,
             )
-            completed += 1
-            if emit:
-                emit({"event": "shard_complete", "shardId": shard_id, "result": result})
+            return shard_id, len(pending_seeds), result, None
         except Exception as exc:  # keep the overnight queue moving after a local shard failure
-            failures[shard_id] = {"type": type(exc).__name__, "message": str(exc)}
+            return shard_id, len(pending_seeds), None, exc
+
+    failures: dict[str, dict[str, str]] = {}
+    completed = 0
+    completed_profiles = 0
+    if max_shard_workers <= 1:
+        outcomes = (run_one(shard) for shard in pending)
+        executor = None
+    else:
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_shard_workers)
+        futures = [executor.submit(run_one, shard) for shard in pending]
+        outcomes = (future.result() for future in concurrent.futures.as_completed(futures))
+    try:
+        for shard_id, pending_count, result, error in outcomes:
+            if error is None and result is not None:
+                completed += 1
+                completed_profiles += int(result.get("completed", pending_count))
+                if emit:
+                    emit({"event": "shard_complete", "shardId": shard_id, "result": result})
+                continue
+            assert error is not None
+            failures[shard_id] = {"type": type(error).__name__, "message": str(error)}
             if emit:
                 emit({"event": "shard_failed", "shardId": shard_id, "error": failures[shard_id]})
+    finally:
+        if executor is not None:
+            executor.shutdown(wait=True)
     return {
         "checkpoint": checkpoint,
         "plannedShards": len(eligible),
         "pendingShards": len(pending),
         "skippedShards": len(eligible) - len(pending),
         "completedShards": completed,
+        "completedProfiles": completed_profiles,
         "failedShards": len(failures),
         "failures": failures,
     }
@@ -972,6 +1157,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_checkpoint.add_argument("--timeout", type=int, default=3600)
     run_checkpoint.add_argument("--max-target-chars", type=int, default=6000)
     run_checkpoint.add_argument("--max-workers", type=int, default=3)
+    run_checkpoint.add_argument("--max-shard-workers", type=int, default=1)
     run_checkpoint.add_argument("--repair-rounds", type=int, default=3)
     repair = subparsers.add_parser("repair")
     repair.add_argument("manifest", type=Path)
@@ -1023,6 +1209,7 @@ def main() -> None:
             timeout_seconds=args.timeout,
             max_target_chars=args.max_target_chars,
             max_workers=args.max_workers,
+            max_shard_workers=args.max_shard_workers,
             max_repair_rounds=args.repair_rounds,
             emit=emit,
         )

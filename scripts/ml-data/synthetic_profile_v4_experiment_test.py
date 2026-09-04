@@ -528,6 +528,44 @@ class SkeletonCompositionTests(unittest.TestCase):
         self.assertNotIn("detailMd", composed["records"][0])
         self.assertNotIn("bodyMd", generated["records"][0])
 
+    def test_v452_formats_long_rewrites_as_multiple_paragraphs_without_a_fixed_prefix(self):
+        planned_payload = payload()
+        planned_payload["renderingPolicy"] = "semantic-rewrite-creative-v2"
+        planned_payload["bodyLengthPlan"] = {
+            "band": "moderately_long",
+            "recordMaxChars": 1000,
+        }
+        planned_payload["events"] = [planned_payload["events"][0]]
+        planned_payload["targetRecordCount"] = 1
+        event = planned_payload["events"][0]
+        event["renderMode"] = "rewrite_evidence"
+        event["skeletonLead"] = ""
+        event["layoutMode"] = "multi_paragraph"
+        event["facts"] = ["Python으로 자료를 정리하고 검토 기준을 기록했다"]
+        event["bodyLengthTarget"] = {"targetChars": 210, "minChars": 120, "maxChars": 260}
+        generated = {
+            "records": [
+                {
+                    "draftId": "r1",
+                    "eventId": event["eventId"],
+                    "categoryKey": event["categoryKey"],
+                    "title": "자료 검토 기준",
+                    "properties": event["propertyValues"],
+                    "detailMd": (
+                        "Python으로 서로 다른 자료 형식을 먼저 확인했다. "
+                        "누락된 값을 구분하고 검토 순서를 기록했다. "
+                        "동료와 기준이 다른 항목을 다시 비교했다. "
+                        "마지막에는 판단 근거를 개인 노트에 남겼다."
+                    ),
+                }
+            ]
+        }
+
+        composed = compose_skeleton_bodies(planned_payload, generated)
+
+        self.assertIn("\n\n", composed["records"][0]["bodyMd"])
+        self.assertTrue(composed["records"][0]["bodyMd"].startswith("Python으로"))
+
     def test_composition_uses_planned_property_values_instead_of_model_invention(self):
         planned_payload = payload()
         planned_payload["renderingPolicy"] = "skeleton-grounded-creative-v1"
@@ -624,6 +662,32 @@ class SkeletonCompositionTests(unittest.TestCase):
 
         self.assertNotIn("멈춘 상태", sanitized["detailMd"])
         self.assertRegex(sanitized["detailMd"], r"[.!?]$")
+
+    def test_sanitizer_keeps_required_date_sentence_when_trimming_long_rewrite(self):
+        event = {
+            "eventId": "ev1",
+            "categoryKey": "education_history",
+            "facts": ["2018-02에 학사 과정을 마쳤다"],
+            "renderMode": "rewrite_evidence",
+            "skeletonLead": "",
+            "layoutMode": "single_paragraph",
+            "bodyLengthTarget": {"targetChars": 90, "minChars": 60, "maxChars": 120},
+        }
+        record = {
+            "title": "학사 과정 마무리",
+            "properties": {},
+            "detailMd": (
+                "수업별 과제 흐름을 개인 노트에 정리해 학기 과업을 완료했다. "
+                "팀 실습에서는 맡은 범위와 연결 지점을 함께 살폈다. "
+                "제출 전에는 빠진 조건을 다시 읽고 결과를 점검했다. "
+                "전공 내용을 실제 문제와 연결하는 습관을 만들었다. "
+                "학사 과정은 2018년 2월에 계획대로 마쳤다."
+            ),
+        }
+
+        sanitized = sanitize_creative_record(event, record, {})
+
+        self.assertIn("2018년 2월", sanitized["detailMd"])
 
     def test_short_record_keeps_enough_detail_to_reach_its_minimum(self):
         event = {

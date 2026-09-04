@@ -80,7 +80,7 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
     def test_current_prompt_version_has_a_renderer_prompt(self):
         prompt_path = Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.md"
 
-        self.assertEqual(PROMPT_VERSION, "synthetic-profile-v4.5.1")
+        self.assertEqual(PROMPT_VERSION, "synthetic-profile-v4.5.2")
         self.assertTrue(prompt_path.is_file(), f"missing renderer prompt: {prompt_path}")
 
     def test_renderer_prompt_requires_structured_spines_to_be_hidden(self):
@@ -303,6 +303,29 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
         self.assertTrue(all(event["renderMode"] == "rewrite_evidence" for event in source_events))
         self.assertTrue(all(event["skeletonLead"] == "" for event in source_events))
 
+    def test_v452_plans_all_facts_as_free_rewrites_with_explicit_layouts(self):
+        specs = build_profile_specs(
+            profile_count=10,
+            family_size=10,
+            split_counts={"train": 10, "valid": 0, "test": 0},
+            seed=17,
+        )
+
+        payloads = build_synthetic_inputs(
+            specs,
+            _atoms(),
+            YP_CALIBRATION,
+            PROPERTY_SCHEMA,
+            seed=17,
+        )
+
+        events = [event for payload in payloads for event in payload["events"]]
+        self.assertTrue(all(payload["renderingPolicy"] == "semantic-rewrite-creative-v2" for payload in payloads))
+        self.assertTrue(all(event["renderMode"] == "rewrite_evidence" for event in events))
+        self.assertTrue(all(event["skeletonLead"] == "" for event in events))
+        self.assertTrue(all(event["layoutMode"] in {"compact_note", "single_paragraph", "multi_paragraph", "checklist"} for event in events))
+        self.assertGreater(len({event["layoutMode"] for event in events}), 1)
+
     def test_each_profile_uses_one_domain_atom_and_reuses_only_when_pool_is_sparse(self):
         specs = build_profile_specs(
             profile_count=10,
@@ -368,7 +391,7 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
         property_counts = Counter()
         for payload in payloads:
             self.assertEqual(payload["targetRecordCount"], len(payload["events"]))
-            self.assertEqual(payload["renderingPolicy"], "skeleton-grounded-creative-v1")
+            self.assertEqual(payload["renderingPolicy"], "semantic-rewrite-creative-v2")
             self.assertEqual(set(payload["propertySchema"]), set(PROPERTY_SCHEMA))
             self.assertEqual(
                 set(payload["persona"]),
@@ -603,6 +626,67 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
             self.assertEqual(report["leakage"]["sourceFamilies"], 1)
             self.assertFalse(report["gatePassed"])
 
+    def test_content_gate_can_pass_before_the_checkpoint_is_complete(self):
+        specs = build_profile_specs(
+            profile_count=10,
+            family_size=10,
+            split_counts={"train": 10, "valid": 0, "test": 0},
+            seed=29,
+        )
+        spec = specs[0]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            input_path = root / "inputs" / f"{spec['profileSeed']}.json"
+            input_path.parent.mkdir(parents=True, exist_ok=True)
+            input_path.write_text(
+                json.dumps(
+                    {
+                        "events": [
+                            {
+                                "eventId": "ev1",
+                                "categoryKey": "project",
+                                "layoutMode": "single_paragraph",
+                                "facts": ["고유한 프로젝트 기록을 완성했다"],
+                                "provenance": {"syntheticFields": []},
+                            }
+                        ]
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            profile_path = root / "profiles" / spec["split"] / f"{spec['profileSeed']}.json"
+            profile_path.parent.mkdir(parents=True, exist_ok=True)
+            profile_path.write_text(
+                json.dumps(
+                    {
+                        "datasetMeta": {
+                            "profileSeed": spec["profileSeed"],
+                            "profileFamily": spec["profileFamily"],
+                            "split": spec["split"],
+                            "promptVersion": PROMPT_VERSION,
+                            "actualBodyLengthMean": spec["bodyLengthPlan"]["targetMeanChars"],
+                            "bodyLengthPlan": spec["bodyLengthPlan"],
+                        },
+                        "records": [
+                            {
+                                "title": "고유 프로젝트 기록",
+                                "properties": {},
+                                "bodyMd": "프로젝트에서 맡은 작업과 판단 근거를 개인 기록으로 충분히 정리했다.",
+                            }
+                        ],
+                        "provenance": {"recordLineage": []},
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            report = inspect_batch(specs, output_root=root, checkpoint=10)
+
+        self.assertTrue(report["contentGatePassed"])
+        self.assertFalse(report["gatePassed"])
+
     def test_inspection_rejects_a_synthetic_opening_reused_by_three_profiles(self):
         specs = build_profile_specs(
             profile_count=10,
@@ -660,6 +744,67 @@ class SyntheticProfileV4BatchTest(unittest.TestCase):
 
         self.assertEqual(report["diversity"]["maxSyntheticOpeningReuse"], 3)
         self.assertEqual(report["diversity"]["repeatedSyntheticOpenings3Plus"], 1)
+        self.assertFalse(report["gatePassed"])
+
+    def test_inspection_rejects_a_repeated_final_sentence_even_when_it_is_not_synthetic(self):
+        specs = build_profile_specs(
+            profile_count=10,
+            family_size=10,
+            split_counts={"train": 10, "valid": 0, "test": 0},
+            seed=23,
+        )
+        repeated = "소프트웨어 개발 업무에서 Python을 활용했다."
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for index, spec in enumerate(specs[:3], start=1):
+                input_path = root / "inputs" / f"{spec['profileSeed']}.json"
+                input_path.parent.mkdir(parents=True, exist_ok=True)
+                input_path.write_text(
+                    json.dumps(
+                        {
+                            "events": [
+                                {
+                                    "eventId": "ev1",
+                                    "layoutMode": "single_paragraph",
+                                    "facts": [repeated.rstrip(".")],
+                                    "provenance": {"syntheticFields": []},
+                                }
+                            ]
+                        },
+                        ensure_ascii=False,
+                    ),
+                    encoding="utf-8",
+                )
+                profile_path = root / "profiles" / spec["split"] / f"{spec['profileSeed']}.json"
+                profile_path.parent.mkdir(parents=True, exist_ok=True)
+                profile_path.write_text(
+                    json.dumps(
+                        {
+                            "datasetMeta": {
+                                "profileSeed": spec["profileSeed"],
+                                "profileFamily": spec["profileFamily"],
+                                "split": spec["split"],
+                                "promptVersion": PROMPT_VERSION,
+                                "actualBodyLengthMean": spec["bodyLengthPlan"]["targetMeanChars"],
+                                "bodyLengthPlan": spec["bodyLengthPlan"],
+                            },
+                            "records": [
+                                {
+                                    "properties": {},
+                                    "bodyMd": f"{repeated} 프로필 {index}의 작업 맥락은 서로 다르다.",
+                                }
+                            ],
+                            "provenance": {"recordLineage": []},
+                        },
+                        ensure_ascii=False,
+                    ),
+                    encoding="utf-8",
+                )
+
+            report = inspect_batch(specs, output_root=root, checkpoint=3)
+
+        self.assertEqual(report["diversity"]["maxFinalSentenceReuse"], 3)
+        self.assertEqual(report["diversity"]["repeatedFinalSentences3Plus"], 1)
         self.assertFalse(report["gatePassed"])
 
     def test_inspection_rejects_repeated_structured_outcomes_within_a_profile(self):
