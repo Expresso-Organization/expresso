@@ -184,7 +184,7 @@
     .de-save > span { position: absolute; inset: 0; display: flex; align-items: center;
       justify-content: center; transition: opacity 180ms ease-out, transform 180ms ease-out; }
     .de-save-done { opacity: 0; transform: translateY(6px); }
-    .de-save.de-saved, .de-save.de-saved:hover { background: #9a4030; border-color: #9a4030; }
+    .de-save.de-saved, .de-save.de-saved:hover { background: #35455f; border-color: #35455f; }
     .de-saved .de-save-idle { opacity: 0; transform: translateY(-6px); }
     .de-saved .de-save-done { opacity: 1; transform: translateY(0); }
     @media (prefers-reduced-motion: reduce) {
