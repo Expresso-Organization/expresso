@@ -90,6 +90,7 @@ class CareerRecordCreateHttpIntegrationTest {
 				.andExpect(jsonPath("$.data.blockBody.content[0].id").isNotEmpty())
 				.andExpect(jsonPath("$.data.blockBody.content[0].type").value("paragraph"))
 				.andExpect(jsonPath("$.data.blockBody.content[0].attrs").isMap())
+				.andExpect(jsonPath("$.data.blockBody.content[0].content").isEmpty())
 				.andExpect(jsonPath("$.data.blockBody.content[0].text.length()").value(0))
 				.andExpect(jsonPath("$.data.version").value(1))
 				.andExpect(jsonPath("$.data.updatedAt").isNotEmpty())

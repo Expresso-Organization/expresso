@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -133,6 +134,86 @@ class CareerRecordPatchHttpIntegrationTest {
 				.getList("content", Document.class).getFirst()
 				.getList("text", Document.class).getFirst().getString("text")).isEqualTo("Updated body");
 		assertThat(stored.getString("bodyMd")).isEqualTo("legacy body stays");
+	}
+
+	@Test
+	void roundTripsRichAndUnknownBlockBodyWithOneVersionIncrementAndNoOpReplay() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+		var requestBody = CareerRichBlockBodyTestFixture.patchBody(
+				CareerRichBlockBodyTestFixture.richAndUnknownBody());
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", requestBody)
+				.andExpect(status().isOk())
+				.andExpect(header().string(HttpHeaders.ETAG, "\"v2\""))
+				.andExpect(jsonPath("$.data.blockBody.content[0].type").value("heading1"))
+				.andExpect(jsonPath("$.data.blockBody.content[0].text[1].marks[0].attrs.href")
+						.value("https://example.com/evidence"))
+				.andExpect(jsonPath("$.data.blockBody.content[2].content[0].content[1].content[0].text[0].text")
+						.value("30% 감소"))
+				.andExpect(jsonPath("$.data.blockBody.content[8].type").value("future.timeline"))
+				.andExpect(jsonPath("$.data.blockBody.content[8].content[0].text[0].text")
+						.value("미래 블록의 중첩 본문"));
+
+		var firstStored = mongoTemplate.getCollection(RECORDS).find(new Document("_id", RECORD_ID)).first();
+		assertThat(firstStored).isNotNull();
+		assertThat(firstStored.getString("bodyMd")).isEqualTo("legacy body stays");
+		assertThat(firstStored.get("blockBody", Document.class).getList("content", Document.class)).hasSize(9);
+		var firstUpdatedAt = firstStored.getDate("updatedAt");
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v2\"", requestBody)
+				.andExpect(status().isOk())
+				.andExpect(header().string(HttpHeaders.ETAG, "\"v2\""))
+				.andExpect(jsonPath("$.data.version").value(2));
+
+		var replayed = mongoTemplate.getCollection(RECORDS).find(new Document("_id", RECORD_ID)).first();
+		assertThat(replayed).isNotNull();
+		assertThat(replayed.getDate("updatedAt")).isEqualTo(firstUpdatedAt);
+	}
+
+	@Test
+	void acceptsAnEmptyRootBlockBody() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"",
+				"{\"blockBody\":{\"schemaVersion\":1,\"type\":\"doc\",\"content\":[]}}")
+				.andExpect(status().isOk())
+				.andExpect(header().string(HttpHeaders.ETAG, "\"v2\""))
+				.andExpect(jsonPath("$.data.blockBody.content").isEmpty());
+	}
+
+	@Test
+	void rejectsMalformedRichBlockBodiesAsValidationErrors() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+		var duplicateId = "{\"blockBody\":{\"schemaVersion\":1,\"type\":\"doc\",\"content\":[{"
+				+ "\"id\":\"" + PARAGRAPH_ID + "\",\"type\":\"future.container\",\"attrs\":{},\"content\":[{"
+				+ "\"id\":\"" + PARAGRAPH_ID + "\",\"type\":\"paragraph\",\"attrs\":{}}]}]}}";
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", duplicateId)
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+
+		var knownInvariantViolation = "{\"blockBody\":{\"schemaVersion\":1,\"type\":\"doc\",\"content\":[{"
+				+ "\"id\":\"" + PARAGRAPH_ID + "\",\"type\":\"paragraph\",\"attrs\":{},\"content\":[{"
+				+ "\"id\":\"c2ae930e-5c93-4488-9652-60c388d5e590\",\"type\":\"paragraph\",\"attrs\":{}}]}]}}";
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", knownInvariantViolation)
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+
+		assertStoredVersionAndTitle(1, "Original title");
+	}
+
+	@Test
+	void rejectsRichBlockBodySafetyLimitViolationsAsValidationErrors() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+
+		for (var blockBody : List.of(depthThirtyThreeBody(), attrsDepthSeventeenBody(), overFourMibBody())) {
+			patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", CareerRichBlockBodyTestFixture.patchBody(blockBody))
+					.andExpect(status().isBadRequest())
+					.andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+		}
+
+		assertStoredVersionAndTitle(1, "Original title");
 	}
 
 	@Test
@@ -277,6 +358,46 @@ class CareerRecordPatchHttpIntegrationTest {
 						.append("type", "paragraph")
 						.append("attrs", new Document())
 						.append("text", List.of(new Document("text", text)))));
+	}
+
+	private static Document depthThirtyThreeBody() {
+		Document current = new Document("id", blockId(33))
+				.append("type", "future.container")
+				.append("attrs", new Document());
+		for (var depth = 32; depth >= 1; depth--) {
+			current = new Document("id", blockId(depth))
+					.append("type", "future.container")
+					.append("attrs", new Document())
+					.append("content", List.of(current));
+		}
+		return new Document("schemaVersion", 1).append("type", "doc").append("content", List.of(current));
+	}
+
+	private static Document attrsDepthSeventeenBody() {
+		Document attrs = new Document();
+		for (var depth = 1; depth < 17; depth++) {
+			attrs = new Document("nested", attrs);
+		}
+		var block = new Document("id", PARAGRAPH_ID)
+				.append("type", "future.container")
+				.append("attrs", attrs);
+		return new Document("schemaVersion", 1).append("type", "doc").append("content", List.of(block));
+	}
+
+	private static Document overFourMibBody() {
+		var text = new ArrayList<Document>();
+		for (var index = 0; index < 29; index++) {
+			text.add(new Document("text", "가".repeat(49_000)));
+		}
+		var block = new Document("id", PARAGRAPH_ID)
+				.append("type", "paragraph")
+				.append("attrs", new Document())
+				.append("text", text);
+		return new Document("schemaVersion", 1).append("type", "doc").append("content", List.of(block));
+	}
+
+	private static String blockId(int index) {
+		return "00000000-0000-4000-8000-%012d".formatted(index);
 	}
 
 	private org.springframework.test.web.servlet.ResultActions patchRecord(

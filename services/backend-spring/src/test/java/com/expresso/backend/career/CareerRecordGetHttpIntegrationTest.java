@@ -89,6 +89,28 @@ class CareerRecordGetHttpIntegrationTest {
 	}
 
 	@Test
+	void returnsRecursiveRichAndUnknownBlocksWithoutUsingLegacyBody() throws Exception {
+		var record = canonicalRecord(USER_ID, 7);
+		record.put("blockBody", CareerRichBlockBodyTestFixture.richAndUnknownBody());
+		record.put("bodyMd", "이 legacy 본문은 응답에 사용하면 안 됩니다");
+		mongoTemplate.getCollection(RECORDS).insertOne(record);
+
+		authenticatedGet(RECORD_ID)
+				.andExpect(status().isOk())
+				.andExpect(header().string(HttpHeaders.ETAG, "\"v7\""))
+				.andExpect(jsonPath("$.data.blockBody.content[0].type").value("heading1"))
+				.andExpect(jsonPath("$.data.blockBody.content[0].attrs.sourceMarkdown").value("# 결제 안정화"))
+				.andExpect(jsonPath("$.data.blockBody.content[0].text[0].marks[0].type").value("bold"))
+				.andExpect(jsonPath("$.data.blockBody.content[1].content[0].content[0].text[0].text")
+						.value("장애율을 30% 낮춤"))
+				.andExpect(jsonPath("$.data.blockBody.content[8].type").value("future.timeline"))
+				.andExpect(jsonPath("$.data.blockBody.content[8].attrs.nullable").value(org.hamcrest.Matchers.nullValue()))
+				.andExpect(jsonPath("$.data.blockBody.content[8].attrs.layout.axis.position").value("top"))
+				.andExpect(jsonPath("$.data.blockBody.content[8].text[0].marks[0].attrs.future").value(true))
+				.andExpect(jsonPath("$.data.bodyMd").doesNotExist());
+	}
+
+	@Test
 	void returnsTheSamePublicNotFoundMeaningForMissingAndOtherUsersRecords() throws Exception {
 		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(OTHER_USER_ID, 1));
 
@@ -131,7 +153,14 @@ class CareerRecordGetHttpIntegrationTest {
 	@Test
 	void exposesMalformedCanonicalRecordAsInternalDataError() throws Exception {
 		var malformed = canonicalRecord(USER_ID, 1);
-		malformed.get("blockBody", Document.class).put("schemaVersion", 2);
+		malformed.get("blockBody", Document.class).put("content", List.of(new Document()
+				.append("id", PARAGRAPH_ID)
+				.append("type", "paragraph")
+				.append("attrs", new Document())
+				.append("content", List.of(new Document()
+						.append("id", "c2ae930e-5c93-4488-9652-60c388d5e590")
+						.append("type", "paragraph")
+						.append("attrs", new Document())))));
 		mongoTemplate.getCollection(RECORDS).insertOne(malformed);
 
 		assertInternalError(authenticatedGet(RECORD_ID).andReturn());

@@ -1,10 +1,13 @@
 package com.expresso.backend.career.api;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import org.springframework.http.HttpHeaders;
@@ -26,8 +29,9 @@ import com.expresso.backend.career.application.PatchCareerRecordUseCase;
 import com.expresso.backend.career.domain.BlockBody;
 import com.expresso.backend.career.domain.CareerRecord;
 import com.expresso.backend.career.domain.CareerRecordChangeSet;
-import com.expresso.backend.career.domain.ParagraphBlock;
+import com.expresso.backend.career.domain.SemanticBlock;
 import com.expresso.backend.career.domain.TextPropertyValue;
+import com.expresso.backend.career.domain.TextMark;
 import com.expresso.backend.career.domain.TextSpan;
 import com.expresso.backend.security.AuthenticatedUserPrincipal;
 
@@ -188,30 +192,76 @@ public class CareerRecordController {
 		if (!(blockBody.get("content") instanceof List<?> content)) {
 			throw new CareerRecordRequestValidationException("blockBody content는 배열이어야 합니다");
 		}
-		return new BlockBody(content.stream().map(CareerRecordController::readParagraph).toList());
+		return new BlockBody(content.stream().map(CareerRecordController::readSemanticBlock).toList());
 	}
 
-	private static ParagraphBlock readParagraph(Object value) {
-		var paragraph = requireMap(value, "paragraph");
-		requireExactFields(paragraph, Set.of("id", "type", "attrs", "text"), "paragraph");
-		var id = normalizeUuid(requireString(paragraph, "id"), "paragraph id");
-		if (!"paragraph".equals(requireString(paragraph, "type"))) {
-			throw new CareerRecordRequestValidationException("block type은 paragraph여야 합니다");
-		}
-		var attrs = requireMap(paragraph.get("attrs"), "paragraph attrs");
-		if (!attrs.isEmpty()) {
-			throw new CareerRecordRequestValidationException("paragraph attrs는 빈 객체여야 합니다");
-		}
-		if (!(paragraph.get("text") instanceof List<?> text)) {
-			throw new CareerRecordRequestValidationException("paragraph text는 배열이어야 합니다");
-		}
-		return new ParagraphBlock(id, text.stream().map(CareerRecordController::readTextSpan).toList());
+	private static SemanticBlock readSemanticBlock(Object value) {
+		var block = requireMap(value, "block");
+		requireRequiredAndOptionalFields(
+				block, Set.of("id", "type", "attrs"), Set.of("content", "text"), "block");
+		return new SemanticBlock(
+				normalizeUuid(requireString(block, "id"), "block id"),
+				requireString(block, "type"),
+				readJsonObject(block.get("attrs"), "block attrs"),
+				readOptionalList(block, "content", CareerRecordController::readSemanticBlock),
+				readOptionalList(block, "text", CareerRecordController::readTextSpan));
 	}
 
 	private static TextSpan readTextSpan(Object value) {
 		var span = requireMap(value, "text span");
-		requireExactFields(span, Set.of("text"), "text span");
-		return new TextSpan(requireString(span, "text"));
+		requireRequiredAndOptionalFields(span, Set.of("text"), Set.of("marks"), "text span");
+		return new TextSpan(
+				requireString(span, "text"),
+				readOptionalList(span, "marks", CareerRecordController::readTextMark));
+	}
+
+	private static TextMark readTextMark(Object value) {
+		var mark = requireMap(value, "text mark");
+		requireRequiredAndOptionalFields(mark, Set.of("type"), Set.of("attrs"), "text mark");
+		var attrs = mark.containsKey("attrs")
+				? readJsonObject(mark.get("attrs"), "mark attrs")
+				: Map.<String, Object>of();
+		return new TextMark(requireString(mark, "type"), attrs);
+	}
+
+	private static <T> List<T> readOptionalList(
+			Map<?, ?> value,
+			String fieldName,
+			Function<Object, T> itemReader) {
+		if (!value.containsKey(fieldName)) {
+			return List.of();
+		}
+		if (!(value.get(fieldName) instanceof List<?> items)) {
+			throw new CareerRecordRequestValidationException(fieldName + "는 배열이어야 합니다");
+		}
+		return items.stream().map(itemReader).toList();
+	}
+
+	private static Map<String, Object> readJsonObject(Object value, String fieldName) {
+		var source = requireMap(value, fieldName);
+		var result = new LinkedHashMap<String, Object>();
+		for (var entry : source.entrySet()) {
+			if (!(entry.getKey() instanceof String key)) {
+				throw new CareerRecordRequestValidationException(fieldName + "의 모든 key는 문자열이어야 합니다");
+			}
+			result.put(key, readJsonValue(entry.getValue(), fieldName));
+		}
+		return result;
+	}
+
+	private static Object readJsonValue(Object value, String fieldName) {
+		if (value == null || value instanceof String || value instanceof Boolean || value instanceof Number) {
+			return value;
+		}
+		if (value instanceof List<?> list) {
+			var result = new ArrayList<>(list.size());
+			for (var item : list) result.add(readJsonValue(item, fieldName));
+			return result;
+		}
+		if (value instanceof Map<?, ?>) {
+			return readJsonObject(value, fieldName);
+		}
+		throw new CareerRecordRequestValidationException(fieldName + "에 JSON으로 표현할 수 없는 값이 있습니다");
 	}
 
 	private static Map<?, ?> requireMap(Object value, String fieldName) {
@@ -223,6 +273,18 @@ public class CareerRecordController {
 
 	private static void requireExactFields(Map<?, ?> value, Set<String> fields, String fieldName) {
 		if (!value.keySet().equals(fields)) {
+			throw new CareerRecordRequestValidationException(fieldName + " 필드 구성이 올바르지 않습니다");
+		}
+	}
+
+	private static void requireRequiredAndOptionalFields(
+			Map<?, ?> value,
+			Set<String> requiredFields,
+			Set<String> optionalFields,
+			String fieldName) {
+		var allowedFields = new java.util.HashSet<>(requiredFields);
+		allowedFields.addAll(optionalFields);
+		if (!value.keySet().containsAll(requiredFields) || !allowedFields.containsAll(value.keySet())) {
 			throw new CareerRecordRequestValidationException(fieldName + " 필드 구성이 올바르지 않습니다");
 		}
 	}
@@ -272,32 +334,47 @@ public class CareerRecordController {
 		}
 	}
 
-	public record BlockBodyResponse(int schemaVersion, String type, List<ParagraphBlockResponse> content) {
+	public record BlockBodyResponse(int schemaVersion, String type, List<SemanticBlockResponse> content) {
 
 		private static BlockBodyResponse from(BlockBody blockBody) {
 			return new BlockBodyResponse(
 					1,
 					"doc",
-					blockBody.paragraphs().stream().map(ParagraphBlockResponse::from).toList());
+					blockBody.content().stream().map(SemanticBlockResponse::from).toList());
 		}
 	}
 
-	public record ParagraphBlockResponse(
+	public record SemanticBlockResponse(
 			String id,
 			String type,
 			Map<String, Object> attrs,
+			List<SemanticBlockResponse> content,
 			List<TextSpanResponse> text) {
 
-		private static ParagraphBlockResponse from(ParagraphBlock paragraph) {
-			return new ParagraphBlockResponse(
-					paragraph.id(),
-					"paragraph",
-					Map.of(),
-					paragraph.text().stream().map(span -> new TextSpanResponse(span.text())).toList());
+		private static SemanticBlockResponse from(SemanticBlock block) {
+			return new SemanticBlockResponse(
+					block.id(),
+					block.type(),
+					block.attrs(),
+					block.content().stream().map(SemanticBlockResponse::from).toList(),
+					block.text().stream().map(TextSpanResponse::from).toList());
 		}
 	}
 
-	public record TextSpanResponse(String text) {
+	public record TextSpanResponse(String text, List<TextMarkResponse> marks) {
+
+		private static TextSpanResponse from(TextSpan span) {
+			return new TextSpanResponse(
+					span.text(),
+					span.marks().stream().map(TextMarkResponse::from).toList());
+		}
+	}
+
+	public record TextMarkResponse(String type, Map<String, Object> attrs) {
+
+		private static TextMarkResponse from(TextMark mark) {
+			return new TextMarkResponse(mark.type(), mark.attrs());
+		}
 	}
 
 }
