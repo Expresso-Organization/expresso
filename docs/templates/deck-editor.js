@@ -188,6 +188,11 @@
     input.de-size:hover { border-color: rgba(0,0,0,.14); }
     input.de-size:focus { outline: none; border-color: #16223a; background: #fff; }
     .de-note { color: #93a2ba; font-size: 11.5px; }
+    /* 저장 결과는 툴바 너비에 영향을 주지 않도록 아래에 띄웁니다. */
+    .de-bar > .de-note { position: absolute; top: calc(100% + 8px); left: 50%;
+      transform: translateX(-50%); padding: 6px 12px; border-radius: 999px;
+      background: #fff; color: #35455f; white-space: nowrap; pointer-events: none; }
+    .de-bar > .de-note:empty { display: none; }
 
     .de-pop {
       position: fixed; z-index: 2147483001; background: #fff; border: 1px solid rgba(0,0,0,.10);
@@ -784,8 +789,7 @@
     note.textContent = text;
     clearTimeout(flashTimer);
     flashTimer = setTimeout(() => {
-      note.textContent = putWorks ? '고치는 대로 파일에 저장됩니다'
-        : handle ? '이 파일에 바로 저장됩니다' : '';
+      note.textContent = '';
     }, 2600);
   }
 
