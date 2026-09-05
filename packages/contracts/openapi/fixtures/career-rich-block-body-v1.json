@@ -1,0 +1,173 @@
+{
+  "paragraphOnly": {
+    "schemaVersion": 1,
+    "type": "doc",
+    "content": [
+      {
+        "id": "10000000-0000-4000-8000-000000000001",
+        "type": "paragraph",
+        "attrs": {},
+        "text": [
+          { "text": "기존 paragraph 문서" }
+        ]
+      }
+    ]
+  },
+  "emptyRoot": {
+    "schemaVersion": 1,
+    "type": "doc",
+    "content": []
+  },
+  "richNested": {
+    "schemaVersion": 1,
+    "type": "doc",
+    "content": [
+      {
+        "id": "20000000-0000-4000-8000-000000000001",
+        "type": "heading1",
+        "attrs": { "sourceMarkdown": "# 결제 안정화" },
+        "text": [
+          { "text": "결제 ", "marks": [{ "type": "bold" }] },
+          {
+            "text": "안정화",
+            "marks": [
+              {
+                "type": "link",
+                "attrs": {
+                  "href": "https://example.com/evidence",
+                  "target": "_blank"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "20000000-0000-4000-8000-000000000002",
+        "type": "bulletList",
+        "attrs": { "sourceMarkdown": "- 장애율 감소" },
+        "content": [
+          {
+            "id": "20000000-0000-4000-8000-000000000003",
+            "type": "listItem",
+            "attrs": { "checked": false },
+            "content": [
+              {
+                "id": "20000000-0000-4000-8000-000000000004",
+                "type": "paragraph",
+                "attrs": {},
+                "text": [{ "text": "장애율을 30% 낮춤" }]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "20000000-0000-4000-8000-000000000005",
+        "type": "table",
+        "attrs": { "sourceMarkdown": "| 지표 | 결과 |" },
+        "content": [
+          {
+            "id": "20000000-0000-4000-8000-000000000006",
+            "type": "tableRow",
+            "attrs": {},
+            "content": [
+              {
+                "id": "20000000-0000-4000-8000-000000000007",
+                "type": "tableCell",
+                "attrs": {},
+                "text": [{ "text": "장애율" }]
+              },
+              {
+                "id": "20000000-0000-4000-8000-000000000008",
+                "type": "tableCell",
+                "attrs": {},
+                "content": [
+                  {
+                    "id": "20000000-0000-4000-8000-000000000009",
+                    "type": "paragraph",
+                    "attrs": {},
+                    "text": [{ "text": "30% 감소" }]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "20000000-0000-4000-8000-000000000010",
+        "type": "code",
+        "attrs": {
+          "language": "java",
+          "sourceMarkdown": "```java"
+        },
+        "text": [{ "text": "record Payment(String id) {}", "marks": [{ "type": "code" }] }]
+      },
+      {
+        "id": "20000000-0000-4000-8000-000000000011",
+        "type": "image",
+        "attrs": {
+          "mediaId": "30000000-0000-4000-8000-000000000001",
+          "alt": "장애율 그래프",
+          "sourceMarkdown": "![장애율 그래프](asset)"
+        }
+      },
+      {
+        "id": "20000000-0000-4000-8000-000000000012",
+        "type": "file",
+        "attrs": {
+          "mediaId": "30000000-0000-4000-8000-000000000002",
+          "name": "incident-report.pdf",
+          "sourceMarkdown": "[보고서](asset)"
+        }
+      },
+      {
+        "id": "20000000-0000-4000-8000-000000000013",
+        "type": "evidence",
+        "attrs": {
+          "source": "incident-2026-09",
+          "sourceMarkdown": "근거: incident-2026-09"
+        },
+        "text": [{ "text": "장애 보고서 근거" }]
+      },
+      {
+        "id": "20000000-0000-4000-8000-000000000014",
+        "type": "paragraph",
+        "attrs": {},
+        "text": [{ "text": "" }]
+      }
+    ]
+  },
+  "unknownBlock": {
+    "schemaVersion": 1,
+    "type": "doc",
+    "content": [
+      {
+        "id": "40000000-0000-4000-8000-000000000001",
+        "type": "future.timeline",
+        "attrs": {
+          "nullable": null,
+          "enabled": true,
+          "scale": 1.5,
+          "labels": ["시작", "완료"],
+          "layout": { "axis": { "position": "top" } }
+        },
+        "content": [
+          {
+            "id": "40000000-0000-4000-8000-000000000002",
+            "type": "paragraph",
+            "attrs": {},
+            "text": [{ "text": "미래 블록의 중첩 본문" }]
+          }
+        ],
+        "text": [
+          {
+            "text": "미래 블록의 직접 본문",
+            "marks": [{ "type": "italic", "attrs": { "future": true } }]
+          }
+        ]
+      }
+    ]
+  }
+}

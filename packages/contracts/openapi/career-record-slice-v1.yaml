@@ -299,37 +299,344 @@ components:
       items:
         $ref: "#/components/schemas/TextPropertyValue"
 
-    TextSpan:
+    CareerTextMark:
+      type: object
+      additionalProperties: false
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [bold, italic, strike, code, link]
+        attrs:
+          type: object
+          additionalProperties: true
+      allOf:
+        - if:
+            properties:
+              type:
+                const: link
+            required: [type]
+          then:
+            required: [attrs]
+            properties:
+              attrs:
+                type: object
+                required: [href]
+                properties:
+                  href:
+                    type: string
+                    minLength: 1
+                additionalProperties: true
+
+    CareerTextSpan:
       type: object
       additionalProperties: false
       required: [text]
       properties:
         text:
           type: string
-          minLength: 1
           maxLength: 200000
+        marks:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/CareerTextMark"
 
-    ParagraphBlock:
+    CareerBlock:
       type: object
       additionalProperties: false
-      required: [id, type, attrs, text]
+      description: >-
+        Editor 기술과 독립적인 semantic block이다. 알려진 type은 allOf의 type별
+        invariant를 따르고, 패턴에 맞는 unknown type은 공통 구조를 유지한 채 attrs,
+        content와 text를 손실 없이 보존한다.
+      x-expresso-knownBlockTypes:
+        - paragraph
+        - heading1
+        - heading2
+        - heading3
+        - bulletList
+        - orderedList
+        - taskList
+        - listItem
+        - blockquote
+        - code
+        - callout
+        - horizontalRule
+        - image
+        - file
+        - table
+        - tableRow
+        - tableCell
+        - evidence
+      required: [id, type, attrs]
       properties:
         id:
           $ref: "#/components/schemas/Uuid"
         type:
           type: string
-          const: paragraph
+          pattern: '^[a-z][a-zA-Z0-9_.-]{0,63}$'
         attrs:
           type: object
-          additionalProperties: false
+          additionalProperties: true
+        content:
+          type: array
+          maxItems: 20000
+          items:
+            $ref: "#/components/schemas/CareerBlock"
         text:
           type: array
           items:
-            $ref: "#/components/schemas/TextSpan"
+            $ref: "#/components/schemas/CareerTextSpan"
+      allOf:
+        - if:
+            properties:
+              type:
+                enum:
+                  - paragraph
+                  - heading1
+                  - heading2
+                  - heading3
+                  - bulletList
+                  - orderedList
+                  - taskList
+                  - listItem
+                  - blockquote
+                  - code
+                  - callout
+                  - horizontalRule
+                  - image
+                  - file
+                  - table
+                  - tableRow
+                  - tableCell
+                  - evidence
+            required: [type]
+          then:
+            properties:
+              attrs:
+                type: object
+                properties:
+                  sourceMarkdown:
+                    type: string
+                additionalProperties: true
+        - if:
+            properties:
+              type:
+                enum: [paragraph, heading1, heading2, heading3]
+            required: [type]
+          then:
+            properties:
+              content:
+                maxItems: 0
+        - if:
+            properties:
+              type:
+                const: code
+            required: [type]
+          then:
+            properties:
+              content:
+                maxItems: 0
+              attrs:
+                type: object
+                properties:
+                  language:
+                    type: [string, "null"]
+                additionalProperties: true
+        - if:
+            properties:
+              type:
+                enum: [bulletList, orderedList, taskList]
+            required: [type]
+          then:
+            properties:
+              text:
+                maxItems: 0
+              content:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/CareerBlock"
+                    - properties:
+                        type:
+                          const: listItem
+                      required: [type]
+        - if:
+            properties:
+              type:
+                const: listItem
+            required: [type]
+          then:
+            properties:
+              attrs:
+                type: object
+                properties:
+                  checked:
+                    type: boolean
+                additionalProperties: true
+            not:
+              required: [content, text]
+              properties:
+                content:
+                  minItems: 1
+                text:
+                  minItems: 1
+        - if:
+            properties:
+              type:
+                enum: [blockquote, callout]
+            required: [type]
+          then:
+            properties:
+              attrs:
+                type: object
+                properties:
+                  icon:
+                    type: string
+                additionalProperties: true
+            not:
+              required: [content, text]
+              properties:
+                content:
+                  minItems: 1
+                text:
+                  minItems: 1
+        - if:
+            properties:
+              type:
+                const: horizontalRule
+            required: [type]
+          then:
+            properties:
+              content:
+                maxItems: 0
+              text:
+                maxItems: 0
+        - if:
+            properties:
+              type:
+                const: image
+            required: [type]
+          then:
+            properties:
+              content:
+                maxItems: 0
+              text:
+                maxItems: 0
+              attrs:
+                type: object
+                required: [mediaId]
+                properties:
+                  mediaId:
+                    type: string
+                    minLength: 1
+                  alt:
+                    type: string
+                additionalProperties: true
+        - if:
+            properties:
+              type:
+                const: file
+            required: [type]
+          then:
+            properties:
+              content:
+                maxItems: 0
+              text:
+                maxItems: 0
+              attrs:
+                type: object
+                required: [mediaId, name]
+                properties:
+                  mediaId:
+                    type: string
+                    minLength: 1
+                  name:
+                    type: string
+                additionalProperties: true
+        - if:
+            properties:
+              type:
+                const: table
+            required: [type]
+          then:
+            properties:
+              text:
+                maxItems: 0
+              content:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/CareerBlock"
+                    - properties:
+                        type:
+                          const: tableRow
+                      required: [type]
+        - if:
+            properties:
+              type:
+                const: tableRow
+            required: [type]
+          then:
+            properties:
+              text:
+                maxItems: 0
+              content:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/CareerBlock"
+                    - properties:
+                        type:
+                          const: tableCell
+                      required: [type]
+        - if:
+            properties:
+              type:
+                const: tableCell
+            required: [type]
+          then:
+            not:
+              required: [content, text]
+              properties:
+                content:
+                  minItems: 1
+                text:
+                  minItems: 1
+        - if:
+            properties:
+              type:
+                const: evidence
+            required: [type]
+          then:
+            properties:
+              content:
+                maxItems: 0
+              attrs:
+                type: object
+                required: [source]
+                properties:
+                  source:
+                    type: string
+                    minLength: 1
+                additionalProperties: true
 
     BlockBody:
       type: object
       additionalProperties: false
+      description: >-
+        Career 본문의 schemaVersion 1 semantic state다. x-expresso-invariants는 JSON
+        Schema만으로 완전히 표현할 수 없는 document-wide 안전성 규칙을 전달하며,
+        extension 자체가 runtime validation을 수행하지 않는다.
+      x-expresso-invariants:
+        globalBlockIdUnique: true
+        maxDepth: 32
+        maxBlocks: 20000
+        maxAttrsDepth: 16
+        maxBlockAttrsBytes: 65536
+        maxMarkAttrsBytes: 8192
+        maxDocumentBytes: 4194304
+        runtimeValidationRequired: true
       required: [schemaVersion, type, content]
       properties:
         schemaVersion:
@@ -340,9 +647,9 @@ components:
           const: doc
         content:
           type: array
-          minItems: 1
+          maxItems: 20000
           items:
-            $ref: "#/components/schemas/ParagraphBlock"
+            $ref: "#/components/schemas/CareerBlock"
 
     CareerRecord:
       type: object

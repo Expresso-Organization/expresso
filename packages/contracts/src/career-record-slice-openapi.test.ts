@@ -2,6 +2,7 @@ import SwaggerParser from "@apidevtools/swagger-parser";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import * as addFormatsModule from "ajv-formats";
 import type { AnySchema, ValidateFunction } from "ajv";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -18,6 +19,12 @@ interface ParameterObject {
   schema?: SchemaObject;
 }
 
+interface ReferenceObject {
+  $ref: string;
+}
+
+type MaybeReference<T> = T | ReferenceObject;
+
 interface MediaTypeObject {
   schema: SchemaObject;
 }
@@ -32,14 +39,14 @@ interface HeaderObject {
 }
 
 interface ResponseObject {
-  headers?: Record<string, HeaderObject>;
+  headers?: Record<string, MaybeReference<HeaderObject>>;
   content?: Record<string, MediaTypeObject>;
 }
 
 interface OperationObject {
-  parameters?: ParameterObject[];
+  parameters?: Array<MaybeReference<ParameterObject>>;
   requestBody?: RequestBodyObject;
-  responses: Record<string, ResponseObject>;
+  responses: Record<string, MaybeReference<ResponseObject>>;
   "x-idempotency"?: unknown;
 }
 
@@ -62,11 +69,38 @@ interface CareerSliceContract {
 const contractPath = fileURLToPath(
   new URL("../openapi/career-record-slice-v1.yaml", import.meta.url),
 );
+const fixtures = JSON.parse(
+  readFileSync(
+    new URL(
+      "../openapi/fixtures/career-rich-block-body-v1.json",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+) as Record<string, unknown>;
 
 const ajv = new Ajv2020({ allErrors: true, strict: false });
 addFormatsModule.default.default(ajv);
 
 let contract: CareerSliceContract;
+
+function resolveReference<T>(value: MaybeReference<T>): T {
+  if (!("$ref" in (value as ReferenceObject))) {
+    return value as T;
+  }
+
+  const reference = (value as ReferenceObject).$ref;
+  expect(reference.startsWith("#/"), reference).toBe(true);
+  const resolved = reference
+    .slice(2)
+    .split("/")
+    .reduce<unknown>((current, segment) => {
+      expect(current, reference).toBeTypeOf("object");
+      return (current as Record<string, unknown>)[segment];
+    }, contract);
+  expect(resolved, reference).toBeDefined();
+  return resolved as T;
+}
 
 function operation(path: string, method: HttpMethod): OperationObject {
   const value = contract.paths[path]?.[method];
@@ -78,15 +112,24 @@ function requiredHeader(
   operationObject: OperationObject,
   name: string,
 ): ParameterObject {
-  const header = operationObject.parameters?.find(
+  const header = operationObject.parameters
+    ?.map((parameter) => resolveReference<ParameterObject>(parameter))
+    .find(
     (parameter) =>
       parameter.in === "header" &&
       parameter.name.toLowerCase() === name.toLowerCase(),
-  );
+    );
   expect(header, `${name} header`).toEqual(
     expect.objectContaining({ required: true }),
   );
-  return header as ParameterObject;
+  return header?.schema
+    ? {
+        ...header,
+        schema: resolveReference<SchemaObject>(
+          header.schema as MaybeReference<SchemaObject>,
+        ),
+      }
+    : header as ParameterObject;
 }
 
 function response(
@@ -95,19 +138,41 @@ function response(
 ): ResponseObject {
   const value = operationObject.responses[status];
   expect(value, `${status} response`).toBeDefined();
-  return value as ResponseObject;
+  return resolveReference<ResponseObject>(value as MaybeReference<ResponseObject>);
+}
+
+function responseHeader(
+  responseObject: ResponseObject,
+  name: string,
+): HeaderObject {
+  const value = responseObject.headers?.[name];
+  expect(value, `${name} response header`).toBeDefined();
+  const header = resolveReference<HeaderObject>(
+    value as MaybeReference<HeaderObject>,
+  );
+  return header.schema
+    ? {
+        ...header,
+        schema: resolveReference<SchemaObject>(
+          header.schema as MaybeReference<SchemaObject>,
+        ),
+      }
+    : header;
 }
 
 function schemaValidator(name: string): ValidateFunction {
   const schema = contract.components.schemas[name];
   expect(schema, `${name} schema`).toBeDefined();
-  return ajv.compile(schema as AnySchema);
+  return ajv.compile({
+    $ref: `#/components/schemas/${name}`,
+    components: { schemas: contract.components.schemas },
+  } as AnySchema);
 }
 
 describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
   beforeAll(async () => {
     await SwaggerParser.validate(contractPath);
-    contract = (await SwaggerParser.dereference(
+    contract = (await SwaggerParser.parse(
       contractPath,
     )) as unknown as CareerSliceContract;
   });
@@ -167,9 +232,9 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
       [get, "200"],
       [update, "200"],
     ] as const) {
-      expect(response(operationObject, status).headers?.ETag?.schema?.pattern).toBe(
-        expectedPattern,
-      );
+      expect(
+        responseHeader(response(operationObject, status), "ETag").schema?.pattern,
+      ).toBe(expectedPattern);
     }
   });
 
@@ -227,23 +292,154 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
         ],
       }),
     ).toBe(false);
+  });
+
+  it("accepts the shared v1 rich document corpus", () => {
+    const validateBlockBody = schemaValidator("BlockBody");
+
+    for (const [name, fixture] of Object.entries(fixtures)) {
+      expect(
+        validateBlockBody(fixture),
+        `${name}: ${ajv.errorsText(validateBlockBody.errors)}`,
+      ).toBe(true);
+    }
+  });
+
+  it("enforces known block semantics while preserving unknown blocks", () => {
+    const validateBlockBody = schemaValidator("BlockBody");
+    const paragraph = {
+      id: "50000000-0000-4000-8000-000000000002",
+      type: "paragraph",
+      attrs: {},
+      text: [{ text: "목록 항목" }],
+    };
+
+    const invalidDocuments = [
+      {
+        schemaVersion: 1,
+        type: "doc",
+        content: [
+          {
+            id: "50000000-0000-4000-8000-000000000001",
+            type: "bulletList",
+            attrs: {},
+            content: [
+              {
+                id: "50000000-0000-4000-8000-000000000003",
+                type: "listItem",
+                attrs: {},
+                content: [paragraph],
+              },
+            ],
+            text: [{ text: "목록이 직접 가지면 안 되는 text" }],
+          },
+        ],
+      },
+      {
+        schemaVersion: 1,
+        type: "doc",
+        content: [
+          {
+            id: "50000000-0000-4000-8000-000000000004",
+            type: "image",
+            attrs: { alt: "mediaId 없는 이미지" },
+          },
+        ],
+      },
+      {
+        schemaVersion: 1,
+        type: "doc",
+        content: [
+          {
+            id: "50000000-0000-4000-8000-000000000005",
+            type: "paragraph",
+            attrs: {},
+            text: [{ text: "링크", marks: [{ type: "link", attrs: {} }] }],
+          },
+        ],
+      },
+    ];
+
+    for (const document of invalidDocuments) {
+      expect(validateBlockBody(document)).toBe(false);
+    }
+
     expect(
-      validateRecord({
-        ...canonicalRecord,
-        blockBody: {
-          schemaVersion: 1,
-          type: "doc",
-          content: [
-            {
-              id: "4757df92-59c2-48fc-bf9b-dc25f25d193f",
-              type: "heading",
-              attrs: {},
-              text: [{ text: "범위 밖 블록" }],
-            },
-          ],
-        },
+      validateBlockBody(fixtures.unknownBlock),
+      ajv.errorsText(validateBlockBody.errors),
+    ).toBe(true);
+  });
+
+  it("publishes portable rich document limits without overstating runtime validation", () => {
+    const blockBodySchema = contract.components.schemas.BlockBody;
+    const blockSchema = contract.components.schemas.CareerBlock;
+    const textSpanSchema = contract.components.schemas.CareerTextSpan;
+    const textMarkSchema = contract.components.schemas.CareerTextMark;
+
+    expect(blockBodySchema?.["x-expresso-invariants"]).toEqual({
+      globalBlockIdUnique: true,
+      maxDepth: 32,
+      maxBlocks: 20_000,
+      maxAttrsDepth: 16,
+      maxBlockAttrsBytes: 65_536,
+      maxMarkAttrsBytes: 8_192,
+      maxDocumentBytes: 4_194_304,
+      runtimeValidationRequired: true,
+    });
+    expect(blockSchema?.["x-expresso-knownBlockTypes"]).toEqual([
+      "paragraph",
+      "heading1",
+      "heading2",
+      "heading3",
+      "bulletList",
+      "orderedList",
+      "taskList",
+      "listItem",
+      "blockquote",
+      "code",
+      "callout",
+      "horizontalRule",
+      "image",
+      "file",
+      "table",
+      "tableRow",
+      "tableCell",
+      "evidence",
+    ]);
+    expect(blockSchema?.properties).toEqual(
+      expect.objectContaining({
+        content: expect.objectContaining({
+          items: { $ref: "#/components/schemas/CareerBlock" },
+        }),
       }),
-    ).toBe(false);
+    );
+    expect(textSpanSchema?.properties).toEqual(
+      expect.objectContaining({
+        text: expect.objectContaining({ maxLength: 200_000 }),
+        marks: expect.objectContaining({ maxItems: 20 }),
+      }),
+    );
+    expect(textMarkSchema).toBeDefined();
+
+    const validateBlockBody = schemaValidator("BlockBody");
+    expect(validateBlockBody({ schemaVersion: 1, type: "doc", content: [] })).toBe(
+      true,
+    );
+    expect(
+      validateBlockBody({
+        schemaVersion: 1,
+        type: "doc",
+        content: [
+          {
+            id: "50000000-0000-4000-8000-000000000006",
+            type: "paragraph",
+            attrs: {},
+            text: [{ text: "" }, { text: "가".repeat(200_000) }],
+          },
+        ],
+      }),
+      ajv.errorsText(validateBlockBody.errors),
+    ).toBe(true);
   });
 
   it("publishes duplicate property definitions as a domain invariant without overstating JSON Schema", () => {
