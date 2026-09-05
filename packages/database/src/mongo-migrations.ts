@@ -10,6 +10,7 @@ import { careerEditorLedgerSteps } from "./mongodb-migrations/0006/migration.js"
 import { jobSourceSeedSteps } from "./mongodb-migrations/0007/migration.js";
 import { careerViewConfigurationSteps } from "./mongodb-migrations/0008/migration.js";
 import { careerRecordSliceSteps } from "./mongodb-migrations/0009/migration.js";
+import { careerRichBlockBodySteps } from "./mongodb-migrations/0010/migration.js";
 
 export interface MongoMigrationStep {
   id: string;
@@ -47,6 +48,8 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const eighthHash = createHash("sha256").update(`migration.ts\0${eighthSource.byteLength}\0`).update(eighthSource).digest("hex");
   const ninthSource = await readFile(new URL("./mongodb-migrations/0009/migration.ts", import.meta.url));
   const ninthHash = createHash("sha256").update(`migration.ts\0${ninthSource.byteLength}\0`).update(ninthSource).digest("hex");
+  const tenthSource = await readFile(new URL("./mongodb-migrations/0010/migration.ts", import.meta.url));
+  const tenthHash = createHash("sha256").update(`migration.ts\0${tenthSource.byteLength}\0`).update(tenthSource).digest("hex");
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
@@ -57,5 +60,6 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0007", name: "job_source_boards", checksum: seventhHash, steps: await jobSourceSeedSteps() },
     { version: "0008", name: "career_view_configurations", checksum: eighthHash, steps: await careerViewConfigurationSteps() },
     { version: "0009", name: "career_record_slice", checksum: ninthHash, steps: await careerRecordSliceSteps() },
+    { version: "0010", name: "career_rich_block_body", checksum: tenthHash, steps: await careerRichBlockBodySteps() },
   ];
 }
