@@ -144,9 +144,7 @@ class CareerRecordCreationTest {
 				() -> new SemanticBlock(PARAGRAPH_ID, "paragraph", java.util.Map.of(), null, List.of()));
 		assertThrows(NullPointerException.class,
 				() -> new SemanticBlock(PARAGRAPH_ID, "paragraph", java.util.Map.of(), List.of(), null));
-		assertThrows(NullPointerException.class, () -> new ParagraphBlock(null, List.of()));
-		assertThrows(NullPointerException.class, () -> new ParagraphBlock(PARAGRAPH_ID, null));
-		assertThrows(NullPointerException.class, () -> new TextSpan(null));
+		assertThrows(NullPointerException.class, () -> new TextSpan(null, List.of()));
 		assertThrows(NullPointerException.class, () -> new TextSpan("본문", null));
 		assertThrows(NullPointerException.class, () -> new TextMark(null, java.util.Map.of()));
 		assertThrows(NullPointerException.class, () -> new TextMark("bold", null));
@@ -164,7 +162,8 @@ class CareerRecordCreationTest {
 	}
 
 	private static BlockBody emptyBody() {
-		return new BlockBody(List.of(new ParagraphBlock(PARAGRAPH_ID, List.of())));
+		return new BlockBody(List.of(new SemanticBlock(
+				PARAGRAPH_ID, "paragraph", java.util.Map.of(), List.of(), List.of())));
 	}
 
 	private static List<TextPropertyValue> propertyValues(int count) {

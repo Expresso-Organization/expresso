@@ -216,15 +216,6 @@ class BlockBodyValidationTest {
 		assertEquals(OBJECT_MAPPER.writeValueAsBytes(expectedDocument).length, CanonicalJsonUtf8Size.blockBodyBytes(body));
 	}
 
-	@Test
-	void acceptsTheExistingParagraphOnlyDomainShape() {
-		var legacyParagraph = new ParagraphBlock(BLOCK_ID, List.of(new TextSpan("기존 본문")));
-		var body = new BlockBody(List.of(legacyParagraph));
-
-		assertEquals("paragraph", body.content().getFirst().type());
-		assertEquals(List.of(legacyParagraph), body.paragraphs());
-	}
-
 	private static SemanticBlock nestedUnknownBlock(int depth) {
 		var current = block(blockId(depth), "future.container", Map.of(), List.of(), List.of());
 		for (var currentDepth = depth - 1; currentDepth >= 1; currentDepth--) {
