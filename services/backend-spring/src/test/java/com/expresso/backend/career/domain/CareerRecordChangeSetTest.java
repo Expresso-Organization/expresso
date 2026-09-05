@@ -35,7 +35,12 @@ class CareerRecordChangeSetTest {
 		var record = emptyRecord();
 		var propertyValues = List.of(new TextPropertyValue(propertyDefinitionId(0), "백엔드 개발자"));
 		var blockBody = new BlockBody(List.of(
-				new ParagraphBlock("e692c2ed-57f7-4f0d-af15-493375323134", List.of(new TextSpan("본문")))));
+				new SemanticBlock(
+						"e692c2ed-57f7-4f0d-af15-493375323134",
+						"callout",
+						java.util.Map.of("icon", "star"),
+						List.of(),
+						List.of(new TextSpan("본문", List.of(new TextMark("bold", java.util.Map.of())))))));
 		var changeSet = CareerRecordChangeSet.none()
 				.withTitle("새 제목")
 				.withPropertyValues(propertyValues)

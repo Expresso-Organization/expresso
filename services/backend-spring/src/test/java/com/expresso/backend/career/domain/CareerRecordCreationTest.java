@@ -35,9 +35,12 @@ class CareerRecordCreationTest {
 	void createsAnEmptyBodyWithExactlyOneEmptyParagraph() {
 		var record = CareerRecord.create(RECORD_ID, OWNER_ID, CATEGORY_ID, PARAGRAPH_ID, CREATED_AT);
 
-		assertEquals(1, record.blockBody().paragraphs().size());
-		assertEquals(PARAGRAPH_ID, record.blockBody().paragraphs().getFirst().id());
-		assertTrue(record.blockBody().paragraphs().getFirst().text().isEmpty());
+		assertEquals(1, record.blockBody().content().size());
+		assertEquals(PARAGRAPH_ID, record.blockBody().content().getFirst().id());
+		assertEquals("paragraph", record.blockBody().content().getFirst().type());
+		assertTrue(record.blockBody().content().getFirst().attrs().isEmpty());
+		assertTrue(record.blockBody().content().getFirst().content().isEmpty());
+		assertTrue(record.blockBody().content().getFirst().text().isEmpty());
 	}
 
 	@Test
@@ -88,19 +91,22 @@ class CareerRecordCreationTest {
 	}
 
 	@Test
-	void rejectsAnEmptyTextSpan() {
-		assertThrows(IllegalArgumentException.class, () -> new TextSpan(""));
+	void acceptsAnEmptyTextSpan() {
+		assertEquals("", new TextSpan("", List.of()).text());
 	}
 
 	@Test
 	void enforcesTheTextSpanMaximumLength() {
-		assertEquals(200_000, new TextSpan("가".repeat(200_000)).text().length());
-		assertThrows(IllegalArgumentException.class, () -> new TextSpan("가".repeat(200_001)));
+		var maximum = new TextSpan("😀".repeat(200_000), List.of());
+		assertEquals(200_000, maximum.text().codePointCount(0, maximum.text().length()));
+		assertThrows(IllegalArgumentException.class, () -> new BlockBody(List.of(new SemanticBlock(
+				PARAGRAPH_ID, "paragraph", java.util.Map.of(), List.of(),
+				List.of(new TextSpan("😀".repeat(200_001), List.of()))))));
 	}
 
 	@Test
-	void rejectsABlockBodyWithoutParagraphs() {
-		assertThrows(IllegalArgumentException.class, () -> new BlockBody(List.of()));
+	void acceptsABlockBodyWithoutBlocks() {
+		assertTrue(new BlockBody(List.<SemanticBlock>of()).content().isEmpty());
 	}
 
 	@Test
@@ -127,10 +133,23 @@ class CareerRecordCreationTest {
 	void rejectsNullRequiredCanonicalComponentFields() {
 		assertThrows(NullPointerException.class, () -> new TextPropertyValue(null, "값"));
 		assertThrows(NullPointerException.class, () -> new TextPropertyValue(propertyDefinitionId(0), null));
-		assertThrows(NullPointerException.class, () -> new BlockBody(null));
+		assertThrows(NullPointerException.class, () -> new BlockBody((List<SemanticBlock>) null));
+		assertThrows(NullPointerException.class,
+				() -> new SemanticBlock(null, "paragraph", java.util.Map.of(), List.of(), List.of()));
+		assertThrows(NullPointerException.class,
+				() -> new SemanticBlock(PARAGRAPH_ID, null, java.util.Map.of(), List.of(), List.of()));
+		assertThrows(NullPointerException.class,
+				() -> new SemanticBlock(PARAGRAPH_ID, "paragraph", null, List.of(), List.of()));
+		assertThrows(NullPointerException.class,
+				() -> new SemanticBlock(PARAGRAPH_ID, "paragraph", java.util.Map.of(), null, List.of()));
+		assertThrows(NullPointerException.class,
+				() -> new SemanticBlock(PARAGRAPH_ID, "paragraph", java.util.Map.of(), List.of(), null));
 		assertThrows(NullPointerException.class, () -> new ParagraphBlock(null, List.of()));
 		assertThrows(NullPointerException.class, () -> new ParagraphBlock(PARAGRAPH_ID, null));
 		assertThrows(NullPointerException.class, () -> new TextSpan(null));
+		assertThrows(NullPointerException.class, () -> new TextSpan("본문", null));
+		assertThrows(NullPointerException.class, () -> new TextMark(null, java.util.Map.of()));
+		assertThrows(NullPointerException.class, () -> new TextMark("bold", null));
 	}
 
 	@Test
