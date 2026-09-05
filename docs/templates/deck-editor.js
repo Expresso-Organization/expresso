@@ -178,6 +178,19 @@
     .de-btn:hover { border-color: #16223a; color: #16223a; }
     .de-btn.de-go { background: #16223a; border-color: #16223a; color: #fff; }
     .de-btn.de-go:hover { background: #0b1220; }
+    /* 두 문구를 같은 고정 폭 안에서 교차시켜 저장 중에도 툴바가 움직이지 않습니다. */
+    .de-btn.de-save { position: relative; width: 82px; min-width: 82px; padding: 0;
+      overflow: hidden; transition: background-color 180ms ease-out, border-color 180ms ease-out; }
+    .de-save > span { position: absolute; inset: 0; display: flex; align-items: center;
+      justify-content: center; transition: opacity 180ms ease-out, transform 180ms ease-out; }
+    .de-save-done { opacity: 0; transform: translateY(6px); }
+    .de-save.de-saved, .de-save.de-saved:hover { background: #9a4030; border-color: #9a4030; }
+    .de-saved .de-save-idle { opacity: 0; transform: translateY(-6px); }
+    .de-saved .de-save-done { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) {
+      .de-btn.de-save, .de-save > span { transition: none; }
+      .de-save > span { transform: none; }
+    }
     .de-btn.de-on { border-color: #9a4030; color: #9a4030; }
     .de-btn[disabled] { opacity: .4; cursor: default; }
     .de-num { font: 500 12px/1 ui-monospace, monospace; min-width: 34px; text-align: center; color: #5a6b87; }
@@ -500,7 +513,7 @@
     const html = serialize();
     const ok = await putToServer(html);
     saving = false;
-    if (ok) flash('저장됨');
+    if (ok) showSaved();
     else if (putWorks === false) flash('자동 저장 꺼짐 — ⌘S 로 저장하십시오');
     if (again) { again = false; queueSave(true); }
   }
@@ -750,7 +763,7 @@
     const html = serialize();
 
     if (await putToServer(html)) {
-      flash('Saved');
+      showSaved();
       return;
     }
 
@@ -768,7 +781,7 @@
         const writable = await handle.createWritable();
         await writable.write(html);
         await writable.close();
-        flash('Saved');
+        showSaved();
         return;
       }
     } catch (err) {
@@ -782,6 +795,17 @@
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     flash('Downloaded — replace the original');
+  }
+
+  let savedTimer = null;
+  function showSaved() {
+    clearTimeout(savedTimer);
+    saveBtn.classList.add('de-saved');
+    saveBtn.setAttribute('aria-label', '저장됨');
+    savedTimer = setTimeout(() => {
+      saveBtn.classList.remove('de-saved');
+      saveBtn.setAttribute('aria-label', '저장 ⌘S');
+    }, 1600);
   }
 
   let flashTimer = null;
@@ -933,6 +957,13 @@
   const railBtn = el('button', { class: 'de-btn', title: 'Slides (S)', text: '▤ Slides', onclick: () => toggleRail() });
   const editBtn = el('button', { class: 'de-btn', title: 'Edit (E)', text: '✎ Edit', onclick: () => toggleEdit() });
 
+  const saveBtn = el('button', {
+    class: 'de-btn de-go de-save', 'aria-label': '저장 ⌘S', onclick: () => save(),
+  }, [
+    el('span', { class: 'de-save-idle', 'aria-hidden': 'true', text: '저장 ⌘S' }),
+    el('span', { class: 'de-save-done', 'aria-hidden': 'true', text: '✓ 저장됨' }),
+  ]);
+
   const bar = el('div', { class: 'de-bar' }, [
     el('span', { class: 'de-tag', text: 'EDITOR' }),
     railBtn,
@@ -944,7 +975,7 @@
     el('button', { class: 'de-btn', text: '＋', title: 'Larger', onclick: () => stepSize(1) }),
     el('button', { class: 'de-btn', text: 'Color', onclick: (e) => colorPop(e.currentTarget) }),
     el('span', { class: 'de-sep' }),
-    el('button', { class: 'de-btn de-go', text: '저장 ⌘S', onclick: () => save() }),
+    saveBtn,
     note,
   ]);
   document.body.appendChild(bar);
