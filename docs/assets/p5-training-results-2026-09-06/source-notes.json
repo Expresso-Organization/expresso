@@ -1,0 +1,61 @@
+{
+  "audience": "technical; first-time project readers",
+  "surface": "HTML using the user-required Expresso template; repository instructions take precedence over plugin renderer defaults",
+  "structure": "User's nine-section report structure: overview, process, synthetic data, training, architecture, application, performance, next development, conclusion. Technical methods and metric definitions included before results; further questions integrated into next steps.",
+  "charts": [
+    {
+      "id": "01-dataset",
+      "format": "inline SVG with 300-dpi PNG companion",
+      "source": "saved evaluation rows and labels",
+      "palette": "Expresso neutral tokens with one espresso accent"
+    },
+    {
+      "id": "02-performance",
+      "format": "inline SVG with 300-dpi PNG companion",
+      "source": "saved evaluation rows and labels",
+      "palette": "Expresso neutral tokens with one espresso accent"
+    },
+    {
+      "id": "03-prediction-scatter",
+      "format": "inline SVG with 300-dpi PNG companion",
+      "source": "saved evaluation rows and labels",
+      "palette": "Expresso neutral tokens with one espresso accent"
+    },
+    {
+      "id": "04-errors",
+      "format": "inline SVG with 300-dpi PNG companion",
+      "source": "saved evaluation rows and labels",
+      "palette": "Expresso neutral tokens with one espresso accent"
+    },
+    {
+      "id": "05-bootstrap",
+      "format": "inline SVG with 300-dpi PNG companion",
+      "source": "saved evaluation rows and labels",
+      "palette": "Expresso neutral tokens with one espresso accent"
+    },
+    {
+      "id": "06-learning",
+      "format": "inline SVG with 300-dpi PNG companion",
+      "source": "saved evaluation rows and labels",
+      "palette": "Expresso neutral tokens with one espresso accent"
+    }
+  ],
+  "notes": [
+    "NDCG uses linear gain and 10 candidates; never called percent accuracy.",
+    "MAP and MRR only cover 13 test profiles with labels >= 60.",
+    "Recall@10 omitted because all 10 candidates are included.",
+    "Runtime covers differing pipelines and caches; inference latency not measured.",
+    "Weight sizes are trained additions, not complete runtime model size.",
+    "Profile and job IDs disjoint; no claim of semantic duplicate audit.",
+    "LLM targets, not human labels or hiring outcomes.",
+    "Paired bootstrap uses test profiles; does not measure across-seed training variation."
+  ],
+  "sources": [
+    "var\\ml-data\\experiments\\match-llm-labels-1000-v1\\models-llm-v1\\e5-mlp\\metrics.json",
+    "var\\ml-data\\experiments\\match-llm-labels-1000-v1\\models-llm-v1\\cross-encoder\\metrics.json",
+    "var\\ml-data\\experiments\\match-llm-labels-1000-v1\\labels-final\\suitability-labels.jsonl",
+    "scripts/ml-data/llm_suitability_train.py",
+    "scripts/ml-data/match_pilot_model.py",
+    "docs/architecture/llm-suitability-labeling-v1.md"
+  ]
+}
