@@ -508,6 +508,23 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
     }
   });
 
+  it("uses the migration 0006 identity for the shared role definition and its value", () => {
+    const officialRoleId = "f3b3693d-2b90-526a-9e13-81d8f64e9e09";
+    const definitions = propertyFixture.category.propertyDefinitions as Array<{
+      id: string;
+      key: string;
+    }>;
+    const roleDefinition = definitions.find(({ key }) => key === "role");
+
+    expect(roleDefinition?.id).toBe(officialRoleId);
+    expect(propertyFixture.propertyValues).toContainEqual(
+      expect.objectContaining({
+        propertyDefinitionId: officialRoleId,
+        type: "text",
+      }),
+    );
+  });
+
   it("uses name and the official stable identity as the canonical definition contract", () => {
     const definitionSchema = contract.components.schemas.PropertyDefinition;
     const definitionTypeSchema = contract.components.schemas.PropertyDefinitionType;
