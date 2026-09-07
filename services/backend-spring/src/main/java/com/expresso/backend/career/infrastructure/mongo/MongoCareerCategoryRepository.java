@@ -12,8 +12,6 @@ import org.springframework.stereotype.Repository;
 
 import com.expresso.backend.career.application.CareerCategoryRepository;
 import com.expresso.backend.career.domain.CareerCategory;
-import com.expresso.backend.career.domain.PropertyDefinition;
-import com.expresso.backend.career.domain.PropertyDefinitionType;
 
 @Repository
 public class MongoCareerCategoryRepository implements CareerCategoryRepository {
@@ -31,7 +29,7 @@ public class MongoCareerCategoryRepository implements CareerCategoryRepository {
 		var query = Query.query(Criteria.where("isSystem").is(true))
 				.with(Sort.by(Sort.Order.asc("sortOrder"), Sort.Order.asc("_id")));
 		return mongoTemplate.find(query, Document.class, COLLECTION).stream()
-				.map(MongoCareerCategoryRepository::mapCategory)
+				.map(MongoCareerCategoryProjector::project)
 				.toList();
 	}
 
@@ -47,32 +45,7 @@ public class MongoCareerCategoryRepository implements CareerCategoryRepository {
 		var query = Query.query(Criteria.where("_id").is(categoryId)
 				.and("isSystem").is(true));
 		var document = mongoTemplate.findOne(query, Document.class, COLLECTION);
-		return Optional.ofNullable(document).map(MongoCareerCategoryRepository::mapCategory);
-	}
-
-	private static CareerCategory mapCategory(Document document) {
-		return new CareerCategory(
-				document.getString("_id"),
-				document.getString("key"),
-				document.getString("name"),
-				mapTextDefinitions(document.getList("propertyDefinitions", Document.class, List.of())));
-	}
-
-	private static List<PropertyDefinition> mapTextDefinitions(List<Document> definitions) {
-		return definitions.stream()
-				.filter(definition -> "text".equals(definition.getString("type")))
-				.map(MongoCareerCategoryRepository::mapTextDefinition)
-				.toList();
-	}
-
-	private static PropertyDefinition mapTextDefinition(Document definition) {
-		return new PropertyDefinition(
-				definition.getString("id"),
-				definition.getString("key"),
-				definition.getString("label"),
-				PropertyDefinitionType.TEXT,
-				definition.getBoolean("required"),
-				definition.getBoolean("system"));
+		return Optional.ofNullable(document).map(MongoCareerCategoryProjector::project);
 	}
 
 }

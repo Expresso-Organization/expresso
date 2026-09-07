@@ -1,6 +1,8 @@
 package com.expresso.backend.career.api;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,7 +36,7 @@ public class CareerCategoryController {
 			String id,
 			String key,
 			String name,
-			List<TextPropertyDefinitionResponse> propertyDefinitions) {
+			List<PropertyDefinitionResponse> propertyDefinitions) {
 
 		private static CareerCategoryResponse from(CareerCategory category) {
 			return new CareerCategoryResponse(
@@ -42,27 +44,35 @@ public class CareerCategoryController {
 					category.key(),
 					category.name(),
 					category.propertyDefinitions().stream()
-							.map(TextPropertyDefinitionResponse::from)
+							.map(PropertyDefinitionResponse::from)
 							.toList());
 		}
 	}
 
-	public record TextPropertyDefinitionResponse(
+	public record PropertyDefinitionResponse(
 			String id,
 			String key,
-			String label,
+			String name,
 			String type,
 			boolean required,
-			boolean system) {
+			boolean system,
+			Map<String, Object> config,
+			int order,
+			long version,
+			Instant deletedAt) {
 
-		private static TextPropertyDefinitionResponse from(PropertyDefinition definition) {
-			return new TextPropertyDefinitionResponse(
+		private static PropertyDefinitionResponse from(PropertyDefinition definition) {
+			return new PropertyDefinitionResponse(
 					definition.id(),
 					definition.key(),
-					definition.label(),
-					definition.type().name().toLowerCase(),
+					definition.name(),
+					definition.type().wireName(),
 					definition.required(),
-					definition.system());
+					definition.system(),
+					definition.config(),
+					definition.order(),
+					definition.version(),
+					definition.deletedAt());
 		}
 	}
 
