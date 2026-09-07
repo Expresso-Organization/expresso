@@ -153,6 +153,8 @@
     .de-object-box, .de-selection-box, .de-marquee { position: absolute; box-sizing: border-box; }
     .de-object-box { border: 1px solid #526b8a66; }
     .de-selection-box { border: 1.5px solid #526b8a; }
+    .de-resize-handle { position:absolute; width:10px; height:10px; padding:0; border:1.5px solid #526b8a; background:white; border-radius:2px; pointer-events:auto; touch-action:none; transform:translate(-50%,-50%); }
+    .de-resize-handle:focus-visible { outline:2px solid #526b8a; outline-offset:3px; }
     .de-marquee { border: 1px solid #526b8a; background: #526b8a18; }
     .de-selection-tools { display: inline-flex; align-items: center; gap: 5px; }
     .de-selection-tools[hidden] { display: none; }
@@ -1136,6 +1138,7 @@
   function locateMove() {
     if (!editing) { hideMove(); return; }
     selected = normalize(selected);
+    const focusDir=selectionLayer.contains(document.activeElement)?document.activeElement.dataset.resize:null;
     selectionLayer.replaceChildren();
     selectionTools.hidden = !selected.length;
     selectedLabel.textContent = selected.length + '개 선택';
@@ -1147,8 +1150,10 @@
       const right = Math.max(...boxes.map(r => r.right)), bottom = Math.max(...boxes.map(r => r.bottom));
       boxes.forEach(r => selectionLayer.appendChild(el('div', { class: 'de-object-box', style: `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px` })));
       const box = el('div', { class: 'de-selection-box', style: `left:${left}px;top:${top}px;width:${right-left}px;height:${bottom-top}px` });
-      // 모서리 표시는 선택 범위를 나타냅니다. 크기 조절 동작은 포함하지 않습니다.
+      const handles = [['nw',0,0,'왼쪽 위'],['n',50,0,'위'],['ne',100,0,'오른쪽 위'],['e',100,50,'오른쪽'],['se',100,100,'오른쪽 아래'],['s',50,100,'아래'],['sw',0,100,'왼쪽 아래'],['w',0,50,'왼쪽']];
+      handles.forEach(([dir,x,y,label]) => box.appendChild(el('button', {class:'de-resize-handle',type:'button','data-resize':dir,'aria-label':label+' 크기 조절',title:label+' 크기 조절 · 모서리 비율 유지 · Shift 자유 조절',style:`left:${x}%;top:${y}%;cursor:${dir==='n'||dir==='s'?'ns':dir==='e'||dir==='w'?'ew':dir==='nw'||dir==='se'?'nwse':'nesw'}-resize`})));
       selectionLayer.appendChild(box);
+      if(focusDir && !drag) box.querySelector('[data-resize="'+focusDir+'"]')?.focus({preventScroll:true});
     }
     if (drag?.kind === 'marquee' && drag.moved) {
       const r = drag.rect;
@@ -1191,10 +1196,70 @@
     if (cancel) {
       ended.states?.forEach(state => moveAttrs.forEach(key => state.attrs[key] === null ? state.node.removeAttribute(key) : state.node.setAttribute(key, state.attrs[key])));
       selected = ended.selection;
-    } else if (ended.kind === 'move' && ended.moved) rememberMove(ended.before);
+    } else if ((ended.kind === 'move' || ended.kind === 'resize') && ended.moved) rememberMove(ended.before);
+    if (selectionLayer.hasPointerCapture(ended.id)) selectionLayer.releasePointerCapture(ended.id);
     if (STAGE.hasPointerCapture(ended.id)) STAGE.releasePointerCapture(ended.id);
     locateMove();
   }
+  function beginResize(handle, x, y, id) {
+    endText();
+    const states = selected.map(n => {
+      const state = movementState(n), r = n.getBoundingClientRect();
+      const values = getComputedStyle(n).scale.split(/\s+/);
+      return { ...state, rect: r, screen: state.svg ? n.getScreenCTM() : null,
+        parentInverse: state.svg ? n.parentElement.getScreenCTM().inverse() : null,
+        scaleX: values[0] === 'none' ? 1 : Number(values[0]), scaleY: values[0] === 'none' ? 1 : Number(values[1] || values[0]) };
+    });
+    const bounds = { left: Math.min(...states.map(s=>s.rect.left)), top: Math.min(...states.map(s=>s.rect.top)), right: Math.max(...states.map(s=>s.rect.right)), bottom: Math.max(...states.map(s=>s.rect.bottom)) };
+    drag = { kind:'resize', handle, sx:x, sy:y, id, states, bounds, before:snapshot(), selection:[...selected], moved:false };
+  }
+  function resizeTo(x, y, freeRatio) {
+    const d=drag, b=d.bounds, h=d.handle, dx=x-d.sx, dy=y-d.sy;
+    const w=b.right-b.left, height=b.bottom-b.top;
+    if (!w || !height) return;
+    let nw=Math.max(16,w+(h.includes('e')?dx:h.includes('w')?-dx:0));
+    let nh=Math.max(16,height+(h.includes('s')?dy:h.includes('n')?-dy:0));
+    if (h.length===2 && !freeRatio) {
+      const factor=Math.max(16/Math.min(w,height),Math.abs(nw/w-1)>Math.abs(nh/height-1)?nw/w:nh/height);
+      nw=w*factor; nh=height*factor;
+    }
+    const left=h.includes('w')?b.right-nw:b.left, top=h.includes('n')?b.bottom-nh:b.top;
+    const fx=nw/w, fy=nh/height;
+    const world=new DOMMatrix([fx,0,0,fy,left-fx*b.left,top-fy*b.top]);
+    d.states.forEach(state=>{
+      const n=state.node;
+      if (state.svg) {
+        const asDOM = m => new DOMMatrix([m.a,m.b,m.c,m.d,m.e,m.f]);
+        const m=asDOM(state.parentInverse).multiply(world).multiply(asDOM(state.screen));
+        const value=`matrix(${m.a} ${m.b} ${m.c} ${m.d} ${m.e} ${m.f})`;
+        n.setAttribute('transform',value);
+        n.dataset.deMoveBase=value; n.dataset.deMoveX='0'; n.dataset.deMoveY='0';
+      } else {
+        // 처음 상태에서 다시 계산해 연속 입력으로 배율 오차가 쌓이지 않게 합니다.
+        state.attrs.style===null?n.removeAttribute('style'):n.setAttribute('style',state.attrs.style);
+        n.style.scale=`${state.scaleX*fx} ${state.scaleY*fy}`;
+        const r=n.getBoundingClientRect();
+        const desiredX=left+(state.rect.left-b.left)*fx, desiredY=top+(state.rect.top-b.top)*fy;
+        placeMoved(state,state.x+(desiredX-r.left)/state.scale,state.y+(desiredY-r.top)/state.scale);
+      }
+    });
+    d.moved=true;locateMove();
+  }
+  selectionLayer.addEventListener('pointerdown',e=>{
+    const handle=e.target.closest('[data-resize]');
+    if (!handle || e.button!==0 || !selected.length) return;
+    e.preventDefault();e.stopPropagation();
+    beginResize(handle.dataset.resize,e.clientX,e.clientY,e.pointerId);
+    selectionLayer.setPointerCapture(e.pointerId);
+  });
+  selectionLayer.addEventListener('pointermove',e=>{
+    if (drag?.kind!=='resize' || drag.id!==e.pointerId) return;
+    e.preventDefault();resizeTo(e.clientX,e.clientY,e.shiftKey);
+  });
+  selectionLayer.addEventListener('pointerup',()=>{if(drag?.kind==='resize')finishMove(false);});
+  selectionLayer.addEventListener('pointercancel',()=>{if(drag?.kind==='resize')finishMove(true);});
+  selectionLayer.addEventListener('lostpointercapture',()=>{if(drag?.kind==='resize')finishMove(true);});
+
   STAGE.addEventListener('pointerdown', e => {
     if (!editing || e.button !== 0 || e.target.closest('[' + MARK + ']')) return;
     if (textTarget?.contains(e.target)) return;
