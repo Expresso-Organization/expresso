@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.expresso.backend.career.domain.CareerRecord;
 import com.expresso.backend.career.domain.CareerRecordChangeSet;
+import com.expresso.backend.career.domain.PropertyDefinitionType;
 
 @Service
 public class CareerRecordPatchService implements PatchCareerRecordUseCase {
@@ -65,7 +66,9 @@ public class CareerRecordPatchService implements PatchCareerRecordUseCase {
 						"propertyValues를 변경할 수 있는 system Category를 찾을 수 없습니다"));
 		var allowedDefinitionIds = new HashSet<String>();
 		for (var definition : category.propertyDefinitions()) {
-			allowedDefinitionIds.add(definition.id());
+			if (definition.type() == PropertyDefinitionType.TEXT && definition.deletedAt() == null) {
+				allowedDefinitionIds.add(definition.id());
+			}
 		}
 		for (var propertyValue : changeSet.propertyValues().orElseThrow()) {
 			if (!allowedDefinitionIds.contains(propertyValue.propertyDefinitionId())) {

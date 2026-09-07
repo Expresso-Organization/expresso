@@ -44,7 +44,8 @@ class CareerRecordPatchHttpIntegrationTest {
 	private static final String RECORD_ID = "10ecce84-8d6b-4b76-87de-ec76729f9b90";
 	private static final String MISSING_RECORD_ID = "45e37ac7-076e-4cd0-a932-e723a7c650af";
 	private static final String CATEGORY_ID = "475106fc-bf88-4a73-9c27-66c648733936";
-	private static final String PROPERTY_DEFINITION_ID = "fd1061b5-d8db-5a5a-8855-51530c98db3f";
+	private static final String PROPERTY_DEFINITION_ID = "6c663539-48c1-5d12-939d-f100fac993c1";
+	private static final String NUMBER_PROPERTY_DEFINITION_ID = "10000000-0000-4000-8000-000000000002";
 	private static final String UNKNOWN_PROPERTY_DEFINITION_ID = "6ae7a3c3-e0f0-4b88-8fe8-da3da27d0dd8";
 	private static final String PARAGRAPH_ID = "fb122c86-7db8-41c3-a9d9-7a12c4758b08";
 	private static final Instant UPDATED_AT = Instant.parse("2026-09-01T08:15:30.123Z");
@@ -197,6 +198,24 @@ class CareerRecordPatchHttpIntegrationTest {
 				+ "\"id\":\"c2ae930e-5c93-4488-9652-60c388d5e590\",\"type\":\"paragraph\",\"attrs\":{}}]}]}}";
 
 		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", knownInvariantViolation)
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+
+		assertStoredVersionAndTitle(1, "Original title");
+	}
+
+	@Test
+	void rejectsTextValueForANonTextCanonicalDefinition() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+		mongoTemplate.getCollection(CATEGORIES).updateOne(
+				new Document("_id", CATEGORY_ID),
+				new Document("$set", new Document("propertyDefinitions", List.of(
+						canonicalDefinition(PROPERTY_DEFINITION_ID, "role", "역할", "text", 0),
+						canonicalDefinition(NUMBER_PROPERTY_DEFINITION_ID, "score", "점수", "number", 1)))));
+		var body = "{\"propertyValues\":[{\"propertyDefinitionId\":\"" + NUMBER_PROPERTY_DEFINITION_ID
+				+ "\",\"type\":\"text\",\"value\":\"숫자 Definition에 쓸 수 없는 값\"}]}";
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", body)
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
 
@@ -457,9 +476,27 @@ class CareerRecordPatchHttpIntegrationTest {
 						.append("type", "text")
 						.append("required", false)
 						.append("system", true)))
-				.append("propertySchema", new Document())
+				.append("propertySchema", new Document("role", new Document()
+						.append("id", PROPERTY_DEFINITION_ID)
+						.append("label", "역할")
+						.append("type", "text")
+						.append("required", false)
+						.append("system", true)))
 				.append("icon", "briefcase")
 				.append("defaultView", "table"));
+	}
+
+	private static Document canonicalDefinition(String id, String key, String name, String type, int order) {
+		return new Document("id", id)
+				.append("key", key)
+				.append("name", name)
+				.append("type", type)
+				.append("required", false)
+				.append("system", true)
+				.append("config", new Document())
+				.append("order", order)
+				.append("version", 1)
+				.append("deletedAt", null);
 	}
 
 	private void insertIdentity(String userId, String tokenHash) {
