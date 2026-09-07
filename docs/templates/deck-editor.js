@@ -57,6 +57,12 @@
 (() => {
   'use strict';
 
+  /* 축소판은 이 자료를 `?preview` 로 그대로 띄웁니다. 넘겨 보는 자리도 고치는
+     자리도 아니므로 도구가 아예 서지 않습니다 — 서면 툴바가 지면을 가리고,
+     도구가 다는 자리 표시가 축소판에 그대로 찍힙니다. 컨트롤러도 같은 표시를
+     보고 조작 장치를 걷습니다. */
+  if (new URLSearchParams(location.search).has('preview')) return;
+
   const CFG = Object.assign(
     {
       slides: null,
@@ -142,6 +148,22 @@
   const css = `
     [${MARK}] { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont,
       'Pretendard Variable', Pretendard, 'Segoe UI', sans-serif; }
+
+    .de-selection-layer { position: fixed; inset: 0; z-index: 12000; pointer-events: none; }
+    .de-object-box, .de-selection-box, .de-marquee { position: absolute; box-sizing: border-box; }
+    .de-object-box { border: 1px solid #526b8a66; }
+    .de-selection-box { border: 1.5px solid #526b8a; }
+    .de-resize-handle { position:absolute; width:10px; height:10px; padding:0; border:1.5px solid #526b8a; background:white; border-radius:2px; pointer-events:auto; touch-action:none; transform:translate(-50%,-50%); }
+    .de-resize-handle:focus-visible { outline:2px solid #526b8a; outline-offset:3px; }
+    .de-marquee { border: 1px solid #526b8a; background: #526b8a18; }
+    .de-selection-tools { display: inline-flex; align-items: center; gap: 5px; }
+    .de-selection-tools[hidden] { display: none; }
+    .de-selection-count { font: 11px/1 system-ui,sans-serif; color: #526b8a; white-space: nowrap; }
+    body.de-editing .slide { user-select: none; }
+    body.de-editing [contenteditable="true"] { user-select: text; }
+    body.de-editing .slide :is(image,g,img) { cursor: move; }
+
+    .de-rail, .de-pop { overscroll-behavior: contain; }
     .de-bar {
       position: fixed; left: 50%; top: 16px; transform: translateX(-50%); z-index: 2147483000;
       display: flex; align-items: center; gap: 8px; padding: 7px 8px 7px 14px;
@@ -172,6 +194,19 @@
     .de-btn:hover { border-color: #16223a; color: #16223a; }
     .de-btn.de-go { background: #16223a; border-color: #16223a; color: #fff; }
     .de-btn.de-go:hover { background: #0b1220; }
+    /* 두 문구를 같은 고정 폭 안에서 교차시켜 저장 중에도 툴바가 움직이지 않습니다. */
+    .de-btn.de-save { position: relative; width: 82px; min-width: 82px; padding: 0;
+      overflow: hidden; transition: background-color 180ms ease-out, border-color 180ms ease-out; }
+    .de-save > span { position: absolute; inset: 0; display: flex; align-items: center;
+      justify-content: center; transition: opacity 180ms ease-out, transform 180ms ease-out; }
+    .de-save-done { opacity: 0; transform: translateY(6px); }
+    .de-save.de-saved, .de-save.de-saved:hover { background: #35455f; border-color: #35455f; }
+    .de-saved .de-save-idle { opacity: 0; transform: translateY(-6px); }
+    .de-saved .de-save-done { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) {
+      .de-btn.de-save, .de-save > span { transition: none; }
+      .de-save > span { transform: none; }
+    }
     .de-btn.de-on { border-color: #9a4030; color: #9a4030; }
     .de-btn[disabled] { opacity: .4; cursor: default; }
     .de-num { font: 500 12px/1 ui-monospace, monospace; min-width: 34px; text-align: center; color: #5a6b87; }
@@ -182,6 +217,11 @@
     input.de-size:hover { border-color: rgba(0,0,0,.14); }
     input.de-size:focus { outline: none; border-color: #16223a; background: #fff; }
     .de-note { color: #93a2ba; font-size: 11.5px; }
+    /* 저장 결과는 툴바 너비에 영향을 주지 않도록 아래에 띄웁니다. */
+    .de-bar > .de-note { position: absolute; top: calc(100% + 8px); left: 50%;
+      transform: translateX(-50%); padding: 6px 12px; border-radius: 999px;
+      background: #fff; color: #35455f; white-space: nowrap; pointer-events: none; }
+    .de-bar > .de-note:empty { display: none; }
 
     .de-pop {
       position: fixed; z-index: 2147483001; background: #fff; border: 1px solid rgba(0,0,0,.10);
@@ -449,14 +489,65 @@
     future.length = 0;
   }
 
-  function restore(html) {
-    STAGE.innerHTML = html;
-    closeFields();
-    changed();
-    queueSave();
+  function restore(html, options = {}) {
+    finishMove(true);
+    const saved = document.createElement('div');
+    saved.innerHTML = html;
+    const beforeSlides = slides();
+    const selectedBefore = [...selected];
+    // 같은 개체는 그대로 두고 바뀐 속성·텍스트만 복원합니다. 이벤트, 포커스,
+    // 이미지 로딩과 진행 중인 애니메이션을 다시 시작하지 않습니다.
+    function sync(live, wanted) {
+      if (live.nodeType === Node.TEXT_NODE || live.nodeType === Node.COMMENT_NODE) {
+        if (live.nodeValue !== wanted.nodeValue) live.nodeValue = wanted.nodeValue;
+        return;
+      }
+      if (live.nodeType !== Node.ELEMENT_NODE) return;
+      if (CFG.skip && live.matches(CFG.skip)) return;
+      const isSlide = live.matches(found.sel);
+      const active = isSlide && live.classList.contains('active');
+      const attrs = new Map([...wanted.attributes].map(a => [a.name, a.value]));
+      if (isSlide) {
+        const classes = new Set((attrs.get('class') || '').split(/\s+/).filter(Boolean));
+        classes.delete('active'); if (active) classes.add('active');
+        attrs.set('class', [...classes].join(' '));
+      }
+      for (const attr of [...live.attributes]) {
+        if (!attrs.has(attr.name)) live.removeAttribute(attr.name);
+      }
+      for (const [name, value] of attrs) {
+        if (live.getAttribute(name) !== value) live.setAttribute(name, value);
+      }
+      syncChildren(live, wanted);
+    }
+    function syncChildren(live, wanted) {
+      const targets = [...wanted.childNodes];
+      targets.forEach((target, i) => {
+        const node = live.childNodes[i];
+        if (!node) live.appendChild(target.cloneNode(true));
+        else if (node.nodeType !== target.nodeType || node.nodeName !== target.nodeName) live.replaceChild(target.cloneNode(true), node);
+        else sync(node, target);
+      });
+      while (live.childNodes.length > targets.length) live.lastChild.remove();
+    }
+    syncChildren(STAGE, saved);
+    const afterSlides = slides();
+    const structural = beforeSlides.length !== afterSlides.length || beforeSlides.some((s,i) => s !== afterSlides[i]);
+    if (structural) {
+      // 장 추가·삭제에만 컨트롤러의 목록과 번호를 다시 구성합니다.
+      hideMove(); closeFields(); changed();
+    } else {
+      selected = normalize(selectedBefore);
+      locateMove();
+      if (railOn) buildRail();
+    }
+    refreshHistory();
+    if (options.external) persistHistory();
+    else queueSave();
   }
 
   function undo() {
+    finishMove(true);
     if (!past.length) return flash('되돌릴 것이 없습니다');
     future.push(snapshot());
     restore(past.pop());
@@ -464,6 +555,7 @@
   }
 
   function redo() {
+    finishMove(true);
     if (!future.length) return flash('다시 할 것이 없습니다');
     past.push(snapshot());
     restore(future.pop());
@@ -478,18 +570,21 @@
   let again = false;
 
   function queueSave(now) {
+    liveLocalRevision++;
+    persistHistory();
     if (putWorks === false || location.protocol === 'file:') return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(run, now ? 0 : 900);
   }
 
   async function run() {
+    saveTimer = null;
     if (saving) { again = true; return; }
     saving = true;
     const html = serialize();
     const ok = await putToServer(html);
     saving = false;
-    if (ok) flash('저장됨');
+    if (ok) showSaved();
     else if (putWorks === false) flash('자동 저장 꺼짐 — ⌘S 로 저장하십시오');
     if (again) { again = false; queueSave(true); }
   }
@@ -521,7 +616,7 @@
       window.deck.show?.(window.deck.i ?? 0);
     }
     buildRail();
-    if (editing) openFields();
+    closeFields();
   }
 
   function duplicate(i, blank) {
@@ -739,7 +834,7 @@
     const html = serialize();
 
     if (await putToServer(html)) {
-      flash('Saved');
+      showSaved();
       return;
     }
 
@@ -757,7 +852,7 @@
         const writable = await handle.createWritable();
         await writable.write(html);
         await writable.close();
-        flash('Saved');
+        showSaved();
         return;
       }
     } catch (err) {
@@ -773,13 +868,23 @@
     flash('Downloaded — replace the original');
   }
 
+  let savedTimer = null;
+  function showSaved() {
+    clearTimeout(savedTimer);
+    saveBtn.classList.add('de-saved');
+    saveBtn.setAttribute('aria-label', '저장됨');
+    savedTimer = setTimeout(() => {
+      saveBtn.classList.remove('de-saved');
+      saveBtn.setAttribute('aria-label', '저장 ⌘S');
+    }, 1600);
+  }
+
   let flashTimer = null;
   function flash(text) {
     note.textContent = text;
     clearTimeout(flashTimer);
     flashTimer = setTimeout(() => {
-      note.textContent = putWorks ? '고치는 대로 파일에 저장됩니다'
-        : handle ? '이 파일에 바로 저장됩니다' : '';
+      note.textContent = '';
     }, 2600);
   }
 
@@ -919,9 +1024,21 @@
   const note = el('span', { class: 'de-note', text: '' });
   const rail = el('aside', { class: 'de-rail', hidden: '' });
   document.body.appendChild(rail);
+  // 목록 스크롤은 유지하고 발표 컨트롤러의 전역 휠 전환까지 전달하지 않습니다.
+  window.addEventListener('wheel', (e) => {
+    if (e.target instanceof Element && e.target.closest('.de-rail, .de-pop')) e.stopImmediatePropagation();
+  }, { capture: true, passive: true });
+
 
   const railBtn = el('button', { class: 'de-btn', title: 'Slides (S)', text: '▤ Slides', onclick: () => toggleRail() });
   const editBtn = el('button', { class: 'de-btn', title: 'Edit (E)', text: '✎ Edit', onclick: () => toggleEdit() });
+
+  const saveBtn = el('button', {
+    class: 'de-btn de-go de-save', 'aria-label': '저장 ⌘S', onclick: () => save(),
+  }, [
+    el('span', { class: 'de-save-idle', 'aria-hidden': 'true', text: '저장 ⌘S' }),
+    el('span', { class: 'de-save-done', 'aria-hidden': 'true', text: '✓ 저장됨' }),
+  ]);
 
   const bar = el('div', { class: 'de-bar' }, [
     el('span', { class: 'de-tag', text: 'EDITOR' }),
@@ -934,7 +1051,7 @@
     el('button', { class: 'de-btn', text: '＋', title: 'Larger', onclick: () => stepSize(1) }),
     el('button', { class: 'de-btn', text: 'Color', onclick: (e) => colorPop(e.currentTarget) }),
     el('span', { class: 'de-sep' }),
-    el('button', { class: 'de-btn de-go', text: '저장 ⌘S', onclick: () => save() }),
+    saveBtn,
     note,
   ]);
   document.body.appendChild(bar);
@@ -974,8 +1091,8 @@
     editing = force === undefined ? !editing : force;
     document.body.classList.toggle('de-editing', editing);
     editBtn.classList.toggle('de-on', editing);
-    if (editing) openFields();
-    else { closeFields(); closeSvgInput(); }
+    closeFields();
+    if (!editing) { finishMove(true); hideMove(); closeSvgInput(); textTarget = null; }
   }
 
   let railOn = false;
@@ -986,7 +1103,7 @@
     if (railOn) buildRail();
   }
 
-  STAGE.addEventListener('click', (e) => {
+  STAGE.addEventListener('dblclick', (e) => {
     if (!editing) return;
     const node = e.target.closest && e.target.closest('tspan, text');
     if (!node || node.children.length) return;
@@ -1041,6 +1158,378 @@
     if (document.activeElement && document.activeElement.isContentEditable) e.stopPropagation();
   };
   ['keydown', 'wheel'].forEach((type) => document.addEventListener(type, swallow, true));
+
+  /* ── 개체 선택·이동·그룹화 ────────────────────────────────────────────────
+     한 번 클릭은 선택, 더블클릭은 글자 편집입니다. 그룹은 식별자로 연결하므로
+     HTML 배치와 SVG 좌표계를 바꾸지 않고 함께 선택·이동할 수 있습니다. */
+  const selectionLayer = el('div', { class: 'de-selection-layer' });
+  document.body.appendChild(selectionLayer);
+  const groupBtn = el('button', { class: 'de-btn', text: '그룹', title: '그룹화 ⌘G / Ctrl+G', onclick: () => groupSelection(false) });
+  const ungroupBtn = el('button', { class: 'de-btn', text: '그룹 해제', title: '그룹 해제 ⇧⌘G / Ctrl+Shift+G', onclick: () => groupSelection(true) });
+  const selectedLabel = el('span', { class: 'de-selection-count', 'aria-live': 'polite' });
+  const selectionTools = el('span', { class: 'de-selection-tools', hidden: '' }, [selectedLabel, groupBtn, ungroupBtn]);
+  bar.insertBefore(selectionTools, saveBtn);
+  let selected = [], drag = null, textTarget = null;
+  const activeSlide = () => slides()[current()];
+  const moveAttrs = ['transform', 'style', 'data-de-move-base', 'data-de-move-x', 'data-de-move-y'];
+  function endText() { document.activeElement?.blur(); closeFields(); closeSvgInput(); textTarget = null; }
+  function hideMove() { selected = []; selectionLayer.replaceChildren(); selectionTools.hidden = true; }
+  function normalize(nodes) {
+    const unique = [...new Set(nodes)].filter(n => n?.isConnected && activeSlide()?.contains(n));
+    return unique.filter(n => !unique.some(parent => parent !== n && parent.contains(n)));
+  }
+  function members(node) {
+    const id = node.dataset.deGroup;
+    return id ? [...activeSlide().querySelectorAll('[data-de-group]')].filter(n => n.dataset.deGroup === id) : [node];
+  }
+  function movable(target) {
+    if (!(target instanceof Element) || !STAGE.contains(target)) return null;
+    if (CFG.skip && target.closest(CFG.skip)) return null;
+    const explicit = target.closest('[data-movable]');
+    if (explicit) return explicit;
+    const svg = target.closest('svg');
+    if (svg) {
+      if (svg.classList.contains('bg') || target.closest('defs, marker, mask, clipPath')) return null;
+      const group = target.closest('g');
+      return group || target.closest('text, image, rect, circle, ellipse, path, polygon, polyline, line');
+    }
+    const block = target.closest('img, video, canvas, h1, h2, h3, h4, p, li, [contenteditable="true"]');
+    if (block) return block;
+    // 독립 인라인 문구도 편집하되, 버튼과 레이아웃을 감싼 요소는 제외합니다.
+    const inline = target.closest('span, b, strong, em, small');
+    if (!inline || inline.closest('button, a, [role="button"]') || !inline.textContent.trim()) return null;
+    if (inline.querySelector('div, section, aside, svg, img, button, input, textarea')) return null;
+    return inline;
+  }
+  function locateMove() {
+    if (!editing) { hideMove(); return; }
+    selected = normalize(selected);
+    const focusDir=selectionLayer.contains(document.activeElement)?document.activeElement.dataset.resize:null;
+    selectionLayer.replaceChildren();
+    selectionTools.hidden = !selected.length;
+    selectedLabel.textContent = selected.length + '개 선택';
+    groupBtn.disabled = selected.length < 2;
+    ungroupBtn.disabled = !selected.some(n => n.dataset.deGroup);
+    const boxes = selected.map(n => n.getBoundingClientRect());
+    if (boxes.length) {
+      const left = Math.min(...boxes.map(r => r.left)), top = Math.min(...boxes.map(r => r.top));
+      const right = Math.max(...boxes.map(r => r.right)), bottom = Math.max(...boxes.map(r => r.bottom));
+      boxes.forEach(r => selectionLayer.appendChild(el('div', { class: 'de-object-box', style: `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px` })));
+      const box = el('div', { class: 'de-selection-box', style: `left:${left}px;top:${top}px;width:${right-left}px;height:${bottom-top}px` });
+      const handles = [['nw',0,0,'왼쪽 위'],['n',50,0,'위'],['ne',100,0,'오른쪽 위'],['e',100,50,'오른쪽'],['se',100,100,'오른쪽 아래'],['s',50,100,'아래'],['sw',0,100,'왼쪽 아래'],['w',0,50,'왼쪽']];
+      handles.forEach(([dir,x,y,label]) => box.appendChild(el('button', {class:'de-resize-handle',type:'button','data-resize':dir,'aria-label':label+' 크기 조절',title:label+' 크기 조절 · 모서리 비율 유지 · Shift 자유 조절',style:`left:${x}%;top:${y}%;cursor:${dir==='n'||dir==='s'?'ns':dir==='e'||dir==='w'?'ew':dir==='nw'||dir==='se'?'nwse':'nesw'}-resize`})));
+      selectionLayer.appendChild(box);
+      if(focusDir && !drag) box.querySelector('[data-resize="'+focusDir+'"]')?.focus({preventScroll:true});
+    }
+    if (drag?.kind === 'marquee' && drag.moved) {
+      const r = drag.rect;
+      selectionLayer.appendChild(el('div', { class: 'de-marquee', style: `left:${r.left}px;top:${r.top}px;width:${r.right-r.left}px;height:${r.bottom-r.top}px` }));
+    }
+  }
+  function movementState(node) {
+    const svg = node instanceof SVGElement && node.tagName.toLowerCase() !== 'svg';
+    const x = Number(node.dataset.deMoveX || 0), y = Number(node.dataset.deMoveY || 0);
+    const base = node.dataset.deMoveBase ?? (svg ? (node.getAttribute('transform') || '') : (node.style.translate || 'none'));
+    const matrix = svg ? node.parentElement.getScreenCTM?.() : null;
+    const scale = STAGE.getBoundingClientRect().width / (STAGE.offsetWidth || STAGE.getBoundingClientRect().width);
+    return { node, svg, x, y, base, inverse: matrix?.inverse(), scale,
+      attrs: Object.fromEntries(moveAttrs.map(key => [key, node.getAttribute(key)])) };
+  }
+  function placeMoved(state, x, y) {
+    const { node, svg, base } = state;
+    x = Math.round(x * 100) / 100; y = Math.round(y * 100) / 100;
+    node.dataset.deMoveBase = base; node.dataset.deMoveX = x; node.dataset.deMoveY = y;
+    if (svg) node.setAttribute('transform', `translate(${x} ${y}) ${base}`.trim());
+    else {
+      const terms = base === 'none' ? ['0px', '0px'] : base.split(/\s+/);
+      node.style.translate = `calc(${terms[0]} + ${x}px) calc(${terms[1] || '0px'} + ${y}px)${terms[2] ? ' ' + terms[2] : ''}`;
+    }
+  }
+  function rememberMove(before) {
+    past.push(before); if (past.length > DEPTH) past.shift(); future.length = 0;
+    refreshHistory(); queueSave();
+  }
+  function candidates() {
+    const root = activeSlide(), list = [...root.querySelectorAll('h1,h2,h3,h4,p,li,img,video,canvas,[data-movable]')].filter(n => !n.closest('svg'));
+    root.querySelectorAll('span,b,strong,em,small').forEach(node => {
+      if (!node.closest('svg') && movable(node) === node) list.push(node);
+    });
+    root.querySelectorAll('svg:not(.bg)').forEach(svg => {
+      [...svg.children].filter(n => /^(g|text|image|rect|circle|ellipse|path|polygon|polyline|line)$/i.test(n.tagName)).forEach(n => list.push(n));
+    });
+    return normalize(list.filter(n => !(CFG.skip && n.matches(CFG.skip))));
+  }
+  function finishMove(cancel) {
+    if (!drag) return;
+    const ended = drag; drag = null;
+    if (cancel) {
+      ended.states?.forEach(state => moveAttrs.forEach(key => state.attrs[key] === null ? state.node.removeAttribute(key) : state.node.setAttribute(key, state.attrs[key])));
+      selected = ended.selection;
+    } else if ((ended.kind === 'move' || ended.kind === 'resize') && ended.moved) rememberMove(ended.before);
+    if (selectionLayer.hasPointerCapture(ended.id)) selectionLayer.releasePointerCapture(ended.id);
+    if (STAGE.hasPointerCapture(ended.id)) STAGE.releasePointerCapture(ended.id);
+    locateMove();
+  }
+  function beginResize(handle, x, y, id) {
+    endText();
+    const states = selected.map(n => {
+      const state = movementState(n), r = n.getBoundingClientRect();
+      const values = getComputedStyle(n).scale.split(/\s+/);
+      return { ...state, rect: r, screen: state.svg ? n.getScreenCTM() : null,
+        parentInverse: state.svg ? n.parentElement.getScreenCTM().inverse() : null,
+        scaleX: values[0] === 'none' ? 1 : Number(values[0]), scaleY: values[0] === 'none' ? 1 : Number(values[1] || values[0]) };
+    });
+    const bounds = { left: Math.min(...states.map(s=>s.rect.left)), top: Math.min(...states.map(s=>s.rect.top)), right: Math.max(...states.map(s=>s.rect.right)), bottom: Math.max(...states.map(s=>s.rect.bottom)) };
+    drag = { kind:'resize', handle, sx:x, sy:y, id, states, bounds, before:snapshot(), selection:[...selected], moved:false };
+  }
+  function resizeTo(x, y, freeRatio) {
+    const d=drag, b=d.bounds, h=d.handle, dx=x-d.sx, dy=y-d.sy;
+    const w=b.right-b.left, height=b.bottom-b.top;
+    if (!w || !height) return;
+    let nw=Math.max(16,w+(h.includes('e')?dx:h.includes('w')?-dx:0));
+    let nh=Math.max(16,height+(h.includes('s')?dy:h.includes('n')?-dy:0));
+    if (h.length===2 && !freeRatio) {
+      const factor=Math.max(16/Math.min(w,height),Math.abs(nw/w-1)>Math.abs(nh/height-1)?nw/w:nh/height);
+      nw=w*factor; nh=height*factor;
+    }
+    const left=h.includes('w')?b.right-nw:b.left, top=h.includes('n')?b.bottom-nh:b.top;
+    const fx=nw/w, fy=nh/height;
+    const world=new DOMMatrix([fx,0,0,fy,left-fx*b.left,top-fy*b.top]);
+    d.states.forEach(state=>{
+      const n=state.node;
+      if (state.svg) {
+        const asDOM = m => new DOMMatrix([m.a,m.b,m.c,m.d,m.e,m.f]);
+        const m=asDOM(state.parentInverse).multiply(world).multiply(asDOM(state.screen));
+        const value=`matrix(${m.a} ${m.b} ${m.c} ${m.d} ${m.e} ${m.f})`;
+        n.setAttribute('transform',value);
+        n.dataset.deMoveBase=value; n.dataset.deMoveX='0'; n.dataset.deMoveY='0';
+      } else {
+        // 처음 상태에서 다시 계산해 연속 입력으로 배율 오차가 쌓이지 않게 합니다.
+        state.attrs.style===null?n.removeAttribute('style'):n.setAttribute('style',state.attrs.style);
+        n.style.scale=`${state.scaleX*fx} ${state.scaleY*fy}`;
+        const r=n.getBoundingClientRect();
+        const desiredX=left+(state.rect.left-b.left)*fx, desiredY=top+(state.rect.top-b.top)*fy;
+        placeMoved(state,state.x+(desiredX-r.left)/state.scale,state.y+(desiredY-r.top)/state.scale);
+      }
+    });
+    d.moved=true;locateMove();
+  }
+  selectionLayer.addEventListener('pointerdown',e=>{
+    const handle=e.target.closest('[data-resize]');
+    if (!handle || e.button!==0 || !selected.length) return;
+    e.preventDefault();e.stopPropagation();
+    beginResize(handle.dataset.resize,e.clientX,e.clientY,e.pointerId);
+    selectionLayer.setPointerCapture(e.pointerId);
+  });
+  selectionLayer.addEventListener('pointermove',e=>{
+    if (drag?.kind!=='resize' || drag.id!==e.pointerId) return;
+    if (!(e.buttons & 1)) { finishMove(false); return; }
+    e.preventDefault();resizeTo(e.clientX,e.clientY,e.shiftKey);
+  });
+  selectionLayer.addEventListener('pointerup',()=>{if(drag?.kind==='resize')finishMove(false);});
+  selectionLayer.addEventListener('pointercancel',()=>{if(drag?.kind==='resize')finishMove(true);});
+  selectionLayer.addEventListener('lostpointercapture',()=>{if(drag?.kind==='resize')finishMove(true);});
+
+  STAGE.addEventListener('pointerdown', e => {
+    if (!editing || e.button !== 0 || e.target.closest('[' + MARK + ']')) return;
+    if (textTarget?.contains(e.target)) return;
+    endText();
+    e.preventDefault(); e.stopPropagation();
+    const hit = movable(e.target), prior = [...selected];
+    if (hit) {
+      const batch = members(hit);
+      if (e.shiftKey) {
+        const remove = batch.every(n => selected.includes(n));
+        selected = normalize(remove ? selected.filter(n => !batch.includes(n)) : [...selected, ...batch]);
+        if (remove) { locateMove(); return; }
+      } else if (!selected.includes(hit)) selected = normalize(batch);
+      drag = { kind: 'move', states: selected.map(movementState), before: snapshot(), selection: prior };
+    } else {
+      if (!e.shiftKey) selected = [];
+      drag = { kind: 'marquee', candidates: candidates(), additive: e.shiftKey ? prior : [], selection: prior };
+    }
+    Object.assign(drag, { id: e.pointerId, sx: e.clientX, sy: e.clientY, moved: false });
+    locateMove();
+  }, true);
+  STAGE.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    // pointerup을 놓쳤더라도 버튼을 놓은 포인터 이동은 개체를 움직이지 않습니다.
+    if (!(e.buttons & 1)) { finishMove(false); return; }
+    const dx = e.clientX-drag.sx, dy = e.clientY-drag.sy;
+    if (!drag.moved && Math.hypot(dx,dy) < 3) return;
+    e.preventDefault(); e.stopPropagation();
+    if (!drag.moved) STAGE.setPointerCapture(e.pointerId);
+    drag.moved = true;
+    if (drag.kind === 'move') {
+      drag.states.forEach(state => {
+        const m = state.inverse;
+        placeMoved(state, state.x+(m ? m.a*dx+m.c*dy : dx/state.scale), state.y+(m ? m.b*dx+m.d*dy : dy/state.scale));
+      });
+    } else {
+      drag.rect = { left: Math.min(drag.sx,e.clientX), right: Math.max(drag.sx,e.clientX), top: Math.min(drag.sy,e.clientY), bottom: Math.max(drag.sy,e.clientY) };
+      const r = drag.rect;
+      const enclosed = drag.candidates.filter(n => { const b=n.getBoundingClientRect(); return b.width && b.height && b.left>=r.left && b.right<=r.right && b.top>=r.top && b.bottom<=r.bottom; });
+      selected = normalize([...drag.additive,...enclosed.flatMap(members)]);
+    }
+    locateMove();
+  }, true);
+  // 선택 직후 생긴 핸들이 pointerup을 받거나 포인터가 무대 밖으로 나가도
+  // 창의 캡처 단계에서 항상 드래그를 종료합니다.
+  window.addEventListener('pointerup', e => { if (drag?.id === e.pointerId) finishMove(false); }, true);
+  window.addEventListener('pointercancel', e => { if (drag?.id === e.pointerId) finishMove(true); }, true);
+  window.addEventListener('blur', () => finishMove(true));
+  STAGE.addEventListener('pointerup', () => finishMove(false), true);
+  STAGE.addEventListener('pointercancel', () => finishMove(true), true);
+  STAGE.addEventListener('lostpointercapture', () => finishMove(true), true);
+  STAGE.addEventListener('dblclick', e => {
+    if (!editing) return;
+    const node = movable(e.target);
+    if (!node || node instanceof SVGElement || !node.matches('h1,h2,h3,h4,p,li,span,b,strong,em,small,[contenteditable]')) return;
+    e.preventDefault(); hideMove(); textTarget = node;
+    node.setAttribute('contenteditable','true'); node.setAttribute('spellcheck','false'); node.focus();
+    const range = document.createRange(); range.selectNodeContents(node);
+    const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range);
+  });
+  function groupSelection(ungroup) {
+    finishMove(false); selected = normalize(selected);
+    if (ungroup ? !selected.some(n => n.dataset.deGroup) : selected.length < 2) return;
+    const before = snapshot();
+    if (ungroup) selected.forEach(n => delete n.dataset.deGroup);
+    else { const id = 'group-' + crypto.randomUUID(); selected.forEach(n => { n.dataset.deGroup = id; }); }
+    rememberMove(before); locateMove();
+  }
+  window.addEventListener('keydown', e => {
+    if (!editing || e.target.closest?.('input,textarea,[contenteditable="true"]')) return;
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'g') {
+      e.preventDefault(); e.stopImmediatePropagation(); groupSelection(e.shiftKey); return;
+    }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); finishMove(true); hideMove(); return; }
+    const delta = { ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1] }[e.key];
+    if (!delta || !selected.length) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    const before = snapshot(), step = e.shiftKey ? 10 : 1;
+    selected.forEach(n => {
+      const state=movementState(n), m=state.inverse;
+      const dx=delta[0]*step, dy=delta[1]*step;
+      placeMoved(state,state.x+(m ? (m.a*dx+m.c*dy)*state.scale : dx),state.y+(m ? (m.b*dx+m.d*dy)*state.scale : dy));
+    });
+    rememberMove(before); locateMove();
+  }, true);
+  STAGE.addEventListener('dragstart', e => { if (editing && !textTarget?.contains(e.target)) e.preventDefault(); });
+  addEventListener('resize', locateMove); addEventListener('scroll',locateMove,true);
+  setInterval(locateMove,180);
+
+  /* 기록은 문서별 IndexedDB에 보관합니다. HTML에는 히스토리를 넣지 않습니다.
+     기준 문서와 다른 외부 수정본에는 과거 기록을 적용하지 않습니다. */
+  const historyKey = location.pathname;
+  let historyDB = null, historyRevision = 0, historyScheduled = false;
+  const historyInitial = snapshot();
+  function canonicalHistory(html) {
+    const root = document.createElement('div'); root.innerHTML = html;
+    root.querySelectorAll('[contenteditable],[spellcheck],[draggable]').forEach(n => {
+      n.removeAttribute('contenteditable'); n.removeAttribute('spellcheck'); n.removeAttribute('draggable');
+    });
+    root.querySelectorAll(found.sel).forEach(n => n.classList.remove('active'));
+    if (CFG.skip) root.querySelectorAll(CFG.skip).forEach(n => { n.textContent = ''; });
+    root.querySelectorAll('[class=""]').forEach(n => n.removeAttribute('class'));
+    return root.innerHTML;
+  }
+  function packHistory(value, base) {
+    let prefix=0, suffix=0;
+    while(prefix<value.length && prefix<base.length && value[prefix]===base[prefix]) prefix++;
+    while(suffix<value.length-prefix && suffix<base.length-prefix && value[value.length-1-suffix]===base[base.length-1-suffix]) suffix++;
+    return [prefix,suffix,value.slice(prefix,value.length-suffix)];
+  }
+  const unpackHistory = (part,base) => base.slice(0,part[0])+part[2]+(part[1]?base.slice(-part[1]):'');
+  function persistHistory() {
+    historyRevision++;
+    if (historyScheduled) return;
+    historyScheduled=true;
+    queueMicrotask(() => {
+      historyScheduled=false;
+      if (!historyDB) return;
+      const base=snapshot();
+      const undoEntries=enter && enter.host.innerHTML!==enter.was ? [...past,enter.all].slice(-DEPTH) : past;
+      try {
+        const tx=historyDB.transaction('documents','readwrite');
+        tx.objectStore('documents').put({version:1,base,past:undoEntries.map(s=>packHistory(s,base)),future:future.map(s=>packHistory(s,base))},historyKey);
+        tx.onerror=()=>console.warn('발표 편집 히스토리 저장 실패: 현재 탭의 실행 취소는 유지됩니다.');
+      } catch(err) { console.warn('발표 편집 히스토리 저장 실패',err); }
+    });
+  }
+  function loadHistory() {
+    const revision=historyRevision;
+    const request=indexedDB.open('html-presentation-history',1);
+    request.onupgradeneeded=()=>request.result.createObjectStore('documents');
+    request.onerror=()=>console.warn('발표 편집 히스토리 저장소를 열지 못했습니다.');
+    request.onsuccess=()=>{
+      historyDB=request.result;
+      historyDB.onversionchange=()=>{historyDB.close();historyDB=null;};
+      const read=historyDB.transaction('documents','readonly').objectStore('documents').get(historyKey);
+      read.onsuccess=()=>{
+        if(historyRevision!==revision){persistHistory();return;}
+        const saved=read.result;
+        if(!saved || saved.version!==1) return;
+        if(canonicalHistory(saved.base)!==canonicalHistory(historyInitial)) return;
+        past.push(...saved.past.map(p=>unpackHistory(p,saved.base)).slice(-DEPTH));
+        future.push(...saved.future.map(p=>unpackHistory(p,saved.base)).slice(-DEPTH));
+        refreshHistory();
+      };
+    };
+  }
+  loadHistory();
+  addEventListener('pagehide',persistHistory);
+
+  /* 파일 변경은 같은 DOM에 반영합니다. 키 입력·드래그·저장 중에는 기다립니다. */
+  let liveRevision=null,liveChecking=false,liveLocalRevision=0;
+  const liveBusy=()=>saving || saveTimer!==null || drag || svgInput || document.activeElement?.isContentEditable;
+  function sourceScripts(root) {
+    return [...root.querySelectorAll('script')].filter(n=>!n.hasAttribute(MARK)).map(n=>[n.getAttribute('src')||'',n.textContent]);
+  }
+  async function checkLiveFile() {
+    if (liveChecking || liveBusy() || location.protocol==='file:') return;
+    liveChecking=true;
+    const localVersion=liveLocalRevision;
+    try {
+      const head=await fetch(location.pathname,{method:'HEAD',cache:'no-store'});
+      const revision=head.headers.get('X-Deck-Revision');
+      if(!head.ok || !revision || revision===liveRevision) return;
+      const response=await fetch(location.pathname,{cache:'no-store'});
+      if(!response.ok) return;
+      const parsed=new DOMParser().parseFromString(await response.text(),'text/html');
+      if(liveBusy() || localVersion!==liveLocalRevision) return;
+      const incoming=STAGE.id?parsed.getElementById(STAGE.id):parsed.querySelector(found.sel)?.parentElement;
+      if(!incoming) return;
+      const sourceChanged=JSON.stringify(sourceScripts(parsed))!==JSON.stringify(sourceScripts(document));
+      const contentChanged=canonicalHistory(incoming.innerHTML)!==canonicalHistory(snapshot());
+      const oldStyles=[...document.head.querySelectorAll('style')].filter(n=>!n.hasAttribute(MARK));
+      const newStyles=[...parsed.head.querySelectorAll('style')].filter(n=>!n.hasAttribute(MARK));
+      const styleChanged=oldStyles.length!==newStyles.length || oldStyles.some((n,i)=>n.textContent!==newStyles[i]?.textContent);
+      if(contentChanged) {
+        mark(); restore(incoming.innerHTML,{external:true});
+      }
+      if(styleChanged) {
+        newStyles.forEach((style,i)=>{
+          if(oldStyles[i]) { if(oldStyles[i].textContent!==style.textContent) oldStyles[i].textContent=style.textContent; }
+          else document.head.appendChild(style.cloneNode(true));
+        });
+        oldStyles.slice(newStyles.length).forEach(n=>n.remove());
+      }
+      document.title=parsed.title;
+      liveRevision=response.headers.get('X-Deck-Revision')||revision;
+      if(sourceChanged) {
+        // 새 스크립트는 중복 실행하지 않습니다. 내용과 히스토리를 먼저 보관합니다.
+        persistHistory();
+        setTimeout(()=>{if(!liveBusy() && localVersion===liveLocalRevision) location.reload();else liveRevision=null;},350);
+      } else if(contentChanged || styleChanged) {
+        locateMove(); flash('파일 변경 반영됨');
+      }
+    } catch(err) { console.debug('실시간 파일 확인 대기',err); }
+    finally { liveChecking=false; }
+  }
+  setInterval(checkLiveFile,1500);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkLiveFile();});
+  checkLiveFile();
 
   window.deckEditor = { save, toggleEdit, toggleRail, serialize };
 })();
