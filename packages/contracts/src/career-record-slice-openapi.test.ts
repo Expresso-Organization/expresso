@@ -69,7 +69,7 @@ interface CareerSliceContract {
 const contractPath = fileURLToPath(
   new URL("../openapi/career-record-slice-v1.yaml", import.meta.url),
 );
-const fixtures = JSON.parse(
+const blockBodyFixtures = JSON.parse(
   readFileSync(
     new URL(
       "../openapi/fixtures/career-rich-block-body-v1.json",
@@ -78,6 +78,18 @@ const fixtures = JSON.parse(
     "utf8",
   ),
 ) as Record<string, unknown>;
+const propertyFixture = JSON.parse(
+  readFileSync(
+    new URL(
+      "../openapi/fixtures/career-property-canonical-v1.json",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+) as {
+  category: Record<string, unknown>;
+  propertyValues: Array<Record<string, unknown>>;
+};
 
 const ajv = new Ajv2020({ allErrors: true, strict: false });
 addFormatsModule.default.default(ajv);
@@ -286,8 +298,8 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
         propertyValues: [
           {
             propertyDefinitionId: "7e96f07a-30ba-496e-ac9d-20d4421c1703",
-            type: "number",
-            value: 3,
+            type: "relation",
+            value: [],
           },
         ],
       }),
@@ -297,7 +309,7 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
   it("accepts the shared v1 rich document corpus", () => {
     const validateBlockBody = schemaValidator("BlockBody");
 
-    for (const [name, fixture] of Object.entries(fixtures)) {
+    for (const [name, fixture] of Object.entries(blockBodyFixtures)) {
       expect(
         validateBlockBody(fixture),
         `${name}: ${ajv.errorsText(validateBlockBody.errors)}`,
@@ -365,7 +377,7 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
     }
 
     expect(
-      validateBlockBody(fixtures.unknownBlock),
+      validateBlockBody(blockBodyFixtures.unknownBlock),
       ajv.errorsText(validateBlockBody.errors),
     ).toBe(true);
   });
@@ -458,6 +470,182 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
       ]),
       "JSON Schema uniqueItems는 같은 ID와 서로 다른 value를 거절하지 않는다",
     ).toBe(true);
+  });
+
+  it("accepts the shared canonical property definition and writable value fixture", () => {
+    const validateCategory = schemaValidator("CareerCategory");
+    const validatePropertyValues = schemaValidator("PropertyValues");
+
+    expect(
+      validateCategory(propertyFixture.category),
+      ajv.errorsText(validateCategory.errors),
+    ).toBe(true);
+    expect(
+      validatePropertyValues(propertyFixture.propertyValues),
+      ajv.errorsText(validatePropertyValues.errors),
+    ).toBe(true);
+
+    const definitions = propertyFixture.category.propertyDefinitions as Array<{
+      id: string;
+      type: string;
+      config: { options?: Array<{ name: string }> };
+    }>;
+    expect(definitions[1]?.config.options?.map(({ name }) => name)).toEqual([
+      "Java",
+      "java",
+      " Java ",
+    ]);
+
+    const definitionsById = new Map(
+      definitions.map((definition) => [definition.id, definition]),
+    );
+    for (const propertyValue of propertyFixture.propertyValues) {
+      const definition = definitionsById.get(
+        propertyValue.propertyDefinitionId as string,
+      );
+      expect(definition, propertyValue.propertyDefinitionId as string).toBeDefined();
+      expect(definition?.type).toBe(propertyValue.type);
+    }
+  });
+
+  it("uses name and the official stable identity as the canonical definition contract", () => {
+    const definitionSchema = contract.components.schemas.PropertyDefinition;
+    const definitionTypeSchema = contract.components.schemas.PropertyDefinitionType;
+
+    expect(definitionSchema?.required).toEqual([
+      "id",
+      "key",
+      "name",
+      "type",
+      "required",
+      "system",
+      "config",
+      "order",
+      "version",
+      "deletedAt",
+    ]);
+    expect(definitionSchema?.description).toContain("0006");
+    expect(definitionSchema?.description).toContain("propertySchemaV2");
+    expect(definitionSchema?.properties).toEqual(
+      expect.objectContaining({
+        name: expect.objectContaining({ minLength: 1, maxLength: 80 }),
+        type: expect.objectContaining({
+          $ref: "#/components/schemas/PropertyDefinitionType",
+        }),
+      }),
+    );
+    expect(definitionSchema?.properties).not.toHaveProperty("label");
+    expect(definitionTypeSchema?.enum).not.toContain("title");
+  });
+
+  it("preserves exact option whitespace but rejects names made only of whitespace", () => {
+    const validateOption = schemaValidator("CareerSelectOption");
+    const id = "20000000-0000-4000-8000-000000000003";
+
+    expect(validateOption({ id, name: " Java " })).toBe(true);
+    expect(validateOption({ id, name: "   " })).toBe(false);
+  });
+
+  it("validates canonical definition config by property type", () => {
+    const validateDefinition = schemaValidator("PropertyDefinition");
+    const base = {
+      id: "6c663539-48c1-5d12-939d-f100fac993c1",
+      key: "role",
+      name: "역할",
+      required: false,
+      system: true,
+      order: 0,
+      version: 1,
+      deletedAt: null,
+    };
+
+    expect(validateDefinition({ ...base, type: "text", config: {} })).toBe(true);
+    expect(validateDefinition({ ...base, type: "text", config: { unknown: true } })).toBe(false);
+    expect(validateDefinition({
+      ...base,
+      type: "relation",
+      config: {
+        targetCategoryId: "54e2b29a-d2ba-4c80-a4bc-1c1d08740497",
+        inversePropertyId: null,
+        cardinality: "multiple",
+        deletePolicy: "nullify",
+      },
+    })).toBe(true);
+    expect(validateDefinition({ ...base, type: "relation", config: {} })).toBe(false);
+  });
+
+  it("accepts only writable property value types and keeps text at 50000 characters", () => {
+    const validatePropertyValues = schemaValidator("PropertyValues");
+    const propertyDefinitionId = "7e96f07a-30ba-496e-ac9d-20d4421c1703";
+
+    expect(
+      validatePropertyValues([
+        { propertyDefinitionId, type: "text", value: "가".repeat(50_000) },
+      ]),
+      ajv.errorsText(validatePropertyValues.errors),
+    ).toBe(true);
+    expect(
+      validatePropertyValues([
+        { propertyDefinitionId, type: "text", value: "가".repeat(50_001) },
+      ]),
+    ).toBe(false);
+
+    for (const type of [
+      "title",
+      "relation",
+      "formula",
+      "rollup",
+      "created_time",
+      "updated_time",
+    ]) {
+      expect(
+        validatePropertyValues([{ propertyDefinitionId, type, value: null }]),
+        `${type}은 일반 writable propertyValues가 아니다`,
+      ).toBe(false);
+    }
+  });
+
+  it("validates month day and offset datetime precision without inventing missing precision", () => {
+    const validateDate = schemaValidator("CareerDateValue");
+
+    for (const value of [
+      { precision: "month", start: "2026-09", end: null },
+      { precision: "day", start: "2026-09-05", end: "2026-09-30" },
+      {
+        precision: "datetime",
+        start: "2026-09-05T09:30:00+09:00",
+        end: null,
+        timezone: "Asia/Seoul",
+      },
+      {
+        precision: "datetime",
+        start: "2026-09-05T00:30:00Z",
+        end: null,
+        timezone: null,
+      },
+    ]) {
+      expect(validateDate(value), ajv.errorsText(validateDate.errors)).toBe(true);
+    }
+
+    for (const value of [
+      { start: "2026-09", end: null },
+      { precision: "month", start: "2026-09-01", end: null },
+      { precision: "month", start: "2026-09", end: null, timezone: null },
+      { precision: "day", start: "2026-09", end: null },
+      {
+        precision: "datetime",
+        start: "2026-09-05T09:30:00",
+        end: null,
+        timezone: "Asia/Seoul",
+      },
+      {
+        precision: "datetime",
+        start: "2026-09-05T09:30:00+09:00",
+        end: null,
+      },
+    ]) {
+      expect(validateDate(value)).toBe(false);
+    }
   });
 
   it("limits create and patch payloads to the first-slice mutations", () => {
