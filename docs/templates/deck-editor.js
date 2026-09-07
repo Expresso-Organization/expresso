@@ -163,6 +163,7 @@
     body.de-editing [contenteditable="true"] { user-select: text; }
     body.de-editing .slide :is(image,g,img) { cursor: move; }
 
+    .de-rail, .de-pop { overscroll-behavior: contain; }
     .de-bar {
       position: fixed; left: 50%; top: 16px; transform: translateX(-50%); z-index: 2147483000;
       display: flex; align-items: center; gap: 8px; padding: 7px 8px 7px 14px;
@@ -1023,6 +1024,11 @@
   const note = el('span', { class: 'de-note', text: '' });
   const rail = el('aside', { class: 'de-rail', hidden: '' });
   document.body.appendChild(rail);
+  // 목록 스크롤은 유지하고 발표 컨트롤러의 전역 휠 전환까지 전달하지 않습니다.
+  window.addEventListener('wheel', (e) => {
+    if (e.target instanceof Element && e.target.closest('.de-rail, .de-pop')) e.stopImmediatePropagation();
+  }, { capture: true, passive: true });
+
 
   const railBtn = el('button', { class: 'de-btn', title: 'Slides (S)', text: '▤ Slides', onclick: () => toggleRail() });
   const editBtn = el('button', { class: 'de-btn', title: 'Edit (E)', text: '✎ Edit', onclick: () => toggleEdit() });
