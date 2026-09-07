@@ -1193,7 +1193,13 @@
       const group = target.closest('g');
       return group || target.closest('text, image, rect, circle, ellipse, path, polygon, polyline, line');
     }
-    return target.closest('img, video, canvas, h1, h2, h3, h4, p, li, [contenteditable="true"]');
+    const block = target.closest('img, video, canvas, h1, h2, h3, h4, p, li, [contenteditable="true"]');
+    if (block) return block;
+    // 독립 인라인 문구도 편집하되, 버튼과 레이아웃을 감싼 요소는 제외합니다.
+    const inline = target.closest('span, b, strong, em, small');
+    if (!inline || inline.closest('button, a, [role="button"]') || !inline.textContent.trim()) return null;
+    if (inline.querySelector('div, section, aside, svg, img, button, input, textarea')) return null;
+    return inline;
   }
   function locateMove() {
     if (!editing) { hideMove(); return; }
@@ -1245,6 +1251,9 @@
   }
   function candidates() {
     const root = activeSlide(), list = [...root.querySelectorAll('h1,h2,h3,h4,p,li,img,video,canvas,[data-movable]')].filter(n => !n.closest('svg'));
+    root.querySelectorAll('span,b,strong,em,small').forEach(node => {
+      if (!node.closest('svg') && movable(node) === node) list.push(node);
+    });
     root.querySelectorAll('svg:not(.bg)').forEach(svg => {
       [...svg.children].filter(n => /^(g|text|image|rect|circle|ellipse|path|polygon|polyline|line)$/i.test(n.tagName)).forEach(n => list.push(n));
     });
@@ -1375,7 +1384,7 @@
   STAGE.addEventListener('dblclick', e => {
     if (!editing) return;
     const node = movable(e.target);
-    if (!node || node instanceof SVGElement || !node.matches('h1,h2,h3,h4,p,li,[contenteditable]')) return;
+    if (!node || node instanceof SVGElement || !node.matches('h1,h2,h3,h4,p,li,span,b,strong,em,small,[contenteditable]')) return;
     e.preventDefault(); hideMove(); textTarget = node;
     node.setAttribute('contenteditable','true'); node.setAttribute('spellcheck','false'); node.focus();
     const range = document.createRange(); range.selectNodeContents(node);
