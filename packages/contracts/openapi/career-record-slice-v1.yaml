@@ -215,30 +215,235 @@ components:
       pattern: '^"v[1-9][0-9]*"$'
       examples: ['"v1"', '"v3"']
 
-    TextPropertyDefinition:
+    PropertyDefinitionType:
+      type: string
+      enum:
+        - text
+        - number
+        - select
+        - multi_select
+        - date
+        - checkbox
+        - url
+        - email
+        - phone
+        - file
+        - media
+        - relation
+        - formula
+        - rollup
+        - created_time
+        - updated_time
+
+    CareerSelectOption:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+          pattern: '\S'
+          description: >-
+            표시 문자열을 그대로 보존한다. migration은 대소문자, 앞뒤 공백,
+            Unicode normalization을 적용하지 않는다.
+
+    CareerSelectConfig:
+      type: object
+      additionalProperties: false
+      required: [options]
+      properties:
+        options:
+          type: array
+          maxItems: 100
+          x-expresso-uniqueBy: id
+          description: option id 중복은 application/domain validation이 거절한다.
+          items:
+            $ref: "#/components/schemas/CareerSelectOption"
+
+    EmptyPropertyConfig:
+      type: object
+      additionalProperties: false
+
+    CareerRelationDefinitionConfig:
+      type: object
+      additionalProperties: false
+      required: [targetCategoryId, inversePropertyId, cardinality, deletePolicy]
+      properties:
+        targetCategoryId:
+          $ref: "#/components/schemas/Uuid"
+        inversePropertyId:
+          oneOf:
+            - $ref: "#/components/schemas/Uuid"
+            - type: "null"
+        cardinality:
+          type: string
+          enum: [single, multiple]
+        deletePolicy:
+          type: string
+          enum: [restrict, nullify]
+
+    CareerFormulaDiagnostic:
+      type: object
+      additionalProperties: false
+      required: [code, message, severity, start, end]
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 80
+        message:
+          type: string
+          minLength: 1
+          maxLength: 500
+        severity:
+          type: string
+          enum: [error, warning]
+        start:
+          type: integer
+          minimum: 0
+        end:
+          type: integer
+          minimum: 0
+
+    CareerFormulaDefinitionConfig:
+      type: object
+      additionalProperties: false
+      required: [source, ast, diagnostics]
+      properties:
+        source:
+          type: string
+          maxLength: 4000
+          description: application validation이 위험한 실행 표현식을 거절한다.
+        ast:
+          description: parser가 생성한 언어 중립 JSON AST 또는 null
+        diagnostics:
+          type: array
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/CareerFormulaDiagnostic"
+
+    CareerRollupDefinitionConfig:
+      type: object
+      additionalProperties: false
+      required: [relationPropertyId, targetPropertyId, aggregation]
+      properties:
+        relationPropertyId:
+          $ref: "#/components/schemas/Uuid"
+        targetPropertyId:
+          $ref: "#/components/schemas/Uuid"
+        aggregation:
+          type: string
+          enum:
+            - count
+            - unique_count
+            - sum
+            - average
+            - min
+            - max
+            - earliest
+            - latest
+            - percent_checked
+            - show_unique
+
+    PropertyDefinition:
       type: object
       additionalProperties: false
       description: >-
-        ID는 생성 후 바뀌지 않으며 PropertyValue가 참조하는 유일한 식별자다.
-        title은 별도 root field이므로 이 목록에 PropertyDefinition으로 중복하지 않는다.
-      required: [id, key, label, type, required, system]
+        id는 migration 0006의 propertySchema.id와 propertySchemaV2.id가 공유하는
+        UUID 계보이며 생성 후 바뀌지 않는다. name이 canonical 표시 이름이다.
+        CareerRecord.title은 별도 root field이며 일반 PropertyDefinition이나
+        writable PropertyValue로 만들지 않는다.
+      required: [id, key, name, type, required, system, config, order, version, deletedAt]
       properties:
         id:
           $ref: "#/components/schemas/Uuid"
         key:
           type: string
           pattern: '^[A-Za-z][A-Za-z0-9_]{0,63}$'
-        label:
+        name:
           type: string
           minLength: 1
           maxLength: 80
         type:
-          type: string
-          const: text
+          $ref: "#/components/schemas/PropertyDefinitionType"
         required:
           type: boolean
         system:
           type: boolean
+        config:
+          type: object
+          additionalProperties: true
+          description: type별 계약으로 검증하는 설정 객체
+        order:
+          type: integer
+          minimum: 0
+        version:
+          type: integer
+          minimum: 1
+        deletedAt:
+          type: [string, "null"]
+          format: date-time
+      allOf:
+        - if:
+            properties:
+              type:
+                enum: [select, multi_select]
+            required: [type]
+          then:
+            properties:
+              config:
+                $ref: "#/components/schemas/CareerSelectConfig"
+        - if:
+            properties:
+              type:
+                const: relation
+            required: [type]
+          then:
+            properties:
+              config:
+                $ref: "#/components/schemas/CareerRelationDefinitionConfig"
+        - if:
+            properties:
+              type:
+                const: formula
+            required: [type]
+          then:
+            properties:
+              config:
+                $ref: "#/components/schemas/CareerFormulaDefinitionConfig"
+        - if:
+            properties:
+              type:
+                const: rollup
+            required: [type]
+          then:
+            properties:
+              config:
+                $ref: "#/components/schemas/CareerRollupDefinitionConfig"
+        - if:
+            properties:
+              type:
+                enum:
+                  - text
+                  - number
+                  - date
+                  - checkbox
+                  - url
+                  - email
+                  - phone
+                  - file
+                  - media
+                  - created_time
+                  - updated_time
+            required: [type]
+          then:
+            properties:
+              config:
+                $ref: "#/components/schemas/EmptyPropertyConfig"
 
     CareerCategory:
       type: object
@@ -259,7 +464,7 @@ components:
           type: array
           maxItems: 50
           items:
-            $ref: "#/components/schemas/TextPropertyDefinition"
+            $ref: "#/components/schemas/PropertyDefinition"
 
     CareerCategoriesResponse:
       type: object
@@ -283,7 +488,192 @@ components:
           const: text
         value:
           type: string
-          maxLength: 5000
+          maxLength: 50000
+
+    NumberPropertyValue:
+      type: object
+      additionalProperties: false
+      required: [propertyDefinitionId, type, value]
+      properties:
+        propertyDefinitionId:
+          $ref: "#/components/schemas/Uuid"
+        type:
+          type: string
+          const: number
+        value:
+          type: number
+
+    CheckboxPropertyValue:
+      type: object
+      additionalProperties: false
+      required: [propertyDefinitionId, type, value]
+      properties:
+        propertyDefinitionId:
+          $ref: "#/components/schemas/Uuid"
+        type:
+          type: string
+          const: checkbox
+        value:
+          type: boolean
+
+    SelectPropertyValue:
+      type: object
+      additionalProperties: false
+      required: [propertyDefinitionId, type, value]
+      properties:
+        propertyDefinitionId:
+          $ref: "#/components/schemas/Uuid"
+        type:
+          type: string
+          const: select
+        value:
+          oneOf:
+            - $ref: "#/components/schemas/Uuid"
+            - type: "null"
+
+    MultiSelectPropertyValue:
+      type: object
+      additionalProperties: false
+      required: [propertyDefinitionId, type, value]
+      properties:
+        propertyDefinitionId:
+          $ref: "#/components/schemas/Uuid"
+        type:
+          type: string
+          const: multi_select
+        value:
+          type: array
+          maxItems: 100
+          description: option UUID 순서와 중복을 입력 의미 그대로 보존한다.
+          items:
+            $ref: "#/components/schemas/Uuid"
+
+    CareerMonthDateValue:
+      type: object
+      additionalProperties: false
+      required: [precision, start, end]
+      properties:
+        precision:
+          type: string
+          const: month
+        start:
+          type: string
+          pattern: '^[0-9]{4}-(0[1-9]|1[0-2])$'
+        end:
+          oneOf:
+            - type: string
+              pattern: '^[0-9]{4}-(0[1-9]|1[0-2])$'
+            - type: "null"
+
+    CareerDayDateValue:
+      type: object
+      additionalProperties: false
+      required: [precision, start, end]
+      properties:
+        precision:
+          type: string
+          const: day
+        start:
+          type: string
+          format: date
+        end:
+          oneOf:
+            - type: string
+              format: date
+            - type: "null"
+
+    CareerDateTimeValue:
+      type: object
+      additionalProperties: false
+      required: [precision, start, end, timezone]
+      properties:
+        precision:
+          type: string
+          const: datetime
+        start:
+          type: string
+          format: date-time
+          description: RFC 3339 offset 또는 Z가 반드시 포함된 datetime
+        end:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        timezone:
+          oneOf:
+            - type: string
+              minLength: 1
+              maxLength: 64
+              description: IANA time zone identifier
+            - type: "null"
+
+    CareerDateValue:
+      oneOf:
+        - $ref: "#/components/schemas/CareerMonthDateValue"
+        - $ref: "#/components/schemas/CareerDayDateValue"
+        - $ref: "#/components/schemas/CareerDateTimeValue"
+      discriminator:
+        propertyName: precision
+      x-expresso-invariants:
+        rangeUsesSamePrecision: true
+        endNotBeforeStart: true
+        runtimeValidationRequired: true
+
+    DatePropertyValue:
+      type: object
+      additionalProperties: false
+      required: [propertyDefinitionId, type, value]
+      properties:
+        propertyDefinitionId:
+          $ref: "#/components/schemas/Uuid"
+        type:
+          type: string
+          const: date
+        value:
+          $ref: "#/components/schemas/CareerDateValue"
+
+    StringPropertyValue:
+      type: object
+      additionalProperties: false
+      required: [propertyDefinitionId, type, value]
+      properties:
+        propertyDefinitionId:
+          $ref: "#/components/schemas/Uuid"
+        type:
+          type: string
+          enum: [url, email, phone]
+        value:
+          type: string
+          maxLength: 2000
+
+    AssetPropertyValue:
+      type: object
+      additionalProperties: false
+      required: [propertyDefinitionId, type, value]
+      properties:
+        propertyDefinitionId:
+          $ref: "#/components/schemas/Uuid"
+        type:
+          type: string
+          enum: [file, media]
+        value:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/Uuid"
+
+    PropertyValue:
+      oneOf:
+        - $ref: "#/components/schemas/TextPropertyValue"
+        - $ref: "#/components/schemas/NumberPropertyValue"
+        - $ref: "#/components/schemas/CheckboxPropertyValue"
+        - $ref: "#/components/schemas/SelectPropertyValue"
+        - $ref: "#/components/schemas/MultiSelectPropertyValue"
+        - $ref: "#/components/schemas/DatePropertyValue"
+        - $ref: "#/components/schemas/StringPropertyValue"
+        - $ref: "#/components/schemas/AssetPropertyValue"
+      discriminator:
+        propertyName: type
 
     PropertyValues:
       type: array
@@ -294,10 +684,11 @@ components:
         같은 propertyDefinitionId는 한 번만 나타나야 한다. uniqueItems는 완전히 같은
         객체의 중복만 거절하므로, x-expresso-uniqueBy는 application/domain validation이
         서로 다른 value를 가진 같은 ID도 거절해야 한다는 invariant를 전달하는
-        metadata다. 이 extension 자체가 런타임 validation을 수행하지 않는다. 첫
-        Slice에서는 TEXT 값만 입력할 수 있으며 key 기반 객체는 허용하지 않는다.
+        metadata다. 이 extension 자체가 런타임 validation을 수행하지 않는다.
+        propertyDefinitionId는 Record Category의 현재 writable Definition을 가리키고
+        type은 그 Definition type과 일치해야 한다. key 기반 객체는 허용하지 않는다.
       items:
-        $ref: "#/components/schemas/TextPropertyValue"
+        $ref: "#/components/schemas/PropertyValue"
 
     CareerTextMark:
       type: object
