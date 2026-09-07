@@ -488,7 +488,7 @@
     future.length = 0;
   }
 
-  function restore(html) {
+  function restore(html, options = {}) {
     finishMove(true);
     const saved = document.createElement('div');
     saved.innerHTML = html;
@@ -541,7 +541,8 @@
       if (railOn) buildRail();
     }
     refreshHistory();
-    queueSave();
+    if (options.external) persistHistory();
+    else queueSave();
   }
 
   function undo() {
@@ -568,6 +569,7 @@
   let again = false;
 
   function queueSave(now) {
+    liveLocalRevision++;
     persistHistory();
     if (putWorks === false || location.protocol === 'file:') return;
     clearTimeout(saveTimer);
@@ -575,6 +577,7 @@
   }
 
   async function run() {
+    saveTimer = null;
     if (saving) { again = true; return; }
     saving = true;
     const html = serialize();
@@ -1461,6 +1464,57 @@
   }
   loadHistory();
   addEventListener('pagehide',persistHistory);
+
+  /* 파일 변경은 같은 DOM에 반영합니다. 키 입력·드래그·저장 중에는 기다립니다. */
+  let liveRevision=null,liveChecking=false,liveLocalRevision=0;
+  const liveBusy=()=>saving || saveTimer!==null || drag || svgInput || document.activeElement?.isContentEditable;
+  function sourceScripts(root) {
+    return [...root.querySelectorAll('script')].filter(n=>!n.hasAttribute(MARK)).map(n=>[n.getAttribute('src')||'',n.textContent]);
+  }
+  async function checkLiveFile() {
+    if (liveChecking || liveBusy() || location.protocol==='file:') return;
+    liveChecking=true;
+    const localVersion=liveLocalRevision;
+    try {
+      const head=await fetch(location.pathname,{method:'HEAD',cache:'no-store'});
+      const revision=head.headers.get('X-Deck-Revision');
+      if(!head.ok || !revision || revision===liveRevision) return;
+      const response=await fetch(location.pathname,{cache:'no-store'});
+      if(!response.ok) return;
+      const parsed=new DOMParser().parseFromString(await response.text(),'text/html');
+      if(liveBusy() || localVersion!==liveLocalRevision) return;
+      const incoming=STAGE.id?parsed.getElementById(STAGE.id):parsed.querySelector(found.sel)?.parentElement;
+      if(!incoming) return;
+      const sourceChanged=JSON.stringify(sourceScripts(parsed))!==JSON.stringify(sourceScripts(document));
+      const contentChanged=canonicalHistory(incoming.innerHTML)!==canonicalHistory(snapshot());
+      const oldStyles=[...document.head.querySelectorAll('style')].filter(n=>!n.hasAttribute(MARK));
+      const newStyles=[...parsed.head.querySelectorAll('style')].filter(n=>!n.hasAttribute(MARK));
+      const styleChanged=oldStyles.length!==newStyles.length || oldStyles.some((n,i)=>n.textContent!==newStyles[i]?.textContent);
+      if(contentChanged) {
+        mark(); restore(incoming.innerHTML,{external:true});
+      }
+      if(styleChanged) {
+        newStyles.forEach((style,i)=>{
+          if(oldStyles[i]) { if(oldStyles[i].textContent!==style.textContent) oldStyles[i].textContent=style.textContent; }
+          else document.head.appendChild(style.cloneNode(true));
+        });
+        oldStyles.slice(newStyles.length).forEach(n=>n.remove());
+      }
+      document.title=parsed.title;
+      liveRevision=response.headers.get('X-Deck-Revision')||revision;
+      if(sourceChanged) {
+        // 새 스크립트는 중복 실행하지 않습니다. 내용과 히스토리를 먼저 보관합니다.
+        persistHistory();
+        setTimeout(()=>{if(!liveBusy() && localVersion===liveLocalRevision) location.reload();else liveRevision=null;},350);
+      } else if(contentChanged || styleChanged) {
+        locateMove(); flash('파일 변경 반영됨');
+      }
+    } catch(err) { console.debug('실시간 파일 확인 대기',err); }
+    finally { liveChecking=false; }
+  }
+  setInterval(checkLiveFile,1500);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkLiveFile();});
+  checkLiveFile();
 
   window.deckEditor = { save, toggleEdit, toggleRail, serialize };
 })();
