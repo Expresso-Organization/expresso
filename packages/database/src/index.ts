@@ -3,5 +3,7 @@ export { loadMongoMigrations, type MongoMigration, type MongoMigrationStep } fro
 export { mongoCollections, type MongoCollections } from "./collections.js";
 export { loadCollectionSpecs, type MongoCollectionSpec } from "./collection-specs.js";
 export { acquireMigrationLease, renewMigrationLease, recoverMigrationLease, releaseMigrationLease, MigrationLeaseUnavailable } from "./migration-lease.js";
+export { officialPropertyDefinitionId, exactOptionId, legacy0009PropertyDefinitionId } from "./career-property-canonical-mapping.js";
+export { inspectCareerPropertyMigration, careerPropertyReferenceLocations, type CareerPropertyInventoryDb, type CareerPropertyPreflightReport, type CareerPropertyMigrationConflict, type CareerPropertyMigrationConflictReason, type CareerPropertyReferenceLocation, type LegacyValueDistribution, type PropertyIdMapping } from "./career-property-inventory.js";
 export type * from "./documents/index.js";
 
