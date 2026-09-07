@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 import type { Collection, Document } from "mongodb";
 
 import { legacy0009PropertyDefinitionId, officialPropertyDefinitionId } from "./career-property-canonical-mapping.js";
@@ -221,7 +222,7 @@ function addLegacyValueDistribution(
     if (length > 50_000) { distribution.textOver50000 += 1; conflicts.add("legacy_text_too_long", location); }
     return;
   }
-  if (definition.type === "tags") {
+  if (definition.type === "tags" || definition.type === "multi_select") {
     if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) { distribution.unsupportedValues += 1; conflicts.add("unsupported_bson_value", location); return; }
     for (const tag of value as string[]) {
       distribution.exactTagDigests[digest(tag)] = (distribution.exactTagDigests[digest(tag)] ?? 0) + 1;
@@ -237,7 +238,7 @@ function addLegacyValueDistribution(
     if (!isSupportedNumber(value)) { distribution.nonstandardNumbers += 1; conflicts.add("nonstandard_legacy_number", location); }
     return;
   }
-  if (definition.type === "boolean" && typeof value !== "boolean") {
+  if ((definition.type === "boolean" || definition.type === "checkbox") && typeof value !== "boolean") {
     distribution.unsupportedValues += 1; conflicts.add("unsupported_bson_value", location);
   }
 }
@@ -276,7 +277,8 @@ function processCategory(
     if (typeof key !== "string" || typeof id !== "string") { conflicts.add("unexpected_0009_definition", `career_categories/${categoryId}/propertyDefinitions`); continue; }
     if (sourceByKey.has(key)) conflicts.add("duplicate_property_key", `career_categories/${categoryId}/propertyDefinitions/${key}`);
     const expected = legacy0009PropertyDefinitionId(categoryId, key);
-    if (id !== expected && !v2Definitions.some((item) => item["id"] === id && item["key"] === key)) {
+    const storedOfficialId = isObject(legacySchema[key]) ? legacySchema[key]["id"] : undefined;
+    if (id !== expected && id !== storedOfficialId && !v2Definitions.some((item) => item["id"] === id && item["key"] === key)) {
       conflicts.add("unexpected_0009_definition", `career_categories/${categoryId}/propertyDefinitions/${key}`);
     }
     sourceByKey.set(key, id);
@@ -293,13 +295,17 @@ function processCategory(
     const source = v2Id ? "propertySchemaV2" : storedLegacyId ? "propertySchema" : "computed_0006";
     if (legacy && !storedLegacyId) conflicts.add("missing_official_property_id", `career_categories/${categoryId}/propertySchema/${key}`);
     if (storedLegacyId && v2Id && storedLegacyId !== v2Id) conflicts.add("official_property_id_mismatch", `career_categories/${categoryId}/${key}`);
-    if (storedLegacyId && storedLegacyId !== computedId) conflicts.add("official_property_id_mismatch", `career_categories/${categoryId}/propertySchema/${key}`);
     const previousKey = seenIds.get(officialId);
     if (previousKey && previousKey !== key) conflicts.add("duplicate_property_id", `career_categories/${categoryId}/${officialId}`);
     seenIds.set(officialId, key);
-    const type = typeof legacy?.["type"] === "string" ? legacy["type"] : typeof v2?.["type"] === "string" ? v2["type"] : "unknown";
+    const type = typeof v2?.["type"] === "string" ? v2["type"] : typeof legacy?.["type"] === "string" ? legacy["type"] : "unknown";
     if (!LEGACY_TYPES.has(type) && !v2) conflicts.add("unsupported_property_definition_type", `career_categories/${categoryId}/${key}`);
-    const state = { key, officialId, legacy0009Id: sourceByKey.get(key) ?? null, type };
+    const storedDefinitionId = sourceByKey.get(key);
+    const expectedLegacy0009Id = legacy0009PropertyDefinitionId(categoryId, key);
+    const legacy0009Id = category["isSystem"] === true || storedDefinitionId === expectedLegacy0009Id
+      ? expectedLegacy0009Id
+      : null;
+    const state = { key, officialId, legacy0009Id, type };
     byKey.set(key, state);
     mappings.push({ categoryId, key, officialId, legacy0009Id: state.legacy0009Id, source });
   }
@@ -375,7 +381,7 @@ export async function inspectCareerPropertyMigration(db: CareerPropertyInventory
       addLegacyValueDistribution(distribution, conflicts, definition, value, location);
     }
     const canonicalValues = Array.isArray(record["propertyValues"]) ? record["propertyValues"] as Document[] : [];
-    const targetValues = new Map<string, string>();
+    const targetValues = new Map<string, Document>();
     for (const [index, value] of canonicalValues.entries()) {
       const propertyDefinitionId = value["propertyDefinitionId"];
       if (typeof propertyDefinitionId !== "string") { conflicts.add("unsupported_bson_value", `career_records/${recordId}/propertyValues/${index}`); continue; }
@@ -383,10 +389,10 @@ export async function inspectCareerPropertyMigration(db: CareerPropertyInventory
       const definition = category && [...category.definitionsByKey.values()].find((item) => item.officialId === propertyDefinitionId || item.legacy0009Id === propertyDefinitionId);
       if (definition && typeof value["type"] === "string" && value["type"] !== canonicalType(definition.type)) conflicts.add("property_value_type_mismatch", `career_records/${recordId}/propertyValues/${index}`);
       if (definition) {
-        const serialized = JSON.stringify(value);
+        const normalized = { ...value, propertyDefinitionId: definition.officialId };
         const previous = targetValues.get(definition.officialId);
-        if (previous !== undefined && previous !== serialized) conflicts.add("canonical_property_value_conflict", `career_records/${recordId}/propertyValues/${definition.officialId}`);
-        targetValues.set(definition.officialId, serialized);
+        if (previous !== undefined && !isDeepStrictEqual(previous, normalized)) conflicts.add("canonical_property_value_conflict", `career_records/${recordId}/propertyValues/${definition.officialId}`);
+        targetValues.set(definition.officialId, normalized);
       }
     }
     for (const propertyId of keyReferences(record["propertyValueTombstones"])) references.push({ id: propertyId, categoryId, location: `career_records/${recordId}/propertyValueTombstones` });
