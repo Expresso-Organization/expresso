@@ -568,6 +568,7 @@
   let again = false;
 
   function queueSave(now) {
+    persistHistory();
     if (putWorks === false || location.protocol === 'file:') return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(run, now ? 0 : 900);
@@ -1391,6 +1392,67 @@
   STAGE.addEventListener('dragstart', e => { if (editing && !textTarget?.contains(e.target)) e.preventDefault(); });
   addEventListener('resize', locateMove); addEventListener('scroll',locateMove,true);
   setInterval(locateMove,180);
+
+  /* 기록은 문서별 IndexedDB에 보관합니다. HTML에는 히스토리를 넣지 않습니다.
+     기준 문서와 다른 외부 수정본에는 과거 기록을 적용하지 않습니다. */
+  const historyKey = location.pathname;
+  let historyDB = null, historyRevision = 0, historyScheduled = false;
+  const historyInitial = snapshot();
+  function canonicalHistory(html) {
+    const root = document.createElement('div'); root.innerHTML = html;
+    root.querySelectorAll('[contenteditable],[spellcheck],[draggable]').forEach(n => {
+      n.removeAttribute('contenteditable'); n.removeAttribute('spellcheck'); n.removeAttribute('draggable');
+    });
+    root.querySelectorAll(found.sel).forEach(n => n.classList.remove('active'));
+    if (CFG.skip) root.querySelectorAll(CFG.skip).forEach(n => { n.textContent = ''; });
+    root.querySelectorAll('[class=""]').forEach(n => n.removeAttribute('class'));
+    return root.innerHTML;
+  }
+  function packHistory(value, base) {
+    let prefix=0, suffix=0;
+    while(prefix<value.length && prefix<base.length && value[prefix]===base[prefix]) prefix++;
+    while(suffix<value.length-prefix && suffix<base.length-prefix && value[value.length-1-suffix]===base[base.length-1-suffix]) suffix++;
+    return [prefix,suffix,value.slice(prefix,value.length-suffix)];
+  }
+  const unpackHistory = (part,base) => base.slice(0,part[0])+part[2]+(part[1]?base.slice(-part[1]):'');
+  function persistHistory() {
+    historyRevision++;
+    if (historyScheduled) return;
+    historyScheduled=true;
+    queueMicrotask(() => {
+      historyScheduled=false;
+      if (!historyDB) return;
+      const base=snapshot();
+      const undoEntries=enter && enter.host.innerHTML!==enter.was ? [...past,enter.all].slice(-DEPTH) : past;
+      try {
+        const tx=historyDB.transaction('documents','readwrite');
+        tx.objectStore('documents').put({version:1,base,past:undoEntries.map(s=>packHistory(s,base)),future:future.map(s=>packHistory(s,base))},historyKey);
+        tx.onerror=()=>console.warn('발표 편집 히스토리 저장 실패: 현재 탭의 실행 취소는 유지됩니다.');
+      } catch(err) { console.warn('발표 편집 히스토리 저장 실패',err); }
+    });
+  }
+  function loadHistory() {
+    const revision=historyRevision;
+    const request=indexedDB.open('html-presentation-history',1);
+    request.onupgradeneeded=()=>request.result.createObjectStore('documents');
+    request.onerror=()=>console.warn('발표 편집 히스토리 저장소를 열지 못했습니다.');
+    request.onsuccess=()=>{
+      historyDB=request.result;
+      historyDB.onversionchange=()=>{historyDB.close();historyDB=null;};
+      const read=historyDB.transaction('documents','readonly').objectStore('documents').get(historyKey);
+      read.onsuccess=()=>{
+        if(historyRevision!==revision){persistHistory();return;}
+        const saved=read.result;
+        if(!saved || saved.version!==1) return;
+        if(canonicalHistory(saved.base)!==canonicalHistory(historyInitial)) return;
+        past.push(...saved.past.map(p=>unpackHistory(p,saved.base)).slice(-DEPTH));
+        future.push(...saved.future.map(p=>unpackHistory(p,saved.base)).slice(-DEPTH));
+        refreshHistory();
+      };
+    };
+  }
+  loadHistory();
+  addEventListener('pagehide',persistHistory);
 
   window.deckEditor = { save, toggleEdit, toggleRail, serialize };
 })();
