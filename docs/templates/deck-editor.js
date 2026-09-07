@@ -489,14 +489,63 @@
   }
 
   function restore(html) {
-    finishMove(true); hideMove();
-    STAGE.innerHTML = html;
-    closeFields();
-    changed();
+    finishMove(true);
+    const saved = document.createElement('div');
+    saved.innerHTML = html;
+    const beforeSlides = slides();
+    const selectedBefore = [...selected];
+    // 같은 개체는 그대로 두고 바뀐 속성·텍스트만 복원합니다. 이벤트, 포커스,
+    // 이미지 로딩과 진행 중인 애니메이션을 다시 시작하지 않습니다.
+    function sync(live, wanted) {
+      if (live.nodeType === Node.TEXT_NODE || live.nodeType === Node.COMMENT_NODE) {
+        if (live.nodeValue !== wanted.nodeValue) live.nodeValue = wanted.nodeValue;
+        return;
+      }
+      if (live.nodeType !== Node.ELEMENT_NODE) return;
+      if (CFG.skip && live.matches(CFG.skip)) return;
+      const isSlide = live.matches(found.sel);
+      const active = isSlide && live.classList.contains('active');
+      const attrs = new Map([...wanted.attributes].map(a => [a.name, a.value]));
+      if (isSlide) {
+        const classes = new Set((attrs.get('class') || '').split(/\s+/).filter(Boolean));
+        classes.delete('active'); if (active) classes.add('active');
+        attrs.set('class', [...classes].join(' '));
+      }
+      for (const attr of [...live.attributes]) {
+        if (!attrs.has(attr.name)) live.removeAttribute(attr.name);
+      }
+      for (const [name, value] of attrs) {
+        if (live.getAttribute(name) !== value) live.setAttribute(name, value);
+      }
+      syncChildren(live, wanted);
+    }
+    function syncChildren(live, wanted) {
+      const targets = [...wanted.childNodes];
+      targets.forEach((target, i) => {
+        const node = live.childNodes[i];
+        if (!node) live.appendChild(target.cloneNode(true));
+        else if (node.nodeType !== target.nodeType || node.nodeName !== target.nodeName) live.replaceChild(target.cloneNode(true), node);
+        else sync(node, target);
+      });
+      while (live.childNodes.length > targets.length) live.lastChild.remove();
+    }
+    syncChildren(STAGE, saved);
+    const afterSlides = slides();
+    const structural = beforeSlides.length !== afterSlides.length || beforeSlides.some((s,i) => s !== afterSlides[i]);
+    if (structural) {
+      // 장 추가·삭제에만 컨트롤러의 목록과 번호를 다시 구성합니다.
+      hideMove(); closeFields(); changed();
+    } else {
+      selected = normalize(selectedBefore);
+      locateMove();
+      if (railOn) buildRail();
+    }
+    refreshHistory();
     queueSave();
   }
 
   function undo() {
+    finishMove(true);
     if (!past.length) return flash('되돌릴 것이 없습니다');
     future.push(snapshot());
     restore(past.pop());
@@ -504,6 +553,7 @@
   }
 
   function redo() {
+    finishMove(true);
     if (!future.length) return flash('다시 할 것이 없습니다');
     past.push(snapshot());
     restore(future.pop());
