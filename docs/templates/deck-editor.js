@@ -148,6 +148,13 @@
   const css = `
     [${MARK}] { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont,
       'Pretendard Variable', Pretendard, 'Segoe UI', sans-serif; }
+
+    .de-move-box { position: fixed; z-index: 12000; border: 1.5px solid #526b8a; pointer-events: none; box-sizing: border-box; }
+    .de-move-box[hidden] { display: none; }
+    .de-move-handle { position: absolute; left: 0; bottom: calc(100% + 6px); padding: 5px 10px; border: 1px solid #d6dee9; border-radius: 7px; background: #fff; color: #35455f; font: 12px/1.3 system-ui,sans-serif; white-space: nowrap; cursor: grab; pointer-events: auto; touch-action: none; user-select: none; box-shadow: 0 2px 6px #16223a18; }
+    .de-move-handle:active { cursor: grabbing; }
+    .de-move-handle:focus-visible { outline: 2px solid #526b8a; outline-offset: 2px; }
+
     .de-bar {
       position: fixed; left: 50%; top: 16px; transform: translateX(-50%); z-index: 2147483000;
       display: flex; align-items: center; gap: 8px; padding: 7px 8px 7px 14px;
@@ -474,6 +481,7 @@
   }
 
   function restore(html) {
+    finishMove(true); hideMove();
     STAGE.innerHTML = html;
     closeFields();
     changed();
@@ -1016,7 +1024,7 @@
     document.body.classList.toggle('de-editing', editing);
     editBtn.classList.toggle('de-on', editing);
     if (editing) openFields();
-    else { closeFields(); closeSvgInput(); }
+    else { finishMove(true); hideMove(); closeFields(); closeSvgInput(); }
   }
 
   let railOn = false;
@@ -1082,6 +1090,133 @@
     if (document.activeElement && document.activeElement.isContentEditable) e.stopPropagation();
   };
   ['keydown', 'wheel'].forEach((type) => document.addEventListener(type, swallow, true));
+
+  /* ── 편집 모드의 요소 이동 ──────────────────────────────────────────────
+     글자 선택과 충돌하지 않도록 별도 손잡이를 끕니다. 도구 표시는 무대 밖에
+     두고, 실제 좌표만 자료에 남깁니다. SVG는 부모 좌표계로 환산합니다. */
+  const moveBox = el('div', { class: 'de-move-box', hidden: '' });
+  const moveHandle = el('button', {
+    class: 'de-move-handle', type: 'button', text: '↔ 이동',
+    title: '드래그로 이동 · 방향키 1px · Shift 10px · Esc 취소',
+    'aria-label': '선택한 요소 이동',
+  });
+  moveBox.appendChild(moveHandle);
+  document.body.appendChild(moveBox);
+  let moveTarget = null, drag = null;
+  function hideMove() { moveTarget = null; moveBox.hidden = true; }
+  function locateMove() {
+    if (!editing || !moveTarget?.isConnected || !moveTarget.closest(found.sel)?.classList.contains('active') && slides().some(s => s.classList.contains('active'))) {
+      moveBox.hidden = true; return;
+    }
+    const r = moveTarget.getBoundingClientRect();
+    moveBox.hidden = false;
+    Object.assign(moveBox.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+  }
+  function movable(target) {
+    if (!(target instanceof Element) || !STAGE.contains(target)) return null;
+    if (CFG.skip && target.closest(CFG.skip)) return null;
+    const explicit = target.closest('[data-movable]');
+    if (explicit) return explicit;
+    const svg = target.closest('svg');
+    if (svg) {
+      if (svg.classList.contains('bg')) return null;
+      const group = target.closest('g');
+      if (group && svg.contains(group)) return group;
+      return target.closest('text, image, rect, circle, ellipse, path, polygon, polyline, line') || svg;
+    }
+    const leaf = target.closest('img, video, canvas, h1, h2, h3, h4, p, li, [contenteditable="true"]');
+    if (leaf) return leaf;
+    if (target.matches(found.sel) || target.matches('.frame, .body, .head, .rail, .foot')) return null;
+    return target;
+  }
+  function movementState(node) {
+    const svg = node instanceof SVGElement && node.tagName.toLowerCase() !== 'svg';
+    const x = Number(node.dataset.deMoveX || 0), y = Number(node.dataset.deMoveY || 0);
+    const base = node.dataset.deMoveBase ?? (svg ? (node.getAttribute('transform') || '') : (node.style.translate || 'none'));
+    return { node, svg, x, y, base };
+  }
+  function placeMoved(state, x, y) {
+    const { node, svg, base } = state;
+    node.dataset.deMoveBase = base;
+    node.dataset.deMoveX = String(Math.round(x * 100) / 100);
+    node.dataset.deMoveY = String(Math.round(y * 100) / 100);
+    if (svg) node.setAttribute('transform', `translate(${x} ${y}) ${base}`.trim());
+    else {
+      const terms = base === 'none' ? ['0px', '0px'] : base.split(/\s+/);
+      node.style.translate = `calc(${terms[0]} + ${x}px) calc(${terms[1] || '0px'} + ${y}px)${terms[2] ? ' ' + terms[2] : ''}`;
+    }
+    locateMove();
+  }
+  function rememberMove(before) {
+    past.push(before);
+    if (past.length > DEPTH) past.shift();
+    future.length = 0;
+    refreshHistory();
+    queueSave();
+  }
+  function finishMove(cancel) {
+    if (!drag) return;
+    const ended = drag; drag = null;
+    if (cancel) {
+      ['transform', 'style', 'data-de-move-base', 'data-de-move-x', 'data-de-move-y'].forEach(key => {
+        const value = ended.attrs[key];
+        value === null ? ended.node.removeAttribute(key) : ended.node.setAttribute(key, value);
+      });
+    } else if (ended.moved) rememberMove(ended.before);
+    if (moveHandle.hasPointerCapture(ended.id)) moveHandle.releasePointerCapture(ended.id);
+    locateMove();
+  }
+  STAGE.addEventListener('click', e => {
+    if (!editing || drag) return;
+    moveTarget = movable(e.target);
+    if (moveTarget) locateMove(); else hideMove();
+  });
+  moveHandle.addEventListener('pointerdown', e => {
+    if (!editing || !moveTarget || e.button !== 0) return;
+    e.preventDefault(); e.stopPropagation();
+    document.activeElement?.blur();
+    closeSvgInput();
+    moveHandle.focus({ preventScroll: true });
+    const state = movementState(moveTarget);
+    const parent = moveTarget.parentElement;
+    const matrix = state.svg ? parent.getScreenCTM?.() : null;
+    if (state.svg && !matrix) return;
+    const inverse = matrix?.inverse();
+    const rect = STAGE.getBoundingClientRect();
+    const scale = rect.width / (STAGE.offsetWidth || rect.width);
+    drag = { ...state, inverse, scale, sx: e.clientX, sy: e.clientY, id: e.pointerId, before: snapshot(), moved: false,
+      attrs: Object.fromEntries(['transform', 'style', 'data-de-move-base', 'data-de-move-x', 'data-de-move-y'].map(key => [key, moveTarget.getAttribute(key)])) };
+    moveHandle.setPointerCapture(e.pointerId);
+  });
+  moveHandle.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+    if (!drag.moved && Math.hypot(dx, dy) < 3) return;
+    e.preventDefault();
+    drag.moved = true;
+    const m = drag.inverse;
+    placeMoved(drag, drag.x + (m ? m.a * dx + m.c * dy : dx / drag.scale), drag.y + (m ? m.b * dx + m.d * dy : dy / drag.scale));
+  });
+  moveHandle.addEventListener('pointerup', () => finishMove(false));
+  moveHandle.addEventListener('pointercancel', () => finishMove(true));
+  moveHandle.addEventListener('lostpointercapture', () => finishMove(true));
+  moveHandle.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finishMove(true); hideMove(); return; }
+    const delta = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (!delta || !moveTarget) return;
+    e.preventDefault(); e.stopPropagation();
+    const before = snapshot(), state = movementState(moveTarget), step = e.shiftKey ? 10 : 1;
+    placeMoved(state, state.x + delta[0] * step, state.y + delta[1] * step);
+    rememberMove(before);
+  });
+  // 포커스를 둔 이동 손잡이의 방향키는 발표 컨트롤러까지 전달하지 않습니다.
+  window.addEventListener('keydown', e => {
+    if (drag && e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); finishMove(true); }
+  }, true);
+  STAGE.addEventListener('dragstart', e => { if (editing) e.preventDefault(); });
+  addEventListener('resize', locateMove);
+  addEventListener('scroll', locateMove, true);
+  setInterval(locateMove, 180);
 
   window.deckEditor = { save, toggleEdit, toggleRail, serialize };
 })();
