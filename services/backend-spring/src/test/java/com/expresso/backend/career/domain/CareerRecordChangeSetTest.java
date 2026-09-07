@@ -33,7 +33,9 @@ class CareerRecordChangeSetTest {
 	@Test
 	void incrementsVersionExactlyOnceWhenAllCanonicalFieldsChangeTogether() {
 		var record = emptyRecord();
-		var propertyValues = List.of(new TextPropertyValue(propertyDefinitionId(0), "백엔드 개발자"));
+		var propertyValues = List.<PropertyValue>of(
+				new TextualPropertyValue(propertyDefinitionId(0), PropertyValueType.TEXT, "백엔드 개발자"),
+				new CheckboxPropertyValue(propertyDefinitionId(1), true));
 		var blockBody = new BlockBody(List.of(
 				new SemanticBlock(
 						"e692c2ed-57f7-4f0d-af15-493375323134",
@@ -87,9 +89,10 @@ class CareerRecordChangeSetTest {
 		return CareerRecord.create(RECORD_ID, OWNER_ID, CATEGORY_ID, PARAGRAPH_ID, CREATED_AT);
 	}
 
-	private static List<TextPropertyValue> propertyValues(int count) {
+	private static List<PropertyValue> propertyValues(int count) {
 		return IntStream.range(0, count)
-				.mapToObj(index -> new TextPropertyValue(propertyDefinitionId(index), "값"))
+				.<PropertyValue>mapToObj(index -> new TextualPropertyValue(
+						propertyDefinitionId(index), PropertyValueType.TEXT, "값"))
 				.toList();
 	}
 

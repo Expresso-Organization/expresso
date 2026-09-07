@@ -22,9 +22,11 @@ import org.junit.jupiter.api.Test;
 
 import com.expresso.backend.career.domain.BlockBody;
 import com.expresso.backend.career.domain.CareerRecord;
+import com.expresso.backend.career.domain.CheckboxPropertyValue;
 import com.expresso.backend.career.domain.SemanticBlock;
 import com.expresso.backend.career.domain.TextMark;
 import com.expresso.backend.career.domain.TextSpan;
+import com.expresso.backend.career.domain.TextualPropertyValue;
 
 import tools.jackson.databind.ObjectMapper;
 
@@ -90,6 +92,25 @@ class MongoCareerRecordProjectorTest {
 	}
 
 	@Test
+	void rejectsNonTextPropertyValuesUntilTheRichBsonMappingTask() {
+		var record = new CareerRecord(
+				RECORD_ID,
+				OWNER_ID,
+				CATEGORY_ID,
+				"Canonical title",
+				List.of(new CheckboxPropertyValue(PROPERTY_DEFINITION_ID, true)),
+				new BlockBody(List.<SemanticBlock>of()),
+				7,
+				UPDATED_AT);
+
+		var error = assertThrows(
+				IllegalStateException.class,
+				() -> writer.write(record, "idempotency-key", "request-hash"));
+
+		assertEquals("현재 Mongo writer는 text PropertyValue만 지원합니다", error.getMessage());
+	}
+
+	@Test
 	void projectsACompleteCanonicalDocument() {
 		var record = projector.project(canonicalDocument());
 
@@ -98,7 +119,7 @@ class MongoCareerRecordProjectorTest {
 		assertEquals(CATEGORY_ID, record.categoryId());
 		assertEquals("Canonical title", record.title());
 		assertEquals(PROPERTY_DEFINITION_ID, record.propertyValues().getFirst().propertyDefinitionId());
-		assertEquals("Canonical property", record.propertyValues().getFirst().value());
+		assertEquals("Canonical property", textPropertyValue(record).value());
 		assertEquals(PARAGRAPH_ID, record.blockBody().content().getFirst().id());
 		assertEquals("Canonical body", record.blockBody().content().getFirst().text().getFirst().text());
 		assertEquals(7, record.version());
@@ -113,7 +134,7 @@ class MongoCareerRecordProjectorTest {
 
 		var record = projector.project(document);
 
-		assertEquals("Canonical property", record.propertyValues().getFirst().value());
+		assertEquals("Canonical property", textPropertyValue(record).value());
 		assertEquals("Canonical body", record.blockBody().content().getFirst().text().getFirst().text());
 	}
 
@@ -125,7 +146,7 @@ class MongoCareerRecordProjectorTest {
 
 		var record = projector.project(document);
 
-		assertEquals("Canonical property", record.propertyValues().getFirst().value());
+		assertEquals("Canonical property", textPropertyValue(record).value());
 		assertEquals("Canonical body", record.blockBody().content().getFirst().text().getFirst().text());
 	}
 
@@ -162,7 +183,7 @@ class MongoCareerRecordProjectorTest {
 
 		var record = projector.project(document);
 
-		assertEquals("Canonical property", record.propertyValues().getFirst().value());
+		assertEquals("Canonical property", textPropertyValue(record).value());
 		assertEquals("Canonical body", record.blockBody().content().getFirst().text().getFirst().text());
 	}
 
@@ -230,6 +251,10 @@ class MongoCareerRecordProjectorTest {
 	private static CareerRecord recordWith(BlockBody body) {
 		return new CareerRecord(
 				RECORD_ID, OWNER_ID, CATEGORY_ID, "Canonical title", List.of(), body, 7, UPDATED_AT);
+	}
+
+	private static TextualPropertyValue textPropertyValue(CareerRecord record) {
+		return assertInstanceOf(TextualPropertyValue.class, record.propertyValues().getFirst());
 	}
 
 	private static LinkedHashMap<String, Object> jsonValues(String prefix) {

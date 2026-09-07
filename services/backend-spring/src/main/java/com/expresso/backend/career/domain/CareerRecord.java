@@ -10,7 +10,7 @@ public record CareerRecord(
 		String ownerId,
 		String categoryId,
 		String title,
-		List<TextPropertyValue> propertyValues,
+		List<PropertyValue> propertyValues,
 		BlockBody blockBody,
 		long version,
 		Instant updatedAt) {
@@ -84,7 +84,7 @@ public record CareerRecord(
 		}
 	}
 
-	private static List<TextPropertyValue> validatePropertyValues(List<TextPropertyValue> propertyValues) {
+	private static List<PropertyValue> validatePropertyValues(List<PropertyValue> propertyValues) {
 		var values = List.copyOf(Objects.requireNonNull(propertyValues, "propertyValues는 null일 수 없습니다"));
 		if (values.size() > MAX_PROPERTY_VALUES) {
 			throw new IllegalArgumentException("propertyValues는 최대 50개까지 허용됩니다");

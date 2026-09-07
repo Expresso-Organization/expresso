@@ -14,10 +14,12 @@ import org.bson.types.Decimal128;
 
 import com.expresso.backend.career.domain.BlockBody;
 import com.expresso.backend.career.domain.CareerRecord;
+import com.expresso.backend.career.domain.PropertyValue;
+import com.expresso.backend.career.domain.PropertyValueType;
 import com.expresso.backend.career.domain.SemanticBlock;
-import com.expresso.backend.career.domain.TextPropertyValue;
 import com.expresso.backend.career.domain.TextMark;
 import com.expresso.backend.career.domain.TextSpan;
+import com.expresso.backend.career.domain.TextualPropertyValue;
 
 final class MongoCareerRecordProjector {
 
@@ -42,13 +44,14 @@ final class MongoCareerRecordProjector {
 		}
 	}
 
-	private static List<TextPropertyValue> projectPropertyValues(List<?> documents) {
-		var values = new ArrayList<TextPropertyValue>(documents.size());
+	private static List<PropertyValue> projectPropertyValues(List<?> documents) {
+		var values = new ArrayList<PropertyValue>(documents.size());
 		for (var value : documents) {
 			var valueDocument = asDocument(value, "propertyValues 항목");
 			requireConstant(valueDocument, "type", "text");
-			values.add(new TextPropertyValue(
+			values.add(new TextualPropertyValue(
 					requiredString(valueDocument, "propertyDefinitionId"),
+					PropertyValueType.TEXT,
 					requiredString(valueDocument, "value")));
 		}
 		return values;
