@@ -1305,6 +1305,7 @@
   });
   selectionLayer.addEventListener('pointermove',e=>{
     if (drag?.kind!=='resize' || drag.id!==e.pointerId) return;
+    if (!(e.buttons & 1)) { finishMove(false); return; }
     e.preventDefault();resizeTo(e.clientX,e.clientY,e.shiftKey);
   });
   selectionLayer.addEventListener('pointerup',()=>{if(drag?.kind==='resize')finishMove(false);});
@@ -1334,6 +1335,8 @@
   }, true);
   STAGE.addEventListener('pointermove', e => {
     if (!drag || e.pointerId !== drag.id) return;
+    // pointerup을 놓쳤더라도 버튼을 놓은 포인터 이동은 개체를 움직이지 않습니다.
+    if (!(e.buttons & 1)) { finishMove(false); return; }
     const dx = e.clientX-drag.sx, dy = e.clientY-drag.sy;
     if (!drag.moved && Math.hypot(dx,dy) < 3) return;
     e.preventDefault(); e.stopPropagation();
@@ -1352,6 +1355,11 @@
     }
     locateMove();
   }, true);
+  // 선택 직후 생긴 핸들이 pointerup을 받거나 포인터가 무대 밖으로 나가도
+  // 창의 캡처 단계에서 항상 드래그를 종료합니다.
+  window.addEventListener('pointerup', e => { if (drag?.id === e.pointerId) finishMove(false); }, true);
+  window.addEventListener('pointercancel', e => { if (drag?.id === e.pointerId) finishMove(true); }, true);
+  window.addEventListener('blur', () => finishMove(true));
   STAGE.addEventListener('pointerup', () => finishMove(false), true);
   STAGE.addEventListener('pointercancel', () => finishMove(true), true);
   STAGE.addEventListener('lostpointercapture', () => finishMove(true), true);
