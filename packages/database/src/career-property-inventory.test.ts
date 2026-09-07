@@ -131,4 +131,54 @@ describe("career property read-only inventory", () => {
     expect(report.conflicts.every(({ count }) => count > 0)).toBe(true);
     expect(report.conflicts.every(({ message }) => message.length > 0)).toBe(true);
   });
+
+  it("preserves a custom V2 identity instead of requiring a newly computed UUID", async () => {
+    const customPropertyId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaab";
+    const fixture = readOnlyDb({
+      career_categories: [{
+        _id: CUSTOM_CATEGORY_ID, userId: "22222222-2222-4222-8222-222222222222", isSystem: false,
+        propertySchema: {
+          note: { id: customPropertyId, type: "text", label: "메모", required: false, system: false },
+        },
+        propertySchemaV2: [v2Definition(customPropertyId, "note", "사용자 메모", "text", 0)],
+      }],
+    });
+
+    const report = await inspectCareerPropertyMigration(fixture.db);
+
+    expect(report.idMappings).toContainEqual(expect.objectContaining({
+      categoryId: CUSTOM_CATEGORY_ID, key: "note", officialId: customPropertyId,
+    }));
+    expect(report.conflicts.map(({ reason }) => reason)).not.toContain("official_property_id_mismatch");
+    expect(report.canMigrate).toBe(true);
+  });
+
+  it("treats equal old and official values as one semantic value but rejects different values", async () => {
+    function collections(officialValue: string): Record<string, Document[]> {
+      return {
+        career_categories: [{
+          _id: SYSTEM_CATEGORY_ID, userId: null, isSystem: true,
+          propertySchema: {
+            role: { id: ROLE_ID, type: "text", label: "역할", required: false, system: true },
+          },
+          propertySchemaV2: [v2Definition(ROLE_ID, "role", "역할", "text", 0)],
+          propertyDefinitions: [legacyDefinition(ROLE_0009_ID, "role", "역할", "text")],
+        }],
+        career_records: [{
+          _id: "33333333-3333-4333-8333-333333333333", categoryId: SYSTEM_CATEGORY_ID, properties: {},
+          propertyValues: [
+            { propertyDefinitionId: ROLE_0009_ID, type: "text", value: "Backend" },
+            { propertyDefinitionId: ROLE_ID, type: "text", value: officialValue },
+          ],
+        }],
+      };
+    }
+
+    const equal = await inspectCareerPropertyMigration(readOnlyDb(collections("Backend")).db);
+    const different = await inspectCareerPropertyMigration(readOnlyDb(collections("Frontend")).db);
+
+    expect(equal.conflicts.map(({ reason }) => reason)).not.toContain("canonical_property_value_conflict");
+    expect(equal.canMigrate).toBe(true);
+    expect(different.conflicts.map(({ reason }) => reason)).toContain("canonical_property_value_conflict");
+  });
 });

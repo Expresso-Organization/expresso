@@ -11,14 +11,7 @@ export interface CareerCategoryDoc {
   key: string;
   isSystem: boolean;
   propertySchema: Contracts.CareerPropertySchema;
-  propertyDefinitions?: Array<{
-    id: string;
-    key: string;
-    label: string;
-    type: "text" | "number" | "date" | "tags" | "boolean";
-    required: boolean;
-    system: boolean;
-  }>;
+  propertyDefinitions?: Contracts.CanonicalCareerPropertyDefinition[];
   sortOrder: number;
   name: string;
   icon: string;
@@ -40,11 +33,7 @@ export interface CareerRecordDoc {
   origin: Contracts.CareerRecord["origin"];
   properties: Contracts.CareerRecord["properties"];
   bodyMd: Contracts.CareerRecord["bodyMd"];
-  propertyValues?: Array<{
-    propertyDefinitionId: string;
-    type: "text";
-    value: string;
-  }>;
+  propertyValues?: Contracts.WritableCareerPropertyValue[];
   blockBody?: {
     schemaVersion: 1;
     type: "doc";

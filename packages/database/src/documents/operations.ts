@@ -1,5 +1,5 @@
 // 최종 SQL 제약 목록을 대조해 확정한 MongoDB 저장 타입입니다. API 계약은 contracts에서 가져옵니다.
-import type { Binary } from "mongodb";
+import type { Binary, Document } from "mongodb";
 import type { JsonObject } from "./common.js";
 
 export interface AccountDeletionRequestDoc {
@@ -61,6 +61,18 @@ export interface MigrationLockDoc {
   owner: string;
   token: string;
   expiresAt: Date;
+}
+
+export interface CareerPropertyMigrationJournalDoc {
+  _id: string;
+  migration: "0011_career_property_canonical_identity";
+  collection: string;
+  documentId: string;
+  before: Document;
+  after: Document;
+  beforeDigest: string;
+  afterDigest: string;
+  state: "planned" | "applied";
 }
 
 export interface SnapshotChunkDoc {
