@@ -5,7 +5,7 @@
     "name": "경험",
     "propertyDefinitions": [
       {
-        "id": "6c663539-48c1-5d12-939d-f100fac993c1",
+        "id": "f3b3693d-2b90-526a-9e13-81d8f64e9e09",
         "key": "role",
         "name": "역할",
         "type": "text",
@@ -186,7 +186,7 @@
   },
   "propertyValues": [
     {
-      "propertyDefinitionId": "6c663539-48c1-5d12-939d-f100fac993c1",
+      "propertyDefinitionId": "f3b3693d-2b90-526a-9e13-81d8f64e9e09",
       "type": "text",
       "value": "백엔드 개발자"
     },
