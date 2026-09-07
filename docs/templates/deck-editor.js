@@ -149,11 +149,17 @@
     [${MARK}] { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont,
       'Pretendard Variable', Pretendard, 'Segoe UI', sans-serif; }
 
-    .de-move-box { position: fixed; z-index: 12000; border: 1.5px solid #526b8a; pointer-events: none; box-sizing: border-box; }
-    .de-move-box[hidden] { display: none; }
-    .de-move-handle { position: absolute; left: 0; bottom: calc(100% + 6px); padding: 5px 10px; border: 1px solid #d6dee9; border-radius: 7px; background: #fff; color: #35455f; font: 12px/1.3 system-ui,sans-serif; white-space: nowrap; cursor: grab; pointer-events: auto; touch-action: none; user-select: none; box-shadow: 0 2px 6px #16223a18; }
-    .de-move-handle:active { cursor: grabbing; }
-    .de-move-handle:focus-visible { outline: 2px solid #526b8a; outline-offset: 2px; }
+    .de-selection-layer { position: fixed; inset: 0; z-index: 12000; pointer-events: none; }
+    .de-object-box, .de-selection-box, .de-marquee { position: absolute; box-sizing: border-box; }
+    .de-object-box { border: 1px solid #526b8a66; }
+    .de-selection-box { border: 1.5px solid #526b8a; }
+    .de-marquee { border: 1px solid #526b8a; background: #526b8a18; }
+    .de-selection-tools { display: inline-flex; align-items: center; gap: 5px; }
+    .de-selection-tools[hidden] { display: none; }
+    .de-selection-count { font: 11px/1 system-ui,sans-serif; color: #526b8a; white-space: nowrap; }
+    body.de-editing .slide { user-select: none; }
+    body.de-editing [contenteditable="true"] { user-select: text; }
+    body.de-editing .slide :is(image,g,img) { cursor: move; }
 
     .de-bar {
       position: fixed; left: 50%; top: 16px; transform: translateX(-50%); z-index: 2147483000;
@@ -553,7 +559,7 @@
       window.deck.show?.(window.deck.i ?? 0);
     }
     buildRail();
-    if (editing) openFields();
+    closeFields();
   }
 
   function duplicate(i, blank) {
@@ -1023,8 +1029,8 @@
     editing = force === undefined ? !editing : force;
     document.body.classList.toggle('de-editing', editing);
     editBtn.classList.toggle('de-on', editing);
-    if (editing) openFields();
-    else { finishMove(true); hideMove(); closeFields(); closeSvgInput(); }
+    closeFields();
+    if (!editing) { finishMove(true); hideMove(); closeSvgInput(); textTarget = null; }
   }
 
   let railOn = false;
@@ -1035,7 +1041,7 @@
     if (railOn) buildRail();
   }
 
-  STAGE.addEventListener('click', (e) => {
+  STAGE.addEventListener('dblclick', (e) => {
     if (!editing) return;
     const node = e.target.closest && e.target.closest('tspan, text');
     if (!node || node.children.length) return;
@@ -1091,26 +1097,28 @@
   };
   ['keydown', 'wheel'].forEach((type) => document.addEventListener(type, swallow, true));
 
-  /* ── 편집 모드의 요소 이동 ──────────────────────────────────────────────
-     글자 선택과 충돌하지 않도록 별도 손잡이를 끕니다. 도구 표시는 무대 밖에
-     두고, 실제 좌표만 자료에 남깁니다. SVG는 부모 좌표계로 환산합니다. */
-  const moveBox = el('div', { class: 'de-move-box', hidden: '' });
-  const moveHandle = el('button', {
-    class: 'de-move-handle', type: 'button', text: '↔ 이동',
-    title: '드래그로 이동 · 방향키 1px · Shift 10px · Esc 취소',
-    'aria-label': '선택한 요소 이동',
-  });
-  moveBox.appendChild(moveHandle);
-  document.body.appendChild(moveBox);
-  let moveTarget = null, drag = null;
-  function hideMove() { moveTarget = null; moveBox.hidden = true; }
-  function locateMove() {
-    if (!editing || !moveTarget?.isConnected || !moveTarget.closest(found.sel)?.classList.contains('active') && slides().some(s => s.classList.contains('active'))) {
-      moveBox.hidden = true; return;
-    }
-    const r = moveTarget.getBoundingClientRect();
-    moveBox.hidden = false;
-    Object.assign(moveBox.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+  /* ── 개체 선택·이동·그룹화 ────────────────────────────────────────────────
+     한 번 클릭은 선택, 더블클릭은 글자 편집입니다. 그룹은 식별자로 연결하므로
+     HTML 배치와 SVG 좌표계를 바꾸지 않고 함께 선택·이동할 수 있습니다. */
+  const selectionLayer = el('div', { class: 'de-selection-layer' });
+  document.body.appendChild(selectionLayer);
+  const groupBtn = el('button', { class: 'de-btn', text: '그룹', title: '그룹화 ⌘G / Ctrl+G', onclick: () => groupSelection(false) });
+  const ungroupBtn = el('button', { class: 'de-btn', text: '그룹 해제', title: '그룹 해제 ⇧⌘G / Ctrl+Shift+G', onclick: () => groupSelection(true) });
+  const selectedLabel = el('span', { class: 'de-selection-count', 'aria-live': 'polite' });
+  const selectionTools = el('span', { class: 'de-selection-tools', hidden: '' }, [selectedLabel, groupBtn, ungroupBtn]);
+  bar.insertBefore(selectionTools, saveBtn);
+  let selected = [], drag = null, textTarget = null;
+  const activeSlide = () => slides()[current()];
+  const moveAttrs = ['transform', 'style', 'data-de-move-base', 'data-de-move-x', 'data-de-move-y'];
+  function endText() { document.activeElement?.blur(); closeFields(); closeSvgInput(); textTarget = null; }
+  function hideMove() { selected = []; selectionLayer.replaceChildren(); selectionTools.hidden = true; }
+  function normalize(nodes) {
+    const unique = [...new Set(nodes)].filter(n => n?.isConnected && activeSlide()?.contains(n));
+    return unique.filter(n => !unique.some(parent => parent !== n && parent.contains(n)));
+  }
+  function members(node) {
+    const id = node.dataset.deGroup;
+    return id ? [...activeSlide().querySelectorAll('[data-de-group]')].filter(n => n.dataset.deGroup === id) : [node];
   }
   function movable(target) {
     if (!(target instanceof Element) || !STAGE.contains(target)) return null;
@@ -1119,104 +1127,155 @@
     if (explicit) return explicit;
     const svg = target.closest('svg');
     if (svg) {
-      if (svg.classList.contains('bg')) return null;
+      if (svg.classList.contains('bg') || target.closest('defs, marker, mask, clipPath')) return null;
       const group = target.closest('g');
-      if (group && svg.contains(group)) return group;
-      return target.closest('text, image, rect, circle, ellipse, path, polygon, polyline, line') || svg;
+      return group || target.closest('text, image, rect, circle, ellipse, path, polygon, polyline, line');
     }
-    const leaf = target.closest('img, video, canvas, h1, h2, h3, h4, p, li, [contenteditable="true"]');
-    if (leaf) return leaf;
-    if (target.matches(found.sel) || target.matches('.frame, .body, .head, .rail, .foot')) return null;
-    return target;
+    return target.closest('img, video, canvas, h1, h2, h3, h4, p, li, [contenteditable="true"]');
+  }
+  function locateMove() {
+    if (!editing) { hideMove(); return; }
+    selected = normalize(selected);
+    selectionLayer.replaceChildren();
+    selectionTools.hidden = !selected.length;
+    selectedLabel.textContent = selected.length + '개 선택';
+    groupBtn.disabled = selected.length < 2;
+    ungroupBtn.disabled = !selected.some(n => n.dataset.deGroup);
+    const boxes = selected.map(n => n.getBoundingClientRect());
+    if (boxes.length) {
+      const left = Math.min(...boxes.map(r => r.left)), top = Math.min(...boxes.map(r => r.top));
+      const right = Math.max(...boxes.map(r => r.right)), bottom = Math.max(...boxes.map(r => r.bottom));
+      boxes.forEach(r => selectionLayer.appendChild(el('div', { class: 'de-object-box', style: `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px` })));
+      const box = el('div', { class: 'de-selection-box', style: `left:${left}px;top:${top}px;width:${right-left}px;height:${bottom-top}px` });
+      // 모서리 표시는 선택 범위를 나타냅니다. 크기 조절 동작은 포함하지 않습니다.
+      selectionLayer.appendChild(box);
+    }
+    if (drag?.kind === 'marquee' && drag.moved) {
+      const r = drag.rect;
+      selectionLayer.appendChild(el('div', { class: 'de-marquee', style: `left:${r.left}px;top:${r.top}px;width:${r.right-r.left}px;height:${r.bottom-r.top}px` }));
+    }
   }
   function movementState(node) {
     const svg = node instanceof SVGElement && node.tagName.toLowerCase() !== 'svg';
     const x = Number(node.dataset.deMoveX || 0), y = Number(node.dataset.deMoveY || 0);
     const base = node.dataset.deMoveBase ?? (svg ? (node.getAttribute('transform') || '') : (node.style.translate || 'none'));
-    return { node, svg, x, y, base };
+    const matrix = svg ? node.parentElement.getScreenCTM?.() : null;
+    const scale = STAGE.getBoundingClientRect().width / (STAGE.offsetWidth || STAGE.getBoundingClientRect().width);
+    return { node, svg, x, y, base, inverse: matrix?.inverse(), scale,
+      attrs: Object.fromEntries(moveAttrs.map(key => [key, node.getAttribute(key)])) };
   }
   function placeMoved(state, x, y) {
     const { node, svg, base } = state;
-    node.dataset.deMoveBase = base;
-    node.dataset.deMoveX = String(Math.round(x * 100) / 100);
-    node.dataset.deMoveY = String(Math.round(y * 100) / 100);
+    x = Math.round(x * 100) / 100; y = Math.round(y * 100) / 100;
+    node.dataset.deMoveBase = base; node.dataset.deMoveX = x; node.dataset.deMoveY = y;
     if (svg) node.setAttribute('transform', `translate(${x} ${y}) ${base}`.trim());
     else {
       const terms = base === 'none' ? ['0px', '0px'] : base.split(/\s+/);
       node.style.translate = `calc(${terms[0]} + ${x}px) calc(${terms[1] || '0px'} + ${y}px)${terms[2] ? ' ' + terms[2] : ''}`;
     }
-    locateMove();
   }
   function rememberMove(before) {
-    past.push(before);
-    if (past.length > DEPTH) past.shift();
-    future.length = 0;
-    refreshHistory();
-    queueSave();
+    past.push(before); if (past.length > DEPTH) past.shift(); future.length = 0;
+    refreshHistory(); queueSave();
+  }
+  function candidates() {
+    const root = activeSlide(), list = [...root.querySelectorAll('h1,h2,h3,h4,p,li,img,video,canvas,[data-movable]')].filter(n => !n.closest('svg'));
+    root.querySelectorAll('svg:not(.bg)').forEach(svg => {
+      [...svg.children].filter(n => /^(g|text|image|rect|circle|ellipse|path|polygon|polyline|line)$/i.test(n.tagName)).forEach(n => list.push(n));
+    });
+    return normalize(list.filter(n => !(CFG.skip && n.matches(CFG.skip))));
   }
   function finishMove(cancel) {
     if (!drag) return;
     const ended = drag; drag = null;
     if (cancel) {
-      ['transform', 'style', 'data-de-move-base', 'data-de-move-x', 'data-de-move-y'].forEach(key => {
-        const value = ended.attrs[key];
-        value === null ? ended.node.removeAttribute(key) : ended.node.setAttribute(key, value);
-      });
-    } else if (ended.moved) rememberMove(ended.before);
-    if (moveHandle.hasPointerCapture(ended.id)) moveHandle.releasePointerCapture(ended.id);
+      ended.states?.forEach(state => moveAttrs.forEach(key => state.attrs[key] === null ? state.node.removeAttribute(key) : state.node.setAttribute(key, state.attrs[key])));
+      selected = ended.selection;
+    } else if (ended.kind === 'move' && ended.moved) rememberMove(ended.before);
+    if (STAGE.hasPointerCapture(ended.id)) STAGE.releasePointerCapture(ended.id);
     locateMove();
   }
-  STAGE.addEventListener('click', e => {
-    if (!editing || drag) return;
-    moveTarget = movable(e.target);
-    if (moveTarget) locateMove(); else hideMove();
-  });
-  moveHandle.addEventListener('pointerdown', e => {
-    if (!editing || !moveTarget || e.button !== 0) return;
+  STAGE.addEventListener('pointerdown', e => {
+    if (!editing || e.button !== 0 || e.target.closest('[' + MARK + ']')) return;
+    if (textTarget?.contains(e.target)) return;
+    endText();
     e.preventDefault(); e.stopPropagation();
-    document.activeElement?.blur();
-    closeSvgInput();
-    moveHandle.focus({ preventScroll: true });
-    const state = movementState(moveTarget);
-    const parent = moveTarget.parentElement;
-    const matrix = state.svg ? parent.getScreenCTM?.() : null;
-    if (state.svg && !matrix) return;
-    const inverse = matrix?.inverse();
-    const rect = STAGE.getBoundingClientRect();
-    const scale = rect.width / (STAGE.offsetWidth || rect.width);
-    drag = { ...state, inverse, scale, sx: e.clientX, sy: e.clientY, id: e.pointerId, before: snapshot(), moved: false,
-      attrs: Object.fromEntries(['transform', 'style', 'data-de-move-base', 'data-de-move-x', 'data-de-move-y'].map(key => [key, moveTarget.getAttribute(key)])) };
-    moveHandle.setPointerCapture(e.pointerId);
-  });
-  moveHandle.addEventListener('pointermove', e => {
-    if (!drag || e.pointerId !== drag.id) return;
-    const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
-    if (!drag.moved && Math.hypot(dx, dy) < 3) return;
-    e.preventDefault();
-    drag.moved = true;
-    const m = drag.inverse;
-    placeMoved(drag, drag.x + (m ? m.a * dx + m.c * dy : dx / drag.scale), drag.y + (m ? m.b * dx + m.d * dy : dy / drag.scale));
-  });
-  moveHandle.addEventListener('pointerup', () => finishMove(false));
-  moveHandle.addEventListener('pointercancel', () => finishMove(true));
-  moveHandle.addEventListener('lostpointercapture', () => finishMove(true));
-  moveHandle.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finishMove(true); hideMove(); return; }
-    const delta = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
-    if (!delta || !moveTarget) return;
-    e.preventDefault(); e.stopPropagation();
-    const before = snapshot(), state = movementState(moveTarget), step = e.shiftKey ? 10 : 1;
-    placeMoved(state, state.x + delta[0] * step, state.y + delta[1] * step);
-    rememberMove(before);
-  });
-  // 포커스를 둔 이동 손잡이의 방향키는 발표 컨트롤러까지 전달하지 않습니다.
-  window.addEventListener('keydown', e => {
-    if (drag && e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); finishMove(true); }
+    const hit = movable(e.target), prior = [...selected];
+    if (hit) {
+      const batch = members(hit);
+      if (e.shiftKey) {
+        const remove = batch.every(n => selected.includes(n));
+        selected = normalize(remove ? selected.filter(n => !batch.includes(n)) : [...selected, ...batch]);
+        if (remove) { locateMove(); return; }
+      } else if (!selected.includes(hit)) selected = normalize(batch);
+      drag = { kind: 'move', states: selected.map(movementState), before: snapshot(), selection: prior };
+    } else {
+      if (!e.shiftKey) selected = [];
+      drag = { kind: 'marquee', candidates: candidates(), additive: e.shiftKey ? prior : [], selection: prior };
+    }
+    Object.assign(drag, { id: e.pointerId, sx: e.clientX, sy: e.clientY, moved: false });
+    locateMove();
   }, true);
-  STAGE.addEventListener('dragstart', e => { if (editing) e.preventDefault(); });
-  addEventListener('resize', locateMove);
-  addEventListener('scroll', locateMove, true);
-  setInterval(locateMove, 180);
+  STAGE.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX-drag.sx, dy = e.clientY-drag.sy;
+    if (!drag.moved && Math.hypot(dx,dy) < 3) return;
+    e.preventDefault(); e.stopPropagation();
+    if (!drag.moved) STAGE.setPointerCapture(e.pointerId);
+    drag.moved = true;
+    if (drag.kind === 'move') {
+      drag.states.forEach(state => {
+        const m = state.inverse;
+        placeMoved(state, state.x+(m ? m.a*dx+m.c*dy : dx/state.scale), state.y+(m ? m.b*dx+m.d*dy : dy/state.scale));
+      });
+    } else {
+      drag.rect = { left: Math.min(drag.sx,e.clientX), right: Math.max(drag.sx,e.clientX), top: Math.min(drag.sy,e.clientY), bottom: Math.max(drag.sy,e.clientY) };
+      const r = drag.rect;
+      const enclosed = drag.candidates.filter(n => { const b=n.getBoundingClientRect(); return b.width && b.height && b.left>=r.left && b.right<=r.right && b.top>=r.top && b.bottom<=r.bottom; });
+      selected = normalize([...drag.additive,...enclosed.flatMap(members)]);
+    }
+    locateMove();
+  }, true);
+  STAGE.addEventListener('pointerup', () => finishMove(false), true);
+  STAGE.addEventListener('pointercancel', () => finishMove(true), true);
+  STAGE.addEventListener('lostpointercapture', () => finishMove(true), true);
+  STAGE.addEventListener('dblclick', e => {
+    if (!editing) return;
+    const node = movable(e.target);
+    if (!node || node instanceof SVGElement || !node.matches('h1,h2,h3,h4,p,li,[contenteditable]')) return;
+    e.preventDefault(); hideMove(); textTarget = node;
+    node.setAttribute('contenteditable','true'); node.setAttribute('spellcheck','false'); node.focus();
+    const range = document.createRange(); range.selectNodeContents(node);
+    const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range);
+  });
+  function groupSelection(ungroup) {
+    finishMove(false); selected = normalize(selected);
+    if (ungroup ? !selected.some(n => n.dataset.deGroup) : selected.length < 2) return;
+    const before = snapshot();
+    if (ungroup) selected.forEach(n => delete n.dataset.deGroup);
+    else { const id = 'group-' + crypto.randomUUID(); selected.forEach(n => { n.dataset.deGroup = id; }); }
+    rememberMove(before); locateMove();
+  }
+  window.addEventListener('keydown', e => {
+    if (!editing || e.target.closest?.('input,textarea,[contenteditable="true"]')) return;
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'g') {
+      e.preventDefault(); e.stopImmediatePropagation(); groupSelection(e.shiftKey); return;
+    }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); finishMove(true); hideMove(); return; }
+    const delta = { ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1] }[e.key];
+    if (!delta || !selected.length) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    const before = snapshot(), step = e.shiftKey ? 10 : 1;
+    selected.forEach(n => {
+      const state=movementState(n), m=state.inverse;
+      const dx=delta[0]*step, dy=delta[1]*step;
+      placeMoved(state,state.x+(m ? (m.a*dx+m.c*dy)*state.scale : dx),state.y+(m ? (m.b*dx+m.d*dy)*state.scale : dy));
+    });
+    rememberMove(before); locateMove();
+  }, true);
+  STAGE.addEventListener('dragstart', e => { if (editing && !textTarget?.contains(e.target)) e.preventDefault(); });
+  addEventListener('resize', locateMove); addEventListener('scroll',locateMove,true);
+  setInterval(locateMove,180);
 
   window.deckEditor = { save, toggleEdit, toggleRail, serialize };
 })();
