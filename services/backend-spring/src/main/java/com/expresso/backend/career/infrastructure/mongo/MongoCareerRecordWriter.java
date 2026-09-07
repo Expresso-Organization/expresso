@@ -11,10 +11,12 @@ import org.bson.types.Decimal128;
 
 import com.expresso.backend.career.domain.BlockBody;
 import com.expresso.backend.career.domain.CareerRecord;
+import com.expresso.backend.career.domain.PropertyValue;
+import com.expresso.backend.career.domain.PropertyValueType;
 import com.expresso.backend.career.domain.SemanticBlock;
 import com.expresso.backend.career.domain.TextMark;
-import com.expresso.backend.career.domain.TextPropertyValue;
 import com.expresso.backend.career.domain.TextSpan;
+import com.expresso.backend.career.domain.TextualPropertyValue;
 
 final class MongoCareerRecordWriter {
 
@@ -39,14 +41,23 @@ final class MongoCareerRecordWriter {
 				.append("createRequestHash", requestHash);
 	}
 
-	static List<Document> writePropertyValues(List<TextPropertyValue> values) {
+	static List<Document> writePropertyValues(List<PropertyValue> values) {
 		return values.stream().map(MongoCareerRecordWriter::writePropertyValue).toList();
 	}
 
-	private static Document writePropertyValue(TextPropertyValue value) {
-		return new Document("propertyDefinitionId", value.propertyDefinitionId())
+	private static Document writePropertyValue(PropertyValue value) {
+		var textValue = requireTextPropertyValue(value);
+		return new Document("propertyDefinitionId", textValue.propertyDefinitionId())
 				.append("type", "text")
-				.append("value", value.value());
+				.append("value", textValue.value());
+	}
+
+	// Task 6에서 rich BSON mapping으로 교체할 임시 TEXT 전용 경계입니다.
+	private static TextualPropertyValue requireTextPropertyValue(PropertyValue value) {
+		if (value instanceof TextualPropertyValue textValue && value.type() == PropertyValueType.TEXT) {
+			return textValue;
+		}
+		throw new IllegalStateException("현재 Mongo writer는 text PropertyValue만 지원합니다");
 	}
 
 	static Document writeBlockBody(BlockBody body) {

@@ -6,7 +6,7 @@ import java.util.Optional;
 
 public record CareerRecordChangeSet(
 		Optional<String> title,
-		Optional<List<TextPropertyValue>> propertyValues,
+		Optional<List<PropertyValue>> propertyValues,
 		Optional<BlockBody> blockBody) {
 
 	public CareerRecordChangeSet {
@@ -24,8 +24,8 @@ public record CareerRecordChangeSet(
 		return new CareerRecordChangeSet(Optional.of(nextTitle), propertyValues, blockBody);
 	}
 
-	public CareerRecordChangeSet withPropertyValues(List<TextPropertyValue> nextPropertyValues) {
-		return new CareerRecordChangeSet(title, Optional.of(nextPropertyValues), blockBody);
+	public CareerRecordChangeSet withPropertyValues(List<? extends PropertyValue> nextPropertyValues) {
+		return new CareerRecordChangeSet(title, Optional.of(List.copyOf(nextPropertyValues)), blockBody);
 	}
 
 	public CareerRecordChangeSet withBlockBody(BlockBody nextBlockBody) {

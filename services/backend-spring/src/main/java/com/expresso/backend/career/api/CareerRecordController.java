@@ -29,10 +29,12 @@ import com.expresso.backend.career.application.PatchCareerRecordUseCase;
 import com.expresso.backend.career.domain.BlockBody;
 import com.expresso.backend.career.domain.CareerRecord;
 import com.expresso.backend.career.domain.CareerRecordChangeSet;
+import com.expresso.backend.career.domain.PropertyValue;
+import com.expresso.backend.career.domain.PropertyValueType;
 import com.expresso.backend.career.domain.SemanticBlock;
-import com.expresso.backend.career.domain.TextPropertyValue;
 import com.expresso.backend.career.domain.TextMark;
 import com.expresso.backend.career.domain.TextSpan;
+import com.expresso.backend.career.domain.TextualPropertyValue;
 import com.expresso.backend.security.AuthenticatedUserPrincipal;
 
 @RestController
@@ -160,14 +162,14 @@ public class CareerRecordController {
 		}
 	}
 
-	private static List<TextPropertyValue> readPropertyValues(Object value) {
+	private static List<PropertyValue> readPropertyValues(Object value) {
 		if (!(value instanceof List<?> values)) {
 			throw new CareerRecordRequestValidationException("propertyValues는 배열이어야 합니다");
 		}
 		return values.stream().map(CareerRecordController::readPropertyValue).toList();
 	}
 
-	private static TextPropertyValue readPropertyValue(Object value) {
+	private static PropertyValue readPropertyValue(Object value) {
 		var propertyValue = requireMap(value, "propertyValues 항목");
 		requireExactFields(propertyValue, Set.of("propertyDefinitionId", "type", "value"),
 				"propertyValues 항목");
@@ -177,7 +179,10 @@ public class CareerRecordController {
 		if (!"text".equals(requireString(propertyValue, "type"))) {
 			throw new CareerRecordRequestValidationException("PropertyValue type은 text여야 합니다");
 		}
-		return new TextPropertyValue(propertyDefinitionId, requireString(propertyValue, "value"));
+		return new TextualPropertyValue(
+				propertyDefinitionId,
+				PropertyValueType.TEXT,
+				requireString(propertyValue, "value"));
 	}
 
 	private static BlockBody readBlockBody(Object value) {
@@ -329,9 +334,18 @@ public class CareerRecordController {
 
 	public record TextPropertyValueResponse(String propertyDefinitionId, String type, String value) {
 
-		private static TextPropertyValueResponse from(TextPropertyValue propertyValue) {
-			return new TextPropertyValueResponse(propertyValue.propertyDefinitionId(), "text", propertyValue.value());
+		private static TextPropertyValueResponse from(PropertyValue propertyValue) {
+			var textValue = requireTextPropertyValue(propertyValue);
+			return new TextPropertyValueResponse(textValue.propertyDefinitionId(), "text", textValue.value());
 		}
+	}
+
+	// Task 6에서 canonical union 응답 mapping으로 교체할 임시 TEXT 전용 경계입니다.
+	private static TextualPropertyValue requireTextPropertyValue(PropertyValue value) {
+		if (value instanceof TextualPropertyValue textValue && value.type() == PropertyValueType.TEXT) {
+			return textValue;
+		}
+		throw new IllegalStateException("현재 HTTP mapper는 text PropertyValue만 지원합니다");
 	}
 
 	public record BlockBodyResponse(int schemaVersion, String type, List<SemanticBlockResponse> content) {

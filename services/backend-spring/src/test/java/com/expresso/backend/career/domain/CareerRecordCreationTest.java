@@ -56,16 +56,18 @@ class CareerRecordCreationTest {
 	}
 
 	@Test
-	void acceptsATextPropertyValueWithFiveThousandCharacters() {
-		var value = new TextPropertyValue(propertyDefinitionId(0), "가".repeat(5_000));
+	void acceptsATextPropertyValueWithFiftyThousandCharacters() {
+		var value = new TextualPropertyValue(
+				propertyDefinitionId(0), PropertyValueType.TEXT, "가".repeat(50_000));
 
-		assertEquals(5_000, value.value().length());
+		assertEquals(50_000, value.value().length());
 	}
 
 	@Test
-	void rejectsATextPropertyValueWithFiveThousandAndOneCharacters() {
+	void rejectsATextPropertyValueWithFiftyThousandAndOneCharacters() {
 		assertThrows(IllegalArgumentException.class,
-				() -> new TextPropertyValue(propertyDefinitionId(0), "가".repeat(5_001)));
+				() -> new TextualPropertyValue(
+						propertyDefinitionId(0), PropertyValueType.TEXT, "가".repeat(50_001)));
 	}
 
 	@Test
@@ -83,9 +85,9 @@ class CareerRecordCreationTest {
 	@Test
 	void rejectsDuplicatePropertyDefinitionIdsEvenWhenValuesDiffer() {
 		var duplicatedId = propertyDefinitionId(0);
-		var values = List.of(
-				new TextPropertyValue(duplicatedId, "첫 값"),
-				new TextPropertyValue(duplicatedId, "다른 값"));
+		var values = List.<PropertyValue>of(
+				new TextualPropertyValue(duplicatedId, PropertyValueType.TEXT, "첫 값"),
+				new NumberPropertyValue(duplicatedId, java.math.BigDecimal.ONE));
 
 		assertThrows(IllegalArgumentException.class, () -> recordWith("", values));
 	}
@@ -131,8 +133,10 @@ class CareerRecordCreationTest {
 
 	@Test
 	void rejectsNullRequiredCanonicalComponentFields() {
-		assertThrows(NullPointerException.class, () -> new TextPropertyValue(null, "값"));
-		assertThrows(NullPointerException.class, () -> new TextPropertyValue(propertyDefinitionId(0), null));
+		assertThrows(NullPointerException.class,
+				() -> new TextualPropertyValue(null, PropertyValueType.TEXT, "값"));
+		assertThrows(NullPointerException.class,
+				() -> new TextualPropertyValue(propertyDefinitionId(0), PropertyValueType.TEXT, null));
 		assertThrows(NullPointerException.class, () -> new BlockBody((List<SemanticBlock>) null));
 		assertThrows(NullPointerException.class,
 				() -> new SemanticBlock(null, "paragraph", java.util.Map.of(), List.of(), List.of()));
@@ -156,7 +160,7 @@ class CareerRecordCreationTest {
 				() -> new CareerRecord(RECORD_ID, OWNER_ID, CATEGORY_ID, "", List.of(), emptyBody(), 0, CREATED_AT));
 	}
 
-	private static CareerRecord recordWith(String title, List<TextPropertyValue> propertyValues) {
+	private static CareerRecord recordWith(String title, List<PropertyValue> propertyValues) {
 		return new CareerRecord(
 				RECORD_ID, OWNER_ID, CATEGORY_ID, title, propertyValues, emptyBody(), 1, CREATED_AT);
 	}
@@ -166,9 +170,10 @@ class CareerRecordCreationTest {
 				PARAGRAPH_ID, "paragraph", java.util.Map.of(), List.of(), List.of())));
 	}
 
-	private static List<TextPropertyValue> propertyValues(int count) {
+	private static List<PropertyValue> propertyValues(int count) {
 		return IntStream.range(0, count)
-				.mapToObj(index -> new TextPropertyValue(propertyDefinitionId(index), "값"))
+				.<PropertyValue>mapToObj(index -> new TextualPropertyValue(
+						propertyDefinitionId(index), PropertyValueType.TEXT, "값"))
 				.toList();
 	}
 
