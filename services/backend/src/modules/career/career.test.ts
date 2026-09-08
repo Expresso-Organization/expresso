@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { exactOptionId } from "@expresso/database";
 
 import { CareerError } from "./errors.js";
-import { validateCareerProperties } from "./properties.js";
+import { toCanonicalPropertyValues, validateCareerProperties } from "./properties.js";
 import { computeSkillAggregate, normalizeSkillName } from "./skills.js";
 
 describe("career property validation", () => {
@@ -41,6 +42,38 @@ describe("career property validation", () => {
     const timestamp = { ...definitions[0]!, key: "timestamp", type: "created_time" as const };
     expect(() => validateCareerProperties({}, { timestamp: { type: "created_time", value: "2026-09-01T00:00:00.000Z" } }, [timestamp])).not.toThrow();
     expect(() => validateCareerProperties({}, { timestamp: { type: "created_time", value: "2026-09-01T00:00:00.000Z" } }, [{ ...timestamp, system: true }])).toThrow(CareerError);
+  });
+
+  it("projects legacy values with official IDs without normalizing tag text or month precision", () => {
+    const categoryId = "475106fc-bf88-4a73-9c27-66c648733936";
+    const definitions = [
+      { id: "68f062ac-83b5-5ff6-bba4-3a8efc1d8a1a", key: "role", name: "역할", type: "text" as const, required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null },
+      { id: "00000000-0000-4000-8000-000000000002", key: "impact", name: "성과", type: "number" as const, required: false, system: false, config: {}, order: 1, version: 1, deletedAt: null },
+      { id: "00000000-0000-4000-8000-000000000003", key: "checked", name: "확인", type: "checkbox" as const, required: false, system: false, config: {}, order: 2, version: 1, deletedAt: null },
+      { id: "00000000-0000-4000-8000-000000000004", key: "tools", name: "도구", type: "multi_select" as const, required: false, system: false, config: { options: [] }, order: 3, version: 1, deletedAt: null },
+      { id: "00000000-0000-4000-8000-000000000005", key: "month", name: "월", type: "date" as const, required: false, system: false, config: {}, order: 4, version: 1, deletedAt: null },
+    ];
+    const category = {
+      _id: categoryId,
+      propertySchema: schema,
+      propertySchemaV2: definitions,
+      propertyDefinitions: definitions,
+    };
+
+    expect(toCanonicalPropertyValues(category, {
+      role: "Backend",
+      impact: 42,
+      checked: true,
+      tools: ["Java", "java", " Java "],
+      month: "2026-09",
+    })).toEqual([
+      { propertyDefinitionId: definitions[0]!.id, type: "text", value: "Backend" },
+      { propertyDefinitionId: definitions[1]!.id, type: "number", value: 42 },
+      { propertyDefinitionId: definitions[2]!.id, type: "checkbox", value: true },
+      { propertyDefinitionId: definitions[3]!.id, type: "multi_select", value: ["Java", "java", " Java "].map((value) => exactOptionId(definitions[3]!.id, value)) },
+      { propertyDefinitionId: definitions[4]!.id, type: "date", value: { precision: "month", start: "2026-09", end: null } },
+    ]);
+    expect(() => toCanonicalPropertyValues(category, { role: "Backend", tools: ["   "] })).toThrow(CareerError);
   });
 });
 

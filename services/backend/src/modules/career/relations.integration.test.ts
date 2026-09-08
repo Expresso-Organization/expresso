@@ -93,6 +93,10 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(moved).toMatchObject({ categoryId: targetCategoryId, bodyMd: "# 본문은 이동해도 남는다" });
     const stored = await mongoCollections(fixture.resource.db).careerRecords.findOne({ _id: sourceRecordId });
     expect(stored?.properties).toMatchObject({ exact: value("text", "같음"), numberText: value("number", 42), tags: value("select", expect.any(String)) });
+    const target = await mongoCollections(fixture.resource.db).careerCategories.findOne({ _id: targetCategoryId });
+    const targetPropertyIds = new Set(target?.propertyDefinitions?.map((definition) => definition.id));
+    expect(stored?.propertyValues).toHaveLength(3);
+    expect(stored?.propertyValues?.every((propertyValue) => targetPropertyIds.has(propertyValue.propertyDefinitionId))).toBe(true);
     expect(stored?.unmappedProperties?.[lostPropertyId]).toEqual(value("text", "남겨 둠"));
     expect(await mongoCollections(fixture.resource.db).careerRecordRelations.countDocuments({ userId, $or: [{ sourceRecordId }, { targetRecordId: sourceRecordId }] })).toBe(edgeCount);
   });

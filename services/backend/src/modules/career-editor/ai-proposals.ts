@@ -20,6 +20,7 @@ import { Binary } from "mongodb";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
+import { materializeLegacyTagOptions, toCanonicalPropertyValues } from "../career/properties.js";
 import { CareerDocumentError } from "./errors.js";
 import { binaryBytes, hashUpdate, MongoCareerDocumentRepository } from "./repository.js";
 import type { CareerDocumentService } from "./service.js";
@@ -148,7 +149,8 @@ export class AiProposalService {
       const category = await db.careerCategories.findOne({ _id: record.categoryId, $or: [{ userId: null }, { userId }] }, { session: tx.session }); if (!category) throw new CareerDocumentError(404, "career category not found");
       const properties = { ...record.properties }; const definitions = definitionMap(category); const changedPropertyIds: string[] = [];
       for (const change of changes) { const definition = definitions.get(change.propertyId); if (!definition || definition.system || JSON.stringify(properties[definition.key] ?? null) !== JSON.stringify(change.previousValue)) throw new CareerDocumentError(409, "AI proposal property changed"); if (change.nextValue === null) delete properties[definition.key]; else properties[definition.key] = CareerPropertyValueV2Schema.parse(change.nextValue); changedPropertyIds.push(change.propertyId); }
-      const propertyUpdated = await db.careerRecords.findOneAndUpdate({ _id: recordId, userId, documentVersion: nextVersion }, { $set: { properties, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
+      await materializeLegacyTagOptions(tx, tx.session, category, [properties]);
+      const propertyUpdated = await db.careerRecords.findOneAndUpdate({ _id: recordId, userId, documentVersion: nextVersion }, { $set: { properties, propertyValues: toCanonicalPropertyValues(category, properties), updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
       if (!propertyUpdated) throw new CareerDocumentError(409, "career record version is stale");
       if (changedPropertyIds.length) await addMongoOutboxEvent(tx, { userId, topic: "career.computation", idempotencyKey: `career-ai-property:${proposal._id}:v${propertyUpdated.version}`, payload: { userId, recordId, changedPropertyIds, sourceRecordVersion: propertyUpdated.version } });
       const revisionId = randomUUID(); await repository.insertRevision({ _id: revisionId, userId, recordId, actor: "ai", summary: proposal.summary ?? "AI 변경 적용", beforeVersion: input.expectedDocumentVersion, afterVersion: nextVersion, snapshotId: beforeSnapshotId, proposalId: proposal._id, createdAt: new Date() }, tx.session);
