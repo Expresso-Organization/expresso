@@ -1,6 +1,7 @@
 package com.expresso.backend.career;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -14,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import org.bson.Document;
+import org.bson.types.Decimal128;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +48,10 @@ class CareerRecordPatchHttpIntegrationTest {
 	private static final String CATEGORY_ID = "475106fc-bf88-4a73-9c27-66c648733936";
 	private static final String PROPERTY_DEFINITION_ID = "6c663539-48c1-5d12-939d-f100fac993c1";
 	private static final String NUMBER_PROPERTY_DEFINITION_ID = "10000000-0000-4000-8000-000000000002";
+	private static final String OPTION_ID = "20000000-0000-4000-8000-000000000001";
+	private static final String OTHER_OPTION_ID = "20000000-0000-4000-8000-000000000002";
+	private static final String UNKNOWN_OPTION_ID = "20000000-0000-4000-8000-000000000003";
+	private static final String ASSET_ID = "30000000-0000-4000-8000-000000000001";
 	private static final String UNKNOWN_PROPERTY_DEFINITION_ID = "6ae7a3c3-e0f0-4b88-8fe8-da3da27d0dd8";
 	private static final String PARAGRAPH_ID = "fb122c86-7db8-41c3-a9d9-7a12c4758b08";
 	private static final Instant UPDATED_AT = Instant.parse("2026-09-01T08:15:30.123Z");
@@ -135,6 +141,94 @@ class CareerRecordPatchHttpIntegrationTest {
 				.getList("content", Document.class).getFirst()
 				.getList("text", Document.class).getFirst().getString("text")).isEqualTo("Updated body");
 		assertThat(stored.getString("bodyMd")).isEqualTo("legacy body stays");
+	}
+
+	@Test
+	void roundTripsEveryWritablePropertyValueThroughPatchMongoAndGet() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+		mongoTemplate.getCollection(CATEGORIES).updateOne(
+				new Document("_id", CATEGORY_ID),
+				new Document("$set", new Document("propertyDefinitions", allWritableDefinitions())));
+		var values = allWritableValues();
+		var body = new Document("propertyValues", values).toJson();
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", body)
+				.andExpect(status().isOk())
+				.andExpect(header().string(HttpHeaders.ETAG, "\"v2\""))
+				.andExpect(jsonPath("$.data.propertyValues[1].value").value(42.5))
+				.andExpect(jsonPath("$.data.propertyValues[4].value[2]").value(OTHER_OPTION_ID))
+				.andExpect(jsonPath("$.data.propertyValues[5].value.precision").value("month"))
+				.andExpect(jsonPath("$.data.propertyValues[5].value.end").value("2026-12"))
+				.andExpect(jsonPath("$.data.propertyValues[7].value.timezone").value("Asia/Seoul"))
+				.andExpect(jsonPath("$.data.propertyValues[12].type").value("media"));
+
+		var stored = mongoTemplate.getCollection(RECORDS).find(new Document("_id", RECORD_ID)).first();
+		assertThat(stored).isNotNull();
+		assertThat(stored.getList("propertyValues", Document.class)).hasSize(13);
+		assertThat(stored.getList("propertyValues", Document.class).get(1).get("value"))
+				.isInstanceOf(Decimal128.class);
+		assertThat(stored.get("properties", Document.class)).isEqualTo(new Document("legacy", "keep"));
+
+		mockMvc.perform(get("/v1/career/records/{recordId}", RECORD_ID)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ACCESS_TOKEN))
+				.andExpect(status().isOk())
+				.andExpect(header().string(HttpHeaders.ETAG, "\"v2\""))
+				.andExpect(jsonPath("$.data.propertyValues[5].value.end").value("2026-12"))
+				.andExpect(jsonPath("$.data.propertyValues[7].value.timezone").value("Asia/Seoul"));
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v2\"", body)
+				.andExpect(status().isOk())
+				.andExpect(header().string(HttpHeaders.ETAG, "\"v2\""))
+				.andExpect(jsonPath("$.data.version").value(2));
+	}
+
+	@Test
+	void rejectsASelectOptionThatDoesNotBelongToItsDefinition() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+		mongoTemplate.getCollection(CATEGORIES).updateOne(
+				new Document("_id", CATEGORY_ID),
+				new Document("$set", new Document("propertyDefinitions", allWritableDefinitions())));
+		var body = new Document("propertyValues", List.of(new Document()
+				.append("propertyDefinitionId", id(4))
+				.append("type", "select")
+				.append("value", UNKNOWN_OPTION_ID))).toJson();
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", body)
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+
+		assertStoredVersionAndTitle(1, "Original title");
+	}
+
+	@Test
+	void preservesAJsonDecimalWithinTheDecimal128PrecisionRange() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+		mongoTemplate.getCollection(CATEGORIES).updateOne(
+				new Document("_id", CATEGORY_ID),
+				new Document("$set", new Document("propertyDefinitions", List.of(
+						canonicalDefinition(id(2), "number", "숫자", "number", 0)))));
+		var decimal = "12345678901234567890.12345678901234";
+		var body = "{\"propertyValues\":[{\"propertyDefinitionId\":\"" + id(2)
+				+ "\",\"type\":\"number\",\"value\":" + decimal + "}]}";
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", body)
+				.andExpect(status().isOk());
+
+		var stored = mongoTemplate.getCollection(RECORDS).find(new Document("_id", RECORD_ID)).first();
+		assertThat(stored).isNotNull();
+		assertThat(stored.getList("propertyValues", Document.class).getFirst()
+				.get("value", Decimal128.class).toString()).isEqualTo(decimal);
+	}
+
+	@Test
+	void rejectsMalformedJsonAsAValidationError() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", "{\"propertyValues\":[")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+
+		assertStoredVersionAndTitle(1, "Original title");
 	}
 
 	@Test
@@ -487,16 +581,72 @@ class CareerRecordPatchHttpIntegrationTest {
 	}
 
 	private static Document canonicalDefinition(String id, String key, String name, String type, int order) {
+		return canonicalDefinition(id, key, name, type, new Document(), order);
+	}
+
+	private static Document canonicalDefinition(
+			String id, String key, String name, String type, Document config, int order) {
 		return new Document("id", id)
 				.append("key", key)
 				.append("name", name)
 				.append("type", type)
 				.append("required", false)
 				.append("system", true)
-				.append("config", new Document())
+				.append("config", config)
 				.append("order", order)
 				.append("version", 1)
 				.append("deletedAt", null);
+	}
+
+	private static List<Document> allWritableDefinitions() {
+		var options = new Document("options", List.of(
+				new Document("id", OPTION_ID).append("name", "Java"),
+				new Document("id", OTHER_OPTION_ID).append("name", "java")));
+		return List.of(
+				canonicalDefinition(id(1), "text", "텍스트", "text", 0),
+				canonicalDefinition(id(2), "number", "숫자", "number", 1),
+				canonicalDefinition(id(3), "checkbox", "체크", "checkbox", 2),
+				canonicalDefinition(id(4), "select", "선택", "select", options, 3),
+				canonicalDefinition(id(5), "multiSelect", "다중 선택", "multi_select", options, 4),
+				canonicalDefinition(id(6), "month", "월", "date", 5),
+				canonicalDefinition(id(7), "day", "일", "date", 6),
+				canonicalDefinition(id(8), "datetime", "시각", "date", 7),
+				canonicalDefinition(id(9), "url", "URL", "url", 8),
+				canonicalDefinition(id(10), "email", "이메일", "email", 9),
+				canonicalDefinition(id(11), "phone", "전화", "phone", 10),
+				canonicalDefinition(id(12), "file", "파일", "file", 11),
+				canonicalDefinition(id(13), "media", "미디어", "media", 12));
+	}
+
+	private static List<Document> allWritableValues() {
+		return List.of(
+				propertyValue(1, "text", "본문"),
+				propertyValue(2, "number", 42.5),
+				propertyValue(3, "checkbox", true),
+				propertyValue(4, "select", OPTION_ID),
+				propertyValue(5, "multi_select", List.of(OPTION_ID, OPTION_ID, OTHER_OPTION_ID)),
+				propertyValue(6, "date", new Document("precision", "month")
+						.append("start", "2026-09").append("end", "2026-12")),
+				propertyValue(7, "date", new Document("precision", "day")
+						.append("start", "2026-09-05").append("end", "2026-09-30")),
+				propertyValue(8, "date", new Document("precision", "datetime")
+						.append("start", "2026-09-05T09:30:00+09:00").append("end", null)
+						.append("timezone", "Asia/Seoul")),
+				propertyValue(9, "url", "https://example.com"),
+				propertyValue(10, "email", "career@example.com"),
+				propertyValue(11, "phone", "+82-10-1234-5678"),
+				propertyValue(12, "file", List.of(ASSET_ID)),
+				propertyValue(13, "media", List.of(ASSET_ID)));
+	}
+
+	private static Document propertyValue(int suffix, String type, Object value) {
+		return new Document("propertyDefinitionId", id(suffix))
+				.append("type", type)
+				.append("value", value);
+	}
+
+	private static String id(int suffix) {
+		return "10000000-0000-4000-8000-%012d".formatted(suffix);
 	}
 
 	private void insertIdentity(String userId, String tokenHash) {

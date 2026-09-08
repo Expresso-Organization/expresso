@@ -167,6 +167,18 @@ class CareerRecordGetHttpIntegrationTest {
 	}
 
 	@Test
+	void exposesMalformedCanonicalPropertyValueAsInternalDataError() throws Exception {
+		var malformed = canonicalRecord(USER_ID, 1);
+		malformed.put("propertyValues", List.of(new Document()
+				.append("propertyDefinitionId", PROPERTY_DEFINITION_ID)
+				.append("type", "number")
+				.append("value", "숫자가 아닌 값")));
+		mongoTemplate.getCollection(RECORDS).insertOne(malformed);
+
+		assertInternalError(authenticatedGet(RECORD_ID).andReturn());
+	}
+
+	@Test
 	void rejectsInvalidRecordIdAndRequiresAuthentication() throws Exception {
 		authenticatedGet("not-a-uuid")
 				.andExpect(status().isBadRequest())

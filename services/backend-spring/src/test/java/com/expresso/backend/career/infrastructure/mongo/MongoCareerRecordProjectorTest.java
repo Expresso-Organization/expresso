@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 
 import com.expresso.backend.career.domain.BlockBody;
 import com.expresso.backend.career.domain.CareerRecord;
-import com.expresso.backend.career.domain.CheckboxPropertyValue;
 import com.expresso.backend.career.domain.SemanticBlock;
 import com.expresso.backend.career.domain.TextMark;
 import com.expresso.backend.career.domain.TextSpan;
@@ -89,25 +88,6 @@ class MongoCareerRecordProjectorTest {
 		var projected = projector.project(writer.write(recordWith(body), "idempotency-key", "request-hash"));
 
 		assertEquals(body, projected.blockBody());
-	}
-
-	@Test
-	void rejectsNonTextPropertyValuesUntilTheRichBsonMappingTask() {
-		var record = new CareerRecord(
-				RECORD_ID,
-				OWNER_ID,
-				CATEGORY_ID,
-				"Canonical title",
-				List.of(new CheckboxPropertyValue(PROPERTY_DEFINITION_ID, true)),
-				new BlockBody(List.<SemanticBlock>of()),
-				7,
-				UPDATED_AT);
-
-		var error = assertThrows(
-				IllegalStateException.class,
-				() -> writer.write(record, "idempotency-key", "request-hash"));
-
-		assertEquals("현재 Mongo writer는 text PropertyValue만 지원합니다", error.getMessage());
 	}
 
 	@Test
