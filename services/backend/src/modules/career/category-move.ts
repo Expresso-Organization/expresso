@@ -19,6 +19,7 @@ import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
 import { requireCareerCategory } from "./mongo-categories.js";
 import { mapMongoRecord } from "./mongo-records.js";
+import { materializeLegacyTagOptions, toCanonicalPropertyValues } from "./properties.js";
 import { convertCareerPropertyValue } from "./property-schema.js";
 import { careerCategoryDefinitions } from "./relations.js";
 
@@ -195,9 +196,11 @@ export class MongoCategoryMoveService implements CategoryMoveService {
       const unmapped = { ...plan.unmappedRaw };
       for (const propertyId of input.discardUnmappedPropertyIds) delete unmapped[propertyId];
       const now = new Date();
+      const properties = plan.nextProperties as CareerRecordDoc["properties"];
+      await materializeLegacyTagOptions(tx, tx.session, target, [properties]);
       const updated = await db.careerRecords.findOneAndUpdate(
         { _id: recordId, userId, categoryId: source._id, deletedAt: null, version: input.expectedVersion },
-        { $set: { categoryId: target._id, properties: plan.nextProperties as CareerRecordDoc["properties"], unmappedProperties: Object.keys(unmapped).length ? unmapped as NonNullable<CareerRecordDoc["unmappedProperties"]> : null, updatedAt: now }, $inc: { version: 1, referenceVersion: 1 } },
+        { $set: { categoryId: target._id, properties, propertyValues: toCanonicalPropertyValues(target, properties), unmappedProperties: Object.keys(unmapped).length ? unmapped as NonNullable<CareerRecordDoc["unmappedProperties"]> : null, updatedAt: now }, $inc: { version: 1, referenceVersion: 1 } },
         { session: tx.session, returnDocument: "after" },
       );
       if (!updated) throw new CareerError(412, "career record version is stale");

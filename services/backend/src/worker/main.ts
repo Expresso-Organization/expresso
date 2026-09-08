@@ -42,6 +42,8 @@ import { CareerDocumentService } from "../modules/career-editor/index.js";
 import { createCareerDocumentCompactionProcessor } from "./processors/career-document-compaction.js";
 import { MongoCareerComputationService } from "../modules/career-computation/index.js";
 import { createCareerComputationProcessor } from "./processors/career-computation.js";
+import { MongoCareerPropertyMutationService } from "../modules/career/property-mutation.js";
+import { createCareerPropertyMutationProcessor } from "./processors/career-property-mutation.js";
 
 const config = loadRuntimeConfig();
 if (!config.mongodbUrl || !config.mongodbDatabase) throw new Error("MongoDB runtime configuration is missing");
@@ -112,6 +114,7 @@ const accountLifecycleService = new AccountLifecycleService(database);
 const careerDocumentService = new CareerDocumentService(database, config.assetSigningSecret);
 const careerDocumentCompactionProcessor = createCareerDocumentCompactionProcessor(careerDocumentService);
 const careerComputationProcessor = createCareerComputationProcessor(new MongoCareerComputationService(database));
+const careerPropertyMutationProcessor = createCareerPropertyMutationProcessor(new MongoCareerPropertyMutationService(database));
 // 수집은 여기서만 돈다 — 바깥을 부르는 일은 요청 경로가 아니라 워커의 일이다.
 const jobIngestService = new JobIngestService(
   database,
@@ -142,6 +145,9 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
     if (job.name === "scheduled.execute") return scheduledJobProcessor(job);
     if (job.name === "career.document.compact") return careerDocumentCompactionProcessor(job) as Promise<Record<string, unknown>>;
     if (job.name === "career.computation") return careerComputationProcessor(job) as unknown as Promise<Record<string, unknown>>;
+    if (job.name === "career.property-conversion" || job.name === "career.property-default" || job.name === "career.property-deletion" || job.name === "career.property-restoration") {
+      return careerPropertyMutationProcessor(job) as unknown as Promise<Record<string, unknown>>;
+    }
     throw new Error(`Unsupported domain job: ${job.name}`);
   },
   onDeadLetterError(error) {

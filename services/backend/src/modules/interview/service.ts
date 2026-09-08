@@ -8,6 +8,7 @@ import { withTimeout } from "../../platform/timeouts.js";
 import { requireActiveUser } from "../identity/index.js";
 import type { ConsentApi } from "../consent/index.js";
 import { cleanupChangedFields, cleanupProperties, type RecordCleaner } from "../career/record-cleaner.js";
+import { materializeLegacyTagOptions, toCanonicalPropertyValues } from "../career/properties.js";
 import { generateQuestionDrafts, hasMetric, questionTextForBasis } from "./questions.js";
 import { countMentions, type QuestionBasisOption, type QuestionContext, type QuestionWriter } from "./question-writer.js";
 import type { InterviewApi } from "./index.js";
@@ -32,9 +33,13 @@ export class InterviewService implements InterviewApi {
     await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const collections = mongoCollections(tx.db); const options = { session: tx.session }; const now = new Date();
+      const category = await collections.careerCategories.findOne({ _id: record.categoryId, $or: [{ userId: null }, { userId }] }, options);
+      if (!category) throw new InterviewError(404, "career category not found");
+      const properties = cleanupProperties(cleaned) as CareerRecordDoc["properties"];
+      await materializeLegacyTagOptions(tx, tx.session, category, [properties]);
       const updated = await collections.careerRecords.updateOne(
         { _id: record._id, userId, origin: "interview", deletedAt: null, status: { $ne: "verified" }, version: expectedRecordVersion },
-        { $set: { title: cleaned.title, properties: cleanupProperties(cleaned) as CareerRecordDoc["properties"], status: "organized", updatedAt: now }, $inc: { version: 1, referenceVersion: 1 } }, options,
+        { $set: { title: cleaned.title, properties, propertyValues: toCanonicalPropertyValues(category, properties), status: "organized", updatedAt: now }, $inc: { version: 1, referenceVersion: 1 } }, options,
       );
       if (!updated.matchedCount) return;
       await collections.answerRecordChanges.updateOne({ userId, answerId, recordId: record._id }, { $set: { changedFields: cleanupChangedFields(cleaned), createdAt: now } }, options);

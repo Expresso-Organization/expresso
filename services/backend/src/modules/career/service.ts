@@ -7,7 +7,7 @@ import { inTransaction } from "../../platform/mongo-transaction.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
-import { validateCareerProperties } from "./properties.js";
+import { legacySchemaToV2Definitions, materializeLegacyTagOptions, toCanonicalPropertyDefinitions, toCanonicalPropertyValues, validateCareerProperties } from "./properties.js";
 import { mapMongoCategory, mapMongoView, requireCareerCategory } from "./mongo-categories.js";
 import { careerRequestHash, listMongoRecords, mapMongoRecord } from "./mongo-records.js";
 import type { CareerApi } from "./index.js";
@@ -78,7 +78,13 @@ export class CareerService implements CareerApi {
         const customCount = await categories.countDocuments({ userId }, { session: tx.session });
         if (customCount >= 100) throw new CareerError(409, "career category limit exceeded");
         const propertySchema = Object.fromEntries(Object.entries(input.propertySchema).map(([key, definition]) => [key, { ...definition, id: definition.id ?? randomUUID() }]));
-        const category: CareerCategoryDoc = { _id: randomUUID(), userId, ...input, propertySchema, isSystem: false, sortOrder: 7 + customCount, version: 1, updatedAt: new Date() };
+        const categoryId = randomUUID();
+        const propertySchemaV2 = legacySchemaToV2Definitions(categoryId, propertySchema);
+        const category: CareerCategoryDoc = {
+          _id: categoryId, userId, ...input, propertySchema, propertySchemaV2,
+          propertyDefinitions: toCanonicalPropertyDefinitions(propertySchemaV2), schemaVersion: 1,
+          isSystem: false, sortOrder: 7 + customCount, version: 1, updatedAt: new Date(),
+        };
         await categories.insertOne(category, { session: tx.session });
         return mapMongoCategory(category);
       });
@@ -94,6 +100,8 @@ export class CareerService implements CareerApi {
       if (!category) throw new CareerError(404, "career category not found");
       if (category.version !== expectedVersion) throw new CareerError(412, "category version is stale");
       const normalizedSchema = Object.fromEntries(Object.entries(nextSchema).map(([key, definition]) => [key, { ...definition, id: definition.id ?? category.propertySchema[key]?.id ?? randomUUID() }]));
+      const propertySchemaV2 = legacySchemaToV2Definitions(categoryId, normalizedSchema, category.propertySchemaV2);
+      const propertyDefinitions = toCanonicalPropertyDefinitions(propertySchemaV2);
       const removed = Object.keys(category.propertySchema).filter((key) => !Object.hasOwn(normalizedSchema, key));
       const protectedProperties = removed.filter((key) => category.propertySchema[key]?.system);
       if (protectedProperties.length) throw new CareerError(403, "system properties cannot be removed", { protectedProperties });
@@ -103,10 +111,25 @@ export class CareerService implements CareerApi {
         if (count) propertyValueCounts[key] = count;
       }
       if (Object.keys(propertyValueCounts).length && !confirmValueRemoval) throw new CareerError(409, "category properties still contain values", { propertyValueCounts });
-      for (const key of Object.keys(propertyValueCounts)) {
-        await db.careerRecords.updateMany({ userId, categoryId, [`properties.${key}`]: { $exists: true } }, { $unset: { [`properties.${key}`]: "" }, $inc: { version: 1 }, $set: { updatedAt: new Date() } }, { session: tx.session });
+      const now = new Date();
+      if (Object.keys(propertyValueCounts).length > 0) {
+        const rows = await db.careerRecords.find({ userId, categoryId, deletedAt: null }, { session: tx.session }).toArray();
+        const categoryForWrite = { ...category, propertySchema: normalizedSchema, propertySchemaV2, propertyDefinitions };
+        await db.careerRecords.bulkWrite(rows.flatMap((row) => {
+          const properties = { ...row.properties };
+          for (const key of removed) delete properties[key];
+          if (JSON.stringify(properties) === JSON.stringify(row.properties)) return [];
+          return [{ updateOne: {
+            filter: { _id: row._id, userId, version: row.version },
+            update: { $set: { properties, propertyValues: toCanonicalPropertyValues(categoryForWrite, properties), updatedAt: now }, $inc: { version: 1 } },
+          } }];
+        }), { session: tx.session });
       }
-      const updated = await db.careerCategories.findOneAndUpdate({ _id: categoryId, userId, version: expectedVersion }, { $set: { propertySchema: normalizedSchema, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
+      const updated = await db.careerCategories.findOneAndUpdate(
+        { _id: categoryId, userId, version: expectedVersion },
+        { $set: { propertySchema: normalizedSchema, propertySchemaV2, propertyDefinitions, schemaVersion: (category.schemaVersion ?? category.version) + 1, updatedAt: now }, $inc: { version: 1 } },
+        { session: tx.session, returnDocument: "after" },
+      );
       if (!updated) throw new CareerError(412, "category version is stale");
       return mapMongoCategory(updated);
     });
@@ -126,7 +149,13 @@ export class CareerService implements CareerApi {
         return { record: mapMongoRecord(existing), created: false };
       }
       const now = new Date();
-      const record: CareerRecordDoc = { _id: randomUUID(), userId, ...input, status: "draft", origin: "manual", version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null, createIdempotencyKey: idempotencyKey, createRequestHash: hash };
+      await materializeLegacyTagOptions(tx, tx.session, category, [input.properties]);
+      const record: CareerRecordDoc = {
+        _id: randomUUID(), userId, ...input,
+        propertyValues: toCanonicalPropertyValues(category, input.properties),
+        status: "draft", origin: "manual", version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null,
+        createIdempotencyKey: idempotencyKey, createRequestHash: hash,
+      };
       await records.insertOne(record, { session: tx.session });
       const definitions = category.propertySchemaV2?.filter((definition) => definition.deletedAt === null) ?? [];
       const changedPropertyIds = definitions.filter((definition) => definition.type === "formula" || definition.type === "rollup" || Object.hasOwn(input.properties, definition.key) || (definition.type === "title" && input.title !== "")).map((definition) => definition.id);
@@ -174,12 +203,14 @@ export class CareerService implements CareerApi {
       const category = await requireCareerCategory(tx, userId, existing.categoryId, tx.session);
       const properties = input.properties ?? existing.properties;
       validateCareerProperties(category.propertySchema, properties, category.propertySchemaV2);
+      await materializeLegacyTagOptions(tx, tx.session, category, [properties]);
+      const propertyValues = toCanonicalPropertyValues(category, properties);
       const computationDefinitions = category.propertySchemaV2?.filter((definition) => definition.deletedAt === null) ?? [];
       const changedPropertyIds = computationDefinitions.filter((definition) => {
         if (definition.type === "title") return input.title !== undefined && input.title !== existing.title;
         return JSON.stringify(existing.properties[definition.key] ?? null) !== JSON.stringify(properties[definition.key] ?? null);
       }).map((definition) => definition.id);
-      const updated = await records.findOneAndUpdate({ _id: recordId, userId, deletedAt: null, version: expectedVersion }, { $set: { title: input.title ?? existing.title, status: input.status ?? existing.status, bodyMd: input.bodyMd ?? existing.bodyMd, properties, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
+      const updated = await records.findOneAndUpdate({ _id: recordId, userId, deletedAt: null, version: expectedVersion }, { $set: { title: input.title ?? existing.title, status: input.status ?? existing.status, bodyMd: input.bodyMd ?? existing.bodyMd, properties, propertyValues, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
       if (!updated) throw new CareerError(412, "career record version is stale");
       if (input.bodyMd !== undefined) {
         // 레거시 저장도 편집기 리비전으로 남기며, 동시 Yjs 변경이 있으면 충돌시킨다.

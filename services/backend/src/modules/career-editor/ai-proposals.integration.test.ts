@@ -100,7 +100,9 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const adapter: AiProposalAdapter = { async generate() { return { summary: "프로퍼티", commands: [], propertyChanges: [{ propertyId, previousValue: null, nextValue: { type: "text", value: "AI 메모" } }] }; } };
     const local = new AiProposalService(fixture.resource, documentService, adapter); const proposal = await local.create(userId, propertyRecordId, { selection: { blockIds: [blockId] }, prompt: "메모" });
     await local.apply(userId, propertyRecordId, { recordId: propertyRecordId, proposalId: proposal.proposalId, expectedDocumentVersion: bootstrap.documentVersion, commandIndexes: [], propertyChangeIndexes: [0] });
-    expect((await mongoCollections(fixture.resource.db).careerRecords.findOne({ _id: propertyRecordId }))?.properties[propertyKey]).toEqual({ type: "text", value: "AI 메모" });
+    const stored = await mongoCollections(fixture.resource.db).careerRecords.findOne({ _id: propertyRecordId });
+    expect(stored?.properties[propertyKey]).toEqual({ type: "text", value: "AI 메모" });
+    expect(stored?.propertyValues).toEqual([{ propertyDefinitionId: propertyId, type: "text", value: "AI 메모" }]);
     expect(await mongoCollections(fixture.resource.db).outboxEvents.countDocuments({ topic: "career.computation", "payload.recordId": propertyRecordId, "payload.changedPropertyIds": propertyId })).toBe(1);
   });
 });

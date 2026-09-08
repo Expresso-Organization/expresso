@@ -13,7 +13,7 @@ import { CareerService } from "./legacy-mysql-service.js";
 import type { CareerApi } from "./index.js";
 import { MongoCareerService } from "./service.js";
 import { MongoIdentityService, type IdentityApi } from "../identity/index.js";
-import { mongoCollections } from "@expresso/database";
+import { exactOptionId, mongoCollections } from "@expresso/database";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { assertActiveRecordsForWrite, purgeTrashedCareerRecord } from "./mongo-record-guard.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
@@ -55,6 +55,80 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
     expect(results.find((result) => result.status === "rejected")).toMatchObject({ reason: { statusCode: 412 } });
     expect((await service.getRecord(userId, record.id)).version).toBe(2);
     await expect(service.updateRecord(otherId, record.id, 2, { title: "침입" })).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("stores legacy and canonical property values together for create and update", async () => {
+    const propertyId = randomUUID();
+    const category = await service.createCategory(userId, {
+      key: `compat_${randomUUID().replaceAll("-", "")}`,
+      name: "호환 쓰기",
+      icon: "folder",
+      defaultView: "table",
+      propertySchema: {
+        note: { id: propertyId, label: "메모", type: "text", required: false, system: false },
+      },
+    });
+
+    const created = await service.createRecord(userId, randomUUID(), {
+      categoryId: category.id,
+      title: "",
+      properties: { note: "처음" },
+      bodyMd: "",
+    });
+    const records = mongoCollections(fixture.resource.db).careerRecords;
+    expect(await records.findOne({ _id: created.record.id })).toMatchObject({
+      properties: { note: "처음" },
+      propertyValues: [{ propertyDefinitionId: propertyId, type: "text", value: "처음" }],
+      version: 1,
+    });
+
+    const updated = await service.updateRecord(userId, created.record.id, 1, { properties: { note: "변경" } });
+    expect(updated.version).toBe(2);
+    expect(await records.findOne({ _id: created.record.id })).toMatchObject({
+      properties: { note: "변경" },
+      propertyValues: [{ propertyDefinitionId: propertyId, type: "text", value: "변경" }],
+      version: 2,
+    });
+
+    await expect(service.updateRecord(userId, created.record.id, 2, { properties: { note: 1 } as never })).rejects.toThrow();
+    expect(await records.findOne({ _id: created.record.id })).toMatchObject({
+      properties: { note: "변경" },
+      propertyValues: [{ propertyDefinitionId: propertyId, type: "text", value: "변경" }],
+      version: 2,
+    });
+  });
+
+  it("materializes exact legacy tag names in canonical Definition options", async () => {
+    const propertyId = randomUUID();
+    const category = await service.createCategory(userId, {
+      key: `tags_${randomUUID().replaceAll("-", "")}`,
+      name: "태그 호환 쓰기",
+      icon: "folder",
+      defaultView: "table",
+      propertySchema: {
+        tools: { id: propertyId, label: "도구", type: "tags", required: false, system: false },
+      },
+    });
+    const names = ["Java", "java", " Java "];
+
+    const created = await service.createRecord(userId, randomUUID(), {
+      categoryId: category.id,
+      title: "",
+      properties: { tools: names },
+      bodyMd: "",
+    });
+    const expectedOptions = names.map((name) => ({ id: exactOptionId(propertyId, name), name }));
+    const collections = mongoCollections(fixture.resource.db);
+    const storedCategory = await collections.careerCategories.findOne({ _id: category.id });
+    const storedRecord = await collections.careerRecords.findOne({ _id: created.record.id });
+
+    expect(storedCategory?.propertyDefinitions?.find((definition) => definition.id === propertyId)?.config)
+      .toEqual({ options: expectedOptions });
+    expect(storedRecord?.propertyValues).toEqual([{
+      propertyDefinitionId: propertyId,
+      type: "multi_select",
+      value: expectedOptions.map((option) => option.id),
+    }]);
   });
 
   it("projects editor documents to legacy bodyMd and rejects a legacy overwrite with pending Yjs updates", async () => {

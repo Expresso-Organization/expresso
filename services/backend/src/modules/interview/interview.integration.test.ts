@@ -83,6 +83,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
     const db = mongoCollections(fixture.resource.db);
     expect(await db.answers.countDocuments({ userId, questionId })).toBe(1);
     expect(await db.answerRecordChanges.countDocuments({ userId, answerId: first.answer.id })).toBe(1);
+    expect((await db.careerRecords.findOne({ _id: first.answer.createdRecordId }))?.propertyValues).toEqual([]);
     expect(await db.outboxEvents.countDocuments({ userId, topic: "record.cleanup" })).toBe(1);
     const strengthened = await service.saveAnswer(userId, sessionId, questionId, "mongo-answer-0002", { ...input, transcript: `${input.transcript} 재발도 막았습니다.` });
     expect(strengthened).toMatchObject({ answer: { id: first.answer.id, version: 2 }, recordChange: { type: "strengthened" } });
@@ -119,6 +120,10 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
     await expect(processor(job)).rejects.toThrow("temporary cleaner failure");
     await expect(processor(job)).resolves.toEqual({});
     expect((await career.getRecord(userId, answer.answer.createdRecordId))).toMatchObject({ title: "배포 절차 문서화", status: "organized" });
+    const stored = await mongoCollections(fixture.resource.db).careerRecords.findOne({ _id: answer.answer.createdRecordId });
+    expect(stored?.propertyValues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: "text", value: "절차를 문서화했습니다." }),
+    ]));
     expect(await mongoCollections(fixture.resource.db).answerRecordChanges.countDocuments({ userId, answerId: answer.answer.id })).toBe(1);
   });
 });
