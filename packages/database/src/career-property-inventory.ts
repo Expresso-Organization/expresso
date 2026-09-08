@@ -181,6 +181,20 @@ function isSupportedNumber(value: unknown): boolean {
   return false;
 }
 
+function isSupportedTypedDate(value: unknown): boolean {
+  if (!isObject(value) || typeof value["start"] !== "string") return false;
+  const start = value["start"];
+  const end = value["end"];
+  const timezone = value["timezone"];
+  if (end !== null && end !== undefined && typeof end !== "string") return false;
+  if (timezone !== null && timezone !== undefined && typeof timezone !== "string") return false;
+  const day = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
+  const datetime = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
+  if (day.test(start)) return end === null || end === undefined || day.test(end);
+  if (datetime.test(start)) return end === null || end === undefined || datetime.test(end);
+  return false;
+}
+
 class ConflictCollector {
   readonly entries = new Map<CareerPropertyMigrationConflictReason, { count: number; locations: Set<string> }>();
 
@@ -232,6 +246,7 @@ function addLegacyValueDistribution(
   }
   if (definition.type === "date") {
     if (typeof value === "string" && /^\d{4}-(?:0[1-9]|1[0-2])$/.test(value)) { distribution.legacyMonthDates += 1; return; }
+    if (isSupportedTypedDate(value)) return;
     distribution.nonstandardDates += 1; conflicts.add("nonstandard_legacy_date", location); return;
   }
   if (definition.type === "number") {

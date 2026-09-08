@@ -63,7 +63,7 @@ export interface MigrationLockDoc {
   expiresAt: Date;
 }
 
-export interface CareerPropertyMigrationJournalDoc {
+export interface CareerPropertyIdentityMigrationJournalDoc {
   _id: string;
   migration: "0011_career_property_canonical_identity";
   collection: string;
@@ -74,6 +74,35 @@ export interface CareerPropertyMigrationJournalDoc {
   afterDigest: string;
   state: "planned" | "applied";
 }
+
+export interface CareerPropertyBackfillJournalDoc {
+  _id: string;
+  migration: "0012_career_property_values_backfill";
+  kind: "document";
+  collection: "career_categories" | "career_records";
+  documentId: string;
+  before: Document;
+  after: Document;
+  beforeDigest: string;
+  afterDigest: string;
+  state: "planned" | "applied";
+}
+
+export interface CareerPropertyBackfillGateDoc {
+  _id: "0012:compatibility-writer-canary";
+  migration: "0012_career_property_values_backfill";
+  kind: "execution_gate";
+  deploymentVersion: string;
+  verifiedAt: Date;
+  checkedWrites: number;
+  mismatches: 0;
+  state: "verified";
+}
+
+export type CareerPropertyMigrationJournalDoc =
+  | CareerPropertyIdentityMigrationJournalDoc
+  | CareerPropertyBackfillJournalDoc
+  | CareerPropertyBackfillGateDoc;
 
 export interface SnapshotChunkDoc {
   _id: string;

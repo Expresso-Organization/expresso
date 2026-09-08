@@ -9,7 +9,9 @@ import { acquireMigrationLease, recoverMigrationLease } from "./migration-lease.
 import { careerRecordSliceSteps } from "./mongodb-migrations/0009/migration.js";
 import { careerRichBlockBodySteps } from "./mongodb-migrations/0010/migration.js";
 import { careerPropertyCanonicalIdentitySteps } from "./mongodb-migrations/0011/migration.js";
+import { careerPropertyLegacyBackfillSteps } from "./mongodb-migrations/0012/migration.js";
 import { legacy0009PropertyDefinitionId, officialPropertyDefinitionId } from "./career-property-canonical-mapping.js";
+import { exactOptionId } from "./career-property-canonical-mapping.js";
 
 const richBlockBodyFixtures = JSON.parse(
   readFileSync(
@@ -96,10 +98,10 @@ describe("MongoDB migration sources", () => {
     expect(first.map(({ version, checksum }) => ({ version, checksum }))).toEqual(
       second.map(({ version, checksum }) => ({ version, checksum })),
     );
-    expect(first).toHaveLength(11);
+    expect(first).toHaveLength(12);
     expect(first.at(-1)).toMatchObject({
-      version: "0011",
-      name: "career_property_canonical_identity",
+      version: "0012",
+      name: "career_property_values_backfill",
     });
     expect(first.slice(0, 10).map(({ checksum }) => checksum)).toEqual([
       "7c81bedd5bac9488e40f27fb0d9de82d7b6cab6878108ef2fd58559d7c3088a7",
@@ -368,6 +370,188 @@ describe.skipIf(!mongoUrl)("Career property canonical identity migration 0011", 
       expect(await db.collection("career_categories").find({}).sort({ _id: 1 }).toArray()).toEqual(categoriesBefore);
       expect(await db.collection("career_records").find({}).sort({ _id: 1 }).toArray()).toEqual(recordsBefore);
       expect(await db.collection("career_property_migration_journal").countDocuments()).toBe(0);
+    } finally {
+      try { await db.dropDatabase(); } finally { await client.close(); }
+    }
+  }, 60_000);
+});
+
+describe.skipIf(!mongoUrl)("Career legacy property value backfill migration 0012", () => {
+  const categoryId = "475106fc-bf88-4a73-9c27-66c648733936";
+  const ownerId = "24f6e03d-f195-4ff2-a4f6-18bece6406f3";
+  const ids = {
+    note: "489cc638-4ab5-4ed1-824e-90b665d64b73",
+    score: "b666679c-5f1e-4b99-a38c-c5b3f8d41011",
+    active: "724f9d45-8208-4984-b993-5ae3146d7cdd",
+    tags: "bb845eb9-b590-4018-a3fe-1d20d66392d8",
+    month: "c96df99e-77cc-482c-9ebd-2c15b8bdc66d",
+  };
+
+  function category(): Document & { _id: string } {
+    const legacy = {
+      note: { id: ids.note, type: "text", label: "메모", required: false, system: false },
+      score: { id: ids.score, type: "number", label: "점수", required: false, system: false },
+      active: { id: ids.active, type: "boolean", label: "활성", required: false, system: false },
+      tags: { id: ids.tags, type: "tags", label: "태그", required: false, system: false },
+      month: { id: ids.month, type: "date", label: "월", required: false, system: false },
+    };
+    const definitions = Object.entries(legacy).map(([key, definition], order) => ({
+      id: definition.id,
+      key,
+      name: definition.label,
+      type: definition.type === "boolean" ? "checkbox" : definition.type === "tags" ? "multi_select" : definition.type,
+      required: definition.required,
+      system: definition.system,
+      config: definition.type === "tags" ? { options: [] } : {},
+      order,
+      version: 1,
+      deletedAt: null,
+    }));
+    return {
+      _id: categoryId,
+      userId: ownerId,
+      key: "backfill",
+      isSystem: false,
+      propertySchema: legacy,
+      propertySchemaV2: definitions,
+      propertyDefinitions: definitions,
+      sortOrder: 7,
+      name: "Backfill",
+      icon: "folder",
+      defaultView: "table",
+      version: 1,
+      schemaVersion: 1,
+      updatedAt: new Date("2026-09-08T00:00:00.000Z"),
+    };
+  }
+
+  function record(properties: Document, propertyValues?: Document[]): Document & { _id: string } {
+    return {
+      _id: randomUUID(),
+      userId: ownerId,
+      categoryId,
+      title: "",
+      status: "draft",
+      origin: "manual",
+      properties,
+      bodyMd: "",
+      ...(propertyValues === undefined ? {} : { propertyValues }),
+      version: 1,
+      updatedAt: new Date("2026-09-08T00:00:00.000Z"),
+      deletedAt: null,
+    };
+  }
+
+  async function installCanaryGate(db: ReturnType<MongoClient["db"]>): Promise<void> {
+    await db.collection<Document & { _id: string }>("career_property_migration_journal").insertOne({
+      _id: "0012:compatibility-writer-canary",
+      migration: "0012_career_property_values_backfill",
+      kind: "execution_gate",
+      deploymentVersion: "test-task-6",
+      verifiedAt: new Date("2026-09-08T00:00:00.000Z"),
+      checkedWrites: 3,
+      mismatches: 0,
+      state: "verified",
+    });
+  }
+
+  it("losslessly backfills legacy values, materializes exact tag options, and reruns as a no-op", async () => {
+    const databaseName = `expresso_test_cp12_${randomUUID().slice(0, 16).replaceAll("-", "")}`;
+    const client = new MongoClient(mongoUrl!, { serverSelectionTimeoutMS: 3_000 });
+    const db = client.db(databaseName);
+    const decimal = Decimal128.fromString("123.450");
+    const properties = { note: "", score: decimal, active: true, tags: ["Java", "java", " Java ", "Java"], month: "2026-09" };
+    const expectedValues = [
+      { propertyDefinitionId: ids.note, type: "text", value: "" },
+      { propertyDefinitionId: ids.score, type: "number", value: decimal },
+      { propertyDefinitionId: ids.active, type: "checkbox", value: true },
+      { propertyDefinitionId: ids.tags, type: "multi_select", value: ["Java", "java", " Java ", "Java"].map((name) => exactOptionId(ids.tags, name)) },
+      { propertyDefinitionId: ids.month, type: "date", value: { precision: "month", start: "2026-09", end: null } },
+    ];
+    const legacyOnly = record(properties);
+    const alreadyCanonical = record(properties, expectedValues);
+    const typedDayProperties = { month: { type: "date", value: { start: "2026-09-08", end: null, timezone: null } } };
+    const typedDayCanonical = [{ propertyDefinitionId: ids.month, type: "date", value: { precision: "day", start: "2026-09-08", end: null } }];
+    const compatibilityWriterRecord = record(typedDayProperties, typedDayCanonical);
+    try {
+      await client.connect();
+      await db.collection<Document & { _id: string }>("career_categories").insertOne(category());
+      await db.collection<Document & { _id: string }>("career_records").insertMany([legacyOnly, alreadyCanonical, compatibilityWriterRecord]);
+      await installCanaryGate(db);
+
+      for (const step of await careerPropertyLegacyBackfillSteps()) await step.run(db);
+
+      expect((await db.collection<Document & { _id: string }>("career_records").findOne({ _id: legacyOnly._id }))?.["propertyValues"]).toEqual(expectedValues);
+      expect((await db.collection<Document & { _id: string }>("career_records").findOne({ _id: alreadyCanonical._id }))?.["propertyValues"]).toEqual(expectedValues);
+      expect((await db.collection<Document & { _id: string }>("career_records").findOne({ _id: compatibilityWriterRecord._id }))?.["propertyValues"]).toEqual(typedDayCanonical);
+      const storedCategory = await db.collection<Document & { _id: string }>("career_categories").findOne({ _id: categoryId });
+      expect((storedCategory?.["propertyDefinitions"] as Document[]).find((definition) => definition["id"] === ids.tags)?.["config"]).toEqual({
+        options: [" Java ", "Java", "java"].map((name) => ({ id: exactOptionId(ids.tags, name), name })),
+      });
+      expect(await db.collection<Document & { _id: string }>("career_property_migration_journal").countDocuments({ migration: "0012_career_property_values_backfill", kind: "document" })).toBe(2);
+
+      const beforeRerun = {
+        categories: await db.collection<Document & { _id: string }>("career_categories").find({}).sort({ _id: 1 }).toArray(),
+        records: await db.collection<Document & { _id: string }>("career_records").find({}).sort({ _id: 1 }).toArray(),
+        journal: await db.collection<Document & { _id: string }>("career_property_migration_journal").find({}).sort({ _id: 1 }).toArray(),
+      };
+      for (const step of await careerPropertyLegacyBackfillSteps()) await step.run(db);
+      expect(await db.collection<Document & { _id: string }>("career_categories").find({}).sort({ _id: 1 }).toArray()).toEqual(beforeRerun.categories);
+      expect(await db.collection<Document & { _id: string }>("career_records").find({}).sort({ _id: 1 }).toArray()).toEqual(beforeRerun.records);
+      expect(await db.collection<Document & { _id: string }>("career_property_migration_journal").find({}).sort({ _id: 1 }).toArray()).toEqual(beforeRerun.journal);
+    } finally {
+      try { await db.dropDatabase(); } finally { await client.close(); }
+    }
+  }, 60_000);
+
+  it.each([
+    ["canonical mismatch", (value: Document) => { value["propertyValues"] = [{ propertyDefinitionId: ids.note, type: "text", value: "다름" }]; }],
+    ["unknown key", (value: Document) => { (value["properties"] as Document)["unknown"] = "값"; }],
+    ["unsupported value", (value: Document) => { (value["properties"] as Document)["note"] = { nested: true }; }],
+    ["non-finite number", (value: Document) => { (value["properties"] as Document)["score"] = Number.POSITIVE_INFINITY; }],
+    ["oversized text", (value: Document) => { (value["properties"] as Document)["note"] = "가".repeat(50_001); }],
+    ["whitespace-only tag", (value: Document) => { (value["properties"] as Document)["tags"] = ["   "]; }],
+    ["invalid date", (value: Document) => { (value["properties"] as Document)["month"] = "2026-09-01"; }],
+    ["date precision mismatch", (value: Document) => { (value["properties"] as Document)["month"] = { type: "date", value: { precision: "month", start: "2026-09-01", end: null } }; }],
+  ])("aborts %s before changing any document", async (_label, mutate) => {
+    const databaseName = `expresso_test_cp12_abort_${randomUUID().slice(0, 12).replaceAll("-", "")}`;
+    const client = new MongoClient(mongoUrl!, { serverSelectionTimeoutMS: 3_000 });
+    const db = client.db(databaseName);
+    try {
+      await client.connect();
+      const storedCategory = category();
+      const storedRecord = record({ note: "정상", tags: ["Java"], month: "2026-09" });
+      mutate(storedRecord);
+      await db.collection<Document & { _id: string }>("career_categories").insertOne(storedCategory);
+      await db.collection<Document & { _id: string }>("career_records").insertOne(storedRecord);
+      await installCanaryGate(db);
+      const beforeCategory = await db.collection<Document & { _id: string }>("career_categories").findOne({ _id: categoryId });
+      const beforeRecord = await db.collection<Document & { _id: string }>("career_records").findOne({ _id: storedRecord._id });
+
+      await expect((async () => {
+        for (const step of await careerPropertyLegacyBackfillSteps()) await step.run(db);
+      })()).rejects.toThrow(/0012|conflict|지원|변환|알 수 없는|초과|공백|날짜/i);
+
+      expect(await db.collection<Document & { _id: string }>("career_categories").findOne({ _id: categoryId })).toEqual(beforeCategory);
+      expect(await db.collection<Document & { _id: string }>("career_records").findOne({ _id: storedRecord._id })).toEqual(beforeRecord);
+      expect(await db.collection<Document & { _id: string }>("career_property_migration_journal").countDocuments({ kind: "document" })).toBe(0);
+    } finally {
+      try { await db.dropDatabase(); } finally { await client.close(); }
+    }
+  }, 60_000);
+
+  it("requires explicit compatibility writer production canary evidence", async () => {
+    const databaseName = `expresso_test_cp12_gate_${randomUUID().slice(0, 12).replaceAll("-", "")}`;
+    const client = new MongoClient(mongoUrl!, { serverSelectionTimeoutMS: 3_000 });
+    const db = client.db(databaseName);
+    try {
+      await client.connect();
+      await db.collection<Document & { _id: string }>("career_categories").insertOne(category());
+      await db.collection<Document & { _id: string }>("career_records").insertOne(record({ note: "미변환" }));
+      await expect((async () => {
+        for (const step of await careerPropertyLegacyBackfillSteps()) await step.run(db);
+      })()).rejects.toThrow(/canary|gate|증거/i);
+      expect(await db.collection<Document & { _id: string }>("career_records").findOne({})).not.toHaveProperty("propertyValues");
     } finally {
       try { await db.dropDatabase(); } finally { await client.close(); }
     }
