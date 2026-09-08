@@ -2,10 +2,9 @@ import { randomUUID } from "node:crypto";
 
 import {
   CareerViewConfigurationSchema,
-  CareerRecordSchema,
   type CareerViewConfiguration,
 } from "@expresso/contracts";
-import { mongoCollections, type CareerViewDoc } from "@expresso/database";
+import { mongoCollections, type CareerRecordDoc, type CareerViewDoc } from "@expresso/database";
 import type { Document } from "mongodb";
 import { z } from "zod";
 
@@ -14,6 +13,7 @@ import { inTransaction } from "../../platform/mongo-transaction.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
 import { mapMongoCategory, requireCareerCategory } from "./mongo-categories.js";
+import { mapMongoRecord } from "./mongo-records.js";
 import { CareerViewQuery } from "./view-query.js";
 
 const ViewCreateSchema = CareerViewConfigurationSchema.omit({
@@ -33,7 +33,7 @@ export const CareerViewQueryInputSchema = z.strictObject({ cursor: z.string().mi
 export type CreateCareerViewConfiguration = z.infer<typeof ViewCreateSchema>;
 export type UpdateCareerViewConfiguration = z.infer<typeof ViewUpdateSchema>;
 export type CareerViewPage = {
-  data: ReturnType<typeof CareerRecordSchema.parse>[];
+  data: ReturnType<typeof mapMongoRecord>[];
   page: { hasNextPage: boolean; nextCursor: string | null };
 };
 
@@ -223,10 +223,7 @@ export class CareerViewService {
       ? this.queryCompiler.encodeCursor({ userId, viewId, viewVersion: view.version, expiresAt: Date.now() + CURSOR_LIFETIME_MS, values: compiled.sortParts.map((part) => last[part.field]), id: String(last._id) })
       : null;
     return {
-      data: pageRows.map((row) => CareerRecordSchema.parse({
-        id: String(row._id), categoryId: row.categoryId, title: row.title, status: row.status, origin: row.origin,
-        properties: row.properties ?? {}, computedProperties: Object.fromEntries(Object.entries(row.computedProperties ?? {}).filter(([key]) => key !== "__expressoComputation")), bodyMd: row.bodyMd ?? "", version: row.version, createdAt: new Date(row.createdAt ?? row.updatedAt).toISOString(), updatedAt: new Date(row.updatedAt).toISOString(),
-      })),
+      data: pageRows.map((row) => mapMongoRecord(row as CareerRecordDoc, categoryDoc)),
       page: { hasNextPage, nextCursor },
     };
   }

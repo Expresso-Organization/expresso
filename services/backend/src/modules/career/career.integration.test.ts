@@ -26,7 +26,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
   let otherId: string;
   let categoryId: string;
   beforeAll(async () => {
-    fixture = await createMongoFixture("career-editing");
+    fixture = await createMongoFixture("career-editing", { migrationTargetVersion: "0011" });
     service = new MongoCareerService(fixture.resource);
     const identity = new MongoIdentityService(fixture.resource);
     userId = (await identity.signup({ email: `career-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "기록" })).user.id;
@@ -94,6 +94,39 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
     expect(await records.findOne({ _id: created.record.id })).toMatchObject({
       properties: { note: "변경" },
       propertyValues: [{ propertyDefinitionId: propertyId, type: "text", value: "변경" }],
+      version: 2,
+    });
+  });
+
+  it("keeps canonical property values authoritative during a title-only compatibility write", async () => {
+    const propertyId = randomUUID();
+    const category = await service.createCategory(userId, {
+      key: `canonical_read_${randomUUID().replaceAll("-", "")}`,
+      name: "canonical 읽기",
+      icon: "folder",
+      defaultView: "table",
+      propertySchema: {
+        note: { id: propertyId, label: "메모", type: "text", required: false, system: false },
+      },
+    });
+    const created = await service.createRecord(userId, randomUUID(), {
+      categoryId: category.id,
+      title: "수정 전",
+      properties: { note: "canonical" },
+      bodyMd: "",
+    });
+    const records = mongoCollections(fixture.resource.db).careerRecords;
+    await records.updateOne(
+      { _id: created.record.id },
+      { $set: { properties: { note: "stale legacy" } } },
+    );
+
+    const updated = await service.updateRecord(userId, created.record.id, 1, { title: "수정 후" });
+
+    expect(updated.properties).toEqual({ note: "canonical" });
+    expect(await records.findOne({ _id: created.record.id })).toMatchObject({
+      properties: { note: "canonical" },
+      propertyValues: [{ propertyDefinitionId: propertyId, type: "text", value: "canonical" }],
       version: 2,
     });
   });
@@ -303,7 +336,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
 
   beforeAll(async () => {
     if (engine === "mongodb") {
-      fixture = await createMongoFixture("career-http");
+      fixture = await createMongoFixture("career-http", { migrationTargetVersion: "0011" });
       identityService = new MongoIdentityService(fixture.resource);
       careerService = new MongoCareerService(fixture.resource);
       const first = await identityService.signup({ email: `career-${randomUUID()}@example.com`, displayName: "기록 A", password: "correct-horse-battery" });

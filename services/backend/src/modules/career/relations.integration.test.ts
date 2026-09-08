@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { CareerService } from "./service.js";
+import { toCanonicalPropertyDefinitions } from "./properties.js";
 
 const value = (type: CareerPropertyDefinitionV2["type"], raw: unknown) => ({ type, value: raw } as CareerPropertyValueV2);
 const definition = (id: string, key: string, type: CareerPropertyDefinitionV2["type"], config: Record<string, unknown> = {}): CareerPropertyDefinitionV2 => ({ id, key, name: key, type, required: false, system: false, config, order: 0, version: 1, deletedAt: null });
@@ -28,7 +29,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
   let lostPropertyId: string;
 
   beforeAll(async () => {
-    fixture = await createMongoFixture("careerrelations");
+    fixture = await createMongoFixture("careerrelations", { migrationTargetVersion: "0011" });
     service = new CareerService(fixture.resource);
     const identity = new MongoIdentityService(fixture.resource);
     userId = (await identity.signup({ email: `relations-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "관계" })).user.id;
@@ -40,16 +41,24 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const exactId = randomUUID(); const numberId = randomUUID(); const tagsId = randomUUID();
     const targetExactId = randomUUID(); const targetNumberId = randomUUID(); const targetTagsId = randomUUID();
     const db = mongoCollections(fixture.resource.db);
-    await db.careerCategories.updateOne({ _id: sourceCategoryId }, { $set: { schemaVersion: 1, propertySchemaV2: [
+    const sourceDefinitions = [
       definition(exactId, "exact", "text"), definition(numberId, "numberText", "text"), definition(tagsId, "tags", "multi_select"), definition(lostPropertyId, "lost", "text"),
       definition(relationId, "related", "relation", { targetCategoryId, inversePropertyId: inverseRelationId, cardinality: "multiple", deletePolicy: "restrict" }),
       definition(singleRelationId, "singleRelated", "relation", { targetCategoryId, inversePropertyId: null, cardinality: "single", deletePolicy: "restrict" }),
       definition(formulaId, "constant", "formula", { source: "1 + 2", ast: null, diagnostics: [] }),
-    ] } });
-    await db.careerCategories.updateOne({ _id: targetCategoryId }, { $set: { schemaVersion: 1, propertySchemaV2: [
+    ];
+    const targetDefinitions = [
       definition(targetExactId, "exact", "text"), definition(targetNumberId, "numberText", "number"), definition(targetTagsId, "tags", "select"),
       definition(inverseRelationId, "back", "relation", { targetCategoryId: sourceCategoryId, inversePropertyId: relationId, cardinality: "multiple", deletePolicy: "restrict" }),
-    ] } });
+    ];
+    await db.careerCategories.updateOne({ _id: sourceCategoryId }, { $set: {
+      schemaVersion: 1, propertySchemaV2: sourceDefinitions,
+      propertyDefinitions: toCanonicalPropertyDefinitions(sourceDefinitions),
+    } });
+    await db.careerCategories.updateOne({ _id: targetCategoryId }, { $set: {
+      schemaVersion: 1, propertySchemaV2: targetDefinitions,
+      propertyDefinitions: toCanonicalPropertyDefinitions(targetDefinitions),
+    } });
     const optionA = randomUUID(); const optionB = randomUUID();
     const sourceRecord = await service.createRecord(userId, randomUUID(), { categoryId: sourceCategoryId, title: "본문 보존", properties: { exact: value("text", "같음"), numberText: value("text", "42"), tags: value("multi_select", [optionA, optionB]), lost: value("text", "남겨 둠") }, bodyMd: "# 본문은 이동해도 남는다" });
     sourceRecordId = sourceRecord.record.id;

@@ -5,6 +5,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
+import { requireCareerCategory } from "./mongo-categories.js";
 import { assertActiveRecordsForWrite } from "./mongo-record-guard.js";
 import { mapMongoRecord, usageLookup } from "./mongo-records.js";
 
@@ -54,6 +55,7 @@ export async function restoreMongoRecord(context: MongoContext, userId: string, 
     await requireActiveUser(tx, userId);
     const record = await mongoCollections(tx.db).careerRecords.findOneAndUpdate({ _id: recordId, userId, deletedAt: { $ne: null }, purgeAfter: { $gt: at } }, { $set: { deletedAt: null, purgeAfter: null, updatedAt: new Date() }, $inc: { version: 1, referenceVersion: 1 } }, { session: tx.session, returnDocument: "after" });
     if (!record) throw new CareerError(404, "restorable career record not found");
-    return mapMongoRecord(record);
+    const category = await requireCareerCategory(tx, userId, record.categoryId, tx.session);
+    return mapMongoRecord(record, category);
   });
 }
