@@ -19,9 +19,8 @@ import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
 import { requireCareerCategory } from "./mongo-categories.js";
 import { mapMongoRecord } from "./mongo-records.js";
-import { materializeLegacyTagOptions, toCanonicalPropertyValues } from "./properties.js";
+import { careerCategoryDefinitions, materializeLegacyTagOptions, projectTypedCareerProperties, toCanonicalPropertyValues } from "./properties.js";
 import { convertCareerPropertyValue } from "./property-schema.js";
-import { careerCategoryDefinitions } from "./relations.js";
 
 const PREVIEW_LIFETIME_MS = 15 * 60_000;
 
@@ -76,10 +75,6 @@ function previewValue(value: unknown, definition: CareerPropertyDefinitionV2): C
   return { type: "text", value: JSON.stringify(value) };
 }
 
-function readValue(record: CareerRecordDoc, definition: CareerPropertyDefinitionV2): unknown {
-  return record.properties[definition.key];
-}
-
 function signToken(token: MoveToken, secret: string): string {
   const body = Buffer.from(canonical(token)).toString("base64url");
   return `${body}.${createHmac("sha256", secret).update(body).digest("base64url")}`;
@@ -114,9 +109,10 @@ function createMovePlan(record: CareerRecordDoc, source: CareerCategoryDoc, targ
   const nextProperties: Record<string, unknown> = {};
   const unmappedRaw: Record<string, unknown> = { ...(record.unmappedProperties ?? {}) };
   const conversions: CareerCategoryMovePreview["conversions"] = [];
+  const sourceProperties = projectTypedCareerProperties(source, record);
 
   for (const definition of sourceDefinitions) {
-    const value = readValue(record, definition);
+    const value = sourceProperties[definition.key];
     const targetDefinition = targetFor(definition, targetDefinitions);
     if (!targetDefinition) {
       conversions.push({ sourcePropertyId: definition.id, targetPropertyId: null, kind: "unmapped", ...(value === undefined ? {} : { sampleBefore: value }) });
@@ -204,11 +200,12 @@ export class MongoCategoryMoveService implements CategoryMoveService {
         { session: tx.session, returnDocument: "after" },
       );
       if (!updated) throw new CareerError(412, "career record version is stale");
+      const targetForRead = await requireCareerCategory(tx, userId, target._id, tx.session);
       await addMongoOutboxEvent(tx, {
         userId, topic: "career.computation", idempotencyKey: `career-category-move:${recordId}:v${updated.version}`,
         payload: { userId, recordId, changedPropertyIds: [], sourceRecordVersion: updated.version },
       });
-      return mapMongoRecord(updated);
+      return mapMongoRecord(updated, targetForRead);
     });
   }
 }

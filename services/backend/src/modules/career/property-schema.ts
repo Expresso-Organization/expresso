@@ -22,7 +22,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
 import { mapMongoCategory } from "./mongo-categories.js";
-import { materializeLegacyTagOptions, toCanonicalPropertyDefinitions, toCanonicalPropertyValues } from "./properties.js";
+import { careerCategoryDefinitions, materializeLegacyTagOptions, projectLegacyCareerProperties, toCanonicalPropertyDefinitions, toCanonicalPropertyValues } from "./properties.js";
 
 const PREVIEW_LIFETIME_MS = 15 * 60_000;
 const INLINE_MUTATION_LIMIT = 100;
@@ -59,14 +59,6 @@ export function stablePropertyId(categoryId: string, key: string): string {
   bytes[8] = (bytes[8]! & 63) | 128;
   const hex = bytes.subarray(0, 16).toString("hex");
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
-function definitions(category: CareerCategoryDoc): CareerPropertyDefinitionV2[] {
-  return category.propertySchemaV2 ?? Object.entries(category.propertySchema).map(([key, property], order) => ({
-    id: property.id ?? stablePropertyId(category._id, key), key, name: property.label,
-    type: property.type === "boolean" ? "checkbox" : property.type === "tags" ? "multi_select" : property.type,
-    required: property.required, system: property.system, config: {}, order, version: 1, deletedAt: null,
-  }));
 }
 
 function signPreview(payload: SignedPreview, signingSecret: string): string {
@@ -184,7 +176,7 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     const db = mongoCollections(this.context.db);
     const category = await db.careerCategories.findOne({ _id: categoryId, userId, isSystem: false });
     if (!category) throw new CareerError(404, "career category not found");
-    const current = definitions(category);
+    const current = careerCategoryDefinitions(category);
     const propertyId = "propertyId" in change ? change.propertyId : undefined;
     const source = propertyId ? current.find((definition) => definition.id === propertyId) : undefined;
     if (propertyId && !source) throw new CareerError(404, "property not found");
@@ -197,16 +189,16 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     const lossyExamples: CareerPropertyChangePreview["impact"]["lossyExamples"] = [];
     if (source && change.kind === "type-change") {
       if (affectedRecordCount > PREVIEW_SCAN_LIMIT) throw new CareerError(413, "property preview scan limit exceeded");
-      const rows = await db.careerRecords.find(filter!).project({ _id: 1, properties: 1 }).limit(PREVIEW_SCAN_LIMIT + 1).toArray();
+      const rows = await db.careerRecords.find(filter!).project({ _id: 1, properties: 1, propertyValues: 1 }).limit(PREVIEW_SCAN_LIMIT + 1).toArray();
       convertibleCount = 0;
       for (const row of rows) {
-        const before = row.properties[source.key];
+        const before = projectLegacyCareerProperties(category, row as CareerRecordDoc)[source.key];
         const converted = convertCareerPropertyValue(before, source.type, change.type);
         if (converted.kind !== "unmapped") convertibleCount += 1;
         if ((converted.kind === "lossy" || converted.kind === "unmapped") && lossyExamples.length < PREVIEW_EXAMPLE_LIMIT) lossyExamples.push({ recordId: row._id, before, ...(converted.value === undefined ? {} : { after: converted.value }) });
       }
     } else if (source && change.kind === "delete") {
-      for (const row of sampleRows) lossyExamples.push({ recordId: row._id, before: row.properties[source.key] });
+      for (const row of sampleRows) lossyExamples.push({ recordId: row._id, before: projectLegacyCareerProperties(category, row)[source.key] });
     }
     const views = propertyId ? await db.careerViews.find({ userId, categoryId }).limit(21).toArray() : [];
     const dependentViews = views.filter((view) => containsReference(view, propertyId!)).map((view) => view._id).slice(0, 100);
@@ -235,7 +227,7 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
       if (category.version !== expectedVersion) throw new CareerError(409, "category version is stale");
       if (!verifyPreview(input.previewToken, { userId, categoryId, categoryVersion: expectedVersion, change: input.change }, this.signingSecret)) throw new CareerError(409, "preview token is invalid or expired");
       const now = new Date();
-      const next = definitions(category).map((definition) => ({ ...definition, config: { ...definition.config } }));
+      const next = careerCategoryDefinitions(category).map((definition) => ({ ...definition, config: { ...definition.config } }));
       const change = input.change;
       let recomputePropertyId: string | null = null;
       if (change.kind === "create") {
@@ -297,12 +289,15 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     const count = await db.careerRecords.countDocuments(filter, { session });
     if (count > INLINE_MUTATION_LIMIT) { await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-conversion", idempotencyKey: `career-property:${categoryId}:${source.id}:${source.version + 1}`, payload: { userId, categoryId, propertyId: source.id, propertyKey: source.key, definitionVersion: source.version + 1, sourceType: source.type, targetType, allowLossy: confirmLossy } }); return; }
     const rows = await db.careerRecords.find(filter, { session }).limit(INLINE_MUTATION_LIMIT + 1).toArray();
-    const conversions = rows.map((row) => ({ row, result: convertCareerPropertyValue(row.properties[source.key], source.type, targetType) }));
+    const conversions = rows.map((row) => {
+      const currentProperties = projectLegacyCareerProperties(category, row);
+      return { row, currentProperties, result: convertCareerPropertyValue(currentProperties[source.key], source.type, targetType) };
+    });
     if (conversions.some(({ result }) => result.kind === "unmapped")) throw new CareerError(409, "some property values cannot be converted");
     if (!confirmLossy && conversions.some(({ result }) => result.kind === "lossy")) throw new CareerError(409, "lossy conversion requires confirmation");
-    const prepared = conversions.map(({ row, result }) => {
-      const stored = CareerPropertyValueV2Schema.safeParse(row.properties[source.key]).success ? result.value : { type: targetType, value: result.value };
-      const properties: CareerProperties = { ...row.properties, [source.key]: stored as CareerProperties[string] };
+    const prepared = conversions.map(({ row, currentProperties, result }) => {
+      const stored = CareerPropertyValueV2Schema.safeParse(currentProperties[source.key]).success ? result.value : { type: targetType, value: result.value };
+      const properties: CareerProperties = { ...currentProperties, [source.key]: stored as CareerProperties[string] };
       return { row, properties };
     });
     await materializeLegacyTagOptions(this.context, session, category, prepared.map((item) => item.properties), nextDefinitions);
@@ -327,7 +322,7 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
       return;
     }
     const rows = await db.careerRecords.find({ userId, categoryId, deletedAt: null, [`properties.${definition.key}`]: { $exists: false } }, { session }).toArray();
-    const prepared = rows.map((row) => ({ row, properties: { ...row.properties, [definition.key]: parsed.data } as CareerProperties }));
+    const prepared = rows.map((row) => ({ row, properties: { ...projectLegacyCareerProperties(category, row), [definition.key]: parsed.data } as CareerProperties }));
     await materializeLegacyTagOptions(this.context, session, category, prepared.map((item) => item.properties), nextDefinitions);
     if (prepared.length > 0) await db.careerRecords.bulkWrite(prepared.map(({ row, properties }) => {
       return { updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { properties, propertyValues: toCanonicalPropertyValues(category, properties, nextDefinitions), updatedAt: now }, $inc: { version: 1 } } } };
@@ -341,12 +336,13 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     if (count > INLINE_MUTATION_LIMIT) { await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-deletion", idempotencyKey: `career-property-delete:${categoryId}:${source.id}:${source.version + 1}`, payload: { userId, categoryId, propertyId: source.id, propertyKey: source.key, definitionVersion: source.version + 1 } }); return; }
     const rows = await db.careerRecords.find(filter, { session }).limit(INLINE_MUTATION_LIMIT + 1).toArray();
     const prepared = rows.map((row) => {
-      const properties = { ...row.properties }; delete properties[source.key];
-      return { row, properties };
+      const currentProperties = projectLegacyCareerProperties(category, row);
+      const properties = { ...currentProperties }; delete properties[source.key];
+      return { row, currentProperties, properties };
     });
     await materializeLegacyTagOptions(this.context, session, category, prepared.map((item) => item.properties), nextDefinitions);
-    if (prepared.length > 0) await db.careerRecords.bulkWrite(prepared.map(({ row, properties }) => {
-      return { updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { properties, propertyValues: toCanonicalPropertyValues(category, properties, nextDefinitions), [`propertyValueTombstones.${source.id}`]: row.properties[source.key], updatedAt: now }, $inc: { version: 1 } } } };
+    if (prepared.length > 0) await db.careerRecords.bulkWrite(prepared.map(({ row, currentProperties, properties }) => {
+      return { updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { properties, propertyValues: toCanonicalPropertyValues(category, properties, nextDefinitions), [`propertyValueTombstones.${source.id}`]: currentProperties[source.key], updatedAt: now }, $inc: { version: 1 } } } };
     }), { session });
   }
 
@@ -359,7 +355,7 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     const prepared = rows.map((row) => {
       const restoredValue = row.propertyValueTombstones?.[source.id];
       if (restoredValue === undefined || restoredValue === null) throw new CareerError(409, "복원할 PropertyValue가 없습니다");
-      const properties: CareerProperties = { ...row.properties, [source.key]: restoredValue as CareerProperties[string] };
+      const properties: CareerProperties = { ...projectLegacyCareerProperties(category, row), [source.key]: restoredValue as CareerProperties[string] };
       return { row, properties };
     });
     await materializeLegacyTagOptions(this.context, session, category, prepared.map((item) => item.properties), nextDefinitions);

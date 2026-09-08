@@ -18,22 +18,9 @@ import { CareerError } from "./errors.js";
 import { requireCareerCategory } from "./mongo-categories.js";
 import { assertActiveRecordsForWrite } from "./mongo-record-guard.js";
 import { mapMongoRecord } from "./mongo-records.js";
-import { stablePropertyId } from "./property-schema.js";
+import { careerCategoryDefinitions } from "./properties.js";
 
-export function careerCategoryDefinitions(category: CareerCategoryDoc) {
-  return category.propertySchemaV2 ?? Object.entries(category.propertySchema).map(([key, property], order) => ({
-    id: property.id ?? stablePropertyId(category._id, key),
-    key,
-    name: property.label,
-    type: property.type === "boolean" ? "checkbox" : property.type === "tags" ? "multi_select" : property.type,
-    required: property.required,
-    system: property.system,
-    config: {},
-    order,
-    version: 1,
-    deletedAt: null,
-  }));
-}
+export { careerCategoryDefinitions } from "./properties.js";
 
 function relationDefinition(category: CareerCategoryDoc, propertyId: string): CareerRelationDefinition {
   const property = careerCategoryDefinitions(category).find((definition) => definition.id === propertyId && definition.deletedAt === null);
@@ -75,7 +62,7 @@ export class MongoRelationService implements RelationService {
       const existing = await db.careerRecordRelations.find({ userId, sourceRecordId: recordId, sourcePropertyId: input.propertyId }, { session: tx.session }).limit(1_001).toArray();
       if (existing.length > 1_000) throw new CareerError(409, "relation target limit exceeded");
       const existingIds = existing.map((edge) => edge.targetRecordId).sort();
-      if (existingIds.length === targetIds.length && existingIds.every((id, index) => id === targetIds[index])) return mapMongoRecord(source);
+      if (existingIds.length === targetIds.length && existingIds.every((id, index) => id === targetIds[index])) return mapMongoRecord(source, sourceCategory);
 
       // snapshot isolation에서 대상의 휴지통 이동과 경쟁하지 않도록 모든 참여 기록을 갱신한다.
       await assertActiveRecordsForWrite(tx, userId, [recordId, ...targetIds]);
@@ -151,7 +138,7 @@ export class MongoRelationService implements RelationService {
           payload: { userId, recordId: target._id, changedPropertyIds: [definition.inversePropertyId], sourceRecordVersion: target.version },
         });
       }
-      return mapMongoRecord(updated);
+      return mapMongoRecord(updated, sourceCategory);
     });
   }
 

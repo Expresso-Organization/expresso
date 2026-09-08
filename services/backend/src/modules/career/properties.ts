@@ -3,6 +3,7 @@ import type {
   CareerProperties,
   CareerPropertyDefinitionV2,
   CareerPropertySchema,
+  CareerPropertyValueV2,
   WritableCareerPropertyType,
   WritableCareerPropertyValue,
 } from "@expresso/contracts";
@@ -11,7 +12,7 @@ import {
   CareerPropertyValueV2Schema,
   WritableCareerPropertyValueSchema,
 } from "@expresso/contracts";
-import { exactOptionId, officialPropertyDefinitionId, type CareerCategoryDoc } from "@expresso/database";
+import { exactOptionId, officialPropertyDefinitionId, type CareerCategoryDoc, type CareerRecordDoc } from "@expresso/database";
 import type { ClientSession } from "mongodb";
 
 import type { MongoContext } from "../../platform/mongodb.js";
@@ -76,6 +77,129 @@ export function legacySchemaToV2Definitions(
   });
 }
 
+/** 읽기 경계는 canonical Definition을 우선하고, 전환 전 Category만 V2/legacy로 내립니다. */
+export function careerCategoryDefinitions(
+  category: Pick<CareerCategoryDoc, "_id" | "propertySchema" | "propertySchemaV2" | "propertyDefinitions">,
+): CareerPropertyDefinitionV2[] {
+  if (category.propertyDefinitions !== undefined) return category.propertyDefinitions.map((definition) => ({ ...definition }));
+  return category.propertySchemaV2?.map((definition) => ({ ...definition }))
+    ?? legacySchemaToV2Definitions(category._id, category.propertySchema);
+}
+
+/** title은 root field이며, 기존 View field reference를 위해서만 V2 virtual Definition을 합성합니다. */
+export function careerCategoryApiDefinitions(category: CareerCategoryDoc): CareerPropertyDefinitionV2[] {
+  const definitions = careerCategoryDefinitions(category);
+  if (category.propertyDefinitions === undefined) return definitions;
+  const virtualTitles = category.propertySchemaV2?.filter((definition) => definition.type === "title") ?? [];
+  return [...virtualTitles, ...definitions];
+}
+
+function dataIntegrity(message: string): never {
+  throw new CareerError(500, message);
+}
+
+function legacyCompatibleValue(
+  category: Pick<CareerCategoryDoc, "propertySchema">,
+  definition: CareerPropertyDefinitionV2,
+  propertyValue: WritableCareerPropertyValue,
+): CareerProperties[string] {
+  const legacyType = category.propertySchema[definition.key]?.type;
+  const matchingLegacyType = propertyValue.type === "checkbox" ? "boolean"
+    : propertyValue.type === "multi_select" ? "tags" : propertyValue.type;
+  if ((propertyValue.type === "text" || propertyValue.type === "number" || propertyValue.type === "checkbox")
+    && legacyType === matchingLegacyType) {
+    return propertyValue.value;
+  }
+  if (propertyValue.type === "multi_select") {
+    const options = Array.isArray(definition.config.options) ? definition.config.options : [];
+    const namesById = new Map(options.flatMap((option) => option !== null && typeof option === "object"
+      && typeof (option as { id?: unknown }).id === "string" && typeof (option as { name?: unknown }).name === "string"
+      ? [[(option as { id: string }).id, (option as { name: string }).name] as const]
+      : []));
+    const names = propertyValue.value.map((optionId) => namesById.get(optionId));
+    if (legacyType === "tags" && names.every((name): name is string => name !== undefined)) return names;
+    return { type: "multi_select", value: [...propertyValue.value] };
+  }
+  if (propertyValue.type === "date") {
+    if (legacyType === "date" && propertyValue.value.precision === "month") {
+      if (propertyValue.value.end !== null) dataIntegrity(`legacy 응답이 month range를 표현할 수 없습니다: ${definition.key}`);
+      return propertyValue.value.start;
+    }
+    const value = {
+      start: propertyValue.value.start,
+      end: propertyValue.value.end,
+      timezone: propertyValue.value.precision === "datetime" ? propertyValue.value.timezone : null,
+    };
+    return { type: "date", value } satisfies CareerPropertyValueV2;
+  }
+  return { type: propertyValue.type, value: propertyValue.value } as CareerPropertyValueV2;
+}
+
+/**
+ * 기존 Web 응답을 위한 key projection입니다.
+ * propertyValues 필드가 존재하면 빈 배열도 canonical snapshot이며 key별 legacy fallback을 하지 않습니다.
+ */
+function projectCareerProperties(
+  category: CareerCategoryDoc,
+  record: Pick<CareerRecordDoc, "properties" | "propertyValues">,
+  projectValue: (definition: CareerPropertyDefinitionV2, propertyValue: WritableCareerPropertyValue) => CareerProperties[string],
+): CareerProperties {
+  if (record.propertyValues === undefined) return record.properties;
+  const definitions = careerCategoryDefinitions(category).filter((definition) => definition.deletedAt === null);
+  const definitionsById = new Map<string, CareerPropertyDefinitionV2>();
+  const definitionKeys = new Set<string>();
+  for (const definition of definitions) {
+    if (definitionsById.has(definition.id) || definitionKeys.has(definition.key)) {
+      dataIntegrity("canonical PropertyDefinition identity가 중복되었습니다");
+    }
+    definitionsById.set(definition.id, definition);
+    definitionKeys.add(definition.key);
+  }
+
+  const projected: CareerProperties = {};
+  const seenPropertyIds = new Set<string>();
+  for (const rawValue of record.propertyValues) {
+    const parsed = WritableCareerPropertyValueSchema.safeParse(rawValue);
+    if (!parsed.success) dataIntegrity("canonical PropertyValue shape가 올바르지 않습니다");
+    const propertyValue = parsed.data;
+    if (seenPropertyIds.has(propertyValue.propertyDefinitionId)) dataIntegrity("canonical PropertyValue identity가 중복되었습니다");
+    seenPropertyIds.add(propertyValue.propertyDefinitionId);
+    const definition = definitionsById.get(propertyValue.propertyDefinitionId);
+    if (!definition) dataIntegrity("canonical PropertyValue가 active Definition을 참조하지 않습니다");
+    if (definition.type !== propertyValue.type) dataIntegrity(`canonical PropertyValue type이 Definition과 다릅니다: ${definition.key}`);
+    projected[definition.key] = projectValue(definition, propertyValue);
+  }
+  return projected;
+}
+
+export function projectLegacyCareerProperties(
+  category: CareerCategoryDoc,
+  record: Pick<CareerRecordDoc, "properties" | "propertyValues">,
+): CareerProperties {
+  return projectCareerProperties(category, record, (definition, propertyValue) => legacyCompatibleValue(category, definition, propertyValue));
+}
+
+/** Category Move 같은 내부 변환에는 canonical type 정보를 V2 wrapper로 유지합니다. */
+export function projectTypedCareerProperties(
+  category: CareerCategoryDoc,
+  record: Pick<CareerRecordDoc, "properties" | "propertyValues">,
+): CareerProperties {
+  return projectCareerProperties(category, record, (definition, propertyValue) => {
+    if (propertyValue.type === "date") {
+      if (propertyValue.value.precision === "month") {
+        if (propertyValue.value.end !== null) dataIntegrity(`내부 V2 값이 month range를 표현할 수 없습니다: ${definition.key}`);
+        return propertyValue.value.start;
+      }
+      return { type: "date", value: {
+        start: propertyValue.value.start,
+        end: propertyValue.value.end,
+        timezone: propertyValue.value.precision === "datetime" ? propertyValue.value.timezone : null,
+      } };
+    }
+    return { type: propertyValue.type, value: propertyValue.value } as CareerPropertyValueV2;
+  });
+}
+
 function canonicalDate(value: { start: string; end: string | null; timezone: string | null }) {
   if (value.start.includes("T")) return { precision: "datetime" as const, ...value };
   if (DAY_VALUE.test(value.start)) return { precision: "day" as const, start: value.start, end: value.end };
@@ -111,8 +235,7 @@ export function toCanonicalPropertyValues(
   definitionsOverride?: readonly CareerPropertyDefinitionV2[],
 ): WritableCareerPropertyValue[] {
   const v2Definitions = definitionsOverride
-    ?? category.propertySchemaV2
-    ?? legacySchemaToV2Definitions(category._id, category.propertySchema);
+    ?? careerCategoryDefinitions(category);
   const storedIdByKey = new Map((definitionsOverride ? [] : category.propertyDefinitions ?? []).filter((definition) => definition.deletedAt === null).map((definition) => [definition.key, definition.id]));
   const canonicalDefinitions = v2Definitions
     .filter((definition): definition is CareerPropertyDefinitionV2 & { type: WritableCareerPropertyType } => definition.deletedAt === null && isWritableDefinition(definition))
@@ -139,8 +262,7 @@ export async function materializeLegacyTagOptions(
   definitionsOverride?: readonly CareerPropertyDefinitionV2[],
 ): Promise<void> {
   const v2Definitions = definitionsOverride
-    ?? category.propertySchemaV2
-    ?? legacySchemaToV2Definitions(category._id, category.propertySchema);
+    ?? careerCategoryDefinitions(category);
   const canonicalByKey = new Map((category.propertyDefinitions ?? []).map((definition) => [definition.key, definition]));
 
   for (const definition of v2Definitions) {

@@ -7,7 +7,7 @@ import type { Filter, UpdateFilter } from "mongodb";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { CareerError } from "./errors.js";
-import { materializeLegacyTagOptions, toCanonicalPropertyValues } from "./properties.js";
+import { careerCategoryDefinitions, materializeLegacyTagOptions, toCanonicalPropertyValues } from "./properties.js";
 import { convertCareerPropertyValue } from "./property-schema.js";
 
 export type CareerPropertyMutationTopic =
@@ -72,7 +72,7 @@ function requireCurrentDefinition(
   topic: CareerPropertyMutationTopic,
   payload: MutationPayload,
 ): CareerPropertyDefinitionV2 {
-  const definition = category.propertySchemaV2?.find((item) => item.id === payload.propertyId);
+  const definition = careerCategoryDefinitions(category).find((item) => item.id === payload.propertyId);
   if (!definition || definition.key !== payload.propertyKey || definition.version !== payload.definitionVersion) {
     throw new CareerError(409, "지연 Property 변경의 Definition이 현재 Category와 일치하지 않습니다");
   }
@@ -114,10 +114,10 @@ function nextProperties(topic: CareerPropertyMutationTopic, payload: MutationPay
   }
 
   const conversion = payload as ConversionPayload;
-  const current = row.properties[payload.propertyKey];
-  const parsed = CareerPropertyValueV2Schema.safeParse(current);
+  const currentValue = row.properties[payload.propertyKey];
+  const parsed = CareerPropertyValueV2Schema.safeParse(currentValue);
   if (parsed.success && parsed.data.type === conversion.targetType) return row.properties;
-  const result = convertCareerPropertyValue(current, conversion.sourceType, conversion.targetType);
+  const result = convertCareerPropertyValue(currentValue, conversion.sourceType, conversion.targetType);
   if (result.kind === "unmapped") throw new CareerError(409, "지연 변경 중 변환할 수 없는 PropertyValue를 발견했습니다");
   if (result.kind === "lossy" && !conversion.allowLossy) throw new CareerError(409, "손실 가능한 지연 Property 변경에는 확인이 필요합니다");
   const stored = parsed.success ? result.value : { type: conversion.targetType, value: result.value };

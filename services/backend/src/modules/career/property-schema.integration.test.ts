@@ -1,12 +1,14 @@
 import { randomUUID } from "node:crypto";
 
 import { mongoCollections } from "@expresso/database";
+import type { CareerPropertyDefinitionV2 } from "@expresso/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { CareerService } from "./service.js";
 import { MongoCareerPropertyMutationService } from "./property-mutation.js";
+import { toCanonicalPropertyDefinitions } from "./properties.js";
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("career property schema Mongo transaction behavior", () => {
   let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
@@ -20,7 +22,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
   let recordIds: string[];
 
   beforeAll(async () => {
-    fixture = await createMongoFixture("propertyschema");
+    fixture = await createMongoFixture("propertyschema", { migrationTargetVersion: "0011" });
     service = new CareerService(fixture.resource);
     const identity = new MongoIdentityService(fixture.resource);
     userId = (await identity.signup({ email: `schema-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "스키마" })).user.id;
@@ -34,11 +36,16 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     });
     categoryId = category.id;
     const db = mongoCollections(fixture.resource.db);
-    await db.careerCategories.updateOne({ _id: categoryId }, { $set: { schemaVersion: 1, propertySchemaV2: [
+    const definitions: CareerPropertyDefinitionV2[] = [
       { id: propertyId, key: "score", name: "점수", type: "text", required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null },
       { id: formulaId, key: "formula", name: "수식", type: "formula", required: false, system: false, config: { source: `prop("${propertyId}")`, ast: { expression: { propertyId } }, diagnostics: [] }, order: 1, version: 1, deletedAt: null },
       { id: randomUUID(), key: "rollup", name: "롤업", type: "rollup", required: false, system: false, config: { relationPropertyId: relationId, targetPropertyId: propertyId, aggregation: "sum" }, order: 2, version: 1, deletedAt: null },
-    ] } });
+    ];
+    await db.careerCategories.updateOne({ _id: categoryId }, { $set: {
+      schemaVersion: 1,
+      propertySchemaV2: definitions,
+      propertyDefinitions: toCanonicalPropertyDefinitions(definitions),
+    } });
     const first = await service.createRecord(userId, randomUUID(), { categoryId, title: "첫째", properties: { score: "42" }, bodyMd: "" });
     const second = await service.createRecord(userId, randomUUID(), { categoryId, title: "둘째", properties: { score: "7" }, bodyMd: "" });
     recordIds = [first.record.id, second.record.id];
