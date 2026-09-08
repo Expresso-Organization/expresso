@@ -7,6 +7,7 @@ import {
   inspectCareerPropertyMigration,
   type PropertyIdMapping,
 } from "../../career-property-inventory.js";
+import { reconcilePlannedDocumentJournals } from "../../migration-journal-recovery.js";
 import type { MongoMigrationStep } from "../../mongo-migrations.js";
 
 const MIGRATION_NAME = "0011_career_property_canonical_identity";
@@ -28,6 +29,7 @@ const HANDLED_REFERENCE_LOCATIONS = new Set([
   "career_ai_proposals:propertyChanges[].propertyId",
   "outbox_events:payload.changedPropertyIds[]",
   "outbox_events:payload.sourcePropertyVersions.$keys",
+  "outbox_events:payload.propertyId",
 ]);
 
 for (const reference of careerPropertyReferenceLocations) {
@@ -231,67 +233,81 @@ function rewriteRegisteredDocument(collection: string, document: Document, mappi
     const payload = { ...result["payload"] };
     if (Array.isArray(payload["changedPropertyIds"])) payload["changedPropertyIds"] = rewriteJson(payload["changedPropertyIds"], ids);
     if (isObject(payload["sourcePropertyVersions"])) payload["sourcePropertyVersions"] = rewriteJson(payload["sourcePropertyVersions"], ids);
+    if (typeof payload["propertyId"] === "string") payload["propertyId"] = ids.get(payload["propertyId"]) ?? payload["propertyId"];
     result["payload"] = payload;
   }
   return result;
 }
 
-async function buildPlan(db: Db): Promise<PlannedWrite[]> {
+async function migrationContext(db: Db): Promise<{
+  mappings: readonly PropertyIdMapping[];
+  ids: ReadonlyMap<string, string>;
+  oldIds: ReadonlySet<string>;
+}> {
   const report = await inspectCareerPropertyMigration(db);
   if (!report.canMigrate) {
     const reasons = report.conflicts.map(({ reason, count }) => `${reason}(${count})`).join(", ");
     throw new Error(`0011 preflight conflict: ${reasons}`);
   }
   const ids = mappingIndex(report.idMappings);
-  const oldIds = new Set(ids.keys());
-  const plans: PlannedWrite[] = [];
+  return { mappings: report.idMappings, ids, oldIds: new Set(ids.keys()) };
+}
 
+async function* plans(db: Db, context: Awaited<ReturnType<typeof migrationContext>>): AsyncGenerator<PlannedWrite> {
   const collectionNames = (await db.listCollections({}, { nameOnly: true }).toArray()).map(({ name }) => name);
   for (const collection of collectionNames) {
     if ([JOURNAL_COLLECTION, "schema_migrations", "migration_locks"].includes(collection)) continue;
-    for (const before of await db.collection<Document>(collection).find({}).toArray()) {
+    for await (const before of db.collection<Document>(collection).find({}).batchSize(100)) {
       const after = REGISTERED_COLLECTIONS.has(collection)
-        ? rewriteRegisteredDocument(collection, before, report.idMappings, ids)
+        ? rewriteRegisteredDocument(collection, before, context.mappings, context.ids)
         : cloneDocument(before);
-      if (containsLegacyId(after, oldIds)) {
+      if (containsLegacyId(after, context.oldIds)) {
         throw new Error(`0011 preflight conflict: 등록되지 않은 0009 ID 참조가 ${collection}/${String(before["_id"])}에 남습니다.`);
       }
-      if (!isDeepStrictEqual(before, after)) plans.push({ collection, documentId: String(before["_id"]), before, after });
+      if (!isDeepStrictEqual(before, after)) yield { collection, documentId: String(before["_id"]), before, after };
     }
   }
-  return plans;
 }
 
-async function writeJournal(db: Db, plans: readonly PlannedWrite[]): Promise<void> {
-  if (plans.length === 0) return;
-  const journal = db.collection<Document & { _id: string }>(JOURNAL_COLLECTION);
-  for (const plan of plans) {
-    const _id = `${MIGRATION_NAME}:${plan.collection}:${plan.documentId}`;
-    const entry = {
-      _id,
-      migration: MIGRATION_NAME,
-      collection: plan.collection,
-      documentId: plan.documentId,
-      before: plan.before,
-      after: plan.after,
-      beforeDigest: digest(plan.before),
-      afterDigest: digest(plan.after),
-      state: "planned",
-    };
-    const existing = await journal.findOne({ _id });
-    if (existing && !isDeepStrictEqual(
-      { ...existing, _id: undefined },
-      { ...entry, _id: undefined },
-    )) throw new Error(`0011 journal conflict: ${_id}`);
-    if (!existing) await journal.insertOne(entry);
+async function preflight(db: Db): Promise<void> {
+  const context = await migrationContext(db);
+  for await (const _plan of plans(db, context)) {
+    // 모든 document를 write 전에 검증하되 전체 before/after를 메모리에 보관하지 않습니다.
   }
+}
+
+async function writeJournal(db: Db, plan: PlannedWrite): Promise<void> {
+  const journal = db.collection<Document & { _id: string }>(JOURNAL_COLLECTION);
+  const _id = `${MIGRATION_NAME}:${plan.collection}:${plan.documentId}`;
+  const entry = {
+    _id,
+    migration: MIGRATION_NAME,
+    kind: "document",
+    collection: plan.collection,
+    documentId: plan.documentId,
+    before: plan.before,
+    after: plan.after,
+    beforeDigest: digest(plan.before),
+    afterDigest: digest(plan.after),
+    state: "planned",
+  };
+  const existing = await journal.findOne({ _id });
+  const comparableExisting = existing && !Object.hasOwn(existing, "kind")
+    ? { ...existing, kind: "document" }
+    : existing;
+  if (comparableExisting && !isDeepStrictEqual(
+    { ...comparableExisting, _id: undefined },
+    { ...entry, _id: undefined },
+  )) throw new Error(`0011 journal conflict: ${_id}`);
+  if (!existing) await journal.insertOne(entry);
 }
 
 async function applyPlan(db: Db): Promise<void> {
-  const plans = await buildPlan(db);
-  await writeJournal(db, plans);
+  await reconcilePlannedDocumentJournals(db, JOURNAL_COLLECTION, MIGRATION_NAME);
+  const context = await migrationContext(db);
   const journal = db.collection<Document & { _id: string }>(JOURNAL_COLLECTION);
-  for (const plan of plans) {
+  for await (const plan of plans(db, context)) {
+    await writeJournal(db, plan);
     const collection = db.collection<Document & { _id: unknown }>(plan.collection);
     const result = await collection.replaceOne(
       plan.before as Filter<Document & { _id: unknown }>,
@@ -431,15 +447,21 @@ async function verifyMigration(db: Db): Promise<void> {
   const oldIds = new Set(mappingIndex(report.idMappings).keys());
   for (const { name } of await db.listCollections({}, { nameOnly: true }).toArray()) {
     if ([JOURNAL_COLLECTION, "schema_migrations", "migration_locks"].includes(name)) continue;
-    for (const document of await db.collection(name).find({}).toArray()) {
+    for await (const document of db.collection(name).find({}).batchSize(100)) {
       if (containsLegacyId(document, oldIds)) throw new Error(`0011 postflight conflict: ${name}/${String(document["_id"])}에 0009 ID가 남았습니다.`);
     }
   }
+  const unfinished = await db.collection(JOURNAL_COLLECTION).countDocuments({
+    migration: MIGRATION_NAME,
+    state: { $ne: "applied" },
+    $or: [{ kind: "document" }, { kind: { $exists: false } }],
+  });
+  if (unfinished > 0) throw new Error(`0011 postflight conflict: ${unfinished}개 journal이 완료되지 않았습니다.`);
 }
 
 export async function careerPropertyCanonicalIdentitySteps(): Promise<MongoMigrationStep[]> {
   return [
-    { id: "career_property:preflight", async run(db) { await buildPlan(db); } },
+    { id: "career_property:preflight", run: preflight },
     { id: "career_property:journal_and_remap", run: applyPlan },
     { id: "career_property:canonical_validators", run: installCanonicalValidators },
     { id: "career_property:postflight", run: verifyMigration },

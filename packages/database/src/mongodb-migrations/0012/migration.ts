@@ -5,6 +5,7 @@ import { BSON, type Db, type Document, type Filter } from "mongodb";
 
 import { exactOptionId } from "../../career-property-canonical-mapping.js";
 import { inspectCareerPropertyMigration, type PropertyIdMapping } from "../../career-property-inventory.js";
+import { reconcilePlannedDocumentJournals } from "../../migration-journal-recovery.js";
 import type { MongoMigrationStep } from "../../mongo-migrations.js";
 
 const MIGRATION_NAME = "0012_career_property_values_backfill";
@@ -179,15 +180,15 @@ function canonicalValue(
   if (type === "text") {
     if (typeof value !== "string") throw new Error(`0012 변환 conflict: ${key} text 값이 지원되지 않습니다.`);
     if ([...value].length > 50_000) throw new Error(`0012 변환 conflict: ${key} text가 50,000자를 초과합니다.`);
-    return { propertyDefinitionId, type, value };
+    return validatedCanonicalValue(definition, { propertyDefinitionId, type, value });
   }
   if (type === "number") {
     if (!supportedNumber(value)) throw new Error(`0012 변환 conflict: ${key} number 값이 지원되지 않습니다.`);
-    return { propertyDefinitionId, type, value: clone(value) };
+    return validatedCanonicalValue(definition, { propertyDefinitionId, type, value: clone(value) });
   }
   if (type === "checkbox") {
     if (typeof value !== "boolean") throw new Error(`0012 변환 conflict: ${key} checkbox 값이 지원되지 않습니다.`);
-    return { propertyDefinitionId, type, value };
+    return validatedCanonicalValue(definition, { propertyDefinitionId, type, value });
   }
   if (type === "multi_select") {
     if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
@@ -195,7 +196,7 @@ function canonicalValue(
     }
     if (declaredType === "multi_select") {
       if (value.some((item) => !UUID.test(item as string))) throw new Error(`0012 변환 conflict: ${key} option ID가 올바르지 않습니다.`);
-      return { propertyDefinitionId, type, value: [...value] };
+      return validatedCanonicalValue(definition, { propertyDefinitionId, type, value: [...value] });
     }
     const names = optionNames.get(propertyDefinitionId) ?? new Set<string>();
     const ids = (value as string[]).map((name) => {
@@ -204,14 +205,47 @@ function canonicalValue(
       return exactOptionId(propertyDefinitionId, name);
     });
     optionNames.set(propertyDefinitionId, names);
-    return { propertyDefinitionId, type, value: ids };
+    return validatedCanonicalValue(definition, { propertyDefinitionId, type, value: ids });
   }
-  if (type === "date") return { propertyDefinitionId, type, value: canonicalDate(value, key) };
+  if (type === "date") return validatedCanonicalValue(definition, { propertyDefinitionId, type, value: canonicalDate(value, key) });
 
   if (["select", "url", "email", "phone", "file", "media"].includes(type) && declaredType === type) {
-    return { propertyDefinitionId, type, value: clone(value) };
+    return validatedCanonicalValue(definition, { propertyDefinitionId, type, value: clone(value) });
   }
   throw new Error(`0012 변환 conflict: ${key}/${type} legacy 값은 자동 변환할 수 없습니다.`);
+}
+
+function validatedCanonicalValue(definition: Document, value: Document): Document {
+  const key = String(definition["key"]);
+  const type = String(definition["type"]);
+  if (!isDeepStrictEqual(Object.keys(value).sort(), ["propertyDefinitionId", "type", "value"])) {
+    throw new Error(`0012 canonical conflict: ${key} PropertyValue shape가 올바르지 않습니다.`);
+  }
+  if (value["propertyDefinitionId"] !== definition["id"] || !UUID.test(String(value["propertyDefinitionId"]))) {
+    throw new Error(`0012 canonical conflict: ${key} propertyDefinitionId가 올바르지 않습니다.`);
+  }
+  if (value["type"] !== type) throw new Error(`0012 canonical conflict: ${key} type이 Definition과 다릅니다.`);
+  const raw = value["value"];
+  if (type === "text") {
+    if (typeof raw !== "string" || [...raw].length > 50_000) throw new Error(`0012 canonical conflict: ${key} text 값이 올바르지 않습니다.`);
+  } else if (type === "number") {
+    if (!supportedNumber(raw)) throw new Error(`0012 canonical conflict: ${key} number 값이 올바르지 않습니다.`);
+  } else if (type === "checkbox") {
+    if (typeof raw !== "boolean") throw new Error(`0012 canonical conflict: ${key} checkbox 값이 올바르지 않습니다.`);
+  } else if (type === "select") {
+    if (raw !== null && (typeof raw !== "string" || !UUID.test(raw))) throw new Error(`0012 canonical conflict: ${key} select option ID가 올바르지 않습니다.`);
+  } else if (type === "multi_select" || type === "file" || type === "media") {
+    if (!Array.isArray(raw) || raw.length > 100 || raw.some((item) => typeof item !== "string" || !UUID.test(item))) {
+      throw new Error(`0012 canonical conflict: ${key} ${type} 배열이 올바르지 않습니다.`);
+    }
+  } else if (["url", "email", "phone"].includes(type)) {
+    if (typeof raw !== "string" || [...raw].length > 2_000) throw new Error(`0012 canonical conflict: ${key} ${type} 값이 올바르지 않습니다.`);
+  } else if (type === "date") {
+    if (!isDeepStrictEqual(raw, canonicalDate(raw, key))) throw new Error(`0012 canonical conflict: ${key} date shape가 올바르지 않습니다.`);
+  } else {
+    throw new Error(`0012 canonical conflict: ${key}/${type}은 writable PropertyValue가 아닙니다.`);
+  }
+  return value;
 }
 
 function equalPropertyValues(left: readonly Document[], right: readonly Document[]): boolean {
@@ -283,103 +317,148 @@ function categoryStates(categories: readonly Document[], mappings: readonly Prop
   return states;
 }
 
-async function buildPlan(db: Db): Promise<PlannedWrite[]> {
+async function loadCategories(db: Db, mappings: readonly PropertyIdMapping[]): Promise<{
+  categories: Document[];
+  states: Map<string, CategoryState>;
+}> {
+  const categories: Document[] = [];
+  for await (const category of db.collection<Document>("career_categories").find({}).sort({ _id: 1 }).batchSize(100)) {
+    categories.push(category);
+  }
+  return { categories, states: categoryStates(categories, mappings) };
+}
+
+function recordPlan(
+  record: Document,
+  states: ReadonlyMap<string, CategoryState>,
+  optionNames: Map<string, Set<string>>,
+): PlannedWrite | null {
+  const categoryId = record["categoryId"];
+  const category = typeof categoryId === "string" ? states.get(categoryId) : undefined;
+  if (!category) throw new Error(`0012 preflight conflict: Record ${String(record["_id"])}의 Category를 찾을 수 없습니다.`);
+  if (!isObject(record["properties"])) throw new Error(`0012 preflight conflict: Record ${String(record["_id"])}의 properties shape가 올바르지 않습니다.`);
+  const expected: Document[] = [];
+  const orderedDefinitions = [...category.definitionsByKey.values()].sort((left, right) => Number(left["order"]) - Number(right["order"]) || compareExact(String(left["key"]), String(right["key"])));
+  const knownKeys = new Set(orderedDefinitions.map((definition) => String(definition["key"])));
+  for (const key of Object.keys(record["properties"])) {
+    if (!knownKeys.has(key)) throw new Error(`0012 preflight conflict: Record ${String(record["_id"])}의 알 수 없는 property key ${key}`);
+  }
+  for (const definition of orderedDefinitions) {
+    const key = String(definition["key"]);
+    if (!Object.hasOwn(record["properties"], key)) continue;
+    expected.push(canonicalValue(definition, record["properties"][key], optionNames));
+  }
+  if (Object.hasOwn(record, "propertyValues")) {
+    if (!Array.isArray(record["propertyValues"])) {
+      throw new Error(`0012 canonical conflict: Record ${String(record["_id"])}의 propertyValues shape가 올바르지 않습니다.`);
+    }
+    const definitionsById = new Map([...category.definitionsByKey.values()].map((definition) => [String(definition["id"]), definition]));
+    for (const value of record["propertyValues"] as Document[]) {
+      if (!isObject(value) || typeof value["propertyDefinitionId"] !== "string") {
+        throw new Error(`0012 canonical conflict: Record ${String(record["_id"])}의 PropertyValue shape가 올바르지 않습니다.`);
+      }
+      const definition = definitionsById.get(value["propertyDefinitionId"]);
+      if (!definition) throw new Error(`0012 canonical conflict: Record ${String(record["_id"])}에 알 수 없는 propertyDefinitionId가 있습니다.`);
+      validatedCanonicalValue(definition, value);
+    }
+    if (!equalPropertyValues(expected, record["propertyValues"] as Document[])) {
+      throw new Error(`0012 canonical conflict: Record ${String(record["_id"])}의 propertyValues가 legacy properties와 다릅니다.`);
+    }
+    return null;
+  }
+  const after = clone(record);
+  after["propertyValues"] = expected;
+  return { collection: "career_records", documentId: String(record["_id"]), before: record, after };
+}
+
+async function scanBackfill(db: Db): Promise<{
+  categories: Document[];
+  states: Map<string, CategoryState>;
+  optionNames: Map<string, Set<string>>;
+  changeCount: number;
+}> {
   await requireCanaryGate(db);
   const report = await inspectCareerPropertyMigration(db);
   if (!report.canMigrate) {
     throw new Error(`0012 preflight conflict: ${report.conflicts.map(({ reason, count }) => `${reason}(${count})`).join(", ")}`);
   }
-  const categories = await db.collection<Document>("career_categories").find({}).sort({ _id: 1 }).toArray();
-  const states = categoryStates(categories, report.idMappings);
+  const { categories, states } = await loadCategories(db, report.idMappings);
   const optionNames = new Map<string, Set<string>>();
-  const plans: PlannedWrite[] = [];
-  const records = await db.collection<Document>("career_records").find({}).sort({ _id: 1 }).toArray();
-
-  for (const record of records) {
-    const categoryId = record["categoryId"];
-    const category = typeof categoryId === "string" ? states.get(categoryId) : undefined;
-    if (!category) throw new Error(`0012 preflight conflict: Record ${String(record["_id"])}의 Category를 찾을 수 없습니다.`);
-    if (!isObject(record["properties"])) throw new Error(`0012 preflight conflict: Record ${String(record["_id"])}의 properties shape가 올바르지 않습니다.`);
-    const expected: Document[] = [];
-    const orderedDefinitions = [...category.definitionsByKey.values()].sort((left, right) => Number(left["order"]) - Number(right["order"]) || compareExact(String(left["key"]), String(right["key"])));
-    const knownKeys = new Set(orderedDefinitions.map((definition) => String(definition["key"])));
-    for (const key of Object.keys(record["properties"])) {
-      if (!knownKeys.has(key)) throw new Error(`0012 preflight conflict: Record ${String(record["_id"])}의 알 수 없는 property key ${key}`);
-    }
-    for (const definition of orderedDefinitions) {
-      const key = String(definition["key"]);
-      if (!Object.hasOwn(record["properties"], key)) continue;
-      expected.push(canonicalValue(definition, record["properties"][key], optionNames));
-    }
-    if (Object.hasOwn(record, "propertyValues")) {
-      if (!Array.isArray(record["propertyValues"]) || !equalPropertyValues(expected, record["propertyValues"] as Document[])) {
-        throw new Error(`0012 canonical conflict: Record ${String(record["_id"])}의 propertyValues가 legacy properties와 다릅니다.`);
-      }
-      continue;
-    }
-    const after = clone(record);
-    after["propertyValues"] = expected;
-    plans.push({ collection: "career_records", documentId: String(record["_id"]), before: record, after });
+  let changeCount = 0;
+  for await (const record of db.collection<Document>("career_records").find({}).sort({ _id: 1 }).batchSize(100)) {
+    if (recordPlan(record, states, optionNames)) changeCount += 1;
   }
 
   for (const category of categories) {
     const after = mergeOptions(category, optionNames);
-    if (!isDeepStrictEqual(category, after)) plans.unshift({ collection: "career_categories", documentId: String(category["_id"]), before: category, after });
+    if (!isDeepStrictEqual(category, after)) changeCount += 1;
   }
-  return plans;
+  return { categories, states, optionNames, changeCount };
 }
 
-async function writeJournal(db: Db, plans: readonly PlannedWrite[]): Promise<void> {
+async function writeJournal(db: Db, plan: PlannedWrite): Promise<void> {
   const journal = db.collection<Document & { _id: string }>(JOURNAL_COLLECTION);
-  for (const plan of plans) {
-    const _id = `${MIGRATION_NAME}:${plan.collection}:${plan.documentId}`;
-    const entry = {
-      _id,
-      migration: MIGRATION_NAME,
-      kind: "document",
-      collection: plan.collection,
-      documentId: plan.documentId,
-      before: plan.before,
-      after: plan.after,
-      beforeDigest: digest(plan.before),
-      afterDigest: digest(plan.after),
-      state: "planned",
-    };
-    const existing = await journal.findOne({ _id });
-    if (existing && !isDeepStrictEqual({ ...existing, _id: undefined }, { ...entry, _id: undefined })) {
-      throw new Error(`0012 journal conflict: ${_id}`);
-    }
-    if (!existing) await journal.insertOne(entry);
+  const _id = `${MIGRATION_NAME}:${plan.collection}:${plan.documentId}`;
+  const entry = {
+    _id,
+    migration: MIGRATION_NAME,
+    kind: "document",
+    collection: plan.collection,
+    documentId: plan.documentId,
+    before: plan.before,
+    after: plan.after,
+    beforeDigest: digest(plan.before),
+    afterDigest: digest(plan.after),
+    state: "planned",
+  };
+  const existing = await journal.findOne({ _id });
+  if (existing && !isDeepStrictEqual({ ...existing, _id: undefined }, { ...entry, _id: undefined })) {
+    throw new Error(`0012 journal conflict: ${_id}`);
   }
+  if (!existing) await journal.insertOne(entry);
+}
+
+async function applyWrite(db: Db, plan: PlannedWrite): Promise<void> {
+  await writeJournal(db, plan);
+  const collection = db.collection<Document & { _id: unknown }>(plan.collection);
+  const result = await collection.replaceOne(plan.before as Filter<Document & { _id: unknown }>, plan.after);
+  if (result.modifiedCount === 0) {
+    const current = await collection.findOne({ _id: plan.before["_id"] });
+    if (!current || !isDeepStrictEqual(current, plan.after)) {
+      throw new Error(`0012 CAS conflict: ${plan.collection}/${plan.documentId}가 preflight 이후 변경되었습니다.`);
+    }
+  }
+  await db.collection<Document & { _id: string }>(JOURNAL_COLLECTION).updateOne(
+    { _id: `${MIGRATION_NAME}:${plan.collection}:${plan.documentId}`, state: "planned" },
+    { $set: { state: "applied" } },
+  );
 }
 
 async function applyPlan(db: Db): Promise<void> {
-  const plans = await buildPlan(db);
-  await writeJournal(db, plans);
-  const journal = db.collection<Document & { _id: string }>(JOURNAL_COLLECTION);
-  for (const plan of plans) {
-    const collection = db.collection<Document & { _id: unknown }>(plan.collection);
-    const result = await collection.replaceOne(plan.before as Filter<Document & { _id: unknown }>, plan.after, { bypassDocumentValidation: true });
-    if (result.modifiedCount === 0) {
-      const current = await collection.findOne({ _id: plan.before["_id"] });
-      if (!current || !isDeepStrictEqual(current, plan.after)) {
-        throw new Error(`0012 CAS conflict: ${plan.collection}/${plan.documentId}가 preflight 이후 변경되었습니다.`);
-      }
+  await reconcilePlannedDocumentJournals(db, JOURNAL_COLLECTION, MIGRATION_NAME);
+  const scan = await scanBackfill(db);
+  for (const category of scan.categories) {
+    const after = mergeOptions(category, scan.optionNames);
+    if (!isDeepStrictEqual(category, after)) {
+      await applyWrite(db, { collection: "career_categories", documentId: String(category["_id"]), before: category, after });
     }
-    await journal.updateOne({ _id: `${MIGRATION_NAME}:${plan.collection}:${plan.documentId}` }, { $set: { state: "applied" } });
+  }
+  for await (const record of db.collection<Document>("career_records").find({}).sort({ _id: 1 }).batchSize(100)) {
+    const plan = recordPlan(record, scan.states, scan.optionNames);
+    if (plan) await applyWrite(db, plan);
   }
 }
 
 async function verifyBackfill(db: Db): Promise<void> {
-  const remaining = await buildPlan(db);
-  if (remaining.length > 0) throw new Error(`0012 postflight conflict: ${remaining.length}개 document가 아직 backfill되지 않았습니다.`);
+  const remaining = await scanBackfill(db);
+  if (remaining.changeCount > 0) throw new Error(`0012 postflight conflict: ${remaining.changeCount}개 document가 아직 backfill되지 않았습니다.`);
   const unfinished = await db.collection<Document & { _id: string }>(JOURNAL_COLLECTION).countDocuments({ migration: MIGRATION_NAME, kind: "document", state: { $ne: "applied" } });
   if (unfinished > 0) throw new Error(`0012 postflight conflict: ${unfinished}개 journal이 완료되지 않았습니다.`);
 }
 
 export async function careerPropertyLegacyBackfillSteps(): Promise<MongoMigrationStep[]> {
   return [
-    { id: "career_property_values:canary_and_preflight", async run(db) { await buildPlan(db); } },
+    { id: "career_property_values:canary_and_preflight", async run(db) { await scanBackfill(db); } },
     { id: "career_property_values:journal_and_backfill", run: applyPlan },
     { id: "career_property_values:postflight", run: verifyBackfill },
   ];

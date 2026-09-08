@@ -89,6 +89,27 @@ describe.skipIf(!mongoUrl)("MongoDB migration recovery", () => {
     await expect(migrateMongo({ ...options, migrations: [{ ...migration, checksum: "b".repeat(64) }] })).rejects.toThrow("modified");
     expect(firstRuns).toBe(1);
   });
+
+  it("stops at an explicit target version and can later continue from that checkpoint", async () => {
+    const targetDatabaseName = `expresso_test_target_${randomUUID().replaceAll("-", "")}`;
+    const migrations = [
+      { version: "0001", name: "first", checksum: "a".repeat(64), steps: [{ id: "first", async run(database: typeof db) { await database.collection("target_probe").insertOne({ version: "0001" }); } }] },
+      { version: "0002", name: "second", checksum: "b".repeat(64), steps: [{ id: "second", async run(database: typeof db) { await database.collection("target_probe").insertOne({ version: "0002" }); } }] },
+    ];
+    const targetDb = client.db(targetDatabaseName);
+    try {
+      const first = await migrateMongo({ databaseUrl: mongoUrl!, databaseName: targetDatabaseName, migrations, targetVersion: "0001" });
+      expect(first.applied).toEqual(["0001_first"]);
+      expect(await targetDb.collection("target_probe").find({}).toArray()).toEqual([{ _id: expect.anything(), version: "0001" }]);
+
+      const second = await migrateMongo({ databaseUrl: mongoUrl!, databaseName: targetDatabaseName, migrations, targetVersion: "0002" });
+      expect(second.existing).toEqual(["0001_first"]);
+      expect(second.applied).toEqual(["0002_second"]);
+      expect(await targetDb.collection("target_probe").countDocuments()).toBe(2);
+    } finally {
+      await targetDb.dropDatabase();
+    }
+  });
 });
 
 describe("MongoDB migration sources", () => {
@@ -125,13 +146,20 @@ describe("MongoDB migration sources", () => {
 describe.skipIf(!mongoUrl)("Career property canonical identity migration 0011", () => {
   it("materializes official definitions and remaps every registered 0009 reference idempotently", async () => {
     const databaseName = `expresso_test_cp11_${randomUUID().slice(0, 16).replaceAll("-", "")}`;
-    const client = new MongoClient(mongoUrl!, { serverSelectionTimeoutMS: 3_000 });
+    const client = new MongoClient(mongoUrl!, { serverSelectionTimeoutMS: 3_000, monitorCommands: true });
     const db = client.db(databaseName);
     const categoryId = "475106fc-bf88-4a73-9c27-66c648733936";
     const roleOfficialId = officialPropertyDefinitionId(categoryId, "role");
     const role0009Id = legacy0009PropertyDefinitionId(categoryId, "role");
     const sourceRecordId = randomUUID();
     const targetRecordId = randomUUID();
+    const migrationFindBatchSizes: Array<number | undefined> = [];
+    let monitorMigrationReads = false;
+    client.on("commandStarted", ({ commandName, command }) => {
+      if (monitorMigrationReads && commandName === "find" && command["find"] === "career_records") {
+        migrationFindBatchSizes.push(command["batchSize"] as number | undefined);
+      }
+    });
     try {
       await client.connect();
       const migrations = await loadMongoMigrations();
@@ -234,10 +262,22 @@ describe.skipIf(!mongoUrl)("Career property canonical identity migration 0011", 
           sourcePropertyVersions: { [role0009Id]: 1, [roleOfficialId]: 1 },
         },
       }, { bypassDocumentValidation: true });
+      const propertyMutationTopics = ["career.property-conversion", "career.property-default", "career.property-deletion"];
+      for (const [index, state] of ["pending", "published", "dead_letter"].entries()) {
+        await db.collection<Document & { _id: string }>("outbox_events").insertOne({
+          _id: randomUUID(), topic: propertyMutationTopics[index], state,
+          idempotencyKey: `property-mutation-${index}`,
+          payload: { categoryId, propertyId: role0009Id, sequence: index },
+        }, { bypassDocumentValidation: true });
+      }
       const categoryIndexesBefore = await categories.listIndexes().toArray();
       const recordIndexesBefore = await records.listIndexes().toArray();
 
+      monitorMigrationReads = true;
       for (const step of await careerPropertyCanonicalIdentitySteps()) await step.run(db);
+      monitorMigrationReads = false;
+      expect(migrationFindBatchSizes.length).toBeGreaterThan(0);
+      expect(migrationFindBatchSizes.every((size) => typeof size === "number" && size <= 100)).toBe(true);
 
       const migratedCategory = await categories.findOne({ _id: categoryId });
       const canonicalDefinitions = migratedCategory?.["propertyDefinitions"] as Document[];
@@ -248,6 +288,7 @@ describe.skipIf(!mongoUrl)("Career property canonical identity migration 0011", 
       expect(JSON.stringify(canonicalDefinitions)).not.toContain(role0009Id);
       expect(JSON.stringify(migratedCategory?.["propertySchemaV2"])).toContain(roleOfficialId);
       expect(JSON.stringify(migratedCategory?.["propertyMutationResults"])).toContain(roleOfficialId);
+      expect(await db.collection("outbox_events").countDocuments({ "payload.propertyId": roleOfficialId })).toBe(3);
       expect((await categories.findOne({ _id: customCategoryId }))?.["propertyDefinitions"]).toEqual([
         {
           id: customPropertyId, key: "note", name: "사용자 메모", type: "text",
@@ -299,6 +340,34 @@ describe.skipIf(!mongoUrl)("Career property canonical identity migration 0011", 
         records.find({}).sort({ _id: 1 }).toArray(),
         db.collection("career_property_migration_journal").find({}).sort({ _id: 1 }).toArray(),
       ])).toEqual(beforeRerun);
+
+      const recoveredJournal = await db.collection<Document & { _id: string }>("career_property_migration_journal").findOne({ migration: "0011_career_property_canonical_identity" });
+      await db.collection<Document & { _id: string }>("career_property_migration_journal").updateOne(
+        { _id: recoveredJournal!._id },
+        { $set: { state: "planned" }, $unset: { kind: "" } },
+      );
+      for (const step of await careerPropertyCanonicalIdentitySteps()) await step.run(db);
+      expect((await db.collection<Document & { _id: string }>("career_property_migration_journal").findOne({ _id: recoveredJournal!._id }))?.["state"]).toBe("applied");
+
+      await db.collection<Document & { _id: string }>(recoveredJournal!["collection"] as string).replaceOne(
+        { _id: recoveredJournal!["documentId"] },
+        recoveredJournal!["before"] as Document & { _id: string },
+        { bypassDocumentValidation: true },
+      );
+      await db.collection<Document & { _id: string }>("career_property_migration_journal").updateOne({ _id: recoveredJournal!._id }, { $set: { state: "planned" } });
+      for (const step of await careerPropertyCanonicalIdentitySteps()) await step.run(db);
+      expect(await db.collection<Document & { _id: string }>(recoveredJournal!["collection"] as string).findOne({ _id: recoveredJournal!["documentId"] })).toEqual(recoveredJournal!["after"]);
+
+      await db.collection<Document & { _id: string }>("career_property_migration_journal").updateOne({ _id: recoveredJournal!._id }, { $set: { state: "planned" } });
+      await db.collection<Document & { _id: string }>(recoveredJournal!["collection"] as string).updateOne(
+        { _id: recoveredJournal!["documentId"] },
+        { $set: { crashRecoveryUserChange: true } },
+        { bypassDocumentValidation: true },
+      );
+      await expect((async () => {
+        for (const step of await careerPropertyCanonicalIdentitySteps()) await step.run(db);
+      })()).rejects.toThrow(/journal recovery conflict|복구 conflict/i);
+      expect((await db.collection<Document & { _id: string }>(recoveredJournal!["collection"] as string).findOne({ _id: recoveredJournal!["documentId"] }))?.["crashRecoveryUserChange"]).toBe(true);
 
       const propertyId = () => randomUUID();
       const writableValues = [
@@ -385,6 +454,12 @@ describe.skipIf(!mongoUrl)("Career legacy property value backfill migration 0012
     active: "724f9d45-8208-4984-b993-5ae3146d7cdd",
     tags: "bb845eb9-b590-4018-a3fe-1d20d66392d8",
     month: "c96df99e-77cc-482c-9ebd-2c15b8bdc66d",
+    select: "d14ec3c9-cfbb-4862-a67f-755f66001cb1",
+    url: "328f7002-bfee-4d29-b8e6-35965879b2c8",
+    email: "33548840-d695-4d30-bd83-a2da3dba6756",
+    phone: "4090757f-1451-4bc2-be1e-9a8a9a1e4c51",
+    file: "0e72ff8d-f9f4-442c-8762-c504640fcb12",
+    media: "dd83d91f-65ac-48ea-9695-0ce012208d40",
   };
 
   function category(): Document & { _id: string } {
@@ -394,6 +469,12 @@ describe.skipIf(!mongoUrl)("Career legacy property value backfill migration 0012
       active: { id: ids.active, type: "boolean", label: "활성", required: false, system: false },
       tags: { id: ids.tags, type: "tags", label: "태그", required: false, system: false },
       month: { id: ids.month, type: "date", label: "월", required: false, system: false },
+      select: { id: ids.select, type: "select", label: "선택", required: false, system: false },
+      url: { id: ids.url, type: "url", label: "URL", required: false, system: false },
+      email: { id: ids.email, type: "email", label: "이메일", required: false, system: false },
+      phone: { id: ids.phone, type: "phone", label: "전화", required: false, system: false },
+      file: { id: ids.file, type: "file", label: "파일", required: false, system: false },
+      media: { id: ids.media, type: "media", label: "미디어", required: false, system: false },
     };
     const definitions = Object.entries(legacy).map(([key, definition], order) => ({
       id: definition.id,
@@ -457,8 +538,15 @@ describe.skipIf(!mongoUrl)("Career legacy property value backfill migration 0012
 
   it("losslessly backfills legacy values, materializes exact tag options, and reruns as a no-op", async () => {
     const databaseName = `expresso_test_cp12_${randomUUID().slice(0, 16).replaceAll("-", "")}`;
-    const client = new MongoClient(mongoUrl!, { serverSelectionTimeoutMS: 3_000 });
+    const client = new MongoClient(mongoUrl!, { serverSelectionTimeoutMS: 3_000, monitorCommands: true });
     const db = client.db(databaseName);
+    const migrationFindBatchSizes: Array<number | undefined> = [];
+    let monitorMigrationReads = false;
+    client.on("commandStarted", ({ commandName, command }) => {
+      if (monitorMigrationReads && commandName === "find" && command["find"] === "career_records") {
+        migrationFindBatchSizes.push(command["batchSize"] as number | undefined);
+      }
+    });
     const decimal = Decimal128.fromString("123.450");
     const properties = { note: "", score: decimal, active: true, tags: ["Java", "java", " Java ", "Java"], month: "2026-09" };
     const expectedValues = [
@@ -479,7 +567,11 @@ describe.skipIf(!mongoUrl)("Career legacy property value backfill migration 0012
       await db.collection<Document & { _id: string }>("career_records").insertMany([legacyOnly, alreadyCanonical, compatibilityWriterRecord]);
       await installCanaryGate(db);
 
+      monitorMigrationReads = true;
       for (const step of await careerPropertyLegacyBackfillSteps()) await step.run(db);
+      monitorMigrationReads = false;
+      expect(migrationFindBatchSizes.length).toBeGreaterThan(0);
+      expect(migrationFindBatchSizes.every((size) => typeof size === "number" && size <= 100)).toBe(true);
 
       expect((await db.collection<Document & { _id: string }>("career_records").findOne({ _id: legacyOnly._id }))?.["propertyValues"]).toEqual(expectedValues);
       expect((await db.collection<Document & { _id: string }>("career_records").findOne({ _id: alreadyCanonical._id }))?.["propertyValues"]).toEqual(expectedValues);
@@ -499,6 +591,21 @@ describe.skipIf(!mongoUrl)("Career legacy property value backfill migration 0012
       expect(await db.collection<Document & { _id: string }>("career_categories").find({}).sort({ _id: 1 }).toArray()).toEqual(beforeRerun.categories);
       expect(await db.collection<Document & { _id: string }>("career_records").find({}).sort({ _id: 1 }).toArray()).toEqual(beforeRerun.records);
       expect(await db.collection<Document & { _id: string }>("career_property_migration_journal").find({}).sort({ _id: 1 }).toArray()).toEqual(beforeRerun.journal);
+
+      const recoveredJournal = await db.collection<Document & { _id: string }>("career_property_migration_journal").findOne({ migration: "0012_career_property_values_backfill", kind: "document" });
+      await db.collection<Document & { _id: string }>("career_property_migration_journal").updateOne({ _id: recoveredJournal!._id }, { $set: { state: "planned" } });
+      for (const step of await careerPropertyLegacyBackfillSteps()) await step.run(db);
+      expect((await db.collection<Document & { _id: string }>("career_property_migration_journal").findOne({ _id: recoveredJournal!._id }))?.["state"]).toBe("applied");
+
+      await db.collection<Document & { _id: string }>("career_property_migration_journal").updateOne({ _id: recoveredJournal!._id }, { $set: { state: "planned" } });
+      await db.collection<Document & { _id: string }>(recoveredJournal!["collection"] as string).updateOne(
+        { _id: recoveredJournal!["documentId"] },
+        { $set: { crashRecoveryUserChange: true } },
+      );
+      await expect((async () => {
+        for (const step of await careerPropertyLegacyBackfillSteps()) await step.run(db);
+      })()).rejects.toThrow(/journal recovery conflict|복구 conflict/i);
+      expect((await db.collection<Document & { _id: string }>(recoveredJournal!["collection"] as string).findOne({ _id: recoveredJournal!["documentId"] }))?.["crashRecoveryUserChange"]).toBe(true);
     } finally {
       try { await db.dropDatabase(); } finally { await client.close(); }
     }
@@ -513,6 +620,18 @@ describe.skipIf(!mongoUrl)("Career legacy property value backfill migration 0012
     ["whitespace-only tag", (value: Document) => { (value["properties"] as Document)["tags"] = ["   "]; }],
     ["invalid date", (value: Document) => { (value["properties"] as Document)["month"] = "2026-09-01"; }],
     ["date precision mismatch", (value: Document) => { (value["properties"] as Document)["month"] = { type: "date", value: { precision: "month", start: "2026-09-01", end: null } }; }],
+    ["invalid select UUID in existing canonical value", (value: Document) => {
+      (value["properties"] as Document)["select"] = { type: "select", value: "not-a-uuid" };
+      value["propertyValues"] = [{ propertyDefinitionId: ids.select, type: "select", value: "not-a-uuid" }];
+    }],
+    ["oversized url", (value: Document) => { (value["properties"] as Document)["url"] = { type: "url", value: "a".repeat(2_001) }; }],
+    ["oversized email", (value: Document) => { (value["properties"] as Document)["email"] = { type: "email", value: "a".repeat(2_001) }; }],
+    ["oversized phone", (value: Document) => { (value["properties"] as Document)["phone"] = { type: "phone", value: "1".repeat(2_001) }; }],
+    ["oversized multi-select", (value: Document) => { (value["properties"] as Document)["tags"] = { type: "multi_select", value: Array.from({ length: 101 }, () => randomUUID()) }; }],
+    ["non-array file", (value: Document) => { (value["properties"] as Document)["file"] = { type: "file", value: randomUUID() }; }],
+    ["invalid media UUID", (value: Document) => { (value["properties"] as Document)["media"] = { type: "media", value: ["not-a-uuid"] }; }],
+    ["oversized file array", (value: Document) => { (value["properties"] as Document)["file"] = { type: "file", value: Array.from({ length: 101 }, () => randomUUID()) }; }],
+    ["oversized media array", (value: Document) => { (value["properties"] as Document)["media"] = { type: "media", value: Array.from({ length: 101 }, () => randomUUID()) }; }],
   ])("aborts %s before changing any document", async (_label, mutate) => {
     const databaseName = `expresso_test_cp12_abort_${randomUUID().slice(0, 12).replaceAll("-", "")}`;
     const client = new MongoClient(mongoUrl!, { serverSelectionTimeoutMS: 3_000 });

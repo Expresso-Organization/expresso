@@ -33,7 +33,12 @@ function readOnlyDb(collections: Record<string, Document[]>): { db: CareerProper
       collection(name: string) {
         return {
           find() {
-            return { async toArray() { return structuredClone(collections[name] ?? []); } };
+            const values = structuredClone(collections[name] ?? []);
+            return {
+              batchSize() { return this; },
+              async toArray() { return values; },
+              async *[Symbol.asyncIterator]() { yield* values; },
+            };
           },
           insertOne: forbidden("insertOne"), insertMany: forbidden("insertMany"),
           updateOne: forbidden("updateOne"), updateMany: forbidden("updateMany"),
@@ -150,6 +155,28 @@ describe("career property read-only inventory", () => {
       categoryId: CUSTOM_CATEGORY_ID, key: "note", officialId: customPropertyId,
     }));
     expect(report.conflicts.map(({ reason }) => reason)).not.toContain("official_property_id_mismatch");
+    expect(report.canMigrate).toBe(true);
+  });
+
+  it("uses payload.categoryId to validate property mutation outbox references in every lifecycle state", async () => {
+    const collections = fixtureCollections();
+    collections.career_records = [];
+    collections.career_views = [];
+    collections.career_record_relations = [];
+    collections.career_ai_proposals = [];
+    const topics = ["career.property-conversion", "career.property-default", "career.property-deletion"];
+    collections.outbox_events = ["pending", "published", "dead_letter"].map((state, index) => ({
+      _id: `88888888-8888-4888-8888-88888888888${index}`,
+      topic: topics[index],
+      state,
+      payload: { categoryId: SYSTEM_CATEGORY_ID, propertyId: ROLE_0009_ID },
+    }));
+
+    const report = await inspectCareerPropertyMigration(readOnlyDb(collections).db);
+
+    expect(report.conflicts.map(({ reason }) => reason)).not.toContain("ambiguous_property_reference");
+    expect(report.conflicts.map(({ reason }) => reason)).not.toContain("orphan_property_reference");
+    expect(report.summary.references).toBe(3);
     expect(report.canMigrate).toBe(true);
   });
 
