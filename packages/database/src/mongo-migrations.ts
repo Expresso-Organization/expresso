@@ -12,6 +12,7 @@ import { careerViewConfigurationSteps } from "./mongodb-migrations/0008/migratio
 import { careerRecordSliceSteps } from "./mongodb-migrations/0009/migration.js";
 import { careerRichBlockBodySteps } from "./mongodb-migrations/0010/migration.js";
 import { careerPropertyCanonicalIdentitySteps } from "./mongodb-migrations/0011/migration.js";
+import { careerPropertyLegacyBackfillSteps } from "./mongodb-migrations/0012/migration.js";
 
 export interface MongoMigrationStep {
   id: string;
@@ -53,6 +54,8 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const tenthHash = createHash("sha256").update(`migration.ts\0${tenthSource.byteLength}\0`).update(tenthSource).digest("hex");
   const eleventhSource = await readFile(new URL("./mongodb-migrations/0011/migration.ts", import.meta.url));
   const eleventhHash = createHash("sha256").update(`migration.ts\0${eleventhSource.byteLength}\0`).update(eleventhSource).digest("hex");
+  const twelfthSource = await readFile(new URL("./mongodb-migrations/0012/migration.ts", import.meta.url));
+  const twelfthHash = createHash("sha256").update(`migration.ts\0${twelfthSource.byteLength}\0`).update(twelfthSource).digest("hex");
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
@@ -65,5 +68,6 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0009", name: "career_record_slice", checksum: ninthHash, steps: await careerRecordSliceSteps() },
     { version: "0010", name: "career_rich_block_body", checksum: tenthHash, steps: await careerRichBlockBodySteps() },
     { version: "0011", name: "career_property_canonical_identity", checksum: eleventhHash, steps: await careerPropertyCanonicalIdentitySteps() },
+    { version: "0012", name: "career_property_values_backfill", checksum: twelfthHash, steps: await careerPropertyLegacyBackfillSteps() },
   ];
 }
