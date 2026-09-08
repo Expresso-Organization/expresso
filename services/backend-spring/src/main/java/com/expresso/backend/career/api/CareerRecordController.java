@@ -1,5 +1,7 @@
 package com.expresso.backend.career.api;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -27,15 +29,26 @@ import com.expresso.backend.career.application.CreateCareerRecordUseCase;
 import com.expresso.backend.career.application.GetCareerRecordUseCase;
 import com.expresso.backend.career.application.PatchCareerRecordUseCase;
 import com.expresso.backend.career.domain.BlockBody;
+import com.expresso.backend.career.domain.AssetPropertyValue;
 import com.expresso.backend.career.domain.CareerRecord;
 import com.expresso.backend.career.domain.CareerRecordChangeSet;
+import com.expresso.backend.career.domain.CheckboxPropertyValue;
+import com.expresso.backend.career.domain.DatePropertyValue;
+import com.expresso.backend.career.domain.MultiSelectPropertyValue;
+import com.expresso.backend.career.domain.NumberPropertyValue;
 import com.expresso.backend.career.domain.PropertyValue;
 import com.expresso.backend.career.domain.PropertyValueType;
+import com.expresso.backend.career.domain.SelectPropertyValue;
 import com.expresso.backend.career.domain.SemanticBlock;
 import com.expresso.backend.career.domain.TextMark;
 import com.expresso.backend.career.domain.TextSpan;
 import com.expresso.backend.career.domain.TextualPropertyValue;
 import com.expresso.backend.security.AuthenticatedUserPrincipal;
+
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 @RestController
 @RequestMapping("/v1/career/records")
@@ -43,6 +56,11 @@ public class CareerRecordController {
 
 	private static final Pattern IDEMPOTENCY_KEY_PATTERN = Pattern.compile("^[A-Za-z0-9._~:+\\-/]{16,128}$");
 	private static final Pattern ETAG_PATTERN = Pattern.compile("^\"v([1-9][0-9]*)\"$");
+	private static final JsonMapper PATCH_REQUEST_MAPPER = JsonMapper.builder()
+			.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+			.build();
+	private static final TypeReference<Map<String, Object>> PATCH_REQUEST_TYPE = new TypeReference<>() {
+	};
 
 	private final CreateCareerRecordUseCase createCareerRecord;
 	private final GetCareerRecordUseCase getCareerRecord;
@@ -82,12 +100,21 @@ public class CareerRecordController {
 			@AuthenticationPrincipal AuthenticatedUserPrincipal principal,
 			@PathVariable String recordId,
 			@RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
-			@RequestBody Map<String, Object> body) {
+			@RequestBody byte[] body) {
 		var normalizedRecordId = normalizeUuid(recordId, "recordId");
 		var expectedVersion = parseExpectedVersion(ifMatch);
-		var changeSet = readChangeSet(body);
+		var changeSet = readChangeSet(readPatchRequest(body));
 		var record = patchCareerRecord.patch(principal.userId(), normalizedRecordId, expectedVersion, changeSet);
 		return recordResponse(record, HttpStatus.OK);
+	}
+
+	private static Map<String, Object> readPatchRequest(byte[] body) {
+		try {
+			return PATCH_REQUEST_MAPPER.readValue(body, PATCH_REQUEST_TYPE);
+		}
+		catch (JacksonException error) {
+			throw new CareerRecordRequestValidationException("요청 본문은 올바른 JSON 객체여야 합니다");
+		}
 	}
 
 	private static void validateIdempotencyKey(String idempotencyKey) {
@@ -176,13 +203,103 @@ public class CareerRecordController {
 		var propertyDefinitionId = normalizeUuid(
 				requireString(propertyValue, "propertyDefinitionId"),
 				"propertyDefinitionId");
-		if (!"text".equals(requireString(propertyValue, "type"))) {
-			throw new CareerRecordRequestValidationException("PropertyValue type은 text여야 합니다");
+		var type = readPropertyValueType(requireString(propertyValue, "type"));
+		var rawValue = propertyValue.get("value");
+		return switch (type) {
+			case TEXT, URL, EMAIL, PHONE -> new TextualPropertyValue(
+					propertyDefinitionId, type, requireString(propertyValue, "value"));
+			case NUMBER -> new NumberPropertyValue(propertyDefinitionId, requireDecimal(rawValue, "value"));
+			case CHECKBOX -> new CheckboxPropertyValue(
+					propertyDefinitionId, requireBoolean(rawValue, "value"));
+			case SELECT -> new SelectPropertyValue(
+					propertyDefinitionId, rawValue == null ? null : requireString(propertyValue, "value"));
+			case MULTI_SELECT -> new MultiSelectPropertyValue(
+					propertyDefinitionId, readUuidList(rawValue, "multi_select value"));
+			case DATE -> readDatePropertyValue(propertyDefinitionId, rawValue);
+			case FILE, MEDIA -> new AssetPropertyValue(
+					propertyDefinitionId, type, readUuidList(rawValue, type.wireName() + " value"));
+		};
+	}
+
+	private static PropertyValueType readPropertyValueType(String type) {
+		try {
+			return PropertyValueType.valueOf(type.toUpperCase(java.util.Locale.ROOT));
 		}
-		return new TextualPropertyValue(
+		catch (IllegalArgumentException exception) {
+			throw new CareerRecordRequestValidationException("지원하지 않는 PropertyValue type입니다");
+		}
+	}
+
+	private static DatePropertyValue readDatePropertyValue(String propertyDefinitionId, Object value) {
+		var date = requireMap(value, "date value");
+		var precisionName = requireString(date, "precision");
+		final DatePropertyValue.Precision precision;
+		try {
+			precision = DatePropertyValue.Precision.valueOf(precisionName.toUpperCase(java.util.Locale.ROOT));
+		}
+		catch (IllegalArgumentException exception) {
+			throw new CareerRecordRequestValidationException("지원하지 않는 date precision입니다");
+		}
+		var fields = precision == DatePropertyValue.Precision.DATETIME
+				? Set.of("precision", "start", "end", "timezone")
+				: Set.of("precision", "start", "end");
+		requireExactFields(date, fields, "date value");
+		return new DatePropertyValue(
 				propertyDefinitionId,
-				PropertyValueType.TEXT,
-				requireString(propertyValue, "value"));
+				precision,
+				requireString(date, "start"),
+				readNullableString(date.get("end"), "date end"),
+				precision == DatePropertyValue.Precision.DATETIME
+						? readNullableString(date.get("timezone"), "date timezone")
+						: null);
+	}
+
+	private static BigDecimal requireDecimal(Object value, String fieldName) {
+		if (value instanceof BigDecimal decimal) {
+			return decimal;
+		}
+		if (value instanceof BigInteger integer) {
+			return new BigDecimal(integer);
+		}
+		if (value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long) {
+			return BigDecimal.valueOf(((Number) value).longValue());
+		}
+		if (value instanceof Float floating && Float.isFinite(floating)) {
+			return BigDecimal.valueOf(floating.doubleValue());
+		}
+		if (value instanceof Double floating && Double.isFinite(floating)) {
+			return BigDecimal.valueOf(floating);
+		}
+		throw new CareerRecordRequestValidationException(fieldName + "는 유한한 number여야 합니다");
+	}
+
+	private static boolean requireBoolean(Object value, String fieldName) {
+		if (value instanceof Boolean booleanValue) {
+			return booleanValue;
+		}
+		throw new CareerRecordRequestValidationException(fieldName + "는 boolean이어야 합니다");
+	}
+
+	private static List<String> readUuidList(Object value, String fieldName) {
+		if (!(value instanceof List<?> items)) {
+			throw new CareerRecordRequestValidationException(fieldName + "는 배열이어야 합니다");
+		}
+		return items.stream().map(item -> {
+			if (!(item instanceof String stringValue)) {
+				throw new CareerRecordRequestValidationException(fieldName + "의 모든 항목은 UUID 문자열이어야 합니다");
+			}
+			return normalizeUuid(stringValue, fieldName + " 항목");
+		}).toList();
+	}
+
+	private static String readNullableString(Object value, String fieldName) {
+		if (value == null) {
+			return null;
+		}
+		if (value instanceof String stringValue) {
+			return stringValue;
+		}
+		throw new CareerRecordRequestValidationException(fieldName + "는 문자열 또는 null이어야 합니다");
 	}
 
 	private static BlockBody readBlockBody(Object value) {
@@ -315,7 +432,7 @@ public class CareerRecordController {
 			String id,
 			String categoryId,
 			String title,
-			List<TextPropertyValueResponse> propertyValues,
+			List<PropertyValueResponse> propertyValues,
 			BlockBodyResponse blockBody,
 			long version,
 			Instant updatedAt) {
@@ -325,27 +442,56 @@ public class CareerRecordController {
 					record.id(),
 					record.categoryId(),
 					record.title(),
-					record.propertyValues().stream().map(TextPropertyValueResponse::from).toList(),
+					record.propertyValues().stream().map(PropertyValueResponse::from).toList(),
 					BlockBodyResponse.from(record.blockBody()),
 					record.version(),
 					record.updatedAt());
 		}
 	}
 
-	public record TextPropertyValueResponse(String propertyDefinitionId, String type, String value) {
+	public record PropertyValueResponse(String propertyDefinitionId, String type, Object value) {
 
-		private static TextPropertyValueResponse from(PropertyValue propertyValue) {
-			var textValue = requireTextPropertyValue(propertyValue);
-			return new TextPropertyValueResponse(textValue.propertyDefinitionId(), "text", textValue.value());
+		private static PropertyValueResponse from(PropertyValue propertyValue) {
+			if (propertyValue instanceof TextualPropertyValue textual) {
+				return response(propertyValue, textual.value());
+			}
+			if (propertyValue instanceof NumberPropertyValue number) {
+				return response(propertyValue, number.value());
+			}
+			if (propertyValue instanceof CheckboxPropertyValue checkbox) {
+				return response(propertyValue, checkbox.value());
+			}
+			if (propertyValue instanceof SelectPropertyValue select) {
+				return response(propertyValue, select.value());
+			}
+			if (propertyValue instanceof MultiSelectPropertyValue multiSelect) {
+				return response(propertyValue, multiSelect.value());
+			}
+			if (propertyValue instanceof DatePropertyValue date) {
+				return response(propertyValue, dateResponse(date));
+			}
+			if (propertyValue instanceof AssetPropertyValue asset) {
+				return response(propertyValue, asset.value());
+			}
+			throw new IllegalStateException(
+					"지원하지 않는 canonical PropertyValue입니다: " + propertyValue.getClass().getSimpleName());
 		}
-	}
 
-	// Task 6에서 canonical union 응답 mapping으로 교체할 임시 TEXT 전용 경계입니다.
-	private static TextualPropertyValue requireTextPropertyValue(PropertyValue value) {
-		if (value instanceof TextualPropertyValue textValue && value.type() == PropertyValueType.TEXT) {
-			return textValue;
+		private static PropertyValueResponse response(PropertyValue propertyValue, Object value) {
+			return new PropertyValueResponse(
+					propertyValue.propertyDefinitionId(), propertyValue.type().wireName(), value);
 		}
-		throw new IllegalStateException("현재 HTTP mapper는 text PropertyValue만 지원합니다");
+
+		private static Map<String, Object> dateResponse(DatePropertyValue date) {
+			var response = new LinkedHashMap<String, Object>();
+			response.put("precision", date.precision().name().toLowerCase(java.util.Locale.ROOT));
+			response.put("start", date.start());
+			response.put("end", date.end());
+			if (date.precision() == DatePropertyValue.Precision.DATETIME) {
+				response.put("timezone", date.timezone());
+			}
+			return java.util.Collections.unmodifiableMap(response);
+		}
 	}
 
 	public record BlockBodyResponse(int schemaVersion, String type, List<SemanticBlockResponse> content) {

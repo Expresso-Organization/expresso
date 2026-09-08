@@ -4,15 +4,21 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.bson.Document;
 import org.bson.types.Decimal128;
 
 import com.expresso.backend.career.domain.BlockBody;
+import com.expresso.backend.career.domain.AssetPropertyValue;
 import com.expresso.backend.career.domain.CareerRecord;
+import com.expresso.backend.career.domain.CheckboxPropertyValue;
+import com.expresso.backend.career.domain.DatePropertyValue;
+import com.expresso.backend.career.domain.MultiSelectPropertyValue;
+import com.expresso.backend.career.domain.NumberPropertyValue;
 import com.expresso.backend.career.domain.PropertyValue;
-import com.expresso.backend.career.domain.PropertyValueType;
+import com.expresso.backend.career.domain.SelectPropertyValue;
 import com.expresso.backend.career.domain.SemanticBlock;
 import com.expresso.backend.career.domain.TextMark;
 import com.expresso.backend.career.domain.TextSpan;
@@ -46,18 +52,36 @@ final class MongoCareerRecordWriter {
 	}
 
 	private static Document writePropertyValue(PropertyValue value) {
-		var textValue = requireTextPropertyValue(value);
-		return new Document("propertyDefinitionId", textValue.propertyDefinitionId())
-				.append("type", "text")
-				.append("value", textValue.value());
-	}
-
-	// Task 6에서 rich BSON mapping으로 교체할 임시 TEXT 전용 경계입니다.
-	private static TextualPropertyValue requireTextPropertyValue(PropertyValue value) {
-		if (value instanceof TextualPropertyValue textValue && value.type() == PropertyValueType.TEXT) {
-			return textValue;
+		var document = new Document("propertyDefinitionId", value.propertyDefinitionId())
+				.append("type", value.type().wireName());
+		if (value instanceof TextualPropertyValue textual) {
+			return document.append("value", textual.value());
 		}
-		throw new IllegalStateException("현재 Mongo writer는 text PropertyValue만 지원합니다");
+		if (value instanceof NumberPropertyValue number) {
+			return document.append("value", new Decimal128(number.value()));
+		}
+		if (value instanceof CheckboxPropertyValue checkbox) {
+			return document.append("value", checkbox.value());
+		}
+		if (value instanceof SelectPropertyValue select) {
+			return document.append("value", select.value());
+		}
+		if (value instanceof MultiSelectPropertyValue multiSelect) {
+			return document.append("value", multiSelect.value());
+		}
+		if (value instanceof DatePropertyValue date) {
+			var dateValue = new Document("precision", date.precision().name().toLowerCase(Locale.ROOT))
+					.append("start", date.start())
+					.append("end", date.end());
+			if (date.precision() == DatePropertyValue.Precision.DATETIME) {
+				dateValue.append("timezone", date.timezone());
+			}
+			return document.append("value", dateValue);
+		}
+		if (value instanceof AssetPropertyValue asset) {
+			return document.append("value", asset.value());
+		}
+		throw new IllegalStateException("지원하지 않는 canonical PropertyValue입니다: " + value.getClass().getSimpleName());
 	}
 
 	static Document writeBlockBody(BlockBody body) {
