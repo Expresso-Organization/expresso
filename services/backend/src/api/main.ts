@@ -19,7 +19,7 @@ import { ConsentService } from "../modules/consent/index.js";
 import { AiBlockEditor } from "../modules/portfolio-editing/editor.js";
 import { AiLayoutRemixer } from "../modules/layout/remixer.js";
 import { AiInsightWriter } from "../modules/analytics/writer.js";
-import { createAiClient } from "../platform/ai/create-client.js";
+import { createAiClient, createPostingFactsAiClient } from "../platform/ai/create-client.js";
 import { DesignSystemService } from "../modules/design-systems/service.js";
 import { TemplateService } from "../modules/templates/index.js";
 import { GenerationService } from "../modules/generation/index.js";
@@ -66,6 +66,8 @@ const generationService = new GenerationService(database);
 // 적용할지 정하는 대화형 편집이라 뒤로 미룰 수 없다(§8.3은 이 화면을
 // 스트리밍으로 그린다. 지금은 한 번에 받는다).
 const ai = createAiClient(config);
+// 요건 읽기는 따로 잠근다 — 사람이 아니라 스케줄러가 돌리는 자리다.
+const factsAi = createPostingFactsAiClient(config);
 
 // 수집은 매일 아침 워커가 돌린다. API에는 목록·수동 실행과 주소 읽기만 있으면 된다.
 const jobIngestService = new JobIngestService(
@@ -73,7 +75,7 @@ const jobIngestService = new JobIngestService(
   createJobSourceAdapters(config),
   // AI가 꺼져 있으면 본문을 읽지 않는다. 규칙 폴백을 두지 않는 이유는
   // 정확도가 조용히 갈리기 때문이다 — 화면은 그 둘을 구분해 말할 수 없다.
-  ai ? new AiFactsReader(ai) : null,
+  factsAi ? new AiFactsReader(factsAi) : null,
   // 회사 로고는 AI와 무관하다 — 회사가 자기 사이트에 걸어 둔 아이콘을 받는다.
   // 저장소에 넣어 둔 파일이 있으면 그것이 먼저다(받아 올 수 없는 회사가 있다).
   new BundledMarkReader(new SiteMarkReader()),
