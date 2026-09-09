@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import type { CareerCategoryDoc, CareerRecordDoc } from "@expresso/database";
+import { Decimal128 } from "mongodb";
 import { describe, expect, it } from "vitest";
 
 import { CareerError } from "./errors.js";
@@ -113,18 +114,50 @@ describe("Fastify canonical Career Property read", () => {
       active: true,
       month: "2026-09",
     });
-    expect(mapMongoRecord(row, category()).properties).toEqual({
+    expect(mapMongoRecord(row, category())).toMatchObject({
+      propertyValues: [
+        { propertyDefinitionId: noteId, type: "text", value: "canonical" },
+        { propertyDefinitionId: tagsId, type: "multi_select", value: [tagLowerId, tagJavaId, tagLowerId] },
+        { propertyDefinitionId: scoreId, type: "number", value: "42" },
+        { propertyDefinitionId: activeId, type: "checkbox", value: true },
+        { propertyDefinitionId: monthId, type: "date", value: { precision: "month", start: "2026-09", end: null } },
+      ],
+      properties: {
       note: "canonical",
       tags: ["java", "Java", "java"],
       score: 42,
       active: true,
       month: "2026-09",
+      },
     });
   });
 
   it("uses legacy properties only for a legacy-only record and does not fill an empty canonical snapshot", () => {
     expect(projectLegacyCareerProperties(category(), record())).toEqual({ note: "legacy" });
     expect(projectLegacyCareerProperties(category(), record({ propertyValues: [] }))).toEqual({});
+    expect(mapMongoRecord(record(), category())).not.toHaveProperty("propertyValues");
+    expect(mapMongoRecord(record({ propertyValues: [] }), category())).toMatchObject({
+      propertyValues: [],
+      properties: {},
+    });
+  });
+
+  it("returns Decimal128 and month ranges losslessly without narrowing compatibility properties", () => {
+    const row = record({
+      properties: { score: 123.45, month: "2026-01" },
+      propertyValues: [
+        { propertyDefinitionId: scoreId, type: "number", value: Decimal128.fromString("123.4500") },
+        { propertyDefinitionId: monthId, type: "date", value: { precision: "month", start: "2026-01", end: "2026-03" } },
+      ],
+    });
+
+    expect(mapMongoRecord(row, category())).toMatchObject({
+      propertyValues: [
+        { propertyDefinitionId: scoreId, type: "number", value: "123.4500" },
+        { propertyDefinitionId: monthId, type: "date", value: { precision: "month", start: "2026-01", end: "2026-03" } },
+      ],
+      properties: {},
+    });
   });
 
   it("rejects orphan canonical values instead of falling back to stale legacy data", () => {
@@ -138,5 +171,25 @@ describe("Fastify canonical Career Property read", () => {
     } catch (error) {
       expect(error).toMatchObject({ statusCode: 500 });
     }
+  });
+
+  it("rejects canonical type mismatches instead of hiding them with legacy data", () => {
+    const row = record({
+      properties: { note: "valid legacy" },
+      propertyValues: [{ propertyDefinitionId: noteId, type: "checkbox", value: true }],
+    });
+
+    expect(() => mapMongoRecord(row, category())).toThrow(CareerError);
+    try {
+      mapMongoRecord(row, category());
+    } catch (error) {
+      expect(error).toMatchObject({ statusCode: 500 });
+    }
+  });
+
+  it("reports malformed canonical snapshots as data-integrity errors", () => {
+    const row = record({ propertyValues: null as never });
+
+    expect(() => mapMongoRecord(row, category())).toThrow(CareerError);
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AiProposalApplyRequestSchema } from "./career-ai.js";
 import { CareerDocumentBootstrapSchema, CareerSocketClientMessageSchema } from "./career-editor.js";
+import { CareerRecordSchema } from "./career.js";
 import { CanonicalCareerPropertyDefinitionSchema, CareerFormulaPreviewSchema, CareerFormulaSchema, CareerPropertyDefinitionV2Schema, CareerPropertySchemaChangeSchema, CareerPropertyValueV2Schema, CareerRollupAggregationSchema, PreviewCareerFormulaSchema, PreviewCareerRollupSchema, WritableCareerPropertyValueSchema } from "./career-properties.js";
 import { CareerViewConfigurationSchema } from "./career-views.js";
 import { expressoOpenApiDocument } from "./openapi.js";
@@ -105,6 +106,33 @@ describe("career editor contracts", () => {
         value,
       })).toThrow();
     }
+  });
+
+  it("exposes canonical propertyValues on CareerRecord responses while legacy-only records may omit them", () => {
+    const base = {
+      id: crypto.randomUUID(),
+      categoryId: crypto.randomUUID(),
+      title: "기록",
+      status: "draft" as const,
+      origin: "manual" as const,
+      properties: {},
+      bodyMd: "",
+      version: 1,
+      updatedAt: "2026-09-09T00:00:00.000Z",
+    };
+    const propertyDefinitionId = crypto.randomUUID();
+
+    expect(CareerRecordSchema.parse({
+      ...base,
+      propertyValues: [{ propertyDefinitionId, type: "number", value: "123.4500" }],
+    }).propertyValues).toEqual([
+      { propertyDefinitionId, type: "number", value: "123.4500" },
+    ]);
+    expect(CareerRecordSchema.parse(base)).not.toHaveProperty("propertyValues");
+    expect(() => CareerRecordSchema.parse({
+      ...base,
+      propertyValues: [{ propertyDefinitionId, type: "number", value: 123.45 }],
+    })).toThrow();
   });
 
   it("rejects config that does not match the canonical definition type", () => {
