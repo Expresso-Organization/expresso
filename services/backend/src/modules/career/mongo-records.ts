@@ -4,14 +4,15 @@ import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc } from "
 import type { Document } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { CareerError } from "./errors.js";
-import { projectLegacyCareerProperties } from "./properties.js";
+import { projectCanonicalCareerPropertyValues, projectCareerResponseProperties } from "./properties.js";
 
 export function mapMongoRecord(record: CareerRecordDoc, category: CareerCategoryDoc, bodyMd = record.bodyMd) {
   const computedProperties = Object.fromEntries(Object.entries(record.computedProperties ?? {}).flatMap(([key, value]) => {
     const parsed = CareerPropertyValueV2Schema.safeParse(value);
     return key === "__expressoComputation" || !parsed.success || (parsed.data.type !== "formula" && parsed.data.type !== "rollup") ? [] : [[key, parsed.data]];
   }));
-  return CareerRecordSchema.parse({ id: record._id, categoryId: record.categoryId, title: record.title, status: record.status, origin: record.origin, properties: projectLegacyCareerProperties(category, record), ...(Object.keys(computedProperties).length ? { computedProperties } : {}), bodyMd, version: record.version, createdAt: (record.createdAt ?? record.updatedAt).toISOString(), updatedAt: record.updatedAt.toISOString() });
+  const propertyValues = projectCanonicalCareerPropertyValues(category, record);
+  return CareerRecordSchema.parse({ id: record._id, categoryId: record.categoryId, title: record.title, status: record.status, origin: record.origin, properties: projectCareerResponseProperties(category, record), ...(propertyValues === undefined ? {} : { propertyValues }), ...(Object.keys(computedProperties).length ? { computedProperties } : {}), bodyMd, version: record.version, createdAt: (record.createdAt ?? record.updatedAt).toISOString(), updatedAt: record.updatedAt.toISOString() });
 }
 
 export function careerRequestHash(input: CreateCareerRecord) {

@@ -5,6 +5,7 @@ import type {
   CareerPropertySchema,
   CareerPropertyValueV2,
   WritableCareerPropertyType,
+  WritableCareerPropertyValue,
 } from "@expresso/contracts";
 import {
   CanonicalCareerPropertyDefinitionSchema,
@@ -147,7 +148,49 @@ function projectCareerProperties(
   record: Pick<CareerRecordDoc, "properties" | "propertyValues">,
   projectValue: (definition: CareerPropertyDefinitionV2, propertyValue: CareerPropertyValueDoc) => CareerProperties[string],
 ): CareerProperties {
-  if (record.propertyValues === undefined) return record.properties;
+  const entries = canonicalPropertyEntries(category, record);
+  if (entries === undefined) return record.properties;
+  const projected: CareerProperties = {};
+  for (const { definition, propertyValue } of entries) {
+    projected[definition.key] = projectValue(definition, propertyValue);
+  }
+  return projected;
+}
+
+function storedPropertyValue(rawValue: unknown): CareerPropertyValueDoc {
+  if (rawValue === null || typeof rawValue !== "object" || !("type" in rawValue)) {
+    dataIntegrity("canonical PropertyValue shape가 올바르지 않습니다");
+  }
+  if (rawValue.type === "number") {
+    const shape = WritableCareerPropertyValueSchema.safeParse({ ...rawValue, value: "0" });
+    const storedNumber = "value" in rawValue ? rawValue.value : undefined;
+    const decimalText = storedNumber instanceof Decimal128 ? storedNumber.toString() : null;
+    if (!shape.success || !(typeof storedNumber === "number" && Number.isFinite(storedNumber)
+      || decimalText !== null && !["NaN", "Infinity", "-Infinity"].includes(decimalText))) {
+      dataIntegrity("canonical number PropertyValue 저장 shape가 올바르지 않습니다");
+    }
+    return rawValue as CareerPropertyValueDoc;
+  }
+  const parsed = WritableCareerPropertyValueSchema.safeParse(rawValue);
+  if (!parsed.success) dataIntegrity("canonical PropertyValue shape가 올바르지 않습니다");
+  if (parsed.data.type === "number") dataIntegrity("canonical number PropertyValue 저장 shape가 올바르지 않습니다");
+  return parsed.data;
+}
+
+type CanonicalPropertyEntry = {
+  definition: CareerPropertyDefinitionV2;
+  propertyValue: CareerPropertyValueDoc;
+};
+
+function canonicalPropertyEntries(
+  category: CareerCategoryDoc,
+  record: Pick<CareerRecordDoc, "properties" | "propertyValues">,
+): CanonicalPropertyEntry[] | undefined {
+  const propertyValues: unknown = record.propertyValues;
+  if (propertyValues === undefined) return undefined;
+  if (!Array.isArray(propertyValues)) dataIntegrity("canonical propertyValues 저장 shape가 올바르지 않습니다");
+  if (propertyValues.length > 50) dataIntegrity("canonical propertyValues는 최대 50개까지 허용됩니다");
+
   const definitions = careerCategoryDefinitions(category).filter((definition) => definition.deletedAt === null);
   const definitionsById = new Map<string, CareerPropertyDefinitionV2>();
   const definitionKeys = new Set<string>();
@@ -159,34 +202,78 @@ function projectCareerProperties(
     definitionKeys.add(definition.key);
   }
 
-  const projected: CareerProperties = {};
+  const entries: CanonicalPropertyEntry[] = [];
   const seenPropertyIds = new Set<string>();
-  for (const rawValue of record.propertyValues) {
+  for (const rawValue of propertyValues) {
     const propertyValue = storedPropertyValue(rawValue);
     if (seenPropertyIds.has(propertyValue.propertyDefinitionId)) dataIntegrity("canonical PropertyValue identity가 중복되었습니다");
     seenPropertyIds.add(propertyValue.propertyDefinitionId);
     const definition = definitionsById.get(propertyValue.propertyDefinitionId);
     if (!definition) dataIntegrity("canonical PropertyValue가 active Definition을 참조하지 않습니다");
     if (definition.type !== propertyValue.type) dataIntegrity(`canonical PropertyValue type이 Definition과 다릅니다: ${definition.key}`);
-    projected[definition.key] = projectValue(definition, propertyValue);
+    entries.push({ definition, propertyValue });
   }
-  return projected;
+  return entries;
 }
 
-function storedPropertyValue(rawValue: CareerPropertyValueDoc): CareerPropertyValueDoc {
-  if (rawValue.type === "number") {
-    const shape = WritableCareerPropertyValueSchema.safeParse({ ...rawValue, value: "0" });
-    const decimalText = rawValue.value instanceof Decimal128 ? rawValue.value.toString() : null;
-    if (!shape.success || !(typeof rawValue.value === "number" && Number.isFinite(rawValue.value)
-      || decimalText !== null && !["NaN", "Infinity", "-Infinity"].includes(decimalText))) {
-      dataIntegrity("canonical number PropertyValue 저장 shape가 올바르지 않습니다");
+function expandScientificDecimal(value: string): string {
+  const match = /^(-?)(\d+)(?:\.(\d+))?[eE]([+-]?)(\d+)$/.exec(value);
+  if (!match) return value;
+
+  const sign = match[1] ?? "";
+  const integer = match[2] ?? "";
+  const fraction = match[3] ?? "";
+  const exponentSign = match[4] ?? "";
+  const exponentDigits = match[5] ?? "";
+  const magnitude = [...exponentDigits].reduce((result, digit) => result * 10 + digit.charCodeAt(0) - 48, 0);
+  const exponent = exponentSign === "-" ? -magnitude : magnitude;
+  const digits = `${integer}${fraction}`;
+  const decimalIndex = integer.length + exponent;
+  if (decimalIndex <= 0) return `${sign}0.${"0".repeat(-decimalIndex)}${digits}`;
+  if (decimalIndex >= digits.length) return `${sign}${digits}${"0".repeat(decimalIndex - digits.length)}`;
+  return `${sign}${digits.slice(0, decimalIndex)}.${digits.slice(decimalIndex)}`;
+}
+
+function canonicalWirePropertyValue(propertyValue: CareerPropertyValueDoc): WritableCareerPropertyValue {
+  const candidate = propertyValue.type === "number"
+    ? {
+      ...propertyValue,
+      value: expandScientificDecimal(
+        propertyValue.value instanceof Decimal128 ? propertyValue.value.toString() : String(propertyValue.value),
+      ),
     }
-    return rawValue;
-  }
-  const parsed = WritableCareerPropertyValueSchema.safeParse(rawValue);
-  if (!parsed.success) dataIntegrity("canonical PropertyValue shape가 올바르지 않습니다");
-  if (parsed.data.type === "number") dataIntegrity("canonical number PropertyValue 저장 shape가 올바르지 않습니다");
+    : propertyValue;
+  const parsed = WritableCareerPropertyValueSchema.safeParse(candidate);
+  if (!parsed.success) dataIntegrity("canonical PropertyValue wire shape가 올바르지 않습니다");
   return parsed.data;
+}
+
+/** Fastify CareerRecord 응답에 저장된 canonical snapshot을 lossless wire 값으로 노출합니다. */
+export function projectCanonicalCareerPropertyValues(
+  category: CareerCategoryDoc,
+  record: Pick<CareerRecordDoc, "properties" | "propertyValues">,
+): WritableCareerPropertyValue[] | undefined {
+  return canonicalPropertyEntries(category, record)?.map(({ propertyValue }) => canonicalWirePropertyValue(propertyValue));
+}
+
+/**
+ * 전환 중인 기존 consumer용 key projection입니다.
+ * canonical 값이 legacy shape로 lossless하게 표현되지 않으면 stale 값이나 축소값 대신 해당 key를 생략합니다.
+ */
+export function projectCareerResponseProperties(
+  category: CareerCategoryDoc,
+  record: Pick<CareerRecordDoc, "properties" | "propertyValues">,
+): CareerProperties {
+  const entries = canonicalPropertyEntries(category, record);
+  if (entries === undefined) return record.properties;
+
+  const projected: CareerProperties = {};
+  for (const { definition, propertyValue } of entries) {
+    if (propertyValue.type === "number" && propertyValue.value instanceof Decimal128) continue;
+    if (propertyValue.type === "date" && propertyValue.value.precision === "month" && propertyValue.value.end !== null) continue;
+    projected[definition.key] = legacyCompatibleValue(category, definition, propertyValue);
+  }
+  return projected;
 }
 
 export function projectLegacyCareerProperties(
