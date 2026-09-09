@@ -1,29 +1,35 @@
 "use client";
 
-import { CareerPropertyValueV2Schema, type CareerPropertyDefinitionV2, type CareerPropertyValueV2 } from "@expresso/contracts";
+import {
+  CareerPropertyValueV2Schema,
+  WritableCareerPropertyValueSchema,
+  type CareerPropertyDefinitionV2,
+} from "@expresso/contracts";
 import { useEffect, useMemo, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
 import { commitOnEnter, propertyOptions, ReadOnlyValue } from "./property-editors";
 import { PropertySelect } from "./PropertySelect";
+import type { CareerPropertyEditorValue } from "./canonical-property-values";
 import styles from "./properties.module.css";
 
 export interface PropertyValueEditorProps {
   definition: CareerPropertyDefinitionV2;
-  value: CareerPropertyValueV2 | null;
-  onCommit(value: CareerPropertyValueV2 | null): Promise<void>;
+  value: CareerPropertyEditorValue | null;
+  onCommit(value: CareerPropertyEditorValue | null): Promise<void>;
   disabled?: boolean;
 }
 
 const readOnlyTypes = new Set(["formula", "rollup", "relation"]);
+const plainDecimalPattern = /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/;
 
 function IssueBadge({ issue }: { issue: string | null }) {
   if (!issue) return null;
   return <span className={styles.issueIcon} role="alert" aria-label={issue} title={issue}><Icon name="warning" size={14} /></span>;
 }
 
-function initialDraft(value: CareerPropertyValueV2 | null): string {
+function initialDraft(value: CareerPropertyEditorValue | null): string {
   if (!value) return "";
   if (value.type === "date") return value.value.start;
   if (value.type === "created_time" || value.type === "updated_time") {
@@ -43,12 +49,22 @@ export function PropertyValueEditor({ definition, value, onCommit, disabled = fa
   const options = useMemo(() => propertyOptions(definition), [definition]);
   useEffect(() => { setDraft(initialDraft(value)); setDateEnd(value?.type === "date" ? value.value.end ?? "" : ""); setIssue(null); }, [value]);
 
-  async function commit(next: CareerPropertyValueV2 | null) {
+  async function commit(next: CareerPropertyEditorValue | null) {
     if (next === null) { setSaving(true); setIssue(null); try { await onCommit(null); } catch (error) { setIssue(error instanceof Error ? error.message : "저장하지 못했습니다."); } finally { setSaving(false); } return; }
-    const parsed = CareerPropertyValueV2Schema.safeParse(next);
-    if (!parsed.success) { setIssue(parsed.error.issues[0]?.message ?? "값을 확인해 주세요."); return; }
+    const writable = WritableCareerPropertyValueSchema.safeParse({ propertyDefinitionId: definition.id, ...next });
+    const legacy = CareerPropertyValueV2Schema.safeParse(next);
+    if (!writable.success && !legacy.success) { setIssue(writable.error.issues[0]?.message ?? legacy.error.issues[0]?.message ?? "값을 확인해 주세요."); return; }
+    let parsed: CareerPropertyEditorValue;
+    if (writable.success) {
+      const { propertyDefinitionId: _propertyDefinitionId, ...editorValue } = writable.data;
+      parsed = editorValue;
+    } else if (legacy.success) {
+      parsed = legacy.data;
+    } else {
+      return;
+    }
     setSaving(true); setIssue(null);
-    try { await onCommit(parsed.data); }
+    try { await onCommit(parsed); }
     catch (error) { setIssue(error instanceof Error ? error.message : "저장하지 못했습니다."); }
     finally { setSaving(false); }
   }
@@ -83,8 +99,20 @@ export function PropertyValueEditor({ definition, value, onCommit, disabled = fa
     return <div className={styles.multiSelect} aria-label={definition.name}>{options.map((option) => <label key={option.id} className={styles.optionCheck}><input type="checkbox" checked={selected.has(option.id)} disabled={disabled || saving} onChange={() => { const next = new Set(selected); if (next.has(option.id)) next.delete(option.id); else next.add(option.id); void commit({ type: "multi_select", value: [...next] }); }} />{option.name}</label>)}</div>;
   }
   if (definition.type === "date") {
-    const commitDate = () => draft ? void commit({ type: "date", value: { start: draft, end: dateEnd || null, timezone: null } }) : void commit(null);
-    return <div className={styles.dateFields}><label><span>시작</span><input className={styles.input} aria-label={`${definition.name} 시작`} type="date" value={draft} disabled={disabled || saving} onChange={(event) => setDraft(event.target.value)} onBlur={commitDate} /></label><label><span>종료</span><div className={styles.fieldRow}><input className={styles.input} aria-label={`${definition.name} 종료`} type="date" value={dateEnd} disabled={disabled || saving} onChange={(event) => setDateEnd(event.target.value)} onBlur={commitDate} /><IssueBadge issue={issue} /></div></label></div>;
+    const currentDate = value?.type === "date" ? value.value : null;
+    const precision: "month" | "day" | "datetime" = currentDate && "precision" in currentDate
+      ? currentDate.precision as "month" | "day" | "datetime"
+      : "day";
+    const inputType = precision === "month" ? "month" : precision === "day" ? "date" : "text";
+    const commitDate = () => {
+      if (!draft) return void commit(null);
+      if (precision === "datetime") {
+        const timezone = currentDate && "timezone" in currentDate ? currentDate.timezone : null;
+        return void commit({ type: "date", value: { precision, start: draft, end: dateEnd || null, timezone } });
+      }
+      return void commit({ type: "date", value: { precision, start: draft, end: dateEnd || null } });
+    };
+    return <div className={styles.dateFields}><label><span>시작</span><input className={styles.input} aria-label={`${definition.name} 시작`} type={inputType} value={draft} disabled={disabled || saving} onChange={(event) => setDraft(event.target.value)} onBlur={commitDate} /></label><label><span>종료</span><div className={styles.fieldRow}><input className={styles.input} aria-label={`${definition.name} 종료`} type={inputType} value={dateEnd} disabled={disabled || saving} onChange={(event) => setDateEnd(event.target.value)} onBlur={commitDate} /><IssueBadge issue={issue} /></div></label></div>;
   }
   if (definition.type === "file" || definition.type === "media") {
     const assetType = definition.type;
@@ -96,8 +124,8 @@ export function PropertyValueEditor({ definition, value, onCommit, disabled = fa
   const commitDraft = () => {
     if (!draft && !definition.required) return void commit(null);
     if (definition.type === "number") {
-      if (draft.trim() === "" || !Number.isFinite(Number(draft))) { setIssue("숫자를 입력해 주세요."); return; }
-      return void commit({ type: "number", value: Number(draft) });
+      if (!plainDecimalPattern.test(draft)) { setIssue("숫자를 입력해 주세요."); return; }
+      return void commit({ type: "number", value: draft });
     }
     const type = definition.type === "title" ? "title" : definition.type === "url" ? "url" : definition.type === "email" ? "email" : definition.type === "phone" ? "phone" : "text";
     return void commit({ type, value: draft });

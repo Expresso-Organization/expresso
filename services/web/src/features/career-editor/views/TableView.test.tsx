@@ -169,4 +169,15 @@ describe("TableView", () => {
     expect(screen.queryByRole("grid", { name: "React 그룹 테이블" })).toBeNull();
     expect(screen.getByRole("button", { name: "React 그룹 펼치기" })).toBeTruthy();
   });
+
+  it("renders canonical values instead of stale legacy properties", () => {
+    const canonical = {
+      ...records[0]!,
+      properties: { role: { type: "text" as const, value: "stale legacy" } },
+      propertyValues: [{ propertyDefinitionId: roleId, type: "text" as const, value: "canonical role" }],
+    };
+    render(<TableView records={[canonical]} view={view} category={category} activeId={canonical.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={() => undefined} onCategoryChange={() => undefined} />);
+    expect(screen.getByRole("gridcell", { name: "canonical role" })).toBeTruthy();
+    expect(screen.queryByText("stale legacy")).toBeNull();
+  });
 });

@@ -1,16 +1,18 @@
 "use client";
 
-import type { CareerPropertyDefinitionV2, CareerPropertyValueV2, CareerRecord } from "@expresso/contracts";
+import type { CareerPropertyDefinitionV2, CareerRecord } from "@expresso/contracts";
 import { createPortal } from "react-dom";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 import { propertyOptions } from "@/features/career-editor/properties/property-editors";
+import type { CareerPropertyEditorValue } from "@/features/career-editor/properties/canonical-property-values";
 
 import { displayValue, rawValue } from "./view-types";
 import styles from "./views.module.css";
 
-export type TableCellValue = CareerPropertyValueV2 | null;
+export type TableCellValue = CareerPropertyEditorValue | null;
+const plainDecimalPattern = /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/;
 
 interface CellPosition { top: number; left: number; width: number }
 
@@ -18,7 +20,7 @@ function valueFor(record: CareerRecord, definition: CareerPropertyDefinitionV2):
   if (definition.key === "title") return record.title;
   if (definition.system && definition.type === "created_time") return record.createdAt ?? record.updatedAt;
   if (definition.system && definition.type === "updated_time") return record.updatedAt;
-  return rawValue(record, definition.key);
+  return rawValue(record, definition);
 }
 
 function draftValue(record: CareerRecord, definition: CareerPropertyDefinitionV2): string {
@@ -39,9 +41,8 @@ function inlineType(definition: CareerPropertyDefinitionV2): boolean {
 function toValue(definition: CareerPropertyDefinitionV2, draft: string): TableCellValue {
   if (!draft && !definition.required) return null;
   if (definition.type === "number") {
-    const number = Number(draft);
-    if (!Number.isFinite(number)) throw new Error("숫자를 입력해 주세요.");
-    return { type: "number", value: number };
+    if (!plainDecimalPattern.test(draft)) throw new Error("숫자를 입력해 주세요.");
+    return { type: "number", value: draft };
   }
   if (definition.type === "created_time" || definition.type === "updated_time") {
     const timestamp = new Date(draft.replace(" ", "T"));
@@ -133,7 +134,9 @@ function isoDate(date: Date): string {
 }
 
 function DatePopout({ definition, value, anchorRef, onCommit, onClose }: { definition: CareerPropertyDefinitionV2; value: unknown; anchorRef: React.RefObject<HTMLElement | null>; onCommit(value: TableCellValue): void; onClose(): void }) {
-  const range = value && typeof value === "object" && "start" in value ? value as { start: string; end?: string | null } : null;
+  const range = value && typeof value === "object" && "start" in value
+    ? value as { precision?: "month" | "day" | "datetime"; start: string; end?: string | null; timezone?: string | null }
+    : null;
   const initial = range?.start ? new Date(`${range.start.slice(0, 10)}T00:00:00`) : new Date();
   const [month, setMonth] = useState(new Date(initial.getFullYear(), initial.getMonth(), 1));
   const [start, setStart] = useState(range?.start?.slice(0, 10) ?? "");
@@ -150,7 +153,19 @@ function DatePopout({ definition, value, anchorRef, onCommit, onClose }: { defin
     document.addEventListener("pointerdown", close);
     return () => document.removeEventListener("pointerdown", close);
   }, [anchorRef, onClose]);
-  const commit = (nextStart: string, nextEnd: string) => onCommit(nextStart ? { type: "date", value: { start: nextStart, end: nextEnd || null, timezone: null } } : null);
+  const precision = range?.precision ?? "day";
+  const preservePrecision = (day: string, previous: string | null | undefined) => {
+    if (precision === "month") return day.slice(0, 7);
+    if (precision === "datetime") return `${day}${previous?.slice(10) ?? "T00:00:00+00:00"}`;
+    return day;
+  };
+  const commit = (nextStart: string, nextEnd: string) => {
+    if (!nextStart) return onCommit(null);
+    const startValue = preservePrecision(nextStart, range?.start);
+    const endValue = nextEnd ? preservePrecision(nextEnd, range?.end) : null;
+    if (precision === "datetime") return onCommit({ type: "date", value: { precision, start: startValue, end: endValue, timezone: range?.timezone ?? null } });
+    return onCommit({ type: "date", value: { precision, start: startValue, end: endValue } });
+  };
   const width = position ? Math.max(position.width, 286) : 286;
   return createPortal(<div ref={panelRef} className={`${styles.cellPopout} ${styles.datePopout}`} style={position ? { top: position.top, left: Math.min(position.left, window.innerWidth - width - 10), width } as CSSProperties : { visibility: "hidden" }} role="dialog" aria-label={`${definition.name} 날짜 선택`}>
     <div className={styles.dateFieldsInline}><button type="button" aria-pressed={!selectingEnd} onClick={() => setSelectingEnd(false)}><small>시작</small><span>{start || "날짜 선택"}</span></button><button type="button" aria-pressed={selectingEnd} onClick={() => setSelectingEnd(true)}><small>종료</small><span>{end || "선택 안 함"}</span></button></div>

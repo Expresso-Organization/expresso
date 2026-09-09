@@ -1,12 +1,13 @@
 "use client";
 
-import type { CareerCategory, CareerPropertyDefinitionV2, CareerPropertyValueV2, CareerRecord, CareerRecordListItem, CareerViewConfiguration } from "@expresso/contracts";
+import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerRecordListItem, CareerViewConfiguration } from "@expresso/contracts";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { DocumentPanel } from "@/app/(app)/career/[categorySlug]/DocumentPanel";
 import { Icon } from "@/components/ui/Icon";
 import type { AiPromptRequest } from "@/features/career-editor/ai/AiProposalPanel";
+import { replaceCanonicalPropertyValue, type CareerPropertyEditorValue } from "@/features/career-editor/properties/canonical-property-values";
 
 import { AiRecordInterview, type AiInterviewResult } from "./AiRecordInterview";
 import { BoardView } from "./BoardView";
@@ -16,14 +17,15 @@ import { QuickFilterBar, type CareerQuickFilter, matchesQuickFilter } from "./Qu
 import { TableView } from "./TableView";
 import { TimelineView } from "./TimelineView";
 import { ViewToolbar } from "./ViewToolbar";
-import { displayValue, propertyKey, rawValue } from "./view-types";
+import { displayValue, propertyDefinition, rawValue } from "./view-types";
 import styles from "./views.module.css";
 
 export interface CareerViewPage { data: CareerRecord[]; page: { hasNextPage: boolean; nextCursor: string | null } }
 export interface CareerViewShellProps { category: CareerCategory; initialView: CareerViewConfiguration; initialPage: CareerViewPage }
 
 function listItem(record: CareerRecord): CareerRecordListItem {
-  return { ...record, categoryKey: "", isEmpty: record.title === "" && record.bodyMd === "" && Object.keys(record.properties).length === 0, periodFrom: null, periodTo: null, linkCount: 0, usedInCount: 0 };
+  const propertiesEmpty = record.propertyValues !== undefined ? record.propertyValues.length === 0 : Object.keys(record.properties).length === 0;
+  return { ...record, categoryKey: "", isEmpty: record.title === "" && record.bodyMd === "" && propertiesEmpty, periodFrom: null, periodTo: null, linkCount: 0, usedInCount: 0 };
 }
 
 const BLURB: Record<string, string> = {
@@ -41,12 +43,39 @@ function unwrap(value: unknown): unknown {
   return value && typeof value === "object" && "value" in value ? (value as { value: unknown }).value : value;
 }
 
-function comparable(value: unknown): string | number | null {
+interface ComparableValue { kind: "decimal" | "text"; value: string }
+const plainDecimalPattern = /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/;
+
+function comparable(value: unknown, number = false): ComparableValue | null {
   const next = unwrap(value);
   if (next === null || next === undefined || next === "") return null;
-  if (typeof next === "number") return next;
-  if (typeof next === "object" && "start" in next) return String((next as { start: unknown }).start);
-  return Array.isArray(next) ? next.map(String).join(" ").toLocaleLowerCase("ko") : String(next).toLocaleLowerCase("ko");
+  const text = typeof next === "object" && "start" in next
+    ? String((next as { start: unknown }).start)
+    : Array.isArray(next) ? next.map(String).join(" ") : String(next);
+  return { kind: number && plainDecimalPattern.test(text) ? "decimal" : "text", value: text.toLocaleLowerCase("ko") };
+}
+
+function compareDecimal(left: string, right: string): number {
+  const parts = (value: string) => {
+    const negative = value.startsWith("-");
+    const unsigned = negative ? value.slice(1) : value;
+    const [integer = "0", fraction = ""] = unsigned.split(".");
+    return { negative, integer: integer.replace(/^0+(?=\d)/, ""), fraction: fraction.replace(/0+$/, "") };
+  };
+  const leftParts = parts(left);
+  const rightParts = parts(right);
+  if (leftParts.negative !== rightParts.negative) return leftParts.negative ? -1 : 1;
+  const direction = leftParts.negative ? -1 : 1;
+  if (leftParts.integer.length !== rightParts.integer.length) return (leftParts.integer.length - rightParts.integer.length) * direction;
+  const integerComparison = leftParts.integer.localeCompare(rightParts.integer);
+  if (integerComparison) return integerComparison * direction;
+  const width = Math.max(leftParts.fraction.length, rightParts.fraction.length);
+  return leftParts.fraction.padEnd(width, "0").localeCompare(rightParts.fraction.padEnd(width, "0")) * direction;
+}
+
+function compareValues(left: ComparableValue, right: ComparableValue): number {
+  if (left.kind === "decimal" && right.kind === "decimal") return compareDecimal(left.value, right.value);
+  return left.value.localeCompare(right.value, "ko");
 }
 
 function sortedRecords(records: CareerRecordListItem[], view: CareerViewConfiguration, category: CareerCategory): CareerRecordListItem[] {
@@ -64,13 +93,14 @@ function sortedRecords(records: CareerRecordListItem[], view: CareerViewConfigur
   }
   return [...records].sort((left, right) => {
     for (const sort of view.sorts) {
-      const key = propertyKey(category, sort.propertyId);
-      const leftValue = comparable(key === "title" ? left.title : key ? rawValue(left, key) : null);
-      const rightValue = comparable(key === "title" ? right.title : key ? rawValue(right, key) : null);
-      if (leftValue === rightValue) continue;
+      const definition = propertyDefinition(category, sort.propertyId);
+      const numeric = definition?.type === "number";
+      const leftValue = comparable(definition?.key === "title" ? left.title : definition ? rawValue(left, definition) : null, numeric);
+      const rightValue = comparable(definition?.key === "title" ? right.title : definition ? rawValue(right, definition) : null, numeric);
+      if (leftValue?.kind === rightValue?.kind && leftValue?.value === rightValue?.value) continue;
       if (leftValue === null) return sort.nulls === "first" ? -1 : 1;
       if (rightValue === null) return sort.nulls === "first" ? 1 : -1;
-      const result = typeof leftValue === "number" && typeof rightValue === "number" ? leftValue - rightValue : String(leftValue).localeCompare(String(rightValue), "ko");
+      const result = compareValues(leftValue, rightValue);
       if (result) return sort.direction === "asc" ? result : -result;
     }
     return 0;
@@ -85,23 +115,27 @@ function matchesSavedFilter(record: CareerRecordListItem, filter: unknown, categ
   }
   if (!("propertyId" in filter) || !("operator" in filter)) return true;
   const leaf = filter as { propertyId: string; operator: string; operand?: unknown };
-  const key = propertyKey(category, leaf.propertyId);
-  const actual = key === "title" ? record.title : key ? rawValue(record, key) : null;
+  const definition = propertyDefinition(category, leaf.propertyId);
+  const actual = definition?.key === "title" ? record.title : definition ? rawValue(record, definition) : null;
   const actualLabel = displayValue(actual);
-  const operand = comparable(leaf.operand);
-  const value = comparable(actual);
+  const operand = comparable(leaf.operand, definition?.type === "number");
+  const value = comparable(actual, definition?.type === "number");
   if (leaf.operator === "is_empty") return actualLabel === "—";
   if (leaf.operator === "is_not_empty") return actualLabel !== "—";
   if (leaf.operator === "contains" || leaf.operator === "not_contains") {
-    const included = String(value ?? "").includes(String(operand ?? ""));
+    const included = (value?.value ?? "").includes(operand?.value ?? "");
     return leaf.operator === "contains" ? included : !included;
   }
-  if (leaf.operator === "eq" || leaf.operator === "neq") return leaf.operator === "eq" ? value === operand : value !== operand;
+  if (leaf.operator === "eq" || leaf.operator === "neq") {
+    const equal = value !== null && operand !== null && compareValues(value, operand) === 0;
+    return leaf.operator === "eq" ? equal : !equal;
+  }
   if (value === null || operand === null) return false;
-  if (leaf.operator === "gt") return value > operand;
-  if (leaf.operator === "gte") return value >= operand;
-  if (leaf.operator === "lt") return value < operand;
-  if (leaf.operator === "lte") return value <= operand;
+  const comparison = compareValues(value, operand);
+  if (leaf.operator === "gt") return comparison > 0;
+  if (leaf.operator === "gte") return comparison >= 0;
+  if (leaf.operator === "lt") return comparison < 0;
+  if (leaf.operator === "lte") return comparison <= 0;
   return true;
 }
 
@@ -120,8 +154,8 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
   const [cellIssues, setCellIssues] = useState<Map<string, string>>(new Map());
   const recordsRef = useRef(records);
   const recordQueues = useRef(new Map<string, Promise<void>>());
-  const pendingCells = useRef(new Map<string, { recordId: string; definition: CareerPropertyDefinitionV2; value: CareerPropertyValueV2 | null; revision: number }>());
-  const failedCells = useRef(new Map<string, { recordId: string; definition: CareerPropertyDefinitionV2; value: CareerPropertyValueV2 | null }>());
+  const pendingCells = useRef(new Map<string, { recordId: string; definition: CareerPropertyDefinitionV2; value: CareerPropertyEditorValue | null; revision: number }>());
+  const failedCells = useRef(new Map<string, { recordId: string; definition: CareerPropertyDefinitionV2; value: CareerPropertyEditorValue | null }>());
   const revision = useRef(0);
 
   useEffect(() => { recordsRef.current = records; }, [records]);
@@ -132,12 +166,9 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
     setRecords(next);
   }, []);
 
-  function applyCell(record: CareerRecordListItem, definition: CareerPropertyDefinitionV2, value: CareerPropertyValueV2 | null): CareerRecordListItem {
+  function applyCell(record: CareerRecordListItem, definition: CareerPropertyDefinitionV2, value: CareerPropertyEditorValue | null): CareerRecordListItem {
     if (definition.key === "title") return { ...record, title: value?.type === "title" ? value.value : "" };
-    const properties = { ...record.properties };
-    if (value === null) delete properties[definition.key];
-    else properties[definition.key] = value;
-    return { ...record, properties };
+    return { ...record, propertyValues: replaceCanonicalPropertyValue(record, definition, value) };
   }
 
   function applyPending(record: CareerRecordListItem): CareerRecordListItem {
@@ -146,13 +177,13 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
     return next;
   }
 
-  async function saveCell(pending: { recordId: string; definition: CareerPropertyDefinitionV2; value: CareerPropertyValueV2 | null; revision: number }) {
+  async function saveCell(pending: { recordId: string; definition: CareerPropertyDefinitionV2; value: CareerPropertyEditorValue | null; revision: number }) {
     const key = `${pending.recordId}:${pending.definition.id}`;
     async function attempt(base: CareerRecordListItem, retry: boolean): Promise<CareerRecordListItem> {
       const optimistic = applyPending(base);
       const body = pending.definition.key === "title"
         ? { title: optimistic.title }
-        : { properties: optimistic.properties };
+        : { propertyValues: optimistic.propertyValues };
       const response = await fetch(`/api/career/records/${pending.recordId}`, { method: "PATCH", headers: { "content-type": "application/json", "if-match": `"v${base.version}"` }, body: JSON.stringify(body) });
       if ((response.status === 409 || response.status === 412) && retry) {
         const latestResponse = await fetch(`/api/career/records/${pending.recordId}`);
@@ -187,13 +218,19 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
     }
   }
 
-  const commitCell = useCallback(async (recordId: string, definition: CareerPropertyDefinitionV2, value: CareerPropertyValueV2 | null) => {
+  const commitCell = useCallback(async (recordId: string, definition: CareerPropertyDefinitionV2, value: CareerPropertyEditorValue | null) => {
     const key = `${recordId}:${definition.id}`;
     const pending = { recordId, definition, value, revision: ++revision.current };
     pendingCells.current.set(key, pending);
     failedCells.current.delete(key);
     setCellIssues((current) => { if (!current.has(key)) return current; const next = new Map(current); next.delete(key); return next; });
-    replaceRecords((current) => current.map((record) => record.id === recordId ? applyCell(record, definition, value) : record));
+    try {
+      replaceRecords((current) => current.map((record) => record.id === recordId ? applyCell(record, definition, value) : record));
+    } catch (error) {
+      pendingCells.current.delete(key);
+      setCellIssues((current) => new Map(current).set(key, error instanceof Error ? error.message : "값을 저장하지 못했습니다."));
+      return;
+    }
     const previous = recordQueues.current.get(recordId) ?? Promise.resolve();
     const queued = previous.catch(() => undefined).then(() => saveCell(pending));
     recordQueues.current.set(recordId, queued);
@@ -205,7 +242,7 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
     if (failed) void commitCell(failed.recordId, failed.definition, failed.value);
   }, [commitCell]);
 
-  const visibleRecords = useMemo(() => sortedRecords(records.filter((record) => matchesSavedFilter(record, view.filter, category) && matchesQuickFilter(record, category.key, quickFilter)), view, category), [category, quickFilter, records, view]);
+  const visibleRecords = useMemo(() => sortedRecords(records.filter((record) => matchesSavedFilter(record, view.filter, category) && matchesQuickFilter(record, category, quickFilter)), view, category), [category, quickFilter, records, view]);
   const active = records.find((record) => record.id === activeId) ?? null;
   const focusId = activeId && visibleRecords.some((record) => record.id === activeId) ? activeId : visibleRecords[0]?.id ?? null;
   const common = {
@@ -307,7 +344,7 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
       <div className={styles.categoryIntro}><span className={styles.categoryIcon}><Icon name={CATEGORY_ICON[category.key] ?? "file-text"} weight="fill" size={18} /></span><h1>{category.name}</h1><span className={styles.caret} aria-hidden="true" /></div>
       <p className={styles.categoryBlurb}>{BLURB[category.key] ?? "이 카테고리의 기록입니다."}</p>
       <ViewToolbar category={category} view={view} onChange={updateView} onCreate={() => void create()} onAiCreate={() => setInterview({ mode: "create" })} onDuplicate={duplicate} />
-      {records.length ? <QuickFilterBar records={records} categoryKey={category.key} value={quickFilter} onChange={setQuickFilter} /> : null}
+      {records.length ? <QuickFilterBar records={records} category={category} value={quickFilter} onChange={setQuickFilter} /> : null}
       {selected.size ? <div className={styles.bulk} role="toolbar" aria-label="선택한 기록 작업"><span>{selected.size}개 선택</span><button onClick={() => void bulkStatus("draft")}>초안</button><button onClick={() => void bulkStatus("organized")}>정리됨</button><button onClick={() => void bulkStatus("verified")}>검증됨</button></div> : null}
       {message ? <p role="status" className={styles.message}>{message}</p> : null}
       {visibleRecords.length ? renderer : <div className={styles.emptyFilter}><strong>조건에 맞는 기록이 없습니다.</strong><button type="button" onClick={() => setQuickFilter("all")}>전체 기록 보기</button></div>}

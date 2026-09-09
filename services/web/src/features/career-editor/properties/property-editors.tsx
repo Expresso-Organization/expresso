@@ -17,7 +17,7 @@ export function commitOnEnter(event: KeyboardEvent<HTMLInputElement | HTMLTextAr
   if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); commit(); }
 }
 
-export function ReadOnlyValue({ value }: { value: CareerPropertyValueV2 | null }): ReactNode {
+export function ReadOnlyValue({ value }: { value: { value: unknown } | null }): ReactNode {
   if (!value) return <span className={styles.emptyValue}>비어 있음</span>;
   const raw = value.value;
   const text = Array.isArray(raw) ? raw.map((item) => typeof item === "object" && item && "title" in item ? String(item.title) : String(item)).join(", ") : String(raw ?? "—");

@@ -1,4 +1,6 @@
-import type { CareerCategory, CareerPropertyDefinitionV2, CareerPropertyValueV2, CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
+import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
+
+import { rawPropertyValue, type CareerPropertyEditorValue } from "../properties/canonical-property-values";
 
 export interface CareerViewRendererProps {
   records: readonly CareerRecord[];
@@ -14,7 +16,7 @@ export interface CareerViewRendererProps {
   onFillMissing(recordId: string): void;
   onToggle(recordId: string): void;
   onViewChange(next: CareerViewConfiguration): void;
-  onCellCommit?(recordId: string, definition: CareerPropertyDefinitionV2, value: CareerPropertyValueV2 | null): Promise<void>;
+  onCellCommit?(recordId: string, definition: CareerPropertyDefinitionV2, value: CareerPropertyEditorValue | null): Promise<void>;
   onCellRetry?(recordId: string, propertyId: string): void;
   onDuplicateRecord?(recordId: string): Promise<CareerRecord | null>;
   onDeleteRecord?(recordId: string): Promise<void>;
@@ -22,15 +24,31 @@ export interface CareerViewRendererProps {
 }
 
 export function propertyKey(category: CareerCategory, propertyId: string): string | null {
-  return category.propertySchemaV2?.find((item) => item.id === propertyId)?.key ?? Object.entries(category.propertySchema).find(([, item]) => item.id === propertyId)?.[0] ?? null;
+  return propertyDefinition(category, propertyId)?.key ?? null;
+}
+export function propertyDefinition(category: CareerCategory, propertyId: string): CareerPropertyDefinitionV2 | null {
+  const canonical = category.propertySchemaV2?.find((item) => item.id === propertyId);
+  if (canonical) return canonical;
+  const legacy = Object.entries(category.propertySchema).find(([, item]) => item.id === propertyId);
+  if (!legacy) return null;
+  const [key, item] = legacy;
+  if (!item.id) return null;
+  const type = item.type === "tags" ? "multi_select" : item.type === "boolean" ? "checkbox" : item.type;
+  return { id: item.id, key, name: item.label, type, required: item.required, system: true, config: {}, order: 0, version: 1, deletedAt: null };
+}
+export function propertyDefinitionByKey(category: CareerCategory, key: string): CareerPropertyDefinitionV2 | null {
+  const canonical = category.propertySchemaV2?.find((item) => item.key === key && item.deletedAt === null);
+  if (canonical) return canonical;
+  const legacy = Object.entries(category.propertySchema).find(([candidate]) => candidate === key);
+  if (!legacy?.[1].id) return null;
+  return propertyDefinition(category, legacy[1].id);
 }
 export function propertyName(category: CareerCategory, propertyId: string): string {
   return category.propertySchemaV2?.find((item) => item.id === propertyId)?.name ?? Object.entries(category.propertySchema).find(([, item]) => item.id === propertyId)?.[1].label ?? propertyId.slice(0, 8);
 }
 
-export function rawValue(record: CareerRecord, key: string): unknown {
-  const stored = record.properties[key];
-  return stored && typeof stored === "object" && "value" in stored ? stored.value : stored;
+export function rawValue(record: CareerRecord, definition: CareerPropertyDefinitionV2): unknown {
+  return rawPropertyValue(record, definition);
 }
 
 export function displayValue(value: unknown): string {
