@@ -5,15 +5,14 @@ import type {
   CareerPropertySchema,
   CareerPropertyValueV2,
   WritableCareerPropertyType,
-  WritableCareerPropertyValue,
 } from "@expresso/contracts";
 import {
   CanonicalCareerPropertyDefinitionSchema,
   CareerPropertyValueV2Schema,
   WritableCareerPropertyValueSchema,
 } from "@expresso/contracts";
-import { exactOptionId, officialPropertyDefinitionId, type CareerCategoryDoc, type CareerRecordDoc } from "@expresso/database";
-import type { ClientSession } from "mongodb";
+import { exactOptionId, officialPropertyDefinitionId, type CareerCategoryDoc, type CareerPropertyValueDoc, type CareerRecordDoc } from "@expresso/database";
+import { Decimal128, type ClientSession } from "mongodb";
 
 import type { MongoContext } from "../../platform/mongodb.js";
 import { CareerError } from "./errors.js";
@@ -101,12 +100,16 @@ function dataIntegrity(message: string): never {
 function legacyCompatibleValue(
   category: Pick<CareerCategoryDoc, "propertySchema">,
   definition: CareerPropertyDefinitionV2,
-  propertyValue: WritableCareerPropertyValue,
+  propertyValue: CareerPropertyValueDoc,
 ): CareerProperties[string] {
   const legacyType = category.propertySchema[definition.key]?.type;
   const matchingLegacyType = propertyValue.type === "checkbox" ? "boolean"
     : propertyValue.type === "multi_select" ? "tags" : propertyValue.type;
-  if ((propertyValue.type === "text" || propertyValue.type === "number" || propertyValue.type === "checkbox")
+  if (propertyValue.type === "number" && legacyType === "number") {
+    if (typeof propertyValue.value === "number") return propertyValue.value;
+    dataIntegrity(`legacy number 응답이 Decimal128 값을 lossless하게 표현할 수 없습니다: ${definition.key}`);
+  }
+  if ((propertyValue.type === "text" || propertyValue.type === "checkbox")
     && legacyType === matchingLegacyType) {
     return propertyValue.value;
   }
@@ -142,7 +145,7 @@ function legacyCompatibleValue(
 function projectCareerProperties(
   category: CareerCategoryDoc,
   record: Pick<CareerRecordDoc, "properties" | "propertyValues">,
-  projectValue: (definition: CareerPropertyDefinitionV2, propertyValue: WritableCareerPropertyValue) => CareerProperties[string],
+  projectValue: (definition: CareerPropertyDefinitionV2, propertyValue: CareerPropertyValueDoc) => CareerProperties[string],
 ): CareerProperties {
   if (record.propertyValues === undefined) return record.properties;
   const definitions = careerCategoryDefinitions(category).filter((definition) => definition.deletedAt === null);
@@ -159,9 +162,7 @@ function projectCareerProperties(
   const projected: CareerProperties = {};
   const seenPropertyIds = new Set<string>();
   for (const rawValue of record.propertyValues) {
-    const parsed = WritableCareerPropertyValueSchema.safeParse(rawValue);
-    if (!parsed.success) dataIntegrity("canonical PropertyValue shape가 올바르지 않습니다");
-    const propertyValue = parsed.data;
+    const propertyValue = storedPropertyValue(rawValue);
     if (seenPropertyIds.has(propertyValue.propertyDefinitionId)) dataIntegrity("canonical PropertyValue identity가 중복되었습니다");
     seenPropertyIds.add(propertyValue.propertyDefinitionId);
     const definition = definitionsById.get(propertyValue.propertyDefinitionId);
@@ -170,6 +171,22 @@ function projectCareerProperties(
     projected[definition.key] = projectValue(definition, propertyValue);
   }
   return projected;
+}
+
+function storedPropertyValue(rawValue: CareerPropertyValueDoc): CareerPropertyValueDoc {
+  if (rawValue.type === "number") {
+    const shape = WritableCareerPropertyValueSchema.safeParse({ ...rawValue, value: "0" });
+    const decimalText = rawValue.value instanceof Decimal128 ? rawValue.value.toString() : null;
+    if (!shape.success || !(typeof rawValue.value === "number" && Number.isFinite(rawValue.value)
+      || decimalText !== null && !["NaN", "Infinity", "-Infinity"].includes(decimalText))) {
+      dataIntegrity("canonical number PropertyValue 저장 shape가 올바르지 않습니다");
+    }
+    return rawValue;
+  }
+  const parsed = WritableCareerPropertyValueSchema.safeParse(rawValue);
+  if (!parsed.success) dataIntegrity("canonical PropertyValue shape가 올바르지 않습니다");
+  if (parsed.data.type === "number") dataIntegrity("canonical number PropertyValue 저장 shape가 올바르지 않습니다");
+  return parsed.data;
 }
 
 export function projectLegacyCareerProperties(
@@ -185,6 +202,12 @@ export function projectTypedCareerProperties(
   record: Pick<CareerRecordDoc, "properties" | "propertyValues">,
 ): CareerProperties {
   return projectCareerProperties(category, record, (definition, propertyValue) => {
+    if (propertyValue.type === "number") {
+      if (typeof propertyValue.value === "number") {
+        return { type: "number", value: propertyValue.value } satisfies CareerPropertyValueV2;
+      }
+      dataIntegrity(`내부 V2 number가 Decimal128 값을 lossless하게 표현할 수 없습니다: ${definition.key}`);
+    }
     if (propertyValue.type === "date") {
       if (propertyValue.value.precision === "month") {
         if (propertyValue.value.end !== null) dataIntegrity(`내부 V2 값이 month range를 표현할 수 없습니다: ${definition.key}`);
@@ -209,8 +232,23 @@ function canonicalDate(value: { start: string; end: string | null; timezone: str
 function canonicalValue(
   definition: Pick<CanonicalCareerPropertyDefinition, "id" | "key"> & { type: WritableCareerPropertyType },
   rawValue: unknown,
-): WritableCareerPropertyValue {
+): CareerPropertyValueDoc {
   const parsedV2 = CareerPropertyValueV2Schema.safeParse(rawValue);
+  if (definition.type === "number") {
+    const number = parsedV2.success && parsedV2.data.type === "number"
+      ? parsedV2.data.value
+      : typeof rawValue === "number" && Number.isFinite(rawValue)
+        ? rawValue
+        : null;
+    if (number === null) {
+      throw new CareerError(400, `canonical PropertyValue로 변환할 수 없습니다: ${definition.key}`);
+    }
+    return {
+      propertyDefinitionId: definition.id,
+      type: "number",
+      value: number,
+    };
+  }
   let value: unknown;
   if (parsedV2.success) {
     if (parsedV2.data.type !== definition.type) throw new CareerError(400, `PropertyValue 타입이 Definition과 일치하지 않습니다: ${definition.key}`);
@@ -225,6 +263,7 @@ function canonicalValue(
   }
   const parsed = WritableCareerPropertyValueSchema.safeParse({ propertyDefinitionId: definition.id, type: definition.type, value });
   if (!parsed.success) throw new CareerError(400, `canonical PropertyValue로 변환할 수 없습니다: ${definition.key}`);
+  if (parsed.data.type === "number") throw new CareerError(400, `canonical PropertyValue로 변환할 수 없습니다: ${definition.key}`);
   return parsed.data;
 }
 
@@ -233,7 +272,7 @@ export function toCanonicalPropertyValues(
   category: Pick<CareerCategoryDoc, "_id" | "propertySchema" | "propertySchemaV2" | "propertyDefinitions">,
   properties: CareerProperties,
   definitionsOverride?: readonly CareerPropertyDefinitionV2[],
-): WritableCareerPropertyValue[] {
+): CareerPropertyValueDoc[] {
   const v2Definitions = definitionsOverride
     ?? careerCategoryDefinitions(category);
   const storedIdByKey = new Map((definitionsOverride ? [] : category.propertyDefinitions ?? []).filter((definition) => definition.deletedAt === null).map((definition) => [definition.key, definition.id]));
@@ -241,7 +280,7 @@ export function toCanonicalPropertyValues(
     .filter((definition): definition is CareerPropertyDefinitionV2 & { type: WritableCareerPropertyType } => definition.deletedAt === null && isWritableDefinition(definition))
     .map((definition) => ({ ...definition, id: storedIdByKey.get(definition.key) ?? definition.id }));
   const definitionByKey = new Map(canonicalDefinitions.map((definition) => [definition.key, definition]));
-  const values: WritableCareerPropertyValue[] = [];
+  const values: CareerPropertyValueDoc[] = [];
   for (const [key, rawValue] of Object.entries(properties)) {
     const definition = definitionByKey.get(key);
     if (!definition || !WRITABLE_TYPES.has(definition.type)) continue;

@@ -155,7 +155,7 @@ class CareerRecordPatchHttpIntegrationTest {
 		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", body)
 				.andExpect(status().isOk())
 				.andExpect(header().string(HttpHeaders.ETAG, "\"v2\""))
-				.andExpect(jsonPath("$.data.propertyValues[1].value").value(42.5))
+				.andExpect(jsonPath("$.data.propertyValues[1].value").value("42.5000"))
 				.andExpect(jsonPath("$.data.propertyValues[4].value[2]").value(OTHER_OPTION_ID))
 				.andExpect(jsonPath("$.data.propertyValues[5].value.precision").value("month"))
 				.andExpect(jsonPath("$.data.propertyValues[5].value.end").value("2026-12"))
@@ -201,23 +201,43 @@ class CareerRecordPatchHttpIntegrationTest {
 	}
 
 	@Test
-	void preservesAJsonDecimalWithinTheDecimal128PrecisionRange() throws Exception {
+	void preservesAPlainDecimalStringAndScaleThroughHttpAndDecimal128() throws Exception {
 		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
 		mongoTemplate.getCollection(CATEGORIES).updateOne(
 				new Document("_id", CATEGORY_ID),
 				new Document("$set", new Document("propertyDefinitions", List.of(
 						canonicalDefinition(id(2), "number", "숫자", "number", 0)))));
-		var decimal = "12345678901234567890.12345678901234";
+		var decimal = "123456789012345678.1234567890123400";
 		var body = "{\"propertyValues\":[{\"propertyDefinitionId\":\"" + id(2)
-				+ "\",\"type\":\"number\",\"value\":" + decimal + "}]}";
+				+ "\",\"type\":\"number\",\"value\":\"" + decimal + "\"}]}";
 
 		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", body)
-				.andExpect(status().isOk());
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.propertyValues[0].value").value(decimal));
 
 		var stored = mongoTemplate.getCollection(RECORDS).find(new Document("_id", RECORD_ID)).first();
 		assertThat(stored).isNotNull();
 		assertThat(stored.getList("propertyValues", Document.class).getFirst()
 				.get("value", Decimal128.class).toString()).isEqualTo(decimal);
+	}
+
+	@Test
+	void rejectsJsonNumbersAndNonPlainDecimalStrings() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+		mongoTemplate.getCollection(CATEGORIES).updateOne(
+				new Document("_id", CATEGORY_ID),
+				new Document("$set", new Document("propertyDefinitions", List.of(
+						canonicalDefinition(id(2), "number", "숫자", "number", 0)))));
+
+		for (var value : List.of("123.45", "\"1e3\"", "\"NaN\"", "\"Infinity\"")) {
+			var body = "{\"propertyValues\":[{\"propertyDefinitionId\":\"" + id(2)
+					+ "\",\"type\":\"number\",\"value\":" + value + "}]}";
+			patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", body)
+					.andExpect(status().isBadRequest())
+					.andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+		}
+
+		assertStoredVersionAndTitle(1, "Original title");
 	}
 
 	@Test
@@ -621,7 +641,7 @@ class CareerRecordPatchHttpIntegrationTest {
 	private static List<Document> allWritableValues() {
 		return List.of(
 				propertyValue(1, "text", "본문"),
-				propertyValue(2, "number", 42.5),
+				propertyValue(2, "number", "42.5000"),
 				propertyValue(3, "checkbox", true),
 				propertyValue(4, "select", OPTION_ID),
 				propertyValue(5, "multi_select", List.of(OPTION_ID, OPTION_ID, OTHER_OPTION_ID)),

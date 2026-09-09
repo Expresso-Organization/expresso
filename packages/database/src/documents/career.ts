@@ -4,6 +4,17 @@ import type { Decimal128 } from "mongodb";
 import type { JsonValue, JsonObject } from "./common.js";
 
 export type CareerPropertyDefinitionDoc = Contracts.CareerPropertyDefinition;
+type NonNumberCareerPropertyValueDoc = Exclude<
+  Contracts.WritableCareerPropertyValue,
+  { type: "number" }
+>;
+
+/** API decimal string과 Mongo 숫자 BSON을 섞지 않기 위한 저장 경계 타입입니다. */
+export type CareerPropertyValueDoc = NonNumberCareerPropertyValueDoc | {
+  propertyDefinitionId: string;
+  type: "number";
+  value: number | Decimal128;
+};
 
 export interface CareerCategoryDoc {
   _id: string;
@@ -33,7 +44,7 @@ export interface CareerRecordDoc {
   origin: Contracts.CareerRecord["origin"];
   properties: Contracts.CareerRecord["properties"];
   bodyMd: Contracts.CareerRecord["bodyMd"];
-  propertyValues?: Contracts.WritableCareerPropertyValue[];
+  propertyValues?: CareerPropertyValueDoc[];
   blockBody?: {
     schemaVersion: 1;
     type: "doc";

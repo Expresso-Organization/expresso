@@ -1,7 +1,6 @@
 package com.expresso.backend.career.api;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -53,6 +52,8 @@ import tools.jackson.databind.json.JsonMapper;
 @RestController
 @RequestMapping("/v1/career/records")
 public class CareerRecordController {
+	private static final Pattern PLAIN_DECIMAL_PATTERN = Pattern.compile(
+			"^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$");
 
 	private static final Pattern IDEMPOTENCY_KEY_PATTERN = Pattern.compile("^[A-Za-z0-9._~:+\\-/]{16,128}$");
 	private static final Pattern ETAG_PATTERN = Pattern.compile("^\"v([1-9][0-9]*)\"$");
@@ -208,7 +209,7 @@ public class CareerRecordController {
 		return switch (type) {
 			case TEXT, URL, EMAIL, PHONE -> new TextualPropertyValue(
 					propertyDefinitionId, type, requireString(propertyValue, "value"));
-			case NUMBER -> new NumberPropertyValue(propertyDefinitionId, requireDecimal(rawValue, "value"));
+			case NUMBER -> new NumberPropertyValue(propertyDefinitionId, requireDecimalString(rawValue, "value"));
 			case CHECKBOX -> new CheckboxPropertyValue(
 					propertyDefinitionId, requireBoolean(rawValue, "value"));
 			case SELECT -> new SelectPropertyValue(
@@ -254,23 +255,18 @@ public class CareerRecordController {
 						: null);
 	}
 
-	private static BigDecimal requireDecimal(Object value, String fieldName) {
-		if (value instanceof BigDecimal decimal) {
-			return decimal;
+	private static BigDecimal requireDecimalString(Object value, String fieldName) {
+		if (!(value instanceof String decimal) || !PLAIN_DECIMAL_PATTERN.matcher(decimal).matches()) {
+			throw new CareerRecordRequestValidationException(
+					fieldName + "는 지수 표기 없는 decimal 문자열이어야 합니다");
 		}
-		if (value instanceof BigInteger integer) {
-			return new BigDecimal(integer);
+		try {
+			return new BigDecimal(decimal);
 		}
-		if (value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long) {
-			return BigDecimal.valueOf(((Number) value).longValue());
+		catch (NumberFormatException exception) {
+			throw new CareerRecordRequestValidationException(
+					fieldName + "는 유효한 decimal 문자열이어야 합니다");
 		}
-		if (value instanceof Float floating && Float.isFinite(floating)) {
-			return BigDecimal.valueOf(floating.doubleValue());
-		}
-		if (value instanceof Double floating && Double.isFinite(floating)) {
-			return BigDecimal.valueOf(floating);
-		}
-		throw new CareerRecordRequestValidationException(fieldName + "는 유한한 number여야 합니다");
 	}
 
 	private static boolean requireBoolean(Object value, String fieldName) {
@@ -456,7 +452,7 @@ public class CareerRecordController {
 				return response(propertyValue, textual.value());
 			}
 			if (propertyValue instanceof NumberPropertyValue number) {
-				return response(propertyValue, number.value());
+				return response(propertyValue, number.value().toPlainString());
 			}
 			if (propertyValue instanceof CheckboxPropertyValue checkbox) {
 				return response(propertyValue, checkbox.value());

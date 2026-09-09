@@ -622,6 +622,25 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
     }
   });
 
+  it("uses lossless plain decimal strings for canonical number values", () => {
+    const validatePropertyValues = schemaValidator("PropertyValues");
+    const propertyDefinitionId = "10000000-0000-4000-8000-000000000004";
+
+    for (const value of ["0", "-0.25", "123.4500"]) {
+      expect(
+        validatePropertyValues([{ propertyDefinitionId, type: "number", value }]),
+        `${value}: ${ajv.errorsText(validatePropertyValues.errors)}`,
+      ).toBe(true);
+    }
+
+    for (const value of [123.45, "1e3", "NaN", "Infinity", "+1", " 1", "1 "]) {
+      expect(
+        validatePropertyValues([{ propertyDefinitionId, type: "number", value }]),
+        `${String(value)}는 canonical plain decimal string이 아니다`,
+      ).toBe(false);
+    }
+  });
+
   it("validates month day and offset datetime precision without inventing missing precision", () => {
     const validateDate = schemaValidator("CareerDateValue");
 
