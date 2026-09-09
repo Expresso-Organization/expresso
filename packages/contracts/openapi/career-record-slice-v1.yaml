@@ -501,7 +501,11 @@ components:
           type: string
           const: number
         value:
-          type: number
+          type: string
+          pattern: '^-?(0|[1-9][0-9]*)(\.[0-9]+)?$'
+          description: >-
+            지수 표기 없이 쓰는 유한한 plain decimal 문자열이다. JS number로 변환하지
+            않으며 trailing zero를 포함한 decimal scale을 보존한다.
 
     CheckboxPropertyValue:
       type: object

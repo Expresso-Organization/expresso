@@ -8,7 +8,6 @@ public record NumberPropertyValue(String propertyDefinitionId, BigDecimal value)
 	public NumberPropertyValue {
 		propertyDefinitionId = PropertyValue.requirePropertyDefinitionId(propertyDefinitionId);
 		Objects.requireNonNull(value, "value는 null일 수 없습니다");
-		value = value.signum() == 0 ? BigDecimal.ZERO : value.stripTrailingZeros();
 	}
 
 	@Override

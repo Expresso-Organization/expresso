@@ -90,6 +90,23 @@ describe("career editor contracts", () => {
     })).toThrow();
   });
 
+  it("keeps canonical numbers as plain decimal strings without JS number coercion", () => {
+    const propertyDefinitionId = "10000000-0000-4000-8000-000000000004";
+
+    expect(WritableCareerPropertyValueSchema.parse({
+      propertyDefinitionId,
+      type: "number",
+      value: "123.4500",
+    }).value).toBe("123.4500");
+    for (const value of [123.45, "1e3", "NaN", "Infinity"]) {
+      expect(() => WritableCareerPropertyValueSchema.parse({
+        propertyDefinitionId,
+        type: "number",
+        value,
+      })).toThrow();
+    }
+  });
+
   it("rejects config that does not match the canonical definition type", () => {
     const base = {
       id: "6c663539-48c1-5d12-939d-f100fac993c1",

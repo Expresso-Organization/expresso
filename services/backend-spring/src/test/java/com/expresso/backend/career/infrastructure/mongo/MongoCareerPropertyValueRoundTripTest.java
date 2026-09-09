@@ -45,7 +45,7 @@ class MongoCareerPropertyValueRoundTripTest {
 		var storedValues = written.getList("propertyValues", Document.class);
 
 		assertInstanceOf(Decimal128.class, storedValues.get(1).get("value"));
-		assertEquals("42.5", storedValues.get(1).get("value", Decimal128.class).toString());
+		assertEquals("42.500", storedValues.get(1).get("value", Decimal128.class).toString());
 		assertEquals(record, projector.project(written));
 	}
 

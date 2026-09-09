@@ -60,10 +60,10 @@ class PropertyValueValidationTest {
 	}
 
 	@Test
-	void canonicalizesFiniteDecimalValues() {
+	void preservesDecimalScaleForLosslessWireRoundTrip() {
 		var value = new NumberPropertyValue(DEFINITION_ID, new BigDecimal("12.500"));
 
-		assertEquals(new BigDecimal("12.5"), value.value());
+		assertEquals(new BigDecimal("12.500"), value.value());
 	}
 
 	@Test

@@ -9,6 +9,7 @@ const CanonicalCareerPropertyDefinitionTypeSchema = CareerPropertyTypeV2Schema.e
 export const WritableCareerPropertyTypeSchema = z.enum([
   "text", "number", "checkbox", "select", "multi_select", "date", "url", "email", "phone", "file", "media",
 ]);
+export const CanonicalDecimalStringSchema = z.string().regex(/^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/);
 export const CareerSelectOptionSchema = z.strictObject({
   id: UuidSchema,
   name: z.string().min(1).max(80).refine((value) => value.trim().length > 0, { message: "option name must contain a visible character" }),
@@ -56,7 +57,7 @@ export const CareerDateValueSchema = z.discriminatedUnion("precision", [
 
 export const WritableCareerPropertyValueSchema = z.discriminatedUnion("type", [
   z.strictObject({ propertyDefinitionId: UuidSchema, type: z.literal("text"), value: z.string().max(50_000) }),
-  z.strictObject({ propertyDefinitionId: UuidSchema, type: z.literal("number"), value: z.number().finite() }),
+  z.strictObject({ propertyDefinitionId: UuidSchema, type: z.literal("number"), value: CanonicalDecimalStringSchema }),
   z.strictObject({ propertyDefinitionId: UuidSchema, type: z.literal("checkbox"), value: z.boolean() }),
   z.strictObject({ propertyDefinitionId: UuidSchema, type: z.literal("select"), value: UuidSchema.nullable() }),
   z.strictObject({ propertyDefinitionId: UuidSchema, type: z.literal("multi_select"), value: z.array(UuidSchema).max(100) }),

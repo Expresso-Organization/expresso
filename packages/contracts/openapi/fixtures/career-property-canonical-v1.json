@@ -193,7 +193,7 @@
     {
       "propertyDefinitionId": "10000000-0000-4000-8000-000000000004",
       "type": "number",
-      "value": 42.5
+      "value": "42.5000"
     },
     {
       "propertyDefinitionId": "10000000-0000-4000-8000-000000000005",
