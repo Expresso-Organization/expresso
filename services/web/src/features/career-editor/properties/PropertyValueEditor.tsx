@@ -21,7 +21,7 @@ export interface PropertyValueEditorProps {
   disabled?: boolean;
 }
 
-const readOnlyTypes = new Set(["formula", "rollup", "relation"]);
+const readOnlyTypes = new Set(["formula", "rollup", "relation", "file", "media"]);
 const plainDecimalPattern = /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/;
 
 function IssueBadge({ issue }: { issue: string | null }) {
@@ -114,12 +114,6 @@ export function PropertyValueEditor({ definition, value, onCommit, disabled = fa
     };
     return <div className={styles.dateFields}><label><span>시작</span><input className={styles.input} aria-label={`${definition.name} 시작`} type={inputType} value={draft} disabled={disabled || saving} onChange={(event) => setDraft(event.target.value)} onBlur={commitDate} /></label><label><span>종료</span><div className={styles.fieldRow}><input className={styles.input} aria-label={`${definition.name} 종료`} type={inputType} value={dateEnd} disabled={disabled || saving} onChange={(event) => setDateEnd(event.target.value)} onBlur={commitDate} /><IssueBadge issue={issue} /></div></label></div>;
   }
-  if (definition.type === "file" || definition.type === "media") {
-    const assetType = definition.type;
-    const ids = value?.type === assetType ? value.value : [];
-    return <div className={styles.assetEditor}><div className={styles.assetList}>{ids.map((id) => <button key={id} type="button" disabled={disabled || saving} onClick={() => void commit({ type: assetType, value: ids.filter((item) => item !== id) })}>{id.slice(0, 8)} ×</button>)}</div><div className={styles.fieldRow}><input className={styles.input} aria-label={`${definition.name} ID 추가`} placeholder="파일 ID를 붙여 넣고 Enter" value={draft} disabled={disabled || saving} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => commitOnEnter(event, () => { void commit({ type: assetType, value: [...ids, draft] }); setDraft(""); })} /><IssueBadge issue={issue} /></div></div>;
-  }
-
   const inputType = definition.type === "email" ? "email" : definition.type === "url" ? "url" : definition.type === "phone" ? "tel" : "text";
   const commitDraft = () => {
     if (!draft && !definition.required) return void commit(null);
