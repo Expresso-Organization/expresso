@@ -593,6 +593,17 @@
       </div>
     </main>
   </div>
+      <details id="job-search-flow-spec" style="margin-top: 18px; padding: 16px 20px; background: #fff; border: 1px solid #E2E9F4; border-radius: 12px; font-size: 13px; line-height: 1.8">
+        <summary style="cursor: pointer; font-weight: 600">06 → 00b · 검색 진행과 결과 전환</summary>
+        <ol style="margin: 12px 0 0; padding-left: 20px; color: #35455F">
+          <li>기존 공고 탐색의 검색창에서 시작합니다. 사이드바와 검색창 위치를 유지하고 검색 버튼을 중지로 바꿉니다.</li>
+          <li>180ms 이상 기다리면 같은 목록 자리에 스켈레톤과 검색 중 안내를 표시합니다. 보조 패널은 흐리게 표시하고 조작을 잠시 막습니다.</li>
+          <li>5초 이상 걸리면 지연 안내를 표시합니다. 중지를 누르면 이전 목록으로 돌아가고 입력한 검색어는 남깁니다.</li>
+          <li>결과가 오면 00b의 기존 검색 결과 화면을 표시합니다. 목록은 180ms 페이드로 함께 나타납니다. 검색어를 바꿔도 명시한 필터와 정렬은 유지하며 첫 쪽으로 돌아갑니다.</li>
+          <li>결과가 없으면 같은 결과 카드 안에 조건을 줄이라는 안내와 전체 공고 링크를 표시합니다. 실패 시 기존 오류 화면에서 같은 조건으로 재시도합니다.</li>
+          <li>모바일에서는 기존 결과 행 안에서 제목과 기술 태그를 나눠 표시합니다. 동작 줄이기 설정에서는 회전과 등장 애니메이션을 생략합니다.</li>
+        </ol>
+      </details>
     </div>
   </div>
 

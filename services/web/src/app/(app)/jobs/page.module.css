@@ -991,3 +991,52 @@
     padding: 22px 26px 20px;
   }
 }
+
+/* 기존 탐색 화면에 검색 진행 상태만 연결합니다. */
+.searchEntry { flex-shrink: 0; }
+.searchStop { display: inline-flex; align-items: center; gap: 6px; }
+.searchProgress {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 20px; font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted); line-height: 1.6;
+}
+.queryCard .searchProgress {
+  background: var(--ex-accent-surface);
+  border-top: 1px solid var(--ex-accent-surface-hover);
+}
+.searchSpinner { display: inline-flex; color: var(--ex-accent-text); animation: searchSpin 1s linear infinite; }
+.searchResults { position: relative; }
+.searchExistingResults { display: contents; }
+.searchCover { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--ex-bg); }
+.searchRailPending { opacity: .45; transition: opacity var(--ex-motion-quick); }
+.searchArrived { animation: searchArrive 180ms ease-out; }
+.searchEmpty { padding: 40px 20px; text-align: center; flex: 1; }
+.searchEmpty h2 { margin: 14px 0 8px; font-size: var(--ex-text-lg); font-weight: 600; }
+.searchEmpty p { font-size: var(--ex-text-sm); color: var(--ex-fg-muted); line-height: 1.7; }
+.searchEmpty a { display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; font-size: var(--ex-text-sm); color: var(--ex-accent-text); }
+@keyframes searchSpin { to { transform: rotate(360deg); } }
+@keyframes searchArrive { from { opacity: .45; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .searchSpinner, .searchArrived { animation: none; }
+  .searchRailPending { transition: none; }
+}
+
+/* 좁은 결과 화면에서도 긴 기술 목록이 공고 제목을 밀어내지 않게 합니다. */
+@media (max-width: 767px) {
+  .resultsHead { flex-wrap: wrap; gap: 8px; }
+  .resultsNote { font-size: var(--ex-text-2xs); }
+  .sorts { order: 1; width: 100%; margin-left: 0; }
+  .sort { white-space: nowrap; }
+  .row { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; }
+  .avatar { grid-column: 1; grid-row: 1; }
+  .rowTitle { grid-column: 2; grid-row: 1; width: auto; }
+  .row > i { grid-column: 3; grid-row: 1; }
+  .rowStack { grid-column: 2 / -1; min-width: 0; overflow-x: auto; }
+  .rowReason { grid-column: 2 / -1; }
+  .rowReason:empty { display: none; }
+  .rowScore { grid-column: 2; width: auto; }
+  .scoreTrack { flex: none; width: 48px; }
+  .rowDeadline { grid-column: 3; width: auto; }
+  .searchCover .row { display: flex; }
+  .searchCover .resultsNote { white-space: normal; }
+}

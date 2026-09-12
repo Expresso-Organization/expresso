@@ -12,13 +12,14 @@ import Link from "next/link";
 import { AppBody, AppHeader } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
 import { jobs as jobsApi } from "@/lib/api/endpoints";
-import { BROWSE_QUERY_PLACEHOLDER, SIMILAR_SEARCHES } from "@/lib/sample/jobs";
+import { SIMILAR_SEARCHES } from "@/lib/sample/jobs";
 import { requireSession } from "@/lib/require-session";
 
 import { JobRowList, deadlineLabel } from "./JobRows";
 import { currentListQuery, detailHref } from "./list-query";
 import { Pagination } from "./Pagination";
 import { ALL, JobFilter, type FilterSection } from "./JobFilter";
+import { JobSearchFlow, JobSearchInput, JobSearchResults, JobSearchRail, JobSearchEmpty } from "./JobSearchFlow";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import styles from "./page.module.css";
 
@@ -209,6 +210,11 @@ export default async function JobsPage({
     jobsApi.sources(session.accessToken),
   ]);
 
+  // 진행 화면 검토용 지연은 개발 서버에서 명시했을 때만 적용합니다.
+  const previewDelay = process.env.NODE_ENV === "development"
+    ? Math.min(15_000, Math.max(0, Number(process.env.DEV_JOBS_SEARCH_DELAY_MS) || 0)) : 0;
+  if (q && previewDelay) await new Promise((resolve) => setTimeout(resolve, previewDelay));
+
   const sources = sourceList.data.filter((source) => source.active);
   const derived = searchFilters(q, interpreted?.conditions ?? []);
 
@@ -376,11 +382,11 @@ export default async function JobsPage({
     <>
       {header}
       <AppBody>
-        <div className={styles.content}>
+        <JobSearchFlow listQuery={listQuery}>
           {q ? (
             <SearchQueryCard query={q} conditions={interpreted?.conditions ?? []} />
           ) : (
-            <BrowseSearchBar />
+            <JobSearchInput />
           )}
 
           {q ? null : (
@@ -405,7 +411,7 @@ export default async function JobsPage({
           )}
 
           <div className={styles.columns}>
-            <div className={styles.results}>
+            <JobSearchResults>
               <div className={styles.resultsHead}>
                 <span className={styles.resultsCount}>
                   {q ? `결과 ${listing.summary.total}건` : `공고 · ${listing.summary.total}건`}
@@ -439,13 +445,13 @@ export default async function JobsPage({
                 <JobFilter sections={sections} />
               </div>
 
-              <JobRowList
+              {listing.summary.total === 0 ? <JobSearchEmpty /> : <JobRowList
                 jobs={postings}
                 highlightFirst={Boolean(q)}
                 tail={q ? "workType" : "experience"}
                 now={now}
                 listQuery={listQuery}
-              />
+              />}
 
               <div className={styles.resultsFoot}>
                 <span className={styles.footText}>
@@ -464,9 +470,9 @@ export default async function JobsPage({
                   </span>
                 ) : null}
               </div>
-            </div>
+            </JobSearchResults>
 
-            <aside className={styles.rail}>
+            <JobSearchRail>
               {q ? (
                 <SearchRail
                   total={listing.summary.total}
@@ -474,6 +480,7 @@ export default async function JobsPage({
                   axes={matchAxes(postings)}
                   recent={recent.data}
                   query={q}
+                  recordCount={recordCount}
                 />
               ) : (
                 <BrowseRail
@@ -485,9 +492,9 @@ export default async function JobsPage({
                   listQuery={listQuery}
                 />
               )}
-            </aside>
+            </JobSearchRail>
           </div>
-        </div>
+        </JobSearchFlow>
       </AppBody>
     </>
   );
@@ -538,23 +545,7 @@ function SearchQueryCard({
   conditions: readonly JobSearchCondition[];
 }) {
   return (
-    <div className={styles.queryCard}>
-      <form className={styles.queryRow} action="/jobs">
-        <Icon name="sparkle" size={18} color="var(--ex-accent-text)" />
-        <input
-          name="q"
-          defaultValue={query}
-          className={styles.queryText}
-          aria-label="공고 검색"
-        />
-        <Link href="/jobs" className={styles.queryClear} aria-label="검색 초기화">
-          <Icon name="x" size={15} />
-        </Link>
-        <button type="submit" className={styles.querySubmit}>
-          검색
-        </button>
-      </form>
-
+    <JobSearchInput query={query}>
       {/* 해석 칩 — 확신이 낮은 조건도 칩으로 만들되 지울 수 있게 둔다 */}
       <div className={styles.parsedRow}>
         <span className={styles.parsedLabel}>이렇게 이해했습니다</span>
@@ -580,25 +571,7 @@ function SearchQueryCard({
           <Icon name="bell-simple" size={14} />이 검색 저장
         </button>
       </div>
-    </div>
-  );
-}
-
-function BrowseSearchBar() {
-  return (
-    <form className={styles.searchBar} action="/jobs">
-      <Icon name="sparkle" size={18} color="var(--ex-accent-text)" />
-      <input
-        name="q"
-        className={styles.searchInput}
-        placeholder={BROWSE_QUERY_PLACEHOLDER}
-        aria-label="공고 검색"
-      />
-      <span className={styles.searchShortcut}>⌘↵</span>
-      <button type="submit" className={styles.querySubmit}>
-        찾기
-      </button>
-    </form>
+    </JobSearchInput>
   );
 }
 
@@ -608,15 +581,17 @@ function SearchRail({
   axes,
   recent,
   query,
+  recordCount,
 }: {
   total: number;
   missing: readonly JobPostingFacet[];
   axes: readonly { label: string; color: string; fill: number; weight: string }[];
   recent: readonly RecentJobSearch[];
   query: string;
+  recordCount: number;
 }) {
   const top = missing[0];
-  const similar = recent.filter((search) => search.query !== query).slice(0, 3);
+  const similar = recent.filter((search, index) => search.query !== query && recent.findIndex((item) => item.query === search.query) === index).slice(0, 3);
 
   return (
     <>
@@ -626,7 +601,11 @@ function SearchRail({
           <span className={styles.brewLabel}>이 결과가 요구하는 것</span>
         </div>
         <p className={styles.brewBody}>
-          {top ? (
+          {total === 0 ? (
+            <>검색 조건을 바꾸면 공고가 요구하는 기술을 확인할 수 있습니다.</>
+          ) : recordCount === 0 ? (
+            <>커리어 기록을 추가하면 이 공고들과 내 경험을 비교할 수 있습니다.</>
+          ) : top ? (
             <>
               {total}건 중 <b style={{ color: "var(--ex-fg)" }}>{top.count}건</b>이{" "}
               {top.label}을 요구합니다. 지금 기록에는 근거가 없습니다.
