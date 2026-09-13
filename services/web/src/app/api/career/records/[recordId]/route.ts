@@ -18,8 +18,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ re
   if (!accessToken) return new Response("로그인이 필요합니다", { status: 401 });
   const body = await request.json().catch(() => null);
   const { recordId } = await params;
-  const canonicalPatch = z.strictObject({ propertyValues: z.array(WritableCareerPropertyValueSchema).max(50) }).safeParse(body);
-  if (canonicalPatch.success) {
+  const springPatch = z.strictObject({
+    title: z.string().trim().max(300).optional(),
+    propertyValues: z.array(WritableCareerPropertyValueSchema).max(50).optional(),
+  }).refine((value) => Object.keys(value).length > 0).safeParse(body);
+  if (springPatch.success) {
     const springBaseUrl = process.env.CAREER_SPRING_API_BASE_URL;
     if (!springBaseUrl) return new Response("Spring Career API 주소가 설정되지 않았습니다", { status: 503 });
     let upstream: Response;
@@ -27,7 +30,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ re
       upstream = await fetch(`${springBaseUrl}${API_PREFIX}/career/records/${encodeURIComponent(recordId)}`, {
         method: "PATCH",
         headers: { authorization: `Bearer ${accessToken}`, accept: "application/json", "content-type": "application/json", "if-match": request.headers.get("if-match") ?? "" },
-        body: JSON.stringify(canonicalPatch.data),
+        body: JSON.stringify(springPatch.data),
         signal: request.signal,
         cache: "no-store",
       });

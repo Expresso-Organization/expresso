@@ -112,15 +112,29 @@ describe("PATCH /api/career/records/[recordId]", () => {
     expect((await response.json()).data.version).toBe(1);
   });
 
-  it("title patch는 기존 Fastify 경로를 유지한다", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(Response.json(fastifyResponse, { headers: { etag: '"v2"' } }));
+  it("title patch를 Spring에 보내고 Fastify에서 갱신된 Record를 읽는다", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(Response.json({
+        ...springResponse,
+        data: { ...springResponse.data, title: "수정" },
+      }, { headers: { etag: '"v2"' } }))
+      .mockResolvedValueOnce(Response.json({
+        ...fastifyResponse,
+        data: { ...fastifyResponse.data, title: "수정" },
+      }));
     vi.stubGlobal("fetch", fetchMock);
 
-    await PATCH(request({ title: "수정" }), { params: Promise.resolve({ recordId }) });
+    const response = await PATCH(request({ title: "수정" }), { params: Promise.resolve({ recordId }) });
 
-    expect(fetchMock).toHaveBeenCalledWith(`http://127.0.0.1:4000/v1/career/records/${recordId}`, expect.objectContaining({
+    expect(fetchMock).toHaveBeenNthCalledWith(1, `http://localhost:4100/v1/career/records/${recordId}`, expect.objectContaining({
       method: "PATCH",
       body: JSON.stringify({ title: "수정" }),
     }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, `http://127.0.0.1:4000/v1/career/records/${recordId}`, expect.objectContaining({
+      headers: expect.objectContaining({ authorization: "Bearer exps_session_token" }),
+    }));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("etag")).toBe('"v2"');
+    expect((await response.json()).data.title).toBe("수정");
   });
 });
