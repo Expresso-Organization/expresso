@@ -1,12 +1,13 @@
 "use client";
 
-import type { CareerCategory, CareerRecordListItem } from "@expresso/contracts";
+import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecordListItem } from "@expresso/contracts";
 import type { CSSProperties, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 import { CareerDocumentEditor } from "@/features/career-editor/editor/CareerDocumentEditor";
 import { AiProposalPanel, type AiPromptRequest } from "@/features/career-editor/ai/AiProposalPanel";
+import type { CareerPropertyEditorValue } from "@/features/career-editor/properties/canonical-property-values";
 import { useCareerEditorSession } from "@/features/career-editor/session/useCareerEditorSession";
 
 import styles from "./DocumentPanel.module.css";
@@ -21,6 +22,8 @@ export function DocumentPanel({
   onExpand,
   aiRequest,
   onAiRequestHandled,
+  onRecordCommit,
+  onRecordAccepted,
 }: {
   record: CareerRecordListItem | null;
   category: CareerCategory;
@@ -28,6 +31,8 @@ export function DocumentPanel({
   onExpand?: () => void;
   aiRequest?: AiPromptRequest | null | undefined;
   onAiRequestHandled?: (() => void) | undefined;
+  onRecordCommit?: ((recordId: string, definition: CareerPropertyDefinitionV2, value: CareerPropertyEditorValue | null) => Promise<void>) | undefined;
+  onRecordAccepted?: ((record: CareerRecordListItem) => void) | undefined;
 }) {
   const [width, setWidth] = useState(DEFAULT_PANEL_WIDTH);
   const [visibleRecord, setVisibleRecord] = useState(record);
@@ -132,7 +137,7 @@ export function DocumentPanel({
         <>
           <div className={styles.body}>
             <div className={styles.blocks}>
-              <CareerDocumentEditor key={panelRecord.id} recordId={panelRecord.id} mode="peek" record={panelRecord} category={category} showAiProposal={false} onAiRequest={setEditorAiRequest} />
+              <CareerDocumentEditor key={panelRecord.id} recordId={panelRecord.id} mode="peek" record={panelRecord} category={category} showAiProposal={false} onAiRequest={setEditorAiRequest} onRecordCommit={onRecordCommit} onRecordAccepted={onRecordAccepted} />
             </div>
           </div>
 

@@ -189,7 +189,9 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
         const latestResponse = await fetch(`/api/career/records/${pending.recordId}`);
         if (!latestResponse.ok) throw new Error("최신 기록을 불러오지 못했습니다.");
         const latestPayload = await latestResponse.json() as { data: CareerRecord };
-        return attempt(listItem(latestPayload.data), false);
+        const latest = listItem(latestPayload.data);
+        replaceRecords((current) => current.map((record) => record.id === latest.id ? latest : record));
+        return attempt(latest, false);
       }
       if (!response.ok) throw new Error(response.status === 409 || response.status === 412 ? "다른 곳에서 바뀐 값과 충돌했습니다." : "값을 저장하지 못했습니다.");
       const payload = await response.json() as { data: CareerRecord };
@@ -241,6 +243,10 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
     const failed = failedCells.current.get(`${recordId}:${propertyId}`);
     if (failed) void commitCell(failed.recordId, failed.definition, failed.value);
   }, [commitCell]);
+
+  const acceptRecord = useCallback((accepted: CareerRecordListItem) => {
+    replaceRecords((current) => current.map((record) => record.id === accepted.id ? { ...record, ...accepted } : record));
+  }, [replaceRecords]);
 
   const visibleRecords = useMemo(() => sortedRecords(records.filter((record) => matchesSavedFilter(record, view.filter, category) && matchesQuickFilter(record, category, quickFilter)), view, category), [category, quickFilter, records, view]);
   const active = records.find((record) => record.id === activeId) ?? null;
@@ -350,7 +356,7 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
       {visibleRecords.length ? renderer : <div className={styles.emptyFilter}><strong>조건에 맞는 기록이 없습니다.</strong><button type="button" onClick={() => setQuickFilter("all")}>전체 기록 보기</button></div>}
       {page.hasNextPage ? <button className={styles.more} onClick={() => void more()}>더 보기</button> : null}
     </main>
-    <DocumentPanel record={active} category={category} onClose={() => setActiveId(null)} aiRequest={aiRequest?.recordId === active?.id ? aiRequest : null} onAiRequestHandled={() => setAiRequest(null)} {...(active ? { onExpand: () => router.push(`/career/records/${active.id}` as never) } : {})} />
+    <DocumentPanel record={active} category={category} onClose={() => setActiveId(null)} onRecordCommit={commitCell} onRecordAccepted={acceptRecord} aiRequest={aiRequest?.recordId === active?.id ? aiRequest : null} onAiRequestHandled={() => setAiRequest(null)} {...(active ? { onExpand: () => router.push(`/career/records/${active.id}` as never) } : {})} />
     {interview ? <AiRecordInterview mode={interview.mode} categoryName={category.name} recordTitle={records.find((record) => record.id === interview.targetId)?.title ?? ""} onCancel={() => setInterview(null)} onComplete={(result) => void completeInterview(result)} /> : null}
   </div>;
 }

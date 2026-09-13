@@ -15,6 +15,7 @@ import {
 import { SelectionToolbar } from "./SelectionToolbar";
 import { SlashMenu } from "./SlashMenu";
 import { PropertyList } from "../properties/PropertyList";
+import type { CareerPropertyEditorValue } from "../properties/canonical-property-values";
 import { AiProposalPanel, type AiPromptRequest } from "../ai/AiProposalPanel";
 
 export function CareerDocumentEditor({
@@ -24,6 +25,8 @@ export function CareerDocumentEditor({
   category,
   showAiProposal = true,
   onAiRequest,
+  onRecordCommit,
+  onRecordAccepted,
 }: {
   recordId: string;
   mode: "peek" | "page";
@@ -31,6 +34,8 @@ export function CareerDocumentEditor({
   category?: CareerCategory;
   showAiProposal?: boolean;
   onAiRequest?: ((request: AiPromptRequest) => void) | undefined;
+  onRecordCommit?: ((recordId: string, definition: CareerPropertyDefinitionV2, value: CareerPropertyEditorValue | null) => Promise<void>) | undefined;
+  onRecordAccepted?: ((record: CareerRecordListItem) => void) | undefined;
 }) {
   const { snapshot, document, updateDocument } = useCareerEditorSession(recordId);
   const [slashOpen, setSlashOpen] = useState(false);
@@ -77,7 +82,7 @@ export function CareerDocumentEditor({
 
   return (
     <section className={styles.editor} data-mode={mode} aria-label="커리어 문서 편집기">
-      {record && category ? <PropertyList record={record} definitions={categoryDefinitions(category)} categoryId={category.id} schemaMutable={!category.isSystem} /> : null}
+      {record && category ? <PropertyList record={record} definitions={categoryDefinitions(category)} categoryId={category.id} schemaMutable={!category.isSystem} onRecordCommit={onRecordCommit} onRecordAccepted={onRecordAccepted} /> : null}
       <div className={styles.toolbarRow}>
         <SelectionToolbar editor={editor} onAiRequest={(prompt, blockIds) => { const request = { id: crypto.randomUUID(), recordId, prompt, blockIds }; if (onAiRequest) onAiRequest(request); else setAiRequest(request); }} />
         <BlockHandle editor={editor} />

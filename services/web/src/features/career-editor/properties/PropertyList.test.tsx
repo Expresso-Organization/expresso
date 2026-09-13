@@ -38,29 +38,37 @@ const record: CareerRecordListItem = {
 describe("PropertyList canonical propertyValues", () => {
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
-  it("reads canonical values and sends the complete snapshot when one value changes", async () => {
-    const updated = { ...record, propertyValues: [
-      { propertyDefinitionId: textId, type: "text" as const, value: "수정" },
-      record.propertyValues![1]!,
-    ], version: 2 };
-    const fetchMock = vi.fn().mockResolvedValue(Response.json({ data: updated }));
+  it("reads canonical values and delegates changes without writing independently", async () => {
+    const onRecordCommit = vi.fn().mockResolvedValue(undefined);
+    const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
-    render(<PropertyList record={record} definitions={definitions} categoryId={categoryId} />);
+    render(<PropertyList record={record} definitions={definitions} categoryId={categoryId} onRecordCommit={onRecordCommit} />);
 
     const input = screen.getByLabelText("역할");
     expect((input as HTMLInputElement).value).toBe("canonical");
     fireEvent.change(input, { target: { value: "수정" } });
     fireEvent.blur(input);
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(`/api/career/records/${record.id}`, expect.objectContaining({
-      method: "PATCH",
-      headers: expect.objectContaining({ "if-match": '"v1"' }),
-      body: JSON.stringify({ propertyValues: updated.propertyValues }),
-    })));
+    await waitFor(() => expect(onRecordCommit).toHaveBeenCalledWith(record.id, definitions[0], { type: "text", value: "수정" }));
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("does not fall back to stale legacy values when the canonical snapshot is empty", () => {
     render(<PropertyList record={{ ...record, propertyValues: [] }} definitions={definitions} categoryId={categoryId} />);
     expect((screen.getByLabelText("역할") as HTMLInputElement).value).toBe("");
+  });
+
+  it("renders a newer controlled record instead of keeping an authoritative local copy", async () => {
+    const onRecordCommit = vi.fn().mockResolvedValue(undefined);
+    const rendered = render(<PropertyList record={record} definitions={definitions} categoryId={categoryId} onRecordCommit={onRecordCommit} />);
+    const latest = { ...record, title: "서버 제목", propertyValues: [
+      { propertyDefinitionId: textId, type: "text" as const, value: "서버 역할" },
+      record.propertyValues![1]!,
+    ], version: 2 };
+
+    rendered.rerender(<PropertyList record={latest} definitions={definitions} categoryId={categoryId} onRecordCommit={onRecordCommit} />);
+
+    await waitFor(() => expect((screen.getByLabelText("제목") as HTMLInputElement).value).toBe("서버 제목"));
+    expect((screen.getByLabelText("역할") as HTMLInputElement).value).toBe("서버 역할");
   });
 });
