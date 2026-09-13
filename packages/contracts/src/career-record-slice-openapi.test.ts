@@ -721,7 +721,9 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
       }),
     ).toBe(true);
     expect(validatePatch({})).toBe(false);
-    expect(validatePatch({ status: "organized" })).toBe(false);
+    expect(validatePatch({ status: "organized" })).toBe(true);
+    expect(validatePatch({ status: "invalid" })).toBe(false);
+    expect(validatePatch({ status: "organized", title: "함께 변경" })).toBe(false);
     expect(validatePatch({ bodyMd: "legacy" })).toBe(false);
     expect(validatePatch({ categoryId })).toBe(false);
   });

@@ -166,4 +166,32 @@ describe("CareerViewShell editor save authority", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(5));
     expect(fetchMock.mock.calls[4]?.[1]).toEqual(expect.objectContaining({ headers: expect.objectContaining({ "if-match": '"v2"' }) }));
   });
+
+  it("serializes status behind a pending property save and uses its accepted version", async () => {
+    let finishProperty!: (value: Response) => void;
+    const propertyResponse = new Promise<Response>((resolve) => { finishProperty = resolve; });
+    const afterProperty = { ...record, propertyValues: [{ propertyDefinitionId: roleId, type: "text" as const, value: "새 역할" }], version: 2 };
+    const afterStatus = { ...afterProperty, status: "organized" as const, version: 3 };
+    const fetchMock = vi.fn()
+      .mockReturnValueOnce(propertyResponse)
+      .mockResolvedValueOnce(response(afterStatus));
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderShell();
+    fireEvent.click(screen.getByRole("gridcell", { name: "초기 제목" }));
+    const role = await screen.findByLabelText("역할");
+    fireEvent.change(role, { target: { value: "새 역할" } });
+    fireEvent.blur(role);
+    fireEvent.click(screen.getByLabelText("초기 제목 선택"));
+    fireEvent.click(screen.getByRole("button", { name: "정리됨" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    finishProperty(response(afterProperty));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(fetchMock.mock.calls[1]?.[1]).toEqual(expect.objectContaining({
+      method: "PATCH",
+      headers: expect.objectContaining({ "if-match": '"v2"' }),
+      body: JSON.stringify({ status: "organized" }),
+    }));
+  });
 });

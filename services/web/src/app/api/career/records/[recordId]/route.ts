@@ -18,10 +18,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ re
   if (!accessToken) return new Response("로그인이 필요합니다", { status: 401 });
   const body = await request.json().catch(() => null);
   const { recordId } = await params;
-  const springPatch = z.strictObject({
+  const canonicalPatch = z.strictObject({
     title: z.string().trim().max(300).optional(),
     propertyValues: z.array(WritableCareerPropertyValueSchema).max(50).optional(),
   }).refine((value) => Object.keys(value).length > 0).safeParse(body);
+  const statusPatch = z.strictObject({ status: z.enum(["draft", "organized", "verified"]) }).safeParse(body);
+  const springPatch = canonicalPatch.success ? canonicalPatch : statusPatch;
   if (springPatch.success) {
     const springBaseUrl = process.env.CAREER_SPRING_API_BASE_URL;
     if (!springBaseUrl) return new Response("Spring Career API 주소가 설정되지 않았습니다", { status: 503 });

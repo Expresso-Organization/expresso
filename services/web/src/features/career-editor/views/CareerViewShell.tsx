@@ -327,10 +327,31 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
   }
 
   async function bulkStatus(status: CareerRecord["status"]) {
-    for (const record of records.filter((item) => selected.has(item.id))) {
-      const response = await fetch(`/api/career/records/${record.id}`, { method: "PATCH", headers: { "content-type": "application/json", "if-match": `"v${record.version}"` }, body: JSON.stringify({ status }) });
-      if (response.ok) { const payload = await response.json() as { data: CareerRecord }; setRecords((current) => current.map((item) => item.id === record.id ? { ...item, ...payload.data } : item)); }
-    }
+    await Promise.all(records.filter((item) => selected.has(item.id)).map(async (selectedRecord) => {
+      async function save(): Promise<void> {
+        async function attempt(base: CareerRecordListItem, retry: boolean): Promise<CareerRecordListItem> {
+          const response = await fetch(`/api/career/records/${selectedRecord.id}`, { method: "PATCH", headers: { "content-type": "application/json", "if-match": `"v${base.version}"` }, body: JSON.stringify({ status }) });
+          if ((response.status === 409 || response.status === 412) && retry) {
+            const latestResponse = await fetch(`/api/career/records/${selectedRecord.id}`);
+            if (!latestResponse.ok) throw new Error("최신 기록을 불러오지 못했습니다.");
+            const latestPayload = await latestResponse.json() as { data: CareerRecord };
+            const latest = listItem(latestPayload.data);
+            replaceRecords((current) => current.map((record) => record.id === latest.id ? applyPending(latest) : record));
+            return attempt(latest, false);
+          }
+          if (!response.ok) throw new Error("상태를 저장하지 못했습니다.");
+          const payload = await response.json() as { data: CareerRecord };
+          replaceRecords((current) => current.map((record) => record.id === selectedRecord.id ? applyPending({ ...record, ...listItem(payload.data) }) : record));
+          return listItem(payload.data);
+        }
+        const current = recordsRef.current.find((record) => record.id === selectedRecord.id);
+        if (current) await attempt(current, true);
+      }
+      const previous = recordQueues.current.get(selectedRecord.id) ?? Promise.resolve();
+      const queued = previous.catch(() => undefined).then(save);
+      recordQueues.current.set(selectedRecord.id, queued);
+      await queued;
+    }));
     setSelected(new Set());
   }
 

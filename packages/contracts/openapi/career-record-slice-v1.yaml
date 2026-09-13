@@ -84,6 +84,8 @@ paths:
       description: >-
         If-Match가 현재 version과 일치할 때만 수정한다. 오래된 version이면 412를
         반환한다. 다른 사용자가 소유한 Record도 존재 여부를 숨기기 위해 404를 반환한다.
+        title, propertyValues, blockBody는 canonical content 변경이며, status는 별도의
+        workflow metadata를 변경하는 status-only 요청으로만 받는다.
       parameters:
         - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
@@ -1088,6 +1090,11 @@ components:
           $ref: "#/components/schemas/Uuid"
 
     PatchCareerRecordRequest:
+      oneOf:
+        - $ref: "#/components/schemas/CanonicalCareerRecordPatch"
+        - $ref: "#/components/schemas/CareerRecordStatusPatch"
+
+    CanonicalCareerRecordPatch:
       type: object
       additionalProperties: false
       minProperties: 1
@@ -1100,6 +1107,19 @@ components:
           $ref: "#/components/schemas/PropertyValues"
         blockBody:
           $ref: "#/components/schemas/BlockBody"
+
+    CareerRecordStatusPatch:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/CareerRecordStatus"
+
+    CareerRecordStatus:
+      type: string
+      description: CareerRecord의 workflow metadata. 상태 의미와 전이 정책은 기존 동작을 유지한다.
+      enum: [draft, organized, verified]
 
     CareerRecordResponse:
       type: object

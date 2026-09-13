@@ -137,4 +137,26 @@ describe("PATCH /api/career/records/[recordId]", () => {
     expect(response.headers.get("etag")).toBe('"v2"');
     expect((await response.json()).data.title).toBe("수정");
   });
+
+  it("status-only patch를 Spring에 보내고 Fastify에서 갱신된 Record를 읽는다", async () => {
+    const organized = {
+      ...fastifyResponse,
+      data: { ...fastifyResponse.data, status: "organized" },
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(Response.json(springResponse, { headers: { etag: '"v2"' } }))
+      .mockResolvedValueOnce(Response.json(organized));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await PATCH(request({ status: "organized" }), { params: Promise.resolve({ recordId }) });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, `http://localhost:4100/v1/career/records/${recordId}`, expect.objectContaining({
+      method: "PATCH",
+      headers: expect.objectContaining({ "if-match": '"v1"' }),
+      body: JSON.stringify({ status: "organized" }),
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, `http://127.0.0.1:4000/v1/career/records/${recordId}`, expect.anything());
+    expect(response.status).toBe(200);
+    expect((await response.json()).data.status).toBe("organized");
+  });
 });
