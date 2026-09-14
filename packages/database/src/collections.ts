@@ -2,6 +2,7 @@ import type { Db, Collection } from "mongodb";
 import type * as Docs from "./documents/index.js";
 
 export interface MongoCollections {
+  agentConversations: Collection<Docs.AgentConversationDoc>;
   plans: Collection<Docs.PlanDoc>;
   users: Collection<Docs.UserDoc>;
   accountDeletionRequests: Collection<Docs.AccountDeletionRequestDoc>;
@@ -88,6 +89,7 @@ export interface MongoCollections {
 
 export function mongoCollections(db: Db): MongoCollections {
   return {
+    agentConversations: db.collection<Docs.AgentConversationDoc>("agent_conversations"),
     plans: db.collection<Docs.PlanDoc>("plans"),
     users: db.collection<Docs.UserDoc>("users"),
     accountDeletionRequests: db.collection<Docs.AccountDeletionRequestDoc>("account_deletion_requests"),

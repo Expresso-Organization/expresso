@@ -1,0 +1,16 @@
+.panel, .standalone { display: flex; flex-direction: column; min-width: 0; background: var(--ex-bg); color: var(--ex-fg); font-family: var(--ex-font-ui); border: 1px solid var(--ex-border); border-radius: 12px; overflow: hidden; }
+.panel { height: min(680px, 85dvh); }
+.standalone { width: 100%; height: calc(100dvh - 112px); max-width: 960px; margin: 0 auto; border: 0; }
+.header, .actions { display: flex; align-items: center; gap: 8px; }
+.header { padding: 14px; font-size: var(--ex-text-xs); }
+.header strong { flex: 1; }
+.header a { color: var(--ex-fg-muted); font-size: var(--ex-text-2xs); }
+.history { display: flex; align-items: center; gap: 8px; padding: 8px 14px; font-size: var(--ex-text-2xs); }
+.history > button { min-width: 0; flex: 1; }
+.contexts { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 14px; font-size: var(--ex-text-2xs); }
+.contexts a { color: var(--ex-fg-muted); }
+.contexts:empty { display: none; }
+.thread { flex: 1; min-height: 0; }
+.actions { justify-content: flex-end; margin-top: 12px; }
+.error { color: var(--ex-status-danger-text); padding: 8px 14px; }
+.status { padding: 8px 14px; color: var(--ex-fg-muted); }

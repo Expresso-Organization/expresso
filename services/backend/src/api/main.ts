@@ -1,3 +1,5 @@
+import { AgentChatService } from "../modules/agent-chat/index.js";
+import { ClaudeAgentRuntime } from "../platform/agent/runtime.js";
 import { buildApi } from "./build-app.js";
 import { loadRuntimeConfig } from "../config/runtime-config.js";
 import { createMongoResource } from "../platform/mongodb.js";
@@ -128,7 +130,9 @@ const careerDocumentService = new CareerDocumentService(
   },
   config.careerAiDeterministicTest ? new SelectedBlockTextAiProposalAdapter() : ai ? new AiClientProposalAdapter(ai) : undefined,
 );
+const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel) : null, careerService, jobBoardService, careerDocumentService, consentService);
 const app = buildApi({
+  agentChatService,
   config,
   readinessChecks: [database.readinessCheck, redis.readinessCheck],
   identityService,

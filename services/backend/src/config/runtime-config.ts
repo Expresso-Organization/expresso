@@ -44,6 +44,9 @@ const runtimeConfigSchema = z.object({
    * CI·컨테이너에서는 별도 인증 없이는 동작하지 않는다.
    */
   AI_PROVIDER: z.enum(["off", "claude-code", "codex", "fixture", "anthropic"]).default("off"),
+  /** 공통 채팅은 기존 구조화 AI 호출과 별도로 활성화합니다. */
+  AGENT_CHAT_ENABLED: z.enum(["0", "1"]).default("0"),
+  AGENT_CHAT_MODEL: z.string().trim().max(100).optional(),
   /**
    * 지면 생성만 다른 프로바이더로.
    *
@@ -123,6 +126,8 @@ export interface RuntimeConfig {
   googleClientId?: string | undefined;
   /** 없으면 `off`. 키도 로그인도 없이 앱 전체가 돌아야 한다. */
   aiProvider?: "off" | "claude-code" | "codex" | "fixture" | "anthropic";
+  agentChatEnabled?: boolean;
+  agentChatModel?: string;
   /** 지면 생성만 갈아 끼울 때. 비우면 `aiProvider`와 같다. */
   aiPageGenerationProvider?: "claude-code" | "codex" | "fixture" | "anthropic";
   work24ApiKey?: string | undefined;
@@ -163,6 +168,8 @@ export function loadRuntimeConfig(
     careerAiDeterministicTest: result.CAREER_AI_DETERMINISTIC_TEST,
     scheduledJobsEnabled: result.SCHEDULED_JOBS_ENABLED,
     googleClientId: result.GOOGLE_CLIENT_ID,
+    agentChatEnabled: result.AGENT_CHAT_ENABLED === "1",
+    ...(result.AGENT_CHAT_MODEL ? { agentChatModel: result.AGENT_CHAT_MODEL } : {}),
     aiProvider: result.AI_PROVIDER,
     ...(result.AI_PROVIDER_PAGE_GENERATION
       ? { aiPageGenerationProvider: result.AI_PROVIDER_PAGE_GENERATION }

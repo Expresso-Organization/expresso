@@ -7,6 +7,7 @@ import type { MongoTransaction } from "../../platform/mongo-transaction.js";
 const RAW_COLLECTIONS = ["analytics_event_receipts", "visit_events", "conversion_events", "section_views"] as const;
 const AGGREGATE_COLLECTIONS = ["metrics_daily", "insights", "analytics_rate_limits"] as const;
 const DOMAIN_COLLECTIONS = [
+  "agent_conversations",
   "annotations", "interview_sessions", "questions", "career_categories", "career_records", "answers",
   "answer_record_changes", "recipes", "recipe_sections", "portfolio_sections", "blocks", "brew_jobs",
   "brew_sources", "career_views", "company_research_items", "consents", "dashboard_views", "deployment_slug_redirects",

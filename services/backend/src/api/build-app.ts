@@ -1,3 +1,4 @@
+import { type AgentChatService, registerAgentChatRoutes } from "../modules/agent-chat/index.js";
 import Fastify, { LogController, type FastifyInstance } from "fastify";
 
 import type { RuntimeConfig } from "../config/runtime-config.js";
@@ -81,6 +82,7 @@ export interface BuildApiOptions {
   jobAnalysisService?: JobAnalysisApi;
   materialsService?: MaterialsApi;
   interviewService?: InterviewApi;
+  agentChatService?: AgentChatService;
   recipeService?: RecipeApi;
   companyResearchService?: CompanyResearchApi;
   brewJobService?: BrewJobApi;
@@ -165,6 +167,7 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }
+    if (options.agentChatService) registerAgentChatRoutes(app, options.agentChatService, createAuthenticateRequest(options.identityService));
     // 읽기 라우트를 먼저 건다 — `/jobs/postings/:id`가 쓰기 라우트와 같은 자리다.
     if (options.jobBoardService) {
       registerJobBoardRoutes(app, {
