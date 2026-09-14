@@ -4399,11 +4399,13 @@ body.de-editing .deck-stage>.slide.active .fit-digit-roll,body.de-editing .deck-
 /* 기존 마일스톤 부품의 선·노드 관계를 네 단계 제품 목표에 적용합니다. */
 .project-milestones .body {padding-top:30px;}
 .project-milestones .ms-grid {display:grid;grid-template-columns:repeat(4,400px);gap:16px;}
-.project-milestones .ms-step {position:relative;padding-top:22px;}
-.project-milestones .ms-step::before {content:"";position:absolute;top:0;left:0;width:416px;height:2px;background:var(--ex-line-200);}
-.project-milestones .ms-step:last-child::before {width:400px;}
-.project-milestones .ms-step::after {content:"";position:absolute;top:-6px;left:0;width:14px;height:14px;border-radius:50px;background:var(--ex-espresso);}
-.project-milestones .ms-id {font-family:var(--ex-font-mono);font-size:20px;color:var(--ex-espresso);margin-bottom:12px;}
+/* 큰 단계 배지와 방향선으로 각 마일스톤의 순서를 강조합니다. */
+.project-milestones .ms-step {position:relative;padding-top:0;}
+.project-milestones .ms-step::before {content:"";position:absolute;top:35px;left:106px;width:284px;height:2px;background:var(--ex-slate-300);}
+.project-milestones .ms-step::after {content:"";position:absolute;top:30px;left:380px;width:10px;height:10px;border-top:2px solid var(--ex-slate-300);border-right:2px solid var(--ex-slate-300);transform:rotate(45deg);}
+.project-milestones .ms-step:last-child::before,.project-milestones .ms-step:last-child::after {display:none;}
+.project-milestones .ms-id {display:flex;align-items:center;justify-content:center;width:88px;height:70px;border:1px solid var(--ex-espresso);border-radius:12px;background:var(--ex-bean-50);font-family:var(--ex-font-mono);font-size:32px;letter-spacing:-.04em;font-weight:500;color:var(--ex-espresso);margin-bottom:18px;}
+.project-milestones .ms-step:last-child .ms-id {background:var(--ex-ink-900);border-color:var(--ex-ink-900);color:var(--ex-white);}
 .project-milestones .ms-title {font-size:23px;font-weight:600;letter-spacing:-.04em;margin-bottom:18px;}
 .project-milestones .ms-product {font-size:29px;line-height:1.45;letter-spacing:-.04em;font-weight:600;color:var(--ex-ink-900);min-height:106px;}
 .project-milestones .ms-label {font-size:16px;color:var(--ex-slate-500);margin:18px 0 12px;}
