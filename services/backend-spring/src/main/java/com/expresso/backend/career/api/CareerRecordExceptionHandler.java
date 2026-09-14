@@ -2,8 +2,10 @@ package com.expresso.backend.career.api;
 
 import java.util.UUID;
 
+import com.mongodb.MongoException;
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -46,6 +48,25 @@ public class CareerRecordExceptionHandler {
 	@ExceptionHandler(CareerRecordPreconditionFailedException.class)
 	ResponseEntity<ApiErrorResponse> preconditionFailed(HttpServletRequest request) {
 		return error(request, HttpStatus.PRECONDITION_FAILED, "PRECONDITION_FAILED", "Precondition failed");
+	}
+
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	ResponseEntity<ApiErrorResponse> mongoWriteConflict(
+			HttpServletRequest request,
+			DataIntegrityViolationException exception) {
+		if (isWriteConflict(exception)) {
+			return preconditionFailed(request);
+		}
+		throw exception;
+	}
+
+	private static boolean isWriteConflict(Throwable exception) {
+		for (var cause = exception; cause != null; cause = cause.getCause()) {
+			if (cause instanceof MongoException mongoException && mongoException.getCode() == 112) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static ResponseEntity<ApiErrorResponse> error(

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { Decimal128, Long, MongoClient, type Document } from "mongodb";
+import { Decimal128, Long, MongoClient, type Db, type Document } from "mongodb";
 
 import { loadMongoMigrations } from "./mongo-migrations.js";
 import { migrateMongo } from "./mongo-migrate.js";
@@ -10,6 +10,7 @@ import { careerRecordSliceSteps } from "./mongodb-migrations/0009/migration.js";
 import { careerRichBlockBodySteps } from "./mongodb-migrations/0010/migration.js";
 import { careerPropertyCanonicalIdentitySteps } from "./mongodb-migrations/0011/migration.js";
 import { careerPropertyLegacyBackfillSteps } from "./mongodb-migrations/0012/migration.js";
+import { careerComputationVersionSteps } from "./mongodb-migrations/0013/migration.js";
 import { legacy0009PropertyDefinitionId, officialPropertyDefinitionId } from "./career-property-canonical-mapping.js";
 import { exactOptionId } from "./career-property-canonical-mapping.js";
 
@@ -119,10 +120,10 @@ describe("MongoDB migration sources", () => {
     expect(first.map(({ version, checksum }) => ({ version, checksum }))).toEqual(
       second.map(({ version, checksum }) => ({ version, checksum })),
     );
-    expect(first).toHaveLength(12);
+    expect(first).toHaveLength(13);
     expect(first.at(-1)).toMatchObject({
-      version: "0012",
-      name: "career_property_values_backfill",
+      version: "0013",
+      name: "career_computation_version",
     });
     expect(first.slice(0, 10).map(({ checksum }) => checksum)).toEqual([
       "7c81bedd5bac9488e40f27fb0d9de82d7b6cab6878108ef2fd58559d7c3088a7",
@@ -140,6 +141,27 @@ describe("MongoDB migration sources", () => {
     for (const migration of first) {
       expect(new Set(migration.steps.map(({ id }) => id)).size).toBe(migration.steps.length);
     }
+  });
+
+  it("adds optional computation fields without changing canonical version fields", async () => {
+    const commands: Document[] = [];
+    const validator = { $jsonSchema: { properties: {
+      version: { bsonType: "int" }, updatedAt: { bsonType: "date" },
+    } } };
+    const db = {
+      listCollections: () => ({ next: async () => ({ options: { validator } }) }),
+      command: async (command: Document) => { commands.push(command); },
+    } as unknown as Db;
+
+    for (const step of await careerComputationVersionSteps()) await step.run(db);
+
+    const properties = commands[0]?.validator.$jsonSchema.properties;
+    expect(properties.computationVersion).toEqual({
+      bsonType: ["int", "long", "double"], minimum: 0, multipleOf: 1,
+    });
+    expect(properties.computedAt).toEqual({ bsonType: ["date", "null"] });
+    expect(properties.version).toEqual({ bsonType: "int" });
+    expect(properties.updatedAt).toEqual({ bsonType: "date" });
   });
 });
 

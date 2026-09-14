@@ -70,6 +70,10 @@ export interface CareerRecordDoc {
   documentVersion?: number | null;
   latestSnapshotId?: string | null;
   computedProperties?: JsonObject | null;
+  /** 계산 결과만 갱신하는 worker의 낙관적 동시성 세대입니다. 기존 문서에서 없으면 0입니다. */
+  computationVersion?: number;
+  /** 계산 결과가 마지막으로 확정된 시각이며 CareerRecord updatedAt과 분리됩니다. */
+  computedAt?: Date | null;
   unmappedProperties?: JsonObject | null;
   /** 삭제한 프로퍼티의 값을 안정 ID 아래 보존해 같은 프로퍼티 복원 때 되살립니다. */
   propertyValueTombstones?: JsonObject | null;

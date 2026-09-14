@@ -15,7 +15,7 @@ public class TestcontainersConfiguration {
 		var image = DockerImageName.parse(
 				"mongo:8.0@sha256:02a0cc7939f5ed38f30f9bc714ef5f682d49baf9350c54acf302ce833087fe8a")
 				.asCompatibleSubstituteFor("mongo");
-		return new MongoDBContainer(image);
+		return new MongoDBContainer(image).withReplicaSet();
 	}
 
 }

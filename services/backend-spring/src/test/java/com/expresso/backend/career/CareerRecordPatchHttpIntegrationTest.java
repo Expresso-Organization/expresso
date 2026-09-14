@@ -39,6 +39,7 @@ class CareerRecordPatchHttpIntegrationTest {
 	private static final String CATEGORIES = "career_categories";
 	private static final String SESSIONS = "identity_sessions";
 	private static final String USERS = "users";
+	private static final String OUTBOX_EVENTS = "outbox_events";
 	private static final String USER_ID = "bc2f9791-0bb1-4a31-a23d-ea720f31284d";
 	private static final String OTHER_USER_ID = "945969f8-c8e5-469b-8119-bab71fa5aa60";
 	private static final String ACCESS_TOKEN = "exps_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
@@ -64,7 +65,7 @@ class CareerRecordPatchHttpIntegrationTest {
 
 	@BeforeEach
 	void prepareDatabase() {
-		for (var collection : List.of(RECORDS, CATEGORIES, SESSIONS, USERS)) {
+		for (var collection : List.of(RECORDS, CATEGORIES, SESSIONS, USERS, OUTBOX_EVENTS)) {
 			mongoTemplate.getCollection(collection).deleteMany(new Document());
 		}
 		insertIdentity(USER_ID, TOKEN_HASH);

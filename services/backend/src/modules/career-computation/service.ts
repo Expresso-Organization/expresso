@@ -10,6 +10,7 @@ import {
   type CareerRollupPreview,
   type PreviewCareerFormula,
   type PreviewCareerRollup,
+  WritableCareerPropertyValueSchema,
 } from "@expresso/contracts";
 import {
   aggregateRollup,
@@ -25,6 +26,7 @@ import {
   type FormulaPropertyValue,
 } from "@expresso/editor";
 import type { CareerCategoryDoc, CareerRecordDoc } from "@expresso/database";
+import { Decimal128, type Document, type Filter, type UpdateFilter } from "mongodb";
 
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
@@ -50,7 +52,7 @@ interface ComputationMetadata { readonly eventIds?: readonly string[]; readonly 
 interface DerivedDefinition extends CareerPropertyDefinitionV2 { readonly ast?: FormulaAst | null; readonly dependencies: readonly string[] }
 
 function definitions(category: CareerCategoryDoc): CareerPropertyDefinitionV2[] {
-  return category.propertySchemaV2 ?? Object.entries(category.propertySchema).map(([key, property], order) => ({
+  return category.propertyDefinitions ?? category.propertySchemaV2 ?? Object.entries(category.propertySchema).map(([key, property], order) => ({
     id: property.id ?? key, key, name: property.label,
     type: property.type === "boolean" ? "checkbox" : property.type === "tags" ? "multi_select" : property.type,
     required: property.required, system: property.system, config: {}, order, version: 1, deletedAt: null,
@@ -122,9 +124,7 @@ function orderedDerived(definitions_: readonly DerivedDefinition[]): readonly De
   return result;
 }
 function valueFor(record: CareerRecordDoc, definitions_: readonly CareerPropertyDefinitionV2[], propertyId: string, computed: Record<string, unknown>): FormulaPropertyValue | null {
-  const definition = definitions_.find((item) => item.id === propertyId);
-  if (!definition) return null;
-  return asValue(record.properties[definition.key] ?? computed[definition.key], definition);
+  return resolveComputationValue({ propertySchema: {}, propertySchemaV2: [...definitions_] } as CareerCategoryDoc, record, propertyId, computed);
 }
 function parseComputed(value: FormulaPropertyValue | null, type: "formula" | "rollup"): CareerPropertyValueV2 | null {
   if (!value) return null;
@@ -198,7 +198,7 @@ export class MongoCareerComputationService implements CareerComputationService {
       const current = computedMap(record); const meta = metadata(current);
       if (meta.eventIds?.includes(event.eventId)) return "duplicate";
       if (record.version !== event.sourceRecordVersion) {
-        await this.enqueueFresh(tx, event, record.version);
+        await this.enqueueFresh(tx, event, record.version, record.computationVersion ?? 0);
         return "stale";
       }
       const category = await repository.readableCategory(event.userId, record.categoryId, tx.session);
@@ -207,7 +207,7 @@ export class MongoCareerComputationService implements CareerComputationService {
       if (event.sourcePropertyVersions) {
         const currentVersions = Object.fromEntries(all.filter((definition) => event.changedPropertyIds.includes(definition.id)).map((definition) => [definition.id, definition.version]));
         if (Object.entries(event.sourcePropertyVersions).some(([id, version]) => currentVersions[id] !== version)) {
-          await this.enqueueFresh(tx, { ...event, sourcePropertyVersions: currentVersions }, record.version);
+          await this.enqueueFresh(tx, { ...event, sourcePropertyVersions: currentVersions }, record.version, record.computationVersion ?? 0);
           return "stale";
         }
       }
@@ -241,8 +241,12 @@ export class MongoCareerComputationService implements CareerComputationService {
       }
       const ids = [...new Set([...(meta.eventIds ?? []), event.eventId])].slice(-20);
       next.__expressoComputation = { eventIds: ids, sourceRecordVersion: event.sourceRecordVersion };
-      const updated = await repository.records().findOneAndUpdate({ _id: record._id, userId: event.userId, deletedAt: null, version: event.sourceRecordVersion }, { $set: { computedProperties: next as never, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
-      if (!updated) { await this.enqueueFresh(tx, event, record.version); return "stale"; }
+      const updated = await repository.records().findOneAndUpdate(
+        computationWriteFilter(record, event.sourceRecordVersion),
+        computationWriteUpdate(next, new Date()),
+        { session: tx.session, returnDocument: "after" },
+      );
+      if (!updated) throw new Error("Career computation CAS가 충돌했습니다");
       await this.fanout(tx, updated, category, [...new Set([...event.changedPropertyIds, ...changedOutputIds])]);
       return "applied";
     });
@@ -270,11 +274,11 @@ export class MongoCareerComputationService implements CareerComputationService {
     return aggregateRollup(aggregation as typeof validAggregation[number], values);
   }
 
-  private async enqueueFresh(tx: MongoContext & { session: import("mongodb").ClientSession }, event: CareerComputationEvent, version: number): Promise<void> {
+  private async enqueueFresh(tx: MongoContext & { session: import("mongodb").ClientSession }, event: CareerComputationEvent, version: number, computationVersion: number): Promise<void> {
     const repository = new MongoCareerComputationRepository(tx);
+    const idempotencyKey = computationFreshKey(event.recordId, version, computationVersion);
     const existing = await repository.outbox().findOne({
-      userId: event.userId, topic: "career.computation", state: "pending",
-      "payload.recordId": event.recordId, "payload.sourceRecordVersion": version,
+      userId: event.userId, topic: "career.computation", state: "pending", idempotencyKey,
     }, { session: tx.session });
     if (existing) {
       const previous = Array.isArray(existing.payload.changedPropertyIds) ? existing.payload.changedPropertyIds.filter((item): item is string => typeof item === "string") : [];
@@ -282,7 +286,7 @@ export class MongoCareerComputationService implements CareerComputationService {
       await repository.outbox().updateOne({ _id: existing._id, state: "pending" }, { $set: { "payload.changedPropertyIds": changedPropertyIds, ...(event.sourcePropertyVersions ? { "payload.sourcePropertyVersions": event.sourcePropertyVersions } : {}), updatedAt: new Date() } }, { session: tx.session });
       return;
     }
-    await addMongoOutboxEvent(tx, { userId: event.userId, topic: "career.computation", idempotencyKey: `career-computation-fresh:${event.recordId}:v${version}`, payload: { userId: event.userId, recordId: event.recordId, changedPropertyIds: [...new Set(event.changedPropertyIds)].sort(), sourceRecordVersion: version, ...(event.sourcePropertyVersions ? { sourcePropertyVersions: event.sourcePropertyVersions } : {}) } });
+    await addMongoOutboxEvent(tx, { userId: event.userId, topic: "career.computation", idempotencyKey, payload: { userId: event.userId, recordId: event.recordId, changedPropertyIds: [...new Set(event.changedPropertyIds)].sort(), sourceRecordVersion: version, ...(event.sourcePropertyVersions ? { sourcePropertyVersions: event.sourcePropertyVersions } : {}) } });
   }
 
   private async fanout(tx: MongoContext & { session: import("mongodb").ClientSession }, record: CareerRecordDoc, _category: CareerCategoryDoc, changedPropertyIds: readonly string[]): Promise<void> {
@@ -296,7 +300,70 @@ export class MongoCareerComputationService implements CareerComputationService {
       if (!category) continue;
       const matches = derivedDefinitions(category).some((definition) => definition.type === "rollup" && definition.config.relationPropertyId === edge.sourcePropertyId && changedPropertyIds.includes(String(definition.config.targetPropertyId)));
       if (!matches) continue;
-      await addMongoOutboxEvent(tx, { userId: record.userId, topic: "career.computation", idempotencyKey: `career-computation-fanout:${record._id}:${edge.sourceRecordId}:v${record.version}`, payload: { userId: record.userId, recordId: source._id, changedPropertyIds: [edge.sourcePropertyId], sourceRecordVersion: source.version } });
+      await addMongoOutboxEvent(tx, { userId: record.userId, topic: "career.computation", idempotencyKey: computationFanoutKey(record._id, edge.sourceRecordId, record.version, record.computationVersion ?? 0), payload: { userId: record.userId, recordId: source._id, changedPropertyIds: [edge.sourcePropertyId], sourceRecordVersion: source.version } });
     }
   }
+}
+
+export function resolveComputationValue(
+  category: CareerCategoryDoc,
+  record: Pick<CareerRecordDoc, "properties" | "propertyValues">,
+  propertyId: string,
+  computed: Record<string, unknown>,
+): FormulaPropertyValue | null {
+  const all = activeDefinitions(category);
+  const definition = all.find((item) => item.id === propertyId);
+  if (!definition) return null;
+  if (definition.type === "formula" || definition.type === "rollup") {
+    return asValue(computed[definition.key], definition);
+  }
+  if (record.propertyValues === undefined) return asValue(record.properties[definition.key], definition);
+  if (!Array.isArray(record.propertyValues)) throw new Error("canonical propertyValues 저장 shape가 올바르지 않습니다");
+  const byId = new Map(all.map((item) => [item.id, item]));
+  const seen = new Set<string>();
+  let resolved: FormulaPropertyValue | null = null;
+  for (const raw of record.propertyValues) {
+    if (!raw || typeof raw !== "object" || typeof raw.propertyDefinitionId !== "string") {
+      throw new Error("canonical PropertyValue shape가 올바르지 않습니다");
+    }
+    if (seen.has(raw.propertyDefinitionId)) throw new Error("canonical PropertyValue identity가 중복되었습니다");
+    seen.add(raw.propertyDefinitionId);
+    const owner = byId.get(raw.propertyDefinitionId);
+    if (!owner || owner.type !== raw.type) throw new Error("canonical PropertyValue가 Definition과 일치하지 않습니다");
+    const candidate = raw.type === "number"
+      ? { ...raw, value: raw.value instanceof Decimal128 ? raw.value.toString() : String(raw.value) }
+      : raw;
+    const parsed = WritableCareerPropertyValueSchema.safeParse(candidate);
+    if (!parsed.success) throw new Error("canonical PropertyValue shape가 올바르지 않습니다");
+    if (raw.propertyDefinitionId !== propertyId) continue;
+    if (parsed.data.type === "number") resolved = { type: "number", value: Number(parsed.data.value) };
+    else if (parsed.data.type === "date") resolved = { type: "date", value: {
+      start: parsed.data.value.start, end: parsed.data.value.end,
+      timezone: parsed.data.value.precision === "datetime" ? parsed.data.value.timezone : null,
+    } };
+    else resolved = { type: parsed.data.type, value: parsed.data.value } as FormulaPropertyValue;
+  }
+  return resolved;
+}
+
+export function computationWriteFilter(record: Pick<CareerRecordDoc, "_id" | "userId" | "computationVersion">, sourceRecordVersion: number): Filter<CareerRecordDoc> {
+  const computationVersion = record.computationVersion ?? 0;
+  return {
+    _id: record._id, userId: record.userId, deletedAt: null, version: sourceRecordVersion,
+    ...(computationVersion === 0
+      ? { $or: [{ computationVersion: 0 }, { computationVersion: { $exists: false } }] }
+      : { computationVersion }),
+  };
+}
+
+export function computationWriteUpdate(computedProperties: Document, computedAt: Date): UpdateFilter<CareerRecordDoc> {
+  return { $set: { computedProperties: computedProperties as never, computedAt }, $inc: { computationVersion: 1 } };
+}
+
+export function computationFreshKey(recordId: string, version: number, computationVersion: number): string {
+  return `career-computation-fresh:${recordId}:v${version}:c${computationVersion}`;
+}
+
+export function computationFanoutKey(recordId: string, sourceRecordId: string, version: number, computationVersion: number): string {
+  return `career-computation-fanout:${recordId}:${sourceRecordId}:v${version}:c${computationVersion}`;
 }

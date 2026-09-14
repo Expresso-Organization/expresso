@@ -3,14 +3,18 @@ package com.expresso.backend.career.application;
 import java.time.Clock;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeSet;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.expresso.backend.career.domain.CareerRecord;
 import com.expresso.backend.career.domain.CareerRecordChangeSet;
 import com.expresso.backend.career.domain.CareerRecordStatus;
+import com.expresso.backend.career.domain.CareerCategory;
 import com.expresso.backend.career.domain.MultiSelectPropertyValue;
 import com.expresso.backend.career.domain.PropertyDefinition;
 import com.expresso.backend.career.domain.PropertyValue;
@@ -22,17 +26,21 @@ public class CareerRecordPatchService implements PatchCareerRecordUseCase {
 	private final CareerRecordRepository recordRepository;
 	private final CareerCategoryRepository categoryRepository;
 	private final Clock clock;
+	private final CareerComputationOutbox computationOutbox;
 
 	public CareerRecordPatchService(
 			CareerRecordRepository recordRepository,
 			CareerCategoryRepository categoryRepository,
-			Clock clock) {
+			Clock clock,
+			CareerComputationOutbox computationOutbox) {
 		this.recordRepository = Objects.requireNonNull(recordRepository, "recordRepository는 null일 수 없습니다");
 		this.categoryRepository = Objects.requireNonNull(categoryRepository, "categoryRepository는 null일 수 없습니다");
 		this.clock = Objects.requireNonNull(clock, "clock은 null일 수 없습니다");
+		this.computationOutbox = Objects.requireNonNull(computationOutbox, "computationOutbox는 null일 수 없습니다");
 	}
 
 	@Override
+	@Transactional
 	public CareerRecord patch(
 			String ownerId,
 			String recordId,
@@ -47,7 +55,7 @@ public class CareerRecordPatchService implements PatchCareerRecordUseCase {
 		if (currentRecord.version() != expectedVersion) {
 			throw new CareerRecordPreconditionFailedException();
 		}
-		validatePropertyDefinitions(currentRecord, changeSet);
+		var category = validatePropertyDefinitions(currentRecord, changeSet);
 
 		CareerRecord updatedRecord;
 		try {
@@ -58,13 +66,15 @@ public class CareerRecordPatchService implements PatchCareerRecordUseCase {
 		catch (IllegalArgumentException validationError) {
 			throw new CareerRecordValidationException("CareerRecord 변경 값이 올바르지 않습니다", validationError);
 		}
-		return recordRepository.updateOwnedCanonical(currentRecord, updatedRecord)
+		var persisted = recordRepository.updateOwnedCanonical(currentRecord, updatedRecord)
 				.orElseGet(() -> distinguishMissingFromStale(ownerId, recordId));
+		appendComputationWork(currentRecord, persisted, changeSet, category);
+		return persisted;
 	}
 
-	private void validatePropertyDefinitions(CareerRecord currentRecord, CareerRecordChangeSet changeSet) {
+	private CareerCategory validatePropertyDefinitions(CareerRecord currentRecord, CareerRecordChangeSet changeSet) {
 		if (changeSet.propertyValues().isEmpty()) {
-			return;
+			return null;
 		}
 		var category = categoryRepository.findSystemCategoryById(currentRecord.categoryId())
 				.orElseThrow(() -> new CareerRecordValidationException(
@@ -89,6 +99,38 @@ public class CareerRecordPatchService implements PatchCareerRecordUseCase {
 			}
 			validateSelectOptions(definition.config(), propertyValue);
 		}
+		return category;
+	}
+
+	private void appendComputationWork(
+			CareerRecord before,
+			CareerRecord after,
+			CareerRecordChangeSet changeSet,
+			CareerCategory category) {
+		if (changeSet.propertyValues().isEmpty() || before.propertyValues().equals(after.propertyValues())) {
+			return;
+		}
+		var beforeById = valuesById(before.propertyValues());
+		var afterById = valuesById(after.propertyValues());
+		var allIds = new TreeSet<String>();
+		allIds.addAll(beforeById.keySet());
+		allIds.addAll(afterById.keySet());
+		var changedIds = allIds.stream()
+				.filter(id -> !Objects.equals(beforeById.get(id), afterById.get(id)))
+				.toList();
+		if (changedIds.isEmpty()) return;
+		var versions = new java.util.HashMap<String, Long>();
+		for (var definition : category.propertyDefinitions()) {
+			if (changedIds.contains(definition.id())) versions.put(definition.id(), definition.version());
+		}
+		computationOutbox.append(new CareerComputationEvent(
+				before.ownerId(), before.id(), changedIds, after.version(), versions));
+	}
+
+	private static Map<String, PropertyValue> valuesById(List<PropertyValue> values) {
+		var result = new java.util.HashMap<String, PropertyValue>();
+		for (var value : values) result.put(value.propertyDefinitionId(), value);
+		return result;
 	}
 
 	@Override
