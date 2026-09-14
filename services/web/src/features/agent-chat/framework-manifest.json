@@ -22,7 +22,8 @@
     "src/components/ui/textarea.tsx": "src/components/ui/textarea.tsx",
     "src/components/assistant-ui/elements/tool-group.aui.tsx": "src/registry/assistant-ui/elements/tool-group.aui.tsx",
     "src/components/ui/skeleton.tsx": "src/components/ui/skeleton.tsx",
-    "src/components/ui/popover.tsx": "src/components/ui/popover.tsx"
+    "src/components/ui/popover.tsx": "src/components/ui/popover.tsx",
+    "src/components/ui/tabs.tsx": "src/components/ui/tabs.tsx"
   },
   "sourceSha256": {
     "src/components/assistant-ui/elements/thread.aui.tsx": "6580f0766746cd74c6668a2fba80b1f80c632e25bd1ea05dbc622ae58972dc96",
@@ -46,7 +47,8 @@
     "src/components/ui/textarea.tsx": "82601c91ffc6c727d924162c78d7cb853114bcced4e2eb922a68ca12d4239c0f",
     "src/components/assistant-ui/elements/tool-group.aui.tsx": "6fa7eb02ceefeb956cac1e34ab12bf95919e52036f58083d4dbd1aa69fb310e8",
     "src/components/ui/skeleton.tsx": "4c2af7fa9c645358a0fb188779deab6f0b981733b62befc25e18aaebea1350dc",
-    "src/components/ui/popover.tsx": "b6bc5045e7b67414816f813788b5f699d0cc5e4a23debe76c89a6ddb68079c26"
+    "src/components/ui/popover.tsx": "b6bc5045e7b67414816f813788b5f699d0cc5e4a23debe76c89a6ddb68079c26",
+    "src/components/ui/tabs.tsx": "664ee378214eadf712f489c77aa9a6084b72f9669d4ee31ac6a030e15872f9e2"
   },
   "changes": {
     "src/components/assistant-ui/elements/thread.aui.tsx": "한국어 문구, capabilities 표시 조건, 제품별 AssistantHeader 확장 슬롯",
