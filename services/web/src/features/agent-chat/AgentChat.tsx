@@ -6,7 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { useRouter } from "next/navigation";
 import { AssistantRuntimeProvider, useExternalStoreRuntime, useAui, useAuiState, type ThreadMessageLike, type ToolCallMessagePartComponent } from "@assistant-ui/react";
 import type { AgentContext, AgentMessage, AiEditProposalDetail, CareerDocumentBootstrap } from "@expresso/contracts";
-import { PropertySelect } from "@/features/career-editor/properties/PropertySelect";
+import { ConversationSwitcher } from "./ConversationSwitcher";
 import { AiProposalDiff } from "@/features/career-editor/ai/AiProposalDiff";
 import { Thread } from "@/components/assistant-ui/elements/thread.aui";
 import { ToolFallback } from "@/components/assistant-ui/elements/tool-fallback.aui";
@@ -76,20 +76,12 @@ export function AgentChat({ context, contextLabel, standalone = false }: { conte
   const missing = context && state.conversation && !state.conversation.contexts.some(ref => ref.kind === context.kind && ref.id === context.id);
   return <ChatContext.Provider value={state}><AssistantRuntimeProvider runtime={runtime}>
     <section className={`acf-scope ${styles.root} ${standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅">
-      {standalone ? <aside className={styles.conversations} aria-label="이전 대화">
-        <div className={styles.navTitle}><LogoMark size={24} /><span>함께 정리한 이야기</span></div>
-        <Button variant="outline" className={styles.newConversation} disabled={state.pending} onClick={() => state.select(null)}><Icon name="plus" size={16} />새 대화 시작</Button>
-        <span className={styles.listLabel}>최근 대화</span>
-        <nav>{state.list.map(item => <button key={item.id} className={styles.conversation} aria-current={state.id === item.id ? "page" : undefined} disabled={state.pending} onClick={() => state.select(item.id)}><Icon name="chat-teardrop-text" size={16} /><span>{item.title}</span>{item.contexts.length ? <span className={styles.contextCount} aria-label={`연결된 자료 ${item.contexts.length}개`}>{item.contexts.length}</span> : null}</button>)}</nav>
-        {!state.list.length ? <p className={styles.noHistory}>함께 나눈 이야기가<br />여기에 쌓입니다.</p> : null}
-        <div className={styles.navFoot}><Icon name="notebook" size={18} /><span>기록은 차곡차곡,<br />기회는 더 선명하게.</span></div>
-      </aside> : null}
       <div className={styles.main}>
         <header className={styles.header}>
-          <div className={styles.heading}><span className={styles.assistantMark}><LogoMark size={22} /></span><div><strong>{standalone ? state.conversation?.title ?? "새로운 이야기" : "Expresso AI"}</strong><span>{running ? "답변을 준비하고 있어요" : standalone ? "Expresso AI" : "나의 커리어 파트너"}</span></div></div>
+          <div className={styles.heading}><span className={styles.assistantMark}><LogoMark size={22} /></span><div><ConversationSwitcher title={state.conversation?.title ?? "새 대화"} currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /><span>{running ? "답변을 준비하고 있어요" : "Expresso AI"}</span></div></div>
           <div className={styles.headerActions}>{!standalone ? <Link aria-label="독립 채팅으로 크게 열기" title="크게 열기" href={{ pathname: "/agent", query: state.id ? { chat: state.id } : {} }}><Icon name="arrows-out-simple" size={17} /></Link> : null}<Button variant="ghost" size="icon" aria-label="새 대화" title="새 대화" disabled={state.pending} onClick={() => state.select(null)}><Icon name="note-pencil" size={18} /></Button></div>
         </header>
-        <div className={styles.history}><PropertySelect label="대화 목록" value={state.id ?? ""} placeholder="새 대화" disabled={state.pending} onChange={value => state.select(value || null)} options={[{ value: "", label: "새 대화" }, ...(state.id && !state.list.some(item => item.id === state.id) ? [{ value: state.id, label: state.conversation?.title ?? "불러오는 중" }] : []), ...state.list.map(item => ({ value: item.id, label: item.title }))]} /></div>
+
         <div className={styles.contexts} aria-label="대화에 연결된 자료">
           <span className={styles.contextLabel}><Icon name="paperclip" size={14} />함께 보는 자료</span>
           <div className={styles.referenceItems}>{state.conversation?.contexts.map((ref, index) => <Link className={styles.reference} data-kind={ref.kind} key={`${ref.kind}:${ref.id}`} href={(ref.kind === "job" ? `/jobs/${ref.id}?chat=${state.id}` : `/career/records/${ref.id}?chat=${state.id}`) as never}><Icon name={ref.kind === "job" ? "target" : "notebook"} size={14} /><span>{context?.id === ref.id && contextLabel ? contextLabel : `${ref.kind === "job" ? "채용 공고" : "커리어 기록"} ${index + 1}`}</span><Icon name="arrow-up-right" size={11} /></Link>)}
