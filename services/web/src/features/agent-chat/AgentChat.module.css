@@ -100,3 +100,10 @@
 .result:hover, .result:focus-visible { background:var(--ex-bg-tint); }
 .result[aria-current] { background:var(--ex-accent-surface); color:var(--ex-accent-text); }
 .noResults { padding:20px 10px; text-align:center; font-size:var(--ex-text-xs); color:var(--ex-fg-muted); }
+
+.conversationRail { flex:0 0 260px; min-width:0; display:flex; flex-direction:column; gap:16px; padding:24px 16px; border-left:1px solid var(--ex-border); background:var(--ex-bg-sunken); }
+.conversationRail h2 { margin:0; font-size:var(--ex-text-sm); font-weight:600; }
+.conversationRail .results { flex:1; max-height:none; }
+.conversationRail .search input:focus-visible { outline:none; box-shadow:none; }
+.compactHistory { display:none; }
+@media(max-width:767px) { .conversationRail { display:none; } .compactHistory { display:inline-flex; } }

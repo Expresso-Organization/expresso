@@ -78,8 +78,8 @@ export function AgentChat({ context, contextLabel, standalone = false }: { conte
     <section className={`acf-scope ${styles.root} ${standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅">
       <div className={styles.main}>
         <header className={styles.header}>
-          <div className={styles.heading}><span className={styles.assistantMark}><LogoMark size={22} /></span><div><ConversationSwitcher title={state.conversation?.title ?? "새 대화"} currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /><span>{running ? "답변을 준비하고 있어요" : "Expresso AI"}</span></div></div>
-          <div className={styles.headerActions}>{!standalone ? <Link aria-label="독립 채팅으로 크게 열기" title="크게 열기" href={{ pathname: "/agent", query: state.id ? { chat: state.id } : {} }}><Icon name="arrows-out-simple" size={17} /></Link> : null}<Button variant="ghost" size="icon" aria-label="새 대화" title="새 대화" disabled={state.pending} onClick={() => state.select(null)}><Icon name="note-pencil" size={18} /></Button></div>
+          <div className={styles.heading}><span className={styles.assistantMark}><LogoMark size={22} /></span><div><strong>{state.conversation?.title ?? "새 대화"}</strong><span>{running ? "답변을 준비하고 있어요" : "Expresso AI"}</span></div></div>
+          <div className={styles.headerActions}><span className={standalone ? styles.compactHistory : undefined}><ConversationSwitcher currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /></span>{!standalone ? <Link aria-label="독립 채팅으로 크게 열기" title="크게 열기" href={{ pathname: "/agent", query: state.id ? { chat: state.id } : {} }}><Icon name="arrows-out-simple" size={17} /></Link> : null}<Button variant="ghost" size="icon" aria-label="새 대화" title="새 대화" disabled={state.pending} onClick={() => state.select(null)}><Icon name="note-pencil" size={18} /></Button></div>
         </header>
 
         <div className={styles.contexts} aria-label="대화에 연결된 자료">
@@ -95,6 +95,7 @@ export function AgentChat({ context, contextLabel, standalone = false }: { conte
         {state.conversation?.run?.error ? <p role="alert" className={styles.error}>{state.conversation.run.error}</p> : null}
         {state.issue ? <p role="alert" className={styles.error}>{state.issue}</p> : null}
       </div>
+      {standalone ? <ConversationSwitcher inline currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /> : null}
     </section>
   </AssistantRuntimeProvider></ChatContext.Provider>;
 }
