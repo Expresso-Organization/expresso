@@ -159,4 +159,17 @@ describe("PATCH /api/career/records/[recordId]", () => {
     expect(response.status).toBe(200);
     expect((await response.json()).data.status).toBe("organized");
   });
+
+  it.each([
+    { properties: { role: { type: "text", value: "레거시 역할" } } },
+    { bodyMd: "# 레거시 본문" },
+  ])("legacy Career 필드 PATCH를 백엔드에 전달하지 않는다", async (body) => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(fastifyResponse));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await PATCH(request(body), { params: Promise.resolve({ recordId }) });
+
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

@@ -100,7 +100,10 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
     const running = cleanup.cleanupAnswer(userId, answer.answer.id);
     await ready;
     const current = await career.getRecord(userId, answer.answer.createdRecordId);
-    await career.updateRecord(userId, current.id, current.version, { title: "사용자 편집" });
+    await mongoCollections(fixture.resource.db).careerRecords.updateOne(
+      { _id: current.id, userId, version: current.version },
+      { $set: { title: "사용자 편집", updatedAt: new Date() }, $inc: { version: 1 } },
+    );
     release();
     await running;
     expect((await career.getRecord(userId, current.id)).title).toBe("사용자 편집");

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { careerDocumentToMarkdown, encodeDocumentAsYUpdate, encodeDocumentStateVector, markdownToCareerDocument, parseCareerDocument, reconstructYDocument } from "@expresso/editor";
-import { CareerPropertySchemaSchema, CareerProfileSchema, CreateCareerCategorySchema, CreateCareerRecordSchema, CreateCareerViewSchema, SaveCareerProfileSchema, UpdateCareerRecordSchema, type CareerPropertySchema, type CreateCareerCategory, type CreateCareerRecord, type CreateCareerView, type ListCareerRecordsQuery, type SaveCareerProfile, type UpdateCareerRecord } from "@expresso/contracts";
+import { careerDocumentToMarkdown, encodeDocumentAsYUpdate, parseCareerDocument, reconstructYDocument } from "@expresso/editor";
+import { CareerPropertySchemaSchema, CareerProfileSchema, CreateCareerCategorySchema, CreateCareerRecordSchema, CreateCareerViewSchema, SaveCareerProfileSchema, type CareerPropertySchema, type CreateCareerCategory, type CreateCareerRecord, type CreateCareerView, type ListCareerRecordsQuery, type SaveCareerProfile } from "@expresso/contracts";
 import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc, type CareerViewDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
@@ -14,8 +14,6 @@ import type { CareerApi } from "./index.js";
 import type { RecomputeCareerSkill } from "@expresso/contracts";
 import { createMongoLink, listMongoLinks, mongoDeleteImpact, trashMongoRecord, restoreMongoRecord } from "./mongo-links.js";
 import { recomputeMongoSkill, listMongoSkills, listMongoSkillEvidence } from "./mongo-skills.js";
-import { MongoCareerDocumentRepository, hashUpdate } from "../career-editor/repository.js";
-import { Binary } from "mongodb";
 import { MongoCareerPropertySchemaService } from "./property-schema.js";
 import { CareerViewService } from "./views.js";
 import { MongoCategoryMoveService } from "./category-move.js";
@@ -181,72 +179,6 @@ export class CareerService implements CareerApi {
       return mapMongoRecord(record, category, careerDocumentToMarkdown(document));
     }
     catch { return mapMongoRecord(record, category); }
-  }
-
-  async updateRecord(userId: string, recordId: string, expectedVersion: number, inputValue: UpdateCareerRecord) {
-      const input = UpdateCareerRecordSchema.parse(inputValue);
-    return inTransaction(this.context, async (tx) => {
-      await requireActiveUser(tx, userId);
-      const records = mongoCollections(tx.db).careerRecords;
-      const existing = await records.findOne({ _id: recordId, userId, deletedAt: null }, { session: tx.session });
-      if (!existing) throw new CareerError(404, "career record not found");
-      if (existing.version !== expectedVersion) throw new CareerError(412, "career record version is stale");
-      if (input.bodyMd !== undefined) {
-        const latestSnapshot = await mongoCollections(tx.db).careerDocumentSnapshots.findOne(
-          { recordId },
-          { sort: { documentVersion: -1 }, session: tx.session },
-        );
-        const pending = await mongoCollections(tx.db).careerDocumentUpdates.countDocuments(
-          { recordId, serverSequence: { $gt: latestSnapshot?.serverSequence ?? 0 }, compactedAt: null },
-          { session: tx.session },
-        );
-        if (pending > 0) throw new CareerError(409, "document has unacknowledged updates");
-      }
-      const category = await requireCareerCategory(tx, userId, existing.categoryId, tx.session);
-      const existingProperties = projectLegacyCareerProperties(category, existing);
-      const properties = input.properties ?? existingProperties;
-      validateCareerProperties(category.propertySchema, properties, careerCategoryDefinitions(category));
-      await materializeLegacyTagOptions(tx, tx.session, category, [properties]);
-      const propertyValues = toCanonicalPropertyValues(category, properties);
-      const computationDefinitions = careerCategoryDefinitions(category).filter((definition) => definition.deletedAt === null);
-      const changedPropertyIds = computationDefinitions.filter((definition) => {
-        if (definition.type === "title") return input.title !== undefined && input.title !== existing.title;
-        return JSON.stringify(existingProperties[definition.key] ?? null) !== JSON.stringify(properties[definition.key] ?? null);
-      }).map((definition) => definition.id);
-      const updated = await records.findOneAndUpdate({ _id: recordId, userId, deletedAt: null, version: expectedVersion }, { $set: { title: input.title ?? existing.title, status: input.status ?? existing.status, bodyMd: input.bodyMd ?? existing.bodyMd, properties, propertyValues, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
-      if (!updated) throw new CareerError(412, "career record version is stale");
-      const categoryForRead = await requireCareerCategory(tx, userId, category._id, tx.session);
-      if (input.bodyMd !== undefined) {
-        // 레거시 저장도 편집기 리비전으로 남기며, 동시 Yjs 변경이 있으면 충돌시킨다.
-        const repository = new MongoCareerDocumentRepository(this.context);
-        const current = existing.documentVersion ?? 0;
-        if (existing.documentVersion == null) {
-          const snapshotId = randomUUID();
-          const initialized = await records.updateOne(
-            { _id: recordId, userId, $or: [{ documentVersion: null }, { documentVersion: { $exists: false } }] },
-            { $set: { documentVersion: 0, documentSchemaVersion: 1, latestSnapshotId: snapshotId } },
-            { session: tx.session },
-          );
-          if (!initialized.modifiedCount) throw new CareerError(412, "document version is stale");
-        }
-        const next = await repository.bumpDocumentVersion(recordId, userId, current, undefined, tx.session);
-        if (next === null) throw new CareerError(412, "document version is stale");
-        const document = markdownToCareerDocument(input.bodyMd);
-        const update = encodeDocumentAsYUpdate(document);
-        const snapshotId = randomUUID();
-        await repository.insertSnapshot({ _id: snapshotId, userId, recordId, documentVersion: next, version: next, schemaVersion: 1, content: document as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(document))), serverSequence: next, checksum: hashUpdate(update), actor: "user", createdAt: new Date() }, tx.session);
-        await records.updateOne({ _id: recordId, userId, documentVersion: next }, { $set: { latestSnapshotId: snapshotId } }, { session: tx.session });
-        await repository.insertRevision({ _id: randomUUID(), userId, recordId, actor: "user", summary: "레거시 본문 저장", beforeVersion: current, afterVersion: next, snapshotId, createdAt: new Date() }, tx.session);
-      }
-      if (changedPropertyIds.length > 0) await addMongoOutboxEvent(tx, {
-        userId, topic: "career.computation", idempotencyKey: `career-record:${recordId}:v${updated.version}`,
-        payload: {
-          userId, recordId, changedPropertyIds, sourceRecordVersion: updated.version,
-          sourcePropertyVersions: Object.fromEntries(computationDefinitions.filter((definition) => changedPropertyIds.includes(definition.id)).map((definition) => [definition.id, definition.version])),
-        },
-      });
-      return mapMongoRecord(updated, categoryForRead);
-    });
   }
 
   async createView(userId: string, categoryId: string, inputValue: CreateCareerView) {

@@ -19,7 +19,6 @@ import {
   ListCareerRecordsQuerySchema,
   RecomputeCareerSkillSchema,
   UpdateCareerPropertySchemaSchema,
-  UpdateCareerRecordSchema,
   CareerPropertySchemaChangeSchema,
   ApplyCareerPropertyChangeSchema,
   CareerPropertyChangePreviewSchema,
@@ -318,25 +317,6 @@ export function registerCareerRoutes(
       const principal = requireAuth(request);
       const { recordId } = parseParams(CareerRecordIdParamsSchema, request);
       const record = await options.careerService.getRecord(principal.user.id, recordId);
-      return reply
-        .header("etag", formatResourceEtag(record.version))
-        .send(recordResponse(record));
-    },
-  );
-
-  app.patch(
-    `${API_PREFIX}/career/records/:recordId`,
-    { preHandler },
-    async (request, reply) => {
-      const principal = requireAuth(request);
-      const { recordId } = parseParams(CareerRecordIdParamsSchema, request);
-      const input = parseBody(UpdateCareerRecordSchema, request);
-      const record = await options.careerService.updateRecord(
-        principal.user.id,
-        recordId,
-        expectedVersion(request),
-        input,
-      );
       return reply
         .header("etag", formatResourceEtag(record.version))
         .send(recordResponse(record));

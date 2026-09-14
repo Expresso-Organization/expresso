@@ -125,17 +125,6 @@ export const CreateCareerRecordSchema = z.strictObject({
   bodyMd: z.string().max(200_000).default(""),
 });
 
-export const UpdateCareerRecordSchema = z
-  .strictObject({
-    title: z.string().trim().max(300).optional(),
-    status: CareerRecordStatusSchema.optional(),
-    properties: CareerPropertiesSchema.optional(),
-    bodyMd: z.string().max(200_000).optional(),
-  })
-  .refine((value) => Object.keys(value).length > 0, {
-    message: "at least one record field must be supplied",
-  });
-
 export const CareerRecordIdParamsSchema = z.strictObject({
   recordId: UuidSchema,
 });
@@ -304,7 +293,6 @@ export type CareerRecordSummary = z.infer<typeof CareerRecordSummarySchema>;
 export type CareerRecordListResponse = z.infer<
   typeof CareerRecordListResponseSchema
 >;
-export type UpdateCareerRecord = z.infer<typeof UpdateCareerRecordSchema>;
 export type CreateCareerView = z.infer<typeof CreateCareerViewSchema>;
 export type RecomputeCareerSkill = z.infer<typeof RecomputeCareerSkillSchema>;
 export type CareerSkill = z.infer<typeof CareerSkillSchema>;

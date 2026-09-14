@@ -1,4 +1,4 @@
-import { API_PREFIX, CareerRecordResponseSchema, UpdateCareerRecordSchema, WritableCareerPropertyValueSchema } from "@expresso/contracts";
+import { API_PREFIX, CareerRecordResponseSchema, WritableCareerPropertyValueSchema } from "@expresso/contracts";
 import { z } from "zod";
 import { API_BASE_URL } from "@/lib/api/client";
 import { readAccessToken } from "@/lib/session";
@@ -61,12 +61,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ re
     }
   }
 
-  const parsed = UpdateCareerRecordSchema.safeParse(body);
-  if (!parsed.success) return new Response("값을 확인해 주세요", { status: 400 });
-  const upstream = await fetch(`${API_BASE_URL}${API_PREFIX}/career/records/${encodeURIComponent(recordId)}`, { method: "PATCH", headers: { authorization: `Bearer ${accessToken}`, accept: "application/json", "content-type": "application/json", "if-match": request.headers.get("if-match") ?? "" }, body: JSON.stringify(parsed.data), signal: request.signal, cache: "no-store" });
-  if (!upstream.ok) return new Response(null, { status: upstream.status });
-  try { return Response.json(CareerRecordResponseSchema.parse(await upstream.json()), { headers: { "cache-control": "no-store", etag: upstream.headers.get("etag") ?? "" } }); }
-  catch { return new Response("백엔드 응답이 계약과 다릅니다", { status: 502 }); }
+  return new Response("값을 확인해 주세요", { status: 400 });
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ recordId: string }> }): Promise<Response> {

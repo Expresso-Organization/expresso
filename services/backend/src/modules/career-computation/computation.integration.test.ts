@@ -102,16 +102,6 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(deleted?.computedProperties?.doubleScore).toMatchObject({ diagnostics: [{ code: "unknown_property" }] });
   });
 
-  it("enqueues stable property IDs and versions when a user edits an input value", async () => {
-    await mongoCollections(fixture.resource.db).careerCategories.updateOne({ _id: sourceCategoryId, "propertySchemaV2.id": scoreId }, { $set: { "propertySchemaV2.$.deletedAt": null } });
-    const created = (await career.createRecord(userId, randomUUID(), { categoryId: sourceCategoryId, title: "입력 변경", properties: { score: { type: "number", value: 1 } }, bodyMd: "" })).record;
-    const updated = await career.updateRecord(userId, created.id, created.version, { properties: { score: { type: "number", value: 4 } } });
-    const event = await mongoCollections(fixture.resource.db).outboxEvents.findOne({ topic: "career.computation", "payload.recordId": created.id, "payload.sourceRecordVersion": updated.version });
-    expect(event?.payload).toMatchObject({ changedPropertyIds: [scoreId], sourcePropertyVersions: { [scoreId]: 1 } });
-    expect(await service.recompute({ eventId: "record-edit", userId, recordId: created.id, changedPropertyIds: [scoreId], sourceRecordVersion: updated.version })).toBe("applied");
-    expect((await mongoCollections(fixture.resource.db).careerRecords.findOne({ _id: created.id }))?.computedProperties?.doubleScore).toMatchObject({ value: 8 });
-  });
-
   it.skipIf(!process.env.TEST_REDIS_URL)("processes 100 related records through BullMQ within the local 1s p95 budget", async () => {
     const db = mongoCollections(fixture.resource.db);
     await db.careerCategories.updateOne({ _id: sourceCategoryId, "propertySchemaV2.id": scoreId }, { $set: { "propertySchemaV2.$.deletedAt": null } });

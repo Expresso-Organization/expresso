@@ -460,7 +460,6 @@ describe("OpenAPI conformance", () => {
       "CareerRecord",
       "CareerRecordResponse",
       "CreateCareerRecord",
-      "UpdateCareerRecord",
       "CareerView",
       "CareerDeleteImpact",
       "RecomputeCareerSkill",
