@@ -5,6 +5,8 @@ import { CareerRecordListResponseSchema, JobPostingListResponseSchema, Portfolio
 import { Icon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { GlideMenu } from "@/components/ui/GlideMenu";
+import sidebar from "@/components/shell/Sidebar.module.css";
 import styles from "./AgentChat.module.css";
 
 export type ResourceKind = "records" | "jobs" | "portfolios";
@@ -59,7 +61,7 @@ export function ResourceList({ kind, chatId }: { kind: ResourceKind; chatId: str
     <h2>{labels[kind]}</h2>
     {kind !== "portfolios" ? <div className={styles.search}><Icon name="magnifying-glass" size={16} /><input type="search" aria-label={`${labels[kind]} 검색`} placeholder={`${labels[kind]} 검색`} maxLength={200} value={query} onChange={event => { setQuery(event.target.value); setPage(null); setItems([]); setNext(null); }} /></div> : null}
     <nav className={styles.resourceResults} aria-label={`${labels[kind]} 목록`} aria-busy={loading}>
-      {items.map(item => <Link className={styles.result} key={item.id} href={`${item.href}${kind !== "portfolios" && chatId ? `?chat=${encodeURIComponent(chatId)}` : ""}` as never}><Icon name={icons[kind]} size={16} /><span><strong>{item.title}</strong><small>{item.description}</small></span><Icon name="arrow-up-right" size={13} /></Link>)}
+      <GlideMenu className={sidebar.navGroup}>{items.map(item => <Link data-row title={item.title} className={`${sidebar.row} ${sidebar.portfolioItem} ${styles.sidebarResult}`} key={item.id} href={`${item.href}${kind !== "portfolios" && chatId ? `?chat=${encodeURIComponent(chatId)}` : ""}` as never}><Icon name={icons[kind]} size={16} /><span><strong>{item.title}</strong><small>{item.description}</small></span><Icon name="arrow-up-right" size={13} /></Link>)}</GlideMenu>
       {loading ? <div role="status" aria-label="목록 불러오는 중"><Skeleton className={styles.listSkeleton} /><Skeleton className={styles.listSkeleton} /></div> : null}
       {error ? <div role="alert" className={styles.listNotice}><p>목록을 불러오지 못했습니다.</p><Button variant="outline" onClick={() => setRetry(value => value + 1)}>다시 시도</Button></div> : null}
       {!loading && !error && !items.length ? <p className={styles.noResults}>{query.trim() ? "검색 결과가 없습니다." : `${labels[kind]} 목록이 비어 있습니다.`}</p> : null}
