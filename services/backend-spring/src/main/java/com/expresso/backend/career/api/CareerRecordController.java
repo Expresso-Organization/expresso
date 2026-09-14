@@ -140,7 +140,7 @@ public class CareerRecordController {
 		return normalizeUuid(categoryId, "categoryId");
 	}
 
-	private static String normalizeUuid(String value, String fieldName) {
+	static String normalizeUuid(String value, String fieldName) {
 		try {
 			var parsedValue = UUID.fromString(value);
 			if (!parsedValue.toString().equalsIgnoreCase(value)) {
@@ -153,7 +153,7 @@ public class CareerRecordController {
 		}
 	}
 
-	private static long parseExpectedVersion(String ifMatch) {
+	static long parseExpectedVersion(String ifMatch) {
 		if (ifMatch == null) {
 			throw new CareerRecordRequestValidationException("If-Match header가 필요합니다");
 		}
@@ -431,7 +431,7 @@ public class CareerRecordController {
 		return stringValue;
 	}
 
-	private static ResponseEntity<CareerRecordResponse> recordResponse(CareerRecord record, HttpStatus status) {
+	static ResponseEntity<CareerRecordResponse> recordResponse(CareerRecord record, HttpStatus status) {
 		var response = new CareerRecordResponse(CareerRecordData.from(record));
 		return ResponseEntity.status(status)
 				.header(HttpHeaders.ETAG, "\"v" + record.version() + "\"")
@@ -450,7 +450,7 @@ public class CareerRecordController {
 			long version,
 			Instant updatedAt) {
 
-		private static CareerRecordData from(CareerRecord record) {
+		static CareerRecordData from(CareerRecord record) {
 			return new CareerRecordData(
 					record.id(),
 					record.categoryId(),
@@ -464,7 +464,7 @@ public class CareerRecordController {
 
 	public record PropertyValueResponse(String propertyDefinitionId, String type, Object value) {
 
-		private static PropertyValueResponse from(PropertyValue propertyValue) {
+		static PropertyValueResponse from(PropertyValue propertyValue) {
 			if (propertyValue instanceof TextualPropertyValue textual) {
 				return response(propertyValue, textual.value());
 			}

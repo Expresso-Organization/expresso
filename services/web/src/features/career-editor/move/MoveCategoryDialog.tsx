@@ -1,6 +1,6 @@
 "use client";
 
-import { CareerCategoryMovePreviewSchema, type CareerCategory } from "@expresso/contracts";
+import { CanonicalCareerCategoryMovePreviewSchema, CareerCategoryMovePreviewSchema, type CareerCategory } from "@expresso/contracts";
 import type { z } from "zod";
 import { useState } from "react";
 
@@ -8,7 +8,7 @@ import { PropertySelect } from "@/features/career-editor/properties/PropertySele
 
 import styles from "./move.module.css";
 
-type CareerCategoryMovePreview = z.infer<typeof CareerCategoryMovePreviewSchema>;
+type CareerCategoryMovePreview = z.infer<typeof CanonicalCareerCategoryMovePreviewSchema> | z.infer<typeof CareerCategoryMovePreviewSchema>;
 
 export function MoveCategoryDialog({ open, recordId, currentCategoryId, recordVersion: _recordVersion, categories, onClose, onMoved }: { open: boolean; recordId: string; currentCategoryId: string; recordVersion: number; categories: readonly CareerCategory[]; onClose(): void; onMoved(categoryId: string): void }) {
   const [target, setTarget] = useState("");

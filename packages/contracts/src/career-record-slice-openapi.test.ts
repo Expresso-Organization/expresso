@@ -195,6 +195,8 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
       "/v1/career/categories",
       "/v1/career/records",
       "/v1/career/records/{recordId}",
+      "/v1/career/records/{recordId}/move",
+      "/v1/career/records/{recordId}/move/preview",
     ]);
     expect(contract.security).toEqual([{ bearerAuth: [] }]);
     expect(contract.components.securitySchemes.bearerAuth).toEqual({
@@ -726,5 +728,44 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
     expect(validatePatch({ status: "organized", title: "함께 변경" })).toBe(false);
     expect(validatePatch({ bodyMd: "legacy" })).toBe(false);
     expect(validatePatch({ categoryId })).toBe(false);
+  });
+
+  it("contracts category move preview and commit with lossless canonical unmapped values", () => {
+    const preview = operation(
+      "/v1/career/records/{recordId}/move/preview",
+      "post",
+    );
+    const commit = operation("/v1/career/records/{recordId}/move", "post");
+    expect(preview.responses).toHaveProperty("200");
+    expect(commit.responses).toHaveProperty("200");
+    expect(commit.responses).toHaveProperty("409");
+    expect(commit.responses).toHaveProperty("412");
+
+    const validateUnmapped = schemaValidator("CareerUnmappedProperties");
+    const propertyDefinitionId = "10000000-0000-4000-8000-000000000001";
+    const value = {
+      [propertyDefinitionId]: {
+        sourceCategoryId: "20000000-0000-4000-8000-000000000001",
+        propertyValue: {
+          propertyDefinitionId,
+          type: "number",
+          value: "123.4500",
+        },
+        provenance: {
+          sourcePropertyKey: "score",
+          sourcePropertyName: "점수",
+          sourcePropertyDefinitionVersion: 3,
+          preservedAt: "2026-09-14T08:00:00.000Z",
+          sourceRecordVersion: 7,
+          reason: "no_target_property",
+        },
+      },
+    };
+    expect(validateUnmapped(value), ajv.errorsText(validateUnmapped.errors)).toBe(true);
+    expect(contract.components.schemas.CareerUnmappedProperties).toMatchObject({
+      maxProperties: 200,
+      "x-expresso-keyEquals": "propertyValue.propertyDefinitionId",
+      "x-expresso-maxUtf8Bytes": 4_194_304,
+    });
   });
 });

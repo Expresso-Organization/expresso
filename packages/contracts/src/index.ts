@@ -18,8 +18,12 @@ export {
   ReplaceCareerRelationTargetsSchema,
   ListCareerRelationTargetsQuerySchema,
   PreviewCareerCategoryMoveSchema,
+  CareerUnmappedPropertyReasonSchema,
+  CareerUnmappedPropertyEnvelopeSchema,
+  CareerUnmappedPropertiesSchema,
   CommitCareerCategoryMoveRequestSchema,
   CareerCategoryMovePreviewSchema,
+  CanonicalCareerCategoryMovePreviewSchema,
   CareerCategoryMoveCommitSchema,
   CareerFormulaSchema,
   PreviewCareerFormulaSchema,
@@ -33,7 +37,7 @@ export {
   CareerPropertyChangePreviewSchema,
   ApplyCareerPropertyChangeSchema,
 } from "./career-properties.js";
-export type { CareerPropertySchemaChange, CareerPropertyChangePreview, ApplyCareerPropertyChange, CareerPropertyDefinitionV2, CareerPropertyValueV2, CanonicalCareerPropertyDefinition, WritableCareerPropertyType, WritableCareerPropertyValue, CareerDateValue, CareerSelectOption, CareerRollupAggregation, PreviewCareerFormula, CareerFormulaPreview, PreviewCareerRollup, CareerRollupPreview, CareerRelationDefinition, CareerRelationTarget, ReplaceCareerRelationTargets, PreviewCareerCategoryMove, CommitCareerCategoryMoveRequest, CareerCategoryMovePreview } from "./career-properties.js";
+export type { CareerPropertySchemaChange, CareerPropertyChangePreview, ApplyCareerPropertyChange, CareerPropertyDefinitionV2, CareerPropertyValueV2, CanonicalCareerPropertyDefinition, WritableCareerPropertyType, WritableCareerPropertyValue, CareerDateValue, CareerSelectOption, CareerRollupAggregation, PreviewCareerFormula, CareerFormulaPreview, PreviewCareerRollup, CareerRollupPreview, CareerRelationDefinition, CareerRelationTarget, ReplaceCareerRelationTargets, PreviewCareerCategoryMove, CommitCareerCategoryMoveRequest, CareerCategoryMovePreview, CanonicalCareerCategoryMovePreview, CareerUnmappedPropertyEnvelope } from "./career-properties.js";
 export {
   CareerViewFilterV2Schema,
   CareerSortV2Schema,

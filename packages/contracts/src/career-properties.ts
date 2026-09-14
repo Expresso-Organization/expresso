@@ -145,15 +145,55 @@ export const ListCareerRelationTargetsQuerySchema = z.strictObject({ propertyId:
 export const PreviewCareerCategoryMoveSchema = z.strictObject({
   targetCategoryId: UuidSchema,
 });
+export const CareerUnmappedPropertyReasonSchema = z.enum([
+  "no_target_property", "ambiguous_target_property", "incompatible_type", "missing_target_option",
+]);
+export const CareerUnmappedPropertyEnvelopeSchema = z.strictObject({
+  sourceCategoryId: UuidSchema,
+  propertyValue: WritableCareerPropertyValueSchema,
+  provenance: z.strictObject({
+    sourcePropertyKey: z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/),
+    sourcePropertyName: z.string().min(1).max(80),
+    sourcePropertyDefinitionVersion: z.number().int().positive(),
+    preservedAt: TimestampSchema,
+    sourceRecordVersion: z.number().int().positive(),
+    reason: CareerUnmappedPropertyReasonSchema,
+  }),
+});
+export const CareerUnmappedPropertiesSchema = z.record(UuidSchema, CareerUnmappedPropertyEnvelopeSchema)
+  .superRefine((properties, context) => {
+    const entries = Object.entries(properties);
+    if (entries.length > 200) context.addIssue({ code: "custom", message: "unmapped properties must not exceed 200 entries" });
+    for (const [id, envelope] of entries) {
+      if (id !== envelope.propertyValue.propertyDefinitionId) {
+        context.addIssue({ code: "custom", path: [id, "propertyValue", "propertyDefinitionId"], message: "unmapped key must equal propertyDefinitionId" });
+      }
+    }
+    if (new TextEncoder().encode(JSON.stringify(properties)).byteLength > 4_194_304) {
+      context.addIssue({ code: "custom", message: "unmapped properties must not exceed 4 MiB" });
+    }
+  });
 export const CareerPropertyConversionSchema = z.strictObject({
   sourcePropertyId: UuidSchema, targetPropertyId: UuidSchema.nullable(),
-  kind: z.enum(["exact", "safe", "lossy", "unmapped"]), sampleBefore: z.unknown().optional(), sampleAfter: z.unknown().optional(),
+  kind: z.enum(["exact", "safe", "lossy", "unmapped"]),
+  sampleBefore: z.unknown().optional(), sampleAfter: z.unknown().optional(),
+});
+export const CanonicalCareerPropertyConversionSchema = z.strictObject({
+  sourcePropertyId: UuidSchema, targetPropertyId: UuidSchema.nullable(),
+  kind: z.enum(["exact", "safe", "lossy", "unmapped"]),
+  sampleBefore: WritableCareerPropertyValueSchema.nullable().optional(), sampleAfter: WritableCareerPropertyValueSchema.nullable().optional(),
 });
 export const CareerCategoryMovePreviewSchema = z.strictObject({
   recordId: UuidSchema, sourceCategoryId: UuidSchema, targetCategoryId: UuidSchema,
   recordVersion: z.number().int().positive(), sourceSchemaVersion: z.number().int().positive(),
   targetSchemaVersion: z.number().int().positive(), conversions: z.array(CareerPropertyConversionSchema).max(200),
   unmappedProperties: z.record(UuidSchema, CareerPropertyValueV2Schema), previewToken: z.string().min(32).max(4096),
+});
+export const CanonicalCareerCategoryMovePreviewSchema = z.strictObject({
+  recordId: UuidSchema, sourceCategoryId: UuidSchema, targetCategoryId: UuidSchema,
+  recordVersion: z.number().int().positive(), sourceSchemaVersion: z.number().int().positive(),
+  targetSchemaVersion: z.number().int().positive(), conversions: z.array(CanonicalCareerPropertyConversionSchema).max(200),
+  unmappedProperties: CareerUnmappedPropertiesSchema, previewToken: z.string().min(32).max(4096),
 });
 export const CareerCategoryMoveCommitSchema = z.strictObject({
   recordId: UuidSchema, targetCategoryId: UuidSchema, previewToken: z.string().min(32).max(4096),
@@ -197,6 +237,8 @@ export type CareerFormulaPreview = z.infer<typeof CareerFormulaPreviewSchema>;
 export type PreviewCareerRollup = z.infer<typeof PreviewCareerRollupSchema>;
 export type CareerRollupPreview = z.infer<typeof CareerRollupPreviewSchema>;
 export type CareerCategoryMovePreview = z.infer<typeof CareerCategoryMovePreviewSchema>;
+export type CanonicalCareerCategoryMovePreview = z.infer<typeof CanonicalCareerCategoryMovePreviewSchema>;
+export type CareerUnmappedPropertyEnvelope = z.infer<typeof CareerUnmappedPropertyEnvelopeSchema>;
 export type CareerRelationDefinition = z.infer<typeof CareerRelationDefinitionSchema>;
 export type CareerRelationTarget = z.infer<typeof CareerRelationTargetSchema>;
 export type ReplaceCareerRelationTargets = z.infer<typeof ReplaceCareerRelationTargetsSchema>;

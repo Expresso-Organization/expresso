@@ -18,8 +18,9 @@ import com.expresso.backend.career.application.CareerRecordIdempotencyConflictEx
 import com.expresso.backend.career.application.CareerRecordNotFoundException;
 import com.expresso.backend.career.application.CareerRecordPreconditionFailedException;
 import com.expresso.backend.career.application.CareerRecordValidationException;
+import com.expresso.backend.career.application.CareerCategoryMoveConflictException;
 
-@RestControllerAdvice(assignableTypes = CareerRecordController.class)
+@RestControllerAdvice(assignableTypes = { CareerRecordController.class, CareerCategoryMoveController.class })
 public class CareerRecordExceptionHandler {
 
 	@ExceptionHandler({ CareerRecordRequestValidationException.class,
@@ -30,7 +31,7 @@ public class CareerRecordExceptionHandler {
 		return error(request, HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Request validation failed");
 	}
 
-	@ExceptionHandler(CareerRecordIdempotencyConflictException.class)
+	@ExceptionHandler({ CareerRecordIdempotencyConflictException.class, CareerCategoryMoveConflictException.class })
 	ResponseEntity<ApiErrorResponse> conflict(HttpServletRequest request) {
 		return error(request, HttpStatus.CONFLICT, "CONFLICT", "Request conflicts with current state");
 	}

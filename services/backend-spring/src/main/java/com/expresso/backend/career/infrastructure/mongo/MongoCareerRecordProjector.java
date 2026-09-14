@@ -63,7 +63,7 @@ final class MongoCareerRecordProjector {
 		return values;
 	}
 
-	private static PropertyValue projectPropertyValue(Document document) {
+	static PropertyValue projectPropertyValue(Document document) {
 		requireExactFields(document, List.of("propertyDefinitionId", "type", "value"), "propertyValues 항목");
 		var propertyDefinitionId = requiredString(document, "propertyDefinitionId");
 		var type = requiredPropertyValueType(document);

@@ -51,7 +51,7 @@ final class MongoCareerRecordWriter {
 		return values.stream().map(MongoCareerRecordWriter::writePropertyValue).toList();
 	}
 
-	private static Document writePropertyValue(PropertyValue value) {
+	static Document writePropertyValue(PropertyValue value) {
 		var document = new Document("propertyDefinitionId", value.propertyDefinitionId())
 				.append("type", value.type().wireName());
 		if (value instanceof TextualPropertyValue textual) {

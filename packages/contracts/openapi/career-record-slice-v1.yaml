@@ -106,6 +106,62 @@ paths:
         "412":
           $ref: "#/components/responses/PreconditionFailed"
 
+  /v1/career/records/{recordId}/move/preview:
+    parameters:
+      - $ref: "#/components/parameters/RecordIdPath"
+    post:
+      tags: [Career]
+      operationId: previewCareerRecordCategoryMove
+      summary: CareerRecord Category 이동 영향 확인
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreviewCareerCategoryMoveRequest"
+      responses:
+        "200":
+          description: 현재 Record와 Category schema 기준 이동 계획
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CareerCategoryMovePreviewResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          $ref: "#/components/responses/RecordNotFound"
+
+  /v1/career/records/{recordId}/move:
+    parameters:
+      - $ref: "#/components/parameters/RecordIdPath"
+    post:
+      tags: [Career]
+      operationId: commitCareerRecordCategoryMove
+      summary: 확인한 계획대로 CareerRecord Category 이동
+      parameters:
+        - $ref: "#/components/parameters/IfMatchHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommitCareerCategoryMoveRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/CareerRecordOk"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          $ref: "#/components/responses/RecordNotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -192,6 +248,12 @@ components:
             $ref: "#/components/schemas/ApiErrorResponse"
     IdempotencyConflict:
       description: 같은 Idempotency-Key가 다른 생성 요청에 이미 사용됨
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    Conflict:
+      description: preview 이후 Record 또는 Category schema가 변경됨
       content:
         application/json:
           schema:
@@ -695,6 +757,164 @@ components:
         type은 그 Definition type과 일치해야 한다. key 기반 객체는 허용하지 않는다.
       items:
         $ref: "#/components/schemas/PropertyValue"
+
+    CareerUnmappedPropertyReason:
+      type: string
+      enum: [no_target_property, ambiguous_target_property, incompatible_type, missing_target_option]
+
+    CareerUnmappedPropertyProvenance:
+      type: object
+      additionalProperties: false
+      required:
+        - sourcePropertyKey
+        - sourcePropertyName
+        - sourcePropertyDefinitionVersion
+        - preservedAt
+        - sourceRecordVersion
+        - reason
+      properties:
+        sourcePropertyKey:
+          type: string
+          pattern: '^[A-Za-z][A-Za-z0-9_]{0,63}$'
+        sourcePropertyName:
+          type: string
+          minLength: 1
+          maxLength: 80
+        sourcePropertyDefinitionVersion:
+          type: integer
+          minimum: 1
+        preservedAt:
+          $ref: "#/components/schemas/Timestamp"
+        sourceRecordVersion:
+          type: integer
+          minimum: 1
+        reason:
+          $ref: "#/components/schemas/CareerUnmappedPropertyReason"
+
+    CareerUnmappedPropertyEnvelope:
+      type: object
+      additionalProperties: false
+      required: [sourceCategoryId, propertyValue, provenance]
+      properties:
+        sourceCategoryId:
+          $ref: "#/components/schemas/Uuid"
+        propertyValue:
+          $ref: "#/components/schemas/PropertyValue"
+        provenance:
+          $ref: "#/components/schemas/CareerUnmappedPropertyProvenance"
+
+    CareerUnmappedProperties:
+      type: object
+      maxProperties: 200
+      additionalProperties:
+        $ref: "#/components/schemas/CareerUnmappedPropertyEnvelope"
+      description: >-
+        key는 source PropertyDefinition ID이며 envelope.propertyValue.propertyDefinitionId와
+        같아야 한다. 이 동일성 및 compact JSON UTF-8 크기 제한은 application/domain에서
+        검증한다.
+      x-expresso-keyEquals: propertyValue.propertyDefinitionId
+      x-expresso-maxUtf8Bytes: 4194304
+
+    CareerPropertyConversion:
+      type: object
+      additionalProperties: false
+      required: [sourcePropertyId, targetPropertyId, kind]
+      properties:
+        sourcePropertyId:
+          $ref: "#/components/schemas/Uuid"
+        targetPropertyId:
+          oneOf:
+            - $ref: "#/components/schemas/Uuid"
+            - type: "null"
+        kind:
+          type: string
+          enum: [exact, safe, lossy, unmapped]
+        sampleBefore:
+          oneOf:
+            - $ref: "#/components/schemas/PropertyValue"
+            - type: "null"
+        sampleAfter:
+          oneOf:
+            - $ref: "#/components/schemas/PropertyValue"
+            - type: "null"
+
+    PreviewCareerCategoryMoveRequest:
+      type: object
+      additionalProperties: false
+      required: [targetCategoryId]
+      properties:
+        targetCategoryId:
+          $ref: "#/components/schemas/Uuid"
+
+    CareerCategoryMovePreview:
+      type: object
+      additionalProperties: false
+      required:
+        - recordId
+        - sourceCategoryId
+        - targetCategoryId
+        - recordVersion
+        - sourceSchemaVersion
+        - targetSchemaVersion
+        - conversions
+        - unmappedProperties
+        - previewToken
+      properties:
+        recordId:
+          $ref: "#/components/schemas/Uuid"
+        sourceCategoryId:
+          $ref: "#/components/schemas/Uuid"
+        targetCategoryId:
+          $ref: "#/components/schemas/Uuid"
+        recordVersion:
+          type: integer
+          minimum: 1
+        sourceSchemaVersion:
+          type: integer
+          minimum: 1
+        targetSchemaVersion:
+          type: integer
+          minimum: 1
+        conversions:
+          type: array
+          maxItems: 200
+          items:
+            $ref: "#/components/schemas/CareerPropertyConversion"
+        unmappedProperties:
+          $ref: "#/components/schemas/CareerUnmappedProperties"
+        previewToken:
+          type: string
+          minLength: 32
+          maxLength: 4096
+
+    CareerCategoryMovePreviewResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/CareerCategoryMovePreview"
+
+    CommitCareerCategoryMoveRequest:
+      type: object
+      additionalProperties: false
+      required: [targetCategoryId, previewToken, expectedVersion]
+      properties:
+        targetCategoryId:
+          $ref: "#/components/schemas/Uuid"
+        previewToken:
+          type: string
+          minLength: 32
+          maxLength: 4096
+        expectedVersion:
+          type: integer
+          minimum: 1
+        discardUnmappedPropertyIds:
+          type: array
+          maxItems: 200
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Uuid"
 
     CareerTextMark:
       type: object

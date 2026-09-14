@@ -77,6 +77,18 @@ public record CareerRecord(
 				changedAt);
 	}
 
+	public CareerRecord moveTo(String targetCategoryId, List<PropertyValue> movedPropertyValues, Instant changedAt) {
+		Objects.requireNonNull(targetCategoryId, "targetCategoryId는 null일 수 없습니다");
+		Objects.requireNonNull(changedAt, "changedAt은 null일 수 없습니다");
+		var values = validatePropertyValues(movedPropertyValues);
+		if (categoryId.equals(targetCategoryId)) {
+			throw new IllegalArgumentException("현재 Category와 같은 Category로 이동할 수 없습니다");
+		}
+		return new CareerRecord(
+				id, ownerId, targetCategoryId, title, values, blockBody,
+				Math.addExact(version, 1), changedAt);
+	}
+
 	private static void validateTitle(String title) {
 		Objects.requireNonNull(title, "title은 null일 수 없습니다");
 		if (title.codePointCount(0, title.length()) > MAX_TITLE_LENGTH) {
