@@ -1,3 +1,4 @@
+// NOTE(agent-chat-framework): 사용자에게 보이는 작업 내역 문구를 한국어로 표시합니다.
 "use client";
 
 import {
@@ -101,7 +102,7 @@ function ToolGroupTrigger({
   count: number;
   active?: boolean;
 }) {
-  const label = `${count} tool ${count === 1 ? "call" : "calls"}`;
+  const label = `작업 내역 · ${count}`;
 
   return (
     <CollapsibleTrigger

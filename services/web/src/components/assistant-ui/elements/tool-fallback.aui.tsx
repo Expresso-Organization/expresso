@@ -1,3 +1,4 @@
+// NOTE(agent-chat-framework): 사용자에게 보이는 도구 제목을 한국어로 표시합니다.
 "use client";
 
 import { memo, useCallback, useRef, useState } from "react";
@@ -141,7 +142,7 @@ function ToolFallbackTrigger({
     status?.type === "incomplete" && status.reason === "cancelled";
 
   const Icon = statusIconMap[statusType];
-  const label = isCancelled ? "Cancelled tool" : "Used tool";
+  const label = isCancelled ? "취소된 작업" : "작업";
 
   return (
     <CollapsibleTrigger
