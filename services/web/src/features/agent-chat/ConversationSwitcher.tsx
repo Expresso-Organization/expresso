@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import type { AgentConversation } from "@expresso/contracts";
 import { Icon } from "@/components/ui/Icon";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ResourceList } from "./ResourceList";
 import { SidebarFrame } from "@/components/shell/SidebarFrame";
@@ -33,7 +34,7 @@ export function ConversationSwitcher({ currentId, conversations, disabled, onSel
   </>;
   const browser = <Tabs value={activeTab} onValueChange={setActiveTab} className={styles.browserTabs}>
     <TabsList variant="line" className={styles.browserTabList} aria-label="목록 종류">
-      {RAIL_ITEMS.map(item => <TabsTrigger key={item.value} value={item.value} aria-label={item.label} title={item.label}><Icon name={item.icon} size={18} weight={activeTab === item.value ? "fill" : "regular"} /></TabsTrigger>)}
+      {RAIL_ITEMS.map(item => <TooltipProvider key={item.value} delay={200}><Tooltip><TabsTrigger value={item.value} aria-label={item.label} asChild><TooltipTrigger data-slot="tabs-trigger"><Icon name={item.icon} size={18} weight={activeTab === item.value ? "fill" : "regular"} /></TooltipTrigger></TabsTrigger><TooltipContent side="bottom" sideOffset={8}>{item.label}</TooltipContent></Tooltip></TooltipProvider>)}
       <span aria-hidden="true" className={styles.tabIndicator} style={{ transform: `translateX(${RAIL_ITEMS.findIndex(item => item.value === activeTab) * 100}%)` }} />
     </TabsList>
     <TabsContent value="chats" className={styles.browserContent}><h2>최근 대화 <span>{conversations.length}</span></h2>{content}</TabsContent>
