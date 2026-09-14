@@ -15,7 +15,7 @@
 .referenceItems { display:flex; flex-wrap:wrap; gap:6px; min-width:0; }
 .reference { display:inline-flex; gap:6px; align-items:center; border:1px solid var(--ex-border); background:var(--ex-bg); color:var(--ex-fg-body); padding:5px 8px; border-radius:6px; font-size:var(--ex-text-3xs); max-width:230px; text-decoration:none; }
 .reference > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.reference[data-kind="job"] > i:first-child { color:var(--ex-fg); }
+.reference[data-kind="job"] > i:first-child { color:var(--ex-accent-text); }
 .reference[data-kind="record"] > i:first-child { color:var(--ex-fg-muted); }
 .reference:hover { border-color:var(--ex-accent-soft); background:var(--ex-accent-surface); }
 .referenceEmpty, .attachButton { display:inline-flex; align-items:center; gap:4px; font-size:var(--ex-text-3xs); color:var(--ex-fg-muted); border:1px dashed var(--ex-border); border-radius:6px; padding:5px 9px; text-decoration:none; height:auto; }
@@ -26,11 +26,11 @@
 .welcomeMark { margin-bottom:20px; }
 .eyebrow { color:var(--ex-fg-muted); font-size:var(--ex-text-2xs); }
 .welcome h1 { font-size:var(--ex-text-display-sm); font-weight:600; line-height:var(--ex-leading-tight); letter-spacing:-.04em; margin:12px 0 16px; }
-.welcome h1 span { color:var(--ex-fg); }
+.welcome h1 span { color:var(--ex-accent-text); }
 .welcome > p { color:var(--ex-fg-muted); font-size:var(--ex-text-sm); line-height:var(--ex-leading-relaxed); }
 .root .starters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:28px; }
 .root .starter { position:relative; display:flex; flex-direction:column; align-items:flex-start; height:auto; min-width:0; gap:8px; white-space:normal; padding:16px 12px; background:var(--ex-bg-sunken); border:1px solid var(--ex-border-inner); border-radius:10px; text-align:left; }
-.root .starter > i:first-child { color:var(--ex-fg); }
+.root .starter > i:first-child { color:var(--ex-accent-text); }
 .root .starter strong { font-size:var(--ex-text-xs); font-weight:600; }
 .root .starter > span { font-size:var(--ex-text-3xs); font-weight:400; color:var(--ex-fg-muted); line-height:var(--ex-leading-normal); }
 .root .starter > i:last-child { position:absolute; right:12px; top:16px; color:var(--ex-fg-subtle); }
