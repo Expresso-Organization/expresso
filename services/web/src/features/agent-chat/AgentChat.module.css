@@ -141,8 +141,8 @@
 
 .browserTabs .browserTabList { width:100%; flex-shrink:0; }
 /* 같은 폭의 탭과 표시 영역을 사용해 아이콘과 pill 선택 배경의 중심을 맞춘다. */
-.browserTabs .browserTabList[data-variant="line"] { position:relative; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); height:36px; padding:0; gap:0; border:2px solid var(--ex-border-firm); border-radius:999px; background:var(--ex-border-firm); isolation:isolate; }
-.browserTabList[data-variant="line"] :global([data-slot="tabs-trigger"]) { height:32px; padding:0; border-width:0; border-radius:999px; color:var(--ex-fg-body); z-index:1; }
+.browserTabs .browserTabList[data-variant="line"] { position:relative; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); height:36px; padding:0; gap:0; border:2px solid var(--ex-border-inner); border-radius:999px; background:var(--ex-bg-tint-strong); isolation:isolate; }
+.browserTabList[data-variant="line"] :global([data-slot="tabs-trigger"]) { height:32px; padding:0; border-width:0; border-radius:999px; color:var(--ex-fg-muted); z-index:1; }
 .browserTabList[data-variant="line"] :global([data-slot="tabs-trigger"][data-state="active"]) { color:var(--ex-fg); }
 .browserTabList[data-variant="line"] :global([data-slot="tabs-trigger"]::after) { display:none; }
 .tabIndicator { position:absolute; top:0; left:0; width:25%; height:100%; z-index:0; pointer-events:none; transition:transform var(--ex-motion-panel); }
