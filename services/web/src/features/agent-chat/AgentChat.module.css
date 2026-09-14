@@ -15,7 +15,7 @@
 .referenceItems { display:flex; flex-wrap:wrap; gap:6px; min-width:0; }
 .reference { display:inline-flex; gap:6px; align-items:center; border:1px solid var(--ex-border); background:var(--ex-bg); color:var(--ex-fg-body); padding:5px 8px; border-radius:6px; font-size:var(--ex-text-3xs); max-width:230px; text-decoration:none; }
 .reference > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.reference[data-kind="job"] > i:first-child { color:var(--ex-accent-text); }
+.reference[data-kind="job"] > i:first-child { color:var(--ex-fg); }
 .reference[data-kind="record"] > i:first-child { color:var(--ex-fg-muted); }
 .reference:hover { border-color:var(--ex-accent-soft); background:var(--ex-accent-surface); }
 .referenceEmpty, .attachButton { display:inline-flex; align-items:center; gap:4px; font-size:var(--ex-text-3xs); color:var(--ex-fg-muted); border:1px dashed var(--ex-border); border-radius:6px; padding:5px 9px; text-decoration:none; height:auto; }
@@ -26,11 +26,11 @@
 .welcomeMark { margin-bottom:20px; }
 .eyebrow { color:var(--ex-fg-muted); font-size:var(--ex-text-2xs); }
 .welcome h1 { font-size:var(--ex-text-display-sm); font-weight:600; line-height:var(--ex-leading-tight); letter-spacing:-.04em; margin:12px 0 16px; }
-.welcome h1 span { color:var(--ex-accent-text); }
+.welcome h1 span { color:var(--ex-fg); }
 .welcome > p { color:var(--ex-fg-muted); font-size:var(--ex-text-sm); line-height:var(--ex-leading-relaxed); }
 .root .starters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:28px; }
 .root .starter { position:relative; display:flex; flex-direction:column; align-items:flex-start; height:auto; min-width:0; gap:8px; white-space:normal; padding:16px 12px; background:var(--ex-bg-sunken); border:1px solid var(--ex-border-inner); border-radius:10px; text-align:left; }
-.root .starter > i:first-child { color:var(--ex-accent-text); }
+.root .starter > i:first-child { color:var(--ex-fg); }
 .root .starter strong { font-size:var(--ex-text-xs); font-weight:600; }
 .root .starter > span { font-size:var(--ex-text-3xs); font-weight:400; color:var(--ex-fg-muted); line-height:var(--ex-leading-normal); }
 .root .starter > i:last-child { position:absolute; right:12px; top:16px; color:var(--ex-fg-subtle); }
@@ -141,10 +141,10 @@
 
 .browserTabs .browserTabList { width:100%; flex-shrink:0; }
 /* 같은 폭의 탭과 표시 영역을 사용해 아이콘과 pill 선택 배경의 중심을 맞춘다. */
-.browserTabs .browserTabList[data-variant="line"] { position:relative; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); height:36px; padding:0; gap:0; border:0; background:transparent; isolation:isolate; }
-.browserTabList[data-variant="line"] :global([data-slot="tabs-trigger"]) { height:36px; padding:0; border-width:0; color:var(--ex-fg-muted); z-index:1; }
-.browserTabList[data-variant="line"] :global([data-slot="tabs-trigger"][data-state="active"]) { color:var(--ex-accent-text); }
+.browserTabs .browserTabList[data-variant="line"] { position:relative; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); height:36px; padding:0; gap:0; border:2px solid var(--ex-border-firm); border-radius:999px; background:var(--ex-border-firm); isolation:isolate; }
+.browserTabList[data-variant="line"] :global([data-slot="tabs-trigger"]) { height:32px; padding:0; border-width:0; border-radius:999px; color:var(--ex-fg-body); z-index:1; }
+.browserTabList[data-variant="line"] :global([data-slot="tabs-trigger"][data-state="active"]) { color:var(--ex-fg); }
 .browserTabList[data-variant="line"] :global([data-slot="tabs-trigger"]::after) { display:none; }
-.tabIndicator { position:absolute; top:0; left:0; width:25%; height:36px; z-index:0; pointer-events:none; transition:transform var(--ex-motion-panel); }
-.tabIndicator::after { content:""; position:absolute; inset:0 3px; border-radius:999px; border:1px solid var(--ex-border-firm); background:var(--ex-bg-sunken); box-shadow:inset 0 2px 4px color-mix(in srgb,var(--ex-bg-sunken) 85%,transparent),inset 0 -1px 0 color-mix(in srgb,var(--ex-fg) 8%,transparent); }
+.tabIndicator { position:absolute; top:0; left:0; width:25%; height:100%; z-index:0; pointer-events:none; transition:transform var(--ex-motion-panel); }
+.tabIndicator::after { content:""; position:absolute; inset:0; border-radius:999px; background:var(--ex-bg); }
 @media(prefers-reduced-motion:reduce) { .tabIndicator { transition:none; } }
