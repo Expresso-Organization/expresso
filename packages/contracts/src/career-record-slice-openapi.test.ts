@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 
-type HttpMethod = "get" | "post" | "patch";
+type HttpMethod = "get" | "post" | "patch" | "delete";
 
 interface SchemaObject extends Record<string, unknown> {
   pattern?: string;
@@ -48,12 +48,14 @@ interface OperationObject {
   requestBody?: RequestBodyObject;
   responses: Record<string, MaybeReference<ResponseObject>>;
   "x-idempotency"?: unknown;
+  "x-pagination"?: unknown;
 }
 
 interface PathItemObject {
   get?: OperationObject;
   post?: OperationObject;
   patch?: OperationObject;
+  delete?: OperationObject;
 }
 
 interface CareerSliceContract {
@@ -195,6 +197,7 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
       "/v1/career/categories",
       "/v1/career/records",
       "/v1/career/records/{recordId}",
+      "/v1/career/records/{recordId}/restore",
     ]);
     expect(contract.security).toEqual([{ bearerAuth: [] }]);
     expect(contract.components.securitySchemes.bearerAuth).toEqual({
@@ -204,8 +207,56 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
 
     operation("/v1/career/categories", "get");
     operation("/v1/career/records", "post");
+    operation("/v1/career/records", "get");
     operation("/v1/career/records/{recordId}", "get");
     operation("/v1/career/records/{recordId}", "patch");
+    operation("/v1/career/records/{recordId}", "delete");
+    operation("/v1/career/records/{recordId}/restore", "post");
+  });
+
+  it("requires a category-scoped stable page and optimistic trash or restore", () => {
+    const list = operation("/v1/career/records", "get");
+    const remove = operation("/v1/career/records/{recordId}", "delete");
+    const restore = operation("/v1/career/records/{recordId}/restore", "post");
+
+    const categoryId = list.parameters
+      ?.map((parameter) => resolveReference<ParameterObject>(parameter))
+      .find((parameter) => parameter.in === "query" && parameter.name === "categoryId");
+    expect(categoryId).toEqual(expect.objectContaining({ required: true }));
+    expect(list["x-pagination"]).toEqual({
+      style: "keyset",
+      order: ["updatedAt:desc", "id:desc"],
+      cursorScope: "categoryId",
+      signed: false,
+    });
+    response(list, "200");
+    response(list, "400");
+
+    requiredHeader(remove, "If-Match");
+    response(remove, "200");
+    response(remove, "404");
+    response(remove, "412");
+
+    requiredHeader(restore, "If-Match");
+    response(restore, "200");
+    response(restore, "404");
+    response(restore, "412");
+
+    const validatePage = schemaValidator("CareerRecordListResponse");
+    expect(validatePage({
+      data: [],
+      page: { hasNextPage: false, nextCursor: null },
+    })).toBe(true);
+
+    const validateTrash = schemaValidator("CareerRecordTrashResponse");
+    expect(validateTrash({
+      data: {
+        id: "1044d680-6f5b-4f6a-90b7-20f7ba5eddf5",
+        deletedAt: "2026-09-14T04:00:00.000Z",
+        purgeAfter: "2026-10-14T04:00:00.000Z",
+        version: 2,
+      },
+    })).toBe(true);
   });
 
   it("makes create idempotency and update preconditions explicit", () => {

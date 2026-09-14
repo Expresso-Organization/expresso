@@ -15,6 +15,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -22,11 +23,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.expresso.backend.career.application.CreateCareerRecordUseCase;
+import com.expresso.backend.career.application.CareerRecordPage;
+import com.expresso.backend.career.application.CareerRecordTrashResult;
 import com.expresso.backend.career.application.GetCareerRecordUseCase;
+import com.expresso.backend.career.application.ListCareerRecordsUseCase;
 import com.expresso.backend.career.application.PatchCareerRecordUseCase;
+import com.expresso.backend.career.application.RestoreCareerRecordUseCase;
+import com.expresso.backend.career.application.TrashCareerRecordUseCase;
 import com.expresso.backend.career.domain.BlockBody;
 import com.expresso.backend.career.domain.AssetPropertyValue;
 import com.expresso.backend.career.domain.CareerRecord;
@@ -67,14 +74,37 @@ public class CareerRecordController {
 	private final CreateCareerRecordUseCase createCareerRecord;
 	private final GetCareerRecordUseCase getCareerRecord;
 	private final PatchCareerRecordUseCase patchCareerRecord;
+	private final ListCareerRecordsUseCase listCareerRecords;
+	private final TrashCareerRecordUseCase trashCareerRecord;
+	private final RestoreCareerRecordUseCase restoreCareerRecord;
 
 	public CareerRecordController(
 			CreateCareerRecordUseCase createCareerRecord,
 			GetCareerRecordUseCase getCareerRecord,
-			PatchCareerRecordUseCase patchCareerRecord) {
+			PatchCareerRecordUseCase patchCareerRecord,
+			ListCareerRecordsUseCase listCareerRecords,
+			TrashCareerRecordUseCase trashCareerRecord,
+			RestoreCareerRecordUseCase restoreCareerRecord) {
 		this.createCareerRecord = createCareerRecord;
 		this.getCareerRecord = getCareerRecord;
 		this.patchCareerRecord = patchCareerRecord;
+		this.listCareerRecords = listCareerRecords;
+		this.trashCareerRecord = trashCareerRecord;
+		this.restoreCareerRecord = restoreCareerRecord;
+	}
+
+	@GetMapping
+	public CareerRecordListResponse list(
+			@AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+			@RequestParam(name = "categoryId", required = false) String categoryId,
+			@RequestParam(name = "limit", required = false) String limit,
+			@RequestParam(name = "cursor", required = false) String cursor) {
+		if (categoryId == null) {
+			throw new CareerRecordRequestValidationException("categoryId query parameter가 필요합니다");
+		}
+		var page = listCareerRecords.list(
+				principal.userId(), normalizeUuid(categoryId, "categoryId"), parseLimit(limit), cursor);
+		return CareerRecordListResponse.from(page);
 	}
 
 	@PostMapping
@@ -111,6 +141,28 @@ public class CareerRecordController {
 						principal.userId(), normalizedRecordId, expectedVersion, readStatus(request.get("status")))
 				: patchCareerRecord.patch(
 						principal.userId(), normalizedRecordId, expectedVersion, readChangeSet(request));
+		return recordResponse(record, HttpStatus.OK);
+	}
+
+	@DeleteMapping("/{recordId}")
+	public ResponseEntity<CareerRecordTrashResponse> trash(
+			@AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+			@PathVariable String recordId,
+			@RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch) {
+		var result = trashCareerRecord.trash(
+				principal.userId(), normalizeUuid(recordId, "recordId"), parseExpectedVersion(ifMatch));
+		return ResponseEntity.ok()
+				.header(HttpHeaders.ETAG, "\"v" + result.version() + "\"")
+				.body(CareerRecordTrashResponse.from(result));
+	}
+
+	@PostMapping("/{recordId}/restore")
+	public ResponseEntity<CareerRecordResponse> restore(
+			@AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+			@PathVariable String recordId,
+			@RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch) {
+		var record = restoreCareerRecord.restore(
+				principal.userId(), normalizeUuid(recordId, "recordId"), parseExpectedVersion(ifMatch));
 		return recordResponse(record, HttpStatus.OK);
 	}
 
@@ -225,6 +277,18 @@ public class CareerRecordController {
 			case FILE, MEDIA -> new AssetPropertyValue(
 					propertyDefinitionId, type, readUuidList(rawValue, type.wireName() + " value"));
 		};
+	}
+
+	private static int parseLimit(String limit) {
+		if (limit == null) return 50;
+		try {
+			var value = Integer.parseInt(limit);
+			if (value < 1 || value > 100) throw new NumberFormatException();
+			return value;
+		}
+		catch (NumberFormatException error) {
+			throw new CareerRecordRequestValidationException("limit은 1 이상 100 이하의 정수여야 합니다");
+		}
 	}
 
 	private static CareerRecordStatus readStatus(Object value) {
@@ -439,6 +503,29 @@ public class CareerRecordController {
 	}
 
 	public record CareerRecordResponse(CareerRecordData data) {
+	}
+
+	public record CareerRecordListResponse(List<CareerRecordData> data, CareerRecordPageResponse page) {
+
+		static CareerRecordListResponse from(CareerRecordPage page) {
+			return new CareerRecordListResponse(
+					page.records().stream().map(CareerRecordData::from).toList(),
+					new CareerRecordPageResponse(page.hasNextPage(), page.nextCursor()));
+		}
+	}
+
+	public record CareerRecordPageResponse(boolean hasNextPage, String nextCursor) {
+	}
+
+	public record CareerRecordTrashResponse(CareerRecordTrashData data) {
+
+		static CareerRecordTrashResponse from(CareerRecordTrashResult result) {
+			return new CareerRecordTrashResponse(new CareerRecordTrashData(
+					result.recordId(), result.deletedAt(), result.purgeAfter(), result.version()));
+		}
+	}
+
+	public record CareerRecordTrashData(String id, Instant deletedAt, Instant purgeAfter, long version) {
 	}
 
 	public record CareerRecordData(

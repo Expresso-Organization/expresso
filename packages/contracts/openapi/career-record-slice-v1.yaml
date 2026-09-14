@@ -28,6 +28,53 @@ paths:
           $ref: "#/components/responses/AuthenticationRequired"
 
   /v1/career/records:
+    get:
+      tags: [Career]
+      operationId: listCareerRecords
+      summary: Category별 활성 CareerRecord 목록 조회
+      description: >-
+        인증 사용자가 소유한 canonical CareerRecord만 categoryId 범위에서
+        updatedAt DESC, id DESC 순서로 조회한다. cursor는 서명된 권한 토큰이 아니라
+        동일 categoryId 안에서 다음 페이지를 찾기 위한 opaque pagination state다.
+      x-pagination:
+        style: keyset
+        order: ["updatedAt:desc", "id:desc"]
+        cursorScope: categoryId
+        signed: false
+      parameters:
+        - name: categoryId
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Uuid"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 512
+      responses:
+        "200":
+          description: 안정적으로 정렬된 CareerRecord 페이지
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CareerRecordListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "500":
+          $ref: "#/components/responses/InternalError"
     post:
       tags: [Career]
       operationId: createCareerRecord
@@ -105,6 +152,54 @@ paths:
           $ref: "#/components/responses/RecordNotFound"
         "412":
           $ref: "#/components/responses/PreconditionFailed"
+    delete:
+      tags: [Career]
+      operationId: trashCareerRecord
+      summary: CareerRecord 휴지통 이동
+      description: >-
+        If-Match가 현재 version과 일치하는 활성 canonical Record만 soft delete한다.
+        다른 사용자 소유, 이미 삭제된 Record, 존재하지 않는 Record는 404를 반환한다.
+      parameters:
+        - $ref: "#/components/parameters/IfMatchHeader"
+      responses:
+        "200":
+          $ref: "#/components/responses/CareerRecordTrashed"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          $ref: "#/components/responses/RecordNotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/career/records/{recordId}/restore:
+    parameters:
+      - $ref: "#/components/parameters/RecordIdPath"
+    post:
+      tags: [Career]
+      operationId: restoreCareerRecord
+      summary: 삭제된 CareerRecord 복원
+      description: >-
+        purgeAfter가 지나지 않은 삭제 상태의 canonical Record를 If-Match CAS로 복원한다.
+        성공하면 version과 referenceVersion을 각각 정확히 1 증가시킨다.
+      parameters:
+        - $ref: "#/components/parameters/IfMatchHeader"
+      responses:
+        "200":
+          $ref: "#/components/responses/CareerRecordOk"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          $ref: "#/components/responses/RecordNotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
 components:
   securitySchemes:
@@ -172,6 +267,15 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/CareerRecordResponse"
+    CareerRecordTrashed:
+      description: 휴지통으로 이동한 CareerRecord의 lifecycle 상태
+      headers:
+        ETag:
+          $ref: "#/components/headers/RecordETag"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CareerRecordTrashResponse"
     BadRequest:
       description: 헤더, 경로 또는 본문이 계약에 맞지 않음
       content:
@@ -198,6 +302,12 @@ components:
             $ref: "#/components/schemas/ApiErrorResponse"
     PreconditionFailed:
       description: If-Match version이 현재 CareerRecord version보다 오래됨
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    InternalError:
+      description: canonical 저장 데이터가 계약을 위반함
       content:
         application/json:
           schema:
@@ -1128,6 +1238,55 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/CareerRecord"
+
+    CareerRecordListResponse:
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CareerRecord"
+        page:
+          $ref: "#/components/schemas/CareerRecordPage"
+
+    CareerRecordPage:
+      type: object
+      additionalProperties: false
+      required: [hasNextPage, nextCursor]
+      properties:
+        hasNextPage:
+          type: boolean
+        nextCursor:
+          oneOf:
+            - type: string
+              minLength: 1
+              maxLength: 512
+            - type: "null"
+
+    CareerRecordTrashResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/CareerRecordTrashData"
+
+    CareerRecordTrashData:
+      type: object
+      additionalProperties: false
+      required: [id, deletedAt, purgeAfter, version]
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        deletedAt:
+          $ref: "#/components/schemas/Timestamp"
+        purgeAfter:
+          $ref: "#/components/schemas/Timestamp"
+        version:
+          type: integer
+          minimum: 2
 
     ApiError:
       type: object
