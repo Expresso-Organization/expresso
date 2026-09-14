@@ -33,10 +33,8 @@ export function ConversationSwitcher({ currentId, conversations, disabled, onSel
   </>;
   const browser = <Tabs value={activeTab} onValueChange={setActiveTab} className={styles.browserTabs}>
     <TabsList variant="line" className={styles.browserTabList} aria-label="목록 종류">
-      <TabsTrigger value="chats" aria-label="채팅 목록">채팅</TabsTrigger>
-      <TabsTrigger value="records" aria-label="커리어 기록 목록">기록</TabsTrigger>
-      <TabsTrigger value="jobs" aria-label="채용 공고 목록">공고</TabsTrigger>
-      <TabsTrigger value="portfolios" aria-label="내 포트폴리오 목록">포트폴리오</TabsTrigger>
+      {RAIL_ITEMS.map(item => <TabsTrigger key={item.value} value={item.value} aria-label={item.label} title={item.label}><Icon name={item.icon} size={18} weight={activeTab === item.value ? "fill" : "regular"} /></TabsTrigger>)}
+      <span aria-hidden="true" className={styles.tabIndicator} style={{ transform: `translateX(${RAIL_ITEMS.findIndex(item => item.value === activeTab) * 100}%)` }} />
     </TabsList>
     <TabsContent value="chats" className={styles.browserContent}><h2>최근 대화 <span>{conversations.length}</span></h2>{content}</TabsContent>
     <TabsContent value="records" className={styles.browserContent}><ResourceList kind="records" chatId={currentId} /></TabsContent>

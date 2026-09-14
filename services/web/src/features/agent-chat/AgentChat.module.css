@@ -140,7 +140,11 @@
 @media(max-width:767px) { .conversationRail.conversationRail { display:none; } }
 
 .browserTabs .browserTabList { width:100%; flex-shrink:0; }
-/* 기준선과 선택 밑줄이 목록의 같은 하단 경계를 공유한다. */
-.browserTabs .browserTabList[data-variant="line"] { padding:0; border-bottom:1px solid var(--ex-border); }
-.browserTabList[data-variant="line"] :global([data-slot="tabs-trigger"]) { height:100%; border-width:0; }
-.browserTabList[data-variant="line"] :global([data-slot="tabs-trigger"]::after) { bottom:-1px; }
+/* 같은 폭의 탭과 표시 영역을 사용해 아이콘 중심과 원의 중심을 맞춘다. */
+.browserTabs .browserTabList[data-variant="line"] { position:relative; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); height:44px; padding:0 0 8px; gap:0; border:0; background:transparent; }
+.browserTabList[data-variant="line"] :global([data-slot="tabs-trigger"]) { height:36px; padding:0; border-width:0; color:var(--ex-fg-muted); }
+.browserTabList[data-variant="line"] :global([data-slot="tabs-trigger"][data-state="active"]) { color:var(--ex-accent-text); }
+.browserTabList[data-variant="line"] :global([data-slot="tabs-trigger"]::after) { display:none; }
+.tabIndicator { position:absolute; bottom:0; left:0; width:25%; height:6px; pointer-events:none; transition:transform var(--ex-motion-panel); }
+.tabIndicator::after { content:""; position:absolute; left:50%; width:5px; height:5px; border-radius:50%; background:var(--ex-accent-text); transform:translateX(-50%); }
+@media(prefers-reduced-motion:reduce) { .tabIndicator { transition:none; } }
