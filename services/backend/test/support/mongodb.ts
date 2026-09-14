@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { MongoClient } from "mongodb";
+import { MongoClient, type Document } from "mongodb";
 import { migrateMongo } from "@expresso/database";
 import { createMongoResource, type MongoResource } from "../../src/platform/mongodb.js";
 
@@ -18,6 +18,18 @@ export async function createMongoFixture(
     finally { try { await admin.db(databaseName).dropDatabase(); } finally { await admin.close(); } }
   })();
   try {
+    if (!options.migrationTargetVersion || options.migrationTargetVersion >= "0012") {
+      await admin.db(databaseName).collection<Document & { _id: string }>("career_property_migration_journal").insertOne({
+        _id: "0012:compatibility-writer-canary",
+        migration: "0012_career_property_values_backfill",
+        kind: "execution_gate",
+        deploymentVersion: "isolated-test-fixture",
+        verifiedAt: new Date(),
+        checkedWrites: 1,
+        mismatches: 0,
+        state: "verified",
+      });
+    }
     await migrateMongo({
       databaseUrl: adminUrl,
       databaseName,
