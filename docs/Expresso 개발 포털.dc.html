@@ -1539,7 +1539,7 @@ class Component extends DCLogic {
       const fr = document.getElementById('deckshot-' + DECK_SLUG[d[0]]);
       let doc = null;
       try { doc = fr && fr.contentDocument; } catch (e) { doc = null; }
-      const c = doc ? doc.querySelectorAll('.slide').length : 0;
+      const c = doc && doc.readyState === 'complete' ? (doc.querySelector('#deckStage')?.querySelectorAll(':scope > section.slide').length || 0) : 0;
       if (c) { next[d[0]] = c; changed = true; } else pending++;
     });
     if (changed) this.setState({ slides: next });
