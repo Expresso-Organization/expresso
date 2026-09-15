@@ -4,14 +4,16 @@ import { API_PREFIX, UuidSchema, CreateAgentConversationSchema, SendAgentMessage
 import { requireAuth } from "../../api/plugins/auth-context.js";
 import type { AgentChatService } from "./service.js";
 
-export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChatService, authenticate: preHandlerHookHandler) {
+export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChatService, authenticate: preHandlerHookHandler, developerUserIds: readonly string[] = []) {
   const base = `${API_PREFIX}/agent/conversations`;
   const options = { preHandler: authenticate };
   const id = (params: unknown) => UuidSchema.parse((params as { id: string }).id);
+  const developer = (userId: string) => developerUserIds.includes(userId);
+  app.get(`${API_PREFIX}/agent/access`, options, async req => ({ data: { enabled: service.enabled, serverCredentialAllowed: developer(requireAuth(req).user.id), model: "sonnet" } }));
   app.get(base, options, async req => ({ data: await service.list(requireAuth(req).user.id) }));
   app.post(base, options, async (req, reply) => { const input = CreateAgentConversationSchema.parse(req.body); return reply.code(201).send({ data: await service.create(requireAuth(req).user.id, input.contexts) }); });
   app.get(`${base}/:id`, options, async req => ({ data: await service.get(requireAuth(req).user.id, id(req.params)) }));
-  app.post(`${base}/:id/messages`, options, async (req, reply) => reply.code(202).send({ data: await service.send(requireAuth(req).user.id, id(req.params), SendAgentMessageSchema.parse(req.body)) }));
+  app.post(`${base}/:id/messages`, options, async (req, reply) => { const principal = requireAuth(req); const input = SendAgentMessageSchema.parse(req.body); if (!developer(principal.user.id) && !input.apiKey) return reply.code(403).send({ error: { message: "Anthropic API 키를 입력해 주세요." } }); return reply.code(202).send({ data: await service.send(principal.user.id, id(req.params), input) }); });
   app.post(`${base}/:id/contexts`, options, async req => ({ data: await service.attach(requireAuth(req).user.id, id(req.params), AddAgentContextSchema.parse(req.body).context) }));
   app.post(`${base}/:id/cancel`, options, async req => ({ data: await service.cancel(requireAuth(req).user.id, id(req.params)) }));
   app.post(`${base}/:id/approval`, options, async req => ({ data: await service.approve(requireAuth(req).user.id, id(req.params), AgentApprovalSchema.parse(req.body)) }));

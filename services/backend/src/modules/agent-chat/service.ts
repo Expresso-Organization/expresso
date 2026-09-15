@@ -14,6 +14,7 @@ export class AgentChatService {
   private readonly running = new Map<string, AbortController>();
   private readonly tasks = new Set<Promise<void>>();
   constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi) {}
+  get enabled() { return !!this.runtime; }
   private get rows() { return mongoCollections(this.db.db).agentConversations; }
   private async owned(userId: string, id: string) {
     await this.rows.updateOne({ _id: id, userId, "run.status": "running", heartbeatAt: { $lt: new Date(Date.now() - 60_000) } }, { $set: { "run.status": "interrupted", "run.error": "서버 실행이 중단되었습니다. 다시 보내 주세요.", updatedAt: new Date().toISOString() }, $inc: { version: 1 } });
@@ -64,11 +65,11 @@ export class AgentChatService {
     const run = { id: randomUUID(), requestId: input.requestId, status: "running" as const, error: null, startedAt: now };
     const changed = await this.rows.findOneAndUpdate({ _id: id, userId, version: row.version, "run.status": { $ne: "running" } }, { $push: { messages: { $each: [user, assistant] } }, $set: { run, title: row.messages.length ? row.title : input.text.slice(0, 100), updatedAt: now, heartbeatAt: new Date() }, $inc: { version: 1 } }, { returnDocument: "after" });
     if (!changed) throw new AgentChatError(409, "다른 화면에서 실행을 시작했습니다.");
-    const task = this.execute(changed, context).catch(() => undefined);
+    const task = this.execute(changed, context, input.apiKey).catch(() => undefined);
     this.tasks.add(task); void task.finally(() => this.tasks.delete(task));
     return view(changed);
   }
-  private async execute(row: AgentConversationDoc, context: Awaited<ReturnType<AgentChatService["context"]>>) {
+  private async execute(row: AgentConversationDoc, context: Awaited<ReturnType<AgentChatService["context"]>>, apiKey?: string) {
     const controller = new AbortController(); this.running.set(row._id, controller);
     const runId = row.run!.id;
     const filter = { _id: row._id, userId: row.userId, "run.id": runId, "run.status": "running" };
@@ -87,7 +88,7 @@ export class AgentChatService {
     }, 1_000);
     const timeout = setTimeout(() => controller.abort(), 600_000);
     try {
-      await this.runtime!.run({ messages: row.messages.slice(0, -1), context, signal: controller.signal,
+      await this.runtime!.run({ messages: row.messages.slice(0, -1), context, ...(apiKey ? { apiKey } : {}), signal: controller.signal,
         emit: async event => {
           if (controller.signal.aborted) throw new Error("cancelled");
           if (event.type === "text") { message.text += event.text; if (message.text.length > 64_000) throw new Error("response too large"); }

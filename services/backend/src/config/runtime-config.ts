@@ -46,7 +46,8 @@ const runtimeConfigSchema = z.object({
   AI_PROVIDER: z.enum(["off", "claude-code", "codex", "fixture", "anthropic"]).default("off"),
   /** 공통 채팅은 기존 구조화 AI 호출과 별도로 활성화합니다. */
   AGENT_CHAT_ENABLED: z.enum(["0", "1"]).default("0"),
-  AGENT_CHAT_MODEL: z.string().trim().max(100).optional(),
+  AGENT_CHAT_MODEL: z.literal("sonnet").default("sonnet"),
+  AGENT_CHAT_DEVELOPER_USER_IDS: z.string().default("").refine(value => value.split(",").map(item => item.trim()).filter(Boolean).every(item => z.uuid().safeParse(item).success), "개발 멤버 ID는 UUID여야 합니다."),
   /**
    * 지면 생성만 다른 프로바이더로.
    *
@@ -128,6 +129,7 @@ export interface RuntimeConfig {
   aiProvider?: "off" | "claude-code" | "codex" | "fixture" | "anthropic";
   agentChatEnabled?: boolean;
   agentChatModel?: string;
+  agentChatDeveloperUserIds?: string[];
   /** 지면 생성만 갈아 끼울 때. 비우면 `aiProvider`와 같다. */
   aiPageGenerationProvider?: "claude-code" | "codex" | "fixture" | "anthropic";
   work24ApiKey?: string | undefined;
@@ -169,7 +171,8 @@ export function loadRuntimeConfig(
     scheduledJobsEnabled: result.SCHEDULED_JOBS_ENABLED,
     googleClientId: result.GOOGLE_CLIENT_ID,
     agentChatEnabled: result.AGENT_CHAT_ENABLED === "1",
-    ...(result.AGENT_CHAT_MODEL ? { agentChatModel: result.AGENT_CHAT_MODEL } : {}),
+    agentChatModel: result.AGENT_CHAT_MODEL,
+    agentChatDeveloperUserIds: result.AGENT_CHAT_DEVELOPER_USER_IDS.split(",").map(value => value.trim().toLowerCase()).filter(Boolean),
     aiProvider: result.AI_PROVIDER,
     ...(result.AI_PROVIDER_PAGE_GENERATION
       ? { aiPageGenerationProvider: result.AI_PROVIDER_PAGE_GENERATION }

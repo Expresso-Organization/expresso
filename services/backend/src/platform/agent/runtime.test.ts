@@ -21,4 +21,17 @@ describe("Claude 채팅 실행 어댑터", () => {
     await expect(new ClaudeAgentRuntime().run({ messages: [], context: [], signal: controller.signal, emit: vi.fn(), propose: vi.fn() })).rejects.toThrow("cancelled");
     expect(stopped).toBe(true);
   });
+  it("개인 키는 서버 인증 환경과 분리하고 모델은 Sonnet으로 고정한다", async () => {
+    sdk.query.mockReturnValue((async function* () { yield { type: "result", is_error: false }; })());
+    await new ClaudeAgentRuntime("opus").run({ apiKey: "sk-ant-test-personal-key-value", messages: [], context: [], signal: new AbortController().signal, emit: vi.fn(), propose: vi.fn() });
+    const options = sdk.query.mock.lastCall![0].options;
+    expect(options.model).toBe("sonnet");
+    expect(options.env.ANTHROPIC_API_KEY).toBe("sk-ant-test-personal-key-value");
+    expect(options.env.HOME).toContain("expresso-agent-");
+    expect(options.env.CLAUDE_CONFIG_DIR).toBe(options.env.HOME);
+    expect(options.env.CLAUDE_CODE_OAUTH_TOKEN).toBeUndefined();
+    expect(options.env.ANTHROPIC_AUTH_TOKEN).toBeUndefined();
+    expect(sdk.query.mock.lastCall![0].prompt).not.toContain("sk-ant-");
+  });
+
 });

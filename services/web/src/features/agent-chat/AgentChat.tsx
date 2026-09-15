@@ -1,10 +1,11 @@
 "use client";
-import { createContext, useContext, useState, useRef } from "react";
+import { createContext, useContext, useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { LogoMark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
 import { useRouter } from "next/navigation";
 import { AssistantRuntimeProvider, useExternalStoreRuntime, useAui, useAuiState, type ThreadMessageLike, type ToolCallMessagePartComponent } from "@assistant-ui/react";
+import { AgentChatAccessSchema, AgentApiKeySchema } from "@expresso/contracts";
 import type { AgentContext, AgentMessage, AiEditProposalDetail, CareerDocumentBootstrap } from "@expresso/contracts";
 import { ConversationSwitcher } from "./ConversationSwitcher";
 import { AiProposalDiff } from "@/features/career-editor/ai/AiProposalDiff";
@@ -71,8 +72,13 @@ const convertMessage = (message: AgentMessage): ThreadMessageLike => ({
 });
 export function AgentChat({ context, contextLabel, standalone = false }: { context?: AgentContext; contextLabel?: string; standalone?: boolean }) {
   const state = useAgentConversation(context);
+  const [access, setAccess] = useState<ReturnType<typeof AgentChatAccessSchema.parse>["data"] | null>(null);
+  const [accessError, setAccessError] = useState(false);
+  const [apiKey, setApiKey] = useState("");
+  useEffect(() => { const controller = new AbortController(); void fetch("/api/agent/access", { signal: controller.signal, cache: "no-store" }).then(async response => { if (!response.ok) throw new Error("access"); setAccess(AgentChatAccessSchema.parse(await response.json()).data); }).catch(() => { if (!controller.signal.aborted) setAccessError(true); }); return () => controller.abort(); }, []);
+  const canSend = !!access?.enabled && (access.serverCredentialAllowed || AgentApiKeySchema.safeParse(apiKey).success);
   const running = state.conversation?.run?.status === "running";
-  const runtime = useExternalStoreRuntime({ messages: state.conversation?.messages ?? [], convertMessage, isRunning: running, isLoading: !!state.id && !state.conversation, isDisabled: state.pending || (!!state.id && !state.conversation), onNew: async message => { const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n"); try { await state.send(text); } catch { runtime.thread.composer.setText(text); } }, onCancel: state.cancel });
+  const runtime = useExternalStoreRuntime({ messages: state.conversation?.messages ?? [], convertMessage, isRunning: running, isLoading: !!state.id && !state.conversation, isDisabled: !canSend || state.pending || (!!state.id && !state.conversation), onNew: async message => { const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n"); try { await state.send(text, access?.serverCredentialAllowed ? undefined : apiKey); } catch { runtime.thread.composer.setText(text); } }, onCancel: state.cancel });
   const missing = context && state.conversation && !state.conversation.contexts.some(ref => ref.kind === context.kind && ref.id === context.id);
   return <ChatContext.Provider value={state}><AssistantRuntimeProvider runtime={runtime}>
     <section className={`acf-scope ${styles.root} ${standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅">
@@ -89,6 +95,7 @@ export function AgentChat({ context, contextLabel, standalone = false }: { conte
           {missing ? <Button variant="ghost" className={styles.attachButton} disabled={running || state.pending} onClick={() => void state.attach()}><Icon name="plus" size={13} /><span>{contextLabel ?? "현재 자료"} 연결</span></Button> : null}
           {!state.conversation?.contexts.length && !contextLabel ? <><Link className={styles.referenceEmpty} href="/jobs"><Icon name="plus" size={12} />공고</Link><Link className={styles.referenceEmpty} href="/career/experience"><Icon name="plus" size={12} />기록</Link></> : null}</div>
         </div>
+        {accessError ? <p role="alert" className={styles.error}>채팅 사용 권한을 확인하지 못했습니다. 새로고침해 주세요.</p> : !access ? <p role="status" className={styles.status}>채팅 사용 권한 확인 중…</p> : !access.enabled ? <p className={styles.status}>에이전트 채팅이 아직 활성화되지 않았습니다.</p> : !access.serverCredentialAllowed ? <div className={styles.apiKeyField}><label>Anthropic API 키<input aria-label="Anthropic API 키" type="password" autoComplete="off" spellCheck={false} value={apiKey} onChange={event => setApiKey(event.target.value.trim())} placeholder="sk-ant-…" /></label><small>본인 API 키로 Sonnet을 사용합니다. 키는 저장하지 않으며 이 화면을 떠나면 지워집니다. API 이용료는 입력한 키의 계정에 청구됩니다.</small></div> : null}
         <div className={styles.thread}><Thread autoFocus={standalone} components={{ Welcome: ChatWelcome, AssistantHeader: AssistantIdentity, ToolFallback: RecordTool, ToolGroup: ExpandedTools }} /></div>
         <div className={styles.footnote}><Icon name="check-circle" size={12} /><span>기록의 변경은 확인 후 적용됩니다.</span></div>
         {state.conversation?.run?.status === "cancelled" ? <p role="status" className={styles.status}>응답을 중지했습니다.</p> : null}

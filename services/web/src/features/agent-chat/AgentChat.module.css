@@ -148,3 +148,8 @@
 .tabIndicator { position:absolute; top:0; left:0; width:25%; height:100%; z-index:0; pointer-events:none; transition:transform var(--ex-motion-panel); }
 .tabIndicator::after { content:""; position:absolute; inset:0; border-radius:999px; background:var(--ex-bg); }
 @media(prefers-reduced-motion:reduce) { .tabIndicator { transition:none; } }
+
+.apiKeyField { margin:0 16px 12px; padding:12px; border:1px solid var(--ex-border); border-radius:8px; background:var(--ex-bg-sunken); }
+.apiKeyField label { display:flex; flex-direction:column; gap:8px; font-size:var(--ex-text-xs); }
+.apiKeyField input { width:100%; padding:8px; color:var(--ex-fg); background:var(--ex-bg); border:1px solid var(--ex-border); border-radius:6px; }
+.apiKeyField small { display:block; margin-top:8px; color:var(--ex-fg-muted); font-size:var(--ex-text-3xs); }
