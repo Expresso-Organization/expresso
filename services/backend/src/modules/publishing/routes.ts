@@ -50,6 +50,8 @@ export function registerPublishingRoutes(app: FastifyInstance, options: {
 
   app.post(`${API_PREFIX}/portfolios/:id/deployments`, { preHandler: options.authenticateRequest }, async (request, reply) => {
     const user = requireAuth(request).user;
+    // 공개 주소에 올리는 일만 이메일 인증 뒤에 한다. 되돌리기 · 중단 · 내보내기는 이미 공개된 것을 다루므로 그대로다.
+    if (!user.emailVerifiedAt) throw new HttpStatusError(403, "email verification required", { reason: "email_verification_required" });
     const params = PortfolioParams.safeParse(request.params);
     const body = PublishPortfolioSchema.safeParse(request.body);
     if (!params.success || !body.success) throw new HttpStatusError(400, "invalid publication request");

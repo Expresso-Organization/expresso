@@ -32,6 +32,10 @@ import {
   IssuedIdentitySessionSchema,
   LoginSchema,
   SESSION_POLICY,
+  SignupSchema,
+  TERMS_VERSION,
+  PasswordResetConfirmSchema,
+  EmailVerificationConfirmSchema,
   JobAnalysisExtractionSchema,
   InterviewSessionSchema,
   JobProgressEventSchema,
@@ -144,6 +148,7 @@ describe("identity contracts", () => {
           email: "user@example.com",
           displayName: "User",
           planCode: "free",
+          emailVerifiedAt: null,
         },
       }).data.planCode,
     ).toBe("free");
@@ -167,6 +172,18 @@ describe("identity contracts", () => {
         persistent: true,
       }),
     ).toThrow();
+  });
+
+  it("requires the current terms version on signup and scopes one-time tokens by prefix", () => {
+    const signup = { email: "user@example.com", password: "secret-passphrase", displayName: "User" };
+    expect(SignupSchema.parse({ ...signup, termsVersion: TERMS_VERSION }).termsVersion).toBe(TERMS_VERSION);
+    expect(() => SignupSchema.parse(signup)).toThrow();
+    expect(() => SignupSchema.parse({ ...signup, termsVersion: TERMS_VERSION + 1 })).toThrow();
+
+    const body = `${"b".repeat(43)}`;
+    expect(PasswordResetConfirmSchema.parse({ token: `exrt_${body}`, password: "new-secret-passphrase" }).token).toMatch(/^exrt_/);
+    expect(() => PasswordResetConfirmSchema.parse({ token: `exvt_${body}`, password: "new-secret-passphrase" })).toThrow();
+    expect(() => EmailVerificationConfirmSchema.parse({ token: `exrt_${body}` })).toThrow();
   });
 
   it("keeps sessions persistent unless the client opts out", () => {

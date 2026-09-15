@@ -23,6 +23,11 @@ export interface UserDoc {
   notificationPreferences?: JsonObject | null;
   writeVersion?: number;
   lifecycleVersion?: number;
+  /** 이 주소가 본인 것임을 확인한 시각. 0010 이전 사용자에게는 없다 = 미인증. */
+  emailVerifiedAt?: Date | null;
+  /** 약관·개인정보 처리방침에 동의한 시각과 그때의 판. 0010 이전 사용자에게는 없다. */
+  termsAcceptedAt?: Date | null;
+  termsVersion?: number | null;
 }
 
 export interface ConsentDoc {
@@ -69,4 +74,20 @@ export interface IdentitySessionDoc {
   idleTtlMs?: number;
   /** 활동으로도 넘지 못하는 절대 상한. 없으면 `createdAt + 90일`로 본다. */
   absoluteExpiresAt?: Date;
+}
+
+/**
+ * 일회용 토큰 — 비밀번호 재설정 링크와 이메일 인증 링크.
+ *
+ * 세션 토큰과 같은 원칙으로 해시만 둔다. 한 번 쓰면 `usedAt`이 찍히고, `expiresAt`은
+ * TTL 인덱스가 지운다. 같은 사람 · 같은 종류의 최신 `createdAt`으로 재발송 간격을 본다.
+ */
+export interface IdentityTokenDoc {
+  _id: string;
+  userId: string;
+  kind: "password_reset" | "email_verification";
+  tokenHash: string;
+  expiresAt: Date;
+  usedAt?: Date | null;
+  createdAt: Date;
 }

@@ -305,6 +305,19 @@
   gap: 8px;
 }
 
+/* 소셜 가입 아래 동의 문장. 체크는 없고 문장이 곧 동의다 — 버튼을 누르는 것이 동의 행위다 */
+.socials:has(+ .socialConsent) {
+  margin-bottom: 8px;
+}
+
+.socialConsent {
+  margin: 0 0 22px;
+  font-size: var(--ex-text-2xs);
+  line-height: 1.65;
+  color: var(--ex-fg-muted);
+  text-align: center;
+}
+
 /* 약관 동의 */
 .consent {
   display: flex;

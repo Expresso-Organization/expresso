@@ -4,6 +4,7 @@ import {
   CareerCategoriesResponseSchema,
   CurrentUserResponseSchema,
   SESSION_POLICY,
+  TERMS_VERSION,
 } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { createMysqlResource } from "../../platform/legacy-mysql.js";
@@ -18,7 +19,25 @@ import { MongoIdentityService, type IdentityApi } from "./index.js";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { mongoCollections } from "@expresso/database";
 import { inTransaction } from "../../platform/mongo-transaction.js";
+import type { MailMessage, Mailer } from "../../platform/mail/client.js";
+import type { PublishingApi } from "../publishing/index.js";
 import { requireActiveUser } from "./mongo-user-guard.js";
+
+/** 보낸 메일을 쌓아 두는 메일러. 테스트가 본문에서 링크의 토큰을 꺼내 쓴다. */
+class RecordingMailer implements Mailer {
+  readonly sent: MailMessage[] = [];
+  async send(message: MailMessage) { this.sent.push(message); return { id: `mail-${this.sent.length}` }; }
+  /** 이 주소로 간 마지막 메일 본문에서 `?token=` 값을 꺼낸다. 다른 테스트가 보낸 메일과 섞이지 않게 수신자로 고른다. */
+  lastTokenFor(to: string): string {
+    const text = this.sent.filter((mail) => mail.to === to).at(-1)?.text ?? "";
+    const match = /[?&]token=([^\s&]+)/.exec(text);
+    if (!match?.[1]) throw new Error("mail has no token link");
+    return decodeURIComponent(match[1]);
+  }
+}
+
+/** 발행 라우트의 인증 게이트만 본다. 서비스는 성공 응답 하나를 돌려주는 대역이다. */
+const publishingStub = { publish: async () => ({ id: "deployment", version: 1, slug: "gate-check" }) } as unknown as PublishingApi;
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
@@ -44,14 +63,15 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
   let fixture: Awaited<ReturnType<typeof createMongoFixture>> | undefined;
   let identityService: IdentityApi;
   let app: ReturnType<typeof buildApi>;
+  const mailer = new RecordingMailer();
   const email = `signup-${crypto.randomUUID()}@example.com`;
   const createdEmails: string[] = [email];
 
   beforeAll(async () => {
     if (engine === "mongodb") {
       fixture = await createMongoFixture("auth");
-      identityService = new MongoIdentityService(fixture.resource);
-      app = buildApi({ config, identityService, careerService: new MongoCareerService(fixture.resource) });
+      identityService = new MongoIdentityService(fixture.resource, { mailer, appBaseUrl: "http://app.test" });
+      app = buildApi({ config, identityService, careerService: new MongoCareerService(fixture.resource), publishingService: publishingStub });
     } else {
       sql = createMysqlResource(databaseUrl!).sql;
       identityService = new IdentityService(sql);
@@ -80,6 +100,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
       email,
       password: PASSWORD,
       displayName: "김지원",
+      termsVersion: TERMS_VERSION,
     });
     expect(created.statusCode).toBe(201);
 
@@ -121,6 +142,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
       email,
       password: PASSWORD,
       displayName: "다른 사람",
+      termsVersion: TERMS_VERSION,
     });
     expect(duplicate.statusCode).toBe(409);
     expect(ApiErrorResponseSchema.parse(duplicate.json()).error.code).toBe("CONFLICT");
@@ -199,6 +221,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
       email: shortPassword,
       password: "short",
       displayName: "짧은 비밀번호",
+      termsVersion: TERMS_VERSION,
     });
     expect(rejected.statusCode).toBe(400);
     expect(ApiErrorResponseSchema.parse(rejected.json()).error.code).toBe(
@@ -286,6 +309,100 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
     const legacy = await collections.identitySessions.findOne({ _id: session.sessionId });
     expect(legacy!.expiresAt.getTime()).toBeGreaterThan(before + SESSION_POLICY.persistent.idleMs - 60_000);
     expect(legacy!.expiresAt.getTime()).toBeLessThanOrEqual(createdAt.getTime() + SESSION_POLICY.absoluteMs);
+  });
+
+  it("rejects a signup that does not accept the current terms", async () => {
+    const response = await signup({ email: `terms-${crypto.randomUUID()}@example.com`, password: PASSWORD, displayName: "미동의" });
+    expect(response.statusCode).toBe(400);
+    const stale = await signup({ email: `terms-${crypto.randomUUID()}@example.com`, password: PASSWORD, displayName: "옛 판", termsVersion: TERMS_VERSION + 1 });
+    expect(stale.statusCode).toBe(400);
+  });
+
+  it.skipIf(engine !== "mongodb")("records the accepted terms and sends one verification mail on signup", async () => {
+    const collections = mongoCollections(fixture!.resource.db);
+    const account = await collections.users.findOne({ email });
+    expect(account?.termsVersion).toBe(TERMS_VERSION);
+    expect(account?.termsAcceptedAt).toBeInstanceOf(Date);
+    expect(account?.emailVerifiedAt).toBeNull();
+
+    const verification = mailer.sent.filter((mail) => mail.to === email && mail.subject.includes("이메일 주소 확인"));
+    expect(verification).toHaveLength(1);
+    expect(verification[0]!.text).toContain("http://app.test/verify-email?token=exvt_");
+    expect(verification[0]!.idempotencyKey).toBeTruthy();
+    // 해시만 저장한다. 원문 토큰은 어디에도 없다.
+    const token = /token=([^\s]+)/.exec(verification[0]!.text)![1]!;
+    expect(await collections.identityTokens.countDocuments({ tokenHash: token })).toBe(0);
+    expect(await collections.identityTokens.countDocuments({ userId: account!._id, kind: "email_verification" })).toBe(1);
+  });
+
+  it.skipIf(engine !== "mongodb")("blocks publishing until the email is verified, then confirms through the mailed link", async () => {
+    const { session } = AuthSessionResponseSchema.parse(
+      (await app.inject({ method: "POST", url: "/v1/auth/login", payload: { email, password: PASSWORD } })).json(),
+    ).data;
+    const authorization = `Bearer ${session.accessToken}`;
+    const publish = () => app.inject({ method: "POST", url: `/v1/portfolios/${crypto.randomUUID()}/deployments`, headers: { authorization }, payload: { slug: "gate-check" } });
+
+    const blocked = await publish();
+    expect(blocked.statusCode).toBe(403);
+    expect(ApiErrorResponseSchema.parse(blocked.json()).error.details).toEqual({ reason: "email_verification_required" });
+
+    // 가입 직후 보낸 메일이 60초 안이라 재발송은 429다.
+    const tooSoon = await app.inject({ method: "POST", url: "/v1/auth/email-verification", headers: { authorization } });
+    expect(tooSoon.statusCode).toBe(429);
+
+    const confirmed = await app.inject({ method: "POST", url: "/v1/auth/email-verification/confirm", payload: { token: mailer.lastTokenFor(email) } });
+    expect(confirmed.statusCode).toBe(200);
+    expect(CurrentUserResponseSchema.parse(confirmed.json()).data.emailVerifiedAt).not.toBeNull();
+
+    // 같은 링크를 두 번 쓸 수 없다.
+    const reused = await app.inject({ method: "POST", url: "/v1/auth/email-verification/confirm", payload: { token: mailer.lastTokenFor(email) } });
+    expect(reused.statusCode).toBe(400);
+
+    const me = await app.inject({ method: "GET", url: "/v1/me", headers: { authorization } });
+    expect(CurrentUserResponseSchema.parse(me.json()).data.emailVerifiedAt).not.toBeNull();
+    expect((await publish()).statusCode).toBe(201);
+
+    // 인증이 끝난 계정의 재발송은 409다.
+    const already = await app.inject({ method: "POST", url: "/v1/auth/email-verification", headers: { authorization } });
+    expect(already.statusCode).toBe(409);
+  });
+
+  it.skipIf(engine !== "mongodb")("resets the password through a one-time link and revokes every other session", async () => {
+    const before = mailer.sent.length;
+    const unknown = await app.inject({ method: "POST", url: "/v1/auth/password-reset", payload: { email: `absent-${crypto.randomUUID()}@example.com` } });
+    expect(unknown.statusCode).toBe(202);
+    expect(mailer.sent).toHaveLength(before);
+
+    const existing = AuthSessionResponseSchema.parse(
+      (await app.inject({ method: "POST", url: "/v1/auth/login", payload: { email, password: PASSWORD } })).json(),
+    ).data;
+
+    const requested = await app.inject({ method: "POST", url: "/v1/auth/password-reset", payload: { email } });
+    expect(requested.statusCode).toBe(202);
+    expect(mailer.sent).toHaveLength(before + 1);
+    expect(mailer.sent.at(-1)!.text).toContain("http://app.test/login/reset?token=exrt_");
+    // 60초 안의 재요청은 같은 202이고 메일은 더 가지 않는다.
+    expect((await app.inject({ method: "POST", url: "/v1/auth/password-reset", payload: { email } })).statusCode).toBe(202);
+    expect(mailer.sent).toHaveLength(before + 1);
+
+    const token = mailer.lastTokenFor(email);
+    // 인증 토큰을 재설정 자리에 넣을 수 없다.
+    expect((await app.inject({ method: "POST", url: "/v1/auth/password-reset/confirm", payload: { token: token.replace(/^exrt_/, "exvt_"), password: `${PASSWORD}-new` } })).statusCode).toBe(400);
+
+    const newPassword = `${PASSWORD}-new`;
+    const confirmed = await app.inject({ method: "POST", url: "/v1/auth/password-reset/confirm", payload: { token, password: newPassword, persistent: false } });
+    expect(confirmed.statusCode).toBe(200);
+    const fresh = AuthSessionResponseSchema.parse(confirmed.json()).data;
+    expect(fresh.session.persistent).toBe(false);
+
+    // 이전 세션은 전부 끊기고 새 세션만 산다.
+    expect((await app.inject({ method: "GET", url: "/v1/me", headers: { authorization: `Bearer ${existing.session.accessToken}` } })).statusCode).toBe(401);
+    expect((await app.inject({ method: "GET", url: "/v1/me", headers: { authorization: `Bearer ${fresh.session.accessToken}` } })).statusCode).toBe(200);
+    // 링크는 한 번만 쓰인다.
+    expect((await app.inject({ method: "POST", url: "/v1/auth/password-reset/confirm", payload: { token, password: newPassword } })).statusCode).toBe(400);
+    // 옛 비밀번호는 더 이상 열리지 않고 새 비밀번호로 들어온다.
+    expect((await app.inject({ method: "POST", url: "/v1/auth/login", payload: { email, password: PASSWORD } })).statusCode).toBe(401);
+    expect((await app.inject({ method: "POST", url: "/v1/auth/login", payload: { email, password: newPassword } })).statusCode).toBe(200);
   });
 
   it.skipIf(engine !== "mongodb")("rolls back account creation if its first session cannot be inserted", async () => {

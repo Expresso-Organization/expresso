@@ -2,7 +2,10 @@ import {
   API_PREFIX,
   AuthSessionResponseSchema,
   CurrentUserResponseSchema,
+  EmailVerificationConfirmSchema,
   GoogleLinkSchema,
+  PasswordResetConfirmSchema,
+  PasswordResetRequestSchema,
   GoogleSignInSchema,
   IdentitySessionIdParamsSchema,
   LoginSchema,
@@ -101,6 +104,44 @@ export function registerIdentityRoutes(
     const identity = await readGoogleIdentity(request, input);
     return SocialAuthSessionResponseSchema.parse({
       data: await options.identityService.linkGoogle(identity, input.password, input.persistent),
+    });
+  });
+
+  /**
+   * 비밀번호 재설정. 요청은 가입 여부와 무관하게 202 — 응답이 갈리면 이메일 존재가 새어 나간다.
+   * 확인은 토큰을 소비하고 새 세션을 준다. 토큰이 틀리면 400이고 그 이상은 말하지 않는다.
+   */
+  app.post(`${API_PREFIX}/auth/password-reset`, async (request, reply) => {
+    const input = parseBody(PasswordResetRequestSchema, request);
+    await options.identityService.requestPasswordReset(input.email);
+    return reply.code(202).send();
+  });
+
+  app.post(`${API_PREFIX}/auth/password-reset/confirm`, async (request) => {
+    const input = parseBody(PasswordResetConfirmSchema, request);
+    return AuthSessionResponseSchema.parse({
+      data: await options.identityService.confirmPasswordReset(input),
+    });
+  });
+
+  /**
+   * 이메일 인증. 재발송은 로그인한 본인만 부른다. 확인은 로그인 없이 된다 — 링크는 다른
+   * 브라우저에서 열릴 수 있다.
+   */
+  app.post(
+    `${API_PREFIX}/auth/email-verification`,
+    { preHandler: authenticateRequest },
+    async (request, reply) => {
+      const principal = requireAuth(request);
+      await options.identityService.requestEmailVerification(principal.user.id);
+      return reply.code(202).send();
+    },
+  );
+
+  app.post(`${API_PREFIX}/auth/email-verification/confirm`, async (request) => {
+    const input = parseBody(EmailVerificationConfirmSchema, request);
+    return CurrentUserResponseSchema.parse({
+      data: await options.identityService.confirmEmailVerification(input.token),
     });
   });
 

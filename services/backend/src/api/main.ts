@@ -20,6 +20,7 @@ import { AiBlockEditor } from "../modules/portfolio-editing/editor.js";
 import { AiLayoutRemixer } from "../modules/layout/remixer.js";
 import { AiInsightWriter } from "../modules/analytics/writer.js";
 import { createAiClient } from "../platform/ai/create-client.js";
+import { createMailer } from "../platform/mail/create-mailer.js";
 import { DesignSystemService } from "../modules/design-systems/service.js";
 import { TemplateService } from "../modules/templates/index.js";
 import { GenerationService } from "../modules/generation/index.js";
@@ -43,7 +44,7 @@ const config = loadRuntimeConfig();
 if (!config.mongodbUrl || !config.mongodbDatabase) throw new Error("MongoDB runtime configuration is missing");
 const database = createMongoResource(config.mongodbUrl, { databaseName: config.mongodbDatabase });
 const redis = createRedisResource(config.redisUrl);
-const identityService = new IdentityService(database);
+const identityService = new IdentityService(database, { mailer: createMailer(config), appBaseUrl: config.appBaseUrl });
 // 클라이언트 ID가 없으면 만들지 않는다 — 라우트가 503으로 답하고, 화면은
 // 버튼을 열지 않는다. 검증기 없이 도는 척하는 경로를 두지 않는다.
 const googleIdTokenVerifier = config.googleClientId

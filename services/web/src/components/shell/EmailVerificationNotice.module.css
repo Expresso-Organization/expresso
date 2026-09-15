@@ -1,0 +1,64 @@
+/*
+ * 앱 셸 위의 인증 안내 띠. 미인증 계정에만 보이고, 인증이 끝나면 다음 요청에서 사라진다.
+ *
+ * 값은 design-ops `web-comfortable` 프로필의 spacing(8 · 12 · 16)에서 왔다. 가로 패딩
+ * 14 · 26은 프로필 밖이지만 바로 아래 헤더(`AppShell.module.css .header`)와 같은 값이다 —
+ * 셸 안에서 세로선이 맞는 쪽을 택했다.
+ */
+.strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 8px 14px;
+  background: var(--ex-status-warning-surface);
+  color: var(--ex-status-warning-text);
+  border-bottom: 1px solid var(--ex-border);
+  font-size: var(--ex-text-xs);
+  line-height: 1.5;
+}
+
+@media (min-width: 768px) {
+  .strip {
+    padding: 8px 26px;
+  }
+}
+
+.text {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.email {
+  font-weight: 600;
+}
+
+.action {
+  flex-shrink: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ex-accent-text);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.action:disabled {
+  cursor: default;
+  color: var(--ex-fg-subtle);
+  text-decoration: none;
+}
+
+.status {
+  flex-basis: 100%;
+  color: var(--ex-fg-muted);
+}
+
+@media (min-width: 768px) {
+  .status {
+    flex-basis: auto;
+  }
+}
