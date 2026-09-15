@@ -16,7 +16,9 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
   afterAll(async () => { try { await mongo.dropDatabase(); } finally { await client.close(); } });
 
   it("creates every product collection and preserves the seeded IDs and all 30 additional designs", async () => {
-    expect(await mongo.listCollections({}, { nameOnly: true }).toArray()).toHaveLength(82);
+    const names = (await mongo.listCollections({}, { nameOnly: true }).toArray()).map(item => item.name);
+    expect(names).toHaveLength(83);
+    expect(names).toContain("agent_conversations");
     expect(await collections.plans.countDocuments()).toBe(3);
     expect((await collections.plans.findOne({ code: "free" }))?._id).toBe("aa09f35f-bde6-4e18-b9cd-7b32759bf43b");
     expect(await collections.careerCategories.countDocuments({ isSystem: true })).toBe(7);
