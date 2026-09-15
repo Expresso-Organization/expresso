@@ -18,7 +18,7 @@ date: 2026-09-15
 | `packages/contracts/src/contracts.test.ts` | 발급 세션 픽스처에 `persistent` |
 | `packages/database/src/documents/identity.ts` | `IdentitySessionDoc.idleTtlMs` · `absoluteExpiresAt` |
 | `packages/database/src/mongodb-migrations/0009/migration.ts` (새) | `identity_sessions` validator에 두 필드 |
-| `packages/database/src/mongo-migrations.ts` · `mongo-build.mjs` · `schema.test.ts` | 0009 등록 |
+| `packages/database/src/mongo-migrations.ts` · `mongo-build.mjs` · `schema.test.ts` · `migrations.test.ts` | 0009 등록(개수 단언 9) |
 | `services/backend/src/modules/identity/public.ts` | `IssueIdentitySessionInput.ttlMs` → `persistent` |
 | `services/backend/src/modules/identity/service.ts` | 정책으로 발급, 파이프라인 갱신으로 연장 |
 | `services/backend/src/modules/identity/legacy-mysql-service.ts` | `persistent` 시그니처만 맞춤 |

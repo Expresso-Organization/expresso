@@ -30,6 +30,8 @@ import {
   IdempotencyKeySchema,
   IdentitySessionIdParamsSchema,
   IssuedIdentitySessionSchema,
+  LoginSchema,
+  SESSION_POLICY,
   JobAnalysisExtractionSchema,
   InterviewSessionSchema,
   JobProgressEventSchema,
@@ -153,6 +155,7 @@ describe("identity contracts", () => {
         sessionId: ids.job,
         accessToken: `exps_${"a".repeat(43)}`,
         expiresAt: "2026-08-10T00:00:00Z",
+        persistent: true,
       }).accessToken,
     ).toMatch(/^exps_/);
 
@@ -161,8 +164,17 @@ describe("identity contracts", () => {
         sessionId: ids.job,
         accessToken: "plaintext-token",
         expiresAt: "2026-08-10T00:00:00Z",
+        persistent: true,
       }),
     ).toThrow();
+  });
+
+  it("keeps sessions persistent unless the client opts out", () => {
+    const login = { email: "user@example.com", password: "secret-passphrase" };
+    expect(LoginSchema.parse(login).persistent).toBe(true);
+    expect(LoginSchema.parse({ ...login, persistent: false }).persistent).toBe(false);
+    expect(SESSION_POLICY.ephemeral.idleMs).toBeLessThan(SESSION_POLICY.persistent.idleMs);
+    expect(SESSION_POLICY.persistent.idleMs).toBeLessThan(SESSION_POLICY.absoluteMs);
   });
 });
 
