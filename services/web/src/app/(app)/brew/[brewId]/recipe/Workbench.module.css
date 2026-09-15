@@ -578,11 +578,12 @@
   font-size: var(--ex-text-2xs);
 }
 
+/* 제목도 글 길이만큼 자란다 — 좁은 지면에서 잘리지 않는다. */
 .sectionTitle {
   flex: 1;
   min-width: 0;
-  height: 36px; /* 18px 제목의 줄 높이 + 위아래 여백 — control-xs 보다 한 걸음 크다 */
-  padding: 0 var(--ex-space-2);
+  min-height: var(--ex-control-xs);
+  padding: var(--ex-space-1) var(--ex-space-2);
   border: 1px solid transparent;
   border-radius: var(--ex-radius-md);
   background: none;
@@ -591,7 +592,18 @@
   font-size: var(--ex-text-xl);
   font-weight: 600;
   letter-spacing: -0.02em;
+  line-height: var(--ex-leading-tight);
+  resize: none;
+  overflow: hidden;
 }
+
+.sectionHead { align-items: flex-start; }
+
+.sectionHead > .handle,
+.sectionHead > .sectionNo,
+.sectionHead > .tools { margin-top: var(--ex-space-1); }
+
+.sectionHead > .sectionNo { line-height: var(--ex-control-xs); margin-top: 0; }
 
 .sectionBody {
   margin-left: calc(var(--ex-control-xs) + var(--ex-space-2));

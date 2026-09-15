@@ -634,14 +634,13 @@ function SectionCard({
           <Icon name="dots-six-vertical" size={16} />
         </button>
         <span className={styles.sectionNo}>{no(index)}</span>
-        <input
+        <AutoTextarea
           className={styles.sectionTitle}
-          defaultValue={section.title}
-          placeholder="섹션 이름"
+          value={section.title}
           maxLength={300}
-          aria-label="섹션 이름"
-          onBlur={(event) => {
-            const title = event.target.value.trim();
+          placeholder="섹션 이름"
+          ariaLabel="섹션 이름"
+          onCommit={(title) => {
             if (title !== section.title) void apply({ operation: "update_section", sectionId: section.id, title });
           }}
         />
