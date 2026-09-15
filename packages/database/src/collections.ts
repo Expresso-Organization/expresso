@@ -52,6 +52,7 @@ export interface MongoCollections {
   generationUsageLedger: Collection<Docs.GenerationUsageLedgerDoc>;
   identityOauthAccounts: Collection<Docs.IdentityOauthAccountDoc>;
   identitySessions: Collection<Docs.IdentitySessionDoc>;
+  identityTokens: Collection<Docs.IdentityTokenDoc>;
   insights: Collection<Docs.InsightDoc>;
   interests: Collection<Docs.InterestDoc>;
   jobSources: Collection<Docs.JobSourceDoc>;
@@ -138,6 +139,7 @@ export function mongoCollections(db: Db): MongoCollections {
     generationUsageLedger: db.collection<Docs.GenerationUsageLedgerDoc>("generation_usage_ledger"),
     identityOauthAccounts: db.collection<Docs.IdentityOauthAccountDoc>("identity_oauth_accounts"),
     identitySessions: db.collection<Docs.IdentitySessionDoc>("identity_sessions"),
+    identityTokens: db.collection<Docs.IdentityTokenDoc>("identity_tokens"),
     insights: db.collection<Docs.InsightDoc>("insights"),
     interests: db.collection<Docs.InterestDoc>("interests"),
     jobSources: db.collection<Docs.JobSourceDoc>("job_sources"),
