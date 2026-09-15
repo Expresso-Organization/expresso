@@ -32,10 +32,25 @@ services/backend/src/worker
 - `api`: HTTP 서버 조립, 라우팅, 인증 컨텍스트, 오류 응답
 - `worker`: 큐 소비자 조립과 장시간 작업 실행
 - `modules`: 커리어 기록, 공고, 인터뷰, 생성, 편집, 배포, 분석 등 업무 규칙
-- `platform`: MySQL, Redis, 큐, 객체 저장소처럼 외부 시스템과 맞닿는 어댑터
+- `platform`: MySQL, Redis, 큐, 객체 저장소, 메일처럼 외부 시스템과 맞닿는 어댑터
 - `config`: 실행 환경 검증
 
 도메인 모듈은 다른 모듈의 내부 파일을 직접 가져오지 않습니다. 공유해야 하는 공개 계약은 각 모듈의 진입점이나 `packages/contracts`를 통해 노출합니다.
+
+### 메일
+
+`platform/mail`의 `Mailer` 하나를 `identity`가 씁니다. 공급자는 `MAIL_PROVIDER`가 정하며
+`off`(기본 — 수신자·제목·본문을 로그로 남기고 보내지 않음)와 `resend`(HTTP API,
+`RESEND_API_KEY` 필수)가 있습니다. 인증 메일은 요청 안에서 동기 발송합니다 — 아웃박스를
+거치면 링크의 원문 토큰이 `outbox_events`에 남아 "토큰은 해시만 저장한다"는 원칙과
+충돌합니다. 가입 직후의 인증 메일 실패는 가입을 막지 않고 로그로 남기며, 사용자는 앱 안에서
+다시 보낼 수 있습니다.
+
+일회용 토큰(비밀번호 재설정 30분 · 이메일 인증 24시간)은 `identity_tokens`에 해시만 두고
+`findOneAndUpdate`로 원자적으로 소비합니다. 재설정 확인은 비밀번호 갱신 · 전 세션 취소 ·
+새 세션 발급을 한 트랜잭션에 넣습니다. 발행(`POST /portfolios/:id/deployments`)은
+`emailVerifiedAt`이 없으면 403 `email_verification_required`로 답합니다 — `publishing`은
+`identity`의 속을 열지 않고 인증 컨텍스트의 사용자 필드만 봅니다.
 
 ## 배포 단위
 

@@ -67,6 +67,17 @@ UI 컴포넌트는 도메인 타입을 알지 않습니다. 화면이 도메인 
 `next`는 `lib/auth/next-path.ts`의 `safeNext()`만 통과합니다(같은 출처 경로,
 `/api/`·`/login`·`/signup` 제외).
 
+### 재설정 · 인증 · 동의
+
+- `/login/forgot` → 이메일 → 백엔드 202(가입 여부 무관) → 같은 문장. `/login/reset?token=`이
+  메일의 링크이고, 성공하면 새 세션 쿠키를 쓰고 `/home`으로 갑니다. 다른 기기의 세션은
+  백엔드가 끊습니다.
+- `/verify-email?token=`은 로그인 없이 열리며 `StandaloneNotice`로 결과를 보입니다.
+  `AppChrome`은 미인증 계정에 `EmailVerificationNotice` 띠를 본문 위에 놓고, 띠의
+  "다시 보내기"는 서버 액션입니다(60초 안 재요청은 429 → "1분 뒤").
+- 가입 폼은 `TERMS_VERSION`을 hidden으로 보내고, 약관·개인정보 링크는 `/terms` · `/privacy`
+  (`app/(legal)`)로 갑니다. 문서 본문은 아직 자리 표시이며 판 번호는 계약에서 옵니다.
+
 ## 토큰과 스타일
 
 CSS Modules와 `--ex-*` CSS 변수를 씁니다. 유틸리티 프레임워크를 쓰지 않는 이유는

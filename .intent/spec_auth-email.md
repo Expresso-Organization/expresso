@@ -11,36 +11,36 @@ date: 2026-09-15
 
 ## 요구사항
 
-- [ ] `MAIL_PROVIDER=off | resend`(기본 `off`). `resend`는 `RESEND_API_KEY`가 있어야 뜬다. `MAIL_FROM`
+- [x] `MAIL_PROVIDER=off | resend`(기본 `off`). `resend`는 `RESEND_API_KEY`가 있어야 뜬다. `MAIL_FROM`
       기본 `Expresso <noreply@expresso.kr>`. 백엔드가 링크를 만들 `APP_BASE_URL`(기본 `http://localhost:3000`).
-- [ ] `off` 어댑터는 수신자·제목·본문(text)을 info 로그로 남기고 성공을 돌려준다.
-- [ ] Resend 어댑터는 `POST https://api.resend.com/emails`에 Bearer 키와 `Idempotency-Key`로 보낸다.
+- [x] `off` 어댑터는 수신자·제목·본문(text)을 info 로그로 남기고 성공을 돌려준다.
+- [x] Resend 어댑터는 `POST https://api.resend.com/emails`에 Bearer 키와 `Idempotency-Key`로 보낸다.
       4xx·5xx는 `MailDeliveryError`로 감싸고 응답의 `name`을 로그에 남긴다.
-- [ ] 일회용 토큰은 `identity_tokens`에 **해시만** 저장한다. 종류 `password_reset`(30분) ·
+- [x] 일회용 토큰은 `identity_tokens`에 **해시만** 저장한다. 종류 `password_reset`(30분) ·
       `email_verification`(24시간). 한 번 쓰면 `usedAt`이 찍히고 다시 쓸 수 없다.
-- [ ] `POST /v1/auth/password-reset {email}` — 가입 여부와 무관하게 202. 계정이 있으면 60초 안에
+- [x] `POST /v1/auth/password-reset {email}` — 가입 여부와 무관하게 202. 계정이 있으면 60초 안에
       다시 보내지 않는다(응답은 같은 202). 계정이 없거나 삭제 대기면 메일을 보내지 않는다.
-- [ ] `POST /v1/auth/password-reset/confirm {token, password, persistent?}` — 토큰이 살아 있으면
+- [x] `POST /v1/auth/password-reset/confirm {token, password, persistent?}` — 토큰이 살아 있으면
       비밀번호를 바꾸고 **그 사용자의 모든 세션을 취소**한 뒤 새 세션(`AuthSession`)을 돌려준다.
       틀리거나 만료·사용된 토큰은 400 `invalid or expired token`.
-- [ ] `POST /v1/auth/email-verification`(인증 필요) — 인증 메일 발송. 이미 인증이면 409, 60초 안
+- [x] `POST /v1/auth/email-verification`(인증 필요) — 인증 메일 발송. 이미 인증이면 409, 60초 안
       재요청은 429. 성공 202.
-- [ ] `POST /v1/auth/email-verification/confirm {token}` — 인증 표시 후 `CurrentUserResponse`.
+- [x] `POST /v1/auth/email-verification/confirm {token}` — 인증 표시 후 `CurrentUserResponse`.
       가입 직후 백엔드가 같은 메일을 한 번 보낸다(발송 실패는 가입을 막지 않고 로그만).
-- [ ] `AuthenticatedUser`에 `emailVerifiedAt: Timestamp | null`. Google로 만든 계정과 Google을
+- [x] `AuthenticatedUser`에 `emailVerifiedAt: Timestamp | null`. Google로 만든 계정과 Google을
       이은 계정은 그 자리에서 인증된다.
-- [ ] `SignupSchema`에 `termsVersion: z.literal(TERMS_VERSION)`. 서버가 `termsAcceptedAt` ·
+- [x] `SignupSchema`에 `termsVersion: z.literal(TERMS_VERSION)`. 서버가 `termsAcceptedAt` ·
       `termsVersion`을 사용자에 기록한다. Google 가입도 현재 판으로 기록한다.
-- [ ] `POST /v1/portfolios/:id/deployments`는 인증 전이면 403 `{ reason: "email_verification_required" }`.
+- [x] `POST /v1/portfolios/:id/deployments`는 인증 전이면 403 `{ reason: "email_verification_required" }`.
       다른 발행 라우트(되돌리기·중단·내보내기)는 그대로.
-- [ ] 웹: `/login/forgot` · `/login/reset?token=` · `/verify-email?token=` · `/terms` · `/privacy`.
+- [x] 웹: `/login/forgot` · `/login/reset?token=` · `/verify-email?token=` · `/terms` · `/privacy`.
       로그인 화면 "잊으셨나요?"가 링크가 된다. 가입 화면 동의 링크가 문서로 간다.
-- [ ] 웹: 앱 셸 위에 인증 안내 띠 — 미인증일 때만, "인증 메일 다시 보내기" 서버 액션 포함.
+- [x] 웹: 앱 셸 위에 인증 안내 띠 — 미인증일 때만, "인증 메일 다시 보내기" 서버 액션 포함.
       08b 배포의 403(`email_verification_required`)은 인증을 안내하는 문장으로 나온다.
-- [ ] 백엔드 통합 테스트(mongodb, `RecordingMailer`): 재설정 요청→메일 링크→확인→기존 세션 401 ·
+- [x] 백엔드 통합 테스트(mongodb, `RecordingMailer`): 재설정 요청→메일 링크→확인→기존 세션 401 ·
       토큰 재사용 400 · 미가입 주소 202이면서 메일 0통 · 인증 메일→확인→`emailVerifiedAt` ·
       60초 안 재요청 429 · 인증 전 발행 403 · `termsVersion` 없는 가입 400.
-- [ ] `pnpm typecheck` · 패키지별 test · `pnpm test:infra` 통과.
+- [x] `pnpm typecheck` · 패키지별 test · `pnpm test:infra` 통과.
 
 ## 설계
 
