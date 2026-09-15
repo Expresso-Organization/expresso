@@ -146,7 +146,7 @@
 .browserTabList[data-variant="line"] :global([data-slot="tabs-trigger"][data-state="active"]) { color:var(--ex-fg); }
 .browserTabList[data-variant="line"] :global([data-slot="tabs-trigger"]::after) { display:none; }
 .tabIndicator { position:absolute; top:0; left:0; width:25%; height:100%; z-index:0; pointer-events:none; transition:transform var(--ex-motion-panel); }
-.tabIndicator::after { content:""; position:absolute; inset:0; border-radius:999px; background:var(--ex-bg); }
+.tabIndicator::after { content:""; position:absolute; inset:3px 5px; border-radius:999px; background:var(--ex-bg); }
 @media(prefers-reduced-motion:reduce) { .tabIndicator { transition:none; } }
 
 .apiKeyField { margin:0 16px 12px; padding:12px; border:1px solid var(--ex-border); border-radius:8px; background:var(--ex-bg-sunken); }
