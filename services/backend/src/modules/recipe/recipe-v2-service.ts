@@ -5,6 +5,9 @@ import {
   RecipeV2EditSchema,
   RecipeV2ReorderSchema,
   RecipeV2Schema,
+  RecipeV2SectionRoleSchema,
+  RecipeV2PresentationSchema,
+  ROLE_OF_CONTENT_PATTERN,
   type PortfolioIntent,
   type RecipeV2,
   type RecipeV2Edit,
@@ -49,6 +52,37 @@ const EMPTY_INTENT: PortfolioIntent = {
 function intentOf(stored: unknown): PortfolioIntent {
   const parsed = PortfolioIntentSchema.safeParse(stored);
   return parsed.success ? parsed.data : EMPTY_INTENT;
+}
+
+type ElementDoc = { _id: string; userId: string; recipeId: string; recipeSectionId: string; orderNo: number; text: string; kind?: "point" | "metric" | "media" | "link"; metric?: JsonObject | null; media?: JsonObject | null; link?: JsonObject | null; updatedAt: Date };
+type SourceDoc = { _id: string; userId: string; recipeId: string; recipeElementId: string; sourceType: "record" | "answer" | "requirement"; sourceId: string; role: "primary" | "supporting"; orderNo: number; createdAt: Date };
+
+/** 저장된 역할 · 형식이 어휘에 없으면(형식이 사라진 뒤의 문서) 기본값으로 읽는다. */
+function roleOf(value: unknown) {
+  const parsed = RecipeV2SectionRoleSchema.safeParse(value);
+  return parsed.success ? parsed.data : "other";
+}
+function presentationOf(value: unknown) {
+  const parsed = RecipeV2PresentationSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
+/** v1 초안 항목의 `content` 를 v2 문장의 종류 · 값으로. 모양이 안 맞으면 point 다. */
+function contentOf(stored: unknown): Pick<ElementDoc, "kind" | "metric" | "media" | "link"> {
+  const content = stored && typeof stored === "object" ? stored as Record<string, unknown> : {};
+  const kind = content["kind"];
+  if (kind === "metric" && content["metric"] && typeof content["metric"] === "object") {
+    const metric = content["metric"] as Record<string, unknown>;
+    return { kind, metric: { label: String(metric["label"] ?? ""), value: String(metric["value"] ?? ""), unit: String(metric["unit"] ?? ""), note: String(metric["note"] ?? "") }, media: null, link: null };
+  }
+  if (kind === "link" && content["link"] && typeof content["link"] === "object") {
+    const link = content["link"] as Record<string, unknown>;
+    return { kind, metric: null, media: null, link: { label: String(link["label"] ?? ""), url: String(link["url"] ?? "") } };
+  }
+  if (kind === "media") {
+    return { kind, metric: null, media: { assetId: null, caption: String(content["caption"] ?? ""), frame: "none" }, link: null };
+  }
+  return { kind: "point", metric: null, media: null, link: null };
 }
 
 export class RecipeV2Service {
@@ -159,15 +193,20 @@ export class RecipeV2Service {
     const unused = await db.recipeUnusedSources.find({ userId, recipeId: legacyRecipeId }, options).toArray();
     const now = new Date();
     const newSections: RecipeSectionDoc[] = [];
-    const elements: Array<{ _id: string; userId: string; recipeId: string; recipeSectionId: string; orderNo: number; text: string; updatedAt: Date }> = [];
-    const sources: Array<{ _id: string; userId: string; recipeId: string; recipeElementId: string; sourceType: "record" | "answer" | "requirement"; sourceId: string; role: "primary" | "supporting"; orderNo: number; createdAt: Date }> = [];
+    const elements: ElementDoc[] = [];
+    const sources: SourceDoc[] = [];
 
     for (const [order, section] of sections.entries()) {
       const sectionId = randomUUID();
       const takeaway = typeof section.context["takeaway"] === "string" ? section.context["takeaway"] : "";
+      // 초안이 역할 · 형식을 냈으면 그것, 아니면 contentPattern 에서 역할만 옮긴다.
+      const role = roleOf(section.context["role"]) !== "other" || section.context["role"] !== undefined
+        ? roleOf(section.context["role"])
+        : ROLE_OF_CONTENT_PATTERN[String(section.context["contentPattern"])] ?? "other";
       newSections.push({
         _id: sectionId, userId, recipeId, orderNo: order, title: section.title,
         purpose: section.purpose, targetLength: section.targetLength, takeaway,
+        role, presentation: presentationOf(section.context["presentation"]),
         context: { ...V1_SECTION_CONTEXT } as unknown as JsonObject,
         locked: false, editedBy: "ai", updatedAt: now,
       });
@@ -175,7 +214,7 @@ export class RecipeV2Service {
         const elementId = randomUUID();
         elements.push({
           _id: elementId, userId, recipeId, recipeSectionId: sectionId,
-          orderNo: itemOrder, text: item.pointText.slice(0, 2_000), updatedAt: now,
+          orderNo: itemOrder, text: item.pointText.slice(0, 2_000), ...contentOf(item.content), updatedAt: now,
         });
         const bound = paths.filter(({ recipeItemId }) => recipeItemId === item._id);
         const seen = new Set<string>();
@@ -245,12 +284,18 @@ export class RecipeV2Service {
         title: section.title,
         purpose: section.purpose,
         takeaway: section.takeaway ?? "",
+        role: roleOf(section.role),
+        presentation: presentationOf(section.presentation),
         items: elements
           .filter(({ recipeSectionId }) => recipeSectionId === section._id)
           .map((element) => ({
             id: element._id,
             order: element.orderNo,
             text: element.text,
+            kind: element.kind ?? "point",
+            metric: element.metric ?? null,
+            media: element.media ?? null,
+            link: element.link ?? null,
             sourceBindings: sources
               .filter(({ recipeElementId }) => recipeElementId === element._id)
               .map(({ sourceType, sourceId, role, orderNo }) => ({ sourceType, sourceId, role, order: orderNo })),
@@ -324,7 +369,8 @@ export class RecipeV2Service {
       const orderNo = await db.recipeSections.countDocuments({ userId, recipeId }, options);
       await db.recipeSections.insertOne({
         _id: randomUUID(), userId, recipeId, orderNo, title: edit.title, purpose: edit.purpose,
-        targetLength: 0, takeaway: "", context: { ...V1_SECTION_CONTEXT } as unknown as JsonObject,
+        targetLength: 0, takeaway: "", role: edit.role ?? "other", presentation: null,
+        context: { ...V1_SECTION_CONTEXT } as unknown as JsonObject,
         locked: true, editedBy: "user", updatedAt: now,
       }, options);
       return;
@@ -336,6 +382,8 @@ export class RecipeV2Service {
       if (edit.title !== undefined) patch.title = edit.title;
       if (edit.purpose !== undefined) patch.purpose = edit.purpose;
       if (edit.takeaway !== undefined) patch.takeaway = edit.takeaway;
+      if (edit.role !== undefined) patch.role = edit.role;
+      if (edit.presentation !== undefined) patch.presentation = edit.presentation;
       await db.recipeSections.updateOne({ _id: section._id, userId }, { $set: patch }, options);
       return;
     }
@@ -371,6 +419,16 @@ export class RecipeV2Service {
       const item = await db.recipeElements.findOne({ _id: edit.itemId, userId, recipeId }, options);
       if (!item) throw new RecipeError(404, "recipe item not found");
       await db.recipeElements.updateOne({ _id: item._id, userId }, { $set: { text: edit.text, updatedAt: now } }, options);
+      return;
+    }
+    if (edit.operation === "update_item_content") {
+      const item = await db.recipeElements.findOne({ _id: edit.itemId, userId, recipeId }, options);
+      if (!item) throw new RecipeError(404, "recipe item not found");
+      await db.recipeElements.updateOne(
+        { _id: item._id, userId },
+        { $set: { text: edit.text, kind: edit.kind, metric: edit.metric as JsonObject | null, media: edit.media as JsonObject | null, link: edit.link as JsonObject | null, updatedAt: now } },
+        options,
+      );
       return;
     }
     if (edit.operation === "duplicate_item") {
@@ -504,19 +562,21 @@ export class RecipeV2Service {
       options,
     );
     const sections: RecipeSectionDoc[] = [];
-    const elements: Array<{ _id: string; userId: string; recipeId: string; recipeSectionId: string; orderNo: number; text: string; updatedAt: Date }> = [];
-    const sources: Array<{ _id: string; userId: string; recipeId: string; recipeElementId: string; sourceType: "record" | "answer" | "requirement"; sourceId: string; role: "primary" | "supporting"; orderNo: number; createdAt: Date }> = [];
+    const elements: ElementDoc[] = [];
+    const sources: SourceDoc[] = [];
     for (const [orderNo, section] of edit.sections.entries()) {
       sections.push({
         _id: section.id, userId, recipeId, orderNo, title: section.title, purpose: section.purpose,
-        targetLength: 0, takeaway: section.takeaway,
+        targetLength: 0, takeaway: section.takeaway, role: section.role, presentation: section.presentation,
         context: { ...V1_SECTION_CONTEXT } as unknown as JsonObject,
         locked: true, editedBy: "user", updatedAt: now,
       });
       for (const [itemOrder, item] of section.items.entries()) {
         elements.push({
           _id: item.id, userId, recipeId, recipeSectionId: section.id,
-          orderNo: itemOrder, text: item.text, updatedAt: now,
+          orderNo: itemOrder, text: item.text,
+          kind: item.kind, metric: item.metric as JsonObject | null, media: item.media as JsonObject | null, link: item.link as JsonObject | null,
+          updatedAt: now,
         });
         const seen = new Set<string>();
         for (const binding of [...item.sourceBindings].sort((a, b) => a.order - b.order)) {

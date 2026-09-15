@@ -66,6 +66,8 @@ export const MediaAssetSchema = z.strictObject({
 });
 
 export const MediaAssetResponseSchema = z.strictObject({ data: MediaAssetSchema });
+/** 내가 올린 것. 최근 것부터, 60개까지(`media.service.list`). */
+export const MediaAssetListResponseSchema = z.strictObject({ data: z.array(MediaAssetSchema) });
 
 /**
  * 그림을 어떤 액자에 넣을까.

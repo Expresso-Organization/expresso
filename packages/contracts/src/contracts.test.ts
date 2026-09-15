@@ -35,6 +35,10 @@ import {
   JobProgressEventSchema,
   UpdateBrewMaterialsSchema,
   RecipeV2EditSchema,
+  RecipeV2ItemSchema,
+  PRESENTATIONS_BY_ROLE,
+  PRESENTATION_LABEL,
+  RECIPE_PRESENTATIONS,
   createCursorPageSchema,
   createJobEnvelopeSchema,
   expressoOpenApiDocument,
@@ -876,5 +880,37 @@ describe("레시피 v2 편집 연산", () => {
       { ...section.items[0]!.sourceBindings[0]!, sourceId: "8f6a2d3e-6c1c-4d4c-9d1e-2b8f9e7c1004", order: 1 },
     ] }] };
     expect(RecipeV2EditSchema.safeParse({ operation: "restore", title: "", intent, sections: [twice] }).success).toBe(false);
+  });
+
+  it("문장의 종류는 값과 함께 온다 — 없으면 점이다", () => {
+    const item = section.items[0]!;
+    const parsed = RecipeV2ItemSchema.parse(item);
+    expect(parsed.kind).toBe("point");
+    expect(parsed.metric).toBeNull();
+    expect(RecipeV2ItemSchema.safeParse({ ...item, kind: "metric" }).success).toBe(false);
+    expect(RecipeV2ItemSchema.safeParse({ ...item, kind: "metric", metric: { label: "지연", value: "38", unit: "%", note: "" } }).success).toBe(true);
+    expect(RecipeV2ItemSchema.safeParse({ ...item, kind: "media", media: { assetId: null, caption: "", frame: "none" } }).success).toBe(true);
+    expect(RecipeV2ItemSchema.safeParse({ ...item, kind: "link", link: { label: "저장소", url: "not a url" } }).success).toBe(false);
+    expect(RecipeV2EditSchema.safeParse({ operation: "update_item_content", itemId: item.id, kind: "link", text: "" }).success).toBe(false);
+    expect(RecipeV2EditSchema.safeParse({
+      operation: "update_item_content", itemId: item.id, kind: "link", text: "", link: { label: "저장소", url: "https://example.com/repo" },
+    }).success).toBe(true);
+  });
+
+  it("섹션의 역할과 형식은 어휘 안의 값만 받고, 없으면 그 밖 · 없음이다", () => {
+    const parsed = RecipeV2EditSchema.parse({ operation: "restore", title: "", intent, sections: [section] });
+    expect(parsed.operation === "restore" && parsed.sections[0]!.role).toBe("other");
+    expect(parsed.operation === "restore" && parsed.sections[0]!.presentation).toBeNull();
+    expect(RecipeV2EditSchema.safeParse({ operation: "update_section", sectionId: section.id, role: "hero", presentation: "hero-split" }).success).toBe(true);
+    expect(RecipeV2EditSchema.safeParse({ operation: "update_section", sectionId: section.id, presentation: null }).success).toBe(true);
+    expect(RecipeV2EditSchema.safeParse({ operation: "update_section", sectionId: section.id, role: "villain" }).success).toBe(false);
+    expect(RecipeV2EditSchema.safeParse({ operation: "add_section", title: "경력", purpose: "", role: "experience" }).success).toBe(true);
+  });
+
+  it("역할표의 형식은 모두 어휘에 있고 이름이 있다", () => {
+    const listed = new Set(Object.values(PRESENTATIONS_BY_ROLE).flat());
+    for (const id of listed) expect(RECIPE_PRESENTATIONS).toContain(id);
+    for (const id of RECIPE_PRESENTATIONS) expect(PRESENTATION_LABEL[id].length).toBeGreaterThan(0);
+    expect(new Set(RECIPE_PRESENTATIONS).size).toBe(RECIPE_PRESENTATIONS.length);
   });
 });

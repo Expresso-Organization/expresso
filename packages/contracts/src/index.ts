@@ -12,6 +12,7 @@ export * from "./materials.js";
 export * from "./interview.js";
 export * from "./recipe.js";
 export * from "./recipe-v2.js";
+export * from "./recipe-vocabulary.js";
 export * from "./recipe-stream.js";
 export * from "./portfolio-plan.js";
 export * from "./portfolio-styles.js";

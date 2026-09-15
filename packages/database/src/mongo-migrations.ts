@@ -6,6 +6,7 @@ import { generationLedgerConstraintSteps } from "./mongodb-migrations/0002/migra
 import { analyticsAndPreferenceSteps } from "./mongodb-migrations/0003/migration.js";
 import { jobImportMetadataSteps } from "./mongodb-migrations/0004/migration.js";
 import { recipeV2ItemSteps } from "./mongodb-migrations/0006/migration.js";
+import { recipeContentKindSteps } from "./mongodb-migrations/0009/migration.js";
 
 export interface MongoMigrationStep {
   id: string;
@@ -35,11 +36,15 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const fourthHash = createHash("sha256").update(`migration.ts\0${fourthSource.byteLength}\0`).update(fourthSource).digest("hex");
   const sixthSource = await readFile(new URL("./mongodb-migrations/0006/migration.ts", import.meta.url));
   const sixthHash = createHash("sha256").update(`migration.ts\0${sixthSource.byteLength}\0`).update(sixthSource).digest("hex");
+  const ninthSource = await readFile(new URL("./mongodb-migrations/0009/migration.ts", import.meta.url));
+  const ninthHash = createHash("sha256").update(`migration.ts\0${ninthSource.byteLength}\0`).update(ninthSource).digest("hex");
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
     { version: "0003", name: "analytics_rate_and_notification_preferences", checksum: thirdHash, steps: await analyticsAndPreferenceSteps() },
     { version: "0004", name: "job_import_metadata", checksum: fourthHash, steps: await jobImportMetadataSteps() },
     { version: "0006", name: "recipe_v2_items", checksum: sixthHash, steps: await recipeV2ItemSteps() },
+    // 0007 · 0008 은 main 에 있다(job_source_boards · career_view_configurations). 그 뒤 번호다.
+    { version: "0009", name: "recipe_content_kinds", checksum: ninthHash, steps: await recipeContentKindSteps() },
   ];
 }

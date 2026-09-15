@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { RecipeV2ItemKindSchema, RecipeV2PresentationSchema, RecipeV2SectionRoleSchema } from "./recipe-vocabulary.js";
+
 import { TimestampSchema, UuidSchema } from "./common.js";
 import {
   PortfolioPlanningManifestSchema,
@@ -41,6 +43,9 @@ export const RecipeSectionSchema = z.strictObject({
     takeaway: z.string().min(1).max(500).default("검증된 근거 한 가지"),
     contentPattern: z.enum(["hero", "case-study", "metrics", "timeline", "capabilities", "about", "contact"]).default("case-study"),
     interactionOpportunity: z.string().max(300).nullable().default(null),
+    /** 플래너가 적은 역할과 형식. v2 가 얹을 때 읽는다. 없는 옛 문서도 그대로 통과한다. */
+    role: RecipeV2SectionRoleSchema.optional(),
+    presentation: RecipeV2PresentationSchema.optional(),
   }),
   locked: z.boolean(),
   editedBy: z.enum(["ai", "user"]),
@@ -122,6 +127,19 @@ export const RecipeDraftItemSchema = z.strictObject({
   pointText: z.string().min(1).max(200),
   /** 프롬프트에서 준 재료 번호. 비어 있으면 사용자가 나중에 연결한다. */
   sources: z.array(z.number().int().min(1).max(40)).max(5),
+  /** 문장의 종류. 없으면 점(글)이다 — 옛 픽스처가 그대로 통과한다. */
+  kind: RecipeV2ItemKindSchema.optional(),
+  /** kind 가 metric 일 때. 재료에 있는 값만 적는다. */
+  metric: z.strictObject({
+    label: z.string().max(80),
+    value: z.string().max(40),
+    unit: z.string().max(20).optional(),
+    note: z.string().max(300).optional(),
+  }).optional(),
+  /** kind 가 link 일 때. */
+  link: z.strictObject({ label: z.string().max(120), url: z.string().max(2_000) }).optional(),
+  /** kind 가 media 일 때 — 자산은 사용자가 놓는다. 무엇이 들어갈 자리인지만 적는다. */
+  caption: z.string().max(300).optional(),
 });
 
 /** SectionContext 6항목. 추출이 이걸 그대로 읽어 문장을 쓴다. */
@@ -142,6 +160,9 @@ export const RecipeDraftSectionSchema = z.strictObject({
   takeaway: z.string().min(1).max(300),
   contentPattern: z.enum(["hero", "case-study", "metrics", "timeline", "capabilities", "about", "contact"]),
   interactionOpportunity: z.string().max(300).nullable(),
+  /** 02 의 역할과 형식(§7.9). 없으면 contentPattern 에서 역할을 옮기고 형식은 비운다. */
+  role: RecipeV2SectionRoleSchema.optional(),
+  presentation: RecipeV2PresentationSchema.optional(),
   items: z.array(RecipeDraftItemSchema).max(8),
 });
 

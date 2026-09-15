@@ -123,6 +123,44 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB recipe v2 integration", 
     expect(edited.status).toBe("draft");
   });
 
+  it("keeps a section's role and presentation, and an item's kind with its value", async () => {
+    const opened = await service.open(userId, brewId);
+    const section = opened.sections.find(({ items }) => items.length > 0)!;
+    const itemId = section.items[0]!.id;
+    expect(section.role).toBe("other");
+    expect(section.presentation).toBeNull();
+    expect(section.items[0]!.kind).toBe("point");
+
+    const roled = (await service.edit(userId, opened.id, { operation: "update_section", sectionId: section.id, role: "projects", presentation: "project-par" })).recipe;
+    const roledSection = roled.sections.find(({ id }) => id === section.id)!;
+    expect(roledSection.role).toBe("projects");
+    expect(roledSection.presentation).toBe("project-par");
+
+    const metric = (await service.edit(userId, opened.id, {
+      operation: "update_item_content", itemId, kind: "metric", text: "응답 지연을 줄였다",
+      metric: { label: "p95 지연", value: "38", unit: "%", note: "" }, media: null, link: null,
+    })).recipe;
+    const metricItem = metric.sections.flatMap(({ items }) => items).find(({ id }) => id === itemId)!;
+    expect(metricItem.kind).toBe("metric");
+    expect(metricItem.metric).toEqual({ label: "p95 지연", value: "38", unit: "%", note: "" });
+    expect(metricItem.sourceBindings).toEqual(section.items[0]!.sourceBindings);
+
+    // 종류를 되돌리면 값도 함께 사라진다. 형식은 restore 가 그대로 가져온다.
+    const restored = (await service.edit(userId, opened.id, { operation: "restore", title: roled.title, intent: roled.intent, sections: roled.sections })).recipe;
+    const restoredItem = restored.sections.flatMap(({ items }) => items).find(({ id }) => id === itemId)!;
+    expect(restoredItem.kind).toBe("point");
+    expect(restoredItem.metric).toBeNull();
+    expect(restored.sections.find(({ id }) => id === section.id)!.presentation).toBe("project-par");
+
+    // 다시 연 것도 같은 값이다.
+    const again = await service.open(userId, brewId);
+    expect(again.sections.find(({ id }) => id === section.id)!.role).toBe("projects");
+    const reopenedSection = (await service.edit(userId, opened.id, { operation: "update_section", sectionId: section.id, presentation: null })).recipe
+      .sections.find(({ id }) => id === section.id)!;
+    expect(reopenedSection.presentation).toBeNull();
+    expect(reopenedSection.role).toBe("projects");
+  });
+
   it("opens onto the AI draft instead of an empty page, and takes a newer draft on the next visit", async () => {
     const draftBrewId = (await new MongoMaterialsService(fixture.resource).createFreeBrew(userId, { title: "초안", brief: "성과", lengthPreset: "single" })).brewId;
     const legacy = new MongoRecipeService(fixture.resource);
@@ -137,6 +175,10 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB recipe v2 integration", 
     expect(bound.length).toBeGreaterThan(0);
     expect(bound.every(({ sourceBindings }) => sourceBindings.filter(({ role }) => role === "primary").length === 1)).toBe(true);
     expect(adopted.unusedSources.length).toBeGreaterThan(0);
+    // 플래너가 준 역할이 섹션에 붙고(규칙 플래너는 첫 섹션을 hero 로 둔다), 없는 항목은 점이다.
+    expect(adopted.sections[0]!.role).toBe("hero");
+    expect(adopted.sections.every(({ role, presentation }) => role.length > 0 && presentation === null)).toBe(true);
+    expect(items.every(({ kind }) => kind === "point")).toBe(true);
 
     // 「다시 만들기」로 새 초안이 오면 다음에 열 때 그것을 얹는다.
     const second = await legacy.generate(userId, draftBrewId, `rv2-draft-${randomUUID()}`);

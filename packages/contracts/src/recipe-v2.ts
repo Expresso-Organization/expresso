@@ -1,6 +1,12 @@
 import { z } from "zod";
 
 import { TimestampSchema, UuidSchema } from "./common.js";
+import { MediaFrameSchema } from "./media.js";
+import {
+  RecipeV2ItemKindSchema,
+  RecipeV2PresentationSchema,
+  RecipeV2SectionRoleSchema,
+} from "./recipe-vocabulary.js";
 
 /**
  * Recipe v2.
@@ -29,18 +35,63 @@ export const RecipeV2SourceBindingSchema = z.strictObject({
 });
 export type RecipeV2SourceBinding = z.infer<typeof RecipeV2SourceBindingSchema>;
 
-export const RecipeV2ItemSchema = z
-  .strictObject({
+// ── 문장의 종류와 값 ────────────────────────────────────────
+//
+// 문장은 평평한 모양이다 — `kind` 하나와 nullable 값 셋. 판별 합집합으로 두면
+// 리듀서 · 저장 · 스트리밍이 전부 갈라지고, 옛 판(문장만 있던)을 그대로 읽지
+// 못한다. `kind` 에 맞는 값만 채워진다(아래 `refineContent`).
+
+/** 수치. 값은 문자열이다 — "4.42/4.5" · "26만" 처럼 사람이 적는 그대로다. */
+export const RecipeV2MetricSchema = z.strictObject({
+  label: z.string().trim().max(80),
+  value: z.string().trim().max(40),
+  unit: z.string().trim().max(20),
+  note: z.string().trim().max(300),
+});
+export type RecipeV2Metric = z.infer<typeof RecipeV2MetricSchema>;
+
+/** 미디어. 자산이 아직 없을 수 있다 — 초안이 "여기 스크린샷" 이라고 자리만 잡는다. */
+export const RecipeV2MediaSchema = z.strictObject({
+  assetId: UuidSchema.nullable(),
+  caption: z.string().trim().max(300),
+  frame: MediaFrameSchema,
+});
+export type RecipeV2Media = z.infer<typeof RecipeV2MediaSchema>;
+
+export const RecipeV2LinkSchema = z.strictObject({
+  label: z.string().trim().max(120),
+  url: z.string().trim().url().max(2_000),
+});
+export type RecipeV2Link = z.infer<typeof RecipeV2LinkSchema>;
+
+const ContentFieldsSchema = z.strictObject({
+  kind: RecipeV2ItemKindSchema.default("point"),
+  /** 이 자리에서 무엇을 말할지. §3.3 — 비어 있어도 유효하다. 미디어 · 링크에서는 곁글이다. */
+  text: z.string().max(2_000),
+  metric: RecipeV2MetricSchema.nullable().default(null),
+  media: RecipeV2MediaSchema.nullable().default(null),
+  link: RecipeV2LinkSchema.nullable().default(null),
+});
+
+function contentMatchesKind(content: z.infer<typeof ContentFieldsSchema>): boolean {
+  if (content.kind === "metric") return content.metric !== null;
+  if (content.kind === "media") return content.media !== null;
+  if (content.kind === "link") return content.link !== null;
+  return true;
+}
+const CONTENT_MESSAGE = { message: "the item's kind must come with its value", path: ["kind"] };
+
+export const RecipeV2ItemSchema = ContentFieldsSchema
+  .extend({
     id: UuidSchema,
     order: z.number().int().nonnegative(),
-    /** 이 자리에서 무엇을 말할지. §3.3 — 비어 있어도 유효하다. */
-    text: z.string().max(2_000),
     sourceBindings: z.array(RecipeV2SourceBindingSchema).max(50),
   })
   .refine(
     (item) => item.sourceBindings.filter(({ role }) => role === "primary").length <= 1,
     { message: "an item keeps at most one primary source", path: ["sourceBindings"] },
-  );
+  )
+  .refine(contentMatchesKind, CONTENT_MESSAGE);
 export type RecipeV2Item = z.infer<typeof RecipeV2ItemSchema>;
 
 export const RecipeV2SectionSchema = z.strictObject({
@@ -56,6 +107,10 @@ export const RecipeV2SectionSchema = z.strictObject({
    * 이것은 무엇이 남는지다.
    */
   takeaway: z.string().max(500),
+  /** 이 섹션이 지면에서 맡는 역할. 형식 후보를 가른다. */
+  role: RecipeV2SectionRoleSchema.default("other"),
+  /** 보여주는 형식(§7.9). 사용자가 02 에서 고른다. 아직 안 골랐으면 null. */
+  presentation: RecipeV2PresentationSchema.nullable().default(null),
   items: z.array(RecipeV2ItemSchema).max(60),
 });
 export type RecipeV2Section = z.infer<typeof RecipeV2SectionSchema>;
@@ -118,13 +173,20 @@ const TitleSchema = z.string().trim().max(300);
 export const RecipeV2EditSchema = z.discriminatedUnion("operation", [
   z.strictObject({ operation: z.literal("update_intent"), intent: PortfolioIntentSchema }),
   z.strictObject({ operation: z.literal("update_title"), title: TitleSchema }),
-  z.strictObject({ operation: z.literal("add_section"), title: TitleSchema, purpose: z.string().trim().max(1_000) }),
+  z.strictObject({
+    operation: z.literal("add_section"),
+    title: TitleSchema,
+    purpose: z.string().trim().max(1_000),
+    role: RecipeV2SectionRoleSchema.optional(),
+  }),
   z.strictObject({
     operation: z.literal("update_section"),
     sectionId: UuidSchema,
     title: TitleSchema.optional(),
     purpose: z.string().trim().max(1_000).optional(),
     takeaway: z.string().trim().max(500).optional(),
+    role: RecipeV2SectionRoleSchema.optional(),
+    presentation: RecipeV2PresentationSchema.nullable().optional(),
   }),
   z.strictObject({ operation: z.literal("delete_section"), sectionId: UuidSchema }),
   z.strictObject({
@@ -135,6 +197,8 @@ export const RecipeV2EditSchema = z.discriminatedUnion("operation", [
     order: z.number().int().nonnegative().optional(),
   }),
   z.strictObject({ operation: z.literal("update_item"), itemId: UuidSchema, text: z.string().trim().max(2_000) }),
+  /** 종류와 값을 통째로 바꾼다. 종류만 바꿀 때도 값을 함께 보낸다. */
+  ContentFieldsSchema.extend({ operation: z.literal("update_item_content"), itemId: UuidSchema }),
   z.strictObject({ operation: z.literal("duplicate_item"), itemId: UuidSchema }),
   z.strictObject({ operation: z.literal("delete_item"), itemId: UuidSchema }),
   z.strictObject({
@@ -161,7 +225,10 @@ export const RecipeV2EditSchema = z.discriminatedUnion("operation", [
   }),
   /** 02를 마친다. 그 뒤의 편집은 다시 `draft`다 — 03이 무엇을 읽었는지 알 수 있게. */
   z.strictObject({ operation: z.literal("confirm") }),
-]);
+]).refine(
+  (edit) => edit.operation !== "update_item_content" || contentMatchesKind(edit),
+  CONTENT_MESSAGE,
+);
 export type RecipeV2Edit = z.infer<typeof RecipeV2EditSchema>;
 
 /**

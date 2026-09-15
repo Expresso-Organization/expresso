@@ -60,6 +60,11 @@ export interface RecipeElementDoc {
   orderNo: number;
   /** 이 자리에서 무엇을 말할지. */
   text: string;
+  /** 문장의 종류. 없으면 point — 종류가 생기기 전의 문서다. */
+  kind?: "point" | "metric" | "media" | "link";
+  metric?: JsonObject | null;
+  media?: JsonObject | null;
+  link?: JsonObject | null;
   updatedAt: Date;
 }
 
@@ -86,6 +91,9 @@ export interface RecipeSectionDoc {
   targetLength: number;
   /** v2 섹션이 제 자리에 두는 핵심 메시지. v1 은 `context.takeaway` 에 있다. */
   takeaway?: string;
+  /** 02 의 역할과 형식. 없으면 other · 아직 안 고름. */
+  role?: string;
+  presentation?: string | null;
   context: JsonObject;
   locked: boolean;
   editedBy: "ai" | "user";
@@ -98,6 +106,8 @@ export interface RecipeItemDoc {
   recipeSectionId: string;
   orderNo: number;
   pointText: string;
+  /** 초안이 낸 종류와 값(kind · metric · link · caption). v2 로 옮길 때 읽는다. */
+  content?: JsonObject | null;
   evidence: JsonValue[];
   locked: boolean;
   editedBy: "ai" | "user";
