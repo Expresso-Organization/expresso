@@ -22,7 +22,7 @@ date: 2026-09-15
 | `services/backend/src/modules/identity/{mail,token,service,routes,legacy-mysql-service,public,index}.ts` | 재설정 · 인증 · 동의 기록 · 게이트용 사용자 필드 |
 | `services/backend/src/modules/identity/auth.integration.test.ts` | 케이스 7개 |
 | `services/backend/src/modules/publishing/routes.ts` · `publishing.integration.test.ts` | 발행 403 게이트 |
-| `services/backend/src/api/main.ts` · 통합 테스트 12곳 | 메일러 주입 · `termsVersion` |
+| `services/backend/src/api/main.ts` · `career-profile` · `google` 통합 테스트 | 메일러 주입 · HTTP 가입 픽스처에 `termsVersion`. 서비스 직접 호출은 `SignupInput`(선택)으로 두어 손대지 않음 |
 | `services/web/src/lib/api/endpoints.ts` · `app/auth-actions.ts` | 엔드포인트 4개 · 액션 3개 |
 | `services/web/src/app/(auth)/login/forgot/*` · `login/reset/*` (새) · `login/LoginForm.tsx` | 재설정 화면 · 링크 |
 | `services/web/src/app/verify-email/page.tsx` (새) | 인증 완료 |
