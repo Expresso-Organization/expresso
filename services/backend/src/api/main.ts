@@ -1,3 +1,4 @@
+import { AgentCredentials } from "../modules/agent-chat/index.js";
 import { AgentChatService } from "../modules/agent-chat/index.js";
 import { ClaudeAgentRuntime } from "../platform/agent/runtime.js";
 import { buildApi } from "./build-app.js";
@@ -130,7 +131,7 @@ const careerDocumentService = new CareerDocumentService(
   },
   config.careerAiDeterministicTest ? new SelectedBlockTextAiProposalAdapter() : ai ? new AiClientProposalAdapter(ai) : undefined,
 );
-const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel) : null, careerService, jobBoardService, careerDocumentService, consentService);
+const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey));
 const app = buildApi({
   agentChatService,
   config,

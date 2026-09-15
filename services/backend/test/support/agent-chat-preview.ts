@@ -16,6 +16,7 @@ import { JobBoardService } from "../../src/modules/jobs/index.js";
 import { EntitlementService } from "../../src/modules/entitlements/index.js";
 import { PortfolioReadService } from "../../src/modules/portfolios/index.js";
 import { EngagementService } from "../../src/modules/engagement/index.js";
+import { AgentCredentials } from "../../src/modules/agent-chat/index.js";
 import { AgentChatService } from "../../src/modules/agent-chat/index.js";
 
 if (process.env.NODE_ENV !== "test" || !process.env.DEV_LOGIN_PASSWORD) throw new Error("테스트 실행과 개발 로그인 설정이 필요합니다.");
@@ -47,7 +48,7 @@ const agentChatService = new AgentChatService(db, process.env.AGENT_CHAT_LIVE ==
   }
   const text = `[검증용 응답] 연결된 자료 ${refs.length}개를 확인했습니다. 이전 질문은 ${input.messages.filter(message => message.role === "user").length - 1}개입니다. 실제 모델 호출 없이 저장·화면 이동·승인·취소 흐름을 확인하고 있습니다.`;
   for (const chunk of text.match(/.{1,5}/g) ?? []) { await delay(200, undefined, { signal: input.signal }); await input.emit({ type: "text", text: chunk }); }
-} }, careerService, jobBoardService, careerDocumentService, consentService);
+} }, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(db, config.agentCredentialEncryptionKey));
 const app = buildApi({ config, identityService, careerService, careerDocumentService, consentService, jobBoardService, entitlementService: new EntitlementService(db), portfolioReadService: new PortfolioReadService(db), engagementService: new EngagementService(db), agentChatService });
 await app.listen({ host: "127.0.0.1", port: 4010 });
 console.info(JSON.stringify({ recordId, jobId: job?._id }));

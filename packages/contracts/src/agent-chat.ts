@@ -12,7 +12,7 @@ export const AgentConversationResponseSchema = z.strictObject({ data: AgentConve
 export const AgentConversationListSchema = z.strictObject({ data: z.array(AgentConversationSchema.omit({ messages: true })).max(100) });
 export const CreateAgentConversationSchema = z.strictObject({ contexts: z.array(AgentContextSchema).max(10).default([]) });
 export const AgentApiKeySchema = z.string().trim().min(20).max(300).regex(/^sk-ant-[A-Za-z0-9_-]+$/);
-export const SendAgentMessageSchema = z.strictObject({ requestId: UuidSchema, text: z.string().trim().min(1).max(8_000), apiKey: AgentApiKeySchema.optional() });
+export const SendAgentMessageSchema = z.strictObject({ requestId: UuidSchema, text: z.string().trim().min(1).max(8_000) });
 export const AddAgentContextSchema = z.strictObject({ context: AgentContextSchema });
 export const AgentApprovalSchema = z.strictObject({ proposalId: UuidSchema, action: z.enum(["apply", "reject", "undo"]), expectedDocumentVersion: z.number().int().nonnegative(), commandIndexes: z.array(z.number().int().nonnegative()).max(100).optional(), propertyChangeIndexes: z.array(z.number().int().nonnegative()).max(50).optional() });
 export type AgentContext = z.infer<typeof AgentContextSchema>;
@@ -26,4 +26,7 @@ export type AgentApproval = z.infer<typeof AgentApprovalSchema>;
 export const AgentEditDraftSchema = AiEditProposalSchema.pick({ summary: true, commands: true, propertyChanges: true });
 export type AgentEditDraft = z.infer<typeof AgentEditDraftSchema>;
 
-export const AgentChatAccessSchema = z.strictObject({ data: z.strictObject({ enabled: z.boolean(), serverCredentialAllowed: z.boolean(), consentRequired: z.boolean(), model: z.literal("sonnet") }) });
+export const AgentChatAccessSchema = z.strictObject({ data: z.strictObject({ enabled: z.boolean(), serverCredentialAllowed: z.boolean(), consentRequired: z.boolean(), apiKeyConfigured: z.boolean(), model: z.literal("sonnet") }) });
+
+export const SaveAgentApiKeySchema = z.strictObject({ apiKey: AgentApiKeySchema });
+export const AgentCredentialStatusSchema = z.strictObject({ data: z.strictObject({ configured: z.boolean() }) });

@@ -182,3 +182,13 @@
 .consentFooter .consentAccept { flex:2; background:var(--ex-accent); color:var(--ex-fg-on-accent); }
 .consentFooter .consentAccept:hover:not(:disabled) { background:var(--ex-accent-hover); }
 @media(max-width:479px) { .consentDialog .consentHeader { padding:24px 16px 20px; } .consentBody { padding:0 16px 20px; } .consentDialog .consentFooter { padding:16px; } .consentFooter button { height:48px; } }
+
+.keyForm { display:flex; flex-direction:column; gap:12px; margin-top:16px; }
+.keyForm label { display:flex; flex-direction:column; gap:8px; font-size:var(--ex-text-sm); color:var(--ex-fg); }
+.keyForm input { width:100%; height:40px; padding:8px 12px; background:var(--ex-bg-sunken); color:var(--ex-fg); border:1px solid var(--ex-border); border-radius:8px; }
+.keyForm p { font-size:var(--ex-text-xs); color:var(--ex-fg-muted); line-height:var(--ex-leading-relaxed); }
+.keyForm > div { display:flex; gap:8px; }
+.keyForm > div > button { min-height:40px; flex:1; }
+.keyForm button[type="submit"] { background:var(--ex-accent); color:var(--ex-fg-on-accent); }
+.keyForm button[type="submit"]:hover:not(:disabled) { background:var(--ex-accent-hover); }
+.consentFooter a { display:inline-flex; align-items:center; justify-content:center; padding:8px; font-size:var(--ex-text-xs); }

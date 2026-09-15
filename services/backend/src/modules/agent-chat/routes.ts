@@ -1,6 +1,6 @@
 import { setTimeout as delay } from "node:timers/promises";
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
-import { API_PREFIX, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema } from "@expresso/contracts";
+import { API_PREFIX, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema, SaveAgentApiKeySchema } from "@expresso/contracts";
 import { requireAuth } from "../../api/plugins/auth-context.js";
 import type { AgentChatService } from "./service.js";
 
@@ -9,11 +9,13 @@ export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChat
   const options = { preHandler: authenticate };
   const id = (params: unknown) => UuidSchema.parse((params as { id: string }).id);
   const developer = (userId: string) => developerUserIds.includes(userId);
-  app.get(`${API_PREFIX}/agent/access`, options, async req => ({ data: { enabled: service.enabled, serverCredentialAllowed: developer(requireAuth(req).user.id), consentRequired: await service.consentRequired(requireAuth(req).user.id), model: "sonnet" } }));
+  app.get(`${API_PREFIX}/agent/access`, options, async req => ({ data: { enabled: service.enabled, serverCredentialAllowed: developer(requireAuth(req).user.id), consentRequired: await service.consentRequired(requireAuth(req).user.id), apiKeyConfigured: await service.credentials.configured(requireAuth(req).user.id), model: "sonnet" } }));
+  app.put(`${API_PREFIX}/agent/credential`, options, async req => { await service.credentials.save(requireAuth(req).user.id, SaveAgentApiKeySchema.parse(req.body).apiKey); return { data: { configured: true } }; });
+  app.delete(`${API_PREFIX}/agent/credential`, options, async req => { await service.credentials.remove(requireAuth(req).user.id); return { data: { configured: false } }; });
   app.get(base, options, async req => ({ data: await service.list(requireAuth(req).user.id) }));
   app.post(base, options, async (req, reply) => { const input = CreateAgentConversationSchema.parse(req.body); return reply.code(201).send({ data: await service.create(requireAuth(req).user.id, input.contexts) }); });
   app.get(`${base}/:id`, options, async req => ({ data: await service.get(requireAuth(req).user.id, id(req.params)) }));
-  app.post(`${base}/:id/messages`, options, async (req, reply) => { const principal = requireAuth(req); const input = SendAgentMessageSchema.parse(req.body); if (!developer(principal.user.id) && !input.apiKey) return reply.code(403).send({ error: { message: "Anthropic API 키를 입력해 주세요." } }); return reply.code(202).send({ data: await service.send(principal.user.id, id(req.params), input) }); });
+  app.post(`${base}/:id/messages`, options, async (req, reply) => { const principal = requireAuth(req); const input = SendAgentMessageSchema.parse(req.body); const apiKey = developer(principal.user.id) ? undefined : await service.credentials.read(principal.user.id); if (!developer(principal.user.id) && !apiKey) return reply.code(403).send({ error: { message: "Anthropic API 키를 입력해 주세요." } }); return reply.code(202).send({ data: await service.send(principal.user.id, id(req.params), input, apiKey) }); });
   app.post(`${base}/:id/contexts`, options, async req => ({ data: await service.attach(requireAuth(req).user.id, id(req.params), AddAgentContextSchema.parse(req.body).context) }));
   app.post(`${base}/:id/cancel`, options, async req => ({ data: await service.cancel(requireAuth(req).user.id, id(req.params)) }));
   app.post(`${base}/:id/approval`, options, async req => ({ data: await service.approve(requireAuth(req).user.id, id(req.params), AgentApprovalSchema.parse(req.body)) }));

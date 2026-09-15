@@ -1,3 +1,4 @@
+import { AgentCredentials } from "./credentials.js";
 import { randomUUID } from "node:crypto";
 import { AgentConversationSchema, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval } from "@expresso/contracts";
 import { mongoCollections, type AgentConversationDoc } from "@expresso/database";
@@ -13,7 +14,7 @@ const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, hear
 export class AgentChatService {
   private readonly running = new Map<string, AbortController>();
   private readonly tasks = new Set<Promise<void>>();
-  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi) {}
+  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db)) {}
   async consentRequired(userId: string) {
     const result = await this.consent.list(userId);
     return !result.data.consents.some(item => item.scope === "career_records" && item.granted);
@@ -54,7 +55,7 @@ export class AgentChatService {
     if (!result.modifiedCount) throw new AgentChatError(409, "대화가 변경되었습니다. 다시 시도해 주세요.");
     return this.get(userId, id);
   }
-  async send(userId: string, id: string, input: SendAgentMessage) {
+  async send(userId: string, id: string, input: SendAgentMessage, apiKey?: string) {
     const row = await this.owned(userId, id);
     if (row.messages.some(message => message.id === input.requestId)) return view(row);
     if (!this.runtime) throw new AgentChatError(503, "에이전트가 아직 설정되지 않았습니다.");
@@ -69,7 +70,7 @@ export class AgentChatService {
     const run = { id: randomUUID(), requestId: input.requestId, status: "running" as const, error: null, startedAt: now };
     const changed = await this.rows.findOneAndUpdate({ _id: id, userId, version: row.version, "run.status": { $ne: "running" } }, { $push: { messages: { $each: [user, assistant] } }, $set: { run, title: row.messages.length ? row.title : input.text.slice(0, 100), updatedAt: now, heartbeatAt: new Date() }, $inc: { version: 1 } }, { returnDocument: "after" });
     if (!changed) throw new AgentChatError(409, "다른 화면에서 실행을 시작했습니다.");
-    const task = this.execute(changed, context, input.apiKey).catch(() => undefined);
+    const task = this.execute(changed, context, apiKey).catch(() => undefined);
     this.tasks.add(task); void task.finally(() => this.tasks.delete(task));
     return view(changed);
   }

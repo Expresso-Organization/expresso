@@ -56,14 +56,14 @@ export function useAgentConversation(context?: AgentContext) {
     setPending(true); setIssue(null);
     try { accept(await action()); } catch (error) { setIssue(error instanceof Error ? error.message : "요청에 실패했습니다."); } finally { setPending(false); }
   };
-  const send = async (text: string, apiKey?: string) => {
+  const send = async (text: string) => {
     if (pending) return;
     setPending(true); setIssue(null);
     try {
       let target = id;
       if (!target) { const created = await agentRequest("", { contexts: context ? [context] : [] }); if (!mounted.current) return; select(created.id); accept(created); target = created.id; }
       requestId.current = requestId.current?.text === text ? requestId.current : { text, id: crypto.randomUUID() };
-      accept(await agentRequest(`/${target}/messages`, { text, requestId: requestId.current.id, ...(apiKey ? { apiKey } : {}) })); requestId.current = null;
+      accept(await agentRequest(`/${target}/messages`, { text, requestId: requestId.current.id })); requestId.current = null;
     } catch (error) { setIssue(error instanceof Error ? error.message : "보내지 못했습니다."); throw error; } finally { setPending(false); }
   };
   return { id, conversation, list, issue, pending, select, send,

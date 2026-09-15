@@ -3,10 +3,12 @@ import { useState } from "react";
 import { CONSENT_POLICY_VERSION, ConsentListResponseSchema } from "@expresso/contracts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { AgentApiKeyForm } from "./AgentApiKeyForm";
 import { Icon } from "@/components/ui/Icon";
 import { LogoMark } from "@/components/brand/Logo";
 import styles from "./AgentChat.module.css";
-export function AgentConsentDialog({ open, onOpenChange, onConsented }: { open: boolean; onOpenChange(open: boolean): void; onConsented(): void }) {
+export function AgentConsentDialog({ open, onOpenChange, onConsented, consentRequired = true, requiresKey = false, onKeySaved }: { consentRequired?: boolean; requiresKey?: boolean; onKeySaved?(): void; open: boolean; onOpenChange(open: boolean): void; onConsented(): void }) {
   const [pending, setPending] = useState(false);
   const [issue, setIssue] = useState<string | null>(null);
   async function agree() {
@@ -18,10 +20,17 @@ export function AgentConsentDialog({ open, onOpenChange, onConsented }: { open: 
       if (!response.ok) throw new Error(payload.error?.message ?? "동의를 저장하지 못했습니다.");
       const result = ConsentListResponseSchema.parse(payload);
       if (!result.data.consents.some(item => item.scope === "career_records" && item.granted)) throw new Error("동의 상태를 확인하지 못했습니다.");
-      onConsented(); onOpenChange(false);
+      onConsented(); if (!requiresKey) onOpenChange(false);
     } catch (error) { setIssue(error instanceof Error ? error.message : "동의를 저장하지 못했습니다. 다시 시도해 주세요."); }
     finally { setPending(false); }
   }
+  if (!consentRequired && requiresKey) return <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent className={`acf-scope ${styles.consentDialog}`} showCloseButton={false}>
+      <DialogHeader className={styles.consentHeader}><div className={styles.consentBrand}><span><LogoMark size={28} /></span><div>Expresso AI<small>Sonnet으로 대화하기</small></div></div><DialogTitle className={styles.consentTitle}>API 키를 연결해 주세요</DialogTitle><DialogDescription className={styles.consentIntro}>본인의 Anthropic API 키로 채팅을 시작합니다.<br />이후에는 설정에서 키를 교체하거나 삭제할 수 있습니다.</DialogDescription></DialogHeader>
+      <div className={styles.consentBody}><AgentApiKeyForm configured={false} onSaved={configured => { if (configured) { onKeySaved?.(); onOpenChange(false); } }} /></div>
+      <DialogFooter className={styles.consentFooter}><div><Button variant="ghost" onClick={() => onOpenChange(false)}>나중에</Button><Link href="/account#ai-chat-settings">설정에서 관리</Link></div></DialogFooter>
+    </DialogContent>
+  </Dialog>;
   return <Dialog open={open} onOpenChange={next => { if (!pending) { setIssue(null); onOpenChange(next); } }}>
     <DialogContent className={`acf-scope ${styles.consentDialog}`} showCloseButton={false}>
       <DialogHeader className={styles.consentHeader}>
@@ -40,7 +49,7 @@ export function AgentConsentDialog({ open, onOpenChange, onConsented }: { open: 
       </div>
       <DialogFooter className={styles.consentFooter}>
         <p>기존 ‘커리어 기록 사용’ 동의와 함께 관리됩니다.</p>
-        <div><Button variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>나중에</Button><Button className={styles.consentAccept} disabled={pending} onClick={() => void agree()}>{pending ? "저장 중…" : "동의하고 시작"}<Icon name="arrow-right" size={16} /></Button></div>
+        <div><Button variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>나중에</Button><Button className={styles.consentAccept} disabled={pending} onClick={() => void agree()}>{pending ? "저장 중…" : requiresKey ? "동의하고 계속" : "동의하고 시작"}<Icon name="arrow-right" size={16} /></Button></div>
       </DialogFooter>
     </DialogContent>
   </Dialog>;
