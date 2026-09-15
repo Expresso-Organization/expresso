@@ -1,9 +1,11 @@
 import type { AuthenticatedUser, CareerCategory } from "@expresso/contracts";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
 import { ApiError } from "./api/client";
 import { auth, career, entitlements } from "./api/endpoints";
+import { loginPath, PATHNAME_HEADER } from "./auth/next-path";
 import { readAccessToken } from "./session";
 
 export interface AppSession {
@@ -31,7 +33,8 @@ export interface AppSession {
  */
 export const requireSession = cache(async (): Promise<AppSession> => {
   const accessToken = await readAccessToken();
-  if (!accessToken) redirect("/login");
+  const pathname = (await headers()).get(PATHNAME_HEADER);
+  if (!accessToken) redirect(loginPath(pathname));
 
   try {
     const [me, categories, generate] = await Promise.all([
@@ -49,7 +52,11 @@ export const requireSession = cache(async (): Promise<AppSession> => {
       },
     };
   } catch (error) {
-    if (error instanceof ApiError && error.status === 401) redirect("/login");
+    // 쿠키는 있는데 서버 세션이 끝났다. 렌더 중에는 쿠키를 지울 수 없어 라우트 핸들러로
+    // 보낸다 — 거기서 지우고, 보던 자리를 `next`로 들고 로그인으로 간다.
+    if (error instanceof ApiError && error.status === 401) {
+      redirect(`/api/auth/expired${pathname ? `?next=${encodeURIComponent(pathname)}` : ""}`);
+    }
     throw error;
   }
 });
