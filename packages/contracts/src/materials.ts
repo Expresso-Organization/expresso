@@ -37,6 +37,8 @@ export const BrewMaterialSchema = z.strictObject({
   origin: z.enum(["manual", "ai", "interview", "import"]),
   /** 왜 이 순위인가. 랭킹이 남긴 말 그대로. */
   reason: z.string().min(1).max(300),
+  /** 공고 요건과 겹친 말. 02 고르기 표가 줄마다 그린다. 없으면 빈 배열이다. */
+  matchedTerms: z.array(z.string().min(1).max(80)).max(5),
 });
 
 export const BrewMaterialsSchema = z.strictObject({

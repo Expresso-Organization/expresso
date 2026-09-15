@@ -285,6 +285,12 @@ export class RecipeV2Service {
       await requireActiveUser(tx, userId);
       await this.#guard(tx, userId, recipeId);
       await this.#apply(tx, userId, recipeId, edit);
+      // 확정 뒤에 손을 대면 다시 초안이다. 03이 읽은 판과 지금 판이 다르다는 표시다.
+      await mongoCollections(tx.db).recipes.updateOne(
+        { _id: recipeId, userId },
+        { $set: { status: edit.operation === "confirm" ? "confirmed" : "draft" } },
+        { session: tx.session },
+      );
       revisionId = await addMongoRecipeRevision(tx, {
         userId, recipeId, action: edit.operation,
         snapshot: before as unknown as JsonObject, diff: [] as JsonValue[],
@@ -298,6 +304,11 @@ export class RecipeV2Service {
     const options = { session: tx.session };
     const now = new Date();
 
+    if (edit.operation === "confirm") return;
+    if (edit.operation === "restore") {
+      await this.#restore(tx, userId, recipeId, edit);
+      return;
+    }
     if (edit.operation === "update_intent") {
       if (edit.intent.jobPostingId && !await db.jobPostings.findOne({ _id: edit.intent.jobPostingId }, options)) {
         throw new RecipeError(404, "job posting not found");
@@ -445,6 +456,8 @@ export class RecipeV2Service {
       await db.recipeSections.updateMany({ userId, recipeId }, { $inc: { orderNo: 1_000 } }, options);
       await db.recipeElements.updateMany({ userId, recipeId }, { $inc: { orderNo: 1_000 } }, options);
       const now = new Date();
+      // 순서를 바꾸는 것도 편집이다. 확정했던 판과 달라졌다.
+      await db.recipes.updateOne({ _id: recipeId, userId }, { $set: { status: "draft" } }, options);
       for (const [orderNo, { sectionId, itemIds: ids }] of input.sections.entries()) {
         await db.recipeSections.updateOne({ _id: sectionId, userId }, { $set: { orderNo, editedBy: "user", locked: true, updatedAt: now } }, options);
         for (const [itemOrder, id] of ids.entries()) {
@@ -457,6 +470,69 @@ export class RecipeV2Service {
       }
     });
     return this.#load(userId, recipeId);
+  }
+
+  /**
+   * 화면이 보낸 판으로 되돌린다(실행 취소 · 다시 실행).
+   *
+   * 섹션 · 문장 · 근거를 전부 지우고 받은 순서대로 다시 넣는다. id는 받은 그대로다.
+   * 지우기를 먼저 끝내야 자리 번호 유일 인덱스에 걸리지 않는다.
+   */
+  async #restore(
+    tx: MongoTransaction,
+    userId: string,
+    recipeId: string,
+    edit: Extract<RecipeV2Edit, { operation: "restore" }>,
+  ): Promise<void> {
+    const db = mongoCollections(tx.db);
+    const options = { session: tx.session };
+    const now = new Date();
+    if (edit.intent.jobPostingId && !await db.jobPostings.findOne({ _id: edit.intent.jobPostingId }, options)) {
+      throw new RecipeError(404, "job posting not found");
+    }
+    const sectionIds = new Set(edit.sections.map(({ id }) => id));
+    const itemIds = edit.sections.flatMap(({ items }) => items.map(({ id }) => id));
+    if (sectionIds.size !== edit.sections.length || new Set(itemIds).size !== itemIds.length) {
+      throw new RecipeError(409, "restore lists an id twice");
+    }
+    await db.recipeElementSources.deleteMany({ userId, recipeId }, options);
+    await db.recipeElements.deleteMany({ userId, recipeId }, options);
+    await db.recipeSections.deleteMany({ userId, recipeId }, options);
+    await db.recipes.updateOne(
+      { _id: recipeId, userId },
+      { $set: { title: edit.title, intent: edit.intent as unknown as JsonObject } },
+      options,
+    );
+    const sections: RecipeSectionDoc[] = [];
+    const elements: Array<{ _id: string; userId: string; recipeId: string; recipeSectionId: string; orderNo: number; text: string; updatedAt: Date }> = [];
+    const sources: Array<{ _id: string; userId: string; recipeId: string; recipeElementId: string; sourceType: "record" | "answer" | "requirement"; sourceId: string; role: "primary" | "supporting"; orderNo: number; createdAt: Date }> = [];
+    for (const [orderNo, section] of edit.sections.entries()) {
+      sections.push({
+        _id: section.id, userId, recipeId, orderNo, title: section.title, purpose: section.purpose,
+        targetLength: 0, takeaway: section.takeaway,
+        context: { ...V1_SECTION_CONTEXT } as unknown as JsonObject,
+        locked: true, editedBy: "user", updatedAt: now,
+      });
+      for (const [itemOrder, item] of section.items.entries()) {
+        elements.push({
+          _id: item.id, userId, recipeId, recipeSectionId: section.id,
+          orderNo: itemOrder, text: item.text, updatedAt: now,
+        });
+        const seen = new Set<string>();
+        for (const binding of [...item.sourceBindings].sort((a, b) => a.order - b.order)) {
+          if (seen.has(binding.sourceId)) continue;
+          seen.add(binding.sourceId);
+          sources.push({
+            _id: randomUUID(), userId, recipeId, recipeElementId: item.id,
+            sourceType: binding.sourceType, sourceId: binding.sourceId, role: binding.role,
+            orderNo: seen.size - 1, createdAt: now,
+          });
+        }
+      }
+    }
+    if (sections.length) await db.recipeSections.insertMany(sections, options);
+    if (elements.length) await db.recipeElements.insertMany(elements, options);
+    if (sources.length) await db.recipeElementSources.insertMany(sources, options);
   }
 
   /** 자리 번호를 0부터 다시 매긴다. 유일 인덱스 때문에 두 번에 나눠 쓴다. */

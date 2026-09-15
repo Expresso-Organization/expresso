@@ -211,6 +211,31 @@
   --ex-leading-normal: 1.6;
   --ex-leading-relaxed: 1.75;
 
+  /*
+   * 간격 · 반경 · 조작 높이.
+   *
+   * 출처는 design-ops `profiles/measured/web-comfortable.DESIGN.md` — 간격은
+   * 4 · 8 · 12 · 16 · 24 · 32 여섯 걸음(표본 대부분이 4 · 8 · 16을 품는다), 반경은
+   * 4 · 8 · 16과 원, 조작 높이 40은 버튼 높이 77개 표본의 최빈값이다(23%뿐이라
+   * 표준이 아니라 밀도 선택이다). 32 · 28은 같은 8px 걸음으로 내려온 보조 ·
+   * 미세 조작 값이다.
+   *
+   * 지금은 02 레시피 화면만 쓴다. 다른 화면의 리터럴을 옮기는 일은 따로 한다.
+   */
+  --ex-space-1: 4px;
+  --ex-space-2: 8px;
+  --ex-space-3: 12px;
+  --ex-space-4: 16px;
+  --ex-space-5: 24px;
+  --ex-space-6: 32px;
+  --ex-radius-sm: 4px;
+  --ex-radius-md: 8px;
+  --ex-radius-lg: 16px;
+  --ex-radius-full: 9999px;
+  --ex-control-md: 40px; /* 주 행동 · 입력 */
+  --ex-control-sm: 32px; /* 보조 버튼 · 칩 */
+  --ex-control-xs: 28px; /* 줄 안의 도구 */
+
   /* ── 모션 ────────────────────────────────────────────────── */
   --ex-motion-instant: 140ms ease;
   --ex-motion-quick: 160ms ease;

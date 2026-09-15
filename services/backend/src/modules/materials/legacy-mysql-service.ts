@@ -10,7 +10,7 @@ import {
 } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/legacy-mysql.js";
 
-import { rankMaterials, type MaterialRecord } from "./ranking.js";
+import { matchedTermsOf, rankMaterials, type MaterialRecord } from "./ranking.js";
 import { EntitlementService } from "../entitlements/legacy-mysql-service.js";
 
 /** 한 번에 담을 수 있는 재료 수. 자동 선택도 여기까지다. */
@@ -72,6 +72,7 @@ function mapSource(row: SourceRow): BrewMaterial {
     periodTo: row.period_to,
     origin: row.origin,
     reason: row.reason_text,
+    matchedTerms: matchedTermsOf(row.reason_text),
   };
 }
 

@@ -145,6 +145,22 @@ export const RecipeV2EditSchema = z.discriminatedUnion("operation", [
     role: z.enum(["primary", "supporting"]),
   }),
   z.strictObject({ operation: z.literal("unbind_source"), itemId: UuidSchema, sourceId: UuidSchema }),
+  /**
+   * 실행 취소 · 다시 실행.
+   *
+   * 화면이 들고 있던 판을 그대로 돌려보낸다. 서버는 섹션 · 문장 · 근거를 받은
+   * 것으로 갈아 끼우되 **id를 유지한다** — 되돌린 뒤에도 화면의 선택과 목차가
+   * 같은 것을 가리켜야 한다. 서버 판(revision)에 기대지 않는 이유는 순서 변경이
+   * 판을 남기지 않고, 판이 50개까지만 남기 때문이다.
+   */
+  z.strictObject({
+    operation: z.literal("restore"),
+    title: TitleSchema,
+    intent: PortfolioIntentSchema,
+    sections: z.array(RecipeV2SectionSchema).max(30),
+  }),
+  /** 02를 마친다. 그 뒤의 편집은 다시 `draft`다 — 03이 무엇을 읽었는지 알 수 있게. */
+  z.strictObject({ operation: z.literal("confirm") }),
 ]);
 export type RecipeV2Edit = z.infer<typeof RecipeV2EditSchema>;
 

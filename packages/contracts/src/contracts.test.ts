@@ -34,6 +34,7 @@ import {
   InterviewSessionSchema,
   JobProgressEventSchema,
   UpdateBrewMaterialsSchema,
+  RecipeV2EditSchema,
   createCursorPageSchema,
   createJobEnvelopeSchema,
   expressoOpenApiDocument,
@@ -844,5 +845,36 @@ describe("키트", () => {
     for (const rule of ["k-reveal{", "k-stagger", "k-progress{display:block"]) {
       expect(guarded).toContain(rule);
     }
+  });
+});
+
+describe("레시피 v2 편집 연산", () => {
+  const section = {
+    id: "8f6a2d3e-6c1c-4d4c-9d1e-2b8f9e7c1001",
+    order: 0,
+    title: "첫 인상",
+    purpose: "",
+    takeaway: "",
+    items: [{
+      id: "8f6a2d3e-6c1c-4d4c-9d1e-2b8f9e7c1002",
+      order: 0,
+      text: "역할과 대표 성과",
+      sourceBindings: [{ sourceType: "record", sourceId: "8f6a2d3e-6c1c-4d4c-9d1e-2b8f9e7c1003", role: "primary", order: 0 }],
+    }],
+  };
+  const intent = { role: "", audience: "", highlight: "", lengthPreset: "single", extraRequest: "", jobPostingId: null };
+
+  it("restore 는 판 전체를 받고 confirm 은 아무것도 받지 않는다", () => {
+    expect(RecipeV2EditSchema.safeParse({ operation: "restore", title: "제목", intent, sections: [section] }).success).toBe(true);
+    expect(RecipeV2EditSchema.safeParse({ operation: "confirm" }).success).toBe(true);
+    expect(RecipeV2EditSchema.safeParse({ operation: "confirm", title: "x" }).success).toBe(false);
+  });
+
+  it("restore 도 문장마다 중심 근거는 하나다", () => {
+    const twice = { ...section, items: [{ ...section.items[0]!, sourceBindings: [
+      section.items[0]!.sourceBindings[0]!,
+      { ...section.items[0]!.sourceBindings[0]!, sourceId: "8f6a2d3e-6c1c-4d4c-9d1e-2b8f9e7c1004", order: 1 },
+    ] }] };
+    expect(RecipeV2EditSchema.safeParse({ operation: "restore", title: "", intent, sections: [twice] }).success).toBe(false);
   });
 });

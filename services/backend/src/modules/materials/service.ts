@@ -8,7 +8,7 @@ import { assertActiveRecordsForWrite } from "../career/index.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
 import type { MaterialsApi } from "./index.js";
 import { MaterialsError } from "./public.js";
-import { rankMaterials } from "./ranking.js";
+import { matchedTermsOf, rankMaterials } from "./ranking.js";
 
 export class MaterialsService implements MaterialsApi {
   constructor(readonly context: MongoContext) {}
@@ -59,7 +59,7 @@ export class MaterialsService implements MaterialsApi {
       { $lookup: { from: "career_categories", localField: "record.categoryId", foreignField: "_id", pipeline: [{ $match: { $or: [{ userId: null }, { userId }] } }], as: "category" } }, { $unwind: "$category" },
     ]).toArray();
     return BrewMaterialsSchema.parse({ brewId, jobAnalysisId: brew.jobAnalysisId, updatedAt: brew.updatedAt.toISOString(), selectionLimit: 10, mode: brew.mode, lengthPreset: brew.lengthPreset,
-      materials: rows.map((row) => ({ recordId: row.recordId, title: row.record.title, status: row.record.status, score: row.score, rank: row.rank, selected: row.isSelected, selectedBy: row.selectedBy, excludedReason: row.excludedReason ?? null, categoryName: row.category.name, categoryIcon: row.category.icon, periodFrom: row.record.periodStart ?? null, periodTo: row.record.periodEnd ?? null, origin: row.record.origin, reason: row.reasonText })),
+      materials: rows.map((row) => ({ recordId: row.recordId, title: row.record.title, status: row.record.status, score: row.score, rank: row.rank, selected: row.isSelected, selectedBy: row.selectedBy, excludedReason: row.excludedReason ?? null, categoryName: row.category.name, categoryIcon: row.category.icon, periodFrom: row.record.periodStart ?? null, periodTo: row.record.periodEnd ?? null, origin: row.record.origin, reason: row.reasonText, matchedTerms: matchedTermsOf(row.reasonText) })),
     });
   }
 

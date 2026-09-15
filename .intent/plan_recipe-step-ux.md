@@ -29,6 +29,9 @@ date: 2026-09-15
 | `services/web/src/app/(app)/brew/[brewId]/recipe/Setup.tsx` | 두 칸 · 요약 · 순위 이유 조건 · 다시 짜기 확인 (고침) |
 | `services/web/src/app/(app)/brew/[brewId]/recipe/Setup.module.css` | 토큰 기반으로 다시 씀 (고침) |
 | `services/web/src/app/(app)/brew/[brewId]/recipe/page.tsx` | 공고 요건 글 전달 · 안 쓴 기록 전달 (고침) |
+| `packages/contracts/src/materials.ts` | 재료에 `matchedTerms` 추가 — 「순위 이유」 칸이 문장 대신 겹친 말을 그린다 (고침, 구현 중 추가) |
+| `services/backend/src/modules/materials/ranking.ts` · `service.ts` · `legacy-mysql-service.ts` · `ranking.test.ts` | 저장된 이유 문장에서 겹친 말을 되돌리는 `matchedTermsOf` (고침, 구현 중 추가) |
+| `services/web/src/app/(app)/brew/[brewId]/BrewSkeleton.tsx` | 머리말의 없어진 `saveState` prop 제거 (고침, 구현 중 추가) |
 
 ## 작업 순서
 
@@ -46,6 +49,17 @@ date: 2026-09-15
 9. page.tsx — 요건 글 · 안 쓴 기록 전달.
 10. 검증 — 아래 명령과 브라우저 확인. 대비 재계산.
 11. 커밋 — 토큰/계약/백엔드 하나, 웹 하나. 푸시.
+
+## 구현 중 벗어난 것
+
+- 「순위 이유」를 빈 칸으로 두려면 겹친 말이 있는지 화면이 알아야 한다. 저장된
+  이유는 문장 하나(`reasonText`)라, 계약에 `matchedTerms`를 더하고 백엔드가 읽을 때
+  그 문장에서 되돌린다(`matchedTermsOf`). 저장 문서는 바꾸지 않았다.
+- 「다시 짜기」 확인 단계가 처음 구현에서 건너뛰어졌다 — 같은 자리의 버튼 한 노드가
+  누르는 순간 `type="submit"`으로 바뀌어 브라우저가 폼을 냈다. `key`로 노드를 갈라
+  고쳤다. 그 사이 로컬 브루 하나(`0b7a…`)에 실제 초안 잡이 한 번 걸렸다.
+- dnd-kit 의 접근성 id 가 서버 · 클라이언트에서 달라 hydration 경고가 났다.
+  `DndContext`에 `useId()` 값을 준다.
 
 ## 가장 위험한 단계
 

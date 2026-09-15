@@ -89,6 +89,40 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB recipe v2 integration", 
       .rejects.toMatchObject({ statusCode: 409 });
   });
 
+  it("restores a whole revision with the same ids, and confirm flips back to draft on the next edit", async () => {
+    const before = await service.open(userId, brewId);
+    const target = before.sections.find(({ items }) => items.length > 0)!;
+    const itemId = target.items[0]!.id;
+    // 문장을 지우고, 섹션 하나를 더하고, 제목을 바꾼 뒤 — 처음 판으로 돌린다.
+    await service.edit(userId, before.id, { operation: "delete_item", itemId });
+    await service.edit(userId, before.id, { operation: "add_section", title: "덧붙인 것", purpose: "" });
+    await service.edit(userId, before.id, { operation: "update_title", title: "바뀐 제목" });
+    const restored = (await service.edit(userId, before.id, {
+      operation: "restore", title: before.title, intent: before.intent, sections: before.sections,
+    })).recipe;
+    expect(restored.title).toBe(before.title);
+    expect(restored.sections.map(({ id }) => id)).toEqual(before.sections.map(({ id }) => id));
+    expect(restored.sections.flatMap(({ items }) => items.map(({ id }) => id)))
+      .toEqual(before.sections.flatMap(({ items }) => items.map(({ id }) => id)));
+    // 근거도 같은 것이 같은 자리에 돌아온다.
+    const bindings = (sections: typeof before.sections) =>
+      sections.flatMap(({ items }) => items.flatMap(({ sourceBindings }) => sourceBindings.map(({ sourceId, role }) => `${sourceId}:${role}`)));
+    expect(bindings(restored.sections)).toEqual(bindings(before.sections));
+    await expect(service.edit(userId, before.id, {
+      operation: "restore", title: "", intent: before.intent, sections: [before.sections[0]!, before.sections[0]!],
+    })).rejects.toMatchObject({ statusCode: 409 });
+
+    const confirmed = (await service.edit(userId, before.id, { operation: "confirm" })).recipe;
+    expect(confirmed.status).toBe("confirmed");
+    const reordered = await service.reorder(userId, before.id, {
+      sections: confirmed.sections.map(({ id, items }) => ({ sectionId: id, itemIds: items.map((item) => item.id) })),
+    });
+    expect(reordered.status).toBe("draft");
+    await service.edit(userId, before.id, { operation: "confirm" });
+    const edited = (await service.edit(userId, before.id, { operation: "update_title", title: "다시 손댐" })).recipe;
+    expect(edited.status).toBe("draft");
+  });
+
   it("opens onto the AI draft instead of an empty page, and takes a newer draft on the next visit", async () => {
     const draftBrewId = (await new MongoMaterialsService(fixture.resource).createFreeBrew(userId, { title: "초안", brief: "성과", lengthPreset: "single" })).brewId;
     const legacy = new MongoRecipeService(fixture.resource);
