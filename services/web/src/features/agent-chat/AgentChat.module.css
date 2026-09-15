@@ -153,3 +153,7 @@
 .apiKeyField label { display:flex; flex-direction:column; gap:8px; font-size:var(--ex-text-xs); }
 .apiKeyField input { width:100%; padding:8px; color:var(--ex-fg); background:var(--ex-bg); border:1px solid var(--ex-border); border-radius:6px; }
 .apiKeyField small { display:block; margin-top:8px; color:var(--ex-fg-muted); font-size:var(--ex-text-3xs); }
+
+.consentDialog.consentDialog { color:var(--ex-fg); background:var(--ex-bg); border:1px solid var(--ex-border); font-family:var(--ex-font-ui); max-height:calc(100dvh - 32px); overflow-y:auto; }
+.consentDetails { display:flex; flex-direction:column; gap:12px; font-size:var(--ex-text-xs); line-height:var(--ex-leading-relaxed); color:var(--ex-fg-muted); }
+.consentDetails strong { color:var(--ex-fg); }
