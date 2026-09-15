@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import type { AgentContext } from "@expresso/contracts";
+import type { PreviewResource } from "./ResourcePreview";
 import { CareerRecordListResponseSchema, JobPostingListResponseSchema, PortfolioListResponseSchema } from "@expresso/contracts";
 import { Icon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/button";
@@ -10,10 +11,10 @@ import sidebar from "@/components/shell/Sidebar.module.css";
 import styles from "./AgentChat.module.css";
 
 export type ResourceKind = "records" | "jobs" | "portfolios";
-type ListItem = { id: string; title: string; description: string; href: string };
+type ListItem = { id: string; title: string; description: string };
 const labels = { records: "커리어 기록", jobs: "채용 공고", portfolios: "내 포트폴리오" };
 const icons = { records: "notebook", jobs: "target", portfolios: "browsers" };
-export function ResourceList({ kind, chatId }: { kind: ResourceKind; chatId: string | null }) {
+export function ResourceList({ kind, contexts, disabled, onToggle, onPreview }: { kind: ResourceKind; contexts: readonly AgentContext[]; disabled: boolean; onToggle(ref: AgentContext, title: string): void; onPreview(resource: PreviewResource): void }) {
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<ListItem[]>([]);
   const [page, setPage] = useState<string | null>(null);
@@ -37,15 +38,15 @@ export function ResourceList({ kind, chatId }: { kind: ResourceKind; chatId: str
           let rows: ListItem[]; let nextPage: string | null;
           if (kind === "records") {
             const result = CareerRecordListResponseSchema.parse(payload);
-            rows = result.data.map(item => ({ id: item.id, title: item.title || "제목 없는 기록", description: new Date(item.updatedAt).toLocaleDateString("ko-KR"), href: `/career/records/${item.id}` }));
+            rows = result.data.map(item => ({ id: item.id, title: item.title || "제목 없는 기록", description: new Date(item.updatedAt).toLocaleDateString("ko-KR") }));
             nextPage = result.page.hasNextPage ? result.page.nextCursor : null;
           } else if (kind === "jobs") {
             const result = JobPostingListResponseSchema.parse(payload);
-            rows = result.data.map(item => ({ id: item.id, title: item.title, description: [item.company.name, item.location].filter(Boolean).join(" · "), href: `/jobs/${item.id}` }));
+            rows = result.data.map(item => ({ id: item.id, title: item.title, description: [item.company.name, item.location].filter(Boolean).join(" · ") }));
             nextPage = result.page.hasNextPage ? String(result.page.page + 1) : null;
           } else {
             const result = PortfolioListResponseSchema.parse(payload);
-            rows = result.data.map(item => ({ id: item.id, title: item.title, description: ({ draft: "초안", published: "공개", unlisted: "비공개" })[item.status], href: `/edit/${item.id}` }));
+            rows = result.data.map(item => ({ id: item.id, title: item.title, description: ({ draft: "초안", published: "공개", unlisted: "비공개" })[item.status] }));
             nextPage = result.page.hasNextPage ? result.page.nextCursor : null;
           }
           if (abort.signal.aborted) return;
@@ -61,7 +62,14 @@ export function ResourceList({ kind, chatId }: { kind: ResourceKind; chatId: str
     <h2>{labels[kind]}</h2>
     {kind !== "portfolios" ? <div className={styles.search}><Icon name="magnifying-glass" size={16} /><input type="search" aria-label={`${labels[kind]} 검색`} placeholder={`${labels[kind]} 검색`} maxLength={200} value={query} onChange={event => { setQuery(event.target.value); setPage(null); setItems([]); setNext(null); }} /></div> : null}
     <nav className={styles.resourceResults} aria-label={`${labels[kind]} 목록`} aria-busy={loading}>
-      <GlideMenu className={sidebar.navGroup}>{items.map(item => <Link data-row title={item.title} className={`${sidebar.row} ${sidebar.portfolioItem} ${styles.sidebarResult}`} key={item.id} href={`${item.href}${kind !== "portfolios" && chatId ? `?chat=${encodeURIComponent(chatId)}` : ""}` as never}><Icon name={icons[kind]} size={16} /><span><strong>{item.title}</strong><small>{item.description}</small></span><Icon name="arrow-up-right" size={13} /></Link>)}</GlideMenu>
+      <GlideMenu className={sidebar.navGroup}>{items.map(item => {
+        const ref: AgentContext = { kind: kind === "jobs" ? "job" : kind === "records" ? "record" : "portfolio", id: item.id };
+        const selected = contexts.some(value => value.kind === ref.kind && value.id === ref.id);
+        return <div data-row className={`${sidebar.row} ${sidebar.portfolioItem} ${styles.resourceRow} ${selected ? sidebar.rowActive : ""}`} key={item.id}>
+          <input type="checkbox" aria-label={`${item.title} AI 문맥에 포함`} checked={selected} disabled={disabled} onChange={() => onToggle(ref, item.title)} />
+          <button title={item.title} className={styles.resourceOpen} aria-label={`${item.title} 미리보기`} onClick={() => onPreview({ ...ref, title: item.title })}><Icon name={icons[kind]} size={16} /><span><strong>{item.title}</strong><small>{item.description}</small></span><Icon name="arrows-out-simple" size={13} /></button>
+        </div>;
+      })}</GlideMenu>
       {loading ? <div role="status" aria-label="목록 불러오는 중"><Skeleton className={styles.listSkeleton} /><Skeleton className={styles.listSkeleton} /></div> : null}
       {error ? <div role="alert" className={styles.listNotice}><p>목록을 불러오지 못했습니다.</p><Button variant="outline" onClick={() => setRetry(value => value + 1)}>다시 시도</Button></div> : null}
       {!loading && !error && !items.length ? <p className={styles.noResults}>{query.trim() ? "검색 결과가 없습니다." : `${labels[kind]} 목록이 비어 있습니다.`}</p> : null}

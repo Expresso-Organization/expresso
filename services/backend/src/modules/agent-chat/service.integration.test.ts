@@ -6,6 +6,9 @@ import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { CareerService } from "../career/index.js";
 import { CareerDocumentService } from "../career-editor/index.js";
+import { PortfolioReadService } from "../portfolios/index.js";
+import { PageService } from "../page/index.js";
+import { AgentCredentials } from "./credentials.js";
 import { ConsentService } from "../consent/index.js";
 import type { AgentRuntime } from "../../platform/agent/runtime.js";
 import { AgentChatService } from "./service.js";
@@ -15,7 +18,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
   let userId: string; let other: string; let recordId: string;
   let career: CareerService; let documents: CareerDocumentService; let consent: ConsentService;
   const services: AgentChatService[] = [];
-  const make = (runtime: AgentRuntime | null) => { const service = new AgentChatService(fixture.resource, runtime, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent); services.push(service); return service; };
+  const make = (runtime: AgentRuntime | null) => { const service = new AgentChatService(fixture.resource, runtime, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource)); services.push(service); return service; };
   beforeAll(async () => {
     fixture = await createMongoFixture("agentchat");
     const identity = new MongoIdentityService(fixture.resource);
@@ -36,6 +39,32 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await expect(service.send(other, conversation.id, { requestId: randomUUID(), text: "안녕" })).rejects.toMatchObject({ statusCode: 403, publicDetails: { requiredConsent: "career_records" } });
     expect((await service.get(other, conversation.id)).messages).toHaveLength(0);
     expect(calls).toBe(0);
+  });
+  it("자료 선택을 저장하고 제외하며 권한과 변경 버전을 검사한다", async () => {
+    const service = make(null); const conversation = await service.create(userId, []);
+    const selected = await service.setContexts(userId, conversation.id, [{ kind: "record", id: recordId }], conversation.version);
+    expect(selected.contexts).toEqual([{ kind: "record", id: recordId }]);
+    expect((await service.get(userId, conversation.id)).contexts).toEqual(selected.contexts);
+    await expect(service.setContexts(userId, conversation.id, [], conversation.version)).rejects.toMatchObject({ statusCode: 409 });
+    await expect(service.setContexts(other, conversation.id, [], selected.version)).rejects.toMatchObject({ statusCode: 404 });
+    const removed = await service.setContexts(userId, conversation.id, [], selected.version);
+    expect(removed.contexts).toEqual([]);
+    const foreign = await service.create(other, []);
+    await expect(service.setContexts(other, foreign.id, [{ kind: "record", id: recordId }], foreign.version)).rejects.toMatchObject({ statusCode: 404 });
+    expect((await service.get(other, foreign.id)).contexts).toEqual([]);
+  });
+  it("선택한 포트폴리오 본문을 런타임에 전달하고 다른 사용자의 선택을 차단한다", async () => {
+    const db = mongoCollections(fixture.resource.db); const id = randomUUID(); const sectionId = randomUUID(); const now = new Date();
+    await db.portfolios.insertOne({ _id: id, userId, brewId: randomUUID(), templateId: (await db.templates.findOne({}))!._id, title: "자료 선택 검증", status: "draft", createdAt: now, updatedAt: now, styleOverrides: {} });
+    await db.portfolioSections.insertOne({ _id: sectionId, userId, portfolioId: id, orderNo: 0, visible: true });
+    await db.blocks.insertOne({ _id: randomUUID(), userId, portfolioSectionId: sectionId, orderNo: 0, kind: "paragraph", content: { text: "배포 시간을 30% 단축했습니다." }, style: {}, syncState: "detached", locked: false });
+    let received: unknown;
+    const service = make({ run: async input => { received = input.context; } });
+    const row = await service.create(userId, [{ kind: "portfolio", id }, { kind: "record", id: recordId }]);
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "자료 확인" });
+    await expect.poll(() => received).toBeDefined();
+    expect(received).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "portfolio", id, data: expect.objectContaining({ portfolio: expect.objectContaining({ title: "자료 선택 검증", sections: expect.arrayContaining([expect.objectContaining({ blocks: expect.arrayContaining([expect.objectContaining({ content: { text: "배포 시간을 30% 단축했습니다." } })]) })]) }) }) })]));
+    await expect(service.create(other, [{ kind: "portfolio", id }])).rejects.toMatchObject({ statusCode: 404 });
   });
   it("저장된 대화를 다른 서비스 인스턴스에서 복원하고 중복 요청을 한 번만 처리한다", async () => {
     const service = make({ run: async input => { await input.emit({ type: "text", text: "첫 " }); await input.emit({ type: "text", text: "응답" }); } });

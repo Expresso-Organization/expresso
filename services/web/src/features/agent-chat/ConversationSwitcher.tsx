@@ -1,10 +1,11 @@
 "use client";
 import { useRef, useState } from "react";
-import type { AgentConversation } from "@expresso/contracts";
+import type { AgentConversation, AgentContext } from "@expresso/contracts";
 import { Icon } from "@/components/ui/Icon";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import type { PreviewResource } from "./ResourcePreview";
 import { ResourceList } from "./ResourceList";
 import { SidebarFrame } from "@/components/shell/SidebarFrame";
 import { SidebarCollapseProvider, useSidebarCollapse } from "@/components/shell/SidebarCollapse";
@@ -14,7 +15,8 @@ import type { ReactNode } from "react";
 import styles from "./AgentChat.module.css";
 
 type Summary = Omit<AgentConversation, "messages">;
-export function ConversationSwitcher({ currentId, conversations, disabled, onSelect, inline = false }: {
+export function ConversationSwitcher({ currentId, conversations, disabled, onSelect, contexts, contextDisabled, onToggleContext, onPreview, inline = false }: {
+  contexts: readonly AgentContext[]; contextDisabled: boolean; onToggleContext(ref: AgentContext, title: string): void; onPreview(resource: PreviewResource): void;
   inline?: boolean; currentId: string | null; conversations: readonly Summary[]; disabled: boolean; onSelect(id: string): void;
 }) {
   const [activeTab, setActiveTab] = useState("chats");
@@ -38,9 +40,9 @@ export function ConversationSwitcher({ currentId, conversations, disabled, onSel
       <span aria-hidden="true" className={styles.tabIndicator} style={{ transform: `translateX(${RAIL_ITEMS.findIndex(item => item.value === activeTab) * 100}%)` }} />
     </TabsList>
     <TabsContent value="chats" className={styles.browserContent}><h2>최근 대화 <span>{conversations.length}</span></h2>{content}</TabsContent>
-    <TabsContent value="records" className={styles.browserContent}><ResourceList kind="records" chatId={currentId} /></TabsContent>
-    <TabsContent value="jobs" className={styles.browserContent}><ResourceList kind="jobs" chatId={currentId} /></TabsContent>
-    <TabsContent value="portfolios" className={styles.browserContent}><ResourceList kind="portfolios" chatId={currentId} /></TabsContent>
+    <TabsContent value="records" className={styles.browserContent}><ResourceList kind="records" contexts={contexts} disabled={contextDisabled} onToggle={onToggleContext} onPreview={resource => { setOpen(false); onPreview(resource); }} /></TabsContent>
+    <TabsContent value="jobs" className={styles.browserContent}><ResourceList kind="jobs" contexts={contexts} disabled={contextDisabled} onToggle={onToggleContext} onPreview={resource => { setOpen(false); onPreview(resource); }} /></TabsContent>
+    <TabsContent value="portfolios" className={styles.browserContent}><ResourceList kind="portfolios" contexts={contexts} disabled={contextDisabled} onToggle={onToggleContext} onPreview={resource => { setOpen(false); onPreview(resource); }} /></TabsContent>
   </Tabs>;
   if (inline) return <SidebarCollapseProvider storageKey="ex.agent.resources.collapsed"><ResourceSidebar activeTab={activeTab} onTab={setActiveTab}>{browser}</ResourceSidebar></SidebarCollapseProvider>;
   return <Popover open={open} onOpenChange={next => { setOpen(next); if (next) setQuery(""); }}>

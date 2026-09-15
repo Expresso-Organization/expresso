@@ -5,8 +5,9 @@ import { LogoMark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
 import { useRouter } from "next/navigation";
 import { AssistantRuntimeProvider, useExternalStoreRuntime, useAui, useAuiState, type ThreadMessageLike, type ToolCallMessagePartComponent } from "@assistant-ui/react";
-import { AgentChatAccessSchema } from "@expresso/contracts";
+import { AgentChatAccessSchema, AgentResourceDetailSchema } from "@expresso/contracts";
 import type { AgentContext, AgentMessage, AiEditProposalDetail, CareerDocumentBootstrap } from "@expresso/contracts";
+import { ResourcePreview, type PreviewResource } from "./ResourcePreview";
 import { AgentConsentDialog } from "./AgentConsentDialog";
 import { ConversationSwitcher } from "./ConversationSwitcher";
 import { AiProposalDiff } from "@/features/career-editor/ai/AiProposalDiff";
@@ -73,6 +74,29 @@ const convertMessage = (message: AgentMessage): ThreadMessageLike => ({
 });
 export function AgentChat({ context, contextLabel, standalone = false }: { context?: AgentContext; contextLabel?: string; standalone?: boolean }) {
   const state = useAgentConversation(context);
+  const [preview, setPreview] = useState<PreviewResource | null>(null);
+  const [contextTitles, setContextTitles] = useState<Record<string, string>>({});
+  const contextKeys = (state.conversation?.contexts ?? []).map(ref => `${ref.kind}:${ref.id}`).join(",");
+  useEffect(() => {
+    const controller = new AbortController();
+    const missing = contextKeys.split(",").filter(key => key && !contextTitles[key]);
+    if (!missing.length) return;
+    void Promise.all(missing.map(async key => {
+      const [kind, id] = key.split(":");
+      const path = kind === "job" ? "jobs" : kind === "record" ? "records" : "portfolios";
+      try {
+        const response = await fetch(`/api/agent/resources/${path}/${id}`, { signal: controller.signal, cache: "no-store" });
+        if (!response.ok) return null;
+        return [key, AgentResourceDetailSchema.parse(await response.json()).data.title] as const;
+      } catch { return null; }
+    })).then(entries => {
+      const titles = Object.fromEntries(entries.filter(entry => entry !== null));
+      if (!controller.signal.aborted && Object.keys(titles).length) setContextTitles(current => ({ ...current, ...titles }));
+    });
+    return () => controller.abort();
+  }, [contextKeys, contextTitles]);
+  const toggleContext = (ref: AgentContext, title: string) => { setContextTitles(current => ({ ...current, [`${ref.kind}:${ref.id}`]: title })); void state.toggleContext(ref); };
+  const contextDisabled = state.pending || state.conversation?.run?.status === "running" || (!!state.id && !state.conversation);
   const [access, setAccess] = useState<ReturnType<typeof AgentChatAccessSchema.parse>["data"] | null>(null);
   const [accessError, setAccessError] = useState(false);
   const [consentOpen, setConsentOpen] = useState(false);
@@ -80,20 +104,24 @@ export function AgentChat({ context, contextLabel, standalone = false }: { conte
   useEffect(() => { const controller = new AbortController(); void fetch("/api/agent/access", { signal: controller.signal, cache: "no-store" }).then(async response => { if (!response.ok) throw new Error("access"); setAccess(AgentChatAccessSchema.parse(await response.json()).data); }).catch(() => { if (!controller.signal.aborted) setAccessError(true); }); return () => controller.abort(); }, []);
   const canSend = !!access?.enabled && !access.consentRequired && (access.serverCredentialAllowed || access.apiKeyConfigured);
   const running = state.conversation?.run?.status === "running";
-  const runtime = useExternalStoreRuntime({ messages: state.conversation?.messages ?? [], convertMessage, isRunning: running, isLoading: !!state.id && !state.conversation, isDisabled: !canSend || state.pending || (!!state.id && !state.conversation), onNew: async message => { const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n"); try { await state.send(text); } catch { runtime.thread.composer.setText(text); } }, onCancel: state.cancel });
+  const runtime = useExternalStoreRuntime({ messages: state.conversation?.messages ?? [], convertMessage, isRunning: running, isLoading: !!state.id && !state.conversation, isDisabled: !!preview || !canSend || state.pending || (!!state.id && !state.conversation), onNew: async message => { const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n"); try { await state.send(text); } catch { runtime.thread.composer.setText(text); } }, onCancel: state.cancel });
   const missing = context && state.conversation && !state.conversation.contexts.some(ref => ref.kind === context.kind && ref.id === context.id);
   return <ChatContext.Provider value={state}><AssistantRuntimeProvider runtime={runtime}>
+    {preview ? <ResourcePreview resource={preview} onClose={() => setPreview(null)} selected={!!state.conversation?.contexts.some(ref => ref.kind === preview.kind && ref.id === preview.id)} disabled={contextDisabled} onToggle={toggleContext} /> : null}
     <AgentConsentDialog consentRequired={access?.consentRequired ?? true} requiresKey={!!access && !access.serverCredentialAllowed && !access.apiKeyConfigured} onKeySaved={() => setAccess(current => current ? { ...current, apiKeyConfigured: true } : current)} open={consentOpen} onOpenChange={setConsentOpen} onConsented={() => setAccess(current => current ? { ...current, consentRequired: false } : current)} />
     <section className={`acf-scope ${styles.root} ${standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅">
       <div className={styles.main}>
         <header className={styles.header}>
           <div className={styles.heading}><span className={styles.assistantMark}><LogoMark size={22} /></span><div><strong>{state.conversation?.title ?? "새 대화"}</strong><span>{running ? "답변을 준비하고 있어요" : "Expresso AI"}</span></div></div>
-          <div className={styles.headerActions}><span className={standalone ? styles.compactHistory : undefined}><ConversationSwitcher currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /></span>{!standalone ? <Link aria-label="독립 채팅으로 크게 열기" title="크게 열기" href={{ pathname: "/agent", query: state.id ? { chat: state.id } : {} }}><Icon name="arrows-out-simple" size={17} /></Link> : null}<Button variant="ghost" size="icon" aria-label="새 대화" title="새 대화" disabled={state.pending} onClick={() => state.select(null)}><Icon name="note-pencil" size={18} /></Button></div>
+          <div className={styles.headerActions}><span className={standalone ? styles.compactHistory : undefined}><ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /></span>{!standalone ? <Link aria-label="독립 채팅으로 크게 열기" title="크게 열기" href={{ pathname: "/agent", query: state.id ? { chat: state.id } : {} }}><Icon name="arrows-out-simple" size={17} /></Link> : null}<Button variant="ghost" size="icon" aria-label="새 대화" title="새 대화" disabled={state.pending} onClick={() => state.select(null)}><Icon name="note-pencil" size={18} /></Button></div>
         </header>
 
         <div className={styles.contexts} aria-label="대화에 연결된 자료">
           <span className={styles.contextLabel}><Icon name="paperclip" size={14} />함께 보는 자료</span>
-          <div className={styles.referenceItems}>{state.conversation?.contexts.map((ref, index) => <Link className={styles.reference} data-kind={ref.kind} key={`${ref.kind}:${ref.id}`} href={(ref.kind === "job" ? `/jobs/${ref.id}?chat=${state.id}` : `/career/records/${ref.id}?chat=${state.id}`) as never}><Icon name={ref.kind === "job" ? "target" : "notebook"} size={14} /><span>{context?.id === ref.id && contextLabel ? contextLabel : `${ref.kind === "job" ? "채용 공고" : "커리어 기록"} ${index + 1}`}</span><Icon name="arrow-up-right" size={11} /></Link>)}
+          <div className={styles.referenceItems}>{state.conversation?.contexts.map((ref, index) => {
+            const title = contextTitles[`${ref.kind}:${ref.id}`] ?? (context?.id === ref.id && contextLabel ? contextLabel : `${ref.kind === "job" ? "채용 공고" : ref.kind === "record" ? "커리어 기록" : "포트폴리오"} ${index + 1}`);
+            return <span className={styles.reference} data-kind={ref.kind} key={`${ref.kind}:${ref.id}`}><button className={styles.referenceTitle} onClick={() => setPreview({ ...ref, title })}><Icon name={ref.kind === "job" ? "target" : ref.kind === "record" ? "notebook" : "browsers"} size={14} /><span>{title}</span></button><button className={styles.referenceRemove} aria-label={`${title} AI 문맥에서 제외`} disabled={contextDisabled} onClick={() => toggleContext(ref, title)}><Icon name="x" size={12} /></button></span>;
+          })}
           {!state.id && contextLabel ? <span className={styles.reference} data-kind={context?.kind}><Icon name={context?.kind === "job" ? "target" : "notebook"} size={14} />{contextLabel}</span> : null}
           {missing ? <Button variant="ghost" className={styles.attachButton} disabled={running || state.pending} onClick={() => void state.attach()}><Icon name="plus" size={13} /><span>{contextLabel ?? "현재 자료"} 연결</span></Button> : null}
           {!state.conversation?.contexts.length && !contextLabel ? <><Link className={styles.referenceEmpty} href="/jobs"><Icon name="plus" size={12} />공고</Link><Link className={styles.referenceEmpty} href="/career/experience"><Icon name="plus" size={12} />기록</Link></> : null}</div>
@@ -106,7 +134,7 @@ export function AgentChat({ context, contextLabel, standalone = false }: { conte
         {state.conversation?.run?.error ? <p role="alert" className={styles.error}>{state.conversation.run.error}</p> : null}
         {state.issue ? <p role="alert" className={styles.error}>{state.issue}</p> : null}
       </div>
-      {standalone ? <ConversationSwitcher inline currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /> : null}
+      {standalone ? <ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} inline currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /> : null}
     </section>
   </AssistantRuntimeProvider></ChatContext.Provider>;
 }

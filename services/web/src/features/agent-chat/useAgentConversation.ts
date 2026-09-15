@@ -15,6 +15,7 @@ export function useAgentConversation(context?: AgentContext) {
   const [list, setList] = useState<ReturnType<typeof AgentConversationListSchema.parse>["data"]>([]);
   const [issue, setIssue] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const contextMutation = useRef(false);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const currentId = useRef(id); currentId.current = id;
@@ -57,7 +58,7 @@ export function useAgentConversation(context?: AgentContext) {
     try { accept(await action()); } catch (error) { setIssue(error instanceof Error ? error.message : "요청에 실패했습니다."); } finally { setPending(false); }
   };
   const send = async (text: string) => {
-    if (pending) return;
+    if (pending || contextMutation.current) return;
     setPending(true); setIssue(null);
     try {
       let target = id;
@@ -66,7 +67,26 @@ export function useAgentConversation(context?: AgentContext) {
       accept(await agentRequest(`/${target}/messages`, { text, requestId: requestId.current.id })); requestId.current = null;
     } catch (error) { setIssue(error instanceof Error ? error.message : "보내지 못했습니다."); throw error; } finally { setPending(false); }
   };
-  return { id, conversation, list, issue, pending, select, send,
+  const toggleContext = async (ref: AgentContext) => {
+    if (contextMutation.current || pending || conversation?.run?.status === "running" || (id && !conversation)) return;
+    contextMutation.current = true; setPending(true); setIssue(null);
+    try {
+      if (!id) {
+        const contexts = context && (context.kind !== ref.kind || context.id !== ref.id) ? [context, ref] : [ref];
+        const created = await agentRequest("", { contexts });
+        if (!mounted.current) return;
+        select(created.id); accept(created);
+      } else {
+        const current = conversation!.contexts;
+        const selected = current.some(item => item.kind === ref.kind && item.id === ref.id);
+        if (!selected && current.length >= 10) throw new Error("한 대화에 자료를 최대 10개까지 연결할 수 있습니다.");
+        const contexts = selected ? current.filter(item => item.kind !== ref.kind || item.id !== ref.id) : [...current, ref];
+        accept(await agentRequest(`/${id}/context-selection`, { contexts, expectedVersion: conversation!.version }));
+      }
+    } catch (error) { setIssue(error instanceof Error ? error.message : "자료 선택을 저장하지 못했습니다."); }
+    finally { contextMutation.current = false; setPending(false); }
+  };
+  return { id, conversation, list, issue, pending, select, send, toggleContext,
     attach: () => id && context ? perform(() => agentRequest(`/${id}/contexts`, { context })) : Promise.resolve(),
     cancel: () => perform(() => agentRequest(`/${id}/cancel`, {})),
     approve: (input: AgentApproval) => perform(() => agentRequest(`/${id}/approval`, input)),

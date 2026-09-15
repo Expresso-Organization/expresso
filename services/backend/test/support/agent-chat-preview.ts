@@ -14,6 +14,7 @@ import { CareerDocumentService } from "../../src/modules/career-editor/index.js"
 import { ConsentService } from "../../src/modules/consent/index.js";
 import { JobBoardService } from "../../src/modules/jobs/index.js";
 import { EntitlementService } from "../../src/modules/entitlements/index.js";
+import { PageService } from "../../src/modules/page/index.js";
 import { PortfolioReadService } from "../../src/modules/portfolios/index.js";
 import { EngagementService } from "../../src/modules/engagement/index.js";
 import { AgentCredentials } from "../../src/modules/agent-chat/index.js";
@@ -39,6 +40,7 @@ if (job) {
   if (company) await db.db.collection("companies").replaceOne({ _id: company._id }, company, { upsert: true });
   await db.db.collection("job_postings").replaceOne({ _id: job._id }, job, { upsert: true });
 }
+const pageService = new PageService(db, consentService);
 const agentChatService = new AgentChatService(db, process.env.AGENT_CHAT_LIVE === "1" ? new ClaudeAgentRuntime() : { async run(input) {
   const refs = input.context as Array<{ kind: string; id: string; data: { document?: CareerDocument } }>;
   const ref = refs.find(item => item.kind === "record");
@@ -48,8 +50,8 @@ const agentChatService = new AgentChatService(db, process.env.AGENT_CHAT_LIVE ==
   }
   const text = `[검증용 응답] 연결된 자료 ${refs.length}개를 확인했습니다. 이전 질문은 ${input.messages.filter(message => message.role === "user").length - 1}개입니다. 실제 모델 호출 없이 저장·화면 이동·승인·취소 흐름을 확인하고 있습니다.`;
   for (const chunk of text.match(/.{1,5}/g) ?? []) { await delay(200, undefined, { signal: input.signal }); await input.emit({ type: "text", text: chunk }); }
-} }, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(db, config.agentCredentialEncryptionKey));
-const app = buildApi({ config, identityService, careerService, careerDocumentService, consentService, jobBoardService, entitlementService: new EntitlementService(db), portfolioReadService: new PortfolioReadService(db), engagementService: new EngagementService(db), agentChatService });
+} }, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(db, config.agentCredentialEncryptionKey), new PortfolioReadService(db), pageService);
+const app = buildApi({ config, pageService, identityService, careerService, careerDocumentService, consentService, jobBoardService, entitlementService: new EntitlementService(db), portfolioReadService: new PortfolioReadService(db), engagementService: new EngagementService(db), agentChatService });
 await app.listen({ host: "127.0.0.1", port: 4010 });
 console.info(JSON.stringify({ recordId, jobId: job?._id }));
 for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => void app.close().then(() => db.close()));

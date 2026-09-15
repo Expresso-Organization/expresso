@@ -1,3 +1,5 @@
+import type { PortfolioReadApi } from "../portfolios/index.js";
+import type { PageApi } from "../page/index.js";
 import { AgentCredentials } from "./credentials.js";
 import { randomUUID } from "node:crypto";
 import { AgentConversationSchema, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval } from "@expresso/contracts";
@@ -14,7 +16,7 @@ const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, hear
 export class AgentChatService {
   private readonly running = new Map<string, AbortController>();
   private readonly tasks = new Set<Promise<void>>();
-  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db)) {}
+  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest">) {}
   async consentRequired(userId: string) {
     const result = await this.consent.list(userId);
     return !result.data.consents.some(item => item.scope === "career_records" && item.granted);
@@ -35,6 +37,12 @@ export class AgentChatService {
   private async context(userId: string, contexts: AgentContext[]) {
     return Promise.all(contexts.map(async ref => {
       if (ref.kind === "job") return { ...ref, data: await this.jobs.get(userId, ref.id) };
+      if (ref.kind === "portfolio") {
+        if (!this.portfolios) throw new AgentChatError(503, "포트폴리오 연결이 설정되지 않았습니다.");
+        const portfolio = await this.portfolios.get(userId, ref.id);
+        const page = await this.pages?.latest(userId, ref.id);
+        return { ...ref, data: { portfolio, generatedPage: page ? { html: page.html } : null } };
+      }
       const record = await this.career.getRecord(userId, ref.id);
       const snapshot = await this.documents.bootstrap(userId, ref.id);
       return { ...ref, data: { record, document: snapshot.document, documentVersion: snapshot.documentVersion } };
@@ -53,6 +61,14 @@ export class AgentChatService {
     await this.context(userId, [context]);
     const result = await this.rows.updateOne({ _id: id, userId, version: row.version }, { $push: { contexts: context }, $inc: { version: 1 }, $set: { updatedAt: new Date().toISOString() } });
     if (!result.modifiedCount) throw new AgentChatError(409, "대화가 변경되었습니다. 다시 시도해 주세요.");
+    return this.get(userId, id);
+  }
+  async setContexts(userId: string, id: string, contexts: AgentContext[], expectedVersion: number) {
+    const row = await this.owned(userId, id);
+    if (row.run?.status === "running" || row.version !== expectedVersion) throw new AgentChatError(409, "대화가 변경되었습니다. 목록을 새로 확인해 주세요.");
+    await this.context(userId, contexts);
+    const result = await this.rows.updateOne({ _id: id, userId, version: expectedVersion, "run.status": { $ne: "running" } }, { $set: { contexts, updatedAt: new Date().toISOString() }, $inc: { version: 1 } });
+    if (!result.modifiedCount) throw new AgentChatError(409, "대화가 변경되었습니다.");
     return this.get(userId, id);
   }
   async send(userId: string, id: string, input: SendAgentMessage, apiKey?: string) {

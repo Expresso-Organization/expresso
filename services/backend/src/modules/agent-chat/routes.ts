@@ -1,6 +1,6 @@
 import { setTimeout as delay } from "node:timers/promises";
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
-import { API_PREFIX, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema, SaveAgentApiKeySchema } from "@expresso/contracts";
+import { API_PREFIX, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema, SaveAgentApiKeySchema, SetAgentContextsSchema } from "@expresso/contracts";
 import { requireAuth } from "../../api/plugins/auth-context.js";
 import type { AgentChatService } from "./service.js";
 
@@ -17,6 +17,7 @@ export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChat
   app.get(`${base}/:id`, options, async req => ({ data: await service.get(requireAuth(req).user.id, id(req.params)) }));
   app.post(`${base}/:id/messages`, options, async (req, reply) => { const principal = requireAuth(req); const input = SendAgentMessageSchema.parse(req.body); const apiKey = developer(principal.user.id) ? undefined : await service.credentials.read(principal.user.id); if (!developer(principal.user.id) && !apiKey) return reply.code(403).send({ error: { message: "Anthropic API 키를 입력해 주세요." } }); return reply.code(202).send({ data: await service.send(principal.user.id, id(req.params), input, apiKey) }); });
   app.post(`${base}/:id/contexts`, options, async req => ({ data: await service.attach(requireAuth(req).user.id, id(req.params), AddAgentContextSchema.parse(req.body).context) }));
+  app.post(`${base}/:id/context-selection`, options, async req => { const input = SetAgentContextsSchema.parse(req.body); return { data: await service.setContexts(requireAuth(req).user.id, id(req.params), input.contexts, input.expectedVersion) }; });
   app.post(`${base}/:id/cancel`, options, async req => ({ data: await service.cancel(requireAuth(req).user.id, id(req.params)) }));
   app.post(`${base}/:id/approval`, options, async req => ({ data: await service.approve(requireAuth(req).user.id, id(req.params), AgentApprovalSchema.parse(req.body)) }));
   app.get(`${base}/:id/events`, options, async (req, reply) => {
