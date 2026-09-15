@@ -7,7 +7,7 @@ import { requireSession } from "@/lib/require-session";
 import { BrewFrame } from "../BrewFrame";
 import { Setup, type SetupRecord } from "./Setup";
 import { Waiting, type ReadingCompany } from "./Waiting";
-import { Workbench, type RecordCard } from "./Workbench";
+import { Workbench, type RecordCard, type RequirementCard } from "./Workbench";
 import { draftRecipeAction } from "./recipe-actions";
 
 /**
@@ -112,7 +112,7 @@ export default async function RecipePage({
       periodFrom: material.periodFrom,
       periodTo: material.periodTo,
       selected: material.selected,
-      reason: material.reason,
+      matchedTerms: material.matchedTerms,
     }));
     return (
       <BrewFrame
@@ -152,6 +152,23 @@ export default async function RecipePage({
       categoryIcon: material.categoryIcon,
     }));
 
+  /*
+   * 공고 요건의 글.
+   *
+   * 레시피의 근거는 요건을 id로만 가리킨다(`sourceId` = `job_posting_requirements._id`).
+   * 그 글은 공고 상세의 `criteria`에 있고 같은 id를 쓴다 — 계약을 넓히는 대신
+   * 여기서 한 번 읽는다. 못 읽어도 화면은 선다: 근거가 "공고 요건"으로만 보인다.
+   */
+  let requirements: RequirementCard[] = [];
+  if (recipe.jobPosting) {
+    try {
+      const { data } = await jobs.posting(session.accessToken, recipe.jobPosting.jobPostingId);
+      requirements = data.criteria.map(({ id, label }) => ({ id, label }));
+    } catch (error) {
+      if (!(error instanceof ApiError)) throw error;
+    }
+  }
+
   return (
     <BrewFrame
       brewId={brewId}
@@ -161,7 +178,7 @@ export default async function RecipePage({
       flow="portfolio-v2"
       tinted
     >
-      <Workbench brewId={brewId} initialRecipe={recipe} records={records} designName={designName} />
+      <Workbench brewId={brewId} initialRecipe={recipe} records={records} requirements={requirements} designName={designName} />
     </BrewFrame>
   );
 }

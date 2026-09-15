@@ -1,25 +1,34 @@
 /*
- * 레시피를 만들기 전에 고르는 화면.
+ * 02 레시피 — 고르기.
  *
- * 고르는 일이 한 화면을 다 쓴다. 레일에 접어 넣으면 글자가 빽빽해지고, 무엇을
- * 고르는 자리인지 알아보기 어려워진다.
+ * 두 칸이다(정의서 01b). 왼쪽은 공고와 기록 표, 오른쪽은 이번에 짜는 재료의
+ * 요약과 만들기 버튼이다. 값은 `tokens.css`의 간격 · 반경 · 조작 높이 토큰만
+ * 쓴다(design-ops web-comfortable). 픽셀로 남는 것은 보더 1px · 아이콘 · 열 폭뿐이다.
  */
 
 .setup {
   flex: 1;
   min-width: 0;
   min-height: 0;
-  padding: 28px 24px 72px;
+  padding: var(--ex-space-5) var(--ex-space-6) 72px;
   background: var(--ex-bg-sunken);
   overflow-y: auto;
 }
 
-.sheet {
-  max-width: 680px;
+.layout {
+  max-width: 1200px;
   margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--ex-rail-width);
+  gap: var(--ex-space-5);
+  align-items: start;
+}
+
+.main {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: var(--ex-space-4);
 }
 
 .head h1 {
@@ -32,11 +41,11 @@
 }
 
 .head p {
-  margin: 8px 0 0;
-  max-width: 52ch;
+  margin: var(--ex-space-2) 0 0;
+  max-width: 56ch;
   color: var(--ex-fg-muted);
   font-size: var(--ex-text-xs);
-  line-height: 1.75;
+  line-height: var(--ex-leading-relaxed);
 }
 
 .head b {
@@ -44,21 +53,24 @@
   font-weight: 600;
 }
 
-.failure {
+.failure,
+.warning {
   margin: 0;
-  padding: 10px 14px;
+  padding: var(--ex-space-2) var(--ex-space-3);
   border: 1px solid var(--ex-status-danger);
-  border-radius: 10px;
+  border-radius: var(--ex-radius-md);
   background: var(--ex-status-danger-surface);
   color: var(--ex-status-danger-text);
-  font-size: var(--ex-text-2xs);
-  line-height: 1.65;
+  font-size: var(--ex-text-xs);
+  line-height: var(--ex-leading-normal);
 }
 
+/* ── 왼쪽 블록 ───────────────────────────────────────────── */
+
 .block {
-  padding: 18px 20px 20px;
+  padding: var(--ex-space-4) var(--ex-space-5) var(--ex-space-5);
   border: 1px solid var(--ex-border);
-  border-radius: 14px;
+  border-radius: var(--ex-radius-lg);
   background: var(--ex-bg);
 }
 
@@ -66,8 +78,8 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: var(--ex-space-2);
+  margin-bottom: var(--ex-space-3);
 }
 
 .blockHead h2 {
@@ -78,25 +90,21 @@
 }
 
 .blockHead span {
-  color: var(--ex-fg-subtle);
+  color: var(--ex-fg-muted);
   font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
+  font-size: var(--ex-text-2xs);
 }
 
-.blockHead span[data-full="1"] {
-  color: var(--ex-fg);
-}
+.blockHead span[data-full="1"] { color: var(--ex-fg); }
 
 .blockNote {
   margin: 0;
   color: var(--ex-fg-muted);
-  font-size: var(--ex-text-2xs);
-  line-height: 1.75;
+  font-size: var(--ex-text-xs);
+  line-height: var(--ex-leading-relaxed);
 }
 
-.blockNote a {
-  color: var(--ex-accent-text);
-}
+.blockNote a { color: var(--ex-accent-text); }
 
 /* ── 지원할 공고 ───────────────────────────────────────────
  *
@@ -108,11 +116,12 @@
 .posting {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 11px 13px;
+  gap: var(--ex-space-3);
+  padding: var(--ex-space-3) var(--ex-space-4);
   border: 1px solid var(--ex-border);
-  border-radius: 10px;
-  background: var(--ex-bg);
+  border-radius: var(--ex-radius-md);
+  background: var(--ex-bg-sunken);
+  color: var(--ex-fg-muted);
 }
 
 .posting > span {
@@ -122,89 +131,89 @@
   flex-direction: column;
   gap: 2px;
   color: var(--ex-fg-muted);
-  font-size: var(--ex-text-3xs);
+  font-size: var(--ex-text-2xs);
 }
 
 .posting strong {
   color: var(--ex-fg);
-  font-size: var(--ex-text-2xs);
+  font-size: var(--ex-text-xs);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.posting > button {
-  flex-shrink: 0;
-  padding: 5px 10px;
-  border: 1px solid var(--ex-border);
-  border-radius: 7px;
-  background: var(--ex-bg);
-  color: var(--ex-fg-body);
-  font-family: inherit;
-  font-size: var(--ex-text-3xs);
-  cursor: pointer;
-}
-
 .postingActions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+  gap: var(--ex-space-2);
+  margin-top: var(--ex-space-3);
 }
 
 .ghostButton {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 12px;
+  gap: var(--ex-space-1);
+  height: var(--ex-control-sm);
+  padding: 0 var(--ex-space-3);
   border: 1px solid var(--ex-border);
-  border-radius: 8px;
+  border-radius: var(--ex-radius-md);
   background: var(--ex-bg);
   color: var(--ex-fg-body);
   font-family: inherit;
-  font-size: var(--ex-text-2xs);
+  font-size: var(--ex-text-xs);
   text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
 }
 
-.ghostButton:hover {
+.ghostButton:hover:not(:disabled) {
   border-color: var(--ex-border-firm);
-  color: var(--ex-fg-body);
+  color: var(--ex-fg);
+}
+
+.ghostButton:disabled {
+  color: var(--ex-fg-subtle);
+  cursor: default;
 }
 
 /* ── 쓸 기록 — 화면 정의서 05 의 표 ─────────────────────── */
 
 .row {
   composes: row from "@/components/career/record-table.module.css";
-  grid-template-columns: minmax(190px, 1fr) 74px 96px 96px minmax(200px, 1.15fr);
+  grid-template-columns: minmax(260px, 1fr) 88px 128px 128px;
 }
 
-.row:last-child {
-  border-bottom: 0;
+/* 공고가 있으면 「순위 이유」 칸이 하나 더 선다. */
+.row[data-ranked="1"] {
+  grid-template-columns: minmax(260px, 1fr) 88px 128px 112px minmax(180px, 0.8fr);
 }
+
+.row:last-child { border-bottom: 0; }
 
 .row[data-off="1"] {
   cursor: default;
   opacity: 0.55;
 }
 
+/* 제목은 자르지 않는다. 표의 기본은 한 줄 말줄임이지만 여기서는 고를 것을 읽어야 한다. */
+.recordTitle {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: var(--ex-leading-snug);
+}
+
 .check {
   flex-shrink: 0;
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   accent-color: var(--ex-fg);
   cursor: pointer;
 }
 
-.check:disabled {
-  cursor: default;
-}
+.check:disabled { cursor: default; }
 
-/*
- * 순위 이유는 문장이다 — 겹친 말을 나열하거나, 겹치는 말이 없다고 말한다.
- * 잘라 두면 머리말만 남고 정작 단어가 사라져서, 두 줄까지 편다.
- */
+/* 겹친 말은 나열이다. 두 줄까지 펴고, 없으면 칸을 비운다. */
 .reason {
   white-space: normal;
   overflow: hidden;
@@ -212,97 +221,242 @@
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
+  color: var(--ex-fg-muted);
   font-size: var(--ex-text-2xs);
-  line-height: 1.5;
-  color: var(--ex-fg-subtle);
+  line-height: var(--ex-leading-snug);
 }
 
-/* ── 제작 의도 ───────────────────────────────────────────── */
+/* ── 오른쪽 · 이번에 짜는 재료 ───────────────────────────── */
 
-.intentToggle {
+.summary {
+  min-width: 0;
+  position: sticky;
+  top: 0;
+}
+
+.card {
   display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 0;
-  border: 0;
-  background: none;
+  flex-direction: column;
+  gap: var(--ex-space-4);
+  padding: var(--ex-space-5);
+  border: 1px solid var(--ex-border);
+  border-radius: var(--ex-radius-lg);
+  background: var(--ex-bg);
+}
+
+.cardTitle {
+  margin: 0;
   color: var(--ex-fg);
-  font-family: inherit;
   font-size: var(--ex-text-md);
   font-weight: 600;
-  cursor: pointer;
 }
 
-.intentToggle > span {
-  color: var(--ex-fg-subtle);
-  font-size: var(--ex-text-3xs);
+.cardNote {
+  margin: 0;
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-2xs);
+  line-height: var(--ex-leading-normal);
+}
+
+.stat {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ex-space-2);
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-xs);
+}
+
+.stat b {
+  color: var(--ex-fg);
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-2xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.stat b em {
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-sm);
+  font-style: normal;
+  font-weight: 500;
+}
+
+.stat b[data-full="1"] em { color: var(--ex-fg); }
+
+/* 분류별 분포 — 정의서 01b 「고른 재료 n건」의 막대 */
+.bar {
+  display: flex;
+  gap: 2px;
+  height: var(--ex-space-2);
+  margin-top: calc(-1 * var(--ex-space-2));
+  border-radius: var(--ex-radius-full);
+  overflow: hidden;
+}
+
+.bar > span {
+  min-width: var(--ex-space-1);
+  border-radius: 2px;
+}
+
+.legend {
+  list-style: none;
+  margin: calc(-1 * var(--ex-space-2)) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ex-space-1);
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-space-2);
+  color: var(--ex-fg-body);
+  font-size: var(--ex-text-xs);
+}
+
+.legend i {
+  flex-shrink: 0;
+  width: var(--ex-space-2);
+  height: var(--ex-space-2);
+  border-radius: 2px;
+}
+
+.legend span { flex: 1; }
+
+.legend b {
+  color: var(--ex-fg-muted);
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-2xs);
   font-weight: 400;
 }
 
-.intentFields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px 14px;
-  margin-top: 14px;
-}
-
-.wide {
-  grid-column: span 2;
-}
-
-.intentFields label {
+.facts {
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--ex-space-2);
+  padding-top: var(--ex-space-4);
+  border-top: 1px solid var(--ex-border-hair);
+}
+
+.facts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.facts dt {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-space-1);
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-2xs);
+}
+
+.facts dd {
+  margin: 0;
+  color: var(--ex-fg-body);
+  font-size: var(--ex-text-xs);
+  line-height: var(--ex-leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.facts dd b {
+  color: var(--ex-fg);
+  font-weight: 600;
+}
+
+.facts dd a { color: var(--ex-accent-text); }
+
+/* ── 제작 의도 ───────────────────────────────────────────── */
+
+.intent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ex-space-2);
+  padding-top: var(--ex-space-4);
+  border-top: 1px solid var(--ex-border-hair);
+}
+
+.intent h3 {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  color: var(--ex-fg);
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+}
+
+.intent h3 span {
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-2xs);
+  font-weight: 400;
+}
+
+.intent label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ex-space-1);
   min-width: 0;
 }
 
-.intentFields label > span {
+.intent label > span {
   color: var(--ex-fg-muted);
-  font-size: var(--ex-text-3xs);
+  font-size: var(--ex-text-2xs);
 }
 
-.intentFields input,
-.intentFields select,
-.intentFields textarea {
+/*
+ * 레일의 입력은 32px 이다 — 프로필의 입력 높이(40)에서 한 걸음 내려온 값.
+ * 다섯 칸이 한 세로 칸에 서야 하고, 40으로 두면 1440×940 에서 만들기 버튼이
+ * 화면 아래로 밀린다. 주 행동(`.primary`)은 40 그대로다.
+ */
+.intent input,
+.intent select { height: var(--ex-control-sm); }
+
+.intent input,
+.intent select,
+.intent textarea {
   width: 100%;
-  padding: 7px 10px;
+  padding: var(--ex-space-1) var(--ex-space-2);
   border: 1px solid var(--ex-border);
-  border-radius: 8px;
-  background: var(--ex-bg-sunken);
+  border-radius: var(--ex-radius-md);
+  background: var(--ex-bg);
   color: var(--ex-fg);
   font-family: inherit;
   font-size: var(--ex-text-xs);
   resize: vertical;
 }
 
-.intentFields input:focus,
-.intentFields select:focus,
-.intentFields textarea:focus {
+.intent input:focus,
+.intent select:focus,
+.intent textarea:focus {
   outline: none;
-  background: var(--ex-bg);
+  border-color: var(--ex-border-firm);
 }
 
 /* ── 만들기 ──────────────────────────────────────────────── */
 
 .foot {
   display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.foot > span {
-  color: var(--ex-fg-subtle);
-  font-size: var(--ex-text-3xs);
+  flex-direction: column;
+  gap: var(--ex-space-2);
+  padding-top: var(--ex-space-4);
+  border-top: 1px solid var(--ex-border-hair);
 }
 
 .primary {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 12px 22px;
+  justify-content: center;
+  gap: var(--ex-space-2);
+  width: 100%;
+  height: var(--ex-control-md);
+  padding: 0 var(--ex-space-4);
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--ex-radius-md);
   background: var(--ex-accent);
   color: var(--ex-fg-on-accent);
   font-family: inherit;
@@ -311,34 +465,42 @@
   cursor: pointer;
 }
 
-.primary:hover:not(:disabled) {
-  background: var(--ex-accent-hover);
-}
+.primary:hover:not(:disabled) { background: var(--ex-accent-hover); }
 
 .primary:disabled {
   background: var(--ex-bg-muted);
-  color: var(--ex-fg-faint);
+  color: var(--ex-fg-subtle);
   cursor: default;
 }
 
+.foot .ghostButton { justify-content: center; }
+
+.footNote {
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-2xs);
+  text-align: center;
+}
+
+/* ── 좁은 화면 ───────────────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  .setup { padding: var(--ex-space-4) var(--ex-space-4) 64px; }
+
+  .layout { grid-template-columns: minmax(0, 1fr); }
+
+  .summary { position: static; }
+
+  .block { padding: var(--ex-space-4); }
+}
+
 @media (max-width: 767px) {
-  .setup {
-    padding: 20px 16px 64px;
+  .row,
+  .row[data-ranked="1"] {
+    grid-template-columns: minmax(0, 1fr) 88px;
   }
 
-  .intentFields {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .wide {
-    grid-column: span 1;
-  }
-
-  .row {
-    grid-template-columns: minmax(0, 1fr) 78px;
-  }
-
-  .row > span:nth-child(n + 3) {
+  .row > span:nth-child(n + 3),
+  .row > div:nth-child(n + 3) {
     display: none;
   }
 }

@@ -50,6 +50,19 @@ export async function editRecipeAction(recipeId: string, edit: RecipeV2Edit): Pr
   }
 }
 
+/** 저장이 실패한 뒤 서버가 아는 판을 다시 받는다. 화면은 이것으로 돌아간다. */
+export async function loadRecipeAction(recipeId: string): Promise<RecipeResult> {
+  const id = z.uuid().safeParse(recipeId);
+  if (!id.success) return { ok: false, error: "요청을 읽지 못했습니다." };
+  const session = await requireSession();
+  try {
+    const { data } = await recipeV2.get(session.accessToken, id.data);
+    return { ok: true, recipe: data };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
 export async function reorderRecipeAction(recipeId: string, input: RecipeV2Reorder): Promise<RecipeResult> {
   const id = z.uuid().safeParse(recipeId);
   const parsed = RecipeV2ReorderSchema.safeParse(input);

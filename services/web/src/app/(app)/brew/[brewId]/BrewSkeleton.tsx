@@ -33,7 +33,7 @@ export function BrewSkeleton({
 }) {
   return (
     <>
-      <WizardHeader portfolioTitle={<Skel w={132} h={12} />} saveState={<Skel w={62} h={11} />} />
+      <WizardHeader portfolioTitle={<Skel w={132} h={12} />} />
       <WizardSteps current={step} situation={<Skel w={84} h={11} />} />
       <AppBody>
         <WizardStage tinted={tinted}>

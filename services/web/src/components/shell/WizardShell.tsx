@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
+import { SaveStateIndicator } from "./SaveState";
+
 import styles from "./WizardShell.module.css";
 
 /** 기존 제작의 6단계. 진행 중인 brew가 돌아올 수 있어 호환 경로에서 유지한다. */
@@ -33,10 +35,8 @@ export type WizardStepKey =
 
 export function WizardHeader({
   portfolioTitle,
-  saveState = "자동 저장됨",
 }: {
   portfolioTitle: ReactNode;
-  saveState?: ReactNode;
 }) {
   return (
     <div className={styles.buildHeader}>
@@ -49,10 +49,8 @@ export function WizardHeader({
         <Icon name="pencil-simple" size={11} color="var(--ex-fg-subtle)" />
       </button>
       <div className={styles.buildRight}>
-        <span className={styles.saveState}>
-          <Icon name="cloud-check" size={14} />
-          {saveState}
-        </span>
+        {/* 저장하는 화면이 상태를 올린다. 올리는 화면이 없으면 "자동 저장됨"이다. */}
+        <SaveStateIndicator />
         <span className={styles.headerRule} />
         <Link href="/home" className={styles.back} aria-label="닫기">
           <Icon name="x" size={16} />

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { AppBody } from "@/components/shell/AppShell";
+import { SaveStateProvider } from "@/components/shell/SaveState";
 import {
   WizardHeader,
   WizardStage,
@@ -38,12 +39,12 @@ export function BrewFrame({
   children: ReactNode;
 }) {
   return (
-    <>
+    <SaveStateProvider>
       <WizardHeader portfolioTitle={portfolioTitle ?? "새 포트폴리오"} />
       <WizardSteps brewId={brewId} current={step} situation={situation} flow={flow} />
       <AppBody>
         <WizardStage tinted={tinted}>{children}</WizardStage>
       </AppBody>
-    </>
+    </SaveStateProvider>
   );
 }
