@@ -2064,20 +2064,6 @@
   color: var(--ex-fg-subtle);
 }
 
-.mediaFile {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-}
-
-.mediaNote {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-subtle);
-}
-
-.mediaError {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-status-danger-text);
-}
 
 /* ── 칸 전환 막대 — 1280 미만에서만 뜬다 ─────────────────────── */
 

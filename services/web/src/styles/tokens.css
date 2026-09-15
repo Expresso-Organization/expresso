@@ -167,6 +167,17 @@
   --ex-elevation-card-hover: 0 14px 32px rgba(22, 34, 58, 0.1);
   --ex-elevation-frame: 0 22px 54px rgba(22, 34, 58, 0.13);
   --ex-focus-ring: 0 0 0 3px rgba(22, 34, 58, 0.18);
+
+  /*
+   * 형식 미리보기 전용 파랑.
+   *
+   * 02 레시피의 「보여주는 형식」 와이어프레임에만 쓴다 — 지면의 색이 아니라
+   * "이건 추상화된 그림이다" 를 말하는 색이다. 다른 자리에 쓰지 않는다.
+   * 흰 지면 위 글자로 5.63:1, 옅은 지면(soft) 위 4.97:1.
+   */
+  --ex-preview: #2a5fd8;
+  --ex-preview-soft: #eaf1ff;
+  --ex-preview-line: #b9cdf7;
 }
 
 /* 테마를 타지 않는 것들 — 서체 · 글자 크기 · 모션. */
@@ -315,6 +326,9 @@
     --ex-elevation-card-hover: 0 14px 32px rgba(0, 0, 0, 0.5);
     --ex-elevation-frame: 0 22px 54px rgba(0, 0, 0, 0.6);
     --ex-focus-ring: 0 0 0 3px rgba(222, 222, 226, 0.3);
+  --ex-preview: #7aa7ff;
+  --ex-preview-soft: #1a2540;
+  --ex-preview-line: #2f4374;
   }
 }
 
@@ -375,6 +389,9 @@
   --ex-elevation-card-hover: 0 14px 32px rgba(0, 0, 0, 0.5);
   --ex-elevation-frame: 0 22px 54px rgba(0, 0, 0, 0.6);
   --ex-focus-ring: 0 0 0 3px rgba(222, 222, 226, 0.3);
+  --ex-preview: #7aa7ff;
+  --ex-preview-soft: #1a2540;
+  --ex-preview-line: #2f4374;
 }
 
 /* §12 모션 감소 */

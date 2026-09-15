@@ -1,6 +1,6 @@
 "use client";
 
-import type { RecipeV2, RecipeV2Edit, RecipeV2Reorder } from "@expresso/contracts";
+import { RecipeV2EditSchema, type RecipeV2, type RecipeV2Edit, type RecipeV2EditInput, type RecipeV2Reorder } from "@expresso/contracts";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useSaveState, type SaveState } from "@/components/shell/SaveState";
@@ -60,8 +60,14 @@ export function applyLocally(recipe: RecipeV2, edit: RecipeV2Edit): RecipeV2 | n
           ...(edit.title !== undefined ? { title: edit.title } : {}),
           ...(edit.purpose !== undefined ? { purpose: edit.purpose } : {}),
           ...(edit.takeaway !== undefined ? { takeaway: edit.takeaway } : {}),
+          ...(edit.role !== undefined ? { role: edit.role } : {}),
+          ...(edit.presentation !== undefined ? { presentation: edit.presentation } : {}),
         }),
       };
+    case "update_item_content":
+      return mapItem(recipe, edit.itemId, (item) => ({
+        ...item, kind: edit.kind, text: edit.text, metric: edit.metric, media: edit.media, link: edit.link,
+      }));
     case "delete_section":
       return { ...recipe, sections: renumber(recipe.sections.filter(({ id }) => id !== edit.sectionId)) };
     case "update_item":
@@ -139,7 +145,7 @@ function snapshotOf(recipe: RecipeV2): RecipeV2Edit {
 export interface RecipeEditor {
   recipe: RecipeV2;
   /** 편집 하나. 화면에 먼저 반영하고 저장을 줄에 세운다. 그 저장이 됐는지로 풀린다. */
-  apply: (edit: RecipeV2Edit) => Promise<boolean>;
+  apply: (edit: RecipeV2EditInput) => Promise<boolean>;
   /** 순서 전체. drop 한 번에 한 번이다. */
   reorder: (sections: Section[]) => void;
   undo: () => void;
@@ -207,7 +213,9 @@ export function useRecipeEditor(initial: RecipeV2): RecipeEditor {
     bump((n) => n + 1);
   }, []);
 
-  const apply = useCallback((edit: RecipeV2Edit) => {
+  const apply = useCallback((input: RecipeV2EditInput) => {
+    // 기본값(종류 point · 값 null)을 여기서 채운다 — 화면의 미리 반영과 서버가 같은 것을 본다.
+    const edit = RecipeV2EditSchema.parse(input);
     const before = current.current;
     const after = applyLocally(before, edit);
     if (edit.operation !== "confirm") remember(before);
@@ -274,10 +282,10 @@ function mergeServer(local: RecipeV2, server: RecipeV2, settled: boolean): Recip
       const mine = localSections.get(section.id);
       return {
         ...section,
-        ...(mine ? { title: mine.title, purpose: mine.purpose, takeaway: mine.takeaway } : {}),
+        ...(mine ? { title: mine.title, purpose: mine.purpose, takeaway: mine.takeaway, role: mine.role, presentation: mine.presentation } : {}),
         items: section.items.map((item) => {
           const own = localItems.get(item.id);
-          return own ? { ...item, text: own.text } : item;
+          return own ? { ...item, text: own.text, kind: own.kind, metric: own.metric, media: own.media, link: own.link } : item;
         }),
       };
     }),

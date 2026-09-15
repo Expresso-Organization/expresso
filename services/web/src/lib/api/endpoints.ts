@@ -2,9 +2,10 @@ import {
   RecipeV2EditResultSchema,
   RecipeV2ReorderSchema,
   RecipeV2ResponseSchema,
-  type RecipeV2Edit,
+  type RecipeV2EditInput,
   type RecipeV2Reorder,
   AnalyticsAggregationResponseSchema,
+  MediaAssetListResponseSchema,
   MediaAssetResponseSchema,
   GeneratedPageSchema,
   type RegeneratePage,
@@ -748,7 +749,7 @@ export const recipeV2 = {
       cache: "no-store",
     }),
 
-  edit: (accessToken: string, recipeId: string, edit: RecipeV2Edit) =>
+  edit: (accessToken: string, recipeId: string, edit: RecipeV2EditInput) =>
     request(
       `${API_PREFIX}/recipe-v2/${recipeId}`,
       z.strictObject({ data: RecipeV2EditResultSchema }),
@@ -927,6 +928,10 @@ export const media = {
     }
     return MediaAssetResponseSchema.parse(payload).data;
   },
+
+  /** 내가 올린 것. 최근 것부터 60개까지 — 02 가 문장에 놓을 그림을 여기서 고른다. */
+  list: (accessToken: string) =>
+    request(`${API_PREFIX}/media`, MediaAssetListResponseSchema, { accessToken, cache: "no-store" }),
 
   addBlock: (
     accessToken: string,

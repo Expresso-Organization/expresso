@@ -15,15 +15,34 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { PortfolioIntent, RecipeV2, RecipeV2Edit } from "@expresso/contracts";
+import {
+  ITEM_KIND_LABEL,
+  MEDIA_FRAMES,
+  PRESENTATION_LABEL,
+  RECIPE_ITEM_KINDS,
+  RECIPE_SECTION_ROLES,
+  SECTION_ROLE_LABEL,
+  mediaAssetUrl,
+  type MediaFrame,
+  type PortfolioIntent,
+  type RecipeV2,
+  type RecipeV2EditInput,
+  type RecipeV2ItemKind,
+  type RecipeV2SectionRole,
+} from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { Icon } from "@/components/ui/Icon";
+import { API_BASE_URL } from "@/lib/api/client";
 
+import { FormatPanel } from "./FormatPanel";
 import { JobPostingPicker } from "./JobPostingPicker";
+import { SourceRail, type MediaCard, type SourceTab } from "./SourceRail";
+import { Wireframe } from "./Wireframe";
+import { uploadMediaAction } from "./recipe-actions";
 import { useRecipeEditor } from "./recipe-editor";
 import styles from "./Workbench.module.css";
 
@@ -44,6 +63,34 @@ type Binding = Item["sourceBindings"][number];
 
 const SOURCE_LABEL = { record: "기록", requirement: "공고 요건", answer: "대화 답변" } as const;
 const SOURCE_ICON = { record: "file-text", requirement: "target", answer: "chat-circle-dots" } as const;
+const KIND_ICON: Record<RecipeV2ItemKind, string> = { point: "text-align-left", metric: "hash", media: "image", link: "link-simple" };
+const FRAME_LABEL: Record<MediaFrame, string> = { none: "그대로", browser: "브라우저 창", phone: "폰" };
+/** 종류마다 글 칸이 맡는 것. 미디어 · 링크에서 글은 곁글이다. */
+const TEXT_PLACEHOLDER: Record<RecipeV2ItemKind, string> = {
+  point: "여기서 무엇을 말할지",
+  metric: "이 수치가 말하는 것",
+  media: "그림에 붙는 곁글 (비워도 됩니다)",
+  link: "링크에 붙는 곁글 (비워도 됩니다)",
+};
+
+/** 미디어 자산의 축소판 주소. 640 계단이면 편집기 안에서는 충분하다. */
+function thumbOf(assetId: string): string {
+  return mediaAssetUrl(API_BASE_URL, assetId, 640);
+}
+
+/** 종류를 바꿀 때 보내는 내용. 있던 값은 지키고 없는 값은 빈 것으로 시작한다. */
+type ContentEdit = Extract<RecipeV2EditInput, { operation: "update_item_content" }>;
+function contentFor(item: Item, kind: RecipeV2ItemKind): ContentEdit {
+  return {
+    operation: "update_item_content",
+    itemId: item.id,
+    kind,
+    text: item.text,
+    metric: kind === "metric" ? item.metric ?? { label: "", value: "", unit: "", note: "" } : null,
+    media: kind === "media" ? item.media ?? { assetId: null, caption: "", frame: "none" } : null,
+    link: kind === "link" ? item.link ?? { label: "", url: "" } : null,
+  };
+}
 
 function no(order: number): string {
   return String(order + 1).padStart(2, "0");
@@ -85,20 +132,23 @@ function sameOrder(a: Section[], b: Section[]): boolean {
  * 여기서 정하는 것은 **어떤 내용이 어떤 순서로 들어갈지**뿐이다. 지면의 모양은
  * 01에서 고른 디자인 안에서 03 생성이 정한다.
  *
- * 두 영역이다 — 왼쪽은 목차와 안 쓴 기록, 가운데는 섹션 카드다. 편집은 화면에
- * 먼저 반영되고 저장이 뒤따른다(`useRecipeEditor`).
+ * 세 영역이다 — 왼쪽에서 **내용**(기록 · 미디어 · 공고 요건)을 고르고, 가운데
+ * 섹션 카드에서 문장과 종류를 고치고, 오른쪽에서 섹션의 **보여주는 형식**을
+ * 고른다. 편집은 화면에 먼저 반영되고 저장이 뒤따른다(`useRecipeEditor`).
  */
 export function Workbench({
   brewId,
   initialRecipe,
   records,
   requirements,
+  media,
   designName,
 }: {
   brewId: string;
   initialRecipe: RecipeV2;
   records: RecordCard[];
   requirements: RequirementCard[];
+  media: MediaCard[];
   designName: string | null;
 }) {
   const router = useRouter();
@@ -107,10 +157,15 @@ export function Workbench({
   const dndId = useId();
   const { recipe } = editor;
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [postingMenu, setPostingMenu] = useState(false);
   const [intentOpen, setIntentOpen] = useState(false);
-  const [railOpen, setRailOpen] = useState(false);
+  const [outlineOpen, setOutlineOpen] = useState(true);
+  /** 좁은 화면의 서랍. 둘이 동시에 열리지 않는다. */
+  const [drawer, setDrawer] = useState<"rail" | "panel" | null>(null);
+  const [sourceTab, setSourceTab] = useState<SourceTab>("records");
+  const [assets, setAssets] = useState(media);
   const [confirming, setConfirming] = useState(false);
   /** 드래그하는 동안의 순서. 놓으면 한 번 저장하고 비운다. */
   const [live, setLive] = useState<Section[] | null>(null);
@@ -121,22 +176,16 @@ export function Workbench({
   const recordById = useMemo(() => new Map(records.map((record) => [record.recordId, record])), [records]);
   const requirementById = useMemo(() => new Map(requirements.map((requirement) => [requirement.id, requirement])), [requirements]);
   const selected = useMemo(() => placed.find(({ id }) => id === selectedId) ?? null, [placed, selectedId]);
-
-  /** 어디에도 걸리지 않은 기록. 초안이 남긴 이유와 함께 왼쪽에 선다. */
-  const unused = useMemo(() => {
-    const used = new Set(placed.flatMap(({ sourceBindings }) => sourceBindings.map(({ sourceId }) => sourceId)));
-    return recipe.unusedSources.flatMap(({ recordId, reason }) => {
-      const record = recordById.get(recordId);
-      return record && !used.has(recordId) ? [{ record, reason }] : [];
-    });
-  }, [placed, recipe.unusedSources, recordById]);
+  const selectedSection = useMemo(() => recipe.sections.find(({ id }) => id === selectedSectionId) ?? null, [recipe.sections, selectedSectionId]);
+  /** 초안이 기록을 안 쓴 이유. 왼쪽에서 쓴 곳이 없는 기록 아래 선다. */
+  const unusedReasons = useMemo(() => new Map(recipe.unusedSources.map(({ recordId, reason }) => [recordId, reason])), [recipe.unusedSources]);
 
   const { undo, redo } = editor;
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setPostingMenu(false);
-        setRailOpen(false);
+        setDrawer(null);
         setSelectedId(null);
         return;
       }
@@ -162,11 +211,47 @@ export function Workbench({
     document.getElementById(id)?.scrollIntoView({ block: "center", behavior: "smooth" });
   }
 
-  /** 고른 문장에 기록을 건다. 중심이 없으면 중심, 있으면 보조다. */
-  function bindToSelected(recordId: string) {
+  /** 문장을 고른다 — 그 섹션도 고른 것이다. */
+  function select(item: Item | null, sectionId: string | null) {
+    setSelectedId(item?.id ?? null);
+    if (sectionId) setSelectedSectionId(sectionId);
+  }
+
+  /** 고른 문장에 근거를 건다. 중심이 없으면 중심, 있으면 보조다. */
+  function bindToSelected(sourceType: "record" | "requirement", sourceId: string) {
     if (!selected) return;
     const primary = selected.sourceBindings.some(({ role }) => role === "primary");
-    void editor.apply({ operation: "bind_source", itemId: selected.id, sourceType: "record", sourceId: recordId, role: primary ? "supporting" : "primary" });
+    void editor.apply({ operation: "bind_source", itemId: selected.id, sourceType, sourceId, role: primary ? "supporting" : "primary" });
+  }
+
+  /** 고른 문장이 미디어면 그 그림이 되고, 아니면 그 문장 다음에 미디어 문장이 생긴다. */
+  function pickMedia(assetId: string) {
+    if (!selected) return;
+    if (selected.kind === "media") {
+      void editor.apply({ ...contentFor(selected, "media"), media: { ...(selected.media ?? { caption: "", frame: "none" }), assetId } });
+      return;
+    }
+    const section = sectionOfItem(recipe.sections, selected.id);
+    if (!section) return;
+    const order = section.items.findIndex(({ id }) => id === selected.id) + 1;
+    void editor.apply({ operation: "add_item", sectionId: section.id, order, kind: "media", media: { assetId, caption: "", frame: "none" } });
+  }
+
+  /** 그림을 올린다. 올린 것은 목록 맨 앞에 선다. 실패 문구를 돌려준다. */
+  async function upload(file: File): Promise<string | null> {
+    const body = new FormData();
+    body.set("file", file);
+    const result = await uploadMediaAction(body);
+    if (!result.ok) return result.error;
+    const { id, width, height } = result.asset;
+    setAssets((list) => [{ id, url: thumbOf(id), width, height }, ...list]);
+    return null;
+  }
+
+  /** 미디어 문장의 빈 액자를 누르면 왼쪽이 미디어 탭으로 열린다. */
+  function openMediaTab() {
+    setSourceTab("media");
+    setDrawer("rail");
   }
 
   async function confirm() {
@@ -280,9 +365,9 @@ export function Workbench({
         <button
           type="button"
           className={styles.iconButton}
-          onClick={() => setRailOpen((open) => !open)}
-          aria-label="목차와 기록"
-          data-rail-toggle=""
+          onClick={() => setDrawer((open) => open === "rail" ? null : "rail")}
+          aria-label="내용 고르기"
+          data-drawer-toggle="rail"
         >
           <Icon name="list" size={16} />
         </button>
@@ -373,6 +458,15 @@ export function Workbench({
           </button>
         </span>
         <span className={styles.counts}>섹션 {recipe.sections.length} · 내용 {placed.length}</span>
+        <button
+          type="button"
+          className={styles.iconButton}
+          onClick={() => setDrawer((open) => open === "panel" ? null : "panel")}
+          aria-label="보여주는 형식"
+          data-drawer-toggle="panel"
+        >
+          <Icon name="layout" size={16} />
+        </button>
       </header>
 
       {intentOpen ? (
@@ -438,82 +532,54 @@ export function Workbench({
       ) : null}
 
       <div className={styles.panes}>
-        {/* ── 왼쪽 · 목차와 기록 ───────────────────────────── */}
-        <aside className={styles.rail} data-open={railOpen ? "1" : undefined}>
-          <section className={styles.railBlock}>
-            <div className={styles.railHead}>
-              <h2>목차</h2>
-              <span>{recipe.sections.length}</span>
-            </div>
-            {recipe.sections.length === 0 ? (
-              <p className={styles.railEmpty}>아직 섹션이 없습니다.</p>
-            ) : (
-              <ol className={styles.outline}>
-                {recipe.sections.map((section) => (
-                  <li key={section.id}>
-                    <button
-                      type="button"
-                      className={styles.outlineSection}
-                      onClick={() => { reveal(`section-${section.id}`); setRailOpen(false); }}
-                    >
-                      <span className={styles.outlineNo}>{no(section.order)}</span>
-                      <span className={styles.outlineName}>{section.title || "이름 없는 섹션"}</span>
-                      <i>{section.items.length}</i>
-                    </button>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </section>
-
-          <section className={styles.railBlock} data-grow="1">
-            <div className={styles.railHead}>
-              <h2>안 쓴 기록</h2>
-              <span>{unused.length}</span>
-            </div>
-            {unused.length === 0 ? (
-              <p className={styles.railEmpty}>고른 기록을 모두 썼습니다.</p>
-            ) : (
-              <ul className={styles.unused}>
-                {unused.map(({ record, reason }) => (
-                  <li key={record.recordId} className={styles.unusedRow}>
-                    <span className={styles.unusedHead}>
-                      <Icon name={record.categoryIcon} size={13} />
-                      <b>{record.title}</b>
-                      {selected ? (
-                        <button type="button" onClick={() => bindToSelected(record.recordId)} aria-label={`${record.title}을(를) 고른 문장에 붙이기`}>
-                          <Icon name="plus" size={12} /> 붙이기
-                        </button>
-                      ) : null}
-                    </span>
-                    {reason ? <span className={styles.unusedReason}>{reason}</span> : null}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {unused.length > 0 && !selected ? (
-              <p className={styles.railHint}>문장을 고르면 여기서 바로 붙일 수 있습니다.</p>
-            ) : null}
-          </section>
-
-          <div className={styles.railFoot}>
-            <button
-              type="button"
-              className={styles.primary}
-              onClick={() => void confirm()}
-              disabled={confirming || failed || recipe.sections.length === 0}
-            >
-              <Icon name="coffee" size={15} /> 이 레시피로 생성하기
-            </button>
-            <Link href={`/brew/${brewId}/recipe?setup=1` as Route} className={styles.secondary}>
-              <Icon name="arrow-counter-clockwise" size={13} /> 재료 다시 고르기
-            </Link>
-          </div>
+        {/* ── 왼쪽 · 내용 ───────────────────────────────────── */}
+        <aside className={styles.rail} data-open={drawer === "rail" ? "1" : undefined}>
+          <SourceRail
+            tab={sourceTab}
+            onTab={setSourceTab}
+            sections={recipe.sections}
+            records={records}
+            requirements={requirements}
+            media={assets}
+            unusedReasons={unusedReasons}
+            selected={selected}
+            onBindRecord={(recordId) => bindToSelected("record", recordId)}
+            onBindRequirement={(requirementId) => bindToSelected("requirement", requirementId)}
+            onPickMedia={pickMedia}
+            onUpload={upload}
+            onReveal={(sectionId) => { reveal(`section-${sectionId}`); setDrawer(null); }}
+          />
         </aside>
 
         {/* ── 가운데 · 레시피 ──────────────────────────────── */}
         <main className={styles.sheet}>
           <div className={styles.doc}>
+            {/* 목차 — 번호 · 이름 · 역할이 한 줄에 선다. 접힌다. */}
+            <div className={styles.outline} data-open={outlineOpen ? "1" : undefined}>
+              <button type="button" className={styles.outlineToggle} onClick={() => setOutlineOpen((open) => !open)} aria-expanded={outlineOpen}>
+                <Icon name={outlineOpen ? "caret-down" : "caret-right"} size={12} />
+                목차 <i>{recipe.sections.length}</i>
+              </button>
+              {outlineOpen ? (
+                <ol className={styles.outlineList}>
+                  {recipe.sections.map((section) => (
+                    <li key={section.id}>
+                      <button
+                        type="button"
+                        className={styles.outlineSection}
+                        data-on={section.id === selectedSectionId ? "1" : undefined}
+                        onClick={() => { setSelectedSectionId(section.id); reveal(`section-${section.id}`); }}
+                      >
+                        <span className={styles.outlineNo}>{no(section.order)}</span>
+                        <span className={styles.outlineName}>{section.title || "이름 없는 섹션"}</span>
+                        <em>{SECTION_ROLE_LABEL[section.role]}</em>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              ) : null}
+            </div>
+
             <DndContext
               id={dndId}
               sensors={sensors}
@@ -532,7 +598,10 @@ export function Workbench({
                     count={sections.length}
                     sections={recipe.sections}
                     selectedId={selectedId}
-                    onSelect={setSelectedId}
+                    selectedSection={section.id === selectedSectionId}
+                    onSelect={select}
+                    onOpenPanel={() => setDrawer("panel")}
+                    onOpenMedia={openMediaTab}
                     records={records}
                     recordById={recordById}
                     requirementById={requirementById}
@@ -554,7 +623,33 @@ export function Workbench({
           </div>
         </main>
 
-        {railOpen ? <button type="button" className={styles.scrim} onClick={() => setRailOpen(false)} aria-label="닫기" /> : null}
+        {/* ── 오른쪽 · 보여주는 형식 ────────────────────────── */}
+        <aside className={styles.panel} data-open={drawer === "panel" ? "1" : undefined}>
+          <FormatPanel
+            section={selectedSection}
+            onPick={(presentation) => {
+              if (!selectedSection) return;
+              void editor.apply({ operation: "update_section", sectionId: selectedSection.id, presentation });
+            }}
+            foot={
+              <>
+                <button
+                  type="button"
+                  className={styles.primary}
+                  onClick={() => void confirm()}
+                  disabled={confirming || failed || recipe.sections.length === 0}
+                >
+                  <Icon name="coffee" size={15} /> 이 레시피로 생성하기
+                </button>
+                <Link href={`/brew/${brewId}/recipe?setup=1` as Route} className={styles.secondary}>
+                  <Icon name="arrow-counter-clockwise" size={13} /> 재료 다시 고르기
+                </Link>
+              </>
+            }
+          />
+        </aside>
+
+        {drawer ? <button type="button" className={styles.scrim} onClick={() => setDrawer(null)} aria-label="닫기" /> : null}
       </div>
 
       {pickerOpen ? (
@@ -576,7 +671,10 @@ function SectionCard({
   count,
   sections,
   selectedId,
+  selectedSection,
   onSelect,
+  onOpenPanel,
+  onOpenMedia,
   records,
   recordById,
   requirementById,
@@ -589,11 +687,15 @@ function SectionCard({
   count: number;
   sections: Section[];
   selectedId: string | null;
-  onSelect: (id: string | null) => void;
+  selectedSection: boolean;
+  onSelect: (item: Item | null, sectionId: string | null) => void;
+  /** 좁은 화면에서 형식 서랍을 연다. */
+  onOpenPanel: () => void;
+  onOpenMedia: () => void;
   records: RecordCard[];
   recordById: Map<string, RecordCard>;
   requirementById: Map<string, RequirementCard>;
-  apply: (edit: RecipeV2Edit) => Promise<boolean>;
+  apply: (edit: RecipeV2EditInput) => Promise<boolean>;
   onMoveSection: (delta: number) => void;
   onMoveItem: (itemId: string, to: { index: number } | { sectionId: string }) => void;
 }) {
@@ -621,6 +723,8 @@ function SectionCard({
       className={styles.section}
       style={style}
       data-dragging={isDragging ? "1" : undefined}
+      data-selected={selectedSection ? "1" : undefined}
+      onClick={() => onSelect(null, section.id)}
     >
       <div className={styles.sectionHead}>
         <button
@@ -658,6 +762,41 @@ function SectionCard({
       </div>
 
       <div className={styles.sectionBody}>
+        {/* 역할과 형식 — 오른쪽의 형식 목록이 역할을 따른다. */}
+        <div className={styles.sectionMeta}>
+          <select
+            className={styles.role}
+            value={section.role}
+            aria-label="섹션 역할"
+            onClick={(event) => event.stopPropagation()}
+            onChange={(event) => {
+              const role = event.target.value as RecipeV2SectionRole;
+              // 역할이 바뀌면 그 역할의 형식이 아닌 것은 비운다.
+              void apply({ operation: "update_section", sectionId: section.id, role, presentation: null });
+            }}
+          >
+            {RECIPE_SECTION_ROLES.map((role) => <option key={role} value={role}>{SECTION_ROLE_LABEL[role]}</option>)}
+          </select>
+          <button
+            type="button"
+            className={styles.formatPick}
+            data-set={section.presentation ? "1" : undefined}
+            onClick={(event) => { event.stopPropagation(); onSelect(null, section.id); onOpenPanel(); }}
+            aria-label="보여주는 형식"
+          >
+            {section.presentation ? (
+              <>
+                <Wireframe presentation={section.presentation} size="mini" />
+                <span>{PRESENTATION_LABEL[section.presentation]}</span>
+              </>
+            ) : (
+              <>
+                <Icon name="layout" size={13} />
+                <span>형식 고르기</span>
+              </>
+            )}
+          </button>
+        </div>
         <AutoTextarea
           className={styles.sectionPurpose}
           value={section.purpose}
@@ -694,7 +833,8 @@ function SectionCard({
                 section={section}
                 sections={sections}
                 selected={item.id === selectedId}
-                onSelect={() => onSelect(item.id)}
+                onSelect={() => onSelect(item, section.id)}
+                onOpenMedia={onOpenMedia}
                 records={records}
                 recordById={recordById}
                 requirementById={requirementById}
@@ -748,6 +888,7 @@ function ItemRow({
   sections,
   selected,
   onSelect,
+  onOpenMedia,
   records,
   recordById,
   requirementById,
@@ -761,10 +902,11 @@ function ItemRow({
   sections: Section[];
   selected: boolean;
   onSelect: () => void;
+  onOpenMedia: () => void;
   records: RecordCard[];
   recordById: Map<string, RecordCard>;
   requirementById: Map<string, RequirementCard>;
-  apply: (edit: RecipeV2Edit) => Promise<boolean>;
+  apply: (edit: RecipeV2EditInput) => Promise<boolean>;
   onMove: (itemId: string, to: { index: number } | { sectionId: string }) => void;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
@@ -773,6 +915,7 @@ function ItemRow({
   });
   const [menuOpen, setMenuOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
+  const [kindOpen, setKindOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const menuRef = useRef<HTMLSpanElement>(null);
 
@@ -782,6 +925,7 @@ function ItemRow({
       if (menuRef.current?.contains(event.target as Node)) return;
       setMenuOpen(false);
       setMoveOpen(false);
+      setKindOpen(false);
       setAddOpen(false);
     }
     window.addEventListener("pointerdown", onPointer);
@@ -802,8 +946,9 @@ function ItemRow({
       style={style}
       data-selected={selected ? "1" : undefined}
       data-dragging={isDragging ? "1" : undefined}
+      data-kind={item.kind}
       onFocusCapture={onSelect}
-      onClick={onSelect}
+      onClick={(event) => { event.stopPropagation(); onSelect(); }}
     >
       <div className={styles.itemRow}>
         <button
@@ -816,11 +961,17 @@ function ItemRow({
         >
           <Icon name="dots-six-vertical" size={16} />
         </button>
+        {item.kind !== "point" ? (
+          <span className={styles.kind} title={ITEM_KIND_LABEL[item.kind]}>
+            <Icon name={KIND_ICON[item.kind]} size={12} />
+            {ITEM_KIND_LABEL[item.kind]}
+          </span>
+        ) : null}
         <AutoTextarea
           className={styles.itemText}
           value={item.text}
           maxLength={2_000}
-          placeholder="여기서 무엇을 말할지"
+          placeholder={TEXT_PLACEHOLDER[item.kind]}
           ariaLabel="문장"
           onCommit={(text) => {
             if (text !== item.text) void apply({ operation: "update_item", itemId: item.id, text });
@@ -831,8 +982,8 @@ function ItemRow({
             <button
               type="button"
               className={styles.tool}
-              onClick={(event) => { event.stopPropagation(); setMenuOpen((open) => !open); setMoveOpen(false); }}
-              aria-label="옮기기"
+              onClick={(event) => { event.stopPropagation(); setMenuOpen((open) => !open); setMoveOpen(false); setKindOpen(false); }}
+              aria-label="문장 메뉴"
               aria-expanded={menuOpen}
               aria-haspopup="menu"
             >
@@ -840,6 +991,28 @@ function ItemRow({
             </button>
             {menuOpen ? (
               <span className={styles.menu} role="menu" onClick={(event) => event.stopPropagation()}>
+                <button type="button" role="menuitem" className={styles.menuLine} aria-expanded={kindOpen} onClick={() => { setKindOpen((open) => !open); setMoveOpen(false); }}>
+                  <Icon name={KIND_ICON[item.kind]} size={13} /> 종류 · {ITEM_KIND_LABEL[item.kind]}
+                  <Icon name={kindOpen ? "caret-up" : "caret-down"} size={11} />
+                </button>
+                {kindOpen ? RECIPE_ITEM_KINDS.map((kind) => (
+                  <button
+                    key={kind}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={kind === item.kind}
+                    className={styles.menuSub}
+                    onClick={() => {
+                      setMenuOpen(false); setKindOpen(false);
+                      if (kind !== item.kind) void apply(contentFor(item, kind));
+                    }}
+                  >
+                    <Icon name={KIND_ICON[kind]} size={13} />
+                    <span className={styles.outlineName}>{ITEM_KIND_LABEL[kind]}</span>
+                    {kind === item.kind ? <Icon name="check" size={12} /> : null}
+                  </button>
+                )) : null}
+                <span className={styles.menuRule} />
                 <button type="button" role="menuitem" className={styles.menuLine} disabled={index === 0} onClick={() => { setMenuOpen(false); onMove(item.id, { index: index - 1 }); }}>
                   <Icon name="arrow-up" size={13} /> 위로
                 </button>
@@ -852,7 +1025,7 @@ function ItemRow({
                 <button type="button" role="menuitem" className={styles.menuLine} disabled={index === count - 1} onClick={() => { setMenuOpen(false); onMove(item.id, { index: count - 1 }); }}>
                   <Icon name="arrow-line-down" size={13} /> 맨 뒤로
                 </button>
-                <button type="button" role="menuitem" className={styles.menuLine} disabled={others.length === 0} aria-expanded={moveOpen} onClick={() => setMoveOpen((open) => !open)}>
+                <button type="button" role="menuitem" className={styles.menuLine} disabled={others.length === 0} aria-expanded={moveOpen} onClick={() => { setMoveOpen((open) => !open); setKindOpen(false); }}>
                   <Icon name="arrow-bend-up-right" size={13} /> 섹션으로 이동
                   <Icon name={moveOpen ? "caret-up" : "caret-down"} size={11} />
                 </button>
@@ -874,6 +1047,88 @@ function ItemRow({
           </span>
         </span>
       </div>
+
+      {item.kind === "metric" && item.metric ? (
+        <div className={styles.fields} onClick={(event) => event.stopPropagation()}>
+          <label className={styles.fieldSm}><span>라벨</span>
+            <input defaultValue={item.metric.label} maxLength={80} placeholder="예: p95 지연" onBlur={(event) => {
+              const label = event.target.value.trim();
+              if (label !== item.metric?.label) void apply({ ...contentFor(item, "metric"), metric: { ...item.metric!, label } });
+            }} />
+          </label>
+          <label className={styles.fieldSm} data-w="value"><span>값</span>
+            <input defaultValue={item.metric.value} maxLength={40} placeholder="38" onBlur={(event) => {
+              const value = event.target.value.trim();
+              if (value !== item.metric?.value) void apply({ ...contentFor(item, "metric"), metric: { ...item.metric!, value } });
+            }} />
+          </label>
+          <label className={styles.fieldSm} data-w="unit"><span>단위</span>
+            <input defaultValue={item.metric.unit} maxLength={20} placeholder="%" onBlur={(event) => {
+              const unit = event.target.value.trim();
+              if (unit !== item.metric?.unit) void apply({ ...contentFor(item, "metric"), metric: { ...item.metric!, unit } });
+            }} />
+          </label>
+          <label className={styles.fieldSm} data-w="wide"><span>설명</span>
+            <input defaultValue={item.metric.note} maxLength={300} placeholder="언제 · 무엇과 견줘 (선택)" onBlur={(event) => {
+              const note = event.target.value.trim();
+              if (note !== item.metric?.note) void apply({ ...contentFor(item, "metric"), metric: { ...item.metric!, note } });
+            }} />
+          </label>
+        </div>
+      ) : null}
+
+      {item.kind === "link" && item.link ? (
+        <div className={styles.fields} onClick={(event) => event.stopPropagation()}>
+          <label className={styles.fieldSm}><span>라벨</span>
+            <input defaultValue={item.link.label} maxLength={120} placeholder="예: 저장소 · 데모" onBlur={(event) => {
+              const label = event.target.value.trim();
+              if (label !== item.link?.label) void apply({ ...contentFor(item, "link"), link: { ...item.link!, label } });
+            }} />
+          </label>
+          <label className={styles.fieldSm} data-w="wide"><span>URL</span>
+            <input defaultValue={item.link.url} type="url" maxLength={2_000} placeholder="https://" onBlur={(event) => {
+              const url = event.target.value.trim();
+              if (url !== item.link?.url) void apply({ ...contentFor(item, "link"), link: { ...item.link!, url } });
+            }} />
+          </label>
+        </div>
+      ) : null}
+
+      {item.kind === "media" && item.media ? (
+        <div className={styles.mediaRow} onClick={(event) => event.stopPropagation()}>
+          {item.media.assetId ? (
+            <button type="button" className={styles.mediaThumb} data-frame={item.media.frame} onClick={() => { onSelect(); onOpenMedia(); }} title="다른 그림으로">
+              <img src={thumbOf(item.media.assetId)} alt="" />
+            </button>
+          ) : (
+            <button type="button" className={styles.mediaEmpty} onClick={() => { onSelect(); onOpenMedia(); }}>
+              <Icon name="image" size={18} />
+              그림 고르기
+            </button>
+          )}
+          <div className={styles.mediaSide}>
+            <label className={styles.fieldSm} data-w="wide"><span>설명</span>
+              <input defaultValue={item.media.caption} maxLength={300} placeholder="무엇이 보이는지 (대체 텍스트)" onBlur={(event) => {
+                const caption = event.target.value.trim();
+                if (caption !== item.media?.caption) void apply({ ...contentFor(item, "media"), media: { ...item.media!, caption } });
+              }} />
+            </label>
+            <div className={styles.frames} role="group" aria-label="액자">
+              {MEDIA_FRAMES.map((frame) => (
+                <button
+                  key={frame}
+                  type="button"
+                  aria-pressed={item.media?.frame === frame}
+                  className={styles.frame}
+                  onClick={() => { if (frame !== item.media?.frame) void apply({ ...contentFor(item, "media"), media: { ...item.media!, frame } }); }}
+                >
+                  {FRAME_LABEL[frame]}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {selected ? (
         <div className={styles.evidence} onClick={(event) => event.stopPropagation()}>

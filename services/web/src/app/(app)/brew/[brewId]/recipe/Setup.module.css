@@ -13,6 +13,8 @@
   padding: var(--ex-space-5) var(--ex-space-6) 72px;
   background: var(--ex-bg-sunken);
   overflow-y: auto;
+  /* 오른쪽 열이 이 높이를 읽는다(`cqh`). 높이는 바깥 flex 가 준다. */
+  container-type: size;
 }
 
 .layout {
@@ -228,10 +230,51 @@
 
 /* ── 오른쪽 · 이번에 짜는 재료 ───────────────────────────── */
 
+/* 붙어 따라오되, 화면보다 길면 안에서 굴러 미디어 카드까지 닿는다. */
 .summary {
   min-width: 0;
   position: sticky;
   top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ex-space-4);
+  max-height: calc(100cqh - var(--ex-space-5));
+  overflow-y: auto;
+}
+
+/* 최근 올린 것 — 여섯 장까지, 나머지는 수로. */
+.mediaGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ex-space-2);
+}
+
+.mediaTile {
+  display: block;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--ex-border);
+  border-radius: var(--ex-radius-md);
+  background: var(--ex-bg-sunken);
+  overflow: hidden;
+}
+
+.mediaTile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mediaMore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4 / 3;
+  border: 1px dashed var(--ex-border);
+  border-radius: var(--ex-radius-md);
+  color: var(--ex-fg-muted);
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-xs);
 }
 
 .card {
@@ -488,7 +531,7 @@
 
   .layout { grid-template-columns: minmax(0, 1fr); }
 
-  .summary { position: static; }
+  .summary { position: static; max-height: none; overflow: visible; }
 
   .block { padding: var(--ex-space-4); }
 }

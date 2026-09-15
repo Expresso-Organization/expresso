@@ -1,0 +1,82 @@
+/*
+ * 형식 와이어프레임 — 파란 박스.
+ *
+ * 색은 `--ex-preview*` 셋뿐이다(형식 미리보기 전용, `tokens.css`). 박스는 실제
+ * 지면의 무엇도 흉내 내지 않는다 — 글 자리 · 그림 자리 · 수 자리의 배치만이다.
+ */
+
+.frame {
+  display: block;
+  width: 100%;
+  aspect-ratio: 120 / 76;
+  border: 1px solid var(--ex-preview-line);
+  border-radius: var(--ex-radius-md);
+  background: var(--ex-preview-soft);
+  overflow: hidden;
+}
+
+.frame[data-size="mini"] {
+  width: 56px;
+  border-radius: var(--ex-radius-sm);
+}
+
+.b { fill: var(--ex-preview); }
+
+.b[data-k="light"] { fill: var(--ex-preview); opacity: 0.4; }
+
+.b[data-k="image"] {
+  fill: var(--ex-preview-line);
+  stroke: var(--ex-preview);
+  stroke-width: 1;
+  opacity: 0.9;
+}
+
+.b[data-k="chip"] { fill: var(--ex-preview-line); stroke: var(--ex-preview); stroke-width: 0.8; }
+
+.b[data-k="dot"] { fill: var(--ex-preview); }
+
+/* 게이지의 안쪽 원은 바탕색이다 — 링으로 보인다. */
+.b[data-k="hole"] { fill: var(--ex-preview-soft); }
+
+.b[data-k="bar"] { transform-box: fill-box; transform-origin: left center; }
+
+/* ── 등장 ────────────────────────────────────────────────── */
+
+/* 박스가 순서대로 들어온다. 서는 순간 한 번, 손이 올라오면 다시(다른 이름의 같은 키프레임). */
+.frame[data-animate] .b {
+  animation: rise var(--ex-motion-panel) both;
+  animation-delay: calc(var(--i) * 45ms);
+}
+
+.frame[data-animate] .b[data-k="bar"] { animation-name: grow; }
+
+.frame[data-animate]:hover .b,
+.frame[data-animate][data-replay="1"] .b { animation-name: rise-again; }
+
+.frame[data-animate]:hover .b[data-k="bar"],
+.frame[data-animate][data-replay="1"] .b[data-k="bar"] { animation-name: grow-again; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: var(--o, 1); transform: translateY(0); }
+}
+@keyframes rise-again {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: var(--o, 1); transform: translateY(0); }
+}
+@keyframes grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes grow-again {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* 연한 박스는 끝 투명도가 다르다 — 키프레임이 `--o` 를 읽는다. */
+.frame[data-animate] .b[data-k="light"] { --o: 0.4; }
+.frame[data-animate] .b[data-k="image"] { --o: 0.9; }
+
+@media (prefers-reduced-motion: reduce) {
+  .frame[data-animate] .b { animation: none; }
+}

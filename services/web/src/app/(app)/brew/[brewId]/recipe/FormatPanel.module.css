@@ -1,0 +1,128 @@
+/* 오른쪽 패널 — 형식 목록. 파란 것은 와이어프레임뿐이고 나머지는 회색 위계다. */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.head {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ex-space-1);
+  padding: var(--ex-space-4) var(--ex-space-4) var(--ex-space-3);
+  border-bottom: 1px solid var(--ex-border);
+}
+
+.head h2 {
+  margin: 0;
+  color: var(--ex-fg);
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+}
+
+.target {
+  display: flex;
+  align-items: center;
+  gap: var(--ex-space-2);
+  margin: 0;
+  min-width: 0;
+  font-size: var(--ex-text-xs);
+}
+
+.target b {
+  flex: 1;
+  min-width: 0;
+  color: var(--ex-fg-body);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.target em {
+  flex-shrink: 0;
+  padding: 0 var(--ex-space-2);
+  border-radius: var(--ex-radius-full);
+  background: var(--ex-bg-muted);
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-2xs);
+  font-style: normal;
+  line-height: 18px;
+}
+
+.no {
+  flex-shrink: 0;
+  color: var(--ex-fg-muted);
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-2xs);
+}
+
+.list {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ex-space-2);
+  padding: var(--ex-space-3) var(--ex-space-4);
+  overflow-y: auto;
+}
+
+.option {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ex-space-2);
+  padding: var(--ex-space-2);
+  border: 1px solid var(--ex-border);
+  border-radius: var(--ex-radius-lg);
+  background: var(--ex-bg);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--ex-motion-quick), box-shadow var(--ex-motion-quick);
+}
+
+.option:hover { border-color: var(--ex-border-firm); }
+
+/* 고른 형식 — 파란 테두리. */
+.option[data-on="1"] {
+  border-color: var(--ex-preview);
+  box-shadow: 0 0 0 1px var(--ex-preview);
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ex-space-2);
+  padding: 0 var(--ex-space-1);
+  color: var(--ex-fg-body);
+  font-size: var(--ex-text-xs);
+  font-weight: 500;
+}
+
+.option[data-on="1"] .label { color: var(--ex-preview); }
+
+.note,
+.empty {
+  margin: 0;
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-2xs);
+  line-height: var(--ex-leading-normal);
+}
+
+.empty {
+  flex: 1 1 auto;
+  padding: var(--ex-space-4);
+}
+
+.foot {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ex-space-2);
+  padding: var(--ex-space-4);
+  border-top: 1px solid var(--ex-border);
+}

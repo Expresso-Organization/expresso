@@ -1,11 +1,12 @@
 "use server";
 
 import {
+  type MediaAsset,
   RecipeV2EditSchema,
   RecipeV2ReorderSchema,
   SubmitJobPostingSchema,
   type RecipeV2,
-  type RecipeV2Edit,
+  type RecipeV2EditInput,
   type RecipeV2Reorder,
 } from "@expresso/contracts";
 import { randomUUID } from "node:crypto";
@@ -14,7 +15,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { ApiError } from "@/lib/api/client";
-import { brews, jobs, recipeV2 } from "@/lib/api/endpoints";
+import { brews, jobs, media, recipeV2 } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 /**
@@ -37,7 +38,7 @@ function failure(error: unknown): RecipeResult {
   throw error;
 }
 
-export async function editRecipeAction(recipeId: string, edit: RecipeV2Edit): Promise<RecipeResult> {
+export async function editRecipeAction(recipeId: string, edit: RecipeV2EditInput): Promise<RecipeResult> {
   const id = z.uuid().safeParse(recipeId);
   const parsed = RecipeV2EditSchema.safeParse(edit);
   if (!id.success || !parsed.success) return { ok: false, error: "요청을 읽지 못했습니다." };
@@ -155,5 +156,31 @@ export async function submitPostingAction(
   } catch (error) {
     if (error instanceof ApiError) return { ok: false, error: "공고를 넣지 못했습니다. 잠시 뒤 다시 시도해 주세요." };
     throw error;
+  }
+}
+
+// ── 미디어 ─────────────────────────────────────────────────
+
+export type MediaUploadResult =
+  | { ok: true; asset: MediaAsset }
+  | { ok: false; error: string };
+
+/**
+ * 그림을 올린다. 어디에 놓을지는 정하지 않는다 — 올린 것은 내 라이브러리에 남고,
+ * 문장에 놓는 일은 편집 연산(`add_item` · `update_item_content`)이 한다.
+ */
+export async function uploadMediaAction(formData: FormData): Promise<MediaUploadResult> {
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: "이미지를 골라 주세요." };
+  const session = await requireSession();
+  try {
+    const asset = await media.upload(session.accessToken, file);
+    return { ok: true, asset };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      if (error.status === 413) return { ok: false, error: "파일이 너무 큽니다. 8MB까지 받습니다." };
+      if (error.status === 415) return { ok: false, error: "PNG · JPEG · WebP · GIF만 받습니다." };
+    }
+    return { ok: false, error: error instanceof Error ? error.message : "이미지를 올리지 못했습니다." };
   }
 }

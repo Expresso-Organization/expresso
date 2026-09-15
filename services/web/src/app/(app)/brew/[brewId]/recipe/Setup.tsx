@@ -1,14 +1,17 @@
 "use client";
 
-import type { PortfolioIntent, RecipeV2, RecipeV2JobPosting } from "@expresso/contracts";
+import { MEDIA_MAX_BYTES, MEDIA_MIME_TYPES, mediaAssetUrl, type PortfolioIntent, type RecipeV2, type RecipeV2JobPosting } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
+import { MediaUploader } from "@/components/ui/MediaUploader";
+import { API_BASE_URL } from "@/lib/api/client";
 
 import { JobPostingPicker } from "./JobPostingPicker";
-import { editRecipeAction, saveMaterialsAction } from "./recipe-actions";
+import type { MediaCard } from "./SourceRail";
+import { editRecipeAction, saveMaterialsAction, uploadMediaAction } from "./recipe-actions";
 import table from "@/components/career/record-table.module.css";
 
 import styles from "./Setup.module.css";
@@ -60,6 +63,7 @@ export function Setup({
   brewId,
   recipe,
   records,
+  media,
   designName,
   previousJobId,
   failureNote,
@@ -68,6 +72,8 @@ export function Setup({
   brewId: string;
   recipe: RecipeV2;
   records: SetupRecord[];
+  /** 올린 그림. 화면 캡처 · 로고는 여기서 받아 두고 고치기에서 문장에 놓는다. */
+  media: MediaCard[];
   designName: string | null;
   /** 직전 시도의 잡. 「다시 짜기」가 새 잡이 되는 근거가 이것이다. */
   previousJobId: string | null;
@@ -76,6 +82,19 @@ export function Setup({
   draftAction: (formData: FormData) => Promise<void>;
 }) {
   const [chosen, setChosen] = useState<string[]>(records.filter(({ selected }) => selected).map(({ recordId }) => recordId));
+  const [assets, setAssets] = useState(media);
+
+  /** 그림을 올린다. 어디에 놓을지는 고치기에서 정한다. */
+  async function upload(file: File): Promise<string | null> {
+    const body = new FormData();
+    body.set("file", file);
+    const result = await uploadMediaAction(body);
+    if (!result.ok) return result.error;
+    const { id, width, height } = result.asset;
+    // 축소판 주소 — 서버가 만든 목록과 같은 규칙(640 계단)이다.
+    setAssets((list) => [{ id, url: mediaAssetUrl(API_BASE_URL, id, 640), width, height }, ...list.filter((asset) => asset.id !== id)]);
+    return null;
+  }
   const [posting, setPosting] = useState<RecipeV2JobPosting | null>(recipe.jobPosting);
   const [intent, setIntent] = useState<PortfolioIntent>(recipe.intent);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -396,6 +415,23 @@ export function Setup({
               {/* 실측 144초 · 158초(기록 10건 · sonnet). 다음 화면이 적는 값과 같아야 한다. */}
               <span className={styles.footNote}>2~3분 걸립니다. 이 화면을 닫아도 계속됩니다.</span>
             </div>
+          </div>
+
+          {/* 그림은 기록에서 나오지 않는다 — 여기서 받아 두고 고치기에서 문장에 놓는다. */}
+          <div className={styles.card}>
+            <h2 className={styles.cardTitle}>미디어</h2>
+            <p className={styles.cardNote}>화면 캡처 · 로고 · 사진. 레시피를 고칠 때 문장에 놓습니다.</p>
+            <MediaUploader accept={MEDIA_MIME_TYPES} maxBytes={MEDIA_MAX_BYTES} onFile={upload} note="PNG · JPEG · WebP · GIF · 8MB까지" />
+            {assets.length > 0 ? (
+              <div className={styles.mediaGrid}>
+                {assets.slice(0, 6).map((asset) => (
+                  <span key={asset.id} className={styles.mediaTile}>
+                    <img src={asset.url} alt="" width={asset.width} height={asset.height} loading="lazy" />
+                  </span>
+                ))}
+                {assets.length > 6 ? <span className={styles.mediaMore}>+{assets.length - 6}</span> : null}
+              </div>
+            ) : null}
           </div>
         </aside>
       </form>

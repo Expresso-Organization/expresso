@@ -1,9 +1,10 @@
 "use client";
 
-import { MEDIA_FRAMES, MEDIA_MAX_BYTES, type MediaFrame } from "@expresso/contracts";
-import { useRef, useState, useTransition } from "react";
+import { MEDIA_FRAMES, MEDIA_MAX_BYTES, MEDIA_MIME_TYPES, type MediaFrame } from "@expresso/contracts";
+import { useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
+import { MediaUploader } from "@/components/ui/MediaUploader";
 
 import { addMediaAction } from "./media-actions";
 import styles from "./page.module.css";
@@ -34,34 +35,21 @@ export function MediaDrop({
   sectionId: string;
   sectionTitle: string;
 }) {
-  const input = useRef<HTMLInputElement>(null);
   const [frame, setFrame] = useState<MediaFrame>("none");
   const [alt, setAlt] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [pending, start] = useTransition();
 
-  function place(file: File | undefined) {
-    setError(null);
-    if (!file) return;
-    if (file.size > MEDIA_MAX_BYTES) {
-      setError(`한 장은 ${Math.floor(MEDIA_MAX_BYTES / 1024 / 1024)}MB까지입니다.`);
-      return;
-    }
-    // 서버 액션에 파일을 그대로 넘긴다 — 브라우저가 알아서 본문에 싣는다.
+  /** 서버 액션에 파일을 그대로 넘긴다 — 브라우저가 알아서 본문에 싣는다. */
+  async function place(file: File): Promise<string | null> {
     const body = new FormData();
     body.set("portfolioId", portfolioId);
     body.set("sectionId", sectionId);
     body.set("frame", frame);
     body.set("alt", alt.trim());
     body.set("file", file);
-    start(async () => {
-      const result = await addMediaAction(body);
-      if (result.error) setError(result.error);
-      else {
-        setAlt("");
-        if (input.current) input.current.value = "";
-      }
-    });
+    const result = await addMediaAction(body);
+    if (result.error) return result.error;
+    setAlt("");
+    return null;
   }
 
   return (
@@ -95,19 +83,13 @@ export function MediaDrop({
         maxLength={200}
       />
 
-      <input
-        ref={input}
-        type="file"
-        accept="image/png,image/jpeg,image/webp,image/gif"
-        className={styles.mediaFile}
-        disabled={pending}
-        onChange={(event) => place(event.target.files?.[0])}
+      <MediaUploader
+        accept={MEDIA_MIME_TYPES}
+        maxBytes={MEDIA_MAX_BYTES}
+        onFile={place}
+        label="이미지 놓기"
+        note="PNG · JPEG · WebP · GIF · 8MB까지"
       />
-
-      <p className={styles.mediaNote}>
-        {pending ? "올리는 중…" : "PNG · JPEG · WebP · GIF · 8MB까지"}
-      </p>
-      {error ? <p className={styles.mediaError}>{error}</p> : null}
     </div>
   );
 }

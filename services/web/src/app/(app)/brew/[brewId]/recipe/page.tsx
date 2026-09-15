@@ -1,12 +1,15 @@
 import { notFound } from "next/navigation";
 
-import { ApiError } from "@/lib/api/client";
-import { brews, designSystems, jobs, recipeV2 } from "@/lib/api/endpoints";
+import { mediaAssetUrl } from "@expresso/contracts";
+
+import { API_BASE_URL, ApiError } from "@/lib/api/client";
+import { brews, designSystems, jobs, media, recipeV2 } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { BrewFrame } from "../BrewFrame";
 import { Setup, type SetupRecord } from "./Setup";
 import { Waiting, type ReadingCompany } from "./Waiting";
+import type { MediaCard } from "./SourceRail";
 import { Workbench, type RecordCard, type RequirementCard } from "./Workbench";
 import { draftRecipeAction } from "./recipe-actions";
 
@@ -101,6 +104,11 @@ export default async function RecipePage({
     );
   }
 
+  // 올린 그림. 고르기에서는 받아 두고, 고치기에서는 왼쪽 미디어 탭에서 문장에 놓는다. 주소는 여기서 만든다 — 화면은 API 를 모른다.
+  const assets: MediaCard[] = (await media.list(session.accessToken)).data.map(({ id, width, height }) => ({
+    id, width, height, url: mediaAssetUrl(API_BASE_URL, id, 640),
+  }));
+
   if (recipe.sections.length === 0 || query.setup === "1") {
     const records: SetupRecord[] = materials.materials.map((material) => ({
       recordId: material.recordId,
@@ -127,6 +135,7 @@ export default async function RecipePage({
           brewId={brewId}
           recipe={recipe}
           records={records}
+          media={assets}
           designName={designName}
           previousJobId={job?.jobId ?? null}
           failureNote={
@@ -178,7 +187,7 @@ export default async function RecipePage({
       flow="portfolio-v2"
       tinted
     >
-      <Workbench brewId={brewId} initialRecipe={recipe} records={records} requirements={requirements} designName={designName} />
+      <Workbench brewId={brewId} initialRecipe={recipe} records={records} requirements={requirements} media={assets} designName={designName} />
     </BrewFrame>
   );
 }
