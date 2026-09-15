@@ -154,6 +154,31 @@
 .apiKeyField input { width:100%; padding:8px; color:var(--ex-fg); background:var(--ex-bg); border:1px solid var(--ex-border); border-radius:6px; }
 .apiKeyField small { display:block; margin-top:8px; color:var(--ex-fg-muted); font-size:var(--ex-text-3xs); }
 
-.consentDialog.consentDialog { color:var(--ex-fg); background:var(--ex-bg); border:1px solid var(--ex-border); font-family:var(--ex-font-ui); max-height:calc(100dvh - 32px); overflow-y:auto; }
-.consentDetails { display:flex; flex-direction:column; gap:12px; font-size:var(--ex-text-xs); line-height:var(--ex-leading-relaxed); color:var(--ex-fg-muted); }
-.consentDetails strong { color:var(--ex-fg); }
+/* web-compact 프로필: 모달 512px, 안쪽 여백 24px. 서체·색은 Expresso 토큰을 유지한다. */
+.consentDialog.consentDialog { width:calc(100vw - 32px); max-width:512px; padding:0; gap:0; border-radius:16px; color:var(--ex-fg); background:var(--ex-bg); border:1px solid var(--ex-border); font-family:var(--ex-font-ui); max-height:calc(100dvh - 32px); overflow-y:auto; }
+.consentDialog .consentHeader { padding:24px 24px 20px; gap:0; }
+.consentBrand { display:flex; align-items:center; gap:12px; margin-bottom:24px; font-size:var(--ex-text-xs); font-weight:600; color:var(--ex-fg); }
+.consentBrand > span { display:grid; place-items:center; width:48px; height:48px; border:1px solid var(--ex-accent-soft); border-radius:12px; background:var(--ex-accent-surface); }
+.consentBrand small { display:block; margin-top:4px; font-size:var(--ex-text-3xs); color:var(--ex-fg-muted); font-weight:400; }
+.consentDialog .consentTitle { font-size:var(--ex-text-3xl); line-height:var(--ex-leading-tight); font-weight:600; letter-spacing:-.03em; }
+.consentDialog .consentIntro { margin-top:12px; font-size:var(--ex-text-sm); line-height:var(--ex-leading-relaxed); color:var(--ex-fg-body); }
+.consentBody { padding:0 24px 24px; }
+.consentFacts { margin:0; border:1px solid var(--ex-border-inner); border-radius:12px; background:var(--ex-bg-sunken); }
+.consentFacts > div { display:flex; gap:12px; align-items:flex-start; padding:16px; }
+.consentFacts > div + div { border-top:1px solid var(--ex-border-inner); }
+.consentFacts > div > i { flex-shrink:0; margin-top:2px; color:var(--ex-fg-muted); }
+.consentFacts dt { margin:0 0 4px; font-size:var(--ex-text-2xs); color:var(--ex-fg-muted); }
+.consentFacts dd { margin:0; font-size:var(--ex-text-sm); line-height:var(--ex-leading-normal); color:var(--ex-fg); }
+.consentFacts small { display:block; margin-top:4px; font-size:var(--ex-text-xs); color:var(--ex-fg-body); }
+.consentChoice { display:flex; align-items:flex-start; gap:8px; margin-top:20px; color:var(--ex-fg-body); }
+.consentChoice > i { flex-shrink:0; color:var(--ex-accent-text); margin-top:2px; }
+.consentChoice p { margin:0; font-size:var(--ex-text-xs); line-height:var(--ex-leading-relaxed); }
+.consentChoice small { display:block; margin-top:4px; font-size:var(--ex-text-2xs); color:var(--ex-fg-muted); }
+.consentDialog .consentFooter { margin:0; padding:16px 24px 24px; display:flex; flex-direction:column; align-items:stretch; gap:12px; border-top:1px solid var(--ex-border-inner); border-radius:0; background:transparent; }
+.consentFooter > p { margin:0; font-size:var(--ex-text-3xs); line-height:var(--ex-leading-normal); color:var(--ex-fg-muted); }
+.consentFooter > div { display:flex; gap:8px; }
+.consentFooter button { height:40px; border-radius:8px; }
+.consentFooter button:first-child { flex:1; }
+.consentFooter .consentAccept { flex:2; background:var(--ex-accent); color:var(--ex-fg-on-accent); }
+.consentFooter .consentAccept:hover:not(:disabled) { background:var(--ex-accent-hover); }
+@media(max-width:479px) { .consentDialog .consentHeader { padding:24px 16px 20px; } .consentBody { padding:0 16px 20px; } .consentDialog .consentFooter { padding:16px; } .consentFooter button { height:48px; } }
