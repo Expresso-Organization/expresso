@@ -11,24 +11,24 @@ date: 2026-09-15
 
 ## 요구사항
 
-- [ ] 세션 정책 상수가 `packages/contracts`에 한 곳 있다. 유지 켬: 활동 후 30일 /
+- [x] 세션 정책 상수가 `packages/contracts`에 한 곳 있다. 유지 켬: 활동 후 30일 /
       유지 끔: 활동 후 12시간 / 절대 상한: 발급 후 90일 (두 모드 공통).
-- [ ] 로그인·가입·Google·Google 연결 요청이 `persistent`(기본 `true`)를 받고, 발급
+- [x] 로그인·가입·Google·Google 연결 요청이 `persistent`(기본 `true`)를 받고, 발급
       세션 응답이 `persistent`를 돌려준다.
-- [ ] 인증된 요청마다 세션 `expiresAt`이 `min(now + idle, absoluteExpiresAt)`으로
+- [x] 인증된 요청마다 세션 `expiresAt`이 `min(now + idle, absoluteExpiresAt)`으로
       갱신된다. 새 필드가 없는 기존 세션은 유지 켬 · 상한 `createdAt + 90일`로 취급된다.
-- [ ] 백엔드 통합 테스트(mongodb): 유지 끔 12시간 발급 · 활동 시 30일로 연장 ·
+- [x] 백엔드 통합 테스트(mongodb): 유지 끔 12시간 발급 · 활동 시 30일로 연장 ·
       상한에 걸리면 상한값 · 기존 문서(새 필드 없음) 연장.
-- [ ] 웹: 유지 켬이면 `ex_session` 쿠키에 `expires`가 있고 요청마다 `now + 30일`로
+- [x] 웹: 유지 켬이면 `ex_session` 쿠키에 `expires`가 있고 요청마다 `now + 30일`로
       다시 찍힌다. 유지 끔이면 `expires`가 없다(브라우저 세션 쿠키).
-- [ ] 웹: 쿠키 없이 보호 구간에 오면 `/login?next=<경로+쿼리>`. 로그인 뒤 `next`로
+- [x] 웹: 쿠키 없이 보호 구간에 오면 `/login?next=<경로+쿼리>`. 로그인 뒤 `next`로
       돌아간다. `next`는 같은 출처 경로만, `/api/`·`/login`·`/signup` 제외, 기본 `/home`.
-- [ ] 웹: 백엔드 401 → 세션 쿠키 두 개 삭제 → `/login?next=<보던 경로>`.
-- [ ] 웹: 쿠키가 있는 상태로 `/login`·`/signup`을 열면 `/home`(또는 `next`)으로 간다.
-- [ ] 웹: 로그인 화면에 "로그인 상태 유지" 체크(기본 켬). Google 버튼도 같은 선택과
+- [x] 웹: 백엔드 401 → 세션 쿠키 두 개 삭제 → `/login?next=<보던 경로>`.
+- [x] 웹: 쿠키가 있는 상태로 `/login`·`/signup`을 열면 `/home`(또는 `next`)으로 간다.
+- [x] 웹: 로그인 화면에 "로그인 상태 유지" 체크(기본 켬). Google 버튼도 같은 선택과
       `next`를 들고 나간다.
-- [ ] 웹: 로그인 서버 검증 오류가 `email` · `password` 각 칸에 붙는다.
-- [ ] `pnpm typecheck` · `pnpm test` · `pnpm test:infra` 통과.
+- [x] 웹: 로그인 서버 검증 오류가 `email` · `password` 각 칸에 붙는다.
+- [x] `pnpm typecheck` · `pnpm test` · `pnpm test:infra` 통과.
 
 ## 설계
 
