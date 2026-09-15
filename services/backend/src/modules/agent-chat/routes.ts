@@ -9,7 +9,7 @@ export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChat
   const options = { preHandler: authenticate };
   const id = (params: unknown) => UuidSchema.parse((params as { id: string }).id);
   const developer = (userId: string) => developerUserIds.includes(userId);
-  app.get(`${API_PREFIX}/agent/access`, options, async req => ({ data: { enabled: service.enabled, serverCredentialAllowed: developer(requireAuth(req).user.id), model: "sonnet" } }));
+  app.get(`${API_PREFIX}/agent/access`, options, async req => ({ data: { enabled: service.enabled, serverCredentialAllowed: developer(requireAuth(req).user.id), consentRequired: await service.consentRequired(requireAuth(req).user.id), model: "sonnet" } }));
   app.get(base, options, async req => ({ data: await service.list(requireAuth(req).user.id) }));
   app.post(base, options, async (req, reply) => { const input = CreateAgentConversationSchema.parse(req.body); return reply.code(201).send({ data: await service.create(requireAuth(req).user.id, input.contexts) }); });
   app.get(`${base}/:id`, options, async req => ({ data: await service.get(requireAuth(req).user.id, id(req.params)) }));

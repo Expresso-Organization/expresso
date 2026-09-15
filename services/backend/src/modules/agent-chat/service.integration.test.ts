@@ -27,6 +27,16 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     recordId = (await career.createRecord(userId, randomUUID(), { categoryId: category.id, title: "채팅 테스트 기록", bodyMd: "원래 본문", properties: {} })).record.id;
   }, 60_000);
   afterAll(async () => { await Promise.all(services.map(service => service.close())); await fixture?.dispose(); });
+  it("동의가 없으면 실행 전 안내 상태를 반환하고 메시지를 저장하지 않는다", async () => {
+    let calls = 0;
+    const service = make({ run: async () => { calls += 1; } });
+    expect(await service.consentRequired(other)).toBe(true);
+    expect(await service.consentRequired(userId)).toBe(false);
+    const conversation = await service.create(other, []);
+    await expect(service.send(other, conversation.id, { requestId: randomUUID(), text: "안녕" })).rejects.toMatchObject({ statusCode: 403, publicDetails: { requiredConsent: "career_records" } });
+    expect((await service.get(other, conversation.id)).messages).toHaveLength(0);
+    expect(calls).toBe(0);
+  });
   it("저장된 대화를 다른 서비스 인스턴스에서 복원하고 중복 요청을 한 번만 처리한다", async () => {
     const service = make({ run: async input => { await input.emit({ type: "text", text: "첫 " }); await input.emit({ type: "text", text: "응답" }); } });
     const conversation = await service.create(userId, []); const input = { requestId: randomUUID(), text: "질문" };

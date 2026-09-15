@@ -8,9 +8,9 @@ const apiKey = "sk-ant-test-personal-key-value";
 describe("에이전트 인증 분리", () => {
   it.each([false, true])("개발 멤버 여부에 따라 서버 인증 사용을 제한한다: %s", async developer => {
     const app = Fastify(); const send = vi.fn(async () => ({}));
-    registerAgentChatRoutes(app, { enabled: true, send, close: async () => {} } as unknown as AgentChatService, async req => { req.auth = { sessionId: "session", user: { id: user, email: "test@example.com", displayName: "test", planCode: "free" } }; }, developer ? [user] : []);
+    registerAgentChatRoutes(app, { enabled: true, consentRequired: async () => true, send, close: async () => {} } as unknown as AgentChatService, async req => { req.auth = { sessionId: "session", user: { id: user, email: "test@example.com", displayName: "test", planCode: "free" } }; }, developer ? [user] : []);
     const access = await app.inject({ method: "GET", url: "/v1/agent/access" });
-    expect(access.json().data).toMatchObject({ serverCredentialAllowed: developer, model: "sonnet" });
+    expect(access.json().data).toMatchObject({ serverCredentialAllowed: developer, consentRequired: true, model: "sonnet" });
     const body = { requestId: conversation, text: "안녕" };
     const response = await app.inject({ method: "POST", url: `/v1/agent/conversations/${conversation}/messages`, payload: body });
     expect(response.statusCode).toBe(developer ? 202 : 403);

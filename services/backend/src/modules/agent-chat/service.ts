@@ -14,6 +14,10 @@ export class AgentChatService {
   private readonly running = new Map<string, AbortController>();
   private readonly tasks = new Set<Promise<void>>();
   constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi) {}
+  async consentRequired(userId: string) {
+    const result = await this.consent.list(userId);
+    return !result.data.consents.some(item => item.scope === "career_records" && item.granted);
+  }
   get enabled() { return !!this.runtime; }
   private get rows() { return mongoCollections(this.db.db).agentConversations; }
   private async owned(userId: string, id: string) {

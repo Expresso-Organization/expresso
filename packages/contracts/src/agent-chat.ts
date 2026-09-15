@@ -26,4 +26,4 @@ export type AgentApproval = z.infer<typeof AgentApprovalSchema>;
 export const AgentEditDraftSchema = AiEditProposalSchema.pick({ summary: true, commands: true, propertyChanges: true });
 export type AgentEditDraft = z.infer<typeof AgentEditDraftSchema>;
 
-export const AgentChatAccessSchema = z.strictObject({ data: z.strictObject({ enabled: z.boolean(), serverCredentialAllowed: z.boolean(), model: z.literal("sonnet") }) });
+export const AgentChatAccessSchema = z.strictObject({ data: z.strictObject({ enabled: z.boolean(), serverCredentialAllowed: z.boolean(), consentRequired: z.boolean(), model: z.literal("sonnet") }) });

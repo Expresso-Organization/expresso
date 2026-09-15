@@ -5,6 +5,7 @@ const base = "/api/agent/conversations";
 export async function agentRequest(path: string, body?: unknown) {
   const response = await fetch(`${base}${path}`, { ...(body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), cache: "no-store" });
   const payload = await response.json();
+  if (!response.ok && payload.error?.details?.requiredConsent === "career_records") throw new Error("AI 사용 동의가 필요합니다. 설정에서 커리어 기록 사용을 켜 주세요.");
   if (!response.ok) throw new Error(payload.error?.message ?? payload.message ?? "대화를 불러오지 못했습니다.");
   return AgentConversationResponseSchema.parse(payload).data;
 }
