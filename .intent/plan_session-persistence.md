@@ -23,8 +23,8 @@ date: 2026-09-15
 | `services/backend/src/modules/identity/service.ts` | 정책으로 발급, 파이프라인 갱신으로 연장 |
 | `services/backend/src/modules/identity/legacy-mysql-service.ts` | `persistent` 시그니처만 맞춤 |
 | `services/backend/src/modules/identity/auth.integration.test.ts` | 연장 케이스 4개 |
-| `services/web/src/lib/auth/session-cookie.ts` (새) | 쿠키 이름·옵션. `next/headers` 없음 |
-| `services/web/src/lib/auth/next-path.ts` (새) · `next-path.test.ts` (새) | `safeNext` |
+| `services/web/src/lib/auth/session-cookie.ts` (새) · `session-cookie.test.ts` (새) | 쿠키 이름·옵션. `next/headers` 없음 |
+| `services/web/src/lib/auth/next-path.ts` (새) · `next-path.test.ts` (새) | `safeNext` · `loginPath` · `PATHNAME_HEADER` |
 | `services/web/src/lib/session.ts` | `writeAccessToken(session)` · `clearAccessToken` 두 쿠키 |
 | `services/web/src/proxy.ts` · `proxy.test.ts` | `next` 전달, `x-ex-pathname`, 유지 쿠키 재발급 |
 | `services/web/src/app/api/auth/expired/route.ts` (새) | 쿠키 삭제 후 `/login?next=` |
