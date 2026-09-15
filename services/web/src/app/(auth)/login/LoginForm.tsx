@@ -95,7 +95,9 @@ export function LoginForm({
                 <label className={styles.fieldLabel} htmlFor="password">
                   비밀번호
                 </label>
-                <span className={styles.fieldAside}>잊으셨나요?</span>
+                <Link href="/login/forgot" className={styles.fieldAside}>
+                  잊으셨나요?
+                </Link>
               </div>
               <input
                 id="password"

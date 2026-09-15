@@ -10,6 +10,9 @@ import {
   SocialAuthSessionResponseSchema,
   type GoogleSignIn,
   type GoogleLink,
+  type PasswordResetRequest,
+  type PasswordResetConfirm,
+  type EmailVerificationConfirm,
   InsightResponseSchema,
   MetricCatalogResponseSchema,
   WidgetListResponseSchema,
@@ -117,6 +120,32 @@ export const auth = {
     requestNoContent(`${API_PREFIX}/auth/logout`, {
       method: "POST",
       accessToken,
+    }),
+
+  /** 가입 여부와 무관하게 202. 화면도 같은 문장을 보인다. */
+  requestPasswordReset: (input: PasswordResetRequest) =>
+    requestNoContent(`${API_PREFIX}/auth/password-reset`, {
+      method: "POST",
+      body: input,
+    }),
+
+  /** 링크의 토큰으로 비밀번호를 정하고 새 세션을 받는다. 다른 세션은 백엔드가 끊는다. */
+  confirmPasswordReset: (input: PasswordResetConfirm) =>
+    request(`${API_PREFIX}/auth/password-reset/confirm`, AuthSessionResponseSchema, {
+      method: "POST",
+      body: input,
+    }),
+
+  requestEmailVerification: (accessToken: string) =>
+    requestNoContent(`${API_PREFIX}/auth/email-verification`, {
+      method: "POST",
+      accessToken,
+    }),
+
+  confirmEmailVerification: (input: EmailVerificationConfirm) =>
+    request(`${API_PREFIX}/auth/email-verification/confirm`, CurrentUserResponseSchema, {
+      method: "POST",
+      body: input,
     }),
 
   me: (accessToken: string) =>

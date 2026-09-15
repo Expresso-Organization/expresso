@@ -26,9 +26,9 @@ date: 2026-09-15
 | `services/web/src/lib/api/endpoints.ts` · `app/auth-actions.ts` | 엔드포인트 4개 · 액션 3개 |
 | `services/web/src/app/(auth)/login/forgot/*` · `login/reset/*` (새) · `login/LoginForm.tsx` | 재설정 화면 · 링크 |
 | `services/web/src/app/verify-email/page.tsx` (새) | 인증 완료 |
-| `services/web/src/components/shell/EmailVerificationNotice.tsx` · `.module.css` (새) · `AppChrome.tsx` | 인증 띠 |
-| `services/web/src/app/(legal)/{layout,terms/page,privacy/page}.tsx` · `legal.module.css` (새) | 문서 페이지 |
-| `services/web/src/app/(auth)/signup/SignupForm.tsx` · `SocialSignIn.tsx` · `api/dev/session/route.ts` | 동의 링크 · `termsVersion` · Google 동의 문장 |
+| `services/web/src/components/shell/EmailVerificationNotice.tsx` · `ResendVerificationForm.tsx` · `.module.css` (새) · `AppChrome.tsx` | 인증 띠(서버) + 재발송 폼(클라이언트) |
+| `services/web/src/app/(legal)/{layout,LegalDocument,terms/page,privacy/page}.tsx` · `legal.module.css` (새) | 문서 페이지 |
+| `services/web/src/app/(auth)/signup/SignupForm.tsx` · `auth.module.css` · `social-notice.ts` · `api/dev/session/route.ts` | 동의 링크 · `termsVersion` · Google 동의 문장(SocialSignIn은 그대로) · 재설정 링크 만료 안내 |
 | `services/web/src/app/(app)/edit/[portfolioId]/deploy/deploy-actions.ts` | 403 분기 |
 | `docs/architecture/backend.md` · `frontend.md` | 메일 어댑터 · 인증 게이트 |
 
