@@ -60,7 +60,8 @@ export type RecipeV2Media = z.infer<typeof RecipeV2MediaSchema>;
 
 export const RecipeV2LinkSchema = z.strictObject({
   label: z.string().trim().max(120),
-  url: z.string().trim().url().max(2_000),
+  /** 비어 있을 수 있다 — 종류를 링크로 바꾼 직후다. 03 은 빈 링크를 싣지 않는다. */
+  url: z.union([z.literal(""), z.string().trim().url().max(2_000)]),
 });
 export type RecipeV2Link = z.infer<typeof RecipeV2LinkSchema>;
 
@@ -189,10 +190,11 @@ export const RecipeV2EditSchema = z.discriminatedUnion("operation", [
     presentation: RecipeV2PresentationSchema.nullable().optional(),
   }),
   z.strictObject({ operation: z.literal("delete_section"), sectionId: UuidSchema }),
-  z.strictObject({
+  /** 종류와 값을 함께 보낼 수 있다 — 왼쪽에서 미디어를 눌러 놓을 때 한 번에 생긴다. */
+  ContentFieldsSchema.extend({
     operation: z.literal("add_item"),
     sectionId: UuidSchema,
-    text: z.string().trim().max(2_000).optional(),
+    text: z.string().trim().max(2_000).default(""),
     /** 놓을 자리. 비우면 섹션 끝. */
     order: z.number().int().nonnegative().optional(),
   }),
@@ -226,10 +228,12 @@ export const RecipeV2EditSchema = z.discriminatedUnion("operation", [
   /** 02를 마친다. 그 뒤의 편집은 다시 `draft`다 — 03이 무엇을 읽었는지 알 수 있게. */
   z.strictObject({ operation: z.literal("confirm") }),
 ]).refine(
-  (edit) => edit.operation !== "update_item_content" || contentMatchesKind(edit),
+  (edit) => (edit.operation !== "update_item_content" && edit.operation !== "add_item") || contentMatchesKind(edit),
   CONTENT_MESSAGE,
 );
 export type RecipeV2Edit = z.infer<typeof RecipeV2EditSchema>;
+/** 보내는 쪽의 모양 — 기본값이 있는 칸(종류 · 값)은 비워도 된다. */
+export type RecipeV2EditInput = z.input<typeof RecipeV2EditSchema>;
 
 /**
  * §11.3 — 순서는 최종 상태를 한 요청으로 받는다.

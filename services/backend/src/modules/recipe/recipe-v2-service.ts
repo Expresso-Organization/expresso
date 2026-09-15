@@ -11,6 +11,7 @@ import {
   type PortfolioIntent,
   type RecipeV2,
   type RecipeV2Edit,
+  type RecipeV2EditInput,
   type RecipeV2Reorder,
 } from "@expresso/contracts";
 import {
@@ -322,7 +323,7 @@ export class RecipeV2Service {
     return recipe;
   }
 
-  async edit(userId: string, recipeId: string, editValue: RecipeV2Edit) {
+  async edit(userId: string, recipeId: string, editValue: RecipeV2EditInput) {
     const edit = RecipeV2EditSchema.parse(editValue);
     const before = await this.#load(userId, recipeId);
     let revisionId = "";
@@ -410,7 +411,9 @@ export class RecipeV2Service {
       ids.splice(at, 0, id);
       await db.recipeElements.insertOne({
         _id: id, userId, recipeId, recipeSectionId: edit.sectionId,
-        orderNo: siblings.length + 1_000, text: edit.text ?? "", updatedAt: now,
+        orderNo: siblings.length + 1_000, text: edit.text, kind: edit.kind,
+        metric: edit.metric as JsonObject | null, media: edit.media as JsonObject | null, link: edit.link as JsonObject | null,
+        updatedAt: now,
       }, options);
       await this.#writeOrder(tx, userId, edit.sectionId, ids);
       return;

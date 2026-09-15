@@ -895,6 +895,12 @@ describe("레시피 v2 편집 연산", () => {
     expect(RecipeV2EditSchema.safeParse({
       operation: "update_item_content", itemId: item.id, kind: "link", text: "", link: { label: "저장소", url: "https://example.com/repo" },
     }).success).toBe(true);
+    // add_item 도 같은 규칙이다. 비우면 점이다.
+    expect(RecipeV2EditSchema.parse({ operation: "add_item", sectionId: section.id })).toMatchObject({ kind: "point", text: "", media: null });
+    expect(RecipeV2EditSchema.safeParse({ operation: "add_item", sectionId: section.id, kind: "media" }).success).toBe(false);
+    expect(RecipeV2EditSchema.safeParse({
+      operation: "add_item", sectionId: section.id, order: 1, kind: "media", media: { assetId: item.id, caption: "", frame: "browser" },
+    }).success).toBe(true);
   });
 
   it("섹션의 역할과 형식은 어휘 안의 값만 받고, 없으면 그 밖 · 없음이다", () => {
