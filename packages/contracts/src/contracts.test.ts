@@ -171,8 +171,9 @@ describe("identity contracts", () => {
 
   it("keeps sessions persistent unless the client opts out", () => {
     const login = { email: "user@example.com", password: "secret-passphrase" };
-    expect(LoginSchema.parse(login).persistent).toBe(true);
+    expect(LoginSchema.parse(login).persistent).toBeUndefined();
     expect(LoginSchema.parse({ ...login, persistent: false }).persistent).toBe(false);
+    expect(() => LoginSchema.parse({ ...login, persistent: "no" })).toThrow();
     expect(SESSION_POLICY.ephemeral.idleMs).toBeLessThan(SESSION_POLICY.persistent.idleMs);
     expect(SESSION_POLICY.persistent.idleMs).toBeLessThan(SESSION_POLICY.absoluteMs);
   });

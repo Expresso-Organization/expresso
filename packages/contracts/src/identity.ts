@@ -33,8 +33,11 @@ export const SESSION_POLICY = {
   absoluteMs: 90 * 86_400_000,
 } as const;
 
-/** 로그인 상태 유지. 기본이 켬이라 옵션을 모르는 클라이언트는 지금까지와 같은 세션을 받는다. */
-export const SessionPersistenceSchema = z.boolean().default(true);
+/**
+ * 로그인 상태 유지. 생략하면 켬 — 옵션을 모르는 클라이언트는 지금까지와 같은 세션을 받는다.
+ * 기본값은 스키마가 아니라 세션을 발급하는 쪽이 채운다(`SESSION_POLICY`를 읽는 자리와 같다).
+ */
+export const SessionPersistenceSchema = z.boolean().optional();
 
 export const IssuedIdentitySessionSchema = z.strictObject({
   sessionId: UuidSchema,
