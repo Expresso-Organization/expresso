@@ -12,3 +12,7 @@ export type * from "./portfolio.js";
 export type * from "./publishing.js";
 export type * from "./recipe.js";
 export type * from "./common.js";
+
+export type * from "./agent-chat.js";
+
+export type { AgentCredentialDoc } from "./agent-credential.js";

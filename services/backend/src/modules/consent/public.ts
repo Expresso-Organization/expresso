@@ -51,6 +51,7 @@ export const SCOPE_LABEL: Record<ConsentScope, string> = {
 };
 
 export class ConsentError extends Error {
+  get publicDetails() { return { requiredConsent: this.scope }; }
   readonly statusCode = 403;
   readonly scope: ConsentScope;
   constructor(scope: ConsentScope) {
