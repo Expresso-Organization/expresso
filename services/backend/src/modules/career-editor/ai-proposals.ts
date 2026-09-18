@@ -14,13 +14,13 @@ import {
   type CreateAiEditProposal,
 } from "@expresso/contracts";
 import { applyCareerCommands, encodeDocumentAsYUpdate, encodeDocumentStateVector, parseCareerDocument, reconstructYDocument, type CareerDocument, type CareerEditCommand } from "@expresso/editor";
-import { mongoCollections, type CareerAiProposalDoc } from "@expresso/database";
+import { mongoCollections, type CareerAiProposalDoc, type CareerCategoryDoc, type CareerRecordDoc } from "@expresso/database";
 import { Binary } from "mongodb";
 
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
-import { materializeLegacyTagOptions, toCanonicalPropertyValues } from "../career/properties.js";
+import { careerCategoryDefinitions, materializeLegacyTagOptions, projectTypedCareerProperties, toCanonicalPropertyValues } from "../career/properties.js";
 import { CareerDocumentError } from "./errors.js";
 import { binaryBytes, hashUpdate, MongoCareerDocumentRepository } from "./repository.js";
 import type { CareerDocumentService } from "./service.js";
@@ -37,11 +37,18 @@ function blockMap(blocks: CareerDocument["content"], map = new Map<string, Caree
   for (const block of blocks) { map.set(block.id, block); if (block.content) blockMap(block.content, map); }
   return map;
 }
-function definitionMap(category: { propertySchemaV2?: readonly { id: string; key: string; system: boolean; deletedAt: string | null }[] | undefined; propertySchema: Record<string, { id?: string | undefined; system: boolean }> }) {
-  const map = new Map<string, { key: string; system: boolean }>();
-  if (category.propertySchemaV2) for (const definition of category.propertySchemaV2) if (definition.deletedAt === null) map.set(definition.id, { key: definition.key, system: definition.system });
-  else for (const [key, definition] of Object.entries(category.propertySchema)) if (definition.id) map.set(definition.id, { key, system: definition.system });
-  return map;
+function definitionMap(category: CareerCategoryDoc) {
+  return new Map(careerCategoryDefinitions(category)
+    .filter((definition) => definition.deletedAt === null)
+    .map((definition) => [definition.id, { key: definition.key, system: definition.system }]));
+}
+function proposalPropertyValue(category: CareerCategoryDoc, record: Pick<CareerRecordDoc, "properties" | "propertyValues">, propertyId: string, key: string) {
+  if (record.propertyValues === undefined) return record.properties[key] ?? null;
+  // 선택하지 않은 정밀 숫자 등은 V2로 변환하지 않고 저장된 값을 그대로 보존합니다.
+  return projectTypedCareerProperties(category, {
+    properties: record.properties,
+    propertyValues: record.propertyValues.filter((value) => value.propertyDefinitionId === propertyId),
+  })[key] ?? null;
 }
 function toDetail(row: CareerAiProposalDoc): AiEditProposalDetail {
   return AiEditProposalDetailSchema.parse({ proposalId: row._id, recordId: row.recordId, baseDocumentVersion: row.baseDocumentVersion, selection: row.selection, summary: row.summary ?? "생성 중", commands: row.commands, propertyChanges: row.propertyChanges, createdAt: row.createdAt.toISOString(), expiresAt: row.expiresAt.toISOString(), status: row.status, progress: row.progress, appliedDocumentVersion: row.appliedDocumentVersion, revisionId: row.revisionId });
@@ -148,9 +155,34 @@ export class AiProposalService {
       await repository.insertSnapshot({ _id: afterSnapshotId, userId, recordId, documentVersion: nextVersion, version: nextVersion, schemaVersion: 1, content: after as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(after))), serverSequence: nextVersion, checksum: hashUpdate(encodeDocumentAsYUpdate(after)), actor: "ai", createdAt: new Date() }, tx.session);
       const category = await db.careerCategories.findOne({ _id: record.categoryId, $or: [{ userId: null }, { userId }] }, { session: tx.session }); if (!category) throw new CareerDocumentError(404, "career category not found");
       const properties = { ...record.properties }; const definitions = definitionMap(category); const changedPropertyIds: string[] = [];
-      for (const change of changes) { const definition = definitions.get(change.propertyId); if (!definition || definition.system || JSON.stringify(properties[definition.key] ?? null) !== JSON.stringify(change.previousValue)) throw new CareerDocumentError(409, "AI proposal property changed"); if (change.nextValue === null) delete properties[definition.key]; else properties[definition.key] = CareerPropertyValueV2Schema.parse(change.nextValue); changedPropertyIds.push(change.propertyId); }
-      await materializeLegacyTagOptions(tx, tx.session, category, [properties]);
-      const propertyUpdated = await db.careerRecords.findOneAndUpdate({ _id: recordId, userId, documentVersion: nextVersion }, { $set: { properties, propertyValues: toCanonicalPropertyValues(category, properties), updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
+      let propertyValues = record.propertyValues === undefined ? undefined : [...record.propertyValues];
+      for (const change of changes) {
+        const definition = definitions.get(change.propertyId);
+        const current = { properties, ...(propertyValues === undefined ? {} : { propertyValues }) };
+        if (!definition || definition.system || JSON.stringify(proposalPropertyValue(category, current, change.propertyId, definition.key)) !== JSON.stringify(change.previousValue)) throw new CareerDocumentError(409, "AI proposal property changed");
+        if (change.nextValue === null) {
+          delete properties[definition.key];
+          propertyValues = propertyValues?.filter((value) => value.propertyDefinitionId !== change.propertyId);
+        } else {
+          const nextValue = CareerPropertyValueV2Schema.parse(change.nextValue);
+          properties[definition.key] = nextValue;
+          if (propertyValues !== undefined) {
+            const replacement = toCanonicalPropertyValues(category, { [definition.key]: nextValue })[0];
+            if (!replacement || replacement.propertyDefinitionId !== change.propertyId) throw new CareerDocumentError(409, "AI proposal property is not writable");
+            const index = propertyValues.findIndex((value) => value.propertyDefinitionId === change.propertyId);
+            if (index === -1) propertyValues.push(replacement);
+            else propertyValues[index] = replacement;
+          }
+        }
+        changedPropertyIds.push(change.propertyId);
+      }
+      // canonical 필드가 없는 기존 기록에만 전체 compatibility 변환을 적용합니다.
+      if (propertyValues === undefined) {
+        await materializeLegacyTagOptions(tx, tx.session, category, [properties]);
+        propertyValues = toCanonicalPropertyValues(category, properties);
+      }
+      const propertyWrites = record.propertyValues === undefined || changes.length > 0 ? { properties, propertyValues } : {};
+      const propertyUpdated = await db.careerRecords.findOneAndUpdate({ _id: recordId, userId, documentVersion: nextVersion }, { $set: { ...propertyWrites, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
       if (!propertyUpdated) throw new CareerDocumentError(409, "career record version is stale");
       if (changedPropertyIds.length) await addMongoOutboxEvent(tx, { userId, topic: "career.computation", idempotencyKey: `career-ai-property:${proposal._id}:v${propertyUpdated.version}`, payload: { userId, recordId, changedPropertyIds, sourceRecordVersion: propertyUpdated.version } });
       const revisionId = randomUUID(); await repository.insertRevision({ _id: revisionId, userId, recordId, actor: "ai", summary: proposal.summary ?? "AI 변경 적용", beforeVersion: input.expectedDocumentVersion, afterVersion: nextVersion, snapshotId: beforeSnapshotId, proposalId: proposal._id, createdAt: new Date() }, tx.session);
@@ -198,7 +230,7 @@ export class AiProposalService {
     const definitions = definitionMap(category);
     for (const change of changes) {
       const definition = definitions.get(change.propertyId);
-      if (!definition || definition.system || JSON.stringify(record.properties[definition.key] ?? null) !== JSON.stringify(change.previousValue)) throw new CareerDocumentError(409, "AI proposal property changed");
+      if (!definition || definition.system || JSON.stringify(proposalPropertyValue(category, record, change.propertyId, definition.key)) !== JSON.stringify(change.previousValue)) throw new CareerDocumentError(409, "AI proposal property changed");
       if (change.nextValue !== null) CareerPropertyValueV2Schema.parse(change.nextValue);
     }
   }

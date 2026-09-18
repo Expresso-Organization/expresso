@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { createHash } from "node:crypto";
 
+import { Decimal128 } from "mongodb";
+import type { CanonicalCareerPropertyDefinition } from "@expresso/contracts";
 import { mongoCollections } from "@expresso/database";
 import { encodeDocumentAsYUpdate, reconstructYDocument } from "@expresso/editor";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -71,7 +73,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
 
   it("rejects forbidden block and system-property changes before a proposal becomes ready", async () => {
     const systemPropertyId = randomUUID();
-    await mongoCollections(fixture.resource.db).careerCategories.updateOne({ _id: categoryId }, { $set: { propertySchemaV2: [{ id: systemPropertyId, key: "systemNote", name: "시스템", type: "text", required: false, system: true, config: {}, order: 0, version: 1, deletedAt: null }] } });
+    await mongoCollections(fixture.resource.db).careerCategories.updateOne({ _id: categoryId }, { $set: { propertySchemaV2: [{ id: systemPropertyId, key: "systemNote", name: "시스템", type: "text", required: false, system: true, config: {}, order: 0, version: 1, deletedAt: null }], propertyDefinitions: [{ id: systemPropertyId, key: "systemNote", name: "시스템", type: "text", required: false, system: true, config: {}, order: 0, version: 1, deletedAt: null }] } });
     const bootstrap = await documentService.bootstrap(userId, recordId); const blockId = bootstrap.document.content[0]!.id;
     const foreignBlock: AiProposalAdapter = { async generate() { return { summary: "금지", commands: [{ type: "setText", blockId: randomUUID(), text: "침입" }], propertyChanges: [] }; } };
     const systemProperty: AiProposalAdapter = { async generate() { return { summary: "금지", commands: [], propertyChanges: [{ propertyId: systemPropertyId, previousValue: null, nextValue: { type: "text", value: "침입" } }] }; } };
@@ -94,7 +96,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
 
   it("applies selected property changes atomically and emits computation work", async () => {
     const propertyId = randomUUID(); const propertyKey = "note";
-    await mongoCollections(fixture.resource.db).careerCategories.updateOne({ _id: categoryId }, { $set: { propertySchemaV2: [{ id: propertyId, key: propertyKey, name: "메모", type: "text", required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null }] } });
+    await mongoCollections(fixture.resource.db).careerCategories.updateOne({ _id: categoryId }, { $set: { propertySchemaV2: [{ id: propertyId, key: propertyKey, name: "메모", type: "text", required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null }], propertyDefinitions: [{ id: propertyId, key: propertyKey, name: "메모", type: "text", required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null }] } });
     const career = new CareerService(fixture.resource); const propertyRecordId = (await career.createRecord(userId, randomUUID(), { categoryId, title: "프로퍼티", properties: {}, bodyMd: "본문" })).record.id;
     const bootstrap = await documentService.bootstrap(userId, propertyRecordId); const blockId = bootstrap.document.content[0]!.id;
     const adapter: AiProposalAdapter = { async generate() { return { summary: "프로퍼티", commands: [], propertyChanges: [{ propertyId, previousValue: null, nextValue: { type: "text", value: "AI 메모" } }] }; } };
@@ -105,4 +107,86 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(stored?.propertyValues).toEqual([{ propertyDefinitionId: propertyId, type: "text", value: "AI 메모" }]);
     expect(await mongoCollections(fixture.resource.db).outboxEvents.countDocuments({ topic: "career.computation", "payload.recordId": propertyRecordId, "payload.changedPropertyIds": propertyId })).toBe(1);
   });
+
+  async function propertyScenario() {
+    const career = new CareerService(fixture.resource);
+    const category = await career.createCategory(userId, { key: `preserve_${randomUUID().replaceAll("-", "")}`, name: "보존", icon: "folder", defaultView: "table", propertySchema: {} });
+    const noteId = randomUUID(); const keepId = randomUUID();
+    const definitions: CanonicalCareerPropertyDefinition[] = [
+      { id: noteId, key: "note", name: "메모", type: "text", required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null },
+      { id: keepId, key: "keep", name: "정밀 숫자", type: "number", required: false, system: false, config: {}, order: 1, version: 1, deletedAt: null },
+    ];
+    const db = mongoCollections(fixture.resource.db);
+    await db.careerCategories.updateOne({ _id: category.id }, { $set: { propertySchemaV2: definitions, propertyDefinitions: definitions } });
+    const record = (await career.createRecord(userId, randomUUID(), { categoryId: category.id, title: "보존", properties: {}, bodyMd: "본문" })).record;
+    const bootstrap = await documentService.bootstrap(userId, record.id);
+    const keep = { propertyDefinitionId: keepId, type: "number" as const, value: Decimal128.fromString("12345678901234567890.123400") };
+    const note = { propertyDefinitionId: noteId, type: "text" as const, value: "canonical" };
+    await db.careerRecords.updateOne({ _id: record.id }, { $set: { properties: { note: { type: "text", value: "legacy" } }, propertyValues: [note, keep] } });
+    return { db, recordId: record.id, noteId, note, keep, bootstrap };
+  }
+
+  it.each([false, true])("preserves canonical properties during body-only apply (empty=%s)", async (empty) => {
+    const { db, recordId, note, keep, bootstrap } = await propertyScenario();
+    const values = empty ? [] : [note, keep];
+    await db.careerRecords.updateOne({ _id: recordId }, { $set: { propertyValues: values } });
+    const before = await db.careerRecords.findOne({ _id: recordId });
+    const proposal = await ai.create(userId, recordId, { selection: { blockIds: [bootstrap.document.content[0]!.id] }, prompt: "본문만" });
+    await ai.apply(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: bootstrap.documentVersion, commandIndexes: [0], propertyChangeIndexes: [] });
+    const after = await db.careerRecords.findOne({ _id: recordId });
+    expect(after?.propertyValues).toEqual(values);
+    expect(after?.properties).toEqual(before?.properties);
+    expect(await db.outboxEvents.countDocuments({ topic: "career.computation", "payload.recordId": recordId })).toBe(0);
+  });
+
+  it.each([false, true])("changes only the selected canonical property (delete=%s)", async (remove) => {
+    const { db, recordId, noteId, note, keep, bootstrap } = await propertyScenario();
+    const local = new AiProposalService(fixture.resource, documentService, { async generate() {
+      return { summary: "메모만", commands: [], propertyChanges: [{ propertyId: noteId, previousValue: { type: "text", value: note.value }, nextValue: remove ? null : { type: "text", value: "changed" } }] };
+    } });
+    const proposal = await local.create(userId, recordId, { selection: { blockIds: [bootstrap.document.content[0]!.id] }, prompt: "메모만" });
+    await local.apply(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: bootstrap.documentVersion, commandIndexes: [], propertyChangeIndexes: [0] });
+    const stored = await db.careerRecords.findOne({ _id: recordId });
+    expect(stored?.propertyValues).toEqual(remove ? [keep] : [{ ...note, value: "changed" }, keep]);
+    expect((await db.outboxEvents.findOne({ topic: "career.computation", "payload.recordId": recordId }))?.payload.changedPropertyIds).toEqual([noteId]);
+  });
+
+  it("uses canonical absence instead of stale legacy values for a property proposal", async () => {
+    const { db, recordId, noteId, bootstrap } = await propertyScenario();
+    await db.careerRecords.updateOne({ _id: recordId }, { $set: { propertyValues: [] } });
+    const local = new AiProposalService(fixture.resource, documentService, { async generate() {
+      return { summary: "추가", commands: [], propertyChanges: [{ propertyId: noteId, previousValue: null, nextValue: { type: "text", value: "new" } }] };
+    } });
+    const proposal = await local.create(userId, recordId, { selection: { blockIds: [bootstrap.document.content[0]!.id] }, prompt: "추가" });
+    await local.apply(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: bootstrap.documentVersion, commandIndexes: [], propertyChangeIndexes: [0] });
+    expect((await db.careerRecords.findOne({ _id: recordId }))?.propertyValues).toEqual([{ propertyDefinitionId: noteId, type: "text", value: "new" }]);
+  });
+
+  it("rejects a canonical value changed after proposal creation and rolls back apply", async () => {
+    const { db, recordId, noteId, note, keep, bootstrap } = await propertyScenario();
+    const local = new AiProposalService(fixture.resource, documentService, { async generate() {
+      return { summary: "메모", commands: [], propertyChanges: [{ propertyId: noteId, previousValue: { type: "text", value: note.value }, nextValue: { type: "text", value: "AI" } }] };
+    } });
+    const proposal = await local.create(userId, recordId, { selection: { blockIds: [bootstrap.document.content[0]!.id] }, prompt: "메모" });
+    await db.careerRecords.updateOne({ _id: recordId }, { $set: { propertyValues: [{ ...note, value: "external" }, keep] }, $inc: { version: 1 } });
+    const before = await db.careerRecords.findOne({ _id: recordId });
+    const snapshots = await db.careerDocumentSnapshots.countDocuments({ recordId });
+    await expect(local.apply(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: bootstrap.documentVersion, commandIndexes: [], propertyChangeIndexes: [0] })).rejects.toMatchObject({ statusCode: 409 });
+    expect(await db.careerRecords.findOne({ _id: recordId })).toEqual(before);
+    expect(await db.careerDocumentSnapshots.countDocuments({ recordId })).toBe(snapshots);
+    expect(await db.careerDocumentUpdates.countDocuments({ recordId })).toBe(0);
+    expect(await db.outboxEvents.countDocuments({ topic: "career.computation", "payload.recordId": recordId })).toBe(0);
+  });
+
+  it.each([false, true])("keeps legacy-only compatibility (property change=%s)", async (changeProperty) => {
+    const { db, recordId, noteId, bootstrap } = await propertyScenario();
+    await db.careerRecords.updateOne({ _id: recordId }, { $unset: { propertyValues: "" } });
+    const local = new AiProposalService(fixture.resource, documentService, { async generate() {
+      return { summary: "호환", commands: changeProperty ? [] : [{ type: "setText", blockId: bootstrap.document.content[0]!.id, text: "본문 변경" }], propertyChanges: changeProperty ? [{ propertyId: noteId, previousValue: { type: "text", value: "legacy" }, nextValue: { type: "text", value: "changed" } }] : [] };
+    } });
+    const proposal = await local.create(userId, recordId, { selection: { blockIds: [bootstrap.document.content[0]!.id] }, prompt: "호환" });
+    await local.apply(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: bootstrap.documentVersion, commandIndexes: changeProperty ? [] : [0], propertyChangeIndexes: changeProperty ? [0] : [] });
+    expect((await db.careerRecords.findOne({ _id: recordId }))?.propertyValues).toEqual([{ propertyDefinitionId: noteId, type: "text", value: changeProperty ? "changed" : "legacy" }]);
+  });
+
 });
