@@ -61,23 +61,54 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB scheduled jobs", () => {
     expect(await db.recordLinks.countDocuments({ userId, $or: [{ fromRecordId: expired.id }, { toRecordId: expired.id }] })).toBe(0);
   }, 30_000);
 
-  it("fails retention and rolls back a purge while the record is still quoted", async () => {
+  it("visits every expiry page, preserves guarded records, finishes other cleanup and reports failures", async () => {
     const identity = new MongoIdentityService(fixture.resource);
     const career = new MongoCareerService(fixture.resource);
-    const userId = (await identity.signup({ email: `retention-guard-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "인용" })).user.id;
+    const userId = (await identity.signup({ email: `retention-pages-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "인용" })).user.id;
     const categoryId = (await career.listCategories(userId)).find(({ key }) => key === "experience")!.id;
-    const record = (await career.createRecord(userId, randomUUID(), { categoryId, title: "인용 중", properties: {}, bodyMd: "" })).record;
+    const template = (await career.createRecord(userId, randomUUID(), { categoryId, title: "원본", properties: {}, bodyMd: "" })).record;
     const db = mongoCollections(fixture.resource.db);
-    const at = new Date("2026-09-20T00:00:00Z"); const blockId = randomUUID();
-    await db.careerRecords.updateOne({ _id: record.id }, { $set: { deletedAt: new Date("2026-08-01T00:00:00Z"), purgeAfter: at } });
-    await db.recordUsages.insertOne({ _id: randomUUID(), userId, recordId: record.id, blockId, quotedText: "인용", firstUsedAt: at });
-    const beforePurge = await db.careerRecords.findOne({ _id: record.id });
+    const stored = (await db.careerRecords.findOne({ _id: template.id }))!;
+    const at = new Date("2026-09-17T00:00:00Z");
+    const earlier = new Date("2026-09-16T00:00:00Z");
+    const id = (index: number) => `00000000-0000-4000-8000-${index.toString().padStart(12, "0")}`;
+    const guardedIds = Array.from({ length: 101 }, (_, index) => id(index + 1));
+    const purgeableIds = [id(0), id(102), id(103)];
+    await db.careerRecords.insertMany([...guardedIds, ...purgeableIds].map((_id) => ({
+      ...stored, _id, createIdempotencyKey: randomUUID(), deletedAt: earlier,
+      purgeAfter: _id === id(103) ? at : earlier,
+    })));
+    await db.recordUsages.insertMany(guardedIds.map((recordId) => ({
+      _id: randomUUID(), userId, recordId, blockId: randomUUID(), quotedText: "인용", firstUsedAt: earlier,
+    })));
+    const before = await db.careerRecords.find({ _id: { $in: guardedIds } }).sort({ _id: 1 }).toArray();
+    const redirectId = randomUUID(); const receiptId = randomUUID();
+    await db.deploymentSlugRedirects.insertOne({ _id: redirectId, userId, portfolioId: randomUUID(), oldSlug: `old-${randomUUID()}`, newSlug: `new-${randomUUID()}`, createdAt: earlier, expiresAt: at });
+    await db.analyticsEventReceipts.insertOne({ _id: receiptId, userId, deploymentId: randomUUID(), eventType: "visit", visitorHash: "b".repeat(64), payloadHash: "c".repeat(64), payloadBytes: 100, occurredAt: earlier, receivedAt: new Date("2026-01-01T00:00:00Z") });
     const runId = randomUUID();
     await db.scheduledJobRuns.insertOne({ _id: runId, jobKey: "retention", scheduledFor: at, status: "queued", attempts: 0, createdAt: at });
+    const scheduler = new MongoSchedulingService(fixture.resource);
 
-    await expect(new MongoSchedulingService(fixture.resource).process(runId, at)).rejects.toMatchObject({ statusCode: 409 });
+    await expect(scheduler.process(runId, at)).rejects.toMatchObject({ name: "RetentionRunError" });
 
-    expect((await db.careerRecords.findOne({ _id: record.id }))?.referenceVersion).toBe(beforePurge?.referenceVersion);
-    await expect(new MongoSchedulingService(fixture.resource).getRun(runId)).resolves.toMatchObject({ status: "failed", attempts: 1 });
-  }, 30_000);
+    expect(await db.careerRecords.find({ _id: { $in: guardedIds } }).sort({ _id: 1 }).toArray()).toEqual(before);
+    expect(await db.recordUsages.countDocuments({ userId })).toBe(101);
+    expect(await db.careerRecords.countDocuments({ _id: { $in: purgeableIds } })).toBe(0);
+    expect(await db.deploymentSlugRedirects.findOne({ _id: redirectId })).toBeNull();
+    expect(await db.analyticsEventReceipts.findOne({ _id: receiptId })).toBeNull();
+    const failed = await scheduler.getRun(runId);
+    expect(failed).toMatchObject({ status: "failed", attempts: 1, lastError: "RetentionRunError", result: {
+      records: 3, redirects: 1, analyticsReceipts: 1, failedRecords: 101, failedCleanups: 0,
+    } });
+    expect(failed.result?.failureSamples).toHaveLength(100);
+    expect(failed.result?.failureSamples).toEqual(expect.arrayContaining([{ scope: "record", recordId: id(1), error: "CareerError", statusCode: 409 }]));
+
+    await expect(scheduler.process(runId, at)).rejects.toMatchObject({ name: "RetentionRunError" });
+    expect(await scheduler.getRun(runId)).toMatchObject({ status: "failed", attempts: 2, result: { records: 0, failedRecords: 101 } });
+    expect(await db.careerRecords.find({ _id: { $in: guardedIds } }).sort({ _id: 1 }).toArray()).toEqual(before);
+
+    await db.recordUsages.deleteMany({ userId });
+    await expect(scheduler.process(runId, at)).resolves.toMatchObject({ status: "succeeded", attempts: 3, lastError: null, result: { records: 101, failedRecords: 0, failedCleanups: 0, failureSamples: [] } });
+    expect(await db.careerRecords.countDocuments({ _id: { $in: guardedIds } })).toBe(0);
+  }, 60_000);
 });

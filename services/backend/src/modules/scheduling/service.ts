@@ -14,6 +14,21 @@ import { SCHEDULED_JOB_KEYS, type ScheduledJobKey } from "./public.js";
 const iso = (value?: Date | null) => value?.toISOString() ?? null;
 const runDto = (row: ScheduledJobRunDoc, at = new Date()) => ({ id: row._id, jobKey: row.jobKey as ScheduledJobKey, scheduledFor: iso(row.scheduledFor)!, status: row.status, attempts: row.attempts, startedAt: iso(row.startedAt), finishedAt: iso(row.finishedAt), lastError: row.lastError ?? null, result: row.result ?? null, lagMs: Math.max(0, at.getTime() - row.scheduledFor.getTime()) });
 
+interface RetentionCandidate { _id: string; userId: string; purgeAfter: Date }
+interface RetentionFailure {
+  scope: "record" | "scan" | "redirects" | "analyticsReceipts";
+  recordId?: string;
+  error: string;
+  statusCode?: number;
+}
+
+class RetentionRunError extends Error {
+  constructor(readonly result: Record<string, unknown>) {
+    super(`Retention failed: ${result.failedRecords} records, ${result.failedCleanups} cleanups`);
+    this.name = "RetentionRunError";
+  }
+}
+
 export class SchedulingService {
   readonly #analytics: { aggregateDay(deploymentId: string, date: string): Promise<Record<string, number>> }; readonly #accounts: { purgeExpired(at?: Date, limit?: number): Promise<{ purged: string[] }> }; readonly #ingest: JobIngestApi | null;
   readonly #overrides: Partial<Record<ScheduledJobKey, (at: Date) => Promise<Record<string, unknown>>>>;
@@ -45,7 +60,7 @@ export class SchedulingService {
       await inTransaction(this.context, async (tx) => { const collections = mongoCollections(tx.db); const options = { session: tx.session }; await collections.scheduledJobRuns.updateOne({ _id: runId, status: "running", attempts: claimed.attempts }, { $set: { status: "succeeded", finishedAt: at, result: JSON.parse(JSON.stringify(result)), lastError: null } }, options); await collections.scheduledJobDefinitions.updateOne({ _id: claimed.jobKey as ScheduledJobKey }, { $set: { lastFinishedAt: at, lastStatus: "succeeded", failureCount: 0 } }, options); });
     } catch (error) {
       const summary = error instanceof Error ? error.name.slice(0, 100) : "UnknownError";
-      await inTransaction(this.context, async (tx) => { const collections = mongoCollections(tx.db); const options = { session: tx.session }; await collections.scheduledJobRuns.updateOne({ _id: runId, status: "running", attempts: claimed.attempts }, { $set: { status: "failed", finishedAt: at, lastError: summary } }, options); await collections.scheduledJobDefinitions.updateOne({ _id: claimed.jobKey as ScheduledJobKey }, { $set: { lastFinishedAt: at, lastStatus: "failed" }, $inc: { failureCount: 1 } }, options); }); throw error;
+      await inTransaction(this.context, async (tx) => { const collections = mongoCollections(tx.db); const options = { session: tx.session }; await collections.scheduledJobRuns.updateOne({ _id: runId, status: "running", attempts: claimed.attempts }, { $set: { status: "failed", finishedAt: at, lastError: summary, ...(error instanceof RetentionRunError ? { result: JSON.parse(JSON.stringify(error.result)) } : {}) } }, options); await collections.scheduledJobDefinitions.updateOne({ _id: claimed.jobKey as ScheduledJobKey }, { $set: { lastFinishedAt: at, lastStatus: "failed" }, $inc: { failureCount: 1 } }, options); }); throw error;
     }
     return this.getRun(runId, at);
   }
@@ -59,17 +74,61 @@ export class SchedulingService {
     if (key === "job_ingest") return this.#ingest ? this.#ingest.run(at) as unknown as Record<string, unknown> : { skipped: "ingest service is not wired" };
     if (key === "posting_facts") return this.#ingest ? this.#ingest.readPendingFacts(undefined, at) as unknown as Record<string, unknown> : { skipped: "ingest service is not wired" };
     if (key === "deletion_grace") return this.#accounts.purgeExpired(at);
-    if (key === "retention") {
-      const candidates = await db.careerRecords.find({ deletedAt: { $ne: null }, purgeAfter: { $lte: at } }).project<{ _id: string; userId: string }>({ _id: 1, userId: 1 }).sort({ purgeAfter: 1, _id: 1 }).limit(100).toArray();
-      let records = 0;
-      for (const candidate of candidates) {
-        await purgeTrashedCareerRecord(this.context, candidate.userId, candidate._id, at);
-        records += 1;
-      }
-      const [redirects, receipts] = await Promise.all([db.deploymentSlugRedirects.deleteMany({ expiresAt: { $lte: at } }), db.analyticsEventReceipts.deleteMany({ receivedAt: { $lt: new Date(at.getTime() - 90 * 86_400_000) } })]);
-      return { records, redirects: redirects.deletedCount, analyticsReceipts: receipts.deletedCount };
-    }
+    if (key === "retention") return this.#retain(at);
     throw new Error(`unsupported scheduled job key: ${key satisfies never}`);
+  }
+
+  async #retain(at: Date): Promise<Record<string, unknown>> {
+    const db = mongoCollections(this.context.db);
+    const result = { records: 0, redirects: 0, analyticsReceipts: 0, failedRecords: 0, failedCleanups: 0, failureSamples: [] as RetentionFailure[] };
+    const recordFailure = (scope: RetentionFailure["scope"], error: unknown, recordId?: string) => {
+      if (scope === "record") result.failedRecords += 1;
+      else result.failedCleanups += 1;
+      // 실패 총수는 모두 집계하고 상세만 제한해 run 문서가 무한히 커지지 않게 합니다.
+      if (result.failureSamples.length < 100) result.failureSamples.push({
+        scope, ...(recordId ? { recordId } : {}),
+        error: error instanceof Error ? error.name.slice(0, 100) : "UnknownError",
+        ...(typeof error === "object" && error !== null && "statusCode" in error && typeof error.statusCode === "number" ? { statusCode: error.statusCode } : {}),
+      });
+    };
+    let cursor: RetentionCandidate | undefined;
+    while (true) {
+      let candidates: RetentionCandidate[];
+      try {
+        candidates = await db.careerRecords.find({
+          deletedAt: { $ne: null }, purgeAfter: { $lte: at },
+          ...(cursor ? { $or: [
+            { purgeAfter: { $gt: cursor.purgeAfter } },
+            { purgeAfter: cursor.purgeAfter, _id: { $gt: cursor._id } },
+          ] } : {}),
+        }).project<RetentionCandidate>({ _id: 1, userId: 1, purgeAfter: 1 })
+          .sort({ purgeAfter: 1, _id: 1 }).limit(100).toArray();
+      } catch (error) {
+        recordFailure("scan", error);
+        break;
+      }
+      if (candidates.length === 0) break;
+      // 삭제 성공 여부와 무관하게 조회한 마지막 키를 넘겨 같은 guard에 갇히지 않습니다.
+      cursor = candidates[candidates.length - 1]!;
+      for (const candidate of candidates) {
+        try {
+          await purgeTrashedCareerRecord(this.context, candidate.userId, candidate._id, at);
+          result.records += 1;
+        } catch (error) {
+          recordFailure("record", error, candidate._id);
+        }
+      }
+    }
+    const [redirects, receipts] = await Promise.allSettled([
+      db.deploymentSlugRedirects.deleteMany({ expiresAt: { $lte: at } }),
+      db.analyticsEventReceipts.deleteMany({ receivedAt: { $lt: new Date(at.getTime() - 90 * 86_400_000) } }),
+    ]);
+    if (redirects.status === "fulfilled") result.redirects = redirects.value.deletedCount;
+    else recordFailure("redirects", redirects.reason);
+    if (receipts.status === "fulfilled") result.analyticsReceipts = receipts.value.deletedCount;
+    else recordFailure("analyticsReceipts", receipts.reason);
+    if (result.failedRecords > 0 || result.failedCleanups > 0) throw new RetentionRunError(result);
+    return result;
   }
 
   async getRun(id: string, at = new Date()) { const row = await mongoCollections(this.context.db).scheduledJobRuns.findOne({ _id: id }); if (!row) throw new Error("scheduled run not found"); return runDto(row, at); }
