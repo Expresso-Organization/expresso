@@ -4,6 +4,17 @@ import type { Decimal128 } from "mongodb";
 import type { JsonValue, JsonObject } from "./common.js";
 
 export type CareerPropertyDefinitionDoc = Contracts.CareerPropertyDefinition;
+type NonNumberCareerPropertyValueDoc = Exclude<
+  Contracts.WritableCareerPropertyValue,
+  { type: "number" }
+>;
+
+/** API decimal string과 Mongo 숫자 BSON을 섞지 않기 위한 저장 경계 타입입니다. */
+export type CareerPropertyValueDoc = NonNumberCareerPropertyValueDoc | {
+  propertyDefinitionId: string;
+  type: "number";
+  value: number | Decimal128;
+};
 
 export interface CareerCategoryDoc {
   _id: string;
@@ -11,6 +22,7 @@ export interface CareerCategoryDoc {
   key: string;
   isSystem: boolean;
   propertySchema: Contracts.CareerPropertySchema;
+  propertyDefinitions?: Contracts.CanonicalCareerPropertyDefinition[];
   sortOrder: number;
   name: string;
   icon: string;
@@ -23,6 +35,34 @@ export interface CareerCategoryDoc {
   propertyMutationResults?: Record<string, unknown>;
 }
 
+export type CareerPropertyMutationStatus = "pending" | "running" | "failed" | "completed" | "cancelled" | "superseded";
+
+export interface CareerPropertyMutationDoc {
+  _id: string;
+  mutationId: string;
+  kind: "career.property-conversion" | "career.property-default" | "career.property-deletion" | "career.property-restoration";
+  userId: string;
+  categoryId: string;
+  propertyId: string;
+  propertyKey: string;
+  lockKey: string;
+  semanticFingerprintVersion: number;
+  semanticFingerprint: string;
+  operationFingerprint: string;
+  operationPayload: JsonObject;
+  status: CareerPropertyMutationStatus;
+  active: boolean;
+  cursor: string | null;
+  processedCount: number;
+  attempts: number;
+  lastError: JsonObject | null;
+  leaseToken: string | null;
+  leaseExpiresAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  completedAt: Date | null;
+}
+
 export interface CareerRecordDoc {
   _id: string;
   userId: string;
@@ -32,6 +72,18 @@ export interface CareerRecordDoc {
   origin: Contracts.CareerRecord["origin"];
   properties: Contracts.CareerRecord["properties"];
   bodyMd: Contracts.CareerRecord["bodyMd"];
+  propertyValues?: CareerPropertyValueDoc[];
+  blockBody?: {
+    schemaVersion: 1;
+    type: "doc";
+    content: Array<{
+      id: string;
+      type: "paragraph";
+      attrs: Record<string, never>;
+      text: Array<{ text: string }>;
+    }>;
+  };
+  editorSchemaVersion?: 1;
   periodStart?: string | null;
   periodEnd?: string | null;
   version: Contracts.CareerRecord["version"];
@@ -46,6 +98,10 @@ export interface CareerRecordDoc {
   documentVersion?: number | null;
   latestSnapshotId?: string | null;
   computedProperties?: JsonObject | null;
+  /** 계산 결과만 갱신하는 worker의 낙관적 동시성 세대입니다. 기존 문서에서 없으면 0입니다. */
+  computationVersion?: number;
+  /** 계산 결과가 마지막으로 확정된 시각이며 CareerRecord updatedAt과 분리됩니다. */
+  computedAt?: Date | null;
   unmappedProperties?: JsonObject | null;
   /** 삭제한 프로퍼티의 값을 안정 ID 아래 보존해 같은 프로퍼티 복원 때 되살립니다. */
   propertyValueTombstones?: JsonObject | null;

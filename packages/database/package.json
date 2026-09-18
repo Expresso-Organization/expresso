@@ -11,6 +11,8 @@
   },
   "scripts": {
     "migrate": "node --env-file-if-exists=../../services/backend/.env --import tsx src/cli.ts",
+    "career:property-inventory": "node --env-file-if-exists=../../services/backend/.env --import tsx src/career-property-inventory-cli.ts",
+    "career:property-reconciliation": "node --env-file-if-exists=../../services/backend/.env --import tsx src/career-property-reconciliation-cli.ts",
     "build": "tsc -p tsconfig.build.json && node src/mongo-build.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"

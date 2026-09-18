@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { encodeDocumentAsYUpdate } from "@expresso/editor";
+import { Decimal128 } from "mongodb";
 import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
 import type { SqlTag } from "../../platform/legacy-mysql.js";
@@ -13,7 +14,7 @@ import { CareerService } from "./legacy-mysql-service.js";
 import type { CareerApi } from "./index.js";
 import { MongoCareerService } from "./service.js";
 import { MongoIdentityService, type IdentityApi } from "../identity/index.js";
-import { mongoCollections } from "@expresso/database";
+import { exactOptionId, mongoCollections } from "@expresso/database";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { assertActiveRecordsForWrite, purgeTrashedCareerRecord } from "./mongo-record-guard.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
@@ -26,7 +27,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
   let otherId: string;
   let categoryId: string;
   beforeAll(async () => {
-    fixture = await createMongoFixture("career-editing");
+    fixture = await createMongoFixture("career-editing", { migrationTargetVersion: "0011" });
     service = new MongoCareerService(fixture.resource);
     const identity = new MongoIdentityService(fixture.resource);
     userId = (await identity.signup({ email: `career-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "기록" })).user.id;
@@ -55,6 +56,135 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
     expect(results.find((result) => result.status === "rejected")).toMatchObject({ reason: { statusCode: 412 } });
     expect((await service.getRecord(userId, record.id)).version).toBe(2);
     await expect(service.updateRecord(otherId, record.id, 2, { title: "침입" })).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("stores legacy and canonical property values together for create and update", async () => {
+    const propertyId = randomUUID();
+    const category = await service.createCategory(userId, {
+      key: `compat_${randomUUID().replaceAll("-", "")}`,
+      name: "호환 쓰기",
+      icon: "folder",
+      defaultView: "table",
+      propertySchema: {
+        note: { id: propertyId, label: "메모", type: "text", required: false, system: false },
+      },
+    });
+
+    const created = await service.createRecord(userId, randomUUID(), {
+      categoryId: category.id,
+      title: "",
+      properties: { note: "처음" },
+      bodyMd: "",
+    });
+    const records = mongoCollections(fixture.resource.db).careerRecords;
+    expect(await records.findOne({ _id: created.record.id })).toMatchObject({
+      properties: { note: "처음" },
+      propertyValues: [{ propertyDefinitionId: propertyId, type: "text", value: "처음" }],
+      blockBody: {
+        schemaVersion: 1,
+        type: "doc",
+        content: [{
+          id: expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
+          type: "paragraph",
+          attrs: {},
+          text: [],
+        }],
+      },
+      version: 1,
+    });
+
+    const updated = await service.updateRecord(userId, created.record.id, 1, { properties: { note: "변경" } });
+    expect(updated.version).toBe(2);
+    expect(await records.findOne({ _id: created.record.id })).toMatchObject({
+      properties: { note: "변경" },
+      propertyValues: [{ propertyDefinitionId: propertyId, type: "text", value: "변경" }],
+      version: 2,
+    });
+
+    await expect(service.updateRecord(userId, created.record.id, 2, { properties: { note: 1 } as never })).rejects.toThrow();
+    expect(await records.findOne({ _id: created.record.id })).toMatchObject({
+      properties: { note: "변경" },
+      propertyValues: [{ propertyDefinitionId: propertyId, type: "text", value: "변경" }],
+      version: 2,
+    });
+  });
+
+  it("preserves canonical BSON and legacy field presence during a non-property update", async () => {
+    const propertyId = randomUUID();
+    const category = await service.createCategory(userId, {
+      key: `canonical_read_${randomUUID().replaceAll("-", "")}`,
+      name: "canonical 읽기",
+      icon: "folder",
+      defaultView: "table",
+      propertySchema: {
+        score: { id: propertyId, label: "점수", type: "number", required: false, system: false },
+      },
+    });
+    const created = await service.createRecord(userId, randomUUID(), {
+      categoryId: category.id,
+      title: "수정 전",
+      properties: { score: 1 },
+      bodyMd: "",
+    });
+    const records = mongoCollections(fixture.resource.db).careerRecords;
+    const precise = Decimal128.fromString("12345678901234567890.123400");
+    await records.updateOne(
+      { _id: created.record.id },
+      { $set: { properties: { score: 2 }, propertyValues: [{ propertyDefinitionId: propertyId, type: "number", value: precise }] } },
+    );
+
+    const updated = await service.updateRecord(userId, created.record.id, 1, { title: "수정 후" });
+    const stored = await records.findOne({ _id: created.record.id });
+
+    expect(updated.title).toBe("수정 후");
+    expect(stored).toMatchObject({
+      properties: { score: 2 },
+      version: 2,
+    });
+    expect(stored?.propertyValues).toEqual([{ propertyDefinitionId: propertyId, type: "number", value: precise }]);
+
+    const legacyOnlyId = randomUUID();
+    const { propertyValues: _propertyValues, ...legacyBase } = stored as NonNullable<typeof stored>;
+    await records.insertOne({
+      ...legacyBase, _id: legacyOnlyId, createIdempotencyKey: randomUUID(), title: "레거시", version: 1,
+    });
+    await service.updateRecord(userId, legacyOnlyId, 1, { status: "organized" });
+    const legacyOnly = await records.findOne({ _id: legacyOnlyId });
+    expect(legacyOnly?.properties).toEqual({ score: 2 });
+    expect(legacyOnly).not.toHaveProperty("propertyValues");
+  });
+
+  it("materializes exact legacy tag names in canonical Definition options", async () => {
+    const propertyId = randomUUID();
+    const category = await service.createCategory(userId, {
+      key: `tags_${randomUUID().replaceAll("-", "")}`,
+      name: "태그 호환 쓰기",
+      icon: "folder",
+      defaultView: "table",
+      propertySchema: {
+        tools: { id: propertyId, label: "도구", type: "tags", required: false, system: false },
+      },
+    });
+    const names = ["Java", "java", " Java "];
+
+    const created = await service.createRecord(userId, randomUUID(), {
+      categoryId: category.id,
+      title: "",
+      properties: { tools: names },
+      bodyMd: "",
+    });
+    const expectedOptions = names.map((name) => ({ id: exactOptionId(propertyId, name), name }));
+    const collections = mongoCollections(fixture.resource.db);
+    const storedCategory = await collections.careerCategories.findOne({ _id: category.id });
+    const storedRecord = await collections.careerRecords.findOne({ _id: created.record.id });
+
+    expect(storedCategory?.propertyDefinitions?.find((definition) => definition.id === propertyId)?.config)
+      .toEqual({ options: expectedOptions });
+    expect(storedRecord?.propertyValues).toEqual([{
+      propertyDefinitionId: propertyId,
+      type: "multi_select",
+      value: expectedOptions.map((option) => option.id),
+    }]);
   });
 
   it("projects editor documents to legacy bodyMd and rejects a legacy overwrite with pending Yjs updates", async () => {
@@ -89,16 +219,47 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
       .rejects.toMatchObject({ statusCode: 409 });
   });
 
-  it("requires confirmation to remove populated properties and protects system fields", async () => {
+  it("rejects legacy property deletion regardless of confirmation or stored values", async () => {
     const category = await service.createCategory(userId, { key: `custom_${randomUUID().replaceAll("-", "")}`, name: "사용자", icon: "📁", defaultView: "table", propertySchema: { note: { type: "text", label: "메모", required: false, system: false }, fixed: { type: "text", label: "고정", required: false, system: true } } });
     const { record } = await service.createRecord(userId, randomUUID(), { categoryId: category.id, title: "", properties: { note: "남은 값" }, bodyMd: "" });
     await expect(service.listViews(otherId, category.id)).rejects.toMatchObject({ statusCode: 404 });
-    await expect(service.updatePropertySchema(userId, category.id, 1, {}, true)).rejects.toMatchObject({ statusCode: 403 });
+    await expect(service.updatePropertySchema(userId, category.id, 1, {}, true)).rejects.toMatchObject({ statusCode: 409 });
     const next = { fixed: category.propertySchema.fixed! };
     await expect(service.updatePropertySchema(userId, category.id, 1, next, false)).rejects.toMatchObject({ statusCode: 409 });
-    expect((await service.updatePropertySchema(userId, category.id, 1, next, true)).version).toBe(2);
-    expect(await service.getRecord(userId, record.id)).toMatchObject({ properties: {}, version: 2 });
-    await expect(service.updatePropertySchema(userId, category.id, 1, next, true)).rejects.toMatchObject({ statusCode: 412 });
+    await expect(service.updatePropertySchema(userId, category.id, 1, next, true)).rejects.toMatchObject({ statusCode: 409 });
+    expect(await service.getRecord(userId, record.id)).toMatchObject({ properties: { note: "남은 값" }, version: 1 });
+  });
+
+  it("allows only legacy label renames and preserves canonical-only definitions", async () => {
+    const category = await service.createCategory(userId, {
+      key: `legacy_schema_${randomUUID().replaceAll("-", "")}`,
+      name: "레거시 스키마",
+      icon: "📁",
+      defaultView: "table",
+      propertySchema: { note: { label: "메모", type: "text", required: false, system: false } },
+    });
+    const categories = mongoCollections(fixture.resource.db).careerCategories;
+    const canonicalOnly = {
+      id: randomUUID(), key: "canonical_only", name: "Canonical only", type: "url" as const,
+      required: false, system: false, config: {}, order: 1, version: 1, deletedAt: null,
+    };
+    await categories.updateOne(
+      { _id: category.id },
+      { $push: { propertySchemaV2: canonicalOnly, propertyDefinitions: canonicalOnly } },
+    );
+
+    await expect(service.updatePropertySchema(userId, category.id, 1, {
+      note: { ...category.propertySchema.note!, type: "number" },
+    }, true)).rejects.toMatchObject({ statusCode: 409 });
+    expect((await categories.findOne({ _id: category.id }))?.version).toBe(1);
+
+    const renamed = await service.updatePropertySchema(userId, category.id, 1, {
+      note: { ...category.propertySchema.note!, label: "새 메모" },
+    }, false);
+    const stored = await categories.findOne({ _id: category.id });
+    expect(renamed.propertySchema.note?.label).toBe("새 메모");
+    expect(stored?.propertyDefinitions).toContainEqual(canonicalOnly);
+    expect(stored?.propertySchemaV2).toContainEqual(canonicalOnly);
   });
 
   it("limits views under concurrency and rejects foreign fields", async () => {
@@ -229,7 +390,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
 
   beforeAll(async () => {
     if (engine === "mongodb") {
-      fixture = await createMongoFixture("career-http");
+      fixture = await createMongoFixture("career-http", { migrationTargetVersion: "0011" });
       identityService = new MongoIdentityService(fixture.resource);
       careerService = new MongoCareerService(fixture.resource);
       const first = await identityService.signup({ email: `career-${randomUUID()}@example.com`, displayName: "기록 A", password: "correct-horse-battery" });
@@ -409,7 +570,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
       payload: { propertySchema: nextSchema, confirmValueRemoval: false },
     });
     expect(preview.statusCode).toBe(409);
-    expect(preview.json().error.details.propertyValueCounts).toEqual({ impact: 1 });
+    expect(preview.json().error.code).toBe("CONFLICT");
 
     const confirmed = await app.inject({
       method: "PATCH",
@@ -417,8 +578,8 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
       headers: { ...auth(), "if-match": categoryResponse.headers.etag as string },
       payload: { propertySchema: nextSchema, confirmValueRemoval: true },
     });
-    expect(confirmed.statusCode).toBe(200);
-    expect((await careerService.getRecord(firstUserId, first.record.id)).properties).not.toHaveProperty("impact");
+    expect(confirmed.statusCode).toBe(409);
+    expect((await careerService.getRecord(firstUserId, first.record.id)).properties).toHaveProperty("impact", 42);
 
     const view = await app.inject({
       method: "POST",

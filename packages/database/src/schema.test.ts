@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MongoClient, Decimal128, Binary } from "mongodb";
+import { MongoClient, Decimal128, Binary, type Document } from "mongodb";
 import { migrateMongo } from "./mongo-migrate.js";
 import { mongoCollections } from "./collections.js";
 const mongoUrl = process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL;
@@ -11,17 +11,29 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
   const mongo = client.db(databaseName);
   const collections = mongoCollections(mongo);
   beforeAll(async () => {
+    await mongo.collection<Document & { _id: string }>("career_property_migration_journal").insertOne({
+      _id: "0012:compatibility-writer-canary",
+      migration: "0012_career_property_values_backfill",
+      kind: "execution_gate",
+      deploymentVersion: "isolated-schema-test",
+      verifiedAt: new Date(),
+      checkedWrites: 1,
+      mismatches: 0,
+      state: "verified",
+    });
     await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
   }, 60_000);
   afterAll(async () => { try { await mongo.dropDatabase(); } finally { await client.close(); } });
 
   it("creates every product collection and preserves the seeded IDs and all 30 additional designs", async () => {
-    expect(await mongo.listCollections({}, { nameOnly: true }).toArray()).toHaveLength(82);
+    expect(await mongo.listCollections({}, { nameOnly: true }).toArray()).toHaveLength(84);
     expect(await collections.plans.countDocuments()).toBe(3);
     expect((await collections.plans.findOne({ code: "free" }))?._id).toBe("aa09f35f-bde6-4e18-b9cd-7b32759bf43b");
     expect(await collections.careerCategories.countDocuments({ isSystem: true })).toBe(7);
     expect(await collections.scheduledJobDefinitions.countDocuments()).toBe(8);
     expect(await collections.templates.countDocuments()).toBe(33);
+    expect((await mongo.collection("schema_migrations").find({ state: "applied" }).sort({ _id: 1 }).toArray()).map(({ _id }) => _id))
+      .toEqual(Array.from({ length: 13 }, (_, index) => String(index + 1).padStart(4, "0")));
     for (let i = 1; i <= 30; i++) {
       expect(await collections.templates.findOne({ _id: `d3510000-0000-4000-8000-${String(i).padStart(12, "0")}` })).not.toBeNull();
     }
@@ -31,7 +43,12 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await collections.plans.updateOne({ code: "free" }, { $set: { generationQuota: 17 } });
     const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     expect(result.applied).toEqual([]);
-    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations"]);
+    expect(result.existing).toEqual([
+      "0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences",
+      "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards",
+      "0008_career_view_configurations", "0009_career_record_slice", "0010_career_rich_block_body",
+      "0011_career_property_canonical_identity", "0012_career_property_values_backfill", "0013_career_computation_version",
+    ]);
     expect((await collections.plans.findOne({ code: "free" }))?.generationQuota).toBe(17);
   });
 
@@ -63,6 +80,14 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
   it("enforces system category uniqueness independently of user category keys", async () => {
     const category = await collections.careerCategories.findOne({ key: "experience", isSystem: true });
     expect(category).not.toBeNull();
+    const categoryDocuments = mongo.collection<Document & { _id: string }>("career_categories");
+    await expect(categoryDocuments.updateOne(
+      { _id: category!._id },
+      { $set: { propertyDefinitions: [{ id: "not-a-uuid", key: "role", label: "역할", type: "text", required: false, system: false }] } },
+    )).rejects.toMatchObject({ code: 121 });
+    await expect(categoryDocuments.updateOne(
+      { _id: category!._id }, { $unset: { propertySchema: "" } },
+    )).rejects.toMatchObject({ code: 121 });
     await expect(collections.careerCategories.insertOne({ ...category!, _id: randomUUID() })).rejects.toMatchObject({ code: 11000 });
     const userId = randomUUID();
     await collections.careerCategories.insertOne({ ...category!, _id: randomUUID(), isSystem: false, userId });
@@ -117,4 +142,49 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     const rerunCategory = await collections.careerCategories.findOne({ _id: category!._id });
     expect(Object.fromEntries(Object.entries(rerunCategory!.propertySchema).map(([key, value]) => [key, value.id]))).toEqual(ids);
   });
+
+  it("accepts optional canonical career fields without relaxing Fastify legacy requirements", async () => {
+    const propertyDefinitionId = "1c768bad-2c1f-5cee-86c5-a43574f0e256";
+    const record = {
+      _id: randomUUID(), userId: randomUUID(), categoryId: "475106fc-bf88-4a73-9c27-66c648733936",
+      title: "Canonical", status: "draft", origin: "manual", properties: {}, bodyMd: "",
+      propertyValues: [{ propertyDefinitionId, type: "text", value: "Backend" }],
+      blockBody: {
+        schemaVersion: 1, type: "doc",
+        content: [{ id: randomUUID(), type: "paragraph", attrs: {}, text: [{ text: "본문" }] }],
+      },
+      editorSchemaVersion: 1, version: 1, updatedAt: new Date(),
+    };
+    const recordDocuments = mongo.collection<Document & { _id: string }>("career_records");
+    await recordDocuments.insertOne(record);
+    await expect(recordDocuments.insertOne({ ...record, _id: randomUUID(), properties: undefined }))
+      .rejects.toMatchObject({ code: 121 });
+    await expect(recordDocuments.insertOne({ ...record, _id: randomUUID(), bodyMd: undefined }))
+      .rejects.toMatchObject({ code: 121 });
+    await expect(recordDocuments.insertOne({
+      ...record, _id: randomUUID(), blockBody: { ...record.blockBody, type: "unknown" },
+    })).rejects.toMatchObject({ code: 121 });
+    await expect(recordDocuments.insertOne({
+      ...record, _id: randomUUID(), propertyValues: [{ propertyDefinitionId, type: "text", value: 42 }],
+    })).rejects.toMatchObject({ code: 121 });
+    await expect(recordDocuments.insertOne({
+      ...record, _id: randomUUID(), editorSchemaVersion: 2,
+    })).rejects.toMatchObject({ code: 121 });
+  });
+});
+
+describe.skipIf(!mongoUrl)("MongoDB schema deploy checkpoint", () => {
+  const databaseName = `expresso_test_schema_cp_${randomUUID().replaceAll("-", "")}`;
+  const client = new MongoClient(mongoUrl ?? "mongodb://127.0.0.1", { serverSelectionTimeoutMS: 3_000 });
+  const mongo = client.db(databaseName);
+
+  afterAll(async () => { try { await mongo.dropDatabase(); } finally { await client.close(); } });
+
+  it("applies the supported deploy checkpoint through 0011 without requiring the 0012 canary", async () => {
+    const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName, targetVersion: "0011" });
+
+    expect(result.applied.at(-1)).toBe("0011_career_property_canonical_identity");
+    expect(await mongo.collection<Document & { _id: string }>("schema_migrations").countDocuments({ _id: "0012" })).toBe(0);
+    expect(await mongo.collection("career_categories").countDocuments({ isSystem: true })).toBe(7);
+  }, 60_000);
 });

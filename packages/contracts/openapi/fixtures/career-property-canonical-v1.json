@@ -1,0 +1,263 @@
+{
+  "category": {
+    "id": "54e2b29a-d2ba-4c80-a4bc-1c1d08740497",
+    "key": "experience",
+    "name": "경험",
+    "propertyDefinitions": [
+      {
+        "id": "f3b3693d-2b90-526a-9e13-81d8f64e9e09",
+        "key": "role",
+        "name": "역할",
+        "type": "text",
+        "required": false,
+        "system": true,
+        "config": {},
+        "order": 0,
+        "version": 1,
+        "deletedAt": null
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000002",
+        "key": "technologies",
+        "name": "기술",
+        "type": "multi_select",
+        "required": false,
+        "system": true,
+        "config": {
+          "options": [
+            { "id": "20000000-0000-4000-8000-000000000001", "name": "Java" },
+            { "id": "20000000-0000-4000-8000-000000000002", "name": "java" },
+            { "id": "20000000-0000-4000-8000-000000000003", "name": " Java " }
+          ]
+        },
+        "order": 1,
+        "version": 2,
+        "deletedAt": null
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000004",
+        "key": "score",
+        "name": "점수",
+        "type": "number",
+        "required": false,
+        "system": true,
+        "config": {},
+        "order": 2,
+        "version": 1,
+        "deletedAt": null
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000005",
+        "key": "featured",
+        "name": "대표 여부",
+        "type": "checkbox",
+        "required": false,
+        "system": true,
+        "config": {},
+        "order": 3,
+        "version": 1,
+        "deletedAt": null
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000006",
+        "key": "primaryTechnology",
+        "name": "주요 기술",
+        "type": "select",
+        "required": false,
+        "system": true,
+        "config": {
+          "options": [
+            { "id": "20000000-0000-4000-8000-000000000001", "name": "Java" }
+          ]
+        },
+        "order": 4,
+        "version": 1,
+        "deletedAt": null
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000007",
+        "key": "startedMonth",
+        "name": "시작 월",
+        "type": "date",
+        "required": false,
+        "system": true,
+        "config": {},
+        "order": 5,
+        "version": 1,
+        "deletedAt": null
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000008",
+        "key": "completedDay",
+        "name": "완료일",
+        "type": "date",
+        "required": false,
+        "system": true,
+        "config": {},
+        "order": 6,
+        "version": 1,
+        "deletedAt": null
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000009",
+        "key": "interviewedAt",
+        "name": "인터뷰 시각",
+        "type": "date",
+        "required": false,
+        "system": true,
+        "config": {},
+        "order": 7,
+        "version": 1,
+        "deletedAt": null
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000010",
+        "key": "referenceUrl",
+        "name": "참고 URL",
+        "type": "url",
+        "required": false,
+        "system": true,
+        "config": {},
+        "order": 8,
+        "version": 1,
+        "deletedAt": null
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000011",
+        "key": "contactEmail",
+        "name": "연락 이메일",
+        "type": "email",
+        "required": false,
+        "system": true,
+        "config": {},
+        "order": 9,
+        "version": 1,
+        "deletedAt": null
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000012",
+        "key": "contactPhone",
+        "name": "연락처",
+        "type": "phone",
+        "required": false,
+        "system": true,
+        "config": {},
+        "order": 10,
+        "version": 1,
+        "deletedAt": null
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000013",
+        "key": "attachment",
+        "name": "첨부 파일",
+        "type": "file",
+        "required": false,
+        "system": true,
+        "config": {},
+        "order": 11,
+        "version": 1,
+        "deletedAt": null
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000014",
+        "key": "previewMedia",
+        "name": "미리보기 미디어",
+        "type": "media",
+        "required": false,
+        "system": true,
+        "config": {},
+        "order": 12,
+        "version": 1,
+        "deletedAt": null
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000003",
+        "key": "archivedNote",
+        "name": "보관된 메모",
+        "type": "text",
+        "required": false,
+        "system": false,
+        "config": {},
+        "order": 13,
+        "version": 3,
+        "deletedAt": "2026-09-05T08:00:00Z"
+      }
+    ]
+  },
+  "propertyValues": [
+    {
+      "propertyDefinitionId": "f3b3693d-2b90-526a-9e13-81d8f64e9e09",
+      "type": "text",
+      "value": "백엔드 개발자"
+    },
+    {
+      "propertyDefinitionId": "10000000-0000-4000-8000-000000000004",
+      "type": "number",
+      "value": "42.5000"
+    },
+    {
+      "propertyDefinitionId": "10000000-0000-4000-8000-000000000005",
+      "type": "checkbox",
+      "value": true
+    },
+    {
+      "propertyDefinitionId": "10000000-0000-4000-8000-000000000006",
+      "type": "select",
+      "value": "20000000-0000-4000-8000-000000000001"
+    },
+    {
+      "propertyDefinitionId": "10000000-0000-4000-8000-000000000002",
+      "type": "multi_select",
+      "value": [
+        "20000000-0000-4000-8000-000000000001",
+        "20000000-0000-4000-8000-000000000002",
+        "20000000-0000-4000-8000-000000000003"
+      ]
+    },
+    {
+      "propertyDefinitionId": "10000000-0000-4000-8000-000000000007",
+      "type": "date",
+      "value": { "precision": "month", "start": "2026-09", "end": null }
+    },
+    {
+      "propertyDefinitionId": "10000000-0000-4000-8000-000000000008",
+      "type": "date",
+      "value": { "precision": "day", "start": "2026-09-05", "end": "2026-09-30" }
+    },
+    {
+      "propertyDefinitionId": "10000000-0000-4000-8000-000000000009",
+      "type": "date",
+      "value": {
+        "precision": "datetime",
+        "start": "2026-09-05T09:30:00+09:00",
+        "end": null,
+        "timezone": "Asia/Seoul"
+      }
+    },
+    {
+      "propertyDefinitionId": "10000000-0000-4000-8000-000000000010",
+      "type": "url",
+      "value": "https://example.com"
+    },
+    {
+      "propertyDefinitionId": "10000000-0000-4000-8000-000000000011",
+      "type": "email",
+      "value": "career@example.com"
+    },
+    {
+      "propertyDefinitionId": "10000000-0000-4000-8000-000000000012",
+      "type": "phone",
+      "value": "+82-10-1234-5678"
+    },
+    {
+      "propertyDefinitionId": "10000000-0000-4000-8000-000000000013",
+      "type": "file",
+      "value": ["30000000-0000-4000-8000-000000000001"]
+    },
+    {
+      "propertyDefinitionId": "10000000-0000-4000-8000-000000000014",
+      "type": "media",
+      "value": ["30000000-0000-4000-8000-000000000002"]
+    }
+  ]
+}

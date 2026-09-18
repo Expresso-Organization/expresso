@@ -9,6 +9,7 @@ if (!databaseUrl) {
 const result = await migrate({
   databaseUrl,
   ...(process.env.MONGODB_DATABASE ? { databaseName: process.env.MONGODB_DATABASE } : {}),
+  ...(process.env.MONGODB_MIGRATE_TARGET_VERSION ? { targetVersion: process.env.MONGODB_MIGRATE_TARGET_VERSION } : {}),
 });
 
 for (const version of result.applied) {

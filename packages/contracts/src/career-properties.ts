@@ -5,6 +5,94 @@ export const CareerPropertyTypeV2Schema = z.enum([
   "title", "text", "number", "select", "multi_select", "date", "checkbox", "url", "email",
   "phone", "file", "media", "relation", "formula", "rollup", "created_time", "updated_time",
 ]);
+const CanonicalCareerPropertyDefinitionTypeSchema = CareerPropertyTypeV2Schema.exclude(["title"]);
+export const WritableCareerPropertyTypeSchema = z.enum([
+  "text", "number", "checkbox", "select", "multi_select", "date", "url", "email", "phone", "file", "media",
+]);
+export const CanonicalDecimalStringSchema = z.string().max(6200).regex(/^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/);
+export const CareerSelectOptionSchema = z.strictObject({
+  id: UuidSchema,
+  name: z.string().min(1).max(80).refine((value) => value.trim().length > 0, { message: "option name must contain a visible character" }),
+});
+export const CareerSelectConfigSchema = z.strictObject({
+  options: z.array(CareerSelectOptionSchema).max(100),
+}).superRefine(({ options }, context) => {
+  const ids = new Set<string>();
+  for (const option of options) {
+    if (ids.has(option.id)) {
+      context.addIssue({ code: "custom", path: ["options"], message: "option IDs must be unique" });
+      return;
+    }
+    ids.add(option.id);
+  }
+});
+const EmptyCareerPropertyConfigSchema = z.strictObject({});
+
+const CareerMonthDateValueSchema = z.strictObject({
+  precision: z.literal("month"),
+  start: z.string().regex(/^\d{4}-(?:0[1-9]|1[0-2])$/),
+  end: z.string().regex(/^\d{4}-(?:0[1-9]|1[0-2])$/).nullable(),
+});
+const CareerDayDateValueSchema = z.strictObject({
+  precision: z.literal("day"),
+  start: z.iso.date(),
+  end: z.iso.date().nullable(),
+});
+const CareerDateTimeValueSchema = z.strictObject({
+  precision: z.literal("datetime"),
+  start: z.iso.datetime({ offset: true }),
+  end: z.iso.datetime({ offset: true }).nullable(),
+  timezone: z.string().min(1).max(64).nullable(),
+});
+export const CareerDateValueSchema = z.discriminatedUnion("precision", [
+  CareerMonthDateValueSchema,
+  CareerDayDateValueSchema,
+  CareerDateTimeValueSchema,
+]).superRefine((value, context) => {
+  if (value.end === null) return;
+  const start = value.precision === "datetime" ? Date.parse(value.start) : value.start;
+  const end = value.precision === "datetime" ? Date.parse(value.end) : value.end;
+  if (end < start) context.addIssue({ code: "custom", path: ["end"], message: "date end must follow start" });
+});
+
+export const WritableCareerPropertyValueSchema = z.discriminatedUnion("type", [
+  z.strictObject({ propertyDefinitionId: UuidSchema, type: z.literal("text"), value: z.string().max(50_000) }),
+  z.strictObject({ propertyDefinitionId: UuidSchema, type: z.literal("number"), value: CanonicalDecimalStringSchema }),
+  z.strictObject({ propertyDefinitionId: UuidSchema, type: z.literal("checkbox"), value: z.boolean() }),
+  z.strictObject({ propertyDefinitionId: UuidSchema, type: z.literal("select"), value: UuidSchema.nullable() }),
+  z.strictObject({ propertyDefinitionId: UuidSchema, type: z.literal("multi_select"), value: z.array(UuidSchema).max(100) }),
+  z.strictObject({ propertyDefinitionId: UuidSchema, type: z.literal("date"), value: CareerDateValueSchema }),
+  z.strictObject({ propertyDefinitionId: UuidSchema, type: z.enum(["url", "email", "phone"]), value: z.string().max(2_000) }),
+  z.strictObject({ propertyDefinitionId: UuidSchema, type: z.enum(["file", "media"]), value: z.array(UuidSchema).max(100) }),
+]);
+
+export const CanonicalCareerPropertyDefinitionSchema = z.strictObject({
+  id: UuidSchema,
+  key: z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/),
+  name: z.string().trim().min(1).max(80),
+  type: CanonicalCareerPropertyDefinitionTypeSchema,
+  required: z.boolean(),
+  system: z.boolean(),
+  config: z.record(z.string(), z.unknown()),
+  order: z.number().int().nonnegative(),
+  version: z.number().int().positive(),
+  deletedAt: TimestampSchema.nullable(),
+}).superRefine((definition, context) => {
+  const configSchema = definition.type === "select" || definition.type === "multi_select"
+    ? CareerSelectConfigSchema
+    : definition.type === "relation"
+      ? CareerRelationDefinitionSchema
+      : definition.type === "formula"
+        ? CareerFormulaSchema
+        : definition.type === "rollup"
+          ? CareerRollupSchema
+          : EmptyCareerPropertyConfigSchema;
+  const result = configSchema.safeParse(definition.config);
+  if (result.success) return;
+  for (const issue of result.error.issues) {
+    context.addIssue({ ...issue, path: ["config", ...issue.path] });
+  }
+});
 export const CareerFormulaDiagnosticSchema = z.strictObject({
   code: z.string().min(1).max(80), message: z.string().min(1).max(500),
   severity: z.enum(["error", "warning"]), start: z.number().int().nonnegative(), end: z.number().int().nonnegative(),
@@ -98,6 +186,11 @@ export const CareerRollupPreviewSchema = z.strictObject({
 
 export type CareerPropertyDefinitionV2 = z.infer<typeof CareerPropertyDefinitionV2Schema>;
 export type CareerPropertyValueV2 = z.infer<typeof CareerPropertyValueV2Schema>;
+export type CanonicalCareerPropertyDefinition = z.infer<typeof CanonicalCareerPropertyDefinitionSchema>;
+export type WritableCareerPropertyType = z.infer<typeof WritableCareerPropertyTypeSchema>;
+export type WritableCareerPropertyValue = z.infer<typeof WritableCareerPropertyValueSchema>;
+export type CareerDateValue = z.infer<typeof CareerDateValueSchema>;
+export type CareerSelectOption = z.infer<typeof CareerSelectOptionSchema>;
 export type CareerRollupAggregation = z.infer<typeof CareerRollupAggregationSchema>;
 export type PreviewCareerFormula = z.infer<typeof PreviewCareerFormulaSchema>;
 export type CareerFormulaPreview = z.infer<typeof CareerFormulaPreviewSchema>;

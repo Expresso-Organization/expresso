@@ -1,11 +1,14 @@
 import { randomUUID } from "node:crypto";
 
 import { mongoCollections } from "@expresso/database";
+import type { CareerPropertyDefinitionV2 } from "@expresso/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { CareerService } from "./service.js";
+import { MongoCareerPropertyMutationService } from "./property-mutation.js";
+import { toCanonicalPropertyDefinitions } from "./properties.js";
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("career property schema Mongo transaction behavior", () => {
   let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
@@ -15,27 +18,34 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
   let categoryId: string;
   let propertyId: string;
   let formulaId: string;
+  let relationId: string;
   let recordIds: string[];
 
   beforeAll(async () => {
-    fixture = await createMongoFixture("propertyschema");
+    fixture = await createMongoFixture("propertyschema", { migrationTargetVersion: "0011" });
     service = new CareerService(fixture.resource);
     const identity = new MongoIdentityService(fixture.resource);
     userId = (await identity.signup({ email: `schema-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "스키마" })).user.id;
     otherUserId = (await identity.signup({ email: `schema-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "다른 사용자" })).user.id;
     propertyId = randomUUID();
     formulaId = randomUUID();
+    relationId = randomUUID();
     const category = await service.createCategory(userId, {
       key: `schema_${randomUUID().replaceAll("-", "")}`, name: "스키마", icon: "folder", defaultView: "table",
       propertySchema: { score: { id: propertyId, label: "점수", type: "text", required: false, system: false } },
     });
     categoryId = category.id;
     const db = mongoCollections(fixture.resource.db);
-    await db.careerCategories.updateOne({ _id: categoryId }, { $set: { schemaVersion: 1, propertySchemaV2: [
+    const definitions: CareerPropertyDefinitionV2[] = [
       { id: propertyId, key: "score", name: "점수", type: "text", required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null },
       { id: formulaId, key: "formula", name: "수식", type: "formula", required: false, system: false, config: { source: `prop("${propertyId}")`, ast: { expression: { propertyId } }, diagnostics: [] }, order: 1, version: 1, deletedAt: null },
-      { id: randomUUID(), key: "rollup", name: "롤업", type: "rollup", required: false, system: false, config: { targetPropertyId: propertyId }, order: 2, version: 1, deletedAt: null },
-    ] } });
+      { id: randomUUID(), key: "rollup", name: "롤업", type: "rollup", required: false, system: false, config: { relationPropertyId: relationId, targetPropertyId: propertyId, aggregation: "sum" }, order: 2, version: 1, deletedAt: null },
+    ];
+    await db.careerCategories.updateOne({ _id: categoryId }, { $set: {
+      schemaVersion: 1,
+      propertySchemaV2: definitions,
+      propertyDefinitions: toCanonicalPropertyDefinitions(definitions),
+    } });
     const first = await service.createRecord(userId, randomUUID(), { categoryId, title: "첫째", properties: { score: "42" }, bodyMd: "" });
     const second = await service.createRecord(userId, randomUUID(), { categoryId, title: "둘째", properties: { score: "7" }, bodyMd: "" });
     recordIds = [first.record.id, second.record.id];
@@ -59,6 +69,12 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(await service.applyChange(userId, categoryId, 1, key, input)).toEqual(applied);
     const rows = await mongoCollections(fixture.resource.db).careerRecords.find({ _id: { $in: recordIds } }).toArray();
     expect(rows.map((row) => row.properties.score)).toEqual(expect.arrayContaining([{ type: "number", value: 7 }, { type: "number", value: 42 }]));
+    expect(rows.map((row) => row.propertyValues)).toEqual(expect.arrayContaining([
+      [{ propertyDefinitionId: propertyId, type: "number", value: 7 }],
+      [{ propertyDefinitionId: propertyId, type: "number", value: 42 }],
+    ]));
+    expect((await mongoCollections(fixture.resource.db).careerCategories.findOne({ _id: categoryId }))?.propertyDefinitions)
+      .toEqual(expect.arrayContaining([expect.objectContaining({ id: propertyId, key: "score", type: "number" })]));
     await expect(service.applyChange(userId, categoryId, 1, "another-key", input)).rejects.toMatchObject({ statusCode: 409 });
     await expect(service.previewChange(otherUserId, categoryId, change)).rejects.toMatchObject({ statusCode: 404 });
   });
@@ -77,6 +93,34 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await expect(service.applyChange(userId, categoryId, 3, randomUUID(), { change: invalid, previewToken: invalidPreview.previewToken, confirmLossy: false })).rejects.toMatchObject({ statusCode: 400 });
   });
 
+  it("rejects canonical definition config before Mongo persistence", async () => {
+    const invalidPropertyId = randomUUID();
+    const category = await service.createCategory(userId, {
+      key: `invalid_config_${randomUUID().replaceAll("-", "")}`,
+      name: "잘못된 설정",
+      icon: "folder",
+      defaultView: "table",
+      propertySchema: { value: { id: invalidPropertyId, label: "값", type: "text", required: false, system: false } },
+    });
+    const invalidChanges = [
+      { kind: "type-change" as const, propertyId: invalidPropertyId, type: "number" as const, config: { unexpected: true } },
+      {
+        kind: "create" as const,
+        property: {
+          key: "long_option", name: "긴 선택", type: "select" as const, required: false, system: false,
+          config: { options: [{ id: randomUUID(), name: "가".repeat(81) }] },
+        },
+      },
+    ];
+
+    for (const change of invalidChanges) {
+      const preview = await service.previewChange(userId, category.id, change);
+      await expect(service.applyChange(userId, category.id, 1, randomUUID(), {
+        change, previewToken: preview.previewToken, confirmLossy: false,
+      })).rejects.toMatchObject({ statusCode: 400 });
+    }
+  });
+
   it("tombstones values on delete and restores the same property ID and values", async () => {
     const deletion = { kind: "delete" as const, propertyId };
     const preview = await service.previewChange(userId, categoryId, deletion);
@@ -93,5 +137,170 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const rows = await mongoCollections(fixture.resource.db).careerRecords.find({ _id: { $in: recordIds } }).toArray();
     expect(rows.map((row) => row.properties.score)).toEqual(expect.arrayContaining([{ type: "number", value: 7 }, { type: "number", value: 42 }]));
     expect(rows.every((row) => row.propertyValueTombstones?.[propertyId] === undefined)).toBe(true);
+  });
+
+  it("persists an owner-scoped deferred conversion for categories over the inline limit", async () => {
+    const deferredPropertyId = randomUUID();
+    const category = await service.createCategory(userId, {
+      key: `deferred_${randomUUID().replaceAll("-", "")}`,
+      name: "지연 변환",
+      icon: "folder",
+      defaultView: "table",
+      propertySchema: {
+        score: { id: deferredPropertyId, label: "점수", type: "text", required: false, system: false },
+      },
+    });
+    const now = new Date();
+    await mongoCollections(fixture.resource.db).careerRecords.insertMany(Array.from({ length: 101 }, (_, index) => ({
+      _id: randomUUID(), userId, categoryId: category.id, title: `기록 ${index}`, status: "draft" as const,
+      origin: "manual" as const, properties: { score: String(index) }, propertyValues: [{ propertyDefinitionId: deferredPropertyId, type: "text" as const, value: String(index) }],
+      bodyMd: "", version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null,
+    })));
+
+    const change = { kind: "type-change" as const, propertyId: deferredPropertyId, type: "number" as const };
+    const preview = await service.previewChange(userId, category.id, change);
+    await service.applyChange(userId, category.id, 1, randomUUID(), {
+      change, previewToken: preview.previewToken, confirmLossy: false,
+    });
+    const event = await mongoCollections(fixture.resource.db).outboxEvents.findOne({
+      topic: "career.property-conversion", "payload.categoryId": category.id,
+    });
+
+    expect(event?.payload).toMatchObject({
+      userId,
+      categoryId: category.id,
+      propertyId: deferredPropertyId,
+      sourceType: "text",
+      targetType: "number",
+      mutationId: expect.stringMatching(/^[0-9a-f-]{36}$/i),
+      semanticFingerprint: expect.stringMatching(/^[a-f0-9]{64}$/),
+      operationFingerprint: expect.stringMatching(/^[a-f0-9]{64}$/),
+    });
+    const mutations = fixture.resource.db.collection("career_property_mutations");
+    expect(await mutations.findOne({ mutationId: event!.payload.mutationId })).toMatchObject({
+      kind: "career.property-conversion",
+      userId,
+      categoryId: category.id,
+      propertyId: deferredPropertyId,
+      status: "pending",
+      active: true,
+      cursor: null,
+      processedCount: 0,
+      operationPayload: expect.objectContaining({ sourceType: "text", targetType: "number", allowLossy: false }),
+    });
+
+    const blockedChange = { kind: "delete" as const, propertyId: deferredPropertyId };
+    const blockedPreview = await service.previewChange(userId, category.id, blockedChange);
+    await expect(service.applyChange(userId, category.id, 2, randomUUID(), {
+      change: blockedChange, previewToken: blockedPreview.previewToken, confirmLossy: true,
+    })).rejects.toMatchObject({ statusCode: 409 });
+
+    const rename = { kind: "rename" as const, propertyId: deferredPropertyId, name: "새 점수" };
+    const renamePreview = await service.previewChange(userId, category.id, rename);
+    await service.applyChange(userId, category.id, 2, randomUUID(), {
+      change: rename, previewToken: renamePreview.previewToken, confirmLossy: false,
+    });
+
+    const mutationService = new MongoCareerPropertyMutationService(fixture.resource);
+    const immutablePlan = (await mutations.findOne({ mutationId: event!.payload.mutationId }))!.operationPayload;
+    await mutations.updateOne(
+      { mutationId: event!.payload.mutationId },
+      { $set: { "operationPayload.allowLossy": true } },
+    );
+    await expect(mutationService.run("career.property-conversion", event!.payload)).rejects.toMatchObject({ statusCode: 409 });
+    await mutations.updateOne(
+      { mutationId: event!.payload.mutationId },
+      { $set: { operationPayload: immutablePlan } },
+    );
+    const { mutationId: ignoredMutationId, ...corruptedDurableDelivery } = event!.payload;
+    void ignoredMutationId;
+    await expect(mutationService.run("career.property-conversion", corruptedDurableDelivery)).rejects.toThrow(
+      /delivery|fingerprint/i,
+    );
+    await mutationService.run("career.property-conversion", event!.payload);
+    expect(await mutations.findOne({ mutationId: event!.payload.mutationId })).toMatchObject({
+      status: "completed", active: false, processedCount: 101, completedAt: expect.any(Date),
+    });
+    const converted = await mongoCollections(fixture.resource.db).careerRecords
+      .find({ userId, categoryId: category.id })
+      .sort({ _id: 1 })
+      .toArray();
+    expect(converted).toHaveLength(101);
+    expect(converted.every((record) => {
+      const score = Number(record.title.replace("기록 ", ""));
+      return JSON.stringify(record.properties.score) === JSON.stringify({ type: "number", value: score })
+        && JSON.stringify(record.propertyValues) === JSON.stringify([{
+          propertyDefinitionId: deferredPropertyId,
+          type: "number",
+          value: score,
+        }]);
+    })).toBe(true);
+
+    const versions = converted.map((record) => record.version);
+    expect(await mutationService.run("career.property-conversion", event!.payload)).toEqual({ processed: 0 });
+    await expect(mutationService.run("career.property-conversion", {
+      ...event!.payload, operationFingerprint: "f".repeat(64),
+    })).rejects.toMatchObject({ statusCode: 409 });
+    const replayed = await mongoCollections(fixture.resource.db).careerRecords
+      .find({ userId, categoryId: category.id })
+      .sort({ _id: 1 })
+      .toArray();
+    expect(replayed.map((record) => record.version)).toEqual(versions);
+  });
+
+  it("keeps a failed mutation locked until explicit resume and continues from durable state", async () => {
+    const deferredPropertyId = randomUUID();
+    const category = await service.createCategory(userId, {
+      key: `failed_deferred_${randomUUID().replaceAll("-", "")}`,
+      name: "실패 복구",
+      icon: "folder",
+      defaultView: "table",
+      propertySchema: { score: { id: deferredPropertyId, label: "점수", type: "text", required: false, system: false } },
+    });
+    const records = mongoCollections(fixture.resource.db).careerRecords;
+    const now = new Date();
+    const rows = Array.from({ length: 101 }, (_, index) => ({
+      _id: randomUUID(), userId, categoryId: category.id, title: `복구 ${index}`, status: "draft" as const,
+      origin: "manual" as const, properties: { score: String(index) },
+      propertyValues: [{ propertyDefinitionId: deferredPropertyId, type: "text" as const, value: String(index) }],
+      bodyMd: "", version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null,
+    }));
+    await records.insertMany(rows);
+    const change = { kind: "type-change" as const, propertyId: deferredPropertyId, type: "number" as const };
+    const preview = await service.previewChange(userId, category.id, change);
+    await service.applyChange(userId, category.id, 1, randomUUID(), {
+      change, previewToken: preview.previewToken, confirmLossy: false,
+    });
+    const event = (await mongoCollections(fixture.resource.db).outboxEvents.findOne({
+      topic: "career.property-conversion", "payload.categoryId": category.id,
+    }))!;
+    const mutationId = String(event.payload.mutationId);
+    await fixture.resource.db.collection<{ _id: string }>("career_records").updateOne(
+      { _id: rows[0]!._id },
+      { $set: { propertyValues: [{ propertyDefinitionId: deferredPropertyId, type: "text", value: { invalid: true } }] } },
+      { bypassDocumentValidation: true },
+    );
+
+    const mutationService = new MongoCareerPropertyMutationService(fixture.resource);
+    await expect(mutationService.run("career.property-conversion", event.payload)).rejects.toBeInstanceOf(Error);
+    const mutations = mongoCollections(fixture.resource.db).careerPropertyMutations;
+    expect(await mutations.findOne({ mutationId })).toMatchObject({
+      status: "failed", active: true, cursor: null, processedCount: 0, lastError: { reason: "mutation_failed" },
+    });
+    const deletion = { kind: "delete" as const, propertyId: deferredPropertyId };
+    const deletionPreview = await service.previewChange(userId, category.id, deletion);
+    await expect(service.applyChange(userId, category.id, 2, randomUUID(), {
+      change: deletion, previewToken: deletionPreview.previewToken, confirmLossy: true,
+    })).rejects.toMatchObject({ statusCode: 409 });
+
+    await fixture.resource.db.collection<{ _id: string }>("career_records").updateOne(
+      { _id: rows[0]!._id },
+      { $set: { propertyValues: [{ propertyDefinitionId: deferredPropertyId, type: "text", value: "0" }] } },
+      { bypassDocumentValidation: true },
+    );
+    expect(await mutationService.resume(mutationId, userId)).toEqual({ processed: 101 });
+    expect(await mutations.findOne({ mutationId })).toMatchObject({
+      status: "completed", active: false, processedCount: 101,
+    });
   });
 });

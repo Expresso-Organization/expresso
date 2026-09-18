@@ -1,16 +1,16 @@
 import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
-import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc } from "@expresso/database";
+import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc, type CareerPropertyValueDoc } from "@expresso/database";
 import {
   ApplyCareerPropertyChangeSchema,
+  CanonicalCareerPropertyDefinitionSchema,
   CareerPropertyChangePreviewSchema,
-  CareerFormulaSchema,
-  CareerRollupSchema,
   CareerPropertySchemaChangeSchema,
   CareerPropertyValueV2Schema,
   type ApplyCareerPropertyChange,
   type CareerPropertyChangePreview,
   type CareerPropertyDefinitionV2,
+  type CareerProperties,
   type CareerPropertySchemaChange,
 } from "@expresso/contracts";
 import type { ClientSession, Filter } from "mongodb";
@@ -21,6 +21,8 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
 import { mapMongoCategory } from "./mongo-categories.js";
+import { careerCategoryDefinitions, materializeLegacyTagOptions, projectTypedCareerProperties, projectCareerResponseProperties, projectCanonicalCareerPropertyValues, toCanonicalPropertyDefinitions, toCanonicalPropertyValues } from "./properties.js";
+import { enqueueDeferredPropertyMutation, requireNoActivePropertyMutation } from "./property-mutation-state.js";
 
 const PREVIEW_LIFETIME_MS = 15 * 60_000;
 const INLINE_MUTATION_LIMIT = 100;
@@ -57,14 +59,6 @@ export function stablePropertyId(categoryId: string, key: string): string {
   bytes[8] = (bytes[8]! & 63) | 128;
   const hex = bytes.subarray(0, 16).toString("hex");
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
-function definitions(category: CareerCategoryDoc): CareerPropertyDefinitionV2[] {
-  return category.propertySchemaV2 ?? Object.entries(category.propertySchema).map(([key, property], order) => ({
-    id: property.id ?? stablePropertyId(category._id, key), key, name: property.label,
-    type: property.type === "boolean" ? "checkbox" : property.type === "tags" ? "multi_select" : property.type,
-    required: property.required, system: property.system, config: {}, order, version: 1, deletedAt: null,
-  }));
 }
 
 function signPreview(payload: SignedPreview, signingSecret: string): string {
@@ -141,29 +135,77 @@ function containsReference(value: unknown, propertyId: string): boolean {
   return Boolean(value && typeof value === "object" && Object.values(value).some((item) => containsReference(item, propertyId)));
 }
 
-function affectedFilter(userId: string, categoryId: string, key: string): Filter<CareerRecordDoc> {
-  return { userId, categoryId, deletedAt: null, [`properties.${key}`]: { $exists: true } } as Filter<CareerRecordDoc>;
+// canonical 필드가 있으면 빈 배열도 authoritative이며 legacy key를 조회하지 않습니다.
+export function propertyPresenceFilter(propertyId: string, key: string, present = true): Filter<CareerRecordDoc> {
+  return { $or: [
+    { propertyValues: { $exists: true }, "propertyValues.propertyDefinitionId": present ? propertyId : { $ne: propertyId } },
+    { propertyValues: { $exists: false }, ["properties." + key]: { $exists: present } },
+  ] };
+}
+
+function affectedFilter(userId: string, categoryId: string, source: CareerPropertyDefinitionV2): Filter<CareerRecordDoc> {
+  return { userId, categoryId, deletedAt: null, ...propertyPresenceFilter(source.id, source.key) };
+}
+
+// 변환할 항목만 기존 V2 projection에 통과시켜 비대상 BSON 값은 건드리지 않습니다.
+export function propertyMutationInput(category: CareerCategoryDoc, row: CareerRecordDoc, source: CareerPropertyDefinitionV2) {
+  if (row.propertyValues === undefined) return row.properties[source.key];
+  return projectTypedCareerProperties({ ...category, propertyDefinitions: toCanonicalPropertyDefinitions([{ ...source, deletedAt: null }]) }, {
+    properties: {}, propertyValues: row.propertyValues.filter(value => value.propertyDefinitionId === source.id),
+  })[source.key];
+}
+
+export function propertyMutationTombstone(row: CareerRecordDoc, source: CareerPropertyDefinitionV2) {
+  return (row.propertyValues === undefined ? row.properties[source.key]
+    : row.propertyValues.find(value => value.propertyDefinitionId === source.id)) as unknown as NonNullable<CareerRecordDoc["propertyValueTombstones"]>[string];
+}
+
+// inline과 worker가 같은 단일 속성 쓰기를 사용합니다. 전체 변환은 legacy-only에 한정합니다.
+export function propertyMutationWrite(category: CareerCategoryDoc, row: CareerRecordDoc, definition: CareerPropertyDefinitionV2,
+  nextValue: unknown, definitions: readonly CareerPropertyDefinitionV2[] = careerCategoryDefinitions(category)) {
+  const properties = { ...row.properties };
+  let replacement: CareerPropertyValueDoc | undefined;
+  if (nextValue === null) delete properties[definition.key];
+  else if (nextValue && typeof nextValue === "object" && "propertyDefinitionId" in nextValue) {
+    // canonical tombstone은 Decimal128까지 원형 그대로 복원합니다.
+    if (nextValue.propertyDefinitionId !== definition.id) throw new CareerError(409, "복원할 PropertyValue ID가 다릅니다");
+    replacement = nextValue as CareerPropertyValueDoc;
+    const singleCategory = { ...category, propertyDefinitions: toCanonicalPropertyDefinitions([{ ...definition, deletedAt: null }]) };
+    projectCanonicalCareerPropertyValues(singleCategory, { properties: {}, propertyValues: [replacement] });
+    const projected = projectCareerResponseProperties(singleCategory, { properties: {}, propertyValues: [replacement] });
+    delete properties[definition.key];
+    if (Object.hasOwn(projected, definition.key)) properties[definition.key] = projected[definition.key]!;
+  } else {
+    properties[definition.key] = nextValue as CareerProperties[string];
+    replacement = toCanonicalPropertyValues(category, { [definition.key]: nextValue as CareerProperties[string] }, definitions)[0];
+    if (!replacement || replacement.propertyDefinitionId !== definition.id) throw new CareerError(409, "PropertyValue를 변환할 수 없습니다");
+  }
+  if (row.propertyValues === undefined) return { properties, propertyValues: toCanonicalPropertyValues(category, properties, definitions) };
+  const propertyValues = row.propertyValues.filter(value => replacement !== undefined || value.propertyDefinitionId !== definition.id)
+    .map(value => value.propertyDefinitionId === definition.id && replacement ? replacement : value);
+  if (replacement && !row.propertyValues.some(value => value.propertyDefinitionId === definition.id)) propertyValues.push(replacement);
+  return { properties, propertyValues };
 }
 
 function validateConfiguration(type: CareerPropertyDefinitionV2["type"], config: Record<string, unknown>): void {
+  const parsed = CanonicalCareerPropertyDefinitionSchema.safeParse({
+    id: "00000000-0000-4000-8000-000000000000",
+    key: "validation",
+    name: "validation",
+    type,
+    required: false,
+    system: false,
+    config,
+    order: 0,
+    version: 1,
+    deletedAt: null,
+  });
+  if (!parsed.success) throw new CareerError(400, "property configuration is invalid");
   if (type === "formula") {
-    const parsed = CareerFormulaSchema.safeParse(config);
-    if (!parsed.success || parsed.data.diagnostics.some((diagnostic) => diagnostic.severity === "error")) throw new CareerError(400, "formula property configuration is invalid");
-    return;
-  }
-  if (type === "rollup") {
-    if (!CareerRollupSchema.safeParse(config).success) throw new CareerError(400, "rollup property configuration is invalid");
-    return;
-  }
-  if (type !== "select" && type !== "multi_select") return;
-  const options = config.options;
-  if (!Array.isArray(options)) throw new CareerError(400, "select properties require options");
-  const ids = new Set<string>();
-  for (const option of options) {
-    if (!option || typeof option !== "object" || typeof (option as { id?: unknown }).id !== "string" || !UUID_PATTERN.test((option as { id: string }).id) || typeof (option as { name?: unknown }).name !== "string" || !(option as { name: string }).name.trim()) throw new CareerError(400, "property option is invalid");
-    const id = (option as { id: string }).id;
-    if (ids.has(id)) throw new CareerError(400, "property option IDs must be unique");
-    ids.add(id);
+    const diagnostics = (config as { diagnostics?: Array<{ severity?: unknown }> }).diagnostics;
+    if (diagnostics?.some((diagnostic) => diagnostic.severity === "error")) {
+      throw new CareerError(400, "formula property configuration is invalid");
+    }
   }
 }
 
@@ -182,11 +224,13 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     const db = mongoCollections(this.context.db);
     const category = await db.careerCategories.findOne({ _id: categoryId, userId, isSystem: false });
     if (!category) throw new CareerError(404, "career category not found");
-    const current = definitions(category);
+    const current = careerCategoryDefinitions(category);
     const propertyId = "propertyId" in change ? change.propertyId : undefined;
     const source = propertyId ? current.find((definition) => definition.id === propertyId) : undefined;
     if (propertyId && !source) throw new CareerError(404, "property not found");
-    const filter = source ? affectedFilter(userId, categoryId, source.key) : undefined;
+    const filter: Filter<CareerRecordDoc> | undefined = source ? change.kind === "restore"
+      ? { userId, categoryId, deletedAt: null, ["propertyValueTombstones." + source.id]: { $exists: true } }
+      : affectedFilter(userId, categoryId, source) : undefined;
     const createHasDefault = change.kind === "create" && Object.hasOwn(change.property.config, "defaultValue");
     const configuresComputed = change.kind === "configure" && source && (source.type === "formula" || source.type === "rollup");
     const affectedRecordCount = configuresComputed ? await db.careerRecords.countDocuments({ userId, categoryId, deletedAt: null }) : filter ? await db.careerRecords.countDocuments(filter) : createHasDefault ? await db.careerRecords.countDocuments({ userId, categoryId, deletedAt: null }) : 0;
@@ -195,16 +239,16 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     const lossyExamples: CareerPropertyChangePreview["impact"]["lossyExamples"] = [];
     if (source && change.kind === "type-change") {
       if (affectedRecordCount > PREVIEW_SCAN_LIMIT) throw new CareerError(413, "property preview scan limit exceeded");
-      const rows = await db.careerRecords.find(filter!).project({ _id: 1, properties: 1 }).limit(PREVIEW_SCAN_LIMIT + 1).toArray();
+      const rows = await db.careerRecords.find(filter!).project({ _id: 1, properties: 1, propertyValues: 1 }).limit(PREVIEW_SCAN_LIMIT + 1).toArray();
       convertibleCount = 0;
       for (const row of rows) {
-        const before = row.properties[source.key];
+        const before = propertyMutationInput(category, row as CareerRecordDoc, source);
         const converted = convertCareerPropertyValue(before, source.type, change.type);
         if (converted.kind !== "unmapped") convertibleCount += 1;
         if ((converted.kind === "lossy" || converted.kind === "unmapped") && lossyExamples.length < PREVIEW_EXAMPLE_LIMIT) lossyExamples.push({ recordId: row._id, before, ...(converted.value === undefined ? {} : { after: converted.value }) });
       }
     } else if (source && change.kind === "delete") {
-      for (const row of sampleRows) lossyExamples.push({ recordId: row._id, before: row.properties[source.key] });
+      for (const row of sampleRows) lossyExamples.push({ recordId: row._id, before: propertyMutationTombstone(row, source) });
     }
     const views = propertyId ? await db.careerViews.find({ userId, categoryId }).limit(21).toArray() : [];
     const dependentViews = views.filter((view) => containsReference(view, propertyId!)).map((view) => view._id).slice(0, 100);
@@ -233,21 +277,25 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
       if (category.version !== expectedVersion) throw new CareerError(409, "category version is stale");
       if (!verifyPreview(input.previewToken, { userId, categoryId, categoryVersion: expectedVersion, change: input.change }, this.signingSecret)) throw new CareerError(409, "preview token is invalid or expired");
       const now = new Date();
-      const next = definitions(category).map((definition) => ({ ...definition, config: { ...definition.config } }));
+      const next = careerCategoryDefinitions(category).map((definition) => ({ ...definition, config: { ...definition.config } }));
       const change = input.change;
       let recomputePropertyId: string | null = null;
       if (change.kind === "create") {
         if (change.property.system) throw new CareerError(403, "system properties cannot be created by users");
-        validateConfiguration(change.property.type, change.property.config);
+        const { defaultValue, ...definitionConfig } = change.property.config;
+        validateConfiguration(change.property.type, definitionConfig);
         if (next.some((definition) => definition.key === change.property.key && definition.deletedAt === null)) throw new CareerError(409, "property key already exists");
-        const created = { ...change.property, id: change.property.id ?? randomUUID(), order: change.property.order ?? next.length, version: 1, deletedAt: null };
-        await this.seedCreatedValues(tx.session, userId, categoryId, created, now);
+        const created = { ...change.property, config: definitionConfig, id: change.property.id ?? randomUUID(), order: change.property.order ?? next.length, version: 1, deletedAt: null };
+        await this.seedCreatedValues(tx.session, userId, category, created, [...next, created], defaultValue, now);
         next.push(created);
         if (created.type === "formula" || created.type === "rollup") recomputePropertyId = created.id;
       } else {
         const source = next.find((definition) => definition.id === change.propertyId);
         if (!source) throw new CareerError(404, "property not found");
         if (source.system && change.kind !== "restore") throw new CareerError(403, "system property cannot be changed");
+        if (["configure", "delete", "restore", "type-change"].includes(change.kind)) {
+          await requireNoActivePropertyMutation(tx, userId, categoryId, source.id);
+        }
         if (change.kind === "rename") { source.name = change.name; source.version += 1; }
         if (change.kind === "reorder") { source.order = change.order; source.version += 1; }
         if (change.kind === "configure") {
@@ -255,15 +303,26 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
           validateConfiguration(source.type, change.config); source.config = change.config; source.version += 1;
           recomputePropertyId = source.id;
         }
-        if (change.kind === "delete") { if (source.deletedAt !== null) throw new CareerError(409, "property is already deleted"); await this.deleteValues(tx.session, userId, categoryId, source, input.confirmLossy, now); source.deletedAt = now.toISOString(); source.version += 1; }
-        if (change.kind === "restore") { if (source.deletedAt === null) throw new CareerError(409, "property is not deleted"); await this.restoreValues(tx.session, userId, categoryId, source, now); source.deletedAt = null; source.version += 1; }
-        if (change.kind === "type-change") { if (READ_ONLY_TYPES.has(source.type) || READ_ONLY_TYPES.has(change.type)) throw new CareerError(403, "property type is protected"); const config = change.config ?? source.config; validateConfiguration(change.type, config); await this.convertValues(tx.session, userId, categoryId, source, change.type, input.confirmLossy, now); source.type = change.type; source.config = config; source.version += 1; }
+        if (change.kind === "delete") { if (source.deletedAt !== null) throw new CareerError(409, "property is already deleted"); const prospective = next.map((item) => item.id === source.id ? { ...item, deletedAt: now.toISOString(), version: item.version + 1 } : item); await this.deleteValues(tx.session, userId, category, source, prospective, input.confirmLossy, now); source.deletedAt = now.toISOString(); source.version += 1; }
+        if (change.kind === "restore") { if (source.deletedAt === null) throw new CareerError(409, "property is not deleted"); const prospective = next.map((item) => item.id === source.id ? { ...item, deletedAt: null, version: item.version + 1 } : item); await this.restoreValues(tx.session, userId, category, source, prospective, now); source.deletedAt = null; source.version += 1; }
+        if (change.kind === "type-change") { if (READ_ONLY_TYPES.has(source.type) || READ_ONLY_TYPES.has(change.type)) throw new CareerError(403, "property type is protected"); const config = change.config ?? source.config; validateConfiguration(change.type, config); const prospective = next.map((item) => item.id === source.id ? { ...item, type: change.type, config, version: item.version + 1 } : item); await this.convertValues(tx.session, userId, category, source, change.type, prospective, input.confirmLossy, now); source.type = change.type; source.config = config; source.version += 1; }
+      }
+      // 값 변경 중 새 legacy tag가 발견되면 같은 transaction에서 materialize된 option을
+      // 이어지는 Category 전체 갱신이 덮어쓰지 않도록 V2 Definition에도 합칩니다.
+      const categoryAfterValueWrite = await db.careerCategories.findOne({ _id: categoryId }, { session: tx.session });
+      for (const definition of next) {
+        if (definition.type !== "select" && definition.type !== "multi_select") continue;
+        const canonicalDefinition = categoryAfterValueWrite?.propertyDefinitions?.find((item) => item.id === definition.id);
+        if (Array.isArray(canonicalDefinition?.config.options)) {
+          definition.config = { ...definition.config, options: canonicalDefinition.config.options };
+        }
       }
       const schemaVersion = (category.schemaVersion ?? category.version) + 1;
-      const mapped = mapMongoCategory({ ...category, propertySchemaV2: next, schemaVersion, version: category.version + 1, updatedAt: now }, 0);
+      const propertyDefinitions = toCanonicalPropertyDefinitions(next);
+      const mapped = mapMongoCategory({ ...category, propertySchemaV2: next, propertyDefinitions, schemaVersion, version: category.version + 1, updatedAt: now }, 0);
       const update = await db.careerCategories.updateOne(
         { _id: categoryId, userId, isSystem: false, version: expectedVersion },
-        { $set: { propertySchemaV2: next, schemaVersion, updatedAt: now, [`propertyMutationResults.${idempotencyField}`]: { category: mapped, requestHash } }, $inc: { version: 1 } }, { session: tx.session },
+        { $set: { propertySchemaV2: next, propertyDefinitions, schemaVersion, updatedAt: now, [`propertyMutationResults.${idempotencyField}`]: { category: mapped, requestHash } }, $inc: { version: 1 } }, { session: tx.session },
       );
       if (update.modifiedCount !== 1) throw new CareerError(409, "category version is stale");
       if (recomputePropertyId) {
@@ -279,24 +338,39 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     });
   }
 
-  private async convertValues(session: ClientSession, userId: string, categoryId: string, source: CareerPropertyDefinitionV2, targetType: string, confirmLossy: boolean, now: Date): Promise<void> {
-    const db = mongoCollections(this.context.db); const filter = affectedFilter(userId, categoryId, source.key);
+  private async convertValues(session: ClientSession, userId: string, category: CareerCategoryDoc, source: CareerPropertyDefinitionV2, targetType: string, nextDefinitions: readonly CareerPropertyDefinitionV2[], confirmLossy: boolean, now: Date): Promise<void> {
+    const db = mongoCollections(this.context.db); const categoryId = category._id; const filter = affectedFilter(userId, categoryId, source);
     const count = await db.careerRecords.countDocuments(filter, { session });
-    if (count > INLINE_MUTATION_LIMIT) { await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-conversion", idempotencyKey: `career-property:${categoryId}:${source.id}:${source.version + 1}`, payload: { categoryId, propertyId: source.id, sourceType: source.type, targetType } }); return; }
+    if (count > INLINE_MUTATION_LIMIT) {
+      const target = nextDefinitions.find((definition) => definition.id === source.id)!;
+      await enqueueDeferredPropertyMutation(
+        { ...this.context, session }, "career.property-conversion", userId, categoryId, target,
+        { sourceType: source.type, targetType, allowLossy: confirmLossy, expectedDeletedAt: null },
+        `career-property:${categoryId}:${source.id}:${source.version + 1}`,
+      );
+      return;
+    }
     const rows = await db.careerRecords.find(filter, { session }).limit(INLINE_MUTATION_LIMIT + 1).toArray();
-    const conversions = rows.map((row) => ({ row, result: convertCareerPropertyValue(row.properties[source.key], source.type, targetType) }));
+    const conversions = rows.map((row) => {
+      const currentValue = propertyMutationInput(category, row, source);
+      return { row, currentValue, result: convertCareerPropertyValue(currentValue, source.type, targetType) };
+    });
     if (conversions.some(({ result }) => result.kind === "unmapped")) throw new CareerError(409, "some property values cannot be converted");
     if (!confirmLossy && conversions.some(({ result }) => result.kind === "lossy")) throw new CareerError(409, "lossy conversion requires confirmation");
-    if (conversions.length > 0) await db.careerRecords.bulkWrite(conversions.map(({ row, result }) => {
-      const stored = CareerPropertyValueV2Schema.safeParse(row.properties[source.key]).success ? result.value : { type: targetType, value: result.value };
-      return { updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { [`properties.${source.key}`]: stored, updatedAt: now }, $inc: { version: 1 } } } };
-    }), { session });
+    const prepared = conversions.map(({ row, currentValue, result }) => {
+      const stored = CareerPropertyValueV2Schema.safeParse(currentValue).success ? result.value : { type: targetType, value: result.value };
+      return { row, ...propertyMutationWrite(category, row, { ...source, type: targetType as CareerPropertyDefinitionV2["type"] }, stored, nextDefinitions) };
+    });
+    await materializeLegacyTagOptions(this.context, session, category, prepared.map((item) => item.row.propertyValues === undefined ? item.properties : {}), nextDefinitions);
+    if (prepared.length > 0) await db.careerRecords.bulkWrite(prepared.map(({ row, properties, propertyValues }) => ({
+      updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { properties, propertyValues, updatedAt: now }, $inc: { version: 1 } } },
+    })), { session });
   }
 
-  private async seedCreatedValues(session: ClientSession, userId: string, categoryId: string, definition: CareerPropertyDefinitionV2, now: Date): Promise<void> {
+  private async seedCreatedValues(session: ClientSession, userId: string, category: CareerCategoryDoc, definition: CareerPropertyDefinitionV2, nextDefinitions: readonly CareerPropertyDefinitionV2[], candidate: unknown, now: Date): Promise<void> {
     const db = mongoCollections(this.context.db);
+    const categoryId = category._id;
     const count = await db.careerRecords.countDocuments({ userId, categoryId, deletedAt: null }, { session });
-    const candidate = definition.config.defaultValue;
     if (candidate === undefined) {
       if (definition.required && count > 0) throw new CareerError(409, "required property needs a default value for existing records");
       return;
@@ -304,28 +378,67 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     const parsed = CareerPropertyValueV2Schema.safeParse(candidate);
     if (!parsed.success || parsed.data.type !== definition.type || READ_ONLY_TYPES.has(definition.type)) throw new CareerError(400, "property default value does not match its type");
     if (count > INLINE_MUTATION_LIMIT) {
-      await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-default", idempotencyKey: `career-property-default:${categoryId}:${definition.id}`, payload: { categoryId, propertyId: definition.id, propertyKey: definition.key, defaultValue: parsed.data } });
+      await enqueueDeferredPropertyMutation(
+        { ...this.context, session }, "career.property-default", userId, categoryId, definition,
+        { defaultValue: parsed.data, expectedDeletedAt: null },
+        `career-property-default:${categoryId}:${definition.id}`,
+      );
       return;
     }
-    await db.careerRecords.updateMany({ userId, categoryId, deletedAt: null, [`properties.${definition.key}`]: { $exists: false } }, { $set: { [`properties.${definition.key}`]: parsed.data, updatedAt: now }, $inc: { version: 1 } }, { session });
+    const rows = await db.careerRecords.find({ userId, categoryId, deletedAt: null, ...propertyPresenceFilter(definition.id, definition.key, false) }, { session }).toArray();
+    const prepared = rows.map((row) => ({ row, ...propertyMutationWrite(category, row, definition, parsed.data, nextDefinitions) }));
+    await materializeLegacyTagOptions(this.context, session, category, prepared.map((item) => item.row.propertyValues === undefined ? item.properties : {}), nextDefinitions);
+    if (prepared.length > 0) await db.careerRecords.bulkWrite(prepared.map(({ row, properties, propertyValues }) => {
+      return { updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { properties, propertyValues, updatedAt: now }, $inc: { version: 1 } } } };
+    }), { session });
   }
 
-  private async deleteValues(session: ClientSession, userId: string, categoryId: string, source: CareerPropertyDefinitionV2, confirmLossy: boolean, now: Date): Promise<void> {
-    const db = mongoCollections(this.context.db); const filter = affectedFilter(userId, categoryId, source.key);
+  private async deleteValues(session: ClientSession, userId: string, category: CareerCategoryDoc, source: CareerPropertyDefinitionV2, nextDefinitions: readonly CareerPropertyDefinitionV2[], confirmLossy: boolean, now: Date): Promise<void> {
+    const db = mongoCollections(this.context.db); const categoryId = category._id; const filter = affectedFilter(userId, categoryId, source);
     const count = await db.careerRecords.countDocuments(filter, { session });
     if (count > 0 && !confirmLossy) throw new CareerError(409, "property deletion requires confirmation");
-    if (count > INLINE_MUTATION_LIMIT) { await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-deletion", idempotencyKey: `career-property-delete:${categoryId}:${source.id}:${source.version + 1}`, payload: { categoryId, propertyId: source.id, propertyKey: source.key } }); return; }
+    if (count > INLINE_MUTATION_LIMIT) {
+      const target = nextDefinitions.find((definition) => definition.id === source.id)!;
+      await enqueueDeferredPropertyMutation(
+        { ...this.context, session }, "career.property-deletion", userId, categoryId, target,
+        { sourceType: source.type, expectedDeletedAt: target.deletedAt },
+        `career-property-delete:${categoryId}:${source.id}:${source.version + 1}`,
+      );
+      return;
+    }
     const rows = await db.careerRecords.find(filter, { session }).limit(INLINE_MUTATION_LIMIT + 1).toArray();
-    if (rows.length > 0) await db.careerRecords.bulkWrite(rows.map((row) => ({ updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { [`propertyValueTombstones.${source.id}`]: row.properties[source.key], updatedAt: now }, $unset: { [`properties.${source.key}`]: "" }, $inc: { version: 1 } } } })), { session });
+    const prepared = rows.map((row) => {
+      return { row, tombstone: propertyMutationTombstone(row, source), ...propertyMutationWrite(category, row, source, null, nextDefinitions) };
+    });
+    await materializeLegacyTagOptions(this.context, session, category, prepared.map((item) => item.row.propertyValues === undefined ? item.properties : {}), nextDefinitions);
+    if (prepared.length > 0) await db.careerRecords.bulkWrite(prepared.map(({ row, tombstone, properties, propertyValues }) => {
+      return { updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { properties, propertyValues, [`propertyValueTombstones.${source.id}`]: tombstone, updatedAt: now }, $inc: { version: 1 } } } };
+    }), { session });
   }
 
-  private async restoreValues(session: ClientSession, userId: string, categoryId: string, source: CareerPropertyDefinitionV2, now: Date): Promise<void> {
-    const db = mongoCollections(this.context.db); const path = `propertyValueTombstones.${source.id}`;
+  private async restoreValues(session: ClientSession, userId: string, category: CareerCategoryDoc, source: CareerPropertyDefinitionV2, nextDefinitions: readonly CareerPropertyDefinitionV2[], now: Date): Promise<void> {
+    const db = mongoCollections(this.context.db); const categoryId = category._id; const path = `propertyValueTombstones.${source.id}`;
     const filter = { userId, categoryId, deletedAt: null, [path]: { $exists: true } } as Filter<CareerRecordDoc>;
     const count = await db.careerRecords.countDocuments(filter, { session });
-    if (count > INLINE_MUTATION_LIMIT) { await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-restoration", idempotencyKey: `career-property-restore:${categoryId}:${source.id}:${source.version + 1}`, payload: { categoryId, propertyId: source.id, propertyKey: source.key } }); return; }
+    if (count > INLINE_MUTATION_LIMIT) {
+      const target = nextDefinitions.find((definition) => definition.id === source.id)!;
+      await enqueueDeferredPropertyMutation(
+        { ...this.context, session }, "career.property-restoration", userId, categoryId, target,
+        { sourceType: source.type, expectedDeletedAt: null },
+        `career-property-restore:${categoryId}:${source.id}:${source.version + 1}`,
+      );
+      return;
+    }
     const rows = await db.careerRecords.find(filter, { session }).limit(INLINE_MUTATION_LIMIT + 1).toArray();
-    if (rows.length > 0) await db.careerRecords.bulkWrite(rows.map((row) => ({ updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { [`properties.${source.key}`]: row.propertyValueTombstones?.[source.id], updatedAt: now }, $unset: { [path]: "" }, $inc: { version: 1 } } } })), { session });
+    const prepared = rows.map((row) => {
+      const restoredValue = row.propertyValueTombstones?.[source.id];
+      if (restoredValue === undefined || restoredValue === null) throw new CareerError(409, "복원할 PropertyValue가 없습니다");
+      return { row, ...propertyMutationWrite(category, row, { ...source, deletedAt: null }, restoredValue, nextDefinitions) };
+    });
+    await materializeLegacyTagOptions(this.context, session, category, prepared.map((item) => item.row.propertyValues === undefined ? item.properties : {}), nextDefinitions);
+    if (prepared.length > 0) await db.careerRecords.bulkWrite(prepared.map(({ row, properties, propertyValues }) => {
+      return { updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { properties, propertyValues, updatedAt: now }, $unset: { [path]: "" }, $inc: { version: 1 } } } };
+    }), { session });
   }
 
   async restoreProperty(userId: string, categoryId: string, propertyId: string, expectedVersion: number) {

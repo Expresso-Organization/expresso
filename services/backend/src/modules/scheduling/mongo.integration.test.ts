@@ -1,7 +1,11 @@
+import { randomUUID } from "node:crypto";
+
 import { mongoCollections } from "@expresso/database";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createMongoFixture } from "../../../test/support/mongodb.js";
+import { MongoCareerService } from "../career/index.js";
+import { MongoIdentityService } from "../identity/index.js";
 import { MongoSchedulingService } from "./service.js";
 import { SCHEDULED_JOB_KEYS, type ScheduledJobKey } from "./public.js";
 
@@ -27,4 +31,84 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB scheduled jobs", () => {
     await expect(service.process(retention._id, new Date("2026-08-09T01:00:03Z"))).resolves.toMatchObject({ status: "succeeded", attempts: 2, result: { retained: true } }); await service.process(retention._id, new Date("2026-08-09T01:00:04Z")); expect(retentionCalls).toBe(2);
     const statuses = await service.status(); expect(statuses).toHaveLength(SCHEDULED_JOB_KEYS.length); expect(statuses.find(({ jobKey }) => jobKey === "retention")).toMatchObject({ lastStatus: "succeeded", failureCount: 0 });
   }, 30_000);
+
+  it("purges only expired trashed career records through the safe cascade", async () => {
+    const identity = new MongoIdentityService(fixture.resource);
+    const career = new MongoCareerService(fixture.resource);
+    const userId = (await identity.signup({ email: `retention-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "보존" })).user.id;
+    const categoryId = (await career.listCategories(userId)).find(({ key }) => key === "experience")!.id;
+    const expired = (await career.createRecord(userId, randomUUID(), { categoryId, title: "만료", properties: {}, bodyMd: "" })).record;
+    const future = (await career.createRecord(userId, randomUUID(), { categoryId, title: "유예", properties: {}, bodyMd: "" })).record;
+    const active = (await career.createRecord(userId, randomUUID(), { categoryId, title: "활성", properties: {}, bodyMd: "" })).record;
+    const db = mongoCollections(fixture.resource.db);
+    const at = new Date("2026-09-18T00:00:00Z");
+    await db.careerRecords.updateOne({ _id: expired.id }, { $set: { deletedAt: new Date("2026-08-01T00:00:00Z"), purgeAfter: at } });
+    await db.careerRecords.updateOne({ _id: future.id }, { $set: { deletedAt: new Date("2026-09-01T00:00:00Z"), purgeAfter: new Date("2026-09-19T00:00:00Z") } });
+    await db.careerRecords.updateOne({ _id: active.id }, { $set: { purgeAfter: at } });
+    const sectionId = randomUUID(); const blockId = randomUUID();
+    await db.portfolioSections.insertOne({ _id: sectionId, userId, portfolioId: randomUUID(), orderNo: 0, visible: true });
+    await db.blocks.insertOne({ _id: blockId, userId, portfolioSectionId: sectionId, kind: "paragraph", content: { text: "보존 문장" }, style: {}, sourceRecordId: expired.id, syncState: "synced", locked: false, orderNo: 0 });
+    await db.recordLinks.insertOne({ _id: randomUUID(), userId, fromRecordId: expired.id, toRecordId: future.id, relation: "related", createdBy: "user" });
+    const runId = randomUUID();
+    await db.scheduledJobRuns.insertOne({ _id: runId, jobKey: "retention", scheduledFor: at, status: "queued", attempts: 0, createdAt: at });
+
+    await new MongoSchedulingService(fixture.resource).process(runId, at);
+
+    expect(await db.careerRecords.findOne({ _id: expired.id })).toBeNull();
+    expect(await db.careerRecords.findOne({ _id: future.id })).not.toBeNull();
+    expect(await db.careerRecords.findOne({ _id: active.id })).not.toBeNull();
+    expect(await db.blocks.findOne({ _id: blockId })).toMatchObject({ sourceRecordId: null, syncState: "detached" });
+    expect(await db.recordLinks.countDocuments({ userId, $or: [{ fromRecordId: expired.id }, { toRecordId: expired.id }] })).toBe(0);
+  }, 30_000);
+
+  it("visits every expiry page, preserves guarded records, finishes other cleanup and reports failures", async () => {
+    const identity = new MongoIdentityService(fixture.resource);
+    const career = new MongoCareerService(fixture.resource);
+    const userId = (await identity.signup({ email: `retention-pages-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "인용" })).user.id;
+    const categoryId = (await career.listCategories(userId)).find(({ key }) => key === "experience")!.id;
+    const template = (await career.createRecord(userId, randomUUID(), { categoryId, title: "원본", properties: {}, bodyMd: "" })).record;
+    const db = mongoCollections(fixture.resource.db);
+    const stored = (await db.careerRecords.findOne({ _id: template.id }))!;
+    const at = new Date("2026-09-17T00:00:00Z");
+    const earlier = new Date("2026-09-16T00:00:00Z");
+    const id = (index: number) => `00000000-0000-4000-8000-${index.toString().padStart(12, "0")}`;
+    const guardedIds = Array.from({ length: 101 }, (_, index) => id(index + 1));
+    const purgeableIds = [id(0), id(102), id(103)];
+    await db.careerRecords.insertMany([...guardedIds, ...purgeableIds].map((_id) => ({
+      ...stored, _id, createIdempotencyKey: randomUUID(), deletedAt: earlier,
+      purgeAfter: _id === id(103) ? at : earlier,
+    })));
+    await db.recordUsages.insertMany(guardedIds.map((recordId) => ({
+      _id: randomUUID(), userId, recordId, blockId: randomUUID(), quotedText: "인용", firstUsedAt: earlier,
+    })));
+    const before = await db.careerRecords.find({ _id: { $in: guardedIds } }).sort({ _id: 1 }).toArray();
+    const redirectId = randomUUID(); const receiptId = randomUUID();
+    await db.deploymentSlugRedirects.insertOne({ _id: redirectId, userId, portfolioId: randomUUID(), oldSlug: `old-${randomUUID()}`, newSlug: `new-${randomUUID()}`, createdAt: earlier, expiresAt: at });
+    await db.analyticsEventReceipts.insertOne({ _id: receiptId, userId, deploymentId: randomUUID(), eventType: "visit", visitorHash: "b".repeat(64), payloadHash: "c".repeat(64), payloadBytes: 100, occurredAt: earlier, receivedAt: new Date("2026-01-01T00:00:00Z") });
+    const runId = randomUUID();
+    await db.scheduledJobRuns.insertOne({ _id: runId, jobKey: "retention", scheduledFor: at, status: "queued", attempts: 0, createdAt: at });
+    const scheduler = new MongoSchedulingService(fixture.resource);
+
+    await expect(scheduler.process(runId, at)).rejects.toMatchObject({ name: "RetentionRunError" });
+
+    expect(await db.careerRecords.find({ _id: { $in: guardedIds } }).sort({ _id: 1 }).toArray()).toEqual(before);
+    expect(await db.recordUsages.countDocuments({ userId })).toBe(101);
+    expect(await db.careerRecords.countDocuments({ _id: { $in: purgeableIds } })).toBe(0);
+    expect(await db.deploymentSlugRedirects.findOne({ _id: redirectId })).toBeNull();
+    expect(await db.analyticsEventReceipts.findOne({ _id: receiptId })).toBeNull();
+    const failed = await scheduler.getRun(runId);
+    expect(failed).toMatchObject({ status: "failed", attempts: 1, lastError: "RetentionRunError", result: {
+      records: 3, redirects: 1, analyticsReceipts: 1, failedRecords: 101, failedCleanups: 0,
+    } });
+    expect(failed.result?.failureSamples).toHaveLength(100);
+    expect(failed.result?.failureSamples).toEqual(expect.arrayContaining([{ scope: "record", recordId: id(1), error: "CareerError", statusCode: 409 }]));
+
+    await expect(scheduler.process(runId, at)).rejects.toMatchObject({ name: "RetentionRunError" });
+    expect(await scheduler.getRun(runId)).toMatchObject({ status: "failed", attempts: 2, result: { records: 0, failedRecords: 101 } });
+    expect(await db.careerRecords.find({ _id: { $in: guardedIds } }).sort({ _id: 1 }).toArray()).toEqual(before);
+
+    await db.recordUsages.deleteMany({ userId });
+    await expect(scheduler.process(runId, at)).resolves.toMatchObject({ status: "succeeded", attempts: 3, lastError: null, result: { records: 101, failedRecords: 0, failedCleanups: 0, failureSamples: [] } });
+    expect(await db.careerRecords.countDocuments({ _id: { $in: guardedIds } })).toBe(0);
+  }, 60_000);
 });

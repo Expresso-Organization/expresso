@@ -1,9 +1,28 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { AiProposalApplyRequestSchema } from "./career-ai.js";
 import { CareerDocumentBootstrapSchema, CareerSocketClientMessageSchema } from "./career-editor.js";
-import { CareerFormulaPreviewSchema, CareerFormulaSchema, CareerPropertyDefinitionV2Schema, CareerPropertySchemaChangeSchema, CareerPropertyValueV2Schema, CareerRollupAggregationSchema, PreviewCareerFormulaSchema, PreviewCareerRollupSchema } from "./career-properties.js";
+import { CareerRecordSchema } from "./career.js";
+import { CanonicalCareerPropertyDefinitionSchema, CareerFormulaPreviewSchema, CareerFormulaSchema, CareerPropertyDefinitionV2Schema, CareerPropertySchemaChangeSchema, CareerPropertyValueV2Schema, CareerRollupAggregationSchema, PreviewCareerFormulaSchema, PreviewCareerRollupSchema, WritableCareerPropertyValueSchema } from "./career-properties.js";
 import { CareerViewConfigurationSchema } from "./career-views.js";
 import { expressoOpenApiDocument } from "./openapi.js";
+
+type DecimalBoundaryCase = {
+  name: string;
+  value: { literal: string } | { prefix: string; repeat: string; count: number; suffix: string };
+  accepted: boolean;
+};
+
+const decimalBoundaryCases = (JSON.parse(readFileSync(
+  new URL("../openapi/fixtures/career-decimal128-v1.json", import.meta.url),
+  "utf8",
+)) as { cases: DecimalBoundaryCase[] }).cases;
+
+function decimalFixtureValue(value: DecimalBoundaryCase["value"]): string {
+  return "literal" in value
+    ? value.literal
+    : `${value.prefix}${value.repeat.repeat(value.count)}${value.suffix}`;
+}
 
 describe("career editor contracts", () => {
   it("strictly rejects extra socket/bootstrap fields and oversized updates", () => {
@@ -16,6 +35,164 @@ describe("career editor contracts", () => {
     expect(CareerPropertyDefinitionV2Schema.parse({ id: crypto.randomUUID(), key: "startedAt", name: "시작일", type: "date", required: false, system: false, config: {}, order: 1, version: 1, deletedAt: null }).type).toBe("date");
     expect(() => CareerPropertyValueV2Schema.parse({ type: "checkbox", value: "yes" })).toThrow();
     expect(() => CareerPropertyValueV2Schema.parse({ type: "select", value: "missing-option" })).toThrow();
+  });
+
+  it("contracts canonical definitions and writable values separately from computed values", () => {
+    const propertyDefinitionId = "6c663539-48c1-5d12-939d-f100fac993c1";
+    expect(CanonicalCareerPropertyDefinitionSchema.parse({
+      id: propertyDefinitionId,
+      key: "role",
+      name: "역할",
+      type: "text",
+      required: false,
+      system: true,
+      config: {},
+      order: 0,
+      version: 1,
+      deletedAt: null,
+    }).name).toBe("역할");
+    expect(WritableCareerPropertyValueSchema.parse({
+      propertyDefinitionId,
+      type: "text",
+      value: "가".repeat(50_000),
+    }).type).toBe("text");
+    expect(() => WritableCareerPropertyValueSchema.parse({
+      propertyDefinitionId,
+      type: "title",
+      value: "중복 title",
+    })).toThrow();
+    expect(() => CanonicalCareerPropertyDefinitionSchema.parse({
+      id: propertyDefinitionId,
+      key: "title",
+      name: "제목",
+      type: "title",
+      required: true,
+      system: true,
+      config: {},
+      order: 0,
+      version: 1,
+      deletedAt: null,
+    })).toThrow();
+  });
+
+  it("preserves date precision and exact select option names", () => {
+    const propertyDefinitionId = "10000000-0000-4000-8000-000000000002";
+    const definition = CanonicalCareerPropertyDefinitionSchema.parse({
+      id: propertyDefinitionId,
+      key: "technologies",
+      name: "기술",
+      type: "multi_select",
+      required: false,
+      system: true,
+      config: {
+        options: [
+          { id: "20000000-0000-4000-8000-000000000001", name: "Java" },
+          { id: "20000000-0000-4000-8000-000000000002", name: "java" },
+          { id: "20000000-0000-4000-8000-000000000003", name: " Java " },
+        ],
+      },
+      order: 0,
+      version: 1,
+      deletedAt: null,
+    });
+    expect((definition.config.options as Array<{ name: string }>).map(({ name }) => name)).toEqual(["Java", "java", " Java "]);
+
+    expect(WritableCareerPropertyValueSchema.parse({
+      propertyDefinitionId,
+      type: "date",
+      value: { precision: "month", start: "2026-09", end: null },
+    }).value).toEqual({ precision: "month", start: "2026-09", end: null });
+    expect(() => WritableCareerPropertyValueSchema.parse({
+      propertyDefinitionId,
+      type: "date",
+      value: { precision: "month", start: "2026-09-01", end: null },
+    })).toThrow();
+  });
+
+  it("keeps canonical numbers as plain decimal strings without JS number coercion", () => {
+    const propertyDefinitionId = "10000000-0000-4000-8000-000000000004";
+
+    expect(WritableCareerPropertyValueSchema.parse({
+      propertyDefinitionId,
+      type: "number",
+      value: "123.4500",
+    }).value).toBe("123.4500");
+    for (const value of [123.45, "1e3", "NaN", "Infinity"]) {
+      expect(() => WritableCareerPropertyValueSchema.parse({
+        propertyDefinitionId,
+        type: "number",
+        value,
+      })).toThrow();
+    }
+  });
+
+  it("enforces the shared Decimal128 wire length boundary", () => {
+    const propertyDefinitionId = "10000000-0000-4000-8000-000000000004";
+    for (const boundary of decimalBoundaryCases) {
+      const value = decimalFixtureValue(boundary.value);
+      if (value.length <= 6200) continue;
+      expect(WritableCareerPropertyValueSchema.safeParse({
+        propertyDefinitionId,
+        type: "number",
+        value,
+      }).success, boundary.name).toBe(false);
+    }
+  });
+
+  it("exposes canonical propertyValues on CareerRecord responses while legacy-only records may omit them", () => {
+    const base = {
+      id: crypto.randomUUID(),
+      categoryId: crypto.randomUUID(),
+      title: "기록",
+      status: "draft" as const,
+      origin: "manual" as const,
+      properties: {},
+      bodyMd: "",
+      version: 1,
+      updatedAt: "2026-09-09T00:00:00.000Z",
+    };
+    const propertyDefinitionId = crypto.randomUUID();
+
+    expect(CareerRecordSchema.parse({
+      ...base,
+      propertyValues: [{ propertyDefinitionId, type: "number", value: "123.4500" }],
+    }).propertyValues).toEqual([
+      { propertyDefinitionId, type: "number", value: "123.4500" },
+    ]);
+    expect(CareerRecordSchema.parse(base)).not.toHaveProperty("propertyValues");
+    expect(() => CareerRecordSchema.parse({
+      ...base,
+      propertyValues: [{ propertyDefinitionId, type: "number", value: 123.45 }],
+    })).toThrow();
+  });
+
+  it("rejects config that does not match the canonical definition type", () => {
+    const base = {
+      id: "6c663539-48c1-5d12-939d-f100fac993c1",
+      key: "role",
+      name: "역할",
+      required: false,
+      system: true,
+      order: 0,
+      version: 1,
+      deletedAt: null,
+    };
+
+    expect(() => CanonicalCareerPropertyDefinitionSchema.parse({
+      ...base,
+      type: "text",
+      config: { unknown: true },
+    })).toThrow();
+    expect(CanonicalCareerPropertyDefinitionSchema.parse({
+      ...base,
+      type: "relation",
+      config: {
+        targetCategoryId: "54e2b29a-d2ba-4c80-a4bc-1c1d08740497",
+        inversePropertyId: null,
+        cardinality: "multiple",
+        deletePolicy: "nullify",
+      },
+    }).type).toBe("relation");
   });
 
   it("uses the approved formula and rollup boundaries", () => {

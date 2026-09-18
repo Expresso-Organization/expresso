@@ -2,7 +2,7 @@ import { performance } from "node:perf_hooks";
 import { randomUUID } from "node:crypto";
 
 import { mongoCollections } from "@expresso/database";
-import type { CareerPropertyDefinitionV2 } from "@expresso/contracts";
+import type { CanonicalCareerPropertyDefinition } from "@expresso/contracts";
 import { Queue, QueueEvents } from "bullmq";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
@@ -13,7 +13,11 @@ import { MongoIdentityService } from "../identity/index.js";
 import { CareerService } from "../career/service.js";
 import { MongoCareerComputationService } from "./service.js";
 
-const definition = (id: string, key: string, type: CareerPropertyDefinitionV2["type"], config: Record<string, unknown> = {}, order = 0): CareerPropertyDefinitionV2 => ({ id, key, name: key, type, required: false, system: false, config, order, version: 1, deletedAt: null });
+const definition = (id: string, key: string, type: CanonicalCareerPropertyDefinition["type"], config: Record<string, unknown> = {}, order = 0): CanonicalCareerPropertyDefinition => ({
+  id, key, name: key, type, required: false, system: false,
+  config: type === "formula" ? { ast: null, diagnostics: [], ...config } : config,
+  order, version: 1, deletedAt: null,
+});
 const legacy = (label: string, type: "number" | "text") => ({ label, type, required: false, system: false });
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("career computation MongoDB and BullMQ", () => {
@@ -41,13 +45,19 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     sourceCategoryId = source.id; targetCategoryId = target.id;
     scoreId = randomUUID(); targetScoreId = randomUUID(); relationId = randomUUID(); formulaId = randomUUID(); rollupId = randomUUID();
     const db = mongoCollections(fixture.resource.db);
-    await db.careerCategories.updateOne({ _id: sourceCategoryId }, { $set: { schemaVersion: 1, propertySchemaV2: [
+    const sourceDefinitions = [
       definition(scoreId, "score", "number", {}, 0),
       definition(relationId, "targets", "relation", { targetCategoryId, inversePropertyId: null, cardinality: "multiple", deletePolicy: "restrict" }, 1),
       definition(formulaId, "doubleScore", "formula", { source: `prop("${scoreId}") * 2` }, 2),
       definition(rollupId, "targetTotal", "rollup", { relationPropertyId: relationId, targetPropertyId: targetScoreId, aggregation: "sum" }, 3),
-    ] } });
-    await db.careerCategories.updateOne({ _id: targetCategoryId }, { $set: { schemaVersion: 1, propertySchemaV2: [definition(targetScoreId, "score", "number")] } });
+    ];
+    const targetDefinitions = [definition(targetScoreId, "score", "number")];
+    await db.careerCategories.updateOne({ _id: sourceCategoryId }, { $set: {
+      schemaVersion: 1, propertySchemaV2: sourceDefinitions, propertyDefinitions: sourceDefinitions,
+    } });
+    await db.careerCategories.updateOne({ _id: targetCategoryId }, { $set: {
+      schemaVersion: 1, propertySchemaV2: targetDefinitions, propertyDefinitions: targetDefinitions,
+    } });
     const sourceRecord = await career.createRecord(userId, randomUUID(), { categoryId: sourceCategoryId, title: "원본", properties: { score: { type: "number", value: 3 } }, bodyMd: "" });
     sourceRecordId = sourceRecord.record.id;
     targetRecordIds = await Promise.all([2, 5].map(async (score) => (await career.createRecord(userId, randomUUID(), { categoryId: targetCategoryId, title: `대상 ${score}`, properties: { score: { type: "number", value: score } }, bodyMd: "" })).record.id));
@@ -59,11 +69,18 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect((await service.previewRollup(userId, { categoryId: sourceCategoryId, recordId: sourceRecordId, relationPropertyId: relationId, targetPropertyId: targetScoreId, aggregation: "sum" })).value).toMatchObject({ type: "rollup", value: 7 });
     expect((await service.previewRollup(userId, { categoryId: sourceCategoryId, relationPropertyId: relationId, targetPropertyId: targetScoreId, aggregation: "percent_checked" })).diagnostics.map((diagnostic) => diagnostic.code)).toContain("argument_type");
     expect((await service.previewFormula(userId, { categoryId: sourceCategoryId, propertyId: formulaId, source: `prop("${formulaId}") + 1` })).diagnostics.map((diagnostic) => diagnostic.code)).toContain("cycle");
+    const beforeComputation = await mongoCollections(fixture.resource.db).careerRecords.findOne({ _id: sourceRecordId });
     expect(await service.recompute({ eventId: "compute-1", userId, recordId: sourceRecordId, changedPropertyIds: [scoreId, relationId], sourceRecordVersion: 1 })).toBe("applied");
     let source = await mongoCollections(fixture.resource.db).careerRecords.findOne({ _id: sourceRecordId });
-    expect(source?.version).toBe(2);
+    expect(source?.version).toBe(1);
+    expect(source?.updatedAt).toEqual(beforeComputation?.updatedAt);
+    expect(source?.computationVersion).toBe(1);
     expect(source?.computedProperties).toMatchObject({ doubleScore: { type: "formula", value: 6 }, targetTotal: { type: "rollup", value: 7 } });
     expect(await service.recompute({ eventId: "compute-1", userId, recordId: sourceRecordId, changedPropertyIds: [scoreId], sourceRecordVersion: 1 })).toBe("duplicate");
+    await mongoCollections(fixture.resource.db).careerRecords.updateOne(
+      { _id: sourceRecordId, version: 1 },
+      { $inc: { version: 1 }, $set: { updatedAt: new Date() } },
+    );
     expect(await service.recompute({ eventId: "compute-stale", userId, recordId: sourceRecordId, changedPropertyIds: [scoreId], sourceRecordVersion: 1 })).toBe("stale");
     expect(await service.recompute({ eventId: "compute-stale-coalesced", userId, recordId: sourceRecordId, changedPropertyIds: [relationId], sourceRecordVersion: 1 })).toBe("stale");
     const fresh = await mongoCollections(fixture.resource.db).outboxEvents.find({ topic: "career.computation", "payload.recordId": sourceRecordId, "payload.sourceRecordVersion": 2 }).toArray();
@@ -76,7 +93,11 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     source = await mongoCollections(fixture.resource.db).careerRecords.findOne({ _id: sourceRecordId });
     expect(source?.version).toBe(2);
 
-    await mongoCollections(fixture.resource.db).careerCategories.updateOne({ _id: sourceCategoryId, "propertySchemaV2.id": formulaId }, { $inc: { "propertySchemaV2.$.version": 1 } });
+    await mongoCollections(fixture.resource.db).careerCategories.updateOne(
+      { _id: sourceCategoryId, "propertyDefinitions.id": formulaId },
+      { $inc: { "propertyDefinitions.$.version": 1, "propertySchemaV2.$[definition].version": 1 } },
+      { arrayFilters: [{ "definition.id": formulaId }] },
+    );
     expect(await service.recompute({ eventId: "property-version-stale", userId, recordId: sourceRecordId, changedPropertyIds: [formulaId], sourceRecordVersion: source!.version, sourcePropertyVersions: { [formulaId]: 1 } })).toBe("stale");
     expect((await mongoCollections(fixture.resource.db).outboxEvents.findOne({ topic: "career.computation", "payload.recordId": sourceRecordId, "payload.sourceRecordVersion": source!.version }))?.payload.sourcePropertyVersions).toEqual({ [formulaId]: 2 });
   });
@@ -84,26 +105,43 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
   it("writes cycle and deleted-dependency diagnostics without more than one version increment", async () => {
     const cycleA = randomUUID(); const cycleB = randomUUID();
     const db = mongoCollections(fixture.resource.db);
-    await db.careerCategories.updateOne({ _id: sourceCategoryId }, { $push: { propertySchemaV2: {
-      $each: [definition(cycleA, "cycleA", "formula", { source: `prop("${cycleB}") + 1` }, 4), definition(cycleB, "cycleB", "formula", { source: `prop("${cycleA}") + 1` }, 5)],
-    } } });
+    const cycleDefinitions = [
+      definition(cycleA, "cycleA", "formula", { source: `prop("${cycleB}") + 1` }, 4),
+      definition(cycleB, "cycleB", "formula", { source: `prop("${cycleA}") + 1` }, 5),
+    ];
+    await db.careerCategories.updateOne({ _id: sourceCategoryId }, { $push: {
+      propertySchemaV2: { $each: cycleDefinitions }, propertyDefinitions: { $each: cycleDefinitions },
+    } });
     const source = await db.careerRecords.findOne({ _id: sourceRecordId });
     const result = await service.recompute({ eventId: "cycle", userId, recordId: sourceRecordId, changedPropertyIds: [cycleA], sourceRecordVersion: source!.version });
     expect(result).toBe("applied");
     const after = await db.careerRecords.findOne({ _id: sourceRecordId });
-    expect(after?.version).toBe(source!.version + 1);
+    expect(after?.version).toBe(source!.version);
+    expect(after?.updatedAt).toEqual(source!.updatedAt);
+    expect(after?.computationVersion).toBe((source!.computationVersion ?? 0) + 1);
     expect(after?.computedProperties?.cycleA).toMatchObject({ diagnostics: [{ code: "cycle" }] });
 
-    await db.careerCategories.updateOne({ _id: sourceCategoryId, "propertySchemaV2.id": scoreId }, { $set: { "propertySchemaV2.$.deletedAt": new Date().toISOString() } });
+    const deletedAt = new Date().toISOString();
+    await db.careerCategories.updateOne(
+      { _id: sourceCategoryId, "propertyDefinitions.id": scoreId },
+      { $set: { "propertyDefinitions.$.deletedAt": deletedAt, "propertySchemaV2.$[definition].deletedAt": deletedAt } },
+      { arrayFilters: [{ "definition.id": scoreId }] },
+    );
     const prior = await db.careerRecords.findOne({ _id: sourceRecordId });
     await service.recompute({ eventId: "deleted", userId, recordId: sourceRecordId, changedPropertyIds: [scoreId], sourceRecordVersion: prior!.version });
     const deleted = await db.careerRecords.findOne({ _id: sourceRecordId });
-    expect(deleted?.version).toBe(prior!.version + 1);
+    expect(deleted?.version).toBe(prior!.version);
+    expect(deleted?.updatedAt).toEqual(prior!.updatedAt);
+    expect(deleted?.computationVersion).toBe((prior!.computationVersion ?? 0) + 1);
     expect(deleted?.computedProperties?.doubleScore).toMatchObject({ diagnostics: [{ code: "unknown_property" }] });
   });
 
   it("enqueues stable property IDs and versions when a user edits an input value", async () => {
-    await mongoCollections(fixture.resource.db).careerCategories.updateOne({ _id: sourceCategoryId, "propertySchemaV2.id": scoreId }, { $set: { "propertySchemaV2.$.deletedAt": null } });
+    await mongoCollections(fixture.resource.db).careerCategories.updateOne(
+      { _id: sourceCategoryId, "propertyDefinitions.id": scoreId },
+      { $set: { "propertyDefinitions.$.deletedAt": null, "propertySchemaV2.$[definition].deletedAt": null } },
+      { arrayFilters: [{ "definition.id": scoreId }] },
+    );
     const created = (await career.createRecord(userId, randomUUID(), { categoryId: sourceCategoryId, title: "입력 변경", properties: { score: { type: "number", value: 1 } }, bodyMd: "" })).record;
     const updated = await career.updateRecord(userId, created.id, created.version, { properties: { score: { type: "number", value: 4 } } });
     const event = await mongoCollections(fixture.resource.db).outboxEvents.findOne({ topic: "career.computation", "payload.recordId": created.id, "payload.sourceRecordVersion": updated.version });
@@ -114,7 +152,11 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
 
   it.skipIf(!process.env.TEST_REDIS_URL)("processes 100 related records through BullMQ within the local 1s p95 budget", async () => {
     const db = mongoCollections(fixture.resource.db);
-    await db.careerCategories.updateOne({ _id: sourceCategoryId, "propertySchemaV2.id": scoreId }, { $set: { "propertySchemaV2.$.deletedAt": null } });
+    await db.careerCategories.updateOne(
+      { _id: sourceCategoryId, "propertyDefinitions.id": scoreId },
+      { $set: { "propertyDefinitions.$.deletedAt": null, "propertySchemaV2.$[definition].deletedAt": null } },
+      { arrayFilters: [{ "definition.id": scoreId }] },
+    );
     const source = (await career.createRecord(userId, randomUUID(), { categoryId: sourceCategoryId, title: "성능", properties: { score: { type: "number", value: 1 } }, bodyMd: "" })).record;
     const targets = await Promise.all(Array.from({ length: 100 }, (_, index) => career.createRecord(userId, randomUUID(), { categoryId: targetCategoryId, title: `성능 ${index}`, properties: { score: { type: "number", value: index + 1 } }, bodyMd: "" })));
     await db.careerRecordRelations.insertMany(targets.map(({ record }) => ({ _id: randomUUID(), userId, sourceRecordId: source.id, sourcePropertyId: relationId, targetRecordId: record.id, inversePropertyId: null, cardinality: "multiple" as const, deletePolicy: "restrict" as const, createdBy: "user" as const, createdAt: new Date(), updatedAt: new Date() })));

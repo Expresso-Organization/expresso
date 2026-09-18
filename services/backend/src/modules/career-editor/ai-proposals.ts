@@ -14,12 +14,13 @@ import {
   type CreateAiEditProposal,
 } from "@expresso/contracts";
 import { applyCareerCommands, encodeDocumentAsYUpdate, encodeDocumentStateVector, parseCareerDocument, reconstructYDocument, type CareerDocument, type CareerEditCommand } from "@expresso/editor";
-import { mongoCollections, type CareerAiProposalDoc } from "@expresso/database";
+import { mongoCollections, type CareerAiProposalDoc, type CareerCategoryDoc, type CareerRecordDoc } from "@expresso/database";
 import { Binary } from "mongodb";
 
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
+import { careerCategoryDefinitions, materializeLegacyTagOptions, projectTypedCareerProperties, toCanonicalPropertyValues } from "../career/properties.js";
 import { CareerDocumentError } from "./errors.js";
 import { binaryBytes, hashUpdate, MongoCareerDocumentRepository } from "./repository.js";
 import type { CareerDocumentService } from "./service.js";
@@ -36,11 +37,18 @@ function blockMap(blocks: CareerDocument["content"], map = new Map<string, Caree
   for (const block of blocks) { map.set(block.id, block); if (block.content) blockMap(block.content, map); }
   return map;
 }
-function definitionMap(category: { propertySchemaV2?: readonly { id: string; key: string; system: boolean; deletedAt: string | null }[] | undefined; propertySchema: Record<string, { id?: string | undefined; system: boolean }> }) {
-  const map = new Map<string, { key: string; system: boolean }>();
-  if (category.propertySchemaV2) for (const definition of category.propertySchemaV2) if (definition.deletedAt === null) map.set(definition.id, { key: definition.key, system: definition.system });
-  else for (const [key, definition] of Object.entries(category.propertySchema)) if (definition.id) map.set(definition.id, { key, system: definition.system });
-  return map;
+function definitionMap(category: CareerCategoryDoc) {
+  return new Map(careerCategoryDefinitions(category)
+    .filter((definition) => definition.deletedAt === null)
+    .map((definition) => [definition.id, { key: definition.key, system: definition.system }]));
+}
+function proposalPropertyValue(category: CareerCategoryDoc, record: Pick<CareerRecordDoc, "properties" | "propertyValues">, propertyId: string, key: string) {
+  if (record.propertyValues === undefined) return record.properties[key] ?? null;
+  // 선택하지 않은 정밀 숫자 등은 V2로 변환하지 않고 저장된 값을 그대로 보존합니다.
+  return projectTypedCareerProperties(category, {
+    properties: record.properties,
+    propertyValues: record.propertyValues.filter((value) => value.propertyDefinitionId === propertyId),
+  })[key] ?? null;
 }
 function toDetail(row: CareerAiProposalDoc): AiEditProposalDetail {
   return AiEditProposalDetailSchema.parse({ proposalId: row._id, recordId: row.recordId, baseDocumentVersion: row.baseDocumentVersion, selection: row.selection, summary: row.summary ?? "생성 중", commands: row.commands, propertyChanges: row.propertyChanges, createdAt: row.createdAt.toISOString(), expiresAt: row.expiresAt.toISOString(), status: row.status, progress: row.progress, appliedDocumentVersion: row.appliedDocumentVersion, revisionId: row.revisionId });
@@ -67,32 +75,37 @@ export class AiProposalService {
     if (input.selection.blockIds.some((id) => !blocks.has(id))) throw new CareerDocumentError(409, "selected block no longer exists");
     const now = new Date();
     const row: CareerAiProposalDoc = { _id: randomUUID(), userId, recordId, status: "draft", baseDocumentVersion: bootstrap.documentVersion, selection: { blockIds: [...input.selection.blockIds], ...(input.selection.from === undefined ? {} : { from: input.selection.from }), ...(input.selection.to === undefined ? {} : { to: input.selection.to }) }, prompt: input.prompt, summary: null, commands: [], propertyChanges: [], progress: { phase: "preparing", completed: 0, total: 3 }, beforeSnapshotId: null, afterSnapshotId: null, beforeChecksum: null, afterChecksum: null, revisionId: null, appliedDocumentVersion: null, expiresAt: new Date(now.getTime() + LIFETIME_MS), createdAt: now, updatedAt: now };
-    await mongoCollections(this.context.db).careerAiProposals.insertOne(row);
-    this.publish(row);
-    const streaming = { ...row, status: "streaming" as const, progress: { phase: "generating" as const, completed: 1, total: 3 }, updatedAt: new Date() };
-    await mongoCollections(this.context.db).careerAiProposals.updateOne({ _id: row._id, userId, status: "draft" }, { $set: { status: streaming.status, progress: streaming.progress, updatedAt: streaming.updatedAt } });
-    this.publish(streaming);
-    const markConflicted = async () => {
-      const updatedAt = new Date();
-      const failed = await mongoCollections(this.context.db).careerAiProposals.findOneAndUpdate({ _id: row._id, userId, status: "streaming" }, { $set: { status: "conflicted", progress: null, updatedAt } }, { returnDocument: "after" });
-      if (failed) this.publish(failed);
-    };
+    // draft/streaming 공개 전에 취소 수단을 등록하고 모든 종료 경로에서 정리합니다.
     const controller = new AbortController(); this.controllers.set(row._id, controller);
-    let generated;
-    try { generated = await this.adapter.generate({ recordId, documentVersion: bootstrap.documentVersion, selectionBlockIds: input.selection.blockIds, selectedBlocks: input.selection.blockIds.map((id) => blocks.get(id)!), prompt: input.prompt, signal: controller.signal }); }
-    catch (error) { if (controller.signal.aborted) return this.get(userId, recordId, row._id); await markConflicted(); throw error; }
-    finally { this.controllers.delete(row._id); }
-    let proposal: AiEditProposal;
     try {
-      proposal = AiEditProposalSchema.parse({ proposalId: row._id, recordId, baseDocumentVersion: bootstrap.documentVersion, selection: row.selection, summary: generated.summary, commands: generated.commands, propertyChanges: generated.propertyChanges, createdAt: now.toISOString(), expiresAt: row.expiresAt.toISOString() });
-      await this.validateProposal(bootstrap.document, proposal.commands, input.selection.blockIds);
-      await this.validatePropertyChanges(userId, recordId, proposal.propertyChanges);
-    } catch (error) { await markConflicted(); throw error; }
-    const ready = { ...streaming, status: "ready" as const, summary: proposal.summary, commands: proposal.commands as unknown as CareerAiProposalDoc["commands"], propertyChanges: proposal.propertyChanges as unknown as CareerAiProposalDoc["propertyChanges"], progress: { phase: "validating" as const, completed: 3, total: 3 }, updatedAt: new Date() };
-    const transition = await mongoCollections(this.context.db).careerAiProposals.findOneAndUpdate({ _id: row._id, userId, status: "streaming" }, { $set: { status: ready.status, summary: ready.summary, commands: ready.commands, propertyChanges: ready.propertyChanges, progress: ready.progress, updatedAt: ready.updatedAt } }, { returnDocument: "after" });
-    if (!transition) return this.get(userId, recordId, row._id);
-    this.publish(ready);
-    return toDetail(ready);
+      await mongoCollections(this.context.db).careerAiProposals.insertOne(row);
+      this.publish(row);
+      const streaming = { ...row, status: "streaming" as const, progress: { phase: "generating" as const, completed: 1, total: 3 }, updatedAt: new Date() };
+      const started = await mongoCollections(this.context.db).careerAiProposals.updateOne({ _id: row._id, userId, status: "draft" }, { $set: { status: streaming.status, progress: streaming.progress, updatedAt: streaming.updatedAt } });
+      if (!started.matchedCount) return this.get(userId, recordId, row._id);
+      const markConflicted = async () => {
+        const updatedAt = new Date();
+        const failed = await mongoCollections(this.context.db).careerAiProposals.findOneAndUpdate({ _id: row._id, userId, status: "streaming" }, { $set: { status: "conflicted", progress: null, updatedAt } }, { returnDocument: "after" });
+        if (failed) this.publish(failed);
+      };
+      const current = await mongoCollections(this.context.db).careerAiProposals.findOne({ _id: row._id, userId, recordId });
+      if (controller.signal.aborted || current?.status !== "streaming") return this.get(userId, recordId, row._id);
+      this.publish(streaming);
+      let generated;
+      try { generated = await this.adapter.generate({ recordId, documentVersion: bootstrap.documentVersion, selectionBlockIds: input.selection.blockIds, selectedBlocks: input.selection.blockIds.map((id) => blocks.get(id)!), prompt: input.prompt, signal: controller.signal }); }
+      catch (error) { if (controller.signal.aborted) return this.get(userId, recordId, row._id); await markConflicted(); throw error; }
+      let proposal: AiEditProposal;
+      try {
+        proposal = AiEditProposalSchema.parse({ proposalId: row._id, recordId, baseDocumentVersion: bootstrap.documentVersion, selection: row.selection, summary: generated.summary, commands: generated.commands, propertyChanges: generated.propertyChanges, createdAt: now.toISOString(), expiresAt: row.expiresAt.toISOString() });
+        await this.validateProposal(bootstrap.document, proposal.commands, input.selection.blockIds);
+        await this.validatePropertyChanges(userId, recordId, proposal.propertyChanges);
+      } catch (error) { await markConflicted(); throw error; }
+      const ready = { ...streaming, status: "ready" as const, summary: proposal.summary, commands: proposal.commands as unknown as CareerAiProposalDoc["commands"], propertyChanges: proposal.propertyChanges as unknown as CareerAiProposalDoc["propertyChanges"], progress: { phase: "validating" as const, completed: 3, total: 3 }, updatedAt: new Date() };
+      const transition = await mongoCollections(this.context.db).careerAiProposals.findOneAndUpdate({ _id: row._id, userId, status: "streaming" }, { $set: { status: ready.status, summary: ready.summary, commands: ready.commands, propertyChanges: ready.propertyChanges, progress: ready.progress, updatedAt: ready.updatedAt } }, { returnDocument: "after" });
+      if (!transition) return this.get(userId, recordId, row._id);
+      this.publish(ready);
+      return toDetail(ready);
+    } finally { this.controllers.delete(row._id); }
   }
 
   async get(userId: string, recordId: string, proposalId: string): Promise<AiEditProposalDetail> {
@@ -107,10 +120,17 @@ export class AiProposalService {
     if (input.recordId !== recordId) throw new CareerDocumentError(404, "AI proposal not found");
     const db = mongoCollections(this.context.db); const row = await db.careerAiProposals.findOne({ _id: input.proposalId, userId, recordId });
     if (!row) throw new CareerDocumentError(404, "AI proposal not found");
-    if (["rejected", "cancelled"].includes(row.status)) return;
+    if (row.status === status) return;
     if (row.status !== "ready" && row.status !== "draft" && row.status !== "streaming") throw new CareerDocumentError(409, "AI proposal cannot be cancelled");
-    row.status = status; row.progress = null; row.updatedAt = new Date();
-    await db.careerAiProposals.updateOne({ _id: row._id, userId }, { $set: { status, progress: null, updatedAt: row.updatedAt } });
+    const updatedAt = new Date();
+    const changed = await db.careerAiProposals.updateOne({ _id: row._id, userId, recordId, status: row.status }, { $set: { status, progress: null, updatedAt } });
+    if (!changed.matchedCount) {
+      const current = await db.careerAiProposals.findOne({ _id: row._id, userId, recordId });
+      if (!current) throw new CareerDocumentError(404, "AI proposal not found");
+      if (current.status === status) return;
+      throw new CareerDocumentError(409, "AI proposal state changed");
+    }
+    row.status = status; row.progress = null; row.updatedAt = updatedAt;
     if (status === "cancelled") this.controllers.get(row._id)?.abort();
     this.publish(row);
   }
@@ -147,8 +167,34 @@ export class AiProposalService {
       await repository.insertSnapshot({ _id: afterSnapshotId, userId, recordId, documentVersion: nextVersion, version: nextVersion, schemaVersion: 1, content: after as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(after))), serverSequence: nextVersion, checksum: hashUpdate(encodeDocumentAsYUpdate(after)), actor: "ai", createdAt: new Date() }, tx.session);
       const category = await db.careerCategories.findOne({ _id: record.categoryId, $or: [{ userId: null }, { userId }] }, { session: tx.session }); if (!category) throw new CareerDocumentError(404, "career category not found");
       const properties = { ...record.properties }; const definitions = definitionMap(category); const changedPropertyIds: string[] = [];
-      for (const change of changes) { const definition = definitions.get(change.propertyId); if (!definition || definition.system || JSON.stringify(properties[definition.key] ?? null) !== JSON.stringify(change.previousValue)) throw new CareerDocumentError(409, "AI proposal property changed"); if (change.nextValue === null) delete properties[definition.key]; else properties[definition.key] = CareerPropertyValueV2Schema.parse(change.nextValue); changedPropertyIds.push(change.propertyId); }
-      const propertyUpdated = await db.careerRecords.findOneAndUpdate({ _id: recordId, userId, documentVersion: nextVersion }, { $set: { properties, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
+      let propertyValues = record.propertyValues === undefined ? undefined : [...record.propertyValues];
+      for (const change of changes) {
+        const definition = definitions.get(change.propertyId);
+        const current = { properties, ...(propertyValues === undefined ? {} : { propertyValues }) };
+        if (!definition || definition.system || JSON.stringify(proposalPropertyValue(category, current, change.propertyId, definition.key)) !== JSON.stringify(change.previousValue)) throw new CareerDocumentError(409, "AI proposal property changed");
+        if (change.nextValue === null) {
+          delete properties[definition.key];
+          propertyValues = propertyValues?.filter((value) => value.propertyDefinitionId !== change.propertyId);
+        } else {
+          const nextValue = CareerPropertyValueV2Schema.parse(change.nextValue);
+          properties[definition.key] = nextValue;
+          if (propertyValues !== undefined) {
+            const replacement = toCanonicalPropertyValues(category, { [definition.key]: nextValue })[0];
+            if (!replacement || replacement.propertyDefinitionId !== change.propertyId) throw new CareerDocumentError(409, "AI proposal property is not writable");
+            const index = propertyValues.findIndex((value) => value.propertyDefinitionId === change.propertyId);
+            if (index === -1) propertyValues.push(replacement);
+            else propertyValues[index] = replacement;
+          }
+        }
+        changedPropertyIds.push(change.propertyId);
+      }
+      // canonical 필드가 없는 기존 기록에만 전체 compatibility 변환을 적용합니다.
+      if (propertyValues === undefined) {
+        await materializeLegacyTagOptions(tx, tx.session, category, [properties]);
+        propertyValues = toCanonicalPropertyValues(category, properties);
+      }
+      const propertyWrites = record.propertyValues === undefined || changes.length > 0 ? { properties, propertyValues } : {};
+      const propertyUpdated = await db.careerRecords.findOneAndUpdate({ _id: recordId, userId, documentVersion: nextVersion }, { $set: { ...propertyWrites, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
       if (!propertyUpdated) throw new CareerDocumentError(409, "career record version is stale");
       if (changedPropertyIds.length) await addMongoOutboxEvent(tx, { userId, topic: "career.computation", idempotencyKey: `career-ai-property:${proposal._id}:v${propertyUpdated.version}`, payload: { userId, recordId, changedPropertyIds, sourceRecordVersion: propertyUpdated.version } });
       const revisionId = randomUUID(); await repository.insertRevision({ _id: revisionId, userId, recordId, actor: "ai", summary: proposal.summary ?? "AI 변경 적용", beforeVersion: input.expectedDocumentVersion, afterVersion: nextVersion, snapshotId: beforeSnapshotId, proposalId: proposal._id, createdAt: new Date() }, tx.session);
@@ -196,7 +242,7 @@ export class AiProposalService {
     const definitions = definitionMap(category);
     for (const change of changes) {
       const definition = definitions.get(change.propertyId);
-      if (!definition || definition.system || JSON.stringify(record.properties[definition.key] ?? null) !== JSON.stringify(change.previousValue)) throw new CareerDocumentError(409, "AI proposal property changed");
+      if (!definition || definition.system || JSON.stringify(proposalPropertyValue(category, record, change.propertyId, definition.key)) !== JSON.stringify(change.previousValue)) throw new CareerDocumentError(409, "AI proposal property changed");
       if (change.nextValue !== null) CareerPropertyValueV2Schema.parse(change.nextValue);
     }
   }

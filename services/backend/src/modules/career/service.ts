@@ -7,7 +7,7 @@ import { inTransaction } from "../../platform/mongo-transaction.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
-import { validateCareerProperties } from "./properties.js";
+import { careerCategoryDefinitions, legacySchemaToV2Definitions, materializeLegacyTagOptions, projectLegacyCareerProperties, toCanonicalPropertyDefinitions, toCanonicalPropertyValues, validateCareerProperties } from "./properties.js";
 import { mapMongoCategory, mapMongoView, requireCareerCategory } from "./mongo-categories.js";
 import { careerRequestHash, listMongoRecords, mapMongoRecord } from "./mongo-records.js";
 import type { CareerApi } from "./index.js";
@@ -21,6 +21,7 @@ import { CareerViewService } from "./views.js";
 import { MongoCategoryMoveService } from "./category-move.js";
 import { MongoRelationService } from "./relations.js";
 import { MongoCareerComputationService } from "../career-computation/index.js";
+import { createEmptyCanonicalBlockBody } from "./canonical-record.js";
 
 const duplicate = (error: unknown) => (error as { code?: number })?.code === 11000;
 
@@ -78,7 +79,13 @@ export class CareerService implements CareerApi {
         const customCount = await categories.countDocuments({ userId }, { session: tx.session });
         if (customCount >= 100) throw new CareerError(409, "career category limit exceeded");
         const propertySchema = Object.fromEntries(Object.entries(input.propertySchema).map(([key, definition]) => [key, { ...definition, id: definition.id ?? randomUUID() }]));
-        const category: CareerCategoryDoc = { _id: randomUUID(), userId, ...input, propertySchema, isSystem: false, sortOrder: 7 + customCount, version: 1, updatedAt: new Date() };
+        const categoryId = randomUUID();
+        const propertySchemaV2 = legacySchemaToV2Definitions(categoryId, propertySchema);
+        const category: CareerCategoryDoc = {
+          _id: categoryId, userId, ...input, propertySchema, propertySchemaV2,
+          propertyDefinitions: toCanonicalPropertyDefinitions(propertySchemaV2), schemaVersion: 1,
+          isSystem: false, sortOrder: 7 + customCount, version: 1, updatedAt: new Date(),
+        };
         await categories.insertOne(category, { session: tx.session });
         return mapMongoCategory(category);
       });
@@ -88,25 +95,45 @@ export class CareerService implements CareerApi {
   async updatePropertySchema(userId: string, categoryId: string, expectedVersion: number, nextSchemaInput: CareerPropertySchema, confirmValueRemoval: boolean) {
     const nextSchema = CareerPropertySchemaSchema.parse(nextSchemaInput);
     return inTransaction(this.context, async (tx) => {
+      void confirmValueRemoval;
       await requireActiveUser(tx, userId);
       const db = mongoCollections(tx.db);
       const category = await db.careerCategories.findOne({ _id: categoryId, userId, isSystem: false }, { session: tx.session });
       if (!category) throw new CareerError(404, "career category not found");
       if (category.version !== expectedVersion) throw new CareerError(412, "category version is stale");
-      const normalizedSchema = Object.fromEntries(Object.entries(nextSchema).map(([key, definition]) => [key, { ...definition, id: definition.id ?? category.propertySchema[key]?.id ?? randomUUID() }]));
-      const removed = Object.keys(category.propertySchema).filter((key) => !Object.hasOwn(normalizedSchema, key));
-      const protectedProperties = removed.filter((key) => category.propertySchema[key]?.system);
-      if (protectedProperties.length) throw new CareerError(403, "system properties cannot be removed", { protectedProperties });
-      const propertyValueCounts: Record<string, number> = {};
-      for (const key of removed) {
-        const count = await db.careerRecords.countDocuments({ userId, categoryId, deletedAt: null, [`properties.${key}`]: { $exists: true } }, { session: tx.session });
-        if (count) propertyValueCounts[key] = count;
+      const currentKeys = Object.keys(category.propertySchema).sort();
+      const nextKeys = Object.keys(nextSchema).sort();
+      if (currentKeys.length !== nextKeys.length || currentKeys.some((key, index) => key !== nextKeys[index])) {
+        throw new CareerError(409, "legacy property schema에서는 기존 property의 label만 변경할 수 있습니다");
       }
-      if (Object.keys(propertyValueCounts).length && !confirmValueRemoval) throw new CareerError(409, "category properties still contain values", { propertyValueCounts });
-      for (const key of Object.keys(propertyValueCounts)) {
-        await db.careerRecords.updateMany({ userId, categoryId, [`properties.${key}`]: { $exists: true } }, { $unset: { [`properties.${key}`]: "" }, $inc: { version: 1 }, $set: { updatedAt: new Date() } }, { session: tx.session });
-      }
-      const updated = await db.careerCategories.findOneAndUpdate({ _id: categoryId, userId, version: expectedVersion }, { $set: { propertySchema: normalizedSchema, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
+      const normalizedSchema = Object.fromEntries(nextKeys.map((key) => {
+        const current = category.propertySchema[key]!;
+        const next = nextSchema[key]!;
+        if ((next.id !== undefined && next.id !== current.id)
+          || next.type !== current.type
+          || next.required !== current.required
+          || next.system !== current.system) {
+          throw new CareerError(409, "legacy property schema에서는 기존 property의 label만 변경할 수 있습니다");
+        }
+        return [key, { ...current, label: next.label }];
+      }));
+      const renameDefinition = <T extends { key: string; name: string; version: number }>(definition: T): T => {
+        const legacy = normalizedSchema[definition.key];
+        if (!legacy || legacy.label === definition.name) return definition;
+        return { ...definition, name: legacy.label, version: definition.version + 1 };
+      };
+      const propertySchemaV2 = category.propertySchemaV2 === undefined
+        ? legacySchemaToV2Definitions(categoryId, normalizedSchema, careerCategoryDefinitions(category))
+        : category.propertySchemaV2.map(renameDefinition);
+      const propertyDefinitions = category.propertyDefinitions === undefined
+        ? toCanonicalPropertyDefinitions(propertySchemaV2)
+        : category.propertyDefinitions.map(renameDefinition);
+      const now = new Date();
+      const updated = await db.careerCategories.findOneAndUpdate(
+        { _id: categoryId, userId, version: expectedVersion },
+        { $set: { propertySchema: normalizedSchema, propertySchemaV2, propertyDefinitions, schemaVersion: (category.schemaVersion ?? category.version) + 1, updatedAt: now }, $inc: { version: 1 } },
+        { session: tx.session, returnDocument: "after" },
+      );
       if (!updated) throw new CareerError(412, "category version is stale");
       return mapMongoCategory(updated);
     });
@@ -118,38 +145,47 @@ export class CareerService implements CareerApi {
     return inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const category = await requireCareerCategory(tx, userId, input.categoryId, tx.session);
-      validateCareerProperties(category.propertySchema, input.properties, category.propertySchemaV2);
+      validateCareerProperties(category.propertySchema, input.properties, careerCategoryDefinitions(category));
       const records = mongoCollections(tx.db).careerRecords;
       const existing = await records.findOne({ userId, createIdempotencyKey: idempotencyKey }, { session: tx.session });
       if (existing) {
         if (existing.createRequestHash !== hash) throw new CareerError(409, "idempotency key was reused with another request");
-        return { record: mapMongoRecord(existing), created: false };
+        return { record: mapMongoRecord(existing, category), created: false };
       }
       const now = new Date();
-      const record: CareerRecordDoc = { _id: randomUUID(), userId, ...input, status: "draft", origin: "manual", version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null, createIdempotencyKey: idempotencyKey, createRequestHash: hash };
+      await materializeLegacyTagOptions(tx, tx.session, category, [input.properties]);
+      const record: CareerRecordDoc = {
+        _id: randomUUID(), userId, ...input,
+        propertyValues: toCanonicalPropertyValues(category, input.properties),
+        blockBody: createEmptyCanonicalBlockBody(),
+        status: "draft", origin: "manual", version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null,
+        createIdempotencyKey: idempotencyKey, createRequestHash: hash,
+      };
       await records.insertOne(record, { session: tx.session });
-      const definitions = category.propertySchemaV2?.filter((definition) => definition.deletedAt === null) ?? [];
+      const categoryForRead = await requireCareerCategory(tx, userId, category._id, tx.session);
+      const definitions = careerCategoryDefinitions(category).filter((definition) => definition.deletedAt === null);
       const changedPropertyIds = definitions.filter((definition) => definition.type === "formula" || definition.type === "rollup" || Object.hasOwn(input.properties, definition.key) || (definition.type === "title" && input.title !== "")).map((definition) => definition.id);
       if (changedPropertyIds.length > 0) await addMongoOutboxEvent(tx, {
         userId, topic: "career.computation", idempotencyKey: `career-record-create:${record._id}:v1`,
         payload: { userId, recordId: record._id, changedPropertyIds, sourceRecordVersion: 1, sourcePropertyVersions: Object.fromEntries(definitions.filter((definition) => changedPropertyIds.includes(definition.id)).map((definition) => [definition.id, definition.version])) },
       });
-      return { record: mapMongoRecord(record), created: true };
+      return { record: mapMongoRecord(record, categoryForRead), created: true };
     });
   }
 
   async getRecord(userId: string, recordId: string) {
     const record = await mongoCollections(this.context.db).careerRecords.findOne({ _id: recordId, userId, deletedAt: null });
     if (!record) throw new CareerError(404, "career record not found");
+    const category = await requireCareerCategory(this.context, userId, record.categoryId);
     const snapshot = await mongoCollections(this.context.db).careerDocumentSnapshots.findOne({ recordId }, { sort: { documentVersion: -1 } });
-    if (!snapshot) return mapMongoRecord(record);
+    if (!snapshot) return mapMongoRecord(record, category);
     try {
       const updates = await mongoCollections(this.context.db).careerDocumentUpdates.find({ recordId, serverSequence: { $gt: snapshot.serverSequence }, compactedAt: null }).sort({ serverSequence: 1 }).limit(10_001).toArray();
       if (updates.length > 10_000) throw new CareerError(503, "document compaction is required before legacy projection");
       const document = reconstructYDocument([encodeDocumentAsYUpdate(parseCareerDocument(snapshot.content)), ...updates.map((row) => new Uint8Array(row.update.buffer))]);
-      return mapMongoRecord(record, careerDocumentToMarkdown(document));
+      return mapMongoRecord(record, category, careerDocumentToMarkdown(document));
     }
-    catch { return mapMongoRecord(record); }
+    catch { return mapMongoRecord(record, category); }
   }
 
   async updateRecord(userId: string, recordId: string, expectedVersion: number, inputValue: UpdateCareerRecord) {
@@ -172,15 +208,39 @@ export class CareerService implements CareerApi {
         if (pending > 0) throw new CareerError(409, "document has unacknowledged updates");
       }
       const category = await requireCareerCategory(tx, userId, existing.categoryId, tx.session);
-      const properties = input.properties ?? existing.properties;
-      validateCareerProperties(category.propertySchema, properties, category.propertySchemaV2);
-      const computationDefinitions = category.propertySchemaV2?.filter((definition) => definition.deletedAt === null) ?? [];
+      const existingProperties = input.properties === undefined ? undefined : projectLegacyCareerProperties(category, existing);
+      const properties = input.properties;
+      if (properties !== undefined) {
+        validateCareerProperties(category.propertySchema, properties, careerCategoryDefinitions(category));
+        await materializeLegacyTagOptions(tx, tx.session, category, [properties]);
+      }
+      const propertyValues = properties === undefined ? undefined : toCanonicalPropertyValues(category, properties);
+      const computationDefinitions = careerCategoryDefinitions(category).filter((definition) => definition.deletedAt === null);
       const changedPropertyIds = computationDefinitions.filter((definition) => {
         if (definition.type === "title") return input.title !== undefined && input.title !== existing.title;
-        return JSON.stringify(existing.properties[definition.key] ?? null) !== JSON.stringify(properties[definition.key] ?? null);
+        return properties !== undefined
+          && JSON.stringify(existingProperties?.[definition.key] ?? null) !== JSON.stringify(properties[definition.key] ?? null);
       }).map((definition) => definition.id);
-      const updated = await records.findOneAndUpdate({ _id: recordId, userId, deletedAt: null, version: expectedVersion }, { $set: { title: input.title ?? existing.title, status: input.status ?? existing.status, bodyMd: input.bodyMd ?? existing.bodyMd, properties, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
+      const fields: Partial<CareerRecordDoc> = {
+        title: input.title ?? existing.title,
+        status: input.status ?? existing.status,
+        bodyMd: input.bodyMd ?? existing.bodyMd,
+        updatedAt: new Date(),
+      };
+      if (properties !== undefined && propertyValues !== undefined) {
+        fields.properties = properties;
+        fields.propertyValues = propertyValues;
+      }
+      const updated = await records.findOneAndUpdate(
+        { _id: recordId, userId, deletedAt: null, version: expectedVersion },
+        {
+          $set: fields,
+          $inc: { version: 1 },
+        },
+        { session: tx.session, returnDocument: "after" },
+      );
       if (!updated) throw new CareerError(412, "career record version is stale");
+      const categoryForRead = await requireCareerCategory(tx, userId, category._id, tx.session);
       if (input.bodyMd !== undefined) {
         // 레거시 저장도 편집기 리비전으로 남기며, 동시 Yjs 변경이 있으면 충돌시킨다.
         const repository = new MongoCareerDocumentRepository(this.context);
@@ -210,7 +270,7 @@ export class CareerService implements CareerApi {
           sourcePropertyVersions: Object.fromEntries(computationDefinitions.filter((definition) => changedPropertyIds.includes(definition.id)).map((definition) => [definition.id, definition.version])),
         },
       });
-      return mapMongoRecord(updated);
+      return mapMongoRecord(updated, categoryForRead);
     });
   }
 
@@ -220,11 +280,12 @@ export class CareerService implements CareerApi {
       return await inTransaction(this.context, async (tx) => {
         await requireActiveUser(tx, userId);
         const category = await requireCareerCategory(tx, userId, categoryId, tx.session);
-        const allowed = new Set(["title", "status", "period", ...Object.keys(category.propertySchema)]);
+        const activeDefinitions = careerCategoryDefinitions(category).filter((definition) => definition.deletedAt === null);
+        const allowed = new Set(["title", "status", "period", ...activeDefinitions.map((definition) => definition.key)]);
         for (const field of [...input.filters.map((item) => item.property), ...input.sorts.map((item) => item.property), ...input.visibleProperties]) {
           if (!allowed.has(field)) throw new CareerError(400, `view references an unknown property: ${field}`);
         }
-        if (input.viewType === "timeline" && !Object.values(category.propertySchema).some((property) => property.type === "date")) throw new CareerError(400, "timeline views require a date property");
+        if (input.viewType === "timeline" && !activeDefinitions.some((definition) => definition.type === "date")) throw new CareerError(400, "timeline views require a date property");
         const views = mongoCollections(tx.db).careerViews;
         const count = await views.countDocuments({ userId, categoryId }, { session: tx.session });
         if (count >= 8) throw new CareerError(409, "category view limit exceeded");
