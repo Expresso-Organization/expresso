@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import { randomUUID } from "node:crypto";
 import { careerDocumentToMarkdown, encodeDocumentAsYUpdate, encodeDocumentStateVector, markdownToCareerDocument, parseCareerDocument, reconstructYDocument } from "@expresso/editor";
 import { CareerPropertySchemaSchema, CareerProfileSchema, CreateCareerCategorySchema, CreateCareerRecordSchema, CreateCareerViewSchema, SaveCareerProfileSchema, UpdateCareerRecordSchema, type CareerPropertySchema, type CreateCareerCategory, type CreateCareerRecord, type CreateCareerView, type ListCareerRecordsQuery, type SaveCareerProfile, type UpdateCareerRecord } from "@expresso/contracts";
@@ -16,7 +17,7 @@ import { createMongoLink, listMongoLinks, mongoDeleteImpact, trashMongoRecord, r
 import { recomputeMongoSkill, listMongoSkills, listMongoSkillEvidence } from "./mongo-skills.js";
 import { MongoCareerDocumentRepository, hashUpdate } from "../career-editor/repository.js";
 import { Binary } from "mongodb";
-import { MongoCareerPropertySchemaService } from "./property-schema.js";
+import { MongoCareerPropertySchemaService, propertyPresenceFilter } from "./property-schema.js";
 import { CareerViewService } from "./views.js";
 import { MongoCategoryMoveService } from "./category-move.js";
 import { MongoRelationService } from "./relations.js";
@@ -106,25 +107,33 @@ export class CareerService implements CareerApi {
       const removed = Object.keys(category.propertySchema).filter((key) => !Object.hasOwn(normalizedSchema, key));
       const protectedProperties = removed.filter((key) => category.propertySchema[key]?.system);
       if (protectedProperties.length) throw new CareerError(403, "system properties cannot be removed", { protectedProperties });
+      const removedDefinitions = careerCategoryDefinitions(category).filter(definition => removed.includes(definition.key));
+      const removedIds = new Set(removedDefinitions.map(definition => definition.id));
       const propertyValueCounts: Record<string, number> = {};
-      for (const key of removed) {
-        const count = await db.careerRecords.countDocuments({ userId, categoryId, deletedAt: null, [`properties.${key}`]: { $exists: true } }, { session: tx.session });
-        if (count) propertyValueCounts[key] = count;
+      for (const definition of removedDefinitions) {
+        const count = await db.careerRecords.countDocuments({ userId, categoryId, deletedAt: null, ...propertyPresenceFilter(definition.id, definition.key) }, { session: tx.session });
+        if (count) propertyValueCounts[definition.key] = count;
       }
       if (Object.keys(propertyValueCounts).length && !confirmValueRemoval) throw new CareerError(409, "category properties still contain values", { propertyValueCounts });
       const now = new Date();
       if (Object.keys(propertyValueCounts).length > 0) {
         const rows = await db.careerRecords.find({ userId, categoryId, deletedAt: null }, { session: tx.session }).toArray();
         const categoryForWrite = { ...category, propertySchema: normalizedSchema, propertySchemaV2, propertyDefinitions };
-        await db.careerRecords.bulkWrite(rows.flatMap((row) => {
-          const properties = { ...projectLegacyCareerProperties(category, row) };
+        const writes = rows.flatMap((row) => {
+          const properties = { ...row.properties };
           for (const key of removed) delete properties[key];
-          if (JSON.stringify(properties) === JSON.stringify(row.properties)) return [];
+          const propertyValues = row.propertyValues === undefined ? toCanonicalPropertyValues(categoryForWrite, properties)
+            : row.propertyValues.filter(value => !removedIds.has(value.propertyDefinitionId));
+          if (isDeepStrictEqual(properties, row.properties) && isDeepStrictEqual(propertyValues, row.propertyValues)) return [];
           return [{ updateOne: {
             filter: { _id: row._id, userId, version: row.version },
-            update: { $set: { properties, propertyValues: toCanonicalPropertyValues(categoryForWrite, properties), updatedAt: now }, $inc: { version: 1 } },
+            update: { $set: { properties, propertyValues, updatedAt: now }, $inc: { version: 1 } },
           } }];
-        }), { session: tx.session });
+        });
+        if (writes.length) {
+          const result = await db.careerRecords.bulkWrite(writes, { session: tx.session });
+          if (result.matchedCount !== writes.length) throw new CareerError(409, "schema 변경 중 Record version 충돌이 발생했습니다");
+        }
       }
       const updated = await db.careerCategories.findOneAndUpdate(
         { _id: categoryId, userId, version: expectedVersion },

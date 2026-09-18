@@ -1,14 +1,14 @@
 import { isDeepStrictEqual } from "node:util";
 
-import { CareerPropertyValueV2Schema, type CareerProperties, type CareerPropertyDefinitionV2 } from "@expresso/contracts";
+import { CareerPropertyValueV2Schema, type CareerPropertyDefinitionV2 } from "@expresso/contracts";
 import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc } from "@expresso/database";
 import type { Filter, UpdateFilter } from "mongodb";
 
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { CareerError } from "./errors.js";
-import { careerCategoryDefinitions, materializeLegacyTagOptions, toCanonicalPropertyValues } from "./properties.js";
-import { convertCareerPropertyValue } from "./property-schema.js";
+import { careerCategoryDefinitions, materializeLegacyTagOptions } from "./properties.js";
+import { convertCareerPropertyValue, propertyPresenceFilter, propertyMutationInput, propertyMutationWrite, propertyMutationTombstone } from "./property-schema.js";
 
 export type CareerPropertyMutationTopic =
   | "career.property-conversion"
@@ -92,36 +92,28 @@ function queryFor(topic: CareerPropertyMutationTopic, payload: MutationPayload, 
     deletedAt: null,
     ...(afterId ? { _id: { $gt: afterId } } : {}),
   };
-  if (topic === "career.property-default") filter[`properties.${payload.propertyKey}`] = { $exists: false };
-  if (topic === "career.property-deletion" || topic === "career.property-conversion") filter[`properties.${payload.propertyKey}`] = { $exists: true };
+  if (topic === "career.property-default") Object.assign(filter, propertyPresenceFilter(payload.propertyId, payload.propertyKey, false));
+  if (topic === "career.property-deletion" || topic === "career.property-conversion") Object.assign(filter, propertyPresenceFilter(payload.propertyId, payload.propertyKey));
   if (topic === "career.property-restoration") filter[`propertyValueTombstones.${payload.propertyId}`] = { $exists: true };
   return filter;
 }
 
-function nextProperties(topic: CareerPropertyMutationTopic, payload: MutationPayload, row: CareerRecordDoc): CareerProperties {
-  if (topic === "career.property-default") {
-    return { ...row.properties, [payload.propertyKey]: (payload as DefaultPayload).defaultValue as CareerProperties[string] };
-  }
-  if (topic === "career.property-deletion") {
-    const properties = { ...row.properties };
-    delete properties[payload.propertyKey];
-    return properties;
-  }
+function nextValue(topic: CareerPropertyMutationTopic, payload: MutationPayload, row: CareerRecordDoc, category: CareerCategoryDoc, definition: CareerPropertyDefinitionV2): unknown {
+  if (topic === "career.property-default") return (payload as DefaultPayload).defaultValue;
+  if (topic === "career.property-deletion") return null;
   if (topic === "career.property-restoration") {
     const value = row.propertyValueTombstones?.[payload.propertyId];
     if (value === undefined || value === null) throw new CareerError(409, "복원할 PropertyValue가 없습니다");
-    return { ...row.properties, [payload.propertyKey]: value as CareerProperties[string] };
+    return value;
   }
-
   const conversion = payload as ConversionPayload;
-  const currentValue = row.properties[payload.propertyKey];
+  const currentValue = propertyMutationInput(category, row, { ...definition, type: conversion.sourceType as CareerPropertyDefinitionV2["type"] });
   const parsed = CareerPropertyValueV2Schema.safeParse(currentValue);
-  if (parsed.success && parsed.data.type === conversion.targetType) return row.properties;
+  if (parsed.success && parsed.data.type === conversion.targetType) return currentValue;
   const result = convertCareerPropertyValue(currentValue, conversion.sourceType, conversion.targetType);
   if (result.kind === "unmapped") throw new CareerError(409, "지연 변경 중 변환할 수 없는 PropertyValue를 발견했습니다");
   if (result.kind === "lossy" && !conversion.allowLossy) throw new CareerError(409, "손실 가능한 지연 Property 변경에는 확인이 필요합니다");
-  const stored = parsed.success ? result.value : { type: conversion.targetType, value: result.value };
-  return { ...row.properties, [payload.propertyKey]: stored as CareerProperties[string] };
+  return parsed.success ? result.value : { type: conversion.targetType, value: result.value };
 }
 
 export class MongoCareerPropertyMutationService {
@@ -151,7 +143,7 @@ export class MongoCareerPropertyMutationService {
       { session: tx.session },
     );
     if (!category) throw new CareerError(404, "지연 Property 변경의 Category를 찾을 수 없습니다");
-    requireCurrentDefinition(category, topic, payload);
+    const definition = requireCurrentDefinition(category, topic, payload);
 
     const rows = await db.careerRecords.find(queryFor(topic, payload, afterId), { session: tx.session })
       .sort({ _id: 1 })
@@ -160,13 +152,15 @@ export class MongoCareerPropertyMutationService {
     if (rows.length === 0) return { processed: 0, afterId: null };
 
     const prepared = rows.map((row) => {
-      const properties = nextProperties(topic, payload, row);
-      const propertyValues = toCanonicalPropertyValues(category, properties);
-      return { row, properties, propertyValues };
+      // 이미 변환된 canonical 항목은 재전달에서도 BSON과 version을 그대로 보존합니다.
+      if (topic === "career.property-conversion" && row.propertyValues?.some(value => value.propertyDefinitionId === payload.propertyId && value.type === (payload as ConversionPayload).targetType)) {
+        return { row, properties: row.properties, propertyValues: row.propertyValues };
+      }
+      return { row, ...propertyMutationWrite(category, row, definition, nextValue(topic, payload, row, category, definition)) };
     });
     const changed = prepared.filter(({ row, properties, propertyValues }) =>
       !isDeepStrictEqual(row.properties, properties) || !isDeepStrictEqual(row.propertyValues ?? [], propertyValues));
-    await materializeLegacyTagOptions(tx, tx.session, category, changed.map((item) => item.properties));
+    await materializeLegacyTagOptions(tx, tx.session, category, changed.map((item) => item.row.propertyValues === undefined ? item.properties : {}));
 
     if (changed.length > 0) {
       const result = await db.careerRecords.bulkWrite(changed.map(({ row, properties, propertyValues }) => {
@@ -175,7 +169,7 @@ export class MongoCareerPropertyMutationService {
           $inc: { version: 1 },
         };
         if (topic === "career.property-deletion") {
-          update.$set![`propertyValueTombstones.${payload.propertyId}`] = row.properties[payload.propertyKey];
+          update.$set![`propertyValueTombstones.${payload.propertyId}`] = propertyMutationTombstone(row, definition);
         }
         if (topic === "career.property-restoration") update.$unset = { [`propertyValueTombstones.${payload.propertyId}`]: "" };
         return { updateOne: { filter: { _id: row._id, userId: payload.userId, version: row.version }, update } };

@@ -1,6 +1,6 @@
 import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
-import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc } from "@expresso/database";
+import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc, type CareerPropertyValueDoc } from "@expresso/database";
 import {
   ApplyCareerPropertyChangeSchema,
   CareerPropertyChangePreviewSchema,
@@ -22,7 +22,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
 import { mapMongoCategory } from "./mongo-categories.js";
-import { careerCategoryDefinitions, materializeLegacyTagOptions, projectLegacyCareerProperties, toCanonicalPropertyDefinitions, toCanonicalPropertyValues } from "./properties.js";
+import { careerCategoryDefinitions, materializeLegacyTagOptions, projectTypedCareerProperties, projectCareerResponseProperties, projectCanonicalCareerPropertyValues, toCanonicalPropertyDefinitions, toCanonicalPropertyValues } from "./properties.js";
 
 const PREVIEW_LIFETIME_MS = 15 * 60_000;
 const INLINE_MUTATION_LIMIT = 100;
@@ -135,8 +135,56 @@ function containsReference(value: unknown, propertyId: string): boolean {
   return Boolean(value && typeof value === "object" && Object.values(value).some((item) => containsReference(item, propertyId)));
 }
 
-function affectedFilter(userId: string, categoryId: string, key: string): Filter<CareerRecordDoc> {
-  return { userId, categoryId, deletedAt: null, [`properties.${key}`]: { $exists: true } } as Filter<CareerRecordDoc>;
+// canonical 필드가 있으면 빈 배열도 authoritative이며 legacy key를 조회하지 않습니다.
+export function propertyPresenceFilter(propertyId: string, key: string, present = true): Filter<CareerRecordDoc> {
+  return { $or: [
+    { propertyValues: { $exists: true }, "propertyValues.propertyDefinitionId": present ? propertyId : { $ne: propertyId } },
+    { propertyValues: { $exists: false }, ["properties." + key]: { $exists: present } },
+  ] };
+}
+
+function affectedFilter(userId: string, categoryId: string, source: CareerPropertyDefinitionV2): Filter<CareerRecordDoc> {
+  return { userId, categoryId, deletedAt: null, ...propertyPresenceFilter(source.id, source.key) };
+}
+
+// 변환할 항목만 기존 V2 projection에 통과시켜 비대상 BSON 값은 건드리지 않습니다.
+export function propertyMutationInput(category: CareerCategoryDoc, row: CareerRecordDoc, source: CareerPropertyDefinitionV2) {
+  if (row.propertyValues === undefined) return row.properties[source.key];
+  return projectTypedCareerProperties({ ...category, propertyDefinitions: toCanonicalPropertyDefinitions([{ ...source, deletedAt: null }]) }, {
+    properties: {}, propertyValues: row.propertyValues.filter(value => value.propertyDefinitionId === source.id),
+  })[source.key];
+}
+
+export function propertyMutationTombstone(row: CareerRecordDoc, source: CareerPropertyDefinitionV2) {
+  return (row.propertyValues === undefined ? row.properties[source.key]
+    : row.propertyValues.find(value => value.propertyDefinitionId === source.id)) as unknown as NonNullable<CareerRecordDoc["propertyValueTombstones"]>[string];
+}
+
+// inline과 worker가 같은 단일 속성 쓰기를 사용합니다. 전체 변환은 legacy-only에 한정합니다.
+export function propertyMutationWrite(category: CareerCategoryDoc, row: CareerRecordDoc, definition: CareerPropertyDefinitionV2,
+  nextValue: unknown, definitions: readonly CareerPropertyDefinitionV2[] = careerCategoryDefinitions(category)) {
+  const properties = { ...row.properties };
+  let replacement: CareerPropertyValueDoc | undefined;
+  if (nextValue === null) delete properties[definition.key];
+  else if (nextValue && typeof nextValue === "object" && "propertyDefinitionId" in nextValue) {
+    // canonical tombstone은 Decimal128까지 원형 그대로 복원합니다.
+    if (nextValue.propertyDefinitionId !== definition.id) throw new CareerError(409, "복원할 PropertyValue ID가 다릅니다");
+    replacement = nextValue as CareerPropertyValueDoc;
+    const singleCategory = { ...category, propertyDefinitions: toCanonicalPropertyDefinitions([{ ...definition, deletedAt: null }]) };
+    projectCanonicalCareerPropertyValues(singleCategory, { properties: {}, propertyValues: [replacement] });
+    const projected = projectCareerResponseProperties(singleCategory, { properties: {}, propertyValues: [replacement] });
+    delete properties[definition.key];
+    if (Object.hasOwn(projected, definition.key)) properties[definition.key] = projected[definition.key]!;
+  } else {
+    properties[definition.key] = nextValue as CareerProperties[string];
+    replacement = toCanonicalPropertyValues(category, { [definition.key]: nextValue as CareerProperties[string] }, definitions)[0];
+    if (!replacement || replacement.propertyDefinitionId !== definition.id) throw new CareerError(409, "PropertyValue를 변환할 수 없습니다");
+  }
+  if (row.propertyValues === undefined) return { properties, propertyValues: toCanonicalPropertyValues(category, properties, definitions) };
+  const propertyValues = row.propertyValues.filter(value => replacement !== undefined || value.propertyDefinitionId !== definition.id)
+    .map(value => value.propertyDefinitionId === definition.id && replacement ? replacement : value);
+  if (replacement && !row.propertyValues.some(value => value.propertyDefinitionId === definition.id)) propertyValues.push(replacement);
+  return { properties, propertyValues };
 }
 
 function validateConfiguration(type: CareerPropertyDefinitionV2["type"], config: Record<string, unknown>): void {
@@ -180,7 +228,9 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     const propertyId = "propertyId" in change ? change.propertyId : undefined;
     const source = propertyId ? current.find((definition) => definition.id === propertyId) : undefined;
     if (propertyId && !source) throw new CareerError(404, "property not found");
-    const filter = source ? affectedFilter(userId, categoryId, source.key) : undefined;
+    const filter: Filter<CareerRecordDoc> | undefined = source ? change.kind === "restore"
+      ? { userId, categoryId, deletedAt: null, ["propertyValueTombstones." + source.id]: { $exists: true } }
+      : affectedFilter(userId, categoryId, source) : undefined;
     const createHasDefault = change.kind === "create" && Object.hasOwn(change.property.config, "defaultValue");
     const configuresComputed = change.kind === "configure" && source && (source.type === "formula" || source.type === "rollup");
     const affectedRecordCount = configuresComputed ? await db.careerRecords.countDocuments({ userId, categoryId, deletedAt: null }) : filter ? await db.careerRecords.countDocuments(filter) : createHasDefault ? await db.careerRecords.countDocuments({ userId, categoryId, deletedAt: null }) : 0;
@@ -192,13 +242,13 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
       const rows = await db.careerRecords.find(filter!).project({ _id: 1, properties: 1, propertyValues: 1 }).limit(PREVIEW_SCAN_LIMIT + 1).toArray();
       convertibleCount = 0;
       for (const row of rows) {
-        const before = projectLegacyCareerProperties(category, row as CareerRecordDoc)[source.key];
+        const before = propertyMutationInput(category, row as CareerRecordDoc, source);
         const converted = convertCareerPropertyValue(before, source.type, change.type);
         if (converted.kind !== "unmapped") convertibleCount += 1;
         if ((converted.kind === "lossy" || converted.kind === "unmapped") && lossyExamples.length < PREVIEW_EXAMPLE_LIMIT) lossyExamples.push({ recordId: row._id, before, ...(converted.value === undefined ? {} : { after: converted.value }) });
       }
     } else if (source && change.kind === "delete") {
-      for (const row of sampleRows) lossyExamples.push({ recordId: row._id, before: projectLegacyCareerProperties(category, row)[source.key] });
+      for (const row of sampleRows) lossyExamples.push({ recordId: row._id, before: propertyMutationTombstone(row, source) });
     }
     const views = propertyId ? await db.careerViews.find({ userId, categoryId }).limit(21).toArray() : [];
     const dependentViews = views.filter((view) => containsReference(view, propertyId!)).map((view) => view._id).slice(0, 100);
@@ -285,24 +335,23 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
   }
 
   private async convertValues(session: ClientSession, userId: string, category: CareerCategoryDoc, source: CareerPropertyDefinitionV2, targetType: string, nextDefinitions: readonly CareerPropertyDefinitionV2[], confirmLossy: boolean, now: Date): Promise<void> {
-    const db = mongoCollections(this.context.db); const categoryId = category._id; const filter = affectedFilter(userId, categoryId, source.key);
+    const db = mongoCollections(this.context.db); const categoryId = category._id; const filter = affectedFilter(userId, categoryId, source);
     const count = await db.careerRecords.countDocuments(filter, { session });
     if (count > INLINE_MUTATION_LIMIT) { await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-conversion", idempotencyKey: `career-property:${categoryId}:${source.id}:${source.version + 1}`, payload: { userId, categoryId, propertyId: source.id, propertyKey: source.key, definitionVersion: source.version + 1, sourceType: source.type, targetType, allowLossy: confirmLossy } }); return; }
     const rows = await db.careerRecords.find(filter, { session }).limit(INLINE_MUTATION_LIMIT + 1).toArray();
     const conversions = rows.map((row) => {
-      const currentProperties = projectLegacyCareerProperties(category, row);
-      return { row, currentProperties, result: convertCareerPropertyValue(currentProperties[source.key], source.type, targetType) };
+      const currentValue = propertyMutationInput(category, row, source);
+      return { row, currentValue, result: convertCareerPropertyValue(currentValue, source.type, targetType) };
     });
     if (conversions.some(({ result }) => result.kind === "unmapped")) throw new CareerError(409, "some property values cannot be converted");
     if (!confirmLossy && conversions.some(({ result }) => result.kind === "lossy")) throw new CareerError(409, "lossy conversion requires confirmation");
-    const prepared = conversions.map(({ row, currentProperties, result }) => {
-      const stored = CareerPropertyValueV2Schema.safeParse(currentProperties[source.key]).success ? result.value : { type: targetType, value: result.value };
-      const properties: CareerProperties = { ...currentProperties, [source.key]: stored as CareerProperties[string] };
-      return { row, properties };
+    const prepared = conversions.map(({ row, currentValue, result }) => {
+      const stored = CareerPropertyValueV2Schema.safeParse(currentValue).success ? result.value : { type: targetType, value: result.value };
+      return { row, ...propertyMutationWrite(category, row, { ...source, type: targetType as CareerPropertyDefinitionV2["type"] }, stored, nextDefinitions) };
     });
-    await materializeLegacyTagOptions(this.context, session, category, prepared.map((item) => item.properties), nextDefinitions);
-    if (prepared.length > 0) await db.careerRecords.bulkWrite(prepared.map(({ row, properties }) => ({
-      updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { properties, propertyValues: toCanonicalPropertyValues(category, properties, nextDefinitions), updatedAt: now }, $inc: { version: 1 } } },
+    await materializeLegacyTagOptions(this.context, session, category, prepared.map((item) => item.row.propertyValues === undefined ? item.properties : {}), nextDefinitions);
+    if (prepared.length > 0) await db.careerRecords.bulkWrite(prepared.map(({ row, properties, propertyValues }) => ({
+      updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { properties, propertyValues, updatedAt: now }, $inc: { version: 1 } } },
     })), { session });
   }
 
@@ -321,28 +370,26 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
       await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-default", idempotencyKey: `career-property-default:${categoryId}:${definition.id}`, payload: { userId, categoryId, propertyId: definition.id, propertyKey: definition.key, definitionVersion: definition.version, defaultValue: parsed.data } });
       return;
     }
-    const rows = await db.careerRecords.find({ userId, categoryId, deletedAt: null, [`properties.${definition.key}`]: { $exists: false } }, { session }).toArray();
-    const prepared = rows.map((row) => ({ row, properties: { ...projectLegacyCareerProperties(category, row), [definition.key]: parsed.data } as CareerProperties }));
-    await materializeLegacyTagOptions(this.context, session, category, prepared.map((item) => item.properties), nextDefinitions);
-    if (prepared.length > 0) await db.careerRecords.bulkWrite(prepared.map(({ row, properties }) => {
-      return { updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { properties, propertyValues: toCanonicalPropertyValues(category, properties, nextDefinitions), updatedAt: now }, $inc: { version: 1 } } } };
+    const rows = await db.careerRecords.find({ userId, categoryId, deletedAt: null, ...propertyPresenceFilter(definition.id, definition.key, false) }, { session }).toArray();
+    const prepared = rows.map((row) => ({ row, ...propertyMutationWrite(category, row, definition, parsed.data, nextDefinitions) }));
+    await materializeLegacyTagOptions(this.context, session, category, prepared.map((item) => item.row.propertyValues === undefined ? item.properties : {}), nextDefinitions);
+    if (prepared.length > 0) await db.careerRecords.bulkWrite(prepared.map(({ row, properties, propertyValues }) => {
+      return { updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { properties, propertyValues, updatedAt: now }, $inc: { version: 1 } } } };
     }), { session });
   }
 
   private async deleteValues(session: ClientSession, userId: string, category: CareerCategoryDoc, source: CareerPropertyDefinitionV2, nextDefinitions: readonly CareerPropertyDefinitionV2[], confirmLossy: boolean, now: Date): Promise<void> {
-    const db = mongoCollections(this.context.db); const categoryId = category._id; const filter = affectedFilter(userId, categoryId, source.key);
+    const db = mongoCollections(this.context.db); const categoryId = category._id; const filter = affectedFilter(userId, categoryId, source);
     const count = await db.careerRecords.countDocuments(filter, { session });
     if (count > 0 && !confirmLossy) throw new CareerError(409, "property deletion requires confirmation");
     if (count > INLINE_MUTATION_LIMIT) { await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-deletion", idempotencyKey: `career-property-delete:${categoryId}:${source.id}:${source.version + 1}`, payload: { userId, categoryId, propertyId: source.id, propertyKey: source.key, definitionVersion: source.version + 1 } }); return; }
     const rows = await db.careerRecords.find(filter, { session }).limit(INLINE_MUTATION_LIMIT + 1).toArray();
     const prepared = rows.map((row) => {
-      const currentProperties = projectLegacyCareerProperties(category, row);
-      const properties = { ...currentProperties }; delete properties[source.key];
-      return { row, currentProperties, properties };
+      return { row, tombstone: propertyMutationTombstone(row, source), ...propertyMutationWrite(category, row, source, null, nextDefinitions) };
     });
-    await materializeLegacyTagOptions(this.context, session, category, prepared.map((item) => item.properties), nextDefinitions);
-    if (prepared.length > 0) await db.careerRecords.bulkWrite(prepared.map(({ row, currentProperties, properties }) => {
-      return { updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { properties, propertyValues: toCanonicalPropertyValues(category, properties, nextDefinitions), [`propertyValueTombstones.${source.id}`]: currentProperties[source.key], updatedAt: now }, $inc: { version: 1 } } } };
+    await materializeLegacyTagOptions(this.context, session, category, prepared.map((item) => item.row.propertyValues === undefined ? item.properties : {}), nextDefinitions);
+    if (prepared.length > 0) await db.careerRecords.bulkWrite(prepared.map(({ row, tombstone, properties, propertyValues }) => {
+      return { updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { properties, propertyValues, [`propertyValueTombstones.${source.id}`]: tombstone, updatedAt: now }, $inc: { version: 1 } } } };
     }), { session });
   }
 
@@ -355,12 +402,11 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     const prepared = rows.map((row) => {
       const restoredValue = row.propertyValueTombstones?.[source.id];
       if (restoredValue === undefined || restoredValue === null) throw new CareerError(409, "복원할 PropertyValue가 없습니다");
-      const properties: CareerProperties = { ...projectLegacyCareerProperties(category, row), [source.key]: restoredValue as CareerProperties[string] };
-      return { row, properties };
+      return { row, ...propertyMutationWrite(category, row, { ...source, deletedAt: null }, restoredValue, nextDefinitions) };
     });
-    await materializeLegacyTagOptions(this.context, session, category, prepared.map((item) => item.properties), nextDefinitions);
-    if (prepared.length > 0) await db.careerRecords.bulkWrite(prepared.map(({ row, properties }) => {
-      return { updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { properties, propertyValues: toCanonicalPropertyValues(category, properties, nextDefinitions), updatedAt: now }, $unset: { [path]: "" }, $inc: { version: 1 } } } };
+    await materializeLegacyTagOptions(this.context, session, category, prepared.map((item) => item.row.propertyValues === undefined ? item.properties : {}), nextDefinitions);
+    if (prepared.length > 0) await db.careerRecords.bulkWrite(prepared.map(({ row, properties, propertyValues }) => {
+      return { updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { properties, propertyValues, updatedAt: now }, $unset: { [path]: "" }, $inc: { version: 1 } } } };
     }), { session });
   }
 
