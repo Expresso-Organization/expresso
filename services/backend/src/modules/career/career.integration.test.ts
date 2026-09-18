@@ -79,6 +79,16 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
     expect(await records.findOne({ _id: created.record.id })).toMatchObject({
       properties: { note: "처음" },
       propertyValues: [{ propertyDefinitionId: propertyId, type: "text", value: "처음" }],
+      blockBody: {
+        schemaVersion: 1,
+        type: "doc",
+        content: [{
+          id: expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
+          type: "paragraph",
+          attrs: {},
+          text: [],
+        }],
+      },
       version: 1,
     });
 

@@ -83,7 +83,19 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
     const db = mongoCollections(fixture.resource.db);
     expect(await db.answers.countDocuments({ userId, questionId })).toBe(1);
     expect(await db.answerRecordChanges.countDocuments({ userId, answerId: first.answer.id })).toBe(1);
-    expect((await db.careerRecords.findOne({ _id: first.answer.createdRecordId }))?.propertyValues).toEqual([]);
+    expect(await db.careerRecords.findOne({ _id: first.answer.createdRecordId })).toMatchObject({
+      propertyValues: [],
+      blockBody: {
+        schemaVersion: 1,
+        type: "doc",
+        content: [{
+          id: expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
+          type: "paragraph",
+          attrs: {},
+          text: [],
+        }],
+      },
+    });
     expect(await db.outboxEvents.countDocuments({ userId, topic: "record.cleanup" })).toBe(1);
     const strengthened = await service.saveAnswer(userId, sessionId, questionId, "mongo-answer-0002", { ...input, transcript: `${input.transcript} 재발도 막았습니다.` });
     expect(strengthened).toMatchObject({ answer: { id: first.answer.id, version: 2 }, recordChange: { type: "strengthened" } });

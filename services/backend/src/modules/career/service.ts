@@ -21,6 +21,7 @@ import { CareerViewService } from "./views.js";
 import { MongoCategoryMoveService } from "./category-move.js";
 import { MongoRelationService } from "./relations.js";
 import { MongoCareerComputationService } from "../career-computation/index.js";
+import { createEmptyCanonicalBlockBody } from "./canonical-record.js";
 
 const duplicate = (error: unknown) => (error as { code?: number })?.code === 11000;
 
@@ -153,6 +154,7 @@ export class CareerService implements CareerApi {
       const record: CareerRecordDoc = {
         _id: randomUUID(), userId, ...input,
         propertyValues: toCanonicalPropertyValues(category, input.properties),
+        blockBody: createEmptyCanonicalBlockBody(),
         status: "draft", origin: "manual", version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null,
         createIdempotencyKey: idempotencyKey, createRequestHash: hash,
       };
