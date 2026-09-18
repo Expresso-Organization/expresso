@@ -6,6 +6,7 @@ import type { RelationService } from "./relations.js";
 import type { CareerComputationService } from "../career-computation/index.js";
 export { CareerService } from "./service.js";
 export { MongoCareerService } from "./service.js";
+export { createEmptyCanonicalBlockBody } from "./canonical-record.js";
 export { assertActiveRecordsForWrite, purgeTrashedCareerRecord } from "./mongo-record-guard.js";
 export { CareerError } from "./errors.js";
 export interface CareerApi extends Pick<LegacyCareerService, keyof LegacyCareerService> {
