@@ -1,4 +1,3 @@
-import { isDeepStrictEqual } from "node:util";
 import { randomUUID } from "node:crypto";
 import { careerDocumentToMarkdown, encodeDocumentAsYUpdate, encodeDocumentStateVector, markdownToCareerDocument, parseCareerDocument, reconstructYDocument } from "@expresso/editor";
 import { CareerPropertySchemaSchema, CareerProfileSchema, CreateCareerCategorySchema, CreateCareerRecordSchema, CreateCareerViewSchema, SaveCareerProfileSchema, UpdateCareerRecordSchema, type CareerPropertySchema, type CreateCareerCategory, type CreateCareerRecord, type CreateCareerView, type ListCareerRecordsQuery, type SaveCareerProfile, type UpdateCareerRecord } from "@expresso/contracts";
@@ -17,7 +16,7 @@ import { createMongoLink, listMongoLinks, mongoDeleteImpact, trashMongoRecord, r
 import { recomputeMongoSkill, listMongoSkills, listMongoSkillEvidence } from "./mongo-skills.js";
 import { MongoCareerDocumentRepository, hashUpdate } from "../career-editor/repository.js";
 import { Binary } from "mongodb";
-import { MongoCareerPropertySchemaService, propertyPresenceFilter } from "./property-schema.js";
+import { MongoCareerPropertySchemaService } from "./property-schema.js";
 import { CareerViewService } from "./views.js";
 import { MongoCategoryMoveService } from "./category-move.js";
 import { MongoRelationService } from "./relations.js";
@@ -96,45 +95,40 @@ export class CareerService implements CareerApi {
   async updatePropertySchema(userId: string, categoryId: string, expectedVersion: number, nextSchemaInput: CareerPropertySchema, confirmValueRemoval: boolean) {
     const nextSchema = CareerPropertySchemaSchema.parse(nextSchemaInput);
     return inTransaction(this.context, async (tx) => {
+      void confirmValueRemoval;
       await requireActiveUser(tx, userId);
       const db = mongoCollections(tx.db);
       const category = await db.careerCategories.findOne({ _id: categoryId, userId, isSystem: false }, { session: tx.session });
       if (!category) throw new CareerError(404, "career category not found");
       if (category.version !== expectedVersion) throw new CareerError(412, "category version is stale");
-      const normalizedSchema = Object.fromEntries(Object.entries(nextSchema).map(([key, definition]) => [key, { ...definition, id: definition.id ?? category.propertySchema[key]?.id ?? randomUUID() }]));
-      const propertySchemaV2 = legacySchemaToV2Definitions(categoryId, normalizedSchema, careerCategoryDefinitions(category));
-      const propertyDefinitions = toCanonicalPropertyDefinitions(propertySchemaV2);
-      const removed = Object.keys(category.propertySchema).filter((key) => !Object.hasOwn(normalizedSchema, key));
-      const protectedProperties = removed.filter((key) => category.propertySchema[key]?.system);
-      if (protectedProperties.length) throw new CareerError(403, "system properties cannot be removed", { protectedProperties });
-      const removedDefinitions = careerCategoryDefinitions(category).filter(definition => removed.includes(definition.key));
-      const removedIds = new Set(removedDefinitions.map(definition => definition.id));
-      const propertyValueCounts: Record<string, number> = {};
-      for (const definition of removedDefinitions) {
-        const count = await db.careerRecords.countDocuments({ userId, categoryId, deletedAt: null, ...propertyPresenceFilter(definition.id, definition.key) }, { session: tx.session });
-        if (count) propertyValueCounts[definition.key] = count;
+      const currentKeys = Object.keys(category.propertySchema).sort();
+      const nextKeys = Object.keys(nextSchema).sort();
+      if (currentKeys.length !== nextKeys.length || currentKeys.some((key, index) => key !== nextKeys[index])) {
+        throw new CareerError(409, "legacy property schema에서는 기존 property의 label만 변경할 수 있습니다");
       }
-      if (Object.keys(propertyValueCounts).length && !confirmValueRemoval) throw new CareerError(409, "category properties still contain values", { propertyValueCounts });
-      const now = new Date();
-      if (Object.keys(propertyValueCounts).length > 0) {
-        const rows = await db.careerRecords.find({ userId, categoryId, deletedAt: null }, { session: tx.session }).toArray();
-        const categoryForWrite = { ...category, propertySchema: normalizedSchema, propertySchemaV2, propertyDefinitions };
-        const writes = rows.flatMap((row) => {
-          const properties = { ...row.properties };
-          for (const key of removed) delete properties[key];
-          const propertyValues = row.propertyValues === undefined ? toCanonicalPropertyValues(categoryForWrite, properties)
-            : row.propertyValues.filter(value => !removedIds.has(value.propertyDefinitionId));
-          if (isDeepStrictEqual(properties, row.properties) && isDeepStrictEqual(propertyValues, row.propertyValues)) return [];
-          return [{ updateOne: {
-            filter: { _id: row._id, userId, version: row.version },
-            update: { $set: { properties, propertyValues, updatedAt: now }, $inc: { version: 1 } },
-          } }];
-        });
-        if (writes.length) {
-          const result = await db.careerRecords.bulkWrite(writes, { session: tx.session });
-          if (result.matchedCount !== writes.length) throw new CareerError(409, "schema 변경 중 Record version 충돌이 발생했습니다");
+      const normalizedSchema = Object.fromEntries(nextKeys.map((key) => {
+        const current = category.propertySchema[key]!;
+        const next = nextSchema[key]!;
+        if ((next.id !== undefined && next.id !== current.id)
+          || next.type !== current.type
+          || next.required !== current.required
+          || next.system !== current.system) {
+          throw new CareerError(409, "legacy property schema에서는 기존 property의 label만 변경할 수 있습니다");
         }
-      }
+        return [key, { ...current, label: next.label }];
+      }));
+      const renameDefinition = <T extends { key: string; name: string; version: number }>(definition: T): T => {
+        const legacy = normalizedSchema[definition.key];
+        if (!legacy || legacy.label === definition.name) return definition;
+        return { ...definition, name: legacy.label, version: definition.version + 1 };
+      };
+      const propertySchemaV2 = category.propertySchemaV2 === undefined
+        ? legacySchemaToV2Definitions(categoryId, normalizedSchema, careerCategoryDefinitions(category))
+        : category.propertySchemaV2.map(renameDefinition);
+      const propertyDefinitions = category.propertyDefinitions === undefined
+        ? toCanonicalPropertyDefinitions(propertySchemaV2)
+        : category.propertyDefinitions.map(renameDefinition);
+      const now = new Date();
       const updated = await db.careerCategories.findOneAndUpdate(
         { _id: categoryId, userId, version: expectedVersion },
         { $set: { propertySchema: normalizedSchema, propertySchemaV2, propertyDefinitions, schemaVersion: (category.schemaVersion ?? category.version) + 1, updatedAt: now }, $inc: { version: 1 } },
@@ -214,17 +208,37 @@ export class CareerService implements CareerApi {
         if (pending > 0) throw new CareerError(409, "document has unacknowledged updates");
       }
       const category = await requireCareerCategory(tx, userId, existing.categoryId, tx.session);
-      const existingProperties = projectLegacyCareerProperties(category, existing);
-      const properties = input.properties ?? existingProperties;
-      validateCareerProperties(category.propertySchema, properties, careerCategoryDefinitions(category));
-      await materializeLegacyTagOptions(tx, tx.session, category, [properties]);
-      const propertyValues = toCanonicalPropertyValues(category, properties);
+      const existingProperties = input.properties === undefined ? undefined : projectLegacyCareerProperties(category, existing);
+      const properties = input.properties;
+      if (properties !== undefined) {
+        validateCareerProperties(category.propertySchema, properties, careerCategoryDefinitions(category));
+        await materializeLegacyTagOptions(tx, tx.session, category, [properties]);
+      }
+      const propertyValues = properties === undefined ? undefined : toCanonicalPropertyValues(category, properties);
       const computationDefinitions = careerCategoryDefinitions(category).filter((definition) => definition.deletedAt === null);
       const changedPropertyIds = computationDefinitions.filter((definition) => {
         if (definition.type === "title") return input.title !== undefined && input.title !== existing.title;
-        return JSON.stringify(existingProperties[definition.key] ?? null) !== JSON.stringify(properties[definition.key] ?? null);
+        return properties !== undefined
+          && JSON.stringify(existingProperties?.[definition.key] ?? null) !== JSON.stringify(properties[definition.key] ?? null);
       }).map((definition) => definition.id);
-      const updated = await records.findOneAndUpdate({ _id: recordId, userId, deletedAt: null, version: expectedVersion }, { $set: { title: input.title ?? existing.title, status: input.status ?? existing.status, bodyMd: input.bodyMd ?? existing.bodyMd, properties, propertyValues, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
+      const fields: Partial<CareerRecordDoc> = {
+        title: input.title ?? existing.title,
+        status: input.status ?? existing.status,
+        bodyMd: input.bodyMd ?? existing.bodyMd,
+        updatedAt: new Date(),
+      };
+      if (properties !== undefined && propertyValues !== undefined) {
+        fields.properties = properties;
+        fields.propertyValues = propertyValues;
+      }
+      const updated = await records.findOneAndUpdate(
+        { _id: recordId, userId, deletedAt: null, version: expectedVersion },
+        {
+          $set: fields,
+          $inc: { version: 1 },
+        },
+        { session: tx.session, returnDocument: "after" },
+      );
       if (!updated) throw new CareerError(412, "career record version is stale");
       const categoryForRead = await requireCareerCategory(tx, userId, category._id, tx.session);
       if (input.bodyMd !== undefined) {
