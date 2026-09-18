@@ -1,12 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { createHash } from "node:crypto";
 
-import { Decimal128 } from "mongodb";
+import { Decimal128, type Collection } from "mongodb";
 import type { CanonicalCareerPropertyDefinition } from "@expresso/contracts";
-import { mongoCollections } from "@expresso/database";
+import { mongoCollections, type CareerAiProposalDoc } from "@expresso/database";
 import { encodeDocumentAsYUpdate, reconstructYDocument } from "@expresso/editor";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import type { MongoContext } from "../../platform/mongodb.js";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { CareerService } from "../career/service.js";
@@ -27,6 +28,187 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     ai = new AiProposalService(fixture.resource, documentService, adapter);
   }, 60_000);
   afterAll(async () => { await fixture?.dispose(); });
+
+  function gate() {
+    let resolve!: () => void;
+    const promise = new Promise<void>((done) => { resolve = done; });
+    return { promise, resolve };
+  }
+
+  // Mongo 명령은 실제 실행하고, 응답을 서비스에 돌려주는 시점만 제어합니다.
+  function proposalContext(wrap: (collection: Collection<CareerAiProposalDoc>) => Collection<CareerAiProposalDoc>): MongoContext {
+    const db = fixture.resource.db;
+    return { ...fixture.resource, db: new Proxy(db, {
+      get(target, key) {
+        if (key === "collection") return (name: string) => name === "career_ai_proposals" ? wrap(target.collection<CareerAiProposalDoc>(name)) : target.collection(name);
+        const value = Reflect.get(target, key);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    }) };
+  }
+
+  async function raceRecord() {
+    const career = new CareerService(fixture.resource);
+    const id = (await career.createRecord(userId, randomUUID(), { categoryId, title: "경합", properties: {}, bodyMd: "경합 전 본문" })).record.id;
+    const bootstrap = await documentService.bootstrap(userId, id);
+    return { id, bootstrap, input: { selection: { blockIds: [bootstrap.document.content[0]!.id] }, prompt: "경합" } };
+  }
+
+  function controllerCount(service: AiProposalService) {
+    return (service as unknown as { controllers: Map<string, AbortController> }).controllers.size;
+  }
+
+  it("race A: does not start generation after cancellation at the streaming publication boundary", async () => {
+    const record = await raceRecord(); const published = gate(); const resume = gate();
+    let proposalId = ""; let starts = 0;
+    const context = proposalContext((collection) => new Proxy(collection, {
+      get(target, key) {
+        if (key === "updateOne") {
+          const update: typeof collection.updateOne = async (filter, changes, options) => {
+            const result = await target.updateOne(filter, changes, options);
+            if (!Array.isArray(changes) && changes.$set?.status === "streaming") {
+              proposalId = String(filter._id); published.resolve(); await resume.promise;
+            }
+            return result;
+          };
+          return update;
+        }
+        const value = Reflect.get(target, key); return typeof value === "function" ? value.bind(target) : value;
+      },
+    }));
+    const local = new AiProposalService(context, documentService, { async generate() { starts += 1; return { summary: "경합", commands: [], propertyChanges: [] }; } });
+    const progress: string[] = []; local.setPublisher((_id, row) => progress.push(row.status));
+    const creating = local.create(userId, record.id, record.input);
+    try {
+      await published.promise;
+      await local.reject(userId, record.id, { recordId: record.id, proposalId }, "cancelled");
+    } finally { resume.resolve(); }
+    expect((await creating).status).toBe("cancelled");
+    expect(progress).toEqual(["draft", "cancelled"]);
+    expect(starts).toBe(0);
+    expect(controllerCount(local)).toBe(0);
+  });
+
+  it("race B: preserves applied content and status when cancellation resumes from a stale ready read", async () => {
+    const record = await raceRecord(); const read = gate(); const resume = gate();
+    let heldId = "";
+    const context = proposalContext((collection) => new Proxy(collection, {
+      get(target, key) {
+        if (key === "findOne") return async (...args: Parameters<typeof collection.findOne>) => {
+          const row = await target.findOne(...args);
+          if (heldId && row?._id === heldId && !args[1]?.session) {
+            heldId = ""; read.resolve(); await resume.promise;
+          }
+          return row;
+        };
+        const value = Reflect.get(target, key); return typeof value === "function" ? value.bind(target) : value;
+      },
+    }));
+    const local = new AiProposalService(context, documentService, { async generate(input) { return { summary: "적용", commands: [{ type: "setText", blockId: input.selectionBlockIds[0]!, text: "적용된 본문" }], propertyChanges: [] }; } });
+    const proposal = await local.create(userId, record.id, record.input); heldId = proposal.proposalId;
+    const cancelling = local.reject(userId, record.id, { recordId: record.id, proposalId: proposal.proposalId }, "cancelled").then(() => null, (error: unknown) => error);
+    try {
+      await read.promise;
+      await local.apply(userId, record.id, { recordId: record.id, proposalId: proposal.proposalId, expectedDocumentVersion: record.bootstrap.documentVersion, commandIndexes: [0], propertyChangeIndexes: [] });
+    } finally { resume.resolve(); }
+    const cancelError = await cancelling;
+    expect(await local.get(userId, record.id, proposal.proposalId)).toMatchObject({ status: "applied", appliedDocumentVersion: 1 });
+    const stored = await documentService.bootstrap(userId, record.id);
+    expect(stored.documentVersion).toBe(1);
+    expect(stored.document.content[0]?.text?.[0]?.text).toBe("적용된 본문");
+    expect(cancelError).toMatchObject({ statusCode: 409 });
+    expect(controllerCount(local)).toBe(0);
+  });
+
+  it.each(["draft", "streaming"] as const)("cleans controllers when cancellation wins at %s publication", async (phase) => {
+    const record = await raceRecord(); const published = gate(); const resume = gate(); let proposalId = ""; let starts = 0;
+    const context = proposalContext((collection) => new Proxy(collection, {
+      get(target, key) {
+        if (phase === "draft" && key === "insertOne") {
+          const insert: typeof collection.insertOne = async (row, options) => {
+            const result = await target.insertOne(row, options); proposalId = row._id; published.resolve(); await resume.promise; return result;
+          };
+          return insert;
+        }
+        if (phase === "streaming" && key === "updateOne") {
+          const update: typeof collection.updateOne = async (filter, changes, options) => {
+            const result = await target.updateOne(filter, changes, options);
+            if (!Array.isArray(changes) && changes.$set?.status === "streaming") { proposalId = String(filter._id); published.resolve(); await resume.promise; }
+            return result;
+          };
+          return update;
+        }
+        const value = Reflect.get(target, key); return typeof value === "function" ? value.bind(target) : value;
+      },
+    }));
+    const local = new AiProposalService(context, documentService, { async generate() { starts += 1; return { summary: "취소", commands: [], propertyChanges: [] }; } });
+    const creating = local.create(userId, record.id, record.input);
+    try {
+      await published.promise;
+      expect(controllerCount(local)).toBe(1);
+      await local.reject(userId, record.id, { recordId: record.id, proposalId }, "cancelled");
+    } finally { resume.resolve(); }
+    expect((await creating).status).toBe("cancelled");
+    expect(starts).toBe(0); expect(controllerCount(local)).toBe(0);
+  });
+
+  it.each(["insert", "transition", "publish", "adapter", "validation", "ready"] as const)("cleans controllers after %s failure", async (phase) => {
+    const record = await raceRecord(); const failure = new Error("의도한 lifecycle 실패");
+    const context = proposalContext((collection) => new Proxy(collection, {
+      get(target, key) {
+        if ((phase === "insert" && key === "insertOne") || (phase === "transition" && key === "updateOne")) return async () => { throw failure; };
+        const value = Reflect.get(target, key); return typeof value === "function" ? value.bind(target) : value;
+      },
+    }));
+    const local = new AiProposalService(context, documentService, { async generate() {
+      if (phase === "adapter") throw failure;
+      return { summary: "실패", commands: phase === "validation" ? [{ type: "setText", blockId: randomUUID(), text: "금지" }] : [], propertyChanges: [] };
+    } });
+    local.setPublisher((_id, row) => { if ((phase === "publish" && row.status === "streaming") || (phase === "ready" && row.status === "ready")) throw failure; });
+    await expect(local.create(userId, record.id, record.input)).rejects.toBeDefined();
+    expect(controllerCount(local)).toBe(0);
+    if (phase === "adapter" || phase === "validation") expect(await mongoCollections(fixture.resource.db).careerAiProposals.findOne({ recordId: record.id })).toMatchObject({ status: "conflicted" });
+  });
+
+  it("race B reverse: cancellation winning during apply rolls back document writes", async () => {
+    const record = await raceRecord(); const read = gate(); const resume = gate(); let armed = false;
+    const context = proposalContext((collection) => new Proxy(collection, {
+      get(target, key) {
+        if (key === "findOne") return async (...args: Parameters<typeof collection.findOne>) => {
+          const row = await target.findOne(...args);
+          if (armed && args[1]?.session && row?.status === "ready") { armed = false; read.resolve(); await resume.promise; }
+          return row;
+        };
+        const value = Reflect.get(target, key); return typeof value === "function" ? value.bind(target) : value;
+      },
+    }));
+    const local = new AiProposalService(context, documentService, { async generate(input) { return { summary: "적용", commands: [{ type: "setText", blockId: input.selectionBlockIds[0]!, text: "남으면 안 되는 본문" }], propertyChanges: [] }; } });
+    const proposal = await local.create(userId, record.id, record.input);
+    const db = mongoCollections(fixture.resource.db); const snapshots = await db.careerDocumentSnapshots.countDocuments({ recordId: record.id }); armed = true;
+    const applying = local.apply(userId, record.id, { recordId: record.id, proposalId: proposal.proposalId, expectedDocumentVersion: 0, commandIndexes: [0], propertyChangeIndexes: [] }).then(() => null, (error: unknown) => error);
+    try { await read.promise; await local.reject(userId, record.id, { recordId: record.id, proposalId: proposal.proposalId }, "cancelled"); }
+    finally { resume.resolve(); }
+    expect(await applying).toMatchObject({ statusCode: 409 });
+    expect((await local.get(userId, record.id, proposal.proposalId)).status).toBe("cancelled");
+    expect((await documentService.bootstrap(userId, record.id)).document).toEqual(record.bootstrap.document);
+    expect(await db.careerRecords.findOne({ _id: record.id })).toMatchObject({ documentVersion: 0 });
+    expect(await db.careerDocumentSnapshots.countDocuments({ recordId: record.id })).toBe(snapshots);
+    expect(await db.careerDocumentUpdates.countDocuments({ recordId: record.id })).toBe(0);
+    expect(await db.careerRecordRevisions.countDocuments({ recordId: record.id, actor: "ai" })).toBe(0);
+  });
+
+  it("preserves normal rejection and reports conflicting terminal cancellation", async () => {
+    const record = await raceRecord();
+    const local = new AiProposalService(fixture.resource, documentService, { async generate() { return { summary: "거절", commands: [], propertyChanges: [] }; } });
+    const proposal = await local.create(userId, record.id, record.input);
+    const request = { recordId: record.id, proposalId: proposal.proposalId };
+    await local.reject(userId, record.id, request);
+    await local.reject(userId, record.id, request);
+    await expect(local.reject(userId, record.id, request, "cancelled")).rejects.toMatchObject({ statusCode: 409 });
+    expect((await local.get(userId, record.id, proposal.proposalId)).status).toBe("rejected");
+    expect((await documentService.bootstrap(userId, record.id)).documentVersion).toBe(0);
+    expect(controllerCount(local)).toBe(0);
+  });
 
   it("keeps proposals separate, streams progress, rebases stable IDs, applies a partial selection and restores the exact before snapshot", async () => {
     const initial = await documentService.bootstrap(userId, recordId); const blockId = initial.document.content[0]!.id;
@@ -59,15 +241,16 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
   it("rejects inaccessible selection and keeps a cancellation that races the adapter", async () => {
     await expect(ai.create(userId, recordId, { selection: { blockIds: [randomUUID()] }, prompt: "침입" })).rejects.toMatchObject({ statusCode: 409 });
     let release!: () => void; const waiting = new Promise<void>((resolve) => { release = resolve; });
-    let aborted = false;
-    const slow: AiProposalAdapter = { async generate(input) { await new Promise<void>((resolve, reject) => { input.signal.addEventListener("abort", () => { aborted = true; reject(new DOMException("취소", "AbortError")); }, { once: true }); void waiting.then(resolve); }); return { summary: "늦음", commands: [], propertyChanges: [] }; } };
+    let aborted = false; const adapterStarted = gate();
+    const slow: AiProposalAdapter = { async generate(input) { await new Promise<void>((resolve, reject) => { input.signal.addEventListener("abort", () => { aborted = true; reject(new DOMException("취소", "AbortError")); }, { once: true }); void waiting.then(resolve); adapterStarted.resolve(); }); return { summary: "늦음", commands: [], propertyChanges: [] }; } };
     const delayed = new AiProposalService(fixture.resource, documentService, slow);
     const bootstrap = await documentService.bootstrap(userId, recordId); const creating = delayed.create(userId, recordId, { selection: { blockIds: [bootstrap.document.content[0]!.id] }, prompt: "취소" });
-    let row: { _id: string } | null = null;
-    for (let attempt = 0; attempt < 20 && !row; attempt += 1) { row = await mongoCollections(fixture.resource.db).careerAiProposals.findOne({ userId, recordId, status: "streaming" }, { projection: { _id: 1 } }); if (!row) await new Promise((resolve) => setTimeout(resolve, 10)); }
+    await adapterStarted.promise;
+    const row = await mongoCollections(fixture.resource.db).careerAiProposals.findOne({ userId, recordId, status: "streaming" }, { projection: { _id: 1 } });
     await delayed.reject(userId, recordId, { recordId, proposalId: row!._id }, "cancelled"); release();
     expect((await creating).status).toBe("cancelled");
     expect(aborted).toBe(true);
+    expect(controllerCount(delayed)).toBe(0);
     await delayed.reject(userId, recordId, { recordId, proposalId: row!._id }, "cancelled");
   });
 
