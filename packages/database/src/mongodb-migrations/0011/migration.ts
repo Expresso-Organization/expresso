@@ -6,8 +6,8 @@ import {
   careerPropertyReferenceLocations,
   inspectCareerPropertyMigration,
   type PropertyIdMapping,
-} from "../../career-property-inventory.js";
-import { reconcilePlannedDocumentJournals } from "../../migration-journal-recovery.js";
+} from "./inventory.js";
+import { reconcilePlannedDocumentJournals } from "./journal-recovery.js";
 import type { MongoMigrationStep } from "../../mongo-migrations.js";
 
 const MIGRATION_NAME = "0011_career_property_canonical_identity";
@@ -65,8 +65,8 @@ function digest(document: Document): string {
   return createHash("sha256").update(JSON.stringify(document)).digest("hex");
 }
 
-function canonicalType(type: unknown): unknown {
-  return type === "tags" ? "multi_select" : type === "boolean" ? "checkbox" : type;
+function canonicalType(type: unknown): string {
+  return type === "tags" ? "multi_select" : type === "boolean" ? "checkbox" : String(type);
 }
 
 function mappingIndex(mappings: readonly PropertyIdMapping[]): Map<string, string> {
@@ -116,15 +116,97 @@ function definitionMeaning(definition: Document): Document {
   };
 }
 
+function canonicalConfig(type: string, raw: unknown, key: unknown): Document {
+  const config = isObject(raw) ? cloneDocument(raw) : {};
+  const hasOnly = (fields: readonly string[]): boolean => Object.keys(config).every((field) => fields.includes(field));
+  const uuid = (value: unknown): value is string => typeof value === "string" && new RegExp(UUID_PATTERN).test(value);
+
+  if (type === "select" || type === "multi_select") {
+    if (!hasOnly(["options"])) {
+      throw new Error(`preflight conflict: ${String(key)} select config에 알 수 없는 필드가 있습니다.`);
+    }
+    const options = config["options"] ?? [];
+    if (!Array.isArray(options) || options.length > 100) {
+      throw new Error(`preflight conflict: ${String(key)} select config.options가 올바르지 않습니다.`);
+    }
+    const ids = new Set<string>();
+    const normalized = options.map((option) => {
+      if (!isObject(option)
+        || Object.keys(option).some((field) => field !== "id" && field !== "name")
+        || !uuid(option["id"])
+        || typeof option["name"] !== "string"
+        || option["name"].length < 1
+        || option["name"].length > 80
+        || option["name"].trim().length === 0
+        || ids.has(option["id"])) {
+        throw new Error(`preflight conflict: ${String(key)} select option이 canonical 계약과 다릅니다.`);
+      }
+      ids.add(option["id"]);
+      return { id: option["id"], name: option["name"] };
+    });
+    return { options: normalized };
+  }
+
+  if (type === "relation") {
+    if (!hasOnly(["targetCategoryId", "inversePropertyId", "cardinality", "deletePolicy"])
+      || !uuid(config["targetCategoryId"])
+      || !(config["inversePropertyId"] === null || uuid(config["inversePropertyId"]))
+      || !["single", "multiple"].includes(String(config["cardinality"]))
+      || !["restrict", "nullify"].includes(String(config["deletePolicy"]))) {
+      throw new Error(`preflight conflict: ${String(key)} relation config가 canonical 계약과 다릅니다.`);
+    }
+    return config;
+  }
+
+  if (type === "formula") {
+    const diagnostics = config["diagnostics"];
+    const validDiagnostics = Array.isArray(diagnostics) && diagnostics.length <= 50 && diagnostics.every((diagnostic) => (
+      isObject(diagnostic)
+      && Object.keys(diagnostic).every((field) => ["code", "message", "severity", "start", "end"].includes(field))
+      && typeof diagnostic["code"] === "string" && diagnostic["code"].length >= 1 && diagnostic["code"].length <= 80
+      && typeof diagnostic["message"] === "string" && diagnostic["message"].length >= 1 && diagnostic["message"].length <= 500
+      && ["error", "warning"].includes(String(diagnostic["severity"]))
+      && Number.isSafeInteger(diagnostic["start"]) && Number(diagnostic["start"]) >= 0
+      && Number.isSafeInteger(diagnostic["end"]) && Number(diagnostic["end"]) >= Number(diagnostic["start"])
+    ));
+    if (!hasOnly(["source", "ast", "diagnostics"])
+      || typeof config["source"] !== "string"
+      || config["source"].length > 4_000
+      || /\b(?:eval|Function|import|require)\s*\(/u.test(config["source"])
+      || !Object.hasOwn(config, "ast")
+      || !validDiagnostics) {
+      throw new Error(`preflight conflict: ${String(key)} formula config가 canonical 계약과 다릅니다.`);
+    }
+    return config;
+  }
+
+  if (type === "rollup") {
+    if (!hasOnly(["relationPropertyId", "targetPropertyId", "aggregation"])
+      || !uuid(config["relationPropertyId"])
+      || !uuid(config["targetPropertyId"])
+      || !["count", "unique_count", "sum", "average", "min", "max", "earliest", "latest", "percent_checked", "show_unique"]
+        .includes(String(config["aggregation"]))) {
+      throw new Error(`preflight conflict: ${String(key)} rollup config가 canonical 계약과 다릅니다.`);
+    }
+    return config;
+  }
+
+  if (Object.keys(config).length > 0) {
+    throw new Error(`preflight conflict: ${String(key)} ${type} config는 비어 있어야 합니다.`);
+  }
+  return {};
+}
+
 function canonicalDefinition(definition: Document, fallbackOrder: number): Document {
+  const type = canonicalType(definition["type"]);
   return {
     id: definition["id"],
     key: definition["key"],
     name: definition["name"] ?? definition["label"],
-    type: canonicalType(definition["type"]),
+    type,
     required: definition["required"],
     system: definition["system"],
-    config: cloneDocument(isObject(definition["config"]) ? definition["config"] : {}),
+    config: canonicalConfig(type, definition["config"], String(definition["key"])),
     order: typeof definition["order"] === "number" ? definition["order"] : fallbackOrder,
     version: typeof definition["version"] === "number" ? definition["version"] : 1,
     deletedAt: typeof definition["deletedAt"] === "string" ? definition["deletedAt"] : null,
@@ -334,6 +416,67 @@ async function collectionValidator(db: Db, name: string): Promise<Document> {
 }
 
 function canonicalDefinitionSchema(): Document {
+  const uuid = { bsonType: "string", pattern: UUID_PATTERN, maxLength: 36 };
+  const emptyConfig = { bsonType: "object", additionalProperties: false };
+  const option = {
+    bsonType: "object",
+    required: ["id", "name"],
+    properties: {
+      id: { bsonType: "string", pattern: UUID_PATTERN, maxLength: 36 },
+      name: { bsonType: "string", minLength: 1, maxLength: 80, pattern: "\\S" },
+    },
+    additionalProperties: false,
+  };
+  const selectConfig = {
+    bsonType: "object",
+    required: ["options"],
+    properties: { options: { bsonType: "array", maxItems: 100, uniqueItems: true, items: option } },
+    additionalProperties: false,
+  };
+  const relationConfig = {
+    bsonType: "object",
+    required: ["targetCategoryId", "inversePropertyId", "cardinality", "deletePolicy"],
+    properties: {
+      targetCategoryId: uuid,
+      inversePropertyId: { bsonType: ["string", "null"], pattern: UUID_PATTERN, maxLength: 36 },
+      cardinality: { enum: ["single", "multiple"] },
+      deletePolicy: { enum: ["restrict", "nullify"] },
+    },
+    additionalProperties: false,
+  };
+  const diagnostic = {
+    bsonType: "object",
+    required: ["code", "message", "severity", "start", "end"],
+    properties: {
+      code: { bsonType: "string", minLength: 1, maxLength: 80 },
+      message: { bsonType: "string", minLength: 1, maxLength: 500 },
+      severity: { enum: ["error", "warning"] },
+      start: { bsonType: ["int", "long", "double"], minimum: 0, multipleOf: 1 },
+      end: { bsonType: ["int", "long", "double"], minimum: 0, multipleOf: 1 },
+    },
+    additionalProperties: false,
+  };
+  const formulaConfig = {
+    bsonType: "object",
+    required: ["source", "ast", "diagnostics"],
+    properties: {
+      source: { bsonType: "string", maxLength: 4_000 },
+      ast: {},
+      diagnostics: { bsonType: "array", maxItems: 50, items: diagnostic },
+    },
+    additionalProperties: false,
+  };
+  const rollupConfig = {
+    bsonType: "object",
+    required: ["relationPropertyId", "targetPropertyId", "aggregation"],
+    properties: {
+      relationPropertyId: uuid,
+      targetPropertyId: uuid,
+      aggregation: { enum: ["count", "unique_count", "sum", "average", "min", "max", "earliest", "latest", "percent_checked", "show_unique"] },
+    },
+    additionalProperties: false,
+  };
+  const emptyConfigTypes = ["text", "number", "checkbox", "date", "url", "email", "phone", "file", "media", "created_time", "updated_time"];
   return {
     bsonType: "array",
     maxItems: 50,
@@ -352,6 +495,13 @@ function canonicalDefinitionSchema(): Document {
         version: { bsonType: ["int", "long", "double"], minimum: 1, multipleOf: 1 },
         deletedAt: { bsonType: ["string", "null"], pattern: OFFSET_DATE_TIME_PATTERN },
       },
+      oneOf: [
+        { properties: { type: { enum: ["select", "multi_select"] }, config: selectConfig } },
+        { properties: { type: { enum: ["relation"] }, config: relationConfig } },
+        { properties: { type: { enum: ["formula"] }, config: formulaConfig } },
+        { properties: { type: { enum: ["rollup"] }, config: rollupConfig } },
+        { properties: { type: { enum: emptyConfigTypes }, config: emptyConfig } },
+      ],
       additionalProperties: false,
     },
   };
@@ -441,6 +591,57 @@ async function installCanonicalValidators(db: Db): Promise<void> {
   await db.command({ collMod: "career_records", validator: recordValidator, validationLevel: "strict", validationAction: "error" });
 }
 
+function propertyMutationValidator(): Document {
+  const nullableUuid = { bsonType: ["string", "null"], pattern: UUID_PATTERN, maxLength: 36 };
+  return {
+    $jsonSchema: {
+      bsonType: "object",
+      required: [
+        "_id", "mutationId", "kind", "userId", "categoryId", "propertyId", "propertyKey", "lockKey",
+        "semanticFingerprintVersion", "semanticFingerprint", "operationFingerprint", "operationPayload", "status", "active",
+        "cursor", "processedCount", "attempts", "lastError", "leaseToken", "leaseExpiresAt",
+        "createdAt", "updatedAt", "completedAt",
+      ],
+      properties: {
+        _id: uuidSchema(), mutationId: uuidSchema(),
+        kind: { enum: ["career.property-conversion", "career.property-default", "career.property-deletion", "career.property-restoration"] },
+        userId: uuidSchema(), categoryId: uuidSchema(), propertyId: uuidSchema(),
+        propertyKey: { bsonType: "string", pattern: "^[A-Za-z][A-Za-z0-9_]{0,63}$" },
+        lockKey: { bsonType: "string", minLength: 1, maxLength: 160 },
+        semanticFingerprintVersion: { bsonType: ["int", "long", "double"], minimum: 1, multipleOf: 1 },
+        semanticFingerprint: { bsonType: "string", pattern: "^[a-f0-9]{64}$" },
+        operationFingerprint: { bsonType: "string", pattern: "^[a-f0-9]{64}$" },
+        operationPayload: { bsonType: "object" },
+        status: { enum: ["pending", "running", "failed", "completed", "cancelled", "superseded"] },
+        active: { bsonType: "bool" },
+        cursor: nullableUuid,
+        processedCount: { bsonType: ["int", "long", "double"], minimum: 0, multipleOf: 1 },
+        attempts: { bsonType: ["int", "long", "double"], minimum: 0, multipleOf: 1 },
+        lastError: { bsonType: ["object", "null"] },
+        leaseToken: nullableUuid,
+        leaseExpiresAt: { bsonType: ["date", "null"] },
+        createdAt: { bsonType: "date" }, updatedAt: { bsonType: "date" }, completedAt: { bsonType: ["date", "null"] },
+      },
+      oneOf: [
+        { properties: { status: { enum: ["pending", "running", "failed"] }, active: { enum: [true] } } },
+        { properties: { status: { enum: ["completed", "cancelled", "superseded"] }, active: { enum: [false] } } },
+      ],
+      additionalProperties: false,
+    },
+  };
+}
+
+async function installPropertyMutationState(db: Db): Promise<void> {
+  const name = "career_property_mutations";
+  const validator = propertyMutationValidator();
+  const exists = await db.listCollections({ name }, { nameOnly: true }).hasNext();
+  if (exists) await db.command({ collMod: name, validator, validationLevel: "strict", validationAction: "error" });
+  else await db.createCollection(name, { validator, validationLevel: "strict", validationAction: "error" });
+  const collection = db.collection(name);
+  await collection.createIndex({ lockKey: 1 }, { name: "career_property_mutation_active_lock", unique: true, partialFilterExpression: { active: true } });
+  await collection.createIndex({ userId: 1, categoryId: 1, propertyId: 1, updatedAt: -1 }, { name: "career_property_mutation_scope" });
+}
+
 async function verifyMigration(db: Db): Promise<void> {
   const report = await inspectCareerPropertyMigration(db);
   if (!report.canMigrate) throw new Error(`0011 postflight conflict: ${report.conflicts.map(({ reason }) => reason).join(", ")}`);
@@ -464,6 +665,7 @@ export async function careerPropertyCanonicalIdentitySteps(): Promise<MongoMigra
     { id: "career_property:preflight", run: preflight },
     { id: "career_property:journal_and_remap", run: applyPlan },
     { id: "career_property:canonical_validators", run: installCanonicalValidators },
+    { id: "career_property:mutation_state", run: installPropertyMutationState },
     { id: "career_property:postflight", run: verifyMigration },
   ];
 }

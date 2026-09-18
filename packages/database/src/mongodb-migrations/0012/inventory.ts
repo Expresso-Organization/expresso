@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import type { Collection, Document } from "mongodb";
 
-import { legacy0009PropertyDefinitionId, officialPropertyDefinitionId } from "./career-property-canonical-mapping.js";
+import { legacy0009PropertyDefinitionId, officialPropertyDefinitionId } from "./canonical-mapping.js";
 
 export type CareerPropertyMigrationConflictReason =
   | "duplicate_property_key"

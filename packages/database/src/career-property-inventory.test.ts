@@ -88,7 +88,7 @@ function fixtureCollections(): Record<string, Document[]> {
       },
       {
         _id: "44444444-4444-4444-8444-444444444444", userId: "22222222-2222-4222-8222-222222222222", categoryId: SYSTEM_CATEGORY_ID,
-        properties: { role: "가".repeat(50_001), tags: ["   "], date: "09/2026", unknown: "orphan" },
+        properties: { role: "가".repeat(50_001), tags: ["   ", "x".repeat(81)], date: "09/2026", unknown: "orphan" },
         unmappedProperties: { [ROLE_ID]: { type: "text", value: "source category unknown" } },
       },
     ],
@@ -130,8 +130,11 @@ describe("career property read-only inventory", () => {
     expect(report.summary.references).toBeGreaterThanOrEqual(8);
     expect(report.distributions).toMatchObject({ textOver50000: 1, whitespaceOnlyTags: 1, legacyMonthDates: 1, nonstandardDates: 1, unknownLegacyKeys: 1 });
     expect(report.conflicts.map(({ reason }) => reason)).toEqual(expect.arrayContaining([
-      "legacy_text_too_long", "whitespace_only_tag", "nonstandard_legacy_date", "unknown_legacy_property_key", "orphan_property_reference", "ambiguous_property_reference",
+      "legacy_text_too_long", "whitespace_only_tag", "legacy_tag_too_long", "nonstandard_legacy_date", "unknown_legacy_property_key", "orphan_property_reference", "ambiguous_property_reference",
     ]));
+    const longTagConflict = report.conflicts.find(({ reason }) => reason === "legacy_tag_too_long");
+    expect(longTagConflict?.locations[0]).toMatch(/length=81,digest=[0-9a-f]{16}/);
+    expect(JSON.stringify(longTagConflict)).not.toContain("x".repeat(81));
     expect(report.canMigrate).toBe(false);
     expect(report.conflicts.every(({ count }) => count > 0)).toBe(true);
     expect(report.conflicts.every(({ message }) => message.length > 0)).toBe(true);

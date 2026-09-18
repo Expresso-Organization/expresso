@@ -306,6 +306,9 @@ describe.skipIf(!mongoUrl)("Career property canonical identity migration 0011", 
       expect(canonicalDefinitions.find((definition) => definition["key"] === "role")).toMatchObject({
         id: roleOfficialId, key: "role", name: "역할", config: {}, order: expect.any(Number), version: 1, deletedAt: null,
       });
+      for (const definition of canonicalDefinitions.filter(({ type }) => type === "select" || type === "multi_select")) {
+        expect(definition["config"], String(definition["key"])).toEqual({ options: expect.any(Array) });
+      }
       expect(canonicalDefinitions.some((definition) => Object.hasOwn(definition, "label"))).toBe(false);
       expect(JSON.stringify(canonicalDefinitions)).not.toContain(role0009Id);
       expect(JSON.stringify(migratedCategory?.["propertySchemaV2"])).toContain(roleOfficialId);
@@ -337,6 +340,33 @@ describe.skipIf(!mongoUrl)("Career property canonical identity migration 0011", 
       });
       expect(await categories.listIndexes().toArray()).toEqual(categoryIndexesBefore);
       expect(await records.listIndexes().toArray()).toEqual(recordIndexesBefore);
+
+      const mutations = db.collection<Document & { _id: string }>("career_property_mutations");
+      const mutationUserId = randomUUID();
+      const mutation = {
+        _id: randomUUID(), mutationId: randomUUID(), kind: "career.property-conversion",
+        userId: mutationUserId, categoryId, propertyId: roleOfficialId, propertyKey: "role",
+        lockKey: `${mutationUserId}:${categoryId}:${roleOfficialId}`,
+        semanticFingerprintVersion: 1, semanticFingerprint: "a".repeat(64),
+        operationFingerprint: "b".repeat(64),
+        operationPayload: { sourceType: "text", targetType: "number", allowLossy: false },
+        status: "pending", active: true, cursor: null, processedCount: 0, attempts: 0,
+        lastError: null, leaseToken: null, leaseExpiresAt: null, createdAt: new Date(), updatedAt: new Date(), completedAt: null,
+      };
+      await mutations.insertOne(mutation);
+      await expect(mutations.insertOne({ ...mutation, _id: randomUUID(), mutationId: randomUUID() }))
+        .rejects.toMatchObject({ code: 11000 });
+      await expect(mutations.insertOne({ ...mutation, _id: randomUUID(), mutationId: randomUUID(), operationPayload: undefined }))
+        .rejects.toMatchObject({ code: 121 });
+
+      const invalidConfigCategory = (await categories.findOne({ _id: categoryId }))!;
+      const definitions = invalidConfigCategory["propertyDefinitions"] as Document[];
+      await expect(categories.updateOne(
+        { _id: categoryId },
+        { $set: { propertyDefinitions: definitions.map((definition) => definition["key"] === "role"
+          ? { ...definition, config: { unexpected: true } }
+          : definition) } },
+      )).rejects.toMatchObject({ code: 121 });
 
       const journal = await db.collection("career_property_migration_journal").find({}).toArray();
       expect(journal.length).toBeGreaterThan(0);
@@ -640,6 +670,7 @@ describe.skipIf(!mongoUrl)("Career legacy property value backfill migration 0012
     ["non-finite number", (value: Document) => { (value["properties"] as Document)["score"] = Number.POSITIVE_INFINITY; }],
     ["oversized text", (value: Document) => { (value["properties"] as Document)["note"] = "가".repeat(50_001); }],
     ["whitespace-only tag", (value: Document) => { (value["properties"] as Document)["tags"] = ["   "]; }],
+    ["overlong tag", (value: Document) => { (value["properties"] as Document)["tags"] = ["private-" + "x".repeat(73)]; }],
     ["invalid date", (value: Document) => { (value["properties"] as Document)["month"] = "2026-09-01"; }],
     ["date precision mismatch", (value: Document) => { (value["properties"] as Document)["month"] = { type: "date", value: { precision: "month", start: "2026-09-01", end: null } }; }],
     ["invalid select UUID in existing canonical value", (value: Document) => {

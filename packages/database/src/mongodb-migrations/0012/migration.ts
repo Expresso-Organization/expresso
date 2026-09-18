@@ -3,9 +3,9 @@ import { isDeepStrictEqual } from "node:util";
 
 import { BSON, type Db, type Document, type Filter } from "mongodb";
 
-import { exactOptionId } from "../../career-property-canonical-mapping.js";
-import { inspectCareerPropertyMigration, type PropertyIdMapping } from "../../career-property-inventory.js";
-import { reconcilePlannedDocumentJournals } from "../../migration-journal-recovery.js";
+import { exactOptionId } from "./canonical-mapping.js";
+import { inspectCareerPropertyMigration, type PropertyIdMapping } from "./inventory.js";
+import { reconcilePlannedDocumentJournals } from "./journal-recovery.js";
 import type { MongoMigrationStep } from "../../mongo-migrations.js";
 
 const MIGRATION_NAME = "0012_career_property_values_backfill";
@@ -38,6 +38,12 @@ function clone<T>(value: T): T {
 
 function digest(value: Document): string {
   return createHash("sha256").update(BSON.serialize(value)).digest("hex");
+}
+
+function privateStringDiagnostic(source: string, value: string): string {
+  const length = [...value].length;
+  const valueDigest = createHash("sha256").update(value, "utf8").digest("hex").slice(0, 16);
+  return `${source}(length=${length},digest=${valueDigest})`;
 }
 
 function compareExact(left: string, right: string): number {
@@ -167,6 +173,7 @@ function canonicalValue(
   definition: Document,
   raw: unknown,
   optionNames: Map<string, Set<string>>,
+  source: string,
 ): Document {
   const propertyDefinitionId = String(definition["id"]);
   const key = String(definition["key"]);
@@ -201,6 +208,9 @@ function canonicalValue(
     const names = optionNames.get(propertyDefinitionId) ?? new Set<string>();
     const ids = (value as string[]).map((name) => {
       if (name.trim().length === 0) throw new Error(`0012 변환 conflict: ${key}에 공백만 있는 tag가 있습니다.`);
+      if ([...name].length > 80) {
+        throw new Error(`0012 변환 conflict: canonical option name 80자 제한을 초과했습니다: ${privateStringDiagnostic(source, name)}`);
+      }
       names.add(name);
       return exactOptionId(propertyDefinitionId, name);
     });
@@ -273,7 +283,7 @@ function mergeOptions(category: Document, optionNames: ReadonlyMap<string, Set<s
     for (const option of options) {
       const id = option["id"];
       const name = option["name"];
-      if (typeof id !== "string" || typeof name !== "string" || byId.has(id) || byName.has(name)) {
+      if (typeof id !== "string" || typeof name !== "string" || [...name].length > 80 || byId.has(id) || byName.has(name)) {
         throw new Error(`0012 option conflict: ${String(definition["key"])}의 기존 option이 올바르지 않습니다.`);
       }
       byId.set(id, option);
@@ -346,7 +356,12 @@ function recordPlan(
   for (const definition of orderedDefinitions) {
     const key = String(definition["key"]);
     if (!Object.hasOwn(record["properties"], key)) continue;
-    expected.push(canonicalValue(definition, record["properties"][key], optionNames));
+    expected.push(canonicalValue(
+      definition,
+      record["properties"][key],
+      optionNames,
+      `career_records/${String(record["_id"])}/properties/${key}:tag`,
+    ));
   }
   if (Object.hasOwn(record, "propertyValues")) {
     if (!Array.isArray(record["propertyValues"])) {

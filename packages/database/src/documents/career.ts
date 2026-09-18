@@ -35,6 +35,34 @@ export interface CareerCategoryDoc {
   propertyMutationResults?: Record<string, unknown>;
 }
 
+export type CareerPropertyMutationStatus = "pending" | "running" | "failed" | "completed" | "cancelled" | "superseded";
+
+export interface CareerPropertyMutationDoc {
+  _id: string;
+  mutationId: string;
+  kind: "career.property-conversion" | "career.property-default" | "career.property-deletion" | "career.property-restoration";
+  userId: string;
+  categoryId: string;
+  propertyId: string;
+  propertyKey: string;
+  lockKey: string;
+  semanticFingerprintVersion: number;
+  semanticFingerprint: string;
+  operationFingerprint: string;
+  operationPayload: JsonObject;
+  status: CareerPropertyMutationStatus;
+  active: boolean;
+  cursor: string | null;
+  processedCount: number;
+  attempts: number;
+  lastError: JsonObject | null;
+  leaseToken: string | null;
+  leaseExpiresAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  completedAt: Date | null;
+}
+
 export interface CareerRecordDoc {
   _id: string;
   userId: string;

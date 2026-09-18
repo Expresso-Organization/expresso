@@ -150,6 +150,20 @@ describe.skipIf(!mongoUrl)("career property reconciliation gate", () => {
     expect(report.canCutover).toBe(true);
   });
 
+  it("blocks an overlong legacy tag without exposing the original value", async () => {
+    const longTag = "private-" + "x".repeat(74);
+    await db.collection<StringIdDocument>("career_categories").insertOne(category());
+    await db.collection<StringIdDocument>("career_records").insertOne(record({ tags: [longTag] }, []));
+    await appliedMigrations();
+
+    const report = await reconcileCareerProperties(db);
+
+    expect(report.canCutover).toBe(false);
+    expect(report.mismatches).toContainEqual(expect.objectContaining({ reason: "inventory:legacy_tag_too_long" }));
+    expect(JSON.stringify(report)).toMatch(/length=82,digest=[0-9a-f]{16}/);
+    expect(JSON.stringify(report)).not.toContain(longTag);
+  });
+
   it("counts an incomplete canonical definition once instead of also reporting it as missing", async () => {
     const incompleteCategory = category();
     incompleteCategory["propertyDefinitions"] = (incompleteCategory["propertyDefinitions"] as Document[]).map((item) => ({

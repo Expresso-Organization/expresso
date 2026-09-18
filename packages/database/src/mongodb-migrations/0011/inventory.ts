@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import type { Collection, Document } from "mongodb";
 
-import { legacy0009PropertyDefinitionId, officialPropertyDefinitionId } from "./career-property-canonical-mapping.js";
+import { legacy0009PropertyDefinitionId, officialPropertyDefinitionId } from "./canonical-mapping.js";
 
 export type CareerPropertyMigrationConflictReason =
   | "duplicate_property_key"
@@ -17,7 +17,6 @@ export type CareerPropertyMigrationConflictReason =
   | "unknown_legacy_property_key"
   | "legacy_text_too_long"
   | "whitespace_only_tag"
-  | "legacy_tag_too_long"
   | "nonstandard_legacy_date"
   | "nonstandard_legacy_number"
   | "unsupported_bson_value"
@@ -129,7 +128,6 @@ const CONFLICT_MESSAGES: Record<CareerPropertyMigrationConflictReason, string> =
   unknown_legacy_property_key: "legacy properties key에 대응하는 Definition을 찾을 수 없습니다.",
   legacy_text_too_long: "legacy text가 canonical 50,000자 제한을 초과합니다.",
   whitespace_only_tag: "공백으로만 이루어진 legacy tag는 canonical option name으로 만들 수 없습니다.",
-  legacy_tag_too_long: "legacy tag가 canonical option name 80자 제한을 초과합니다.",
   nonstandard_legacy_date: "legacy date가 지원하는 YYYY-MM 형식이 아닙니다.",
   nonstandard_legacy_number: "legacy number가 유한한 지원 BSON numeric 값이 아닙니다.",
   unsupported_bson_value: "legacy 또는 canonical 값에 지원하지 않는 BSON shape가 있습니다.",
@@ -244,8 +242,6 @@ function addLegacyValueDistribution(
     for (const tag of value as string[]) {
       distribution.exactTagDigests[digest(tag)] = (distribution.exactTagDigests[digest(tag)] ?? 0) + 1;
       if (tag.trim().length === 0) { distribution.whitespaceOnlyTags += 1; conflicts.add("whitespace_only_tag", location); }
-      const length = [...tag].length;
-      if (length > 80) conflicts.add("legacy_tag_too_long", `${location}:tag(length=${length},digest=${digest(tag)})`);
     }
     return;
   }

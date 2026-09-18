@@ -11,17 +11,29 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
   const mongo = client.db(databaseName);
   const collections = mongoCollections(mongo);
   beforeAll(async () => {
+    await mongo.collection<Document & { _id: string }>("career_property_migration_journal").insertOne({
+      _id: "0012:compatibility-writer-canary",
+      migration: "0012_career_property_values_backfill",
+      kind: "execution_gate",
+      deploymentVersion: "isolated-schema-test",
+      verifiedAt: new Date(),
+      checkedWrites: 1,
+      mismatches: 0,
+      state: "verified",
+    });
     await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
   }, 60_000);
   afterAll(async () => { try { await mongo.dropDatabase(); } finally { await client.close(); } });
 
   it("creates every product collection and preserves the seeded IDs and all 30 additional designs", async () => {
-    expect(await mongo.listCollections({}, { nameOnly: true }).toArray()).toHaveLength(82);
+    expect(await mongo.listCollections({}, { nameOnly: true }).toArray()).toHaveLength(84);
     expect(await collections.plans.countDocuments()).toBe(3);
     expect((await collections.plans.findOne({ code: "free" }))?._id).toBe("aa09f35f-bde6-4e18-b9cd-7b32759bf43b");
     expect(await collections.careerCategories.countDocuments({ isSystem: true })).toBe(7);
     expect(await collections.scheduledJobDefinitions.countDocuments()).toBe(8);
     expect(await collections.templates.countDocuments()).toBe(33);
+    expect((await mongo.collection("schema_migrations").find({ state: "applied" }).sort({ _id: 1 }).toArray()).map(({ _id }) => _id))
+      .toEqual(Array.from({ length: 13 }, (_, index) => String(index + 1).padStart(4, "0")));
     for (let i = 1; i <= 30; i++) {
       expect(await collections.templates.findOne({ _id: `d3510000-0000-4000-8000-${String(i).padStart(12, "0")}` })).not.toBeNull();
     }
@@ -31,7 +43,12 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await collections.plans.updateOne({ code: "free" }, { $set: { generationQuota: 17 } });
     const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     expect(result.applied).toEqual([]);
-    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_career_record_slice"]);
+    expect(result.existing).toEqual([
+      "0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences",
+      "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards",
+      "0008_career_view_configurations", "0009_career_record_slice", "0010_career_rich_block_body",
+      "0011_career_property_canonical_identity", "0012_career_property_values_backfill", "0013_career_computation_version",
+    ]);
     expect((await collections.plans.findOne({ code: "free" }))?.generationQuota).toBe(17);
   });
 
@@ -154,4 +171,20 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
       ...record, _id: randomUUID(), editorSchemaVersion: 2,
     })).rejects.toMatchObject({ code: 121 });
   });
+});
+
+describe.skipIf(!mongoUrl)("MongoDB schema deploy checkpoint", () => {
+  const databaseName = `expresso_test_schema_cp_${randomUUID().replaceAll("-", "")}`;
+  const client = new MongoClient(mongoUrl ?? "mongodb://127.0.0.1", { serverSelectionTimeoutMS: 3_000 });
+  const mongo = client.db(databaseName);
+
+  afterAll(async () => { try { await mongo.dropDatabase(); } finally { await client.close(); } });
+
+  it("applies the supported deploy checkpoint through 0011 without requiring the 0012 canary", async () => {
+    const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName, targetVersion: "0011" });
+
+    expect(result.applied.at(-1)).toBe("0011_career_property_canonical_identity");
+    expect(await mongo.collection<Document & { _id: string }>("schema_migrations").countDocuments({ _id: "0012" })).toBe(0);
+    expect(await mongo.collection("career_categories").countDocuments({ isSystem: true })).toBe(7);
+  }, 60_000);
 });

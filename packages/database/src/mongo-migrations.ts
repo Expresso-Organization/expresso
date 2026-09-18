@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import type { Db } from "mongodb";
+import { checksumMigrationManifest } from "./migration-checksum.js";
 import { initialMigrationSteps } from "./mongodb-migrations/0001/migration.js";
 import { generationLedgerConstraintSteps } from "./mongodb-migrations/0002/migration.js";
 import { analyticsAndPreferenceSteps } from "./mongodb-migrations/0003/migration.js";
@@ -53,10 +54,8 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const ninthHash = createHash("sha256").update(`migration.ts\0${ninthSource.byteLength}\0`).update(ninthSource).digest("hex");
   const tenthSource = await readFile(new URL("./mongodb-migrations/0010/migration.ts", import.meta.url));
   const tenthHash = createHash("sha256").update(`migration.ts\0${tenthSource.byteLength}\0`).update(tenthSource).digest("hex");
-  const eleventhSource = await readFile(new URL("./mongodb-migrations/0011/migration.ts", import.meta.url));
-  const eleventhHash = createHash("sha256").update(`migration.ts\0${eleventhSource.byteLength}\0`).update(eleventhSource).digest("hex");
-  const twelfthSource = await readFile(new URL("./mongodb-migrations/0012/migration.ts", import.meta.url));
-  const twelfthHash = createHash("sha256").update(`migration.ts\0${twelfthSource.byteLength}\0`).update(twelfthSource).digest("hex");
+  const eleventhHash = await checksumMigrationManifest(new URL("./mongodb-migrations/0011/", import.meta.url));
+  const twelfthHash = await checksumMigrationManifest(new URL("./mongodb-migrations/0012/", import.meta.url));
   const thirteenthSource = await readFile(new URL("./mongodb-migrations/0013/migration.ts", import.meta.url));
   const thirteenthHash = createHash("sha256").update(`migration.ts\0${thirteenthSource.byteLength}\0`).update(thirteenthSource).digest("hex");
   return [

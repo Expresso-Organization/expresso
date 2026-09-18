@@ -13,7 +13,11 @@ import { MongoIdentityService } from "../identity/index.js";
 import { CareerService } from "../career/service.js";
 import { MongoCareerComputationService } from "./service.js";
 
-const definition = (id: string, key: string, type: CanonicalCareerPropertyDefinition["type"], config: Record<string, unknown> = {}, order = 0): CanonicalCareerPropertyDefinition => ({ id, key, name: key, type, required: false, system: false, config, order, version: 1, deletedAt: null });
+const definition = (id: string, key: string, type: CanonicalCareerPropertyDefinition["type"], config: Record<string, unknown> = {}, order = 0): CanonicalCareerPropertyDefinition => ({
+  id, key, name: key, type, required: false, system: false,
+  config: type === "formula" ? { ast: null, diagnostics: [], ...config } : config,
+  order, version: 1, deletedAt: null,
+});
 const legacy = (label: string, type: "number" | "text") => ({ label, type, required: false, system: false });
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("career computation MongoDB and BullMQ", () => {

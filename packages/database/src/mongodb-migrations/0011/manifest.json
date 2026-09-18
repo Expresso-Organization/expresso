@@ -1,0 +1,8 @@
+{
+  "entries": [
+    "canonical-mapping.ts",
+    "inventory.ts",
+    "journal-recovery.ts",
+    "migration.ts"
+  ]
+}
