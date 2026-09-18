@@ -111,6 +111,8 @@ jobs:
           pnpm --filter @expresso/database build
 
       - name: 마이그레이션
+        env:
+          MONGODB_MIGRATE_TARGET_VERSION: "0011"
         run: pnpm db:migrate
 
       - name: 타입 검사
