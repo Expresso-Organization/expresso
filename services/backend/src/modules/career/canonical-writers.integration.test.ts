@@ -87,15 +87,15 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await f.worker("career.property-restoration");
     expect((await f.read())!.propertyValues).toContainEqual({ propertyDefinitionId: f.target, type: "number", value: 42 });
   });
-  it("schema removal counts canonical-only values and preserves unrelated BSON", async () => {
+  it("legacy schema removal is rejected even for canonical-only values and preserves unrelated BSON", async () => {
     const f = await setup();
     await f.db.careerRecords.updateOne({ _id: f.record.id }, { $unset: { "properties.target": "" } });
     const before = await f.read();
     const schema = { ...f.category.propertySchema }; delete schema.target;
     await expect(service.updatePropertySchema(userId, f.category.id, 1, schema, false)).rejects.toMatchObject({ statusCode: 409 });
     expect(await f.read()).toEqual(before);
-    await service.updatePropertySchema(userId, f.category.id, 1, schema, true);
-    expect((await f.read())!.propertyValues).toEqual(f.preserved);
+    await expect(service.updatePropertySchema(userId, f.category.id, 1, schema, true)).rejects.toMatchObject({ statusCode: 409 });
+    expect(await f.read()).toEqual(before);
     await expect(service.getRecord(userId, f.record.id)).resolves.toMatchObject({ id: f.record.id });
   });
   it.each(["type-change", "delete"] as const)("schema %s previews and mutates canonical-only candidates", async kind => {
@@ -187,7 +187,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(await f.db.careerRecords.find({ categoryId: f.category.id }).sort({ _id: 1 }).toArray()).toEqual(rows);
     expect(await f.db.outboxEvents.countDocuments({ userId })).toBe(outbox);
   });
-  it("inline legacy-only conversion and schema removal retain compatibility", async () => {
+  it("inline legacy-only conversion remains compatible while legacy schema removal is rejected", async () => {
     const f = await setup({ legacy: true });
     const change = { kind: "type-change" as const, propertyId: f.target, type: "number" as const };
     const preview = await service.previewChange(userId, f.category.id, change);
@@ -196,7 +196,8 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect((await f.read())!.propertyValues).toContainEqual({ propertyDefinitionId: f.target, type: "number", value: 42 });
     const other = await setup({ legacy: true });
     const schema = { ...other.category.propertySchema }; delete schema.target;
-    await service.updatePropertySchema(userId, other.category.id, 1, schema, true);
-    expect((await other.read())!.propertyValues).toEqual([{ propertyDefinitionId: other.preserved[1]!.propertyDefinitionId, type: "text", value: "legacy tail" }]);
+    const beforeRemoval = await other.read();
+    await expect(service.updatePropertySchema(userId, other.category.id, 1, schema, true)).rejects.toMatchObject({ statusCode: 409 });
+    expect(await other.read()).toEqual(beforeRemoval);
   });
 });
