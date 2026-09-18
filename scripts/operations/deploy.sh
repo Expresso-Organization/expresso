@@ -72,7 +72,11 @@ if [ -z "${MONGODB_MIGRATE_URL:-}" ] && ! grep -q '^MONGODB_MIGRATE_URL=' servic
   echo "services/backend/.env에 MONGODB_MIGRATE_URL이 필요합니다" >&2
   exit 1
 fi
-pnpm db:migrate
+# 0012는 compatibility writer production canary 확인 뒤에만 적용한다. 승인된
+# 운영 전진에서는 MONGODB_MIGRATE_TARGET_VERSION을 정확한 목표 버전으로 지정한다.
+MIGRATION_TARGET="${MONGODB_MIGRATE_TARGET_VERSION:-0011}"
+echo "MongoDB migration target $MIGRATION_TARGET"
+MONGODB_MIGRATE_TARGET_VERSION="$MIGRATION_TARGET" pnpm db:migrate
 
 # 새 편집기는 명시적으로 true를 넣기 전까지 API·WebSocket 등록을 열지 않는다.
 # 기존 서버의 .env에는 이 줄이 없을 수 있으므로 배포 중 기본값을 안전하게 보완한다.
