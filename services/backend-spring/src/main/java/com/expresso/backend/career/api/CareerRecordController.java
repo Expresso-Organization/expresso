@@ -168,7 +168,11 @@ public class CareerRecordController {
 
 	private static Map<String, Object> readPatchRequest(byte[] body) {
 		try {
-			return PATCH_REQUEST_MAPPER.readValue(body, PATCH_REQUEST_TYPE);
+			var request = PATCH_REQUEST_MAPPER.readValue(body, PATCH_REQUEST_TYPE);
+			if (request == null) {
+				throw new CareerRecordRequestValidationException("요청 본문은 올바른 JSON 객체여야 합니다");
+			}
+			return request;
 		}
 		catch (JacksonException error) {
 			throw new CareerRecordRequestValidationException("요청 본문은 올바른 JSON 객체여야 합니다");

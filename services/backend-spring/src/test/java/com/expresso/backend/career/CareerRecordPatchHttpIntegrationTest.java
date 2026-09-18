@@ -7,6 +7,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
@@ -19,6 +23,7 @@ import org.bson.types.Decimal128;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
@@ -32,7 +37,7 @@ import com.expresso.backend.TestcontainersConfiguration;
 
 @Import(TestcontainersConfiguration.class)
 @AutoConfigureMockMvc
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class CareerRecordPatchHttpIntegrationTest {
 
 	private static final String RECORDS = "career_records";
@@ -56,6 +61,9 @@ class CareerRecordPatchHttpIntegrationTest {
 	private static final String UNKNOWN_PROPERTY_DEFINITION_ID = "6ae7a3c3-e0f0-4b88-8fe8-da3da27d0dd8";
 	private static final String PARAGRAPH_ID = "fb122c86-7db8-41c3-a9d9-7a12c4758b08";
 	private static final Instant UPDATED_AT = Instant.parse("2026-09-01T08:15:30.123Z");
+
+	@Value("${local.server.port}")
+	private int port;
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -277,6 +285,25 @@ class CareerRecordPatchHttpIntegrationTest {
 		}
 
 		assertStoredVersionAndTitle(1, "Original title");
+	}
+
+	@Test
+	void rejectsJsonNullOverHttpAsAValidationError() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+		var request = HttpRequest.newBuilder(
+				URI.create("http://127.0.0.1:" + port + "/v1/career/records/" + RECORD_ID))
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ACCESS_TOKEN)
+				.header(HttpHeaders.IF_MATCH, "\"v1\"")
+				.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+				.method("PATCH", HttpRequest.BodyPublishers.ofString("null"))
+				.build();
+		try (var client = HttpClient.newHttpClient()) {
+			var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+			assertThat(response.statusCode()).isEqualTo(400);
+			assertThat(response.body()).contains("\"code\":\"VALIDATION_ERROR\"");
+		}
+		assertStoredVersionAndTitle(1, "Original title");
+		assertThat(mongoTemplate.getCollection(OUTBOX_EVENTS).countDocuments()).isZero();
 	}
 
 	@Test
