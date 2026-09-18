@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.expresso.backend.career.domain.CareerRecord;
 import com.expresso.backend.career.domain.CareerRecordChangeSet;
+import com.expresso.backend.career.domain.CareerRecordStatus;
 import com.expresso.backend.career.domain.MultiSelectPropertyValue;
 import com.expresso.backend.career.domain.PropertyDefinition;
 import com.expresso.backend.career.domain.PropertyValue;
@@ -88,6 +89,28 @@ public class CareerRecordPatchService implements PatchCareerRecordUseCase {
 			}
 			validateSelectOptions(definition.config(), propertyValue);
 		}
+	}
+
+	@Override
+	public CareerRecord patchStatus(
+			String ownerId,
+			String recordId,
+			long expectedVersion,
+			CareerRecordStatus status) {
+		Objects.requireNonNull(ownerId, "ownerId는 null일 수 없습니다");
+		Objects.requireNonNull(recordId, "recordId는 null일 수 없습니다");
+		Objects.requireNonNull(status, "status는 null일 수 없습니다");
+
+		var currentRecord = recordRepository.findOwnedCanonicalById(ownerId, recordId)
+				.orElseThrow(CareerRecordNotFoundException::new);
+		if (currentRecord.version() != expectedVersion) {
+			throw new CareerRecordPreconditionFailedException();
+		}
+		return recordRepository.updateOwnedStatus(
+				currentRecord,
+				status,
+				clock.instant().truncatedTo(ChronoUnit.MILLIS))
+				.orElseGet(() -> distinguishMissingFromStale(ownerId, recordId));
 	}
 
 	private static void validateSelectOptions(Map<String, Object> config, PropertyValue value) {

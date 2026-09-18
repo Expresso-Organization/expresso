@@ -144,6 +144,44 @@ class CareerRecordPatchHttpIntegrationTest {
 	}
 
 	@Test
+	void updatesOnlyWorkflowStatusAndReturnsTheNextEtag() throws Exception {
+		var original = canonicalRecord(USER_ID, 1);
+		mongoTemplate.getCollection(RECORDS).insertOne(original);
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", "{\"status\":\"organized\"}")
+				.andExpect(status().isOk())
+				.andExpect(header().string(HttpHeaders.ETAG, "\"v2\""))
+				.andExpect(jsonPath("$.data.version").value(2))
+				.andExpect(jsonPath("$.data.status").doesNotExist());
+
+		var stored = mongoTemplate.getCollection(RECORDS).find(new Document("_id", RECORD_ID)).first();
+		assertThat(stored).isNotNull();
+		assertThat(stored.getString("status")).isEqualTo("organized");
+		assertThat(stored.getString("title")).isEqualTo(original.getString("title"));
+		assertThat(stored.getList("propertyValues", Document.class))
+				.isEqualTo(original.getList("propertyValues", Document.class));
+		assertThat(stored.get("blockBody", Document.class)).isEqualTo(original.get("blockBody", Document.class));
+		assertThat(stored.get("properties", Document.class)).isEqualTo(original.get("properties", Document.class));
+		assertThat(stored.getString("bodyMd")).isEqualTo(original.getString("bodyMd"));
+	}
+
+	@Test
+	void keepsVersionAndUpdatedAtWhenWorkflowStatusIsUnchanged() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 3));
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v3\"", "{\"status\":\"draft\"}")
+				.andExpect(status().isOk())
+				.andExpect(header().string(HttpHeaders.ETAG, "\"v3\""))
+				.andExpect(jsonPath("$.data.version").value(3))
+				.andExpect(jsonPath("$.data.updatedAt").value(UPDATED_AT.toString()));
+
+		var stored = mongoTemplate.getCollection(RECORDS).find(new Document("_id", RECORD_ID)).first();
+		assertThat(stored).isNotNull();
+		assertThat(stored.getInteger("version")).isEqualTo(3);
+		assertThat(stored.getDate("updatedAt").toInstant()).isEqualTo(UPDATED_AT);
+	}
+
+	@Test
 	void roundTripsEveryWritablePropertyValueThroughPatchMongoAndGet() throws Exception {
 		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
 		mongoTemplate.getCollection(CATEGORIES).updateOne(

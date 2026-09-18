@@ -31,6 +31,7 @@ import com.expresso.backend.career.domain.BlockBody;
 import com.expresso.backend.career.domain.AssetPropertyValue;
 import com.expresso.backend.career.domain.CareerRecord;
 import com.expresso.backend.career.domain.CareerRecordChangeSet;
+import com.expresso.backend.career.domain.CareerRecordStatus;
 import com.expresso.backend.career.domain.CheckboxPropertyValue;
 import com.expresso.backend.career.domain.DatePropertyValue;
 import com.expresso.backend.career.domain.MultiSelectPropertyValue;
@@ -104,8 +105,12 @@ public class CareerRecordController {
 			@RequestBody byte[] body) {
 		var normalizedRecordId = normalizeUuid(recordId, "recordId");
 		var expectedVersion = parseExpectedVersion(ifMatch);
-		var changeSet = readChangeSet(readPatchRequest(body));
-		var record = patchCareerRecord.patch(principal.userId(), normalizedRecordId, expectedVersion, changeSet);
+		var request = readPatchRequest(body);
+		var record = request.keySet().equals(Set.of("status"))
+				? patchCareerRecord.patchStatus(
+						principal.userId(), normalizedRecordId, expectedVersion, readStatus(request.get("status")))
+				: patchCareerRecord.patch(
+						principal.userId(), normalizedRecordId, expectedVersion, readChangeSet(request));
 		return recordResponse(record, HttpStatus.OK);
 	}
 
@@ -220,6 +225,18 @@ public class CareerRecordController {
 			case FILE, MEDIA -> new AssetPropertyValue(
 					propertyDefinitionId, type, readUuidList(rawValue, type.wireName() + " value"));
 		};
+	}
+
+	private static CareerRecordStatus readStatus(Object value) {
+		if (!(value instanceof String status)) {
+			throw new CareerRecordRequestValidationException("status는 문자열이어야 합니다");
+		}
+		try {
+			return CareerRecordStatus.fromWireName(status);
+		}
+		catch (IllegalArgumentException error) {
+			throw new CareerRecordRequestValidationException("status는 draft, organized, verified 중 하나여야 합니다");
+		}
 	}
 
 	private static PropertyValueType readPropertyValueType(String type) {

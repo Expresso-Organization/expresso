@@ -16,6 +16,7 @@ import com.expresso.backend.career.application.CareerRecordDataIntegrityExceptio
 import com.expresso.backend.career.application.CareerRecordIdempotencyConflictException;
 import com.expresso.backend.career.application.CareerRecordRepository;
 import com.expresso.backend.career.domain.CareerRecord;
+import com.expresso.backend.career.domain.CareerRecordStatus;
 
 @Repository
 public class MongoCareerRecordRepository implements CareerRecordRepository {
@@ -83,6 +84,35 @@ public class MongoCareerRecordRepository implements CareerRecordRepository {
 			update.set("blockBody", MongoCareerRecordWriter.writeBlockBody(updatedRecord.blockBody()));
 		}
 		update.set("updatedAt", java.util.Date.from(updatedRecord.updatedAt())).inc("version", 1);
+		var document = mongoTemplate.findAndModify(
+				query,
+				update,
+				FindAndModifyOptions.options().returnNew(true),
+				Document.class,
+				COLLECTION);
+		return document == null ? Optional.empty() : Optional.of(projectCanonicalData(document));
+	}
+
+	@Override
+	public Optional<CareerRecord> updateOwnedStatus(
+			CareerRecord currentRecord,
+			CareerRecordStatus status,
+			java.time.Instant changedAt) {
+		var query = Query.query(Criteria.where("_id").is(currentRecord.id())
+				.and("userId").is(currentRecord.ownerId())
+				.and("deletedAt").is(null)
+				.and("version").is(currentRecord.version()));
+		var existing = mongoTemplate.findOne(query, Document.class, COLLECTION);
+		if (existing == null) {
+			return Optional.empty();
+		}
+		if (status.wireName().equals(existing.getString("status"))) {
+			return Optional.of(projectCanonicalData(existing));
+		}
+		var update = new Update()
+				.set("status", status.wireName())
+				.set("updatedAt", java.util.Date.from(changedAt))
+				.inc("version", 1);
 		var document = mongoTemplate.findAndModify(
 				query,
 				update,
