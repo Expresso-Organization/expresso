@@ -133,7 +133,11 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
   });
 
   it("enqueues stable property IDs and versions when a user edits an input value", async () => {
-    await mongoCollections(fixture.resource.db).careerCategories.updateOne({ _id: sourceCategoryId, "propertySchemaV2.id": scoreId }, { $set: { "propertySchemaV2.$.deletedAt": null } });
+    await mongoCollections(fixture.resource.db).careerCategories.updateOne(
+      { _id: sourceCategoryId, "propertyDefinitions.id": scoreId },
+      { $set: { "propertyDefinitions.$.deletedAt": null, "propertySchemaV2.$[definition].deletedAt": null } },
+      { arrayFilters: [{ "definition.id": scoreId }] },
+    );
     const created = (await career.createRecord(userId, randomUUID(), { categoryId: sourceCategoryId, title: "입력 변경", properties: { score: { type: "number", value: 1 } }, bodyMd: "" })).record;
     const updated = await career.updateRecord(userId, created.id, created.version, { properties: { score: { type: "number", value: 4 } } });
     const event = await mongoCollections(fixture.resource.db).outboxEvents.findOne({ topic: "career.computation", "payload.recordId": created.id, "payload.sourceRecordVersion": updated.version });
