@@ -1,0 +1,50 @@
+{
+  "cases": [
+    {
+      "name": "preserves fractional trailing zero scale",
+      "value": { "literal": "1.2300" },
+      "accepted": true,
+      "coefficient": "12300",
+      "fractionalScale": 4
+    },
+    {
+      "name": "normalizes negative zero while preserving fractional scale",
+      "value": { "literal": "-0.00" },
+      "accepted": true,
+      "coefficient": "0",
+      "fractionalScale": 2
+    },
+    {
+      "name": "accepts 34 significant digits",
+      "value": { "literal": "9999999999999999999999999999999999" },
+      "accepted": true
+    },
+    {
+      "name": "rejects 35 significant digits that require rounding",
+      "value": { "literal": "99999999999999999999999999999999999" },
+      "accepted": false
+    },
+    {
+      "name": "accepts the minimum Decimal128 exponent as plain decimal",
+      "value": { "prefix": "0.", "repeat": "0", "count": 6175, "suffix": "1" },
+      "accepted": true
+    },
+    {
+      "name": "rejects Decimal128 exponent underflow as plain decimal",
+      "value": { "prefix": "0.", "repeat": "0", "count": 6176, "suffix": "1" },
+      "accepted": false
+    },
+    {
+      "name": "accepts a large exact integer despite a negative BigDecimal scale",
+      "value": { "prefix": "1", "repeat": "0", "count": 6144, "suffix": "" },
+      "accepted": true,
+      "fractionalScale": 0
+    },
+    {
+      "name": "rejects input over the wire length limit before numeric parsing",
+      "value": { "prefix": "1", "repeat": "0", "count": 6200, "suffix": "" },
+      "accepted": false,
+      "lengthRejected": true
+    }
+  ]
+}

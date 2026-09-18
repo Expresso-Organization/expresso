@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CareerCategoryDoc, CareerRecordDoc } from "@expresso/database";
+import { Decimal128 } from "mongodb";
 
 import { createCareerComputationProcessor } from "../../worker/processors/career-computation.js";
 import {
@@ -41,6 +42,23 @@ describe("career computation processor", () => {
     expect(() => resolveComputationValue(category(), record({
       propertyValues: [{ propertyDefinitionId: PROPERTY_ID, type: "checkbox", value: true }],
     } as never), PROPERTY_ID, {})).toThrow(/canonical/);
+  });
+
+  it("normalizes a Decimal128 scientific representation before canonical validation", () => {
+    const numericCategory: CareerCategoryDoc = {
+      ...category(),
+      propertyDefinitions: [{
+        id: PROPERTY_ID, key: "score", name: "점수", type: "number", required: false,
+        system: true, config: {}, order: 0, version: 1, deletedAt: null,
+      }],
+    };
+    expect(resolveComputationValue(numericCategory, record({
+      propertyValues: [{
+        propertyDefinitionId: PROPERTY_ID,
+        type: "number",
+        value: Decimal128.fromString("1E-7"),
+      }],
+    }), PROPERTY_ID, {})).toEqual({ type: "number", value: 1e-7 });
   });
 
   it("builds a computation-only CAS update and treats a missing computationVersion as zero", () => {

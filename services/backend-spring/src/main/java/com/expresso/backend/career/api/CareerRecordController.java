@@ -60,9 +60,6 @@ import tools.jackson.databind.json.JsonMapper;
 @RestController
 @RequestMapping("/v1/career/records")
 public class CareerRecordController {
-	private static final Pattern PLAIN_DECIMAL_PATTERN = Pattern.compile(
-			"^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$");
-
 	private static final Pattern IDEMPOTENCY_KEY_PATTERN = Pattern.compile("^[A-Za-z0-9._~:+\\-/]{16,128}$");
 	private static final Pattern ETAG_PATTERN = Pattern.compile("^\"v([1-9][0-9]*)\"$");
 	private static final JsonMapper PATCH_REQUEST_MAPPER = JsonMapper.builder()
@@ -341,17 +338,11 @@ public class CareerRecordController {
 	}
 
 	private static BigDecimal requireDecimalString(Object value, String fieldName) {
-		if (!(value instanceof String decimal) || !PLAIN_DECIMAL_PATTERN.matcher(decimal).matches()) {
+		if (!(value instanceof String decimal)) {
 			throw new CareerRecordRequestValidationException(
 					fieldName + "는 지수 표기 없는 decimal 문자열이어야 합니다");
 		}
-		try {
-			return new BigDecimal(decimal);
-		}
-		catch (NumberFormatException exception) {
-			throw new CareerRecordRequestValidationException(
-					fieldName + "는 유효한 decimal 문자열이어야 합니다");
-		}
+		return CanonicalDecimal128Parser.parse(decimal, fieldName);
 	}
 
 	private static boolean requireBoolean(Object value, String fieldName) {

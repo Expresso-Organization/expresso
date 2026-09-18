@@ -684,7 +684,7 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
       ).toBe(true);
     }
 
-    for (const value of [123.45, "1e3", "NaN", "Infinity", "+1", " 1", "1 "]) {
+    for (const value of [123.45, "1e3", "NaN", "Infinity", "+1", " 1", "1 ", "1".repeat(6201)]) {
       expect(
         validatePropertyValues([{ propertyDefinitionId, type: "number", value }]),
         `${String(value)}는 canonical plain decimal string이 아니다`,

@@ -16,6 +16,7 @@ import { exactOptionId, officialPropertyDefinitionId, type CareerCategoryDoc, ty
 import { Decimal128, type ClientSession } from "mongodb";
 
 import type { MongoContext } from "../../platform/mongodb.js";
+import { decimal128ToCanonicalPlain } from "./canonical-decimal.js";
 import { CareerError } from "./errors.js";
 
 const MONTH_VALUE = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -216,31 +217,13 @@ function canonicalPropertyEntries(
   return entries;
 }
 
-function expandScientificDecimal(value: string): string {
-  const match = /^(-?)(\d+)(?:\.(\d+))?[eE]([+-]?)(\d+)$/.exec(value);
-  if (!match) return value;
-
-  const sign = match[1] ?? "";
-  const integer = match[2] ?? "";
-  const fraction = match[3] ?? "";
-  const exponentSign = match[4] ?? "";
-  const exponentDigits = match[5] ?? "";
-  const magnitude = [...exponentDigits].reduce((result, digit) => result * 10 + digit.charCodeAt(0) - 48, 0);
-  const exponent = exponentSign === "-" ? -magnitude : magnitude;
-  const digits = `${integer}${fraction}`;
-  const decimalIndex = integer.length + exponent;
-  if (decimalIndex <= 0) return `${sign}0.${"0".repeat(-decimalIndex)}${digits}`;
-  if (decimalIndex >= digits.length) return `${sign}${digits}${"0".repeat(decimalIndex - digits.length)}`;
-  return `${sign}${digits.slice(0, decimalIndex)}.${digits.slice(decimalIndex)}`;
-}
-
 function canonicalWirePropertyValue(propertyValue: CareerPropertyValueDoc): WritableCareerPropertyValue {
   const candidate = propertyValue.type === "number"
     ? {
       ...propertyValue,
-      value: expandScientificDecimal(
-        propertyValue.value instanceof Decimal128 ? propertyValue.value.toString() : String(propertyValue.value),
-      ),
+      value: propertyValue.value instanceof Decimal128
+        ? decimal128ToCanonicalPlain(propertyValue.value)
+        : String(propertyValue.value),
     }
     : propertyValue;
   const parsed = WritableCareerPropertyValueSchema.safeParse(candidate);

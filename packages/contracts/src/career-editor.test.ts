@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { AiProposalApplyRequestSchema } from "./career-ai.js";
 import { CareerDocumentBootstrapSchema, CareerSocketClientMessageSchema } from "./career-editor.js";
@@ -5,6 +6,23 @@ import { CareerRecordSchema } from "./career.js";
 import { CanonicalCareerPropertyDefinitionSchema, CareerFormulaPreviewSchema, CareerFormulaSchema, CareerPropertyDefinitionV2Schema, CareerPropertySchemaChangeSchema, CareerPropertyValueV2Schema, CareerRollupAggregationSchema, PreviewCareerFormulaSchema, PreviewCareerRollupSchema, WritableCareerPropertyValueSchema } from "./career-properties.js";
 import { CareerViewConfigurationSchema } from "./career-views.js";
 import { expressoOpenApiDocument } from "./openapi.js";
+
+type DecimalBoundaryCase = {
+  name: string;
+  value: { literal: string } | { prefix: string; repeat: string; count: number; suffix: string };
+  accepted: boolean;
+};
+
+const decimalBoundaryCases = (JSON.parse(readFileSync(
+  new URL("../openapi/fixtures/career-decimal128-v1.json", import.meta.url),
+  "utf8",
+)) as { cases: DecimalBoundaryCase[] }).cases;
+
+function decimalFixtureValue(value: DecimalBoundaryCase["value"]): string {
+  return "literal" in value
+    ? value.literal
+    : `${value.prefix}${value.repeat.repeat(value.count)}${value.suffix}`;
+}
 
 describe("career editor contracts", () => {
   it("strictly rejects extra socket/bootstrap fields and oversized updates", () => {
@@ -105,6 +123,19 @@ describe("career editor contracts", () => {
         type: "number",
         value,
       })).toThrow();
+    }
+  });
+
+  it("enforces the shared Decimal128 wire length boundary", () => {
+    const propertyDefinitionId = "10000000-0000-4000-8000-000000000004";
+    for (const boundary of decimalBoundaryCases) {
+      const value = decimalFixtureValue(boundary.value);
+      if (value.length <= 6200) continue;
+      expect(WritableCareerPropertyValueSchema.safeParse({
+        propertyDefinitionId,
+        type: "number",
+        value,
+      }).success, boundary.name).toBe(false);
     }
   });
 

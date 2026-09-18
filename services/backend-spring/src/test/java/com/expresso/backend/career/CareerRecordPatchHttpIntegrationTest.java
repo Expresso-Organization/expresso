@@ -288,6 +288,25 @@ class CareerRecordPatchHttpIntegrationTest {
 	}
 
 	@Test
+	void rejectsAnInexactDecimal128BeforeRecordOrOutboxWrite() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+		mongoTemplate.getCollection(CATEGORIES).updateOne(
+				new Document("_id", CATEGORY_ID),
+				new Document("$set", new Document("propertyDefinitions", List.of(
+						canonicalDefinition(id(2), "number", "숫자", "number", 0)))));
+		var inexact = "99999999999999999999999999999999999";
+		var body = "{\"propertyValues\":[{\"propertyDefinitionId\":\"" + id(2)
+				+ "\",\"type\":\"number\",\"value\":\"" + inexact + "\"}]}";
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", body)
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+
+		assertStoredVersionAndTitle(1, "Original title");
+		assertThat(mongoTemplate.getCollection("outbox_events").countDocuments()).isZero();
+	}
+
+	@Test
 	void rejectsJsonNullOverHttpAsAValidationError() throws Exception {
 		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
 		var request = HttpRequest.newBuilder(

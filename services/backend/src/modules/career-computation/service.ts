@@ -27,6 +27,7 @@ import {
 } from "@expresso/editor";
 import type { CareerCategoryDoc, CareerRecordDoc } from "@expresso/database";
 import { Decimal128, type Document, type Filter, type UpdateFilter } from "mongodb";
+import { decimal128ToCanonicalPlain } from "../career/canonical-decimal.js";
 
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
@@ -331,7 +332,7 @@ export function resolveComputationValue(
     const owner = byId.get(raw.propertyDefinitionId);
     if (!owner || owner.type !== raw.type) throw new Error("canonical PropertyValue가 Definition과 일치하지 않습니다");
     const candidate = raw.type === "number"
-      ? { ...raw, value: raw.value instanceof Decimal128 ? raw.value.toString() : String(raw.value) }
+      ? { ...raw, value: raw.value instanceof Decimal128 ? decimal128ToCanonicalPlain(raw.value) : String(raw.value) }
       : raw;
     const parsed = WritableCareerPropertyValueSchema.safeParse(candidate);
     if (!parsed.success) throw new Error("canonical PropertyValue shape가 올바르지 않습니다");
