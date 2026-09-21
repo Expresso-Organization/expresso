@@ -7,6 +7,7 @@ import { RemoteGoogleIdTokenVerifier } from "../modules/identity/google.js";
 import { EntitlementService } from "../modules/entitlements/index.js";
 import { CareerService } from "../modules/career/index.js";
 import { JobMarketService } from "../modules/jobs/index.js";
+import { AiSearchInterpreter } from "../modules/jobs/search-interpreter.js";
 import { AiFactsReader, createJobSourceAdapters, BundledMarkReader, JobIngestService, JobUrlImporter, SiteMarkReader } from "../modules/jobs/ingest/index.js";
 import { JobBoardService } from "../modules/jobs/index.js";
 import { JobAnalysisService } from "../modules/job-analysis/index.js";
@@ -51,7 +52,6 @@ const googleIdTokenVerifier = config.googleClientId
   : null;
 const entitlementService = new EntitlementService(database);
 const careerService = new CareerService(database);
-const jobMarketService = new JobMarketService(database);
 const jobUrlImporter = new JobUrlImporter();
 const jobBoardService = new JobBoardService(database);
 const jobAnalysisService = new JobAnalysisService(database);
@@ -80,6 +80,14 @@ const jobIngestService = new JobIngestService(
 );
 // 계약을 부르기 전에 지나는 문. 규칙 폴백은 지나지 않는다.
 const consentService = new ConsentService(database);
+// 자연어 검색도 요청 안에서 계약을 부른다 — 검색은 사용자가 입력하고 바로
+// 결과를 보는 화면이라 뒤로 미룰 수 없다. AI가 꺼져 있으면 규칙 폴백
+// (search-parser.ts)이 그대로 돈다.
+const jobMarketService = new JobMarketService(
+  database,
+  ai ? new AiSearchInterpreter(ai) : null,
+  consentService,
+);
 const portfolioEditingService = new PortfolioEditingService(
   database,
   ai ? new AiBlockEditor(ai) : null,

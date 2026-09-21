@@ -18,7 +18,10 @@ const FILTER_KEYS = [
   "sort",
   "page",
   "country",
+  "location",
   "experience",
+  "technology",
+  "family",
   "workType",
   "company",
 ] as const;

@@ -115,8 +115,11 @@ export function classifyFamily(title: string, team: string | null): JobFamily | 
  * 다른 하나가 조용히 어긋나므로 한 줄에 같이 적는다.
  */
 const REGION_RULES: { region: string; country: string; pattern: RegExp }[] = [
-  { region: "서울", country: "한국", pattern: /\bseoul\b|서울/i },
-  { region: "경기", country: "한국", pattern: /\b(gyeonggi|seongnam|pangyo|bundang|suwon|yongin|goyang)\b|경기|성남|판교|분당|수원|용인/i },
+  // 25개 자치구 전체 + 자주 쓰는 동네 이름(구 이름과 겹치는 건 한 번만 적는다).
+  { region: "서울", country: "한국", pattern: /\bseoul\b|서울|강남|강동|강북|강서|관악|광진|구로|금천|노원|도봉|동대문|동작|마포|서대문|서초|성동|성북|송파|양천|영등포|용산|은평|종로|중구|중랑|여의도|가산|잠실|역삼|선릉|홍대|을지로|성수/i },
+  // 31개 시·군 전체(광주시는 뺐다 — 광주광역시와 이름이 겹쳐서 아래 "광주" 규칙과
+  // 부딪힌다. 표기만으론 못 가른다) + 자주 쓰는 신도시 이름(판교·분당·동탄·일산).
+  { region: "경기", country: "한국", pattern: /\b(gyeonggi|seongnam|pangyo|bundang|suwon|yongin|goyang|ansan|bucheon|hwaseong|anyang|pyeongtaek|gimpo|namyangju|uijeongbu|ilsan)\b|경기|성남|수원|안양|안산|용인|부천|평택|동두천|광명|안성|김포|군포|이천|양주|오산|구리|의왕|하남|여주|파주|시흥|화성|양평|과천|고양|남양주|의정부|포천|연천|가평|판교|분당|동탄|일산/i },
   { region: "인천", country: "한국", pattern: /\bincheon\b|인천/i },
   { region: "부산", country: "한국", pattern: /\bbusan\b|부산/i },
   { region: "대전", country: "한국", pattern: /\bdaejeon\b|대전/i },
@@ -150,6 +153,32 @@ const REGION_RULES: { region: string; country: string; pattern: RegExp }[] = [
 export const COUNTRY_OF_REGION: Readonly<Record<string, string>> = Object.fromEntries(
   REGION_RULES.map((rule) => [rule.region, rule.country]),
 );
+
+/**
+ * 지역 밑에 흔히 검색어로 쓰이는 동네 이름들.
+ *
+ * 검색 해석기(`search-interpreter.ts`)가 모델에게 "성수는 서울로 본다"를
+ * 알려줄 때 쓴다 — 모델이 상식으로 추측하지 않고, 여기 적힌 걸 보고 판단하게
+ * 하기 위해서다. **위 `REGION_RULES`의 한글 키워드와 반드시 맞춰 둔다** —
+ * 정규식에서 자동으로 뽑아내지 않고 손으로 나란히 적어 둔 이유는, 정규식에는
+ * 영문 로마자 표기까지 섞여 있어 한글만 깔끔하게 뽑아내기 어렵기 때문이다.
+ * 여기 하나를 추가하면 위 정규식에도 하나를 추가한다.
+ */
+export const REGION_SUBAREA_HINTS: Readonly<Record<string, readonly string[]>> = {
+  서울: [
+    "강남", "강동", "강북", "강서", "관악", "광진", "구로", "금천", "노원", "도봉",
+    "동대문", "동작", "마포", "서대문", "서초", "성동", "성북", "송파", "양천",
+    "영등포", "용산", "은평", "종로", "중구", "중랑", "여의도", "가산", "잠실",
+    "역삼", "선릉", "홍대", "을지로", "성수",
+  ],
+  // 경기도 광주시는 뺐다 — REGION_RULES에 적은 이유와 같다(광주광역시와 겹침).
+  경기: [
+    "성남", "수원", "안양", "안산", "용인", "부천", "평택", "동두천", "광명",
+    "안성", "김포", "군포", "이천", "양주", "오산", "구리", "의왕", "하남",
+    "여주", "파주", "시흥", "화성", "양평", "과천", "고양", "남양주", "의정부",
+    "포천", "연천", "가평", "판교", "분당", "동탄", "일산",
+  ],
+};
 
 export function countryOf(region: string): string {
   return COUNTRY_OF_REGION[region] ?? region;
