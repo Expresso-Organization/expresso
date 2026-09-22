@@ -1116,7 +1116,31 @@ body.de-editing .deck-stage>.slide.active .fit-score-live{animation:none!importa
 body.de-editing .deck-stage>.slide.active .fit-digit-roll,body.de-editing .deck-stage>.slide.active .fit-score-window{animation:none!important}
 @media(prefers-reduced-motion:reduce){.deck-stage>.slide.active .fit-digit-roll,.deck-stage>.slide.active .fit-score-window{animation:none!important}}
 @media print{.fit-digit-roll,.fit-score-window{animation:none!important}}
-</style></head>
+</style><style>
+/* 기존 소개의 두 문구를 유지하고 실제 이력서와 웹 포트폴리오의 표현 방식을 비교합니다. */
+.portfolio-comparison .comparison-brand { position:absolute; left:0; top:70px; margin:0; width:max-content; font:500 64px/1 var(--ex-font-brand); letter-spacing:-.04em; }
+.portfolio-comparison .comparison-brand span { color:var(--ex-espresso); }
+.portfolio-comparison .comparison-promise { position:absolute; left:0; top:152px; margin:0; width:max-content; font-size:28px; color:var(--ex-slate-700); }
+.portfolio-comparison .comparison-grid { position:absolute; left:0; right:0; top:236px; display:grid; grid-template-columns:440px 72px 1fr; gap:24px; align-items:start; }
+.portfolio-comparison .comparison-label { display:flex; justify-content:space-between; align-items:baseline; margin:0 0 18px; gap:16px; }
+.portfolio-comparison .comparison-label h3 { font-size:24px; margin:0; font-weight:600; }
+.portfolio-comparison .comparison-label span, .portfolio-comparison .comparison-label a { font-size:16px; color:var(--ex-slate-500); }
+.portfolio-comparison .resume-paper { height:612px; padding:0; background:var(--ex-white); border:1px solid var(--ex-line-200); color:var(--ex-ink-900); overflow:auto; overscroll-behavior:contain; }
+.portfolio-comparison .resume-paper img { display:block; width:100%; height:auto; border-bottom:8px solid var(--ex-tint-50); }
+.portfolio-comparison .comparison-arrow { margin-top:296px; color:var(--ex-espresso); font-size:40px; text-align:center; }
+/* 시각 자료 양식의 브라우저 틀을 재사용하며 실제 사이트를 내부에서 스크롤합니다. */
+.portfolio-comparison .portfolio-browser { height:612px; border:1px solid var(--ex-line-200); border-radius:18px; overflow:hidden; background:var(--ex-white); }
+.portfolio-comparison .portfolio-browser-bar { height:40px; display:flex; align-items:center; gap:7px; padding:0 16px; border-bottom:1px solid var(--ex-line-200); background:var(--ex-tint-50); }
+.portfolio-comparison .portfolio-browser-bar i { width:7px; height:7px; border-radius:50%; background:var(--ex-slate-300); }
+.portfolio-comparison .portfolio-browser-bar a { margin-left:16px; font:14px var(--ex-font-mono); color:var(--ex-slate-500); }
+.portfolio-comparison iframe { display:block; width:100%; height:570px; border:0; background:var(--ex-white); }
+.portfolio-comparison .comparison-caption { margin:18px 0 0; font-size:22px; color:var(--ex-slate-500); }
+.portfolio-comparison .comparison-caption.emphasis { color:var(--ex-espresso); font-weight:600; }
+.portfolio-comparison .foot { margin-top:auto; }
+@media print { .portfolio-comparison .resume-paper { overflow:hidden; } }
+
+</style>
+</head>
 
 <body>
 <div class="deck-viewport">
@@ -1182,13 +1206,13 @@ body.de-editing .deck-stage>.slide.active .fit-digit-roll,body.de-editing .deck-
         </div>
         <span class="ex-sr-only">work. idea. self.</span>
       </div></div>
-    <div class="intro-name in dl-2"><h2>Expre<span>ss</span>o</h2><p>Express + Espresso</p></div>
+    <div class="intro-name"><h2 data-morph="portfolio-brand">Expre<span>ss</span>o</h2><p>Express + Espresso</p></div>
     <div class="intro-meaning in dl-3">
       <div><h3>Express</h3><p>나의 경험과 역량을 표현</p></div>
       <span class="plus" aria-hidden="true">+</span>
       <div><h3>Espresso</h3><p>경험의 핵심을 한 잔에 압축</p></div>
     </div>
-    <p class="intro-summary in dl-4">커리어 기록을 채용 공고에 맞는 포트폴리오로</p>
+    <p class="intro-summary" data-morph="portfolio-promise">커리어 기록을 채용 공고에 맞는 포트폴리오로</p>
     <div class="intro-keywords in dl-5">
       <div><h3>커리어 기록</h3><p>경험과 성과 축적</p></div>
       <div><h3>공고 맞춤</h3><p>직무에 맞는 경험 추천</p></div>
@@ -1199,6 +1223,38 @@ body.de-editing .deck-stage>.slide.active .fit-digit-roll,body.de-editing .deck-
   </div>
 </section>
 
+
+
+<!-- 공개 포트폴리오와 사용자가 제공한 Minjae_Park_CV_Robotics_Original_Design.docx 렌더링을 비교합니다. -->
+<section class="slide portfolio-comparison" data-title="포트폴리오 표현 방식" data-kind="RESUME / PORTFOLIO">
+  <div class="frame">
+    <div class="rail"><span class="now ko">포트폴리오 표현 방식</span><span class="end count"></span></div>
+    <h2 class="ex-sr-only">포트폴리오 표현 방식</h2>
+    <div class="comparison-brand" data-morph="portfolio-brand">Expre<span>ss</span>o</div>
+    <p class="comparison-promise" data-morph="portfolio-promise">커리어 기록을 채용 공고에 맞는 포트폴리오로</p>
+    <div class="comparison-grid">
+      <div class="in dl-3">
+        <div class="comparison-label"><h3>이력서 문서</h3><span>원본 CV · 3쪽</span></div>
+        <article class="resume-paper" data-deck-scroll tabindex="0" aria-label="박민재 원본 CV 3쪽, 스크롤하여 보기">
+          <img src="assets/프로젝트-제안서/cv-page-1.png" alt="박민재 원본 이력서 1쪽 — 연구 관심 분야, 프로필, 학력, 논문" width="1414" height="2000">
+          <img src="assets/프로젝트-제안서/cv-page-2.png" alt="박민재 원본 이력서 2쪽 — 경력 및 프로젝트" width="1414" height="2000">
+          <img src="assets/프로젝트-제안서/cv-page-3.png" alt="박민재 원본 이력서 3쪽 — 기술, 수상, 영어, 장학금" width="1414" height="2000">
+        </article>
+        <p class="comparison-caption">텍스트 중심의 경력 나열</p>
+      </div>
+      <div class="comparison-arrow in dl-4" aria-hidden="true"><i class="ph ph-arrow-right"></i></div>
+      <div class="in dl-5" data-deck-scroll>
+        <div class="comparison-label"><h3>디자인된 포트폴리오</h3><span>디자인 참고 예시 · 화면 안에서 스크롤</span></div>
+        <div class="portfolio-browser">
+          <div class="portfolio-browser-bar"><i></i><i></i><i></i><a href="https://minjae-park.pages.dev" target="_blank" rel="noopener noreferrer">minjae-park.pages.dev ↗</a></div>
+          <iframe src="https://minjae-park.pages.dev" title="박민재 디자인 포트폴리오 참고 예시" loading="eager" referrerpolicy="no-referrer"></iframe>
+        </div>
+        <p class="comparison-caption emphasis">눈에 띄는 핵심 역량, 이미지와 함께 전달하는 성과</p>
+      </div>
+    </div>
+    <div class="foot"><p></p><span class="pg"></span></div>
+  </div>
+</section>
 
 <!-- ============================================================
      02 · 목차
@@ -4581,6 +4637,7 @@ class Deck {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       /* 글을 고치는 중에는 화살표가 글자 사이를 움직여야 합니다. */
       if (document.body.classList.contains('de-editing')) return;
+      if (e.target.closest?.('[data-deck-scroll]')) return;
       const k = e.key;
       if (['ArrowRight', 'ArrowDown', ' ', 'PageDown'].includes(k)) { e.preventDefault(); this.next(); }
       else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(k)) { e.preventDefault(); this.prev(); }
@@ -4601,7 +4658,7 @@ class Deck {
 
   bindTouch() {
     let x0 = null;
-    document.addEventListener('touchstart', (e) => { if (document.body.classList.contains('de-editing')) return; x0 = e.changedTouches[0].clientX; }, { passive: true });
+    document.addEventListener('touchstart', (e) => { if (document.body.classList.contains('de-editing') || e.target.closest?.('[data-deck-scroll]')) { x0 = null; return; } x0 = e.changedTouches[0].clientX; }, { passive: true });
     document.addEventListener('touchend', (e) => {
       if (x0 === null) return;
       const dx = e.changedTouches[0].clientX - x0;
@@ -4614,6 +4671,7 @@ class Deck {
   bindWheel() {
     let lock = false;
     window.addEventListener('wheel', (e) => {
+      if (e.target.closest?.('[data-deck-scroll]')) return;
       if (lock || this.overview.classList.contains('on') || document.body.classList.contains('de-editing')) return;
       if (Math.abs(e.deltaY) < 24) return;
       lock = true;
