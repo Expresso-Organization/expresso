@@ -1,10 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Expresso 개발 포털</title>
 <script src="./support.js"></script>
+<link rel="stylesheet" href="./library/tokens.css">
+<link rel="stylesheet" href="./library/portal-library.css">
+<script type="module" src="./library/portal-library.mjs"></script>
 </head>
 <body>
 <x-dc>
@@ -26,16 +29,16 @@
 <script src="./screen-map.js"></script>
 </helmet>
 
-<div style="width: 100%; min-width: 1024px; max-width: 2000px; margin: 0 auto; background: #F7FAFE; min-height: 900px">
+<div class="{{ shellClass }}" style="width: 100%; min-width: {{ shellMinWidth }}; max-width: 2000px; margin: 0 auto; background: #F7FAFE; min-height: 900px">
 
-  <div style="display: flex; align-items: center; gap: 14px; padding: 16px 32px; background: #16223A; color: #fff">
+  <div class="portal-header" style="display: flex; align-items: center; gap: 14px; padding: 16px 32px; background: #16223A; color: #fff">
     <div onClick="{{ goHome }}" title="초기 화면으로" style="display: flex; align-items: center; gap: 7px; cursor: pointer" style-hover="opacity: .72">
     <svg width="22" height="22" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cpt"><circle cx="44" cy="54" r="35.5"></circle></clipPath><mask id="kpt"><rect x="0" y="0" width="108" height="108" fill="#fff"></rect><circle cx="44" cy="54" r="47.05" fill="#000"></circle></mask></defs><circle cx="77.72" cy="54" r="19.53" stroke="#A9793F" stroke-width="9.35" mask="url(#kpt)"></circle><rect x="0" y="58.8" width="108" height="49.2" fill="#E0B486" clip-path="url(#cpt)"></rect><circle cx="44" cy="54" r="35.5" stroke="#E0B486" stroke-width="11"></circle></svg>
     <span style="font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 500; letter-spacing: -.02em">Expre<span style="color: #E0B486">ss</span>o</span>
     </div>
     <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .14em; color: #8395AF">DEV CONSOLE</span>
 
-    <div style="flex: 1; max-width: 520px; margin-left: 18px; position: relative">
+    <div class="portal-search" style="flex: 1; max-width: 520px; margin-left: 18px; position: relative">
       <input value="{{ q }}" onChange="{{ onSearch }}" onFocus="{{ onSearchFocus }}" onBlur="{{ onSearchBlur }}" onKeyDown="{{ onSearchKey }}" placeholder="도메인 · 기능 · 태스크 · 테이블 · 화면 검색  ( / 로 포커스 )" style="width: 100%; font-size: 13px; color: #16223A; background: #fff; border: 1px solid rgba(255,255,255,.16); border-radius: 9px; padding: 9px 13px" />
 
       <sc-if value="{{ showClear }}" hint-placeholder-val="{{ false }}">
@@ -119,7 +122,7 @@
       </sc-if>
     </div>
 
-    <div style="display: flex; align-items: center; gap: 14px; margin-left: auto">
+    <div class="portal-progress" style="display: flex; align-items: center; gap: 14px; margin-left: auto">
       <div style="display: flex; align-items: baseline; gap: 7px"><span style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 22px; line-height: 1">{{ doneCount }}</span><span style="font-size: 11px; color: #93A2BA">완료 / 151</span></div>
       <div style="width: 96px; height: 6px; background: rgba(255,255,255,.14); border-radius: 4px; overflow: hidden; display: flex">
         <div style="width: {{ donePct }}%; background: #12A97A"></div>
@@ -136,6 +139,10 @@
       </a>
     </sc-for>
   </div>
+
+  <sc-if value="{{ libraryOpen }}" hint-placeholder-val="{{ false }}">
+    <expresso-library route="{{ libraryRoute }}"></expresso-library>
+  </sc-if>
 
   <sc-if value="{{ viewerOpen }}" hint-placeholder-val="{{ false }}">
     <div style="{{ viewerWrap }}">
@@ -1097,9 +1104,11 @@ DECKS.forEach(d => {
 // 프리젠테이션 탭에서만 자료 선택을 읽는다 — 다른 문서로 옮겨 가면 저절로 풀린다.
 const deckOf = s => (s.doc === DECK_TAB && s.deck && DECK_SLUG[s.deck]) ? s.deck : null;
 
+const LIBRARY_TAB = '라이브러리';
 const NAV = [
   ['HOME', '개발 포털', 'Expresso 개발 포털.dc.html', '#fff', 1],
 
+  ['LIB', LIBRARY_TAB, '', '#E0B486'],
   ['SRS', '설계서', GD, '#E0B486'],
   ['DECK', '프리젠테이션', DECK, '#E0B486'],
   ['SPEC', '기능 명세서', F, '#E0B486'],
@@ -1154,6 +1163,7 @@ NAV.forEach(n => { if (!n[4]) { DOC_SLUG[n[1]] = n[0].toLowerCase(); DOC_OF_SLUG
 const BVIEW = { kanban: 1, sprint: 1, timeline: 1 };
 
 function routeOf(s) {
+  if (s.doc === LIBRARY_TAB) return s.libraryRoute || '#/library';
   if (s.doc) {
     const deck = deckOf(s);
     return '#/doc/' + (DOC_SLUG[s.doc] || encodeURIComponent(s.doc)) +
@@ -1166,6 +1176,7 @@ function routeOf(s) {
 
 // 해석하지 못하는 주소는 null 을 돌려준다 — 부르는 쪽이 지금 화면을 그대로 둔다.
 function parseRoute(hash) {
+  if (/^#\/library(?:[/?]|$)/.test(String(hash))) return { doc: LIBRARY_TAB, libraryRoute: String(hash), full: false, view: 'console', section: 'domain', toc: [], tocAt: -1 };
   const part = String(hash || '').replace(/^#\/?/, '').split('/').filter(x => x).map(x => {
     try { return decodeURIComponent(x); } catch (e) { return x; }
   });
@@ -1849,7 +1860,7 @@ class Component extends DCLogic {
         return {
           tag: n[0], label: n[1], tagColor: n[3],
           // 프리젠테이션은 자료 하나가 아니라 목록이다 — ⌘클릭도 목록으로 간다
-          href: n[1] === DECK_TAB ? '#/doc/' + DOC_SLUG[DECK_TAB] : url(n[2]),
+          href: n[1] === LIBRARY_TAB ? '#/library' : n[1] === DECK_TAB ? '#/doc/' + DOC_SLUG[DECK_TAB] : url(n[2]),
           color: active ? '#fff' : '#C6CEDD',
           weight: active ? 600 : 400,
           bg: active ? 'rgba(255,255,255,.07)' : 'transparent',
@@ -1860,6 +1871,7 @@ class Component extends DCLogic {
             this._frame = null;
             this.setState({
               doc: n[4] ? null : n[1],
+              libraryRoute: n[1] === LIBRARY_TAB ? '#/library' : s.libraryRoute,
               deck: null,
               view: n[4] ? VIEW[n[4]] : 'console',
               toc: [], tocAt: -1
@@ -1868,7 +1880,11 @@ class Component extends DCLogic {
           }
         };
       }),
-      viewerOpen: !!s.doc,
+      shellClass: s.doc === LIBRARY_TAB ? 'portal-library-active' : '',
+      shellMinWidth: s.doc === LIBRARY_TAB ? '0' : '1024px',
+      libraryOpen: s.doc === LIBRARY_TAB,
+      libraryRoute: s.libraryRoute || '#/library',
+      viewerOpen: !!s.doc && s.doc !== LIBRARY_TAB,
       portalOpen: !s.doc,
       consoleOpen: !s.doc && s.section === 'domain',
       boardOpen: !s.doc && s.section === 'board',
