@@ -1139,7 +1139,7 @@ body.de-editing .deck-stage>.slide.active .fit-digit-roll,body.de-editing .deck-
 .portfolio-comparison .portfolio-browser-bar i { width:7px; height:7px; border-radius:50%; background:var(--ex-slate-300); }
 .portfolio-comparison .portfolio-browser-bar a { margin-left:16px; font:14px var(--ex-font-mono); color:var(--ex-slate-500); }
 .portfolio-comparison .portfolio-viewport { position:relative; height:570px; }
-.portfolio-comparison .portfolio-load-state { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:20px; background:var(--ex-white); color:var(--ex-slate-500); font-size:22px; }
+.portfolio-comparison .portfolio-load-state { position:absolute; inset:auto 12px 12px; display:flex; align-items:center; justify-content:center; gap:16px; padding:12px; border:1px solid var(--ex-line-200); border-radius:8px; background:var(--ex-white); color:var(--ex-slate-500); font-size:16px; }
 .portfolio-comparison .portfolio-load-state[hidden] { display:none; }
 .portfolio-comparison .portfolio-load-state p { margin:0; }
 .portfolio-comparison .portfolio-load-state button { padding:10px 20px; border:1px solid var(--ex-line-200); border-radius:8px; background:var(--ex-tint-50); color:var(--ex-ink-900); font:inherit; cursor:pointer; }
@@ -6746,7 +6746,7 @@ window.deck = new Deck();
   }
   function load() {
     unload();
-    if (!slide.classList.contains('active') || document.hidden) return;
+    if (!slide.classList.contains('active')) return;
     viewport.setAttribute('aria-busy', 'true');
     frame = template.content.firstElementChild.cloneNode(true);
     frame.setAttribute('data-deck-editor', '');
@@ -6765,12 +6765,11 @@ window.deck = new Deck();
   }
   function sync() {
     clearTimeout(activation);
-    if (!slide.classList.contains('active') || document.hidden) { unload(); return; }
+    if (!slide.classList.contains('active')) { unload(); return; }
     if (!frame) activation = setTimeout(load, 950);
   }
   state.querySelector('[data-portfolio-retry]').addEventListener('click', load);
   new MutationObserver(sync).observe(slide, { attributes:true, attributeFilter:['class'] });
-  document.addEventListener('visibilitychange', sync);
   sync();
 })();
 </script>
