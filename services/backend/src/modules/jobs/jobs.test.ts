@@ -2,10 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { calculateExplainableMatch } from "./match-score.js";
 
-// 자연어 검색 해석은 이제 AI 계약(search-interpreter.ts)만 쓴다 — 규칙 기반
-// interpretSearchQuery에 대한 테스트는 그 로직이 활성 경로에서 걷어나가며
-// 함께 지웠다. AI 경로는 실제 프로바이더가 있어야 돌기 때문에 여기(단위
-// 테스트)에서 재현하지 않는다.
+// 자연어 검색의 AI 응답 검증은 search-interpreter.test.ts에서 확인합니다.
 
 describe("explainable match scoring", () => {
   it("요건 충족률로 점수를 내고 가장 약한 축에서 다음 행동을 뽑는다", () => {
