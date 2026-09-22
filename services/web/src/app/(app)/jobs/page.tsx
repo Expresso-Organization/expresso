@@ -895,9 +895,9 @@ function SearchQueryCard({
               offHref={chipOffHref(axis, conditionHref)}
               options={optionsByAxis[axis].map((option) => ({
                 label: option.label,
-                count: option.count,
                 active: option.value === effectiveValue,
                 href: chipOptionHref(axis, option.value, conditionHref),
+                ...(option.count === undefined ? {} : { count: option.count }),
               }))}
             />
           );
