@@ -1119,6 +1119,11 @@ body.de-editing .deck-stage>.slide.active .fit-digit-roll,body.de-editing .deck-
 </style><style>
 /* 기존 소개의 두 문구를 유지하고 실제 이력서와 웹 포트폴리오의 표현 방식을 비교합니다. */
 .portfolio-comparison .comparison-brand { position:absolute; left:0; top:70px; margin:0; width:max-content; font:500 64px/1 var(--ex-font-brand); letter-spacing:-.04em; }
+.brand-intro [data-morph], .portfolio-comparison [data-morph] { transform-origin:0 0; transform-box:border-box; }
+.portfolio-comparison .comparison-logo { position:absolute; left:268px; top:66px; width:72px; height:72px; overflow:visible; }
+.portfolio-comparison .logo-handle { stroke:var(--ex-crema); }
+.portfolio-comparison .logo-fill, .portfolio-comparison .logo-ring { fill:var(--ex-espresso); }
+.portfolio-comparison .logo-ring { fill:none; stroke:var(--ex-espresso); }
 .portfolio-comparison .comparison-brand span { color:var(--ex-espresso); }
 .portfolio-comparison .comparison-promise { position:absolute; left:0; top:152px; margin:0; width:max-content; font-size:28px; color:var(--ex-slate-700); }
 .portfolio-comparison .comparison-grid { position:absolute; left:0; right:0; top:236px; display:grid; grid-template-columns:440px 72px 1fr; gap:24px; align-items:start; }
@@ -1186,7 +1191,7 @@ body.de-editing .deck-stage>.slide.active .fit-digit-roll,body.de-editing .deck-
   </div>
 </section>
 <section class="slide brand-intro" data-title="Expresso 소개" data-kind="BRAND / INTRO">
-  <svg class="brand-logo" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <svg class="brand-logo" data-morph="portfolio-logo" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <defs><clipPath id="proposal-intro-clip"><circle cx="44" cy="54" r="36"></circle></clipPath><mask id="proposal-intro-mask"><rect width="108" height="108" fill="white"></rect><circle cx="44" cy="54" r="46.5" fill="black"></circle></mask></defs>
     <circle class="logo-handle" cx="78.2" cy="54" r="19.8" stroke-width="8.5" mask="url(#proposal-intro-mask)"></circle>
     <rect class="logo-fill" x="0" y="58.96" width="108" height="49.04" clip-path="url(#proposal-intro-clip)"></rect>
@@ -1229,6 +1234,12 @@ body.de-editing .deck-stage>.slide.active .fit-digit-roll,body.de-editing .deck-
 <section class="slide portfolio-comparison" data-title="포트폴리오 표현 방식" data-kind="RESUME / PORTFOLIO">
   <div class="frame">
     <div class="rail"><span class="now ko">포트폴리오 표현 방식</span><span class="end count"></span></div>
+  <svg class="comparison-logo" data-morph="portfolio-logo" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs><clipPath id="proposal-comparison-clip"><circle cx="44" cy="54" r="36"></circle></clipPath><mask id="proposal-comparison-mask"><rect width="108" height="108" fill="white"></rect><circle cx="44" cy="54" r="46.5" fill="black"></circle></mask></defs>
+    <circle class="logo-handle" cx="78.2" cy="54" r="19.8" stroke-width="8.5" mask="url(#proposal-comparison-mask)"></circle>
+    <rect class="logo-fill" x="0" y="58.96" width="108" height="49.04" clip-path="url(#proposal-comparison-clip)"></rect>
+    <circle class="logo-ring" cx="44" cy="54" r="36" stroke-width="10"></circle>
+  </svg>
     <h2 class="ex-sr-only">포트폴리오 표현 방식</h2>
     <div class="comparison-brand" data-morph="portfolio-brand">Expre<span>ss</span>o</div>
     <p class="comparison-promise" data-morph="portfolio-promise">커리어 기록을 채용 공고에 맞는 포트폴리오로</p>
@@ -4801,6 +4812,24 @@ window.deck = new Deck();
     ));
   }
 
+  /* 소개와 비교 지면의 동일 요소는 한 벌만 표시해 잔상 없이 이동합니다.
+     전환 전에 좌표를 재고, 제목·문구·로고의 도착 시간을 맞춥니다. */
+  function portfolioGlide(from, to, start) {
+    const end = to.getBoundingClientRect();
+    if (!start.width || !end.width) return;
+    const scale = STAGE.getBoundingClientRect().width / 1920;
+    const x = (start.left - end.left) / scale;
+    const y = (start.top - end.top) / scale;
+    const ratio = start.width / end.width;
+    const pose = t => `translate(${x * (1 - t)}px, ${y * (1 - t)}px) scale(${ratio + (1 - ratio) * t})`;
+    running.push(from.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 900, fill: 'both' }));
+    running.push(to.animate([
+      { transform: pose(0), offset: 0 },
+      { transform: pose(.55), offset: .42 },
+      { transform: 'none', offset: 1 },
+    ], { duration: 900, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'both' }));
+  }
+
   /* 같은 조각을 지닌 두 장 사이에서는 지면이 통째로 흐려지지 않습니다.
      남는 것만 남기고 **나머지는 왼쪽으로 빠집니다.** 그래야 조각이 자리를
      옮기는 동안 눈이 그것만 따라갑니다. 들어오는 쪽은 오른쪽에서 들어옵니다 —
@@ -4838,6 +4867,7 @@ window.deck = new Deck();
     const was = document.querySelector('.deck-stage > .slide.active');
     const from = bar();
     const marks = keyed(was);
+    const starts = new Map([...marks].map(([key, node]) => [key, node.getBoundingClientRect()]));
     show(n);
     const to = bar();
     if (still.matches) return;
@@ -4856,8 +4886,26 @@ window.deck = new Deck();
         if (nodes.some((n) => n !== pairs[i][1] && n.contains(pairs[i][1]))) pairs.splice(i, 1);
       }
       if (pairs.length) {
-        sweep(was, pairs.map((p) => p[0]), now, pairs.map((p) => p[1]), way);
-        pairs.forEach(([prev, node]) => glide(prev, node));
+        const portfolioPair = was.matches('.brand-intro, .portfolio-comparison') && now.matches('.brand-intro, .portfolio-comparison');
+        if (portfolioPair) {
+          /* 지면 전체의 기본 페이드를 막아 이동 중인 글자와 로고의 농도를 유지합니다. */
+          const background = getComputedStyle(now).backgroundColor;
+          running.push(now.animate([
+            { opacity: 1, zIndex: 2, backgroundColor: 'transparent', offset: 0 },
+            { opacity: 1, zIndex: 2, backgroundColor: background, offset: .25 },
+            { opacity: 1, zIndex: 2, backgroundColor: background, offset: 1 },
+          ], { duration: 900, fill: 'both' }));
+          others(was, pairs.map(p => p[0])).forEach(el => running.push(el.animate(
+            [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-16px)' }],
+            { duration: 220, easing: OUT, fill: 'both' })));
+          others(now, pairs.map(p => p[1])).forEach(el => running.push(el.animate(
+            [{ opacity: 0, transform: 'translateY(20px)' }, { opacity: 1, transform: 'none' }],
+            { duration: 440, delay: 460, easing: IN, fill: 'both' })));
+          pairs.forEach(([prev, node]) => portfolioGlide(prev, node, starts.get(node.dataset.morph)));
+        } else {
+          sweep(was, pairs.map((p) => p[0]), now, pairs.map((p) => p[1]), way);
+          pairs.forEach(([prev, node]) => glide(prev, node));
+        }
       }
       if (pairs.length) {
         /* 나가는 장이 안무가 끝날 때까지 자리를 지킵니다. 정해 둔 시간이 아니라
