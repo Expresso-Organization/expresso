@@ -1267,7 +1267,7 @@ body.de-editing .deck-stage>.slide.active .fit-digit-roll,body.de-editing .deck-
           <div class="portfolio-viewport" aria-busy="true">
             <template data-portfolio-template><iframe src="https://minjae-park.pages.dev/" title="박민재 디자인 포트폴리오 참고 예시" loading="eager"></iframe></template>
             <div class="portfolio-load-state" role="status">
-              <p data-portfolio-status>포트폴리오를 불러오는 중입니다.</p>
+              <p data-portfolio-status>포트폴리오 로딩 중</p>
               <button type="button" data-portfolio-retry>다시 불러오기</button>
               <a href="https://minjae-park.pages.dev/" target="_blank" rel="noopener noreferrer">새 탭에서 열기 ↗</a>
             </div>
@@ -6706,7 +6706,7 @@ window.deck = new Deck();
     frame?.remove();
     frame = null;
     state.hidden = false;
-    status.textContent = '포트폴리오를 불러오는 중입니다.';
+    status.textContent = '포트폴리오 로딩 중';
     viewport.setAttribute('aria-busy', 'false');
   }
   function load() {
