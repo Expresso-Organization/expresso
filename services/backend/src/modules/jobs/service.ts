@@ -9,7 +9,12 @@ import { requireActiveUser } from "../identity/index.js";
 import { JobMarketError } from "./errors.js";
 import type { JobMarketApi } from "./index.js";
 import { calculateExplainableMatch } from "./match-score.js";
-import { interpretSearchQuery } from "./search-parser.js";
+import type { ConsentApi } from "../consent/index.js";
+import {
+  NullSearchInterpreter,
+  SEARCH_INTERPRET_PROMPT_VERSION,
+  type SearchInterpreter,
+} from "./search-interpreter.js";
 import { postingDedupeHash, sha256 } from "./mongo-queries.js";
 
 function queuedAnalysis(userId: string, jobPostingId: string, inputType: JobAnalysisDoc["inputType"]): JobAnalysisDoc {
@@ -18,7 +23,17 @@ function queuedAnalysis(userId: string, jobPostingId: string, inputType: JobAnal
 function mapSaved(row: SavedSearchDoc) { return SavedJobSearchSchema.parse({ id: row._id, name: row.name, originalQuery: row.queryText, conditions: row.filters.conditions ?? [], notify: row.notify, createdAt: row.createdAt.toISOString() }); }
 
 export class JobMarketService implements JobMarketApi {
-  constructor(readonly context: MongoContext) {}
+  readonly interpreter: SearchInterpreter;
+  readonly searchPromptVersion: number;
+  constructor(
+    readonly context: MongoContext,
+    interpreter?: SearchInterpreter | null,
+    readonly consent: ConsentApi | null = null,
+  ) {
+    this.interpreter = interpreter ?? new NullSearchInterpreter();
+    // AI가 꺼져 있으면(interpreter가 안 주어지면) 동의를 묻지 않는다 — 아무것도 밖으로 안 나간다.
+    this.searchPromptVersion = interpreter ? SEARCH_INTERPRET_PROMPT_VERSION : 0;
+  }
   async #write<T>(userId: string, action: (tx: MongoTransaction) => Promise<T>): Promise<T> {
     return inTransaction(this.context, async (tx) => { await requireActiveUser(tx, userId); return action(tx); });
   }
@@ -66,7 +81,8 @@ export class JobMarketService implements JobMarketApi {
   }
 
   async interpretSearch(userId: string, query: string, resultCount: number) {
-    const conditions = interpretSearchQuery(query);
+    if (this.searchPromptVersion > 0) await this.consent?.require(userId, "search_interpret");
+    const conditions = await this.interpreter.interpret(query);
     return this.#write(userId, async (tx) => {
       const searches = mongoCollections(tx.db).recentSearches; const options = { session: tx.session };
       const latest = await searches.findOne({ userId }, { ...options, sort: { createdAt: -1, _id: -1 } });

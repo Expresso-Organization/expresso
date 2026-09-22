@@ -16,6 +16,7 @@ import { BROWSE_QUERY_PLACEHOLDER, SIMILAR_SEARCHES } from "@/lib/sample/jobs";
 import { requireSession } from "@/lib/require-session";
 
 import { JobRowList, deadlineLabel } from "./JobRows";
+import { ConditionChip } from "./ConditionChip";
 import { currentListQuery, detailHref } from "./list-query";
 import { Pagination } from "./Pagination";
 import { ALL, JobFilter, type FilterSection } from "./JobFilter";
@@ -53,6 +54,11 @@ function experienceLabel(years: number): string {
 
 function experienceValue(label: string): number {
   return label === "신입" ? 0 : Number.parseInt(label, 10);
+}
+
+/** 해석 칩에 쓰는 경력 표시. `conditionValue`가 쓰는 "N년 이상" 어투를 맞춘다. */
+function experienceChipLabel(years: number): string {
+  return years === 0 ? "신입 이상" : `${years}년 이상`;
 }
 
 const CONDITION_AXIS: Record<JobSearchCondition["field"], string> = {
@@ -162,21 +168,42 @@ export default async function JobsPage({
    * 전체다. 기본값을 주소에 안 적는 이유는 `/jobs`가 늘 같은 화면이어야
    * 하기 때문이다.
    */
-  const country = typeof params.country === "string" && params.country.trim()
+  const countryExplicit = typeof params.country === "string" && params.country.trim()
     ? params.country.trim()
-    : DEFAULT_COUNTRY;
+    : undefined;
+  const country = countryExplicit ?? DEFAULT_COUNTRY;
   const countryFilter = country === "all" ? null : country;
-  // 나머지 축은 기본값이 없다 — 안 적혀 있으면 안 걸린 것이다.
-  const experience = typeof params.experience === "string"
-    ? Number.parseInt(params.experience, 10)
-    : Number.NaN;
-  const experienceYears = Number.isInteger(experience) && experience >= 0 ? experience : undefined;
+  /**
+   * 해석 칩에서 축 하나를 "끄기"로 누르면 그 축 값을 `off`로 적는다 —
+   * 파라미터를 그냥 지우면 검색어가 다시 그 축을 읽어내 되살아나므로,
+   * "안 골랐음"과 "꺼 버림"을 구분해야 한다. 아래 네 축(경력·지역·기술·직무)이
+   * 모두 같은 규칙을 쓴다.
+   */
+  const experienceParam = typeof params.experience === "string" ? params.experience.trim() : "";
+  const experienceOff = experienceParam === "off";
+  const experienceParsed = Number.parseInt(experienceParam, 10);
+  const experienceYears = !experienceOff && Number.isInteger(experienceParsed) && experienceParsed >= 0
+    ? experienceParsed
+    : undefined;
   const workType = typeof params.workType === "string" && params.workType.trim()
     ? params.workType.trim()
     : undefined;
   const company = typeof params.company === "string" && params.company.trim()
     ? params.company.trim()
     : undefined;
+  // country처럼 기본값이 없다 — 검색어가 지역까지 읽어내면 그 값을 쓰고,
+  // 아니면 나라 단위(country)까지만 걸린다.
+  const locationParam = typeof params.location === "string" ? params.location.trim() : "";
+  const locationOff = locationParam === "off";
+  const locationExplicit = !locationOff && locationParam ? locationParam : undefined;
+  // 기술 · 직무도 검색어에서 읽히지만, 칩으로 직접 고르거나 끌 수 있어야
+  // "이렇게 이해했습니다" 줄이 실제로 동작한다.
+  const technologyParam = typeof params.technology === "string" ? params.technology.trim() : "";
+  const technologyOff = technologyParam === "off";
+  const technologyExplicit = !technologyOff && technologyParam ? technologyParam : undefined;
+  const familyParam = typeof params.family === "string" ? params.family.trim() : "";
+  const familyOff = familyParam === "off";
+  const familyExplicit = !familyOff && familyParam ? familyParam : undefined;
   const pageSize = 20;
   /*
    * 지금 걸린 조건을 한 문자열로 만들어 상세로 실어 보낸다. 상세 화면은
@@ -211,11 +238,61 @@ export default async function JobsPage({
 
   const sources = sourceList.data.filter((source) => source.active);
   const derived = searchFilters(q, interpreted?.conditions ?? []);
+  /**
+   * 실제로 걸리는 나라·지역·연차·기술·직무 값. 주소에 명시된 값이 항상
+   * 이기고, 없으면 검색어에서 읽어낸 값이, 그것도 없으면 기본값(나라는
+   * 한국)이 쓰인다. 해석 칩 표시도 이 값을 그대로 써야 한다 — 안 그러면
+   * "지역 · 미국"으로 해석해 놓고 칩은 "한국"이라고 보여주는 불일치가 생긴다.
+   */
+  const effectiveCountry = countryExplicit !== undefined || derived.country === undefined
+    ? countryFilter
+    : derived.country;
+  /**
+   * 검색어가 읽어낸 지역은 나라를 사용자가 직접 고르거나, 칩에서 "끄기"를
+   * 누르면 접는다 — 안 그러면 "경기"를 검색해 놓고 근무지 칩에서 "미국"을
+   * 눌렀는데 주소에는 여전히 `location=경기`가 남아 있어 아무 결과도 안
+   * 나오는 모순이 생긴다.
+   */
+  const effectiveLocation = locationExplicit !== undefined
+    ? locationExplicit
+    : locationOff || countryExplicit !== undefined
+      ? undefined
+      : derived.location;
+  const effectiveExperience = experienceYears !== undefined
+    ? experienceYears
+    : experienceOff
+      ? undefined
+      : derived.experience;
+  const effectiveTechnology = technologyExplicit !== undefined
+    ? technologyExplicit
+    : technologyOff
+      ? undefined
+      : derived.technology;
+  const effectiveFamily = familyExplicit !== undefined
+    ? familyExplicit
+    : familyOff
+      ? undefined
+      : derived.family;
 
   const listing = await jobsApi.postings(session.accessToken, {
-    ...(q ? derived : categoryFilter(category)),
-    ...(countryFilter ? { country: countryFilter } : {}),
-    ...(experienceYears === undefined ? {} : { experience: experienceYears }),
+    ...(q
+      ? {
+          ...derived,
+          // 위에서 이미 최종 값을 다시 정했으니, 검색어가 읽어낸 값이 그대로
+          // 새어 나가지 않게 여기서 먼저 비운다 — 특히 칩에서 "끄기"를 눌렀을
+          // 때 이게 없으면 꺼지지 않는다.
+          country: undefined,
+          location: undefined,
+          experience: undefined,
+          technology: undefined,
+          family: undefined,
+        }
+      : categoryFilter(category)),
+    ...(effectiveCountry ? { country: effectiveCountry } : {}),
+    ...(effectiveLocation ? { location: effectiveLocation } : {}),
+    ...(effectiveExperience === undefined ? {} : { experience: effectiveExperience }),
+    ...(effectiveTechnology ? { technology: effectiveTechnology } : {}),
+    ...(effectiveFamily ? { family: effectiveFamily } : {}),
     ...(workType ? { workType } : {}),
     ...(company ? { company } : {}),
     sort,
@@ -269,11 +346,75 @@ export default async function JobsPage({
     if (q) search.set("q", q);
     if (category) search.set("category", category);
     if (country !== DEFAULT_COUNTRY) search.set("country", country);
+    if (locationExplicit) search.set("location", locationExplicit);
     if (experienceYears !== undefined) search.set("experience", String(experienceYears));
     if (workType) search.set("workType", workType);
     if (company) search.set("company", company);
     if (sort !== "match") search.set("sort", sort);
     if (next > 1) search.set("page", String(next));
+    const query = search.toString();
+    return (query ? `/jobs?${query}` : "/jobs") as Route;
+  };
+  /**
+   * 해석 칩 하나를 다른 값으로 바꾸거나 끄는 주소. `filterHref`와 달리
+   * 축을 "껐다"를 축마다 `off`로 명시해 남겨야 한다 — 그냥 지우면 검색어가
+   * 다시 그 값을 읽어내 되살아난다. 지금 바꾸는 축이 아니면 지금 상태(꺼져
+   * 있으면 off, 골라 뒀으면 그 값)를 그대로 옮겨 적어, 다른 축을 바꿀 때 이
+   * 축이 조용히 풀리지 않게 한다.
+   */
+  const conditionHref = (
+    patch: {
+      location?: string | null;
+      experience?: number | null;
+      technology?: string | null;
+      family?: string | null;
+    },
+  ): Route => {
+    const search = new URLSearchParams();
+    if (q) search.set("q", q);
+    if (sort !== "match") search.set("sort", sort);
+    if (country !== DEFAULT_COUNTRY) search.set("country", country);
+    if (workType) search.set("workType", workType);
+    if (company) search.set("company", company);
+
+    if ("location" in patch) {
+      search.set("location", patch.location === null || patch.location === undefined ? "off" : patch.location);
+    } else if (locationOff) {
+      search.set("location", "off");
+    } else if (locationExplicit) {
+      search.set("location", locationExplicit);
+    }
+
+    if ("experience" in patch) {
+      search.set(
+        "experience",
+        patch.experience === null || patch.experience === undefined ? "off" : String(patch.experience),
+      );
+    } else if (experienceOff) {
+      search.set("experience", "off");
+    } else if (experienceYears !== undefined) {
+      search.set("experience", String(experienceYears));
+    }
+
+    if ("technology" in patch) {
+      search.set(
+        "technology",
+        patch.technology === null || patch.technology === undefined ? "off" : patch.technology,
+      );
+    } else if (technologyOff) {
+      search.set("technology", "off");
+    } else if (technologyExplicit) {
+      search.set("technology", technologyExplicit);
+    }
+
+    if ("family" in patch) {
+      search.set("family", patch.family === null || patch.family === undefined ? "off" : patch.family);
+    } else if (familyOff) {
+      search.set("family", "off");
+    } else if (familyExplicit) {
+      search.set("family", familyExplicit);
+    }
+
     const query = search.toString();
     return (query ? `/jobs?${query}` : "/jobs") as Route;
   };
@@ -288,11 +429,35 @@ export default async function JobsPage({
   const sum = (rows: readonly { count: number }[]) =>
     rows.reduce((total, one) => total + one.count, 0);
 
+  /**
+   * 해석 칩(지역·경력·직무·기술)이 팝오버에 늘어놓을 값들.
+   *
+   * 경력·직무·기술은 이미 이 요청에서 받아 온 `summary`의 실제 집계를 그대로
+   * 쓴다 — 새로 계산하지 않는다. 직무는 `summary.categories`의 `family:`
+   * 칩과 같은 것이다(06 카테고리 칩이 쓰는 바로 그 집계). 지역은 나라 단위
+   * 집계(`summary.countries`)만 있고 지역 단위 집계는 없어서, 건수 없이
+   * 국내 지역 이름만 늘어놓는다.
+   */
+  const locationOptions = [...KOREAN_REGIONS].map((region) => ({ label: region, value: region }));
+  const experienceOptions = summary.experienceLevels.map((one) => ({
+    label: one.label,
+    value: experienceValue(one.label),
+    count: one.count,
+  }));
+  const familyOptions = summary.categories
+    .filter((one) => one.key.startsWith("family:") && one.count > 0)
+    .map((one) => ({ label: one.label, value: one.key.slice("family:".length), count: one.count }));
+  const technologyOptions = summary.commonTechnologies.map((one) => ({
+    label: one.label,
+    value: one.label,
+    count: one.count,
+  }));
+
   const sections: FilterSection[] = [
     {
       key: "country",
       title: "근무지",
-      active: countryFilter,
+      active: effectiveCountry,
       options: [
         { label: ALL, count: sum(summary.countries), href: filterHref({ country: null }) },
         ...summary.countries.map((one) => ({
@@ -307,7 +472,7 @@ export default async function JobsPage({
       title: "내 경력",
       // 수가 서로를 품는다. 그렇게 읽으라고 적어 둔다.
       note: "지원할 수 있는 공고",
-      active: experienceYears === undefined ? null : experienceLabel(experienceYears),
+      active: effectiveExperience === undefined ? null : experienceLabel(effectiveExperience),
       options: [
         { label: ALL, count: summary.total, href: filterHref({ experience: null }) },
         ...summary.experienceLevels.map((one) => ({
@@ -378,7 +543,23 @@ export default async function JobsPage({
       <AppBody>
         <div className={styles.content}>
           {q ? (
-            <SearchQueryCard query={q} conditions={interpreted?.conditions ?? []} />
+            <SearchQueryCard
+              query={q}
+              conditions={interpreted?.conditions ?? []}
+              effectiveByAxis={{
+                location: effectiveLocation,
+                experience: effectiveExperience,
+                technology: effectiveTechnology,
+                family: effectiveFamily,
+              }}
+              optionsByAxis={{
+                location: locationOptions,
+                experience: experienceOptions,
+                technology: technologyOptions,
+                family: familyOptions,
+              }}
+              conditionHref={conditionHref}
+            />
           ) : (
             <BrowseSearchBar />
           )}
@@ -494,11 +675,51 @@ export default async function JobsPage({
 }
 
 /**
+ * 검색 문장에서 나온 지역이 `서울`·`경기`처럼 국내 세부 지역명이면 API의
+ * `location` 필터(나라보다 한 겹 더 좁다)로, 해외 지역명이면 `country`로
+ * 보낸다. 이 목록은 백엔드 `ingest/classify.ts`의 REGION_RULES에서 나라가
+ * `한국`인 지역들과 같아야 한다 — 국내 지역을 추가하면 여기도 같이 늘려야
+ * 한다.
+ */
+const KOREAN_REGIONS = new Set([
+  "서울", "경기", "인천", "부산", "대전", "대구", "광주", "제주", "한국 그 외",
+]);
+
+/**
+ * "직무" 조건을 06 카테고리(`jobFamily`)로 옮길 때 쓰는 판정이다.
+ *
+ * `jobFamily`는 수집 시점에 `ingest/classify.ts`의 `FAMILY_RULES`로 이미 모든
+ * 공고에 매겨져 있다(기술처럼 나중에 분석해야 채워지는 값이 아니다) — 그래서
+ * 이 값과 맞추면 바로 걸린다. 패턴은 그 파일의 백엔드·프론트엔드 규칙을 그대로
+ * 옮겼다 — 거기서 바뀌면 여기도 맞춰야 한다. 지금은 이 둘만 옮긴다(요청받은
+ * 범위) — 나머지 갈래(모바일·데이터 등)도 같은 방식으로 늘릴 수 있다.
+ */
+const BACKEND_ROLE = /\b(backend|back-end|back end|server engineer|server developer|api engineer)\b|백\s?[엔앤]드|서버\s?(개발|엔지니어|프로그래머)/i;
+const FRONTEND_ROLE = /\b(frontend|front-end|front end|web engineer|ui engineer)\b|프론트\s?[엔앤]드|퍼블리셔/i;
+
+function familyFromRole(roleValue: string): string | undefined {
+  if (BACKEND_ROLE.test(roleValue)) return "백엔드";
+  if (FRONTEND_ROLE.test(roleValue)) return "프론트엔드";
+  return undefined;
+}
+
+/**
  * 해석된 조건 중 API가 실제로 거를 수 있는 것만 필터로 옮긴다. 옮길 게
  * 하나도 없으면 적힌 말 그대로 이름·원문에서 찾는다 — 회사 이름으로 찾는
  * 사람도 있기 때문이다.
  */
-function searchFilters(q: string | undefined, conditions: readonly JobSearchCondition[]) {
+function searchFilters(
+  q: string | undefined,
+  conditions: readonly JobSearchCondition[],
+): {
+  q?: string;
+  technology?: string;
+  remote?: true;
+  country?: string;
+  location?: string;
+  experience?: number;
+  family?: string;
+} {
   if (!q) return {};
   const technology = conditions.find(
     (condition) => condition.field === "technology" && condition.enabled,
@@ -509,9 +730,31 @@ function searchFilters(q: string | undefined, conditions: readonly JobSearchCond
       condition.enabled &&
       /remote|리모트|재택/i.test(String(condition.value)),
   );
+  const location = conditions.find(
+    (condition) => condition.field === "location" && condition.enabled,
+  );
+  const experience = conditions.find(
+    (condition) => condition.field === "experience" && condition.enabled,
+  );
+  const role = conditions.find(
+    (condition) => condition.field === "role" && condition.enabled,
+  );
+  const locationValue = location ? String(location.value) : null;
+  const family = role ? familyFromRole(String(role.value)) : undefined;
   const filters = {
     ...(technology ? { technology: String(technology.value) } : {}),
-    ...(remote ? { remote: true } : {}),
+    ...(remote ? { remote: true as const } : {}),
+    // 국내 지역은 country(한국)와 location(경기 등)을 함께 보낸다 — location이
+    // 더 좁혀 걸고, country는 근무지 필터 칩 표시를 예전과 그대로 맞춘다.
+    ...(locationValue
+      ? KOREAN_REGIONS.has(locationValue)
+        ? { country: "한국", location: locationValue }
+        : { country: locationValue }
+      : {}),
+    ...(experience ? { experience: Number(experience.value) } : {}),
+    // "직무 · 백엔드/프론트엔드"로 잡힌 조건을 06 카테고리 필터(jobFamily)로도
+    // 옮긴다 — 알아보는 갈래가 이 둘뿐이면 조용히 빠지고, 칩 표시는 그대로다.
+    ...(family ? { family } : {}),
   };
   return Object.keys(filters).length > 0 ? filters : { q };
 }
@@ -529,13 +772,72 @@ function chipHref(chip: JobPostingCategory): Route {
   return (chip.key === "all" ? "/jobs" : `/jobs?category=${encodeURIComponent(chip.key)}`) as Route;
 }
 
+/** 해석 칩 중 다른 값으로 바꾸거나 끌 수 있는 축과, 그 값이 채워 넣는 질의 파라미터. */
+const CHIP_AXIS_PARAM: Partial<
+  Record<JobSearchCondition["field"], "location" | "experience" | "technology" | "family">
+> = {
+  location: "location",
+  experience: "experience",
+  role: "family",
+  technology: "technology",
+};
+
+interface ChipOptionSource {
+  label: string;
+  value: string | number;
+  count?: number;
+}
+
+/** `conditionHref`는 patch의 키마다 값 타입이 달라, 축별로 나눠 불러야 한다. */
+function chipOffHref(
+  axis: "location" | "experience" | "technology" | "family",
+  conditionHref: (patch: {
+    location?: string | null;
+    experience?: number | null;
+    technology?: string | null;
+    family?: string | null;
+  }) => Route,
+): Route {
+  if (axis === "location") return conditionHref({ location: null });
+  if (axis === "experience") return conditionHref({ experience: null });
+  if (axis === "technology") return conditionHref({ technology: null });
+  return conditionHref({ family: null });
+}
+
+function chipOptionHref(
+  axis: "location" | "experience" | "technology" | "family",
+  value: string | number,
+  conditionHref: (patch: {
+    location?: string | null;
+    experience?: number | null;
+    technology?: string | null;
+    family?: string | null;
+  }) => Route,
+): Route {
+  if (axis === "location") return conditionHref({ location: String(value) });
+  if (axis === "experience") return conditionHref({ experience: Number(value) });
+  if (axis === "technology") return conditionHref({ technology: String(value) });
+  return conditionHref({ family: String(value) });
+}
+
 /** 순서를 정한 근거는 가장 잘 맞은 공고의 일치 기술에서 나온다. */
 function SearchQueryCard({
   query,
   conditions,
+  effectiveByAxis,
+  optionsByAxis,
+  conditionHref,
 }: {
   query: string;
   conditions: readonly JobSearchCondition[];
+  effectiveByAxis: Record<"location" | "experience" | "technology" | "family", string | number | undefined>;
+  optionsByAxis: Record<"location" | "experience" | "technology" | "family", ChipOptionSource[]>;
+  conditionHref: (patch: {
+    location?: string | null;
+    experience?: number | null;
+    technology?: string | null;
+    family?: string | null;
+  }) => Route;
 }) {
   return (
     <div className={styles.queryCard}>
@@ -555,23 +857,51 @@ function SearchQueryCard({
         </button>
       </form>
 
-      {/* 해석 칩 — 확신이 낮은 조건도 칩으로 만들되 지울 수 있게 둔다 */}
+      {/* 해석 칩 — 확신이 낮은 조건도 칩으로 만들되 지울 수 있게 둔다. 지역 ·
+          경력 · 직무 · 기술은 눌러서 다른 값을 고르거나 끌 수 있다. */}
       <div className={styles.parsedRow}>
         <span className={styles.parsedLabel}>이렇게 이해했습니다</span>
-        {conditions.map((condition) => (
-          <button
-            key={`${condition.field}-${condition.value}`}
-            type="button"
-            className={styles.parsedChip}
-          >
-            {CONDITION_AXIS[condition.field]} · {conditionValue(condition)}
-            <Icon
-              name={condition.enabled ? "caret-down" : "x"}
-              size={10}
-              color={condition.enabled ? undefined : "var(--ex-accent-text)"}
+        {conditions.map((condition) => {
+          const axis = CHIP_AXIS_PARAM[condition.field];
+          if (!axis) {
+            return (
+              <button
+                key={`${condition.field}-${condition.value}`}
+                type="button"
+                className={styles.parsedChip}
+              >
+                {CONDITION_AXIS[condition.field]} · {conditionValue(condition)}
+                <Icon
+                  name={condition.enabled ? "caret-down" : "x"}
+                  size={10}
+                  color={condition.enabled ? undefined : "var(--ex-accent-text)"}
+                />
+              </button>
+            );
+          }
+          const effectiveValue = effectiveByAxis[axis];
+          const enabled = effectiveValue !== undefined;
+          const valueLabel = effectiveValue === undefined
+            ? conditionValue(condition)
+            : axis === "experience"
+              ? experienceChipLabel(Number(effectiveValue))
+              : String(effectiveValue);
+          return (
+            <ConditionChip
+              key={`${condition.field}-${condition.value}`}
+              axisLabel={CONDITION_AXIS[condition.field]}
+              valueLabel={valueLabel}
+              enabled={enabled}
+              offHref={chipOffHref(axis, conditionHref)}
+              options={optionsByAxis[axis].map((option) => ({
+                label: option.label,
+                active: option.value === effectiveValue,
+                href: chipOptionHref(axis, option.value, conditionHref),
+                ...(option.count === undefined ? {} : { count: option.count }),
+              }))}
             />
-          </button>
-        ))}
+          );
+        })}
         <button type="button" className={styles.parsedAdd}>
           <Icon name="plus" size={11} />
           조건 추가
