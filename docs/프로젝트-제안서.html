@@ -1265,7 +1265,7 @@ body.de-editing .deck-stage>.slide.active .fit-digit-roll,body.de-editing .deck-
         <div class="portfolio-browser">
           <div class="portfolio-browser-bar"><i></i><i></i><i></i><a href="https://minjae-park.pages.dev" target="_blank" rel="noopener noreferrer">minjae-park.pages.dev ↗</a></div>
           <div class="portfolio-viewport" aria-busy="true">
-            <iframe data-portfolio-src="assets/프로젝트-제안서/portfolio-preview.html" title="박민재 디자인 포트폴리오 참고 예시" referrerpolicy="no-referrer"></iframe>
+            <template data-portfolio-template><iframe src="https://minjae-park.pages.dev/" title="박민재 디자인 포트폴리오 참고 예시" loading="eager"></iframe></template>
             <div class="portfolio-load-state" role="status">
               <p data-portfolio-status>포트폴리오를 불러오는 중입니다.</p>
               <button type="button" data-portfolio-retry>다시 불러오기</button>
@@ -6691,45 +6691,52 @@ window.deck = new Deck();
 </script><script src="templates/deck-portal-navigation.js"></script>
 
 <script>
-/* 숨겨진 장에서 iframe 탐색이 보류되는 브라우저에서도, 표시 후 실제 URL을 지정합니다. */
+/* 포트폴리오는 비교 지면을 보고 있는 동안에만 원본 URL로 실행합니다. */
 (() => {
   const slide = document.querySelector('.portfolio-comparison');
-  const frame = slide?.querySelector('[data-portfolio-src]');
-  if (!frame) return;
-  const viewport = frame.parentElement;
+  const template = slide?.querySelector('[data-portfolio-template]');
+  if (!template) return;
+  const viewport = template.parentElement;
   const state = viewport.querySelector('.portfolio-load-state');
   const status = state.querySelector('[data-portfolio-status]');
-  const retry = state.querySelector('[data-portfolio-retry]');
-  let started = false, timer, activation;
-  function load() {
+  let frame, timer, activation;
+  function unload() {
     clearTimeout(timer);
-    started = true;
+    clearTimeout(activation);
+    frame?.remove();
+    frame = null;
     state.hidden = false;
-    viewport.setAttribute('aria-busy', 'true');
     status.textContent = '포트폴리오를 불러오는 중입니다.';
-    frame.src = frame.dataset.portfolioSrc;
+    viewport.setAttribute('aria-busy', 'false');
+  }
+  function load() {
+    unload();
+    if (!slide.classList.contains('active') || document.hidden) return;
+    viewport.setAttribute('aria-busy', 'true');
+    frame = template.content.firstElementChild.cloneNode(true);
+    frame.setAttribute('data-deck-editor', '');
+    const current = frame;
+    current.addEventListener('load', () => {
+      if (frame !== current) return;
+      clearTimeout(timer);
+      state.hidden = true;
+      viewport.setAttribute('aria-busy', 'false');
+    }, { once:true });
+    viewport.insertBefore(current, state);
     timer = setTimeout(() => {
       status.textContent = '연결이 지연되고 있습니다. 다시 불러오거나 새 탭에서 열어 주세요.';
       viewport.setAttribute('aria-busy', 'false');
     }, 12000);
   }
-  frame.addEventListener('load', () => {
-    if (!started || !frame.getAttribute('src')) return;
-    clearTimeout(timer);
-    state.hidden = true;
-    viewport.setAttribute('aria-busy', 'false');
-  });
-  retry.addEventListener('click', load);
-  function activate() {
+  function sync() {
     clearTimeout(activation);
-    if (started || !slide.classList.contains('active')) return;
-    /* 모핑과 등장 모션이 끝난 뒤 탐색을 시작하며, 재방문 시 스크롤 위치를 유지합니다. */
-    activation = setTimeout(() => {
-      if (slide.classList.contains('active') && !started) load();
-    }, 950);
+    if (!slide.classList.contains('active') || document.hidden) { unload(); return; }
+    if (!frame) activation = setTimeout(load, 950);
   }
-  new MutationObserver(activate).observe(slide, { attributes:true, attributeFilter:['class'] });
-  activate();
+  state.querySelector('[data-portfolio-retry]').addEventListener('click', load);
+  new MutationObserver(sync).observe(slide, { attributes:true, attributeFilter:['class'] });
+  document.addEventListener('visibilitychange', sync);
+  sync();
 })();
 </script>
 </body></html>
