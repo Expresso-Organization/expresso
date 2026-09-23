@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "alert-13",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "alert"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/alerts/alert-13.tsx",
+      "content": "import  {MdError} from \"react-icons/md\";\nimport { Alert, AlertTitle } from \"@/components/ui/alert\";\nimport { Button } from \"@/components/ui/button\";\n\nconst Alert13 = () => {\n  return (\n    <Alert className=\"flex items-center justify-between [&>svg]:translate-y-0\">\n      <MdError className=\"size-4\" />\n      <AlertTitle className=\"flex-1\">You have a new message!</AlertTitle>\n      <Button variant=\"ghost\" className=\" cursor-pointer rounded-md px-2\">\n        Open\n      </Button>\n    </Alert>\n  );\n};\n\nexport default Alert13;\n",
+      "type": "registry:ui",
+      "target": "components/ui/alert-13.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

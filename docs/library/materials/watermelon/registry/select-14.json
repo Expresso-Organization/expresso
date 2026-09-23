@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "select-14",
+  "dependencies": [],
+  "registryDependencies": [
+    "label",
+    "select"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/select/select-14.tsx",
+      "content": "import { useId } from 'react';\n\nimport { Label } from '@/components/ui/label';\nimport {\n  Select,\n  SelectContent,\n  SelectItem,\n  SelectTrigger,\n  SelectValue,\n} from '@/components/ui/select';\n\nconst Select14 = () => {\n  const id = useId();\n\n  return (\n    <div className=\"w-full max-w-xs space-y-2\">\n      <Label htmlFor={id} className=\"text-zinc-600 dark:text-zinc-400\">\n        Active Environment\n      </Label>\n      <Select defaultValue=\"prod\">\n        <SelectTrigger \n          id={id} \n          aria-invalid=\"true\"\n          className=\"w-full rounded-xl border-zinc-200 bg-white shadow-xs transition-all hover:bg-zinc-50 aria-invalid:border-amber-500 aria-invalid:ring-amber-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900 dark:aria-invalid:border-amber-900 dark:aria-invalid:ring-amber-900/40\"\n        >\n          <SelectValue placeholder=\"Identify environment\" />\n        </SelectTrigger>\n        <SelectContent \n          position=\"popper\" \n          sideOffset={4} \n          className=\"rounded-xl border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-950\"\n        >\n          <SelectItem value=\"dev\" className=\"rounded-lg\">Development Sandbox</SelectItem>\n          <SelectItem value=\"staging\" className=\"rounded-lg\">Staging Cluster</SelectItem>\n          <SelectItem value=\"qa\" className=\"rounded-lg\">QA Validation</SelectItem>\n          <SelectItem value=\"prod\" className=\"rounded-lg\">Production Main</SelectItem>\n        </SelectContent>\n      </Select>\n      <p className=\"text-[12px] text-amber-600 dark:text-amber-500\" role=\"alert\" aria-live=\"polite\">\n        Production environment is currently locked for maintenance tasks.\n      </p>\n    </div>\n  );\n};\n\nexport default Select14;\n\n",
+      "type": "registry:ui",
+      "target": "components/ui/select-14.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

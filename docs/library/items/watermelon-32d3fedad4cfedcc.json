@@ -1,0 +1,69 @@
+{
+  "id": "watermelon-32d3fedad4cfedcc",
+  "sourceUrl": "https://ui.watermelon.sh/components/tabs",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/tabs.json",
+      "sha256": "ab2a8de2bb51b727b1f57a79b953fe5ad45db8a29c1e510538166c02df15bc0a",
+      "bytes": 32536,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/tabs.tsx",
+      "target": "components/ui/tabs.tsx",
+      "type": "registry:ui",
+      "sha256": "fdb343270a11a64baa2b29f48a8c21d631c2e27d244de7a0dff7d29414a918e0",
+      "bytes": 30993
+    }
+  ],
+  "dependencies": [
+    "motion"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "@/lib/utils",
+    "motion/react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "type TabsProps = TabsPrimitiveProps;\n\nfunction Tabs({ className, ...props }",
+    "type TabsListProps = TabsListPrimitiveProps;\n\nfunction TabsList({ className, ...props }",
+    "type TabsTriggerProps = TabsTriggerPrimitiveProps;\n\nfunction TabsTrigger({ className, ...props }",
+    "type TabsContentsProps = TabsContentsPrimitiveProps;\n\nfunction TabsContents(props: TabsContentsProps) {\n  return <TabsContentsPrimitive {...props}",
+    "type TabsContentProps = TabsContentPrimitiveProps;\n\nfunction TabsContent({ className, ...props }",
+    "type BaseTabsProps = React.ComponentProps<'div'> & {\n  children: React.ReactNode;\n}",
+    "type UnControlledTabsProps = BaseTabsProps & {\n  defaultValue?: string;\n  value?: never;\n  onValueChange?: never;\n}",
+    "type ControlledTabsProps = BaseTabsProps & {\n  value: string;\n  onValueChange?: (value: string) => void;\n  defaultValue?: never;\n}",
+    "type TabsPrimitiveProps = UnControlledTabsProps | ControlledTabsProps;\n\nfunction TabsPrimitive({\n  defaultValue,\n  value,\n  onValueChange,\n  children,\n  ...props\n}",
+    "type TabsHighlightPrimitiveProps = Omit<HighlightProps, 'controlledItems' | 'value'>;\n\nfunction TabsHighlightPrimitive({\n  transition = { type: 'spring', stiffness: 200, damping: 25 }",
+    "type TabsListPrimitiveProps = React.ComponentProps<'div'> & {\n  children: React.ReactNode;\n}",
+    "type TabsHighlightItemProps = HighlightItemProps & {\n  value: string;\n}",
+    "type TabsTriggerPrimitiveProps = WithAsChild<\n  {\n    value: string;\n    children: React.ReactNode;\n  }",
+    "type TabsContentsPrimitiveProps = HTMLMotionProps<'div'> & {\n  children: React.ReactNode;\n  transition?: Transition;\n}",
+    "type TabsContentPrimitiveProps = WithAsChild<\n  {\n    value: string;\n    children?: React.ReactNode;\n  }",
+    "type AnyProps = Record<string, unknown>;\n\ntype DOMMotionProps<T extends HTMLElement = HTMLElement> = Omit<\n  HTMLMotionProps<keyof HTMLElementTagNameMap>,\n  'ref'\n> & { ref?: React.Ref<T> }",
+    "type ParentModeHighlightProps = {\n  boundsOffset?: Partial<Bounds>;\n  containerClassName?: string;\n  forceUpdateBounds?: boolean;\n}",
+    "type ExtendedChildProps = React.ComponentProps<'div'> & {\n  id?: string;\n  ref?: React.Ref<HTMLElement>;\n  'data-active'?: string;\n  'data-value'?: string;\n  'data-disabled'?: boolean;\n  'data-highlight'?: boolean;\n  'data-slot'?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/tabs.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

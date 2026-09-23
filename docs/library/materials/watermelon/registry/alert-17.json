@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "alert-17",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "alert"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/alerts/alert-17.tsx",
+      "content": "\n\nimport { Alert, AlertTitle, AlertDescription } from \"@/components/ui/alert\";\nimport { MdError } from \"react-icons/md\";\n\nconst Alert17 = () => {\n  return (\n    <Alert>\n      <MdError className=\"size-4\" />\n      <AlertTitle>Complete your profile</AlertTitle>\n      <AlertDescription>\n        Add your information to personalize your experience.\n      </AlertDescription>\n    </Alert>\n  );\n};\n\nexport default Alert17;\n",
+      "type": "registry:ui",
+      "target": "components/ui/alert-17.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

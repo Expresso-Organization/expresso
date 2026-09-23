@@ -1,0 +1,29 @@
+{
+  "id": "unsection-fde6ad6b091c6722",
+  "sourceUrl": "https://www.unsection.com/section/aiid-ai-case-feature-design",
+  "sourceRevision": null,
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: aiid ai case feature design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/aiid-ai-case-feature-design",
+    "sha256": "a61bc41b01a963a70c5c9f037e0168c74c8794161a4a0fb09f1754b3319628fd",
+    "fetchedAt": "2026-09-23T12:51:17+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

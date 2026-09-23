@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "alert-24",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "alert"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/alerts/alert-24.tsx",
+      "content": "import { Alert, AlertTitle, AlertDescription } from \"@/components/ui/alert\";\nimport { GoAlertFill } from \"react-icons/go\";\n\nconst Alert24 = () => {\n  return (\n    <Alert className=\"border-none bg-yellow-600/10 text-yellow-600 dark:bg-yellow-400/10 dark:text-yellow-400\">\n      <GoAlertFill className=\"size-4\" />\n      <AlertTitle>Large file detected</AlertTitle>\n      <AlertDescription className=\"text-yellow-600/80 dark:text-yellow-400/80\">\n        This file may take longer to upload. Consider optimizing it for a faster\n        experience.\n      </AlertDescription>\n    </Alert>\n  );\n};\n\nexport default Alert24;\n",
+      "type": "registry:ui",
+      "target": "components/ui/alert-24.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

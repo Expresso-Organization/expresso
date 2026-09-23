@@ -1,0 +1,30 @@
+{
+  "id": "footer-d4436a8b05ef478e",
+  "sourceUrl": "https://www.footer.design/sites/terra",
+  "sourceRevision": null,
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Terra",
+    "공개 이미지 요소: 27개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://myterra.ai/",
+  "evidence": {
+    "url": "https://www.footer.design/sites/terra",
+    "sha256": "c0ef6dece5dc1ad7d5534403d39736ebb7ea8164d3b90d0bc4b7b8bea79bb8d2",
+    "fetchedAt": "2026-09-23T12:55:07+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

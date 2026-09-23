@@ -1,0 +1,78 @@
+{
+  "id": "watermelon-24c0b94f3c9b8888",
+  "sourceUrl": "https://ui.watermelon.sh/block/team-5",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/team-5.json",
+      "sha256": "3b4cb0dc5028d45d968e6d65bbdb86078f6093e43c45e17641f9fe00e2027c8d",
+      "bytes": 7432,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/team-5.tsx",
+      "target": "components/ui/team-5.tsx",
+      "type": "registry:ui",
+      "sha256": "848fbdc7cd17017c545817e79685d3de16bd70eaedc37308de84fd086bf8a548",
+      "bytes": 6626
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "team",
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/badge",
+    "@/lib/utils",
+    "react",
+    "react-icons/fa",
+    "react-icons/fa6"
+  ],
+  "propsDeclarations": [
+    "export interface Team5Props {\n  badge?: string;\n  heading?: string;\n  description?: string;\n  members?: Team5Member[];\n  className?: string;\n  renderLink?: (props: {\n    href: string;\n    label: string;\n    children: ReactNode;\n  }"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=800&auto=format&fit=crop"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/team-5.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "team-5",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/team-5.tsx",
+    "url": "./library/previews/watermelon/team-5.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:25+00:00",
+    "snapshotSha256": "9924e9fea9c4cccefa097ce5945e31ac3117dfb19b723569d6600cf9a0186a43"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

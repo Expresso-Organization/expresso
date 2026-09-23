@@ -1,0 +1,57 @@
+{
+  "id": "watermelon-77ac729b344bf9a4",
+  "sourceUrl": "https://ui.watermelon.sh/block/career-4",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "experience"
+  ],
+  "roleEvidence": "경력과 과정의 순서를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/career-4.json",
+      "sha256": "55526392daf81c39394a511c8eb063881f5c4cae2bf5e0790f140fe06a68890d",
+      "bytes": 9767,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/career-4.tsx",
+      "target": "components/ui/career-4.tsx",
+      "type": "registry:ui",
+      "sha256": "667da74ae270f80a34e467574aeca81fc6610520d92aadd735c3927a36392151",
+      "bytes": 8880
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "career",
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/select",
+    "@/lib/utils",
+    "react",
+    "react-icons/fi"
+  ],
+  "propsDeclarations": [
+    "export interface Career4Props {\n  eyebrow?: string;\n  heading: string;\n  description?: string;\n  jobs: Job[];\n  footerLabel?: string;\n  footerCTA?: string;\n  onFooterCTA?: () => void;\n  className?: string;\n}",
+    "interface FilterDropdownProps {\n  label: string;\n  options: string[];\n  value: string;\n  onChange: (v: string) => void;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/career-4.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

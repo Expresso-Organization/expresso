@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "tooltip-2",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "tooltip"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/tooltip/tooltip-2.tsx",
+      "content": "import { Button } from \"@/components/ui/button\";\nimport {\n  Tooltip,\n  TooltipContent,\n  TooltipTrigger,\n} from \"@/components/ui/tooltip\";\n\nconst Tooltip2 = () => {\n  return (\n    <Tooltip>\n      <TooltipTrigger asChild>\n        <Button variant=\"outline\" size=\"lg\">\n          Neutral\n        </Button>\n      </TooltipTrigger>\n      <TooltipContent className=\"bg-neutral-200 text-neutral-950 dark:bg-neutral-50 [&_svg]:bg-neutral-200 [&_svg]:fill-neutral-200 dark:[&_svg]:bg-neutral-50 dark:[&_svg]:fill-neutral-50\">\n        <p>Consistent appearance across themes</p>\n      </TooltipContent>\n    </Tooltip>\n  );\n};\n\nexport default Tooltip2;\n",
+      "type": "registry:ui",
+      "target": "components/ui/tooltip-2.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

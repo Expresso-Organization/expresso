@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "accordion-8",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "accordion"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/accordion/accordion-8.tsx",
+      "content": "import * as AccordionPrimitive from '@radix-ui/react-accordion'\nimport type { LucideIcon } from 'lucide-react'\nimport { GraduationCapIcon, LibraryBigIcon, PlusIcon, UsersIcon } from 'lucide-react'\n\nimport { Accordion, AccordionContent, AccordionItem } from '@/components/ui/accordion'\n\ntype AccordionItemData = {\n  value: string\n  icon: LucideIcon\n  title: string\n  subtitle: string\n  content: string\n}\n\nconst items: readonly AccordionItemData[] = [\n  {\n    value: 'item-1',\n    icon: GraduationCapIcon,\n    title: 'Why do students struggle to stay on track?',\n    subtitle: 'Learning Journey',\n    content:\n      'Students usually lose momentum when lessons, deadlines, and progress signals are scattered across too many places. A stronger learning experience makes the next step visible and keeps milestones easy to review.'\n  },\n  {\n    value: 'item-2',\n    icon: LibraryBigIcon,\n    title: 'How should course materials be organized?',\n    subtitle: 'Curriculum Structure',\n    content:\n      'Course content works better when readings, assignments, and supporting resources are grouped by topic instead of being added as a long list. Clear structure helps learners spend more time studying and less time searching.'\n  },\n  {\n    value: 'item-3',\n    icon: UsersIcon,\n    title: 'What improves collaboration in cohort programs?',\n    subtitle: 'Community Experience',\n    content:\n      'Cohort learning becomes stronger when discussion spaces, peer feedback, and live session notes are connected to the same workflow. Students engage more when collaboration feels like part of the course instead of an extra step.'\n  }\n] as const\n\nconst Accordion8 = () => {\n  return (\n    <Accordion className='w-full' type=\"multiple\" defaultValue={[items[0].value]}>\n      {items.map((item) => {\n        const Icon = item.icon\n\n        return (\n          <AccordionItem key={item.value} value={item.value}>\n            <AccordionPrimitive.Header className='flex'>\n              <AccordionPrimitive.Trigger\n                data-slot='accordion-trigger'\n                className='group/accordion-trigger focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-center justify-between gap-4 rounded-md py-4 text-left text-sm font-medium outline-none transition-all focus-visible:ring-[3px] aria-disabled:pointer-events-none aria-disabled:opacity-50'\n              >\n                <span className='flex items-center gap-4'>\n                  <span\n                    className='flex size-10 shrink-0 items-center justify-center rounded-md border'\n                    aria-hidden='true'\n                  >\n                    <Icon className='size-4' />\n                  </span>\n                  <span className='flex flex-col space-y-0.5'>\n                    <span>{item.title}</span>\n                    <span className='font-normal text-muted-foreground'>{item.subtitle}</span>\n                  </span>\n                </span>\n                <PlusIcon className='pointer-events-none size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-aria-expanded/accordion-trigger:rotate-45' />\n              </AccordionPrimitive.Trigger>\n            </AccordionPrimitive.Header>\n            <AccordionContent className='text-muted-foreground'>\n              {item.content}\n            </AccordionContent>\n          </AccordionItem>\n        )\n      })}\n    </Accordion>\n  )\n}\n\nexport default Accordion8\n",
+      "type": "registry:ui",
+      "target": "components/ui/accordion-8.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

@@ -1,0 +1,71 @@
+{
+  "id": "watermelon-48967984677a6cc4",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/github-stars.json",
+      "sha256": "a8086039f27c62be915370ef7adc6a970994b287e0994c289bb82a55b885fcfd",
+      "bytes": 26177,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/github-stars.tsx",
+      "target": "components/ui/github-stars.tsx",
+      "type": "registry:ui",
+      "sha256": "9d0a21d9d77fee041f29e70101d82fe0d9302f4641d215ea757e4e5b59628b94",
+      "bytes": 24765
+    }
+  ],
+  "dependencies": [
+    "class-variance-authority",
+    "lucide-react",
+    "motion",
+    "react-use-measure"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "@/lib/utils",
+    "class-variance-authority",
+    "lucide-react",
+    "motion/react",
+    "react",
+    "react-use-measure"
+  ],
+  "propsDeclarations": [
+    "type GitHubStarsButtonProps = Omit<\n  ButtonPrimitiveProps & GithubStarsProps,\n  'asChild' | 'children'\n> &\n  VariantProps<typeof buttonVariants>;\n\nfunction GitHubStarsButton({\n  className,\n  username,\n  repo,\n  value,\n  delay,\n  inView,\n  inViewMargin,\n  inViewOnce,\n  variant,\n  size,\n  ...props\n}",
+    "type GithubStarsProps = WithAsChild<\n  {\n    children: React.ReactNode;\n    username?: string;\n    repo?: string;\n    value?: number;\n    delay?: number;\n  }",
+    "type GithubStarsNumberProps = Omit<SlidingNumberProps, 'number' | 'fromNumber'>;\n\nfunction GithubStarsNumber({\n  padStart = true,\n  ...props\n}",
+    "type GithubStarsParticlesProps = ParticlesEffectProps & {\n  children: React.ReactElement;\n  size?: number;\n}",
+    "type GithubStarsLogoProps = React.SVGProps<SVGSVGElement>;\n\nfunction GithubStarsLogo(props: GithubStarsLogoProps) {\n  return (\n    <svg\n      role=\"img\"\n      viewBox=\"0 0 24 24\"\n      fill=\"currentColor\"\n      aria-label=\"GitHub\"\n      {...props}",
+    "type ButtonPrimitiveProps = WithAsChild<\n  HTMLMotionProps<'button'> & {\n    hoverScale?: number;\n    tapScale?: number;\n  }",
+    "type AnyProps = Record<string, unknown>;\n\ntype DOMMotionProps<T extends HTMLElement = HTMLElement> = Omit<\n  HTMLMotionProps<keyof HTMLElementTagNameMap>,\n  'ref'\n> & { ref?: React.Ref<T> }",
+    "type SlidingNumberRollerProps = {\n  prevValue: number;\n  value: number;\n  place: number;\n  transition: SpringOptions;\n  delay?: number;\n}",
+    "type SlidingNumberDisplayProps = {\n  motionValue: MotionValue<number>;\n  number: number;\n  height: number;\n  transition: SpringOptions;\n}",
+    "type SlidingNumberProps = Omit<HTMLMotionProps<'span'>, 'children'> & {\n  number: number;\n  fromNumber?: number;\n  onNumberChange?: (number: number) => void;\n  padStart?: boolean;\n  decimalSeparator?: string;\n  decimalPlaces?: number;\n  thousandSeparator?: string;\n  transition?: SpringOptions;\n  delay?: number;\n  initiallyStable?: boolean;\n}",
+    "type ParticlesProps = WithAsChild<\n  Omit<HTMLMotionProps<'div'>, 'children'> & {\n    animate?: boolean;\n    children: React.ReactNode;\n  }",
+    "type ParticlesEffectProps = Omit<HTMLMotionProps<'div'>, 'children'> & {\n  side?: Side;\n  align?: Align;\n  count?: number;\n  radius?: number;\n  spread?: number;\n  duration?: number;\n  holdDelay?: number;\n  sideOffset?: number;\n  alignOffset?: number;\n  delay?: number;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://api.github.com/repos/${username}/${repo}"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/github-stars.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

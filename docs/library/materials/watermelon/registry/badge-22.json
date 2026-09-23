@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "badge-22",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "badge"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/badge/badge-22.tsx",
+      "content": "\"use client\";\n\nimport { useState } from \"react\";\n\nimport { Badge } from \"@/components/ui/badge\";\nimport { GoCheckCircleFill } from \"react-icons/go\";\n\nconst Badge22 = () => {\n  const [selected, setSelected] = useState(false);\n\n  return (\n    <Badge\n      variant={selected ? \"secondary\" : \"outline\"}\n      onClick={() => setSelected((prev) => !prev)}\n      className=\"  relative inline-flex items-center justify-center gap-1 cursor-pointer rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/50 select-none\"\n    >\n      {selected && (\n        <GoCheckCircleFill\n          className=\"size-3 text-green-600 dark:text-green-400 translate-y-[0.5px]\"\n          aria-hidden=\"true\"\n        />\n      )}\n\n      <span>{selected ? \"Selected\" : \"Selectable\"}</span>\n    </Badge>\n  );\n};\n\nexport default Badge22;\n",
+      "type": "registry:ui",
+      "target": "components/ui/badge-22.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

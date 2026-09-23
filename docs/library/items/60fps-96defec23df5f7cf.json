@@ -1,0 +1,29 @@
+{
+  "id": "60fps-96defec23df5f7cf",
+  "sourceUrl": "https://60fps.design/shots/runbuds-app-icon-lock-animation",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Runbuds App Icon Lock Animation",
+    "공개 이미지 요소: 23개",
+    "동영상 포스터: 25개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/runbuds-app-icon-lock-animation",
+    "sha256": "94ad8ab5685e23a459d41f35c2ae2c46c4c5266c3b6ba34915fbb115dbd26e76",
+    "fetchedAt": "2026-09-23T13:06:26+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

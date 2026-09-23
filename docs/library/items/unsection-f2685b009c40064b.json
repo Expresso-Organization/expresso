@@ -1,0 +1,29 @@
+{
+  "id": "unsection-f2685b009c40064b",
+  "sourceUrl": "https://www.unsection.com/section/montoni-executive-leadership-team-grid-design",
+  "sourceRevision": null,
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: montoni executive leadership team grid design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/montoni-executive-leadership-team-grid-design",
+    "sha256": "68a0540b9ac10de9c9c7718997f511c3ba88c450dfe8fa5a5ce98e0d6369c341",
+    "fetchedAt": "2026-09-23T12:55:07+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

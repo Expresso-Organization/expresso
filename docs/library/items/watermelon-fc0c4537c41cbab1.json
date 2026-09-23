@@ -1,0 +1,78 @@
+{
+  "id": "watermelon-fc0c4537c41cbab1",
+  "sourceUrl": "https://ui.watermelon.sh/block/hero-28",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/hero-28.json",
+      "sha256": "979eb72e90989f69b047b814bef9c6542b7c399938066cd91ed22f3e84c4fc66",
+      "bytes": 10175,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/hero-28.tsx",
+      "target": "components/ui/hero-28.tsx",
+      "type": "registry:ui",
+      "sha256": "c8bc5195db65da92fc596f07edebd4b9174ac29c0e99f933c717fdade0e4c8f0",
+      "bytes": 9384
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion",
+    "@hugeicons/react"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/button",
+    "@hugeicons/core-free-icons",
+    "@hugeicons/react",
+    "motion/react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "interface Hero28Props {\n  titleLine1Start?: string;\n  titleLine1Highlight?: string;\n  titleLine1End?: string;\n  titleLine2?: string;\n  subtitle?: string;\n  primaryActionText?: string;\n  secondaryActionText?: string;\n  socialProofText?: string;\n  backgroundImage?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://assets.watermelon.sh/hero-28.webp",
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=64&h=64&q=80",
+    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=64&h=64&q=80",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=64&h=64&q=80",
+    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=64&h=64&q=80"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/hero-28.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "hero-28",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-28.tsx",
+    "url": "./library/previews/watermelon/hero-28.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:17+00:00",
+    "snapshotSha256": "6d1ac89e4b39b1ae0c664abfe77de0ed5e7fa2208b66bb5789b154230f1501c1"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "60fps-08104b224824cd1e",
+  "sourceUrl": "https://60fps.design/shots/navi-mutual-funds-title-text-animation",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Navi Mutual Funds Title Text Animation",
+    "공개 이미지 요소: 25개",
+    "동영상 포스터: 24개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/navi-mutual-funds-title-text-animation",
+    "sha256": "442bc40e6663312e85b25059fd1563feb877e324ecf9ba3e7abab6be5b8e6884",
+    "fetchedAt": "2026-09-23T13:04:39+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

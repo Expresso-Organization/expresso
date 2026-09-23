@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "textarea-21",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "textarea"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/textarea/textarea-21.tsx",
+      "content": "import { useId } from \"react\";\n\nimport { Label } from \"@/components/ui/label\";\nimport { Textarea } from \"@/components/ui/textarea\";\n\nconst TextArea21 = () => {\n  const id = useId();\n\n  return (\n    <div className=\"w-full max-w-xs space-y-2\">\n      <Label htmlFor={id}>Project Notes</Label>\n      <Textarea\n        id={id}\n        className=\"bg-muted focus-visible:ring-primary/20 focus-visible:border-primary/50 rounded-sm border-transparent shadow-sm focus-visible:ring-2\"\n        placeholder=\"Write a quick note about your project...\"\n      />\n    </div>\n  );\n};\n\nexport default TextArea21;\n",
+      "type": "registry:ui",
+      "target": "components/ui/textarea-21.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "dropdown-menu-11",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "dropdown-menu",
+    "button"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/dropdown-menu/dropdown-menu-11.tsx",
+      "content": "\"use client\";\n\nimport { useState } from \"react\";\nimport {\n  FaBell,\n  FaBellSlash,\n  FaVolumeLow,\n  FaVolumeHigh,\n  FaVolumeXmark,\n} from \"react-icons/fa6\";\n\nimport { Button } from \"@/components/ui/button\";\nimport {\n  DropdownMenu,\n  DropdownMenuContent,\n  DropdownMenuGroup,\n  DropdownMenuItem,\n  DropdownMenuLabel,\n  DropdownMenuTrigger,\n} from \"@/components/ui/dropdown-menu\";\n\nconst levels = [\n  {\n    value: \"all\",\n    label: \"All Notifications\",\n    icon: FaBell,\n    color: \"text-foreground\",\n  },\n  {\n    value: \"important\",\n    label: \"Important Only\",\n    icon: FaVolumeHigh,\n    color: \"text-amber-500 \",\n  },\n  {\n    value: \"mentions\",\n    label: \"Mentions Only\",\n    icon: FaVolumeLow,\n    color: \"text-blue-500\",\n  },\n  {\n    value: \"silent\",\n    label: \"Silent Mode\",\n    icon: FaVolumeXmark,\n    color: \"text-muted-foreground\",\n  },\n  {\n    value: \"off\",\n    label: \"Turn Off\",\n    icon: FaBellSlash,\n    color: \"text-destructive\",\n  },\n];\n\nconst DropdownMenu11 = () => {\n  const [selected, setSelected] = useState(\"all\");\n\n  return (\n    <div>\n      <DropdownMenu>\n        <DropdownMenuTrigger asChild>\n          <Button variant=\"outline\" className=\"rounded-lg\">\n            Notifications\n          </Button>\n        </DropdownMenuTrigger>\n\n        <DropdownMenuContent\n          className=\"bg-popover sm:w-64 w-56 rounded-lg border p-1 shadow-md\"\n          align=\"start\"\n        >\n          <DropdownMenuLabel className=\"px-1 pb-1 text-sm font-semibold\">\n            Notification Level\n          </DropdownMenuLabel>\n\n          <DropdownMenuGroup className=\"flex flex-col gap-0.5\">\n            {levels.map((item) => {\n              const Icon = item.icon;\n              const active = selected === item.value;\n\n              return (\n                <DropdownMenuItem\n                  key={item.value}\n                  onClick={() => setSelected(item.value)}\n                  className={`group flex cursor-pointer items-center gap-2 rounded-sm p-1 transition-all  ${\n                    active ? \"bg-accent\" : \"\"\n                  }`}\n                >\n                  <Icon\n                    className={`${item.color} transition-transform duration-200 ${\n                      active ? \"scale-105\" : \"group-hover:scale-105\"\n                    }`}\n                  />\n\n                  <span className=\"flex-1 text-sm font-medium\">\n                    {item.label}\n                  </span>\n                </DropdownMenuItem>\n              );\n            })}\n          </DropdownMenuGroup>\n        </DropdownMenuContent>\n      </DropdownMenu>\n    </div>\n  );\n};\n\nexport default DropdownMenu11;\n",
+      "type": "registry:ui",
+      "target": "components/ui/dropdown-menu-11.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

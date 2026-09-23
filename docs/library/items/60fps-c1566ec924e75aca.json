@@ -1,0 +1,29 @@
+{
+  "id": "60fps-c1566ec924e75aca",
+  "sourceUrl": "https://60fps.design/motion/wabi-by-studiodumbar",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: wabi by studiodumbar",
+    "공개 이미지 요소: 38개",
+    "동영상 포스터: 19개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/motion/wabi-by-studiodumbar",
+    "sha256": "ebf854bef78a3f63fb6bd91ab9034efe6d3b4455c02d722a30fd91b6a142975b",
+    "fetchedAt": "2026-09-23T12:55:54+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

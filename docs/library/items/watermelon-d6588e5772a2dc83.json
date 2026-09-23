@@ -1,0 +1,56 @@
+{
+  "id": "watermelon-d6588e5772a2dc83",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/option-picker.json",
+      "sha256": "e84972ea2d23be440d8ebb195706a55cf65989908d6d186c8f669a69a90057aa",
+      "bytes": 7525,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/option-picker.tsx",
+      "target": "components/ui/option-picker.tsx",
+      "type": "registry:ui",
+      "sha256": "47f4b5db3d1b7c066d04f937ab2a013e44113bbc8a69ffddeea56b2126f99223",
+      "bytes": 6861
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion",
+    "react-icons"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "lucide-react",
+    "motion/react",
+    "react",
+    "react-icons",
+    "react-icons/tb"
+  ],
+  "propsDeclarations": [
+    "interface OptionPickerProps {\n  options?: Option[]; \n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/option-picker.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

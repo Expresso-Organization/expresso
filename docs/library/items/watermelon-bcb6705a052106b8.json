@@ -1,0 +1,73 @@
+{
+  "id": "watermelon-bcb6705a052106b8",
+  "sourceUrl": "https://ui.watermelon.sh/block/cta-1",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/cta-1.json",
+      "sha256": "68ac201a366c182253dbba177a2ef08fe584ecd78fec89f4ab658f2b581cff36",
+      "bytes": 5089,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/cta-1.tsx",
+      "target": "components/ui/cta-1.tsx",
+      "type": "registry:ui",
+      "sha256": "48e27b3c73530f79d783ca1b5d569878df158f2566da3851024d771e18659d33",
+      "bytes": 4535
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "cta",
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/button",
+    "react"
+  ],
+  "propsDeclarations": [
+    "export interface CTAProps {\n  /**\n   * The main icon displayed on the left side of the CTA block.\n   */\n  icon?: React.ReactNode;\n  /**\n   * The primary heading text.\n   */\n  title: string;\n  /**\n   * The secondary description text.\n   */\n  description?: string;\n  /**\n   * The text to display inside the action button.\n   */\n  buttonText: string;\n  /**\n   * An optional URL for the action button. If provided, the button acts as an anchor tag.\n   */\n  buttonLink?: string;\n  /**\n   * An optional icon to display inside the action button.\n   */\n  buttonIcon?: React.ReactNode;\n  /**\n   * An optional click handler for the action button, useful if buttonLink is not provided.\n   */\n  onButtonClick?: () => void;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/cta-1.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "cta-1",
+    "status": "built",
+    "export": "Cta1",
+    "props": {
+      "title": "Explore the work behind the result",
+      "description": "Example content for layout review.",
+      "buttonText": "View projects",
+      "buttonLink": "#"
+    },
+    "entry": "src/components/watermelon-ui/cta-1.tsx",
+    "url": "./library/previews/watermelon/cta-1.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:04+00:00",
+    "snapshotSha256": "fa43c329aa86e5b2649d79c97ee6d1ff3d38f269d3bebd4a4805d93c7b2eb404"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "60fps-64bd09af59d2729e",
+  "sourceUrl": "https://60fps.design/shots/district-spiderman-movie-feature-interstitial-animation",
+  "sourceRevision": null,
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: District Spiderman Movie Feature Interstitial Animation",
+    "공개 이미지 요소: 11개",
+    "동영상 포스터: 10개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/district-spiderman-movie-feature-interstitial-animation",
+    "sha256": "1894a47a32bfc35cd81479671c3463aa0ae0b2ed537653155d294f40bf113bd2",
+    "fetchedAt": "2026-09-23T12:59:31+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

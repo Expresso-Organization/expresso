@@ -1,0 +1,29 @@
+{
+  "id": "60fps-9f83bd50bc220425",
+  "sourceUrl": "https://60fps.design/shots/jiohotstar-top-carousel-cards-scroll-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: JioHotstar Top Carousel Cards Scroll Interaction",
+    "공개 이미지 요소: 25개",
+    "동영상 포스터: 26개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/jiohotstar-top-carousel-cards-scroll-interaction",
+    "sha256": "8f3f0c9dd1ba60ad886863177eeea8c581494ee63debf4255fa064ba6cf03ce4",
+    "fetchedAt": "2026-09-23T13:03:16+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

@@ -1,0 +1,29 @@
+{
+  "id": "60fps-0a9684db0bd17ea7",
+  "sourceUrl": "https://60fps.design/shots/train-workout-recovery-graph",
+  "sourceRevision": null,
+  "roles": [
+    "outcome"
+  ],
+  "roleEvidence": "성과와 수치의 비교를 표현할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Train Workout Recovery Graph",
+    "공개 이미지 요소: 27개",
+    "동영상 포스터: 26개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/train-workout-recovery-graph",
+    "sha256": "1dab68fd8c93ec64287362edafba01386f6180ac48d767d1d5a993d701aea961",
+    "fetchedAt": "2026-09-23T13:08:29+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

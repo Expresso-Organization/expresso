@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "alert-16",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "alert"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/alerts/alert-16.tsx",
+      "content": "import { Alert, AlertTitle } from \"@/components/ui/alert\";\n\nconst Alert16 = () => {\n  return (\n    <Alert className=\"bg-accent\">\n      <AlertTitle>You have a new message!</AlertTitle>\n    </Alert>\n  );\n};\n\nexport default Alert16;\n",
+      "type": "registry:ui",
+      "target": "components/ui/alert-16.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

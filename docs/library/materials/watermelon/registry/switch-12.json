@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "switch-12",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "switch"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/switch/switch-12.tsx",
+      "content": "import { Label } from \"@/components/ui/label\";\nimport { Switch } from \"@/components/ui/switch\";\n\nimport { FaShieldAlt, FaBell, FaMoon } from \"react-icons/fa\";\n\nconst settings = [\n  { label: \"Privacy Mode\", icon: FaShieldAlt },\n  { label: \"Notifications\", icon: FaBell },\n  { label: \"Dark Theme\", icon: FaMoon },\n];\n\nconst Switch12 = () => {\n  return (\n    <fieldset className=\"w-full max-w-96 space-y-4\">\n      <legend className=\"text-foreground text-sm leading-none font-medium\">\n        Manage your preferences:\n      </legend>\n      <ul className=\"flex w-full flex-col divide-y rounded-md border\">\n        {settings.map(({ label, icon: Icon }) => (\n          <li key={label}>\n            <Label\n              htmlFor={label}\n              className=\"flex items-center justify-between gap-2 px-5 py-3\"\n            >\n              <span className=\"flex items-center gap-2\">\n                <Icon className=\"size-4\" />\n                {label}\n              </span>\n              <Switch id={label} />\n            </Label>\n          </li>\n        ))}\n      </ul>\n    </fieldset>\n  );\n};\n\nexport default Switch12;\n",
+      "type": "registry:ui",
+      "target": "components/ui/switch-12.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

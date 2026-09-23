@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "textarea-8",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "textarea"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/textarea/textarea-8.tsx",
+      "content": "import { useId } from \"react\";\n\nimport { Label } from \"@/components/ui/label\";\nimport { Textarea } from \"@/components/ui/textarea\";\n\nconst Textarea8 = () => {\n  const id = useId();\n\n  return (\n    <div className=\"w-full max-w-sm space-y-2\">\n      <Label htmlFor={id}>Reason for request</Label>\n      <Textarea\n        id={id}\n        aria-invalid\n        placeholder=\"Explain your request...\"\n        className=\"border-destructive focus-visible:border-destructive\"\n      />\n      <p className=\"text-destructive text-xs\">This field can’t be empty.</p>\n    </div>\n  );\n};\n\nexport default Textarea8;\n",
+      "type": "registry:ui",
+      "target": "components/ui/textarea-8.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

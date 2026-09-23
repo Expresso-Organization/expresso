@@ -1,0 +1,69 @@
+{
+  "id": "watermelon-64fbbd046d073519",
+  "sourceUrl": "https://ui.watermelon.sh/animated-components/profile-card",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/profile-card.json",
+      "sha256": "264d6780e1bc70d307adbe4759a078a83324d54d67d6e484fe14f29c6f3878e2",
+      "bytes": 8647,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/profile-card.tsx",
+      "target": "components/ui/profile-card.tsx",
+      "type": "registry:ui",
+      "sha256": "9e20dede5215e954d8ec42b7e425c12b3d8307869d17d201fd090c0574ad348c",
+      "bytes": 7984
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "lucide-react",
+    "motion/react",
+    "react",
+    "react-icons/ri",
+    "react-icons/rx"
+  ],
+  "propsDeclarations": [
+    "interface ProfileCardProps {\n  logo?: string;\n  name: string;\n  website: string;\n  visits: string;\n  heatScore: number;\n  location: string;\n  categories: string[];\n  employees: string;\n  arr: string;\n  founders: { name: string; avatar: string }"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/profile-card.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "profile-card",
+    "status": "built",
+    "export": "ProfileCard",
+    "props": {},
+    "entry": "src/components/watermelon-ui/profile-card.tsx",
+    "url": "./library/previews/watermelon/profile-card.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:22+00:00",
+    "snapshotSha256": "6150a2ab7577c6156a3bf459198a9794f43d8309529d89915b7b407e18b69f0b"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

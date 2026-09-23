@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "dropdown-menu-1",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "dropdown-menu",
+    "button"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/dropdown-menu/dropdown-menu-1.tsx",
+      "content": "import { Button } from '@/components/ui/button';\nimport {\n  DropdownMenu,\n  DropdownMenuContent,\n  DropdownMenuItem,\n  DropdownMenuSeparator,\n  DropdownMenuTrigger,\n} from '@/components/ui/dropdown-menu';\nimport { FaUser, FaBell, FaLock, FaSignOutAlt, FaCog } from 'react-icons/fa';\n\nconst DropdownMenu1 = () => {\n  return (\n    <DropdownMenu>\n      <DropdownMenuTrigger asChild>\n        <Button variant=\"outline\">Open Panel</Button>\n      </DropdownMenuTrigger>\n\n      <DropdownMenuContent className=\"sm:w-64 w-60  space-y-1 \" align='center' >\n        <div className=\"px-2 \">\n          <p className=\"text-sm font-medium\">Dashboard</p>\n          <p className=\"text-muted-foreground text-xs\">\n            Manage your preferences\n          </p>\n        </div>\n\n        <DropdownMenuSeparator />\n\n        <DropdownMenuItem className=\"flex items-center gap-2 rounded-md\">\n          <FaUser className=\"text-sm\" />\n          <span>Account</span>\n        </DropdownMenuItem>\n\n        <DropdownMenuItem className=\"flex items-center gap-2 rounded-md\">\n          <FaBell className=\"text-sm\" />\n          <span>Notifications</span>\n        </DropdownMenuItem>\n\n        <DropdownMenuItem className=\"flex items-center gap-2 rounded-md\">\n          <FaLock className=\"text-sm\" />\n          <span>Privacy</span>\n        </DropdownMenuItem>\n\n        <DropdownMenuItem className=\"flex items-center gap-2 rounded-md\">\n          <FaCog className=\"text-sm\" />\n          <span>Preferences</span>\n        </DropdownMenuItem>\n\n        <DropdownMenuSeparator />\n\n        <DropdownMenuItem className=\"text-destructive flex items-center gap-2 rounded-md\" variant='destructive'>\n          <FaSignOutAlt className=\"text-sm\" />\n          <span>Logout</span>\n        </DropdownMenuItem>\n      </DropdownMenuContent>\n    </DropdownMenu>\n  );\n};\n\nexport default DropdownMenu1;\n",
+      "type": "registry:ui",
+      "target": "components/ui/dropdown-menu-1.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

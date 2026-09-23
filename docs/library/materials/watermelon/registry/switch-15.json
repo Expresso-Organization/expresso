@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "switch-15",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "switch"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/switch/switch-15.tsx",
+      "content": "\"use client\";\n\nimport { useState } from \"react\";\n\nimport { Label } from \"@/components/ui/label\";\nimport { Switch } from \"@/components/ui/switch\";\n\nconst Switch15 = () => {\n  const [checked, setChecked] = useState<boolean>(true);\n\n  return (\n    <div className=\"inline-flex items-center gap-2\">\n      <Switch\n        id=\"notifications-toggle\"\n        checked={checked}\n        onCheckedChange={setChecked}\n        aria-label=\"Toggle notifications\"\n      />\n      <Label htmlFor=\"notifications-toggle\" className=\"text-sm font-medium\">\n        {checked ? \"Notifications On\" : \"Notifications Off\"}\n      </Label>\n    </div>\n  );\n};\n\nexport default Switch15;\n",
+      "type": "registry:ui",
+      "target": "components/ui/switch-15.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

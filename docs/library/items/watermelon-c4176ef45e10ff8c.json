@@ -1,0 +1,55 @@
+{
+  "id": "watermelon-c4176ef45e10ff8c",
+  "sourceUrl": "https://ui.watermelon.sh/block/error-1",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/error-1.json",
+      "sha256": "b2fea655eeaa26d0a390a3d7af8005a5b8bce38751afb4c74baadd6d8935769a",
+      "bytes": 4658,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/error-1.tsx",
+      "target": "components/ui/error-1.tsx",
+      "type": "registry:ui",
+      "sha256": "60b7c31c72e49fefc4cddf673dcbd3532696e5b1aa9410266f827f5f48a0564b",
+      "bytes": 4071
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "error",
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/button",
+    "react",
+    "react-icons/ri"
+  ],
+  "propsDeclarations": [
+    "export interface ErrorOneProps {\n  /** The HTTP error code to display prominently, e.g. \"404\" */\n  code?: string;\n  /** Bold headline beneath the error code */\n  title?: string;\n  /** Supporting description copy */\n  description?: string;\n  /** Primary call-to-action */\n  action?: ErrorOneAction;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/error-1.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

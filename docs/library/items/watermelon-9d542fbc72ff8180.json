@@ -1,0 +1,65 @@
+{
+  "id": "watermelon-9d542fbc72ff8180",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/audio-player-with-waveform.json",
+      "sha256": "a470aa692cc280d31c26df4deec3bc34cc81ac0c2cababa92999a4f73df6bf27",
+      "bytes": 14655,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/audio-player-with-waveform.tsx",
+      "target": "components/ui/audio-player-with-waveform.tsx",
+      "type": "registry:ui",
+      "sha256": "cc276547ca6ab6d6092f167cdff5ea23b71083cb0c84b5d830d46f2ff23e39a8",
+      "bytes": 9030
+    },
+    {
+      "path": "src/hooks/use-audio-waveform.ts",
+      "target": "hooks/use-audio-waveform.ts",
+      "type": "registry:hook",
+      "sha256": "e4290efef4f7c833bf1cf457db2b33bf93c6949906291f9f95ad86ef61d7c1b5",
+      "bytes": 4339
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "select"
+  ],
+  "imports": [
+    "@/components/ui/select",
+    "@/hooks/use-audio-waveform",
+    "@/lib/utils",
+    "lucide-react",
+    "react",
+    "wavesurfer.js"
+  ],
+  "propsDeclarations": [
+    "interface ControlsProps {\n  isPlaying: boolean;\n  onPlayPause: () => void;\n  onStop?: () => void;\n  onSkipBackward?: () => void;\n  onSkipForward?: () => void;\n  disabled?: boolean;\n  size?: \"sm\" | \"md\" | \"lg\";\n  className?: string;\n}",
+    "export interface AudioPlayerWithWaveformProps {\n  source: File | Blob | string;\n  title?: string;\n  artist?: string;\n  showTitle?: boolean;\n  showControls?: boolean;\n  showPlaybackSpeed?: boolean;\n  waveColor?: string;\n  progressColor?: string;\n  height?: number;\n  barWidth?: number;\n  barGap?: number;\n  barRadius?: number;\n  onPlay?: () => void;\n  onPause?: () => void;\n  onEnd?: () => void;\n  onError?: (error: Error) => void;\n  className?: string;\n  variant?: \"default\" | \"compact\";\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/audio-player-with-waveform.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

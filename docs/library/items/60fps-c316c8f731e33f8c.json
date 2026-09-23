@@ -1,0 +1,29 @@
+{
+  "id": "60fps-c316c8f731e33f8c",
+  "sourceUrl": "https://60fps.design/shots/mymind-onboarding-story",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Mymind Onboarding Story",
+    "공개 이미지 요소: 32개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/mymind-onboarding-story",
+    "sha256": "18c25e5f7adeb387b1308ca0e4823c2cdf81885eb1e0ef0cacdd774b75eb3bc1",
+    "fetchedAt": "2026-09-23T13:04:33+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

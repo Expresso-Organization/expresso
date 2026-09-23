@@ -1,0 +1,220 @@
+{
+  "id": "watermelon-5f6f9d9fcf060f53",
+  "sourceUrl": "https://ui.watermelon.sh/template/landing-01",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/landing-01.json",
+      "sha256": "1575a4f9958f45c3cedad08028c70f0dfa307cfc6b3871218cc193bfbe6e5ade",
+      "bytes": 92314,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/templates/landing-01/demo.tsx",
+      "target": "components/watermelon/templates/landing-01/demo.tsx",
+      "type": "registry:component",
+      "sha256": "3cf0a4388e4b3cb0cc6200d5a861eece1460520c7480b7dba4b573cfd2f40aba",
+      "bytes": 732
+    },
+    {
+      "path": "src/components/templates/landing-01/landing/animated-bento.tsx",
+      "target": "components/watermelon/templates/landing-01/landing/animated-bento.tsx",
+      "type": "registry:component",
+      "sha256": "b2a172e0addc15745fb10979c80c76f067191ae072e6d2139ad4e5bad253f9ab",
+      "bytes": 8585
+    },
+    {
+      "path": "src/components/templates/landing-01/landing/bg-frame.tsx",
+      "target": "components/watermelon/templates/landing-01/landing/bg-frame.tsx",
+      "type": "registry:component",
+      "sha256": "34af791c707dbff20486c86e6641e08be164498d6e5ac617c074a8c7e67df8a4",
+      "bytes": 457
+    },
+    {
+      "path": "src/components/templates/landing-01/landing/card.tsx",
+      "target": "components/watermelon/templates/landing-01/landing/card.tsx",
+      "type": "registry:component",
+      "sha256": "58f422e9964477ba2aabb014682c2e23e423d9043bca18ff324ce24c86994670",
+      "bytes": 1594
+    },
+    {
+      "path": "src/components/templates/landing-01/landing/component-bento.tsx",
+      "target": "components/watermelon/templates/landing-01/landing/component-bento.tsx",
+      "type": "registry:component",
+      "sha256": "6767e99396f386fdea06e911aab5edc1bee3f51e7c8ab09df1eec6d1ebc1341a",
+      "bytes": 5235
+    },
+    {
+      "path": "src/components/templates/landing-01/landing/container.tsx",
+      "target": "components/watermelon/templates/landing-01/landing/container.tsx",
+      "type": "registry:component",
+      "sha256": "56164de131aa4c4b85177c64f28b006d938c4e46a6f9c7b264f6ed37e287a378",
+      "bytes": 327
+    },
+    {
+      "path": "src/components/templates/landing-01/landing/feature-visuals.tsx",
+      "target": "components/watermelon/templates/landing-01/landing/feature-visuals.tsx",
+      "type": "registry:component",
+      "sha256": "e01b7e8e9a77495753674f36d2bb0422d7eed054572195e9e55b8ee54b40361c",
+      "bytes": 10858
+    },
+    {
+      "path": "src/components/templates/landing-01/landing/features.tsx",
+      "target": "components/watermelon/templates/landing-01/landing/features.tsx",
+      "type": "registry:component",
+      "sha256": "5930d3b61cd1eb81010d2b77250c7dc95345427e49a5e87e665ba134f8247d2e",
+      "bytes": 6093
+    },
+    {
+      "path": "src/components/templates/landing-01/landing/footer.tsx",
+      "target": "components/watermelon/templates/landing-01/landing/footer.tsx",
+      "type": "registry:component",
+      "sha256": "271f4d2bc2f43851a8d742854e89dae69b5042d5c9006b7402aa0fe0abb07d90",
+      "bytes": 8679
+    },
+    {
+      "path": "src/components/templates/landing-01/landing/heading.tsx",
+      "target": "components/watermelon/templates/landing-01/landing/heading.tsx",
+      "type": "registry:component",
+      "sha256": "1910a561087c15e357b4c6eed8616578e2b472442b55eddac8c53cd885f05887",
+      "bytes": 641
+    },
+    {
+      "path": "src/components/templates/landing-01/landing/hero.tsx",
+      "target": "components/watermelon/templates/landing-01/landing/hero.tsx",
+      "type": "registry:component",
+      "sha256": "c41417d835ed0c1f2bdf55c3a3535a43fdc9eb85a4f5b6223c96d40caab2e284",
+      "bytes": 12195
+    },
+    {
+      "path": "src/components/templates/landing-01/landing/navbar.tsx",
+      "target": "components/watermelon/templates/landing-01/landing/navbar.tsx",
+      "type": "registry:component",
+      "sha256": "2936953d2cc11beffc66c9b8a967ec5fd5017cfa5310d4a096bc99418e90ca7d",
+      "bytes": 3861
+    },
+    {
+      "path": "src/components/templates/landing-01/landing/stats.tsx",
+      "target": "components/watermelon/templates/landing-01/landing/stats.tsx",
+      "type": "registry:component",
+      "sha256": "72b9c14c57098e8415ae68918b963842c892dd54ea9e0de5476efd985cfbbffc",
+      "bytes": 6601
+    },
+    {
+      "path": "src/components/templates/landing-01/landing/subheading.tsx",
+      "target": "components/watermelon/templates/landing-01/landing/subheading.tsx",
+      "type": "registry:component",
+      "sha256": "cb61a814eee93a1f023d681cfd6bd9cd945e228bf5cd470372d52e4933df80c7",
+      "bytes": 596
+    },
+    {
+      "path": "src/components/templates/landing-01/landing/template-bento.tsx",
+      "target": "components/watermelon/templates/landing-01/landing/template-bento.tsx",
+      "type": "registry:component",
+      "sha256": "fa5375f161e3aa2f6fbc62ac75d1b880cd01bf564d8533bf0aabb3eafb2e1d10",
+      "bytes": 7240
+    },
+    {
+      "path": "src/components/templates/landing-01/landing/testimonial.tsx",
+      "target": "components/watermelon/templates/landing-01/landing/testimonial.tsx",
+      "type": "registry:component",
+      "sha256": "43ecd5d37894b562fc95be0e62a662a25e2b671b026b4cc8e6d7b77f7b709056",
+      "bytes": 11053
+    }
+  ],
+  "dependencies": [
+    "@hugeicons/core-free-icons",
+    "@hugeicons/react",
+    "hugeicons-react",
+    "motion",
+    "react-router-dom"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "./bg-frame",
+    "./container",
+    "./feature-visuals",
+    "./heading",
+    "./landing/animated-bento",
+    "./landing/component-bento",
+    "./landing/features",
+    "./landing/footer",
+    "./landing/hero",
+    "./landing/navbar",
+    "./landing/stats",
+    "./landing/template-bento",
+    "./landing/testimonial",
+    "./subheading",
+    "@/assets/logo-icon",
+    "@/data/contents/animated-components/carousel-slider/original",
+    "@/data/contents/animated-components/knob-slider/original",
+    "@/data/contents/animated-components/morphing-button/original",
+    "@/data/contents/animated-components/select-ai-agent/original",
+    "@/data/contents/components/breadcrumb/variant-7",
+    "@/data/contents/components/checkbox/variant-16",
+    "@/data/contents/components/switch/variant-3",
+    "@/data/contents/components/tabs/variant-7",
+    "@/lib/utils",
+    "@hugeicons/core-free-icons",
+    "@hugeicons/react",
+    "hugeicons-react",
+    "motion/react",
+    "react",
+    "react-router-dom"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://assets.watermelon.sh/lp-footer-01.avif",
+    "https://assets.watermelon.sh/lp-footer-02.avif",
+    "https://assets.watermelon.sh/lp-footer-03.avif",
+    "https://assets.watermelon.sh/lp-hero-${(i",
+    "https://assets.watermelon.sh/lp-hero-01.avif",
+    "https://assets.watermelon.sh/lp-hero-02.avif",
+    "https://assets.watermelon.sh/lp-hero-03.avif",
+    "https://assets.watermelon.sh/lp-hero-04.avif",
+    "https://assets.watermelon.sh/lp-hero-05.avif",
+    "https://github.com/WatermelonCorp/watermelon-platform",
+    "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=500&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?q=80&w=500&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=500&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=500&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1518780664697-55e3ad937233?q=80&w=500&auto=format&fit=crop",
+    "https://prourls.link/ORXBVr",
+    "https://unavatar.io/x/Gur__vi",
+    "https://unavatar.io/x/ajaypatel_aj",
+    "https://unavatar.io/x/alibey_10",
+    "https://unavatar.io/x/dillionverma",
+    "https://unavatar.io/x/imananddesigner",
+    "https://unavatar.io/x/kapish_dima",
+    "https://unavatar.io/x/orcdev",
+    "https://unavatar.io/x/sahildotxzz",
+    "https://x.com/Gur__vi",
+    "https://x.com/ajaypatel_aj",
+    "https://x.com/alibey_10",
+    "https://x.com/dillionverma",
+    "https://x.com/imananddesigner",
+    "https://x.com/kapish_dima",
+    "https://x.com/orcdev",
+    "https://x.com/sahildotxzz",
+    "https://x.com/watermelonui"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/landing-01.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

@@ -1,0 +1,30 @@
+{
+  "id": "footer-489b612d91d652ad",
+  "sourceUrl": "https://www.footer.design/sites/contact-studios",
+  "sourceRevision": null,
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Contact Studios",
+    "공개 이미지 요소: 27개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.contactstudios.com/",
+  "evidence": {
+    "url": "https://www.footer.design/sites/contact-studios",
+    "sha256": "c6bacf78dc7a1f45b76d3e22712ff6b9ba3465bf6a3a786be69af758db5f5c86",
+    "fetchedAt": "2026-09-23T12:51:51+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

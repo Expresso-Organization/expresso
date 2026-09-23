@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "accordion-3",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "accordion"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/accordion/accordion-3.tsx",
+      "content": "import {\n  AlertTriangleIcon,\n  ShieldAlertIcon,\n  WalletCardsIcon,\n} from 'lucide-react'\n\nimport {\n  Accordion,\n  AccordionContent,\n  AccordionItem,\n  AccordionTrigger,\n} from '@/components/ui/accordion'\n\nconst items = [\n  {\n    value: 'item-1',\n    icon: WalletCardsIcon,\n    title: 'Why do payment settlements feel delayed?',\n    content:\n      'Settlement delays usually come from multiple banking layers, cutoff windows, and reconciliation checks between processors and internal ledgers. A fintech product needs clearer transaction states so users know whether funds are pending, processing, or fully available.'\n  },\n  {\n    value: 'item-2',\n    icon: ShieldAlertIcon,\n    title: 'How do we reduce false fraud alerts?',\n    content:\n      'False positives often happen when fraud rules are too rigid and do not account for user context. Better risk scoring, device intelligence, and behavior-based review flows help reduce unnecessary account blocks while still protecting sensitive transactions.'\n  },\n  {\n    value: 'item-3',\n    icon: AlertTriangleIcon,\n    title: 'What causes confusion around failed transfers?',\n    content:\n      'Users usually see a failure message without enough explanation. Stronger error mapping, retry guidance, and status updates tied to specific banking rails make failed transfer experiences easier to understand and recover from.'\n  }\n] as const\n\nconst Accordion3 = () => {\n  return (\n    <Accordion className='w-full' type=\"multiple\" defaultValue={[items[0].value]}>\n      {items.map((item) => {\n        const Icon = item.icon\n\n        return (\n          <AccordionItem key={item.value} value={item.value}>\n            <AccordionTrigger>\n              <span className='flex items-center gap-4'>\n                <Icon className='size-4 shrink-0 text-muted-foreground' />\n                <span>{item.title}</span>\n              </span>\n            </AccordionTrigger>\n            <AccordionContent className='text-muted-foreground'>\n              {item.content}\n            </AccordionContent>\n          </AccordionItem>\n        )\n      })}\n    </Accordion>\n  )\n}\n\nexport default Accordion3\n",
+      "type": "registry:ui",
+      "target": "components/ui/accordion-3.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

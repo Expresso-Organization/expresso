@@ -1,0 +1,29 @@
+{
+  "id": "60fps-b8ad4ff051e0d2b6",
+  "sourceUrl": "https://60fps.design/appsites/jace-thumbnail-hero-transition",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Jace Thumbnail Hero Transition",
+    "공개 이미지 요소: 16개",
+    "동영상 포스터: 19개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/appsites/jace-thumbnail-hero-transition",
+    "sha256": "d8ed2f444b3a94fe49aca1eb6de0d07402e101cdb280606fec5204113f81705c",
+    "fetchedAt": "2026-09-23T12:54:33+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

@@ -1,0 +1,29 @@
+{
+  "id": "60fps-fb019bc3fce64f7d",
+  "sourceUrl": "https://60fps.design/apps/capwords",
+  "sourceRevision": null,
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: CapWords",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 22개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/apps/capwords",
+    "sha256": "7bac15ec2494fe144506ad7a76ac6e734fd9aa7f6b528a9c9c4e0f3156bdaca7",
+    "fetchedAt": "2026-09-23T12:51:28+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

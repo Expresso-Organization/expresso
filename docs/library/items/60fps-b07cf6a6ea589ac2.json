@@ -1,0 +1,29 @@
+{
+  "id": "60fps-b07cf6a6ea589ac2",
+  "sourceUrl": "https://60fps.design/motion/alipay-by-further",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: alipay by further",
+    "공개 이미지 요소: 38개",
+    "동영상 포스터: 19개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/motion/alipay-by-further",
+    "sha256": "79468ac5f85f04edb36f655e70278c05d6a74c0ec45ff7b24699ca229d4f55f1",
+    "fetchedAt": "2026-09-23T12:55:28+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

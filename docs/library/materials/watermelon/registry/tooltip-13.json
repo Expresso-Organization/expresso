@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "tooltip-13",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "tooltip"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/tooltip/tooltip-13.tsx",
+      "content": "import { Avatar, AvatarFallback, AvatarImage } from \"@/components/ui/avatar\";\nimport { Button } from \"@/components/ui/button\";\nimport {\n  HoverCard,\n  HoverCardContent,\n  HoverCardTrigger,\n} from \"@/components/ui/hover-card\";\n\nconst tasks = [\n  {\n    image: \"https://github.com/emilkowalski.png\",\n    fallback: \"EK\",\n    name: \"Emil Kowalski\",\n    designation: \"Frontend Engineer\",\n    percentage: 92,\n  },\n  {\n    image: \"https://github.com/jakubkr.png\",\n    fallback: \"JK\",\n    name: \"Jakub Kr\",\n    designation: \"Full Stack Developer\",\n    percentage: 68,\n  },\n  {\n    image: \"https://github.com/raunofreiberg.png\",\n    fallback: \"RF\",\n    name: \"Rauno Freiberg\",\n    designation: \"ui Engineer\",\n    percentage: 81,\n  },\n  {\n    image: \"https://github.com/raphaelsalaja.png\",\n    fallback: \"RS\",\n    name: \"Raphael Salaja\",\n    designation: \"Product Designer\",\n    percentage: 47,\n  },\n];\n\nconst Tooltip13 = () => {\n  return (\n    <HoverCard openDelay={0} closeDelay={0}>\n      <HoverCardTrigger asChild>\n        <Button variant=\"link\">Team Activity</Button>\n      </HoverCardTrigger>\n\n      <HoverCardContent className=\"w-72\">\n        <div className=\"space-y-4\">\n          <p className=\"text-lg font-semibold\">Current workload distribution</p>\n\n          <ul className=\"space-y-2.5\">\n            {tasks.map((task) => (\n              <li key={task.name} className=\"flex items-start gap-4\">\n                <Avatar>\n                  <AvatarImage src={task.image} alt={task.name} />\n                  <AvatarFallback>{task.fallback}</AvatarFallback>\n                </Avatar>\n\n                <div className=\"flex flex-1 flex-col\">\n                  <div className=\"text-sm font-medium\">{task.name}</div>\n                  <p className=\"text-muted-foreground text-xs\">\n                    {task.designation}\n                  </p>\n                  <p className=\"text-muted-foreground text-xs\">\n                    Handling multiple active tasks\n                  </p>\n                </div>\n\n                <span className=\"text-sm font-medium\">{task.percentage}%</span>\n              </li>\n            ))}\n          </ul>\n        </div>\n      </HoverCardContent>\n    </HoverCard>\n  );\n};\n\nexport default Tooltip13;\n",
+      "type": "registry:ui",
+      "target": "components/ui/tooltip-13.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

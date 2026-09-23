@@ -1,0 +1,21 @@
+{
+  "id": "codedvisuals-28046812da428b60",
+  "sourceUrl": "https://codedvisuals.com/visuals/sections/team",
+  "sourceRevision": null,
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상용 라이선스의 AI builder·site builder 사용 제한"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "licenseUrl": "https://codedvisuals.com/license",
+  "acquisitionStatus": "permission_needed",
+  "previewReason": "상용 라이선스의 AI builder·site builder 사용 제한",
+  "sourceLicense": "https://codedvisuals.com/license"
+}

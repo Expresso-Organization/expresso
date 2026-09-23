@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "tooltip-3",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "tooltip"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/tooltip/tooltip-3.tsx",
+      "content": "import { Button } from \"@/components/ui/button\";\nimport {\n  Tooltip,\n  TooltipContent,\n  TooltipTrigger,\n} from \"@/components/ui/tooltip\";\n\nconst Tooltip3 = () => {\n  return (\n    <Tooltip>\n      <TooltipTrigger asChild>\n        <Button variant=\"outline\" size=\"lg\">\n          w/o arrow\n        </Button>\n      </TooltipTrigger>\n      <TooltipContent className=\"[&_svg]:invisible\">\n        <p>This tooltip don&apos;t have arrow</p>\n      </TooltipContent>\n    </Tooltip>\n  );\n};\n\nexport default Tooltip3;\n",
+      "type": "registry:ui",
+      "target": "components/ui/tooltip-3.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

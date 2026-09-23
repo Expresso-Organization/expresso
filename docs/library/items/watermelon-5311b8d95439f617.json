@@ -1,0 +1,69 @@
+{
+  "id": "watermelon-5311b8d95439f617",
+  "sourceUrl": "https://ui.watermelon.sh/block/footer-21",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/footer-21.json",
+      "sha256": "3189202210c8c3bc4d9b0e4992fabae0fa95735254bb831888b6e51c5c95385a",
+      "bytes": 11782,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/footer-21.tsx",
+      "target": "components/ui/footer-21.tsx",
+      "type": "registry:ui",
+      "sha256": "df9924aac6594bf78dec0d75653509f86a15b7875914b0293f2bd46c502b6d87",
+      "bytes": 10879
+    }
+  ],
+  "dependencies": [
+    "@hugeicons/react",
+    "framer-motion"
+  ],
+  "registryDependencies": [
+    "footer"
+  ],
+  "imports": [
+    "@hugeicons/core-free-icons",
+    "@hugeicons/react",
+    "motion/react"
+  ],
+  "propsDeclarations": [
+    "export interface Footer21Props {\n    brandName?: string;\n    socialLinks?: { label: string; href: string }"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/footer-21.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "footer-21",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-21.tsx",
+    "url": "./library/previews/watermelon/footer-21.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:10+00:00",
+    "snapshotSha256": "729e863590d439cbdadcf26869d93e00a4c604ece95938f9785d7ee0558ca807"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

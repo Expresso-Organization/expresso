@@ -1,0 +1,30 @@
+{
+  "id": "navbar-6ff6d6d6ee620517",
+  "sourceUrl": "https://www.navbar.gallery/navbar/wrangle",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Wrangle",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://wrangle.ai/",
+  "evidence": {
+    "url": "https://www.navbar.gallery/navbar/wrangle",
+    "sha256": "6ff207f0e11267d0e44a1d1e45bd560861bb2345b80a8b5a0d1b53efac0da802",
+    "fetchedAt": "2026-09-23T12:54:17+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

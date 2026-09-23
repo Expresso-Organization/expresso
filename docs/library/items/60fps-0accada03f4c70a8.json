@@ -1,0 +1,29 @@
+{
+  "id": "60fps-0accada03f4c70a8",
+  "sourceUrl": "https://60fps.design/shots/wolt-timer-sheet-to-map-zoom-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Wolt Timer Sheet to Map Zoom Interaction",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 25개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/wolt-timer-sheet-to-map-zoom-interaction",
+    "sha256": "aa85079b45203961e27f38555db6abc8d88dc653a3c455dbabc851731a1760ce",
+    "fetchedAt": "2026-09-23T13:09:20+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

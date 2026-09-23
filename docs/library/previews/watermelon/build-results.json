@@ -1,0 +1,1290 @@
+[
+  {
+    "name": "aave-swap-component",
+    "status": "built",
+    "export": "AaveSwapComponent",
+    "props": {
+      "from": {
+        "name": "Demo Ether",
+        "symbol": "ETH",
+        "priceUSD": 2000,
+        "max": 1,
+        "logo": ""
+      },
+      "to": {
+        "name": "Demo USD",
+        "symbol": "USD",
+        "priceUSD": 1,
+        "logo": ""
+      }
+    },
+    "entry": "src/components/watermelon-ui/aave-swap-component.tsx",
+    "url": "./library/previews/watermelon/aave-swap-component.html"
+  },
+  {
+    "name": "activities-card",
+    "status": "built",
+    "export": "ActivitiesCard",
+    "props": {
+      "headerIcon": "P",
+      "title": "Project activity",
+      "subtitle": "Example portfolio timeline",
+      "activities": [
+        {
+          "icon": "1",
+          "title": "Research",
+          "desc": "Example process entry",
+          "time": "Phase 1"
+        },
+        {
+          "icon": "2",
+          "title": "Prototype",
+          "desc": "Example implementation entry",
+          "time": "Phase 2"
+        }
+      ]
+    },
+    "entry": "src/components/watermelon-ui/activities-card.tsx",
+    "url": "./library/previews/watermelon/activities-card.html"
+  },
+  {
+    "name": "bento-1",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-1.tsx",
+    "url": "./library/previews/watermelon/bento-1.html"
+  },
+  {
+    "name": "bento-10",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-10.tsx",
+    "url": "./library/previews/watermelon/bento-10.html"
+  },
+  {
+    "name": "bento-11",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-11.tsx",
+    "url": "./library/previews/watermelon/bento-11.html"
+  },
+  {
+    "name": "bento-12",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-12.tsx",
+    "url": "./library/previews/watermelon/bento-12.html"
+  },
+  {
+    "name": "bento-13",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-13.tsx",
+    "url": "./library/previews/watermelon/bento-13.html"
+  },
+  {
+    "name": "bento-14",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-14.tsx",
+    "url": "./library/previews/watermelon/bento-14.html"
+  },
+  {
+    "name": "bento-15",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-15.tsx",
+    "url": "./library/previews/watermelon/bento-15.html"
+  },
+  {
+    "name": "bento-16",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-16.tsx",
+    "url": "./library/previews/watermelon/bento-16.html"
+  },
+  {
+    "name": "bento-17",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-17.tsx",
+    "url": "./library/previews/watermelon/bento-17.html"
+  },
+  {
+    "name": "bento-2",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-2.tsx",
+    "url": "./library/previews/watermelon/bento-2.html"
+  },
+  {
+    "name": "bento-3",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-3.tsx",
+    "url": "./library/previews/watermelon/bento-3.html"
+  },
+  {
+    "name": "bento-4",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-4.tsx",
+    "url": "./library/previews/watermelon/bento-4.html"
+  },
+  {
+    "name": "bento-5",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-5.tsx",
+    "url": "./library/previews/watermelon/bento-5.html"
+  },
+  {
+    "name": "bento-6",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-6.tsx",
+    "url": "./library/previews/watermelon/bento-6.html"
+  },
+  {
+    "name": "bento-7",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-7.tsx",
+    "url": "./library/previews/watermelon/bento-7.html"
+  },
+  {
+    "name": "bento-8",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-8.tsx",
+    "url": "./library/previews/watermelon/bento-8.html"
+  },
+  {
+    "name": "bento-9",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-9.tsx",
+    "url": "./library/previews/watermelon/bento-9.html"
+  },
+  {
+    "name": "cta-1",
+    "status": "built",
+    "export": "Cta1",
+    "props": {
+      "title": "Explore the work behind the result",
+      "description": "Example content for layout review.",
+      "buttonText": "View projects",
+      "buttonLink": "#"
+    },
+    "entry": "src/components/watermelon-ui/cta-1.tsx",
+    "url": "./library/previews/watermelon/cta-1.html"
+  },
+  {
+    "name": "cta-2",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/cta-2.tsx",
+    "url": "./library/previews/watermelon/cta-2.html"
+  },
+  {
+    "name": "cta-3",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/cta-3.tsx",
+    "url": "./library/previews/watermelon/cta-3.html"
+  },
+  {
+    "name": "cta-4",
+    "status": "built",
+    "export": "PerformanceOverview",
+    "props": {
+      "title": "Project",
+      "accentWord": "Overview",
+      "subtitle": "Example values for layout review",
+      "ctaLabel": "View case study",
+      "periods": [
+        {
+          "id": "demo",
+          "label": "Demo",
+          "metrics": [
+            {
+              "id": "a",
+              "label": "Example projects",
+              "value": "03",
+              "changePercent": 0,
+              "icon": "product"
+            }
+          ],
+          "activities": []
+        }
+      ]
+    },
+    "entry": "src/components/watermelon-ui/cta-4.tsx",
+    "url": "./library/previews/watermelon/cta-4.html"
+  },
+  {
+    "name": "cta-5",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/cta-5.tsx",
+    "url": "./library/previews/watermelon/cta-5.html"
+  },
+  {
+    "name": "feature-1",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/feature-1.tsx",
+    "url": "./library/previews/watermelon/feature-1.html"
+  },
+  {
+    "name": "feature-2",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/feature-2.tsx",
+    "url": "./library/previews/watermelon/feature-2.html"
+  },
+  {
+    "name": "feature-3",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/feature-3.tsx",
+    "url": "./library/previews/watermelon/feature-3.html"
+  },
+  {
+    "name": "feature-4",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/feature-4.tsx",
+    "url": "./library/previews/watermelon/feature-4.html"
+  },
+  {
+    "name": "feature-5",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/feature-5.tsx",
+    "url": "./library/previews/watermelon/feature-5.html"
+  },
+  {
+    "name": "footer-1",
+    "status": "built",
+    "export": "Footer1",
+    "props": {
+      "brandName": "Portfolio Demo",
+      "logo": "P",
+      "tagline": "Selected work, process, and evidence.",
+      "description": "Example content for a portfolio component preview.",
+      "newsletterTitle": "Stay in touch",
+      "newsletterDescription": "Updates from this example portfolio.",
+      "newsletterSubtitle": "Example subscription form",
+      "socialText": "Connect",
+      "socialLinks": [],
+      "linkGroups": [
+        {
+          "title": "Work",
+          "links": [
+            {
+              "label": "Projects",
+              "href": "#"
+            },
+            {
+              "label": "Research",
+              "href": "#"
+            }
+          ]
+        },
+        {
+          "title": "About",
+          "links": [
+            {
+              "label": "Experience",
+              "href": "#"
+            },
+            {
+              "label": "Contact",
+              "href": "#"
+            }
+          ]
+        }
+      ],
+      "copyright": "Portfolio example · demo content",
+      "legalLinks": [
+        {
+          "label": "Privacy",
+          "href": "#"
+        }
+      ],
+      "brandWatermark": "PORTFOLIO"
+    },
+    "entry": "src/components/watermelon-ui/footer-1.tsx",
+    "url": "./library/previews/watermelon/footer-1.html"
+  },
+  {
+    "name": "footer-10",
+    "status": "built",
+    "export": "Footer10",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-10.tsx",
+    "url": "./library/previews/watermelon/footer-10.html"
+  },
+  {
+    "name": "footer-11",
+    "status": "built",
+    "export": "Footer11",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-11.tsx",
+    "url": "./library/previews/watermelon/footer-11.html"
+  },
+  {
+    "name": "footer-12",
+    "status": "built",
+    "export": "Footer12",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-12.tsx",
+    "url": "./library/previews/watermelon/footer-12.html"
+  },
+  {
+    "name": "footer-13",
+    "status": "built",
+    "export": "Footer13",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-13.tsx",
+    "url": "./library/previews/watermelon/footer-13.html"
+  },
+  {
+    "name": "footer-14",
+    "status": "built",
+    "export": "Footer14",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-14.tsx",
+    "url": "./library/previews/watermelon/footer-14.html"
+  },
+  {
+    "name": "footer-15",
+    "status": "built",
+    "export": "Footer15",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-15.tsx",
+    "url": "./library/previews/watermelon/footer-15.html"
+  },
+  {
+    "name": "footer-16",
+    "status": "built",
+    "export": "Footer16",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-16.tsx",
+    "url": "./library/previews/watermelon/footer-16.html"
+  },
+  {
+    "name": "footer-17",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-17.tsx",
+    "url": "./library/previews/watermelon/footer-17.html"
+  },
+  {
+    "name": "footer-18",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-18.tsx",
+    "url": "./library/previews/watermelon/footer-18.html"
+  },
+  {
+    "name": "footer-19",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-19.tsx",
+    "url": "./library/previews/watermelon/footer-19.html"
+  },
+  {
+    "name": "footer-2",
+    "status": "built",
+    "export": "Footer2",
+    "props": {
+      "brandName": "Portfolio Demo",
+      "logo": "P",
+      "tagline": "Selected work, process, and evidence.",
+      "description": "Example content for a portfolio component preview.",
+      "newsletterTitle": "Stay in touch",
+      "newsletterDescription": "Updates from this example portfolio.",
+      "newsletterSubtitle": "Example subscription form",
+      "socialText": "Connect",
+      "socialLinks": [],
+      "linkGroups": [
+        {
+          "title": "Work",
+          "links": [
+            {
+              "label": "Projects",
+              "href": "#"
+            },
+            {
+              "label": "Research",
+              "href": "#"
+            }
+          ]
+        },
+        {
+          "title": "About",
+          "links": [
+            {
+              "label": "Experience",
+              "href": "#"
+            },
+            {
+              "label": "Contact",
+              "href": "#"
+            }
+          ]
+        }
+      ],
+      "copyright": "Portfolio example · demo content",
+      "legalLinks": [
+        {
+          "label": "Privacy",
+          "href": "#"
+        }
+      ],
+      "brandWatermark": "PORTFOLIO"
+    },
+    "entry": "src/components/watermelon-ui/footer-2.tsx",
+    "url": "./library/previews/watermelon/footer-2.html"
+  },
+  {
+    "name": "footer-20",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-20.tsx",
+    "url": "./library/previews/watermelon/footer-20.html"
+  },
+  {
+    "name": "footer-21",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-21.tsx",
+    "url": "./library/previews/watermelon/footer-21.html"
+  },
+  {
+    "name": "footer-22",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-22.tsx",
+    "url": "./library/previews/watermelon/footer-22.html"
+  },
+  {
+    "name": "footer-23",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-23.tsx",
+    "url": "./library/previews/watermelon/footer-23.html"
+  },
+  {
+    "name": "footer-24",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-24.tsx",
+    "url": "./library/previews/watermelon/footer-24.html"
+  },
+  {
+    "name": "footer-25",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-25.tsx",
+    "url": "./library/previews/watermelon/footer-25.html"
+  },
+  {
+    "name": "footer-26",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-26.tsx",
+    "url": "./library/previews/watermelon/footer-26.html"
+  },
+  {
+    "name": "footer-27",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-27.tsx",
+    "url": "./library/previews/watermelon/footer-27.html"
+  },
+  {
+    "name": "footer-28",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-28.tsx",
+    "url": "./library/previews/watermelon/footer-28.html"
+  },
+  {
+    "name": "footer-29",
+    "status": "built",
+    "export": "Footer29",
+    "props": {
+      "brandName": "Portfolio Demo",
+      "logo": "P",
+      "tagline": "Selected work, process, and evidence.",
+      "description": "Example content for a portfolio component preview.",
+      "newsletterTitle": "Stay in touch",
+      "newsletterDescription": "Updates from this example portfolio.",
+      "newsletterSubtitle": "Example subscription form",
+      "socialText": "Connect",
+      "socialLinks": [],
+      "linkGroups": [
+        {
+          "title": "Work",
+          "links": [
+            {
+              "label": "Projects",
+              "href": "#"
+            },
+            {
+              "label": "Research",
+              "href": "#"
+            }
+          ]
+        },
+        {
+          "title": "About",
+          "links": [
+            {
+              "label": "Experience",
+              "href": "#"
+            },
+            {
+              "label": "Contact",
+              "href": "#"
+            }
+          ]
+        }
+      ],
+      "copyright": "Portfolio example · demo content",
+      "legalLinks": [
+        {
+          "label": "Privacy",
+          "href": "#"
+        }
+      ],
+      "brandWatermark": "PORTFOLIO"
+    },
+    "entry": "src/components/watermelon-ui/footer-29.tsx",
+    "url": "./library/previews/watermelon/footer-29.html"
+  },
+  {
+    "name": "footer-3",
+    "status": "built",
+    "export": "Footer3",
+    "props": {
+      "brandName": "Portfolio Demo",
+      "logo": "P",
+      "tagline": "Selected work, process, and evidence.",
+      "description": "Example content for a portfolio component preview.",
+      "newsletterTitle": "Stay in touch",
+      "newsletterDescription": "Updates from this example portfolio.",
+      "newsletterSubtitle": "Example subscription form",
+      "socialText": "Connect",
+      "socialLinks": [],
+      "linkGroups": [
+        {
+          "title": "Work",
+          "links": [
+            {
+              "label": "Projects",
+              "href": "#"
+            },
+            {
+              "label": "Research",
+              "href": "#"
+            }
+          ]
+        },
+        {
+          "title": "About",
+          "links": [
+            {
+              "label": "Experience",
+              "href": "#"
+            },
+            {
+              "label": "Contact",
+              "href": "#"
+            }
+          ]
+        }
+      ],
+      "copyright": "Portfolio example · demo content",
+      "legalLinks": [
+        {
+          "label": "Privacy",
+          "href": "#"
+        }
+      ],
+      "brandWatermark": "PORTFOLIO"
+    },
+    "entry": "src/components/watermelon-ui/footer-3.tsx",
+    "url": "./library/previews/watermelon/footer-3.html"
+  },
+  {
+    "name": "footer-30",
+    "status": "built",
+    "export": "Footer30",
+    "props": {
+      "heading": "Let’s work together",
+      "columns": [
+        {
+          "title": "Work",
+          "links": [
+            {
+              "label": "Projects",
+              "href": "#"
+            },
+            {
+              "label": "Research",
+              "href": "#"
+            }
+          ]
+        },
+        {
+          "title": "About",
+          "links": [
+            {
+              "label": "Experience",
+              "href": "#"
+            },
+            {
+              "label": "Contact",
+              "href": "#"
+            }
+          ]
+        }
+      ],
+      "bigText": "PORTFOLIO",
+      "copyright": "Portfolio example · demo content",
+      "location": "Seoul · example",
+      "time": "09:00",
+      "bottomLinks": [
+        {
+          "label": "Privacy",
+          "href": "#"
+        }
+      ]
+    },
+    "entry": "src/components/watermelon-ui/footer-30.tsx",
+    "url": "./library/previews/watermelon/footer-30.html"
+  },
+  {
+    "name": "footer-31",
+    "status": "built",
+    "export": "Footer31",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-31.tsx",
+    "url": "./library/previews/watermelon/footer-31.html"
+  },
+  {
+    "name": "footer-4",
+    "status": "built",
+    "export": "Footer4",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-4.tsx",
+    "url": "./library/previews/watermelon/footer-4.html"
+  },
+  {
+    "name": "footer-5",
+    "status": "built",
+    "export": "Footer5",
+    "props": {
+      "brandName": "Portfolio Demo",
+      "logo": "P",
+      "tagline": "Selected work, process, and evidence.",
+      "description": "Example content for a portfolio component preview.",
+      "newsletterTitle": "Stay in touch",
+      "newsletterDescription": "Updates from this example portfolio.",
+      "newsletterSubtitle": "Example subscription form",
+      "socialText": "Connect",
+      "socialLinks": [],
+      "linkGroups": [
+        {
+          "title": "Work",
+          "links": [
+            {
+              "label": "Projects",
+              "href": "#"
+            },
+            {
+              "label": "Research",
+              "href": "#"
+            }
+          ]
+        },
+        {
+          "title": "About",
+          "links": [
+            {
+              "label": "Experience",
+              "href": "#"
+            },
+            {
+              "label": "Contact",
+              "href": "#"
+            }
+          ]
+        }
+      ],
+      "copyright": "Portfolio example · demo content",
+      "legalLinks": [
+        {
+          "label": "Privacy",
+          "href": "#"
+        }
+      ],
+      "brandWatermark": "PORTFOLIO"
+    },
+    "entry": "src/components/watermelon-ui/footer-5.tsx",
+    "url": "./library/previews/watermelon/footer-5.html"
+  },
+  {
+    "name": "footer-6",
+    "status": "built",
+    "export": "Footer6",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-6.tsx",
+    "url": "./library/previews/watermelon/footer-6.html"
+  },
+  {
+    "name": "footer-7",
+    "status": "built",
+    "export": "Footer7",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-7.tsx",
+    "url": "./library/previews/watermelon/footer-7.html"
+  },
+  {
+    "name": "footer-8",
+    "status": "built",
+    "export": "Footer8",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-8.tsx",
+    "url": "./library/previews/watermelon/footer-8.html"
+  },
+  {
+    "name": "footer-9",
+    "status": "built",
+    "export": "Footer9",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-9.tsx",
+    "url": "./library/previews/watermelon/footer-9.html"
+  },
+  {
+    "name": "hero-1",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-1.tsx",
+    "url": "./library/previews/watermelon/hero-1.html"
+  },
+  {
+    "name": "hero-10",
+    "status": "built",
+    "export": "Hero10",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-10.tsx",
+    "url": "./library/previews/watermelon/hero-10.html"
+  },
+  {
+    "name": "hero-11",
+    "status": "built",
+    "export": "Hero11",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-11.tsx",
+    "url": "./library/previews/watermelon/hero-11.html"
+  },
+  {
+    "name": "hero-12",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-12.tsx",
+    "url": "./library/previews/watermelon/hero-12.html"
+  },
+  {
+    "name": "hero-13",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-13.tsx",
+    "url": "./library/previews/watermelon/hero-13.html"
+  },
+  {
+    "name": "hero-14",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-14.tsx",
+    "url": "./library/previews/watermelon/hero-14.html"
+  },
+  {
+    "name": "hero-15",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-15.tsx",
+    "url": "./library/previews/watermelon/hero-15.html"
+  },
+  {
+    "name": "hero-16",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-16.tsx",
+    "url": "./library/previews/watermelon/hero-16.html"
+  },
+  {
+    "name": "hero-17",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-17.tsx",
+    "url": "./library/previews/watermelon/hero-17.html"
+  },
+  {
+    "name": "hero-18",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-18.tsx",
+    "url": "./library/previews/watermelon/hero-18.html"
+  },
+  {
+    "name": "hero-19",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-19.tsx",
+    "url": "./library/previews/watermelon/hero-19.html"
+  },
+  {
+    "name": "hero-2",
+    "status": "built",
+    "export": "Hero2",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-2.tsx",
+    "url": "./library/previews/watermelon/hero-2.html"
+  },
+  {
+    "name": "hero-20",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-20.tsx",
+    "url": "./library/previews/watermelon/hero-20.html"
+  },
+  {
+    "name": "hero-21",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-21.tsx",
+    "url": "./library/previews/watermelon/hero-21.html"
+  },
+  {
+    "name": "hero-22",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-22.tsx",
+    "url": "./library/previews/watermelon/hero-22.html"
+  },
+  {
+    "name": "hero-23",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-23.tsx",
+    "url": "./library/previews/watermelon/hero-23.html"
+  },
+  {
+    "name": "hero-24",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-24.tsx",
+    "url": "./library/previews/watermelon/hero-24.html"
+  },
+  {
+    "name": "hero-25",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-25.tsx",
+    "url": "./library/previews/watermelon/hero-25.html"
+  },
+  {
+    "name": "hero-26",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-26.tsx",
+    "url": "./library/previews/watermelon/hero-26.html"
+  },
+  {
+    "name": "hero-27",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-27.tsx",
+    "url": "./library/previews/watermelon/hero-27.html"
+  },
+  {
+    "name": "hero-28",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-28.tsx",
+    "url": "./library/previews/watermelon/hero-28.html"
+  },
+  {
+    "name": "hero-29",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-29.tsx",
+    "url": "./library/previews/watermelon/hero-29.html"
+  },
+  {
+    "name": "hero-3",
+    "status": "built",
+    "export": "Hero3",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-3.tsx",
+    "url": "./library/previews/watermelon/hero-3.html"
+  },
+  {
+    "name": "hero-30",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-30.tsx",
+    "url": "./library/previews/watermelon/hero-30.html"
+  },
+  {
+    "name": "hero-31",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-31.tsx",
+    "url": "./library/previews/watermelon/hero-31.html"
+  },
+  {
+    "name": "hero-32",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-32.tsx",
+    "url": "./library/previews/watermelon/hero-32.html"
+  },
+  {
+    "name": "hero-33",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-33.tsx",
+    "url": "./library/previews/watermelon/hero-33.html"
+  },
+  {
+    "name": "hero-34",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-34.tsx",
+    "url": "./library/previews/watermelon/hero-34.html"
+  },
+  {
+    "name": "hero-35",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-35.tsx",
+    "url": "./library/previews/watermelon/hero-35.html"
+  },
+  {
+    "name": "hero-36",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-36.tsx",
+    "url": "./library/previews/watermelon/hero-36.html"
+  },
+  {
+    "name": "hero-37",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-37.tsx",
+    "url": "./library/previews/watermelon/hero-37.html"
+  },
+  {
+    "name": "hero-38",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-38.tsx",
+    "url": "./library/previews/watermelon/hero-38.html"
+  },
+  {
+    "name": "hero-39",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-39.tsx",
+    "url": "./library/previews/watermelon/hero-39.html"
+  },
+  {
+    "name": "hero-4",
+    "status": "built",
+    "export": "Hero4",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-4.tsx",
+    "url": "./library/previews/watermelon/hero-4.html"
+  },
+  {
+    "name": "hero-40",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-40.tsx",
+    "url": "./library/previews/watermelon/hero-40.html"
+  },
+  {
+    "name": "hero-41",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-41.tsx",
+    "url": "./library/previews/watermelon/hero-41.html"
+  },
+  {
+    "name": "hero-42",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-42.tsx",
+    "url": "./library/previews/watermelon/hero-42.html"
+  },
+  {
+    "name": "hero-43",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-43.tsx",
+    "url": "./library/previews/watermelon/hero-43.html"
+  },
+  {
+    "name": "hero-5",
+    "status": "built",
+    "export": "Hero5",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-5.tsx",
+    "url": "./library/previews/watermelon/hero-5.html"
+  },
+  {
+    "name": "hero-6",
+    "status": "built",
+    "export": "Hero6",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-6.tsx",
+    "url": "./library/previews/watermelon/hero-6.html"
+  },
+  {
+    "name": "hero-7",
+    "status": "built",
+    "export": "Hero7",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-7.tsx",
+    "url": "./library/previews/watermelon/hero-7.html"
+  },
+  {
+    "name": "hero-8",
+    "status": "built",
+    "export": "Hero8",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-8.tsx",
+    "url": "./library/previews/watermelon/hero-8.html"
+  },
+  {
+    "name": "hero-9",
+    "status": "built",
+    "export": "Hero9",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-9.tsx",
+    "url": "./library/previews/watermelon/hero-9.html"
+  },
+  {
+    "name": "portfolio-dashboard",
+    "status": "built",
+    "export": "DashboardContent",
+    "props": {},
+    "entry": "src/components/dashboards/portfolio-dashboard/components/portfolio/dashboard-content.tsx",
+    "url": "./library/previews/watermelon/portfolio-dashboard.html"
+  },
+  {
+    "name": "profile-card",
+    "status": "built",
+    "export": "ProfileCard",
+    "props": {},
+    "entry": "src/components/watermelon-ui/profile-card.tsx",
+    "url": "./library/previews/watermelon/profile-card.html"
+  },
+  {
+    "name": "profile-card-base",
+    "status": "built",
+    "export": "ProfileCard",
+    "props": {},
+    "entry": "src/components/watermelon-ui/profile-card-base.tsx",
+    "url": "./library/previews/watermelon/profile-card-base.html"
+  },
+  {
+    "name": "project-management-dashboard",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/dashboards/project-management-dashboard/demo.tsx",
+    "url": "./library/previews/watermelon/project-management-dashboard.html"
+  },
+  {
+    "name": "stats-1",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/stats-1.tsx",
+    "url": "./library/previews/watermelon/stats-1.html"
+  },
+  {
+    "name": "stats-2",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/stats-2.tsx",
+    "url": "./library/previews/watermelon/stats-2.html"
+  },
+  {
+    "name": "stats-3",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/stats-3.tsx",
+    "url": "./library/previews/watermelon/stats-3.html"
+  },
+  {
+    "name": "stats-4",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/stats-4.tsx",
+    "url": "./library/previews/watermelon/stats-4.html"
+  },
+  {
+    "name": "team-1",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/team-1.tsx",
+    "url": "./library/previews/watermelon/team-1.html"
+  },
+  {
+    "name": "team-2",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/team-2.tsx",
+    "url": "./library/previews/watermelon/team-2.html"
+  },
+  {
+    "name": "team-3",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/team-3.tsx",
+    "url": "./library/previews/watermelon/team-3.html"
+  },
+  {
+    "name": "team-4",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/team-4.tsx",
+    "url": "./library/previews/watermelon/team-4.html"
+  },
+  {
+    "name": "team-5",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/team-5.tsx",
+    "url": "./library/previews/watermelon/team-5.html"
+  },
+  {
+    "name": "testimonials-1",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/testimonials-1.tsx",
+    "url": "./library/previews/watermelon/testimonials-1.html"
+  },
+  {
+    "name": "testimonials-2",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/testimonials-2.tsx",
+    "url": "./library/previews/watermelon/testimonials-2.html"
+  },
+  {
+    "name": "testimonials-3",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/testimonials-3.tsx",
+    "url": "./library/previews/watermelon/testimonials-3.html"
+  },
+  {
+    "name": "testimonials-4",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/testimonials-4.tsx",
+    "url": "./library/previews/watermelon/testimonials-4.html"
+  }
+]

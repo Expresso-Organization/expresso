@@ -1,0 +1,27 @@
+{
+  "id": "rune-d276a526265c7dda",
+  "sourceUrl": "https://github.com/Nexvyn/runeicons/blob/f649e467d1bc9f272aae3f8daa329d4c924e7340/public/duotone/playback/film.svg",
+  "sourceRevision": "f649e467d1bc9f272aae3f8daa329d4c924e7340",
+  "roles": [
+    "icon"
+  ],
+  "roleEvidence": "아이콘의 원본 의미 분류를 탐색·링크·자료 유형 표시에 대응합니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/rune/rune-d276a526265c7dda.svg",
+      "sha256": "4bd91c6da521d9f1d6e38ca92b77fdf320509abd258d1f7ec9f39611630b2679",
+      "bytes": 597,
+      "kind": "svg_source",
+      "label": "원본 SVG"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "usageNote": "스타일·크기·stroke 적용을 확인한 뒤 제품에서 사용합니다. Apache-2.0 LICENSE 및 변경 표시를 보존합니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/Nexvyn/runeicons/blob/f649e467d1bc9f272aae3f8daa329d4c924e7340/LICENSE"
+}

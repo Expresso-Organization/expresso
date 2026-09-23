@@ -1,0 +1,72 @@
+{
+  "id": "watermelon-a267805e656c8037",
+  "sourceUrl": "https://ui.watermelon.sh/block/hero-5",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/hero-5.json",
+      "sha256": "8bc6cbc46161e20fb34b7bcf214af2ceefe62a34ce3139b381c041f71d02ee46",
+      "bytes": 11553,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/hero-5.tsx",
+      "target": "components/ui/hero-5.tsx",
+      "type": "registry:ui",
+      "sha256": "0f297ab31d5c70af115b97e8e8e64904f7dfbe481abd7abde6d2a5e1237840ba",
+      "bytes": 10753
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "imports": [
+    "@/assets/logo-icon",
+    "motion/react",
+    "react",
+    "react-icons/fa6"
+  ],
+  "propsDeclarations": [
+    "export interface Hero5Props {\n  /** Brand logo icon */\n  logo?: ReactNode;\n  /** Brand logo text */\n  logoText?: string;\n  /** Navigation items */\n  navItems?: Hero5NavItem[];\n  /** Login button text */\n  loginText?: string;\n  /** Login button URL */\n  loginHref?: string;\n  /** Headline line 1 (regular weight) */\n  titleLine1?: string;\n  /** Headline line 2 (italic accent) */\n  titleLine2Accent?: string;\n  /** Body description paragraph */\n  description?: string;\n  /** Primary CTA text (outlined button) */\n  primaryCtaText?: string;\n  /** Primary CTA URL */\n  primaryCtaHref?: string;\n  /** Secondary CTA text (filled button with arrow) */\n  secondaryCtaText?: string;\n  /** Secondary CTA URL */\n  secondaryCtaHref?: string;\n  /** Background image URL */\n  backgroundImage?: string;\n  /** Trusted brands section title */\n  trustedTitle?: string;\n  /** Trusted brand items */\n  trustedBrands?: Hero5TrustedBrand[];\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://assets.watermelon.sh/hero-5-bg.avif"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/hero-5.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "hero-5",
+    "status": "built",
+    "export": "Hero5",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-5.tsx",
+    "url": "./library/previews/watermelon/hero-5.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:22+00:00",
+    "snapshotSha256": "febc61bb42974396a5666619c297a13c653be114ca7e5974796e5f458218e27d"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

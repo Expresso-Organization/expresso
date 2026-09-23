@@ -1,0 +1,90 @@
+{
+  "id": "watermelon-f6247f54f6df695e",
+  "sourceUrl": "https://ui.watermelon.sh/block/cta-4",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/cta-4.json",
+      "sha256": "3da6e7676585a7f871eee7b6c9eb817d218c425530e766a825060d101e4ee161",
+      "bytes": 9358,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/cta-4.tsx",
+      "target": "components/ui/cta-4.tsx",
+      "type": "registry:ui",
+      "sha256": "7e09c459fea0d8c8ec8928b4af4ef6bc8839f26c5c61c4af0e02372364d073f7",
+      "bytes": 8641
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "cta",
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/button",
+    "react",
+    "react-icons/fa"
+  ],
+  "propsDeclarations": [
+    "export interface PerformanceOverviewProps {\n  title: string;\n\n  accentWord: string;\n\n  subtitle: string;\n\n  ctaLabel: string;\n\n  onCtaClick?: () => void;\n\n  periods: PeriodData[];\n\n  defaultPeriodId?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/cta-4.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "cta-4",
+    "status": "built",
+    "export": "PerformanceOverview",
+    "props": {
+      "title": "Project",
+      "accentWord": "Overview",
+      "subtitle": "Example values for layout review",
+      "ctaLabel": "View case study",
+      "periods": [
+        {
+          "id": "demo",
+          "label": "Demo",
+          "metrics": [
+            {
+              "id": "a",
+              "label": "Example projects",
+              "value": "03",
+              "changePercent": 0,
+              "icon": "product"
+            }
+          ],
+          "activities": []
+        }
+      ]
+    },
+    "entry": "src/components/watermelon-ui/cta-4.tsx",
+    "url": "./library/previews/watermelon/cta-4.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:04+00:00",
+    "snapshotSha256": "7de83dda7e45f12e06ca21b9f064ac2a79d43322e6ac40e0743cb7487b79d683"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

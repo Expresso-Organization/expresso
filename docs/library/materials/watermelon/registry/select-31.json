@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "select-31",
+  "dependencies": [],
+  "registryDependencies": [
+    "avatar",
+    "label",
+    "select"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/select/select-31.tsx",
+      "content": "import { useId } from 'react';\n\nimport { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';\nimport { Label } from '@/components/ui/label';\nimport {\n  Select,\n  SelectContent,\n  SelectGroup,\n  SelectItem,\n  SelectLabel,\n  SelectTrigger,\n  SelectValue,\n} from '@/components/ui/select';\n\nconst agents = [\n  { id: '1', handle: 'vance', name: 'Vance Sterling', initials: 'VS' },\n  { id: '2', handle: 'elara', name: 'Elara Vance', initials: 'EV' },\n  { id: '3', handle: 'jules', name: 'Jules Winfield', initials: 'JW' },\n];\n\nconst Select31 = () => {\n  const id = useId();\n\n  return (\n    <div className=\"w-full max-w-xs space-y-2\">\n      <Label htmlFor={id} className=\"text-zinc-600 dark:text-zinc-400\">\n        Delegate Action\n      </Label>\n      <Select defaultValue=\"1\">\n        <SelectTrigger \n          id={id} \n          className=\"w-full rounded-xl border-zinc-200 bg-white shadow-xs transition-all hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900 px-2\"\n        >\n          <SelectValue placeholder=\"Identify member\" />\n        </SelectTrigger>\n        <SelectContent \n          position=\"popper\" \n          sideOffset={4} \n          className=\"rounded-xl border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-950\"\n        >\n          <SelectGroup>\n            <SelectLabel className=\"text-zinc-500 text-xs px-2.5\">Available Agents</SelectLabel>\n            {agents.map((agent) => (\n              <SelectItem key={agent.id} value={agent.id} className=\"rounded-lg\">\n                <span className=\"flex items-center gap-2\">\n                  <Avatar className=\"size-5 border border-zinc-200 dark:border-zinc-800\">\n                    <AvatarImage src={`https://unavatar.io/${agent.handle}`} alt={agent.name} />\n                    <AvatarFallback className=\"text-[8px] bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400\">\n                      {agent.initials}\n                    </AvatarFallback>\n                  </Avatar>\n                  <span className=\"truncate\">{agent.name}</span>\n                </span>\n              </SelectItem>\n            ))}\n          </SelectGroup>\n        </SelectContent>\n      </Select>\n    </div>\n  );\n};\n\nexport default Select31;\n\n",
+      "type": "registry:ui",
+      "target": "components/ui/select-31.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

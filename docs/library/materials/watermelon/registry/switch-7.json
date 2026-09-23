@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "switch-7",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "switch"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/switch/switch-7.tsx",
+      "content": "import { Switch } from \"@/components/ui/switch\";\n\nconst Switch7 = () => {\n  return (\n    <div className=\"flex items-center gap-3\">\n      <Switch aria-label=\"Small Switch\" />\n      <Switch\n        aria-label=\"Medium switch\"\n        className=\"data-[size=default]:h-6 data-[size=default]:w-10 [&_span]:group-data-[size=default]/switch:size-5 data-[state=checked]:[&_span]:translate-x-4.5 data-[state=checked]:[&_span]:rtl:-translate-x-4.5\"\n      />\n      <Switch\n        aria-label=\"Large Switch\"\n        className=\"data-[size=default]:h-7 data-[size=default]:w-12 [&_span]:group-data-[size=default]/switch:size-6 data-[state=checked]:[&_span]:translate-x-5.5 data-[state=checked]:[&_span]:rtl:-translate-x-5.5\"\n      />\n    </div>\n  );\n};\n\nexport default Switch7;\n",
+      "type": "registry:ui",
+      "target": "components/ui/switch-7.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

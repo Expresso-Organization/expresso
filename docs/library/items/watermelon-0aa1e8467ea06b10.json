@@ -1,0 +1,70 @@
+{
+  "id": "watermelon-0aa1e8467ea06b10",
+  "sourceUrl": "https://ui.watermelon.sh/block/cta-2",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/cta-2.json",
+      "sha256": "f1e27356e380f16cc7cbfe433d9c9ede3958abf51c14f59a84d56060a6e2c8a4",
+      "bytes": 6654,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/cta-2.tsx",
+      "target": "components/ui/cta-2.tsx",
+      "type": "registry:ui",
+      "sha256": "f26b80b61a4788f9cb712f3e17a8f6a6138734a252c07a0fff0520e71644d830",
+      "bytes": 6016
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "cta",
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "react-icons/fa",
+    "react-icons/fi"
+  ],
+  "propsDeclarations": [
+    "interface CTASectionProps {\n  badge?: string;\n  headingLine1: string;\n  headingHighlight: string;\n  subtext: string;\n  primaryCTA: {\n    label: string;\n    href?: string;\n    onClick?: () => void;\n  }"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/cta-2.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "cta-2",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/cta-2.tsx",
+    "url": "./library/previews/watermelon/cta-2.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:04+00:00",
+    "snapshotSha256": "d2441555b0ef62612919e2bc388c8c71bdc3e3aa6ba02c77a7bca0573a2928c8"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

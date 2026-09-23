@@ -1,0 +1,29 @@
+{
+  "id": "60fps-41c6a27ccb79ea34",
+  "sourceUrl": "https://60fps.design/shots/smallcase-wealth-office-ai-chat-icon-animation",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Smallcase Wealth Office AI Chat Icon Animation",
+    "공개 이미지 요소: 32개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/smallcase-wealth-office-ai-chat-icon-animation",
+    "sha256": "75196f0c1ae4fe0c24c6f0f57bc09f8d0fd91acac54cad7499b6be9a3c44e711",
+    "fetchedAt": "2026-09-23T13:06:50+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

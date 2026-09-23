@@ -1,0 +1,29 @@
+{
+  "id": "unsection-16b35fbbd5bb80b5",
+  "sourceUrl": "https://www.unsection.com/section/montoni-newsletter-subscription-cta-design",
+  "sourceRevision": null,
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: montoni newsletter subscription cta design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/montoni-newsletter-subscription-cta-design",
+    "sha256": "00e57f652fc96ab2c4aed6228ee1cd4e78d48777b0f846f151acf0617a794a64",
+    "fetchedAt": "2026-09-23T12:55:08+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

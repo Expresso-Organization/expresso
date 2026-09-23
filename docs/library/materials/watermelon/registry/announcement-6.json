@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "announcement-6",
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "announcement",
+    "button"
+  ],
+  "files": [
+    {
+      "path": "src/components/watermelon-ui/announcement-6.tsx",
+      "content": "\"use client\";\n\nimport { Button } from \"@/components/ui/button\";\n\nexport default function Announcement6() {\n  return (\n    <div className=\"flex h-full w-full items-center justify-center\">\n      <div className=\"bg-muted w-full px-4 py-3 text-sm max-w-7xl\">\n        <div className=\"grid w-full items-start gap-4 sm:grid-cols-[1fr_auto] sm:items-center\">\n          <p className=\"text-muted-foreground leading-relaxed tracking-wide\">\n            This website uses cookies to enhance your experience, analyze\n            traffic, and improve our services. Accepting cookies is optional but\n            recommended. See our{\" \"}\n            <span className=\"text-primary cursor-pointer underline underline-offset-4\">\n              cookie policy\n            </span>\n            .\n          </p>\n\n          <div className=\"flex shrink-0 items-center gap-2 self-start sm:self-center\">\n            <Button variant=\"default\" className=\"rounded-sm\">\n              Accept all\n            </Button>\n\n            <Button\n              variant=\"outline\"\n              className=\"text-muted-foreground rounded-sm text-sm\"\n            >\n              Reject all\n            </Button>\n          </div>\n        </div>\n      </div>\n    </div>\n  );\n}\n",
+      "type": "registry:ui",
+      "target": "components/ui/announcement-6.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

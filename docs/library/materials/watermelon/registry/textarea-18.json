@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "textarea-18",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "textarea"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/textarea/textarea-18.tsx",
+      "content": "\"use client\";\n\nimport { useId, useState, type ChangeEvent } from \"react\";\n\nimport { Label } from \"@/components/ui/label\";\nimport { Textarea } from \"@/components/ui/textarea\";\n\nconst maxLength = 200;\nconst initialValue = \"\";\n\nconst Textarea18 = () => {\n  const [value, setValue] = useState(initialValue);\n  const [characterCount, setCharacterCount] = useState(initialValue.length);\n\n  const id = useId();\n\n  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {\n    if (e.target.value.length <= maxLength) {\n      setValue(e.target.value);\n      setCharacterCount(e.target.value.length);\n    }\n  };\n\n  return (\n    <div className=\"w-full max-w-sm space-y-2\">\n      <Label htmlFor={id}>Brief summary</Label>\n      <Textarea\n        id={id}\n        placeholder=\"Write a short summary...\"\n        value={value}\n        maxLength={maxLength}\n        onChange={handleChange}\n        className=\"focus-visible:ring-primary/20 focus-visible:border-primary/50 rounded-sm shadow-sm focus-visible:ring-2\"\n      />\n      <p className=\"text-muted-foreground text-xs\">\n        <span className=\"tabular-nums\">{maxLength - characterCount}</span>{\" \"}\n        remaining\n      </p>\n    </div>\n  );\n};\n\nexport default Textarea18;\n",
+      "type": "registry:ui",
+      "target": "components/ui/textarea-18.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

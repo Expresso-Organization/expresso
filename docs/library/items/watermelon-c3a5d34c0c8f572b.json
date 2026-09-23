@@ -1,0 +1,73 @@
+{
+  "id": "watermelon-c3a5d34c0c8f572b",
+  "sourceUrl": "https://ui.watermelon.sh/block/hero-34",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/hero-34.json",
+      "sha256": "657d3790d4b997cf8fe336eb4f9719d8c7a42051cdf0d0e75631ea714627a3b8",
+      "bytes": 10620,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/hero-34.tsx",
+      "target": "components/ui/hero-34.tsx",
+      "type": "registry:ui",
+      "sha256": "b8d0ee118eb1893322a3a16fc52db56db9a8668982cc44c006d8d2ce966486f9",
+      "bytes": 9855
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "imports": [
+    "@/assets/logo-icon",
+    "framer-motion",
+    "lucide-react"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://assets.watermelon.sh/hero-34-bg.avif",
+    "https://assets.watermelon.sh/wm_alex.png",
+    "https://assets.watermelon.sh/wm_ben.png",
+    "https://assets.watermelon.sh/wm_mia.png",
+    "https://assets.watermelon.sh/wm_olivia.png"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/hero-34.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "hero-34",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-34.tsx",
+    "url": "./library/previews/watermelon/hero-34.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:20+00:00",
+    "snapshotSha256": "6992ff882847510c3f3611d36c1d81afc567e6b54c9cb12c861e1c3878eab2b4"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

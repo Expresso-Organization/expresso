@@ -61,14 +61,14 @@ export function parseLibraryRoute(hash) {
   return {
     type: Object.hasOwn(TYPES, parts[1]) ? parts[1] : 'all',
     id: decode(parts[2]), source: params.get('source') || '', q: params.get('q') || '',
-    category: params.get('category') || '', page: Number.isSafeInteger(page) && page > 0 ? page : 1,
+    category: params.get('category') || '', ...(params.get('role') ? {role:params.get('role')} : {}), ...(params.get('availability') ? {availability:params.get('availability')} : {}), page: Number.isSafeInteger(page) && page > 0 ? page : 1,
   };
 }
 export function libraryRoute(state) {
   const type = Object.hasOwn(TYPES, state.type) ? state.type : 'all';
   let path = '#/library' + (type !== 'all' || state.id ? '/' + type : '') + (state.id ? '/' + encodeURIComponent(state.id) : '');
   const params = new URLSearchParams();
-  for (const key of ['source','category','q']) if (state[key]) params.set(key, state[key]);
+  for (const key of ['source','category','q','role','availability']) if (state[key]) params.set(key, state[key]);
   if (state.page > 1) params.set('page', String(state.page));
   return path + (params.size ? '?' + params.toString() : '');
 }
@@ -79,6 +79,10 @@ export function selectItems(data, state) {
     if (state.type !== 'all' && TYPE_OF[item.artifactKind] !== state.type) return false;
     if (state.source && item.sourceSite !== state.source) return false;
     if (state.category && !item.categories.includes(state.category)) return false;
+    if (state.role && !item.roles?.includes(state.role)) return false;
+    if (state.availability === 'preview' && !item.preview) return false;
+    if (state.availability === 'source' && item.acquisitionStatus !== 'source_ready') return false;
+    if (state.availability === 'waiting' && !['permission_needed','access_blocked'].includes(item.acquisitionStatus)) return false;
     const haystack = [item.title, item.sourceItemId, names[item.sourceSite], ...item.categories].join(' ').toLocaleLowerCase();
     return words.every(word => haystack.includes(word));
   });
