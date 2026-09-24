@@ -63,7 +63,10 @@
 .lib-preview-missing { display: flex; align-items: center; justify-content: center; color: var(--ex-fg-muted); background: var(--ex-bg-sunken); border: 1px dashed var(--ex-border-strong); border-radius: 4px; margin: 16px 0; min-height: 64px; font-size: var(--ex-text-2xs); }
 .lib-card footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px; border-top: 1px solid var(--ex-border); margin-top: auto; padding-top: 10px; color: var(--ex-fg-muted); font-size: var(--ex-text-3xs); }
 .lib-pagination { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 24px; font-size: var(--ex-text-xs); }
-.lib-pagination div { display: flex; gap: 18px; }
+.lib-pagination div { display: flex; align-items: center; gap: 18px; }
+.lib-page-select { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+.lib-page-select select { padding: 9px; border: 1px solid var(--ex-border-strong); border-radius: 7px; background: var(--ex-bg); }
+.lib-page-select select:disabled { cursor: default; color: var(--ex-fg-muted); }
 .lib-pagination [aria-disabled] { color: var(--ex-fg-muted); }
 .lib-message { text-align: center; padding: 64px 24px; }
 .lib-message h1 { font-size: var(--ex-text-3xl); }

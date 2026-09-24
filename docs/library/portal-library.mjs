@@ -29,6 +29,7 @@ class ExpressoLibrary extends HTMLElement {
       if(button?.hasAttribute('data-show-code')) this.showCode(button);
     };
     this.onchange = event => {
+      if (event.target.name === 'page') this.navigate({page:Number(event.target.value), id:''});
       if (event.target.name === 'source') this.navigate({source:event.target.value, category:'', id:'', page:1});
       if (['role','availability'].includes(event.target.name)) this.navigate({[event.target.name]:event.target.value,id:'',page:1});
       if (event.target.name === 'category') this.navigate({category:event.target.value, id:'', page:1});
@@ -104,7 +105,7 @@ class ExpressoLibrary extends HTMLElement {
           ${results.total ? `<div class="lib-grid">${results.items.map(item=>this.card(item,sources.get(item.sourceSite),state)).join('')}</div>`
             : `<div class="lib-message"><h3>${state.q || state.category ? '검색 조건에 맞는 항목이 없습니다' : '아직 목록에 등록된 자료가 없습니다'}</h3><p>${selectedSource ? escape(selectedSource.note) : state.type === 'pages' ? '검증된 컴포넌트를 조합한 페이지 구성은 후속 단계에서 추가합니다.' : '유형·사이트·검색 조건을 바꾸어 확인해 보세요.'}</p><a href="#/library">전체 목록 보기</a></div>`}
           <nav class="lib-pagination" aria-label="라이브러리 페이지"><span>${results.total ? number((results.page-1)*PAGE_SIZE+1) : 0}–${number(Math.min(results.page*PAGE_SIZE,results.total))} / ${number(results.total)}</span>
-            <div>${results.page>1?`<a href="${route({page:results.page-1,id:''})}" rel="prev">← 이전</a>`:'<span aria-disabled="true">← 이전</span>'}<span>${results.page} / ${results.pages}</span>${results.page<results.pages?`<a href="${route({page:results.page+1,id:''})}" rel="next">다음 →</a>`:'<span aria-disabled="true">다음 →</span>'}</div></nav>
+            <div>${results.page>1?`<a href="${route({page:results.page-1,id:''})}" rel="prev">← 이전</a>`:'<span aria-disabled="true">← 이전</span>'}<label class="lib-page-select"><span class="lib-sr">페이지 선택</span><select name="page" id="lib-page" ${results.pages===1?'disabled':''}>${Array.from({length:results.pages},(_,index)=>`<option value="${index+1}" ${index+1===results.page?'selected':''}>${index+1} 페이지</option>`).join('')}</select><span>/ ${number(results.pages)}</span></label>${results.page<results.pages?`<a href="${route({page:results.page+1,id:''})}" rel="next">다음 →</a>`:'<span aria-disabled="true">다음 →</span>'}</div></nav>
         </main>
       </div>
       ${state.id ? this.detail(selected, selected ? sources.get(selected.sourceSite) : null, state) : ''}`;
