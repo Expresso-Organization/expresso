@@ -92,3 +92,10 @@ jobs:
           done
           echo "200 을 받지 못했습니다"
           exit 1
+
+      - name: 라이브러리 모듈을 실행 가능한 형식으로 내보내는지
+        run: |
+          content_type=$(curl -fsSI --max-time 20 https://dev.expresso.ai.kr/library/portal-library.mjs |
+            tr -d '\r' | awk 'tolower($1) == "content-type:" { split($2, value, ";"); print tolower(value[1]); exit }')
+          echo "라이브러리 모듈 Content-Type: $content_type"
+          [ "$content_type" = "application/javascript" ] || exit 1
