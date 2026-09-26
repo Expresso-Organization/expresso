@@ -15,6 +15,9 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@assistant-ui/react": "0.15.18",
+    "@assistant-ui/react-markdown": "0.14.14",
+    "@base-ui/react": "1.8.0",
     "@expresso/contracts": "workspace:*",
     "@expresso/editor": "workspace:*",
     "@phosphor-icons/web": "^2.1.2",
@@ -31,13 +34,19 @@
     "@tiptap/pm": "3.31.0",
     "@tiptap/react": "3.31.0",
     "@tiptap/starter-kit": "3.31.0",
+    "class-variance-authority": "0.7.1",
+    "cn": "0.2.5",
+    "lucide-react": "1.41.0",
     "next": "^16.3.0",
+    "radix-ui": "1.6.7",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
     "simple-icons": "^16.28.0",
-    "zod": "^4.4.3"
+    "tw-animate-css": "1.4.0",
+    "zod": "^4.4.3",
+    "zustand": "5.0.15"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

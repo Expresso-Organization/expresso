@@ -14,7 +14,8 @@ export type SidebarSection =
   | "new-portfolio"
   | "jobs"
   | "analytics"
-  | "career";
+  | "career"
+  | "agent";
 
 const PRIMARY_ITEMS: readonly {
   key: SidebarSection;
@@ -25,6 +26,7 @@ const PRIMARY_ITEMS: readonly {
   { key: "home", label: "홈", href: "/home", icon: "house" },
   { key: "new-portfolio", label: "새 포트폴리오", href: "/portfolio/new", icon: "coffee" },
   { key: "jobs", label: "공고 탐색", href: "/jobs", icon: "target" },
+  { key: "agent", label: "에이전트 채팅", href: "/agent", icon: "chat-circle-dots" },
   { key: "analytics", label: "분석", href: "/analytics", icon: "chart-bar" },
 ];
 
@@ -36,6 +38,7 @@ const PRIMARY_ITEMS: readonly {
  * 알고 있는 사실이다. 설정(`/account`)은 별도 메뉴가 아니라 홈 밑이다.
  */
 export function sectionForPath(pathname: string): SidebarSection | null {
+  if (pathname.startsWith("/agent")) return "agent";
   if (pathname === "/home" || pathname.startsWith("/account")) return "home";
   if (pathname.startsWith("/jobs")) return "jobs";
   if (pathname.startsWith("/analytics")) return "analytics";

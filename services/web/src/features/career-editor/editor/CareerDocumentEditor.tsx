@@ -1,4 +1,5 @@
 "use client";
+import { AgentChat } from "@/features/agent-chat/AgentChat";
 
 import { EditorContent, useEditor } from "@tiptap/react";
 import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecordListItem } from "@expresso/contracts";
@@ -86,7 +87,8 @@ export function CareerDocumentEditor({
         <EditorContent editor={editor} />
         <SlashMenu editor={editor} open={slashOpen} onClose={() => setSlashOpen(false)} />
       </div>
-      {showAiProposal ? <AiProposalPanel recordId={recordId} documentVersion={snapshot.documentVersion} selectedBlockIds={selectedBlockIds(editor, document.content[0]?.id)} announcedProposal={snapshot.proposal} requestedPrompt={aiRequest} onRequestHandled={() => setAiRequest(null)} document={document} definitions={category ? categoryDefinitions(category) : []} /> : null}
+      <AgentChat context={{ kind: "record", id: recordId }} contextLabel="현재 기록" />
+      {showAiProposal ? <details open={aiRequest != null}><summary>선택 영역 빠른 편집</summary><AiProposalPanel recordId={recordId} documentVersion={snapshot.documentVersion} selectedBlockIds={selectedBlockIds(editor, document.content[0]?.id)} announcedProposal={snapshot.proposal} requestedPrompt={aiRequest} onRequestHandled={() => setAiRequest(null)} document={document} definitions={category ? categoryDefinitions(category) : []} /></details> : null}
     </section>
   );
 }
