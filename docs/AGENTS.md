@@ -144,3 +144,7 @@ python3 scripts/serve-docs.py
 이 서버로 띄우면 편집 도구의 「저장」이 **파일 선택 없이 열어 둔 그 파일을
 바로 덮습니다.** `python3 -m http.server` 로도 보기는 되지만, 그때는 저장할
 때 파일을 한 번 고르게 됩니다.
+
+포털의 문서·라이브러리 목록이 바뀌면 `node scripts/library/build_portal_search.mjs`로
+상단 검색 인덱스를 갱신합니다. 포털 UI를 바꾼 뒤에는
+`node scripts/library/build_portal_changes.mjs`로 변경 알림 목록을 갱신합니다.

@@ -21,7 +21,6 @@ class ExpressoLibrary extends HTMLElement {
     // DC가 원본 템플릿을 읽기 전에 내용을 바꾸면 React가 예제 DOM까지 소유하게 됩니다.
     if (this.closest('x-dc')) return;
     this.classList.add('ex-library');
-    this.setAttribute('data-theme', 'light');
     this.details ||= new Map();
     this.addEventListener('load',event=>{if(['IMG','IFRAME'].includes(event.target.tagName))event.target.closest('.lib-visual')?.removeAttribute('data-loading');},true);
     this.addEventListener('error',event=>{if(event.target.tagName==='IMG' && event.target.closest('.lib-visual')){const frame=event.target.closest('.lib-visual');frame.removeAttribute('data-loading');frame.innerHTML='<span class="lib-image-error">원본 이미지에 연결하지 못했습니다<br>상세에서 출처를 확인하세요.</span>';}},true);

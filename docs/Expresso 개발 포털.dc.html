@@ -4,10 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Expresso 개발 문서</title>
+<script src="./library/portal-controls.js"></script>
 <script src="./support.js"></script>
 <link rel="stylesheet" href="./library/tokens.css">
 <link rel="stylesheet" href="./library/portal-library.css">
 <link rel="stylesheet" href="./library/portal-documentation.css">
+<link rel="stylesheet" href="./library/portal-controls.css">
 <script type="module" src="./library/portal-library.mjs"></script>
 </head>
 <body>
@@ -30,7 +32,7 @@
 <script src="./screen-map.js"></script>
 </helmet>
 
-<div class="{{ shellClass }}" style="width: 100%; min-width: {{ shellMinWidth }}; max-width: 2000px; margin: 0 auto; background: #F7FAFE; min-height: 900px">
+<div class="portal-site-shell {{ shellClass }}" style="width: 100%; min-width: {{ shellMinWidth }}; max-width: 2000px; margin: 0 auto; background: #F7FAFE; min-height: 900px">
 
   <div class="portal-header" style="display: flex; align-items: center; gap: 14px; padding: 16px 32px; background: #16223A; color: #fff">
     <div onClick="{{ goHome }}" title="초기 화면으로" style="display: flex; align-items: center; gap: 7px; cursor: pointer" style-hover="opacity: .72">
@@ -125,6 +127,60 @@
     </div>
     </sc-if>
 
+    <sc-if value="{{ modernHeaderOpen }}" hint-placeholder-val="{{ true }}">
+      <div class="portal-global-search" role="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6"/><path d="m16 16 4.3 4.3"/></svg>
+        <input id="portal-global-query" type="search" value="{{ globalQ }}" onChange="{{ onGlobalSearch }}" onFocus="{{ onGlobalSearchFocus }}" onBlur="{{ onGlobalSearchBlur }}" onKeyDown="{{ onGlobalSearchKey }}" aria-label="문서·발표 자료·라이브러리 검색" aria-controls="portal-global-results" aria-expanded="{{ globalOpen }}" placeholder="문서 · 발표 자료 · 라이브러리 검색" autocomplete="off" />
+        <sc-if value="{{ globalOpen }}" hint-placeholder-val="{{ false }}">
+          <div id="portal-global-results" class="portal-global-results" onMouseDown="{{ keepFocus }}">
+            <sc-if value="{{ globalHasHits }}" hint-placeholder-val="{{ false }}">
+              <div class="portal-result-count">검색 결과 {{ globalHitCount }}개</div>
+              <sc-for list="{{ globalHits }}" as="h" hint-placeholder-count="5">
+                <a class="portal-result" href="{{ h.href }}" onClick="{{ h.onOpen }}" aria-current="{{ h.active }}" aria-label="{{ h.title }} · {{ h.context }} 열기">
+                  <span class="portal-result-tag">{{ h.tag }}</span><span class="portal-result-copy"><strong>{{ h.title }}</strong><small>{{ h.context }}</small></span><span aria-hidden="true">↗</span>
+                </a>
+              </sc-for>
+            </sc-if>
+            <sc-if value="{{ globalLoading }}" hint-placeholder-val="{{ false }}"><p class="portal-result-message">라이브러리 항목을 찾는 중입니다.</p></sc-if>
+            <sc-if value="{{ globalHintShort }}" hint-placeholder-val="{{ false }}"><p class="portal-result-message">라이브러리는 두 글자부터 검색합니다.</p></sc-if>
+            <sc-if value="{{ globalSearchError }}" hint-placeholder-val="{{ false }}"><p class="portal-result-message">라이브러리 검색 목록을 불러오지 못했습니다. 다시 입력해 주세요.</p></sc-if>
+            <sc-if value="{{ globalEmpty }}" hint-placeholder-val="{{ false }}"><p class="portal-result-message">일치하는 자료가 없습니다.</p></sc-if>
+            <sc-if value="{{ globalShowAll }}" hint-placeholder-val="{{ false }}"><a class="portal-result-more" href="{{ globalAllHref }}" onClick="{{ globalOpenAll }}">라이브러리에서 모두 보기 →</a></sc-if>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <div class="portal-header-actions">
+      <div class="portal-action-wrap">
+        <button class="portal-top-action" aria-label="테마 변경" aria-expanded="{{ themeOpen }}" onClick="{{ toggleTheme }}" title="테마 변경">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/></svg><span>테마</span>
+        </button>
+        <sc-if value="{{ themeOpen }}" hint-placeholder-val="{{ false }}">
+          <div class="portal-top-popover portal-theme-popover" aria-label="테마 모드 선택">
+            <p>화면 모드</p>
+            <sc-for list="{{ themeOptions }}" as="t" hint-placeholder-count="3">
+              <button aria-pressed="{{ t.active }}" onClick="{{ t.onPick }}">{{ t.label }}<span aria-hidden="true">{{ t.mark }}</span></button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+      <div class="portal-action-wrap">
+        <button class="portal-top-action portal-bell" aria-label="개발 포털 변경 알림" aria-expanded="{{ changesOpen }}" onClick="{{ toggleChanges }}" title="개발 포털 변경 알림">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-2.5 8-2.5 9h17C20.5 16 18 15 18 8Z"/><path d="M10 20h4"/></svg><span>알림</span><sc-if value="{{ hasUnreadChanges }}" hint-placeholder-val="{{ false }}"><span class="portal-unread">{{ unreadChanges }}</span></sc-if>
+        </button>
+        <sc-if value="{{ changesOpen }}" hint-placeholder-val="{{ false }}">
+          <div class="portal-top-popover portal-changes" aria-label="개발 포털 변경 사항">
+            <div class="portal-changes-heading"><h2>변경 사항</h2><button onClick="{{ resetChangeReads }}">다시 알림</button></div>
+            <sc-if value="{{ changesFailed }}" hint-placeholder-val="{{ false }}"><p class="portal-result-message">변경 기록을 불러오지 못했습니다.</p></sc-if>
+            <sc-for list="{{ changeItems }}" as="c" hint-placeholder-count="5">
+              <a href="{{ c.href }}" onClick="{{ c.onOpen }}" class="portal-change"><time>{{ c.date }}</time><strong>{{ c.title }}</strong><span>{{ c.summary }}</span></a>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
     <sc-if value="{{ portalOpen }}" hint-placeholder-val="{{ false }}">
     <div class="portal-progress" style="display: flex; align-items: center; gap: 14px; margin-left: auto">
       <div style="display: flex; align-items: baseline; gap: 7px"><span style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 22px; line-height: 1">{{ doneCount }}</span><span style="font-size: 11px; color: #93A2BA">완료 / 151</span></div>
@@ -176,8 +232,8 @@
   </sc-if>
 
   <sc-if value="{{ viewerOpen }}" hint-placeholder-val="{{ false }}">
-    <div style="{{ viewerWrap }}">
-      <div style="display: flex; align-items: center; gap: 14px; padding: 10px 32px; background: #fff; border-bottom: 1px solid #E2E9F4; flex-shrink: 0">
+    <div class="portal-viewer" style="{{ viewerWrap }}">
+      <div class="portal-viewer-header" style="display: flex; align-items: center; gap: 14px; padding: 10px 32px; background: #fff; border-bottom: 1px solid #E2E9F4; flex-shrink: 0">
         <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .12em; color: #9A4030">{{ viewerTag }}</span>
         <span style="font-size: 13.5px; font-weight: 600; white-space: nowrap">{{ viewerTitle }}</span>
         <sc-if value="{{ deckSwitchOpen }}" hint-placeholder-val="{{ false }}">
@@ -201,7 +257,7 @@
       </div>
       <div style="display: flex; align-items: flex-start">
         <sc-if value="{{ tocOpen }}" hint-placeholder-val="{{ false }}">
-          <div style="width: 268px; height: {{ frameH }}; overflow-y: auto; flex-shrink: 0; background: #FBFCFE; border-right: 1px solid #E2E9F4; padding: 18px 0 40px">
+          <div class="portal-viewer-toc" style="width: 268px; height: {{ frameH }}; overflow-y: auto; flex-shrink: 0; background: #FBFCFE; border-right: 1px solid #E2E9F4; padding: 18px 0 40px">
             <div style="display: flex; align-items: baseline; gap: 8px; padding: 0 18px 14px; margin-bottom: 6px; border-bottom: 1px solid #F1F5FB">
               <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .12em; color: #93A2BA">CONTENTS</span>
               <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #C6CEDD">{{ tocCount }}</span>
@@ -219,26 +275,26 @@
         </sc-if>
 
         <sc-if value="{{ deckListOpen }}" hint-placeholder-val="{{ false }}">
-          <div style="flex: 1 1 auto; min-width: 0; height: {{ frameH }}; overflow-y: auto; background: #F7FAFE; padding: 26px 32px 60px">
+          <div class="portal-deck-list" style="flex: 1 1 auto; min-width: 0; height: {{ frameH }}; overflow-y: auto; background: #F7FAFE; padding: 26px 32px 60px">
             <sc-for list="{{ deckGroups }}" as="g" hint-placeholder-count="2">
               <div style="margin-bottom: 34px">
                 <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px">
                   <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .12em; color: #93A2BA">{{ g.tag }}</span>
-                  <span style="font-size: 13px; font-weight: 600; color: #16223A">{{ g.label }}</span>
-                  <span style="font-size: 11.5px; color: #93A2BA">{{ g.note }}</span>
+                  <span class="portal-deck-group-title" style="font-size: 13px; font-weight: 600; color: #16223A">{{ g.label }}</span>
+                  <span class="portal-deck-group-note" style="font-size: 11.5px; color: #93A2BA">{{ g.note }}</span>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px">
                   <sc-for list="{{ g.items }}" as="d" hint-placeholder-count="3">
-                    <div onClick="{{ d.onOpen }}" style="background: #fff; border: 1px solid #E2E9F4; border-radius: 12px; overflow: hidden; cursor: pointer" style-hover="border-color: #C58C78; box-shadow: 0 10px 26px rgba(16,26,46,.10)">
+                    <div class="portal-deck-card" onClick="{{ d.onOpen }}" style="background: #fff; border: 1px solid #E2E9F4; border-radius: 12px; overflow: hidden; cursor: pointer" style-hover="border-color: #C58C78; box-shadow: 0 10px 26px rgba(16,26,46,.10)">
                       <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; background: #16223A; border-bottom: 1px solid #E2E9F4">
                         <iframe id="{{ d.shotId }}" src="{{ d.shotSrc }}" scrolling="no" tabindex="-1" aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: none; pointer-events: none"></iframe>
                       </div>
-                      <div style="padding: 12px 14px 13px">
+                      <div class="portal-deck-copy" style="padding: 12px 14px 13px">
                         <div style="display: flex; align-items: baseline; gap: 10px">
-                          <span style="font-size: 14px; font-weight: 600; color: #16223A">{{ d.title }}</span>
+                          <span class="portal-deck-title" style="font-size: 14px; font-weight: 600; color: #16223A">{{ d.title }}</span>
                           <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #AFBACB; flex-shrink: 0">{{ d.count }}</span>
                         </div>
-                        <div style="margin-top: 5px; font-size: 11.5px; line-height: 1.6; color: #7C8CA6">{{ d.desc }}</div>
+                        <div class="portal-deck-desc" style="margin-top: 5px; font-size: 11.5px; line-height: 1.6; color: #7C8CA6">{{ d.desc }}</div>
                       </div>
                     </div>
                   </sc-for>
@@ -1210,6 +1266,24 @@ const DOC_SLUG = {}, DOC_OF_SLUG = {};
 [...PORTAL_DOCUMENTS, NAV[2]].forEach(n => { DOC_SLUG[n[1]] = n[0].toLowerCase(); DOC_OF_SLUG[n[0].toLowerCase()] = n[1]; });
 const BVIEW = { kanban: 1, sprint: 1, timeline: 1 };
 
+function portalSearchMatches(query, libraryEntries) {
+  const q = query.trim().toLocaleLowerCase();
+  if (!q) return { hits: [], total: 0, libraryTotal: 0 };
+  const matches = value => String(value || '').toLocaleLowerCase().includes(q);
+  const documents = PORTAL_DOCUMENTS.filter(d => matches(d[0] + ' ' + d[1] + ' ' + DOCUMENTATION_DESCRIPTIONS[d[1]] + ' 개발 문서'));
+  const decks = DECKS.filter(d => matches(d[1] + ' ' + d[2] + ' 프리젠테이션 발표 자료'));
+  const library = q.length > 1 ? (libraryEntries || []).filter(i => matches(i.title + ' ' + i.identifier + ' ' + i.source)) : [];
+  return {
+    total: documents.length + decks.length + library.length,
+    libraryTotal: library.length,
+    hits: [
+      ...documents.slice(0, 4).map(d => ({ tag: d[0], title: d[1], context: DOCUMENTATION_DESCRIPTIONS[d[1]], href: '#/doc/' + d[0].toLowerCase() })),
+      ...decks.slice(0, 3).map(d => ({ tag: 'DECK', title: d[1], context: d[2], href: '#/doc/deck/' + DECK_SLUG[d[0]] })),
+      ...library.slice(0, 6).map(i => ({ tag: 'LIB', title: i.title, context: i.source, href: '#/library/all/' + encodeURIComponent(i.id) }))
+    ]
+  };
+}
+
 function routeOf(s) {
   if (s.doc === LIBRARY_TAB) return s.libraryRoute || '#/library';
   if (s.doc === DOCUMENTATION_TAB) return '#/docs';
@@ -1282,8 +1356,41 @@ class Component extends DCLogic {
     impDomain: 'D1', form: { title: '', assignee: '', due: '', effort: 'M', domain: '' },
     pages: [], comments: [], wseq: 1, psel: null, editing: false, block: -1, draft: '', me: '', newTpl: 'blank',
     replyTo: null, replyDraft: '', showResolved: false, shots: {},
-    sopen: false, recent: [], scur: -1, full: false
+    sopen: false, recent: [], scur: -1, full: false,
+    globalQ: '', globalOpen: false, globalIndex: 0, globalLoading: false, globalSearchError: false,
+    themeMode: window.ExpressoPortalControls.getMode(), themeOpen: false,
+    changes: [], seenChanges: [], changesOpen: false, changesFailed: false
   };
+
+  loadPortalIndex() {
+    if (this._portalIndexPromise) return;
+    this.setState({ globalLoading: true, globalSearchError: false });
+    this._portalIndexPromise = fetch('./library/portal-search-index.json')
+      .then(response => { if (!response.ok) throw new Error('검색 인덱스 요청 실패'); return response.json(); })
+      .then(data => {
+        if (data.schemaVersion !== 1 || !Array.isArray(data.entries)) throw new Error('검색 인덱스 형식 오류');
+        this._portalIndex = data.entries;
+        this.setState({ globalLoading: false });
+      })
+      .catch(() => { this._portalIndexPromise = null; this.setState({ globalLoading: false, globalSearchError: true }); });
+  }
+
+  loadPortalChanges() {
+    fetch('./library/portal-changes.json', { cache: 'no-store' })
+      .then(response => { if (!response.ok) throw new Error('변경 기록 요청 실패'); return response.json(); })
+      .then(data => {
+        if (data.schemaVersion !== 1 || !Array.isArray(data.items) ||
+            data.items.some(item => typeof item.id !== 'string' || typeof item.title !== 'string' ||
+              typeof item.summary !== 'string' || typeof item.date !== 'string' ||
+              !/^#\/(?:docs|library|doc\/)/.test(item.href))) throw new Error('변경 기록 형식 오류');
+        if (this.state.changesOpen) {
+          const ids = [...new Set([...this.state.seenChanges, ...data.items.map(item => item.id)])];
+          window.ExpressoPortalControls.writeSeen(ids);
+          this.setState({ changes: data.items, seenChanges: ids, changesFailed: false });
+        } else this.setState({ changes: data.items, changesFailed: false });
+      })
+      .catch(() => this.setState({ changesFailed: true }));
+  }
 
   loadWiki() {
     const w = WStore.load();
@@ -1512,6 +1619,7 @@ class Component extends DCLogic {
   applyRoute(hash) {
     const patch = parseRoute(hash);
     if (!patch) return false;
+    Object.assign(patch, { globalQ: '', globalOpen: false, changesOpen: false, themeOpen: false });
     // 라이브러리 안의 상세 모달·필터 이동은 목록의 스크롤 위치를 유지합니다.
     const withinLibrary = this.state.doc === LIBRARY_TAB && patch.doc === LIBRARY_TAB;
     // 이 브라우저에 없는 티켓·문서를 가리키는 주소 — 보드·위키까지는 열어 준다
@@ -1539,6 +1647,8 @@ class Component extends DCLogic {
   }
 
   componentDidMount() {
+    this.setState({ seenChanges: window.ExpressoPortalControls.readSeen() });
+    this.loadPortalChanges();
     try {
       const raw = window.localStorage.getItem(KEY);
       if (raw) this.setState({ prog: JSON.parse(raw) });
@@ -1558,8 +1668,11 @@ class Component extends DCLogic {
     };
     window.addEventListener('hashchange', this._onHash);
     this._onKey = e => {
+      if (e.key === 'Escape') {
+        this.setState({ globalOpen: false, themeOpen: false, changesOpen: false });
+      }
       if (e.key === '/' && e.target.tagName !== 'INPUT') {
-        const el = document.querySelector('input[placeholder^="도메인"]');
+        const el = document.getElementById('portal-global-query') || document.querySelector('input[placeholder^="도메인"]');
         if (el) { e.preventDefault(); el.focus(); }
       }
     };
@@ -1723,6 +1836,12 @@ class Component extends DCLogic {
     const s = this.state, prog = s.prog;
     const sel = D.find(d => d[0] === s.sel) || D[0];
     const q = s.q.trim().toLowerCase();
+    const global = portalSearchMatches(s.globalQ, this._portalIndex);
+    const globalHits = global.hits.map((hit, index) => ({ ...hit, onOpen: ev => {
+      ev.preventDefault();
+      this.applyRoute(hit.href);
+    }, active: index === s.globalIndex }));
+    const unreadChanges = s.changes.filter(item => !s.seenChanges.includes(item.id)).length;
 
     let done = 0, wip = 0;
     D.forEach(d => tasksOf(d).forEach(t => { const v = prog[t.id] || 0; if (v === 2) done++; else if (v === 1) wip++; }));
@@ -1897,11 +2016,64 @@ class Component extends DCLogic {
 
     return {
       docVersion: this.props.docVersion ?? 'v1.1 · 2026.08',
+      modernHeaderOpen: !!s.doc,
+      globalQ: s.globalQ,
+      globalOpen: s.globalOpen && !!s.globalQ.trim(),
+      globalHits,
+      globalHasHits: globalHits.length > 0,
+      globalHitCount: global.total.toLocaleString('ko-KR'),
+      globalLoading: s.globalLoading && s.globalQ.trim().length > 1,
+      globalEmpty: !globalHits.length && !s.globalLoading && !s.globalSearchError && s.globalQ.trim().length > 1,
+      globalHintShort: !globalHits.length && s.globalQ.trim().length === 1,
+      globalSearchError: s.globalSearchError && s.globalQ.trim().length > 1,
+      globalShowAll: s.globalQ.trim().length > 1,
+      globalAllHref: '#/library/all?q=' + encodeURIComponent(s.globalQ.trim()),
+      globalOpenAll: ev => { ev.preventDefault(); this.applyRoute('#/library/all?q=' + encodeURIComponent(this.state.globalQ.trim())); },
+      onGlobalSearch: ev => {
+        const value = ev.target.value;
+        this.setState({ globalQ: value, globalOpen: !!value.trim(), globalIndex: 0 });
+        if (value.trim().length > 1) this.loadPortalIndex();
+      },
+      onGlobalSearchFocus: () => { if (this.state.globalQ.trim()) this.setState({ globalOpen: true }); },
+      onGlobalSearchBlur: () => setTimeout(() => this.setState({ globalOpen: false }), 120),
+      onGlobalSearchKey: ev => {
+        if (ev.key === 'Escape') { this.setState({ globalOpen: false }); return; }
+        if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+          ev.preventDefault();
+          if (globalHits.length) this.setState({ globalIndex: (s.globalIndex + (ev.key === 'ArrowDown' ? 1 : -1) + globalHits.length) % globalHits.length, globalOpen: true });
+        }
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          if (globalHits.length) this.applyRoute(globalHits[Math.min(s.globalIndex, globalHits.length - 1)].href);
+          else if (s.globalQ.trim().length > 1) this.applyRoute('#/library/all?q=' + encodeURIComponent(s.globalQ.trim()));
+        }
+      },
+      themeOpen: s.themeOpen,
+      toggleTheme: () => this.setState({ themeOpen: !s.themeOpen, changesOpen: false, globalOpen: false }),
+      themeOptions: [['light','라이트'],['dark','다크'],['system','시스템']].map(([mode,label]) => ({
+        label, active: mode === s.themeMode, mark: mode === s.themeMode ? '✓' : '',
+        onPick: () => { window.ExpressoPortalControls.setMode(mode); this.setState({ themeMode: mode, themeOpen: false }); }
+      })),
+      changesOpen: s.changesOpen,
+      toggleChanges: () => {
+        const opening = !s.changesOpen;
+        if (opening) {
+          const ids = [...new Set([...s.seenChanges, ...s.changes.map(item => item.id)])];
+          window.ExpressoPortalControls.writeSeen(ids);
+          this.setState({ changesOpen: true, seenChanges: ids, themeOpen: false, globalOpen: false });
+        } else this.setState({ changesOpen: false });
+      },
+      unreadChanges: unreadChanges.toLocaleString('ko-KR'),
+      hasUnreadChanges: unreadChanges > 0,
+      changesFailed: s.changesFailed,
+      changeItems: s.changes.map(item => ({ ...item, onOpen: ev => { ev.preventDefault(); this.applyRoute(item.href); } })),
+      resetChangeReads: () => { window.ExpressoPortalControls.writeSeen([]); this.setState({ seenChanges: [] }); },
       goHome: () => {
         this._frame = null;
         this.setState({
           sel: 'D1', q: '', role: 'all', status: 'all',
           doc: DOCUMENTATION_TAB, deck: null, toc: [], tocAt: -1,
+          globalOpen: false, themeOpen: false, changesOpen: false,
           view: 'console', section: 'domain', tsel: null
         });
         window.scrollTo(0, 0);
@@ -1926,6 +2098,7 @@ class Component extends DCLogic {
               doc: n[1],
               libraryRoute: n[1] === LIBRARY_TAB ? '#/library' : s.libraryRoute,
               deck: null,
+              globalOpen: false, themeOpen: false, changesOpen: false,
               view: 'console',
               toc: [], tocAt: -1
             });
@@ -1943,7 +2116,7 @@ class Component extends DCLogic {
         })
       })),
       shellClass: s.doc === LIBRARY_TAB ? 'portal-library-active' : s.doc === DOCUMENTATION_TAB ? 'portal-documentation-active' : '',
-      shellMinWidth: s.doc === LIBRARY_TAB || s.doc === DOCUMENTATION_TAB ? '0' : '1024px',
+      shellMinWidth: s.doc ? '0' : '1024px',
       libraryOpen: s.doc === LIBRARY_TAB,
       libraryRoute: s.libraryRoute || '#/library',
       viewerOpen: !!s.doc && s.doc !== LIBRARY_TAB && s.doc !== DOCUMENTATION_TAB,
