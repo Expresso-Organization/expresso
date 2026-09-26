@@ -4,3 +4,4 @@ previews/** -text -whitespace linguist-generated
 items/** linguist-generated
 acquisitions.json linguist-generated
 acquisition-run.json linguist-generated
+curation.json linguist-generated

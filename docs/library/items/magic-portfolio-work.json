@@ -1,0 +1,62 @@
+{
+  "id": "magic-portfolio-work",
+  "sourceUrl": "https://github.com/magicuidesign/portfolio/blob/5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b/src/components/section/work-section.tsx",
+  "sourceRevision": "5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b",
+  "roles": [
+    "experience"
+  ],
+  "roleEvidence": "원본 데이터 구조 검토",
+  "roleMethod": "source_review",
+  "materials": [
+    {
+      "path": "./library/materials/magic-portfolio/work.json",
+      "sha256": "c55d7441a1bf3573b93fdd6dc955856e14da59dad3b2b43aa48e1b5d129b41b0",
+      "bytes": 6506,
+      "label": "원본 코드 묶음",
+      "kind": "registry_source"
+    },
+    {
+      "path": "./library/materials/magic-portfolio/LICENSE.txt",
+      "sha256": "3d801bfc3879f9e9ea11043bb614aa8caa59a4b981e89eac6074a99ddfc9573c",
+      "bytes": 1070,
+      "label": "MIT 라이선스 원문",
+      "kind": "license"
+    }
+  ],
+  "observations": [
+    "DATA.work를 props로 분리해야 합니다.",
+    "현재 경력의 Present 문구 현지화와 키보드 아코디언 검증이 필요합니다."
+  ],
+  "inputs": [
+    "company",
+    "title",
+    "start",
+    "end",
+    "description",
+    "logoUrl"
+  ],
+  "framework": "React / Next.js / Tailwind CSS",
+  "sourceLicense": "https://github.com/magicuidesign/portfolio/blob/5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b/LICENSE",
+  "acquisitionStatus": "source_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/section/work-section.tsx",
+      "sha256": "fff69cc122a11af262c8255cbbee95af5187139a27bd93da1c44035e9482dfa4",
+      "bytes": 3418
+    },
+    {
+      "path": "src/components/ui/accordion.tsx",
+      "sha256": "c52f61ab37581abb23c243dcf6c82d23c9074d8d9ecceeba515ff02c2a1b35a3",
+      "bytes": 1909
+    },
+    {
+      "path": "src/lib/utils.ts",
+      "sha256": "46aa759ac54e621d043e31975433d26c7a70bed4a6b5fac063ab9007f1cb5df3",
+      "bytes": 495
+    }
+  ],
+  "usageNote": "고정 버전의 지정 파일 묶음입니다. 완전한 실행 의존성 묶음은 아니며 설치·렌더링 전입니다."
+}

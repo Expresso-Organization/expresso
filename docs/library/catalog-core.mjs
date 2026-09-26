@@ -61,14 +61,14 @@ export function parseLibraryRoute(hash) {
   return {
     type: Object.hasOwn(TYPES, parts[1]) ? parts[1] : 'all',
     id: decode(parts[2]), source: params.get('source') || '', q: params.get('q') || '',
-    category: params.get('category') || '', ...(params.get('role') ? {role:params.get('role')} : {}), ...(params.get('availability') ? {availability:params.get('availability')} : {}), page: Number.isSafeInteger(page) && page > 0 ? page : 1,
+    category: params.get('category') || '', ...Object.fromEntries(['role','availability','selection','family'].filter(k=>params.get(k)).map(k=>[k,params.get(k)])), page: Number.isSafeInteger(page) && page > 0 ? page : 1,
   };
 }
 export function libraryRoute(state) {
   const type = Object.hasOwn(TYPES, state.type) ? state.type : 'all';
   let path = '#/library' + (type !== 'all' || state.id ? '/' + type : '') + (state.id ? '/' + encodeURIComponent(state.id) : '');
   const params = new URLSearchParams();
-  for (const key of ['source','category','q','role','availability']) if (state[key]) params.set(key, state[key]);
+  for (const key of ['source','category','q','role','availability','selection','family']) if (state[key]) params.set(key, state[key]);
   if (state.page > 1) params.set('page', String(state.page));
   return path + (params.size ? '?' + params.toString() : '');
 }
@@ -80,6 +80,8 @@ export function selectItems(data, state) {
     if (state.source && item.sourceSite !== state.source) return false;
     if (state.category && !item.categories.includes(state.category)) return false;
     if (state.role && !item.roles?.includes(state.role)) return false;
+    if (state.selection && item.selection!==state.selection) return false;
+    if (state.family && item.familyId!==state.family) return false;
     if (state.availability === 'preview' && !item.preview) return false;
     if (state.availability === 'source' && item.acquisitionStatus !== 'source_ready') return false;
     if (state.availability === 'waiting' && !['permission_needed','access_blocked'].includes(item.acquisitionStatus)) return false;

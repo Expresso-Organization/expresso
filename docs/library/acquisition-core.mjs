@@ -1,6 +1,6 @@
 import {safeUrl,RIGHTS,validateCatalog} from './catalog-core.mjs';
 export const ACQUISITION = Object.freeze({source_ready:'소스 확보',reference_ready:'참고 자료 확보',prompt_ready:'프롬프트 확보',permission_needed:'이용 범위 확인 필요',access_blocked:'접근·연결 확인 필요',out_of_scope:'공급자 탐색 대상'});
-export const ROLES = Object.freeze({hero:'대표 소개','project-grid':'프로젝트·작품',experience:'경력·과정',outcome:'성과·수치',evidence:'평가·근거',contact:'연락·마무리',navigation:'탐색',capability:'역량·기여','supporting-page':'보조 화면','supporting-ui':'보조 UI','technical-evidence':'기술 설명',icon:'아이콘',supplier:'공급자',interaction:'상호작용','quality-workflow':'제작·품질 검토'});
+export const ROLES = Object.freeze({hero:'대표 소개','project-grid':'프로젝트·작품','project-detail':'프로젝트 상세',experience:'경력·과정',education:'학력·교육',research:'연구·논문',media:'이미지·영상',outcome:'성과·수치',evidence:'평가·근거',contact:'연락·마무리',navigation:'탐색',capability:'역량·기여','supporting-page':'보조 화면','supporting-ui':'보조 UI','technical-evidence':'기술 설명',icon:'아이콘',supplier:'공급자',interaction:'상호작용','quality-workflow':'제작·품질 검토'});
 export function safeLocal(value) {return typeof value==='string' && /^\.\/library\/(items|materials|previews)\/[a-zA-Z0-9_./-]+$/.test(value) && !value.split('/').includes('..');}
 export function validPreview(preview) {
   if (preview===null) return true;

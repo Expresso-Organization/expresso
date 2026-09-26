@@ -1,0 +1,53 @@
+{
+  "id": "magic-portfolio-timeline",
+  "sourceUrl": "https://github.com/magicuidesign/portfolio/blob/5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b/src/components/timeline.tsx",
+  "sourceRevision": "5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b",
+  "roles": [
+    "experience"
+  ],
+  "roleEvidence": "원본 데이터 구조 검토",
+  "roleMethod": "source_review",
+  "materials": [
+    {
+      "path": "./library/materials/magic-portfolio/timeline.json",
+      "sha256": "4bdb1200132e4f26562c4198423c7047c0730ca6e815fbacfb5a7a97e105929f",
+      "bytes": 3298,
+      "label": "원본 코드 묶음",
+      "kind": "registry_source"
+    },
+    {
+      "path": "./library/materials/magic-portfolio/LICENSE.txt",
+      "sha256": "3d801bfc3879f9e9ea11043bb614aa8caa59a4b981e89eac6074a99ddfc9573c",
+      "bytes": 1070,
+      "label": "MIT 라이선스 원문",
+      "kind": "license"
+    }
+  ],
+  "observations": [
+    "children 기반 조합을 연도·기간·내용 배열로 감싸야 합니다.",
+    "긴 내용과 모바일 가로 방향의 읽기 순서를 검증해야 합니다."
+  ],
+  "inputs": [
+    "orientation",
+    "items"
+  ],
+  "framework": "React / Next.js / Tailwind CSS",
+  "sourceLicense": "https://github.com/magicuidesign/portfolio/blob/5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b/LICENSE",
+  "acquisitionStatus": "source_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/timeline.tsx",
+      "sha256": "cf5de225d98dd4ed1786ba0ac8ca2819f4ac31edaee2df07475cdc3884dffae5",
+      "bytes": 2297
+    },
+    {
+      "path": "src/lib/utils.ts",
+      "sha256": "46aa759ac54e621d043e31975433d26c7a70bed4a6b5fac063ab9007f1cb5df3",
+      "bytes": 495
+    }
+  ],
+  "usageNote": "고정 버전의 지정 파일 묶음입니다. 완전한 실행 의존성 묶음은 아니며 설치·렌더링 전입니다."
+}

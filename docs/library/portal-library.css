@@ -67,6 +67,8 @@
 .lib-page-select { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
 .lib-page-select select { padding: 9px; border: 1px solid var(--ex-border-strong); border-radius: 7px; background: var(--ex-bg); }
 .lib-page-select select:disabled { cursor: default; color: var(--ex-fg-muted); }
+.lib-curation-links { flex-wrap: wrap; margin-block: 14px; }
+.lib-curation-links a { border: 1px solid var(--ex-border); border-radius: 7px; padding: 8px 14px; background: var(--ex-bg); font-size: var(--ex-text-xs); }
 .lib-pagination [aria-disabled] { color: var(--ex-fg-muted); }
 .lib-message { text-align: center; padding: 64px 24px; }
 .lib-message h1 { font-size: var(--ex-text-3xl); }

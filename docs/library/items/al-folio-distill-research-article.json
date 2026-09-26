@@ -1,0 +1,52 @@
+{
+  "id": "al-folio-distill-research-article",
+  "sourceUrl": "https://github.com/al-org-dev/al-folio-distill/blob/c63daebbd1448a1c0ffa5fd8241ccf6161f775fa/templates/distill/render.liquid",
+  "sourceRevision": "c63daebbd1448a1c0ffa5fd8241ccf6161f775fa",
+  "roles": [
+    "research",
+    "project-detail"
+  ],
+  "roleEvidence": "원본 데이터 구조 검토",
+  "roleMethod": "source_review",
+  "materials": [
+    {
+      "path": "./library/materials/al-folio-distill/research-article.json",
+      "sha256": "d1258272239a40ed6ff88edf7d945a9297384cb046f1a8f3c3dd521efa983e40",
+      "bytes": 4358,
+      "label": "원본 코드 묶음",
+      "kind": "registry_source"
+    },
+    {
+      "path": "./library/materials/al-folio-distill/LICENSE.txt",
+      "sha256": "5ab2a5be971a7ebaa7374280c92f3a7896c6a4ad9b639110696f76f2a265b57c",
+      "bytes": 1077,
+      "label": "MIT 라이선스 원문",
+      "kind": "license"
+    }
+  ],
+  "observations": [
+    "Distill 전용 요소와 스크립트가 필요하므로 구조 참고 후보로 보존합니다.",
+    "수식·그림·인용은 별도 허용 블록으로 이식해야 합니다."
+  ],
+  "inputs": [
+    "title",
+    "authors",
+    "toc",
+    "content",
+    "bibliography"
+  ],
+  "framework": "Jekyll / Liquid",
+  "sourceLicense": "https://github.com/al-org-dev/al-folio-distill/blob/c63daebbd1448a1c0ffa5fd8241ccf6161f775fa/LICENSE",
+  "acquisitionStatus": "source_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "templates/distill/render.liquid",
+      "sha256": "78eb23499cb047a88b62bd981d918bebf33abb874e0cf266a2c3e17cdf47377c",
+      "bytes": 3862
+    }
+  ],
+  "usageNote": "고정 버전의 지정 파일 묶음입니다. 완전한 실행 의존성 묶음은 아니며 설치·렌더링 전입니다."
+}

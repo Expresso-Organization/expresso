@@ -72,7 +72,7 @@ ROLE_RULES=[
  (r'hero|/hero/','hero','대표 소개와 핵심 메시지를 배치할 후보입니다.'),
  (r'bento|gallery|portfolio|project|case.study','project-grid','작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.'),
  (r'timeline|experience|career|history','experience','경력과 과정의 순서를 설명할 후보입니다.'),
- (r'chart|graph|metric|stat|growth|result','outcome','성과와 수치의 비교를 표현할 후보입니다.'),
+ (r'\b(?:chart|graph|metrics?|stats?|growth|results?)(?:\b|_)','outcome','성과와 수치의 비교를 표현할 후보입니다.'),
  (r'testimonial|review|quote','evidence','협업 평가와 근거를 배치할 후보입니다.'),
  (r'footer|contact|/cta/|cta-','contact','본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.'),
  (r'navbar|navigation|menu','navigation','페이지·사례 사이의 탐색을 구성할 후보입니다.'),
@@ -82,6 +82,14 @@ def role_for(item):
     if item['artifactKind']=='icon':return ['icon'], '아이콘의 원본 의미 분류를 탐색·링크·자료 유형 표시에 대응합니다.'
     if item['artifactKind']=='diagram':return ['technical-evidence'], '시스템 구조·과정·기술 기여를 설명하는 도식 후보입니다.'
     if item['artifactKind']=='registry':return ['supplier'], '공식 registry와 이용 조건을 추가 탐색할 공급자입니다.'
+    if item['sourceSite']=='watermelon':
+        name=item['sourceItemId']
+        if re.fullmatch(r'career-[1-4]',name):return ['supporting-ui'],'원본 jobs·지원 링크를 확인한 채용 공고 UI입니다. 개인 경력 이력과 구분합니다.'
+        if name=='timeline':return ['supporting-ui'],'원본 startHour·duration·드래그 슬롯을 확인한 시간대별 일정 편집기입니다.'
+        if name=='portfolio-dashboard':return ['supporting-ui'],'원본 totalBalance·자산 배분을 확인한 금융 대시보드입니다.'
+        if name=='project-management-dashboard':return ['supporting-ui'],'원본 Tasks·Calendar·Team을 확인한 프로젝트 관리 대시보드입니다.'
+        if name in ('code','code-block','code-tabs','terminal','preview-link-card'):return ['technical-evidence'],'코드·실행 결과·외부 링크 표현 후보입니다. 섹션으로 조합하고 출처 데이터를 연결해야 합니다.'
+        if name in ('browser','device','video','audio-player','mobile-video-player'):return ['media'],'스크린샷·영상·음성 표현 후보입니다. 실제 자산과 대체 표현 검증이 필요합니다.'
     text=' '.join([item['sourceItemId'],item['title'],*item['categories']]).lower()
     for pattern,role,reason in ROLE_RULES:
         if re.search(pattern,text):return [role],reason
