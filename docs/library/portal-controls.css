@@ -17,11 +17,11 @@
 .portal-result-message { margin:0; padding:16px; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); }
 .portal-header-actions { display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; }
 .portal-action-wrap { position:relative; }
-.portal-top-action { display:inline-flex; align-items:center; gap:8px; height:40px; padding:0 12px; border:1px solid rgba(255,255,255,.19); border-radius:8px; background:rgba(255,255,255,.05); color:#fff; font:12px 'Pretendard Variable',Pretendard,sans-serif; cursor:pointer; }
+.portal-top-action { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; padding:0; border:1px solid rgba(255,255,255,.19); border-radius:8px; background:rgba(255,255,255,.05); color:#fff; cursor:pointer; }
 .portal-top-action:hover,.portal-top-action[aria-expanded="true"] { background:rgba(255,255,255,.14); }
 .portal-top-action:focus-visible { outline:2px solid #e0b486; outline-offset:2px; }
 .portal-top-action svg { width:17px; height:17px; }
-.portal-unread { display:grid; min-width:18px; height:18px; place-items:center; padding-inline:3px; border-radius:999px; background:#e0b486; color:#16223a; font:10px 'JetBrains Mono',monospace; }
+.portal-unread { position:absolute; top:-5px; right:-5px; display:grid; min-width:18px; height:18px; place-items:center; padding-inline:3px; border-radius:999px; background:#e0b486; color:#16223a; font:10px 'JetBrains Mono',monospace; }
 .portal-top-popover { position:absolute; top:calc(100% + 8px); right:0; z-index:40; border:1px solid var(--ex-border); border-radius:9px; background:var(--ex-bg); color:var(--ex-fg); box-shadow:0 16px 40px rgba(10,20,40,.22); }
 .portal-theme-popover { width:184px; padding:8px; }
 .portal-theme-popover p { margin:6px 8px 10px; color:var(--ex-fg-muted); font-size:var(--ex-text-2xs); }
@@ -44,10 +44,8 @@ html[data-theme="dark"] .portal-global-search { color:#9d9da3; }
 @media(max-width:768px) {
   .portal-site-shell .portal-header { flex-wrap:wrap; padding:16px!important; }
   .portal-global-search { order:3; flex:0 0 100%; max-width:none; margin:0; }
-  .portal-top-action { padding-inline:9px; }
   .portal-viewer-header { flex-wrap:wrap; padding:12px 16px!important; }
 }
-@media(max-width:430px) { .portal-top-action > span:not(.portal-unread) { display:none; } }
 html[data-theme="dark"] .portal-viewer { background:var(--ex-bg)!important; color:var(--ex-fg); }
 html[data-theme="dark"] .portal-viewer-header { background:var(--ex-bg)!important; color:var(--ex-fg); border-color:var(--ex-border)!important; }
 html[data-theme="dark"] .portal-viewer-toc,html[data-theme="dark"] .portal-deck-list { background:var(--ex-bg-sunken)!important; border-color:var(--ex-border)!important; }

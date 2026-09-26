@@ -154,7 +154,7 @@
     <div class="portal-header-actions">
       <div class="portal-action-wrap">
         <button class="portal-top-action" aria-label="테마 변경" aria-expanded="{{ themeOpen }}" onClick="{{ toggleTheme }}" title="테마 변경">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/></svg><span>테마</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/></svg>
         </button>
         <sc-if value="{{ themeOpen }}" hint-placeholder-val="{{ false }}">
           <div class="portal-top-popover portal-theme-popover" aria-label="테마 모드 선택">
@@ -167,7 +167,7 @@
       </div>
       <div class="portal-action-wrap">
         <button class="portal-top-action portal-bell" aria-label="개발 포털 변경 알림" aria-expanded="{{ changesOpen }}" onClick="{{ toggleChanges }}" title="개발 포털 변경 알림">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-2.5 8-2.5 9h17C20.5 16 18 15 18 8Z"/><path d="M10 20h4"/></svg><span>알림</span><sc-if value="{{ hasUnreadChanges }}" hint-placeholder-val="{{ false }}"><span class="portal-unread">{{ unreadChanges }}</span></sc-if>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-2.5 8-2.5 9h17C20.5 16 18 15 18 8Z"/><path d="M10 20h4"/></svg><sc-if value="{{ hasUnreadChanges }}" hint-placeholder-val="{{ false }}"><span class="portal-unread">{{ unreadChanges }}</span></sc-if>
         </button>
         <sc-if value="{{ changesOpen }}" hint-placeholder-val="{{ false }}">
           <div class="portal-top-popover portal-changes" aria-label="개발 포털 변경 사항">
@@ -193,9 +193,9 @@
     </sc-if>
   </div>
 
-  <div style="display: flex; align-items: center; gap: 4px; padding: 0 32px; background: #1D2B47; border-bottom: 1px solid rgba(255,255,255,.08); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none">
-    <sc-for list="{{ navLinks }}" as="n" hint-placeholder-count="3">
-      <a href="{{ n.href }}" onClick="{{ n.onClick }}" style="display: flex; align-items: center; gap: 7px; padding: 11px 13px; font-size: 12.5px; font-weight: {{ n.weight }}; color: {{ n.color }}; background: {{ n.bg }}; white-space: nowrap; flex-shrink: 0; cursor: pointer; border-bottom: 2px solid {{ n.edge }}" style-hover="color: #fff; border-bottom-color: #E0B486; background: rgba(255,255,255,.09)">
+  <div class="portal-document-nav" style="display: flex; align-items: center; gap: 4px; padding: 0 32px; background: #1D2B47; border-bottom: 1px solid rgba(255,255,255,.08); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none">
+    <sc-for list="{{ navLinks }}" as="n" hint-placeholder-count="7">
+      <a id="portal-nav-{{ n.tag }}" href="{{ n.href }}" onClick="{{ n.onClick }}" style="display: flex; align-items: center; gap: 7px; padding: 11px 13px; font-size: 12.5px; font-weight: {{ n.weight }}; color: {{ n.color }}; background: {{ n.bg }}; white-space: nowrap; flex-shrink: 0; cursor: pointer; border-bottom: 2px solid {{ n.edge }}" style-hover="color: #fff; border-bottom-color: #E0B486; background: rgba(255,255,255,.09)">
         <span style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: .08em; color: {{ n.tagColor }}">{{ n.tag }}</span>{{ n.label }}
       </a>
     </sc-for>
@@ -1196,8 +1196,13 @@ const DOCUMENTATION_TAB = '개발 문서';
 const NAV = [
   ['DOC', DOCUMENTATION_TAB, '', '#E0B486'],
   ['LIB', LIBRARY_TAB, '', '#E0B486'],
-  ['DECK', DECK_TAB, '', '#E0B486']
+  ['DECK', DECK_TAB, '', '#E0B486'],
+  ['SRS', '설계서', GD, '#E0B486'],
+  ['UI', '화면 정의서', SC, '#7FD3AE'],
+  ['DS', '디자인 시스템', DS, '#D8B49A'],
+  ['ICON', '아이콘', IC, '#D8B49A']
 ];
+const DIRECT_DOC_TABS = new Set(NAV.slice(3).map(n => n[1]));
 const PORTAL_DOCUMENTS = [
   ['SRS', '설계서', GD, '#E0B486'],
   ['SPEC', '기능 명세서', F, '#E0B486'],
@@ -1263,7 +1268,7 @@ FILE_NAV[DECK] = DECK_TAB;
 // 티켓과 위키 문서는 각자 브라우저(localStorage)에 있습니다 — 주소를 받은
 // 사람에게 그 id가 없으면 보드·위키까지만 열고 선택은 비웁니다(applyRoute).
 const DOC_SLUG = {}, DOC_OF_SLUG = {};
-[...PORTAL_DOCUMENTS, NAV[2]].forEach(n => { DOC_SLUG[n[1]] = n[0].toLowerCase(); DOC_OF_SLUG[n[0].toLowerCase()] = n[1]; });
+[...PORTAL_DOCUMENTS, NAV.find(n => n[1] === DECK_TAB)].forEach(n => { DOC_SLUG[n[1]] = n[0].toLowerCase(); DOC_OF_SLUG[n[0].toLowerCase()] = n[1]; });
 const BVIEW = { kanban: 1, sprint: 1, timeline: 1 };
 
 function portalSearchMatches(query, libraryEntries) {
@@ -1727,6 +1732,15 @@ class Component extends DCLogic {
     this.watchDeckList();
     if (this._prevDoc === this.state.doc) return;
     this._prevDoc = this.state.doc;
+    const nav = document.querySelector('.portal-document-nav');
+    const activeTag = this.state.doc === DOCUMENTATION_TAB ||
+      (PORTAL_DOCUMENTS.some(d => d[1] === this.state.doc) && !DIRECT_DOC_TABS.has(this.state.doc))
+      ? 'DOC' : (NAV.find(n => n[1] === this.state.doc) || [])[0];
+    const activeLink = activeTag && document.getElementById('portal-nav-' + activeTag);
+    if (nav && activeLink && nav.scrollWidth > nav.clientWidth) {
+      const navBox = nav.getBoundingClientRect(), linkBox = activeLink.getBoundingClientRect();
+      nav.scrollLeft += linkBox.left - navBox.left - (nav.clientWidth - linkBox.width) / 2;
+    }
     if (!this.state.doc || !NAV_TOC[this.state.doc]) return;   // 목차를 붙일 문서만 훑는다
     setTimeout(() => {
       const fr = document.getElementById('docframe');
@@ -2081,11 +2095,11 @@ class Component extends DCLogic {
       headerLabel: s.doc === LIBRARY_TAB ? 'LIBRARY' : s.doc ? 'DOCUMENTATION' : 'DEV CONSOLE',
       navLinks: NAV.map(n => {
         const active = n[1] === DOCUMENTATION_TAB
-          ? s.doc === DOCUMENTATION_TAB || PORTAL_DOCUMENTS.some(d => d[1] === s.doc)
+          ? s.doc === DOCUMENTATION_TAB || (PORTAL_DOCUMENTS.some(d => d[1] === s.doc) && !DIRECT_DOC_TABS.has(s.doc))
           : s.doc === n[1];
         return {
           tag: n[0], label: n[1], tagColor: n[3],
-          href: n[1] === LIBRARY_TAB ? '#/library' : n[1] === DECK_TAB ? '#/doc/deck' : '#/docs',
+          href: n[1] === LIBRARY_TAB ? '#/library' : n[1] === DOCUMENTATION_TAB ? '#/docs' : '#/doc/' + DOC_SLUG[n[1]],
           color: active ? '#fff' : '#C6CEDD',
           weight: active ? 600 : 400,
           bg: active ? 'rgba(255,255,255,.07)' : 'transparent',

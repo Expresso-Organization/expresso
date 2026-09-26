@@ -17,10 +17,12 @@ const notes={
 };
 const newSubject='포털 통합 검색·테마·변경 알림 추가';
 const newSummary='문서·발표 자료·라이브러리를 함께 검색하고 테마 및 변경 알림을 상단에서 확인합니다.';
+const directTabsSubject='문서 바로가기 탭과 아이콘 전용 도구 버튼 추가';
+const directTabsSummary='설계서·화면 정의서·디자인 시스템·아이콘을 상단 탭에서 열고, 테마와 알림을 아이콘 버튼으로 조작합니다.';
 const history=lines.filter(Boolean).map(line=>{
  const [id,stamp,subject]=line.split('\x1f');
  const title=subject.replace(/^[a-z]+: /,'');
- return {id,date:stamp.slice(0,10),title,summary:title===newSubject?newSummary:notes[id.slice(0,8)]||'개발 포털 화면과 자료 구성이 업데이트됐습니다.',href:title===newSubject||id.startsWith('d941')?'#/docs':'#/library'};
+ return {id,date:stamp.slice(0,10),title,summary:title===directTabsSubject?directTabsSummary:title===newSubject?newSummary:notes[id.slice(0,8)]||'개발 포털 화면과 자료 구성이 업데이트됐습니다.',href:title===directTabsSubject||title===newSubject||id.startsWith('d941')?'#/docs':'#/library'};
 });
 const inHistory=history.some(item=>item.title===newSubject);
 const draft=inHistory?[]:[{id:'portal-controls-2026-09-26',date:'2026-09-26',title:newSubject,summary:newSummary,href:'#/docs'}];
