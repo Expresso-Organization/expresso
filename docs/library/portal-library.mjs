@@ -31,6 +31,10 @@ class ExpressoLibrary extends HTMLElement {
       const button=event.target.closest('button');
       if(button?.dataset.live) this.openLive(button);
       if(button?.hasAttribute('data-play-video')) this.playVideo(button);
+      if(button?.hasAttribute('data-filter-toggle')) {
+        this.filtersOpen=!this.filtersOpen;button.setAttribute('aria-expanded',String(this.filtersOpen));
+        this.querySelector('#lib-advanced-filters').hidden=!this.filtersOpen;
+      }
       if(button?.dataset.copy) this.copyMaterial(button);
       if(button?.hasAttribute('data-detail-retry')) this.loadDetail(this.data.items.find(i=>i.id===this.state.id),true);
       if(button?.hasAttribute('data-show-code')) this.showCode(button);
@@ -74,7 +78,9 @@ class ExpressoLibrary extends HTMLElement {
     const results = selectItems(data, state);
     const sources = new Map(data.sources.map(source => [source.id, source]));
     const selectedSource = sources.get(state.source);
-    const filtered = ['q','source','category','role','availability','selection','family'].some(key=>state[key]);
+    const filterCount=['q','source','category','role','availability','selection','family'].filter(key=>state[key]).length;
+    const advancedCount=['role','availability','selection'].filter(key=>state[key]).length;
+    const filtered=filterCount>0;
     const categories = [...new Set(data.items.filter(i => matchesType(i,state.type) && (!state.source || i.sourceSite === state.source)).flatMap(i => i.categories))].sort();
     const route = patch => escape(libraryRoute({...state, ...patch}));
     const selected = data.items.find(i => i.id === state.id);
@@ -101,15 +107,21 @@ class ExpressoLibrary extends HTMLElement {
           <p class="lib-side-note">항목 수에는 스타일 변형과 공급자 목록이 포함됩니다. 실제 사용 가능한 컴포넌트 수는 검증 후 집계합니다.</p>
         </aside>
         <main class="lib-main">
-          <div class="lib-controls">
-            <form data-search role="search"><label class="lib-sr" for="lib-query">라이브러리 검색</label><input type="search" id="lib-query" name="q" value="${escape(state.q)}" placeholder="이름, 식별자, 출처 검색"><button type="submit">검색</button></form>
-            <label class="lib-mobile-source">사이트<select name="source" id="lib-source" aria-label="사이트"><option value="">모든 사이트</option>${data.sources.map(s=>`<option value="${s.id}" ${s.id===state.source?'selected':''}>${escape(s.name)}</option>`).join('')}</select></label>
-            <label>분류<select name="category" id="lib-category" aria-label="분류"><option value="">모든 분류</option>${categories.map(c=>`<option value="${escape(c)}" ${c===state.category?'selected':''}>${escape(c)}</option>`).join('')}</select></label>
-          </div>
-          <div class="lib-extra-filters"><label>포트폴리오 역할<select name="role" aria-label="포트폴리오 역할"><option value="">모든 역할</option>${Object.entries(ROLES).map(([id,name])=>`<option value="${id}" ${state.role===id?'selected':''}>${name}</option>`).join('')}</select></label><label>확보 상태<select name="availability" aria-label="확보 상태">${[['','전체 자료'],['preview','미리보기 있음'],['example','실행 예제 있음'],['video','참고 영상 있음'],['source','소스·자산 확보'],['waiting','확인 대기']].map(([id,name])=>`<option value="${id}" ${state.availability===id?'selected':''}>${name}</option>`).join('')}</select></label><label>후보 선별<select name="selection" aria-label="후보 선별"><option value="">전체 항목</option>${Object.entries(SELECTION).map(([id,name])=>`<option value="${id}" ${state.selection===id?'selected':''}>${name}</option>`).join('')}</select></label><a href="${route({q:'',source:'',category:'',role:'',availability:'',selection:'',family:'',page:1,id:''})}">필터 초기화</a></div>
-          ${state.family?`<p class="lib-meta">이름 계열: ${escape(state.family)} · 구조가 같은지는 검토 전입니다. <a href="${route({family:'',page:1})}">계열 필터 해제</a></p>`:''}
-          ${TYPE_DESCRIPTIONS[state.type]?`<p class="lib-meta">${TYPE_DESCRIPTIONS[state.type]}</p>`:''}
-          <div class="lib-result-heading"><h2>${selectedSource ? escape(selectedSource.name) : typeLabel(state.type)} <span>${number(results.total)}개</span></h2>
+          <section class="lib-toolbar" aria-label="자료 검색과 필터">
+            <div class="lib-controls">
+              <form data-search role="search"><label for="lib-query">검색</label><div class="lib-search-field"><input type="search" id="lib-query" name="q" value="${escape(state.q)}" placeholder="이름이나 출처 검색"><button type="submit">검색</button></div></form>
+              <label class="lib-mobile-source" for="lib-source">사이트<select name="source" id="lib-source" aria-label="사이트"><option value="">모든 사이트</option>${data.sources.map(s=>`<option value="${s.id}" ${s.id===state.source?'selected':''}>${escape(s.name)}</option>`).join('')}</select></label>
+              <label for="lib-category">분류<select name="category" id="lib-category" aria-label="분류"><option value="">모든 분류</option>${categories.map(c=>`<option value="${escape(c)}" ${c===state.category?'selected':''}>${escape(c)}</option>`).join('')}</select></label>
+              <button type="button" id="lib-filter-toggle" class="lib-filter-toggle" data-filter-toggle aria-controls="lib-advanced-filters" aria-expanded="${!!this.filtersOpen}">${collectionIcon('basic-ui')}<span>상세 필터</span>${advancedCount?`<span class="lib-filter-count">${advancedCount}</span>`:''}</button>
+            </div>
+            <div class="lib-extra-filters" id="lib-advanced-filters" ${this.filtersOpen?'':'hidden'}>
+              <label for="lib-role">포트폴리오 역할<select name="role" id="lib-role" aria-label="포트폴리오 역할"><option value="">모든 역할</option>${Object.entries(ROLES).map(([id,name])=>`<option value="${id}" ${state.role===id?'selected':''}>${name}</option>`).join('')}</select></label>
+              <label for="lib-availability">확보 상태<select name="availability" id="lib-availability" aria-label="확보 상태">${[['','전체 자료'],['preview','미리보기 있음'],['example','실행 예제 있음'],['video','참고 영상 있음'],['source','소스·자산 확보'],['waiting','확인 대기']].map(([id,name])=>`<option value="${id}" ${state.availability===id?'selected':''}>${name}</option>`).join('')}</select></label>
+              <label for="lib-selection">후보 선별<select name="selection" id="lib-selection" aria-label="후보 선별"><option value="">전체 항목</option>${Object.entries(SELECTION).map(([id,name])=>`<option value="${id}" ${state.selection===id?'selected':''}>${name}</option>`).join('')}</select></label>
+            </div>
+            ${filtered?`<div class="lib-filter-status"><span>조건 ${filterCount}개 적용 중${state.family?` · 이름 계열: ${escape(state.family)}`:''}</span><a href="${route({q:'',source:'',category:'',role:'',availability:'',selection:'',family:'',page:1,id:''})}">초기화</a></div>`:''}
+          </section>
+          <div class="lib-result-heading"><div><h2>${selectedSource ? escape(selectedSource.name) : typeLabel(state.type)} <span>${number(results.total)}개</span></h2>${TYPE_DESCRIPTIONS[state.type]?`<p class="lib-result-description">${TYPE_DESCRIPTIONS[state.type]}</p>`:''}</div>
             <span>기초 수집 ${escape(data.generatedAt.slice(0,10))} · 선별 ${escape(data.curation.reviewedAt)}</span></div>
           ${results.total ? `<div class="lib-grid">${results.items.map(item=>this.card(item,sources.get(item.sourceSite),state)).join('')}</div>`
             : `<div class="lib-message"><h3>${filtered ? '검색 조건에 맞는 항목이 없습니다' : '아직 목록에 등록된 자료가 없습니다'}</h3><p>${selectedSource ? escape(selectedSource.note) : state.type === 'pages' ? '검증된 컴포넌트를 조합한 페이지 구성은 후속 단계에서 추가합니다.' : '유형·사이트·검색 조건을 바꾸어 확인해 보세요.'}</p><a href="${route({q:'',source:'',category:'',role:'',availability:'',selection:'',family:'',page:1,id:''})}">이 유형의 전체 목록 보기</a></div>`}
