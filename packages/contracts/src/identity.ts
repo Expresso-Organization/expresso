@@ -19,10 +19,32 @@ export const IdentitySessionIdParamsSchema = z.strictObject({
   sessionId: UuidSchema,
 });
 
+/**
+ * 세션 수명 정책. 백엔드가 만료를 연장할 때와 웹이 쿠키 만료를 찍을 때 같은 값을 본다.
+ *
+ * - `persistent` — "로그인 상태 유지"를 켠 세션. 마지막 활동 뒤 30일.
+ * - `ephemeral` — 끈 세션. 마지막 활동 뒤 12시간. 쿠키는 브라우저를 닫으면 사라진다.
+ * - `absoluteMs` — 두 모드 공통의 절대 상한. 발급 뒤 90일이 지나면 어떤 활동도 살리지 못한다.
+ *   훔친 토큰의 수명을 여기서 끊는다.
+ */
+export const SESSION_POLICY = {
+  persistent: { idleMs: 30 * 86_400_000 },
+  ephemeral: { idleMs: 12 * 3_600_000 },
+  absoluteMs: 90 * 86_400_000,
+} as const;
+
+/**
+ * 로그인 상태 유지. 생략하면 켬 — 옵션을 모르는 클라이언트는 지금까지와 같은 세션을 받는다.
+ * 기본값은 스키마가 아니라 세션을 발급하는 쪽이 채운다(`SESSION_POLICY`를 읽는 자리와 같다).
+ */
+export const SessionPersistenceSchema = z.boolean().optional();
+
 export const IssuedIdentitySessionSchema = z.strictObject({
   sessionId: UuidSchema,
   accessToken: z.string().regex(/^exps_[A-Za-z0-9_-]{43}$/),
   expiresAt: TimestampSchema,
+  /** 이 세션이 유지 모드인가. 웹이 쿠키에 `expires`를 찍을지 여기서 정한다. */
+  persistent: z.boolean(),
 });
 
 export const EmailSchema = z.email().max(320);
@@ -35,11 +57,13 @@ export const SignupSchema = z.strictObject({
   email: EmailSchema,
   password: z.string().min(10).max(200),
   displayName: z.string().trim().min(1).max(200),
+  persistent: SessionPersistenceSchema,
 });
 
 export const LoginSchema = z.strictObject({
   email: EmailSchema,
   password: z.string().min(1).max(200),
+  persistent: SessionPersistenceSchema,
 });
 
 export const AuthSessionSchema = z.strictObject({
@@ -65,6 +89,7 @@ export const OAuthProviderSchema = z.enum(["google"]);
 export const GoogleSignInSchema = z.strictObject({
   idToken: z.string().min(1).max(8_192),
   nonce: z.string().min(1).max(256),
+  persistent: SessionPersistenceSchema,
 });
 
 /**
@@ -78,6 +103,7 @@ export const GoogleLinkSchema = z.strictObject({
   idToken: z.string().min(1).max(8_192),
   nonce: z.string().min(1).max(256),
   password: z.string().min(1).max(200),
+  persistent: SessionPersistenceSchema,
 });
 
 /** `created`는 이 요청이 계정을 새로 만들었는지다 — 온보딩으로 보낼지가 여기서 갈린다. */

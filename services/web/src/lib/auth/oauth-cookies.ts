@@ -30,6 +30,10 @@ export interface Handshake {
   state: string;
   nonce: string;
   codeVerifier: string;
+  /** 로그인 화면의 "로그인 상태 유지" 선택. 왕복을 건너 세션 발급까지 들고 간다. */
+  persistent: boolean;
+  /** 로그인 뒤 돌아갈 자리. 검증은 쓰는 쪽(`safeNext`)이 한다. */
+  next: string | null;
 }
 
 export async function writeHandshake(handshake: Handshake): Promise<void> {
@@ -47,11 +51,17 @@ export async function takeHandshake(): Promise<Handshake | null> {
   try {
     const parsed: unknown = JSON.parse(raw);
     if (typeof parsed !== "object" || parsed === null) return null;
-    const { state, nonce, codeVerifier } = parsed as Record<string, unknown>;
+    const { state, nonce, codeVerifier, persistent, next } = parsed as Record<string, unknown>;
     if (typeof state !== "string" || typeof nonce !== "string" || typeof codeVerifier !== "string") {
       return null;
     }
-    return { state, nonce, codeVerifier };
+    return {
+      state,
+      nonce,
+      codeVerifier,
+      persistent: persistent !== false,
+      next: typeof next === "string" ? next : null,
+    };
   } catch {
     return null;
   }
@@ -67,6 +77,8 @@ export interface PendingGoogleLink {
   idToken: string;
   nonce: string;
   email: string;
+  persistent: boolean;
+  next: string | null;
 }
 
 export async function writePendingLink(pending: PendingGoogleLink): Promise<void> {
@@ -82,11 +94,17 @@ export async function readPendingLink(): Promise<PendingGoogleLink | null> {
   try {
     const parsed: unknown = JSON.parse(raw);
     if (typeof parsed !== "object" || parsed === null) return null;
-    const { idToken, nonce, email } = parsed as Record<string, unknown>;
+    const { idToken, nonce, email, persistent, next } = parsed as Record<string, unknown>;
     if (typeof idToken !== "string" || typeof nonce !== "string" || typeof email !== "string") {
       return null;
     }
-    return { idToken, nonce, email };
+    return {
+      idToken,
+      nonce,
+      email,
+      persistent: persistent !== false,
+      next: typeof next === "string" ? next : null,
+    };
   } catch {
     return null;
   }

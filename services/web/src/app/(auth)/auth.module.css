@@ -343,6 +343,22 @@
   text-underline-offset: 2px;
 }
 
+/* 네이티브 체크박스는 접근성 트리에만 남기고 그림은 .consentBox가 맡는다 */
+.consentInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.consent:has(.consentInput:focus-visible) .consentBox {
+  border-color: var(--ex-fg);
+  box-shadow: var(--ex-focus-ring);
+}
+
 /* 제출 — 로그인·가입은 시그니처 색을 쓴다 (화면 정의서) */
 .submit {
   width: 100%;
