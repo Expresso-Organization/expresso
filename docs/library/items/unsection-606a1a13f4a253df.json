@@ -1,0 +1,29 @@
+{
+  "id": "unsection-606a1a13f4a253df",
+  "sourceUrl": "https://www.unsection.com/section/superwhisper-adaptability-features-design",
+  "sourceRevision": null,
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: superwhisper adaptability features design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/superwhisper-adaptability-features-design",
+    "sha256": "ad80d2003a3809b92274f2dbd7e94687f453ff8e3299058b5246bd9c958d3dba",
+    "fetchedAt": "2026-09-23T12:56:42+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

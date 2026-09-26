@@ -1,0 +1,29 @@
+{
+  "id": "60fps-7788874cf42d64df",
+  "sourceUrl": "https://60fps.design/shots/recollect-splash",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Recollect Splash",
+    "공개 이미지 요소: 28개",
+    "동영상 포스터: 27개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/recollect-splash",
+    "sha256": "0447d6076af4349f71aa992a7eae1bef1df4dc34404011770a6ffd59ca3ca7e4",
+    "fetchedAt": "2026-09-23T13:05:59+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

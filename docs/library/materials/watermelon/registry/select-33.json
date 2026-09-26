@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "select-33",
+  "dependencies": [
+    "@tabler/icons-react"
+  ],
+  "registryDependencies": [
+    "button",
+    "label",
+    "popover"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/select/select-33.tsx",
+      "content": "import { useState } from 'react';\nimport { IconCheck, IconChevronDown } from '@tabler/icons-react';\n\nimport { Button } from '@/components/ui/button';\nimport { Label } from '@/components/ui/label';\nimport {\n  Popover,\n  PopoverContent,\n  PopoverTrigger,\n} from '@/components/ui/popover';\nimport { cn } from '@/lib/utils';\n\nconst channels = [\n  { id: 'email', label: 'Primary Email' },\n  { id: 'sms', label: 'SMS Gateway' },\n  { id: 'push', label: 'Mobile Push' },\n  { id: 'slack', label: 'Slack Webhook' },\n  { id: 'discord', label: 'Discord Bot' },\n];\n\nconst Select33 = () => {\n  const [selected, setSelected] = useState<string[]>([]);\n\n  const toggleChannel = (id: string) => {\n    setSelected((prev) =>\n      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]\n    );\n  };\n\n  const getLabel = () => {\n    if (selected.length === 0) return 'Select notification paths';\n    if (selected.length === 1) return channels.find(c => c.id === selected[0])?.label;\n    return `${selected.length} channels selected`;\n  };\n\n  return (\n    <div className=\"w-full max-w-xs space-y-2 text-zinc-900 dark:text-zinc-100\">\n      <Label className=\"text-zinc-600 dark:text-zinc-400\">Communication Channels</Label>\n      <Popover>\n        <PopoverTrigger asChild>\n          <Button\n            variant=\"outline\"\n            className=\"w-full justify-between rounded-xl border-zinc-200 bg-white px-3 font-normal shadow-xs transition-all hover:bg-zinc-50 focus:ring-2 focus:ring-zinc-400/20 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900 dark:focus:ring-zinc-500/20 outline-none\"\n          >\n            <span className={cn(\"truncate\", selected.length === 0 && \"text-zinc-500\")}>\n              {getLabel()}\n            </span>\n            <IconChevronDown className=\"size-4 shrink-0 opacity-50\" stroke={1.5} />\n          </Button>\n        </PopoverTrigger>\n        <PopoverContent \n          align=\"start\"\n          className=\"w-(--radix-popover-trigger-width) p-1 rounded-xl border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950\"\n        >\n          <div className=\"flex flex-col gap-0.5\">\n            {channels.map((ch) => {\n              const isSelected = selected.includes(ch.id);\n              return (\n                <button\n                  key={ch.id}\n                  onClick={() => toggleChannel(ch.id)}\n                  className={cn(\n                    \"flex items-center justify-between w-full px-2.5 py-2 rounded-lg text-sm transition-colors outline-none\",\n                    \"hover:bg-zinc-100 dark:hover:bg-zinc-900\",\n                    isSelected ? \"text-zinc-900 dark:text-zinc-100\" : \"text-zinc-600 dark:text-zinc-400\"\n                  )}\n                >\n                  <span className=\"font-medium\">{ch.label}</span>\n                  {isSelected && (\n                    <IconCheck className=\"size-4 text-zinc-900 dark:text-zinc-100\" stroke={2} />\n                  )}\n                </button>\n              );\n            })}\n          </div>\n        </PopoverContent>\n      </Popover>\n      <p className=\"text-[12px] text-zinc-500 px-1 dark:text-zinc-500\">\n        System alerts will be delivered via all selected channels.\n      </p>\n    </div>\n  );\n};\n\nexport default Select33;\n\n",
+      "type": "registry:ui",
+      "target": "components/ui/select-33.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

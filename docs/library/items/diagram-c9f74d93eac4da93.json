@@ -1,0 +1,28 @@
+{
+  "id": "diagram-c9f74d93eac4da93",
+  "sourceUrl": "https://github.com/cathrynlavery/diagram-design/blob/dc1ace47b99a419e42d01a03cb6ace5346efa8ae/skills/diagram-design/assets/example-datalake-dark.html",
+  "sourceRevision": "dc1ace47b99a419e42d01a03cb6ace5346efa8ae",
+  "roles": [
+    "technical-evidence"
+  ],
+  "roleEvidence": "시스템 구조·과정·기술 기여를 설명하는 도식 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/diagram/diagram-c9f74d93eac4da93.html.txt",
+      "sha256": "98ed93bddc4d2112c3bd886aa2aa469c4f592a034eb39d2d3056033dc75d810d",
+      "bytes": 25137,
+      "kind": "diagram_source",
+      "label": "원본 example-datalake-dark.html"
+    }
+  ],
+  "observations": [
+    "예제 원문에서 스크립트·외부 폰트 링크를 제외한 미리보기입니다. 원본 파일은 별도로 보존했습니다."
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/cathrynlavery/diagram-design/blob/dc1ace47b99a419e42d01a03cb6ace5346efa8ae/LICENSE"
+}

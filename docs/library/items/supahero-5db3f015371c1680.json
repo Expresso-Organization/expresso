@@ -1,0 +1,30 @@
+{
+  "id": "supahero-5db3f015371c1680",
+  "sourceUrl": "https://supahero.io/hero/coda",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Coda",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://coda.io/",
+  "evidence": {
+    "url": "https://supahero.io/hero/coda",
+    "sha256": "83e64b4bdbf46cfebff40f9e19ccf410c36ba009073683feb0a5ff221a0b6aff",
+    "fetchedAt": "2026-09-23T12:51:39+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

@@ -1,0 +1,30 @@
+{
+  "id": "supahero-ab3611edb1e9b166",
+  "sourceUrl": "https://supahero.io/hero/milanco",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Milanco",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://milanco.ca/",
+  "evidence": {
+    "url": "https://supahero.io/hero/milanco",
+    "sha256": "9c08f6c592fe61cf05aa4c32cd4bee7314f89d55b4acb146a1f9845a99336a54",
+    "fetchedAt": "2026-09-23T12:53:12+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "radiogroup-9",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "radio-group"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/radiogroup/radiogroup-9.tsx",
+      "content": "import { Label } from \"@/components/ui/label\";\nimport { RadioGroup, RadioGroupItem } from \"@/components/ui/radio-group\";\n\nconst RadioGroup9 = () => {\n  return (\n    <RadioGroup defaultValue=\"warning\" className=\"flex items-center gap-4\">\n      <div className=\"flex items-center gap-2\">\n        <RadioGroupItem\n          value=\"warning\"\n          id=\"color-warning\"\n          className=\"border-amber-500 text-amber-500 focus-visible:border-amber-500 focus-visible:ring-amber-500/20 dark:border-amber-400 dark:text-amber-400 dark:focus-visible:ring-amber-400/40 [&_svg]:fill-amber-500 [&_svg]:text-amber-500\"\n        />\n        <Label htmlFor=\"color-warning\">Warning</Label>\n      </div>\n\n      <div className=\"flex items-center gap-2\">\n        <RadioGroupItem\n          value=\"positive\"\n          id=\"color-positive\"\n          className=\"border-emerald-500 text-emerald-500 focus-visible:border-emerald-500 focus-visible:ring-emerald-500/20 dark:border-emerald-400 dark:text-emerald-400 dark:focus-visible:border-emerald-400 dark:focus-visible:ring-emerald-400/40 [&_svg]:fill-emerald-500 [&_svg]:text-emerald-500 dark:[&_svg]:fill-emerald-400\"\n        />\n        <Label htmlFor=\"color-positive\">Positive</Label>\n      </div>\n\n      <div className=\"flex items-center gap-2\">\n        <RadioGroupItem\n          value=\"neutral\"\n          id=\"color-neutral\"\n          className=\"border-indigo-500 text-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-indigo-500/20 dark:border-indigo-400 dark:text-indigo-400 dark:focus-visible:border-indigo-400 dark:focus-visible:ring-indigo-400/40 [&_svg]:fill-indigo-500 [&_svg]:text-indigo-500 dark:[&_svg]:fill-indigo-400\"\n        />\n        <Label htmlFor=\"color-neutral\">Neutral</Label>\n      </div>\n    </RadioGroup>\n  );\n};\n\nexport default RadioGroup9;\n",
+      "type": "registry:ui",
+      "target": "components/ui/radiogroup-9.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

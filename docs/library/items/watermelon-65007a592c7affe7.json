@@ -1,0 +1,60 @@
+{
+  "id": "watermelon-65007a592c7affe7",
+  "sourceUrl": "https://ui.watermelon.sh/animated-components/swap-currency-card",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/swap-currency-card.json",
+      "sha256": "9e7898acbfe2b4026a313db777ff8f1d89a2abfc160a89d0eb587f4e88246e86",
+      "bytes": 12080,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/swap-currency-card.tsx",
+      "target": "components/ui/swap-currency-card.tsx",
+      "type": "registry:ui",
+      "sha256": "59677f8a4c0dd874e6c178c4ee7825c1c4ef57f5b695c0ca9f797b2e83037e96",
+      "bytes": 11292
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "lucide-react",
+    "motion/react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "interface SwapCurrencyCardProps {\n  currencies: Currency[];\n  defaultFromCode?: string;\n  defaultToCode?: string;\n  defaultAmount?: string;\n}",
+    "interface FlagIconProps {\n  countryCode: string;\n  emoji: string;\n}",
+    "interface DropdownProps {\n  selected: Currency;\n  onSelect: (currency: Currency) => void;\n  currencies: Currency[];\n}",
+    "interface AnimatedNumberProps {\n  value: string;\n}",
+    "interface DigitColumnProps {\n  digit: string;\n  delay?: number;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://flagcdn.com/${countryCode.toLowerCase(",
+    "https://upload.wikimedia.org/wikipedia/commons/b/b7/Flag_of_Europe.svg"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/swap-currency-card.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

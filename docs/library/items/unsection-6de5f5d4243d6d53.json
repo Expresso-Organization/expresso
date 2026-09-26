@@ -1,0 +1,29 @@
+{
+  "id": "unsection-6de5f5d4243d6d53",
+  "sourceUrl": "https://www.unsection.com/section/twelvelabs-advisor-profiles-team-section",
+  "sourceRevision": null,
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: TeamTwelveLabs Advisor Profiles Team Section",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/twelvelabs-advisor-profiles-team-section",
+    "sha256": "77ff1f5e5a8c134a73ea70a35182831ce6b1e18c0bb9b38529b82f8708054404",
+    "fetchedAt": "2026-09-23T12:56:56+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

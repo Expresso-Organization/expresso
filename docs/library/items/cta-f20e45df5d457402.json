@@ -1,0 +1,30 @@
+{
+  "id": "cta-f20e45df5d457402",
+  "sourceUrl": "https://www.cta.gallery/cta/victorialavine",
+  "sourceRevision": null,
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Victorialavine",
+    "공개 이미지 요소: 46개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.victorialavine.com/",
+  "evidence": {
+    "url": "https://www.cta.gallery/cta/victorialavine",
+    "sha256": "a7024e9ebe6ad4e63132525e3f219c6a20472323094ef9057e0fdf489ef3f0a2",
+    "fetchedAt": "2026-09-23T12:54:04+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

@@ -1,0 +1,30 @@
+/* 기존 라이브러리 카드와 제품 역할 토큰을 문서 진입 화면에도 적용합니다. */
+.portal-docs { min-height: calc(100vh - 108px); color: var(--ex-fg); background: var(--ex-bg-muted); font-family: var(--ex-font-ui); }
+.portal-docs-heading { padding: 32px; background: var(--ex-bg); border-bottom: 1px solid var(--ex-border); }
+.portal-docs-eyebrow { margin: 0; color: var(--ex-fg-muted); font: var(--ex-text-3xs) var(--ex-font-mono); letter-spacing: .08em; }
+.portal-docs-heading h1 { margin: 9px 0; font-size: var(--ex-text-4xl); line-height: var(--ex-leading-tight); letter-spacing: -.03em; }
+.portal-docs-heading > p:last-child { margin: 0; color: var(--ex-fg-muted); font-size: var(--ex-text-sm); }
+.portal-docs-content { max-width: 1440px; margin: auto; padding: 32px 32px 56px; }
+.portal-docs-section + .portal-docs-section { margin-top: 40px; }
+.portal-docs-section-heading { margin-bottom: 20px; }
+.portal-docs-section-heading h2 { margin: 0; font-size: var(--ex-text-xl); }
+.portal-docs-section-heading p { margin: 7px 0 0; font-size: var(--ex-text-xs); color: var(--ex-fg-muted); }
+.portal-docs-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+.portal-doc-card { display: flex; flex-direction: column; min-width: 0; min-height: 176px; padding: 20px; background: var(--ex-bg); border: 1px solid var(--ex-border); border-radius: 9px; color: var(--ex-fg); text-decoration: none; transition: transform var(--ex-motion-quick), border-color var(--ex-motion-quick), background-color var(--ex-motion-quick); }
+.portal-doc-card:hover, .portal-doc-card:focus-visible { color: var(--ex-fg); text-decoration: none; border-color: var(--ex-accent); background: var(--ex-accent-surface); transform: translateY(-4px); }
+.portal-doc-card:focus-visible { outline: 2px solid var(--ex-fg); outline-offset: 3px; }
+.portal-doc-card-heading { display: flex; justify-content: space-between; align-items: center; }
+.portal-doc-card-icon { display: grid; width: 24px; height: 24px; flex: 0 0 24px; place-items: center; color: var(--ex-accent-text); }
+.portal-doc-card-icon svg { display: block; width: 24px; height: 24px; }
+.portal-doc-card-meta { display: flex; align-items: center; gap: 12px; }
+.portal-doc-tag { color: var(--ex-accent-text); font: var(--ex-text-3xs) var(--ex-font-mono); letter-spacing: .08em; }
+.portal-doc-arrow { color: var(--ex-fg-muted); font-size: var(--ex-text-lg); }
+.portal-doc-card h3 { margin: 16px 0 0; font-size: var(--ex-text-lg); line-height: var(--ex-leading-snug); }
+.portal-doc-card p { margin: 8px 0 20px; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); }
+.portal-doc-card footer { display: flex; justify-content: space-between; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--ex-border); color: var(--ex-accent-text); font-size: var(--ex-text-2xs); }
+.portal-doc-card footer span:last-child { transition: transform var(--ex-motion-quick); }
+.portal-doc-card:hover footer span:last-child, .portal-doc-card:focus-visible footer span:last-child { transform: translateX(4px); }
+@media (max-width: 1200px) { .portal-docs-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 768px) { .portal-docs-heading { padding: 24px 16px; } .portal-docs-heading h1 { font-size: var(--ex-text-3xl); } .portal-docs-content { padding: 24px 16px 40px; } .portal-docs-grid { gap: 14px; } }
+@media (max-width: 560px) { .portal-docs-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .portal-doc-card, .portal-doc-card footer span:last-child { transition: none; transform: none; } }

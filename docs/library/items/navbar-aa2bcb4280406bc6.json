@@ -1,0 +1,30 @@
+{
+  "id": "navbar-aa2bcb4280406bc6",
+  "sourceUrl": "https://www.navbar.gallery/navbar/chesapeake-plywood",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Chesapeake Plywood",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://chesapeakeplywood.com/",
+  "evidence": {
+    "url": "https://www.navbar.gallery/navbar/chesapeake-plywood",
+    "sha256": "fd01e8706b1482d90414868fb74feb5ea928da8249b81b303ae46e78dc7f89e0",
+    "fetchedAt": "2026-09-23T12:51:28+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

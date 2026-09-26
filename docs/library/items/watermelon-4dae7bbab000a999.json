@@ -1,0 +1,174 @@
+{
+  "id": "watermelon-4dae7bbab000a999",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/incident-management.json",
+      "sha256": "5a94a3ffc329724254212b02245796aef525faa479a3fb5643615b0cd795328c",
+      "bytes": 47895,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/incident-management/activeStreamViews.tsx",
+      "target": "components/watermelon/incident-management/activeStreamViews.tsx",
+      "type": "registry:component",
+      "sha256": "c911557aa8059c3dc40edca0adea724ae2682ebb5491ad4876af2353508d9779",
+      "bytes": 7703
+    },
+    {
+      "path": "src/components/dashboards/incident-management/components/active-streams/constants.tsx",
+      "target": "components/watermelon/incident-management/components/active-streams/constants.tsx",
+      "type": "registry:component",
+      "sha256": "957faf079ab1be82828469cf7b59a89b23cd353157dcdd2df9fd82692413f246",
+      "bytes": 5019
+    },
+    {
+      "path": "src/components/dashboards/incident-management/components/active-streams/kanban-column.tsx",
+      "target": "components/watermelon/incident-management/components/active-streams/kanban-column.tsx",
+      "type": "registry:component",
+      "sha256": "1057e5b1e9bffb4a2c03eefabffc73b05ec003c291638542848049bcc13a4f3a",
+      "bytes": 6229
+    },
+    {
+      "path": "src/components/dashboards/incident-management/components/active-streams/stream-card.tsx",
+      "target": "components/watermelon/incident-management/components/active-streams/stream-card.tsx",
+      "type": "registry:component",
+      "sha256": "bd6b56b80d842af1fe4b1a0f49f3ee92be0dc5489af2cd371150dc780b632ba8",
+      "bytes": 5523
+    },
+    {
+      "path": "src/components/dashboards/incident-management/components/active-streams/types.ts",
+      "target": "components/watermelon/incident-management/components/active-streams/types.ts",
+      "type": "registry:component",
+      "sha256": "22ed10d0dec83a461adc653b741391c8e3673f35500f2856227b95b173a22bf4",
+      "bytes": 410
+    },
+    {
+      "path": "src/components/dashboards/incident-management/components/app-sidebar.tsx",
+      "target": "components/watermelon/incident-management/components/app-sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "0d8e0378bfdfcff5453659e0ffb04bf4c80bcaf2f58bc7a2709bf2052832ed44",
+      "bytes": 15015
+    },
+    {
+      "path": "src/components/dashboards/incident-management/components/search-form.tsx",
+      "target": "components/watermelon/incident-management/components/search-form.tsx",
+      "type": "registry:component",
+      "sha256": "13bbc2de8f64c02dd5e7aa68aa5e85216686f09d3fa559b9bbea2a137db5c16c",
+      "bytes": 1787
+    },
+    {
+      "path": "src/components/dashboards/incident-management/dashboardLayout.tsx",
+      "target": "components/watermelon/incident-management/dashboardLayout.tsx",
+      "type": "registry:component",
+      "sha256": "c5abda20eaddf0f17684d2d96d9b046e1cedbf0960949de79dadfac060ddc3ba",
+      "bytes": 605
+    },
+    {
+      "path": "src/components/dashboards/incident-management/demo.tsx",
+      "target": "components/watermelon/incident-management/demo.tsx",
+      "type": "registry:component",
+      "sha256": "3c43fac8de16aa79e9be5c19e16631c5cbcc2a136b94a79a1c343f5d6ca7eccb",
+      "bytes": 664
+    }
+  ],
+  "dependencies": [
+    "@radix-ui/react-avatar",
+    "@radix-ui/react-checkbox",
+    "@radix-ui/react-collapsible",
+    "@radix-ui/react-dialog",
+    "@radix-ui/react-dropdown-menu",
+    "@radix-ui/react-label",
+    "@radix-ui/react-select",
+    "@radix-ui/react-separator",
+    "@radix-ui/react-slot",
+    "@radix-ui/react-tabs",
+    "@radix-ui/react-tooltip",
+    "@tabler/icons-react",
+    "class-variance-authority",
+    "lucide-react",
+    "react-router-dom",
+    "recharts"
+  ],
+  "registryDependencies": [
+    "avatar",
+    "badge",
+    "breadcrumb",
+    "button",
+    "card",
+    "chart",
+    "checkbox",
+    "collapsible",
+    "dialog",
+    "dropdown-menu",
+    "input",
+    "label",
+    "select",
+    "separator",
+    "sheet",
+    "sidebar",
+    "skeleton",
+    "table",
+    "tabs",
+    "tooltip"
+  ],
+  "imports": [
+    "./activeStreamViews",
+    "./components/active-streams/constants",
+    "./components/active-streams/kanban-column",
+    "./components/app-sidebar",
+    "./dashboardLayout",
+    "./search-form",
+    "./stream-card",
+    "./types",
+    "@/components/ui/avatar",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/collapsible",
+    "@/components/ui/dialog",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/select",
+    "@/components/ui/sidebar",
+    "@/components/ui/tabs",
+    "@/lib/utils",
+    "@tabler/icons-react",
+    "lucide-react",
+    "react",
+    "react-router-dom"
+  ],
+  "propsDeclarations": [
+    "export interface StreamCardProps {\n    id: string\n    title: string\n    code: string\n    avatar: string\n    logo: React.ReactNode\n    logoBg: string\n    details: {\n        origin: string\n        priority: string\n        handler: string\n        process: string\n        date: string\n    }",
+    "interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {\n  onNavigate?: (view: string) => void;\n  currentView?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://github.com/shadcn.png",
+    "https://i.pravatar.cc/150?u=2",
+    "https://i.pravatar.cc/150?u=3",
+    "https://i.pravatar.cc/150?u=4",
+    "https://i.pravatar.cc/150?u=5",
+    "https://i.pravatar.cc/150?u=6"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/incident-management.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "button-36",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/button/button-36.tsx",
+      "content": "import { IoMailOpenOutline } from \"react-icons/io5\";\nimport { Badge } from \"@/components/ui/badge\";\nimport { Button } from \"@/components/ui/button\";\n\nconst Button36 = () => {\n  return (\n    <Button variant=\"outline\" size=\"icon\" className=\"relative\">\n      <IoMailOpenOutline className=\"size-5\" />\n      <span className=\"sr-only\">Messages</span>\n      <Badge className=\"absolute -top-2.5 -right-2.5 h-5 min-w-5 px-1 tabular-nums\">\n        3\n      </Badge>\n    </Button>\n  );\n};\n\nexport default Button36;\n",
+      "type": "registry:ui",
+      "target": "components/ui/button-36.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

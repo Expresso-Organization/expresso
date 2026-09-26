@@ -1,0 +1,340 @@
+{
+  "footer-1": {
+    "brandName": "Portfolio Demo",
+    "logo": "P",
+    "tagline": "Selected work, process, and evidence.",
+    "description": "Example content for a portfolio component preview.",
+    "newsletterTitle": "Stay in touch",
+    "newsletterDescription": "Updates from this example portfolio.",
+    "newsletterSubtitle": "Example subscription form",
+    "socialText": "Connect",
+    "socialLinks": [],
+    "linkGroups": [
+      {
+        "title": "Work",
+        "links": [
+          {
+            "label": "Projects",
+            "href": "#"
+          },
+          {
+            "label": "Research",
+            "href": "#"
+          }
+        ]
+      },
+      {
+        "title": "About",
+        "links": [
+          {
+            "label": "Experience",
+            "href": "#"
+          },
+          {
+            "label": "Contact",
+            "href": "#"
+          }
+        ]
+      }
+    ],
+    "copyright": "Portfolio example · demo content",
+    "legalLinks": [
+      {
+        "label": "Privacy",
+        "href": "#"
+      }
+    ],
+    "brandWatermark": "PORTFOLIO"
+  },
+  "footer-2": {
+    "brandName": "Portfolio Demo",
+    "logo": "P",
+    "tagline": "Selected work, process, and evidence.",
+    "description": "Example content for a portfolio component preview.",
+    "newsletterTitle": "Stay in touch",
+    "newsletterDescription": "Updates from this example portfolio.",
+    "newsletterSubtitle": "Example subscription form",
+    "socialText": "Connect",
+    "socialLinks": [],
+    "linkGroups": [
+      {
+        "title": "Work",
+        "links": [
+          {
+            "label": "Projects",
+            "href": "#"
+          },
+          {
+            "label": "Research",
+            "href": "#"
+          }
+        ]
+      },
+      {
+        "title": "About",
+        "links": [
+          {
+            "label": "Experience",
+            "href": "#"
+          },
+          {
+            "label": "Contact",
+            "href": "#"
+          }
+        ]
+      }
+    ],
+    "copyright": "Portfolio example · demo content",
+    "legalLinks": [
+      {
+        "label": "Privacy",
+        "href": "#"
+      }
+    ],
+    "brandWatermark": "PORTFOLIO"
+  },
+  "footer-3": {
+    "brandName": "Portfolio Demo",
+    "logo": "P",
+    "tagline": "Selected work, process, and evidence.",
+    "description": "Example content for a portfolio component preview.",
+    "newsletterTitle": "Stay in touch",
+    "newsletterDescription": "Updates from this example portfolio.",
+    "newsletterSubtitle": "Example subscription form",
+    "socialText": "Connect",
+    "socialLinks": [],
+    "linkGroups": [
+      {
+        "title": "Work",
+        "links": [
+          {
+            "label": "Projects",
+            "href": "#"
+          },
+          {
+            "label": "Research",
+            "href": "#"
+          }
+        ]
+      },
+      {
+        "title": "About",
+        "links": [
+          {
+            "label": "Experience",
+            "href": "#"
+          },
+          {
+            "label": "Contact",
+            "href": "#"
+          }
+        ]
+      }
+    ],
+    "copyright": "Portfolio example · demo content",
+    "legalLinks": [
+      {
+        "label": "Privacy",
+        "href": "#"
+      }
+    ],
+    "brandWatermark": "PORTFOLIO"
+  },
+  "footer-5": {
+    "brandName": "Portfolio Demo",
+    "logo": "P",
+    "tagline": "Selected work, process, and evidence.",
+    "description": "Example content for a portfolio component preview.",
+    "newsletterTitle": "Stay in touch",
+    "newsletterDescription": "Updates from this example portfolio.",
+    "newsletterSubtitle": "Example subscription form",
+    "socialText": "Connect",
+    "socialLinks": [],
+    "linkGroups": [
+      {
+        "title": "Work",
+        "links": [
+          {
+            "label": "Projects",
+            "href": "#"
+          },
+          {
+            "label": "Research",
+            "href": "#"
+          }
+        ]
+      },
+      {
+        "title": "About",
+        "links": [
+          {
+            "label": "Experience",
+            "href": "#"
+          },
+          {
+            "label": "Contact",
+            "href": "#"
+          }
+        ]
+      }
+    ],
+    "copyright": "Portfolio example · demo content",
+    "legalLinks": [
+      {
+        "label": "Privacy",
+        "href": "#"
+      }
+    ],
+    "brandWatermark": "PORTFOLIO"
+  },
+  "footer-29": {
+    "brandName": "Portfolio Demo",
+    "logo": "P",
+    "tagline": "Selected work, process, and evidence.",
+    "description": "Example content for a portfolio component preview.",
+    "newsletterTitle": "Stay in touch",
+    "newsletterDescription": "Updates from this example portfolio.",
+    "newsletterSubtitle": "Example subscription form",
+    "socialText": "Connect",
+    "socialLinks": [],
+    "linkGroups": [
+      {
+        "title": "Work",
+        "links": [
+          {
+            "label": "Projects",
+            "href": "#"
+          },
+          {
+            "label": "Research",
+            "href": "#"
+          }
+        ]
+      },
+      {
+        "title": "About",
+        "links": [
+          {
+            "label": "Experience",
+            "href": "#"
+          },
+          {
+            "label": "Contact",
+            "href": "#"
+          }
+        ]
+      }
+    ],
+    "copyright": "Portfolio example · demo content",
+    "legalLinks": [
+      {
+        "label": "Privacy",
+        "href": "#"
+      }
+    ],
+    "brandWatermark": "PORTFOLIO"
+  },
+  "footer-30": {
+    "heading": "Let’s work together",
+    "columns": [
+      {
+        "title": "Work",
+        "links": [
+          {
+            "label": "Projects",
+            "href": "#"
+          },
+          {
+            "label": "Research",
+            "href": "#"
+          }
+        ]
+      },
+      {
+        "title": "About",
+        "links": [
+          {
+            "label": "Experience",
+            "href": "#"
+          },
+          {
+            "label": "Contact",
+            "href": "#"
+          }
+        ]
+      }
+    ],
+    "bigText": "PORTFOLIO",
+    "copyright": "Portfolio example · demo content",
+    "location": "Seoul · example",
+    "time": "09:00",
+    "bottomLinks": [
+      {
+        "label": "Privacy",
+        "href": "#"
+      }
+    ]
+  },
+  "cta-1": {
+    "title": "Explore the work behind the result",
+    "description": "Example content for layout review.",
+    "buttonText": "View projects",
+    "buttonLink": "#"
+  },
+  "cta-4": {
+    "title": "Project",
+    "accentWord": "Overview",
+    "subtitle": "Example values for layout review",
+    "ctaLabel": "View case study",
+    "periods": [
+      {
+        "id": "demo",
+        "label": "Demo",
+        "metrics": [
+          {
+            "id": "a",
+            "label": "Example projects",
+            "value": "03",
+            "changePercent": 0,
+            "icon": "product"
+          }
+        ],
+        "activities": []
+      }
+    ]
+  },
+  "activities-card": {
+    "headerIcon": "P",
+    "title": "Project activity",
+    "subtitle": "Example portfolio timeline",
+    "activities": [
+      {
+        "icon": "1",
+        "title": "Research",
+        "desc": "Example process entry",
+        "time": "Phase 1"
+      },
+      {
+        "icon": "2",
+        "title": "Prototype",
+        "desc": "Example implementation entry",
+        "time": "Phase 2"
+      }
+    ]
+  },
+  "aave-swap-component": {
+    "from": {
+      "name": "Demo Ether",
+      "symbol": "ETH",
+      "priceUSD": 2000,
+      "max": 1,
+      "logo": ""
+    },
+    "to": {
+      "name": "Demo USD",
+      "symbol": "USD",
+      "priceUSD": 1,
+      "logo": ""
+    }
+  }
+}

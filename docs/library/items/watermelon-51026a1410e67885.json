@@ -1,0 +1,49 @@
+{
+  "id": "watermelon-51026a1410e67885",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/floating-input-base.json",
+      "sha256": "0150b8e78f042d64dad73b0004cdc6b36b3dfc5b897245176a29a62aadb967a3",
+      "bytes": 1736,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/floating-input-base.tsx",
+      "target": "components/ui/floating-input-base.tsx",
+      "type": "registry:ui",
+      "sha256": "73a4284ade0793ec230a28e5ea50a029d48affdb280a0bb40b86dd760a18a6dd",
+      "bytes": 1315
+    }
+  ],
+  "dependencies": [],
+  "registryDependencies": [],
+  "imports": [
+    "@/lib/utils",
+    "react"
+  ],
+  "propsDeclarations": [
+    "interface FloatingInputProps extends React.InputHTMLAttributes<HTMLInputElement> {\n  label: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/floating-input-base.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

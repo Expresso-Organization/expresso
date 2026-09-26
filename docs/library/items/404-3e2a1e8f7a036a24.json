@@ -1,0 +1,29 @@
+{
+  "id": "404-3e2a1e8f7a036a24",
+  "sourceUrl": "https://www.404s.design/sites/speakeasy",
+  "sourceRevision": null,
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Speakeasy",
+    "공개 이미지 요소: 15개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.404s.design/sites/speakeasy",
+    "sha256": "6c39e80d6cb6e07d4ed994cc0f87559b384872231cfa81e49428699c7580c6af",
+    "fetchedAt": "2026-09-23T12:52:22+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": "https://www.404s.design/legal"
+}

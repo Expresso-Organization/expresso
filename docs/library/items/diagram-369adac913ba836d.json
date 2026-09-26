@@ -1,0 +1,26 @@
+{
+  "id": "diagram-369adac913ba836d",
+  "sourceUrl": "https://github.com/cathrynlavery/diagram-design/blob/dc1ace47b99a419e42d01a03cb6ace5346efa8ae/skills/diagram-design/SKILL.md",
+  "sourceRevision": "dc1ace47b99a419e42d01a03cb6ace5346efa8ae",
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/diagram/diagram-369adac913ba836d.md.txt",
+      "sha256": "e5972fbf409d6d676cfdfde321a4f526cbb0b587224b0df42ce484a328cef27e",
+      "bytes": 39506,
+      "kind": "reference_source",
+      "label": "원본 SKILL.md"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "텍스트 자료 · 원문 보기 가능",
+  "sourceLicense": "https://github.com/cathrynlavery/diagram-design/blob/dc1ace47b99a419e42d01a03cb6ace5346efa8ae/LICENSE"
+}

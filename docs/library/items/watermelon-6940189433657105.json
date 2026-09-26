@@ -1,0 +1,75 @@
+{
+  "id": "watermelon-6940189433657105",
+  "sourceUrl": "https://ui.watermelon.sh/components/dialog",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/dialog.json",
+      "sha256": "cae7e7e16c58c4f99d703ea740a9aaca314852dbb44c6de6a7f9891d14519e2d",
+      "bytes": 10659,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/dialog.tsx",
+      "target": "components/ui/dialog.tsx",
+      "type": "registry:ui",
+      "sha256": "d499077fbd2c8c8c1662b33367def72dd03506ee75b11c7bbd8c88fdd0add2e8",
+      "bytes": 9887
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion",
+    "radix-ui"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "@/lib/utils",
+    "lucide-react",
+    "motion/react",
+    "radix-ui",
+    "react"
+  ],
+  "propsDeclarations": [
+    "type DialogProps = DialogPrimitiveProps;\n\nfunction Dialog(props: DialogProps) {\n  return <DialogPrimitive {...props}",
+    "type DialogTriggerProps = DialogTriggerPrimitiveProps;\n\nfunction DialogTrigger(props: DialogTriggerProps) {\n  return <DialogTriggerPrimitive {...props}",
+    "type DialogCloseProps = DialogClosePrimitiveProps;\n\nfunction DialogClose(props: DialogCloseProps) {\n  return <DialogClosePrimitive {...props}",
+    "type DialogOverlayProps = DialogOverlayPrimitiveProps;\n\nfunction DialogOverlay({ className, ...props }",
+    "type DialogContentProps = DialogContentPrimitiveProps & {\n  showCloseButton?: boolean;\n}",
+    "type DialogHeaderProps = DialogHeaderPrimitiveProps;\n\nfunction DialogHeader({ className, ...props }",
+    "type DialogFooterProps = DialogFooterPrimitiveProps;\n\nfunction DialogFooter({ className, ...props }",
+    "type DialogTitleProps = DialogTitlePrimitiveProps;\n\nfunction DialogTitle({ className, ...props }",
+    "type DialogDescriptionProps = DialogDescriptionPrimitiveProps;\n\nfunction DialogDescription({ className, ...props }",
+    "type DialogPrimitiveProps = React.ComponentProps<typeof DialogPrime.Root>;\n\nfunction DialogPrimitive(props: DialogPrimitiveProps) {\n  const [isOpen, setIsOpen] = useControlledState({\n    value: props?.open,\n    defaultValue: props?.defaultOpen,\n    onChange: props?.onOpenChange,\n  }",
+    "type DialogTriggerPrimitiveProps = React.ComponentProps<typeof DialogPrime.Trigger>;\n\nfunction DialogTriggerPrimitive(props: DialogTriggerPrimitiveProps) {\n  return <DialogPrime.Trigger data-slot=\"dialog-trigger\" {...props}",
+    "type DialogPortalProps = Omit<\n  React.ComponentProps<typeof DialogPrime.Portal>,\n  'forceMount'\n>;\n\nfunction DialogPortalPrimitive(props: DialogPortalProps) {\n  const { isOpen }",
+    "type DialogOverlayPrimitiveProps = Omit<\n  React.ComponentProps<typeof DialogPrime.Overlay>,\n  'forceMount' | 'asChild'\n> &\n  HTMLMotionProps<'div'>;\n\nfunction DialogOverlayPrimitive({\n  transition = { duration: 0.2, ease: 'easeInOut' }",
+    "type DialogContentPrimitiveProps = Omit<\n  React.ComponentProps<typeof DialogPrime.Content>,\n  'forceMount' | 'asChild'\n> &\n  HTMLMotionProps<'div'> & {\n    from?: DialogFlipDirection;\n  }",
+    "type DialogClosePrimitiveProps = React.ComponentProps<typeof DialogPrime.Close>;\n\nfunction DialogClosePrimitive(props: DialogClosePrimitiveProps) {\n  return <DialogPrime.Close data-slot=\"dialog-close\" {...props}",
+    "type DialogHeaderPrimitiveProps = React.ComponentProps<'div'>;\n\nfunction DialogHeaderPrimitive(props: DialogHeaderPrimitiveProps) {\n  return <div data-slot=\"dialog-header\" {...props}",
+    "type DialogFooterPrimitiveProps = React.ComponentProps<'div'>;\n\nfunction DialogFooterPrimitive(props: DialogFooterPrimitiveProps) {\n  return <div data-slot=\"dialog-footer\" {...props}",
+    "type DialogTitlePrimitiveProps = React.ComponentProps<typeof DialogPrime.Title>;\n\nfunction DialogTitlePrimitive(props: DialogTitlePrimitiveProps) {\n  return <DialogPrime.Title data-slot=\"dialog-title\" {...props}",
+    "type DialogDescriptionPrimitiveProps = React.ComponentProps<\n  typeof DialogPrime.Description\n>;\n\nfunction DialogDescriptionPrimitive(props: DialogDescriptionPrimitiveProps) {\n  return (\n    <DialogPrime.Description data-slot=\"dialog-description\" {...props}",
+    "interface CommonControlledStateProps<T> {\n  value?: T;\n  defaultValue?: T;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/dialog.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

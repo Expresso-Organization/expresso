@@ -1,0 +1,71 @@
+{
+  "id": "watermelon-c0ed10b41f440e3b",
+  "sourceUrl": "https://ui.watermelon.sh/block/footer-9",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/footer-9.json",
+      "sha256": "b2ab6178e6eb7ae4e8104155bf026ba669f4a5a3cab61936d0050ba4514a562b",
+      "bytes": 8359,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/footer-9.tsx",
+      "target": "components/ui/footer-9.tsx",
+      "type": "registry:ui",
+      "sha256": "b0bbc97c4813b92c7afa7e4351e1a60350ae1de65675148225a5544624ae0ee5",
+      "bytes": 7636
+    }
+  ],
+  "dependencies": [
+    "react-icons",
+    "framer-motion"
+  ],
+  "registryDependencies": [
+    "footer",
+    "separator"
+  ],
+  "imports": [
+    "@/components/ui/separator",
+    "motion/react",
+    "react",
+    "react-icons/fa6"
+  ],
+  "propsDeclarations": [
+    "export interface Footer9Props {\n  /** Large CTA heading text (multi-line supported) */\n  heading?: string;\n  /** Contact email displayed below the heading */\n  email?: string;\n  /** Href for the email link (e.g. mailto:) */\n  emailHref?: string;\n  /** Custom icon for email link */\n  emailIcon?: ReactNode;\n  /** Background image URL for the hero area */\n  backgroundImage?: string;\n  /** Social media links displayed on the right */\n  socialLinks?: Footer9SocialLink[];\n  /** Brand logo or name element */\n  brandLogo?: ReactNode;\n  /** Navigation links shown in the bottom bar */\n  navLinks?: Footer9NavLink[];\n  /** Copyright text */\n  copyright?: string;\n  /** Legal/policy links shown at the very bottom */\n  legalLinks?: Footer9LegalLink[];\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/footer-9.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "footer-9",
+    "status": "built",
+    "export": "Footer9",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-9.tsx",
+    "url": "./library/previews/watermelon/footer-9.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:12+00:00",
+    "snapshotSha256": "96925cf062980f61e95bc1944bd79b1bcc88a313b62fac11aee68be876c33d5f"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

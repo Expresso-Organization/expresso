@@ -1,0 +1,29 @@
+{
+  "id": "60fps-e5ed83a153a805a2",
+  "sourceUrl": "https://60fps.design/shots/supersonic-hold-to-stop-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Supersonic Hold to Stop Interaction",
+    "공개 이미지 요소: 32개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/supersonic-hold-to-stop-interaction",
+    "sha256": "c590de6d2d638a479aca64d7b834db52f5bd986c1d52646ec09d5c279483788e",
+    "fetchedAt": "2026-09-23T13:07:34+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

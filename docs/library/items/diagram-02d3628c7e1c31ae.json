@@ -1,0 +1,26 @@
+{
+  "id": "diagram-02d3628c7e1c31ae",
+  "sourceUrl": "https://github.com/cathrynlavery/diagram-design/blob/dc1ace47b99a419e42d01a03cb6ace5346efa8ae/skills/diagram-design/references/type-state.md",
+  "sourceRevision": "dc1ace47b99a419e42d01a03cb6ace5346efa8ae",
+  "roles": [
+    "outcome"
+  ],
+  "roleEvidence": "성과와 수치의 비교를 표현할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/diagram/diagram-02d3628c7e1c31ae.md.txt",
+      "sha256": "f5cda20b18da2bb92f291d200ac37ffd8af13328768ae0acf42d688384aa0433",
+      "bytes": 1931,
+      "kind": "reference_source",
+      "label": "원본 type-state.md"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "텍스트 자료 · 원문 보기 가능",
+  "sourceLicense": "https://github.com/cathrynlavery/diagram-design/blob/dc1ace47b99a419e42d01a03cb6ace5346efa8ae/LICENSE"
+}

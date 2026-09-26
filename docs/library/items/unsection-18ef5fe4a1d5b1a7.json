@@ -1,0 +1,29 @@
+{
+  "id": "unsection-18ef5fe4a1d5b1a7",
+  "sourceUrl": "https://www.unsection.com/section/noramble-benefits-feature-design",
+  "sourceRevision": null,
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: noramble benefits feature design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/noramble-benefits-feature-design",
+    "sha256": "cce5981c154e8d79cf9ea1751e4426a455c695c2b742f6baf466e9c551c91fe4",
+    "fetchedAt": "2026-09-23T12:55:18+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

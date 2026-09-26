@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "dropdown-menu-3",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "dropdown-menu",
+    "button"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/dropdown-menu/dropdown-menu-3.tsx",
+      "content": "import {\n  FaFont,\n  FaBold,\n  FaItalic,\n  FaUnderline,\n  FaHighlighter,\n} from \"react-icons/fa\";\n\nimport { Button } from \"@/components/ui/button\";\nimport {\n  DropdownMenu,\n  DropdownMenuContent,\n  DropdownMenuItem,\n  DropdownMenuTrigger,\n} from \"@/components/ui/dropdown-menu\";\n\nconst listItems = [\n  {\n    icon: FaFont,\n    title: \"Font Style\",\n    desc: \"Change typography\",\n  },\n  {\n    icon: FaBold,\n    title: \"Bold Text\",\n    desc: \"Make text stand out\",\n  },\n  {\n    icon: FaItalic,\n    title: \"Italic Text\",\n    desc: \"Add emphasis\",\n  },\n  {\n    icon: FaUnderline,\n    title: \"Underline\",\n    desc: \"Highlight importance\",\n  },\n  {\n    icon: FaHighlighter,\n    title: \"Highlight\",\n    desc: \"Mark key content\",\n  },\n];\n\nconst DropdownMenu3 = () => {\n  return (\n    <DropdownMenu>\n      <DropdownMenuTrigger asChild>\n        <Button\n          variant=\"outline\"\n          size=\"icon\"\n          className=\"flex items-center justify-center rounded-sm shadow-xs\"\n        >\n          <FaFont className=\"text-sm\" />\n          <span className=\"sr-only\">Text tools</span>\n        </Button>\n      </DropdownMenuTrigger>\n\n      <DropdownMenuContent className=\"grid w-64 gap-1 p-1\" align=\"center\">\n        <div className=\"px-1 py-1\">\n          <p className=\"text-muted-foreground text-sm font-medium\">\n            Text Tools\n          </p>\n        </div>\n\n        {listItems.map((item, index) => (\n          <DropdownMenuItem\n            key={index}\n            className=\"hover:bg-accent/50! flex items-center gap-3 rounded-lg p-1\"\n          >\n            <div className=\"bg-muted flex h-8 w-8 items-center justify-center rounded-md\">\n              <item.icon className=\"text-sm\" />\n            </div>\n\n            <div className=\"flex flex-col\">\n              <span className=\"text-sm\">{item.title}</span>\n              <span className=\"text-muted-foreground text-xs\">{item.desc}</span>\n            </div>\n          </DropdownMenuItem>\n        ))}\n      </DropdownMenuContent>\n    </DropdownMenu>\n  );\n};\n\nexport default DropdownMenu3;\n",
+      "type": "registry:ui",
+      "target": "components/ui/dropdown-menu-3.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

@@ -1,0 +1,67 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import {applyAcquisitions} from '../../docs/library/acquisition-core.mjs';
+import {applyCuration} from '../../docs/library/curation-core.mjs';
+import {applyExamples} from '../../docs/library/examples-core.mjs';
+const {JSDOM}=createRequire(new URL('../../services/web/package.json',import.meta.url))('jsdom');
+const read=name=>JSON.parse(readFileSync(new URL('../../docs/library/'+name+'.json',import.meta.url)));
+
+test('라이브러리 탐색·필터를 보존하고 상세 모달에서만 예제를 실행한다',async()=>{
+ const dom=new JSDOM('<main></main>',{url:'http://localhost/#/library'});
+ const keys=['HTMLElement','customElements','document','fetch','ResizeObserver','location','CSS'];
+ const before=new Map(keys.map(k=>[k,globalThis[k]]));
+ try{
+  for(const k of ['HTMLElement','customElements','document','location'])globalThis[k]=dom.window[k];
+  globalThis.CSS={escape:s=>s};
+  globalThis.ResizeObserver=class{observe(){}disconnect(){}};
+  dom.window.HTMLElement.prototype.scrollIntoView=function(){};
+  dom.window.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
+  dom.window.HTMLDialogElement.prototype.close=function(){this.open=false;};
+  globalThis.fetch=()=>new Promise(()=>{});
+  await import('../../docs/library/portal-library.mjs');
+  const el=document.createElement('expresso-library');document.querySelector('main').append(el);
+  el.data=applyExamples(applyCuration(applyAcquisitions(read('catalog'),read('acquisitions')),read('curation')),read('examples'));
+  el.setAttribute('route','#/library');
+  assert.equal(el.querySelectorAll('.lib-collection-card').length,12);
+  assert.equal(el.querySelectorAll('.lib-types,.lib-grid').length,0);
+  for(const card of el.querySelectorAll('.lib-collection-card'))assert.ok(card.querySelector('.lib-collection-icon svg[aria-hidden="true"]'));
+  const sections=el.querySelector('[aria-label="섹션 목록 보기"]');
+  el.setAttribute('route',sections.getAttribute('href'));
+  assert.match(el.querySelector('.lib-result-heading').textContent,/섹션\s+193개/);
+  assert.equal(el.querySelectorAll('.lib-collection-card,.lib-types').length,0);
+  assert.equal(el.querySelector('.lib-breadcrumb a').getAttribute('href'),'#/library');
+  assert.equal(el.querySelector('#lib-advanced-filters').hidden,true);
+  el.querySelector('[data-filter-toggle]').click();
+  assert.equal(el.querySelector('#lib-advanced-filters').hidden,false);
+  const role=el.querySelector('#lib-role');role.value='experience';
+  role.dispatchEvent(new dom.window.Event('change',{bubbles:true}));
+  assert.match(location.hash,/role=experience/);
+  el.setAttribute('route',location.hash);
+  assert.equal(el.querySelector('#lib-role').value,'experience');
+  assert.equal(el.querySelector('#lib-advanced-filters').hidden,false);
+  assert.match(el.querySelector('.lib-filter-status').textContent,/조건 1개/);
+  el.querySelector('[data-filter-toggle]').click();
+  assert.equal(el.querySelector('#lib-advanced-filters').hidden,true);
+  assert.equal(el.querySelector('[data-filter-toggle]').getAttribute('aria-expanded'),'false');
+  assert.equal(el.querySelector('.lib-filter-count').textContent,'1');
+  el.setAttribute('route','#/library/components?availability=example');
+  assert.equal(el.querySelectorAll('.lib-collection-card').length,4);
+  for(const card of el.querySelectorAll('.lib-collection-card'))assert.match(card.getAttribute('href'),/availability=example/);
+  assert.match(el.querySelector('.lib-home-filter').textContent,/필터/);
+  const item=el.data.items.find(i=>i.id==='watermelon-ae05a3bf72601ef6');
+  el.setAttribute('route','#/library/basic-ui/'+item.id);
+  const live=el.querySelector('dialog iframe');
+  assert.equal(live.getAttribute('src'),item.preview.liveUrl);
+  assert.equal(live.getAttribute('sandbox'),'allow-scripts');
+  assert.equal(live.getAttribute('loading'),'eager');
+  assert.equal(live.tabIndex,0);
+  assert.equal(el.querySelector('[data-live]'),null);
+  for(const frame of el.querySelectorAll('.lib-card iframe'))assert.equal(frame.getAttribute('sandbox'),'');
+  el.setAttribute('route','#/library/basic-ui');
+  assert.equal(live.isConnected,false);
+  assert.equal(el.querySelector('dialog'),null);
+
+ }finally{dom.window.close();for(const k of keys)globalThis[k]=before.get(k);}
+});

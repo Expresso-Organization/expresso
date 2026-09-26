@@ -1,0 +1,53 @@
+{
+  "id": "watermelon-cd2dc79a2813bab3",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/vertical-tooltip-navbar-base.json",
+      "sha256": "0c630df2bde34bf782520432f3e4cd277fd9743689a6929f565d8fe9720c3c36",
+      "bytes": 8502,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/vertical-tooltip-navbar-base.tsx",
+      "target": "components/ui/vertical-tooltip-navbar-base.tsx",
+      "type": "registry:ui",
+      "sha256": "de2c784f0db9f79dd26bf4ba70a73d3b896f2a0daa079b8740b06c1bcfcbaa04",
+      "bytes": 7779
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "lucide-react",
+    "motion/react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "interface TooltipVerticalNavbarProps {\n  items: TooltipItem[];\n  tooltipDelay?: number;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/vertical-tooltip-navbar-base.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

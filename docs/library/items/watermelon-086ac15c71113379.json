@@ -1,0 +1,70 @@
+{
+  "id": "watermelon-086ac15c71113379",
+  "sourceUrl": "https://ui.watermelon.sh/block/footer-7",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/footer-7.json",
+      "sha256": "8f8ac7460b826d5322433fd62d508a2f79ebabe00938f61aabbf8566c27a61b5",
+      "bytes": 6535,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/footer-7.tsx",
+      "target": "components/ui/footer-7.tsx",
+      "type": "registry:ui",
+      "sha256": "fbe860b6a4b608a07c1b1798d1590a4dd287a5dcaf4bec532085613610fc6b01",
+      "bytes": 5882
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "footer",
+    "button",
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "react"
+  ],
+  "propsDeclarations": [
+    "export interface Footer7Props {\n  logo?: ReactNode;\n  brandName?: string;\n  badgeText?: string;\n  headline?: string;\n  inputPlaceholder?: string;\n  buttonText?: string;\n  buttonIcon?: ReactNode;\n  backgroundImage?: string;\n  centerIcon?: ReactNode;\n  linkGroups?: Footer7LinkGroup[];\n  brandWatermark?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/footer-7.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "footer-7",
+    "status": "built",
+    "export": "Footer7",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-7.tsx",
+    "url": "./library/previews/watermelon/footer-7.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:12+00:00",
+    "snapshotSha256": "52d0587a68ae8bb5daabd65ca73efc3e902281c9f5ddf5aff8d27b9d2f04f637"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "date-picker-7",
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "date-picker"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/date-picker/date-picker-7.tsx",
+      "content": "'use client'\n\nimport type { ComponentProps } from 'react'\nimport { useId, useState } from 'react'\n\nimport { ChevronDownIcon } from 'lucide-react'\n\nimport { Calendar } from '@/components/ui/calendar'\nimport { Label } from '@/components/ui/label'\nimport { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'\n\ntype CalendarClassNames = NonNullable<ComponentProps<typeof Calendar>['classNames']>\n\nconst formatSelectedDate = (selectedDate: Date) =>\n  selectedDate.toLocaleDateString()\n\nconst calendarClassNames = {\n  day_button:\n    'rounded-full data-[selected=true]:rounded-full! data-[selected=true]:bg-slate-900! data-[selected=true]:text-white! data-[selected=true]:dark:bg-white! data-[selected=true]:dark:text-slate-950! hover:rounded-full',\n  today:\n    'rounded-full bg-muted/60! data-[selected=true]:bg-slate-900! data-[selected=true]:text-white! dark:data-[selected=true]:bg-white! dark:data-[selected=true]:text-slate-950!'\n} satisfies CalendarClassNames\n\nconst DatePicker7 = () => {\n  const id = useId()\n  const [open, setOpen] = useState<boolean>(false)\n  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)\n\n  return (\n    <div className='w-full max-w-xs space-y-2'>\n      <Label htmlFor={id} className='px-1 text-sm font-medium'>\n        Hidden outside days\n      </Label>\n      <Popover open={open} onOpenChange={setOpen}>\n        <PopoverTrigger\n          id={id}\n          className='flex h-11 w-full items-center justify-between rounded-2xl border border-border/60 bg-background px-3.5 text-sm font-normal shadow-xs outline-none transition-colors hover:bg-accent/10 focus-visible:ring-[3px] focus-visible:ring-ring/50'\n        >\n          <span className={selectedDate ? 'text-foreground' : 'text-muted-foreground'}>\n            {selectedDate ? formatSelectedDate(selectedDate) : 'Pick a date'}\n          </span>\n          <ChevronDownIcon className='size-4 text-muted-foreground/80' />\n        </PopoverTrigger>\n        <PopoverContent\n          className='w-auto overflow-hidden rounded-2xl border-border/60 p-0 shadow-sm'\n          align='start'\n        >\n          <Calendar\n            mode='single'\n            selected={selectedDate}\n            classNames={calendarClassNames}\n            showOutsideDays={false}\n            onSelect={(date) => {\n              setSelectedDate(date)\n              setOpen(false)\n            }}\n          />\n        </PopoverContent>\n      </Popover>\n    </div>\n  )\n}\n\nexport default DatePicker7\n",
+      "type": "registry:ui",
+      "target": "components/ui/date-picker-7.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

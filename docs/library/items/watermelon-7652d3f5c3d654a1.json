@@ -1,0 +1,69 @@
+{
+  "id": "watermelon-7652d3f5c3d654a1",
+  "sourceUrl": "https://ui.watermelon.sh/block/footer-22",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/footer-22.json",
+      "sha256": "985ac4f3bb926c212b2626d21020e427bb92a0abd23fa764e2ce7f73120cea00",
+      "bytes": 11650,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/footer-22.tsx",
+      "target": "components/ui/footer-22.tsx",
+      "type": "registry:ui",
+      "sha256": "c43fba8728d9dcd155fb0610e21bf12214cccc9f725b3ece51eea8ca5f8bb66f",
+      "bytes": 10825
+    }
+  ],
+  "dependencies": [
+    "@hugeicons/react",
+    "framer-motion"
+  ],
+  "registryDependencies": [
+    "footer"
+  ],
+  "imports": [
+    "@hugeicons/core-free-icons",
+    "@hugeicons/react",
+    "motion/react"
+  ],
+  "propsDeclarations": [
+    "export interface Footer22Props {\n    brandName?: string;\n    offerColumns?: OfferColumn[];\n    newsletterHeadline?: string;\n    newsletterDescription?: string;\n    contactHeading?: string;\n    contactDescription?: string;\n    emailContact?: string;\n    bottomLinks?: LinkItem[];\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/footer-22.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "footer-22",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-22.tsx",
+    "url": "./library/previews/watermelon/footer-22.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:10+00:00",
+    "snapshotSha256": "378bbc670ce4df61930a7bf515a684a35d45aa96aea1ff26b77718bf6a031667"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

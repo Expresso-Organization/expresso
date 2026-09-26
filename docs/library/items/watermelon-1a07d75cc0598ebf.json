@@ -1,0 +1,71 @@
+{
+  "id": "watermelon-1a07d75cc0598ebf",
+  "sourceUrl": "https://ui.watermelon.sh/block/footer-4",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/footer-4.json",
+      "sha256": "52fee1877a953c60e56a4d8ad58cd1ab2b4674388ee5ba48cce3ebb2a90cf5cf",
+      "bytes": 8133,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/footer-4.tsx",
+      "target": "components/ui/footer-4.tsx",
+      "type": "registry:ui",
+      "sha256": "50ff37abc54c4124dcbb0d7c25c1f3f6e3a9f832c0bc169dd2e84eb73a2572ee",
+      "bytes": 7426
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "footer",
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/separator",
+    "react"
+  ],
+  "propsDeclarations": [
+    "export interface Footer4Props {\n  /** Brand logo node */\n  logo?: ReactNode;\n  /** Brand / product name */\n  brandName: string;\n  /** Short punchy tagline rendered large */\n  tagline: string;\n  /** Supporting sentence beneath the tagline */\n  description?: string;\n  /** Optional badge shown above the tagline */\n  badge?: Footer4BadgeItem;\n  /** Newsletter section title */\n  newsletterTitle: string;\n  /** Newsletter supporting copy */\n  newsletterSubtitle?: string;\n  /** Input placeholder */\n  newsletterPlaceholder?: string;\n  /** Button label */\n  newsletterButtonLabel?: string;\n  /** Link columns */\n  linkGroups?: Footer4LinkGroup[];\n  /** Social icon links shown in the bottom bar */\n  socialLinks?: Footer4SocialLink[];\n  /** Bottom bar legal / nav links */\n  legalLinks?: Footer4Link[];\n  /** Copyright text */\n  copyright: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/footer-4.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "footer-4",
+    "status": "built",
+    "export": "Footer4",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-4.tsx",
+    "url": "./library/previews/watermelon/footer-4.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:12+00:00",
+    "snapshotSha256": "09967a17c5f2150016d43d7958991974b02baa3c6e26d8e39608328f3063c26d"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

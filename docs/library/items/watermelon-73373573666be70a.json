@@ -1,0 +1,115 @@
+{
+  "id": "watermelon-73373573666be70a",
+  "sourceUrl": "https://ui.watermelon.sh/block/footer-2",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/footer-2.json",
+      "sha256": "d3f1c4ef575f74dd778673ee2ac3b49c90a0506de2aef0666657f0441a62e76e",
+      "bytes": 5941,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/footer-2.tsx",
+      "target": "components/ui/footer-2.tsx",
+      "type": "registry:ui",
+      "sha256": "c8e0c7bc3a44260f434ab1f9c14160466965f78941891eeab1e23f675119fc4d",
+      "bytes": 5321
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "footer",
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "react"
+  ],
+  "propsDeclarations": [
+    "export interface Footer2Props {\n  logo: React.ReactNode;\n  brandName: string;\n  tagline: string;\n  socialLinks: SocialLink[];\n  socialText: string;\n  linkGroups: FooterLinkGroup[];\n  newsletterTitle: string;\n  newsletterSubtitle: string;\n  newsletterPlaceholder?: string;\n  newsletterButtonText?: string;\n  copyright: string;\n  floatingIcon?: React.ReactNode;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/footer-2.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "footer-2",
+    "status": "built",
+    "export": "Footer2",
+    "props": {
+      "brandName": "Portfolio Demo",
+      "logo": "P",
+      "tagline": "Selected work, process, and evidence.",
+      "description": "Example content for a portfolio component preview.",
+      "newsletterTitle": "Stay in touch",
+      "newsletterDescription": "Updates from this example portfolio.",
+      "newsletterSubtitle": "Example subscription form",
+      "socialText": "Connect",
+      "socialLinks": [],
+      "linkGroups": [
+        {
+          "title": "Work",
+          "links": [
+            {
+              "label": "Projects",
+              "href": "#"
+            },
+            {
+              "label": "Research",
+              "href": "#"
+            }
+          ]
+        },
+        {
+          "title": "About",
+          "links": [
+            {
+              "label": "Experience",
+              "href": "#"
+            },
+            {
+              "label": "Contact",
+              "href": "#"
+            }
+          ]
+        }
+      ],
+      "copyright": "Portfolio example · demo content",
+      "legalLinks": [
+        {
+          "label": "Privacy",
+          "href": "#"
+        }
+      ],
+      "brandWatermark": "PORTFOLIO"
+    },
+    "entry": "src/components/watermelon-ui/footer-2.tsx",
+    "url": "./library/previews/watermelon/footer-2.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:10+00:00",
+    "snapshotSha256": "62894cd948da33d25520383707f93926e15e5b01c1a4271dffd04f3c8469ab77"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

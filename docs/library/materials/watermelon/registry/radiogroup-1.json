@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "radiogroup-1",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "radio-group"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/radiogroup/radiogroup-1.tsx",
+      "content": "import { Label } from \"@/components/ui/label\";\nimport { RadioGroup, RadioGroupItem } from \"@/components/ui/radio-group\";\n\nconst RadioGroup1 = () => {\n  return (\n    <RadioGroup defaultValue=\"email\" className=\"  space-y-2\">\n      <div className=\"flex items-center gap-2\">\n        <RadioGroupItem\n          value=\"email\"\n          id=\"email\"\n          className=\"border-border data-[state=checked]:border-primary rounded-lg border\"\n        />\n        <Label htmlFor=\"email\">Email Notifications</Label>\n      </div>\n\n      <div className=\"flex items-center gap-2\">\n        <RadioGroupItem\n          value=\"sms\"\n          id=\"sms\"\n          className=\"border-border data-[state=checked]:border-primary rounded-lg border\"\n        />\n        <Label htmlFor=\"sms\">SMS Notifications</Label>\n      </div>\n\n      <div className=\"flex items-center gap-2\">\n        <RadioGroupItem\n          value=\"push\"\n          id=\"push\"\n          className=\"border-border data-[state=checked]:border-primary rounded-lg border\"\n        />\n        <Label htmlFor=\"push\">Push Notifications</Label>\n      </div>\n    </RadioGroup>\n  );\n};\n\nexport default RadioGroup1;\n",
+      "type": "registry:ui",
+      "target": "components/ui/radiogroup-1.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

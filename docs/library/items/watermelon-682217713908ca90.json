@@ -1,0 +1,79 @@
+{
+  "id": "watermelon-682217713908ca90",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/bento-12.json",
+      "sha256": "7fda714677f87b0037f18fb741dac3c955adde6104695ab2636068b82c9a322b",
+      "bytes": 31265,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/bento-12.tsx",
+      "target": "components/ui/bento-12.tsx",
+      "type": "registry:ui",
+      "sha256": "07745b5e0b2836168d1ebd46dcc05a61fd481411dd43010d72b000783ecaf751",
+      "bytes": 29817
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "card"
+  ],
+  "imports": [
+    "@/components/ui/card",
+    "@/lib/utils",
+    "framer-motion",
+    "react",
+    "react-icons/gi",
+    "react-icons/gr",
+    "react-icons/tb"
+  ],
+  "propsDeclarations": [
+    "type IconProps = {\n  className?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/2000/svg",
+    "https://randomuser.me/api/portraits/men/32.jpg",
+    "https://randomuser.me/api/portraits/men/78.jpg",
+    "https://randomuser.me/api/portraits/women/40.jpg",
+    "https://randomuser.me/api/portraits/women/44.jpg"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/bento-12.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "bento-12",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-12.tsx",
+    "url": "./library/previews/watermelon/bento-12.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:02+00:00",
+    "snapshotSha256": "4399671768c64235120f967bc8a1b61d92427c22b66b04b135d81d381bc60b52"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

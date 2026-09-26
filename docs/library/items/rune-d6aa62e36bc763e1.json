@@ -1,0 +1,27 @@
+{
+  "id": "rune-d6aa62e36bc763e1",
+  "sourceUrl": "https://github.com/Nexvyn/runeicons/blob/f649e467d1bc9f272aae3f8daa329d4c924e7340/public/glass-icons/mountain.svg",
+  "sourceRevision": "f649e467d1bc9f272aae3f8daa329d4c924e7340",
+  "roles": [
+    "icon"
+  ],
+  "roleEvidence": "아이콘의 원본 의미 분류를 탐색·링크·자료 유형 표시에 대응합니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/rune/rune-d6aa62e36bc763e1.svg",
+      "sha256": "b08b6108f3cd4b20df5791906b6d24f47fec4b69dba1f605ecf69823b678e336",
+      "bytes": 3826,
+      "kind": "svg_source",
+      "label": "원본 SVG"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "usageNote": "스타일·크기·stroke 적용을 확인한 뒤 제품에서 사용합니다. Apache-2.0 LICENSE 및 변경 표시를 보존합니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/Nexvyn/runeicons/blob/f649e467d1bc9f272aae3f8daa329d4c924e7340/LICENSE"
+}

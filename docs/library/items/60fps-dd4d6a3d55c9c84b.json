@@ -1,0 +1,29 @@
+{
+  "id": "60fps-dd4d6a3d55c9c84b",
+  "sourceUrl": "https://60fps.design/shots/firstclub-intro-button-progress-animation",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: FirstClub Intro Button Progress Animation",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 25개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/firstclub-intro-button-progress-animation",
+    "sha256": "9548d9ef70bb4aba58ad90cdefca11cc6e720631eb1b868820b84f1e60cacce7",
+    "fetchedAt": "2026-09-23T13:01:30+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

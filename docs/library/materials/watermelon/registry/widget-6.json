@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "widget-6",
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "widget",
+    "button"
+  ],
+  "files": [
+    {
+      "path": "src/components/watermelon-ui/widget-6.tsx",
+      "content": "import { MoreHorizontal, TrendingUp } from 'lucide-react';\nimport { motion } from 'framer-motion';\n\nexport function ProgressTrackerWidget() {\n  const totalBars = 32;\n  const filledBars = 23;\n\n  return (\n    <div className=\"bg-card border-border w-full max-w-[480px] rounded-3xl border p-6 shadow-sm\">\n      <div className=\"mb-6 flex items-start justify-between\">\n        <div>\n          <h3 className=\"text-card-foreground text-base font-semibold\">\n            Weekly Engagement\n          </h3>\n          <p className=\"text-muted-foreground mt-1 text-sm\">\n            Community interaction is growing steadily\n          </p>\n        </div>\n        <button className=\"text-muted-foreground hover:text-foreground transition-colors p-1\">\n          <MoreHorizontal className=\"h-5 w-5\" />\n        </button>\n      </div>\n\n      <div className=\"mb-6 flex items-end justify-between\">\n        <div className=\"text-card-foreground text-5xl font-bold tracking-tighter\">\n          72%\n        </div>\n        <div className=\"mb-1 flex items-center gap-2\">\n          <div className=\"text-primary bg-primary/10 flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold\">\n            <TrendingUp\n              className=\"h-4 w-4\"\n              strokeWidth={2.5}\n            />\n            <span>+12%</span>\n          </div>\n          <span className=\"text-muted-foreground text-sm font-medium\">vs last week</span>\n        </div>\n      </div>\n\n      <div className=\"flex h-12 w-full gap-[3px]\">\n        {Array.from({ length: totalBars }).map((_, i) => (\n          <motion.div\n            key={i}\n            initial={{ scaleY: 0, opacity: 0 }}\n            animate={{ scaleY: 1, opacity: 1 }}\n            transition={{\n              duration: 0.4,\n              delay: i * 0.02,\n              ease: 'easeOut',\n            }}\n            style={{ originY: 1 }}\n            className={`flex-1 rounded-[2px] ${\n              i < filledBars ? 'bg-primary' : 'bg-muted'\n            }`}\n          />\n        ))}\n      </div>\n    </div>\n  );\n}\n",
+      "type": "registry:ui",
+      "target": "components/ui/widget-6.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

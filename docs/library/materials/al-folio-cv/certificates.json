@@ -1,0 +1,12 @@
+{
+  "name": "certificates",
+  "sourceRepository": "https://github.com/al-org-dev/al-folio-cv",
+  "sourceRevision": "a2d2e673215dfb01e3a5a8c8e36683eec6c550fa",
+  "license": "MIT",
+  "files": [
+    {
+      "path": "templates/cv/certificates.liquid",
+      "content": "{% comment %}\n  Unified certificates entry renderer for both formats\n{% endcomment %}\n\n<ul class=\"card-text font-weight-light list-group list-group-flush\">\n  {% for entry in entries %}\n    <li class=\"list-group-item\">\n      {% if entry.icon %}\n        <i class=\"{{ entry.icon }}\"></i>\n      {% endif %}\n      {% if entry.url %}\n        <strong\n          ><a href=\"{{ entry.url }}\" target=\"_blank\">{{ entry.name }}</a></strong\n        >\n      {% else %}\n        <strong>{{ entry.name }}</strong>\n      {% endif %}\n\n      {% if entry.issuer %}\n        - <em>{{ entry.issuer }}</em>\n      {% endif %}\n\n      {% if entry.date %}\n        ({{ entry.date | split: '-' | slice: 0, 1 | join: '' }})\n      {% endif %}\n    </li>\n  {% endfor %}\n</ul>\n"
+    }
+  ]
+}

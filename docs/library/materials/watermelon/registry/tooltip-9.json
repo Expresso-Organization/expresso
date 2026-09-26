@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "tooltip-9",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "tooltip"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/tooltip/tooltip-9.tsx",
+      "content": "import { Button } from \"@/components/ui/button\";\nimport {\n  Tooltip,\n  TooltipContent,\n  TooltipTrigger,\n} from \"@/components/ui/tooltip\";\n\nconst Tooltip9 = () => {\n  return (\n    <Tooltip>\n      <TooltipTrigger asChild>\n        <Button variant=\"outline\" size=\"sm\">\n          Rounded\n        </Button>\n      </TooltipTrigger>\n      <TooltipContent className=\"rounded-full\">\n        <p>This tooltip is rounded</p>\n      </TooltipContent>\n    </Tooltip>\n  );\n};\n\nexport default Tooltip9;\n",
+      "type": "registry:ui",
+      "target": "components/ui/tooltip-9.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

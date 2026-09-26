@@ -1,0 +1,76 @@
+{
+  "id": "watermelon-9e04206d9bf620b8",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/bento-3.json",
+      "sha256": "5d345e358e7ba35abd6247108962b36e6b011f5f67ed9e86b2230482dbed9175",
+      "bytes": 33384,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/bento-3.tsx",
+      "target": "components/ui/bento-3.tsx",
+      "type": "registry:ui",
+      "sha256": "0d4c958bd577ce4658f33335013de637c8f03545e44b7c7959f8ada9a694cc44",
+      "bytes": 31693
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "card"
+  ],
+  "imports": [
+    "@/components/ui/card",
+    "motion/react",
+    "react"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/2000/svg",
+    "https://assets.watermelon.sh/Closed%20Treasure%20Chest.svg",
+    "https://assets.watermelon.sh/Cloud%20Storage.svg",
+    "https://assets.watermelon.sh/Compose.svg",
+    "https://assets.watermelon.sh/Cube.svg",
+    "https://assets.watermelon.sh/Edit%20Chat%20History.svg",
+    "https://assets.watermelon.sh/iphone-mockup.png",
+    "https://assets.watermelon.sh/keyboard.png"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/bento-3.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "bento-3",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-3.tsx",
+    "url": "./library/previews/watermelon/bento-3.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:04+00:00",
+    "snapshotSha256": "c0c5802f91e8836b1ebad73e0dd659351ed5df43fcd7364cd1636d8d33a4ffc6"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

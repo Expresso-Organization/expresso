@@ -1,0 +1,199 @@
+{
+  "id": "watermelon-6a668d8c3fe1a496",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/payment-operations-dashboard.json",
+      "sha256": "b182989c60d181bc7d98cc6f0fab4d1212438d542af72dec1cc3fb25f3211131",
+      "bytes": 48538,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/payment-operations-dashboard/components/app-sidebar.tsx",
+      "target": "components/watermelon/payment-operations-dashboard/components/app-sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "0316c890316c283e10ddb50bffaf527a4c9a5869a1346f225630519234d1c71a",
+      "bytes": 3181
+    },
+    {
+      "path": "src/components/dashboards/payment-operations-dashboard/components/failed-payment.tsx",
+      "target": "components/watermelon/payment-operations-dashboard/components/failed-payment.tsx",
+      "type": "registry:component",
+      "sha256": "cbd18af1e1b23a4505cef004ef54f56b5ac00262e72881087ae3e8f1370b7d33",
+      "bytes": 2966
+    },
+    {
+      "path": "src/components/dashboards/payment-operations-dashboard/components/header.tsx",
+      "target": "components/watermelon/payment-operations-dashboard/components/header.tsx",
+      "type": "registry:component",
+      "sha256": "ad8999f99507f9e71bc4a65df70b8eb04e57d3dfeb330cfe3caa9b75de6c135a",
+      "bytes": 5922
+    },
+    {
+      "path": "src/components/dashboards/payment-operations-dashboard/components/nav-footer.tsx",
+      "target": "components/watermelon/payment-operations-dashboard/components/nav-footer.tsx",
+      "type": "registry:component",
+      "sha256": "915bfefdd005ca6813eb245ad44fe97d4fc1cb45288a55e8d15370aecd335d18",
+      "bytes": 3507
+    },
+    {
+      "path": "src/components/dashboards/payment-operations-dashboard/components/nav-main.tsx",
+      "target": "components/watermelon/payment-operations-dashboard/components/nav-main.tsx",
+      "type": "registry:component",
+      "sha256": "f02d0056be0cacd7a593f7e90a053bc196af6be44087b0c7b72ff59e1a536b6e",
+      "bytes": 1187
+    },
+    {
+      "path": "src/components/dashboards/payment-operations-dashboard/components/nav-options.tsx",
+      "target": "components/watermelon/payment-operations-dashboard/components/nav-options.tsx",
+      "type": "registry:component",
+      "sha256": "70c21c6002270d8108d8ff828b5e18086a7de7f23cb39724cbb9d18dd97cc9ac",
+      "bytes": 1275
+    },
+    {
+      "path": "src/components/dashboards/payment-operations-dashboard/components/nav-products.tsx",
+      "target": "components/watermelon/payment-operations-dashboard/components/nav-products.tsx",
+      "type": "registry:component",
+      "sha256": "93b1efbccdfd196b49fcb0c9993bb7ff2d07c1b3fd7fccfaf6d3145342be9c38",
+      "bytes": 1109
+    },
+    {
+      "path": "src/components/dashboards/payment-operations-dashboard/components/payment-summary.tsx",
+      "target": "components/watermelon/payment-operations-dashboard/components/payment-summary.tsx",
+      "type": "registry:component",
+      "sha256": "5623b6183b0a415d23b8e2d144ecc968ee24965a90ac8a558c3c4b385aabb7a4",
+      "bytes": 5557
+    },
+    {
+      "path": "src/components/dashboards/payment-operations-dashboard/components/revenue-charts.tsx",
+      "target": "components/watermelon/payment-operations-dashboard/components/revenue-charts.tsx",
+      "type": "registry:component",
+      "sha256": "67a1d0016bce2b428816da9fc42884254a5a5894548d4de9996f28e3e9b1e8d5",
+      "bytes": 5653
+    },
+    {
+      "path": "src/components/dashboards/payment-operations-dashboard/components/theme-toggle.tsx",
+      "target": "components/watermelon/payment-operations-dashboard/components/theme-toggle.tsx",
+      "type": "registry:component",
+      "sha256": "c8804daa57814f84f52e5b0e359b786464ac1cff46ca228c1a2bb3a9ad050cdf",
+      "bytes": 1309
+    },
+    {
+      "path": "src/components/dashboards/payment-operations-dashboard/components/transaction-table.tsx",
+      "target": "components/watermelon/payment-operations-dashboard/components/transaction-table.tsx",
+      "type": "registry:component",
+      "sha256": "21b9967e08f8eccc22b2a74ebe2efd03b4705c72a907df0074a8f25445e803ed",
+      "bytes": 8428
+    },
+    {
+      "path": "src/components/dashboards/payment-operations-dashboard/dashboardLayout.tsx",
+      "target": "components/watermelon/payment-operations-dashboard/dashboardLayout.tsx",
+      "type": "registry:component",
+      "sha256": "2bc3d37b375072633b40999730e6108d1ddd4a8aa4b85550a9767b00587122f9",
+      "bytes": 705
+    },
+    {
+      "path": "src/components/dashboards/payment-operations-dashboard/dashboardView.tsx",
+      "target": "components/watermelon/payment-operations-dashboard/dashboardView.tsx",
+      "type": "registry:component",
+      "sha256": "dc33a2193b95a710c2e1f0c7fb8fe3f2bcdca7f1199d6d72cf6ed85389732f8c",
+      "bytes": 921
+    },
+    {
+      "path": "src/components/dashboards/payment-operations-dashboard/demo.tsx",
+      "target": "components/watermelon/payment-operations-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "f5eb76f508646d45090c11cfb8225461408399d1dfc55695ba7e22a44411fe0f",
+      "bytes": 236
+    }
+  ],
+  "dependencies": [
+    "@radix-ui/react-avatar",
+    "@radix-ui/react-dialog",
+    "@radix-ui/react-dropdown-menu",
+    "@radix-ui/react-popover",
+    "@radix-ui/react-select",
+    "@radix-ui/react-separator",
+    "@radix-ui/react-slot",
+    "@radix-ui/react-switch",
+    "@radix-ui/react-tooltip",
+    "@tabler/icons-react",
+    "class-variance-authority",
+    "lucide-react",
+    "next-themes",
+    "recharts"
+  ],
+  "registryDependencies": [
+    "avatar",
+    "badge",
+    "button",
+    "card",
+    "chart",
+    "dialog",
+    "dropdown-menu",
+    "input",
+    "popover",
+    "select",
+    "separator",
+    "sheet",
+    "sidebar",
+    "skeleton",
+    "switch",
+    "table",
+    "tooltip"
+  ],
+  "imports": [
+    "./components/app-sidebar",
+    "./components/failed-payment",
+    "./components/header",
+    "./components/payment-summary",
+    "./components/revenue-charts",
+    "./components/transaction-table",
+    "./dashboardLayout",
+    "./dashboardView",
+    "./nav-footer",
+    "./nav-main",
+    "./nav-options",
+    "./theme-toggle",
+    "@/components/ui/avatar",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/chart",
+    "@/components/ui/dialog",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/input",
+    "@/components/ui/popover",
+    "@/components/ui/select",
+    "@/components/ui/sidebar",
+    "@/components/ui/switch",
+    "@/components/ui/table",
+    "@tabler/icons-react",
+    "lucide-react",
+    "next-themes",
+    "react",
+    "recharts"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/payment-operations-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

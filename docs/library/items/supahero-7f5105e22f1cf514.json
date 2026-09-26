@@ -1,0 +1,30 @@
+{
+  "id": "supahero-7f5105e22f1cf514",
+  "sourceUrl": "https://supahero.io/hero/roberta-s-society",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Roberta's Society",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://robertassociety.com/",
+  "evidence": {
+    "url": "https://supahero.io/hero/roberta-s-society",
+    "sha256": "c41519140daba85c57968c8e1fd591a049755d1444f1ac9a33c67d4e3493116a",
+    "fetchedAt": "2026-09-23T12:53:56+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

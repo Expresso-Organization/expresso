@@ -1,0 +1,29 @@
+{
+  "id": "60fps-5d53447d37aeeb22",
+  "sourceUrl": "https://60fps.design/appsites/sunflower-3d-footer-animation",
+  "sourceRevision": null,
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Sunflower 3D Footer Animation",
+    "공개 이미지 요소: 16개",
+    "동영상 포스터: 19개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/appsites/sunflower-3d-footer-animation",
+    "sha256": "b47ab798c06186501a1de06fcde1f20a3e92266f4cb272d6d9db453ef272908e",
+    "fetchedAt": "2026-09-23T12:54:46+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

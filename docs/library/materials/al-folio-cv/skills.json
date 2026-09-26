@@ -1,0 +1,12 @@
+{
+  "name": "skills",
+  "sourceRepository": "https://github.com/al-org-dev/al-folio-cv",
+  "sourceRevision": "a2d2e673215dfb01e3a5a8c8e36683eec6c550fa",
+  "license": "MIT",
+  "files": [
+    {
+      "path": "templates/cv/skills.liquid",
+      "content": "{% comment %}\n  Unified skills entry renderer for both formats\n{% endcomment %}\n\n<div class=\"card-text font-weight-light\">\n  {% for entry in entries %}\n    <div class=\"skill-item\">\n      {% if entry.icon %}\n        <i class=\"{{ entry.icon }}\"></i>\n      {% endif %}\n      <strong>\n        {{- entry.name -}}\n        {%- if entry.level %} ({{ entry.level }}){% endif %}:</strong\n      >\n      {% if entry.keywords %}\n        {% for keyword in entry.keywords %}\n          {% if forloop.last %}\n            {{ keyword }}\n          {% else %}\n            {{ keyword }},\n          {% endif %}\n        {% endfor %}\n      {% endif %}\n    </div>\n  {% endfor %}\n</div>\n\n<style>\n  .skill-item {\n    padding: 0.5rem 0;\n  }\n</style>\n"
+    }
+  ]
+}

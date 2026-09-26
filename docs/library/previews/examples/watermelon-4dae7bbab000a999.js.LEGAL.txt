@@ -1,0 +1,32 @@
+Bundled license information:
+
+@tabler/icons-react/dist/esm/defaultAttributes.mjs:
+@tabler/icons-react/dist/esm/createReactComponent.mjs:
+@tabler/icons-react/dist/esm/icons/IconAlertTriangle.mjs:
+@tabler/icons-react/dist/esm/icons/IconApi.mjs:
+@tabler/icons-react/dist/esm/icons/IconBolt.mjs:
+@tabler/icons-react/dist/esm/icons/IconBox.mjs:
+@tabler/icons-react/dist/esm/icons/IconCalendar.mjs:
+@tabler/icons-react/dist/esm/icons/IconClock.mjs:
+@tabler/icons-react/dist/esm/icons/IconCreditCard.mjs:
+@tabler/icons-react/dist/esm/icons/IconDatabase.mjs:
+@tabler/icons-react/dist/esm/icons/IconDots.mjs:
+@tabler/icons-react/dist/esm/icons/IconFlag.mjs:
+@tabler/icons-react/dist/esm/icons/IconFolder.mjs:
+@tabler/icons-react/dist/esm/icons/IconHistory.mjs:
+@tabler/icons-react/dist/esm/icons/IconHourglass.mjs:
+@tabler/icons-react/dist/esm/icons/IconLayoutNavbar.mjs:
+@tabler/icons-react/dist/esm/icons/IconMessage.mjs:
+@tabler/icons-react/dist/esm/icons/IconPlus.mjs:
+@tabler/icons-react/dist/esm/icons/IconSettings.mjs:
+@tabler/icons-react/dist/esm/icons/IconTool.mjs:
+@tabler/icons-react/dist/esm/icons/IconTournament.mjs:
+@tabler/icons-react/dist/esm/icons/IconTrolley.mjs:
+@tabler/icons-react/dist/esm/icons/IconUser.mjs:
+@tabler/icons-react/dist/esm/tabler-icons-react.mjs:
+  /**
+   * @license @tabler/icons-react v3.44.0 - MIT
+   *
+   * This source code is licensed under the MIT license.
+   * See the LICENSE file in the root directory of this source tree.
+   */

@@ -1,0 +1,30 @@
+{
+  "id": "footer-c1a727366ea3a429",
+  "sourceUrl": "https://www.footer.design/sites/hyperion",
+  "sourceRevision": null,
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Hyperion",
+    "공개 이미지 요소: 27개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.hyperionla.com/",
+  "evidence": {
+    "url": "https://www.footer.design/sites/hyperion",
+    "sha256": "99a1e2ec0007e797abe38d1efbbcead991b2ae365bbe019e285b94d93a2a3653",
+    "fetchedAt": "2026-09-23T12:52:57+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

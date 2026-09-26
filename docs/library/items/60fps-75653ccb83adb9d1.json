@@ -1,0 +1,29 @@
+{
+  "id": "60fps-75653ccb83adb9d1",
+  "sourceUrl": "https://60fps.design/shots/duolingo-chess-play-with-player-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Duolingo Chess Play with Player Interaction",
+    "공개 이미지 요소: 32개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/duolingo-chess-play-with-player-interaction",
+    "sha256": "48865d4c2ecc9e9f037ff7fcd45e997e748ac4c4d06ea30ca5b491b485f89abe",
+    "fetchedAt": "2026-09-23T12:59:58+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

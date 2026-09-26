@@ -1,0 +1,29 @@
+{
+  "id": "60fps-b84b94e55f7b8a40",
+  "sourceUrl": "https://60fps.design/apps/not-boring-calculator",
+  "sourceRevision": null,
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Not Boring Calculator",
+    "공개 이미지 요소: 5개",
+    "동영상 포스터: 2개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/apps/not-boring-calculator",
+    "sha256": "f123da9ece244f166113ec5e019051c6523b8e7074e369782d602a6c48f7fe05",
+    "fetchedAt": "2026-09-23T12:52:53+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

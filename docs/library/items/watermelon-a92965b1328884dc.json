@@ -1,0 +1,81 @@
+{
+  "id": "watermelon-a92965b1328884dc",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/bento-13.json",
+      "sha256": "af85f7bfac27f0dc68446d90208d9067342823f58dfc6fb3930678cc2d5c2d19",
+      "bytes": 24527,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/bento-13.tsx",
+      "target": "components/ui/bento-13.tsx",
+      "type": "registry:ui",
+      "sha256": "5c8fd417d63833d9075c97a3b70380bd4076f3787165fc9f29dff0cd0f1ceb2b",
+      "bytes": 23109
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "card"
+  ],
+  "imports": [
+    "@/components/ui/card",
+    "@/lib/utils",
+    "motion/react",
+    "react",
+    "react-icons/ai",
+    "react-icons/fa6"
+  ],
+  "propsDeclarations": [
+    "type AnimatedNumberProps = {\n  value: number;\n  className?: string;\n  springOptions?: Parameters<typeof useSpring>[1];\n  as?: \"span\" | \"div\" | \"p\";\n  decimals?: number;\n  prefix?: string;\n  suffix?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://assets.watermelon.sh/bento-13-bg.png",
+    "https://assets.watermelon.sh/winner-cup.png",
+    "https://randomuser.me/api/portraits/men/13.jpg",
+    "https://randomuser.me/api/portraits/men/32.jpg",
+    "https://randomuser.me/api/portraits/men/78.jpg",
+    "https://randomuser.me/api/portraits/women/17.jpg",
+    "https://randomuser.me/api/portraits/women/40.jpg",
+    "https://randomuser.me/api/portraits/women/44.jpg"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/bento-13.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "bento-13",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-13.tsx",
+    "url": "./library/previews/watermelon/bento-13.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:02+00:00",
+    "snapshotSha256": "c8bc6276d702e0409cffd011af4e69855c5ee41f9b411445c66fc9a03b9d15f1"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

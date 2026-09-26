@@ -1,0 +1,29 @@
+{
+  "id": "60fps-67f90a7011f11d11",
+  "sourceUrl": "https://60fps.design/shots/linear-issue-actions-popup-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Linear Issue Actions Popup Interaction",
+    "공개 이미지 요소: 24개",
+    "동영상 포스터: 25개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/linear-issue-actions-popup-interaction",
+    "sha256": "11b885354936713c08f3ba3d92f25505b57955c3208b99b3ed32eab05280324a",
+    "fetchedAt": "2026-09-23T13:03:36+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

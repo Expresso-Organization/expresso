@@ -1,0 +1,157 @@
+{
+  "id": "watermelon-bd6b5113a6912d75",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/business-operations-dashboard.json",
+      "sha256": "5ea7a8ced8f0fe6ed72ccdc17aa1e5b10595d28eb78679990a610ea1ee1db665",
+      "bytes": 51347,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/business-operations-dashboard/components/app-sidebar.tsx",
+      "target": "components/watermelon/business-operations-dashboard/components/app-sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "78d1937829ccfdb22019d636e55c53efb698d8be04246646742ea4cb508afee9",
+      "bytes": 5129
+    },
+    {
+      "path": "src/components/dashboards/business-operations-dashboard/components/invoice-card.tsx",
+      "target": "components/watermelon/business-operations-dashboard/components/invoice-card.tsx",
+      "type": "registry:component",
+      "sha256": "8460e89ebacbbaba175cc58ca3264ec9db7174757f9205a28972d801c3c01ace",
+      "bytes": 3180
+    },
+    {
+      "path": "src/components/dashboards/business-operations-dashboard/components/nav-main.tsx",
+      "target": "components/watermelon/business-operations-dashboard/components/nav-main.tsx",
+      "type": "registry:component",
+      "sha256": "b581d5779e309091f40d01887163c21bde729843c7c40b42bbcb046229c50b62",
+      "bytes": 1531
+    },
+    {
+      "path": "src/components/dashboards/business-operations-dashboard/components/nav-projects.tsx",
+      "target": "components/watermelon/business-operations-dashboard/components/nav-projects.tsx",
+      "type": "registry:component",
+      "sha256": "331dee473993d5d46c715a2eacb58ca71801dfd39094243867aad839960c4993",
+      "bytes": 1418
+    },
+    {
+      "path": "src/components/dashboards/business-operations-dashboard/components/nav-user.tsx",
+      "target": "components/watermelon/business-operations-dashboard/components/nav-user.tsx",
+      "type": "registry:component",
+      "sha256": "8e41664e09a0f2be6d232f6e3266a17b24a35c47496e07b400b94bffa86f2ff6",
+      "bytes": 3966
+    },
+    {
+      "path": "src/components/dashboards/business-operations-dashboard/components/team-switcher.tsx",
+      "target": "components/watermelon/business-operations-dashboard/components/team-switcher.tsx",
+      "type": "registry:component",
+      "sha256": "cd6d85fa117290e59382a4cf63aaee4cd94b37f39adfcd32e6a5b4f14abc2d20",
+      "bytes": 2952
+    },
+    {
+      "path": "src/components/dashboards/business-operations-dashboard/dashboardLayout.tsx",
+      "target": "components/watermelon/business-operations-dashboard/dashboardLayout.tsx",
+      "type": "registry:component",
+      "sha256": "ca8f10af53e45c8bd2fddc4038753b26c74efc5e0f3b88e2e5fc07a6f1e50481",
+      "bytes": 435
+    },
+    {
+      "path": "src/components/dashboards/business-operations-dashboard/data.ts",
+      "target": "components/watermelon/business-operations-dashboard/data.ts",
+      "type": "registry:component",
+      "sha256": "bb0597036fa616251fe6862c626a62d141fdfd0ac7dfe9c850993356337e201b",
+      "bytes": 4640
+    },
+    {
+      "path": "src/components/dashboards/business-operations-dashboard/demo.tsx",
+      "target": "components/watermelon/business-operations-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "e5624be0e023f3c53fbcf3de00fe9201012298ccf9e321cceec96f02aec0b5ba",
+      "bytes": 288
+    },
+    {
+      "path": "src/components/dashboards/business-operations-dashboard/invoicesPageView.tsx",
+      "target": "components/watermelon/business-operations-dashboard/invoicesPageView.tsx",
+      "type": "registry:component",
+      "sha256": "cb9858c17ad8358380d0aaf18b8685e6a8ce7cacd9183fdf2753590e94eea4b6",
+      "bytes": 22869
+    }
+  ],
+  "dependencies": [
+    "@tabler/icons-react",
+    "class-variance-authority",
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "avatar",
+    "badge",
+    "breadcrumb",
+    "button",
+    "card",
+    "collapsible",
+    "dialog",
+    "dropdown-menu",
+    "input",
+    "label",
+    "popover",
+    "separator",
+    "sheet",
+    "sidebar",
+    "skeleton",
+    "tabs",
+    "textarea",
+    "tooltip"
+  ],
+  "imports": [
+    "../data",
+    "./components/app-sidebar",
+    "./components/invoice-card",
+    "./dashboardLayout",
+    "./data",
+    "./invoicesPageView",
+    "./nav-main",
+    "./nav-projects",
+    "./nav-user",
+    "@/components/ui/avatar",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/dialog",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/popover",
+    "@/components/ui/separator",
+    "@/components/ui/sidebar",
+    "@/components/ui/tabs",
+    "@/components/ui/textarea",
+    "@tabler/icons-react",
+    "lucide-react",
+    "react"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://www.google.com/search?q=Stacks.com"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/business-operations-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

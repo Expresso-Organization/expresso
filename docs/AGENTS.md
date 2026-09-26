@@ -70,8 +70,8 @@ cp docs/templates/expresso-doc.html docs/<문서-이름>.html
 새 문서는 `docs/index.html` 목록에 한 줄 추가합니다. 목록에 없는 문서는 아무도
 찾지 못합니다.
 
-**발표 자료는 개발 포털의 목록에도 한 줄 더합니다** — `docs/Expresso 개발 포털.dc.html`
-의 `DECKS` 배열이고, 프리젠테이션 탭이 그 목록을 표지와 함께 보여 줍니다. 장수는
+**발표 자료는 포털의 프리젠테이션 목록에도 한 줄 더합니다** — `docs/Expresso 개발 포털.dc.html`
+의 `DECKS` 배열이고, 상단 프리젠테이션 탭이 그 목록을 표지와 함께 보여 줍니다. 장수는
 적지 않습니다. 미리보기가 그 자료의 지면을 직접 셉니다.
 
 만들던 발표 자료로 돌아갈 때는 작업대를 띄웁니다 — 축소판과 함께 고친 순서로
@@ -144,3 +144,7 @@ python3 scripts/serve-docs.py
 이 서버로 띄우면 편집 도구의 「저장」이 **파일 선택 없이 열어 둔 그 파일을
 바로 덮습니다.** `python3 -m http.server` 로도 보기는 되지만, 그때는 저장할
 때 파일을 한 번 고르게 됩니다.
+
+포털의 문서·라이브러리 목록이 바뀌면 `node scripts/library/build_portal_search.mjs`로
+상단 검색 인덱스를 갱신합니다. 포털 UI를 바꾼 뒤에는
+`node scripts/library/build_portal_changes.mjs`로 변경 알림 목록을 갱신합니다.

@@ -1,0 +1,64 @@
+{
+  "id": "watermelon-224ae5e153b69cab",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/tooltip-radix.json",
+      "sha256": "83197f42a03a9a9fb86768fbd9a83f7227c02424b0a2c16fbab2689148ecce8e",
+      "bytes": 9095,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/tooltip-radix.tsx",
+      "target": "components/ui/tooltip-radix.tsx",
+      "type": "registry:ui",
+      "sha256": "7226f05bd9cbf4a50eda9fce4677d646d3b112771704a0822fe62d3b18097b26",
+      "bytes": 8335
+    }
+  ],
+  "dependencies": [
+    "motion",
+    "radix-ui"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "@/lib/utils",
+    "motion/react",
+    "radix-ui",
+    "react"
+  ],
+  "propsDeclarations": [
+    "type TooltipProviderProps = TooltipProviderPrimitiveProps;\n\nfunction TooltipProvider({\n  delayDuration = 0,\n  ...props\n}",
+    "type TooltipProps = TooltipPrimitiveProps & {\n  delayDuration?: TooltipPrimitiveProps[\"delayDuration\"];\n}",
+    "type TooltipTriggerProps = TooltipTriggerPrimitiveProps;\n\nfunction TooltipTrigger({ ...props }",
+    "type TooltipContentProps = TooltipContentPrimitiveProps;\n\nfunction TooltipContent({\n  className,\n  sideOffset,\n  children,\n  ...props\n}",
+    "type TooltipProviderPrimitiveProps = React.ComponentProps<\n  typeof TooltipPrime.Provider\n>;\n\nfunction TooltipProviderPrimitive(props: TooltipProviderPrimitiveProps) {\n  return <TooltipPrime.Provider data-slot=\"tooltip-provider\" {...props}",
+    "type TooltipPrimitiveProps = React.ComponentProps<typeof TooltipPrime.Root> & {\n  followCursor?: boolean | \"x\" | \"y\";\n  followCursorSpringOptions?: SpringOptions;\n}",
+    "type TooltipTriggerPrimitiveProps = React.ComponentProps<\n  typeof TooltipPrime.Trigger\n>;\n\nfunction TooltipTriggerPrimitive({\n  onMouseMove,\n  ...props\n}",
+    "type TooltipPortalPrimitiveProps = Omit<\n  React.ComponentProps<typeof TooltipPrime.Portal>,\n  \"forceMount\"\n>;\n\nfunction TooltipPortalPrimitive(props: TooltipPortalPrimitiveProps) {\n  const { isOpen }",
+    "type TooltipContentPrimitiveProps = Omit<\n  React.ComponentProps<typeof TooltipPrime.Content>,\n  \"forceMount\" | \"asChild\"\n> &\n  HTMLMotionProps<\"div\">;\n\nfunction TooltipContentPrimitive({\n  onEscapeKeyDown,\n  onPointerDownOutside,\n  side,\n  sideOffset,\n  align,\n  alignOffset,\n  avoidCollisions,\n  collisionBoundary,\n  collisionPadding,\n  arrowPadding,\n  sticky,\n  hideWhenDetached,\n  style,\n  transition = { type: \"spring\", stiffness: 300, damping: 25 }",
+    "type TooltipArrowPrimitiveProps = React.ComponentProps<\n  typeof TooltipPrime.Arrow\n>;\n\nfunction TooltipArrowPrimitive(props: TooltipArrowPrimitiveProps) {\n  return <TooltipPrime.Arrow data-slot=\"tooltip-arrow\" {...props}",
+    "interface CommonControlledStateProps<T> {\n  value?: T;\n  defaultValue?: T;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/tooltip-radix.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

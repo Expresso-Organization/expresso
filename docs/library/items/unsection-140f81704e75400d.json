@@ -1,0 +1,29 @@
+{
+  "id": "unsection-140f81704e75400d",
+  "sourceUrl": "https://www.unsection.com/section/1inch-apis-cta-design",
+  "sourceRevision": null,
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: 1inch apis cta design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/1inch-apis-cta-design",
+    "sha256": "c1566f5637ae6248b05121aa0ef8e869c9e271cb379b862e87868774a8856666",
+    "fetchedAt": "2026-09-23T12:50:58+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

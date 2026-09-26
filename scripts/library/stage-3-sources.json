@@ -1,0 +1,432 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-09-26",
+  "sources": [
+    {
+      "id": "magic-portfolio",
+      "repo": "magicuidesign/portfolio",
+      "folder": "portfolio",
+      "name": "Magic UI Portfolio",
+      "framework": "React / Next.js / Tailwind CSS",
+      "revision": "5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b",
+      "license": "LICENSE",
+      "licenseId": "MIT"
+    },
+    {
+      "id": "shadcn-timeline",
+      "repo": "timDeHof/shadcn-timeline",
+      "folder": "shadcn-timeline",
+      "name": "shadcn Timeline",
+      "framework": "React / Tailwind CSS",
+      "revision": "23a910569ca1f44eafd4d069f4ec523d9e2934ab",
+      "license": "LICENSE",
+      "licenseId": "MIT"
+    },
+    {
+      "id": "al-folio-core",
+      "repo": "al-org-dev/al-folio-core",
+      "folder": "al-folio-core",
+      "name": "al-folio Core",
+      "framework": "Jekyll / Liquid",
+      "revision": "fa58be03acad50a4a1ec566dc88280e73ab75d18",
+      "license": "LICENSE",
+      "licenseId": "MIT"
+    },
+    {
+      "id": "al-folio-cv",
+      "repo": "al-org-dev/al-folio-cv",
+      "folder": "al-folio-cv",
+      "name": "al-folio CV",
+      "framework": "Jekyll / Liquid",
+      "revision": "a2d2e673215dfb01e3a5a8c8e36683eec6c550fa",
+      "license": "LICENSE",
+      "licenseId": "MIT"
+    },
+    {
+      "id": "al-folio-distill",
+      "repo": "al-org-dev/al-folio-distill",
+      "folder": "al-folio-distill",
+      "name": "al-folio Distill",
+      "framework": "Jekyll / Liquid",
+      "revision": "c63daebbd1448a1c0ffa5fd8241ccf6161f775fa",
+      "license": "LICENSE",
+      "licenseId": "MIT"
+    }
+  ],
+  "items": [
+    {
+      "source": "magic-portfolio",
+      "key": "work",
+      "path": "src/components/section/work-section.tsx",
+      "title": "회사·직책·기간이 있는 경력 목록",
+      "roles": [
+        "experience"
+      ],
+      "inputs": [
+        "company",
+        "title",
+        "start",
+        "end",
+        "description",
+        "logoUrl"
+      ],
+      "notes": [
+        "DATA.work를 props로 분리해야 합니다.",
+        "현재 경력의 Present 문구 현지화와 키보드 아코디언 검증이 필요합니다."
+      ],
+      "extra": [
+        "src/components/ui/accordion.tsx",
+        "src/lib/utils.ts"
+      ]
+    },
+    {
+      "source": "magic-portfolio",
+      "key": "project-card",
+      "path": "src/components/project-card.tsx",
+      "title": "기간·기술·링크가 있는 프로젝트 카드",
+      "roles": [
+        "project-grid"
+      ],
+      "inputs": [
+        "title",
+        "description",
+        "dates",
+        "tags",
+        "image?",
+        "video?",
+        "links"
+      ],
+      "notes": [
+        "이미지 누락 시 높이 고정 빈 상자를 접는 변형이 필요합니다.",
+        "ReactNode 아이콘을 허용된 아이콘 ID로 바꾸고 영상 자동 재생 정책을 정해야 합니다."
+      ],
+      "extra": [
+        "src/components/ui/badge.tsx",
+        "src/lib/utils.ts"
+      ]
+    },
+    {
+      "source": "magic-portfolio",
+      "key": "projects",
+      "path": "src/components/section/projects-section.tsx",
+      "title": "대표 프로젝트 격자 섹션",
+      "roles": [
+        "project-grid"
+      ],
+      "inputs": [
+        "heading",
+        "description",
+        "projects"
+      ],
+      "notes": [
+        "DATA.projects와 고정 영문 제목을 props로 분리해야 합니다.",
+        "카드·등장 애니메이션 의존성을 함께 연결해야 합니다."
+      ],
+      "extra": [
+        "src/components/project-card.tsx",
+        "src/components/magicui/blur-fade.tsx"
+      ]
+    },
+    {
+      "source": "magic-portfolio",
+      "key": "timeline",
+      "path": "src/components/timeline.tsx",
+      "title": "가로·세로 이력 연결선",
+      "roles": [
+        "experience"
+      ],
+      "inputs": [
+        "orientation",
+        "items"
+      ],
+      "notes": [
+        "children 기반 조합을 연도·기간·내용 배열로 감싸야 합니다.",
+        "긴 내용과 모바일 가로 방향의 읽기 순서를 검증해야 합니다."
+      ],
+      "extra": [
+        "src/lib/utils.ts"
+      ]
+    },
+    {
+      "source": "magic-portfolio",
+      "key": "article",
+      "path": "src/app/blog/[slug]/page.tsx",
+      "title": "긴 사례용 제목·본문·이전다음 구성",
+      "roles": [
+        "project-detail"
+      ],
+      "inputs": [
+        "title",
+        "publishedAt",
+        "body",
+        "previous",
+        "next"
+      ],
+      "notes": [
+        "Next.js 서버 라우트와 MDX 빌드에 연결된 원본입니다. 섹션 렌더러 이식이 필요합니다.",
+        "문제·접근·기여·결과 구조는 별도로 정의해야 합니다."
+      ],
+      "extra": []
+    },
+    {
+      "source": "shadcn-timeline",
+      "key": "timeline",
+      "path": "src/components/timeline/timeline.tsx",
+      "title": "날짜·제목·설명 연표",
+      "roles": [
+        "experience",
+        "education"
+      ],
+      "inputs": [
+        "date",
+        "title",
+        "description",
+        "status",
+        "icon"
+      ],
+      "notes": [
+        "날짜 형식 en-US 고정과 잘못된 날짜의 toISOString 예외를 수정해야 합니다.",
+        "아이콘·ReactNode·Date를 직렬화 가능한 입력으로 감싸야 합니다."
+      ],
+      "extra": [
+        "src/components/timeline/timeline.stories.tsx"
+      ]
+    },
+    {
+      "source": "al-folio-core",
+      "key": "publications",
+      "path": "_layouts/bib.liquid",
+      "title": "저자·발표처·초록·논문 링크",
+      "roles": [
+        "research",
+        "technical-evidence"
+      ],
+      "inputs": [
+        "title",
+        "authors",
+        "journal",
+        "year",
+        "abstract",
+        "pdf",
+        "doi",
+        "code"
+      ],
+      "notes": [
+        "BibTeX/Jekyll 데이터를 JSON으로 매핑해야 합니다.",
+        "접힌 초록·저자 확장·외부 배지는 React로 이식하고 외부 요청 정책을 정해야 합니다."
+      ],
+      "extra": []
+    },
+    {
+      "source": "al-folio-core",
+      "key": "projects-horizontal",
+      "path": "_includes/projects_horizontal.liquid",
+      "title": "이미지와 요약을 나란히 배치한 프로젝트",
+      "roles": [
+        "project-grid"
+      ],
+      "inputs": [
+        "title",
+        "description",
+        "img?",
+        "url"
+      ],
+      "notes": [
+        "Liquid와 Bootstrap 클래스를 제품 컴포넌트로 이식해야 합니다.",
+        "이미지 없는 항목의 본문 폭을 확인해야 합니다."
+      ],
+      "extra": []
+    },
+    {
+      "source": "al-folio-core",
+      "key": "article",
+      "path": "_layouts/post.liquid",
+      "title": "목차·인용이 있는 긴 본문",
+      "roles": [
+        "project-detail",
+        "research"
+      ],
+      "inputs": [
+        "title",
+        "description",
+        "content",
+        "toc",
+        "citations"
+      ],
+      "notes": [
+        "Jekyll content·목차·인용 플러그인의 대체 구현이 필요합니다.",
+        "임의 HTML을 그대로 삽입하지 않고 허용 본문 블록으로 변환해야 합니다."
+      ],
+      "extra": []
+    },
+    {
+      "source": "al-folio-cv",
+      "key": "experience",
+      "path": "templates/cv/experience.liquid",
+      "title": "기간·조직·기여 목록",
+      "roles": [
+        "experience"
+      ],
+      "inputs": [
+        "startDate",
+        "endDate",
+        "position",
+        "company",
+        "summary",
+        "highlights"
+      ],
+      "notes": [
+        "Liquid 템플릿을 React로 이식하고 입력의 별칭을 단일 JSON 계약으로 정리해야 합니다.",
+        "긴 한국어·항목 누락·연도 정렬·인쇄 스타일 검증이 필요합니다."
+      ],
+      "extra": []
+    },
+    {
+      "source": "al-folio-cv",
+      "key": "education",
+      "path": "templates/cv/education.liquid",
+      "title": "학위·학교·교과·활동 목록",
+      "roles": [
+        "education"
+      ],
+      "inputs": [
+        "institution",
+        "degree",
+        "area",
+        "startDate",
+        "endDate",
+        "highlights"
+      ],
+      "notes": [
+        "Liquid 템플릿을 React로 이식하고 입력의 별칭을 단일 JSON 계약으로 정리해야 합니다.",
+        "긴 한국어·항목 누락·연도 정렬·인쇄 스타일 검증이 필요합니다."
+      ],
+      "extra": []
+    },
+    {
+      "source": "al-folio-cv",
+      "key": "publications",
+      "path": "templates/cv/publications.liquid",
+      "title": "텍스트 중심 논문 목록",
+      "roles": [
+        "research"
+      ],
+      "inputs": [
+        "title",
+        "publisher",
+        "date",
+        "summary",
+        "url"
+      ],
+      "notes": [
+        "Liquid 템플릿을 React로 이식하고 입력의 별칭을 단일 JSON 계약으로 정리해야 합니다.",
+        "긴 한국어·항목 누락·연도 정렬·인쇄 스타일 검증이 필요합니다."
+      ],
+      "extra": []
+    },
+    {
+      "source": "al-folio-cv",
+      "key": "projects",
+      "path": "templates/cv/projects.liquid",
+      "title": "이미지 없는 프로젝트 목록",
+      "roles": [
+        "project-grid",
+        "project-detail"
+      ],
+      "inputs": [
+        "name",
+        "startDate",
+        "endDate",
+        "summary",
+        "highlights",
+        "url"
+      ],
+      "notes": [
+        "Liquid 템플릿을 React로 이식하고 입력의 별칭을 단일 JSON 계약으로 정리해야 합니다.",
+        "긴 한국어·항목 누락·연도 정렬·인쇄 스타일 검증이 필요합니다."
+      ],
+      "extra": []
+    },
+    {
+      "source": "al-folio-cv",
+      "key": "skills",
+      "path": "templates/cv/skills.liquid",
+      "title": "분야별 기술과 키워드",
+      "roles": [
+        "capability"
+      ],
+      "inputs": [
+        "name",
+        "level",
+        "keywords"
+      ],
+      "notes": [
+        "Liquid 템플릿을 React로 이식하고 입력의 별칭을 단일 JSON 계약으로 정리해야 합니다.",
+        "긴 한국어·항목 누락·연도 정렬·인쇄 스타일 검증이 필요합니다."
+      ],
+      "extra": []
+    },
+    {
+      "source": "al-folio-cv",
+      "key": "awards",
+      "path": "templates/cv/awards.liquid",
+      "title": "수상·기관·연도 목록",
+      "roles": [
+        "evidence"
+      ],
+      "inputs": [
+        "title",
+        "awarder",
+        "date",
+        "summary"
+      ],
+      "notes": [
+        "Liquid 템플릿을 React로 이식하고 입력의 별칭을 단일 JSON 계약으로 정리해야 합니다.",
+        "긴 한국어·항목 누락·연도 정렬·인쇄 스타일 검증이 필요합니다."
+      ],
+      "extra": []
+    },
+    {
+      "source": "al-folio-cv",
+      "key": "certificates",
+      "path": "templates/cv/certificates.liquid",
+      "title": "자격·발급 기관·링크",
+      "roles": [
+        "evidence"
+      ],
+      "inputs": [
+        "name",
+        "issuer",
+        "date",
+        "url"
+      ],
+      "notes": [
+        "Liquid 템플릿을 React로 이식하고 입력의 별칭을 단일 JSON 계약으로 정리해야 합니다.",
+        "긴 한국어·항목 누락·연도 정렬·인쇄 스타일 검증이 필요합니다."
+      ],
+      "extra": []
+    },
+    {
+      "source": "al-folio-distill",
+      "key": "research-article",
+      "path": "templates/distill/render.liquid",
+      "title": "연구 상세·목차·참고문헌 구성",
+      "roles": [
+        "research",
+        "project-detail"
+      ],
+      "inputs": [
+        "title",
+        "authors",
+        "toc",
+        "content",
+        "bibliography"
+      ],
+      "notes": [
+        "Distill 전용 요소와 스크립트가 필요하므로 구조 참고 후보로 보존합니다.",
+        "수식·그림·인용은 별도 허용 블록으로 이식해야 합니다."
+      ],
+      "extra": []
+    }
+  ]
+}

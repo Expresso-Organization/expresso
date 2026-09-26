@@ -1,0 +1,30 @@
+{
+  "id": "footer-26a09d3cf92eca4a",
+  "sourceUrl": "https://www.footer.design/sites/fabric-health",
+  "sourceRevision": null,
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Fabric Health",
+    "공개 이미지 요소: 27개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.fabrichealth.com/",
+  "evidence": {
+    "url": "https://www.footer.design/sites/fabric-health",
+    "sha256": "23a8cf7622d3c2110a7c8084f8159081943f0abcae03b336f2b2a5a4091bad3e",
+    "fetchedAt": "2026-09-23T12:52:23+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

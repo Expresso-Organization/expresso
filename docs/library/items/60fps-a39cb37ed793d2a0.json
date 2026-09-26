@@ -1,0 +1,29 @@
+{
+  "id": "60fps-a39cb37ed793d2a0",
+  "sourceUrl": "https://60fps.design/shots/apple-playground-generation-scale-transform",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Apple Playground Generation Scale Transform",
+    "공개 이미지 요소: 23개",
+    "동영상 포스터: 24개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/apple-playground-generation-scale-transform",
+    "sha256": "f9aa8904062a17d0e5eef04d6a8bfad753d1af62ddd65941e75d8784863cee97",
+    "fetchedAt": "2026-09-23T12:57:10+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

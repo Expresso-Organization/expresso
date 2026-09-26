@@ -1,0 +1,30 @@
+{
+  "id": "supahero-a88127a36bfea003",
+  "sourceUrl": "https://supahero.io/hero/kael-donovan",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Kael Donovan",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://kael-donovan.vercel.app/",
+  "evidence": {
+    "url": "https://supahero.io/hero/kael-donovan",
+    "sha256": "aac7c51f4cf209694e77b15f04df9cc34f8ce2e872ce636027a902bb820a8d93",
+    "fetchedAt": "2026-09-23T12:52:46+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

@@ -1,0 +1,29 @@
+{
+  "id": "60fps-ea0ac776dd4f9ffc",
+  "sourceUrl": "https://60fps.design/shots/apple-tv-video-preview-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "evidence"
+  ],
+  "roleEvidence": "협업 평가와 근거를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Apple TV Video Preview Interaction",
+    "공개 이미지 요소: 19개",
+    "동영상 포스터: 25개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/apple-tv-video-preview-interaction",
+    "sha256": "f97f018cc75ebda4b98981e2c549c63ce1da23ee237bff3c2b16e751381d3cbd",
+    "fetchedAt": "2026-09-23T12:57:17+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

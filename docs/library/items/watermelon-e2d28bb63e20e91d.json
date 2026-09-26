@@ -1,0 +1,184 @@
+{
+  "id": "watermelon-e2d28bb63e20e91d",
+  "sourceUrl": "https://ui.watermelon.sh/dashboard/astrix-dashboard",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/astrix-dashboard.json",
+      "sha256": "a7ddf7a586dd1fdd4d2f76ec1f4d3e1d0ecdf41ef6fd715fc0ff166bea3e1209",
+      "bytes": 247994,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/astrix-dashboard/components/astrix/classification-content.tsx",
+      "target": "components/watermelon/astrix-dashboard/components/astrix/classification-content.tsx",
+      "type": "registry:component",
+      "sha256": "8edc14694ead101c0a0117556b0d58dd3c25401ecbb94e7f91451b82a6e1053c",
+      "bytes": 12488
+    },
+    {
+      "path": "src/components/dashboards/astrix-dashboard/components/astrix/dashboard-content.tsx",
+      "target": "components/watermelon/astrix-dashboard/components/astrix/dashboard-content.tsx",
+      "type": "registry:component",
+      "sha256": "8dd29954eec9283f1e028ad26f6a5a5d24e97a01a4c4ae16b89a53bdd16949ea",
+      "bytes": 10046
+    },
+    {
+      "path": "src/components/dashboards/astrix-dashboard/components/astrix/icons.tsx",
+      "target": "components/watermelon/astrix-dashboard/components/astrix/icons.tsx",
+      "type": "registry:component",
+      "sha256": "1958c5abf64987d39d7d3d7f9bb431896c83d7d2e5fcfe04c686fb48884d542a",
+      "bytes": 39400
+    },
+    {
+      "path": "src/components/dashboards/astrix-dashboard/components/astrix/logo.tsx",
+      "target": "components/watermelon/astrix-dashboard/components/astrix/logo.tsx",
+      "type": "registry:component",
+      "sha256": "8a5491e5a1da6a8541bdef7d3a4801821c240dcbe398b9792f5105b1bbdd857a",
+      "bytes": 1120
+    },
+    {
+      "path": "src/components/dashboards/astrix-dashboard/components/astrix/navigation.tsx",
+      "target": "components/watermelon/astrix-dashboard/components/astrix/navigation.tsx",
+      "type": "registry:component",
+      "sha256": "1e5782cf177a6260fd3c35f7fa70679a937076f0df15fef6892eaf1680aa829d",
+      "bytes": 1520
+    },
+    {
+      "path": "src/components/dashboards/astrix-dashboard/components/astrix/pipeline-sample.tsx",
+      "target": "components/watermelon/astrix-dashboard/components/astrix/pipeline-sample.tsx",
+      "type": "registry:component",
+      "sha256": "7e5152c8e83e9db1655a3798dad6a78ae75dd83673050e8ea63074349e9243f3",
+      "bytes": 121234
+    },
+    {
+      "path": "src/components/dashboards/astrix-dashboard/components/astrix/reports-content.tsx",
+      "target": "components/watermelon/astrix-dashboard/components/astrix/reports-content.tsx",
+      "type": "registry:component",
+      "sha256": "58e3c58d9fb4bee13e3b3e19d7b67e0dba41902237a8b1b441246096340d6003",
+      "bytes": 12238
+    },
+    {
+      "path": "src/components/dashboards/astrix-dashboard/components/astrix/shared.tsx",
+      "target": "components/watermelon/astrix-dashboard/components/astrix/shared.tsx",
+      "type": "registry:component",
+      "sha256": "8c9747fd37dce9f8bce3a0e0fc3cd63c5b8e1645c71a3491f9f5e579157ef7af",
+      "bytes": 1574
+    },
+    {
+      "path": "src/components/dashboards/astrix-dashboard/components/astrix/sidebar.tsx",
+      "target": "components/watermelon/astrix-dashboard/components/astrix/sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "71dd7501c5966adcf644e956e57cf82126cc14fd661aa32b3c1792dfb587520d",
+      "bytes": 7204
+    },
+    {
+      "path": "src/components/dashboards/astrix-dashboard/components/astrix/theme-provider.tsx",
+      "target": "components/watermelon/astrix-dashboard/components/astrix/theme-provider.tsx",
+      "type": "registry:component",
+      "sha256": "2b26bdb08ed867522787d8c954a126c69fbe1043166cd7d75460ad4b62816438",
+      "bytes": 1924
+    },
+    {
+      "path": "src/components/dashboards/astrix-dashboard/components/astrix/topbar.tsx",
+      "target": "components/watermelon/astrix-dashboard/components/astrix/topbar.tsx",
+      "type": "registry:component",
+      "sha256": "3e1d1cc363caf9201ea757c5c14cb0ef5c89169405a939a17df7246c76b78677",
+      "bytes": 7041
+    },
+    {
+      "path": "src/components/dashboards/astrix-dashboard/dashboard-layout.tsx",
+      "target": "components/watermelon/astrix-dashboard/dashboard-layout.tsx",
+      "type": "registry:component",
+      "sha256": "fc6c2aa01d14684d13764f40a1961735868bccb3225dcfe17d407b2902f5b18d",
+      "bytes": 967
+    },
+    {
+      "path": "src/components/dashboards/astrix-dashboard/dashboard.css",
+      "target": "components/watermelon/astrix-dashboard/dashboard.css",
+      "type": "registry:component",
+      "sha256": "3cfce86e85c8320a39f00c24389d84ba4f7cc2f61ebd4b1011e02f79ebeea1bb",
+      "bytes": 8841
+    },
+    {
+      "path": "src/components/dashboards/astrix-dashboard/data.tsx",
+      "target": "components/watermelon/astrix-dashboard/data.tsx",
+      "type": "registry:component",
+      "sha256": "d0612943d4cc0bb5141443347626c2818f4f73cdf8b5370274db6470e275af16",
+      "bytes": 11380
+    },
+    {
+      "path": "src/components/dashboards/astrix-dashboard/demo.tsx",
+      "target": "components/watermelon/astrix-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "c87e1043c23aa2bcd99cb671c85a3267decdf3971621649010b4afe96df8174f",
+      "bytes": 1185
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "avatar",
+    "button",
+    "dropdown-menu",
+    "input-group",
+    "sidebar",
+    "table"
+  ],
+  "imports": [
+    "../../data",
+    "./components/astrix/classification-content",
+    "./components/astrix/dashboard-content",
+    "./components/astrix/icons",
+    "./components/astrix/navigation",
+    "./components/astrix/reports-content",
+    "./components/astrix/sidebar",
+    "./components/astrix/theme-provider",
+    "./components/astrix/topbar",
+    "./dashboard-layout",
+    "./icons",
+    "./logo",
+    "./navigation",
+    "./pipeline-sample",
+    "./shared",
+    "./theme-provider",
+    "@/components/ui/avatar",
+    "@/components/ui/button",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/input-group",
+    "@/components/ui/sidebar",
+    "@/components/ui/table",
+    "@/lib/utils",
+    "lucide-react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "type IconProps = SVGProps<SVGSVGElement>;\n\nexport function HomeIcon({ className, ...props }",
+    "type ThemeProviderProps = {\n  children: ReactNode;\n  defaultTheme?: Theme;\n  storageKey?: string;\n}",
+    "type DashboardLayoutProps = {\n  children: ReactNode;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/2000/svg",
+    "https://api.dicebear.com/10.x/notionists/svg"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/astrix-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

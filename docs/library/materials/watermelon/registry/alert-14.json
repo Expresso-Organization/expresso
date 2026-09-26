@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "alert-14",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "alert"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/alerts/alert-14.tsx",
+      "content": "import { GoAlertFill } from \"react-icons/go\";\n\nimport { Alert, AlertTitle } from \"@/components/ui/alert\";\n\nconst Alert14 = () => {\n  return (\n    <Alert variant=\"destructive\">\n      <GoAlertFill className=\"size-4\" />\n      <AlertTitle>Oops! Something didn’t work as expected.</AlertTitle>\n    </Alert>\n  );\n};\n\nexport default Alert14;\n",
+      "type": "registry:ui",
+      "target": "components/ui/alert-14.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

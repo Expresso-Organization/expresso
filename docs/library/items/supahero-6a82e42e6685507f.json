@@ -1,0 +1,30 @@
+{
+  "id": "supahero-6a82e42e6685507f",
+  "sourceUrl": "https://supahero.io/hero/sitely",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Sitely",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.sitely.cc/",
+  "evidence": {
+    "url": "https://supahero.io/hero/sitely",
+    "sha256": "bf97269c17527cf0b694971d59e37846e81ca16d0e59b6cce5294628ea5cf7ea",
+    "fetchedAt": "2026-09-23T12:54:05+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

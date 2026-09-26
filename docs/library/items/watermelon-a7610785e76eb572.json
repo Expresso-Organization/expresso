@@ -1,0 +1,72 @@
+{
+  "id": "watermelon-a7610785e76eb572",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/bento-11.json",
+      "sha256": "700890f6c3d1d13dfe7ba98faec575480a38daadb62b5e2d79a87b4bac11d9e0",
+      "bytes": 25115,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/bento-11.tsx",
+      "target": "components/ui/bento-11.tsx",
+      "type": "registry:ui",
+      "sha256": "03e480b8b8f060b1cf9599a567bbf2fec203630f533c8154d2feda520e1cea3c",
+      "bytes": 23803
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "card"
+  ],
+  "imports": [
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "framer-motion",
+    "lucide-react",
+    "react",
+    "recharts"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/2000/svg"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/bento-11.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "bento-11",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-11.tsx",
+    "url": "./library/previews/watermelon/bento-11.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:02+00:00",
+    "snapshotSha256": "bb83cfb1c8f5168ed0d74970b8e7e24795a7b463e7c7a6597e6a56537cdc1526"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

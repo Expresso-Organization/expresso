@@ -1,0 +1,30 @@
+{
+  "id": "navbar-ff10ca9a0b5074cb",
+  "sourceUrl": "https://www.navbar.gallery/navbar/leko-labs",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Leko Labs",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.lekolabs.com/",
+  "evidence": {
+    "url": "https://www.navbar.gallery/navbar/leko-labs",
+    "sha256": "b8b7d5b28de4babb610fcc037239dbdfabddf465d37462f87874e6a2c94ba2f5",
+    "fetchedAt": "2026-09-23T12:52:37+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}
