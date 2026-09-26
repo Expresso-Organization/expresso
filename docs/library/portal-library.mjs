@@ -1,4 +1,4 @@
-import { TYPES, TYPE_OF, RIGHTS, COVERAGE, PAGE_SIZE, validateCatalog, parseLibraryRoute, libraryRoute, selectItems } from './catalog-core.mjs';
+import { TYPES, itemType, typeLabel, TYPE_DESCRIPTIONS, RIGHTS, COVERAGE, PAGE_SIZE, validateCatalog, parseLibraryRoute, libraryRoute, selectItems } from './catalog-core.mjs';
 
 import {ACQUISITION, ROLES, applyAcquisitions, validateDetail} from './acquisition-core.mjs';
 import {SELECTION, applyCuration} from './curation-core.mjs';
@@ -69,9 +69,10 @@ class ExpressoLibrary extends HTMLElement {
     const results = selectItems(data, state);
     const sources = new Map(data.sources.map(source => [source.id, source]));
     const selectedSource = sources.get(state.source);
+    const filtered = ['q','source','category','role','availability','selection','family'].some(key=>state[key]);
     const categories = [...new Set(data.items.filter(i => !state.source || i.sourceSite === state.source).flatMap(i => i.categories))].sort();
     const counts = {};
-    for (const item of data.items) counts[TYPE_OF[item.artifactKind]] = (counts[TYPE_OF[item.artifactKind]] || 0) + 1;
+    for (const item of data.items) { const type=itemType(item); counts[type]=(counts[type]||0)+1; }
     const route = patch => escape(libraryRoute({...state, ...patch}));
     const selected = data.items.find(i => i.id === state.id);
     const changedSelection = this.lastSelection !== state.id;
@@ -107,10 +108,11 @@ class ExpressoLibrary extends HTMLElement {
           <section class="lib-source-panel" aria-label="선별 결과"><div><h3>본문 후보와 보강 과제</h3></div><p>코드 예제는 예시 데이터를 사용합니다. 템플릿 실행·구조 재구현 예제는 별도 표시하며 제품 품질 검증은 후속 단계입니다.</p><div class="lib-curation-links">${['shortlisted','reference','excluded'].map(selection=>`<a href="${route({type:'all',source:'',category:'',role:'',q:'',family:'',availability:'',selection,page:1,id:''})}">${SELECTION[selection]} ${data.items.filter(i=>i.selection===selection).length}</a>`).join('')}</div><details><summary>역할별 부족한 유형과 다음 작업</summary><ul>${data.curation.gaps.map(g=>`<li><strong>${ROLES[g.role]} · ${escape(g.status)}</strong><p>${escape(g.note)}</p><p>${escape(g.nextAction)}</p></li>`).join('')}</ul></details></section>
           ${state.family?`<p class="lib-meta">이름 계열: ${escape(state.family)} · 구조가 같은지는 검토 전입니다. <a href="${route({family:'',page:1})}">계열 필터 해제</a></p>`:''}
           ${selectedSource ? this.sourcePanel(selectedSource) : `<details class="lib-coverage"><summary>사이트별 수집 범위와 미처리 내역</summary><div class="lib-source-grid">${data.sources.map(s=>`<a href="${route({source:s.id,category:'',page:1,id:''})}"><strong>${escape(s.name)}</strong><span>${COVERAGE[s.coverageState]}</span><small>${number(s.discoveredCount)}개 · 후속 확인 ${s.nextActions.length}건</small></a>`).join('')}</div></details>`}
-          <div class="lib-result-heading"><h2>${selectedSource ? escape(selectedSource.name) : TYPES[state.type]} <span>${number(results.total)}개</span></h2>
+          ${TYPE_DESCRIPTIONS[state.type]?`<p class="lib-meta">${TYPE_DESCRIPTIONS[state.type]}</p>`:''}
+          <div class="lib-result-heading"><h2>${selectedSource ? escape(selectedSource.name) : typeLabel(state.type)} <span>${number(results.total)}개</span></h2>
             <span>기초 수집 ${escape(data.generatedAt.slice(0,10))} · 선별 ${escape(data.curation.reviewedAt)}</span></div>
           ${results.total ? `<div class="lib-grid">${results.items.map(item=>this.card(item,sources.get(item.sourceSite),state)).join('')}</div>`
-            : `<div class="lib-message"><h3>${state.q || state.category ? '검색 조건에 맞는 항목이 없습니다' : '아직 목록에 등록된 자료가 없습니다'}</h3><p>${selectedSource ? escape(selectedSource.note) : state.type === 'pages' ? '검증된 컴포넌트를 조합한 페이지 구성은 후속 단계에서 추가합니다.' : '유형·사이트·검색 조건을 바꾸어 확인해 보세요.'}</p><a href="#/library">전체 목록 보기</a></div>`}
+            : `<div class="lib-message"><h3>${filtered ? '검색 조건에 맞는 항목이 없습니다' : '아직 목록에 등록된 자료가 없습니다'}</h3><p>${selectedSource ? escape(selectedSource.note) : state.type === 'pages' ? '검증된 컴포넌트를 조합한 페이지 구성은 후속 단계에서 추가합니다.' : '유형·사이트·검색 조건을 바꾸어 확인해 보세요.'}</p><a href="${route({q:'',source:'',category:'',role:'',availability:'',selection:'',family:'',page:1,id:''})}">이 유형의 전체 목록 보기</a></div>`}
           <nav class="lib-pagination" aria-label="라이브러리 페이지"><span>${results.total ? number((results.page-1)*PAGE_SIZE+1) : 0}–${number(Math.min(results.page*PAGE_SIZE,results.total))} / ${number(results.total)}</span>
             <div>${results.page>1?`<a href="${route({page:results.page-1,id:''})}" rel="prev">← 이전</a>`:'<span aria-disabled="true">← 이전</span>'}<label class="lib-page-select"><span class="lib-sr">페이지 선택</span><select name="page" id="lib-page" ${results.pages===1?'disabled':''}>${Array.from({length:results.pages},(_,index)=>`<option value="${index+1}" ${index+1===results.page?'selected':''}>${index+1} 페이지</option>`).join('')}</select><span>/ ${number(results.pages)}</span></label>${results.page<results.pages?`<a href="${route({page:results.page+1,id:''})}" rel="next">다음 →</a>`:'<span aria-disabled="true">다음 →</span>'}</div></nav>
         </main>
@@ -135,7 +137,7 @@ class ExpressoLibrary extends HTMLElement {
       ${link(source.url,'공식 출처')} ${source.licenseUrl?link(source.licenseUrl,'이용 조건'):''}${source.revision?`<p class="lib-meta">원본 판 <code>${escape(source.revision)}</code></p>`:''}</details></section>`;
   }
   card(item, source, state) {
-    const type = TYPE_OF[item.artifactKind];
+    const type = itemType(item);
     return `<article class="lib-card"><div class="lib-card-top"><span>${TYPES[type]}</span><span>${ACQUISITION[item.acquisitionStatus]}</span></div>
       <h3><a data-item="${item.id}" href="${escape(libraryRoute({...state,id:item.id}))}">${escape(item.title)}</a></h3>
       <p class="lib-card-category">${item.selection!=='pending'?SELECTION[item.selection]+' · ':''}${escape(item.categories.join(' · ') || '분류 확인 예정')}${item.variant ? ' · '+escape(item.variant) : ''}</p>
@@ -203,7 +205,7 @@ class ExpressoLibrary extends HTMLElement {
     const routeFamily = family => escape(libraryRoute({type:'all',family,page:1}));
     const duplicates = this.data.curation.duplicates.filter(g=>g.itemIds.includes(item.id)).flatMap(g=>g.itemIds).filter(id=>id!==item.id);
     const related = this.data.relations.filter(r=>r.itemIds.includes(item.id)).flatMap(r=>r.itemIds).filter(id=>id!==item.id);
-    return `<dialog class="lib-detail" aria-labelledby="lib-detail-title"><header><span>${TYPES[TYPE_OF[item.artifactKind]]} / ${escape(source.name)}</span><button data-close aria-label="상세 닫기">닫기 ×</button></header>
+    return `<dialog class="lib-detail" aria-labelledby="lib-detail-title"><header><span>${TYPES[itemType(item)]} / ${escape(source.name)}</span><button data-close aria-label="상세 닫기">닫기 ×</button></header>
       <h2 id="lib-detail-title">${escape(item.title)}</h2><p class="lib-meta">${({listing:'공개 목록의 이름',detail_page:'원본 상세 페이지의 이름',authored:'익스프레소 자체 작성',curated:'검토한 용도에 따른 이름',filename:'원본 파일명',identifier:'식별자에서 표시 이름 생성'})[item.titleSource]||'원본 항목 이름'}</p>
       ${this.preview(item,true)}${item.preview?.liveUrl ? `<div class="lib-detail-links"><button data-live="${escape(item.preview.liveUrl)}">실행 예제 보기</button><a href="${escape(item.preview.liveUrl)}" target="_blank" rel="noopener">새 탭에서 크게 보기 ↗</a></div>` : ''}
       ${item.preview?.kind==='remote_video'?`<div class="lib-detail-links"><button data-play-video>참고 영상 재생</button>${link(item.preview.url,'원본 영상 열기')}</div><p data-video-status role="status"></p>`:''}
@@ -217,7 +219,7 @@ class ExpressoLibrary extends HTMLElement {
       <section class="lib-source-panel" aria-label="후보 검토"><h3>${SELECTION[item.selection]}</h3><p>${ROLES[item.roles[0]]||'역할 확인 필요'} · 제품 등록 전</p>${item.curation.inputs.length?`<p>입력 후보: ${item.curation.inputs.map(escape).join(', ')}</p>`:''}<ul>${item.curation.constraints.map(t=>`<li>${escape(t)}</li>`).join('')}</ul>${duplicates.length?`<p>원본 코드 본문이 같은 항목 · 의존성 및 실행 동등성 미검증</p><ul>${duplicates.map(id=>{const other=this.data.items.find(i=>i.id===id);return `<li><a href="${escape(libraryRoute({...state,id}))}">${escape(other.title)}</a></li>`;}).join('')}</ul>`:''}</section>
       <p class="lib-role-evidence">${escape(item.roleEvidence)} <span>분류 근거: ${item.roleMethod==='source_review'?'원본 코드 검토':item.roleMethod==='authored'?'자체 작성 목적':'식별자·원본 분류 규칙 (미검토)'}</span></p><section data-material-panel aria-label="확보한 자료"><p role="status">항목 자료를 불러오는 중입니다.</p></section><p>${escape(source.note)}</p><div class="lib-detail-links">${link(item.canonicalUrl,item.sourceSite==='bento'?'목록에서 확인':'공급자에서 확인')}${item.originalUrl?link(item.originalUrl,'원본 사이트'):''}</div>
       <details><summary>발견 위치 ${item.discoveredFrom.length}곳${related.length ? ` · 같은 원본 URL을 참조한 항목 ${related.length}개` : ''}</summary><ul>${item.discoveredFrom.map(u=>`<li>${link(u,u)}</li>`).join('')}</ul>${item.sourceUrls.length > 1 ? `<p>같은 식별자로 발견한 출처 주소</p><ul>${item.sourceUrls.map(u=>`<li>${link(u,u)}</li>`).join('')}</ul>` : ''}
-      ${related.length?`<p>원본 URL이 같아도 서로 다른 화면·컴포넌트일 수 있습니다.</p><ul>${[...new Set(related)].map(id=>{const i=this.data.items.find(v=>v.id===id);return `<li><a href="${escape(libraryRoute({...state,type:TYPE_OF[i.artifactKind],id}))}">${escape(i.title)} · ${escape(i.sourceSite)}</a></li>`;}).join('')}</ul>`:''}</details>
+      ${related.length?`<p>원본 URL이 같아도 서로 다른 화면·컴포넌트일 수 있습니다.</p><ul>${[...new Set(related)].map(id=>{const i=this.data.items.find(v=>v.id===id);return `<li><a href="${escape(libraryRoute({...state,type:itemType(i),id}))}">${escape(i.title)} · ${escape(i.sourceSite)}</a></li>`;}).join('')}</ul>`:''}</details>
     </dialog>`;
   }
 }
