@@ -190,3 +190,8 @@
   .lib-toolbar { --lib-control-height:48px; }
   .lib-extra-filters { grid-template-columns:minmax(0,1fr); }
 }
+
+/* 모달의 실행 예제는 화면 폭에 맞추고, 목록의 정적 미리보기와 분리합니다. */
+.lib-live-preview { display:grid; grid-template-rows:minmax(0,1fr) auto; height:min(520px,60vh); }
+.lib-live-preview iframe { width:100%; height:100%; transform:none; pointer-events:auto; }
+.lib-live-preview .lib-preview-label { position:static; }

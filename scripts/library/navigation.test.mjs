@@ -8,7 +8,7 @@ import {applyExamples} from '../../docs/library/examples-core.mjs';
 const {JSDOM}=createRequire(new URL('../../services/web/package.json',import.meta.url))('jsdom');
 const read=name=>JSON.parse(readFileSync(new URL('../../docs/library/'+name+'.json',import.meta.url)));
 
-test('카드 홈에서 유형 목록으로 이동하고 이전 컴포넌트 필터를 카드 링크에 유지한다',async()=>{
+test('라이브러리 탐색·필터를 보존하고 상세 모달에서만 예제를 실행한다',async()=>{
  const dom=new JSDOM('<main></main>',{url:'http://localhost/#/library'});
  const keys=['HTMLElement','customElements','document','fetch','ResizeObserver','location','CSS'];
  const before=new Map(keys.map(k=>[k,globalThis[k]]));
@@ -17,6 +17,8 @@ test('카드 홈에서 유형 목록으로 이동하고 이전 컴포넌트 필�
   globalThis.CSS={escape:s=>s};
   globalThis.ResizeObserver=class{observe(){}disconnect(){}};
   dom.window.HTMLElement.prototype.scrollIntoView=function(){};
+  dom.window.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
+  dom.window.HTMLDialogElement.prototype.close=function(){this.open=false;};
   globalThis.fetch=()=>new Promise(()=>{});
   await import('../../docs/library/portal-library.mjs');
   const el=document.createElement('expresso-library');document.querySelector('main').append(el);
@@ -48,5 +50,18 @@ test('카드 홈에서 유형 목록으로 이동하고 이전 컴포넌트 필�
   assert.equal(el.querySelectorAll('.lib-collection-card').length,4);
   for(const card of el.querySelectorAll('.lib-collection-card'))assert.match(card.getAttribute('href'),/availability=example/);
   assert.match(el.querySelector('.lib-home-filter').textContent,/필터/);
+  const item=el.data.items.find(i=>i.id==='watermelon-ae05a3bf72601ef6');
+  el.setAttribute('route','#/library/basic-ui/'+item.id);
+  const live=el.querySelector('dialog iframe');
+  assert.equal(live.getAttribute('src'),item.preview.liveUrl);
+  assert.equal(live.getAttribute('sandbox'),'allow-scripts');
+  assert.equal(live.getAttribute('loading'),'eager');
+  assert.equal(live.tabIndex,0);
+  assert.equal(el.querySelector('[data-live]'),null);
+  for(const frame of el.querySelectorAll('.lib-card iframe'))assert.equal(frame.getAttribute('sandbox'),'');
+  el.setAttribute('route','#/library/basic-ui');
+  assert.equal(live.isConnected,false);
+  assert.equal(el.querySelector('dialog'),null);
+
  }finally{dom.window.close();for(const k of keys)globalThis[k]=before.get(k);}
 });

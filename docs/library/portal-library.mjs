@@ -29,7 +29,6 @@ class ExpressoLibrary extends HTMLElement {
       if (event.target.closest('[data-retry]')) this.load();
       if (event.target.closest('[data-close]')) this.navigate({id: ''});
       const button=event.target.closest('button');
-      if(button?.dataset.live) this.openLive(button);
       if(button?.hasAttribute('data-play-video')) this.playVideo(button);
       if(button?.hasAttribute('data-filter-toggle')) {
         this.filtersOpen=!this.filtersOpen;button.setAttribute('aria-expanded',String(this.filtersOpen));
@@ -184,6 +183,7 @@ class ExpressoLibrary extends HTMLElement {
     if(!p) return `<div class="lib-preview-missing ${large?'lib-detail-preview':''}">${escape(item.previewReason||'원본에서 확인')}</div>`;
     if(p.kind==='remote_video' && large) return `<div class="lib-visual lib-large-preview lib-video-preview"><video controls playsinline preload="none" poster="${escape(p.poster)}" src="${escape(p.url)}" aria-label="${escape(item.title)} 참고 영상"></video><span class="lib-preview-label">${escape(p.label)}</span></div>`;
     if(p.kind==='text') return `<div class="lib-visual lib-prompt-preview"><pre>${escape(p.text)}</pre><span class="lib-preview-label">${escape(p.label)}</span></div>`;
+    if(p.kind==='local_frame' && large && p.liveUrl) return `<div class="lib-visual lib-large-preview lib-live-preview" data-loading="true"><iframe src="${escape(p.liveUrl)}" title="${escape(item.title)} 실행 예제" sandbox="allow-scripts" loading="eager" tabindex="0" referrerpolicy="no-referrer"></iframe><span class="lib-preview-label">${escape(p.label)} · 실행 중</span></div>`;
     if(p.kind==='local_frame') return `<div class="lib-visual lib-frame-preview ${large?'lib-large-preview':''}" data-loading="true" data-preview-width="${p.width}" data-preview-height="${p.height}"><iframe src="${escape(p.url)}" title="${escape(item.title)} ${escape(p.label)}" sandbox="" loading="lazy" tabindex="-1" width="${p.width}" height="${p.height}" referrerpolicy="no-referrer"></iframe><span class="lib-preview-label">${escape(p.label)} · ${p.width}px</span></div>`;
     return `<div data-loading="true" class="lib-visual ${item.artifactKind==='icon'?'lib-icon-preview':''} ${large?'lib-large-preview':''}"><img src="${escape(large?(p.poster||p.url):p.thumbnailUrl||p.poster||p.url)}" alt="${escape(item.title)} 미리보기" loading="lazy" decoding="async" referrerpolicy="no-referrer"><span class="lib-preview-label">${escape(p.label)}</span></div>`;
   }
@@ -218,14 +218,6 @@ class ExpressoLibrary extends HTMLElement {
     const target=this.querySelector('[data-source-code]');target.hidden=false;target.textContent='원본 코드를 불러오는 중입니다.';
     try{const response=await fetch(material.path);if(!response.ok)throw new Error();const registry=await response.json();target.textContent=registry.files.map(f=>'// '+f.path+'\n'+(f.content||'')).join('\n\n');button.disabled=true;}catch{target.textContent='원본 코드를 불러오지 못했습니다. 파일 링크에서 다시 확인하세요.';}
   }
-  openLive(button) {
-    const frame=this.querySelector('.lib-detail iframe');if(!frame)return;
-    const box=frame.closest('.lib-visual');this.resizeObserver?.unobserve(box);
-    box.style.height='min(520px,60vh)';
-    frame.style.width='100%';frame.style.height='100%';frame.style.transform='none';
-    box.querySelector('.lib-preview-label').textContent='실행 중 · 화면 폭에 맞춤';
-    frame.setAttribute('sandbox','allow-scripts');frame.src=button.dataset.live;frame.style.pointerEvents='auto';frame.tabIndex=0;button.disabled=true;button.textContent='실행 예제 표시 중';
-  }
   async playVideo(button) {
     const video=this.querySelector('.lib-detail video');if(!video)return;
     if(!video.paused){video.pause();button.textContent='참고 영상 재생';return;}
@@ -243,7 +235,7 @@ class ExpressoLibrary extends HTMLElement {
     const related = this.data.relations.filter(r=>r.itemIds.includes(item.id)).flatMap(r=>r.itemIds).filter(id=>id!==item.id);
     return `<dialog class="lib-detail" aria-labelledby="lib-detail-title"><header><span>${TYPES[itemType(item)]} / ${escape(source.name)}</span><button data-close aria-label="상세 닫기">닫기 ×</button></header>
       <h2 id="lib-detail-title">${escape(item.title)}</h2><p class="lib-meta">${({listing:'공개 목록의 이름',detail_page:'원본 상세 페이지의 이름',authored:'익스프레소 자체 작성',curated:'검토한 용도에 따른 이름',filename:'원본 파일명',identifier:'식별자에서 표시 이름 생성'})[item.titleSource]||'원본 항목 이름'}</p>
-      ${this.preview(item,true)}${item.preview?.liveUrl ? `<div class="lib-detail-links"><button data-live="${escape(item.preview.liveUrl)}">실행 예제 보기</button><a href="${escape(item.preview.liveUrl)}" target="_blank" rel="noopener">새 탭에서 크게 보기 ↗</a></div>` : ''}
+      ${this.preview(item,true)}${item.preview?.liveUrl ? `<div class="lib-detail-links"><a href="${escape(item.preview.liveUrl)}" target="_blank" rel="noopener">새 탭에서 크게 보기 ↗</a></div>` : ''}
       ${item.preview?.kind==='remote_video'?`<div class="lib-detail-links"><button data-play-video>참고 영상 재생</button>${link(item.preview.url,'원본 영상 열기')}</div><p data-video-status role="status"></p>`:''}
       ${item.artifactKind==='component'?`<p class="lib-meta">탐색 분류: ${escape(componentClassification(item).evidence)}${componentClassification(item).provisional?' · 원본 미확보, 임시 분류':''}</p>`:''}
       <dl><div><dt>수집</dt><dd>${ACQUISITION[item.acquisitionStatus]}</dd></div><div><dt>품질 / 제품 연결</dt><dd>미검토 / 미등록</dd></div>
