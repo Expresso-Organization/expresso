@@ -35,11 +35,8 @@
 .lib-controls label { display: grid; gap: 4px; font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); }
 .lib-controls select { width: 180px; padding: 9px; border: 1px solid var(--ex-border-strong); border-radius: 7px; background: var(--ex-bg); }
 .lib-controls .lib-mobile-source { display: none; }
-.lib-coverage, .lib-source-panel { margin-top: 20px; border: 1px solid var(--ex-border); background: var(--ex-bg); border-radius: 7px; padding: 14px 16px; }
+.lib-source-panel { margin-top: 20px; border: 1px solid var(--ex-border); background: var(--ex-bg); border-radius: 7px; padding: 14px 16px; }
 .ex-library summary { cursor: pointer; color: var(--ex-fg-body); font-size: var(--ex-text-xs); }
-.lib-source-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; margin-top: 18px; }
-.lib-source-grid a { display: grid; gap: 5px; border-top: 1px solid var(--ex-border); padding-top: 10px; font-size: var(--ex-text-xs); }
-.lib-source-grid :is(span,small) { color: var(--ex-fg-muted); }
 .lib-source-panel > div { display: flex; align-items: center; gap: 12px; }
 .lib-source-panel h3 { font-size: var(--ex-text-lg); }
 .lib-source-panel p { margin: 8px 0; font-size: var(--ex-text-xs); }
@@ -63,8 +60,6 @@
 .lib-page-select { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
 .lib-page-select select { padding: 9px; border: 1px solid var(--ex-border-strong); border-radius: 7px; background: var(--ex-bg); }
 .lib-page-select select:disabled { cursor: default; color: var(--ex-fg-muted); }
-.lib-curation-links { flex-wrap: wrap; margin-block: 14px; }
-.lib-curation-links a { border: 1px solid var(--ex-border); border-radius: 7px; padding: 8px 14px; background: var(--ex-bg); font-size: var(--ex-text-xs); }
 .lib-pagination [aria-disabled] { color: var(--ex-fg-muted); }
 .lib-message { text-align: center; padding: 64px 24px; }
 .lib-message h1 { font-size: var(--ex-text-3xl); }
@@ -101,7 +96,7 @@
   .lib-controls form { flex-basis: 100%; }
   .lib-controls label { width: calc(50% - 7px); }
   .lib-controls select { width: 100%; }
-  .lib-grid, .lib-source-grid { grid-template-columns: minmax(0,1fr); }
+  .lib-grid { grid-template-columns: minmax(0,1fr); }
   .lib-result-heading { flex-wrap: wrap; gap: 4px; }
   .lib-pagination { flex-wrap: wrap; }
   .lib-detail dl > div { grid-template-columns: minmax(0,1fr); gap: 4px; }
