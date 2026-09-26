@@ -20,7 +20,7 @@ const newSummary='문서·발표 자료·라이브러리를 함께 검색하고 
 const history=lines.filter(Boolean).map(line=>{
  const [id,stamp,subject]=line.split('\x1f');
  const title=subject.replace(/^[a-z]+: /,'');
- return {id,date:stamp.slice(0,10),title,summary:title===newSubject?newSummary:notes[id.slice(0,8)]||'개발 포털 화면과 자료 구성이 업데이트됐습니다.',href:id.startsWith('d941')?'#/docs':'#/library'};
+ return {id,date:stamp.slice(0,10),title,summary:title===newSubject?newSummary:notes[id.slice(0,8)]||'개발 포털 화면과 자료 구성이 업데이트됐습니다.',href:title===newSubject||id.startsWith('d941')?'#/docs':'#/library'};
 });
 const inHistory=history.some(item=>item.title===newSubject);
 const draft=inHistory?[]:[{id:'portal-controls-2026-09-26',date:'2026-09-26',title:newSubject,summary:newSummary,href:'#/docs'}];
