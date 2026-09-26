@@ -63,6 +63,21 @@ const runtimeConfigSchema = z.object({
     .enum(["claude-code", "codex", "fixture", "anthropic"])
     .optional(),
   /**
+   * 공고 본문에서 요건을 뽑는 읽기 담당.
+   *
+   * **기본이 `off`다.** 지면 생성과 달리 이 읽기는 사람이 기다리는 자리가
+   * 아니라 `posting_facts`가 10분마다 25건씩 알아서 도는 자리라, 켜 두면
+   * 들어오는 공고만큼 값이 계속 나간다. 지금은 수집을 넓히는 중이라 꺼 둔다.
+   *
+   * 켤 때는 프로바이더를 적는다. `AI_PROVIDER`를 그대로 쓰려면
+   * `AI_PROVIDER_POSTING_FACTS`에 같은 값을 적는다 — 비워 두면 꺼진 것이지
+   * `AI_PROVIDER`를 따라가는 것이 아니다. 조용히 켜지는 편보다 조용히 꺼져
+   * 있는 편이 낫고, 꺼진 것은 실행 기록에 `skipped`로 남는다.
+   */
+  AI_PROVIDER_POSTING_FACTS: z
+    .enum(["off", "claude-code", "codex", "fixture", "anthropic"])
+    .default("off"),
+  /**
    * 고용24(워크넷) 공공 API 인증키. 공공데이터포털에서 발급받는다.
    *
    * 없으면 워크넷 어댑터를 만들지 않는다 — 키 없이 도는 척하면 매일 아침
@@ -125,6 +140,8 @@ export interface RuntimeConfig {
   aiProvider?: "off" | "claude-code" | "codex" | "fixture" | "anthropic";
   /** 지면 생성만 갈아 끼울 때. 비우면 `aiProvider`와 같다. */
   aiPageGenerationProvider?: "claude-code" | "codex" | "fixture" | "anthropic";
+  /** 공고 요건 읽기 담당. 비었거나 `off`면 만들지 않는다. */
+  aiPostingFactsProvider?: "off" | "claude-code" | "codex" | "fixture" | "anthropic";
   work24ApiKey?: string | undefined;
   aiTimeoutMs?: number;
   aiFixtureDir?: string;
@@ -164,6 +181,7 @@ export function loadRuntimeConfig(
     scheduledJobsEnabled: result.SCHEDULED_JOBS_ENABLED,
     googleClientId: result.GOOGLE_CLIENT_ID,
     aiProvider: result.AI_PROVIDER,
+    aiPostingFactsProvider: result.AI_PROVIDER_POSTING_FACTS,
     ...(result.AI_PROVIDER_PAGE_GENERATION
       ? { aiPageGenerationProvider: result.AI_PROVIDER_PAGE_GENERATION }
       : {}),
