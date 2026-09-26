@@ -1,0 +1,60 @@
+Bundled license information:
+
+@tabler/icons-react/dist/esm/defaultAttributes.mjs:
+@tabler/icons-react/dist/esm/createReactComponent.mjs:
+@tabler/icons-react/dist/esm/icons/IconAdjustmentsHorizontal.mjs:
+@tabler/icons-react/dist/esm/icons/IconArrowsSort.mjs:
+@tabler/icons-react/dist/esm/icons/IconBell.mjs:
+@tabler/icons-react/dist/esm/icons/IconBrandVscode.mjs:
+@tabler/icons-react/dist/esm/icons/IconCalendarEvent.mjs:
+@tabler/icons-react/dist/esm/icons/IconCheck.mjs:
+@tabler/icons-react/dist/esm/icons/IconCheckbox.mjs:
+@tabler/icons-react/dist/esm/icons/IconCircleCheck.mjs:
+@tabler/icons-react/dist/esm/icons/IconCircleDashed.mjs:
+@tabler/icons-react/dist/esm/icons/IconCirclePlus.mjs:
+@tabler/icons-react/dist/esm/icons/IconCircle.mjs:
+@tabler/icons-react/dist/esm/icons/IconClipboardCheck.mjs:
+@tabler/icons-react/dist/esm/icons/IconCoin.mjs:
+@tabler/icons-react/dist/esm/icons/IconCreditCard.mjs:
+@tabler/icons-react/dist/esm/icons/IconDeviceDesktop.mjs:
+@tabler/icons-react/dist/esm/icons/IconDots.mjs:
+@tabler/icons-react/dist/esm/icons/IconEye.mjs:
+@tabler/icons-react/dist/esm/icons/IconFileInvoice.mjs:
+@tabler/icons-react/dist/esm/icons/IconFlag.mjs:
+@tabler/icons-react/dist/esm/icons/IconFolder.mjs:
+@tabler/icons-react/dist/esm/icons/IconGitBranch.mjs:
+@tabler/icons-react/dist/esm/icons/IconHash.mjs:
+@tabler/icons-react/dist/esm/icons/IconInbox.mjs:
+@tabler/icons-react/dist/esm/icons/IconLayoutDashboard.mjs:
+@tabler/icons-react/dist/esm/icons/IconLayoutGrid.mjs:
+@tabler/icons-react/dist/esm/icons/IconLayoutSidebar.mjs:
+@tabler/icons-react/dist/esm/icons/IconList.mjs:
+@tabler/icons-react/dist/esm/icons/IconLock.mjs:
+@tabler/icons-react/dist/esm/icons/IconLogout.mjs:
+@tabler/icons-react/dist/esm/icons/IconMoon.mjs:
+@tabler/icons-react/dist/esm/icons/IconPlus.mjs:
+@tabler/icons-react/dist/esm/icons/IconQuestionMark.mjs:
+@tabler/icons-react/dist/esm/icons/IconReceipt.mjs:
+@tabler/icons-react/dist/esm/icons/IconReport.mjs:
+@tabler/icons-react/dist/esm/icons/IconRosetteDiscountCheck.mjs:
+@tabler/icons-react/dist/esm/icons/IconSearch.mjs:
+@tabler/icons-react/dist/esm/icons/IconSortAscending.mjs:
+@tabler/icons-react/dist/esm/icons/IconSparkles.mjs:
+@tabler/icons-react/dist/esm/icons/IconSun.mjs:
+@tabler/icons-react/dist/esm/icons/IconTable.mjs:
+@tabler/icons-react/dist/esm/icons/IconTimeline.mjs:
+@tabler/icons-react/dist/esm/icons/IconUpload.mjs:
+@tabler/icons-react/dist/esm/icons/IconUserCircle.mjs:
+@tabler/icons-react/dist/esm/icons/IconUserPlus.mjs:
+@tabler/icons-react/dist/esm/icons/IconUsers.mjs:
+@tabler/icons-react/dist/esm/icons/IconWorld.mjs:
+@tabler/icons-react/dist/esm/icons/IconAlertTriangleFilled.mjs:
+@tabler/icons-react/dist/esm/icons/IconCircleCheckFilled.mjs:
+@tabler/icons-react/dist/esm/icons/IconFlagFilled.mjs:
+@tabler/icons-react/dist/esm/tabler-icons-react.mjs:
+  /**
+   * @license @tabler/icons-react v3.44.0 - MIT
+   *
+   * This source code is licensed under the MIT license.
+   * See the LICENSE file in the root directory of this source tree.
+   */

@@ -83,6 +83,8 @@ export function selectItems(data, state) {
     if (state.selection && item.selection!==state.selection) return false;
     if (state.family && item.familyId!==state.family) return false;
     if (state.availability === 'preview' && !item.preview) return false;
+    if (state.availability === 'example' && !item.preview?.liveUrl) return false;
+    if (state.availability === 'video' && item.preview?.kind!=='remote_video') return false;
     if (state.availability === 'source' && item.acquisitionStatus !== 'source_ready') return false;
     if (state.availability === 'waiting' && !['permission_needed','access_blocked'].includes(item.acquisitionStatus)) return false;
     const haystack = [item.title, item.sourceItemId, names[item.sourceSite], ...item.categories].join(' ').toLocaleLowerCase();

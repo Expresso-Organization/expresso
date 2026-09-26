@@ -90,6 +90,8 @@ Node 테스트 15건, Python 테스트 11건, 타입 검사를 통과했습니�
 
 ## 7. 관련 근거
 
+후속 작업: [전체 실행 예제와 공식 모션 영상 연결](./portfolio-library-examples.md)을 완료했습니다. 제품 이식과 실제 경력 콘텐츠의 품질 검증은 남아 있습니다.
+
 - [고정 출처와 파일 목록](../scripts/library/stage-3-sources.json), [검토 데이터와 변경 전후 역할](./library/curation.json)
 - [Magic UI Portfolio](https://github.com/magicuidesign/portfolio/tree/5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b)
 - [shadcn Timeline](https://github.com/timDeHof/shadcn-timeline/tree/23a910569ca1f44eafd4d069f4ec523d9e2934ab)

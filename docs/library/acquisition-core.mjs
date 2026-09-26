@@ -7,6 +7,7 @@ export function validPreview(preview) {
   if (!preview || typeof preview.label!=='string') return false;
   if (preview.kind==='text') return typeof preview.text==='string';
   if (!safeUrl(preview.sourceUrl)) return false;
+  if (preview.kind==='remote_video') return safeUrl(preview.url) && safeUrl(preview.poster) && (!preview.thumbnailUrl||safeUrl(preview.thumbnailUrl));
   if (preview.kind==='remote_image') return safeUrl(preview.url) && (!preview.thumbnailUrl||safeUrl(preview.thumbnailUrl));
   if (preview.kind==='local_image') return safeLocal(preview.url);
   if (preview.kind==='local_frame') return safeLocal(preview.url) && (!preview.liveUrl || safeLocal(preview.liveUrl)) && preview.width>0 && preview.height>0;

@@ -116,6 +116,8 @@
 .lib-visual { position:relative; overflow:hidden; height:220px; background:var(--ex-bg-muted); color:var(--ex-fg-muted); }
 .lib-card-preview .lib-visual { border-radius:9px 9px 0 0; }
 .lib-visual img { display:block; width:100%; height:100%; object-fit:contain; object-position:top center; }
+.lib-visual video { display:block; width:100%; height:100%; object-fit:contain; background:var(--ex-bg-inverse); }
+.lib-video-preview .lib-preview-label { top:0; bottom:auto; pointer-events:none; }
 .lib-icon-preview img { object-fit:contain; padding:50px; }
 .lib-visual iframe { display:block; border:0; max-width:none; transform:scale(var(--preview-scale,.25)); transform-origin:top left; pointer-events:none; background:var(--ex-bg); }
 .lib-preview-label { position:absolute; bottom:0; left:0; right:0; padding:5px 9px; font-size:var(--ex-text-3xs); color:var(--ex-fg-body); background:var(--ex-bg); border-top:1px solid var(--ex-border); }
