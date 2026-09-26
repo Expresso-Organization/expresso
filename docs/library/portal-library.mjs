@@ -144,9 +144,8 @@ class ExpressoLibrary extends HTMLElement {
       ${componentState?'<nav class="lib-breadcrumb" aria-label="라이브러리 탐색 경로"><a href="#/library">← 모든 유형 보기</a><span aria-hidden="true">/</span><span aria-current="page">컴포넌트</span></nav>':''}
       <main class="lib-home"><section aria-labelledby="lib-assembly-title"><div class="lib-home-title"><div><h2 id="lib-assembly-title">페이지 조립</h2><p>큰 구역부터 세부 요소까지, 필요한 조립 단위로 찾습니다.</p></div>${componentState?'':`<a href="#/library/all">전체 ${number(this.data.items.length)}개 검색 →</a>`}</div>
       ${componentState && ['q','source','category','role','availability','selection','family'].some(key=>state[key])?'<p class="lib-home-filter">기존 검색·필터가 카드별 결과에 적용되어 있습니다. <a href="#/library/components">필터 해제</a></p>':''}
-      <div class="lib-collection-grid">${primary.map(type=>this.collectionCard(type,state,true)).join('')}</div></section>
-      ${componentState?'':`<section aria-labelledby="lib-materials-title"><div class="lib-home-title"><div><h2 id="lib-materials-title">디자인과 제작 자료</h2><p>콘텐츠 구성, 시각 참고, 제작 도구를 용도별로 살펴봅니다.</p></div></div><div class="lib-collection-grid lib-collection-secondary">${secondary.map(type=>this.collectionCard(type,state,false)).join('')}</div></section>`}</main>`;
-    this.fitPreviews();
+      <div class="lib-collection-grid">${primary.map(type=>this.collectionCard(type,state)).join('')}</div></section>
+      ${componentState?'':`<section aria-labelledby="lib-materials-title"><div class="lib-home-title"><div><h2 id="lib-materials-title">디자인과 제작 자료</h2><p>콘텐츠 구성, 시각 참고, 제작 도구를 용도별로 살펴봅니다.</p></div></div><div class="lib-collection-grid lib-collection-secondary">${secondary.map(type=>this.collectionCard(type,state)).join('')}</div></section>`}</main>`;
     this.finishNavigation(componentState?'component-hub':'home');
   }
   finishNavigation(view) {
@@ -156,15 +155,11 @@ class ExpressoLibrary extends HTMLElement {
     }
     this.lastView=view;
   }
-  collectionCard(type,state,visual) {
+  collectionCard(type,state) {
     const items=this.data.items.filter(i=>itemType(i)===type);
     const filtered=selectItems(this.data,{...state,type,page:1,id:''});
-    const preferred={sections:'hero-1','content-elements':'src/components/project-card.tsx','basic-ui':'button-6','page-examples':'agndex-dashboard'};
-    const preferredItem=items.find(i=>i.sourceItemId===preferred[type]&&i.preview);
-    const sample=preferredItem && selectItems({...this.data,items:[preferredItem]},{...state,type,page:1}).total ? preferredItem : filtered.items.find(i=>i.preview);
     const href=libraryRoute({...state,type,page:1,id:''});
     return `<a class="lib-collection-card" href="${escape(href)}" aria-label="${TYPES[type]} 목록 보기">
-      ${visual?`<div class="lib-collection-preview" aria-hidden="true">${sample?this.preview(sample):'<div class="lib-preview-missing">현재 조건에 맞는 예제가 없습니다</div>'}</div>`:''}
       <header><div class="lib-collection-name"><span class="lib-collection-icon">${collectionIcon(type)}</span><h3>${TYPES[type]}</h3></div><span>${number(filtered.total)}개</span></header><p>${TYPE_DESCRIPTIONS[type]}</p><footer><span>${filtered.total!==items.length?`전체 ${number(items.length)}개 · 필터 적용`: items.some(i=>i.preview?.liveUrl)?`실행 예제 ${number(items.filter(i=>i.preview?.liveUrl).length)}개`:`미리보기 ${number(items.filter(i=>i.preview).length)}개`}</span><span class="lib-collection-action" aria-hidden="true">목록 보기 <span class="lib-collection-arrow">${collectionIcon('arrow')}</span></span></footer></a>`;
   }
   sourcePanel(source) {

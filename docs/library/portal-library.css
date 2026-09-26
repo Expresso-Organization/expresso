@@ -158,10 +158,6 @@
 .lib-collection-card header span { color:var(--ex-fg-muted); font:var(--ex-text-xs) var(--ex-font-mono); white-space:nowrap; }
 .lib-collection-card > p { margin:12px 0 24px; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); }
 .lib-collection-card footer { margin-top:auto; padding-top:14px; border-top:1px solid var(--ex-border); display:flex; flex-wrap:wrap; justify-content:space-between; gap:7px; font-size:var(--ex-text-2xs); color:var(--ex-fg-muted); }
-.lib-collection-preview { margin:-20px -20px 20px; border-bottom:1px solid var(--ex-border); border-radius:9px 9px 0 0; overflow:hidden; pointer-events:none; }
-.lib-collection-preview .lib-visual { height:170px; }
-.lib-collection-preview .lib-preview-label { display:none; }
-.lib-collection-preview .lib-preview-missing { height:170px; margin:0; border:0; border-radius:0; padding:16px; }
 @media(max-width:1200px) { .lib-collection-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:600px) { .lib-home { padding:24px 16px; } .lib-breadcrumb { padding:16px; } .lib-collection-grid { grid-template-columns:minmax(0,1fr); } .lib-home-title { align-items:flex-start; flex-direction:column; gap:12px; } }
 
