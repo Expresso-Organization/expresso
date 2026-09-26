@@ -21,10 +21,12 @@ const directTabsSubject='문서 바로가기 탭과 아이콘 전용 도구 버�
 const directTabsSummary='설계서·화면 정의서·디자인 시스템·아이콘을 상단 탭에서 열고, 테마와 알림을 아이콘 버튼으로 조작합니다.';
 const documentIconsSubject='개발 문서 카드별 아이콘 추가';
 const documentIconsSummary='개발 문서 카드 11개에 자료 성격을 나타내는 아이콘을 추가했습니다.';
+const bareIconsSubject='개발 문서 카드 아이콘 배경 제거';
+const bareIconsSummary='개발 문서 카드의 아이콘 뒤에 있던 배경과 테두리를 제거했습니다.';
 const history=lines.filter(Boolean).map(line=>{
  const [id,stamp,subject]=line.split('\x1f');
  const title=subject.replace(/^[a-z]+: /,'');
- return {id,date:stamp.slice(0,10),title,summary:title===documentIconsSubject?documentIconsSummary:title===directTabsSubject?directTabsSummary:title===newSubject?newSummary:notes[id.slice(0,8)]||'개발 포털 화면과 자료 구성이 업데이트됐습니다.',href:title===documentIconsSubject||title===directTabsSubject||title===newSubject||id.startsWith('d941')?'#/docs':'#/library'};
+ return {id,date:stamp.slice(0,10),title,summary:title===bareIconsSubject?bareIconsSummary:title===documentIconsSubject?documentIconsSummary:title===directTabsSubject?directTabsSummary:title===newSubject?newSummary:notes[id.slice(0,8)]||'개발 포털 화면과 자료 구성이 업데이트됐습니다.',href:title===bareIconsSubject||title===documentIconsSubject||title===directTabsSubject||title===newSubject||id.startsWith('d941')?'#/docs':'#/library'};
 });
 const inHistory=history.some(item=>item.title===newSubject);
 const draft=inHistory?[]:[{id:'portal-controls-2026-09-26',date:'2026-09-26',title:newSubject,summary:newSummary,href:'#/docs'}];
