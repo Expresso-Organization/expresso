@@ -1462,6 +1462,8 @@ class Component extends DCLogic {
   applyRoute(hash) {
     const patch = parseRoute(hash);
     if (!patch) return false;
+    // 라이브러리 안의 상세 모달·필터 이동은 목록의 스크롤 위치를 유지합니다.
+    const withinLibrary = this.state.doc === LIBRARY_TAB && patch.doc === LIBRARY_TAB;
     // 이 브라우저에 없는 티켓·문서를 가리키는 주소 — 보드·위키까지는 열어 준다
     if (patch.tsel && !this.state.tickets.some(t => t.id === patch.tsel)) patch.tsel = null;
     if (patch.psel && !this.state.pages.some(pg => pg.id === patch.psel)) {
@@ -1470,7 +1472,7 @@ class Component extends DCLogic {
     this._frame = null;
     this._normalize = true;   // 주소를 손봐 맞춘 것이라면 이력을 새로 쌓지 않는다
     this.setState(patch);
-    window.scrollTo(0, 0);
+    if (!withinLibrary) window.scrollTo(0, 0);
     return true;
   }
 
