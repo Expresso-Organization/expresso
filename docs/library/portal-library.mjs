@@ -1,8 +1,10 @@
-import { TYPES, itemType, typeLabel, TYPE_DESCRIPTIONS, RIGHTS, COVERAGE, PAGE_SIZE, validateCatalog, parseLibraryRoute, libraryRoute, selectItems } from './catalog-core.mjs';
+import { TYPES, itemType, typeLabel, TYPE_DESCRIPTIONS, isLibraryHome, matchesType, RIGHTS, COVERAGE, PAGE_SIZE, validateCatalog, parseLibraryRoute, libraryRoute, selectItems } from './catalog-core.mjs';
 
 import {ACQUISITION, ROLES, applyAcquisitions, validateDetail} from './acquisition-core.mjs';
 import {SELECTION, applyCuration} from './curation-core.mjs';
 import {applyExamples} from './examples-core.mjs';
+import {componentClassification} from './component-types.mjs';
+import {collectionIcon} from './collection-icons.mjs';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const rightsLabel = item => item.sourceSite==='expresso'?'자체 작성':RIGHTS[item.rightsStatus];
@@ -66,13 +68,14 @@ class ExpressoLibrary extends HTMLElement {
     const focusId = this.contains(document.activeElement) ? document.activeElement.id : null;
     const state = this.state;
     const data = this.data;
+    const home = isLibraryHome(this.getAttribute('route') || '#/library');
+    const componentHub = state.type==='components' && !state.id;
+    if(home || componentHub) { this.renderHome(componentHub ? state : null); return; }
     const results = selectItems(data, state);
     const sources = new Map(data.sources.map(source => [source.id, source]));
     const selectedSource = sources.get(state.source);
     const filtered = ['q','source','category','role','availability','selection','family'].some(key=>state[key]);
-    const categories = [...new Set(data.items.filter(i => !state.source || i.sourceSite === state.source).flatMap(i => i.categories))].sort();
-    const counts = {};
-    for (const item of data.items) { const type=itemType(item); counts[type]=(counts[type]||0)+1; }
+    const categories = [...new Set(data.items.filter(i => matchesType(i,state.type) && (!state.source || i.sourceSite === state.source)).flatMap(i => i.categories))].sort();
     const route = patch => escape(libraryRoute({...state, ...patch}));
     const selected = data.items.find(i => i.id === state.id);
     const changedSelection = this.lastSelection !== state.id;
@@ -89,8 +92,7 @@ class ExpressoLibrary extends HTMLElement {
         <div><strong>${number(data.items.filter(i=>i.acquisitionStatus==='source_ready').length)}</strong><span>소스·자산 확보</span></div>
         <p>원본 예제와 공식 참고 이미지를 함께 확인합니다.<br>제품 등록·실제 경력 콘텐츠 검증은 후속 단계입니다.</p>
       </div>
-      <nav class="lib-types" aria-label="라이브러리 자료 유형">${Object.entries(TYPES).map(([type,label]) =>
-        `<a href="${route({type,id:'',page:1,category:'',family:''})}" ${state.type === type ? 'aria-current="page"' : ''}>${label}<span>${number(type === 'all' ? data.items.length : counts[type] || 0)}</span></a>`).join('')}</nav>
+      <nav class="lib-breadcrumb" aria-label="라이브러리 탐색 경로"><a href="#/library">← 유형 선택</a><span aria-hidden="true">/</span><span aria-current="page">${typeLabel(state.type)}</span></nav>
       <div class="lib-layout">
         <aside class="lib-sidebar" aria-label="수집 출처">
           <div class="lib-side-title">원본 사이트 <span>${data.sources.length}</span></div>
@@ -104,7 +106,7 @@ class ExpressoLibrary extends HTMLElement {
             <label class="lib-mobile-source">사이트<select name="source" id="lib-source" aria-label="사이트"><option value="">모든 사이트</option>${data.sources.map(s=>`<option value="${s.id}" ${s.id===state.source?'selected':''}>${escape(s.name)}</option>`).join('')}</select></label>
             <label>분류<select name="category" id="lib-category" aria-label="분류"><option value="">모든 분류</option>${categories.map(c=>`<option value="${escape(c)}" ${c===state.category?'selected':''}>${escape(c)}</option>`).join('')}</select></label>
           </div>
-          <div class="lib-extra-filters"><label>포트폴리오 역할<select name="role" aria-label="포트폴리오 역할"><option value="">모든 역할</option>${Object.entries(ROLES).map(([id,name])=>`<option value="${id}" ${state.role===id?'selected':''}>${name}</option>`).join('')}</select></label><label>확보 상태<select name="availability" aria-label="확보 상태">${[['','전체 자료'],['preview','미리보기 있음'],['example','실행 예제 있음'],['video','참고 영상 있음'],['source','소스·자산 확보'],['waiting','확인 대기']].map(([id,name])=>`<option value="${id}" ${state.availability===id?'selected':''}>${name}</option>`).join('')}</select></label><label>후보 선별<select name="selection" aria-label="후보 선별"><option value="">전체 항목</option>${Object.entries(SELECTION).map(([id,name])=>`<option value="${id}" ${state.selection===id?'selected':''}>${name}</option>`).join('')}</select></label><a href="#/library">필터 초기화</a></div>
+          <div class="lib-extra-filters"><label>포트폴리오 역할<select name="role" aria-label="포트폴리오 역할"><option value="">모든 역할</option>${Object.entries(ROLES).map(([id,name])=>`<option value="${id}" ${state.role===id?'selected':''}>${name}</option>`).join('')}</select></label><label>확보 상태<select name="availability" aria-label="확보 상태">${[['','전체 자료'],['preview','미리보기 있음'],['example','실행 예제 있음'],['video','참고 영상 있음'],['source','소스·자산 확보'],['waiting','확인 대기']].map(([id,name])=>`<option value="${id}" ${state.availability===id?'selected':''}>${name}</option>`).join('')}</select></label><label>후보 선별<select name="selection" aria-label="후보 선별"><option value="">전체 항목</option>${Object.entries(SELECTION).map(([id,name])=>`<option value="${id}" ${state.selection===id?'selected':''}>${name}</option>`).join('')}</select></label><a href="${route({q:'',source:'',category:'',role:'',availability:'',selection:'',family:'',page:1,id:''})}">필터 초기화</a></div>
           <section class="lib-source-panel" aria-label="선별 결과"><div><h3>본문 후보와 보강 과제</h3></div><p>코드 예제는 예시 데이터를 사용합니다. 템플릿 실행·구조 재구현 예제는 별도 표시하며 제품 품질 검증은 후속 단계입니다.</p><div class="lib-curation-links">${['shortlisted','reference','excluded'].map(selection=>`<a href="${route({type:'all',source:'',category:'',role:'',q:'',family:'',availability:'',selection,page:1,id:''})}">${SELECTION[selection]} ${data.items.filter(i=>i.selection===selection).length}</a>`).join('')}</div><details><summary>역할별 부족한 유형과 다음 작업</summary><ul>${data.curation.gaps.map(g=>`<li><strong>${ROLES[g.role]} · ${escape(g.status)}</strong><p>${escape(g.note)}</p><p>${escape(g.nextAction)}</p></li>`).join('')}</ul></details></section>
           ${state.family?`<p class="lib-meta">이름 계열: ${escape(state.family)} · 구조가 같은지는 검토 전입니다. <a href="${route({family:'',page:1})}">계열 필터 해제</a></p>`:''}
           ${selectedSource ? this.sourcePanel(selectedSource) : `<details class="lib-coverage"><summary>사이트별 수집 범위와 미처리 내역</summary><div class="lib-source-grid">${data.sources.map(s=>`<a href="${route({source:s.id,category:'',page:1,id:''})}"><strong>${escape(s.name)}</strong><span>${COVERAGE[s.coverageState]}</span><small>${number(s.discoveredCount)}개 · 후속 확인 ${s.nextActions.length}건</small></a>`).join('')}</div></details>`}
@@ -129,6 +131,41 @@ class ExpressoLibrary extends HTMLElement {
     this.lastSelection = state.id;
     this.fitPreviews();
     if(selected) this.loadDetail(selected);
+    this.finishNavigation('list:'+state.type);
+  }
+  renderHome(componentState=null) {
+    this.querySelector('dialog')?.close();this.resizeObserver?.disconnect();
+    this.lastSelection='';this.currentDetail=null;
+    const state=componentState || parseLibraryRoute('#/library');
+    const primary=['sections','content-elements','basic-ui','page-examples'];
+    const secondary=['templates','design-references','prompts','motion','icons','diagrams','tools','registries'];
+    if(this.data.items.some(i=>itemType(i)==='pages'))secondary.push('pages');
+    this.innerHTML=`<header class="lib-heading"><div><p class="lib-eyebrow">PORTFOLIO LIBRARY</p><h1>${componentState?'컴포넌트 둘러보기':'포트폴리오 라이브러리'}</h1><p>필요한 자료의 카드를 선택해 목록과 실행 예제를 살펴보세요.</p></div><a class="lib-report" href="./portfolio-library-examples.md">실행 예제 보고서 ↗</a></header>
+      ${componentState?'<nav class="lib-breadcrumb" aria-label="라이브러리 탐색 경로"><a href="#/library">← 모든 유형 보기</a><span aria-hidden="true">/</span><span aria-current="page">컴포넌트</span></nav>':''}
+      <main class="lib-home"><section aria-labelledby="lib-assembly-title"><div class="lib-home-title"><div><h2 id="lib-assembly-title">페이지 조립</h2><p>큰 구역부터 세부 요소까지, 필요한 조립 단위로 찾습니다.</p></div>${componentState?'':`<a href="#/library/all">전체 ${number(this.data.items.length)}개 검색 →</a>`}</div>
+      ${componentState && ['q','source','category','role','availability','selection','family'].some(key=>state[key])?'<p class="lib-home-filter">기존 검색·필터가 카드별 결과에 적용되어 있습니다. <a href="#/library/components">필터 해제</a></p>':''}
+      <div class="lib-collection-grid">${primary.map(type=>this.collectionCard(type,state,true)).join('')}</div></section>
+      ${componentState?'':`<section aria-labelledby="lib-materials-title"><div class="lib-home-title"><div><h2 id="lib-materials-title">디자인과 제작 자료</h2><p>콘텐츠 구성, 시각 참고, 제작 도구를 용도별로 살펴봅니다.</p></div></div><div class="lib-collection-grid lib-collection-secondary">${secondary.map(type=>this.collectionCard(type,state,false)).join('')}</div></section>`}</main>`;
+    this.fitPreviews();
+    this.finishNavigation(componentState?'component-hub':'home');
+  }
+  finishNavigation(view) {
+    if(this.lastView && this.lastView!==view) {
+      const heading=this.querySelector('h1');heading?.setAttribute('tabindex','-1');heading?.focus({preventScroll:true});
+      this.scrollIntoView({block:'start',behavior:'instant'});
+    }
+    this.lastView=view;
+  }
+  collectionCard(type,state,visual) {
+    const items=this.data.items.filter(i=>itemType(i)===type);
+    const filtered=selectItems(this.data,{...state,type,page:1,id:''});
+    const preferred={sections:'hero-1','content-elements':'src/components/project-card.tsx','basic-ui':'button-6','page-examples':'agndex-dashboard'};
+    const preferredItem=items.find(i=>i.sourceItemId===preferred[type]&&i.preview);
+    const sample=preferredItem && selectItems({...this.data,items:[preferredItem]},{...state,type,page:1}).total ? preferredItem : filtered.items.find(i=>i.preview);
+    const href=libraryRoute({...state,type,page:1,id:''});
+    return `<a class="lib-collection-card" href="${escape(href)}" aria-label="${TYPES[type]} 목록 보기">
+      ${visual?`<div class="lib-collection-preview" aria-hidden="true">${sample?this.preview(sample):'<div class="lib-preview-missing">현재 조건에 맞는 예제가 없습니다</div>'}</div>`:''}
+      <header><div class="lib-collection-name"><span class="lib-collection-icon">${collectionIcon(type)}</span><h3>${TYPES[type]}</h3></div><span>${number(filtered.total)}개</span></header><p>${TYPE_DESCRIPTIONS[type]}</p><footer><span>${filtered.total!==items.length?`전체 ${number(items.length)}개 · 필터 적용`: items.some(i=>i.preview?.liveUrl)?`실행 예제 ${number(items.filter(i=>i.preview?.liveUrl).length)}개`:`미리보기 ${number(items.filter(i=>i.preview).length)}개`}</span><span class="lib-collection-action" aria-hidden="true">목록 보기 <span class="lib-collection-arrow">${collectionIcon('arrow')}</span></span></footer></a>`;
   }
   sourcePanel(source) {
     return `<section class="lib-source-panel"><div><h3>${escape(source.name)}</h3><span class="lib-badge">${COVERAGE[source.coverageState]}</span></div>
@@ -209,6 +246,7 @@ class ExpressoLibrary extends HTMLElement {
       <h2 id="lib-detail-title">${escape(item.title)}</h2><p class="lib-meta">${({listing:'공개 목록의 이름',detail_page:'원본 상세 페이지의 이름',authored:'익스프레소 자체 작성',curated:'검토한 용도에 따른 이름',filename:'원본 파일명',identifier:'식별자에서 표시 이름 생성'})[item.titleSource]||'원본 항목 이름'}</p>
       ${this.preview(item,true)}${item.preview?.liveUrl ? `<div class="lib-detail-links"><button data-live="${escape(item.preview.liveUrl)}">실행 예제 보기</button><a href="${escape(item.preview.liveUrl)}" target="_blank" rel="noopener">새 탭에서 크게 보기 ↗</a></div>` : ''}
       ${item.preview?.kind==='remote_video'?`<div class="lib-detail-links"><button data-play-video>참고 영상 재생</button>${link(item.preview.url,'원본 영상 열기')}</div><p data-video-status role="status"></p>`:''}
+      ${item.artifactKind==='component'?`<p class="lib-meta">탐색 분류: ${escape(componentClassification(item).evidence)}${componentClassification(item).provisional?' · 원본 미확보, 임시 분류':''}</p>`:''}
       <dl><div><dt>수집</dt><dd>${ACQUISITION[item.acquisitionStatus]}</dd></div><div><dt>품질 / 제품 연결</dt><dd>미검토 / 미등록</dd></div>
         <div><dt>이용 조건</dt><dd>${rightsLabel(item)}${source.licenseUrl?' · '+link(source.licenseUrl,'확인'):''}</dd></div>
         <div><dt>분류 / 변형</dt><dd>${escape(item.categories.join(' · '))}${item.variant?' / '+escape(item.variant):''}</dd></div>

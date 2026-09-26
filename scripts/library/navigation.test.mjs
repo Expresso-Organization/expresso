@@ -1,0 +1,38 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import {applyAcquisitions} from '../../docs/library/acquisition-core.mjs';
+import {applyCuration} from '../../docs/library/curation-core.mjs';
+import {applyExamples} from '../../docs/library/examples-core.mjs';
+const {JSDOM}=createRequire(new URL('../../services/web/package.json',import.meta.url))('jsdom');
+const read=name=>JSON.parse(readFileSync(new URL('../../docs/library/'+name+'.json',import.meta.url)));
+
+test('카드 홈에서 유형 목록으로 이동하고 이전 컴포넌트 필터를 카드 링크에 유지한다',async()=>{
+ const dom=new JSDOM('<main></main>',{url:'http://localhost/#/library'});
+ const keys=['HTMLElement','customElements','document','fetch','ResizeObserver','location','CSS'];
+ const before=new Map(keys.map(k=>[k,globalThis[k]]));
+ try{
+  for(const k of ['HTMLElement','customElements','document','location'])globalThis[k]=dom.window[k];
+  globalThis.CSS={escape:s=>s};
+  globalThis.ResizeObserver=class{observe(){}disconnect(){}};
+  dom.window.HTMLElement.prototype.scrollIntoView=function(){};
+  globalThis.fetch=()=>new Promise(()=>{});
+  await import('../../docs/library/portal-library.mjs');
+  const el=document.createElement('expresso-library');document.querySelector('main').append(el);
+  el.data=applyExamples(applyCuration(applyAcquisitions(read('catalog'),read('acquisitions')),read('curation')),read('examples'));
+  el.setAttribute('route','#/library');
+  assert.equal(el.querySelectorAll('.lib-collection-card').length,12);
+  assert.equal(el.querySelectorAll('.lib-types,.lib-grid').length,0);
+  for(const card of el.querySelectorAll('.lib-collection-card'))assert.ok(card.querySelector('.lib-collection-icon svg[aria-hidden="true"]'));
+  const sections=el.querySelector('[aria-label="섹션 목록 보기"]');
+  el.setAttribute('route',sections.getAttribute('href'));
+  assert.match(el.querySelector('.lib-result-heading').textContent,/섹션\s+193개/);
+  assert.equal(el.querySelectorAll('.lib-collection-card,.lib-types').length,0);
+  assert.equal(el.querySelector('.lib-breadcrumb a').getAttribute('href'),'#/library');
+  el.setAttribute('route','#/library/components?availability=example');
+  assert.equal(el.querySelectorAll('.lib-collection-card').length,4);
+  for(const card of el.querySelectorAll('.lib-collection-card'))assert.match(card.getAttribute('href'),/availability=example/);
+  assert.match(el.querySelector('.lib-home-filter').textContent,/필터/);
+ }finally{dom.window.close();for(const k of keys)globalThis[k]=before.get(k);}
+});

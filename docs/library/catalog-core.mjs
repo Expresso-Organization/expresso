@@ -1,6 +1,8 @@
+import {componentClassification} from './component-types.mjs';
 // 정적 포털 목록의 검증·검색·공유 주소를 한 곳에서 처리합니다.
 export const TYPES = Object.freeze({
-  all: '전체', components: '컴포넌트', prompts: '프롬프트',
+  all: '전체', sections: '섹션', 'content-elements': '콘텐츠 요소',
+  'basic-ui': '기본 UI', 'page-examples': '페이지·앱 예제', prompts: '프롬프트',
   'design-references': '디자인 레퍼런스', templates: '콘텐츠 템플릿', tools: '개발 도구',
   motion: '모션', icons: '아이콘', diagrams: '다이어그램', pages: '페이지 구성', registries: '공급자',
 });
@@ -13,18 +15,31 @@ const REFERENCE_TYPES = Object.freeze({
   'al-folio-cv': 'templates', 'al-folio-distill': 'templates',
 });
 export function itemType(item) {
+  if(item.artifactKind === 'component') return componentClassification(item).type;
   return item.artifactKind === 'reference'
     ? REFERENCE_TYPES[item.sourceSite] || 'design-references'
     : TYPE_OF[item.artifactKind];
 }
 export const TYPE_DESCRIPTIONS = Object.freeze({
+  sections: '히어로·프로젝트 목록·경력·연락처·푸터처럼 페이지의 큰 구역을 구성합니다.',
+  'content-elements': '프로젝트 카드·타임라인·차트·미디어·위젯으로 섹션 안에 내용을 배치합니다.',
+  'basic-ui': '버튼·입력창·메뉴·대화상자·탭 등 조작과 상태 표현에 쓰는 부품입니다.',
+  'page-examples': '랜딩·대시보드·인증 화면 등 페이지 전체의 배치와 동작을 확인합니다.',
+  components: '기존 컴포넌트 주소입니다. 유형 카드에서 섹션·콘텐츠 요소·기본 UI·페이지 및 앱 예제로 나누어 볼 수 있습니다.',
+  all: '전체 자료를 검색합니다.',
+  prompts: '생성·검토 작업에 사용할 프롬프트와 입력 변수를 확인합니다.',
+  motion: '움직임과 화면 전환을 공식 참고 영상으로 살펴봅니다.',
+  icons: '화면에 사용할 아이콘의 모양과 출처를 확인합니다.',
+  diagrams: '구조·흐름·관계를 설명하는 다이어그램 예제를 살펴봅니다.',
+  pages: '검증된 부품을 조합한 익스프레소 페이지 구성을 모읍니다.',
+  registries: '컴포넌트 공급자와 공식 자료 위치를 찾습니다.',
   'design-references': '히어로·내비게이션·푸터·벤토 등 실제 사이트의 디자인과 배치를 참고합니다.',
   templates: '경력·학력·논문·프로젝트 상세에 어떤 내용을 어떤 순서로 배치할지 확인합니다.',
   tools: 'React 훅·유틸리티·다이어그램 문서 등 구현을 돕는 자료입니다.',
   references: '기존 참고 자료 주소입니다. 디자인 레퍼런스·콘텐츠 템플릿·개발 도구 탭에서 나누어 볼 수 있습니다.',
 });
-const validType = type => type === 'references' || Object.hasOwn(TYPES, type);
-export const typeLabel = type => type === 'references' ? '이전 참고 자료' : TYPES[type];
+const validType = type => ['references','components'].includes(type) || Object.hasOwn(TYPES, type);
+export const typeLabel = type => type === 'references' ? '이전 참고 자료' : type === 'components' ? '전체 컴포넌트' : TYPES[type];
 export const RIGHTS = Object.freeze({allowed: '공개 라이선스', reference_only: '참고 전용',
   permission_needed: '이용 범위 확인 필요', unreviewed: '이용 조건 미검토', restricted: '이용 제한'});
 export const COVERAGE = Object.freeze({snapshot_complete: '공개 목록 확인', partial: '일부 범위 확인',
@@ -86,17 +101,26 @@ export function parseLibraryRoute(hash) {
 }
 export function libraryRoute(state) {
   const type = validType(state.type) ? state.type : 'all';
-  let path = '#/library' + (type !== 'all' || state.id ? '/' + type : '') + (state.id ? '/' + encodeURIComponent(state.id) : '');
+  let path = '#/library/' + type + (state.id ? '/' + encodeURIComponent(state.id) : '');
   const params = new URLSearchParams();
   for (const key of ['source','category','q','role','availability','selection','family']) if (state[key]) params.set(key, state[key]);
   if (state.page > 1) params.set('page', String(state.page));
   return path + (params.size ? '?' + params.toString() : '');
 }
+export function matchesType(item,type) {
+  if(type==='all') return true;
+  if(type==='references') return item.artifactKind==='reference';
+  if(type==='components') return item.artifactKind==='component';
+  return itemType(item)===type;
+}
+export function isLibraryHome(hash) {
+  return /^#\/library\/?$/.test(String(hash));
+}
 export function selectItems(data, state) {
   const words = state.q.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
   const names = Object.fromEntries(data.sources.map(s => [s.id, s.name]));
   const items = data.items.filter(item => {
-    if (state.type === 'references' ? item.artifactKind !== 'reference' : state.type !== 'all' && itemType(item) !== state.type) return false;
+    if (!matchesType(item,state.type)) return false;
     if (state.source && item.sourceSite !== state.source) return false;
     if (state.category && !item.categories.includes(state.category)) return false;
     if (state.role && !item.roles?.includes(state.role)) return false;

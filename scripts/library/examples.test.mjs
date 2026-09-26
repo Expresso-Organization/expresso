@@ -70,3 +70,24 @@ test('분리한 유형과 이전 상세 주소에서 검색·페이지·선택�
   assert.deepEqual(parseLibraryRoute(libraryRoute(state)),state);
  }
 });
+
+test('컴포넌트 전체는 네 조립 단위로 나뉘고 기존 종류·예제를 보존한다',async()=>{
+ const {itemType}=await import('../../docs/library/catalog-core.mjs');
+ const types=['sections','content-elements','basic-ui','page-examples'];
+ const original=data.items.filter(i=>i.artifactKind==='component');
+ const partition=data.items.filter(i=>types.includes(itemType(i)));
+ assert.deepEqual(partition.map(i=>i.id).sort(),original.map(i=>i.id).sort());
+ assert.deepEqual(types.map(type=>selectItems(data,parseLibraryRoute('#/library/'+type)).total),[193,260,767,57]);
+ for(const [site,id,type] of [['watermelon','hero-1','sections'],['watermelon','button-6','basic-ui'],['watermelon','agndex-dashboard','page-examples'],['watermelon','luminia-luxe-realestate','page-examples'],['magic-portfolio','src/components/project-card.tsx','content-elements'],['magic-portfolio','src/components/section/projects-section.tsx','sections']]) {
+  const item=data.items.find(i=>i.sourceSite===site&&i.sourceItemId===id);assert.ok(item);assert.equal(itemType(item),type);assert.ok(item.preview.liveUrl);
+ }
+});
+test('카드 홈·전체 목록 주소를 구분하고 이전 컴포넌트 상세 주소를 복원한다',async()=>{
+ const {isLibraryHome,libraryRoute}=await import('../../docs/library/catalog-core.mjs');
+ assert.equal(isLibraryHome('#/library'),true);assert.equal(isLibraryHome('#/library/'),true);
+ assert.equal(isLibraryHome('#/library/all'),false);assert.equal(isLibraryHome('#/library?availability=example'),false);
+ assert.equal(libraryRoute(parseLibraryRoute('#/library')),'#/library/all');
+ const old=parseLibraryRoute('#/library/components/watermelon-6df5fe3ae04dae49?availability=example&page=2');
+ assert.deepEqual(parseLibraryRoute(libraryRoute(old)),old);
+ assert.equal(selectItems(data,{...old,page:1}).total,1071);
+});
