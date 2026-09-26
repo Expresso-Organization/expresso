@@ -215,7 +215,10 @@
             <div class="portal-docs-grid">
               <sc-for list="{{ g.items }}" as="d" hint-placeholder-count="4">
                 <a class="portal-doc-card" href="{{ d.href }}" aria-label="{{ d.title }} 열기">
-                  <div class="portal-doc-card-heading"><span class="portal-doc-tag">{{ d.tag }}</span><span class="portal-doc-arrow" aria-hidden="true">↗</span></div>
+                  <div class="portal-doc-card-heading">
+                    <span class="portal-doc-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{ d.icon }}"/></svg></span>
+                    <span class="portal-doc-card-meta"><span class="portal-doc-tag">{{ d.tag }}</span><span class="portal-doc-arrow" aria-hidden="true">↗</span></span>
+                  </div>
                   <h3>{{ d.title }}</h3><p>{{ d.description }}</p>
                   <footer><span>문서 보기</span><span aria-hidden="true">→</span></footer>
                 </a>
@@ -1229,6 +1232,19 @@ const DOCUMENTATION_DESCRIPTIONS = {
   '디자인 시스템': '색·서체·크기의 기준', '아이콘': '제품 아이콘 목록',
   '랜딩': '공개 제품 화면의 시안'
 };
+const DOCUMENTATION_ICONS = {
+  '설계서': 'M5 3.5h9l5 5V20H5z M14 3.5v5h5 M8 12h8 M8 16h6',
+  '기능 명세서': 'M5 4h14v16H5z M8 9l1.5 1.5L12 8 M14 9h2 M8 15l1.5 1.5L12 14 M14 15h2',
+  '구현 명세서': 'M8 6 3 12l5 6 M16 6l5 6-5 6 M14 4l-4 16',
+  '화면 정의서': 'M3 4.5h18v15H3z M3 9h18 M8 9v10 M11 13h7 M11 16h4',
+  '데이터 모델': 'M4 6c0-3 16-3 16 0s-16 3-16 0z M4 6v12c0 3 16 3 16 0V6 M4 12c0 3 16 3 16 0',
+  '구조 다이어그램': 'M3 4h6v5H3z M15 4h6v5h-6z M9 14h6v6H9z M6 9v3h6v2 M18 9v3h-6',
+  '기능 지도': 'M3 4h8v7H3z M13 4h8v7h-8z M3 13h8v7H3z M13 13h8v7h-8z',
+  '기능 마인드맵': 'M10 10h4v4h-4z M3 3h5v5H3z M16 3h5v5h-5z M3 16h5v5H3z M16 16h5v5h-5z M8 6h4v4 M18 8v4h-4 M8 18h4v-4 M18 16v-4h-4',
+  '디자인 시스템': 'M4 6h16 M4 12h16 M4 18h16 M9 3v6 M16 9v6 M8 15v6',
+  '아이콘': 'M7 3 3 7l4 4 4-4z M17 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8z M3 15h8v6H3z M17 14l4 7h-8z',
+  '랜딩': 'M3 4h18v16H3z M3 9h18 M6 6.5h.01 M9 6.5h.01 M12 6.5h.01 M7 13h7 M7 16h4 M17 13v4 M15 15h4'
+};
 const NAV_TAG = {}, NAV_FILE = {};
 PORTAL_DOCUMENTS.forEach(n => { NAV_TAG[n[1]] = n[0]; NAV_FILE[n[1]] = n[2]; });
 NAV_TAG[DECK_TAB] = 'DECK';
@@ -2126,7 +2142,7 @@ class Component extends DCLogic {
         title: g[0], description: g[1],
         items: g[2].map(label => {
           const n = PORTAL_DOCUMENTS.find(d => d[1] === label);
-          return { tag: n[0], title: label, description: DOCUMENTATION_DESCRIPTIONS[label], href: '#/doc/' + n[0].toLowerCase() };
+          return { tag: n[0], title: label, description: DOCUMENTATION_DESCRIPTIONS[label], icon: DOCUMENTATION_ICONS[label], href: '#/doc/' + n[0].toLowerCase() };
         })
       })),
       shellClass: s.doc === LIBRARY_TAB ? 'portal-library-active' : s.doc === DOCUMENTATION_TAB ? 'portal-documentation-active' : '',
