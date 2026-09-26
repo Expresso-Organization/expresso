@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Expresso 개발 포털</title>
+<title>Expresso 개발 문서</title>
 <script src="./support.js"></script>
 <link rel="stylesheet" href="./library/tokens.css">
 <link rel="stylesheet" href="./library/portal-library.css">
+<link rel="stylesheet" href="./library/portal-documentation.css">
 <script type="module" src="./library/portal-library.mjs"></script>
 </head>
 <body>
@@ -36,8 +37,9 @@
     <svg width="22" height="22" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cpt"><circle cx="44" cy="54" r="35.5"></circle></clipPath><mask id="kpt"><rect x="0" y="0" width="108" height="108" fill="#fff"></rect><circle cx="44" cy="54" r="47.05" fill="#000"></circle></mask></defs><circle cx="77.72" cy="54" r="19.53" stroke="#A9793F" stroke-width="9.35" mask="url(#kpt)"></circle><rect x="0" y="58.8" width="108" height="49.2" fill="#E0B486" clip-path="url(#cpt)"></rect><circle cx="44" cy="54" r="35.5" stroke="#E0B486" stroke-width="11"></circle></svg>
     <span style="font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 500; letter-spacing: -.02em">Expre<span style="color: #E0B486">ss</span>o</span>
     </div>
-    <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .14em; color: #8395AF">DEV CONSOLE</span>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .14em; color: #8395AF">{{ headerLabel }}</span>
 
+    <sc-if value="{{ portalOpen }}" hint-placeholder-val="{{ false }}">
     <div class="portal-search" style="flex: 1; max-width: 520px; margin-left: 18px; position: relative">
       <input value="{{ q }}" onChange="{{ onSearch }}" onFocus="{{ onSearchFocus }}" onBlur="{{ onSearchBlur }}" onKeyDown="{{ onSearchKey }}" placeholder="도메인 · 기능 · 태스크 · 테이블 · 화면 검색  ( / 로 포커스 )" style="width: 100%; font-size: 13px; color: #16223A; background: #fff; border: 1px solid rgba(255,255,255,.16); border-radius: 9px; padding: 9px 13px" />
 
@@ -121,7 +123,9 @@
         </div>
       </sc-if>
     </div>
+    </sc-if>
 
+    <sc-if value="{{ portalOpen }}" hint-placeholder-val="{{ false }}">
     <div class="portal-progress" style="display: flex; align-items: center; gap: 14px; margin-left: auto">
       <div style="display: flex; align-items: baseline; gap: 7px"><span style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 22px; line-height: 1">{{ doneCount }}</span><span style="font-size: 11px; color: #93A2BA">완료 / 151</span></div>
       <div style="width: 96px; height: 6px; background: rgba(255,255,255,.14); border-radius: 4px; overflow: hidden; display: flex">
@@ -130,15 +134,42 @@
       </div>
       <span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #8395AF">{{ docVersion }}</span>
     </div>
+    </sc-if>
   </div>
 
   <div style="display: flex; align-items: center; gap: 4px; padding: 0 32px; background: #1D2B47; border-bottom: 1px solid rgba(255,255,255,.08); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none">
-    <sc-for list="{{ navLinks }}" as="n" hint-placeholder-count="8">
+    <sc-for list="{{ navLinks }}" as="n" hint-placeholder-count="3">
       <a href="{{ n.href }}" onClick="{{ n.onClick }}" style="display: flex; align-items: center; gap: 7px; padding: 11px 13px; font-size: 12.5px; font-weight: {{ n.weight }}; color: {{ n.color }}; background: {{ n.bg }}; white-space: nowrap; flex-shrink: 0; cursor: pointer; border-bottom: 2px solid {{ n.edge }}" style-hover="color: #fff; border-bottom-color: #E0B486; background: rgba(255,255,255,.09)">
         <span style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: .08em; color: {{ n.tagColor }}">{{ n.tag }}</span>{{ n.label }}
       </a>
     </sc-for>
   </div>
+
+  <sc-if value="{{ documentationOpen }}" hint-placeholder-val="{{ true }}">
+    <main class="portal-docs" aria-labelledby="portal-docs-title">
+      <header class="portal-docs-heading">
+        <p class="portal-docs-eyebrow">DOCUMENTATION</p>
+        <h1 id="portal-docs-title">개발 문서</h1>
+        <p>설계와 구현 자료를 한곳에서 찾아보고, 카드를 선택해 문서를 엽니다.</p>
+      </header>
+      <div class="portal-docs-content">
+        <sc-for list="{{ documentationGroups }}" as="g" hint-placeholder-count="4">
+          <section class="portal-docs-section" aria-labelledby="{{ g.headingId }}">
+            <div class="portal-docs-section-heading"><h2 id="{{ g.headingId }}">{{ g.title }}</h2><p>{{ g.description }}</p></div>
+            <div class="portal-docs-grid">
+              <sc-for list="{{ g.items }}" as="d" hint-placeholder-count="4">
+                <a class="portal-doc-card" href="{{ d.href }}" aria-label="{{ d.title }} 열기">
+                  <div class="portal-doc-card-heading"><span class="portal-doc-tag">{{ d.tag }}</span><span class="portal-doc-arrow" aria-hidden="true">↗</span></div>
+                  <h3>{{ d.title }}</h3><p>{{ d.description }}</p>
+                  <footer><span>문서 보기</span><span aria-hidden="true">→</span></footer>
+                </a>
+              </sc-for>
+            </div>
+          </section>
+        </sc-for>
+      </div>
+    </main>
+  </sc-if>
 
   <sc-if value="{{ libraryOpen }}" hint-placeholder-val="{{ false }}">
     <expresso-library route="{{ libraryRoute }}"></expresso-library>
@@ -1105,12 +1136,14 @@ DECKS.forEach(d => {
 const deckOf = s => (s.doc === DECK_TAB && s.deck && DECK_SLUG[s.deck]) ? s.deck : null;
 
 const LIBRARY_TAB = '라이브러리';
+const DOCUMENTATION_TAB = '개발 문서';
 const NAV = [
-  ['HOME', '개발 포털', 'Expresso 개발 포털.dc.html', '#fff', 1],
-
+  ['DOC', DOCUMENTATION_TAB, '', '#E0B486'],
   ['LIB', LIBRARY_TAB, '', '#E0B486'],
+  ['DECK', DECK_TAB, '', '#E0B486']
+];
+const PORTAL_DOCUMENTS = [
   ['SRS', '설계서', GD, '#E0B486'],
-  ['DECK', '프리젠테이션', DECK, '#E0B486'],
   ['SPEC', '기능 명세서', F, '#E0B486'],
   ['IMPL', '구현 명세서', IM, '#E0B486'],
   ['UI', '화면 정의서', SC, '#7FD3AE'],
@@ -1122,8 +1155,22 @@ const NAV = [
   ['ICON', '아이콘', IC, '#D8B49A'],
   ['WEB', '랜딩', LD, '#7FD3AE']
 ];
+const DOCUMENTATION_GROUPS = [
+  ['핵심 설계', '제품의 요구와 화면 동작을 정의합니다.', ['설계서', '기능 명세서', '구현 명세서', '화면 정의서']],
+  ['모델과 구조', '데이터와 기능의 관계를 살펴봅니다.', ['데이터 모델', '구조 다이어그램', '기능 지도', '기능 마인드맵']],
+  ['화면과 디자인', '시각 규칙과 제품 화면을 확인합니다.', ['디자인 시스템', '아이콘', '랜딩']]
+];
+const DOCUMENTATION_DESCRIPTIONS = {
+  '설계서': '제품 목적, 요구사항, 전체 설계', '기능 명세서': '기능별 동작 규칙과 제약',
+  '구현 명세서': '화면 구성과 구현 기준', '화면 정의서': '실제 화면과 상태 정의',
+  '데이터 모델': '데이터 구조와 필드', '구조 다이어그램': '엔터티 관계와 연결',
+  '기능 지도': '제품 기능의 전체 범위', '기능 마인드맵': '기능 간 관계와 범위',
+  '디자인 시스템': '색·서체·크기의 기준', '아이콘': '제품 아이콘 목록',
+  '랜딩': '공개 제품 화면의 시안'
+};
 const NAV_TAG = {}, NAV_FILE = {};
-NAV.forEach(n => { NAV_TAG[n[1]] = n[0]; NAV_FILE[n[1]] = n[2]; });
+PORTAL_DOCUMENTS.forEach(n => { NAV_TAG[n[1]] = n[0]; NAV_FILE[n[1]] = n[2]; });
+NAV_TAG[DECK_TAB] = 'DECK';
 
 // 목차를 붙일 문서. 여기 없는 문서는 훑지도, 목차 자리를 잡지도 않는다.
 //
@@ -1142,7 +1189,8 @@ const NAV_TOC = {
 
 // 검색 결과에서 문서를 뷰어로 열려면 파일명 → NAV 라벨이 필요하다
 const FILE_NAV = {};
-NAV.forEach(n => { FILE_NAV[n[2]] = n[1]; });
+PORTAL_DOCUMENTS.forEach(n => { FILE_NAV[n[2]] = n[1]; });
+FILE_NAV[DECK] = DECK_TAB;
 
 // ── 딥링크 ──────────────────────────────────────────────
 // 보고 있는 자리를 주소에 싣는다. 주소 하나가 곧 공유 단위이고, 새로고침해도
@@ -1159,11 +1207,12 @@ NAV.forEach(n => { FILE_NAV[n[2]] = n[1]; });
 // 티켓과 위키 문서는 각자 브라우저(localStorage)에 있습니다 — 주소를 받은
 // 사람에게 그 id가 없으면 보드·위키까지만 열고 선택은 비웁니다(applyRoute).
 const DOC_SLUG = {}, DOC_OF_SLUG = {};
-NAV.forEach(n => { if (!n[4]) { DOC_SLUG[n[1]] = n[0].toLowerCase(); DOC_OF_SLUG[n[0].toLowerCase()] = n[1]; } });
+[...PORTAL_DOCUMENTS, NAV[2]].forEach(n => { DOC_SLUG[n[1]] = n[0].toLowerCase(); DOC_OF_SLUG[n[0].toLowerCase()] = n[1]; });
 const BVIEW = { kanban: 1, sprint: 1, timeline: 1 };
 
 function routeOf(s) {
   if (s.doc === LIBRARY_TAB) return s.libraryRoute || '#/library';
+  if (s.doc === DOCUMENTATION_TAB) return '#/docs';
   if (s.doc) {
     const deck = deckOf(s);
     return '#/doc/' + (DOC_SLUG[s.doc] || encodeURIComponent(s.doc)) +
@@ -1177,6 +1226,7 @@ function routeOf(s) {
 // 해석하지 못하는 주소는 null 을 돌려준다 — 부르는 쪽이 지금 화면을 그대로 둔다.
 function parseRoute(hash) {
   if (/^#\/library(?:[/?]|$)/.test(String(hash))) return { doc: LIBRARY_TAB, libraryRoute: String(hash), full: false, view: 'console', section: 'domain', toc: [], tocAt: -1 };
+  if (hash === '#/docs') return { doc: DOCUMENTATION_TAB, full: false, view: 'console', section: 'domain', toc: [], tocAt: -1 };
   const part = String(hash || '').replace(/^#\/?/, '').split('/').filter(x => x).map(x => {
     try { return decodeURIComponent(x); } catch (e) { return x; }
   });
@@ -1227,7 +1277,7 @@ function tasksOf(d) {
 
 class Component extends DCLogic {
   state = {
-    sel: 'D1', q: '', role: 'all', status: 'all', prog: {}, doc: null, deck: null, slides: {}, toc: [], tocAt: -1, tocMiss: null,
+    sel: 'D1', q: '', role: 'all', status: 'all', prog: {}, doc: DOCUMENTATION_TAB, deck: null, slides: {}, toc: [], tocAt: -1, tocMiss: null,
     view: 'console', section: 'domain', bview: 'kanban', tickets: [], seq: 1, tsel: null, member: 'all',
     impDomain: 'D1', form: { title: '', assignee: '', due: '', effort: 'M', domain: '' },
     pages: [], comments: [], wseq: 1, psel: null, editing: false, block: -1, draft: '', me: '', newTpl: 'blank',
@@ -1851,42 +1901,52 @@ class Component extends DCLogic {
         this._frame = null;
         this.setState({
           sel: 'D1', q: '', role: 'all', status: 'all',
-          doc: null, toc: [], tocAt: -1,
+          doc: DOCUMENTATION_TAB, deck: null, toc: [], tocAt: -1,
           view: 'console', section: 'domain', tsel: null
         });
         window.scrollTo(0, 0);
       },
+      headerLabel: s.doc === LIBRARY_TAB ? 'LIBRARY' : s.doc ? 'DOCUMENTATION' : 'DEV CONSOLE',
       navLinks: NAV.map(n => {
-        const VIEW = { 1: 'console', 2: 'board', 3: 'wiki' };
-        const active = n[4] ? (!s.doc && s.view === VIEW[n[4]]) : s.doc === n[1];
+        const active = n[1] === DOCUMENTATION_TAB
+          ? s.doc === DOCUMENTATION_TAB || PORTAL_DOCUMENTS.some(d => d[1] === s.doc)
+          : s.doc === n[1];
         return {
           tag: n[0], label: n[1], tagColor: n[3],
-          // 프리젠테이션은 자료 하나가 아니라 목록이다 — ⌘클릭도 목록으로 간다
-          href: n[1] === LIBRARY_TAB ? '#/library' : n[1] === DECK_TAB ? '#/doc/' + DOC_SLUG[DECK_TAB] : url(n[2]),
+          href: n[1] === LIBRARY_TAB ? '#/library' : n[1] === DECK_TAB ? '#/doc/deck' : '#/docs',
           color: active ? '#fff' : '#C6CEDD',
           weight: active ? 600 : 400,
           bg: active ? 'rgba(255,255,255,.07)' : 'transparent',
           edge: active ? '#E0B486' : 'transparent',
           onClick: ev => {
-            if (n[4] !== 2 && (ev.metaKey || ev.ctrlKey || ev.shiftKey)) return;
+            if (ev.metaKey || ev.ctrlKey || ev.shiftKey) return;
             ev.preventDefault();
             this._frame = null;
             this.setState({
-              doc: n[4] ? null : n[1],
+              doc: n[1],
               libraryRoute: n[1] === LIBRARY_TAB ? '#/library' : s.libraryRoute,
               deck: null,
-              view: n[4] ? VIEW[n[4]] : 'console',
+              view: 'console',
               toc: [], tocAt: -1
             });
             window.scrollTo(0, 0);
           }
         };
       }),
-      shellClass: s.doc === LIBRARY_TAB ? 'portal-library-active' : '',
-      shellMinWidth: s.doc === LIBRARY_TAB ? '0' : '1024px',
+      documentationOpen: s.doc === DOCUMENTATION_TAB,
+      documentationGroups: DOCUMENTATION_GROUPS.map((g, index) => ({
+        headingId: 'portal-doc-group-' + index,
+        title: g[0], description: g[1],
+        items: g[2].map(label => {
+          const n = PORTAL_DOCUMENTS.find(d => d[1] === label);
+          return { tag: n[0], title: label, description: DOCUMENTATION_DESCRIPTIONS[label], href: '#/doc/' + n[0].toLowerCase() };
+        })
+      })),
+      shellClass: s.doc === LIBRARY_TAB ? 'portal-library-active' : s.doc === DOCUMENTATION_TAB ? 'portal-documentation-active' : '',
+      shellMinWidth: s.doc === LIBRARY_TAB || s.doc === DOCUMENTATION_TAB ? '0' : '1024px',
       libraryOpen: s.doc === LIBRARY_TAB,
       libraryRoute: s.libraryRoute || '#/library',
-      viewerOpen: !!s.doc && s.doc !== LIBRARY_TAB,
+      viewerOpen: !!s.doc && s.doc !== LIBRARY_TAB && s.doc !== DOCUMENTATION_TAB,
       portalOpen: !s.doc,
       consoleOpen: !s.doc && s.section === 'domain',
       boardOpen: !s.doc && s.section === 'board',
@@ -1907,8 +1967,8 @@ class Component extends DCLogic {
       },
       viewerTitle: curDeck ? curDeck[1] : (s.doc || ''),
       viewerTag: curDeck ? 'DECK' : (NAV_TAG[s.doc] || 'DOC'),
-      viewerSrc: curDeck ? url(curDeck[0]) + "?portal=1" : (s.doc ? url(NAV_FILE[s.doc]) : ''),
-      closeViewer: () => { this._frame = null; this.setState({ doc: null, deck: null, toc: [], tocAt: -1, full: false }); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); },
+      viewerSrc: curDeck ? url(curDeck[0]) + "?portal=1" : (NAV_FILE[s.doc] ? url(NAV_FILE[s.doc]) : ''),
+      closeViewer: () => { this._frame = null; this.setState({ doc: DOCUMENTATION_TAB, deck: null, toc: [], tocAt: -1, full: false }); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); },
 
       // ── 발표 자료 ─────────────────────────────────────────
       // 프리젠테이션 탭은 자료 하나가 아니라 목록입니다. 고르면 같은 뷰어에
