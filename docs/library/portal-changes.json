@@ -2,6 +2,13 @@
   "schemaVersion": 1,
   "items": [
     {
+      "id": "3645bcecc834aeebfecaa91939e506a12e85d14e",
+      "date": "2026-09-28",
+      "title": "Componentry 가상 포트폴리오 예제 추가",
+      "summary": "프로젝트형 예제 4개를 개인정보 없는 가상 프로젝트와 전용 화면으로 확인합니다.",
+      "href": "#/library/all/componentry-case-study-flip-stack?source=componentry"
+    },
+    {
       "id": "bd43b33a7ce96de401e5d9135a65680d3119b9de",
       "date": "2026-09-27",
       "title": "Componentry 원본 렌더링 예제 추가",
@@ -48,13 +55,6 @@
       "date": "2026-09-27",
       "title": "문서 바로가기 탭과 아이콘 전용 도구 버튼 추가",
       "summary": "설계서·화면 정의서·디자인 시스템·아이콘을 상단 탭에서 열고, 테마와 알림을 아이콘 버튼으로 조작합니다.",
-      "href": "#/docs"
-    },
-    {
-      "id": "794acec1dc6f83fffe71eeac1af562f9182a82e1",
-      "date": "2026-09-26",
-      "title": "포털 통합 검색·테마·변경 알림 추가",
-      "summary": "문서·발표 자료·라이브러리를 함께 검색하고 테마 및 변경 알림을 상단에서 확인합니다.",
       "href": "#/docs"
     }
   ]

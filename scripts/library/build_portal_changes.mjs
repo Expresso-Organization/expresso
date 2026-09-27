@@ -44,8 +44,6 @@ const history=lines.filter(Boolean).map(line=>{
  const release=releaseNotes.get(title);
  return {id,date:stamp.slice(0,10),title,summary:release?.summary||notes[id.slice(0,8)]||'개발 포털 화면과 자료 구성이 업데이트됐습니다.',href:release?.href||(id.startsWith('d941')?'#/docs':'#/library')};
 });
-const inHistory=history.some(item=>item.title===newSubject);
-const draft=inHistory?[]:[{id:'portal-controls-2026-09-26',date:'2026-09-26',title:newSubject,summary:newSummary,href:'#/docs'}];
-const items=[...draft,...history].slice(0,8);
+const items=history.slice(0,8);
 fs.writeFileSync(path.join(root,'docs/library/portal-changes.json'),JSON.stringify({schemaVersion:1,items},null,2)+'\n');
 console.log('portal changes',items.length);
