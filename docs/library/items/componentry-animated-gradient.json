@@ -1,0 +1,58 @@
+{
+  "id": "componentry-animated-gradient",
+  "sourceUrl": "https://componentry.dev/docs/components/animated-gradient",
+  "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+  "roleMethod": "identifier_rules_v2",
+  "materials": [
+    {
+      "path": "./library/materials/componentry/registry/animated-gradient.json",
+      "sha256": "e86506af0c2193475a64660799f0fd6e0ea861af7126189ba40967a19b11cb1a",
+      "bytes": 21956,
+      "label": "설치 가능한 registry 원본",
+      "kind": "registry_source"
+    },
+    {
+      "path": "./library/materials/componentry/source/animated-gradient.tsx",
+      "sha256": "33ee70f83c8740c224cb578ea8ec40295c5cb8120cfe2df30fe2d2d61f80569e",
+      "bytes": 19240,
+      "label": "공식 저장소 컴포넌트 원본",
+      "kind": "source_code"
+    },
+    {
+      "path": "./library/materials/componentry/LICENSE.txt",
+      "sha256": "bc600731e5efb47721989e2ca834302a01093b4a8370d4d9b5bf153bcfc340f0",
+      "bytes": 1069,
+      "label": "MIT 라이선스 원문",
+      "kind": "license"
+    }
+  ],
+  "observations": [
+    "A beautiful, animated, and customizable WebGL gradient with noise capabilities.",
+    "공식 분류: Hero Backgrounds",
+    "registry 의존성: 없음"
+  ],
+  "inputs": [],
+  "framework": "React 19 · Tailwind CSS 4",
+  "sourceLicense": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/LICENSE",
+  "acquisitionStatus": "source_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "components/ui/animated-gradient.tsx",
+      "sha256": "cab0f7876cdef88574891dcd8c85fd06c7eb2641c92d4adc4454675ec954e523",
+      "bytes": 19219
+    },
+    {
+      "path": "components/ui/webgl-error-boundary.tsx",
+      "sha256": "ab3841788fe175169c4931710bf42e834fffa892387d70b58b150041c782107c",
+      "bytes": 1380
+    }
+  ],
+  "usageNote": "고정 버전의 원본 코드와 registry payload입니다. 공식 시연 영상은 외부 링크이며 로컬 실행·제품 품질은 검증 전입니다."
+}

@@ -23,10 +23,20 @@ const documentIconsSubject='개발 문서 카드별 아이콘 추가';
 const documentIconsSummary='개발 문서 카드 11개에 자료 성격을 나타내는 아이콘을 추가했습니다.';
 const bareIconsSubject='개발 문서 카드 아이콘 배경 제거';
 const bareIconsSummary='개발 문서 카드의 아이콘 뒤에 있던 배경과 테두리를 제거했습니다.';
+const componentrySubject='Componentry 공식 registry 자료 추가';
+const componentrySummary='UI 53개와 블록 3개의 원본 코드·이용 조건·공식 시연 자료를 라이브러리에서 확인합니다.';
+const releaseNotes=new Map([
+ [newSubject,{summary:newSummary,href:'#/docs'}],
+ [directTabsSubject,{summary:directTabsSummary,href:'#/docs'}],
+ [documentIconsSubject,{summary:documentIconsSummary,href:'#/docs'}],
+ [bareIconsSubject,{summary:bareIconsSummary,href:'#/docs'}],
+ [componentrySubject,{summary:componentrySummary,href:'#/library/all?source=componentry'}],
+]);
 const history=lines.filter(Boolean).map(line=>{
  const [id,stamp,subject]=line.split('\x1f');
  const title=subject.replace(/^[a-z]+: /,'');
- return {id,date:stamp.slice(0,10),title,summary:title===bareIconsSubject?bareIconsSummary:title===documentIconsSubject?documentIconsSummary:title===directTabsSubject?directTabsSummary:title===newSubject?newSummary:notes[id.slice(0,8)]||'개발 포털 화면과 자료 구성이 업데이트됐습니다.',href:title===bareIconsSubject||title===documentIconsSubject||title===directTabsSubject||title===newSubject||id.startsWith('d941')?'#/docs':'#/library'};
+ const release=releaseNotes.get(title);
+ return {id,date:stamp.slice(0,10),title,summary:release?.summary||notes[id.slice(0,8)]||'개발 포털 화면과 자료 구성이 업데이트됐습니다.',href:release?.href||(id.startsWith('d941')?'#/docs':'#/library')};
 });
 const inHistory=history.some(item=>item.title===newSubject);
 const draft=inHistory?[]:[{id:'portal-controls-2026-09-26',date:'2026-09-26',title:newSubject,summary:newSummary,href:'#/docs'}];

@@ -42,6 +42,11 @@ export function componentClassification(item) {
     evidence='공급자의 시각 자료 분류에 따른 임시 배치';
   } else if(item.sourceSite==='kobra' && kobraContent.has(id.split('/').at(-1))) {
     type='content-elements';evidence='공급자의 정보·미디어 표시 요소 분류';
+  } else if(item.sourceSite==='componentry') {
+    if(item.categories.includes('registry:block') || ['case-study-flip-stack','sticky-scroll-cards','newsletter-bookshelf'].includes(id)) type='sections';
+    else if(['magnetic-dock','hover-transition'].includes(id)) type='basic-ui';
+    else type='content-elements';
+    evidence='공식 registry 분류와 이름에 따른 임시 탐색 분류 · 제품 적합성 미검증';
   }
   const provisional=item.acquisitionStatus!=='source_ready';
   return {type,evidence,provisional};

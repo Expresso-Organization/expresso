@@ -1,0 +1,3223 @@
+{
+  "schemaVersion": 1,
+  "runId": "componentry-0fd9e13b344c",
+  "generatedAt": "2026-09-27T07:33:24.145Z",
+  "source": {
+    "id": "componentry",
+    "name": "Componentry",
+    "url": "https://componentry.dev/docs",
+    "licenseUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/LICENSE",
+    "rightsStatus": "allowed",
+    "coverageState": "snapshot_complete",
+    "discoveredCount": 56,
+    "categories": [
+      "Components",
+      "Text Animations",
+      "Hero Backgrounds",
+      "Visual Effects",
+      "ASCII Effects",
+      "registry:block"
+    ],
+    "requestIds": [],
+    "fetchedAt": "2026-09-27T07:33:24.145Z",
+    "method": "공식 저장소 고정 commit의 registry·코드 수집",
+    "note": "53개 UI와 3개 블록의 MIT 원본을 보존했습니다. 시연 영상은 공식 주소로 연결하며 GSAP 의존 항목과 제품 이식은 별도 검토합니다.",
+    "nextActions": [
+      {
+        "kind": "validation",
+        "url": "https://github.com/harshjdhv/componentry",
+        "reason": "포트폴리오 입력 계약·실행 의존성·반응형·이용 조건 검증"
+      }
+    ]
+  },
+  "additions": [
+    {
+      "id": "componentry-animated-gradient",
+      "sourceSite": "componentry",
+      "sourceItemId": "animated-gradient",
+      "title": "Animated Gradient",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/animated-gradient",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/animated-gradient",
+        "https://componentry.dev/r/animated-gradient.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/animated-gradient.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/animated-gradient.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Hero Backgrounds",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A beautiful, animated, and customizable WebGL gradient with noise capabilities."
+    },
+    {
+      "id": "componentry-ascii-effect",
+      "sourceSite": "componentry",
+      "sourceItemId": "ascii-effect",
+      "title": "ASCII Effect",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/ascii-effect",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/ascii-effect",
+        "https://componentry.dev/r/ascii-effect.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/ascii-effect.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/ascii-effect.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "ASCII Effects",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Render images as responsive ASCII artwork with image, flow, and glitch variations."
+    },
+    {
+      "id": "componentry-aurora-flow",
+      "sourceSite": "componentry",
+      "sourceItemId": "aurora-flow",
+      "title": "Aurora Flow",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/aurora-flow",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/aurora-flow",
+        "https://componentry.dev/r/aurora-flow.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/aurora-flow.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/aurora-flow.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Hero Backgrounds",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Procedural atmospheric hero background with layered flowing color, diffused aurora light, and subtle interaction."
+    },
+    {
+      "id": "componentry-case-study-flip-stack",
+      "sourceSite": "componentry",
+      "sourceItemId": "case-study-flip-stack",
+      "title": "Case Study Flip Stack",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/case-study-flip-stack",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/case-study-flip-stack",
+        "https://componentry.dev/r/case-study-flip-stack.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/case-study-flip-stack.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/case-study-flip-stack.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Editorial case study cards that fold upward on scroll to reveal the next story."
+    },
+    {
+      "id": "componentry-circuit-board",
+      "sourceSite": "componentry",
+      "sourceItemId": "circuit-board",
+      "title": "Circuit Board",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/circuit-board",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/circuit-board",
+        "https://componentry.dev/r/circuit-board.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/circuit-board.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/circuit-board.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Animated circuit board visualization with nodes and connections."
+    },
+    {
+      "id": "componentry-closing-plasma",
+      "sourceSite": "componentry",
+      "sourceItemId": "closing-plasma",
+      "title": "Closing Plasma",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/closing-plasma",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/closing-plasma",
+        "https://componentry.dev/r/closing-plasma.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/closing-plasma.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/closing-plasma.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Hero Backgrounds",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Plasma field tailored for footer and CTA sections with premium atmospheric motion."
+    },
+    {
+      "id": "componentry-collection-surfer",
+      "sourceSite": "componentry",
+      "sourceItemId": "collection-surfer",
+      "title": "Collection Surfer",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/collection-surfer",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/collection-surfer",
+        "https://componentry.dev/r/collection-surfer.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/collection-surfer.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/collection-surfer.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Smooth surfing interaction for browsing collections."
+    },
+    {
+      "id": "componentry-cursor-driven-particle-typography",
+      "sourceSite": "componentry",
+      "sourceItemId": "cursor-driven-particle-typography",
+      "title": "Particle Typography",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/cursor-driven-particle-typography",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/cursor-driven-particle-typography",
+        "https://componentry.dev/r/cursor-driven-particle-typography.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/cursor-driven-particle-typography.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/cursor-driven-particle-typography.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Text Animations",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Renders dynamic typography constructed entirely from particles that elegantly disperse and reassemble upon cursor interaction using spring physics."
+    },
+    {
+      "id": "componentry-dither-gradient",
+      "sourceSite": "componentry",
+      "sourceItemId": "dither-gradient",
+      "title": "Dither Gradient",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/dither-gradient",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/dither-gradient",
+        "https://componentry.dev/r/dither-gradient.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/dither-gradient.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/dither-gradient.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Visual Effects",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Gradient background with dithering noise."
+    },
+    {
+      "id": "componentry-dither-prism-hero",
+      "sourceSite": "componentry",
+      "sourceItemId": "dither-prism-hero",
+      "title": "Dither Prism Hero",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/dither-prism-hero",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/dither-prism-hero",
+        "https://componentry.dev/r/dither-prism-hero.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/dither-prism-hero.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/dither-prism-hero.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Hero Backgrounds",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Stunning WebGL hero with advanced dithering, prismatic refraction, holographic iridescence, and center-focused energy."
+    },
+    {
+      "id": "componentry-dithered-logo",
+      "sourceSite": "componentry",
+      "sourceItemId": "dithered-logo",
+      "title": "Dithered Logo",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/dithered-logo",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/dithered-logo",
+        "https://componentry.dev/r/dithered-logo.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/dithered-logo.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/dithered-logo.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Visual Effects",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "An interactive particle logo that turns image assets into a dithered canvas field with cursor ripples."
+    },
+    {
+      "id": "componentry-eye-tracking",
+      "sourceSite": "componentry",
+      "sourceItemId": "eye-tracking",
+      "title": "Eye Tracking",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/eye-tracking",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/eye-tracking",
+        "https://componentry.dev/r/eye-tracking.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/eye-tracking.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/eye-tracking.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Hyper-realistic eyes that follow your cursor with smooth spring physics, reactive pupils, blinking, and multiple stunning variants."
+    },
+    {
+      "id": "componentry-fisheye-infinite-grid",
+      "sourceSite": "componentry",
+      "sourceItemId": "fisheye-infinite-grid",
+      "title": "Fisheye Infinite Grid",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/fisheye-infinite-grid",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/fisheye-infinite-grid",
+        "https://componentry.dev/r/fisheye-infinite-grid.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/fisheye-infinite-grid.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/fisheye-infinite-grid.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A dense draggable image wall warped as one continuous fisheye surface with weighted momentum."
+    },
+    {
+      "id": "componentry-flight-status-card",
+      "sourceSite": "componentry",
+      "sourceItemId": "flight-status-card",
+      "title": "Flight Status Card",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/flight-status-card",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/flight-status-card",
+        "https://componentry.dev/r/flight-status-card.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/flight-status-card.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/flight-status-card.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A detailed card showing flight information with animations."
+    },
+    {
+      "id": "componentry-flipping-word-swap",
+      "sourceSite": "componentry",
+      "sourceItemId": "flipping-word-swap",
+      "title": "Flipping Word Swap",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/flipping-word-swap",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/flipping-word-swap",
+        "https://componentry.dev/r/flipping-word-swap.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/flipping-word-swap.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/flipping-word-swap.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Text Animations",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "unreviewed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A clean character-by-character flip between two words on interaction."
+    },
+    {
+      "id": "componentry-github-calendar",
+      "sourceSite": "componentry",
+      "sourceItemId": "github-calendar",
+      "title": "Github Calendar",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/github-calendar",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/github-calendar",
+        "https://componentry.dev/r/github-calendar.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/github-calendar.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/github-calendar.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "GitHub-style contribution calendar heatmap."
+    },
+    {
+      "id": "componentry-hero-geometric",
+      "sourceSite": "componentry",
+      "sourceItemId": "hero-geometric",
+      "title": "Hero Geometric",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/hero-geometric",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/hero-geometric",
+        "https://componentry.dev/r/hero-geometric.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/hero-geometric.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/hero-geometric.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Hero Backgrounds",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Geometric shapes and patterns for hero sections."
+    },
+    {
+      "id": "componentry-hover-transition",
+      "sourceSite": "componentry",
+      "sourceItemId": "hover-transition",
+      "title": "Hover Transition",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/hover-transition",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/hover-transition",
+        "https://componentry.dev/r/hover-transition.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/hover-transition.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/hover-transition.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Eight polished hover transitions with per-card animation, direction, color, and content controls."
+    },
+    {
+      "id": "componentry-image-ripple-effect",
+      "sourceSite": "componentry",
+      "sourceItemId": "image-ripple-effect",
+      "title": "Image Ripple Effect",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/image-ripple-effect",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/image-ripple-effect",
+        "https://componentry.dev/r/image-ripple-effect.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/image-ripple-effect.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/image-ripple-effect.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Visual Effects",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "WebGL-powered cursor ripples that displace layered image cards in real time."
+    },
+    {
+      "id": "componentry-image-trail",
+      "sourceSite": "componentry",
+      "sourceItemId": "image-trail",
+      "title": "Image Trail",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/image-trail",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/image-trail",
+        "https://componentry.dev/r/image-trail.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/image-trail.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/image-trail.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Visual Effects",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "unreviewed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Leaves a trail of images behind the cursor with a premium delay fade."
+    },
+    {
+      "id": "componentry-infinite-image-field",
+      "sourceSite": "componentry",
+      "sourceItemId": "infinite-image-field",
+      "title": "Infinite Image Field",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/infinite-image-field",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/infinite-image-field",
+        "https://componentry.dev/r/infinite-image-field.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/infinite-image-field.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/infinite-image-field.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Visual Effects",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "An endless, cursor-driven photo canvas that tiles images infinitely and pans fluidly toward wherever you move your cursor."
+    },
+    {
+      "id": "componentry-kinetic-text-reveal",
+      "sourceSite": "componentry",
+      "sourceItemId": "kinetic-text-reveal",
+      "title": "Kinetic Text Reveal",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/kinetic-text-reveal",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/kinetic-text-reveal",
+        "https://componentry.dev/r/kinetic-text-reveal.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/kinetic-text-reveal.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/kinetic-text-reveal.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Text Animations",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Directional text reveal with soft blur and configurable word, character, or line stagger timing."
+    },
+    {
+      "id": "componentry-layered-stack",
+      "sourceSite": "componentry",
+      "sourceItemId": "layered-stack",
+      "title": "Layered Stack",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/layered-stack",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/layered-stack",
+        "https://componentry.dev/r/layered-stack.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/layered-stack.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/layered-stack.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "unreviewed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A stack of layered cards that interact with mouse hover."
+    },
+    {
+      "id": "componentry-letter-cascade",
+      "sourceSite": "componentry",
+      "sourceItemId": "letter-cascade",
+      "title": "Letter Cascade",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/letter-cascade",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/letter-cascade",
+        "https://componentry.dev/r/letter-cascade.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/letter-cascade.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/letter-cascade.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Text Animations",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Kinetic text animation where letters scatter outward with spring physics and blur, then elegantly reassemble."
+    },
+    {
+      "id": "componentry-liquid-chrome",
+      "sourceSite": "componentry",
+      "sourceItemId": "liquid-chrome",
+      "title": "Liquid Chrome",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/liquid-chrome",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/liquid-chrome",
+        "https://componentry.dev/r/liquid-chrome.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/liquid-chrome.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/liquid-chrome.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Hero Backgrounds",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Premium fluid liquid metal shader background effect."
+    },
+    {
+      "id": "componentry-mac-keyboard",
+      "sourceSite": "componentry",
+      "sourceItemId": "mac-keyboard",
+      "title": "Mac Keyboard",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/mac-keyboard",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/mac-keyboard",
+        "https://componentry.dev/r/mac-keyboard.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/mac-keyboard.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/mac-keyboard.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A realistic Mac keyboard component with interactive keys and detailed styling."
+    },
+    {
+      "id": "componentry-magnet-lines",
+      "sourceSite": "componentry",
+      "sourceItemId": "magnet-lines",
+      "title": "Magnet Lines",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/magnet-lines",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/magnet-lines",
+        "https://componentry.dev/r/magnet-lines.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/magnet-lines.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/magnet-lines.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Visual Effects",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Lines that react to cursor movement like a magnetic field."
+    },
+    {
+      "id": "componentry-magnetic-dock",
+      "sourceSite": "componentry",
+      "sourceItemId": "magnetic-dock",
+      "title": "Magnetic Dock",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/magnetic-dock",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/magnetic-dock",
+        "https://componentry.dev/r/magnetic-dock.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/magnetic-dock.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/magnetic-dock.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "MacOS style dock that scales items based on mouse proximity."
+    },
+    {
+      "id": "componentry-matrix-rain",
+      "sourceSite": "componentry",
+      "sourceItemId": "matrix-rain",
+      "title": "Matrix Rain",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/matrix-rain",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/matrix-rain",
+        "https://componentry.dev/r/matrix-rain.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/matrix-rain.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/matrix-rain.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Visual Effects",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Classic Matrix digital rain effect."
+    },
+    {
+      "id": "componentry-music-player",
+      "sourceSite": "componentry",
+      "sourceItemId": "music-player",
+      "title": "Music Player",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/music-player",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/music-player",
+        "https://componentry.dev/r/music-player.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/music-player.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/music-player.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A fun interactive vinyl record music player with swinging tonearm."
+    },
+    {
+      "id": "componentry-newsletter-bookshelf",
+      "sourceSite": "componentry",
+      "sourceItemId": "newsletter-bookshelf",
+      "title": "Newsletter Bookshelf",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/newsletter-bookshelf",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/newsletter-bookshelf",
+        "https://componentry.dev/r/newsletter-bookshelf.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/newsletter-bookshelf.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/newsletter-bookshelf.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A tactile 3D newsletter archive with hover lift, camera browsing, centered covers, and automatic drag-adjustable orbiting."
+    },
+    {
+      "id": "componentry-orbit-card-stack",
+      "sourceSite": "componentry",
+      "sourceItemId": "orbit-card-stack",
+      "title": "Orbit Card Stack",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/orbit-card-stack",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/orbit-card-stack",
+        "https://componentry.dev/r/orbit-card-stack.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/orbit-card-stack.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/orbit-card-stack.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Premium hover card deck that fans outward and lifts the active card without changing its color or angle."
+    },
+    {
+      "id": "componentry-pixel-canvas",
+      "sourceSite": "componentry",
+      "sourceItemId": "pixel-canvas",
+      "title": "Pixel Canvas",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/pixel-canvas",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/pixel-canvas",
+        "https://componentry.dev/r/pixel-canvas.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/pixel-canvas.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/pixel-canvas.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Visual Effects",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Canvas where pixels react to interaction."
+    },
+    {
+      "id": "componentry-pixel-image-trail",
+      "sourceSite": "componentry",
+      "sourceItemId": "pixel-image-trail",
+      "title": "Pixel Image Trail",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/pixel-image-trail",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/pixel-image-trail",
+        "https://componentry.dev/r/pixel-image-trail.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/pixel-image-trail.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/pixel-image-trail.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Visual Effects",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "An image reveal made from cursor-painted squares that expire into a bounded pixel trail."
+    },
+    {
+      "id": "componentry-prism-gradient",
+      "sourceSite": "componentry",
+      "sourceItemId": "prism-gradient",
+      "title": "Prism Gradient",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/prism-gradient",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/prism-gradient",
+        "https://componentry.dev/r/prism-gradient.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/prism-gradient.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/prism-gradient.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Hero Backgrounds",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A theme-aware WebGL prism field with liquid checkered motion, electric-blue refraction, and tactile grain."
+    },
+    {
+      "id": "componentry-ripple-transition",
+      "sourceSite": "componentry",
+      "sourceItemId": "ripple-transition",
+      "title": "Ripple Transition",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/ripple-transition",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/ripple-transition",
+        "https://componentry.dev/r/ripple-transition.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/ripple-transition.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/ripple-transition.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Visual Effects",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "WebGL image transitions with noisy refractive waves, chromatic edges, glow, and click-triggered ripple origins."
+    },
+    {
+      "id": "componentry-scroll-based-velocity",
+      "sourceSite": "componentry",
+      "sourceItemId": "scroll-based-velocity",
+      "title": "Velocity Scroll",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/scroll-based-velocity",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/scroll-based-velocity",
+        "https://componentry.dev/r/scroll-based-velocity.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/scroll-based-velocity.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/scroll-based-velocity.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Text Animations",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Text that moves horizontally based on scroll speed."
+    },
+    {
+      "id": "componentry-scroll-choreography",
+      "sourceSite": "componentry",
+      "sourceItemId": "scroll-choreography",
+      "title": "Scroll Choreography",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/scroll-choreography",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/scroll-choreography",
+        "https://componentry.dev/r/scroll-choreography.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/scroll-choreography.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/scroll-choreography.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A smooth, scroll-driven image choreography component using Framer Motion."
+    },
+    {
+      "id": "componentry-scroll-split-card",
+      "sourceSite": "componentry",
+      "sourceItemId": "scroll-split-card",
+      "title": "Scroll Split Card",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/scroll-split-card",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/scroll-split-card",
+        "https://componentry.dev/r/scroll-split-card.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/scroll-split-card.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/scroll-split-card.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A scroll-driven interactive card that splits into three panels and flips."
+    },
+    {
+      "id": "componentry-scroll-tilted-grid",
+      "sourceSite": "componentry",
+      "sourceItemId": "scroll-tilted-grid",
+      "title": "Scroll Tilted Grid",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/scroll-tilted-grid",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/scroll-tilted-grid",
+        "https://componentry.dev/r/scroll-tilted-grid.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/scroll-tilted-grid.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/scroll-tilted-grid.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A cinematic image grid that tilts and resolves into focus as each frame crosses the viewport."
+    },
+    {
+      "id": "componentry-signature",
+      "sourceSite": "componentry",
+      "sourceItemId": "signature",
+      "title": "Signature",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/signature",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/signature",
+        "https://componentry.dev/r/signature.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/signature.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/signature.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "An animated SVG signature effect that draws out text as if hand-written."
+    },
+    {
+      "id": "componentry-silk-aurora",
+      "sourceSite": "componentry",
+      "sourceItemId": "silk-aurora",
+      "title": "Silk Aurora",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/silk-aurora",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/silk-aurora",
+        "https://componentry.dev/r/silk-aurora.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/silk-aurora.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/silk-aurora.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Hero Backgrounds",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Premium WebGL hero background with satin-dark aurora ribbons, pearlescent highlights, fine grain, and cursor depth."
+    },
+    {
+      "id": "componentry-spiral-3d-slider",
+      "sourceSite": "componentry",
+      "sourceItemId": "spiral-3d-slider",
+      "title": "Spiral 3D Slider",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/spiral-3d-slider",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/spiral-3d-slider",
+        "https://componentry.dev/r/spiral-3d-slider.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/spiral-3d-slider.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/spiral-3d-slider.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A compact, autoplaying image gallery that responds to scroll along a smooth 3D spiral."
+    },
+    {
+      "id": "componentry-split-flap-display",
+      "sourceSite": "componentry",
+      "sourceItemId": "split-flap-display",
+      "title": "Split Flap Display",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/split-flap-display",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/split-flap-display",
+        "https://componentry.dev/r/split-flap-display.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/split-flap-display.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/split-flap-display.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A premium split-flap display component inspired by vintage departure boards."
+    },
+    {
+      "id": "componentry-sticky-scroll-cards",
+      "sourceSite": "componentry",
+      "sourceItemId": "sticky-scroll-cards",
+      "title": "Sticky Scroll Cards",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/sticky-scroll-cards",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/sticky-scroll-cards",
+        "https://componentry.dev/r/sticky-scroll-cards.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/sticky-scroll-cards.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/sticky-scroll-cards.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A scroll-driven card stack where images pin and scale as you scroll, creating a layered depth effect."
+    },
+    {
+      "id": "componentry-text-morph",
+      "sourceSite": "componentry",
+      "sourceItemId": "text-morph",
+      "title": "Text Morph",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/text-morph",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/text-morph",
+        "https://componentry.dev/r/text-morph.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/text-morph.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/text-morph.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Text Animations",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Centered fluid text transitions that inherit the surrounding typography and theme."
+    },
+    {
+      "id": "componentry-text-repel",
+      "sourceSite": "componentry",
+      "sourceItemId": "text-repel",
+      "title": "Text Repel",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/text-repel",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/text-repel",
+        "https://componentry.dev/r/text-repel.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/text-repel.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/text-repel.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Text Animations",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Physics-based text where each letter reacts to cursor proximity with spring dynamics, creating an interactive magnetic force-field effect."
+    },
+    {
+      "id": "componentry-webgl-liquid",
+      "sourceSite": "componentry",
+      "sourceItemId": "webgl-liquid",
+      "title": "WebGL Liquid",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/webgl-liquid",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/webgl-liquid",
+        "https://componentry.dev/r/webgl-liquid.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/webgl-liquid.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/webgl-liquid.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Hero Backgrounds",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Cinematic liquid shader hero with premium gradients, configurable reveal timing, and advanced flow controls."
+    },
+    {
+      "id": "componentry-wheel-carousel",
+      "sourceSite": "componentry",
+      "sourceItemId": "wheel-carousel",
+      "title": "Wheel Carousel",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/wheel-carousel",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/wheel-carousel",
+        "https://componentry.dev/r/wheel-carousel.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/wheel-carousel.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/wheel-carousel.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A cinematic rotating-wheel picker with inertial drag, curved fading labels, and crossfading project imagery."
+    },
+    {
+      "id": "componentry-annotated-text",
+      "sourceSite": "componentry",
+      "sourceItemId": "annotated-text",
+      "title": "Annotated Text",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/annotated-text",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/annotated-text",
+        "https://componentry.dev/r/annotated-text.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/annotated-text.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/annotated-text.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Hand-drawn marks — circles, highlights, underlines, cross-outs — sketched around inline text."
+    },
+    {
+      "id": "componentry-grain-gradient",
+      "sourceSite": "componentry",
+      "sourceItemId": "grain-gradient",
+      "title": "Grain Gradient",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/grain-gradient",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/grain-gradient",
+        "https://componentry.dev/r/grain-gradient.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/grain-gradient.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/grain-gradient.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Hero Backgrounds",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A breathing color field with flowing shadows, customizable film grain, and soft atmospheric light."
+    },
+    {
+      "id": "componentry-spectral-ribbon",
+      "sourceSite": "componentry",
+      "sourceItemId": "spectral-ribbon",
+      "title": "Spectral Ribbon",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/spectral-ribbon",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/spectral-ribbon",
+        "https://componentry.dev/r/spectral-ribbon.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/spectral-ribbon.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/spectral-ribbon.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Hero Backgrounds",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A soft spectral light ribbon on pure black — slow liquid motion and rainbow fringe."
+    },
+    {
+      "id": "componentry-liquid-glass-carousel",
+      "sourceSite": "componentry",
+      "sourceItemId": "liquid-glass-carousel",
+      "title": "Liquid Glass Carousel",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/docs/components/liquid-glass-carousel",
+      "sourceUrls": [
+        "https://componentry.dev/docs/components/liquid-glass-carousel",
+        "https://componentry.dev/r/liquid-glass-carousel.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/liquid-glass-carousel.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/packages/ui/src/components/liquid-glass-carousel.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "Components",
+        "registry:ui"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "unreviewed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "An infinite image carousel seen through a WebGL liquid-glass lens — chromatic rim, snap scroll, and a focus expand."
+    },
+    {
+      "id": "componentry-gradient-hero-01",
+      "sourceSite": "componentry",
+      "sourceItemId": "gradient-hero-01",
+      "title": "Gradient Hero 01",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/r/gradient-hero-01.json",
+      "sourceUrls": [
+        "https://componentry.dev/r/gradient-hero-01.json",
+        "https://componentry.dev/r/gradient-hero-01.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/registry/blocks/gradient-hero-01/gradient-hero-01.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/registry/blocks/gradient-hero-01/gradient-hero-01.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "hero-section",
+        "registry:block"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A simple centered hero with a warm cinematic gradient, compact badge, short copy, and two actions."
+    },
+    {
+      "id": "componentry-pricing-01",
+      "sourceSite": "componentry",
+      "sourceItemId": "pricing-01",
+      "title": "Pricing 01",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/r/pricing-01.json",
+      "sourceUrls": [
+        "https://componentry.dev/r/pricing-01.json",
+        "https://componentry.dev/r/pricing-01.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/registry/blocks/pricing-01/pricing-01.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/registry/blocks/pricing-01/pricing-01.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "pricing",
+        "registry:block"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "Three tactile pricing cards with revealed hover notes, clear feature lists, and a highlighted popular plan."
+    },
+    {
+      "id": "componentry-pricing-02",
+      "sourceSite": "componentry",
+      "sourceItemId": "pricing-02",
+      "title": "Pricing 02",
+      "titleSource": "listing",
+      "canonicalUrl": "https://componentry.dev/r/pricing-02.json",
+      "sourceUrls": [
+        "https://componentry.dev/r/pricing-02.json",
+        "https://componentry.dev/r/pricing-02.json",
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/registry/blocks/pricing-02/pricing-02.tsx"
+      ],
+      "originalUrl": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/registry/blocks/pricing-02/pricing-02.tsx",
+      "artifactKind": "component",
+      "categories": [
+        "pricing",
+        "registry:block"
+      ],
+      "roles": [],
+      "discoveredFrom": [
+        "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/apps/web/public/r/registry.json"
+      ],
+      "familyId": null,
+      "variant": null,
+      "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+      "collectionStatus": "discovered",
+      "rightsStatus": "allowed",
+      "reviewStatus": "unreviewed",
+      "integrationStatus": "not_started",
+      "preview": null,
+      "description": "A compact pricing table with separated plan summaries, detailed feature lists, and an animated billing-cycle switch."
+    }
+  ],
+  "updates": [
+    {
+      "id": "componentry-animated-gradient",
+      "roles": [
+        "hero"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/hero-backgrounds/animatedgradient.webm",
+        "poster": "https://componentry.dev/docs/components/animated-gradient/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/animated-gradient",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-animated-gradient.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-ascii-effect",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/ascii-effects/asciieffect.webm",
+        "poster": "https://componentry.dev/docs/components/ascii-effect/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/ascii-effect",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-ascii-effect.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-aurora-flow",
+      "roles": [
+        "hero"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 시연 영상이 없어 원본 문서 또는 코드에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Aurora Flow\nProcedural atmospheric hero background with layered flowing color, diffused aurora light, and subtle interaction.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-aurora-flow.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-case-study-flip-stack",
+      "roles": [
+        "project-detail"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/casestudyflipstack.webm",
+        "poster": "https://componentry.dev/docs/components/case-study-flip-stack/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/case-study-flip-stack",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-case-study-flip-stack.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-circuit-board",
+      "roles": [
+        "technical-evidence"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 registry의 시연 영상 주소가 수집 시점에 HTTP 404를 반환했습니다. 원본 문서에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Circuit Board\nAnimated circuit board visualization with nodes and connections.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-circuit-board.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-closing-plasma",
+      "roles": [
+        "hero"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 registry의 시연 영상 주소가 수집 시점에 HTTP 404를 반환했습니다. 원본 문서에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Closing Plasma\nPlasma field tailored for footer and CTA sections with premium atmospheric motion.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-closing-plasma.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-collection-surfer",
+      "roles": [
+        "project-grid"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 registry의 시연 영상 주소가 수집 시점에 HTTP 404를 반환했습니다. 원본 문서에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Collection Surfer\nSmooth surfing interaction for browsing collections.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-collection-surfer.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-cursor-driven-particle-typography",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/text-animations/cursordrivenparticletypography.webm",
+        "poster": "https://componentry.dev/docs/components/cursor-driven-particle-typography/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/cursor-driven-particle-typography",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-cursor-driven-particle-typography.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-dither-gradient",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 registry의 시연 영상 주소가 수집 시점에 HTTP 404를 반환했습니다. 원본 문서에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Dither Gradient\nGradient background with dithering noise.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-dither-gradient.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-dither-prism-hero",
+      "roles": [
+        "hero"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 registry의 시연 영상 주소가 수집 시점에 HTTP 404를 반환했습니다. 원본 문서에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Dither Prism Hero\nStunning WebGL hero with advanced dithering, prismatic refraction, holographic iridescence, and center-focused energy.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-dither-prism-hero.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-dithered-logo",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/visual-effects/ditheredlogo.webm",
+        "poster": "https://componentry.dev/docs/components/dithered-logo/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/dithered-logo",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-dithered-logo.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-eye-tracking",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/eyetracking.webm",
+        "poster": "https://componentry.dev/docs/components/eye-tracking/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/eye-tracking",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-eye-tracking.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-fisheye-infinite-grid",
+      "roles": [
+        "project-grid"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/fisheyeinfinitegrid.webm",
+        "poster": "https://componentry.dev/docs/components/fisheye-infinite-grid/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/fisheye-infinite-grid",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-fisheye-infinite-grid.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-flight-status-card",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/flightstatuscard.webm",
+        "poster": "https://componentry.dev/docs/components/flight-status-card/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/flight-status-card",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-flight-status-card.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-flipping-word-swap",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "GSAP의 별도 이용 조건을 확인한 뒤 제품에 이식합니다.",
+        "공식 시연 영상이 없어 원본 문서 또는 코드에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Flipping Word Swap\nA clean character-by-character flip between two words on interaction.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-flipping-word-swap.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-github-calendar",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 registry의 시연 영상 주소가 수집 시점에 HTTP 404를 반환했습니다. 원본 문서에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Github Calendar\nGitHub-style contribution calendar heatmap.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-github-calendar.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-hero-geometric",
+      "roles": [
+        "hero"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 registry의 시연 영상 주소가 수집 시점에 HTTP 404를 반환했습니다. 원본 문서에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Hero Geometric\nGeometric shapes and patterns for hero sections.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-hero-geometric.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-hover-transition",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/hovertransition.webm",
+        "poster": "https://componentry.dev/docs/components/hover-transition/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/hover-transition",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-hover-transition.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-image-ripple-effect",
+      "roles": [
+        "media"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/visual-effects/imagerippleeffect.webm",
+        "poster": "https://componentry.dev/docs/components/image-ripple-effect/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/image-ripple-effect",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-image-ripple-effect.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-image-trail",
+      "roles": [
+        "media"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "GSAP의 별도 이용 조건을 확인한 뒤 제품에 이식합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/visual-effects/imagetrail.webm",
+        "poster": "https://componentry.dev/docs/components/image-trail/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/image-trail",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-image-trail.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-infinite-image-field",
+      "roles": [
+        "media"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/visual-effects/infiniteimagefield.webm",
+        "poster": "https://componentry.dev/docs/components/infinite-image-field/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/infinite-image-field",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-infinite-image-field.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-kinetic-text-reveal",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/text-animations/kinetictextreveal.webm",
+        "poster": "https://componentry.dev/docs/components/kinetic-text-reveal/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/kinetic-text-reveal",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-kinetic-text-reveal.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-layered-stack",
+      "roles": [
+        "project-grid"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "GSAP의 별도 이용 조건을 확인한 뒤 제품에 이식합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/layeredstack.webm",
+        "poster": "https://componentry.dev/docs/components/layered-stack/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/layered-stack",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-layered-stack.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-letter-cascade",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/text-animations/lettercascade.webm",
+        "poster": "https://componentry.dev/docs/components/letter-cascade/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/letter-cascade",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-letter-cascade.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-liquid-chrome",
+      "roles": [
+        "hero"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/hero-backgrounds/liquidchrome.webm",
+        "poster": "https://componentry.dev/docs/components/liquid-chrome/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/liquid-chrome",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-liquid-chrome.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-mac-keyboard",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/mackeyboard.webm",
+        "poster": "https://componentry.dev/docs/components/mac-keyboard/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/mac-keyboard",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-mac-keyboard.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-magnet-lines",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 registry의 시연 영상 주소가 수집 시점에 HTTP 404를 반환했습니다. 원본 문서에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Magnet Lines\nLines that react to cursor movement like a magnetic field.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-magnet-lines.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-magnetic-dock",
+      "roles": [
+        "navigation"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 registry의 시연 영상 주소가 수집 시점에 HTTP 404를 반환했습니다. 원본 문서에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Magnetic Dock\nMacOS style dock that scales items based on mouse proximity.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-magnetic-dock.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-matrix-rain",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 registry의 시연 영상 주소가 수집 시점에 HTTP 404를 반환했습니다. 원본 문서에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Matrix Rain\nClassic Matrix digital rain effect.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-matrix-rain.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-music-player",
+      "roles": [
+        "media"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/musicplayer.webm",
+        "poster": "https://componentry.dev/docs/components/music-player/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/music-player",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-music-player.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-newsletter-bookshelf",
+      "roles": [
+        "project-detail"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/newsletterbookshelf.webm",
+        "poster": "https://componentry.dev/docs/components/newsletter-bookshelf/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/newsletter-bookshelf",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-newsletter-bookshelf.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-orbit-card-stack",
+      "roles": [
+        "project-grid"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/orbitcardstack.webm",
+        "poster": "https://componentry.dev/docs/components/orbit-card-stack/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/orbit-card-stack",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-orbit-card-stack.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-pixel-canvas",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 registry의 시연 영상 주소가 수집 시점에 HTTP 404를 반환했습니다. 원본 문서에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Pixel Canvas\nCanvas where pixels react to interaction.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-pixel-canvas.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-pixel-image-trail",
+      "roles": [
+        "media"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/visual-effects/pixelimagetrail.webm",
+        "poster": "https://componentry.dev/docs/components/pixel-image-trail/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/pixel-image-trail",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-pixel-image-trail.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-prism-gradient",
+      "roles": [
+        "hero"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/hero-backgrounds/prismgradient.webm",
+        "poster": "https://componentry.dev/docs/components/prism-gradient/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/prism-gradient",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-prism-gradient.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-ripple-transition",
+      "roles": [
+        "media"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/visual-effects/rippletransition.webm",
+        "poster": "https://componentry.dev/docs/components/ripple-transition/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/ripple-transition",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-ripple-transition.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-scroll-based-velocity",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 registry의 시연 영상 주소가 수집 시점에 HTTP 404를 반환했습니다. 원본 문서에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Velocity Scroll\nText that moves horizontally based on scroll speed.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-scroll-based-velocity.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-scroll-choreography",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/scrollchoreography.webm",
+        "poster": "https://componentry.dev/docs/components/scroll-choreography/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/scroll-choreography",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-scroll-choreography.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-scroll-split-card",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/scrollsplitcard.webm",
+        "poster": "https://componentry.dev/docs/components/scroll-split-card/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/scroll-split-card",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-scroll-split-card.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-scroll-tilted-grid",
+      "roles": [
+        "project-grid"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/scrolltiltedgrid.webm",
+        "poster": "https://componentry.dev/docs/components/scroll-tilted-grid/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/scroll-tilted-grid",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-scroll-tilted-grid.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-signature",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/signature.webm",
+        "poster": "https://componentry.dev/docs/components/signature/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/signature",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-signature.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-silk-aurora",
+      "roles": [
+        "hero"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/hero-backgrounds/silkaurora.webm",
+        "poster": "https://componentry.dev/docs/components/silk-aurora/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/silk-aurora",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-silk-aurora.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-spiral-3d-slider",
+      "roles": [
+        "project-grid"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://componentry.dev/preview-videos/component-animations/spiral3dslider.webm",
+        "poster": "https://componentry.dev/images/spiral-3d-slider/catalog-preview.jpg",
+        "thumbnailUrl": "https://componentry.dev/images/spiral-3d-slider/catalog-preview.jpg",
+        "sourceUrl": "https://componentry.dev/docs/components/spiral-3d-slider",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-spiral-3d-slider.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-split-flap-display",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/splitflapdisplay.webm",
+        "poster": "https://componentry.dev/docs/components/split-flap-display/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/split-flap-display",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-split-flap-display.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-sticky-scroll-cards",
+      "roles": [
+        "project-detail"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/stickyscrollcards.webm",
+        "poster": "https://componentry.dev/docs/components/sticky-scroll-cards/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/sticky-scroll-cards",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-sticky-scroll-cards.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-text-morph",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 시연 영상이 없어 원본 문서 또는 코드에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Text Morph\nCentered fluid text transitions that inherit the surrounding typography and theme.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-text-morph.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-text-repel",
+      "roles": [
+        "interaction"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/text-animations/textrepel.webm",
+        "poster": "https://componentry.dev/docs/components/text-repel/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/text-repel",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-text-repel.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-webgl-liquid",
+      "roles": [
+        "hero"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 registry의 시연 영상 주소가 수집 시점에 HTTP 404를 반환했습니다. 원본 문서에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "WebGL Liquid\nCinematic liquid shader hero with premium gradients, configurable reveal timing, and advanced flow controls.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-webgl-liquid.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-wheel-carousel",
+      "roles": [
+        "project-grid"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/wheelcarousel.webm",
+        "poster": "https://componentry.dev/docs/components/wheel-carousel/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/wheel-carousel",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-wheel-carousel.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-annotated-text",
+      "roles": [
+        "technical-evidence"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/annotatedtext.webm",
+        "poster": "https://componentry.dev/docs/components/annotated-text/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/annotated-text",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-annotated-text.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-grain-gradient",
+      "roles": [
+        "hero"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 시연 영상이 없어 원본 문서 또는 코드에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Grain Gradient\nA breathing color field with flowing shadows, customizable film grain, and soft atmospheric light.",
+        "label": "공식 설명 · 실행 화면은 원본에서 확인"
+      },
+      "detailPath": "./library/items/componentry-grain-gradient.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-spectral-ribbon",
+      "roles": [
+        "hero"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/hero-backgrounds/spectralribbon.webm",
+        "poster": "https://componentry.dev/docs/components/spectral-ribbon/opengraph-image",
+        "sourceUrl": "https://componentry.dev/docs/components/spectral-ribbon",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-spectral-ribbon.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-liquid-glass-carousel",
+      "roles": [
+        "media"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "GSAP의 별도 이용 조건을 확인한 뒤 제품에 이식합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "remote_video",
+        "url": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/liquidglasscarousel.webm",
+        "poster": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/liquidglasscarousel-4s.webp",
+        "thumbnailUrl": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/liquidglasscarousel-4s.webp",
+        "sourceUrl": "https://componentry.dev/docs/components/liquid-glass-carousel",
+        "label": "공식 시연 영상 · 제품 실행 전"
+      },
+      "detailPath": "./library/items/componentry-liquid-glass-carousel.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-gradient-hero-01",
+      "roles": [
+        "hero"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 시연 영상이 없어 원본 문서 또는 코드에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Gradient Hero 01\nA simple centered hero with a warm cinematic gradient, compact badge, short copy, and two actions.",
+        "label": "공식 registry 설명 · 실행 검증 전"
+      },
+      "detailPath": "./library/items/componentry-gradient-hero-01.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-pricing-01",
+      "roles": [
+        "supporting-page"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 시연 영상이 없어 원본 문서 또는 코드에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Pricing 01\nThree tactile pricing cards with revealed hover notes, clear feature lists, and a highlighted popular plan.",
+        "label": "공식 registry 설명 · 실행 검증 전"
+      },
+      "detailPath": "./library/items/componentry-pricing-01.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    },
+    {
+      "id": "componentry-pricing-02",
+      "roles": [
+        "supporting-page"
+      ],
+      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+      "roleMethod": "identifier_rules_v2",
+      "selection": "pending",
+      "inputs": [],
+      "constraints": [
+        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
+        "공식 시연 영상이 없어 원본 문서 또는 코드에서 동작을 확인해야 합니다."
+      ],
+      "familyId": null,
+      "preview": {
+        "kind": "text",
+        "text": "Pricing 02\nA compact pricing table with separated plan summaries, detailed feature lists, and an animated billing-cycle switch.",
+        "label": "공식 registry 설명 · 실행 검증 전"
+      },
+      "detailPath": "./library/items/componentry-pricing-02.json",
+      "acquisitionStatus": "source_ready",
+      "collectionStatus": "material_ready",
+      "previewReason": null
+    }
+  ],
+  "stats": {
+    "items": 56,
+    "components": 53,
+    "blocks": 3,
+    "officialVideos": 36,
+    "unavailableVideos": 13,
+    "textPreviews": 20
+  }
+}

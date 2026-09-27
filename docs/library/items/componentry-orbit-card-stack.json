@@ -1,0 +1,53 @@
+{
+  "id": "componentry-orbit-card-stack",
+  "sourceUrl": "https://componentry.dev/docs/components/orbit-card-stack",
+  "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+  "roleMethod": "identifier_rules_v2",
+  "materials": [
+    {
+      "path": "./library/materials/componentry/registry/orbit-card-stack.json",
+      "sha256": "57e5c2a23647eda453019e0c240ffa381f68d538d50c7944c0333f12f0acd3ee",
+      "bytes": 10859,
+      "label": "설치 가능한 registry 원본",
+      "kind": "registry_source"
+    },
+    {
+      "path": "./library/materials/componentry/source/orbit-card-stack.tsx",
+      "sha256": "652a48ea42129a925e2cb9e7546468a487ad749b9f5e8cf25928a7b4c1a724ce",
+      "bytes": 9892,
+      "label": "공식 저장소 컴포넌트 원본",
+      "kind": "source_code"
+    },
+    {
+      "path": "./library/materials/componentry/LICENSE.txt",
+      "sha256": "bc600731e5efb47721989e2ca834302a01093b4a8370d4d9b5bf153bcfc340f0",
+      "bytes": 1069,
+      "label": "MIT 라이선스 원문",
+      "kind": "license"
+    }
+  ],
+  "observations": [
+    "Premium hover card deck that fans outward and lifts the active card without changing its color or angle.",
+    "공식 분류: Components",
+    "registry 의존성: framer-motion, lucide-react"
+  ],
+  "inputs": [],
+  "framework": "React 19 · Tailwind CSS 4",
+  "sourceLicense": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/LICENSE",
+  "acquisitionStatus": "source_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "components/ui/orbit-card-stack.tsx",
+      "sha256": "8a55a74f5fab28968994d5a607213a68ca4d3c36434da574e1bb1e51000add48",
+      "bytes": 9880
+    }
+  ],
+  "usageNote": "고정 버전의 원본 코드와 registry payload입니다. 공식 시연 영상은 외부 링크이며 로컬 실행·제품 품질은 검증 전입니다."
+}

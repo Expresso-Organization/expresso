@@ -1,0 +1,53 @@
+{
+  "id": "componentry-signature",
+  "sourceUrl": "https://componentry.dev/docs/components/signature",
+  "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+  "roleMethod": "identifier_rules_v2",
+  "materials": [
+    {
+      "path": "./library/materials/componentry/registry/signature.json",
+      "sha256": "019a472416f9411020cc82477dc729e4997bda8cca017d66ff42767dc279bfe3",
+      "bytes": 5353,
+      "label": "설치 가능한 registry 원본",
+      "kind": "registry_source"
+    },
+    {
+      "path": "./library/materials/componentry/source/signature.tsx",
+      "sha256": "8b65586652c44cd0c0984de3a5089f251d9fce4ec883901f75cb635288deede7",
+      "bytes": 4677,
+      "label": "공식 저장소 컴포넌트 원본",
+      "kind": "source_code"
+    },
+    {
+      "path": "./library/materials/componentry/LICENSE.txt",
+      "sha256": "bc600731e5efb47721989e2ca834302a01093b4a8370d4d9b5bf153bcfc340f0",
+      "bytes": 1069,
+      "label": "MIT 라이선스 원문",
+      "kind": "license"
+    }
+  ],
+  "observations": [
+    "An animated SVG signature effect that draws out text as if hand-written.",
+    "공식 분류: Components",
+    "registry 의존성: framer-motion, opentype.js"
+  ],
+  "inputs": [],
+  "framework": "React 19 · Tailwind CSS 4",
+  "sourceLicense": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/LICENSE",
+  "acquisitionStatus": "source_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "components/ui/signature.tsx",
+      "sha256": "4e6c0fc1677e3bb50e32ed506a1ef24795086e8a0224f4ad69996f981bd59b70",
+      "bytes": 4665
+    }
+  ],
+  "usageNote": "고정 버전의 원본 코드와 registry payload입니다. 공식 시연 영상은 외부 링크이며 로컬 실행·제품 품질은 검증 전입니다."
+}

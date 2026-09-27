@@ -4,8 +4,8 @@ import {readFileSync} from 'node:fs';
 const read=name=>JSON.parse(readFileSync(new URL('../../docs/library/'+name+'.json',import.meta.url)));
 
 test('상단 검색 인덱스는 수집·보강 목록의 모든 항목을 유일하게 포함한다',()=>{
- const index=read('portal-search-index'),base=read('catalog'),acquired=read('acquisitions'),curated=read('curation');
- const sourceItems=[...base.items,...acquired.additions,...curated.additions];
+ const index=read('portal-search-index'),base=read('catalog'),acquired=read('acquisitions'),curated=read('curation'),componentry=read('componentry');
+ const sourceItems=[...base.items,...acquired.additions,...curated.additions,...componentry.additions];
  assert.equal(index.schemaVersion,1);
  assert.equal(index.catalogRunId,base.runId);
  assert.equal(index.curationRunId,curated.runId);

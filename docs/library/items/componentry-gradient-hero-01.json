@@ -1,0 +1,53 @@
+{
+  "id": "componentry-gradient-hero-01",
+  "sourceUrl": "https://componentry.dev/r/gradient-hero-01.json",
+  "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+  "roleMethod": "identifier_rules_v2",
+  "materials": [
+    {
+      "path": "./library/materials/componentry/registry/gradient-hero-01.json",
+      "sha256": "48b05a7f8a04abb60c994a4ac72a823d52cefd6cf739627a2f3a5f21aa44cee5",
+      "bytes": 3696,
+      "label": "설치 가능한 registry 원본",
+      "kind": "registry_source"
+    },
+    {
+      "path": "./library/materials/componentry/source/gradient-hero-01.tsx",
+      "sha256": "926a57ee0fc86b34df06cb4fb9d88c3802595762615d3b28ff34520c538e5c5c",
+      "bytes": 2977,
+      "label": "공식 저장소 컴포넌트 원본",
+      "kind": "source_code"
+    },
+    {
+      "path": "./library/materials/componentry/LICENSE.txt",
+      "sha256": "bc600731e5efb47721989e2ca834302a01093b4a8370d4d9b5bf153bcfc340f0",
+      "bytes": 1069,
+      "label": "MIT 라이선스 원문",
+      "kind": "license"
+    }
+  ],
+  "observations": [
+    "A simple centered hero with a warm cinematic gradient, compact badge, short copy, and two actions.",
+    "공식 분류: hero-section",
+    "registry 의존성: 없음"
+  ],
+  "inputs": [],
+  "framework": "React 19 · Tailwind CSS 4",
+  "sourceLicense": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/LICENSE",
+  "acquisitionStatus": "source_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "registry/blocks/gradient-hero-01/gradient-hero-01.tsx",
+      "sha256": "929ccc4c6f3d242369f879db9b75db7f7407c072c6fb31f45454b1606c5427f3",
+      "bytes": 2969
+    }
+  ],
+  "usageNote": "고정 버전의 원본 코드와 registry payload입니다. 공식 시연 영상은 외부 링크이며 로컬 실행·제품 품질은 검증 전입니다."
+}

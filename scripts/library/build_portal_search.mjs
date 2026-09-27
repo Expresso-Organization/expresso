@@ -4,9 +4,9 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const at=name=>JSON.parse(fs.readFileSync(path.join(root,'docs/library',name+'.json'),'utf8'));
-const base=at('catalog'),acquisitions=at('acquisitions'),curation=at('curation');
-const sources=new Map([...base.sources,...acquisitions.sources,...curation.sources].map(s=>[s.id,s.name]));
-const items=[...base.items,...acquisitions.additions,...curation.additions];
+const base=at('catalog'),acquisitions=at('acquisitions'),curation=at('curation'),componentry=at('componentry');
+const sources=new Map([...base.sources,...acquisitions.sources,...curation.sources,componentry.source].map(s=>[s.id,s.name]));
+const items=[...base.items,...acquisitions.additions,...curation.additions,...componentry.additions];
 const ids=new Set();
 const entries=items.map(item=>{
   if(ids.has(item.id)||!sources.has(item.sourceSite))throw Error('중복 ID 또는 출처 누락: '+item.id);

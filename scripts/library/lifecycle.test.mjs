@@ -17,7 +17,7 @@ test('DC 원본 템플릿은 비워 두고 실제 포털에 장착된 뒤에만 
   template.setAttribute('route','#/library');assert.equal(template.innerHTML,'');
   const mounted=dom.window.document.createElement('expresso-library');
   mounted.setAttribute('route','#/library');dom.window.document.getElementById('dc-root').append(mounted);
-  assert.match(mounted.textContent,/불러오는 중/);assert.equal(requests,4);
+  assert.match(mounted.textContent,/불러오는 중/);assert.equal(requests,5);
   assert.equal(template.innerHTML,'');
  }finally{dom.window.close();for(const k of keys)globalThis[k]=before.get(k);}
 });

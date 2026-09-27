@@ -1,0 +1,53 @@
+{
+  "id": "componentry-cursor-driven-particle-typography",
+  "sourceUrl": "https://componentry.dev/docs/components/cursor-driven-particle-typography",
+  "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+  "roleMethod": "identifier_rules_v2",
+  "materials": [
+    {
+      "path": "./library/materials/componentry/registry/cursor-driven-particle-typography.json",
+      "sha256": "0375049543fa32158e0ff3082073922a4035e32db63e415ae9fda2e560437d00",
+      "bytes": 10046,
+      "label": "설치 가능한 registry 원본",
+      "kind": "registry_source"
+    },
+    {
+      "path": "./library/materials/componentry/source/cursor-driven-particle-typography.tsx",
+      "sha256": "c771fae987b327a09f8c43a0e6235580f82f6e1fa8fa7e56ec03261d0fdeb66d",
+      "bytes": 9395,
+      "label": "공식 저장소 컴포넌트 원본",
+      "kind": "source_code"
+    },
+    {
+      "path": "./library/materials/componentry/LICENSE.txt",
+      "sha256": "bc600731e5efb47721989e2ca834302a01093b4a8370d4d9b5bf153bcfc340f0",
+      "bytes": 1069,
+      "label": "MIT 라이선스 원문",
+      "kind": "license"
+    }
+  ],
+  "observations": [
+    "Renders dynamic typography constructed entirely from particles that elegantly disperse and reassemble upon cursor interaction using spring physics.",
+    "공식 분류: Text Animations",
+    "registry 의존성: 없음"
+  ],
+  "inputs": [],
+  "framework": "React 19 · Tailwind CSS 4",
+  "sourceLicense": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/LICENSE",
+  "acquisitionStatus": "source_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "components/ui/cursor-driven-particle-typography.tsx",
+      "sha256": "7ed8c3f3f8a7ad516952b552c85cce6e30e100abdf0ca814ad5b52c200943b30",
+      "bytes": 9383
+    }
+  ],
+  "usageNote": "고정 버전의 원본 코드와 registry payload입니다. 공식 시연 영상은 외부 링크이며 로컬 실행·제품 품질은 검증 전입니다."
+}

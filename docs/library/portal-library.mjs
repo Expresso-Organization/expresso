@@ -3,6 +3,7 @@ import { TYPES, itemType, typeLabel, TYPE_DESCRIPTIONS, isLibraryHome, matchesTy
 import {ACQUISITION, ROLES, applyAcquisitions, validateDetail} from './acquisition-core.mjs';
 import {SELECTION, applyCuration} from './curation-core.mjs';
 import {applyExamples} from './examples-core.mjs';
+import {applyComponentry} from './componentry-core.mjs';
 import {componentClassification} from './component-types.mjs';
 import {collectionIcon} from './collection-icons.mjs';
 
@@ -12,8 +13,8 @@ const number = value => value.toLocaleString('ko-KR');
 const link = (url, label) => `<a href="${escape(url)}" target="_blank" rel="noopener noreferrer">${escape(label)} ↗</a>`;
 let catalogPromise;
 const readJSON = path => fetch(new URL(path,import.meta.url)).then(response=>{if(!response.ok)throw new Error(`자료 요청 실패 (HTTP ${response.status})`);return response.json();});
-const getCatalog = () => catalogPromise ||= Promise.all([readJSON('./catalog.json'),readJSON('./acquisitions.json'),readJSON('./curation.json'),readJSON('./examples.json')])
-  .then(([base,acquired,curation,examples])=>applyExamples(applyCuration(applyAcquisitions(validateCatalog(base),acquired),curation),examples)).catch(error=>{catalogPromise=null;throw error;});
+const getCatalog = () => catalogPromise ||= Promise.all([readJSON('./catalog.json'),readJSON('./acquisitions.json'),readJSON('./curation.json'),readJSON('./examples.json'),readJSON('./componentry.json')])
+  .then(([base,acquired,curation,examples,componentry])=>applyComponentry(applyExamples(applyCuration(applyAcquisitions(validateCatalog(base),acquired),curation),examples),componentry)).catch(error=>{catalogPromise=null;throw error;});
 
 class ExpressoLibrary extends HTMLElement {
   static observedAttributes = ['route'];
@@ -24,6 +25,17 @@ class ExpressoLibrary extends HTMLElement {
     this.details ||= new Map();
     this.addEventListener('load',event=>{if(['IMG','IFRAME'].includes(event.target.tagName))event.target.closest('.lib-visual')?.removeAttribute('data-loading');},true);
     this.addEventListener('error',event=>{if(event.target.tagName==='IMG' && event.target.closest('.lib-visual')){const frame=event.target.closest('.lib-visual');frame.removeAttribute('data-loading');frame.innerHTML='<span class="lib-image-error">원본 이미지에 연결하지 못했습니다<br>상세에서 출처를 확인하세요.</span>';}},true);
+    this.addEventListener('pointerover',event=>{
+      const card=event.target.closest('.lib-card-preview');
+      if(!card||card.contains(event.relatedTarget)||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+      const video=card.querySelector('video[data-hover-preview]');
+      if(video)void video.play().catch(()=>{});
+    });
+    this.addEventListener('pointerout',event=>{
+      const card=event.target.closest('.lib-card-preview');
+      if(!card||card.contains(event.relatedTarget))return;
+      card.querySelector('video[data-hover-preview]')?.pause();
+    });
     this.onclick = event => {
       if (event.target.closest('[data-retry]')) this.load();
       if (event.target.closest('[data-close]')) this.navigate({id: ''});
@@ -120,7 +132,7 @@ class ExpressoLibrary extends HTMLElement {
             ${filtered?`<div class="lib-filter-status"><span>조건 ${filterCount}개 적용 중${state.family?` · 이름 계열: ${escape(state.family)}`:''}</span><a href="${route({q:'',source:'',category:'',role:'',availability:'',selection:'',family:'',page:1,id:''})}">초기화</a></div>`:''}
           </section>
           <div class="lib-result-heading"><div><h2>${selectedSource ? escape(selectedSource.name) : typeLabel(state.type)} <span>${number(results.total)}개</span></h2>${TYPE_DESCRIPTIONS[state.type]?`<p class="lib-result-description">${TYPE_DESCRIPTIONS[state.type]}</p>`:''}</div>
-            <span>기초 수집 ${escape(data.generatedAt.slice(0,10))} · 선별 ${escape(data.curation.reviewedAt)}</span></div>
+          <span>${selectedSource?.id==='componentry'?`수집 ${escape(selectedSource.fetchedAt.slice(0,10))} · 원본 고정 버전`:`기초 수집 ${escape(data.generatedAt.slice(0,10))} · 선별 ${escape(data.curation.reviewedAt)}`}</span></div>
           ${results.total ? `<div class="lib-grid">${results.items.map(item=>this.card(item,sources.get(item.sourceSite),state)).join('')}</div>`
             : `<div class="lib-message"><h3>${filtered ? '검색 조건에 맞는 항목이 없습니다' : '아직 목록에 등록된 자료가 없습니다'}</h3><p>${selectedSource ? escape(selectedSource.note) : state.type === 'pages' ? '검증된 컴포넌트를 조합한 페이지 구성은 후속 단계에서 추가합니다.' : '유형·사이트·검색 조건을 바꾸어 확인해 보세요.'}</p><a href="${route({q:'',source:'',category:'',role:'',availability:'',selection:'',family:'',page:1,id:''})}">이 유형의 전체 목록 보기</a></div>`}
           <nav class="lib-pagination" aria-label="라이브러리 페이지"><span>${results.total ? number((results.page-1)*PAGE_SIZE+1) : 0}–${number(Math.min(results.page*PAGE_SIZE,results.total))} / ${number(results.total)}</span>
@@ -174,13 +186,17 @@ class ExpressoLibrary extends HTMLElement {
     const type = itemType(item);
     return `<article class="lib-card"><div class="lib-card-top"><span>${TYPES[type]}</span><span>${ACQUISITION[item.acquisitionStatus]}</span></div>
       <h3><a data-item="${item.id}" href="${escape(libraryRoute({...state,id:item.id}))}">${escape(item.title)}</a></h3>
-      <p class="lib-card-category">${item.selection!=='pending'?SELECTION[item.selection]+' · ':''}${escape(item.categories.join(' · ') || '분류 확인 예정')}${item.variant ? ' · '+escape(item.variant) : ''}</p>
+      <p class="lib-card-category">${item.selection!=='pending'?SELECTION[item.selection]+' · ':''}${escape(item.categories.join(' · ') || '분류 확인 예정')}${item.variant ? ' · '+escape(item.variant) : ''}</p>${item.sourceSite==='componentry'?`<p class="lib-card-description">${escape(item.description)}</p>`:''}
       <a class="lib-card-preview" aria-label="${escape(item.title)} 미리보기와 상세" href="${escape(libraryRoute({...state,id:item.id}))}">${this.preview(item)}</a><footer><span>${escape(source.name)}</span><span>${rightsLabel(item)}</span></footer></article>`;
   }
   preview(item,large=false) {
     const p=item.preview;
     if(!p) return `<div class="lib-preview-missing ${large?'lib-detail-preview':''}">${escape(item.previewReason||'원본에서 확인')}</div>`;
-    if(p.kind==='remote_video' && large) return `<div class="lib-visual lib-large-preview lib-video-preview"><video controls playsinline preload="none" poster="${escape(p.poster)}" src="${escape(p.url)}" aria-label="${escape(item.title)} 참고 영상"></video><span class="lib-preview-label">${escape(p.label)}</span></div>`;
+    if(p.kind==='remote_video' && large) {
+      const auto=item.sourceSite==='componentry'&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches?'autoplay muted loop preload="metadata"':'preload="none"';
+      return `<div class="lib-visual lib-large-preview lib-video-preview"><video controls playsinline ${auto} poster="${escape(p.poster)}" src="${escape(p.url)}" aria-label="${escape(item.title)} 참고 영상"></video><span class="lib-preview-label">${escape(p.label)}</span></div>`;
+    }
+    if(p.kind==='remote_video' && item.sourceSite==='componentry') return `<div class="lib-visual lib-video-card"><video data-hover-preview muted playsinline loop preload="none" poster="${escape(p.thumbnailUrl||p.poster)}" src="${escape(p.url)}" aria-hidden="true"></video><span class="lib-preview-label">공식 시연 영상 · 호버 재생</span></div>`;
     if(p.kind==='text') return `<div class="lib-visual lib-prompt-preview"><pre>${escape(p.text)}</pre><span class="lib-preview-label">${escape(p.label)}</span></div>`;
     if(p.kind==='local_frame' && large && p.liveUrl) return `<div class="lib-visual lib-large-preview lib-live-preview" data-loading="true"><iframe src="${escape(p.liveUrl)}" title="${escape(item.title)} 실행 예제" sandbox="allow-scripts" loading="eager" tabindex="0" referrerpolicy="no-referrer"></iframe><span class="lib-preview-label">${escape(p.label)} · 실행 중</span></div>`;
     if(p.kind==='local_frame') return `<div class="lib-visual lib-frame-preview ${large?'lib-large-preview':''}" data-loading="true" data-preview-width="${p.width}" data-preview-height="${p.height}"><iframe src="${escape(p.url)}" title="${escape(item.title)} ${escape(p.label)}" sandbox="" loading="lazy" tabindex="-1" width="${p.width}" height="${p.height}" referrerpolicy="no-referrer"></iframe><span class="lib-preview-label">${escape(p.label)} · ${p.width}px</span></div>`;
