@@ -47,8 +47,8 @@
       "status": "ready",
       "reason": "",
       "errors": [],
-      "snapshotSha256": "1f1d445de1c2365e4adc61e03c734eea5687b8a85e37fa8bdc733c305bd23487",
-      "snapshotBytes": 70404
+      "snapshotSha256": "6405c25d2fa8288cab439c35877130ab3617470038074ad8b0b7f7f49ff08cef",
+      "snapshotBytes": 50702
     },
     {
       "id": "componentry-circuit-board",
@@ -326,8 +326,8 @@
       "status": "ready",
       "reason": "",
       "errors": [],
-      "snapshotSha256": "7688d2d96619f1ebfcbaace1b67fbfcf025ba3b67a936f8cdd1bb03ce23f1bf6",
-      "snapshotBytes": 40034
+      "snapshotSha256": "d7c92115958f1d0ab9595ad82b09962a2825663f57f353a94a8027e1fb164a0c",
+      "snapshotBytes": 30667
     },
     {
       "id": "componentry-pixel-canvas",
@@ -407,8 +407,8 @@
       "status": "ready",
       "reason": "",
       "errors": [],
-      "snapshotSha256": "26c430f1de8bd8810d6346243af01c9c605a723d7da72474e0a9e775920da68c",
-      "snapshotBytes": 51989
+      "snapshotSha256": "94fad441258fa0b68396c79116255147d1b4b143bff19850c253514d12673d70",
+      "snapshotBytes": 39166
     },
     {
       "id": "componentry-scroll-tilted-grid",
@@ -470,8 +470,8 @@
       "status": "ready",
       "reason": "",
       "errors": [],
-      "snapshotSha256": "e9db6f06c4cfeea639a1f053fc2374b690bb3586f77cc28a17286685a456a86a",
-      "snapshotBytes": 42964
+      "snapshotSha256": "08f5de25a16424cc7833e01e509ca7c20c24b5e646c641589e6160d4dbdf8cdd",
+      "snapshotBytes": 23298
     },
     {
       "id": "componentry-text-morph",

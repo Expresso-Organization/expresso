@@ -63,20 +63,21 @@
       "bytes": 6943
     }
   ],
-  "usageNote": "공식 원본 코드를 예시 입력으로 브라우저에서 직접 렌더링했습니다. 실제 경력 데이터·반응형·키보드·제품 이식 품질은 검증 전입니다.",
+  "usageNote": "공식 원본 코드를 가상 포트폴리오 데이터로 직접 렌더링했습니다. 모아 지도·루멘 노트·온길 안내는 실제 경력이나 성과가 아닙니다. 제품 이식·키보드 접근성 검사는 별도입니다. 원본 소스의 고정 영어 안내 문구는 제품 이식 전에 교체해야 합니다.",
   "example": {
     "mode": "authored_fixture",
-    "inputCode": "<C imageSrc=\"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=85\" cards={[{title:\"Discover\",description:\"Research and evidence\",bgColor:\"#c7d2fe\",textColor:\"#111827\"},{title:\"Create\",description:\"Design and build\",bgColor:\"#fecaca\",textColor:\"#111827\"},{title:\"Deliver\",description:\"Measure the result\",bgColor:\"#bbf7d0\",textColor:\"#111827\"}]} />",
+    "inputCode": "<C imageSrc=\"./assets/portfolio-lumen-note.svg\" cards={[{title:\"문제 정의\",description:\"흩어진 자료를 다시 찾기 어렵다는 가상 상황\",bgColor:\"#ddd0f4\",textColor:\"#352d50\"},{title:\"화면 설계\",description:\"기록과 연결을 한 흐름에 배치\",bgColor:\"#c1dcd4\",textColor:\"#143e4a\"},{title:\"시연 화면\",description:\"주제별 연결을 탐색하는 가상 시제품\",bgColor:\"#f2d9bb\",textColor:\"#633d27\"}]} />",
     "props": {},
     "notes": [
-      "공식 원본 컴포넌트에 예시 입력을 전달한 독립 실행 화면입니다.",
-      "실제 경력 데이터와 포트폴리오 품질 검사는 별도입니다."
+      "루멘 노트는 이 예제를 위해 만든 가상 프로젝트입니다. 실제 인물·경력·성과가 아닙니다.",
+      "공식 원본 컴포넌트에 가상 입력을 전달한 독립 실행 화면입니다. 제품 이식 품질은 별도 검증이 필요합니다.",
+      "원본 소스에 고정된 영어 스크롤 안내와 종료 문구는 제품 이식 전에 교체해야 합니다."
     ]
   },
   "renderCheck": {
     "status": "ready",
     "method": "chrome_dom_and_screenshot",
-    "snapshotSha256": "26c430f1de8bd8810d6346243af01c9c605a723d7da72474e0a9e775920da68c",
+    "snapshotSha256": "94fad441258fa0b68396c79116255147d1b4b143bff19850c253514d12673d70",
     "viewport": {
       "width": 1280,
       "height": 880

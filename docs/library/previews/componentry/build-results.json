@@ -37,7 +37,8 @@
     "member": "CaseStudyFlipStack",
     "url": "./library/previews/componentry/componentry-case-study-flip-stack.html",
     "status": "built",
-    "fixture": "<C heading=\"Selected work\" />"
+    "fictionalPortfolio": true,
+    "fixture": "<C items={[{\"eyebrow\":\"지역 정보 · 가상 프로젝트\",\"title\":\"모아 지도\",\"description\":\"동네의 공공 공간을 찾는 흐름을 정리한 탐색 서비스 콘셉트입니다. 장소를 비교하고 방문 계획을 저장하는 화면을 설계했습니다.\",\"image\":\"./assets/portfolio-moa-map.svg\",\"imageAlt\":\"가상 프로젝트 모아 지도의 장소 탐색 화면\",\"background\":\"#143e4a\",\"foreground\":\"#f2fbf9\"},{\"eyebrow\":\"지식 정리 · 가상 프로젝트\",\"title\":\"루멘 노트\",\"description\":\"읽은 자료를 주제별로 연결하는 개인 지식 도구 콘셉트입니다. 기록·연결·재발견을 하나의 작업 흐름으로 구성했습니다.\",\"image\":\"./assets/portfolio-lumen-note.svg\",\"imageAlt\":\"가상 프로젝트 루멘 노트의 자료 연결 화면\",\"background\":\"#392b54\",\"foreground\":\"#faf6ff\"},{\"eyebrow\":\"접근성 · 가상 프로젝트\",\"title\":\"온길 안내\",\"description\":\"낯선 건물에서 필요한 시설을 찾도록 돕는 안내 화면 콘셉트입니다. 큰 글자와 간단한 선택지로 이동 경로를 표현했습니다.\",\"image\":\"./assets/portfolio-ongil-guide.svg\",\"imageAlt\":\"가상 프로젝트 온길 안내의 경로 선택 화면\",\"background\":\"#854629\",\"foreground\":\"#fffaf3\"}]} heading=\"가상 프로젝트 사례\" hint=\"스크롤해 사례 보기\" endLabel=\"예제 끝\" />"
   },
   {
     "id": "componentry-circuit-board",
@@ -285,7 +286,8 @@
     "member": "OrbitCardStack",
     "url": "./library/previews/componentry/componentry-orbit-card-stack.html",
     "status": "built",
-    "fixture": "<C />"
+    "fictionalPortfolio": true,
+    "fixture": "<div className=\"grid min-h-[740px] place-items-center bg-[#eeeaf4]\"><C items={[{\"name\":\"모아 지도\",\"role\":\"지역 정보 · 가상 프로젝트\",\"description\":\"동네의 공공 공간을 찾는 흐름을 정리한 탐색 서비스 콘셉트입니다. 장소를 비교하고 방문 계획을 저장하는 화면을 설계했습니다.\",\"accent\":\"#b5e0d2\",\"stat\":\"가상 프로젝트\",\"image\":\"./assets/portfolio-moa-map.svg\"},{\"name\":\"루멘 노트\",\"role\":\"지식 정리 · 가상 프로젝트\",\"description\":\"읽은 자료를 주제별로 연결하는 개인 지식 도구 콘셉트입니다. 기록·연결·재발견을 하나의 작업 흐름으로 구성했습니다.\",\"accent\":\"#ddd0f4\",\"stat\":\"가상 프로젝트\",\"image\":\"./assets/portfolio-lumen-note.svg\"},{\"name\":\"온길 안내\",\"role\":\"접근성 · 가상 프로젝트\",\"description\":\"낯선 건물에서 필요한 시설을 찾도록 돕는 안내 화면 콘셉트입니다. 큰 글자와 간단한 선택지로 이동 경로를 표현했습니다.\",\"accent\":\"#f5d5a9\",\"stat\":\"가상 프로젝트\",\"image\":\"./assets/portfolio-ongil-guide.svg\"}]} defaultActiveIndex={1} spread={window.innerWidth<600?28:window.innerWidth<900?72:168} /></div>"
   },
   {
     "id": "componentry-pixel-canvas",
@@ -357,7 +359,8 @@
     "member": "ScrollSplitCard",
     "url": "./library/previews/componentry/componentry-scroll-split-card.html",
     "status": "built",
-    "fixture": "<C imageSrc=\"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=85\" cards={[{title:\"Discover\",description:\"Research and evidence\",bgColor:\"#c7d2fe\",textColor:\"#111827\"},{title:\"Create\",description:\"Design and build\",bgColor:\"#fecaca\",textColor:\"#111827\"},{title:\"Deliver\",description:\"Measure the result\",bgColor:\"#bbf7d0\",textColor:\"#111827\"}]} />"
+    "fictionalPortfolio": true,
+    "fixture": "<C imageSrc=\"./assets/portfolio-lumen-note.svg\" cards={[{title:\"문제 정의\",description:\"흩어진 자료를 다시 찾기 어렵다는 가상 상황\",bgColor:\"#ddd0f4\",textColor:\"#352d50\"},{title:\"화면 설계\",description:\"기록과 연결을 한 흐름에 배치\",bgColor:\"#c1dcd4\",textColor:\"#143e4a\"},{title:\"시연 화면\",description:\"주제별 연결을 탐색하는 가상 시제품\",bgColor:\"#f2d9bb\",textColor:\"#633d27\"}]} />"
   },
   {
     "id": "componentry-scroll-tilted-grid",
@@ -413,7 +416,8 @@
     "member": "StickyScrollCards",
     "url": "./library/previews/componentry/componentry-sticky-scroll-cards.html",
     "status": "built",
-    "fixture": "<C />"
+    "fictionalPortfolio": true,
+    "fixture": "<C cards={[{\"title\":\"모아 지도\",\"src\":\"./assets/portfolio-moa-map.svg\"},{\"title\":\"루멘 노트\",\"src\":\"./assets/portfolio-lumen-note.svg\"},{\"title\":\"온길 안내\",\"src\":\"./assets/portfolio-ongil-guide.svg\"}]} hint=\"가상 프로젝트 탐색\" />"
   },
   {
     "id": "componentry-text-morph",

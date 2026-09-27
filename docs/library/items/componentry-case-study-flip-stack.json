@@ -63,20 +63,20 @@
       "bytes": 9643
     }
   ],
-  "usageNote": "공식 원본 코드를 예시 입력으로 브라우저에서 직접 렌더링했습니다. 실제 경력 데이터·반응형·키보드·제품 이식 품질은 검증 전입니다.",
+  "usageNote": "공식 원본 코드를 가상 포트폴리오 데이터로 직접 렌더링했습니다. 모아 지도·루멘 노트·온길 안내는 실제 경력이나 성과가 아닙니다. 제품 이식·키보드 접근성 검사는 별도입니다.",
   "example": {
     "mode": "authored_fixture",
-    "inputCode": "<C heading=\"Selected work\" />",
+    "inputCode": "<C items={[{\"eyebrow\":\"지역 정보 · 가상 프로젝트\",\"title\":\"모아 지도\",\"description\":\"동네의 공공 공간을 찾는 흐름을 정리한 탐색 서비스 콘셉트입니다. 장소를 비교하고 방문 계획을 저장하는 화면을 설계했습니다.\",\"image\":\"./assets/portfolio-moa-map.svg\",\"imageAlt\":\"가상 프로젝트 모아 지도의 장소 탐색 화면\",\"background\":\"#143e4a\",\"foreground\":\"#f2fbf9\"},{\"eyebrow\":\"지식 정리 · 가상 프로젝트\",\"title\":\"루멘 노트\",\"description\":\"읽은 자료를 주제별로 연결하는 개인 지식 도구 콘셉트입니다. 기록·연결·재발견을 하나의 작업 흐름으로 구성했습니다.\",\"image\":\"./assets/portfolio-lumen-note.svg\",\"imageAlt\":\"가상 프로젝트 루멘 노트의 자료 연결 화면\",\"background\":\"#392b54\",\"foreground\":\"#faf6ff\"},{\"eyebrow\":\"접근성 · 가상 프로젝트\",\"title\":\"온길 안내\",\"description\":\"낯선 건물에서 필요한 시설을 찾도록 돕는 안내 화면 콘셉트입니다. 큰 글자와 간단한 선택지로 이동 경로를 표현했습니다.\",\"image\":\"./assets/portfolio-ongil-guide.svg\",\"imageAlt\":\"가상 프로젝트 온길 안내의 경로 선택 화면\",\"background\":\"#854629\",\"foreground\":\"#fffaf3\"}]} heading=\"가상 프로젝트 사례\" hint=\"스크롤해 사례 보기\" endLabel=\"예제 끝\" />",
     "props": {},
     "notes": [
-      "공식 원본 컴포넌트에 예시 입력을 전달한 독립 실행 화면입니다.",
-      "실제 경력 데이터와 포트폴리오 품질 검사는 별도입니다."
+      "모아 지도·루멘 노트·온길 안내는 이 예제를 위해 만든 가상 프로젝트입니다. 실제 인물·경력·성과가 아닙니다.",
+      "공식 원본 컴포넌트에 가상 입력을 전달한 독립 실행 화면입니다. 제품 이식 품질은 별도 검증이 필요합니다."
     ]
   },
   "renderCheck": {
     "status": "ready",
     "method": "chrome_dom_and_screenshot",
-    "snapshotSha256": "1f1d445de1c2365e4adc61e03c734eea5687b8a85e37fa8bdc733c305bd23487",
+    "snapshotSha256": "6405c25d2fa8288cab439c35877130ab3617470038074ad8b0b7f7f49ff08cef",
     "viewport": {
       "width": 1280,
       "height": 880

@@ -33,7 +33,7 @@ async function worker(){
       status=await page.locator('html').getAttribute('data-preview-status');
       reason=await page.locator('html').getAttribute('data-preview-reason')||'';
       if(status==='ready'){
-        const scrollCapture={'case-study-flip-stack':1000,'sticky-scroll-cards':950};
+        const scrollCapture={'case-study-flip-stack':1000,'sticky-scroll-cards':950,'scroll-split-card':2900};
         if(scrollCapture[item.name]){
           await page.evaluate(y=>window.scrollTo(0,y),scrollCapture[item.name]);
           await page.waitForTimeout(700);

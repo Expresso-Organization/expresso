@@ -1981,7 +1981,7 @@
         "kind": "local_frame",
         "url": "./library/previews/componentry/componentry-case-study-flip-stack.static.html",
         "liveUrl": "./library/previews/componentry/componentry-case-study-flip-stack.html",
-        "label": "원본 컴포넌트 실행 · 예시 입력",
+        "label": "가상 포트폴리오 · 원본 컴포넌트 실행",
         "sourceUrl": "https://componentry.dev/docs/components/case-study-flip-stack",
         "width": 1280,
         "height": 740,
@@ -1993,17 +1993,17 @@
       "previewReason": null,
       "example": {
         "mode": "authored_fixture",
-        "inputCode": "<C heading=\"Selected work\" />",
+        "inputCode": "<C items={[{\"eyebrow\":\"지역 정보 · 가상 프로젝트\",\"title\":\"모아 지도\",\"description\":\"동네의 공공 공간을 찾는 흐름을 정리한 탐색 서비스 콘셉트입니다. 장소를 비교하고 방문 계획을 저장하는 화면을 설계했습니다.\",\"image\":\"./assets/portfolio-moa-map.svg\",\"imageAlt\":\"가상 프로젝트 모아 지도의 장소 탐색 화면\",\"background\":\"#143e4a\",\"foreground\":\"#f2fbf9\"},{\"eyebrow\":\"지식 정리 · 가상 프로젝트\",\"title\":\"루멘 노트\",\"description\":\"읽은 자료를 주제별로 연결하는 개인 지식 도구 콘셉트입니다. 기록·연결·재발견을 하나의 작업 흐름으로 구성했습니다.\",\"image\":\"./assets/portfolio-lumen-note.svg\",\"imageAlt\":\"가상 프로젝트 루멘 노트의 자료 연결 화면\",\"background\":\"#392b54\",\"foreground\":\"#faf6ff\"},{\"eyebrow\":\"접근성 · 가상 프로젝트\",\"title\":\"온길 안내\",\"description\":\"낯선 건물에서 필요한 시설을 찾도록 돕는 안내 화면 콘셉트입니다. 큰 글자와 간단한 선택지로 이동 경로를 표현했습니다.\",\"image\":\"./assets/portfolio-ongil-guide.svg\",\"imageAlt\":\"가상 프로젝트 온길 안내의 경로 선택 화면\",\"background\":\"#854629\",\"foreground\":\"#fffaf3\"}]} heading=\"가상 프로젝트 사례\" hint=\"스크롤해 사례 보기\" endLabel=\"예제 끝\" />",
         "props": {},
         "notes": [
-          "공식 원본 컴포넌트에 예시 입력을 전달한 독립 실행 화면입니다.",
-          "실제 경력 데이터와 포트폴리오 품질 검사는 별도입니다."
+          "모아 지도·루멘 노트·온길 안내는 이 예제를 위해 만든 가상 프로젝트입니다. 실제 인물·경력·성과가 아닙니다.",
+          "공식 원본 컴포넌트에 가상 입력을 전달한 독립 실행 화면입니다. 제품 이식 품질은 별도 검증이 필요합니다."
         ]
       },
       "renderCheck": {
         "status": "ready",
         "method": "chrome_dom_and_screenshot",
-        "snapshotSha256": "1f1d445de1c2365e4adc61e03c734eea5687b8a85e37fa8bdc733c305bd23487",
+        "snapshotSha256": "6405c25d2fa8288cab439c35877130ab3617470038074ad8b0b7f7f49ff08cef",
         "viewport": {
           "width": 1280,
           "height": 880
@@ -3283,7 +3283,7 @@
         "kind": "local_frame",
         "url": "./library/previews/componentry/componentry-orbit-card-stack.static.html",
         "liveUrl": "./library/previews/componentry/componentry-orbit-card-stack.html",
-        "label": "원본 컴포넌트 실행 · 예시 입력",
+        "label": "가상 포트폴리오 · 원본 컴포넌트 실행",
         "sourceUrl": "https://componentry.dev/docs/components/orbit-card-stack",
         "width": 1280,
         "height": 740,
@@ -3295,17 +3295,17 @@
       "previewReason": null,
       "example": {
         "mode": "authored_fixture",
-        "inputCode": "<C />",
+        "inputCode": "<div className=\"grid min-h-[740px] place-items-center bg-[#eeeaf4]\"><C items={[{\"name\":\"모아 지도\",\"role\":\"지역 정보 · 가상 프로젝트\",\"description\":\"동네의 공공 공간을 찾는 흐름을 정리한 탐색 서비스 콘셉트입니다. 장소를 비교하고 방문 계획을 저장하는 화면을 설계했습니다.\",\"accent\":\"#b5e0d2\",\"stat\":\"가상 프로젝트\",\"image\":\"./assets/portfolio-moa-map.svg\"},{\"name\":\"루멘 노트\",\"role\":\"지식 정리 · 가상 프로젝트\",\"description\":\"읽은 자료를 주제별로 연결하는 개인 지식 도구 콘셉트입니다. 기록·연결·재발견을 하나의 작업 흐름으로 구성했습니다.\",\"accent\":\"#ddd0f4\",\"stat\":\"가상 프로젝트\",\"image\":\"./assets/portfolio-lumen-note.svg\"},{\"name\":\"온길 안내\",\"role\":\"접근성 · 가상 프로젝트\",\"description\":\"낯선 건물에서 필요한 시설을 찾도록 돕는 안내 화면 콘셉트입니다. 큰 글자와 간단한 선택지로 이동 경로를 표현했습니다.\",\"accent\":\"#f5d5a9\",\"stat\":\"가상 프로젝트\",\"image\":\"./assets/portfolio-ongil-guide.svg\"}]} defaultActiveIndex={1} spread={window.innerWidth<600?28:window.innerWidth<900?72:168} /></div>",
         "props": {},
         "notes": [
-          "공식 원본 컴포넌트에 예시 입력을 전달한 독립 실행 화면입니다.",
-          "실제 경력 데이터와 포트폴리오 품질 검사는 별도입니다."
+          "모아 지도·루멘 노트·온길 안내는 이 예제를 위해 만든 가상 프로젝트입니다. 실제 인물·경력·성과가 아닙니다.",
+          "공식 원본 컴포넌트에 가상 입력을 전달한 독립 실행 화면입니다. 제품 이식 품질은 별도 검증이 필요합니다."
         ]
       },
       "renderCheck": {
         "status": "ready",
         "method": "chrome_dom_and_screenshot",
-        "snapshotSha256": "7688d2d96619f1ebfcbaace1b67fbfcf025ba3b67a936f8cdd1bb03ce23f1bf6",
+        "snapshotSha256": "d7c92115958f1d0ab9595ad82b09962a2825663f57f353a94a8027e1fb164a0c",
         "viewport": {
           "width": 1280,
           "height": 880
@@ -3607,7 +3607,7 @@
         "kind": "local_frame",
         "url": "./library/previews/componentry/componentry-scroll-split-card.static.html",
         "liveUrl": "./library/previews/componentry/componentry-scroll-split-card.html",
-        "label": "원본 컴포넌트 실행 · 예시 입력",
+        "label": "가상 포트폴리오 · 원본 컴포넌트 실행",
         "sourceUrl": "https://componentry.dev/docs/components/scroll-split-card",
         "width": 1280,
         "height": 740,
@@ -3619,17 +3619,18 @@
       "previewReason": null,
       "example": {
         "mode": "authored_fixture",
-        "inputCode": "<C imageSrc=\"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=85\" cards={[{title:\"Discover\",description:\"Research and evidence\",bgColor:\"#c7d2fe\",textColor:\"#111827\"},{title:\"Create\",description:\"Design and build\",bgColor:\"#fecaca\",textColor:\"#111827\"},{title:\"Deliver\",description:\"Measure the result\",bgColor:\"#bbf7d0\",textColor:\"#111827\"}]} />",
+        "inputCode": "<C imageSrc=\"./assets/portfolio-lumen-note.svg\" cards={[{title:\"문제 정의\",description:\"흩어진 자료를 다시 찾기 어렵다는 가상 상황\",bgColor:\"#ddd0f4\",textColor:\"#352d50\"},{title:\"화면 설계\",description:\"기록과 연결을 한 흐름에 배치\",bgColor:\"#c1dcd4\",textColor:\"#143e4a\"},{title:\"시연 화면\",description:\"주제별 연결을 탐색하는 가상 시제품\",bgColor:\"#f2d9bb\",textColor:\"#633d27\"}]} />",
         "props": {},
         "notes": [
-          "공식 원본 컴포넌트에 예시 입력을 전달한 독립 실행 화면입니다.",
-          "실제 경력 데이터와 포트폴리오 품질 검사는 별도입니다."
+          "루멘 노트는 이 예제를 위해 만든 가상 프로젝트입니다. 실제 인물·경력·성과가 아닙니다.",
+          "공식 원본 컴포넌트에 가상 입력을 전달한 독립 실행 화면입니다. 제품 이식 품질은 별도 검증이 필요합니다.",
+          "원본 소스에 고정된 영어 스크롤 안내와 종료 문구는 제품 이식 전에 교체해야 합니다."
         ]
       },
       "renderCheck": {
         "status": "ready",
         "method": "chrome_dom_and_screenshot",
-        "snapshotSha256": "26c430f1de8bd8810d6346243af01c9c605a723d7da72474e0a9e775920da68c",
+        "snapshotSha256": "94fad441258fa0b68396c79116255147d1b4b143bff19850c253514d12673d70",
         "viewport": {
           "width": 1280,
           "height": 880
@@ -3883,7 +3884,7 @@
         "kind": "local_frame",
         "url": "./library/previews/componentry/componentry-sticky-scroll-cards.static.html",
         "liveUrl": "./library/previews/componentry/componentry-sticky-scroll-cards.html",
-        "label": "원본 컴포넌트 실행 · 예시 입력",
+        "label": "가상 포트폴리오 · 원본 컴포넌트 실행",
         "sourceUrl": "https://componentry.dev/docs/components/sticky-scroll-cards",
         "width": 1280,
         "height": 740,
@@ -3895,17 +3896,17 @@
       "previewReason": null,
       "example": {
         "mode": "authored_fixture",
-        "inputCode": "<C />",
+        "inputCode": "<C cards={[{\"title\":\"모아 지도\",\"src\":\"./assets/portfolio-moa-map.svg\"},{\"title\":\"루멘 노트\",\"src\":\"./assets/portfolio-lumen-note.svg\"},{\"title\":\"온길 안내\",\"src\":\"./assets/portfolio-ongil-guide.svg\"}]} hint=\"가상 프로젝트 탐색\" />",
         "props": {},
         "notes": [
-          "공식 원본 컴포넌트에 예시 입력을 전달한 독립 실행 화면입니다.",
-          "실제 경력 데이터와 포트폴리오 품질 검사는 별도입니다."
+          "모아 지도·루멘 노트·온길 안내는 이 예제를 위해 만든 가상 프로젝트입니다. 실제 인물·경력·성과가 아닙니다.",
+          "공식 원본 컴포넌트에 가상 입력을 전달한 독립 실행 화면입니다. 제품 이식 품질은 별도 검증이 필요합니다."
         ]
       },
       "renderCheck": {
         "status": "ready",
         "method": "chrome_dom_and_screenshot",
-        "snapshotSha256": "e9db6f06c4cfeea639a1f053fc2374b690bb3586f77cc28a17286685a456a86a",
+        "snapshotSha256": "08f5de25a16424cc7833e01e509ca7c20c24b5e646c641589e6160d4dbdf8cdd",
         "viewport": {
           "width": 1280,
           "height": 880

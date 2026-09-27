@@ -4,7 +4,7 @@ import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
-const lines=execFileSync('git',['log','-n','8','--format=%H%x1f%aI%x1f%s','--','docs/Expresso 개발 포털.dc.html','docs/library/portal-library.mjs','docs/library/portal-documentation.css'],{cwd:root,encoding:'utf8'}).trim().split('\n');
+const lines=execFileSync('git',['log','-n','8','--format=%H%x1f%aI%x1f%s','--','docs/Expresso 개발 포털.dc.html','docs/library/portal-library.mjs','docs/library/portal-documentation.css','docs/library/componentry.json'],{cwd:root,encoding:'utf8'}).trim().split('\n');
 const notes={
  d941505c:'상단을 개발 문서·라이브러리·프리젠테이션으로 정리하고 문서 카드 목록을 추가했습니다.',
  '17f4cd96':'라이브러리 상세 모달을 열고 닫아도 목록 스크롤 위치가 유지됩니다.',
@@ -27,6 +27,8 @@ const componentrySubject='Componentry 공식 registry 자료 추가';
 const componentrySummary='UI 53개와 블록 3개의 원본 코드·이용 조건·공식 시연 자료를 라이브러리에서 확인합니다.';
 const componentryRenderSubject='Componentry 원본 렌더링 예제 추가';
 const componentryRenderSummary='Componentry 56개 모두 카드에 실제 렌더 화면을 표시하고 상세에서 실행 예제를 조작할 수 있습니다.';
+const fictionalPortfolioSubject='Componentry 가상 포트폴리오 예제 추가';
+const fictionalPortfolioSummary='프로젝트형 예제 4개를 개인정보 없는 가상 프로젝트와 전용 화면으로 확인합니다.';
 const releaseNotes=new Map([
  [newSubject,{summary:newSummary,href:'#/docs'}],
  [directTabsSubject,{summary:directTabsSummary,href:'#/docs'}],
@@ -34,6 +36,7 @@ const releaseNotes=new Map([
  [bareIconsSubject,{summary:bareIconsSummary,href:'#/docs'}],
  [componentrySubject,{summary:componentrySummary,href:'#/library/all?source=componentry'}],
  [componentryRenderSubject,{summary:componentryRenderSummary,href:'#/library/all?source=componentry'}],
+ [fictionalPortfolioSubject,{summary:fictionalPortfolioSummary,href:'#/library/all/componentry-case-study-flip-stack?source=componentry'}],
 ]);
 const history=lines.filter(Boolean).map(line=>{
  const [id,stamp,subject]=line.split('\x1f');

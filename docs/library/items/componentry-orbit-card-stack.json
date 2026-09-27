@@ -63,20 +63,20 @@
       "bytes": 9880
     }
   ],
-  "usageNote": "공식 원본 코드를 예시 입력으로 브라우저에서 직접 렌더링했습니다. 실제 경력 데이터·반응형·키보드·제품 이식 품질은 검증 전입니다.",
+  "usageNote": "공식 원본 코드를 가상 포트폴리오 데이터로 직접 렌더링했습니다. 모아 지도·루멘 노트·온길 안내는 실제 경력이나 성과가 아닙니다. 제품 이식·키보드 접근성 검사는 별도입니다.",
   "example": {
     "mode": "authored_fixture",
-    "inputCode": "<C />",
+    "inputCode": "<div className=\"grid min-h-[740px] place-items-center bg-[#eeeaf4]\"><C items={[{\"name\":\"모아 지도\",\"role\":\"지역 정보 · 가상 프로젝트\",\"description\":\"동네의 공공 공간을 찾는 흐름을 정리한 탐색 서비스 콘셉트입니다. 장소를 비교하고 방문 계획을 저장하는 화면을 설계했습니다.\",\"accent\":\"#b5e0d2\",\"stat\":\"가상 프로젝트\",\"image\":\"./assets/portfolio-moa-map.svg\"},{\"name\":\"루멘 노트\",\"role\":\"지식 정리 · 가상 프로젝트\",\"description\":\"읽은 자료를 주제별로 연결하는 개인 지식 도구 콘셉트입니다. 기록·연결·재발견을 하나의 작업 흐름으로 구성했습니다.\",\"accent\":\"#ddd0f4\",\"stat\":\"가상 프로젝트\",\"image\":\"./assets/portfolio-lumen-note.svg\"},{\"name\":\"온길 안내\",\"role\":\"접근성 · 가상 프로젝트\",\"description\":\"낯선 건물에서 필요한 시설을 찾도록 돕는 안내 화면 콘셉트입니다. 큰 글자와 간단한 선택지로 이동 경로를 표현했습니다.\",\"accent\":\"#f5d5a9\",\"stat\":\"가상 프로젝트\",\"image\":\"./assets/portfolio-ongil-guide.svg\"}]} defaultActiveIndex={1} spread={window.innerWidth<600?28:window.innerWidth<900?72:168} /></div>",
     "props": {},
     "notes": [
-      "공식 원본 컴포넌트에 예시 입력을 전달한 독립 실행 화면입니다.",
-      "실제 경력 데이터와 포트폴리오 품질 검사는 별도입니다."
+      "모아 지도·루멘 노트·온길 안내는 이 예제를 위해 만든 가상 프로젝트입니다. 실제 인물·경력·성과가 아닙니다.",
+      "공식 원본 컴포넌트에 가상 입력을 전달한 독립 실행 화면입니다. 제품 이식 품질은 별도 검증이 필요합니다."
     ]
   },
   "renderCheck": {
     "status": "ready",
     "method": "chrome_dom_and_screenshot",
-    "snapshotSha256": "7688d2d96619f1ebfcbaace1b67fbfcf025ba3b67a936f8cdd1bb03ce23f1bf6",
+    "snapshotSha256": "d7c92115958f1d0ab9595ad82b09962a2825663f57f353a94a8027e1fb164a0c",
     "viewport": {
       "width": 1280,
       "height": 880

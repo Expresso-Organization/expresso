@@ -31,17 +31,23 @@ for(const update of feed.updates){
   const staticHtml=`<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'unsafe-inline'"><title>${update.id} 렌더 화면</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff}img{display:block;width:100%;height:100%;object-fit:cover}</style><img src="${update.id}.jpg" alt="실제 컴포넌트 렌더 화면"></html>`;
   fs.writeFileSync(path.join(out,update.id+'.static.html'),staticHtml);
   update.preview={kind:'local_frame',url:prefix+'.static.html',liveUrl:prefix+'.html',
-    label:'원본 컴포넌트 실행 · 예시 입력',sourceUrl:feed.additions.find(item=>item.id===update.id).canonicalUrl,
+    label:build.fictionalPortfolio?'가상 포트폴리오 · 원본 컴포넌트 실행':'원본 컴포넌트 실행 · 예시 입력',sourceUrl:feed.additions.find(item=>item.id===update.id).canonicalUrl,
     width:1280,height:740,interactive:true};
   if(!validPreview(update.preview))throw new Error('실행 미리보기 경로가 올바르지 않습니다: '+update.id);
   update.example={mode:'authored_fixture',inputCode:build.fixture,props:{},
-    notes:['공식 원본 컴포넌트에 예시 입력을 전달한 독립 실행 화면입니다.','실제 경력 데이터와 포트폴리오 품질 검사는 별도입니다.']};
+    notes:build.fictionalPortfolio?
+      [build.name==='scroll-split-card'?'루멘 노트는 이 예제를 위해 만든 가상 프로젝트입니다. 실제 인물·경력·성과가 아닙니다.':'모아 지도·루멘 노트·온길 안내는 이 예제를 위해 만든 가상 프로젝트입니다. 실제 인물·경력·성과가 아닙니다.','공식 원본 컴포넌트에 가상 입력을 전달한 독립 실행 화면입니다. 제품 이식 품질은 별도 검증이 필요합니다.']:
+      ['공식 원본 컴포넌트에 예시 입력을 전달한 독립 실행 화면입니다.','실제 경력 데이터와 포트폴리오 품질 검사는 별도입니다.']};
+  if(build.name==='scroll-split-card')update.example.notes.push('원본 소스에 고정된 영어 스크롤 안내와 종료 문구는 제품 이식 전에 교체해야 합니다.');
   update.renderCheck={status:'ready',method:verified.method,snapshotSha256:hash,viewport:verified.viewport};
   const detailPath=path.join(base,'items',update.id+'.json');
   const detail=JSON.parse(fs.readFileSync(detailPath));
   detail.example=update.example;
   detail.renderCheck=update.renderCheck;
-  detail.usageNote='공식 원본 코드를 예시 입력으로 브라우저에서 직접 렌더링했습니다. 실제 경력 데이터·반응형·키보드·제품 이식 품질은 검증 전입니다.';
+  detail.usageNote=build.fictionalPortfolio?
+    '공식 원본 코드를 가상 포트폴리오 데이터로 직접 렌더링했습니다. 모아 지도·루멘 노트·온길 안내는 실제 경력이나 성과가 아닙니다. 제품 이식·키보드 접근성 검사는 별도입니다.':
+    '공식 원본 코드를 예시 입력으로 브라우저에서 직접 렌더링했습니다. 실제 경력 데이터·반응형·키보드·제품 이식 품질은 검증 전입니다.';
+  if(build.name==='scroll-split-card')detail.usageNote+=' 원본 소스의 고정 영어 안내 문구는 제품 이식 전에 교체해야 합니다.';
   fs.writeFileSync(detailPath,JSON.stringify(detail,null,2)+'\n');
 }
 feed.stats.localRenders=feed.updates.length;
