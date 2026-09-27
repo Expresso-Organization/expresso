@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<!-- 제목은 「문서 이름 — Expresso」로 씁니다. 탭 목록에서 우리 문서를 찾는 유일한 단서입니다. -->
+<title>포트폴리오 생성 방식 비교 — Expresso</title>
+
+<!--
+  Expresso 문서 양식 v1
+  ─────────────────────────────────────────────────────────────
+  쓰는 법: 이 파일을 복사해 이름을 바꾸고, 아래 세 곳만 손댑니다.
+    1) <title>과 .doc-head — 문서 이름 · 한 줄 요약 · 메타
+    2) <section class="sec"> 들 — 본문. 목차는 h2를 읽어 자동으로 만들어집니다.
+    3) 맨 끝 「변경 이력」 표
+
+  손대지 않는 곳: :root 토큰. 값의 출처는 services/web/src/styles/tokens.css이고
+  화면 정의서가 기준입니다. 여기에 없는 색을 새로 만들지 않습니다.
+
+  마지막 절(부품 상자)은 이 양식이 가진 부품 목록입니다. 실제 문서를 쓸 때는
+  통째로 지우고, 필요할 때 이 파일 원본을 다시 열어 보십시오.
+-->
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- 아이콘 — 이모지 대신 씁니다. Regular만, Bold는 쓰지 않습니다. -->
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+
+<style>
+/* ===========================================================
+   01 · TOKENS — 디자인 시스템 그대로. 여기서만 값을 읽습니다.
+   =========================================================== */
+:root {
+  color-scheme: light;
+
+  /* 시스템 — 무채색 */
+  --ex-ink-900: #16223a;
+  --ex-ink-900-hover: #0b1220;
+  --ex-slate-700: #35455f;
+  --ex-slate-500: #5a6b87;
+  --ex-slate-400: #93a2ba;
+  --ex-slate-300: #afbacb;
+  --ex-line-200: #e2e9f4;
+  --ex-line-inner: #f1f5fb;
+  --ex-tint-50: #eff2f7;
+  --ex-tint-100: #e4e9f2;
+  --ex-surface-100: #eff4fb;
+  --ex-surface-50: #f7fafe;
+  --ex-white: #ffffff;
+  --ex-hairline: #f2f5f9;
+  --ex-table-header: #fafbfd;
+  --ex-row-hover: #fcfdff;
+  --ex-track: #edf1f7;
+  --ex-border-quiet: #dce3ed;
+
+  /* 시그니처 — 결정적인 순간에만 */
+  --ex-espresso: #9a4030;
+  --ex-espresso-hover: #7e3225;
+  --ex-espresso-text: #7e3225;
+  --ex-crema: #e0b486;
+  --ex-bean-50: #fbeee4;
+  --ex-bean-ink: #5a3a28;
+
+  /* 상태 */
+  --ex-success-text: #0e8a63;
+  --ex-success-surface: #e4f7f0;
+  --ex-warning-text: #8a6412;
+  --ex-warning-surface: #fbf4e2;
+  --ex-danger: #e2543a;
+  --ex-danger-text: #c6402a;
+  --ex-danger-surface: #fef5f3;
+
+  /* 서체 — 3벌 고정 */
+  --ex-font-ui: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --ex-font-brand: "Outfit", var(--ex-font-ui);
+  --ex-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* 깊이 — 얕고 넓게 */
+  --ex-elevation-raised: 0 2px 10px rgba(22, 34, 58, .05);
+  --ex-elevation-overlay: 0 18px 44px rgba(22, 34, 58, .11);
+  --ex-focus-ring: 0 0 0 3px rgba(22, 34, 58, .18);
+
+  /* 모션 */
+  --ex-motion-instant: 140ms ease;
+  --ex-motion-quick: 160ms ease;
+  --ex-motion-panel: 280ms cubic-bezier(.32, .72, 0, 1);
+
+  /* 지면 치수 */
+  --sheet: 820px;   /* 본문 한 줄이 너무 길어지지 않는 폭 */
+  --toc: 212px;
+  --gap: 40px;
+}
+
+/* ===========================================================
+   02 · BASE
+   =========================================================== */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 96px; }
+body {
+  margin: 0;
+  background: var(--ex-surface-50);
+  color: var(--ex-ink-900);
+  font-family: var(--ex-font-ui);
+  font-size: 15px;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--ex-ink-900); text-decoration: none; }
+a:hover { color: var(--ex-ink-900-hover); text-decoration: underline; text-underline-offset: 3px; }
+
+/* 키보드로 도는 사람이 첫 탭에서 본문으로 건너뛸 수 있어야 합니다. */
+.skip {
+  position: fixed; top: 10px; left: 10px; z-index: 60;
+  transform: translateY(-160%);
+  background: var(--ex-ink-900); color: var(--ex-white);
+  font-size: 13px; font-weight: 600; padding: 9px 14px; border-radius: 10px;
+  transition: transform var(--ex-motion-quick);
+}
+.skip:focus { transform: none; text-decoration: none; }
+:focus-visible { outline: none; box-shadow: var(--ex-focus-ring); border-radius: 8px; }
+
+/* ===========================================================
+   03 · TOPBAR — 문서가 무엇이고 지금 어떤 상태인지 한 줄로
+   =========================================================== */
+.topbar {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; align-items: center; gap: 12px;
+  height: 56px; padding: 0 24px;
+  background: rgba(247, 250, 254, .88);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--ex-line-200);
+}
+.brand { display: flex; align-items: center; gap: 9px; }
+.brand .word {
+  font-family: var(--ex-font-brand); font-size: 16px; font-weight: 500; letter-spacing: -.025em;
+}
+.brand .word em { font-style: normal; color: var(--ex-espresso); }
+.doctype {
+  font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .14em;
+  color: var(--ex-slate-400); border: 1px solid var(--ex-line-200);
+  border-radius: 5px; padding: 4px 8px; white-space: nowrap;
+}
+.topbar .spacer { margin-left: auto; }
+.topbar .where { font-size: 12.5px; color: var(--ex-slate-500); }
+.btn-quiet {
+  font: inherit; font-size: 12.5px; font-weight: 600; color: var(--ex-slate-500);
+  background: transparent; border: 1px solid var(--ex-line-200); border-radius: 10px;
+  padding: 7px 13px; cursor: pointer;
+  transition: border-color var(--ex-motion-quick), color var(--ex-motion-quick);
+}
+.btn-quiet:hover { border-color: var(--ex-ink-900); color: var(--ex-ink-900); }
+
+/* 읽은 만큼 차오르는 실선. 문서 길이를 몸으로 알려 줍니다. */
+.readbar {
+  position: absolute; left: 0; bottom: -1px; height: 2px; width: 0;
+  background: var(--ex-espresso);
+}
+
+/* ===========================================================
+   04 · LAYOUT — 목차 레일 + 본문 지면
+   =========================================================== */
+.shell {
+  display: grid;
+  grid-template-columns: var(--toc) minmax(0, var(--sheet));
+  gap: var(--gap);
+  justify-content: center;
+  padding: 48px 24px 120px;
+}
+.toc { position: sticky; top: 92px; align-self: start; max-height: calc(100vh - 140px); overflow: auto; }
+.toc-label {
+  font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .14em;
+  color: var(--ex-slate-400); margin-bottom: 12px;
+}
+.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.toc a {
+  display: grid; grid-template-columns: 22px 1fr; gap: 9px; align-items: baseline;
+  padding: 6px 9px; border-radius: 8px;
+  font-size: 13px; line-height: 1.5; color: var(--ex-slate-500);
+  transition: background var(--ex-motion-quick), color var(--ex-motion-quick);
+}
+.toc a:hover { background: var(--ex-white); color: var(--ex-ink-900); text-decoration: none; }
+.toc a .n { font-family: var(--ex-font-mono); font-size: 10.5px; color: var(--ex-slate-400); }
+.toc a.on { background: var(--ex-tint-50); color: var(--ex-ink-900); font-weight: 600; }
+.toc a.on .n { color: var(--ex-espresso); }
+
+.sheet {
+  background: var(--ex-white);
+  border: 1px solid var(--ex-line-200);
+  border-radius: 18px;
+  padding: 56px 60px 64px;
+}
+
+/* ===========================================================
+   05 · 문서 머리 — 이름 · 한 줄 요약 · 메타
+   =========================================================== */
+.kicker {
+  font-family: var(--ex-font-mono); font-size: 11px; letter-spacing: .12em;
+  color: var(--ex-espresso); text-transform: uppercase;
+}
+.doc-head { padding-bottom: 34px; border-bottom: 1px solid var(--ex-line-200); margin-bottom: 44px; }
+.doc-head h1 {
+  margin: 14px 0 0; font-size: 36px; font-weight: 600; letter-spacing: -.03em; line-height: 1.3;
+  word-break: keep-all;
+}
+.doc-head .lede {
+  margin: 14px 0 0; font-size: 16px; line-height: 1.85; color: var(--ex-slate-500);
+  max-width: 620px; text-wrap: pretty; word-break: keep-all;
+}
+.meta {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 30px;
+}
+.meta .k {
+  font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .12em;
+  color: var(--ex-slate-400); margin-bottom: 6px;
+}
+.meta .v { font-size: 13.5px; font-weight: 500; color: var(--ex-slate-700); }
+
+/* ===========================================================
+   06 · 절 — 번호 · 제목 · 오른쪽 보조 한 마디
+   =========================================================== */
+.sec { margin-bottom: 64px; scroll-margin-top: 92px; }
+.sec:last-of-type { margin-bottom: 0; }
+.sec-head {
+  display: flex; align-items: baseline; gap: 14px;
+  border-bottom: 1px solid var(--ex-line-200); padding-bottom: 12px; margin-bottom: 26px;
+}
+.sec-head .num { font-family: var(--ex-font-mono); font-size: 11px; color: var(--ex-espresso); }
+.sec-head h2 {
+  margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -.025em; line-height: 1.4;
+  word-break: keep-all;
+}
+.sec-head .aside { margin-left: auto; font-size: 12.5px; color: var(--ex-slate-500); white-space: nowrap; }
+/* 제목에 마우스를 올리면 나타나는 앵커. 문서 한 줄을 정확히 가리켜 공유합니다. */
+.anchor {
+  font-family: var(--ex-font-mono); font-size: 12px; color: var(--ex-slate-300);
+  opacity: 0; margin-left: 2px; transition: opacity var(--ex-motion-quick);
+}
+.sec-head:hover .anchor, .anchor:focus { opacity: 1; }
+.anchor:hover { color: var(--ex-espresso); text-decoration: none; }
+
+h3 {
+  margin: 34px 0 12px; font-size: 17px; font-weight: 600; letter-spacing: -.015em; line-height: 1.5;
+}
+h4 {
+  margin: 24px 0 10px; font-size: 14px; font-weight: 600; color: var(--ex-slate-700);
+}
+p { margin: 0 0 16px; color: var(--ex-slate-700); text-wrap: pretty; word-break: keep-all; }
+p:last-child { margin-bottom: 0; }
+strong { font-weight: 600; color: var(--ex-ink-900); }
+ul, ol { margin: 0 0 16px; padding-left: 20px; color: var(--ex-slate-700); }
+li { margin-bottom: 7px; word-break: keep-all; }
+li::marker { color: var(--ex-slate-400); }
+hr { border: none; border-top: 1px solid var(--ex-line-inner); margin: 34px 0; }
+
+/* ===========================================================
+   07 · 인라인 부품
+   =========================================================== */
+code {
+  font-family: var(--ex-font-mono); font-size: .88em;
+  background: var(--ex-tint-50); border-radius: 6px; padding: 2px 6px;
+  color: var(--ex-ink-900); overflow-wrap: anywhere;
+}
+kbd {
+  font-family: var(--ex-font-mono); font-size: 11.5px;
+  background: var(--ex-white); border: 1px solid var(--ex-border-quiet);
+  border-bottom-width: 2px; border-radius: 6px; padding: 2px 7px; color: var(--ex-slate-700);
+}
+.badge {
+  display: inline-block; font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .1em;
+  border-radius: 8px; padding: 4px 8px; white-space: nowrap; vertical-align: 1px;
+  color: var(--ex-slate-500); background: var(--ex-surface-100);
+}
+.badge.done  { color: var(--ex-ink-900); background: var(--ex-tint-50); }
+.badge.live  { color: var(--ex-success-text); background: var(--ex-success-surface); }
+.badge.pro   { color: var(--ex-espresso); background: var(--ex-bean-50); }
+.badge.hold  { color: var(--ex-warning-text); background: var(--ex-warning-surface); }
+.badge.stop  { color: var(--ex-danger-text); background: var(--ex-danger-surface); }
+.chip {
+  display: inline-block; font-size: 12.5px; color: var(--ex-slate-700);
+  border: 1px solid var(--ex-line-200); border-radius: 999px; padding: 5px 12px; background: var(--ex-white);
+}
+
+/* ===========================================================
+   08 · 상자 — 알림 · 결정 · 인용
+   =========================================================== */
+.box {
+  border: 1px solid var(--ex-line-200); border-radius: 14px;
+  padding: 18px 20px; margin: 0 0 20px; background: var(--ex-surface-50);
+}
+.box > :last-child { margin-bottom: 0; }
+.box .t {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 9px;
+  font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .12em; color: var(--ex-slate-400);
+}
+.box .t::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ex-slate-400);
+}
+/* 시그니처 상자 — 이 문서에서 딱 하나, 가장 중요한 결정에만 씁니다. */
+.box.key { background: var(--ex-bean-50); border-color: transparent; }
+.box.key .t { color: var(--ex-espresso); }
+.box.key .t::before { background: var(--ex-espresso); }
+.box.key p { color: var(--ex-bean-ink); }
+.box.key strong { color: var(--ex-bean-ink); }
+.box.warn { background: var(--ex-warning-surface); border-color: transparent; }
+.box.warn .t { color: var(--ex-warning-text); }
+.box.warn .t::before { background: var(--ex-warning-text); }
+.box.stop { background: var(--ex-danger-surface); border-color: transparent; }
+.box.stop .t { color: var(--ex-danger-text); }
+.box.stop .t::before { background: var(--ex-danger); }
+
+blockquote {
+  margin: 0 0 20px; padding: 4px 0 4px 20px; border-left: 2px solid var(--ex-espresso);
+  font-size: 16px; line-height: 1.85; color: var(--ex-slate-700); word-break: keep-all;
+}
+blockquote cite {
+  display: block; margin-top: 10px; font-style: normal;
+  font-family: var(--ex-font-mono); font-size: 11px; letter-spacing: .1em; color: var(--ex-slate-400);
+}
+
+/* 결정 기록 — 배경 · 선택지 · 결정 · 근거를 한 상자에 묶습니다. */
+.adr { border: 1px solid var(--ex-line-200); border-radius: 16px; overflow: hidden; margin-bottom: 20px; }
+.adr > .h {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--ex-surface-50); border-bottom: 1px solid var(--ex-line-200); padding: 13px 20px;
+}
+.adr > .h .id { font-family: var(--ex-font-mono); font-size: 11px; color: var(--ex-espresso); }
+.adr > .h .ttl { font-size: 14px; font-weight: 600; }
+.adr > .h .badge { margin-left: auto; }
+.adr .row {
+  display: grid; grid-template-columns: 92px 1fr; gap: 18px;
+  padding: 15px 20px; border-bottom: 1px solid var(--ex-line-inner);
+}
+.adr .row:last-child { border-bottom: none; }
+.adr .row .k {
+  font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .12em;
+  color: var(--ex-slate-400); padding-top: 4px;
+}
+.adr .row .v { font-size: 14px; line-height: 1.8; color: var(--ex-slate-700); word-break: keep-all; }
+.adr .row .v > :last-child { margin-bottom: 0; }
+
+/* ===========================================================
+   09 · 표
+   =========================================================== */
+.table-wrap { overflow-x: auto; margin-bottom: 20px; border: 1px solid var(--ex-line-200); border-radius: 14px; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+thead th {
+  text-align: left; font-weight: 600; color: var(--ex-slate-500);
+  background: var(--ex-table-header); border-bottom: 1px solid var(--ex-line-200);
+  padding: 12px 16px; white-space: nowrap;
+  font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+}
+tbody td {
+  padding: 13px 16px; border-bottom: 1px solid var(--ex-line-inner);
+  color: var(--ex-slate-700); vertical-align: top; word-break: keep-all;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--ex-row-hover); }
+td.num, th.num { font-family: var(--ex-font-mono); text-align: right; white-space: nowrap; }
+caption {
+  caption-side: bottom; text-align: left; padding: 12px 16px;
+  font-size: 12px; color: var(--ex-slate-400); border-top: 1px solid var(--ex-line-inner);
+}
+
+/* ===========================================================
+   10 · 코드
+   =========================================================== */
+figure.code { margin: 0 0 20px; border: 1px solid var(--ex-line-200); border-radius: 14px; overflow: hidden; }
+figure.code .bar {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--ex-surface-50); border-bottom: 1px solid var(--ex-line-200); padding: 9px 14px;
+  font-family: var(--ex-font-mono); font-size: 11px; color: var(--ex-slate-500);
+}
+figure.code .bar .copy {
+  margin-left: auto; font: inherit; font-size: 10px; letter-spacing: .1em;
+  background: transparent; border: 1px solid var(--ex-line-200); border-radius: 7px;
+  padding: 3px 8px; color: var(--ex-slate-400); cursor: pointer;
+  transition: border-color var(--ex-motion-quick), color var(--ex-motion-quick);
+}
+figure.code .bar .copy:hover { border-color: var(--ex-ink-900); color: var(--ex-ink-900); }
+pre {
+  margin: 0; padding: 16px 18px; overflow-x: auto;
+  background: var(--ex-white);
+  font-family: var(--ex-font-mono); font-size: 12.5px; line-height: 1.75; color: var(--ex-ink-900);
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+
+/* ===========================================================
+   11 · 목록 부품 — 단계 · 체크 · 비교
+   =========================================================== */
+.steps { list-style: none; margin: 0 0 20px; padding: 0; counter-reset: step; }
+.steps li {
+  position: relative; counter-increment: step;
+  padding: 0 0 20px 40px; margin: 0;
+  border-left: 1px solid var(--ex-line-200); margin-left: 11px;
+}
+.steps li:last-child { border-left-color: transparent; padding-bottom: 0; }
+.steps li::before {
+  content: counter(step, decimal-leading-zero);
+  position: absolute; left: -11px; top: 0;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--ex-white); border: 1px solid var(--ex-line-200);
+  display: grid; place-items: center;
+  font-family: var(--ex-font-mono); font-size: 9.5px; color: var(--ex-slate-500);
+}
+.steps li .t { font-size: 14px; font-weight: 600; display: block; margin-bottom: 5px; }
+.steps li .d { font-size: 13.5px; color: var(--ex-slate-500); line-height: 1.75; }
+.steps li.now::before { background: var(--ex-espresso); border-color: var(--ex-espresso); color: var(--ex-white); }
+
+.check { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 2px; }
+/* 표시는 절대 배치로 답니다 — li를 grid로 만들면 안에 쓴 <code>가 칸 하나를 차지해 찌그러집니다. */
+.check li {
+  position: relative; padding: 8px 10px 8px 40px; border-radius: 10px; margin: 0;
+  font-size: 14px; line-height: 1.75; color: var(--ex-slate-700);
+}
+.check li:hover { background: var(--ex-surface-50); }
+.check li::before {
+  content: ""; position: absolute; left: 12px; top: 13px;
+  width: 15px; height: 15px; box-sizing: border-box;
+  border: 1.5px solid var(--ex-slate-300); border-radius: 5px;
+}
+.check li.ok { color: var(--ex-slate-500); }
+.check li.ok::before {
+  content: "✓"; border-color: var(--ex-success-text); background: var(--ex-success-surface);
+  color: var(--ex-success-text); font-size: 9px; line-height: 12px; text-align: center;
+}
+
+.dodont { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.dodont > div { background: var(--ex-surface-50); border-radius: 14px; padding: 16px 18px; }
+.dodont .t {
+  display: flex; align-items: center; gap: 7px; margin-bottom: 10px;
+  font-family: var(--ex-font-mono); font-size: 9.5px; letter-spacing: .1em;
+}
+.dodont .do .t { color: var(--ex-success-text); }
+.dodont .dont .t { color: var(--ex-danger-text); }
+.dodont .t .m {
+  width: 15px; height: 15px; border-radius: 50%; display: grid; place-items: center; font-size: 9px;
+}
+.dodont .do .t .m { background: var(--ex-success-surface); }
+.dodont .dont .t .m { background: var(--ex-danger-surface); }
+.dodont p { font-size: 13.5px; line-height: 1.75; }
+.dodont .dont p { color: var(--ex-slate-400); }
+
+/* ===========================================================
+   12 · 수치 — 숫자는 Outfit 300으로, 항상 얇게
+   =========================================================== */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.stat { background: var(--ex-surface-50); border-radius: 14px; padding: 16px 18px; }
+.stat .k { font-size: 11.5px; color: var(--ex-slate-500); margin-bottom: 8px; }
+.stat .v {
+  font-family: var(--ex-font-brand); font-weight: 300; font-size: 34px; line-height: 1;
+  letter-spacing: -.03em; color: var(--ex-ink-900);
+}
+.stat .d { font-size: 11.5px; margin-top: 7px; color: var(--ex-slate-400); }
+.stat .d.up { color: var(--ex-success-text); }
+.stat .d.down { color: var(--ex-danger-text); }
+
+.gauges { display: grid; gap: 11px; margin-bottom: 20px; }
+.gauge .l { display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 6px; color: var(--ex-slate-700); }
+.gauge .l span:last-child { font-family: var(--ex-font-mono); font-size: 11px; color: var(--ex-slate-400); }
+.gauge .bar { height: 6px; background: var(--ex-track); border-radius: 999px; overflow: hidden; }
+.gauge .bar i { display: block; height: 100%; background: var(--ex-ink-900); border-radius: 999px; }
+.gauge .bar i.sig { background: var(--ex-espresso); }
+
+/* 그림 자리 — 캡션은 그림이 무엇인지 말합니다. */
+figure.fig { margin: 0 0 20px; }
+figure.fig .plate {
+  border: 1px solid var(--ex-line-200); border-radius: 14px; overflow: hidden;
+  background: repeating-linear-gradient(135deg, #f2f6fc 0 10px, #eaf0f9 10px 20px);
+  min-height: 180px; display: grid; place-items: center;
+}
+figure.fig .plate img { display: block; width: 100%; height: auto; }
+figure.fig .plate .ph { font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .1em; color: var(--ex-slate-400); }
+figure.fig figcaption { margin-top: 10px; font-size: 12.5px; color: var(--ex-slate-500); line-height: 1.7; }
+
+/* ===========================================================
+   13 · 꼬리 — 변경 이력과 문서 끝
+   =========================================================== */
+.docfoot {
+  margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--ex-line-200);
+  font-size: 12.5px; color: var(--ex-slate-400); line-height: 1.8;
+}
+
+/* ===========================================================
+   14 · 좁은 화면 — 목차는 접히고 지면은 폭을 다 씁니다.
+   =========================================================== */
+@media (max-width: 1080px) {
+  .shell { grid-template-columns: minmax(0, var(--sheet)); padding: 32px 16px 80px; }
+  .toc { display: none; }
+  .sheet { padding: 36px 24px 44px; border-radius: 14px; }
+  .doc-head h1 { font-size: 28px; }
+  .meta { grid-template-columns: 1fr 1fr; }
+  .dodont { grid-template-columns: 1fr; }
+  .adr .row { grid-template-columns: 1fr; gap: 6px; }
+}
+
+/* ===========================================================
+   15 · 인쇄 — 크롬을 걷어내고 종이로 만듭니다.
+   =========================================================== */
+@media print {
+  @page { size: A4; margin: 16mm 14mm; }
+  body { background: #fff; font-size: 10.5pt; line-height: 1.7; }
+  .topbar, .toc, .skip, figure.code .copy, .anchor { display: none !important; }
+  .shell { display: block; padding: 0; }
+  .sheet { border: none; border-radius: 0; padding: 0; max-width: none; }
+  .sec { margin-bottom: 28px; break-inside: auto; }
+  .sec-head { break-after: avoid; }
+  h3, h4 { break-after: avoid; }
+  .box, .adr, figure, table, .stat { break-inside: avoid; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 8.5pt; color: #5a6b87; }
+}
+
+/* §12 모션 감소 */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+}
+</style>
+</head>
+
+<body>
+<a class="skip" href="#doc">본문으로 건너뛰기</a>
+
+<!-- ============================================================
+     TOPBAR — 문서 종류와 상태. doctype 글자만 문서마다 바꿉니다.
+     ============================================================ -->
+<header class="topbar">
+  <span class="brand">
+    <svg width="22" height="22" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><clipPath id="lc"><circle cx="44" cy="54" r="36"/></clipPath><mask id="lm"><rect width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="46.5" fill="#000"/></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.5" mask="url(#lm)"/><rect y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#lc)"/><circle cx="44" cy="54" r="36" stroke="#9A4030" stroke-width="10"/></svg>
+    <span class="word">Expre<em>ss</em>o</span>
+  </span>
+  <span class="doctype">TECH NOTE</span>
+  <span class="spacer"></span>
+  <span class="where" id="where">문서 제목</span>
+  <button class="btn-quiet" onclick="window.print()">PDF로 저장</button>
+  <span class="readbar" id="readbar"></span>
+</header>
+
+<div class="shell">
+
+  <!-- 목차는 아래 h2를 읽어 스크립트가 채웁니다. 손으로 적지 않습니다. -->
+  <nav class="toc" aria-label="목차">
+    <div class="toc-label">CONTENTS</div>
+    <ol id="tocList"></ol>
+  </nav>
+
+  <main class="sheet" id="doc"><div class="doc-head"><div class="kicker">PORTFOLIO · GENERATION</div><h1>포트폴리오 생성 방식 비교</h1><p class="lede">이번 결과에서는 구조화 생성이 더 정돈됐고, 자유 생성은 프로젝트 사례와 근거 자료를 더 풍부하게 표현했습니다.</p><div class="meta"><div><div class="k">MODEL</div><div class="v">claude-opus-5</div></div><div><div class="k">UPDATED</div><div class="v">2026-09-28</div></div><div><div class="k">SAMPLE</div><div class="v">각 방식 1회</div></div></div></div><section class="sec" id="summary"><div class="sec-head"><span class="num">01</span><h2>비교 결과</h2></div><ul><li>자유 생성은 사례 설명 옆에 큰 이미지를 배치하고, 근거 내용을 단계와 목록으로 구성했습니다. 프로젝트를 설명하는 방식이 더 다양합니다.</li><li>자유 생성의 두 번째 사례에는 제목과 이미지가 서로 다른 그리드 행에 놓이는 배치 문제가 있습니다. 기본 자동 검사에서는 발견되지 않았습니다.</li><li>두 결과 모두 이름·제목·기간·역할·연락처·근거 제목 22개를 보존했습니다. 390·768·1440px에서 가로 넘침, 깨진 이미지, 끊어진 목차 앵커가 없었습니다.</li><li>구조화 JSON이 선택한 섹션 순서는 기존 예제와 같습니다. 현재 카탈로그의 선택 범위가 좁아, 이 결과로 AI의 디자인 능력이나 일반적인 비용 우위를 판단할 수는 없습니다.</li></ul><div class="box"><div class="t">비교 범위</div><p>구조화 방식은 기존 섹션의 순서를 선택합니다. 자유 방식은 HTML/CSS와 문구를 생성합니다. 컴포넌트와 테마의 사전 제작 비용은 이번 호출 비용에 포함되지 않았습니다. 같은 모델과 가상 입력으로 각각 한 번 실행한 결과입니다.</p></div></section><section class="sec" id="screens"><div class="sec-head"><span class="num">02</span><h2>실행 화면</h2></div><!-- 같은 화면 폭의 결과를 축소해 비교하도록 섹션 안에 미리보기 스타일을 추가합니다. -->
+<style>.comparison-controls{display:flex;gap:16px;flex-wrap:wrap;margin:0 0 20px}.comparison-controls label{display:flex;gap:8px;align-items:center}.comparison-controls select{font:inherit;padding:6px 10px;border:1px solid var(--ex-line-200);border-radius:7px;background:var(--ex-white);color:var(--ex-ink-900)}.comparison-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.comparison-grid[data-mode=structured],.comparison-grid[data-mode=free]{grid-template-columns:1fr}.comparison-grid[data-mode=structured] [data-method=free],.comparison-grid[data-mode=free] [data-method=structured]{display:none}.comparison-panel{min-width:0}.comparison-panel h3{margin:0 0 8px}.comparison-panel>p{font-size:12px;line-height:1.6}.comparison-frame{overflow:hidden;border:1px solid var(--ex-line-200);border-radius:8px;background:var(--ex-surface-50)}.comparison-frame iframe{display:block;border:0;transform-origin:top left;max-width:none}@media(max-width:700px){.comparison-grid{grid-template-columns:1fr}}@media print{.comparison-controls,.comparison-frame{display:none}}</style>
+<div class="comparison-controls"><label>화면 폭 <select id="compare-width"><option value="390">모바일 390px</option><option value="768">태블릿 768px</option><option value="1440" selected>데스크톱 1440px</option></select></label><label>배치 <select id="compare-mode"><option value="both">나란히</option><option value="structured">구조화만</option><option value="free">자유 생성만</option></select></label></div><div class="comparison-grid" data-mode="both"><article class="comparison-panel" data-method="structured"><h3>구조화 생성</h3><p><a href="./library/previews/comparison/structured.html" target="_blank" rel="noopener">전체 페이지 열기 ↗</a> · <a href="./library/previews/comparison/structured-1440.jpg" target="_blank" rel="noopener">데스크톱 전체 캡처 ↗</a></p><div class="comparison-frame"><iframe sandbox="" title="구조화 생성 포트폴리오" src="./library/previews/comparison/structured.html"></iframe></div></article><article class="comparison-panel" data-method="free"><h3>자유 생성</h3><p><a href="./library/previews/comparison/free.html" target="_blank" rel="noopener">전체 페이지 열기 ↗</a> · <a href="./library/previews/comparison/free-1440.jpg" target="_blank" rel="noopener">데스크톱 전체 캡처 ↗</a></p><div class="comparison-frame"><iframe sandbox="" title="자유 생성 포트폴리오" src="./library/previews/comparison/free.html"></iframe></div></article></div><p>각 화면 안에서 스크롤할 수 있습니다. 원래 크기의 문서는 ‘전체 페이지 열기’로 확인합니다.</p></section><section class="sec" id="measurements"><div class="sec-head"><span class="num">03</span><h2>측정값</h2></div><div class="table-wrap"><table><thead><tr><th>항목</th><th>구조화 생성</th><th>자유 생성</th></tr></thead><tbody><tr><td>모델 호출 시간</td><td>5.2초</td><td>228.0초</td></tr><tr><td>입력 토큰 · 캐시 포함</td><td>9,580</td><td>14,816</td></tr><tr><td>출력 토큰</td><td>425</td><td>21,617</td></tr><tr><td>CLI 보고 추정 비용</td><td>$0.1110</td><td>$0.6984</td></tr><tr><td>모델 생성 데이터</td><td>748 bytes · JSON</td><td>35,222 bytes · HTML/CSS</td></tr><tr><td>핵심 필드 문자열 일치</td><td>22/22</td><td>22/22</td></tr><tr><td>가로 넘침 발생 폭</td><td>없음</td><td>없음</td></tr><tr><td>깨진 이미지·목차 앵커</td><td>0</td><td>0</td></tr></tbody></table></div><p>시간과 토큰은 CLI 보고값입니다. 비용은 CLI 추정치이며 실제 구독 청구액을 뜻하지 않습니다. 핵심 필드는 이름·제목·기간·역할·연락처·근거 제목의 문자열을 대조했습니다. 요약 문장의 의미와 시각 품질은 아래 검토에 기록했습니다.</p></section><section class="sec" id="visual-review"><div class="sec-head"><span class="num">04</span><h2>시각 검토</h2></div><div class="table-wrap"><table><thead><tr><th>관점</th><th>구조화 생성</th><th>자유 생성</th></tr></thead><tbody><tr><td>프로젝트 이미지</td><td>목록의 썸네일 카드로 빠르게 훑을 수 있습니다. 사례 상세에서는 이미지를 함께 보여주지 않습니다.</td><td>사례마다 큰 화면 이미지를 배치해 결과물과 설명을 함께 살펴보기 좋습니다.</td></tr><tr><td>사례 서술</td><td>문제·담당 작업·결과를 동일한 형식으로 반복해 일관성이 높습니다. 시각적 변화는 적습니다.</td><td>역할·기간·태그와 사례 본문을 묶고 기여 문단을 강조합니다. 목록과 상세에서 요약 문장이 반복됩니다.</td></tr><tr><td>근거 자료</td><td>한 목록에서 내용을 펼칩니다. 사례의 연결 문구가 ‘설계 근거 1’처럼 일반적입니다.</td><td>프로젝트별로 자료를 묶고 실제 자료 제목으로 연결합니다. 긴 문장을 단계와 검토 목록으로 변환했습니다.</td></tr><tr><td>데스크톱 배치</td><td>섹션 정렬과 간격이 일관되고 큰 의도치 않은 공백을 찾지 못했습니다.</td><td>루멘 노트의 좌우 교차 배치에서 이미지가 다음 행으로 밀립니다. grid-column만 뒤집고 grid-row를 지정하지 않은 구성입니다.</td></tr><tr><td>모바일</td><td>프로젝트 카드를 한 열로 정리하고 모든 본문을 유지합니다.</td><td>정보와 이미지를 한 열로 표시해 읽을 수 있습니다. 프로젝트 설명 반복으로 전체 페이지가 더 깁니다.</td></tr><tr><td>생성 범위</td><td>모델은 기존 부품의 순서와 데이터 참조를 출력합니다. 새 디자인과 내용은 만들지 않았습니다.</td><td>모델이 HTML/CSS와 일부 설명 문구를 작성했습니다. 시각 검토 후 수정할 영역이 남았습니다.</td></tr></tbody></table></div><p>시각 평가는 이 한 쌍의 전체 페이지와 모바일 캡처를 검토한 관찰입니다. 구조화 부품은 미리 사람이 설계하고 검증했습니다. 자유 생성은 첫 출력이며 수동 수정이나 재생성 없이 비교했습니다. 특정 방식의 평균 품질·성공률을 증명하는 결과로 해석할 수는 없습니다.</p></section><section class="sec" id="conditions"><div class="sec-head"><span class="num">05</span><h2>실행 조건</h2></div><p>한국어 프로덕트 디자이너의 가상 포트폴리오를 만듭니다. 모든 인물·조직·경력·프로젝트·성과는 시연용입니다.
+목표: 처음 방문한 사람이 역할, 프로젝트 문제와 기여, 경력, 근거 자료, 연락처를 읽고 탐색할 수 있는 완성 페이지.
+시각 방향: 차분한 편집형. 배경 #f7f6f1, 본문 #1c302e, 강조 #24654d. 넓은 여백과 명확한 글자 위계.
+서체: Apple SD Gothic Neo, Malgun Gothic, system-ui, sans-serif. 별도 폰트 다운로드를 사용하지 않습니다.
+가상 데이터 표시를 눈에 보이게 유지합니다. 출처에 없는 성과 수치나 회사·프로젝트를 추가하지 않습니다.
+제목·이름·조직·기간·역할·연락처·근거 자료를 보존합니다. 설명 문장은 의미를 유지하며 정리할 수 있습니다.
+휴대폰 390px, 태블릿 768px, 데스크톱 1440px에서 읽히고, 키보드 포커스와 모션 감소를 지원합니다.
+목차, 프로젝트 상세, 근거 자료를 실제 앵커나 네이티브 details로 연결합니다. JavaScript가 없는 문서에서도 읽을 수 있어야 합니다.</p><ul><li>자유 생성: 제품의 AiPageGenerator, PageDraftSchema, sanitizePage, pageQa를 사용했습니다. 공통 Opus 모델과 useKit=false 조건으로 단독 호출했습니다. 제품 PageService의 Sonnet·키트 선택 설정과는 별도의 통제 조건입니다.</li><li>구조화 생성: 같은 AI 클라이언트와 모델로 spec을 만들고 generationSchema와 콘텐츠 참조 검사를 거쳐 json-render에서 렌더링했습니다.</li><li>두 결과의 제공 이미지는 같은 파일을 임베드했습니다. 공통 시스템 서체 조건을 사용하고 생성된 배치·문구에는 수동 수정을 적용하지 않았습니다.</li><li>제품 데이터베이스와 실제 CV를 사용하지 않았습니다. 테스트 입력은 앞서 만든 가상 포트폴리오입니다.</li></ul><p><a href="./library/previews/comparison/input.json">공통 입력 JSON</a> · <a href="./library/previews/comparison/generation.json">호출 결과·비용</a> · <a href="./library/previews/comparison/verification.json">브라우저 검사</a> · <a href="./library/previews/comparison/free-request.json">자유 생성 요청</a> · <a href="./library/previews/comparison/structured-request.json">구조화 생성 요청</a></p></section><section class="sec" id="recommendation"><div class="sec-head"><span class="num">06</span><h2>개발 방향</h2></div><p>다음에는 큰 이미지가 있는 사례 상세, 프로젝트별 근거 목록, 단계형 설명을 구조화 컴포넌트의 변형으로 추가할 것을 권합니다. 서로 다른 완성 지면을 만들 수 있는 선택지를 확보한 뒤, 같은 모델과 여러 가상 입력으로 반복 비교해 생성 방식을 결정하는 것이 적절합니다.</p><p><a href="./Expresso%20개발%20포털.dc.html#/library">포트폴리오 라이브러리로 돌아가기 →</a></p></section><footer class="docfoot"><strong>변경 이력</strong> · 2026-09-28 v1.0 동일 가상 데이터의 생성 방식 비교</footer></main>
+</div>
+
+<script>
+/* ===========================================================
+   목차 · 현재 위치 · 읽은 양 · 코드 복사
+   문서를 쓰는 사람이 손댈 일은 없습니다.
+   =========================================================== */
+(function () {
+  const secs = [...document.querySelectorAll('main .sec')];
+  const list = document.getElementById('tocList');
+  const where = document.getElementById('where');
+  const bar = document.getElementById('readbar');
+  const title = document.querySelector('.doc-head h1');
+
+  if (where && title) where.textContent = title.textContent.trim();
+
+  /* 1) h2를 읽어 목차를 만들고, 제목마다 앵커를 답니다. */
+  const links = secs.map((sec, i) => {
+    const head = sec.querySelector('.sec-head');
+    const h2 = head.querySelector('h2');
+    const num = (head.querySelector('.num') || {}).textContent || String(i + 1).padStart(2, '0');
+    if (!sec.id) sec.id = 'sec-' + (i + 1);
+
+    const a = document.createElement('a');
+    a.href = '#' + sec.id;
+    a.innerHTML = '<span class="n"></span><span class="l"></span>';
+    a.querySelector('.n').textContent = num;
+    a.querySelector('.l').textContent = h2.textContent.trim();
+    const li = document.createElement('li');
+    li.appendChild(a);
+    list.appendChild(li);
+
+    const anchor = document.createElement('a');
+    anchor.className = 'anchor';
+    anchor.href = '#' + sec.id;
+    anchor.textContent = '#';
+    anchor.setAttribute('aria-label', h2.textContent.trim() + ' 링크');
+    h2.insertAdjacentElement('afterend', anchor);
+
+    return a;
+  });
+
+  /* 2) 화면에 들어온 절을 목차에서 밝힙니다. 위쪽 절이 이깁니다. */
+  const seen = new Set();
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => e.isIntersecting ? seen.add(e.target) : seen.delete(e.target));
+    const top = secs.filter((s) => seen.has(s))[0];
+    links.forEach((a, i) => a.classList.toggle('on', secs[i] === top));
+  }, { rootMargin: '-88px 0px -60% 0px' });
+  secs.forEach((s) => io.observe(s));
+
+  /* 3) 읽은 양. 문서 길이를 스크롤바 대신 실선으로 알려 줍니다. */
+  const onScroll = () => {
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (h > 0 ? Math.min(1, window.scrollY / h) * 100 : 0) + '%';
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  onScroll();
+
+  /* 4) 코드 복사. 붙여 넣을 때 머리말이 따라가지 않게 <code>만 읽습니다. */
+  document.querySelectorAll('figure.code .copy').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const code = btn.closest('figure').querySelector('code');
+      try {
+        await navigator.clipboard.writeText(code.textContent);
+        const was = btn.textContent;
+        btn.textContent = 'COPIED';
+        setTimeout(() => { btn.textContent = was; }, 1200);
+      } catch (_) {
+        /* 클립보드가 막힌 환경(비 HTTPS 등)에서는 직접 긁어 갑니다. */
+        const r = document.createRange();
+        r.selectNodeContents(code);
+        const sel = getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+      }
+    });
+  });
+})();
+</script>
+
+<!-- 읽는 자리 표시(쪽 번호 · 미니맵). 문서에 매이지 않은 도구라
+     다른 문서에도 이 한 줄로 붙습니다. 고칠 일은 여기가 아니라
+     templates/doc-rail.js 에서 합니다. -->
+<script src="./doc-rail.js" defer></script>
+
+<script>
+const grid=document.querySelector('.comparison-grid'),widthControl=document.getElementById('compare-width'),modeControl=document.getElementById('compare-mode');
+function fit(){const width=Number(widthControl.value);for(const box of document.querySelectorAll('.comparison-frame')){if(!box.clientWidth)continue;const scale=Math.min(1,box.clientWidth/width);const frame=box.querySelector('iframe');frame.style.width=width+'px';frame.style.height='1000px';frame.style.transform='scale('+scale+')';box.style.height=(1000*scale)+'px';}}
+widthControl.addEventListener('change',fit);modeControl.addEventListener('change',()=>{grid.dataset.mode=modeControl.value;requestAnimationFrame(fit)});new ResizeObserver(fit).observe(grid);fit();
+</script></body>
+</html>

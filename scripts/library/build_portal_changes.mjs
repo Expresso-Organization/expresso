@@ -30,6 +30,7 @@ const componentryRenderSummary='Componentry 56개 모두 카드에 실제 렌더
 const fictionalPortfolioSubject='Componentry 가상 포트폴리오 예제 추가';
 const fictionalPortfolioSummary='프로젝트형 예제 4개를 개인정보 없는 가상 프로젝트와 전용 화면으로 확인합니다.';
 const compositionSubject='json-render 포트폴리오 조합 예제 추가';
+const comparisonSubject='구조화·자유 포트폴리오 생성 비교 추가';
 const releaseNotes=new Map([
  [newSubject,{summary:newSummary,href:'#/docs'}],
  [directTabsSubject,{summary:directTabsSummary,href:'#/docs'}],
@@ -39,6 +40,7 @@ const releaseNotes=new Map([
  [componentryRenderSubject,{summary:componentryRenderSummary,href:'#/library/all?source=componentry'}],
  [fictionalPortfolioSubject,{summary:fictionalPortfolioSummary,href:'#/library/all/componentry-case-study-flip-stack?source=componentry'}],
  [compositionSubject,{summary:'가상 데이터로 만든 완성 페이지에서 네 가지 입력과 정적 HTML을 비교합니다.',href:'#/library'}],
+ [comparisonSubject,{summary:'같은 모델과 가상 데이터로 생성한 지면의 품질·시간·비용을 비교합니다.',href:'#/library'}],
 ]);
 const history=lines.filter(Boolean).map(line=>{
  const [id,stamp,subject]=line.split('\x1f');
