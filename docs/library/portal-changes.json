@@ -2,6 +2,13 @@
   "schemaVersion": 1,
   "items": [
     {
+      "id": "bd43b33a7ce96de401e5d9135a65680d3119b9de",
+      "date": "2026-09-27",
+      "title": "Componentry 원본 렌더링 예제 추가",
+      "summary": "Componentry 56개 모두 카드에 실제 렌더 화면을 표시하고 상세에서 실행 예제를 조작할 수 있습니다.",
+      "href": "#/library/all?source=componentry"
+    },
+    {
       "id": "1d5337947238d23364bfeb8fd53cb3f0060832d8",
       "date": "2026-09-27",
       "title": "Componentry 공식 registry 자료 추가",
@@ -48,13 +55,6 @@
       "date": "2026-09-26",
       "title": "포털 통합 검색·테마·변경 알림 추가",
       "summary": "문서·발표 자료·라이브러리를 함께 검색하고 테마 및 변경 알림을 상단에서 확인합니다.",
-      "href": "#/docs"
-    },
-    {
-      "id": "d941505ce5104dc9779c43072c722f07f8d0a711",
-      "date": "2026-09-26",
-      "title": "개발 문서 허브와 3탭 내비게이션 추가",
-      "summary": "상단을 개발 문서·라이브러리·프리젠테이션으로 정리하고 문서 카드 목록을 추가했습니다.",
       "href": "#/docs"
     }
   ]
