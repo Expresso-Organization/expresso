@@ -1,0 +1,513 @@
+{
+  "method": "chrome_dom_and_screenshot",
+  "viewport": {
+    "width": 1280,
+    "height": 880
+  },
+  "results": [
+    {
+      "id": "componentry-animated-gradient",
+      "name": "animated-gradient",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "d17292421893e4e8e550287d110aecb716b762fe85dba46ce198ebea4f984509",
+      "snapshotBytes": 45740
+    },
+    {
+      "id": "componentry-annotated-text",
+      "name": "annotated-text",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "5af68cf68f0908f898bde1fa37ce087116b26fa9dc38b485e0efda6a762b0b18",
+      "snapshotBytes": 14410
+    },
+    {
+      "id": "componentry-ascii-effect",
+      "name": "ascii-effect",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "9b6c5c9ad4bb49688154ec1cfa3777e0462f133617b81b3cea9cff4a7947df66",
+      "snapshotBytes": 307225
+    },
+    {
+      "id": "componentry-aurora-flow",
+      "name": "aurora-flow",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "3344944d78aeccea26300527ca0bf3f9eb28a3f62fc2a7cb3d01a7c06d499da6",
+      "snapshotBytes": 35271
+    },
+    {
+      "id": "componentry-case-study-flip-stack",
+      "name": "case-study-flip-stack",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "1f1d445de1c2365e4adc61e03c734eea5687b8a85e37fa8bdc733c305bd23487",
+      "snapshotBytes": 70404
+    },
+    {
+      "id": "componentry-circuit-board",
+      "name": "circuit-board",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "42552098c187153ceb17d46dd8f3e4bf97950a1003efdf2a609a9e97fe859378",
+      "snapshotBytes": 12036
+    },
+    {
+      "id": "componentry-closing-plasma",
+      "name": "closing-plasma",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "7103831c1fc19da2f351c38ed8ddeb2358d97a2bc51605f1f438862f4a1b4db3",
+      "snapshotBytes": 108845
+    },
+    {
+      "id": "componentry-collection-surfer",
+      "name": "collection-surfer",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "ea3b96ef51b9502ea275612261266656fed5b7a00c80b20283343e9f3bb731f1",
+      "snapshotBytes": 70377
+    },
+    {
+      "id": "componentry-cursor-driven-particle-typography",
+      "name": "cursor-driven-particle-typography",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "8a430354d9978a207dd8e0a7e7b8cbb7b164567a6f9471377787e92d026ef6ec",
+      "snapshotBytes": 18360
+    },
+    {
+      "id": "componentry-dither-gradient",
+      "name": "dither-gradient",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "b227a08d19ed48a246df21c189d40bfa50cffc041080cfa64808c118d28a6b16",
+      "snapshotBytes": 106604
+    },
+    {
+      "id": "componentry-dither-prism-hero",
+      "name": "dither-prism-hero",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "1d31cfeea68a4e9eea880db5e81708f3ac3a2536f501c79ab3e3061a4cd31be1",
+      "snapshotBytes": 139665
+    },
+    {
+      "id": "componentry-dithered-logo",
+      "name": "dithered-logo",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "fe3115857bd6ae23cadaea6bae021fe2b1152b36aff155c98409c66deaebe2ca",
+      "snapshotBytes": 40515
+    },
+    {
+      "id": "componentry-eye-tracking",
+      "name": "eye-tracking",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "90519c0b619b8ef4ef4a6dc9dbe6310c34a1ae8935aab814b44118c46a9fcdc3",
+      "snapshotBytes": 9838
+    },
+    {
+      "id": "componentry-fisheye-infinite-grid",
+      "name": "fisheye-infinite-grid",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "f4c52bdfca138ac82863f6577a09ded27df04f96d5f15dc01c774dec5c8fe53f",
+      "snapshotBytes": 87492
+    },
+    {
+      "id": "componentry-flight-status-card",
+      "name": "flight-status-card",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "a2cd50829d2eece4164088e22e7b8d112c70fd75b509bc1262031725eb2b3dcf",
+      "snapshotBytes": 22665
+    },
+    {
+      "id": "componentry-flipping-word-swap",
+      "name": "flipping-word-swap",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "1f72a095ee29d248c2c0c6a2fbb8e4ce7925531042ab98a4546ff760a67861ff",
+      "snapshotBytes": 9564
+    },
+    {
+      "id": "componentry-github-calendar",
+      "name": "github-calendar",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "b72912a533f3c9a3a3d54d0073098d2b6518546351ed024e58df59e6b203c9d4",
+      "snapshotBytes": 38388
+    },
+    {
+      "id": "componentry-gradient-hero-01",
+      "name": "gradient-hero-01",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "7dac9bc9ce9aa14bee67a263d75f78e6833da823962eb8f9b26d5968c8a56a28",
+      "snapshotBytes": 45866
+    },
+    {
+      "id": "componentry-grain-gradient",
+      "name": "grain-gradient",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "ffa8fc51e14963b7e4f4681dd9b466538734111fb6242cb7e556999cdfc734ea",
+      "snapshotBytes": 174411
+    },
+    {
+      "id": "componentry-hero-geometric",
+      "name": "hero-geometric",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "9e380db2a215b5779ea131d4b228b762eb3766885cda63ddc0d01d2cfd6cbc51",
+      "snapshotBytes": 100232
+    },
+    {
+      "id": "componentry-hover-transition",
+      "name": "hover-transition",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "f54a887668f44ddb2d209d2ab43e5c26278caaf8457f21e111e0176a782bfd32",
+      "snapshotBytes": 9350
+    },
+    {
+      "id": "componentry-image-ripple-effect",
+      "name": "image-ripple-effect",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "41eec5a19d23e746ef6c9304a6075ef5810c4bf9b3e173d7a2db893eabe83600",
+      "snapshotBytes": 45865
+    },
+    {
+      "id": "componentry-image-trail",
+      "name": "image-trail",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "a54305769254ce007472976f8f758c92cc8f365f4b354c80f592fb0c79b86dcb",
+      "snapshotBytes": 29239
+    },
+    {
+      "id": "componentry-infinite-image-field",
+      "name": "infinite-image-field",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "430474d30fbd5a5ee721f44d248e52449c42a484f58bacd24516a90a77734d0e",
+      "snapshotBytes": 200944
+    },
+    {
+      "id": "componentry-kinetic-text-reveal",
+      "name": "kinetic-text-reveal",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "45143458e5eaaae4f36daf087ca7c9b91be7ea391447b53b04beb9d34a2895e3",
+      "snapshotBytes": 19955
+    },
+    {
+      "id": "componentry-layered-stack",
+      "name": "layered-stack",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "1fae62fbf671fdcf23faa3aa2ad26f3d256630fcec93717dc627f96862c04f89",
+      "snapshotBytes": 13773
+    },
+    {
+      "id": "componentry-letter-cascade",
+      "name": "letter-cascade",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "5a149ce7dcb51d77e97f3f4ffd4c0eac9e932e53b957d3f91c76e6922868732b",
+      "snapshotBytes": 13708
+    },
+    {
+      "id": "componentry-liquid-chrome",
+      "name": "liquid-chrome",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "7ec51bc3235e2585488b1c7c7ac0723f213c2a3251ae237bbe6bce9c5fefc4eb",
+      "snapshotBytes": 50932
+    },
+    {
+      "id": "componentry-liquid-glass-carousel",
+      "name": "liquid-glass-carousel",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "bcf112aa1561abd18d2eaea866b7ff3b82f729a0d743d6bd436110f8a0447c7d",
+      "snapshotBytes": 16258
+    },
+    {
+      "id": "componentry-mac-keyboard",
+      "name": "mac-keyboard",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "853c14964441e6efaeee84c9a0cb8634418ccf00b5a92022e6ff863125e7d027",
+      "snapshotBytes": 46837
+    },
+    {
+      "id": "componentry-magnet-lines",
+      "name": "magnet-lines",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "f47cdee4fd57c81e71515fa6737a427502e802ead1cc495f004abc7bf60b19dc",
+      "snapshotBytes": 23913
+    },
+    {
+      "id": "componentry-magnetic-dock",
+      "name": "magnetic-dock",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "d4f30a66be85d66c13a5138de2c0511dd76615cae769812544eea6ab2bd59932",
+      "snapshotBytes": 10244
+    },
+    {
+      "id": "componentry-matrix-rain",
+      "name": "matrix-rain",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "fca933443b29940e9c0e8d5fd2de913bb86e1dea6709b9491bbd3dce3db1f45a",
+      "snapshotBytes": 82971
+    },
+    {
+      "id": "componentry-music-player",
+      "name": "music-player",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "78b3af3ec1b1d77a9af667f4ae58ca55d8dd752803ae563624b135865b57b486",
+      "snapshotBytes": 23889
+    },
+    {
+      "id": "componentry-newsletter-bookshelf",
+      "name": "newsletter-bookshelf",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "af7892ed7986255b16eb134d2aa592ab71f86d5b375486357a2207e7d8220946",
+      "snapshotBytes": 44498
+    },
+    {
+      "id": "componentry-orbit-card-stack",
+      "name": "orbit-card-stack",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "7688d2d96619f1ebfcbaace1b67fbfcf025ba3b67a936f8cdd1bb03ce23f1bf6",
+      "snapshotBytes": 40034
+    },
+    {
+      "id": "componentry-pixel-canvas",
+      "name": "pixel-canvas",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "56f669d37b642678df4e8349b4fb9250803481e4cc621bf8c758fbedc06f19e1",
+      "snapshotBytes": 11428
+    },
+    {
+      "id": "componentry-pixel-image-trail",
+      "name": "pixel-image-trail",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "f0c12d1e588d60b0fdd6018d6fb6c37703ccf75436cee03b8f643027ccd4bcbc",
+      "snapshotBytes": 10554
+    },
+    {
+      "id": "componentry-pricing-01",
+      "name": "pricing-01",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "f52d183134713e8875c3d136cb3cd74c642b3c48036cd626b577bd7d1957a7c4",
+      "snapshotBytes": 64348
+    },
+    {
+      "id": "componentry-pricing-02",
+      "name": "pricing-02",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "59b8498a43dbffb43fef7137c1fc7ba0721075b4e5d5f8fe2917681836947d5b",
+      "snapshotBytes": 63908
+    },
+    {
+      "id": "componentry-prism-gradient",
+      "name": "prism-gradient",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "6fa201957bbae129941aaba71bfe9a20fafec3a73ba03164d3a47696f018cd5f",
+      "snapshotBytes": 32005
+    },
+    {
+      "id": "componentry-ripple-transition",
+      "name": "ripple-transition",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "be95219e1812c0abdd4ee98e6962f1749e5d1ab04b18310ff7b8cb3072a4bd7a",
+      "snapshotBytes": 106170
+    },
+    {
+      "id": "componentry-scroll-based-velocity",
+      "name": "scroll-based-velocity",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "9332b9b0e0b69a423e9d80211e00cc7d7e4ce39b655e53decd83716460d4bdbf",
+      "snapshotBytes": 45342
+    },
+    {
+      "id": "componentry-scroll-choreography",
+      "name": "scroll-choreography",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "b8dfd6b74bc62e2d3d1bafbdb2802994b3e7e73084021936ac4c776886f8497f",
+      "snapshotBytes": 86800
+    },
+    {
+      "id": "componentry-scroll-split-card",
+      "name": "scroll-split-card",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "26c430f1de8bd8810d6346243af01c9c605a723d7da72474e0a9e775920da68c",
+      "snapshotBytes": 51989
+    },
+    {
+      "id": "componentry-scroll-tilted-grid",
+      "name": "scroll-tilted-grid",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "5686fa81e0cdf122bf334297cc3b900da606814786a783be3950f76ec1f54eff",
+      "snapshotBytes": 76880
+    },
+    {
+      "id": "componentry-signature",
+      "name": "signature",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "3600cf6d1e8b6ba4bab5b6eff2bd0f75fb75d318cdea360e4e4dc572ab86f50b",
+      "snapshotBytes": 34114
+    },
+    {
+      "id": "componentry-silk-aurora",
+      "name": "silk-aurora",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "10a80501cf15e1566c04f7707f2e169bbb067a0cc420c3086cee44e55e07ab6f",
+      "snapshotBytes": 66307
+    },
+    {
+      "id": "componentry-spectral-ribbon",
+      "name": "spectral-ribbon",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "b3e9ab8f3e5a7274319e279639f4db251acb6b9977954a169bb685412f5079ec",
+      "snapshotBytes": 41317
+    },
+    {
+      "id": "componentry-spiral-3d-slider",
+      "name": "spiral-3d-slider",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "7857e726874f980428317edb82761f62358aaee7cb815fc022f7b3ac9bd55052",
+      "snapshotBytes": 68808
+    },
+    {
+      "id": "componentry-split-flap-display",
+      "name": "split-flap-display",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "468316cf63d1061964e6c7969df2330ee250cc5e24df6bc6795d0b939dddc5f9",
+      "snapshotBytes": 16473
+    },
+    {
+      "id": "componentry-sticky-scroll-cards",
+      "name": "sticky-scroll-cards",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "e9db6f06c4cfeea639a1f053fc2374b690bb3586f77cc28a17286685a456a86a",
+      "snapshotBytes": 42964
+    },
+    {
+      "id": "componentry-text-morph",
+      "name": "text-morph",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "020c3da9a10aa1eb2dbe2b2f7f45e95a3327f62cabbb6d1c053c2943588aeb4d",
+      "snapshotBytes": 10055
+    },
+    {
+      "id": "componentry-text-repel",
+      "name": "text-repel",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "063029aa0b2b55659ee838a78ff855422d16f77b6f5e56c7a1055b96fb7783e7",
+      "snapshotBytes": 13032
+    },
+    {
+      "id": "componentry-webgl-liquid",
+      "name": "webgl-liquid",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "e3000f41faa7d69618d7bbfc0eb09ad88dcc02ed19cffd6b05844674779b1459",
+      "snapshotBytes": 104480
+    },
+    {
+      "id": "componentry-wheel-carousel",
+      "name": "wheel-carousel",
+      "status": "ready",
+      "reason": "",
+      "errors": [],
+      "snapshotSha256": "7c28b37056873826cb3223c124ad8253d059c2ea5988a338af5b0250a3d3f1f5",
+      "snapshotBytes": 20908
+    }
+  ]
+}

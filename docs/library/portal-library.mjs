@@ -25,17 +25,6 @@ class ExpressoLibrary extends HTMLElement {
     this.details ||= new Map();
     this.addEventListener('load',event=>{if(['IMG','IFRAME'].includes(event.target.tagName))event.target.closest('.lib-visual')?.removeAttribute('data-loading');},true);
     this.addEventListener('error',event=>{if(event.target.tagName==='IMG' && event.target.closest('.lib-visual')){const frame=event.target.closest('.lib-visual');frame.removeAttribute('data-loading');frame.innerHTML='<span class="lib-image-error">원본 이미지에 연결하지 못했습니다<br>상세에서 출처를 확인하세요.</span>';}},true);
-    this.addEventListener('pointerover',event=>{
-      const card=event.target.closest('.lib-card-preview');
-      if(!card||card.contains(event.relatedTarget)||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
-      const video=card.querySelector('video[data-hover-preview]');
-      if(video)void video.play().catch(()=>{});
-    });
-    this.addEventListener('pointerout',event=>{
-      const card=event.target.closest('.lib-card-preview');
-      if(!card||card.contains(event.relatedTarget))return;
-      card.querySelector('video[data-hover-preview]')?.pause();
-    });
     this.onclick = event => {
       if (event.target.closest('[data-retry]')) this.load();
       if (event.target.closest('[data-close]')) this.navigate({id: ''});
@@ -192,11 +181,7 @@ class ExpressoLibrary extends HTMLElement {
   preview(item,large=false) {
     const p=item.preview;
     if(!p) return `<div class="lib-preview-missing ${large?'lib-detail-preview':''}">${escape(item.previewReason||'원본에서 확인')}</div>`;
-    if(p.kind==='remote_video' && large) {
-      const auto=item.sourceSite==='componentry'&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches?'autoplay muted loop preload="metadata"':'preload="none"';
-      return `<div class="lib-visual lib-large-preview lib-video-preview"><video controls playsinline ${auto} poster="${escape(p.poster)}" src="${escape(p.url)}" aria-label="${escape(item.title)} 참고 영상"></video><span class="lib-preview-label">${escape(p.label)}</span></div>`;
-    }
-    if(p.kind==='remote_video' && item.sourceSite==='componentry') return `<div class="lib-visual lib-video-card"><video data-hover-preview muted playsinline loop preload="none" poster="${escape(p.thumbnailUrl||p.poster)}" src="${escape(p.url)}" aria-hidden="true"></video><span class="lib-preview-label">공식 시연 영상 · 호버 재생</span></div>`;
+    if(p.kind==='remote_video' && large) return `<div class="lib-visual lib-large-preview lib-video-preview"><video controls playsinline preload="none" poster="${escape(p.poster)}" src="${escape(p.url)}" aria-label="${escape(item.title)} 참고 영상"></video><span class="lib-preview-label">${escape(p.label)}</span></div>`;
     if(p.kind==='text') return `<div class="lib-visual lib-prompt-preview"><pre>${escape(p.text)}</pre><span class="lib-preview-label">${escape(p.label)}</span></div>`;
     if(p.kind==='local_frame' && large && p.liveUrl) return `<div class="lib-visual lib-large-preview lib-live-preview" data-loading="true"><iframe src="${escape(p.liveUrl)}" title="${escape(item.title)} 실행 예제" sandbox="allow-scripts" loading="eager" tabindex="0" referrerpolicy="no-referrer"></iframe><span class="lib-preview-label">${escape(p.label)} · 실행 중</span></div>`;
     if(p.kind==='local_frame') return `<div class="lib-visual lib-frame-preview ${large?'lib-large-preview':''}" data-loading="true" data-preview-width="${p.width}" data-preview-height="${p.height}"><iframe src="${escape(p.url)}" title="${escape(item.title)} ${escape(p.label)}" sandbox="" loading="lazy" tabindex="-1" width="${p.width}" height="${p.height}" referrerpolicy="no-referrer"></iframe><span class="lib-preview-label">${escape(p.label)} · ${p.width}px</span></div>`;

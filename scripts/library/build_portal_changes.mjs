@@ -25,12 +25,15 @@ const bareIconsSubject='개발 문서 카드 아이콘 배경 제거';
 const bareIconsSummary='개발 문서 카드의 아이콘 뒤에 있던 배경과 테두리를 제거했습니다.';
 const componentrySubject='Componentry 공식 registry 자료 추가';
 const componentrySummary='UI 53개와 블록 3개의 원본 코드·이용 조건·공식 시연 자료를 라이브러리에서 확인합니다.';
+const componentryRenderSubject='Componentry 원본 렌더링 예제 추가';
+const componentryRenderSummary='Componentry 56개 모두 카드에 실제 렌더 화면을 표시하고 상세에서 실행 예제를 조작할 수 있습니다.';
 const releaseNotes=new Map([
  [newSubject,{summary:newSummary,href:'#/docs'}],
  [directTabsSubject,{summary:directTabsSummary,href:'#/docs'}],
  [documentIconsSubject,{summary:documentIconsSummary,href:'#/docs'}],
  [bareIconsSubject,{summary:bareIconsSummary,href:'#/docs'}],
  [componentrySubject,{summary:componentrySummary,href:'#/library/all?source=componentry'}],
+ [componentryRenderSubject,{summary:componentryRenderSummary,href:'#/library/all?source=componentry'}],
 ]);
 const history=lines.filter(Boolean).map(line=>{
  const [id,stamp,subject]=line.split('\x1f');

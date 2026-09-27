@@ -43,6 +43,13 @@ const put=(subpath,body,label,kind)=>{
   return {path:'./library/materials/componentry/'+subpath,sha256:sha(body),bytes:body.length,label,kind};
 };
 const license=put('LICENSE.txt',read('LICENSE'),'MIT 라이선스 원문','license');
+const support={
+  utils:put('support/utils.ts',read('packages/ui/src/lib/utils.ts'),'원본 스타일 유틸리티','source_code'),
+  webgl:put('support/webgl-error-boundary.tsx',read('packages/ui/src/components/webgl-error-boundary.tsx'),'원본 WebGL 경계','source_code'),
+  css:put('support/globals.css',read('packages/ui/src/styles/globals.css'),'원본 스타일 토큰','source_code'),
+  font:put('support/LastoriaBoldRegular.otf',read('apps/web/public/LastoriaBoldRegular.otf'),'서명 예제 원본 폰트','asset'),
+  logo:put('support/dithered-logo.svg',read('apps/web/public/images/dithered-logo/logo.svg'),'로고 예제 원본 SVG','asset'),
+};
 const sectionNames=new Set(['case-study-flip-stack','sticky-scroll-cards','newsletter-bookshelf','gradient-hero-01']);
 const projectNames=new Set(['collection-surfer','fisheye-infinite-grid','layered-stack','orbit-card-stack','scroll-tilted-grid','wheel-carousel','spiral-3d-slider']);
 const mediaNames=new Set(['image-trail','image-ripple-effect','infinite-image-field','liquid-glass-carousel','music-player','pixel-image-trail','ripple-transition']);
@@ -117,9 +124,15 @@ for(const [at,item] of lock.items.entries()){
   updates.push({id,roles:[role],roleEvidence,roleMethod:'identifier_rules_v2',selection:'pending',
     inputs:[],constraints,familyId:null,preview,detailPath,acquisitionStatus:'source_ready',
     collectionStatus:'material_ready',previewReason:null});
+  const sourceText=read(sourceRelative).toString('utf8');
+  const supporting=[support.css,
+    ...(sourceText.includes('@workspace/ui/lib/utils')?[support.utils]:[]),
+    ...(sourceText.includes('@workspace/ui/components/webgl-error-boundary')?[support.webgl]:[]),
+    ...(item.name==='signature'?[support.font]:[]),
+    ...(item.name==='dithered-logo'?[support.logo]:[])];
   const detail={
     id,sourceUrl:canonicalUrl,sourceRevision:revision,roles:[role],roleEvidence,
-    roleMethod:'identifier_rules_v2',materials:[registryMaterial,sourceMaterial,license],
+    roleMethod:'identifier_rules_v2',materials:[registryMaterial,sourceMaterial,license,...supporting],
     observations:[description,`공식 분류: ${category}`,`registry 의존성: ${(registry.dependencies??[]).join(', ')||'없음'}`,
       ...(item.previewVideoStatus==='unavailable_404'?[`공식 시연 영상 주소 HTTP 404 (${lock.mediaCheckedAt}): ${item.previewVideo}`]:[])],
     inputs:[],framework:'React 19 · Tailwind CSS 4',sourceLicense:licenseUrl,

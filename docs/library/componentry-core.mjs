@@ -16,7 +16,12 @@ export function applyComponentry(base,data){
       !Object.hasOwn(SELECTION,update.selection)||!Array.isArray(update.roles)||
       !update.roles.every(role=>Object.hasOwn(ROLES,role))||!Array.isArray(update.inputs)||
       !Array.isArray(update.constraints)||!update.constraints.every(value=>typeof value==='string')||
-      !validPreview(update.preview)||!safeLocal(update.detailPath))fail();
+      !validPreview(update.preview)||!safeLocal(update.detailPath)||
+      (update.example&&(
+        update.preview.kind!=='local_frame'||!update.preview.liveUrl||
+        update.example.mode!=='authored_fixture'||typeof update.example.inputCode!=='string'||
+        update.renderCheck?.status!=='ready'||!/^[a-f0-9]{64}$/.test(update.renderCheck.snapshotSha256)
+      )))fail();
     updates.set(update.id,update);
   }
   if(updates.size!==data.additions.length)fail();
@@ -24,6 +29,7 @@ export function applyComponentry(base,data){
     const update=updates.get(item.id);
     if(!update)fail();
     return {...item,...update,curation:{selection:update.selection,inputs:update.inputs,constraints:update.constraints},
+      execution:update.example?{example:update.example,renderCheck:update.renderCheck}:undefined,
       integrationStatus:'not_started'};
   });
   return {...base,sources:[...base.sources,data.source],items:[...base.items,...additions],componentry:data};

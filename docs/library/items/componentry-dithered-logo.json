@@ -28,6 +28,27 @@
       "bytes": 1069,
       "label": "MIT 라이선스 원문",
       "kind": "license"
+    },
+    {
+      "path": "./library/materials/componentry/support/globals.css",
+      "sha256": "1915ea971dc7b68f86d9ff9ca3ff813ea17baab8350d07952c32635a474846a1",
+      "bytes": 12574,
+      "label": "원본 스타일 토큰",
+      "kind": "source_code"
+    },
+    {
+      "path": "./library/materials/componentry/support/utils.ts",
+      "sha256": "7c8c3dfc0cdd370d44932828eb067ef771c8fe7996693221d5d4b90af6d54f2d",
+      "bytes": 166,
+      "label": "원본 스타일 유틸리티",
+      "kind": "source_code"
+    },
+    {
+      "path": "./library/materials/componentry/support/dithered-logo.svg",
+      "sha256": "80da25e8c11421c15789844e2f4180bbe52017ea11f7ba55a518de4ce9b92e19",
+      "bytes": 7574,
+      "label": "로고 예제 원본 SVG",
+      "kind": "asset"
     }
   ],
   "observations": [
@@ -49,5 +70,23 @@
       "bytes": 18901
     }
   ],
-  "usageNote": "고정 버전의 원본 코드와 registry payload입니다. 공식 시연 영상은 외부 링크이며 로컬 실행·제품 품질은 검증 전입니다."
+  "usageNote": "공식 원본 코드를 예시 입력으로 브라우저에서 직접 렌더링했습니다. 실제 경력 데이터·반응형·키보드·제품 이식 품질은 검증 전입니다.",
+  "example": {
+    "mode": "authored_fixture",
+    "inputCode": "<C imageSrc=\"[원본 SVG 인라인 데이터]\" className=\"h-[740px] w-full\" scale={0.36} />",
+    "props": {},
+    "notes": [
+      "공식 원본 컴포넌트에 예시 입력을 전달한 독립 실행 화면입니다.",
+      "실제 경력 데이터와 포트폴리오 품질 검사는 별도입니다."
+    ]
+  },
+  "renderCheck": {
+    "status": "ready",
+    "method": "chrome_dom_and_screenshot",
+    "snapshotSha256": "fe3115857bd6ae23cadaea6bae021fe2b1152b36aff155c98409c66deaebe2ca",
+    "viewport": {
+      "width": 1280,
+      "height": 880
+    }
+  }
 }

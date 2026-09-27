@@ -28,6 +28,27 @@
       "bytes": 1069,
       "label": "MIT 라이선스 원문",
       "kind": "license"
+    },
+    {
+      "path": "./library/materials/componentry/support/globals.css",
+      "sha256": "1915ea971dc7b68f86d9ff9ca3ff813ea17baab8350d07952c32635a474846a1",
+      "bytes": 12574,
+      "label": "원본 스타일 토큰",
+      "kind": "source_code"
+    },
+    {
+      "path": "./library/materials/componentry/support/utils.ts",
+      "sha256": "7c8c3dfc0cdd370d44932828eb067ef771c8fe7996693221d5d4b90af6d54f2d",
+      "bytes": 166,
+      "label": "원본 스타일 유틸리티",
+      "kind": "source_code"
+    },
+    {
+      "path": "./library/materials/componentry/support/webgl-error-boundary.tsx",
+      "sha256": "b287e44532a6be7dac5d90dba953d7ce0d8edeec9234071026084be99a789954",
+      "bytes": 1392,
+      "label": "원본 WebGL 경계",
+      "kind": "source_code"
     }
   ],
   "observations": [
@@ -54,5 +75,23 @@
       "bytes": 1380
     }
   ],
-  "usageNote": "고정 버전의 원본 코드와 registry payload입니다. 공식 시연 영상은 외부 링크이며 로컬 실행·제품 품질은 검증 전입니다."
+  "usageNote": "공식 원본 코드를 예시 입력으로 브라우저에서 직접 렌더링했습니다. 실제 경력 데이터·반응형·키보드·제품 이식 품질은 검증 전입니다.",
+  "example": {
+    "mode": "authored_fixture",
+    "inputCode": "<div className=\"grid h-[740px] place-items-center bg-[#061529]\"><C className=\"h-[420px] w-full\" /></div>",
+    "props": {},
+    "notes": [
+      "공식 원본 컴포넌트에 예시 입력을 전달한 독립 실행 화면입니다.",
+      "실제 경력 데이터와 포트폴리오 품질 검사는 별도입니다."
+    ]
+  },
+  "renderCheck": {
+    "status": "ready",
+    "method": "chrome_dom_and_screenshot",
+    "snapshotSha256": "3344944d78aeccea26300527ca0bf3f9eb28a3f62fc2a7cb3d01a7c06d499da6",
+    "viewport": {
+      "width": 1280,
+      "height": 880
+    }
+  }
 }

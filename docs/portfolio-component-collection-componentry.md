@@ -1,11 +1,12 @@
 # Componentry 추가 수집
 
-Componentry의 공식 registry에 있는 UI 53개와 블록 3개를 고정 버전의 원본 코드·이용 조건·공식 시연 링크와 함께 포트폴리오 라이브러리에 추가했습니다.
+Componentry의 UI 53개와 블록 3개를 원본 React 코드로 실행해 포트폴리오 라이브러리의 카드와 상세 화면에 연결했습니다.
 
 - 기존 라이브러리에는 Shoogle에서 발견한 과거 `componentry.fun` 공급자 주소 1건만 있었습니다. 이번 항목 56개는 `componentry.dev`의 공식 registry에서 새로 수집했습니다.
-- UI 36개에는 실제 응답을 확인한 공급자 시연 영상을 연결했습니다. 영상 주소 13개는 HTTP 404였고, 나머지 UI 4개와 블록 3개는 영상 주소가 없습니다. 이 20개 항목은 공식 설명과 원본 코드로 식별하며 실행 화면 검증을 남겨 두었습니다.
+- 56개 모두 예시 입력으로 브라우저 렌더링을 확인했습니다. 목록 카드에는 그 화면을 캡처한 정적 이미지가 나오고, 상세 모달에는 원본 React 컴포넌트의 조작 가능한 실행 화면이 열립니다.
+- 공식 시연 영상은 원본 출처 기록으로 보존했습니다. 확인 당시 정상 응답 36개, HTTP 404 13개, 영상 주소 없음 7개였습니다. 포털 미리보기에는 영상 대신 로컬 실행 화면을 표시합니다.
 - 설치용 registry JSON, 저장소의 원본 TSX, MIT 고지를 별도 자료로 보존했습니다. GSAP 의존 항목 4개는 별도 이용 조건 확인 대상으로 표시했습니다.
-- 56개 전부 제품 등록·실제 포트폴리오 콘텐츠 검증 전입니다. 공급자의 시연 영상과 Expresso 실행 예제는 구분해 표시합니다.
+- 56개 전부 제품 등록·실제 경력 데이터·반응형·키보드·성능 검증 전입니다. 브라우저 실행 성공과 포트폴리오 지면 품질을 분리해 기록합니다.
 
 수집 기준: 2026-09-27 · 공식 저장소 `harshjdhv/componentry` commit `0fd9e13b344cfa36a0332705611f877bbd8e85d9` · [Componentry 자료 목록](./Expresso%20개발%20포털.dc.html#/library/all?source=componentry)
 
@@ -25,7 +26,7 @@ Componentry의 공식 registry에 있는 UI 53개와 블록 3개를 고정 버�
 
 [공식 저장소](https://github.com/harshjdhv/componentry)는 MIT로 공개되어 있습니다. 설치 payload의 React·Tailwind·모션·WebGL 의존성은 항목마다 다릅니다. `flipping-word-swap`, `image-trail`, `layered-stack`, `liquid-glass-carousel`의 registry payload에는 GSAP 의존성이 있어 제품 사용 전에 [GSAP 이용 조건](https://gsap.com/licensing/)을 별도로 확인해야 합니다. 공급자 시연 영상은 링크로만 연결했고 파일을 재배포하지 않았습니다.
 
-공식 시연 영상은 원본 표현을 살피는 자료입니다. 로컬에 설치한 컴포넌트의 실행 성공, 긴 콘텐츠에 대한 적합성, 실제 포트폴리오 지면 품질은 아직 측정하지 않았습니다. 영상이 없거나 응답이 끊긴 20개 항목에는 코드·설명 미리보기를 표시하고 원본 문서 또는 registry 주소로 이동할 수 있게 했습니다. 영상 주소의 응답 상태와 확인 시각은 수집 lock에 기록했습니다.
+공식 시연 영상은 원본 표현을 살피는 자료입니다. 카드의 캡처와 상세 iframe은 설치한 의존성·예시 입력으로 원본 코드를 실행한 결과입니다. GitHub Calendar는 외부 API 대신 고정된 예시 기여 데이터를 제공하고, 서명 폰트와 로고 SVG는 원본 저장소의 자산을 함께 보존했습니다. 긴 한국어 콘텐츠와 실제 포트폴리오 지면 품질은 아직 측정하지 않았습니다. 영상 주소의 응답 상태와 확인 시각은 수집 lock에 기록했습니다.
 
 ## 재수집과 검증
 
@@ -33,8 +34,14 @@ Componentry의 공식 registry에 있는 UI 53개와 블록 3개를 고정 버�
 
 ```sh
 node scripts/library/collect_componentry.mjs
+pnpm --dir scripts/library/renderer install --ignore-workspace --frozen-lockfile
+node scripts/library/renderer/build-componentry.mjs
+# 별도 터미널에서 python3 scripts/serve-docs.py 8918 실행
+node scripts/library/renderer/verify-componentry.mjs
+node scripts/library/publish_componentry.mjs
+node scripts/library/renderer/verify-componentry-embed.mjs
 node scripts/library/build_portal_search.mjs
 node --test scripts/library/componentry.test.mjs scripts/library/portal-controls.test.mjs
 ```
 
-수집기는 registry 목록과 원본 파일의 해시를 확인합니다. 실행 결과는 `docs/library/componentry.json`, 자료별 상세 JSON, `docs/library/materials/componentry/`에 저장합니다. 다음 단계에서 포트폴리오용 입력 계약을 정의하고 실제 길이의 콘텐츠로 대표 후보부터 렌더링합니다.
+수집기는 registry 목록과 원본 파일의 해시를 확인합니다. 렌더러는 56개 JSX를 빌드하고 Chrome에서 오류·빈 화면을 확인한 뒤 캡처를 남깁니다. 게시기는 56개 전체의 성공 기록과 캡처 해시가 일치할 때만 `docs/library/componentry.json` 및 자료별 상세 JSON을 실행 미리보기로 갱신합니다. 마지막 검사는 포털과 같은 sandbox iframe에서 56개가 실행되는지 확인합니다. 다음 단계에서 포트폴리오용 입력 계약을 정의하고 실제 길이의 콘텐츠로 대표 후보를 검증합니다.

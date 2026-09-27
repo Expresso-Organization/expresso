@@ -28,6 +28,13 @@
       "bytes": 1069,
       "label": "MIT 라이선스 원문",
       "kind": "license"
+    },
+    {
+      "path": "./library/materials/componentry/support/globals.css",
+      "sha256": "1915ea971dc7b68f86d9ff9ca3ff813ea17baab8350d07952c32635a474846a1",
+      "bytes": 12574,
+      "label": "원본 스타일 토큰",
+      "kind": "source_code"
     }
   ],
   "observations": [
@@ -49,5 +56,23 @@
       "bytes": 4985
     }
   ],
-  "usageNote": "고정 버전의 원본 코드와 registry payload입니다. 공식 시연 영상은 외부 링크이며 로컬 실행·제품 품질은 검증 전입니다. GSAP은 별도 이용 조건을 확인해야 합니다."
+  "usageNote": "공식 원본 코드를 예시 입력으로 브라우저에서 직접 렌더링했습니다. 실제 경력 데이터·반응형·키보드·제품 이식 품질은 검증 전입니다.",
+  "example": {
+    "mode": "authored_fixture",
+    "inputCode": "<div className=\"relative h-[650px] bg-zinc-950\"><h1 className=\"pointer-events-none absolute inset-0 z-10 grid place-items-center text-6xl font-semibold text-white\">Explore</h1><C images={[\"https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200&q=85\",\"https://images.unsplash.com/photo-1497366858526-0766cadbe8fa?w=1200&q=85\",\"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=85\"]} /></div>",
+    "props": {},
+    "notes": [
+      "공식 원본 컴포넌트에 예시 입력을 전달한 독립 실행 화면입니다.",
+      "실제 경력 데이터와 포트폴리오 품질 검사는 별도입니다."
+    ]
+  },
+  "renderCheck": {
+    "status": "ready",
+    "method": "chrome_dom_and_screenshot",
+    "snapshotSha256": "a54305769254ce007472976f8f758c92cc8f365f4b354c80f592fb0c79b86dcb",
+    "viewport": {
+      "width": 1280,
+      "height": 880
+    }
+  }
 }

@@ -8,7 +8,7 @@
 - 검증된 컴포넌트만 json-render의 실행 목록에 등록합니다. 참고 자료와 코드 후보는 계속 확장합니다.
 - 기존 개발포털에 라이브러리 탭을 추가해 컴포넌트·프롬프트·관련 자료를 시각적으로 탐색합니다.
 
-작성일: 2026-09-22 · 버전: v1.4 · 상태: 3단계 재분류·보강과 Componentry 추가 수집, 구조 변형 비교 대기 · [3단계 결과](./portfolio-component-collection-stage-3.md) · [Componentry 추가 수집](./portfolio-component-collection-componentry.md)
+작성일: 2026-09-22 · 버전: v1.5 · 상태: 3단계 재분류·보강과 Componentry 원본 실행 완료, 구조 변형 비교 대기 · [3단계 결과](./portfolio-component-collection-stage-3.md) · [Componentry 실행 결과](./portfolio-component-collection-componentry.md)
 
 선행 자료: [포트폴리오 컴포넌트 레퍼런스 조사](./portfolio-component-reference-research.md)
 
@@ -29,7 +29,7 @@
 
 1단계에서 공개 목록과 출처를 수집했습니다. 2단계에서 허용된 원본 소스·자산, 공식 참고 이미지, 자체 프롬프트를 확보하고 포털 상세에 연결했습니다. 실제 경력 콘텐츠의 품질 검증은 후속 단계입니다.
 
-2026-09-27에는 Componentry의 공식 registry UI 53개와 블록 3개를 추가했습니다. 공식 시연 영상은 참고 자료로 연결했고 원본 코드와 제품 등록 상태를 분리했습니다.
+2026-09-27에는 Componentry의 공식 registry UI 53개와 블록 3개를 추가하고, 56개 모두 원본 코드를 예시 입력으로 브라우저에서 렌더링했습니다. 카드에는 실제 렌더 캡처를, 상세에는 실행 iframe을 연결했습니다. 제품 등록과 실제 경력 콘텐츠의 품질 검증은 별도 상태로 유지합니다.
 
 ### 1.2 포트폴리오 역할 분류
 

@@ -28,6 +28,20 @@
       "bytes": 1069,
       "label": "MIT 라이선스 원문",
       "kind": "license"
+    },
+    {
+      "path": "./library/materials/componentry/support/globals.css",
+      "sha256": "1915ea971dc7b68f86d9ff9ca3ff813ea17baab8350d07952c32635a474846a1",
+      "bytes": 12574,
+      "label": "원본 스타일 토큰",
+      "kind": "source_code"
+    },
+    {
+      "path": "./library/materials/componentry/support/utils.ts",
+      "sha256": "7c8c3dfc0cdd370d44932828eb067ef771c8fe7996693221d5d4b90af6d54f2d",
+      "bytes": 166,
+      "label": "원본 스타일 유틸리티",
+      "kind": "source_code"
     }
   ],
   "observations": [
@@ -49,5 +63,23 @@
       "bytes": 3804
     }
   ],
-  "usageNote": "고정 버전의 원본 코드와 registry payload입니다. 공식 시연 영상은 외부 링크이며 로컬 실행·제품 품질은 검증 전입니다. GSAP은 별도 이용 조건을 확인해야 합니다."
+  "usageNote": "공식 원본 코드를 예시 입력으로 브라우저에서 직접 렌더링했습니다. 실제 경력 데이터·반응형·키보드·제품 이식 품질은 검증 전입니다.",
+  "example": {
+    "mode": "authored_fixture",
+    "inputCode": "<C className=\"relative mx-auto grid h-[560px] max-w-[820px] grid-cols-3 items-center gap-4\">{[\"Research\",\"Design\",\"Delivery\"].map((label,index)=><div key={label} className=\"grid h-[300px] place-items-center rounded-3xl bg-zinc-900 text-3xl font-semibold text-white\" style={{backgroundColor:[\"#1d4ed8\",\"#7c3aed\",\"#be185d\"][index]}}>{label}</div>)}</C>",
+    "props": {},
+    "notes": [
+      "공식 원본 컴포넌트에 예시 입력을 전달한 독립 실행 화면입니다.",
+      "실제 경력 데이터와 포트폴리오 품질 검사는 별도입니다."
+    ]
+  },
+  "renderCheck": {
+    "status": "ready",
+    "method": "chrome_dom_and_screenshot",
+    "snapshotSha256": "1fae62fbf671fdcf23faa3aa2ad26f3d256630fcec93717dc627f96862c04f89",
+    "viewport": {
+      "width": 1280,
+      "height": 880
+    }
+  }
 }

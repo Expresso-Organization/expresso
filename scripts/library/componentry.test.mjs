@@ -12,6 +12,7 @@ const root=new URL('../../',import.meta.url);
 const read=path=>readFileSync(new URL(path,root));
 const json=path=>JSON.parse(read(path));
 const feed=json('docs/library/componentry.json');
+const embedded=json('docs/library/previews/componentry/embed-verification.json');
 const base=applyExamples(applyCuration(applyAcquisitions(
   validateCatalog(json('docs/library/catalog.json')),
   json('docs/library/acquisitions.json')),
@@ -22,16 +23,24 @@ test('Componentry 53개 UI와 3개 블록의 고정 소스·시연 자료를 연
   const merged=applyComponentry(base,feed);
   assert.equal(merged.items.length,base.items.length+56);
   assert.equal(merged.sources.at(-1).id,'componentry');
-  assert.deepEqual(feed.stats,{items:56,components:53,blocks:3,officialVideos:36,unavailableVideos:13,textPreviews:20});
+  assert.deepEqual(feed.stats,{items:56,components:53,blocks:3,officialVideos:36,unavailableVideos:13,textPreviews:20,localRenders:56});
   assert.equal(selectItems(merged,parseLibraryRoute('#/library/all?source=componentry')).total,56);
   const items=merged.items.filter(item=>item.sourceSite==='componentry');
   for(const item of items){
     assert.equal(item.selection,'pending');
     assert.equal(item.integrationStatus,'not_started');
-    assert.equal(item.execution,undefined);
+    assert.equal(item.preview.kind,'local_frame');
+    assert.equal(item.preview.liveUrl,`./library/previews/componentry/${item.id}.html`);
+    assert.equal(item.execution?.renderCheck.status,'ready');
+    const image=read(`docs/library/previews/componentry/${item.id}.jpg`);
+    assert.equal(createHash('sha256').update(image).digest('hex'),item.execution.renderCheck.snapshotSha256);
+    for(const suffix of ['.html','.js','.static.html']){
+      assert.ok(read(`docs/library/previews/componentry/${item.id}${suffix}`).length>0,item.id+suffix);
+    }
     const detail=validateDetail(json('docs/'+item.detailPath.slice(2)),item.id);
     assert.equal(detail.sourceRevision,item.sourceRevision);
     assert.equal(detail.visualReview,'not_reviewed');
+    assert.equal(detail.renderCheck.snapshotSha256,item.execution.renderCheck.snapshotSha256);
     for(const material of detail.materials){
       assert.equal(createHash('sha256').update(read('docs/'+material.path.slice(2))).digest('hex'),material.sha256);
     }
@@ -46,4 +55,15 @@ test('누락 항목과 위험한 미리보기 주소를 거부한다',()=>{
   assert.throws(()=>applyComponentry(base,missing));
   const unsafe=structuredClone(feed);unsafe.updates[0].preview={kind:'remote_video',url:'javascript:alert(1)',poster:'https://example.com/x.png',sourceUrl:'https://example.com',label:'x'};
   assert.throws(()=>applyComponentry(base,unsafe));
+});
+
+test('Componentry 실행 예제 전체가 포털 iframe 조건에서 표시된다',()=>{
+  assert.equal(embedded.method,'sandbox_iframe');
+  assert.equal(embedded.results.length,56);
+  const ids=new Set(feed.additions.map(item=>item.id));
+  for(const result of embedded.results){
+    assert.ok(ids.delete(result.id),result.id);
+    assert.equal(result.status,'ready',result.name+': '+result.reason);
+  }
+  assert.equal(ids.size,0);
 });
