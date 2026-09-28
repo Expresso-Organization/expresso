@@ -50,6 +50,7 @@ function Evidence({groups,variant}){
 export const {registry}=defineRegistry(catalog,{components:{
   PortfolioPage:({props,children})=><Page props={props}>{children}</Page>,
   Hero:({props})=><Hero {...props}/>,
+  ProjectShowcase:({props})=><ProjectShowcase {...props}/>,
   ProjectIndex:({props})=><VisualProjectIndex {...props}/>,
   ProjectCaseStudy:({props})=><CaseStudy {...props}/>,
   CareerTimeline:({props})=><Existing name="CareerTimeline" props={props}/>,
@@ -59,4 +60,17 @@ export const {registry}=defineRegistry(catalog,{components:{
 export function Portfolio({plan,content}){
   const compiled=compilePlan(plan,content);
   return <StateProvider key={JSON.stringify([plan,content])} initialState={compiled.state}><VisibilityProvider><ActionProvider handlers={{}}><Renderer spec={compiled.spec} registry={registry}/></ActionProvider></VisibilityProvider></StateProvider>;
+}
+
+// 라이브러리도 생성 페이지와 동일한 카탈로그·Registry를 사용합니다.
+export function MotionComponentPreview({component,plan,content}){
+  const compiled=compilePlan(plan,content),ref=React.useRef(null);
+  React.useLayoutEffect(()=>mountPortfolioMotion(ref.current,{replayScroll:false}),[component,plan.motion.preset,plan.recipe]);
+  let node=Object.values(compiled.spec.elements).find(el=>el.type===component);
+  if(component==='ProjectShowcase')node={type:component,props:{projects:compiled.state.projects,recipe:plan.recipe},children:[]};
+  if(!node)throw new Error('등록되지 않은 미리보기 컴포넌트: '+component);
+  const spec={root:'sample',elements:{sample:node}};
+  return <div ref={ref} className="variant-shell motion-component-preview" data-recipe={plan.recipe} data-design={designDirections[plan.recipe]} data-motion-preset={plan.motion.preset} onClick={event=>{
+    const link=event.target.closest('a[href^="#"]');if(link){event.preventDefault();location.href=`./index.html?recipe=${plan.recipe}&motion=${plan.motion.preset}${link.getAttribute('href')}`;}
+  }}><StateProvider initialState={compiled.state}><VisibilityProvider><ActionProvider handlers={{}}><Renderer spec={spec} registry={registry}/></ActionProvider></VisibilityProvider></StateProvider></div>;
 }

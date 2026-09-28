@@ -98,6 +98,26 @@
 
 `verify-portfolio-motion.mjs`는 두 디자인·세 프리셋·두 화면 폭의 12개 조합을 검사합니다. 등장 간격과 중간 상태, 스크롤 시 한 번 실행, 포커스 즉시 표시, 반복 재생 시 관찰자 정리, 실행 중 모션 감소 변경, 선택한 파일 다운로드와 해시, 정적 파일의 CSP 실행, JavaScript/API 없는 상태, 앵커 진입을 확인합니다. `motion-verification.json`에 결과와 파일 해시를 남깁니다.
 
+## 컴포넌트별 모션 지원
+
+`motion-catalog.mjs`는 현재 생성에 사용하는 일곱 컴포넌트의 모션 정보를 소유합니다. 개발 포털의 **라이브러리 → 완성 페이지 → 컴포넌트 모션** 카드에서 목록과 실행 예제를 볼 수 있습니다. 수집만 된 전체 라이브러리에 지원 상태를 부여하지 않습니다.
+
+| 컴포넌트 | 공통 등장 | 고유 동작 |
+| --- | --- | --- |
+| 소개 | 제목·보드·메모 순서 | 내부 프로젝트 전시에 위임 |
+| 프로젝트 전시 | 보드와 메모 | 선택 방향에 따른 앞·뒤 전환 |
+| 프로젝트 갤러리 | 카드 순차 등장 | 포인터가 들어오면 상승, 벗어나면 복귀 |
+| 프로젝트 사례 | 제목·시제품·과정 | 시제품 선택, 원본 설명 펼치기 |
+| 경력 타임라인 | 노드·연결선·본문 | 각 부분을 구분해 순서대로 표시 |
+| 근거 자료 | 자료 묶음 등장 | 펼치기·접기 상태 표시 |
+| 연락처 | 영역 등장 | 별도 고유 효과 없음 |
+
+각 항목에는 지원 프리셋, 등장 효과의 담당 단위, 내부 의존 컴포넌트, 모션 감소 동작, 모바일·키보드·단일 HTML 지원 정보를 기록합니다. `compilePlan`은 생성 결과의 컴포넌트와 내부 의존성을 확인하고 미등록 컴포넌트·지원하지 않는 프리셋을 거부합니다. 출력 JSON의 `motionSupport`에는 실제 사용한 항목 ID가 들어갑니다. AI 자동 선택 호출은 아직 연결하지 않았습니다.
+
+렌더러와 포털은 같은 지원 정보를 읽습니다. 레거시 타임라인·근거·연락처의 공통 등장 바인딩도 이 목록에서 가져옵니다. 타임라인 부모 전체에 효과를 겹치지 않고 노드·선·본문을 각각 연결합니다. 노드, 선, 본문의 추가 지연은 0·70·110ms입니다. 카드 선택 방향에 따라 시제품은 좌우 32px와 2도의 회전에서 220ms로 전환하며, 빠른 재선택 시 이전 전환을 취소합니다. 호버 효과는 마우스 등 정밀 포인터에서만 적용하고 키보드와 모션 감소 설정에서는 조작 결과를 즉시 표시합니다. 공통 실행기가 맡는 전시에는 기존 CSS 등장 효과를 끄고, 키보드 포커스가 있는 문서는 긴 거리의 부드러운 스크롤을 끕니다.
+
+포털 미리보기는 실제 json-render Catalog와 Registry를 사용합니다. 디자인·프리셋 선택과 재생을 제공하고, 내부 사례 링크는 완성 페이지로 연결합니다. 컴포넌트 재생은 현재 스크롤 위치를 유지합니다. 지원 정보는 `component-motion-catalog.json`, 브라우저 결과는 `motion-library-verification.json`에 저장합니다. 두 디자인·두 화면 폭·일곱 컴포넌트의 표시와 조작을 검증합니다. 기존 완성 페이지 및 HTML 내보내기 검증도 유지합니다.
+
 ## 포털과 출력
 
 개발 포털의 **라이브러리 → 완성 페이지 → 포트폴리오 조합 예제**에서 디자인 방향·입력·모션을 전환합니다. 구성 JSON 버튼으로 선택 내용을 확인하고, 전체 spec·데이터 JSON 및 단일 HTML을 저장할 수 있습니다.
@@ -125,7 +145,8 @@ node scripts/library/renderer/build-portfolio-variants.mjs
 # 별도 터미널: python3 -m http.server 8924 --bind 127.0.0.1
 node scripts/library/renderer/verify-portfolio-variants.mjs
 PORTFOLIO_PREVIEW_BASE=http://127.0.0.1:8924/docs node scripts/library/renderer/verify-portfolio-motion.mjs
-node --test scripts/library/portfolio-variants.test.mjs scripts/library/portfolio-composition.test.mjs
+PORTFOLIO_PREVIEW_BASE=http://127.0.0.1:8924/docs node scripts/library/renderer/verify-motion-library.mjs
+node --test scripts/library/portfolio-variants.test.mjs scripts/library/portfolio-composition.test.mjs scripts/library/renderer/portfolio/v1/motion-catalog.test.mjs
 ```
 
 기초 컴포넌트나 스타일을 갱신할 때는 먼저 `build-portfolio.mjs`로 초기 산출물을 재생성한 뒤 변형 빌드를 실행합니다. 초기 산출물이 바뀌면 해당 초기 검증도 다시 수행합니다. 자유 생성 비교 파일은 당시 결과의 기록으로 유지합니다.

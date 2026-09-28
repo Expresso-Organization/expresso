@@ -1,0 +1,189 @@
+{
+  "results": [
+    {
+      "component": "hero",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "hero",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "hero",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "hero",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "showcase",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "showcase",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "showcase",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "showcase",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "gallery",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "gallery",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "gallery",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "gallery",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "case",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "case",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "case",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "case",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "timeline",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "timeline",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "timeline",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "timeline",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "evidence",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "evidence",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "evidence",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "evidence",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "contact",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "contact",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "contact",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "contact",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    }
+  ],
+  "checks": {
+    "directionalStack": true,
+    "keyboardImmediate": true,
+    "galleryHoverReverse": true,
+    "timelineParts": true,
+    "reducedMotion": true,
+    "nonePreset": true,
+    "portalNavigation": true,
+    "staticTimeline": true
+  },
+  "artifactHashes": {
+    "component-motion-catalog.json": "98a1daf11c26dbb4174440ad9d7da9fb6849efc80d020ded77058a385ae3e439",
+    "variants.js": "f1f0e830b714025d222faee8817dfd7a49a07d2af479f5b02b078af0cf3adb04",
+    "variants.css": "4e6f6996b698054de7af8e5d3cf9f1abeb10dd1e2586356d23a5f368df08fb1b",
+    "variants-sources.json": "9338a93ec5b6a22b71768932e136d98fb5736cd32ae3042025b73cd7ba6d91e7",
+    "featured-standard.static.html": "e8a8958521370b7b81a3ddb69c02e642176b1b4906e13fd8a18780f5eae72449"
+  }
+}

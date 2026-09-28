@@ -26,7 +26,7 @@ test('라이브러리 탐색·필터를 보존하고 상세 모달에서만 예�
   el.setAttribute('route','#/library');
   // 완성 페이지 진입점과 자료 유형 카드를 각각 검증합니다.
   const composition=el.querySelector('section[aria-labelledby="lib-composition-title"]');
-  assert.deepEqual([...composition.querySelectorAll('.lib-collection-card')].map(a=>a.getAttribute('href')),['./library/previews/portfolio/index.html','./portfolio-generation-comparison.html']);
+  assert.deepEqual([...composition.querySelectorAll('.lib-collection-card')].map(a=>a.getAttribute('href')),['./library/previews/portfolio/index.html','./portfolio-generation-comparison.html','./library/previews/portfolio/index.html?view=motion-library']);
   assert.equal(el.querySelectorAll('.lib-collection-card[href^="#/library/"]').length,12);
   assert.equal(el.querySelectorAll('.lib-types,.lib-grid').length,0);
   for(const card of el.querySelectorAll('.lib-collection-card'))assert.ok(card.querySelector('.lib-collection-icon svg[aria-hidden="true"]'));

@@ -642,6 +642,15 @@
       "email": "portfolio-demo@example.com"
     }
   },
+  "motionSupport": [
+    "hero",
+    "showcase",
+    "gallery",
+    "timeline",
+    "evidence",
+    "contact",
+    "case"
+  ],
   "eligible": [
     {
       "id": "moa",

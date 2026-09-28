@@ -20,8 +20,8 @@
     "showcase": "쇼케이스"
   },
   "motionRuntime": {
-    "bytes": 3906,
-    "sha256": "nHXjQC9Wsr7IVvFVyEFl7HYhaUpTQL8vlbIbCsKPM8M="
+    "bytes": 9835,
+    "sha256": "zUCznnJn8pIijmWsIQtRda4LTdqub6L3RvskiNyxKWw="
   },
   "variants": [
     {
@@ -676,7 +676,7 @@
   "sources": [
     {
       "path": "scripts/library/renderer/portfolio/v1/catalog.mjs",
-      "sha256": "249a7b902fa5b34431bf9cb2ea5c79d0aa218f3f148ff88afd0c1f7621ab8c12"
+      "sha256": "bbefb866d0d9644f674d513398d8137e9e7d74881905b673fe4368da39f10dd0"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/fixtures.mjs",
@@ -684,7 +684,7 @@
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/registry.jsx",
-      "sha256": "bbab21c7cbc1362832491581f456580375f4890e2419f4b557bd35f002e76573"
+      "sha256": "fbb635675c5ae729ee46ca2a66948f52d35c071ad2d761f3184a3613b05970c1"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/styles.css",
@@ -708,19 +708,31 @@
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/motion.mjs",
-      "sha256": "38e282dcb4017101685b850addbda6cf243fe7f32aaa5f86b421521939af49f7"
+      "sha256": "13aa7865a83c8df8339a11ed761aabeab7b87421a3b2638a4cffc21ac3438a92"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/motion.css",
-      "sha256": "9ce24d65f11de55df11b4e4a30c2e8eac8144a7c17694ce027a8b6f80416c9db"
+      "sha256": "75d627c525de1c27947591122738ff4abd870389d0c1b0102334488ff8589d7f"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/motion-export.mjs",
       "sha256": "51a86ebe6b41addac1178eaa9a715b07e6a20a84e19623018d3861504b7d713a"
     },
     {
+      "path": "scripts/library/renderer/portfolio/v1/motion-catalog.mjs",
+      "sha256": "f22348876af337d0946ba506e1ee2e47be9f4020f3d0d50c9744c6fc34eefcd7"
+    },
+    {
+      "path": "scripts/library/renderer/portfolio/v1/motion-library.jsx",
+      "sha256": "5086119cb23126a733c9ad5c487ce72c1fafb5d07ea12c9e10c5a0cbb8417d26"
+    },
+    {
+      "path": "scripts/library/renderer/portfolio/v1/motion-library.css",
+      "sha256": "22caf5260106ad5f5d2602bc44256436f1b794a08ce35a3ba95bf620304bff02"
+    },
+    {
       "path": "scripts/library/renderer/portfolio/v1/app.jsx",
-      "sha256": "5528fb8afb0f6deba09b1c1c5b87df248c4c39f37fdff0919fa07afd51285fd0"
+      "sha256": "6b908c5c533ae3feff72d0093e68db610e81716eaf7275ca9d5bfd2811c5afb9"
     }
   ],
   "originalSources": "./sources.json",

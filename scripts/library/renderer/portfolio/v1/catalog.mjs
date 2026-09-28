@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {motionSupportFor} from './motion-catalog.mjs';
 import {defaultMotion} from './motion.mjs';
 import {defineCatalog} from '@json-render/core';
 import {schema} from '@json-render/react/schema';
@@ -57,6 +58,7 @@ const groupSchema=z.object({id:z.string(),title:z.string(),projectIds:z.array(id
 export const catalog=defineCatalog(schema,{components:{
   PortfolioPage:{props:z.object({profile:baseContent.shape.profile,recipe:z.enum(['featured','gallery']),motion:z.object({preset:z.enum(['none','subtle','showcase'])})}),slots:['default'],description:'구성안에 연결된 디자인 방향을 적용합니다.'},
   Hero:{props:z.object({profile:baseContent.shape.profile,projects:z.array(projectSchema),recipe:z.enum(['featured','gallery'])}),description:'역할과 핵심 소개'},
+  ProjectShowcase:{props:z.object({projects:z.array(projectSchema),recipe:z.enum(['featured','gallery'])}),description:'프로젝트 보드의 방향 전환과 시제품 선택'},
   ProjectIndex:{props:z.object({projects:z.array(projectSchema),variant:z.enum(['list','gallery'])}),description:'목록형 또는 이미지 갤러리'},
   ProjectCaseStudy:{props:z.object({project:projectView,variant:z.enum(['media','process','text']),ordinal:z.number().int().min(1).max(8)}),description:'프로젝트별 이미지·과정·본문 중심 표현. 본문은 참조 데이터 그대로 사용합니다.'},
   CareerTimeline:{props:z.object({career:baseContent.shape.career}),description:'기간과 역할의 타임라인'},
@@ -88,5 +90,5 @@ export function compilePlan(plan,input){
   }};
   valid.plan.cases.forEach((c,i)=>{spec.elements['case-'+c.projectId]={type:'ProjectCaseStudy',props:{project:binding('projectById/'+c.projectId),variant:c.variant,ordinal:i+1},children:[]};});
   if(!catalog.validate(spec).success)throw new Error('카탈로그와 구성 결과가 맞지 않습니다.');
-  return {plan:valid.plan,content,state,spec};
+  return {plan:valid.plan,content,state,spec,motionSupport:motionSupportFor(Object.values(spec.elements).map(e=>e.type),valid.plan.motion.preset)};
 }

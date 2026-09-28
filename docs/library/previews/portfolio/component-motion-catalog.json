@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "scope": "현재 생성용 컴포넌트",
+  "components": [
+    {
+      "id": "hero",
+      "component": "Hero",
+      "title": "소개",
+      "icon": "intro",
+      "description": "제목·보드·메모를 순서대로 보여줍니다.",
+      "entrance": "역할별 순차 등장",
+      "intrinsic": "내부 프로젝트 전시가 선택 동작을 담당",
+      "owner": "slots",
+      "dependencies": [
+        "ProjectShowcase"
+      ],
+      "bindings": [],
+      "anchor": "intro",
+      "instruction": "다시 재생을 눌러 제목과 보드의 등장 순서를 확인하세요.",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "scripts/library/renderer/portfolio/v1/registry.jsx"
+    },
+    {
+      "id": "showcase",
+      "component": "ProjectShowcase",
+      "title": "프로젝트 전시",
+      "icon": "stack",
+      "description": "선택 방향에 맞춰 보드가 전환됩니다.",
+      "entrance": "보드·메모 순차 등장",
+      "intrinsic": "앞·뒤 방향 슬라이드와 시제품 선택",
+      "owner": "slots",
+      "dependencies": [],
+      "bindings": [],
+      "anchor": "intro",
+      "instruction": "모아 지도 → 온길 안내 → 루멘 노트 순서로 눌러 양방향 전환을 확인하세요.",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "scripts/library/renderer/portfolio/v1/registry.jsx"
+    },
+    {
+      "id": "gallery",
+      "component": "ProjectIndex",
+      "title": "프로젝트 갤러리",
+      "icon": "grid",
+      "description": "카드가 순서대로 등장하고 포인터에 반응합니다.",
+      "entrance": "카드 묶음 순차 등장",
+      "intrinsic": "화면 카드의 호버 상승과 복귀",
+      "owner": "group",
+      "dependencies": [],
+      "bindings": [],
+      "anchor": "work",
+      "instruction": "다시 재생 후 화면 카드 위에 포인터를 올렸다가 벗겨 보세요. 휴대폰에서는 선택 항목을 눌러 조작합니다.",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "scripts/library/renderer/portfolio/v1/registry.jsx"
+    },
+    {
+      "id": "case",
+      "component": "ProjectCaseStudy",
+      "title": "프로젝트 사례",
+      "icon": "document",
+      "description": "제목·시제품·과정을 이어서 보여줍니다.",
+      "entrance": "제목·화면·단계 등장",
+      "intrinsic": "시제품 선택과 원본 설명 펼치기",
+      "owner": "slots",
+      "dependencies": [],
+      "bindings": [],
+      "anchor": "case-moa",
+      "instruction": "시제품의 장소를 선택하고 원본 화면과 설명을 펼쳐 보세요.",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "scripts/library/renderer/portfolio/v1/registry.jsx"
+    },
+    {
+      "id": "timeline",
+      "component": "CareerTimeline",
+      "title": "경력 타임라인",
+      "icon": "timeline",
+      "description": "노드와 연결선, 경력 내용이 이어집니다.",
+      "entrance": "노드 확대·연결선 확장·본문 등장",
+      "intrinsic": "별도 선택 동작 없음",
+      "owner": "slots",
+      "dependencies": [],
+      "bindings": [
+        {
+          "selector": ".career .section-heading",
+          "cue": "section"
+        },
+        {
+          "selector": ".career-item .timeline-dot",
+          "cue": "timeline-node"
+        },
+        {
+          "selector": ".career-item [data-timeline-line]",
+          "cue": "timeline-line"
+        },
+        {
+          "selector": ".career-item>div:last-child",
+          "cue": "timeline-copy"
+        }
+      ],
+      "anchor": "career",
+      "instruction": "다시 재생을 눌러 노드·연결선·경력 내용이 이어지는 순서를 확인하세요.",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "scripts/library/renderer/portfolio/v1/registry.jsx"
+    },
+    {
+      "id": "evidence",
+      "component": "EvidenceCollection",
+      "title": "근거 자료",
+      "icon": "layers",
+      "description": "자료 묶음을 보여주고 상세 내용을 펼칩니다.",
+      "entrance": "프로젝트별 자료 묶음 등장",
+      "intrinsic": "펼치기·접기와 상태 표시",
+      "owner": "group",
+      "dependencies": [],
+      "bindings": [
+        {
+          "selector": ".v-evidence .section-heading",
+          "cue": "section"
+        },
+        {
+          "selector": ".v-evidence-group",
+          "cue": "card"
+        }
+      ],
+      "anchor": "evidence",
+      "instruction": "자료 제목을 누르거나 키보드 Enter로 펼치고 다시 접어 보세요.",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "scripts/library/renderer/portfolio/v1/registry.jsx"
+    },
+    {
+      "id": "contact",
+      "component": "Contact",
+      "title": "연락처",
+      "icon": "arrow",
+      "description": "마지막 연락처 영역을 자연스럽게 표시합니다.",
+      "entrance": "영역 등장",
+      "intrinsic": "별도 고유 모션 없음",
+      "owner": "group",
+      "dependencies": [],
+      "bindings": [
+        {
+          "selector": ".contact",
+          "cue": "section"
+        }
+      ],
+      "anchor": "contact",
+      "instruction": "다시 재생으로 등장 효과를 확인하세요. 연락처는 가상 예제 주소입니다.",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "scripts/library/renderer/portfolio/v1/registry.jsx"
+    }
+  ]
+}

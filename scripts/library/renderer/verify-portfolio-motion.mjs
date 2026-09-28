@@ -10,7 +10,7 @@ const out=path.join(root,'docs/library/previews/portfolio'),base=(process.env.PO
 const shots='/tmp/expresso-motion-qa';fs.mkdirSync(shots,{recursive:true});
 const browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});
 const results=[];
-const settle=page=>page.evaluate(async()=>{await Promise.allSettled(document.getAnimations().map(a=>a.finished));});
+const settle=page=>page.evaluate(async()=>{let timer;try{await Promise.race([Promise.allSettled(document.getAnimations().map(a=>a.finished)),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('종료되지 않은 모션: '+JSON.stringify(document.getAnimations().map(a=>({id:a.id,state:a.playState,pending:a.pending,target:a.effect.target.className}))))),5000);})]);}finally{clearTimeout(timer);}});
 try{
  for(const recipe of ['featured','gallery'])for(const preset of ['none','subtle','showcase'])for(const width of [390,1440]){
   const page=await browser.newPage({viewport:{width,height:1000},reducedMotion:'no-preference',acceptDownloads:true});
