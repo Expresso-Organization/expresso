@@ -351,7 +351,7 @@ GET /v1/job-analyses/3f2a1c8e-0b47-4d9a-91c2-6e5f0a7b1d34
 | 속성 | IN | OUT | Type | Description |
 | --- | --- | --- | --- | --- |
 | `recipeId` | O | | uuid | 생성 대상 레시피 |
-| `templateId` | O | | uuid | 선택한 디자인 템플릿 |
+| `templateId` | O | | uuid | 선택한 디자인 시스템 식별자. 현재 계약 필드명은 `templateId` |
 | `Idempotency-Key` | O | | String | 헤더. 중복 생성 방지 |
 | `content_type` | | O | String | application/json |
 | `jobId` | | O | uuid | 생성 작업 식별자 |
@@ -396,7 +396,7 @@ AI학습서버는 별도로 실행되는 서버다. 서비스 API와 포트·프
 | Method | URI | Description |
 | --- | --- | --- |
 | GET | `/training/datasets` | 데이터세트 목록 조회 (`?kind=match\|record`) |
-| POST | `/training/datasets` | 데이터세트 생성 — 쌍 생성 · 교사 라벨링 · 특징 추출 |
+| POST | `/training/datasets` | 데이터세트 생성 — 쌍 생성 · 교사 라벨링 · 입력 구성 |
 | GET | `/training/datasets/:version` | 데이터세트 상세(행 수 · 분포 · 교사 모델 · κ) |
 | DELETE | `/training/datasets/:version` | 데이터세트 삭제 |
 | GET | `/training/datasets/:version/review-samples` | 사람 검수용 표본 조회 (교사 라벨 가림) |
@@ -426,7 +426,7 @@ AI학습서버는 별도로 실행되는 서버다. 서비스 API와 포트·프
 
 ```text
 API 서버  ──▶  공고 적합도 판정 요청  ──▶ (IN)   AI학습서버(추론)
-          ◀──  공고별 점수 전송      ◀── (OUT)
+          ◀──  1차·2차 점수와 최종 순위 전송      ◀── (OUT)
 ```
 
 **Parameter**
@@ -566,8 +566,10 @@ API 서버  ──▶  공고 적합도 판정 요청  ──▶ (IN)   AI학습
 | `ndcg` | | O | Object | NDCG@10 (공고·기록 추천) |
 | `recallAtK` | | O | Object | 후보 선별의 Recall@K |
 | `mae` | | O | Number | 적합도 점수의 평균 절대 오차 |
+| `pairwiseAgreement` | | O | Number | 같은 프로필 공고쌍의 순서 일치율 |
 | `baseline` | | O | Object | 규칙 기반 동일 지표 |
 | `teacherAgreement` | | O | Object | 교사↔사람 κ |
 | `studentHuman` | | O | Object | 학생↔사람 일치도 |
-| `latencyMs` | | O | Object | 단계별 p95 추론 지연·처리량 |
+| `latencyMs` | | O | Object | 선별·재정렬·전체 p95 추론 지연 |
+| `throughputPerSecond` | | O | Number | 초당 처리한 후보 쌍 수 |
 | `approved` | | O | bool | 9.2 기준 충족 여부 |
