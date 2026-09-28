@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {defaultMotion} from './motion.mjs';
 import {defineCatalog} from '@json-render/core';
 import {schema} from '@json-render/react/schema';
 import {contentSchema as baseContent,projectSchema as baseProject} from '../catalog.mjs';
@@ -13,7 +14,7 @@ const field=z.enum(['problem','contribution','outcome']);
 const showcaseSchema=z.strictObject({kind:z.enum(['map','network','wayfinding']),label:z.string(),subtitle:z.string(),items:z.array(z.tuple([z.string(),z.string(),z.string()])).length(3)});
 const projectSchema=baseProject.extend({process:z.array(field).max(3).default([]),showcase:showcaseSchema.nullable().default(null)});
 export const contentSchema=baseContent.extend({projects:z.array(projectSchema).min(1).max(8)});
-export const planSchema=z.strictObject({version:z.literal(1),recipe:z.enum(['featured','gallery']),cases:z.array(z.strictObject({projectId:id,variant:z.enum(['media','process','text'])})).min(1).max(8),evidence:z.enum(['grouped','expanded'])});
+export const planSchema=z.strictObject({version:z.literal(1),recipe:z.enum(['featured','gallery']),cases:z.array(z.strictObject({projectId:id,variant:z.enum(['media','process','text'])})).min(1).max(8),evidence:z.enum(['grouped','expanded']),motion:z.strictObject({preset:z.enum(['none','subtle','showcase'])}).default({preset:'none'})});
 
 export function candidates(project){
   return ['text',...(project.image?['media']:[]),...(project.process.length===3?['process']:[])];
@@ -31,10 +32,10 @@ export function validateContent(input){
   }
   return content;
 }
-export function defaultPlan(input,recipe='featured'){
+export function defaultPlan(input,recipe='featured',preset=defaultMotion(recipe)){
   const content=validateContent(input);
   const preferred=recipe==='featured'?['media','process','text']:['text','media','process'];
-  return planSchema.parse({version:1,recipe,evidence:recipe==='featured'?'grouped':'expanded',cases:content.projects.map((p,i)=>{
+  return planSchema.parse({version:1,recipe,motion:{preset},evidence:recipe==='featured'?'grouped':'expanded',cases:content.projects.map((p,i)=>{
     const allowed=candidates(p),wanted=preferred[i%preferred.length];
     return {projectId:p.id,variant:allowed.includes(wanted)?wanted:allowed.includes('process')?'process':'text'};
   })});
@@ -54,7 +55,7 @@ export function validatePlan(plan,input){
 const projectView=projectSchema.extend({artifacts:z.array(baseContent.shape.evidence.element)});
 const groupSchema=z.object({id:z.string(),title:z.string(),projectIds:z.array(id),items:z.array(baseContent.shape.evidence.element)});
 export const catalog=defineCatalog(schema,{components:{
-  PortfolioPage:{props:z.object({profile:baseContent.shape.profile,recipe:z.enum(['featured','gallery'])}),slots:['default'],description:'구성안에 연결된 디자인 방향을 적용합니다.'},
+  PortfolioPage:{props:z.object({profile:baseContent.shape.profile,recipe:z.enum(['featured','gallery']),motion:z.object({preset:z.enum(['none','subtle','showcase'])})}),slots:['default'],description:'구성안에 연결된 디자인 방향을 적용합니다.'},
   Hero:{props:z.object({profile:baseContent.shape.profile,projects:z.array(projectSchema),recipe:z.enum(['featured','gallery'])}),description:'역할과 핵심 소개'},
   ProjectIndex:{props:z.object({projects:z.array(projectSchema),variant:z.enum(['list','gallery'])}),description:'목록형 또는 이미지 갤러리'},
   ProjectCaseStudy:{props:z.object({project:projectView,variant:z.enum(['media','process','text']),ordinal:z.number().int().min(1).max(8)}),description:'프로젝트별 이미지·과정·본문 중심 표현. 본문은 참조 데이터 그대로 사용합니다.'},
@@ -78,7 +79,7 @@ export function compilePlan(plan,input){
   const cases=valid.plan.cases.map(c=>'case-'+c.projectId);
   const ending=valid.plan.recipe==='featured'?['career','evidence']:['evidence','career'];
   const spec={root:'page',elements:{
-    page:{type:'PortfolioPage',props:{profile:binding('profile'),recipe:valid.plan.recipe},children:['intro','work',...cases,...ending,'contact']},
+    page:{type:'PortfolioPage',props:{profile:binding('profile'),recipe:valid.plan.recipe,motion:valid.plan.motion},children:['intro','work',...cases,...ending,'contact']},
     intro:{type:'Hero',props:{profile:binding('profile'),projects:binding('projects'),recipe:valid.plan.recipe},children:[]},
     work:{type:'ProjectIndex',props:{projects:binding('projects'),variant:valid.plan.recipe==='featured'?'list':'gallery'},children:[]},
     career:{type:'CareerTimeline',props:{career:binding('career')},children:[]},

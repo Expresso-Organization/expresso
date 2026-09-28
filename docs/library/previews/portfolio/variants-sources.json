@@ -14,12 +14,67 @@
     "grouped": "프로젝트별 펼치기",
     "expanded": "내용 펼쳐 보기"
   },
+  "motionPresets": {
+    "none": "없음",
+    "subtle": "차분하게",
+    "showcase": "쇼케이스"
+  },
+  "motionRuntime": {
+    "bytes": 3906,
+    "sha256": "nHXjQC9Wsr7IVvFVyEFl7HYhaUpTQL8vlbIbCsKPM8M="
+  },
   "variants": [
     {
       "recipe": "featured",
       "scenario": "standard",
-      "planBytes": 183,
-      "specBytes": 1162,
+      "motion": "none",
+      "file": "featured-standard-none",
+      "planBytes": 210,
+      "specBytes": 1189,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "standard",
+      "motion": "subtle",
+      "file": "featured-standard",
+      "planBytes": 212,
+      "specBytes": 1191,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "standard",
+      "motion": "showcase",
+      "file": "featured-standard-showcase",
+      "planBytes": 214,
+      "specBytes": 1193,
       "cases": [
         {
           "projectId": "moa",
@@ -38,8 +93,54 @@
     {
       "recipe": "featured",
       "scenario": "long",
-      "planBytes": 183,
-      "specBytes": 1162,
+      "motion": "none",
+      "file": "featured-long-none",
+      "planBytes": 210,
+      "specBytes": 1189,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "long",
+      "motion": "subtle",
+      "file": "featured-long",
+      "planBytes": 212,
+      "specBytes": 1191,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "long",
+      "motion": "showcase",
+      "file": "featured-long-showcase",
+      "planBytes": 214,
+      "specBytes": 1193,
       "cases": [
         {
           "projectId": "moa",
@@ -58,8 +159,54 @@
     {
       "recipe": "featured",
       "scenario": "no-images",
-      "planBytes": 182,
-      "specBytes": 1161,
+      "motion": "none",
+      "file": "featured-no-images-none",
+      "planBytes": 209,
+      "specBytes": 1188,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "no-images",
+      "motion": "subtle",
+      "file": "featured-no-images",
+      "planBytes": 211,
+      "specBytes": 1190,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "no-images",
+      "motion": "showcase",
+      "file": "featured-no-images-showcase",
+      "planBytes": 213,
+      "specBytes": 1192,
       "cases": [
         {
           "projectId": "moa",
@@ -78,8 +225,94 @@
     {
       "recipe": "featured",
       "scenario": "many",
-      "planBytes": 406,
-      "specBytes": 1975,
+      "motion": "none",
+      "file": "featured-many-none",
+      "planBytes": 433,
+      "specBytes": 2002,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-3",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-4",
+          "variant": "process"
+        },
+        {
+          "projectId": "project-5",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-6",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-7",
+          "variant": "process"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "many",
+      "motion": "subtle",
+      "file": "featured-many",
+      "planBytes": 435,
+      "specBytes": 2004,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-3",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-4",
+          "variant": "process"
+        },
+        {
+          "projectId": "project-5",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-6",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-7",
+          "variant": "process"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "many",
+      "motion": "showcase",
+      "file": "featured-many-showcase",
+      "planBytes": 437,
+      "specBytes": 2006,
       "cases": [
         {
           "projectId": "moa",
@@ -118,8 +351,54 @@
     {
       "recipe": "gallery",
       "scenario": "standard",
-      "planBytes": 180,
-      "specBytes": 1161,
+      "motion": "none",
+      "file": "gallery-standard-none",
+      "planBytes": 207,
+      "specBytes": 1188,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "standard",
+      "motion": "subtle",
+      "file": "gallery-standard-subtle",
+      "planBytes": 209,
+      "specBytes": 1190,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "standard",
+      "motion": "showcase",
+      "file": "gallery-standard",
+      "planBytes": 211,
+      "specBytes": 1192,
       "cases": [
         {
           "projectId": "moa",
@@ -138,8 +417,54 @@
     {
       "recipe": "gallery",
       "scenario": "long",
-      "planBytes": 180,
-      "specBytes": 1161,
+      "motion": "none",
+      "file": "gallery-long-none",
+      "planBytes": 207,
+      "specBytes": 1188,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "long",
+      "motion": "subtle",
+      "file": "gallery-long-subtle",
+      "planBytes": 209,
+      "specBytes": 1190,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "long",
+      "motion": "showcase",
+      "file": "gallery-long",
+      "planBytes": 211,
+      "specBytes": 1192,
       "cases": [
         {
           "projectId": "moa",
@@ -158,8 +483,54 @@
     {
       "recipe": "gallery",
       "scenario": "no-images",
-      "planBytes": 182,
-      "specBytes": 1163,
+      "motion": "none",
+      "file": "gallery-no-images-none",
+      "planBytes": 209,
+      "specBytes": 1190,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "no-images",
+      "motion": "subtle",
+      "file": "gallery-no-images-subtle",
+      "planBytes": 211,
+      "specBytes": 1192,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "no-images",
+      "motion": "showcase",
+      "file": "gallery-no-images",
+      "planBytes": 213,
+      "specBytes": 1194,
       "cases": [
         {
           "projectId": "moa",
@@ -178,8 +549,94 @@
     {
       "recipe": "gallery",
       "scenario": "many",
-      "planBytes": 397,
-      "specBytes": 1968,
+      "motion": "none",
+      "file": "gallery-many-none",
+      "planBytes": 424,
+      "specBytes": 1995,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-3",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-4",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-5",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-6",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-7",
+          "variant": "media"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "many",
+      "motion": "subtle",
+      "file": "gallery-many-subtle",
+      "planBytes": 426,
+      "specBytes": 1997,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-3",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-4",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-5",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-6",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-7",
+          "variant": "media"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "many",
+      "motion": "showcase",
+      "file": "gallery-many",
+      "planBytes": 428,
+      "specBytes": 1999,
       "cases": [
         {
           "projectId": "moa",
@@ -219,7 +676,7 @@
   "sources": [
     {
       "path": "scripts/library/renderer/portfolio/v1/catalog.mjs",
-      "sha256": "e28621a0b7797d8421fc0783530571ebd9cbb836e73a2b18a5bdc1b4378ea09a"
+      "sha256": "249a7b902fa5b34431bf9cb2ea5c79d0aa218f3f148ff88afd0c1f7621ab8c12"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/fixtures.mjs",
@@ -227,7 +684,7 @@
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/registry.jsx",
-      "sha256": "54772ebd162a2d4042bce624dcea3e0d843301c4e6e9d2540939f74508a825ea"
+      "sha256": "bbab21c7cbc1362832491581f456580375f4890e2419f4b557bd35f002e76573"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/styles.css",
@@ -239,7 +696,7 @@
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/showcase.jsx",
-      "sha256": "cbb7371957505005226d367a0d33d059448edc644fced0fa6cda85918ad5bb06"
+      "sha256": "c9307cf30c446b66ddb966edf29f3c9045536f80c2ebad01aebb5fa473c26992"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/showcase.css",
@@ -250,8 +707,20 @@
       "sha256": "dd672ab86d19e1ed1ee5d16d175d442ce227d008b763c46852529485d85030b5"
     },
     {
+      "path": "scripts/library/renderer/portfolio/v1/motion.mjs",
+      "sha256": "38e282dcb4017101685b850addbda6cf243fe7f32aaa5f86b421521939af49f7"
+    },
+    {
+      "path": "scripts/library/renderer/portfolio/v1/motion.css",
+      "sha256": "9ce24d65f11de55df11b4e4a30c2e8eac8144a7c17694ce027a8b6f80416c9db"
+    },
+    {
+      "path": "scripts/library/renderer/portfolio/v1/motion-export.mjs",
+      "sha256": "51a86ebe6b41addac1178eaa9a715b07e6a20a84e19623018d3861504b7d713a"
+    },
+    {
       "path": "scripts/library/renderer/portfolio/v1/app.jsx",
-      "sha256": "a0479848e7a8e87536217fa89875e776d9012e499792ee5619643670d093aaca"
+      "sha256": "5528fb8afb0f6deba09b1c1c5b87df248c4c39f37fdff0919fa07afd51285fd0"
     }
   ],
   "originalSources": "./sources.json",

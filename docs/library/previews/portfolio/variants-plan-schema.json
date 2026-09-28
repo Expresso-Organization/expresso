@@ -46,13 +46,34 @@
         "grouped",
         "expanded"
       ]
+    },
+    "motion": {
+      "default": {
+        "preset": "none"
+      },
+      "type": "object",
+      "properties": {
+        "preset": {
+          "type": "string",
+          "enum": [
+            "none",
+            "subtle",
+            "showcase"
+          ]
+        }
+      },
+      "required": [
+        "preset"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
     "version",
     "recipe",
     "cases",
-    "evidence"
+    "evidence",
+    "motion"
   ],
   "additionalProperties": false
 }

@@ -21,7 +21,8 @@
     { "projectId": "lumen", "variant": "process" },
     { "projectId": "ongil", "variant": "text" }
   ],
-  "evidence": "grouped"
+  "evidence": "grouped",
+  "motion": { "preset": "subtle" }
 }
 ```
 
@@ -43,7 +44,7 @@
 
 기존 shadcn Card와 Timeline 구현, 데이터 바인딩과 근거 연결은 재사용합니다. Hero는 방향에 맞는 의미 구조로 재구성했습니다. 같은 가상 프로젝트의 조작 화면을 사용하며 보드·메모·색면의 구성으로 차이를 만듭니다. 지도·관계도·층별 안내는 HTML/SVG로 동작하는 제품 UI이므로 별도의 사진·배경 이미지 생성은 사용하지 않았습니다.
 
-기본 간격은 8·16·24·32px이며 시제품 창에는 반경 8·12px, 작업 보드에는 회전과 그림자를 사용합니다. 제목과 이름은 큰 시제품 화면과 함께 보이도록 각각 34–56px, 48–88px 범위로 줄였습니다. 큰 섹션 여백은 편집 지면의 구분을 위해 48·64·96px를 사용합니다. 작은 화면은 본문 한 열, 과정 세로 목록, 경력 세로 목록으로 전환합니다. 프로젝트 선택은 250ms의 8px 이동과 불투명도 전환을, 경로 선택은 180ms의 강조 전환을 사용합니다. 모션 감소에서는 애니메이션과 기울기를 제거합니다.
+기본 간격은 8·16·24·32px이며 시제품 창에는 반경 8·12px, 작업 보드에는 회전과 그림자를 사용합니다. 제목과 이름은 큰 시제품 화면과 함께 보이도록 각각 34–56px, 48–88px 범위로 줄였습니다. 큰 섹션 여백은 편집 지면의 구분을 위해 48·64·96px를 사용합니다. 작은 화면은 본문 한 열, 과정 세로 목록, 경력 세로 목록으로 전환합니다. 프로젝트 선택은 220ms의 8px 이동과 불투명도 전환을, 경로 선택은 180ms의 강조 전환을 사용합니다. 페이지 등장에는 아래 모션 프리셋을 적용합니다. 모션 감소에서는 애니메이션과 기울기를 제거합니다.
 
 명조는 [Google Fonts의 Nanum Myeongjo 원본](https://github.com/google/fonts/tree/main/ofl/nanummyeongjo)을 WOFF로 변환하고 OFL의 예약 이름 조건에 따라 **Expresso Editorial**로 이름을 변경했습니다. 원본 글리프 전체를 보존했습니다. `assets/editorial-font-source.json`에 원본·변환본 해시와 도구 버전을, `assets/editorial-font-OFL.txt`에 이용 조건을 남겼습니다. 파일은 약 1MB이며 에디토리얼 정적 HTML에는 내장합니다. 포스터 정적 HTML에는 서체 데이터를 넣지 않습니다. 초기 v0 및 생성 방식 비교의 원본은 유지합니다.
 
@@ -75,9 +76,31 @@
 
 검증은 Chrome의 390·768·1440px에서 첫 화면 전환, 각 시제품의 선택·복귀, 키보드 선택, 독립 상태, 모션 감소, 이미지 실패, JavaScript 없는 출력을 확인합니다. 상태 변경 후 애니메이션이 끝난 상태를 검사합니다. 스타일 선호에 대한 최종 판단은 사용자의 화면 검토에 남겨 둡니다.
 
+## 모션 계약과 실행
+
+`motion.preset`에 `none`, `subtle`, `showcase` 중 하나를 지정하면 생성 계약·React 렌더러·HTML 내보내기에 같은 설정이 연결됩니다. 이전 계획에 `motion`이 없으면 `none`으로 해석합니다. 검증용 기본 계획은 에디토리얼에 `subtle`, 포스터에 `showcase`를 사용합니다. AI 자동 선택 호출은 후속 단계이며, 현재 프리셋은 미리보기 선택기와 고정 계획에서 지정합니다.
+
+| 프리셋 | 등장 시간 | 이동 거리 | 순차 등장 간격 |
+| --- | --- | --- | --- |
+| 없음 | 0 | 0 | 0 |
+| 차분하게 | 420ms | 12px | 55ms |
+| 쇼케이스 | 650ms | 28px | 85ms |
+
+위 수치는 이번 예제를 위한 설정입니다. 쇼케이스 보드는 0.96배에서 원래 크기로, 메모는 기본 거리의 1.3배에서 등장합니다. 제목·보드·메모를 순서대로 표시하며, 카드의 순차 지연은 최대 세 간격으로 제한합니다. 조작에 대한 반응은 별도의 220ms 전환으로 짧게 유지합니다.
+
+`motion.mjs` 한 파일이 `IntersectionObserver`와 Web Animations API로 동작합니다. 렌더러는 대상 요소에 `data-reveal`로 역할을 표시합니다. 이미 자체 움직임이 있는 시제품 내부에는 등장 효과를 중첩하지 않고 시제품의 바깥 요소에만 적용합니다. 대기 중인 화면 밖 요소는 진입할 때 한 번 등장합니다. 다시 재생할 때 이전 관찰자와 실행 중인 애니메이션을 정리합니다. 진행 중인 변형이 끝나면 원래 디자인의 회전·배치를 복원합니다.
+
+시스템 모션 감소가 우선하며 실행 중 설정을 바꾸어도 적용됩니다. 키보드 포커스와 앵커로 접근한 대상은 즉시 표시합니다. 모션 없음은 기존 CSS 전환도 끕니다. JavaScript 또는 필요한 API가 없으면 내용은 처음부터 표시되고 네이티브 라디오·펼치기는 계속 작동합니다. 인쇄 시 대기 상태를 해제해 내용을 표시합니다.
+
+단일 HTML은 선택한 모션 실행 코드를 내장합니다. `none` 파일에는 스크립트를 넣지 않습니다. 그 외 파일은 빌드한 코드의 SHA-256만 CSP에서 허용하고, 외부 스크립트나 네트워크 요청을 추가하지 않습니다. 이는 초기 v0의 스크립트 없는 내보내기와 별도이며, 초기 파일은 그대로 유지합니다. 각 입력·디자인·프리셋을 조합한 파일 24개를 생성합니다. 기본 프리셋은 기존 파일명을 유지하고 나머지는 `-none`, `-subtle`, `-showcase` 접미사를 사용합니다.
+
+미리보기에서 모션을 선택하면 주소의 `motion` 값과 구성 JSON, HTML 저장 대상이 함께 바뀝니다. 디자인을 바꾸면 그 디자인의 기본 모션으로 돌아갑니다. **다시 재생**은 첫 화면으로 돌아가 등장 효과를 다시 보여줍니다. 시스템 모션 감소가 켜져 있으면 상태를 표시하고 재생 버튼을 비활성화합니다.
+
+`verify-portfolio-motion.mjs`는 두 디자인·세 프리셋·두 화면 폭의 12개 조합을 검사합니다. 등장 간격과 중간 상태, 스크롤 시 한 번 실행, 포커스 즉시 표시, 반복 재생 시 관찰자 정리, 실행 중 모션 감소 변경, 선택한 파일 다운로드와 해시, 정적 파일의 CSP 실행, JavaScript/API 없는 상태, 앵커 진입을 확인합니다. `motion-verification.json`에 결과와 파일 해시를 남깁니다.
+
 ## 포털과 출력
 
-개발 포털의 **라이브러리 → 완성 페이지 → 포트폴리오 조합 예제**에서 디자인 방향과 입력을 전환합니다. 구성 JSON 버튼으로 선택 내용을 확인하고, 전체 spec·데이터 JSON 및 단일 HTML을 저장할 수 있습니다.
+개발 포털의 **라이브러리 → 완성 페이지 → 포트폴리오 조합 예제**에서 디자인 방향·입력·모션을 전환합니다. 구성 JSON 버튼으로 선택 내용을 확인하고, 전체 spec·데이터 JSON 및 단일 HTML을 저장할 수 있습니다.
 
 - 현재 예제: `docs/library/previews/portfolio/index.html`
 - 초기 예제: `docs/library/previews/portfolio/baseline.html`
@@ -101,6 +124,7 @@ node --test scripts/library/renderer/portfolio/v1/catalog.test.mjs
 node scripts/library/renderer/build-portfolio-variants.mjs
 # 별도 터미널: python3 -m http.server 8924 --bind 127.0.0.1
 node scripts/library/renderer/verify-portfolio-variants.mjs
+PORTFOLIO_PREVIEW_BASE=http://127.0.0.1:8924/docs node scripts/library/renderer/verify-portfolio-motion.mjs
 node --test scripts/library/portfolio-variants.test.mjs scripts/library/portfolio-composition.test.mjs
 ```
 

@@ -144,3 +144,12 @@
 @keyframes showcase-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.project-showcase{--scene-motion:0ms}.project-showcase *,.project-scene *{animation:none!important;transition:none!important}.showcase-board>.project-scene,.visual-project-cover>.project-scene{transform:none!important}}
 @media print{.showcase-board>.project-scene{transform:none}.showcase-note{position:static;transform:none;margin-top:16px;max-width:none}.showcase-board{padding:0}.showcase-case-link,.showcase-offset-sheet{display:none}.project-showcase .showcase-panel{animation:none}.visual-hero-main{display:block!important}.project-showcase{margin-top:24px}.case-original{break-inside:avoid}}
+
+/* 기본 HTML은 보입니다. 관찰자가 준비된 뒤 화면 밖의 대상만 대기시킵니다. */
+.variant-shell[data-motion-effective]:not([data-motion-effective=none]) [data-motion-state=pending]{opacity:0}
+.variant-shell[data-motion-preset] .showcase-panel{animation:none}
+.variant-shell[data-motion-effective=none] *,.variant-shell[data-motion-preset=none] *,.variant-shell[data-input-mode=keyboard] *{animation:none!important;transition:none!important}
+.variant-shell [data-motion-state=pending]:focus-within{opacity:1!important}
+.preview-toolbar .motion-status{font-size:11px;color:#d9e2f0}.preview-toolbar button:disabled{opacity:.55;cursor:default}
+@media(prefers-reduced-motion:reduce){.variant-shell [data-motion-state]{opacity:1!important;animation:none!important;transition:none!important}}
+@media print{.variant-shell [data-motion-state]{opacity:1!important;transform:none!important}}

@@ -37,7 +37,10 @@
         "variant": "media"
       }
     ],
-    "evidence": "expanded"
+    "evidence": "expanded",
+    "motion": {
+      "preset": "showcase"
+    }
   },
   "spec": {
     "root": "page",
@@ -48,7 +51,10 @@
           "profile": {
             "$state": "/profile"
           },
-          "recipe": "gallery"
+          "recipe": "gallery",
+          "motion": {
+            "preset": "showcase"
+          }
         },
         "children": [
           "intro",

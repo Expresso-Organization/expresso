@@ -1,0 +1,8 @@
+/* 기본 HTML은 보입니다. 관찰자가 준비된 뒤 화면 밖의 대상만 대기시킵니다. */
+.variant-shell[data-motion-effective]:not([data-motion-effective=none]) [data-motion-state=pending]{opacity:0}
+.variant-shell[data-motion-preset] .showcase-panel{animation:none}
+.variant-shell[data-motion-effective=none] *,.variant-shell[data-motion-preset=none] *,.variant-shell[data-input-mode=keyboard] *{animation:none!important;transition:none!important}
+.variant-shell [data-motion-state=pending]:focus-within{opacity:1!important}
+.preview-toolbar .motion-status{font-size:11px;color:#d9e2f0}.preview-toolbar button:disabled{opacity:.55;cursor:default}
+@media(prefers-reduced-motion:reduce){.variant-shell [data-motion-state]{opacity:1!important;animation:none!important;transition:none!important}}
+@media print{.variant-shell [data-motion-state]{opacity:1!important;transform:none!important}}

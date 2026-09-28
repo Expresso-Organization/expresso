@@ -108,7 +108,7 @@
           "offset": 327.796875
         }
       ],
-      "height": 10621
+      "height": 10660
     },
     {
       "recipe": "featured",
@@ -217,7 +217,7 @@
           "offset": 0
         }
       ],
-      "height": 8899
+      "height": 8911
     },
     {
       "recipe": "featured",
@@ -435,7 +435,7 @@
           "offset": 528.1875
         }
       ],
-      "height": 12164
+      "height": 12203
     },
     {
       "recipe": "featured",
@@ -544,7 +544,7 @@
           "offset": 0
         }
       ],
-      "height": 10189
+      "height": 10201
     },
     {
       "recipe": "featured",
@@ -757,7 +757,7 @@
       ],
       "h1": 1,
       "mediaAlignments": [],
-      "height": 10566
+      "height": 10605
     },
     {
       "recipe": "featured",
@@ -861,7 +861,7 @@
       ],
       "h1": 1,
       "mediaAlignments": [],
-      "height": 9114
+      "height": 9126
     },
     {
       "recipe": "featured",
@@ -1138,7 +1138,7 @@
           "offset": 327.796875
         }
       ],
-      "height": 21060
+      "height": 21099
     },
     {
       "recipe": "featured",
@@ -1311,7 +1311,7 @@
           "offset": 0
         }
       ],
-      "height": 16428
+      "height": 16440
     },
     {
       "recipe": "featured",
@@ -1609,7 +1609,7 @@
           "offset": 326.890625
         }
       ],
-      "height": 11657
+      "height": 11696
     },
     {
       "recipe": "gallery",
@@ -1734,7 +1734,7 @@
           "offset": 0
         }
       ],
-      "height": 9494
+      "height": 9506
     },
     {
       "recipe": "gallery",
@@ -1984,7 +1984,7 @@
           "offset": 379.390625
         }
       ],
-      "height": 13088
+      "height": 13127
     },
     {
       "recipe": "gallery",
@@ -2109,7 +2109,7 @@
           "offset": 0
         }
       ],
-      "height": 10487
+      "height": 10499
     },
     {
       "recipe": "gallery",
@@ -2342,7 +2342,7 @@
       ],
       "h1": 1,
       "mediaAlignments": [],
-      "height": 11589
+      "height": 11628
     },
     {
       "recipe": "gallery",
@@ -2450,7 +2450,7 @@
       ],
       "h1": 1,
       "mediaAlignments": [],
-      "height": 9782
+      "height": 9794
     },
     {
       "recipe": "gallery",
@@ -2771,7 +2771,7 @@
           "offset": 326.890625
         }
       ],
-      "height": 22371
+      "height": 22410
     },
     {
       "recipe": "gallery",
@@ -2984,7 +2984,7 @@
           "offset": 0
         }
       ],
-      "height": 16641
+      "height": 16653
     },
     {
       "recipe": "gallery",
@@ -3219,28 +3219,28 @@
   },
   "artifactHashes": {
     "index.html": "502086228d491559451b5026342880d68bd7367fb72b7b32caca88ed59677c79",
-    "variants.js": "4c39448356a96c2aedf0c86639b668d444753c66cce20074932873607925d231",
-    "variants.css": "20b51f2b44477bac9309977d75449974afb6d6432e0fc9daaa913196f2421211",
-    "variants-sources.json": "c8b0baabff61072b7ae07bfc3dc1a1c7dbf8bdde2b1ee7506aeccfa8ac136ff3",
-    "variants-plan-schema.json": "dfe3751e96cf32d57c0ce558a941ece9d0593efc8023628258cf3d76cdd47af0",
+    "variants.js": "adaae7902c5b13c996d9feb586942967710b9e4f2b84f06c57b343bd948e2277",
+    "variants.css": "fb54320ca31890b502a0475b6f0c2babf765572c4fcc5977cfc46f50fa2f8a0f",
+    "variants-sources.json": "ca0198be65a3897d48e83b79955cbd71f5b37f099454a1e6bf89ba114e7745b1",
+    "variants-plan-schema.json": "e2904032a05364d5eb13c90f43e9b0ebf8e25b3228c00f76aae56d4eb23e5dbd",
     "assets/expresso-editorial.woff": "a5a0da18422413e1baf6ff7466ae98e3417c9cffd6a3afc07ecb6d404932ee20",
     "assets/editorial-font-OFL.txt": "8eb1c1019fe7fe6d0b6e7d7bbbba1d9cbdd969d8c5f26455708f6cfb8a77284c",
     "assets/editorial-font-source.json": "f48ee21a25a65e3ae36ee9ac71720d438b8e84aa355d34ae9e99d19778ececf9",
-    "featured-standard.static.html": "4579ffd5e0eb205f7cd9b1d52957399f03faf37ba2db00d3207e1d18c7174c57",
-    "featured-standard.json": "5c9e094d1b924e7b6c402d980112d90117c30c7f7f23ee306c6c73cded36a40f",
-    "featured-long.static.html": "cfb92ee5dfec4eb7ec4d71effe700bfb6c8c2598024b62f3b4760049505cee91",
-    "featured-long.json": "b971b8b4b407f1ab1e67da266b867e3fbe76841daedd9f278cdfb2d3c52d4aa2",
-    "featured-no-images.static.html": "2b85db7ca9616d9ba228138f4ca4f2c9a1bb8a346a270f8fe36477007f76c4fd",
-    "featured-no-images.json": "f6f00e112349a4697b59d09b6ed0fd05df5d5c0e20efbeb1cfd8ea51639a1314",
-    "featured-many.static.html": "83bfaad09a0c704b21242e80e193a49fd5e9cd78c427b996c20051ec29f9d531",
-    "featured-many.json": "6b849a289916614a01da68350ae9a11092f0af4985f91b2c920a2f80135b1a04",
-    "gallery-standard.static.html": "ad0e1223718d9d9c326463ab8ee1de8cb8d93dc2b0144e3625cca28d7560f7e3",
-    "gallery-standard.json": "00c73779d8180263ec6e6bca539d773c1430344d32119bf746b34c52030e3a54",
-    "gallery-long.static.html": "8738bb4d30323925566e209f570b1b921bb2afc813bbd0b1a20eec5f20e37296",
-    "gallery-long.json": "4ea7ac398800efe82ab2b93c23005474d1c6c08fb1b8d373efc84e256285cd20",
-    "gallery-no-images.static.html": "91741d839d7bd2cddbb22cbc8b1aab0d5ca06f726f37e51579ad83779316e02a",
-    "gallery-no-images.json": "4b5dc6d93da2abc4320481d53166b0c0af74ec1fc44455a44a29fd261aff39ab",
-    "gallery-many.static.html": "9fcf8566c69fb3d2eebaec6145d4e17d9ff8b0dcc5d2b69064b2841d41c1e3f1",
-    "gallery-many.json": "c29a21fbc3c95d4291bec45b0b05c0adb9a837ab074a6f6cc61e82a8181deca6"
+    "featured-standard.static.html": "9e786acfe0ee1c2b28a8c6a50af58057565c6605ab025daa1ea1ede44f769416",
+    "featured-standard.json": "666bd44f0f932e6dc899e8075a7130c1c81f882d761296a57473535c6b73f581",
+    "featured-long.static.html": "22e47a8744592db6a3cd91d48dbc6eb057b8471e3aa05562397491f10542fa0e",
+    "featured-long.json": "f72ad145593b39c97721b43dd9c458facd55d349f284dfcca5b35015f2f6a038",
+    "featured-no-images.static.html": "146863c17a63cb6b5ec6efc0ab5b90c5cc44597d53778e1df71f1cf087e58146",
+    "featured-no-images.json": "4a2f7dd290e1c0db58543edae5f5656929aebf7284841442f019f037cf2d7f78",
+    "featured-many.static.html": "236ac598b6dd9d017d145c21e1b6f8ed7b19012e490c2eb471a67b52a86ffb8f",
+    "featured-many.json": "a8c891efc484090284a2df01103a1cbc6ce2b7fa9eb7b73e01e3f57bf937430d",
+    "gallery-standard.static.html": "c4fb364467b33c450ae49665a45ec2111cae0dceeee88a1f8b7fd86d191ab7b8",
+    "gallery-standard.json": "51a81fa0d926f6f5373d56f74f3badda8433ab440fbba477c2cd6622a3e228bf",
+    "gallery-long.static.html": "d60b4d1dcb8dae0627141078ff72f55d77e49b11596c6201424d6fc4f531d8f4",
+    "gallery-long.json": "a11c434cbcee7a145515154cb49372f8eb1cb665acd5fee819cad682bd4294de",
+    "gallery-no-images.static.html": "b1693ae99477adbd5fbdf9df0b1d146810fdcb596249b5f6737a3de3e60a5bc0",
+    "gallery-no-images.json": "7c9639aea666528234b1c173d3e755c2d6b1a1f3e58176c0931043f1a74298b1",
+    "gallery-many.static.html": "601ea066ab6cb581ffe6aa928d02d00e96137dfaa2a4fa5205521ee1c0eaa83f",
+    "gallery-many.json": "f54020d9913da3152ad58bcc2b8d21bf0bb4cf70a3ec488cfba230ed12fdf1d8"
   }
 }

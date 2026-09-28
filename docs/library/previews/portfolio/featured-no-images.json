@@ -17,7 +17,10 @@
         "variant": "text"
       }
     ],
-    "evidence": "grouped"
+    "evidence": "grouped",
+    "motion": {
+      "preset": "subtle"
+    }
   },
   "spec": {
     "root": "page",
@@ -28,7 +31,10 @@
           "profile": {
             "$state": "/profile"
           },
-          "recipe": "featured"
+          "recipe": "featured",
+          "motion": {
+            "preset": "subtle"
+          }
         },
         "children": [
           "intro",

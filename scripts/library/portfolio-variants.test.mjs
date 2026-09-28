@@ -18,7 +18,7 @@ test('동일 입력으로 구조가 다른 두 지면을 만들고 정적 파일
   assert.deepEqual(featured.content,gallery.content);assert.notDeepEqual(featured.plan.cases,gallery.plan.cases);
   assert.notDeepEqual(featured.spec.elements.page.children,gallery.spec.elements.page.children);
   for(const recipe of ['featured','gallery'])for(const scenario of ['standard','long','no-images','many']){
-    const html=read(folder+recipe+'-'+scenario+'.static.html').toString();assert.doesNotMatch(html,/<script\b|src="https?:/);assert.match(html,/THIRD-PARTY NOTICES/);assert.match(html,/가상 포트폴리오/);
+    const html=read(folder+recipe+'-'+scenario+'.static.html').toString();assert.doesNotMatch(html,/src="https?:/);assert.match(html,/<script data-portfolio-motion>/);assert.match(html,/THIRD-PARTY NOTICES/);assert.match(html,/가상 포트폴리오/);
   }
 });
 
@@ -41,8 +41,31 @@ test('가상 시제품 입력과 정적 조작 마크업을 두 방향에 보존
     assert.deepEqual(data.content.projects.map(p=>p.showcase.kind),['map','network','wayfinding']);
     const html=read(folder+recipe+'-standard.static.html').toString();
     assert.match(html,/첫 화면 프로젝트 전시/);assert.match(html,/type="radio"/);assert.match(html,/가상 시제품/);
-    assert.doesNotMatch(html,/<script\b/);
+    assert.equal([...html.matchAll(/<script\b/g)].length,1);
   }
   const checks=json(folder+'variants-verification.json').checks;
   for(const key of ['projectSwitcher','sceneKeyboard','sceneIsolation','staticSceneControls'])assert.equal(checks[key],true);
+});
+
+test('모션별 내보내기는 선택 JSON과 허용한 실행 코드의 해시를 보존한다',()=>{
+  const manifest=json(folder+'variants-sources.json');assert.equal(manifest.variants.length,24);
+  for(const variant of manifest.variants){
+    const data=json(folder+variant.file+'.json'),html=read(folder+variant.file+'.static.html').toString();
+    assert.equal(data.plan.motion.preset,variant.motion);
+    const scripts=[...html.matchAll(/<script data-portfolio-motion>([\s\S]*?)<\/script>/g)];
+    assert.equal(scripts.length,variant.motion==='none'?0:1);
+    if(scripts.length){
+      const hash=createHash('sha256').update(scripts[0][1]).digest('base64');
+      assert.equal(hash,manifest.motionRuntime.sha256);assert.ok(html.includes(`script-src 'sha256-${hash}'`));
+    }
+  }
+});
+
+test('모션 프리셋과 정적 출력의 실행 검증이 현재 산출물과 일치한다',()=>{
+  const report=json(folder+'motion-verification.json');
+  assert.equal(report.results.length,12);
+  assert.equal(new Set(report.results.map(r=>`${r.recipe}/${r.preset}/${r.width}`)).size,12);
+  assert.ok(report.results.every(r=>r.download&&r.staticRuntime));
+  assert.ok(Object.values(report.checks).every(Boolean));
+  for(const [file,hash] of Object.entries(report.artifactHashes))assert.equal(createHash('sha256').update(read(folder+file)).digest('hex'),hash,file);
 });

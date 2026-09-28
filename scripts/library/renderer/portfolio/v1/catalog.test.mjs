@@ -49,3 +49,10 @@ test('앵커 충돌, 유실된 근거, 불완전한 과정 참조를 거부한�
     const data=fixture();edit(data);assert.throws(()=>defaultPlan(data));
   }
 });
+
+test('모션은 허용된 프리셋만 받고 이전 계획은 움직임 없이 해석한다',()=>{
+  const data=fixture(),plan=defaultPlan(data,'gallery','subtle');
+  assert.deepEqual(compilePlan(plan,data).spec.elements.page.props.motion,{preset:'subtle'});
+  for(const motion of [{preset:'unknown'},{preset:'showcase',duration:9000},{code:'alert(1)'}])assert.throws(()=>validatePlan({...plan,motion},data));
+  delete plan.motion;assert.deepEqual(validatePlan(plan,data).plan.motion,{preset:'none'});
+});
