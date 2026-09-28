@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "number",
+      "const": 1
+    },
+    "recipe": {
+      "type": "string",
+      "enum": [
+        "featured",
+        "gallery"
+      ]
+    },
+    "cases": {
+      "minItems": 1,
+      "maxItems": 8,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "variant": {
+            "type": "string",
+            "enum": [
+              "media",
+              "process",
+              "text"
+            ]
+          }
+        },
+        "required": [
+          "projectId",
+          "variant"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "evidence": {
+      "type": "string",
+      "enum": [
+        "grouped",
+        "expanded"
+      ]
+    }
+  },
+  "required": [
+    "version",
+    "recipe",
+    "cases",
+    "evidence"
+  ],
+  "additionalProperties": false
+}

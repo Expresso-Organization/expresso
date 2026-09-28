@@ -1,0 +1,88 @@
+import {z} from 'zod';
+import {defineCatalog} from '@json-render/core';
+import {schema} from '@json-render/react/schema';
+import {contentSchema as baseContent,projectSchema as baseProject} from '../catalog.mjs';
+
+const id=z.string().regex(/^[a-z][a-z0-9-]{0,63}$/);
+export const caseVariants={media:'이미지 중심',process:'과정 중심',text:'본문 중심'};
+export const recipes={featured:'대표 사례 중심',gallery:'갤러리 중심'};
+export const evidenceVariants={grouped:'프로젝트별 펼치기',expanded:'내용 펼쳐 보기'};
+const field=z.enum(['problem','contribution','outcome']);
+const projectSchema=baseProject.extend({process:z.array(field).max(3).default([])});
+export const contentSchema=baseContent.extend({projects:z.array(projectSchema).min(1).max(8)});
+export const planSchema=z.strictObject({version:z.literal(1),recipe:z.enum(['featured','gallery']),cases:z.array(z.strictObject({projectId:id,variant:z.enum(['media','process','text'])})).min(1).max(8),evidence:z.enum(['grouped','expanded'])});
+
+export function candidates(project){
+  return ['text',...(project.image?['media']:[]),...(project.process.length===3?['process']:[])];
+}
+export function validateContent(input){
+  const content=contentSchema.parse(input);
+  const ids=[...content.projects,...content.career,...content.evidence].map(x=>x.id);
+  if(new Set(ids).size!==ids.length)throw new Error('콘텐츠 식별자가 중복됩니다.');
+  const anchors=['intro','work','career','evidence','contact',...content.projects.map(p=>'case-'+p.id),...content.evidence.map(e=>e.id)];
+  if(new Set(anchors).size!==anchors.length)throw new Error('화면 앵커가 중복됩니다.');
+  const evidenceIds=new Set(content.evidence.map(e=>e.id));
+  for(const p of content.projects){
+    if(p.process.length&&(p.process.length!==3||new Set(p.process).size!==3))throw new Error('과정은 문제·기여·결과를 각각 참조해야 합니다.');
+    if(new Set(p.evidenceIds).size!==p.evidenceIds.length||p.evidenceIds.some(e=>!evidenceIds.has(e)))throw new Error('근거 참조가 올바르지 않습니다.');
+  }
+  return content;
+}
+export function defaultPlan(input,recipe='featured'){
+  const content=validateContent(input);
+  const preferred=recipe==='featured'?['media','process','text']:['text','media','process'];
+  return planSchema.parse({version:1,recipe,evidence:recipe==='featured'?'grouped':'expanded',cases:content.projects.map((p,i)=>{
+    const allowed=candidates(p),wanted=preferred[i%preferred.length];
+    return {projectId:p.id,variant:allowed.includes(wanted)?wanted:allowed.includes('process')?'process':'text'};
+  })});
+}
+export function validatePlan(plan,input){
+  const content=validateContent(input),parsed=planSchema.parse(plan),byId=new Map(content.projects.map(p=>[p.id,p]));
+  const seen=new Set();
+  for(const entry of parsed.cases){
+    const project=byId.get(entry.projectId);
+    if(!project||seen.has(entry.projectId))throw new Error('프로젝트 참조가 없거나 중복됩니다.');
+    if(!candidates(project).includes(entry.variant))throw new Error('콘텐츠가 지원하지 않는 표현입니다: '+entry.projectId+' / '+entry.variant);
+    seen.add(entry.projectId);
+  }
+  if(seen.size!==content.projects.length)throw new Error('선택한 프로젝트가 누락되었습니다.');
+  return {plan:parsed,content};
+}
+const projectView=projectSchema.extend({artifacts:z.array(baseContent.shape.evidence.element)});
+const groupSchema=z.object({id:z.string(),title:z.string(),projectIds:z.array(id),items:z.array(baseContent.shape.evidence.element)});
+export const catalog=defineCatalog(schema,{components:{
+  PortfolioPage:{props:z.object({profile:baseContent.shape.profile,recipe:z.enum(['featured','gallery'])}),slots:['default'],description:'공통 테마와 페이지 구성안을 적용합니다.'},
+  Hero:{props:z.object({profile:baseContent.shape.profile}),description:'역할과 핵심 소개'},
+  ProjectIndex:{props:z.object({projects:z.array(projectSchema),variant:z.enum(['list','gallery'])}),description:'목록형 또는 이미지 갤러리'},
+  ProjectCaseStudy:{props:z.object({project:projectView,variant:z.enum(['media','process','text']),ordinal:z.number().int().min(1).max(8)}),description:'프로젝트별 이미지·과정·본문 중심 표현. 본문은 참조 데이터 그대로 사용합니다.'},
+  CareerTimeline:{props:z.object({career:baseContent.shape.career}),description:'기간과 역할의 타임라인'},
+  EvidenceCollection:{props:z.object({groups:z.array(groupSchema),variant:z.enum(['grouped','expanded'])}),description:'프로젝트별 자료 또는 펼친 구조화 자료. 같은 근거는 한 번만 표시합니다.'},
+  Contact:{props:z.object({contact:baseContent.shape.contact}),description:'연락처와 마무리'}
+},actions:{}});
+
+export function compilePlan(plan,input){
+  const valid=validatePlan(plan,input),content=valid.content;
+  const projects=valid.plan.cases.map(c=>content.projects.find(p=>p.id===c.projectId));
+  const projectById=Object.fromEntries(projects.map(p=>[p.id,{...p,artifacts:p.evidenceIds.map(id=>content.evidence.find(e=>e.id===id))}]));
+  // 같은 근거를 여러 프로젝트가 인용해도 DOM 앵커는 한 번만 만듭니다.
+  const owners=new Map(content.evidence.map(e=>[e.id,projects.filter(p=>p.evidenceIds.includes(e.id))]));
+  const groups=projects.map(p=>({id:'group-project-'+p.id,title:p.title,projectIds:[p.id],items:content.evidence.filter(e=>owners.get(e.id).length===1&&owners.get(e.id)[0].id===p.id)})).filter(g=>g.items.length);
+  const shared=content.evidence.filter(e=>owners.get(e.id).length>1),other=content.evidence.filter(e=>!owners.get(e.id).length);
+  if(shared.length)groups.push({id:'group-shared',title:'함께 쓰인 근거',projectIds:[],items:shared});
+  if(other.length)groups.push({id:'group-other',title:'추가 자료',projectIds:[],items:other});
+  const state={...content,projects,projectById,evidenceGroups:groups};
+  const binding=key=>({$state:'/'+key});
+  const cases=valid.plan.cases.map(c=>'case-'+c.projectId);
+  const ending=valid.plan.recipe==='featured'?['career','evidence']:['evidence','career'];
+  const spec={root:'page',elements:{
+    page:{type:'PortfolioPage',props:{profile:binding('profile'),recipe:valid.plan.recipe},children:['intro','work',...cases,...ending,'contact']},
+    intro:{type:'Hero',props:{profile:binding('profile')},children:[]},
+    work:{type:'ProjectIndex',props:{projects:binding('projects'),variant:valid.plan.recipe==='featured'?'list':'gallery'},children:[]},
+    career:{type:'CareerTimeline',props:{career:binding('career')},children:[]},
+    evidence:{type:'EvidenceCollection',props:{groups:binding('evidenceGroups'),variant:valid.plan.evidence},children:[]},
+    contact:{type:'Contact',props:{contact:binding('contact')},children:[]}
+  }};
+  valid.plan.cases.forEach((c,i)=>{spec.elements['case-'+c.projectId]={type:'ProjectCaseStudy',props:{project:binding('projectById/'+c.projectId),variant:c.variant,ordinal:i+1},children:[]};});
+  if(!catalog.validate(spec).success)throw new Error('카탈로그와 구성 결과가 맞지 않습니다.');
+  return {plan:valid.plan,content,state,spec};
+}

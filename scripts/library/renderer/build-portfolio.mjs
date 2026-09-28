@@ -38,7 +38,7 @@ const {render}=await import(pathToFileURL(server).href);
 for(const name of ['portfolio-moa-map.svg','portfolio-lumen-note.svg','portfolio-ongil-guide.svg'])fs.copyFileSync(path.join(root,'docs/library/previews/componentry/assets',name),path.join(out,'assets',name));
 const csp="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'";
 const html=(body,style,scripts='')=>`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="${csp}"><title>가상 포트폴리오 · 페이지 조합 예제</title>${style}</head><body>${body}${scripts}</body></html>`;
-fs.writeFileSync(path.join(out,'index.html'),html('<div id="root"></div>','<link rel="stylesheet" href="./style.css">','<script src="./app.js"></script>'));
+fs.writeFileSync(path.join(out,'baseline.html'),html('<div id="root"></div>','<link rel="stylesheet" href="./style.css">','<script src="./app.js"></script>'));
 const css=fs.readFileSync(path.join(out,'style.css'),'utf8');
 for(const scenario of Object.keys(scenarios)){
   const {spec,content}=validatePortfolio(portfolioSpec,fixture(scenario));

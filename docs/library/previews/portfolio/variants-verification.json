@@ -1,0 +1,993 @@
+{
+  "method": "chrome_composition_variants",
+  "results": [
+    {
+      "recipe": "featured",
+      "scenario": "standard",
+      "width": 390,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "media"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-moa",
+          "offset": 330.890625
+        }
+      ],
+      "height": 7066
+    },
+    {
+      "recipe": "featured",
+      "scenario": "standard",
+      "width": 768,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "media"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-moa",
+          "offset": 0
+        }
+      ],
+      "height": 5838
+    },
+    {
+      "recipe": "featured",
+      "scenario": "standard",
+      "width": 1440,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "media"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-moa",
+          "offset": 0
+        }
+      ],
+      "height": 5933
+    },
+    {
+      "recipe": "featured",
+      "scenario": "long",
+      "width": 390,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "media"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-moa",
+          "offset": 498.5625
+        }
+      ],
+      "height": 8371
+    },
+    {
+      "recipe": "featured",
+      "scenario": "long",
+      "width": 768,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "media"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-moa",
+          "offset": 0
+        }
+      ],
+      "height": 6886
+    },
+    {
+      "recipe": "featured",
+      "scenario": "long",
+      "width": 1440,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "media"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-moa",
+          "offset": 0
+        }
+      ],
+      "height": 6923
+    },
+    {
+      "recipe": "featured",
+      "scenario": "no-images",
+      "width": 390,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [],
+      "height": 6753
+    },
+    {
+      "recipe": "featured",
+      "scenario": "no-images",
+      "width": 768,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [],
+      "height": 5472
+    },
+    {
+      "recipe": "featured",
+      "scenario": "no-images",
+      "width": 1440,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [],
+      "height": 5571
+    },
+    {
+      "recipe": "featured",
+      "scenario": "many",
+      "width": 390,
+      "status": "passed",
+      "preservedFields": 115,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "media"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        },
+        {
+          "id": "project-3",
+          "variant": "media"
+        },
+        {
+          "id": "project-4",
+          "variant": "process"
+        },
+        {
+          "id": "project-5",
+          "variant": "text"
+        },
+        {
+          "id": "project-6",
+          "variant": "media"
+        },
+        {
+          "id": "project-7",
+          "variant": "process"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-moa",
+          "offset": 330.890625
+        },
+        {
+          "id": "case-project-3",
+          "offset": 330.890625
+        },
+        {
+          "id": "case-project-6",
+          "offset": 330.890625
+        }
+      ],
+      "height": 12935
+    },
+    {
+      "recipe": "featured",
+      "scenario": "many",
+      "width": 768,
+      "status": "passed",
+      "preservedFields": 115,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "media"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        },
+        {
+          "id": "project-3",
+          "variant": "media"
+        },
+        {
+          "id": "project-4",
+          "variant": "process"
+        },
+        {
+          "id": "project-5",
+          "variant": "text"
+        },
+        {
+          "id": "project-6",
+          "variant": "media"
+        },
+        {
+          "id": "project-7",
+          "variant": "process"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-moa",
+          "offset": 0
+        },
+        {
+          "id": "case-project-3",
+          "offset": 0
+        },
+        {
+          "id": "case-project-6",
+          "offset": 0
+        }
+      ],
+      "height": 10085
+    },
+    {
+      "recipe": "featured",
+      "scenario": "many",
+      "width": 1440,
+      "status": "passed",
+      "preservedFields": 115,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "media"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        },
+        {
+          "id": "project-3",
+          "variant": "media"
+        },
+        {
+          "id": "project-4",
+          "variant": "process"
+        },
+        {
+          "id": "project-5",
+          "variant": "text"
+        },
+        {
+          "id": "project-6",
+          "variant": "media"
+        },
+        {
+          "id": "project-7",
+          "variant": "process"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-moa",
+          "offset": 0
+        },
+        {
+          "id": "case-project-3",
+          "offset": 0
+        },
+        {
+          "id": "case-project-6",
+          "offset": 0
+        }
+      ],
+      "height": 10064
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "standard",
+      "width": 390,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "media"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-lumen",
+          "offset": 330.890625
+        }
+      ],
+      "height": 8977
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "standard",
+      "width": 768,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "media"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-lumen",
+          "offset": 0
+        }
+      ],
+      "height": 6731
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "standard",
+      "width": 1440,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "media"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-lumen",
+          "offset": 0
+        }
+      ],
+      "height": 7027
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "long",
+      "width": 390,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "media"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-lumen",
+          "offset": 383.390625
+        }
+      ],
+      "height": 10488
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "long",
+      "width": 768,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "media"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-lumen",
+          "offset": 0
+        }
+      ],
+      "height": 7795
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "long",
+      "width": 1440,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "media"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-lumen",
+          "offset": 0
+        }
+      ],
+      "height": 7768
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "no-images",
+      "width": 390,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [],
+      "height": 8766
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "no-images",
+      "width": 768,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [],
+      "height": 6530
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "no-images",
+      "width": 1440,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [],
+      "height": 6877
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "many",
+      "width": 390,
+      "status": "passed",
+      "preservedFields": 115,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "media"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        },
+        {
+          "id": "project-3",
+          "variant": "text"
+        },
+        {
+          "id": "project-4",
+          "variant": "media"
+        },
+        {
+          "id": "project-5",
+          "variant": "text"
+        },
+        {
+          "id": "project-6",
+          "variant": "text"
+        },
+        {
+          "id": "project-7",
+          "variant": "media"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-lumen",
+          "offset": 330.890625
+        },
+        {
+          "id": "case-project-4",
+          "offset": 330.890625
+        },
+        {
+          "id": "case-project-7",
+          "offset": 330.890625
+        }
+      ],
+      "height": 16645
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "many",
+      "width": 768,
+      "status": "passed",
+      "preservedFields": 115,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "media"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        },
+        {
+          "id": "project-3",
+          "variant": "text"
+        },
+        {
+          "id": "project-4",
+          "variant": "media"
+        },
+        {
+          "id": "project-5",
+          "variant": "text"
+        },
+        {
+          "id": "project-6",
+          "variant": "text"
+        },
+        {
+          "id": "project-7",
+          "variant": "media"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-lumen",
+          "offset": 0
+        },
+        {
+          "id": "case-project-4",
+          "offset": 0
+        },
+        {
+          "id": "case-project-7",
+          "offset": 0
+        }
+      ],
+      "height": 11518
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "many",
+      "width": 1440,
+      "status": "passed",
+      "preservedFields": 115,
+      "staticParity": true,
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "media"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        },
+        {
+          "id": "project-3",
+          "variant": "text"
+        },
+        {
+          "id": "project-4",
+          "variant": "media"
+        },
+        {
+          "id": "project-5",
+          "variant": "text"
+        },
+        {
+          "id": "project-6",
+          "variant": "text"
+        },
+        {
+          "id": "project-7",
+          "variant": "media"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-lumen",
+          "offset": 0
+        },
+        {
+          "id": "case-project-4",
+          "offset": 0
+        },
+        {
+          "id": "case-project-7",
+          "offset": 0
+        }
+      ],
+      "height": 11972
+    }
+  ],
+  "checks": {
+    "recipeSwitch": true,
+    "scenarioSwitch": true,
+    "planView": true,
+    "keyboardDisclosure": true,
+    "htmlDownload": true,
+    "brokenImageFallback": true,
+    "noJavascript": true,
+    "portalNavigation": true,
+    "baselinePreserved": true
+  },
+  "artifactHashes": {
+    "index.html": "0978365b7666e789b4baffc2ebf54d69b125d47123bb76cab09624741620f8e7",
+    "variants.js": "4ff42b15e73096f5dcc25b05a323e7d924fd3f3fdb4ccc55a66d4be1973e0ab7",
+    "variants.css": "bcdb2a339bd4f0fb0485d41cd9e52cd8b97868afb935b8af007c34d75b509ebd",
+    "variants-sources.json": "c900eca7cfe08da8638ff2768fa1e3a7cac6482851ae4802d2577deb3bfbf788",
+    "variants-plan-schema.json": "dfe3751e96cf32d57c0ce558a941ece9d0593efc8023628258cf3d76cdd47af0",
+    "featured-standard.static.html": "af7728da8b2ad9b64c4c26de282b099b1a7ffd4340f0fd95869ac6c98f8a0141",
+    "featured-standard.json": "401b0d9a008880d1027450c47d760d4c61ee2c9391024b59f66fd4f5575f3c31",
+    "featured-long.static.html": "07cc5a2ce2a4a16be129e970a3ba02c74ac86f824ac3a92475a593f43054688f",
+    "featured-long.json": "6c15f75b96259d2f324249bec9145da04b0b9bef2bba94460cb3e9b87ea39cf6",
+    "featured-no-images.static.html": "16787868db2c1c84db66304337a21a73e88da0f604526ec457e675cc74e2cfad",
+    "featured-no-images.json": "fcc2b3c6542f89d5bf515c1acc466b9c471431d9601600667b93b3b2a64b013e",
+    "featured-many.static.html": "040c55bb6f7c32eff8e4fd2bb43e2e66e36af18e1ce51e80278b9795775d3876",
+    "featured-many.json": "3b4060c5a6dfb7c166f1501460f8a75910b3c55a4a7c4fbf7ff9de111e364b1d",
+    "gallery-standard.static.html": "4eab7bee597601307876191abec9d5c04e8f84978d0afc4ffc0494086786b965",
+    "gallery-standard.json": "ffd62a6d3ea43cf4e92082b2f0c5aa13450ee3d82c2e9d7e2c50cfa4aeabf2de",
+    "gallery-long.static.html": "5d97d6bd9eac75dce366759f67d53047de0a7b5dbe1ccc3e8e4d53cd59d4f910",
+    "gallery-long.json": "ef5f91a25e022e002320488c37b3a876103f054f43548f2898c2e9783ffb0d7f",
+    "gallery-no-images.static.html": "bf77d9e6a75c8e518d7d62aa506b8e69739e4eb6a3bc661683272a1cf876c599",
+    "gallery-no-images.json": "345f47d37d693fe52fee9f6b62996802bab02e31aea20f1f7dc0b59aaf585022",
+    "gallery-many.static.html": "2ec23847c3dc639ad189b7cea2e4a54801ac58d70914722e7122a329617b329e",
+    "gallery-many.json": "9950db931784a1616ef843b535a3d0b2d69bdfcd9094f849babb2d244bb2db82"
+  }
+}

@@ -17,7 +17,7 @@ try{
   for(const scenario of Object.keys(scenarios))for(const width of [390,768,1440]){
     const page=await browser.newPage({viewport:{width,height:1000},reducedMotion:'reduce'});
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
-    await page.goto(url+`index.html?scenario=${scenario}`);
+    await page.goto(url+`baseline.html?scenario=${scenario}`);
     await page.locator('.portfolio h1').waitFor();
     await page.evaluate(async()=>{for(const img of document.images){img.loading='eager';await img.decode().catch(()=>{});}});
     const inspected=await page.evaluate(()=>({
@@ -44,7 +44,7 @@ try{
     console.log(scenario,width,'passed');await page.close();
   }
   const page=await browser.newPage({viewport:{width:1280,height:900},acceptDownloads:true});
-  await page.goto(url+'index.html');await page.locator('h1').waitFor();
+  await page.goto(url+'baseline.html');await page.locator('h1').waitFor();
   await page.selectOption('#scenario','no-images');assert.equal(await page.locator('.image-fallback').count(),3);
   await page.getByRole('button',{name:'구성 JSON'}).click();await page.locator('#composition-json').waitFor();
   assert.match(await page.locator('#composition-json pre').innerText(),/\$state/);

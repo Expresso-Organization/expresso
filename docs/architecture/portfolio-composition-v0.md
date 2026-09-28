@@ -46,7 +46,7 @@ node scripts/library/renderer/build-portfolio.mjs
 node scripts/library/renderer/verify-portfolio.mjs
 ```
 
-브라우저 주소는 `/docs/library/previews/portfolio/index.html`입니다. `PORTFOLIO_PREVIEW_BASE`로 `/docs`까지 포함한 서버 주소를 바꿀 수 있습니다. 생성 입력 계약과 카탈로그 프롬프트는 각각 `generation-schema.json`, `catalog-prompt.txt`로 함께 생성합니다.
+초기 예제의 브라우저 주소는 `/docs/library/previews/portfolio/baseline.html`입니다. 현재 `index.html`은 [구성안과 프로젝트 표현 v1](./portfolio-composition-variants-v1.md)을 엽니다. `PORTFOLIO_PREVIEW_BASE`로 `/docs`까지 포함한 서버 주소를 바꿀 수 있습니다. 생성 입력 계약과 카탈로그 프롬프트는 각각 `generation-schema.json`, `catalog-prompt.txt`로 함께 생성합니다.
 
 ## 다음 연결
 

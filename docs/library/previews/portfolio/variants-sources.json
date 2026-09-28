@@ -1,0 +1,243 @@
+{
+  "schemaVersion": 1,
+  "renderer": "@json-render/react@0.21.0",
+  "recipes": {
+    "featured": "대표 사례 중심",
+    "gallery": "갤러리 중심"
+  },
+  "caseVariants": {
+    "media": "이미지 중심",
+    "process": "과정 중심",
+    "text": "본문 중심"
+  },
+  "evidenceVariants": {
+    "grouped": "프로젝트별 펼치기",
+    "expanded": "내용 펼쳐 보기"
+  },
+  "variants": [
+    {
+      "recipe": "featured",
+      "scenario": "standard",
+      "planBytes": 183,
+      "specBytes": 1108,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "long",
+      "planBytes": 183,
+      "specBytes": 1108,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "no-images",
+      "planBytes": 182,
+      "specBytes": 1107,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "many",
+      "planBytes": 406,
+      "specBytes": 1921,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-3",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-4",
+          "variant": "process"
+        },
+        {
+          "projectId": "project-5",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-6",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-7",
+          "variant": "process"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "standard",
+      "planBytes": 180,
+      "specBytes": 1108,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "long",
+      "planBytes": 180,
+      "specBytes": 1108,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "no-images",
+      "planBytes": 182,
+      "specBytes": 1110,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "many",
+      "planBytes": 397,
+      "specBytes": 1915,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-3",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-4",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-5",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-6",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-7",
+          "variant": "media"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "path": "scripts/library/renderer/portfolio/v1/catalog.mjs",
+      "sha256": "1b3d0a5585ee6aff6c3275c9a8721ce8b7a81eea85a2674f46d0456b84b6fd23"
+    },
+    {
+      "path": "scripts/library/renderer/portfolio/v1/fixtures.mjs",
+      "sha256": "e957717ab8770e6c45c2692ace3e504bfd058db72e6852a6fa3058448db52445"
+    },
+    {
+      "path": "scripts/library/renderer/portfolio/v1/registry.jsx",
+      "sha256": "97aa7d2967fca413b887087de0f924babf8934f9899f73d95e32c20393d6d435"
+    },
+    {
+      "path": "scripts/library/renderer/portfolio/v1/styles.css",
+      "sha256": "4089413a0dfb656719f73d587414dde2fcf245ad224ec1d28bc77dd237e1fd41"
+    },
+    {
+      "path": "scripts/library/renderer/portfolio/v1/app.jsx",
+      "sha256": "c8cf25477cfc70158d9d2334c89c04b261943832f05669a86d9e0792aeb7b99c"
+    }
+  ],
+  "originalSources": "./sources.json",
+  "note": "고정 검증용 구성안입니다. 실제 AI 자동 선택과 제품 생성 API 연결은 후속 단계입니다."
+}
