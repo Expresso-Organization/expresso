@@ -5,7 +5,9 @@ import {contentSchema as baseContent,projectSchema as baseProject} from '../cata
 
 const id=z.string().regex(/^[a-z][a-z0-9-]{0,63}$/);
 export const caseVariants={media:'이미지 중심',process:'과정 중심',text:'본문 중심'};
-export const recipes={featured:'대표 사례 중심',gallery:'갤러리 중심'};
+export const recipes={featured:'에디토리얼 · 대표 사례',gallery:'포스터 · 갤러리'};
+// 구성안은 색·서체·히어로·섹션 리듬을 함께 결정하는 검증된 디자인 단위입니다.
+export const designDirections={featured:'editorial',gallery:'poster'};
 export const evidenceVariants={grouped:'프로젝트별 펼치기',expanded:'내용 펼쳐 보기'};
 const field=z.enum(['problem','contribution','outcome']);
 const projectSchema=baseProject.extend({process:z.array(field).max(3).default([])});
@@ -51,8 +53,8 @@ export function validatePlan(plan,input){
 const projectView=projectSchema.extend({artifacts:z.array(baseContent.shape.evidence.element)});
 const groupSchema=z.object({id:z.string(),title:z.string(),projectIds:z.array(id),items:z.array(baseContent.shape.evidence.element)});
 export const catalog=defineCatalog(schema,{components:{
-  PortfolioPage:{props:z.object({profile:baseContent.shape.profile,recipe:z.enum(['featured','gallery'])}),slots:['default'],description:'공통 테마와 페이지 구성안을 적용합니다.'},
-  Hero:{props:z.object({profile:baseContent.shape.profile}),description:'역할과 핵심 소개'},
+  PortfolioPage:{props:z.object({profile:baseContent.shape.profile,recipe:z.enum(['featured','gallery'])}),slots:['default'],description:'구성안에 연결된 디자인 방향을 적용합니다.'},
+  Hero:{props:z.object({profile:baseContent.shape.profile,recipe:z.enum(['featured','gallery'])}),description:'역할과 핵심 소개'},
   ProjectIndex:{props:z.object({projects:z.array(projectSchema),variant:z.enum(['list','gallery'])}),description:'목록형 또는 이미지 갤러리'},
   ProjectCaseStudy:{props:z.object({project:projectView,variant:z.enum(['media','process','text']),ordinal:z.number().int().min(1).max(8)}),description:'프로젝트별 이미지·과정·본문 중심 표현. 본문은 참조 데이터 그대로 사용합니다.'},
   CareerTimeline:{props:z.object({career:baseContent.shape.career}),description:'기간과 역할의 타임라인'},
@@ -76,7 +78,7 @@ export function compilePlan(plan,input){
   const ending=valid.plan.recipe==='featured'?['career','evidence']:['evidence','career'];
   const spec={root:'page',elements:{
     page:{type:'PortfolioPage',props:{profile:binding('profile'),recipe:valid.plan.recipe},children:['intro','work',...cases,...ending,'contact']},
-    intro:{type:'Hero',props:{profile:binding('profile')},children:[]},
+    intro:{type:'Hero',props:{profile:binding('profile'),recipe:valid.plan.recipe},children:[]},
     work:{type:'ProjectIndex',props:{projects:binding('projects'),variant:valid.plan.recipe==='featured'?'list':'gallery'},children:[]},
     career:{type:'CareerTimeline',props:{career:binding('career')},children:[]},
     evidence:{type:'EvidenceCollection',props:{groups:binding('evidenceGroups'),variant:valid.plan.evidence},children:[]},

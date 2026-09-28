@@ -1,10 +1,19 @@
 import React from 'react';
 import {defineRegistry,Renderer,StateProvider,VisibilityProvider,ActionProvider} from '@json-render/react';
 import {registry as original} from '../registry.jsx';
-import {catalog,compilePlan} from './catalog.mjs';
+import {catalog,compilePlan,designDirections} from './catalog.mjs';
 
 // 수집 코드가 연결된 기존 소개·카드·경력·연락처 구현을 그대로 재사용합니다.
 function Existing({name,props,children}){const View=original[name];return <View element={{type:name,props}}>{children}</View>;}
+function Hero({profile,recipe}){
+  const poster=recipe==='gallery';
+  return <section className={'hero v-hero-'+designDirections[recipe]} id="intro">
+    <div className="v-hero-masthead"><p className="eyebrow">{profile.role}</p><span>{poster?'SELECTED WORK / PORTFOLIO':'DESIGN JOURNAL / PORTFOLIO'}</span></div>
+    {poster&&<p className="v-poster-name">{profile.name}<span aria-hidden="true">↘</span></p>}
+    <div className="v-hero-composition"><div className="v-hero-title">{!poster&&<p className="v-editorial-byline">{profile.name}의 포트폴리오</p>}<h1>{profile.headline}</h1></div><div className="hero-bottom"><p>{profile.intro}</p><a className="text-link" href="#work">작업 살펴보기 <span aria-hidden="true">↘</span></a></div></div>
+    <div className="hero-meta"><p>{profile.location}</p><ul aria-label="전문 분야">{profile.focus.map(f=><li key={f}>{f}</li>)}</ul></div>
+  </section>;
+}
 function Image({project}){
   const [failed,setFailed]=React.useState(false);
   return project.image&&!failed?<img src={project.image} alt={project.imageAlt} width="960" height="720" loading="lazy" onError={()=>setFailed(true)}/>:<div className="image-fallback" role="img" aria-label={`${project.title} 이미지 대신 제목 표시`}><span>PROJECT / {project.id.toUpperCase()}</span><strong>{project.title}</strong><p>{project.category}</p></div>;
@@ -33,8 +42,8 @@ function Evidence({groups,variant}){
   return <section className={'section v-evidence v-evidence-'+variant} id="evidence"><header className="section-heading"><p className="eyebrow">NOTES & ARTIFACTS</p><div><h2>설계를 설명하는 근거</h2><p>각 프로젝트의 판단과 과정을 기록한 가상 자료입니다.</p></div></header><div className="v-evidence-groups">{groups.map(group=><div className="v-evidence-group" key={group.id}><h3 className="v-group-title">{group.projectIds.length===1?<a href={`#case-${group.projectIds[0]}`}>{group.title} ↗</a>:group.title}</h3><div className="v-artifacts">{group.items.map(e=>variant==='grouped'?<details className="v-artifact" id={e.id} key={e.id}><summary><span className="eyebrow">{e.kind}</span><strong>{e.title}</strong><span>{e.summary}</span><span className="v-disclosure-sign" aria-hidden="true">+</span></summary><EvidenceBody item={e}/></details>:<article className="v-artifact" id={e.id} key={e.id}><header><span className="eyebrow">{e.kind}</span><h4>{e.title}</h4><p>{e.summary}</p></header><EvidenceBody item={e}/></article>)}</div></div>)}</div></section>;
 }
 export const {registry}=defineRegistry(catalog,{components:{
-  PortfolioPage:({props,children})=><div className="variant-shell" data-recipe={props.recipe}><Existing name="PortfolioPage" props={{profile:props.profile}}>{children}</Existing></div>,
-  Hero:({props})=><Existing name="Hero" props={props}/>,
+  PortfolioPage:({props,children})=><div className="variant-shell" data-recipe={props.recipe} data-design={designDirections[props.recipe]}><Existing name="PortfolioPage" props={{profile:props.profile}}>{children}</Existing></div>,
+  Hero:({props})=><Hero {...props}/>,
   ProjectIndex:({props:{projects,variant}})=>variant==='gallery'?<div className="v-gallery-index"><Existing name="ProjectGrid" props={{projects}}/></div>:<section className="section v-project-index" id="work"><header className="section-heading"><p className="eyebrow">SELECTED WORK</p><div><h2>프로젝트 인덱스</h2><p>대표 사례의 화면과 설계 과정을 이어서 살펴보세요.</p></div></header><ol>{projects.map((p,i)=><li key={p.id}><span className="v-index-number" aria-hidden="true">{String(i+1).padStart(2,'0')}</span><div><h3><a href={`#case-${p.id}`}>{p.title} <span aria-hidden="true">↘</span></a></h3><p>{p.category}</p></div><div className="v-index-meta"><span>{p.period}</span><p>{p.role}</p></div></li>)}</ol></section>,
   ProjectCaseStudy:({props})=><CaseStudy {...props}/>,
   CareerTimeline:({props})=><Existing name="CareerTimeline" props={props}/>,

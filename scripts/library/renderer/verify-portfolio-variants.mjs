@@ -18,7 +18,7 @@ try{
   for(const recipe of Object.keys(recipes))for(const scenario of Object.keys(scenarios))for(const width of [390,768,1440]){
     const content=fixture(scenario),plan=defaultPlan(content,recipe),page=await browser.newPage({viewport:{width,height:1000},reducedMotion:'reduce'});
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
-    await page.goto(url+`index.html?recipe=${recipe}&scenario=${scenario}`);await page.locator('.portfolio h1').waitFor();
+    await page.goto(url+`index.html?recipe=${recipe}&scenario=${scenario}`);await page.locator('.portfolio h1').waitFor();await page.evaluate(()=>document.fonts.ready);
     await page.evaluate(async()=>{for(const img of document.images){img.loading='eager';await img.decode().catch(()=>{});}});
     const info=await page.evaluate(()=>{
       const ids=[...document.querySelectorAll('[id]')].map(e=>e.id);
@@ -32,6 +32,16 @@ try{
     }).map(e=>({tag:e.tagName,text:e.textContent.slice(0,60),width:e.getBoundingClientRect().width})));
     assert.deepEqual(narrowText,[],`${recipe}/${scenario}/${width}: 읽기 폭이 부족한 문장`);
     if(width>=650)for(const row of info.mediaAlignments)assert.ok(row.offset<2,`${row.id}: 제목과 이미지 행 밀림 ${row.offset}px`);
+    const design=await page.evaluate(()=>{
+      const heading=document.querySelector('.hero h1'),hero=document.querySelector('.hero');
+      const rgb=value=>(value.match(/[\d.]+/g)||[]).slice(0,3).map(Number);
+      const luminance=value=>rgb(value).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
+      const contrast=el=>{let parent=el,bg='rgb(255,255,255)';while(parent){const c=getComputedStyle(parent).backgroundColor;if(c!=='rgba(0, 0, 0, 0)'&&c!=='transparent'){bg=c;break;}parent=parent.parentElement;}const a=luminance(getComputedStyle(el).color),b=luminance(bg);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);};
+      const contrasts=[...document.querySelectorAll('.hero h1,.hero-bottom>p,.v-poster-name,.v-fact p,.v-artifact-body p,.contact h2,.contact>p,.contact-link')].filter(e=>e.getBoundingClientRect().height>0).map(e=>({selector:e.className||e.tagName,ratio:contrast(e)}));
+      return {direction:document.querySelector('.variant-shell').dataset.design,font:getComputedStyle(heading).fontFamily,weight:getComputedStyle(heading).fontWeight,heroBackground:getComputedStyle(hero).backgroundColor,fontLoaded:[...document.fonts].some(f=>f.family==='Expresso Editorial'&&f.status==='loaded'),posterName:!!document.querySelector('.v-poster-name'),minimumContrast:Math.min(...contrasts.map(c=>c.ratio)),contrasts};
+    });
+    assert.ok(design.minimumContrast>=4.5,`${recipe}: 본문 대비 부족 ${JSON.stringify(design.contrasts.filter(c=>c.ratio<4.5))}`);
+    if(recipe==='featured'){assert.equal(design.fontLoaded,true,'명조 웹폰트 미확보');assert.match(design.font,/Expresso Editorial/);assert.equal(design.posterName,false);}else{assert.doesNotMatch(design.font,/Expresso Editorial/);assert.equal(design.posterName,true);}
     let preserved=0;
     for(const p of content.projects){
       const text=normalize(await page.locator(`[data-case-id="${p.id}"]`).textContent());
@@ -46,8 +56,8 @@ try{
     for(const value of [content.profile.name,content.profile.role,content.profile.headline,content.profile.intro,content.profile.location,...content.profile.focus,...content.career.flatMap(c=>[c.period,c.organization,c.role,c.description]),...Object.values(content.contact)]){assert.ok(all.includes(normalize(value)),'공통 콘텐츠 유실');preserved++;}
     const liveText=await page.locator('.portfolio').textContent();
     if((scenario==='standard'&&width!==768)||(scenario==='long'&&width===390)||(scenario==='no-images'&&width===390))await page.screenshot({path:path.join(shots,`${recipe}-${scenario}-${width}.png`),fullPage:true});
-    await page.goto(url+`${recipe}-${scenario}.static.html`);assert.equal(await page.locator('script').count(),0);assert.equal(await page.locator('.portfolio').textContent(),liveText);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
-    results.push({recipe,scenario,width,status:'passed',preservedFields:preserved,staticParity:true,...info});console.log(recipe,scenario,width,'passed',preserved+' fields');await page.close();
+    await page.goto(url+`${recipe}-${scenario}.static.html`);await page.evaluate(()=>document.fonts.ready);if(recipe==='featured')assert.equal(await page.evaluate(()=>[...document.fonts].some(f=>f.family==='Expresso Editorial'&&f.status==='loaded')),true,'정적 HTML 명조 로딩 실패');assert.equal(await page.locator('script').count(),0);assert.equal(await page.locator('.portfolio').textContent(),liveText);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
+    results.push({recipe,scenario,width,status:'passed',preservedFields:preserved,staticParity:true,design,...info});console.log(recipe,scenario,width,'passed',preserved+' fields');await page.close();
   }
   const page=await browser.newPage({viewport:{width:1280,height:900},acceptDownloads:true});
   await page.goto(url+'index.html');await page.locator('.v-case').first().waitFor();
@@ -61,7 +71,7 @@ try{
   const nojs=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:844}}),staticPage=await nojs.newPage();
   await staticPage.goto(url+'featured-standard.static.html');await staticPage.locator('#moa-flow summary').click();assert.equal(await staticPage.locator('#moa-flow').getAttribute('open'),'');assert.equal(await staticPage.locator('.v-case').count(),3);await nojs.close();
   const portal=await browser.newPage();await portal.goto(base+'/Expresso%20개발%20포털.dc.html#/library');await portal.getByRole('link',{name:/포트폴리오 조합 예제/}).click();await portal.locator('#recipe').waitFor();await portal.getByRole('link',{name:'초기 구성',exact:true}).click();await portal.locator('.portfolio .cases').waitFor();await portal.close();
-  const files=['index.html','variants.js','variants.css','variants-sources.json','variants-plan-schema.json',...Object.keys(recipes).flatMap(recipe=>Object.keys(scenarios).flatMap(s=>[`${recipe}-${s}.static.html`,`${recipe}-${s}.json`]))];
+  const files=['index.html','variants.js','variants.css','variants-sources.json','variants-plan-schema.json','assets/expresso-editorial.woff','assets/editorial-font-OFL.txt','assets/editorial-font-source.json',...Object.keys(recipes).flatMap(recipe=>Object.keys(scenarios).flatMap(s=>[`${recipe}-${s}.static.html`,`${recipe}-${s}.json`]))];
   const artifactHashes=Object.fromEntries(files.map(file=>[file,createHash('sha256').update(fs.readFileSync(path.join(out,file))).digest('hex')]));
-  fs.writeFileSync(path.join(out,'variants-verification.json'),JSON.stringify({method:'chrome_composition_variants',results,checks:{recipeSwitch:true,scenarioSwitch:true,planView:true,keyboardDisclosure:true,htmlDownload:true,brokenImageFallback:true,noJavascript:true,portalNavigation:true,baselinePreserved:true},artifactHashes},null,2)+'\n');
+  fs.writeFileSync(path.join(out,'variants-verification.json'),JSON.stringify({method:'chrome_composition_variants',results,checks:{recipeSwitch:true,scenarioSwitch:true,planView:true,keyboardDisclosure:true,htmlDownload:true,brokenImageFallback:true,noJavascript:true,portalNavigation:true,baselinePreserved:true,designTypography:true,textContrast:true},artifactHashes},null,2)+'\n');
 }finally{await browser.close();}

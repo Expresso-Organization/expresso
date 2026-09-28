@@ -46,7 +46,8 @@
         "props": {
           "profile": {
             "$state": "/profile"
-          }
+          },
+          "recipe": "featured"
         },
         "children": []
       },

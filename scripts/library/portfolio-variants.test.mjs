@@ -21,3 +21,16 @@ test('동일 입력으로 구조가 다른 두 지면을 만들고 정적 파일
     const html=read(folder+recipe+'-'+scenario+'.static.html').toString();assert.doesNotMatch(html,/<script\b|src="https?:/);assert.match(html,/THIRD-PARTY NOTICES/);assert.match(html,/가상 포트폴리오/);
   }
 });
+
+test('두 방향의 서체·첫 화면·글자 대비와 독립 HTML 서체를 검증한다',()=>{
+  const report=json(folder+'variants-verification.json');
+  for(const row of report.results){
+    assert.ok(row.design.minimumContrast>=4.5);
+    assert.equal(row.design.posterName,row.recipe==='gallery');
+    if(row.recipe==='featured')assert.equal(row.design.fontLoaded,true);
+  }
+  const a=report.results.find(r=>r.recipe==='featured').design,b=report.results.find(r=>r.recipe==='gallery').design;
+  assert.notEqual(a.font,b.font);assert.notEqual(a.weight,b.weight);assert.notEqual(a.heroBackground,b.heroBackground);
+  assert.match(read(folder+'featured-standard.static.html').toString(),/data:font\/woff;base64,/);
+  assert.doesNotMatch(read(folder+'gallery-standard.static.html').toString(),/data:font\/woff;base64,/);
+});

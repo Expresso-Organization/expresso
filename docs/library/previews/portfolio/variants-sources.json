@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "renderer": "@json-render/react@0.21.0",
   "recipes": {
-    "featured": "대표 사례 중심",
-    "gallery": "갤러리 중심"
+    "featured": "에디토리얼 · 대표 사례",
+    "gallery": "포스터 · 갤러리"
   },
   "caseVariants": {
     "media": "이미지 중심",
@@ -19,7 +19,7 @@
       "recipe": "featured",
       "scenario": "standard",
       "planBytes": 183,
-      "specBytes": 1108,
+      "specBytes": 1128,
       "cases": [
         {
           "projectId": "moa",
@@ -39,7 +39,7 @@
       "recipe": "featured",
       "scenario": "long",
       "planBytes": 183,
-      "specBytes": 1108,
+      "specBytes": 1128,
       "cases": [
         {
           "projectId": "moa",
@@ -59,7 +59,7 @@
       "recipe": "featured",
       "scenario": "no-images",
       "planBytes": 182,
-      "specBytes": 1107,
+      "specBytes": 1127,
       "cases": [
         {
           "projectId": "moa",
@@ -79,7 +79,7 @@
       "recipe": "featured",
       "scenario": "many",
       "planBytes": 406,
-      "specBytes": 1921,
+      "specBytes": 1941,
       "cases": [
         {
           "projectId": "moa",
@@ -119,7 +119,7 @@
       "recipe": "gallery",
       "scenario": "standard",
       "planBytes": 180,
-      "specBytes": 1108,
+      "specBytes": 1127,
       "cases": [
         {
           "projectId": "moa",
@@ -139,7 +139,7 @@
       "recipe": "gallery",
       "scenario": "long",
       "planBytes": 180,
-      "specBytes": 1108,
+      "specBytes": 1127,
       "cases": [
         {
           "projectId": "moa",
@@ -159,7 +159,7 @@
       "recipe": "gallery",
       "scenario": "no-images",
       "planBytes": 182,
-      "specBytes": 1110,
+      "specBytes": 1129,
       "cases": [
         {
           "projectId": "moa",
@@ -179,7 +179,7 @@
       "recipe": "gallery",
       "scenario": "many",
       "planBytes": 397,
-      "specBytes": 1915,
+      "specBytes": 1934,
       "cases": [
         {
           "projectId": "moa",
@@ -219,7 +219,7 @@
   "sources": [
     {
       "path": "scripts/library/renderer/portfolio/v1/catalog.mjs",
-      "sha256": "1b3d0a5585ee6aff6c3275c9a8721ce8b7a81eea85a2674f46d0456b84b6fd23"
+      "sha256": "4956639f82b0c135f116a403c76b6cb9be4b5c9cf3f8a828c574ba849ede2d7f"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/fixtures.mjs",
@@ -227,15 +227,19 @@
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/registry.jsx",
-      "sha256": "97aa7d2967fca413b887087de0f924babf8934f9899f73d95e32c20393d6d435"
+      "sha256": "1a394d4340b97dba9b4a47233bb4535f6784bbf113061bf941c23d0c8e5e3161"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/styles.css",
-      "sha256": "4089413a0dfb656719f73d587414dde2fcf245ad224ec1d28bc77dd237e1fd41"
+      "sha256": "d329aa018beaac7fb8027688bf7602fedded673f25bb46f160aeab671b3936ab"
+    },
+    {
+      "path": "scripts/library/renderer/portfolio/v1/directions.css",
+      "sha256": "d4e7c8a06ef9600482c9bd62000fe9b257f747a792c50c5c48d1a40f08e0d562"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/app.jsx",
-      "sha256": "c8cf25477cfc70158d9d2334c89c04b261943832f05669a86d9e0792aeb7b99c"
+      "sha256": "a0479848e7a8e87536217fa89875e776d9012e499792ee5619643670d093aaca"
     }
   ],
   "originalSources": "./sources.json",
