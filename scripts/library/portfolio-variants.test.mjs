@@ -34,3 +34,15 @@ test('두 방향의 서체·첫 화면·글자 대비와 독립 HTML 서체를 �
   assert.match(read(folder+'featured-standard.static.html').toString(),/data:font\/woff;base64,/);
   assert.doesNotMatch(read(folder+'gallery-standard.static.html').toString(),/data:font\/woff;base64,/);
 });
+
+test('가상 시제품 입력과 정적 조작 마크업을 두 방향에 보존한다',()=>{
+  for(const recipe of ['featured','gallery']){
+    const data=json(folder+recipe+'-standard.json');
+    assert.deepEqual(data.content.projects.map(p=>p.showcase.kind),['map','network','wayfinding']);
+    const html=read(folder+recipe+'-standard.static.html').toString();
+    assert.match(html,/첫 화면 프로젝트 전시/);assert.match(html,/type="radio"/);assert.match(html,/가상 시제품/);
+    assert.doesNotMatch(html,/<script\b/);
+  }
+  const checks=json(folder+'variants-verification.json').checks;
+  for(const key of ['projectSwitcher','sceneKeyboard','sceneIsolation','staticSceneControls'])assert.equal(checks[key],true);
+});

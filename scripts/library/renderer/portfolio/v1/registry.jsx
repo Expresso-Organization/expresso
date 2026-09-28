@@ -2,21 +2,20 @@ import React from 'react';
 import {defineRegistry,Renderer,StateProvider,VisibilityProvider,ActionProvider} from '@json-render/react';
 import {registry as original} from '../registry.jsx';
 import {catalog,compilePlan,designDirections} from './catalog.mjs';
+import {ProjectShowcase,VisualProjectIndex,CaseVisual} from './showcase.jsx';
 
 // 수집 코드가 연결된 기존 소개·카드·경력·연락처 구현을 그대로 재사용합니다.
 function Existing({name,props,children}){const View=original[name];return <View element={{type:name,props}}>{children}</View>;}
-function Hero({profile,recipe}){
+function Hero({profile,projects,recipe}){
   const poster=recipe==='gallery';
   return <section className={'hero v-hero-'+designDirections[recipe]} id="intro">
     <div className="v-hero-masthead"><p className="eyebrow">{profile.role}</p><span>{poster?'SELECTED WORK / PORTFOLIO':'DESIGN JOURNAL / PORTFOLIO'}</span></div>
-    {poster&&<p className="v-poster-name">{profile.name}<span aria-hidden="true">↘</span></p>}
-    <div className="v-hero-composition"><div className="v-hero-title">{!poster&&<p className="v-editorial-byline">{profile.name}의 포트폴리오</p>}<h1>{profile.headline}</h1></div><div className="hero-bottom"><p>{profile.intro}</p><a className="text-link" href="#work">작업 살펴보기 <span aria-hidden="true">↘</span></a></div></div>
+    <div className="visual-hero-main"><div className="visual-hero-copy">
+      {poster?<p className="v-poster-name">{profile.name}<span aria-hidden="true">↘</span></p>:<p className="v-editorial-byline">{profile.name}의 포트폴리오</p>}
+      <h1>{profile.headline}</h1>
+    </div><ProjectShowcase projects={projects} recipe={recipe}/><div className="hero-bottom"><p>{profile.intro}</p><a className="text-link" href="#work">작업 살펴보기 <span aria-hidden="true">↘</span></a></div></div>
     <div className="hero-meta"><p>{profile.location}</p><ul aria-label="전문 분야">{profile.focus.map(f=><li key={f}>{f}</li>)}</ul></div>
   </section>;
-}
-function Image({project}){
-  const [failed,setFailed]=React.useState(false);
-  return project.image&&!failed?<img src={project.image} alt={project.imageAlt} width="960" height="720" loading="lazy" onError={()=>setFailed(true)}/>:<div className="image-fallback" role="img" aria-label={`${project.title} 이미지 대신 제목 표시`}><span>PROJECT / {project.id.toUpperCase()}</span><strong>{project.title}</strong><p>{project.category}</p></div>;
 }
 const fieldLabels={problem:'문제 정의',contribution:'담당 작업',outcome:'결과와 한계'};
 function CaseHeading({project,ordinal}){return <header className="v-case-heading"><p className="eyebrow">CASE {String(ordinal).padStart(2,'0')} / {project.category}</p><h2>{project.title}</h2><p className="v-case-summary">{project.summary}</p><dl className="v-case-meta"><div><dt>역할</dt><dd>{project.role}</dd></div><div><dt>기간</dt><dd>{project.period}</dd></div></dl><ul className="tags">{project.tags.map(t=><li key={t}>{t}</li>)}</ul></header>;}
@@ -25,7 +24,8 @@ function Sources({project}){return <footer className="v-case-sources"><span clas
 function CaseStudy({project,variant,ordinal}){
   return <article id={`case-${project.id}`} className={'section v-case v-case-'+variant} data-case-id={project.id} data-variant={variant}>
     <CaseHeading project={project} ordinal={ordinal}/>
-    {variant==='media'&&<figure className="v-case-visual"><Image project={project}/><figcaption>{project.imageAlt}</figcaption></figure>}
+    {variant==='media'&&<figure className="v-case-visual"><CaseVisual project={project}/><figcaption>{project.imageAlt}</figcaption></figure>}
+    {variant!=='media'&&<CaseVisual project={project}/>}
     {variant==='process'?<ol className="v-process-steps" aria-label={`${project.title} 설계 과정`}>{project.process.map((field,i)=><li key={field} data-source={`projects/${project.id}/${field}`}><span className="v-step-number" aria-hidden="true">{String(i+1).padStart(2,'0')}</span><h3>{fieldLabels[field]}</h3><p>{project[field]}</p></li>)}</ol>:<Facts project={project}/>}
     <Sources project={project}/>
   </article>;
@@ -44,7 +44,7 @@ function Evidence({groups,variant}){
 export const {registry}=defineRegistry(catalog,{components:{
   PortfolioPage:({props,children})=><div className="variant-shell" data-recipe={props.recipe} data-design={designDirections[props.recipe]}><Existing name="PortfolioPage" props={{profile:props.profile}}>{children}</Existing></div>,
   Hero:({props})=><Hero {...props}/>,
-  ProjectIndex:({props:{projects,variant}})=>variant==='gallery'?<div className="v-gallery-index"><Existing name="ProjectGrid" props={{projects}}/></div>:<section className="section v-project-index" id="work"><header className="section-heading"><p className="eyebrow">SELECTED WORK</p><div><h2>프로젝트 인덱스</h2><p>대표 사례의 화면과 설계 과정을 이어서 살펴보세요.</p></div></header><ol>{projects.map((p,i)=><li key={p.id}><span className="v-index-number" aria-hidden="true">{String(i+1).padStart(2,'0')}</span><div><h3><a href={`#case-${p.id}`}>{p.title} <span aria-hidden="true">↘</span></a></h3><p>{p.category}</p></div><div className="v-index-meta"><span>{p.period}</span><p>{p.role}</p></div></li>)}</ol></section>,
+  ProjectIndex:({props})=><VisualProjectIndex {...props}/>,
   ProjectCaseStudy:({props})=><CaseStudy {...props}/>,
   CareerTimeline:({props})=><Existing name="CareerTimeline" props={props}/>,
   EvidenceCollection:({props})=><Evidence {...props}/>,

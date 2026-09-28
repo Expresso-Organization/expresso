@@ -105,1216 +105,1216 @@
       "mediaAlignments": [
         {
           "id": "case-moa",
-          "offset": 331.796875
-        }
-      ],
-      "height": 7022
-    },
-    {
-      "recipe": "featured",
-      "scenario": "standard",
-      "width": 768,
-      "status": "passed",
-      "preservedFields": 65,
-      "staticParity": true,
-      "design": {
-        "direction": "editorial",
-        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
-        "weight": "400",
-        "heroBackground": "rgba(0, 0, 0, 0)",
-        "fontLoaded": true,
-        "posterName": false,
-        "minimumContrast": 5.8857489892463635,
-        "contrasts": [
-          {
-            "selector": "H1",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "eyebrow",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "H2",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "contact-link",
-            "ratio": 6.949242348730315
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          }
-        ]
-      },
-      "overflow": false,
-      "broken": 0,
-      "duplicateIds": [],
-      "missingAnchors": [],
-      "variants": [
-        {
-          "id": "moa",
-          "variant": "media"
-        },
-        {
-          "id": "lumen",
-          "variant": "process"
-        },
-        {
-          "id": "ongil",
-          "variant": "text"
-        }
-      ],
-      "h1": 1,
-      "mediaAlignments": [
-        {
-          "id": "case-moa",
-          "offset": 0
-        }
-      ],
-      "height": 6159
-    },
-    {
-      "recipe": "featured",
-      "scenario": "standard",
-      "width": 1440,
-      "status": "passed",
-      "preservedFields": 65,
-      "staticParity": true,
-      "design": {
-        "direction": "editorial",
-        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
-        "weight": "400",
-        "heroBackground": "rgba(0, 0, 0, 0)",
-        "fontLoaded": true,
-        "posterName": false,
-        "minimumContrast": 5.8857489892463635,
-        "contrasts": [
-          {
-            "selector": "H1",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "eyebrow",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "H2",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "contact-link",
-            "ratio": 6.949242348730315
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          }
-        ]
-      },
-      "overflow": false,
-      "broken": 0,
-      "duplicateIds": [],
-      "missingAnchors": [],
-      "variants": [
-        {
-          "id": "moa",
-          "variant": "media"
-        },
-        {
-          "id": "lumen",
-          "variant": "process"
-        },
-        {
-          "id": "ongil",
-          "variant": "text"
-        }
-      ],
-      "h1": 1,
-      "mediaAlignments": [
-        {
-          "id": "case-moa",
-          "offset": 0
-        }
-      ],
-      "height": 5946
-    },
-    {
-      "recipe": "featured",
-      "scenario": "long",
-      "width": 390,
-      "status": "passed",
-      "preservedFields": 65,
-      "staticParity": true,
-      "design": {
-        "direction": "editorial",
-        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
-        "weight": "400",
-        "heroBackground": "rgba(0, 0, 0, 0)",
-        "fontLoaded": true,
-        "posterName": false,
-        "minimumContrast": 5.8857489892463635,
-        "contrasts": [
-          {
-            "selector": "H1",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "eyebrow",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "H2",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "contact-link",
-            "ratio": 6.949242348730315
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          }
-        ]
-      },
-      "overflow": false,
-      "broken": 0,
-      "duplicateIds": [],
-      "missingAnchors": [],
-      "variants": [
-        {
-          "id": "moa",
-          "variant": "media"
-        },
-        {
-          "id": "lumen",
-          "variant": "process"
-        },
-        {
-          "id": "ongil",
-          "variant": "text"
-        }
-      ],
-      "h1": 1,
-      "mediaAlignments": [
-        {
-          "id": "case-moa",
-          "offset": 532.1875
-        }
-      ],
-      "height": 8421
-    },
-    {
-      "recipe": "featured",
-      "scenario": "long",
-      "width": 768,
-      "status": "passed",
-      "preservedFields": 65,
-      "staticParity": true,
-      "design": {
-        "direction": "editorial",
-        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
-        "weight": "400",
-        "heroBackground": "rgba(0, 0, 0, 0)",
-        "fontLoaded": true,
-        "posterName": false,
-        "minimumContrast": 5.8857489892463635,
-        "contrasts": [
-          {
-            "selector": "H1",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "eyebrow",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "H2",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "contact-link",
-            "ratio": 6.949242348730315
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          }
-        ]
-      },
-      "overflow": false,
-      "broken": 0,
-      "duplicateIds": [],
-      "missingAnchors": [],
-      "variants": [
-        {
-          "id": "moa",
-          "variant": "media"
-        },
-        {
-          "id": "lumen",
-          "variant": "process"
-        },
-        {
-          "id": "ongil",
-          "variant": "text"
-        }
-      ],
-      "h1": 1,
-      "mediaAlignments": [
-        {
-          "id": "case-moa",
-          "offset": 0
-        }
-      ],
-      "height": 7593
-    },
-    {
-      "recipe": "featured",
-      "scenario": "long",
-      "width": 1440,
-      "status": "passed",
-      "preservedFields": 65,
-      "staticParity": true,
-      "design": {
-        "direction": "editorial",
-        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
-        "weight": "400",
-        "heroBackground": "rgba(0, 0, 0, 0)",
-        "fontLoaded": true,
-        "posterName": false,
-        "minimumContrast": 5.8857489892463635,
-        "contrasts": [
-          {
-            "selector": "H1",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "eyebrow",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "H2",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "contact-link",
-            "ratio": 6.949242348730315
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          }
-        ]
-      },
-      "overflow": false,
-      "broken": 0,
-      "duplicateIds": [],
-      "missingAnchors": [],
-      "variants": [
-        {
-          "id": "moa",
-          "variant": "media"
-        },
-        {
-          "id": "lumen",
-          "variant": "process"
-        },
-        {
-          "id": "ongil",
-          "variant": "text"
-        }
-      ],
-      "h1": 1,
-      "mediaAlignments": [
-        {
-          "id": "case-moa",
-          "offset": 0
-        }
-      ],
-      "height": 6973
-    },
-    {
-      "recipe": "featured",
-      "scenario": "no-images",
-      "width": 390,
-      "status": "passed",
-      "preservedFields": 65,
-      "staticParity": true,
-      "design": {
-        "direction": "editorial",
-        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
-        "weight": "400",
-        "heroBackground": "rgba(0, 0, 0, 0)",
-        "fontLoaded": true,
-        "posterName": false,
-        "minimumContrast": 5.8857489892463635,
-        "contrasts": [
-          {
-            "selector": "H1",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "eyebrow",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "H2",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "contact-link",
-            "ratio": 6.949242348730315
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          }
-        ]
-      },
-      "overflow": false,
-      "broken": 0,
-      "duplicateIds": [],
-      "missingAnchors": [],
-      "variants": [
-        {
-          "id": "moa",
-          "variant": "text"
-        },
-        {
-          "id": "lumen",
-          "variant": "process"
-        },
-        {
-          "id": "ongil",
-          "variant": "text"
-        }
-      ],
-      "h1": 1,
-      "mediaAlignments": [],
-      "height": 6700
-    },
-    {
-      "recipe": "featured",
-      "scenario": "no-images",
-      "width": 768,
-      "status": "passed",
-      "preservedFields": 65,
-      "staticParity": true,
-      "design": {
-        "direction": "editorial",
-        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
-        "weight": "400",
-        "heroBackground": "rgba(0, 0, 0, 0)",
-        "fontLoaded": true,
-        "posterName": false,
-        "minimumContrast": 5.8857489892463635,
-        "contrasts": [
-          {
-            "selector": "H1",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "eyebrow",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "H2",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "contact-link",
-            "ratio": 6.949242348730315
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          }
-        ]
-      },
-      "overflow": false,
-      "broken": 0,
-      "duplicateIds": [],
-      "missingAnchors": [],
-      "variants": [
-        {
-          "id": "moa",
-          "variant": "text"
-        },
-        {
-          "id": "lumen",
-          "variant": "process"
-        },
-        {
-          "id": "ongil",
-          "variant": "text"
-        }
-      ],
-      "h1": 1,
-      "mediaAlignments": [],
-      "height": 5805
-    },
-    {
-      "recipe": "featured",
-      "scenario": "no-images",
-      "width": 1440,
-      "status": "passed",
-      "preservedFields": 65,
-      "staticParity": true,
-      "design": {
-        "direction": "editorial",
-        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
-        "weight": "400",
-        "heroBackground": "rgba(0, 0, 0, 0)",
-        "fontLoaded": true,
-        "posterName": false,
-        "minimumContrast": 5.8857489892463635,
-        "contrasts": [
-          {
-            "selector": "H1",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "eyebrow",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "H2",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "contact-link",
-            "ratio": 6.949242348730315
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          }
-        ]
-      },
-      "overflow": false,
-      "broken": 0,
-      "duplicateIds": [],
-      "missingAnchors": [],
-      "variants": [
-        {
-          "id": "moa",
-          "variant": "text"
-        },
-        {
-          "id": "lumen",
-          "variant": "process"
-        },
-        {
-          "id": "ongil",
-          "variant": "text"
-        }
-      ],
-      "h1": 1,
-      "mediaAlignments": [],
-      "height": 5618
-    },
-    {
-      "recipe": "featured",
-      "scenario": "many",
-      "width": 390,
-      "status": "passed",
-      "preservedFields": 115,
-      "staticParity": true,
-      "design": {
-        "direction": "editorial",
-        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
-        "weight": "400",
-        "heroBackground": "rgba(0, 0, 0, 0)",
-        "fontLoaded": true,
-        "posterName": false,
-        "minimumContrast": 5.8857489892463635,
-        "contrasts": [
-          {
-            "selector": "H1",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "eyebrow",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "H2",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "contact-link",
-            "ratio": 6.949242348730315
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          }
-        ]
-      },
-      "overflow": false,
-      "broken": 0,
-      "duplicateIds": [],
-      "missingAnchors": [],
-      "variants": [
-        {
-          "id": "moa",
-          "variant": "media"
-        },
-        {
-          "id": "lumen",
-          "variant": "process"
-        },
-        {
-          "id": "ongil",
-          "variant": "text"
-        },
-        {
-          "id": "project-3",
-          "variant": "media"
-        },
-        {
-          "id": "project-4",
-          "variant": "process"
-        },
-        {
-          "id": "project-5",
-          "variant": "text"
-        },
-        {
-          "id": "project-6",
-          "variant": "media"
-        },
-        {
-          "id": "project-7",
-          "variant": "process"
-        }
-      ],
-      "h1": 1,
-      "mediaAlignments": [
-        {
-          "id": "case-moa",
-          "offset": 331.796875
-        },
-        {
-          "id": "case-project-3",
-          "offset": 331.796875
-        },
-        {
-          "id": "case-project-6",
-          "offset": 331.796875
-        }
-      ],
-      "height": 12664
-    },
-    {
-      "recipe": "featured",
-      "scenario": "many",
-      "width": 768,
-      "status": "passed",
-      "preservedFields": 115,
-      "staticParity": true,
-      "design": {
-        "direction": "editorial",
-        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
-        "weight": "400",
-        "heroBackground": "rgba(0, 0, 0, 0)",
-        "fontLoaded": true,
-        "posterName": false,
-        "minimumContrast": 5.8857489892463635,
-        "contrasts": [
-          {
-            "selector": "H1",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "eyebrow",
-            "ratio": 5.8857489892463635
-          },
-          {
-            "selector": "H2",
-            "ratio": 12.610028850327282
-          },
-          {
-            "selector": "contact-link",
-            "ratio": 6.949242348730315
-          },
-          {
-            "selector": "P",
-            "ratio": 5.8857489892463635
-          }
-        ]
-      },
-      "overflow": false,
-      "broken": 0,
-      "duplicateIds": [],
-      "missingAnchors": [],
-      "variants": [
-        {
-          "id": "moa",
-          "variant": "media"
-        },
-        {
-          "id": "lumen",
-          "variant": "process"
-        },
-        {
-          "id": "ongil",
-          "variant": "text"
-        },
-        {
-          "id": "project-3",
-          "variant": "media"
-        },
-        {
-          "id": "project-4",
-          "variant": "process"
-        },
-        {
-          "id": "project-5",
-          "variant": "text"
-        },
-        {
-          "id": "project-6",
-          "variant": "media"
-        },
-        {
-          "id": "project-7",
-          "variant": "process"
-        }
-      ],
-      "h1": 1,
-      "mediaAlignments": [
-        {
-          "id": "case-moa",
-          "offset": 0
-        },
-        {
-          "id": "case-project-3",
-          "offset": 0
-        },
-        {
-          "id": "case-project-6",
-          "offset": 0
+          "offset": 327.796875
         }
       ],
       "height": 10621
     },
     {
       "recipe": "featured",
+      "scenario": "standard",
+      "width": 768,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "design": {
+        "direction": "editorial",
+        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
+        "weight": "400",
+        "heroBackground": "rgba(0, 0, 0, 0)",
+        "fontLoaded": true,
+        "posterName": false,
+        "minimumContrast": 5.8857489892463635,
+        "contrasts": [
+          {
+            "selector": "H1",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "eyebrow",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "H2",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "contact-link",
+            "ratio": 6.949242348730315
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          }
+        ]
+      },
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "media"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-moa",
+          "offset": 0
+        }
+      ],
+      "height": 8899
+    },
+    {
+      "recipe": "featured",
+      "scenario": "standard",
+      "width": 1440,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "design": {
+        "direction": "editorial",
+        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
+        "weight": "400",
+        "heroBackground": "rgba(0, 0, 0, 0)",
+        "fontLoaded": true,
+        "posterName": false,
+        "minimumContrast": 5.8857489892463635,
+        "contrasts": [
+          {
+            "selector": "H1",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "eyebrow",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "H2",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "contact-link",
+            "ratio": 6.949242348730315
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          }
+        ]
+      },
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "media"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-moa",
+          "offset": 0
+        }
+      ],
+      "height": 8329
+    },
+    {
+      "recipe": "featured",
+      "scenario": "long",
+      "width": 390,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "design": {
+        "direction": "editorial",
+        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
+        "weight": "400",
+        "heroBackground": "rgba(0, 0, 0, 0)",
+        "fontLoaded": true,
+        "posterName": false,
+        "minimumContrast": 5.8857489892463635,
+        "contrasts": [
+          {
+            "selector": "H1",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "eyebrow",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "H2",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "contact-link",
+            "ratio": 6.949242348730315
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          }
+        ]
+      },
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "media"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-moa",
+          "offset": 528.1875
+        }
+      ],
+      "height": 12164
+    },
+    {
+      "recipe": "featured",
+      "scenario": "long",
+      "width": 768,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "design": {
+        "direction": "editorial",
+        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
+        "weight": "400",
+        "heroBackground": "rgba(0, 0, 0, 0)",
+        "fontLoaded": true,
+        "posterName": false,
+        "minimumContrast": 5.8857489892463635,
+        "contrasts": [
+          {
+            "selector": "H1",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "eyebrow",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "H2",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "contact-link",
+            "ratio": 6.949242348730315
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          }
+        ]
+      },
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "media"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-moa",
+          "offset": 0
+        }
+      ],
+      "height": 10189
+    },
+    {
+      "recipe": "featured",
+      "scenario": "long",
+      "width": 1440,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "design": {
+        "direction": "editorial",
+        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
+        "weight": "400",
+        "heroBackground": "rgba(0, 0, 0, 0)",
+        "fontLoaded": true,
+        "posterName": false,
+        "minimumContrast": 5.8857489892463635,
+        "contrasts": [
+          {
+            "selector": "H1",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "eyebrow",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "H2",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "contact-link",
+            "ratio": 6.949242348730315
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          }
+        ]
+      },
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "media"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-moa",
+          "offset": 0
+        }
+      ],
+      "height": 9389
+    },
+    {
+      "recipe": "featured",
+      "scenario": "no-images",
+      "width": 390,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "design": {
+        "direction": "editorial",
+        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
+        "weight": "400",
+        "heroBackground": "rgba(0, 0, 0, 0)",
+        "fontLoaded": true,
+        "posterName": false,
+        "minimumContrast": 5.8857489892463635,
+        "contrasts": [
+          {
+            "selector": "H1",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "eyebrow",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "H2",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "contact-link",
+            "ratio": 6.949242348730315
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          }
+        ]
+      },
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [],
+      "height": 10566
+    },
+    {
+      "recipe": "featured",
+      "scenario": "no-images",
+      "width": 768,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "design": {
+        "direction": "editorial",
+        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
+        "weight": "400",
+        "heroBackground": "rgba(0, 0, 0, 0)",
+        "fontLoaded": true,
+        "posterName": false,
+        "minimumContrast": 5.8857489892463635,
+        "contrasts": [
+          {
+            "selector": "H1",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "eyebrow",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "H2",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "contact-link",
+            "ratio": 6.949242348730315
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          }
+        ]
+      },
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [],
+      "height": 9114
+    },
+    {
+      "recipe": "featured",
+      "scenario": "no-images",
+      "width": 1440,
+      "status": "passed",
+      "preservedFields": 65,
+      "staticParity": true,
+      "design": {
+        "direction": "editorial",
+        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
+        "weight": "400",
+        "heroBackground": "rgba(0, 0, 0, 0)",
+        "fontLoaded": true,
+        "posterName": false,
+        "minimumContrast": 5.8857489892463635,
+        "contrasts": [
+          {
+            "selector": "H1",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "eyebrow",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "H2",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "contact-link",
+            "ratio": 6.949242348730315
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          }
+        ]
+      },
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [],
+      "height": 8562
+    },
+    {
+      "recipe": "featured",
+      "scenario": "many",
+      "width": 390,
+      "status": "passed",
+      "preservedFields": 115,
+      "staticParity": true,
+      "design": {
+        "direction": "editorial",
+        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
+        "weight": "400",
+        "heroBackground": "rgba(0, 0, 0, 0)",
+        "fontLoaded": true,
+        "posterName": false,
+        "minimumContrast": 5.8857489892463635,
+        "contrasts": [
+          {
+            "selector": "H1",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "eyebrow",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "H2",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "contact-link",
+            "ratio": 6.949242348730315
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          }
+        ]
+      },
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "media"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        },
+        {
+          "id": "project-3",
+          "variant": "media"
+        },
+        {
+          "id": "project-4",
+          "variant": "process"
+        },
+        {
+          "id": "project-5",
+          "variant": "text"
+        },
+        {
+          "id": "project-6",
+          "variant": "media"
+        },
+        {
+          "id": "project-7",
+          "variant": "process"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-moa",
+          "offset": 327.796875
+        },
+        {
+          "id": "case-project-3",
+          "offset": 327.796875
+        },
+        {
+          "id": "case-project-6",
+          "offset": 327.796875
+        }
+      ],
+      "height": 21060
+    },
+    {
+      "recipe": "featured",
+      "scenario": "many",
+      "width": 768,
+      "status": "passed",
+      "preservedFields": 115,
+      "staticParity": true,
+      "design": {
+        "direction": "editorial",
+        "font": "\"Expresso Editorial\", AppleMyungjo, Batang, serif",
+        "weight": "400",
+        "heroBackground": "rgba(0, 0, 0, 0)",
+        "fontLoaded": true,
+        "posterName": false,
+        "minimumContrast": 5.8857489892463635,
+        "contrasts": [
+          {
+            "selector": "H1",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "eyebrow",
+            "ratio": 5.8857489892463635
+          },
+          {
+            "selector": "H2",
+            "ratio": 12.610028850327282
+          },
+          {
+            "selector": "contact-link",
+            "ratio": 6.949242348730315
+          },
+          {
+            "selector": "P",
+            "ratio": 5.8857489892463635
+          }
+        ]
+      },
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "media"
+        },
+        {
+          "id": "lumen",
+          "variant": "process"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        },
+        {
+          "id": "project-3",
+          "variant": "media"
+        },
+        {
+          "id": "project-4",
+          "variant": "process"
+        },
+        {
+          "id": "project-5",
+          "variant": "text"
+        },
+        {
+          "id": "project-6",
+          "variant": "media"
+        },
+        {
+          "id": "project-7",
+          "variant": "process"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-moa",
+          "offset": 0
+        },
+        {
+          "id": "case-project-3",
+          "offset": 0
+        },
+        {
+          "id": "case-project-6",
+          "offset": 0
+        }
+      ],
+      "height": 16428
+    },
+    {
+      "recipe": "featured",
       "scenario": "many",
       "width": 1440,
       "status": "passed",
@@ -1484,7 +1484,7 @@
           "offset": 0
         }
       ],
-      "height": 10370
+      "height": 15848
     },
     {
       "recipe": "gallery",
@@ -1606,10 +1606,10 @@
       "mediaAlignments": [
         {
           "id": "case-lumen",
-          "offset": 330.890625
+          "offset": 326.890625
         }
       ],
-      "height": 9291
+      "height": 11657
     },
     {
       "recipe": "gallery",
@@ -1734,7 +1734,7 @@
           "offset": 0
         }
       ],
-      "height": 7195
+      "height": 9494
     },
     {
       "recipe": "gallery",
@@ -1859,7 +1859,7 @@
           "offset": 0
         }
       ],
-      "height": 7403
+      "height": 9245
     },
     {
       "recipe": "gallery",
@@ -1981,10 +1981,10 @@
       "mediaAlignments": [
         {
           "id": "case-lumen",
-          "offset": 383.390625
+          "offset": 379.390625
         }
       ],
-      "height": 10742
+      "height": 13088
     },
     {
       "recipe": "gallery",
@@ -2109,7 +2109,7 @@
           "offset": 0
         }
       ],
-      "height": 8336
+      "height": 10487
     },
     {
       "recipe": "gallery",
@@ -2234,7 +2234,7 @@
           "offset": 0
         }
       ],
-      "height": 8073
+      "height": 9837
     },
     {
       "recipe": "gallery",
@@ -2342,7 +2342,7 @@
       ],
       "h1": 1,
       "mediaAlignments": [],
-      "height": 8988
+      "height": 11589
     },
     {
       "recipe": "gallery",
@@ -2450,7 +2450,7 @@
       ],
       "h1": 1,
       "mediaAlignments": [],
-      "height": 6997
+      "height": 9782
     },
     {
       "recipe": "gallery",
@@ -2558,7 +2558,7 @@
       ],
       "h1": 1,
       "mediaAlignments": [],
-      "height": 7225
+      "height": 9585
     },
     {
       "recipe": "gallery",
@@ -2760,236 +2760,23 @@
       "mediaAlignments": [
         {
           "id": "case-lumen",
-          "offset": 330.890625
+          "offset": 326.890625
         },
         {
           "id": "case-project-4",
-          "offset": 330.890625
+          "offset": 326.890625
         },
         {
           "id": "case-project-7",
-          "offset": 330.890625
+          "offset": 326.890625
         }
       ],
-      "height": 17301
+      "height": 22371
     },
     {
       "recipe": "gallery",
       "scenario": "many",
       "width": 768,
-      "status": "passed",
-      "preservedFields": 115,
-      "staticParity": true,
-      "design": {
-        "direction": "poster",
-        "font": "\"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
-        "weight": "800",
-        "heroBackground": "rgb(23, 62, 212)",
-        "fontLoaded": false,
-        "posterName": true,
-        "minimumContrast": 6.714844718043808,
-        "contrasts": [
-          {
-            "selector": "v-poster-name",
-            "ratio": 6.714844718043808
-          },
-          {
-            "selector": "H1",
-            "ratio": 7.847021405880488
-          },
-          {
-            "selector": "P",
-            "ratio": 7.847021405880488
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 6.797299403273832
-          },
-          {
-            "selector": "P",
-            "ratio": 11.312345890932786
-          },
-          {
-            "selector": "P",
-            "ratio": 11.312345890932786
-          },
-          {
-            "selector": "P",
-            "ratio": 11.312345890932786
-          },
-          {
-            "selector": "P",
-            "ratio": 11.312345890932786
-          },
-          {
-            "selector": "eyebrow",
-            "ratio": 14.671140623520568
-          },
-          {
-            "selector": "H2",
-            "ratio": 14.671140623520568
-          },
-          {
-            "selector": "contact-link",
-            "ratio": 14.671140623520568
-          },
-          {
-            "selector": "P",
-            "ratio": 14.671140623520568
-          }
-        ]
-      },
-      "overflow": false,
-      "broken": 0,
-      "duplicateIds": [],
-      "missingAnchors": [],
-      "variants": [
-        {
-          "id": "moa",
-          "variant": "text"
-        },
-        {
-          "id": "lumen",
-          "variant": "media"
-        },
-        {
-          "id": "ongil",
-          "variant": "text"
-        },
-        {
-          "id": "project-3",
-          "variant": "text"
-        },
-        {
-          "id": "project-4",
-          "variant": "media"
-        },
-        {
-          "id": "project-5",
-          "variant": "text"
-        },
-        {
-          "id": "project-6",
-          "variant": "text"
-        },
-        {
-          "id": "project-7",
-          "variant": "media"
-        }
-      ],
-      "h1": 1,
-      "mediaAlignments": [
-        {
-          "id": "case-lumen",
-          "offset": 0
-        },
-        {
-          "id": "case-project-4",
-          "offset": 0
-        },
-        {
-          "id": "case-project-7",
-          "offset": 0
-        }
-      ],
-      "height": 12162
-    },
-    {
-      "recipe": "gallery",
-      "scenario": "many",
-      "width": 1440,
       "status": "passed",
       "preservedFields": 115,
       "staticParity": true,
@@ -3197,7 +2984,220 @@
           "offset": 0
         }
       ],
-      "height": 12653
+      "height": 16641
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "many",
+      "width": 1440,
+      "status": "passed",
+      "preservedFields": 115,
+      "staticParity": true,
+      "design": {
+        "direction": "poster",
+        "font": "\"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
+        "weight": "800",
+        "heroBackground": "rgb(23, 62, 212)",
+        "fontLoaded": false,
+        "posterName": true,
+        "minimumContrast": 6.714844718043808,
+        "contrasts": [
+          {
+            "selector": "v-poster-name",
+            "ratio": 6.714844718043808
+          },
+          {
+            "selector": "H1",
+            "ratio": 7.847021405880488
+          },
+          {
+            "selector": "P",
+            "ratio": 7.847021405880488
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 6.797299403273832
+          },
+          {
+            "selector": "P",
+            "ratio": 11.312345890932786
+          },
+          {
+            "selector": "P",
+            "ratio": 11.312345890932786
+          },
+          {
+            "selector": "P",
+            "ratio": 11.312345890932786
+          },
+          {
+            "selector": "P",
+            "ratio": 11.312345890932786
+          },
+          {
+            "selector": "eyebrow",
+            "ratio": 14.671140623520568
+          },
+          {
+            "selector": "H2",
+            "ratio": 14.671140623520568
+          },
+          {
+            "selector": "contact-link",
+            "ratio": 14.671140623520568
+          },
+          {
+            "selector": "P",
+            "ratio": 14.671140623520568
+          }
+        ]
+      },
+      "overflow": false,
+      "broken": 0,
+      "duplicateIds": [],
+      "missingAnchors": [],
+      "variants": [
+        {
+          "id": "moa",
+          "variant": "text"
+        },
+        {
+          "id": "lumen",
+          "variant": "media"
+        },
+        {
+          "id": "ongil",
+          "variant": "text"
+        },
+        {
+          "id": "project-3",
+          "variant": "text"
+        },
+        {
+          "id": "project-4",
+          "variant": "media"
+        },
+        {
+          "id": "project-5",
+          "variant": "text"
+        },
+        {
+          "id": "project-6",
+          "variant": "text"
+        },
+        {
+          "id": "project-7",
+          "variant": "media"
+        }
+      ],
+      "h1": 1,
+      "mediaAlignments": [
+        {
+          "id": "case-lumen",
+          "offset": 0
+        },
+        {
+          "id": "case-project-4",
+          "offset": 0
+        },
+        {
+          "id": "case-project-7",
+          "offset": 0
+        }
+      ],
+      "height": 16633
     }
   ],
   "checks": {
@@ -3211,32 +3211,36 @@
     "portalNavigation": true,
     "baselinePreserved": true,
     "designTypography": true,
-    "textContrast": true
+    "textContrast": true,
+    "projectSwitcher": true,
+    "sceneKeyboard": true,
+    "sceneIsolation": true,
+    "staticSceneControls": true
   },
   "artifactHashes": {
     "index.html": "502086228d491559451b5026342880d68bd7367fb72b7b32caca88ed59677c79",
-    "variants.js": "3a9ac2ead6a074aed7b2e701c26a433af2909d2477b6db2adbbb64d408a8d048",
-    "variants.css": "50d01d61938c80194d7578cfe73b9e5a1e2d7dd94a24af2981b369b23ce4b434",
-    "variants-sources.json": "9d63d75fb114789393404d9a65d50605f0994e5faa136630b1f20afad478a66d",
+    "variants.js": "4c39448356a96c2aedf0c86639b668d444753c66cce20074932873607925d231",
+    "variants.css": "a242c8fb5baa8e6a8bf4484b56a305c0aa31b49c0cff23f8540508e71addc321",
+    "variants-sources.json": "ca817c3db74bdaaa1f7765bba7239ac3c302abac6056305619863737d0061596",
     "variants-plan-schema.json": "dfe3751e96cf32d57c0ce558a941ece9d0593efc8023628258cf3d76cdd47af0",
     "assets/expresso-editorial.woff": "a5a0da18422413e1baf6ff7466ae98e3417c9cffd6a3afc07ecb6d404932ee20",
     "assets/editorial-font-OFL.txt": "8eb1c1019fe7fe6d0b6e7d7bbbba1d9cbdd969d8c5f26455708f6cfb8a77284c",
     "assets/editorial-font-source.json": "f48ee21a25a65e3ae36ee9ac71720d438b8e84aa355d34ae9e99d19778ececf9",
-    "featured-standard.static.html": "5d5ea0a7e25f8df13448ab4523d0edd3021c2e7539102c90bb0aa67329a6e7ef",
-    "featured-standard.json": "187a92d5dc83239c5801b8827720653230417c808816ed9c4e71cc2191517bfe",
-    "featured-long.static.html": "e82b78d8f20223f0a88d4c6c2a640e540762963b4b4313c9801682af3d598dda",
-    "featured-long.json": "4941f16b56ce26f52fb69f5b0876654dc276653da76820ad177c39695f9178b9",
-    "featured-no-images.static.html": "e071793c33403300d48e0c73357ac369e5e5e418f423cde49728f960c19b5fb1",
-    "featured-no-images.json": "fff29bd817e2c6f42afe02ac66cd0ea2a62e83aa548de50218d033ceb38f3dc6",
-    "featured-many.static.html": "be913ea5e9b955a7310818074db17b909994f08a6f71c885e3c09494b73af990",
-    "featured-many.json": "312b135f418d212faaa7486f4950dce041464ba85cb626cc140a3799d0a174f9",
-    "gallery-standard.static.html": "7c641a3494f07d67c3afcbfad723bcee178bcc8a6153bde71712a15de53619a1",
-    "gallery-standard.json": "89b98beb51ef5ca4c5182579e1eaf45ed90302c0ad3b8af1a29430e726fa6dbb",
-    "gallery-long.static.html": "f5bf9a20075645dd2b9fd7e15aa92c9a6da51494c4f6e651ee5af7b6da0e892b",
-    "gallery-long.json": "67763eb8435ac934f2476de92b94927de99de5b172ae287c59a964f5b06f6d83",
-    "gallery-no-images.static.html": "4bd171011dbf7be5d1653ea4ffa24b298793ac8064c47fc23d6db115273baa39",
-    "gallery-no-images.json": "1a53db8dc0cce374a41e9295817aabb7c5b7606ee5f2267c716bf39f911b7cf7",
-    "gallery-many.static.html": "7746bf0242c828c9119ff4aafad1aeb4654c52c2371b297862d2bc3a86cee3a0",
-    "gallery-many.json": "781b08f501697b7182f542bec89fb779e3b24c2bbc01a26f229aeb36cbe6d062"
+    "featured-standard.static.html": "0d20010a413a18e763fc698a9aef244b9c88e5ba1a7234a12836f28ffd5b1038",
+    "featured-standard.json": "5c9e094d1b924e7b6c402d980112d90117c30c7f7f23ee306c6c73cded36a40f",
+    "featured-long.static.html": "2e14455a8e2665febd26891cb536b7bf69e2cbe400d758909492f93c75dae377",
+    "featured-long.json": "b971b8b4b407f1ab1e67da266b867e3fbe76841daedd9f278cdfb2d3c52d4aa2",
+    "featured-no-images.static.html": "0b2196672e5a43a53e37e534e841fab7ebca05666f6d82bc6e23758dfcd308b0",
+    "featured-no-images.json": "f6f00e112349a4697b59d09b6ed0fd05df5d5c0e20efbeb1cfd8ea51639a1314",
+    "featured-many.static.html": "dbe1e6c90e2b600219cab39f4fb17ae9c9207608cb4dbc925e5f1749502dd9c5",
+    "featured-many.json": "6b849a289916614a01da68350ae9a11092f0af4985f91b2c920a2f80135b1a04",
+    "gallery-standard.static.html": "29c8b5e65c0cc18fce9f6beeef50a694919304a017aa16e9d28868a4fe0a3e62",
+    "gallery-standard.json": "00c73779d8180263ec6e6bca539d773c1430344d32119bf746b34c52030e3a54",
+    "gallery-long.static.html": "d5c104576b2c04c283687cf298d21513271d44c0e12bfcbbed66fe98e127e68a",
+    "gallery-long.json": "4ea7ac398800efe82ab2b93c23005474d1c6c08fb1b8d373efc84e256285cd20",
+    "gallery-no-images.static.html": "239d1f97070664bd0b92300f6540d4257a74b57813e20b7276a437d28d1add9a",
+    "gallery-no-images.json": "4b5dc6d93da2abc4320481d53166b0c0af74ec1fc44455a44a29fd261aff39ab",
+    "gallery-many.static.html": "999a60dc52bd6d2d9dcd2d190f20e5fbedded407561995bb195c807598aac2b2",
+    "gallery-many.json": "c29a21fbc3c95d4291bec45b0b05c0adb9a837ab074a6f6cc61e82a8181deca6"
   }
 }

@@ -23,7 +23,7 @@ await esbuild.build({...common,entryPoints:[path.join(here,'portfolio/v1/app.jsx
 const server=path.join(cache,'ssr.mjs');
 await esbuild.build({...common,entryPoints:[path.join(here,'portfolio/v1/ssr.jsx')],outfile:server,format:'esm',platform:'node',external:['react','react/jsx-runtime','react-dom/server','@json-render/*','zod','clsx','tailwind-merge']});
 const {render}=await import(pathToFileURL(server).href);
-const css=fs.readFileSync(path.join(out,'style.css'),'utf8')+'\n'+fs.readFileSync(path.join(here,'portfolio/v1/styles.css'),'utf8')+'\n'+fs.readFileSync(path.join(here,'portfolio/v1/directions.css'),'utf8');
+const css=fs.readFileSync(path.join(out,'style.css'),'utf8')+'\n'+fs.readFileSync(path.join(here,'portfolio/v1/styles.css'),'utf8')+'\n'+fs.readFileSync(path.join(here,'portfolio/v1/directions.css'),'utf8')+'\n'+fs.readFileSync(path.join(here,'portfolio/v1/showcase.css'),'utf8');
 fs.writeFileSync(path.join(out,'variants.css'),css);
 const csp="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'";
 const shell=(body,styles,scripts='')=>`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="${csp}"><title>포트폴리오 구성안 · 가상 데이터</title>${styles}</head><body>${body}${scripts}</body></html>`;
@@ -45,7 +45,7 @@ for(const recipe of Object.keys(recipes))for(const scenario of Object.keys(scena
 }
 fs.writeFileSync(path.join(out,'variants-plan-schema.json'),JSON.stringify(z.toJSONSchema(planSchema),null,2)+'\n');
 fs.writeFileSync(path.join(out,'variants-prompt.txt'),'공통 원문을 유지하고, 제공된 후보에서 프로젝트별 표현을 선택합니다. version=1, recipe, cases[{projectId,variant}], evidence만 출력합니다. 프로젝트마다 정확히 한 번 선택하고 ID를 유지합니다. media는 이미지가 있는 후보, process는 문제·기여·결과의 과정 참조가 있는 후보에만 허용됩니다. recipe는 featured(종이색·명조·여백 중심 에디토리얼) 또는 gallery(청색·큰 고딕·이미지 전시 중심 포스터), evidence는 grouped 또는 expanded입니다. HTML/CSS와 원문을 생성하지 않습니다.\n');
-const files=['catalog.mjs','fixtures.mjs','registry.jsx','styles.css','directions.css','app.jsx'];
+const files=['catalog.mjs','fixtures.mjs','registry.jsx','styles.css','directions.css','showcase.jsx','showcase.css','showcase-fixtures.mjs','app.jsx'];
 const sources=files.map(file=>({path:`scripts/library/renderer/portfolio/v1/${file}`,sha256:createHash('sha256').update(fs.readFileSync(path.join(here,'portfolio/v1',file))).digest('hex')}));
 fs.writeFileSync(path.join(out,'variants-sources.json'),JSON.stringify({schemaVersion:1,renderer:'@json-render/react@0.21.0',recipes,caseVariants,evidenceVariants,variants,sources,originalSources:'./sources.json',note:'고정 검증용 구성안입니다. 실제 AI 자동 선택과 제품 생성 API 연결은 후속 단계입니다.'},null,2)+'\n');
 console.log('두 구성안 × 네 입력의 실제 렌더링과 단일 HTML 생성 완료');

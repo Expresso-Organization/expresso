@@ -19,7 +19,7 @@
       "recipe": "featured",
       "scenario": "standard",
       "planBytes": 183,
-      "specBytes": 1128,
+      "specBytes": 1162,
       "cases": [
         {
           "projectId": "moa",
@@ -39,7 +39,7 @@
       "recipe": "featured",
       "scenario": "long",
       "planBytes": 183,
-      "specBytes": 1128,
+      "specBytes": 1162,
       "cases": [
         {
           "projectId": "moa",
@@ -59,7 +59,7 @@
       "recipe": "featured",
       "scenario": "no-images",
       "planBytes": 182,
-      "specBytes": 1127,
+      "specBytes": 1161,
       "cases": [
         {
           "projectId": "moa",
@@ -79,7 +79,7 @@
       "recipe": "featured",
       "scenario": "many",
       "planBytes": 406,
-      "specBytes": 1941,
+      "specBytes": 1975,
       "cases": [
         {
           "projectId": "moa",
@@ -119,7 +119,7 @@
       "recipe": "gallery",
       "scenario": "standard",
       "planBytes": 180,
-      "specBytes": 1127,
+      "specBytes": 1161,
       "cases": [
         {
           "projectId": "moa",
@@ -139,7 +139,7 @@
       "recipe": "gallery",
       "scenario": "long",
       "planBytes": 180,
-      "specBytes": 1127,
+      "specBytes": 1161,
       "cases": [
         {
           "projectId": "moa",
@@ -159,7 +159,7 @@
       "recipe": "gallery",
       "scenario": "no-images",
       "planBytes": 182,
-      "specBytes": 1129,
+      "specBytes": 1163,
       "cases": [
         {
           "projectId": "moa",
@@ -179,7 +179,7 @@
       "recipe": "gallery",
       "scenario": "many",
       "planBytes": 397,
-      "specBytes": 1934,
+      "specBytes": 1968,
       "cases": [
         {
           "projectId": "moa",
@@ -219,15 +219,15 @@
   "sources": [
     {
       "path": "scripts/library/renderer/portfolio/v1/catalog.mjs",
-      "sha256": "4956639f82b0c135f116a403c76b6cb9be4b5c9cf3f8a828c574ba849ede2d7f"
+      "sha256": "e28621a0b7797d8421fc0783530571ebd9cbb836e73a2b18a5bdc1b4378ea09a"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/fixtures.mjs",
-      "sha256": "e957717ab8770e6c45c2692ace3e504bfd058db72e6852a6fa3058448db52445"
+      "sha256": "33f97eba2e13b29dee3b3e68316b14f0e6c10cb5a8a3892244792e3236ea9e3e"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/registry.jsx",
-      "sha256": "1a394d4340b97dba9b4a47233bb4535f6784bbf113061bf941c23d0c8e5e3161"
+      "sha256": "54772ebd162a2d4042bce624dcea3e0d843301c4e6e9d2540939f74508a825ea"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/styles.css",
@@ -236,6 +236,18 @@
     {
       "path": "scripts/library/renderer/portfolio/v1/directions.css",
       "sha256": "d4e7c8a06ef9600482c9bd62000fe9b257f747a792c50c5c48d1a40f08e0d562"
+    },
+    {
+      "path": "scripts/library/renderer/portfolio/v1/showcase.jsx",
+      "sha256": "cbb7371957505005226d367a0d33d059448edc644fced0fa6cda85918ad5bb06"
+    },
+    {
+      "path": "scripts/library/renderer/portfolio/v1/showcase.css",
+      "sha256": "45fbeebbf4d88ead6f6ebd4e5f3835f2e381368b43c123f3305a08b22ea6a76a"
+    },
+    {
+      "path": "scripts/library/renderer/portfolio/v1/showcase-fixtures.mjs",
+      "sha256": "dd672ab86d19e1ed1ee5d16d175d442ce227d008b763c46852529485d85030b5"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/app.jsx",

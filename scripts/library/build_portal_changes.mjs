@@ -33,6 +33,7 @@ const compositionSubject='json-render 포트폴리오 조합 예제 추가';
 const comparisonSubject='구조화·자유 포트폴리오 생성 비교 추가';
 const variantsSubject='포트폴리오 구성안과 프로젝트 표현 확장';
 const releaseNotes=new Map([
+ ['포트폴리오 시제품 전시와 화면 조작 추가',{summary:'첫 화면과 프로젝트 사례에서 가상 지도·관계도·층별 경로를 직접 조작합니다.',href:'#/library'}],
  ['포트폴리오 에디토리얼·포스터 디자인 분리',{summary:'같은 가상 콘텐츠를 서로 다른 색·서체·첫 화면·이미지 프레임으로 비교합니다.',href:'#/library'}],
  [newSubject,{summary:newSummary,href:'#/docs'}],
  [directTabsSubject,{summary:directTabsSummary,href:'#/docs'}],

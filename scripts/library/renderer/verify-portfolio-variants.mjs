@@ -13,6 +13,34 @@ const shots=process.env.PORTFOLIO_QA_DIR||'/tmp/expresso-portfolio-variants';fs.
 const base=process.env.PORTFOLIO_PREVIEW_BASE||'http://127.0.0.1:8924/docs',url=base+'/library/previews/portfolio/';
 const normalize=v=>String(v).toLowerCase().replace(/[^\p{L}\p{N}@]/gu,'');
 const browser=await chromium.launch({executablePath:process.env.CHROME_BIN||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});
+async function verifyShowcase(page){
+  const deck=page.locator('.project-showcase');
+  assert.equal(await deck.locator('.showcase-panel:visible').count(),1);
+  // 프로젝트와 시제품의 라디오 그룹은 서로 독립적으로 이동해야 합니다.
+  await deck.locator('.showcase-selection input').first().focus();await page.keyboard.press('ArrowRight');
+  const network=deck.locator('.showcase-choice-1');assert.equal(await network.isVisible(),true);
+  await network.locator('.scene-choices label').nth(2).click();
+  assert.match(await network.locator('.scene-info:visible').innerText(),/다음 질문/);
+  await deck.locator('.showcase-selection label').nth(2).click();
+  const floor=deck.locator('.showcase-choice-2');assert.equal(await floor.isVisible(),true);
+  await floor.locator('.scene-choices label').nth(1).click();
+  // 스크립트 비활성 문서에서도 브라우저 CSS 전환이 끝났는지 드라이버에서 확인합니다.
+  for(let attempt=0;attempt<40;attempt++){
+    if(await floor.locator('.floor-1').evaluate(e=>getComputedStyle(e).opacity)==='1')break;
+    await page.waitForTimeout(25);
+  }
+  assert.equal(await floor.locator('.floor-1').evaluate(e=>getComputedStyle(e).opacity),'1');
+  assert.equal(await floor.locator('.floor-1 .floor-path').first().evaluate(e=>getComputedStyle(e).opacity),'1');
+  await deck.locator('.showcase-selection label').first().click();
+  const map=deck.locator('.showcase-choice-0');
+  await map.locator('.scene-choices input').first().focus();await page.keyboard.press('ArrowRight');
+  assert.match(await map.locator('.scene-info:visible').innerText(),/느린 정원/);
+  assert.equal(await map.locator('.scene-route.scene-choice-1').evaluate(e=>getComputedStyle(e).display),'block');
+  await page.keyboard.press('ArrowLeft');assert.match(await map.locator('.scene-info:visible').innerText(),/여울 도서관/);
+  // 첫 화면 선택이 아래 사례의 초기 선택을 바꾸지 않아야 합니다.
+  assert.equal(await page.locator('[data-case-id="moa"] .scene-choices input').first().isChecked(),true);
+  await page.evaluate(()=>scrollTo(0,0));
+}
 const results=[];
 try{
   for(const recipe of Object.keys(recipes))for(const scenario of Object.keys(scenarios))for(const width of [390,768,1440]){
@@ -54,6 +82,7 @@ try{
     }
     const all=normalize(await page.locator('.portfolio').textContent());
     for(const value of [content.profile.name,content.profile.role,content.profile.headline,content.profile.intro,content.profile.location,...content.profile.focus,...content.career.flatMap(c=>[c.period,c.organization,c.role,c.description]),...Object.values(content.contact)]){assert.ok(all.includes(normalize(value)),'공통 콘텐츠 유실');preserved++;}
+    if(scenario==='standard')await verifyShowcase(page);
     const liveText=await page.locator('.portfolio').textContent();
     if((scenario==='standard'&&width!==768)||(scenario==='long'&&width===390)||(scenario==='no-images'&&width===390))await page.screenshot({path:path.join(shots,`${recipe}-${scenario}-${width}.png`),fullPage:true});
     await page.goto(url+`${recipe}-${scenario}.static.html`);await page.evaluate(()=>document.fonts.ready);if(recipe==='featured')assert.equal(await page.evaluate(()=>[...document.fonts].some(f=>f.family==='Expresso Editorial'&&f.status==='loaded')),true,'정적 HTML 명조 로딩 실패');assert.equal(await page.locator('script').count(),0);assert.equal(await page.locator('.portfolio').textContent(),liveText);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
@@ -66,12 +95,12 @@ try{
   await page.selectOption('#recipe','gallery');assert.equal(await page.locator('.v-evidence-expanded').count(),1);
   await page.selectOption('#scenario','no-images');assert.equal(await page.locator('[data-variant="media"]').count(),0);
   const pending=page.waitForEvent('download');await page.getByRole('link',{name:'HTML 저장'}).click();const download=await pending;assert.equal(download.suggestedFilename(),'gallery-no-images.static.html');assert.equal(await download.failure(),null);
-  await page.route('**/assets/*.svg',route=>route.abort());await page.reload();await page.selectOption('#scenario','standard');await page.evaluate(()=>{for(const img of document.images)img.loading='eager';});await page.waitForFunction(()=>document.querySelectorAll('.image-fallback').length>=4);
+  await page.route('**/assets/*.svg',route=>route.abort());await page.reload();await page.selectOption('#scenario','standard');await page.evaluate(()=>{for(const img of document.images)img.loading='eager';});await page.waitForFunction(()=>document.querySelectorAll('[data-asset-fallback]').length===3);
   await page.close();
   const nojs=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:844}}),staticPage=await nojs.newPage();
-  await staticPage.goto(url+'featured-standard.static.html');await staticPage.locator('#moa-flow summary').click();assert.equal(await staticPage.locator('#moa-flow').getAttribute('open'),'');assert.equal(await staticPage.locator('.v-case').count(),3);await nojs.close();
+  await staticPage.goto(url+'featured-standard.static.html');await staticPage.locator('#moa-flow summary').click();assert.equal(await staticPage.locator('#moa-flow').getAttribute('open'),'');assert.equal(await staticPage.locator('.v-case').count(),3);await verifyShowcase(staticPage);await nojs.close();
   const portal=await browser.newPage();await portal.goto(base+'/Expresso%20개발%20포털.dc.html#/library');await portal.getByRole('link',{name:/포트폴리오 조합 예제/}).click();await portal.locator('#recipe').waitFor();await portal.getByRole('link',{name:'초기 구성',exact:true}).click();await portal.locator('.portfolio .cases').waitFor();await portal.close();
   const files=['index.html','variants.js','variants.css','variants-sources.json','variants-plan-schema.json','assets/expresso-editorial.woff','assets/editorial-font-OFL.txt','assets/editorial-font-source.json',...Object.keys(recipes).flatMap(recipe=>Object.keys(scenarios).flatMap(s=>[`${recipe}-${s}.static.html`,`${recipe}-${s}.json`]))];
   const artifactHashes=Object.fromEntries(files.map(file=>[file,createHash('sha256').update(fs.readFileSync(path.join(out,file))).digest('hex')]));
-  fs.writeFileSync(path.join(out,'variants-verification.json'),JSON.stringify({method:'chrome_composition_variants',results,checks:{recipeSwitch:true,scenarioSwitch:true,planView:true,keyboardDisclosure:true,htmlDownload:true,brokenImageFallback:true,noJavascript:true,portalNavigation:true,baselinePreserved:true,designTypography:true,textContrast:true},artifactHashes},null,2)+'\n');
+  fs.writeFileSync(path.join(out,'variants-verification.json'),JSON.stringify({method:'chrome_composition_variants',results,checks:{recipeSwitch:true,scenarioSwitch:true,planView:true,keyboardDisclosure:true,htmlDownload:true,brokenImageFallback:true,noJavascript:true,portalNavigation:true,baselinePreserved:true,designTypography:true,textContrast:true,projectSwitcher:true,sceneKeyboard:true,sceneIsolation:true,staticSceneControls:true},artifactHashes},null,2)+'\n');
 }finally{await browser.close();}
