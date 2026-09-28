@@ -21,6 +21,9 @@ import { readFile, stat } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const sourceFile = resolve(ROOT, process.argv[2] ?? "docs/졸업작품-설계서.html");
+const sourceHtml = readFileSync(sourceFile, "utf8");
+const documentVersion = sourceHtml.match(/<div class="k">VERSION<\/div><div class="v">(v[^<]+)<\/div>/)?.[1] ?? "v0.1";
 
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
@@ -28,7 +31,7 @@ const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const META = {
   team: "팀번호: XX",
   project: "Expresso — 채용 공고 맞춤형 포트폴리오 생성 서비스",
-  version: "v0.1",
+  version: documentVersion,
   course: "네트워크보안프로그래밍 (졸업작품 프로젝트)",
   footer: "2026 가천대학교, 설계서",
 };
