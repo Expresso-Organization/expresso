@@ -2,6 +2,13 @@
   "schemaVersion": 1,
   "items": [
     {
+      "id": "87ea87b91c885476aa83e4ee1f87a7f950eeb1ae",
+      "date": "2026-09-28",
+      "title": "생성용 컴포넌트 모션 지원 목록과 실행 예제 추가",
+      "summary": "컴포넌트별 모션 지원 정보를 확인하고 카드 전환·갤러리·타임라인의 움직임을 직접 재생합니다.",
+      "href": "#/library"
+    },
+    {
       "id": "517c08cbba2b4d28b3c741e575a7b8d792656b6e",
       "date": "2026-09-28",
       "title": "포트폴리오 모션 프리셋과 내보내기 연동",
@@ -49,13 +56,6 @@
       "title": "Componentry 가상 포트폴리오 예제 추가",
       "summary": "프로젝트형 예제 4개를 개인정보 없는 가상 프로젝트와 전용 화면으로 확인합니다.",
       "href": "#/library/all/componentry-case-study-flip-stack?source=componentry"
-    },
-    {
-      "id": "bd43b33a7ce96de401e5d9135a65680d3119b9de",
-      "date": "2026-09-27",
-      "title": "Componentry 원본 렌더링 예제 추가",
-      "summary": "Componentry 56개 모두 카드에 실제 렌더 화면을 표시하고 상세에서 실행 예제를 조작할 수 있습니다.",
-      "href": "#/library/all?source=componentry"
     }
   ]
 }
