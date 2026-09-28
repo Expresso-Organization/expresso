@@ -633,7 +633,7 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
       <div style="margin-top:24mm; font-size:12pt; color:var(--ex-slate-700)">2026. 09. 28.</div>
       <div style="margin-top:26mm; font-size:14pt; font-weight:600">가천대학교 컴퓨터공학과</div>
       <div style="margin-top:10mm; font-size:11pt; color:var(--ex-slate-700); line-height:2">
-        팀장 ▪ —<br>팀원 ▪ —<br>팀원 ▪ —<br>팀원 ▪ —
+        팀장 ▪ 박민재<br>팀원 ▪ 심민규 · 오시건 · 채서현 · 윤규현
       </div>
     </section>
 
@@ -645,7 +645,7 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
       <div class="table-wrap">
         <table>
           <tbody>
-            <tr><th style="width:26mm">버전</th><td>0.2</td></tr>
+            <tr><th style="width:26mm">버전</th><td>0.3</td></tr>
             <tr><th>작성일</th><td>2026-09-28</td></tr>
             <tr><th>상태</th><td>☐ 완료 &nbsp; ☐ 진행 중 &nbsp; ■ 초안</td></tr>
           </tbody>
@@ -657,7 +657,7 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
           <tbody>
             <tr><td class="num">0.1</td><td>Expresso 팀</td><td>2026-08-14</td><td>저장소 형상을 근거로 전 장 초안 작성</td></tr>
             <tr><td class="num">0.2</td><td>Expresso 팀</td><td>2026-09-28</td><td>MongoDB 데이터·시스템 구조와 현행 규모·성능 수치 반영</td></tr>
-            <tr><td class="num">0.3</td><td>—</td><td>—</td><td>—</td></tr>
+            <tr><td class="num">0.3</td><td>Expresso 팀</td><td>2026-09-28</td><td>프로젝트 제안서의 팀 구성 및 담당 역할 반영</td></tr>
             <tr><td class="num">1.0</td><td>—</td><td>—</td><td>설계서 작성 완료</td></tr>
           </tbody>
         </table>
@@ -675,7 +675,7 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
       <div class="meta">
         <div><div class="k">AUTHOR</div><div class="v">Expresso 팀</div></div>
         <div><div class="k">UPDATED</div><div class="v">2026-09-28</div></div>
-        <div><div class="k">VERSION</div><div class="v">v0.2</div></div>
+        <div><div class="k">VERSION</div><div class="v">v0.3</div></div>
         <div><div class="k">STATUS</div><div class="v"><span class="badge">DRAFT</span></div></div>
       </div>
     </div>
@@ -883,21 +883,23 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
         </table>
       </div>
 
-      <h3 data-page="7">1.3 개발조직/역할</h3>
+      <h3 style="break-before:page" data-page="8">1.3 개발조직/역할</h3>
       <p>
-        본 프로젝트의 개발조직과 역할은 아래 표와 같다. 2장과 3장의 기능 표에 있는
-        <strong>개발담당</strong> 칸은 이 표의 이름과 일치하여야 한다.
+        <a href="./%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%EC%A0%9C%EC%95%88%EC%84%9C.html">프로젝트 제안서</a>
+        37장 「개발팀 구성 및 역할」의 담당 도메인과 공통 업무를 반영한다.
+        박민재의 팀장 표기는 제안서의 PM·일정 조율 담당을 기준으로 한다.
       </p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>역할</th><th>이름</th><th>역할(개발기능)</th><th>비고</th></tr></thead>
           <tbody>
-            <tr><td>팀장</td><td>—</td><td>—</td><td>팀 구성 확정 후 기재</td></tr>
-            <tr><td>팀원</td><td>—</td><td>—</td><td>팀 구성 확정 후 기재</td></tr>
-            <tr><td>팀원</td><td>—</td><td>—</td><td>팀 구성 확정 후 기재</td></tr>
-            <tr><td>팀원</td><td>—</td><td>—</td><td>팀 구성 확정 후 기재</td></tr>
+            <tr><td>팀장</td><td>박민재</td><td>PM · AI · 프론트<br>포트폴리오 생성·편집, 공개 사이트 배포</td><td>프로젝트 일정·업무 조율, 시스템 구조·UI/UX 설계</td></tr>
+            <tr><td>팀원</td><td>심민규</td><td>백엔드<br>채용 공고 수집·정규화, 검색·필터·공고 탐색</td><td>CI/CD 파이프라인, 서버 운영·모니터링</td></tr>
+            <tr><td>팀원</td><td>오시건</td><td>백엔드<br>커리어 기록 작성·편집·분류, 검색·첨부 관리</td><td>계정·인증 기능, DB 스키마 관리</td></tr>
+            <tr><td>팀원</td><td>채서현</td><td>백엔드 · AI<br>공고 요건·역량 추출, AI 인터뷰 질문·응답 처리</td><td>학습 데이터·라벨 구축, 추천 모델 학습·평가</td></tr>
+            <tr><td>팀원</td><td>윤규현</td><td>데이터 · AI<br>AI 대화·맥락 관리, 대화 기반 기록 연동</td><td>사용량·요금제 관리, 방문자 통계·분석</td></tr>
           </tbody>
-          <caption>팀 구성이 확정되지 않아 이름과 담당 기능을 비워 두었다. 이 표가 채워지기 전까지 2.3 · 2.5 · 2.6의 개발담당 칸도 비어 있다.</caption>
+          <caption>제안서는 담당 도메인과 공통 업무를 제시한다. 2.3 · 2.5 · 2.6의 상세기능별 개발담당은 제안서에 명시되어 있지 않아 별도 배정 대상으로 둔다.</caption>
         </table>
       </div>
     </section>
@@ -6668,6 +6670,7 @@ pnpm dev:backend</code></pre>
     </section>
 
     <footer class="docfoot">
+      <strong>2026-09-28 v0.3</strong> 프로젝트 제안서의 팀 구성 및 담당 역할 반영 — Expresso 팀<br>
       <strong>2026-09-28 v0.2</strong> MongoDB 데이터·시스템 구조와 현행 규모·성능 수치 반영 — Expresso 팀<br>
       <strong>변경 이력</strong> · 2026-08-14 v0.1 저장소 형상 기준 전 장 초안 작성 — Expresso 팀<br>
       2026-08-14 5.3 사용자 화면설계 29개를 화면별로 다시 작성 · 5.2 초기화면에 실제 캡처 적용 —
