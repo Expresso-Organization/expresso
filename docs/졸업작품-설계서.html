@@ -6469,17 +6469,18 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <table>
           <thead><tr><th>경로</th><th class="num">예산</th><th class="num">측정 p95</th><th>결과</th></tr></thead>
           <tbody>
-            <tr><td>대표 read <code>GET /v1/home</code></td><td class="num">300ms</td><td class="num">7.59ms</td><td><span class="badge done">PASS</span></td></tr>
-            <tr><td>대표 write <code>POST /v1/career/records</code></td><td class="num">300ms</td><td class="num">10.30ms</td><td><span class="badge done">PASS</span></td></tr>
-            <tr><td>event collection</td><td class="num">150ms</td><td class="num">6.89ms</td><td><span class="badge done">PASS</span></td></tr>
-            <tr><td>queue registration</td><td class="num">200ms</td><td class="num">7.39ms</td><td><span class="badge done">PASS</span></td></tr>
+            <tr><td>대표 read <code>GET /v1/home</code></td><td class="num">300ms</td><td class="num">4.56ms</td><td><span class="badge done">PASS</span></td></tr>
+            <tr><td>대표 write <code>POST /v1/career/records</code></td><td class="num">300ms</td><td class="num">8.01ms</td><td><span class="badge done">PASS</span></td></tr>
+            <tr><td>event collection</td><td class="num">150ms</td><td class="num">4.88ms</td><td><span class="badge done">PASS</span></td></tr>
+            <tr><td>queue registration</td><td class="num">200ms</td><td class="num">5.30ms</td><td><span class="badge done">PASS</span></td></tr>
           </tbody>
           <caption>2026-09-28 현재 코드, MongoDB 8.0 단일 노드 rs0의 독립된 임시 테스트 DB에서 측정했다. 로컬 회귀 기준이며 운영 트래픽의 보장값은 아니다.</caption>
         </table>
       </div>
-      <p>추가 측정값은 읽기 100건 동시 요청 118.01ms, 공고 1,000건 목록 85.90ms,
-      9MiB 스냅샷 10조각 쓰기 132.94ms·읽기 78.12ms다. 같은 시험에서 3개 검증이
-      통과했다. 실행 명령은 <code>EXPRESSO_LOAD_TEST=1 node scripts/test-infra.mjs
+      <p>추가 측정값은 읽기 100건 동시 요청 109.20ms, 공고 1,000건 목록 77.85ms,
+      9MiB 스냅샷 10조각 쓰기 114.99ms·읽기 54.11ms다. 같은 시험에서 3개 검증이
+      통과했다. <code>pnpm --filter @expresso/editor build</code> 후 실행 명령은
+      <code>EXPRESSO_LOAD_TEST=1 node scripts/test-infra.mjs
       test/load/performance-budget.test.ts --disableConsoleIntercept</code>다.</p>
 
       <h3 data-page="167">9.2 AI학습 성능 (ROC)</h3>
