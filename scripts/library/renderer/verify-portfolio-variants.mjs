@@ -82,7 +82,7 @@ try{
     }
     const all=normalize(await page.locator('.portfolio').textContent());
     for(const value of [content.profile.name,content.profile.role,content.profile.headline,content.profile.intro,content.profile.location,...content.profile.focus,...content.career.flatMap(c=>[c.period,c.organization,c.role,c.description]),...Object.values(content.contact)]){assert.ok(all.includes(normalize(value)),'공통 콘텐츠 유실');preserved++;}
-    if(scenario==='standard')await verifyShowcase(page);
+    if(scenario==='standard'){await verifyShowcase(page);assert.equal(await page.locator('.showcase-panel:visible .project-scene').evaluate(e=>getComputedStyle(e).transform),'none','모션 감소에서는 전시 회전 제거');}
     const liveText=await page.locator('.portfolio').textContent();
     if((scenario==='standard'&&width!==768)||(scenario==='long'&&width===390)||(scenario==='no-images'&&width===390))await page.screenshot({path:path.join(shots,`${recipe}-${scenario}-${width}.png`),fullPage:true});
     await page.goto(url+`${recipe}-${scenario}.static.html`);await page.evaluate(()=>document.fonts.ready);if(recipe==='featured')assert.equal(await page.evaluate(()=>[...document.fonts].some(f=>f.family==='Expresso Editorial'&&f.status==='loaded')),true,'정적 HTML 명조 로딩 실패');assert.equal(await page.locator('script').count(),0);assert.equal(await page.locator('.portfolio').textContent(),liveText);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);

@@ -243,7 +243,7 @@
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/showcase.css",
-      "sha256": "45fbeebbf4d88ead6f6ebd4e5f3835f2e381368b43c123f3305a08b22ea6a76a"
+      "sha256": "2d3ca19ade7c65775153e21458713145f5bbc1a60d1df07f31ed487b797c9a1a"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/showcase-fixtures.mjs",

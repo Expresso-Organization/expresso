@@ -2,6 +2,13 @@
   "schemaVersion": 1,
   "items": [
     {
+      "id": "03d6bbcbc0680dab13fe526348b50373722926f1",
+      "date": "2026-09-28",
+      "title": "포트폴리오 시제품 전시와 화면 조작 추가",
+      "summary": "첫 화면과 프로젝트 사례에서 가상 지도·관계도·층별 경로를 직접 조작합니다.",
+      "href": "#/library"
+    },
+    {
       "id": "5a2b6bd68e83fb4460ffb17d424a4e6669de6834",
       "date": "2026-09-28",
       "title": "포트폴리오 에디토리얼·포스터 디자인 분리",
@@ -49,13 +56,6 @@
       "title": "Componentry 공식 registry 자료 추가",
       "summary": "UI 53개와 블록 3개의 원본 코드·이용 조건·공식 시연 자료를 라이브러리에서 확인합니다.",
       "href": "#/library/all?source=componentry"
-    },
-    {
-      "id": "7fc18f2cd82bbef5176cea2bb3df300082be3ea6",
-      "date": "2026-09-27",
-      "title": "포털 라이브러리 모듈 캐시 갱신",
-      "summary": "개발 포털 화면과 자료 구성이 업데이트됐습니다.",
-      "href": "#/library"
     }
   ]
 }
