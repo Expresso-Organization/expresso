@@ -142,6 +142,8 @@
       ],
       "anchor": "career",
       "instruction": "다시 재생을 눌러 노드·연결선·경력 내용이 이어지는 순서를 확인하세요.",
+      "sourceItemId": "magic-portfolio-timeline",
+      "sourcePath": "docs/library/materials/magic-portfolio/timeline.json",
       "presets": [
         "none",
         "subtle",
@@ -154,7 +156,7 @@
         "standaloneHtml": true
       },
       "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
-      "source": "scripts/library/renderer/portfolio/v1/registry.jsx"
+      "source": "docs/library/materials/magic-portfolio/timeline.json"
     },
     {
       "id": "evidence",
@@ -284,6 +286,151 @@
       },
       "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
       "source": "docs/library/materials/componentry/source/annotated-text.tsx"
+    },
+    {
+      "id": "headline-lines",
+      "component": "HeadlineLines",
+      "title": "소개 제목 줄별 등장",
+      "icon": "draw",
+      "description": "제목의 원문 줄을 순서대로 보여줍니다.",
+      "entrance": "줄별 순차 등장",
+      "intrinsic": "제목 밑줄과 연결",
+      "owner": "slots",
+      "dependencies": [],
+      "bindings": [],
+      "anchor": "intro",
+      "instruction": "다시 재생을 눌러 제목 두 줄이 차례로 등장하고 밑줄이 뒤따르는지 확인하세요.",
+      "sourceItemId": "watermelon-6df5fe3ae04dae49",
+      "sourcePath": "docs/library/materials/watermelon/registry/hero-1.json",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "docs/library/materials/watermelon/registry/hero-1.json"
+    },
+    {
+      "id": "bento",
+      "component": "BentoProjectIndex",
+      "title": "프로젝트 벤토",
+      "icon": "grid",
+      "description": "대표 화면과 나머지 프로젝트를 크기가 다른 카드로 배치합니다.",
+      "entrance": "카드 순차 등장",
+      "intrinsic": "이미지 확대·사례 링크",
+      "owner": "slots",
+      "dependencies": [],
+      "bindings": [],
+      "anchor": "work",
+      "instruction": "카드 화면에 포인터를 올리거나 Tab으로 사례 링크를 찾아보세요.",
+      "sourceItemId": "watermelon-82efded280ba96cc",
+      "sourcePath": "docs/library/materials/watermelon/registry/bento-1.json",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "docs/library/materials/watermelon/registry/bento-1.json"
+    },
+    {
+      "id": "career-ribbon",
+      "component": "CareerRibbon",
+      "title": "경력 리본",
+      "icon": "timeline",
+      "description": "기간·역할·연결선이 차례로 이어집니다.",
+      "entrance": "번호·연결선·본문 등장",
+      "intrinsic": "별도 조작 없음",
+      "owner": "slots",
+      "dependencies": [],
+      "bindings": [],
+      "anchor": "career",
+      "instruction": "다시 재생해 번호와 선, 역할 설명이 이어지는 순서를 확인하세요.",
+      "sourceItemId": "shadcn-timeline-timeline",
+      "sourcePath": "docs/library/materials/shadcn-timeline/timeline.json",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "docs/library/materials/shadcn-timeline/timeline.json"
+    },
+    {
+      "id": "evidence-previews",
+      "component": "EvidencePreviews",
+      "title": "근거 미리보기 카드",
+      "icon": "layers",
+      "description": "근거를 카드로 훑고 본문을 직접 펼칩니다.",
+      "entrance": "자료 카드 순차 등장",
+      "intrinsic": "키보드와 터치로 펼치기·접기",
+      "owner": "slots",
+      "dependencies": [],
+      "bindings": [],
+      "anchor": "evidence",
+      "instruction": "자료 카드를 눌러 본문을 펼치고 다시 접어 보세요.",
+      "sourceItemId": "watermelon-db08130ec35b8377",
+      "sourcePath": "docs/library/materials/watermelon/registry/preview-link-card.json",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "docs/library/materials/watermelon/registry/preview-link-card.json"
+    },
+    {
+      "id": "contact-card",
+      "component": "ContactCard",
+      "title": "연락처 카드",
+      "icon": "arrow",
+      "description": "한 개의 실제 연락 수단을 크게 보여줍니다.",
+      "entrance": "제목 뒤 카드 등장",
+      "intrinsic": "이메일 링크의 화살표 반응",
+      "owner": "slots",
+      "dependencies": [],
+      "bindings": [],
+      "anchor": "contact",
+      "instruction": "이메일 링크에 포인터나 키보드 초점을 두어 화살표 움직임을 확인하세요.",
+      "sourceItemId": "watermelon-35cbf2467d4fcab7",
+      "sourcePath": "docs/library/materials/watermelon/registry/contact-1.json",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "docs/library/materials/watermelon/registry/contact-1.json"
     }
   ]
 }

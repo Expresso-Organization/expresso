@@ -23,7 +23,11 @@
     },
     "components": {
       "projectIndex": "default",
-      "heroAnnotation": "off"
+      "heroAnnotation": "off",
+      "heroReveal": "block",
+      "careerStyle": "default",
+      "evidenceStyle": "default",
+      "contactStyle": "default"
     }
   },
   "spec": {
@@ -61,7 +65,8 @@
             "$state": "/projects"
           },
           "recipe": "featured",
-          "annotation": "off"
+          "annotation": "off",
+          "reveal": "block"
         },
         "children": []
       },

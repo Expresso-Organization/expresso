@@ -70,7 +70,11 @@
     "components": {
       "default": {
         "projectIndex": "default",
-        "heroAnnotation": "off"
+        "heroAnnotation": "off",
+        "heroReveal": "block",
+        "careerStyle": "default",
+        "evidenceStyle": "default",
+        "contactStyle": "default"
       },
       "type": "object",
       "properties": {
@@ -78,7 +82,8 @@
           "type": "string",
           "enum": [
             "default",
-            "orbit"
+            "orbit",
+            "bento"
           ]
         },
         "heroAnnotation": {
@@ -87,11 +92,47 @@
             "off",
             "drawn"
           ]
+        },
+        "heroReveal": {
+          "default": "block",
+          "type": "string",
+          "enum": [
+            "block",
+            "lines"
+          ]
+        },
+        "careerStyle": {
+          "default": "default",
+          "type": "string",
+          "enum": [
+            "default",
+            "ribbon"
+          ]
+        },
+        "evidenceStyle": {
+          "default": "default",
+          "type": "string",
+          "enum": [
+            "default",
+            "preview"
+          ]
+        },
+        "contactStyle": {
+          "default": "default",
+          "type": "string",
+          "enum": [
+            "default",
+            "card"
+          ]
         }
       },
       "required": [
         "projectIndex",
-        "heroAnnotation"
+        "heroAnnotation",
+        "heroReveal",
+        "careerStyle",
+        "evidenceStyle",
+        "contactStyle"
       ],
       "additionalProperties": false
     }

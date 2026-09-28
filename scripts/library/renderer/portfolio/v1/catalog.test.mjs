@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {planSchema,compilePlan,defaultPlan,validatePlan,candidates} from './catalog.mjs';
+import {planSchema,compilePlan,defaultPlan,validatePlan,candidates,selectedComponents,bentoComponents} from './catalog.mjs';
 import {fixture,scenarios} from './fixtures.mjs';
 
 test('두 구성안과 네 입력에서 각 프로젝트를 한 번씩 연결하고 원문을 보존한다',()=>{
@@ -57,11 +57,16 @@ test('모션은 허용된 프리셋만 받고 이전 계획은 움직임 없이 
   delete plan.motion;assert.deepEqual(validatePlan(plan,data).plan.motion,{preset:'none'});
 });
 test('선별 컴포넌트 선택은 허용된 이름만 받고 프로젝트 원문을 유지한다',()=>{
- const data=fixture('many'),plan=defaultPlan(data,'gallery','showcase',{projectIndex:'orbit',heroAnnotation:'drawn'});
+ const data=fixture('many'),plan=defaultPlan(data,'gallery','showcase',selectedComponents);
  const compiled=compilePlan(plan,data);
  assert.equal(compiled.spec.elements.work.type,'OrbitProjectIndex');
  assert.equal(compiled.spec.elements.intro.props.annotation,'drawn');
+ assert.equal(compiled.spec.elements.intro.props.reveal,'lines');
+ assert.equal(compiled.spec.elements.career.type,'CareerRibbon');
+ assert.equal(compiled.spec.elements.evidence.type,'EvidencePreviews');
+ assert.equal(compiled.spec.elements.contact.type,'ContactCard');
  assert.deepEqual(compiled.state.projects,data.projects);
- assert.deepEqual(compiled.motionSupport.filter(c=>c.sourceItemId).map(c=>c.id),['orbit','annotation']);
+ assert.deepEqual(compiled.motionSupport.filter(c=>c.sourceItemId).map(c=>c.id),['orbit','career-ribbon','evidence-previews','contact-card','annotation','headline-lines']);
+ assert.equal(compilePlan(defaultPlan(data,'gallery','showcase',bentoComponents),data).spec.elements.work.type,'BentoProjectIndex');
  for(const components of [{projectIndex:'made-up',heroAnnotation:'drawn'},{projectIndex:'orbit',heroAnnotation:'script'},{projectIndex:'orbit',heroAnnotation:'drawn',rawHtml:'<h1>x</h1>'}])assert.throws(()=>validatePlan({...plan,components},data));
 });

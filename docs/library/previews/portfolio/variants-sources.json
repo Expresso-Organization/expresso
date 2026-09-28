@@ -16,7 +16,8 @@
   },
   "componentChoices": {
     "default": "기본 조합",
-    "selected": "선별 컴포넌트"
+    "selected": "카드 펼침 · 확장",
+    "bento": "벤토 · 확장"
   },
   "motionPresets": {
     "none": "없음",
@@ -24,8 +25,8 @@
     "showcase": "쇼케이스"
   },
   "motionRuntime": {
-    "bytes": 11807,
-    "sha256": "JWJqAWZYj7lpLTGS4v73fXaHU2ps/tw9/3lPt4omK7M="
+    "bytes": 15598,
+    "sha256": "6cWp9gKdJuIBiL/0C3n/KPcsC9UroarOBP4JEfuSDZk="
   },
   "variants": [
     {
@@ -34,8 +35,8 @@
       "motion": "none",
       "componentSet": "default",
       "file": "featured-standard-none",
-      "planBytes": 273,
-      "specBytes": 1208,
+      "planBytes": 369,
+      "specBytes": 1225,
       "cases": [
         {
           "projectId": "moa",
@@ -57,8 +58,31 @@
       "motion": "none",
       "componentSet": "selected",
       "file": "featured-standard-none-selected",
-      "planBytes": 273,
-      "specBytes": 1198,
+      "planBytes": 365,
+      "specBytes": 1195,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "standard",
+      "motion": "none",
+      "componentSet": "bento",
+      "file": "featured-standard-none-bento",
+      "planBytes": 365,
+      "specBytes": 1195,
       "cases": [
         {
           "projectId": "moa",
@@ -80,8 +104,8 @@
       "motion": "subtle",
       "componentSet": "default",
       "file": "featured-standard",
-      "planBytes": 275,
-      "specBytes": 1210,
+      "planBytes": 371,
+      "specBytes": 1227,
       "cases": [
         {
           "projectId": "moa",
@@ -103,8 +127,31 @@
       "motion": "subtle",
       "componentSet": "selected",
       "file": "featured-standard-selected",
-      "planBytes": 275,
-      "specBytes": 1200,
+      "planBytes": 367,
+      "specBytes": 1197,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "standard",
+      "motion": "subtle",
+      "componentSet": "bento",
+      "file": "featured-standard-bento",
+      "planBytes": 367,
+      "specBytes": 1197,
       "cases": [
         {
           "projectId": "moa",
@@ -126,8 +173,8 @@
       "motion": "showcase",
       "componentSet": "default",
       "file": "featured-standard-showcase",
-      "planBytes": 277,
-      "specBytes": 1212,
+      "planBytes": 373,
+      "specBytes": 1229,
       "cases": [
         {
           "projectId": "moa",
@@ -149,8 +196,31 @@
       "motion": "showcase",
       "componentSet": "selected",
       "file": "featured-standard-showcase-selected",
-      "planBytes": 277,
-      "specBytes": 1202,
+      "planBytes": 369,
+      "specBytes": 1199,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "standard",
+      "motion": "showcase",
+      "componentSet": "bento",
+      "file": "featured-standard-showcase-bento",
+      "planBytes": 369,
+      "specBytes": 1199,
       "cases": [
         {
           "projectId": "moa",
@@ -172,8 +242,8 @@
       "motion": "none",
       "componentSet": "default",
       "file": "featured-long-none",
-      "planBytes": 273,
-      "specBytes": 1208,
+      "planBytes": 369,
+      "specBytes": 1225,
       "cases": [
         {
           "projectId": "moa",
@@ -195,8 +265,31 @@
       "motion": "none",
       "componentSet": "selected",
       "file": "featured-long-none-selected",
-      "planBytes": 273,
-      "specBytes": 1198,
+      "planBytes": 365,
+      "specBytes": 1195,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "long",
+      "motion": "none",
+      "componentSet": "bento",
+      "file": "featured-long-none-bento",
+      "planBytes": 365,
+      "specBytes": 1195,
       "cases": [
         {
           "projectId": "moa",
@@ -218,8 +311,8 @@
       "motion": "subtle",
       "componentSet": "default",
       "file": "featured-long",
-      "planBytes": 275,
-      "specBytes": 1210,
+      "planBytes": 371,
+      "specBytes": 1227,
       "cases": [
         {
           "projectId": "moa",
@@ -241,8 +334,31 @@
       "motion": "subtle",
       "componentSet": "selected",
       "file": "featured-long-selected",
-      "planBytes": 275,
-      "specBytes": 1200,
+      "planBytes": 367,
+      "specBytes": 1197,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "long",
+      "motion": "subtle",
+      "componentSet": "bento",
+      "file": "featured-long-bento",
+      "planBytes": 367,
+      "specBytes": 1197,
       "cases": [
         {
           "projectId": "moa",
@@ -264,8 +380,8 @@
       "motion": "showcase",
       "componentSet": "default",
       "file": "featured-long-showcase",
-      "planBytes": 277,
-      "specBytes": 1212,
+      "planBytes": 373,
+      "specBytes": 1229,
       "cases": [
         {
           "projectId": "moa",
@@ -287,8 +403,31 @@
       "motion": "showcase",
       "componentSet": "selected",
       "file": "featured-long-showcase-selected",
-      "planBytes": 277,
-      "specBytes": 1202,
+      "planBytes": 369,
+      "specBytes": 1199,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "long",
+      "motion": "showcase",
+      "componentSet": "bento",
+      "file": "featured-long-showcase-bento",
+      "planBytes": 369,
+      "specBytes": 1199,
       "cases": [
         {
           "projectId": "moa",
@@ -310,8 +449,8 @@
       "motion": "none",
       "componentSet": "default",
       "file": "featured-no-images-none",
-      "planBytes": 272,
-      "specBytes": 1207,
+      "planBytes": 368,
+      "specBytes": 1224,
       "cases": [
         {
           "projectId": "moa",
@@ -333,8 +472,31 @@
       "motion": "none",
       "componentSet": "selected",
       "file": "featured-no-images-none-selected",
-      "planBytes": 272,
-      "specBytes": 1197,
+      "planBytes": 364,
+      "specBytes": 1194,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "no-images",
+      "motion": "none",
+      "componentSet": "bento",
+      "file": "featured-no-images-none-bento",
+      "planBytes": 364,
+      "specBytes": 1194,
       "cases": [
         {
           "projectId": "moa",
@@ -356,8 +518,8 @@
       "motion": "subtle",
       "componentSet": "default",
       "file": "featured-no-images",
-      "planBytes": 274,
-      "specBytes": 1209,
+      "planBytes": 370,
+      "specBytes": 1226,
       "cases": [
         {
           "projectId": "moa",
@@ -379,8 +541,31 @@
       "motion": "subtle",
       "componentSet": "selected",
       "file": "featured-no-images-selected",
-      "planBytes": 274,
-      "specBytes": 1199,
+      "planBytes": 366,
+      "specBytes": 1196,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "no-images",
+      "motion": "subtle",
+      "componentSet": "bento",
+      "file": "featured-no-images-bento",
+      "planBytes": 366,
+      "specBytes": 1196,
       "cases": [
         {
           "projectId": "moa",
@@ -402,8 +587,8 @@
       "motion": "showcase",
       "componentSet": "default",
       "file": "featured-no-images-showcase",
-      "planBytes": 276,
-      "specBytes": 1211,
+      "planBytes": 372,
+      "specBytes": 1228,
       "cases": [
         {
           "projectId": "moa",
@@ -425,8 +610,31 @@
       "motion": "showcase",
       "componentSet": "selected",
       "file": "featured-no-images-showcase-selected",
-      "planBytes": 276,
-      "specBytes": 1201,
+      "planBytes": 368,
+      "specBytes": 1198,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "no-images",
+      "motion": "showcase",
+      "componentSet": "bento",
+      "file": "featured-no-images-showcase-bento",
+      "planBytes": 368,
+      "specBytes": 1198,
       "cases": [
         {
           "projectId": "moa",
@@ -448,8 +656,8 @@
       "motion": "none",
       "componentSet": "default",
       "file": "featured-many-none",
-      "planBytes": 496,
-      "specBytes": 2021,
+      "planBytes": 592,
+      "specBytes": 2038,
       "cases": [
         {
           "projectId": "moa",
@@ -491,8 +699,51 @@
       "motion": "none",
       "componentSet": "selected",
       "file": "featured-many-none-selected",
-      "planBytes": 496,
-      "specBytes": 2011,
+      "planBytes": 588,
+      "specBytes": 2008,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-3",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-4",
+          "variant": "process"
+        },
+        {
+          "projectId": "project-5",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-6",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-7",
+          "variant": "process"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "many",
+      "motion": "none",
+      "componentSet": "bento",
+      "file": "featured-many-none-bento",
+      "planBytes": 588,
+      "specBytes": 2008,
       "cases": [
         {
           "projectId": "moa",
@@ -534,8 +785,8 @@
       "motion": "subtle",
       "componentSet": "default",
       "file": "featured-many",
-      "planBytes": 498,
-      "specBytes": 2023,
+      "planBytes": 594,
+      "specBytes": 2040,
       "cases": [
         {
           "projectId": "moa",
@@ -577,8 +828,51 @@
       "motion": "subtle",
       "componentSet": "selected",
       "file": "featured-many-selected",
-      "planBytes": 498,
-      "specBytes": 2013,
+      "planBytes": 590,
+      "specBytes": 2010,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-3",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-4",
+          "variant": "process"
+        },
+        {
+          "projectId": "project-5",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-6",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-7",
+          "variant": "process"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "many",
+      "motion": "subtle",
+      "componentSet": "bento",
+      "file": "featured-many-bento",
+      "planBytes": 590,
+      "specBytes": 2010,
       "cases": [
         {
           "projectId": "moa",
@@ -620,8 +914,8 @@
       "motion": "showcase",
       "componentSet": "default",
       "file": "featured-many-showcase",
-      "planBytes": 500,
-      "specBytes": 2025,
+      "planBytes": 596,
+      "specBytes": 2042,
       "cases": [
         {
           "projectId": "moa",
@@ -663,8 +957,51 @@
       "motion": "showcase",
       "componentSet": "selected",
       "file": "featured-many-showcase-selected",
-      "planBytes": 500,
-      "specBytes": 2015,
+      "planBytes": 592,
+      "specBytes": 2012,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "media"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-3",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-4",
+          "variant": "process"
+        },
+        {
+          "projectId": "project-5",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-6",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-7",
+          "variant": "process"
+        }
+      ]
+    },
+    {
+      "recipe": "featured",
+      "scenario": "many",
+      "motion": "showcase",
+      "componentSet": "bento",
+      "file": "featured-many-showcase-bento",
+      "planBytes": 592,
+      "specBytes": 2012,
       "cases": [
         {
           "projectId": "moa",
@@ -706,8 +1043,8 @@
       "motion": "none",
       "componentSet": "default",
       "file": "gallery-standard-none",
-      "planBytes": 270,
-      "specBytes": 1207,
+      "planBytes": 366,
+      "specBytes": 1224,
       "cases": [
         {
           "projectId": "moa",
@@ -729,8 +1066,31 @@
       "motion": "none",
       "componentSet": "selected",
       "file": "gallery-standard-none-selected",
-      "planBytes": 270,
-      "specBytes": 1194,
+      "planBytes": 362,
+      "specBytes": 1190,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "standard",
+      "motion": "none",
+      "componentSet": "bento",
+      "file": "gallery-standard-none-bento",
+      "planBytes": 362,
+      "specBytes": 1190,
       "cases": [
         {
           "projectId": "moa",
@@ -752,8 +1112,8 @@
       "motion": "subtle",
       "componentSet": "default",
       "file": "gallery-standard-subtle",
-      "planBytes": 272,
-      "specBytes": 1209,
+      "planBytes": 368,
+      "specBytes": 1226,
       "cases": [
         {
           "projectId": "moa",
@@ -775,8 +1135,31 @@
       "motion": "subtle",
       "componentSet": "selected",
       "file": "gallery-standard-subtle-selected",
-      "planBytes": 272,
-      "specBytes": 1196,
+      "planBytes": 364,
+      "specBytes": 1192,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "standard",
+      "motion": "subtle",
+      "componentSet": "bento",
+      "file": "gallery-standard-subtle-bento",
+      "planBytes": 364,
+      "specBytes": 1192,
       "cases": [
         {
           "projectId": "moa",
@@ -798,8 +1181,8 @@
       "motion": "showcase",
       "componentSet": "default",
       "file": "gallery-standard",
-      "planBytes": 274,
-      "specBytes": 1211,
+      "planBytes": 370,
+      "specBytes": 1228,
       "cases": [
         {
           "projectId": "moa",
@@ -821,8 +1204,31 @@
       "motion": "showcase",
       "componentSet": "selected",
       "file": "gallery-standard-selected",
-      "planBytes": 274,
-      "specBytes": 1198,
+      "planBytes": 366,
+      "specBytes": 1194,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "standard",
+      "motion": "showcase",
+      "componentSet": "bento",
+      "file": "gallery-standard-bento",
+      "planBytes": 366,
+      "specBytes": 1194,
       "cases": [
         {
           "projectId": "moa",
@@ -844,8 +1250,8 @@
       "motion": "none",
       "componentSet": "default",
       "file": "gallery-long-none",
-      "planBytes": 270,
-      "specBytes": 1207,
+      "planBytes": 366,
+      "specBytes": 1224,
       "cases": [
         {
           "projectId": "moa",
@@ -867,8 +1273,31 @@
       "motion": "none",
       "componentSet": "selected",
       "file": "gallery-long-none-selected",
-      "planBytes": 270,
-      "specBytes": 1194,
+      "planBytes": 362,
+      "specBytes": 1190,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "long",
+      "motion": "none",
+      "componentSet": "bento",
+      "file": "gallery-long-none-bento",
+      "planBytes": 362,
+      "specBytes": 1190,
       "cases": [
         {
           "projectId": "moa",
@@ -890,8 +1319,8 @@
       "motion": "subtle",
       "componentSet": "default",
       "file": "gallery-long-subtle",
-      "planBytes": 272,
-      "specBytes": 1209,
+      "planBytes": 368,
+      "specBytes": 1226,
       "cases": [
         {
           "projectId": "moa",
@@ -913,8 +1342,31 @@
       "motion": "subtle",
       "componentSet": "selected",
       "file": "gallery-long-subtle-selected",
-      "planBytes": 272,
-      "specBytes": 1196,
+      "planBytes": 364,
+      "specBytes": 1192,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "long",
+      "motion": "subtle",
+      "componentSet": "bento",
+      "file": "gallery-long-subtle-bento",
+      "planBytes": 364,
+      "specBytes": 1192,
       "cases": [
         {
           "projectId": "moa",
@@ -936,8 +1388,8 @@
       "motion": "showcase",
       "componentSet": "default",
       "file": "gallery-long",
-      "planBytes": 274,
-      "specBytes": 1211,
+      "planBytes": 370,
+      "specBytes": 1228,
       "cases": [
         {
           "projectId": "moa",
@@ -959,8 +1411,31 @@
       "motion": "showcase",
       "componentSet": "selected",
       "file": "gallery-long-selected",
-      "planBytes": 274,
-      "specBytes": 1198,
+      "planBytes": 366,
+      "specBytes": 1194,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "long",
+      "motion": "showcase",
+      "componentSet": "bento",
+      "file": "gallery-long-bento",
+      "planBytes": 366,
+      "specBytes": 1194,
       "cases": [
         {
           "projectId": "moa",
@@ -982,8 +1457,8 @@
       "motion": "none",
       "componentSet": "default",
       "file": "gallery-no-images-none",
-      "planBytes": 272,
-      "specBytes": 1209,
+      "planBytes": 368,
+      "specBytes": 1226,
       "cases": [
         {
           "projectId": "moa",
@@ -1005,8 +1480,31 @@
       "motion": "none",
       "componentSet": "selected",
       "file": "gallery-no-images-none-selected",
-      "planBytes": 272,
-      "specBytes": 1196,
+      "planBytes": 364,
+      "specBytes": 1192,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "no-images",
+      "motion": "none",
+      "componentSet": "bento",
+      "file": "gallery-no-images-none-bento",
+      "planBytes": 364,
+      "specBytes": 1192,
       "cases": [
         {
           "projectId": "moa",
@@ -1028,8 +1526,8 @@
       "motion": "subtle",
       "componentSet": "default",
       "file": "gallery-no-images-subtle",
-      "planBytes": 274,
-      "specBytes": 1211,
+      "planBytes": 370,
+      "specBytes": 1228,
       "cases": [
         {
           "projectId": "moa",
@@ -1051,8 +1549,31 @@
       "motion": "subtle",
       "componentSet": "selected",
       "file": "gallery-no-images-subtle-selected",
-      "planBytes": 274,
-      "specBytes": 1198,
+      "planBytes": 366,
+      "specBytes": 1194,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "no-images",
+      "motion": "subtle",
+      "componentSet": "bento",
+      "file": "gallery-no-images-subtle-bento",
+      "planBytes": 366,
+      "specBytes": 1194,
       "cases": [
         {
           "projectId": "moa",
@@ -1074,8 +1595,8 @@
       "motion": "showcase",
       "componentSet": "default",
       "file": "gallery-no-images",
-      "planBytes": 276,
-      "specBytes": 1213,
+      "planBytes": 372,
+      "specBytes": 1230,
       "cases": [
         {
           "projectId": "moa",
@@ -1097,8 +1618,31 @@
       "motion": "showcase",
       "componentSet": "selected",
       "file": "gallery-no-images-selected",
-      "planBytes": 276,
-      "specBytes": 1200,
+      "planBytes": 368,
+      "specBytes": 1196,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "process"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "no-images",
+      "motion": "showcase",
+      "componentSet": "bento",
+      "file": "gallery-no-images-bento",
+      "planBytes": 368,
+      "specBytes": 1196,
       "cases": [
         {
           "projectId": "moa",
@@ -1120,8 +1664,8 @@
       "motion": "none",
       "componentSet": "default",
       "file": "gallery-many-none",
-      "planBytes": 487,
-      "specBytes": 2014,
+      "planBytes": 583,
+      "specBytes": 2031,
       "cases": [
         {
           "projectId": "moa",
@@ -1163,8 +1707,51 @@
       "motion": "none",
       "componentSet": "selected",
       "file": "gallery-many-none-selected",
-      "planBytes": 487,
-      "specBytes": 2001,
+      "planBytes": 579,
+      "specBytes": 1997,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-3",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-4",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-5",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-6",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-7",
+          "variant": "media"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "many",
+      "motion": "none",
+      "componentSet": "bento",
+      "file": "gallery-many-none-bento",
+      "planBytes": 579,
+      "specBytes": 1997,
       "cases": [
         {
           "projectId": "moa",
@@ -1206,8 +1793,8 @@
       "motion": "subtle",
       "componentSet": "default",
       "file": "gallery-many-subtle",
-      "planBytes": 489,
-      "specBytes": 2016,
+      "planBytes": 585,
+      "specBytes": 2033,
       "cases": [
         {
           "projectId": "moa",
@@ -1249,8 +1836,51 @@
       "motion": "subtle",
       "componentSet": "selected",
       "file": "gallery-many-subtle-selected",
-      "planBytes": 489,
-      "specBytes": 2003,
+      "planBytes": 581,
+      "specBytes": 1999,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-3",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-4",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-5",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-6",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-7",
+          "variant": "media"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "many",
+      "motion": "subtle",
+      "componentSet": "bento",
+      "file": "gallery-many-subtle-bento",
+      "planBytes": 581,
+      "specBytes": 1999,
       "cases": [
         {
           "projectId": "moa",
@@ -1292,8 +1922,8 @@
       "motion": "showcase",
       "componentSet": "default",
       "file": "gallery-many",
-      "planBytes": 491,
-      "specBytes": 2018,
+      "planBytes": 587,
+      "specBytes": 2035,
       "cases": [
         {
           "projectId": "moa",
@@ -1335,8 +1965,51 @@
       "motion": "showcase",
       "componentSet": "selected",
       "file": "gallery-many-selected",
-      "planBytes": 491,
-      "specBytes": 2005,
+      "planBytes": 583,
+      "specBytes": 2001,
+      "cases": [
+        {
+          "projectId": "moa",
+          "variant": "text"
+        },
+        {
+          "projectId": "lumen",
+          "variant": "media"
+        },
+        {
+          "projectId": "ongil",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-3",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-4",
+          "variant": "media"
+        },
+        {
+          "projectId": "project-5",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-6",
+          "variant": "text"
+        },
+        {
+          "projectId": "project-7",
+          "variant": "media"
+        }
+      ]
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "many",
+      "motion": "showcase",
+      "componentSet": "bento",
+      "file": "gallery-many-bento",
+      "planBytes": 583,
+      "specBytes": 2001,
       "cases": [
         {
           "projectId": "moa",
@@ -1376,7 +2049,7 @@
   "sources": [
     {
       "path": "scripts/library/renderer/portfolio/v1/catalog.mjs",
-      "sha256": "7cd7ea14aff724a1ccb7625f0caf5abbb0a81a5de271fbef27b8f0a8e3888276"
+      "sha256": "a1ed227ee23b6ad30353a62ab3d7c111d6c69dd1cfdda80d89fafb6c1c095fb6"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/fixtures.mjs",
@@ -1384,7 +2057,7 @@
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/registry.jsx",
-      "sha256": "8646723deddb6017c69950bb3fef51d9eb7d0dbe1b3e8c2d1a5af8ba4ba0aa99"
+      "sha256": "4c64c6a2f004805ab2d7b50fd6f3741721cb6b6723cd4ed92b55a29589b78dfe"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/styles.css",
@@ -1415,8 +2088,16 @@
       "sha256": "56deea18b4b4db55f4264e78db529b6b826979fbe55472d9586db2b1b8957ad6"
     },
     {
+      "path": "scripts/library/renderer/portfolio/v1/expanded-components.jsx",
+      "sha256": "54a039a0ad8983ccb9702587c8c269528d3256e5c0d9ca3b284e0d178413ae98"
+    },
+    {
+      "path": "scripts/library/renderer/portfolio/v1/expanded-components.css",
+      "sha256": "357942fc954cb435d031414953335a5da967a2e89347becded346abf8fc9b98f"
+    },
+    {
       "path": "scripts/library/renderer/portfolio/v1/motion.mjs",
-      "sha256": "61ead0449dc2c504a8f8a3ee525f66dda1d1032f20614718c41c89d7b7a29fd5"
+      "sha256": "f8ab4289cc3bca8426be65b3d82ed47aa067865d5b987d0ac9be2ce62eb92e10"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/motion.css",
@@ -1428,11 +2109,11 @@
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/motion-catalog.mjs",
-      "sha256": "7b0a534d11241fb40217bdca002d861ed71c9d2d178d154239dd159bbf2ca645"
+      "sha256": "b266338836712b4535f9e4205c1d81b82e854927e03a00d6b89d99581d2c8ba6"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/motion-library.jsx",
-      "sha256": "7e2b9485363bf6e102adcedd4d8c5eb6ca47d65771d89b7d144168b5f60c6765"
+      "sha256": "def30eddfd34957783bf8e4d7687751d2149f0f3752750f1dcadda13034c3cd5"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/motion-library.css",
@@ -1440,7 +2121,11 @@
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/app.jsx",
-      "sha256": "1d8675739e4514dcccddab51b0d695d73ffa6ba75fefd2be047fa6c0bfbebb72"
+      "sha256": "c34c5ab7852ff64f8b97358994d410aba30e67b354c1283b230ad12ea783f93d"
+    },
+    {
+      "path": "scripts/library/renderer/audit-portfolio-motion.mjs",
+      "sha256": "4b1fcf8dd4a7945379fa0c10c42bb3f77ab96309541e92e66d5daf2c97411526"
     }
   ],
   "originalSources": "./sources.json",

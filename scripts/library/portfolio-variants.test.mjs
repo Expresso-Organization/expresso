@@ -48,11 +48,11 @@ test('가상 시제품 입력과 정적 조작 마크업을 두 방향에 보존
 });
 
 test('모션별 내보내기는 선택 JSON과 허용한 실행 코드의 해시를 보존한다',()=>{
-  const manifest=json(folder+'variants-sources.json');assert.equal(manifest.variants.length,48);
+  const manifest=json(folder+'variants-sources.json');assert.equal(manifest.variants.length,72);
   for(const variant of manifest.variants){
     const data=json(folder+variant.file+'.json'),html=read(folder+variant.file+'.static.html').toString();
     assert.equal(data.plan.motion.preset,variant.motion);
-    assert.equal(data.plan.components.projectIndex,variant.componentSet==='selected'?'orbit':'default');
+    assert.equal(data.plan.components.projectIndex,variant.componentSet==='selected'?'orbit':variant.componentSet==='bento'?'bento':'default');
     const scripts=[...html.matchAll(/<script data-portfolio-motion>([\s\S]*?)<\/script>/g)];
     assert.equal(scripts.length,variant.motion==='none'?0:1);
     if(scripts.length){
@@ -73,16 +73,18 @@ test('모션 프리셋과 정적 출력의 실행 검증이 현재 산출물과 
 
 test('컴포넌트 모션 지원 목록과 실행 검증이 현재 산출물을 가리킨다',()=>{
  const catalog=json(folder+'component-motion-catalog.json'),report=json(folder+'motion-library-verification.json');
- assert.equal(catalog.components.length,9);assert.equal(report.results.length,36);
- assert.equal(new Set(report.results.map(r=>`${r.component}/${r.recipe}/${r.width}`)).size,36);
+ assert.equal(catalog.components.length,14);assert.equal(report.results.length,56);
+ assert.equal(new Set(report.results.map(r=>`${r.component}/${r.recipe}/${r.width}`)).size,56);
  assert.ok(report.results.every(r=>r.status==='passed'));assert.ok(Object.values(report.checks).every(Boolean));
  for(const [name,hash] of Object.entries(report.artifactHashes))assert.equal(createHash('sha256').update(read(folder+name)).digest('hex'),hash,name);
- const plan=json(folder+'gallery-standard.json');assert.deepEqual([...plan.motionSupport].sort(),catalog.components.filter(c=>!c.sourceItemId).map(c=>c.id).sort());
- const selected=json(folder+'gallery-standard-selected.json');assert.deepEqual(selected.motionSupport.filter(id=>['orbit','annotation'].includes(id)).sort(),['annotation','orbit']);
+ const plan=json(folder+'gallery-standard.json');assert.deepEqual([...plan.motionSupport].sort(),['hero','showcase','gallery','case','timeline','evidence','contact'].sort());
+ assert.ok(plan.motionSupport.every(id=>catalog.components.some(component=>component.id===id)));
+ const selected=json(folder+'gallery-standard-selected.json');assert.deepEqual(selected.motionSupport.filter(id=>['orbit','annotation','headline-lines','career-ribbon','evidence-previews','contact-card'].includes(id)).sort(),['annotation','career-ribbon','contact-card','evidence-previews','headline-lines','orbit']);
+ const bento=json(folder+'gallery-standard-bento.json');assert.ok(bento.motionSupport.includes('bento'));
 });
 test('선별 컴포넌트의 전체 입력·모바일·저장 HTML 검증을 보존한다',()=>{
  const report=json(folder+'selected-components-verification.json');
- assert.equal(report.results.length,16);
+ assert.equal(report.results.length,32);
  assert.ok(report.results.every(row=>row.status==='passed'&&row.staticParity));
  assert.ok(Object.values(report.checks).every(Boolean));
  for(const [file,hash] of Object.entries(report.artifactHashes))assert.equal(createHash('sha256').update(read(folder+file)).digest('hex'),hash,file);

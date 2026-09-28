@@ -2,7 +2,7 @@ import {componentMotions} from './motion-catalog.mjs';
 // 같은 실행기를 React 미리보기와 단일 HTML에서 사용합니다.
 export const motionPresets={none:'없음',subtle:'차분하게',showcase:'쇼케이스'};
 export const defaultMotion=recipe=>recipe==='gallery'?'showcase':'subtle';
-export function variantFile(recipe,scenario,preset=defaultMotion(recipe),componentSet='default'){return `${recipe}-${scenario}${preset===defaultMotion(recipe)?'':'-'+preset}${componentSet==='selected'?'-selected':''}`;}
+export function variantFile(recipe,scenario,preset=defaultMotion(recipe),componentSet='default'){return `${recipe}-${scenario}${preset===defaultMotion(recipe)?'':'-'+preset}${componentSet==='selected'?'-selected':componentSet==='bento'?'-bento':''}`;}
 const settings={subtle:{duration:420,distance:12,stagger:55},showcase:{duration:650,distance:28,stagger:85}};
 const heroOrder={'hero-label':0,'hero-title':1,'hero-backdrop':2,'hero-visual':3,'hero-note':4,'hero-intro':3,'hero-meta':4};
 export function mountPortfolioMotion(root,{replayScroll=true}={}){
@@ -30,7 +30,8 @@ export function mountPortfolioMotion(root,{replayScroll=true}={}){
       if(cue==='timeline-line'){from.transform=`${transform} scaleY(0)`.trim();from.transformOrigin='50% 0%';}
       if(cue==='timeline-copy')from.transform=`translateX(${requested==='showcase'?18:8}px) ${transform}`.trim();
       if(interaction&&direction&&cue==='hero-visual')from.transform=`translateX(${direction*32}px) rotate(${direction*2}deg) ${transform}`.trim();
-      if(cue==='annotation')delay+=config.duration*.65+(Number(el.dataset.motionIndex)||0)*110;
+      if(cue==='hero-line')delay+=config.stagger;
+      if(cue==='annotation')delay+=config.duration+config.stagger+(Number(el.dataset.motionIndex)||0)*110;
       el.dataset.motionState='entering';
       try{
         const mark=el.getAttribute('data-annotation-drawing');

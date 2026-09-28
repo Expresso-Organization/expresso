@@ -2613,12 +2613,21 @@
       "roles": [
         "project-grid"
       ],
-      "roleEvidence": "작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.",
-      "roleMethod": "source_review",
-      "selection": "reference",
-      "inputs": [],
+      "roleEvidence": "프로젝트 수에 맞춰 크기가 다른 카드에 화면과 사례 링크를 배치합니다.",
+      "roleMethod": "authored",
+      "selection": "shortlisted",
+      "inputs": [
+        "projects[].id",
+        "projects[].title",
+        "projects[].summary",
+        "projects[].image",
+        "projects[].imageAlt"
+      ],
       "constraints": [
-        "샘플 데이터·입력 구조를 수정하거나 본문 섹션 안에 조합해야 합니다. 원본 실행 확인과 제품 품질 검증은 별개입니다."
+        "샘플 데이터·입력 구조를 수정하거나 본문 섹션 안에 조합해야 합니다. 원본 실행 확인과 제품 품질 검증은 별개입니다.",
+        "프로젝트 화면과 제목을 벤토 카드에 연결합니다.",
+        "원본의 업체·워크숍 문구와 외부 이미지는 사용하지 않습니다.",
+        "키보드·모바일·모션 감소·저장용 HTML을 생성 조합에서 검증합니다."
       ],
       "familyId": "watermelon-bento"
     },
@@ -4543,15 +4552,16 @@
       "roles": [
         "outcome"
       ],
-      "roleEvidence": "원본 입력·구현을 확인한 이식 후보입니다. 실제 경력 콘텐츠의 렌더링 검증은 남아 있습니다.",
-      "roleMethod": "source_review",
-      "selection": "shortlisted",
+      "roleEvidence": "현재 포트폴리오 입력에는 차트에 필요한 검증된 수치 자료가 없습니다. 구조 참고로 보존합니다.",
+      "roleMethod": "authored",
+      "selection": "reference",
       "inputs": [
         "config",
         "data"
       ],
       "constraints": [
-        "차트 보조 프리미티브입니다. 성과의 단위·기간·출처를 담는 섹션으로 조합해야 합니다."
+        "차트 보조 프리미티브입니다. 성과의 단위·기간·출처를 담는 섹션으로 조합해야 합니다.",
+        "현재 포트폴리오 입력에는 차트에 필요한 검증된 수치 자료가 없습니다. 구조 참고로 보존합니다."
       ],
       "familyId": "watermelon-chart"
     },
@@ -4788,16 +4798,17 @@
       "roles": [
         "technical-evidence"
       ],
-      "roleEvidence": "원본 입력·구현을 확인한 이식 후보입니다. 실제 경력 콘텐츠의 렌더링 검증은 남아 있습니다.",
-      "roleMethod": "source_review",
-      "selection": "shortlisted",
+      "roleEvidence": "현재 포트폴리오 입력에는 실행 가능한 코드 본문이 없습니다. 구조 참고로 보존합니다.",
+      "roleMethod": "authored",
+      "selection": "reference",
       "inputs": [
         "code",
         "language",
         "theme"
       ],
       "constraints": [
-        "Shiki 의존성·허용 언어·복사 버튼·중복 DOM ID를 검증해야 합니다."
+        "Shiki 의존성·허용 언어·복사 버튼·중복 DOM ID를 검증해야 합니다.",
+        "현재 포트폴리오 입력에는 실행 가능한 코드 본문이 없습니다. 구조 참고로 보존합니다."
       ],
       "familyId": null
     },
@@ -10138,14 +10149,23 @@
     {
       "id": "watermelon-db08130ec35b8377",
       "roles": [
-        "technical-evidence"
+        "technical-evidence",
+        "evidence"
       ],
-      "roleEvidence": "코드·실행 결과·외부 링크 표현 후보입니다. 섹션으로 조합하고 출처 데이터를 연결해야 합니다.",
-      "roleMethod": "source_review",
-      "selection": "reference",
-      "inputs": [],
+      "roleEvidence": "근거의 제목·요약을 카드로 훑고 원문 본문을 펼치는 표현입니다.",
+      "roleMethod": "authored",
+      "selection": "shortlisted",
+      "inputs": [
+        "evidence[].id",
+        "evidence[].kind",
+        "evidence[].title",
+        "evidence[].summary",
+        "evidence[].body"
+      ],
       "constraints": [
-        "샘플 데이터·입력 구조를 수정하거나 본문 섹션 안에 조합해야 합니다. 원본 실행 확인과 제품 품질 검증은 별개입니다."
+        "샘플 데이터·입력 구조를 수정하거나 본문 섹션 안에 조합해야 합니다. 원본 실행 확인과 제품 품질 검증은 별개입니다.",
+        "공급자 원본의 외부 URL·이미지 없이 근거 본문을 네이티브 펼치기로 표시합니다.",
+        "키보드·터치·모션 감소·저장용 HTML을 생성 조합에서 검증합니다."
       ],
       "familyId": null
     },
@@ -113996,9 +114016,9 @@
       "roles": [
         "experience"
       ],
-      "roleEvidence": "원본의 데이터 입력과 본문 구성을 확인했습니다.",
-      "roleMethod": "source_review",
-      "selection": "shortlisted",
+      "roleEvidence": "경력 타임라인 원본과 역할이 겹칩니다. 섹션 배치 참고로 보존합니다.",
+      "roleMethod": "authored",
+      "selection": "reference",
       "inputs": [
         "company",
         "title",
@@ -114009,7 +114029,8 @@
       ],
       "constraints": [
         "DATA.work를 props로 분리해야 합니다.",
-        "현재 경력의 Present 문구 현지화와 키보드 아코디언 검증이 필요합니다."
+        "현재 경력의 Present 문구 현지화와 키보드 아코디언 검증이 필요합니다.",
+        "경력 타임라인 원본과 역할이 겹칩니다. 섹션 배치 참고로 보존합니다."
       ],
       "familyId": null,
       "preview": {
@@ -114026,9 +114047,9 @@
       "roles": [
         "project-grid"
       ],
-      "roleEvidence": "원본의 데이터 입력과 본문 구성을 확인했습니다.",
-      "roleMethod": "source_review",
-      "selection": "shortlisted",
+      "roleEvidence": "기존 카드·벤토·오빗 후보와 역할이 겹칩니다. 카드 구조 참고로 보존합니다.",
+      "roleMethod": "authored",
+      "selection": "reference",
       "inputs": [
         "title",
         "description",
@@ -114040,7 +114061,8 @@
       ],
       "constraints": [
         "이미지 누락 시 높이 고정 빈 상자를 접는 변형이 필요합니다.",
-        "ReactNode 아이콘을 허용된 아이콘 ID로 바꾸고 영상 자동 재생 정책을 정해야 합니다."
+        "ReactNode 아이콘을 허용된 아이콘 ID로 바꾸고 영상 자동 재생 정책을 정해야 합니다.",
+        "기존 카드·벤토·오빗 후보와 역할이 겹칩니다. 카드 구조 참고로 보존합니다."
       ],
       "familyId": null,
       "preview": {
@@ -114057,9 +114079,9 @@
       "roles": [
         "project-grid"
       ],
-      "roleEvidence": "원본의 데이터 입력과 본문 구성을 확인했습니다.",
-      "roleMethod": "source_review",
-      "selection": "shortlisted",
+      "roleEvidence": "프로젝트 목록의 다른 후보와 역할이 겹칩니다. 섹션 구조 참고로 보존합니다.",
+      "roleMethod": "authored",
+      "selection": "reference",
       "inputs": [
         "heading",
         "description",
@@ -114067,7 +114089,8 @@
       ],
       "constraints": [
         "DATA.projects와 고정 영문 제목을 props로 분리해야 합니다.",
-        "카드·등장 애니메이션 의존성을 함께 연결해야 합니다."
+        "카드·등장 애니메이션 의존성을 함께 연결해야 합니다.",
+        "프로젝트 목록의 다른 후보와 역할이 겹칩니다. 섹션 구조 참고로 보존합니다."
       ],
       "familyId": null,
       "preview": {

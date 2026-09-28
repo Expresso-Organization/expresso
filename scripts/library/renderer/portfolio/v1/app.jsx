@@ -2,7 +2,7 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {MotionLibrary} from './motion-library.jsx';
 import {Portfolio} from './registry.jsx';
-import {defaultPlan,recipes,caseVariants,evidenceVariants,componentChoices,selectedComponents,defaultComponents} from './catalog.mjs';
+import {defaultPlan,recipes,caseVariants,evidenceVariants,componentChoices,selectedComponents,bentoComponents,defaultComponents} from './catalog.mjs';
 import {motionPresets,defaultMotion,variantFile} from './motion.mjs';
 import {fixture,scenarios} from './fixtures.mjs';
 
@@ -15,7 +15,7 @@ function App(){
   const [reduced,setReduced]=React.useState(()=>matchMedia('(prefers-reduced-motion: reduce)').matches);
   React.useEffect(()=>{const media=matchMedia('(prefers-reduced-motion: reduce)'),update=()=>setReduced(media.matches);media.addEventListener('change',update);return ()=>media.removeEventListener('change',update);},[]);
   const [showPlan,setShowPlan]=React.useState(false);
-  const content=fixture(scenario),plan=defaultPlan(content,recipe,motion,componentSet==='selected'?selectedComponents:defaultComponents),file=variantFile(recipe,scenario,motion,componentSet);
+  const content=fixture(scenario),plan=defaultPlan(content,recipe,motion,componentSet==='selected'?selectedComponents:componentSet==='bento'?bentoComponents:defaultComponents),file=variantFile(recipe,scenario,motion,componentSet);
   function update(key,value){
     const url=new URL(location.href);
     if(key==='recipe'){setRecipe(value);setMotion(defaultMotion(value));url.searchParams.delete('motion');}

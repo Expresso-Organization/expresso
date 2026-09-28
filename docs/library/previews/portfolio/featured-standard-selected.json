@@ -23,7 +23,11 @@
     },
     "components": {
       "projectIndex": "orbit",
-      "heroAnnotation": "drawn"
+      "heroAnnotation": "drawn",
+      "heroReveal": "lines",
+      "careerStyle": "ribbon",
+      "evidenceStyle": "preview",
+      "contactStyle": "card"
     }
   },
   "spec": {
@@ -61,7 +65,8 @@
             "$state": "/projects"
           },
           "recipe": "featured",
-          "annotation": "drawn"
+          "annotation": "drawn",
+          "reveal": "lines"
         },
         "children": []
       },
@@ -75,7 +80,7 @@
         "children": []
       },
       "career": {
-        "type": "CareerTimeline",
+        "type": "CareerRibbon",
         "props": {
           "career": {
             "$state": "/career"
@@ -84,17 +89,16 @@
         "children": []
       },
       "evidence": {
-        "type": "EvidenceCollection",
+        "type": "EvidencePreviews",
         "props": {
           "groups": {
             "$state": "/evidenceGroups"
-          },
-          "variant": "grouped"
+          }
         },
         "children": []
       },
       "contact": {
-        "type": "Contact",
+        "type": "ContactCard",
         "props": {
           "contact": {
             "$state": "/contact"
@@ -345,11 +349,12 @@
     "hero",
     "showcase",
     "orbit",
-    "timeline",
-    "evidence",
-    "contact",
+    "career-ribbon",
+    "evidence-previews",
+    "contact-card",
     "case",
-    "annotation"
+    "annotation",
+    "headline-lines"
   ],
   "eligible": [
     {
