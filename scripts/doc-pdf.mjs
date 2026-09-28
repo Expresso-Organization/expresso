@@ -32,7 +32,6 @@ const META = {
   team: "팀번호: XX",
   project: "Expresso — 채용 공고 맞춤형 포트폴리오 생성 서비스",
   version: documentVersion,
-  course: "네트워크보안프로그래밍 (졸업작품 프로젝트)",
   footer: "2026 가천대학교, 설계서",
 };
 
@@ -48,7 +47,6 @@ const HEADER = `
       <td style="padding:0 0 2mm 0;white-space:nowrap;">${esc(META.team)}</td>
       <td style="padding:0 0 2mm 0;text-align:center;color:#5a6b87;">${esc(META.project)}</td>
       <td style="padding:0 0 2mm 0;text-align:center;color:#9a4030;white-space:nowrap;width:14mm;">${esc(META.version)}</td>
-      <td style="padding:0 0 2mm 0;text-align:right;white-space:nowrap;font-weight:600;">${esc(META.course)}</td>
     </tr>
   </table>
 </div>`;
