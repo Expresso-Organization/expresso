@@ -33,7 +33,7 @@ zod 스키마를 두고, 서버는 검증에, 클라이언트는 타입에 쓴�
 | --- | --- |
 | 기본 경로 | `/v1` (`API_PREFIX`) |
 | 형식 | `application/json` |
-| 인증 | 세션 쿠키 (`identity_session`) |
+| 인증 | `httpOnly` 세션 쿠키 (`ex_session`) |
 | 요청 ID | 응답 헤더 `x-request-id` |
 | 낙관적 잠금 | `If-Match` 요청 헤더 · `ETag` 응답 헤더 |
 | 멱등성 | `Idempotency-Key` 헤더 (생성 계열) |
@@ -59,161 +59,201 @@ zod 스키마를 두고, 서버는 검증에, 클라이언트는 타입에 쓴�
 
 ## 7.2. 서비스 REST API 정의
 
-현재 형상의 엔드포인트 **125개**다. URI는 명사형을 원칙으로 한다. 동사가 필요한 동작은
-하위 리소스(`/analyses`, `/runs`, `/deployments`)로 표현한다.
+2026-09-28 시점의 Fastify HTTP 경로 정의는 163개다. 상태 확인 경로 2개를 제외한
+`/v1` 경로는 161개다. 이 중 커리어 편집기 경로 10개는 기능 플래그가 켜질 때 등록된다.
+기본 설정에서 등록되는 HTTP 경로는 153개다. 아래 목록은 `services/backend/src/modules/**/routes.ts`와
+`jobs/board-routes.ts`의 등록 코드를 기준으로 하며, 반복 등록되는 인터뷰 상태 2개와
+AI 제안 상태 3개를 각각 풀어 센다. 커리어 문서 편집 경로는
+`CAREER_EDITOR_V2_ENABLED=true`일 때 등록된다. WebSocket 세션 경로는 REST 수에
+포함하지 않는다.
 
+**GET** (62개)
 
-**GET** (49개)
+| Method | URI | 모듈 |
+| --- | --- | --- |
+| GET | `/health/live` | system |
+| GET | `/health/ready` | system |
+| GET | `/v1/account/export` | account-lifecycle |
+| GET | `/v1/analytics/metrics` | analytics |
+| GET | `/v1/brew-jobs/:id` | brew-jobs |
+| GET | `/v1/brews/:brewId/company-research` | company-research |
+| GET | `/v1/brews/:id` | materials |
+| GET | `/v1/brews/:id/materials` | materials |
+| GET | `/v1/career/categories` | career |
+| GET | `/v1/career/categories/:categoryId/view-configurations` | career |
+| GET | `/v1/career/categories/:categoryId/views` | career |
+| GET | `/v1/career/profile` | career |
+| GET | `/v1/career/records` | career |
+| GET | `/v1/career/records/:recordId` | career |
+| GET | `/v1/career/records/:recordId/ai-proposals/:proposalId` | career-editor |
+| GET | `/v1/career/records/:recordId/delete-impact` | career |
+| GET | `/v1/career/records/:recordId/document` | career-editor |
+| GET | `/v1/career/records/:recordId/document/revisions` | career-editor |
+| GET | `/v1/career/records/:recordId/links` | career |
+| GET | `/v1/career/records/:recordId/relations` | career |
+| GET | `/v1/career/skills` | career |
+| GET | `/v1/career/skills/:skillId/evidence` | career |
+| GET | `/v1/career/view-configurations/:viewId/query` | career |
+| GET | `/v1/companies/:id/logo` | jobs |
+| GET | `/v1/consents` | consent |
+| GET | `/v1/deployments/:id/analytics/derived` | analytics |
+| GET | `/v1/deployments/:id/analytics/insight` | analytics |
+| GET | `/v1/design-system-revisions/:id` | design-systems |
+| GET | `/v1/design-systems` | design-systems |
+| GET | `/v1/design-systems/:id` | design-systems |
+| GET | `/v1/entitlements/:capability` | entitlements |
+| GET | `/v1/export-jobs/:id` | publishing |
+| GET | `/v1/generation-jobs/:id` | generation |
+| GET | `/v1/generation-jobs/:id/page-stream` | generation |
+| GET | `/v1/home` | engagement |
+| GET | `/v1/interview-sessions/:id` | interview |
+| GET | `/v1/job-analyses/:id` | job-analysis |
+| GET | `/v1/job-sources` | jobs |
+| GET | `/v1/jobs/postings` | jobs |
+| GET | `/v1/jobs/postings/:id` | jobs |
+| GET | `/v1/jobs/recent-searches` | jobs |
+| GET | `/v1/jobs/saved-searches` | jobs |
+| GET | `/v1/me` | identity |
+| GET | `/v1/media` | media |
+| GET | `/v1/media/:id` | media |
+| GET | `/v1/notification-preferences` | engagement |
+| GET | `/v1/notifications` | engagement |
+| GET | `/v1/portfolios` | portfolios |
+| GET | `/v1/portfolios/:id` | portfolios |
+| GET | `/v1/portfolios/:id/analytics/dashboard` | analytics |
+| GET | `/v1/portfolios/:id/deployments` | publishing |
+| GET | `/v1/portfolios/:id/layouts` | layout |
+| GET | `/v1/portfolios/:id/page` | page |
+| GET | `/v1/portfolios/:id/page/document` | page |
+| GET | `/v1/portfolios/:id/page/history` | page |
+| GET | `/v1/portfolios/:id/page/stream` | page |
+| GET | `/v1/portfolios/:id/revisions` | portfolios |
+| GET | `/v1/public/assets/:id` | publishing |
+| GET | `/v1/public/portfolios/:slug` | publishing |
+| GET | `/v1/recipes/:id` | recipe |
+| GET | `/v1/recipes/:id/template-previews` | templates |
+| GET | `/v1/search` | engagement |
 
-| Method | URI | 모듈 | Description |
-| --- | --- | --- | --- |
-| GET | `/v1/account/export` | account-lifecycle | |
-| GET | `/v1/analytics/metrics` | analytics | |
-| GET | `/v1/deployments/:id/analytics/derived` | analytics | |
-| GET | `/v1/deployments/:id/analytics/insight` | analytics | |
-| GET | `/v1/portfolios/:id/analytics/dashboard` | analytics | |
-| GET | `/v1/brew-jobs/:id` | brew-jobs | |
-| GET | `/v1/career/categories` | career | |
-| GET | `/v1/career/categories/:categoryId/views` | career | |
-| GET | `/v1/career/profile` | career | |
-| GET | `/v1/career/records` | career | |
-| GET | `/v1/career/records/:recordId` | career | |
-| GET | `/v1/career/records/:recordId/delete-impact` | career | |
-| GET | `/v1/career/records/:recordId/links` | career | |
-| GET | `/v1/career/skills` | career | |
-| GET | `/v1/career/skills/:skillId/evidence` | career | |
-| GET | `/v1/consents` | consent | |
-| GET | `/v1/home` | engagement | |
-| GET | `/v1/notification-preferences` | engagement | |
-| GET | `/v1/notifications` | engagement | |
-| GET | `/v1/search` | engagement | |
-| GET | `/v1/entitlements/:capability` | entitlements | |
-| GET | `/v1/generation-jobs/:id` | generation | |
-| GET | `/v1/me` | identity | |
-| GET | `/v1/interview-sessions/:id` | interview | |
-| GET | `/v1/job-analyses/:id` | job-analysis | |
-| GET | `/v1/companies/:id/logo` | jobs | |
-| GET | `/v1/job-sources` | jobs | |
-| GET | `/v1/jobs/postings` | jobs | |
-| GET | `/v1/jobs/postings/:id` | jobs | |
-| GET | `/v1/jobs/recent-searches` | jobs | |
-| GET | `/v1/jobs/saved-searches` | jobs | |
-| GET | `/v1/portfolios/:id/layouts` | layout | |
-| GET | `/v1/brews/:id` | materials | |
-| GET | `/v1/brews/:id/materials` | materials | |
-| GET | `/v1/media` | media | |
-| GET | `/v1/media/:id` | media | |
-| GET | `${path}/document` | page | |
-| GET | `${path}/history` | page | |
-| GET | `/v1/portfolios` | portfolios | |
-| GET | `/v1/portfolios/:id` | portfolios | |
-| GET | `/v1/portfolios/:id/revisions` | portfolios | |
-| GET | `/v1/export-jobs/:id` | publishing | |
-| GET | `/v1/portfolios/:id/deployments` | publishing | |
-| GET | `/v1/public/assets/:id` | publishing | |
-| GET | `/v1/public/portfolios/:slug` | publishing | |
-| GET | `/v1/recipes/:id` | recipe | |
-| GET | `/health/live` | system | |
-| GET | `/health/ready` | system | |
-| GET | `/v1/recipes/:id/template-previews` | templates | |
+**POST** (75개)
 
-**POST** (54개)
+| Method | URI | 모듈 |
+| --- | --- | --- |
+| POST | `/v1/account/deletion` | account-lifecycle |
+| POST | `/v1/account/deletion/cancel` | account-lifecycle |
+| POST | `/v1/analytics/events` | analytics |
+| POST | `/v1/assets/:id/signed-url` | publishing |
+| POST | `/v1/auth/google` | identity |
+| POST | `/v1/auth/google/link` | identity |
+| POST | `/v1/auth/login` | identity |
+| POST | `/v1/auth/logout` | identity |
+| POST | `/v1/auth/signup` | identity |
+| POST | `/v1/brews` | materials |
+| POST | `/v1/brews/:id/design-selection` | design-systems |
+| POST | `/v1/brews/:id/interview-sessions` | interview |
+| POST | `/v1/brews/:id/recipes` | recipe |
+| POST | `/v1/brews/free` | materials |
+| POST | `/v1/career/categories` | career |
+| POST | `/v1/career/categories/:categoryId/property-schema/:propertyId/restore` | career |
+| POST | `/v1/career/categories/:categoryId/property-schema/apply` | career |
+| POST | `/v1/career/categories/:categoryId/property-schema/preview` | career |
+| POST | `/v1/career/categories/:categoryId/view-configurations` | career |
+| POST | `/v1/career/categories/:categoryId/view-configurations/reorder` | career |
+| POST | `/v1/career/categories/:categoryId/views` | career |
+| POST | `/v1/career/formulas/preview` | career |
+| POST | `/v1/career/records` | career |
+| POST | `/v1/career/records/:recordId/ai-proposals` | career-editor |
+| POST | `/v1/career/records/:recordId/ai-proposals/:proposalId/apply` | career-editor |
+| POST | `/v1/career/records/:recordId/ai-proposals/:proposalId/cancel` | career-editor |
+| POST | `/v1/career/records/:recordId/ai-proposals/:proposalId/reject` | career-editor |
+| POST | `/v1/career/records/:recordId/ai-proposals/:proposalId/undo` | career-editor |
+| POST | `/v1/career/records/:recordId/document/revisions/:revisionId/restore` | career-editor |
+| POST | `/v1/career/records/:recordId/document/updates` | career-editor |
+| POST | `/v1/career/records/:recordId/links` | career |
+| POST | `/v1/career/records/:recordId/move` | career |
+| POST | `/v1/career/records/:recordId/move/preview` | career |
+| POST | `/v1/career/records/:recordId/restore` | career |
+| POST | `/v1/career/rollups/preview` | career |
+| POST | `/v1/career/skills/recompute` | career |
+| POST | `/v1/career/view-configurations/:viewId/duplicate` | career |
+| POST | `/v1/consents` | consent |
+| POST | `/v1/deployments/:id/analytics/aggregate` | analytics |
+| POST | `/v1/generation-jobs` | generation |
+| POST | `/v1/interview-sessions/:id/pause` | interview |
+| POST | `/v1/interview-sessions/:id/questions/:questionId/replace` | interview |
+| POST | `/v1/interview-sessions/:id/questions/:questionId/skip` | interview |
+| POST | `/v1/interview-sessions/:id/resume` | interview |
+| POST | `/v1/job-analyses/:id/reanalyze` | job-analysis |
+| POST | `/v1/job-sources` | jobs |
+| POST | `/v1/job-sources/:id/runs` | jobs |
+| POST | `/v1/job-sources/runs` | jobs |
+| POST | `/v1/jobs/demand-summary` | jobs |
+| POST | `/v1/jobs/postings/:id/analyses` | jobs |
+| POST | `/v1/jobs/postings/:id/match` | jobs |
+| POST | `/v1/jobs/saved-searches` | jobs |
+| POST | `/v1/jobs/search/interpret` | jobs |
+| POST | `/v1/jobs/submissions` | jobs |
+| POST | `/v1/jobs/url-imports` | jobs |
+| POST | `/v1/media` | media |
+| POST | `/v1/portfolio-edit-proposals/:id/apply` | portfolio-editing |
+| POST | `/v1/portfolio-revisions/:id/revert` | portfolio-editing |
+| POST | `/v1/portfolios/:id/analytics/aggregate` | analytics |
+| POST | `/v1/portfolios/:id/analytics/insight` | analytics |
+| POST | `/v1/portfolios/:id/blocks/:blockId/duplicate` | portfolio-editing |
+| POST | `/v1/portfolios/:id/blocks/:blockId/edit-preview` | portfolio-editing |
+| POST | `/v1/portfolios/:id/dashboard-layout` | analytics |
+| POST | `/v1/portfolios/:id/dashboard-views` | analytics |
+| POST | `/v1/portfolios/:id/deployments` | publishing |
+| POST | `/v1/portfolios/:id/deployments/:deploymentId/rollback` | publishing |
+| POST | `/v1/portfolios/:id/exports` | publishing |
+| POST | `/v1/portfolios/:id/layouts/:layoutId/select` | layout |
+| POST | `/v1/portfolios/:id/layouts/remix` | layout |
+| POST | `/v1/portfolios/:id/page` | page |
+| POST | `/v1/portfolios/:id/restore` | portfolio-editing |
+| POST | `/v1/portfolios/:id/resume-assets` | publishing |
+| POST | `/v1/portfolios/:id/sections/:sectionId/media-blocks` | media |
+| POST | `/v1/portfolios/:id/widgets` | analytics |
+| POST | `/v1/recipes/:id/revisions/:revisionId/restore-item` | recipe |
 
-| Method | URI | 모듈 | Description |
-| --- | --- | --- | --- |
-| POST | `/v1/account/deletion` | account-lifecycle | |
-| POST | `/v1/account/deletion/cancel` | account-lifecycle | |
-| POST | `/v1/analytics/events` | analytics | |
-| POST | `/v1/deployments/:id/analytics/aggregate` | analytics | |
-| POST | `/v1/portfolios/:id/analytics/aggregate` | analytics | |
-| POST | `/v1/portfolios/:id/analytics/insight` | analytics | |
-| POST | `/v1/portfolios/:id/dashboard-layout` | analytics | |
-| POST | `/v1/portfolios/:id/dashboard-views` | analytics | |
-| POST | `/v1/portfolios/:id/widgets` | analytics | |
-| POST | `/v1/career/categories` | career | |
-| POST | `/v1/career/categories/:categoryId/views` | career | |
-| POST | `/v1/career/records` | career | |
-| POST | `/v1/career/records/:recordId/links` | career | |
-| POST | `/v1/career/records/:recordId/restore` | career | |
-| POST | `/v1/career/skills/recompute` | career | |
-| POST | `/v1/consents` | consent | |
-| POST | `/v1/generation-jobs` | generation | |
-| POST | `/v1/auth/google` | identity | |
-| POST | `/v1/auth/google/link` | identity | |
-| POST | `/v1/auth/login` | identity | |
-| POST | `/v1/auth/logout` | identity | |
-| POST | `/v1/auth/signup` | identity | |
-| POST | `/v1/brews/:id/interview-sessions` | interview | |
-| POST | `/v1/interview-sessions/:id/${paused ? "pause" : "resume"}` | interview | |
-| POST | `/v1/interview-sessions/:id/questions/:questionId/replace` | interview | |
-| POST | `/v1/interview-sessions/:id/questions/:questionId/skip` | interview | |
-| POST | `/v1/job-analyses/:id/reanalyze` | job-analysis | |
-| POST | `/v1/job-sources` | jobs | |
-| POST | `/v1/job-sources/:id/runs` | jobs | |
-| POST | `/v1/job-sources/runs` | jobs | |
-| POST | `/v1/jobs/demand-summary` | jobs | |
-| POST | `/v1/jobs/postings/:id/analyses` | jobs | |
-| POST | `/v1/jobs/postings/:id/match` | jobs | |
-| POST | `/v1/jobs/saved-searches` | jobs | |
-| POST | `/v1/jobs/search/interpret` | jobs | |
-| POST | `/v1/jobs/submissions` | jobs | |
-| POST | `/v1/jobs/url-imports` | jobs | |
-| POST | `/v1/portfolios/:id/layouts/:layoutId/select` | layout | |
-| POST | `/v1/portfolios/:id/layouts/remix` | layout | |
-| POST | `/v1/brews` | materials | |
-| POST | `/v1/media` | media | |
-| POST | `/v1/portfolios/:id/sections/:sectionId/media-blocks` | media | |
-| POST | `/v1/portfolio-edit-proposals/:id/apply` | portfolio-editing | |
-| POST | `/v1/portfolio-revisions/:id/revert` | portfolio-editing | |
-| POST | `/v1/portfolios/:id/blocks/:blockId/duplicate` | portfolio-editing | |
-| POST | `/v1/portfolios/:id/blocks/:blockId/edit-preview` | portfolio-editing | |
-| POST | `/v1/portfolios/:id/restore` | portfolio-editing | |
-| POST | `/v1/assets/:id/signed-url` | publishing | |
-| POST | `/v1/portfolios/:id/deployments` | publishing | |
-| POST | `/v1/portfolios/:id/deployments/:deploymentId/rollback` | publishing | |
-| POST | `/v1/portfolios/:id/exports` | publishing | |
-| POST | `/v1/portfolios/:id/resume-assets` | publishing | |
-| POST | `/v1/brews/:id/recipes` | recipe | |
-| POST | `/v1/recipes/:id/revisions/:revisionId/restore-item` | recipe | |
+**PUT** (7개)
 
-**PUT** (5개)
+| Method | URI | 모듈 |
+| --- | --- | --- |
+| PUT | `/v1/brews/:brewId/company-research` | company-research |
+| PUT | `/v1/brews/:id/materials` | materials |
+| PUT | `/v1/career/profile` | career |
+| PUT | `/v1/career/records/:recordId/relations` | career |
+| PUT | `/v1/interview-sessions/:id/answers/:questionId` | interview |
+| PUT | `/v1/jobs/postings/:id/interest` | jobs |
+| PUT | `/v1/notification-preferences/:kind` | engagement |
 
-| Method | URI | 모듈 | Description |
-| --- | --- | --- | --- |
-| PUT | `/v1/career/profile` | career | |
-| PUT | `/v1/notification-preferences/:kind` | engagement | |
-| PUT | `/v1/interview-sessions/:id/answers/:questionId` | interview | |
-| PUT | `/v1/jobs/postings/:id/interest` | jobs | |
-| PUT | `/v1/brews/:id/materials` | materials | |
+**PATCH** (10개)
 
-**PATCH** (9개)
+| Method | URI | 모듈 |
+| --- | --- | --- |
+| PATCH | `/v1/brews/:id` | materials |
+| PATCH | `/v1/career/categories/:categoryId/property-schema` | career |
+| PATCH | `/v1/career/records/:recordId` | career |
+| PATCH | `/v1/career/view-configurations/:viewId` | career |
+| PATCH | `/v1/portfolios/:id/sections/:sectionId` | portfolio-editing |
+| PATCH | `/v1/portfolios/:id/sections/:sectionId/blocks/order` | portfolio-editing |
+| PATCH | `/v1/portfolios/:id/sections/order` | portfolio-editing |
+| PATCH | `/v1/portfolios/:id/widgets/order` | analytics |
+| PATCH | `/v1/recipes/:id` | recipe |
+| PATCH | `/v1/widgets/:id` | analytics |
 
-| Method | URI | 모듈 | Description |
-| --- | --- | --- | --- |
-| PATCH | `/v1/portfolios/:id/widgets/order` | analytics | |
-| PATCH | `/v1/widgets/:id` | analytics | |
-| PATCH | `/v1/career/categories/:categoryId/property-schema` | career | |
-| PATCH | `/v1/career/records/:recordId` | career | |
-| PATCH | `/v1/brews/:id` | materials | |
-| PATCH | `/v1/portfolios/:id/sections/:sectionId` | portfolio-editing | |
-| PATCH | `/v1/portfolios/:id/sections/:sectionId/blocks/order` | portfolio-editing | |
-| PATCH | `/v1/portfolios/:id/sections/order` | portfolio-editing | |
-| PATCH | `/v1/recipes/:id` | recipe | |
+**DELETE** (9개)
 
-**DELETE** (8개)
-
-| Method | URI | 모듈 | Description |
-| --- | --- | --- | --- |
-| DELETE | `/v1/portfolios/:id/dashboard-layout` | analytics | |
-| DELETE | `/v1/widgets/:id` | analytics | |
-| DELETE | `/v1/career/records/:recordId` | career | |
-| DELETE | `/v1/consents/:scope` | consent | |
-| DELETE | `/v1/identity/sessions/:sessionId` | identity | |
-| DELETE | `/v1/jobs/recent-searches/:id` | jobs | |
-| DELETE | `/v1/portfolios/:id/blocks/:blockId` | portfolio-editing | |
-| DELETE | `/v1/portfolios/:id/publication` | publishing | |
-
-> Description 칸은 미작성이다. `packages/contracts/src/`의 각 스키마 주석에서 옮긴다.
+| Method | URI | 모듈 |
+| --- | --- | --- |
+| DELETE | `/v1/career/records/:recordId` | career |
+| DELETE | `/v1/career/view-configurations/:viewId` | career |
+| DELETE | `/v1/consents/:scope` | consent |
+| DELETE | `/v1/identity/sessions/:sessionId` | identity |
+| DELETE | `/v1/jobs/recent-searches/:id` | jobs |
+| DELETE | `/v1/portfolios/:id/blocks/:blockId` | portfolio-editing |
+| DELETE | `/v1/portfolios/:id/dashboard-layout` | analytics |
+| DELETE | `/v1/portfolios/:id/publication` | publishing |
+| DELETE | `/v1/widgets/:id` | analytics |
 
 ### 명사형 위반 검토
 
@@ -241,8 +281,8 @@ zod 스키마를 두고, 서버는 검증에, 클라이언트는 타입에 쓴�
 | `POST /v1/blocks/:blockId/edit-preview` | 동사구 | `POST /v1/.../blocks/:id/edit-previews` |
 | `POST /v1/assets/:id/signed-url` | 허용 | 명사구 |
 
-19개 중 18개가 수정 대상이다. **문서와 코드를 함께 고칠지, 문서만 양식에 맞출지는
-결정이 필요하다.** 코드를 고치면 클라이언트 호출부와 계약 스키마가 함께 바뀐다.
+위 표는 현행 URI에서 명사형 원칙과 어긋나는 대표 경로를 기록한다. 경로를 바꿀 때는
+`packages/contracts`와 웹 호출부를 함께 변경한다.
 
 ## 7.3. 서비스 REST API 설계
 
@@ -337,7 +377,7 @@ GET /v1/job-analyses/3f2a1c8e-0b47-4d9a-91c2-6e5f0a7b1d34
 
 ### 작성 현황
 
-125개 중 2개 작성.
+현재 등록된 REST 경로 중 대표 2개를 상세 설계했다.
 
 ## 7.4. AI학습서버 REST API 설계
 
