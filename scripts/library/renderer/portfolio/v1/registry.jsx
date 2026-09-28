@@ -4,6 +4,7 @@ import {registry as original} from '../registry.jsx';
 import {catalog,compilePlan,designDirections} from './catalog.mjs';
 import {mountPortfolioMotion} from './motion.mjs';
 import {ProjectShowcase,VisualProjectIndex,CaseVisual} from './showcase.jsx';
+import {AnnotatedHeading,OrbitProjectIndex} from './selected-components.jsx';
 
 // 수집 코드가 연결된 기존 소개·카드·경력·연락처 구현을 그대로 재사용합니다.
 function Existing({name,props,children}){const View=original[name];return <View element={{type:name,props}}>{children}</View>;}
@@ -12,13 +13,13 @@ function Page({props,children}){
   React.useLayoutEffect(()=>mountPortfolioMotion(ref.current),[props.motion.preset]);
   return <div ref={ref} className="variant-shell" data-recipe={props.recipe} data-design={designDirections[props.recipe]} data-motion-preset={props.motion.preset}><Existing name="PortfolioPage" props={{profile:props.profile}}>{children}</Existing></div>;
 }
-function Hero({profile,projects,recipe}){
+function Hero({profile,projects,recipe,annotation}){
   const poster=recipe==='gallery';
   return <section className={'hero v-hero-'+designDirections[recipe]} id="intro">
     <div className="v-hero-masthead"><p className="eyebrow">{profile.role}</p><span>{poster?'SELECTED WORK / PORTFOLIO':'DESIGN JOURNAL / PORTFOLIO'}</span></div>
     <div className="visual-hero-main"><div className="visual-hero-copy">
       {poster?<p className="v-poster-name" data-reveal="hero-label">{profile.name}<span aria-hidden="true">↘</span></p>:<p className="v-editorial-byline" data-reveal="hero-label">{profile.name}의 포트폴리오</p>}
-      <h1 data-reveal="hero-title">{profile.headline}</h1>
+      <h1 data-reveal="hero-title">{annotation==='drawn'?<AnnotatedHeading text={profile.headline} highlight={profile.highlight}/>:profile.headline}</h1>
     </div><ProjectShowcase projects={projects} recipe={recipe}/><div className="hero-bottom" data-reveal="hero-intro"><p>{profile.intro}</p><a className="text-link" href="#work">작업 살펴보기 <span aria-hidden="true">↘</span></a></div></div>
     <div className="hero-meta" data-reveal="hero-meta"><p>{profile.location}</p><ul aria-label="전문 분야">{profile.focus.map(f=><li key={f}>{f}</li>)}</ul></div>
   </section>;
@@ -50,8 +51,10 @@ function Evidence({groups,variant}){
 export const {registry}=defineRegistry(catalog,{components:{
   PortfolioPage:({props,children})=><Page props={props}>{children}</Page>,
   Hero:({props})=><Hero {...props}/>,
+  AnnotatedHeading:({props})=><h2 className="standalone-annotation"><AnnotatedHeading {...props}/></h2>,
   ProjectShowcase:({props})=><ProjectShowcase {...props}/>,
   ProjectIndex:({props})=><VisualProjectIndex {...props}/>,
+  OrbitProjectIndex:({props})=><OrbitProjectIndex {...props}/>,
   ProjectCaseStudy:({props})=><CaseStudy {...props}/>,
   CareerTimeline:({props})=><Existing name="CareerTimeline" props={props}/>,
   EvidenceCollection:({props})=><Evidence {...props}/>,
@@ -68,9 +71,10 @@ export function MotionComponentPreview({component,plan,content}){
   React.useLayoutEffect(()=>mountPortfolioMotion(ref.current,{replayScroll:false}),[component,plan.motion.preset,plan.recipe]);
   let node=Object.values(compiled.spec.elements).find(el=>el.type===component);
   if(component==='ProjectShowcase')node={type:component,props:{projects:compiled.state.projects,recipe:plan.recipe},children:[]};
+  if(component==='AnnotatedHeading')node={type:component,props:{text:compiled.state.profile.headline,highlight:compiled.state.profile.highlight},children:[]};
   if(!node)throw new Error('등록되지 않은 미리보기 컴포넌트: '+component);
   const spec={root:'sample',elements:{sample:node}};
   return <div ref={ref} className="variant-shell motion-component-preview" data-recipe={plan.recipe} data-design={designDirections[plan.recipe]} data-motion-preset={plan.motion.preset} onClick={event=>{
-    const link=event.target.closest('a[href^="#"]');if(link){event.preventDefault();location.href=`./index.html?recipe=${plan.recipe}&motion=${plan.motion.preset}${link.getAttribute('href')}`;}
+    const link=event.target.closest('a[href^="#"]');if(link){event.preventDefault();location.href=`./index.html?recipe=${plan.recipe}&motion=${plan.motion.preset}&components=${plan.components.projectIndex==='orbit'?'selected':'default'}${link.getAttribute('href')}`;}
   }}><StateProvider initialState={compiled.state}><VisibilityProvider><ActionProvider handlers={{}}><Renderer spec={spec} registry={registry}/></ActionProvider></VisibilityProvider></StateProvider></div>;
 }

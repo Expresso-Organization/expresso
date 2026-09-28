@@ -40,6 +40,10 @@
     "evidence": "grouped",
     "motion": {
       "preset": "none"
+    },
+    "components": {
+      "projectIndex": "default",
+      "heroAnnotation": "off"
     }
   },
   "spec": {
@@ -81,7 +85,8 @@
           "projects": {
             "$state": "/projects"
           },
-          "recipe": "featured"
+          "recipe": "featured",
+          "annotation": "off"
         },
         "children": []
       },

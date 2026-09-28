@@ -2,7 +2,7 @@ import {componentMotions} from './motion-catalog.mjs';
 // 같은 실행기를 React 미리보기와 단일 HTML에서 사용합니다.
 export const motionPresets={none:'없음',subtle:'차분하게',showcase:'쇼케이스'};
 export const defaultMotion=recipe=>recipe==='gallery'?'showcase':'subtle';
-export function variantFile(recipe,scenario,preset=defaultMotion(recipe)){return `${recipe}-${scenario}${preset===defaultMotion(recipe)?'':'-'+preset}`;}
+export function variantFile(recipe,scenario,preset=defaultMotion(recipe),componentSet='default'){return `${recipe}-${scenario}${preset===defaultMotion(recipe)?'':'-'+preset}${componentSet==='selected'?'-selected':''}`;}
 const settings={subtle:{duration:420,distance:12,stagger:55},showcase:{duration:650,distance:28,stagger:85}};
 const heroOrder={'hero-label':0,'hero-title':1,'hero-backdrop':2,'hero-visual':3,'hero-note':4,'hero-intro':3,'hero-meta':4};
 export function mountPortfolioMotion(root,{replayScroll=true}={}){
@@ -30,9 +30,13 @@ export function mountPortfolioMotion(root,{replayScroll=true}={}){
       if(cue==='timeline-line'){from.transform=`${transform} scaleY(0)`.trim();from.transformOrigin='50% 0%';}
       if(cue==='timeline-copy')from.transform=`translateX(${requested==='showcase'?18:8}px) ${transform}`.trim();
       if(interaction&&direction&&cue==='hero-visual')from.transform=`translateX(${direction*32}px) rotate(${direction*2}deg) ${transform}`.trim();
+      if(cue==='annotation')delay+=config.duration*.65+(Number(el.dataset.motionIndex)||0)*110;
       el.dataset.motionState='entering';
       try{
-        const a=el.animate([from,{opacity:1,transform:base,...(cue==='timeline-line'?{transformOrigin:'50% 0%'}:{})}],{id:interaction?'component:stack':cue.startsWith('timeline-')?'component:'+cue:'entrance:'+cue,duration:interaction?220:config.duration,delay,easing:'cubic-bezier(.22,1,.36,1)',fill:'both'});
+        const mark=el.getAttribute('data-annotation-drawing');
+        const opacity=Number(el.getAttribute('opacity')??1);
+        const frames=cue==='annotation'?(mark==='reveal'?[{clipPath:'inset(0 100% 0 0)'},{clipPath:'inset(0 0% 0 0)'}]:[{strokeDasharray:'1',strokeDashoffset:'1',opacity:0},{strokeDasharray:'1',strokeDashoffset:'0',opacity}]):[from,{opacity:1,transform:base,...(cue==='timeline-line'?{transformOrigin:'50% 0%'}:{})}];
+        const a=el.animate(frames,{id:interaction?'component:stack':cue==='annotation'?'component:annotation':cue.startsWith('timeline-')?'component:'+cue:'entrance:'+cue,duration:interaction?220:config.duration,delay,easing:'cubic-bezier(.22,1,.36,1)',fill:'both'});
         animations.set(el,a);
         a.finished.then(()=>{if(!ended&&animations.get(el)===a)finish(el);},()=>{if(!ended&&animations.get(el)===a)finish(el);});
       }catch{finish(el);}

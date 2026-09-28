@@ -56,3 +56,12 @@ test('모션은 허용된 프리셋만 받고 이전 계획은 움직임 없이 
   for(const motion of [{preset:'unknown'},{preset:'showcase',duration:9000},{code:'alert(1)'}])assert.throws(()=>validatePlan({...plan,motion},data));
   delete plan.motion;assert.deepEqual(validatePlan(plan,data).plan.motion,{preset:'none'});
 });
+test('선별 컴포넌트 선택은 허용된 이름만 받고 프로젝트 원문을 유지한다',()=>{
+ const data=fixture('many'),plan=defaultPlan(data,'gallery','showcase',{projectIndex:'orbit',heroAnnotation:'drawn'});
+ const compiled=compilePlan(plan,data);
+ assert.equal(compiled.spec.elements.work.type,'OrbitProjectIndex');
+ assert.equal(compiled.spec.elements.intro.props.annotation,'drawn');
+ assert.deepEqual(compiled.state.projects,data.projects);
+ assert.deepEqual(compiled.motionSupport.filter(c=>c.sourceItemId).map(c=>c.id),['orbit','annotation']);
+ for(const components of [{projectIndex:'made-up',heroAnnotation:'drawn'},{projectIndex:'orbit',heroAnnotation:'script'},{projectIndex:'orbit',heroAnnotation:'drawn',rawHtml:'<h1>x</h1>'}])assert.throws(()=>validatePlan({...plan,components},data));
+});

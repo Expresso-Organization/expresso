@@ -33,6 +33,7 @@ const compositionSubject='json-render 포트폴리오 조합 예제 추가';
 const comparisonSubject='구조화·자유 포트폴리오 생성 비교 추가';
 const variantsSubject='포트폴리오 구성안과 프로젝트 표현 확장';
 const releaseNotes=new Map([
+ ['포트폴리오 선별 컴포넌트와 모션 조합 추가',{summary:'프로젝트 카드 펼침과 제목 밑줄을 구성 JSON에서 선택하고 실제 페이지와 모션 목록에서 확인합니다.',href:'#/library'}],
  ['생성용 컴포넌트 모션 지원 목록과 실행 예제 추가',{summary:'컴포넌트별 모션 지원 정보를 확인하고 카드 전환·갤러리·타임라인의 움직임을 직접 재생합니다.',href:'#/library'}],
  ['포트폴리오 모션 프리셋과 내보내기 연동',{summary:'없음·차분하게·쇼케이스 모션을 비교하고 등장 효과를 다시 재생합니다. 저장한 HTML에도 선택한 모션을 포함합니다.',href:'#/library'}],
  ['포트폴리오 시제품 전시와 화면 조작 추가',{summary:'첫 화면과 프로젝트 사례에서 가상 지도·관계도·층별 경로를 직접 조작합니다.',href:'#/library'}],

@@ -1,0 +1,155 @@
+{
+  "method": "chrome_selected_portfolio_components",
+  "results": [
+    {
+      "recipe": "featured",
+      "scenario": "standard",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "recipe": "featured",
+      "scenario": "standard",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "recipe": "featured",
+      "scenario": "long",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "recipe": "featured",
+      "scenario": "long",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "recipe": "featured",
+      "scenario": "no-images",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "recipe": "featured",
+      "scenario": "no-images",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "recipe": "featured",
+      "scenario": "many",
+      "width": 390,
+      "status": "passed",
+      "projects": 8,
+      "staticParity": true
+    },
+    {
+      "recipe": "featured",
+      "scenario": "many",
+      "width": 1440,
+      "status": "passed",
+      "projects": 8,
+      "staticParity": true
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "standard",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "standard",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "long",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "long",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "no-images",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "no-images",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "many",
+      "width": 390,
+      "status": "passed",
+      "projects": 8,
+      "staticParity": true
+    },
+    {
+      "recipe": "gallery",
+      "scenario": "many",
+      "width": 1440,
+      "status": "passed",
+      "projects": 8,
+      "staticParity": true
+    }
+  ],
+  "checks": {
+    "mobile": true,
+    "desktop": true,
+    "projectOverflow": true,
+    "staticParity": true,
+    "reducedMotion": true,
+    "noJavascript": true
+  },
+  "artifactHashes": {
+    "variants.js": "f0385e2f9442c40c82e91ffc9e30fd6bb6c429e1b4a85a924489f8897ed66f33",
+    "variants.css": "77642fc0a1401f1567a06edc3b2c95dd817cf053dd073ee2b5df9f784301733c",
+    "variants-sources.json": "d721e3f16e8f37fbb232871e1d5c4d0cae9e01ece16195eda628b3a7ec6c6c78",
+    "component-motion-catalog.json": "0327ab7707b654b969b88363ca3fd0c4785aeeaef0e992f6e9b74bc5a6b2810d",
+    "featured-standard-selected.static.html": "491b4b7486a1a8095fcef9fec6cc0225e8078053d025fde37d097b322a931295",
+    "featured-long-selected.static.html": "279f0c1bf98703775f0bd242057b24566b681016ff5caf8a92e9485705c1f216",
+    "featured-no-images-selected.static.html": "35aeef11e7f5bffb9b780eae8b068a91709dfceafd0adbaa43e1957ce881872b",
+    "featured-many-selected.static.html": "61c94d74932c2a8aae14a6bcf7c0a6a46ee08087734c61119cdd48ed7eea98e8",
+    "gallery-standard-selected.static.html": "4699bbacac80526ea096fa911bb685dc135bf640739db1eafae40b19243ea32e",
+    "gallery-long-selected.static.html": "67ac68f82331c812ed92c2355fe8097f182bdbbe2dbe42a55f4fa886348edb94",
+    "gallery-no-images-selected.static.html": "b9c5e8e48dd2175d2b73c4026141d97d8a6b6bdb48ce8ee10654ffd8c47e25bb",
+    "gallery-many-selected.static.html": "8f7e21b2d99d0cd5e660a8e93ee056b73444170361226b1d209deacd9843af0e"
+  }
+}

@@ -3271,12 +3271,22 @@
       "roles": [
         "project-grid"
       ],
-      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
-      "roleMethod": "identifier_rules_v2",
-      "selection": "pending",
-      "inputs": [],
+      "roleEvidence": "프로젝트 제목·요약·이미지·사례 링크에 연결한 생성용 카드 탐색을 확인했습니다.",
+      "roleMethod": "authored",
+      "selection": "shortlisted",
+      "inputs": [
+        "projects[].id",
+        "projects[].title",
+        "projects[].summary",
+        "projects[].category",
+        "projects[].period",
+        "projects[].image",
+        "projects[].imageAlt"
+      ],
       "constraints": [
-        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+        "원본의 인물 프로필 대신 프로젝트 데이터를 사용합니다.",
+        "저장용 HTML에서도 선택할 수 있도록 네이티브 라디오로 조합합니다.",
+        "프로젝트가 5개를 넘으면 나머지는 링크 목록으로 표시합니다."
       ],
       "familyId": null,
       "preview": {
@@ -4104,12 +4114,16 @@
       "roles": [
         "technical-evidence"
       ],
-      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
-      "roleMethod": "identifier_rules_v2",
-      "selection": "pending",
-      "inputs": [],
+      "roleEvidence": "원본 Annotated Text를 소개 제목의 강조 문구에 연결했습니다.",
+      "roleMethod": "authored",
+      "selection": "shortlisted",
+      "inputs": [
+        "profile.headline",
+        "profile.highlight"
+      ],
       "constraints": [
-        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다."
+        "강조 문구가 제목에 없으면 제목의 첫 줄에 밑줄을 그립니다.",
+        "SVG 획은 공통 모션 프리셋으로 제어합니다."
       ],
       "familyId": null,
       "preview": {

@@ -5,9 +5,12 @@ import {compilePlan,defaultPlan} from './catalog.mjs';
 import {fixture} from './fixtures.mjs';
 test('생성에 사용하는 모든 컴포넌트와 내부 전시의 모션 지원을 연결한다',()=>{
  const content=fixture(),compiled=compilePlan(defaultPlan(content),content);
- assert.equal(componentMotions.length,7);
- assert.equal(new Set(componentMotions.map(c=>c.id)).size,7);
+ assert.equal(componentMotions.length,9);
+ assert.equal(new Set(componentMotions.map(c=>c.id)).size,9);
  assert.equal(compiled.motionSupport.length,7);
+ const selected=compilePlan(defaultPlan(content,'gallery','showcase',{projectIndex:'orbit',heroAnnotation:'drawn'}),content);
+ assert.equal(selected.spec.elements.work.type,'OrbitProjectIndex');
+ assert.deepEqual(selected.motionSupport.filter(c=>c.sourceItemId).map(c=>c.id),['orbit','annotation']);
  assert.ok(compiled.motionSupport.some(c=>c.component==='ProjectShowcase'));
  for(const preset of ['none','subtle','showcase'])assert.equal(motionSupportFor(['Hero'],preset).length,2);
 });

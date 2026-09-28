@@ -145,6 +145,35 @@
 @media(prefers-reduced-motion:reduce){.project-showcase{--scene-motion:0ms}.project-showcase *,.project-scene *{animation:none!important;transition:none!important}.showcase-board>.project-scene,.visual-project-cover>.project-scene{transform:none!important}}
 @media print{.showcase-board>.project-scene{transform:none}.showcase-note{position:static;transform:none;margin-top:16px;max-width:none}.showcase-board{padding:0}.showcase-case-link,.showcase-offset-sheet{display:none}.project-showcase .showcase-panel{animation:none}.visual-hero-main{display:block!important}.project-showcase{margin-top:24px}.case-original{break-inside:avoid}}
 
+/* 선별한 원본의 동작을 실제 프로젝트 카드와 제목에 연결합니다. */
+.v-drawn-highlight>span{position:relative;display:inline-block;white-space:nowrap}
+.v-drawn-highlight svg{position:absolute;left:-1%;bottom:-.32em;width:102%;height:.5em;color:var(--accent);pointer-events:none;overflow:visible}
+[data-design=poster] .v-drawn-highlight svg{color:var(--signal)}
+.v-drawn-highlight [data-annotation-drawing]{stroke-linecap:round;stroke-linejoin:round}
+.orbit-index{max-width:none;padding-inline:max(var(--gutter),calc((100% - var(--content))/2));overflow:hidden}
+.orbit-index .section-heading{max-width:var(--content);margin-inline:auto}
+.orbit-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.orbit-stage{min-width:0;border:0;padding:0;margin:36px auto 0;max-width:var(--content)}
+.orbit-deck{position:relative;height:570px;isolation:isolate}
+.orbit-position{position:absolute;top:48%;left:50%;width:min(290px,28vw);min-width:238px;transform:translate(calc(-50% + var(--orbit-x)),-50%) rotate(var(--orbit-rotate)) scale(.93);transform-origin:50% 88%;z-index:1;transition:transform 340ms cubic-bezier(.22,1,.36,1)}
+.orbit-position:hover,.orbit-position:focus-within{z-index:5}
+.orbit-position:has(.orbit-radio:checked){transform:translate(calc(-50% + var(--orbit-x)),-58%) rotate(0deg) scale(1.04);z-index:4}
+.orbit-radio{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.orbit-position label{display:block;cursor:pointer}
+.orbit-radio:focus-visible+label{outline:3px solid var(--accent);outline-offset:5px}
+.orbit-card{display:flex;flex-direction:column;gap:0;padding:0;min-height:455px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 16px 40px #151d351c;overflow:hidden}
+.orbit-card>div{padding:0}.orbit-card>div:nth-child(2){padding:16px 18px 4px;flex:1}.orbit-card>div:last-child{padding:8px 18px 18px;font-size:12px;color:var(--muted)}
+.orbit-card h3{font-family:var(--display-font);font-size:clamp(22px,2.3vw,29px);line-height:1.2;margin:8px 0}
+.orbit-card p{margin:0}.orbit-card .eyebrow{font-size:10px;color:var(--accent)}.orbit-card [data-slot=card-description]{font-size:13px;line-height:1.45;color:var(--muted)}
+.orbit-cover{height:238px;background:var(--paper);position:relative;overflow:hidden}.orbit-cover img{width:100%;height:100%;object-fit:cover}.orbit-cover-fallback{height:100%;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;padding:24px;background:linear-gradient(145deg,var(--surface),var(--paper));color:var(--ink)}.orbit-cover-fallback strong{font-family:var(--display-font);font-size:28px}.orbit-cover-fallback span{font-size:11px}.orbit-number{position:absolute;top:14px;right:14px;font-size:12px;background:var(--ink);color:var(--paper);padding:5px 9px}
+.orbit-case-link{display:none;position:absolute;top:100%;left:50%;white-space:nowrap;transform:translateX(-50%);font-size:12px;font-weight:700;padding:11px 14px;background:var(--ink);color:var(--paper);border-radius:2px}.orbit-position:has(.orbit-radio:checked) .orbit-case-link{display:block}
+.orbit-hint{text-align:center;color:var(--muted);font-size:13px}.orbit-more{max-width:var(--content);margin:44px auto 0}.orbit-more h3{font-size:18px;margin-bottom:10px}.orbit-more li{border-top:1px solid var(--line)}.orbit-more a{display:flex;gap:16px;align-items:center;padding:15px 0}.orbit-more a span:first-child{margin-left:auto;color:var(--muted);font-size:12px}
+[data-design=poster] .orbit-card{border-radius:0;box-shadow:12px 12px 0 var(--electric)}[data-design=editorial] .orbit-card{border-radius:2px}
+@media(max-width:850px){.orbit-index{padding-inline:var(--gutter)}.orbit-deck{height:540px}.orbit-position{width:260px;min-width:0;transform:translate(calc(-50% + var(--orbit-x-mobile)),-50%) rotate(var(--orbit-rotate)) scale(.9)}.orbit-position:has(.orbit-radio:checked){transform:translate(calc(-50% + var(--orbit-x-mobile)),-56%) rotate(0deg) scale(1)}.orbit-card{min-height:420px}.orbit-cover{height:205px}}
+@media(max-width:520px){.orbit-deck{height:510px}.orbit-position{width:210px}.orbit-card{min-height:390px}.orbit-cover{height:170px}.orbit-card>div:nth-child(2){padding:12px 14px 4px}.orbit-card>div:last-child{padding:6px 14px 14px}.orbit-card h3{font-size:21px}.orbit-card [data-slot=card-description]{font-size:11px}.orbit-hint{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.orbit-position{transition:none}}
+@media print{.orbit-deck{height:auto;display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.orbit-position,.orbit-position:has(.orbit-radio:checked){position:static;width:auto;transform:none;break-inside:avoid}.orbit-position:not(:has(.orbit-radio:checked)){display:block}.orbit-card{min-height:0}.orbit-case-link{display:block;position:static;transform:none}.orbit-hint{display:none}}
+
 /* 기본 HTML은 보입니다. 관찰자가 준비된 뒤 화면 밖의 대상만 대기시킵니다. */
 .variant-shell[data-motion-effective]:not([data-motion-effective=none]) [data-motion-state=pending]{opacity:0}
 .variant-shell[data-motion-preset] .showcase-panel{animation:none!important}

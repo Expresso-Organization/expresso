@@ -223,6 +223,67 @@
       },
       "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
       "source": "scripts/library/renderer/portfolio/v1/registry.jsx"
+    },
+    {
+      "id": "orbit",
+      "component": "OrbitProjectIndex",
+      "title": "프로젝트 카드 펼침",
+      "icon": "orbit",
+      "description": "선택한 카드가 앞으로 올라오고 나머지 카드가 둘레에 펼쳐집니다.",
+      "entrance": "카드 순차 등장",
+      "intrinsic": "카드 선택·방향키 탐색·사례 링크",
+      "owner": "slots",
+      "dependencies": [],
+      "bindings": [],
+      "anchor": "work",
+      "instruction": "카드를 누르거나 방향키로 다른 프로젝트를 선택한 뒤 사례 링크를 열어 보세요.",
+      "sourceItemId": "componentry-orbit-card-stack",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "docs/library/materials/componentry/source/orbit-card-stack.tsx"
+    },
+    {
+      "id": "annotation",
+      "component": "AnnotatedHeading",
+      "title": "핵심 문구 표시",
+      "icon": "draw",
+      "description": "소개 제목의 핵심 문구 아래에 선을 그립니다.",
+      "entrance": "제목 뒤 밑줄 그리기",
+      "intrinsic": "별도 조작 없음",
+      "owner": "slots",
+      "dependencies": [],
+      "bindings": [
+        {
+          "selector": "[data-annotation-mark] [data-annotation-drawing]",
+          "cue": "annotation"
+        }
+      ],
+      "anchor": "intro",
+      "instruction": "다시 재생을 눌러 제목 뒤에 밑줄이 그려지는 순서를 확인하세요.",
+      "sourceItemId": "componentry-annotated-text",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "docs/library/materials/componentry/source/annotated-text.tsx"
     }
   ]
 }

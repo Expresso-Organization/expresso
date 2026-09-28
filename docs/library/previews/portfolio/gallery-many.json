@@ -40,6 +40,10 @@
     "evidence": "expanded",
     "motion": {
       "preset": "showcase"
+    },
+    "components": {
+      "projectIndex": "default",
+      "heroAnnotation": "off"
     }
   },
   "spec": {
@@ -81,7 +85,8 @@
           "projects": {
             "$state": "/projects"
           },
-          "recipe": "gallery"
+          "recipe": "gallery",
+          "annotation": "off"
         },
         "children": []
       },

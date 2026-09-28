@@ -66,6 +66,34 @@
         "preset"
       ],
       "additionalProperties": false
+    },
+    "components": {
+      "default": {
+        "projectIndex": "default",
+        "heroAnnotation": "off"
+      },
+      "type": "object",
+      "properties": {
+        "projectIndex": {
+          "type": "string",
+          "enum": [
+            "default",
+            "orbit"
+          ]
+        },
+        "heroAnnotation": {
+          "type": "string",
+          "enum": [
+            "off",
+            "drawn"
+          ]
+        }
+      },
+      "required": [
+        "projectIndex",
+        "heroAnnotation"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -73,7 +101,8 @@
     "recipe",
     "cases",
     "evidence",
-    "motion"
+    "motion",
+    "components"
   ],
   "additionalProperties": false
 }

@@ -13,7 +13,7 @@ try{
  for(const item of componentMotions)for(const width of [390,1440]){
   const p=await browser.newPage({viewport:{width,height:1000},reducedMotion:'no-preference'}),errors=[];p.on('pageerror',e=>errors.push(e.message));
   await p.goto(url+`?view=motion-library&component=${item.id}&motion=showcase#motion-preview`);await p.locator('.motion-component-preview').waitFor();await p.evaluate(()=>document.fonts.ready);
-  assert.equal(await p.locator('.motion-library-link').count(),7);assert.equal(await p.locator('.motion-library-link[aria-current=page]').count(),1);
+  assert.equal(await p.locator('.motion-library-link').count(),9);assert.equal(await p.locator('.motion-library-link[aria-current=page]').count(),1);
   assert.equal(await p.locator('#motion-preview-title').innerText(),item.title);
   for(const recipe of ['featured','gallery']){
    await p.getByLabel('미리보기 디자인',{exact:true}).selectOption(recipe);await p.locator('.motion-preview-stage').scrollIntoViewIfNeeded();await settle(p);
@@ -43,6 +43,20 @@ try{
   if(item.id==='evidence'){
    await p.getByLabel('미리보기 디자인',{exact:true}).selectOption('featured');const summary=p.locator('.v-artifact summary').first();await summary.focus();await p.keyboard.press('Enter');assert.equal(await p.locator('.v-artifact').first().getAttribute('open'),'');await p.keyboard.press('Enter');assert.equal(await p.locator('.v-artifact').first().getAttribute('open'),null);
   }
+  if(item.id==='orbit'){
+   const first=p.locator('.orbit-radio').first(),second=p.locator('.orbit-radio').nth(1);
+   await first.focus();await p.keyboard.press('ArrowRight');assert.equal(await second.isChecked(),true);
+   assert.equal(await p.locator('.orbit-case-link:visible').count(),1);
+   await p.getByLabel('미리보기 모션',{exact:true}).selectOption('none');
+   await second.check({force:true});assert.equal(await second.isChecked(),true);assert.equal(await second.locator('xpath=..').evaluate(e=>getComputedStyle(e).transitionDuration),'0s');
+   await p.getByLabel('미리보기 모션',{exact:true}).selectOption('showcase');
+  }
+  if(item.id==='annotation'){
+   assert.ok(await p.locator('[data-annotation-drawing]').count()>0);
+   await p.getByRole('button',{name:'다시 재생'}).click();
+   await p.waitForFunction(()=>document.getAnimations().some(a=>a.id==='component:annotation'));
+   await settle(p);
+  }
   await p.emulateMedia({reducedMotion:'reduce'});await p.waitForFunction(()=>document.querySelector('.motion-component-preview').dataset.motionEffective==='none');assert.equal(await p.locator('[data-motion-state=pending]').count(),0);assert.equal(await p.getByRole('button',{name:'다시 재생'}).isDisabled(),true);
   await p.emulateMedia({reducedMotion:'no-preference'});await p.getByLabel('미리보기 모션',{exact:true}).selectOption('none');assert.equal(await p.locator('[data-motion-state=pending]').count(),0);assert.equal(await p.getByRole('button',{name:'다시 재생'}).isDisabled(),true);
   assert.deepEqual(errors,[]);console.log(item.id,width,'passed');await p.close();
@@ -50,7 +64,8 @@ try{
  const p=await browser.newPage();await p.goto(base+'/Expresso%20개발%20포털.dc.html#/library');await p.getByRole('link',{name:/컴포넌트 모션/}).click();await p.locator('.motion-library').waitFor();await p.getByRole('link',{name:/경력 타임라인/}).click();await p.locator('.career-item').first().waitFor();assert.match(p.url(),/component=timeline/);
  // 단일 HTML에서도 동일한 타임라인 동작을 확인합니다.
  await p.goto(base+'/library/previews/portfolio/featured-standard.static.html');await p.locator('[data-motion-effective]').waitFor();await p.locator('.career').scrollIntoViewIfNeeded();await p.waitForFunction(()=>document.querySelector('.career-item .timeline-dot').dataset.motionState==='shown');assert.equal(await p.locator('.career-item .timeline-dot').first().evaluate(e=>getComputedStyle(e).opacity),'1');await p.close();
- const files=['component-motion-catalog.json','variants.js','variants.css','variants-sources.json','featured-standard.static.html'];
+ const nojs=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:844}}),staticPage=await nojs.newPage();await staticPage.goto(base+'/library/previews/portfolio/gallery-standard-selected.static.html');assert.equal(await staticPage.locator('.orbit-radio').count(),3);assert.equal(await staticPage.locator('.v-drawn-highlight [data-annotation-drawing]').count()>0,true);await staticPage.locator('.orbit-radio').nth(1).check({force:true});assert.equal(await staticPage.locator('.orbit-case-link:visible').count(),1);await nojs.close();
+ const files=['component-motion-catalog.json','variants.js','variants.css','variants-sources.json','featured-standard.static.html','gallery-standard-selected.static.html'];
  const artifactHashes=Object.fromEntries(files.map(file=>[file,createHash('sha256').update(fs.readFileSync(path.join(out,file))).digest('hex')]));
- fs.writeFileSync(path.join(out,'motion-library-verification.json'),JSON.stringify({results,checks:{directionalStack:true,keyboardImmediate:true,galleryHoverReverse:true,timelineParts:true,reducedMotion:true,nonePreset:true,portalNavigation:true,staticTimeline:true},artifactHashes},null,2)+'\n');
+ fs.writeFileSync(path.join(out,'motion-library-verification.json'),JSON.stringify({results,checks:{directionalStack:true,keyboardImmediate:true,galleryHoverReverse:true,timelineParts:true,orbitKeyboard:true,annotationDrawing:true,reducedMotion:true,nonePreset:true,portalNavigation:true,staticTimeline:true,staticSelectedControls:true},artifactHashes},null,2)+'\n');
 }finally{await browser.close();}

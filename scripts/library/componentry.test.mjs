@@ -26,8 +26,9 @@ test('Componentry 53개 UI와 3개 블록의 고정 소스·시연 자료를 연
   assert.deepEqual(feed.stats,{items:56,components:53,blocks:3,officialVideos:36,unavailableVideos:13,textPreviews:20,localRenders:56});
   assert.equal(selectItems(merged,parseLibraryRoute('#/library/all?source=componentry')).total,56);
   const items=merged.items.filter(item=>item.sourceSite==='componentry');
+  const selected=new Set(['componentry-orbit-card-stack','componentry-annotated-text']);
   for(const item of items){
-    assert.equal(item.selection,'pending');
+    assert.equal(item.selection,selected.has(item.id)?'shortlisted':'pending');
     assert.equal(item.integrationStatus,'not_started');
     assert.equal(item.preview.kind,'local_frame');
     assert.equal(item.preview.liveUrl,`./library/previews/componentry/${item.id}.html`);
@@ -45,6 +46,7 @@ test('Componentry 53개 UI와 3개 블록의 고정 소스·시연 자료를 연
       assert.equal(createHash('sha256').update(read('docs/'+material.path.slice(2))).digest('hex'),material.sha256);
     }
   }
+  assert.equal(selectItems(merged,parseLibraryRoute('#/library/all?source=componentry&selection=shortlisted')).total,2);
   for(const name of ['flipping-word-swap','image-trail','layered-stack','liquid-glass-carousel']){
     assert.equal(items.find(item=>item.sourceItemId===name)?.rightsStatus,'unreviewed');
   }

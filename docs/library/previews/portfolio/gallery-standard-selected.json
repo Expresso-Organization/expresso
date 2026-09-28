@@ -1,0 +1,378 @@
+{
+  "schemaVersion": 2,
+  "plan": {
+    "version": 1,
+    "recipe": "gallery",
+    "cases": [
+      {
+        "projectId": "moa",
+        "variant": "text"
+      },
+      {
+        "projectId": "lumen",
+        "variant": "media"
+      },
+      {
+        "projectId": "ongil",
+        "variant": "text"
+      }
+    ],
+    "evidence": "expanded",
+    "motion": {
+      "preset": "showcase"
+    },
+    "components": {
+      "projectIndex": "orbit",
+      "heroAnnotation": "drawn"
+    }
+  },
+  "spec": {
+    "root": "page",
+    "elements": {
+      "page": {
+        "type": "PortfolioPage",
+        "props": {
+          "profile": {
+            "$state": "/profile"
+          },
+          "recipe": "gallery",
+          "motion": {
+            "preset": "showcase"
+          }
+        },
+        "children": [
+          "intro",
+          "work",
+          "case-moa",
+          "case-lumen",
+          "case-ongil",
+          "evidence",
+          "career",
+          "contact"
+        ]
+      },
+      "intro": {
+        "type": "Hero",
+        "props": {
+          "profile": {
+            "$state": "/profile"
+          },
+          "projects": {
+            "$state": "/projects"
+          },
+          "recipe": "gallery",
+          "annotation": "drawn"
+        },
+        "children": []
+      },
+      "work": {
+        "type": "OrbitProjectIndex",
+        "props": {
+          "projects": {
+            "$state": "/projects"
+          }
+        },
+        "children": []
+      },
+      "career": {
+        "type": "CareerTimeline",
+        "props": {
+          "career": {
+            "$state": "/career"
+          }
+        },
+        "children": []
+      },
+      "evidence": {
+        "type": "EvidenceCollection",
+        "props": {
+          "groups": {
+            "$state": "/evidenceGroups"
+          },
+          "variant": "expanded"
+        },
+        "children": []
+      },
+      "contact": {
+        "type": "Contact",
+        "props": {
+          "contact": {
+            "$state": "/contact"
+          }
+        },
+        "children": []
+      },
+      "case-moa": {
+        "type": "ProjectCaseStudy",
+        "props": {
+          "project": {
+            "$state": "/projectById/moa"
+          },
+          "variant": "text",
+          "ordinal": 1
+        },
+        "children": []
+      },
+      "case-lumen": {
+        "type": "ProjectCaseStudy",
+        "props": {
+          "project": {
+            "$state": "/projectById/lumen"
+          },
+          "variant": "media",
+          "ordinal": 2
+        },
+        "children": []
+      },
+      "case-ongil": {
+        "type": "ProjectCaseStudy",
+        "props": {
+          "project": {
+            "$state": "/projectById/ongil"
+          },
+          "variant": "text",
+          "ordinal": 3
+        },
+        "children": []
+      }
+    }
+  },
+  "content": {
+    "fictional": true,
+    "profile": {
+      "name": "윤서하",
+      "monogram": "YSH",
+      "role": "Product designer",
+      "headline": "복잡한 정보를\n명료한 경험으로.",
+      "highlight": "명료한 경험",
+      "intro": "관찰에서 시작해 화면의 작은 선택까지 설계합니다. 사람들에게 필요한 정보가 적절한 순간에 닿는 제품을 만듭니다.",
+      "location": "서울 · 대한민국",
+      "focus": [
+        "정보 구조",
+        "인터랙션 디자인",
+        "접근성"
+      ]
+    },
+    "projects": [
+      {
+        "id": "moa",
+        "title": "모아 지도",
+        "category": "지역 탐색 서비스",
+        "summary": "동네의 공공 공간을 찾는 흐름을 정리한 탐색 서비스 콘셉트입니다. 장소를 비교하고 방문 계획을 저장하는 화면을 설계했습니다.",
+        "image": "./assets/portfolio-moa-map.svg",
+        "imageAlt": "가상 프로젝트 모아 지도의 장소 탐색 화면",
+        "role": "UX 리서치 · 제품 설계",
+        "period": "2026.01 — 2026.04",
+        "tags": [
+          "UX Research",
+          "Product Design"
+        ],
+        "problem": "시설 정보가 여러 화면에 나뉘어 있어 장소를 비교하기 어렵다는 상황을 가정했습니다.",
+        "contribution": "지도와 장소 목록을 함께 살펴보는 화면을 설계하고, 접근성 조건과 운영 시간을 비교 항목으로 정리했습니다.",
+        "outcome": "장소 탐색에서 방문 계획 저장까지 연결되는 시제품을 구성했습니다. 실제 사용자 효과는 측정하지 않은 가상 사례입니다.",
+        "evidenceIds": [
+          "moa-flow",
+          "moa-criteria"
+        ],
+        "process": [],
+        "showcase": {
+          "kind": "map",
+          "label": "MOA / EXPLORE",
+          "subtitle": "가까운 일상을 발견하는 지도",
+          "items": [
+            [
+              "여울 도서관",
+              "조용히 머물 수 있는 동네의 작은 도서관",
+              "계단 없는 출입구"
+            ],
+            [
+              "느린 정원",
+              "산책과 잠깐의 휴식을 위한 열린 공간",
+              "완만한 산책로"
+            ],
+            [
+              "동네 작업실",
+              "함께 만들고 배우는 동네의 작업 공간",
+              "엘리베이터 이용"
+            ]
+          ]
+        }
+      },
+      {
+        "id": "lumen",
+        "title": "루멘 노트",
+        "category": "개인 지식 도구",
+        "summary": "읽은 자료를 주제별로 연결하는 개인 지식 도구 콘셉트입니다. 기록·연결·재발견을 하나의 작업 흐름으로 구성했습니다.",
+        "image": "./assets/portfolio-lumen-note.svg",
+        "imageAlt": "가상 프로젝트 루멘 노트의 자료 연결 화면",
+        "role": "정보 구조 · 인터랙션",
+        "period": "2025.08 — 2025.12",
+        "tags": [
+          "Information Architecture",
+          "Interaction"
+        ],
+        "problem": "읽은 자료가 폴더 안에 쌓여 주제 사이의 관계를 다시 찾기 어려운 상황을 설정했습니다.",
+        "contribution": "기록·연결·재발견의 흐름을 정의하고, 관련 자료를 연결하는 화면과 읽기 목록을 구성했습니다.",
+        "outcome": "자료 간 연결을 탐색할 수 있는 시제품을 구성했습니다. 이 화면은 가상 설계 과정의 결과물입니다.",
+        "evidenceIds": [
+          "lumen-map"
+        ],
+        "process": [
+          "problem",
+          "contribution",
+          "outcome"
+        ],
+        "showcase": {
+          "kind": "network",
+          "label": "LUMEN / CONNECT",
+          "subtitle": "기록 사이에서 발견하는 연결",
+          "items": [
+            [
+              "접근 가능한 탐색",
+              "장소를 고르는 기준과 화면의 정보 순서를 함께 기록합니다.",
+              "관련 기록 · 장소 비교 기준"
+            ],
+            [
+              "정보의 연결",
+              "흩어진 메모를 주제와 연결해 다시 찾을 수 있는 구조입니다.",
+              "관련 기록 · 자료와 주제"
+            ],
+            [
+              "다음 질문",
+              "관찰한 내용을 질문으로 바꾸고 다음 탐색에 연결합니다.",
+              "관련 기록 · 시제품 검토"
+            ]
+          ]
+        }
+      },
+      {
+        "id": "ongil",
+        "title": "온길 안내",
+        "category": "공공 공간 안내",
+        "summary": "낯선 건물에서 필요한 시설을 찾도록 돕는 안내 화면 콘셉트입니다. 큰 글자와 간단한 선택지로 이동 경로를 표현했습니다.",
+        "image": "./assets/portfolio-ongil-guide.svg",
+        "imageAlt": "가상 프로젝트 온길 안내의 경로 선택 화면",
+        "role": "접근성 · UI 설계",
+        "period": "2025.03 — 2025.06",
+        "tags": [
+          "Accessibility",
+          "Design System"
+        ],
+        "problem": "낯선 건물에서 층별 시설과 이동 경로를 함께 파악하기 어려운 상황을 다뤘습니다.",
+        "contribution": "목적지를 먼저 고르는 흐름과 계단 없는 경로 선택을 설계했습니다. 큰 글자와 설명이 있는 아이콘을 사용했습니다.",
+        "outcome": "목적지와 이동 조건을 한 화면에서 선택하는 시제품을 구성했습니다. 실제 시설에 적용한 이력은 없습니다.",
+        "evidenceIds": [
+          "ongil-checklist"
+        ],
+        "process": [],
+        "showcase": {
+          "kind": "wayfinding",
+          "label": "ONGIL / FIND YOUR WAY",
+          "subtitle": "누구에게나 편안한 다음 걸음",
+          "items": [
+            [
+              "1F · 안내 데스크",
+              "주출입구에서 중앙 홀을 지나 안내 데스크로 이동합니다.",
+              "계단 없는 경로"
+            ],
+            [
+              "2F · 열린 서가",
+              "중앙 엘리베이터에서 내려 오른쪽 열린 서가로 이동합니다.",
+              "엘리베이터 경유"
+            ],
+            [
+              "3F · 라운지",
+              "중앙 엘리베이터에서 내려 정면 라운지로 이동합니다.",
+              "엘리베이터 경유"
+            ]
+          ]
+        }
+      }
+    ],
+    "career": [
+      {
+        "id": "career-studio",
+        "period": "2024.03 — 현재",
+        "organization": "가상 조직 · 스튜디오 여백",
+        "role": "프로덕트 디자이너",
+        "description": "정보 탐색과 기록 도구를 주제로 프로젝트를 설계한 가상 경력입니다. 조사 질문부터 인터랙션 시제품까지 담당한 것으로 설정했습니다."
+      },
+      {
+        "id": "career-lab",
+        "period": "2022.09 — 2024.02",
+        "organization": "가상 조직 · 일상경험 연구실",
+        "role": "UX 디자인 연구원",
+        "description": "공공 공간 안내와 접근성을 주제로 관찰 내용을 정리하고 화면 가설을 만든 가상 경력입니다."
+      }
+    ],
+    "evidence": [
+      {
+        "id": "moa-flow",
+        "title": "장소 탐색 흐름",
+        "kind": "설계 기록",
+        "summary": "검색부터 비교, 방문 계획 저장까지의 연결",
+        "body": "검색어 입력 → 지도와 목록 탐색 → 운영 시간과 접근성 조건 비교 → 방문 계획 저장. 각 단계에서 필요한 정보가 이어지는지 확인하기 위한 가상 설계 기록입니다."
+      },
+      {
+        "id": "moa-criteria",
+        "title": "장소 비교 기준",
+        "kind": "검토 기준",
+        "summary": "비교 화면에서 놓치지 않아야 할 정보",
+        "body": "운영 시간, 이동 거리, 계단 없는 출입구, 이용 가능한 시설을 같은 순서로 표시합니다. 실제 기관에서 수집한 조사 자료를 포함하지 않습니다."
+      },
+      {
+        "id": "lumen-map",
+        "title": "기록의 정보 구조",
+        "kind": "구조 설계",
+        "summary": "자료와 주제 사이의 관계",
+        "body": "자료에는 제목, 요약, 주제, 관련 기록을 둡니다. 하나의 자료를 여러 주제와 연결하고 읽기 목록에서 다시 방문할 수 있게 설계한 가상 예제입니다."
+      },
+      {
+        "id": "ongil-checklist",
+        "title": "안내 화면 검토표",
+        "kind": "접근성 검토",
+        "summary": "큰 글자와 명확한 이동 선택",
+        "body": "글자 확대 시 정보가 잘리지 않는지, 키보드로 목적지를 선택할 수 있는지, 색상 외의 설명으로 경로를 구분할 수 있는지 확인하는 가상 프로젝트의 검토표입니다."
+      }
+    ],
+    "contact": {
+      "heading": "다음 문제를 함께\n풀어갈 수 있도록.",
+      "description": "이 페이지의 인물, 조직, 프로젝트 이력은 조합 검증을 위한 가상 예제입니다.",
+      "email": "portfolio-demo@example.com"
+    }
+  },
+  "motionSupport": [
+    "hero",
+    "showcase",
+    "orbit",
+    "timeline",
+    "evidence",
+    "contact",
+    "case",
+    "annotation"
+  ],
+  "eligible": [
+    {
+      "id": "moa",
+      "variants": [
+        "text",
+        "media"
+      ]
+    },
+    {
+      "id": "lumen",
+      "variants": [
+        "text",
+        "media",
+        "process"
+      ]
+    },
+    {
+      "id": "ongil",
+      "variants": [
+        "text",
+        "media"
+      ]
+    }
+  ]
+}

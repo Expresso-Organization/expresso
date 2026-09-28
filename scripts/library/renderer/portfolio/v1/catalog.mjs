@@ -11,11 +11,14 @@ export const recipes={featured:'에디토리얼 · 대표 사례',gallery:'포�
 // 구성안은 색·서체·히어로·섹션 리듬을 함께 결정하는 검증된 디자인 단위입니다.
 export const designDirections={featured:'editorial',gallery:'poster'};
 export const evidenceVariants={grouped:'프로젝트별 펼치기',expanded:'내용 펼쳐 보기'};
+export const componentChoices={default:'기본 조합',selected:'선별 컴포넌트'};
+export const defaultComponents=Object.freeze({projectIndex:'default',heroAnnotation:'off'});
+export const selectedComponents=Object.freeze({projectIndex:'orbit',heroAnnotation:'drawn'});
 const field=z.enum(['problem','contribution','outcome']);
 const showcaseSchema=z.strictObject({kind:z.enum(['map','network','wayfinding']),label:z.string(),subtitle:z.string(),items:z.array(z.tuple([z.string(),z.string(),z.string()])).length(3)});
 const projectSchema=baseProject.extend({process:z.array(field).max(3).default([]),showcase:showcaseSchema.nullable().default(null)});
 export const contentSchema=baseContent.extend({projects:z.array(projectSchema).min(1).max(8)});
-export const planSchema=z.strictObject({version:z.literal(1),recipe:z.enum(['featured','gallery']),cases:z.array(z.strictObject({projectId:id,variant:z.enum(['media','process','text'])})).min(1).max(8),evidence:z.enum(['grouped','expanded']),motion:z.strictObject({preset:z.enum(['none','subtle','showcase'])}).default({preset:'none'})});
+export const planSchema=z.strictObject({version:z.literal(1),recipe:z.enum(['featured','gallery']),cases:z.array(z.strictObject({projectId:id,variant:z.enum(['media','process','text'])})).min(1).max(8),evidence:z.enum(['grouped','expanded']),motion:z.strictObject({preset:z.enum(['none','subtle','showcase'])}).default({preset:'none'}),components:z.strictObject({projectIndex:z.enum(['default','orbit']),heroAnnotation:z.enum(['off','drawn'])}).default(defaultComponents)});
 
 export function candidates(project){
   return ['text',...(project.image?['media']:[]),...(project.process.length===3?['process']:[])];
@@ -33,10 +36,10 @@ export function validateContent(input){
   }
   return content;
 }
-export function defaultPlan(input,recipe='featured',preset=defaultMotion(recipe)){
+export function defaultPlan(input,recipe='featured',preset=defaultMotion(recipe),components=defaultComponents){
   const content=validateContent(input);
   const preferred=recipe==='featured'?['media','process','text']:['text','media','process'];
-  return planSchema.parse({version:1,recipe,motion:{preset},evidence:recipe==='featured'?'grouped':'expanded',cases:content.projects.map((p,i)=>{
+  return planSchema.parse({version:1,recipe,motion:{preset},components,evidence:recipe==='featured'?'grouped':'expanded',cases:content.projects.map((p,i)=>{
     const allowed=candidates(p),wanted=preferred[i%preferred.length];
     return {projectId:p.id,variant:allowed.includes(wanted)?wanted:allowed.includes('process')?'process':'text'};
   })});
@@ -57,9 +60,11 @@ const projectView=projectSchema.extend({artifacts:z.array(baseContent.shape.evid
 const groupSchema=z.object({id:z.string(),title:z.string(),projectIds:z.array(id),items:z.array(baseContent.shape.evidence.element)});
 export const catalog=defineCatalog(schema,{components:{
   PortfolioPage:{props:z.object({profile:baseContent.shape.profile,recipe:z.enum(['featured','gallery']),motion:z.object({preset:z.enum(['none','subtle','showcase'])})}),slots:['default'],description:'구성안에 연결된 디자인 방향을 적용합니다.'},
-  Hero:{props:z.object({profile:baseContent.shape.profile,projects:z.array(projectSchema),recipe:z.enum(['featured','gallery'])}),description:'역할과 핵심 소개'},
+  Hero:{props:z.object({profile:baseContent.shape.profile,projects:z.array(projectSchema),recipe:z.enum(['featured','gallery']),annotation:z.enum(['off','drawn'])}),description:'역할과 핵심 소개'},
+  AnnotatedHeading:{props:z.object({text:z.string(),highlight:z.string()}),description:'선별한 Annotated Text로 핵심 문구에 표시를 그립니다.'},
   ProjectShowcase:{props:z.object({projects:z.array(projectSchema),recipe:z.enum(['featured','gallery'])}),description:'프로젝트 보드의 방향 전환과 시제품 선택'},
   ProjectIndex:{props:z.object({projects:z.array(projectSchema),variant:z.enum(['list','gallery'])}),description:'목록형 또는 이미지 갤러리'},
+  OrbitProjectIndex:{props:z.object({projects:z.array(projectSchema)}),description:'선별한 Orbit Card Stack의 프로젝트 탐색 표현'},
   ProjectCaseStudy:{props:z.object({project:projectView,variant:z.enum(['media','process','text']),ordinal:z.number().int().min(1).max(8)}),description:'프로젝트별 이미지·과정·본문 중심 표현. 본문은 참조 데이터 그대로 사용합니다.'},
   CareerTimeline:{props:z.object({career:baseContent.shape.career}),description:'기간과 역할의 타임라인'},
   EvidenceCollection:{props:z.object({groups:z.array(groupSchema),variant:z.enum(['grouped','expanded'])}),description:'프로젝트별 자료 또는 펼친 구조화 자료. 같은 근거는 한 번만 표시합니다.'},
@@ -82,13 +87,13 @@ export function compilePlan(plan,input){
   const ending=valid.plan.recipe==='featured'?['career','evidence']:['evidence','career'];
   const spec={root:'page',elements:{
     page:{type:'PortfolioPage',props:{profile:binding('profile'),recipe:valid.plan.recipe,motion:valid.plan.motion},children:['intro','work',...cases,...ending,'contact']},
-    intro:{type:'Hero',props:{profile:binding('profile'),projects:binding('projects'),recipe:valid.plan.recipe},children:[]},
-    work:{type:'ProjectIndex',props:{projects:binding('projects'),variant:valid.plan.recipe==='featured'?'list':'gallery'},children:[]},
+    intro:{type:'Hero',props:{profile:binding('profile'),projects:binding('projects'),recipe:valid.plan.recipe,annotation:valid.plan.components.heroAnnotation},children:[]},
+    work:valid.plan.components.projectIndex==='orbit'?{type:'OrbitProjectIndex',props:{projects:binding('projects')},children:[]}:{type:'ProjectIndex',props:{projects:binding('projects'),variant:valid.plan.recipe==='featured'?'list':'gallery'},children:[]},
     career:{type:'CareerTimeline',props:{career:binding('career')},children:[]},
     evidence:{type:'EvidenceCollection',props:{groups:binding('evidenceGroups'),variant:valid.plan.evidence},children:[]},
     contact:{type:'Contact',props:{contact:binding('contact')},children:[]}
   }};
   valid.plan.cases.forEach((c,i)=>{spec.elements['case-'+c.projectId]={type:'ProjectCaseStudy',props:{project:binding('projectById/'+c.projectId),variant:c.variant,ordinal:i+1},children:[]};});
   if(!catalog.validate(spec).success)throw new Error('카탈로그와 구성 결과가 맞지 않습니다.');
-  return {plan:valid.plan,content,state,spec,motionSupport:motionSupportFor(Object.values(spec.elements).map(e=>e.type),valid.plan.motion.preset)};
+  return {plan:valid.plan,content,state,spec,motionSupport:motionSupportFor([...Object.values(spec.elements).map(e=>e.type),...(valid.plan.components.heroAnnotation==='drawn'?['AnnotatedHeading']:[])],valid.plan.motion.preset)};
 }
