@@ -25,8 +25,8 @@
     "showcase": "쇼케이스"
   },
   "motionRuntime": {
-    "bytes": 15598,
-    "sha256": "6cWp9gKdJuIBiL/0C3n/KPcsC9UroarOBP4JEfuSDZk="
+    "bytes": 18082,
+    "sha256": "OyESdvSi5n9LE41v/Z0NaclzE8I9ETX9dTTmkikiKKg="
   },
   "variants": [
     {
@@ -35,8 +35,8 @@
       "motion": "none",
       "componentSet": "default",
       "file": "featured-standard-none",
-      "planBytes": 369,
-      "specBytes": 1225,
+      "planBytes": 391,
+      "specBytes": 1296,
       "cases": [
         {
           "projectId": "moa",
@@ -58,8 +58,8 @@
       "motion": "none",
       "componentSet": "selected",
       "file": "featured-standard-none-selected",
-      "planBytes": 365,
-      "specBytes": 1195,
+      "planBytes": 387,
+      "specBytes": 1266,
       "cases": [
         {
           "projectId": "moa",
@@ -81,8 +81,8 @@
       "motion": "none",
       "componentSet": "bento",
       "file": "featured-standard-none-bento",
-      "planBytes": 365,
-      "specBytes": 1195,
+      "planBytes": 387,
+      "specBytes": 1266,
       "cases": [
         {
           "projectId": "moa",
@@ -104,8 +104,8 @@
       "motion": "subtle",
       "componentSet": "default",
       "file": "featured-standard",
-      "planBytes": 371,
-      "specBytes": 1227,
+      "planBytes": 393,
+      "specBytes": 1298,
       "cases": [
         {
           "projectId": "moa",
@@ -127,8 +127,8 @@
       "motion": "subtle",
       "componentSet": "selected",
       "file": "featured-standard-selected",
-      "planBytes": 367,
-      "specBytes": 1197,
+      "planBytes": 389,
+      "specBytes": 1268,
       "cases": [
         {
           "projectId": "moa",
@@ -150,8 +150,8 @@
       "motion": "subtle",
       "componentSet": "bento",
       "file": "featured-standard-bento",
-      "planBytes": 367,
-      "specBytes": 1197,
+      "planBytes": 389,
+      "specBytes": 1268,
       "cases": [
         {
           "projectId": "moa",
@@ -173,8 +173,8 @@
       "motion": "showcase",
       "componentSet": "default",
       "file": "featured-standard-showcase",
-      "planBytes": 373,
-      "specBytes": 1229,
+      "planBytes": 395,
+      "specBytes": 1300,
       "cases": [
         {
           "projectId": "moa",
@@ -196,8 +196,8 @@
       "motion": "showcase",
       "componentSet": "selected",
       "file": "featured-standard-showcase-selected",
-      "planBytes": 369,
-      "specBytes": 1199,
+      "planBytes": 391,
+      "specBytes": 1270,
       "cases": [
         {
           "projectId": "moa",
@@ -219,8 +219,8 @@
       "motion": "showcase",
       "componentSet": "bento",
       "file": "featured-standard-showcase-bento",
-      "planBytes": 369,
-      "specBytes": 1199,
+      "planBytes": 391,
+      "specBytes": 1270,
       "cases": [
         {
           "projectId": "moa",
@@ -242,8 +242,8 @@
       "motion": "none",
       "componentSet": "default",
       "file": "featured-long-none",
-      "planBytes": 369,
-      "specBytes": 1225,
+      "planBytes": 391,
+      "specBytes": 1296,
       "cases": [
         {
           "projectId": "moa",
@@ -265,8 +265,8 @@
       "motion": "none",
       "componentSet": "selected",
       "file": "featured-long-none-selected",
-      "planBytes": 365,
-      "specBytes": 1195,
+      "planBytes": 387,
+      "specBytes": 1266,
       "cases": [
         {
           "projectId": "moa",
@@ -288,8 +288,8 @@
       "motion": "none",
       "componentSet": "bento",
       "file": "featured-long-none-bento",
-      "planBytes": 365,
-      "specBytes": 1195,
+      "planBytes": 387,
+      "specBytes": 1266,
       "cases": [
         {
           "projectId": "moa",
@@ -311,8 +311,8 @@
       "motion": "subtle",
       "componentSet": "default",
       "file": "featured-long",
-      "planBytes": 371,
-      "specBytes": 1227,
+      "planBytes": 393,
+      "specBytes": 1298,
       "cases": [
         {
           "projectId": "moa",
@@ -334,8 +334,8 @@
       "motion": "subtle",
       "componentSet": "selected",
       "file": "featured-long-selected",
-      "planBytes": 367,
-      "specBytes": 1197,
+      "planBytes": 389,
+      "specBytes": 1268,
       "cases": [
         {
           "projectId": "moa",
@@ -357,8 +357,8 @@
       "motion": "subtle",
       "componentSet": "bento",
       "file": "featured-long-bento",
-      "planBytes": 367,
-      "specBytes": 1197,
+      "planBytes": 389,
+      "specBytes": 1268,
       "cases": [
         {
           "projectId": "moa",
@@ -380,8 +380,8 @@
       "motion": "showcase",
       "componentSet": "default",
       "file": "featured-long-showcase",
-      "planBytes": 373,
-      "specBytes": 1229,
+      "planBytes": 395,
+      "specBytes": 1300,
       "cases": [
         {
           "projectId": "moa",
@@ -403,8 +403,8 @@
       "motion": "showcase",
       "componentSet": "selected",
       "file": "featured-long-showcase-selected",
-      "planBytes": 369,
-      "specBytes": 1199,
+      "planBytes": 391,
+      "specBytes": 1270,
       "cases": [
         {
           "projectId": "moa",
@@ -426,8 +426,8 @@
       "motion": "showcase",
       "componentSet": "bento",
       "file": "featured-long-showcase-bento",
-      "planBytes": 369,
-      "specBytes": 1199,
+      "planBytes": 391,
+      "specBytes": 1270,
       "cases": [
         {
           "projectId": "moa",
@@ -449,8 +449,8 @@
       "motion": "none",
       "componentSet": "default",
       "file": "featured-no-images-none",
-      "planBytes": 368,
-      "specBytes": 1224,
+      "planBytes": 390,
+      "specBytes": 1295,
       "cases": [
         {
           "projectId": "moa",
@@ -472,8 +472,8 @@
       "motion": "none",
       "componentSet": "selected",
       "file": "featured-no-images-none-selected",
-      "planBytes": 364,
-      "specBytes": 1194,
+      "planBytes": 386,
+      "specBytes": 1265,
       "cases": [
         {
           "projectId": "moa",
@@ -495,8 +495,8 @@
       "motion": "none",
       "componentSet": "bento",
       "file": "featured-no-images-none-bento",
-      "planBytes": 364,
-      "specBytes": 1194,
+      "planBytes": 386,
+      "specBytes": 1265,
       "cases": [
         {
           "projectId": "moa",
@@ -518,8 +518,8 @@
       "motion": "subtle",
       "componentSet": "default",
       "file": "featured-no-images",
-      "planBytes": 370,
-      "specBytes": 1226,
+      "planBytes": 392,
+      "specBytes": 1297,
       "cases": [
         {
           "projectId": "moa",
@@ -541,8 +541,8 @@
       "motion": "subtle",
       "componentSet": "selected",
       "file": "featured-no-images-selected",
-      "planBytes": 366,
-      "specBytes": 1196,
+      "planBytes": 388,
+      "specBytes": 1267,
       "cases": [
         {
           "projectId": "moa",
@@ -564,8 +564,8 @@
       "motion": "subtle",
       "componentSet": "bento",
       "file": "featured-no-images-bento",
-      "planBytes": 366,
-      "specBytes": 1196,
+      "planBytes": 388,
+      "specBytes": 1267,
       "cases": [
         {
           "projectId": "moa",
@@ -587,8 +587,8 @@
       "motion": "showcase",
       "componentSet": "default",
       "file": "featured-no-images-showcase",
-      "planBytes": 372,
-      "specBytes": 1228,
+      "planBytes": 394,
+      "specBytes": 1299,
       "cases": [
         {
           "projectId": "moa",
@@ -610,8 +610,8 @@
       "motion": "showcase",
       "componentSet": "selected",
       "file": "featured-no-images-showcase-selected",
-      "planBytes": 368,
-      "specBytes": 1198,
+      "planBytes": 390,
+      "specBytes": 1269,
       "cases": [
         {
           "projectId": "moa",
@@ -633,8 +633,8 @@
       "motion": "showcase",
       "componentSet": "bento",
       "file": "featured-no-images-showcase-bento",
-      "planBytes": 368,
-      "specBytes": 1198,
+      "planBytes": 390,
+      "specBytes": 1269,
       "cases": [
         {
           "projectId": "moa",
@@ -656,8 +656,8 @@
       "motion": "none",
       "componentSet": "default",
       "file": "featured-many-none",
-      "planBytes": 592,
-      "specBytes": 2038,
+      "planBytes": 614,
+      "specBytes": 2109,
       "cases": [
         {
           "projectId": "moa",
@@ -699,8 +699,8 @@
       "motion": "none",
       "componentSet": "selected",
       "file": "featured-many-none-selected",
-      "planBytes": 588,
-      "specBytes": 2008,
+      "planBytes": 610,
+      "specBytes": 2079,
       "cases": [
         {
           "projectId": "moa",
@@ -742,8 +742,8 @@
       "motion": "none",
       "componentSet": "bento",
       "file": "featured-many-none-bento",
-      "planBytes": 588,
-      "specBytes": 2008,
+      "planBytes": 610,
+      "specBytes": 2079,
       "cases": [
         {
           "projectId": "moa",
@@ -785,8 +785,8 @@
       "motion": "subtle",
       "componentSet": "default",
       "file": "featured-many",
-      "planBytes": 594,
-      "specBytes": 2040,
+      "planBytes": 616,
+      "specBytes": 2111,
       "cases": [
         {
           "projectId": "moa",
@@ -828,8 +828,8 @@
       "motion": "subtle",
       "componentSet": "selected",
       "file": "featured-many-selected",
-      "planBytes": 590,
-      "specBytes": 2010,
+      "planBytes": 612,
+      "specBytes": 2081,
       "cases": [
         {
           "projectId": "moa",
@@ -871,8 +871,8 @@
       "motion": "subtle",
       "componentSet": "bento",
       "file": "featured-many-bento",
-      "planBytes": 590,
-      "specBytes": 2010,
+      "planBytes": 612,
+      "specBytes": 2081,
       "cases": [
         {
           "projectId": "moa",
@@ -914,8 +914,8 @@
       "motion": "showcase",
       "componentSet": "default",
       "file": "featured-many-showcase",
-      "planBytes": 596,
-      "specBytes": 2042,
+      "planBytes": 618,
+      "specBytes": 2113,
       "cases": [
         {
           "projectId": "moa",
@@ -957,8 +957,8 @@
       "motion": "showcase",
       "componentSet": "selected",
       "file": "featured-many-showcase-selected",
-      "planBytes": 592,
-      "specBytes": 2012,
+      "planBytes": 614,
+      "specBytes": 2083,
       "cases": [
         {
           "projectId": "moa",
@@ -1000,8 +1000,8 @@
       "motion": "showcase",
       "componentSet": "bento",
       "file": "featured-many-showcase-bento",
-      "planBytes": 592,
-      "specBytes": 2012,
+      "planBytes": 614,
+      "specBytes": 2083,
       "cases": [
         {
           "projectId": "moa",
@@ -1043,8 +1043,8 @@
       "motion": "none",
       "componentSet": "default",
       "file": "gallery-standard-none",
-      "planBytes": 366,
-      "specBytes": 1224,
+      "planBytes": 388,
+      "specBytes": 1294,
       "cases": [
         {
           "projectId": "moa",
@@ -1066,8 +1066,8 @@
       "motion": "none",
       "componentSet": "selected",
       "file": "gallery-standard-none-selected",
-      "planBytes": 362,
-      "specBytes": 1190,
+      "planBytes": 384,
+      "specBytes": 1260,
       "cases": [
         {
           "projectId": "moa",
@@ -1089,8 +1089,8 @@
       "motion": "none",
       "componentSet": "bento",
       "file": "gallery-standard-none-bento",
-      "planBytes": 362,
-      "specBytes": 1190,
+      "planBytes": 384,
+      "specBytes": 1260,
       "cases": [
         {
           "projectId": "moa",
@@ -1112,8 +1112,8 @@
       "motion": "subtle",
       "componentSet": "default",
       "file": "gallery-standard-subtle",
-      "planBytes": 368,
-      "specBytes": 1226,
+      "planBytes": 390,
+      "specBytes": 1296,
       "cases": [
         {
           "projectId": "moa",
@@ -1135,8 +1135,8 @@
       "motion": "subtle",
       "componentSet": "selected",
       "file": "gallery-standard-subtle-selected",
-      "planBytes": 364,
-      "specBytes": 1192,
+      "planBytes": 386,
+      "specBytes": 1262,
       "cases": [
         {
           "projectId": "moa",
@@ -1158,8 +1158,8 @@
       "motion": "subtle",
       "componentSet": "bento",
       "file": "gallery-standard-subtle-bento",
-      "planBytes": 364,
-      "specBytes": 1192,
+      "planBytes": 386,
+      "specBytes": 1262,
       "cases": [
         {
           "projectId": "moa",
@@ -1181,8 +1181,8 @@
       "motion": "showcase",
       "componentSet": "default",
       "file": "gallery-standard",
-      "planBytes": 370,
-      "specBytes": 1228,
+      "planBytes": 392,
+      "specBytes": 1298,
       "cases": [
         {
           "projectId": "moa",
@@ -1204,8 +1204,8 @@
       "motion": "showcase",
       "componentSet": "selected",
       "file": "gallery-standard-selected",
-      "planBytes": 366,
-      "specBytes": 1194,
+      "planBytes": 388,
+      "specBytes": 1264,
       "cases": [
         {
           "projectId": "moa",
@@ -1227,8 +1227,8 @@
       "motion": "showcase",
       "componentSet": "bento",
       "file": "gallery-standard-bento",
-      "planBytes": 366,
-      "specBytes": 1194,
+      "planBytes": 388,
+      "specBytes": 1264,
       "cases": [
         {
           "projectId": "moa",
@@ -1250,8 +1250,8 @@
       "motion": "none",
       "componentSet": "default",
       "file": "gallery-long-none",
-      "planBytes": 366,
-      "specBytes": 1224,
+      "planBytes": 388,
+      "specBytes": 1294,
       "cases": [
         {
           "projectId": "moa",
@@ -1273,8 +1273,8 @@
       "motion": "none",
       "componentSet": "selected",
       "file": "gallery-long-none-selected",
-      "planBytes": 362,
-      "specBytes": 1190,
+      "planBytes": 384,
+      "specBytes": 1260,
       "cases": [
         {
           "projectId": "moa",
@@ -1296,8 +1296,8 @@
       "motion": "none",
       "componentSet": "bento",
       "file": "gallery-long-none-bento",
-      "planBytes": 362,
-      "specBytes": 1190,
+      "planBytes": 384,
+      "specBytes": 1260,
       "cases": [
         {
           "projectId": "moa",
@@ -1319,8 +1319,8 @@
       "motion": "subtle",
       "componentSet": "default",
       "file": "gallery-long-subtle",
-      "planBytes": 368,
-      "specBytes": 1226,
+      "planBytes": 390,
+      "specBytes": 1296,
       "cases": [
         {
           "projectId": "moa",
@@ -1342,8 +1342,8 @@
       "motion": "subtle",
       "componentSet": "selected",
       "file": "gallery-long-subtle-selected",
-      "planBytes": 364,
-      "specBytes": 1192,
+      "planBytes": 386,
+      "specBytes": 1262,
       "cases": [
         {
           "projectId": "moa",
@@ -1365,8 +1365,8 @@
       "motion": "subtle",
       "componentSet": "bento",
       "file": "gallery-long-subtle-bento",
-      "planBytes": 364,
-      "specBytes": 1192,
+      "planBytes": 386,
+      "specBytes": 1262,
       "cases": [
         {
           "projectId": "moa",
@@ -1388,8 +1388,8 @@
       "motion": "showcase",
       "componentSet": "default",
       "file": "gallery-long",
-      "planBytes": 370,
-      "specBytes": 1228,
+      "planBytes": 392,
+      "specBytes": 1298,
       "cases": [
         {
           "projectId": "moa",
@@ -1411,8 +1411,8 @@
       "motion": "showcase",
       "componentSet": "selected",
       "file": "gallery-long-selected",
-      "planBytes": 366,
-      "specBytes": 1194,
+      "planBytes": 388,
+      "specBytes": 1264,
       "cases": [
         {
           "projectId": "moa",
@@ -1434,8 +1434,8 @@
       "motion": "showcase",
       "componentSet": "bento",
       "file": "gallery-long-bento",
-      "planBytes": 366,
-      "specBytes": 1194,
+      "planBytes": 388,
+      "specBytes": 1264,
       "cases": [
         {
           "projectId": "moa",
@@ -1457,8 +1457,8 @@
       "motion": "none",
       "componentSet": "default",
       "file": "gallery-no-images-none",
-      "planBytes": 368,
-      "specBytes": 1226,
+      "planBytes": 390,
+      "specBytes": 1296,
       "cases": [
         {
           "projectId": "moa",
@@ -1480,8 +1480,8 @@
       "motion": "none",
       "componentSet": "selected",
       "file": "gallery-no-images-none-selected",
-      "planBytes": 364,
-      "specBytes": 1192,
+      "planBytes": 386,
+      "specBytes": 1262,
       "cases": [
         {
           "projectId": "moa",
@@ -1503,8 +1503,8 @@
       "motion": "none",
       "componentSet": "bento",
       "file": "gallery-no-images-none-bento",
-      "planBytes": 364,
-      "specBytes": 1192,
+      "planBytes": 386,
+      "specBytes": 1262,
       "cases": [
         {
           "projectId": "moa",
@@ -1526,8 +1526,8 @@
       "motion": "subtle",
       "componentSet": "default",
       "file": "gallery-no-images-subtle",
-      "planBytes": 370,
-      "specBytes": 1228,
+      "planBytes": 392,
+      "specBytes": 1298,
       "cases": [
         {
           "projectId": "moa",
@@ -1549,8 +1549,8 @@
       "motion": "subtle",
       "componentSet": "selected",
       "file": "gallery-no-images-subtle-selected",
-      "planBytes": 366,
-      "specBytes": 1194,
+      "planBytes": 388,
+      "specBytes": 1264,
       "cases": [
         {
           "projectId": "moa",
@@ -1572,8 +1572,8 @@
       "motion": "subtle",
       "componentSet": "bento",
       "file": "gallery-no-images-subtle-bento",
-      "planBytes": 366,
-      "specBytes": 1194,
+      "planBytes": 388,
+      "specBytes": 1264,
       "cases": [
         {
           "projectId": "moa",
@@ -1595,8 +1595,8 @@
       "motion": "showcase",
       "componentSet": "default",
       "file": "gallery-no-images",
-      "planBytes": 372,
-      "specBytes": 1230,
+      "planBytes": 394,
+      "specBytes": 1300,
       "cases": [
         {
           "projectId": "moa",
@@ -1618,8 +1618,8 @@
       "motion": "showcase",
       "componentSet": "selected",
       "file": "gallery-no-images-selected",
-      "planBytes": 368,
-      "specBytes": 1196,
+      "planBytes": 390,
+      "specBytes": 1266,
       "cases": [
         {
           "projectId": "moa",
@@ -1641,8 +1641,8 @@
       "motion": "showcase",
       "componentSet": "bento",
       "file": "gallery-no-images-bento",
-      "planBytes": 368,
-      "specBytes": 1196,
+      "planBytes": 390,
+      "specBytes": 1266,
       "cases": [
         {
           "projectId": "moa",
@@ -1664,8 +1664,8 @@
       "motion": "none",
       "componentSet": "default",
       "file": "gallery-many-none",
-      "planBytes": 583,
-      "specBytes": 2031,
+      "planBytes": 605,
+      "specBytes": 2101,
       "cases": [
         {
           "projectId": "moa",
@@ -1707,8 +1707,8 @@
       "motion": "none",
       "componentSet": "selected",
       "file": "gallery-many-none-selected",
-      "planBytes": 579,
-      "specBytes": 1997,
+      "planBytes": 601,
+      "specBytes": 2067,
       "cases": [
         {
           "projectId": "moa",
@@ -1750,8 +1750,8 @@
       "motion": "none",
       "componentSet": "bento",
       "file": "gallery-many-none-bento",
-      "planBytes": 579,
-      "specBytes": 1997,
+      "planBytes": 601,
+      "specBytes": 2067,
       "cases": [
         {
           "projectId": "moa",
@@ -1793,8 +1793,8 @@
       "motion": "subtle",
       "componentSet": "default",
       "file": "gallery-many-subtle",
-      "planBytes": 585,
-      "specBytes": 2033,
+      "planBytes": 607,
+      "specBytes": 2103,
       "cases": [
         {
           "projectId": "moa",
@@ -1836,8 +1836,8 @@
       "motion": "subtle",
       "componentSet": "selected",
       "file": "gallery-many-subtle-selected",
-      "planBytes": 581,
-      "specBytes": 1999,
+      "planBytes": 603,
+      "specBytes": 2069,
       "cases": [
         {
           "projectId": "moa",
@@ -1879,8 +1879,8 @@
       "motion": "subtle",
       "componentSet": "bento",
       "file": "gallery-many-subtle-bento",
-      "planBytes": 581,
-      "specBytes": 1999,
+      "planBytes": 603,
+      "specBytes": 2069,
       "cases": [
         {
           "projectId": "moa",
@@ -1922,8 +1922,8 @@
       "motion": "showcase",
       "componentSet": "default",
       "file": "gallery-many",
-      "planBytes": 587,
-      "specBytes": 2035,
+      "planBytes": 609,
+      "specBytes": 2105,
       "cases": [
         {
           "projectId": "moa",
@@ -1965,8 +1965,8 @@
       "motion": "showcase",
       "componentSet": "selected",
       "file": "gallery-many-selected",
-      "planBytes": 583,
-      "specBytes": 2001,
+      "planBytes": 605,
+      "specBytes": 2071,
       "cases": [
         {
           "projectId": "moa",
@@ -2008,8 +2008,8 @@
       "motion": "showcase",
       "componentSet": "bento",
       "file": "gallery-many-bento",
-      "planBytes": 583,
-      "specBytes": 2001,
+      "planBytes": 605,
+      "specBytes": 2071,
       "cases": [
         {
           "projectId": "moa",
@@ -2049,7 +2049,7 @@
   "sources": [
     {
       "path": "scripts/library/renderer/portfolio/v1/catalog.mjs",
-      "sha256": "5338d022d5c7d283c48e62044758f5346b7f390ef36c843d68159768b733d156"
+      "sha256": "2d7b97ceac817b3e71276a9feee78fa2487866309c15d541658cb639b66d0a7c"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/fixtures.mjs",
@@ -2057,7 +2057,7 @@
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/registry.jsx",
-      "sha256": "4c64c6a2f004805ab2d7b50fd6f3741721cb6b6723cd4ed92b55a29589b78dfe"
+      "sha256": "ca4e71c2c7abc223694e848c86ab6ba25e0e0fdaeee12e1909ae4a19ed954702"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/styles.css",
@@ -2065,7 +2065,7 @@
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/directions.css",
-      "sha256": "d4e7c8a06ef9600482c9bd62000fe9b257f747a792c50c5c48d1a40f08e0d562"
+      "sha256": "8a0cc0506299dc24699b6bce695e86f098ccdb44b6601bcc33a61241708d6c97"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/showcase.jsx",
@@ -2089,15 +2089,23 @@
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/expanded-components.jsx",
-      "sha256": "54a039a0ad8983ccb9702587c8c269528d3256e5c0d9ca3b284e0d178413ae98"
+      "sha256": "d7d339c45bf972e1a7ef7c593b13708e1f127fe11a60f3d20a982aef2b3ee02e"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/expanded-components.css",
       "sha256": "357942fc954cb435d031414953335a5da967a2e89347becded346abf8fc9b98f"
     },
     {
+      "path": "scripts/library/renderer/portfolio/v1/library-components.jsx",
+      "sha256": "835936aca06956b359d87f5ec1637a04721508232e93bffbac45fd564ae48392"
+    },
+    {
+      "path": "scripts/library/renderer/portfolio/v1/library-components.css",
+      "sha256": "97cee58eea69eb279d7d471c6205094ca708480ada6b32f45cec1a1ee905559f"
+    },
+    {
       "path": "scripts/library/renderer/portfolio/v1/motion.mjs",
-      "sha256": "f8ab4289cc3bca8426be65b3d82ed47aa067865d5b987d0ac9be2ce62eb92e10"
+      "sha256": "908f2b652b81e09d0a3c6c85f802990c702ce34f99b289444a4e2332e4e17372"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/motion.css",
@@ -2109,19 +2117,19 @@
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/motion-catalog.mjs",
-      "sha256": "b266338836712b4535f9e4205c1d81b82e854927e03a00d6b89d99581d2c8ba6"
+      "sha256": "d8c8eedea96817cd90a4d825885abc3e23436ad8be617d81ee8323ffec9be680"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/motion-library.jsx",
-      "sha256": "def30eddfd34957783bf8e4d7687751d2149f0f3752750f1dcadda13034c3cd5"
+      "sha256": "a7e40f6c5879262013cbc8699f848f43c4cfebd6cd2473d6e2e29cd6b86b545c"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/motion-library.css",
-      "sha256": "22caf5260106ad5f5d2602bc44256436f1b794a08ce35a3ba95bf620304bff02"
+      "sha256": "a7679657adcd0ede79f879a86f983df145cc0d245defcfe7d1a74013b6134bda"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/app.jsx",
-      "sha256": "c34c5ab7852ff64f8b97358994d410aba30e67b354c1283b230ad12ea783f93d"
+      "sha256": "d1899b1d926ea45f131ab9f1b06ec778a88ea36de9d33b31a4ba312aff9a0cdd"
     },
     {
       "path": "scripts/library/renderer/audit-portfolio-motion.mjs",
@@ -2129,5 +2137,5 @@
     }
   ],
   "originalSources": "./sources.json",
-  "note": "고정 검증용 구성안입니다. 실제 AI 자동 선택과 제품 생성 API 연결은 후속 단계입니다."
+  "note": "이 72개는 고정 회귀용 구성안입니다. 모델이 직접 선택하고 작성한 Spec의 결과는 runs/library-*-service-designer에 별도로 있습니다. 제품 API·Worker 연결은 후속 단계입니다."
 }

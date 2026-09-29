@@ -6,10 +6,10 @@
     "total": 368,
     "sections": 176,
     "contentElements": 192,
-    "shortlisted": 8,
+    "shortlisted": 11,
     "reference": 7,
     "excluded": 5,
-    "pending": 348,
+    "pending": 345,
     "complexSignal": 234,
     "transitionOrHover": 109,
     "noSignal": 25
@@ -466,9 +466,9 @@
       "roles": [
         "hero"
       ],
-      "selection": "pending",
+      "selection": "shortlisted",
       "motionClass": "transition_or_hover",
-      "motionSupport": null,
+      "motionSupport": "gradient-hero",
       "signals": {
         "motionLibrary": false,
         "gsap": false,
@@ -2157,9 +2157,9 @@
       "roles": [
         "project-grid"
       ],
-      "selection": "pending",
+      "selection": "shortlisted",
       "motionClass": "complex_signal",
-      "motionSupport": null,
+      "motionSupport": "mosaic",
       "signals": {
         "motionLibrary": true,
         "gsap": false,
@@ -6213,9 +6213,9 @@
       "roles": [
         "hero"
       ],
-      "selection": "pending",
+      "selection": "shortlisted",
       "motionClass": "complex_signal",
-      "motionSupport": null,
+      "motionSupport": "spotlight-hero",
       "signals": {
         "motionLibrary": true,
         "gsap": false,

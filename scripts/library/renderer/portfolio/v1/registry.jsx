@@ -1,26 +1,28 @@
 import React from 'react';
 import {defineRegistry,Renderer,StateProvider,VisibilityProvider,ActionProvider} from '@json-render/react';
 import {registry as original} from '../registry.jsx';
-import {catalog,compilePlan,designDirections} from './catalog.mjs';
+import {catalog,compilePlan,designDirections,defaultDesign} from './catalog.mjs';
 import {mountPortfolioMotion} from './motion.mjs';
 import {ProjectShowcase,VisualProjectIndex,CaseVisual} from './showcase.jsx';
 import {AnnotatedHeading,OrbitProjectIndex} from './selected-components.jsx';
 import {HeadlineLines,BentoProjectIndex,CareerRibbon,EvidencePreviews,ContactCard} from './expanded-components.jsx';
+import {GradientHero,SpotlightHero,MosaicProjectIndex} from './library-components.jsx';
 
 // 수집 코드가 연결된 기존 소개·카드·경력·연락처 구현을 그대로 재사용합니다.
 function Existing({name,props,children}){const View=original[name];return <View element={{type:name,props}}>{children}</View>;}
 function Page({props,children}){
   const ref=React.useRef(null);
   React.useLayoutEffect(()=>mountPortfolioMotion(ref.current),[props.motion.preset]);
-  return <div ref={ref} className="variant-shell" data-recipe={props.recipe} data-design={designDirections[props.recipe]} data-motion-preset={props.motion.preset}><Existing name="PortfolioPage" props={{profile:props.profile}}>{children}</Existing></div>;
+  const design=props.design||defaultDesign(props.recipe);
+  return <div ref={ref} className="variant-shell" data-recipe={props.recipe} data-design={design.layout} data-palette={design.palette} data-typography={design.typography} data-motion-preset={props.motion.preset}><Existing name="PortfolioPage" props={{profile:props.profile}}>{children}</Existing></div>;
 }
-function Hero({profile,projects,recipe,annotation,reveal}){
-  const poster=recipe==='gallery';
-  return <section className={'hero v-hero-'+designDirections[recipe]} id="intro">
-    <div className="v-hero-masthead"><p className="eyebrow">{profile.role}</p><span>{poster?'SELECTED WORK / PORTFOLIO':'DESIGN JOURNAL / PORTFOLIO'}</span></div>
+function Hero({profile,projects,recipe,layout,annotation,reveal}){
+  const direction=layout||designDirections[recipe],poster=direction==='poster';
+  return <section className={'hero v-hero-'+direction} id="intro">
+    <div className="v-hero-masthead" data-reveal="hero-label"><p className="eyebrow">{profile.role}</p><span>{poster?'SELECTED WORK / PORTFOLIO':'DESIGN JOURNAL / PORTFOLIO'}</span></div>
     <div className="visual-hero-main"><div className="visual-hero-copy">
-      {poster?<p className="v-poster-name" data-reveal="hero-label">{profile.name}<span aria-hidden="true">↘</span></p>:<p className="v-editorial-byline" data-reveal="hero-label">{profile.name}의 포트폴리오</p>}
-      <h1 aria-label={reveal==='lines'?profile.headline:undefined} data-reveal={reveal==='lines'?undefined:'hero-title'}>{reveal==='lines'?<HeadlineLines text={profile.headline} highlight={profile.highlight} annotation={annotation}/>:annotation==='drawn'?<AnnotatedHeading text={profile.headline} highlight={profile.highlight}/>:profile.headline}</h1>
+      <h1 className={poster?'v-poster-name':'v-person-name'} data-reveal="hero-title">{profile.name}{poster&&<span aria-hidden="true">↘</span>}</h1>
+      <p className="v-hero-definition" aria-label={reveal==='lines'?profile.headline:undefined} data-reveal={reveal==='lines'?undefined:'hero-definition'}>{reveal==='lines'?<HeadlineLines text={profile.headline} highlight={profile.highlight} annotation={annotation}/>:annotation==='drawn'?<AnnotatedHeading text={profile.headline} highlight={profile.highlight}/>:profile.headline}</p>
     </div><ProjectShowcase projects={projects} recipe={recipe}/><div className="hero-bottom" data-reveal="hero-intro"><p>{profile.intro}</p><a className="text-link" href="#work">작업 살펴보기 <span aria-hidden="true">↘</span></a></div></div>
     <div className="hero-meta" data-reveal="hero-meta"><p>{profile.location}</p><ul aria-label="전문 분야">{profile.focus.map(f=><li key={f}>{f}</li>)}</ul></div>
   </section>;
@@ -52,12 +54,15 @@ function Evidence({groups,variant}){
 export const {registry}=defineRegistry(catalog,{components:{
   PortfolioPage:({props,children})=><Page props={props}>{children}</Page>,
   Hero:({props})=><Hero {...props}/>,
+  GradientHero:({props})=><GradientHero {...props}/>,
+  SpotlightHero:({props})=><SpotlightHero {...props}/>,
   HeadlineLines:({props})=><h2 className="standalone-annotation" aria-label={props.text}><HeadlineLines {...props}/></h2>,
   AnnotatedHeading:({props})=><h2 className="standalone-annotation"><AnnotatedHeading {...props}/></h2>,
   ProjectShowcase:({props})=><ProjectShowcase {...props}/>,
   ProjectIndex:({props})=><VisualProjectIndex {...props}/>,
   OrbitProjectIndex:({props})=><OrbitProjectIndex {...props}/>,
   BentoProjectIndex:({props})=><BentoProjectIndex {...props}/>,
+  MosaicProjectIndex:({props})=><MosaicProjectIndex {...props}/>,
   ProjectCaseStudy:({props})=><CaseStudy {...props}/>,
   CareerTimeline:({props})=><Existing name="CareerTimeline" props={props}/>,
   CareerRibbon:({props})=><CareerRibbon {...props}/>,
@@ -81,7 +86,8 @@ export function MotionComponentPreview({component,plan,content}){
   if(component==='HeadlineLines')node={type:component,props:{text:compiled.state.profile.headline,highlight:compiled.state.profile.highlight,annotation:plan.components.heroAnnotation},children:[]};
   if(!node)throw new Error('등록되지 않은 미리보기 컴포넌트: '+component);
   const spec={root:'sample',elements:{sample:node}};
-  return <div ref={ref} className="variant-shell motion-component-preview" data-recipe={plan.recipe} data-design={designDirections[plan.recipe]} data-motion-preset={plan.motion.preset} onClick={event=>{
+  const design=plan.design||defaultDesign(plan.recipe);
+  return <div ref={ref} className="variant-shell motion-component-preview" data-recipe={plan.recipe} data-design={design.layout} data-palette={design.palette} data-typography={design.typography} data-motion-preset={plan.motion.preset} onClick={event=>{
     const link=event.target.closest('a[href^="#"]');if(link){event.preventDefault();location.href=`./index.html?recipe=${plan.recipe}&motion=${plan.motion.preset}&components=${plan.components.projectIndex==='orbit'?'selected':plan.components.projectIndex==='bento'?'bento':'default'}${link.getAttribute('href')}`;}
   }}><StateProvider initialState={compiled.state}><VisibilityProvider><ActionProvider handlers={{}}><Renderer spec={spec} registry={registry}/></ActionProvider></VisibilityProvider></StateProvider></div>;
 }

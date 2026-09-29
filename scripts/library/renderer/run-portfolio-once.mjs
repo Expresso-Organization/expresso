@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import * as esbuild from 'esbuild';
 import {z} from 'zod';
-import {validateContent,compilePlan,candidates} from './portfolio/v1/catalog.mjs';
+import {validateContent,compilePlan,candidates,designSchema} from './portfolio/v1/catalog.mjs';
 import {modelSpecSchemaFor,validateModelSpec} from './portfolio/v1/model-spec.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
@@ -16,8 +16,8 @@ for(let i=2;i<process.argv.length;i+=2){
  if(!process.argv[i]?.startsWith('--')||!process.argv[i+1])throw new Error('인자는 --이름 값 형식이어야 합니다.');
  flags.set(process.argv[i].slice(2),process.argv[i+1]);
 }
-for(const key of flags.keys())if(!['input','out','spec-model','spec','avoid'].includes(key))throw new Error('알 수 없는 인자: '+key);
-if(!flags.get('input')||!flags.get('out')||Boolean(flags.get('spec-model'))===Boolean(flags.get('spec')))throw new Error('--input, --out, --spec-model 또는 --spec 중 하나가 필요합니다.');
+for(const key of flags.keys())if(!['input','out','spec-model','spec','model-record','avoid','brief'].includes(key))throw new Error('알 수 없는 인자: '+key);
+if(!flags.get('input')||!flags.get('out')||['spec-model','spec','model-record'].filter(key=>flags.has(key)).length!==1)throw new Error('--input, --out, --spec-model·--spec·--model-record 중 하나가 필요합니다.');
 
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const inputPath=path.resolve(flags.get('input'));
@@ -29,28 +29,52 @@ const previous=previousPath?JSON.parse(fs.readFileSync(previousPath)):null;
 const previousHtmlPath=previousPath?.replace(/\.json$/,'.static.html');
 const previousHtmlHash=previous?.htmlSha256||(previousHtmlPath&&fs.existsSync(previousHtmlPath)?sha(fs.readFileSync(previousHtmlPath)):null);
 
-async function askLocalModel(model,prompt,format){
- const response=await fetch('http://127.0.0.1:11434/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model,messages:[{role:'user',content:prompt}],stream:false,think:false,format,options:{temperature:0.35}}),signal:AbortSignal.timeout(180000)});
+async function askLocalModel(model,prompt,format,temperature=0.35){
+ const response=await fetch('http://127.0.0.1:11434/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model,messages:[{role:'user',content:prompt}],stream:false,think:false,format,options:{temperature}}),signal:AbortSignal.timeout(180000)});
  if(!response.ok)throw new Error(`Ollama HTTP ${response.status}`);
  const result=await response.json();
  if(typeof result.message?.content!=='string')throw new Error('Ollama 응답에 JSON이 없습니다.');
  return result.message.content;
 }
 
+const selectionSchema=z.strictObject({recipe:z.enum(['featured','gallery']),design:designSchema,heroStyle:z.enum(['classic','gradient','spotlight']),projectIndex:z.enum(['default','orbit','bento','mosaic']),reason:z.string().trim().min(8).max(240)});
+async function generateSelection(model){
+ const brief=flags.get('brief')||'프로젝트 사례와 근거 자료가 잘 읽히는 포트폴리오를 구성하세요.';
+ const previousSelection=previous?.plan?{recipe:previous.plan.recipe,design:previous.plan.design,heroStyle:previous.plan.components?.heroStyle||'classic',projectIndex:previous.plan.components?.projectIndex}:null;
+ const catalog=`heroStyle: classic=에디토리얼 또는 포스터의 제목·조작형 보드, gradient=Componentry Gradient Hero 01의 밝고 중앙 정렬된 빛·프로젝트 이미지 카드, spotlight=Watermelon Hero 40의 검은 배경·주황 광원·좌우 분할·프로젝트 이미지 카드. projectIndex: default=일반 목록/갤러리, orbit=Componentry의 겹쳐진 인터랙티브 카드, bento=Watermelon Bento 1의 크기 차이 카드, mosaic=Watermelon Bento 2의 이미지 중심 비대칭 타일. palette: paper=따뜻한 종이색, electric=청색과 밝은 배경, midnight=어두운 배경과 주황빛. typography: serif=명조, sans=현대적 고딕, display=강한 제목. layout: editorial=여백과 본문 중심, poster=굵은 면과 번호, studio=몰입형 넓은 화면.`;
+ const attempts=[];
+ for(let attempt=0;attempt<3;attempt++){
+  const prompt=`포트폴리오 디자인을 선택하세요. 사용자는 다음 방향을 원합니다: ${brief}\n프로필 분야: ${content.profile.role}; 프로젝트: ${content.projects.map(p=>p.title+'('+p.category+')').join(', ')}.\n선택 가능 항목: ${catalog}\n앞선 페이지 선택: ${JSON.stringify(previousSelection)}. 앞선 페이지가 있으면 palette, heroStyle, projectIndex 중 둘 이상을 다르게 선택해 눈으로 구별되는 페이지를 만드세요.\n디자인 요청의 색, 밝기, 정렬, 제목 크기, 프로젝트 목록 표현을 정확히 반영하세요. recipe는 featured 또는 gallery입니다. reason에는 요청과 선택이 맞는 이유를 한 문장으로 쓰세요. JSON만 출력하세요.${attempt?'\n이전 선택은 요청이나 차별화 조건에 맞지 않았습니다. 다른 디자인을 선택하세요.':''}`;
+  const output=await askLocalModel(model,prompt,z.toJSONSchema(selectionSchema),0.55);
+  try{
+   const selection=selectionSchema.parse(JSON.parse(output));
+   const delta=previousSelection?Number(selection.design.palette!==previousSelection.design?.palette)+Number(selection.heroStyle!==previousSelection.heroStyle)+Number(selection.projectIndex!==previousSelection.projectIndex):3;
+   if(delta<2)throw new Error('직전 페이지와 시각 구성 요소 두 가지 이상을 달리해야 합니다.');
+   attempts.push({valid:true,outputSha256:sha(output),output});
+   return {selection,attempts};
+  }catch(error){attempts.push({valid:false,error:error.message,outputSha256:sha(output),output});}
+ }
+ fs.mkdirSync(out,{recursive:true});fs.writeFileSync(path.join(out,'selection-attempts.json'),JSON.stringify({model,brief,attempts},null,2)+'\n');
+ throw new Error('모델 디자인 선택 실패: '+attempts.map(item=>item.error).join(' / '));
+}
+
 async function generateSpecWithLocalModel(model){
+ const {selection,attempts:selectionAttempts}=await generateSelection(model);
  const projects=content.projects.map(project=>({id:project.id,title:project.title,category:project.category,allowedCaseVariants:candidates(project)}));
- const previousStyle=previous?.plan?JSON.stringify({recipe:previous.plan.recipe,projectIndex:previous.plan.components?.projectIndex}):'없음';
- const prompt=`json-render의 flat Spec JSON을 직접 작성하세요. root는 page, elements는 요소 ID를 키로 둔 객체입니다. JSON 외 문장을 출력하지 마세요. HTML·CSS·가상 경력 문장을 생성하지 마세요.\n입력은 가상 데이터입니다. 프로필: ${JSON.stringify({role:content.profile.role,headline:content.profile.headline,focus:content.profile.focus})}\n프로젝트: ${JSON.stringify(projects)}\n직전 구성: ${previousStyle}. 직전 결과가 있으면 recipe와 프로젝트 목록 표현을 다르게 선택하세요.\n요구하는 요소 ID: page, intro, work, 모든 프로젝트의 case-<id>, career, evidence, contact. page.children은 intro, work, 각 case, career/evidence, contact 순서입니다. 각 하위 요소의 children은 []입니다. 모든 프로젝트를 정확히 한 번 표시하세요.\n허용 타입과 props: page=PortfolioPage {profile:{$state:'/profile'},recipe:'featured'|'gallery',motion:{preset:'showcase'}}; intro=Hero {profile:{$state:'/profile'},projects:{$state:'/projects'},recipe:page와 동일,annotation:'off'|'drawn',reveal:'block'|'lines'}; work=ProjectIndex {projects:{$state:'/projects'},variant:'list'|'gallery'} 또는 OrbitProjectIndex/BentoProjectIndex {projects:{$state:'/projects'}}; case-<id>=ProjectCaseStudy {project:{$state:'/projectById/<id>'},variant:해당 프로젝트의 allowedCaseVariants 중 하나,ordinal:1부터 순서}; career=CareerTimeline 또는 CareerRibbon {career:{$state:'/career'}}; evidence=EvidenceCollection {groups:{$state:'/evidenceGroups'},variant:'grouped'|'expanded'} 또는 EvidencePreviews {groups:{$state:'/evidenceGroups'}}; contact=Contact 또는 ContactCard {contact:{$state:'/contact'}}. 다른 요소·속성·데이터 경로는 쓰지 마세요.\n결과는 {"root":"page","elements":{...}} 형태입니다. JSON 문자열에서 $state 키를 정확히 사용하세요.`;
+ const previousStyle=previous?.plan?JSON.stringify({recipe:previous.plan.recipe,design:previous.plan.design,heroStyle:previous.plan.components?.heroStyle,projectIndex:previous.plan.components?.projectIndex}):'없음';
+ const prompt=`json-render의 flat Spec JSON을 직접 작성하세요. root는 page, elements는 요소 ID를 키로 둔 객체입니다. JSON 외 문장을 출력하지 마세요. HTML·CSS·가상 경력 문장을 생성하지 마세요.\n입력은 가상 데이터입니다. 프로필: ${JSON.stringify({role:content.profile.role,headline:content.profile.headline,focus:content.profile.focus})}\n프로젝트: ${JSON.stringify(projects)}\n모델이 먼저 선택한 디자인: ${JSON.stringify(selection)}. page.props.design과 intro/work 타입에 이 선택을 정확히 사용하세요.\n직전 구성: ${previousStyle}.\n요구하는 요소 ID: page, intro, work, 모든 프로젝트의 case-<id>, career, evidence, contact. page.children은 정확히 ${JSON.stringify(['intro','work',...content.projects.map(project=>'case-'+project.id),'career','evidence','contact'])}입니다. 각 하위 요소의 children은 []입니다. 모든 프로젝트를 정확히 한 번 표시하세요.\n허용 타입과 props: page=PortfolioPage {profile:{$state:'/profile'},recipe:선택한 recipe,design:선택한 design,motion:{preset:'showcase'}}; intro=선택한 heroStyle에 대응하는 Hero/GradientHero/SpotlightHero {profile:{$state:'/profile'},projects:{$state:'/projects'},recipe:page와 동일,layout:선택한 design.layout,annotation:'off'|'drawn',reveal:'block'|'lines'}; work=선택한 projectIndex에 대응하는 ProjectIndex {projects:{$state:'/projects'},variant:'list'|'gallery'} 또는 OrbitProjectIndex/BentoProjectIndex/MosaicProjectIndex {projects:{$state:'/projects'}}; case-<id>=ProjectCaseStudy {project:{$state:'/projectById/<id>'},variant:해당 프로젝트의 allowedCaseVariants 중 하나,ordinal:1부터 순서}; career=CareerTimeline 또는 CareerRibbon {career:{$state:'/career'}}; evidence=EvidenceCollection {groups:{$state:'/evidenceGroups'},variant:'grouped'|'expanded'} 또는 EvidencePreviews {groups:{$state:'/evidenceGroups'}}; contact=Contact 또는 ContactCard {contact:{$state:'/contact'}}. 다른 요소·속성·데이터 경로는 쓰지 마세요.\n결과는 {"root":"page","elements":{...}} 형태입니다. JSON 문자열에서 $state 키를 정확히 사용하세요.`;
  const attempts=[];
  for(let attempt=0;attempt<2;attempt++){
   const request=attempt?prompt+`\n이전 시도가 계약 검사에서 실패했습니다. 오류: ${attempts[0].error}. 이전 응답: ${attempts[0].output}. 오류를 고쳐 전체 Spec을 다시 생성하세요.`:prompt;
-  const output=await askLocalModel(model,request,z.toJSONSchema(modelSpecSchemaFor(content)));
+  const output=await askLocalModel(model,request,z.toJSONSchema(modelSpecSchemaFor(content,{requireDesign:true,selection})));
   try{
    const checked=validateModelSpec(JSON.parse(output),content);
+   if(!checked.plan.design)throw new Error('모델이 색·서체·배치 선택을 생략했습니다.');
    attempts.push({valid:true,outputSha256:sha(output),output});
    fs.mkdirSync(out,{recursive:true});
    fs.writeFileSync(path.join(out,'model-attempts.json'),JSON.stringify({model,attempts},null,2)+'\n');
-   return {...checked,model,modelOutput:output,attempts};
+   fs.writeFileSync(path.join(out,'selection-attempts.json'),JSON.stringify({model,brief:flags.get('brief')||null,attempts:selectionAttempts},null,2)+'\n');
+   return {...checked,model,modelOutput:output,attempts,selection};
   }catch(error){attempts.push({valid:false,error:error.message,outputSha256:sha(output),output});}
  }
  fs.mkdirSync(out,{recursive:true});
@@ -58,7 +82,21 @@ async function generateSpecWithLocalModel(model){
  throw new Error('모델 생성 Spec의 계약 검사 실패: '+attempts.map(item=>item.error).join(' / ')+' (원문: '+path.join(out,'model-attempts.json')+')');
 }
 
-const directSpec=flags.get('spec-model')?await generateSpecWithLocalModel(flags.get('spec-model')):{...validateModelSpec((input=>input.spec||input)(JSON.parse(fs.readFileSync(path.resolve(flags.get('spec'))))),content),model:null,modelOutput:null,attempts:[]};
+let directSpec;
+if(flags.get('spec-model'))directSpec=await generateSpecWithLocalModel(flags.get('spec-model'));
+else if(flags.get('model-record')){
+ const recordPath=path.resolve(flags.get('model-record'));
+ const record=JSON.parse(fs.readFileSync(recordPath));
+ const attempt=record.attempts?.find(item=>item.valid&&typeof item.output==='string');
+ if(!record.model||!attempt)throw new Error('검증에 통과한 모델 원문 기록이 없습니다.');
+ const selectionPath=path.join(path.dirname(recordPath),'selection-attempts.json');
+ const selectionRecord=fs.existsSync(selectionPath)?JSON.parse(fs.readFileSync(selectionPath)):null;
+ const selectionOutput=selectionRecord?.attempts?.find(item=>item.valid)?.output;
+ const selection=selectionOutput?selectionSchema.parse(JSON.parse(selectionOutput)):null;
+ const raw=JSON.parse(attempt.output);
+ if(selection&&!modelSpecSchemaFor(content,{requireDesign:true,selection}).safeParse(raw).success)throw new Error('기록된 Spec과 모델의 디자인 선택이 맞지 않습니다.');
+ directSpec={...validateModelSpec(raw,content),model:record.model,modelOutput:attempt.output,attempts:[attempt],recorded:true,selection};
+}else directSpec={...validateModelSpec((input=>input.spec||input)(JSON.parse(fs.readFileSync(path.resolve(flags.get('spec'))))),content),model:null,modelOutput:null,attempts:[]};
 const plan=directSpec.plan;
 if(previous&&JSON.stringify({content,plan})===JSON.stringify({content:previous.content,plan:previous.plan}))throw new Error('직전 입력과 구성이 같습니다. 새 결과로 보고할 수 없습니다.');
 const compiled=compilePlan(plan,content);
@@ -82,9 +120,10 @@ const {renderSpec}=await import(pathToFileURL(server).href+'?run='+Date.now());
 const motionBuild=await esbuild.build({entryPoints:[path.join(here,'portfolio/v1/motion-export.mjs')],bundle:true,format:'iife',platform:'browser',minify:true,write:false});
 const motionRuntime=motionBuild.outputFiles[0].text.trim();
 const motionHash=createHash('sha256').update(motionRuntime).digest('base64');
-const css=fs.readFileSync(path.join(preview,'style.css'),'utf8')+'\n'+['styles.css','directions.css','showcase.css','selected-components.css','expanded-components.css','motion.css'].map(name=>fs.readFileSync(path.join(here,'portfolio/v1',name),'utf8')).join('\n');
+const css=fs.readFileSync(path.join(preview,'style.css'),'utf8')+'\n'+['styles.css','directions.css','showcase.css','selected-components.css','expanded-components.css','library-components.css','motion.css'].map(name=>fs.readFileSync(path.join(here,'portfolio/v1',name),'utf8')).join('\n');
 const notices=fs.readFileSync(path.join(preview,'THIRD-PARTY-NOTICES.txt'),'utf8').replaceAll('--','—');
-const pageCss=plan.recipe==='featured'?css.replace('./assets/expresso-editorial.woff','data:font/woff;base64,'+fs.readFileSync(path.join(preview,'assets/expresso-editorial.woff')).toString('base64')):css.replace(/@font-face\{[^}]+\}/,'');
+const useSerif=(plan.design?.typography|| (plan.recipe==='featured'?'serif':'sans'))==='serif';
+const pageCss=useSerif?css.replace('./assets/expresso-editorial.woff','data:font/woff;base64,'+fs.readFileSync(path.join(preview,'assets/expresso-editorial.woff')).toString('base64')):css.replace(/@font-face\{[^}]+\}/,'');
 let html=renderSpec(spec,directSpec.state);
 const assets={};
 for(const image of new Set(content.projects.map(project=>project.image).filter(Boolean))){
@@ -96,7 +135,7 @@ for(const image of new Set(content.projects.map(project=>project.image).filter(B
 }
 if(/(?:src|href)="\.\/assets\/portfolio-/.test(html))throw new Error('프로젝트 이미지가 독립 HTML에 포함되지 않았습니다.');
 const csp=`default-src 'none'; script-src ${plan.motion.preset==='none'?"'none'":"'sha256-"+motionHash+"'"}; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'`;
-const fontNotice=plan.recipe==='featured'?fs.readFileSync(path.join(preview,'assets/editorial-font-OFL.txt'),'utf8'):'';
+const fontNotice=useSerif?fs.readFileSync(path.join(preview,'assets/editorial-font-OFL.txt'),'utf8'):'';
 const document=`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="${csp}"><title>${content.profile.name} · 가상 포트폴리오</title><style>${pageCss}</style></head><body>${html}${plan.motion.preset==='none'?'':`<script data-portfolio-motion>${motionRuntime}</script>`}</body></html>\n<!-- THIRD-PARTY NOTICES\n${notices}\n${fontNotice}\n-->\n`;
 const documentHash=sha(document);
 if(previousHtmlHash===documentHash)throw new Error('직전과 동일한 HTML입니다. 새 결과로 보고할 수 없습니다.');
@@ -108,6 +147,6 @@ for(const image of Object.keys(assets)){
 }
 fs.writeFileSync(path.join(out,'index.html'),document);
 fs.writeFileSync(path.join(out,'composition.json'),JSON.stringify({schemaVersion:1,plan,content,spec,motionSupport:compiled.motionSupport.map(item=>item.id)},null,2)+'\n');
-const manifest={schemaVersion:1,createdAt:new Date().toISOString(),fictional:true,model:directSpec.model||'provided-spec',specOrigin:directSpec.model?'model':'provided-spec',validationAttempts:directSpec.attempts.map(({output,...rest})=>rest),inputSha256:sha(input),planSha256:sha(JSON.stringify(plan)),specSha256:sha(JSON.stringify(spec)),htmlSha256:documentHash,modelOutputSha256:directSpec.modelOutput?sha(directSpec.modelOutput):null,assets,comparison:previous?{sameInput:JSON.stringify(content)===JSON.stringify(previous.content),samePlan:JSON.stringify(plan)===JSON.stringify(previous.plan),sameHtml:previousHtmlHash===documentHash}:null};
+const manifest={schemaVersion:1,createdAt:new Date().toISOString(),fictional:true,model:directSpec.model||'provided-spec',specOrigin:directSpec.recorded?'recorded-model-spec':directSpec.model?'model':'provided-spec',modelSelection:directSpec.selection||null,validationAttempts:directSpec.attempts.map(({output,...rest})=>rest),inputSha256:sha(input),planSha256:sha(JSON.stringify(plan)),specSha256:sha(JSON.stringify(spec)),htmlSha256:documentHash,modelOutputSha256:directSpec.modelOutput?sha(directSpec.modelOutput):null,assets,comparison:previous?{sameInput:JSON.stringify(content)===JSON.stringify(previous.content),samePlan:JSON.stringify(plan)===JSON.stringify(previous.plan),sameHtml:previousHtmlHash===documentHash}:null};
 fs.writeFileSync(path.join(out,'run.json'),JSON.stringify(manifest,null,2)+'\n');
 console.log(JSON.stringify({out,specOrigin:manifest.specOrigin,validationAttempts:manifest.validationAttempts,recipe:plan.recipe,components:plan.components,projects:content.projects.map(project=>project.title),htmlSha256:documentHash,comparison:manifest.comparison},null,2));

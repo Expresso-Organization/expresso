@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-09-29T14:17:21.569Z",
+  "fictional": true,
+  "model": "qwen3.5:9b-q8_0",
+  "specOrigin": "recorded-model-spec",
+  "modelSelection": {
+    "recipe": "gallery",
+    "design": {
+      "palette": "midnight",
+      "typography": "display",
+      "layout": "studio"
+    },
+    "heroStyle": "spotlight",
+    "projectIndex": "bento",
+    "reason": "사용자가 요청한 검은 무대 배경과 주황 광원 (spotlight), 벤토형 프로젝트 목록 (bento), 그리고 서비스 디자인 분야의 전문성을 강조할 수 있는 대형 타이포그래피와 스타디움 레이아웃을 적용했습니다."
+  },
+  "validationAttempts": [
+    {
+      "valid": true,
+      "outputSha256": "5800ad12fdd7368b6af1077a7e78d4793faf8a5a5b6207037fa4392765519d81"
+    }
+  ],
+  "inputSha256": "a9f66944a1ec61e7b73404112862939f0095dba8bfa705db77e72fb0400025eb",
+  "planSha256": "335810be4f3349cb724de729d1b92c246618bf9cff28d45187292bdbc6d295ce",
+  "specSha256": "43b37d12d91fdbf74671fccc4d4dddd70ac5a95c43379bc1269ccabb279a24f2",
+  "htmlSha256": "693e968fcb2e0b2de6bb7576a59240df0d0d2813c7fbf094b06cbbb93e3ae799",
+  "modelOutputSha256": "5800ad12fdd7368b6af1077a7e78d4793faf8a5a5b6207037fa4392765519d81",
+  "assets": {
+    "./assets/portfolio-threadlab.svg": {
+      "sha256": "aea7faa3ca30da3265e01b5db8ed1fbb29f38d80f1aac64e5b308a2b90d31f83",
+      "bytes": 2954
+    },
+    "./assets/portfolio-comma-map.svg": {
+      "sha256": "8a1be8f0727311e9bde261cf633957035c632e6c966b4d2852f983d497040ea4",
+      "bytes": 3068
+    },
+    "./assets/portfolio-gilnun.svg": {
+      "sha256": "d892273c5b3fac6d9845fb9c4ee8585367ed07900211a273e9ed07632685ed37",
+      "bytes": 2680
+    }
+  },
+  "comparison": null
+}

@@ -4,7 +4,9 @@ import {AnnotatedHeading} from './selected-components.jsx';
 
 // 원본 제목을 바꾸지 않고 줄별 등장 순서를 제어합니다.
 export function HeadlineLines({text,highlight,annotation}){
-  const lines=text.split('\n');
+  const spaces=[...text.matchAll(/\s+/g)];
+  const breakAt=spaces.length?spaces.reduce((best,match)=>Math.abs(match.index-text.length/2)<Math.abs(best.index-text.length/2)?match:best).index:-1;
+  const lines=text.includes('\n')?text.split('\n'):breakAt<0?[text]:[text.slice(0,breakAt+1),text.slice(breakAt+1)];
   const target=highlight&&text.includes(highlight)?lines.findIndex(line=>line.includes(highlight)):0;
   return lines.map((line,index)=><span className="v-headline-line" data-reveal="hero-line" data-motion-index={index} key={index}>
     {annotation==='drawn'&&index===target?<AnnotatedHeading text={line} highlight={highlight}/>:line}

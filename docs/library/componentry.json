@@ -4304,13 +4304,13 @@
       "roles": [
         "hero"
       ],
-      "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
-      "roleMethod": "identifier_rules_v2",
-      "selection": "pending",
-      "inputs": [],
+      "roleEvidence": "원본의 중앙 정렬·빛 레이어·두 개의 행동 경로를 실제 소개와 대표 프로젝트 카드에 연결했습니다.",
+      "roleMethod": "authored",
+      "selection": "shortlisted",
+      "inputs": ["profile.role", "profile.headline", "profile.intro", "profile.focus", "projects[].image", "projects[].summary"],
       "constraints": [
-        "원본의 React·Tailwind 의존성과 실제 포트폴리오 콘텐츠를 연결해 검증해야 합니다.",
-        "공식 시연 영상이 없어 원본 문서 또는 코드에서 동작을 확인해야 합니다."
+        "원본의 고정 문구는 사용하지 않습니다.",
+        "포트폴리오 데이터 계약에 맞춘 GradientHero로 재구성했습니다."
       ],
       "familyId": null,
       "preview": {
