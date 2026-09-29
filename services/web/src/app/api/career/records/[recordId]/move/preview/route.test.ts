@@ -22,7 +22,7 @@ describe("POST /api/career/records/[recordId]/move/preview", () => {
     expect(response.status).toBe(200);
   });
 
-  it("rollout gate가 꺼져 있으면 기존 Fastify 경로를 유지한다", async () => {
+  it("legacy flag가 없어도 Spring preview만 호출한다", async () => {
     delete process.env.CAREER_SPRING_CATEGORY_MOVE_ENABLED;
     const recordId = "00000000-0000-4000-8000-000000000001";
     const targetCategoryId = "00000000-0000-4000-8000-000000000002";
@@ -32,7 +32,18 @@ describe("POST /api/career/records/[recordId]/move/preview", () => {
 
     const response = await POST(new Request("http://localhost", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ targetCategoryId }) }), { params: Promise.resolve({ recordId }) });
 
-    expect(fetchMock).toHaveBeenCalledWith(`http://127.0.0.1:4000/v1/career/records/${recordId}/move/preview`, expect.anything());
+    expect(fetchMock).toHaveBeenCalledWith(`http://localhost:4100/v1/career/records/${recordId}/move/preview`, expect.anything());
     expect(response.status).toBe(200);
+  });
+
+  it("Spring URL이 없으면 Fastify로 fallback하지 않는다", async () => {
+    delete process.env.CAREER_SPRING_API_BASE_URL;
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(new Request("http://localhost", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ targetCategoryId: "00000000-0000-4000-8000-000000000002" }) }), { params: Promise.resolve({ recordId: "00000000-0000-4000-8000-000000000001" }) });
+
+    expect(response.status).toBe(503);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

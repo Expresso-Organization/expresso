@@ -10,8 +10,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ rec
   const raw = await request.json().catch(() => null) as Record<string, unknown> | null;
   const input = CareerCategoryMoveCommitSchema.safeParse({ ...raw, recordId });
   if (!input.success) return new Response(null, { status: 400 });
-  const useSpring = process.env.CAREER_SPRING_CATEGORY_MOVE_ENABLED === "true";
-  const baseUrl = useSpring ? process.env.CAREER_SPRING_API_BASE_URL : API_BASE_URL;
+  const baseUrl = process.env.CAREER_SPRING_API_BASE_URL;
   if (!baseUrl) return new Response(null, { status: 503 });
   const { recordId: _ignored, ...body } = input.data;
   const upstream = await fetch(`${baseUrl}${API_PREFIX}/career/records/${encodeURIComponent(recordId)}/move`, {
@@ -20,10 +19,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ rec
     body: JSON.stringify(body), cache: "no-store",
   });
   if (!upstream.ok) return new Response(null, { status: upstream.status });
-  if (!useSpring) {
-    try { return Response.json(CareerRecordResponseSchema.parse(await upstream.json())); }
-    catch { return new Response(null, { status: 502 }); }
-  }
   const refreshed = await fetch(`${API_BASE_URL}${API_PREFIX}/career/records/${encodeURIComponent(recordId)}`, {
     headers: { authorization: `Bearer ${token}`, accept: "application/json" }, cache: "no-store",
   });

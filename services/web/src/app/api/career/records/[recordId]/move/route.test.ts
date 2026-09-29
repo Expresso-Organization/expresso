@@ -26,4 +26,29 @@ describe("POST /api/career/records/[recordId]/move", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual(record);
   });
+
+  it("legacy flag가 없어도 Spring commit과 Fastify read-after-write만 사용한다", async () => {
+    delete process.env.CAREER_SPRING_CATEGORY_MOVE_ENABLED;
+    const fetchMock = vi.fn().mockResolvedValueOnce(Response.json({ data: { id: recordId } }, { headers: { etag: '"v2"' } })).mockResolvedValueOnce(Response.json(record));
+    vi.stubGlobal("fetch", fetchMock);
+    const body = { targetCategoryId: categoryId, previewToken: "x".repeat(40), expectedVersion: 1, discardUnmappedPropertyIds: [] };
+
+    const response = await POST(new Request("http://localhost", { method: "POST", headers: { "content-type": "application/json", "if-match": '"v1"' }, body: JSON.stringify(body) }), { params: Promise.resolve({ recordId }) });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, `http://localhost:4100/v1/career/records/${recordId}/move`, expect.anything());
+    expect(fetchMock).toHaveBeenNthCalledWith(2, `http://127.0.0.1:4000/v1/career/records/${recordId}`, expect.anything());
+    expect(response.status).toBe(200);
+  });
+
+  it("Spring URL이 없으면 Fastify Move로 fallback하지 않는다", async () => {
+    delete process.env.CAREER_SPRING_API_BASE_URL;
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const body = { targetCategoryId: categoryId, previewToken: "x".repeat(40), expectedVersion: 1, discardUnmappedPropertyIds: [] };
+
+    const response = await POST(new Request("http://localhost", { method: "POST", headers: { "content-type": "application/json", "if-match": '"v1"' }, body: JSON.stringify(body) }), { params: Promise.resolve({ recordId }) });
+
+    expect(response.status).toBe(503);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });
