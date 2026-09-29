@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "createdAt": "2026-09-29T14:17:21.235Z",
+  "createdAt": "2026-09-29T16:17:49.478Z",
   "fictional": true,
   "model": "qwen3.5:9b-q8_0",
   "specOrigin": "recorded-model-spec",
@@ -14,7 +14,7 @@
   "inputSha256": "a9f66944a1ec61e7b73404112862939f0095dba8bfa705db77e72fb0400025eb",
   "planSha256": "1216d4ae836cfdccbbbd65104a22a201fd7d901a97c2c69e974af8cc390bd77b",
   "specSha256": "4588f615a56f3cc093488a47d23b06e0993e8af0ee12b844b16a6a25ae2ab616",
-  "htmlSha256": "4acbdeabd09ee8c8dfa2d67a499091e37cb66a5b16d80f16ef0b342cc09dec55",
+  "htmlSha256": "ecb27c8c3a4b92de36cc385443387ac4ee10f34d9485b25574d34f72f624eed5",
   "modelOutputSha256": "4588f615a56f3cc093488a47d23b06e0993e8af0ee12b844b16a6a25ae2ab616",
   "assets": {
     "./assets/portfolio-threadlab.svg": {
@@ -29,6 +29,14 @@
       "sha256": "d892273c5b3fac6d9845fb9c4ee8585367ed07900211a273e9ed07632685ed37",
       "bytes": 2680
     }
+  },
+  "previewComparison": {
+    "runIds": [
+      "ambient",
+      "spotlight",
+      "poster"
+    ],
+    "pureHtmlSha256": "32c4ff92ef22b80f557c3e146fa3d8f159d01ca623a5957dd019fe189a0f6026"
   },
   "comparison": null
 }

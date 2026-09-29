@@ -69,6 +69,8 @@ test('모델이 직접 만든 Spec이 저장 HTML의 출처이며 섹션 순서�
  assert.deepEqual(JSON.parse(attempts.attempts[0].output),output.spec);
  assert.equal(validateModelSpec(output.spec,output.content).plan.recipe,'gallery');
  assert.equal(createHash('sha256').update(fs.readFileSync(path.join(folder,'index.html'))).digest('hex'),manifest.htmlSha256);
+ assert.deepEqual(manifest.previewComparison.runIds,['ambient','spotlight','poster']);
+ assert.equal(createHash('sha256').update(fs.readFileSync(path.join(folder,'portfolio.static.html'))).digest('hex'),manifest.previewComparison.pureHtmlSha256);
  assert.ok(output.spec.elements.page.children.indexOf('career')<output.spec.elements.page.children.indexOf('evidence'));
  assert.ok(compilePlan(output.plan,output.content).spec.elements.page.children.indexOf('career')>compilePlan(output.plan,output.content).spec.elements.page.children.indexOf('evidence'));
 });

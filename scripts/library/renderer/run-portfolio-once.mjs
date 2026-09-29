@@ -16,7 +16,7 @@ for(let i=2;i<process.argv.length;i+=2){
  if(!process.argv[i]?.startsWith('--')||!process.argv[i+1])throw new Error('인자는 --이름 값 형식이어야 합니다.');
  flags.set(process.argv[i].slice(2),process.argv[i+1]);
 }
-for(const key of flags.keys())if(!['input','out','spec-model','spec','model-record','avoid','brief'].includes(key))throw new Error('알 수 없는 인자: '+key);
+for(const key of flags.keys())if(!['input','out','spec-model','spec','model-record','avoid','brief','comparison'].includes(key))throw new Error('알 수 없는 인자: '+key);
 if(!flags.get('input')||!flags.get('out')||['spec-model','spec','model-record'].filter(key=>flags.has(key)).length!==1)throw new Error('--input, --out, --spec-model·--spec·--model-record 중 하나가 필요합니다.');
 
 const sha=value=>createHash('sha256').update(value).digest('hex');
@@ -116,7 +116,7 @@ const plugin={name:'collected-variants',setup(build){
 const common={bundle:true,jsx:'automatic',nodePaths:[path.join(here,'node_modules')],plugins:[plugin],logLevel:'warning',define:{'process.env.NODE_ENV':'"production"'}};
 const server=path.join(cache,'ssr.mjs');
 await esbuild.build({...common,entryPoints:[path.join(here,'portfolio/v1/ssr.jsx')],outfile:server,format:'esm',platform:'node',external:['react','react/jsx-runtime','react-dom/server','@json-render/*','zod','clsx','tailwind-merge']});
-const {renderSpec}=await import(pathToFileURL(server).href+'?run='+Date.now());
+const {renderSpec,renderComparisonPanel}=await import(pathToFileURL(server).href+'?run='+Date.now());
 const motionBuild=await esbuild.build({entryPoints:[path.join(here,'portfolio/v1/motion-export.mjs')],bundle:true,format:'iife',platform:'browser',minify:true,write:false});
 const motionRuntime=motionBuild.outputFiles[0].text.trim();
 const motionHash=createHash('sha256').update(motionRuntime).digest('base64');
@@ -136,7 +136,27 @@ for(const image of new Set(content.projects.map(project=>project.image).filter(B
 if(/(?:src|href)="\.\/assets\/portfolio-/.test(html))throw new Error('프로젝트 이미지가 독립 HTML에 포함되지 않았습니다.');
 const csp=`default-src 'none'; script-src ${plan.motion.preset==='none'?"'none'":"'sha256-"+motionHash+"'"}; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'`;
 const fontNotice=useSerif?fs.readFileSync(path.join(preview,'assets/editorial-font-OFL.txt'),'utf8'):'';
-const document=`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="${csp}"><title>${content.profile.name} · 가상 포트폴리오</title><style>${pageCss}</style></head><body>${html}${plan.motion.preset==='none'?'':`<script data-portfolio-motion>${motionRuntime}</script>`}</body></html>\n<!-- THIRD-PARTY NOTICES\n${notices}\n${fontNotice}\n-->\n`;
+const pureDocument=`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="${csp}"><title>${content.profile.name} · 가상 포트폴리오</title><style>${pageCss}</style></head><body>${html}${plan.motion.preset==='none'?'':`<script data-portfolio-motion>${motionRuntime}</script>`}</body></html>\n<!-- THIRD-PARTY NOTICES\n${notices}\n${fontNotice}\n-->\n`;
+let document=pureDocument,previewComparison=null;
+if(flags.get('comparison')){
+ const comparisonFolder=path.resolve(flags.get('comparison')),runFolder=path.dirname(comparisonFolder);
+ const comparisonReport=JSON.parse(fs.readFileSync(path.join(comparisonFolder,'report.json')));
+ const variants=[
+  {id:'ambient',title:'중앙형 · 그라디언트',description:'밝은 소개 · 프로젝트 모자이크',hero:'gradient',index:'mosaic'},
+  {id:'spotlight',title:'분할형 · 스포트라이트',description:'어두운 소개 · 벤토 프로젝트',hero:'spotlight',index:'bento'},
+  {id:'poster',title:'전시형 · 포스터',description:'큰 이름 · 이미지 모자이크',hero:'classic',index:'mosaic'}
+ ];
+ const items=variants.map(variant=>{
+  const folder=path.join(runFolder,`library-${variant.id}-service-designer`),manifest=JSON.parse(fs.readFileSync(path.join(folder,'run.json')));
+  if(manifest.inputSha256!==sha(input)||manifest.modelSelection?.heroStyle!==variant.hero||manifest.modelSelection?.projectIndex!==variant.index)throw new Error('비교할 결과의 입력 또는 컴포넌트 선택이 현재 페이지와 맞지 않습니다: '+variant.id);
+  if(comparisonReport.runs?.find(run=>run.name===variant.id)?.htmlSha256!==manifest.htmlSha256)throw new Error('비교 화면이 최신 생성 결과와 맞지 않습니다: '+variant.id);
+  const image=fs.readFileSync(path.join(comparisonFolder,variant.id+'-desktop.png'));
+  return {id:variant.id,title:variant.title,description:variant.description,image:'data:image/png;base64,'+image.toString('base64'),href:path.relative(out,path.join(folder,'index.html')).split(path.sep).join('/')};
+ });
+ const panel=renderComparisonPanel({items,pureHref:'./portfolio.static.html'}),comparisonCss=fs.readFileSync(path.join(here,'portfolio/v1/comparison-panel.css'),'utf8');
+ document=pureDocument.replace('</head>',`<style>${comparisonCss}</style></head>`).replace('<body>',`<body>${panel}`);
+ previewComparison={runIds:items.map(item=>item.id),pureHtmlSha256:sha(pureDocument)};
+}
 const documentHash=sha(document);
 if(previousHtmlHash===documentHash)throw new Error('직전과 동일한 HTML입니다. 새 결과로 보고할 수 없습니다.');
 fs.mkdirSync(out,{recursive:true});
@@ -146,7 +166,8 @@ for(const image of Object.keys(assets)){
  fs.copyFileSync(path.join(path.dirname(inputPath),image),destination);
 }
 fs.writeFileSync(path.join(out,'index.html'),document);
+if(previewComparison)fs.writeFileSync(path.join(out,'portfolio.static.html'),pureDocument);
 fs.writeFileSync(path.join(out,'composition.json'),JSON.stringify({schemaVersion:1,plan,content,spec,motionSupport:compiled.motionSupport.map(item=>item.id)},null,2)+'\n');
-const manifest={schemaVersion:1,createdAt:new Date().toISOString(),fictional:true,model:directSpec.model||'provided-spec',specOrigin:directSpec.recorded?'recorded-model-spec':directSpec.model?'model':'provided-spec',modelSelection:directSpec.selection||null,validationAttempts:directSpec.attempts.map(({output,...rest})=>rest),inputSha256:sha(input),planSha256:sha(JSON.stringify(plan)),specSha256:sha(JSON.stringify(spec)),htmlSha256:documentHash,modelOutputSha256:directSpec.modelOutput?sha(directSpec.modelOutput):null,assets,comparison:previous?{sameInput:JSON.stringify(content)===JSON.stringify(previous.content),samePlan:JSON.stringify(plan)===JSON.stringify(previous.plan),sameHtml:previousHtmlHash===documentHash}:null};
+const manifest={schemaVersion:1,createdAt:new Date().toISOString(),fictional:true,model:directSpec.model||'provided-spec',specOrigin:directSpec.recorded?'recorded-model-spec':directSpec.model?'model':'provided-spec',modelSelection:directSpec.selection||null,validationAttempts:directSpec.attempts.map(({output,...rest})=>rest),inputSha256:sha(input),planSha256:sha(JSON.stringify(plan)),specSha256:sha(JSON.stringify(spec)),htmlSha256:documentHash,modelOutputSha256:directSpec.modelOutput?sha(directSpec.modelOutput):null,assets,previewComparison,comparison:previous?{sameInput:JSON.stringify(content)===JSON.stringify(previous.content),samePlan:JSON.stringify(plan)===JSON.stringify(previous.plan),sameHtml:previousHtmlHash===documentHash}:null};
 fs.writeFileSync(path.join(out,'run.json'),JSON.stringify(manifest,null,2)+'\n');
 console.log(JSON.stringify({out,specOrigin:manifest.specOrigin,validationAttempts:manifest.validationAttempts,recipe:plan.recipe,components:plan.components,projects:content.projects.map(project=>project.title),htmlSha256:documentHash,comparison:manifest.comparison},null,2));

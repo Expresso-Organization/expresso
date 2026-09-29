@@ -23,6 +23,8 @@ node scripts/library/renderer/run-portfolio-once.mjs \
 
 같은 모델 응답은 `--spec docs/library/previews/portfolio/runs/model-spec-service-designer/composition.json`으로 다시 렌더링할 수 있다. 재렌더링한 HTML의 SHA-256은 최초 결과와 같았다.
 
+개발 포털에서는 기록된 모델 출력을 다시 렌더링하면서 `--comparison docs/library/previews/portfolio/runs/library-comparison`을 전달한다. 이 옵션은 `index.html` 위에 동일한 가상 입력의 세 디자인 미리보기 카드를 붙인다. 카드에서 각 완성 페이지를 열 수 있고, 비교 영역을 접으면 기존 페이지를 그대로 읽을 수 있다. 비교 UI가 없는 결과는 `portfolio.static.html`에 따로 보존한다.
+
 ## 결과와 범위
 
 | 자료 | 위치 |
@@ -31,6 +33,7 @@ node scripts/library/renderer/run-portfolio-once.mjs \
 | 실패한 느슨한 형식의 두 출력 | `docs/library/previews/portfolio/runs/model-spec-service-designer/diagnostics/loose-schema-attempts.json` |
 | 구성·모델 Spec·가상 입력 | `docs/library/previews/portfolio/runs/model-spec-service-designer/composition.json` |
 | 실행 상태·입력/Spec/HTML 해시 | `docs/library/previews/portfolio/runs/model-spec-service-designer/run.json` |
-| 브라우저에서 여는 독립 결과 | `docs/library/previews/portfolio/runs/model-spec-service-designer/index.html` |
+| 세 디자인 비교와 기존 페이지 | `docs/library/previews/portfolio/runs/model-spec-service-designer/index.html` |
+| 비교 UI가 없는 독립 HTML | `docs/library/previews/portfolio/runs/model-spec-service-designer/portfolio.static.html` |
 
-이 실험은 **하나의 가상 입력과 로컬 모델에서 구조화 Spec 생성이 가능한지** 확인했다. 임의 입력에서의 성공률, 실제 사용자 콘텐츠 품질, 생성 API·Worker·저장소 연결은 이 결과로 검증되지 않았다. 현재 생성 Registry의 선택지는 14종이다.
+이 실험은 **하나의 가상 입력과 로컬 모델에서 구조화 Spec 생성이 가능한지** 확인했다. 임의 입력에서의 성공률, 실제 사용자 콘텐츠 품질, 생성 API·Worker·저장소 연결은 이 결과로 검증되지 않았다. 현재 생성 Registry의 선택지는 17종이다.
