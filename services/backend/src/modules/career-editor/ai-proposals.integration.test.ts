@@ -96,7 +96,8 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
 
   it("applies selected property changes atomically and emits computation work", async () => {
     const propertyId = randomUUID(); const propertyKey = "note";
-    await mongoCollections(fixture.resource.db).careerCategories.updateOne({ _id: categoryId }, { $set: { propertySchemaV2: [{ id: propertyId, key: propertyKey, name: "메모", type: "text", required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null }] } });
+    const definition = { id: propertyId, key: propertyKey, name: "메모", type: "text" as const, required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null };
+    await mongoCollections(fixture.resource.db).careerCategories.updateOne({ _id: categoryId }, { $set: { propertySchemaV2: [definition], propertyDefinitions: [definition] } });
     const career = new CareerService(fixture.resource); const propertyRecordId = (await career.createRecord(userId, randomUUID(), { categoryId, title: "프로퍼티", properties: {}, bodyMd: "본문" })).record.id;
     const bootstrap = await documentService.bootstrap(userId, propertyRecordId); const blockId = bootstrap.document.content[0]!.id;
     const adapter: AiProposalAdapter = { async generate() { return { summary: "프로퍼티", commands: [], propertyChanges: [{ propertyId, previousValue: null, nextValue: { type: "text", value: "AI 메모" } }] }; } };
