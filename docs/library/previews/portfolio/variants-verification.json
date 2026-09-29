@@ -3219,9 +3219,9 @@
   },
   "artifactHashes": {
     "index.html": "502086228d491559451b5026342880d68bd7367fb72b7b32caca88ed59677c79",
-    "variants.js": "5a5ef3ecc3e87526c51d87fb000d633e0e90fa18d46cca97d06a6ce5cce178c0",
+    "variants.js": "d40f502f7ae6a62268185c3e95945471a039f50a44da0902ab17dabc2438a33c",
     "variants.css": "9a5259cff492b3de1a62b7199417d7c9f845a865454fe1e1b8c38b4a46a43f9c",
-    "variants-sources.json": "46b31b7a0f508faecfc619c4da162c0aace70014952ba0f51b76ee3c33f11d38",
+    "variants-sources.json": "087a8c8d39e0f3d9140a83274c58f8ac0579fe507bea8a45de68649b1980d442",
     "variants-plan-schema.json": "959a6e15169ba64a59673a0b6b73410b3355269ac398ca2cc975fcd048ae20fd",
     "assets/expresso-editorial.woff": "a5a0da18422413e1baf6ff7466ae98e3417c9cffd6a3afc07ecb6d404932ee20",
     "assets/editorial-font-OFL.txt": "8eb1c1019fe7fe6d0b6e7d7bbbba1d9cbdd969d8c5f26455708f6cfb8a77284c",

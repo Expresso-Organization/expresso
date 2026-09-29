@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-09-29T11:54:47.952Z",
+  "fictional": true,
+  "model": "qwen3.5:9b-q8_0",
+  "specOrigin": "model",
+  "validationAttempts": [
+    {
+      "valid": true,
+      "outputSha256": "4588f615a56f3cc093488a47d23b06e0993e8af0ee12b844b16a6a25ae2ab616"
+    }
+  ],
+  "inputSha256": "f22f0be1d489175e6409a5e513e512728969840dd4b912c2114884362e98dc29",
+  "planSha256": "e2451d0146fa3783529a5ff043a97badd19ea28b4efc680d7d82bef62f4aba65",
+  "specSha256": "4588f615a56f3cc093488a47d23b06e0993e8af0ee12b844b16a6a25ae2ab616",
+  "htmlSha256": "e7f5a894c1ce0042fbd1d78f0fb1db4e167bbd8fc11ba8f8636d421ca276acd9",
+  "modelOutputSha256": "4588f615a56f3cc093488a47d23b06e0993e8af0ee12b844b16a6a25ae2ab616",
+  "assets": {
+    "./assets/portfolio-threadlab.svg": {
+      "sha256": "aea7faa3ca30da3265e01b5db8ed1fbb29f38d80f1aac64e5b308a2b90d31f83",
+      "bytes": 2954
+    },
+    "./assets/portfolio-comma-map.svg": {
+      "sha256": "8a1be8f0727311e9bde261cf633957035c632e6c966b4d2852f983d497040ea4",
+      "bytes": 3068
+    },
+    "./assets/portfolio-gilnun.svg": {
+      "sha256": "d892273c5b3fac6d9845fb9c4ee8585367ed07900211a273e9ed07632685ed37",
+      "bytes": 2680
+    }
+  },
+  "comparison": {
+    "sameInput": false,
+    "samePlan": false,
+    "sameHtml": false
+  }
+}

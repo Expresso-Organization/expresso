@@ -430,9 +430,9 @@
     "anchorLanding": true
   },
   "artifactHashes": {
-    "variants.js": "5a5ef3ecc3e87526c51d87fb000d633e0e90fa18d46cca97d06a6ce5cce178c0",
+    "variants.js": "d40f502f7ae6a62268185c3e95945471a039f50a44da0902ab17dabc2438a33c",
     "variants.css": "9a5259cff492b3de1a62b7199417d7c9f845a865454fe1e1b8c38b4a46a43f9c",
-    "variants-sources.json": "46b31b7a0f508faecfc619c4da162c0aace70014952ba0f51b76ee3c33f11d38",
+    "variants-sources.json": "087a8c8d39e0f3d9140a83274c58f8ac0579fe507bea8a45de68649b1980d442",
     "featured-standard-none.json": "14fb8d876ab87625046e386d43cd993e1c282a61def98b39da213c50547f1c66",
     "featured-standard-none.static.html": "a0e57825470d2d6ef514da70956e7e2e3bc9148651373f583eb541681a3b9c6d",
     "featured-standard-none-selected.json": "3157d371897b4710025fc1ecea21fe9b91dfab4fbfe560e5ce9e9f01bc33d3e2",

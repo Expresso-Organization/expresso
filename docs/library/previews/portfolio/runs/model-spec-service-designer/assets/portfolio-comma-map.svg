@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-label="쉼표 지도 가상 시제품 화면">
+  <rect width="1200" height="900" fill="#eef3eb"/>
+  <rect width="1200" height="74" fill="#174c43"/>
+  <text x="37" y="48" fill="#fff" font-family="Arial,sans-serif" font-size="30" font-weight="700">comma  /  places</text>
+  <text x="930" y="47" fill="#d6e9e3" font-family="Arial,sans-serif" font-size="18">Explore  /  Saved places</text>
+  <rect x="26" y="101" width="376" height="764" rx="19" fill="#fff"/>
+  <text x="52" y="157" fill="#193d36" font-family="Arial,sans-serif" font-size="28" font-weight="700">A place to pause</text>
+  <text x="52" y="190" fill="#6b8179" font-family="Arial,sans-serif" font-size="17">Compare quiet spaces around you</text>
+  <rect x="52" y="224" width="324" height="55" rx="10" fill="#edf4f1"/>
+  <text x="73" y="259" fill="#668078" font-family="Arial,sans-serif" font-size="18">⌕  Library, garden, workshop</text>
+  <g font-family="Arial,sans-serif">
+    <rect x="52" y="310" width="324" height="137" rx="13" fill="#dceee6"/>
+    <text x="72" y="353" fill="#214d40" font-size="22" font-weight="700">Yeowool Library</text>
+    <text x="72" y="390" fill="#477568" font-size="17">Quiet  ·  Step-free entry</text>
+    <text x="72" y="419" fill="#477568" font-size="17">Open until 20:00</text>
+    <rect x="52" y="465" width="324" height="137" rx="13" fill="#f5eddc"/>
+    <text x="72" y="508" fill="#5e533e" font-size="22" font-weight="700">Slow Garden</text>
+    <text x="72" y="545" fill="#8a7654" font-size="17">Outdoor  ·  Benches</text>
+    <text x="72" y="574" fill="#8a7654" font-size="17">Open all day</text>
+    <rect x="52" y="620" width="324" height="137" rx="13" fill="#e9ebf3"/>
+    <text x="72" y="663" fill="#3d475c" font-size="22" font-weight="700">Neighborhood Studio</text>
+    <text x="72" y="700" fill="#68738c" font-size="17">Indoor  ·  Seats available</text>
+    <text x="72" y="729" fill="#68738c" font-size="17">Open until 18:00</text>
+  </g>
+  <rect x="423" y="101" width="751" height="764" rx="19" fill="#dbe7d7"/>
+  <path d="M423 229H1174M423 513H1174M557 101V865M858 101V865" stroke="#f9fbf6" stroke-width="27"/>
+  <path d="M430 770L1173 276" stroke="#fff" stroke-width="24"/>
+  <path d="M525 872C613 657 829 667 806 109" stroke="#a9d7ce" stroke-width="74" fill="none"/>
+  <g fill="#b6d5b0"><rect x="608" y="270" width="170" height="127" rx="24"/><rect x="926" y="570" width="166" height="141" rx="24"/><rect x="902" y="130" width="180" height="109" rx="24"/></g>
+  <g fill="#174c43" stroke="#fff" stroke-width="7"><circle cx="717" cy="428" r="27"/><circle cx="989" cy="446" r="27"/><circle cx="1100" cy="235" r="27"/></g>
+  <path d="M717 428L740 520L982 520L989 446" stroke="#d17952" stroke-width="7" stroke-dasharray="11 13" fill="none" stroke-linecap="round"/>
+  <rect x="870" y="760" width="270" height="72" rx="13" fill="#fff"/>
+  <text x="897" y="806" fill="#174c43" font-family="Arial,sans-serif" font-size="20" font-weight="700">3 places match your needs</text>
+</svg>

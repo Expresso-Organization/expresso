@@ -2049,7 +2049,7 @@
   "sources": [
     {
       "path": "scripts/library/renderer/portfolio/v1/catalog.mjs",
-      "sha256": "a1ed227ee23b6ad30353a62ab3d7c111d6c69dd1cfdda80d89fafb6c1c095fb6"
+      "sha256": "5338d022d5c7d283c48e62044758f5346b7f390ef36c843d68159768b733d156"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/fixtures.mjs",
@@ -2069,7 +2069,7 @@
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/showcase.jsx",
-      "sha256": "c9307cf30c446b66ddb966edf29f3c9045536f80c2ebad01aebb5fa473c26992"
+      "sha256": "9a9b053952524f81ee6ebc7d805887a5c069c30dfe35921311073b0529af6c57"
     },
     {
       "path": "scripts/library/renderer/portfolio/v1/showcase.css",
