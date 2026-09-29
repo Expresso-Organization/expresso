@@ -1,0 +1,243 @@
+{
+  "schemaVersion": 1,
+  "fictional": true,
+  "checks": [
+    "same_input",
+    "model_output_is_spec",
+    "content_preservation",
+    "desktop_mobile",
+    "no_overflow",
+    "anchors",
+    "images",
+    "reduced_motion",
+    "no_javascript",
+    "distinct_visual_selection"
+  ],
+  "runs": [
+    {
+      "name": "ambient",
+      "inputSha256": "a9f66944a1ec61e7b73404112862939f0095dba8bfa705db77e72fb0400025eb",
+      "htmlSha256": "71254e04697eb3dc001796cf24d4344ad3d1c5c76c32be3fec8d2e2125fe85a0",
+      "selection": {
+        "recipe": "gallery",
+        "design": {
+          "palette": "paper",
+          "typography": "serif",
+          "layout": "studio"
+        },
+        "heroStyle": "gradient",
+        "projectIndex": "mosaic",
+        "reason": "따뜻한 종이색과 명조체, 중앙 정렬된 밝은 배경 스타일을 통해 서비스 디자이너의 친근하고 전문적인 이미지를 강조하며, 프로젝트는 둥근 빛이 있는 비대칭 타일로 표현되었습니다."
+      },
+      "screens": [
+        {
+          "width": 390,
+          "design": [
+            "paper",
+            "serif",
+            "studio"
+          ],
+          "motion": "none",
+          "overflow": false,
+          "missingAnchors": [],
+          "duplicateIds": [],
+          "brokenImages": 0,
+          "caseIds": [
+            "threadlab",
+            "comma-map",
+            "gilnun"
+          ],
+          "h1": 1,
+          "identity": {
+            "name": "서이준",
+            "definition": "복잡한 자료의 정보 구조를 설계하는 서비스 디자이너입니다.",
+            "nameSize": 62.4,
+            "definitionSize": 24,
+            "nameTop": 295.75,
+            "definitionTop": 387.640625
+          },
+          "preservedFields": 70
+        },
+        {
+          "width": 1440,
+          "design": [
+            "paper",
+            "serif",
+            "studio"
+          ],
+          "motion": "none",
+          "overflow": false,
+          "missingAnchors": [],
+          "duplicateIds": [],
+          "brokenImages": 0,
+          "caseIds": [
+            "threadlab",
+            "comma-map",
+            "gilnun"
+          ],
+          "h1": 1,
+          "identity": {
+            "name": "서이준",
+            "definition": "복잡한 자료의 정보 구조를 설계하는 서비스 디자이너입니다.",
+            "nameSize": 97.92,
+            "definitionSize": 40,
+            "nameTop": 311.25,
+            "definitionTop": 442.921875
+          },
+          "preservedFields": 70
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "name": "spotlight",
+      "inputSha256": "a9f66944a1ec61e7b73404112862939f0095dba8bfa705db77e72fb0400025eb",
+      "htmlSha256": "693e968fcb2e0b2de6bb7576a59240df0d0d2813c7fbf094b06cbbb93e3ae799",
+      "selection": {
+        "recipe": "gallery",
+        "design": {
+          "palette": "midnight",
+          "typography": "display",
+          "layout": "studio"
+        },
+        "heroStyle": "spotlight",
+        "projectIndex": "bento",
+        "reason": "사용자가 요청한 검은 무대 배경과 주황 광원 (spotlight), 벤토형 프로젝트 목록 (bento), 그리고 서비스 디자인 분야의 전문성을 강조할 수 있는 대형 타이포그래피와 스타디움 레이아웃을 적용했습니다."
+      },
+      "screens": [
+        {
+          "width": 390,
+          "design": [
+            "midnight",
+            "display",
+            "studio"
+          ],
+          "motion": "none",
+          "overflow": false,
+          "missingAnchors": [],
+          "duplicateIds": [],
+          "brokenImages": 0,
+          "caseIds": [
+            "threadlab",
+            "comma-map",
+            "gilnun"
+          ],
+          "h1": 1,
+          "identity": {
+            "name": "서이준",
+            "definition": "복잡한 자료의 정보 구조를 설계하는 서비스 디자이너입니다.",
+            "nameSize": 62.4,
+            "definitionSize": 24,
+            "nameTop": 372.25,
+            "definitionTop": 465.640625
+          },
+          "preservedFields": 70
+        },
+        {
+          "width": 1440,
+          "design": [
+            "midnight",
+            "display",
+            "studio"
+          ],
+          "motion": "none",
+          "overflow": false,
+          "missingAnchors": [],
+          "duplicateIds": [],
+          "brokenImages": 0,
+          "caseIds": [
+            "threadlab",
+            "comma-map",
+            "gilnun"
+          ],
+          "h1": 1,
+          "identity": {
+            "name": "서이준",
+            "definition": "복잡한 자료의 정보 구조를 설계하는 서비스 디자이너입니다.",
+            "nameSize": 90.72,
+            "definitionSize": 36,
+            "nameTop": 372.90625,
+            "definitionTop": 496.875
+          },
+          "preservedFields": 70
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "name": "poster",
+      "inputSha256": "a9f66944a1ec61e7b73404112862939f0095dba8bfa705db77e72fb0400025eb",
+      "htmlSha256": "bbc4d9e8672f39490f5d8fc7504abb47970599a03f5bc864c78eb52f8dda942f",
+      "selection": {
+        "recipe": "gallery",
+        "design": {
+          "palette": "electric",
+          "typography": "display",
+          "layout": "poster"
+        },
+        "heroStyle": "classic",
+        "projectIndex": "mosaic",
+        "reason": "사용자가 명백히 밝은 포스터 스타일과 고딕 폰트를 요청했으므로, 이전 페이지의 어두운 배경과 스튜디오 레이아웃과 대비되도록 전기색 팔레트와 포스터 레이아웃을 선택했습니다."
+      },
+      "screens": [
+        {
+          "width": 390,
+          "design": [
+            "electric",
+            "display",
+            "poster"
+          ],
+          "motion": "none",
+          "overflow": false,
+          "missingAnchors": [],
+          "duplicateIds": [],
+          "brokenImages": 0,
+          "caseIds": [
+            "threadlab",
+            "comma-map",
+            "gilnun"
+          ],
+          "h1": 1,
+          "identity": {
+            "name": "서이준↘",
+            "definition": "복잡한 자료의 정보 구조를 설계하는 서비스 디자이너입니다.",
+            "nameSize": 84,
+            "definitionSize": 23,
+            "nameTop": 253,
+            "definitionTop": 381.1875
+          },
+          "preservedFields": 70
+        },
+        {
+          "width": 1440,
+          "design": [
+            "electric",
+            "display",
+            "poster"
+          ],
+          "motion": "none",
+          "overflow": false,
+          "missingAnchors": [],
+          "duplicateIds": [],
+          "brokenImages": 0,
+          "caseIds": [
+            "threadlab",
+            "comma-map",
+            "gilnun"
+          ],
+          "h1": 1,
+          "identity": {
+            "name": "서이준↘",
+            "definition": "복잡한 자료의 정보 구조를 설계하는 서비스 디자이너입니다.",
+            "nameSize": 115.2,
+            "definitionSize": 42,
+            "nameTop": 286.578125,
+            "definitionTop": 447.53125
+          },
+          "preservedFields": 70
+        }
+      ],
+      "noJavaScript": true
+    }
+  ]
+}

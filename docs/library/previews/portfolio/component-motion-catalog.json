@@ -7,7 +7,7 @@
       "component": "Hero",
       "title": "소개",
       "icon": "intro",
-      "description": "제목·보드·메모를 순서대로 보여줍니다.",
+      "description": "이름·자기 정의·보드를 순서대로 보여줍니다.",
       "entrance": "역할별 순차 등장",
       "intrinsic": "내부 프로젝트 전시가 선택 동작을 담당",
       "owner": "slots",
@@ -16,7 +16,7 @@
       ],
       "bindings": [],
       "anchor": "intro",
-      "instruction": "다시 재생을 눌러 제목과 보드의 등장 순서를 확인하세요.",
+      "instruction": "다시 재생을 눌러 이름과 보드의 등장 순서를 확인하세요.",
       "presets": [
         "none",
         "subtle",
@@ -30,6 +30,64 @@
       },
       "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
       "source": "scripts/library/renderer/portfolio/v1/registry.jsx"
+    },
+    {
+      "id": "gradient-hero",
+      "component": "GradientHero",
+      "title": "그라디언트 소개",
+      "icon": "intro",
+      "description": "중앙 제목, 빛 레이어, 실제 프로젝트 카드를 순서대로 보여줍니다.",
+      "entrance": "제목·행동 버튼·프로젝트 카드 등장",
+      "intrinsic": "카드 호버와 사례 링크",
+      "owner": "slots",
+      "dependencies": [],
+      "bindings": [],
+      "anchor": "intro",
+      "instruction": "제목과 카드가 나타난 뒤 사례 링크를 열어 보세요.",
+      "sourceItemId": "componentry-gradient-hero-01",
+      "sourcePath": "docs/library/materials/componentry/source/gradient-hero-01.tsx",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "docs/library/materials/componentry/source/gradient-hero-01.tsx"
+    },
+    {
+      "id": "spotlight-hero",
+      "component": "SpotlightHero",
+      "title": "스포트라이트 소개",
+      "icon": "intro",
+      "description": "조명 배경과 실제 프로젝트 이미지를 서로 다른 위치에 배치합니다.",
+      "entrance": "제목·소개·이미지 순차 등장",
+      "intrinsic": "이미지 카드 호버와 사례 링크",
+      "owner": "slots",
+      "dependencies": [],
+      "bindings": [],
+      "anchor": "intro",
+      "instruction": "등장 순서와 프로젝트 이미지 링크를 확인하세요.",
+      "sourceItemId": "watermelon-90f22f5a2c5f6a52",
+      "sourcePath": "docs/library/materials/watermelon/registry/hero-40.json",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "docs/library/materials/watermelon/registry/hero-40.json"
     },
     {
       "id": "showcase",
@@ -257,10 +315,10 @@
     {
       "id": "annotation",
       "component": "AnnotatedHeading",
-      "title": "핵심 문구 표시",
+      "title": "자기 정의 핵심 문구",
       "icon": "draw",
-      "description": "소개 제목의 핵심 문구 아래에 선을 그립니다.",
-      "entrance": "제목 뒤 밑줄 그리기",
+      "description": "이름 아래 자기 정의 문장의 핵심 문구에 선을 그립니다.",
+      "entrance": "문장 뒤 밑줄 그리기",
       "intrinsic": "별도 조작 없음",
       "owner": "slots",
       "dependencies": [],
@@ -271,7 +329,7 @@
         }
       ],
       "anchor": "intro",
-      "instruction": "다시 재생을 눌러 제목 뒤에 밑줄이 그려지는 순서를 확인하세요.",
+      "instruction": "다시 재생을 눌러 자기 정의 문장 뒤에 밑줄이 그려지는 순서를 확인하세요.",
       "sourceItemId": "componentry-annotated-text",
       "presets": [
         "none",
@@ -290,16 +348,16 @@
     {
       "id": "headline-lines",
       "component": "HeadlineLines",
-      "title": "소개 제목 줄별 등장",
+      "title": "자기 정의 문장 순차 등장",
       "icon": "draw",
-      "description": "제목의 원문 줄을 순서대로 보여줍니다.",
-      "entrance": "줄별 순차 등장",
-      "intrinsic": "제목 밑줄과 연결",
+      "description": "한 문장을 읽기 쉬운 두 부분으로 나누어 순서대로 보여줍니다.",
+      "entrance": "문장 순차 등장",
+      "intrinsic": "문장 밑줄과 연결",
       "owner": "slots",
       "dependencies": [],
       "bindings": [],
       "anchor": "intro",
-      "instruction": "다시 재생을 눌러 제목 두 줄이 차례로 등장하고 밑줄이 뒤따르는지 확인하세요.",
+      "instruction": "다시 재생을 눌러 자기 정의 문장의 두 부분이 차례로 등장하는지 확인하세요.",
       "sourceItemId": "watermelon-6df5fe3ae04dae49",
       "sourcePath": "docs/library/materials/watermelon/registry/hero-1.json",
       "presets": [
@@ -344,6 +402,35 @@
       },
       "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
       "source": "docs/library/materials/watermelon/registry/bento-1.json"
+    },
+    {
+      "id": "mosaic",
+      "component": "MosaicProjectIndex",
+      "title": "프로젝트 모자이크",
+      "icon": "grid",
+      "description": "프로젝트 이미지와 설명을 비대칭 타일로 배치합니다.",
+      "entrance": "타일 순차 등장",
+      "intrinsic": "카드 호버와 사례 링크",
+      "owner": "slots",
+      "dependencies": [],
+      "bindings": [],
+      "anchor": "work",
+      "instruction": "프로젝트 이미지를 선택해 연결된 사례로 이동해 보세요.",
+      "sourceItemId": "watermelon-cdd2cb9bdb3a432e",
+      "sourcePath": "docs/library/materials/watermelon/registry/bento-2.json",
+      "presets": [
+        "none",
+        "subtle",
+        "showcase"
+      ],
+      "support": {
+        "mobile": true,
+        "keyboard": true,
+        "reducedMotion": true,
+        "standaloneHtml": true
+      },
+      "reducedBehavior": "등장·전환 즉시 표시, 네이티브 조작 유지",
+      "source": "docs/library/materials/watermelon/registry/bento-2.json"
     },
     {
       "id": "career-ribbon",

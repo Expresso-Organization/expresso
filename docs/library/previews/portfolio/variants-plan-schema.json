@@ -13,6 +13,41 @@
         "gallery"
       ]
     },
+    "design": {
+      "type": "object",
+      "properties": {
+        "palette": {
+          "type": "string",
+          "enum": [
+            "paper",
+            "electric",
+            "midnight"
+          ]
+        },
+        "typography": {
+          "type": "string",
+          "enum": [
+            "serif",
+            "sans",
+            "display"
+          ]
+        },
+        "layout": {
+          "type": "string",
+          "enum": [
+            "editorial",
+            "poster",
+            "studio"
+          ]
+        }
+      },
+      "required": [
+        "palette",
+        "typography",
+        "layout"
+      ],
+      "additionalProperties": false
+    },
     "cases": {
       "minItems": 1,
       "maxItems": 8,
@@ -70,6 +105,7 @@
     "components": {
       "default": {
         "projectIndex": "default",
+        "heroStyle": "classic",
         "heroAnnotation": "off",
         "heroReveal": "block",
         "careerStyle": "default",
@@ -83,7 +119,17 @@
           "enum": [
             "default",
             "orbit",
-            "bento"
+            "bento",
+            "mosaic"
+          ]
+        },
+        "heroStyle": {
+          "default": "classic",
+          "type": "string",
+          "enum": [
+            "classic",
+            "gradient",
+            "spotlight"
           ]
         },
         "heroAnnotation": {
@@ -128,6 +174,7 @@
       },
       "required": [
         "projectIndex",
+        "heroStyle",
         "heroAnnotation",
         "heroReveal",
         "careerStyle",

@@ -5,8 +5,9 @@ import {compilePlan,defaultPlan,selectedComponents,bentoComponents} from './cata
 import {fixture} from './fixtures.mjs';
 test('생성에 사용하는 모든 컴포넌트와 내부 전시의 모션 지원을 연결한다',()=>{
  const content=fixture(),compiled=compilePlan(defaultPlan(content),content);
- assert.equal(componentMotions.length,14);
- assert.equal(new Set(componentMotions.map(c=>c.id)).size,14);
+ assert.equal(componentMotions.length,17);
+ assert.equal(new Set(componentMotions.map(c=>c.id)).size,17);
+ assert.deepEqual(componentMotions.filter(c=>['gradient-hero','spotlight-hero','mosaic'].includes(c.id)).map(c=>c.sourceItemId),['componentry-gradient-hero-01','watermelon-90f22f5a2c5f6a52','watermelon-cdd2cb9bdb3a432e']);
  assert.equal(compiled.motionSupport.length,7);
  const selected=compilePlan(defaultPlan(content,'gallery','showcase',selectedComponents),content);
  assert.equal(selected.spec.elements.work.type,'OrbitProjectIndex');
