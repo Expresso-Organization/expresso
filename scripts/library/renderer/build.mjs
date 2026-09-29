@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import * as esbuild from 'esbuild';
 import ts from 'typescript';
+import {motionBridgeTag} from './source-motion-core.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const repo = path.join(root,'artifacts/portfolio-library/stage-2/repos/watermelon');
 const work = path.join(root,'artifacts/portfolio-library/stage-2/preview-build');
@@ -35,6 +36,8 @@ const selection=/^(hero-\d+|bento-\d+|features?-\d+|footer-\d+|cta-\d+|testimoni
 const results=[];const seen=new Set();
 for (const item of registry.items){
  if(!selection.test(item.name)||seen.has(item.name))continue;seen.add(item.name);
+ const catalogItem=catalog.items.find(entry=>entry.sourceSite==='watermelon'&&entry.sourceItemId===item.name);
+ if(!catalogItem)throw new Error('수집 목록에 없는 Watermelon 항목: '+item.name);
  const entry=item.name==='project-management-dashboard'?{path:'src/components/dashboards/project-management-dashboard/demo.tsx'}:item.files.find(f=>/\.(tsx|jsx)$/.test(f.path));if(!entry)continue;
  const input=path.join(repo,entry.path);if(!fs.existsSync(input))continue;
  const member=exportsFor(input);if(!member){results.push({name:item.name,status:'missing_export'});continue;}
@@ -61,7 +64,7 @@ for (const item of registry.items){
  try{
   await esbuild.build({...base,entryPoints:[file],external:modules,banner:{js:'var require=function(name){if(!(name in window.__exModules))throw new Error("Missing preview module: "+name);return window.__exModules[name]};'},outfile:path.join(out,item.name+'.js')});
   const csp="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src https: data:; font-src https: data:; connect-src 'none'; form-action 'none'; base-uri 'none'";
-  fs.writeFileSync(path.join(out,item.name+'.html'),`<!doctype html><html lang="en" data-theme="light"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="${csp}"><title>${item.name} · Watermelon preview</title><link rel="stylesheet" href="preview.css"><body><div id="root"></div><script src="vendor.js"></script><script src="${item.name}.js"></script></body></html>`);
+  fs.writeFileSync(path.join(out,item.name+'.html'),`<!doctype html><html lang="en" data-theme="light"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="${csp}"><title>${item.name} · Watermelon preview</title><link rel="stylesheet" href="preview.css"><body><div id="root"></div><script src="vendor.js"></script>${motionBridgeTag(root,catalogItem.id)}<script src="${item.name}.js"></script></body></html>`);
   results.push({name:item.name,status:'built',export:member,props,entry:entry.path,url:`./library/previews/watermelon/${item.name}.html`});
  }catch(e){results.push({name:item.name,status:'build_failed',reason:e.errors?.map(e=>e.text).join('; ')||e.message});}
 }

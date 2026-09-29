@@ -7,35 +7,21 @@ import {applyExamples} from '../../../docs/library/examples-core.mjs';
 import {applyComponentry} from '../../../docs/library/componentry-core.mjs';
 import {itemType} from '../../../docs/library/catalog-core.mjs';
 import {componentMotions} from './portfolio/v1/motion-catalog.mjs';
+import {sourceMotionSignals} from './source-motion-core.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../..');
 const read=name=>JSON.parse(fs.readFileSync(path.join(root,'docs/library',name+'.json')));
-const local=value=>path.join(root,'docs',value.startsWith('./')?value.slice(2):value);
 let data=applyAcquisitions(read('catalog'),read('acquisitions'));
 data=applyCuration(data,read('curation'));
 data=applyExamples(data,read('examples'));
 data=applyComponentry(data,read('componentry'));
 const supported=new Map(componentMotions.filter(item=>item.sourceItemId).map(item=>[item.sourceItemId,item.id]));
-const signals={motionLibrary:/from ['"](?:motion\/react|framer-motion)['"]|require\(['"](?:motion\/react|framer-motion)/,gsap:/from ['"]gsap(?:\/[^'"]*)?['"]|\bgsap\.(?:to|from|timeline|set)/,scroll:/useScroll|ScrollTrigger|IntersectionObserver|whileInView|inView\(|onScroll|scrollYProgress/,waapi:/\.animate\s*\(/,keyframes:/@keyframes|animation\s*:/,transition:/transition(?:-[a-z-]+)?\s*:|\btransition-(?:all|colors|transform|opacity)|\bduration-\d+\b/,hover:/hover:|group-hover:|onMouseEnter|onPointerEnter/,canvas:/<canvas|WebGL|three(?:\/|['"])|ogl/,continuous:/requestAnimationFrame|setInterval|useFrame\(|animate\s*\(\s*\{|repeat\s*:\s*Infinity/,reducedMotion:/prefers-reduced-motion|useReducedMotion|matchMedia\(['"]\(prefers-reduced-motion/};
 const rows=[];
 for(const item of data.items.filter(item=>item.artifactKind==='component'&&item.acquisitionStatus==='source_ready'&&['sections','content-elements'].includes(itemType(item)))){
- const detail=JSON.parse(fs.readFileSync(local(item.detailPath)));
- let files=[];
- for(const material of detail.materials||[]){
-  if(material.kind!=='registry_source')continue;
-  const source=JSON.parse(fs.readFileSync(local(material.path)));
-  if(Array.isArray(source.files))files.push(...source.files.filter(file=>file.content&&/\.(tsx?|jsx?|css)$/.test(file.path)));
- }
- const exact=files.filter(file=>file.path===item.sourceItemId||file.path.split('/').at(-1).replace(/\.(tsx?|jsx?|css)$/,'')===item.sourceItemId);
- if(exact.length)files=exact;else if(files.length>1)files=files.slice(0,1);
- if(!files.length)throw new Error('원본 파일 없음: '+item.id);
- const code=files.map(file=>file.content).join('\n');
- const detected=Object.fromEntries(Object.entries(signals).map(([key,pattern])=>[key,pattern.test(code)]));
- const complex=['motionLibrary','gsap','scroll','waapi','keyframes','canvas','continuous'].some(key=>detected[key]);
- const motionClass=complex?'complex_signal':detected.transition||detected.hover?'transition_or_hover':'no_signal';
+ const {signals:detected,motionClass,primaryFile}=sourceMotionSignals(root,item);
  const selection=item.curation?.selection||item.selection||'pending';
  if(selection==='shortlisted'&&!supported.has(item.id))throw new Error('생성 모션 목록에 없는 선별 항목: '+item.id);
- rows.push({id:item.id,source:item.sourceSite,name:item.sourceItemId,type:itemType(item),roles:item.roles,selection,motionClass,motionSupport:supported.get(item.id)||null,signals:detected,sourceRevision:item.sourceRevision,primaryFile:files[0].path});
+ rows.push({id:item.id,source:item.sourceSite,name:item.sourceItemId,type:itemType(item),roles:item.roles,selection,motionClass,motionSupport:supported.get(item.id)||null,signals:detected,sourceRevision:item.sourceRevision,primaryFile});
 }
 rows.sort((a,b)=>a.source.localeCompare(b.source)||a.name.localeCompare(b.name));
 const count=(key,value)=>rows.filter(row=>row[key]===value).length;

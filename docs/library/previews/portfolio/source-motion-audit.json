@@ -10,8 +10,8 @@
     "reference": 7,
     "excluded": 5,
     "pending": 348,
-    "complexSignal": 240,
-    "transitionOrHover": 103,
+    "complexSignal": 234,
+    "transitionOrHover": 109,
     "noSignal": 25
   },
   "caveat": "코드의 문자열 신호와 수집 분류를 계산한 결과입니다. 실제 재생 품질과 제품 적합성은 생성 조합의 브라우저 검증으로 판정합니다.",
@@ -1934,7 +1934,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -1960,7 +1960,7 @@
         "keyframes": false,
         "transition": true,
         "hover": false,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -2272,7 +2272,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": true,
         "reducedMotion": false
       },
@@ -2506,7 +2506,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": true,
         "reducedMotion": false
       },
@@ -5028,7 +5028,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -5496,7 +5496,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -5808,7 +5808,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -6224,7 +6224,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -6250,7 +6250,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -6276,7 +6276,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -6302,7 +6302,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -6328,7 +6328,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -6500,7 +6500,7 @@
         "supporting-ui"
       ],
       "selection": "pending",
-      "motionClass": "complex_signal",
+      "motionClass": "transition_or_hover",
       "motionSupport": null,
       "signals": {
         "motionLibrary": false,
@@ -6510,7 +6510,7 @@
         "keyframes": false,
         "transition": true,
         "hover": false,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -6526,7 +6526,7 @@
         "supporting-ui"
       ],
       "selection": "pending",
-      "motionClass": "complex_signal",
+      "motionClass": "transition_or_hover",
       "motionSupport": null,
       "signals": {
         "motionLibrary": false,
@@ -6536,7 +6536,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -7463,7 +7463,7 @@
         "supporting-ui"
       ],
       "selection": "pending",
-      "motionClass": "complex_signal",
+      "motionClass": "transition_or_hover",
       "motionSupport": null,
       "signals": {
         "motionLibrary": false,
@@ -7473,7 +7473,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -8165,7 +8165,7 @@
         "supporting-ui"
       ],
       "selection": "pending",
-      "motionClass": "complex_signal",
+      "motionClass": "transition_or_hover",
       "motionSupport": null,
       "signals": {
         "motionLibrary": false,
@@ -8175,7 +8175,7 @@
         "keyframes": false,
         "transition": false,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -8529,7 +8529,7 @@
         "supporting-ui"
       ],
       "selection": "pending",
-      "motionClass": "complex_signal",
+      "motionClass": "transition_or_hover",
       "motionSupport": null,
       "signals": {
         "motionLibrary": false,
@@ -8539,7 +8539,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -8763,7 +8763,7 @@
         "evidence"
       ],
       "selection": "pending",
-      "motionClass": "complex_signal",
+      "motionClass": "transition_or_hover",
       "motionSupport": null,
       "signals": {
         "motionLibrary": false,
@@ -8773,7 +8773,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -9033,7 +9033,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },
@@ -9059,7 +9059,7 @@
         "keyframes": false,
         "transition": true,
         "hover": true,
-        "canvas": true,
+        "canvas": false,
         "continuous": false,
         "reducedMotion": false
       },

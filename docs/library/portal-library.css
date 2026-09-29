@@ -90,6 +90,11 @@
 .lib-detail dd { margin: 0; overflow-wrap: anywhere; }
 .lib-detail > p { font-size: var(--ex-text-xs); }
 .lib-detail-links { display: flex; gap: 20px; margin: 24px 0; }
+.lib-motion-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 24px 0 16px; padding: 16px; border: 1px solid var(--ex-border); border-radius: 9px; background: var(--ex-bg-muted); }
+.lib-motion-controls label { display: grid; gap: 6px; min-width: 170px; color: var(--ex-fg-muted); font-size: var(--ex-text-2xs); }
+.lib-motion-controls select,.lib-motion-controls button { min-height: 42px; border: 1px solid var(--ex-border); border-radius: 7px; padding: 0 12px; background: var(--ex-bg); color: var(--ex-fg); font: inherit; cursor: pointer; }
+.lib-motion-controls p { flex-basis: 100%; margin: 0; color: var(--ex-fg-muted); font-size: var(--ex-text-2xs); }
+.lib-motion-waiting { margin: 20px 0; color: var(--ex-fg-muted); font-size: var(--ex-text-2xs); }
 .lib-detail li { overflow-wrap: anywhere; font-size: var(--ex-text-xs); margin-bottom: 7px; }
 .lib-sr { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (max-width: 1280px) { .lib-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .lib-summary { gap: 20px; } }

@@ -6,6 +6,7 @@ import {spawnSync} from 'node:child_process';
 import * as esbuild from 'esbuild';
 import ts from 'typescript';
 import {componentryFixtures,componentryDefaultFixture,portfolioFixtureNames} from './componentry-fixtures.mjs';
+import {motionBridgeTag} from './source-motion-core.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../..');
 const sourceDir=path.join(root,'docs/library/materials/componentry/source');
@@ -104,7 +105,7 @@ setTimeout(()=>{if(document.documentElement.dataset.previewStatus==='error')retu
       loader:{'.svg':'dataurl','.png':'dataurl','.jpg':'dataurl','.webp':'dataurl'},
       define:{'process.env.NODE_ENV':'"production"'}});
     const fictionalBadge=result.fictionalPortfolio?'<div class="fictional-badge">가상 포트폴리오 예제 · 실제 인물·경력·성과 아님</div>':'';
-    fs.writeFileSync(path.join(out,item.id+'.html'),`<!doctype html><html lang="ko" class="light"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="${csp}"><title>${item.title} · Componentry 실행 예제</title><link rel="stylesheet" href="preview.css"><style>body{overflow-x:hidden}#demo{position:relative;height:740px;min-height:740px}button,input,select{font:inherit}.fictional-badge{position:fixed;top:12px;right:12px;z-index:9999;max-width:calc(100vw - 24px);padding:8px 12px;border:1px solid #d8c49d;border-radius:999px;background:#fffaf0ed;color:#674a27;font:600 12px/1.4 system-ui,sans-serif;box-shadow:0 2px 14px #20150d1c;pointer-events:none}</style><body>${fictionalBadge}<div id="demo"></div><script src="vendor.js"></script><script src="${item.id}.js"></script></body></html>`);
+    fs.writeFileSync(path.join(out,item.id+'.html'),`<!doctype html><html lang="ko" class="light"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="${csp}"><title>${item.title} · Componentry 실행 예제</title><link rel="stylesheet" href="preview.css"><style>body{overflow-x:hidden}#demo{position:relative;height:740px;min-height:740px}button,input,select{font:inherit}.fictional-badge{position:fixed;top:12px;right:12px;z-index:9999;max-width:calc(100vw - 24px);padding:8px 12px;border:1px solid #d8c49d;border-radius:999px;background:#fffaf0ed;color:#674a27;font:600 12px/1.4 system-ui,sans-serif;box-shadow:0 2px 14px #20150d1c;pointer-events:none}</style><body>${fictionalBadge}<div id="demo"></div><script src="vendor.js"></script>${motionBridgeTag(root,item.id)}<script src="${item.id}.js"></script></body></html>`);
     result.status='built';
     result.fixture=fixture
       .replace(/data:font\/otf;base64,[A-Za-z0-9+/=]+/g,'[원본 폰트 인라인 데이터]')

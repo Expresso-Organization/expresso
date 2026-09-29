@@ -23,6 +23,8 @@ test('라이브러리 탐색·필터를 보존하고 상세 모달에서만 예�
   await import('../../docs/library/portal-library.mjs');
   const el=document.createElement('expresso-library');document.querySelector('main').append(el);
   el.data=applyExamples(applyCuration(applyAcquisitions(read('catalog'),read('acquisitions')),read('curation')),read('examples'));
+  const motion=JSON.parse(readFileSync(new URL('../../docs/library/previews/motion-policy-index.json',import.meta.url)));
+  el.data.motionPolicies=new Map(motion.items.map(item=>[item.id,item]));el.data.motionSummary=motion.summary;
   el.setAttribute('route','#/library');
   // 완성 페이지 진입점과 자료 유형 카드를 각각 검증합니다.
   const composition=el.querySelector('section[aria-labelledby="lib-composition-title"]');
@@ -60,6 +62,7 @@ test('라이브러리 탐색·필터를 보존하고 상세 모달에서만 예�
   assert.equal(live.getAttribute('sandbox'),'allow-scripts');
   assert.equal(live.getAttribute('loading'),'eager');
   assert.equal(live.tabIndex,0);
+  assert.deepEqual([...el.querySelector('[name="motion-mode"]').options].map(option=>option.value),['original','none','subtle','showcase']);
   assert.equal(el.querySelector('[data-live]'),null);
   for(const frame of el.querySelectorAll('.lib-card iframe'))assert.equal(frame.getAttribute('sandbox'),'');
   el.setAttribute('route','#/library/basic-ui');

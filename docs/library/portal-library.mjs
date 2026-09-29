@@ -13,8 +13,8 @@ const number = value => value.toLocaleString('ko-KR');
 const link = (url, label) => `<a href="${escape(url)}" target="_blank" rel="noopener noreferrer">${escape(label)} ↗</a>`;
 let catalogPromise;
 const readJSON = path => fetch(new URL(path,import.meta.url)).then(response=>{if(!response.ok)throw new Error(`자료 요청 실패 (HTTP ${response.status})`);return response.json();});
-const getCatalog = () => catalogPromise ||= Promise.all([readJSON('./catalog.json'),readJSON('./acquisitions.json'),readJSON('./curation.json'),readJSON('./examples.json'),readJSON('./componentry.json')])
-  .then(([base,acquired,curation,examples,componentry])=>applyComponentry(applyExamples(applyCuration(applyAcquisitions(validateCatalog(base),acquired),curation),examples),componentry)).catch(error=>{catalogPromise=null;throw error;});
+const getCatalog = () => catalogPromise ||= Promise.all([readJSON('./catalog.json'),readJSON('./acquisitions.json'),readJSON('./curation.json'),readJSON('./examples.json'),readJSON('./componentry.json'),readJSON('./previews/motion-policy-index.json')])
+  .then(([base,acquired,curation,examples,componentry,motion])=>({...applyComponentry(applyExamples(applyCuration(applyAcquisitions(validateCatalog(base),acquired),curation),examples),componentry),motionPolicies:new Map(motion.items.map(item=>[item.id,item])),motionSummary:motion.summary})).catch(error=>{catalogPromise=null;throw error;});
 
 class ExpressoLibrary extends HTMLElement {
   static observedAttributes = ['route'];
@@ -23,6 +23,15 @@ class ExpressoLibrary extends HTMLElement {
     if (this.closest('x-dc')) return;
     this.classList.add('ex-library');
     this.details ||= new Map();
+    this.motionMode ||= 'original';
+    this.motionReplay ||= 0;
+    this.motionMessage=event=>{
+      const frame=this.querySelector('.lib-detail .lib-live-preview iframe');
+      if(!frame||event.source!==frame.contentWindow||event.data?.type!=='expresso-motion-preview'||event.data.id!==this.state.id)return;
+      const status=this.querySelector('[data-motion-status]');
+      if(status&&event.data.state==='ready')status.textContent=this.motionDescription(this.data.motionPolicies.get(event.data.id));
+    };
+    this.ownerDocument.defaultView?.addEventListener('message',this.motionMessage);
     this.addEventListener('load',event=>{if(['IMG','IFRAME'].includes(event.target.tagName))event.target.closest('.lib-visual')?.removeAttribute('data-loading');},true);
     this.addEventListener('error',event=>{if(event.target.tagName==='IMG' && event.target.closest('.lib-visual')){const frame=event.target.closest('.lib-visual');frame.removeAttribute('data-loading');frame.innerHTML='<span class="lib-image-error">원본 이미지에 연결하지 못했습니다<br>상세에서 출처를 확인하세요.</span>';}},true);
     this.onclick = event => {
@@ -37,12 +46,14 @@ class ExpressoLibrary extends HTMLElement {
       if(button?.dataset.copy) this.copyMaterial(button);
       if(button?.hasAttribute('data-detail-retry')) this.loadDetail(this.data.items.find(i=>i.id===this.state.id),true);
       if(button?.hasAttribute('data-show-code')) this.showCode(button);
+      if(button?.hasAttribute('data-motion-replay')) this.setMotionMode(this.motionMode,true);
     };
     this.onchange = event => {
       if (event.target.name === 'page') this.navigate({page:Number(event.target.value), id:''});
       if (event.target.name === 'source') this.navigate({source:event.target.value, category:'', family:'', id:'', page:1});
       if (['role','availability','selection'].includes(event.target.name)) this.navigate({[event.target.name]:event.target.value,id:'',page:1});
       if (event.target.name === 'category') this.navigate({category:event.target.value, id:'', page:1});
+      if (event.target.name === 'motion-mode') this.setMotionMode(event.target.value);
     };
     this.onsubmit = event => {
       if (!event.target.matches('[data-search]')) return;
@@ -54,6 +65,7 @@ class ExpressoLibrary extends HTMLElement {
   disconnectedCallback() {
     this.querySelector('dialog')?.close();
     this.resizeObserver?.disconnect();
+    this.ownerDocument.defaultView?.removeEventListener('message',this.motionMessage);
   }
   attributeChangedCallback() { if (this.isConnected && this.data) this.render(); }
   // 공유 주소는 기존 포털 라우터가 해석한 속성으로 받아 중복 렌더링을 방지합니다.
@@ -84,6 +96,7 @@ class ExpressoLibrary extends HTMLElement {
     const route = patch => escape(libraryRoute({...state, ...patch}));
     const selected = data.items.find(i => i.id === state.id);
     const changedSelection = this.lastSelection !== state.id;
+    if(changedSelection){this.motionMode='original';this.motionReplay=0;}
     this.querySelector('dialog')?.close();
     this.innerHTML = `
       <header class="lib-heading">
@@ -149,9 +162,9 @@ class ExpressoLibrary extends HTMLElement {
     const primary=['sections','content-elements','basic-ui','page-examples'];
     const secondary=['templates','design-references','prompts','motion','icons','diagrams','tools','registries'];
     if(this.data.items.some(i=>itemType(i)==='pages'))secondary.push('pages');
-    this.innerHTML=`<header class="lib-heading"><div><p class="lib-eyebrow">PORTFOLIO LIBRARY</p><h1>${componentState?'컴포넌트 둘러보기':'포트폴리오 라이브러리'}</h1><p>필요한 자료의 카드를 선택해 목록과 실행 예제를 살펴보세요.</p></div><a class="lib-report" href="./portfolio-library-examples.md">실행 예제 보고서 ↗</a></header>
+    this.innerHTML=`<header class="lib-heading"><div><p class="lib-eyebrow">PORTFOLIO LIBRARY</p><h1>${componentState?'컴포넌트 둘러보기':'포트폴리오 라이브러리'}</h1><p>필요한 자료의 카드를 선택해 목록과 실행 예제를 살펴보세요. 모션을 적용한 실행 예제 ${number(this.data.motionSummary.previewReady)}개는 각 항목 상세에서 확인할 수 있습니다.</p></div><a class="lib-report" href="./portfolio-library-examples.md">실행 예제 보고서 ↗</a></header>
       ${componentState?'<nav class="lib-breadcrumb" aria-label="라이브러리 탐색 경로"><a href="#/library">← 모든 유형 보기</a><span aria-hidden="true">/</span><span aria-current="page">컴포넌트</span></nav>':''}
-      <main class="lib-home">${componentState?'':`<section aria-labelledby="lib-composition-title"><div class="lib-home-title"><div><h2 id="lib-composition-title">완성 페이지</h2><p>컴포넌트가 하나의 포트폴리오로 연결된 모습을 확인합니다.</p></div></div><div class="lib-collection-grid"><a class="lib-collection-card" href="./library/previews/portfolio/index.html"><header><div class="lib-collection-name"><span class="lib-collection-icon">${collectionIcon('page-examples')}</span><h3>포트폴리오 조합 예제</h3></div><span>가상 데이터</span></header><p>프로젝트 화면과 모션 프리셋을 비교합니다. 등장 효과를 다시 재생하고, 스크롤하며 카드와 사례의 움직임을 확인하세요.</p><footer><span>조작 가능한 가상 시제품 · 디자인 방향 2종</span><span class="lib-collection-action">페이지 보기 <span class="lib-collection-arrow">${collectionIcon('arrow')}</span></span></footer></a><a class="lib-collection-card" href="./portfolio-generation-comparison.html"><header><div class="lib-collection-name"><span class="lib-collection-icon">${collectionIcon('page-examples')}</span><h3>생성 방식 비교</h3></div><span>동일 가상 데이터</span></header><p>구조화 JSON과 자유 HTML/CSS의 실제 생성 결과를 같은 화면 폭으로 비교합니다.</p><footer><span>시각 검토 · 내용 보존 · 시간과 비용</span><span class="lib-collection-action">비교 보기 <span class="lib-collection-arrow">${collectionIcon('arrow')}</span></span></footer></a><a class="lib-collection-card" href="./library/previews/portfolio/index.html?view=motion-library"><header><div class="lib-collection-name"><span class="lib-collection-icon">${collectionIcon('page-examples')}</span><h3>컴포넌트 모션</h3></div><span>생성용 컴포넌트</span></header><p>소개·프로젝트·경력·근거·연락처의 지원 모션을 확인하고 각 컴포넌트를 직접 재생합니다.</p><footer><span>모션 지원 정보 · 실제 실행</span><span class="lib-collection-action">목록 보기 <span class="lib-collection-arrow">${collectionIcon('arrow')}</span></span></footer></a></div></section>`}<section aria-labelledby="lib-assembly-title"><div class="lib-home-title"><div><h2 id="lib-assembly-title">페이지 조립</h2><p>큰 구역부터 세부 요소까지, 필요한 조립 단위로 찾습니다.</p></div>${componentState?'':`<a href="#/library/all">전체 ${number(this.data.items.length)}개 검색 →</a>`}</div>
+      <main class="lib-home">${componentState?'':`<section aria-labelledby="lib-composition-title"><div class="lib-home-title"><div><h2 id="lib-composition-title">완성 페이지</h2><p>컴포넌트가 하나의 포트폴리오로 연결된 모습을 확인합니다.</p></div></div><div class="lib-collection-grid"><a class="lib-collection-card" href="./library/previews/portfolio/index.html"><header><div class="lib-collection-name"><span class="lib-collection-icon">${collectionIcon('page-examples')}</span><h3>포트폴리오 조합 예제</h3></div><span>가상 데이터</span></header><p>프로젝트 화면과 모션 프리셋을 비교합니다. 등장 효과를 다시 재생하고, 스크롤하며 카드와 사례의 움직임을 확인하세요.</p><footer><span>조작 가능한 가상 시제품 · 디자인 방향 2종</span><span class="lib-collection-action">페이지 보기 <span class="lib-collection-arrow">${collectionIcon('arrow')}</span></span></footer></a><a class="lib-collection-card" href="./portfolio-generation-comparison.html"><header><div class="lib-collection-name"><span class="lib-collection-icon">${collectionIcon('page-examples')}</span><h3>생성 방식 비교</h3></div><span>동일 가상 데이터</span></header><p>구조화 JSON과 자유 HTML/CSS의 실제 생성 결과를 같은 화면 폭으로 비교합니다.</p><footer><span>시각 검토 · 내용 보존 · 시간과 비용</span><span class="lib-collection-action">비교 보기 <span class="lib-collection-arrow">${collectionIcon('arrow')}</span></span></footer></a><a class="lib-collection-card" href="./library/previews/portfolio/index.html?view=motion-library"><header><div class="lib-collection-name"><span class="lib-collection-icon">${collectionIcon('page-examples')}</span><h3>생성용 컴포넌트 모션</h3></div><span>14종</span></header><p>소개·프로젝트·경력·근거·연락처의 지원 모션을 확인하고 각 컴포넌트를 직접 재생합니다.</p><footer><span>모션 지원 정보 · 실제 실행</span><span class="lib-collection-action">목록 보기 <span class="lib-collection-arrow">${collectionIcon('arrow')}</span></span></footer></a></div></section>`}<section aria-labelledby="lib-assembly-title"><div class="lib-home-title"><div><h2 id="lib-assembly-title">페이지 조립</h2><p>큰 구역부터 세부 요소까지, 필요한 조립 단위로 찾습니다.</p></div>${componentState?'':`<a href="#/library/all">전체 ${number(this.data.items.length)}개 검색 →</a>`}</div>
       ${componentState && ['q','source','category','role','availability','selection','family'].some(key=>state[key])?'<p class="lib-home-filter">기존 검색·필터가 카드별 결과에 적용되어 있습니다. <a href="#/library/components">필터 해제</a></p>':''}
       <div class="lib-collection-grid">${primary.map(type=>this.collectionCard(type,state)).join('')}</div></section>
       ${componentState?'':`<section aria-labelledby="lib-materials-title"><div class="lib-home-title"><div><h2 id="lib-materials-title">디자인과 제작 자료</h2><p>콘텐츠 구성, 시각 참고, 제작 도구를 용도별로 살펴봅니다.</p></div></div><div class="lib-collection-grid lib-collection-secondary">${secondary.map(type=>this.collectionCard(type,state)).join('')}</div></section>`}</main>`;
@@ -178,12 +191,36 @@ class ExpressoLibrary extends HTMLElement {
       <p class="lib-card-category">${item.selection!=='pending'?SELECTION[item.selection]+' · ':''}${escape(item.categories.join(' · ') || '분류 확인 예정')}${item.variant ? ' · '+escape(item.variant) : ''}</p>${item.sourceSite==='componentry'?`<p class="lib-card-description">${escape(item.description)}</p>`:''}
       <a class="lib-card-preview" aria-label="${escape(item.title)} 미리보기와 상세" href="${escape(libraryRoute({...state,id:item.id}))}">${this.preview(item)}</a><footer><span>${escape(source.name)}</span><span>${rightsLabel(item)}</span></footer></article>`;
   }
+  motionDescription(policy) {
+    if(!policy||policy.status!=='preview_ready')return '원본 코드와 이용 조건 확인 후 실행할 수 있습니다.';
+    if(this.motionMode==='none')return policy.reduction==='partial_native'?'모션을 최소화했습니다. 원본 JavaScript 효과는 일부 남을 수 있습니다.':policy.reduction==='host_motion_config'?'Motion 기반 이동 효과를 줄였습니다. 원본의 다른 효과는 일부 남을 수 있습니다.':'모션을 최소화했습니다. 선택·입력 동작은 유지됩니다.';
+    if(policy.strategy==='preserve_native')return '원본 자체 모션을 실행합니다. 다시 재생하면 예제를 처음부터 불러옵니다.';
+    return this.motionMode==='original'?'원본의 조작과 화면을 실행합니다.':'원본 조작에 공통 등장 모션을 적용했습니다.';
+  }
+  motionPreviewUrl(url) {
+    if(this.motionMode==='original'&&!this.motionReplay)return url;
+    const resolved=new URL(url,document.baseURI);
+    if(this.motionMode!=='original')resolved.searchParams.set('exMotion',this.motionMode);
+    if(this.motionReplay)resolved.searchParams.set('exReplay',String(this.motionReplay));
+    return resolved.href;
+  }
+  setMotionMode(mode,replay=false) {
+    const item=this.data?.items.find(entry=>entry.id===this.state.id),policy=this.data?.motionPolicies.get(item?.id);
+    if(policy?.status!=='preview_ready'||!['original','none','subtle','showcase'].includes(mode)||policy.strategy==='preserve_native'&&['subtle','showcase'].includes(mode))return;
+    this.motionMode=mode;
+    if(replay)this.motionReplay++;
+    else this.motionReplay=0;
+    const frame=this.querySelector('.lib-detail .lib-live-preview iframe');
+    if(frame)frame.src=this.motionPreviewUrl(item.preview.liveUrl);
+    const status=this.querySelector('[data-motion-status]');
+    if(status)status.textContent='실행 예제를 불러오는 중입니다.';
+  }
   preview(item,large=false) {
     const p=item.preview;
     if(!p) return `<div class="lib-preview-missing ${large?'lib-detail-preview':''}">${escape(item.previewReason||'원본에서 확인')}</div>`;
     if(p.kind==='remote_video' && large) return `<div class="lib-visual lib-large-preview lib-video-preview"><video controls playsinline preload="none" poster="${escape(p.poster)}" src="${escape(p.url)}" aria-label="${escape(item.title)} 참고 영상"></video><span class="lib-preview-label">${escape(p.label)}</span></div>`;
     if(p.kind==='text') return `<div class="lib-visual lib-prompt-preview"><pre>${escape(p.text)}</pre><span class="lib-preview-label">${escape(p.label)}</span></div>`;
-    if(p.kind==='local_frame' && large && p.liveUrl) return `<div class="lib-visual lib-large-preview lib-live-preview" data-loading="true"><iframe src="${escape(p.liveUrl)}" title="${escape(item.title)} 실행 예제" sandbox="allow-scripts" loading="eager" tabindex="0" referrerpolicy="no-referrer"></iframe><span class="lib-preview-label">${escape(p.label)} · 실행 중</span></div>`;
+    if(p.kind==='local_frame' && large && p.liveUrl) return `<div class="lib-visual lib-large-preview lib-live-preview" data-loading="true"><iframe src="${escape(this.motionPreviewUrl(p.liveUrl))}" title="${escape(item.title)} 실행 예제" sandbox="allow-scripts" loading="eager" tabindex="0" referrerpolicy="no-referrer"></iframe><span class="lib-preview-label">${escape(p.label)} · 실행 중</span></div>`;
     if(p.kind==='local_frame') return `<div class="lib-visual lib-frame-preview ${large?'lib-large-preview':''}" data-loading="true" data-preview-width="${p.width}" data-preview-height="${p.height}"><iframe src="${escape(p.url)}" title="${escape(item.title)} ${escape(p.label)}" sandbox="" loading="lazy" tabindex="-1" width="${p.width}" height="${p.height}" referrerpolicy="no-referrer"></iframe><span class="lib-preview-label">${escape(p.label)} · ${p.width}px</span></div>`;
     return `<div data-loading="true" class="lib-visual ${item.artifactKind==='icon'?'lib-icon-preview':''} ${large?'lib-large-preview':''}"><img src="${escape(large?(p.poster||p.url):p.thumbnailUrl||p.poster||p.url)}" alt="${escape(item.title)} 미리보기" loading="lazy" decoding="async" referrerpolicy="no-referrer"><span class="lib-preview-label">${escape(p.label)}</span></div>`;
   }
@@ -230,11 +267,13 @@ class ExpressoLibrary extends HTMLElement {
 
   detail(item, source, state) {
     if (!item) return `<dialog class="lib-detail" aria-labelledby="lib-detail-title"><button data-close aria-label="상세 닫기">닫기</button><h2 id="lib-detail-title">항목을 찾을 수 없습니다</h2><p>목록이 갱신되었거나 잘못된 공유 주소입니다.</p></dialog>`;
+    const policy=this.data.motionPolicies.get(item.id);
     const routeFamily = family => escape(libraryRoute({type:'all',family,page:1}));
     const duplicates = this.data.curation.duplicates.filter(g=>g.itemIds.includes(item.id)).flatMap(g=>g.itemIds).filter(id=>id!==item.id);
     const related = this.data.relations.filter(r=>r.itemIds.includes(item.id)).flatMap(r=>r.itemIds).filter(id=>id!==item.id);
     return `<dialog class="lib-detail" aria-labelledby="lib-detail-title"><header><span>${TYPES[itemType(item)]} / ${escape(source.name)}</span><button data-close aria-label="상세 닫기">닫기 ×</button></header>
       <h2 id="lib-detail-title">${escape(item.title)}</h2><p class="lib-meta">${({listing:'공개 목록의 이름',detail_page:'원본 상세 페이지의 이름',authored:'익스프레소 자체 작성',curated:'검토한 용도에 따른 이름',filename:'원본 파일명',identifier:'식별자에서 표시 이름 생성'})[item.titleSource]||'원본 항목 이름'}</p>
+      ${policy?.status==='preview_ready'?`<section class="lib-motion-controls" aria-label="컴포넌트 모션"><label>모션<select name="motion-mode" aria-label="컴포넌트 모션"><option value="original">원본</option><option value="none">최소화</option>${policy.strategy==='shared_reveal'?'<option value="subtle">차분하게</option><option value="showcase">쇼케이스</option>':''}</select></label><button type="button" data-motion-replay>다시 재생</button><p data-motion-status role="status">${escape(this.motionDescription(policy))}</p></section>`:item.artifactKind==='component'?`<p class="lib-motion-waiting">${policy?.reason==='rights_review'?'이용 조건 확인 후 모션을 적용할 수 있습니다.':'원본 코드 확보 후 모션을 적용할 수 있습니다.'}</p>`:''}
       ${this.preview(item,true)}${item.preview?.liveUrl ? `<div class="lib-detail-links"><a href="${escape(item.preview.liveUrl)}" target="_blank" rel="noopener">새 탭에서 크게 보기 ↗</a></div>` : ''}
       ${item.preview?.kind==='remote_video'?`<div class="lib-detail-links"><button data-play-video>참고 영상 재생</button>${link(item.preview.url,'원본 영상 열기')}</div><p data-video-status role="status"></p>`:''}
       ${item.artifactKind==='component'?`<p class="lib-meta">탐색 분류: ${escape(componentClassification(item).evidence)}${componentClassification(item).provisional?' · 원본 미확보, 임시 분류':''}</p>`:''}
