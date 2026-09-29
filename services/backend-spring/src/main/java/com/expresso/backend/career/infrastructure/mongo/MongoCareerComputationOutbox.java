@@ -34,12 +34,16 @@ public class MongoCareerComputationOutbox implements CareerComputationOutbox {
 	@Override
 	public void append(CareerComputationEvent event) {
 		var now = Date.from(clock.instant());
-		var idempotencyKey = "career-record:" + event.recordId() + ":v" + event.sourceRecordVersion();
+		var idempotencyKey = event.idempotencyKey() == null
+				? "career-record:" + event.recordId() + ":v" + event.sourceRecordVersion()
+				: event.idempotencyKey();
 		var payload = new Document("userId", event.userId())
 				.append("recordId", event.recordId())
 				.append("changedPropertyIds", event.changedPropertyIds())
-				.append("sourceRecordVersion", event.sourceRecordVersion())
-				.append("sourcePropertyVersions", new Document(event.sourcePropertyVersions()));
+				.append("sourceRecordVersion", event.sourceRecordVersion());
+		if (event.sourcePropertyVersions() != null) {
+			payload.append("sourcePropertyVersions", new Document(event.sourcePropertyVersions()));
+		}
 		var inserted = new Document("_id", UUID.randomUUID().toString())
 				.append("userId", event.userId()).append("topic", TOPIC).append("payload", payload)
 				.append("idempotencyKey", idempotencyKey).append("state", "pending").append("attempts", 0)

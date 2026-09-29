@@ -42,4 +42,28 @@ describe("career property schema v2", () => {
     for (const change of [{ kind: "reorder", propertyId, order: 0 }, { kind: "rename", propertyId, name: "이름" }, { kind: "delete", propertyId }, { kind: "restore", propertyId }, { kind: "type-change", propertyId, type: "text" }, { kind: "configure", propertyId, config: { source: "1" } }]) expect(CareerPropertySchemaChangeSchema.parse(change)).toEqual(change);
     expect(() => CareerPropertySchemaChangeSchema.parse({ kind: "delete", propertyId, force: true })).toThrow();
   });
+
+  it("accepts a complete client-identified property and rejects malformed create requests", () => {
+    const complete = {
+      kind: "create" as const,
+      property: {
+        id: propertyId,
+        key: "role",
+        name: "역할",
+        type: "text" as const,
+        required: false,
+        system: false,
+        config: {},
+      },
+    };
+    expect(CareerPropertySchemaChangeSchema.parse(complete)).toEqual(complete);
+    expect(() => CareerPropertySchemaChangeSchema.parse({
+      ...complete,
+      property: { ...complete.property, id: "not-a-uuid" },
+    })).toThrow();
+    expect(() => CareerPropertySchemaChangeSchema.parse({
+      ...complete,
+      property: { ...complete.property, name: "" },
+    })).toThrow();
+  });
 });

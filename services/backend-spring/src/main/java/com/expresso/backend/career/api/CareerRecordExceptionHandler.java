@@ -6,6 +6,7 @@ import com.mongodb.MongoException;
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -19,8 +20,15 @@ import com.expresso.backend.career.application.CareerRecordNotFoundException;
 import com.expresso.backend.career.application.CareerRecordPreconditionFailedException;
 import com.expresso.backend.career.application.CareerRecordValidationException;
 import com.expresso.backend.career.application.CareerCategoryMoveConflictException;
+import com.expresso.backend.career.application.CareerPropertyDefinitionConflictException;
+import com.expresso.backend.career.application.CareerPropertyDefinitionForbiddenException;
 
-@RestControllerAdvice(assignableTypes = { CareerRecordController.class, CareerCategoryMoveController.class })
+@RestControllerAdvice(assignableTypes = {
+		CareerRecordController.class,
+		CareerCategoryMoveController.class,
+		CareerCategoryCreateController.class,
+		CareerPropertyDefinitionController.class
+})
 public class CareerRecordExceptionHandler {
 
 	@ExceptionHandler({ CareerRecordRequestValidationException.class,
@@ -31,7 +39,12 @@ public class CareerRecordExceptionHandler {
 		return error(request, HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Request validation failed");
 	}
 
-	@ExceptionHandler({ CareerRecordIdempotencyConflictException.class, CareerCategoryMoveConflictException.class })
+	@ExceptionHandler({
+			CareerRecordIdempotencyConflictException.class,
+			CareerCategoryMoveConflictException.class,
+			CareerPropertyDefinitionConflictException.class,
+			DuplicateKeyException.class
+	})
 	ResponseEntity<ApiErrorResponse> conflict(HttpServletRequest request) {
 		return error(request, HttpStatus.CONFLICT, "CONFLICT", "Request conflicts with current state");
 	}
@@ -39,6 +52,11 @@ public class CareerRecordExceptionHandler {
 	@ExceptionHandler(CareerRecordNotFoundException.class)
 	ResponseEntity<ApiErrorResponse> notFound(HttpServletRequest request) {
 		return error(request, HttpStatus.NOT_FOUND, "NOT_FOUND", "Resource not found");
+	}
+
+	@ExceptionHandler(CareerPropertyDefinitionForbiddenException.class)
+	ResponseEntity<ApiErrorResponse> forbidden(HttpServletRequest request) {
+		return error(request, HttpStatus.FORBIDDEN, "FORBIDDEN", "Operation is not allowed");
 	}
 
 	@ExceptionHandler(CareerRecordDataIntegrityException.class)

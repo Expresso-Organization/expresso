@@ -234,7 +234,9 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
         if (change.property.system) throw new CareerError(403, "system properties cannot be created by users");
         validateConfiguration(change.property.type, change.property.config);
         if (next.some((definition) => definition.key === change.property.key && definition.deletedAt === null)) throw new CareerError(409, "property key already exists");
-        const created = { ...change.property, id: change.property.id ?? randomUUID(), order: change.property.order ?? next.length, version: 1, deletedAt: null };
+        const propertyId = change.property.id ?? randomUUID();
+        if (next.some((definition) => definition.id === propertyId)) throw new CareerError(409, "property id already exists");
+        const created = { ...change.property, id: propertyId, order: change.property.order ?? next.length, version: 1, deletedAt: null };
         await this.seedCreatedValues(tx.session, userId, category, created, [...next, created], now);
         next.push(created);
         if (created.type === "formula" || created.type === "rollup") recomputePropertyId = created.id;

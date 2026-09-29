@@ -9,7 +9,17 @@ public record CareerComputationEvent(
 		String recordId,
 		List<String> changedPropertyIds,
 		long sourceRecordVersion,
-		Map<String, Long> sourcePropertyVersions) {
+		Map<String, Long> sourcePropertyVersions,
+		String idempotencyKey) {
+
+	public CareerComputationEvent(
+			String userId,
+			String recordId,
+			List<String> changedPropertyIds,
+			long sourceRecordVersion,
+			Map<String, Long> sourcePropertyVersions) {
+		this(userId, recordId, changedPropertyIds, sourceRecordVersion, sourcePropertyVersions, null);
+	}
 
 	public CareerComputationEvent {
 		Objects.requireNonNull(userId, "userId는 null일 수 없습니다");
@@ -22,7 +32,8 @@ public record CareerComputationEvent(
 		if (sourceRecordVersion < 1) {
 			throw new IllegalArgumentException("sourceRecordVersion은 1 이상이어야 합니다");
 		}
-		sourcePropertyVersions = Map.copyOf(Objects.requireNonNull(
-				sourcePropertyVersions, "sourcePropertyVersions는 null일 수 없습니다"));
+		if (sourcePropertyVersions != null) {
+			sourcePropertyVersions = Map.copyOf(sourcePropertyVersions);
+		}
 	}
 }
