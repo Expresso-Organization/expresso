@@ -1,0 +1,29 @@
+{
+  "id": "60fps-c2e6ab486dbd4a7b",
+  "sourceUrl": "https://60fps.design/shots/dot-pinch-to-shrink-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Dot Pinch to Shrink Interaction",
+    "공개 이미지 요소: 25개",
+    "동영상 포스터: 25개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/dot-pinch-to-shrink-interaction",
+    "sha256": "c32ada512ad52fc76bcc3de2bef3a6c14186ed102f78bd02cc5623c636d74ee2",
+    "fetchedAt": "2026-09-23T12:59:32+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

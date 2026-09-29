@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "tooltip-12",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "tooltip"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/tooltip/tooltip-12.tsx",
+      "content": "import { Avatar, AvatarFallback, AvatarImage } from \"@/components/ui/avatar\";\nimport { Button } from \"@/components/ui/button\";\nimport {\n  HoverCard,\n  HoverCardContent,\n  HoverCardTrigger,\n} from \"@/components/ui/hover-card\";\n\nconst Tooltip12 = () => {\n  return (\n    <HoverCard openDelay={0} closeDelay={0}>\n      <HoverCardTrigger asChild>\n        <Button variant=\"link\">User Overview</Button>\n      </HoverCardTrigger>\n\n      <HoverCardContent className=\"w-fit\">\n        <div className=\"flex items-center gap-2\">\n          <Avatar className=\"size-10\">\n            <AvatarImage\n              src=\"https://github.com/vanshpatel.png\"\n              alt=\"Vansh Patel\"\n            />\n            <AvatarFallback className=\"text-xs\">AC</AvatarFallback>\n          </Avatar>\n\n          <div className=\"flex flex-col gap-0.5\">\n            <div className=\"text-sm font-medium\">Vansh Patel</div>\n            <div className=\"text-muted-foreground text-xs\">\n              Product Designer\n            </div>\n            <div className=\"text-xs\">Active now • 124 tasks completed</div>\n          </div>\n        </div>\n      </HoverCardContent>\n    </HoverCard>\n  );\n};\n\nexport default Tooltip12;\n",
+      "type": "registry:ui",
+      "target": "components/ui/tooltip-12.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

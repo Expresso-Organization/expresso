@@ -1,0 +1,26 @@
+import React from 'react';
+import {Card,CardHeader,CardTitle,CardDescription,CardContent} from '@collected/card';
+import {componentMotions} from './motion-catalog.mjs';
+import {motionPresets,variantFile} from './motion.mjs';
+import {defaultPlan,recipes,selectedComponents,bentoComponents,defaultComponents} from './catalog.mjs';
+import {fixture} from './fixtures.mjs';
+import {MotionComponentPreview} from './registry.jsx';
+const iconPaths={intro:'M4 5h16M4 10h10M4 15h16M4 20h10',stack:'m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5',grid:'M3 3h7v7H3V3Zm11 0h7v7h-7V3ZM3 14h7v7H3v-7Zm11 0h7v7h-7v-7Z',document:'M6 3h9l4 4v14H6V3Zm9 0v5h4M9 12h7M9 16h5',timeline:'M5 3v18M9 6h11M9 12h8M9 18h11M3 6h4M3 12h4M3 18h4',layers:'M4 5h16v4H4V5Zm0 7h16v4H4v-4Zm0 7h10',arrow:'M5 19 19 5M5 5h14v14',orbit:'M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0M3 12c3-8 15-8 18 0M3 12c3 8 15 8 18 0M3 12h18',draw:'M3 17c5-3 9-3 14-1l4 2M4 7h16M4 11h12'};
+function Icon({name}){return <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={iconPaths[name]}/></svg>;}
+export function MotionLibrary(){
+ const query=new URLSearchParams(location.search),selected=componentMotions.find(c=>c.id===query.get('component'))||componentMotions[0];
+ const [preset,setPreset]=React.useState(Object.hasOwn(motionPresets,query.get('motion'))?query.get('motion'):'showcase');
+ const [recipe,setRecipe]=React.useState(Object.hasOwn(recipes,query.get('recipe'))?query.get('recipe'):'featured');
+ const [reduced,setReduced]=React.useState(()=>matchMedia('(prefers-reduced-motion: reduce)').matches);
+ React.useEffect(()=>{const media=matchMedia('(prefers-reduced-motion: reduce)'),update=()=>setReduced(media.matches);media.addEventListener('change',update);return ()=>media.removeEventListener('change',update);},[]);
+ const componentSet=selected.id==='bento'?'bento':['orbit','annotation','headline-lines','career-ribbon','evidence-previews','contact-card'].includes(selected.id)?'selected':'default';
+ const content=fixture(),plan=defaultPlan(content,recipe,preset,componentSet==='selected'?selectedComponents:componentSet==='bento'?bentoComponents:defaultComponents),key=selected.id+'-'+recipe+'-'+preset;
+ function update(name,value){if(name==='motion')setPreset(value);else setRecipe(value);const url=new URL(location.href);url.searchParams.set(name,value);history.replaceState(null,'',url);}
+ return <><nav className="preview-toolbar" aria-label="모션 라이브러리 이동"><a href="../../../Expresso%20개발%20포털.dc.html#/library">← 라이브러리</a><a href={`./index.html?recipe=${recipe}&motion=${preset}&components=${componentSet}`}>완성 페이지 보기 ↗</a><a href="./component-motion-catalog.json" download>지원 정보 JSON ↓</a><a href="./source-motion-audit.json" download>수집 항목 점검 JSON ↓</a></nav>
+ <main className="motion-library"><header className="motion-library-heading"><p className="eyebrow">PORTFOLIO / MOTION LIBRARY</p><h1>컴포넌트 모션</h1><p>현재 포트폴리오 생성에 사용하는 컴포넌트를 선택하고 움직임을 확인하세요.</p></header>
+ <div className="motion-library-grid">{componentMotions.map(item=><a className="motion-library-link" key={item.id} href={`?view=motion-library&component=${item.id}&recipe=${recipe}&motion=${preset}#motion-preview`} aria-current={selected.id===item.id?'page':undefined}><Card className="motion-library-card"><CardHeader><CardTitle><span><Icon name={item.icon}/>{item.title}</span><span aria-hidden="true">↗</span></CardTitle><CardDescription>{item.description}</CardDescription></CardHeader><CardContent><span>{item.entrance}</span></CardContent></Card></a>)}</div>
+ <section className="motion-library-selected" id="motion-preview" aria-labelledby="motion-preview-title"><header><div><p className="eyebrow">LIVE COMPONENT</p><h2 id="motion-preview-title">{selected.title}</h2></div><a href={`./${variantFile(recipe,'standard',preset,componentSet)}.static.html#${selected.anchor}`} target="_blank" rel="noopener">저장용 HTML에서 보기 ↗</a></header>
+ <dl className="motion-support"><div><dt>등장</dt><dd>{selected.entrance}</dd></div><div><dt>조작</dt><dd>{selected.intrinsic}</dd></div><div><dt>지원 환경</dt><dd>모바일 · 키보드 · 모션 감소 · 단일 HTML</dd></div><div><dt>모션 감소</dt><dd>{selected.reducedBehavior}</dd></div></dl>
+ <div className="motion-preview-tools"><label>디자인<select aria-label="미리보기 디자인" value={recipe} onChange={e=>update('recipe',e.target.value)}>{Object.entries(recipes).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><label>모션<select aria-label="미리보기 모션" value={preset} onChange={e=>update('motion',e.target.value)}>{Object.entries(motionPresets).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><button type="button" disabled={preset==='none'||reduced} onClick={()=>document.querySelector('.motion-component-preview').dispatchEvent(new Event('portfolio-motion-replay'))}>다시 재생</button>{reduced&&<span role="status">시스템 모션 감소 적용 중</span>}</div>
+ <p className="motion-preview-instruction">{selected.instruction}</p><div className="motion-preview-stage"><MotionComponentPreview key={key} component={selected.component} content={content} plan={plan}/></div><p className="motion-preview-note">가상 데이터로 실행합니다. 내부 링크는 해당 사례가 있는 완성 페이지로 이동합니다.</p></section></main></>;
+}

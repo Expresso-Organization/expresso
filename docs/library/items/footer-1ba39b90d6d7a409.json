@@ -1,0 +1,30 @@
+{
+  "id": "footer-1ba39b90d6d7a409",
+  "sourceUrl": "https://www.footer.design/sites/waka-waka",
+  "sourceRevision": null,
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Waka Waka",
+    "공개 이미지 요소: 15개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://wakawaka.world/",
+  "evidence": {
+    "url": "https://www.footer.design/sites/waka-waka",
+    "sha256": "e06340f1ceb376a5eb84923354a5a8a984f5c6199fa7c53ea1f116d9aefa7cec",
+    "fetchedAt": "2026-09-23T12:55:33+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

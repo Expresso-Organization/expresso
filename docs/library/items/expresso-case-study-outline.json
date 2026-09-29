@@ -1,0 +1,31 @@
+{
+  "id": "expresso-case-study-outline",
+  "sourceUrl": "https://github.com/Expresso-Organization/expresso/blob/codex/portfolio-reference-research/scripts/library/prompts.json",
+  "sourceRevision": "1.0",
+  "roles": [
+    "quality-workflow"
+  ],
+  "roleEvidence": "문제·기여·과정·성과·근거를 갖춘 사례의 섹션 구성을 만듭니다.",
+  "materials": [],
+  "observations": [
+    "익스프레소에서 직접 작성한 템플릿입니다. 모델 실행·품질 평가는 아직 수행하지 않았습니다."
+  ],
+  "prompt": {
+    "id": "case-study-outline",
+    "title": "프로젝트 사례 구성",
+    "purpose": "문제·기여·과정·성과·근거를 갖춘 사례의 섹션 구성을 만듭니다.",
+    "inputs": [
+      "projectRecord",
+      "evidenceIds",
+      "availableComponents"
+    ],
+    "output": "orderedSections, componentIds, evidenceIds, missingEvidence를 포함하는 JSON",
+    "body": "projectRecord와 evidenceIds만 사용해 프로젝트 사례를 구성하세요. 문제, 본인의 기여, 의사결정, 수행 과정, 결과와 근거가 독자가 따라갈 수 있는 순서가 되도록 orderedSections를 만드세요. availableComponents에 등록된 ID만 선택하고 각 섹션에 필요한 데이터와 evidenceIds를 연결하세요. 자료가 없는 영역은 missingEvidence로 남기며 성공·수치·인과관계를 추정해 채우지 마세요. 제목은 구체적인 프로젝트 내용을 설명해야 합니다.",
+    "version": "1.0",
+    "executionStatus": "not_run"
+  },
+  "acquisitionStatus": "prompt_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured"
+}

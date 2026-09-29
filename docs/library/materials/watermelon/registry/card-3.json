@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "card-3",
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "card"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/card/card-3.tsx",
+      "content": "import { CircleFadingPlusIcon } from 'lucide-react'\n\nimport { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'\nimport { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'\n\ntype TeamMember = {\n  fallback: string\n  imageAlt: string\n  name: string\n  role: string\n  src: string\n}\n\nconst members: readonly TeamMember[] = [\n  {\n    fallback: 'MC',\n    imageAlt: 'Maya Chen',\n    name: 'Maya Chen',\n    role: 'Product Designer',\n    src: 'https://i.pravatar.cc/160?img=28'\n  },\n  {\n    fallback: 'EL',\n    imageAlt: 'Ethan Lewis',\n    name: 'Ethan Lewis',\n    role: 'Frontend Engineer',\n    src: 'https://i.pravatar.cc/160?img=36'\n  },\n  {\n    fallback: 'AP',\n    imageAlt: 'Ava Patel',\n    name: 'Ava Patel',\n    role: 'Brand Strategist',\n    src: 'https://i.pravatar.cc/160?img=52'\n  }\n] as const\n\nconst Card3 = () => {\n  return (\n    <Card className='w-full max-w-lg border-border/70 shadow-sm'>\n      <CardHeader>\n        <CardTitle>Project Team</CardTitle>\n      </CardHeader>\n      <CardContent className='grid gap-3 sm:grid-cols-2'>\n        <button\n          type='button'\n          className='flex items-center gap-4 rounded-lg border border-dashed border-border/50 bg-muted/15 px-4 py-3 text-left transition-colors hover:bg-muted/25'\n        >\n          <CircleFadingPlusIcon className='size-5 text-muted-foreground' />\n          <span className='text-sm font-semibold'>Invite teammate</span>\n        </button>\n        {members.map((member) => (\n          <div\n            key={member.name}\n            className='flex items-center gap-4 rounded-lg border border-border/45 bg-background/70 px-4 py-3'\n          >\n            <Avatar>\n              <AvatarImage src={member.src} alt={member.imageAlt} />\n              <AvatarFallback className='text-xs'>{member.fallback}</AvatarFallback>\n            </Avatar>\n            <div className='flex flex-col'>\n              <span className='text-sm font-semibold'>{member.name}</span>\n              <span className='text-sm text-muted-foreground'>{member.role}</span>\n            </div>\n          </div>\n        ))}\n      </CardContent>\n    </Card>\n  )\n}\n\nexport default Card3\n\n",
+      "type": "registry:ui",
+      "target": "components/ui/card-3.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

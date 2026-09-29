@@ -1,0 +1,72 @@
+{
+  "id": "watermelon-6df5fe3ae04dae49",
+  "sourceUrl": "https://ui.watermelon.sh/block/hero-1",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/hero-1.json",
+      "sha256": "f31e8016cc5b03e123b624a1e087468800d8e0c3d709c41425f2a7cea1fb4344",
+      "bytes": 16842,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/hero-1.tsx",
+      "target": "components/ui/hero-1.tsx",
+      "type": "registry:ui",
+      "sha256": "4bc9f0204ec3b5223df4fc50d46c90cf67acf4f06937350c6e0e51e54f0db455",
+      "bytes": 15899
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "imports": [
+    "@/lib/utils",
+    "lucide-react",
+    "motion/react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "export interface Hero1Props {\n    /** Brand / logo name shown top-left */\n    brand?: React.ReactNode;\n    /** Navigation links rendered in the center of the navbar */\n    navLinks?: NavLink[];\n    /** Main headline — can be a string or JSX (e.g. with <br />) */\n    headline?: React.ReactNode;\n    /** CTA button label */\n    ctaLabel?: string;\n    /** CTA button href */\n    ctaHref?: string;\n    /** Small description text at the bottom-left */\n    description?: string;\n    /** Social links rendered at the bottom-right */\n    socialLinks?: SocialLink[];\n    /** Sign-in / auth button label */\n    signInLabel?: string;\n    /** Sign-in href */\n    signInHref?: string;\n    /** Callback for when a nav link is clicked */\n    onNavLinkClick?: (link: NavLink) => void;\n    /** Additional wrapper CSS classes */\n    className?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://assets.watermelon.sh/hero-1.avif"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/hero-1.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "hero-1",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-1.tsx",
+    "url": "./library/previews/watermelon/hero-1.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:15+00:00",
+    "snapshotSha256": "df16a5516a6d0547c35f16d4c69759b8dad204f8d1c87835112ff78dae5401d2"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

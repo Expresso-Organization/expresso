@@ -1,0 +1,20 @@
+{
+  "id": "shoogle-f34847864b54640f",
+  "sourceUrl": "https://snapcn.dev/",
+  "sourceRevision": null,
+  "roles": [
+    "supplier"
+  ],
+  "roleEvidence": "공식 registry와 이용 조건을 추가 탐색할 공급자입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 수집의 코드 단위는 공급자별 registry 항목입니다. 이 항목은 공급자 식별·접근 경로로 보존합니다."
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "acquisitionStatus": "out_of_scope",
+  "previewReason": "공급자 디렉터리 · 개별 컴포넌트는 다음 확장 대상",
+  "sourceLicense": "https://shoogle.dev/terms-of-service"
+}

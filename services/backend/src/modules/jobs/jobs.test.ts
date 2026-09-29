@@ -1,42 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { calculateExplainableMatch } from "./match-score.js";
-import { interpretSearchQuery } from "./search-parser.js";
 
-describe("job search interpretation", () => {
-  it("preserves editable high-confidence and low-confidence conditions", () => {
-    expect(
-      interpretSearchQuery("서울 3년 TypeScript 백엔드 remote 연봉 6000"),
-    ).toEqual(expect.arrayContaining([
-      { field: "role", value: "백엔드", enabled: true, confidence: 0.95 },
-      { field: "experience", value: 3, enabled: true, confidence: 0.95 },
-      { field: "work_type", value: "remote", enabled: true, confidence: 0.95 },
-      { field: "location", value: "서울", enabled: true, confidence: 0.9 },
-      { field: "technology", value: "typescript", enabled: true, confidence: 0.98 },
-      { field: "salary", value: 6000, enabled: false, confidence: 0.65 },
-    ]));
-    expect(interpretSearchQuery("좋은 곳")).toEqual([]);
-  });
-
-  it("화면 정의서가 던지는 한국어 문장을 읽는다", () => {
-    expect(
-      interpretSearchQuery("리모트 되고 데이터 파이프라인 다루는 백엔드, 연봉 8천 이상"),
-    ).toEqual(expect.arrayContaining([
-      { field: "role", value: "백엔드", enabled: true, confidence: 0.95 },
-      { field: "work_type", value: "remote", enabled: true, confidence: 0.95 },
-      { field: "salary", value: 8_000, enabled: false, confidence: 0.65 },
-    ]));
-    // 짧은 이름이 다른 낱말 안에서 잡히면 안 된다 — django에는 go가 없다.
-    expect(interpretSearchQuery("django 백엔드").map((c) => c.value))
-      .not.toContain("go");
-    expect(interpretSearchQuery("Airflow와 dbt 쓰는 팀")).toEqual(
-      expect.arrayContaining([
-        { field: "technology", value: "airflow", enabled: true, confidence: 0.98 },
-        { field: "technology", value: "dbt", enabled: true, confidence: 0.98 },
-      ]),
-    );
-  });
-});
+// 자연어 검색의 AI 응답 검증은 search-interpreter.test.ts에서 확인합니다.
 
 describe("explainable match scoring", () => {
   it("요건 충족률로 점수를 내고 가장 약한 축에서 다음 행동을 뽑는다", () => {

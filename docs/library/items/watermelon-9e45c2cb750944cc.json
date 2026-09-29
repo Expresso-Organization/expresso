@@ -1,0 +1,54 @@
+{
+  "id": "watermelon-9e45c2cb750944cc",
+  "sourceUrl": "https://ui.watermelon.sh/animated-components/add-cash-disclosure",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/add-cash-disclosure.json",
+      "sha256": "18a49b203e0430be0bcc80638b6478056c7502473789c871654fe46f977b6b6c",
+      "bytes": 14671,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/add-cash-disclosure.tsx",
+      "target": "components/ui/add-cash-disclosure.tsx",
+      "type": "registry:ui",
+      "sha256": "3c3ae418da10b915dcc3348f4b8fc9a56463d0f4dd898a48f58fff06c09384eb",
+      "bytes": 13857
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "lucide-react",
+    "motion/react",
+    "react",
+    "react-icons/md"
+  ],
+  "propsDeclarations": [
+    "export interface CashDisclosureProps {\n  initialBalance: number;\n  cards: PaymentCard[];\n  presets: number[];\n  onConfirm: (amount: number) => Promise<void>;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/add-cash-disclosure.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

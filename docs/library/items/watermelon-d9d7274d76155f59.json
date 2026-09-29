@@ -1,0 +1,62 @@
+{
+  "id": "watermelon-d9d7274d76155f59",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/dropdown-menu-13.json",
+      "sha256": "669e4114a1a90f5795d45706b06be309248732839af47cc931927d0317fd4477",
+      "bytes": 4135,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/base-variants/dropdown-menu/dropdown-menu-13.tsx",
+      "target": "components/ui/dropdown-menu-13.tsx",
+      "type": "registry:ui",
+      "sha256": "a671030a4719c1465278d4279a7a8631ffbb0779b1a72024cd61d5c8f78bb6a2",
+      "bytes": 3464
+    }
+  ],
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "dropdown-menu",
+    "button",
+    "switch",
+    "avatar"
+  ],
+  "imports": [
+    "@/components/ui/avatar",
+    "@/components/ui/button",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/switch",
+    "react",
+    "react-icons/fa6"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://github.com/ThePrimeagen.png",
+    "https://github.com/leerob.png",
+    "https://github.com/t3dotgg.png"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/dropdown-menu-13.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

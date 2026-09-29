@@ -1,0 +1,29 @@
+{
+  "id": "supahero-5ef278f1866cff8c",
+  "sourceUrl": "https://supahero.io/hero/folioblox-free-portfolio-framer-template-in-nature-theme",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Folioblox - Free Portfolio Framer template in nature theme",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://supahero.io/hero/folioblox-free-portfolio-framer-template-in-nature-theme",
+    "sha256": "0ba35fb0d3245a3a7aa42b69d6ac17b1de6fe6e7b34365f06e2611576adb7022",
+    "fetchedAt": "2026-09-23T12:52:14+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

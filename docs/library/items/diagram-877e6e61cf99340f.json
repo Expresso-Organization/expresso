@@ -1,0 +1,28 @@
+{
+  "id": "diagram-877e6e61cf99340f",
+  "sourceUrl": "https://github.com/cathrynlavery/diagram-design/blob/dc1ace47b99a419e42d01a03cb6ace5346efa8ae/skills/diagram-design/assets/example-kanban.html",
+  "sourceRevision": "dc1ace47b99a419e42d01a03cb6ace5346efa8ae",
+  "roles": [
+    "technical-evidence"
+  ],
+  "roleEvidence": "시스템 구조·과정·기술 기여를 설명하는 도식 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/diagram/diagram-877e6e61cf99340f.html.txt",
+      "sha256": "3b19fb185019e0e341496de095bb1d92bd1fe4705c1502562ef47cb88329b2bb",
+      "bytes": 10947,
+      "kind": "diagram_source",
+      "label": "원본 example-kanban.html"
+    }
+  ],
+  "observations": [
+    "예제 원문에서 스크립트·외부 폰트 링크를 제외한 미리보기입니다. 원본 파일은 별도로 보존했습니다."
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/cathrynlavery/diagram-design/blob/dc1ace47b99a419e42d01a03cb6ace5346efa8ae/LICENSE"
+}

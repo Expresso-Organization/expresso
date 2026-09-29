@@ -1,0 +1,29 @@
+{
+  "id": "60fps-65cd2c1b6587c2d0",
+  "sourceUrl": "https://60fps.design/shots/instagram-story-menu-expand-collapse-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Instagram Story Menu Expand Collapse Interaction",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/instagram-story-menu-expand-collapse-interaction",
+    "sha256": "235bac59a25685af758a4ad754467aadd6682792163100d94df4580e2f5d76d3",
+    "fetchedAt": "2026-09-23T13:03:13+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

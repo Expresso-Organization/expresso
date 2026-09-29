@@ -1,0 +1,23 @@
+import {portfolioProjects} from '../componentry-portfolio-data.mjs';
+// 인물·조직·프로젝트 이력은 이 조합 실험을 위해 새로 작성한 가상 데이터입니다.
+export const baseline={fictional:true,
+  profile:{name:'윤서하',monogram:'YSH',role:'Product designer',headline:'복잡한 정보를\n명료한 경험으로.',highlight:'명료한 경험',intro:'관찰에서 시작해 화면의 작은 선택까지 설계합니다. 사람들에게 필요한 정보가 적절한 순간에 닿는 제품을 만듭니다.',location:'서울 · 대한민국',focus:['정보 구조','인터랙션 디자인','접근성']},
+  projects:portfolioProjects.map((p,i)=>({id:['moa','lumen','ongil'][i],title:p.title,category:['지역 탐색 서비스','개인 지식 도구','공공 공간 안내'][i],summary:p.description,image:p.image,imageAlt:p.imageAlt,role:['UX 리서치 · 제품 설계','정보 구조 · 인터랙션','접근성 · UI 설계'][i],period:['2026.01 — 2026.04','2025.08 — 2025.12','2025.03 — 2025.06'][i],tags:[['UX Research','Product Design'],['Information Architecture','Interaction'],['Accessibility','Design System']][i],problem:['시설 정보가 여러 화면에 나뉘어 있어 장소를 비교하기 어렵다는 상황을 가정했습니다.','읽은 자료가 폴더 안에 쌓여 주제 사이의 관계를 다시 찾기 어려운 상황을 설정했습니다.','낯선 건물에서 층별 시설과 이동 경로를 함께 파악하기 어려운 상황을 다뤘습니다.'][i],contribution:['지도와 장소 목록을 함께 살펴보는 화면을 설계하고, 접근성 조건과 운영 시간을 비교 항목으로 정리했습니다.','기록·연결·재발견의 흐름을 정의하고, 관련 자료를 연결하는 화면과 읽기 목록을 구성했습니다.','목적지를 먼저 고르는 흐름과 계단 없는 경로 선택을 설계했습니다. 큰 글자와 설명이 있는 아이콘을 사용했습니다.'][i],outcome:['장소 탐색에서 방문 계획 저장까지 연결되는 시제품을 구성했습니다. 실제 사용자 효과는 측정하지 않은 가상 사례입니다.','자료 간 연결을 탐색할 수 있는 시제품을 구성했습니다. 이 화면은 가상 설계 과정의 결과물입니다.','목적지와 이동 조건을 한 화면에서 선택하는 시제품을 구성했습니다. 실제 시설에 적용한 이력은 없습니다.'][i],evidenceIds:[['moa-flow','moa-criteria'],['lumen-map'],['ongil-checklist']][i]})),
+  career:[{id:'career-studio',period:'2024.03 — 현재',organization:'가상 조직 · 스튜디오 여백',role:'프로덕트 디자이너',description:'정보 탐색과 기록 도구를 주제로 프로젝트를 설계한 가상 경력입니다. 조사 질문부터 인터랙션 시제품까지 담당한 것으로 설정했습니다.'},{id:'career-lab',period:'2022.09 — 2024.02',organization:'가상 조직 · 일상경험 연구실',role:'UX 디자인 연구원',description:'공공 공간 안내와 접근성을 주제로 관찰 내용을 정리하고 화면 가설을 만든 가상 경력입니다.'}],
+  evidence:[{id:'moa-flow',title:'장소 탐색 흐름',kind:'설계 기록',summary:'검색부터 비교, 방문 계획 저장까지의 연결',body:'검색어 입력 → 지도와 목록 탐색 → 운영 시간과 접근성 조건 비교 → 방문 계획 저장. 각 단계에서 필요한 정보가 이어지는지 확인하기 위한 가상 설계 기록입니다.'},{id:'moa-criteria',title:'장소 비교 기준',kind:'검토 기준',summary:'비교 화면에서 놓치지 않아야 할 정보',body:'운영 시간, 이동 거리, 계단 없는 출입구, 이용 가능한 시설을 같은 순서로 표시합니다. 실제 기관에서 수집한 조사 자료를 포함하지 않습니다.'},{id:'lumen-map',title:'기록의 정보 구조',kind:'구조 설계',summary:'자료와 주제 사이의 관계',body:'자료에는 제목, 요약, 주제, 관련 기록을 둡니다. 하나의 자료를 여러 주제와 연결하고 읽기 목록에서 다시 방문할 수 있게 설계한 가상 예제입니다.'},{id:'ongil-checklist',title:'안내 화면 검토표',kind:'접근성 검토',summary:'큰 글자와 명확한 이동 선택',body:'글자 확대 시 정보가 잘리지 않는지, 키보드로 목적지를 선택할 수 있는지, 색상 외의 설명으로 경로를 구분할 수 있는지 확인하는 가상 프로젝트의 검토표입니다.'}],
+  contact:{heading:'다음 문제를 함께\n풀어갈 수 있도록.',description:'이 페이지의 인물, 조직, 프로젝트 이력은 조합 검증을 위한 가상 예제입니다.',email:'portfolio-demo@example.com'}
+};
+export function fixture(name='standard'){
+  const data=structuredClone(baseline);
+  if(name==='long'){
+    data.profile.headline='낯선 정보를 이해하고\n스스로 다음 행동을 선택할 수 있도록 돕는 경험을 설계합니다.';
+    data.profile.intro+=' 작업의 배경과 제약을 함께 기록하고, 팀이 의사결정의 이유를 이해할 수 있도록 구조와 표현을 조율합니다.'.repeat(3);
+    data.projects[0].title='모아 지도 — 다양한 공공 시설의 접근성과 운영 정보를 한눈에 비교하는 동네 탐색 서비스';
+    data.projects.forEach(p=>{p.summary+=' '+p.summary;p.contribution+=' 화면을 설명하는 문장이 길어져도 모든 정보가 읽히도록 검토합니다.'.repeat(4);});
+    data.career[0].description+=' 프로젝트의 상황과 역할, 협업 과정이 길게 서술되어도 정보가 유지되어야 합니다.'.repeat(4);
+  }
+  if(name==='no-images')data.projects.forEach(p=>{p.image=null;});
+  if(name==='many')for(let i=3;i<8;i++)data.projects.push({...structuredClone(data.projects[i%3]),id:`project-${i}`,title:`확장 사례 ${i+1} · ${data.projects[i%3].title}`});
+  return data;
+}
+export const scenarios={standard:'기본',long:'긴 문장','no-images':'이미지 없음',many:'프로젝트 8개'};

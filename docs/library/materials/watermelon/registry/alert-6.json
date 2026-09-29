@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "alert-6",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "alert"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/alerts/alert-6.tsx",
+      "content": "\nimport { TbFileAlert } from \"react-icons/tb\";\nimport { Alert, AlertTitle } from \"@/components/ui/alert\";\nimport { Avatar, AvatarFallback } from \"@/components/ui/avatar\";\n\nconst Alert6 = () => {\n  return (\n    <Alert className=\"flex items-center gap-3\">\n      <Avatar className=\"rounded-md\">\n        <AvatarFallback className=\"bg-destructive dark:bg-destructive/60 rounded-md text-white\">\n          <TbFileAlert className=\"size-4\" />\n        </AvatarFallback>\n      </Avatar>\n      <AlertTitle>This file may harm your system!</AlertTitle>\n    </Alert>\n  );\n};\n\nexport default Alert6;\n",
+      "type": "registry:ui",
+      "target": "components/ui/alert-6.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "renderer": "@json-render/react@0.21.0",
+  "sources": [
+    {
+      "id": "watermelon-card",
+      "source": "https://github.com/WatermelonCorp/watermellon-registry",
+      "material": "docs/library/materials/watermelon/registry/card.json",
+      "license": "docs/library/materials/watermelon/LICENSE.txt",
+      "components": [
+        "ProjectGrid"
+      ],
+      "adaptation": "수집한 Card 전체 구성을 재사용하고 프로젝트 데이터·공통 테마를 적용합니다.",
+      "sha256": "76314b6dd15952fa21ac98d23beecd6678e11aea04986b1793e1794bdafe9193"
+    },
+    {
+      "id": "magic-portfolio-timeline",
+      "source": "https://github.com/magicuidesign/portfolio",
+      "material": "docs/library/materials/magic-portfolio/timeline.json",
+      "license": "docs/library/materials/magic-portfolio/LICENSE.txt",
+      "components": [
+        "CareerTimeline"
+      ],
+      "adaptation": "수집한 Timeline과 연결선 구성을 재사용하고 가상 경력을 전달합니다.",
+      "sha256": "4bdb1200132e4f26562c4198423c7047c0730ca6e815fbacfb5a7a97e105929f"
+    },
+    {
+      "id": "componentry-annotated-text",
+      "source": "https://componentry.dev/docs/components/annotated-text",
+      "material": "docs/library/materials/componentry/source/annotated-text.tsx",
+      "license": "docs/library/materials/componentry/LICENSE.txt",
+      "components": [
+        "Hero"
+      ],
+      "adaptation": "원본 텍스트 강조에 짧은 한국어 구절을 전달합니다. 정적 출력의 일치를 위해 그리기 애니메이션을 끕니다.",
+      "sha256": "5d11e6ff7e7088217738b9c9e154df48719f97b8982b7da04675090cacc43b9f"
+    },
+    {
+      "id": "expresso-composition",
+      "source": null,
+      "material": "scripts/library/renderer/portfolio/registry.jsx",
+      "license": null,
+      "components": [
+        "PortfolioPage",
+        "CaseStudies",
+        "EvidenceList",
+        "Contact"
+      ],
+      "adaptation": "포트폴리오 내용과 근거 연결을 위한 자체 섹션 어댑터입니다.",
+      "sha256": "2899e4ea21270786361fe8b459669cf0ca4adab21169e6d3440229b31542e8b4"
+    }
+  ]
+}

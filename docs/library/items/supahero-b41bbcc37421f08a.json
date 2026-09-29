@@ -1,0 +1,30 @@
+{
+  "id": "supahero-b41bbcc37421f08a",
+  "sourceUrl": "https://supahero.io/hero/follow",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Follow",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.foll-ow.com/home",
+  "evidence": {
+    "url": "https://supahero.io/hero/follow",
+    "sha256": "e6f870e2d40306c5371005765350b02c3357005cec32297e3a4347a015655cff",
+    "fetchedAt": "2026-09-23T12:52:15+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

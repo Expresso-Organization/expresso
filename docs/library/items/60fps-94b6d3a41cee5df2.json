@@ -1,0 +1,29 @@
+{
+  "id": "60fps-94b6d3a41cee5df2",
+  "sourceUrl": "https://60fps.design/shots/apple-calculator-switch-modes-menu-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Apple Calculator Switch Modes Menu Interaction",
+    "공개 이미지 요소: 19개",
+    "동영상 포스터: 24개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/apple-calculator-switch-modes-menu-interaction",
+    "sha256": "c2ce654b78b7a9bcfa22c1e73e5f953cd8344d48b0ae0a56a76a8884b3c9cd22",
+    "fetchedAt": "2026-09-23T12:56:42+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

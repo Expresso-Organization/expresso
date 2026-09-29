@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "input-otp-1",
+  "dependencies": [
+    "react-icons",
+    "input-otp"
+  ],
+  "registryDependencies": [
+    "input-otp",
+    "label"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/input-otp/input-otp-1.tsx",
+      "content": "\"use client\";\n\nimport { useId } from \"react\";\nimport { REGEXP_ONLY_DIGITS } from \"input-otp\";\n\nimport {\n  InputOTP,\n  InputOTPGroup,\n  InputOTPSlot,\n} from \"@/components/ui/input-otp\";\nimport { Label } from \"@/components/ui/label\";\n\nconst InputOtp1 = () => {\n  const id = useId();\n\n  return (\n    <div className=\"flex flex-col items-center justify-center gap-2\">\n      <div className=\"text-center\">\n        <Label htmlFor={id} className=\"text-base font-semibold\">\n          Enter OTP\n        </Label>\n      </div>\n\n      <InputOTP\n        id={id}\n        maxLength={4}\n        pattern={REGEXP_ONLY_DIGITS}\n        className=\"w-full\"\n      >\n        <InputOTPGroup className=\"flex w-full justify-center gap-3\">\n          <InputOTPSlot\n            index={0}\n            className=\"data-[active=true]:ring-primary/30! data-[active=true]:border-primary/50 h-14 w-14 rounded-sm! border text-lg data-[active=true]:ring-2!\"\n          />\n          <InputOTPSlot\n            index={1}\n            className=\"data-[active=true]:ring-primary/30! data-[active=true]:border-primary/50 h-14 w-14 rounded-sm! border text-lg data-[active=true]:ring-2!\"\n          />\n          <InputOTPSlot\n            index={2}\n            className=\"data-[active=true]:ring-primary/30! data-[active=true]:border-primary/50 h-14 w-14 rounded-sm! border text-lg data-[active=true]:ring-2!\"\n          />\n          <InputOTPSlot\n            index={3}\n            className=\"data-[active=true]:ring-primary/30! data-[active=true]:border-primary/50 h-14 w-14 rounded-sm! border text-lg data-[active=true]:ring-2!\"\n          />\n        </InputOTPGroup>\n      </InputOTP>\n    </div>\n  );\n};\n\nexport default InputOtp1;\n",
+      "type": "registry:ui",
+      "target": "components/ui/input-otp-1.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

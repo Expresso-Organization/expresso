@@ -1,0 +1,228 @@
+{
+  "id": "watermelon-d1f00f880b467d12",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/workflow-management-dashboard.json",
+      "sha256": "c385f88fce996afdf31ae4ad2bf5902a70868b1ed045f87f30ab0487a243a3fa",
+      "bytes": 69284,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/components/app-sidebar.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/components/app-sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "d8123e04adde84a5599dab40c1f0eaa0770aee09877c40e70fa3463a2455dcd3",
+      "bytes": 13955
+    },
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/components/header.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/components/header.tsx",
+      "type": "registry:component",
+      "sha256": "afe73dc67d19a6f1eaea0d383196bf3a5596aebccda421e24a73ad5ac57cfc7d",
+      "bytes": 4669
+    },
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/components/nav-footer.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/components/nav-footer.tsx",
+      "type": "registry:component",
+      "sha256": "8724e5e935af8b6f105b507797a724c12bdef2303c287287237eb0aa74d41dd0",
+      "bytes": 3424
+    },
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/components/nav-main.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/components/nav-main.tsx",
+      "type": "registry:component",
+      "sha256": "15f1be6255906eb9418729eac92e8245dbf3b2cceb8769ccd64cb3679e5e9652",
+      "bytes": 1308
+    },
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/components/nav-options.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/components/nav-options.tsx",
+      "type": "registry:component",
+      "sha256": "4c1a3d243c3a5e51af42299266a47fedba88d2ce4e194a3742973c651481f82f",
+      "bytes": 1404
+    },
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/components/nav-products.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/components/nav-products.tsx",
+      "type": "registry:component",
+      "sha256": "a86ea86cc97293442b086f5c7bed6be1cf82f450355f5e2c56c731d4d7cd01bc",
+      "bytes": 1360
+    },
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/components/store/task-store.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/components/store/task-store.tsx",
+      "type": "registry:component",
+      "sha256": "dec9a5cbf8a3423914eeebdd50ce5f9a68633b3a202c3a78f281b449747b3250",
+      "bytes": 3942
+    },
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/components/task-detail-header.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/components/task-detail-header.tsx",
+      "type": "registry:component",
+      "sha256": "332415eae65095d3ac0b1e4ff8c137495879a03eb94a4ab5d9776842d7864ccd",
+      "bytes": 5190
+    },
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/components/task-detail.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/components/task-detail.tsx",
+      "type": "registry:component",
+      "sha256": "8a07c8df4d8a502fb8bd65f1b09d98066d1c2d0588b1bbb690053f24933e9169",
+      "bytes": 7088
+    },
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/components/task-list-header.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/components/task-list-header.tsx",
+      "type": "registry:component",
+      "sha256": "544d6492754d62da37ba2c69f1b127953c24a7f7a8212f1429cf4c6dcf7d3702",
+      "bytes": 4591
+    },
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/components/task-list.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/components/task-list.tsx",
+      "type": "registry:component",
+      "sha256": "d598f7115677d2174b0bd2a9c06e14f170daadeb85ff08b6ccfed22a16924171",
+      "bytes": 6544
+    },
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/components/team-switcher.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/components/team-switcher.tsx",
+      "type": "registry:component",
+      "sha256": "a494571939ac7499a64edae90ecd3e56047b4f5a77e24600d051e6ddf0934517",
+      "bytes": 2977
+    },
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/components/theme-provider.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/components/theme-provider.tsx",
+      "type": "registry:component",
+      "sha256": "03dbb33d93ab5483aa7987fc9d6a39d5cdfa60d2ea361095276235878e83f142",
+      "bytes": 299
+    },
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/components/theme-toggle.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/components/theme-toggle.tsx",
+      "type": "registry:component",
+      "sha256": "493306f112464bc34babded7454c5803b7916bb3c671f99e236bc141f3a17d53",
+      "bytes": 1214
+    },
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/dashboard-layout.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/dashboard-layout.tsx",
+      "type": "registry:component",
+      "sha256": "353b9b181b2e80ef404e40a9499203ce0373c1aa3dda40f7f86274a979afae51",
+      "bytes": 681
+    },
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/dashboardView.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/dashboardView.tsx",
+      "type": "registry:component",
+      "sha256": "3cacb27bbcca72c7e36f3924d265d8210c87c3007b77bc8a80961347ef853783",
+      "bytes": 2435
+    },
+    {
+      "path": "src/components/dashboards/workflow-management-dashboard/demo.tsx",
+      "target": "components/watermelon/workflow-management-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "03906aee6841338ac592ff64186e9df11a2481628d324c293d43e5b9437d026b",
+      "bytes": 262
+    }
+  ],
+  "dependencies": [
+    "@tabler/icons-react",
+    "class-variance-authority",
+    "cmdk",
+    "lucide-react",
+    "next-themes"
+  ],
+  "registryDependencies": [
+    "alert-dialog",
+    "avatar",
+    "badge",
+    "button",
+    "card",
+    "checkbox",
+    "combobox",
+    "dialog",
+    "drawer",
+    "dropdown-menu",
+    "field",
+    "input-group",
+    "input",
+    "label",
+    "popover",
+    "scroll-area",
+    "select",
+    "separator",
+    "sheet",
+    "sidebar",
+    "skeleton",
+    "tabs",
+    "textarea",
+    "tooltip"
+  ],
+  "imports": [
+    "./components/app-sidebar",
+    "./components/header",
+    "./components/store/task-store",
+    "./components/task-detail",
+    "./components/task-detail-header",
+    "./components/task-list",
+    "./components/task-list-header",
+    "./dashboard-layout",
+    "./dashboardView",
+    "./nav-main",
+    "./nav-options",
+    "./nav-products",
+    "./store/task-store",
+    "./team-switcher",
+    "./theme-toggle",
+    "@/components/ui/avatar",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/checkbox",
+    "@/components/ui/dialog",
+    "@/components/ui/drawer",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/label",
+    "@/components/ui/popover",
+    "@/components/ui/scroll-area",
+    "@/components/ui/select",
+    "@/components/ui/separator",
+    "@/components/ui/sidebar",
+    "@/components/ui/switch",
+    "@/components/ui/tabs",
+    "@/components/ui/textarea",
+    "@/components/ui/tooltip",
+    "@/hooks/use-mobile",
+    "@/lib/utils",
+    "@tabler/icons-react",
+    "cmdk",
+    "lucide-react",
+    "next-themes",
+    "react",
+    "zustand"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/workflow-management-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

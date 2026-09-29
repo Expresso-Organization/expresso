@@ -1,0 +1,30 @@
+{
+  "id": "footer-7502f2f643b2f7f7",
+  "sourceUrl": "https://www.footer.design/sites/soil",
+  "sourceRevision": null,
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: SOIL",
+    "공개 이미지 요소: 27개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://soil-net.jp/",
+  "evidence": {
+    "url": "https://www.footer.design/sites/soil",
+    "sha256": "c1792ca7e8b7fddc89b8c8fd2cbd8ea8e96d1232602381de53348fce49beb7b2",
+    "fetchedAt": "2026-09-23T12:54:43+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

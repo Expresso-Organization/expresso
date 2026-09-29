@@ -1,0 +1,184 @@
+{
+  "id": "watermelon-a7209b03fb045570",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "outcome"
+  ],
+  "roleEvidence": "성과와 수치의 비교를 표현할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/luminia-luxe-realestate.json",
+      "sha256": "aeb8a83fe4a43dabaee7176c26b14db8952e20c37558a1cd5c4fc10476f1d80e",
+      "bytes": 48780,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/pages/luminia-luxe-realestate/Index.tsx",
+      "target": "components/watermelon/landing/luminia-luxe-realestate/index.tsx",
+      "type": "registry:block",
+      "sha256": "a02e6107ad927800ccd1d8d883a67005cf7399e819cb1fff554af138d565e9a6",
+      "bytes": 1708
+    },
+    {
+      "path": "src/components/pages/luminia-luxe-realestate/types.ts",
+      "target": "components/watermelon/landing/luminia-luxe-realestate/types.ts",
+      "type": "registry:component",
+      "sha256": "f06b73569d666744c2e951fbc6a67948105f588fb579587ae1a4e667917df509",
+      "bytes": 513
+    },
+    {
+      "path": "src/components/pages/luminia-luxe-realestate/Constants.tsx",
+      "target": "components/watermelon/landing/luminia-luxe-realestate/constants.tsx",
+      "type": "registry:component",
+      "sha256": "faf738f364cb0ffc16e965cda8aefeeb721d0fc1c07a11f3719c284a596f6102",
+      "bytes": 7704
+    },
+    {
+      "path": "src/components/pages/luminia-luxe-realestate/ui/Navbar.tsx",
+      "target": "components/watermelon/landing/luminia-luxe-realestate/ui/Navbar.tsx",
+      "type": "registry:component",
+      "sha256": "4ed4cb16d2e9cfd3ea5d96786618a98cf6846171adc230a58944677b74fb103d",
+      "bytes": 1764
+    },
+    {
+      "path": "src/components/pages/luminia-luxe-realestate/ui/Hero.tsx",
+      "target": "components/watermelon/landing/luminia-luxe-realestate/ui/Hero.tsx",
+      "type": "registry:component",
+      "sha256": "c6e0a69de0324cc4b1133432379ae28ff12c376d45dc5ea8da4937bcb44a6d1c",
+      "bytes": 2680
+    },
+    {
+      "path": "src/components/pages/luminia-luxe-realestate/ui/Services.tsx",
+      "target": "components/watermelon/landing/luminia-luxe-realestate/ui/Services.tsx",
+      "type": "registry:component",
+      "sha256": "bca23631b236f62da5d093ef987c0b6acc1e68a1297ce22cfc0b1d1084a31943",
+      "bytes": 5079
+    },
+    {
+      "path": "src/components/pages/luminia-luxe-realestate/ui/FeaturedProperties.tsx",
+      "target": "components/watermelon/landing/luminia-luxe-realestate/ui/FeaturedProperties.tsx",
+      "type": "registry:component",
+      "sha256": "ab12c07f4a61e7bf9ba4b186ff1f1572138cb343bc25db512919014afd2b46ae",
+      "bytes": 3405
+    },
+    {
+      "path": "src/components/pages/luminia-luxe-realestate/ui/About.tsx",
+      "target": "components/watermelon/landing/luminia-luxe-realestate/ui/About.tsx",
+      "type": "registry:component",
+      "sha256": "0b750b8edfcadc7ade995fac49ab4a7ccb160e63c5883903346fd8add347bb9a",
+      "bytes": 3660
+    },
+    {
+      "path": "src/components/pages/luminia-luxe-realestate/ui/Agents.tsx",
+      "target": "components/watermelon/landing/luminia-luxe-realestate/ui/Agents.tsx",
+      "type": "registry:component",
+      "sha256": "259df0bb013a5c90875bace4a285c45577c4be32a7a4a93b5034e09ed6ea59df",
+      "bytes": 3024
+    },
+    {
+      "path": "src/components/pages/luminia-luxe-realestate/ui/Testimonials.tsx",
+      "target": "components/watermelon/landing/luminia-luxe-realestate/ui/Testimonials.tsx",
+      "type": "registry:component",
+      "sha256": "b04d655eacaa3c6e69e4942dd62054dc3a6ae1395700eec1f7a90153715c79fc",
+      "bytes": 2974
+    },
+    {
+      "path": "src/components/pages/luminia-luxe-realestate/ui/FAQ.tsx",
+      "target": "components/watermelon/landing/luminia-luxe-realestate/ui/FAQ.tsx",
+      "type": "registry:component",
+      "sha256": "cc08d6762e043168794db045d126e79e456fa3b1839c2db3ed9cc9e804311cf3",
+      "bytes": 2143
+    },
+    {
+      "path": "src/components/pages/luminia-luxe-realestate/ui/Contact.tsx",
+      "target": "components/watermelon/landing/luminia-luxe-realestate/ui/Contact.tsx",
+      "type": "registry:component",
+      "sha256": "90460f03d94b7c96a32212355fc58139843ae6eff4cc5a920e1a8382173b6530",
+      "bytes": 4127
+    },
+    {
+      "path": "src/components/pages/luminia-luxe-realestate/ui/Footer.tsx",
+      "target": "components/watermelon/landing/luminia-luxe-realestate/ui/Footer.tsx",
+      "type": "registry:component",
+      "sha256": "4df41364ccd92f03974934295a7ce338948c92987e5474866f03376ba387e5ce",
+      "bytes": 3875
+    },
+    {
+      "path": "src/components/pages/luminia-luxe-realestate/ui/agents-carousel.css",
+      "target": "components/watermelon/landing/luminia-luxe-realestate/ui/agents-carousel.css",
+      "type": "registry:component",
+      "sha256": "df9aeae0f5373657baef4a4b459104956a1afa4d2319ccd14f17709f07dfc901",
+      "bytes": 961
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "react-slick",
+    "slick-carousel"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "../Constants",
+    "./types",
+    "./ui/About",
+    "./ui/Agents",
+    "./ui/Contact",
+    "./ui/FAQ",
+    "./ui/FeaturedProperties",
+    "./ui/Footer",
+    "./ui/Hero",
+    "./ui/Navbar",
+    "./ui/Services",
+    "./ui/Testimonials",
+    "lucide-react",
+    "react",
+    "react-slick"
+  ],
+  "propsDeclarations": [
+    "interface NavbarProps {\n  isScrolled: boolean;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://images.pexels.com/photos/10785841/pexels-photo-10785841.jpeg",
+    "https://images.pexels.com/photos/164522/pexels-photo-164522.jpeg",
+    "https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg",
+    "https://images.pexels.com/photos/53610/large-home-residential-house-architecture-53610.jpeg",
+    "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100",
+    "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200",
+    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=400",
+    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=2000",
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100",
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200",
+    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100",
+    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200",
+    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=1200",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200",
+    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200",
+    "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&q=80&w=1200",
+    "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400",
+    "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=1200",
+    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100",
+    "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400",
+    "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=1200",
+    "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=400",
+    "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400",
+    "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400",
+    "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80&w=1200"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/luminia-luxe-realestate.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

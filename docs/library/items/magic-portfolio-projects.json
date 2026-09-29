@@ -1,0 +1,59 @@
+{
+  "id": "magic-portfolio-projects",
+  "sourceUrl": "https://github.com/magicuidesign/portfolio/blob/5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b/src/components/section/projects-section.tsx",
+  "sourceRevision": "5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b",
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "원본 데이터 구조 검토",
+  "roleMethod": "source_review",
+  "materials": [
+    {
+      "path": "./library/materials/magic-portfolio/projects.json",
+      "sha256": "86a3e89c220877994f553c8e6781af6e6131a38501ef20d7e861472aea3c3a6f",
+      "bytes": 9119,
+      "label": "원본 코드 묶음",
+      "kind": "registry_source"
+    },
+    {
+      "path": "./library/materials/magic-portfolio/LICENSE.txt",
+      "sha256": "3d801bfc3879f9e9ea11043bb614aa8caa59a4b981e89eac6074a99ddfc9573c",
+      "bytes": 1070,
+      "label": "MIT 라이선스 원문",
+      "kind": "license"
+    }
+  ],
+  "observations": [
+    "DATA.projects와 고정 영문 제목을 props로 분리해야 합니다.",
+    "카드·등장 애니메이션 의존성을 함께 연결해야 합니다."
+  ],
+  "inputs": [
+    "heading",
+    "description",
+    "projects"
+  ],
+  "framework": "React / Next.js / Tailwind CSS",
+  "sourceLicense": "https://github.com/magicuidesign/portfolio/blob/5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b/LICENSE",
+  "acquisitionStatus": "source_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/section/projects-section.tsx",
+      "sha256": "dd05a29c5853f7f6831c5665efd2fa9c822038d6244c049c67a92e62ebfa469e",
+      "bytes": 2821
+    },
+    {
+      "path": "src/components/project-card.tsx",
+      "sha256": "d96bc33ebaba9d437cfe478d8de47c89e0002b6558ebe9302990d7cb5eee8bc2",
+      "bytes": 4006
+    },
+    {
+      "path": "src/components/magicui/blur-fade.tsx",
+      "sha256": "49401a36289681f8b1f59ccf98a8841b13898147fba05ed444db5d58b986ddec",
+      "bytes": 1446
+    }
+  ],
+  "usageNote": "고정 버전의 지정 파일 묶음입니다. 완전한 실행 의존성 묶음은 아니며 설치·렌더링 전입니다."
+}

@@ -1,0 +1,29 @@
+{
+  "id": "60fps-ec7e146018c9fd7a",
+  "sourceUrl": "https://60fps.design/shots/letter-flow-menu-pop-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Letter Flow Menu Pop Interaction",
+    "공개 이미지 요소: 27개",
+    "동영상 포스터: 26개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/letter-flow-menu-pop-interaction",
+    "sha256": "5e93d9e12776e5d285b7b1b98222a1af9009478108422af294e8f756a5ff130d",
+    "fetchedAt": "2026-09-23T13:03:33+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

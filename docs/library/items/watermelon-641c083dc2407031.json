@@ -1,0 +1,76 @@
+{
+  "id": "watermelon-641c083dc2407031",
+  "sourceUrl": "https://ui.watermelon.sh/block/testimonials-1",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "evidence"
+  ],
+  "roleEvidence": "협업 평가와 근거를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/testimonials-1.json",
+      "sha256": "233a0cc4bcde63e2a2a949717e3ccb24647dd319f835090ee664b3cc96f59204",
+      "bytes": 7059,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/testimonials-1.tsx",
+      "target": "components/ui/testimonials-1.tsx",
+      "type": "registry:ui",
+      "sha256": "7a3df84d8f831b156fed9d17596cff39f4f80d57c84a54f93082d5436e1c5361",
+      "bytes": 6298
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "testimonials",
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/avatar",
+    "@/components/ui/card",
+    "@/components/ui/carousel"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://github.com/addyosmani.png",
+    "https://github.com/gaearon.png",
+    "https://github.com/kentcdodds.png",
+    "https://github.com/leerob.png",
+    "https://github.com/rauchg.png",
+    "https://github.com/sindresorhus.png",
+    "https://github.com/t3dotgg.png",
+    "https://github.com/yyx990803.png"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/testimonials-1.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "testimonials-1",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/testimonials-1.tsx",
+    "url": "./library/previews/watermelon/testimonials-1.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:25+00:00",
+    "snapshotSha256": "d6d3f23792297931abe64e7cb724652a395e19348682f3bc330df0aa23e858ba"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

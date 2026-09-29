@@ -1,0 +1,185 @@
+{
+  "id": "watermelon-e9068d9574d09021",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/mail-dashboard.json",
+      "sha256": "8c977730517e6c50bdf72b377d7e225ce6bed079de0158e7f9e1f69ea4c4e7f7",
+      "bytes": 44097,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/mail-dashboard/components/app-sidebar.tsx",
+      "target": "components/watermelon/dashboards/mail-dashboard/components/app-sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "a0670e7496b0951f4956f67f8d43bcf68d7ca14bb53059103e151bd885ff1b7e",
+      "bytes": 5494
+    },
+    {
+      "path": "src/components/dashboards/mail-dashboard/components/empty-state.tsx",
+      "target": "components/watermelon/dashboards/mail-dashboard/components/empty-state.tsx",
+      "type": "registry:component",
+      "sha256": "3eb1d9a237bc8d8e9d348669e82e2d36ebb0ad226ac8a8a2fc785fe41922bc49",
+      "bytes": 173
+    },
+    {
+      "path": "src/components/dashboards/mail-dashboard/components/mail/mail-list.tsx",
+      "target": "components/watermelon/dashboards/mail-dashboard/components/mail/mail-list.tsx",
+      "type": "registry:component",
+      "sha256": "8d989df29e241dc4adad5a0be9c4468d124e520deaacdff3b29bcc4a5542806f",
+      "bytes": 9744
+    },
+    {
+      "path": "src/components/dashboards/mail-dashboard/components/mail/mail-viewer.tsx",
+      "target": "components/watermelon/dashboards/mail-dashboard/components/mail/mail-viewer.tsx",
+      "type": "registry:component",
+      "sha256": "0249ac2af6f0a5162685066b5891d3e6f36076ab450c293852f877e121ee6a04",
+      "bytes": 10115
+    },
+    {
+      "path": "src/components/dashboards/mail-dashboard/components/mail/workspace-layout.tsx",
+      "target": "components/watermelon/dashboards/mail-dashboard/components/mail/workspace-layout.tsx",
+      "type": "registry:component",
+      "sha256": "3fa45c02f85a87c7c6420779fcc0f3dd2bf0fefbdc6cc4732dddc1c75a60707e",
+      "bytes": 682
+    },
+    {
+      "path": "src/components/dashboards/mail-dashboard/components/nav-user.tsx",
+      "target": "components/watermelon/dashboards/mail-dashboard/components/nav-user.tsx",
+      "type": "registry:component",
+      "sha256": "a10e684447c588e2857214a85b3a334b375086339d85811919eb8f617209a69f",
+      "bytes": 3983
+    },
+    {
+      "path": "src/components/dashboards/mail-dashboard/dashboardLayout.tsx",
+      "target": "components/watermelon/dashboards/mail-dashboard/dashboardLayout.tsx",
+      "type": "registry:component",
+      "sha256": "d401691f03663360d89903c175752a8da9632c2440715ffe7b1b6df178419ff1",
+      "bytes": 585
+    },
+    {
+      "path": "src/components/dashboards/mail-dashboard/data.ts",
+      "target": "components/watermelon/dashboards/mail-dashboard/data.ts",
+      "type": "registry:component",
+      "sha256": "15be6748446c714969638719507d7e7ed26ac92e1cc766d083dc3c31231d4328",
+      "bytes": 5089
+    },
+    {
+      "path": "src/components/dashboards/mail-dashboard/demo.tsx",
+      "target": "components/watermelon/dashboards/mail-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "99838747d18433c62f55bccbe341b9ec08b987d24aa74c73999db74682f708cc",
+      "bytes": 1730
+    },
+    {
+      "path": "src/components/dashboards/mail-dashboard/inboxLayout.tsx",
+      "target": "components/watermelon/dashboards/mail-dashboard/inboxLayout.tsx",
+      "type": "registry:component",
+      "sha256": "664b0ced0871589b23571e6ec7ae3400b9882f2bf2d5a6178a15fb9641c542bf",
+      "bytes": 349
+    },
+    {
+      "path": "src/components/dashboards/mail-dashboard/inboxView.tsx",
+      "target": "components/watermelon/dashboards/mail-dashboard/inboxView.tsx",
+      "type": "registry:component",
+      "sha256": "a1e870086e4db98711b8efa5fe56550d7539ba878f54c7397f002868ba1c8442",
+      "bytes": 591
+    },
+    {
+      "path": "src/components/dashboards/mail-dashboard/mailView.tsx",
+      "target": "components/watermelon/dashboards/mail-dashboard/mailView.tsx",
+      "type": "registry:component",
+      "sha256": "8efc309ced6cb3b1d3a3994931fe7dd067251aad72ec66c81e8a8bdae902aa6a",
+      "bytes": 204
+    }
+  ],
+  "dependencies": [
+    "@radix-ui/react-avatar",
+    "@radix-ui/react-collapsible",
+    "@radix-ui/react-dialog",
+    "@radix-ui/react-dropdown-menu",
+    "@radix-ui/react-label",
+    "@radix-ui/react-separator",
+    "@radix-ui/react-slot",
+    "@radix-ui/react-switch",
+    "@radix-ui/react-tabs",
+    "@radix-ui/react-tooltip",
+    "@tabler/icons-react",
+    "class-variance-authority",
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "avatar",
+    "breadcrumb",
+    "button",
+    "collapsible",
+    "dialog",
+    "dropdown-menu",
+    "field",
+    "input",
+    "label",
+    "separator",
+    "sheet",
+    "sidebar",
+    "skeleton",
+    "switch",
+    "tabs",
+    "textarea",
+    "tooltip"
+  ],
+  "imports": [
+    "../../data",
+    "./components/app-sidebar",
+    "./components/mail/mail-list",
+    "./components/mail/mail-viewer",
+    "./components/mail/workspace-layout",
+    "./dashboardLayout",
+    "./data",
+    "./nav-user",
+    "@/components/ui/avatar",
+    "@/components/ui/button",
+    "@/components/ui/dialog",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/field",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/sidebar",
+    "@/components/ui/tabs",
+    "@/components/ui/textarea",
+    "@/components/ui/tooltip",
+    "@/lib/utils",
+    "@tabler/icons-react",
+    "lucide-react",
+    "react"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
+    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
+    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
+    "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop",
+    "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop",
+    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/mail-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

@@ -1,0 +1,166 @@
+{
+  "id": "watermelon-e77a84b85e977544",
+  "sourceUrl": "https://ui.watermelon.sh/dashboard/library-dashboard",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/library-dashboard.json",
+      "sha256": "a1edeb228aae2b0e98ffade30de88812f48da641eab351df5f4b1f9e4380e8d6",
+      "bytes": 109663,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/library-dashboard/components/library/circulation-chart.tsx",
+      "target": "components/watermelon/library-dashboard/components/library/circulation-chart.tsx",
+      "type": "registry:component",
+      "sha256": "d89c1dc7d8bad79843107429c37a9bd9ed56d23d8abf8602d730f568eb94e2f6",
+      "bytes": 10789
+    },
+    {
+      "path": "src/components/dashboards/library-dashboard/components/library/collection-donut-chart.tsx",
+      "target": "components/watermelon/library-dashboard/components/library/collection-donut-chart.tsx",
+      "type": "registry:component",
+      "sha256": "f0235767e5d53301bd6a4873e71b3e5864afb59c38de967fe64c18cbf9c2fb3a",
+      "bytes": 4373
+    },
+    {
+      "path": "src/components/dashboards/library-dashboard/components/library/dashboard-content.tsx",
+      "target": "components/watermelon/library-dashboard/components/library/dashboard-content.tsx",
+      "type": "registry:component",
+      "sha256": "45ef585e21379e906c4fb305a6b6966163f45f82f965e4f0ec02ce4495271f44",
+      "bytes": 12741
+    },
+    {
+      "path": "src/components/dashboards/library-dashboard/components/library/icons.tsx",
+      "target": "components/watermelon/library-dashboard/components/library/icons.tsx",
+      "type": "registry:component",
+      "sha256": "707209fe5a018598812d25da1a03b9128a0d576fe84d224e774081d0955d5973",
+      "bytes": 33837
+    },
+    {
+      "path": "src/components/dashboards/library-dashboard/components/library/logo.tsx",
+      "target": "components/watermelon/library-dashboard/components/library/logo.tsx",
+      "type": "registry:component",
+      "sha256": "a5494730b1f51d828439e77b420d02b82ca529f2a9deb2e361a2c8a7b4cb4b02",
+      "bytes": 504
+    },
+    {
+      "path": "src/components/dashboards/library-dashboard/components/library/sidebar.tsx",
+      "target": "components/watermelon/library-dashboard/components/library/sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "7f4c0df0ad261f1a15c86971482269c419ad1c6fc7a38f5a33fd66dd26866321",
+      "bytes": 19054
+    },
+    {
+      "path": "src/components/dashboards/library-dashboard/components/library/theme-provider.tsx",
+      "target": "components/watermelon/library-dashboard/components/library/theme-provider.tsx",
+      "type": "registry:component",
+      "sha256": "20f97f1c91e2b17072a22803548e20f2cb1c0b746baa565f6b76f84883fb2c09",
+      "bytes": 1917
+    },
+    {
+      "path": "src/components/dashboards/library-dashboard/components/library/topbar.tsx",
+      "target": "components/watermelon/library-dashboard/components/library/topbar.tsx",
+      "type": "registry:component",
+      "sha256": "f59a458271c782114046d642bb40862cd310ca2bbce9bb211785e8ca42fcde2e",
+      "bytes": 7186
+    },
+    {
+      "path": "src/components/dashboards/library-dashboard/dashboard-layout.tsx",
+      "target": "components/watermelon/library-dashboard/dashboard-layout.tsx",
+      "type": "registry:component",
+      "sha256": "c87278f0cf73a3907a6400094890d324399f4e6e68182ec62314a5b5085e5005",
+      "bytes": 1002
+    },
+    {
+      "path": "src/components/dashboards/library-dashboard/dashboard.css",
+      "target": "components/watermelon/library-dashboard/dashboard.css",
+      "type": "registry:component",
+      "sha256": "07ac860c5013733256a51f64e199a7c26e86345740fbb8361f0a4047814a3e06",
+      "bytes": 3372
+    },
+    {
+      "path": "src/components/dashboards/library-dashboard/data.ts",
+      "target": "components/watermelon/library-dashboard/data.ts",
+      "type": "registry:component",
+      "sha256": "45bd7f0138b5ba7ec97ffa816c0ad55626294889129c327cacbf90d04d5121a7",
+      "bytes": 6984
+    },
+    {
+      "path": "src/components/dashboards/library-dashboard/demo.tsx",
+      "target": "components/watermelon/library-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "ff4c9b6ff65ac045df879ff282354ec18574be610db3bc3f3f3ffe9a230f2c4e",
+      "bytes": 381
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "recharts"
+  ],
+  "registryDependencies": [
+    "button",
+    "card",
+    "chart",
+    "dropdown-menu",
+    "input-group",
+    "sheet",
+    "sidebar",
+    "tooltip"
+  ],
+  "imports": [
+    "../../data",
+    "./circulation-chart",
+    "./collection-donut-chart",
+    "./components/library/dashboard-content",
+    "./components/library/icons",
+    "./components/library/sidebar",
+    "./components/library/theme-provider",
+    "./components/library/topbar",
+    "./dashboard-layout",
+    "./icons",
+    "./logo",
+    "./theme-provider",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/chart",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/input-group",
+    "@/components/ui/sheet",
+    "@/components/ui/sidebar",
+    "@/components/ui/tooltip",
+    "@/lib/utils",
+    "lucide-react",
+    "react",
+    "recharts"
+  ],
+  "propsDeclarations": [
+    "type CollectionDonutChartProps = {\n  data: CollectionDonutDatum[];\n  total: number;\n  label: string;\n  size?: number;\n  activeIndex?: number | null;\n  onActiveIndexChange?: (index: number | null) => void;\n}",
+    "export type IconProps = SVGProps<SVGSVGElement>\n\nexport function AiIdeaIcon(props: IconProps) {\n  return (\n    <svg viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\" {...props}",
+    "type DashboardSidebarProps = {\n  activeSection?: string;\n  activeSubsection?: string;\n}",
+    "type SidebarNavigationItemProps = {\n  active: boolean;\n  activeSubsection?: string;\n  item: NavigationItem;\n}",
+    "type ThemeProviderProps = {\n  children: ReactNode;\n  defaultTheme?: Theme;\n  storageKey?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/2000/svg"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/library-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

@@ -1,0 +1,30 @@
+{
+  "id": "navbar-eb6e25e4f2743d71",
+  "sourceUrl": "https://www.navbar.gallery/navbar/together-ai",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Together AI",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.together.ai/",
+  "evidence": {
+    "url": "https://www.navbar.gallery/navbar/together-ai",
+    "sha256": "1724c1c54af64a0d57330dc2ebec88e66526a8ad838d99548c183ff6f0f48280",
+    "fetchedAt": "2026-09-23T12:53:55+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

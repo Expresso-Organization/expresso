@@ -1,0 +1,66 @@
+<!doctype html><html lang="en" data-theme="light"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; img-src https: data:; font-src https: data:; form-action 'none'; base-uri 'none'"><title>stats-2 · 정적 예제</title><link rel="stylesheet" href="preview.css"><style>*,::before,::after{animation-play-state:paused!important;transition:none!important}</style><body><div id="root"><style>
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-4px); }
+        }
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 0; }
+          50% { opacity: 1; }
+        }
+        @keyframes gradient-shift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes metric-in {
+          0% { opacity: 0; transform: translateY(12px) scale(0.96); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .stat-card {
+          transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .stat-card:hover .accent-bar {
+          height: 100% !important;
+          top: 0 !important;
+          transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .stat-card .accent-bar {
+          transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .stat-card:hover .card-glow {
+          opacity: 1;
+        }
+        .card-glow {
+          transition: opacity 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .stat-card:hover .metric-value {
+          animation: float 3s ease-in-out infinite;
+        }
+        .stat-card:hover .pill-badge {
+          transform: scale(1.03);
+          box-shadow: 0 0 0 1px currentColor;
+        }
+        .pill-badge {
+          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .stat-card:hover .shimmer-line {
+          animation: shimmer 2s linear infinite;
+          background-size: 200% 100%;
+        }
+        .stat-card:hover .stat-icon {
+          transform: rotate(-8deg) scale(1.15);
+        }
+        .stat-icon {
+          transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .stat-card:hover .desc-text {
+          color: var(--foreground);
+        }
+        .desc-text {
+          transition: color 0.4s ease;
+        }
+      </style><section class="theme-injected w-full px-4 py-20 md:px-8"><div class="mx-auto max-w-6xl text-center"><h2 class="text-foreground mt-8 text-4xl leading-[1.1] font-bold tracking-tight md:text-5xl lg:text-[3.5rem]">Built for teams that<span class="block bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 bg-clip-text text-transparent">ship relentlessly</span></h2><p class="text-muted-foreground mx-auto mt-5 max-w-xl text-base leading-relaxed md:text-lg">Stop drowning in tooling overhead. One platform to code, deploy, and monitor — so engineers can focus on building.</p><div class="mt-16 grid grid-cols-1 gap-5 md:grid-cols-3"><div data-slot="card" class="flex flex-col gap-6 border text-card-foreground stat-card group bg-background relative overflow-hidden rounded-none p-0 shadow-[0px_0px_0px_1px_rgba(0,0,0,0.08),0px_1px_2px_-1px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.06)] ring-0 transition-shadow duration-300 hover:shadow-[0px_0px_0px_1px_rgba(0,0,0,0.08),0px_1px_2px_-1px_rgba(0,0,0,0.08),0px_4px_4px_0px_rgba(0,0,0,0.1)]"><div class="card-glow pointer-events-none absolute inset-0 rounded-none opacity-0" style="background: radial-gradient(600px at 50% 0%, rgba(245, 158, 11, 0.15), rgba(0, 0, 0, 0) 60%) 0% 0% / auto repeat scroll padding-box border-box rgba(0, 0, 0, 0);"></div><div class="accent-bar absolute top-[20%] left-0 h-[60%] w-[3px] rounded-full bg-gradient-to-b from-amber-400 via-orange-400 to-rose-400"></div><div data-slot="card-content" class="relative flex h-full flex-col p-7 text-left"><div class="flex items-center"><span class="pill-badge inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wide uppercase bg-amber-500/10 text-amber-600"><svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 320 512" class="stat-icon size-3" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M296 160H180.6l42.6-129.8C227.2 15 215.7 0 200 0H56C44 0 33.8 8.9 32.2 20.8l-32 240C-1.7 275.2 9.5 288 24 288h118.7L96.6 482.5c-3.6 15.2 8 29.5 23.3 29.5 8.4 0 16.4-4.4 20.8-12l176-304c9.3-15.9-2.2-36-20.7-36z"></path></svg>Lines shipped per sprint</span></div><div class="mt-8 flex items-baseline gap-1"><span class="metric-value text-foreground text-6xl font-bold tracking-tighter">2.4M</span></div><div class="mt-4 flex items-center gap-2"><div class="shimmer-line h-[2px] w-8 rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400" style="background-image: linear-gradient(90deg, rgba(0, 0, 0, 0), rgb(22, 34, 58), rgba(0, 0, 0, 0));"></div><p class="text-foreground text-sm font-medium">Across all repos</p></div><p class="desc-text text-muted-foreground mt-6 text-sm leading-relaxed">Engineering teams push more high-quality code with automated reviews and instant CI feedback loops.</p></div></div><div data-slot="card" class="flex flex-col gap-6 border text-card-foreground stat-card group bg-background relative overflow-hidden rounded-none p-0 shadow-[0px_0px_0px_1px_rgba(0,0,0,0.08),0px_1px_2px_-1px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.06)] ring-0 transition-shadow duration-300 hover:shadow-[0px_0px_0px_1px_rgba(0,0,0,0.08),0px_1px_2px_-1px_rgba(0,0,0,0.08),0px_4px_4px_0px_rgba(0,0,0,0.1)]"><div class="card-glow pointer-events-none absolute inset-0 rounded-none opacity-0" style="background: radial-gradient(600px at 50% 0%, rgba(6, 182, 212, 0.15), rgba(0, 0, 0, 0) 60%) 0% 0% / auto repeat scroll padding-box border-box rgba(0, 0, 0, 0);"></div><div class="accent-bar absolute top-[20%] left-0 h-[60%] w-[3px] rounded-full bg-gradient-to-b from-cyan-400 via-blue-400 to-indigo-400"></div><div data-slot="card-content" class="relative flex h-full flex-col p-7 text-left"><div class="flex items-center"><span class="pill-badge inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wide uppercase bg-cyan-500/10 text-cyan-600"><svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" class="stat-icon size-3" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M505.12019,19.09375c-1.18945-5.53125-6.65819-11-12.207-12.1875C460.716,0,435.507,0,410.40747,0,307.17523,0,245.26909,55.20312,199.05238,128H94.83772c-16.34763.01562-35.55658,11.875-42.88664,26.48438L2.51562,253.29688A28.4,28.4,0,0,0,0,264a24.00867,24.00867,0,0,0,24.00582,24H127.81618l-22.47457,22.46875c-11.36521,11.36133-12.99607,32.25781,0,45.25L156.24582,406.625c11.15623,11.1875,32.15619,13.15625,45.27726,0l22.47457-22.46875V488a24.00867,24.00867,0,0,0,24.00581,24,28.55934,28.55934,0,0,0,10.707-2.51562l98.72834-49.39063c14.62888-7.29687,26.50776-26.5,26.50776-42.85937V312.79688c72.59753-46.3125,128.03493-108.40626,128.03493-211.09376C512.07526,76.5,512.07526,51.29688,505.12019,19.09375ZM384.04033,168A40,40,0,1,1,424.05,128,40.02322,40.02322,0,0,1,384.04033,168Z"></path></svg>Deploys per day on average</span></div><div class="mt-8 flex items-baseline gap-1"><span class="metric-value text-foreground text-6xl font-bold tracking-tighter">12x</span></div><div class="mt-4 flex items-center gap-2"><div class="shimmer-line h-[2px] w-8 rounded-full bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400" style="background-image: linear-gradient(90deg, rgba(0, 0, 0, 0), rgb(22, 34, 58), rgba(0, 0, 0, 0));"></div><p class="text-foreground text-sm font-medium">Faster releases</p></div><p class="desc-text text-muted-foreground mt-6 text-sm leading-relaxed">Zero-downtime deploys with canary rollouts mean your team ships confidently, every single day.</p></div></div><div data-slot="card" class="flex flex-col gap-6 border text-card-foreground stat-card group bg-background relative overflow-hidden rounded-none p-0 shadow-[0px_0px_0px_1px_rgba(0,0,0,0.08),0px_1px_2px_-1px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.06)] ring-0 transition-shadow duration-300 hover:shadow-[0px_0px_0px_1px_rgba(0,0,0,0.08),0px_1px_2px_-1px_rgba(0,0,0,0.08),0px_4px_4px_0px_rgba(0,0,0,0.1)]"><div class="card-glow pointer-events-none absolute inset-0 rounded-none opacity-0" style="background: radial-gradient(600px at 50% 0%, rgba(16, 185, 129, 0.15), rgba(0, 0, 0, 0) 60%) 0% 0% / auto repeat scroll padding-box border-box rgba(0, 0, 0, 0);"></div><div class="accent-bar absolute top-[20%] left-0 h-[60%] w-[3px] rounded-full bg-gradient-to-b from-emerald-400 via-teal-400 to-cyan-400"></div><div data-slot="card-content" class="relative flex h-full flex-col p-7 text-left"><div class="flex items-center"><span class="pill-badge inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wide uppercase bg-emerald-500/10 text-emerald-600"><svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" class="stat-icon size-3" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M466.5 83.7l-192-80a48.15 48.15 0 0 0-36.9 0l-192 80C27.7 91.1 16 108.6 16 128c0 198.5 114.5 335.7 221.5 380.3 11.8 4.9 25.1 4.9 36.9 0C360.1 472.6 496 349.3 496 128c0-19.4-11.7-36.9-29.5-44.3zM256.1 446.3l-.1-381 175.9 73.3c-3.3 151.4-82.1 261.1-175.8 307.7z"></path></svg>Platform uptime guaranteed</span></div><div class="mt-8 flex items-baseline gap-1"><span class="metric-value text-foreground text-6xl font-bold tracking-tighter">99.9%</span></div><div class="mt-4 flex items-center gap-2"><div class="shimmer-line h-[2px] w-8 rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400" style="background-image: linear-gradient(90deg, rgba(0, 0, 0, 0), rgb(22, 34, 58), rgba(0, 0, 0, 0));"></div><p class="text-foreground text-sm font-medium">Reliability score</p></div><p class="desc-text text-muted-foreground mt-6 text-sm leading-relaxed">Built on geo-distributed infrastructure with automatic failover — trusted by teams who never sleep.</p></div></div></div></div></section></div></body></html>

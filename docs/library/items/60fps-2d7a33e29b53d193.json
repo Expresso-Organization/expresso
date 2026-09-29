@@ -1,0 +1,29 @@
+{
+  "id": "60fps-2d7a33e29b53d193",
+  "sourceUrl": "https://60fps.design/shots/sora-feature-intro-video",
+  "sourceRevision": null,
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Sora Feature Intro Video",
+    "공개 이미지 요소: 25개",
+    "동영상 포스터: 24개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/sora-feature-intro-video",
+    "sha256": "c8a36e66dac10eb6874415a6272d47d9c337373856e2276cedd0abb0739f78ff",
+    "fetchedAt": "2026-09-23T13:06:54+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

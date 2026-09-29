@@ -1,0 +1,77 @@
+{
+  "id": "watermelon-171f34c8301fa0ae",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/alert-dialog.json",
+      "sha256": "6a94f29362849e1340dd883af0d0a36eb57101f6441ff017903787d57686d846",
+      "bytes": 13274,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/alert-dialog.tsx",
+      "target": "components/ui/alert-dialog.tsx",
+      "type": "registry:ui",
+      "sha256": "4a8411206d575736070a74b122afc9c33689d36960b417dcbc85f863c2826e84",
+      "bytes": 12405
+    }
+  ],
+  "dependencies": [
+    "class-variance-authority",
+    "motion",
+    "radix-ui"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "@/lib/utils",
+    "class-variance-authority",
+    "motion/react",
+    "radix-ui",
+    "react"
+  ],
+  "propsDeclarations": [
+    "type AlertDialogProps = AlertDialogPrimitiveProps;\n\nfunction AlertDialog(props: AlertDialogProps) {\n  return <AlertDialogPrimitive {...props}",
+    "type AlertDialogTriggerProps = AlertDialogTriggerPrimitiveProps;\n\nfunction AlertDialogTrigger(props: AlertDialogTriggerProps) {\n  return <AlertDialogTriggerPrimitive {...props}",
+    "type AlertDialogOverlayProps = AlertDialogOverlayPrimitiveProps;\n\nfunction AlertDialogOverlay({ className, ...props }",
+    "type AlertDialogContentProps = AlertDialogContentPrimitiveProps;\n\nfunction AlertDialogContent({ className, ...props }",
+    "type AlertDialogHeaderProps = AlertDialogHeaderPrimitiveProps;\n\nfunction AlertDialogHeader({ className, ...props }",
+    "type AlertDialogFooterProps = AlertDialogFooterPrimitiveProps;\n\nfunction AlertDialogFooter({ className, ...props }",
+    "type AlertDialogTitleProps = AlertDialogTitlePrimitiveProps;\n\nfunction AlertDialogTitle({ className, ...props }",
+    "type AlertDialogDescriptionProps = AlertDialogDescriptionPrimitiveProps;\n\nfunction AlertDialogDescription({\n  className,\n  ...props\n}",
+    "type AlertDialogActionProps = AlertDialogActionPrimitiveProps;\n\nfunction AlertDialogAction({\n  className,\n  ...props\n}",
+    "type AlertDialogCancelProps = AlertDialogCancelPrimitiveProps;\n\nfunction AlertDialogCancel({\n  className,\n  ...props\n}",
+    "type AlertDialogPrimitiveProps = React.ComponentProps<typeof AlertDialogPrime.Root>;\n\nfunction AlertDialogPrimitive(props: AlertDialogPrimitiveProps) {\n  const [isOpen, setIsOpen] = useControlledState({\n    value: props?.open,\n    defaultValue: props?.defaultOpen,\n    onChange: props?.onOpenChange,\n  }",
+    "type AlertDialogTriggerPrimitiveProps = React.ComponentProps<\n  typeof AlertDialogPrime.Trigger\n>;\n\nfunction AlertDialogTriggerPrimitive(props: AlertDialogTriggerPrimitiveProps) {\n  return (\n    <AlertDialogPrime.Trigger data-slot=\"alert-dialog-trigger\" {...props}",
+    "type AlertDialogPortalPrimitiveProps = Omit<\n  React.ComponentProps<typeof AlertDialogPrime.Portal>,\n  'forceMount'\n>;\n\nfunction AlertDialogPortalPrimitive(props: AlertDialogPortalPrimitiveProps) {\n  const { isOpen }",
+    "type AlertDialogOverlayPrimitiveProps = Omit<\n  React.ComponentProps<typeof AlertDialogPrime.Overlay>,\n  'forceMount' | 'asChild'\n> &\n  HTMLMotionProps<'div'>;\n\nfunction AlertDialogOverlayPrimitive({\n  transition = { duration: 0.2, ease: 'easeInOut' }",
+    "type AlertDialogContentPrimitiveProps = Omit<\n  React.ComponentProps<typeof AlertDialogPrime.Content>,\n  'forceMount' | 'asChild'\n> &\n  HTMLMotionProps<'div'> & {\n    from?: AlertDialogFlipDirection;\n  }",
+    "type AlertDialogCancelPrimitiveProps = React.ComponentProps<\n  typeof AlertDialogPrime.Cancel\n>;\n\nfunction AlertDialogCancelPrimitive(props: AlertDialogCancelPrimitiveProps) {\n  return (\n    <AlertDialogPrime.Cancel data-slot=\"alert-dialog-cancel\" {...props}",
+    "type AlertDialogActionPrimitiveProps = React.ComponentProps<\n  typeof AlertDialogPrime.Action\n>;\n\nfunction AlertDialogActionPrimitive(props: AlertDialogActionPrimitiveProps) {\n  return (\n    <AlertDialogPrime.Action data-slot=\"alert-dialog-action\" {...props}",
+    "type AlertDialogHeaderPrimitiveProps = React.ComponentProps<'div'>;\n\nfunction AlertDialogHeaderPrimitive(props: AlertDialogHeaderPrimitiveProps) {\n  return <div data-slot=\"alert-dialog-header\" {...props}",
+    "type AlertDialogFooterPrimitiveProps = React.ComponentProps<'div'>;\n\nfunction AlertDialogFooterPrimitive(props: AlertDialogFooterPrimitiveProps) {\n  return <div data-slot=\"alert-dialog-footer\" {...props}",
+    "type AlertDialogTitlePrimitiveProps = React.ComponentProps<\n  typeof AlertDialogPrime.Title\n>;\n\nfunction AlertDialogTitlePrimitive(props: AlertDialogTitlePrimitiveProps) {\n  return (\n    <AlertDialogPrime.Title data-slot=\"alert-dialog-title\" {...props}",
+    "type AlertDialogDescriptionPrimitiveProps = React.ComponentProps<\n  typeof AlertDialogPrime.Description\n>;\n\nfunction AlertDialogDescriptionPrimitive(props: AlertDialogDescriptionPrimitiveProps) {\n  return (\n    <AlertDialogPrime.Description\n      data-slot=\"alert-dialog-description\"\n      {...props}",
+    "interface CommonControlledStateProps<T> {\n  value?: T;\n  defaultValue?: T;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/alert-dialog.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

@@ -1,0 +1,326 @@
+{
+  "method": "chrome_selected_portfolio_components",
+  "results": [
+    {
+      "componentSet": "selected",
+      "recipe": "featured",
+      "scenario": "standard",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "selected",
+      "recipe": "featured",
+      "scenario": "standard",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "selected",
+      "recipe": "featured",
+      "scenario": "long",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "selected",
+      "recipe": "featured",
+      "scenario": "long",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "selected",
+      "recipe": "featured",
+      "scenario": "no-images",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "selected",
+      "recipe": "featured",
+      "scenario": "no-images",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "selected",
+      "recipe": "featured",
+      "scenario": "many",
+      "width": 390,
+      "status": "passed",
+      "projects": 8,
+      "staticParity": true
+    },
+    {
+      "componentSet": "selected",
+      "recipe": "featured",
+      "scenario": "many",
+      "width": 1440,
+      "status": "passed",
+      "projects": 8,
+      "staticParity": true
+    },
+    {
+      "componentSet": "selected",
+      "recipe": "gallery",
+      "scenario": "standard",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "selected",
+      "recipe": "gallery",
+      "scenario": "standard",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "selected",
+      "recipe": "gallery",
+      "scenario": "long",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "selected",
+      "recipe": "gallery",
+      "scenario": "long",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "selected",
+      "recipe": "gallery",
+      "scenario": "no-images",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "selected",
+      "recipe": "gallery",
+      "scenario": "no-images",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "selected",
+      "recipe": "gallery",
+      "scenario": "many",
+      "width": 390,
+      "status": "passed",
+      "projects": 8,
+      "staticParity": true
+    },
+    {
+      "componentSet": "selected",
+      "recipe": "gallery",
+      "scenario": "many",
+      "width": 1440,
+      "status": "passed",
+      "projects": 8,
+      "staticParity": true
+    },
+    {
+      "componentSet": "bento",
+      "recipe": "featured",
+      "scenario": "standard",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "bento",
+      "recipe": "featured",
+      "scenario": "standard",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "bento",
+      "recipe": "featured",
+      "scenario": "long",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "bento",
+      "recipe": "featured",
+      "scenario": "long",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "bento",
+      "recipe": "featured",
+      "scenario": "no-images",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "bento",
+      "recipe": "featured",
+      "scenario": "no-images",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "bento",
+      "recipe": "featured",
+      "scenario": "many",
+      "width": 390,
+      "status": "passed",
+      "projects": 8,
+      "staticParity": true
+    },
+    {
+      "componentSet": "bento",
+      "recipe": "featured",
+      "scenario": "many",
+      "width": 1440,
+      "status": "passed",
+      "projects": 8,
+      "staticParity": true
+    },
+    {
+      "componentSet": "bento",
+      "recipe": "gallery",
+      "scenario": "standard",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "bento",
+      "recipe": "gallery",
+      "scenario": "standard",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "bento",
+      "recipe": "gallery",
+      "scenario": "long",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "bento",
+      "recipe": "gallery",
+      "scenario": "long",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "bento",
+      "recipe": "gallery",
+      "scenario": "no-images",
+      "width": 390,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "bento",
+      "recipe": "gallery",
+      "scenario": "no-images",
+      "width": 1440,
+      "status": "passed",
+      "projects": 3,
+      "staticParity": true
+    },
+    {
+      "componentSet": "bento",
+      "recipe": "gallery",
+      "scenario": "many",
+      "width": 390,
+      "status": "passed",
+      "projects": 8,
+      "staticParity": true
+    },
+    {
+      "componentSet": "bento",
+      "recipe": "gallery",
+      "scenario": "many",
+      "width": 1440,
+      "status": "passed",
+      "projects": 8,
+      "staticParity": true
+    }
+  ],
+  "checks": {
+    "mobile": true,
+    "desktop": true,
+    "projectOverflow": true,
+    "careerRibbon": true,
+    "evidenceDisclosure": true,
+    "contactCard": true,
+    "staticParity": true,
+    "reducedMotion": true,
+    "noJavascript": true
+  },
+  "artifactHashes": {
+    "variants.js": "5a5ef3ecc3e87526c51d87fb000d633e0e90fa18d46cca97d06a6ce5cce178c0",
+    "variants.css": "9a5259cff492b3de1a62b7199417d7c9f845a865454fe1e1b8c38b4a46a43f9c",
+    "variants-sources.json": "46b31b7a0f508faecfc619c4da162c0aace70014952ba0f51b76ee3c33f11d38",
+    "component-motion-catalog.json": "ebb1d1f246d9cf275eac5924f4981cd24a5b209419436443c5e21ec4008768c2",
+    "featured-standard-selected.static.html": "86306dfa3fbda650e2f3bf68f9a40abedf185cd0c35cd7b1713c7e1a58225180",
+    "featured-long-selected.static.html": "4a6b6432f850752c0ac4ced1a46ecc54b53c6a506f6d4c9b320531459fb16809",
+    "featured-no-images-selected.static.html": "07103582f863a0c44d0b23861c624b8c39f19550c057210b14340f02d9651539",
+    "featured-many-selected.static.html": "27c9b76ecdfe2a327c3d88f48db7f7e49569190189091b3f778ed1c3119afc28",
+    "gallery-standard-selected.static.html": "87798aa03ef6d77b748dbe5e1c869ade7dff5406d1bdc69d6cf399c40031b17c",
+    "gallery-long-selected.static.html": "a488e8d7e2f55edcf965229023a09492a5d7a61496a3286c9e5c424a8c4e95ae",
+    "gallery-no-images-selected.static.html": "fb940ca3a96182cd2650d03f1feaddb9d609e5a21fcba76442fa6e0d958ec0ed",
+    "gallery-many-selected.static.html": "21e4b1edc8ee4f7db93b6098f7d64227190693822bfddb4fac78ffa5ec1e4091",
+    "featured-standard-bento.static.html": "31ea4d4578d482545651fe52a45c3d9cbf6c0da2d3569f4af23575c8c6dd89df",
+    "featured-long-bento.static.html": "f90c250486429939f70ed07ddb421542ba7ef382df2d16c12310fbe66a334e1d",
+    "featured-no-images-bento.static.html": "ceeabc7bb80351d8c2021225b5a03a73e411368b75b25219669434a1f2ad465e",
+    "featured-many-bento.static.html": "24f9626e7bb41a32f1cd9904f3e1363f814591bf061ce1280ef343f342a77f09",
+    "gallery-standard-bento.static.html": "fdbdd0296b2e51a5c776f0865a8b86698030259f699264c8beca3709ae4d8839",
+    "gallery-long-bento.static.html": "5a3af6e65963c04c084a262297f616f873bc53035b0b481690c53a053e09dd8c",
+    "gallery-no-images-bento.static.html": "18049716073ec09e8a479fb225ec6e22e2d50af9ddd3c7f285781b2ffb8dd681",
+    "gallery-many-bento.static.html": "63a992ae7783587e3fd8ebfd7362babfe1868b15edfd5718a043c6cfbf253e18"
+  }
+}

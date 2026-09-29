@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "card-1",
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "card"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/card/card-1.tsx",
+      "content": "import { Button } from '@/components/ui/button'\nimport { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'\nimport { Input } from '@/components/ui/input'\nimport { Label } from '@/components/ui/label'\n\ntype FormField = {\n  id: string\n  label: string\n  placeholder?: string\n  type: 'email' | 'password'\n}\n\nconst fields: readonly FormField[] = [\n  {\n    id: 'work-email',\n    label: 'Work email',\n    placeholder: 'team@studio.com',\n    type: 'email'\n  },\n  {\n    id: 'access-code',\n    label: 'Access code',\n    type: 'password'\n  }\n] as const\n\nconst Card1 = () => {\n  return (\n    <Card className='w-full max-w-md border-border/60 bg-background/95 shadow-xl'>\n      <CardHeader className='space-y-1'>\n        <CardTitle className='text-xl'>Sign in to your workspace</CardTitle>\n        <CardDescription className='max-w-sm text-sm leading-6'>\n          Use your work details to continue to the project dashboard.\n        </CardDescription>\n      </CardHeader>\n      <CardContent>\n        <form>\n          <div className='flex flex-col gap-5'>\n            {fields.map((field) => (\n              <div key={field.id} className='grid gap-2'>\n                <div className='flex items-center'>\n                  <Label htmlFor={field.id} className='text-sm font-medium'>\n                    {field.label}\n                  </Label>\n                  {field.id === 'access-code' ? (\n                    <a href='#' className='ml-auto inline-block text-sm text-muted-foreground underline-offset-4 hover:underline'>\n                      Reset it\n                    </a>\n                  ) : null}\n                </div>\n                <Input id={field.id} type={field.type} placeholder={field.placeholder} className='h-11 border-border/70' />\n              </div>\n            ))}\n          </div>\n        </form>\n      </CardContent>\n      <CardFooter className='flex-col gap-2.5 pt-3'>\n        <Button type='submit' className='h-11 w-full bg-sky-600 text-white hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-400'>\n          Continue\n        </Button>\n        <Button variant='outline' className='h-11 w-full border-border/70'>\n          Sign in with email link\n        </Button>\n        <div className='mt-3 text-center text-sm text-muted-foreground'>\n          New here?{' '}\n          <a href='#' className='text-foreground underline underline-offset-4'>\n            Request access\n          </a>\n        </div>\n      </CardFooter>\n    </Card>\n  )\n}\n\nexport default Card1\n",
+      "type": "registry:ui",
+      "target": "components/ui/card-1.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

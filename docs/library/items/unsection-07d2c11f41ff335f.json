@@ -1,0 +1,29 @@
+{
+  "id": "unsection-07d2c11f41ff335f",
+  "sourceUrl": "https://www.unsection.com/section/anam-enterprise-features-design",
+  "sourceRevision": null,
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: anam enterprise features design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/anam-enterprise-features-design",
+    "sha256": "e33a8ceccbe84daf6f131ee4542584c5ccfec991b1eda8c47cba286f7a4d9529",
+    "fetchedAt": "2026-09-23T12:51:35+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

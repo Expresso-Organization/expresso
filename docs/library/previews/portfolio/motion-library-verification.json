@@ -1,0 +1,367 @@
+{
+  "results": [
+    {
+      "component": "hero",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "hero",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "hero",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "hero",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "showcase",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "showcase",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "showcase",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "showcase",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "gallery",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "gallery",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "gallery",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "gallery",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "case",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "case",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "case",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "case",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "timeline",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "timeline",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "timeline",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "timeline",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "evidence",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "evidence",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "evidence",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "evidence",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "contact",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "contact",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "contact",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "contact",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "orbit",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "orbit",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "orbit",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "orbit",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "annotation",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "annotation",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "annotation",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "annotation",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "headline-lines",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "headline-lines",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "headline-lines",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "headline-lines",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "bento",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "bento",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "bento",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "bento",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "career-ribbon",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "career-ribbon",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "career-ribbon",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "career-ribbon",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "evidence-previews",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "evidence-previews",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "evidence-previews",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "evidence-previews",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "contact-card",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "contact-card",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "contact-card",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "contact-card",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    }
+  ],
+  "checks": {
+    "directionalStack": true,
+    "keyboardImmediate": true,
+    "galleryHoverReverse": true,
+    "timelineParts": true,
+    "orbitKeyboard": true,
+    "annotationDrawing": true,
+    "headlineLines": true,
+    "bentoHover": true,
+    "careerRibbon": true,
+    "evidenceDisclosure": true,
+    "contactCard": true,
+    "reducedMotion": true,
+    "nonePreset": true,
+    "portalNavigation": true,
+    "staticTimeline": true,
+    "staticSelectedControls": true
+  },
+  "artifactHashes": {
+    "component-motion-catalog.json": "ebb1d1f246d9cf275eac5924f4981cd24a5b209419436443c5e21ec4008768c2",
+    "variants.js": "5a5ef3ecc3e87526c51d87fb000d633e0e90fa18d46cca97d06a6ce5cce178c0",
+    "variants.css": "9a5259cff492b3de1a62b7199417d7c9f845a865454fe1e1b8c38b4a46a43f9c",
+    "variants-sources.json": "46b31b7a0f508faecfc619c4da162c0aace70014952ba0f51b76ee3c33f11d38",
+    "featured-standard.static.html": "559e06bfef215162173c14d2ec2b5a2cd6efa30101d583ccd6dcc1ce191b610f",
+    "gallery-standard-selected.static.html": "87798aa03ef6d77b748dbe5e1c869ade7dff5406d1bdc69d6cf399c40031b17c",
+    "gallery-standard-bento.static.html": "fdbdd0296b2e51a5c776f0865a8b86698030259f699264c8beca3709ae4d8839"
+  }
+}

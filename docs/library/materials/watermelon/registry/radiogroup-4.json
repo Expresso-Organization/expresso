@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "radiogroup-4",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "radio-group"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/radiogroup/radiogroup-4.tsx",
+      "content": "import { RadioGroup, RadioGroupItem } from \"@/components/ui/radio-group\";\nimport { FaBolt, FaUsers, FaCrown } from \"react-icons/fa6\";\n\nconst RadioGroup4 = () => {\n  return (\n    <RadioGroup defaultValue=\"starter\" className=\"  max-w-md space-y-3\">\n      <label\n        htmlFor=\"starter\"\n        className=\"group border-border has-[:checked]:border-primary has-[:checked]:bg-accent/50 flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition hover:-translate-y-0.5 hover:shadow-md has-[:checked]:shadow-md\"\n      >\n        <RadioGroupItem\n          value=\"starter\"\n          id=\"starter\"\n          className=\"data-[state=checked]:border-primary mt-1\"\n        />\n        <div className=\"grid flex-1 gap-1\">\n          <div className=\"flex items-center justify-between\">\n            <span className=\"text-foreground flex items-center gap-2 text-sm font-medium\">\n              <FaBolt className=\"text-muted-foreground group-has-[:checked]:text-primary\" />\n              Starter\n            </span>\n            <span className=\"text-muted-foreground text-xs\">Free</span>\n          </div>\n          <p className=\"text-muted-foreground text-xs\">\n            Quick setup for personal productivity\n          </p>\n        </div>\n      </label>\n\n      <label\n        htmlFor=\"team\"\n        className=\"group border-border has-[:checked]:border-primary has-[:checked]:bg-accent/50 flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition hover:-translate-y-0.5 hover:shadow-md has-[:checked]:shadow-md\"\n      >\n        <RadioGroupItem\n          value=\"team\"\n          id=\"team\"\n          className=\"data-[state=checked]:border-primary mt-1\"\n        />\n        <div className=\"grid flex-1 gap-1\">\n          <div className=\"flex items-center justify-between\">\n            <span className=\"text-foreground flex items-center gap-2 text-sm font-medium\">\n              <FaUsers className=\"text-muted-foreground group-has-[:checked]:text-primary\" />\n              Team\n            </span>\n            <span className=\"text-foreground text-xs\">₹799/mo</span>\n          </div>\n          <p className=\"text-muted-foreground text-xs\">\n            Built for collaboration and shared workflows\n          </p>\n        </div>\n      </label>\n\n      <label\n        htmlFor=\"premium\"\n        className=\"group border-border has-[:checked]:border-primary has-[:checked]:bg-accent/50 flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition hover:-translate-y-0.5 hover:shadow-md has-[:checked]:shadow-md\"\n      >\n        <RadioGroupItem\n          value=\"premium\"\n          id=\"premium\"\n          className=\"data-[state=checked]:border-primary mt-1\"\n        />\n        <div className=\"grid flex-1 gap-1\">\n          <div className=\"flex items-center justify-between\">\n            <span className=\"text-foreground flex items-center gap-2 text-sm font-medium\">\n              <FaCrown className=\"text-muted-foreground group-has-[:checked]:text-primary\" />\n              Premium\n            </span>\n            <span className=\"text-foreground text-xs\">Custom</span>\n          </div>\n          <p className=\"text-muted-foreground text-xs\">\n            Full power with advanced controls and support\n          </p>\n        </div>\n      </label>\n    </RadioGroup>\n  );\n};\n\nexport default RadioGroup4;\n",
+      "type": "registry:ui",
+      "target": "components/ui/radiogroup-4.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

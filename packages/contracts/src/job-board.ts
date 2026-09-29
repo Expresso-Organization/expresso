@@ -192,6 +192,17 @@ export const ListJobPostingsQuerySchema = z.strictObject({
    */
   country: z.string().trim().min(1).max(60).optional(),
   /**
+   * 근무지 지역(서울·경기 등). `country`보다 한 겹 더 좁게 건다 — 국내 안에서도
+   * 더 잘라야 할 만큼 쌓이면 그때 한 겹 더 둔다고 `country` 주석이 적어 둔
+   * 바로 그 자리다.
+   *
+   * `location_region`과 정확히 일치해야 한다 — 값은 `ingest/classify.ts`의
+   * `REGION_RULES`가 정한 지역명 그대로다(예: "경기"). 공고 수집 때 이미 그
+   * 지역으로 정규화해 저장해 두므로, "경기"로 걸면 "판교"·"성남"처럼 다른
+   * 표기로 들어온 공고도 함께 걸린다 — 둘 다 같은 `location_region`을 쓴다.
+   */
+  location: z.string().trim().min(1).max(60).optional(),
+  /**
    * **내 연차.** 요구 최소 연차가 이 값 이하인 공고만 남긴다.
    *
    * 구간이 아니라 상한인 이유는, 7년차가 `3년 이상`과 `7년 이상`에 모두

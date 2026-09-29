@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "input-otp-5",
+  "dependencies": [
+    "react-icons",
+    "input-otp"
+  ],
+  "registryDependencies": [
+    "input-otp",
+    "label"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/input-otp/input-otp-5.tsx",
+      "content": "\"use client\";\n\nimport { useId } from \"react\";\n\nimport {\n  InputOTP,\n  InputOTPGroup,\n  InputOTPSlot,\n} from \"@/components/ui/input-otp\";\nimport { Label } from \"@/components/ui/label\";\n\nconst InputOtp5 = () => {\n  const id = useId();\n\n  return (\n    <div className=\"max-w-sm space-y-2\">\n      <Label htmlFor={id} className=\"text-base font-semibold\">\n        Enter OTP\n      </Label>\n\n      <InputOTP id={id} maxLength={4} className=\"w-full\">\n        <InputOTPGroup className=\"flex justify-center gap-3\">\n          {[0, 1, 2, 3].map((i) => (\n            <InputOTPSlot\n              key={i}\n              index={i}\n              className=\"data-[active=true]:ring-primary/30! data-[active=true]:border-primary/50 bg-muted h-14 w-14 rounded-sm! border text-lg transition-all data-[active=true]:scale-110 data-[active=true]:ring-2!\"\n            />\n          ))}\n        </InputOTPGroup>\n      </InputOTP>\n    </div>\n  );\n};\n\nexport default InputOtp5;\n",
+      "type": "registry:ui",
+      "target": "components/ui/input-otp-5.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

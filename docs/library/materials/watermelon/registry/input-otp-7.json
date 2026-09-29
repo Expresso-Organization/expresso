@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "input-otp-7",
+  "dependencies": [
+    "react-icons",
+    "input-otp"
+  ],
+  "registryDependencies": [
+    "input-otp",
+    "label"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/input-otp/input-otp-7.tsx",
+      "content": "\"use client\";\n\nimport { useId } from \"react\";\n\nimport {\n  InputOTP,\n  InputOTPGroup,\n  InputOTPSeparator,\n  InputOTPSlot,\n} from \"@/components/ui/input-otp\";\nimport { Label } from \"@/components/ui/label\";\n\nconst InputOtp7 = () => {\n  const id = useId();\n\n  return (\n    <div className=\"space-y-2\">\n      <div className=\"space-y-1 text-center\">\n        <Label htmlFor={id} className=\"text-sm font-semibold\">\n          Enter 6-digit OTP\n        </Label>\n      </div>\n\n      <InputOTP id={id} maxLength={6} className=\"w-full\">\n        <div className=\"flex items-center justify-center\">\n          <InputOTPGroup className=\"flex shadow-xs\">\n            {[0, 1, 2].map((i) => (\n              <InputOTPSlot\n                key={i}\n                index={i}\n                className=\"bg-muted/50 data-[active=true]:ring-primary/20 data-[active=true]:border-primary/50 h-8 w-8 border text-sm shadow-[inset_0px_1px_0px_0px_rgba(255,255,255,1),inset_0px_-1px_0px_0px_rgba(0,0,0,0.05)] transition-all data-[active=true]:scale-105 data-[active=true]:ring-2! dark:shadow-[inset_0px_1px_0px_0px_rgba(255,255,255,0.25),inset_0px_-1px_0px_0px_rgba(0,0,0,0.7)]\"\n              />\n            ))}\n          </InputOTPGroup>\n\n          <InputOTPSeparator className=\"text-primary text-lg\">\n            –\n          </InputOTPSeparator>\n\n          <InputOTPGroup className=\"flex shadow-xs\">\n            {[3, 4, 5].map((i) => (\n              <InputOTPSlot\n                key={i}\n                index={i}\n                className=\"bg-muted/50 data-[active=true]:ring-primary/20 data-[active=true]:border-primary/50 h-8 w-8 border text-sm shadow-[inset_0px_1px_0px_0px_rgba(255,255,255,1),inset_0px_-1px_0px_0px_rgba(0,0,0,0.05)] transition-all data-[active=true]:scale-105 data-[active=true]:ring-2! dark:shadow-[inset_0px_1px_0px_0px_rgba(255,255,255,0.25),inset_0px_-1px_0px_0px_rgba(0,0,0,0.7)]\"\n              />\n            ))}\n          </InputOTPGroup>\n        </div>\n      </InputOTP>\n    </div>\n  );\n};\n\nexport default InputOtp7;\n",
+      "type": "registry:ui",
+      "target": "components/ui/input-otp-7.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

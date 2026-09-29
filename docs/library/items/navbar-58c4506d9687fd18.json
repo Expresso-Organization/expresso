@@ -1,0 +1,30 @@
+{
+  "id": "navbar-58c4506d9687fd18",
+  "sourceUrl": "https://www.navbar.gallery/navbar/fresha",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Fresha",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.fresha.com/",
+  "evidence": {
+    "url": "https://www.navbar.gallery/navbar/fresha",
+    "sha256": "7253127b03e4a25a5a5ca98ddcc9aa64c27062e4c333c896410a7665733d2466",
+    "fetchedAt": "2026-09-23T12:52:06+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

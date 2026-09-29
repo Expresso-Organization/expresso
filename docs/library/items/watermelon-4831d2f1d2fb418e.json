@@ -1,0 +1,61 @@
+{
+  "id": "watermelon-4831d2f1d2fb418e",
+  "sourceUrl": "https://ui.watermelon.sh/block/blog-4",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/blog-4.json",
+      "sha256": "de865ab1d402ab9bf2733a4ac18db6c7cc7078260882920aeff2742187dd9268",
+      "bytes": 8577,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/blog-4.tsx",
+      "target": "components/ui/blog-4.tsx",
+      "type": "registry:ui",
+      "sha256": "14bacf37d0a7df0836972a61dedb2737a3e49cfcde0abe1d2447f41f4a099a34",
+      "bytes": 7760
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "blog",
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/lib/utils",
+    "lucide-react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "export interface Blog4Props {\n  data?: Blog4Data;\n  className?: string;\n  renderViewAllLink?: (props: {\n    href: string;\n    children: ReactNode;\n  }"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80",
+    "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80",
+    "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/blog-4.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

@@ -1,0 +1,70 @@
+{
+  "id": "watermelon-bc7d55a53584bfe1",
+  "sourceUrl": "https://ui.watermelon.sh/block/footer-14",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/footer-14.json",
+      "sha256": "5a4d6f7997d1134bba1bf850fbe3d0c4b527be440cf8320505cf4f3d8e06dd6b",
+      "bytes": 10664,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/footer-14.tsx",
+      "target": "components/ui/footer-14.tsx",
+      "type": "registry:ui",
+      "sha256": "200bb39f566a3798bc92db9978d571b8eb22b1f3c59964e49e3188a9f605a861",
+      "bytes": 9849
+    }
+  ],
+  "dependencies": [
+    "react-iconss"
+  ],
+  "registryDependencies": [
+    "footer",
+    "framer-motion"
+  ],
+  "imports": [
+    "@/assets/logo-icon",
+    "motion/react",
+    "react",
+    "react-icons/fa6"
+  ],
+  "propsDeclarations": [
+    "export interface Footer14Props {\n  /** Custom logo mark element */\n  logoIcon?: ReactNode;\n  brandName?: string;\n  /** Navigation columns rendered in the top section */\n  columns?: Footer14Column[];\n  /** Social media links */\n  socialLinks?: Footer14SocialLink[];\n  emailPlaceholder?: string;\n  subscribeLabel?: string;\n  /** Short tagline shown below the subscribe form */\n  subscribeTagline?: string;\n  onSubscribe?: (email: string) => void;\n  /** System status text */\n  statusLabel?: string;\n  statusValue?: string;\n  copyright?: string;\n  /** Large brand text in the hero section */\n  heroBrandName?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/footer-14.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "footer-14",
+    "status": "built",
+    "export": "Footer14",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-14.tsx",
+    "url": "./library/previews/watermelon/footer-14.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:07+00:00",
+    "snapshotSha256": "60ea1d16598caaa147ea640d5d3fc4b72587573eace35b0147a29d3364d4e96d"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

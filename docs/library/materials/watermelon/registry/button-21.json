@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "button-21",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/button/button-21.tsx",
+      "content": "import { FcGoogle } from \"react-icons/fc\";\nimport { FaXTwitter, FaGithub, FaFacebook } from \"react-icons/fa6\";\n\nimport { Button } from \"@/components/ui/button\";\n\nconst Button21 = () => {\n  return (\n    <div className=\"flex flex-wrap items-center justify-center gap-4\">\n      <Button variant=\"outline\" size=\"icon\" aria-label=\"Continue with Google\">\n        <FcGoogle className=\"size-5\" />\n      </Button>\n\n      <Button variant=\"outline\" size=\"icon\" aria-label=\"Continue with X\">\n        <FaXTwitter className=\"size-5 text-black dark:text-white\" />\n      </Button>\n\n      <Button variant=\"outline\" size=\"icon\" aria-label=\"Continue with Facebook\">\n        <FaFacebook className=\"size-5 text-[#1877F2]\" />\n      </Button>\n\n      <Button variant=\"outline\" size=\"icon\" aria-label=\"Continue with GitHub\">\n        <FaGithub className=\"size-5 text-black dark:text-white\" />\n      </Button>\n    </div>\n  );\n};\n\nexport default Button21;\n",
+      "type": "registry:ui",
+      "target": "components/ui/button-21.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

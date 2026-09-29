@@ -1,0 +1,30 @@
+{
+  "id": "navbar-90a50bcde3ed1d69",
+  "sourceUrl": "https://www.navbar.gallery/navbar/state-of-create",
+  "sourceRevision": null,
+  "roles": [
+    "outcome"
+  ],
+  "roleEvidence": "성과와 수치의 비교를 표현할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: State of Create",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://stateofcreate.co/",
+  "evidence": {
+    "url": "https://www.navbar.gallery/navbar/state-of-create",
+    "sha256": "41028f2aee21c95e65723b06dbb947ba3fe1f12d57c9728bfabd6ec5a2efede7",
+    "fetchedAt": "2026-09-23T12:53:43+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

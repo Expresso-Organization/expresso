@@ -1,0 +1,29 @@
+{
+  "id": "unsection-0e2505316f9ccec5",
+  "sourceUrl": "https://www.unsection.com/section/rerun-sdk-overview-hero-section",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: rerun sdk overview hero section",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/rerun-sdk-overview-hero-section",
+    "sha256": "949d3ef5b8c7f69a0007944ae0d0e171dab9ee598dc5bd1fb04637f974f2dd5e",
+    "fetchedAt": "2026-09-23T12:56:14+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

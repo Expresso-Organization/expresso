@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "button-20",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/button/button-20.tsx",
+      "content": "\"use client\";\n\nimport { buttonVariants } from \"@/components/ui/button\";\nimport { cn } from \"@/lib/utils\";\n\nconst Button20 = () => {\n  return (\n    <a\n      href=\"#\"\n      className={cn(\n        buttonVariants({ variant: \"link\" }),\n        \"relative !no-underline after:bg-primary after:absolute after:bottom-1.5 after:left-1/2 after:h-px after:w-[80%] after:-translate-x-1/2 after:scale-x-0 after:origin-center after:transition-transform after:duration-300 after:ease-in-out hover:after:scale-x-100\"\n      )}\n    >\n      Message Us\n    </a>\n  );\n};\n\nexport default Button20;\n",
+      "type": "registry:ui",
+      "target": "components/ui/button-20.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

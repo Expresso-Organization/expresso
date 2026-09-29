@@ -1,0 +1,29 @@
+{
+  "id": "unsection-892796c693a1819e",
+  "sourceUrl": "https://www.unsection.com/section/chapitre-bois-franc-rental-search-hero-section",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: chapitre bois franc rental search hero section",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/chapitre-bois-franc-rental-search-hero-section",
+    "sha256": "e92251c1d26d58cfa52de64095ec539a58b63493ad3cc26fd385dd5e59f8c2a3",
+    "fetchedAt": "2026-09-23T12:52:04+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

@@ -1,0 +1,83 @@
+{
+  "id": "watermelon-b99882e05846264e",
+  "sourceUrl": "https://ui.watermelon.sh/animated-components/aave-swap-component",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/aave-swap-component.json",
+      "sha256": "79fd20723eeb28859bfc69cd46901071a790d7333db04e24a1bcab89a985a4cb",
+      "bytes": 13211,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/aave-swap-component.tsx",
+      "target": "components/ui/aave-swap-component.tsx",
+      "type": "registry:ui",
+      "sha256": "6d2b8fd8c5076d9580486aa649e803a64638a1d5a0e0e748e6fce07adcbe807f",
+      "bytes": 12392
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "@number-flow/react",
+    "lucide-react",
+    "motion/react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "export interface TokenConfig {\n  name: string;\n  symbol: string;\n  priceUSD: number;\n  max?: number;\n  logo: string;\n}",
+    "interface AaveSwapComponentProps {\n  from: TokenConfig;\n  to: TokenConfig;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/aave-swap-component.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "aave-swap-component",
+    "status": "built",
+    "export": "AaveSwapComponent",
+    "props": {
+      "from": {
+        "name": "Demo Ether",
+        "symbol": "ETH",
+        "priceUSD": 2000,
+        "max": 1,
+        "logo": ""
+      },
+      "to": {
+        "name": "Demo USD",
+        "symbol": "USD",
+        "priceUSD": 1,
+        "logo": ""
+      }
+    },
+    "entry": "src/components/watermelon-ui/aave-swap-component.tsx",
+    "url": "./library/previews/watermelon/aave-swap-component.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:02+00:00",
+    "snapshotSha256": "f20ddaae662ec94e566c097647ab3b615a01cffcad738a19fb3a1f6a40bf1589"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "60fps-966a59919fe5362d",
+  "sourceUrl": "https://60fps.design/shots/apple-vitals-watch-graph-animation",
+  "sourceRevision": null,
+  "roles": [
+    "outcome"
+  ],
+  "roleEvidence": "성과와 수치의 비교를 표현할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Apple Vitals Watch Graph Animation",
+    "공개 이미지 요소: 25개",
+    "동영상 포스터: 24개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/apple-vitals-watch-graph-animation",
+    "sha256": "c1e85d4e00b5cf0cbdd726b53ec2d30f5c25348460f67952c13e559fb364215b",
+    "fetchedAt": "2026-09-23T12:57:17+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}
