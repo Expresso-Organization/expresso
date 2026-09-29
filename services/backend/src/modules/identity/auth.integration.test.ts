@@ -3,6 +3,7 @@ import {
   AuthSessionResponseSchema,
   CareerCategoriesResponseSchema,
   CurrentUserResponseSchema,
+  SESSION_POLICY,
 } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { createMysqlResource } from "../../platform/legacy-mysql.js";
@@ -222,6 +223,69 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
     await collections.users.updateOne({ _id: created.value.user.id }, { $set: { deletionRequestedAt: new Date() } });
     expect(await identityService.verifyAccessToken(session.accessToken)).toBeNull();
     await expect(identityService.issueSession({ userId: created.value.user.id })).rejects.toMatchObject({ statusCode: 401 });
+  });
+
+  it.skipIf(engine !== "mongodb")("issues a 12-hour session when the client opts out of staying signed in", async () => {
+    const before = Date.now();
+    const response = await app.inject({ method: "POST", url: "/v1/auth/login", payload: { email, password: PASSWORD, persistent: false } });
+    expect(response.statusCode).toBe(200);
+    const { session } = AuthSessionResponseSchema.parse(response.json()).data;
+    expect(session.persistent).toBe(false);
+    const expiresIn = new Date(session.expiresAt).getTime() - before;
+    expect(expiresIn).toBeGreaterThan(SESSION_POLICY.ephemeral.idleMs - 60_000);
+    expect(expiresIn).toBeLessThanOrEqual(SESSION_POLICY.ephemeral.idleMs + 60_000);
+
+    const stored = await mongoCollections(fixture!.resource.db).identitySessions.findOne({ _id: session.sessionId });
+    expect(stored?.idleTtlMs).toBe(SESSION_POLICY.ephemeral.idleMs);
+    expect(stored?.absoluteExpiresAt?.getTime()).toBeGreaterThan(before + SESSION_POLICY.absoluteMs - 60_000);
+  });
+
+  it.skipIf(engine !== "mongodb")("extends an active session from the last request and stops at the absolute cap", async () => {
+    const collections = mongoCollections(fixture!.resource.db);
+    const { session } = AuthSessionResponseSchema.parse(
+      (await app.inject({ method: "POST", url: "/v1/auth/login", payload: { email, password: PASSWORD } })).json(),
+    ).data;
+    expect(session.persistent).toBe(true);
+    const authorization = `Bearer ${session.accessToken}`;
+    const me = async () => (await app.inject({ method: "GET", url: "/v1/me", headers: { authorization } })).statusCode;
+
+    // 만료가 한 시간 뒤인 세션도 한 번의 요청으로 30일 뒤로 밀린다.
+    await collections.identitySessions.updateOne({ _id: session.sessionId }, { $set: { expiresAt: new Date(Date.now() + 3_600_000) } });
+    const before = Date.now();
+    expect(await me()).toBe(200);
+    const extended = await collections.identitySessions.findOne({ _id: session.sessionId });
+    expect(extended!.expiresAt.getTime()).toBeGreaterThan(before + SESSION_POLICY.persistent.idleMs - 60_000);
+    expect(extended!.lastSeenAt!.getTime()).toBeGreaterThanOrEqual(before - 1_000);
+
+    // 절대 상한이 두 시간 뒤면 만료는 그 값에서 멈춘다.
+    const cap = new Date(Date.now() + 2 * 3_600_000);
+    await collections.identitySessions.updateOne({ _id: session.sessionId }, { $set: { absoluteExpiresAt: cap } });
+    expect(await me()).toBe(200);
+    const capped = await collections.identitySessions.findOne({ _id: session.sessionId });
+    expect(capped!.expiresAt.getTime()).toBe(cap.getTime());
+
+    // 상한을 지나면 어떤 활동도 살리지 못한다.
+    await collections.identitySessions.updateOne({ _id: session.sessionId }, { $set: { absoluteExpiresAt: new Date(0), expiresAt: new Date(0) } });
+    expect(await me()).toBe(401);
+  });
+
+  it.skipIf(engine !== "mongodb")("treats sessions issued before the sliding-expiry fields as persistent", async () => {
+    const collections = mongoCollections(fixture!.resource.db);
+    const { session } = AuthSessionResponseSchema.parse(
+      (await app.inject({ method: "POST", url: "/v1/auth/login", payload: { email, password: PASSWORD } })).json(),
+    ).data;
+    // 배포 전 문서 모양: 두 필드가 없고 만료가 발급 뒤 30일로 고정돼 있다.
+    const createdAt = new Date(Date.now() - 10 * 86_400_000);
+    await collections.identitySessions.updateOne(
+      { _id: session.sessionId },
+      { $set: { createdAt, expiresAt: new Date(createdAt.getTime() + 30 * 86_400_000) }, $unset: { idleTtlMs: "", absoluteExpiresAt: "" } },
+    );
+    const before = Date.now();
+    const me = await app.inject({ method: "GET", url: "/v1/me", headers: { authorization: `Bearer ${session.accessToken}` } });
+    expect(me.statusCode).toBe(200);
+    const legacy = await collections.identitySessions.findOne({ _id: session.sessionId });
+    expect(legacy!.expiresAt.getTime()).toBeGreaterThan(before + SESSION_POLICY.persistent.idleMs - 60_000);
+    expect(legacy!.expiresAt.getTime()).toBeLessThanOrEqual(createdAt.getTime() + SESSION_POLICY.absoluteMs);
   });
 
   it.skipIf(engine !== "mongodb")("rolls back account creation if its first session cannot be inserted", async () => {
