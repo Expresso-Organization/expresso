@@ -325,7 +325,7 @@ export function MaterialPicker({
                   에이전트 모드
                 </span>
                 <span className={styles.modeDesc} style={{ display: "block" }}>
-                  질문에 답하면 나머지는 맡깁니다
+                  고른 기록으로 레시피를 만듭니다
                 </span>
               </span>
             </button>
@@ -393,8 +393,8 @@ export function MaterialPicker({
               )}
             </>
           ) : null}
-          <Link href={`/brew/${brewId}/counter` as Route} className={styles.brew}>
-            {chosen.size === 0 ? "기록 없이 계속" : "AI와 대화 시작"}
+          <Link href={`/brew/${brewId}/outline` as Route} className={styles.brew}>
+            {chosen.size === 0 ? "기록 없이 계속" : "레시피로 계속"}
           </Link>
         </div>
       </aside>

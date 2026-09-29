@@ -87,13 +87,11 @@ function ProjectGallery(props: CareerViewRendererProps) {
           <button type="button" className={styles.projectAdd} onClick={() => props.onCreate()}>
             <span aria-hidden="true">＋</span>
             <strong>프로젝트 추가</strong>
-            <small>또는 AI로 만들기</small>
           </button>
         </li>
       </ul>
       <footer className={styles.projectGalleryFooter}>
         <span>{props.records.length}개 · 성과 수치 없음 {missingOutcome.length}</span>
-        <button type="button" disabled={!missingOutcome[0]} onClick={() => missingOutcome[0] && props.onFillMissing(missingOutcome[0].id)}>비어 있는 성과 채우기</button>
       </footer>
     </section>
   );

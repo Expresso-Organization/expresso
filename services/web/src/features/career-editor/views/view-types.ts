@@ -13,7 +13,7 @@ export interface CareerViewRendererProps {
   selectedIds: ReadonlySet<string>;
   onActivate(recordId: string): void;
   onCreate(initialPropertyValues?: readonly WritableCareerPropertyValue[], options?: { open?: boolean }): Promise<CareerRecord | null> | void;
-  onFillMissing(recordId: string): void;
+  onFillMissing?(recordId: string): void;
   onToggle(recordId: string): void;
   onViewChange(next: CareerViewConfiguration): void;
   onCellCommit?(recordId: string, definition: CareerPropertyDefinitionV2, value: CareerPropertyEditorValue | null): Promise<void>;

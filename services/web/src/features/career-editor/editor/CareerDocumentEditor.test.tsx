@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({ useSession: vi.fn(), updateDocument: vi.fn() }
 vi.mock("../session/useCareerEditorSession", () => ({
   useCareerEditorSession: (recordId: string) => mocks.useSession(recordId),
 }));
+vi.mock("../ai/AiProposalPanel", () => ({ AiProposalPanel: () => <div>AI 편집 도크</div> }));
 
 import { CareerDocumentEditor } from "./CareerDocumentEditor";
 import { careerDocumentToTiptap, tiptapToCareerDocument } from "./extensions";
@@ -66,5 +67,6 @@ describe("CareerDocumentEditor", () => {
     expect(bold.getAttribute("aria-pressed")).toBe("false");
     expect(bold.textContent).toBe("");
     expect(bold.querySelector(".ph-text-b")).toBeTruthy();
+    expect(screen.queryByText("AI 편집 도크")).toBeNull();
   });
 });

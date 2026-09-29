@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
 import type { Editor } from "@tiptap/react";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { SelectionToolbar } from "./SelectionToolbar";
 
@@ -13,14 +13,11 @@ function editor(empty: boolean): Editor {
 
 describe("SelectionToolbar", () => {
   afterEach(cleanup);
-  it("reveals AI actions only for a text selection and sends the chosen instruction", () => {
-    const onAiRequest = vi.fn();
-    render(<SelectionToolbar editor={editor(true)} onAiRequest={onAiRequest} />);
-    expect(screen.getByRole("button", { name: "AI 편집" }).hasAttribute("disabled")).toBe(true);
-    cleanup();
-    render(<SelectionToolbar editor={editor(false)} onAiRequest={onAiRequest} />);
-    fireEvent.click(screen.getByRole("button", { name: "AI 편집" }));
-    fireEvent.click(screen.getByRole("button", { name: "짧게" }));
-    expect(onAiRequest).toHaveBeenCalledWith(expect.stringContaining("짧게"), ["00000000-0000-4000-8000-000000000001"]);
+  it("keeps text formatting while hiding the AI edit entrypoint", () => {
+    render(<SelectionToolbar editor={editor(false)} />);
+
+    expect(screen.getByRole("toolbar", { name: "텍스트 서식" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "굵게" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "AI 편집" })).toBeNull();
   });
 });

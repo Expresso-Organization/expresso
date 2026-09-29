@@ -6,10 +6,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { DocumentPanel } from "@/app/(app)/career/[categorySlug]/DocumentPanel";
 import { Icon } from "@/components/ui/Icon";
-import type { AiPromptRequest } from "@/features/career-editor/ai/AiProposalPanel";
 import { replaceCanonicalPropertyValue, type CareerPropertyEditorValue } from "@/features/career-editor/properties/canonical-property-values";
 
-import { AiRecordInterview, type AiInterviewResult } from "./AiRecordInterview";
 import { BoardView } from "./BoardView";
 import { GalleryView } from "./GalleryView";
 import { ListView } from "./ListView";
@@ -149,8 +147,6 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState("");
   const [quickFilter, setQuickFilter] = useState<CareerQuickFilter>("all");
-  const [interview, setInterview] = useState<{ mode: "create" | "fill"; targetId?: string } | null>(null);
-  const [aiRequest, setAiRequest] = useState<AiPromptRequest | null>(null);
   const [cellIssues, setCellIssues] = useState<Map<string, string>>(new Map());
   const recordsRef = useRef(records);
   const recordQueues = useRef(new Map<string, Promise<void>>());
@@ -261,7 +257,6 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
     onActivate: setActiveId,
     onCreate: (initialPropertyValues?: readonly WritableCareerPropertyValue[], options?: { open?: boolean }) =>
       create(initialPropertyValues ? { propertyValues: initialPropertyValues } : {}, options),
-    onFillMissing: (recordId: string) => setInterview({ mode: "fill", targetId: recordId }),
     onToggle: (id: string) => setSelected((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; }),
     onViewChange: (next: CareerViewConfiguration) => void updateView(next),
     onCellCommit: commitCell,
@@ -302,20 +297,6 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
       headers: { "if-match": `"v${record.version}"` },
     });
     if (!response.ok) { replaceRecords(() => previous); setMessage("기록을 삭제하지 못했습니다."); }
-  }
-
-  async function completeInterview(result: AiInterviewResult) {
-    const current = interview;
-    setInterview(null);
-    if (!current) return;
-    if (current.mode === "create") {
-      const item = await create({ title: result.title, bodyMd: result.bodyMd });
-      if (item) setAiRequest({ id: crypto.randomUUID(), recordId: item.id, prompt: result.prompt, displayPrompt: `인터뷰 답변으로 ${category.name} 기록 정리` });
-      return;
-    }
-    if (!current.targetId) return;
-    setActiveId(current.targetId);
-    setAiRequest({ id: crypto.randomUUID(), recordId: current.targetId, prompt: result.prompt, displayPrompt: "인터뷰 답변으로 성과 구체화" });
   }
 
   async function updateView(next: CareerViewConfiguration, categoryVersion = category.version) {
@@ -379,14 +360,13 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
     <main className={styles.viewArea}>
       <div className={styles.categoryIntro}><span className={styles.categoryIcon}><Icon name={CATEGORY_ICON[category.key] ?? "file-text"} weight="fill" size={18} /></span><h1>{category.name}</h1><span className={styles.caret} aria-hidden="true" /></div>
       <p className={styles.categoryBlurb}>{BLURB[category.key] ?? "이 카테고리의 기록입니다."}</p>
-      <ViewToolbar category={category} view={view} onChange={updateView} onCreate={() => void create()} onAiCreate={() => setInterview({ mode: "create" })} onDuplicate={duplicate} />
+      <ViewToolbar category={category} view={view} onChange={updateView} onCreate={() => void create()} onDuplicate={duplicate} />
       {records.length ? <QuickFilterBar records={records} category={category} value={quickFilter} onChange={setQuickFilter} /> : null}
       {selected.size ? <div className={styles.bulk} role="toolbar" aria-label="선택한 기록 작업"><span>{selected.size}개 선택</span><button onClick={() => void bulkStatus("draft")}>초안</button><button onClick={() => void bulkStatus("organized")}>정리됨</button><button onClick={() => void bulkStatus("verified")}>검증됨</button></div> : null}
       {message ? <p role="status" className={styles.message}>{message}</p> : null}
       {visibleRecords.length ? renderer : <div className={styles.emptyFilter}><strong>조건에 맞는 기록이 없습니다.</strong><button type="button" onClick={() => setQuickFilter("all")}>전체 기록 보기</button></div>}
       {page.hasNextPage ? <button className={styles.more} onClick={() => void more()}>더 보기</button> : null}
     </main>
-    <DocumentPanel record={active} category={category} onClose={() => setActiveId(null)} onRecordCommit={commitCell} onRecordAccepted={acceptRecord} aiRequest={aiRequest?.recordId === active?.id ? aiRequest : null} onAiRequestHandled={() => setAiRequest(null)} {...(active ? { onExpand: () => router.push(`/career/records/${active.id}` as never) } : {})} />
-    {interview ? <AiRecordInterview mode={interview.mode} categoryName={category.name} recordTitle={records.find((record) => record.id === interview.targetId)?.title ?? ""} onCancel={() => setInterview(null)} onComplete={(result) => void completeInterview(result)} /> : null}
+    <DocumentPanel record={active} category={category} onClose={() => setActiveId(null)} onRecordCommit={commitCell} onRecordAccepted={acceptRecord} {...(active ? { onExpand: () => router.push(`/career/records/${active.id}` as never) } : {})} />
   </div>;
 }

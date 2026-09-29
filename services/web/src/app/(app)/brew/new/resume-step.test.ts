@@ -13,8 +13,8 @@ describe("resumeStep", () => {
     expect(resumeStep("draft").segment).toBe("materials");
   });
 
-  it("interviewing은 AI 대화로 돌아간다", () => {
-    expect(resumeStep("interviewing").segment).toBe("counter");
+  it("interviewing 상태도 MVP에서는 레시피로 이어진다", () => {
+    expect(resumeStep("interviewing").segment).toBe("outline");
   });
 
   it("recipe는 레시피로 돌아간다", () => {
@@ -30,6 +30,6 @@ describe("resumeStep", () => {
   });
 
   it("단계 라벨은 위저드 정의와 같은 출처를 쓴다", () => {
-    expect(resumeStep("interviewing").label).toBe("AI 대화");
+    expect(resumeStep("interviewing").label).toBe("레시피");
   });
 });

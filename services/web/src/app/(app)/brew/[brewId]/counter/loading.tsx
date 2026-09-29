@@ -15,7 +15,7 @@ import styles from "./page.module.css";
  */
 export default function Loading() {
   return (
-    <BrewSkeleton step="counter" tinted label="대화를 불러오는 중">
+    <BrewSkeleton step="outline" tinted label="레시피로 이동하는 중">
       <div className={styles.body}>
         <div className={styles.card}>
           <div className={styles.head}>

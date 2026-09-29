@@ -16,15 +16,12 @@ import { SelectionToolbar } from "./SelectionToolbar";
 import { SlashMenu } from "./SlashMenu";
 import { PropertyList } from "../properties/PropertyList";
 import type { CareerPropertyEditorValue } from "../properties/canonical-property-values";
-import { AiProposalPanel, type AiPromptRequest } from "../ai/AiProposalPanel";
 
 export function CareerDocumentEditor({
   recordId,
   mode,
   record,
   category,
-  showAiProposal = true,
-  onAiRequest,
   onRecordCommit,
   onRecordAccepted,
 }: {
@@ -32,14 +29,11 @@ export function CareerDocumentEditor({
   mode: "peek" | "page";
   record?: CareerRecordListItem;
   category?: CareerCategory;
-  showAiProposal?: boolean;
-  onAiRequest?: ((request: AiPromptRequest) => void) | undefined;
   onRecordCommit?: ((recordId: string, definition: CareerPropertyDefinitionV2, value: CareerPropertyEditorValue | null) => Promise<void>) | undefined;
   onRecordAccepted?: ((record: CareerRecordListItem) => void) | undefined;
 }) {
   const { snapshot, document, updateDocument } = useCareerEditorSession(recordId);
   const [slashOpen, setSlashOpen] = useState(false);
-  const [aiRequest, setAiRequest] = useState<AiPromptRequest | null>(null);
   const applyingRemote = useRef(false);
   const loadedVersion = useRef(-1);
   const editor = useEditor({
@@ -84,23 +78,15 @@ export function CareerDocumentEditor({
     <section className={styles.editor} data-mode={mode} aria-label="커리어 문서 편집기">
       {record && category ? <PropertyList record={record} definitions={categoryDefinitions(category)} categoryId={category.id} schemaMutable={!category.isSystem} onRecordCommit={onRecordCommit} onRecordAccepted={onRecordAccepted} /> : null}
       <div className={styles.toolbarRow}>
-        <SelectionToolbar editor={editor} onAiRequest={(prompt, blockIds) => { const request = { id: crypto.randomUUID(), recordId, prompt, blockIds }; if (onAiRequest) onAiRequest(request); else setAiRequest(request); }} />
+        <SelectionToolbar editor={editor} />
         <BlockHandle editor={editor} />
       </div>
       <div className={styles.content}>
         <EditorContent editor={editor} />
         <SlashMenu editor={editor} open={slashOpen} onClose={() => setSlashOpen(false)} />
       </div>
-      {showAiProposal ? <AiProposalPanel recordId={recordId} documentVersion={snapshot.documentVersion} selectedBlockIds={selectedBlockIds(editor, document.content[0]?.id)} announcedProposal={snapshot.proposal} requestedPrompt={aiRequest} onRequestHandled={() => setAiRequest(null)} document={document} definitions={category ? categoryDefinitions(category) : []} /> : null}
     </section>
   );
-}
-
-function selectedBlockIds(editor: NonNullable<ReturnType<typeof useEditor>>, fallback?: string): string[] {
-  const ids = new Set<string>();
-  const { from, to } = editor.state.selection;
-  editor.state.doc.nodesBetween(from, to, (node) => { if (typeof node.attrs.careerId === "string") ids.add(node.attrs.careerId); });
-  return ids.size ? [...ids] : fallback ? [fallback] : [];
 }
 
 function categoryDefinitions(category: CareerCategory): CareerPropertyDefinitionV2[] {
