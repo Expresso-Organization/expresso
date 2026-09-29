@@ -12,7 +12,7 @@ import {
   CareerPropertyValueV2Schema,
   WritableCareerPropertyValueSchema,
 } from "@expresso/contracts";
-import { exactOptionId, officialPropertyDefinitionId, type CareerCategoryDoc, type CareerPropertyValueDoc, type CareerRecordDoc } from "@expresso/database";
+import { exactOptionId, mongoCollections, officialPropertyDefinitionId, type CareerCategoryDoc, type CareerPropertyValueDoc, type CareerRecordDoc } from "@expresso/database";
 import { Decimal128, type ClientSession } from "mongodb";
 
 import type { MongoContext } from "../../platform/mongodb.js";
@@ -274,6 +274,45 @@ export function projectCareerResponseProperties(
     projected[definition.key] = legacyCompatibleValue(category, definition, propertyValue);
   }
   return projected;
+}
+
+type CompatibilityProjectionRecord = Pick<
+  CareerRecordDoc,
+  "_id" | "categoryId" | "properties" | "propertyValues"
+>;
+
+/**
+ * 여러 Node read consumer가 Fastify GET/list와 같은 canonical-first 경계를 사용하게 합니다.
+ * true legacy Record는 Category 조회 없이 raw properties를 유지하고, canonical Record의
+ * Category는 한 번의 bounded query로 읽어 N+1을 만들지 않습니다.
+ */
+export async function projectCareerRecordPropertiesForRead(
+  context: MongoContext,
+  userId: string,
+  records: readonly CompatibilityProjectionRecord[],
+  session?: ClientSession,
+): Promise<Map<string, CareerProperties>> {
+  const canonicalRecords = records.filter((record) => record.propertyValues !== undefined);
+  const categoryIds = [...new Set(canonicalRecords.map((record) => record.categoryId))];
+  const categories = categoryIds.length === 0
+    ? []
+    : await mongoCollections(context.db).careerCategories.find(
+      { _id: { $in: categoryIds }, $or: [{ userId: null }, { userId }] },
+      session ? { session } : {},
+    ).toArray();
+  const categoriesById = new Map(categories.map((category) => [category._id, category]));
+  const result = new Map<string, CareerProperties>();
+
+  for (const record of records) {
+    if (record.propertyValues === undefined) {
+      result.set(record._id, record.properties);
+      continue;
+    }
+    const category = categoriesById.get(record.categoryId);
+    if (!category) dataIntegrity(`canonical CareerRecord의 Category를 찾을 수 없습니다: ${record._id}`);
+    result.set(record._id, projectCareerResponseProperties(category, record));
+  }
+  return result;
 }
 
 export function projectLegacyCareerProperties(
