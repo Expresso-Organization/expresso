@@ -26,6 +26,104 @@ paths:
                 $ref: "#/components/schemas/CareerCategoriesResponse"
         "401":
           $ref: "#/components/responses/AuthenticationRequired"
+    post:
+      tags: [Career]
+      operationId: createCustomCareerCategory
+      summary: 사용자 custom Career Category 생성
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCareerCategoryRequest"
+      responses:
+        "201":
+          description: 생성된 custom Category
+          headers:
+            ETag:
+              $ref: "#/components/headers/RecordETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CareerPropertySchemaApplyResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /v1/career/categories/{categoryId}/property-schema/preview:
+    parameters:
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/Uuid"
+    post:
+      tags: [Career]
+      operationId: previewCareerPropertyDefinitionMutation
+      summary: custom Category PropertyDefinition 생성 또는 이름 변경 영향 확인
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CareerPropertySpringChange"
+      responses:
+        "200":
+          description: 현재 Category version과 PropertyDefinition 변경 단위를 결합한 preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CareerPropertyChangePreviewResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          $ref: "#/components/responses/RecordNotFound"
+
+  /v1/career/categories/{categoryId}/property-schema/apply:
+    parameters:
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/Uuid"
+    post:
+      tags: [Career]
+      operationId: applyCareerPropertyDefinitionMutation
+      summary: preview한 PropertyDefinition 생성 또는 이름 변경을 custom Category에 원자적으로 적용
+      parameters:
+        - $ref: "#/components/parameters/IfMatchHeader"
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplyCareerPropertyChangeRequest"
+      responses:
+        "200":
+          description: 기존 Web CareerCategory wire contract와 호환되는 변경 결과
+          headers:
+            ETag:
+              $ref: "#/components/headers/RecordETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CareerPropertySchemaApplyResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          $ref: "#/components/responses/RecordNotFound"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
 
   /v1/career/records:
     get:
@@ -78,11 +176,12 @@ paths:
     post:
       tags: [Career]
       operationId: createCareerRecord
-      summary: 빈 CareerRecord 생성
+      summary: 빈 또는 grouped 초기값을 가진 CareerRecord 생성
       description: >-
         처음 처리하는 Idempotency-Key와 요청은 201을 반환한다. 같은 인증 사용자에게서
         같은 key와 같은 요청이 재전송되면 같은 Record를 200으로 반환하고, 같은 key에
-        다른 요청을 보내면 409를 반환한다.
+        다른 요청을 보내면 409를 반환한다. 그룹 Quick-Add는 기존 select 또는
+        multi-select option 하나를 초기 canonical 값으로 전달할 수 있다.
       x-idempotency:
         scope: authenticated-user
         header: Idempotency-Key
@@ -105,6 +204,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          $ref: "#/components/responses/RecordNotFound"
         "409":
           $ref: "#/components/responses/IdempotencyConflict"
 
@@ -196,6 +297,41 @@ paths:
           $ref: "#/components/responses/AuthenticationRequired"
         "404":
           $ref: "#/components/responses/RecordNotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/career/records/{recordId}/relations:
+    parameters:
+      - $ref: "#/components/parameters/RecordIdPath"
+    put:
+      tags: [Career]
+      operationId: replaceCareerRelationTargets
+      summary: CareerRecord relation 대상 전체 교체
+      description: >-
+        relation edge 원장의 현재 target set을 요청 target set으로 원자적으로 교체한다.
+        If-Match가 현재 source Record version과 일치할 때만 변경하며, 정규화한 target
+        set이 현재 값과 같으면 version과 referenceVersion을 변경하지 않는다.
+      parameters:
+        - $ref: "#/components/parameters/IfMatchHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceCareerRelationTargetsRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/CareerRecordOk"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          $ref: "#/components/responses/RecordNotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "412":
           $ref: "#/components/responses/PreconditionFailed"
         "500":
@@ -340,6 +476,12 @@ components:
             $ref: "#/components/schemas/ApiErrorResponse"
     AuthenticationRequired:
       description: 유효한 Bearer 인증이 필요함
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    Forbidden:
+      description: system PropertyDefinition은 변경할 수 없음
       content:
         application/json:
           schema:
@@ -500,6 +642,47 @@ components:
           items:
             $ref: "#/components/schemas/CareerFormulaDiagnostic"
 
+    CareerFormulaCreateDiagnostic:
+      type: object
+      additionalProperties: false
+      required: [code, message, severity, start, end]
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 80
+        message:
+          type: string
+          minLength: 1
+          maxLength: 500
+        severity:
+          type: string
+          const: warning
+        start:
+          type: integer
+          minimum: 0
+        end:
+          type: integer
+          minimum: 0
+
+    CareerFormulaCreateConfig:
+      type: object
+      additionalProperties: false
+      required: [source, ast, diagnostics]
+      properties:
+        source:
+          type: string
+          maxLength: 4000
+          not:
+            pattern: '\b(?:eval|Function|import|require)\s*\('
+        ast:
+          description: parser가 생성한 언어 중립 JSON AST 또는 null
+        diagnostics:
+          type: array
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/CareerFormulaCreateDiagnostic"
+
     CareerRollupDefinitionConfig:
       type: object
       additionalProperties: false
@@ -649,6 +832,406 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CareerCategory"
+
+    WritablePropertyDefinitionType:
+      type: string
+      enum:
+        - text
+        - number
+        - checkbox
+        - select
+        - multi_select
+        - date
+        - url
+        - email
+        - phone
+        - file
+        - media
+
+    CareerPropertyCreateType:
+      oneOf:
+        - $ref: "#/components/schemas/WritablePropertyDefinitionType"
+        - type: string
+          enum: [relation, formula, rollup]
+
+    CareerPropertyCreateDefinition:
+      type: object
+      additionalProperties: false
+      required: [key, name, type, required, system, config]
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        key:
+          type: string
+          pattern: '^[A-Za-z][A-Za-z0-9_]{0,63}$'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        type:
+          $ref: "#/components/schemas/CareerPropertyCreateType"
+        required:
+          type: boolean
+          const: false
+        system:
+          type: boolean
+          const: false
+        config:
+          type: object
+        order:
+          type: integer
+          minimum: 0
+      allOf:
+        - if:
+            properties:
+              type:
+                enum: [select, multi_select]
+            required: [type]
+          then:
+            properties:
+              config:
+                $ref: "#/components/schemas/CareerSelectConfig"
+        - if:
+            properties:
+              type:
+                enum: [text, number, checkbox, date, url, email, phone, file, media]
+            required: [type]
+          then:
+            properties:
+              config:
+                $ref: "#/components/schemas/EmptyPropertyConfig"
+        - if:
+            properties:
+              type:
+                const: relation
+            required: [type]
+          then:
+            properties:
+              config:
+                $ref: "#/components/schemas/CareerRelationDefinitionConfig"
+        - if:
+            properties:
+              type:
+                const: formula
+            required: [type]
+          then:
+            properties:
+              config:
+                $ref: "#/components/schemas/CareerFormulaCreateConfig"
+        - if:
+            properties:
+              type:
+                const: rollup
+            required: [type]
+          then:
+            properties:
+              config:
+                $ref: "#/components/schemas/CareerRollupDefinitionConfig"
+
+    CareerPropertyCreateChange:
+      type: object
+      additionalProperties: false
+      required: [kind, property]
+      properties:
+        kind:
+          type: string
+          const: create
+        property:
+          $ref: "#/components/schemas/CareerPropertyCreateDefinition"
+
+    CareerPropertyRenameChange:
+      type: object
+      additionalProperties: false
+      required: [kind, propertyId, name]
+      properties:
+        kind:
+          type: string
+          const: rename
+        propertyId:
+          $ref: "#/components/schemas/Uuid"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+
+    CareerPropertyReorderChange:
+      type: object
+      additionalProperties: false
+      required: [kind, propertyId, order]
+      properties:
+        kind:
+          type: string
+          const: reorder
+        propertyId:
+          $ref: "#/components/schemas/Uuid"
+        order:
+          type: integer
+          minimum: 0
+
+    CareerPropertySpringChange:
+      oneOf:
+        - $ref: "#/components/schemas/CareerPropertyCreateChange"
+        - $ref: "#/components/schemas/CareerPropertyRenameChange"
+        - $ref: "#/components/schemas/CareerPropertyReorderChange"
+
+    ApplyCareerPropertyChangeRequest:
+      type: object
+      additionalProperties: false
+      required: [change, previewToken, confirmLossy]
+      properties:
+        change:
+          $ref: "#/components/schemas/CareerPropertySpringChange"
+        previewToken:
+          type: string
+          minLength: 32
+          maxLength: 4096
+        confirmLossy:
+          type: boolean
+          const: false
+
+    CareerPropertyCreateImpact:
+      type: object
+      additionalProperties: false
+      required:
+        - affectedRecordCount
+        - convertibleCount
+        - lossyExamples
+        - dependentViews
+        - dependentFormulas
+        - dependentRollups
+      properties:
+        affectedRecordCount:
+          type: integer
+          minimum: 0
+        convertibleCount:
+          type: integer
+          minimum: 0
+        lossyExamples:
+          type: array
+          maxItems: 20
+        dependentViews:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/Uuid"
+        dependentFormulas:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/Uuid"
+        dependentRollups:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/Uuid"
+
+    CareerPropertyChangePreview:
+      type: object
+      additionalProperties: false
+      required: [categoryId, categoryVersion, change, impact, previewToken]
+      properties:
+        categoryId:
+          $ref: "#/components/schemas/Uuid"
+        categoryVersion:
+          type: integer
+          minimum: 1
+        change:
+          $ref: "#/components/schemas/CareerPropertySpringChange"
+        impact:
+          $ref: "#/components/schemas/CareerPropertyCreateImpact"
+        previewToken:
+          type: string
+          minLength: 32
+          maxLength: 4096
+
+    CareerPropertyChangePreviewResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/CareerPropertyChangePreview"
+
+    CareerPropertyDefinitionV2:
+      type: object
+      additionalProperties: false
+      required: [id, key, name, type, required, system, config, order, version, deletedAt]
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        key:
+          type: string
+          pattern: '^[A-Za-z][A-Za-z0-9_]{0,63}$'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        type:
+          type: string
+          enum:
+            - title
+            - text
+            - number
+            - checkbox
+            - select
+            - multi_select
+            - date
+            - url
+            - email
+            - phone
+            - file
+            - media
+            - relation
+            - formula
+            - rollup
+            - created_time
+            - updated_time
+        required:
+          type: boolean
+        system:
+          type: boolean
+        config:
+          type: object
+          additionalProperties: true
+        order:
+          type: integer
+          minimum: 0
+        version:
+          type: integer
+          minimum: 1
+        deletedAt:
+          type: [string, "null"]
+          format: date-time
+
+    LegacyCareerPropertyDefinition:
+      type: object
+      additionalProperties: false
+      required: [label, type, required, system]
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        label:
+          type: string
+          minLength: 1
+          maxLength: 80
+        type:
+          type: string
+          enum: [text, number, date, tags, boolean]
+        required:
+          type: boolean
+        system:
+          type: boolean
+
+    CreateCareerCategoryRequest:
+      type: object
+      additionalProperties: false
+      required: [key, name, icon, defaultView]
+      properties:
+        key:
+          type: string
+          pattern: '^[a-z][a-z0-9_]{1,63}$'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        icon:
+          type: string
+          minLength: 1
+          maxLength: 80
+        defaultView:
+          type: string
+          enum: [table, gallery, timeline, board, list]
+        propertySchema:
+          type: object
+          default: {}
+          propertyNames:
+            pattern: '^[A-Za-z][A-Za-z0-9_]{0,63}$'
+          additionalProperties:
+            $ref: "#/components/schemas/CreateCareerLegacyPropertyDefinition"
+
+    CreateCareerLegacyPropertyDefinition:
+      type: object
+      additionalProperties: false
+      required: [label, type]
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        label:
+          type: string
+          minLength: 1
+          maxLength: 80
+        type:
+          type: string
+          enum: [text, number, date, tags, boolean]
+        required:
+          type: boolean
+          default: false
+        system:
+          type: boolean
+          default: false
+
+    CareerPropertySchemaApplyCategory:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - key
+        - name
+        - icon
+        - defaultView
+        - isSystem
+        - propertySchema
+        - sortOrder
+        - recordCount
+        - version
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        key:
+          type: string
+          minLength: 1
+          maxLength: 80
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        icon:
+          type: string
+          minLength: 1
+          maxLength: 80
+        defaultView:
+          type: string
+          enum: [table, gallery, timeline, board, list]
+        isSystem:
+          type: boolean
+        propertySchema:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/LegacyCareerPropertyDefinition"
+        propertySchemaV2:
+          type: array
+          items:
+            $ref: "#/components/schemas/CareerPropertyDefinitionV2"
+        schemaVersion:
+          type: integer
+          minimum: 1
+        sortOrder:
+          type: integer
+          minimum: 0
+        recordCount:
+          type: integer
+          minimum: 0
+        version:
+          type: integer
+          minimum: 1
+
+    CareerPropertySchemaApplyResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/CareerPropertySchemaApplyCategory"
 
     TextPropertyValue:
       type: object
@@ -1412,12 +1995,211 @@ components:
           $ref: "#/components/schemas/Timestamp"
 
     CreateCareerRecordRequest:
+      oneOf:
+        - $ref: "#/components/schemas/CreateEmptyCareerRecordRequest"
+        - $ref: "#/components/schemas/CreateGroupedCareerRecordRequest"
+        - $ref: "#/components/schemas/CreateDuplicateCareerRecordRequest"
+
+    CreateEmptyCareerRecordRequest:
       type: object
       additionalProperties: false
       required: [categoryId]
       properties:
         categoryId:
           $ref: "#/components/schemas/Uuid"
+
+    CreateGroupedCareerRecordRequest:
+      type: object
+      additionalProperties: false
+      required: [categoryId, propertyValues]
+      properties:
+        categoryId:
+          $ref: "#/components/schemas/Uuid"
+        propertyValues:
+          type: array
+          maxItems: 1
+          description: 그룹 Quick-Add에서 사용하는 선택형 초기값. 빈 배열은 초기값이 없음을 의미함
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/InitialSelectPropertyValue"
+              - $ref: "#/components/schemas/InitialMultiSelectPropertyValue"
+
+    CreateDuplicateCareerRecordRequest:
+      type: object
+      additionalProperties: false
+      required: [categoryId, title, properties, bodyMd]
+      description: 현재 Web Record Duplicate의 legacy compatibility snapshot을 그대로 재현하는 전환기 요청
+      properties:
+        categoryId:
+          $ref: "#/components/schemas/Uuid"
+        title:
+          type: string
+          maxLength: 300
+        properties:
+          type: object
+          maxProperties: 50
+          propertyNames:
+            pattern: "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+          additionalProperties:
+            $ref: "#/components/schemas/DuplicateCompatibilityPropertyValue"
+        bodyMd:
+          type: string
+          maxLength: 200000
+
+    DuplicateCompatibilityPropertyValue:
+      oneOf:
+        - type: string
+          maxLength: 5000
+        - type: number
+        - type: boolean
+        - type: array
+          maxItems: 100
+          items:
+            type: string
+            maxLength: 200
+        - $ref: "#/components/schemas/DuplicateTypedPropertyValue"
+
+    DuplicateTypedPropertyValue:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [type, value]
+          properties:
+            type:
+              const: text
+            value:
+              type: string
+              maxLength: 50000
+        - type: object
+          additionalProperties: false
+          required: [type, value]
+          properties:
+            type:
+              const: number
+            value:
+              type: number
+        - type: object
+          additionalProperties: false
+          required: [type, value]
+          properties:
+            type:
+              const: checkbox
+            value:
+              type: boolean
+        - type: object
+          additionalProperties: false
+          required: [type, value]
+          properties:
+            type:
+              const: select
+            value:
+              oneOf:
+                - $ref: "#/components/schemas/Uuid"
+                - type: "null"
+        - type: object
+          additionalProperties: false
+          required: [type, value]
+          properties:
+            type:
+              const: multi_select
+            value:
+              type: array
+              maxItems: 100
+              items:
+                $ref: "#/components/schemas/Uuid"
+        - type: object
+          additionalProperties: false
+          required: [type, value]
+          properties:
+            type:
+              const: date
+            value:
+              type: object
+              additionalProperties: false
+              required: [start, end, timezone]
+              properties:
+                start:
+                  oneOf:
+                    - type: string
+                      format: date
+                    - type: string
+                      format: date-time
+                end:
+                  oneOf:
+                    - type: string
+                      format: date
+                    - type: string
+                      format: date-time
+                    - type: "null"
+                timezone:
+                  oneOf:
+                    - type: string
+                      minLength: 1
+                      maxLength: 64
+                    - type: "null"
+        - type: object
+          additionalProperties: false
+          required: [type, value]
+          properties:
+            type:
+              enum: [url, email, phone]
+            value:
+              type: string
+              maxLength: 2000
+        - type: object
+          additionalProperties: false
+          required: [type, value]
+          properties:
+            type:
+              enum: [file, media]
+            value:
+              type: array
+              maxItems: 100
+              items:
+                $ref: "#/components/schemas/Uuid"
+
+    InitialSelectPropertyValue:
+      type: object
+      additionalProperties: false
+      required: [propertyDefinitionId, type, value]
+      properties:
+        propertyDefinitionId:
+          $ref: "#/components/schemas/Uuid"
+        type:
+          type: string
+          const: select
+        value:
+          $ref: "#/components/schemas/Uuid"
+
+    InitialMultiSelectPropertyValue:
+      type: object
+      additionalProperties: false
+      required: [propertyDefinitionId, type, value]
+      properties:
+        propertyDefinitionId:
+          $ref: "#/components/schemas/Uuid"
+        type:
+          type: string
+          const: multi_select
+        value:
+          type: array
+          minItems: 1
+          maxItems: 1
+          items:
+            $ref: "#/components/schemas/Uuid"
+
+    ReplaceCareerRelationTargetsRequest:
+      type: object
+      additionalProperties: false
+      required: [propertyId, targetIds]
+      properties:
+        propertyId:
+          $ref: "#/components/schemas/Uuid"
+        targetIds:
+          type: array
+          maxItems: 1000
+          items:
+            $ref: "#/components/schemas/Uuid"
 
     PatchCareerRecordRequest:
       oneOf:

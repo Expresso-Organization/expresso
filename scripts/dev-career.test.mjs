@@ -20,6 +20,7 @@ test("runtime 환경만으로 infra와 Spring 환경을 한 출처로 맞춘다"
     },
     processEnvironment: {
       CAREER_MOVE_PREVIEW_SECRET: "s".repeat(32),
+      CAREER_SCHEMA_PREVIEW_SECRET: "p".repeat(32),
     },
     createSecret: () => "unused",
   });
@@ -29,11 +30,16 @@ test("runtime 환경만으로 infra와 Spring 환경을 한 출처로 맞춘다"
   assert.equal(resolved.springEnvironment.MONGODB_URL, localRuntimeUrl);
   assert.equal(resolved.springEnvironment.SERVER_PORT, "4100");
   assert.equal(resolved.springEnvironment.CAREER_MOVE_PREVIEW_SECRET, "s".repeat(32));
+  assert.equal(resolved.springEnvironment.CAREER_SCHEMA_PREVIEW_SECRET, "p".repeat(32));
   assert.deepEqual(resolved.notices, []);
 });
 
-test("process env가 .env보다 우선하고 누락된 Spring secret은 임시 생성한다", () => {
+test("process env가 .env보다 우선하고 누락된 Spring secret들은 각각 임시 생성한다", () => {
   const overriddenRuntimeUrl = "mongodb://override-user:override-pass@localhost:57017/expresso?authSource=expresso&replicaSet=rs0";
+  const generatedSecrets = [
+    "generated-move-secret-that-is-long-enough",
+    "generated-schema-secret-that-is-long-enough",
+  ];
   const resolved = resolveCareerEnvironment({
     fileEnvironment: {
       HOST: "127.0.0.1",
@@ -43,13 +49,14 @@ test("process env가 .env보다 우선하고 누락된 Spring secret은 임시 �
       REDIS_URL: "redis://127.0.0.1:56379",
     },
     processEnvironment: { MONGODB_URL: overriddenRuntimeUrl },
-    createSecret: () => "generated-local-secret-that-is-long-enough",
+    createSecret: () => generatedSecrets.shift(),
   });
 
   assert.equal(resolved.backendEnvironment.MONGODB_URL, overriddenRuntimeUrl);
   assert.equal(resolved.infraEnvironment.EXPRESSO_MONGODB_RUNTIME_USERNAME, "override-user");
-  assert.equal(resolved.springEnvironment.CAREER_MOVE_PREVIEW_SECRET, "generated-local-secret-that-is-long-enough");
-  assert.equal(resolved.notices.length, 1);
+  assert.equal(resolved.springEnvironment.CAREER_MOVE_PREVIEW_SECRET, "generated-move-secret-that-is-long-enough");
+  assert.equal(resolved.springEnvironment.CAREER_SCHEMA_PREVIEW_SECRET, "generated-schema-secret-that-is-long-enough");
+  assert.equal(resolved.notices.length, 2);
 });
 
 class FakeChild extends EventEmitter {

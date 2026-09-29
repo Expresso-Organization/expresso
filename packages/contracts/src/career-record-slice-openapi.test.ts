@@ -6,7 +6,9 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 
-type HttpMethod = "get" | "post" | "patch" | "delete";
+import { CareerCategorySchema } from "./career.js";
+
+type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
 interface SchemaObject extends Record<string, unknown> {
   pattern?: string;
@@ -54,6 +56,7 @@ interface OperationObject {
 interface PathItemObject {
   get?: OperationObject;
   post?: OperationObject;
+  put?: OperationObject;
   patch?: OperationObject;
   delete?: OperationObject;
 }
@@ -195,10 +198,13 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
     expect(contract.openapi).toBe("3.1.0");
     expect(Object.keys(contract.paths).sort()).toEqual([
       "/v1/career/categories",
+      "/v1/career/categories/{categoryId}/property-schema/apply",
+      "/v1/career/categories/{categoryId}/property-schema/preview",
       "/v1/career/records",
       "/v1/career/records/{recordId}",
       "/v1/career/records/{recordId}/move",
       "/v1/career/records/{recordId}/move/preview",
+      "/v1/career/records/{recordId}/relations",
       "/v1/career/records/{recordId}/restore",
     ]);
     expect(contract.security).toEqual([{ bearerAuth: [] }]);
@@ -208,12 +214,316 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
     });
 
     operation("/v1/career/categories", "get");
+    operation("/v1/career/categories", "post");
+    operation("/v1/career/categories/{categoryId}/property-schema/preview", "post");
+    operation("/v1/career/categories/{categoryId}/property-schema/apply", "post");
     operation("/v1/career/records", "post");
     operation("/v1/career/records", "get");
     operation("/v1/career/records/{recordId}", "get");
     operation("/v1/career/records/{recordId}", "patch");
     operation("/v1/career/records/{recordId}", "delete");
+    operation("/v1/career/records/{recordId}/relations", "put");
     operation("/v1/career/records/{recordId}/restore", "post");
+
+    response(operation("/v1/career/records", "post"), "404");
+  });
+
+  it("defines optimistic replacement of CareerRecord relation targets", () => {
+    const replace = operation("/v1/career/records/{recordId}/relations", "put");
+    requiredHeader(replace, "If-Match");
+    const ok = response(replace, "200");
+    responseHeader(ok, "ETag");
+    for (const status of ["400", "401", "404", "409", "412", "500"]) {
+      response(replace, status);
+    }
+
+    const validate = schemaValidator("ReplaceCareerRelationTargetsRequest");
+    expect(validate({
+      propertyId: "10000000-0000-4000-8000-000000000001",
+      targetIds: [
+        "10000000-0000-4000-8000-000000000002",
+        "10000000-0000-4000-8000-000000000002",
+      ],
+    })).toBe(true);
+    expect(validate({
+      propertyId: "not-a-uuid",
+      targetIds: [],
+    })).toBe(false);
+    expect(validate({
+      propertyId: "10000000-0000-4000-8000-000000000001",
+      targetIds: Array.from(
+        { length: 1_001 },
+        (_, index) => `10000000-0000-4000-8000-${index.toString().padStart(12, "0")}`,
+      ),
+    })).toBe(false);
+  });
+
+  it("defines custom Category create with the existing Fastify Web wire contract", () => {
+    const create = operation("/v1/career/categories", "post");
+    const created = response(create, "201");
+    responseHeader(created, "ETag");
+    response(create, "400");
+    response(create, "401");
+    response(create, "409");
+
+    const validateRequest = schemaValidator("CreateCareerCategoryRequest");
+    expect(validateRequest({
+      key: "custom_projects",
+      name: "사용자 프로젝트",
+      icon: "sparkles",
+      defaultView: "gallery",
+      propertySchema: {
+        impact: {
+          id: "10000000-0000-4000-8000-000000000001",
+          label: "성과",
+          type: "number",
+          required: false,
+          system: false,
+        },
+        tools: {
+          label: "도구",
+          type: "tags",
+          required: false,
+          system: false,
+        },
+      },
+    }), ajv.errorsText(validateRequest.errors)).toBe(true);
+    expect(validateRequest({
+      key: "custom_notes",
+      name: "사용자 메모",
+      icon: "folder",
+      defaultView: "table",
+      propertySchema: {
+        note: { label: "메모", type: "text" },
+      },
+    }), ajv.errorsText(validateRequest.errors)).toBe(true);
+    expect(validateRequest({
+      key: "System_Category",
+      name: "잘못된 카테고리",
+      icon: "folder",
+      defaultView: "table",
+      propertySchema: {},
+    })).toBe(false);
+    expect(validateRequest({
+      key: "custom",
+      name: "사용자 카테고리",
+      icon: "folder",
+      defaultView: "table",
+      propertySchema: {},
+      isSystem: true,
+    })).toBe(false);
+  });
+
+  it("defines PropertyDefinition create/rename/reorder preview and apply with the existing Web wire contract", () => {
+    const preview = operation("/v1/career/categories/{categoryId}/property-schema/preview", "post");
+    const apply = operation("/v1/career/categories/{categoryId}/property-schema/apply", "post");
+    requiredHeader(apply, "If-Match");
+    requiredHeader(apply, "Idempotency-Key");
+    response(preview, "200");
+    response(preview, "400");
+    response(preview, "404");
+    const applied = response(apply, "200");
+    responseHeader(applied, "ETag");
+    response(apply, "400");
+    response(apply, "404");
+    response(apply, "403");
+    response(apply, "409");
+
+    const propertyId = "10000000-0000-4000-8000-000000000001";
+    const change = {
+      kind: "create",
+      property: {
+        id: propertyId,
+        key: "achievement",
+        name: "성과",
+        type: "text",
+        required: false,
+        system: false,
+        config: {},
+      },
+    };
+    expect(
+      preview.requestBody?.content["application/json"]?.schema,
+    ).toEqual({ $ref: "#/components/schemas/CareerPropertySpringChange" });
+    expect(schemaValidator("CareerPropertyCreateChange")(change)).toBe(true);
+    expect(schemaValidator("CareerPropertyCreateChange")({ change })).toBe(false);
+    expect(schemaValidator("CareerPropertyCreateChange")({
+      ...change,
+      property: { ...change.property, required: true },
+    })).toBe(false);
+    const validateCreate = schemaValidator("CareerPropertyCreateChange");
+    const specialChanges = [
+      {
+        ...change,
+        property: {
+          ...change.property,
+          type: "relation",
+          config: {
+            targetCategoryId: "10000000-0000-4000-8000-000000000002",
+            inversePropertyId: null,
+            cardinality: "multiple",
+            deletePolicy: "nullify",
+          },
+        },
+      },
+      {
+        ...change,
+        property: {
+          ...change.property,
+          type: "formula",
+          config: { source: "1 + 2", ast: null, diagnostics: [] },
+        },
+      },
+      {
+        ...change,
+        property: {
+          ...change.property,
+          type: "rollup",
+          config: {
+            relationPropertyId: "10000000-0000-4000-8000-000000000003",
+            targetPropertyId: "10000000-0000-4000-8000-000000000004",
+            aggregation: "sum",
+          },
+        },
+      },
+    ];
+    for (const specialChange of specialChanges) {
+      expect(validateCreate(specialChange)).toBe(true);
+      expect(schemaValidator("CareerPropertySpringChange")(specialChange)).toBe(true);
+      expect(schemaValidator("ApplyCareerPropertyChangeRequest")({
+        change: specialChange,
+        previewToken: "a".repeat(32),
+        confirmLossy: false,
+      })).toBe(true);
+      expect(validateCreate({
+        ...specialChange,
+        property: { ...specialChange.property, config: {} },
+      })).toBe(false);
+      expect(validateCreate({
+        ...specialChange,
+        property: { ...specialChange.property, config: undefined },
+      })).toBe(false);
+    }
+    expect(validateCreate({
+      ...specialChanges[0],
+      property: {
+        ...specialChanges[0]!.property,
+        config: { ...specialChanges[0]!.property.config, cardinality: "many" },
+      },
+    })).toBe(false);
+    expect(validateCreate({
+      ...specialChanges[1],
+      property: {
+        ...specialChanges[1]!.property,
+        config: { ...specialChanges[1]!.property.config, diagnostics: "none" },
+      },
+    })).toBe(false);
+    expect(validateCreate({
+      ...specialChanges[1],
+      property: {
+        ...specialChanges[1]!.property,
+        config: { source: "eval('x')", ast: null, diagnostics: [] },
+      },
+    })).toBe(false);
+    expect(validateCreate({
+      ...specialChanges[1],
+      property: {
+        ...specialChanges[1]!.property,
+        config: {
+          source: "1 + true",
+          ast: null,
+          diagnostics: [{
+            code: "invalid_operator",
+            message: "타입 오류",
+            severity: "error",
+            start: 0,
+            end: 8,
+          }],
+        },
+      },
+    })).toBe(false);
+    expect(validateCreate({
+      ...specialChanges[2],
+      property: {
+        ...specialChanges[2]!.property,
+        config: { ...specialChanges[2]!.property.config, aggregation: "median" },
+      },
+    })).toBe(false);
+    for (const writableType of [
+      "text", "number", "checkbox", "date", "url", "email", "phone", "file", "media",
+    ]) {
+      expect(validateCreate({
+        ...change,
+        property: { ...change.property, type: writableType, config: {} },
+      })).toBe(true);
+    }
+    for (const writableType of ["select", "multi_select"]) {
+      expect(validateCreate({
+        ...change,
+        property: { ...change.property, type: writableType, config: { options: [] } },
+      })).toBe(true);
+    }
+    expect(validateCreate({
+      ...change,
+      property: { ...change.property, type: "text", config: { unexpected: true } },
+    })).toBe(false);
+    expect(validateCreate({
+      ...change,
+      property: { ...change.property, type: "select", config: {} },
+    })).toBe(false);
+    expect(schemaValidator("CareerPropertySpringChange")({
+      kind: "rename",
+      propertyId,
+      name: "담당 역할",
+    })).toBe(true);
+    expect(schemaValidator("CareerPropertySpringChange")({
+      kind: "rename",
+      propertyId,
+      name: "",
+    })).toBe(false);
+    expect(schemaValidator("CareerPropertySpringChange")({
+      kind: "reorder",
+      propertyId,
+      order: 4,
+    })).toBe(true);
+    expect(schemaValidator("CareerPropertySpringChange")({
+      kind: "reorder",
+      propertyId,
+      order: -1,
+    })).toBe(false);
+    expect(schemaValidator("ApplyCareerPropertyChangeRequest")({
+      change,
+      previewToken: "a".repeat(32),
+      confirmLossy: false,
+    })).toBe(true);
+
+    const existingWebCategory = {
+        id: "10000000-0000-4000-8000-000000000002",
+        key: "custom",
+        name: "사용자 카테고리",
+        icon: "folder",
+        defaultView: "table",
+        isSystem: false,
+        propertySchema: {},
+        propertySchemaV2: [{
+          id: propertyId,
+          key: "achievement",
+          name: "성과",
+          type: "text",
+          required: false,
+          system: false,
+          config: {},
+          order: 0,
+          version: 1,
+          deletedAt: null,
+        }],
+        schemaVersion: 2,
+        sortOrder: 0,
+        recordCount: 0,
+        version: 2,
+      };
+    expect(CareerCategorySchema.safeParse(existingWebCategory).success).toBe(true);
+    expect(schemaValidator("CareerPropertySchemaApplyResponse")({ data: existingWebCategory })).toBe(true);
   });
 
   it("requires a category-scoped stable page and optimistic trash or restore", () => {
@@ -743,7 +1053,107 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
     const categoryId = "54e2b29a-d2ba-4c80-a4bc-1c1d08740497";
 
     expect(validateCreate({ categoryId })).toBe(true);
+    expect(
+      validateCreate({
+        categoryId,
+        propertyValues: [
+          {
+            propertyDefinitionId: "7e96f07a-30ba-496e-ac9d-20d4421c1703",
+            type: "select",
+            value: "8ec09af1-45a6-4f54-8f48-d0c1e32882fe",
+          },
+        ],
+      }),
+      ajv.errorsText(validateCreate.errors),
+    ).toBe(true);
+    expect(
+      validateCreate({
+        categoryId,
+        propertyValues: [
+          {
+            propertyDefinitionId: "7e96f07a-30ba-496e-ac9d-20d4421c1703",
+            type: "multi_select",
+            value: ["8ec09af1-45a6-4f54-8f48-d0c1e32882fe"],
+          },
+        ],
+      }),
+      ajv.errorsText(validateCreate.errors),
+    ).toBe(true);
+    expect(validateCreate({ categoryId, propertyValues: [] })).toBe(true);
+    expect(validateCreate({
+      categoryId,
+      propertyValues: [{
+        propertyDefinitionId: "7e96f07a-30ba-496e-ac9d-20d4421c1703",
+        type: "select",
+        value: null,
+      }],
+    })).toBe(false);
+    expect(validateCreate({
+      categoryId,
+      propertyValues: [{
+        propertyDefinitionId: "7e96f07a-30ba-496e-ac9d-20d4421c1703",
+        type: "multi_select",
+        value: [],
+      }],
+    })).toBe(false);
+    expect(
+      validateCreate({
+        categoryId,
+        propertyValues: [
+          {
+            propertyDefinitionId: "7e96f07a-30ba-496e-ac9d-20d4421c1703",
+            type: "text",
+            value: "생성 시 역할",
+          },
+        ],
+      }),
+    ).toBe(false);
+    expect(
+      validateCreate({
+        categoryId,
+        propertyValues: [
+          {
+            propertyDefinitionId: "7e96f07a-30ba-496e-ac9d-20d4421c1703",
+            type: "select",
+            value: "8ec09af1-45a6-4f54-8f48-d0c1e32882fe",
+          },
+          {
+            propertyDefinitionId: "8cc8aa20-aacd-4529-9d62-135e71b8234b",
+            type: "multi_select",
+            value: ["40ab2ac4-f770-4983-9352-110b0ef95fb4"],
+          },
+        ],
+      }),
+    ).toBe(false);
     expect(validateCreate({ categoryId, title: "생성 시 제목" })).toBe(false);
+    expect(validateCreate({
+      categoryId,
+      title: "원본 기록 복제",
+      properties: {
+        role: { type: "select", value: "8ec09af1-45a6-4f54-8f48-d0c1e32882fe" },
+      },
+      bodyMd: "# 저장된 레거시 본문",
+    }), ajv.errorsText(validateCreate.errors)).toBe(true);
+    expect(validateCreate({ categoryId, title: "원본 기록 복제", properties: {} })).toBe(false);
+    expect(validateCreate({
+      categoryId,
+      title: "원본 기록 복제",
+      properties: { attachment: { type: "file", value: "not-an-array" } },
+      bodyMd: "본문",
+    })).toBe(false);
+    expect(validateCreate({
+      categoryId,
+      title: "원본 기록 복제",
+      properties: { note: "a".repeat(5_001) },
+      bodyMd: "본문",
+    })).toBe(false);
+    expect(validateCreate({
+      categoryId,
+      title: "원본 기록 복제",
+      properties: {},
+      bodyMd: "본문",
+      propertyValues: [],
+    })).toBe(false);
 
     expect(validatePatch({ title: "수정된 제목" })).toBe(true);
     expect(

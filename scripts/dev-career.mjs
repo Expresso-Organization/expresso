@@ -51,6 +51,16 @@ function validateLocalRedisUrl(value) {
   }
 }
 
+function resolvePreviewSecret(environment, key, createSecret, notices) {
+  const configured = environment[key]?.trim() ?? "";
+  if (configured && configured.length < 32) {
+    throw new Error(`${key} must be at least 32 characters`);
+  }
+  if (configured) return configured;
+  notices.push(`${key}이 없어 이번 실행에만 유효한 로컬 값을 생성했습니다.`);
+  return createSecret();
+}
+
 export function resolveCareerEnvironment({
   fileEnvironment,
   processEnvironment,
@@ -66,15 +76,9 @@ export function resolveCareerEnvironment({
   }
   validateLocalRedisUrl(required(effective, "REDIS_URL"));
 
-  const configuredSecret = effective.CAREER_MOVE_PREVIEW_SECRET?.trim() ?? "";
-  if (configuredSecret && configuredSecret.length < 32) {
-    throw new Error("CAREER_MOVE_PREVIEW_SECRET must be at least 32 characters");
-  }
   const notices = [];
-  const previewSecret = configuredSecret || createSecret();
-  if (!configuredSecret) {
-    notices.push("CAREER_MOVE_PREVIEW_SECRET이 없어 이번 실행에만 유효한 로컬 값을 생성했습니다.");
-  }
+  const movePreviewSecret = resolvePreviewSecret(effective, "CAREER_MOVE_PREVIEW_SECRET", createSecret, notices);
+  const schemaPreviewSecret = resolvePreviewSecret(effective, "CAREER_SCHEMA_PREVIEW_SECRET", createSecret, notices);
 
   const commonEnvironment = {
     ...effective,
@@ -90,7 +94,8 @@ export function resolveCareerEnvironment({
       ...processEnvironment,
       MONGODB_URL: runtime.url,
       SERVER_PORT: "4100",
-      CAREER_MOVE_PREVIEW_SECRET: previewSecret,
+      CAREER_MOVE_PREVIEW_SECRET: movePreviewSecret,
+      CAREER_SCHEMA_PREVIEW_SECRET: schemaPreviewSecret,
     },
     webEnvironment: { ...processEnvironment },
     infraEnvironment: {
