@@ -1,6 +1,6 @@
 "use client";
 
-import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerRecordListItem, CareerViewConfiguration } from "@expresso/contracts";
+import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerRecordListItem, CareerViewConfiguration, WritableCareerPropertyValue } from "@expresso/contracts";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -259,7 +259,8 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
     openId: activeId,
     selectedIds: selected,
     onActivate: setActiveId,
-    onCreate: (initialProperties?: Record<string, unknown>, options?: { open?: boolean }) => create(initialProperties ? { properties: initialProperties } : {}, options),
+    onCreate: (initialPropertyValues?: readonly WritableCareerPropertyValue[], options?: { open?: boolean }) =>
+      create(initialPropertyValues ? { propertyValues: initialPropertyValues } : {}, options),
     onFillMissing: (recordId: string) => setInterview({ mode: "fill", targetId: recordId }),
     onToggle: (id: string) => setSelected((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; }),
     onViewChange: (next: CareerViewConfiguration) => void updateView(next),
@@ -270,8 +271,11 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
     cellIssues,
   };
 
-  async function create(draft: { title?: string; bodyMd?: string; properties?: Record<string, unknown> } = {}, options: { open?: boolean } = {}): Promise<CareerRecordListItem | null> {
-    const response = await fetch("/api/career/records", { method: "POST", headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() }, body: JSON.stringify({ categoryId: category.id, title: draft.title ?? "", properties: draft.properties ?? {}, bodyMd: draft.bodyMd ?? "" }) });
+  async function create(draft: { createMode?: "duplicate"; title?: string; bodyMd?: string; properties?: Record<string, unknown>; propertyValues?: readonly WritableCareerPropertyValue[] } = {}, options: { open?: boolean } = {}): Promise<CareerRecordListItem | null> {
+    const body = draft.propertyValues
+      ? { categoryId: category.id, propertyValues: draft.propertyValues }
+      : { ...(draft.createMode ? { createMode: draft.createMode } : {}), categoryId: category.id, title: draft.title ?? "", properties: draft.properties ?? {}, bodyMd: draft.bodyMd ?? "" };
+    const response = await fetch("/api/career/records", { method: "POST", headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() }, body: JSON.stringify(body) });
     if (!response.ok) { setMessage("기록을 만들지 못했습니다."); return null; }
     const payload = await response.json() as { data: CareerRecord };
     const item = listItem(payload.data);
@@ -283,15 +287,20 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
   async function duplicateRecord(recordId: string): Promise<CareerRecordListItem | null> {
     const source = recordsRef.current.find((record) => record.id === recordId);
     if (!source) return null;
-    return create({ title: source.title ? `${source.title} 복제` : "", bodyMd: source.bodyMd, properties: source.properties }, { open: false });
+    return create({ createMode: "duplicate", title: source.title ? `${source.title} 복제` : "", bodyMd: source.bodyMd, properties: source.properties }, { open: false });
   }
 
   async function deleteRecord(recordId: string): Promise<void> {
     const previous = recordsRef.current;
+    const record = previous.find((item) => item.id === recordId);
+    if (!record) return;
     replaceRecords((current) => current.filter((record) => record.id !== recordId));
     setSelected((current) => { const next = new Set(current); next.delete(recordId); return next; });
     if (activeId === recordId) setActiveId(null);
-    const response = await fetch(`/api/career/records/${recordId}`, { method: "DELETE" });
+    const response = await fetch(`/api/career/records/${recordId}`, {
+      method: "DELETE",
+      headers: { "if-match": `"v${record.version}"` },
+    });
     if (!response.ok) { replaceRecords(() => previous); setMessage("기록을 삭제하지 못했습니다."); }
   }
 

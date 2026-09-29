@@ -68,7 +68,23 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ r
   const accessToken = await readAccessToken();
   if (!accessToken) return new Response("로그인이 필요합니다", { status: 401 });
   const { recordId } = await params;
-  const upstream = await fetch(`${API_BASE_URL}${API_PREFIX}/career/records/${encodeURIComponent(recordId)}`, { method: "DELETE", headers: { authorization: `Bearer ${accessToken}`, accept: "application/json" }, signal: request.signal, cache: "no-store" });
+  const springBaseUrl = process.env.CAREER_SPRING_API_BASE_URL?.replace(/\/+$/, "");
+  if (!springBaseUrl) return new Response("Spring Career API 주소가 설정되지 않았습니다", { status: 503 });
+  let upstream: Response;
+  try {
+    upstream = await fetch(`${springBaseUrl}${API_PREFIX}/career/records/${encodeURIComponent(recordId)}`, {
+      method: "DELETE",
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        accept: "application/json",
+        "if-match": request.headers.get("if-match") ?? "",
+      },
+      signal: request.signal,
+      cache: "no-store",
+    });
+  } catch {
+    return new Response("Spring Career API에 연결하지 못했습니다", { status: 502 });
+  }
   if (!upstream.ok) return new Response(null, { status: upstream.status });
   return new Response(null, { status: 204 });
 }

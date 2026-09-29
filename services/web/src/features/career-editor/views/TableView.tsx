@@ -1,6 +1,6 @@
 "use client";
 
-import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
+import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerViewConfiguration, WritableCareerPropertyValue } from "@expresso/contracts";
 import { createPortal } from "react-dom";
 import type { CSSProperties, DragEvent as ReactDragEvent, KeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -148,8 +148,8 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     focusCell(keyboardRecords[nextRow]?.id ?? recordId, propertyIds[nextColumn] ?? propertyId, false, instanceKey);
   }
 
-  async function createAndFocus(initialProperties?: Record<string, unknown>, instanceKey = "main") {
-    const created = await props.onCreate(initialProperties, { open: false });
+  async function createAndFocus(initialPropertyValues?: readonly WritableCareerPropertyValue[], instanceKey = "main") {
+    const created = await props.onCreate(initialPropertyValues, { open: false });
     if (created) focusCell(created.id, titleColumnId, true, instanceKey);
   }
 
@@ -367,10 +367,10 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     })}
   </div>;
 
-  const groupInitialProperties = (group: TableGroup): Record<string, unknown> | undefined => {
+  const groupInitialPropertyValues = (group: TableGroup): readonly WritableCareerPropertyValue[] | undefined => {
     if (!groupDefinition || group.empty) return undefined;
-    if (groupDefinition.type === "select") return { [groupDefinition.key]: { type: "select", value: group.key } };
-    if (groupDefinition.type === "multi_select") return { [groupDefinition.key]: { type: "multi_select", value: [group.key] } };
+    if (groupDefinition.type === "select") return [{ propertyDefinitionId: groupDefinition.id, type: "select", value: group.key }];
+    if (groupDefinition.type === "multi_select") return [{ propertyDefinitionId: groupDefinition.id, type: "multi_select", value: [group.key] }];
     return undefined;
   };
 
@@ -407,7 +407,7 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
             {!collapsed ? <div className={styles.groupTable} role="grid" aria-label={`${group.label} 그룹 테이블`} aria-rowcount={group.records.length + 1}>
               {tableHeader()}
               {tableRows(group.records, 2, group.records, group.key)}
-              <div className={styles.tableGroupFooter}><button type="button" aria-label={`${group.label} 그룹에 새 기록`} onClick={() => void createAndFocus(groupInitialProperties(group), group.key)}>＋ 새 기록</button><span>{group.records.length}개 기록</span></div>
+              <div className={styles.tableGroupFooter}><button type="button" aria-label={`${group.label} 그룹에 새 기록`} onClick={() => void createAndFocus(groupInitialPropertyValues(group), group.key)}>＋ 새 기록</button><span>{group.records.length}개 기록</span></div>
             </div> : null}
           </section>;
         })}

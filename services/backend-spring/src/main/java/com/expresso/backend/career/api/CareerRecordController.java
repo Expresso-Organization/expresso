@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,12 +28,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.expresso.backend.career.application.CreateCareerRecordUseCase;
+import com.expresso.backend.career.application.CreateCareerRecordCommand;
 import com.expresso.backend.career.application.CareerRecordPage;
 import com.expresso.backend.career.application.CareerRecordTrashResult;
 import com.expresso.backend.career.application.GetCareerRecordUseCase;
 import com.expresso.backend.career.application.ListCareerRecordsUseCase;
 import com.expresso.backend.career.application.PatchCareerRecordUseCase;
 import com.expresso.backend.career.application.RestoreCareerRecordUseCase;
+import com.expresso.backend.career.application.ReplaceCareerRelationTargetsUseCase;
 import com.expresso.backend.career.application.TrashCareerRecordUseCase;
 import com.expresso.backend.career.domain.BlockBody;
 import com.expresso.backend.career.domain.AssetPropertyValue;
@@ -77,6 +80,7 @@ public class CareerRecordController {
 	private final ListCareerRecordsUseCase listCareerRecords;
 	private final TrashCareerRecordUseCase trashCareerRecord;
 	private final RestoreCareerRecordUseCase restoreCareerRecord;
+	private final ReplaceCareerRelationTargetsUseCase replaceCareerRelationTargets;
 
 	public CareerRecordController(
 			CreateCareerRecordUseCase createCareerRecord,
@@ -84,13 +88,15 @@ public class CareerRecordController {
 			PatchCareerRecordUseCase patchCareerRecord,
 			ListCareerRecordsUseCase listCareerRecords,
 			TrashCareerRecordUseCase trashCareerRecord,
-			RestoreCareerRecordUseCase restoreCareerRecord) {
+			RestoreCareerRecordUseCase restoreCareerRecord,
+			ReplaceCareerRelationTargetsUseCase replaceCareerRelationTargets) {
 		this.createCareerRecord = createCareerRecord;
 		this.getCareerRecord = getCareerRecord;
 		this.patchCareerRecord = patchCareerRecord;
 		this.listCareerRecords = listCareerRecords;
 		this.trashCareerRecord = trashCareerRecord;
 		this.restoreCareerRecord = restoreCareerRecord;
+		this.replaceCareerRelationTargets = replaceCareerRelationTargets;
 	}
 
 	@GetMapping
@@ -113,8 +119,8 @@ public class CareerRecordController {
 			@RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
 			@RequestBody Map<String, Object> body) {
 		validateIdempotencyKey(idempotencyKey);
-		var categoryId = readCategoryId(body);
-		var result = createCareerRecord.create(principal.userId(), categoryId, idempotencyKey);
+		var request = readCreateRequest(body);
+		var result = createCareerRecord.create(principal.userId(), request, idempotencyKey);
 		return recordResponse(result.record(), result.created() ? HttpStatus.CREATED : HttpStatus.OK);
 	}
 
@@ -166,6 +172,25 @@ public class CareerRecordController {
 		return recordResponse(record, HttpStatus.OK);
 	}
 
+	@PutMapping("/{recordId}/relations")
+	public ResponseEntity<CareerRecordResponse> replaceRelationTargets(
+			@AuthenticationPrincipal AuthenticatedUserPrincipal principal,
+			@PathVariable String recordId,
+			@RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
+			@RequestBody byte[] body) {
+		var request = readPatchRequest(body);
+		requireExactFields(request, Set.of("propertyId", "targetIds"), "relation 요청");
+		var propertyId = normalizeUuid(requireString(request, "propertyId"), "propertyId");
+		var targetIds = readUuidList(request.get("targetIds"), "targetIds");
+		if (targetIds.size() > 1_000) {
+			throw new CareerRecordRequestValidationException("targetIds는 최대 1000개까지 허용됩니다");
+		}
+		var record = replaceCareerRelationTargets.replace(
+				principal.userId(), normalizeUuid(recordId, "recordId"), propertyId,
+				targetIds, parseExpectedVersion(ifMatch));
+		return recordResponse(record, HttpStatus.OK);
+	}
+
 	private static Map<String, Object> readPatchRequest(byte[] body) {
 		try {
 			return PATCH_REQUEST_MAPPER.readValue(body, PATCH_REQUEST_TYPE);
@@ -182,14 +207,48 @@ public class CareerRecordController {
 		}
 	}
 
-	private static String readCategoryId(Map<String, Object> body) {
-		if (body == null || !body.keySet().equals(java.util.Set.of("categoryId"))) {
-			throw new CareerRecordRequestValidationException("요청 본문에는 categoryId만 있어야 합니다");
+	private static CreateCareerRecordCommand readCreateRequest(Map<String, Object> body) {
+		if (body == null || !body.containsKey("categoryId")) {
+			throw new CareerRecordRequestValidationException(
+					"요청 본문에는 categoryId가 필요합니다");
 		}
 		if (!(body.get("categoryId") instanceof String categoryId)) {
 			throw new CareerRecordRequestValidationException("categoryId는 UUID 문자열이어야 합니다");
 		}
-		return normalizeUuid(categoryId, "categoryId");
+		var normalizedCategoryId = normalizeUuid(categoryId, "categoryId");
+		if (body.keySet().equals(Set.of("categoryId"))) {
+			return new CreateCareerRecordCommand(normalizedCategoryId, "", List.of(), Map.of(), "",
+					CreateCareerRecordCommand.Mode.EMPTY);
+		}
+		if (body.keySet().equals(Set.of("categoryId", "title", "properties", "bodyMd"))) {
+			var title = requireString(body, "title");
+			var bodyMd = requireString(body, "bodyMd");
+			if (title.codePointCount(0, title.length()) > 300) {
+				throw new CareerRecordRequestValidationException("title은 300자를 초과할 수 없습니다");
+			}
+			if (bodyMd.codePointCount(0, bodyMd.length()) > 200_000) {
+				throw new CareerRecordRequestValidationException("bodyMd는 200000자를 초과할 수 없습니다");
+			}
+			var properties = readJsonObject(body.get("properties"), "properties");
+			if (properties.size() > 50) {
+				throw new CareerRecordRequestValidationException("properties는 최대 50개까지 허용됩니다");
+			}
+			return new CreateCareerRecordCommand(normalizedCategoryId, title, List.of(), properties, bodyMd,
+					CreateCareerRecordCommand.Mode.DUPLICATE);
+		}
+		if (!body.keySet().equals(Set.of("categoryId", "propertyValues"))) {
+			throw new CareerRecordRequestValidationException("CareerRecord 생성 요청 필드 구성이 올바르지 않습니다");
+		}
+		var propertyValues = body.containsKey("propertyValues")
+				? readPropertyValues(body.get("propertyValues"))
+				: List.<PropertyValue>of();
+		if (propertyValues.size() > 1 || propertyValues.stream().anyMatch(
+				value -> !(value instanceof SelectPropertyValue) && !(value instanceof MultiSelectPropertyValue))) {
+			throw new CareerRecordRequestValidationException(
+					"생성 propertyValues에는 select 또는 multi_select 값 하나만 사용할 수 있습니다");
+		}
+		return new CreateCareerRecordCommand(normalizedCategoryId, "", propertyValues, Map.of(), "",
+				CreateCareerRecordCommand.Mode.GROUPED);
 	}
 
 	static String normalizeUuid(String value, String fieldName) {

@@ -8,19 +8,21 @@ import { TableView } from "./TableView";
 
 const ids = Array.from({ length: 6 }, (_, index) => `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`);
 const [categoryId, titleId, roleId, outcomeId, technologiesId, scoreId] = ids as [string, string, string, string, string, string];
+const reactOptionId = "10000000-0000-4000-8000-000000000001";
+const goOptionId = "10000000-0000-4000-8000-000000000002";
 const category: CareerCategory = {
   id: categoryId, key: "project", name: "프로젝트", icon: "briefcase", defaultView: "table", isSystem: true, propertySchema: {}, schemaVersion: 1, sortOrder: 0, recordCount: 2, version: 1,
   propertySchemaV2: [
     { id: titleId, key: "title", name: "제목", type: "title", required: true, system: true, config: {}, order: 0, version: 1, deletedAt: null },
     { id: roleId, key: "role", name: "역할", type: "text", required: false, system: false, config: {}, order: 1, version: 1, deletedAt: null },
     { id: outcomeId, key: "outcome", name: "성과", type: "text", required: false, system: false, config: {}, order: 2, version: 1, deletedAt: null },
-    { id: technologiesId, key: "technologies", name: "기술", type: "multi_select", required: false, system: false, config: { options: [] }, order: 3, version: 1, deletedAt: null },
+    { id: technologiesId, key: "technologies", name: "기술", type: "multi_select", required: false, system: false, config: { options: [{ id: reactOptionId, name: "React" }, { id: goOptionId, name: "Go" }] }, order: 3, version: 1, deletedAt: null },
     { id: scoreId, key: "score", name: "점수", type: "number", required: false, system: false, config: {}, order: 4, version: 1, deletedAt: null },
   ],
 };
 const view: CareerViewConfiguration = { id: categoryId, categoryId, name: "기본", type: "table", version: 1, order: 0, filter: null, sorts: [], groupPropertyId: null, groupOrder: [], recordOrder: [], visiblePropertyIds: [titleId, roleId, outcomeId, technologiesId, scoreId], propertyOrder: [titleId, technologiesId, outcomeId, roleId, scoreId], columnWidths: {}, gallery: null, board: null, timeline: null, createdAt: "2026-09-01T00:00:00.000Z", updatedAt: "2026-09-01T00:00:00.000Z" };
 const records: CareerRecord[] = [
-  { id: ids[0]!, categoryId, title: "두 번째", status: "draft", origin: "manual", bodyMd: "", properties: { role: { type: "text", value: "개발" }, outcome: { type: "text", value: "20% 개선" }, technologies: { type: "multi_select", value: ["React", "Go"] }, score: { type: "number", value: 2 } }, version: 1, updatedAt: "2026-09-01T00:00:00.000Z" },
+  { id: ids[0]!, categoryId, title: "두 번째", status: "draft", origin: "manual", bodyMd: "", properties: { role: { type: "text", value: "개발" }, outcome: { type: "text", value: "20% 개선" }, technologies: { type: "multi_select", value: [reactOptionId, goOptionId] }, score: { type: "number", value: 2 } }, version: 1, updatedAt: "2026-09-01T00:00:00.000Z" },
   { id: ids[1]!, categoryId, title: "첫 번째", status: "verified", origin: "manual", bodyMd: "", properties: {}, version: 1, updatedAt: "2026-09-01T00:00:00.000Z" },
 ];
 
@@ -164,7 +166,9 @@ describe("TableView", () => {
     expect(screen.getAllByRole("listbox", { hidden: true })).toHaveLength(1);
     fireEvent.pointerDown(document.body);
     fireEvent.click(screen.getByRole("button", { name: "React 그룹에 새 기록" }));
-    expect(onCreate).toHaveBeenCalledWith({ technologies: { type: "multi_select", value: ["React"] } }, { open: false });
+    expect(onCreate).toHaveBeenCalledWith([
+      { propertyDefinitionId: technologiesId, type: "multi_select", value: [reactOptionId] },
+    ], { open: false });
     fireEvent.click(screen.getByRole("button", { name: "React 그룹 접기" }));
     expect(screen.queryByRole("grid", { name: "React 그룹 테이블" })).toBeNull();
     expect(screen.getByRole("button", { name: "React 그룹 펼치기" })).toBeTruthy();

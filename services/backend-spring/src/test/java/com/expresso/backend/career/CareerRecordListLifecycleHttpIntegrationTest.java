@@ -136,7 +136,7 @@ class CareerRecordListLifecycleHttpIntegrationTest {
 		assertThat(deletedAt).isBetween(before.minusSeconds(1), Instant.now().plusSeconds(1));
 		assertThat(stored.getDate("purgeAfter").toInstant()).isEqualTo(deletedAt.plus(Duration.ofDays(30)));
 		assertThat(stored.get("version", Number.class).longValue()).isEqualTo(2);
-		assertThat(stored.get("referenceVersion", Number.class).longValue()).isEqualTo(7);
+		assertThat(stored.get("referenceVersion", Number.class).longValue()).isEqualTo(8);
 		assertThat(stored.getList("propertyValues", Document.class)).hasSize(1);
 		assertThat(stored.get("properties", Document.class)).isEqualTo(new Document("legacy", "keep"));
 

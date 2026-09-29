@@ -1,4 +1,4 @@
-import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
+import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerViewConfiguration, WritableCareerPropertyValue } from "@expresso/contracts";
 
 import { rawPropertyValue, type CareerPropertyEditorValue } from "../properties/canonical-property-values";
 
@@ -12,7 +12,7 @@ export interface CareerViewRendererProps {
   openId: string | null;
   selectedIds: ReadonlySet<string>;
   onActivate(recordId: string): void;
-  onCreate(initialProperties?: Record<string, unknown>, options?: { open?: boolean }): Promise<CareerRecord | null> | void;
+  onCreate(initialPropertyValues?: readonly WritableCareerPropertyValue[], options?: { open?: boolean }): Promise<CareerRecord | null> | void;
   onFillMissing(recordId: string): void;
   onToggle(recordId: string): void;
   onViewChange(next: CareerViewConfiguration): void;

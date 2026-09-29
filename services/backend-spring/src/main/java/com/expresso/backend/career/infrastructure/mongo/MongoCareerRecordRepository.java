@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Map;
 
 import org.bson.Document;
 import org.springframework.dao.DuplicateKeyException;
@@ -41,13 +42,22 @@ public class MongoCareerRecordRepository
 
 	@Override
 	public CreateResult createOrReplay(CareerRecord newRecord, String idempotencyKey, String requestHash) {
+		return createOrReplay(newRecord, idempotencyKey, requestHash, Map.of());
+	}
+
+	@Override
+	public CreateResult createOrReplay(
+			CareerRecord newRecord,
+			String idempotencyKey,
+			String requestHash,
+			Map<String, Object> legacyProperties) {
 		var existing = findByIdempotencyKey(newRecord.ownerId(), idempotencyKey);
 		if (existing != null) {
 			return replay(existing, requestHash);
 		}
 
 		try {
-			mongoTemplate.insert(writer.write(newRecord, idempotencyKey, requestHash), COLLECTION);
+			mongoTemplate.insert(writer.write(newRecord, idempotencyKey, requestHash, legacyProperties), COLLECTION);
 			return new CreateResult(newRecord, true);
 		}
 		catch (DuplicateKeyException duplicateKey) {
@@ -69,6 +79,26 @@ public class MongoCareerRecordRepository
 			return Optional.empty();
 		}
 		return Optional.of(projectCanonicalData(document));
+	}
+
+	@Override
+	public CreateResult createOrReplay(
+			CareerRecord newRecord,
+			String idempotencyKey,
+			String requestHash,
+			Map<String, Object> legacyProperties,
+			String bodyMd) {
+		var existing = findByIdempotencyKey(newRecord.ownerId(), idempotencyKey);
+		if (existing != null) return replay(existing, requestHash);
+		try {
+			mongoTemplate.insert(writer.write(newRecord, idempotencyKey, requestHash, legacyProperties, bodyMd), COLLECTION);
+			return new CreateResult(newRecord, true);
+		}
+		catch (DuplicateKeyException duplicateKey) {
+			var concurrentWinner = findByIdempotencyKey(newRecord.ownerId(), idempotencyKey);
+			if (concurrentWinner == null) throw duplicateKey;
+			return replay(concurrentWinner, requestHash);
+		}
 	}
 
 	@Override
@@ -167,7 +197,8 @@ public class MongoCareerRecordRepository
 				.set("deletedAt", Date.from(deletedAt))
 				.set("purgeAfter", Date.from(purgeAfter))
 				.set("updatedAt", Date.from(deletedAt))
-				.inc("version", 1);
+				.inc("version", 1)
+				.inc("referenceVersion", 1);
 		var document = mongoTemplate.findAndModify(
 				query, update, FindAndModifyOptions.options().returnNew(true), Document.class, COLLECTION);
 		if (document == null) return Optional.empty();

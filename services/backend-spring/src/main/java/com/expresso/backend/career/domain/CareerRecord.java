@@ -77,6 +77,25 @@ public record CareerRecord(
 				changedAt);
 	}
 
+	public static CareerRecord create(
+			String id,
+			String ownerId,
+			String categoryId,
+			String title,
+			String emptyParagraphId,
+			List<PropertyValue> propertyValues,
+			Instant now) {
+		return new CareerRecord(
+				id,
+				ownerId,
+				categoryId,
+				title,
+				propertyValues,
+				BlockBody.empty(emptyParagraphId),
+				1,
+				now);
+	}
+
 	public CareerRecord moveTo(String targetCategoryId, List<PropertyValue> movedPropertyValues, Instant changedAt) {
 		Objects.requireNonNull(targetCategoryId, "targetCategoryId는 null일 수 없습니다");
 		Objects.requireNonNull(changedAt, "changedAt은 null일 수 없습니다");
@@ -87,6 +106,24 @@ public record CareerRecord(
 		return new CareerRecord(
 				id, ownerId, targetCategoryId, title, values, blockBody,
 				Math.addExact(version, 1), changedAt);
+	}
+
+	public static CareerRecord create(
+			String id,
+			String ownerId,
+			String categoryId,
+			String emptyParagraphId,
+			List<PropertyValue> propertyValues,
+			Instant now) {
+		return new CareerRecord(
+				id,
+				ownerId,
+				categoryId,
+				"",
+				propertyValues,
+				BlockBody.empty(emptyParagraphId),
+				1,
+				now);
 	}
 
 	private static void validateTitle(String title) {

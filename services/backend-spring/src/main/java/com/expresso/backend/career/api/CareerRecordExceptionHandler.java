@@ -22,6 +22,7 @@ import com.expresso.backend.career.application.CareerRecordValidationException;
 import com.expresso.backend.career.application.CareerCategoryMoveConflictException;
 import com.expresso.backend.career.application.CareerPropertyDefinitionConflictException;
 import com.expresso.backend.career.application.CareerPropertyDefinitionForbiddenException;
+import com.expresso.backend.career.application.CareerRelationConflictException;
 
 @RestControllerAdvice(assignableTypes = {
 		CareerRecordController.class,
@@ -32,7 +33,6 @@ import com.expresso.backend.career.application.CareerPropertyDefinitionForbidden
 public class CareerRecordExceptionHandler {
 
 	@ExceptionHandler({ CareerRecordRequestValidationException.class,
-			CareerRecordCategoryNotAllowedException.class,
 			CareerRecordValidationException.class,
 			HttpMessageNotReadableException.class })
 	ResponseEntity<ApiErrorResponse> badRequest(HttpServletRequest request) {
@@ -42,6 +42,7 @@ public class CareerRecordExceptionHandler {
 	@ExceptionHandler({
 			CareerRecordIdempotencyConflictException.class,
 			CareerCategoryMoveConflictException.class,
+			CareerRelationConflictException.class,
 			CareerPropertyDefinitionConflictException.class,
 			DuplicateKeyException.class
 	})
@@ -49,7 +50,7 @@ public class CareerRecordExceptionHandler {
 		return error(request, HttpStatus.CONFLICT, "CONFLICT", "Request conflicts with current state");
 	}
 
-	@ExceptionHandler(CareerRecordNotFoundException.class)
+	@ExceptionHandler({ CareerRecordNotFoundException.class, CareerRecordCategoryNotAllowedException.class })
 	ResponseEntity<ApiErrorResponse> notFound(HttpServletRequest request) {
 		return error(request, HttpStatus.NOT_FOUND, "NOT_FOUND", "Resource not found");
 	}

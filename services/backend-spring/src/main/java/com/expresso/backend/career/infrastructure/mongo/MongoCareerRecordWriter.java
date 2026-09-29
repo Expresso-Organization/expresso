@@ -27,6 +27,23 @@ import com.expresso.backend.career.domain.TextualPropertyValue;
 final class MongoCareerRecordWriter {
 
 	Document write(CareerRecord record, String idempotencyKey, String requestHash) {
+		return write(record, idempotencyKey, requestHash, Map.of());
+	}
+
+	Document write(
+			CareerRecord record,
+			String idempotencyKey,
+			String requestHash,
+			Map<String, Object> legacyProperties) {
+		return write(record, idempotencyKey, requestHash, legacyProperties, "");
+	}
+
+	Document write(
+			CareerRecord record,
+			String idempotencyKey,
+			String requestHash,
+			Map<String, Object> legacyProperties,
+			String bodyMd) {
 		return new Document("_id", record.id())
 				.append("userId", record.ownerId())
 				.append("categoryId", record.categoryId())
@@ -39,8 +56,8 @@ final class MongoCareerRecordWriter {
 				// Fastify 공존 기간의 기존 Mongo validator가 요구하는 최소 호환 필드입니다.
 				.append("status", "draft")
 				.append("origin", "manual")
-				.append("properties", new Document())
-				.append("bodyMd", "")
+				.append("properties", writeCompatibilityJsonObject(legacyProperties))
+				.append("bodyMd", bodyMd)
 				.append("deletedAt", null)
 				.append("purgeAfter", null)
 				.append("createIdempotencyKey", idempotencyKey)
@@ -120,6 +137,35 @@ final class MongoCareerRecordWriter {
 		var document = new Document();
 		value.forEach((key, item) -> document.append(key, writeJsonValue(item)));
 		return document;
+	}
+
+	private static Document writeCompatibilityJsonObject(Map<String, Object> value) {
+		var document = new Document();
+		value.forEach((key, item) -> document.append(key, writeCompatibilityJsonValue(item)));
+		return document;
+	}
+
+	private static Object writeCompatibilityJsonValue(Object value) {
+		if (value == null || value instanceof String || value instanceof Boolean
+				|| value instanceof Integer || value instanceof Long || value instanceof Double) {
+			return value;
+		}
+		if (value instanceof BigDecimal decimal) {
+			return new Decimal128(decimal);
+		}
+		if (value instanceof List<?> list) {
+			var values = new ArrayList<>(list.size());
+			for (var item : list) values.add(writeCompatibilityJsonValue(item));
+			return values;
+		}
+		if (value instanceof Map<?, ?> map) {
+			var document = new Document();
+			for (var entry : map.entrySet()) {
+				document.append((String) entry.getKey(), writeCompatibilityJsonValue(entry.getValue()));
+			}
+			return document;
+		}
+		throw new IllegalArgumentException("MongoDB에 저장할 수 없는 compatibility JSON 값입니다");
 	}
 
 	private static Object writeJsonValue(Object value) {
