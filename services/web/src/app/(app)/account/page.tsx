@@ -1,4 +1,5 @@
 import { AppBody, DocumentHeader } from "@/components/shell/AppShell";
+import { AgentKeySettings } from "@/features/agent-chat/AgentKeySettings";
 import { ThemePicker } from "@/components/ThemePicker";
 import { Icon } from "@/components/ui/Icon";
 import { ACCOUNT } from "@/lib/sample/site";
@@ -161,6 +162,8 @@ export default async function AccountPage() {
                 </div>
               ))}
             </div>
+
+            <section id="ai-chat-settings" className={styles.section}><div className={styles.sectionLabel}>AI 채팅</div><AgentKeySettings /></section>
 
             {/* 무엇이 나가는지 · 언제든 끌 수 있다 */}
             <div className={styles.section}>

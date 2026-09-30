@@ -15,6 +15,7 @@ import {
   type CareerRevision,
   type CareerUpdateAck,
   type AiEditProposalDetail,
+  type AgentEditDraft,
   type CreateAiEditProposal,
 } from "@expresso/contracts";
 import type { CareerRecordRevisionDoc, JsonValue } from "@expresso/database";
@@ -44,6 +45,7 @@ export interface CareerDocumentApi {
   restoreRevision(userId: string, revisionId: string, expectedVersion: number, expectedRecordId?: string): Promise<CareerDocumentBootstrap>;
   listRevisions(userId: string, recordId: string): Promise<CareerRevision[]>;
   updatesSince(userId: string, recordId: string, afterSequence: number): Promise<Array<{ serverSequence: number; updateBase64: string; actor: "user" | "ai" | "migration" }>>;
+  createPreparedAiProposal(userId: string, recordId: string, input: CreateAiEditProposal, draft: AgentEditDraft): Promise<AiEditProposalDetail>;
   createAiProposal(userId: string, recordId: string, input: CreateAiEditProposal): Promise<AiEditProposalDetail>;
   getAiProposal(userId: string, recordId: string, proposalId: string): Promise<AiEditProposalDetail>;
   applyAiProposal(userId: string, recordId: string, input: unknown): Promise<AiEditProposalDetail>;
@@ -71,6 +73,10 @@ export class CareerDocumentService implements CareerDocumentApi {
   private proposalService(adapter?: AiProposalAdapter) { return this.aiProposals ??= new AiProposalService(this.context, this, adapter ?? this.aiProposalAdapter); }
   setAiProposalPublisher(publisher: (recordId: string, proposal: AiEditProposalDetail) => void) { this.proposalService().setPublisher(publisher); }
   setAiUpdatePublisher(publisher: (recordId: string, updateBase64: string, serverSequence: number) => void) { this.proposalService().setUpdatePublisher(publisher); }
+  async createPreparedAiProposal(userId: string, recordId: string, input: CreateAiEditProposal, draft: AgentEditDraft) {
+    // 에이전트가 만든 명령도 기존 제안 검증과 저장 절차를 거칩니다.
+    return new AiProposalService(this.context, this, { generate: async () => draft }).create(userId, recordId, input);
+  }
   createAiProposal(userId: string, recordId: string, input: CreateAiEditProposal) { return this.proposalService().create(userId, recordId, input); }
   getAiProposal(userId: string, recordId: string, proposalId: string) { return this.proposalService().get(userId, recordId, proposalId); }
   applyAiProposal(userId: string, recordId: string, input: unknown) { return this.proposalService().apply(userId, recordId, input); }
