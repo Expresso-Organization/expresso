@@ -74,7 +74,7 @@ export function mountPortfolioMotion(root,{replayScroll=true}={}){
       hash();
     }catch{cleanup();root.dataset.motionEffective='none';}
   }
-  function replay(){root.dataset.inputMode='pointer';if(replayScroll)window.scrollTo({top:0,behavior:'instant'});start();}
+  function replay(){root.dataset.inputMode='pointer';if(replayScroll)window.scrollTo({top:root.getBoundingClientRect().top+window.scrollY,behavior:'instant'});start();}
   root.addEventListener('portfolio-motion-replay',replay);media.addEventListener('change',start);start();
   return ()=>{disposed=true;stop();root.removeEventListener('portfolio-motion-replay',replay);media.removeEventListener('change',start);delete root.dataset.motionEffective;delete root.dataset.inputMode;};
 }

@@ -12,7 +12,8 @@
 [data-design=editorial] .v-hero-masthead{color:var(--accent)}
 [data-design=editorial] .v-hero-masthead .eyebrow{color:var(--accent)}
 [data-design=editorial] .v-editorial-byline{font-family:var(--display-font);font-size:18px;color:var(--accent);margin-top:56px}
-[data-design=editorial] .hero h1{font-size:clamp(40px,4.65vw,68px);font-weight:400;line-height:1.5;letter-spacing:-.06em;margin:24px 0 0}
+[data-design=editorial] .hero h1{font-size:clamp(68px,8vw,120px);font-weight:400;line-height:1.1;letter-spacing:-.075em;margin:48px 0 0}
+[data-design=editorial] .v-hero-definition{max-width:760px;font-family:var(--display-font);font-size:clamp(22px,2.5vw,34px);line-height:1.5;letter-spacing:-.04em;margin:28px 0 0}
 [data-design=editorial] .hero-bottom{padding-bottom:12px}
 [data-design=editorial] .hero-meta{border-color:var(--ink)}
 [data-design=editorial] .v-project-index{padding-block:56px 96px}
@@ -49,10 +50,10 @@
 [data-design=poster] .hero{background:var(--electric);color:var(--on-electric);padding-top:24px;padding-bottom:0}
 [data-design=poster] .v-hero-masthead{border-top:1px solid #6984eb;padding-top:24px}
 [data-design=poster] .v-hero-masthead .eyebrow{color:var(--on-electric)}
-[data-design=poster] .v-poster-name{display:flex;align-items:center;justify-content:space-between;gap:24px;font-size:clamp(76px,13vw,192px);font-weight:900;line-height:1.15;letter-spacing:-.085em;color:var(--signal);padding-block:32px}
+[data-design=poster] .hero h1.v-poster-name{display:flex;align-items:center;justify-content:space-between;gap:24px;font-family:var(--display-font);font-size:clamp(90px,14vw,208px);font-weight:900;line-height:1.05;letter-spacing:-.085em;color:var(--signal);padding-block:32px;margin:0}
 [data-design=poster] .v-poster-name>span{font-weight:400;line-height:1;letter-spacing:0}
 [data-design=poster] .v-hero-composition{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:80px;padding-bottom:32px}
-[data-design=poster] .hero h1{font-size:clamp(32px,3.7vw,54px);font-weight:800;line-height:1.25;letter-spacing:-.055em;margin:0}
+[data-design=poster] .v-hero-definition{font-size:clamp(24px,3.2vw,42px);font-weight:700;line-height:1.35;letter-spacing:-.04em;max-width:620px;margin:0 0 24px}
 [data-design=poster] .hero-bottom>p{color:var(--on-electric)}
 [data-design=poster] .hero-bottom .text-link{color:var(--ink);background:var(--signal);padding:8px 16px;border:0}
 [data-design=poster] .hero :focus-visible,[data-design=poster] .page-nav :focus-visible{outline-color:var(--signal)}

@@ -302,9 +302,9 @@
     "noJavascript": true
   },
   "artifactHashes": {
-    "variants.js": "5a5ef3ecc3e87526c51d87fb000d633e0e90fa18d46cca97d06a6ce5cce178c0",
+    "variants.js": "d40f502f7ae6a62268185c3e95945471a039f50a44da0902ab17dabc2438a33c",
     "variants.css": "9a5259cff492b3de1a62b7199417d7c9f845a865454fe1e1b8c38b4a46a43f9c",
-    "variants-sources.json": "46b31b7a0f508faecfc619c4da162c0aace70014952ba0f51b76ee3c33f11d38",
+    "variants-sources.json": "087a8c8d39e0f3d9140a83274c58f8ac0579fe507bea8a45de68649b1980d442",
     "component-motion-catalog.json": "ebb1d1f246d9cf275eac5924f4981cd24a5b209419436443c5e21ec4008768c2",
     "featured-standard-selected.static.html": "86306dfa3fbda650e2f3bf68f9a40abedf185cd0c35cd7b1713c7e1a58225180",
     "featured-long-selected.static.html": "4a6b6432f850752c0ac4ced1a46ecc54b53c6a506f6d4c9b320531459fb16809",

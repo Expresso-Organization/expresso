@@ -16,7 +16,7 @@ try{
  for(const width of [390,1440]){
   const p=await browser.newPage({viewport:{width,height:1000},reducedMotion:'no-preference'}),errors=[];p.on('pageerror',e=>errors.push(e.message));
   await p.goto(url+`?view=motion-library&component=${item.id}&motion=showcase#motion-preview`);await p.locator('.motion-component-preview').waitFor();await p.evaluate(()=>document.fonts.ready);
-  assert.equal(await p.locator('.motion-library-link').count(),14);assert.equal(await p.locator('.motion-library-link[aria-current=page]').count(),1);
+  assert.equal(await p.locator('.motion-library-link').count(),componentMotions.length);assert.equal(await p.locator('.motion-library-link[aria-current=page]').count(),1);
   assert.equal(await p.locator('#motion-preview-title').innerText(),item.title);
   for(const recipe of ['featured','gallery']){
    await p.getByLabel('미리보기 디자인',{exact:true}).selectOption(recipe);await p.locator('.motion-preview-stage').scrollIntoViewIfNeeded();await settle(p);

@@ -2732,11 +2732,11 @@
       "roles": [
         "project-grid"
       ],
-      "roleEvidence": "작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.",
-      "roleMethod": "identifier_rules_v2",
-      "selection": "pending",
-      "inputs": [],
-      "constraints": [],
+      "roleEvidence": "Bento 2의 비대칭 타일 구조에 프로젝트 화면과 사례 설명을 연결했습니다.",
+      "roleMethod": "authored",
+      "selection": "shortlisted",
+      "inputs": ["projects[].id", "projects[].title", "projects[].summary", "projects[].image", "projects[].imageAlt", "projects[].role"],
+      "constraints": ["원본의 부동산 수치·문구·애니메이션은 사용하지 않습니다.", "포트폴리오 데이터 계약에 맞춘 MosaicProjectIndex로 재구성했습니다."],
       "familyId": "watermelon-bento"
     },
     {
@@ -8241,11 +8241,11 @@
       "roles": [
         "hero"
       ],
-      "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
-      "roleMethod": "identifier_rules_v2",
-      "selection": "pending",
-      "inputs": [],
-      "constraints": [],
+      "roleEvidence": "Hero 40의 어두운 광원·좌우 분할 구도에 소개와 대표 프로젝트 이미지를 연결했습니다.",
+      "roleMethod": "authored",
+      "selection": "shortlisted",
+      "inputs": ["profile.headline", "profile.intro", "profile.focus", "projects[].image", "projects[].title"],
+      "constraints": ["원본 외부 이미지와 브랜드 로고는 사용하지 않습니다.", "포트폴리오 데이터 계약에 맞춘 SpotlightHero로 재구성했습니다."],
       "familyId": "watermelon-hero"
     },
     {
@@ -118069,10 +118069,10 @@
     "roleCorrections": 132,
     "sourceReviewed": 32,
     "selection": {
-      "pending": 9428,
+      "pending": 9426,
       "reference": 16,
       "excluded": 7,
-      "shortlisted": 9
+      "shortlisted": 11
     },
     "codeItemsCompared": 1073,
     "nameFamilies": 153,

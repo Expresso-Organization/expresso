@@ -49,6 +49,18 @@ test('앵커 충돌, 유실된 근거, 불완전한 과정 참조를 거부한�
     const data=fixture();edit(data);assert.throws(()=>defaultPlan(data));
   }
 });
+test('이름 아래 자기 정의를 줄바꿈 없는 한 문장으로 제한한다',()=>{
+ const content=fixture();
+ for(const headline of ['복잡한 정보를\n명료하게.','복잡한 정보를 명료하게','정보를 설계합니다. 화면도 만듭니다.']){
+  const invalid=structuredClone(content);invalid.profile.headline=headline;
+  assert.throws(()=>defaultPlan(invalid),/한 문장/);
+ }
+ const vague=structuredClone(content);vague.profile.headline='흩어진 단서를 다음 선택으로 잇습니다.';
+ assert.throws(()=>defaultPlan(vague),/직무와 전문 분야/);
+ const tooLong=structuredClone(content);tooLong.profile.headline='정보 구조와 인터랙션을 설계해 복잡한 자료를 읽기 쉬운 서비스로 만드는 프로덕트 디자이너입니다.';
+ assert.throws(()=>defaultPlan(tooLong),/더 짧게/);
+ assert.ok(defaultPlan(content));
+});
 
 test('모션은 허용된 프리셋만 받고 이전 계획은 움직임 없이 해석한다',()=>{
   const data=fixture(),plan=defaultPlan(data,'gallery','subtle');
@@ -69,4 +81,19 @@ test('선별 컴포넌트 선택은 허용된 이름만 받고 프로젝트 원�
  assert.deepEqual(compiled.motionSupport.filter(c=>c.sourceItemId).map(c=>c.id),['orbit','career-ribbon','evidence-previews','contact-card','annotation','headline-lines']);
  assert.equal(compilePlan(defaultPlan(data,'gallery','showcase',bentoComponents),data).spec.elements.work.type,'BentoProjectIndex');
  for(const components of [{projectIndex:'made-up',heroAnnotation:'drawn'},{projectIndex:'orbit',heroAnnotation:'script'},{projectIndex:'orbit',heroAnnotation:'drawn',rawHtml:'<h1>x</h1>'}])assert.throws(()=>validatePlan({...plan,components},data));
+});
+test('라이브러리 구도와 색·서체·배치를 독립적으로 조합해 원문을 유지한다',()=>{
+ const data=fixture('many'),plan=defaultPlan(data,'featured','showcase');
+ plan.design={palette:'midnight',typography:'display',layout:'studio'};
+ plan.components.heroStyle='spotlight';
+ plan.components.projectIndex='mosaic';
+ const result=compilePlan(plan,data);
+ assert.equal(result.spec.elements.intro.type,'SpotlightHero');
+ assert.equal(result.spec.elements.work.type,'MosaicProjectIndex');
+ assert.deepEqual(result.spec.elements.page.props.design,plan.design);
+ assert.deepEqual(result.state.projects,data.projects);
+ assert.deepEqual(result.motionSupport.filter(item=>['spotlight-hero','mosaic'].includes(item.id)).map(item=>item.id),['spotlight-hero','mosaic']);
+ plan.components.heroStyle='gradient';
+ assert.equal(compilePlan(plan,data).spec.elements.intro.type,'GradientHero');
+ for(const design of [{...plan.design,palette:'invented'},{...plan.design,code:'body{}'}])assert.throws(()=>validatePlan({...plan,design},data));
 });

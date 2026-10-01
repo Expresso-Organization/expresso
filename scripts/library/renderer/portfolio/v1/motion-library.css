@@ -2,3 +2,20 @@
 @media(max-width:900px){.motion-library-grid{grid-template-columns:1fr 1fr}.motion-support{grid-template-columns:1fr}.motion-support>div:nth-last-child(2){border-bottom:1px solid var(--line)}.motion-component-preview .visual-hero-main{grid-template-columns:1fr!important;grid-template-areas:'copy' 'showcase' 'intro'!important}}
 @media(max-width:600px){.motion-library{padding:32px 20px 48px}.motion-library-heading h1{font-size:30px}.motion-library-grid{grid-template-columns:1fr}.motion-library-card{padding:20px}.motion-library-selected>header{align-items:start;flex-direction:column;gap:12px}.motion-support{padding:8px 16px}.motion-support>div{grid-template-columns:72px 1fr;gap:12px}.motion-preview-tools{gap:12px}.motion-preview-tools label{width:100%;justify-content:space-between}.motion-preview-tools select{max-width:220px}.motion-component-preview{--gutter:16px}.motion-component-preview>.project-showcase{padding:20px 16px}.motion-component-preview .project-showcase{max-width:100%}.motion-preview-stage{border-radius:8px}.motion-component-preview .v-case-text{display:block}.motion-component-preview .scene-choices label{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.motion-library-link{transition:none}.motion-library-link:hover{transform:none}}
+/* 모델 생성 결과와 고정 회귀 예제의 탐색 경계를 표시합니다. */
+.model-run-list{padding:40px max(24px,calc((100% - 1240px)/2)) 48px;background:#f1f4f8;color:#14213a;border-bottom:1px solid #d5deea}
+.model-run-heading{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:22px}
+.model-run-heading p{font-size:11px;letter-spacing:.13em;color:#526681;margin-bottom:8px}
+.model-run-heading h2{font-size:clamp(24px,3vw,36px);font-weight:750;letter-spacing:-.04em}
+.model-run-heading>span{font-size:13px;color:#60718a}
+.model-run-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.model-run-grid>a{display:block;min-width:0}
+.model-run-card{height:100%;background:#fff;border:1px solid #d5deea;border-radius:14px;overflow:hidden;padding:0;gap:0;box-shadow:none;transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
+.model-run-grid>a:hover .model-run-card,.model-run-grid>a:focus-visible .model-run-card{transform:translateY(-4px);border-color:#5072ad;box-shadow:0 12px 28px #172a4e1f}
+.model-run-card>[data-slot=card-content],.model-run-card>[data-slot=card-header]{padding:0;display:block}
+.model-run-card img{width:100%;height:188px;object-fit:cover;object-position:top center}
+.model-run-card>[data-slot=card-header]{padding:18px 20px 20px}
+.model-run-card [data-slot=card-title]{font-size:18px;font-weight:750;line-height:1.3}
+.model-run-card [data-slot=card-description]{font-size:12px;color:#5e708a;margin-top:7px;line-height:1.5}
+@media(max-width:750px){.model-run-heading{display:block}.model-run-heading>span{display:block;margin-top:10px}.model-run-grid{grid-template-columns:1fr}.model-run-card img{height:210px}}
+@media(prefers-reduced-motion:reduce){.model-run-card{transition:none!important}}

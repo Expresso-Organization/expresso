@@ -18,7 +18,7 @@
         "minimumContrast": 5.8857489892463635,
         "contrasts": [
           {
-            "selector": "H1",
+            "selector": "v-person-name",
             "ratio": 12.610028850327282
           },
           {
@@ -108,7 +108,7 @@
           "offset": 327.796875
         }
       ],
-      "height": 10703
+      "height": 11938
     },
     {
       "recipe": "featured",
@@ -127,7 +127,7 @@
         "minimumContrast": 5.8857489892463635,
         "contrasts": [
           {
-            "selector": "H1",
+            "selector": "v-person-name",
             "ratio": 12.610028850327282
           },
           {
@@ -217,7 +217,7 @@
           "offset": 0
         }
       ],
-      "height": 8939
+      "height": 9402
     },
     {
       "recipe": "featured",
@@ -236,7 +236,7 @@
         "minimumContrast": 5.8857489892463635,
         "contrasts": [
           {
-            "selector": "H1",
+            "selector": "v-person-name",
             "ratio": 12.610028850327282
           },
           {
@@ -326,7 +326,7 @@
           "offset": 0
         }
       ],
-      "height": 8362
+      "height": 8839
     },
     {
       "recipe": "featured",
@@ -345,7 +345,7 @@
         "minimumContrast": 5.8857489892463635,
         "contrasts": [
           {
-            "selector": "H1",
+            "selector": "v-person-name",
             "ratio": 12.610028850327282
           },
           {
@@ -435,7 +435,7 @@
           "offset": 528.1875
         }
       ],
-      "height": 12246
+      "height": 13377
     },
     {
       "recipe": "featured",
@@ -454,7 +454,7 @@
         "minimumContrast": 5.8857489892463635,
         "contrasts": [
           {
-            "selector": "H1",
+            "selector": "v-person-name",
             "ratio": 12.610028850327282
           },
           {
@@ -544,7 +544,7 @@
           "offset": 0
         }
       ],
-      "height": 10229
+      "height": 10657
     },
     {
       "recipe": "featured",
@@ -563,7 +563,7 @@
         "minimumContrast": 5.8857489892463635,
         "contrasts": [
           {
-            "selector": "H1",
+            "selector": "v-person-name",
             "ratio": 12.610028850327282
           },
           {
@@ -653,7 +653,7 @@
           "offset": 0
         }
       ],
-      "height": 9422
+      "height": 9677
     },
     {
       "recipe": "featured",
@@ -672,7 +672,7 @@
         "minimumContrast": 5.8857489892463635,
         "contrasts": [
           {
-            "selector": "H1",
+            "selector": "v-person-name",
             "ratio": 12.610028850327282
           },
           {
@@ -757,7 +757,7 @@
       ],
       "h1": 1,
       "mediaAlignments": [],
-      "height": 10648
+      "height": 11883
     },
     {
       "recipe": "featured",
@@ -776,7 +776,7 @@
         "minimumContrast": 5.8857489892463635,
         "contrasts": [
           {
-            "selector": "H1",
+            "selector": "v-person-name",
             "ratio": 12.610028850327282
           },
           {
@@ -861,7 +861,7 @@
       ],
       "h1": 1,
       "mediaAlignments": [],
-      "height": 9154
+      "height": 9617
     },
     {
       "recipe": "featured",
@@ -880,7 +880,7 @@
         "minimumContrast": 5.8857489892463635,
         "contrasts": [
           {
-            "selector": "H1",
+            "selector": "v-person-name",
             "ratio": 12.610028850327282
           },
           {
@@ -965,7 +965,7 @@
       ],
       "h1": 1,
       "mediaAlignments": [],
-      "height": 8595
+      "height": 9073
     },
     {
       "recipe": "featured",
@@ -984,7 +984,7 @@
         "minimumContrast": 5.8857489892463635,
         "contrasts": [
           {
-            "selector": "H1",
+            "selector": "v-person-name",
             "ratio": 12.610028850327282
           },
           {
@@ -1138,7 +1138,7 @@
           "offset": 327.796875
         }
       ],
-      "height": 21142
+      "height": 22377
     },
     {
       "recipe": "featured",
@@ -1157,7 +1157,7 @@
         "minimumContrast": 5.8857489892463635,
         "contrasts": [
           {
-            "selector": "H1",
+            "selector": "v-person-name",
             "ratio": 12.610028850327282
           },
           {
@@ -1311,7 +1311,7 @@
           "offset": 0
         }
       ],
-      "height": 16468
+      "height": 16930
     },
     {
       "recipe": "featured",
@@ -1330,7 +1330,7 @@
         "minimumContrast": 5.8857489892463635,
         "contrasts": [
           {
-            "selector": "H1",
+            "selector": "v-person-name",
             "ratio": 12.610028850327282
           },
           {
@@ -1484,7 +1484,7 @@
           "offset": 0
         }
       ],
-      "height": 15881
+      "height": 16359
     },
     {
       "recipe": "gallery",
@@ -1496,7 +1496,7 @@
       "design": {
         "direction": "poster",
         "font": "\"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
-        "weight": "800",
+        "weight": "900",
         "heroBackground": "rgb(23, 62, 212)",
         "fontLoaded": false,
         "posterName": true,
@@ -1505,10 +1505,6 @@
           {
             "selector": "v-poster-name",
             "ratio": 6.714844718043808
-          },
-          {
-            "selector": "H1",
-            "ratio": 7.847021405880488
           },
           {
             "selector": "P",
@@ -1609,7 +1605,7 @@
           "offset": 326.890625
         }
       ],
-      "height": 11739
+      "height": 12954
     },
     {
       "recipe": "gallery",
@@ -1621,7 +1617,7 @@
       "design": {
         "direction": "poster",
         "font": "\"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
-        "weight": "800",
+        "weight": "900",
         "heroBackground": "rgb(23, 62, 212)",
         "fontLoaded": false,
         "posterName": true,
@@ -1630,10 +1626,6 @@
           {
             "selector": "v-poster-name",
             "ratio": 6.714844718043808
-          },
-          {
-            "selector": "H1",
-            "ratio": 7.847021405880488
           },
           {
             "selector": "P",
@@ -1734,7 +1726,7 @@
           "offset": 0
         }
       ],
-      "height": 9534
+      "height": 10025
     },
     {
       "recipe": "gallery",
@@ -1746,7 +1738,7 @@
       "design": {
         "direction": "poster",
         "font": "\"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
-        "weight": "800",
+        "weight": "900",
         "heroBackground": "rgb(23, 62, 212)",
         "fontLoaded": false,
         "posterName": true,
@@ -1755,10 +1747,6 @@
           {
             "selector": "v-poster-name",
             "ratio": 6.714844718043808
-          },
-          {
-            "selector": "H1",
-            "ratio": 7.847021405880488
           },
           {
             "selector": "P",
@@ -1859,7 +1847,7 @@
           "offset": 0
         }
       ],
-      "height": 9278
+      "height": 9755
     },
     {
       "recipe": "gallery",
@@ -1871,7 +1859,7 @@
       "design": {
         "direction": "poster",
         "font": "\"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
-        "weight": "800",
+        "weight": "900",
         "heroBackground": "rgb(23, 62, 212)",
         "fontLoaded": false,
         "posterName": true,
@@ -1880,10 +1868,6 @@
           {
             "selector": "v-poster-name",
             "ratio": 6.714844718043808
-          },
-          {
-            "selector": "H1",
-            "ratio": 7.847021405880488
           },
           {
             "selector": "P",
@@ -1984,7 +1968,7 @@
           "offset": 379.390625
         }
       ],
-      "height": 13170
+      "height": 14292
     },
     {
       "recipe": "gallery",
@@ -1996,7 +1980,7 @@
       "design": {
         "direction": "poster",
         "font": "\"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
-        "weight": "800",
+        "weight": "900",
         "heroBackground": "rgb(23, 62, 212)",
         "fontLoaded": false,
         "posterName": true,
@@ -2005,10 +1989,6 @@
           {
             "selector": "v-poster-name",
             "ratio": 6.714844718043808
-          },
-          {
-            "selector": "H1",
-            "ratio": 7.847021405880488
           },
           {
             "selector": "P",
@@ -2109,7 +2089,7 @@
           "offset": 0
         }
       ],
-      "height": 10527
+      "height": 11007
     },
     {
       "recipe": "gallery",
@@ -2121,7 +2101,7 @@
       "design": {
         "direction": "poster",
         "font": "\"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
-        "weight": "800",
+        "weight": "900",
         "heroBackground": "rgb(23, 62, 212)",
         "fontLoaded": false,
         "posterName": true,
@@ -2130,10 +2110,6 @@
           {
             "selector": "v-poster-name",
             "ratio": 6.714844718043808
-          },
-          {
-            "selector": "H1",
-            "ratio": 7.847021405880488
           },
           {
             "selector": "P",
@@ -2234,7 +2210,7 @@
           "offset": 0
         }
       ],
-      "height": 9870
+      "height": 10337
     },
     {
       "recipe": "gallery",
@@ -2246,7 +2222,7 @@
       "design": {
         "direction": "poster",
         "font": "\"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
-        "weight": "800",
+        "weight": "900",
         "heroBackground": "rgb(23, 62, 212)",
         "fontLoaded": false,
         "posterName": true,
@@ -2255,10 +2231,6 @@
           {
             "selector": "v-poster-name",
             "ratio": 6.714844718043808
-          },
-          {
-            "selector": "H1",
-            "ratio": 7.847021405880488
           },
           {
             "selector": "P",
@@ -2342,7 +2314,7 @@
       ],
       "h1": 1,
       "mediaAlignments": [],
-      "height": 11671
+      "height": 12886
     },
     {
       "recipe": "gallery",
@@ -2354,7 +2326,7 @@
       "design": {
         "direction": "poster",
         "font": "\"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
-        "weight": "800",
+        "weight": "900",
         "heroBackground": "rgb(23, 62, 212)",
         "fontLoaded": false,
         "posterName": true,
@@ -2363,10 +2335,6 @@
           {
             "selector": "v-poster-name",
             "ratio": 6.714844718043808
-          },
-          {
-            "selector": "H1",
-            "ratio": 7.847021405880488
           },
           {
             "selector": "P",
@@ -2450,7 +2418,7 @@
       ],
       "h1": 1,
       "mediaAlignments": [],
-      "height": 9822
+      "height": 10314
     },
     {
       "recipe": "gallery",
@@ -2462,7 +2430,7 @@
       "design": {
         "direction": "poster",
         "font": "\"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
-        "weight": "800",
+        "weight": "900",
         "heroBackground": "rgb(23, 62, 212)",
         "fontLoaded": false,
         "posterName": true,
@@ -2471,10 +2439,6 @@
           {
             "selector": "v-poster-name",
             "ratio": 6.714844718043808
-          },
-          {
-            "selector": "H1",
-            "ratio": 7.847021405880488
           },
           {
             "selector": "P",
@@ -2558,7 +2522,7 @@
       ],
       "h1": 1,
       "mediaAlignments": [],
-      "height": 9618
+      "height": 10095
     },
     {
       "recipe": "gallery",
@@ -2570,7 +2534,7 @@
       "design": {
         "direction": "poster",
         "font": "\"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
-        "weight": "800",
+        "weight": "900",
         "heroBackground": "rgb(23, 62, 212)",
         "fontLoaded": false,
         "posterName": true,
@@ -2579,10 +2543,6 @@
           {
             "selector": "v-poster-name",
             "ratio": 6.714844718043808
-          },
-          {
-            "selector": "H1",
-            "ratio": 7.847021405880488
           },
           {
             "selector": "P",
@@ -2771,7 +2731,7 @@
           "offset": 326.890625
         }
       ],
-      "height": 22453
+      "height": 23668
     },
     {
       "recipe": "gallery",
@@ -2783,7 +2743,7 @@
       "design": {
         "direction": "poster",
         "font": "\"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
-        "weight": "800",
+        "weight": "900",
         "heroBackground": "rgb(23, 62, 212)",
         "fontLoaded": false,
         "posterName": true,
@@ -2792,10 +2752,6 @@
           {
             "selector": "v-poster-name",
             "ratio": 6.714844718043808
-          },
-          {
-            "selector": "H1",
-            "ratio": 7.847021405880488
           },
           {
             "selector": "P",
@@ -2984,7 +2940,7 @@
           "offset": 0
         }
       ],
-      "height": 16681
+      "height": 17173
     },
     {
       "recipe": "gallery",
@@ -2996,7 +2952,7 @@
       "design": {
         "direction": "poster",
         "font": "\"Apple SD Gothic Neo\", \"Malgun Gothic\", system-ui, sans-serif",
-        "weight": "800",
+        "weight": "900",
         "heroBackground": "rgb(23, 62, 212)",
         "fontLoaded": false,
         "posterName": true,
@@ -3005,10 +2961,6 @@
           {
             "selector": "v-poster-name",
             "ratio": 6.714844718043808
-          },
-          {
-            "selector": "H1",
-            "ratio": 7.847021405880488
           },
           {
             "selector": "P",
@@ -3197,7 +3149,7 @@
           "offset": 0
         }
       ],
-      "height": 16665
+      "height": 17143
     }
   ],
   "checks": {
@@ -3219,28 +3171,28 @@
   },
   "artifactHashes": {
     "index.html": "502086228d491559451b5026342880d68bd7367fb72b7b32caca88ed59677c79",
-    "variants.js": "5a5ef3ecc3e87526c51d87fb000d633e0e90fa18d46cca97d06a6ce5cce178c0",
-    "variants.css": "9a5259cff492b3de1a62b7199417d7c9f845a865454fe1e1b8c38b4a46a43f9c",
-    "variants-sources.json": "46b31b7a0f508faecfc619c4da162c0aace70014952ba0f51b76ee3c33f11d38",
-    "variants-plan-schema.json": "959a6e15169ba64a59673a0b6b73410b3355269ac398ca2cc975fcd048ae20fd",
+    "variants.js": "8520a21459c8b8f3ad9a6c9470f4814336c2920d1ea1ed0b393ddaccc9c17474",
+    "variants.css": "e0d6b75e28230e7b6bbda06bf3f3710ba0f8e95c7135bcd4582579a16b8e4f50",
+    "variants-sources.json": "82ae4ca363a2a9fb77afd8e9c208b9d37fdb6b310f109cef860f70f94afa6d45",
+    "variants-plan-schema.json": "434f6466eb69c817b71db15fe44f6d8c47638fdba403ba328d32a92a8fd649dd",
     "assets/expresso-editorial.woff": "a5a0da18422413e1baf6ff7466ae98e3417c9cffd6a3afc07ecb6d404932ee20",
     "assets/editorial-font-OFL.txt": "8eb1c1019fe7fe6d0b6e7d7bbbba1d9cbdd969d8c5f26455708f6cfb8a77284c",
     "assets/editorial-font-source.json": "f48ee21a25a65e3ae36ee9ac71720d438b8e84aa355d34ae9e99d19778ececf9",
-    "featured-standard.static.html": "559e06bfef215162173c14d2ec2b5a2cd6efa30101d583ccd6dcc1ce191b610f",
-    "featured-standard.json": "d3202c273688428dd39ec2078686af393b530bb22819440e1178e17b3cf54d07",
-    "featured-long.static.html": "17d3d30637a66058d2775c4b92ef56a284f90872167a6936dc60ebbbb6f959a3",
-    "featured-long.json": "c4cac8058b967809f11beb83572803c934d63f3283b21e92774655068c29e783",
-    "featured-no-images.static.html": "498c07a3ea4306bf65e8214ccaf375dbd95fdea6c61b7e9d417f741d627576d2",
-    "featured-no-images.json": "e1be8b1a5ae039f31193938949a01e6cf90f408290f1e90c4ba0b751063793b1",
-    "featured-many.static.html": "75ba29ed96da9e4b173bd04469897531589461ca67239abb74c665ae48fe8cbd",
-    "featured-many.json": "c6b69abc86ccae4dec1a07c72d44f668fa2dccc329926fddb002fd8d995f3814",
-    "gallery-standard.static.html": "98528baccf840b283396bf8aef2be3a7cf10e9d1150b41802423833feff2cca0",
-    "gallery-standard.json": "91c09cc160bcf3804fd6807877c390d09201339cef4ed90c200bf92b0e9f140b",
-    "gallery-long.static.html": "499d7f04282a3358142bd5772b70c47bc2298e3e228ee2d315966f80d7d0809c",
-    "gallery-long.json": "d4253a2e57f659cb121b0335df80899de828e59fa7fee4bc51cf39ee81b6f72f",
-    "gallery-no-images.static.html": "2d4bcf626f8c45cbc7c112fb886efb7e48b9a275211a0be7055e20a364556ef1",
-    "gallery-no-images.json": "746f94148000c89e971422868739613acd07dcde659ea276b66e0737afb3e83e",
-    "gallery-many.static.html": "3bd0b10945a5b3f06942f3318c21fe8217cedbb2baa321b36d27a58d3ca506ce",
-    "gallery-many.json": "7738b6559f6a5b0e243d7163fcc66105e434d3b55c95ec549ccc55578da0a13e"
+    "featured-standard.static.html": "0ea889c24dcd1ebb86a46a34680462b8a8f022098c3a315517ddf7377aba145e",
+    "featured-standard.json": "8443bb67b91521a7c6042686dde07fd1261f9e3949ae886044c8a57bdef1c756",
+    "featured-long.static.html": "9a4f486661705c91d83c03abcdb4dd5a3971d77e35250b968741294c88509ca8",
+    "featured-long.json": "e27c2fa173492bb1bcb716e06a48056a3cee58fed9d1d392b5ccb07879930303",
+    "featured-no-images.static.html": "cc4d32baa1ac4004639578fed539fd397e6234007816be4bb32533cca278dd74",
+    "featured-no-images.json": "230a199a5a14c82b2cc08b4759fba71df5c302f570b8346e67902094c369960e",
+    "featured-many.static.html": "52a6fe6fccb159ece216061758cd7f6ddcde94501148f5c3125758ef47ad7338",
+    "featured-many.json": "e7830f20edd3c6b971670964b6b711205a865fe6e187d38c8d9d4fa2199b40d3",
+    "gallery-standard.static.html": "0671a44d03a946b13da061ae509948e770f505e4b82188a60ff484237c78a062",
+    "gallery-standard.json": "12f53113d53d45cc7d400788c41a40295c62a50ef85f69c50da8f30bedfcbf72",
+    "gallery-long.static.html": "aedec7ccc6e3eb44a8eecd453b93d5ff312879020af116a663bff53dde54d3d3",
+    "gallery-long.json": "9a01bc373cea0c518744ca72a14d26961d54b36bcb5fef6bb8ca45c33936ef19",
+    "gallery-no-images.static.html": "c6cf82ff14ab33714b293ea7d3b1534470bcf133bb7aac7bb9677728d5005068",
+    "gallery-no-images.json": "9bf0725be851fb9ba9db56b33ba2afac286b3ae38365f469e0bacca637b268e3",
+    "gallery-many.static.html": "a579a8963302e5c577fa2d444e842daac3be1d752c3a7ab5569bbd816b7187d9",
+    "gallery-many.json": "253934c926132e4287726e175bbf3890905aaa19fb96e992d84cd7b367bd34cf"
   }
 }
