@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { CareerService } from "./service.js";
+import { toCanonicalPropertyDefinitions } from "./properties.js";
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("career saved views on Mongo replica set", () => {
   let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
@@ -19,7 +20,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
   let viewId: string;
 
   beforeAll(async () => {
-    fixture = await createMongoFixture("career-views");
+    fixture = await createMongoFixture("career-views", { migrationTargetVersion: "0011" });
     service = new CareerService(fixture.resource);
     const identity = new MongoIdentityService(fixture.resource);
     userId = (await identity.signup({ email: `view-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "뷰" })).user.id;
@@ -32,12 +33,14 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     });
     categoryId = category.id;
     categoryVersion = category.version;
+    const definitions = [
+      { id: titleId, key: "title", name: "제목", type: "title" as const, required: true, system: true, config: {}, order: 0, version: 1, deletedAt: null },
+      { id: scoreId, key: "score", name: "점수", type: "number" as const, required: false, system: false, config: {}, order: 1, version: 1, deletedAt: null },
+    ];
     await mongoCollections(fixture.resource.db).careerCategories.updateOne({ _id: categoryId }, { $set: {
       schemaVersion: 1,
-      propertySchemaV2: [
-        { id: titleId, key: "title", name: "제목", type: "title", required: true, system: true, config: {}, order: 0, version: 1, deletedAt: null },
-        { id: scoreId, key: "score", name: "점수", type: "number", required: false, system: false, config: {}, order: 1, version: 1, deletedAt: null },
-      ],
+      propertySchemaV2: definitions,
+      propertyDefinitions: toCanonicalPropertyDefinitions(definitions),
     } });
     const now = new Date();
     const rows: CareerRecordDoc[] = Array.from({ length: 100 }, (_, index) => ({
@@ -93,5 +96,29 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(reordered.map((view) => view.id)).toEqual([duplicate.id, updated.id]);
     await service.deleteViewConfiguration(userId, duplicate.id, reordered[0]!.version);
     expect(await service.listViewConfigurations(userId, categoryId)).toHaveLength(1);
+  });
+
+  it("filters mixed records with canonical property values instead of stale legacy properties", async () => {
+    const canonicalHigh = await service.createRecord(userId, randomUUID(), {
+      categoryId, title: "canonical high", properties: { score: { type: "number", value: 99 } }, bodyMd: "",
+    });
+    const canonicalLow = await service.createRecord(userId, randomUUID(), {
+      categoryId, title: "canonical low", properties: { score: { type: "number", value: 1 } }, bodyMd: "",
+    });
+    const records = mongoCollections(fixture.resource.db).careerRecords;
+    await records.updateOne({ _id: canonicalHigh.record.id }, { $set: { properties: { score: { type: "number", value: 1 } } } });
+    await records.updateOne({ _id: canonicalLow.record.id }, { $set: { properties: { score: { type: "number", value: 99 } } } });
+    const category = await mongoCollections(fixture.resource.db).careerCategories.findOne({ _id: categoryId });
+    const view = await service.createViewConfiguration(userId, categoryId, category!.version, {
+      ...input(),
+      name: "canonical filter",
+      filter: { propertyId: scoreId, operator: "gte", operand: { type: "number", value: 99 } },
+      sorts: [],
+    });
+
+    const page = await service.queryViewConfiguration(userId, view.id, null, 100);
+
+    expect(page.data.map((record) => record.id)).toContain(canonicalHigh.record.id);
+    expect(page.data.map((record) => record.id)).not.toContain(canonicalLow.record.id);
   });
 });

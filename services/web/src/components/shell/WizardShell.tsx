@@ -6,11 +6,10 @@ import { Icon } from "@/components/ui/Icon";
 
 import styles from "./WizardShell.module.css";
 
-/** 기존 제작의 6단계. 진행 중인 brew가 돌아올 수 있어 호환 경로에서 유지한다. */
+/** Career MVP 제작의 5단계. Interview 단계는 제품 경로에서 제외한다. */
 export const LEGACY_WIZARD_STEPS = [
   { key: "analyze", label: "공고 분석", segment: "analyze" },
   { key: "materials", label: "재료 고르기", segment: "materials" },
-  { key: "counter", label: "AI 대화", segment: "counter" },
   { key: "outline", label: "레시피", segment: "outline" },
   { key: "design", label: "디자인 선택", segment: "design" },
   { key: "edit", label: "다듬기", segment: "edit" },
@@ -67,7 +66,7 @@ export function WizardHeader({
  *
  * `brewId`와 `current`는 **아직 모를 수 있다** — `loading.tsx`는 params를 받지
  * 않는다(Next 16 `loading.js` 규약). 모르면 되돌아가는 링크를 걸지 않고,
- * 어느 단계도 지난 단계로 칠하지 않는다. 여섯 칸의 자리는 그대로 선다.
+ * 어느 단계도 지난 단계로 칠하지 않는다.
  */
 export function WizardSteps({
   brewId = null,
@@ -89,8 +88,7 @@ export function WizardSteps({
   return (
     <nav className={styles.steps} aria-label="포트폴리오 제작 단계">
       {/*
-        좁은 화면에서 여섯 단계를 늘어놓으면 헤더가 화면을 먹는다. 그때는 지금
-        어디쯤인지만 남긴다 — 진행 막대와 "03 / 06". 나머지는 CSS가 감춘다.
+        좁은 화면에서는 지금 어디쯤인지만 남긴다. 나머지는 CSS가 감춘다.
       */}
       <span className={styles.compact} aria-hidden="true">
         <span className={styles.compactTrack}>

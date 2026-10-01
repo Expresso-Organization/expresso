@@ -1,2 +1,33 @@
-import { API_PREFIX,CareerCategoryMoveCommitSchema,CareerRecordResponseSchema } from "@expresso/contracts";import { API_BASE_URL } from "@/lib/api/client";import { readAccessToken } from "@/lib/session";
-export async function POST(request:Request,{params}:{params:Promise<{recordId:string}>}){const token=await readAccessToken();if(!token)return new Response(null,{status:401});const {recordId}=await params;const raw=await request.json().catch(()=>null) as Record<string,unknown>|null;const input=CareerCategoryMoveCommitSchema.safeParse({...raw,recordId});if(!input.success)return new Response(null,{status:400});const {recordId:_ignored,...body}=input.data;const upstream=await fetch(`${API_BASE_URL}${API_PREFIX}/career/records/${encodeURIComponent(recordId)}/move`,{method:"POST",headers:{authorization:`Bearer ${token}`,accept:"application/json","content-type":"application/json","if-match":request.headers.get("if-match")??""},body:JSON.stringify(body),cache:"no-store"});if(!upstream.ok)return new Response(null,{status:upstream.status});try{return Response.json(CareerRecordResponseSchema.parse(await upstream.json()))}catch{return new Response(null,{status:502})}}
+import { API_PREFIX, CareerCategoryMoveCommitSchema, CareerRecordResponseSchema } from "@expresso/contracts";
+
+import { API_BASE_URL } from "@/lib/api/client";
+import { readAccessToken } from "@/lib/session";
+
+export async function POST(request: Request, { params }: { params: Promise<{ recordId: string }> }) {
+  const token = await readAccessToken();
+  if (!token) return new Response(null, { status: 401 });
+  const { recordId } = await params;
+  const raw = await request.json().catch(() => null) as Record<string, unknown> | null;
+  const input = CareerCategoryMoveCommitSchema.safeParse({ ...raw, recordId });
+  if (!input.success) return new Response(null, { status: 400 });
+  const baseUrl = process.env.CAREER_SPRING_API_BASE_URL;
+  if (!baseUrl) return new Response(null, { status: 503 });
+  const { recordId: _ignored, ...body } = input.data;
+  const upstream = await fetch(`${baseUrl}${API_PREFIX}/career/records/${encodeURIComponent(recordId)}/move`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, accept: "application/json", "content-type": "application/json", "if-match": request.headers.get("if-match") ?? "" },
+    body: JSON.stringify(body), cache: "no-store",
+  });
+  if (!upstream.ok) return new Response(null, { status: upstream.status });
+  const refreshed = await fetch(`${API_BASE_URL}${API_PREFIX}/career/records/${encodeURIComponent(recordId)}`, {
+    headers: { authorization: `Bearer ${token}`, accept: "application/json" }, cache: "no-store",
+  });
+  if (!refreshed.ok) return new Response(null, { status: refreshed.status });
+  try {
+    const record = CareerRecordResponseSchema.parse(await refreshed.json());
+    return Response.json(record, {
+      headers: { etag: `"v${record.data.version}"` },
+    });
+  }
+  catch { return new Response(null, { status: 502 }); }
+}

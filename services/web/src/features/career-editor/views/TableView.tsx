@@ -1,6 +1,6 @@
 "use client";
 
-import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
+import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerViewConfiguration, WritableCareerPropertyValue } from "@expresso/contracts";
 import { createPortal } from "react-dom";
 import type { CSSProperties, DragEvent as ReactDragEvent, KeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -11,7 +11,7 @@ import { propertyOptions } from "@/features/career-editor/properties/property-ed
 import { CareerTableCell, type TableCellValue } from "./CareerTableCell";
 import { PropertyHeaderMenu } from "./PropertyHeaderMenu";
 import type { CareerViewRendererProps } from "./view-types";
-import { displayValue, keyboardActivate, propertyKey, propertyName, rawValue } from "./view-types";
+import { displayValue, keyboardActivate, propertyDefinition, propertyKey, propertyName, rawValue } from "./view-types";
 import styles from "./views.module.css";
 
 const SELECT_WIDTH = 96;
@@ -40,9 +40,8 @@ function propertyWidth(view: CareerViewConfiguration, propertyId: string | null,
 }
 
 function groupedRecords(records: readonly CareerRecord[], category: CareerCategory, propertyId: string, groupOrder: readonly string[]): TableGroup[] {
-  const definition = category.propertySchemaV2?.find((item) => item.id === propertyId && item.deletedAt === null);
-  const key = propertyKey(category, propertyId);
-  if (!key) return [];
+  const definition = propertyDefinition(category, propertyId);
+  if (!definition) return [];
   const options = definition ? propertyOptions(definition) : [];
   const optionLabels = new Map(options.map((option) => [option.id, option.name]));
   const optionOrder = new Map(options.map((option, index) => [option.id, index]));
@@ -55,7 +54,7 @@ function groupedRecords(records: readonly CareerRecord[], category: CareerCatego
   };
 
   for (const record of records) {
-    const raw = key === "title" ? record.title : rawValue(record, key);
+    const raw = definition.key === "title" ? record.title : rawValue(record, definition);
     if (Array.isArray(raw)) {
       const values = [...new Set(raw.flatMap((item) => typeof item === "string" || typeof item === "number" ? [String(item)] : item && typeof item === "object" && "id" in item ? [String(item.id)] : []))];
       if (!values.length) add(EMPTY_GROUP, emptyLabel, record, true);
@@ -149,8 +148,8 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     focusCell(keyboardRecords[nextRow]?.id ?? recordId, propertyIds[nextColumn] ?? propertyId, false, instanceKey);
   }
 
-  async function createAndFocus(initialProperties?: Record<string, unknown>, instanceKey = "main") {
-    const created = await props.onCreate(initialProperties, { open: false });
+  async function createAndFocus(initialPropertyValues?: readonly WritableCareerPropertyValue[], instanceKey = "main") {
+    const created = await props.onCreate(initialPropertyValues, { open: false });
     if (created) focusCell(created.id, titleColumnId, true, instanceKey);
   }
 
@@ -362,16 +361,16 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     <span role="gridcell" />
     <strong role="gridcell">{props.records.length}개 기록</strong>
     {columns.map((id) => {
-      const key = propertyKey(props.category, id);
-      const missing = key ? props.records.filter((record) => displayValue(rawValue(record, key)) === "—").length : props.records.length;
+      const definition = propertyDefinition(props.category, id);
+      const missing = definition ? props.records.filter((record) => displayValue(rawValue(record, definition)) === "—").length : props.records.length;
       return <span role="gridcell" key={id}>{missing ? `빈 값 ${missing}` : "모두 입력됨"}</span>;
     })}
   </div>;
 
-  const groupInitialProperties = (group: TableGroup): Record<string, unknown> | undefined => {
+  const groupInitialPropertyValues = (group: TableGroup): readonly WritableCareerPropertyValue[] | undefined => {
     if (!groupDefinition || group.empty) return undefined;
-    if (groupDefinition.type === "select") return { [groupDefinition.key]: { type: "select", value: group.key } };
-    if (groupDefinition.type === "multi_select") return { [groupDefinition.key]: { type: "multi_select", value: [group.key] } };
+    if (groupDefinition.type === "select") return [{ propertyDefinitionId: groupDefinition.id, type: "select", value: group.key }];
+    if (groupDefinition.type === "multi_select") return [{ propertyDefinitionId: groupDefinition.id, type: "multi_select", value: [group.key] }];
     return undefined;
   };
 
@@ -379,7 +378,7 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     const record = props.records.find((item) => item.id === cellMenu.recordId);
     const definition = cellMenu.propertyId === titleColumnId ? titleDefinition : definitionsById.get(cellMenu.propertyId);
     if (!record || !definition) return null;
-    const raw = definition.key === "title" ? record.title : rawValue(record, definition.key);
+    const raw = definition.key === "title" ? record.title : rawValue(record, definition);
     const canEdit = !["formula", "rollup", "relation", "file", "media"].includes(definition.type) && !(definition.system && ["created_time", "updated_time"].includes(definition.type));
     const close = () => setCellMenu(null);
     return createPortal(<section className={styles.cellContextMenu} data-cell-context-menu role="menu" aria-label={`${definition.name} 셀 메뉴`} style={{ top: Math.min(cellMenu.y, window.innerHeight - 270), left: Math.min(cellMenu.x, window.innerWidth - 230) }} onContextMenu={(event) => event.preventDefault()}>
@@ -408,7 +407,7 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
             {!collapsed ? <div className={styles.groupTable} role="grid" aria-label={`${group.label} 그룹 테이블`} aria-rowcount={group.records.length + 1}>
               {tableHeader()}
               {tableRows(group.records, 2, group.records, group.key)}
-              <div className={styles.tableGroupFooter}><button type="button" aria-label={`${group.label} 그룹에 새 기록`} onClick={() => void createAndFocus(groupInitialProperties(group), group.key)}>＋ 새 기록</button><span>{group.records.length}개 기록</span></div>
+              <div className={styles.tableGroupFooter}><button type="button" aria-label={`${group.label} 그룹에 새 기록`} onClick={() => void createAndFocus(groupInitialPropertyValues(group), group.key)}>＋ 새 기록</button><span>{group.records.length}개 기록</span></div>
             </div> : null}
           </section>;
         })}

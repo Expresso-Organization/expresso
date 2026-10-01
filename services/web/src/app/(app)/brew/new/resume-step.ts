@@ -10,7 +10,7 @@ import { WIZARD_STEPS } from "@/components/shell/WizardShell";
  */
 const STATUS_SEGMENT: Record<string, (typeof WIZARD_STEPS)[number]["segment"]> = {
   draft: "materials",
-  interviewing: "counter",
+  interviewing: "outline",
   recipe: "outline",
   // 추출 대기는 디자인 화면이 그린다(`design/Generating.tsx`).
   generating: "design",

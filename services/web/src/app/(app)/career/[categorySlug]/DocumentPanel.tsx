@@ -1,13 +1,12 @@
 "use client";
 
-import type { CareerCategory, CareerRecordListItem } from "@expresso/contracts";
+import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecordListItem } from "@expresso/contracts";
 import type { CSSProperties, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 import { CareerDocumentEditor } from "@/features/career-editor/editor/CareerDocumentEditor";
-import { AiProposalPanel, type AiPromptRequest } from "@/features/career-editor/ai/AiProposalPanel";
-import { useCareerEditorSession } from "@/features/career-editor/session/useCareerEditorSession";
+import type { CareerPropertyEditorValue } from "@/features/career-editor/properties/canonical-property-values";
 
 import styles from "./DocumentPanel.module.css";
 
@@ -19,33 +18,25 @@ export function DocumentPanel({
   category,
   onClose,
   onExpand,
-  aiRequest,
-  onAiRequestHandled,
+  onRecordCommit,
+  onRecordAccepted,
 }: {
   record: CareerRecordListItem | null;
   category: CareerCategory;
   onClose: () => void;
   onExpand?: () => void;
-  aiRequest?: AiPromptRequest | null | undefined;
-  onAiRequestHandled?: (() => void) | undefined;
+  onRecordCommit?: ((recordId: string, definition: CareerPropertyDefinitionV2, value: CareerPropertyEditorValue | null) => Promise<void>) | undefined;
+  onRecordAccepted?: ((record: CareerRecordListItem) => void) | undefined;
 }) {
   const [width, setWidth] = useState(DEFAULT_PANEL_WIDTH);
   const [visibleRecord, setVisibleRecord] = useState(record);
   const [resizing, setResizing] = useState(false);
-  const [editorAiRequest, setEditorAiRequest] = useState<AiPromptRequest | null>(null);
   const drag = useRef<{ pointerId: number; startX: number; startWidth: number } | null>(null);
   const panelRecord = record ?? visibleRecord;
 
   useEffect(() => {
     if (record) setVisibleRecord(record);
-    setEditorAiRequest(null);
   }, [record]);
-
-  const requestedPrompt = editorAiRequest ?? aiRequest;
-  const handleAiRequest = () => {
-    if (requestedPrompt?.id === aiRequest?.id) onAiRequestHandled?.();
-    setEditorAiRequest(null);
-  };
 
   const clampWidth = useCallback((next: number) => {
     const viewportLimit = typeof window === "undefined" ? MAX_PANEL_WIDTH : window.innerWidth - 64;
@@ -132,22 +123,11 @@ export function DocumentPanel({
         <>
           <div className={styles.body}>
             <div className={styles.blocks}>
-              <CareerDocumentEditor key={panelRecord.id} recordId={panelRecord.id} mode="peek" record={panelRecord} category={category} showAiProposal={false} onAiRequest={setEditorAiRequest} />
+              <CareerDocumentEditor key={panelRecord.id} recordId={panelRecord.id} mode="peek" record={panelRecord} category={category} onRecordCommit={onRecordCommit} onRecordAccepted={onRecordAccepted} />
             </div>
-          </div>
-
-          <div className={styles.foot}>
-            <DocumentPanelAiDock key={panelRecord.id} recordId={panelRecord.id} category={category} aiRequest={requestedPrompt} onAiRequestHandled={handleAiRequest} />
           </div>
         </>
       ) : null}
     </aside>
   );
-}
-
-function DocumentPanelAiDock({ recordId, category, aiRequest, onAiRequestHandled }: { recordId: string; category: CareerCategory; aiRequest?: AiPromptRequest | null | undefined; onAiRequestHandled?: (() => void) | undefined }) {
-  const { snapshot, document } = useCareerEditorSession(recordId);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  return <AiProposalPanel recordId={recordId} documentVersion={snapshot.documentVersion} selectedBlockIds={mounted && document?.content[0]?.id ? [document.content[0].id] : []} announcedProposal={mounted ? snapshot.proposal : null} requestedPrompt={mounted ? aiRequest : null} onRequestHandled={onAiRequestHandled} document={mounted ? document : null} definitions={category.propertySchemaV2 ?? []} />;
 }

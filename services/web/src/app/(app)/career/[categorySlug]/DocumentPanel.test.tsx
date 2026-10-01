@@ -4,9 +4,9 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/career-editor/editor/CareerDocumentEditor", () => ({
-  CareerDocumentEditor: ({ recordId, onAiRequest }: { recordId: string; onAiRequest?: (request: { id: string; recordId: string; prompt: string; blockIds: string[] }) => void }) => <div>편집기 {recordId}<button type="button" onClick={() => onAiRequest?.({ id: "selection-request", recordId, prompt: "선택한 문장을 짧게", blockIds: ["00000000-0000-4000-8000-000000000003"] })}>선택 AI 요청</button></div>,
+  CareerDocumentEditor: ({ recordId }: { recordId: string }) => <div>편집기 {recordId}</div>,
 }));
-vi.mock("@/features/career-editor/ai/AiProposalPanel", () => ({ AiProposalPanel: ({ requestedPrompt }: { requestedPrompt?: { prompt: string } | null }) => <div>AI {requestedPrompt?.prompt}</div> }));
+vi.mock("@/features/career-editor/ai/AiProposalPanel", () => ({ AiProposalPanel: () => <div>AI 편집 도크</div> }));
 vi.mock("@/features/career-editor/session/useCareerEditorSession", () => ({
   useCareerEditorSession: () => ({ snapshot: { documentVersion: 1, proposal: null }, document: { content: [] } }),
 }));
@@ -66,9 +66,9 @@ describe("DocumentPanel", () => {
     expect(drawer.getAttribute("data-resizing")).toBe("false");
   });
 
-  it("routes editor selection actions into the drawer AI review dock", () => {
+  it("does not expose the drawer AI review dock", () => {
     render(<DocumentPanel record={record} category={category} onClose={() => undefined} />);
-    fireEvent.click(screen.getByRole("button", { name: "선택 AI 요청" }));
-    expect(screen.getByText(/AI 선택한 문장을 짧게/)).toBeTruthy();
+    expect(screen.queryByText("AI 편집 도크")).toBeNull();
+    expect(screen.getByText(`편집기 ${record.id}`)).toBeTruthy();
   });
 });

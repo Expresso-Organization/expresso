@@ -50,7 +50,6 @@ import {
   CareerViewSchema,
   CreateCareerRecordSchema,
   RecomputeCareerSkillSchema,
-  UpdateCareerRecordSchema,
 } from "./career.js";
 import {
   ExplainableMatchSchema,
@@ -198,7 +197,6 @@ export const expressoOpenApiDocument = {
       CareerRecord: jsonSchema(CareerRecordSchema),
       CareerRecordResponse: jsonSchema(CareerRecordResponseSchema),
       CreateCareerRecord: jsonSchema(CreateCareerRecordSchema),
-      UpdateCareerRecord: jsonSchema(UpdateCareerRecordSchema),
       CareerView: jsonSchema(CareerViewSchema),
       CareerDeleteImpact: jsonSchema(CareerDeleteImpactSchema),
       RecomputeCareerSkill: jsonSchema(RecomputeCareerSkillSchema),

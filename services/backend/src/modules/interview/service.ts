@@ -8,6 +8,8 @@ import { withTimeout } from "../../platform/timeouts.js";
 import { requireActiveUser } from "../identity/index.js";
 import type { ConsentApi } from "../consent/index.js";
 import { cleanupChangedFields, cleanupProperties, type RecordCleaner } from "../career/record-cleaner.js";
+import { projectCareerRecordPropertiesForRead } from "../career/index.js";
+import { materializeLegacyTagOptions, toCanonicalPropertyValues } from "../career/properties.js";
 import { generateQuestionDrafts, hasMetric, questionTextForBasis } from "./questions.js";
 import { countMentions, type QuestionBasisOption, type QuestionContext, type QuestionWriter } from "./question-writer.js";
 import type { InterviewApi } from "./index.js";
@@ -32,9 +34,13 @@ export class InterviewService implements InterviewApi {
     await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const collections = mongoCollections(tx.db); const options = { session: tx.session }; const now = new Date();
+      const category = await collections.careerCategories.findOne({ _id: record.categoryId, $or: [{ userId: null }, { userId }] }, options);
+      if (!category) throw new InterviewError(404, "career category not found");
+      const properties = cleanupProperties(cleaned) as CareerRecordDoc["properties"];
+      await materializeLegacyTagOptions(tx, tx.session, category, [properties]);
       const updated = await collections.careerRecords.updateOne(
         { _id: record._id, userId, origin: "interview", deletedAt: null, status: { $ne: "verified" }, version: expectedRecordVersion },
-        { $set: { title: cleaned.title, properties: cleanupProperties(cleaned) as CareerRecordDoc["properties"], status: "organized", updatedAt: now }, $inc: { version: 1, referenceVersion: 1 } }, options,
+        { $set: { title: cleaned.title, properties, propertyValues: toCanonicalPropertyValues(category, properties), status: "organized", updatedAt: now }, $inc: { version: 1, referenceVersion: 1 } }, options,
       );
       if (!updated.matchedCount) return;
       await collections.answerRecordChanges.updateOne({ userId, answerId, recordId: record._id }, { $set: { changedFields: cleanupChangedFields(cleaned), createdAt: now } }, options);
@@ -54,6 +60,11 @@ export class InterviewService implements InterviewApi {
     const records = await db.careerRecords.find({ userId, _id: { $in: sources.map(({ recordId }) => recordId) }, deletedAt: null }, options).toArray();
     const recordsById = new Map(records.map((record) => [record._id, record]));
     const orderedRecords = sources.flatMap(({ recordId }) => recordsById.get(recordId) ? [recordsById.get(recordId)!] : []);
+    const propertiesByRecordId = await projectCareerRecordPropertiesForRead(this.context, userId, orderedRecords, session);
+    const projectedRecords = orderedRecords.map((record) => ({
+      ...record,
+      properties: propertiesByRecordId.get(record._id)!,
+    }));
     const posting = analysis.jobPostingId ? await db.jobPostings.findOne({ _id: analysis.jobPostingId }, options) : null;
     const company = posting ? await db.companies.findOne({ _id: posting.companyId }, options) : null;
     const requirementRows = requirements.flatMap((requirement) => {
@@ -65,13 +76,13 @@ export class InterviewService implements InterviewApi {
     const context: QuestionContext = {
       options: [
         ...requirementRows.filter(({ coverage }) => coverage !== "covered").map((row) => ({ basis: { type: "requirement" as const, requirementId: row._id, coverage: row.coverage as "missing" | "partial", evidence: row.quote }, label: `[공고 요건 · ${row.coverage === "missing" ? "안 채움" : "일부만"}] ${row.label}`, detail: row.quote, mentions: posting ? countMentions(row.label, posting.descriptionRaw) : null })),
-        ...orderedRecords.filter((record) => !hasMetric(`${record.title} ${record.bodyMd} ${JSON.stringify(record.properties)}`)).map((record) => ({ basis: { type: "record_gap" as const, recordId: record._id, gap: "metric" as const, evidence: record.title }, label: `[기록 · 수치 없음] ${record.title}`, detail: record.bodyMd, mentions: null })),
+        ...projectedRecords.filter((record) => !hasMetric(`${record.title} ${record.bodyMd} ${JSON.stringify(record.properties)}`)).map((record) => ({ basis: { type: "record_gap" as const, recordId: record._id, gap: "metric" as const, evidence: record.title }, label: `[기록 · 수치 없음] ${record.title}`, detail: record.bodyMd, mentions: null })),
       ],
       company: company ? { name: company.name, industry: company.industry ?? null, toneSummary: company.toneSummary ?? null } : null,
       jobTitle: posting?.title ?? null,
-      materials: orderedRecords.map(({ title }) => title),
+      materials: projectedRecords.map(({ title }) => title),
     };
-    return { context, requirements: requirementRows, records: orderedRecords };
+    return { context, requirements: requirementRows, records: projectedRecords };
   }
 
   async #planQuestions(userId: string, brewId: string): Promise<PlannedQuestion[]> {

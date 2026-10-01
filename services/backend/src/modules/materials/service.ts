@@ -4,7 +4,7 @@ import { mongoCollections, type BrewDoc, type BrewSourceDoc, type CareerRecordDo
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import { requireActiveUser } from "../identity/index.js";
-import { assertActiveRecordsForWrite } from "../career/index.js";
+import { assertActiveRecordsForWrite, projectCareerRecordPropertiesForRead } from "../career/index.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
 import type { MaterialsApi } from "./index.js";
 import { MaterialsError } from "./public.js";
@@ -16,7 +16,8 @@ export class MaterialsService implements MaterialsApi {
   async #create(tx: MongoTransaction, userId: string, input: { jobAnalysisId: string; lengthPreset: BrewDoc["lengthPreset"]; freeTitle?: string; freeBrief?: string }, labels: string[]) {
     const db = mongoCollections(tx.db); const options = { session: tx.session };
     const records = await db.careerRecords.find({ userId, deletedAt: null, status: { $in: ["organized", "verified"] } }, options).toArray();
-    const ranked = rankMaterials(records.flatMap((record) => record.status === "organized" || record.status === "verified" ? [{ id: record._id, title: record.title, status: record.status, text: `${record.title}\n${record.bodyMd}\n${JSON.stringify(record.properties)}` }] : []), labels).slice(0, 50);
+    const propertiesByRecordId = await projectCareerRecordPropertiesForRead(tx, userId, records, tx.session);
+    const ranked = rankMaterials(records.flatMap((record) => record.status === "organized" || record.status === "verified" ? [{ id: record._id, title: record.title, status: record.status, text: `${record.title}\n${record.bodyMd}\n${JSON.stringify(propertiesByRecordId.get(record._id)!)}` }] : []), labels).slice(0, 50);
     await assertActiveRecordsForWrite(tx, userId, ranked.map((record) => record.id));
     const brew: BrewDoc = { _id: randomUUID(), userId, ...input, mode: "solo", status: "draft", createdAt: new Date(), updatedAt: new Date() };
     await db.brews.insertOne(brew, options);
