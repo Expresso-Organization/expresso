@@ -472,16 +472,16 @@ public class CareerPropertyDefinitionCreateService {
 			if (definition.id().equals(propertyId)) {
 				throw new CareerPropertyDefinitionConflictException("PropertyDefinition id가 이미 사용 중입니다");
 			}
-			if (definition.deletedAt() == null && definition.key().equals(key)) {
-				throw new CareerPropertyDefinitionConflictException("활성 PropertyDefinition key가 이미 사용 중입니다");
+			if (definition.key().equals(key)) {
+				throw new CareerPropertyDefinitionConflictException("PropertyDefinition key가 이미 사용 중입니다");
 			}
 		}
 		for (var definition : category.propertyDefinitions()) {
 			if (definition.id().equals(propertyId)) {
 				throw new CareerPropertyDefinitionConflictException("PropertyDefinition id가 이미 사용 중입니다");
 			}
-			if (definition.deletedAt() == null && definition.key().equals(key)) {
-				throw new CareerPropertyDefinitionConflictException("활성 PropertyDefinition key가 이미 사용 중입니다");
+			if (definition.key().equals(key)) {
+				throw new CareerPropertyDefinitionConflictException("PropertyDefinition key가 이미 사용 중입니다");
 			}
 		}
 	}

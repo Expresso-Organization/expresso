@@ -996,7 +996,7 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
       ).toBe(true);
     }
 
-    for (const value of [123.45, "1e3", "NaN", "Infinity", "+1", " 1", "1 "]) {
+    for (const value of [123.45, "1e3", "NaN", "Infinity", "+1", " 1", "1 ", "9".repeat(6_201)]) {
       expect(
         validatePropertyValues([{ propertyDefinitionId, type: "number", value }]),
         `${String(value)}는 canonical plain decimal string이 아니다`,
@@ -1153,7 +1153,7 @@ describe("CareerRecord Spring Slice 1 OpenAPI contract", () => {
       properties: {},
       bodyMd: "본문",
       propertyValues: [],
-    })).toBe(false);
+    })).toBe(true);
 
     expect(validatePatch({ title: "수정된 제목" })).toBe(true);
     expect(

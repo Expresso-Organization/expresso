@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CareerCategoryDoc, CareerRecordDoc } from "@expresso/database";
+import { Decimal128 } from "mongodb";
 
 import { createCareerComputationProcessor } from "../../worker/processors/career-computation.js";
 import {
@@ -8,6 +9,7 @@ import {
   computationWriteFilter,
   computationWriteUpdate,
   resolveComputationValue,
+  decimal128ToPlainString,
 } from "./service.js";
 
 describe("career computation processor", () => {
@@ -41,6 +43,21 @@ describe("career computation processor", () => {
     expect(() => resolveComputationValue(category(), record({
       propertyValues: [{ propertyDefinitionId: PROPERTY_ID, type: "checkbox", value: true }],
     } as never), PROPERTY_ID, {})).toThrow(/canonical/);
+  });
+
+  it.each([
+    ["1E-7", "0.0000001"], ["1.2300E-7", "0.00000012300"],
+    ["123.4500", "123.4500"], ["-1.25E+3", "-1250"],
+  ])("normalizes Decimal128 %s without floating-point conversion", (stored, expected) => {
+    expect(decimal128ToPlainString(Decimal128.fromString(stored))).toBe(expected);
+  });
+
+  it("accepts a Spring-stored small Decimal128 as a canonical computation input", () => {
+    const numberCategory = category();
+    numberCategory.propertyDefinitions = [{ ...numberCategory.propertyDefinitions![0]!, type: "number" }];
+    expect(resolveComputationValue(numberCategory, record({
+      propertyValues: [{ propertyDefinitionId: PROPERTY_ID, type: "number", value: Decimal128.fromString("1E-7") }],
+    }), PROPERTY_ID, {})).toEqual({ type: "number", value: 0.0000001 });
   });
 
   it("builds a computation-only CAS update and treats a missing computationVersion as zero", () => {

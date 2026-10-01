@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -133,6 +134,37 @@ class CareerRecordCreateHttpIntegrationTest {
 				.find(new Document("_id", responseData(result).getString("id"))).first();
 		assertThat(stored.get("properties", Document.class)).isEqualTo(
 				new Document("skills", new Document("type", "multi_select").append("value", List.of(OPTION_B))));
+	}
+
+	@Test
+	void emptyCreateEnqueuesFormulaComputationInTheSameTransaction() throws Exception {
+		insertCustomCategory(USER_A);
+		var created = createRaw(TOKEN_A, "empty-computation-key-0001",
+				"{\"categoryId\":\"" + CUSTOM_CATEGORY + "\"}")
+				.andExpect(status().isCreated()).andReturn();
+		var recordId = responseData(created).getString("id");
+		var event = mongoTemplate.getCollection("outbox_events")
+				.find(new Document("idempotencyKey", "career-record-create:" + recordId + ":v1")).first();
+		assertThat(event).isNotNull();
+		assertThat(event.get("payload", Document.class).getList("changedPropertyIds", String.class))
+				.containsExactly(FORMULA_DEFINITION);
+		createRaw(TOKEN_A, "empty-computation-key-0001",
+				"{\"categoryId\":\"" + CUSTOM_CATEGORY + "\"}").andExpect(status().isOk());
+		assertThat(mongoTemplate.getCollection("outbox_events").countDocuments()).isEqualTo(1);
+	}
+
+	@Test
+	void emptyGroupedSnapshotHasTheSameCreationMeaningAsEmptyCreate() throws Exception {
+		insertCustomCategory(USER_A);
+		var created = createRaw(TOKEN_A, "empty-grouped-key-0001",
+				"{\"categoryId\":\"" + CUSTOM_CATEGORY + "\",\"propertyValues\":[]}")
+				.andExpect(status().isCreated()).andReturn();
+		var recordId = responseData(created).getString("id");
+		assertThat(mongoTemplate.getCollection(RECORDS).find(new Document("_id", recordId)).first()
+				.getList("propertyValues", Document.class)).isEmpty();
+		assertThat(mongoTemplate.getCollection("outbox_events")
+				.countDocuments(new Document("idempotencyKey", "career-record-create:" + recordId + ":v1")))
+				.isEqualTo(1);
 	}
 
 	@Test
@@ -264,6 +296,77 @@ class CareerRecordCreateHttpIntegrationTest {
 				.filter(definition -> MULTI_SELECT_DEFINITION.equals(definition.getString("id")))
 				.findFirst().orElseThrow().get("config", Document.class).getList("options", Document.class);
 		assertThat(optionsAfterConflict).noneMatch(option -> "다른 태그".equals(option.getString("name")));
+	}
+
+	@Test
+	void duplicateUsesExplicitCanonicalSnapshotInsteadOfLossyLegacyProperties() throws Exception {
+		insertCustomCategory(USER_A);
+		var body = "{\"categoryId\":\"" + CUSTOM_CATEGORY + "\","
+				+ "\"title\":\"정밀 복제\",\"properties\":{},\"bodyMd\":\"\","
+				+ "\"propertyValues\":["
+				+ "{\"propertyDefinitionId\":\"" + NUMBER_DEFINITION + "\",\"type\":\"number\",\"value\":\"0.0000001\"},"
+				+ "{\"propertyDefinitionId\":\"" + SELECT_DEFINITION + "\",\"type\":\"select\",\"value\":\"" + OPTION_A + "\"},"
+				+ "{\"propertyDefinitionId\":\"" + MULTI_SELECT_DEFINITION + "\",\"type\":\"multi_select\",\"value\":[\"" + OPTION_B + "\"]}]}";
+		var first = createRaw(TOKEN_A, "canonical-duplicate-key-0001", body)
+				.andExpect(status().isCreated()).andReturn();
+		createRaw(TOKEN_A, "canonical-duplicate-key-0001", body).andExpect(status().isOk());
+		var stored = mongoTemplate.getCollection(RECORDS)
+				.find(new Document("_id", responseData(first).getString("id"))).first();
+		assertThat(stored.getList("propertyValues", Document.class)).hasSize(3);
+		assertThat(stored.getList("propertyValues", Document.class).getFirst()
+				.get("value", org.bson.types.Decimal128.class).toString()).isEqualTo("1E-7");
+		assertThat(stored.get("properties", Document.class)).isEqualTo(new Document());
+		assertThat(mongoTemplate.getCollection(RECORDS).countDocuments()).isEqualTo(1);
+	}
+
+	@Test
+	void duplicatePreservesEveryWritableCanonicalValueAndMonthRange() throws Exception {
+		insertCustomCategory(USER_A);
+		var category = mongoTemplate.getCollection(CATEGORIES).find(new Document("_id", CUSTOM_CATEGORY)).first();
+		var definitions = new ArrayList<>(category.getList("propertyDefinitions", Document.class));
+		var textId = "bb224bb6-e9d8-46be-adb5-63e5b768df43";
+		var checkboxId = "27d68932-054d-4377-bc65-c69fe341c317";
+		var dateId = "609a3857-d5a1-4d93-84b9-80750cbdb41b";
+		var urlId = "72e0dd2c-683b-4fdc-b804-c9a29e574921";
+		var emailId = "32bc5df4-c531-4de1-ac60-8641da7a88d6";
+		var phoneId = "847979e1-07b4-49f0-a046-c00f4727e33f";
+		var fileId = "95e5b12e-b9eb-47e1-b025-a10279964dbc";
+		var mediaId = "257cfcc6-ae71-4e82-b196-40daef079f6b";
+		for (var extra : List.of(
+				definition(textId, "summary", "text", 1, new Document()),
+				definition(checkboxId, "active", "checkbox", 1, new Document()),
+				definition(dateId, "period", "date", 1, new Document()),
+				definition(urlId, "site", "url", 1, new Document()),
+				definition(emailId, "email", "email", 1, new Document()),
+				definition(phoneId, "phone", "phone", 1, new Document()),
+				definition(fileId, "files", "file", 1, new Document()),
+				definition(mediaId, "media", "media", 1, new Document()))) definitions.add(extra);
+		mongoTemplate.getCollection(CATEGORIES).updateOne(new Document("_id", CUSTOM_CATEGORY),
+				new Document("$set", new Document("propertyDefinitions", definitions).append("propertySchemaV2", definitions)));
+		var assetId = "c0766286-c7bd-4a97-bad6-b3614121067d";
+		var body = "{" +
+				"\"categoryId\":\"" + CUSTOM_CATEGORY + "\",\"title\":\"전체 복제\",\"properties\":{},\"bodyMd\":\"\",\"propertyValues\":[" +
+				"{\"propertyDefinitionId\":\"" + textId + "\",\"type\":\"text\",\"value\":\"본문\"}," +
+				"{\"propertyDefinitionId\":\"" + NUMBER_DEFINITION + "\",\"type\":\"number\",\"value\":\"123.4500\"}," +
+				"{\"propertyDefinitionId\":\"" + checkboxId + "\",\"type\":\"checkbox\",\"value\":true}," +
+				"{\"propertyDefinitionId\":\"" + SELECT_DEFINITION + "\",\"type\":\"select\",\"value\":\"" + OPTION_A + "\"}," +
+				"{\"propertyDefinitionId\":\"" + MULTI_SELECT_DEFINITION + "\",\"type\":\"multi_select\",\"value\":[\"" + OPTION_B + "\"]}," +
+				"{\"propertyDefinitionId\":\"" + dateId + "\",\"type\":\"date\",\"value\":{\"precision\":\"month\",\"start\":\"2026-01\",\"end\":\"2026-03\"}}," +
+				"{\"propertyDefinitionId\":\"" + urlId + "\",\"type\":\"url\",\"value\":\"https://example.com\"}," +
+				"{\"propertyDefinitionId\":\"" + emailId + "\",\"type\":\"email\",\"value\":\"a@example.com\"}," +
+				"{\"propertyDefinitionId\":\"" + phoneId + "\",\"type\":\"phone\",\"value\":\"010-1234-5678\"}," +
+				"{\"propertyDefinitionId\":\"" + fileId + "\",\"type\":\"file\",\"value\":[\"" + assetId + "\"]}," +
+				"{\"propertyDefinitionId\":\"" + mediaId + "\",\"type\":\"media\",\"value\":[\"" + assetId + "\"]}]}";
+		var created = createRaw(TOKEN_A, "canonical-all-duplicate-key-0001", body)
+				.andExpect(status().isCreated()).andReturn();
+		var stored = mongoTemplate.getCollection(RECORDS)
+				.find(new Document("_id", responseData(created).getString("id"))).first();
+		assertThat(stored.getList("propertyValues", Document.class)).hasSize(11);
+		assertThat(stored.getList("propertyValues", Document.class).get(1)
+				.get("value", org.bson.types.Decimal128.class).toString()).isEqualTo("123.4500");
+		assertThat(stored.getList("propertyValues", Document.class).get(5).get("value", Document.class))
+				.containsEntry("precision", "month").containsEntry("end", "2026-03");
+		assertThat(stored.get("properties", Document.class)).isEqualTo(new Document());
 	}
 
 	@Test

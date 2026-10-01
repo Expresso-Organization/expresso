@@ -82,6 +82,12 @@ public class MongoCareerRelationRepository implements CareerRelationRepository {
 		if (existingIds.equals(targetIds)) {
 			return new Replacement(project(sourceDocument), List.of());
 		}
+		var removedIds = existingIds.stream().filter(id -> !targetIds.contains(id)).toList();
+		var removedTargets = removedIds.isEmpty() ? List.<Document>of() : mongoTemplate.find(
+				Query.query(Criteria.where("_id").in(removedIds).and("userId").is(userId)
+						.and("deletedAt").is(null)), Document.class, RECORDS);
+		var addedTargets = targetDocuments.stream()
+				.filter(target -> !existingIds.contains(target.getString("_id"))).toList();
 
 		guardActiveRecord(userId, recordId);
 		for (var targetId : targetIds) {
@@ -144,7 +150,8 @@ public class MongoCareerRelationRepository implements CareerRelationRepository {
 		}
 		var updated = project(updatedDocument);
 		return new Replacement(updated, computationEvents(
-				userId, recordId, propertyId, sourceCategory, definition, targetDocuments, updated.version()));
+				userId, recordId, propertyId, sourceCategory, definition,
+				addedTargets, removedTargets, updated.version()));
 	}
 
 	private List<CareerComputationEvent> computationEvents(
@@ -153,7 +160,8 @@ public class MongoCareerRelationRepository implements CareerRelationRepository {
 			String propertyId,
 			CareerCategory sourceCategory,
 			RelationDefinition relation,
-			List<Document> targets,
+			List<Document> addedTargets,
+			List<Document> removedTargets,
 			long updatedVersion) {
 		var changedIds = new ArrayList<String>();
 		changedIds.add(propertyId);
@@ -175,7 +183,7 @@ public class MongoCareerRelationRepository implements CareerRelationRepository {
 				userId, recordId, uniqueChangedIds, updatedVersion, versions,
 				"career-relation:" + recordId + ":" + propertyId + ":" + recordId + ":v" + updatedVersion));
 		if (relation.inversePropertyId() != null) {
-			for (var target : targets) {
+			for (var target : java.util.stream.Stream.concat(addedTargets.stream(), removedTargets.stream()).toList()) {
 				events.add(new CareerComputationEvent(
 						userId, target.getString("_id"), List.of(relation.inversePropertyId()), version(target), null,
 						"career-relation:" + recordId + ":" + propertyId + ":" + target.getString("_id")

@@ -85,10 +85,11 @@ export async function PUT(
   }
   if (!refreshed.ok) return new Response(null, { status: refreshed.status });
   try {
-    return Response.json(CareerRecordResponseSchema.parse(await refreshed.json()), {
+    const record = CareerRecordResponseSchema.parse(await refreshed.json());
+    return Response.json(record, {
       headers: {
         "cache-control": "no-store",
-        etag: upstream.headers.get("etag") ?? refreshed.headers.get("etag") ?? "",
+        etag: `"v${record.data.version}"`,
       },
     });
   } catch {

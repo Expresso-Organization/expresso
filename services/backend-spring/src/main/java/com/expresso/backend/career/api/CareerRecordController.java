@@ -218,9 +218,10 @@ public class CareerRecordController {
 		var normalizedCategoryId = normalizeUuid(categoryId, "categoryId");
 		if (body.keySet().equals(Set.of("categoryId"))) {
 			return new CreateCareerRecordCommand(normalizedCategoryId, "", List.of(), Map.of(), "",
-					CreateCareerRecordCommand.Mode.EMPTY);
+					CreateCareerRecordCommand.Mode.EMPTY, false);
 		}
-		if (body.keySet().equals(Set.of("categoryId", "title", "properties", "bodyMd"))) {
+		if (body.keySet().equals(Set.of("categoryId", "title", "properties", "bodyMd"))
+				|| body.keySet().equals(Set.of("categoryId", "title", "properties", "bodyMd", "propertyValues"))) {
 			var title = requireString(body, "title");
 			var bodyMd = requireString(body, "bodyMd");
 			if (title.codePointCount(0, title.length()) > 300) {
@@ -233,8 +234,10 @@ public class CareerRecordController {
 			if (properties.size() > 50) {
 				throw new CareerRecordRequestValidationException("properties는 최대 50개까지 허용됩니다");
 			}
-			return new CreateCareerRecordCommand(normalizedCategoryId, title, List.of(), properties, bodyMd,
-					CreateCareerRecordCommand.Mode.DUPLICATE);
+			var canonicalDuplicate = body.containsKey("propertyValues");
+			return new CreateCareerRecordCommand(normalizedCategoryId, title,
+					canonicalDuplicate ? readPropertyValues(body.get("propertyValues")) : List.of(), properties, bodyMd,
+					CreateCareerRecordCommand.Mode.DUPLICATE, canonicalDuplicate);
 		}
 		if (!body.keySet().equals(Set.of("categoryId", "propertyValues"))) {
 			throw new CareerRecordRequestValidationException("CareerRecord 생성 요청 필드 구성이 올바르지 않습니다");
@@ -248,7 +251,7 @@ public class CareerRecordController {
 					"생성 propertyValues에는 select 또는 multi_select 값 하나만 사용할 수 있습니다");
 		}
 		return new CreateCareerRecordCommand(normalizedCategoryId, "", propertyValues, Map.of(), "",
-				CreateCareerRecordCommand.Mode.GROUPED);
+				CreateCareerRecordCommand.Mode.GROUPED, false);
 	}
 
 	static String normalizeUuid(String value, String fieldName) {
@@ -396,16 +399,23 @@ public class CareerRecordController {
 	}
 
 	private static BigDecimal requireDecimalString(Object value, String fieldName) {
-		if (!(value instanceof String decimal) || !PLAIN_DECIMAL_PATTERN.matcher(decimal).matches()) {
+		if (!(value instanceof String decimal) || decimal.length() > 6_200
+				|| !PLAIN_DECIMAL_PATTERN.matcher(decimal).matches()) {
 			throw new CareerRecordRequestValidationException(
-					fieldName + "는 지수 표기 없는 decimal 문자열이어야 합니다");
+					fieldName + "는 최대 6200자의 지수 표기 없는 decimal 문자열이어야 합니다");
 		}
 		try {
-			return new BigDecimal(decimal);
+			var parsed = new BigDecimal(decimal);
+			if (!new org.bson.types.Decimal128(parsed).bigDecimalValue().toPlainString()
+					.equals(parsed.toPlainString())) {
+				throw new CareerRecordRequestValidationException(
+						fieldName + "는 Decimal128에 소수 자릿수까지 정확히 저장 가능해야 합니다");
+			}
+			return parsed;
 		}
-		catch (NumberFormatException exception) {
+		catch (NumberFormatException | ArithmeticException exception) {
 			throw new CareerRecordRequestValidationException(
-					fieldName + "는 유효한 decimal 문자열이어야 합니다");
+					fieldName + "는 Decimal128에 정확히 저장 가능한 decimal 문자열이어야 합니다");
 		}
 	}
 

@@ -110,6 +110,8 @@ describe("POST /api/career/categories/[categoryId]/property-schema/preview", () 
     { kind: "type-change", propertyId, type: "number", config: {} },
     { kind: "delete", propertyId },
     { kind: "restore", propertyId },
+    { kind: "configure", propertyId, config: { source: "1 + 2" } },
+    { kind: "configure", propertyId, config: { relationPropertyId: categoryId, aggregation: "sum" } },
     { ...change, property: { ...change.property, config: { defaultValue: { type: "text", value: "기본값" } } } },
   ])("MVP에서 제외한 deferred mutation을 upstream에 전달하지 않는다", async (excluded) => {
     const fetchMock = vi.fn().mockResolvedValue(Response.json(preview));

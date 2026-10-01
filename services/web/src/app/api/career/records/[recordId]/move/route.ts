@@ -24,8 +24,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ rec
   });
   if (!refreshed.ok) return new Response(null, { status: refreshed.status });
   try {
-    return Response.json(CareerRecordResponseSchema.parse(await refreshed.json()), {
-      headers: { etag: upstream.headers.get("etag") ?? refreshed.headers.get("etag") ?? "" },
+    const record = CareerRecordResponseSchema.parse(await refreshed.json());
+    return Response.json(record, {
+      headers: { etag: `"v${record.data.version}"` },
     });
   }
   catch { return new Response(null, { status: 502 }); }

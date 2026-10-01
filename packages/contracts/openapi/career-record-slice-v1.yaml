@@ -1259,6 +1259,7 @@ components:
           const: number
         value:
           type: string
+          maxLength: 6200
           pattern: '^-?(0|[1-9][0-9]*)(\.[0-9]+)?$'
           description: >-
             지수 표기 없이 쓰는 유한한 plain decimal 문자열이다. JS number로 변환하지
@@ -2028,7 +2029,7 @@ components:
       type: object
       additionalProperties: false
       required: [categoryId, title, properties, bodyMd]
-      description: 현재 Web Record Duplicate의 legacy compatibility snapshot을 그대로 재현하는 전환기 요청
+      description: canonical propertyValues가 있으면 이를 복제 원본으로 사용하고, 없는 legacy Record만 properties에서 변환하는 전환기 요청
       properties:
         categoryId:
           $ref: "#/components/schemas/Uuid"
@@ -2045,6 +2046,9 @@ components:
         bodyMd:
           type: string
           maxLength: 200000
+        propertyValues:
+          description: 원본 Record의 canonical snapshot. 빈 배열도 명시적인 canonical empty 상태임
+          $ref: "#/components/schemas/PropertyValues"
 
     DuplicateCompatibilityPropertyValue:
       oneOf:

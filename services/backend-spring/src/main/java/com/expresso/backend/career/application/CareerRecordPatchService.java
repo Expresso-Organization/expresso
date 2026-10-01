@@ -55,7 +55,7 @@ public class CareerRecordPatchService implements PatchCareerRecordUseCase {
 		if (currentRecord.version() != expectedVersion) {
 			throw new CareerRecordPreconditionFailedException();
 		}
-		var category = validatePropertyDefinitions(currentRecord, changeSet);
+		var category = validatePropertyDefinitions(ownerId, currentRecord, changeSet);
 
 		CareerRecord updatedRecord;
 		try {
@@ -72,13 +72,14 @@ public class CareerRecordPatchService implements PatchCareerRecordUseCase {
 		return persisted;
 	}
 
-	private CareerCategory validatePropertyDefinitions(CareerRecord currentRecord, CareerRecordChangeSet changeSet) {
+	private CareerCategory validatePropertyDefinitions(
+			String ownerId, CareerRecord currentRecord, CareerRecordChangeSet changeSet) {
 		if (changeSet.propertyValues().isEmpty()) {
 			return null;
 		}
-		var category = categoryRepository.findSystemCategoryById(currentRecord.categoryId())
+		var category = categoryRepository.findAccessibleCategoryById(ownerId, currentRecord.categoryId())
 				.orElseThrow(() -> new CareerRecordValidationException(
-						"propertyValues를 변경할 수 있는 system Category를 찾을 수 없습니다"));
+						"propertyValues를 변경할 수 있는 Category를 찾을 수 없습니다"));
 		var allowedDefinitions = new java.util.HashMap<String, PropertyDefinition>();
 		for (var definition : category.propertyDefinitions()) {
 			if (definition.type().writable() && definition.deletedAt() == null) {

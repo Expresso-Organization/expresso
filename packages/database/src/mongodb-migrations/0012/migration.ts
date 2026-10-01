@@ -201,6 +201,7 @@ function canonicalValue(
     const names = optionNames.get(propertyDefinitionId) ?? new Set<string>();
     const ids = (value as string[]).map((name) => {
       if (name.trim().length === 0) throw new Error(`0012 변환 conflict: ${key}에 공백만 있는 tag가 있습니다.`);
+      if (name.length > 80) throw new Error(`0012 변환 conflict: ${key} tag가 80자를 초과합니다.`);
       names.add(name);
       return exactOptionId(propertyDefinitionId, name);
     });
@@ -260,6 +261,23 @@ function equalPropertyValues(left: readonly Document[], right: readonly Document
     && isDeepStrictEqual(value, rightById.get(String(value["propertyDefinitionId"]))));
 }
 
+function validateStoredOptions(definition: Document): void {
+  if (definition["type"] !== "select" && definition["type"] !== "multi_select") return;
+  const config = definition["config"];
+  if (!isObject(config) || !Object.hasOwn(config, "options")) return;
+  const options = config["options"];
+  const ids = new Set<string>();
+  const names = new Set<string>();
+  if (!Array.isArray(options) || options.length > 100 || options.some((option: unknown) => {
+    if (!isObject(option) || typeof option["id"] !== "string" || !UUID.test(option["id"])
+      || typeof option["name"] !== "string" || option["name"].trim().length === 0
+      || option["name"].length > 80 || ids.has(option["id"]) || names.has(option["name"])) return true;
+    ids.add(option["id"]);
+    names.add(option["name"]);
+    return false;
+  })) throw new Error(`0012 option conflict: ${String(definition["key"])}의 기존 option이 올바르지 않습니다.`);
+}
+
 function mergeOptions(category: Document, optionNames: ReadonlyMap<string, Set<string>>): Document {
   const result = clone(category);
   const definitions = Array.isArray(result["propertyDefinitions"]) ? result["propertyDefinitions"] as Document[] : [];
@@ -273,13 +291,15 @@ function mergeOptions(category: Document, optionNames: ReadonlyMap<string, Set<s
     for (const option of options) {
       const id = option["id"];
       const name = option["name"];
-      if (typeof id !== "string" || typeof name !== "string" || byId.has(id) || byName.has(name)) {
+      if (typeof id !== "string" || !UUID.test(id) || typeof name !== "string" || name.trim().length === 0
+        || name.length > 80 || byId.has(id) || byName.has(name)) {
         throw new Error(`0012 option conflict: ${String(definition["key"])}의 기존 option이 올바르지 않습니다.`);
       }
       byId.set(id, option);
       byName.set(name, id);
     }
     for (const name of [...optionNames.get(propertyId)!].sort(compareExact)) {
+      if (name.length > 80) throw new Error(`0012 option conflict: ${String(definition["key"])} tag가 80자를 초과합니다.`);
       const id = exactOptionId(propertyId, name);
       const storedById = byId.get(id);
       const storedIdByName = byName.get(name);
@@ -383,6 +403,10 @@ async function scanBackfill(db: Db): Promise<{
     throw new Error(`0012 preflight conflict: ${report.conflicts.map(({ reason, count }) => `${reason}(${count})`).join(", ")}`);
   }
   const { categories, states } = await loadCategories(db, report.idMappings);
+  for (const category of categories) {
+    const definitions = Array.isArray(category["propertyDefinitions"]) ? category["propertyDefinitions"] as Document[] : [];
+    for (const definition of definitions) validateStoredOptions(definition);
+  }
   const optionNames = new Map<string, Set<string>>();
   let changeCount = 0;
   for await (const record of db.collection<Document>("career_records").find({}).sort({ _id: 1 }).batchSize(100)) {

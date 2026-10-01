@@ -4,6 +4,7 @@ import { runInNewContext } from "node:vm";
 import { randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import type { Document } from "mongodb";
 
 import { createMongoResource, type MongoResource } from "./mongodb.js";
 import { createMongoFixture } from "../../test/support/mongodb.js";
@@ -96,6 +97,17 @@ describeWithInfrastructure("MongoDB resource integration", () => {
 
   beforeAll(async () => {
     // 입력 URI의 DB에는 쓰지 않고 테스트 관리 계정으로 임의 DB만 생성합니다.
+    const fixture = createMongoResource(mongoUrl!, { databaseName });
+    await fixture.db.collection<Document & { _id: string }>("career_property_migration_journal").insertOne({
+      _id: "0012:compatibility-writer-canary",
+      migration: "0012_career_property_values_backfill",
+      kind: "execution_gate",
+      deploymentVersion: "isolated-mongodb-integration-fixture",
+      verifiedAt: new Date(),
+      checkedWrites: 1,
+      mismatches: 0,
+      state: "verified",
+    });
     await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     resource = createMongoResource(mongoUrl!, { databaseName });
     await resource.readinessCheck.run();

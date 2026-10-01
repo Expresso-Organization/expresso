@@ -53,8 +53,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ re
     }
     if (!refreshed.ok) return new Response(null, { status: refreshed.status });
     try {
-      return Response.json(CareerRecordResponseSchema.parse(await refreshed.json()), {
-        headers: { "cache-control": "no-store", etag: upstream.headers.get("etag") ?? refreshed.headers.get("etag") ?? "" },
+      const record = CareerRecordResponseSchema.parse(await refreshed.json());
+      return Response.json(record, {
+        headers: { "cache-control": "no-store", etag: `"v${record.data.version}"` },
       });
     } catch {
       return new Response("백엔드 응답이 계약과 다릅니다", { status: 502 });

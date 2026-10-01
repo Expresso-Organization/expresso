@@ -150,6 +150,29 @@ describe.skipIf(!mongoUrl)("career property reconciliation gate", () => {
     expect(report.canCutover).toBe(true);
   });
 
+  it.each([
+    ["ASCII 80", "x".repeat(80), true],
+    ["ASCII 81", "x".repeat(81), false],
+    ["emoji 40", "😀".repeat(40), true],
+    ["emoji 41", "😀".repeat(41), false],
+  ] as const)("validates %s exact tag options before cutover", async (_case, name, valid) => {
+    const fixture = category();
+    const tags = (fixture["propertyDefinitions"] as Document[]).find((item) => item["key"] === "tags")!;
+    tags["config"] = { options: [{ id: exactOptionId(ids.tags!, name), name }] };
+    await db.collection<StringIdDocument>("career_categories").insertOne(fixture);
+    await db.collection<StringIdDocument>("career_records").insertOne(record(
+      { tags: [name] },
+      [{ propertyDefinitionId: ids.tags, type: "multi_select", value: [exactOptionId(ids.tags!, name)] }],
+    ));
+    await appliedMigrations();
+
+    const report = await reconcileCareerProperties(db);
+
+    expect(report.canCutover).toBe(valid);
+    if (!valid) expect(report.mismatches.map(({ reason }) => reason)).toContain("invalid_canonical_value");
+    expect(JSON.stringify(report)).not.toContain(name);
+  });
+
   it("counts an incomplete canonical definition once instead of also reporting it as missing", async () => {
     const incompleteCategory = category();
     incompleteCategory["propertyDefinitions"] = (incompleteCategory["propertyDefinitions"] as Document[]).map((item) => ({

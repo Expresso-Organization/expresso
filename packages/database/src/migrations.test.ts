@@ -570,12 +570,14 @@ describe.skipIf(!mongoUrl)("Career legacy property value backfill migration 0012
       }
     });
     const decimal = Decimal128.fromString("123.450");
-    const properties = { note: "", score: decimal, active: true, tags: ["Java", "java", " Java ", "Java"], month: "2026-09" };
+    const longestValidTag = "x".repeat(80);
+    const longestValidEmojiTag = "😀".repeat(40);
+    const properties = { note: "", score: decimal, active: true, tags: ["Java", "java", " Java ", "Java", longestValidTag, longestValidEmojiTag], month: "2026-09" };
     const expectedValues = [
       { propertyDefinitionId: ids.note, type: "text", value: "" },
       { propertyDefinitionId: ids.score, type: "number", value: decimal },
       { propertyDefinitionId: ids.active, type: "checkbox", value: true },
-      { propertyDefinitionId: ids.tags, type: "multi_select", value: ["Java", "java", " Java ", "Java"].map((name) => exactOptionId(ids.tags, name)) },
+      { propertyDefinitionId: ids.tags, type: "multi_select", value: ["Java", "java", " Java ", "Java", longestValidTag, longestValidEmojiTag].map((name) => exactOptionId(ids.tags, name)) },
       { propertyDefinitionId: ids.month, type: "date", value: { precision: "month", start: "2026-09", end: null } },
     ];
     const legacyOnly = record(properties);
@@ -600,7 +602,7 @@ describe.skipIf(!mongoUrl)("Career legacy property value backfill migration 0012
       expect((await db.collection<Document & { _id: string }>("career_records").findOne({ _id: compatibilityWriterRecord._id }))?.["propertyValues"]).toEqual(typedDayCanonical);
       const storedCategory = await db.collection<Document & { _id: string }>("career_categories").findOne({ _id: categoryId });
       expect((storedCategory?.["propertyDefinitions"] as Document[]).find((definition) => definition["id"] === ids.tags)?.["config"]).toEqual({
-        options: [" Java ", "Java", "java"].map((name) => ({ id: exactOptionId(ids.tags, name), name })),
+        options: [" Java ", "Java", "java", longestValidTag, longestValidEmojiTag].map((name) => ({ id: exactOptionId(ids.tags, name), name })),
       });
       expect(await db.collection<Document & { _id: string }>("career_property_migration_journal").countDocuments({ migration: "0012_career_property_values_backfill", kind: "document" })).toBe(2);
 
@@ -640,6 +642,8 @@ describe.skipIf(!mongoUrl)("Career legacy property value backfill migration 0012
     ["non-finite number", (value: Document) => { (value["properties"] as Document)["score"] = Number.POSITIVE_INFINITY; }],
     ["oversized text", (value: Document) => { (value["properties"] as Document)["note"] = "가".repeat(50_001); }],
     ["whitespace-only tag", (value: Document) => { (value["properties"] as Document)["tags"] = ["   "]; }],
+    ["overlong tag", (value: Document) => { (value["properties"] as Document)["tags"] = ["a".repeat(81)]; }],
+    ["overlong emoji tag", (value: Document) => { (value["properties"] as Document)["tags"] = ["😀".repeat(41)]; }],
     ["invalid date", (value: Document) => { (value["properties"] as Document)["month"] = "2026-09-01"; }],
     ["date precision mismatch", (value: Document) => { (value["properties"] as Document)["month"] = { type: "date", value: { precision: "month", start: "2026-09-01", end: null } }; }],
     ["invalid select UUID in existing canonical value", (value: Document) => {
@@ -676,6 +680,32 @@ describe.skipIf(!mongoUrl)("Career legacy property value backfill migration 0012
       expect(await db.collection<Document & { _id: string }>("career_categories").findOne({ _id: categoryId })).toEqual(beforeCategory);
       expect(await db.collection<Document & { _id: string }>("career_records").findOne({ _id: storedRecord._id })).toEqual(beforeRecord);
       expect(await db.collection<Document & { _id: string }>("career_property_migration_journal").countDocuments({ kind: "document" })).toBe(0);
+    } finally {
+      try { await db.dropDatabase(); } finally { await client.close(); }
+    }
+  }, 60_000);
+
+  it.each([
+    ["overlong stored option", [{ id: exactOptionId(ids.tags, "x".repeat(81)), name: "x".repeat(81) }]],
+    ["overlong stored emoji option", [{ id: exactOptionId(ids.tags, "😀".repeat(41)), name: "😀".repeat(41) }]],
+    ["duplicate stored option ID", [{ id: randomUUID(), name: "a" }, { id: randomUUID(), name: "b" }]],
+  ])("rejects %s even without a matching legacy tag value", async (label, options) => {
+    const databaseName = `expresso_test_cp12_option_${randomUUID().slice(0, 12)}`;
+    const client = new MongoClient(mongoUrl!, { serverSelectionTimeoutMS: 3_000 });
+    const db = client.db(databaseName);
+    try {
+      await client.connect();
+      const storedCategory = category();
+      const definition = (storedCategory["propertyDefinitions"] as Document[]).find((item) => item["key"] === "tags")!;
+      definition["config"] = { options: label === "duplicate stored option ID" ? [options[0], { ...options[1], id: options[0]!["id"] }] : options };
+      await db.collection<Document & { _id: string }>("career_categories").insertOne(storedCategory);
+      await db.collection<Document & { _id: string }>("career_records").insertOne(record({ note: "정상" }));
+      await installCanaryGate(db);
+
+      await expect((async () => {
+        for (const step of await careerPropertyLegacyBackfillSteps()) await step.run(db);
+      })()).rejects.toThrow(/0012|conflict|option/i);
+      expect(await db.collection("career_property_migration_journal").countDocuments({ kind: "document" })).toBe(0);
     } finally {
       try { await db.dropDatabase(); } finally { await client.close(); }
     }

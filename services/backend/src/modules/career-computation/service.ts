@@ -102,6 +102,19 @@ function derivedDefinitions(category: CareerCategoryDoc): DerivedDefinition[] {
   });
 }
 function computedMap(record: CareerRecordDoc): Record<string, unknown> { return { ...(record.computedProperties ?? {}) } as Record<string, unknown>; }
+export function decimal128ToPlainString(value: Decimal128): string {
+  const text = value.toString();
+  const match = /^(-?)(\d+)(?:\.(\d+))?(?:[Ee]([+-]?\d+))?$/.exec(text);
+  if (!match) throw new Error("canonical Decimal128 number가 유한한 십진수가 아닙니다");
+  const digits = match[2]! + (match[3] ?? "");
+  const point = match[2]!.length + Number.parseInt(match[4] ?? "0", 10);
+  const plain = point <= 0
+    ? `0.${"0".repeat(-point)}${digits}`
+    : point >= digits.length
+      ? digits + "0".repeat(point - digits.length)
+      : `${digits.slice(0, point)}.${digits.slice(point)}`;
+  return (match[1] ?? "") + plain;
+}
 function metadata(computed: Record<string, unknown>): ComputationMetadata { const value = computed.__expressoComputation; return value && typeof value === "object" ? value as ComputationMetadata : {}; }
 function canonical(value: unknown): string { return JSON.stringify(value); }
 function derivedClosure(definitions_: readonly DerivedDefinition[], changed: readonly string[]): readonly DerivedDefinition[] {
@@ -331,7 +344,7 @@ export function resolveComputationValue(
     const owner = byId.get(raw.propertyDefinitionId);
     if (!owner || owner.type !== raw.type) throw new Error("canonical PropertyValue가 Definition과 일치하지 않습니다");
     const candidate = raw.type === "number"
-      ? { ...raw, value: raw.value instanceof Decimal128 ? raw.value.toString() : String(raw.value) }
+      ? { ...raw, value: raw.value instanceof Decimal128 ? decimal128ToPlainString(raw.value) : String(raw.value) }
       : raw;
     const parsed = WritableCareerPropertyValueSchema.safeParse(candidate);
     if (!parsed.success) throw new Error("canonical PropertyValue shape가 올바르지 않습니다");

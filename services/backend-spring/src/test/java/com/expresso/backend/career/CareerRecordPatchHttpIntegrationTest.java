@@ -47,6 +47,7 @@ class CareerRecordPatchHttpIntegrationTest {
 	private static final String RECORD_ID = "10ecce84-8d6b-4b76-87de-ec76729f9b90";
 	private static final String MISSING_RECORD_ID = "45e37ac7-076e-4cd0-a932-e723a7c650af";
 	private static final String CATEGORY_ID = "475106fc-bf88-4a73-9c27-66c648733936";
+	private static final String CUSTOM_CATEGORY_ID = "475106fc-bf88-4a73-9c27-66c648733937";
 	private static final String PROPERTY_DEFINITION_ID = "6c663539-48c1-5d12-939d-f100fac993c1";
 	private static final String NUMBER_PROPERTY_DEFINITION_ID = "10000000-0000-4000-8000-000000000002";
 	private static final String OPTION_ID = "20000000-0000-4000-8000-000000000001";
@@ -107,6 +108,51 @@ class CareerRecordPatchHttpIntegrationTest {
 		assertThat(stored).isNotNull();
 		assertThat(stored.getList("propertyValues", Document.class).getFirst().getString("value"))
 				.isEqualTo("Updated property");
+		assertThat(stored.get("properties", Document.class)).isEqualTo(new Document("legacy", "keep"));
+	}
+
+	@Test
+	void updatesPropertyValuesInAnOwnedCustomCategory() throws Exception {
+		insertCustomCategory(USER_ID);
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1)
+				.append("categoryId", CUSTOM_CATEGORY_ID));
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", "{\"propertyValues\":[{\"propertyDefinitionId\":\""
+				+ PROPERTY_DEFINITION_ID + "\",\"type\":\"text\",\"value\":\"Custom\"}]}")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.propertyValues[0].value").value("Custom"));
+	}
+
+	@Test
+	void rejectsPropertyValuesInAnotherUsersCustomCategory() throws Exception {
+		insertCustomCategory(OTHER_USER_ID);
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1)
+				.append("categoryId", CUSTOM_CATEGORY_ID));
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", "{\"propertyValues\":[]}")
+				.andExpect(status().isBadRequest());
+		assertStoredVersionAndTitle(1, "Original title");
+	}
+
+	@Test
+	void rejectsPropertyValuesWhenCategoryIsMissing() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1)
+				.append("categoryId", CUSTOM_CATEGORY_ID));
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", "{\"propertyValues\":[]}")
+				.andExpect(status().isBadRequest());
+		assertStoredVersionAndTitle(1, "Original title");
+	}
+
+	@Test
+	void emptyPropertyValuesClearsTheCanonicalSnapshotWithoutLegacyFallback() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+
+		patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", "{\"propertyValues\":[]}")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.propertyValues").isEmpty());
+		var stored = mongoTemplate.getCollection(RECORDS).find(new Document("_id", RECORD_ID)).first();
+		assertThat(stored.getList("propertyValues", Document.class)).isEmpty();
 		assertThat(stored.get("properties", Document.class)).isEqualTo(new Document("legacy", "keep"));
 	}
 
@@ -277,6 +323,24 @@ class CareerRecordPatchHttpIntegrationTest {
 		}
 
 		assertStoredVersionAndTitle(1, "Original title");
+	}
+
+	@Test
+	void rejectsNumbersThatDecimal128CannotStoreExactlyBeforeRecordOrOutboxWrite() throws Exception {
+		mongoTemplate.getCollection(RECORDS).insertOne(canonicalRecord(USER_ID, 1));
+		mongoTemplate.getCollection(CATEGORIES).updateOne(
+				new Document("_id", CATEGORY_ID),
+				new Document("$set", new Document("propertyDefinitions", List.of(
+						canonicalDefinition(id(2), "number", "숫자", "number", 0)))));
+		for (var decimal : List.of("9".repeat(35), "1e-7", "9".repeat(6_201))) {
+			var body = "{\"propertyValues\":[{\"propertyDefinitionId\":\"" + id(2)
+					+ "\",\"type\":\"number\",\"value\":\"" + decimal + "\"}]}";
+			patchRecord(ACCESS_TOKEN, RECORD_ID, "\"v1\"", body)
+					.andExpect(status().isBadRequest())
+					.andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+		}
+		assertStoredVersionAndTitle(1, "Original title");
+		assertThat(mongoTemplate.getCollection(OUTBOX_EVENTS).countDocuments()).isZero();
 	}
 
 	@Test
@@ -635,6 +699,19 @@ class CareerRecordPatchHttpIntegrationTest {
 						.append("type", "text")
 						.append("required", false)
 						.append("system", true)))
+				.append("icon", "briefcase")
+				.append("defaultView", "table"));
+	}
+
+	private void insertCustomCategory(String ownerId) {
+		mongoTemplate.getCollection(CATEGORIES).insertOne(new Document("_id", CUSTOM_CATEGORY_ID)
+				.append("userId", ownerId)
+				.append("key", "custom")
+				.append("name", "Custom")
+				.append("isSystem", false)
+				.append("sortOrder", 1)
+				.append("propertyDefinitions", List.of(canonicalDefinition(
+						PROPERTY_DEFINITION_ID, "role", "Role", "text", 0)))
 				.append("icon", "briefcase")
 				.append("defaultView", "table"));
 	}

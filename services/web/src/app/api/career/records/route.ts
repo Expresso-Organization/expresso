@@ -4,6 +4,7 @@ import {
   CareerRecordResponseSchema,
   CreateCareerRecordSchema,
   UuidSchema,
+  WritableCareerPropertyValueSchema,
 } from "@expresso/contracts";
 import { z } from "zod";
 
@@ -36,6 +37,7 @@ const SpringDuplicateCreateCareerRecordSchema = z.strictObject({
   title: z.string().max(300),
   properties: CareerPropertiesSchema,
   bodyMd: z.string().max(200_000),
+  propertyValues: z.array(WritableCareerPropertyValueSchema).max(50).optional(),
 });
 
 export async function POST(request: Request) {
@@ -63,6 +65,9 @@ export async function POST(request: Request) {
         title: duplicateBody.data.title,
         properties: duplicateBody.data.properties,
         bodyMd: duplicateBody.data.bodyMd,
+        ...(duplicateBody.data.propertyValues !== undefined
+          ? { propertyValues: duplicateBody.data.propertyValues }
+          : {}),
       }
     : groupedBody.success
     ? groupedBody.data

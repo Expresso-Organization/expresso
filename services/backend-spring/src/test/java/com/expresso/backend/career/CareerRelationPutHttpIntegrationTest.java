@@ -128,7 +128,7 @@ class CareerRelationPutHttpIntegrationTest {
 	}
 
 	@Test
-	void replacementLeavesRemovedTargetVersionsUntouched() throws Exception {
+	void replacementRecomputesRemovedAndAddedTargetsWithoutChangingTheirVersions() throws Exception {
 		insertEdge(SOURCE_ID, RELATION_ID, TARGET_B_ID, INVERSE_ID);
 		insertEdge(SOURCE_ID, RELATION_ID, TARGET_C_ID, INVERSE_ID);
 		insertEdge(TARGET_B_ID, INVERSE_ID, SOURCE_ID, RELATION_ID);
@@ -146,8 +146,29 @@ class CareerRelationPutHttpIntegrationTest {
 		assertThat(mongoTemplate.getCollection("career_record_relations")
 				.countDocuments(new Document("sourceRecordId", SOURCE_ID).append("targetRecordId", TARGET_B_ID)))
 				.isZero();
-		assertThat(mongoTemplate.getCollection("outbox_events")
-				.countDocuments(new Document("payload.recordId", TARGET_B_ID))).isZero();
+		assertThat(outbox("career-relation:" + SOURCE_ID + ":" + RELATION_ID + ":" + TARGET_B_ID + ":v2"))
+				.isNotNull();
+		assertThat(outbox("career-relation:" + SOURCE_ID + ":" + RELATION_ID + ":" + TARGET_D_ID + ":v2"))
+				.isNotNull();
+		assertThat(outbox("career-relation:" + SOURCE_ID + ":" + RELATION_ID + ":" + TARGET_C_ID + ":v2"))
+				.isNull();
+	}
+
+	@Test
+	void clearingRelationsRecomputesTheRemovedInverseTarget() throws Exception {
+		insertEdge(SOURCE_ID, RELATION_ID, TARGET_B_ID, INVERSE_ID);
+		insertEdge(TARGET_B_ID, INVERSE_ID, SOURCE_ID, RELATION_ID);
+
+		mockMvc.perform(put("/v1/career/records/{recordId}/relations", SOURCE_ID)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN)
+				.header(HttpHeaders.IF_MATCH, "\"v1\"")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(request(RELATION_ID)))
+				.andExpect(status().isOk());
+
+		assertThat(outbox("career-relation:" + SOURCE_ID + ":" + RELATION_ID + ":" + TARGET_B_ID + ":v2"))
+				.isNotNull();
+		assertThat(mongoTemplate.getCollection("career_record_relations").countDocuments()).isZero();
 	}
 
 	@Test

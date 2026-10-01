@@ -442,6 +442,7 @@ class CareerPropertyDefinitionCreateHttpIntegrationTest {
 	void rejectsDuplicateActiveOrDeletedIdentityAndLeavesCategoryAndRecordsUntouched() throws Exception {
 		for (var conflictingChange : List.of(
 				createChange(NEW_PROPERTY_ID, "role", "중복 key", "text", new Document()),
+				createChange(NEW_PROPERTY_ID, "old", "삭제된 key 재사용", "text", new Document()),
 				createChange(ACTIVE_PROPERTY_ID, "another", "중복 active id", "text", new Document()),
 				createChange(DELETED_PROPERTY_ID, "deleted_again", "중복 deleted id", "text", new Document()))) {
 			var beforeCategory = storedCategory();

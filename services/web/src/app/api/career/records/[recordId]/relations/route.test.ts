@@ -102,6 +102,21 @@ describe("/api/career/records/[recordId]/relations", () => {
     expect(await response.json()).toEqual(fastifyRecord);
   });
 
+  it("read-after-write 중 version이 바뀌면 반환 Record와 동일한 ETag를 준다", async () => {
+    const latest = { ...fastifyRecord, data: { ...fastifyRecord.data, version: 3 }, resource: { ...fastifyRecord.resource, version: 3 } };
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce(Response.json({ data: { id: recordId } }, { headers: { etag: '"v2"' } }))
+      .mockResolvedValueOnce(Response.json(latest)));
+
+    const response = await PUT(new Request("http://localhost", {
+      method: "PUT", headers: { "content-type": "application/json", "if-match": '"v1"' },
+      body: JSON.stringify({ propertyId, targetIds: [targetId] }),
+    }), { params: Promise.resolve({ recordId }) });
+
+    expect((await response.json()).data.version).toBe(3);
+    expect(response.headers.get("etag")).toBe('"v3"');
+  });
+
   it.each([400, 404, 409, 412])("returns Spring relation failure %i without reading Fastify", async (status) => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status }));
     vi.stubGlobal("fetch", fetchMock);

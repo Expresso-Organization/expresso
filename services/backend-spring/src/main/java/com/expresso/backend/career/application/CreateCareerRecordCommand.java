@@ -12,7 +12,8 @@ public record CreateCareerRecordCommand(
 		List<PropertyValue> propertyValues,
 		Map<String, Object> compatibilityProperties,
 		String bodyMd,
-		Mode mode) {
+		Mode mode,
+		boolean canonicalDuplicate) {
 
 	public enum Mode {
 		EMPTY,

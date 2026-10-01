@@ -11,12 +11,22 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
   const mongo = client.db(databaseName);
   const collections = mongoCollections(mongo);
   beforeAll(async () => {
+    await mongo.collection<Document & { _id: string }>("career_property_migration_journal").insertOne({
+      _id: "0012:compatibility-writer-canary",
+      migration: "0012_career_property_values_backfill",
+      kind: "execution_gate",
+      deploymentVersion: "isolated-schema-test-fixture",
+      verifiedAt: new Date(),
+      checkedWrites: 1,
+      mismatches: 0,
+      state: "verified",
+    });
     await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
   }, 60_000);
   afterAll(async () => { try { await mongo.dropDatabase(); } finally { await client.close(); } });
 
   it("creates every product collection and preserves the seeded IDs and all 30 additional designs", async () => {
-    expect(await mongo.listCollections({}, { nameOnly: true }).toArray()).toHaveLength(82);
+    expect(await mongo.listCollections({}, { nameOnly: true }).toArray()).toHaveLength(83);
     expect(await collections.plans.countDocuments()).toBe(3);
     expect((await collections.plans.findOne({ code: "free" }))?._id).toBe("aa09f35f-bde6-4e18-b9cd-7b32759bf43b");
     expect(await collections.careerCategories.countDocuments({ isSystem: true })).toBe(7);
@@ -31,7 +41,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await collections.plans.updateOne({ code: "free" }, { $set: { generationQuota: 17 } });
     const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     expect(result.applied).toEqual([]);
-    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_career_record_slice"]);
+    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_career_record_slice", "0010_career_rich_block_body", "0011_career_property_canonical_identity", "0012_career_property_values_backfill", "0013_career_computation_version"]);
     expect((await collections.plans.findOne({ code: "free" }))?.generationQuota).toBe(17);
   });
 

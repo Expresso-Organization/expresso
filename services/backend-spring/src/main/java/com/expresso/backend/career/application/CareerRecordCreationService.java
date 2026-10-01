@@ -66,11 +66,7 @@ public class CareerRecordCreationService implements CreateCareerRecordUseCase {
 					ownerId, command.categoryId(), command.propertyValues(), idempotencyKey);
 			return new CreateCareerRecordResult(grouped.record(), grouped.created());
 		}
-		categoryRepository.findAccessibleCategoryById(ownerId, command.categoryId())
-				.orElseThrow(CareerRecordCategoryNotAllowedException::new);
-		var newRecord = createRecord(ownerId, command.categoryId(), "", List.of());
-		var result = recordRepository.createOrReplay(
-				newRecord, idempotencyKey, requestHash(command.categoryId(), null), Map.of());
+		var result = createGroupedRecordWithRetry(ownerId, command.categoryId(), List.of(), idempotencyKey);
 		return new CreateCareerRecordResult(result.record(), result.created());
 	}
 
@@ -97,16 +93,46 @@ public class CareerRecordCreationService implements CreateCareerRecordUseCase {
 			String idempotencyKey) {
 		var category = categoryRepository.findAccessibleCategoryById(ownerId, command.categoryId())
 				.orElseThrow(CareerRecordCategoryNotAllowedException::new);
-		var mapped = duplicatePropertiesMapper.map(category.propertyDefinitions(), command.compatibilityProperties());
-		categoryRepository.addExactOptions(category.id(), mapped.newOptionsByDefinitionId());
-		var newRecord = createRecord(ownerId, command.categoryId(), command.title(), mapped.propertyValues());
+		List<PropertyValue> values;
+		if (command.canonicalDuplicate()) {
+			validateDuplicateCanonicalValues(category.propertyDefinitions(), command.propertyValues());
+			values = command.propertyValues();
+		}
+		else {
+			var mapped = duplicatePropertiesMapper.map(category.propertyDefinitions(), command.compatibilityProperties());
+			categoryRepository.addExactOptions(category.id(), mapped.newOptionsByDefinitionId());
+			values = mapped.propertyValues();
+		}
+		var newRecord = createRecord(ownerId, command.categoryId(), command.title(), values);
 		var result = recordRepository.createOrReplay(
 				newRecord, idempotencyKey, duplicateRequestHash(command),
 				command.compatibilityProperties(), command.bodyMd());
 		if (result.created()) {
-			appendComputationWork(result.record(), category.propertyDefinitions(), mapped.propertyValues());
+			appendComputationWork(result.record(), category.propertyDefinitions(), values);
 		}
 		return result;
+	}
+
+	private static void validateDuplicateCanonicalValues(
+			List<PropertyDefinition> definitions, List<PropertyValue> values) {
+		var active = new java.util.HashMap<String, PropertyDefinition>();
+		for (var definition : definitions) {
+			if (definition.deletedAt() == null && definition.type().writable()) active.put(definition.id(), definition);
+		}
+		for (var value : values) {
+			var definition = active.get(value.propertyDefinitionId());
+			if (definition == null || !definition.type().wireName().equals(value.type().wireName())) {
+				throw new CareerRecordValidationException("복제 PropertyValue가 현재 Category Definition과 일치하지 않습니다");
+			}
+			if (value instanceof SelectPropertyValue select && select.value() != null
+					&& !optionIds(definition).contains(select.value())) {
+				throw new CareerRecordValidationException("복제 select option이 현재 Category에 없습니다");
+			}
+			if (value instanceof MultiSelectPropertyValue multi
+					&& !optionIds(definition).containsAll(multi.value())) {
+				throw new CareerRecordValidationException("복제 multi_select option이 현재 Category에 없습니다");
+			}
+		}
 	}
 
 	private CareerRecordRepository.CreateResult createGroupedRecordWithRetry(
@@ -150,7 +176,7 @@ public class CareerRecordCreationService implements CreateCareerRecordUseCase {
 		var newRecord = createRecord(ownerId, categoryId, "", propertyValues);
 		var result = recordRepository.createOrReplay(
 				newRecord, idempotencyKey, requestHash(categoryId, initial), legacyProperties(initial));
-		if (result.created()) appendComputationWork(result.record(), category.propertyDefinitions(), initial.definition());
+		if (result.created()) appendComputationWork(result.record(), category.propertyDefinitions(), propertyValues);
 		return result;
 	}
 
@@ -274,11 +300,13 @@ public class CareerRecordCreationService implements CreateCareerRecordUseCase {
 
 	private static String duplicateRequestHash(CreateCareerRecordCommand command) {
 		var canonical = new StringBuilder();
-		appendHashValue(canonical, Map.of(
-				"bodyMd", command.bodyMd(),
-				"categoryId", command.categoryId(),
-				"properties", command.compatibilityProperties(),
-				"title", command.title()));
+		var fields = new LinkedHashMap<String, Object>();
+		fields.put("bodyMd", command.bodyMd());
+		fields.put("categoryId", command.categoryId());
+		fields.put("properties", command.compatibilityProperties());
+		fields.put("title", command.title());
+		if (command.canonicalDuplicate()) fields.put("propertyValues", command.propertyValues());
+		appendHashValue(canonical, fields);
 		try {
 			return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
 					.digest(canonical.toString().getBytes(StandardCharsets.UTF_8)));

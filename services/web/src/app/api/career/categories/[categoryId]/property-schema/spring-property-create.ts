@@ -23,7 +23,7 @@ export function usesSpringPropertyMutation(change: CareerPropertySchemaChange): 
 }
 
 export function isCareerPropertyMutationEnabledForMvp(change: CareerPropertySchemaChange): boolean {
-  if (change.kind === "type-change" || change.kind === "delete" || change.kind === "restore") return false;
+  if (change.kind === "type-change" || change.kind === "delete" || change.kind === "restore" || change.kind === "configure") return false;
   if (change.kind === "create" && Object.hasOwn(change.property.config, "defaultValue")) return false;
   return true;
 }

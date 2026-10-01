@@ -176,6 +176,21 @@ describe("POST /api/career/records", () => {
     expect(await response.json()).toEqual(duplicatedLegacyResponse);
   });
 
+  it("canonical Duplicate snapshot을 Spring에 손실 없이 전달한다", async () => {
+    const propertyValues = [
+      { propertyDefinitionId: recordId, type: "number", value: "0.0000001" },
+    ];
+    const body = { createMode: "duplicate", categoryId, title: "정밀 복제", properties: {}, bodyMd: "", propertyValues };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(Response.json(springResponse, { status: 201 }))
+      .mockResolvedValueOnce(Response.json(legacyResponse));
+    vi.stubGlobal("fetch", fetchMock);
+
+    expect((await POST(createRequest(body))).status).toBe(200);
+    expect(fetchMock).toHaveBeenNthCalledWith(1, "http://localhost:4100/v1/career/records",
+      expect.objectContaining({ body: JSON.stringify({ categoryId, title: body.title, properties: {}, bodyMd: "", propertyValues }) }));
+  });
+
   it("Record Duplicate는 Spring URL이 없을 때 Fastify create로 우회하지 않는다", async () => {
     delete process.env.CAREER_SPRING_API_BASE_URL;
     const fetchMock = vi.fn();

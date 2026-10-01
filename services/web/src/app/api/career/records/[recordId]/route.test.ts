@@ -112,6 +112,22 @@ describe("PATCH /api/career/records/[recordId]", () => {
     expect((await response.json()).data.version).toBe(1);
   });
 
+  it("Spring PATCH 뒤 다른 쓰기가 끼어들어도 ETag는 반환 body의 최신 version을 가리킨다", async () => {
+    const latest = {
+      ...fastifyResponse,
+      data: { ...fastifyResponse.data, version: 3 },
+      resource: { ...fastifyResponse.resource, version: 3 },
+    };
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce(Response.json(springResponse, { headers: { etag: '"v2"' } }))
+      .mockResolvedValueOnce(Response.json(latest)));
+
+    const response = await PATCH(request({ propertyValues }), { params: Promise.resolve({ recordId }) });
+
+    expect((await response.json()).data.version).toBe(3);
+    expect(response.headers.get("etag")).toBe('"v3"');
+  });
+
   it("title patch를 Spring에 보내고 Fastify에서 갱신된 Record를 읽는다", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(Response.json({

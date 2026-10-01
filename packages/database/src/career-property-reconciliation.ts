@@ -277,6 +277,17 @@ export async function reconcileCareerProperties(db: Db): Promise<CareerPropertyR
         continue;
       }
       const definition = { id, key, type, required: raw["required"], deletedAt: raw["deletedAt"], config: raw["config"] };
+      if (type === "select" || type === "multi_select") {
+        const options = raw["config"]["options"];
+        const seenIds = new Set<string>();
+        if (!Array.isArray(options) || options.length > 100 || options.some((option: unknown) => {
+          if (!isObject(option) || typeof option["id"] !== "string" || !UUID.test(option["id"])
+            || typeof option["name"] !== "string" || option["name"].trim().length === 0
+            || option["name"].length > 80 || seenIds.has(option["id"])) return true;
+          seenIds.add(option["id"]);
+          return false;
+        })) mismatches.add("invalid_canonical_value", `career_categories/${categoryId}/propertyDefinitions/${key}/config/options`);
+      }
       const officialId = officialByCategoryAndKey.get(`${categoryId}:${key}`);
       if (officialId !== id) mismatches.add("definition_identity_mismatch", `career_categories/${categoryId}/propertyDefinitions/${key}`);
       definitionsByKey.set(key, definition);

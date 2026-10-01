@@ -40,6 +40,17 @@ describe("POST /api/career/records/[recordId]/move", () => {
     expect(response.status).toBe(200);
   });
 
+  it("read-after-write 중 version이 바뀌면 반환 Record와 동일한 ETag를 준다", async () => {
+    const latest = { ...record, data: { ...record.data, version: 3 }, resource: { ...record.resource, version: 3 } };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(Response.json({ data: { id: recordId } }, { headers: { etag: '"v2"' } })).mockResolvedValueOnce(Response.json(latest)));
+    const body = { targetCategoryId: categoryId, previewToken: "x".repeat(40), expectedVersion: 1, discardUnmappedPropertyIds: [] };
+
+    const response = await POST(new Request("http://localhost", { method: "POST", headers: { "content-type": "application/json", "if-match": '"v1"' }, body: JSON.stringify(body) }), { params: Promise.resolve({ recordId }) });
+
+    expect((await response.json()).data.version).toBe(3);
+    expect(response.headers.get("etag")).toBe('"v3"');
+  });
+
   it("Spring URL이 없으면 Fastify Move로 fallback하지 않는다", async () => {
     delete process.env.CAREER_SPRING_API_BASE_URL;
     const fetchMock = vi.fn();

@@ -99,7 +99,7 @@ describe("career editor contracts", () => {
       type: "number",
       value: "123.4500",
     }).value).toBe("123.4500");
-    for (const value of [123.45, "1e3", "NaN", "Infinity"]) {
+    for (const value of [123.45, "1e3", "NaN", "Infinity", "9".repeat(6_201)]) {
       expect(() => WritableCareerPropertyValueSchema.parse({
         propertyDefinitionId,
         type: "number",
