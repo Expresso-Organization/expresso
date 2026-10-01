@@ -138,6 +138,7 @@ const careerDocumentService = new CareerDocumentService(
 );
 const app = buildApi({
   config,
+  jobChatAi: ai,
   readinessChecks: [database.readinessCheck, redis.readinessCheck],
   identityService,
   ...(googleIdTokenVerifier ? { googleIdTokenVerifier } : {}),

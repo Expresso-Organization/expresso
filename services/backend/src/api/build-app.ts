@@ -1,4 +1,6 @@
 import Fastify, { LogController, type FastifyInstance } from "fastify";
+import type { AiClient } from "../platform/ai/client.js";
+import { registerJobChatRoutes } from "../modules/job-chat/routes.js";
 
 import type { RuntimeConfig } from "../config/runtime-config.js";
 import type { ReadinessCheck } from "../modules/system/readiness.js";
@@ -67,6 +69,7 @@ import websocket from "@fastify/websocket";
 import { registerCareerDocumentSocket } from "../modules/career-editor/socket.js";
 
 export interface BuildApiOptions {
+  jobChatAi?: AiClient | null;
   config: RuntimeConfig;
   readinessChecks?: readonly ReadinessCheck[];
   identityService?: IdentityApi;
@@ -176,6 +179,20 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
       registerJobAnalysisRoutes(app, {
         jobAnalysisService: options.jobAnalysisService,
         authenticateRequest: createAuthenticateRequest(options.identityService),
+      });
+    }
+   if (
+    options.identityService &&
+    options.jobBoardService &&
+    options.consentService
+    ) {
+      registerJobChatRoutes(app, {
+        ai: options.jobChatAi ?? null,
+        jobBoardService: options.jobBoardService,
+        consentService: options.consentService,
+        authenticateRequest: createAuthenticateRequest(
+          options.identityService,
+        ),
       });
     }
     if (options.materialsService) {
