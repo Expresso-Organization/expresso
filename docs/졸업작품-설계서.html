@@ -523,6 +523,22 @@ svg.dg .ll  { stroke: var(--ex-line-200); stroke-width: 1; stroke-dasharray: 4 5
 svg.dg .tk  { stroke: var(--ex-line-200); stroke-width: 1; fill: none; }
 svg.dg .uc  { fill: var(--ex-surface-50); stroke: var(--ex-line-200); stroke-width: 1; }
 svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
+/* 역할 색 — 제안서(docs/프로젝트-제안서.html) 모델 그림의 네 쌍을 그대로 쓴다. 토큰 표에 없는 값이라
+   여기 한 곳에만 둔다: 입력 · 동결(사전학습) · 학습 · 출력. */
+svg.dg .c-in  { fill: #EAF3FF; stroke: #6C9CD2; stroke-width: 1.3; }
+svg.dg .c-fz  { fill: #F0EDFC; stroke: #9382C4; stroke-width: 1.3; }
+svg.dg .c-tr  { fill: #FFF0DA; stroke: #D69B47; stroke-width: 1.3; }
+svg.dg .c-out { fill: #E6F5EF; stroke: #65A58E; stroke-width: 1.3; }
+svg.dg .hd  { font-family: var(--ex-font-ui); font-size: 12px; font-weight: 600; fill: #53657D; }
+svg.dg .ar  { stroke: #53657D; stroke-width: 1.4; fill: none; stroke-linejoin: round; }
+svg.dg .ard { stroke: #53657D; stroke-width: 1.2; fill: none; stroke-dasharray: 4 4; }
+/* 일정 막대 — 제안서 일정표의 단계 색. 값은 토큰이다. */
+svg.dg .gb-an { fill: var(--ex-crema); }
+svg.dg .gb-im { fill: var(--ex-espresso); }
+svg.dg .gb-ai { fill: var(--ex-slate-700); }
+svg.dg .gb-qa { fill: var(--ex-slate-500); }
+svg.dg .gb-do { fill: var(--ex-bean-50); stroke: var(--ex-crema); stroke-width: 1; }
+svg.dg .tw  { fill: var(--ex-white); }
 
 /* ===========================================================
    13 · 꼬리 — 변경 이력과 문서 끝
@@ -887,58 +903,62 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
 
       <figure class="fig">
         <div class="plate drawn">
-          <svg class="dg" viewBox="0 0 900 322" xmlns="http://www.w3.org/2000/svg" role="img"
-               aria-label="2주차부터 15주차까지 분석 설계 구현 AI 모델 검증 완료 단계의 추진 일정">
-            <rect class="bxq" x="284" y="8" width="616" height="26" rx="8"/>
-            <text class="lm" x="306" y="26" text-anchor="middle">2</text>
-            <text class="lm" x="350" y="26" text-anchor="middle">3</text>
-            <text class="lm" x="394" y="26" text-anchor="middle">4</text>
-            <text class="lm" x="438" y="26" text-anchor="middle">5</text>
-            <text class="lm" x="482" y="26" text-anchor="middle">6</text>
-            <text class="lm" x="526" y="26" text-anchor="middle">7</text>
-            <text class="lm" x="570" y="26" text-anchor="middle">8</text>
-            <text class="lm" x="614" y="26" text-anchor="middle">9</text>
-            <text class="lm" x="658" y="26" text-anchor="middle">10</text>
-            <text class="lm" x="702" y="26" text-anchor="middle">11</text>
-            <text class="lm" x="746" y="26" text-anchor="middle">12</text>
-            <text class="lm" x="790" y="26" text-anchor="middle">13</text>
-            <text class="lm" x="834" y="26" text-anchor="middle">14</text>
-            <text class="lm" x="878" y="26" text-anchor="middle">15</text>
-            <text class="s" x="274" y="26" text-anchor="end">주차</text>
-            <path class="ll" d="M 328 34 L 328 318 M 372 34 L 372 318 M 416 34 L 416 318 M 460 34 L 460 318 M 504 34 L 504 318 M 548 34 L 548 318 M 592 34 L 592 318 M 636 34 L 636 318 M 680 34 L 680 318 M 724 34 L 724 318 M 768 34 L 768 318 M 812 34 L 812 318 M 856 34 L 856 318"/>
-            <text class="t" x="0" y="62">분석·설계</text>
-            <text class="s" x="76" y="62">요구사항 분석 · 제안서 작성</text>
-            <rect class="bx" x="287" y="48" width="82" height="20" rx="7"/>
-            <text class="lm" x="328" y="62" text-anchor="middle">2–3</text>
-            <text class="s" x="76" y="92">화면 · API · DB · 시스템 설계</text>
-            <rect class="bx" x="331" y="78" width="170" height="20" rx="7"/>
-            <text class="lm" x="416" y="92" text-anchor="middle">3–6</text>
-            <text class="t" x="0" y="122">구현</text>
-            <text class="s" x="76" y="122">개발 환경 · 인증 · CI/CD 구축</text>
-            <rect class="bx" x="463" y="108" width="82" height="20" rx="7"/>
-            <text class="lm" x="504" y="122" text-anchor="middle">6–7</text>
-            <text class="s" x="76" y="152">도메인별 기능 개발 · 연동</text>
-            <rect class="bx" x="463" y="138" width="258" height="20" rx="7"/>
-            <text class="lm" x="592" y="152" text-anchor="middle">6–11</text>
-            <text class="t" x="0" y="182">AI 모델</text>
-            <text class="s" x="76" y="182">합성 데이터 · 교사 라벨 구축</text>
-            <rect class="bxs" x="375" y="168" width="170" height="20" rx="7"/>
-            <text class="lm" x="460" y="182" text-anchor="middle">4–7</text>
-            <text class="s" x="76" y="212">인코더 비교 · 적합도 모델 학습</text>
-            <rect class="bxs" x="507" y="198" width="170" height="20" rx="7"/>
-            <text class="lm" x="592" y="212" text-anchor="middle">7–10</text>
-            <text class="t" x="0" y="242">검증</text>
-            <text class="s" x="76" y="242">추천 연동 · 성능 평가 · 통합 테스트</text>
-            <rect class="bx" x="639" y="228" width="126" height="20" rx="7"/>
-            <text class="lm" x="702" y="242" text-anchor="middle">10–12</text>
-            <text class="t" x="0" y="272">완료</text>
-            <text class="s" x="76" y="272">완료 보고서 · 시연 준비</text>
-            <rect class="bx" x="727" y="258" width="82" height="20" rx="7"/>
-            <text class="lm" x="768" y="272" text-anchor="middle">12–13</text>
-            <text class="s" x="76" y="302">최종 발표 · 심사 · 결과 정리</text>
-            <rect class="bx" x="815" y="288" width="82" height="20" rx="7"/>
-            <text class="lm" x="856" y="302" text-anchor="middle">14–15</text>
-          </svg>
+<svg class="dg" viewBox="0 0 800 319" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="2주차부터 15주차까지 분석·설계, 구현, AI 모델, 검증, 완료 단계의 작업 항목별 추진 일정">
+  <rect class="bxq" x="0" y="0" width="800" height="30" rx="0"/>
+  <path class="ac" d="M 0 0.7 L 800 0.7"/>
+  <text class="s" x="8" y="19">단계</text>
+  <text class="s" x="80" y="19">작업 항목</text>
+  <text class="t" x="287" y="20" text-anchor="middle">2<tspan class="s">주</tspan></text>
+  <text class="t" x="325" y="20" text-anchor="middle">3<tspan class="s">주</tspan></text>
+  <text class="t" x="363" y="20" text-anchor="middle">4<tspan class="s">주</tspan></text>
+  <text class="t" x="401" y="20" text-anchor="middle">5<tspan class="s">주</tspan></text>
+  <text class="t" x="439" y="20" text-anchor="middle">6<tspan class="s">주</tspan></text>
+  <text class="t" x="477" y="20" text-anchor="middle">7<tspan class="s">주</tspan></text>
+  <text class="t" x="515" y="20" text-anchor="middle">8<tspan class="s">주</tspan></text>
+  <text class="t" x="553" y="20" text-anchor="middle">9<tspan class="s">주</tspan></text>
+  <text class="t" x="591" y="20" text-anchor="middle">10<tspan class="s">주</tspan></text>
+  <text class="t" x="629" y="20" text-anchor="middle">11<tspan class="s">주</tspan></text>
+  <text class="t" x="667" y="20" text-anchor="middle">12<tspan class="s">주</tspan></text>
+  <text class="t" x="705" y="20" text-anchor="middle">13<tspan class="s">주</tspan></text>
+  <text class="t" x="743" y="20" text-anchor="middle">14<tspan class="s">주</tspan></text>
+  <text class="t" x="781" y="20" text-anchor="middle">15<tspan class="s">주</tspan></text>
+  <path class="tk" d="M 268 30 L 268 318 M 306 30 L 306 318 M 344 30 L 344 318 M 382 30 L 382 318 M 420 30 L 420 318 M 458 30 L 458 318 M 496 30 L 496 318 M 534 30 L 534 318 M 572 30 L 572 318 M 610 30 L 610 318 M 648 30 L 648 318 M 686 30 L 686 318 M 724 30 L 724 318 M 762 30 L 762 318"/>
+  <path class="tk" d="M 0 62 L 800 62 M 0 126 L 800 126 M 0 190 L 800 190 M 0 286 L 800 286"/>
+  <path class="fl" d="M 0 94 L 800 94 M 0 158 L 800 158 M 0 222 L 800 222 M 0 254 L 800 254 M 0 318 L 800 318"/>
+  <text class="t" x="8" y="50">분석·설계</text>
+  <text class="s" x="80" y="50">요구사항 분석 · 제안서 작성</text>
+  <rect class="gb-an" x="271" y="36" width="70" height="20" rx="6"/>
+  <text class="s" x="306" y="50" text-anchor="middle">2–3주</text>
+  <text class="s" x="80" y="82">화면 · API · DB · 시스템 설계</text>
+  <rect class="gb-an" x="309" y="68" width="146" height="20" rx="6"/>
+  <text class="s" x="382" y="82" text-anchor="middle">3–6주</text>
+  <text class="t" x="8" y="114">구현</text>
+  <text class="s" x="80" y="114">개발 환경 · 인증 · CI/CD 구축</text>
+  <rect class="gb-im" x="423" y="100" width="70" height="20" rx="6"/>
+  <text class="s tw" x="458" y="114" text-anchor="middle">6–7주</text>
+  <text class="s" x="80" y="146">도메인별 기능 개발 · 연동</text>
+  <rect class="gb-im" x="423" y="132" width="222" height="20" rx="6"/>
+  <text class="s tw" x="534" y="146" text-anchor="middle">6–11주</text>
+  <text class="t" x="8" y="178">AI 모델</text>
+  <text class="s" x="80" y="178">합성 데이터 · 교사 라벨 구축</text>
+  <rect class="gb-ai" x="347" y="164" width="146" height="20" rx="6"/>
+  <text class="s tw" x="420" y="178" text-anchor="middle">4–7주</text>
+  <text class="s" x="80" y="210">인코더 비교 · 적합도 모델 학습</text>
+  <rect class="gb-ai" x="461" y="196" width="146" height="20" rx="6"/>
+  <text class="s tw" x="534" y="210" text-anchor="middle">7–10주</text>
+  <text class="t" x="8" y="242">검증</text>
+  <text class="s" x="80" y="242">추천 연동 · 성능 평가 · 통합 테스트</text>
+  <rect class="gb-qa" x="575" y="228" width="108" height="20" rx="6"/>
+  <text class="s tw" x="629" y="242" text-anchor="middle">10–12주</text>
+  <text class="t" x="8" y="274">완료</text>
+  <text class="s" x="80" y="274">완료 보고서 · 시연 준비</text>
+  <rect class="gb-do" x="651" y="260" width="70" height="20" rx="6"/>
+  <text class="s sigt" x="686" y="274" text-anchor="middle">12–13주</text>
+  <text class="s" x="80" y="306">최종 발표 · 심사 · 결과 정리</text>
+  <rect class="gb-do" x="727" y="292" width="70" height="20" rx="6"/>
+  <text class="s sigt" x="762" y="306" text-anchor="middle">14–15주</text>
+</svg>
         </div>
         <figcaption>그림 1.2 개발일정 및 산출물</figcaption>
       </figure>
@@ -1699,46 +1719,76 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
 
       <figure class="fig">
         <div class="plate drawn">
-<svg class="dg" viewBox="0 0 900 330" xmlns="http://www.w3.org/2000/svg" role="img"
-     aria-label="채용 공고 추천 모델과 커리어 기록 추천 모델이 공고와 기록을 잇는 구조">
-  <defs><marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ex-slate-300)"/></marker></defs>
+<svg class="dg" viewBox="0 0 800 440" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="채용 공고 추천 모델은 기록 전체와 선호 조건으로 Bi-Encoder+MLP 선별과 Cross-Encoder 재정렬을 거쳐 추천 공고 순위를 내고, 커리어 기록 추천 모델은 같은 Cross-Encoder를 재사용하여 공고 요건과 기록 목록에서 추천 기록과 선택 조합을 내는 구성">
+  <defs><marker id="fig-3-1-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ar" d="M2 2L8 5L2 8"/></marker></defs>
 
-  <rect class="bx" x="0" y="118" width="170" height="72" rx="13"/>
-  <text class="tb" x="85" y="148" text-anchor="middle">커리어 기록</text>
-  <text class="s" x="85" y="169" text-anchor="middle">사용자 프로필</text>
+  <!-- 모델 A · 기록 → 공고 -->
+  <rect class="bxq" x="0" y="0" width="372" height="394" rx="10"/>
+  <text class="hd" x="18" y="28">모델 A · 채용 공고 추천 모델</text>
+  <text class="s" x="354" y="28" text-anchor="end">기록 → 공고</text>
+  <text class="tb" x="18" y="56">이 사용자에게 어떤 공고가 적합한가</text>
 
-  <rect class="bx" x="730" y="118" width="170" height="72" rx="13"/>
-  <text class="tb" x="815" y="148" text-anchor="middle">채용 공고</text>
-  <text class="s" x="815" y="169" text-anchor="middle">필수 · 업무 · 우대 요건</text>
+  <rect class="c-in" x="18" y="74" width="336" height="56" rx="8"/>
+  <text class="t" x="34" y="98">기록 전체 · 선호 조건</text>
+  <text class="s" x="34" y="118">사용자 프로필과 후보 공고 목록</text>
 
-  <rect class="bxq" x="214" y="10" width="472" height="128" rx="14"/>
-  <text class="l" x="232" y="32">MODEL A</text>
-  <text class="tb" x="450" y="38" text-anchor="middle">채용 공고 추천 모델</text>
-  <text class="s" x="450" y="58" text-anchor="middle">이 사용자에게 어떤 공고가 적합한가</text>
-  <rect class="bx" x="232" y="72" width="200" height="50" rx="10"/>
-  <text class="t" x="332" y="94" text-anchor="middle">Bi-Encoder+MLP</text>
-  <text class="s" x="332" y="112" text-anchor="middle">전체 공고 선별</text>
-  <rect class="bxs" x="468" y="72" width="200" height="50" rx="10"/>
-  <text class="t" x="568" y="94" text-anchor="middle">Cross-Encoder</text>
-  <text class="s" x="568" y="112" text-anchor="middle">상위 후보 재정렬</text>
-  <path class="fl" d="M 432 97 L 464 97" marker-end="url(#ab)"/>
+  <rect class="c-tr" x="18" y="156" width="336" height="56" rx="8"/>
+  <text class="t" x="34" y="180">Bi-Encoder+MLP</text>
+  <text class="s" x="34" y="200">전체 공고에서 상위 후보 선별</text>
 
-  <rect class="bxq" x="214" y="182" width="472" height="128" rx="14"/>
-  <text class="l" x="232" y="204">MODEL B</text>
-  <text class="tb" x="450" y="210" text-anchor="middle">커리어 기록 추천 모델</text>
-  <text class="s" x="450" y="230" text-anchor="middle">이 공고에 어떤 경험을 담아야 하는가</text>
-  <rect class="bxs" x="232" y="244" width="200" height="50" rx="10"/>
-  <text class="t" x="332" y="266" text-anchor="middle">Cross-Encoder 재사용</text>
-  <text class="s" x="332" y="284" text-anchor="middle">공고 · 기록 쌍 채점</text>
-  <rect class="bx" x="468" y="244" width="200" height="50" rx="10"/>
-  <text class="t" x="568" y="266" text-anchor="middle">선택 조합</text>
-  <text class="s" x="568" y="284" text-anchor="middle">관련성 · 요건 범위 · 중복</text>
-  <path class="fl" d="M 432 269 L 464 269" marker-end="url(#ab)"/>
+  <rect class="c-tr" x="18" y="238" width="336" height="56" rx="8"/>
+  <text class="t" x="34" y="262">Cross-Encoder</text>
+  <text class="s" x="34" y="282">상위 후보 재정렬</text>
 
-  <path class="fl" d="M 170 136 L 192 136 L 192 74 L 210 74" marker-end="url(#ab)"/>
-  <path class="fl" d="M 690 74 L 708 74 L 708 136 L 726 136" marker-end="url(#ab)"/>
-  <path class="fl" d="M 730 172 L 708 172 L 708 246 L 690 246" marker-end="url(#ab)"/>
-  <path class="fl" d="M 210 246 L 192 246 L 192 172 L 174 172" marker-end="url(#ab)"/>
+  <rect class="c-out" x="18" y="320" width="336" height="56" rx="8"/>
+  <text class="t" x="34" y="344">추천 공고 순위</text>
+  <text class="s" x="34" y="364">공고별 적합도 점수 0–100</text>
+
+  <path class="ar" d="M186 130 V152" marker-end="url(#fig-3-1-a)"/>
+  <path class="ar" d="M186 212 V234" marker-end="url(#fig-3-1-a)"/>
+  <path class="ar" d="M186 294 V316" marker-end="url(#fig-3-1-a)"/>
+
+  <!-- 모델 B · 공고 → 기록 -->
+  <rect class="bxq" x="428" y="0" width="372" height="394" rx="10"/>
+  <text class="hd" x="446" y="28">모델 B · 커리어 기록 추천 모델</text>
+  <text class="s" x="782" y="28" text-anchor="end">공고 → 기록</text>
+  <text class="tb" x="446" y="56">이 공고에 어떤 경험을 담아야 하는가</text>
+
+  <rect class="c-in" x="446" y="74" width="336" height="56" rx="8"/>
+  <text class="t" x="462" y="98">공고 요건 · 기록 목록</text>
+  <text class="s" x="462" y="118">필수 · 업무 · 우대 요건과 사용자의 커리어 기록</text>
+
+  <rect class="c-tr" x="446" y="156" width="336" height="56" rx="8"/>
+  <text class="t" x="462" y="180">Cross-Encoder 재사용</text>
+  <text class="s" x="462" y="200">공고 · 기록 1건 쌍 채점</text>
+
+  <rect class="bx" x="446" y="238" width="336" height="56" rx="8"/>
+  <text class="t" x="462" y="262">선택 조합</text>
+  <text class="s" x="462" y="282">관련성 · 요건 범위 · 중복</text>
+
+  <rect class="c-out" x="446" y="320" width="336" height="56" rx="8"/>
+  <text class="t" x="462" y="344">추천 기록 · 선택 조합</text>
+  <text class="s" x="462" y="364">기록별 적합도 점수</text>
+
+  <path class="ar" d="M614 130 V152" marker-end="url(#fig-3-1-a)"/>
+  <path class="ar" d="M614 212 V234" marker-end="url(#fig-3-1-a)"/>
+  <path class="ar" d="M614 294 V316" marker-end="url(#fig-3-1-a)"/>
+
+  <!-- 모델 A의 Cross-Encoder를 모델 B가 재사용 -->
+  <path class="ard" d="M354 266 H400 V184 H442" marker-end="url(#fig-3-1-a)"/>
+
+  <!-- 범례 -->
+  <rect class="c-in" x="0" y="414" width="14" height="14" rx="3"/>
+  <text class="s" x="22" y="425">입력</text>
+  <rect class="c-tr" x="70" y="414" width="14" height="14" rx="3"/>
+  <text class="s" x="92" y="425">학습 모델</text>
+  <rect class="bx" x="166" y="414" width="14" height="14" rx="3"/>
+  <text class="s" x="188" y="425">점수 조합 규칙</text>
+  <rect class="c-out" x="286" y="414" width="14" height="14" rx="3"/>
+  <text class="s" x="308" y="425">출력</text>
+  <path class="ard" d="M364 421 H396"/>
+  <text class="s" x="404" y="425">같은 모델 재사용</text>
 </svg>
         </div>
         <figcaption>그림 3.1 채용 공고 추천 모델과 커리어 기록 추천 모델의 구성</figcaption>
@@ -1809,7 +1859,7 @@ return { ...record, score };</code></pre>
         </table>
       </div>
 
-      <h3 data-page="31">3.1 데이터 수집출처 및 수집방법</h3>
+      <h3 data-page="32">3.1 데이터 수집출처 및 수집방법</h3>
       <p>
         AI학습에는 채용 공고와 사용자 커리어 기록, 그리고 둘의 적합도 라벨이 필요하다. 공고와
         요건의 수집 경로는 구현돼 있다. 공개 데이터에서는 다수 사용자의 상세 커리어 기록을
@@ -1864,7 +1914,7 @@ return { ...record, score };</code></pre>
         <tr><td><code>extractorVersion</code></td><td>정수</td><td>추출기 버전</td></tr>
       </tbody></table></div>
 
-      <h4 data-page="33">■ 합성 프로필 구축</h4>
+      <h4 data-page="34">■ 합성 프로필 구축</h4>
       <p>
         합성 프로필은 실제 자료 두 가지를 조건으로 생성한다. 청년패널조사의 집계 분포로 가상
         사용자의 학력 · 직업 · 경력 골격을 정하고, 채용면접 인터뷰의 실제 경험 서술을 근거로
@@ -1872,42 +1922,62 @@ return { ...record, score };</code></pre>
       </p>
       <figure class="fig">
         <div class="plate drawn">
-<svg class="dg" viewBox="0 0 900 250" xmlns="http://www.w3.org/2000/svg" role="img"
-     aria-label="실제 자료에서 조건부 LLM 합성을 거쳐 가상 사용자 프로필을 만드는 과정">
-  <defs><marker id="sy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ex-slate-300)"/></marker></defs>
-  <text class="l" x="0" y="14">01 실제 자료</text>
-  <rect class="bx" x="0" y="26" width="250" height="88" rx="12"/>
-  <text class="t" x="16" y="52">청년패널조사 YP2021</text>
-  <text class="s" x="16" y="74">학력 · 직업 · 경력의 집계 분포</text>
-  <text class="s" x="16" y="94">가상 프로필의 골격 구성</text>
-  <rect class="bx" x="0" y="130" width="250" height="88" rx="12"/>
-  <text class="t" x="16" y="156">AI Hub 채용면접 인터뷰</text>
-  <text class="s" x="16" y="178">실제 경험의 역할 · 행동 · 성과</text>
-  <text class="s" x="16" y="198">커리어 기록 내용의 근거</text>
+<svg class="dg" viewBox="0 0 800 312" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="청년패널조사 YP2021과 AI Hub 채용면접 인터뷰를 조건으로 LLM이 프로필 골격과 경험 서술을 합성하여 가상 사용자 프로필 1,000개를 만드는 과정">
+  <defs><marker id="fig-3-2-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ar" d="M2 2L8 5L2 8"/></marker></defs>
 
-  <text class="l" x="310" y="14">02 조건부 LLM 합성</text>
-  <rect class="bxs" x="310" y="26" width="280" height="192" rx="12"/>
-  <text class="t" x="326" y="52">프로필 골격 + 경험 서술</text>
-  <text class="s" x="326" y="74">자료의 근거를 조건으로 기록 작성</text>
-  <text class="t" x="326" y="110">보존</text>
-  <text class="s" x="372" y="110">사건 · 연차 · 수치</text>
-  <text class="t" x="326" y="136">확장</text>
-  <text class="s" x="372" y="136">상황 · 작업 과정 · 회고</text>
-  <text class="t" x="326" y="172">검증</text>
-  <text class="s" x="372" y="172">입력 조건 · 필수 정보 · 기록 구조</text>
+  <!-- 01 실제 자료 -->
+  <text class="hd" x="0" y="16">01　실제 자료</text>
+  <rect class="c-in" x="0" y="30" width="236" height="106" rx="8"/>
+  <text class="t" x="16" y="56">청년패널조사 YP2021</text>
+  <text class="s" x="16" y="78">한국고용정보원 고용조사분석시스템</text>
+  <text class="s" x="16" y="100">학력 · 직업 · 경력의 집계 분포</text>
+  <text class="s" x="16" y="122">가상 프로필의 골격 구성</text>
 
-  <text class="l" x="650" y="14">03 가상 사용자 프로필</text>
-  <rect class="bx" x="650" y="26" width="250" height="192" rx="12"/>
-  <text class="t" x="666" y="52">합성 프로필</text>
-  <text class="s" x="666" y="74">학력 · 직업 · 경력</text>
-  <text class="t" x="666" y="110">커리어 기록</text>
-  <text class="s" x="666" y="132">프로젝트 · 경험 기록</text>
-  <text class="s" x="666" y="152">수행 역할 → 행동 → 성과</text>
-  <text class="lm" x="666" y="196">1,000 profiles</text>
+  <rect class="c-in" x="0" y="156" width="236" height="106" rx="8"/>
+  <text class="t" x="16" y="182">AI Hub 채용면접 인터뷰</text>
+  <text class="s" x="16" y="204">AI Hub 데이터셋 71592</text>
+  <text class="s" x="16" y="226">실제 경험의 역할 · 행동 · 성과</text>
+  <text class="s" x="16" y="248">커리어 기록 내용의 근거</text>
 
-  <path class="fl" d="M 250 70 L 280 70 L 280 122 L 306 122" marker-end="url(#sy)"/>
-  <path class="fl" d="M 250 174 L 280 174 L 280 122 L 306 122" marker-end="url(#sy)"/>
-  <path class="fl" d="M 590 122 L 646 122" marker-end="url(#sy)"/>
+  <!-- 02 조건부 LLM 합성 -->
+  <text class="hd" x="276" y="16">02　조건부 LLM 합성</text>
+  <rect class="c-fz" x="276" y="56" width="270" height="170" rx="8"/>
+  <text class="t" x="292" y="82">프로필 골격 + 경험 서술</text>
+  <text class="s" x="292" y="104">자료의 근거를 조건으로 기록 작성</text>
+  <path class="tk" d="M292 120 H530"/>
+  <text class="t" x="292" y="148">보존</text>
+  <text class="s" x="334" y="148">사건 · 연차 · 수치</text>
+  <text class="t" x="292" y="178">확장</text>
+  <text class="s" x="334" y="178">상황 · 작업 과정 · 회고</text>
+  <text class="t" x="292" y="208">검증</text>
+  <text class="s" x="334" y="208">입력 조건 · 필수 정보 · 기록 구조</text>
+
+  <!-- 03 가상 사용자 프로필 -->
+  <text class="hd" x="596" y="16">03　가상 사용자 프로필</text>
+  <rect class="c-out" x="596" y="30" width="204" height="232" rx="8"/>
+  <text class="t" x="612" y="56">가상 프로필</text>
+  <text class="s" x="612" y="78">커리어 기록 합성 데이터</text>
+  <path class="tk" d="M612 94 H784"/>
+  <text class="t" x="612" y="122">학력 · 직업 · 경력</text>
+  <text class="t" x="612" y="152">프로젝트 · 경험 기록</text>
+  <text class="s" x="612" y="174">수행 역할 → 행동 → 성과</text>
+  <path class="tk" d="M612 204 H784"/>
+  <text class="t" x="612" y="236">프로필 1,000개</text>
+
+  <!-- 흐름 -->
+  <path class="ar" d="M236 83 H256 V141 H272" marker-end="url(#fig-3-2-a)"/>
+  <path class="ar" d="M236 209 H256 V141 H272" marker-end="url(#fig-3-2-a)"/>
+  <path class="ar" d="M546 141 H592" marker-end="url(#fig-3-2-a)"/>
+  <text class="s" x="569" y="132" text-anchor="middle">생성</text>
+
+  <!-- 범례 -->
+  <rect class="c-in" x="0" y="288" width="14" height="14" rx="3"/>
+  <text class="s" x="22" y="299">실제 자료</text>
+  <rect class="c-fz" x="96" y="288" width="14" height="14" rx="3"/>
+  <text class="s" x="118" y="299">외부 LLM</text>
+  <rect class="c-out" x="192" y="288" width="14" height="14" rx="3"/>
+  <text class="s" x="214" y="299">합성 결과</text>
 </svg>
         </div>
         <figcaption>그림 3.2 실제 자료 기반 합성 프로필의 구축 과정</figcaption>
@@ -1929,8 +1999,106 @@ return { ...record, score };</code></pre>
         교사가 점수를 직접 매기게 하면 같은 판단에도 점수가 흔들린다. 그래서 교사는
         <strong>근거 해석과 판정</strong>만 수행하고, <strong>가중 점수 계산과 오류 검사</strong>는
         코드가 수행한다. 교사는 공고에서 핵심 요구사항을 1–8개 추리고, 요구사항마다 종류와
-        충족 수준을 판정한 뒤 근거가 되는 기록의 ID를 연결한다.
+        충족 수준을 판정한 뒤 근거가 되는 기록의 ID를 연결한다. 아래 그림 3.3은 그 과정이다.
       </p>
+      <figure class="fig">
+        <div class="plate drawn">
+<svg class="dg" viewBox="0 0 800 376" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="수집 채용 공고와 합성 프로필을 교사 LLM이 요구사항별로 판정하고, 코드가 고정된 루브릭으로 가중 점수를 계산하여 적합도 라벨 0–100을 만든 뒤 Bi-Encoder+MLP와 Cross-Encoder 학생 모델을 학습하는 지식 증류 과정">
+  <defs><marker id="fig-3-distill-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ar" d="M2 2L8 5L2 8"/></marker></defs>
+
+  <!-- 01 입력 -->
+  <text class="hd" x="0" y="16">01　입력</text>
+  <rect class="c-in" x="0" y="60" width="150" height="76" rx="8"/>
+  <text class="t" x="14" y="84">수집 채용 공고</text>
+  <text class="s" x="14" y="104">서비스가 수집한 공고</text>
+  <text class="s" x="14" y="124">필수 · 업무 · 우대 요건</text>
+
+  <rect class="c-in" x="0" y="164" width="150" height="76" rx="8"/>
+  <text class="t" x="14" y="188">합성 프로필</text>
+  <text class="s" x="14" y="208">학력 · 직업 · 경력</text>
+  <text class="s" x="14" y="228">커리어 기록 목록</text>
+
+  <text class="s" x="0" y="296">프로필–공고 10,000쌍</text>
+
+  <!-- 02 교사 판정 -->
+  <text class="hd" x="184" y="16">02　교사 판정</text>
+  <rect class="c-fz" x="184" y="40" width="180" height="220" rx="8"/>
+  <text class="t" x="198" y="64">교사 LLM</text>
+  <text class="s" x="198" y="86">GPT-5.6 Luna</text>
+  <text class="s" x="198" y="106">Claude Sonnet</text>
+  <path class="tk" d="M198 122 H350"/>
+  <text class="t" x="198" y="148">요구사항 ↔ 근거 기록</text>
+  <text class="s" x="198" y="172">요구사항 1–8개 추출</text>
+  <text class="s" x="198" y="194">종류 · 충족 수준 판정</text>
+  <text class="s" x="198" y="216">근거 기록 ID 연결</text>
+
+  <text class="s" x="184" y="296">교사: 근거 해석과 판정</text>
+
+  <!-- 03 루브릭 점수화 -->
+  <text class="hd" x="398" y="16">03　루브릭 점수화</text>
+  <rect class="bx" x="398" y="32" width="240" height="242" rx="8"/>
+  <text class="t" x="414" y="56">고정된 평가 기준</text>
+  <text class="lm" x="414" y="76" style="font-size:12px">job-profile-fit-v1</text>
+
+  <rect class="bxq" x="414" y="90" width="62" height="48" rx="6"/>
+  <text class="s" x="424" y="108">필수요건</text>
+  <text class="t" x="424" y="128">45%</text>
+  <rect class="bxq" x="485" y="90" width="62" height="48" rx="6"/>
+  <text class="s" x="495" y="108">담당업무</text>
+  <text class="t" x="495" y="128">40%</text>
+  <rect class="bxq" x="556" y="90" width="62" height="48" rx="6"/>
+  <text class="s" x="566" y="108">우대요건</text>
+  <text class="t" x="566" y="128">15%</text>
+
+  <text class="s" x="414" y="164">강한 직접 근거</text>
+  <text class="t" x="618" y="164" text-anchor="end">100</text>
+  <text class="s" x="414" y="188">직접 근거</text>
+  <text class="t" x="618" y="188" text-anchor="end">75</text>
+  <text class="s" x="414" y="212">부분 충족</text>
+  <text class="t" x="618" y="212" text-anchor="end">50</text>
+  <text class="s" x="414" y="236">전이 가능한 인접 경험</text>
+  <text class="t" x="618" y="236" text-anchor="end">25</text>
+  <text class="s" x="414" y="260">근거 없음</text>
+  <text class="t" x="618" y="260" text-anchor="end">0</text>
+
+  <text class="s" x="398" y="296">코드: 가중 점수 계산과 오류 검사</text>
+  <text class="s" x="398" y="316">해당 없는 축은 제외 후 가중치 재정규화</text>
+  <text class="s" x="398" y="336">교사 점수와 다르면 오류로 처리</text>
+
+  <!-- 04 지식 증류 -->
+  <text class="hd" x="672" y="16">04　지식 증류</text>
+  <rect class="c-out" x="672" y="60" width="128" height="76" rx="8"/>
+  <text class="t" x="686" y="86">적합도 라벨</text>
+  <text class="tb" x="686" y="116">0–100</text>
+
+  <rect class="c-tr" x="672" y="164" width="128" height="96" rx="8"/>
+  <text class="t" x="686" y="188">학생 모델 학습</text>
+  <text class="s" x="686" y="212">Bi-Encoder+MLP</text>
+  <text class="s" x="686" y="234">Cross-Encoder</text>
+
+  <!-- 흐름 -->
+  <path class="ar" d="M150 98 H167 V150 H180" marker-end="url(#fig-3-distill-a)"/>
+  <path class="ar" d="M150 202 H167 V150 H180" marker-end="url(#fig-3-distill-a)"/>
+  <path class="ar" d="M364 150 H394" marker-end="url(#fig-3-distill-a)"/>
+  <path class="ar" d="M638 98 H668" marker-end="url(#fig-3-distill-a)"/>
+  <path class="ar" d="M736 136 V160" marker-end="url(#fig-3-distill-a)"/>
+
+  <!-- 범례 -->
+  <rect class="c-in" x="0" y="356" width="14" height="14" rx="3"/>
+  <text class="s" x="22" y="367">입력</text>
+  <rect class="c-fz" x="70" y="356" width="14" height="14" rx="3"/>
+  <text class="s" x="92" y="367">교사 LLM(외부)</text>
+  <rect class="bx" x="200" y="356" width="14" height="14" rx="3"/>
+  <text class="s" x="222" y="367">코드 계산</text>
+  <rect class="c-out" x="300" y="356" width="14" height="14" rx="3"/>
+  <text class="s" x="322" y="367">라벨</text>
+  <rect class="c-tr" x="370" y="356" width="14" height="14" rx="3"/>
+  <text class="s" x="392" y="367">학습 대상</text>
+</svg>
+        </div>
+        <figcaption>그림 3.3 루브릭 기반 교사 지식 증류의 적합도 라벨 생성 과정</figcaption>
+      </figure>
       <div class="table-wrap">
         <table>
           <thead><tr><th>요구사항 종류</th><th class="num">가중치</th><th>대상</th></tr></thead>
@@ -1963,7 +2131,7 @@ return { ...record, score };</code></pre>
         점수가 다르면 그 라벨을 오류로 처리한다.
       </p>
 
-      <h3 data-page="35">3.2 데이터 특징추출 및 특징분포</h3>
+      <h3 data-page="36">3.2 데이터 특징추출 및 특징분포</h3>
       <p>
         본 프로젝트의 특징은 사람이 설계한 수치 특징이 아니라 <strong>사전학습 문장 인코더가
         만든 벡터</strong>이다. 채용 공고와 사용자 프로필은 문서 구조가 서로 다르므로 각각을
@@ -1985,7 +2153,7 @@ return { ...record, score };</code></pre>
         <code>[u, v, |u−v|, u⊙v]</code>를 이어 붙인 3,072차원이며, 이를 받는 MLP는 4.2에 기술한다.
       </p>
 
-      <h4 data-page="35">■ 인코더 비교</h4>
+      <h4 data-page="36">■ 인코더 비교</h4>
       <p>
         인코더는 사전에 하나로 정하지 않고, 같은 데이터와 같은 평가 조건에서 아래 네 모델의
         적합도 예측 성능을 비교하여 선정한다.
@@ -2004,16 +2172,16 @@ return { ...record, score };</code></pre>
       </div>
 
       <figure class="fig">
-        <div class="plate"><span class="ph">그림 3.3 · 적합도 라벨 분포와 라벨 구간별 코사인 유사도 분포 (데이터 구축 후 삽입)</span></div>
-        <figcaption>그림 3.3 적합도 라벨의 분포와 라벨 구간별 코사인 유사도 분포</figcaption>
+        <div class="plate"><span class="ph">그림 3.4 · 적합도 라벨 분포와 라벨 구간별 코사인 유사도 분포 (데이터 구축 후 삽입)</span></div>
+        <figcaption>그림 3.4 적합도 라벨의 분포와 라벨 구간별 코사인 유사도 분포</figcaption>
       </figure>
       <p>
-        그림 3.3에서 확인하여야 할 것은 두 가지이다. 첫째, 적합도 라벨이 한쪽 구간에 몰리지
+        그림 3.4에서 확인하여야 할 것은 두 가지이다. 첫째, 적합도 라벨이 한쪽 구간에 몰리지
         않아야 한다. 둘째, 라벨이 높은 쌍일수록 프로필 벡터와 공고 벡터의 코사인 유사도가
         높아야 한다. 유사도 분포가 라벨 구간과 무관하면 인코더 입력의 텍스트 구성을 다시 설계한다.
       </p>
 
-      <h3 data-page="36">3.3 데이터세트 정의 및 생성</h3>
+      <h3 data-page="37">3.3 데이터세트 정의 및 생성</h3>
       <p>
         AI학습용으로 최종 결정한 데이터세트는 <code>fit-v1</code> 한 벌이다. 합성 프로필마다
         후보 공고 10개를 연결하고, 교사가 각 공고의 적합도를 평가한다. 두 학생 모델은 같은
