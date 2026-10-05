@@ -560,18 +560,18 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
   .cover-brand .word em { font-style: normal; color: var(--ex-espresso); }
   .cover-grid { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 4mm 0; }
   .cover-grid img { width: 122mm; height: auto; }
-  .cover-main { padding-bottom: 14mm; }
+  .cover-main { padding-bottom: 4mm; }
   .cover-main .kicker { font-size: 9pt; }
   .cover-name { margin-top: 0; font-size: 16pt; font-weight: 600; letter-spacing: -.01em; color: var(--ex-ink-900); }
   .cover-project { margin-top: 2mm; font-size: 13pt; color: var(--ex-slate-500); }
   .cover-title { margin-top: 3mm; font-size: 54pt; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; color: var(--ex-ink-900); }
-  .cover-meta { margin-top: 8mm; padding-top: 4mm; border-top: 1.2pt solid var(--ex-espresso); display: flex; gap: 10mm;
-    font-family: var(--ex-font-brand); font-weight: 300; font-size: 13pt; color: var(--ex-slate-700); }
-  .cover-band { background: var(--ex-bean-50); border-radius: 4mm; padding: 9mm 10mm; }
-  .cover-org { font-size: 13pt; font-weight: 600; color: var(--ex-bean-ink); }
-  .cover-team { margin: 4mm 0 0; display: grid; grid-template-columns: 14mm 1fr; row-gap: 2mm; font-size: 11pt; color: var(--ex-bean-ink); }
-  .cover-team dt { font-weight: 600; }
-  .cover-team dd { margin: 0; }
+  .cover-info { margin: 8mm 0 0; padding-top: 5mm; border-top: 1.2pt solid var(--ex-espresso);
+    display: grid; grid-template-columns: 30mm 40mm 1fr; column-gap: 6mm; row-gap: 6mm; }
+  .cover-info div { min-width: 0; }
+  .cover-info .wide { grid-column: 2 / 4; }
+  .cover-info dt { font-size: 8.5pt; font-weight: 600; letter-spacing: .02em; color: var(--ex-slate-500); }
+  .cover-info dd { margin: 1.5mm 0 0; font-size: 12pt; font-weight: 500; color: var(--ex-ink-900); }
+  .cover-info dd.num { font-family: var(--ex-font-brand); font-weight: 300; font-size: 13pt; }
 
   /* 문서 정보 · 목차 쪽의 제목 */
   .print-title { display: flex; align-items: baseline; gap: 10px; margin: 4mm 0 10mm; padding-bottom: 4mm; border-bottom: 1.2pt solid var(--ex-espresso); }
@@ -685,13 +685,12 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
         <div class="cover-name">Expresso - 익스프레소</div>
         <div class="cover-project">채용 공고·커리어 기록 추천 모델 기반<br>맞춤형 포트폴리오 생성 및 배포 플랫폼 개발</div>
         <div class="cover-title">설계서</div>
-        <div class="cover-meta"><span>v0.3</span><span>2026. 10. 05.</span></div>
-      </div>
-      <div class="cover-band">
-        <div class="cover-org">가천대학교 컴퓨터공학과</div>
-        <dl class="cover-team">
-          <dt>팀장</dt><dd>박민재</dd>
-          <dt>팀원</dt><dd>심민규 · 오시건 · 채서현 · 윤규현</dd>
+        <dl class="cover-info">
+          <div><dt>버전</dt><dd class="num">v0.3</dd></div>
+          <div><dt>작성일</dt><dd class="num">2026. 10. 05.</dd></div>
+          <div><dt>소속</dt><dd>가천대학교 컴퓨터공학과</dd></div>
+          <div><dt>팀장</dt><dd>박민재</dd></div>
+          <div class="wide"><dt>팀원</dt><dd>심민규 · 오시건 · 채서현 · 윤규현</dd></div>
         </dl>
       </div>
     </section>
