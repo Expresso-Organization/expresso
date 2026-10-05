@@ -187,7 +187,7 @@ def grid_svg(tone: str) -> str:
 
     - 면: 컵 고리 · 담긴 커피 · 손잡이 초승달을 한 색으로
     - 윤곽: 면의 가장자리
-    - 원(윤곽과 같은 색, 가는 선): 손잡이를 이루는 바깥 · 안쪽 원 전체
+    - 원(윤곽과 같은 색, 가는 선): 손잡이를 이루는 바깥 · 안쪽 원 전체, 커피 면에 묻힌 안쪽 원의 아래 호(점선)
     - 기준선: 잉크 경계 상자(INK_BOX)의 네 변, 커피 면의 높이, 손잡이를 지우는 마스크 원
     - 표식: 상자 모서리(네모), 마크가 상자에 닿는 네 점과 커피 면의 양 끝(빈 원), 두 중심(점)
     """
@@ -213,6 +213,9 @@ def grid_svg(tone: str) -> str:
     cup = (f"M {n(cx - outer)} {n(cy)} A {n(outer)} {n(outer)} 0 1 1 {n(cx + outer)} {n(cy)} "
            f"A {n(outer)} {n(outer)} 0 1 1 {n(cx - outer)} {n(cy)} Z "
            f"M {n(cx - chord)} {n(BREW_TOP)} A {n(inner)} {n(inner)} 0 1 1 {n(cx + chord)} {n(BREW_TOP)} Z")
+    # 안쪽 원 가운데 커피 면에 묻힌 아래쪽 호 — 보이는 가장자리가 아니므로 점선으로 둔다
+    inner_low = (f"M {n(cx + chord)} {n(BREW_TOP)} "
+                 f"A {n(inner)} {n(inner)} 0 0 1 {n(cx - chord)} {n(BREW_TOP)}")
     handle = (f"M {n(ox)} {n(hy - oh)} A {n(ho)} {n(ho)} 0 0 1 {n(ox)} {n(hy + oh)} "
               f"A {n(R)} {n(R)} 0 0 0 {n(ix)} {n(hy + ih)} "
               f"A {n(hi)} {n(hi)} 0 0 0 {n(ix)} {n(hy - ih)} "
@@ -243,6 +246,7 @@ def grid_svg(tone: str) -> str:
   <g stroke="{c['outline']}" stroke-width="0.3">
     <circle cx="{n(hx)}" cy="{n(hy)}" r="{n(ho)}"/>
     <circle cx="{n(hx)}" cy="{n(hy)}" r="{n(hi)}"/>
+    <path stroke-dasharray="1.6 1.2" d="{inner_low}"/>
   </g>
   <g stroke="{c['outline']}" stroke-width="0.45" stroke-linejoin="round">
     <path fill-rule="evenodd" d="{cup}"/>
