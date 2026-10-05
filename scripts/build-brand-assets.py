@@ -184,15 +184,14 @@ def _num(v: float) -> str:
 
 
 def grid_svg(tone: str) -> str:
-    """로고 구성도. 마크를 옅은 브랜드 색 면과 윤곽선으로 그리고, 그 모양을 만든 도형을 함께 둔다.
+    """로고 구성도. 마크를 옅은 브랜드 색 면과 윤곽선으로 그리고, 모양을 정하는 것만 둔다.
 
     그리는 순서는 면 → 보조선 → 윤곽선 → 점이다. 숨은 도형이 면 위로 지나가야 보인다.
 
     - 면: 실제로 보이는 모양 — 컵 고리와 담긴 커피가 이어진 한 덩어리, 손잡이 초승달
-    - 가는 원: 마크 뒤에 숨은 원래 도형 — 컵 기준 원 · 안쪽 원, 손잡이 고리의 두 원
-    - 점선: 컵 · 손잡이 중심축, 45° 대각선, 손잡이를 지우는 마스크 원
-    - 경계 상자: 잉크가 차지하는 칸(INK_BOX). 선은 상자 밖으로 뻗고 모서리에 앵커
-    - 점: 경계에 닿는 네 점, 커피 윗면의 두 끝, 손잡이가 마스크 원과 만나는 네 점
+    - 실선: 잉크가 차지하는 경계 상자(INK_BOX)와 손잡이의 기준 원
+    - 점선: 컵 중심을 지나는 가로 · 세로 축, 손잡이를 지우는 마스크 원
+    - 점: 경계 상자에 닿는 네 점, 컵 · 손잡이의 중심, 상자 모서리의 앵커
     """
     cx, cy, cr, cw = CUP
     hx, hy, hr, hw = HANDLE
@@ -221,11 +220,7 @@ def grid_svg(tone: str) -> str:
               f"A {n(hi)} {n(hi)} 0 0 0 {n(ix)} {n(hy - ih)} "
               f"A {n(HANDLE_MASK_R)} {n(HANDLE_MASK_R)} 0 0 0 {n(ox)} {n(hy - oh)} Z")
 
-    diag = HANDLE_MASK_R + 6
-    k = diag / math.sqrt(2)
-    points = [(cx, y0), (cx, y1), (x0, cy), (x1, cy),
-              (cx - chord, BREW_TOP), (cx + chord, BREW_TOP),
-              (ox, hy - oh), (ox, hy + oh), (ix, hy - ih), (ix, hy + ih)]
+    points = [(cx, y0), (cx, y1), (x0, cy), (x1, cy)]
     sq = 1.8
     corners = [(x0, y0), (x1, y0), (x0, y1), (x1, y1)]
     dash = 'stroke-dasharray="1.6 1.4"'
@@ -240,27 +235,16 @@ def grid_svg(tone: str) -> str:
     <line x1="{n(x1)}" y1="{n(y0 - ext)}" x2="{n(x1)}" y2="{n(y1 + ext)}"/>
     <line x1="{n(x0 - ext)}" y1="{n(y0)}" x2="{n(x1 + ext)}" y2="{n(y0)}"/>
     <line x1="{n(x0 - ext)}" y1="{n(y1)}" x2="{n(x1 + ext)}" y2="{n(y1)}"/>
-    <line x1="{n(x0 - ext)}" y1="{n(BREW_TOP)}" x2="{n(x1 + ext)}" y2="{n(BREW_TOP)}"/>
-    <circle cx="{n(cx)}" cy="{n(cy)}" r="{n(cr)}"/>
-    <circle cx="{n(cx)}" cy="{n(cy)}" r="{n(inner)}"/>
-    <circle cx="{n(hx)}" cy="{n(hy)}" r="{n(ho)}"/>
-    <circle cx="{n(hx)}" cy="{n(hy)}" r="{n(hi)}"/>
+    <circle cx="{n(hx)}" cy="{n(hy)}" r="{n(hr)}"/>
   </g>
   <g stroke="{c['dash']}" stroke-width="0.3" {dash}>
     <line x1="{n(x0 - ext)}" y1="{n(cy)}" x2="{n(x1 + ext)}" y2="{n(cy)}"/>
     <line x1="{n(cx)}" y1="{n(y0 - ext)}" x2="{n(cx)}" y2="{n(y1 + ext)}"/>
-    <line x1="{n(hx)}" y1="{n(y0 - ext)}" x2="{n(hx)}" y2="{n(y1 + ext)}"/>
-    <line x1="{n(cx - k)}" y1="{n(cy - k)}" x2="{n(cx + k)}" y2="{n(cy + k)}"/>
-    <line x1="{n(cx - k)}" y1="{n(cy + k)}" x2="{n(cx + k)}" y2="{n(cy - k)}"/>
     <circle cx="{n(cx)}" cy="{n(cy)}" r="{n(HANDLE_MASK_R)}"/>
   </g>
   <g fill="none" stroke-width="0.45" stroke-linejoin="round">
     <path stroke="{c['outline_cup']}" fill-rule="evenodd" d="{cup}"/>
     <path stroke="{c['outline_handle']}" d="{handle}"/>
-  </g>
-  <g stroke="{c['point']}" stroke-width="0.3">
-    <line x1="{n(cx)}" y1="{n(cy)}" x2="{n(cx)}" y2="{n(y0)}"/>
-    <line x1="{n(hx)}" y1="{n(hy)}" x2="{n(x1)}" y2="{n(hy)}"/>
   </g>
   <g fill="{c['point_fill']}" stroke="{c['point']}" stroke-width="0.3">
 {chr(10).join(f'    <rect x="{n(x - sq / 2)}" y="{n(y - sq / 2)}" width="{n(sq)}" height="{n(sq)}"/>' for x, y in corners)}
