@@ -29,7 +29,7 @@ const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
 /** 양식 머리말 — 표지 오른쪽 위의 그 칸이다. 팀번호 칸에는 Expresso 워드마크를 둔다. */
 const META = {
-  project: "Expresso — 채용 공고·커리어 기록 추천 모델 기반 맞춤형 포트폴리오 생성 및 배포 플랫폼 개발",
+  project: "채용 공고·커리어 기록 추천 모델 기반 맞춤형 포트폴리오 생성 및 배포 플랫폼 개발",
   version: documentVersion,
   footer: "2026 가천대학교, 설계서",
 };
