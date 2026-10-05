@@ -40,3 +40,5 @@ node scripts/doc-pdf.mjs docs/졸업작품-설계서.html
   `scripts/build-brand-assets.py`가 `Logo.tsx` 좌표 상수에서 `assets/brand/expresso-logo-grid-{light,dark}.svg`를
   생성하고, 개발 포털이 `docs/`만 발행하므로 문서용 사본을 `docs/assets/brand/`에도 쓴다. 표지는 이 파일을
   `<img>`로 쓴다. `draw_mark`의 좌표도 같은 상수로 옮긴다.
+- 구성 그리드는 사용자가 준 구성도 양식(단일 면 · 진한 윤곽 · 실선 기준 원 · 점선 외접원과 방사 축 · 교점 네모 표식)을
+  따르도록 다시 그렸다. 경계 상자와 모서리 앵커는 뺐다.

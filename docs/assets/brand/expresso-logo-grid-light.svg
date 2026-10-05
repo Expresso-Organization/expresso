@@ -1,40 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-22 -22 152 152" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-13.5 -9.375 126.75 126.75" fill="none">
   <!-- scripts/build-brand-assets.py 가 Logo.tsx 의 좌표로 생성한다. 손으로 고치지 않는다. -->
-  <g stroke="none">
-    <path fill="#FBEEE4" fill-rule="evenodd" d="M 3 54 A 41 41 0 1 1 85 54 A 41 41 0 1 1 3 54 Z M 13.399 58.96 A 31 31 0 1 1 74.601 58.96 Z"/>
-    <path fill="#F6E2D3" d="M 84.256 30.725 A 24.05 24.05 0 0 1 84.256 77.275 A 46.5 46.5 0 0 0 89.177 65.014 A 15.55 15.55 0 0 0 89.177 42.986 A 46.5 46.5 0 0 0 84.256 30.725 Z"/>
+  <g fill="#F6E2D3" stroke="none">
+    <path fill-rule="evenodd" d="M 3 54 A 41 41 0 1 1 85 54 A 41 41 0 1 1 3 54 Z M 13.399 58.96 A 31 31 0 1 1 74.601 58.96 Z"/>
+    <path d="M 84.256 30.725 A 24.05 24.05 0 0 1 84.256 77.275 A 46.5 46.5 0 0 0 89.177 65.014 A 15.55 15.55 0 0 0 89.177 42.986 A 46.5 46.5 0 0 0 84.256 30.725 Z"/>
   </g>
-  <g stroke="#E0B486" stroke-width="0.3">
-    <line x1="3" y1="1" x2="3" y2="107"/>
-    <line x1="102.25" y1="1" x2="102.25" y2="107"/>
-    <line x1="-9" y1="13" x2="114.25" y2="13"/>
-    <line x1="-9" y1="95" x2="114.25" y2="95"/>
-    <circle cx="78.2" cy="54" r="19.8"/>
+  <g stroke="#A9793F" stroke-width="0.3">
+    <circle cx="78.2" cy="54" r="24.05"/>
+    <circle cx="78.2" cy="54" r="15.55"/>
   </g>
   <g stroke="#A9793F" stroke-width="0.3" stroke-dasharray="1.6 1.4">
-    <line x1="-9" y1="54" x2="114.25" y2="54"/>
-    <line x1="44" y1="1" x2="44" y2="107"/>
     <circle cx="44" cy="54" r="46.5"/>
+    <line x1="-11.5" y1="54" x2="111.25" y2="54"/>
+    <line x1="44" y1="-1.5" x2="44" y2="109.5"/>
+    <line x1="-4.047" y1="26.22" x2="92.047" y2="81.78"/>
+    <line x1="-4.047" y1="81.78" x2="92.047" y2="26.22"/>
   </g>
-  <g fill="none" stroke-width="0.45" stroke-linejoin="round">
-    <path stroke="#9A4030" fill-rule="evenodd" d="M 3 54 A 41 41 0 1 1 85 54 A 41 41 0 1 1 3 54 Z M 13.399 58.96 A 31 31 0 1 1 74.601 58.96 Z"/>
-    <path stroke="#9A4030" d="M 74.601 58.96 A 31 31 0 0 1 13.399 58.96"/>
-    <path stroke="#A9793F" d="M 84.256 30.725 A 24.05 24.05 0 0 1 84.256 77.275 A 46.5 46.5 0 0 0 89.177 65.014 A 15.55 15.55 0 0 0 89.177 42.986 A 46.5 46.5 0 0 0 84.256 30.725 Z"/>
+  <g stroke="#9A4030" stroke-width="0.45" stroke-linejoin="round">
+    <path fill-rule="evenodd" d="M 3 54 A 41 41 0 1 1 85 54 A 41 41 0 1 1 3 54 Z M 13.399 58.96 A 31 31 0 1 1 74.601 58.96 Z"/>
+    <path d="M 74.601 58.96 A 31 31 0 0 1 13.399 58.96"/>
+    <path d="M 84.256 30.725 A 24.05 24.05 0 0 1 84.256 77.275 A 46.5 46.5 0 0 0 89.177 65.014 A 15.55 15.55 0 0 0 89.177 42.986 A 46.5 46.5 0 0 0 84.256 30.725 Z"/>
   </g>
   <g fill="#FFFFFF" stroke="#9A4030" stroke-width="0.3">
-    <rect x="2.1" y="12.1" width="1.8" height="1.8"/>
-    <rect x="101.35" y="12.1" width="1.8" height="1.8"/>
-    <rect x="2.1" y="94.1" width="1.8" height="1.8"/>
-    <rect x="101.35" y="94.1" width="1.8" height="1.8"/>
-    <circle cx="44" cy="13" r="1"/>
-    <circle cx="44" cy="95" r="1"/>
-    <circle cx="3" cy="54" r="1"/>
-    <circle cx="102.25" cy="54" r="1"/>
-    <circle cx="44" cy="54" r="1.4"/>
-    <circle cx="78.2" cy="54" r="1.4"/>
+    <rect x="89.6" y="53.1" width="1.8" height="1.8"/>
+    <rect x="-3.4" y="53.1" width="1.8" height="1.8"/>
+    <rect x="43.1" y="99.6" width="1.8" height="1.8"/>
+    <rect x="43.1" y="6.6" width="1.8" height="1.8"/>
+    <rect x="83.356" y="76.375" width="1.8" height="1.8"/>
+    <rect x="2.844" y="29.825" width="1.8" height="1.8"/>
+    <rect x="83.356" y="29.825" width="1.8" height="1.8"/>
+    <rect x="2.844" y="76.375" width="1.8" height="1.8"/>
+    <circle cx="44" cy="54" r="1.2"/>
+    <circle cx="78.2" cy="54" r="1.2"/>
   </g>
   <g fill="#9A4030">
-    <circle cx="44" cy="54" r="0.4"/>
-    <circle cx="78.2" cy="54" r="0.4"/>
+    <circle cx="44" cy="54" r="0.35"/>
+    <circle cx="78.2" cy="54" r="0.35"/>
   </g>
 </svg>
