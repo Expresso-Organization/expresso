@@ -784,14 +784,14 @@ svg.dg .mute { fill: var(--ex-slate-300); }
       </p>
 
       <p>
-        아래 그림 1.1은 본 서비스의 전체적인 구성을 나타내며, 구직자 · 관리자 · 열람자 3종류의 사용자가 본 서비스를
+        아래 그림 1.1은 본 서비스의 전체적인 구성을 나타내며, 구직자 · 관리자 · 방문자 3종류의 사용자가 본 서비스를
         사용한다. 점선 안쪽이 본 프로젝트의 개발 및 설계범위이다.
       </p>
 
       <figure class="fig">
         <div class="plate drawn">
 <svg class="dg" viewBox="0 0 800 470" xmlns="http://www.w3.org/2000/svg" role="img"
-     aria-label="구직자 · 관리자 · 열람자 3종의 사용자가 웹 클라이언트로 들어오고, 점선 안쪽의 웹 클라이언트 · AI서비스 도메인 모듈 12개 · 데이터와 AI학습서버가 개발 및 설계범위이며, 학습 모델을 쓰는 도메인은 채용 공고 수집/검색 · 포트폴리오 재료 선정 · 홈 · 내비게이션이고, LLM 프로바이더와 채용 사이트는 범위 밖인 서비스 전체 구성">
+     aria-label="구직자 · 관리자 · 방문자 3종의 사용자가 웹 클라이언트로 들어오고, 점선 안쪽의 웹 클라이언트 · AI서비스 도메인 모듈 12개 · 데이터와 AI학습서버가 개발 및 설계범위이며, 학습 모델을 쓰는 도메인은 채용 공고 수집/검색 · 포트폴리오 재료 선정 · 홈 · 내비게이션이고, LLM 프로바이더와 채용 사이트는 범위 밖인 서비스 전체 구성">
   <defs><marker id="fig-1-1-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ex-slate-500)"/></marker></defs>
 
   <!-- 사용자 3종 — 각자 쓰는 화면으로 들어간다 -->
@@ -801,7 +801,7 @@ svg.dg .mute { fill: var(--ex-slate-300); }
   <rect class="bx" x="0" y="194" width="70" height="48" rx="10"/>
   <text class="tb" x="35" y="223" text-anchor="middle">관리자</text>
   <rect class="bx" x="0" y="252" width="70" height="48" rx="10"/>
-  <text class="tb" x="35" y="281" text-anchor="middle">열람자</text>
+  <text class="tb" x="35" y="281" text-anchor="middle">방문자</text>
 
   <!-- 점선 안쪽이 개발 및 설계범위 -->
   <text class="hd" x="88" y="18">개발 및 설계범위</text>
@@ -1308,7 +1308,7 @@ svg.dg .mute { fill: var(--ex-slate-300); }
               <td><strong>모델 A</strong><br>채용 공고 추천 모델</td>
               <td>기록 → 공고</td>
               <td>사용자에게 적합한 공고의 순위</td>
-              <td>사용자의 기록 전체 · 선호 조건과 후보 공고 목록</td>
+              <td>사용자의 기록 전체와 후보 공고 목록</td>
               <td>공고별 적합도 점수(0–100)와 추천 순위</td>
               <td>홈(00) · 공고 탐색(06) · 공고 AI 검색 결과(00b)</td>
             </tr>
@@ -1341,7 +1341,7 @@ svg.dg .mute { fill: var(--ex-slate-300); }
           <thead><tr><th>구분</th><th>모델 A — 기록에서 공고로</th><th>모델 B — 공고에서 기록으로</th></tr></thead>
           <tbody>
             <tr><td>답하는 질문</td><td>이 사용자에게 어떤 공고가 적합한가</td><td>이 공고에 어떤 경험을 담아야 하는가</td></tr>
-            <tr><td>판단 기준</td><td>경험 · 역량의 관련성, 역할 · 연차 · 근무 조건</td><td>기록의 관련성, 요건 범위, 경험의 중복</td></tr>
+            <tr><td>판단 기준</td><td>경험 · 역량의 관련성, 역할 · 연차</td><td>기록의 관련성, 요건 범위, 경험의 중복</td></tr>
             <tr><td>관측 단위</td><td>(사용자 프로필 1건, 채용 공고 1건)</td><td>(채용 공고 1건, 커리어 기록 1건)</td></tr>
             <tr><td>학습 데이터</td><td>프로필–공고 10,000쌍과 교사 적합도 점수</td><td>별도 학습 없음 — 모델 A의 Cross-Encoder 재사용</td></tr>
             <tr><td>평가 정답</td><td>교사 적합도 점수</td><td>교사가 요구사항별로 연결한 근거 기록과 충족 수준</td></tr>
@@ -1773,7 +1773,7 @@ svg.dg .mute { fill: var(--ex-slate-300); }
       <figure class="fig">
         <div class="plate drawn">
 <svg class="dg" viewBox="0 0 800 440" xmlns="http://www.w3.org/2000/svg" role="img"
-     aria-label="채용 공고 추천 모델은 기록 전체와 선호 조건으로 Bi-Encoder+MLP 선별과 Cross-Encoder 재정렬을 거쳐 추천 공고 순위를 내고, 커리어 기록 추천 모델은 같은 Cross-Encoder를 재사용하여 공고 요건과 기록 목록에서 추천 기록과 선택 조합을 내는 구성">
+     aria-label="채용 공고 추천 모델은 기록 전체와 후보 공고로 Bi-Encoder+MLP 선별과 Cross-Encoder 재정렬을 거쳐 추천 공고 순위를 내고, 커리어 기록 추천 모델은 같은 Cross-Encoder를 재사용하여 공고 요건과 기록 목록에서 추천 기록과 선택 조합을 내는 구성">
   <defs><marker id="fig-3-1-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ar" d="M2 2L8 5L2 8"/></marker></defs>
 
   <!-- 모델 A · 기록 → 공고 -->
@@ -1783,7 +1783,7 @@ svg.dg .mute { fill: var(--ex-slate-300); }
   <text class="tb" x="18" y="56">이 사용자에게 어떤 공고가 적합한가</text>
 
   <rect class="c-in" x="18" y="74" width="336" height="56" rx="8"/>
-  <text class="t" x="34" y="98">기록 전체 · 선호 조건</text>
+  <text class="t" x="34" y="98">기록 전체 · 후보 공고</text>
   <text class="s" x="34" y="118">사용자 프로필과 후보 공고 목록</text>
 
   <rect class="c-tr" x="18" y="156" width="336" height="56" rx="8"/>
