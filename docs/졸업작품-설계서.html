@@ -825,43 +825,65 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
 
       <h3 data-page="6">1.2 개발일정/산출물</h3>
       <p>
-        본 설계서는 아래 그림 1.2와 같이 개발일정에 따라 진행하며, 각 단계별로 산출물을
-        개발한다. 구현은 2026-08-06에 착수하였고, 설계와 구현을 병행하여 진행한다.
-        중간보고서와 완료보고서의 제출 시점은 학과 일정에 맞추어 확정한다.
+        본 프로젝트는 아래 그림 1.2와 같이 15주 일정에 따라 진행하며, 각 단계별로 산출물을
+        개발한다. 주차는 학기 주차이며 제안서 발표가 2주차이다. 서비스 구현은 2026-08-06에
+        먼저 착수하였고, 설계와 구현을 병행하여 진행한다. AI 모델의 데이터 구축과 학습은
+        4주차부터 10주차까지 서비스 기능 개발과 함께 진행한다.
       </p>
 
       <figure class="fig">
         <div class="plate drawn">
-          <svg class="dg" viewBox="0 0 900 250" xmlns="http://www.w3.org/2000/svg" role="img"
-               aria-label="2026년 8월부터 2027년 2월까지 요구분석 설계 구현 시험 네 단계와 단계별 산출물">
-            <text class="l" x="0" y="14">2026</text>
-            <text class="l" x="628" y="14">2027</text>
-
-            <rect class="bxq" x="0" y="24" width="900" height="26" rx="8"/>
-            <text class="lm" x="62" y="42" text-anchor="middle">8월</text>
-            <text class="lm" x="188" y="42" text-anchor="middle">9월</text>
-            <text class="lm" x="314" y="42" text-anchor="middle">10월</text>
-            <text class="lm" x="440" y="42" text-anchor="middle">11월</text>
-            <text class="lm" x="566" y="42" text-anchor="middle">12월</text>
-            <text class="lm" x="692" y="42" text-anchor="middle">1월</text>
-            <text class="lm" x="818" y="42" text-anchor="middle">2월</text>
-            <path class="ll" d="M 126 24 L 126 224 M 252 24 L 252 224 M 378 24 L 378 224 M 504 24 L 504 224 M 630 24 L 630 224 M 756 24 L 756 224"/>
-
-            <rect class="bx" x="4" y="62" width="184" height="30" rx="9"/>
-            <text class="t" x="96" y="82" text-anchor="middle">요구분석</text>
-
-            <rect class="bx" x="4" y="100" width="310" height="30" rx="9"/>
-            <text class="t" x="159" y="120" text-anchor="middle">설계</text>
-
-            <rect class="bx" x="4" y="138" width="626" height="30" rx="9"/>
-            <text class="t" x="317" y="158" text-anchor="middle">구현</text>
-
-            <rect class="bx" x="630" y="176" width="266" height="30" rx="9"/>
-            <text class="t" x="763" y="196" text-anchor="middle">시험 · 산출물 정리</text>
-
-            <text class="lm" x="196" y="120">요구규격 및 설계서 v1.0</text>
-            <text class="lm" x="638" y="158">서비스 서버 · 웹 클라이언트 · AI학습서버</text>
-            <text class="lm" x="638" y="222">시험성적서 · 완료보고서 · 매뉴얼</text>
+          <svg class="dg" viewBox="0 0 900 322" xmlns="http://www.w3.org/2000/svg" role="img"
+               aria-label="2주차부터 15주차까지 분석 설계 구현 AI 모델 검증 완료 단계의 추진 일정">
+            <rect class="bxq" x="284" y="8" width="616" height="26" rx="8"/>
+            <text class="lm" x="306" y="26" text-anchor="middle">2</text>
+            <text class="lm" x="350" y="26" text-anchor="middle">3</text>
+            <text class="lm" x="394" y="26" text-anchor="middle">4</text>
+            <text class="lm" x="438" y="26" text-anchor="middle">5</text>
+            <text class="lm" x="482" y="26" text-anchor="middle">6</text>
+            <text class="lm" x="526" y="26" text-anchor="middle">7</text>
+            <text class="lm" x="570" y="26" text-anchor="middle">8</text>
+            <text class="lm" x="614" y="26" text-anchor="middle">9</text>
+            <text class="lm" x="658" y="26" text-anchor="middle">10</text>
+            <text class="lm" x="702" y="26" text-anchor="middle">11</text>
+            <text class="lm" x="746" y="26" text-anchor="middle">12</text>
+            <text class="lm" x="790" y="26" text-anchor="middle">13</text>
+            <text class="lm" x="834" y="26" text-anchor="middle">14</text>
+            <text class="lm" x="878" y="26" text-anchor="middle">15</text>
+            <text class="s" x="274" y="26" text-anchor="end">주차</text>
+            <path class="ll" d="M 328 34 L 328 318 M 372 34 L 372 318 M 416 34 L 416 318 M 460 34 L 460 318 M 504 34 L 504 318 M 548 34 L 548 318 M 592 34 L 592 318 M 636 34 L 636 318 M 680 34 L 680 318 M 724 34 L 724 318 M 768 34 L 768 318 M 812 34 L 812 318 M 856 34 L 856 318"/>
+            <text class="t" x="0" y="62">분석·설계</text>
+            <text class="s" x="76" y="62">요구사항 분석 · 제안서 작성</text>
+            <rect class="bx" x="287" y="48" width="82" height="20" rx="7"/>
+            <text class="lm" x="328" y="62" text-anchor="middle">2–3</text>
+            <text class="s" x="76" y="92">화면 · API · DB · 시스템 설계</text>
+            <rect class="bx" x="331" y="78" width="170" height="20" rx="7"/>
+            <text class="lm" x="416" y="92" text-anchor="middle">3–6</text>
+            <text class="t" x="0" y="122">구현</text>
+            <text class="s" x="76" y="122">개발 환경 · 인증 · CI/CD 구축</text>
+            <rect class="bx" x="463" y="108" width="82" height="20" rx="7"/>
+            <text class="lm" x="504" y="122" text-anchor="middle">6–7</text>
+            <text class="s" x="76" y="152">도메인별 기능 개발 · 연동</text>
+            <rect class="bx" x="463" y="138" width="258" height="20" rx="7"/>
+            <text class="lm" x="592" y="152" text-anchor="middle">6–11</text>
+            <text class="t" x="0" y="182">AI 모델</text>
+            <text class="s" x="76" y="182">합성 데이터 · 교사 라벨 구축</text>
+            <rect class="bxs" x="375" y="168" width="170" height="20" rx="7"/>
+            <text class="lm" x="460" y="182" text-anchor="middle">4–7</text>
+            <text class="s" x="76" y="212">인코더 비교 · 적합도 모델 학습</text>
+            <rect class="bxs" x="507" y="198" width="170" height="20" rx="7"/>
+            <text class="lm" x="592" y="212" text-anchor="middle">7–10</text>
+            <text class="t" x="0" y="242">검증</text>
+            <text class="s" x="76" y="242">추천 연동 · 성능 평가 · 통합 테스트</text>
+            <rect class="bx" x="639" y="228" width="126" height="20" rx="7"/>
+            <text class="lm" x="702" y="242" text-anchor="middle">10–12</text>
+            <text class="t" x="0" y="272">완료</text>
+            <text class="s" x="76" y="272">완료 보고서 · 시연 준비</text>
+            <rect class="bx" x="727" y="258" width="82" height="20" rx="7"/>
+            <text class="lm" x="768" y="272" text-anchor="middle">12–13</text>
+            <text class="s" x="76" y="302">최종 발표 · 심사 · 결과 정리</text>
+            <rect class="bx" x="815" y="288" width="82" height="20" rx="7"/>
+            <text class="lm" x="856" y="302" text-anchor="middle">14–15</text>
           </svg>
         </div>
         <figcaption>그림 1.2 개발일정 및 산출물</figcaption>
@@ -883,21 +905,38 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
         </table>
       </div>
 
+      <h4>■ 단계별 제품 목표</h4>
+      <p>개발은 아래 네 단계의 마일스톤으로 나누어 진행한다. 각 단계는 사용자가 쓸 수 있는
+      서비스 하나를 목표로 하며, 앞 단계의 서비스 위에 다음 단계의 기능을 더한다.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>단계</th><th>제품 목표</th><th>구현 범위</th></tr></thead>
+          <tbody>
+            <tr><td>M1</td><td><strong>커리어 기록과 공고 탐색</strong><br>내 경험을 저장하고 지원할 공고를 찾는 서비스</td><td>회원가입 · 로그인 구현 · 커리어 기록 작성 · 수정 · 분류 · 채용 공고 수집 · 검색 · 필터 · 공고 상세 · 지원 요건 제공</td></tr>
+            <tr><td>M2</td><td><strong>공고 맞춤 포트폴리오 제작</strong><br>선택한 공고에 맞는 포트폴리오 제작 서비스</td><td>공고 분석 · 관련 기록 선택 · AI 인터뷰로 경험 보완 · 레시피 구성 · 디자인 선택 · 포트폴리오 생성 · 편집</td></tr>
+            <tr><td>M3</td><td><strong>자체 학습 모델 기반 추천</strong><br>내 경험에 맞는 공고와 지원에 쓸 기록 추천 서비스</td><td>학습 데이터 · 교사 라벨 구축 · 임베딩 비교 · 적합도 모델 학습 · 공고 · 커리어 기록 추천 연동 · 추천 품질 · 응답 시간 평가</td></tr>
+            <tr><td>M4</td><td><strong>포트폴리오 배포와 방문 분석</strong><br>포트폴리오 공유와 방문자 데이터 분석 서비스</td><td>공개 URL 배포 · 수정본 재배포 · 포트폴리오 버전 관리 · 방문 수집 · 분석 대시보드 구현 · 전체 흐름 통합 테스트</td></tr>
+          </tbody>
+          <caption>M3의 학습 모델 설계는 3장과 4장, 평가 방법은 9장에 기술한다.</caption>
+        </table>
+      </div>
+
       <h3 data-page="7">1.3 개발조직/역할</h3>
       <p>
-        본 프로젝트의 개발조직과 역할은 아래 표와 같다. 2장과 3장의 기능 표에 있는
-        <strong>개발담당</strong> 칸은 이 표의 이름과 일치하여야 한다.
+        본 프로젝트의 개발조직과 역할은 아래 표와 같다. 2장의 기능 표(2.3 · 2.5 · 2.6)에 있는
+        <strong>개발담당</strong> 칸은 이 표의 이름과 담당 도메인을 따른다.
       </p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>역할</th><th>이름</th><th>역할(개발기능)</th><th>비고</th></tr></thead>
+          <thead><tr><th>역할</th><th>이름</th><th>역할(개발기능)</th><th>담당 도메인</th></tr></thead>
           <tbody>
-            <tr><td>팀장</td><td>—</td><td>—</td><td>팀 구성 확정 후 기재</td></tr>
-            <tr><td>팀원</td><td>—</td><td>—</td><td>팀 구성 확정 후 기재</td></tr>
-            <tr><td>팀원</td><td>—</td><td>—</td><td>팀 구성 확정 후 기재</td></tr>
-            <tr><td>팀원</td><td>—</td><td>—</td><td>팀 구성 확정 후 기재</td></tr>
+            <tr><td>팀장</td><td>박민재</td><td>PM · AI · 프론트 — 포트폴리오 생성 · 편집 · 공개 사이트 배포 · 프로젝트 일정 · 업무 조율 · 시스템 구조 · UI/UX 설계</td><td>D4 · D6 · D7 · D8 · D9 · D11</td></tr>
+            <tr><td>팀원</td><td>심민규</td><td>백엔드 — 채용 공고 수집 · 정규화 · 검색 · 필터 · 공고 탐색 · CI/CD 파이프라인 구축 · 서버 운영 · 모니터링</td><td>D2 · 관리자 수집 · 운영 기능</td></tr>
+            <tr><td>팀원</td><td>오시건</td><td>백엔드 — 커리어 기록 작성 · 편집 · 분류 · 기록 검색 · 첨부 관리 · 계정 · 인증 기능 개발 · DB 스키마 · 마이그레이션</td><td>D1 · 관리자 인증</td></tr>
+            <tr><td>팀원</td><td>채서현</td><td>백엔드 · AI — 공고 요건 · 역량 추출 · 인터뷰 질문 · 응답 처리 · 학습 데이터 · 라벨 구축 · 추천 모델 학습 · 평가</td><td>D3 · D5 · AI학습서버</td></tr>
+            <tr><td>팀원</td><td>윤규현</td><td>데이터 · AI — AI 대화 · 맥락 관리 · 대화 기반 기록 연동 · 사용량 · 요금제 관리 · 방문자 통계 · 분석</td><td>D10 · D12</td></tr>
           </tbody>
-          <caption>팀 구성이 확정되지 않아 이름과 담당 기능을 비워 두었다. 이 표가 채워지기 전까지 2.3 · 2.5 · 2.6의 개발담당 칸도 비어 있다.</caption>
+          <caption>도메인 번호는 2.5의 D1–D12이다. D4 재료 선정과 D11 홈 · 내비게이션은 포트폴리오 생성과 UI/UX 설계를 맡은 팀장이 담당한다.</caption>
         </table>
       </div>
     </section>
@@ -1228,41 +1267,41 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
         <table>
           <thead><tr><th class="num">번호</th><th>주요모듈</th><th>상세기능</th><th>개발담당</th></tr></thead>
           <tbody>
-            <tr><td class="num">1</td><td>교사 라벨링 모듈</td><td>공고·프로필 쌍 생성 기능</td><td>—</td></tr>
-            <tr><td class="num">2</td><td><span class="rep">교사 라벨링 모듈</span></td><td>LLM 교사 배치 호출 기능</td><td>—</td></tr>
-            <tr><td class="num">3</td><td><span class="rep">교사 라벨링 모듈</span></td><td>교사 프롬프트 버전 관리 기능</td><td>—</td></tr>
-            <tr><td class="num">4</td><td><span class="rep">교사 라벨링 모듈</span></td><td>사람 검수 표본 추출 기능</td><td>—</td></tr>
-            <tr><td class="num">5</td><td><span class="rep">교사 라벨링 모듈</span></td><td>교사–사람 일치도(κ) 산출 기능</td><td>—</td></tr>
-            <tr><td class="num">6</td><td>데이터세트 모듈</td><td>개인정보 마스킹 기능</td><td>—</td></tr>
-            <tr><td class="num">7</td><td><span class="rep">데이터세트 모듈</span></td><td>임베딩 생성·캐시 기능</td><td>—</td></tr>
-            <tr><td class="num">8</td><td><span class="rep">데이터세트 모듈</span></td><td>모델 A 특징 추출 기능</td><td>—</td></tr>
-            <tr><td class="num">9</td><td><span class="rep">데이터세트 모듈</span></td><td>모델 B 특징 추출 기능</td><td>—</td></tr>
-            <tr><td class="num">10</td><td><span class="rep">데이터세트 모듈</span></td><td>클래스 균형 표본 추출 기능</td><td>—</td></tr>
-            <tr><td class="num">11</td><td><span class="rep">데이터세트 모듈</span></td><td>프로필·공고 단위 분할 기능</td><td>—</td></tr>
-            <tr><td class="num">12</td><td><span class="rep">데이터세트 모듈</span></td><td>데이터세트 버전 기록 기능</td><td>—</td></tr>
-            <tr><td class="num">13</td><td>학습 모듈</td><td>모델 A 랭커 학습 기능</td><td>—</td></tr>
-            <tr><td class="num">14</td><td><span class="rep">학습 모듈</span></td><td>모델 B 랭커 학습 기능</td><td>—</td></tr>
-            <tr><td class="num">15</td><td><span class="rep">학습 모듈</span></td><td>하이퍼파라미터 탐색 기능</td><td>—</td></tr>
-            <tr><td class="num">16</td><td><span class="rep">학습 모듈</span></td><td>학습 중단 · 재개 기능</td><td>—</td></tr>
-            <tr><td class="num">17</td><td><span class="rep">학습 모듈</span></td><td>재학습 기능</td><td>—</td></tr>
-            <tr><td class="num">18</td><td>검증 모듈</td><td>시험세트 성능 측정 기능</td><td>—</td></tr>
-            <tr><td class="num">19</td><td><span class="rep">검증 모듈</span></td><td>ROC · AUC 산출 기능</td><td>—</td></tr>
-            <tr><td class="num">20</td><td><span class="rep">검증 모듈</span></td><td>순위 지표(NDCG) 산출 기능</td><td>—</td></tr>
-            <tr><td class="num">21</td><td><span class="rep">검증 모듈</span></td><td>규칙 baseline 비교 기능</td><td>—</td></tr>
-            <tr><td class="num">22</td><td><span class="rep">검증 모듈</span></td><td>학생–교사–사람 3축 비교 기능</td><td>—</td></tr>
-            <tr><td class="num">23</td><td><span class="rep">검증 모듈</span></td><td>배포 승인 판정 기능</td><td>—</td></tr>
-            <tr><td class="num">24</td><td>배포 모듈</td><td>모델 아티팩트 배포 기능</td><td>—</td></tr>
-            <tr><td class="num">25</td><td><span class="rep">배포 모듈</span></td><td>모델별 배포 버전 선택 기능</td><td>—</td></tr>
-            <tr><td class="num">26</td><td><span class="rep">배포 모듈</span></td><td>이전 버전 롤백 기능</td><td>—</td></tr>
-            <tr><td class="num">27</td><td>관리 모듈</td><td>모델 버전관리 기능</td><td>—</td></tr>
-            <tr><td class="num">28</td><td><span class="rep">관리 모듈</span></td><td>학습 파라미터 수정 기능</td><td>—</td></tr>
-            <tr><td class="num">29</td><td><span class="rep">관리 모듈</span></td><td>모델 삭제 기능</td><td>—</td></tr>
-            <tr><td class="num">30</td><td>인터페이스 모듈</td><td>공고 적합도 판정 요청 처리 (모델 A)</td><td>—</td></tr>
-            <tr><td class="num">31</td><td><span class="rep">인터페이스 모듈</span></td><td>요건 충족 판정 요청 처리 (모델 B)</td><td>—</td></tr>
-            <tr><td class="num">32</td><td><span class="rep">인터페이스 모듈</span></td><td>모델 미배포 시 규칙 기반 폴백 기능</td><td>—</td></tr>
-            <tr><td class="num">33</td><td><span class="rep">인터페이스 모듈</span></td><td>판정 신뢰도·근거 반환 기능</td><td>—</td></tr>
-            <tr><td class="num">34</td><td>장애기록 모듈</td><td>학습 장애 기록 기능</td><td>—</td></tr>
-            <tr><td class="num">35</td><td><span class="rep">장애기록 모듈</span></td><td>장애기록 정보 제공 기능</td><td>—</td></tr>
+            <tr><td class="num">1</td><td>교사 라벨링 모듈</td><td>공고·프로필 쌍 생성 기능</td><td>채서현</td></tr>
+            <tr><td class="num">2</td><td><span class="rep">교사 라벨링 모듈</span></td><td>LLM 교사 배치 호출 기능</td><td>채서현</td></tr>
+            <tr><td class="num">3</td><td><span class="rep">교사 라벨링 모듈</span></td><td>교사 프롬프트 버전 관리 기능</td><td>채서현</td></tr>
+            <tr><td class="num">4</td><td><span class="rep">교사 라벨링 모듈</span></td><td>사람 검수 표본 추출 기능</td><td>채서현</td></tr>
+            <tr><td class="num">5</td><td><span class="rep">교사 라벨링 모듈</span></td><td>교사–사람 일치도(κ) 산출 기능</td><td>채서현</td></tr>
+            <tr><td class="num">6</td><td>데이터세트 모듈</td><td>개인정보 마스킹 기능</td><td>채서현</td></tr>
+            <tr><td class="num">7</td><td><span class="rep">데이터세트 모듈</span></td><td>임베딩 생성·캐시 기능</td><td>채서현</td></tr>
+            <tr><td class="num">8</td><td><span class="rep">데이터세트 모듈</span></td><td>모델 A 특징 추출 기능</td><td>채서현</td></tr>
+            <tr><td class="num">9</td><td><span class="rep">데이터세트 모듈</span></td><td>모델 B 특징 추출 기능</td><td>채서현</td></tr>
+            <tr><td class="num">10</td><td><span class="rep">데이터세트 모듈</span></td><td>클래스 균형 표본 추출 기능</td><td>채서현</td></tr>
+            <tr><td class="num">11</td><td><span class="rep">데이터세트 모듈</span></td><td>프로필·공고 단위 분할 기능</td><td>채서현</td></tr>
+            <tr><td class="num">12</td><td><span class="rep">데이터세트 모듈</span></td><td>데이터세트 버전 기록 기능</td><td>채서현</td></tr>
+            <tr><td class="num">13</td><td>학습 모듈</td><td>모델 A 랭커 학습 기능</td><td>채서현</td></tr>
+            <tr><td class="num">14</td><td><span class="rep">학습 모듈</span></td><td>모델 B 랭커 학습 기능</td><td>채서현</td></tr>
+            <tr><td class="num">15</td><td><span class="rep">학습 모듈</span></td><td>하이퍼파라미터 탐색 기능</td><td>채서현</td></tr>
+            <tr><td class="num">16</td><td><span class="rep">학습 모듈</span></td><td>학습 중단 · 재개 기능</td><td>채서현</td></tr>
+            <tr><td class="num">17</td><td><span class="rep">학습 모듈</span></td><td>재학습 기능</td><td>채서현</td></tr>
+            <tr><td class="num">18</td><td>검증 모듈</td><td>시험세트 성능 측정 기능</td><td>채서현</td></tr>
+            <tr><td class="num">19</td><td><span class="rep">검증 모듈</span></td><td>ROC · AUC 산출 기능</td><td>채서현</td></tr>
+            <tr><td class="num">20</td><td><span class="rep">검증 모듈</span></td><td>순위 지표(NDCG) 산출 기능</td><td>채서현</td></tr>
+            <tr><td class="num">21</td><td><span class="rep">검증 모듈</span></td><td>규칙 baseline 비교 기능</td><td>채서현</td></tr>
+            <tr><td class="num">22</td><td><span class="rep">검증 모듈</span></td><td>학생–교사–사람 3축 비교 기능</td><td>채서현</td></tr>
+            <tr><td class="num">23</td><td><span class="rep">검증 모듈</span></td><td>배포 승인 판정 기능</td><td>채서현</td></tr>
+            <tr><td class="num">24</td><td>배포 모듈</td><td>모델 아티팩트 배포 기능</td><td>채서현</td></tr>
+            <tr><td class="num">25</td><td><span class="rep">배포 모듈</span></td><td>모델별 배포 버전 선택 기능</td><td>채서현</td></tr>
+            <tr><td class="num">26</td><td><span class="rep">배포 모듈</span></td><td>이전 버전 롤백 기능</td><td>채서현</td></tr>
+            <tr><td class="num">27</td><td>관리 모듈</td><td>모델 버전관리 기능</td><td>채서현</td></tr>
+            <tr><td class="num">28</td><td><span class="rep">관리 모듈</span></td><td>학습 파라미터 수정 기능</td><td>채서현</td></tr>
+            <tr><td class="num">29</td><td><span class="rep">관리 모듈</span></td><td>모델 삭제 기능</td><td>채서현</td></tr>
+            <tr><td class="num">30</td><td>인터페이스 모듈</td><td>공고 적합도 판정 요청 처리 (모델 A)</td><td>채서현</td></tr>
+            <tr><td class="num">31</td><td><span class="rep">인터페이스 모듈</span></td><td>요건 충족 판정 요청 처리 (모델 B)</td><td>채서현</td></tr>
+            <tr><td class="num">32</td><td><span class="rep">인터페이스 모듈</span></td><td>모델 미배포 시 규칙 기반 폴백 기능</td><td>채서현</td></tr>
+            <tr><td class="num">33</td><td><span class="rep">인터페이스 모듈</span></td><td>판정 신뢰도·근거 반환 기능</td><td>채서현</td></tr>
+            <tr><td class="num">34</td><td>장애기록 모듈</td><td>학습 장애 기록 기능</td><td>채서현</td></tr>
+            <tr><td class="num">35</td><td><span class="rep">장애기록 모듈</span></td><td>장애기록 정보 제공 기능</td><td>채서현</td></tr>
           </tbody>
           <caption>교사 라벨링 모듈을 맨 앞에 둔 것은, 사용자가 없는 상태에서 라벨을 만드는 일이 본 프로젝트의 출발점이기 때문이다.</caption>
         </table>
@@ -1407,156 +1446,156 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
         <table>
           <thead><tr><th class="num">No</th><th>도메인</th><th>주요기능명</th><th>상세기능명</th><th>담당</th></tr></thead>
           <tbody>
-            <tr><td class="num">1</td><td>D1 커리어 기록</td><td>F1.1 카테고리 관리</td><td><code>T1.1.1</code> 기본 카테고리 제공</td><td>—</td></tr>
-            <tr><td class="num">2</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.1 카테고리 관리</span></td><td><code>T1.1.2</code> 사용자 카테고리 추가</td><td>—</td></tr>
-            <tr><td class="num">3</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.1 카테고리 관리</span></td><td><code>T1.1.3</code> 카테고리별 속성 스키마</td><td>—</td></tr>
-            <tr><td class="num">4</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.1 카테고리 관리</span></td><td><code>T1.1.4</code> 트리에서 바로 추가</td><td>—</td></tr>
-            <tr><td class="num">5</td><td><span class="rep">D1 커리어 기록</span></td><td>F1.2 기록 생성</td><td><code>T1.2.1</code> 직접 만들기</td><td>—</td></tr>
-            <tr><td class="num">6</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.2 기록 생성</span></td><td><code>T1.2.2</code> AI로 만들기</td><td>—</td></tr>
-            <tr><td class="num">7</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.2 기록 생성</span></td><td><code>T1.2.3</code> 대화에서 자동 생성</td><td>—</td></tr>
-            <tr><td class="num">8</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.2 기록 생성</span></td><td><code>T1.2.4</code> 외부에서 가져오기</td><td>—</td></tr>
-            <tr><td class="num">9</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.2 기록 생성</span></td><td><code>T1.2.5</code> 상태 자동 판정</td><td>—</td></tr>
-            <tr><td class="num">10</td><td><span class="rep">D1 커리어 기록</span></td><td>F1.3 기록 문서 편집</td><td><code>T1.3.1</code> 문서 패널 열기</td><td>—</td></tr>
-            <tr><td class="num">11</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.3 기록 문서 편집</span></td><td><code>T1.3.2</code> 속성 편집</td><td>—</td></tr>
-            <tr><td class="num">12</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.3 기록 문서 편집</span></td><td><code>T1.3.3</code> AI 정리 블록</td><td>—</td></tr>
-            <tr><td class="num">13</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.3 기록 문서 편집</span></td><td><code>T1.3.4</code> 문서 단위 AI 요청</td><td>—</td></tr>
-            <tr><td class="num">14</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.3 기록 문서 편집</span></td><td><code>T1.3.5</code> 삭제와 영향 범위</td><td>—</td></tr>
-            <tr><td class="num">15</td><td><span class="rep">D1 커리어 기록</span></td><td>F1.4 뷰 · 필터 · 정렬</td><td><code>T1.4.1</code> 뷰 전환</td><td>—</td></tr>
-            <tr><td class="num">16</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.4 뷰 · 필터 · 정렬</span></td><td><code>T1.4.2</code> 뷰 저장</td><td>—</td></tr>
-            <tr><td class="num">17</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.4 뷰 · 필터 · 정렬</span></td><td><code>T1.4.3</code> 필터 · 정렬 · 표시 속성</td><td>—</td></tr>
-            <tr><td class="num">18</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.4 뷰 · 필터 · 정렬</span></td><td><code>T1.4.4</code> 갤러리 카드 시각화</td><td>—</td></tr>
-            <tr><td class="num">19</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.4 뷰 · 필터 · 정렬</span></td><td><code>T1.4.5</code> 목록 집계</td><td>—</td></tr>
-            <tr><td class="num">20</td><td><span class="rep">D1 커리어 기록</span></td><td>F1.5 기록 간 연결과 사용처 추적</td><td><code>T1.5.1</code> 기록 연결</td><td>—</td></tr>
-            <tr><td class="num">21</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.5 기록 간 연결과 사용처 추적</span></td><td><code>T1.5.2</code> 사용처 표시</td><td>—</td></tr>
-            <tr><td class="num">22</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.5 기록 간 연결과 사용처 추적</span></td><td><code>T1.5.3</code> 인용 문단 추적</td><td>—</td></tr>
-            <tr><td class="num">23</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.5 기록 간 연결과 사용처 추적</span></td><td><code>T1.5.4</code> 중복·병합 제안</td><td>—</td></tr>
-            <tr><td class="num">24</td><td><span class="rep">D1 커리어 기록</span></td><td>F1.6 스킬 자동 집계와 수요 갭</td><td><code>T1.6.1</code> 기록에서 스킬 추출</td><td>—</td></tr>
-            <tr><td class="num">25</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.6 스킬 자동 집계와 수요 갭</span></td><td><code>T1.6.2</code> 숙련도 산출</td><td>—</td></tr>
-            <tr><td class="num">26</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.6 스킬 자동 집계와 수요 갭</span></td><td><code>T1.6.3</code> 근거 열람</td><td>—</td></tr>
-            <tr><td class="num">27</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.6 스킬 자동 집계와 수요 갭</span></td><td><code>T1.6.4</code> 공고 수요 비교</td><td>—</td></tr>
-            <tr><td class="num">28</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.6 스킬 자동 집계와 수요 갭</span></td><td><code>T1.6.5</code> 숫자 연결 제안</td><td>—</td></tr>
-            <tr><td class="num">29</td><td>D2 채용 공고 수집/검색</td><td>F2.1 공고 수집과 정규화</td><td><code>T2.1.1</code> 정기 수집</td><td>—</td></tr>
-            <tr><td class="num">30</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.1 공고 수집과 정규화</span></td><td><code>T2.1.2</code> 사용자 직접 등록</td><td>—</td></tr>
-            <tr><td class="num">31</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.1 공고 수집과 정규화</span></td><td><code>T2.1.3</code> 필드 정규화</td><td>—</td></tr>
-            <tr><td class="num">32</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.1 공고 수집과 정규화</span></td><td><code>T2.1.4</code> 중복 제거와 만료</td><td>—</td></tr>
-            <tr><td class="num">33</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.1 공고 수집과 정규화</span></td><td><code>T2.1.5</code> 신규 표시</td><td>—</td></tr>
-            <tr><td class="num">34</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td>F2.2 자연어 검색과 조건 해석</td><td><code>T2.2.1</code> 문장 → 조건 변환</td><td>—</td></tr>
-            <tr><td class="num">35</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.2 자연어 검색과 조건 해석</span></td><td><code>T2.2.2</code> 조건 수정과 재검색</td><td>—</td></tr>
-            <tr><td class="num">36</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.2 자연어 검색과 조건 해석</span></td><td><code>T2.2.3</code> 결과 0건 대응</td><td>—</td></tr>
-            <tr><td class="num">37</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.2 자연어 검색과 조건 해석</span></td><td><code>T2.2.4</code> 검색 저장과 알림</td><td>—</td></tr>
-            <tr><td class="num">38</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.2 자연어 검색과 조건 해석</span></td><td><code>T2.2.5</code> 최근 검색 · 추천 질의</td><td>—</td></tr>
-            <tr><td class="num">39</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td>F2.3 일치도 산출과 설명</td><td><code>T2.3.1</code> 점수 계산</td><td>—</td></tr>
-            <tr><td class="num">40</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.3 일치도 산출과 설명</span></td><td><code>T2.3.3</code> 축별 충족 내역</td><td>—</td></tr>
-            <tr><td class="num">41</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.3 일치도 산출과 설명</span></td><td><code>T2.3.4</code> 낮은 점수 접기</td><td>—</td></tr>
-            <tr><td class="num">42</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.3 일치도 산출과 설명</span></td><td><code>T2.3.5</code> 결과 집합 요약</td><td>—</td></tr>
-            <tr><td class="num">43</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td>F2.4 공고 상세 열람과 요건 대조</td><td><code>T2.4.1</code> 원문 렌더링</td><td>—</td></tr>
-            <tr><td class="num">44</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.2</code> 요건별 충족 판정</td><td>—</td></tr>
-            <tr><td class="num">45</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.3</code> 스택 대조 표시</td><td>—</td></tr>
-            <tr><td class="num">46</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.4</code> 보강 경로 제시</td><td>—</td></tr>
-            <tr><td class="num">47</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.5</code> 기업 톤 정보</td><td>—</td></tr>
-            <tr><td class="num">48</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.6</code> 관심 공고 관리</td><td>—</td></tr>
-            <tr><td class="num">49</td><td>D3 채용 공고 분석</td><td>F3.1 분석 대상 지정</td><td><code>T3.1.1</code> 입력 방식 3종</td><td>—</td></tr>
-            <tr><td class="num">50</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.1 분석 대상 지정</span></td><td><code>T3.1.2</code> 부가 자료 수집</td><td>—</td></tr>
-            <tr><td class="num">51</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.1 분석 대상 지정</span></td><td><code>T3.1.3</code> 진행 상태 표시</td><td>—</td></tr>
-            <tr><td class="num">52</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.1 분석 대상 지정</span></td><td><code>T3.1.4</code> 재분석</td><td>—</td></tr>
-            <tr><td class="num">53</td><td><span class="rep">D3 채용 공고 분석</span></td><td>F3.2 요구 역량 도출과 근거</td><td><code>T3.2.1</code> 역량 항목 추출</td><td>—</td></tr>
-            <tr><td class="num">54</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.2</code> 기록 커버리지 판정</td><td>—</td></tr>
-            <tr><td class="num">55</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.3</code> 원문 근거 하이라이트</td><td>—</td></tr>
-            <tr><td class="num">56</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.4</code> 반복 표현 추출</td><td>—</td></tr>
-            <tr><td class="num">57</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.5</code> 질문 배정 예고</td><td>—</td></tr>
-            <tr><td class="num">58</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.6</code> 소스 후보 선별</td><td>—</td></tr>
-            <tr><td class="num">59</td><td>D4 포트폴리오 재료 선정</td><td>F4.1 소스 기록 추천과 선택</td><td><code>T4.1.1</code> 매칭 순 정렬과 자동 선택</td><td>—</td></tr>
-            <tr><td class="num">60</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.1 소스 기록 추천과 선택</span></td><td><code>T4.1.2</code> 선택 변경과 즉시 반영</td><td>—</td></tr>
-            <tr><td class="num">61</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.1 소스 기록 추천과 선택</span></td><td><code>T4.1.3</code> 제외 사유 제시</td><td>—</td></tr>
-            <tr><td class="num">62</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.1 소스 기록 추천과 선택</span></td><td><code>T4.1.4</code> 현장에서 기록 추가</td><td>—</td></tr>
-            <tr><td class="num">63</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td>F4.2 생성 모드와 분량 설정</td><td><code>T4.2.1</code> 모드 선택</td><td>—</td></tr>
-            <tr><td class="num">64</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.2 생성 모드와 분량 설정</span></td><td><code>T4.2.2</code> 분량 프리셋</td><td>—</td></tr>
-            <tr><td class="num">65</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.2 생성 모드와 분량 설정</span></td><td><code>T4.2.3</code> 마감 알림 설정</td><td>—</td></tr>
-            <tr><td class="num">66</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.2 생성 모드와 분량 설정</span></td><td><code>T4.2.4</code> 사용량 확인</td><td>—</td></tr>
-            <tr><td class="num">67</td><td>D5 AI 인터뷰</td><td>F5.1 질문 생성과 배정</td><td><code>T5.1.1</code> 질문 세트 구성</td><td>—</td></tr>
-            <tr><td class="num">68</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.1 질문 생성과 배정</span></td><td><code>T5.1.2</code> 질문 근거 표시</td><td>—</td></tr>
-            <tr><td class="num">69</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.1 질문 생성과 배정</span></td><td><code>T5.1.3</code> 질문 품질 규칙</td><td>—</td></tr>
-            <tr><td class="num">70</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.1 질문 생성과 배정</span></td><td><code>T5.1.4</code> 질문 교체</td><td>—</td></tr>
-            <tr><td class="num">71</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.1 질문 생성과 배정</span></td><td><code>T5.1.5</code> 남은 질문 미리보기</td><td>—</td></tr>
-            <tr><td class="num">72</td><td><span class="rep">D5 AI 인터뷰</span></td><td>F5.2 응답 수집과 기록 생성</td><td><code>T5.2.1</code> 답변 입력 수단</td><td>—</td></tr>
-            <tr><td class="num">73</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.2</code> 실시간 기록 구성</td><td>—</td></tr>
-            <tr><td class="num">74</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.3</code> 기록 확정과 저장</td><td>—</td></tr>
-            <tr><td class="num">75</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.4</code> 추가 질문(꼬리 질문)</td><td>—</td></tr>
-            <tr><td class="num">76</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.5</code> 중단 · 재개 · 건너뛰기</td><td>—</td></tr>
-            <tr><td class="num">77</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.6</code> 이전 대화 열람</td><td>—</td></tr>
-            <tr><td class="num">78</td><td>D6 포트폴리오 레시피</td><td>F6.1 레시피 생성</td><td><code>T6.1.1</code> 입력 통합</td><td>—</td></tr>
-            <tr><td class="num">79</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.2</code> 섹션 목록 생성</td><td>—</td></tr>
-            <tr><td class="num">80</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.3</code> 컨텍스트 문서 작성</td><td>—</td></tr>
-            <tr><td class="num">81</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.4</code> 근거 경로 기록</td><td>—</td></tr>
-            <tr><td class="num">82</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.5</code> 미사용 소스 처리</td><td>—</td></tr>
-            <tr><td class="num">83</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.6</code> 전체 재생성</td><td>—</td></tr>
-            <tr><td class="num">84</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td>F6.2 레시피 편집과 공동 작업</td><td><code>T6.2.1</code> 섹션 순서·추가·삭제</td><td>—</td></tr>
-            <tr><td class="num">85</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.2 레시피 편집과 공동 작업</span></td><td><code>T6.2.2</code> 항목 단위 편집</td><td>—</td></tr>
-            <tr><td class="num">86</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.2 레시피 편집과 공동 작업</span></td><td><code>T6.2.3</code> 문장으로 수정 지시</td><td>—</td></tr>
-            <tr><td class="num">87</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.2 레시피 편집과 공동 작업</span></td><td><code>T6.2.4</code> 변경 이력</td><td>—</td></tr>
-            <tr><td class="num">88</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.2 레시피 편집과 공동 작업</span></td><td><code>T6.2.5</code> 완성도 요약</td><td>—</td></tr>
-            <tr><td class="num">89</td><td>D7 포트폴리오 생성</td><td>F7.1 지면 생성</td><td><code>T7.1.1</code> 내 내용으로 후보 비교</td><td>—</td></tr>
-            <tr><td class="num">90</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.1 지면 생성</span></td><td><code>T7.1.2</code> 후보 3안과 전체 보기</td><td>—</td></tr>
-            <tr><td class="num">91</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.1 지면 생성</span></td><td><code>T7.1.3</code> 기업 톤 반영</td><td>—</td></tr>
-            <tr><td class="num">92</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.1 지면 생성</span></td><td><code>T7.1.4</code> 스타일 변형 지시</td><td>—</td></tr>
-            <tr><td class="num">93</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.1 지면 생성</span></td><td><code>T7.1.5</code> 선택 요약</td><td>—</td></tr>
-            <tr><td class="num">94</td><td><span class="rep">D7 포트폴리오 생성</span></td><td>F7.2 문서 생성 실행</td><td><code>T7.2.1</code> 레시피 준수 생성</td><td>—</td></tr>
-            <tr><td class="num">95</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.2 문서 생성 실행</span></td><td><code>T7.2.2</code> 진행 표시와 백그라운드</td><td>—</td></tr>
-            <tr><td class="num">96</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.2 문서 생성 실행</span></td><td><code>T7.2.3</code> 사용량 차감과 복구</td><td>—</td></tr>
-            <tr><td class="num">97</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.2 문서 생성 실행</span></td><td><code>T7.2.4</code> 생성 직후 스냅샷</td><td>—</td></tr>
-            <tr><td class="num">98</td><td>D8 포트폴리오 편집</td><td>F8.1 구조 편집</td><td><code>T8.1.1</code> 섹션 순서·표시</td><td>—</td></tr>
-            <tr><td class="num">99</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.1 구조 편집</span></td><td><code>T8.1.2</code> 순서 개선 제안</td><td>—</td></tr>
-            <tr><td class="num">100</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.1 구조 편집</span></td><td><code>T8.1.3</code> 섹션 추가</td><td>—</td></tr>
-            <tr><td class="num">101</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.1 구조 편집</span></td><td><code>T8.1.4</code> 뷰포트 전환</td><td>—</td></tr>
-            <tr><td class="num">102</td><td><span class="rep">D8 포트폴리오 편집</span></td><td>F8.2 대화형 수정</td><td><code>T8.2.1</code> 대상 지정</td><td>—</td></tr>
-            <tr><td class="num">103</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.2 대화형 수정</span></td><td><code>T8.2.2</code> 변경 요약 제시</td><td>—</td></tr>
-            <tr><td class="num">104</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.2 대화형 수정</span></td><td><code>T8.2.3</code> 기록에서 가져오기</td><td>—</td></tr>
-            <tr><td class="num">105</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.2 대화형 수정</span></td><td><code>T8.2.4</code> 인라인 텍스트 편집</td><td>—</td></tr>
-            <tr><td class="num">106</td><td><span class="rep">D8 포트폴리오 편집</span></td><td>F8.3 속성 조정과 기록 동기화</td><td><code>T8.3.1</code> 내용 속성 편집</td><td>—</td></tr>
-            <tr><td class="num">107</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.3 속성 조정과 기록 동기화</span></td><td><code>T8.3.2</code> 표현 속성 편집</td><td>—</td></tr>
-            <tr><td class="num">108</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.3 속성 조정과 기록 동기화</span></td><td><code>T8.3.3</code> 원본 기록 동기화</td><td>—</td></tr>
-            <tr><td class="num">109</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.3 속성 조정과 기록 동기화</span></td><td><code>T8.3.4</code> 기본값 복원</td><td>—</td></tr>
-            <tr><td class="num">110</td><td><span class="rep">D8 포트폴리오 편집</span></td><td>F8.4 변경 이력과 잠금</td><td><code>T8.4.1</code> 주체별 이력</td><td>—</td></tr>
-            <tr><td class="num">111</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.4 변경 이력과 잠금</span></td><td><code>T8.4.2</code> 개별 되돌리기</td><td>—</td></tr>
-            <tr><td class="num">112</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.4 변경 이력과 잠금</span></td><td><code>T8.4.3</code> 변경 위치 비교 보기</td><td>—</td></tr>
-            <tr><td class="num">113</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.4 변경 이력과 잠금</span></td><td><code>T8.4.4</code> 복원 지점</td><td>—</td></tr>
-            <tr><td class="num">114</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.4 변경 이력과 잠금</span></td><td><code>T8.4.5</code> 잠금 관리</td><td>—</td></tr>
-            <tr><td class="num">115</td><td>D9 배포 · 공개 사이트</td><td>F9.1 배포와 버전</td><td><code>T9.1.1</code> 주소 발급</td><td>—</td></tr>
-            <tr><td class="num">116</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.1 배포와 버전</span></td><td><code>T9.1.2</code> 배포 전 확인</td><td>—</td></tr>
-            <tr><td class="num">117</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.1 배포와 버전</span></td><td><code>T9.1.3</code> 버전 관리</td><td>—</td></tr>
-            <tr><td class="num">118</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.1 배포와 버전</span></td><td><code>T9.1.4</code> 공개 중단·삭제</td><td>—</td></tr>
-            <tr><td class="num">119</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.1 배포와 버전</span></td><td><code>T9.1.5</code> 커스텀 도메인</td><td>—</td></tr>
-            <tr><td class="num">120</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td>F9.2 공개 사이트 품질과 내보내기</td><td><code>T9.2.1</code> 모바일 대응</td><td>—</td></tr>
-            <tr><td class="num">121</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.2 공개 사이트 품질과 내보내기</span></td><td><code>T9.2.2</code> 공유 메타 정보</td><td>—</td></tr>
-            <tr><td class="num">122</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.2 공개 사이트 품질과 내보내기</span></td><td><code>T9.2.3</code> 문서 내보내기</td><td>—</td></tr>
-            <tr><td class="num">123</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.2 공개 사이트 품질과 내보내기</span></td><td><code>T9.2.4</code> 이력서 파일 첨부</td><td>—</td></tr>
-            <tr><td class="num">124</td><td>D10 통계 분석</td><td>F10.1 방문 데이터 수집</td><td><code>T10.1.1</code> 기본 지표 수집</td><td>—</td></tr>
-            <tr><td class="num">125</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.1 방문 데이터 수집</span></td><td><code>T10.1.2</code> 섹션 단위 측정</td><td>—</td></tr>
-            <tr><td class="num">126</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.1 방문 데이터 수집</span></td><td><code>T10.1.3</code> 기업 방문 식별</td><td>—</td></tr>
-            <tr><td class="num">127</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.1 방문 데이터 수집</span></td><td><code>T10.1.4</code> 표본 부족 처리</td><td>—</td></tr>
-            <tr><td class="num">128</td><td><span class="rep">D10 통계 분석</span></td><td>F10.2 대시보드 구성</td><td><code>T10.2.1</code> 기본 대시보드</td><td>—</td></tr>
-            <tr><td class="num">129</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.2</code> 위젯 추가·배치</td><td>—</td></tr>
-            <tr><td class="num">130</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.3</code> 위젯 설정</td><td>—</td></tr>
-            <tr><td class="num">131</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.4</code> 뷰 저장</td><td>—</td></tr>
-            <tr><td class="num">132</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.5</code> 파생 지표</td><td>—</td></tr>
-            <tr><td class="num">133</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.6</code> 주석</td><td>—</td></tr>
-            <tr><td class="num">134</td><td><span class="rep">D10 통계 분석</span></td><td>F10.3 해석과 개선 제안</td><td><code>T10.3.1</code> 읽기 패턴 해설</td><td>—</td></tr>
-            <tr><td class="num">135</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.3 해석과 개선 제안</span></td><td><code>T10.3.2</code> 실행 가능한 제안</td><td>—</td></tr>
-            <tr><td class="num">136</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.3 해석과 개선 제안</span></td><td><code>T10.3.3</code> 홈 요약 연동</td><td>—</td></tr>
-            <tr><td class="num">137</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.3 해석과 개선 제안</span></td><td><code>T10.3.4</code> 리포트 발송</td><td>—</td></tr>
-            <tr><td class="num">138</td><td>D11 홈 · 내비게이션</td><td>F11.1 홈 대시보드</td><td><code>T11.1.1</code> 추천 공고 제시</td><td>—</td></tr>
-            <tr><td class="num">139</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.1 홈 대시보드</span></td><td><code>T11.1.2</code> 진행 중 작업 이어가기</td><td>—</td></tr>
-            <tr><td class="num">140</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.1 홈 대시보드</span></td><td><code>T11.1.3</code> 포트폴리오 현황</td><td>—</td></tr>
-            <tr><td class="num">141</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.1 홈 대시보드</span></td><td><code>T11.1.4</code> 최초 사용자 안내</td><td>—</td></tr>
-            <tr><td class="num">142</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td>F11.2 전역 내비게이션과 검색</td><td><code>T11.2.1</code> 사이드바 구성</td><td>—</td></tr>
-            <tr><td class="num">143</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.2 전역 내비게이션과 검색</span></td><td><code>T11.2.2</code> 통합 검색</td><td>—</td></tr>
-            <tr><td class="num">144</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.2 전역 내비게이션과 검색</span></td><td><code>T11.2.3</code> 알림</td><td>—</td></tr>
-            <tr><td class="num">145</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.2 전역 내비게이션과 검색</span></td><td><code>T11.2.4</code> 진행 단계 표시</td><td>—</td></tr>
-            <tr><td class="num">146</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.2 전역 내비게이션과 검색</span></td><td><code>T11.2.5</code> 자동 저장 표시</td><td>—</td></tr>
-            <tr><td class="num">147</td><td>D12 계정 · 요금제</td><td>F12.1 사용량과 플랜 게이팅</td><td><code>T12.1.1</code> 사용량 표시</td><td>—</td></tr>
-            <tr><td class="num">148</td><td><span class="rep">D12 계정 · 요금제</span></td><td><span class="rep">F12.1 사용량과 플랜 게이팅</span></td><td><code>T12.1.2</code> 유료 기능 노출</td><td>—</td></tr>
-            <tr><td class="num">149</td><td><span class="rep">D12 계정 · 요금제</span></td><td><span class="rep">F12.1 사용량과 플랜 게이팅</span></td><td><code>T12.1.3</code> 플랜 변경</td><td>—</td></tr>
-            <tr><td class="num">150</td><td><span class="rep">D12 계정 · 요금제</span></td><td><span class="rep">F12.1 사용량과 플랜 게이팅</span></td><td><code>T12.1.4</code> 계정 데이터 관리</td><td>—</td></tr>
+            <tr><td class="num">1</td><td>D1 커리어 기록</td><td>F1.1 카테고리 관리</td><td><code>T1.1.1</code> 기본 카테고리 제공</td><td>오시건</td></tr>
+            <tr><td class="num">2</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.1 카테고리 관리</span></td><td><code>T1.1.2</code> 사용자 카테고리 추가</td><td>오시건</td></tr>
+            <tr><td class="num">3</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.1 카테고리 관리</span></td><td><code>T1.1.3</code> 카테고리별 속성 스키마</td><td>오시건</td></tr>
+            <tr><td class="num">4</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.1 카테고리 관리</span></td><td><code>T1.1.4</code> 트리에서 바로 추가</td><td>오시건</td></tr>
+            <tr><td class="num">5</td><td><span class="rep">D1 커리어 기록</span></td><td>F1.2 기록 생성</td><td><code>T1.2.1</code> 직접 만들기</td><td>오시건</td></tr>
+            <tr><td class="num">6</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.2 기록 생성</span></td><td><code>T1.2.2</code> AI로 만들기</td><td>오시건</td></tr>
+            <tr><td class="num">7</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.2 기록 생성</span></td><td><code>T1.2.3</code> 대화에서 자동 생성</td><td>오시건</td></tr>
+            <tr><td class="num">8</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.2 기록 생성</span></td><td><code>T1.2.4</code> 외부에서 가져오기</td><td>오시건</td></tr>
+            <tr><td class="num">9</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.2 기록 생성</span></td><td><code>T1.2.5</code> 상태 자동 판정</td><td>오시건</td></tr>
+            <tr><td class="num">10</td><td><span class="rep">D1 커리어 기록</span></td><td>F1.3 기록 문서 편집</td><td><code>T1.3.1</code> 문서 패널 열기</td><td>오시건</td></tr>
+            <tr><td class="num">11</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.3 기록 문서 편집</span></td><td><code>T1.3.2</code> 속성 편집</td><td>오시건</td></tr>
+            <tr><td class="num">12</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.3 기록 문서 편집</span></td><td><code>T1.3.3</code> AI 정리 블록</td><td>오시건</td></tr>
+            <tr><td class="num">13</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.3 기록 문서 편집</span></td><td><code>T1.3.4</code> 문서 단위 AI 요청</td><td>오시건</td></tr>
+            <tr><td class="num">14</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.3 기록 문서 편집</span></td><td><code>T1.3.5</code> 삭제와 영향 범위</td><td>오시건</td></tr>
+            <tr><td class="num">15</td><td><span class="rep">D1 커리어 기록</span></td><td>F1.4 뷰 · 필터 · 정렬</td><td><code>T1.4.1</code> 뷰 전환</td><td>오시건</td></tr>
+            <tr><td class="num">16</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.4 뷰 · 필터 · 정렬</span></td><td><code>T1.4.2</code> 뷰 저장</td><td>오시건</td></tr>
+            <tr><td class="num">17</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.4 뷰 · 필터 · 정렬</span></td><td><code>T1.4.3</code> 필터 · 정렬 · 표시 속성</td><td>오시건</td></tr>
+            <tr><td class="num">18</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.4 뷰 · 필터 · 정렬</span></td><td><code>T1.4.4</code> 갤러리 카드 시각화</td><td>오시건</td></tr>
+            <tr><td class="num">19</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.4 뷰 · 필터 · 정렬</span></td><td><code>T1.4.5</code> 목록 집계</td><td>오시건</td></tr>
+            <tr><td class="num">20</td><td><span class="rep">D1 커리어 기록</span></td><td>F1.5 기록 간 연결과 사용처 추적</td><td><code>T1.5.1</code> 기록 연결</td><td>오시건</td></tr>
+            <tr><td class="num">21</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.5 기록 간 연결과 사용처 추적</span></td><td><code>T1.5.2</code> 사용처 표시</td><td>오시건</td></tr>
+            <tr><td class="num">22</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.5 기록 간 연결과 사용처 추적</span></td><td><code>T1.5.3</code> 인용 문단 추적</td><td>오시건</td></tr>
+            <tr><td class="num">23</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.5 기록 간 연결과 사용처 추적</span></td><td><code>T1.5.4</code> 중복·병합 제안</td><td>오시건</td></tr>
+            <tr><td class="num">24</td><td><span class="rep">D1 커리어 기록</span></td><td>F1.6 스킬 자동 집계와 수요 갭</td><td><code>T1.6.1</code> 기록에서 스킬 추출</td><td>오시건</td></tr>
+            <tr><td class="num">25</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.6 스킬 자동 집계와 수요 갭</span></td><td><code>T1.6.2</code> 숙련도 산출</td><td>오시건</td></tr>
+            <tr><td class="num">26</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.6 스킬 자동 집계와 수요 갭</span></td><td><code>T1.6.3</code> 근거 열람</td><td>오시건</td></tr>
+            <tr><td class="num">27</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.6 스킬 자동 집계와 수요 갭</span></td><td><code>T1.6.4</code> 공고 수요 비교</td><td>오시건</td></tr>
+            <tr><td class="num">28</td><td><span class="rep">D1 커리어 기록</span></td><td><span class="rep">F1.6 스킬 자동 집계와 수요 갭</span></td><td><code>T1.6.5</code> 숫자 연결 제안</td><td>오시건</td></tr>
+            <tr><td class="num">29</td><td>D2 채용 공고 수집/검색</td><td>F2.1 공고 수집과 정규화</td><td><code>T2.1.1</code> 정기 수집</td><td>심민규</td></tr>
+            <tr><td class="num">30</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.1 공고 수집과 정규화</span></td><td><code>T2.1.2</code> 사용자 직접 등록</td><td>심민규</td></tr>
+            <tr><td class="num">31</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.1 공고 수집과 정규화</span></td><td><code>T2.1.3</code> 필드 정규화</td><td>심민규</td></tr>
+            <tr><td class="num">32</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.1 공고 수집과 정규화</span></td><td><code>T2.1.4</code> 중복 제거와 만료</td><td>심민규</td></tr>
+            <tr><td class="num">33</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.1 공고 수집과 정규화</span></td><td><code>T2.1.5</code> 신규 표시</td><td>심민규</td></tr>
+            <tr><td class="num">34</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td>F2.2 자연어 검색과 조건 해석</td><td><code>T2.2.1</code> 문장 → 조건 변환</td><td>심민규</td></tr>
+            <tr><td class="num">35</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.2 자연어 검색과 조건 해석</span></td><td><code>T2.2.2</code> 조건 수정과 재검색</td><td>심민규</td></tr>
+            <tr><td class="num">36</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.2 자연어 검색과 조건 해석</span></td><td><code>T2.2.3</code> 결과 0건 대응</td><td>심민규</td></tr>
+            <tr><td class="num">37</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.2 자연어 검색과 조건 해석</span></td><td><code>T2.2.4</code> 검색 저장과 알림</td><td>심민규</td></tr>
+            <tr><td class="num">38</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.2 자연어 검색과 조건 해석</span></td><td><code>T2.2.5</code> 최근 검색 · 추천 질의</td><td>심민규</td></tr>
+            <tr><td class="num">39</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td>F2.3 일치도 산출과 설명</td><td><code>T2.3.1</code> 점수 계산</td><td>심민규</td></tr>
+            <tr><td class="num">40</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.3 일치도 산출과 설명</span></td><td><code>T2.3.3</code> 축별 충족 내역</td><td>심민규</td></tr>
+            <tr><td class="num">41</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.3 일치도 산출과 설명</span></td><td><code>T2.3.4</code> 낮은 점수 접기</td><td>심민규</td></tr>
+            <tr><td class="num">42</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.3 일치도 산출과 설명</span></td><td><code>T2.3.5</code> 결과 집합 요약</td><td>심민규</td></tr>
+            <tr><td class="num">43</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td>F2.4 공고 상세 열람과 요건 대조</td><td><code>T2.4.1</code> 원문 렌더링</td><td>심민규</td></tr>
+            <tr><td class="num">44</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.2</code> 요건별 충족 판정</td><td>심민규</td></tr>
+            <tr><td class="num">45</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.3</code> 스택 대조 표시</td><td>심민규</td></tr>
+            <tr><td class="num">46</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.4</code> 보강 경로 제시</td><td>심민규</td></tr>
+            <tr><td class="num">47</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.5</code> 기업 톤 정보</td><td>심민규</td></tr>
+            <tr><td class="num">48</td><td><span class="rep">D2 채용 공고 수집/검색</span></td><td><span class="rep">F2.4 공고 상세 열람과 요건 대조</span></td><td><code>T2.4.6</code> 관심 공고 관리</td><td>심민규</td></tr>
+            <tr><td class="num">49</td><td>D3 채용 공고 분석</td><td>F3.1 분석 대상 지정</td><td><code>T3.1.1</code> 입력 방식 3종</td><td>채서현</td></tr>
+            <tr><td class="num">50</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.1 분석 대상 지정</span></td><td><code>T3.1.2</code> 부가 자료 수집</td><td>채서현</td></tr>
+            <tr><td class="num">51</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.1 분석 대상 지정</span></td><td><code>T3.1.3</code> 진행 상태 표시</td><td>채서현</td></tr>
+            <tr><td class="num">52</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.1 분석 대상 지정</span></td><td><code>T3.1.4</code> 재분석</td><td>채서현</td></tr>
+            <tr><td class="num">53</td><td><span class="rep">D3 채용 공고 분석</span></td><td>F3.2 요구 역량 도출과 근거</td><td><code>T3.2.1</code> 역량 항목 추출</td><td>채서현</td></tr>
+            <tr><td class="num">54</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.2</code> 기록 커버리지 판정</td><td>채서현</td></tr>
+            <tr><td class="num">55</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.3</code> 원문 근거 하이라이트</td><td>채서현</td></tr>
+            <tr><td class="num">56</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.4</code> 반복 표현 추출</td><td>채서현</td></tr>
+            <tr><td class="num">57</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.5</code> 질문 배정 예고</td><td>채서현</td></tr>
+            <tr><td class="num">58</td><td><span class="rep">D3 채용 공고 분석</span></td><td><span class="rep">F3.2 요구 역량 도출과 근거</span></td><td><code>T3.2.6</code> 소스 후보 선별</td><td>채서현</td></tr>
+            <tr><td class="num">59</td><td>D4 포트폴리오 재료 선정</td><td>F4.1 소스 기록 추천과 선택</td><td><code>T4.1.1</code> 매칭 순 정렬과 자동 선택</td><td>박민재</td></tr>
+            <tr><td class="num">60</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.1 소스 기록 추천과 선택</span></td><td><code>T4.1.2</code> 선택 변경과 즉시 반영</td><td>박민재</td></tr>
+            <tr><td class="num">61</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.1 소스 기록 추천과 선택</span></td><td><code>T4.1.3</code> 제외 사유 제시</td><td>박민재</td></tr>
+            <tr><td class="num">62</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.1 소스 기록 추천과 선택</span></td><td><code>T4.1.4</code> 현장에서 기록 추가</td><td>박민재</td></tr>
+            <tr><td class="num">63</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td>F4.2 생성 모드와 분량 설정</td><td><code>T4.2.1</code> 모드 선택</td><td>박민재</td></tr>
+            <tr><td class="num">64</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.2 생성 모드와 분량 설정</span></td><td><code>T4.2.2</code> 분량 프리셋</td><td>박민재</td></tr>
+            <tr><td class="num">65</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.2 생성 모드와 분량 설정</span></td><td><code>T4.2.3</code> 마감 알림 설정</td><td>박민재</td></tr>
+            <tr><td class="num">66</td><td><span class="rep">D4 포트폴리오 재료 선정</span></td><td><span class="rep">F4.2 생성 모드와 분량 설정</span></td><td><code>T4.2.4</code> 사용량 확인</td><td>박민재</td></tr>
+            <tr><td class="num">67</td><td>D5 AI 인터뷰</td><td>F5.1 질문 생성과 배정</td><td><code>T5.1.1</code> 질문 세트 구성</td><td>채서현</td></tr>
+            <tr><td class="num">68</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.1 질문 생성과 배정</span></td><td><code>T5.1.2</code> 질문 근거 표시</td><td>채서현</td></tr>
+            <tr><td class="num">69</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.1 질문 생성과 배정</span></td><td><code>T5.1.3</code> 질문 품질 규칙</td><td>채서현</td></tr>
+            <tr><td class="num">70</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.1 질문 생성과 배정</span></td><td><code>T5.1.4</code> 질문 교체</td><td>채서현</td></tr>
+            <tr><td class="num">71</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.1 질문 생성과 배정</span></td><td><code>T5.1.5</code> 남은 질문 미리보기</td><td>채서현</td></tr>
+            <tr><td class="num">72</td><td><span class="rep">D5 AI 인터뷰</span></td><td>F5.2 응답 수집과 기록 생성</td><td><code>T5.2.1</code> 답변 입력 수단</td><td>채서현</td></tr>
+            <tr><td class="num">73</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.2</code> 실시간 기록 구성</td><td>채서현</td></tr>
+            <tr><td class="num">74</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.3</code> 기록 확정과 저장</td><td>채서현</td></tr>
+            <tr><td class="num">75</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.4</code> 추가 질문(꼬리 질문)</td><td>채서현</td></tr>
+            <tr><td class="num">76</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.5</code> 중단 · 재개 · 건너뛰기</td><td>채서현</td></tr>
+            <tr><td class="num">77</td><td><span class="rep">D5 AI 인터뷰</span></td><td><span class="rep">F5.2 응답 수집과 기록 생성</span></td><td><code>T5.2.6</code> 이전 대화 열람</td><td>채서현</td></tr>
+            <tr><td class="num">78</td><td>D6 포트폴리오 레시피</td><td>F6.1 레시피 생성</td><td><code>T6.1.1</code> 입력 통합</td><td>박민재</td></tr>
+            <tr><td class="num">79</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.2</code> 섹션 목록 생성</td><td>박민재</td></tr>
+            <tr><td class="num">80</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.3</code> 컨텍스트 문서 작성</td><td>박민재</td></tr>
+            <tr><td class="num">81</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.4</code> 근거 경로 기록</td><td>박민재</td></tr>
+            <tr><td class="num">82</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.5</code> 미사용 소스 처리</td><td>박민재</td></tr>
+            <tr><td class="num">83</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.1 레시피 생성</span></td><td><code>T6.1.6</code> 전체 재생성</td><td>박민재</td></tr>
+            <tr><td class="num">84</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td>F6.2 레시피 편집과 공동 작업</td><td><code>T6.2.1</code> 섹션 순서·추가·삭제</td><td>박민재</td></tr>
+            <tr><td class="num">85</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.2 레시피 편집과 공동 작업</span></td><td><code>T6.2.2</code> 항목 단위 편집</td><td>박민재</td></tr>
+            <tr><td class="num">86</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.2 레시피 편집과 공동 작업</span></td><td><code>T6.2.3</code> 문장으로 수정 지시</td><td>박민재</td></tr>
+            <tr><td class="num">87</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.2 레시피 편집과 공동 작업</span></td><td><code>T6.2.4</code> 변경 이력</td><td>박민재</td></tr>
+            <tr><td class="num">88</td><td><span class="rep">D6 포트폴리오 레시피</span></td><td><span class="rep">F6.2 레시피 편집과 공동 작업</span></td><td><code>T6.2.5</code> 완성도 요약</td><td>박민재</td></tr>
+            <tr><td class="num">89</td><td>D7 포트폴리오 생성</td><td>F7.1 지면 생성</td><td><code>T7.1.1</code> 내 내용으로 후보 비교</td><td>박민재</td></tr>
+            <tr><td class="num">90</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.1 지면 생성</span></td><td><code>T7.1.2</code> 후보 3안과 전체 보기</td><td>박민재</td></tr>
+            <tr><td class="num">91</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.1 지면 생성</span></td><td><code>T7.1.3</code> 기업 톤 반영</td><td>박민재</td></tr>
+            <tr><td class="num">92</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.1 지면 생성</span></td><td><code>T7.1.4</code> 스타일 변형 지시</td><td>박민재</td></tr>
+            <tr><td class="num">93</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.1 지면 생성</span></td><td><code>T7.1.5</code> 선택 요약</td><td>박민재</td></tr>
+            <tr><td class="num">94</td><td><span class="rep">D7 포트폴리오 생성</span></td><td>F7.2 문서 생성 실행</td><td><code>T7.2.1</code> 레시피 준수 생성</td><td>박민재</td></tr>
+            <tr><td class="num">95</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.2 문서 생성 실행</span></td><td><code>T7.2.2</code> 진행 표시와 백그라운드</td><td>박민재</td></tr>
+            <tr><td class="num">96</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.2 문서 생성 실행</span></td><td><code>T7.2.3</code> 사용량 차감과 복구</td><td>박민재</td></tr>
+            <tr><td class="num">97</td><td><span class="rep">D7 포트폴리오 생성</span></td><td><span class="rep">F7.2 문서 생성 실행</span></td><td><code>T7.2.4</code> 생성 직후 스냅샷</td><td>박민재</td></tr>
+            <tr><td class="num">98</td><td>D8 포트폴리오 편집</td><td>F8.1 구조 편집</td><td><code>T8.1.1</code> 섹션 순서·표시</td><td>박민재</td></tr>
+            <tr><td class="num">99</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.1 구조 편집</span></td><td><code>T8.1.2</code> 순서 개선 제안</td><td>박민재</td></tr>
+            <tr><td class="num">100</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.1 구조 편집</span></td><td><code>T8.1.3</code> 섹션 추가</td><td>박민재</td></tr>
+            <tr><td class="num">101</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.1 구조 편집</span></td><td><code>T8.1.4</code> 뷰포트 전환</td><td>박민재</td></tr>
+            <tr><td class="num">102</td><td><span class="rep">D8 포트폴리오 편집</span></td><td>F8.2 대화형 수정</td><td><code>T8.2.1</code> 대상 지정</td><td>박민재</td></tr>
+            <tr><td class="num">103</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.2 대화형 수정</span></td><td><code>T8.2.2</code> 변경 요약 제시</td><td>박민재</td></tr>
+            <tr><td class="num">104</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.2 대화형 수정</span></td><td><code>T8.2.3</code> 기록에서 가져오기</td><td>박민재</td></tr>
+            <tr><td class="num">105</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.2 대화형 수정</span></td><td><code>T8.2.4</code> 인라인 텍스트 편집</td><td>박민재</td></tr>
+            <tr><td class="num">106</td><td><span class="rep">D8 포트폴리오 편집</span></td><td>F8.3 속성 조정과 기록 동기화</td><td><code>T8.3.1</code> 내용 속성 편집</td><td>박민재</td></tr>
+            <tr><td class="num">107</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.3 속성 조정과 기록 동기화</span></td><td><code>T8.3.2</code> 표현 속성 편집</td><td>박민재</td></tr>
+            <tr><td class="num">108</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.3 속성 조정과 기록 동기화</span></td><td><code>T8.3.3</code> 원본 기록 동기화</td><td>박민재</td></tr>
+            <tr><td class="num">109</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.3 속성 조정과 기록 동기화</span></td><td><code>T8.3.4</code> 기본값 복원</td><td>박민재</td></tr>
+            <tr><td class="num">110</td><td><span class="rep">D8 포트폴리오 편집</span></td><td>F8.4 변경 이력과 잠금</td><td><code>T8.4.1</code> 주체별 이력</td><td>박민재</td></tr>
+            <tr><td class="num">111</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.4 변경 이력과 잠금</span></td><td><code>T8.4.2</code> 개별 되돌리기</td><td>박민재</td></tr>
+            <tr><td class="num">112</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.4 변경 이력과 잠금</span></td><td><code>T8.4.3</code> 변경 위치 비교 보기</td><td>박민재</td></tr>
+            <tr><td class="num">113</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.4 변경 이력과 잠금</span></td><td><code>T8.4.4</code> 복원 지점</td><td>박민재</td></tr>
+            <tr><td class="num">114</td><td><span class="rep">D8 포트폴리오 편집</span></td><td><span class="rep">F8.4 변경 이력과 잠금</span></td><td><code>T8.4.5</code> 잠금 관리</td><td>박민재</td></tr>
+            <tr><td class="num">115</td><td>D9 배포 · 공개 사이트</td><td>F9.1 배포와 버전</td><td><code>T9.1.1</code> 주소 발급</td><td>박민재</td></tr>
+            <tr><td class="num">116</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.1 배포와 버전</span></td><td><code>T9.1.2</code> 배포 전 확인</td><td>박민재</td></tr>
+            <tr><td class="num">117</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.1 배포와 버전</span></td><td><code>T9.1.3</code> 버전 관리</td><td>박민재</td></tr>
+            <tr><td class="num">118</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.1 배포와 버전</span></td><td><code>T9.1.4</code> 공개 중단·삭제</td><td>박민재</td></tr>
+            <tr><td class="num">119</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.1 배포와 버전</span></td><td><code>T9.1.5</code> 커스텀 도메인</td><td>박민재</td></tr>
+            <tr><td class="num">120</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td>F9.2 공개 사이트 품질과 내보내기</td><td><code>T9.2.1</code> 모바일 대응</td><td>박민재</td></tr>
+            <tr><td class="num">121</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.2 공개 사이트 품질과 내보내기</span></td><td><code>T9.2.2</code> 공유 메타 정보</td><td>박민재</td></tr>
+            <tr><td class="num">122</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.2 공개 사이트 품질과 내보내기</span></td><td><code>T9.2.3</code> 문서 내보내기</td><td>박민재</td></tr>
+            <tr><td class="num">123</td><td><span class="rep">D9 배포 · 공개 사이트</span></td><td><span class="rep">F9.2 공개 사이트 품질과 내보내기</span></td><td><code>T9.2.4</code> 이력서 파일 첨부</td><td>박민재</td></tr>
+            <tr><td class="num">124</td><td>D10 통계 분석</td><td>F10.1 방문 데이터 수집</td><td><code>T10.1.1</code> 기본 지표 수집</td><td>윤규현</td></tr>
+            <tr><td class="num">125</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.1 방문 데이터 수집</span></td><td><code>T10.1.2</code> 섹션 단위 측정</td><td>윤규현</td></tr>
+            <tr><td class="num">126</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.1 방문 데이터 수집</span></td><td><code>T10.1.3</code> 기업 방문 식별</td><td>윤규현</td></tr>
+            <tr><td class="num">127</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.1 방문 데이터 수집</span></td><td><code>T10.1.4</code> 표본 부족 처리</td><td>윤규현</td></tr>
+            <tr><td class="num">128</td><td><span class="rep">D10 통계 분석</span></td><td>F10.2 대시보드 구성</td><td><code>T10.2.1</code> 기본 대시보드</td><td>윤규현</td></tr>
+            <tr><td class="num">129</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.2</code> 위젯 추가·배치</td><td>윤규현</td></tr>
+            <tr><td class="num">130</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.3</code> 위젯 설정</td><td>윤규현</td></tr>
+            <tr><td class="num">131</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.4</code> 뷰 저장</td><td>윤규현</td></tr>
+            <tr><td class="num">132</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.5</code> 파생 지표</td><td>윤규현</td></tr>
+            <tr><td class="num">133</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.2 대시보드 구성</span></td><td><code>T10.2.6</code> 주석</td><td>윤규현</td></tr>
+            <tr><td class="num">134</td><td><span class="rep">D10 통계 분석</span></td><td>F10.3 해석과 개선 제안</td><td><code>T10.3.1</code> 읽기 패턴 해설</td><td>윤규현</td></tr>
+            <tr><td class="num">135</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.3 해석과 개선 제안</span></td><td><code>T10.3.2</code> 실행 가능한 제안</td><td>윤규현</td></tr>
+            <tr><td class="num">136</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.3 해석과 개선 제안</span></td><td><code>T10.3.3</code> 홈 요약 연동</td><td>윤규현</td></tr>
+            <tr><td class="num">137</td><td><span class="rep">D10 통계 분석</span></td><td><span class="rep">F10.3 해석과 개선 제안</span></td><td><code>T10.3.4</code> 리포트 발송</td><td>윤규현</td></tr>
+            <tr><td class="num">138</td><td>D11 홈 · 내비게이션</td><td>F11.1 홈 대시보드</td><td><code>T11.1.1</code> 추천 공고 제시</td><td>박민재</td></tr>
+            <tr><td class="num">139</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.1 홈 대시보드</span></td><td><code>T11.1.2</code> 진행 중 작업 이어가기</td><td>박민재</td></tr>
+            <tr><td class="num">140</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.1 홈 대시보드</span></td><td><code>T11.1.3</code> 포트폴리오 현황</td><td>박민재</td></tr>
+            <tr><td class="num">141</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.1 홈 대시보드</span></td><td><code>T11.1.4</code> 최초 사용자 안내</td><td>박민재</td></tr>
+            <tr><td class="num">142</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td>F11.2 전역 내비게이션과 검색</td><td><code>T11.2.1</code> 사이드바 구성</td><td>박민재</td></tr>
+            <tr><td class="num">143</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.2 전역 내비게이션과 검색</span></td><td><code>T11.2.2</code> 통합 검색</td><td>박민재</td></tr>
+            <tr><td class="num">144</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.2 전역 내비게이션과 검색</span></td><td><code>T11.2.3</code> 알림</td><td>박민재</td></tr>
+            <tr><td class="num">145</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.2 전역 내비게이션과 검색</span></td><td><code>T11.2.4</code> 진행 단계 표시</td><td>박민재</td></tr>
+            <tr><td class="num">146</td><td><span class="rep">D11 홈 · 내비게이션</span></td><td><span class="rep">F11.2 전역 내비게이션과 검색</span></td><td><code>T11.2.5</code> 자동 저장 표시</td><td>박민재</td></tr>
+            <tr><td class="num">147</td><td>D12 계정 · 요금제</td><td>F12.1 사용량과 플랜 게이팅</td><td><code>T12.1.1</code> 사용량 표시</td><td>윤규현</td></tr>
+            <tr><td class="num">148</td><td><span class="rep">D12 계정 · 요금제</span></td><td><span class="rep">F12.1 사용량과 플랜 게이팅</span></td><td><code>T12.1.2</code> 유료 기능 노출</td><td>윤규현</td></tr>
+            <tr><td class="num">149</td><td><span class="rep">D12 계정 · 요금제</span></td><td><span class="rep">F12.1 사용량과 플랜 게이팅</span></td><td><code>T12.1.3</code> 플랜 변경</td><td>윤규현</td></tr>
+            <tr><td class="num">150</td><td><span class="rep">D12 계정 · 요금제</span></td><td><span class="rep">F12.1 사용량과 플랜 게이팅</span></td><td><code>T12.1.4</code> 계정 데이터 관리</td><td>윤규현</td></tr>
           </tbody>
           <caption>이 표의 행 수가 5장(화면 설계)과 6장(시퀀스 다이어그램)의 분량을 그대로 결정한다.</caption>
         </table>
@@ -1578,32 +1617,32 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
 
       <div class="table-wrap">
         <table>
-          <thead><tr><th class="num">No</th><th>주요기능명</th><th>상세기능명</th><th>현재 상태</th></tr></thead>
+          <thead><tr><th class="num">No</th><th>주요기능명</th><th>상세기능명</th><th>현재 상태</th><th>개발담당</th></tr></thead>
           <tbody>
-            <tr><td class="num">1</td><td>공고 소스 관리</td><td>수집 소스 목록 조회</td><td><code>GET /v1/job-sources</code></td></tr>
-            <tr><td class="num">2</td><td><span class="rep">공고 소스 관리</span></td><td>수집 소스 등록</td><td><code>POST /v1/job-sources</code></td></tr>
-            <tr><td class="num">3</td><td><span class="rep">공고 소스 관리</span></td><td>전체 소스 수집 실행</td><td><code>POST /v1/job-sources/runs</code></td></tr>
-            <tr><td class="num">4</td><td><span class="rep">공고 소스 관리</span></td><td>개별 소스 수집 실행</td><td><code>POST /v1/job-sources/:id/runs</code></td></tr>
-            <tr><td class="num">5</td><td>공고 관리</td><td>공고 직접 등록</td><td><code>POST /v1/jobs/submissions</code></td></tr>
-            <tr><td class="num">6</td><td><span class="rep">공고 관리</span></td><td>URL로 공고 가져오기</td><td><code>POST /v1/jobs/url-imports</code></td></tr>
-            <tr><td class="num">7</td><td><span class="rep">공고 관리</span></td><td>직무 수요 요약 산출</td><td><code>POST /v1/jobs/demand-summary</code></td></tr>
-            <tr><td class="num">8</td><td>시스템 상태</td><td>생존 확인</td><td><code>GET /health/live</code></td></tr>
-            <tr><td class="num">9</td><td><span class="rep">시스템 상태</span></td><td>준비 확인 (MongoDB · Redis)</td><td><code>GET /health/ready</code></td></tr>
-            <tr><td class="num">10</td><td>관리자 인증</td><td>역할 기반 접근 제어</td><td><span class="badge hold">미구현</span></td></tr>
-            <tr><td class="num">11</td><td><span class="rep">관리자 인증</span></td><td>관리자 로그인 · 로그아웃</td><td><span class="badge hold">미구현</span></td></tr>
-            <tr><td class="num">12</td><td>수집 모니터링</td><td>수집 실행 이력 조회</td><td>컬렉션에 기록</td></tr>
-            <tr><td class="num">13</td><td><span class="rep">수집 모니터링</span></td><td>수집 실패 알림</td><td><span class="badge hold">미구현</span></td></tr>
-            <tr><td class="num">14</td><td>스케줄 관리</td><td>스케줄 작업 정의 조회 · 수정</td><td>컬렉션에 기록</td></tr>
-            <tr><td class="num">15</td><td>학습 데이터 관리</td><td>데이터세트 생성 요청</td><td><span class="badge hold">미구현</span></td></tr>
-            <tr><td class="num">16</td><td><span class="rep">학습 데이터 관리</span></td><td>라벨 검수 화면</td><td><span class="badge hold">미구현</span></td></tr>
-            <tr><td class="num">17</td><td>모델 운영</td><td>학습 실행 요청</td><td><span class="badge hold">미구현</span></td></tr>
-            <tr><td class="num">18</td><td><span class="rep">모델 운영</span></td><td>학습 진행 · 결과 조회</td><td><span class="badge hold">미구현</span></td></tr>
-            <tr><td class="num">19</td><td><span class="rep">모델 운영</span></td><td>성능 지표(ROC · AUC) 조회</td><td><span class="badge hold">미구현</span></td></tr>
-            <tr><td class="num">20</td><td><span class="rep">모델 운영</span></td><td>모델 배포</td><td><span class="badge hold">미구현</span></td></tr>
-            <tr><td class="num">21</td><td><span class="rep">모델 운영</span></td><td>모델 버전 조회 · 롤백</td><td><span class="badge hold">미구현</span></td></tr>
-            <tr><td class="num">22</td><td>장애 관리</td><td>학습 장애기록 조회</td><td><span class="badge hold">미구현</span></td></tr>
-            <tr><td class="num">23</td><td>사용자 관리</td><td>사용량 · 플랜 조회</td><td>컬렉션에 기록</td></tr>
-            <tr><td class="num">24</td><td><span class="rep">사용자 관리</span></td><td>계정 삭제 요청 처리</td><td>컬렉션에 기록, 화면 없음</td></tr>
+            <tr><td class="num">1</td><td>공고 소스 관리</td><td>수집 소스 목록 조회</td><td><code>GET /v1/job-sources</code></td><td>심민규</td></tr>
+            <tr><td class="num">2</td><td><span class="rep">공고 소스 관리</span></td><td>수집 소스 등록</td><td><code>POST /v1/job-sources</code></td><td>심민규</td></tr>
+            <tr><td class="num">3</td><td><span class="rep">공고 소스 관리</span></td><td>전체 소스 수집 실행</td><td><code>POST /v1/job-sources/runs</code></td><td>심민규</td></tr>
+            <tr><td class="num">4</td><td><span class="rep">공고 소스 관리</span></td><td>개별 소스 수집 실행</td><td><code>POST /v1/job-sources/:id/runs</code></td><td>심민규</td></tr>
+            <tr><td class="num">5</td><td>공고 관리</td><td>공고 직접 등록</td><td><code>POST /v1/jobs/submissions</code></td><td>심민규</td></tr>
+            <tr><td class="num">6</td><td><span class="rep">공고 관리</span></td><td>URL로 공고 가져오기</td><td><code>POST /v1/jobs/url-imports</code></td><td>심민규</td></tr>
+            <tr><td class="num">7</td><td><span class="rep">공고 관리</span></td><td>직무 수요 요약 산출</td><td><code>POST /v1/jobs/demand-summary</code></td><td>심민규</td></tr>
+            <tr><td class="num">8</td><td>시스템 상태</td><td>생존 확인</td><td><code>GET /health/live</code></td><td>심민규</td></tr>
+            <tr><td class="num">9</td><td><span class="rep">시스템 상태</span></td><td>준비 확인 (MongoDB · Redis)</td><td><code>GET /health/ready</code></td><td>심민규</td></tr>
+            <tr><td class="num">10</td><td>관리자 인증</td><td>역할 기반 접근 제어</td><td><span class="badge hold">미구현</span></td><td>오시건</td></tr>
+            <tr><td class="num">11</td><td><span class="rep">관리자 인증</span></td><td>관리자 로그인 · 로그아웃</td><td><span class="badge hold">미구현</span></td><td>오시건</td></tr>
+            <tr><td class="num">12</td><td>수집 모니터링</td><td>수집 실행 이력 조회</td><td>컬렉션에 기록</td><td>심민규</td></tr>
+            <tr><td class="num">13</td><td><span class="rep">수집 모니터링</span></td><td>수집 실패 알림</td><td><span class="badge hold">미구현</span></td><td>심민규</td></tr>
+            <tr><td class="num">14</td><td>스케줄 관리</td><td>스케줄 작업 정의 조회 · 수정</td><td>컬렉션에 기록</td><td>심민규</td></tr>
+            <tr><td class="num">15</td><td>학습 데이터 관리</td><td>데이터세트 생성 요청</td><td><span class="badge hold">미구현</span></td><td>채서현</td></tr>
+            <tr><td class="num">16</td><td><span class="rep">학습 데이터 관리</span></td><td>라벨 검수 화면</td><td><span class="badge hold">미구현</span></td><td>채서현</td></tr>
+            <tr><td class="num">17</td><td>모델 운영</td><td>학습 실행 요청</td><td><span class="badge hold">미구현</span></td><td>채서현</td></tr>
+            <tr><td class="num">18</td><td><span class="rep">모델 운영</span></td><td>학습 진행 · 결과 조회</td><td><span class="badge hold">미구현</span></td><td>채서현</td></tr>
+            <tr><td class="num">19</td><td><span class="rep">모델 운영</span></td><td>성능 지표(ROC · AUC) 조회</td><td><span class="badge hold">미구현</span></td><td>채서현</td></tr>
+            <tr><td class="num">20</td><td><span class="rep">모델 운영</span></td><td>모델 배포</td><td><span class="badge hold">미구현</span></td><td>채서현</td></tr>
+            <tr><td class="num">21</td><td><span class="rep">모델 운영</span></td><td>모델 버전 조회 · 롤백</td><td><span class="badge hold">미구현</span></td><td>채서현</td></tr>
+            <tr><td class="num">22</td><td>장애 관리</td><td>학습 장애기록 조회</td><td><span class="badge hold">미구현</span></td><td>심민규</td></tr>
+            <tr><td class="num">23</td><td>사용자 관리</td><td>사용량 · 플랜 조회</td><td>컬렉션에 기록</td><td>윤규현</td></tr>
+            <tr><td class="num">24</td><td><span class="rep">사용자 관리</span></td><td>계정 삭제 요청 처리</td><td>컬렉션에 기록, 화면 없음</td><td>오시건</td></tr>
           </tbody>
           <caption>이 24개가 확정되면 5.5의 관리자 화면 설계와 6.3의 시퀀스 다이어그램 분량이 따라 정해진다.</caption>
         </table>
