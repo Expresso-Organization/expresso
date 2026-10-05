@@ -630,10 +630,10 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
                   box-shadow:6px 6px 0 var(--ex-line-200)">
         <div style="font-family:var(--ex-font-display,inherit); font-size:30pt; letter-spacing:.34em; font-weight:600">설 계 서</div>
       </div>
-      <div style="margin-top:24mm; font-size:12pt; color:var(--ex-slate-700)">2026. 09. 28.</div>
+      <div style="margin-top:24mm; font-size:12pt; color:var(--ex-slate-700)">2026. 10. 05.</div>
       <div style="margin-top:26mm; font-size:14pt; font-weight:600">가천대학교 컴퓨터공학과</div>
       <div style="margin-top:10mm; font-size:11pt; color:var(--ex-slate-700); line-height:2">
-        팀장 ▪ —<br>팀원 ▪ —<br>팀원 ▪ —<br>팀원 ▪ —
+        팀장 ▪ 박민재<br>팀원 ▪ 심민규<br>팀원 ▪ 오시건<br>팀원 ▪ 채서현<br>팀원 ▪ 윤규현
       </div>
     </section>
 
@@ -645,8 +645,8 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
       <div class="table-wrap">
         <table>
           <tbody>
-            <tr><th style="width:26mm">버전</th><td>0.2</td></tr>
-            <tr><th>작성일</th><td>2026-09-28</td></tr>
+            <tr><th style="width:26mm">버전</th><td>0.3</td></tr>
+            <tr><th>작성일</th><td>2026-10-05</td></tr>
             <tr><th>상태</th><td>☐ 완료 &nbsp; ☐ 진행 중 &nbsp; ■ 초안</td></tr>
           </tbody>
         </table>
@@ -657,7 +657,7 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
           <tbody>
             <tr><td class="num">0.1</td><td>Expresso 팀</td><td>2026-08-14</td><td>저장소 형상을 근거로 전 장 초안 작성</td></tr>
             <tr><td class="num">0.2</td><td>Expresso 팀</td><td>2026-09-28</td><td>MongoDB 데이터·시스템 구조와 현행 규모·성능 수치 반영</td></tr>
-            <tr><td class="num">0.3</td><td>—</td><td>—</td><td>—</td></tr>
+            <tr><td class="num">0.3</td><td>Expresso 팀</td><td>2026-10-05</td><td>프로젝트 제안서 기준 AI 모델 · 학습 데이터 · 평가 지표 · 일정 · 조직 정합</td></tr>
             <tr><td class="num">1.0</td><td>—</td><td>—</td><td>설계서 작성 완료</td></tr>
           </tbody>
         </table>
@@ -670,12 +670,12 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
       <p class="lede">
         본 문서는 채용 공고 맞춤형 포트폴리오 생성 서비스 Expresso 개발을 위한
         요구규격 및 설계서입니다. 가천대학교 컴퓨터공학과 졸업작품 AI트랙 양식을 따르며,
-        2026-09-28 시점의 저장소 형상을 근거로 작성하였습니다.
+        2026-09-28 시점의 저장소 형상과 프로젝트 제안서를 근거로 작성하였습니다.
       </p>
       <div class="meta">
         <div><div class="k">AUTHOR</div><div class="v">Expresso 팀</div></div>
-        <div><div class="k">UPDATED</div><div class="v">2026-09-28</div></div>
-        <div><div class="k">VERSION</div><div class="v">v0.2</div></div>
+        <div><div class="k">UPDATED</div><div class="v">2026-10-05</div></div>
+        <div><div class="k">VERSION</div><div class="v">v0.3</div></div>
         <div><div class="k">STATUS</div><div class="v"><span class="badge">DRAFT</span></div></div>
       </div>
     </div>
@@ -815,7 +815,7 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
             <tr><td>클라이언트</td><td>웹 (Next.js)</td><td>네이티브 모바일 앱</td></tr>
             <tr><td>서버</td><td>REST API · 비동기 Worker</td><td>—</td></tr>
             <tr><td>AI 생성</td><td>공고 분석 · 레시피 · 포트폴리오 생성 · 편집 제안 <strong>(외부 LLM API 이용)</strong></td><td>다중 후보 생성 후 선별</td></tr>
-            <tr><td>AI 학습</td><td>공고 추천 랭커(모델 A) · 기록 추천 랭커(모델 B)</td><td>자체 LLM 사전학습 · 생성 모델 파인튜닝</td></tr>
+            <tr><td>AI 학습</td><td>채용 공고 추천 모델(모델 A) · 커리어 기록 추천 모델(모델 B)</td><td>자체 LLM 사전학습 · 생성 모델 파인튜닝</td></tr>
             <tr><td>배포</td><td>공개 사이트 배포 · 버전 · 롤백 · 내보내기</td><td>커스텀 도메인 자동 발급</td></tr>
             <tr><td>분석</td><td>방문 지표 수집 · 대시보드 · 해설</td><td>외부 광고 플랫폼 연동</td></tr>
           </tbody>
@@ -1071,7 +1071,7 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
   <text class="t" x="782" y="197" text-anchor="middle">모델 배포</text>
 
   <rect class="bxs" x="282" y="252" width="294" height="46" rx="12"/>
-  <text class="tb sigt" x="429" y="274" text-anchor="middle">모델 A 랭커 · 모델 B 랭커</text>
+  <text class="tb sigt" x="429" y="274" text-anchor="middle">모델 A 공고 추천 · 모델 B 기록 추천</text>
   <text class="s sigt" x="429" y="291" text-anchor="middle">기록 ↔ 공고 연결</text>
   <path class="fls" d="M 782 214 V 234 H 604 V 275 H 584" marker-end="url(#a1s)"/>
   <text class="lm sig" x="693" y="228" text-anchor="middle">배포된 모델</text>
@@ -6574,14 +6574,15 @@ POST /v1/assets/ast_77/signed-url</code></pre>
           <thead><tr><th>평가항목</th><th class="num">단위</th><th class="num">개발목표치</th><th>평가방법</th></tr></thead>
           <tbody>
             <tr><td>근거 없는 수치 차단율</td><td class="num">%</td><td class="num">100</td><td>팀 자체시험</td></tr>
-            <tr><td>공고 추천 순위 품질 (모델 A · NDCG@10)</td><td class="num">—</td><td class="num">≥ 0.80</td><td>팀 자체시험</td></tr>
-            <tr><td>기록 추천 정확도 (모델 B · Precision@8)</td><td class="num">%</td><td class="num">≥ 75</td><td>팀 자체시험</td></tr>
+            <tr><td>공고 추천 순위 품질 (모델 A · NDCG@10)</td><td class="num">—</td><td class="num">확정 전</td><td>팀 자체시험</td></tr>
+            <tr><td>기록 추천 순위 품질 (모델 B · NDCG@10)</td><td class="num">—</td><td class="num">확정 전</td><td>팀 자체시험</td></tr>
             <tr><td>포트폴리오 생성 성공률</td><td class="num">%</td><td class="num">≥ 90</td><td>팀 자체시험</td></tr>
             <tr><td>대표 read 경로 p95</td><td class="num">ms</td><td class="num">≤ 300</td><td>자동화 시험</td></tr>
             <tr><td>대표 write 경로 p95</td><td class="num">ms</td><td class="num">≤ 300</td><td>자동화 시험</td></tr>
             <tr><td>이벤트 수집 p95</td><td class="num">ms</td><td class="num">≤ 150</td><td>자동화 시험</td></tr>
             <tr><td>큐 등록 p95</td><td class="num">ms</td><td class="num">≤ 200</td><td>자동화 시험</td></tr>
           </tbody>
+          <caption>학습 모델의 개발목표치는 규칙 baseline과 기준 인코더(<code>multilingual-e5-base</code>)의 측정값을 얻은 뒤 정한다.</caption>
         </table>
       </div>
 
@@ -6597,18 +6598,18 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <li><span class="t">판정</span><span class="d">50건 모두 <code>GEN_UNGROUNDED_NUMBER</code>로 거부되면 통과이며, 1건이라도 통과하면 실패로 본다.</span></li>
       </ol>
 
-            <div class="table-wrap">
+      <div class="table-wrap">
         <table>
           <thead><tr><th>평가항목</th><th class="num">단위</th><th class="num">개발목표치</th><th>평가방법</th></tr></thead>
-          <tbody><tr><td>공고 추천 순위 품질 (모델 A)</td><td class="num">—</td><td class="num">≥ 0.80</td><td>팀 자체시험</td></tr></tbody>
+          <tbody><tr><td>공고 추천 순위 품질 (모델 A)</td><td class="num">—</td><td class="num">확정 전</td><td>팀 자체시험</td></tr></tbody>
         </table>
       </div>
       <div class="table-wrap">
         <table>
           <tbody>
-            <tr><th style="width:104px">시험내용</th><td>모델 A가 매긴 공고 순위가 교사의 판정과 얼마나 일치하는지 측정한다. test 분할의 프로필마다 공고 후보를 모델 A의 점수로 정렬한 뒤 상위 10건에 대하여 NDCG를 산출하며, 프로필 전체의 평균이 0.80 이상이면 통과로 간주한다. 같은 시험을 규칙 baseline에도 수행하여 개선 폭을 함께 확인한다.</td></tr>
-            <tr><th>시험환경</th><td><ol style="margin:0; padding-left:18px"><li>test 분할 3,000쌍 (프로필 단위로 분리된 것)</li><li>학습이 완료된 모델 A와 <code>feature_spec.json</code></li><li>규칙 baseline — <code>match-score.ts</code>의 <code>calculateExplainableMatch()</code></li><li>지표 산출 스크립트와 임베딩 캐시</li><li>결과를 확인할 PC 환경</li></ol></td></tr>
-            <tr><th>시험절차</th><td><ol style="margin:0; padding-left:18px"><li>test 분할에서 프로필 1건을 선택한다.</li><li>그 프로필과 짝지어진 공고 후보 전체를 모델 A로 채점한다.</li><li>점수 내림차순으로 정렬하고 상위 10건을 취한다.</li><li>교사가 매긴 관련도를 정답으로 하여 NDCG@10을 계산한다.</li><li>모든 프로필에 대하여 1~4를 반복하고 평균을 낸다. 평균이 0.80 이상이면 통과이다.</li><li>같은 절차를 규칙 baseline으로 수행하여 두 값을 비교한다.</li></ol></td></tr>
+            <tr><th style="width:104px">시험내용</th><td>모델 A가 매긴 공고 순위가 교사 적합도 라벨의 순위와 얼마나 일치하는지 측정한다. 평가 분할의 프로필마다 연결된 공고 10개를 모델 A의 점수로 정렬한 뒤 NDCG@10을 산출하고 프로필 전체의 평균을 낸다. 예측 점수와 교사 점수의 MAE와 공고쌍 순서 일치율을 함께 산출하며, 같은 시험을 규칙 baseline에도 수행하여 개선 폭을 확인한다.</td></tr>
+            <tr><th>시험환경</th><td><ol style="margin:0; padding-left:18px"><li>평가 분할 700쌍 (프로필 70개, 프로필 단위로 분리된 것)</li><li>학습이 완료된 <code>bi</code> · <code>cross</code> 모델과 <code>metadata.json</code></li><li>규칙 baseline — <code>match-score.ts</code>의 <code>calculateExplainableMatch()</code></li><li>지표 산출 스크립트와 공고 벡터 캐시</li><li>결과를 확인할 PC 환경</li></ol></td></tr>
+            <tr><th>시험절차</th><td><ol style="margin:0; padding-left:18px"><li>평가 분할에서 프로필 1건을 선택한다.</li><li>그 프로필에 연결된 공고 10개를 모델 A로 채점한다(선별 후 재정렬).</li><li>점수 내림차순으로 정렬한다.</li><li>교사 적합도 라벨을 정답으로 하여 NDCG@10을 계산한다.</li><li>같은 프로필 안에서 정답 점수 차가 5점 이상인 공고쌍의 순서 일치율과, 예측 점수의 MAE를 계산한다.</li><li>모든 프로필에 대하여 1~5를 반복하고 평균을 낸다.</li><li>같은 절차를 규칙 baseline으로 수행하여 두 값을 비교한다.</li></ol></td></tr>
           </tbody>
         </table>
       </div>
@@ -6616,15 +6617,15 @@ POST /v1/assets/ast_77/signed-url</code></pre>
       <div class="table-wrap">
         <table>
           <thead><tr><th>평가항목</th><th class="num">단위</th><th class="num">개발목표치</th><th>평가방법</th></tr></thead>
-          <tbody><tr><td>기록 추천 순위 품질 (모델 B · NDCG@10)</td><td class="num">—</td><td class="num">≥ 0.80</td><td>팀 자체시험</td></tr></tbody>
+          <tbody><tr><td>기록 추천 순위 품질 (모델 B · NDCG@10)</td><td class="num">—</td><td class="num">확정 전</td><td>팀 자체시험</td></tr></tbody>
         </table>
       </div>
       <div class="table-wrap">
         <table>
           <tbody>
-            <tr><th style="width:104px">시험내용</th><td>모델 B가 (채용 공고, 사용자 기록) 쌍에 매긴 적합도 순서가 사람의 판단과 일치하는지 측정한다. 순서를 재는 것이므로 NDCG@10을 주 지표로 삼으며, 0.80 이상이면 통과로 간주한다.</td></tr>
-            <tr><th>시험환경</th><td><ol style="margin:0; padding-left:18px"><li>test 분할 3,000쌍 (공고 단위로 분리된 것)</li><li>사람이 검수한 300쌍</li><li>학습이 완료된 모델 B</li><li>규칙 baseline — <code>materials/ranking.ts</code>의 <code>rankMaterials()</code></li><li>NDCG@10과 Precision@8을 산출하는 스크립트</li></ol></td></tr>
-            <tr><th>시험절차</th><td><ol style="margin:0; padding-left:18px"><li>test 분할의 모든 쌍을 모델 B로 정렬한다.</li><li>NDCG@10과 상위 여덟 건의 정밀도를 계산한다.</li><li>NDCG@10이 0.80 이상이면 통과이다.</li><li>사람이 검수한 300쌍에 대하여 같은 값을 따로 산출한다.</li><li>사람이 높게 평가한 기록이 하위로 떨어진 비율을 세고, 2%를 넘으면 배포하지 않는다.</li></ol></td></tr>
+            <tr><th style="width:104px">시험내용</th><td>모델 B가 (채용 공고, 커리어 기록 1건) 쌍에 매긴 점수 순서가 교사의 기록 단위 판정과 일치하는지 측정한다. 기록의 정답 관련도는 교사가 그 공고의 요구사항에 연결한 충족 점수 가운데 최댓값으로 하고, 어느 요구사항에도 연결되지 않은 기록은 0으로 둔다. Cross-Encoder를 학습 때와 다른 입력 단위로 쓰므로, 이 시험이 그 분포 차이의 영향을 확인하는 자리이다.</td></tr>
+            <tr><th>시험환경</th><td><ol style="margin:0; padding-left:18px"><li>평가 분할 700쌍의 교사 판정 — 요구사항별 근거 기록 ID와 충족 수준</li><li>활성 <code>cross</code> 모델</li><li>규칙 baseline — <code>materials/ranking.ts</code>의 <code>rankMaterials()</code></li><li>NDCG@10을 산출하는 스크립트</li></ol></td></tr>
+            <tr><th>시험절차</th><td><ol style="margin:0; padding-left:18px"><li>평가 분할에서 (공고, 프로필) 쌍 1건을 선택한다.</li><li>그 프로필의 기록마다 모델 B로 (공고, 기록) 점수를 매긴다.</li><li>점수 내림차순으로 정렬한다.</li><li>교사의 기록 단위 판정을 정답으로 하여 NDCG@10을 계산한다.</li><li>모든 쌍에 대하여 1~4를 반복하고 평균을 낸다.</li><li>같은 절차를 규칙 baseline으로 수행하여 두 값을 비교한다.</li></ol></td></tr>
           </tbody>
         </table>
       </div>
@@ -6648,30 +6649,38 @@ POST /v1/assets/ast_77/signed-url</code></pre>
       test/load/performance-budget.test.ts --disableConsoleIntercept</code>다.</p>
 
       <h3 data-page="167">9.2 AI학습 성능 (ROC)</h3>
-      <p>모델 A와 B는 모두 LightGBM 랭커로 설계한다. 각각 프로필에 맞는 공고와 공고에 맞는
-      커리어 기록의 순위를 측정한다. ROC·AUC는 설계서 양식이 요구하는 보조 지표다.
-      학습 데이터셋과 모델 아티팩트가 없어 아래 목표의 측정값은 아직 없다.</p>
-      <div class="table-wrap"><table><thead><tr><th>모델</th><th>주요 지표</th><th>보조 지표</th><th>사용자 기준</th></tr></thead><tbody>
-        <tr><td>A · 공고 추천</td><td>NDCG@10 · MAP</td><td>AUC(높음 대 나머지)</td><td>사람 평가 대비 규칙 baseline 개선</td></tr>
-        <tr><td>B · 기록 추천</td><td>NDCG@10 · Precision@8</td><td>AUC(높음 대 나머지)</td><td>높은 기록의 하위 누락률</td></tr>
+      <p>학습 모델의 성능은 추천 순위 · 후보 선별 · 점수 예측 · 처리 효율을 구분하여 평가한다.
+      주요 지표는 NDCG@10이며, 설계서 양식이 요구하는 ROC · AUC는 보조 지표로 함께 산출한다.
+      ROC는 적합도 라벨 75점(루브릭의 직접 근거) 이상을 양성으로 두고, 예측 점수의 임계값을
+      바꾸어 가며 그린다.</p>
+      <div class="table-wrap"><table><thead><tr><th>평가 지표</th><th>무엇을 평가하는가</th><th>해석 방향</th><th>적용 범위</th></tr></thead><tbody>
+        <tr><td>NDCG@10</td><td>적합도가 높은 공고를 상위에 배치하는가</td><td>높을수록 좋음</td><td>주요 지표 · 모델 A · B</td></tr>
+        <tr><td>Recall@K</td><td>적합한 공고를 스크리닝 단계에서 충분히 남기는가</td><td>높을수록 좋음</td><td>스크리닝 (<code>bi</code>)</td></tr>
+        <tr><td>MAE</td><td>예측 점수와 교사 라벨 점수의 평균 절대 차이</td><td>낮을수록 좋음</td><td>점수 예측</td></tr>
+        <tr><td>공고쌍 순서 일치율</td><td>같은 프로필에서 더 적합한 공고에 높은 점수를 주는가</td><td>높을수록 좋음</td><td>순서 예측</td></tr>
+        <tr><td>p95 지연 · 처리량</td><td>요청의 95%가 완료되는 시간과 단위 시간당 처리량</td><td>지연은 낮게 · 처리량은 높게</td><td>운영 효율</td></tr>
+        <tr><td>ROC · AUC</td><td>75점 이상 쌍을 나머지와 구분하는가</td><td>높을수록 좋음</td><td>양식 보조 지표</td></tr>
       </tbody></table></div>
-      <h4 data-page="168">■ 비교 집단과 배포 기준</h4>
-      <p>학생 모델, Claude 교사, 사람 검수, 현재 규칙 기반 구현을 같은 표본에서 비교한다.
-      교사와 사람의 일치도 κ가 0.6 미만이면 교사 프롬프트를 먼저 고친다. 모델은
-      valid 분할에서 임계값을 정하고 독립된 test 분할에서 한 번 평가한다.</p>
-      <div class="table-wrap"><table><thead><tr><th>모델</th><th>지표</th><th>목표</th><th>현재 결과</th></tr></thead><tbody>
-        <tr><td rowspan="4">A</td><td>NDCG@10</td><td>≥ 0.80</td><td>측정 전</td></tr>
-        <tr><td>AUC(높음 대 나머지)</td><td>≥ 0.85</td><td>측정 전</td></tr>
-        <tr><td>사람 평가 대비 규칙 개선</td><td>상대 ≥ 20%</td><td>측정 전</td></tr>
-        <tr><td>공고 200건 서빙 지연</td><td>≤ 50ms</td><td>측정 전</td></tr>
-        <tr><td rowspan="5">B</td><td>NDCG@10</td><td>≥ 0.80</td><td>측정 전</td></tr>
-        <tr><td>Precision@8(사람 기준)</td><td>≥ 0.75</td><td>측정 전</td></tr>
-        <tr><td>높은 기록의 하위 누락률</td><td>≤ 2%</td><td>측정 전</td></tr>
-        <tr><td>규칙 baseline 대비 NDCG@10</td><td>상대 ≥ 15%</td><td>측정 전</td></tr>
-        <tr><td>기록 200건 서빙 지연</td><td>≤ 50ms</td><td>측정 전</td></tr>
-        <tr><td>공통</td><td>교사 ↔ 사람 일치도 κ</td><td>≥ 0.6</td><td>측정 전</td></tr>
-      </tbody></table></div>
-      <figure class="fig"><div class="plate"><span class="ph">모델 A와 B의 ROC 곡선 — 학습·측정 후 삽입</span></div><figcaption>그림 9.1·9.2 ROC 곡선 자리</figcaption></figure>
+      <h4 data-page="168">■ 평가 조건</h4>
+      <ul class="check">
+        <li>점수와 순위는 교사 라벨을 기준으로 평가한다.</li>
+        <li>공고쌍은 같은 프로필 안에서 정답 점수 차이가 5점 이상인 쌍으로 구성한다.</li>
+        <li>Recall@K는 K보다 큰 후보 풀과 관련성 기준을 정해 측정한다. 프로필당 공고 10개 묶음 평가와는 별도로 구성한다.</li>
+        <li>인코더 네 종은 같은 데이터와 같은 평가 조건에서 비교하고, 임베딩 생성 시간 · 처리량 · GPU 메모리 · 임베딩 저장 용량을 함께 기록한다.</li>
+        <li>모델은 검증 분할에서 임계값과 하이퍼파라미터를 정하고, 평가 분할에서 한 번만 평가한다.</li>
+        <li>사람 평가와의 일치와 루브릭 가중치의 타당성은 라벨 구축 후 후속 검증으로 확인한다.</li>
+      </ul>
+      <div class="table-wrap"><table><thead><tr><th>모델</th><th>지표</th><th>목표</th><th>측정값</th></tr></thead><tbody>
+        <tr><td rowspan="6">A</td><td>NDCG@10</td><td>확정 전</td><td>—</td></tr>
+        <tr><td>Recall@K (스크리닝)</td><td>확정 전</td><td>—</td></tr>
+        <tr><td>MAE</td><td>확정 전</td><td>—</td></tr>
+        <tr><td>공고쌍 순서 일치율</td><td>확정 전</td><td>—</td></tr>
+        <tr><td>p95 지연 · 처리량</td><td>확정 전</td><td>—</td></tr>
+        <tr><td>AUC (75점 이상 양성)</td><td>확정 전</td><td>—</td></tr>
+        <tr><td rowspan="2">B</td><td>NDCG@10 (교사 기록 단위 판정 기준)</td><td>확정 전</td><td>—</td></tr>
+        <tr><td>AUC (75점 이상 양성)</td><td>확정 전</td><td>—</td></tr>
+      </tbody><caption>목표는 규칙 baseline과 기준 인코더의 측정값을 얻은 뒤 정하고, 측정값은 평가 분할 평가 후 기재한다.</caption></table></div>
+      <figure class="fig"><div class="plate"><span class="ph">모델 A와 B의 ROC 곡선 — 평가 분할 측정 후 삽입</span></div><figcaption>그림 9.1·9.2 ROC 곡선 자리</figcaption></figure>
     </section>
 
     <!-- 10 ================================================== -->
@@ -6714,11 +6723,11 @@ POST /v1/assets/ast_77/signed-url</code></pre>
             <tr><td rowspan="3">클라이언트</td><td>프레임워크</td><td>Next.js 16.3 (App Router)</td></tr>
             <tr><td>라이브러리</td><td>React 19.2 · Phosphor Icons 2.1 · react-markdown 10.1</td></tr>
             <tr><td>지원 브라우저</td><td>Chrome · Safari · Edge 최신 2개 버전</td></tr>
-            <tr><td rowspan="5">AI학습서버</td><td>언어</td><td>Python 3.12</td></tr>
-            <tr><td>학습</td><td>LightGBM · scikit-learn</td></tr>
-            <tr><td>임베딩</td><td>다국어 문장 임베딩 (파인튜닝 없음)</td></tr>
-            <tr><td>데이터 · 시각화</td><td>pandas · pyarrow · seaborn · matplotlib</td></tr>
-            <tr><td>서빙 · GPU</td><td>FastAPI · <strong>GPU 불필요</strong></td></tr>
+            <tr><td rowspan="5">AI학습서버</td><td>언어</td><td>Python</td></tr>
+            <tr><td>학습</td><td>PyTorch · Hugging Face Transformers</td></tr>
+            <tr><td>인코더</td><td><code>multilingual-e5-base</code> 외 비교 후보 3종 (동결) · <code>bge-reranker-v2-m3</code> (마지막 4개 층 학습)</td></tr>
+            <tr><td>데이터 · 시각화</td><td>pandas · pyarrow · matplotlib</td></tr>
+            <tr><td>서빙 · GPU</td><td>FastAPI · Cross-Encoder 미세조정에 GPU 사용 <span class="badge hold">사양 확정 필요</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -6815,11 +6824,11 @@ pnpm dev:backend</code></pre>
             <tr><td rowspan="3">REST API</td><td>경로</td><td>kebab-case 복수 명사</td><td><code>/v1/job-analyses</code></td></tr>
             <tr><td>파라미터 · JSON 필드</td><td>camelCase</td><td><code>:portfolioId</code> · <code>usageRemaining</code></td></tr>
             <tr><td>오류 코드</td><td>UPPER_SNAKE_CASE</td><td><code>PRECONDITION_FAILED</code></td></tr>
-            <tr><td rowspan="3">Python</td><td>변수 · 함수 · 특징</td><td>snake_case</td><td><code>max_sent_cos</code></td></tr>
-            <tr><td>데이터세트 버전</td><td><code>record-v&lt;번호&gt;</code></td><td><code>record-v1</code></td></tr>
-            <tr><td>모델 버전</td><td><code>record-v&lt;세트&gt;-&lt;일련&gt;</code></td><td><code>record-v1-003</code></td></tr>
+            <tr><td rowspan="3">Python</td><td>변수 · 함수</td><td>snake_case</td><td><code>build_profile_text</code></td></tr>
+            <tr><td>데이터세트 버전</td><td><code>fit-v&lt;번호&gt;</code></td><td><code>fit-v1</code></td></tr>
+            <tr><td>모델 버전</td><td><code>bi-v&lt;세트&gt;-&lt;일련&gt;</code> · <code>cross-v&lt;세트&gt;-&lt;일련&gt;</code></td><td><code>cross-v1-002</code></td></tr>
           </tbody>
-          <caption>TypeScript 문서 타입과 MongoDB 문서 필드는 camelCase를 사용한다. 컬렉션 이름은 snake_case 복수형이다. 특징 이름은 <code>feature_spec.json</code>에 그대로 실리므로, 이름을 바꾸는 일은 데이터세트 버전을 올리는 일과 같다.</caption>
+          <caption>TypeScript 문서 타입과 MongoDB 문서 필드는 camelCase를 사용한다. 컬렉션 이름은 snake_case 복수형이다. 루브릭이나 인코더 입력의 텍스트 구성을 바꾸면 라벨과 벡터의 성격이 바뀌므로 데이터세트 버전을 올린다.</caption>
         </table>
       </div>
 
@@ -6832,7 +6841,8 @@ pnpm dev:backend</code></pre>
     </section>
 
     <footer class="docfoot">
-      <strong>2026-09-28 v0.2</strong> MongoDB 데이터·시스템 구조와 현행 규모·성능 수치 반영 — Expresso 팀<br>
+      <strong>2026-10-05 v0.3</strong> 프로젝트 제안서 기준 AI 모델(Bi-Encoder+MLP · Cross-Encoder) · 합성 학습 데이터 · 평가 지표 · 15주 일정 · 개발조직 정합 — Expresso 팀<br>
+      2026-09-28 v0.2 MongoDB 데이터·시스템 구조와 현행 규모·성능 수치 반영 — Expresso 팀<br>
       <strong>변경 이력</strong> · 2026-08-14 v0.1 저장소 형상 기준 전 장 초안 작성 — Expresso 팀<br>
       2026-08-14 5.3 사용자 화면설계 29개를 화면별로 다시 작성 · 5.2 초기화면에 실제 캡처 적용 —
       Expresso 팀<br>
