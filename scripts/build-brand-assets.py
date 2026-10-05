@@ -186,7 +186,7 @@ def grid_svg(tone: str) -> str:
     그리는 순서는 면 → 보조선 → 윤곽선 → 표식이다. 숨은 도형이 면 위로 지나가야 보인다.
 
     - 면: 컵 고리 · 담긴 커피 · 손잡이 초승달을 한 색으로
-    - 윤곽: 면의 가장자리와, 커피 면에 묻힌 안쪽 원의 아래쪽 호
+    - 윤곽: 면의 가장자리
     - 실선: 손잡이를 이루는 바깥 · 안쪽 원 전체
     - 점선: 손잡이를 지우는 마스크 원, 컵 중심을 지나는 가로 · 세로 축, 초승달 끝을 지나는 두 방사 축
     - 표식: 축이 마스크 원과 만나는 점(네모), 컵 · 손잡이 중심(⊙)
@@ -213,9 +213,6 @@ def grid_svg(tone: str) -> str:
     cup = (f"M {n(cx - outer)} {n(cy)} A {n(outer)} {n(outer)} 0 1 1 {n(cx + outer)} {n(cy)} "
            f"A {n(outer)} {n(outer)} 0 1 1 {n(cx - outer)} {n(cy)} Z "
            f"M {n(cx - chord)} {n(BREW_TOP)} A {n(inner)} {n(inner)} 0 1 1 {n(cx + chord)} {n(BREW_TOP)} Z")
-    # 안쪽 원 가운데 커피 면에 묻힌 아래쪽 호 — 면은 하나지만 컵의 안쪽 경계를 선으로 보인다.
-    inner_low = (f"M {n(cx + chord)} {n(BREW_TOP)} "
-                 f"A {n(inner)} {n(inner)} 0 0 1 {n(cx - chord)} {n(BREW_TOP)}")
     handle = (f"M {n(ox)} {n(hy - oh)} A {n(ho)} {n(ho)} 0 0 1 {n(ox)} {n(hy + oh)} "
               f"A {n(R)} {n(R)} 0 0 0 {n(ix)} {n(hy + ih)} "
               f"A {n(hi)} {n(hi)} 0 0 0 {n(ix)} {n(hy - ih)} "
@@ -252,7 +249,6 @@ def grid_svg(tone: str) -> str:
   </g>
   <g stroke="{c['outline']}" stroke-width="0.45" stroke-linejoin="round">
     <path fill-rule="evenodd" d="{cup}"/>
-    <path d="{inner_low}"/>
     <path d="{handle}"/>
   </g>
   <g fill="{c['point_fill']}" stroke="{c['point']}" stroke-width="0.3">
