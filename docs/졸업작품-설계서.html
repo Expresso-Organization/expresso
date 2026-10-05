@@ -1070,16 +1070,20 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
   <rect class="bx" x="680" y="174" width="204" height="36" rx="10"/>
   <text class="t" x="782" y="197" text-anchor="middle">모델 배포</text>
 
-  <rect class="bxs" x="282" y="252" width="294" height="46" rx="12"/>
-  <text class="tb sigt" x="429" y="274" text-anchor="middle">모델 A 공고 추천 · 모델 B 기록 추천</text>
-  <text class="s sigt" x="429" y="291" text-anchor="middle">기록 ↔ 공고 연결</text>
-  <path class="fls" d="M 782 214 V 234 H 604 V 275 H 584" marker-end="url(#a1s)"/>
-  <text class="lm sig" x="693" y="228" text-anchor="middle">배포된 모델</text>
+  <rect class="bxq" x="282" y="244" width="294" height="46" rx="12"/>
+  <text class="t" x="429" y="272" text-anchor="middle">LLM 프로바이더</text>
+  <line class="fl" x1="506" y1="212" x2="506" y2="240" marker-end="url(#a1)"/>
+  <text class="lm" x="514" y="231">LLM 호출</text>
 
-  <rect class="bxq" x="664" y="252" width="236" height="46" rx="12"/>
-  <text class="t" x="782" y="281" text-anchor="middle">LLM 프로바이더</text>
-  <path class="fl" d="M 580 132 H 632 V 240 H 700 V 249" marker-end="url(#a1)"/>
-  <text class="lm" x="640" y="150">LLM 호출</text>
+  <path class="fl" d="M 598 180 H 630 V 272 H 660" marker-end="url(#a1)"/>
+  <text class="lm" x="600" y="172">추천 요청</text>
+
+  <rect class="bxs" x="664" y="236" width="236" height="74" rx="12"/>
+  <text class="tb sigt" x="782" y="259" text-anchor="middle">모델 A 공고 추천</text>
+  <text class="tb sigt" x="782" y="280" text-anchor="middle">모델 B 기록 추천</text>
+  <text class="s sigt" x="782" y="299" text-anchor="middle">기록 ↔ 공고 연결</text>
+  <line class="fls" x1="782" y1="212" x2="782" y2="232" marker-end="url(#a1s)"/>
+  <text class="lm sig" x="790" y="227">배포된 모델</text>
 
   <text class="l" x="0" y="336">DATA COLLECTION</text>
   <rect class="grp" x="0" y="346" width="900" height="72" rx="14"/>
