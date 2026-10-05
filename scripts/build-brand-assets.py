@@ -15,6 +15,7 @@ GEOMETRY는 그 SVG를 좌표 그대로 옮긴 것이고, 색도 화면 정의�
 PNG는 `assets/brand/`에, 파비콘 세 개는 `services/web/src/app/`에 놓는다.
 뒤쪽은 Next App Router가 파일 이름만 보고 <link>를 붙이는 자리다.
 """
+import math
 from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw
@@ -22,9 +23,16 @@ from PIL import Image, ImageChops, ImageDraw
 ROOT = Path(__file__).resolve().parent.parent
 BRAND_DIR = ROOT / "assets" / "brand"
 APP_DIR = ROOT / "services" / "web" / "src" / "app"
+DOCS_BRAND_DIR = ROOT / "docs" / "assets" / "brand"
 
 # Logo.tsx의 viewBox. 좌표는 전부 이 단위다.
 VIEWBOX = 108.0
+
+# Logo.tsx의 세 도형. 마크(PNG)와 구성 그리드(SVG)가 같은 값을 쓴다.
+CUP = (44.0, 54.0, 36.0, 10.0)        # 컵 — 중심 x · y, 반지름, 획 두께
+HANDLE = (78.2, 54.0, 19.8, 8.5)      # 손잡이 — 중심 x · y, 반지름, 획 두께
+HANDLE_MASK_R = 46.5                  # 손잡이를 지우는 컵 중심의 원
+BREW_TOP = 58.96                      # 담긴 커피의 윗면
 
 # 화면 정의서의 두 짝. light는 05 사이드바, dark는 10 · 10b 좌측 패널.
 TONES = {
@@ -112,12 +120,16 @@ def draw_mark(canvas: Canvas, tone: str) -> Image.Image:
     img = Image.new("RGBA", (canvas.size, canvas.size), (0, 0, 0, 0))
 
     # 손잡이 — 컵 반지름 46.5 안쪽은 마스크로 지운다. 컵 뒤로 들어가는 부분이다.
+    cx, cy, cr, cw = CUP
+    hx, hy, hr, hw = HANDLE
     handle = ImageChops.subtract(
-        canvas.ring(78.2, 54, 19.8, 8.5), canvas.disc(44, 54, 46.5)
+        canvas.ring(hx, hy, hr, hw), canvas.disc(cx, cy, HANDLE_MASK_R)
     )
-    # 담긴 커피 — 58.96 아래를 컵 원으로 잘라 낸다.
-    brew = ImageChops.multiply(canvas.rect(0, 58.96, 108, 49.04), canvas.disc(44, 54, 36))
-    cup = canvas.ring(44, 54, 36, 10)
+    # 담긴 커피 — BREW_TOP 아래를 컵 원으로 잘라 낸다.
+    brew = ImageChops.multiply(
+        canvas.rect(0, BREW_TOP, VIEWBOX, VIEWBOX - BREW_TOP), canvas.disc(cx, cy, cr)
+    )
+    cup = canvas.ring(cx, cy, cr, cw)
 
     for mask, key in ((handle, "handle"), (brew, "cup"), (cup, "cup")):
         img = Image.alpha_composite(img, _layer(canvas.size, color[key], canvas.flatten(mask)))
@@ -152,6 +164,74 @@ def tile_png(size: int, radius_ratio: float = 0.2237) -> Image.Image:
     return Image.alpha_composite(ground, draw_mark(Canvas(size, scale, ox, oy), "dark"))
 
 
+# 구성 그리드의 보조선 색 — tokens.css의 line-200 · slate-300. 어두운 지면에서는
+# 같은 역할을 흰색의 투명도로 낸다.
+GRID_GUIDES = {
+    "light": {"grid": "#E2E9F4", "guide": "#AFBACB"},
+    "dark": {"grid": "rgba(255,255,255,.10)", "guide": "rgba(255,255,255,.32)"},
+}
+GRID_STEP = 9.0  # viewBox 108을 12칸으로 나눈다
+
+
+def _num(v: float) -> str:
+    return f"{v:.3f}".rstrip("0").rstrip(".")
+
+
+def grid_svg(tone: str) -> str:
+    """마크를 채움 없이 윤곽선으로만 그리고, 그 좌표를 만든 보조선을 함께 둔다.
+
+    윤곽은 실제로 보이는 모양의 가장자리다. 컵은 고리의 바깥 · 안쪽 원과 커피
+    윗면이 만드는 안쪽 경계, 손잡이는 고리에서 마스크 원 안쪽을 지운 초승달이다.
+    """
+    cx, cy, cr, cw = CUP
+    hx, hy, hr, hw = HANDLE
+    outer, inner = cr + cw / 2, cr - cw / 2
+    color, guide = TONES[tone], GRID_GUIDES[tone]
+
+    # 커피 윗면이 안쪽 원과 만나는 두 점
+    chord = math.sqrt(inner**2 - (BREW_TOP - cy) ** 2)
+
+    # 손잡이 고리의 바깥 · 안쪽 원이 마스크 원과 만나는 점
+    def meet(r: float) -> tuple[float, float]:
+        d = hx - cx
+        a = (d * d + HANDLE_MASK_R**2 - r * r) / (2 * d)
+        return cx + a, math.sqrt(HANDLE_MASK_R**2 - a * a)
+
+    ho, hi = hr + hw / 2, hr - hw / 2
+    (ox, oh), (ix, ih) = meet(ho), meet(hi)
+    n = _num
+    pad = 12
+    lo, hi_ = -pad, VIEWBOX + pad
+    steps = [i * GRID_STEP for i in range(int(VIEWBOX / GRID_STEP) + 1)]
+    grid = "".join(
+        f'<line x1="{n(v)}" y1="0" x2="{n(v)}" y2="{n(VIEWBOX)}"/>'
+        f'<line x1="0" y1="{n(v)}" x2="{n(VIEWBOX)}" y2="{n(v)}"/>'
+        for v in steps
+    )
+    dash = 'stroke-dasharray="1.2 1.2"'
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="{n(lo)} {n(lo)} {n(hi_ - lo)} {n(hi_ - lo)}" fill="none">
+  <!-- scripts/build-brand-assets.py 가 Logo.tsx 의 좌표로 생성한다. 손으로 고치지 않는다. -->
+  <g stroke="{guide['grid']}" stroke-width="0.25">{grid}</g>
+  <g stroke="{guide['guide']}" stroke-width="0.35">
+    <line x1="{n(lo)}" y1="{n(cy)}" x2="{n(hi_)}" y2="{n(cy)}"/>
+    <line x1="{n(cx)}" y1="{n(lo)}" x2="{n(cx)}" y2="{n(hi_)}"/>
+    <line x1="{n(hx)}" y1="{n(lo)}" x2="{n(hx)}" y2="{n(hi_)}"/>
+    <line x1="{n(lo)}" y1="{n(BREW_TOP)}" x2="{n(hi_)}" y2="{n(BREW_TOP)}" {dash}/>
+    <circle cx="{n(cx)}" cy="{n(cy)}" r="{n(cr)}" {dash}/>
+    <circle cx="{n(cx)}" cy="{n(cy)}" r="{n(HANDLE_MASK_R)}" {dash}/>
+    <circle cx="{n(hx)}" cy="{n(hy)}" r="{n(hr)}" {dash}/>
+    <circle cx="{n(cx)}" cy="{n(cy)}" r="0.9"/>
+    <circle cx="{n(hx)}" cy="{n(hy)}" r="0.9"/>
+  </g>
+  <g stroke-width="0.6" stroke-linejoin="round">
+    <circle cx="{n(cx)}" cy="{n(cy)}" r="{n(outer)}" stroke="{color['cup']}"/>
+    <path d="M {n(cx - chord)} {n(BREW_TOP)} A {n(inner)} {n(inner)} 0 1 1 {n(cx + chord)} {n(BREW_TOP)} Z" stroke="{color['cup']}"/>
+    <path d="M {n(ox)} {n(hy - oh)} A {n(ho)} {n(ho)} 0 0 1 {n(ox)} {n(hy + oh)} A {n(HANDLE_MASK_R)} {n(HANDLE_MASK_R)} 0 0 0 {n(ix)} {n(hy + ih)} A {n(hi)} {n(hi)} 0 0 0 {n(ix)} {n(hy - ih)} A {n(HANDLE_MASK_R)} {n(HANDLE_MASK_R)} 0 0 0 {n(ox)} {n(hy - oh)} Z" stroke="{color['handle']}"/>
+  </g>
+</svg>
+"""
+
+
 def main() -> None:
     BRAND_DIR.mkdir(parents=True, exist_ok=True)
     written = []
@@ -166,6 +246,16 @@ def main() -> None:
         path = BRAND_DIR / f"expresso-tile-{size}.png"
         tile_png(size).save(path)
         written.append(path)
+
+    # 구성 그리드 — 벡터 그대로 둔다. 개발 포털은 docs/만 발행하므로 문서용
+    # 사본을 docs/assets/brand/에도 쓴다.
+    DOCS_BRAND_DIR.mkdir(parents=True, exist_ok=True)
+    for tone in TONES:
+        svg = grid_svg(tone)
+        for folder in (BRAND_DIR, DOCS_BRAND_DIR):
+            path = folder / f"expresso-logo-grid-{tone}.svg"
+            path.write_text(svg, encoding="utf-8")
+            written.append(path)
 
     # 파비콘 — Next App Router가 이름으로 집어 간다.
     # .ico는 16·32·48을 한 파일에 넣는다. 브라우저마다 집어 가는 크기가 다르다.
