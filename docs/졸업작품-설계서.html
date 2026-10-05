@@ -618,7 +618,7 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
     <ol id="tocList"></ol>
   </nav>
 
-  <main class="sheet" id="doc" data-doc-pages="171" data-doc-paged-at="2026-10-05">
+  <main class="sheet" id="doc" data-doc-pages="174" data-doc-paged-at="2026-10-05">
 
 
     <!-- 표지와 문서정보 — 화면에서는 감추고 PDF에서만 나온다. -->
@@ -6535,30 +6535,101 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <li>모델은 검증 분할에서 임계값과 하이퍼파라미터를 정하고, 평가 분할에서 한 번만 평가한다.</li>
         <li>사람 평가와의 일치와 루브릭 가중치의 타당성은 라벨 구축 후 후속 검증으로 확인한다.</li>
       </ul>
-      <div class="table-wrap"><table><thead><tr><th>모델</th><th>지표</th><th>목표</th><th>측정값</th></tr></thead><tbody>
-        <tr><td rowspan="6">A</td><td>NDCG@10</td><td>확정 전</td><td>—</td></tr>
-        <tr><td>Recall@K (스크리닝)</td><td>확정 전</td><td>—</td></tr>
-        <tr><td>MAE</td><td>확정 전</td><td>—</td></tr>
-        <tr><td>공고쌍 순서 일치율</td><td>확정 전</td><td>—</td></tr>
-        <tr><td>p95 지연 · 처리량</td><td>확정 전</td><td>—</td></tr>
-        <tr><td>AUC (75점 이상 양성)</td><td>확정 전</td><td>—</td></tr>
-        <tr><td rowspan="2">B</td><td>NDCG@10 (교사 기록 단위 판정 기준)</td><td>확정 전</td><td>—</td></tr>
-        <tr><td>AUC (75점 이상 양성)</td><td>확정 전</td><td>—</td></tr>
+      <h4 data-page="165">■ 파일럿 학습 조건</h4>
+      <p>
+        2026-09-04에 수행한 파일럿 학습의 결과를 기록한다. 합성 프로필 1,000개에 공고 10개씩을
+        붙인 10,000쌍을 사용하였고, 후보 공고는 프로필마다 같은 직무 5개 · 인접 직무 3개 ·
+        무작위 2개이다. 공고는 JTH 공고 데이터(<code>jobs.csv</code>)의 구조화 필드를 사용하였다.
+        라벨은 루브릭 <code>job-profile-fit-v1</code>로 산출하였으며 GPT-5.6 Luna가 9,260건,
+        Claude Sonnet이 740건을 판정하였다. 프로필 ID와 공고 ID는 분할 사이에 겹치지 않는다.
+        두 학습 모델은 선별 · 재정렬로 연결하지 않고 각각 독립으로 평가하였다.
+      </p>
+      <div class="table-wrap"><table><thead><tr><th>분할</th><th class="num">프로필</th><th class="num">공고</th><th class="num">쌍</th><th>용도</th></tr></thead><tbody>
+        <tr><td>학습</td><td class="num">840</td><td class="num">2,366</td><td class="num">8,400</td><td>가중치 학습 · 기준선 점수 보정</td></tr>
+        <tr><td>검증</td><td class="num">90</td><td class="num">292</td><td class="num">900</td><td>최적 epoch 선택</td></tr>
+        <tr><td>평가</td><td class="num">70</td><td class="num">228</td><td class="num">700</td><td>최종 성능 비교</td></tr>
       </tbody></table></div>
-      <figure class="fig"><div class="plate"><span class="ph">모델 A와 B의 ROC 곡선 — 평가 분할 측정 후 삽입</span></div><figcaption>그림 9.1·9.2 ROC 곡선 자리</figcaption></figure>
+      <div class="table-wrap"><table><thead><tr><th>학습 설정</th><th>Bi-Encoder+MLP</th><th>Cross-Encoder</th></tr></thead><tbody>
+        <tr><td>기반 모델</td><td><code>multilingual-e5-base</code> · 동결</td><td><code>bge-reranker-v2-m3</code></td></tr>
+        <tr><td>목적 함수</td><td>점수 회귀 + 0.1 × 순서 학습 손실</td><td>점수 회귀</td></tr>
+        <tr><td>학습률</td><td class="num">0.0005</td><td class="num">0.00002</td></tr>
+        <tr><td>선택 epoch</td><td>47 epoch 중 검증 MAE 최저 39 (조기 종료)</td><td>3 epoch 중 3</td></tr>
+        <tr><td>학습한 가중치</td><td>MLP 헤드 · 3.0 MiB</td><td>마지막 4개 층 + 분류 헤드 · 약 5,144만 파라미터 · 196.23 MiB</td></tr>
+        <tr><td>실행 장비</td><td>RTX 5080 · CUDA 12.8</td><td>RTX 5080 · CUDA 12.8</td></tr>
+      </tbody></table></div>
+
+      <h4 data-page="166">■ 파일럿 평가 결과</h4>
+      <div class="table-wrap"><table><thead><tr><th>모델</th><th class="num">NDCG@10 ↑</th><th class="num">순서 일치율 ↑</th><th class="num">MAP@10 ↑</th><th class="num">MRR@10 ↑</th></tr></thead><tbody>
+        <tr><td>Word TF-IDF</td><td class="num">0.8653</td><td class="num">0.5870</td><td class="num">0.4955</td><td class="num">0.5581</td></tr>
+        <tr><td>BM25</td><td class="num">0.8635</td><td class="num">0.5827</td><td class="num">0.4371</td><td class="num">0.4647</td></tr>
+        <tr><td>Char TF-IDF</td><td class="num">0.8799</td><td class="num">0.6334</td><td class="num">0.5280</td><td class="num">0.6253</td></tr>
+        <tr><td>E5 cosine (학습 전)</td><td class="num">0.8370</td><td class="num">0.5151</td><td class="num">0.4112</td><td class="num">0.4965</td></tr>
+        <tr><td>BGE zero-shot (학습 전)</td><td class="num">0.8535</td><td class="num">0.5685</td><td class="num">0.4302</td><td class="num">0.4824</td></tr>
+        <tr><td><strong>Bi-Encoder+MLP</strong></td><td class="num"><strong>0.9555</strong></td><td class="num"><strong>0.8025</strong></td><td class="num">0.6909</td><td class="num">0.7225</td></tr>
+        <tr><td><strong>Cross-Encoder</strong></td><td class="num"><strong>0.9608</strong></td><td class="num">0.7903</td><td class="num">0.7464</td><td class="num">0.7610</td></tr>
+      </tbody><caption>순위 지표. 평가 분할 70명 · 700쌍. NDCG@10은 선형 gain, 순서 일치율은 동점 라벨을 제외한 2,714개 공고쌍, MAP@10 · MRR@10은 60점 이상 공고가 있는 13명을 대상으로 계산하였다.</caption></table></div>
+      <div class="table-wrap"><table><thead><tr><th>모델</th><th class="num">MAE ↓</th><th class="num">RMSE ↓</th><th class="num">Spearman ↑</th></tr></thead><tbody>
+        <tr><td>Word TF-IDF</td><td class="num">15.04</td><td class="num">17.76</td><td class="num">0.2522</td></tr>
+        <tr><td>BM25</td><td class="num">14.95</td><td class="num">17.71</td><td class="num">0.2675</td></tr>
+        <tr><td>Char TF-IDF</td><td class="num">14.91</td><td class="num">17.57</td><td class="num">0.3189</td></tr>
+        <tr><td>E5 cosine (학습 전)</td><td class="num">15.29</td><td class="num">17.98</td><td class="num">0.1605</td></tr>
+        <tr><td>BGE zero-shot (학습 전)</td><td class="num">15.41</td><td class="num">18.06</td><td class="num">0.2315</td></tr>
+        <tr><td><strong>Bi-Encoder+MLP</strong></td><td class="num"><strong>10.54</strong></td><td class="num">13.44</td><td class="num">0.6832</td></tr>
+        <tr><td><strong>Cross-Encoder</strong></td><td class="num"><strong>10.51</strong></td><td class="num">12.93</td><td class="num">0.6819</td></tr>
+      </tbody><caption>점수 지표. 평가 분할 700쌍.</caption></table></div>
+
+      <figure class="fig">
+        <div class="plate"><img src="assets/p5-training-results-2026-09-06/02-performance.png" alt="Char TF-IDF · E5+MLP · Cross-Encoder의 NDCG@10 · 순서 일치율 · MAP@10과 MAE 비교" width="3034" height="1235"></div>
+        <figcaption>그림 9.1 모델별 순위 품질과 점수 오차 (평가 분할)</figcaption>
+      </figure>
+
+      <figure class="fig">
+        <div class="plate"><img src="assets/p5-training-results-2026-09-06/03-prediction-scatter.png" alt="평가 분할 700쌍의 LLM 라벨과 모델 예측값 산점도" width="3034" height="1073"></div>
+        <figcaption>그림 9.2 LLM 라벨과 모델 예측값 (평가 분할 700쌍)</figcaption>
+      </figure>
+
+      <div class="table-wrap"><table><thead><tr><th>모델</th><th class="num">같은 직무 (350쌍)</th><th class="num">인접 직무 (210쌍)</th><th class="num">무작위 (140쌍)</th></tr></thead><tbody>
+        <tr><td>Char TF-IDF</td><td class="num">15.31</td><td class="num">14.58</td><td class="num">14.37</td></tr>
+        <tr><td>Bi-Encoder+MLP</td><td class="num">11.19</td><td class="num">10.42</td><td class="num">9.08</td></tr>
+        <tr><td>Cross-Encoder</td><td class="num">11.45</td><td class="num">10.49</td><td class="num">8.18</td></tr>
+      </tbody><caption>후보 유형별 MAE (평가 분할).</caption></table></div>
+
+      <div class="table-wrap"><table><thead><tr><th>비교</th><th class="num">NDCG@10 차이 [95% 구간]</th><th class="num">MAE 차이 [95% 구간]</th></tr></thead><tbody>
+        <tr><td>Bi-Encoder+MLP − Char TF-IDF</td><td class="num">+0.0756 [+0.0548, +0.0967]</td><td class="num">−4.37 [−5.65, −3.02]</td></tr>
+        <tr><td>Cross-Encoder − Char TF-IDF</td><td class="num">+0.0809 [+0.0597, +0.1036]</td><td class="num">−4.40 [−5.25, −3.53]</td></tr>
+        <tr><td>Cross-Encoder − Bi-Encoder+MLP</td><td class="num">+0.0054 [−0.0046, +0.0160]</td><td class="num">−0.03 [−0.94, +0.85]</td></tr>
+      </tbody><caption>평가 프로필 70명 단위 paired bootstrap · 20,000회 · seed 42.</caption></table></div>
+      <p>
+        두 학습 모델은 기준선 가운데 가장 높은 Char TF-IDF보다 NDCG@10이 높고 MAE가 낮으며,
+        두 차이의 95% 구간이 모두 0을 포함하지 않는다. Cross-Encoder와 Bi-Encoder+MLP의 차이는
+        두 지표 모두 구간이 0을 포함한다. 검증 분할의 NDCG@10은 Bi-Encoder+MLP 0.9406,
+        Cross-Encoder 0.9383이고 MAE는 각각 10.41, 10.35이다.
+      </p>
+
+      <h4 data-page="169">■ 지표별 측정 현황</h4>
+      <div class="table-wrap"><table><thead><tr><th>모델</th><th>지표</th><th>파일럿 측정값</th></tr></thead><tbody>
+        <tr><td rowspan="6">A</td><td>NDCG@10</td><td>Bi-Encoder+MLP 0.9555 · Cross-Encoder 0.9608</td></tr>
+        <tr><td>MAE</td><td>Bi-Encoder+MLP 10.54 · Cross-Encoder 10.51</td></tr>
+        <tr><td>공고쌍 순서 일치율</td><td>Bi-Encoder+MLP 0.8025 · Cross-Encoder 0.7903</td></tr>
+        <tr><td>Recall@K (스크리닝)</td><td>측정하지 않음 — 후보 10개 전체를 평가하여 Recall@10이 항상 1</td></tr>
+        <tr><td>p95 지연 · 처리량</td><td>측정하지 않음</td></tr>
+        <tr><td>AUC</td><td>산출하지 않음</td></tr>
+        <tr><td>B</td><td>NDCG@10 (교사 기록 단위 판정 기준)</td><td>측정하지 않음</td></tr>
+      </tbody></table></div>
+      <figure class="fig"><div class="plate"><span class="ph">모델 A의 ROC 곡선 — 평가 분할 점수로 산출 후 삽입</span></div><figcaption>그림 9.3 ROC 곡선 자리</figcaption></figure>
     </section>
 
     <!-- 10 ================================================== -->
     <section class="sec" id="env">
       <div class="sec-head">
         <span class="num">10</span>
-        <h2 data-page="167">개발환경 구성</h2>
+        <h2 data-page="170">개발환경 구성</h2>
         <span class="aside">양식 10장</span>
       </div>
 
-      <h3 data-page="167">10.1 개발환경</h3>
+      <h3 data-page="170">10.1 개발환경</h3>
       <p>본 프로젝트의 개발환경은 아래와 같다.</p>
-      <h4 data-page="167">■ 서버</h4>
+      <h4 data-page="170">■ 서버</h4>
       <div class="table-wrap">
         <table>
           <thead><tr><th>구분</th><th>개발환경</th><th>규격</th></tr></thead>
@@ -6580,7 +6651,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         </table>
       </div>
 
-      <h4 data-page="168">■ 클라이언트 · AI학습서버</h4>
+      <h4 data-page="171">■ 클라이언트 · AI학습서버</h4>
       <div class="table-wrap">
         <table>
           <thead><tr><th>구분</th><th>개발환경</th><th>규격</th></tr></thead>
@@ -6597,7 +6668,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         </table>
       </div>
 
-      <h4 data-page="168">■ LLM 프로바이더</h4>
+      <h4 data-page="171">■ LLM 프로바이더</h4>
       <div class="table-wrap">
         <table>
           <thead><tr><th><code>AI_PROVIDER</code></th><th>동작</th><th>용도</th></tr></thead>
@@ -6611,7 +6682,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         </table>
       </div>
 
-      <h4 data-page="168">■ 인프라 실행</h4>
+      <h4 data-page="171">■ 인프라 실행</h4>
       <figure class="code">
         <div class="bar">
           <span>로컬 개발 시작</span>
@@ -6630,7 +6701,7 @@ pnpm dev:backend</code></pre>
         503을 반환한다.
       </p>
 
-      <h3 data-page="169">10.2 소스디렉터리 구조</h3>
+      <h3 data-page="172">10.2 소스디렉터리 구조</h3>
       <figure class="fig">
         <div class="plate drawn"><svg class="dg" viewBox="0 0 900 317" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="모노레포 디렉터리 구조">
   <rect class="bxs" x="4" y="2" width="150" height="22" rx="7"/>
@@ -6665,7 +6736,7 @@ pnpm dev:backend</code></pre>
         <code>*.integration.test.ts</code>가 그 옆에 놓인다. 파일 이름이 곧 역할이므로
         새 모듈을 추가할 때에도 같은 구성을 따른다.
       </p>
-      <h3 data-page="169">10.3 명칭표준안 (변수, 함수, 파일명)</h3>
+      <h3 data-page="172">10.3 명칭표준안 (변수, 함수, 파일명)</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>영역</th><th>대상</th><th>규칙</th><th>예</th></tr></thead>
