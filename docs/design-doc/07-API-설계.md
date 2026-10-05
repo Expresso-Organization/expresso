@@ -389,101 +389,79 @@ AI학습서버는 별도로 실행되는 서버다. 서비스 API와 포트·프
 | 포트 | 4100 |
 | 인증 | 내부 네트워크 + 서비스 토큰 |
 | 외부 공개 | 하지 않음 |
-| 모델 종류 | `match`(모델 A) · `record`(모델 B) — 경로 파라미터 또는 본문의 `kind`로 구분 |
+| 학습 단위 | `bi`(Bi-Encoder+MLP) · `cross`(Cross-Encoder) — 모델 B는 활성 `cross` 버전을 사용 |
 
 ### API 정의
 
 | Method | URI | Description |
 | --- | --- | --- |
-| GET | `/training/datasets` | 데이터세트 목록 조회 (`?kind=match\|record`) |
-| POST | `/training/datasets` | 데이터세트 생성 — 쌍 생성 · 교사 라벨링 · 특징 추출 |
-| GET | `/training/datasets/:version` | 데이터세트 상세(행 수 · 분포 · 교사 모델 · κ) |
+| GET | `/training/datasets` | 데이터세트 목록 조회 |
+| POST | `/training/datasets` | 데이터세트 생성 — 프로필–공고 묶음 구성 · 교사 라벨링 · 루브릭 점수 계산 |
+| GET | `/training/datasets/:version` | 데이터세트 상세(행 수 · 라벨 분포 · 교사 모델 · 루브릭 버전 · 라벨 검사 결과) |
 | DELETE | `/training/datasets/:version` | 데이터세트 삭제 |
-| GET | `/training/datasets/:version/review-samples` | 사람 검수용 표본 조회 (교사 라벨 가림) |
-| PUT | `/training/datasets/:version/review-samples` | 검수 결과 제출 · κ 산출 |
+| GET | `/training/datasets/:version/review-samples` | 사람 평가 표본 조회 (교사 라벨 가림) |
+| PUT | `/training/datasets/:version/review-samples` | 사람 평가 결과 제출 · 교사–사람 일치도 산출 |
 | GET | `/training/runs` | 학습 실행 목록 조회 |
-| POST | `/training/runs` | 학습 실행 |
+| POST | `/training/runs` | 학습 실행 (인코더 비교 · Bi-Encoder+MLP · Cross-Encoder) |
 | GET | `/training/runs/:id` | 학습 진행 · 결과 조회 |
 | DELETE | `/training/runs/:id` | 학습 중단 |
-| GET | `/training/runs/:id/metrics` | 성능 지표 조회 (ROC 좌표 · NDCG · 3축 비교) |
-| GET | `/training/models` | 모델 버전 목록 조회 (`?kind=`) |
+| GET | `/training/runs/:id/metrics` | 성능 지표 조회 (NDCG@10 · Recall@K · MAE · 순서 일치율 · ROC 좌표 · baseline 비교) |
+| GET | `/training/models` | 모델 버전 목록 조회 (`?kind=bi\|cross`) |
 | GET | `/training/models/:version` | 모델 상세 조회 |
 | POST | `/training/models/:version/deployments` | 모델 배포 |
 | DELETE | `/training/models/:version` | 모델 삭제 |
-| GET | `/training/active-models` | 활성 모델 조회 (A · B 각각) |
+| GET | `/training/active-models` | 활성 모델 조회 (Bi-Encoder+MLP · Cross-Encoder 각각) |
 | PUT | `/training/active-models/:kind` | 활성 모델 변경(롤백 포함) |
 | GET | `/training/parameters` | 학습 파라미터 조회 |
 | PUT | `/training/parameters` | 학습 파라미터 수정 |
-| GET | `/training/teacher-prompts` | 교사 프롬프트 버전 조회 |
+| GET | `/training/teacher-prompts` | 교사 프롬프트 · 루브릭 버전 조회 |
 | PUT | `/training/teacher-prompts/:kind` | 교사 프롬프트 수정 |
 | GET | `/training/failures` | 학습 장애기록 조회 |
-| POST | `/inference/match` | **모델 A** — 공고 적합도 판정 |
-| POST | `/inference/record-rank` | **모델 B** — 공고에 맞는 기록 정렬 |
+| POST | `/inference/match` | **모델 A** — 공고 선별 · 재정렬 |
+| POST | `/inference/record-rank` | **모델 B** — 공고에 맞는 기록 채점 · 선택 조합 |
 | GET | `/health/live` | 생존 확인 |
-| GET | `/health/ready` | 준비 확인(모델 로드 여부) |
+| GET | `/health/ready` | 준비 확인(인코더 · 모델 로드 여부) |
 
 ### POST /inference/match — 모델 A
-
-```text
-API 서버  ──▶  공고 적합도 판정 요청  ──▶ (IN)   AI학습서버(추론)
-          ◀──  공고별 점수 전송      ◀── (OUT)
-```
 
 **Parameter**
 
 | 속성 | IN | OUT | Type | Description |
 | --- | --- | --- | --- | --- |
-| `profile` | O | | Object | 프로필 요약 — 총 경력 · 주 직군 · 스킬 · 기록 수 |
-| `profile.recordCount` | O | | int | 3 미만이면 서버가 `usable: false`로 답한다 |
-| `postings` | O | | Array | 공고 목록 (최대 500) |
-| `postings[].id` | O | | uuid | 공고 식별자 |
-| `postings[].requirements` | O | | Array | 라벨 · 축 · 종류 |
-| `modelVersion` | | O | String | 판정에 쓴 모델 버전 |
-| `usable` | | O | bool | 모델 적용 가능 여부. false면 호출자가 규칙으로 폴백 |
-| `results` | | O | Array | 공고별 결과 |
-| `results[].score` | | O | int | 적합도 0–100. 요건 0건이면 null |
-| `results[].axes` | | O | Object | 축별 충족률 |
-| `results[].topFeatures` | | O | Array | 판정에 기여한 특징 상위 3개 |
+| `profile` | O | | Object | 경력 연차 · 기록 목록(제목 · 기본 프로퍼티 · 본문) |
+| `postingIds` | O | | Array | 후보 공고 식별자. 공고 벡터는 수집 시 계산되어 저장돼 있다 |
+| `rerankTop` | | | int | Cross-Encoder로 재평가할 상위 후보 수. 기본값은 9.2의 Recall@K로 정한다 |
+| `modelVersions` | | O | Object | 사용한 `bi` · `cross` 버전 |
+| `usable` | | O | bool | 모델 판정 가능 여부 |
+| `results[].score` | | O | int | 적합도 0–100 |
+| `results[].stage` | | O | String | `screening` 또는 `reranked` |
+| `results[].evidenceRecords` | | O | Array | Cross-Encoder 입력으로 고른 근거 기록 ID |
 
 **실제 전송내용 (JSON)**
 
 ```json
 전송방향 : IN
 {
-  "profile": {
-    "totalMonths": 46,
-    "primaryCategory": "backend",
-    "skills": ["typescript", "postgresql", "aws"],
-    "recordCount": 12
-  },
-  "postings": [
-    {
-      "id": "8c4d2e1a-77b3-4f60-a1de-93c5b0f28a47",
-      "requirements": [
-        { "label": "TypeScript 백엔드 개발 경험 3년 이상", "axis": "technology", "kind": "must" },
-        { "label": "대용량 트래픽 처리 경험", "axis": "impact", "kind": "nice" }
-      ]
-    }
-  ]
+  "profile": { "experienceYears": 4, "records": [{ "recordId": "rec_2f1a", "title": "결제 정산 스케줄러 재설계" }] },
+  "postingIds": ["8c4d2e1a-77b3-4f60-a1de-93c5b0f28a47"]
 }
 
 전송방향 : OUT
 {
-  "modelVersion": "match-v1-003",
+  "modelVersions": { "bi": "bi-v1-003", "cross": "cross-v1-002" },
   "usable": true,
   "results": [
     {
       "id": "8c4d2e1a-77b3-4f60-a1de-93c5b0f28a47",
       "score": 78,
-      "axes": { "technology": 0.86, "impact": 0.40, "role": 0.75, "conditions": 1.0 },
-      "topFeatures": ["cos_skills_requirements", "must_hit_ratio", "years_gap"]
+      "stage": "reranked",
+      "evidenceRecords": ["rec_2f1a", "rec_8c03"]
     }
   ]
 }
 ```
 
-`usable`이 false면 호출자가 `match-score.ts` 규칙으로 되돌아갑니다. 기록이 3건 미만인
-신규 사용자는 학습 분포 밖이라 모델이 근거 없는 순위를 냅니다.
+`usable`이 false면 호출자가 `match-score.ts` 규칙으로 되돌아갑니다.
 
 ### POST /inference/record-rank — 모델 B
 
@@ -491,13 +469,12 @@ API 서버  ──▶  공고 적합도 판정 요청  ──▶ (IN)   AI학습
 
 | 속성 | IN | OUT | Type | Description |
 | --- | --- | --- | --- | --- |
-| `posting` | O | | Object | 공고 요약 · 요구사항 목록 |
-| `records` | O | | Array | 정렬 대상 기록 목록 |
-| `records[]` | O | | Object | 제목 · 본문 · 카테고리 · 속성 |
-| `modelVersion` | | O | String | 정렬에 쓴 모델 버전 |
-| `results[].score` | | O | float | 적합도 0–100 |
-| `results[].rank` | | O | int | 이 공고 안에서의 순위 |
-| `results[].topFeatures` | | O | Array | 적합도에 기여한 특징 상위 3개 |
+| `posting` | O | | Object | 공고 텍스트 · 요구사항 목록 |
+| `records` | O | | Array | 채점 대상 기록 목록 (제목 · 본문 · 카테고리 · 속성) |
+| `modelVersion` | | O | String | 채점에 쓴 `cross` 버전 |
+| `results[].score` | | O | int | (공고, 기록 1건) 적합도 0–100 |
+| `results[].selected` | | O | bool | 추천 선택 조합에 포함 여부 |
+| `results[].reason` | | O | String | 제외 사유 — 낮은 점수 · 선택된 기록과 중복 · 새로 충족하는 요건 없음 |
 
 **실제 전송내용 (JSON)**
 
@@ -505,37 +482,24 @@ API 서버  ──▶  공고 적합도 판정 요청  ──▶ (IN)   AI학습
 전송방향 : IN
 {
   "posting": {
-    "summary": "React 기반 웹 프론트엔드 개발자를 찾습니다. ...",
-    "requirements": [
-      { "label": "React 기반 프론트엔드 개발 경험", "axis": "technology", "kind": "must" }
-    ]
+    "text": "React 기반 웹 프론트엔드 개발자를 찾습니다. ...",
+    "requirements": [{ "label": "React 기반 프론트엔드 개발 경험", "kind": "must" }]
   },
   "records": [
-    {
-      "recordId": "r1",
-      "title": "사내 관리자 콘솔 재구축",
-      "body": "React와 TypeScript로 관리자 콘솔을 다시 만들었다. ...",
-      "category": "프로젝트",
-      "properties": { "durationMonths": 8, "stack": ["react", "typescript"] }
-    }
+    { "recordId": "r1", "title": "사내 관리자 콘솔 재구축", "body": "React와 TypeScript로 관리자 콘솔을 다시 만들었다. ...", "category": "프로젝트" }
   ]
 }
 
 전송방향 : OUT
 {
-  "modelVersion": "record-v1-002",
+  "modelVersion": "cross-v1-002",
   "results": [
-    {
-      "recordId": "r1",
-      "score": 96,
-      "rank": 1,
-      "topFeatures": ["max_sent_cos", "tech_token_recall", "duration_months"]
-    }
+    { "recordId": "r1", "score": 96, "selected": true, "reason": null }
   ]
 }
 ```
 
-`topFeatures`가 있어야 화면 01b에서 "왜 이 기록을 뺐는가"(T4.1.3 제외 사유 제시)를
+`reason`이 있어야 화면 01b에서 "왜 이 기록을 뺐는가"(T4.1.3 제외 사유 제시)를
 사용자에게 보일 수 있습니다.
 
 ### POST /training/runs
@@ -544,15 +508,15 @@ API 서버  ──▶  공고 적합도 판정 요청  ──▶ (IN)   AI학습
 
 | 속성 | IN | OUT | Type | Description |
 | --- | --- | --- | --- | --- |
-| `kind` | O | | String | `match` 또는 `record` |
-| `datasetVersion` | O | | String | 학습에 쓸 데이터세트 |
-| `algorithm` | O | | String | `lightgbm_rank` / `logistic` |
-| `parameterOverrides` | | | Object | 4.3 기본값 덮어쓰기 |
+| `kind` | O | | String | `bi` 또는 `cross` |
+| `datasetVersion` | O | | String | 학습에 쓸 데이터세트 (`fit-v1`) |
+| `encoder` | | | String | `bi`의 인코더. 생략하면 네 후보를 비교한다 |
+| `parameterOverrides` | | | Object | 4.3 값 덮어쓰기 |
 | `runId` | | O | uuid | 학습 실행 식별자 |
 | `status` | | O | String | queued |
 
-교사 신뢰도(κ)가 0.6 미만인 데이터세트로 학습을 요청하면 **400을 반환하고 학습하지
-않습니다.** 교사가 사람과 어긋난 상태에서 학습하면 학생이 그 오차를 배웁니다.
+교사 점수와 루브릭 계산이 어긋난 라벨이 남은 데이터세트로 학습을 요청하면 **400을 반환하고
+학습하지 않습니다.**
 
 ### GET /training/runs/:id/metrics
 
@@ -561,14 +525,13 @@ API 서버  ──▶  공고 적합도 판정 요청  ──▶ (IN)   AI학습
 | 속성 | IN | OUT | Type | Description |
 | --- | --- | --- | --- | --- |
 | `id` | O | | uuid | 학습 실행 식별자 |
-| `kind` | | O | String | `match` / `record` |
-| `ndcg` | | O | Object | 모델 A 전용 — `@5` · `@10` |
-| `precisionAt8` | | O | float | 상위 여덟 건의 정밀도 (모델 B) |
-| `ndcg` | | O | Object | NDCG@5 · NDCG@10 (두 모델 공통) |
-| `rocPoints` | | O | Array | ROC 좌표 (높음 vs 나머지, 모델별 1곡선) |
-| `auc` | | O | Object | 높음 vs 나머지 AUC |
+| `kind` | | O | String | `bi` / `cross` |
+| `ndcgAt10` | | O | float | 추천 순위 품질 (주요 지표) |
+| `recallAtK` | | O | Object | 스크리닝 후보 선별 성능 (`bi`) |
+| `mae` | | O | float | 교사 라벨 점수와의 평균 절대 차이 |
+| `pairOrderAccuracy` | | O | float | 공고쌍 순서 일치율 (정답 차 5점 이상인 쌍) |
+| `rocPoints` | | O | Array | ROC 좌표 (루브릭 75점 이상을 양성) |
+| `auc` | | O | float | 위 ROC의 AUC |
+| `latencyMs` | | O | Object | p95 지연 · 처리량 |
 | `baseline` | | O | Object | 규칙 기반 동일 지표 |
-| `teacherAgreement` | | O | Object | 교사↔사람 κ |
-| `studentHuman` | | O | Object | 학생↔사람 일치도 |
-| `latencyMs` | | O | Object | 모델 A 전용 — 공고 200건 판정 지연 |
-| `approved` | | O | bool | 9.2 기준 충족 여부 |
+| `approved` | | O | bool | 배포 승인 여부 |
