@@ -33,3 +33,10 @@ date: 2026-10-05
 ```bash
 node scripts/doc-pdf.mjs docs/졸업작품-설계서.html
 ```
+
+## 실행 중 벗어난 곳
+
+- 사용자 요청으로 표지 가운데에 로고 구성 그리드(선만)를 넣고, 이를 브랜드 자산으로 만든다.
+  `scripts/build-brand-assets.py`가 `Logo.tsx` 좌표 상수에서 `assets/brand/expresso-logo-grid-{light,dark}.svg`를
+  생성하고, 개발 포털이 `docs/`만 발행하므로 문서용 사본을 `docs/assets/brand/`에도 쓴다. 표지는 이 파일을
+  `<img>`로 쓴다. `draw_mark`의 좌표도 같은 상수로 옮긴다.

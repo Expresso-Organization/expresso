@@ -558,7 +558,9 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
   .cover-brand { display: flex; align-items: center; gap: 12px; padding-top: 6mm; }
   .cover-brand .word { font-family: var(--ex-font-brand); font-size: 26pt; font-weight: 500; letter-spacing: -.025em; color: var(--ex-ink-900); }
   .cover-brand .word em { font-style: normal; color: var(--ex-espresso); }
-  .cover-main { margin-top: auto; padding-bottom: 22mm; }
+  .cover-grid { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 4mm 0; }
+  .cover-grid img { height: 88mm; width: auto; }
+  .cover-main { padding-bottom: 14mm; }
   .cover-main .kicker { font-size: 9pt; }
   .cover-name { margin-top: 6mm; font-size: 16pt; font-weight: 600; letter-spacing: -.01em; color: var(--ex-ink-900); }
   .cover-project { margin-top: 2mm; font-size: 13pt; color: var(--ex-slate-500); }
@@ -674,6 +676,10 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
       <div class="cover-brand">
         <svg width="46" height="46" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><clipPath id="lcc"><circle cx="44" cy="54" r="36"/></clipPath><mask id="lmc"><rect width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="46.5" fill="#000"/></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.5" mask="url(#lmc)"/><rect y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#lcc)"/><circle cx="44" cy="54" r="36" stroke="#9A4030" stroke-width="10"/></svg>
         <span class="word">Expre<em>ss</em>o</span>
+      </div>
+      <!-- 로고 구성 그리드 — scripts/build-brand-assets.py 가 Logo.tsx 의 좌표로 생성한다. -->
+      <div class="cover-grid">
+        <img src="assets/brand/expresso-logo-grid-light.svg" alt="Expresso 로고 구성 그리드">
       </div>
       <div class="cover-main">
         <div class="kicker">Graduation Project · AI Track</div>
