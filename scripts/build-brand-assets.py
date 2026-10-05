@@ -164,13 +164,19 @@ def tile_png(size: int, radius_ratio: float = 0.2237) -> Image.Image:
     return Image.alpha_composite(ground, draw_mark(Canvas(size, scale, ox, oy), "dark"))
 
 
-# 구성 그리드의 보조선 색 — tokens.css의 line-200 · slate-300. 어두운 지면에서는
-# 같은 역할을 흰색의 투명도로 낸다.
-GRID_GUIDES = {
-    "light": {"grid": "#E2E9F4", "guide": "#AFBACB"},
-    "dark": {"grid": "rgba(255,255,255,.10)", "guide": "rgba(255,255,255,.32)"},
+# 구성도 색 — 브랜드 색만 쓴다. tokens.css의 espresso · crema · bean-50 · bean-100과
+# Logo.tsx의 손잡이 색 짝(#A9793F)이다. 컵은 espresso 계열, 손잡이는 crema 계열로
+# 마크의 색 짝을 그대로 따르고, 보조선은 crema, 점선은 그보다 짙은 #A9793F로 나눈다.
+# 어두운 지면에서는 같은 역할을 crema와 그 투명도로 낸다.
+CONSTRUCTION = {
+    "light": {"fill_cup": "#FBEEE4", "fill_handle": "#F6E2D3",
+              "outline_cup": "#9A4030", "outline_handle": "#A9793F",
+              "guide": "#E0B486", "dash": "#A9793F", "point": "#9A4030", "point_fill": "#FFFFFF"},
+    "dark": {"fill_cup": "rgba(224,180,134,.14)", "fill_handle": "rgba(224,180,134,.08)",
+             "outline_cup": "#E0B486", "outline_handle": "#A9793F",
+             "guide": "rgba(224,180,134,.28)", "dash": "rgba(224,180,134,.5)",
+             "point": "#E0B486", "point_fill": "#16223A"},
 }
-GRID_STEP = 9.0  # viewBox 108을 12칸으로 나눈다
 
 
 def _num(v: float) -> str:
@@ -178,20 +184,24 @@ def _num(v: float) -> str:
 
 
 def grid_svg(tone: str) -> str:
-    """마크를 채움 없이 윤곽선으로만 그리고, 그 좌표를 만든 보조선을 함께 둔다.
+    """로고 구성도. 마크를 옅은 브랜드 색 면과 윤곽선으로 그리고, 그 모양을 만든 도형을 함께 둔다.
 
-    윤곽은 실제로 보이는 모양의 가장자리다. 컵은 고리의 바깥 · 안쪽 원과 커피
-    윗면이 만드는 안쪽 경계, 손잡이는 고리에서 마스크 원 안쪽을 지운 초승달이다.
+    그리는 순서는 면 → 보조선 → 윤곽선 → 점이다. 숨은 도형이 면 위로 지나가야 보인다.
+
+    - 면: 실제로 보이는 모양 — 컵 고리와 담긴 커피가 이어진 한 덩어리, 손잡이 초승달
+    - 가는 원: 마크 뒤에 숨은 원래 도형 — 컵 기준 원 · 안쪽 원, 손잡이 고리의 두 원
+    - 점선: 컵 · 손잡이 중심축, 45° 대각선, 손잡이를 지우는 마스크 원
+    - 경계 상자: 잉크가 차지하는 칸(INK_BOX). 선은 상자 밖으로 뻗고 모서리에 앵커
+    - 점: 경계에 닿는 네 점, 커피 윗면의 두 끝, 손잡이가 마스크 원과 만나는 네 점
     """
     cx, cy, cr, cw = CUP
     hx, hy, hr, hw = HANDLE
     outer, inner = cr + cw / 2, cr - cw / 2
-    color, guide = TONES[tone], GRID_GUIDES[tone]
+    c = CONSTRUCTION[tone]
+    n = _num
 
-    # 커피 윗면이 안쪽 원과 만나는 두 점
     chord = math.sqrt(inner**2 - (BREW_TOP - cy) ** 2)
 
-    # 손잡이 고리의 바깥 · 안쪽 원이 마스크 원과 만나는 점
     def meet(r: float) -> tuple[float, float]:
         d = hx - cx
         a = (d * d + HANDLE_MASK_R**2 - r * r) / (2 * d)
@@ -199,34 +209,68 @@ def grid_svg(tone: str) -> str:
 
     ho, hi = hr + hw / 2, hr - hw / 2
     (ox, oh), (ix, ih) = meet(ho), meet(hi)
-    n = _num
-    pad = 12
+    x0, y0, x1, y1 = INK_BOX
+    pad, ext = 22.0, 12.0
     lo, hi_ = -pad, VIEWBOX + pad
-    steps = [i * GRID_STEP for i in range(int(VIEWBOX / GRID_STEP) + 1)]
-    grid = "".join(
-        f'<line x1="{n(v)}" y1="0" x2="{n(v)}" y2="{n(VIEWBOX)}"/>'
-        f'<line x1="0" y1="{n(v)}" x2="{n(VIEWBOX)}" y2="{n(v)}"/>'
-        for v in steps
-    )
-    dash = 'stroke-dasharray="1.2 1.2"'
+
+    cup = (f"M {n(cx - outer)} {n(cy)} A {n(outer)} {n(outer)} 0 1 1 {n(cx + outer)} {n(cy)} "
+           f"A {n(outer)} {n(outer)} 0 1 1 {n(cx - outer)} {n(cy)} Z "
+           f"M {n(cx - chord)} {n(BREW_TOP)} A {n(inner)} {n(inner)} 0 1 1 {n(cx + chord)} {n(BREW_TOP)} Z")
+    handle = (f"M {n(ox)} {n(hy - oh)} A {n(ho)} {n(ho)} 0 0 1 {n(ox)} {n(hy + oh)} "
+              f"A {n(HANDLE_MASK_R)} {n(HANDLE_MASK_R)} 0 0 0 {n(ix)} {n(hy + ih)} "
+              f"A {n(hi)} {n(hi)} 0 0 0 {n(ix)} {n(hy - ih)} "
+              f"A {n(HANDLE_MASK_R)} {n(HANDLE_MASK_R)} 0 0 0 {n(ox)} {n(hy - oh)} Z")
+
+    diag = HANDLE_MASK_R + 6
+    k = diag / math.sqrt(2)
+    points = [(cx, y0), (cx, y1), (x0, cy), (x1, cy),
+              (cx - chord, BREW_TOP), (cx + chord, BREW_TOP),
+              (ox, hy - oh), (ox, hy + oh), (ix, hy - ih), (ix, hy + ih)]
+    sq = 1.8
+    corners = [(x0, y0), (x1, y0), (x0, y1), (x1, y1)]
+    dash = 'stroke-dasharray="1.6 1.4"'
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="{n(lo)} {n(lo)} {n(hi_ - lo)} {n(hi_ - lo)}" fill="none">
   <!-- scripts/build-brand-assets.py 가 Logo.tsx 의 좌표로 생성한다. 손으로 고치지 않는다. -->
-  <g stroke="{guide['grid']}" stroke-width="0.25">{grid}</g>
-  <g stroke="{guide['guide']}" stroke-width="0.35">
-    <line x1="{n(lo)}" y1="{n(cy)}" x2="{n(hi_)}" y2="{n(cy)}"/>
-    <line x1="{n(cx)}" y1="{n(lo)}" x2="{n(cx)}" y2="{n(hi_)}"/>
-    <line x1="{n(hx)}" y1="{n(lo)}" x2="{n(hx)}" y2="{n(hi_)}"/>
-    <line x1="{n(lo)}" y1="{n(BREW_TOP)}" x2="{n(hi_)}" y2="{n(BREW_TOP)}" {dash}/>
-    <circle cx="{n(cx)}" cy="{n(cy)}" r="{n(cr)}" {dash}/>
-    <circle cx="{n(cx)}" cy="{n(cy)}" r="{n(HANDLE_MASK_R)}" {dash}/>
-    <circle cx="{n(hx)}" cy="{n(hy)}" r="{n(hr)}" {dash}/>
-    <circle cx="{n(cx)}" cy="{n(cy)}" r="0.9"/>
-    <circle cx="{n(hx)}" cy="{n(hy)}" r="0.9"/>
+  <g stroke="none">
+    <path fill="{c['fill_cup']}" fill-rule="evenodd" d="{cup}"/>
+    <path fill="{c['fill_handle']}" d="{handle}"/>
   </g>
-  <g stroke-width="0.6" stroke-linejoin="round">
-    <circle cx="{n(cx)}" cy="{n(cy)}" r="{n(outer)}" stroke="{color['cup']}"/>
-    <path d="M {n(cx - chord)} {n(BREW_TOP)} A {n(inner)} {n(inner)} 0 1 1 {n(cx + chord)} {n(BREW_TOP)} Z" stroke="{color['cup']}"/>
-    <path d="M {n(ox)} {n(hy - oh)} A {n(ho)} {n(ho)} 0 0 1 {n(ox)} {n(hy + oh)} A {n(HANDLE_MASK_R)} {n(HANDLE_MASK_R)} 0 0 0 {n(ix)} {n(hy + ih)} A {n(hi)} {n(hi)} 0 0 0 {n(ix)} {n(hy - ih)} A {n(HANDLE_MASK_R)} {n(HANDLE_MASK_R)} 0 0 0 {n(ox)} {n(hy - oh)} Z" stroke="{color['handle']}"/>
+  <g stroke="{c['guide']}" stroke-width="0.3">
+    <line x1="{n(x0)}" y1="{n(y0 - ext)}" x2="{n(x0)}" y2="{n(y1 + ext)}"/>
+    <line x1="{n(x1)}" y1="{n(y0 - ext)}" x2="{n(x1)}" y2="{n(y1 + ext)}"/>
+    <line x1="{n(x0 - ext)}" y1="{n(y0)}" x2="{n(x1 + ext)}" y2="{n(y0)}"/>
+    <line x1="{n(x0 - ext)}" y1="{n(y1)}" x2="{n(x1 + ext)}" y2="{n(y1)}"/>
+    <line x1="{n(x0 - ext)}" y1="{n(BREW_TOP)}" x2="{n(x1 + ext)}" y2="{n(BREW_TOP)}"/>
+    <circle cx="{n(cx)}" cy="{n(cy)}" r="{n(cr)}"/>
+    <circle cx="{n(cx)}" cy="{n(cy)}" r="{n(inner)}"/>
+    <circle cx="{n(hx)}" cy="{n(hy)}" r="{n(ho)}"/>
+    <circle cx="{n(hx)}" cy="{n(hy)}" r="{n(hi)}"/>
+  </g>
+  <g stroke="{c['dash']}" stroke-width="0.3" {dash}>
+    <line x1="{n(x0 - ext)}" y1="{n(cy)}" x2="{n(x1 + ext)}" y2="{n(cy)}"/>
+    <line x1="{n(cx)}" y1="{n(y0 - ext)}" x2="{n(cx)}" y2="{n(y1 + ext)}"/>
+    <line x1="{n(hx)}" y1="{n(y0 - ext)}" x2="{n(hx)}" y2="{n(y1 + ext)}"/>
+    <line x1="{n(cx - k)}" y1="{n(cy - k)}" x2="{n(cx + k)}" y2="{n(cy + k)}"/>
+    <line x1="{n(cx - k)}" y1="{n(cy + k)}" x2="{n(cx + k)}" y2="{n(cy - k)}"/>
+    <circle cx="{n(cx)}" cy="{n(cy)}" r="{n(HANDLE_MASK_R)}"/>
+  </g>
+  <g fill="none" stroke-width="0.45" stroke-linejoin="round">
+    <path stroke="{c['outline_cup']}" fill-rule="evenodd" d="{cup}"/>
+    <path stroke="{c['outline_handle']}" d="{handle}"/>
+  </g>
+  <g stroke="{c['point']}" stroke-width="0.3">
+    <line x1="{n(cx)}" y1="{n(cy)}" x2="{n(cx)}" y2="{n(y0)}"/>
+    <line x1="{n(hx)}" y1="{n(hy)}" x2="{n(x1)}" y2="{n(hy)}"/>
+  </g>
+  <g fill="{c['point_fill']}" stroke="{c['point']}" stroke-width="0.3">
+{chr(10).join(f'    <rect x="{n(x - sq / 2)}" y="{n(y - sq / 2)}" width="{n(sq)}" height="{n(sq)}"/>' for x, y in corners)}
+{chr(10).join(f'    <circle cx="{n(x)}" cy="{n(y)}" r="1"/>' for x, y in points)}
+    <circle cx="{n(cx)}" cy="{n(cy)}" r="1.4"/>
+    <circle cx="{n(hx)}" cy="{n(hy)}" r="1.4"/>
+  </g>
+  <g fill="{c['point']}">
+    <circle cx="{n(cx)}" cy="{n(cy)}" r="0.4"/>
+    <circle cx="{n(hx)}" cy="{n(hy)}" r="0.4"/>
   </g>
 </svg>
 """
