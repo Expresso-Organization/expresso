@@ -169,10 +169,10 @@ def tile_png(size: int, radius_ratio: float = 0.2237) -> Image.Image:
 # 마크의 색 짝을 그대로 따르고, 보조선은 crema, 점선은 그보다 짙은 #A9793F로 나눈다.
 # 어두운 지면에서는 같은 역할을 crema와 그 투명도로 낸다.
 CONSTRUCTION = {
-    "light": {"fill": "#F6E2D3", "outline": "#9A4030", "guide": "#A9793F",
-              "point": "#9A4030", "point_fill": "#FFFFFF"},
-    "dark": {"fill": "rgba(224,180,134,.14)", "outline": "#E0B486", "guide": "rgba(224,180,134,.5)",
-             "point": "#E0B486", "point_fill": "#16223A"},
+    "light": {"fill": "#F6E2D3", "outline": "#9A4030", "guide": "#E0B486",
+              "mark": "#A9793F", "mark_fill": "#FFFFFF"},
+    "dark": {"fill": "rgba(224,180,134,.14)", "outline": "#E0B486", "guide": "rgba(224,180,134,.3)",
+             "mark": "rgba(224,180,134,.7)", "mark_fill": "#16223A"},
 }
 
 
@@ -181,15 +181,15 @@ def _num(v: float) -> str:
 
 
 def grid_svg(tone: str) -> str:
-    """로고 구성도. 마크를 한 가지 면과 윤곽선으로 그리고, 모양을 정하는 도형을 겹친다.
+    """로고 구성도. 마크를 한 가지 면과 윤곽선으로 그리고, 모양을 만드는 원과 기준선을 겹친다.
 
-    그리는 순서는 면 → 보조선 → 윤곽선 → 표식이다. 숨은 도형이 면 위로 지나가야 보인다.
+    그리는 순서는 면 → 기준선 → 원 · 윤곽선 → 표식이다. 원이 면 위로 지나가야 보인다.
 
     - 면: 컵 고리 · 담긴 커피 · 손잡이 초승달을 한 색으로
     - 윤곽: 면의 가장자리
-    - 실선: 손잡이를 이루는 바깥 · 안쪽 원 전체
-    - 점선: 손잡이를 지우는 마스크 원, 컵 중심을 지나는 가로 · 세로 축, 초승달 끝을 지나는 두 방사 축
-    - 표식: 축이 마스크 원과 만나는 점(네모), 컵 · 손잡이 중심(⊙)
+    - 원(윤곽과 같은 색, 가는 선): 손잡이를 이루는 바깥 · 안쪽 원 전체
+    - 기준선: 잉크 경계 상자(INK_BOX)의 네 변, 커피 면의 높이, 손잡이를 지우는 마스크 원
+    - 표식: 상자 모서리(네모), 마크가 상자에 닿는 네 점과 커피 면의 양 끝(빈 원), 두 중심(점)
     """
     cx, cy, cr, cw = CUP
     hx, hy, hr, hw = HANDLE
@@ -207,8 +207,8 @@ def grid_svg(tone: str) -> str:
 
     ho, hi = hr + hw / 2, hr - hw / 2
     (ox, oh), (ix, ih) = meet(ho), meet(hi)
-    ext = 9.0
-    reach = R + ext
+    x0, y0, x1, y1 = INK_BOX
+    ext = 10.0
 
     cup = (f"M {n(cx - outer)} {n(cy)} A {n(outer)} {n(outer)} 0 1 1 {n(cx + outer)} {n(cy)} "
            f"A {n(outer)} {n(outer)} 0 1 1 {n(cx - outer)} {n(cy)} Z "
@@ -218,20 +218,14 @@ def grid_svg(tone: str) -> str:
               f"A {n(hi)} {n(hi)} 0 0 0 {n(ix)} {n(hy - ih)} "
               f"A {n(R)} {n(R)} 0 0 0 {n(ox)} {n(hy - oh)} Z")
 
-    # 축 방향 — 가로 · 세로와, 초승달 끝(손잡이 바깥 원이 마스크 원과 만나는 점)을 지나는 두 방사선
-    tip = math.atan2(oh, ox - cx)
-    angles = [0.0, math.pi / 2, tip, -tip]
-    axes = [(math.cos(t), math.sin(t)) for t in angles]
-    marks = [(cx + s * R * dx, cy + s * R * dy) for dx, dy in axes for s in (1, -1)]
+    corners = [(x0, y0), (x1, y0), (x0, y1), (x1, y1)]
+    touches = [(cx, y0), (cx, y1), (x0, cy), (x1, cy), (cx - chord, BREW_TOP), (cx + chord, BREW_TOP)]
 
-    # 가로축은 손잡이 끝을 지나 나가야 하므로 오른쪽만 더 길다. viewBox는 그린 것 전체를 감싸는 정사각형.
-    left, right = cx - reach, max(cx + reach, hx + ho + ext)
-    top, bottom = cy - reach, cy + reach
-    side = max(right - left, bottom - top) + 4
-    vx, vy = (left + right - side) / 2, (top + bottom - side) / 2
+    # 상자 네 변을 ext 만큼 늘인 선까지 들어가는 정사각 viewBox
+    side = max(x1 - x0, y1 - y0) + 2 * ext + 4
+    vx, vy = (x0 + x1 - side) / 2, (y0 + y1 - side) / 2
 
-    sq = 1.8
-    dash = 'stroke-dasharray="1.6 1.4"'
+    sq, dot = 1.6, 0.85
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="{n(vx)} {n(vy)} {n(side)} {n(side)}" fill="none">
   <!-- scripts/build-brand-assets.py 가 Logo.tsx 의 좌표로 생성한다. 손으로 고치지 않는다. -->
   <g fill="{c['fill']}" stroke="none">
@@ -239,26 +233,28 @@ def grid_svg(tone: str) -> str:
     <path d="{handle}"/>
   </g>
   <g stroke="{c['guide']}" stroke-width="0.3">
+    <line x1="{n(x0)}" y1="{n(y0 - ext)}" x2="{n(x0)}" y2="{n(y1 + ext)}"/>
+    <line x1="{n(x1)}" y1="{n(y0 - ext)}" x2="{n(x1)}" y2="{n(y1 + ext)}"/>
+    <line x1="{n(x0 - ext)}" y1="{n(y0)}" x2="{n(x1 + ext)}" y2="{n(y0)}"/>
+    <line x1="{n(x0 - ext)}" y1="{n(y1)}" x2="{n(x1 + ext)}" y2="{n(y1)}"/>
+    <line x1="{n(x0 - ext)}" y1="{n(BREW_TOP)}" x2="{n(x1 + ext)}" y2="{n(BREW_TOP)}"/>
+    <circle cx="{n(cx)}" cy="{n(cy)}" r="{n(R)}"/>
+  </g>
+  <g stroke="{c['outline']}" stroke-width="0.3">
     <circle cx="{n(hx)}" cy="{n(hy)}" r="{n(ho)}"/>
     <circle cx="{n(hx)}" cy="{n(hy)}" r="{n(hi)}"/>
-  </g>
-  <g stroke="{c['guide']}" stroke-width="0.3" {dash}>
-    <circle cx="{n(cx)}" cy="{n(cy)}" r="{n(R)}"/>
-    <line x1="{n(left)}" y1="{n(cy)}" x2="{n(right)}" y2="{n(cy)}"/>
-{chr(10).join(f'    <line x1="{n(cx - reach * dx)}" y1="{n(cy - reach * dy)}" x2="{n(cx + reach * dx)}" y2="{n(cy + reach * dy)}"/>' for dx, dy in axes[1:])}
   </g>
   <g stroke="{c['outline']}" stroke-width="0.45" stroke-linejoin="round">
     <path fill-rule="evenodd" d="{cup}"/>
     <path d="{handle}"/>
   </g>
-  <g fill="{c['point_fill']}" stroke="{c['point']}" stroke-width="0.3">
-{chr(10).join(f'    <rect x="{n(x - sq / 2)}" y="{n(y - sq / 2)}" width="{n(sq)}" height="{n(sq)}"/>' for x, y in marks)}
-    <circle cx="{n(cx)}" cy="{n(cy)}" r="1.2"/>
-    <circle cx="{n(hx)}" cy="{n(hy)}" r="1.2"/>
+  <g fill="{c['mark_fill']}" stroke="{c['mark']}" stroke-width="0.25">
+{chr(10).join(f'    <rect x="{n(x - sq / 2)}" y="{n(y - sq / 2)}" width="{n(sq)}" height="{n(sq)}"/>' for x, y in corners)}
+{chr(10).join(f'    <circle cx="{n(x)}" cy="{n(y)}" r="{n(dot)}"/>' for x, y in touches)}
   </g>
-  <g fill="{c['point']}">
-    <circle cx="{n(cx)}" cy="{n(cy)}" r="0.35"/>
-    <circle cx="{n(hx)}" cy="{n(hy)}" r="0.35"/>
+  <g fill="{c['outline']}">
+    <circle cx="{n(cx)}" cy="{n(cy)}" r="0.4"/>
+    <circle cx="{n(hx)}" cy="{n(hy)}" r="0.4"/>
   </g>
 </svg>
 """
