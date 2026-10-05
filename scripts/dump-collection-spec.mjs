@@ -159,7 +159,7 @@ function render(regions, schema) {
         `        <tr><td><code>${esc(r.path)}</code></td><td>${esc(r.type)}</td><td class="num">${r.required ? "O" : "—"}</td><td>${r.constraint}</td></tr>`);
       const ix = indexes.filter((i) => i.name !== "_id_").map(indexText);
       parts.push(
-        `      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>`,
+        `      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>`,
         ...(body.length ? body : [`        <tr><td colspan="4">validator 없음</td></tr>`]),
         `      </tbody><caption>표 8.2.${n} <code>${esc(name)}</code>${ix.length ? ` · 인덱스 ${ix.join(" · ")}` : ""}</caption></table></div>`,
       );

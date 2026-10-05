@@ -620,7 +620,7 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
     <ol id="tocList"></ol>
   </nav>
 
-  <main class="sheet" id="doc" data-doc-pages="174" data-doc-paged-at="2026-10-05">
+  <main class="sheet" id="doc" data-doc-pages="228" data-doc-paged-at="2026-10-05">
 
 
     <!-- 표지와 문서정보 — 화면에서는 감추고 PDF에서만 나온다. -->
@@ -6307,7 +6307,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
       <code>career_views.configuration</code>에 둔다. 관계·수식·롤업 결과는 커리어 기록과
       관계 컬렉션에 연결한다. AI 편집 제안의 상태와 기준 버전은
       <code>career_ai_proposals</code>에 남긴다.</p>
-      <h4 data-page="158">■ 컬렉션 목록</h4>
+      <h4 data-page="156">■ 컬렉션 목록</h4>
       <div class="table-wrap"><table><thead><tr><th>영역</th><th>컬렉션</th><th>개수</th></tr></thead><tbody>
         <tr><td>계정·인증</td><td><code>plans</code>, <code>users</code>, <code>consents</code>, <code>usage_counters</code>, <code>identity_oauth_accounts</code>, <code>identity_sessions</code></td><td class="num">6</td></tr>
         <tr><td>커리어 기록</td><td><code>career_categories</code>, <code>career_records</code>, <code>career_views</code>, <code>record_links</code>, <code>record_usages</code>, <code>revisions</code>, <code>skills</code>, <code>skill_evidence</code></td><td class="num">8</td></tr>
@@ -6326,14 +6326,14 @@ POST /v1/assets/ast_77/signed-url</code></pre>
       <p>각 컬렉션의 필드와 인덱스는 아래 표와 같다. 표는 마이그레이션을 모두 적용한 스키마의 validator와 인덱스에서 생성한다.</p>
       <!-- collection-spec:auto — 여기서부터 scripts/dump-collection-spec.mjs 가 생성 -->
       <h4 data-page="0">■ 계정·인증</h4>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>code</code></td><td>문자열</td><td class="num">O</td><td><code>free</code> · <code>pro</code> · <code>team</code> · 최대 255자</td></tr>
         <tr><td><code>generationQuota</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>features</code></td><td>객체</td><td class="num">O</td><td></td></tr>
         <tr><td><code>isPublicListed</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.1 <code>plans</code> · 인덱스 <code>code ↑</code> (유일)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>email</code></td><td>문자열</td><td class="num">O</td><td>최대 320자</td></tr>
         <tr><td><code>displayName</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
@@ -6353,7 +6353,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>notificationPreferences.traffic</code></td><td>참거짓</td><td class="num">—</td><td></td></tr>
         <tr><td><code>writeVersion</code></td><td>정수</td><td class="num">—</td><td>≥ 0</td></tr>
       </tbody><caption>표 8.2.2 <code>users</code> · 인덱스 <code>email ↑</code> (유일) · <code>planId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>scope</code></td><td>문자열</td><td class="num">O</td><td><code>job_posting_analysis</code> · <code>career_records</code> · 최대 255자</td></tr>
@@ -6361,14 +6361,14 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>grantedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>revokedAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
       </tbody><caption>표 8.2.3 <code>consents</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, scope ↑</code> (유일 · 부분) · <code>userId ↑, scope ↑, revokedAt ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>periodStart</code></td><td>문자열</td><td class="num">O</td><td>형식 <code>^\d{4}-\d{2}-\d{2}$</code></td></tr>
         <tr><td><code>used</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>resetsAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.4 <code>usage_counters</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, periodStart ↑</code> (유일)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>provider</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
@@ -6377,7 +6377,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>linkedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>lastLoginAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
       </tbody><caption>표 8.2.5 <code>identity_oauth_accounts</code> · 인덱스 <code>provider ↑, providerAccountId ↑</code> (유일) · <code>userId ↑, provider ↑</code> (유일)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>tokenHash</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
@@ -6387,7 +6387,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.6 <code>identity_sessions</code> · 인덱스 <code>tokenHash ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>tokenHash ↑, expiresAt ↑</code> · <code>userId ↑, createdAt ↓</code> · <code>expiresAt ↑</code> (만료 0초)</caption></table></div>
       <h4 data-page="0">■ 커리어 기록</h4>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>key</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
@@ -6400,7 +6400,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>version</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.7 <code>career_categories</code> · 인덱스 <code>userId ↑, key ↑</code> (유일 · 부분) · <code>key ↑</code> (유일 · 부분)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>categoryId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6426,7 +6426,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>propertyValueTombstones</code></td><td>객체</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>editorMigratedAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
       </tbody><caption>표 8.2.8 <code>career_records</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, createIdempotencyKey ↑</code> (유일 · 부분) · <code>userId ↑, categoryId ↑</code> · <code>categoryId ↑</code> · <code>userId ↑, deletedAt ↑, categoryId ↑, updatedAt ↓, _id ↓</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>categoryId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6441,7 +6441,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>version</code></td><td>정수</td><td class="num">—</td><td>≥ 1</td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">—</td><td></td></tr>
       </tbody><caption>표 8.2.9 <code>career_views</code> · 인덱스 <code>userId ↑, categoryId ↑, name ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, categoryId ↑, sortOrder ↑</code> · <code>categoryId ↑</code> · <code>userId ↑, categoryId ↑, configuration.order ↑, _id ↑</code> (부분) · <code>userId ↑, _id ↑, configuration.version ↑</code> (부분)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>fromRecordId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6449,7 +6449,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>relation</code></td><td>문자열</td><td class="num">O</td><td><code>related</code> · <code>parent</code> · <code>duplicate_of</code> · 최대 255자</td></tr>
         <tr><td><code>createdBy</code></td><td>문자열</td><td class="num">O</td><td><code>user</code> · <code>ai</code></td></tr>
       </tbody><caption>표 8.2.10 <code>record_links</code> · 인덱스 <code>userId ↑, fromRecordId ↑, toRecordId ↑, relation ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, toRecordId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>recordId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6457,7 +6457,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>quotedText</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>firstUsedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.11 <code>record_usages</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recordId ↑, blockId ↑</code> (유일) · <code>userId ↑, blockId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>portfolioId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6472,7 +6472,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>summary</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.12 <code>revisions</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>blockId ↑</code> · <code>proposalId ↑</code> · <code>revertedRevisionId ↑</code> · <code>userId ↑, portfolioId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>name</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
@@ -6483,7 +6483,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>lastUsedAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>strength</code></td><td>문자열</td><td class="num">O</td><td><code>weak</code> · <code>supported</code> · <code>strong</code></td></tr>
       </tbody><caption>표 8.2.13 <code>skills</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, name ↑</code> (유일)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>skillId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6492,7 +6492,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>extractedSpan</code></td><td>객체</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.14 <code>skill_evidence</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, skillId ↑, recordId ↑</code> (유일) · <code>userId ↑, recordId ↑</code></caption></table></div>
       <h4 data-page="0">■ 커리어 편집</h4>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>recordId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6506,7 +6506,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>actor</code></td><td>문자열</td><td class="num">O</td><td><code>user</code> · <code>ai</code> · <code>migration</code></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.15 <code>career_document_snapshots</code> · 인덱스 <code>recordId ↑, version ↓</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>recordId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6520,7 +6520,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>receivedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>compactedAt</code></td><td>날짜</td><td class="num">O</td><td>null 허용</td></tr>
       </tbody><caption>표 8.2.16 <code>career_document_updates</code> · 인덱스 <code>recordId ↑, clientId ↑, clientSequence ↑</code> (유일) · <code>recordId ↑, serverSequence ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>recordId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6533,7 +6533,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>expiresAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.17 <code>career_record_revisions</code> · 인덱스 <code>recordId ↑, createdAt ↓</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>sourceRecordId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6546,7 +6546,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.18 <code>career_record_relations</code> · 인덱스 <code>userId ↑, sourceRecordId ↑, sourcePropertyId ↑, targetRecordId ↑</code> (유일) · <code>userId ↑, targetRecordId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>recordId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6569,7 +6569,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.19 <code>career_ai_proposals</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recordId ↑, status ↑</code> · <code>expiresAt ↑</code> (만료 0초)</caption></table></div>
       <h4 data-page="0">■ 채용 공고</h4>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>name</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>domain</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
@@ -6590,7 +6590,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>importRunId</code></td><td>문자열</td><td class="num">—</td><td>최대 64자</td></tr>
         <tr><td><code>sourceHash</code></td><td>문자열</td><td class="num">—</td><td>형식 <code>^[a-f0-9]{64}$</code> · 최대 64자 · 최소 64자</td></tr>
       </tbody><caption>표 8.2.20 <code>companies</code> · 인덱스 <code>dedupeKey ↑</code> (유일 · 부분) · <code>importRunId ↑, _id ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>companyId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>source</code></td><td>문자열</td><td class="num">O</td><td><code>api</code> · <code>partner</code> · <code>user_input</code> · 최대 255자</td></tr>
@@ -6624,7 +6624,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>importRunId</code></td><td>문자열</td><td class="num">—</td><td>최대 64자</td></tr>
         <tr><td><code>sourceHash</code></td><td>문자열</td><td class="num">—</td><td>형식 <code>^[a-f0-9]{64}$</code> · 최대 64자 · 최소 64자</td></tr>
       </tbody><caption>표 8.2.21 <code>job_postings</code> · 인덱스 <code>dedupeHash ↑</code> (유일) · <code>source ↑, externalId ↑</code> (유일 · 부분) · <code>experienceMinYears ↑</code> · <code>expiresAt ↑</code> · <code>createdAt ↑</code> · <code>jobFamily ↑, locationRegion ↑</code> · <code>jobFamily ↑</code> · <code>locationRegion ↑</code> · <code>companyId ↑</code> · <code>importRunId ↑, _id ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>jobPostingId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>orderNo</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
@@ -6637,7 +6637,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>importRunId</code></td><td>문자열</td><td class="num">—</td><td>최대 64자</td></tr>
         <tr><td><code>sourceHash</code></td><td>문자열</td><td class="num">—</td><td>형식 <code>^[a-f0-9]{64}$</code> · 최대 64자 · 최소 64자</td></tr>
       </tbody><caption>표 8.2.22 <code>job_posting_requirements</code> · 인덱스 <code>jobPostingId ↑, axis ↑</code> · <code>jobPostingId ↑, orderNo ↑</code> · <code>importRunId ↑, _id ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>provider</code></td><td>문자열</td><td class="num">O</td><td><code>greenhouse</code> · <code>lever</code> · <code>ashby</code> · <code>workable</code> · <code>greeting</code> · <code>work24</code> · <code>work24web</code> · 최대 255자</td></tr>
         <tr><td><code>token</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
@@ -6653,7 +6653,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>importRunId</code></td><td>문자열</td><td class="num">—</td><td>최대 64자</td></tr>
         <tr><td><code>sourceHash</code></td><td>문자열</td><td class="num">—</td><td>형식 <code>^[a-f0-9]{64}$</code> · 최대 64자 · 최소 64자</td></tr>
       </tbody><caption>표 8.2.23 <code>job_sources</code> · 인덱스 <code>provider ↑, token ↑</code> (유일) · <code>provider ↑, token ↑</code> · <code>importRunId ↑, _id ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>queryText</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
@@ -6662,7 +6662,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.24 <code>recent_searches</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, createdAt ↓</code></caption></table></div>
       <h4 data-page="0">■ 제작·매칭</h4>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>jobPostingId</code></td><td>UUID 문자열</td><td class="num">—</td><td>null 허용</td></tr>
@@ -6684,7 +6684,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>history.requirements</code></td><td>배열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>history.archivedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.25 <code>job_analyses</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분) · <code>userId ↑, status ↑</code> · <code>jobPostingId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>jobAnalysisId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6698,7 +6698,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.26 <code>brews</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, status ↑</code> · <code>userId ↑, jobAnalysisId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>type</code></td><td>문자열</td><td class="num">O</td><td><code>interview</code> · <code>recipe</code> · 최대 255자</td></tr>
@@ -6713,7 +6713,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.27 <code>brew_jobs</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분) · <code>userId ↑, type ↑, createdAt ↓</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>brewId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6726,7 +6726,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>isSelected</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.28 <code>brew_sources</code> · 인덱스 <code>userId ↑, brewId ↑, recordId ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, brewId ↑, rank ↑</code> (유일 · 부분) · <code>userId ↑, recordId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>companyId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6739,7 +6739,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>confidence</code></td><td>문자열</td><td class="num">O</td><td><code>low</code> · <code>medium</code> · <code>high</code></td></tr>
         <tr><td><code>basisFactIds</code></td><td>임의 값</td><td class="num">O</td><td>null 허용</td></tr>
       </tbody><caption>표 8.2.29 <code>company_research_items</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, companyId ↑, kind ↑, capturedAt ↓</code> · <code>companyId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>jobPostingId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6748,7 +6748,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>memo</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.30 <code>interests</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, jobPostingId ↑</code> (유일) · <code>jobPostingId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>jobPostingId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6758,7 +6758,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>computedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>nextAction</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.31 <code>match_scores</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, jobPostingId ↑</code> (유일) · <code>jobPostingId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>requirementId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>coverage</code></td><td>문자열</td><td class="num">O</td><td><code>covered</code> · <code>partial</code> · <code>missing</code></td></tr>
@@ -6767,7 +6767,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.32 <code>requirement_coverages</code> · 인덱스 <code>userId ↑</code> · <code>requirementId ↑</code></caption></table></div>
       <h4 data-page="0">■ AI 인터뷰</h4>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>brewId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6781,7 +6781,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.33 <code>interview_sessions</code> · 인덱스 <code>userId ↑, brewId ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>interviewSessionId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6796,7 +6796,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>rationale</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
       </tbody><caption>표 8.2.34 <code>questions</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, interviewSessionId ↑, orderNo ↑</code> (유일 · 부분) · <code>replacedFromId ↑</code> · <code>requirementId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>questionId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6808,7 +6808,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>version</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.35 <code>answers</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, questionId ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분) · <code>createdRecordId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>answerId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6819,7 +6819,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.36 <code>answer_record_changes</code> · 인덱스 <code>userId ↑, answerId ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recordId ↑</code></caption></table></div>
       <h4 data-page="0">■ 레시피</h4>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>code</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
         <tr><td><code>name</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
@@ -6832,7 +6832,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>industries</code></td><td>임의 값</td><td class="num">O</td><td>null 허용</td></tr>
         <tr><td><code>isActive</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.37 <code>templates</code> · 인덱스 <code>code ↑</code> (유일)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>brewId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6846,7 +6846,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>portfolioPlan</code></td><td>객체</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>planningManifest</code></td><td>객체</td><td class="num">—</td><td>null 허용</td></tr>
       </tbody><caption>표 8.2.38 <code>recipes</code> · 인덱스 <code>userId ↑, brewId ↑, version ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>recipeId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6859,7 +6859,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>editedBy</code></td><td>문자열</td><td class="num">O</td><td><code>ai</code> · <code>user</code></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.39 <code>recipe_sections</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recipeId ↑, orderNo ↑</code> (유일)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>recipeSectionId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6870,7 +6870,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>editedBy</code></td><td>문자열</td><td class="num">O</td><td><code>ai</code> · <code>user</code></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.40 <code>recipe_items</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recipeSectionId ↑, orderNo ↑</code> (유일)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>recipeId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6881,7 +6881,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>targetPath</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.41 <code>recipe_evidence_paths</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recipeId ↑, sourceType ↑, sourceId ↑, recipeItemId ↑</code> (유일) · <code>userId ↑, recipeItemId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>recipeId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6891,7 +6891,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>diff</code></td><td>배열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.42 <code>recipe_revisions</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recipeId ↑, createdAt ↓, _id ↓</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>recipeId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6900,7 +6900,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.43 <code>recipe_unused_sources</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recipeId ↑, recordId ↑</code> (유일) · <code>userId ↑, recordId ↑</code></caption></table></div>
       <h4 data-page="0">■ 생성·편집</h4>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>brewId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6912,7 +6912,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>styleOverrides</code></td><td>객체</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.44 <code>portfolios</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, status ↑</code> · <code>userId ↑, updatedAt ↓, _id ↓</code> · <code>currentDeploymentId ↑</code> · <code>templateId ↑</code> · <code>userId ↑, brewId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>portfolioId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6921,7 +6921,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>visible</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
         <tr><td><code>hiddenReason</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
       </tbody><caption>표 8.2.45 <code>portfolio_sections</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑, orderNo ↑</code> (유일) · <code>userId ↑, portfolioId ↑, recipeSectionId ↑</code> (유일 · 부분) · <code>recipeSectionId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>portfolioSectionId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6933,7 +6933,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>locked</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
         <tr><td><code>orderNo</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
       </tbody><caption>표 8.2.46 <code>blocks</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioSectionId ↑, orderNo ↑, _id ↑</code> · <code>userId ↑, sourceRecordId ↑</code> · <code>sourceRecordId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>brewId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6952,7 +6952,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>styleOverrides</code></td><td>객체</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.47 <code>generation_jobs</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분) · <code>userId ↑, status ↑</code> · <code>portfolioId ↑</code> · <code>templateId ↑</code> · <code>userId ↑, brewId ↑</code> · <code>userId ↑, recipeId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>generationJobId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6961,7 +6961,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>sourceQuote</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.48 <code>generation_sentence_evidence</code> · 인덱스 <code>userId ↑, generationJobId ↑, blockId ↑, recipeEvidencePathId ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>recipeEvidencePathId ↑</code> · <code>userId ↑, blockId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>generationJobId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6971,7 +6971,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.49 <code>generation_usage_ledger</code> · 인덱스 <code>userId ↑, generationJobId ↑, reason ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, usageCounterId ↑</code></caption></table></div>
       <h4 data-page="0">■ 지면·레이아웃</h4>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>portfolioId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -6992,7 +6992,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>styleSpecSnapshot</code></td><td>객체</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>designPrinciplesVersion</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
       </tbody><caption>표 8.2.50 <code>generated_pages</code> · 인덱스 <code>portfolioId ↑, revision ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>generationJobId ↑</code> (유일 · 부분) · <code>portfolioId ↑, revision ↓</code> · <code>userId ↑, portfolioId ↑</code> · <code>userId ↑, generationJobId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>portfolioId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7007,7 +7007,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>instruction</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
       </tbody><caption>표 8.2.51 <code>layout_specs</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑</code> (유일 · 부분) · <code>userId ↑, portfolioId ↑, createdAt ↓, batchId ↑, orderNo ↑</code> · <code>generationJobId ↑</code> · <code>seedTemplateId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>portfolioId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7024,7 +7024,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>patches</code></td><td>배열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>instruction</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
       </tbody><caption>표 8.2.52 <code>portfolio_edit_proposals</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑, status ↑, expiresAt ↑</code> · <code>userId ↑, blockId ↑</code> · <code>userId ↑, sourceRecordId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>portfolioId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7033,7 +7033,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.53 <code>portfolio_snapshots</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑, createdAt ↓, _id ↓</code></caption></table></div>
       <h4 data-page="0">■ 배포·미디어</h4>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>portfolioId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7047,7 +7047,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>snapshot</code></td><td>객체</td><td class="num">O</td><td></td></tr>
         <tr><td><code>seo</code></td><td>객체</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.54 <code>deployments</code> · 인덱스 <code>subdomain ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑, version ↑</code> (유일) · <code>customDomain ↑</code> (유일 · 부분) · <code>userId ↑, portfolioId ↑, version ↓</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>portfolioId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7056,7 +7056,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>expiresAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.55 <code>deployment_slug_redirects</code> · 인덱스 <code>oldSlug ↑</code> (유일) · <code>oldSlug ↑, expiresAt ↑</code> · <code>userId ↑, portfolioId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>portfolioId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7069,7 +7069,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>revokedAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.56 <code>export_assets</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑</code> (유일 · 부분) · <code>userId ↑, portfolioId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>portfolioId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7085,7 +7085,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.57 <code>export_jobs</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, idempotencyKey ↑</code> (유일) · <code>assetId ↑</code> · <code>deploymentId ↑</code> · <code>userId ↑, portfolioId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>storageKey</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
@@ -7096,7 +7096,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>checksum</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.58 <code>media_assets</code> · 인덱스 <code>userId ↑, checksum ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, createdAt ↓</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>mediaAssetId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7108,7 +7108,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.59 <code>media_variants</code> · 인덱스 <code>mediaAssetId ↑, width ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>mediaAssetId ↑, width ↑</code> · <code>userId ↑, mediaAssetId ↑</code></caption></table></div>
       <h4 data-page="0">■ 분석</h4>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>deploymentId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7119,7 +7119,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>occurredAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>receivedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.60 <code>analytics_event_receipts</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>visitorHash ↑, receivedAt ↓</code> · <code>userId ↑, deploymentId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>portfolioId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7127,7 +7127,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>label</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>note</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.61 <code>annotations</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>deploymentId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7140,7 +7140,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>completed</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
         <tr><td><code>durationMs</code></td><td>정수</td><td class="num">—</td><td>≥ 0 · null 허용</td></tr>
       </tbody><caption>표 8.2.62 <code>visit_events</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>eventId ↑</code> (유일 · 부분) · <code>userId ↑, deploymentId ↑, startedAt ↓</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>visitEventId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7149,7 +7149,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>eventId</code></td><td>UUID 문자열</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>occurredAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.63 <code>conversion_events</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>eventId ↑</code> (유일 · 부분) · <code>userId ↑, visitEventId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>portfolioId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7157,14 +7157,14 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>period</code></td><td>문자열</td><td class="num">O</td><td><code>7d</code> · <code>30d</code> · <code>all</code></td></tr>
         <tr><td><code>isDefault</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.64 <code>dashboard_views</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑, name ↑</code> (유일) · <code>userId ↑, portfolioId ↑</code> (유일 · 부분)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>name</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
         <tr><td><code>numeratorKey</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>denominatorKey</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.65 <code>derived_metrics</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, name ↑</code> (유일)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>deploymentId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7175,7 +7175,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>suggestions</code></td><td>배열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>generatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.66 <code>insights</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, deploymentId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>deploymentId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7184,7 +7184,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>value</code></td><td>실수</td><td class="num">O</td><td></td></tr>
         <tr><td><code>sampleSize</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
       </tbody><caption>표 8.2.67 <code>metrics_daily</code> · 인덱스 <code>userId ↑, deploymentId ↑, date ↑, metricKey ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, deploymentId ↑, metricKey ↑, date ↓</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>kind</code></td><td>문자열</td><td class="num">O</td><td><code>deadline</code> · <code>saved_search</code> · <code>generation</code> · <code>traffic</code></td></tr>
@@ -7199,7 +7199,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>deliveredAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
       </tbody><caption>표 8.2.68 <code>notifications</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, dedupeKey ↑, dedupeDate ↑</code> (유일) · <code>deliveryStatus ↑, nextAttemptAt ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>queryText</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
@@ -7210,7 +7210,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.69 <code>saved_searches</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, name ↑</code> (유일)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>visitEventId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7221,7 +7221,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>eventId</code></td><td>UUID 문자열</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>occurredAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.70 <code>section_views</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>eventId ↑</code> (유일 · 부분) · <code>userId ↑, portfolioSectionId ↑</code> · <code>userId ↑, visitEventId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>dashboardViewId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7232,7 +7232,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>position</code></td><td>객체</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.71 <code>widgets</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>derivedMetricId ↑</code> · <code>userId ↑, dashboardViewId ↑</code></caption></table></div>
       <h4 data-page="0">■ 운영·플랫폼</h4>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>subjectId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -7245,14 +7245,14 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>restoration</code></td><td>객체</td><td class="num">O</td><td></td></tr>
         <tr><td><code>phase</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.72 <code>account_deletion_requests</code> · 인덱스 <code>subjectId ↑</code> (유일 · 부분) · <code>userId ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>requestId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>phase</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
         <tr><td><code>affectedRows</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>occurredAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.73 <code>account_deletion_events</code> · 인덱스 <code>requestId ↑, phase ↑</code> (유일)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td><code>saved_searches</code> · <code>expire_postings</code> · <code>notification_batch</code> · <code>analytics_daily</code> · <code>deletion_grace</code> · <code>retention</code> · <code>job_ingest</code> · <code>posting_facts</code> · 최대 255자</td></tr>
         <tr><td><code>intervalSeconds</code></td><td>정수</td><td class="num">O</td><td>≥ 60 · ≤ 604800</td></tr>
         <tr><td><code>nextRunAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
@@ -7261,7 +7261,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>lastStatus</code></td><td>문자열</td><td class="num">—</td><td><code>succeeded</code> · <code>failed</code> · <code>null</code> · null 허용</td></tr>
         <tr><td><code>failureCount</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
       </tbody><caption>표 8.2.74 <code>scheduled_job_definitions</code> · 인덱스 <code>nextRunAt ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>jobKey</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
         <tr><td><code>scheduledFor</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
@@ -7273,7 +7273,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>result</code></td><td>객체</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.75 <code>scheduled_job_runs</code> · 인덱스 <code>jobKey ↑, scheduledFor ↑</code> (유일) · <code>status ↑, scheduledFor ↑</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>name</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>checksum</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
@@ -7281,13 +7281,13 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>completedSteps</code></td><td>배열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>appliedAt</code></td><td>날짜</td><td class="num">—</td><td></td></tr>
       </tbody><caption>표 8.2.76 <code>schema_migrations</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>owner</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>token</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>expiresAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.77 <code>migration_locks</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>payloadId</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
@@ -7295,7 +7295,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>bytes</code></td><td>이진</td><td class="num">O</td><td></td></tr>
         <tr><td><code>sha256</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.78 <code>snapshot_chunks</code> · 인덱스 <code>payloadId ↑, part ↑</code> (유일)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>visitorHash</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>targetId</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
@@ -7303,14 +7303,14 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>count</code></td><td>정수 · 실수</td><td class="num">O</td><td></td></tr>
         <tr><td><code>expiresAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.79 <code>analytics_rate_limits</code> · 인덱스 <code>expiresAt ↑</code> (만료 0초) · <code>visitorHash ↑, targetId ↑, period ↑</code> (유일)</caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>schemaHash</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>tables</code></td><td>객체</td><td class="num">O</td><td></td></tr>
         <tr><td><code>validation</code></td><td>객체</td><td class="num">O</td><td></td></tr>
         <tr><td><code>completed</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.80 <code>import_runs</code></caption></table></div>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>runId</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>tableName</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
@@ -7318,7 +7318,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>processedCount</code></td><td>정수 · 실수</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.81 <code>import_checkpoints</code> · 인덱스 <code>runId ↑, tableName ↑</code> (유일)</caption></table></div>
       <h4 data-page="0">■ 비동기 이벤트</h4>
-      <div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+      <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>topic</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>payload</code></td><td>객체</td><td class="num">O</td><td></td></tr>
@@ -7336,11 +7336,11 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td><code>userId</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
       </tbody><caption>표 8.2.82 <code>outbox_events</code> · 인덱스 <code>idempotencyKey ↑</code> (유일) · <code>availableAt ↑, createdAt ↑</code> · <code>state ↑, availableAt ↑, _id ↑</code> · <code>state ↑, leaseUntil ↑</code></caption></table></div>
       <!-- /collection-spec:auto -->
-      <h4 data-page="159">■ 검증과 일관성</h4>
+      <h4 data-page="212">■ 검증과 일관성</h4>
       <ul><li>요청·응답은 <code>packages/contracts</code>의 Zod 스키마로 검증한다. 저장 문서는 컬렉션 validator와 인덱스를 적용한다.</li>
       <li>여러 문서에 걸친 상태 변경은 MongoDB 트랜잭션으로 묶는다. 작업 발행은 <code>outbox_events</code>를 같은 트랜잭션에 기록하고 디스패처가 Redis 큐로 전달한다.</li>
       <li>참조 대상의 존재와 소유권은 서비스가 검증한다.</li></ul>
-      <h3 data-page="159">8.3 로그파일 설계</h3>
+      <h3 data-page="213">8.3 로그파일 설계</h3>
       <p>
         모든 기능과 서비스가 정상 동작하는지 확인하기 위해 실행 로그와 운영 로그를 파일로
         저장한다. 로그는 JSON 한 줄에 한 사건으로 기록하며, 사람이 읽는 형식이 아닌 기계가
@@ -7377,7 +7377,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
  "error":{"name":"GenerationValidationError","statusCode":422},"msg":"request failed"}</code></pre>
       </figure>
 
-      <h3 data-page="160">8.4 오류코드 및 오류파일 설계</h3>
+      <h3 data-page="214">8.4 오류코드 및 오류파일 설계</h3>
       <p>
         발생할 수 있는 모든 오류를 식별하여 아래와 같이 코드로 정의한다. 오류가 발생할 때마다
         기록하는 오류 파일의 포맷과 파일명은 8.3의 로그파일 설계를 따른다.
@@ -7426,11 +7426,11 @@ POST /v1/assets/ast_77/signed-url</code></pre>
     <section class="sec" id="metrics">
       <div class="sec-head">
         <span class="num">09</span>
-        <h2 data-page="162">성능시험지표</h2>
+        <h2 data-page="216">성능시험지표</h2>
         <span class="aside">서비스 로컬 측정 · 모델 미측정</span>
       </div>
 
-      <h3 data-page="162">9.1 AI서비스 성능평가지표</h3>
+      <h3 data-page="216">9.1 AI서비스 성능평가지표</h3>
       <p>
         개발할 AI서비스의 성능을 측정하기 위한 평가지표를 아래와 같이 발굴하여 정의한다.
         평가항목마다 시험내용 · 시험환경 · 시험절차를 함께 작성한다.
@@ -7451,7 +7451,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         </table>
       </div>
 
-      <h4 data-page="162">■ 근거 없는 수치 차단율</h4>
+      <h4 data-page="216">■ 근거 없는 수치 차단율</h4>
       <p>
         본 서비스는 채용 문서를 생성한다. 지어낸 수치가 <strong>단 한 건이라도</strong>
         공개되면 사용자에게 실질적인 피해가 발생하므로 목표치를 100%로 정한다.
@@ -7495,7 +7495,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         </table>
       </div>
 
-      <h4 data-page="164">■ 응답 시간 — 2026-09-28 MongoDB 로컬 시험</h4>
+      <h4 data-page="218">■ 응답 시간 — 2026-09-28 MongoDB 로컬 시험</h4>
       <div class="table-wrap">
         <table>
           <thead><tr><th>경로</th><th class="num">예산</th><th class="num">측정 p95</th><th>결과</th></tr></thead>
@@ -7513,7 +7513,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
       통과했다. 실행 명령은 <code>EXPRESSO_LOAD_TEST=1 node scripts/test-infra.mjs
       test/load/performance-budget.test.ts --disableConsoleIntercept</code>다.</p>
 
-      <h3 data-page="164">9.2 AI학습 성능 (ROC)</h3>
+      <h3 data-page="218">9.2 AI학습 성능 (ROC)</h3>
       <p>학습 모델의 성능은 추천 순위 · 후보 선별 · 점수 예측 · 처리 효율을 구분하여 평가한다.
       주요 지표는 NDCG@10이며, 설계서 양식이 요구하는 ROC · AUC는 보조 지표로 함께 산출한다.
       ROC는 적합도 라벨 60점 이상을 양성으로 두고, 예측 점수의 임계값을
@@ -7526,7 +7526,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td>p95 지연 · 처리량</td><td>요청의 95%가 완료되는 시간과 단위 시간당 처리량</td><td>지연은 낮게 · 처리량은 높게</td><td>운영 효율</td></tr>
         <tr><td>ROC · AUC</td><td>60점 이상 쌍을 나머지와 구분하는가</td><td>높을수록 좋음</td><td>양식 보조 지표</td></tr>
       </tbody></table></div>
-      <h4 data-page="165">■ 평가 조건</h4>
+      <h4 data-page="219">■ 평가 조건</h4>
       <ul class="check">
         <li>점수와 순위는 교사 라벨을 기준으로 평가한다.</li>
         <li>공고쌍은 같은 프로필 안에서 정답 점수 차이가 5점 이상인 쌍으로 구성한다.</li>
@@ -7535,7 +7535,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <li>모델은 검증 분할에서 임계값과 하이퍼파라미터를 정하고, 평가 분할에서 한 번만 평가한다.</li>
         <li>사람 평가와의 일치와 루브릭 가중치의 타당성은 라벨 구축 후 후속 검증으로 확인한다.</li>
       </ul>
-      <h4 data-page="165">■ 파일럿 학습 조건</h4>
+      <h4 data-page="219">■ 파일럿 학습 조건</h4>
       <p>
         2026-09-04에 수행한 파일럿 학습의 결과를 기록한다. 합성 프로필 1,000개에 공고 10개씩을
         붙인 10,000쌍을 사용하였고, 후보 공고는 프로필마다 같은 직무 5개 · 인접 직무 3개 ·
@@ -7558,7 +7558,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td>실행 장비</td><td>RTX 5080 · CUDA 12.8</td><td>RTX 5080 · CUDA 12.8</td></tr>
       </tbody></table></div>
 
-      <h4 data-page="166">■ 파일럿 평가 결과</h4>
+      <h4 data-page="220">■ 파일럿 평가 결과</h4>
       <div class="table-wrap"><table><thead><tr><th>모델</th><th class="num">NDCG@10 ↑</th><th class="num">순서 일치율 ↑</th><th class="num">MAP@10 ↑</th><th class="num">MRR@10 ↑</th></tr></thead><tbody>
         <tr><td>Word TF-IDF</td><td class="num">0.8653</td><td class="num">0.5870</td><td class="num">0.4955</td><td class="num">0.5581</td></tr>
         <tr><td>BM25</td><td class="num">0.8635</td><td class="num">0.5827</td><td class="num">0.4371</td><td class="num">0.4647</td></tr>
@@ -7606,7 +7606,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         Cross-Encoder 0.9383이고 MAE는 각각 10.41, 10.35이다.
       </p>
 
-      <h4 data-page="169">■ 지표별 측정 현황</h4>
+      <h4 data-page="223">■ 지표별 측정 현황</h4>
       <div class="table-wrap"><table><thead><tr><th>모델</th><th>지표</th><th>파일럿 측정값</th></tr></thead><tbody>
         <tr><td rowspan="6">A</td><td>NDCG@10</td><td>Bi-Encoder+MLP 0.9555 · Cross-Encoder 0.9608</td></tr>
         <tr><td>MAE</td><td>Bi-Encoder+MLP 10.54 · Cross-Encoder 10.51</td></tr>
@@ -7623,13 +7623,13 @@ POST /v1/assets/ast_77/signed-url</code></pre>
     <section class="sec" id="env">
       <div class="sec-head">
         <span class="num">10</span>
-        <h2 data-page="170">개발환경 구성</h2>
+        <h2 data-page="224">개발환경 구성</h2>
         <span class="aside">양식 10장</span>
       </div>
 
-      <h3 data-page="170">10.1 개발환경</h3>
+      <h3 data-page="224">10.1 개발환경</h3>
       <p>본 프로젝트의 개발환경은 아래와 같다.</p>
-      <h4 data-page="170">■ 서버</h4>
+      <h4 data-page="224">■ 서버</h4>
       <div class="table-wrap">
         <table>
           <thead><tr><th>구분</th><th>개발환경</th><th>규격</th></tr></thead>
@@ -7651,7 +7651,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         </table>
       </div>
 
-      <h4 data-page="171">■ 클라이언트 · AI학습서버</h4>
+      <h4 data-page="225">■ 클라이언트 · AI학습서버</h4>
       <div class="table-wrap">
         <table>
           <thead><tr><th>구분</th><th>개발환경</th><th>규격</th></tr></thead>
@@ -7668,7 +7668,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         </table>
       </div>
 
-      <h4 data-page="171">■ LLM 프로바이더</h4>
+      <h4 data-page="225">■ LLM 프로바이더</h4>
       <div class="table-wrap">
         <table>
           <thead><tr><th><code>AI_PROVIDER</code></th><th>동작</th><th>용도</th></tr></thead>
@@ -7682,7 +7682,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         </table>
       </div>
 
-      <h4 data-page="171">■ 인프라 실행</h4>
+      <h4 data-page="225">■ 인프라 실행</h4>
       <figure class="code">
         <div class="bar">
           <span>로컬 개발 시작</span>
@@ -7701,7 +7701,7 @@ pnpm dev:backend</code></pre>
         503을 반환한다.
       </p>
 
-      <h3 data-page="172">10.2 소스디렉터리 구조</h3>
+      <h3 data-page="226">10.2 소스디렉터리 구조</h3>
       <figure class="fig">
         <div class="plate drawn"><svg class="dg" viewBox="0 0 900 317" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="모노레포 디렉터리 구조">
   <rect class="bxs" x="4" y="2" width="150" height="22" rx="7"/>
@@ -7736,7 +7736,7 @@ pnpm dev:backend</code></pre>
         <code>*.integration.test.ts</code>가 그 옆에 놓인다. 파일 이름이 곧 역할이므로
         새 모듈을 추가할 때에도 같은 구성을 따른다.
       </p>
-      <h3 data-page="172">10.3 명칭표준안 (변수, 함수, 파일명)</h3>
+      <h3 data-page="226">10.3 명칭표준안 (변수, 함수, 파일명)</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>영역</th><th>대상</th><th>규칙</th><th>예</th></tr></thead>
