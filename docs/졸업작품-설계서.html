@@ -581,6 +581,8 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
   .shot { break-inside: avoid; }
   .shot img { max-height: 148mm; object-fit: contain; object-position: top; }
   figure.code { break-inside: auto; }
+  /* 종이에는 가로 스크롤이 없다. 긴 줄은 접어서 지면 안에 남긴다. */
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; overflow: visible; }
   a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 8.5pt; color: #5a6b87; }
 }
 
@@ -620,7 +622,7 @@ svg.dg .ac  { stroke: var(--ex-slate-500); stroke-width: 1.4; fill: none; }
     <ol id="tocList"></ol>
   </nav>
 
-  <main class="sheet" id="doc" data-doc-pages="228" data-doc-paged-at="2026-10-05">
+  <main class="sheet" id="doc" data-doc-pages="263" data-doc-paged-at="2026-10-05">
 
 
     <!-- 표지와 문서정보 — 화면에서는 감추고 PDF에서만 나온다. -->
@@ -5583,7 +5585,7 @@ return { ...record, score };</code></pre>
             <tr><td>조건부 수정</td><td><code>If-Match</code>로 버전을 확인한다. 200 또는 409</td><td>7.3.3 · 7.3.12</td><td>PATCH 10 · PUT 7</td></tr>
             <tr><td>삭제</td><td>영향 범위를 먼저 알린 뒤 지운다. 204</td><td>7.3.4</td><td>DELETE 9</td></tr>
             <tr><td>비동기 접수</td><td>작업 식별자를 담아 202를 돌려준다</td><td>7.3.5 · 7.3.19 · 7.3.20</td><td>POST 75건 중 비동기</td></tr>
-            <tr><td>학습 모델 판정</td><td>판정 주체와 근거를 함께 돌려준다. 200</td><td>7.3.6</td><td>모델 서빙 경로</td></tr>
+            <tr><td>일치도 산출</td><td>공고 요건과 사용자 기록의 축별 충족 내역과 점수를 돌려준다. 200</td><td>7.3.6</td><td>일치도 경로</td></tr>
             <tr><td>스트림</td><td><code>text/event-stream</code>으로 진행을 밀어 준다</td><td>7.3.7</td><td>1건</td></tr>
             <tr><td>공개 조회</td><td>인증이 없다. 배포 스냅샷만 노출한다</td><td>7.3.8</td><td>4건</td></tr>
             <tr><td>서명 URL</td><td>만료가 있는 임시 주소를 발급한다</td><td>7.3.9</td><td>1건</td></tr>
@@ -5623,13 +5625,15 @@ return { ...record, score };</code></pre>
           <thead><tr><th>속성</th><th class="num">IN</th><th class="num">OUT</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>
             <tr><td><code>categoryId</code></td><td class="num">O</td><td class="num">—</td><td>uuid</td><td>카테고리로 거른다. 없으면 전체</td></tr>
-            <tr><td><code>status</code></td><td class="num">O</td><td class="num">—</td><td>String</td><td><code>draft</code> · <code>active</code> · <code>archived</code></td></tr>
-            <tr><td><code>q</code></td><td class="num">O</td><td class="num">—</td><td>String</td><td>제목과 본문을 검색한다</td></tr>
-            <tr><td><code>sort</code></td><td class="num">O</td><td class="num">—</td><td>String</td><td>기본값 <code>updated_desc</code></td></tr>
+            <tr><td><code>status</code></td><td class="num">O</td><td class="num">—</td><td>String</td><td><code>draft</code> · <code>organized</code> · <code>verified</code></td></tr>
+            <tr><td><code>origin</code></td><td class="num">O</td><td class="num">—</td><td>String</td><td><code>manual</code> · <code>ai</code> · <code>interview</code> · <code>import</code></td></tr>
+            <tr><td><code>q</code></td><td class="num">O</td><td class="num">—</td><td>String</td><td>제목에서 찾는다. 1 – 200자</td></tr>
+            <tr><td><code>sort</code></td><td class="num">O</td><td class="num">—</td><td>String</td><td><code>updated_desc</code> · <code>updated_asc</code> · <code>title_asc</code> · <code>period_desc</code> · <code>period_asc</code>, 기본값 <code>updated_desc</code></td></tr>
             <tr><td><code>cursor</code></td><td class="num">O</td><td class="num">—</td><td>String</td><td>이어 받을 위치</td></tr>
             <tr><td><code>limit</code></td><td class="num">O</td><td class="num">—</td><td>int</td><td>1 – 100, 기본값 50</td></tr>
             <tr><td><code>data</code></td><td class="num">—</td><td class="num">O</td><td>Array</td><td>기록 목록</td></tr>
-            <tr><td><code>nextCursor</code></td><td class="num">—</td><td class="num">O</td><td>String</td><td>다음 쪽이 없으면 null</td></tr>
+            <tr><td><code>page</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td><code>{nextCursor, hasNextPage}</code>. 다음 쪽이 없으면 <code>nextCursor</code>는 null</td></tr>
+            <tr><td><code>summary</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td><code>{total, draft, organized, verified, empty}</code>. 조건에 맞는 기록의 상태별 개수</td></tr>
           </tbody>
           <caption>표 7.3.1 기록 목록 조회의 파라메터</caption>
         </table>
@@ -5641,7 +5645,7 @@ return { ...record, score };</code></pre>
           <button class="copy" type="button">COPY</button>
         </div>
         <pre><code>전송방향 : IN
-GET /v1/career/records?categoryId=cat_2f1a&amp;status=active&amp;sort=updated_desc&amp;limit=50</code></pre>
+GET /v1/career/records?categoryId=7a1c9e42-2b3d-4f5e-8a6b-1c2d3e4f5a6b&amp;status=organized&amp;sort=updated_desc&amp;limit=50</code></pre>
       </figure>
 
       <figure class="code">
@@ -5653,26 +5657,30 @@ GET /v1/career/records?categoryId=cat_2f1a&amp;status=active&amp;sort=updated_de
 {
   &quot;data&quot;: [
     {
-      &quot;id&quot;: &quot;rec_a91f&quot;,
-      &quot;categoryId&quot;: &quot;cat_2f1a&quot;,
+      &quot;id&quot;: &quot;0b6f2a3e-5c1d-4e8a-9f27-3d4c5b6a7e81&quot;,
+      &quot;categoryId&quot;: &quot;7a1c9e42-2b3d-4f5e-8a6b-1c2d3e4f5a6b&quot;,
       &quot;categoryKey&quot;: &quot;project&quot;,
       &quot;title&quot;: &quot;사내 검색 개편&quot;,
-      &quot;status&quot;: &quot;active&quot;,
+      &quot;status&quot;: &quot;organized&quot;,
       &quot;origin&quot;: &quot;manual&quot;,
+      &quot;properties&quot;: { &quot;role&quot;: &quot;백엔드 리드&quot; },
+      &quot;bodyMd&quot;: &quot;검색 지연을 320ms에서 90ms로 줄였다.&quot;,
       &quot;isEmpty&quot;: false,
       &quot;periodFrom&quot;: &quot;2025-03-01&quot;,
       &quot;periodTo&quot;: &quot;2025-09-30&quot;,
       &quot;linkCount&quot;: 2,
       &quot;usedInCount&quot;: 3,
       &quot;version&quot;: 7,
+      &quot;createdAt&quot;: &quot;2026-08-01T01:20:00.000Z&quot;,
       &quot;updatedAt&quot;: &quot;2026-08-11T04:12:33.000Z&quot;
     }
   ],
-  &quot;nextCursor&quot;: null
+  &quot;page&quot;: { &quot;nextCursor&quot;: null, &quot;hasNextPage&quot;: false },
+  &quot;summary&quot;: { &quot;total&quot;: 1, &quot;draft&quot;: 0, &quot;organized&quot;: 1, &quot;verified&quot;: 0, &quot;empty&quot;: 0 }
 }</code></pre>
       </figure>
 
-      <p>목록은 커서 방식으로 이어 받으며 쪽 번호는 사용하지 않는다. 기록이 추가되거나 지워져도 이미 본 항목이 다시 나오거나 건너뛰이지 않기 때문이다. <code>usedInCount</code>는 그 기록을 인용한 포트폴리오 수이며, 화면의 「사용처 N곳」에 그대로 쓰인다.</p>
+      <p>목록은 커서 방식으로 이어 받으며 쪽 번호는 사용하지 않는다. 기록이 추가되거나 지워져도 이미 본 항목이 다시 나오거나 건너뛰지 않기 때문이다. <code>usedInCount</code>는 그 기록을 인용한 포트폴리오 수이며, 화면의 「사용처 N곳」에 그대로 쓰인다.</p>
 
       <h4 data-page="144">2) 기록 생성</h4>
       <p>유형 <strong>생성</strong> · <code>POST /v1/career/records</code></p>
@@ -5704,12 +5712,13 @@ GET /v1/career/records?categoryId=cat_2f1a&amp;status=active&amp;sort=updated_de
         <table>
           <thead><tr><th>속성</th><th class="num">IN</th><th class="num">OUT</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>
-            <tr><td><code>Idempotency-Key</code></td><td class="num">O</td><td class="num">—</td><td>Header</td><td>같은 키의 두 번째 요청은 첫 번째 결과를 돌려준다</td></tr>
+            <tr><td><code>Idempotency-Key</code></td><td class="num">O</td><td class="num">—</td><td>Header</td><td>필수. 같은 키로 다시 보내면 이미 만든 기록을 돌려준다</td></tr>
             <tr><td><code>categoryId</code></td><td class="num">O</td><td class="num">—</td><td>uuid</td><td>필수</td></tr>
             <tr><td><code>title</code></td><td class="num">O</td><td class="num">—</td><td>String</td><td>최대 300자, 기본값 빈 문자열</td></tr>
             <tr><td><code>properties</code></td><td class="num">O</td><td class="num">—</td><td>Object</td><td>카테고리 속성 스키마를 따른다</td></tr>
             <tr><td><code>bodyMd</code></td><td class="num">O</td><td class="num">—</td><td>String</td><td>최대 200,000자</td></tr>
-            <tr><td><code>data</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td>생성된 기록</td></tr>
+            <tr><td><code>ETag</code></td><td class="num">—</td><td class="num">O</td><td>Header</td><td>생성된 기록의 버전. 형식은 <code>"v1"</code></td></tr>
+            <tr><td><code>data</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td>생성된 기록. 처음 상태는 <code>draft</code></td></tr>
             <tr><td><code>resource</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td><code>{version, updatedAt}</code></td></tr>
           </tbody>
           <caption>표 7.3.2 기록 생성의 파라메터</caption>
@@ -5724,9 +5733,9 @@ GET /v1/career/records?categoryId=cat_2f1a&amp;status=active&amp;sort=updated_de
         <pre><code>전송방향 : IN
 Idempotency-Key: 4b1f9c2e-7a30-4d55-9c11-8e2f0a6d34bb
 {
-  &quot;categoryId&quot;: &quot;cat_2f1a&quot;,
+  &quot;categoryId&quot;: &quot;7a1c9e42-2b3d-4f5e-8a6b-1c2d3e4f5a6b&quot;,
   &quot;title&quot;: &quot;사내 검색 개편&quot;,
-  &quot;properties&quot;: { &quot;period&quot;: { &quot;from&quot;: &quot;2025-03-01&quot;, &quot;to&quot;: &quot;2025-09-30&quot; } },
+  &quot;properties&quot;: { &quot;period&quot;: { &quot;type&quot;: &quot;date&quot;, &quot;value&quot;: { &quot;start&quot;: &quot;2025-03-01&quot;, &quot;end&quot;: &quot;2025-09-30&quot;, &quot;timezone&quot;: null } } },
   &quot;bodyMd&quot;: &quot;검색 지연을 320ms에서 90ms로 줄였다.&quot;
 }</code></pre>
       </figure>
@@ -5737,23 +5746,28 @@ Idempotency-Key: 4b1f9c2e-7a30-4d55-9c11-8e2f0a6d34bb
           <button class="copy" type="button">COPY</button>
         </div>
         <pre><code>전송방향 : OUT
+HTTP 201 Created
+ETag: &quot;v1&quot;
 {
   &quot;data&quot;: {
-    &quot;id&quot;: &quot;rec_a91f&quot;,
-    &quot;categoryId&quot;: &quot;cat_2f1a&quot;,
+    &quot;id&quot;: &quot;0b6f2a3e-5c1d-4e8a-9f27-3d4c5b6a7e81&quot;,
+    &quot;categoryId&quot;: &quot;7a1c9e42-2b3d-4f5e-8a6b-1c2d3e4f5a6b&quot;,
     &quot;title&quot;: &quot;사내 검색 개편&quot;,
-    &quot;status&quot;: &quot;active&quot;,
+    &quot;status&quot;: &quot;draft&quot;,
     &quot;origin&quot;: &quot;manual&quot;,
+    &quot;properties&quot;: { &quot;period&quot;: { &quot;type&quot;: &quot;date&quot;, &quot;value&quot;: { &quot;start&quot;: &quot;2025-03-01&quot;, &quot;end&quot;: &quot;2025-09-30&quot;, &quot;timezone&quot;: null } } },
+    &quot;bodyMd&quot;: &quot;검색 지연을 320ms에서 90ms로 줄였다.&quot;,
     &quot;version&quot;: 1,
+    &quot;createdAt&quot;: &quot;2026-08-14T02:10:11.000Z&quot;,
     &quot;updatedAt&quot;: &quot;2026-08-14T02:10:11.000Z&quot;
   },
   &quot;resource&quot;: { &quot;version&quot;: 1, &quot;updatedAt&quot;: &quot;2026-08-14T02:10:11.000Z&quot; }
 }</code></pre>
       </figure>
 
-      <p><code>Idempotency-Key</code>는 16자 이상이어야 하고 안전한 문자만 허용한다. 네트워크가 끊겨 클라이언트가 재시도하더라도 기록이 두 벌 생기지 않게 하는 장치이며, 서버는 첫 요청의 응답을 그대로 다시 돌려준다.</p>
+      <p><code>Idempotency-Key</code>는 16자 이상 128자 이하여야 하고 안전한 문자만 허용한다. 네트워크가 끊겨 클라이언트가 재시도하더라도 기록이 두 벌 생기지 않게 하는 장치이며, 서버는 새로 만들지 않고 첫 요청이 만든 기록을 200으로 돌려준다. 같은 키에 다른 본문을 보내면 409이다.</p>
 
-      <h4 data-page="145">3) 기록 수정</h4>
+      <h4 data-page="146">3) 기록 수정</h4>
       <p>유형 <strong>조건부 수정</strong> · <code>PATCH /v1/career/records/:recordId</code></p>
 
       <figure class="fig">
@@ -5784,10 +5798,12 @@ Idempotency-Key: 4b1f9c2e-7a30-4d55-9c11-8e2f0a6d34bb
           <thead><tr><th>속성</th><th class="num">IN</th><th class="num">OUT</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>
             <tr><td><code>recordId</code></td><td class="num">O</td><td class="num">—</td><td>uuid</td><td>경로 파라메터</td></tr>
-            <tr><td><code>If-Match</code></td><td class="num">O</td><td class="num">—</td><td>Header</td><td>현재 버전의 ETag. 어긋나면 409</td></tr>
-            <tr><td><code>title</code></td><td class="num">O</td><td class="num">—</td><td>String</td><td>셋 중 하나 이상은 있어야 한다</td></tr>
+            <tr><td><code>If-Match</code></td><td class="num">O</td><td class="num">—</td><td>Header</td><td>현재 버전의 ETag(<code>"v7"</code> 형식). 없으면 400, 어긋나면 412</td></tr>
+            <tr><td><code>title</code></td><td class="num">O</td><td class="num">—</td><td>String</td><td>넷 중 하나 이상은 있어야 한다</td></tr>
+            <tr><td><code>status</code></td><td class="num">O</td><td class="num">—</td><td>String</td><td><code>draft</code> · <code>organized</code> · <code>verified</code></td></tr>
             <tr><td><code>properties</code></td><td class="num">O</td><td class="num">—</td><td>Object</td><td>—</td></tr>
             <tr><td><code>bodyMd</code></td><td class="num">O</td><td class="num">—</td><td>String</td><td>—</td></tr>
+            <tr><td><code>ETag</code></td><td class="num">—</td><td class="num">O</td><td>Header</td><td>올라간 버전. 다음 수정의 <code>If-Match</code>에 쓴다</td></tr>
             <tr><td><code>data</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td>갱신된 기록</td></tr>
             <tr><td><code>resource</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td>올라간 버전</td></tr>
           </tbody>
@@ -5801,7 +5817,7 @@ Idempotency-Key: 4b1f9c2e-7a30-4d55-9c11-8e2f0a6d34bb
           <button class="copy" type="button">COPY</button>
         </div>
         <pre><code>전송방향 : IN
-If-Match: &quot;7&quot;
+If-Match: &quot;v7&quot;
 {
   &quot;bodyMd&quot;: &quot;검색 지연을 320ms에서 90ms로 줄였다. 색인 크기는 1.4배가 되었다.&quot;
 }</code></pre>
@@ -5813,20 +5829,32 @@ If-Match: &quot;7&quot;
           <button class="copy" type="button">COPY</button>
         </div>
         <pre><code>전송방향 : OUT
+ETag: &quot;v8&quot;
 {
-  &quot;data&quot;: { &quot;id&quot;: &quot;rec_a91f&quot;, &quot;version&quot;: 8, &quot;updatedAt&quot;: &quot;2026-08-14T02:31:40.000Z&quot; },
+  &quot;data&quot;: {
+    &quot;id&quot;: &quot;0b6f2a3e-5c1d-4e8a-9f27-3d4c5b6a7e81&quot;,
+    &quot;categoryId&quot;: &quot;7a1c9e42-2b3d-4f5e-8a6b-1c2d3e4f5a6b&quot;,
+    &quot;title&quot;: &quot;사내 검색 개편&quot;,
+    &quot;status&quot;: &quot;organized&quot;,
+    &quot;origin&quot;: &quot;manual&quot;,
+    &quot;properties&quot;: { &quot;role&quot;: &quot;백엔드 리드&quot; },
+    &quot;bodyMd&quot;: &quot;검색 지연을 320ms에서 90ms로 줄였다. 색인 크기는 1.4배가 되었다.&quot;,
+    &quot;version&quot;: 8,
+    &quot;createdAt&quot;: &quot;2026-08-01T01:20:00.000Z&quot;,
+    &quot;updatedAt&quot;: &quot;2026-08-14T02:31:40.000Z&quot;
+  },
   &quot;resource&quot;: { &quot;version&quot;: 8, &quot;updatedAt&quot;: &quot;2026-08-14T02:31:40.000Z&quot; }
 }
 
 버전이 어긋난 경우
-HTTP 409
-{ &quot;error&quot;: { &quot;code&quot;: &quot;CONFLICT&quot;, &quot;message&quot;: &quot;resource version mismatch&quot;,
-             &quot;requestId&quot;: &quot;req_0f8a2c91-...&quot; } }</code></pre>
+HTTP 412
+{ &quot;error&quot;: { &quot;code&quot;: &quot;PRECONDITION_FAILED&quot;, &quot;message&quot;: &quot;Resource version is stale&quot;,
+             &quot;requestId&quot;: &quot;req_0f8a2c91-3b4d-4e5f-a6b7-c8d9e0f1a2b3&quot; } }</code></pre>
       </figure>
 
-      <p>세 필드 가운데 하나도 없으면 400이다. 빈 수정 요청이 버전만 올리는 것을 막기 위해서이다. 409를 받은 클라이언트는 최신 상태를 다시 읽어 사용자에게 무엇이 달라졌는지 보여 준 뒤 재시도한다.</p>
+      <p>네 필드 가운데 하나도 없으면 400이다. 빈 수정 요청이 버전만 올리는 것을 막기 위해서이다. 412를 받은 클라이언트는 최신 상태를 다시 읽어 사용자에게 무엇이 달라졌는지 보여 준 뒤 재시도한다.</p>
 
-      <h4 data-page="147">4) 기록 삭제와 영향 범위</h4>
+      <h4 data-page="148">4) 기록 삭제와 영향 범위</h4>
       <p>유형 <strong>삭제</strong> · <code>GET /v1/career/records/:recordId/delete-impact · DELETE</code></p>
 
       <figure class="fig">
@@ -5856,11 +5884,12 @@ HTTP 409
         <table>
           <thead><tr><th>속성</th><th class="num">IN</th><th class="num">OUT</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>
-            <tr><td><code>recordId</code></td><td class="num">O</td><td class="num">—</td><td>uuid</td><td>경로 파라메터</td></tr>
+            <tr><td><code>recordId</code></td><td class="num">O</td><td class="num">O</td><td>uuid</td><td>경로 파라메터. 응답에도 담긴다</td></tr>
+            <tr><td><code>data</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td>영향 범위. 아래 필드를 담는다. <code>DELETE</code>도 같은 모양을 돌려준다</td></tr>
             <tr><td><code>portfolioCount</code></td><td class="num">—</td><td class="num">O</td><td>int</td><td>이 기록을 인용한 포트폴리오 수</td></tr>
             <tr><td><code>blockCount</code></td><td class="num">—</td><td class="num">O</td><td>int</td><td>영향을 받는 블록 수</td></tr>
-            <tr><td><code>deletedAt</code></td><td class="num">—</td><td class="num">O</td><td>Timestamp</td><td>삭제 시각</td></tr>
-            <tr><td><code>purgeAfter</code></td><td class="num">—</td><td class="num">O</td><td>Timestamp</td><td>이후에는 복구할 수 없다</td></tr>
+            <tr><td><code>deletedAt</code></td><td class="num">—</td><td class="num">O</td><td>Timestamp</td><td>삭제 시각. 영향 범위 조회에서는 조회 시각</td></tr>
+            <tr><td><code>purgeAfter</code></td><td class="num">—</td><td class="num">O</td><td>Timestamp</td><td>삭제 시각으로부터 30일. 이후에는 복구할 수 없다</td></tr>
           </tbody>
           <caption>표 7.3.4 기록 삭제와 영향 범위의 파라메터</caption>
         </table>
@@ -5872,7 +5901,7 @@ HTTP 409
           <button class="copy" type="button">COPY</button>
         </div>
         <pre><code>전송방향 : IN
-GET /v1/career/records/rec_a91f/delete-impact</code></pre>
+GET /v1/career/records/0b6f2a3e-5c1d-4e8a-9f27-3d4c5b6a7e81/delete-impact</code></pre>
       </figure>
 
       <figure class="code">
@@ -5882,20 +5911,24 @@ GET /v1/career/records/rec_a91f/delete-impact</code></pre>
         </div>
         <pre><code>전송방향 : OUT
 {
-  &quot;recordId&quot;: &quot;rec_a91f&quot;,
-  &quot;portfolioCount&quot;: 3,
-  &quot;blockCount&quot;: 11,
-  &quot;deletedAt&quot;: &quot;2026-08-14T02:40:00.000Z&quot;,
-  &quot;purgeAfter&quot;: &quot;2026-09-13T02:40:00.000Z&quot;
+  &quot;data&quot;: {
+    &quot;recordId&quot;: &quot;0b6f2a3e-5c1d-4e8a-9f27-3d4c5b6a7e81&quot;,
+    &quot;portfolioCount&quot;: 3,
+    &quot;blockCount&quot;: 11,
+    &quot;deletedAt&quot;: &quot;2026-08-14T02:40:00.000Z&quot;,
+    &quot;purgeAfter&quot;: &quot;2026-09-13T02:40:00.000Z&quot;
+  }
 }
 
 삭제 실행
-DELETE /v1/career/records/rec_a91f  →  HTTP 204</code></pre>
+DELETE /v1/career/records/0b6f2a3e-5c1d-4e8a-9f27-3d4c5b6a7e81  →  HTTP 200
+{ &quot;data&quot;: { &quot;recordId&quot;: &quot;0b6f2a3e-5c1d-4e8a-9f27-3d4c5b6a7e81&quot;, &quot;portfolioCount&quot;: 3, &quot;blockCount&quot;: 11,
+             &quot;deletedAt&quot;: &quot;2026-08-14T02:41:05.000Z&quot;, &quot;purgeAfter&quot;: &quot;2026-09-13T02:41:05.000Z&quot; } }</code></pre>
       </figure>
 
       <p>삭제를 바로 실행하지 않고 영향 범위를 먼저 알려 준다. 이미 배포된 포트폴리오가 그 기록을 인용하고 있을 수 있기 때문이다. 삭제 후에도 <code>purgeAfter</code>까지는 <code>POST …/restore</code>로 되돌릴 수 있다.</p>
 
-      <h4 data-page="148">5) 공고 분석 접수</h4>
+      <h4 data-page="149">5) 공고 분석 접수</h4>
       <p>유형 <strong>비동기 접수</strong> · <code>POST /v1/jobs/postings/:id/analyses</code></p>
 
       <figure class="fig">
@@ -5926,8 +5959,10 @@ DELETE /v1/career/records/rec_a91f  →  HTTP 204</code></pre>
           <thead><tr><th>속성</th><th class="num">IN</th><th class="num">OUT</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>
             <tr><td><code>id</code></td><td class="num">O</td><td class="num">—</td><td>uuid</td><td>공고 식별자, 경로 파라메터</td></tr>
-            <tr><td><code>analysisId</code></td><td class="num">—</td><td class="num">O</td><td>uuid</td><td>진행 조회에 사용한다</td></tr>
-            <tr><td><code>status</code></td><td class="num">—</td><td class="num">O</td><td>String</td><td>접수 직후에는 <code>pending</code></td></tr>
+            <tr><td><code>data</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td>접수 결과. 아래 필드와 <code>jobPostingId</code>를 담는다</td></tr>
+            <tr><td><code>jobAnalysisId</code></td><td class="num">—</td><td class="num">O</td><td>uuid</td><td>진행 조회에 사용한다</td></tr>
+            <tr><td><code>status</code></td><td class="num">—</td><td class="num">O</td><td>String</td><td><code>queued</code> · <code>running</code> · <code>done</code> · <code>failed</code>. 새로 접수하면 <code>queued</code></td></tr>
+            <tr><td><code>reused</code></td><td class="num">—</td><td class="num">O</td><td>Boolean</td><td>이 공고의 분석이 이미 있어 그것을 돌려주면 true</td></tr>
           </tbody>
           <caption>표 7.3.5 공고 분석 접수의 파라메터</caption>
         </table>
@@ -5939,7 +5974,7 @@ DELETE /v1/career/records/rec_a91f  →  HTTP 204</code></pre>
           <button class="copy" type="button">COPY</button>
         </div>
         <pre><code>전송방향 : IN
-POST /v1/jobs/postings/job_7c31/analyses</code></pre>
+POST /v1/jobs/postings/3e9d1f7a-6b2c-4d8e-a1f3-5b7c9d0e2f41/analyses</code></pre>
       </figure>
 
       <figure class="code">
@@ -5948,17 +5983,21 @@ POST /v1/jobs/postings/job_7c31/analyses</code></pre>
           <button class="copy" type="button">COPY</button>
         </div>
         <pre><code>전송방향 : OUT
-HTTP 202 Accepted
+HTTP 201 Created
 {
-  &quot;analysisId&quot;: &quot;ana_55e2&quot;,
-  &quot;status&quot;: &quot;pending&quot;
+  &quot;data&quot;: {
+    &quot;jobPostingId&quot;: &quot;3e9d1f7a-6b2c-4d8e-a1f3-5b7c9d0e2f41&quot;,
+    &quot;jobAnalysisId&quot;: &quot;8c4b2a19-7d3e-4f6a-b5c8-9e0d1f2a3b4c&quot;,
+    &quot;status&quot;: &quot;queued&quot;,
+    &quot;reused&quot;: false
+  }
 }</code></pre>
       </figure>
 
-      <p>분석에는 수십 초가 걸리므로 202로 접수 응답을 반환한다. 클라이언트는 <code>analysisId</code>로 <code>GET /v1/job-analyses/:id</code>를 주기적으로 조회하여 완료를 확인한다.</p>
+      <p>분석에는 수십 초가 걸리므로 결과를 기다리지 않고 접수 응답을 반환한다. 새로 접수하면 201, 이 공고의 분석이 이미 있으면 그 분석을 200으로 돌려준다. 클라이언트는 <code>jobAnalysisId</code>로 <code>GET /v1/job-analyses/:id</code>를 주기적으로 조회하여 완료를 확인한다.</p>
 
-      <h4 data-page="149">6) 공고 일치도 산출</h4>
-      <p>유형 <strong>학습 모델 판정</strong> · <code>POST /v1/jobs/postings/:id/match</code></p>
+      <h4 data-page="150">6) 공고 일치도 산출</h4>
+      <p>유형 <strong>일치도 산출</strong> · <code>POST /v1/jobs/postings/:id/match</code></p>
 
       <figure class="fig">
         <div class="plate drawn"><svg class="dg" viewBox="0 0 900 130" xmlns="http://www.w3.org/2000/svg" role="img"
@@ -5972,7 +6011,7 @@ HTTP 202 Accepted
   <line x1="216" y1="52" x2="684" y2="52" style="stroke:var(--ex-slate-500);stroke-width:1.5" marker-end="url(#ap06)"/>
   <text class="l" x="700" y="56">IN</text>
 
-  <text class="lm" x="450" y="88" text-anchor="middle">점수 · 축별 내역 · 판정 주체 전송</text>
+  <text class="lm" x="450" y="88" text-anchor="middle">점수 · 축별 충족 내역 전송</text>
   <line x1="684" y1="98" x2="216" y2="98" style="stroke:var(--ex-slate-300);stroke-width:1.5;stroke-dasharray:5 4" marker-end="url(#ap06)"/>
   <text class="l" x="700" y="102">OUT</text>
 
@@ -5988,11 +6027,14 @@ HTTP 202 Accepted
           <thead><tr><th>속성</th><th class="num">IN</th><th class="num">OUT</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>
             <tr><td><code>id</code></td><td class="num">O</td><td class="num">—</td><td>uuid</td><td>공고 식별자, 경로 파라메터</td></tr>
-            <tr><td><code>total</code></td><td class="num">—</td><td class="num">O</td><td>int</td><td>0 – 100. 요건을 하나도 읽지 못하면 null</td></tr>
-            <tr><td><code>axes</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td><code>technology</code> · <code>impact</code> · <code>role</code> · <code>conditions</code></td></tr>
-            <tr><td><code>decidedBy</code></td><td class="num">—</td><td class="num">O</td><td>String</td><td><code>model:{버전}</code> 또는 <code>rule</code></td></tr>
-            <tr><td><code>evidenceRecords</code></td><td class="num">—</td><td class="num">O</td><td>Array</td><td>판정의 근거로 쓴 기록 ID. 모델 판정이면 Cross-Encoder 입력 기록</td></tr>
+            <tr><td><code>data</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td>산출 결과. 아래 필드와 <code>jobPostingId</code>를 담는다</td></tr>
+            <tr><td><code>total</code></td><td class="num">—</td><td class="num">O</td><td>int</td><td>0 – 100. <code>round(100 × covered ÷ required)</code></td></tr>
+            <tr><td><code>required</code></td><td class="num">—</td><td class="num">O</td><td>int</td><td>공고가 명시한 요건 수. 네 축의 합이며 1 이상</td></tr>
+            <tr><td><code>covered</code></td><td class="num">—</td><td class="num">O</td><td>int</td><td>기록에서 근거를 찾은 요건 수. 네 축의 합</td></tr>
+            <tr><td><code>axes</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td><code>technology</code> · <code>impact</code> · <code>role</code> · <code>conditions</code>. 축마다 <code>{required, covered, matched, missing}</code></td></tr>
             <tr><td><code>reason</code></td><td class="num">—</td><td class="num">O</td><td>String</td><td>화면에 그대로 보이는 한 문장</td></tr>
+            <tr><td><code>nextAction</code></td><td class="num">—</td><td class="num">O</td><td>String</td><td>다음에 할 일을 적은 한 문장</td></tr>
+            <tr><td><code>computedAt</code></td><td class="num">—</td><td class="num">O</td><td>Timestamp</td><td>산출 시각</td></tr>
           </tbody>
           <caption>표 7.3.6 공고 일치도 산출의 파라메터</caption>
         </table>
@@ -6004,7 +6046,7 @@ HTTP 202 Accepted
           <button class="copy" type="button">COPY</button>
         </div>
         <pre><code>전송방향 : IN
-POST /v1/jobs/postings/job_7c31/match</code></pre>
+POST /v1/jobs/postings/3e9d1f7a-6b2c-4d8e-a1f3-5b7c9d0e2f41/match</code></pre>
       </figure>
 
       <figure class="code">
@@ -6014,35 +6056,40 @@ POST /v1/jobs/postings/job_7c31/match</code></pre>
         </div>
         <pre><code>전송방향 : OUT
 {
-  &quot;total&quot;: 78,
-  &quot;axes&quot;: {
-    &quot;technology&quot;: {
-      &quot;required&quot;: 5, &quot;covered&quot;: 4,
-      &quot;matched&quot;: [&quot;React&quot;, &quot;TypeScript&quot;, &quot;Node.js&quot;, &quot;PostgreSQL&quot;],
-      &quot;missing&quot;: [&quot;Kubernetes&quot;]
+  &quot;data&quot;: {
+    &quot;jobPostingId&quot;: &quot;3e9d1f7a-6b2c-4d8e-a1f3-5b7c9d0e2f41&quot;,
+    &quot;total&quot;: 80,
+    &quot;covered&quot;: 8,
+    &quot;required&quot;: 10,
+    &quot;axes&quot;: {
+      &quot;technology&quot;: {
+        &quot;required&quot;: 5, &quot;covered&quot;: 4,
+        &quot;matched&quot;: [&quot;React&quot;, &quot;TypeScript&quot;, &quot;Node.js&quot;, &quot;PostgreSQL&quot;],
+        &quot;missing&quot;: [&quot;Kubernetes&quot;]
+      },
+      &quot;impact&quot;: {
+        &quot;required&quot;: 2, &quot;covered&quot;: 2,
+        &quot;matched&quot;: [&quot;지연 개선&quot;, &quot;트래픽 규모&quot;], &quot;missing&quot;: []
+      },
+      &quot;role&quot;: {
+        &quot;required&quot;: 2, &quot;covered&quot;: 1,
+        &quot;matched&quot;: [&quot;백엔드&quot;], &quot;missing&quot;: [&quot;리드 경험&quot;]
+      },
+      &quot;conditions&quot;: {
+        &quot;required&quot;: 1, &quot;covered&quot;: 1,
+        &quot;matched&quot;: [&quot;서울&quot;], &quot;missing&quot;: []
+      }
     },
-    &quot;impact&quot;: {
-      &quot;required&quot;: 2, &quot;covered&quot;: 2,
-      &quot;matched&quot;: [&quot;지연 개선&quot;, &quot;트래픽 규모&quot;], &quot;missing&quot;: []
-    },
-    &quot;role&quot;: {
-      &quot;required&quot;: 2, &quot;covered&quot;: 1,
-      &quot;matched&quot;: [&quot;백엔드&quot;], &quot;missing&quot;: [&quot;팀 리드&quot;]
-    },
-    &quot;conditions&quot;: {
-      &quot;required&quot;: 1, &quot;covered&quot;: 1,
-      &quot;matched&quot;: [&quot;서울&quot;], &quot;missing&quot;: []
-    }
-  },
-  &quot;decidedBy&quot;: &quot;model:cross-v1-002&quot;,
-  &quot;evidenceRecords&quot;: [&quot;rec_2f1a&quot;, &quot;rec_8c03&quot;, &quot;rec_91de&quot;],
-  &quot;reason&quot;: &quot;기술 스택 4/5와 규모 지표가 맞고, 팀 리드 경험이 비어 있다.&quot;
+    &quot;reason&quot;: &quot;역할·연차에서 리드 경험 근거가 비어 있습니다.&quot;,
+    &quot;nextAction&quot;: &quot;리드 경험을 실제로 사용한 기록을 추가하거나 기존 기록의 원문 근거를 보강하세요.&quot;,
+    &quot;computedAt&quot;: &quot;2026-08-14T03:05:12.000Z&quot;
+  }
 }</code></pre>
       </figure>
 
-      <p><code>decidedBy</code>가 <code>rule</code>이면 모델이 배포되어 있지 않아 규칙 함수가 답한 것이다. <code>total</code>이 null인 경우는 요건을 하나도 읽지 못한 공고이며, 이때 화면은 점수를 숨기고 「분석 필요」로 표시한다. 0점과 판정 불가는 다른 상태이다.</p>
+      <p><code>total</code>은 공고가 명시한 요건 가운데 기록에서 근거를 찾은 요건의 비율이며, 축은 요건을 묶어 보여 주는 분류이고 배점이 아니다. 요건을 하나도 읽지 못한 공고는 점수를 내지 않고 409로 답한다. 삭제되지 않은 기록이 3개보다 적을 때도 409이다. 0점과 판정 불가는 다른 상태이다.</p>
 
-      <h4 data-page="150">7) 생성 진행 스트림</h4>
+      <h4 data-page="152">7) 생성 진행 스트림</h4>
       <p>유형 <strong>스트림</strong> · <code>GET /v1/generation-jobs/:id/page-stream</code></p>
 
       <figure class="fig">
@@ -6074,8 +6121,8 @@ POST /v1/jobs/postings/job_7c31/match</code></pre>
           <tbody>
             <tr><td><code>id</code></td><td class="num">O</td><td class="num">—</td><td>uuid</td><td>생성 작업 식별자</td></tr>
             <tr><td><code>Accept</code></td><td class="num">O</td><td class="num">—</td><td>Header</td><td><code>text/event-stream</code></td></tr>
-            <tr><td><code>event</code></td><td class="num">—</td><td class="num">O</td><td>String</td><td><code>progress</code> · <code>block</code> · <code>done</code> · <code>error</code></td></tr>
-            <tr><td><code>data</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td>이벤트별 본문</td></tr>
+            <tr><td><code>event</code></td><td class="num">—</td><td class="num">O</td><td>String</td><td><code>begin</code> · <code>thinking</code> · <code>delta</code> · <code>done</code> · <code>failed</code></td></tr>
+            <tr><td><code>data</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td>이벤트별 본문. <code>begin</code>은 <code>{style}</code>, <code>thinking</code>은 <code>{tokens}</code>, <code>delta</code>는 <code>{text}</code>, <code>done</code>은 <code>{pageId}</code>, <code>failed</code>는 <code>{code}</code></td></tr>
           </tbody>
           <caption>표 7.3.7 생성 진행 스트림의 파라메터</caption>
         </table>
@@ -6087,7 +6134,7 @@ POST /v1/jobs/postings/job_7c31/match</code></pre>
           <button class="copy" type="button">COPY</button>
         </div>
         <pre><code>전송방향 : IN
-GET /v1/generation-jobs/gen_3d90/page-stream
+GET /v1/generation-jobs/5f3e8d21-9a4b-4c7d-8e6f-0a1b2c3d4e5f/page-stream
 Accept: text/event-stream</code></pre>
       </figure>
 
@@ -6097,21 +6144,28 @@ Accept: text/event-stream</code></pre>
           <button class="copy" type="button">COPY</button>
         </div>
         <pre><code>전송방향 : OUT
-Content-Type: text/event-stream
+Content-Type: text/event-stream; charset=utf-8
 
-event: progress
-data: {&quot;phase&quot;:&quot;section&quot;,&quot;done&quot;:2,&quot;total&quot;:6}
+id: 1786676400000-0
+event: begin
+data: {&quot;style&quot;:&quot;null&quot;}
 
-event: block
-data: {&quot;blockId&quot;:&quot;blk_11&quot;,&quot;kind&quot;:&quot;metric&quot;,&quot;text&quot;:&quot;검색 지연 320ms → 90ms&quot;}
+id: 1786676412000-0
+event: thinking
+data: {&quot;tokens&quot;:512}
 
+id: 1786676530000-0
+event: delta
+data: {&quot;text&quot;:&quot;{\&quot;html\&quot;:\&quot;&lt;section&gt;&lt;h1&gt;사내 검색 개편&quot;}
+
+id: 1786676590000-0
 event: done
-data: {&quot;portfolioId&quot;:&quot;pf_8a2c&quot;,&quot;revisionId&quot;:&quot;rev_1&quot;}</code></pre>
+data: {&quot;pageId&quot;:&quot;2d7c6b5a-4e3f-4a1b-9c8d-7e6f5a4b3c2d&quot;}</code></pre>
       </figure>
 
-      <p>생성은 수십 초가 걸리고 그 사이 화면이 비어 있으면 사용자가 실패로 오해한다. 완성된 블록을 나오는 대로 밀어 주어 진행을 보여 준다. 연결이 끊기면 클라이언트는 <code>GET /v1/generation-jobs/:id</code>로 현재 상태를 다시 읽는다.</p>
+      <p>생성은 몇 분이 걸리고 그 사이 화면이 비어 있으면 사용자가 실패로 오해한다. 모델이 쓰는 지면 JSON을 조각(<code>delta</code>)이 나오는 대로 밀어 주어 진행을 보여 준다. 연결이 끊겼다 다시 붙으면 서버가 처음부터 다시 보내므로 클라이언트는 받은 내용을 비우고 처음부터 다시 받는다.</p>
 
-      <h4 data-page="152">8) 공개 포트폴리오 열람</h4>
+      <h4 data-page="154">8) 공개 포트폴리오 열람</h4>
       <p>유형 <strong>공개 조회</strong> · <code>GET /v1/public/portfolios/:slug</code></p>
 
       <figure class="fig">
@@ -6141,9 +6195,10 @@ data: {&quot;portfolioId&quot;:&quot;pf_8a2c&quot;,&quot;revisionId&quot;:&quot;
         <table>
           <thead><tr><th>속성</th><th class="num">IN</th><th class="num">OUT</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>
-            <tr><td><code>slug</code></td><td class="num">O</td><td class="num">—</td><td>String</td><td>공개 주소, 경로 파라메터</td></tr>
-            <tr><td><code>data</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td>배포 시점에 고정된 문서</td></tr>
-            <tr><td><code>meta</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td>공유 카드용 제목 · 요약 · 이미지</td></tr>
+            <tr><td><code>slug</code></td><td class="num">O</td><td class="num">—</td><td>String</td><td>공개 주소, 경로 파라메터. 3 – 63자, 영문 소문자 · 숫자 · <code>-</code></td></tr>
+            <tr><td><code>data</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td><code>kind</code>에 따라 <code>deployment</code> 또는 새 주소를 담는다</td></tr>
+            <tr><td><code>kind</code></td><td class="num">—</td><td class="num">O</td><td>String</td><td><code>portfolio</code> · <code>redirect</code>. 바뀐 주소로 들어오면 <code>redirect</code>와 <code>{from, to, expiresAt}</code></td></tr>
+            <tr><td><code>deployment</code></td><td class="num">—</td><td class="num">O</td><td>Object</td><td>배포 시점에 고정된 문서. <code>snapshot</code> · 공유 카드용 <code>seo</code> · <code>publishedAt</code>를 담는다</td></tr>
           </tbody>
           <caption>표 7.3.8 공개 포트폴리오 열람의 파라메터</caption>
         </table>
@@ -6167,17 +6222,30 @@ GET /v1/public/portfolios/minjae-frontend-2026
         <pre><code>전송방향 : OUT
 {
   &quot;data&quot;: {
-    &quot;deploymentId&quot;: &quot;dep_4f10&quot;,
-    &quot;publishedAt&quot;: &quot;2026-08-12T09:00:00.000Z&quot;,
-    &quot;sections&quot;: [ { &quot;id&quot;: &quot;sec_1&quot;, &quot;kind&quot;: &quot;hero&quot;, &quot;blocks&quot;: [ ... ] } ]
-  },
-  &quot;meta&quot;: { &quot;title&quot;: &quot;박민재 · 프론트엔드&quot;, &quot;description&quot;: &quot;…&quot;, &quot;image&quot;: &quot;/v1/public/assets/ast_77&quot; }
+    &quot;kind&quot;: &quot;portfolio&quot;,
+    &quot;deployment&quot;: {
+      &quot;id&quot;: &quot;9a8b7c6d-5e4f-4321-8abc-def012345678&quot;,
+      &quot;portfolioId&quot;: &quot;4c3b2a1d-0e9f-4a8b-9c7d-6e5f4a3b2c1d&quot;,
+      &quot;version&quot;: 3,
+      &quot;slug&quot;: &quot;minjae-frontend-2026&quot;,
+      &quot;snapshot&quot;: {
+        &quot;portfolioId&quot;: &quot;4c3b2a1d-0e9f-4a8b-9c7d-6e5f4a3b2c1d&quot;,
+        &quot;title&quot;: &quot;박민재 · 프론트엔드&quot;,
+        &quot;templateId&quot;: &quot;6e5d4c3b-2a1f-4e0d-8c9b-a8f7e6d5c4b3&quot;,
+        &quot;sections&quot;: [ { &quot;id&quot;: &quot;1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d&quot;, &quot;order&quot;: 0, &quot;visible&quot;: true, &quot;blocks&quot;: [ ... ] } ],
+        &quot;generatedPage&quot;: { &quot;id&quot;: &quot;2d7c6b5a-4e3f-4a1b-9c8d-7e6f5a4b3c2d&quot;, &quot;revision&quot;: 2, &quot;document&quot;: &quot;&lt;!doctype html&gt;…&quot; }
+      },
+      &quot;seo&quot;: { &quot;title&quot;: &quot;박민재 · 프론트엔드&quot;, &quot;description&quot;: &quot;…&quot;, &quot;indexable&quot;: true },
+      &quot;contactVisibility&quot;: &quot;on_request&quot;,
+      &quot;publishedAt&quot;: &quot;2026-08-12T09:00:00.000Z&quot;
+    }
+  }
 }</code></pre>
       </figure>
 
-      <p>인증이 없는 유일한 도메인 경로이다. 배포 시점의 스냅샷만 노출하므로 이후의 편집이 공개된 문서를 바꾸지 않는다. 사용자 식별자와 원본 기록은 응답에 담기지 않는다.</p>
+      <p>인증 없이 열리는 경로이다. 배포 시점의 스냅샷만 노출하므로 이후의 편집이 공개된 문서를 바꾸지 않는다. 사용자 식별자와 원본 기록은 응답에 담기지 않는다.</p>
 
-      <h4 data-page="153">9) 자산 서명 URL 발급</h4>
+      <h4 data-page="155">9) 자산 서명 URL 발급</h4>
       <p>유형 <strong>서명 URL</strong> · <code>POST /v1/assets/:id/signed-url</code></p>
 
       <figure class="fig">
@@ -6207,10 +6275,11 @@ GET /v1/public/portfolios/minjae-frontend-2026
         <table>
           <thead><tr><th>속성</th><th class="num">IN</th><th class="num">OUT</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>
-            <tr><td><code>id</code></td><td class="num">O</td><td class="num">—</td><td>uuid</td><td>자산 식별자, 경로 파라메터</td></tr>
-            <tr><td><code>url</code></td><td class="num">—</td><td class="num">O</td><td>String</td><td>로컬 미디어 저장소의 임시 주소</td></tr>
-            <tr><td><code>expiresAt</code></td><td class="num">—</td><td class="num">O</td><td>Timestamp</td><td>이후에는 접근할 수 없다</td></tr>
-            <tr><td><code>contentType</code></td><td class="num">—</td><td class="num">O</td><td>String</td><td><code>application/pdf</code> 등</td></tr>
+            <tr><td><code>id</code></td><td class="num">O</td><td class="num">—</td><td>uuid</td><td>내보내기 자산 식별자, 경로 파라메터</td></tr>
+            <tr><td><code>ttlSeconds</code></td><td class="num">O</td><td class="num">—</td><td>int</td><td>1 – 86,400초, 기본값 300</td></tr>
+            <tr><td><code>data.assetId</code></td><td class="num">—</td><td class="num">O</td><td>uuid</td><td>자산 식별자</td></tr>
+            <tr><td><code>data.url</code></td><td class="num">—</td><td class="num">O</td><td>String</td><td><code>/v1/public/assets/:id</code>에 <code>version</code> · <code>expires</code> · <code>signature</code>를 붙인 주소</td></tr>
+            <tr><td><code>data.expiresAt</code></td><td class="num">—</td><td class="num">O</td><td>datetime</td><td>이 시각 이후에는 403을 돌려준다</td></tr>
           </tbody>
           <caption>표 7.3.9 자산 서명 URL 발급의 파라메터</caption>
         </table>
@@ -6222,7 +6291,10 @@ GET /v1/public/portfolios/minjae-frontend-2026
           <button class="copy" type="button">COPY</button>
         </div>
         <pre><code>전송방향 : IN
-POST /v1/assets/ast_77/signed-url</code></pre>
+POST /v1/assets/4f1c2a9e-7b3d-4e8a-9c21-5d6e7f8a9b0c/signed-url
+{
+  &quot;ttlSeconds&quot;: 600
+}</code></pre>
       </figure>
 
       <figure class="code">
@@ -6232,15 +6304,17 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         </div>
         <pre><code>전송방향 : OUT
 {
-  &quot;url&quot;: &quot;https://storage.example.com/exports/ast_77?X-Signature=…&quot;,
-  &quot;expiresAt&quot;: &quot;2026-08-14T03:10:00.000Z&quot;,
-  &quot;contentType&quot;: &quot;application/pdf&quot;
+  &quot;data&quot;: {
+    &quot;assetId&quot;: &quot;4f1c2a9e-7b3d-4e8a-9c21-5d6e7f8a9b0c&quot;,
+    &quot;url&quot;: &quot;/v1/public/assets/4f1c2a9e-7b3d-4e8a-9c21-5d6e7f8a9b0c?version=2&amp;expires=1791201000&amp;signature=Jb3x…&quot;,
+    &quot;expiresAt&quot;: &quot;2026-10-05T11:50:00.000Z&quot;
+  }
 }</code></pre>
       </figure>
 
-      <p>파일을 API 서버가 직접 내려보내지 않는다. 만료가 있는 서명 URL만 발급하므로, 주소가 유출되더라도 만료 후에는 쓸 수 없다. 만료 시간은 발급 시점으로부터 10분이다.</p>
+      <p>파일을 API 서버가 직접 내려보내지 않고, 만료 시각과 서명을 붙인 공개 자산 주소만 발급한다. 요금제가 <code>export.document</code>를 허용하지 않으면 403을, 자산이 없거나 회수되었으면 404를 돌려준다. 발급된 주소는 만료 시각이 지나거나 서명이 맞지 않으면 403으로 거절되며, 내려받을 때마다 자산의 내려받기 수를 1 늘린다.</p>
 
-<h4 data-page="0">10) 로그인</h4>
+      <h4 data-page="157">10) 로그인</h4>
       <p>유형 <strong>생성</strong> · <code>POST /v1/auth/login</code></p>
 
       <figure class="fig">
@@ -6321,7 +6395,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
 
       <p>인증 없이 호출하는 경로이며, 본문이 스키마를 벗어나면 400을, 이메일이나 비밀번호가 맞지 않거나 삭제를 요청한 계정이면 401을 돌려준다. 성공하면 200과 함께 새 세션을 하나 발급하고, 세션 만료 시각은 발급 시점으로부터 30일 뒤로 정한다.</p>
 
-      <h4 data-page="0">11) 카테고리 생성</h4>
+      <h4 data-page="158">11) 카테고리 생성</h4>
       <p>유형 <strong>생성</strong> · <code>POST /v1/career/categories</code></p>
 
       <figure class="fig">
@@ -6414,7 +6488,7 @@ ETag: &quot;v1&quot;
 
       <p>성공하면 201을 돌려주고 <code>ETag</code> 헤더에 카테고리 버전을 싣는다. 본문이 스키마를 벗어나면 400을, 그 사용자에게 같은 <code>key</code>의 카테고리가 이미 있거나 사용자 카테고리가 100개에 이르면 409를 돌려준다. 속성 정의에 <code>id</code>가 없으면 서버가 UUID를 발급해 채운다.</p>
 
-      <h4 data-page="0">12) 기록 문서 편집 반영</h4>
+      <h4 data-page="160">12) 기록 문서 편집 반영</h4>
       <p>유형 <strong>조건부 수정</strong> · <code>POST /v1/career/records/:recordId/document/updates</code></p>
 
       <figure class="fig">
@@ -6490,7 +6564,7 @@ POST /v1/career/records/8aaade04-0aec-4175-927a-d8a5f4564253/document/updates
 
       <p>디코딩한 업데이트가 1MB를 넘으면 413을, 체크섬이 맞지 않으면 422를, 기록이 없으면 404를, <code>expectedSequence</code>가 현재 문서 버전과 다르면 409를 돌려준다. 같은 <code>clientId</code> · <code>clientSequence</code> 조합이 다시 오면 업데이트를 새로 저장하지 않고 처음 부여한 순번을 그대로 돌려준다. 압축되지 않은 업데이트가 100건 이상이거나 합계 512KB 이상이 되면 문서 압축 작업을 큐에 넣는다.</p>
 
-      <h4 data-page="0">13) 저장된 뷰 조회</h4>
+      <h4 data-page="162">13) 저장된 뷰 조회</h4>
       <p>유형 <strong>목록 조회</strong> · <code>GET /v1/career/view-configurations/:viewId/query</code></p>
 
       <figure class="fig">
@@ -6577,7 +6651,7 @@ GET /v1/career/view-configurations/cd3ca7f4-a403-48c4-a8a8-00fe7b0637d7/query?li
 
       <p>뷰나 그 뷰의 카테고리가 없으면 404를, 쿼리 문자열이 스키마를 벗어나면 400을 돌려준다. 커서는 서버가 서명하고 사용자 · 뷰 · 뷰 버전에 묶여 15분 동안 유효하며, 서명이 맞지 않거나 만료되었거나 그사이 뷰 설정이 바뀌었으면 400을 돌려준다. 서버는 <code>limit</code>보다 한 건 더 읽어 <code>hasNextPage</code>를 정한다.</p>
 
-      <h4 data-page="0">14) 스킬 목록 조회</h4>
+      <h4 data-page="164">14) 스킬 목록 조회</h4>
       <p>유형 <strong>목록 조회</strong> · <code>GET /v1/career/skills</code></p>
 
       <figure class="fig">
@@ -6652,7 +6726,7 @@ GET /v1/career/skills</code></pre>
 
       <p>요청 파라메터 없이 로그인한 사용자의 스킬만 돌려준다. 근거 수가 0인 스킬은 빼고, <code>level</code> 내림차순 · <code>evidenceCount</code> 내림차순 · 이름 오름차순으로 정렬해 최대 1,000건까지 담는다. 조회만 하며 스킬을 다시 계산하지 않는다.</p>
 
-      <h4 data-page="0">15) 자연어 검색 조건 변환</h4>
+      <h4 data-page="165">15) 자연어 검색 조건 변환</h4>
       <p>유형 <strong>생성</strong> · <code>POST /v1/jobs/search/interpret</code></p>
 
       <figure class="fig">
@@ -6732,7 +6806,7 @@ GET /v1/career/skills</code></pre>
 
       <p>서버는 역할 · 경력 연수 · 근무 형태 · 지역 · 기술 · 연봉을 사전과 정규식으로 추출하며, 연봉 조건은 <code>enabled: false</code>로 만든다. 본문이 스키마를 벗어나면 400을 돌려준다. 해석할 때마다 최근 검색에 기록하는데, 직전 최근 검색과 검색어가 같으면 그 항목을 갱신하고 사용자당 최근 20건만 남긴다.</p>
 
-<h4 data-page="0">16) 공고 상세 조회</h4>
+<h4 data-page="167">16) 공고 상세 조회</h4>
       <p>유형 <strong>단건 조회</strong> · <code>GET /v1/jobs/postings/:id</code></p>
 
       <figure class="fig">
@@ -6829,7 +6903,7 @@ GET /v1/jobs/postings/7c0e2a51-3f4b-4d8e-9a61-2b5d8f0c1e47</code></pre>
 
       <p>경로의 <code>id</code>가 UUID 형식이 아니면 400을, 해당 공고가 없으면 404를 돌려준다. 공고 본문과 요건은 모든 사용자에게 같고, <code>match</code> · <code>interest</code> · <code>analysis</code> · <code>rank</code>와 요건의 <code>coverage</code>는 요청한 사용자 기준으로 채워진다. 이 공고를 아직 대조하지 않았으면 요건의 <code>coverage</code>는 null로 온다.</p>
 
-      <h4 data-page="0">17) 재료 후보 조회</h4>
+      <h4 data-page="169">17) 재료 후보 조회</h4>
       <p>유형 <strong>목록 조회</strong> · <code>GET /v1/brews/:id/materials</code></p>
 
       <figure class="fig">
@@ -6923,7 +6997,7 @@ GET /v1/brews/2d7f4a10-8c3e-4b59-b6a1-0e9c5d3f7b22/materials</code></pre>
 
       <p>경로의 <code>id</code>가 UUID 형식이 아니면 400을, 요청한 사용자의 제작이 아니거나 없으면 404를 돌려준다. 후보는 제작을 만들 때 최대 50건까지 매겨지고 순위 0–9의 10건이 자동으로 선택된다. 이 API는 읽기 전용이며, 선택을 바꿀 때는 같은 경로의 <code>PUT</code>에 <code>recordIds</code>(중복 없는 uuid 최대 10개)를 보내고 같은 형태의 응답을 받는다.</p>
 
-      <h4 data-page="0">18) 인터뷰 답변 저장</h4>
+      <h4 data-page="171">18) 인터뷰 답변 저장</h4>
       <p>유형 <strong>생성</strong> · <code>PUT /v1/interview-sessions/:id/answers/:questionId</code></p>
 
       <figure class="fig">
@@ -7013,7 +7087,7 @@ Idempotency-Key: 4b1f9c2e-7a30-4d55-9c11-8e2f0a6d34bb
 
       <p>질문에 처음 답하면 경험 카테고리에 <code>origin</code>이 <code>interview</code>인 초안 기록을 새로 만들고, 같은 질문에 다시 답하면 그 기록의 제목과 본문을 덮어쓰며 <code>recordChange.type</code>을 <code>strengthened</code>로 돌려준다. 같은 <code>Idempotency-Key</code>로 같은 내용을 다시 보내면 첫 결과를 돌려주고, 다른 내용을 보내면 409를 돌려준다. 세션이나 질문이 없으면 404이며, 저장할 때마다 세션의 답변 수와 다음 질문 순서를 다시 계산하고 모든 질문이 답변되거나 건너뛰어지면 세션을 <code>done</code>으로 바꾼다.</p>
 
-      <h4 data-page="0">19) 레시피 생성</h4>
+      <h4 data-page="173">19) 레시피 생성</h4>
       <p>유형 <strong>비동기 접수</strong> · <code>POST /v1/brews/:id/recipes</code></p>
 
       <figure class="fig">
@@ -7088,7 +7162,7 @@ Idempotency-Key: 8e5d2a17-6c4f-4b90-a3d1-7f0b9e2c5a48</code></pre>
 
       <p>요청 본문은 읽지 않으며, 작업 문서와 <code>recipe.draft</code> outbox 이벤트를 한 트랜잭션에 기록한 뒤 202로 작업 상태만 돌려준다. 같은 <code>Idempotency-Key</code>로 다시 보내면 새 작업을 만들지 않고 기존 작업을 돌려주며, 그 키가 다른 제작이나 다른 작업 유형에 쓰였으면 409를, 제작이 없으면 404를 돌려준다. 레시피는 워커가 작업을 끝낸 뒤 만들어지고, 클라이언트는 <code>GET /v1/brew-jobs/:id</code>로 상태를 확인해 <code>resultId</code>를 받는다.</p>
 
-      <h4 data-page="0">20) 포트폴리오 생성 실행</h4>
+      <h4 data-page="175">20) 포트폴리오 생성 실행</h4>
       <p>유형 <strong>비동기 접수</strong> · <code>POST /v1/generation-jobs</code></p>
 
       <figure class="fig">
@@ -7169,7 +7243,7 @@ Idempotency-Key: 0c9b4e72-1d5a-4f38-b6e0-9a2f7c3d1e85
 
       <p>본문 검증에 실패하거나 <code>Idempotency-Key</code>가 없으면 400을, 레시피가 없거나 템플릿이 활성 상태가 아니면 404를 돌려준다. 같은 키와 같은 본문으로 다시 보내면 기존 작업을 돌려주고, 같은 키에 다른 본문을 보내면 409를 돌려준다. 작업 문서와 <code>portfolio.generate</code> outbox 이벤트를 한 트랜잭션에 기록한 뒤 202로 응답하며, 진행 상태는 <code>GET /v1/generation-jobs/:id</code>로, 만들어지는 지면은 <code>GET /v1/generation-jobs/:id/page-stream</code>으로 받는다.</p>
 
-      <h4 data-page="0">21) 블록 수정 미리보기</h4>
+      <h4 data-page="176">21) 블록 수정 미리보기</h4>
       <p>유형 <strong>생성</strong> · <code>POST /v1/portfolios/:id/blocks/:blockId/edit-preview</code></p>
 
       <figure class="fig">
@@ -7257,7 +7331,7 @@ POST /v1/portfolios/6e0a3d58-9f21-4b7c-a4e3-0d8b5c2f1a69/blocks/1b7e4c90-5d32-4a
 
       <p>이 API는 블록을 바꾸지 않고 24시간 뒤 만료되는 <code>pending</code> 상태의 수정 제안만 저장하며 201을 돌려준다. 블록 종류가 허용하지 않는 <code>path</code>(문단 · 제목 · 목록은 <code>content.text</code>, 수치는 <code>content.value</code> · <code>content.label</code>만 허용)는 422로, 잠긴 블록에 대한 <code>instruct</code>와 미리보기 중 블록이 바뀐 경우는 409로, 편집 모델이 설정되지 않은 상태의 <code>instruct</code>는 503으로 거절한다. 제안은 <code>POST /v1/portfolio-edit-proposals/:id/apply</code>를 호출해야 블록에 반영된다.</p>
 
-<h4 data-page="0">22) 포트폴리오 배포</h4>
+<h4 data-page="179">22) 포트폴리오 배포</h4>
       <p>유형 <strong>생성</strong> · <code>POST /v1/portfolios/:id/deployments</code></p>
 
       <figure class="fig">
@@ -7349,7 +7423,7 @@ POST /v1/portfolios/6e0a3d58-9f21-4b7c-a4e3-0d8b5c2f1a69/blocks/1b7e4c90-5d32-4a
 
       <p>성공하면 201을 돌려주고 포트폴리오 상태를 <code>published</code>로 바꾼다. 배포 한 건마다 <code>slug</code>가 고유해야 하므로(<code>deployments.subdomain</code> 고유 인덱스) 이전 배포에 쓴 <code>slug</code>로 다시 요청하면 같은 포트폴리오라도 409로 거절하고, 품질 검사를 통과한(<code>qualityStatus: ready</code>) 생성 페이지가 없을 때도 409를 낸다. 직전 배포와 <code>slug</code>가 다르면 옛 주소에서 새 주소로 가는 30일짜리 리다이렉트를 함께 기록한다.</p>
 
-      <h4 data-page="0">23) 방문 이벤트 수집</h4>
+      <h4 data-page="181">23) 방문 이벤트 수집</h4>
       <p>유형 <strong>생성</strong> · <code>POST /v1/analytics/events</code></p>
 
       <figure class="fig">
@@ -7431,7 +7505,7 @@ POST /v1/portfolios/6e0a3d58-9f21-4b7c-a4e3-0d8b5c2f1a69/blocks/1b7e4c90-5d32-4a
 
       <p>로그인 없이 호출할 수 있고 202를 돌려준다. <code>Authorization: Bearer</code> 헤더가 있으면 토큰을 검증해, 포트폴리오 주인의 방문은 집계에서 빠지도록 표시한다. 같은 <code>eventId</code>를 같은 내용으로 다시 보내면 <code>duplicate: true</code>로 응답하고 내용이 다르면 409를 낸다. 본문이 8KB를 넘으면 413, 같은 방문자·배포에서 1분에 120건을 넘으면 429, 공개 중인 배포가 없는 <code>slug</code>이면 404, <code>visit</code> 이벤트보다 다른 이벤트가 먼저 오면 409로 거절한다.</p>
 
-      <h4 data-page="0">24) 분석 대시보드 조회</h4>
+      <h4 data-page="182">24) 분석 대시보드 조회</h4>
       <p>유형 <strong>단건 조회</strong> · <code>GET /v1/portfolios/:id/analytics/dashboard</code></p>
 
       <figure class="fig">
@@ -7515,7 +7589,7 @@ GET /v1/portfolios/7c1e4a52-93d0-4f6b-8a2e-1b5d9f0c3e71/analytics/dashboard?peri
 
       <p>이 API는 저장된 집계(<code>metricsDaily</code>)를 읽기만 하고 아무것도 쓰지 않으며, 집계되지 않은 날의 방문은 <code>metrics</code>와 <code>trend</code>에 들어가지 않고 <code>coverage.pendingDates</code>에만 나타난다. 다른 사용자의 포트폴리오이거나 없으면 404, 한 번도 배포하지 않은 포트폴리오이면 409를 돌려준다. 정의되지 않은 쿼리 파라미터가 섞이면 400으로 거절한다.</p>
 
-      <h4 data-page="0">25) 홈 화면 조회</h4>
+      <h4 data-page="185">25) 홈 화면 조회</h4>
       <p>유형 <strong>단건 조회</strong> · <code>GET /v1/home</code></p>
 
       <figure class="fig">
@@ -7593,7 +7667,7 @@ GET /v1/home</code></pre>
 
       <p>로그인한 사용자 본인의 데이터만 읽고 요청 파라미터는 없다. 아무것도 쓰지 않는 조회이며, <code>keyMetrics</code>는 기간을 나누지 않고 지표 키별로 모든 일별 집계를 더한 값이다. 목록이 비어 있으면 빈 배열과 함께 <code>empty</code>의 해당 값이 <code>true</code>로 온다.</p>
 
-      <h4 data-page="0">26) 기능 사용 권한 조회</h4>
+      <h4 data-page="186">26) 기능 사용 권한 조회</h4>
       <p>유형 <strong>단건 조회</strong> · <code>GET /v1/entitlements/:capability</code></p>
 
       <figure class="fig">
@@ -7671,7 +7745,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
 
       <p>목록에 없는 <code>capability</code>이면 400을 돌려준다. 요금제가 기능을 허용하지 않으면 <code>allowed: false</code>, <code>reason: PLAN_REQUIRED</code>로 응답하고, <code>portfolio.generate</code>는 이번 달 사용 횟수가 한도에 닿으면 <code>QUOTA_EXHAUSTED</code>가 된다. 조회만 하며 사용량을 늘리지 않는다.</p>
 
-      <h3 data-page="154">7.4 AI학습서버 REST API 설계</h3>
+      <h3 data-page="188">7.4 AI학습서버 REST API 설계</h3>
       <p>
         서비스 API와 프로세스를 분리하고, 내부 네트워크와 서비스 토큰으로 접근을 제한한다. 모델 A는 공고를, 모델 B는 해당 공고에 쓸 커리어 기록을 정렬한다. 학습 단위는 Bi-Encoder+MLP(<code>bi</code>)와 Cross-Encoder(<code>cross</code>) 둘이며, 모델 B는 활성 <code>cross</code> 버전을 사용한다.
       </p>
@@ -7710,8 +7784,8 @@ GET /v1/entitlements/portfolio.generate</code></pre>
 
     <!-- 08 ================================================== -->
     <section class="sec" id="datadesign">
-      <div class="sec-head"><span class="num">08</span><h2 data-page="156">데이터 설계</h2><span class="aside">MongoDB 컬렉션</span></div>
-      <h3 data-page="156">8.1 데이터 모델</h3>
+      <div class="sec-head"><span class="num">08</span><h2 data-page="191">데이터 설계</h2><span class="aside">MongoDB 컬렉션</span></div>
+      <h3 data-page="191">8.1 데이터 모델</h3>
       <p>Expresso는 MongoDB 8.0 단일 노드 replica set의 <code>expresso</code> 데이터베이스에
       도메인 문서를 저장한다. <code>packages/database/src/collections.ts</code>의 접근자에
       컬렉션 82개가 선언돼 있다. 문서 타입은 <code>packages/database/src/documents/</code>,
@@ -7734,12 +7808,12 @@ GET /v1/entitlements/portfolio.generate</code></pre>
       <p>공개 포트폴리오의 문장 근거는 <code>generation_sentence_evidence</code>가
       <code>recipe_evidence_paths</code>를 거쳐 <code>career_records</code>의 원천 기록을
       가리키도록 보존한다.</p>
-      <h3 data-page="156">8.2 논리적 설계(컬렉션 명세서)</h3>
+      <h3 data-page="191">8.2 논리적 설계(컬렉션 명세서)</h3>
       <p>커리어 본문은 스냅샷과 순서가 있는 업데이트로 관리한다. 저장된 뷰는
       <code>career_views.configuration</code>에 둔다. 관계·수식·롤업 결과는 커리어 기록과
       관계 컬렉션에 연결한다. AI 편집 제안의 상태와 기준 버전은
       <code>career_ai_proposals</code>에 남긴다.</p>
-      <h4 data-page="156">■ 컬렉션 목록</h4>
+      <h4 data-page="191">■ 컬렉션 목록</h4>
       <div class="table-wrap"><table><thead><tr><th>영역</th><th>컬렉션</th><th>개수</th></tr></thead><tbody>
         <tr><td>계정·인증</td><td><code>plans</code>, <code>users</code>, <code>consents</code>, <code>usage_counters</code>, <code>identity_oauth_accounts</code>, <code>identity_sessions</code></td><td class="num">6</td></tr>
         <tr><td>커리어 기록</td><td><code>career_categories</code>, <code>career_records</code>, <code>career_views</code>, <code>record_links</code>, <code>record_usages</code>, <code>revisions</code>, <code>skills</code>, <code>skill_evidence</code></td><td class="num">8</td></tr>
@@ -7757,7 +7831,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
       </tbody></table></div>
       <p>각 컬렉션의 필드와 인덱스는 아래 표와 같다. 표는 마이그레이션을 모두 적용한 스키마의 validator와 인덱스에서 생성한다.</p>
       <!-- collection-spec:auto — 여기서부터 scripts/dump-collection-spec.mjs 가 생성 -->
-      <h4 data-page="0">■ 계정·인증</h4>
+      <h4 data-page="193">■ 계정·인증</h4>
       <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>code</code></td><td>문자열</td><td class="num">O</td><td><code>free</code> · <code>pro</code> · <code>team</code> · 최대 255자</td></tr>
@@ -7818,7 +7892,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>lastSeenAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.6 <code>identity_sessions</code> · 인덱스 <code>tokenHash ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>tokenHash ↑, expiresAt ↑</code> · <code>userId ↑, createdAt ↓</code> · <code>expiresAt ↑</code> (만료 0초)</caption></table></div>
-      <h4 data-page="0">■ 커리어 기록</h4>
+      <h4 data-page="196">■ 커리어 기록</h4>
       <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">—</td><td>null 허용</td></tr>
@@ -7923,7 +7997,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>weight</code></td><td>실수</td><td class="num">O</td><td></td></tr>
         <tr><td><code>extractedSpan</code></td><td>객체</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.14 <code>skill_evidence</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, skillId ↑, recordId ↑</code> (유일) · <code>userId ↑, recordId ↑</code></caption></table></div>
-      <h4 data-page="0">■ 커리어 편집</h4>
+      <h4 data-page="202">■ 커리어 편집</h4>
       <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8000,7 +8074,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.19 <code>career_ai_proposals</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recordId ↑, status ↑</code> · <code>expiresAt ↑</code> (만료 0초)</caption></table></div>
-      <h4 data-page="0">■ 채용 공고</h4>
+      <h4 data-page="206">■ 채용 공고</h4>
       <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>name</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
@@ -8093,7 +8167,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>resultCount</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.24 <code>recent_searches</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, createdAt ↓</code></caption></table></div>
-      <h4 data-page="0">■ 제작·매칭</h4>
+      <h4 data-page="211">■ 제작·매칭</h4>
       <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8198,7 +8272,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>computedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.32 <code>requirement_coverages</code> · 인덱스 <code>userId ↑</code> · <code>requirementId ↑</code></caption></table></div>
-      <h4 data-page="0">■ AI 인터뷰</h4>
+      <h4 data-page="217">■ AI 인터뷰</h4>
       <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8250,7 +8324,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>sourceQuote</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.36 <code>answer_record_changes</code> · 인덱스 <code>userId ↑, answerId ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recordId ↑</code></caption></table></div>
-      <h4 data-page="0">■ 레시피</h4>
+      <h4 data-page="219">■ 레시피</h4>
       <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>code</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
@@ -8331,7 +8405,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>reason</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.43 <code>recipe_unused_sources</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recipeId ↑, recordId ↑</code> (유일) · <code>userId ↑, recordId ↑</code></caption></table></div>
-      <h4 data-page="0">■ 생성·편집</h4>
+      <h4 data-page="224">■ 생성·편집</h4>
       <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8402,7 +8476,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>reason</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.49 <code>generation_usage_ledger</code> · 인덱스 <code>userId ↑, generationJobId ↑, reason ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, usageCounterId ↑</code></caption></table></div>
-      <h4 data-page="0">■ 지면·레이아웃</h4>
+      <h4 data-page="228">■ 지면·레이아웃</h4>
       <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8464,7 +8538,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>snapshot</code></td><td>객체</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.53 <code>portfolio_snapshots</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑, createdAt ↓, _id ↓</code></caption></table></div>
-      <h4 data-page="0">■ 배포·미디어</h4>
+      <h4 data-page="231">■ 배포·미디어</h4>
       <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8539,7 +8613,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>byteSize</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.59 <code>media_variants</code> · 인덱스 <code>mediaAssetId ↑, width ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>mediaAssetId ↑, width ↑</code> · <code>userId ↑, mediaAssetId ↑</code></caption></table></div>
-      <h4 data-page="0">■ 분석</h4>
+      <h4 data-page="235">■ 분석</h4>
       <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8663,7 +8737,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>compareTo</code></td><td>문자열</td><td class="num">—</td><td><code>prev_period</code> · <code>other_portfolio</code> · <code>industry</code> · <code>null</code> · null 허용</td></tr>
         <tr><td><code>position</code></td><td>객체</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.71 <code>widgets</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>derivedMetricId ↑</code> · <code>userId ↑, dashboardViewId ↑</code></caption></table></div>
-      <h4 data-page="0">■ 운영·플랫폼</h4>
+      <h4 data-page="242">■ 운영·플랫폼</h4>
       <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">—</td><td>null 허용</td></tr>
@@ -8749,7 +8823,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>lastKey</code></td><td>문자열</td><td class="num">—</td><td></td></tr>
         <tr><td><code>processedCount</code></td><td>정수 · 실수</td><td class="num">O</td><td></td></tr>
       </tbody><caption>표 8.2.81 <code>import_checkpoints</code> · 인덱스 <code>runId ↑, tableName ↑</code> (유일)</caption></table></div>
-      <h4 data-page="0">■ 비동기 이벤트</h4>
+      <h4 data-page="247">■ 비동기 이벤트</h4>
       <div class="table-wrap"><table style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>topic</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
@@ -8768,11 +8842,11 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>userId</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
       </tbody><caption>표 8.2.82 <code>outbox_events</code> · 인덱스 <code>idempotencyKey ↑</code> (유일) · <code>availableAt ↑, createdAt ↑</code> · <code>state ↑, availableAt ↑, _id ↑</code> · <code>state ↑, leaseUntil ↑</code></caption></table></div>
       <!-- /collection-spec:auto -->
-      <h4 data-page="212">■ 검증과 일관성</h4>
+      <h4 data-page="248">■ 검증과 일관성</h4>
       <ul><li>요청·응답은 <code>packages/contracts</code>의 Zod 스키마로 검증한다. 저장 문서는 컬렉션 validator와 인덱스를 적용한다.</li>
       <li>여러 문서에 걸친 상태 변경은 MongoDB 트랜잭션으로 묶는다. 작업 발행은 <code>outbox_events</code>를 같은 트랜잭션에 기록하고 디스패처가 Redis 큐로 전달한다.</li>
       <li>참조 대상의 존재와 소유권은 서비스가 검증한다.</li></ul>
-      <h3 data-page="213">8.3 로그파일 설계</h3>
+      <h3 data-page="248">8.3 로그파일 설계</h3>
       <p>
         모든 기능과 서비스가 정상 동작하는지 확인하기 위해 실행 로그와 운영 로그를 파일로
         저장한다. 로그는 JSON 한 줄에 한 사건으로 기록하며, 사람이 읽는 형식이 아닌 기계가
@@ -8809,7 +8883,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
  "error":{"name":"GenerationValidationError","statusCode":422},"msg":"request failed"}</code></pre>
       </figure>
 
-      <h3 data-page="214">8.4 오류코드 및 오류파일 설계</h3>
+      <h3 data-page="249">8.4 오류코드 및 오류파일 설계</h3>
       <p>
         발생할 수 있는 모든 오류를 식별하여 아래와 같이 코드로 정의한다. 오류가 발생할 때마다
         기록하는 오류 파일의 포맷과 파일명은 8.3의 로그파일 설계를 따른다.
@@ -8858,11 +8932,11 @@ GET /v1/entitlements/portfolio.generate</code></pre>
     <section class="sec" id="metrics">
       <div class="sec-head">
         <span class="num">09</span>
-        <h2 data-page="216">성능시험지표</h2>
+        <h2 data-page="251">성능시험지표</h2>
         <span class="aside">서비스 로컬 측정 · 모델 미측정</span>
       </div>
 
-      <h3 data-page="216">9.1 AI서비스 성능평가지표</h3>
+      <h3 data-page="251">9.1 AI서비스 성능평가지표</h3>
       <p>
         개발할 AI서비스의 성능을 측정하기 위한 평가지표를 아래와 같이 발굴하여 정의한다.
         평가항목마다 시험내용 · 시험환경 · 시험절차를 함께 작성한다.
@@ -8883,7 +8957,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         </table>
       </div>
 
-      <h4 data-page="216">■ 근거 없는 수치 차단율</h4>
+      <h4 data-page="251">■ 근거 없는 수치 차단율</h4>
       <p>
         본 서비스는 채용 문서를 생성한다. 지어낸 수치가 <strong>단 한 건이라도</strong>
         공개되면 사용자에게 실질적인 피해가 발생하므로 목표치를 100%로 정한다.
@@ -8927,7 +9001,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         </table>
       </div>
 
-      <h4 data-page="218">■ 응답 시간 — 2026-09-28 MongoDB 로컬 시험</h4>
+      <h4 data-page="253">■ 응답 시간 — 2026-09-28 MongoDB 로컬 시험</h4>
       <div class="table-wrap">
         <table>
           <thead><tr><th>경로</th><th class="num">예산</th><th class="num">측정 p95</th><th>결과</th></tr></thead>
@@ -8945,7 +9019,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
       통과했다. 실행 명령은 <code>EXPRESSO_LOAD_TEST=1 node scripts/test-infra.mjs
       test/load/performance-budget.test.ts --disableConsoleIntercept</code>다.</p>
 
-      <h3 data-page="218">9.2 AI학습 성능 (ROC)</h3>
+      <h3 data-page="253">9.2 AI학습 성능 (ROC)</h3>
       <p>학습 모델의 성능은 추천 순위 · 후보 선별 · 점수 예측 · 처리 효율을 구분하여 평가한다.
       주요 지표는 NDCG@10이며, 설계서 양식이 요구하는 ROC · AUC는 보조 지표로 함께 산출한다.
       ROC는 적합도 라벨 60점 이상을 양성으로 두고, 예측 점수의 임계값을
@@ -8958,7 +9032,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td>p95 지연 · 처리량</td><td>요청의 95%가 완료되는 시간과 단위 시간당 처리량</td><td>지연은 낮게 · 처리량은 높게</td><td>운영 효율</td></tr>
         <tr><td>ROC · AUC</td><td>60점 이상 쌍을 나머지와 구분하는가</td><td>높을수록 좋음</td><td>양식 보조 지표</td></tr>
       </tbody></table></div>
-      <h4 data-page="219">■ 평가 조건</h4>
+      <h4 data-page="254">■ 평가 조건</h4>
       <ul class="check">
         <li>점수와 순위는 교사 라벨을 기준으로 평가한다.</li>
         <li>공고쌍은 같은 프로필 안에서 정답 점수 차이가 5점 이상인 쌍으로 구성한다.</li>
@@ -8967,7 +9041,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <li>모델은 검증 분할에서 임계값과 하이퍼파라미터를 정하고, 평가 분할에서 한 번만 평가한다.</li>
         <li>사람 평가와의 일치와 루브릭 가중치의 타당성은 라벨 구축 후 후속 검증으로 확인한다.</li>
       </ul>
-      <h4 data-page="219">■ 파일럿 학습 조건</h4>
+      <h4 data-page="254">■ 파일럿 학습 조건</h4>
       <p>
         2026-09-04에 수행한 파일럿 학습의 결과를 기록한다. 합성 프로필 1,000개에 공고 10개씩을
         붙인 10,000쌍을 사용하였고, 후보 공고는 프로필마다 같은 직무 5개 · 인접 직무 3개 ·
@@ -8990,7 +9064,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td>실행 장비</td><td>RTX 5080 · CUDA 12.8</td><td>RTX 5080 · CUDA 12.8</td></tr>
       </tbody></table></div>
 
-      <h4 data-page="220">■ 파일럿 평가 결과</h4>
+      <h4 data-page="255">■ 파일럿 평가 결과</h4>
       <div class="table-wrap"><table><thead><tr><th>모델</th><th class="num">NDCG@10 ↑</th><th class="num">순서 일치율 ↑</th><th class="num">MAP@10 ↑</th><th class="num">MRR@10 ↑</th></tr></thead><tbody>
         <tr><td>Word TF-IDF</td><td class="num">0.8653</td><td class="num">0.5870</td><td class="num">0.4955</td><td class="num">0.5581</td></tr>
         <tr><td>BM25</td><td class="num">0.8635</td><td class="num">0.5827</td><td class="num">0.4371</td><td class="num">0.4647</td></tr>
@@ -9038,7 +9112,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         Cross-Encoder 0.9383이고 MAE는 각각 10.41, 10.35이다.
       </p>
 
-      <h4 data-page="223">■ 지표별 측정 현황</h4>
+      <h4 data-page="258">■ 지표별 측정 현황</h4>
       <div class="table-wrap"><table><thead><tr><th>모델</th><th>지표</th><th>파일럿 측정값</th></tr></thead><tbody>
         <tr><td rowspan="6">A</td><td>NDCG@10</td><td>Bi-Encoder+MLP 0.9555 · Cross-Encoder 0.9608</td></tr>
         <tr><td>MAE</td><td>Bi-Encoder+MLP 10.54 · Cross-Encoder 10.51</td></tr>
@@ -9055,13 +9129,13 @@ GET /v1/entitlements/portfolio.generate</code></pre>
     <section class="sec" id="env">
       <div class="sec-head">
         <span class="num">10</span>
-        <h2 data-page="224">개발환경 구성</h2>
+        <h2 data-page="259">개발환경 구성</h2>
         <span class="aside">양식 10장</span>
       </div>
 
-      <h3 data-page="224">10.1 개발환경</h3>
+      <h3 data-page="259">10.1 개발환경</h3>
       <p>본 프로젝트의 개발환경은 아래와 같다.</p>
-      <h4 data-page="224">■ 서버</h4>
+      <h4 data-page="259">■ 서버</h4>
       <div class="table-wrap">
         <table>
           <thead><tr><th>구분</th><th>개발환경</th><th>규격</th></tr></thead>
@@ -9083,7 +9157,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         </table>
       </div>
 
-      <h4 data-page="225">■ 클라이언트 · AI학습서버</h4>
+      <h4 data-page="260">■ 클라이언트 · AI학습서버</h4>
       <div class="table-wrap">
         <table>
           <thead><tr><th>구분</th><th>개발환경</th><th>규격</th></tr></thead>
@@ -9100,7 +9174,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         </table>
       </div>
 
-      <h4 data-page="225">■ LLM 프로바이더</h4>
+      <h4 data-page="260">■ LLM 프로바이더</h4>
       <div class="table-wrap">
         <table>
           <thead><tr><th><code>AI_PROVIDER</code></th><th>동작</th><th>용도</th></tr></thead>
@@ -9114,7 +9188,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         </table>
       </div>
 
-      <h4 data-page="225">■ 인프라 실행</h4>
+      <h4 data-page="260">■ 인프라 실행</h4>
       <figure class="code">
         <div class="bar">
           <span>로컬 개발 시작</span>
@@ -9133,7 +9207,7 @@ pnpm dev:backend</code></pre>
         503을 반환한다.
       </p>
 
-      <h3 data-page="226">10.2 소스디렉터리 구조</h3>
+      <h3 data-page="261">10.2 소스디렉터리 구조</h3>
       <figure class="fig">
         <div class="plate drawn"><svg class="dg" viewBox="0 0 900 317" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="모노레포 디렉터리 구조">
   <rect class="bxs" x="4" y="2" width="150" height="22" rx="7"/>
@@ -9168,7 +9242,7 @@ pnpm dev:backend</code></pre>
         <code>*.integration.test.ts</code>가 그 옆에 놓인다. 파일 이름이 곧 역할이므로
         새 모듈을 추가할 때에도 같은 구성을 따른다.
       </p>
-      <h3 data-page="226">10.3 명칭표준안 (변수, 함수, 파일명)</h3>
+      <h3 data-page="261">10.3 명칭표준안 (변수, 함수, 파일명)</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>영역</th><th>대상</th><th>규칙</th><th>예</th></tr></thead>
