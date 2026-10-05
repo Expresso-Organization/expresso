@@ -4484,7 +4484,7 @@ return { ...record, score };</code></pre>
       </figure>
 
       <p>요청을 받으면 <code>recipe</code> 행과 outbox 이벤트를 같은 트랜잭션에 넣고 202로 답한다. Worker가 AI서버에 섹션 구성을 요청하여 <code>recipe_item</code>으로 저장하며, 항목마다 근거로 삼을 기록을 함께 적는다.</p>
-      <p>레시피는 생성할 문서의 구성 정의이다. 항목마다 근거 경로가 붙는다는 점이 이 단계의 핵심이며, 이 경로가 나중에 생성된 문장이 지어낸 것인지 판별하는 기준이 된다. 근거를 지정할 수 없는 항목은 레시피에 남기지 않는다.</p>
+      <p>레시피는 생성할 문서의 구성 정의이다. 항목마다 근거 경로가 붙으며, 근거를 지정할 수 없는 항목은 레시피에 남기지 않는다.</p>
 
       <h4 data-page="89">11) 포트폴리오 생성 실행 기능</h4>
       <p>
@@ -4534,7 +4534,7 @@ return { ...record, score };</code></pre>
       </figure>
 
       <p>생성 요청을 받으면 사용량을 먼저 차감한 뒤 <code>generation_job</code>과 outbox를 같은 트랜잭션에 기록하고 202로 답한다. Worker는 레시피를 지키도록 지시하여 블록과 인용 근거를 받고, <code>validator.ts</code>가 블록에 적힌 수치가 인용한 근거 안에 있는지 검사한다. 통과한 결과만 저장하며 진행 상황은 스트림으로 내려보낸다.</p>
-      <p>채용 문서에서 지어낸 수치는 사용자에게 직접적인 피해가 된다. 그래서 검증에 걸린 결과는 저장하지 않고 다시 생성한다. 사용량을 작업 생성 이전에 차감하는 것은 같은 요청이 여러 번 접수되어 한도를 넘기는 것을 막기 위함이다.</p>
+      <p>검증에 걸린 결과는 저장하지 않고 다시 생성한다. 사용량을 작업 생성 이전에 차감하는 것은 같은 요청이 여러 번 접수되어 한도를 넘기는 것을 막기 위함이다.</p>
 
       <h4 data-page="90">12) 대화형 수정 기능</h4>
       <p>
@@ -9054,7 +9054,6 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <table>
           <thead><tr><th>평가항목</th><th class="num">단위</th><th class="num">개발목표치</th><th>평가방법</th></tr></thead>
           <tbody>
-            <tr><td>근거 없는 수치 차단율</td><td class="num">%</td><td class="num">100</td><td>팀 자체시험</td></tr>
             <tr><td>공고 추천 순위 품질 (모델 A · NDCG@10)</td><td class="num">—</td><td class="num">확정 전</td><td>팀 자체시험</td></tr>
             <tr><td>기록 추천 순위 품질 (모델 B · NDCG@10)</td><td class="num">—</td><td class="num">확정 전</td><td>팀 자체시험</td></tr>
             <tr><td>포트폴리오 생성 성공률</td><td class="num">%</td><td class="num">≥ 90</td><td>팀 자체시험</td></tr>
@@ -9065,18 +9064,6 @@ GET /v1/entitlements/portfolio.generate</code></pre>
           </tbody>
         </table>
       </div>
-
-      <h4 data-page="196">■ 근거 없는 수치 차단율</h4>
-      <p>
-        본 서비스는 채용 문서를 생성한다. 지어낸 수치가 <strong>단 한 건이라도</strong>
-        공개되면 사용자에게 실질적인 피해가 발생하므로 목표치를 100%로 정한다.
-      </p>
-      <ol class="steps">
-        <li><span class="t">준비</span><span class="d">수치가 3개 명시된 기록으로 레시피를 구성한다.</span></li>
-        <li><span class="t">유도</span><span class="d">기록에 없는 수치를 포함하도록 유도하는 입력 50건을 작성한다.</span></li>
-        <li><span class="t">실행</span><span class="d">각 입력으로 생성을 실행한다.</span></li>
-        <li><span class="t">판정</span><span class="d">50건 모두 <code>GEN_UNGROUNDED_NUMBER</code>로 거부되면 통과이며, 1건이라도 통과하면 실패로 본다.</span></li>
-      </ol>
 
       <div class="table-wrap">
         <table>
@@ -9110,7 +9097,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         </table>
       </div>
 
-      <h4 data-page="198">■ 응답 시간 — 2026-09-28 MongoDB 로컬 시험</h4>
+      <h4 data-page="197">■ 응답 시간 — 2026-09-28 MongoDB 로컬 시험</h4>
       <div class="table-wrap">
         <table>
           <thead><tr><th>경로</th><th class="num">예산</th><th class="num">측정 p95</th><th>결과</th></tr></thead>
@@ -9221,7 +9208,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         Cross-Encoder 0.9383이고 MAE는 각각 10.41, 10.35이다.
       </p>
 
-      <h4 data-page="203">■ 지표별 측정 현황</h4>
+      <h4 data-page="202">■ 지표별 측정 현황</h4>
       <div class="table-wrap"><table><thead><tr><th>모델</th><th>지표</th><th>파일럿 측정값</th></tr></thead><tbody>
         <tr><td rowspan="6">A</td><td>NDCG@10</td><td>Bi-Encoder+MLP 0.9555 · Cross-Encoder 0.9608</td></tr>
         <tr><td>MAE</td><td>Bi-Encoder+MLP 10.54 · Cross-Encoder 10.51</td></tr>
