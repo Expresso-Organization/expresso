@@ -2267,15 +2267,18 @@ return { ...record, score };</code></pre>
             <tr><td>동결 범위</td><td>인코더 12개 층 전체</td><td>토큰 임베딩과 앞쪽 20개 층</td></tr>
             <tr><td>학습 범위</td><td>MLP — Linear 3,072 → 256 · GELU · Linear 256 → 1</td><td>마지막 4개 층과 점수 예측 헤드</td></tr>
             <tr><td>출력</td><td>Sigmoid → 적합도 0–100</td><td>Sigmoid → 적합도 0–100</td></tr>
-            <tr><td>학습 목표</td><td>정답 점수에 가깝게, 더 적합한 공고를 더 높게</td><td>정답 점수에 가깝게</td></tr>
-            <tr><td>학습률 · 배치 크기 · 에폭</td><td>확정 전</td><td>확정 전</td></tr>
+            <tr><td>손실 함수</td><td>점수 MSE + 0.1 × 순서 학습 손실 (같은 프로필 안 정답 차 5점 이상 쌍)</td><td>점수 MSE</td></tr>
+            <tr><td>옵티마이저 · 학습률</td><td>AdamW · 0.0005</td><td>AdamW · 0.00002</td></tr>
+            <tr><td>배치 크기</td><td>프로필 32명 단위</td><td>2쌍 · 기울기 누적 4회</td></tr>
+            <tr><td>에폭</td><td>최대 60 · 검증 MAE 8회 개선 없으면 조기 종료 · 최저 검증 MAE 시점 선택</td><td>3 · 최저 검증 MAE 시점 선택</td></tr>
+            <tr><td>기울기 제한 · 정밀도</td><td>—</td><td>기울기 노름 1.0 · bfloat16</td></tr>
           </tbody>
-          <caption>학습 목표의 예: 공고 A의 정답이 85점이면 예측도 85점에 가깝게, A가 85점이고 B가 60점이면 A의 예측 점수가 더 높도록 학습한다.</caption>
+          <caption>파일럿 학습(2026-09-04)에서 사용한 값이다. 출처는 <code>scripts/ml-data/llm_suitability_train.py</code>와 파일럿 결과 리포트이다.</caption>
         </table>
       </div>
       <p>
-        하이퍼파라미터는 검증 분할(900쌍)에서 탐색한다. 교사 프롬프트와 루브릭 버전은 데이터세트
-        메타에 기록한다. 루브릭이 바뀌면 라벨의 성격 자체가 바뀌기 때문이다.
+        파일럿에서 Bi-Encoder+MLP는 47 에폭에서 조기 종료되어 39 에폭을, Cross-Encoder는 3 에폭을
+        선택하였다. 교사 프롬프트와 루브릭 버전은 데이터세트 메타에 기록한다.
       </p>
 
       <h3 data-page="40">4.4 AI학습 모델의 생성</h3>
@@ -6516,7 +6519,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
       <h3 data-page="164">9.2 AI학습 성능 (ROC)</h3>
       <p>학습 모델의 성능은 추천 순위 · 후보 선별 · 점수 예측 · 처리 효율을 구분하여 평가한다.
       주요 지표는 NDCG@10이며, 설계서 양식이 요구하는 ROC · AUC는 보조 지표로 함께 산출한다.
-      ROC는 적합도 라벨 75점(루브릭의 직접 근거) 이상을 양성으로 두고, 예측 점수의 임계값을
+      ROC는 적합도 라벨 60점 이상을 양성으로 두고, 예측 점수의 임계값을
       바꾸어 가며 그린다.</p>
       <div class="table-wrap"><table><thead><tr><th>평가 지표</th><th>무엇을 평가하는가</th><th>해석 방향</th><th>적용 범위</th></tr></thead><tbody>
         <tr><td>NDCG@10</td><td>적합도가 높은 공고를 상위에 배치하는가</td><td>높을수록 좋음</td><td>주요 지표 · 모델 A · B</td></tr>
@@ -6524,7 +6527,7 @@ POST /v1/assets/ast_77/signed-url</code></pre>
         <tr><td>MAE</td><td>예측 점수와 교사 라벨 점수의 평균 절대 차이</td><td>낮을수록 좋음</td><td>점수 예측</td></tr>
         <tr><td>공고쌍 순서 일치율</td><td>같은 프로필에서 더 적합한 공고에 높은 점수를 주는가</td><td>높을수록 좋음</td><td>순서 예측</td></tr>
         <tr><td>p95 지연 · 처리량</td><td>요청의 95%가 완료되는 시간과 단위 시간당 처리량</td><td>지연은 낮게 · 처리량은 높게</td><td>운영 효율</td></tr>
-        <tr><td>ROC · AUC</td><td>75점 이상 쌍을 나머지와 구분하는가</td><td>높을수록 좋음</td><td>양식 보조 지표</td></tr>
+        <tr><td>ROC · AUC</td><td>60점 이상 쌍을 나머지와 구분하는가</td><td>높을수록 좋음</td><td>양식 보조 지표</td></tr>
       </tbody></table></div>
       <h4 data-page="165">■ 평가 조건</h4>
       <ul class="check">

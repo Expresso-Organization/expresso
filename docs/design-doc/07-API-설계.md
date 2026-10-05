@@ -530,7 +530,7 @@ AI학습서버는 별도로 실행되는 서버다. 서비스 API와 포트·프
 | `recallAtK` | | O | Object | 스크리닝 후보 선별 성능 (`bi`) |
 | `mae` | | O | float | 교사 라벨 점수와의 평균 절대 차이 |
 | `pairOrderAccuracy` | | O | float | 공고쌍 순서 일치율 (정답 차 5점 이상인 쌍) |
-| `rocPoints` | | O | Array | ROC 좌표 (루브릭 75점 이상을 양성) |
+| `rocPoints` | | O | Array | ROC 좌표 (적합도 라벨 60점 이상을 양성) |
 | `auc` | | O | float | 위 ROC의 AUC |
 | `latencyMs` | | O | Object | p95 지연 · 처리량 |
 | `baseline` | | O | Object | 규칙 기반 동일 지표 |
