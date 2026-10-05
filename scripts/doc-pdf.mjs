@@ -4,7 +4,7 @@
  *
  * 브라우저의 「인쇄 → PDF로 저장」과 다른 점은 **쪽 번호와 머리말**이다. Chrome은
  * CSS의 `@page` 여백 상자를 지원하지 않아 인쇄 대화상자로는 양식이 요구하는
- * 「팀번호 · 프로젝트명 · version」 머리말과 「가천대학교, 설계서  N」 꼬리말을
+ * 「워드마크 · 프로젝트명 · version」 머리말과 「가천대학교, 설계서  N」 꼬리말을
  * 넣을 수 없다. 그래서 DevTools 프로토콜의 `Page.printToPDF`를 직접 부른다 —
  * 이쪽은 머리말·꼬리말 서식과 쪽 번호를 받는다.
  *
@@ -27,9 +27,8 @@ const documentVersion = sourceHtml.match(/<div class="k">VERSION<\/div><div clas
 
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
-/** 양식 머리말 — 표지 오른쪽 위의 그 칸이다. */
+/** 양식 머리말 — 표지 오른쪽 위의 그 칸이다. 팀번호 칸에는 Expresso 워드마크를 둔다. */
 const META = {
-  team: "팀번호: XX",
   project: "Expresso — 채용 공고·커리어 기록 추천 모델 기반 맞춤형 포트폴리오 생성 및 배포 플랫폼 개발",
   version: documentVersion,
   footer: "2026 가천대학교, 설계서",
@@ -57,12 +56,15 @@ const LOGO = `<svg width="13" height="13" viewBox="0 0 108 108" fill="none" xmln
 <rect y="58.96" width="108" height="49.04" fill="${BRAND.espresso}" clip-path="url(#hc)"/>
 <circle cx="44" cy="54" r="36" stroke="${BRAND.espresso}" stroke-width="10"/></svg>`;
 
+// 워드마크 — 표지 · Logo.tsx와 같이 가운데 「ss」만 espresso
+const WORDMARK = `<span style="margin-left:4px;font-size:8.5pt;font-weight:500;letter-spacing:-0.025em;vertical-align:-0.5px;">Expre<span style="color:${BRAND.espresso};">ss</span>o</span>`;
+
 const HEADER = `<style>${outfit(400)}${outfit(500)}</style>
 <div style="width:100%;font-family:${FONT_STACK};font-size:7pt;
             color:${BRAND.ink};padding:0 14mm;box-sizing:border-box;">
   <table style="width:100%;border-collapse:collapse;border-bottom:0.8pt solid ${BRAND.espresso};">
     <tr>
-      <td style="padding:0 0 2mm 0;white-space:nowrap;">${LOGO}<span style="margin-left:5px;">${esc(META.team)}</span></td>
+      <td style="padding:0 0 2mm 0;white-space:nowrap;">${LOGO}${WORDMARK}</td>
       <td style="padding:0 0 2mm 0;text-align:center;color:${BRAND.slate};">${esc(META.project)}</td>
       <td style="padding:0 0 2mm 0;text-align:right;color:${BRAND.espresso};font-weight:500;white-space:nowrap;width:14mm;">${esc(META.version)}</td>
     </tr>
