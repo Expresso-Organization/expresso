@@ -563,6 +563,44 @@ svg.dg .mute { fill: var(--ex-slate-300); }
 }
 
 /* ===========================================================
+   14.5 · 표지 · 문서 정보 · 목차 · 장 머리 — 화면과 PDF가 같은 모습이다.
+   화면에서는 쪽 대신 구분선으로 지면을 나눈다.
+   =========================================================== */
+.doc-head { display: none; }                  /* 표지가 대신한다 — 마크업은 제목 · 버전을 읽는 스크립트를 위해 둔다 */
+/* 표지 — 흰 지면에 로고 · 워드마크 · 로고 구성 그리드, 아래에 문서 정보 표. */
+.cover { height: 252mm; display: flex !important; flex-direction: column; text-align: left; }
+.cover-brand { display: flex; align-items: center; gap: 12px; padding-top: 6mm; }
+.cover-brand .word { font-family: var(--ex-font-brand); font-size: 26pt; font-weight: 500; letter-spacing: -.025em; color: var(--ex-ink-900); }
+.cover-brand .word em { font-style: normal; color: var(--ex-espresso); }
+.cover-grid { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 4mm 0; }
+.cover-grid img { width: 122mm; height: auto; }
+.cover-main { padding-bottom: 4mm; }
+.cover-main .kicker { font-size: 9pt; }
+.cover-name { margin-top: 0; font-size: 16pt; font-weight: 600; letter-spacing: -.01em; color: var(--ex-ink-900); }
+.cover-project { margin-top: 2mm; font-size: 13pt; color: var(--ex-slate-500); }
+.cover-title { margin-top: 3mm; font-size: 54pt; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; color: var(--ex-ink-900); }
+.cover-info { margin: 8mm 0 0; padding-top: 5mm; border-top: 1.2pt solid var(--ex-espresso);
+  display: grid; grid-template-columns: 30mm 40mm 1fr; column-gap: 6mm; row-gap: 6mm; }
+.cover-info div { min-width: 0; }
+.cover-info .wide { grid-column: 2 / 4; }
+.cover-info dt { font-size: 8.5pt; font-weight: 600; letter-spacing: .02em; color: var(--ex-slate-500); }
+.cover-info dd { margin: 1.5mm 0 0; font-size: 12pt; font-weight: 500; color: var(--ex-ink-900); }
+.cover-info dd.num { font-family: var(--ex-font-brand); font-weight: 300; font-size: 13pt; }
+
+/* 문서 정보 · 목차 쪽의 제목 */
+.print-title { display: flex; align-items: baseline; gap: 10px; margin: 4mm 0 10mm; padding-bottom: 4mm; border-bottom: 1.2pt solid var(--ex-espresso); }
+.print-title .kicker { font-size: 9pt; }
+.print-title .t { font-size: 20pt; font-weight: 600; letter-spacing: -.02em; color: var(--ex-ink-900); }
+
+/* 장 머리 — 장 번호를 큰 숫자로, 아래 선을 espresso로 */
+.sec-head { align-items: flex-end; border-bottom: 1.2pt solid var(--ex-espresso); padding-bottom: 8px; }
+.sec-head .num { font-family: var(--ex-font-brand); font-weight: 300; font-size: 30pt; line-height: 1; color: var(--ex-espresso); }
+.sec-head h2 { font-size: 20pt; }
+@media screen {
+  .print-page { margin-bottom: 56px; padding-bottom: 48px; border-bottom: 1px solid var(--ex-line-200); }
+}
+
+/* ===========================================================
    15 · 인쇄 — 크롬을 걷어내고 종이로 만듭니다.
    =========================================================== */
 @media print {
@@ -570,39 +608,9 @@ svg.dg .mute { fill: var(--ex-slate-300); }
   .print-only { display: block !important; }
   .print-page { break-after: page; }
 
-  /* 표지 — 흰 지면에 로고와 워드마크, 아래 띠 하나만 bean 지면(시그니처 지면은 표지 한 번). */
-  .cover { height: 252mm; display: flex !important; flex-direction: column; text-align: left; }
-  .cover-brand { display: flex; align-items: center; gap: 12px; padding-top: 6mm; }
-  .cover-brand .word { font-family: var(--ex-font-brand); font-size: 26pt; font-weight: 500; letter-spacing: -.025em; color: var(--ex-ink-900); }
-  .cover-brand .word em { font-style: normal; color: var(--ex-espresso); }
-  .cover-grid { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 4mm 0; }
-  .cover-grid img { width: 122mm; height: auto; }
-  .cover-main { padding-bottom: 4mm; }
-  .cover-main .kicker { font-size: 9pt; }
-  .cover-name { margin-top: 0; font-size: 16pt; font-weight: 600; letter-spacing: -.01em; color: var(--ex-ink-900); }
-  .cover-project { margin-top: 2mm; font-size: 13pt; color: var(--ex-slate-500); }
-  .cover-title { margin-top: 3mm; font-size: 54pt; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; color: var(--ex-ink-900); }
-  .cover-info { margin: 8mm 0 0; padding-top: 5mm; border-top: 1.2pt solid var(--ex-espresso);
-    display: grid; grid-template-columns: 30mm 40mm 1fr; column-gap: 6mm; row-gap: 6mm; }
-  .cover-info div { min-width: 0; }
-  .cover-info .wide { grid-column: 2 / 4; }
-  .cover-info dt { font-size: 8.5pt; font-weight: 600; letter-spacing: .02em; color: var(--ex-slate-500); }
-  .cover-info dd { margin: 1.5mm 0 0; font-size: 12pt; font-weight: 500; color: var(--ex-ink-900); }
-  .cover-info dd.num { font-family: var(--ex-font-brand); font-weight: 300; font-size: 13pt; }
-
-  /* 문서 정보 · 목차 쪽의 제목 */
-  .print-title { display: flex; align-items: baseline; gap: 10px; margin: 4mm 0 10mm; padding-bottom: 4mm; border-bottom: 1.2pt solid var(--ex-espresso); }
-  .print-title .kicker { font-size: 9pt; }
-  .print-title .t { font-size: 20pt; font-weight: 600; letter-spacing: -.02em; color: var(--ex-ink-900); }
-
-  /* 장 머리 — 장 번호를 큰 숫자로, 아래 선을 espresso로 */
-  .sec-head { align-items: flex-end; border-bottom: 1.2pt solid var(--ex-espresso); padding-bottom: 8px; }
-  .sec-head .num { font-family: var(--ex-font-brand); font-weight: 300; font-size: 30pt; line-height: 1; color: var(--ex-espresso); }
-  .sec-head h2 { font-size: 20pt; }
   /* 장마다 새 쪽에서 시작한다 — 양식의 규칙이다. */
   main > section.sec { break-before: page; }
   main > section.sec:first-of-type { break-before: auto; }
-  .doc-head { display: none; }                /* 표지가 대신한다 */
   body { background: #fff; font-size: 10.5pt; line-height: 1.7; }
   .topbar, .toc, .skip, figure.code .copy, .anchor { display: none !important; }
   .shell { display: block; padding: 0; }
@@ -685,11 +693,11 @@ svg.dg .mute { fill: var(--ex-slate-300); }
     <ol id="tocList"></ol>
   </nav>
 
-  <main class="sheet" id="doc" data-doc-pages="209" data-doc-paged-at="2026-10-05">
+  <main class="sheet" id="doc" data-doc-pages="209" data-doc-paged-at="2026-10-06">
 
 
     <!-- 표지와 문서정보 — 화면에서는 감추고 PDF에서만 나온다. -->
-    <section class="print-only print-page cover" style="display:none">
+    <section class="print-page cover">
       <div class="cover-brand">
         <svg width="46" height="46" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><clipPath id="lcc"><circle cx="44" cy="54" r="36"/></clipPath><mask id="lmc"><rect width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="46.5" fill="#000"/></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.5" mask="url(#lmc)"/><rect y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#lcc)"/><circle cx="44" cy="54" r="36" stroke="#9A4030" stroke-width="10"/></svg>
         <span class="word">Expre<em>ss</em>o</span>
@@ -712,7 +720,7 @@ svg.dg .mute { fill: var(--ex-slate-300); }
       </div>
     </section>
 
-    <section class="print-only print-page docinfo" style="display:none">
+    <section class="print-page docinfo">
       <div class="print-title"><span class="kicker">Document</span><span class="t">문서 정보</span></div>
       <div class="box" style="margin-bottom:8mm">
         <p>본 문서는 <strong>Expresso — 채용 공고·커리어 기록 추천 모델 기반 맞춤형 포트폴리오 생성 및 배포 플랫폼 개발</strong>을 위한 요구규격 및 설계서입니다.</p>
@@ -9843,6 +9851,35 @@ pnpm dev:backend</code></pre>
    =========================================================== */
 (function () {
   const secs = [...document.querySelectorAll('main .sec')];
+
+  /* 0) 목차 쪽 — PDF와 같은 모양으로 그린다. 쪽 번호는 scripts/doc-pdf.mjs 가 제목에 새긴 data-page 다.
+        PDF를 뽑을 때는 doc-pdf.mjs 가 같은 id의 목차를 새로 재어 갈아 끼운다. */
+  (() => {
+    const first = document.querySelector('#doc > section.sec');
+    if (!first || document.getElementById('ex-toc-page')) return;
+    const rows = secs.flatMap((sec) => {
+      const h2 = sec.querySelector('.sec-head h2');
+      const num = (sec.querySelector('.sec-head .num') || {}).textContent || '';
+      const out = [{ level: 1, label: num.trim() + '. ' + h2.textContent.trim(), page: h2.dataset.page || '' }];
+      sec.querySelectorAll(':scope > h3').forEach((h3) => out.push({ level: 2, label: h3.textContent.trim(), page: h3.dataset.page || '' }));
+      return out;
+    });
+    const esc = (t) => t.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+    const line = (r) => {
+      const lv = r.level === 1;
+      return '<div style="display:flex; align-items:baseline; gap:8px; margin:' + (lv ? '14px 0 6px' : '3px 0') +
+        '; padding-left:' + (lv ? 0 : 22) + 'px;"><span style="font-weight:' + (lv ? 600 : 400) + '; font-size:' +
+        (lv ? '11.5pt' : '10pt') + '; color:var(--ex-' + (lv ? 'ink-900' : 'slate-700') + ')">' + esc(r.label) + '</span>' +
+        '<span style="flex:1; border-bottom:1px dotted var(--ex-line-300); transform:translateY(-3px)"></span>' +
+        '<span style="font-family:var(--ex-font-brand); font-weight:' + (lv ? 500 : 400) + '; font-size:10pt; color:var(--ex-' +
+        (lv ? 'espresso' : 'slate-500') + ')">' + r.page + '</span></div>';
+    };
+    const toc = document.createElement('section');
+    toc.id = 'ex-toc-page';
+    toc.className = 'print-page';
+    toc.innerHTML = '<div class="print-title"><span class="kicker">Contents</span><span class="t">목차</span></div>' + rows.map(line).join('');
+    first.parentNode.insertBefore(toc, first);
+  })();
   const list = document.getElementById('tocList');
   const where = document.getElementById('where');
   const bar = document.getElementById('readbar');
