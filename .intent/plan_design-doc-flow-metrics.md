@@ -1,0 +1,36 @@
+---
+title: 설계서 전체 사용자 플로우 그림과 순위 지표 설명 추가
+slug: design-doc-flow-metrics
+stage: plan
+status: accepted
+spec: .intent/spec_design-doc-flow-metrics.md
+date: 2026-10-06
+---
+
+# 설계서 전체 사용자 플로우 그림과 순위 지표 설명 추가 — 계획
+
+## 바뀌는 파일
+
+`docs/졸업작품-설계서.html` · `.pdf` · `docs/design-doc/02-요구사항-정의.md` · `09-성능시험지표.md`.
+
+## 순서
+
+1. 계산 예시를 스크립트로 계산해 숫자를 확정한다.
+2. 하위 에이전트가 플로우 그림 조각을, 호스트가 지표 그림과 본문을 만든다.
+3. 그림 2장 · 9장 번호를 밀고 참조를 고친 뒤 넣는다. PDF로 확인한다.
+4. 커밋 `docs: 설계서 전체 사용자 플로우 그림 추가` · `docs: 설계서 순위 지표 NDCG · Recall 설명 추가`, PR · 배포.
+
+## 가장 위험한 단계
+
+3단계 번호 밀기. 「그림 2.1」을 먼저 바꾸면 새 2.1과 섞인다 — 큰 번호부터 바꾸고, 새 그림은 마지막에 넣는다.
+
+## 검증 명령
+
+```bash
+grep -o '그림 [29]\.[0-9]*' docs/졸업작품-설계서.html | sort | uniq -c
+node scripts/doc-pdf.mjs docs/졸업작품-설계서.html
+```
+
+## 실행 중 벗어난 곳
+
+없음
