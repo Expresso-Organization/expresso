@@ -68,3 +68,4 @@ export * from "./engagement.js";
 export * from "./account-lifecycle.js";
 export * from "./openapi.js";
 export * from "./design-system.js";
+export * from "./structured-portfolio.js";

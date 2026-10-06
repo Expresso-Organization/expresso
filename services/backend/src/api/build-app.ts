@@ -259,10 +259,10 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }
-    if (options.pageService && options.pageGenerator) {
+    if (options.pageService) {
       registerPageRoutes(app, {
         service: options.pageService,
-        generator: options.pageGenerator,
+        ...(options.pageGenerator ? { generator: options.pageGenerator } : {}),
         stream: options.pageStream ?? null,
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });

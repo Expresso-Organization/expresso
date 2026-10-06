@@ -38,6 +38,7 @@ import { PageService } from "../modules/page/index.js";
 import { PageStream } from "../modules/page/stream.js";
 import { createStreamRedis } from "../platform/redis.js";
 import { AiPageGenerator } from "../modules/page/generator.js";
+import { StructuredPageGenerator } from "../modules/page/structured-generator.js";
 import { CareerDocumentService } from "../modules/career-editor/index.js";
 import { createCareerDocumentCompactionProcessor } from "./processors/career-document-compaction.js";
 import { MongoCareerComputationService } from "../modules/career-computation/index.js";
@@ -78,7 +79,7 @@ const generationProcessor = createGenerationProcessor(
   generationService,
   ai ? new AiSentenceWriter(ai) : new UnavailableSentenceWriter(),
   ai ? new AiLayoutDesigner(ai) : null,
-  ai ? { service: pageService, generator: new AiPageGenerator(ai) } : null,
+  ai ? { service: pageService, generator: config.pageGenerationFormat === "html" ? new AiPageGenerator(ai) : new StructuredPageGenerator(ai) } : null,
 );
 // 질문 생성 · 레시피 생성도 여기서 돈다. HTTP 요청은 잡만 만들고 바로 돌아간다.
 const brewJobService = new BrewJobService(database);
