@@ -53,6 +53,11 @@ const spec = {
 };
 
 describe("등록 지면 렌더러", () => {
+  it("유효한 개별 입력도 합친 지면이 저장 한도를 넘으면 거부한다", () => {
+    const value = structuredClone(content);
+    value.sections[0]!.media = [{ src: "data:image/svg+xml;base64," + "A".repeat(600_000), alt: "가상 시험 이미지", origin: "fictional" }];
+    expect(() => renderStructuredPortfolio(spec, value)).toThrow("저장 크기 제한");
+  });
   it("동일 내용의 전체 배치를 바꾸고 세 지면 유형을 저장 HTML에 표시한다", () => {
     for (const layout of ["editorial", "gallery", "dossier"]) {
       const tree = structuredClone(spec);
