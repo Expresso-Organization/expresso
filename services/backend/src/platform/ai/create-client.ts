@@ -24,6 +24,23 @@ export function createAiClient(config: RuntimeConfig): AiClient | null {
 }
 
 /**
+ * 공고 요건을 읽는 담당. 없으면 `null`이다.
+ *
+ * `createAiClient`와 따로 두는 이유는 **끄는 자리가 다르기** 때문이다. 지면
+ * 생성은 사람이 눌러서 도는데, 이 읽기는 `posting_facts`가 10분마다 알아서
+ * 돈다 — 들어오는 공고만큼 값이 계속 나가는 자리라 따로 잠글 수 있어야 한다.
+ *
+ * `AI_PROVIDER_POSTING_FACTS`를 비우면 **꺼진 것**이지 `AI_PROVIDER`를
+ * 따라가는 것이 아니다. 꺼져 있으면 `readPendingFacts`가 한 건도 건드리지
+ * 않고 실행 기록에 `skipped: "reader is not configured"`로 남는다.
+ */
+export function createPostingFactsAiClient(config: RuntimeConfig): AiClient | null {
+  const provider = config.aiPostingFactsProvider ?? "off";
+  if (provider === "off") return null;
+  return build(config, provider);
+}
+
+/**
  * 계약에 따라 다른 프로바이더로 보낸다.
  *
  * 하나 때문에 전부를 바꾸지 않으려고 있다. 지면 생성만 **부분 출력이 필요하고**
