@@ -11,6 +11,7 @@ import {
 } from "@json-render/react";
 import { z } from "zod";
 import {
+  PAGE_MAX_BYTES,
   StructuredDesignSchema,
   StructuredPortfolioContentSchema as content,
   StructuredSectionSchema,
@@ -397,6 +398,8 @@ export function renderStructuredPortfolio(
       </VisibilityProvider>
     </StateProvider>,
   );
+  // 저장 계약을 넘는 지면은 판을 추가하기 전에 거부합니다.
+  if (html.length > PAGE_MAX_BYTES) throw new Error("지면이 저장 크기 제한을 넘었습니다. 내용을 줄여 주세요.");
   const colors = theme
     ? z
         .object({
