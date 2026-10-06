@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "alert-7",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "alert"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/alerts/alert-7.tsx",
+      "content": "\"use client\";\n\nimport { useState, useEffect } from \"react\";\nimport { MdOutlineFileUpload } from \"react-icons/md\";\nimport { RxCross2 } from \"react-icons/rx\";\n\nimport {\n  Alert,\n  AlertDescription,\n  AlertTitle,\n} from \"@/components/ui/alert\";\nimport { Button } from \"@/components/ui/button\";\nimport { Progress } from \"@/components/ui/progress\";\n\nconst Alert7 = () => {\n  const [isActive, setIsActive] = useState(true);\n  const [progress, setProgress] = useState(0);\n\n  useEffect(() => {\n    const timer = setTimeout(() => setProgress(50), 100);\n    return () => clearTimeout(timer);\n  }, []);\n\n  if (!isActive) return null;\n\n  return (\n    <Alert className=\"flex flex-col gap-3 sm:flex-row sm:items-start\">\n      <div className=\"flex w-full items-start gap-3\">\n        <MdOutlineFileUpload className=\"size-5 shrink-0\" />\n\n        <div className=\"flex min-w-0 flex-1 flex-col gap-4\">\n          <div className=\"flex flex-col gap-1\">\n            <AlertTitle>Uploading your &apos;watermelon.png&apos;</AlertTitle>\n            <AlertDescription>\n              Please wait While we upload your image.\n            </AlertDescription>\n          </div>\n\n          <Progress\n            value={progress}\n            className=\"*:h-1.5 *:bg-cyan-600/20 dark:*:bg-cyan-400/20 [&_[data-slot=progress-indicator]]:bg-cyan-600! dark:[&_[data-slot=progress-indicator]]:bg-cyan-400!\"\n            aria-label=\"Upload Progress\"\n          />\n\n          <div className=\"flex items-center gap-4\">\n            <Button variant=\"ghost\" className=\"h-7 rounded-md px-2\">\n              Cancel\n            </Button>\n            <Button\n              variant=\"ghost\"\n              disabled\n              className=\"h-7 rounded-md px-2 text-cyan-600 hover:bg-cyan-600/10 hover:text-cyan-600 dark:text-cyan-400 dark:hover:bg-cyan-400/10 dark:hover:text-cyan-400\"\n            >\n              Upload another\n            </Button>\n          </div>\n        </div>\n\n        <button\n          className=\"size-4 shrink-0 cursor-pointer\"\n          onClick={() => setIsActive(false)}\n        >\n          <RxCross2 className=\"size-4\" />\n          <span className=\"sr-only\">Close</span>\n        </button>\n      </div>\n    </Alert>\n  );\n};\n\nexport default Alert7;\n",
+      "type": "registry:ui",
+      "target": "components/ui/alert-7.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

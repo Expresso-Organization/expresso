@@ -1,0 +1,29 @@
+{
+  "id": "60fps-b9ea9964bd37ed68",
+  "sourceUrl": "https://60fps.design/apps/revolut",
+  "sourceRevision": null,
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Revolut",
+    "공개 이미지 요소: 37개",
+    "동영상 포스터: 34개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/apps/revolut",
+    "sha256": "e330e9e01c625532e176ce1a86ea7fb7c8d635106618f1a150914d348a7dc3c2",
+    "fetchedAt": "2026-09-23T12:53:19+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

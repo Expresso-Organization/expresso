@@ -1,0 +1,29 @@
+{
+  "id": "60fps-50b33960d6343a6b",
+  "sourceUrl": "https://60fps.design/shots/moleskine-planner-expired-feature-video",
+  "sourceRevision": null,
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Moleskine Planner Expired Feature Video",
+    "공개 이미지 요소: 25개",
+    "동영상 포스터: 24개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/moleskine-planner-expired-feature-video",
+    "sha256": "36d012997701aa6c68dd1a88a4fc7e90fa5ab7bf4e72f5efecd0a3eab993c06f",
+    "fetchedAt": "2026-09-23T13:04:16+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

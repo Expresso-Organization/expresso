@@ -1,0 +1,21 @@
+{
+  "id": "codedvisuals-cf16588989eb8855",
+  "sourceUrl": "https://codedvisuals.com/visuals/states/not-found",
+  "sourceRevision": null,
+  "roles": [
+    "outcome"
+  ],
+  "roleEvidence": "성과와 수치의 비교를 표현할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상용 라이선스의 AI builder·site builder 사용 제한"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "licenseUrl": "https://codedvisuals.com/license",
+  "acquisitionStatus": "permission_needed",
+  "previewReason": "상용 라이선스의 AI builder·site builder 사용 제한",
+  "sourceLicense": "https://codedvisuals.com/license"
+}

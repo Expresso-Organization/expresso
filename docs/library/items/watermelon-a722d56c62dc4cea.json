@@ -1,0 +1,20 @@
+{
+  "id": "watermelon-a722d56c62dc4cea",
+  "sourceUrl": "https://ui.watermelon.sh/components/input-mask",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "사이트맵에만 있는 항목입니다. 고정 registry의 이름과 대응하지 않아 소스 연결을 보류했습니다."
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "acquisitionStatus": "access_blocked",
+  "previewReason": "고정 registry에 대응하는 코드 파일 없음",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

@@ -1,0 +1,181 @@
+{
+  "id": "watermelon-5c1244dbc33a24cc",
+  "sourceUrl": "https://ui.watermelon.sh/dashboard/demostack-dashboard",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/demostack-dashboard.json",
+      "sha256": "e0ac573e79f0d4157f993be790f35dacc23559cdc2f5808bd4c5aac5b2f1134b",
+      "bytes": 112202,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/demostack-dashboard/components/demostack/dashboard-content.tsx",
+      "target": "components/watermelon/demostack-dashboard/components/demostack/dashboard-content.tsx",
+      "type": "registry:component",
+      "sha256": "c01c0c78f9b5a60fa0ae16f52526a2346bfd1d85d1619280f900dc1a560b7a4c",
+      "bytes": 8776
+    },
+    {
+      "path": "src/components/dashboards/demostack-dashboard/components/demostack/demostacks-content.tsx",
+      "target": "components/watermelon/demostack-dashboard/components/demostack/demostacks-content.tsx",
+      "type": "registry:component",
+      "sha256": "1474649a10115063ca257e5067a031c08462a3c91625d51731b7524ab013b16d",
+      "bytes": 15506
+    },
+    {
+      "path": "src/components/dashboards/demostack-dashboard/components/demostack/icons.tsx",
+      "target": "components/watermelon/demostack-dashboard/components/demostack/icons.tsx",
+      "type": "registry:component",
+      "sha256": "555146b7eb4fa42399794e758000782a9fc2d288e7c5e03e296b307426633f1f",
+      "bytes": 42998
+    },
+    {
+      "path": "src/components/dashboards/demostack-dashboard/components/demostack/logo.tsx",
+      "target": "components/watermelon/demostack-dashboard/components/demostack/logo.tsx",
+      "type": "registry:component",
+      "sha256": "dfa10e68fdac032aa11da3b5b045ce02c2c3b1746e6527a90e1c27ce88f6c78d",
+      "bytes": 4477
+    },
+    {
+      "path": "src/components/dashboards/demostack-dashboard/components/demostack/navigation.tsx",
+      "target": "components/watermelon/demostack-dashboard/components/demostack/navigation.tsx",
+      "type": "registry:component",
+      "sha256": "1e5782cf177a6260fd3c35f7fa70679a937076f0df15fef6892eaf1680aa829d",
+      "bytes": 1520
+    },
+    {
+      "path": "src/components/dashboards/demostack-dashboard/components/demostack/sidebar.tsx",
+      "target": "components/watermelon/demostack-dashboard/components/demostack/sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "583ae9620979762d86ce25c9dd3e69ccfa14c290c086cbe6146dd85e31563174",
+      "bytes": 10606
+    },
+    {
+      "path": "src/components/dashboards/demostack-dashboard/components/demostack/theme-provider.tsx",
+      "target": "components/watermelon/demostack-dashboard/components/demostack/theme-provider.tsx",
+      "type": "registry:component",
+      "sha256": "bb976081704217afefbe0e795a50687246b3ef6c6e3e7a1e865758fad5772689",
+      "bytes": 1917
+    },
+    {
+      "path": "src/components/dashboards/demostack-dashboard/components/demostack/topbar.tsx",
+      "target": "components/watermelon/demostack-dashboard/components/demostack/topbar.tsx",
+      "type": "registry:component",
+      "sha256": "005372c59ad8487243af03c9534adfd34b62e7ce262f6816e7be5cc09de9f035",
+      "bytes": 8155
+    },
+    {
+      "path": "src/components/dashboards/demostack-dashboard/dashboard-layout.tsx",
+      "target": "components/watermelon/demostack-dashboard/dashboard-layout.tsx",
+      "type": "registry:component",
+      "sha256": "d1afbe75dc6aa488b4a45a4cc67d2d0c7ca6b40ac71cc7002e91a2a84935fbf1",
+      "bytes": 1128
+    },
+    {
+      "path": "src/components/dashboards/demostack-dashboard/dashboard.css",
+      "target": "components/watermelon/demostack-dashboard/dashboard.css",
+      "type": "registry:component",
+      "sha256": "fab829f3d8f0e0d78ed6a0568cef0b88de4e80c6b4728b72516f0a68e7e5c64b",
+      "bytes": 4409
+    },
+    {
+      "path": "src/components/dashboards/demostack-dashboard/data.ts",
+      "target": "components/watermelon/demostack-dashboard/data.ts",
+      "type": "registry:component",
+      "sha256": "3f04ecf1bdc6f9697d7ca2f10c769f2b1771ccc57288b09debf4775a88cfea6d",
+      "bytes": 4800
+    },
+    {
+      "path": "src/components/dashboards/demostack-dashboard/demo.tsx",
+      "target": "components/watermelon/demostack-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "c315b3a84747cf61ab4450b6393856cb5fb31be776d66fe82de5bed45216070a",
+      "bytes": 858
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "avatar",
+    "button",
+    "dropdown-menu",
+    "input-group",
+    "sidebar",
+    "tabs",
+    "tooltip"
+  ],
+  "imports": [
+    "../../data",
+    "./components/demostack/dashboard-content",
+    "./components/demostack/demostacks-content",
+    "./components/demostack/icons",
+    "./components/demostack/navigation",
+    "./components/demostack/sidebar",
+    "./components/demostack/theme-provider",
+    "./components/demostack/topbar",
+    "./dashboard-layout",
+    "./icons",
+    "./logo",
+    "./navigation",
+    "./theme-provider",
+    "@/components/ui/avatar",
+    "@/components/ui/button",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/input-group",
+    "@/components/ui/sidebar",
+    "@/components/ui/tabs",
+    "@/components/ui/tooltip",
+    "@/lib/utils",
+    "lucide-react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "type DemostacksToolbarProps = {\n  sort: SortMode;\n  setSort: (sort: SortMode) => void;\n  selectedAuthors: string[];\n  setSelectedAuthors: (authors: string[]) => void;\n  view: ViewMode;\n  setView: (view: ViewMode) => void;\n}",
+    "type ThemeProviderProps = {\n  children: ReactNode;\n  defaultTheme?: Theme;\n  storageKey?: string;\n}",
+    "type DashboardLayoutProps = {\n  children: ReactNode;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/2000/svg",
+    "https://api.dicebear.com/10.x/notionists/svg",
+    "https://assets.watermelon.sh/components/analytics-dashboard-3x2.png",
+    "https://assets.watermelon.sh/components/bg-element-neon.webp",
+    "https://assets.watermelon.sh/components/bg-element-sky.webp",
+    "https://assets.watermelon.sh/components/bg-element-wave.webp",
+    "https://assets.watermelon.sh/components/demostack-tip-1.webp",
+    "https://assets.watermelon.sh/components/demostack-tip-2.webp",
+    "https://assets.watermelon.sh/components/demostack-tip-3.webp",
+    "https://assets.watermelon.sh/components/demostack-tip-4.webp",
+    "https://assets.watermelon.sh/components/gridwise-tour-3x2.png",
+    "https://assets.watermelon.sh/components/stockroom-tour-3x2.png",
+    "https://assets.watermelon.sh/components/support-request-tour-3x2.png",
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=256&h=256",
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=96&h=96",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=256&h=256",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=96&h=96",
+    "https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&q=80&w=256&h=256",
+    "https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&q=80&w=96&h=96",
+    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256&h=256",
+    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=96&h=96"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/demostack-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

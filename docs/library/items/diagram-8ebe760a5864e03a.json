@@ -1,0 +1,26 @@
+{
+  "id": "diagram-8ebe760a5864e03a",
+  "sourceUrl": "https://github.com/cathrynlavery/diagram-design/blob/dc1ace47b99a419e42d01a03cb6ace5346efa8ae/skills/diagram-design/references/type-flowchart.md",
+  "sourceRevision": "dc1ace47b99a419e42d01a03cb6ace5346efa8ae",
+  "roles": [
+    "outcome"
+  ],
+  "roleEvidence": "성과와 수치의 비교를 표현할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/diagram/diagram-8ebe760a5864e03a.md.txt",
+      "sha256": "c2af5e2b849255ae4859125db7b101b74bfb9b201204725c1e83fac51a98ebab",
+      "bytes": 1079,
+      "kind": "reference_source",
+      "label": "원본 type-flowchart.md"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "텍스트 자료 · 원문 보기 가능",
+  "sourceLicense": "https://github.com/cathrynlavery/diagram-design/blob/dc1ace47b99a419e42d01a03cb6ace5346efa8ae/LICENSE"
+}

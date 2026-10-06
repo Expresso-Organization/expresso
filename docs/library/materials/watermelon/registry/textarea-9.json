@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "textarea-9",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "textarea"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/textarea/textarea-9.tsx",
+      "content": "import { useId } from \"react\";\n\nimport { Label } from \"@/components/ui/label\";\nimport { Textarea } from \"@/components/ui/textarea\";\n\nconst Textarea9 = () => {\n  const id = useId();\n\n  return (\n    <div className=\"w-full max-w-sm space-y-2\">\n      <div className=\"flex items-center justify-between gap-1\">\n        <Label htmlFor={id}>Additional notes</Label>\n        <span className=\"text-muted-foreground text-xs\">Optional</span>\n      </div>\n      <Textarea\n        id={id}\n        placeholder=\"Add any extra details...\"\n        className=\"focus-visible:ring-primary/20 focus-visible:border-primary/50\"\n      />\n    </div>\n  );\n};\n\nexport default Textarea9;\n",
+      "type": "registry:ui",
+      "target": "components/ui/textarea-9.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

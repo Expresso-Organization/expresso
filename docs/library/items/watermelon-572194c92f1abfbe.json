@@ -1,0 +1,145 @@
+{
+  "id": "watermelon-572194c92f1abfbe",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/task-management-dashboard.json",
+      "sha256": "47ebea8a2862b71ccf540ae1b1d7764f278ba82d8fba94c011c0c56eb53c4f5f",
+      "bytes": 71566,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/task-management-dashboard/components/app-sidebar.tsx",
+      "target": "components/watermelon/task-management-dashboard/components/app-sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "7935d394f4759c6f18945b1adaa3603991d6d0375d0e3d4989393861d728fd2c",
+      "bytes": 4543
+    },
+    {
+      "path": "src/components/dashboards/task-management-dashboard/components/nav-main.tsx",
+      "target": "components/watermelon/task-management-dashboard/components/nav-main.tsx",
+      "type": "registry:component",
+      "sha256": "2195606bd383bf50363d018944c8466fb1c5b0bfd8861cb9c77ee6821e070160",
+      "bytes": 1500
+    },
+    {
+      "path": "src/components/dashboards/task-management-dashboard/components/nav-secondary.tsx",
+      "target": "components/watermelon/task-management-dashboard/components/nav-secondary.tsx",
+      "type": "registry:component",
+      "sha256": "fb553718f13935969f311f64647fa13c5ec564b03c4382fcc75bc34678b31cee",
+      "bytes": 2583
+    },
+    {
+      "path": "src/components/dashboards/task-management-dashboard/components/nav-user.tsx",
+      "target": "components/watermelon/task-management-dashboard/components/nav-user.tsx",
+      "type": "registry:component",
+      "sha256": "f3e001b86fa896aed7af193ed33517465104f762e4006bbb505b2f82ff05bbce",
+      "bytes": 5217
+    },
+    {
+      "path": "src/components/dashboards/task-management-dashboard/dashboardLayout.tsx",
+      "target": "components/watermelon/task-management-dashboard/dashboardLayout.tsx",
+      "type": "registry:component",
+      "sha256": "7d0e2262e85f764dd81c26079e090ade41b66b7466b14706bc274fe02e6d70ff",
+      "bytes": 447
+    },
+    {
+      "path": "src/components/dashboards/task-management-dashboard/data.ts",
+      "target": "components/watermelon/task-management-dashboard/data.ts",
+      "type": "registry:component",
+      "sha256": "69c5587ce14518eb3b6f885249865dd190bfef24071b241eadaf60254d5b8eed",
+      "bytes": 10413
+    },
+    {
+      "path": "src/components/dashboards/task-management-dashboard/demo.tsx",
+      "target": "components/watermelon/task-management-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "e66987fc212296f42539a9c3a4ce0e90a2e4c51ae8a5c7a20ba1933858e87897",
+      "bytes": 275
+    },
+    {
+      "path": "src/components/dashboards/task-management-dashboard/tasksPageView.tsx",
+      "target": "components/watermelon/task-management-dashboard/tasksPageView.tsx",
+      "type": "registry:component",
+      "sha256": "adfcaacca51e369a8dbcad24815c77bfd36def878bbb475d476a7f708399db6d",
+      "bytes": 42002
+    }
+  ],
+  "dependencies": [
+    "@tabler/icons-react",
+    "class-variance-authority",
+    "lucide-react",
+    "next-themes"
+  ],
+  "registryDependencies": [
+    "avatar",
+    "badge",
+    "breadcrumb",
+    "button",
+    "card",
+    "collapsible",
+    "dialog",
+    "dropdown-menu",
+    "input",
+    "label",
+    "popover",
+    "separator",
+    "sheet",
+    "sidebar",
+    "skeleton",
+    "tabs",
+    "textarea",
+    "tooltip"
+  ],
+  "imports": [
+    "../data",
+    "./components/app-sidebar",
+    "./dashboardLayout",
+    "./data",
+    "./nav-main",
+    "./nav-secondary",
+    "./nav-user",
+    "./tasksPageView",
+    "@/components/ui/avatar",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/dialog",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/popover",
+    "@/components/ui/separator",
+    "@/components/ui/sidebar",
+    "@/components/ui/tabs",
+    "@/components/ui/textarea",
+    "@/lib/utils",
+    "@tabler/icons-react",
+    "next-themes",
+    "react"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://watermelon.co/d/tasks"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/task-management-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

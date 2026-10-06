@@ -1,0 +1,16 @@
+{
+  "name": "timeline",
+  "sourceRepository": "https://github.com/magicuidesign/portfolio",
+  "sourceRevision": "5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b",
+  "license": "MIT",
+  "files": [
+    {
+      "path": "src/components/timeline.tsx",
+      "content": "import { ReactNode } from \"react\";\nimport { cn } from \"@/lib/utils\";\n\ntype Orientation = \"vertical\" | \"horizontal\";\n\nexport interface TimelineItemProps {\n  children: ReactNode;\n  className?: string;\n}\n\nexport interface TimelineProps {\n  children: ReactNode;\n  className?: string;\n  orientation?: Orientation;\n}\n\nexport interface TimelineConnectItemProps {\n  children: ReactNode;\n  className?: string;\n}\n\nexport function TimelineConnectItem({\n  children,\n  className,\n}: TimelineConnectItemProps) {\n  return (\n    <div\n      className={cn(\n        \"relative flex shrink-0 justify-center items-center self-stretch\",\n        className\n      )}\n    >\n      <div\n        data-timeline-line\n        className={cn(\n          \"absolute bg-border\",\n          \"group-data-[orientation=vertical]:left-1/2 group-data-[orientation=vertical]:-translate-x-1/2\",\n          \"group-data-[orientation=vertical]:top-0 group-data-[orientation=vertical]:h-[calc(50%+var(--timeline-gap)+50%)]\",\n          \"group-data-[orientation=vertical]:w-px\",\n          \"group-data-[orientation=horizontal]:top-1/2 group-data-[orientation=horizontal]:-translate-y-1/2\",\n          \"group-data-[orientation=horizontal]:left-1/2 group-data-[orientation=horizontal]:w-[calc(50%+var(--timeline-gap)+50%)]\",\n          \"group-data-[orientation=horizontal]:h-px\"\n        )}\n      />\n      <div className=\"relative z-20 shrink-0\">{children}</div>\n    </div>\n  );\n}\n\nexport function TimelineItem({ children, className }: TimelineItemProps) {\n  return (\n    <div className={cn(\"relative\", className)}>\n      {children}\n    </div>\n  );\n}\n\nexport function Timeline({\n  children,\n  className,\n  orientation = \"vertical\",\n}: TimelineProps) {\n  return (\n    <div\n      data-orientation={orientation}\n      className={cn(\n        \"group relative [--timeline-gap:2rem]\",\n        orientation === \"vertical\" && \"flex flex-col gap-4 p-4 w-full\",\n        orientation === \"horizontal\" && \"flex flex-row gap-4 p-4 h-full\",\n        className\n      )}\n    >\n      <div\n        className={cn(\n          \"relative [&>*:last-child_[data-timeline-line]]:hidden\",\n          orientation === \"vertical\" && \"space-y-8 w-full\",\n          orientation === \"horizontal\" && \"flex flex-row gap-8 h-full\"\n        )}\n      >\n        {children}\n      </div>\n    </div>\n  );\n}\n"
+    },
+    {
+      "path": "src/lib/utils.ts",
+      "content": "import { type ClassValue, clsx } from \"clsx\";\nimport { twMerge } from \"tailwind-merge\";\n\nexport function cn(...inputs: ClassValue[]) {\n  return twMerge(clsx(inputs));\n}\n\nexport function formatDate(date: string | Date) {\n  // Use UTC to ensure consistent formatting between server and client\n  const dateObj = typeof date === \"string\" ? new Date(date) : date;\n  return dateObj.toLocaleDateString(\"en-US\", {\n    year: \"numeric\",\n    month: \"long\",\n    day: \"numeric\",\n    timeZone: \"UTC\",\n  });\n}\n"
+    }
+  ]
+}

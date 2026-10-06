@@ -1,0 +1,29 @@
+{
+  "id": "unsection-e43d27e149e7998e",
+  "sourceUrl": "https://www.unsection.com/section/ebury-operational-efficiency-feature-design",
+  "sourceRevision": null,
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: ebury operational efficiency feature design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/ebury-operational-efficiency-feature-design",
+    "sha256": "deeb8ee869f315470ec4c21b96f240aa96a32e1cea9ff3c8ece5d32ba2c0204d",
+    "fetchedAt": "2026-09-23T12:53:00+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

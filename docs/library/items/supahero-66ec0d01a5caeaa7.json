@@ -1,0 +1,30 @@
+{
+  "id": "supahero-66ec0d01a5caeaa7",
+  "sourceUrl": "https://supahero.io/hero/alche",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Alche",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://alche.studio/",
+  "evidence": {
+    "url": "https://supahero.io/hero/alche",
+    "sha256": "39793c55e5bb62d566fcce66c7babe693b7fd0416fa69bfa7bb0386269ec91b4",
+    "fetchedAt": "2026-09-23T12:51:08+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

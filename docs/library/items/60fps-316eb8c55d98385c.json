@@ -1,0 +1,29 @@
+{
+  "id": "60fps-316eb8c55d98385c",
+  "sourceUrl": "https://60fps.design/shots/duolingo-expanded-courses-animation",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Duolingo Expanded Courses Animation",
+    "공개 이미지 요소: 32개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/duolingo-expanded-courses-animation",
+    "sha256": "7e0dcc0d18b84deb19f03974a592140514b4eca71cf383d6c9a0c75b3c844dd5",
+    "fetchedAt": "2026-09-23T13:00:06+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

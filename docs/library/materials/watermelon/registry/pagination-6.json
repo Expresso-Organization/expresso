@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "pagination-6",
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "pagination"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/pagination/pagination-6.tsx",
+      "content": "import {\n  Pagination,\n  PaginationContent,\n  PaginationItem,\n  PaginationLink,\n  PaginationNext,\n  PaginationPrevious,\n} from '@/components/ui/pagination';\n\nconst pages = [1, 2, 3];\n\nconst Pagination6 = () => {\n  return (\n    <Pagination>\n      <PaginationContent>\n        <PaginationItem>\n          <PaginationPrevious\n            href=\"#\"\n            className=\"rounded-xl border border-neutral-200 bg-neutral-50 transition-colors hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800\"\n          >\n            Prev\n          </PaginationPrevious>\n        </PaginationItem>\n        {pages.map((page) => (\n          <PaginationItem key={page}>\n            <PaginationLink\n              href={`#${page}`}\n              isActive={page === 2}\n              className=\"rounded-xl shadow-sm transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800\"\n            >\n              {page}\n            </PaginationLink>\n          </PaginationItem>\n        ))}\n        <PaginationItem>\n          <PaginationNext\n            href=\"#\"\n            className=\"rounded-xl border border-neutral-200 bg-neutral-50 transition-colors hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800\"\n          >\n            Next\n          </PaginationNext>\n        </PaginationItem>\n      </PaginationContent>\n    </Pagination>\n  );\n};\n\nexport default Pagination6;\n",
+      "type": "registry:ui",
+      "target": "components/ui/pagination-6.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

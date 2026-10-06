@@ -1,0 +1,29 @@
+{
+  "id": "60fps-21f1ba2a804e1e59",
+  "sourceUrl": "https://60fps.design/motion/verston-by-thisisbond",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: verston by thisisbond",
+    "공개 이미지 요소: 38개",
+    "동영상 포스터: 19개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/motion/verston-by-thisisbond",
+    "sha256": "5903cec288f59c4e54a74617f849a8570a6492a78e008056fc80745f5b75db0b",
+    "fetchedAt": "2026-09-23T12:55:54+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

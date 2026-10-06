@@ -1,0 +1,167 @@
+{
+  "id": "watermelon-e85e8ecd33589aa1",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/e-commerce-dashboard.json",
+      "sha256": "da4dbc13608283c1f0936dbd8c71e4195d70da77254504179d141bd4352794ef",
+      "bytes": 43520,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/e-commerce-dashboard/components/app-sidebar.tsx",
+      "target": "components/watermelon/e-commerce-dashboard/components/app-sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "24c679be14c30c4effc4980f25da5cd7faf0eb02b329962787495a0e966b644c",
+      "bytes": 6434
+    },
+    {
+      "path": "src/components/dashboards/e-commerce-dashboard/components/nav-main.tsx",
+      "target": "components/watermelon/e-commerce-dashboard/components/nav-main.tsx",
+      "type": "registry:component",
+      "sha256": "f75373b2a17a728eac841a3f44273e216aeb0273ab2b4a05be065d85be8ed794",
+      "bytes": 1712
+    },
+    {
+      "path": "src/components/dashboards/e-commerce-dashboard/components/nav-secondary.tsx",
+      "target": "components/watermelon/e-commerce-dashboard/components/nav-secondary.tsx",
+      "type": "registry:component",
+      "sha256": "bc296721f1a4d69e56251914cc8a1755a917e63ccb9ca8afdc303fa493852705",
+      "bytes": 3114
+    },
+    {
+      "path": "src/components/dashboards/e-commerce-dashboard/components/nav-user.tsx",
+      "target": "components/watermelon/e-commerce-dashboard/components/nav-user.tsx",
+      "type": "registry:component",
+      "sha256": "7039840b15faf0f59806cf5182a98f67a163c3edc02f284e9a17a0e54f7984e3",
+      "bytes": 3973
+    },
+    {
+      "path": "src/components/dashboards/e-commerce-dashboard/components/site-header.tsx",
+      "target": "components/watermelon/e-commerce-dashboard/components/site-header.tsx",
+      "type": "registry:component",
+      "sha256": "9e705d5b1c65b75d64268404c5ecdbe3cb056a977206f5b908e25baf9da47aee",
+      "bytes": 687
+    },
+    {
+      "path": "src/components/dashboards/e-commerce-dashboard/dashboardLayout.tsx",
+      "target": "components/watermelon/e-commerce-dashboard/dashboardLayout.tsx",
+      "type": "registry:component",
+      "sha256": "779222e49df33f97ea3f8d9325140c3d215dc9ac374cdade0a39fd213031a9b4",
+      "bytes": 858
+    },
+    {
+      "path": "src/components/dashboards/e-commerce-dashboard/dashboardView.tsx",
+      "target": "components/watermelon/e-commerce-dashboard/dashboardView.tsx",
+      "type": "registry:component",
+      "sha256": "79c0fe26c6afc1ce8e94050f0c353562f81d5a69f05aaf8f696b0b53e4732a73",
+      "bytes": 18088
+    },
+    {
+      "path": "src/components/dashboards/e-commerce-dashboard/data.ts",
+      "target": "components/watermelon/e-commerce-dashboard/data.ts",
+      "type": "registry:component",
+      "sha256": "2a5a85f9087b6922535a213763eb0b376b7dde53444d1d47f6ffe433da9726c2",
+      "bytes": 3124
+    },
+    {
+      "path": "src/components/dashboards/e-commerce-dashboard/demo.tsx",
+      "target": "components/watermelon/e-commerce-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "9dbeaaf85ae8edf125b456d7ae456df645462dc5c35195e0660376d85f7ab79b",
+      "bytes": 646
+    }
+  ],
+  "dependencies": [
+    "@radix-ui/react-avatar",
+    "@radix-ui/react-checkbox",
+    "@radix-ui/react-dialog",
+    "@radix-ui/react-dropdown-menu",
+    "@radix-ui/react-label",
+    "@radix-ui/react-select",
+    "@radix-ui/react-separator",
+    "@radix-ui/react-slot",
+    "@radix-ui/react-tabs",
+    "@radix-ui/react-toggle",
+    "@radix-ui/react-toggle-group",
+    "@radix-ui/react-tooltip",
+    "@tabler/icons-react",
+    "class-variance-authority",
+    "lucide-react",
+    "next-themes",
+    "recharts",
+    "sonner",
+    "vaul"
+  ],
+  "registryDependencies": [
+    "avatar",
+    "badge",
+    "breadcrumb",
+    "button",
+    "card",
+    "chart",
+    "checkbox",
+    "drawer",
+    "dropdown-menu",
+    "input",
+    "label",
+    "select",
+    "separator",
+    "sheet",
+    "sidebar",
+    "skeleton",
+    "sonner",
+    "table",
+    "tabs",
+    "toggle-group",
+    "toggle",
+    "tooltip"
+  ],
+  "imports": [
+    "./components/app-sidebar",
+    "./components/site-header",
+    "./dashboardLayout",
+    "./dashboardView",
+    "./data",
+    "./nav-main",
+    "./nav-secondary",
+    "./nav-user",
+    "@/components/ui/avatar",
+    "@/components/ui/badge",
+    "@/components/ui/card",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/select",
+    "@/components/ui/separator",
+    "@/components/ui/sidebar",
+    "@/components/ui/table",
+    "@tabler/icons-react",
+    "lucide-react",
+    "react",
+    "recharts",
+    "sonner"
+  ],
+  "propsDeclarations": [
+    "interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {\n  onNavigate?: (view: string) => void;\n  currentView?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/e-commerce-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

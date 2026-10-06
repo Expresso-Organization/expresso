@@ -1,0 +1,30 @@
+{
+  "id": "navbar-47fef4be2ffb603d",
+  "sourceUrl": "https://www.navbar.gallery/navbar/paradigm",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Paradigm",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.paradigmai.com/",
+  "evidence": {
+    "url": "https://www.navbar.gallery/navbar/paradigm",
+    "sha256": "cf2c29d4912289982bd21e7711c2129934b3a58e924903d4991e49b7758eccec",
+    "fetchedAt": "2026-09-23T12:53:08+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

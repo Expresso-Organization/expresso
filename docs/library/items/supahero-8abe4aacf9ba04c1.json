@@ -1,0 +1,30 @@
+{
+  "id": "supahero-8abe4aacf9ba04c1",
+  "sourceUrl": "https://supahero.io/hero/dialweb",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Dialweb",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.dialedweb.com/",
+  "evidence": {
+    "url": "https://supahero.io/hero/dialweb",
+    "sha256": "e3ffb316f94be3befafc2a43b5591c020e470b225e9af2508bd8f9c8c8bbc157",
+    "fetchedAt": "2026-09-23T12:51:52+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "input-otp-2",
+  "dependencies": [
+    "react-icons",
+    "input-otp"
+  ],
+  "registryDependencies": [
+    "input-otp",
+    "label",
+    "button"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/input-otp/input-otp-2.tsx",
+      "content": "\"use client\";\n\nimport { useEffect, useId, useState } from \"react\";\n\nimport {\n  InputOTP,\n  InputOTPGroup,\n  InputOTPSlot,\n} from \"@/components/ui/input-otp\";\nimport { Label } from \"@/components/ui/label\";\nimport { Button } from \"@/components/ui/button\";\n\nconst InputOtp2 = () => {\n  const id = useId();\n  const [seconds, setSeconds] = useState(30);\n\n  useEffect(() => {\n    if (seconds === 0) return;\n\n    const timer = setInterval(() => {\n      setSeconds((prev) => prev - 1);\n    }, 1000);\n\n    return () => clearInterval(timer);\n  }, [seconds]);\n\n  const handleResend = () => {\n    setSeconds(30);\n  };\n\n  return (\n    <div className=\"space-y-2\">\n      <div className=\"text-center\">\n        <Label htmlFor={id} className=\"text-base font-semibold\">\n          Verify Code\n        </Label>\n        <p className=\"text-muted-foreground text-start text-sm\">\n          Enter the 4-digit code sent to you\n        </p>\n      </div>\n\n      <InputOTP id={id} maxLength={4} className=\"w-full\">\n        <InputOTPGroup className=\"flex justify-between gap-3\">\n          {[0, 1, 2, 3].map((i) => (\n            <InputOTPSlot\n              key={i}\n              index={i}\n              className=\"data-[active=true]:ring-primary/30! data-[active=true]:border-primary/50 h-14 w-14 rounded-sm! border text-lg data-[active=true]:ring-2!\"\n            />\n          ))}\n        </InputOTPGroup>\n      </InputOTP>\n\n      <div className=\"flex items-center justify-start text-sm\">\n        <span className=\"text-muted-foreground\">\n          {seconds > 0\n            ? `Resend in 00:${seconds.toString().padStart(2, \"0\")}`\n            : \"Didn't receive code?\"}\n        </span>\n\n        <Button\n          variant={\"link\"}\n          onClick={handleResend}\n          disabled={seconds > 0}\n          className=\"p-0 pl-1\"\n        >\n          Resend\n        </Button>\n      </div>\n    </div>\n  );\n};\n\nexport default InputOtp2;\n",
+      "type": "registry:ui",
+      "target": "components/ui/input-otp-2.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

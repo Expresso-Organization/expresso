@@ -1,0 +1,30 @@
+{
+  "id": "supahero-b979382c67d16c23",
+  "sourceUrl": "https://supahero.io/hero/flagship",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Flagship",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.flagship.ai/",
+  "evidence": {
+    "url": "https://supahero.io/hero/flagship",
+    "sha256": "d91015b437d778aa86eb136ed3aa51615e270d5558a87c618fdb365f403c4f91",
+    "fetchedAt": "2026-09-23T12:52:10+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

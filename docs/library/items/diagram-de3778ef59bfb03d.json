@@ -1,0 +1,26 @@
+{
+  "id": "diagram-de3778ef59bfb03d",
+  "sourceUrl": "https://github.com/cathrynlavery/diagram-design/blob/dc1ace47b99a419e42d01a03cb6ace5346efa8ae/skills/diagram-design/references/type-architecture.md",
+  "sourceRevision": "dc1ace47b99a419e42d01a03cb6ace5346efa8ae",
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/diagram/diagram-de3778ef59bfb03d.md.txt",
+      "sha256": "cb5672b5c69cbe24a0b18d144f8b2e4507a124ebb0dbc0bc898ceafb27612caa",
+      "bytes": 5001,
+      "kind": "reference_source",
+      "label": "원본 type-architecture.md"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "텍스트 자료 · 원문 보기 가능",
+  "sourceLicense": "https://github.com/cathrynlavery/diagram-design/blob/dc1ace47b99a419e42d01a03cb6ace5346efa8ae/LICENSE"
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "badge-13",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "badge"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/badge/badge-13.tsx",
+      "content": "\nimport { Badge } from \"@/components/ui/badge\";\n\nconst Badge13= () => {\n  return (\n    <Badge className=\"bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive border-none focus-visible:outline-none\">\n      <span\n        className=\"bg-destructive size-2 rounded-full\"\n        aria-hidden=\"true\"\n      />\n      Cancelled\n    </Badge>\n  );\n};\n\nexport default Badge13\n",
+      "type": "registry:ui",
+      "target": "components/ui/badge-13.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

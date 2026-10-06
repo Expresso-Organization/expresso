@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "breadcrumb-2",
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "breadcrumb"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/breadcrumb/breadcrumb-2.tsx",
+      "content": "import { LayoutGridIcon } from 'lucide-react'\n\nimport {\n  Breadcrumb,\n  BreadcrumbItem,\n  BreadcrumbLink,\n  BreadcrumbList,\n  BreadcrumbPage,\n  BreadcrumbSeparator\n} from '@/components/ui/breadcrumb'\n\ntype BreadcrumbSegment =\n  | {\n      label: string\n      href: string\n      current?: false\n    }\n  | {\n      label: string\n      current: true\n      href?: never\n    }\n\nconst segments: readonly BreadcrumbSegment[] = [\n  { label: 'Portal', href: '#' },\n  { label: 'Orders', href: '#' },\n  { label: 'Shipment Status', current: true }\n] as const\n\nconst Breadcrumb2 = () => {\n  const [home, ...rest] = segments\n\n  return (\n    <Breadcrumb>\n      <BreadcrumbList className='px-1 py-1'>\n        {'href' in home ? (\n          <BreadcrumbItem>\n            <BreadcrumbLink href={home.href} className='flex items-center gap-2 font-medium'>\n              <LayoutGridIcon className='size-3.5' />\n              {home.label}\n            </BreadcrumbLink>\n          </BreadcrumbItem>\n        ) : null}\n\n        {rest.map((segment) => (\n          <BreadcrumbItem key={segment.label}>\n            <BreadcrumbSeparator className='text-muted-foreground/70'>/</BreadcrumbSeparator>\n            {'href' in segment ? (\n              <BreadcrumbLink href={segment.href} className='text-muted-foreground'>\n                {segment.label}\n              </BreadcrumbLink>\n            ) : (\n              <BreadcrumbPage className='font-medium underline underline-offset-4'>\n                {segment.label}\n              </BreadcrumbPage>\n            )}\n          </BreadcrumbItem>\n        ))}\n      </BreadcrumbList>\n    </Breadcrumb>\n  )\n}\n\nexport default Breadcrumb2\n",
+      "type": "registry:ui",
+      "target": "components/ui/breadcrumb-2.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

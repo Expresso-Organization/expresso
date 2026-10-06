@@ -1,0 +1,71 @@
+{
+  "id": "watermelon-3b899b8d0bb50386",
+  "sourceUrl": "https://ui.watermelon.sh/block/hero-10",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/hero-10.json",
+      "sha256": "484a4255924475a90c299b0b9fae4ff69bfb87e7777d3d3de3698dae846fb128",
+      "bytes": 12650,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/hero-10.tsx",
+      "target": "components/ui/hero-10.tsx",
+      "type": "registry:ui",
+      "sha256": "3df9451ba5ca80d7f77b13587856ebaa5eabf8a2ba043f46f29a28c1c59d32b3",
+      "bytes": 11848
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "imports": [
+    "motion/react",
+    "react",
+    "react-icons/fa6"
+  ],
+  "propsDeclarations": [
+    "export interface Hero10Props {\n  brandName?: string;\n  navItems?: Hero10NavItem[];\n  ctaText?: string;\n  ctaHref?: string;\n  eyebrowText?: string;\n  title?: string;\n  description?: string;\n  primaryText?: string;\n  primaryHref?: string;\n  bottomLabel?: string;\n  usersText?: string;\n  backgroundImage?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://assets.watermelon.sh/hero-10-bg.avif"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/hero-10.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "hero-10",
+    "status": "built",
+    "export": "Hero10",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-10.tsx",
+    "url": "./library/previews/watermelon/hero-10.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:15+00:00",
+    "snapshotSha256": "2a22075b208cfd6cf06d723e4016a1012d7ce18de55de75974e0e980f9f7f512"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

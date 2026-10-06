@@ -1,0 +1,98 @@
+/* 포트폴리오 작품의 디자인 토큰입니다. 개발 포털의 제품 테마와 분리합니다. */
+@font-face{font-family:'Expresso Editorial';src:url('./assets/expresso-editorial.woff') format('woff');font-weight:400;font-style:normal;font-display:swap}
+.variant-shell{--display-font:'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;background:var(--paper);color:var(--ink)}
+.variant-shell .portfolio{max-width:none}.variant-shell h1,.variant-shell h2,.variant-shell h3{overflow-wrap:anywhere;word-break:keep-all}.variant-shell .hero{display:block;max-width:none;padding-inline:max(var(--gutter),calc((100% - var(--content))/2))}.variant-shell .hero h1{font-family:var(--display-font)}
+.v-hero-masthead{display:flex;justify-content:space-between;gap:24px;align-items:center}.v-hero-masthead>span{font-size:10px;letter-spacing:.12em}.v-hero-composition{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:64px;align-items:end}.v-hero-title{min-width:0}.variant-shell .hero-bottom{display:flex;flex-direction:column;align-items:start;gap:32px}.variant-shell .hero-bottom>p{font-size:16px;line-height:1.9}.variant-shell .hero-bottom .text-link{margin:0}.variant-shell .hero-meta{margin-top:64px;padding-block:20px}.variant-shell .page-nav{padding-block:24px}.variant-shell .page-nav a{min-height:40px;display:inline-flex;align-items:center}.variant-shell .text-link{min-height:44px}.variant-shell .v-step-number{white-space:nowrap}.variant-shell .section-heading h2,.variant-shell .v-case-heading h2{font-family:var(--display-font)}
+/* 명조·종이색·가는 선과 비대칭 여백을 쓰는 편집 지면입니다. */
+.variant-shell[data-design=editorial]{--paper:#f5f0e7;--surface:#eae3d7;--ink:#302923;--muted:#665a50;--line:#cabfb1;--accent:#8c352d;--radius:0px;--content:1088px;--display-font:'Expresso Editorial','AppleMyungjo','Batang',serif}
+[data-design=editorial] .fictional-notice{background:var(--surface)}
+[data-design=editorial] .page-nav{border-bottom:1px solid var(--ink);padding-inline:0;margin-inline:auto;width:calc(100% - var(--gutter)*2);max-width:var(--content)}
+[data-design=editorial] .wordmark{font-family:var(--display-font);font-size:32px;font-weight:400;letter-spacing:-.04em}
+[data-design=editorial] .hero{padding-top:48px;padding-bottom:0}
+[data-design=editorial] .v-hero-masthead{color:var(--accent)}
+[data-design=editorial] .v-hero-masthead .eyebrow{color:var(--accent)}
+[data-design=editorial] .v-editorial-byline{font-family:var(--display-font);font-size:18px;color:var(--accent);margin-top:56px}
+[data-design=editorial] .hero h1{font-size:clamp(68px,8vw,120px);font-weight:400;line-height:1.1;letter-spacing:-.075em;margin:48px 0 0}
+[data-design=editorial] .v-hero-definition{max-width:760px;font-family:var(--display-font);font-size:clamp(22px,2.5vw,34px);line-height:1.5;letter-spacing:-.04em;margin:28px 0 0}
+[data-design=editorial] .hero-bottom{padding-bottom:12px}
+[data-design=editorial] .hero-meta{border-color:var(--ink)}
+[data-design=editorial] .v-project-index{padding-block:56px 96px}
+[data-design=editorial] .section-heading h2{font-weight:400;font-size:32px}
+[data-design=editorial] .v-project-index h3{font-family:var(--display-font);font-weight:400;font-size:28px}
+[data-design=editorial] .v-index-number{color:var(--accent);font-family:var(--display-font);font-size:18px}
+[data-design=editorial] .v-case{padding-block:96px}
+[data-design=editorial] .v-case-heading h2{font-size:48px;font-weight:400;line-height:1.45}
+[data-design=editorial] .v-case-visual{padding:16px;background:var(--surface);border:1px solid var(--line)}
+[data-design=editorial] .v-case-visual figcaption{padding-top:4px}
+[data-design=editorial] .v-case-visual img{background:var(--paper)}
+[data-design=editorial] .v-case-process{background:transparent;border-top:1px solid var(--ink);border-bottom:1px solid var(--line);padding:64px 0;margin:0 auto;max-width:var(--content)}
+[data-design=editorial] .v-case-process .v-case-heading{max-width:720px}
+[data-design=editorial] .v-step-number{font-family:var(--display-font);font-size:48px}
+[data-design=editorial] .v-case-text{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);column-gap:96px}
+[data-design=editorial] .v-case-text .v-case-facts{border-width:1px}
+[data-design=editorial] .tags li{padding:0 12px 0 0;border:0;border-right:1px solid var(--line);border-radius:0}
+[data-design=editorial] .tags li:last-child{border:0}
+[data-design=editorial] .career{border-block:1px solid var(--line);background:var(--surface)}
+[data-design=editorial] .career-item h3{font-family:var(--display-font);font-weight:400}
+[data-design=editorial] .v-group-title{color:var(--accent)}
+[data-design=editorial] .contact{margin:0;max-width:none;background:var(--paper);color:var(--ink);padding:80px max(var(--gutter),calc((100% - var(--content))/2));border-top:1px solid var(--ink);border-radius:0}
+[data-design=editorial] .contact h2{font-family:var(--display-font);font-weight:400}
+[data-design=editorial] .contact .eyebrow,[data-design=editorial] .contact>p:last-child{color:var(--muted)}
+[data-design=editorial] .contact-link{color:var(--accent);border-color:var(--accent)}
+/* 큰 고딕·청색 면·번호·각진 이미지 프레임으로 작업을 전시합니다. */
+.variant-shell[data-design=poster]{--paper:#fafaf7;--surface:#e9edfb;--ink:#111a36;--muted:#4d5872;--line:#b6c0da;--accent:#173ed4;--electric:#173ed4;--on-electric:#fff;--signal:#e4f78a;--radius:0px;--content:1184px}
+[data-design=poster] .fictional-notice{background:var(--ink);color:var(--on-electric);border:0}
+[data-design=poster] .fictional-notice span{color:#d1d8ec}
+[data-design=poster] .page-nav{max-width:none;background:var(--electric);color:var(--on-electric);padding-inline:max(var(--gutter),calc((100% - var(--content))/2))}
+[data-design=poster] .page-nav nav{gap:0}
+[data-design=poster] .page-nav nav a{padding-inline:20px;border-left:1px solid #6984eb}
+[data-design=poster] .wordmark{font-weight:900;font-size:32px}
+[data-design=poster] .hero{background:var(--electric);color:var(--on-electric);padding-top:24px;padding-bottom:0}
+[data-design=poster] .v-hero-masthead{border-top:1px solid #6984eb;padding-top:24px}
+[data-design=poster] .v-hero-masthead .eyebrow{color:var(--on-electric)}
+[data-design=poster] .hero h1.v-poster-name{display:flex;align-items:center;justify-content:space-between;gap:24px;font-family:var(--display-font);font-size:clamp(90px,14vw,208px);font-weight:900;line-height:1.05;letter-spacing:-.085em;color:var(--signal);padding-block:32px;margin:0}
+[data-design=poster] .v-poster-name>span{font-weight:400;line-height:1;letter-spacing:0}
+[data-design=poster] .v-hero-composition{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:80px;padding-bottom:32px}
+[data-design=poster] .v-hero-definition{font-size:clamp(24px,3.2vw,42px);font-weight:700;line-height:1.35;letter-spacing:-.04em;max-width:620px;margin:0 0 24px}
+[data-design=poster] .hero-bottom>p{color:var(--on-electric)}
+[data-design=poster] .hero-bottom .text-link{color:var(--ink);background:var(--signal);padding:8px 16px;border:0}
+[data-design=poster] .hero :focus-visible,[data-design=poster] .page-nav :focus-visible{outline-color:var(--signal)}
+[data-design=poster] .hero-meta{border-color:#6984eb;color:var(--on-electric);margin-top:8px}
+[data-design=poster] .section-heading>.eyebrow{color:var(--accent)}
+[data-design=poster] .section-heading h2{font-size:clamp(30px,3.6vw,48px);font-weight:800;letter-spacing:-.055em}
+[data-design=poster] .v-gallery-index .work{padding-block:72px}
+[data-design=poster] .v-gallery-index .project-grid{gap:48px 32px}
+[data-design=poster] .project-cover{padding:24px;background:var(--electric);border-radius:0}
+[data-design=poster] .project-cover img{border:1px solid var(--line);background:var(--paper)}
+[data-design=poster] .project-card .eyebrow{color:var(--accent)}
+[data-design=poster] .cover-arrow{background:var(--signal);color:var(--ink);border-radius:0;width:40px;height:40px;bottom:0;right:0}
+[data-design=poster] .project-card h3{font-weight:800}
+[data-design=poster] .tags li{border-color:var(--line);border-radius:0}
+[data-design=poster] .v-case{border-top:2px solid var(--ink);padding-block:64px}
+[data-design=poster] .v-case-heading>.eyebrow{color:var(--accent)}
+[data-design=poster] .v-case-heading h2{font-weight:800;letter-spacing:-.055em}
+[data-design=poster] .v-case-text{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr)}
+[data-design=poster] .v-case-text .v-case-facts{border:0;padding:0}
+[data-design=poster] .v-fact{border-top:1px solid var(--line);padding-top:16px}
+[data-design=poster] .v-fact h3{font-size:14px;color:var(--accent)}
+[data-design=poster] .v-case-visual{border:16px solid var(--electric);padding:16px;background:var(--surface)}
+[data-design=poster] .v-case-visual img{aspect-ratio:1.2;border-radius:0;background:var(--paper)}
+[data-design=poster] .v-case-process{padding:48px;background:var(--surface);border:2px solid var(--electric);border-radius:0}
+[data-design=poster] .v-step-number{font-weight:800;font-size:56px}
+[data-design=poster] .v-evidence{max-width:none;background:var(--ink);color:var(--on-electric);padding-inline:max(var(--gutter),calc((100% - var(--content))/2));--line:#53617f;--muted:#c9d2e7;--accent:#e4f78a}
+[data-design=poster] .v-evidence-expanded .v-artifact{background:transparent;border-radius:0;border-width:1px 0 0;padding:24px 0}
+[data-design=poster] .v-evidence-expanded .v-artifact h4{font-size:24px}
+[data-design=poster] .v-evidence-group{padding-bottom:40px}
+[data-design=poster] .career{background:var(--paper);margin-bottom:0!important}
+[data-design=poster] .career-timeline{max-width:none;margin-left:0;display:grid;grid-template-columns:1fr 1fr;gap:48px}
+[data-design=poster] .career-item{grid-template-columns:16px 1fr;gap:16px}
+[data-design=poster] .timeline-dot{border-radius:0;width:12px;height:12px}
+[data-design=poster] .contact{max-width:none;margin:0;padding:64px max(var(--gutter),calc((100% - var(--content))/2));border-radius:0;background:var(--signal);color:var(--ink)}
+[data-design=poster] .contact h2{font-size:clamp(36px,5vw,72px);font-weight:800;line-height:1.2}
+[data-design=poster] .contact .eyebrow,[data-design=poster] .contact>p:last-child{color:var(--ink)}
+[data-design=poster] .contact-link{border-color:var(--ink)}
+.variant-shell .page-footer{max-width:none;padding-inline:max(var(--gutter),calc((100% - var(--content))/2))}
+@media(max-width:1200px){[data-design=editorial] .v-case-process{margin-inline:var(--gutter)}.v-hero-composition,[data-design=poster] .v-hero-composition{gap:40px}[data-design=editorial] .v-case-text{column-gap:48px}}
+@media(max-width:850px){.v-hero-composition,[data-design=poster] .v-hero-composition{grid-template-columns:1fr}.variant-shell .hero-bottom{max-width:620px;gap:24px}[data-design=editorial] .hero h1{font-size:56px}[data-design=editorial] .v-editorial-byline{margin-top:32px}[data-design=poster] .hero h1{font-size:44px}[data-design=poster] .v-poster-name{padding-block:32px 48px}[data-design=editorial] .v-case{padding-block:64px}}
+@media(max-width:650px){.v-hero-masthead{gap:16px;align-items:start}.v-hero-masthead>span{font-size:9px;max-width:110px;text-align:right}.variant-shell .page-nav nav{gap:12px}.variant-shell .page-nav nav a{padding-inline:0;min-height:44px;border:0}.variant-shell .hero{padding-top:24px}.variant-shell .hero h1{font-size:38px}.variant-shell .hero-meta{margin-top:40px}.variant-shell .hero-bottom>p{font-size:16px}.v-hero-composition,[data-design=poster] .v-hero-composition{gap:32px}[data-design=editorial] .hero h1{line-height:1.5;margin-top:20px}[data-design=editorial] .v-editorial-byline{margin-top:32px;font-size:16px}[data-design=editorial] .v-case-heading h2{font-size:34px}[data-design=editorial] .v-case,[data-design=editorial] .v-project-index{padding-block:48px}[data-design=editorial] .v-case-text,[data-design=poster] .v-case-text{display:block}[data-design=editorial] .v-case-process{padding-block:40px}[data-design=editorial] .v-step-number{font-size:30px}[data-design=editorial] .v-case-visual{padding:12px}.variant-shell .v-case-media{grid-template-columns:1fr}[data-design=poster] .v-poster-name{font-size:clamp(72px,18vw,116px);padding-block:32px;gap:12px}[data-design=poster] .hero h1{font-size:34px}[data-design=poster] .hero-meta{margin-top:0}[data-design=poster] .v-gallery-index .work{padding-block:48px}[data-design=poster] .project-cover{padding:16px}[data-design=poster] .v-case-visual{padding:8px;border-width:8px}[data-design=poster] .v-case-process{padding:24px}[data-design=poster] .career-timeline{grid-template-columns:1fr;gap:24px}.variant-shell .contact{padding-block:48px}.variant-shell .contact-link{font-size:18px}.variant-shell .contact h2{font-size:36px}}
+@media print{.variant-shell{-webkit-print-color-adjust:exact;print-color-adjust:exact}.variant-shell .v-case-visual{position:static}.variant-shell .hero h1{font-size:40px}}

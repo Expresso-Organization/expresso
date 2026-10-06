@@ -1,0 +1,621 @@
+{
+  "results": [
+    {
+      "recipe": "featured",
+      "preset": "none",
+      "width": 390,
+      "entrance": false,
+      "download": true,
+      "staticRuntime": true,
+      "timing": null
+    },
+    {
+      "recipe": "featured",
+      "preset": "none",
+      "width": 1440,
+      "entrance": false,
+      "download": true,
+      "staticRuntime": true,
+      "timing": null
+    },
+    {
+      "recipe": "featured",
+      "preset": "subtle",
+      "width": 390,
+      "entrance": true,
+      "download": true,
+      "staticRuntime": true,
+      "timing": {
+        "timings": {
+          "hero-label": {
+            "delay": 0,
+            "direction": "normal",
+            "duration": 420,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-title": {
+            "delay": 55,
+            "direction": "normal",
+            "duration": 420,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-visual": {
+            "delay": 165,
+            "direction": "normal",
+            "duration": 420,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-note": {
+            "delay": 220,
+            "direction": "normal",
+            "duration": 420,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          }
+        },
+        "titleOpacity": "0.566817"
+      }
+    },
+    {
+      "recipe": "featured",
+      "preset": "subtle",
+      "width": 1440,
+      "entrance": true,
+      "download": true,
+      "staticRuntime": true,
+      "timing": {
+        "timings": {
+          "hero-label": {
+            "delay": 0,
+            "direction": "normal",
+            "duration": 420,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-title": {
+            "delay": 55,
+            "direction": "normal",
+            "duration": 420,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-visual": {
+            "delay": 165,
+            "direction": "normal",
+            "duration": 420,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-note": {
+            "delay": 220,
+            "direction": "normal",
+            "duration": 420,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          }
+        },
+        "titleOpacity": "0.566817"
+      }
+    },
+    {
+      "recipe": "featured",
+      "preset": "showcase",
+      "width": 390,
+      "entrance": true,
+      "download": true,
+      "staticRuntime": true,
+      "timing": {
+        "timings": {
+          "hero-label": {
+            "delay": 0,
+            "direction": "normal",
+            "duration": 650,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-title": {
+            "delay": 85,
+            "direction": "normal",
+            "duration": 650,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-visual": {
+            "delay": 255,
+            "direction": "normal",
+            "duration": 650,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-note": {
+            "delay": 340,
+            "direction": "normal",
+            "duration": 650,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          }
+        },
+        "titleOpacity": "0.230452"
+      }
+    },
+    {
+      "recipe": "featured",
+      "preset": "showcase",
+      "width": 1440,
+      "entrance": true,
+      "download": true,
+      "staticRuntime": true,
+      "timing": {
+        "timings": {
+          "hero-label": {
+            "delay": 0,
+            "direction": "normal",
+            "duration": 650,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-title": {
+            "delay": 85,
+            "direction": "normal",
+            "duration": 650,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-visual": {
+            "delay": 255,
+            "direction": "normal",
+            "duration": 650,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-note": {
+            "delay": 340,
+            "direction": "normal",
+            "duration": 650,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          }
+        },
+        "titleOpacity": "0.230452"
+      }
+    },
+    {
+      "recipe": "gallery",
+      "preset": "none",
+      "width": 390,
+      "entrance": false,
+      "download": true,
+      "staticRuntime": true,
+      "timing": null
+    },
+    {
+      "recipe": "gallery",
+      "preset": "none",
+      "width": 1440,
+      "entrance": false,
+      "download": true,
+      "staticRuntime": true,
+      "timing": null
+    },
+    {
+      "recipe": "gallery",
+      "preset": "subtle",
+      "width": 390,
+      "entrance": true,
+      "download": true,
+      "staticRuntime": true,
+      "timing": {
+        "timings": {
+          "hero-label": {
+            "delay": 0,
+            "direction": "normal",
+            "duration": 420,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-title": {
+            "delay": 55,
+            "direction": "normal",
+            "duration": 420,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-visual": {
+            "delay": 165,
+            "direction": "normal",
+            "duration": 420,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-note": {
+            "delay": 220,
+            "direction": "normal",
+            "duration": 420,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          }
+        },
+        "titleOpacity": "0.566817"
+      }
+    },
+    {
+      "recipe": "gallery",
+      "preset": "subtle",
+      "width": 1440,
+      "entrance": true,
+      "download": true,
+      "staticRuntime": true,
+      "timing": {
+        "timings": {
+          "hero-label": {
+            "delay": 0,
+            "direction": "normal",
+            "duration": 420,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-title": {
+            "delay": 55,
+            "direction": "normal",
+            "duration": 420,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-visual": {
+            "delay": 165,
+            "direction": "normal",
+            "duration": 420,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-note": {
+            "delay": 220,
+            "direction": "normal",
+            "duration": 420,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          }
+        },
+        "titleOpacity": "0.566817"
+      }
+    },
+    {
+      "recipe": "gallery",
+      "preset": "showcase",
+      "width": 390,
+      "entrance": true,
+      "download": true,
+      "staticRuntime": true,
+      "timing": {
+        "timings": {
+          "hero-label": {
+            "delay": 0,
+            "direction": "normal",
+            "duration": 650,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-title": {
+            "delay": 85,
+            "direction": "normal",
+            "duration": 650,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-visual": {
+            "delay": 255,
+            "direction": "normal",
+            "duration": 650,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-note": {
+            "delay": 340,
+            "direction": "normal",
+            "duration": 650,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          }
+        },
+        "titleOpacity": "0.230452"
+      }
+    },
+    {
+      "recipe": "gallery",
+      "preset": "showcase",
+      "width": 1440,
+      "entrance": true,
+      "download": true,
+      "staticRuntime": true,
+      "timing": {
+        "timings": {
+          "hero-label": {
+            "delay": 0,
+            "direction": "normal",
+            "duration": 650,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-title": {
+            "delay": 85,
+            "direction": "normal",
+            "duration": 650,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-visual": {
+            "delay": 255,
+            "direction": "normal",
+            "duration": 650,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          },
+          "hero-note": {
+            "delay": 340,
+            "direction": "normal",
+            "duration": 650,
+            "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+            "endDelay": 0,
+            "fill": "both",
+            "iterationStart": 0,
+            "iterations": 1
+          }
+        },
+        "titleOpacity": "0.230452"
+      }
+    }
+  ],
+  "checks": {
+    "systemReducedMotion": true,
+    "keyboardReveal": true,
+    "replayCleanup": true,
+    "noObserverFallback": true,
+    "noJavascript": true,
+    "anchorLanding": true
+  },
+  "artifactHashes": {
+    "variants.js": "8520a21459c8b8f3ad9a6c9470f4814336c2920d1ea1ed0b393ddaccc9c17474",
+    "variants.css": "e0d6b75e28230e7b6bbda06bf3f3710ba0f8e95c7135bcd4582579a16b8e4f50",
+    "variants-sources.json": "82ae4ca363a2a9fb77afd8e9c208b9d37fdb6b310f109cef860f70f94afa6d45",
+    "featured-standard-none.json": "80cce27e18486fc63c6d15b0784a146ce010e2223485167f1f4314077fa88bc1",
+    "featured-standard-none.static.html": "eda5c3c795a0fbb6a59265379f1c177ddd9ba530c1742dc0c4816fb28d61a5a8",
+    "featured-standard-none-selected.json": "a08d7ac0889e8a5a8c0552cb741054925a11edcb3797bb4b8f1b830ac0b69dea",
+    "featured-standard-none-selected.static.html": "e2ad3e33e2acb68a1894702232130f7a49d4d2add2e62f3d27a26754d93151bd",
+    "featured-standard-none-bento.json": "b5aa06d72e9e8fe3027dcd88e31786f29015f70b044adb4658335abaf19459a4",
+    "featured-standard-none-bento.static.html": "28d8222a38c3a518dec6b243510720ec73e620de591c6f270f9b8cae85774379",
+    "featured-standard.json": "8443bb67b91521a7c6042686dde07fd1261f9e3949ae886044c8a57bdef1c756",
+    "featured-standard.static.html": "0ea889c24dcd1ebb86a46a34680462b8a8f022098c3a315517ddf7377aba145e",
+    "featured-standard-selected.json": "9d73c0a63b4adb2e7d9f07b2e78e157038bcee6939db52ef270b430eefbf5df6",
+    "featured-standard-selected.static.html": "52c53ce3d253d96e5d274fe07cfd830cdb727a91ec611462b64a416875110732",
+    "featured-standard-bento.json": "02ab3877def93aea90fe9027492a9036a4b10f69408e28f2425fea09406a9bad",
+    "featured-standard-bento.static.html": "5c484a4b79257a0e4fe632fcdae0ae6112676bc2b25d25c3a0b05d5a76f968e6",
+    "featured-standard-showcase.json": "518fcb968d89dcd33006c24917402aae934397384b83530f50274188036ffab6",
+    "featured-standard-showcase.static.html": "8aaf27de510af1cbc0c1079bed3eec9ecbbc5055cd5ecaad9f0e96d1cb2b30a6",
+    "featured-standard-showcase-selected.json": "4ea9ec9dcf8f5856445336b84de95a64fe67d8b7e8146dfefd7488a8efbf2766",
+    "featured-standard-showcase-selected.static.html": "0100de40578a314083067b220585cd745431b5661a768ed8eb1058fe6f4b287f",
+    "featured-standard-showcase-bento.json": "d00d2818e797be6d3d35813b557541a97183992879dd2af77fde5d6a1a3c7c9b",
+    "featured-standard-showcase-bento.static.html": "d753f757dbe69f57b118882a090bd5f48677cae450cc7977b3b90daa9993e339",
+    "featured-long-none.json": "d966b73ea6d551979fcb58d4eb1188725caf52dd8d075d6d057da6a2560d5e55",
+    "featured-long-none.static.html": "6b3789bcc291f920fd8cdaf8771b275807868f471c1c0a4ecc1f563a2bcaa2d8",
+    "featured-long-none-selected.json": "0e497b879622386589ca5d01c24b7d5e00b41130e8d79d14f2b3992c35b4b9f8",
+    "featured-long-none-selected.static.html": "294183e7cde865da5bd13da7a9e27e7cad22a62e3e9fd55cf03634d423d6ca26",
+    "featured-long-none-bento.json": "7f1d354d8e7f4489bd6606c5c880cc31601de043f4aac492be9a55ac225f7b4b",
+    "featured-long-none-bento.static.html": "b6f5de8a7f8a6a76ac45e28533f94de0991631bafaeeba86a613fdf8909fef96",
+    "featured-long.json": "e27c2fa173492bb1bcb716e06a48056a3cee58fed9d1d392b5ccb07879930303",
+    "featured-long.static.html": "9a4f486661705c91d83c03abcdb4dd5a3971d77e35250b968741294c88509ca8",
+    "featured-long-selected.json": "d9457c3e0909e450db64ac169789f310b93cc553282f1bafac48d5160ff8e7c8",
+    "featured-long-selected.static.html": "36ab9efe2204119cec9bb6b0df234efaa0b6be6b0ed38690e41b398cae72eae5",
+    "featured-long-bento.json": "6063ac3d056709d4084a5a4a9c17651cff494be1178bd8a2602c5d1aea7a786e",
+    "featured-long-bento.static.html": "384177cdd6419b8f3d805c24646971a04f62a8ca9e42c7b38c3d9944a4a2fc12",
+    "featured-long-showcase.json": "0db4b647ddcc9d3b696b49847baf770f44ace0d368ce30582c6d9f57ff2f94c3",
+    "featured-long-showcase.static.html": "8365bb8f4ffb62659f2f70446eb31144fdb76b6deef789273b4bb7c7fa158355",
+    "featured-long-showcase-selected.json": "8479f1035d9418b8fab316f8cae2487bf8273c5f59c5f3227bb3b349b31e435d",
+    "featured-long-showcase-selected.static.html": "637ada8ee76535232bce40ad57e38bb9090f23856992efdc169eddaa2dd4d72a",
+    "featured-long-showcase-bento.json": "ac437cb71f24efa960fad092c6e50c04d44dbbefa6c8e6a5c2096d76ead1dfb5",
+    "featured-long-showcase-bento.static.html": "60392610680e2a34dbca4355773aed56041215024a2cf63d91e3bbf0dc0b6423",
+    "featured-no-images-none.json": "86bc765e7b39174d0f2929aa6ef3b8683a0ec8f439eb85029ff0b23f17770418",
+    "featured-no-images-none.static.html": "6c462c083e73193a52eb9b6713772450c221507b1d369ddfcc8869a500a1a68d",
+    "featured-no-images-none-selected.json": "0eadcfabefd3efdc81e3f42a3e7306fd3e6658776c372f504bf70b1b22af594c",
+    "featured-no-images-none-selected.static.html": "77b7f0158d2ef504dfaabfa1e769aa57b77aa447ec885bfc075e0d1d95b8f614",
+    "featured-no-images-none-bento.json": "63f925e93511fcde4521de2887433f0c1fad154a25c8f096955cbe6271b098b5",
+    "featured-no-images-none-bento.static.html": "ea0abe1f5768aae047b35450169b2e862e060fc613e7a91329991bd671918456",
+    "featured-no-images.json": "230a199a5a14c82b2cc08b4759fba71df5c302f570b8346e67902094c369960e",
+    "featured-no-images.static.html": "cc4d32baa1ac4004639578fed539fd397e6234007816be4bb32533cca278dd74",
+    "featured-no-images-selected.json": "a251ec0905b6974c62f927cccc829410c92a5bce57e823e68814959ff704a1f5",
+    "featured-no-images-selected.static.html": "10dcaa99f934055fcad6442bcca1001b7ae035e40585cee64fd1dd7a9b9bc9ef",
+    "featured-no-images-bento.json": "af06ddd9706ac880b9f996325bf749350015a5930b21385aa51e1691d622c37f",
+    "featured-no-images-bento.static.html": "f8c030809093d4f9c9769ad2577a548f922ece81ac09e1749a80ad4083c56d3b",
+    "featured-no-images-showcase.json": "b9a6906f134c0dcbc7e9dac9e3020ce2b5a273bf9ac93287a738b880e0249610",
+    "featured-no-images-showcase.static.html": "caae8d29565b9885a96c67f68e43075d844bac2bb37ec525a50bb40f96ee8481",
+    "featured-no-images-showcase-selected.json": "b86b4d20e6cd28f79df247337605b592a4171b0c009a497fcbf2edf807b40e35",
+    "featured-no-images-showcase-selected.static.html": "58127aa622966b33f37bc097c2a4f15bbe4857c16971e553713d716026dcd104",
+    "featured-no-images-showcase-bento.json": "01d9c8179e78b64498dd574ac7fdfd72955bfdbbe1662060ee42333b105e038e",
+    "featured-no-images-showcase-bento.static.html": "c9dc3437befbc907183475f403efe3bf94a2a58bb6ab4f82714985001844e5af",
+    "featured-many-none.json": "7b3bb961b46a497608d7b815f91e122f522343fe45551739304167a8811afbe0",
+    "featured-many-none.static.html": "51c15f085dbb2cfd22b5b63ee463d16f2cf2fbb97838c383f138d65610e9790f",
+    "featured-many-none-selected.json": "04c0e903b06d6af2a957e452730e9d5a08d819a9dc0688cfb4d63d722009e3ab",
+    "featured-many-none-selected.static.html": "c82ebf4d2b5f04988b8b73866f4f61d0b2ff6fb45e7a18cd03a7451573cb1905",
+    "featured-many-none-bento.json": "e64ebab194f07f5362ec90f834c1a46f546e632301bd436876a26cf17396d46f",
+    "featured-many-none-bento.static.html": "b7be0b08757812022e6a7247de5c9007aef10b0a1d3a2e81700df4da429a7242",
+    "featured-many.json": "e7830f20edd3c6b971670964b6b711205a865fe6e187d38c8d9d4fa2199b40d3",
+    "featured-many.static.html": "52a6fe6fccb159ece216061758cd7f6ddcde94501148f5c3125758ef47ad7338",
+    "featured-many-selected.json": "ce484691d8ac177224838a40a11febe589313a1216e3f284f71294a659c7ae3d",
+    "featured-many-selected.static.html": "227633be047efa45db74da23d32d09dfe8142891c7e34ab17389672748663958",
+    "featured-many-bento.json": "3d8bc2e4cc65958890bce9aa842b674120eaa11d31122b71b4733556985f95a4",
+    "featured-many-bento.static.html": "e5dbb662976700f3177ef8b09d540fd99ac6a03e828f4fdfa8dacc472fc94c3a",
+    "featured-many-showcase.json": "ae8887596d2e6d21647a57028c4341e07fdd47fe2bf9de96ed631d8864aa6356",
+    "featured-many-showcase.static.html": "6f8ff2a5798533bf38e38f36f52788d0796b7cb0853ae1843106b4816be56a7b",
+    "featured-many-showcase-selected.json": "fddd53b00037ccea5aeeed246a8688a8fe7babf86104af85503558cbeab067d4",
+    "featured-many-showcase-selected.static.html": "f34dc37c1ddb31bc12edd10ea0f21435e1b0783011c6d35d436ff0beaad5831d",
+    "featured-many-showcase-bento.json": "f17f59e2681a17ba6c5e9f6da7378e0c381d881e7c4e29865b6a73745171c5e6",
+    "featured-many-showcase-bento.static.html": "faf2a326b712d12bb9919b978bb0d7457c010413d9ec644eaddf1a2f23e60faa",
+    "gallery-standard-none.json": "0284a0b122ec51471a8820ea03316159d539b90eac3f369d1392098596b7df42",
+    "gallery-standard-none.static.html": "ce623a57ba7908b9c8b032e2a1fc4035ca741f15616940f4e4da4395f240666d",
+    "gallery-standard-none-selected.json": "beea3d441bc89673bbb61d3da7e47810c75a6418270606a5f7b2a8451305e7e9",
+    "gallery-standard-none-selected.static.html": "46dee1cf3e5155c6b2af35654feaa838cd9ae64a2aa7ba1fe2719eb0fd4b10d4",
+    "gallery-standard-none-bento.json": "12f467b81da6b6072af47c3869ac353013d27a745edf08f1c2c669c04b8550f1",
+    "gallery-standard-none-bento.static.html": "7a0810dcb08d784de3553246a3b05dc4641c66418d3dd7eaf24422ca33ef64f3",
+    "gallery-standard-subtle.json": "d446a96a354aa585270f2a446998ecca75e44932da31267205e2cce0f899bab7",
+    "gallery-standard-subtle.static.html": "486409489f53f0a1c25c09a7422d5a65eb53d519e907ab69bee0e9eba7c92fa4",
+    "gallery-standard-subtle-selected.json": "58c3c9445a7a5bbb2d6bb0c9a699b1b909e9b125b9b30f1e792e14863303c74c",
+    "gallery-standard-subtle-selected.static.html": "37d25b0e7d3346aa02a03c3e9838f30d9c687d7571b1f3fc1b993deaadffccd1",
+    "gallery-standard-subtle-bento.json": "450d97252dbaf210c0a688c02d2b9b69e98fe34ee42e9c1c6e7eeb729e29eb34",
+    "gallery-standard-subtle-bento.static.html": "8aabcd7a22111892f5a6c8b2e7ee8164d3752f3cd8865ea3813bc002f2acf4ce",
+    "gallery-standard.json": "12f53113d53d45cc7d400788c41a40295c62a50ef85f69c50da8f30bedfcbf72",
+    "gallery-standard.static.html": "0671a44d03a946b13da061ae509948e770f505e4b82188a60ff484237c78a062",
+    "gallery-standard-selected.json": "bd38bf98a9203b4a2325abd45fa5661c4568f087e1f005b4a57af8232b7b3e4c",
+    "gallery-standard-selected.static.html": "ea116a5df3bbfe9b078d642dd150bcde0d0bd0c3acfd47bac278517c965980cd",
+    "gallery-standard-bento.json": "a427ac21f7004ad682cfef68c6c375f4e221f37fe3334dfef6afb3b58929dffa",
+    "gallery-standard-bento.static.html": "82b3ac07d9a2e91192a3457b41ebfcbce987aad534c272fb0c669632bc8fe6dd",
+    "gallery-long-none.json": "0323ba3d76c3e54451fdd27db700ecf25f2216ce59679cef55cf07f09de77a72",
+    "gallery-long-none.static.html": "c67820032d4e71975e37b0fac4e41a23c916beb50e5e5f736d87c1deaf562261",
+    "gallery-long-none-selected.json": "e2c8531f3568038188373f6013eec34f764f1660fe97730fe555319f433b12e5",
+    "gallery-long-none-selected.static.html": "33cf50a5539440763894800ee7065003ae98148bb1fac1033c583f469a84433e",
+    "gallery-long-none-bento.json": "26e35031b1193017fd350836e730c738a7421de37d450b334e07e2b18b807541",
+    "gallery-long-none-bento.static.html": "6600692eb00a528e6578dced56204ec2d1395b213d813745db0b977446f6bb09",
+    "gallery-long-subtle.json": "ec3980ff32d0c0c46081af4b080e9b5302d2f71fedaf0cad9b1242d5e84f7df3",
+    "gallery-long-subtle.static.html": "b9627749cde7fde7c0c70242cd0ff4ac2b60cf1cf8bc0214b42c5c712265ba00",
+    "gallery-long-subtle-selected.json": "40fae4dcf37826ee850991b0bf4e363120d6c5bef3c5a59f79cc83625f2d1eb4",
+    "gallery-long-subtle-selected.static.html": "e9125db06e95fbf055d743d58b0ce7719dad06a07732c021f7dfc6ea2cb5ec8f",
+    "gallery-long-subtle-bento.json": "78d8d187bd124246da2b7fc5720b1521324a0711ac43426366c1f2d7ca6d3e2b",
+    "gallery-long-subtle-bento.static.html": "6658ff2c622e8e60989ff854ce7a22ea1c5ae2410dacc3c9d1e43000beb84e5e",
+    "gallery-long.json": "9a01bc373cea0c518744ca72a14d26961d54b36bcb5fef6bb8ca45c33936ef19",
+    "gallery-long.static.html": "aedec7ccc6e3eb44a8eecd453b93d5ff312879020af116a663bff53dde54d3d3",
+    "gallery-long-selected.json": "dd9783f6052b162a7c06a2a7d74277de36d96724ccf3995080d8b7ef48fd3d38",
+    "gallery-long-selected.static.html": "e182f2fa9c11260ce776eb662e2e62285ac6babd12f48df80c00a371ea492fef",
+    "gallery-long-bento.json": "6335765bde21aafe1567eea86f1c90a29e8e9eede61ad4987bae77709b1685ef",
+    "gallery-long-bento.static.html": "4624b90e729becd1523b7d9af4818a944b7f43f515955744d93548a220cb8096",
+    "gallery-no-images-none.json": "8f003238fa8c989e08fa851a216107f7bda5cf5c78329738c2f12383c8ed4118",
+    "gallery-no-images-none.static.html": "268db1b586e68a0cdb3b5b4bad7ae314a571e9054d5f3c44af9979f385f46e8e",
+    "gallery-no-images-none-selected.json": "97458f3cac299bb5872e8e96b702c4732db986050a28e17890da6da5277b2d70",
+    "gallery-no-images-none-selected.static.html": "440986a77240c09886f27b5bf5cef4eeddc2505ee48640bce58ec24334a0192b",
+    "gallery-no-images-none-bento.json": "fa81e5ce6807ddb9c46e80c59e8f190a693fcfb9b9af6b01792a3f16ff2c8013",
+    "gallery-no-images-none-bento.static.html": "5ab8fa445606e2faa72a3046a3d8421b52c9eb1fbfe6d87da75e160ba62bbfdd",
+    "gallery-no-images-subtle.json": "a4f7370561ac0f6304df286819ed9acbc0287474c14e8da9c178524538854ce9",
+    "gallery-no-images-subtle.static.html": "893490e3cfa3f788fd3f58312c9ed9478ef35789491081d5370e5f046a0f9576",
+    "gallery-no-images-subtle-selected.json": "bcbf3c3ac62469d7b39bb210605c3cadc85aaaffb1c2872a36a987bfbf803fd7",
+    "gallery-no-images-subtle-selected.static.html": "885f029b0e7883bb3913fda769415387c11b90e7084952348d8cfc279a3053b5",
+    "gallery-no-images-subtle-bento.json": "5860b5c2ba959a92a895b78d388b27be9b076dbba5089ccfd9d6dcd92884e063",
+    "gallery-no-images-subtle-bento.static.html": "a0c2feb453af42197d4bafc5bc360402aba071299c1bb7cd73cc8413b639b878",
+    "gallery-no-images.json": "9bf0725be851fb9ba9db56b33ba2afac286b3ae38365f469e0bacca637b268e3",
+    "gallery-no-images.static.html": "c6cf82ff14ab33714b293ea7d3b1534470bcf133bb7aac7bb9677728d5005068",
+    "gallery-no-images-selected.json": "0272607cce77ffafea3f09019393c21cb1562fb92b7dcff84cbfe0b5f9b96aee",
+    "gallery-no-images-selected.static.html": "fe1bb11b691ceb04b48c3ce7f00aab78acce434ee8eadf5788b2b1f0334d5ffd",
+    "gallery-no-images-bento.json": "00f3e4fc3adbd3f41af12cd7e364345938a25d75e2c8f9bdd4d6e8f4a8acf0c6",
+    "gallery-no-images-bento.static.html": "064b2805ecc4442400e75106a3cced0e5d60630eaf2ea6138bd6f501d491dbff",
+    "gallery-many-none.json": "59abdaecb6d3142fa2023f85b9dcc3eebc24bc279fe58dae7067a88300b4829c",
+    "gallery-many-none.static.html": "e93f133d624a61b28ad91f4813fc42b535b5db9cb118e8b64f6aa0ff10f2ed7d",
+    "gallery-many-none-selected.json": "68be7494d79600e210ce716f07be729f9266215067ef51228e9af6a89de5ca7d",
+    "gallery-many-none-selected.static.html": "81b573d9f0081b4218a8205bfc6bcd1cfb1dd58a56c799d41212c055d480b35c",
+    "gallery-many-none-bento.json": "911c261f4c3af8f72ba478197515f56d3f5edbaa3554b5804be262240beb8785",
+    "gallery-many-none-bento.static.html": "b3c780dc6d9ccdeac347a125a4f5179ece68db5dc662c34864efcfa842051fee",
+    "gallery-many-subtle.json": "7faac4bc95541dee9645ec8db26787aefcfaad62e7f548c1d410192b65bc1dc8",
+    "gallery-many-subtle.static.html": "9951913a10b8cca41d303f385adec8a4507e7457bb956b7ad8539b9fcf67419f",
+    "gallery-many-subtle-selected.json": "48fc0b1d7da8f342d0c8b6ff43f765d59f4d6a6fc28e6f10ddd5eec4cde0756a",
+    "gallery-many-subtle-selected.static.html": "217d0c42ec87dbc9d6ec5c8796681e7d5f7e2cda57cab5687db0953a7874a5a7",
+    "gallery-many-subtle-bento.json": "981b060692d0689d13274ac16eb60c33d510196bea6469c685aed933e335cf1f",
+    "gallery-many-subtle-bento.static.html": "e797d823b0583126459cb46fd4a01e1d04feecab7f472918447f498c5b4281e7",
+    "gallery-many.json": "253934c926132e4287726e175bbf3890905aaa19fb96e992d84cd7b367bd34cf",
+    "gallery-many.static.html": "a579a8963302e5c577fa2d444e842daac3be1d752c3a7ab5569bbd816b7187d9",
+    "gallery-many-selected.json": "7e8f6f25fa1d2dc7c604e8ceaa773099b1300262683a34b8030919b6240184eb",
+    "gallery-many-selected.static.html": "5d54489bd1621690f13bde0be2609e3ab8505902d4711f319e360a2ba7066d96",
+    "gallery-many-bento.json": "caa011623be323a8beb8b08b5add68f31b87991b676ea8aa3f3de52f78134a21",
+    "gallery-many-bento.static.html": "513330e45d2da9b8ea2caf5c41560361a875b2b0801f4111555926c6ce6c25c1"
+  }
+}

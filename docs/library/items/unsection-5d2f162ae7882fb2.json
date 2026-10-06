@@ -1,0 +1,29 @@
+{
+  "id": "unsection-5d2f162ae7882fb2",
+  "sourceUrl": "https://www.unsection.com/section/superwhisper-custom-mode-feature-list-design",
+  "sourceRevision": null,
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: superwhisper custom mode feature list design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/superwhisper-custom-mode-feature-list-design",
+    "sha256": "077d6ab809e8439e86b94b4bfa41549c7e3d5d3bbdf0e835339a0747a3c3915e",
+    "fetchedAt": "2026-09-23T12:56:43+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

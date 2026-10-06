@@ -1,0 +1,29 @@
+{
+  "id": "60fps-b50f2a931719b04f",
+  "sourceUrl": "https://60fps.design/shots/roll-camera-3d-film-spin-animation",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Roll Camera 3D Film Spin Animation",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 25개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/roll-camera-3d-film-spin-animation",
+    "sha256": "e7f43b91d83e4453a5c6c0a4c00be681a529bb18d83d6dbdc0b9ca10942f8856",
+    "fetchedAt": "2026-09-23T13:06:24+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

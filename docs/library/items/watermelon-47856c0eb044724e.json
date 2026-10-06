@@ -1,0 +1,90 @@
+{
+  "id": "watermelon-47856c0eb044724e",
+  "sourceUrl": "https://ui.watermelon.sh/components/dropdown-menu",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/dropdown-menu.json",
+      "sha256": "924e747a4d429eeb06ea1e1ceda836062e8646a922149996f718dbbd55a15af2",
+      "bytes": 44663,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/dropdown-menu.tsx",
+      "target": "components/ui/dropdown-menu.tsx",
+      "type": "registry:ui",
+      "sha256": "1456039b15cdf96a2ac804ebd07df4f7dec3dd0a6bf81ded0490ff15ba27c53f",
+      "bytes": 42634
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion",
+    "radix-ui"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "@/lib/utils",
+    "lucide-react",
+    "motion/react",
+    "radix-ui",
+    "react"
+  ],
+  "propsDeclarations": [
+    "type DropdownMenuProps = DropdownMenuPrimitiveProps;\n\nfunction DropdownMenu(props: DropdownMenuProps) {\n  return <DropdownMenuPrimitive {...props}",
+    "type DropdownMenuTriggerProps = DropdownMenuTriggerPrimitiveProps;\n\nfunction DropdownMenuTrigger(props: DropdownMenuTriggerProps) {\n  return <DropdownMenuTriggerPrimitive {...props}",
+    "type DropdownMenuContentProps = DropdownMenuContentPrimitiveProps;\n\nfunction DropdownMenuContent({\n  sideOffset = 4,\n  className,\n  children,\n  ...props\n}",
+    "type DropdownMenuGroupProps = DropdownMenuGroupPrimitiveProps;\n\nfunction DropdownMenuGroup({ ...props }",
+    "type DropdownMenuItemProps = DropdownMenuItemPrimitiveProps & {\n  inset?: boolean;\n  variant?: 'default' | 'destructive';\n}",
+    "type DropdownMenuCheckboxItemProps = DropdownMenuCheckboxItemPrimitiveProps;\n\nfunction DropdownMenuCheckboxItem({\n  className,\n  children,\n  checked,\n  disabled,\n  ...props\n}",
+    "type DropdownMenuRadioGroupProps = DropdownMenuRadioGroupPrimitiveProps;\n\nfunction DropdownMenuRadioGroup(props: DropdownMenuRadioGroupProps) {\n  return <DropdownMenuRadioGroupPrimitive {...props}",
+    "type DropdownMenuRadioItemProps = DropdownMenuRadioItemPrimitiveProps;\n\nfunction DropdownMenuRadioItem({\n  className,\n  children,\n  disabled,\n  ...props\n}",
+    "type DropdownMenuLabelProps = DropdownMenuLabelPrimitiveProps & {\n  inset?: boolean;\n}",
+    "type DropdownMenuSeparatorProps = DropdownMenuSeparatorPrimitiveProps;\n\nfunction DropdownMenuSeparator({\n  className,\n  ...props\n}",
+    "type DropdownMenuShortcutProps = DropdownMenuShortcutPrimitiveProps;\n\nfunction DropdownMenuShortcut({\n  className,\n  ...props\n}",
+    "type DropdownMenuSubProps = DropdownMenuSubPrimitiveProps;\n\nfunction DropdownMenuSub(props: DropdownMenuSubProps) {\n  return <DropdownMenuSubPrimitive {...props}",
+    "type DropdownMenuSubTriggerProps = DropdownMenuSubTriggerPrimitiveProps & {\n  inset?: boolean;\n}",
+    "type DropdownMenuSubContentProps = DropdownMenuSubContentPrimitiveProps;\n\nfunction DropdownMenuSubContent({\n  className,\n  ...props\n}",
+    "type DropdownMenuPrimitiveProps = React.ComponentProps<\n  typeof DropdownMenuPrime.Root\n>;\n\nfunction DropdownMenuPrimitive(props: DropdownMenuPrimitiveProps) {\n  const [isOpen, setIsOpen] = useControlledState({\n    value: props?.open,\n    defaultValue: props?.defaultOpen,\n    onChange: props?.onOpenChange,\n  }",
+    "type DropdownMenuTriggerPrimitiveProps = React.ComponentProps<\n  typeof DropdownMenuPrime.Trigger\n>;\n\nfunction DropdownMenuTriggerPrimitive(props: DropdownMenuTriggerPrimitiveProps) {\n  return (\n    <DropdownMenuPrime.Trigger\n      data-slot=\"dropdown-menu-trigger\"\n      {...props}",
+    "type DropdownMenuPortalPrimitiveProps = React.ComponentProps<\n  typeof DropdownMenuPrime.Portal\n>;\n\nfunction DropdownMenuPortalPrimitive(props: DropdownMenuPortalPrimitiveProps) {\n  return (\n    <DropdownMenuPrime.Portal data-slot=\"dropdown-menu-portal\" {...props}",
+    "type DropdownMenuGroupPrimitiveProps = React.ComponentProps<\n  typeof DropdownMenuPrime.Group\n>;\n\nfunction DropdownMenuGroupPrimitive(props: DropdownMenuGroupPrimitiveProps) {\n  return (\n    <DropdownMenuPrime.Group data-slot=\"dropdown-menu-group\" {...props}",
+    "type DropdownMenuSubPrimitiveProps = React.ComponentProps<\n  typeof DropdownMenuPrime.Sub\n>;\n\nfunction DropdownMenuSubPrimitive(props: DropdownMenuSubPrimitiveProps) {\n  const [isOpen, setIsOpen] = useControlledState({\n    value: props?.open,\n    defaultValue: props?.defaultOpen,\n    onChange: props?.onOpenChange,\n  }",
+    "type DropdownMenuRadioGroupPrimitiveProps = React.ComponentProps<\n  typeof DropdownMenuPrime.RadioGroup\n>;\n\nfunction DropdownMenuRadioGroupPrimitive(props: DropdownMenuRadioGroupPrimitiveProps) {\n  return (\n    <DropdownMenuPrime.RadioGroup\n      data-slot=\"dropdown-menu-radio-group\"\n      {...props}",
+    "type DropdownMenuSubTriggerPrimitiveProps = Omit<\n  React.ComponentProps<typeof DropdownMenuPrime.SubTrigger>,\n  'asChild'\n> &\n  HTMLMotionProps<'div'>;\n\nfunction DropdownMenuSubTriggerPrimitive({\n  disabled,\n  textValue,\n  ...props\n}",
+    "type DropdownMenuSubContentPrimitiveProps = Omit<\n  React.ComponentProps<typeof DropdownMenuPrime.SubContent>,\n  'forceMount' | 'asChild'\n> &\n  Omit<\n    React.ComponentProps<typeof DropdownMenuPrime.Portal>,\n    'forceMount'\n  > &\n  HTMLMotionProps<'div'>;\n\nfunction DropdownMenuSubContentPrimitive({\n  loop,\n  onEscapeKeyDown,\n  onPointerDownOutside,\n  onFocusOutside,\n  onInteractOutside,\n  sideOffset,\n  alignOffset,\n  avoidCollisions,\n  collisionBoundary,\n  collisionPadding,\n  arrowPadding,\n  sticky,\n  hideWhenDetached,\n  transition = { duration: 0.2 }",
+    "type DropdownMenuHighlightProps = Omit<\n  HighlightProps,\n  'controlledItems' | 'enabled' | 'hover'\n> & {\n  animateOnHover?: boolean;\n}",
+    "type DropdownMenuContentPrimitiveProps = Omit<\n  React.ComponentProps<typeof DropdownMenuPrime.Content>,\n  'forceMount' | 'asChild'\n> &\n  Omit<\n    React.ComponentProps<typeof DropdownMenuPrime.Portal>,\n    'forceMount'\n  > &\n  HTMLMotionProps<'div'>;\n\nfunction DropdownMenuContentPrimitive({\n  loop,\n  onCloseAutoFocus,\n  onEscapeKeyDown,\n  onPointerDownOutside,\n  onFocusOutside,\n  onInteractOutside,\n  side,\n  sideOffset,\n  align,\n  alignOffset,\n  avoidCollisions,\n  collisionBoundary,\n  collisionPadding,\n  arrowPadding,\n  sticky,\n  hideWhenDetached,\n  transition = { duration: 0.2 }",
+    "type DropdownMenuHighlightItemProps = HighlightItemProps;\n\nfunction DropdownMenuHighlightItemPrimitive(props: DropdownMenuHighlightItemProps) {\n  return <HighlightItem data-slot=\"dropdown-menu-highlight-item\" {...props}",
+    "type DropdownMenuItemPrimitiveProps = Omit<\n  React.ComponentProps<typeof DropdownMenuPrime.Item>,\n  'asChild'\n> &\n  HTMLMotionProps<'div'>;\n\nfunction DropdownMenuItemPrimitive({\n  disabled,\n  onSelect,\n  textValue,\n  ...props\n}",
+    "type DropdownMenuCheckboxItemPrimitiveProps = Omit<\n  React.ComponentProps<typeof DropdownMenuPrime.CheckboxItem>,\n  'asChild'\n> &\n  HTMLMotionProps<'div'>;\n\nfunction DropdownMenuCheckboxItemPrimitive({\n  checked,\n  onCheckedChange,\n  disabled,\n  onSelect,\n  textValue,\n  ...props\n}",
+    "type DropdownMenuRadioItemPrimitiveProps = Omit<\n  React.ComponentProps<typeof DropdownMenuPrime.RadioItem>,\n  'asChild'\n> &\n  HTMLMotionProps<'div'>;\n\nfunction DropdownMenuRadioItemPrimitive({\n  value,\n  disabled,\n  onSelect,\n  textValue,\n  ...props\n}",
+    "type DropdownMenuLabelPrimitiveProps = React.ComponentProps<\n  typeof DropdownMenuPrime.Label\n>;\n\nfunction DropdownMenuLabelPrimitive(props: DropdownMenuLabelPrimitiveProps) {\n  return (\n    <DropdownMenuPrime.Label data-slot=\"dropdown-menu-label\" {...props}",
+    "type DropdownMenuSeparatorPrimitiveProps = React.ComponentProps<\n  typeof DropdownMenuPrime.Separator\n>;\n\nfunction DropdownMenuSeparatorPrimitive(props: DropdownMenuSeparatorPrimitiveProps) {\n  return (\n    <DropdownMenuPrime.Separator\n      data-slot=\"dropdown-menu-separator\"\n      {...props}",
+    "type DropdownMenuShortcutPrimitiveProps = React.ComponentProps<'span'>;\n\nfunction DropdownMenuShortcutPrimitive(props: DropdownMenuShortcutPrimitiveProps) {\n  return <span data-slot=\"dropdown-menu-shortcut\" {...props}",
+    "type DropdownMenuItemIndicatorPrimitiveProps = Omit<\n  React.ComponentProps<typeof DropdownMenuPrime.ItemIndicator>,\n  'asChild'\n> &\n  HTMLMotionProps<'div'>;\n\nfunction DropdownMenuItemIndicatorPrimitive(props: DropdownMenuItemIndicatorPrimitiveProps) {\n  return (\n    <DropdownMenuPrime.ItemIndicator\n      data-slot=\"dropdown-menu-item-indicator\"\n      asChild\n    >\n      <motion.div {...props}",
+    "interface CommonControlledStateProps<T> {\n  value?: T;\n  defaultValue?: T;\n}",
+    "type ParentModeHighlightProps = {\n  boundsOffset?: Partial<Bounds>;\n  containerClassName?: string;\n  forceUpdateBounds?: boolean;\n}",
+    "type ExtendedChildProps = React.ComponentProps<'div'> & {\n  id?: string;\n  ref?: React.Ref<HTMLElement>;\n  'data-active'?: string;\n  'data-value'?: string;\n  'data-disabled'?: boolean;\n  'data-highlight'?: boolean;\n  'data-slot'?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/dropdown-menu.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

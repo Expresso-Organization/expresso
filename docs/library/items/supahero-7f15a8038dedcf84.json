@@ -1,0 +1,30 @@
+{
+  "id": "supahero-7f15a8038dedcf84",
+  "sourceUrl": "https://supahero.io/hero/iconly",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Iconly",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://iconly.pro/",
+  "evidence": {
+    "url": "https://supahero.io/hero/iconly",
+    "sha256": "bad58070a8c12c3f3105d8537efbd99ef73ebf6801860ad68f32ef569e0215df",
+    "fetchedAt": "2026-09-23T12:52:38+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

@@ -1,0 +1,64 @@
+{
+  "id": "watermelon-83d6396bace0f06d",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/x-post.json",
+      "sha256": "fc202cbfe3f9b0cb84363594ae80238b125548ac942163f34900eb4e12aa7cc9",
+      "bytes": 30107,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/x-post.tsx",
+      "target": "components/ui/x-post.tsx",
+      "type": "registry:ui",
+      "sha256": "4f8b8b511f0e8566ae5198283d479c20e4f56db06c7da0984353f69f128752d9",
+      "bytes": 28269
+    }
+  ],
+  "dependencies": [
+    "@radix-ui/react-slot",
+    "@radix-ui/react-tooltip",
+    "class-variance-authority",
+    "lucide-react",
+    "zod"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "@/lib/utils",
+    "@radix-ui/react-slot",
+    "@radix-ui/react-tooltip",
+    "class-variance-authority",
+    "lucide-react",
+    "react",
+    "zod"
+  ],
+  "propsDeclarations": [
+    "export interface XPostProps {\n  post: XPostData;\n  className?: string;\n  onAction?: (action: string, post: XPostData) => void;\n  responseActions?: ActionsProp;\n  onResponseAction?: (actionId: string) => void | Promise<void>;\n  onBeforeResponseAction?: (actionId: string) => boolean | Promise<boolean>;\n}",
+    "export interface ActionButtonsProps {\n  actions: Action[];\n  onAction: (actionId: string) => void | Promise<void>;\n  onBeforeAction?: (actionId: string) => boolean | Promise<boolean>;\n  confirmTimeout?: number;\n  align?: \"left\" | \"center\" | \"right\";\n  className?: string;\n}",
+    "export interface ActionsConfig {\n  items: Action[];\n  align?: \"left\" | \"center\" | \"right\";\n  confirmTimeout?: number;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/2000/svg"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/x-post.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

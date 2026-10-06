@@ -38,8 +38,13 @@
   border: 1.5px solid var(--ex-accent);
   border-radius: 16px;
   box-shadow: 0 0 0 3px rgba(154, 64, 48, 0.07);
-  overflow: hidden;
   flex-shrink: 0;
+  /*
+   * 예전엔 overflow: hidden으로 둥근 모서리를 맞췄다. 그런데 해석 칩이
+   * 팝오버를 열면(ConditionChip) 그 팝오버도 이 카드의 자식이라 함께
+   * 잘려 나간다 — 그래서 클리핑 대신 아래쪽 줄(.parsedRow)에 직접 둥근
+   * 모서리를 준다.
+   */
 }
 
 .queryRow {
@@ -94,6 +99,8 @@
   padding: 11px 20px;
   background: var(--ex-accent-surface);
   border-top: 1px solid var(--ex-accent-surface-hover);
+  border-bottom-left-radius: 14.5px;
+  border-bottom-right-radius: 14.5px;
   flex-wrap: wrap;
 }
 
@@ -117,6 +124,45 @@
   font-size: var(--ex-text-sm);
   color: var(--ex-accent-text);
   white-space: nowrap;
+}
+
+/* 칩 팝오버 — 위치 기준이 되는 감싸개. .filter/.filterPop과 같은 구조인데,
+   기준이 필터 버튼 하나가 아니라 칩 하나하나라 왼쪽에 붙인다. */
+.parsedChipBox {
+  position: relative;
+  display: inline-flex;
+}
+
+.parsedChipPop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  min-width: 176px;
+  max-height: min(50vh, 320px);
+  overflow: auto;
+  padding: 6px;
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
+  border-radius: 11px;
+  box-shadow: 0 10px 28px rgb(16 34 58 / 12%);
+}
+
+.parsedChipOff {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--ex-border-inner);
+  border-radius: 7px;
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-subtle);
+  transition: background var(--ex-motion-quick);
+}
+
+.parsedChipOff:hover {
+  background: var(--ex-bg-sunken);
 }
 
 .parsedAdd {

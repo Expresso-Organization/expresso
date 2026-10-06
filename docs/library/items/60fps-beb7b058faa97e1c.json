@@ -1,0 +1,29 @@
+{
+  "id": "60fps-beb7b058faa97e1c",
+  "sourceUrl": "https://60fps.design/shots/remy-ai-health-permission-animation",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Remy AI Health Permission Animation",
+    "공개 이미지 요소: 32개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/remy-ai-health-permission-animation",
+    "sha256": "65c3c8276bfd23992e5e2b55d275a8c7f97fba120acff51077dfef5531366fb4",
+    "fetchedAt": "2026-09-23T13:06:05+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

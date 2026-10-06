@@ -1,0 +1,186 @@
+{
+  "id": "watermelon-08de2969685f2afc",
+  "sourceUrl": "https://ui.watermelon.sh/dashboard/gridline-dashboard",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/gridline-dashboard.json",
+      "sha256": "d4a183a16bee93612a7003d01395e797255ec027c3fc3882d6bc71a6e4794e84",
+      "bytes": 84474,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/gridline-dashboard/assets/icons.tsx",
+      "target": "components/watermelon/gridline-dashboard/assets/icons.tsx",
+      "type": "registry:component",
+      "sha256": "51dac90c10a898e0a2d1cf2808eee830dd2fd1dee01478b968153aa1970ad25c",
+      "bytes": 2211
+    },
+    {
+      "path": "src/components/dashboards/gridline-dashboard/assets/logo.tsx",
+      "target": "components/watermelon/gridline-dashboard/assets/logo.tsx",
+      "type": "registry:component",
+      "sha256": "aa980b3db0935081aaf5c366a34d79e8108c2d1e291ed51109aa4877056f5e09",
+      "bytes": 1982
+    },
+    {
+      "path": "src/components/dashboards/gridline-dashboard/components/dashboard/dashboard-content.tsx",
+      "target": "components/watermelon/gridline-dashboard/components/dashboard/dashboard-content.tsx",
+      "type": "registry:component",
+      "sha256": "0e41b1d07d390196877b8ece0735c9dc729a5ec1bebfee0ce6e46d2b1a6b32dd",
+      "bytes": 6292
+    },
+    {
+      "path": "src/components/dashboards/gridline-dashboard/components/dashboard/flexibility-dashboard.tsx",
+      "target": "components/watermelon/gridline-dashboard/components/dashboard/flexibility-dashboard.tsx",
+      "type": "registry:component",
+      "sha256": "5112ab7d5cc0f2c2234e0a2e22e27727dcfee3a00610223cf6093d0b901755be",
+      "bytes": 27113
+    },
+    {
+      "path": "src/components/dashboards/gridline-dashboard/components/dashboard/modelling-dashboard.tsx",
+      "target": "components/watermelon/gridline-dashboard/components/dashboard/modelling-dashboard.tsx",
+      "type": "registry:component",
+      "sha256": "bd23dbc459c63b15e2ac949b51d9800bc4a085a7a5e59bb60d8b3999a22923a4",
+      "bytes": 12433
+    },
+    {
+      "path": "src/components/dashboards/gridline-dashboard/components/layout/app-sidebar.tsx",
+      "target": "components/watermelon/gridline-dashboard/components/layout/app-sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "36df1117584368cdde50d32decf2fe5ff5c30af951a0da0b71bfb0b7f7f8d6f1",
+      "bytes": 5517
+    },
+    {
+      "path": "src/components/dashboards/gridline-dashboard/components/layout/dashboard-shell.tsx",
+      "target": "components/watermelon/gridline-dashboard/components/layout/dashboard-shell.tsx",
+      "type": "registry:component",
+      "sha256": "696a4c8048236993aba9c7f67f87bed31cc7625e0cfde2173daff7ba27106812",
+      "bytes": 1419
+    },
+    {
+      "path": "src/components/dashboards/gridline-dashboard/components/layout/sidebar-navigation-item.tsx",
+      "target": "components/watermelon/gridline-dashboard/components/layout/sidebar-navigation-item.tsx",
+      "type": "registry:component",
+      "sha256": "d05dfe3eec844a86b75a646fcb01d0cf3734a9547a505c0064a15cf1915bcb1b",
+      "bytes": 2004
+    },
+    {
+      "path": "src/components/dashboards/gridline-dashboard/components/layout/top-navbar.tsx",
+      "target": "components/watermelon/gridline-dashboard/components/layout/top-navbar.tsx",
+      "type": "registry:component",
+      "sha256": "e519b3c60cef08c2b4f4a9e017d69176ee4d6624c38199740d8ab75024ec2576",
+      "bytes": 3561
+    },
+    {
+      "path": "src/components/dashboards/gridline-dashboard/components/navigation.tsx",
+      "target": "components/watermelon/gridline-dashboard/components/navigation.tsx",
+      "type": "registry:component",
+      "sha256": "1e5782cf177a6260fd3c35f7fa70679a937076f0df15fef6892eaf1680aa829d",
+      "bytes": 1520
+    },
+    {
+      "path": "src/components/dashboards/gridline-dashboard/components/shared/profile-menu.tsx",
+      "target": "components/watermelon/gridline-dashboard/components/shared/profile-menu.tsx",
+      "type": "registry:component",
+      "sha256": "f7be42264d9d0b5ee4fba928146143dfbb12e7df57153d063865871c63d40ab5",
+      "bytes": 1684
+    },
+    {
+      "path": "src/components/dashboards/gridline-dashboard/dashboard.css",
+      "target": "components/watermelon/gridline-dashboard/dashboard.css",
+      "type": "registry:component",
+      "sha256": "39732f341ab65f5170b8996397f543627d207b7e5002771b86b3ec0701a38e4d",
+      "bytes": 2950
+    },
+    {
+      "path": "src/components/dashboards/gridline-dashboard/dashboardView.tsx",
+      "target": "components/watermelon/gridline-dashboard/dashboardView.tsx",
+      "type": "registry:component",
+      "sha256": "c702156e09851d7894f75b640d3a1891790352286c256c463dd8ba439ffc67b5",
+      "bytes": 901
+    },
+    {
+      "path": "src/components/dashboards/gridline-dashboard/data.ts",
+      "target": "components/watermelon/gridline-dashboard/data.ts",
+      "type": "registry:component",
+      "sha256": "1addb1eb825bfc40caf159d4af860fac47be8fe37350dc56149246967011742a",
+      "bytes": 6568
+    },
+    {
+      "path": "src/components/dashboards/gridline-dashboard/demo.tsx",
+      "target": "components/watermelon/gridline-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "409e78fc9ac6bfbdf9cd670471c1ed1ae350195d39a2dadb62337955a159aaa9",
+      "bytes": 153
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "button",
+    "card",
+    "drawer",
+    "dropdown-menu",
+    "input",
+    "sheet",
+    "switch",
+    "tooltip"
+  ],
+  "imports": [
+    "../../assets/icons",
+    "../../assets/logo",
+    "../../data",
+    "../navigation",
+    "../shared/profile-menu",
+    "./app-sidebar",
+    "./components/dashboard/dashboard-content",
+    "./components/dashboard/flexibility-dashboard",
+    "./components/dashboard/modelling-dashboard",
+    "./components/layout/dashboard-shell",
+    "./components/navigation",
+    "./dashboardView",
+    "./sidebar-navigation-item",
+    "./top-navbar",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/drawer",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/input",
+    "@/components/ui/sheet",
+    "@/components/ui/switch",
+    "@/components/ui/tooltip",
+    "@/lib/utils",
+    "lucide-react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "type ThemeProps = {\n  isDark: boolean;\n  onThemeChange: (isDark: boolean) => void;\n}",
+    "type SidebarNavigationItemProps = {\n  item: NavigationItem;\n  showLabel?: boolean;\n  onNavigate?: () => void;\n}",
+    "type TopbarProps = {\n  isDark: boolean;\n  onThemeChange: (isDark: boolean) => void;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/2000/svg",
+    "https://assets.watermelon.sh/components/map-sample.png"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/gridline-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

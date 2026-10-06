@@ -1,0 +1,10 @@
+{
+  "model": "qwen3.5:9b-q8_0",
+  "attempts": [
+    {
+      "valid": true,
+      "outputSha256": "4588f615a56f3cc093488a47d23b06e0993e8af0ee12b844b16a6a25ae2ab616",
+      "output": "{\"root\":\"page\",\"elements\":{\"page\":{\"type\":\"PortfolioPage\",\"props\":{\"profile\":{\"$state\":\"/profile\"},\"recipe\":\"gallery\",\"motion\":{\"preset\":\"showcase\"}},\"children\":[\"intro\",\"work\",\"case-threadlab\",\"case-comma-map\",\"case-gilnun\",\"career\",\"evidence\",\"contact\"]},\"intro\":{\"type\":\"Hero\",\"props\":{\"profile\":{\"$state\":\"/profile\"},\"projects\":{\"$state\":\"/projects\"},\"recipe\":\"gallery\",\"annotation\":\"drawn\",\"reveal\":\"lines\"},\"children\":[]},\"work\":{\"type\":\"OrbitProjectIndex\",\"props\":{\"projects\":{\"$state\":\"/projects\"}},\"children\":[]},\"case-threadlab\":{\"type\":\"ProjectCaseStudy\",\"props\":{\"project\":{\"$state\":\"/projectById/threadlab\"},\"variant\":\"text\",\"ordinal\":1},\"children\":[]},\"case-comma-map\":{\"type\":\"ProjectCaseStudy\",\"props\":{\"project\":{\"$state\":\"/projectById/comma-map\"},\"variant\":\"media\",\"ordinal\":2},\"children\":[]},\"case-gilnun\":{\"type\":\"ProjectCaseStudy\",\"props\":{\"project\":{\"$state\":\"/projectById/gilnun\"},\"variant\":\"process\",\"ordinal\":3},\"children\":[]},\"career\":{\"type\":\"CareerTimeline\",\"props\":{\"career\":{\"$state\":\"/career\"}},\"children\":[]},\"evidence\":{\"type\":\"EvidenceCollection\",\"props\":{\"groups\":{\"$state\":\"/evidenceGroups\"},\"variant\":\"grouped\"},\"children\":[]},\"contact\":{\"type\":\"ContactCard\",\"props\":{\"contact\":{\"$state\":\"/contact\"}},\"children\":[]}}}"
+    }
+  ]
+}

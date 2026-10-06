@@ -1,0 +1,52 @@
+{
+  "id": "watermelon-8ab683019a3b1a86",
+  "sourceUrl": "https://ui.watermelon.sh/animated-components/changeable-pricing-section",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/changeable-pricing-section.json",
+      "sha256": "a4e070e6205376c77871c769d05c5912e93e7da19d60f032a8250d718555fcb7",
+      "bytes": 12263,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/changeable-pricing-section.tsx",
+      "target": "components/ui/changeable-pricing-section.tsx",
+      "type": "registry:ui",
+      "sha256": "b420e553aee34df01dafd23354c2baad9c181d2665773ecb74124c9d1dda9930",
+      "bytes": 11467
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "framer-motion",
+    "lucide-react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "export interface ChangeablePricingSectionProps {\n  /** The main title of the section */\n  title?: string;\n  /** Array of pricing plans to display */\n  plans: Plan[];\n  /** Optional ID of the default selected plan */\n  defaultPlanId?: PlanId;\n  /** Default billing cycle */\n  defaultBillingCycle?: \"monthly\" | \"yearly\";\n  /** Custom label for monthly toggle */\n  monthlyLabel?: string;\n  /** Custom label for yearly toggle */\n  yearlyLabel?: string;\n  /** Footer text below plans */\n  footerText?: string;\n  /** CTA button text */\n  buttonText?: string;\n  /** Callback fired when continue button is clicked */\n  onContinue?: (planId: PlanId, billingCycle: \"monthly\" | \"yearly\") => void;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/changeable-pricing-section.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

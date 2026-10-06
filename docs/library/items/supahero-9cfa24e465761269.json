@@ -1,0 +1,29 @@
+{
+  "id": "supahero-9cfa24e465761269",
+  "sourceUrl": "https://supahero.io/hero/axim-ecommerce",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Axim Ecommerce",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://supahero.io/hero/axim-ecommerce",
+    "sha256": "cd76c0554a0549ccf282d98551895f54f1fa9d4ff0138a1fb0b588c2ed0d474c",
+    "fetchedAt": "2026-09-23T12:51:20+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

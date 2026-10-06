@@ -1,0 +1,35 @@
+Bundled license information:
+
+@tabler/icons-react/dist/esm/defaultAttributes.mjs:
+@tabler/icons-react/dist/esm/createReactComponent.mjs:
+@tabler/icons-react/dist/esm/icons/IconArchive.mjs:
+@tabler/icons-react/dist/esm/icons/IconBookmark.mjs:
+@tabler/icons-react/dist/esm/icons/IconBrandSlack.mjs:
+@tabler/icons-react/dist/esm/icons/IconBrandTelegram.mjs:
+@tabler/icons-react/dist/esm/icons/IconChevronDown.mjs:
+@tabler/icons-react/dist/esm/icons/IconChevronLeft.mjs:
+@tabler/icons-react/dist/esm/icons/IconDotsVertical.mjs:
+@tabler/icons-react/dist/esm/icons/IconFileText.mjs:
+@tabler/icons-react/dist/esm/icons/IconFolder.mjs:
+@tabler/icons-react/dist/esm/icons/IconMail.mjs:
+@tabler/icons-react/dist/esm/icons/IconPlus.mjs:
+@tabler/icons-react/dist/esm/icons/IconSearch.mjs:
+@tabler/icons-react/dist/esm/icons/IconShare.mjs:
+@tabler/icons-react/dist/esm/icons/IconSparkles.mjs:
+@tabler/icons-react/dist/esm/icons/IconTrash.mjs:
+@tabler/icons-react/dist/esm/icons/IconUserCircle.mjs:
+@tabler/icons-react/dist/esm/icons/IconX.mjs:
+@tabler/icons-react/dist/esm/icons/IconArchiveFilled.mjs:
+@tabler/icons-react/dist/esm/icons/IconBulbFilled.mjs:
+@tabler/icons-react/dist/esm/icons/IconClockFilled.mjs:
+@tabler/icons-react/dist/esm/icons/IconMailFilled.mjs:
+@tabler/icons-react/dist/esm/icons/IconQuoteFilled.mjs:
+@tabler/icons-react/dist/esm/icons/IconStarsFilled.mjs:
+@tabler/icons-react/dist/esm/icons/IconUserFilled.mjs:
+@tabler/icons-react/dist/esm/tabler-icons-react.mjs:
+  /**
+   * @license @tabler/icons-react v3.44.0 - MIT
+   *
+   * This source code is licensed under the MIT license.
+   * See the LICENSE file in the root directory of this source tree.
+   */

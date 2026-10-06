@@ -1,0 +1,51 @@
+{
+  "id": "magic-portfolio-article",
+  "sourceUrl": "https://github.com/magicuidesign/portfolio/blob/5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b/src/app/blog/%5Bslug%5D/page.tsx",
+  "sourceRevision": "5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b",
+  "roles": [
+    "project-detail"
+  ],
+  "roleEvidence": "원본 데이터 구조 검토",
+  "roleMethod": "source_review",
+  "materials": [
+    {
+      "path": "./library/materials/magic-portfolio/article.json",
+      "sha256": "17ca915bab8bdb34b5e4858c74da93cc4a461a05d7d3db27f24b2a42e12d907f",
+      "bytes": 6444,
+      "label": "원본 코드 묶음",
+      "kind": "registry_source"
+    },
+    {
+      "path": "./library/materials/magic-portfolio/LICENSE.txt",
+      "sha256": "3d801bfc3879f9e9ea11043bb614aa8caa59a4b981e89eac6074a99ddfc9573c",
+      "bytes": 1070,
+      "label": "MIT 라이선스 원문",
+      "kind": "license"
+    }
+  ],
+  "observations": [
+    "Next.js 서버 라우트와 MDX 빌드에 연결된 원본입니다. 섹션 렌더러 이식이 필요합니다.",
+    "문제·접근·기여·결과 구조는 별도로 정의해야 합니다."
+  ],
+  "inputs": [
+    "title",
+    "publishedAt",
+    "body",
+    "previous",
+    "next"
+  ],
+  "framework": "React / Next.js / Tailwind CSS",
+  "sourceLicense": "https://github.com/magicuidesign/portfolio/blob/5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b/LICENSE",
+  "acquisitionStatus": "source_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/app/blog/[slug]/page.tsx",
+      "sha256": "68350961ee03cf14e67acd8841a377a3b639b157dc49f05c3f81d821dbbe7f9d",
+      "bytes": 5875
+    }
+  ],
+  "usageNote": "고정 버전의 지정 파일 묶음입니다. 완전한 실행 의존성 묶음은 아니며 설치·렌더링 전입니다."
+}

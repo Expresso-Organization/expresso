@@ -1,0 +1,454 @@
+[
+  {
+    "id": "componentry-animated-gradient",
+    "name": "animated-gradient",
+    "member": "AnimatedGradient",
+    "url": "./library/previews/componentry/componentry-animated-gradient.html",
+    "status": "built",
+    "fixture": "<C />"
+  },
+  {
+    "id": "componentry-annotated-text",
+    "name": "annotated-text",
+    "member": "AnnotatedText",
+    "url": "./library/previews/componentry/componentry-annotated-text.html",
+    "status": "built",
+    "fixture": "<div className=\"grid h-[740px] place-items-center\"><div className=\"text-6xl font-semibold leading-relaxed\"><C variant=\"highlight\">Design in motion</C></div></div>"
+  },
+  {
+    "id": "componentry-ascii-effect",
+    "name": "ascii-effect",
+    "member": "AsciiEffect",
+    "url": "./library/previews/componentry/componentry-ascii-effect.html",
+    "status": "built",
+    "fixture": "<C imageSrc=\"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=85\" className=\"h-[620px] w-full\" />"
+  },
+  {
+    "id": "componentry-aurora-flow",
+    "name": "aurora-flow",
+    "member": "default",
+    "url": "./library/previews/componentry/componentry-aurora-flow.html",
+    "status": "built",
+    "fixture": "<div className=\"grid h-[740px] place-items-center bg-[#061529]\"><C className=\"h-[420px] w-full\" /></div>"
+  },
+  {
+    "id": "componentry-case-study-flip-stack",
+    "name": "case-study-flip-stack",
+    "member": "CaseStudyFlipStack",
+    "url": "./library/previews/componentry/componentry-case-study-flip-stack.html",
+    "status": "built",
+    "fictionalPortfolio": true,
+    "fixture": "<C items={[{\"eyebrow\":\"지역 정보 · 가상 프로젝트\",\"title\":\"모아 지도\",\"description\":\"동네의 공공 공간을 찾는 흐름을 정리한 탐색 서비스 콘셉트입니다. 장소를 비교하고 방문 계획을 저장하는 화면을 설계했습니다.\",\"image\":\"./assets/portfolio-moa-map.svg\",\"imageAlt\":\"가상 프로젝트 모아 지도의 장소 탐색 화면\",\"background\":\"#143e4a\",\"foreground\":\"#f2fbf9\"},{\"eyebrow\":\"지식 정리 · 가상 프로젝트\",\"title\":\"루멘 노트\",\"description\":\"읽은 자료를 주제별로 연결하는 개인 지식 도구 콘셉트입니다. 기록·연결·재발견을 하나의 작업 흐름으로 구성했습니다.\",\"image\":\"./assets/portfolio-lumen-note.svg\",\"imageAlt\":\"가상 프로젝트 루멘 노트의 자료 연결 화면\",\"background\":\"#392b54\",\"foreground\":\"#faf6ff\"},{\"eyebrow\":\"접근성 · 가상 프로젝트\",\"title\":\"온길 안내\",\"description\":\"낯선 건물에서 필요한 시설을 찾도록 돕는 안내 화면 콘셉트입니다. 큰 글자와 간단한 선택지로 이동 경로를 표현했습니다.\",\"image\":\"./assets/portfolio-ongil-guide.svg\",\"imageAlt\":\"가상 프로젝트 온길 안내의 경로 선택 화면\",\"background\":\"#854629\",\"foreground\":\"#fffaf3\"}]} heading=\"가상 프로젝트 사례\" hint=\"스크롤해 사례 보기\" endLabel=\"예제 끝\" />"
+  },
+  {
+    "id": "componentry-circuit-board",
+    "name": "circuit-board",
+    "member": "CircuitBoard",
+    "url": "./library/previews/componentry/componentry-circuit-board.html",
+    "status": "built",
+    "fixture": "<C width={880} height={540} nodes={[{id:\"research\",x:120,y:150,label:\"Research\",status:\"active\"},{id:\"design\",x:430,y:120,label:\"Design\",status:\"processing\"},{id:\"delivery\",x:680,y:320,label:\"Delivery\",status:\"active\"}]} connections={[{from:\"research\",to:\"design\",animated:true},{from:\"design\",to:\"delivery\",animated:true}]} />"
+  },
+  {
+    "id": "componentry-closing-plasma",
+    "name": "closing-plasma",
+    "member": "default",
+    "url": "./library/previews/componentry/componentry-closing-plasma.html",
+    "status": "built",
+    "fixture": "<C />"
+  },
+  {
+    "id": "componentry-collection-surfer",
+    "name": "collection-surfer",
+    "member": "CollectionSurfer",
+    "url": "./library/previews/componentry/componentry-collection-surfer.html",
+    "status": "built",
+    "fixture": "<C items={[{\"id\":1,\"image\":\"https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200&q=85\",\"title\":\"Studio\"},{\"id\":2,\"image\":\"https://images.unsplash.com/photo-1497366858526-0766cadbe8fa?w=1200&q=85\",\"title\":\"Archive\"},{\"id\":3,\"image\":\"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=85\",\"title\":\"Practice\"}]} variant=\"magnetic\" />"
+  },
+  {
+    "id": "componentry-cursor-driven-particle-typography",
+    "name": "cursor-driven-particle-typography",
+    "member": "CursorDrivenParticleTypography",
+    "url": "./library/previews/componentry/componentry-cursor-driven-particle-typography.html",
+    "status": "built",
+    "fixture": "<C text=\"EXPRESSO\" />"
+  },
+  {
+    "id": "componentry-dither-gradient",
+    "name": "dither-gradient",
+    "member": "DitherGradient",
+    "url": "./library/previews/componentry/componentry-dither-gradient.html",
+    "status": "built",
+    "fixture": "<C />"
+  },
+  {
+    "id": "componentry-dither-prism-hero",
+    "name": "dither-prism-hero",
+    "member": "default",
+    "url": "./library/previews/componentry/componentry-dither-prism-hero.html",
+    "status": "built",
+    "fixture": "<C title1=\"Creative\" title2=\"Portfolio\" />"
+  },
+  {
+    "id": "componentry-dithered-logo",
+    "name": "dithered-logo",
+    "member": "default",
+    "url": "./library/previews/componentry/componentry-dithered-logo.html",
+    "status": "built",
+    "fixture": "<C imageSrc=\"[원본 SVG 인라인 데이터]\" className=\"h-[740px] w-full\" scale={0.36} />"
+  },
+  {
+    "id": "componentry-eye-tracking",
+    "name": "eye-tracking",
+    "member": "EyeTracking",
+    "url": "./library/previews/componentry/componentry-eye-tracking.html",
+    "status": "built",
+    "fixture": "<div className=\"grid h-[740px] place-items-center bg-[#f1eee7]\"><C /></div>"
+  },
+  {
+    "id": "componentry-fisheye-infinite-grid",
+    "name": "fisheye-infinite-grid",
+    "member": "FisheyeInfiniteGrid",
+    "url": "./library/previews/componentry/componentry-fisheye-infinite-grid.html",
+    "status": "built",
+    "fixture": "<C />"
+  },
+  {
+    "id": "componentry-flight-status-card",
+    "name": "flight-status-card",
+    "member": "FlightStatusCard",
+    "url": "./library/previews/componentry/componentry-flight-status-card.html",
+    "status": "built",
+    "fixture": "<div className=\"grid h-[740px] place-items-center\"><C /></div>"
+  },
+  {
+    "id": "componentry-flipping-word-swap",
+    "name": "flipping-word-swap",
+    "member": "FlippingWordSwap",
+    "url": "./library/previews/componentry/componentry-flipping-word-swap.html",
+    "status": "built",
+    "fixture": "<div className=\"grid h-[740px] place-items-center text-6xl font-semibold\"><C word1=\"Create\" word2=\"Express\" /></div>"
+  },
+  {
+    "id": "componentry-github-calendar",
+    "name": "github-calendar",
+    "member": "GithubCalendar",
+    "url": "./library/previews/componentry/componentry-github-calendar.html",
+    "status": "built",
+    "fixture": "<div className=\"grid h-[740px] place-items-center\"><C username=\"portfolio-demo\" /></div>"
+  },
+  {
+    "id": "componentry-gradient-hero-01",
+    "name": "gradient-hero-01",
+    "member": "default",
+    "url": "./library/previews/componentry/componentry-gradient-hero-01.html",
+    "status": "built",
+    "fixture": "<C />"
+  },
+  {
+    "id": "componentry-grain-gradient",
+    "name": "grain-gradient",
+    "member": "GrainGradient",
+    "url": "./library/previews/componentry/componentry-grain-gradient.html",
+    "status": "built",
+    "fixture": "<C />"
+  },
+  {
+    "id": "componentry-hero-geometric",
+    "name": "hero-geometric",
+    "member": "default",
+    "url": "./library/previews/componentry/componentry-hero-geometric.html",
+    "status": "built",
+    "fixture": "<C title1=\"Creative\" title2=\"Portfolio\" description=\"Selected work and the thinking behind it.\" />"
+  },
+  {
+    "id": "componentry-hover-transition",
+    "name": "hover-transition",
+    "member": "HoverTransition",
+    "url": "./library/previews/componentry/componentry-hover-transition.html",
+    "status": "built",
+    "fixture": "<C className=\"h-[560px] w-full\" defaultComponent={<div className=\"grid h-full place-items-center bg-zinc-100 text-5xl font-semibold\">Discover</div>} hoverComponent={<div className=\"grid h-full place-items-center bg-lime-300 text-5xl font-semibold\">Explore</div>} />"
+  },
+  {
+    "id": "componentry-image-ripple-effect",
+    "name": "image-ripple-effect",
+    "member": "ImageRippleEffect",
+    "url": "./library/previews/componentry/componentry-image-ripple-effect.html",
+    "status": "built",
+    "fixture": "<C className=\"h-[740px] w-full\" images={[{src:\"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=85\",x:0,y:0,widthScale:0.34,heightScale:0.42}]} />"
+  },
+  {
+    "id": "componentry-image-trail",
+    "name": "image-trail",
+    "member": "ImageTrail",
+    "url": "./library/previews/componentry/componentry-image-trail.html",
+    "status": "built",
+    "fixture": "<div className=\"relative h-[650px] bg-zinc-950\"><h1 className=\"pointer-events-none absolute inset-0 z-10 grid place-items-center text-6xl font-semibold text-white\">Explore</h1><C images={[\"https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200&q=85\",\"https://images.unsplash.com/photo-1497366858526-0766cadbe8fa?w=1200&q=85\",\"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=85\"]} /></div>"
+  },
+  {
+    "id": "componentry-infinite-image-field",
+    "name": "infinite-image-field",
+    "member": "InfiniteImageField",
+    "url": "./library/previews/componentry/componentry-infinite-image-field.html",
+    "status": "built",
+    "fixture": "<C />"
+  },
+  {
+    "id": "componentry-kinetic-text-reveal",
+    "name": "kinetic-text-reveal",
+    "member": "KineticTextReveal",
+    "url": "./library/previews/componentry/componentry-kinetic-text-reveal.html",
+    "status": "built",
+    "fixture": "<div className=\"grid h-[740px] place-items-center\"><C text=\"Interfaces that move with intent\" className=\"text-6xl font-semibold\" /></div>"
+  },
+  {
+    "id": "componentry-layered-stack",
+    "name": "layered-stack",
+    "member": "LayeredStack",
+    "url": "./library/previews/componentry/componentry-layered-stack.html",
+    "status": "built",
+    "fixture": "<C className=\"relative mx-auto grid h-[560px] max-w-[820px] grid-cols-3 items-center gap-4\">{[\"Research\",\"Design\",\"Delivery\"].map((label,index)=><div key={label} className=\"grid h-[300px] place-items-center rounded-3xl bg-zinc-900 text-3xl font-semibold text-white\" style={{backgroundColor:[\"#1d4ed8\",\"#7c3aed\",\"#be185d\"][index]}}>{label}</div>)}</C>"
+  },
+  {
+    "id": "componentry-letter-cascade",
+    "name": "letter-cascade",
+    "member": "LetterCascade",
+    "url": "./library/previews/componentry/componentry-letter-cascade.html",
+    "status": "built",
+    "fixture": "<div className=\"grid h-[740px] place-items-center\"><C text=\"Creative practice\" className=\"text-6xl font-semibold\" /></div>"
+  },
+  {
+    "id": "componentry-liquid-chrome",
+    "name": "liquid-chrome",
+    "member": "LiquidChrome",
+    "url": "./library/previews/componentry/componentry-liquid-chrome.html",
+    "status": "built",
+    "fixture": "<C />"
+  },
+  {
+    "id": "componentry-liquid-glass-carousel",
+    "name": "liquid-glass-carousel",
+    "member": "LiquidGlassCarousel",
+    "url": "./library/previews/componentry/componentry-liquid-glass-carousel.html",
+    "status": "built",
+    "fixture": "<C panelHeight={540} />"
+  },
+  {
+    "id": "componentry-mac-keyboard",
+    "name": "mac-keyboard",
+    "member": "MacKeyboard",
+    "url": "./library/previews/componentry/componentry-mac-keyboard.html",
+    "status": "built",
+    "fixture": "<C />"
+  },
+  {
+    "id": "componentry-magnet-lines",
+    "name": "magnet-lines",
+    "member": "MagnetLines",
+    "url": "./library/previews/componentry/componentry-magnet-lines.html",
+    "status": "built",
+    "fixture": "<div className=\"grid h-[740px] place-items-center bg-zinc-950\"><C /></div>"
+  },
+  {
+    "id": "componentry-magnetic-dock",
+    "name": "magnetic-dock",
+    "member": "MagneticDock",
+    "url": "./library/previews/componentry/componentry-magnetic-dock.html",
+    "status": "built",
+    "fixture": "<div className=\"grid h-[740px] place-items-center\"><C items={[{id:\"home\",label:\"Home\",icon:<E.DockIconHome/>},{id:\"search\",label:\"Search\",icon:<E.DockIconSearch/>},{id:\"folder\",label:\"Projects\",icon:<E.DockIconFolder/>},{id:\"mail\",label:\"Contact\",icon:<E.DockIconMail/>}]} /></div>"
+  },
+  {
+    "id": "componentry-matrix-rain",
+    "name": "matrix-rain",
+    "member": "MatrixRain",
+    "url": "./library/previews/componentry/componentry-matrix-rain.html",
+    "status": "built",
+    "fixture": "<C />"
+  },
+  {
+    "id": "componentry-music-player",
+    "name": "music-player",
+    "member": "MusicPlayer",
+    "url": "./library/previews/componentry/componentry-music-player.html",
+    "status": "built",
+    "fixture": "<div className=\"grid h-[740px] place-items-center bg-zinc-950\"><C coverArt=\"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=85\" src=\"\" /></div>"
+  },
+  {
+    "id": "componentry-newsletter-bookshelf",
+    "name": "newsletter-bookshelf",
+    "member": "NewsletterBookshelf",
+    "url": "./library/previews/componentry/componentry-newsletter-bookshelf.html",
+    "status": "built",
+    "fixture": "<C items={E.defaultNewsletterBooks.slice(0,8)} height={620} />"
+  },
+  {
+    "id": "componentry-orbit-card-stack",
+    "name": "orbit-card-stack",
+    "member": "OrbitCardStack",
+    "url": "./library/previews/componentry/componentry-orbit-card-stack.html",
+    "status": "built",
+    "fictionalPortfolio": true,
+    "fixture": "<div className=\"grid min-h-[740px] place-items-center bg-[#eeeaf4]\"><C items={[{\"name\":\"모아 지도\",\"role\":\"지역 정보 · 가상 프로젝트\",\"description\":\"동네의 공공 공간을 찾는 흐름을 정리한 탐색 서비스 콘셉트입니다. 장소를 비교하고 방문 계획을 저장하는 화면을 설계했습니다.\",\"accent\":\"#b5e0d2\",\"stat\":\"가상 프로젝트\",\"image\":\"./assets/portfolio-moa-map.svg\"},{\"name\":\"루멘 노트\",\"role\":\"지식 정리 · 가상 프로젝트\",\"description\":\"읽은 자료를 주제별로 연결하는 개인 지식 도구 콘셉트입니다. 기록·연결·재발견을 하나의 작업 흐름으로 구성했습니다.\",\"accent\":\"#ddd0f4\",\"stat\":\"가상 프로젝트\",\"image\":\"./assets/portfolio-lumen-note.svg\"},{\"name\":\"온길 안내\",\"role\":\"접근성 · 가상 프로젝트\",\"description\":\"낯선 건물에서 필요한 시설을 찾도록 돕는 안내 화면 콘셉트입니다. 큰 글자와 간단한 선택지로 이동 경로를 표현했습니다.\",\"accent\":\"#f5d5a9\",\"stat\":\"가상 프로젝트\",\"image\":\"./assets/portfolio-ongil-guide.svg\"}]} defaultActiveIndex={1} spread={window.innerWidth<600?28:window.innerWidth<900?72:168} /></div>"
+  },
+  {
+    "id": "componentry-pixel-canvas",
+    "name": "pixel-canvas",
+    "member": "PixelCanvas",
+    "url": "./library/previews/componentry/componentry-pixel-canvas.html",
+    "status": "built",
+    "fixture": "<div className=\"relative h-[560px] overflow-hidden rounded-3xl bg-zinc-950\"><C className=\"absolute inset-0\"/><div className=\"pointer-events-none absolute inset-0 grid place-items-center text-5xl font-bold text-white\">Pixel Canvas</div></div>"
+  },
+  {
+    "id": "componentry-pixel-image-trail",
+    "name": "pixel-image-trail",
+    "member": "PixelImageTrail",
+    "url": "./library/previews/componentry/componentry-pixel-image-trail.html",
+    "status": "built",
+    "fixture": "<C src=\"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=85\" alt=\"A bright creative studio\" className=\"h-[620px] w-full\" />"
+  },
+  {
+    "id": "componentry-pricing-01",
+    "name": "pricing-01",
+    "member": "default",
+    "url": "./library/previews/componentry/componentry-pricing-01.html",
+    "status": "built",
+    "fixture": "<C />"
+  },
+  {
+    "id": "componentry-pricing-02",
+    "name": "pricing-02",
+    "member": "default",
+    "url": "./library/previews/componentry/componentry-pricing-02.html",
+    "status": "built",
+    "fixture": "<C />"
+  },
+  {
+    "id": "componentry-prism-gradient",
+    "name": "prism-gradient",
+    "member": "default",
+    "url": "./library/previews/componentry/componentry-prism-gradient.html",
+    "status": "built",
+    "fixture": "<C />"
+  },
+  {
+    "id": "componentry-ripple-transition",
+    "name": "ripple-transition",
+    "member": "RippleTransition",
+    "url": "./library/previews/componentry/componentry-ripple-transition.html",
+    "status": "built",
+    "fixture": "<C images={[\"https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200&q=85\",\"https://images.unsplash.com/photo-1497366858526-0766cadbe8fa?w=1200&q=85\",\"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=85\"]} className=\"h-[620px] w-full\" />"
+  },
+  {
+    "id": "componentry-scroll-based-velocity",
+    "name": "scroll-based-velocity",
+    "member": "ScrollBasedVelocity",
+    "url": "./library/previews/componentry/componentry-scroll-based-velocity.html",
+    "status": "built",
+    "fixture": "<div className=\"grid h-[740px] items-center\"><C text=\"EXPRESSO PORTFOLIO\" className=\"text-6xl font-bold\" /></div>"
+  },
+  {
+    "id": "componentry-scroll-choreography",
+    "name": "scroll-choreography",
+    "member": "ScrollChoreography",
+    "url": "./library/previews/componentry/componentry-scroll-choreography.html",
+    "status": "built",
+    "fixture": "<C images={{topLeft:\"https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200&q=85\",topRight:\"https://images.unsplash.com/photo-1497366858526-0766cadbe8fa?w=1200&q=85\",bottomLeft:\"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=85\",bottomRight:\"https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200&q=85\"}} />"
+  },
+  {
+    "id": "componentry-scroll-split-card",
+    "name": "scroll-split-card",
+    "member": "ScrollSplitCard",
+    "url": "./library/previews/componentry/componentry-scroll-split-card.html",
+    "status": "built",
+    "fictionalPortfolio": true,
+    "fixture": "<C imageSrc=\"./assets/portfolio-lumen-note.svg\" cards={[{title:\"문제 정의\",description:\"흩어진 자료를 다시 찾기 어렵다는 가상 상황\",bgColor:\"#ddd0f4\",textColor:\"#352d50\"},{title:\"화면 설계\",description:\"기록과 연결을 한 흐름에 배치\",bgColor:\"#c1dcd4\",textColor:\"#143e4a\"},{title:\"시연 화면\",description:\"주제별 연결을 탐색하는 가상 시제품\",bgColor:\"#f2d9bb\",textColor:\"#633d27\"}]} />"
+  },
+  {
+    "id": "componentry-scroll-tilted-grid",
+    "name": "scroll-tilted-grid",
+    "member": "ScrollTiltedGrid",
+    "url": "./library/previews/componentry/componentry-scroll-tilted-grid.html",
+    "status": "built",
+    "fixture": "<C images={[{\"src\":\"https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200&q=85\",\"alt\":\"Studio\"},{\"src\":\"https://images.unsplash.com/photo-1497366858526-0766cadbe8fa?w=1200&q=85\",\"alt\":\"Archive\"},{\"src\":\"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=85\",\"alt\":\"Practice\"}]} smoothScroll={false} />"
+  },
+  {
+    "id": "componentry-signature",
+    "name": "signature",
+    "member": "Signature",
+    "url": "./library/previews/componentry/componentry-signature.html",
+    "status": "built",
+    "fixture": "<div className=\"grid h-[740px] place-items-center\"><C text=\"Expressive work\" fontSize={74} fontUrl=\"[원본 폰트 인라인 데이터]\" /></div>"
+  },
+  {
+    "id": "componentry-silk-aurora",
+    "name": "silk-aurora",
+    "member": "default",
+    "url": "./library/previews/componentry/componentry-silk-aurora.html",
+    "status": "built",
+    "fixture": "<C title=\"Beyond the brief\" subtitle=\"Creative practice\" description=\"Ideas shaped into useful experiences.\" />"
+  },
+  {
+    "id": "componentry-spectral-ribbon",
+    "name": "spectral-ribbon",
+    "member": "SpectralRibbon",
+    "url": "./library/previews/componentry/componentry-spectral-ribbon.html",
+    "status": "built",
+    "fixture": "<div className=\"relative h-[620px] w-full\"><C className=\"absolute inset-0\"><div className=\"grid h-full place-items-center text-6xl font-semibold text-white\">Portfolio</div></C></div>"
+  },
+  {
+    "id": "componentry-spiral-3d-slider",
+    "name": "spiral-3d-slider",
+    "member": "Spiral3DSlider",
+    "url": "./library/previews/componentry/componentry-spiral-3d-slider.html",
+    "status": "built",
+    "fixture": "<C items={[{\"src\":\"https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200&q=85\",\"alt\":\"Studio\"},{\"src\":\"https://images.unsplash.com/photo-1497366858526-0766cadbe8fa?w=1200&q=85\",\"alt\":\"Archive\"},{\"src\":\"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=85\",\"alt\":\"Practice\"}]} className=\"h-[640px] w-full\" />"
+  },
+  {
+    "id": "componentry-split-flap-display",
+    "name": "split-flap-display",
+    "member": "SplitFlapDisplay",
+    "url": "./library/previews/componentry/componentry-split-flap-display.html",
+    "status": "built",
+    "fixture": "<div className=\"grid h-[740px] place-items-center\"><C text=\"EXPRESSO\" /></div>"
+  },
+  {
+    "id": "componentry-sticky-scroll-cards",
+    "name": "sticky-scroll-cards",
+    "member": "StickyScrollCards",
+    "url": "./library/previews/componentry/componentry-sticky-scroll-cards.html",
+    "status": "built",
+    "fictionalPortfolio": true,
+    "fixture": "<C cards={[{\"title\":\"모아 지도\",\"src\":\"./assets/portfolio-moa-map.svg\"},{\"title\":\"루멘 노트\",\"src\":\"./assets/portfolio-lumen-note.svg\"},{\"title\":\"온길 안내\",\"src\":\"./assets/portfolio-ongil-guide.svg\"}]} hint=\"가상 프로젝트 탐색\" />"
+  },
+  {
+    "id": "componentry-text-morph",
+    "name": "text-morph",
+    "member": "default",
+    "url": "./library/previews/componentry/componentry-text-morph.html",
+    "status": "built",
+    "fixture": "<div className=\"grid h-[740px] place-items-center\"><C className=\"text-7xl font-semibold\" /></div>"
+  },
+  {
+    "id": "componentry-text-repel",
+    "name": "text-repel",
+    "member": "TextRepel",
+    "url": "./library/previews/componentry/componentry-text-repel.html",
+    "status": "built",
+    "fixture": "<div className=\"grid h-[740px] place-items-center\"><C text=\"Move your cursor\" className=\"text-6xl font-semibold\" /></div>"
+  },
+  {
+    "id": "componentry-webgl-liquid",
+    "name": "webgl-liquid",
+    "member": "default",
+    "url": "./library/previews/componentry/componentry-webgl-liquid.html",
+    "status": "built",
+    "fixture": "<C />"
+  },
+  {
+    "id": "componentry-wheel-carousel",
+    "name": "wheel-carousel",
+    "member": "WheelCarousel",
+    "url": "./library/previews/componentry/componentry-wheel-carousel.html",
+    "status": "built",
+    "fixture": "<C />"
+  }
+]

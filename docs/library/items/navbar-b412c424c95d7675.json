@@ -1,0 +1,30 @@
+{
+  "id": "navbar-b412c424c95d7675",
+  "sourceUrl": "https://www.navbar.gallery/navbar/mugen-studio",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Mugen Studio",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://mugenstudio.framer.website/",
+  "evidence": {
+    "url": "https://www.navbar.gallery/navbar/mugen-studio",
+    "sha256": "6bc5a70de4779dae6f4849f6af1cce69e4a8e1e2fc38746d2350dce83562890e",
+    "fetchedAt": "2026-09-23T12:52:55+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

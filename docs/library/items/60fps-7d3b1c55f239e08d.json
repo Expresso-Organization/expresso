@@ -1,0 +1,29 @@
+{
+  "id": "60fps-7d3b1c55f239e08d",
+  "sourceUrl": "https://60fps.design/shots/google-fit-graph-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "outcome"
+  ],
+  "roleEvidence": "성과와 수치의 비교를 표현할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Google Fit Graph Interaction",
+    "공개 이미지 요소: 28개",
+    "동영상 포스터: 27개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/google-fit-graph-interaction",
+    "sha256": "a2d8b0972ac8b64acf5090da4420ca029fb4f9fc96a2d8371674512a7f701398",
+    "fetchedAt": "2026-09-23T13:02:18+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

@@ -1,0 +1,30 @@
+{
+  "id": "navbar-76654ed0c234f17f",
+  "sourceUrl": "https://www.navbar.gallery/navbar/lassco",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Lassco",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://lassco.ca/",
+  "evidence": {
+    "url": "https://www.navbar.gallery/navbar/lassco",
+    "sha256": "950f40d4abc83388dd00222dfe462bcba92907dfcfe5239568a907b2ede86598",
+    "fetchedAt": "2026-09-23T12:52:35+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

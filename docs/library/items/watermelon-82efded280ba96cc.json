@@ -1,0 +1,74 @@
+{
+  "id": "watermelon-82efded280ba96cc",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/bento-1.json",
+      "sha256": "fd54f298c549741ef808ee4697e3fe4ebbe510df619fd85a504411f8f36d558e",
+      "bytes": 40828,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/bento-1.tsx",
+      "target": "components/ui/bento-1.tsx",
+      "type": "registry:ui",
+      "sha256": "40f589681b0caa1c735e4c7f28cf493e3ef1d68417bbed18907ed344c671b64f",
+      "bytes": 38596
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "card"
+  ],
+  "imports": [
+    "@/components/ui/card",
+    "motion/react",
+    "react-icons/md"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/2000/svg",
+    "https://fonts.googleapis.com/css2?family=Sansation&display=swap",
+    "https://randomuser.me/api/portraits/men/32.jpg",
+    "https://randomuser.me/api/portraits/men/78.jpg",
+    "https://randomuser.me/api/portraits/women/40.jpg",
+    "https://randomuser.me/api/portraits/women/44.jpg"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/bento-1.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "bento-1",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-1.tsx",
+    "url": "./library/previews/watermelon/bento-1.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:02+00:00",
+    "snapshotSha256": "ea24c555e994e5cd21ea0fd668bc366280f61196fa80a641dcba3779a5373d21"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

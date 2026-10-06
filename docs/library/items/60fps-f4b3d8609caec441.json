@@ -1,0 +1,29 @@
+{
+  "id": "60fps-f4b3d8609caec441",
+  "sourceUrl": "https://60fps.design/shots/revolut-feature-hero-animation",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Revolut Feature Hero Animation",
+    "공개 이미지 요소: 32개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/revolut-feature-hero-animation",
+    "sha256": "025910740aa685ee1886acea25198c11555bf7455962e6e34aea5dfa3ec5f6e8",
+    "fetchedAt": "2026-09-23T13:06:13+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

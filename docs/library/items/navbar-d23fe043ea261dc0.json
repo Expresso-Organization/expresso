@@ -1,0 +1,30 @@
+{
+  "id": "navbar-d23fe043ea261dc0",
+  "sourceUrl": "https://www.navbar.gallery/navbar/aether-studio",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Aether Studio",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://aetherstudio.framer.website/",
+  "evidence": {
+    "url": "https://www.navbar.gallery/navbar/aether-studio",
+    "sha256": "1249af48f827f4383241a953f00478b46cf72d4ac967ab3dbcdaf545d6381efb",
+    "fetchedAt": "2026-09-23T12:51:00+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

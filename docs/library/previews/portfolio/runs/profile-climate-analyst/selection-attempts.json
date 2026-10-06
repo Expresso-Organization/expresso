@@ -1,0 +1,11 @@
+{
+  "model": "qwen3.5:9b-q8_0",
+  "brief": null,
+  "attempts": [
+    {
+      "valid": true,
+      "outputSha256": "52c0acbb2f41ff575e33461a2f5a654fdcd7d9ae35822028c700b3376745947e",
+      "output": "{\n  \"recipe\": \"featured\",\n  \"design\": {\n    \"palette\": \"midnight\",\n    \"typography\": \"serif\",\n    \"layout\": \"editorial\"\n  },\n  \"heroStyle\": \"spotlight\",\n  \"projectIndex\": \"bento\",\n  \"reason\": \"어두운 배경과 주황빛의 강렬한 대비를 활용한 스포트라이트 히어로와 정보 밀집도를 고려한 벤토 그리드 레이아웃이 데이터 분석가의 전문성과 프로젝트의 기술적 깊이를 동시에 강조합니다.\"\n}"
+    }
+  ]
+}

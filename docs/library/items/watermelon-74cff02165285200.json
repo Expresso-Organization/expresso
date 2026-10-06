@@ -1,0 +1,55 @@
+{
+  "id": "watermelon-74cff02165285200",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/progressive-input-stack-base.json",
+      "sha256": "0cb440daab19d4b0225d6f85197037e36bc3aa4a2fc0b67ebb98e82b39a6a97f",
+      "bytes": 7154,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/progressive-input-stack-base.tsx",
+      "target": "components/ui/progressive-input-stack-base.tsx",
+      "type": "registry:ui",
+      "sha256": "659a74ab7c28ad4623a58b22cee882f88dc8081b13eb81c484411544d37a3299",
+      "bytes": 6511
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "@/lib/utils",
+    "lucide-react",
+    "motion/react",
+    "react",
+    "react-icons/fa6"
+  ],
+  "propsDeclarations": [
+    "interface ProgressiveInputStackProps {\n  steps: StepData[];\n  initialData?: Record<string, string | boolean>;\n  onSubmit?: (data: Record<string, string | boolean>) => void;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/progressive-input-stack-base.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "codedvisuals-890bc74be25f2e39",
+  "sourceUrl": "https://codedvisuals.com/visuals/calendar/date-picker",
+  "sourceRevision": null,
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상용 라이선스의 AI builder·site builder 사용 제한"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "licenseUrl": "https://codedvisuals.com/license",
+  "acquisitionStatus": "permission_needed",
+  "previewReason": "상용 라이선스의 AI builder·site builder 사용 제한",
+  "sourceLicense": "https://codedvisuals.com/license"
+}

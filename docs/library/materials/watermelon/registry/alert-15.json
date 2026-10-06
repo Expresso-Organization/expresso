@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "alert-15",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "alert"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/alerts/alert-15.tsx",
+      "content": "import  {GoAlertFill} from \"react-icons/go\";\n\nimport { Alert, AlertTitle } from \"@/components/ui/alert\";\n\nconst Alert15 = () => {\n  return (\n    <Alert variant=\"destructive\" className=\"border-destructive bg-destructive/5\">\n      <GoAlertFill className=\"size-4\" />\n      <AlertTitle>We couldn’t process your payment.</AlertTitle>\n    </Alert>\n  );\n};\n\nexport default Alert15;\n",
+      "type": "registry:ui",
+      "target": "components/ui/alert-15.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

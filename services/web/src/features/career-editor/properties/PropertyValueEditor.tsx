@@ -20,7 +20,12 @@ const readOnlyTypes = new Set(["formula", "rollup", "relation"]);
 
 function IssueBadge({ issue }: { issue: string | null }) {
   if (!issue) return null;
-  return <span className={styles.issueIcon} role="alert" aria-label={issue} title={issue}><Icon name="warning" size={14} /></span>;
+  return (
+    <span className={styles.issueIcon} role="alert" title={issue}>
+      <Icon name="warning" size={14} />
+      <span className="ex-sr-only">{issue}</span>
+    </span>
+  );
 }
 
 function initialDraft(value: CareerPropertyValueV2 | null): string {

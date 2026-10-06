@@ -1,0 +1,29 @@
+{
+  "id": "60fps-b1ad7742c95f4800",
+  "sourceUrl": "https://60fps.design/shots/luma-splash",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Luma Splash",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 25개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/luma-splash",
+    "sha256": "18770e7efcabc7c34c2639894cfdd700c59455a93918c621c5dc7264e15514e3",
+    "fetchedAt": "2026-09-23T13:03:44+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

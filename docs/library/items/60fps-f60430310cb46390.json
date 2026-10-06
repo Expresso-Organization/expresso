@@ -1,0 +1,29 @@
+{
+  "id": "60fps-f60430310cb46390",
+  "sourceUrl": "https://60fps.design/shots/x-new-messaging-experience-text-fade-transition",
+  "sourceRevision": null,
+  "roles": [
+    "experience"
+  ],
+  "roleEvidence": "경력과 과정의 순서를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: X New Messaging Experience Text Fade Transition",
+    "공개 이미지 요소: 32개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/x-new-messaging-experience-text-fade-transition",
+    "sha256": "c76f6633e0e288d8cb6aef07be8376d0c6cc97e260c622617eaa7eb102272006",
+    "fetchedAt": "2026-09-23T13:09:26+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

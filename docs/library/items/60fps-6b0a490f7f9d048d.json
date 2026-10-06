@@ -1,0 +1,29 @@
+{
+  "id": "60fps-6b0a490f7f9d048d",
+  "sourceUrl": "https://60fps.design/appsites/cursor-year-in-review-timeline-animations",
+  "sourceRevision": null,
+  "roles": [
+    "experience"
+  ],
+  "roleEvidence": "경력과 과정의 순서를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Cursor Year in Review Timeline Animations",
+    "공개 이미지 요소: 16개",
+    "동영상 포스터: 19개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/appsites/cursor-year-in-review-timeline-animations",
+    "sha256": "aca821a6487ddb63c20b718f2a2008962e164b9279e3b069ca5f054426d47feb",
+    "fetchedAt": "2026-09-23T12:54:25+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

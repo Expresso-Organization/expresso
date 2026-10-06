@@ -1,0 +1,85 @@
+{
+  "id": "componentry-fisheye-infinite-grid",
+  "sourceUrl": "https://componentry.dev/docs/components/fisheye-infinite-grid",
+  "sourceRevision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "공식 registry 분류와 설명으로 임시 탐색 역할을 붙였습니다. 포트폴리오 적합성은 검토 전입니다.",
+  "roleMethod": "identifier_rules_v2",
+  "materials": [
+    {
+      "path": "./library/materials/componentry/registry/fisheye-infinite-grid.json",
+      "sha256": "2ee9982c7cba1f169bcf5dee7e9a3ddb9107d3cec7babee875c4c9731ec199bf",
+      "bytes": 27595,
+      "label": "설치 가능한 registry 원본",
+      "kind": "registry_source"
+    },
+    {
+      "path": "./library/materials/componentry/source/fisheye-infinite-grid.tsx",
+      "sha256": "485700c746b600b70243e5b3bfcc0ae7adac2bc9f2320562d0315419d861a520",
+      "bytes": 26007,
+      "label": "공식 저장소 컴포넌트 원본",
+      "kind": "source_code"
+    },
+    {
+      "path": "./library/materials/componentry/LICENSE.txt",
+      "sha256": "bc600731e5efb47721989e2ca834302a01093b4a8370d4d9b5bf153bcfc340f0",
+      "bytes": 1069,
+      "label": "MIT 라이선스 원문",
+      "kind": "license"
+    },
+    {
+      "path": "./library/materials/componentry/support/globals.css",
+      "sha256": "1915ea971dc7b68f86d9ff9ca3ff813ea17baab8350d07952c32635a474846a1",
+      "bytes": 12574,
+      "label": "원본 스타일 토큰",
+      "kind": "source_code"
+    },
+    {
+      "path": "./library/materials/componentry/support/utils.ts",
+      "sha256": "7c8c3dfc0cdd370d44932828eb067ef771c8fe7996693221d5d4b90af6d54f2d",
+      "bytes": 166,
+      "label": "원본 스타일 유틸리티",
+      "kind": "source_code"
+    }
+  ],
+  "observations": [
+    "A dense draggable image wall warped as one continuous fisheye surface with weighted momentum.",
+    "공식 분류: Components",
+    "registry 의존성: 없음"
+  ],
+  "inputs": [],
+  "framework": "React 19 · Tailwind CSS 4",
+  "sourceLicense": "https://github.com/harshjdhv/componentry/blob/0fd9e13b344cfa36a0332705611f877bbd8e85d9/LICENSE",
+  "acquisitionStatus": "source_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "components/ui/fisheye-infinite-grid.tsx",
+      "sha256": "7ca387712618ab5ebc4ccd0ce5d9668da05b422bc6d66737b7069a4dcd9657f6",
+      "bytes": 25995
+    }
+  ],
+  "usageNote": "공식 원본 코드를 예시 입력으로 브라우저에서 직접 렌더링했습니다. 실제 경력 데이터·반응형·키보드·제품 이식 품질은 검증 전입니다.",
+  "example": {
+    "mode": "authored_fixture",
+    "inputCode": "<C />",
+    "props": {},
+    "notes": [
+      "공식 원본 컴포넌트에 예시 입력을 전달한 독립 실행 화면입니다.",
+      "실제 경력 데이터와 포트폴리오 품질 검사는 별도입니다."
+    ]
+  },
+  "renderCheck": {
+    "status": "ready",
+    "method": "chrome_dom_and_screenshot",
+    "snapshotSha256": "f4c52bdfca138ac82863f6577a09ded27df04f96d5f15dc01c774dec5c8fe53f",
+    "viewport": {
+      "width": 1280,
+      "height": 880
+    }
+  }
+}
