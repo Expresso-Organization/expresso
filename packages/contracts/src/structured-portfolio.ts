@@ -280,14 +280,7 @@ export function structuredModelSchema(
       props: z.strictObject({ contact: ref("contact") }),
       children: empty,
     });
-  const middle = Object.keys(nodes).filter(
-    (key) => key !== "intro" && key !== "contact",
-  );
-  const order: [z.ZodType, ...z.ZodType[]] = [
-    z.literal("intro"),
-    ...middle.map(() => z.enum(middle as [string, ...string[]])),
-    ...(content.contact ? [z.literal("contact")] : []),
-  ];
+  const nodeIds = Object.keys(nodes) as [string, ...string[]];
   const page = z.strictObject({
     type: z.literal("PortfolioPage"),
     props: z.strictObject({
@@ -296,7 +289,8 @@ export function structuredModelSchema(
       motion: z.enum(["none", "subtle", "showcase"]),
       rationale: z.string().min(1).max(400),
     }),
-    children: z.tuple(order),
+    // 공급자 공통 배열 문법을 사용하고 소개·연락처 위치는 아래 도메인 검사에서 검증합니다.
+    children: z.array(z.enum(nodeIds)).length(nodeIds.length),
   });
   return z.strictObject({
     root: z.literal("page"),

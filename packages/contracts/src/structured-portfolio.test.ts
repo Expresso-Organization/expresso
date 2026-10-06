@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import {
   applyStructuredTextPatches,
   EditStructuredPageSchema,
   StructuredMediaSchema,
+  structuredModelSchema,
   validateStructuredPortfolio,
   type StructuredPortfolioContent,
 } from "./structured-portfolio.js";
@@ -74,6 +76,39 @@ export const spec = {
   },
 };
 describe("구조화 포트폴리오 계약", () => {
+  it("모델 출력 스키마에 위치별 튜플 문법을 포함하지 않는다", () => {
+    const json = JSON.stringify(z.toJSONSchema(structuredModelSchema(content)));
+    expect(json).not.toContain("prefixItems");
+    expect(json).not.toContain('"items":false');
+    expect(json).toContain('"minItems":4');
+    expect(json).toContain('"maxItems":4');
+    const reordered = structuredClone(spec);
+    reordered.elements.page.children = ["evidence", "intro", "case-a"];
+    expect(() => validateStructuredPortfolio(reordered, content)).toThrow(
+      "첫 섹션",
+    );
+    const withContact = {
+      ...spec,
+      elements: {
+        ...spec.elements,
+        page: {
+          ...spec.elements.page,
+          children: ["intro", "contact", "evidence", "case-a"],
+        },
+        contact: {
+          type: "Contact",
+          props: { contact: { $state: "/contact" } },
+          children: [],
+        },
+      },
+    };
+    expect(() =>
+      validateStructuredPortfolio(withContact, {
+        ...content,
+        contact: { label: "연락", href: "mailto:fictional@example.com" },
+      }),
+    ).toThrow("마지막");
+  });
   it("업로드 경로의 외부 URL과 경로 이탈을 거부한다", () => {
     const media = { alt: "업로드 이미지", origin: "uploaded" };
     expect(
