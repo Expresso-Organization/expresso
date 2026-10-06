@@ -75,3 +75,5 @@ export * from "./structured-portfolio.js";
 export * from "./page-library.js";
 
 export * from "./agent-chat.js";
+export * from "./career-writer.js";
+export * from "./career-writer-openapi.js";
