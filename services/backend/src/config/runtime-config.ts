@@ -62,6 +62,7 @@ const runtimeConfigSchema = z.object({
   AI_PROVIDER_PAGE_GENERATION: z
     .enum(["claude-code", "codex", "fixture", "anthropic"])
     .optional(),
+  PAGE_GENERATION_FORMAT: z.enum(["json-render", "html"]).default("json-render"),
   /**
    * 고용24(워크넷) 공공 API 인증키. 공공데이터포털에서 발급받는다.
    *
@@ -125,6 +126,7 @@ export interface RuntimeConfig {
   aiProvider?: "off" | "claude-code" | "codex" | "fixture" | "anthropic";
   /** 지면 생성만 갈아 끼울 때. 비우면 `aiProvider`와 같다. */
   aiPageGenerationProvider?: "claude-code" | "codex" | "fixture" | "anthropic";
+  pageGenerationFormat?: "json-render" | "html";
   work24ApiKey?: string | undefined;
   aiTimeoutMs?: number;
   aiFixtureDir?: string;
@@ -164,6 +166,7 @@ export function loadRuntimeConfig(
     scheduledJobsEnabled: result.SCHEDULED_JOBS_ENABLED,
     googleClientId: result.GOOGLE_CLIENT_ID,
     aiProvider: result.AI_PROVIDER,
+    pageGenerationFormat: result.PAGE_GENERATION_FORMAT,
     ...(result.AI_PROVIDER_PAGE_GENERATION
       ? { aiPageGenerationProvider: result.AI_PROVIDER_PAGE_GENERATION }
       : {}),

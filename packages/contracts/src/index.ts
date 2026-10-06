@@ -70,3 +70,4 @@ export * from "./openapi.js";
 export * from "./design-system.js";
 export * from "./job-chat.js";
 export * from "./job-career-match.js";
+export * from "./structured-portfolio.js";

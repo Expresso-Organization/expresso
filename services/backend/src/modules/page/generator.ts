@@ -10,6 +10,8 @@ import {
   type PageQaReport,
   type PageStyleGrammar,
   type PortfolioPlan,
+  type StructuredPortfolioContent,
+  type StructuredPortfolioSnapshot,
 } from "@expresso/contracts";
 
 import type { AiClient, AiModelTier, AiUsage } from "../../platform/ai/client.js";
@@ -30,6 +32,7 @@ import { isOrdinalLabel, ungroundedNumbers } from "../../platform/numbers.js";
 export interface PageEvidence {
   label: string;
   text: string;
+  id?: string;
 }
 
 export interface PageSection {
@@ -38,6 +41,8 @@ export interface PageSection {
   goal: string;
   points: string[];
   targetLength: number;
+  id?: string;
+  sourceIds?: string[];
 }
 
 export interface PageMedia {
@@ -50,6 +55,8 @@ export interface PageMedia {
 }
 
 export interface PageGenerationContext {
+  author?: { name: string };
+  structuredContent?: StructuredPortfolioContent;
   /** 1단계에서 보존한 편집 가능한 맥락 초안. */
   portfolioPlan: PortfolioPlan | null;
   /**
@@ -72,7 +79,7 @@ export interface PageGenerationContext {
   /** 다시 뽑을 때만. "더 차분하게" · "첫 화면을 크게". */
   instruction?: string | undefined;
   /** 다시 뽑을 때 직전 지면. 지시가 건드리지 않은 것은 그대로 두게 한다. */
-  previous?: { html: string; css: string } | undefined;
+  previous?: { html: string; css: string; structured?: StructuredPortfolioSnapshot } | undefined;
   /**
    * 키트를 쓸 것인가.
    *

@@ -118,14 +118,72 @@ function canonicalize(field: AiField, rawValue: string | number): string | numbe
   return rawValue;
 }
 
+/**
+ * 해석 결과 캐시의 크기와 수명.
+ *
+ * 검색 화면은 한 번 그릴 때 해석을 두 번 부르고(해석 → 목록 → 결과 수 기록),
+ * 칩을 바꾸거나 쪽을 넘길 때도 같은 검색어로 화면을 다시 그린다. 해석은
+ * 사용자와 무관하게 검색어와 프롬프트 버전만으로 정해지므로, 같은 검색어면
+ * 모델을 다시 부르지 않고 앞서 받은 조건을 그대로 쓴다. 프로세스 메모리에만
+ * 두고, 프롬프트 버전이 바뀌면 키가 달라져 자연히 새로 해석한다.
+ */
+const CACHE_MAX_ENTRIES = 500;
+const CACHE_TTL_MS = 60 * 60 * 1000;
+
+export interface AiSearchInterpreterOptions {
+  cacheMaxEntries?: number;
+  cacheTtlMs?: number;
+  now?: () => number;
+}
+
 export class AiSearchInterpreter implements SearchInterpreter {
   readonly #ai: AiClient;
+  readonly #cacheMaxEntries: number;
+  readonly #cacheTtlMs: number;
+  readonly #now: () => number;
+  /** Map은 넣은 순서를 지키므로, 맨 앞이 가장 오래 안 쓴 항목이다. */
+  readonly #cache = new Map<string, { conditions: JobSearchCondition[]; expiresAt: number }>();
+  /** 같은 검색어 해석이 동시에 들어오면 모델 호출 하나를 나눠 쓴다. */
+  readonly #inFlight = new Map<string, Promise<JobSearchCondition[]>>();
 
-  constructor(ai: AiClient) {
+  constructor(ai: AiClient, options: AiSearchInterpreterOptions = {}) {
     this.#ai = ai;
+    this.#cacheMaxEntries = options.cacheMaxEntries ?? CACHE_MAX_ENTRIES;
+    this.#cacheTtlMs = options.cacheTtlMs ?? CACHE_TTL_MS;
+    this.#now = options.now ?? Date.now;
   }
 
   async interpret(query: string): Promise<JobSearchCondition[]> {
+    const key = `${SEARCH_INTERPRET_PROMPT_VERSION}\0${query.normalize("NFKC").toLocaleLowerCase("en-US").trim().replace(/\s+/g, " ")}`;
+
+    const cached = this.#cache.get(key);
+    if (cached && cached.expiresAt > this.#now()) {
+      // 최근에 쓴 항목을 맨 뒤로 옮긴다.
+      this.#cache.delete(key);
+      this.#cache.set(key, cached);
+      return cached.conditions.map((condition) => ({ ...condition }));
+    }
+    if (cached) this.#cache.delete(key);
+
+    let pending = this.#inFlight.get(key);
+    if (!pending) {
+      pending = this.#interpretUncached(query, key).finally(() => this.#inFlight.delete(key));
+      this.#inFlight.set(key, pending);
+    }
+    const conditions = await pending;
+    return conditions.map((condition) => ({ ...condition }));
+  }
+
+  #remember(key: string, conditions: JobSearchCondition[]): void {
+    this.#cache.set(key, { conditions, expiresAt: this.#now() + this.#cacheTtlMs });
+    while (this.#cache.size > this.#cacheMaxEntries) {
+      const oldest = this.#cache.keys().next().value;
+      if (oldest === undefined) break;
+      this.#cache.delete(oldest);
+    }
+  }
+
+  async #interpretUncached(query: string, key: string): Promise<JobSearchCondition[]> {
     const normalizedQuery = query.normalize("NFKC").toLocaleLowerCase("en-US");
 
     // AI 호출은 실패할 수 있다(레이트 리밋·타임아웃·스키마 이탈) — 그런데
@@ -155,6 +213,7 @@ export class AiSearchInterpreter implements SearchInterpreter {
         if (attempt === 2) break;
       }
     }
+    // 실패는 기억하지 않는다 — 레이트 리밋이 풀리면 다음 검색에서 다시 해석해야 한다.
     if (!data) return [];
 
     const conditions: JobSearchCondition[] = [];
@@ -168,9 +227,9 @@ export class AiSearchInterpreter implements SearchInterpreter {
       const value = canonicalize(field, item.value);
       if (value === null) continue;
 
-      const key = `${field}:${value}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
+      const dedupeKey = `${field}:${value}`;
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
 
       conditions.push({
         field,
@@ -179,6 +238,8 @@ export class AiSearchInterpreter implements SearchInterpreter {
         confidence: DEFAULT_CONFIDENCE[field],
       });
     }
+    // 모델이 제대로 답했는데 조건이 없었던 것도 결과다 — 같이 기억한다.
+    this.#remember(key, conditions);
     return conditions;
   }
 }

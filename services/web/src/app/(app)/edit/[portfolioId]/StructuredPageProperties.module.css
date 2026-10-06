@@ -1,0 +1,55 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  color: var(--ex-fg);
+  font-size: var(--ex-text-sm);
+}
+.panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.panel input,
+.panel select,
+.panel textarea,
+.panel button {
+  font: inherit;
+  color: var(--ex-fg);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
+  border-radius: 10px;
+  padding: 8px;
+  max-width: 100%;
+}
+.panel textarea {
+  resize: vertical;
+  min-height: 44px;
+}
+.panel button {
+  cursor: pointer;
+}
+.panel button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.sections li {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--ex-border);
+  padding-top: 12px;
+}
+.order {
+  display: flex;
+  gap: 8px;
+}
