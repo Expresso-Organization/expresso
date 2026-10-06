@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "switch-13",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "switch"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/switch/switch-13.tsx",
+      "content": "import { FiMail } from \"react-icons/fi\";\n\nimport { Label } from \"@/components/ui/label\";\nimport { Switch } from \"@/components/ui/switch\";\n\nconst Switch13 = () => {\n  return (\n    <div className=\"border-input has-data-[state=checked]:border-primary/50 has-data-[state=checked]:ring-4 has-data-[state=checked]:ring-primary/20  relative flex w-full items-start gap-2 rounded-md border p-4 outline-none\">\n      <Switch\n        id=\"email-updates\"\n        className=\"order-1 after:absolute after:inset-0 data-[size=default]:h-4 data-[size=default]:w-6 [&_span]:group-data-[size=default]/switch:size-3 data-[state=checked]:[&_span]:translate-x-2.5 data-[state=checked]:[&_span]:rtl:-translate-x-2.5\"\n        aria-describedby=\"email-updates-description\"\n      />\n      <div className=\"flex grow items-center gap-3\">\n        <FiMail className=\"text-muted-foreground size-4 shrink-0 self-start\" />\n        <div className=\"grid grow gap-2\">\n          <Label htmlFor=\"email-updates\">Email Updates</Label>\n          <p\n            id=\"email-updates-description\"\n            className=\"text-muted-foreground text-xs\"\n          >\n            Receive important updates and notifications via email.\n          </p>\n        </div>\n      </div>\n    </div>\n  );\n};\n\nexport default Switch13;\n",
+      "type": "registry:ui",
+      "target": "components/ui/switch-13.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

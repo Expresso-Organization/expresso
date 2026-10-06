@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-09-29T14:17:21.412Z",
+  "fictional": true,
+  "model": "qwen3.5:9b-q8_0",
+  "specOrigin": "recorded-model-spec",
+  "modelSelection": {
+    "recipe": "gallery",
+    "design": {
+      "palette": "paper",
+      "typography": "serif",
+      "layout": "studio"
+    },
+    "heroStyle": "gradient",
+    "projectIndex": "mosaic",
+    "reason": "따뜻한 종이색과 명조체, 중앙 정렬된 밝은 배경 스타일을 통해 서비스 디자이너의 친근하고 전문적인 이미지를 강조하며, 프로젝트는 둥근 빛이 있는 비대칭 타일로 표현되었습니다."
+  },
+  "validationAttempts": [
+    {
+      "valid": true,
+      "outputSha256": "c4dba09cfac1a5a97e45edd3440afa05399c6acb52b3e3ce1f1feddbe15ed0a2"
+    }
+  ],
+  "inputSha256": "a9f66944a1ec61e7b73404112862939f0095dba8bfa705db77e72fb0400025eb",
+  "planSha256": "2fcbaee3c142b4d85c78e536f41f60a03e1c9d321ca330f52f534d78f0940b7c",
+  "specSha256": "aa035701e94e425e348114811a19c63b0aee3f0d4da6af5f191f222a6032b0d4",
+  "htmlSha256": "71254e04697eb3dc001796cf24d4344ad3d1c5c76c32be3fec8d2e2125fe85a0",
+  "modelOutputSha256": "c4dba09cfac1a5a97e45edd3440afa05399c6acb52b3e3ce1f1feddbe15ed0a2",
+  "assets": {
+    "./assets/portfolio-threadlab.svg": {
+      "sha256": "aea7faa3ca30da3265e01b5db8ed1fbb29f38d80f1aac64e5b308a2b90d31f83",
+      "bytes": 2954
+    },
+    "./assets/portfolio-comma-map.svg": {
+      "sha256": "8a1be8f0727311e9bde261cf633957035c632e6c966b4d2852f983d497040ea4",
+      "bytes": 3068
+    },
+    "./assets/portfolio-gilnun.svg": {
+      "sha256": "d892273c5b3fac6d9845fb9c4ee8585367ed07900211a273e9ed07632685ed37",
+      "bytes": 2680
+    }
+  },
+  "comparison": null
+}

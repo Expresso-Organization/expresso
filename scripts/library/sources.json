@@ -1,0 +1,184 @@
+[
+  {
+    "id": "watermelon",
+    "name": "Watermelon",
+    "url": "https://ui.watermelon.sh/",
+    "entry": "https://ui.watermelon.sh/",
+    "kind": "component",
+    "rightsStatus": "allowed",
+    "licenseUrl": "https://github.com/WatermelonCorp/watermellon-registry/blob/main/LICENSE",
+    "note": "MIT 적용 registry 항목의 목록입니다. 개별 의존성·외부 이미지·생성 결과 배포 조건은 상세 수집에서 확인합니다."
+  },
+  {
+    "id": "origin",
+    "name": "OriginKit",
+    "url": "https://www.originkit.dev/",
+    "kind": "component",
+    "rightsStatus": "permission_needed",
+    "licenseUrl": "https://www.originkit.dev/docs/licensing",
+    "note": "카탈로그 복제·메타데이터 미러링 제한에 따라 대량 목록 수집을 보류합니다. 허용 범위 확인 후 재개합니다."
+  },
+  {
+    "id": "motion",
+    "name": "Motion — motionin.design",
+    "url": "https://www.motionin.design/",
+    "entry": "https://www.motionin.design/",
+    "kind": "prompt",
+    "rightsStatus": "unreviewed",
+    "licenseUrl": "https://www.motionin.design/terms",
+    "pattern": "^/gallery/[^/]+$",
+    "categoryPattern": "^/\\?cat=",
+    "note": "공개 갤러리의 제목·링크만 기록했습니다. 프롬프트 본문과 실행 결과는 미확보입니다."
+  },
+  {
+    "id": "codedvisuals",
+    "name": "CodedVisuals",
+    "url": "https://codedvisuals.com/",
+    "entry": "https://codedvisuals.com/visuals",
+    "kind": "component",
+    "rightsStatus": "reference_only",
+    "licenseUrl": "https://codedvisuals.com/license",
+    "pattern": "^/visuals/[^/]+/[^/]+$",
+    "note": "상용 코드의 site builder·AI builder 이용 제한이 있어 링크를 참고 자료로 관리합니다. 무료 항목도 별도 라이선스 확인이 필요합니다."
+  },
+  {
+    "id": "diagram",
+    "name": "diagram-design",
+    "url": "https://github.com/cathrynlavery/diagram-design",
+    "kind": "diagram",
+    "rightsStatus": "allowed",
+    "licenseUrl": "https://github.com/cathrynlavery/diagram-design/blob/main/LICENSE",
+    "note": "공식 저장소의 예제·참고 문서·도구 경로를 기록했습니다. 포함된 제3자 아이콘 디렉터리는 제외했습니다."
+  },
+  {
+    "id": "kobra",
+    "name": "Kobra",
+    "url": "https://kobra.systems/",
+    "entry": "https://kobra.systems/components/input-otp",
+    "kind": "component",
+    "rightsStatus": "permission_needed",
+    "licenseUrl": "https://kobra.systems/terms",
+    "pattern": "^/components/[^/]+$",
+    "note": "공개 제목·링크 목록입니다. 요금제별 개인·상업 이용과 소스 재배포 범위를 확인한 뒤 코드를 확보합니다."
+  },
+  {
+    "id": "shoogle",
+    "name": "Shoogle",
+    "url": "https://shoogle.dev/",
+    "entry": "https://shoogle.dev/directory",
+    "kind": "registry",
+    "rightsStatus": "unreviewed",
+    "licenseUrl": "https://shoogle.dev/terms-of-service",
+    "note": "공개 Directory에서 발견한 공급자 목록입니다. 각 registry의 컴포넌트 수·라이선스는 후속 탐색 대상입니다."
+  },
+  {
+    "id": "rune",
+    "name": "Rune Icons",
+    "url": "https://www.runeicons.com/",
+    "kind": "icon",
+    "rightsStatus": "allowed",
+    "licenseUrl": "https://github.com/Nexvyn/runeicons/blob/main/LICENSE",
+    "note": "Apache-2.0 저장소의 개별 SVG 경로 목록입니다. 스타일 변형을 유지하며 sprites 묶음 파일은 중복 집계에서 제외했습니다."
+  },
+  {
+    "id": "navbar",
+    "name": "Navbar Gallery",
+    "url": "https://www.navbar.gallery/",
+    "entry": "https://www.navbar.gallery/",
+    "kind": "reference",
+    "rightsStatus": "reference_only",
+    "pattern": "^/navbar/[^/]+$",
+    "categoryPattern": "^/(type|style)/[^/]+$",
+    "role": "navigation",
+    "note": "공개 탐색 사례의 링크 목록입니다. 원본 디자인·이미지·코드의 이용 허가는 별도로 확인합니다."
+  },
+  {
+    "id": "supahero",
+    "name": "Supahero",
+    "url": "https://supahero.io/",
+    "entry": "https://supahero.io/",
+    "kind": "reference",
+    "rightsStatus": "reference_only",
+    "pattern": "^/hero/[^/]+$",
+    "role": "hero",
+    "note": "홈페이지에 노출된 히어로 사례 목록입니다. 전체 총수와 후속 페이지 존재는 확인되지 않았습니다."
+  },
+  {
+    "id": "404",
+    "name": "404s.design",
+    "url": "https://www.404s.design/",
+    "entry": "https://www.404s.design/",
+    "kind": "reference",
+    "rightsStatus": "reference_only",
+    "pattern": "^/sites/[^/]+$",
+    "categoryPattern": "^/styles/[^/]+$",
+    "role": "error",
+    "licenseUrl": "https://www.404s.design/legal",
+    "note": "공개 오류 화면 사례의 링크 목록입니다. 이미지 원본은 미확보입니다."
+  },
+  {
+    "id": "footer",
+    "name": "footer.design",
+    "url": "https://www.footer.design/",
+    "entry": "https://www.footer.design/",
+    "kind": "reference",
+    "rightsStatus": "reference_only",
+    "pattern": "^/sites/[^/]+$",
+    "categoryPattern": "^/(styles|types)/[^/]+$",
+    "role": "footer",
+    "note": "공개 푸터 사례의 링크 목록입니다. 사이트맵과 페이지에 표시된 링크를 합쳤습니다."
+  },
+  {
+    "id": "cta",
+    "name": "CTA.gallery",
+    "url": "https://www.cta.gallery/",
+    "entry": "https://www.cta.gallery/",
+    "kind": "reference",
+    "rightsStatus": "reference_only",
+    "pattern": "^/cta/[^/]+$",
+    "categoryPattern": "^/(categories|industry|mode)/[^/]+$",
+    "role": "cta",
+    "note": "공개 행동 유도 사례의 링크 목록입니다. 원본 UI의 재사용 권한은 포함하지 않습니다."
+  },
+  {
+    "id": "unsection",
+    "name": "Unsection",
+    "url": "https://www.unsection.com/",
+    "entry": "https://www.unsection.com/",
+    "kind": "reference",
+    "rightsStatus": "reference_only",
+    "pattern": "^/section/[^/]+$",
+    "categoryPattern": "^/(category|styles|industry|type|fonts-in-use)/[^/]+$",
+    "note": "공개 섹션 링크를 기록했습니다. 사이트맵의 1,000개 제한 가능성과 유료 자료 범위는 후속 확인 대상입니다."
+  },
+  {
+    "id": "bento",
+    "name": "Bento Grids",
+    "url": "https://bentogrids.com/",
+    "entry": "https://bentogrids.com/",
+    "kind": "reference",
+    "rightsStatus": "reference_only",
+    "role": "project-grid",
+    "note": "홈페이지 응답의 공개 __NEXT_DATA__에 포함된 제목·ID·출처·분류만 추출했습니다. 이미지·영상은 저장하지 않았습니다."
+  },
+  {
+    "id": "60fps",
+    "name": "60fps.design",
+    "url": "https://60fps.design/",
+    "entry": "https://60fps.design/",
+    "kind": "motion",
+    "rightsStatus": "reference_only",
+    "pattern": "^/(shots|motion|storyboards|apps|appsites|glossary)/[^/]+$",
+    "categoryPattern": "^/(shots/filter|motion/tag|apps/category)/[^/]+$",
+    "note": "공개 Shot·Motion·Storyboard·App·용어 링크 목록입니다. 영상·유료 MCP·분석·코드는 미확보입니다."
+  },
+  {
+    "id": "spells",
+    "name": "Design Spells",
+    "url": "https://designspells.com/",
+    "entry": "https://designspells.com/feed",
+    "kind": "motion",
+    "rightsStatus": "reference_only",
+    "note": "홈페이지와 robots 요청은 선행 탐색에서 HTTP 429였습니다. 공식 홈페이지가 제공한 RSS 경로를 조사하며 반복 우회 요청은 하지 않습니다."
+  }
+]

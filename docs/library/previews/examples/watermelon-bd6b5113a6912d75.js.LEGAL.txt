@@ -1,0 +1,30 @@
+Bundled license information:
+
+@tabler/icons-react/dist/esm/defaultAttributes.mjs:
+@tabler/icons-react/dist/esm/createReactComponent.mjs:
+@tabler/icons-react/dist/esm/icons/IconBuildingSkyscraper.mjs:
+@tabler/icons-react/dist/esm/icons/IconCalendarEvent.mjs:
+@tabler/icons-react/dist/esm/icons/IconChartBar.mjs:
+@tabler/icons-react/dist/esm/icons/IconCheckbox.mjs:
+@tabler/icons-react/dist/esm/icons/IconDots.mjs:
+@tabler/icons-react/dist/esm/icons/IconFileInvoice.mjs:
+@tabler/icons-react/dist/esm/icons/IconFilter.mjs:
+@tabler/icons-react/dist/esm/icons/IconLayoutDashboard.mjs:
+@tabler/icons-react/dist/esm/icons/IconLayoutGrid.mjs:
+@tabler/icons-react/dist/esm/icons/IconLayoutSidebar.mjs:
+@tabler/icons-react/dist/esm/icons/IconPlus.mjs:
+@tabler/icons-react/dist/esm/icons/IconSearch.mjs:
+@tabler/icons-react/dist/esm/icons/IconSettings.mjs:
+@tabler/icons-react/dist/esm/icons/IconUserPlus.mjs:
+@tabler/icons-react/dist/esm/icons/IconUsers.mjs:
+@tabler/icons-react/dist/esm/icons/IconCircleCheckFilled.mjs:
+@tabler/icons-react/dist/esm/icons/IconCircleFilled.mjs:
+@tabler/icons-react/dist/esm/icons/IconClockFilled.mjs:
+@tabler/icons-react/dist/esm/icons/IconFileStarFilled.mjs:
+@tabler/icons-react/dist/esm/tabler-icons-react.mjs:
+  /**
+   * @license @tabler/icons-react v3.44.0 - MIT
+   *
+   * This source code is licensed under the MIT license.
+   * See the LICENSE file in the root directory of this source tree.
+   */

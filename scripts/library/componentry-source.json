@@ -1,0 +1,551 @@
+{
+  "schemaVersion": 1,
+  "repository": "https://github.com/harshjdhv/componentry",
+  "revision": "0fd9e13b344cfa36a0332705611f877bbd8e85d9",
+  "capturedAt": "2026-09-27T07:33:24.145Z",
+  "registryIndexSha256": "911cb73e66a2ed27b4085513379bb662b52c3588352331f2195b8085dab84ccd",
+  "metadataSha256": "412b79af9b03585ed2db71c8b99cf504a5e423af6de70a8ba35934002b80aba1",
+  "blocksSha256": "c8ddb4c3cc192ddd89cc90b76ca027efaf871055fa87b8fab01925bc1a034ef7",
+  "licenseSha256": "bc600731e5efb47721989e2ca834302a01093b4a8370d4d9b5bf153bcfc340f0",
+  "items": [
+    {
+      "name": "animated-gradient",
+      "type": "registry:ui",
+      "title": "Animated Gradient",
+      "description": "A beautiful, animated, and customizable WebGL gradient with noise capabilities.",
+      "category": "Hero Backgrounds",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/hero-backgrounds/animatedgradient.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "ascii-effect",
+      "type": "registry:ui",
+      "title": "ASCII Effect",
+      "description": "Render images as responsive ASCII artwork with image, flow, and glitch variations.",
+      "category": "ASCII Effects",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/ascii-effects/asciieffect.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "aurora-flow",
+      "type": "registry:ui",
+      "title": "Aurora Flow",
+      "description": "Procedural atmospheric hero background with layered flowing color, diffused aurora light, and subtle interaction.",
+      "category": "Hero Backgrounds",
+      "previewVideo": null,
+      "previewImage": null
+    },
+    {
+      "name": "case-study-flip-stack",
+      "type": "registry:ui",
+      "title": "Case Study Flip Stack",
+      "description": "Editorial case study cards that fold upward on scroll to reveal the next story.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/casestudyflipstack.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "circuit-board",
+      "type": "registry:ui",
+      "title": "Circuit Board",
+      "description": "Animated circuit board visualization with nodes and connections.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/circuitboard.mov",
+      "previewImage": null,
+      "previewVideoStatus": "unavailable_404"
+    },
+    {
+      "name": "closing-plasma",
+      "type": "registry:ui",
+      "title": "Closing Plasma",
+      "description": "Plasma field tailored for footer and CTA sections with premium atmospheric motion.",
+      "category": "Hero Backgrounds",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/hero-backgrounds/closingplasma.mov",
+      "previewImage": null,
+      "previewVideoStatus": "unavailable_404"
+    },
+    {
+      "name": "collection-surfer",
+      "type": "registry:ui",
+      "title": "Collection Surfer",
+      "description": "Smooth surfing interaction for browsing collections.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/collectionsurfer.mov",
+      "previewImage": null,
+      "previewVideoStatus": "unavailable_404"
+    },
+    {
+      "name": "cursor-driven-particle-typography",
+      "type": "registry:ui",
+      "title": "Particle Typography",
+      "description": "Renders dynamic typography constructed entirely from particles that elegantly disperse and reassemble upon cursor interaction using spring physics.",
+      "category": "Text Animations",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/text-animations/cursordrivenparticletypography.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "dither-gradient",
+      "type": "registry:ui",
+      "title": "Dither Gradient",
+      "description": "Gradient background with dithering noise.",
+      "category": "Visual Effects",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/visual-effects/dithergradient.mov",
+      "previewImage": null,
+      "previewVideoStatus": "unavailable_404"
+    },
+    {
+      "name": "dither-prism-hero",
+      "type": "registry:ui",
+      "title": "Dither Prism Hero",
+      "description": "Stunning WebGL hero with advanced dithering, prismatic refraction, holographic iridescence, and center-focused energy.",
+      "category": "Hero Backgrounds",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/hero-backgrounds/ditherprismhero.mov",
+      "previewImage": null,
+      "previewVideoStatus": "unavailable_404"
+    },
+    {
+      "name": "dithered-logo",
+      "type": "registry:ui",
+      "title": "Dithered Logo",
+      "description": "An interactive particle logo that turns image assets into a dithered canvas field with cursor ripples.",
+      "category": "Visual Effects",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/visual-effects/ditheredlogo.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "eye-tracking",
+      "type": "registry:ui",
+      "title": "Eye Tracking",
+      "description": "Hyper-realistic eyes that follow your cursor with smooth spring physics, reactive pupils, blinking, and multiple stunning variants.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/eyetracking.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "fisheye-infinite-grid",
+      "type": "registry:ui",
+      "title": "Fisheye Infinite Grid",
+      "description": "A dense draggable image wall warped as one continuous fisheye surface with weighted momentum.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/fisheyeinfinitegrid.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "flight-status-card",
+      "type": "registry:ui",
+      "title": "Flight Status Card",
+      "description": "A detailed card showing flight information with animations.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/flightstatuscard.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "flipping-word-swap",
+      "type": "registry:ui",
+      "title": "Flipping Word Swap",
+      "description": "A clean character-by-character flip between two words on interaction.",
+      "category": "Text Animations",
+      "previewVideo": null,
+      "previewImage": null
+    },
+    {
+      "name": "github-calendar",
+      "type": "registry:ui",
+      "title": "Github Calendar",
+      "description": "GitHub-style contribution calendar heatmap.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/githubcalendar.mov",
+      "previewImage": null,
+      "previewVideoStatus": "unavailable_404"
+    },
+    {
+      "name": "hero-geometric",
+      "type": "registry:ui",
+      "title": "Hero Geometric",
+      "description": "Geometric shapes and patterns for hero sections.",
+      "category": "Hero Backgrounds",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/hero-backgrounds/herogeometric.mov",
+      "previewImage": null,
+      "previewVideoStatus": "unavailable_404"
+    },
+    {
+      "name": "hover-transition",
+      "type": "registry:ui",
+      "title": "Hover Transition",
+      "description": "Eight polished hover transitions with per-card animation, direction, color, and content controls.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/hovertransition.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "image-ripple-effect",
+      "type": "registry:ui",
+      "title": "Image Ripple Effect",
+      "description": "WebGL-powered cursor ripples that displace layered image cards in real time.",
+      "category": "Visual Effects",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/visual-effects/imagerippleeffect.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "image-trail",
+      "type": "registry:ui",
+      "title": "Image Trail",
+      "description": "Leaves a trail of images behind the cursor with a premium delay fade.",
+      "category": "Visual Effects",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/visual-effects/imagetrail.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "infinite-image-field",
+      "type": "registry:ui",
+      "title": "Infinite Image Field",
+      "description": "An endless, cursor-driven photo canvas that tiles images infinitely and pans fluidly toward wherever you move your cursor.",
+      "category": "Visual Effects",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/visual-effects/infiniteimagefield.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "kinetic-text-reveal",
+      "type": "registry:ui",
+      "title": "Kinetic Text Reveal",
+      "description": "Directional text reveal with soft blur and configurable word, character, or line stagger timing.",
+      "category": "Text Animations",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/text-animations/kinetictextreveal.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "layered-stack",
+      "type": "registry:ui",
+      "title": "Layered Stack",
+      "description": "A stack of layered cards that interact with mouse hover.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/layeredstack.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "letter-cascade",
+      "type": "registry:ui",
+      "title": "Letter Cascade",
+      "description": "Kinetic text animation where letters scatter outward with spring physics and blur, then elegantly reassemble.",
+      "category": "Text Animations",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/text-animations/lettercascade.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "liquid-chrome",
+      "type": "registry:ui",
+      "title": "Liquid Chrome",
+      "description": "Premium fluid liquid metal shader background effect.",
+      "category": "Hero Backgrounds",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/hero-backgrounds/liquidchrome.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "mac-keyboard",
+      "type": "registry:ui",
+      "title": "Mac Keyboard",
+      "description": "A realistic Mac keyboard component with interactive keys and detailed styling.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/mackeyboard.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "magnet-lines",
+      "type": "registry:ui",
+      "title": "Magnet Lines",
+      "description": "Lines that react to cursor movement like a magnetic field.",
+      "category": "Visual Effects",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/visual-effects/magneticlines.mov",
+      "previewImage": null,
+      "previewVideoStatus": "unavailable_404"
+    },
+    {
+      "name": "magnetic-dock",
+      "type": "registry:ui",
+      "title": "Magnetic Dock",
+      "description": "MacOS style dock that scales items based on mouse proximity.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/magneticdock.mov",
+      "previewImage": null,
+      "previewVideoStatus": "unavailable_404"
+    },
+    {
+      "name": "matrix-rain",
+      "type": "registry:ui",
+      "title": "Matrix Rain",
+      "description": "Classic Matrix digital rain effect.",
+      "category": "Visual Effects",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/visual-effects/matrixrain.mov",
+      "previewImage": null,
+      "previewVideoStatus": "unavailable_404"
+    },
+    {
+      "name": "music-player",
+      "type": "registry:ui",
+      "title": "Music Player",
+      "description": "A fun interactive vinyl record music player with swinging tonearm.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/musicplayer.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "newsletter-bookshelf",
+      "type": "registry:ui",
+      "title": "Newsletter Bookshelf",
+      "description": "A tactile 3D newsletter archive with hover lift, camera browsing, centered covers, and automatic drag-adjustable orbiting.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/newsletterbookshelf.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "orbit-card-stack",
+      "type": "registry:ui",
+      "title": "Orbit Card Stack",
+      "description": "Premium hover card deck that fans outward and lifts the active card without changing its color or angle.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/orbitcardstack.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "pixel-canvas",
+      "type": "registry:ui",
+      "title": "Pixel Canvas",
+      "description": "Canvas where pixels react to interaction.",
+      "category": "Visual Effects",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/visual-effects/pixelcanvas.mov",
+      "previewImage": null,
+      "previewVideoStatus": "unavailable_404"
+    },
+    {
+      "name": "pixel-image-trail",
+      "type": "registry:ui",
+      "title": "Pixel Image Trail",
+      "description": "An image reveal made from cursor-painted squares that expire into a bounded pixel trail.",
+      "category": "Visual Effects",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/visual-effects/pixelimagetrail.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "prism-gradient",
+      "type": "registry:ui",
+      "title": "Prism Gradient",
+      "description": "A theme-aware WebGL prism field with liquid checkered motion, electric-blue refraction, and tactile grain.",
+      "category": "Hero Backgrounds",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/hero-backgrounds/prismgradient.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "ripple-transition",
+      "type": "registry:ui",
+      "title": "Ripple Transition",
+      "description": "WebGL image transitions with noisy refractive waves, chromatic edges, glow, and click-triggered ripple origins.",
+      "category": "Visual Effects",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/visual-effects/rippletransition.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "scroll-based-velocity",
+      "type": "registry:ui",
+      "title": "Velocity Scroll",
+      "description": "Text that moves horizontally based on scroll speed.",
+      "category": "Text Animations",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/text-animations/scrollvelocity.mov",
+      "previewImage": null,
+      "previewVideoStatus": "unavailable_404"
+    },
+    {
+      "name": "scroll-choreography",
+      "type": "registry:ui",
+      "title": "Scroll Choreography",
+      "description": "A smooth, scroll-driven image choreography component using Framer Motion.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/scrollchoreography.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "scroll-split-card",
+      "type": "registry:ui",
+      "title": "Scroll Split Card",
+      "description": "A scroll-driven interactive card that splits into three panels and flips.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/scrollsplitcard.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "scroll-tilted-grid",
+      "type": "registry:ui",
+      "title": "Scroll Tilted Grid",
+      "description": "A cinematic image grid that tilts and resolves into focus as each frame crosses the viewport.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/scrolltiltedgrid.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "signature",
+      "type": "registry:ui",
+      "title": "Signature",
+      "description": "An animated SVG signature effect that draws out text as if hand-written.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/signature.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "silk-aurora",
+      "type": "registry:ui",
+      "title": "Silk Aurora",
+      "description": "Premium WebGL hero background with satin-dark aurora ribbons, pearlescent highlights, fine grain, and cursor depth.",
+      "category": "Hero Backgrounds",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/hero-backgrounds/silkaurora.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "spiral-3d-slider",
+      "type": "registry:ui",
+      "title": "Spiral 3D Slider",
+      "description": "A compact, autoplaying image gallery that responds to scroll along a smooth 3D spiral.",
+      "category": "Components",
+      "previewVideo": "/preview-videos/component-animations/spiral3dslider.webm",
+      "previewImage": "/images/spiral-3d-slider/catalog-preview.jpg",
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "split-flap-display",
+      "type": "registry:ui",
+      "title": "Split Flap Display",
+      "description": "A premium split-flap display component inspired by vintage departure boards.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/splitflapdisplay.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "sticky-scroll-cards",
+      "type": "registry:ui",
+      "title": "Sticky Scroll Cards",
+      "description": "A scroll-driven card stack where images pin and scale as you scroll, creating a layered depth effect.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/stickyscrollcards.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "text-morph",
+      "type": "registry:ui",
+      "title": "Text Morph",
+      "description": "Centered fluid text transitions that inherit the surrounding typography and theme.",
+      "category": "Text Animations",
+      "previewVideo": null,
+      "previewImage": null
+    },
+    {
+      "name": "text-repel",
+      "type": "registry:ui",
+      "title": "Text Repel",
+      "description": "Physics-based text where each letter reacts to cursor proximity with spring dynamics, creating an interactive magnetic force-field effect.",
+      "category": "Text Animations",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/text-animations/textrepel.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "webgl-liquid",
+      "type": "registry:ui",
+      "title": "WebGL Liquid",
+      "description": "Cinematic liquid shader hero with premium gradients, configurable reveal timing, and advanced flow controls.",
+      "category": "Hero Backgrounds",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/hero-backgrounds/webglliquid.mov",
+      "previewImage": null,
+      "previewVideoStatus": "unavailable_404"
+    },
+    {
+      "name": "wheel-carousel",
+      "type": "registry:ui",
+      "title": "Wheel Carousel",
+      "description": "A cinematic rotating-wheel picker with inertial drag, curved fading labels, and crossfading project imagery.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/wheelcarousel.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "annotated-text",
+      "type": "registry:ui",
+      "title": "Annotated Text",
+      "description": "Hand-drawn marks — circles, highlights, underlines, cross-outs — sketched around inline text.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/annotatedtext.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "grain-gradient",
+      "type": "registry:ui",
+      "title": "Grain Gradient",
+      "description": "A breathing color field with flowing shadows, customizable film grain, and soft atmospheric light.",
+      "category": "Hero Backgrounds",
+      "previewVideo": null,
+      "previewImage": null
+    },
+    {
+      "name": "spectral-ribbon",
+      "type": "registry:ui",
+      "title": "Spectral Ribbon",
+      "description": "A soft spectral light ribbon on pure black — slow liquid motion and rainbow fringe.",
+      "category": "Hero Backgrounds",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/hero-backgrounds/spectralribbon.webm",
+      "previewImage": null,
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "liquid-glass-carousel",
+      "type": "registry:ui",
+      "title": "Liquid Glass Carousel",
+      "description": "An infinite image carousel seen through a WebGL liquid-glass lens — chromatic rim, snap scroll, and a focus expand.",
+      "category": "Components",
+      "previewVideo": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/liquidglasscarousel.webm",
+      "previewImage": "https://pub-a50e7f4ea75a4970a1738e50d53b6eb1.r2.dev/preview-videos/component-animations/liquidglasscarousel-4s.webp",
+      "previewVideoStatus": "available"
+    },
+    {
+      "name": "gradient-hero-01",
+      "type": "registry:block"
+    },
+    {
+      "name": "pricing-01",
+      "type": "registry:block"
+    },
+    {
+      "name": "pricing-02",
+      "type": "registry:block"
+    }
+  ],
+  "mediaCheckedAt": "2026-09-27T07:44:09+00:00"
+}

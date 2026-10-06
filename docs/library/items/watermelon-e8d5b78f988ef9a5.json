@@ -1,0 +1,71 @@
+{
+  "id": "watermelon-e8d5b78f988ef9a5",
+  "sourceUrl": "https://ui.watermelon.sh/block/cta-5",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/cta-5.json",
+      "sha256": "b9bae8cb2f50816d07817d25043fc1c54a6bde1f4829518ddc279c06c6029c30",
+      "bytes": 16243,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/cta-5.tsx",
+      "target": "components/ui/cta-5.tsx",
+      "type": "registry:ui",
+      "sha256": "49476053e0125cbb6f076a77b59db10da579bfa506e4fc70083fb7d361baa961",
+      "bytes": 15254
+    }
+  ],
+  "dependencies": [
+    "motion",
+    "@hugeicons/react"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "imports": [
+    "@/assets/logo-icon",
+    "@hugeicons/core-free-icons",
+    "@hugeicons/react",
+    "motion/react",
+    "react"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/2000/svg"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/cta-5.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "cta-5",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/cta-5.tsx",
+    "url": "./library/previews/watermelon/cta-5.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:04+00:00",
+    "snapshotSha256": "1ac9cd1d0649b653372a683b26abe1156a9356fbb7e131c3c32c2c10407ac4cb"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

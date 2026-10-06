@@ -1,0 +1,30 @@
+{
+  "id": "supahero-04522e161216a679",
+  "sourceUrl": "https://supahero.io/hero/artboard-studio",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Artboard Studio",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://artboard.studio/",
+  "evidence": {
+    "url": "https://supahero.io/hero/artboard-studio",
+    "sha256": "e0deddef4770a9534e6ebf498940e416070aa1dccb02ef37ec6c4851d78f60b8",
+    "fetchedAt": "2026-09-23T12:51:16+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

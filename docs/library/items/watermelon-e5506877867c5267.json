@@ -1,0 +1,241 @@
+{
+  "id": "watermelon-e5506877867c5267",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/sales-dashboard.json",
+      "sha256": "e70e9622e243a145e545422731360fe4eaf0dbeb2069ed51d27d742b969f377c",
+      "bytes": 90358,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/sales-dashboard/companyView.tsx",
+      "target": "components/watermelon/sales-dashboard/companyView.tsx",
+      "type": "registry:component",
+      "sha256": "a856ec8b80c05d1108757d5acd7019d7e21593edbee35df690b0c4ef36802673",
+      "bytes": 2035
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/components/app-sidebar.tsx",
+      "target": "components/watermelon/sales-dashboard/components/app-sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "c0136cf22ebabab66fd75a0baa733b8909fd4337eb4a0e5aa65c6d4c064377fc",
+      "bytes": 4391
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/components/billing.tsx",
+      "target": "components/watermelon/sales-dashboard/components/billing.tsx",
+      "type": "registry:component",
+      "sha256": "97004aff86a25a8fc12de683580d3259492a717e77f5610998dad00e0fe8573d",
+      "bytes": 3182
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/components/companies-table.tsx",
+      "target": "components/watermelon/sales-dashboard/components/companies-table.tsx",
+      "type": "registry:component",
+      "sha256": "5e429841beb8c1074d967d5dcb87a4438cfbed0e5cd4a9c662f21c33f1f537c0",
+      "bytes": 9714
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/components/company-filters.tsx",
+      "target": "components/watermelon/sales-dashboard/components/company-filters.tsx",
+      "type": "registry:component",
+      "sha256": "fd13573e767887351d984f097e3017655f01f442d5438205de76b996b5e52137",
+      "bytes": 7951
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/components/deal-card.tsx",
+      "target": "components/watermelon/sales-dashboard/components/deal-card.tsx",
+      "type": "registry:component",
+      "sha256": "98727665ca3ae1d1fec80369d9f929c8a20bb8a773a3e8c176312d0104b4b506",
+      "bytes": 4252
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/components/nav-main.tsx",
+      "target": "components/watermelon/sales-dashboard/components/nav-main.tsx",
+      "type": "registry:component",
+      "sha256": "1ab6d07f28e8929e36c445751aa91208d74daca6bd7b1f9f6b8464e8bae2b30c",
+      "bytes": 1927
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/components/nav-pipelines.tsx",
+      "target": "components/watermelon/sales-dashboard/components/nav-pipelines.tsx",
+      "type": "registry:component",
+      "sha256": "f92e215844da2600ea4a956ae937d1cf96e7b003ade5c8b040287ed694972d81",
+      "bytes": 1371
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/components/nav-reporting.tsx",
+      "target": "components/watermelon/sales-dashboard/components/nav-reporting.tsx",
+      "type": "registry:component",
+      "sha256": "72db42ecf973c10317ece9602ee3e1f7ca500c401416974bd5f21f081c0b9f53",
+      "bytes": 1430
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/components/nav-secondary.tsx",
+      "target": "components/watermelon/sales-dashboard/components/nav-secondary.tsx",
+      "type": "registry:component",
+      "sha256": "fc9c540078325a37bc5aa4119c673f5593702156bceea1fdd7ad808a70bb6625",
+      "bytes": 1051
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/components/nav-teams.tsx",
+      "target": "components/watermelon/sales-dashboard/components/nav-teams.tsx",
+      "type": "registry:component",
+      "sha256": "17f7a8fd0c606e418002285906f077a780c98d4ada76db68f3a5fa7c92ead600",
+      "bytes": 1417
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/components/site-header.tsx",
+      "target": "components/watermelon/sales-dashboard/components/site-header.tsx",
+      "type": "registry:component",
+      "sha256": "0c5ee0e1b0f5365e4f6e09933f8e99f79dc21109e11917fad97255c28e7016b4",
+      "bytes": 18771
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/components/team-switcher.tsx",
+      "target": "components/watermelon/sales-dashboard/components/team-switcher.tsx",
+      "type": "registry:component",
+      "sha256": "cd6d85fa117290e59382a4cf63aaee4cd94b37f39adfcd32e6a5b4f14abc2d20",
+      "bytes": 2952
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/dashboardLayout.tsx",
+      "target": "components/watermelon/sales-dashboard/dashboardLayout.tsx",
+      "type": "registry:component",
+      "sha256": "9ac6e92aa05f50303e16c62070020e48b1911d77fc6788a711828a32e5005d81",
+      "bytes": 724
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/data.ts",
+      "target": "components/watermelon/sales-dashboard/data.ts",
+      "type": "registry:component",
+      "sha256": "4ab7e5880413e2885d58af7d20ed78c911a748a7de5c9851173b00b8c87ff1b7",
+      "bytes": 11252
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/dealsboardView.tsx",
+      "target": "components/watermelon/sales-dashboard/dealsboardView.tsx",
+      "type": "registry:component",
+      "sha256": "67fb4d350b8f973edd0adb9f7e2b065fe3e9504c86c69ef06c0ce2b19702c336",
+      "bytes": 8316
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/demo.tsx",
+      "target": "components/watermelon/sales-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "d239805410f336e68ce8387556c5784231c7ea05b8ebc13dee6d960ee1a441c6",
+      "bytes": 736
+    },
+    {
+      "path": "src/components/dashboards/sales-dashboard/types.ts",
+      "target": "components/watermelon/sales-dashboard/types.ts",
+      "type": "registry:component",
+      "sha256": "b36ef82bcd50a125102e3cae2a115b09eb05b2032d7a1bb89b8ec2c635a95c06",
+      "bytes": 379
+    }
+  ],
+  "dependencies": [
+    "@radix-ui/react-avatar",
+    "@radix-ui/react-checkbox",
+    "@radix-ui/react-collapsible",
+    "@radix-ui/react-dialog",
+    "@radix-ui/react-dropdown-menu",
+    "@radix-ui/react-select",
+    "@radix-ui/react-separator",
+    "@radix-ui/react-slot",
+    "@radix-ui/react-tabs",
+    "@radix-ui/react-tooltip",
+    "class-variance-authority",
+    "lucide-react",
+    "react-router-dom"
+  ],
+  "registryDependencies": [
+    "avatar",
+    "badge",
+    "breadcrumb",
+    "button",
+    "checkbox",
+    "collapsible",
+    "dialog",
+    "dropdown-menu",
+    "input",
+    "select",
+    "separator",
+    "sheet",
+    "sidebar",
+    "skeleton",
+    "table",
+    "tabs",
+    "tooltip"
+  ],
+  "imports": [
+    "../data",
+    "../types",
+    "./billing",
+    "./companyView",
+    "./components/app-sidebar",
+    "./components/companies-table",
+    "./components/company-filters",
+    "./components/deal-card",
+    "./components/site-header",
+    "./dashboardLayout",
+    "./data",
+    "./dealsboardView",
+    "./nav-main",
+    "./nav-pipelines",
+    "./nav-reporting",
+    "./nav-secondary",
+    "./nav-teams",
+    "./types",
+    "@/components/ui/avatar",
+    "@/components/ui/badge",
+    "@/components/ui/breadcrumb",
+    "@/components/ui/button",
+    "@/components/ui/checkbox",
+    "@/components/ui/dialog",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/input",
+    "@/components/ui/select",
+    "@/components/ui/separator",
+    "@/components/ui/sidebar",
+    "@/components/ui/table",
+    "@/components/ui/tabs",
+    "lucide-react",
+    "react",
+    "react-router-dom"
+  ],
+  "propsDeclarations": [
+    "interface DealCardProps {\n  deal: Deal;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=1480&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "https://picsum.photos/seed/alex/100/100",
+    "https://picsum.photos/seed/ava/100/100",
+    "https://picsum.photos/seed/james/100/100",
+    "https://picsum.photos/seed/nia/100/100",
+    "https://picsum.photos/seed/noah/100/100",
+    "https://picsum.photos/seed/ricky/100/100",
+    "https://picsum.photos/seed/sarah/100/100"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/sales-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

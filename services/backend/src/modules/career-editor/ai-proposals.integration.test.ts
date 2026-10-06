@@ -57,12 +57,14 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
   it("rejects inaccessible selection and keeps a cancellation that races the adapter", async () => {
     await expect(ai.create(userId, recordId, { selection: { blockIds: [randomUUID()] }, prompt: "침입" })).rejects.toMatchObject({ statusCode: 409 });
     let release!: () => void; const waiting = new Promise<void>((resolve) => { release = resolve; });
+    let started!: () => void; const generating = new Promise<void>((resolve) => { started = resolve; });
     let aborted = false;
-    const slow: AiProposalAdapter = { async generate(input) { await new Promise<void>((resolve, reject) => { input.signal.addEventListener("abort", () => { aborted = true; reject(new DOMException("취소", "AbortError")); }, { once: true }); void waiting.then(resolve); }); return { summary: "늦음", commands: [], propertyChanges: [] }; } };
+    const slow: AiProposalAdapter = { async generate(input) { await new Promise<void>((resolve, reject) => { input.signal.addEventListener("abort", () => { aborted = true; reject(new DOMException("취소", "AbortError")); }, { once: true }); started(); void waiting.then(resolve); }); return { summary: "늦음", commands: [], propertyChanges: [] }; } };
     const delayed = new AiProposalService(fixture.resource, documentService, slow);
     const bootstrap = await documentService.bootstrap(userId, recordId); const creating = delayed.create(userId, recordId, { selection: { blockIds: [bootstrap.document.content[0]!.id] }, prompt: "취소" });
-    let row: { _id: string } | null = null;
-    for (let attempt = 0; attempt < 20 && !row; attempt += 1) { row = await mongoCollections(fixture.resource.db).careerAiProposals.findOne({ userId, recordId, status: "streaming" }, { projection: { _id: 1 } }); if (!row) await new Promise((resolve) => setTimeout(resolve, 10)); }
+    // streaming 저장 직후에는 어댑터가 시작되기 전일 수 있으므로 취소 수신 준비를 기다립니다.
+    await Promise.race([generating, creating.then(() => { throw new Error("어댑터 시작 전에 생성이 끝났습니다"); })]);
+    const row = await mongoCollections(fixture.resource.db).careerAiProposals.findOne({ userId, recordId, status: "streaming" }, { projection: { _id: 1 } });
     await delayed.reject(userId, recordId, { recordId, proposalId: row!._id }, "cancelled"); release();
     expect((await creating).status).toBe("cancelled");
     expect(aborted).toBe(true);

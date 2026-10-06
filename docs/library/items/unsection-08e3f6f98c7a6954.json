@@ -1,0 +1,29 @@
+{
+  "id": "unsection-08e3f6f98c7a6954",
+  "sourceUrl": "https://www.unsection.com/section/habitat-team-culture-feature-section",
+  "sourceRevision": null,
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: habitat team culture feature section",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/habitat-team-culture-feature-section",
+    "sha256": "6c9ebbce2afee797099cb0abdf41c25b4cf44b80e67337b07520efa9b001c1e8",
+    "fetchedAt": "2026-09-23T12:54:13+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

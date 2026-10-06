@@ -1,0 +1,57 @@
+{
+  "id": "watermelon-fe6212dccab4a450",
+  "sourceUrl": "https://ui.watermelon.sh/animated-components/inline-edit",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/inline-edit.json",
+      "sha256": "b7271669a89951c8d5800f8fb70204a2f3e5434978c67acd377caa93d8284368",
+      "bytes": 11513,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/inline-edit.tsx",
+      "target": "components/ui/inline-edit.tsx",
+      "type": "registry:ui",
+      "sha256": "334a568639c77b69559b2ba55c0bad84c9a7abfccc0bceaaf87edd6cbb445644",
+      "bytes": 10659
+    }
+  ],
+  "dependencies": [
+    "@hugeicons/core-free-icons/index",
+    "@hugeicons/react",
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "@hugeicons/core-free-icons/index",
+    "@hugeicons/react",
+    "motion/react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "interface EditableRowProps {\n  // eslint-disable-next-line @typescript-eslint/no-explicit-any\n  icon: any;\n  label: string;\n  value: string;\n  secondaryValue?: string;\n  onSave?: (value: string) => void;\n  onSaveRange?: (v1: string, v2: string) => void;\n  type?: \"text\" | \"time\" | \"url\";\n  multiline?: boolean;\n}",
+    "interface InlineEditCardProps {\n  data: EventData;\n  onDataChange: (data: EventData) => void;\n  title?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/inline-edit.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

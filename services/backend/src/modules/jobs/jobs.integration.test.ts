@@ -59,6 +59,8 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB job market and board", (
     expect((await board.list(owner, { ...query, interested: true })).summary.total).toBe(1);
     expect((await board.list(other, { ...query, interested: true })).summary.total).toBe(0);
     const search = await market.interpretSearch(owner, "서울 MongoDB", 1);
+    expect(search).toMatchObject({ originalQuery: "서울 MongoDB", conditions: [], needsClarification: true });
+    expect(await mongoCollections(fixture.resource.db).recentSearches.findOne({ _id: search.recentSearchId, userId: owner })).toMatchObject({ conditions: [], resultCount: 1 });
     expect((await market.interpretSearch(owner, "서울 MongoDB", 2)).recentSearchId).toBe(search.recentSearchId);
     expect((await board.recentSearches(owner, 20)).data).toHaveLength(1);
     await expect(market.deleteRecentSearch(other, search.recentSearchId)).rejects.toMatchObject({ statusCode: 404 });
@@ -151,7 +153,20 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
       fixture = await createMongoFixture("job-market-http");
       identityService = new MongoIdentityService(fixture.resource);
       careerService = new MongoCareerService(fixture.resource);
-      jobMarketService = new MongoJobMarketService(fixture.resource);
+      // AI 활성 경로의 저장·소유권 검증에는 외부 호출 없는 해석기를 주입합니다.
+      jobMarketService = new MongoJobMarketService(fixture.resource, {
+        async interpret(query) {
+          expect(query).toBe("서울 3년 TypeScript 백엔드 remote 연봉 6000");
+          return [
+            { field: "location", value: "서울", enabled: true, confidence: 0.85 },
+            { field: "experience", value: 3, enabled: true, confidence: 0.9 },
+            { field: "technology", value: "typescript", enabled: true, confidence: 0.95 },
+            { field: "role", value: "백엔드", enabled: true, confidence: 0.9 },
+            { field: "work_type", value: "remote", enabled: true, confidence: 0.9 },
+            { field: "salary", value: 6000, enabled: false, confidence: 0.6 },
+          ];
+        },
+      });
       const first = await identityService.signup({ email: `jobs-a-${marker}@example.com`, displayName: "Jobs A", password: "correct-horse-battery" });
       const second = await identityService.signup({ email: `jobs-b-${marker}@example.com`, displayName: "Jobs B", password: "correct-horse-battery" });
       firstUserId = first.user.id; secondUserId = second.user.id; firstToken = first.session.accessToken; secondToken = second.session.accessToken;

@@ -1,0 +1,29 @@
+{
+  "id": "unsection-8627131a53a8ccdd",
+  "sourceUrl": "https://www.unsection.com/section/storey-project-inquiry-contact-form-design",
+  "sourceRevision": null,
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: storey project inquiry contact form design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/storey-project-inquiry-contact-form-design",
+    "sha256": "8909976abe279ef0c69af811b4121ec0ce651da6c6db00f5f4034dab4e0fe8ec",
+    "fetchedAt": "2026-09-23T12:56:41+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "badge-3",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "badge"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/badge/badge-3.tsx",
+      "content": "import { Badge } from \"@/components/ui/badge\";\n\nconst Badge3 = () => {\n  return <Badge variant=\"outline\">Outline</Badge>;\n};\n\nexport default Badge3\n",
+      "type": "registry:ui",
+      "target": "components/ui/badge-3.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

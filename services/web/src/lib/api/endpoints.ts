@@ -747,6 +747,7 @@ export const jobs = {
         // 서버는 처음부터 받고 있었고 클라이언트가 안 실어 보냈다.
         ...(query.family ? { family: query.family } : {}),
         ...(query.country ? { country: query.country } : {}),
+        ...(query.location ? { location: query.location } : {}),
         ...(query.experience === undefined ? {} : { experience: String(query.experience) }),
         ...(query.workType ? { workType: query.workType } : {}),
         ...(query.company ? { company: query.company } : {}),

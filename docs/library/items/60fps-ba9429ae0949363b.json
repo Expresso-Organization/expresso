@@ -1,0 +1,29 @@
+{
+  "id": "60fps-ba9429ae0949363b",
+  "sourceUrl": "https://60fps.design/shots/apple-widget-resizing-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Apple Widget Resizing Interaction",
+    "공개 이미지 요소: 23개",
+    "동영상 포스터: 24개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/apple-widget-resizing-interaction",
+    "sha256": "b1a2d6631cc61ba0181be9b3d23d70dfceda77af6e157d4e4a050b54c5191a23",
+    "fetchedAt": "2026-09-23T12:57:22+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

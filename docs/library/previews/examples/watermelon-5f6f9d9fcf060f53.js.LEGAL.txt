@@ -1,0 +1,21 @@
+Bundled license information:
+
+hugeicons-react/dist/esm/icons/ArrowUpRight01Icon.js:
+hugeicons-react/dist/esm/icons/Cancel01Icon.js:
+hugeicons-react/dist/esm/icons/CodeIcon.js:
+hugeicons-react/dist/esm/icons/Copy01Icon.js:
+hugeicons-react/dist/esm/icons/CubeIcon.js:
+hugeicons-react/dist/esm/icons/DiscordIcon.js:
+hugeicons-react/dist/esm/icons/GithubIcon.js:
+hugeicons-react/dist/esm/icons/Layout01Icon.js:
+hugeicons-react/dist/esm/icons/MagicWand01Icon.js:
+hugeicons-react/dist/esm/icons/Menu01Icon.js:
+hugeicons-react/dist/esm/icons/NewTwitterIcon.js:
+hugeicons-react/dist/esm/icons/PaintBoardIcon.js:
+hugeicons-react/dist/esm/icons/PuzzleIcon.js:
+hugeicons-react/dist/esm/hugeicons-react.js:
+  /**
+   * @license hugeicons-react v0.4.0
+   *
+   * See the LICENSE file in the root directory of this source tree.
+   */

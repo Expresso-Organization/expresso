@@ -1,0 +1,29 @@
+{
+  "id": "unsection-69e892eea07d4024",
+  "sourceUrl": "https://www.unsection.com/section/ripe-leadership-coaching-feature-section",
+  "sourceRevision": null,
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: ripe leadership coaching feature section",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/ripe-leadership-coaching-feature-section",
+    "sha256": "01ea75bc11f1e067f9cc4d22e21337ff8a696534258b3f4b0bf001728f7bcd15",
+    "fetchedAt": "2026-09-23T12:56:16+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

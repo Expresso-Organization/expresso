@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "input-mask-3",
+  "dependencies": [
+    "react-icons",
+    "react-payment-inputs"
+  ],
+  "registryDependencies": [
+    "input-mask",
+    "label",
+    "input"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/input-mask/input-mask-3.tsx",
+      "content": "\"use client\";\n\nimport { useId } from \"react\";\n\nimport { HiLockClosed } from \"react-icons/hi2\";\n\nimport { usePaymentInputs } from \"react-payment-inputs\";\n\nimport { Input } from \"@/components/ui/input\";\nimport { Label } from \"@/components/ui/label\";\n\nconst InputMask3 = () => {\n  const id = useId();\n  const { getCVCProps } = usePaymentInputs();\n\n  return (\n    <div className=\"w-full max-w-xs space-y-3\">\n      <Label htmlFor={id} className=\"flex items-center gap-2\">\n        Security Code\n      </Label>\n\n      <div className=\"relative\">\n        <Input\n          {...getCVCProps()}\n          id={id}\n          placeholder=\"123\"\n          className=\"focus-visible:ring-primary/20 focus-visible:border-primary/50 bg-muted/50 pl-8 focus-visible:ring-2\"\n        />\n        <HiLockClosed className=\"text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2\" />\n      </div>\n\n      <p className=\"text-muted-foreground text-xs\">\n        3 or 4 digit code on your card\n      </p>\n    </div>\n  );\n};\n\nexport default InputMask3;\n",
+      "type": "registry:ui",
+      "target": "components/ui/input-mask-3.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

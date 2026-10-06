@@ -1,0 +1,30 @@
+{
+  "id": "navbar-69b7f24bc62eda36",
+  "sourceUrl": "https://www.navbar.gallery/navbar/cphfw-25",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: CPHFW '25",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://cphfw25.samsoe.com/",
+  "evidence": {
+    "url": "https://www.navbar.gallery/navbar/cphfw-25",
+    "sha256": "58a87a418b5a479a4a8b791d814f59ca5ed09ccc334a1afcd269696c5d98214d",
+    "fetchedAt": "2026-09-23T12:51:37+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

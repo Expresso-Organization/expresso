@@ -1,0 +1,78 @@
+{
+  "id": "watermelon-7a6ded946c984709",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/bento-9.json",
+      "sha256": "ba5205d843282d3fd6f26ad4d0d39e32a68f4b01855149b980f7b049ae3c654b",
+      "bytes": 38690,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/bento-9.tsx",
+      "target": "components/ui/bento-9.tsx",
+      "type": "registry:ui",
+      "sha256": "5e6b201b4f80ef6e331b5f37fd34bf1f2f339e08336a9d15c2096038026036bc",
+      "bytes": 37018
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "card"
+  ],
+  "imports": [
+    "@/components/ui/card",
+    "framer-motion",
+    "react",
+    "react-icons/fa",
+    "react-icons/fa6",
+    "react-icons/io",
+    "react-icons/md"
+  ],
+  "propsDeclarations": [
+    "type ChatIncidentProps = {\n  text: string;\n  incidents: Incident[];\n}",
+    "type BackupListProps = {\n  items: Item[];\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/1999/xlink",
+    "http://www.w3.org/2000/svg",
+    "https://assets.watermelon.sh/monkey-face.png"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/bento-9.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "bento-9",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/bento-9.tsx",
+    "url": "./library/previews/watermelon/bento-9.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:04+00:00",
+    "snapshotSha256": "598df4f4b7dc36adaecabfd3c5cd12336b952366567c3ca68d6f84468e3d6e3c"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

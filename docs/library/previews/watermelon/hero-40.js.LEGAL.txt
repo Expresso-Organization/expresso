@@ -1,0 +1,11 @@
+Bundled license information:
+
+hugeicons-react/dist/esm/icons/AdobeXdIcon.js:
+hugeicons-react/dist/esm/icons/MicrosoftIcon.js:
+hugeicons-react/dist/esm/icons/StripeIcon.js:
+hugeicons-react/dist/esm/hugeicons-react.js:
+  /**
+   * @license hugeicons-react v0.4.0
+   *
+   * See the LICENSE file in the root directory of this source tree.
+   */

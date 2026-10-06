@@ -1,0 +1,110 @@
+{
+  "id": "watermelon-75e200345938829e",
+  "sourceUrl": "https://ui.watermelon.sh/block/footer-30",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/footer-30.json",
+      "sha256": "e236fef69db5fef6496160d3847b927579e8afbcc661b70f7e95184d800e9093",
+      "bytes": 5453,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/footer-30.tsx",
+      "target": "components/ui/footer-30.tsx",
+      "type": "registry:ui",
+      "sha256": "57eac1266a98f978728c8e2c4a649cb3cfe2ace5c5f234075bf425dfec777bfc",
+      "bytes": 4823
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "framer-motion"
+  ],
+  "registryDependencies": [
+    "footer"
+  ],
+  "imports": [
+    "@/lib/utils",
+    "framer-motion",
+    "lucide-react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "export interface Footer30Props {\n  heading: React.ReactNode;\n  columns: FooterColumn[];\n  bigText: string;\n  copyright: string;\n  location: string;\n  time: string;\n  bottomLinks: FooterLink[];\n  className?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/footer-30.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "footer-30",
+    "status": "built",
+    "export": "Footer30",
+    "props": {
+      "heading": "Let’s work together",
+      "columns": [
+        {
+          "title": "Work",
+          "links": [
+            {
+              "label": "Projects",
+              "href": "#"
+            },
+            {
+              "label": "Research",
+              "href": "#"
+            }
+          ]
+        },
+        {
+          "title": "About",
+          "links": [
+            {
+              "label": "Experience",
+              "href": "#"
+            },
+            {
+              "label": "Contact",
+              "href": "#"
+            }
+          ]
+        }
+      ],
+      "bigText": "PORTFOLIO",
+      "copyright": "Portfolio example · demo content",
+      "location": "Seoul · example",
+      "time": "09:00",
+      "bottomLinks": [
+        {
+          "label": "Privacy",
+          "href": "#"
+        }
+      ]
+    },
+    "entry": "src/components/watermelon-ui/footer-30.tsx",
+    "url": "./library/previews/watermelon/footer-30.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:12+00:00",
+    "snapshotSha256": "932cffc2a0e378c5fe4ceab702d969608c95d444000333665406f9e8dc0ea1d2"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

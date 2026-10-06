@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "avatar-14",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "avatar"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/avatar/avatar-14.tsx",
+      "content": "import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from '@/components/ui/avatar'\n\ntype Profile = {\n  name: string\n  src: string\n}\n\nconst avatars: readonly Profile[] = [\n  {\n    src: 'https://i.pravatar.cc/160?img=18',\n    name: 'Maya Chen'\n  },\n  {\n    src: 'https://i.pravatar.cc/160?img=28',\n    name: 'Nina Alvarez'\n  },\n  {\n    src: 'https://i.pravatar.cc/160?img=36',\n    name: 'Amara Lewis'\n  }\n] as const\n\nconst overflowCount = 6\n\nconst getInitials = (name: string) =>\n  name\n    .split(/\\s+/)\n    .map((word) => word.slice(0, 1))\n    .join('')\n\nconst Avatar14 = () => {\n  return (\n    <AvatarGroup>\n      {avatars.map((avatar) => (\n        <Avatar key={avatar.name}>\n          <AvatarImage src={avatar.src} alt={avatar.name} />\n          <AvatarFallback className='text-xs'>{getInitials(avatar.name)}</AvatarFallback>\n        </Avatar>\n      ))}\n      <AvatarGroupCount className='text-xs'>+{overflowCount}</AvatarGroupCount>\n    </AvatarGroup>\n  )\n}\n\nexport default Avatar14\n\n",
+      "type": "registry:ui",
+      "target": "components/ui/avatar-14.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

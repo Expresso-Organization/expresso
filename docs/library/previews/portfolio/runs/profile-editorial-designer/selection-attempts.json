@@ -1,0 +1,11 @@
+{
+  "model": "qwen3.5:9b-q8_0",
+  "brief": null,
+  "attempts": [
+    {
+      "valid": true,
+      "outputSha256": "bf84d075be415710f0710fd2d7feea5d0841192b610f42249a5925765fa0667f",
+      "output": "{\n  \"recipe\": \"gallery\",\n  \"design\": {\n    \"palette\": \"midnight\",\n    \"typography\": \"serif\",\n    \"layout\": \"editorial\"\n  },\n  \"heroStyle\": \"spotlight\",\n  \"projectIndex\": \"mosaic\",\n  \"reason\": \"편집 디자이너의 정체성을 반영하여 어두운 배경과 명조체로 고급스러운 편집성 (Editorial) 을 살리고, 계절의 언어와 아카이브 프로젝트 특유의 깊이 있는 내용을 강조하기 위해 검은 배경에 주황 광원이 있는 스포트라이트 형식과 이미지 중심의 모자이크 레이아웃을 선택했습니다.\"\n}"
+    }
+  ]
+}

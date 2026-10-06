@@ -1,0 +1,21 @@
+var require=function(name){if(!(name in window.__exModules))throw new Error("Missing preview module: "+name);return window.__exModules[name]};
+(()=>{var _=Object.create;var y=Object.defineProperty;var E=Object.getOwnPropertyDescriptor;var C=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,S=Object.prototype.hasOwnProperty;var a=(e=>typeof require<"u"?require:typeof Proxy<"u"?new Proxy(e,{get:(t,o)=>(typeof require<"u"?require:t)[o]}):e)(function(e){if(typeof require<"u")return require.apply(this,arguments);throw Error('Dynamic require of "'+e+'" is not supported')});var T=(e,t,o,r)=>{if(t&&typeof t=="object"||typeof t=="function")for(let n of C(t))!S.call(e,n)&&n!==o&&y(e,n,{get:()=>t[n],enumerable:!(r=E(t,n))||r.enumerable});return e};var k=(e,t,o)=>(o=e!=null?_(w(e)):{},T(t||!e||!e.__esModule?y(o,"default",{value:e,enumerable:!0}):o,e));var h=k(a("react")),x=a("react-dom/client");var u=a("react"),m=a("framer-motion"),l=a("react/jsx-runtime"),I=[{id:"home",label:"Home"},{id:"interactions",label:"Interactions"},{id:"resources",label:"Resources"},{id:"docs",label:"Docs"}],v=({tabs:e=I,defaultActiveId:t="home",onChange:o})=>{let[r,n]=(0,u.useState)(t),[d,f]=(0,u.useState)(!1);(0,u.useEffect)(()=>{f(!0)},[]);let i=s=>{n(s),o?.(s)};return d?(0,l.jsx)(m.LayoutGroup,{children:(0,l.jsx)("nav",{className:`
+          relative flex items-center gap-0.5 sm:gap-1 p-1 sm:p-1.5
+            rounded-full
+            border border-[#E5E5E9] dark:border-zinc-800
+            bg-linear-to-b from-[#ffffff] to-[#e9e9f2]
+            dark:from-zinc-900 dark:to-zinc-950
+            shadow-[inset_0_-2px_4px_rgba(0,0,0,0.08),
+                    inset_0_1px_0_rgba(255,255,255,0.9),
+                    0_4px_12px_rgba(0,0,0,0.03)]
+            dark:shadow-[inset_0_-2px_4px_rgba(0,0,0,0.5),
+                    inset_0_1px_0_rgba(255,255,255,0.05),
+                    0_10px_20px_rgba(0,0,0,0.4)]
+            transition-all duration-300
+          `,children:e.map(s=>{let c=r===s.id;return(0,l.jsxs)("button",{onClick:()=>i(s.id),className:"relative px-4 py-2 sm:px-6 sm:py-3 rounded-full outline-none",children:[c&&(0,l.jsx)(m.motion.div,{layoutId:"active-pill",transition:{type:"spring",stiffness:380,damping:30,mass:.9},className:`
+                      absolute inset-0 rounded-full
+                      bg-[#252528] dark:bg-zinc-100
+                      shadow-xs
+                    `}),(0,l.jsx)(m.motion.span,{layout:"position",className:`relative z-10 text-sm sm:text-base font-semibold transition-colors duration-200
+                    ${c?"text-[#EDEDEC] dark:text-zinc-950":"text-[#343437] dark:text-zinc-500 hover:text-[#62625D] dark:hover:text-zinc-300"}
+                  `,children:s.label})]},s.id)})})}):null};var p=a("react/jsx-runtime"),A=v;function D(){return(0,p.jsx)(A,{})}function g(e,t=""){document.documentElement.dataset.previewStatus=e,document.documentElement.dataset.previewReason=t;let o="";if(e==="ready"){let r=document.getElementById("demo"),n=r.cloneNode(!0),d=[r,...r.querySelectorAll("*")],f=[n,...n.querySelectorAll("*")];for(let i=0;i<d.length;i++){let s=getComputedStyle(d[i]);if(d[i].style?.length)for(let c of[...d[i].style])c.startsWith("--")||f[i].style.setProperty(c,s.getPropertyValue(c));s.opacity==="0"&&(f[i].style.opacity="1")}o=n.outerHTML}parent.postMessage({type:"expresso-all-preview",id:"watermelon-bcaaef2e8e8cd589",status:e,reason:t,html:o},"*")}var b=class extends h.default.Component{state={error:null};static getDerivedStateFromError(t){return{error:String(t)}}componentDidCatch(t){g("error",String(t))}render(){return this.state.error?(0,p.jsx)("pre",{role:"alert",children:this.state.error}):this.props.children}};window.addEventListener("error",e=>g("error",e.message));window.addEventListener("unhandledrejection",e=>g("error",String(e.reason)));(0,x.createRoot)(document.getElementById("demo")).render((0,p.jsx)(b,{children:(0,p.jsx)(D,{})}));setTimeout(()=>{if(document.documentElement.dataset.previewStatus==="error")return;let t=[...document.getElementById("demo").querySelectorAll("*")].some(o=>{let r=o.getBoundingClientRect();return r.width>2&&r.height>2&&(o.textContent.trim()||o.matches("input,button,svg,canvas,img,video"))});g(t?"ready":"empty",t?"":"\uC6D0\uBCF8 \uD45C\uC2DC \uB0B4\uC6A9 \uC5C6\uC74C")},3e3);})();

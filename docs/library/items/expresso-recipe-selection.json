@@ -1,0 +1,31 @@
+{
+  "id": "expresso-recipe-selection",
+  "sourceUrl": "https://github.com/Expresso-Organization/expresso/blob/codex/portfolio-reference-research/scripts/library/prompts.json",
+  "sourceRevision": "1.0",
+  "roles": [
+    "quality-workflow"
+  ],
+  "roleEvidence": "허용된 카탈로그의 컴포넌트 ID와 콘텐츠 참조로 짧은 레시피를 만듭니다.",
+  "materials": [],
+  "observations": [
+    "익스프레소에서 직접 작성한 템플릿입니다. 모델 실행·품질 평가는 아직 수행하지 않았습니다."
+  ],
+  "prompt": {
+    "id": "recipe-selection",
+    "title": "등록 컴포넌트로 레시피 선택",
+    "purpose": "허용된 카탈로그의 컴포넌트 ID와 콘텐츠 참조로 짧은 레시피를 만듭니다.",
+    "inputs": [
+      "validatedCatalog",
+      "careerEvidence",
+      "designDirection"
+    ],
+    "output": "themeId와 sections[{componentId,variantId,contentRefs,props}]",
+    "body": "validatedCatalog에서 registered 상태이고 입력 조건을 충족하는 컴포넌트만 선택하세요. designDirection을 기준으로 페이지의 폭·타이포·배경·섹션 순서를 일관되게 구성하세요. careerEvidence의 항목 ID를 contentRefs로 연결하고 렌더러가 결정할 CSS·DOM·임의 className은 생성하지 마세요. 명세가 요구하는 필수 props만 넣으세요. 적합한 등록 컴포넌트가 없으면 unsupportedRoles에 기록하세요. schemaVersion, themeId, sections, unsupportedRoles를 갖는 JSON만 반환하세요.",
+    "version": "1.0",
+    "executionStatus": "not_run"
+  },
+  "acquisitionStatus": "prompt_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured"
+}

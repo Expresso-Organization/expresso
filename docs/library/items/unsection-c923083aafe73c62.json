@@ -1,0 +1,29 @@
+{
+  "id": "unsection-c923083aafe73c62",
+  "sourceUrl": "https://www.unsection.com/section/kudanil-adventure-hero-design",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: kudanil adventure hero design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/kudanil-adventure-hero-design",
+    "sha256": "6f4456a3315d41e667e747663a462698abc774307f889922c6a297f8854d05f5",
+    "fetchedAt": "2026-09-23T12:54:42+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

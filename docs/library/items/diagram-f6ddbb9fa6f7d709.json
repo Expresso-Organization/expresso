@@ -1,0 +1,28 @@
+{
+  "id": "diagram-f6ddbb9fa6f7d709",
+  "sourceUrl": "https://github.com/cathrynlavery/diagram-design/blob/dc1ace47b99a419e42d01a03cb6ace5346efa8ae/skills/diagram-design/assets/example-layers.html",
+  "sourceRevision": "dc1ace47b99a419e42d01a03cb6ace5346efa8ae",
+  "roles": [
+    "technical-evidence"
+  ],
+  "roleEvidence": "시스템 구조·과정·기술 기여를 설명하는 도식 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/diagram/diagram-f6ddbb9fa6f7d709.html.txt",
+      "sha256": "196f3cd9866d64da9e04323f258534b1a51d1116140c0db2c8e330adb516a809",
+      "bytes": 6876,
+      "kind": "diagram_source",
+      "label": "원본 example-layers.html"
+    }
+  ],
+  "observations": [
+    "예제 원문에서 스크립트·외부 폰트 링크를 제외한 미리보기입니다. 원본 파일은 별도로 보존했습니다."
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/cathrynlavery/diagram-design/blob/dc1ace47b99a419e42d01a03cb6ace5346efa8ae/LICENSE"
+}

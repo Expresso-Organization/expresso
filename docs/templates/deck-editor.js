@@ -1531,5 +1531,10 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkLiveFile();});
   checkLiveFile();
 
-  window.deckEditor = { save, toggleEdit, toggleRail, serialize };
+  window.deckEditor = { save, toggleEdit, toggleRail, serialize,
+    saveForExport: async () => {
+      if (!await putToServer(serialize())) throw new Error('저장하지 못했습니다. 작업대 서버를 확인해 주세요.');
+      showSaved();
+    },
+  };
 })();

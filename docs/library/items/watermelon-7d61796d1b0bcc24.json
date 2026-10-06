@@ -1,0 +1,146 @@
+{
+  "id": "watermelon-7d61796d1b0bcc24",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/hrm.json",
+      "sha256": "23e7fe3b6f7bbff8daa29e803eb8bb18036fd3f61548c3c1e23ea77d29de5bdf",
+      "bytes": 53820,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/hrm/components/app-sidebar.tsx",
+      "target": "components/watermelon/hrm/components/app-sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "14d524c903bebd9a9fa70099a90a43f353cc6af514f3d8ef645b98c527096114",
+      "bytes": 13130
+    },
+    {
+      "path": "src/components/dashboards/hrm/components/employee-table.tsx",
+      "target": "components/watermelon/hrm/components/employee-table.tsx",
+      "type": "registry:component",
+      "sha256": "3ffc56c05325a49df8616101468e4c1df98e8a9a5f4496e3a46f4c2efb312311",
+      "bytes": 3741
+    },
+    {
+      "path": "src/components/dashboards/hrm/dashboardLayout.tsx",
+      "target": "components/watermelon/hrm/dashboardLayout.tsx",
+      "type": "registry:component",
+      "sha256": "3b07f4f669e278a0d3ba65f1d705a45c80f5609cbd11462f89a7d1c01d9b15b9",
+      "bytes": 6035
+    },
+    {
+      "path": "src/components/dashboards/hrm/dashboardView.tsx",
+      "target": "components/watermelon/hrm/dashboardView.tsx",
+      "type": "registry:component",
+      "sha256": "f0743ad6192f5c79e866e8f8b7e7cb623d8e19090026887e7b8669e698dd7f76",
+      "bytes": 20573
+    },
+    {
+      "path": "src/components/dashboards/hrm/data.ts",
+      "target": "components/watermelon/hrm/data.ts",
+      "type": "registry:component",
+      "sha256": "c8660cbb1880f5a1b1a05ec0fe296bf8bd1c7976bd99bfaa29d1971e91134d19",
+      "bytes": 5170
+    },
+    {
+      "path": "src/components/dashboards/hrm/demo.tsx",
+      "target": "components/watermelon/hrm/demo.tsx",
+      "type": "registry:component",
+      "sha256": "d046dd3770bfa48a48b764848ef54901bc546629df211ffa349fa43d5dddfab7",
+      "bytes": 640
+    }
+  ],
+  "dependencies": [
+    "@radix-ui/react-avatar",
+    "@radix-ui/react-collapsible",
+    "@radix-ui/react-dialog",
+    "@radix-ui/react-dropdown-menu",
+    "@radix-ui/react-scroll-area",
+    "@radix-ui/react-select",
+    "@radix-ui/react-separator",
+    "@radix-ui/react-slot",
+    "@radix-ui/react-tabs",
+    "@radix-ui/react-tooltip",
+    "class-variance-authority",
+    "lucide-react",
+    "next-themes",
+    "recharts"
+  ],
+  "registryDependencies": [
+    "avatar",
+    "badge",
+    "button",
+    "card",
+    "chart",
+    "collapsible",
+    "dropdown-menu",
+    "input",
+    "label",
+    "popover",
+    "scroll-area",
+    "select",
+    "separator",
+    "sheet",
+    "sidebar",
+    "skeleton",
+    "table",
+    "tabs",
+    "tooltip"
+  ],
+  "imports": [
+    "../data",
+    "./components/app-sidebar",
+    "./components/employee-table",
+    "./dashboardLayout",
+    "./dashboardView",
+    "./data",
+    "@/components/ui/avatar",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/chart",
+    "@/components/ui/collapsible",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/popover",
+    "@/components/ui/select",
+    "@/components/ui/sheet",
+    "@/components/ui/table",
+    "@/components/ui/tabs",
+    "@/components/ui/tooltip",
+    "@/lib/utils",
+    "lucide-react",
+    "next-themes",
+    "react",
+    "recharts"
+  ],
+  "propsDeclarations": [
+    "interface EmployeeTableProps {\n  employees: Employee[];\n  selectedId?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/2000/svg",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=${employee.name}",
+    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=1480&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/hrm.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

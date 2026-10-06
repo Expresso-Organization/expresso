@@ -1,0 +1,439 @@
+{
+  "results": [
+    {
+      "component": "hero",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "hero",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "hero",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "hero",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "gradient-hero",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "gradient-hero",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "gradient-hero",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "gradient-hero",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "spotlight-hero",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "spotlight-hero",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "spotlight-hero",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "spotlight-hero",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "showcase",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "showcase",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "showcase",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "showcase",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "gallery",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "gallery",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "gallery",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "gallery",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "case",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "case",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "case",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "case",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "timeline",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "timeline",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "timeline",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "timeline",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "evidence",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "evidence",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "evidence",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "evidence",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "contact",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "contact",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "contact",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "contact",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "orbit",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "orbit",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "orbit",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "orbit",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "annotation",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "annotation",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "annotation",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "annotation",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "headline-lines",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "headline-lines",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "headline-lines",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "headline-lines",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "bento",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "bento",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "bento",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "bento",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "mosaic",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "mosaic",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "mosaic",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "mosaic",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "career-ribbon",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "career-ribbon",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "career-ribbon",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "career-ribbon",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "evidence-previews",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "evidence-previews",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "evidence-previews",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "evidence-previews",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "contact-card",
+      "recipe": "featured",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "contact-card",
+      "recipe": "gallery",
+      "width": 390,
+      "status": "passed"
+    },
+    {
+      "component": "contact-card",
+      "recipe": "featured",
+      "width": 1440,
+      "status": "passed"
+    },
+    {
+      "component": "contact-card",
+      "recipe": "gallery",
+      "width": 1440,
+      "status": "passed"
+    }
+  ],
+  "checks": {
+    "directionalStack": true,
+    "keyboardImmediate": true,
+    "galleryHoverReverse": true,
+    "timelineParts": true,
+    "orbitKeyboard": true,
+    "annotationDrawing": true,
+    "headlineLines": true,
+    "bentoHover": true,
+    "careerRibbon": true,
+    "evidenceDisclosure": true,
+    "contactCard": true,
+    "reducedMotion": true,
+    "nonePreset": true,
+    "portalNavigation": true,
+    "staticTimeline": true,
+    "staticSelectedControls": true
+  },
+  "artifactHashes": {
+    "component-motion-catalog.json": "42c26ab1f809a7d98f82878bcdb925ff33101c26d62c7e46acf7f0b96efc3cd8",
+    "variants.js": "8520a21459c8b8f3ad9a6c9470f4814336c2920d1ea1ed0b393ddaccc9c17474",
+    "variants.css": "e0d6b75e28230e7b6bbda06bf3f3710ba0f8e95c7135bcd4582579a16b8e4f50",
+    "variants-sources.json": "82ae4ca363a2a9fb77afd8e9c208b9d37fdb6b310f109cef860f70f94afa6d45",
+    "featured-standard.static.html": "0ea889c24dcd1ebb86a46a34680462b8a8f022098c3a315517ddf7377aba145e",
+    "gallery-standard-selected.static.html": "ea116a5df3bbfe9b078d642dd150bcde0d0bd0c3acfd47bac278517c965980cd",
+    "gallery-standard-bento.static.html": "82b3ac07d9a2e91192a3457b41ebfcbce987aad534c272fb0c669632bc8fe6dd"
+  }
+}

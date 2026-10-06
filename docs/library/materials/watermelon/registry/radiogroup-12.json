@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "radiogroup-12",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "radio-group"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/radiogroup/radiogroup-12.tsx",
+      "content": "import { useId } from \"react\";\n\nimport { FaUser, FaCrown } from \"react-icons/fa\";\n\nimport { Label } from \"@/components/ui/label\";\nimport { RadioGroup, RadioGroupItem } from \"@/components/ui/radio-group\";\n\nconst RadioGroup12 = () => {\n  const id = useId();\n\n  return (\n    <RadioGroup\n      className=\"w-full max-w-96 justify-items-center sm:grid-cols-2\"\n      defaultValue=\"starter\"\n    >\n      <div className=\"border-input has-data-[state=checked]:border-primary/60 has-data-[state=checked]:bg-accent/40 relative flex w-full max-w-50 flex-col items-center gap-3 rounded-lg border p-4 shadow-xs transition\">\n        <RadioGroupItem\n          value=\"starter\"\n          id={`${id}-starter`}\n          className=\"order-1 size-5 after:absolute after:inset-0 [&_svg]:size-3\"\n          aria-describedby={`${id}-starter-description`}\n        />\n        <div className=\"grid grow justify-items-center gap-2 text-center\">\n          <FaUser className=\"text-muted-foreground size-5\" />\n          <Label\n            htmlFor={`${id}-starter`}\n            className=\"justify-center font-medium\"\n          >\n            Starter\n          </Label>\n          <p\n            id={`${id}-starter-description`}\n            className=\"text-muted-foreground text-xs leading-snug\"\n          >\n            Great for personal use and small tasks.\n          </p>\n        </div>\n      </div>\n\n      <div className=\"border-input has-data-[state=checked]:border-primary/60 has-data-[state=checked]:bg-accent/40 relative flex w-full max-w-50 flex-col items-center gap-3 rounded-lg border p-4 shadow-xs transition\">\n        <RadioGroupItem\n          value=\"pro\"\n          id={`${id}-pro`}\n          className=\"order-1 size-5 after:absolute after:inset-0 [&_svg]:size-3\"\n          aria-describedby={`${id}-pro-description`}\n        />\n        <div className=\"grid grow justify-items-center gap-2 text-center\">\n          <FaCrown className=\"text-primary size-5\" />\n          <Label htmlFor={`${id}-pro`} className=\"justify-center font-medium\">\n            Pro\n          </Label>\n          <p\n            id={`${id}-pro-description`}\n            className=\"text-muted-foreground text-xs leading-snug\"\n          >\n            Built for teams with advanced features.\n          </p>\n        </div>\n      </div>\n    </RadioGroup>\n  );\n};\n\nexport default RadioGroup12;\n",
+      "type": "registry:ui",
+      "target": "components/ui/radiogroup-12.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

@@ -1,0 +1,30 @@
+{
+  "id": "navbar-2ac9159be9ff80ff",
+  "sourceUrl": "https://www.navbar.gallery/navbar/popp-ai",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Popp AI",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.joinpopp.com/",
+  "evidence": {
+    "url": "https://www.navbar.gallery/navbar/popp-ai",
+    "sha256": "9301dc502b85f4d9f22111dc257baa80e1b3e1895d7b3f3f4cf6b6f806af2958",
+    "fetchedAt": "2026-09-23T12:53:14+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

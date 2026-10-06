@@ -1,0 +1,165 @@
+{
+  "id": "watermelon-97d7297286387608",
+  "sourceUrl": "https://ui.watermelon.sh/dashboard/medesk-dashboard",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/medesk-dashboard.json",
+      "sha256": "bff775d759ea96b34847dd45b2c89918cd663b9f142023e92e0bddfe1f9c4b7c",
+      "bytes": 197910,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/medesk-dashboard/components/medesk/dashboard-content.tsx",
+      "target": "components/watermelon/medesk-dashboard/components/medesk/dashboard-content.tsx",
+      "type": "registry:component",
+      "sha256": "25f03bd4740f4dde7f1f71af0decda031f543e3581590f21b8784a7b443330ce",
+      "bytes": 37334
+    },
+    {
+      "path": "src/components/dashboards/medesk-dashboard/components/medesk/icons.tsx",
+      "target": "components/watermelon/medesk-dashboard/components/medesk/icons.tsx",
+      "type": "registry:component",
+      "sha256": "42b2457677e9ed0fedc5885ad30db036e49f3f4a83e62d8a7dd5a8212f6a6a49",
+      "bytes": 89585
+    },
+    {
+      "path": "src/components/dashboards/medesk-dashboard/components/medesk/logo.tsx",
+      "target": "components/watermelon/medesk-dashboard/components/medesk/logo.tsx",
+      "type": "registry:component",
+      "sha256": "52ef946075f3e028af0e302d377fd305a061ec1df49a53d80a2730982ca408b0",
+      "bytes": 1313
+    },
+    {
+      "path": "src/components/dashboards/medesk-dashboard/components/medesk/navigation.tsx",
+      "target": "components/watermelon/medesk-dashboard/components/medesk/navigation.tsx",
+      "type": "registry:component",
+      "sha256": "1e5782cf177a6260fd3c35f7fa70679a937076f0df15fef6892eaf1680aa829d",
+      "bytes": 1520
+    },
+    {
+      "path": "src/components/dashboards/medesk-dashboard/components/medesk/sidebar.tsx",
+      "target": "components/watermelon/medesk-dashboard/components/medesk/sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "a12b034d881748e7c46fd57d52be947d58cebed7d947095492a2f39badcae8de",
+      "bytes": 10168
+    },
+    {
+      "path": "src/components/dashboards/medesk-dashboard/components/medesk/theme-provider.tsx",
+      "target": "components/watermelon/medesk-dashboard/components/medesk/theme-provider.tsx",
+      "type": "registry:component",
+      "sha256": "c5dca6c3052e7fb6fe4004aa0ab68d84a04bfeab2ebe7b78e31f6d3a6a486d8e",
+      "bytes": 2223
+    },
+    {
+      "path": "src/components/dashboards/medesk-dashboard/components/medesk/topbar.tsx",
+      "target": "components/watermelon/medesk-dashboard/components/medesk/topbar.tsx",
+      "type": "registry:component",
+      "sha256": "6dd968f3e3a5e5eb40ad698ae72f887df6f1b359865c4d8d9b812f673dd08a9f",
+      "bytes": 5456
+    },
+    {
+      "path": "src/components/dashboards/medesk-dashboard/dashboard-layout.tsx",
+      "target": "components/watermelon/medesk-dashboard/dashboard-layout.tsx",
+      "type": "registry:component",
+      "sha256": "c39fa287915ae9facef251e6d7880ab95d3530762e5172472f299706687f85bb",
+      "bytes": 1049
+    },
+    {
+      "path": "src/components/dashboards/medesk-dashboard/dashboard.css",
+      "target": "components/watermelon/medesk-dashboard/dashboard.css",
+      "type": "registry:component",
+      "sha256": "f3847a3166a913b910e03f807b2be752aebd6d8d85b113604cae6588cc86e717",
+      "bytes": 4161
+    },
+    {
+      "path": "src/components/dashboards/medesk-dashboard/data.tsx",
+      "target": "components/watermelon/medesk-dashboard/data.tsx",
+      "type": "registry:component",
+      "sha256": "4214691322a29c0fc4a8648405982c578986c1f90cc0c312b0d8aecc542f1a3a",
+      "bytes": 34291
+    },
+    {
+      "path": "src/components/dashboards/medesk-dashboard/demo.tsx",
+      "target": "components/watermelon/medesk-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "49cd0a7381cd403f09530f83e8f971feeb135f3cd81f00429a9692b2acfb56b6",
+      "bytes": 1055
+    }
+  ],
+  "dependencies": [
+    "@fontsource/geist",
+    "@fontsource/geist-mono",
+    "@fontsource/instrument-serif",
+    "lucide-react",
+    "recharts@2.15.4"
+  ],
+  "registryDependencies": [
+    "avatar",
+    "button",
+    "collapsible",
+    "dropdown-menu",
+    "input-group",
+    "sheet",
+    "sidebar"
+  ],
+  "imports": [
+    "../../data",
+    "./components/medesk/dashboard-content",
+    "./components/medesk/icons",
+    "./components/medesk/navigation",
+    "./components/medesk/sidebar",
+    "./components/medesk/theme-provider",
+    "./components/medesk/topbar",
+    "./dashboard-layout",
+    "./icons",
+    "./logo",
+    "./navigation",
+    "./theme-provider",
+    "@/components/ui/avatar",
+    "@/components/ui/button",
+    "@/components/ui/collapsible",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/input-group",
+    "@/components/ui/sheet",
+    "@/components/ui/sidebar",
+    "@/lib/utils",
+    "lucide-react",
+    "react",
+    "recharts"
+  ],
+  "propsDeclarations": [
+    "type IconProps = SVGProps<SVGSVGElement>;\n\nfunction Icon({ className, ...props }",
+    "type ToggleIconProps = IconProps & {\n  pressed?: boolean;\n}",
+    "type ThemeProviderProps = {\n  children: ReactNode;\n  defaultTheme?: Theme;\n  storageKey?: string;\n}",
+    "type DashboardLayoutProps = {\n  children: ReactNode;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/2000/svg",
+    "https://api.dicebear.com/9.x/avataaars/svg?seed=Reyes%20Patel",
+    "https://assets.watermelon.sh/components/doc-anjali-profile-picture.png",
+    "https://assets.watermelon.sh/components/doc-harrison-profile-picture.png",
+    "https://assets.watermelon.sh/components/doc-jeff-profile-picture.png",
+    "https://docs.medesk.com",
+    "https://medesk.com/support"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/medesk-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

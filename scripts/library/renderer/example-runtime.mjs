@@ -1,0 +1,9 @@
+// 실행·오류·정적 카드 캡처를 모든 원본 예제에 같은 방식으로 적용합니다.
+export const wrapper=(id,body)=>`import React from 'react';import {createRoot} from 'react-dom/client';import {MemoryRouter} from 'react-router-dom';import {Tooltip} from 'radix-ui';
+${body}
+function report(status,reason=''){document.documentElement.dataset.previewStatus=status;document.documentElement.dataset.previewReason=reason;let html='';if(status==='ready'){const root=document.getElementById('demo');const clone=root.cloneNode(true);const a=[root,...root.querySelectorAll('*')],b=[clone,...clone.querySelectorAll('*')];for(let n=0;n<a.length;n++){const c=getComputedStyle(a[n]);if(a[n].style?.length){for(const p of [...a[n].style])if(!p.startsWith('--'))b[n].style.setProperty(p,c.getPropertyValue(p));}if(c.opacity==='0')b[n].style.opacity='1';}html=clone.outerHTML;}parent.postMessage({type:'expresso-all-preview',id:${JSON.stringify(id)},status,reason,html},'*')}
+class Boundary extends React.Component{state={error:null};static getDerivedStateFromError(e){return {error:String(e)}}componentDidCatch(e,info){report('error',String(e)+' '+info.componentStack)}render(){return this.state.error?<pre role="alert">{this.state.error}</pre>:this.props.children}}
+window.addEventListener('error',e=>report('error',e.message));window.addEventListener('unhandledrejection',e=>report('error',String(e.reason)));
+createRoot(document.getElementById('demo')).render(<Boundary><MemoryRouter><Tooltip.Provider><View/></Tooltip.Provider></MemoryRouter></Boundary>);
+setTimeout(()=>{if(document.documentElement.dataset.previewStatus==='error')return;const d=document.getElementById('demo');const visible=[...d.querySelectorAll('*')].some(e=>{const r=e.getBoundingClientRect();return r.width>2&&r.height>2&&(e.textContent.trim()||e.matches('input,textarea,select,button,svg,canvas,img,video,[data-slot=skeleton]'))});report(visible?'ready':'empty',visible?'':'원본 표시 내용 없음')},3000);
+`;

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "pagination-10",
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "pagination"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/pagination/pagination-10.tsx",
+      "content": "import {\n  Pagination,\n  PaginationContent,\n  PaginationItem,\n  PaginationLink,\n  PaginationNext,\n  PaginationPrevious,\n} from '@/components/ui/pagination';\n\nconst Pagination10 = () => {\n  return (\n    <Pagination>\n      <PaginationContent className=\"gap-2 rounded-2xl border border-neutral-200 bg-white/80 p-2 shadow-xl backdrop-blur-sm transition-all hover:shadow-2xl dark:border-neutral-800 dark:bg-neutral-950\">\n        <PaginationItem>\n          <PaginationPrevious\n            href=\"#\"\n            className=\"rounded-xl px-4 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800\"\n          >\n            Back\n          </PaginationPrevious>\n        </PaginationItem>\n        <PaginationItem>\n          <PaginationLink\n            href=\"#\"\n            className=\"rounded-xl transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800\"\n          >\n            1\n          </PaginationLink>\n        </PaginationItem>\n        <PaginationItem>\n          <PaginationLink\n            href=\"#\"\n            isActive\n            className=\"rounded-xl border-none font-bold shadow-lg transition-all\"\n          >\n            2\n          </PaginationLink>\n        </PaginationItem>\n        <PaginationItem>\n          <PaginationLink\n            href=\"#\"\n            className=\"rounded-xl transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800\"\n          >\n            3\n          </PaginationLink>\n        </PaginationItem>\n        <PaginationItem>\n          <PaginationNext href=\"#\" />\n        </PaginationItem>\n      </PaginationContent>\n    </Pagination>\n  );\n};\n\nexport default Pagination10;\n",
+      "type": "registry:ui",
+      "target": "components/ui/pagination-10.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

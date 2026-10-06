@@ -1,0 +1,152 @@
+{
+  "id": "watermelon-2c1936b5bd62bab8",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/invoice-generator-dashboard.json",
+      "sha256": "0cebf443858f99553f5ab12e2e2d5f551aea30e7c6e1df1efc193e8befb3263f",
+      "bytes": 46004,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/invoice-generator-dashboard/components/app-sidebar.tsx",
+      "target": "components/watermelon/invoice-generator-dashboard/components/app-sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "3d410aaf9077e0f6d1dfb4caa6a3140a671ff3e167919f3f8107a408bbcf1caf",
+      "bytes": 6644
+    },
+    {
+      "path": "src/components/dashboards/invoice-generator-dashboard/components/mode-toggle.tsx",
+      "target": "components/watermelon/invoice-generator-dashboard/components/mode-toggle.tsx",
+      "type": "registry:component",
+      "sha256": "079b1dd1472201dafb7b6ecfd858d6e4dffc5c7ddf1918a1d84e8e9ced31122f",
+      "bytes": 903
+    },
+    {
+      "path": "src/components/dashboards/invoice-generator-dashboard/components/search-form.tsx",
+      "target": "components/watermelon/invoice-generator-dashboard/components/search-form.tsx",
+      "type": "registry:component",
+      "sha256": "cf119aa6b4677487545d4c01170cabbc4baf51f3e4187ca2bc5555563ed41c0f",
+      "bytes": 961
+    },
+    {
+      "path": "src/components/dashboards/invoice-generator-dashboard/components/site-header.tsx",
+      "target": "components/watermelon/invoice-generator-dashboard/components/site-header.tsx",
+      "type": "registry:component",
+      "sha256": "21895f8a14e95e2c081fa2c79877b0849afa54daed5914167c1c8092c0a44696",
+      "bytes": 5058
+    },
+    {
+      "path": "src/components/dashboards/invoice-generator-dashboard/components/version-switcher.tsx",
+      "target": "components/watermelon/invoice-generator-dashboard/components/version-switcher.tsx",
+      "type": "registry:component",
+      "sha256": "01f4c369c8fdf40a28805acb73163744bbd2ba54ad91925a04168eaebfc31952",
+      "bytes": 1986
+    },
+    {
+      "path": "src/components/dashboards/invoice-generator-dashboard/dashboardLayout.tsx",
+      "target": "components/watermelon/invoice-generator-dashboard/dashboardLayout.tsx",
+      "type": "registry:component",
+      "sha256": "bcd62c71fe508d200bda478abf272149e6d8921e46b3cafda3f403c91794e458",
+      "bytes": 865
+    },
+    {
+      "path": "src/components/dashboards/invoice-generator-dashboard/data.ts",
+      "target": "components/watermelon/invoice-generator-dashboard/data.ts",
+      "type": "registry:component",
+      "sha256": "d3be1f30a9a1fa837cfd82910f1c6ffeec6eb7821fd0bdab0bfa05ad212659e4",
+      "bytes": 2101
+    },
+    {
+      "path": "src/components/dashboards/invoice-generator-dashboard/demo.tsx",
+      "target": "components/watermelon/invoice-generator-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "5863c71ada0e19868d32df6530ceeae60de7cfcb9ff7c9579d2d7b526a9424ec",
+      "bytes": 931
+    },
+    {
+      "path": "src/components/dashboards/invoice-generator-dashboard/invoicePageView.tsx",
+      "target": "components/watermelon/invoice-generator-dashboard/invoicePageView.tsx",
+      "type": "registry:component",
+      "sha256": "932e707713d7c7accba55aea978925a94046da5a7ac7e52be41b8fe91fe6f0d3",
+      "bytes": 21895
+    }
+  ],
+  "dependencies": [
+    "@radix-ui/react-dialog",
+    "@radix-ui/react-dropdown-menu",
+    "@radix-ui/react-label",
+    "@radix-ui/react-select",
+    "@radix-ui/react-separator",
+    "@radix-ui/react-slot",
+    "@radix-ui/react-tooltip",
+    "class-variance-authority",
+    "lucide-react",
+    "next-themes"
+  ],
+  "registryDependencies": [
+    "breadcrumb",
+    "button",
+    "dialog",
+    "dropdown-menu",
+    "input",
+    "label",
+    "popover",
+    "select",
+    "separator",
+    "sheet",
+    "sidebar",
+    "skeleton",
+    "textarea",
+    "tooltip"
+  ],
+  "imports": [
+    "../data",
+    "./components/app-sidebar",
+    "./components/site-header",
+    "./dashboardLayout",
+    "./data",
+    "./invoicePageView",
+    "./mode-toggle",
+    "./search-form",
+    "@/components/ui/breadcrumb",
+    "@/components/ui/button",
+    "@/components/ui/dialog",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/popover",
+    "@/components/ui/select",
+    "@/components/ui/separator",
+    "@/components/ui/sidebar",
+    "@/components/ui/textarea",
+    "@/lib/utils",
+    "lucide-react",
+    "next-themes",
+    "react"
+  ],
+  "propsDeclarations": [
+    "interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {\n  onNavigate?: (view: string) => void;\n  currentView?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/invoice-generator-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

@@ -1,0 +1,53 @@
+{
+  "id": "watermelon-90d67feadda4fade",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/alert-dialog-03.json",
+      "sha256": "4a6faedbf72417d1515196615aaa94a022f10a5eead781c6acc9aaabcaecbcf2",
+      "bytes": 2348,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/alert-dialog-03.tsx",
+      "target": "components/ui/alert-dialog-03.tsx",
+      "type": "registry:ui",
+      "sha256": "7e1853a64e7e5b2f39c3beaf45ac887f52f85429ee4b35bb5d3aea924bd2f211",
+      "bytes": 1843
+    }
+  ],
+  "dependencies": [
+    "@aliimam/icons"
+  ],
+  "registryDependencies": [
+    "alert-dialog",
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/alert-dialog",
+    "@/components/ui/button",
+    "@aliimam/icons"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/alert-dialog-03.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

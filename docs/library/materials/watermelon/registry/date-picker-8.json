@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "date-picker-8",
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "date-picker"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/date-picker/date-picker-8.tsx",
+      "content": "\nimport { useId } from 'react';\nimport type { FC } from 'react';\nimport { Input } from '@/components/ui/input';\nimport { Label } from '@/components/ui/label';\n\nconst initialTimeValue = '10:10:00' as const;\n\nconst DatePicker8: FC = () => {\n  const id = useId();\n\n  return (\n    <div className=\"w-full max-w-xs space-y-2\">\n      <Label htmlFor={id} className=\"px-1 text-sm font-medium\">\n        Pick time\n      </Label>\n      <Input\n        type=\"time\"\n        id={id}\n        step={1}\n        defaultValue={initialTimeValue}\n        className=\"h-11 rounded-2xl border-border/60 bg-background shadow-xs appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none\"\n      />\n    </div>\n  );\n};\n\nexport default DatePicker8;\n",
+      "type": "registry:ui",
+      "target": "components/ui/date-picker-8.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

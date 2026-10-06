@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-09-29T16:31:43.258Z",
+  "fictional": true,
+  "model": "qwen3.5:9b-q8_0",
+  "specOrigin": "model",
+  "modelSelection": {
+    "recipe": "featured",
+    "design": {
+      "palette": "midnight",
+      "typography": "sans",
+      "layout": "studio"
+    },
+    "heroStyle": "spotlight",
+    "projectIndex": "bento",
+    "reason": "로봇 엔지니어의 전문성을 어두운 배경과 주황 광원 (spotlight, midnight) 으로 강조하고, 세 가지 프로젝트 (경로 계획, 그리퍼, 현장 시험) 를 시각적 위중도가 다른 카드 (bento) 로 명확하게 구분하여 기술적 근거를 직관적으로 제시합니다."
+  },
+  "validationAttempts": [
+    {
+      "valid": true,
+      "outputSha256": "b5f4dcb59cc7f5a83c9dc8e0bf2fd1bd2f39e1d608e114fff121b68a0f1e6849"
+    }
+  ],
+  "inputSha256": "b1b28874b5fc2f7240cbfcf862072c5ba0a29f64213b4d2dca5ed5fa78b77bf7",
+  "planSha256": "1851a27defa7f6591d85246559722104da11aebbb6875e3973c8e0ea1be570a7",
+  "specSha256": "281fc55416a62ad71ba65883bd956fb7d17bc09fd5c2da230e14d51a9d364020",
+  "htmlSha256": "e95e3056262fa709879ec8868a2a167140ee62bc484c4564206c48b45bc1b30b",
+  "modelOutputSha256": "b5f4dcb59cc7f5a83c9dc8e0bf2fd1bd2f39e1d608e114fff121b68a0f1e6849",
+  "assets": {
+    "./assets/portfolio-robot-route.svg": {
+      "sha256": "efece66d22e9d27570acb269c782a9ffe8a9d3b120ba60315b416d127256195e",
+      "bytes": 3301
+    },
+    "./assets/portfolio-robot-gripper.svg": {
+      "sha256": "f4fee24e013f0182c897edc18465907e459c3ef6cec1a004bcca09c9c7df68de",
+      "bytes": 2803
+    },
+    "./assets/portfolio-robot-aisle.svg": {
+      "sha256": "30641cdbba3685c74c6f99a9a505aed85f28be1a9be5d1532cef017ad35920a2",
+      "bytes": 5866
+    }
+  },
+  "previewComparison": null,
+  "comparison": null
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "badge-7",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "badge"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/badge/badge-7.tsx",
+      "content": "import { Badge } from \"@/components/ui/badge\";\n\nconst Badge7 = () => {\n  return (\n    <Badge variant=\"ghost\">\n      <span className=\"bg-primary size-2 rounded-full\" aria-hidden=\"true\" />\n      Dot Badge\n    </Badge>\n  );\n};\n\nexport default Badge7;\n",
+      "type": "registry:ui",
+      "target": "components/ui/badge-7.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

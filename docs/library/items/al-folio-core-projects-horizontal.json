@@ -1,0 +1,50 @@
+{
+  "id": "al-folio-core-projects-horizontal",
+  "sourceUrl": "https://github.com/al-org-dev/al-folio-core/blob/fa58be03acad50a4a1ec566dc88280e73ab75d18/_includes/projects_horizontal.liquid",
+  "sourceRevision": "fa58be03acad50a4a1ec566dc88280e73ab75d18",
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "원본 데이터 구조 검토",
+  "roleMethod": "source_review",
+  "materials": [
+    {
+      "path": "./library/materials/al-folio-core/projects-horizontal.json",
+      "sha256": "733ff1d75ccf095acb0ccb27c387d24d8c1ac43ee62e759627d9bddd919f6740",
+      "bytes": 1866,
+      "label": "원본 코드 묶음",
+      "kind": "registry_source"
+    },
+    {
+      "path": "./library/materials/al-folio-core/LICENSE.txt",
+      "sha256": "24a7406c4f73258556a4ab05a631b089bf646cd0b64cf853de112f7c79e74281",
+      "bytes": 1086,
+      "label": "MIT 라이선스 원문",
+      "kind": "license"
+    }
+  ],
+  "observations": [
+    "Liquid와 Bootstrap 클래스를 제품 컴포넌트로 이식해야 합니다.",
+    "이미지 없는 항목의 본문 폭을 확인해야 합니다."
+  ],
+  "inputs": [
+    "title",
+    "description",
+    "img?",
+    "url"
+  ],
+  "framework": "Jekyll / Liquid",
+  "sourceLicense": "https://github.com/al-org-dev/al-folio-core/blob/fa58be03acad50a4a1ec566dc88280e73ab75d18/LICENSE",
+  "acquisitionStatus": "source_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "_includes/projects_horizontal.liquid",
+      "sha256": "0e15e46185ab819e275d2e435afc9d2896e373f6c874dcf624dcbc51d2f98e59",
+      "bytes": 1489
+    }
+  ],
+  "usageNote": "고정 버전의 지정 파일 묶음입니다. 완전한 실행 의존성 묶음은 아니며 설치·렌더링 전입니다."
+}

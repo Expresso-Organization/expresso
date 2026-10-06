@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "dropdown-menu-2",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "dropdown-menu",
+    "button"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/dropdown-menu/dropdown-menu-2.tsx",
+      "content": "import {\n  FaUserCircle,\n  FaWallet,\n  FaShieldAlt,\n  FaMoon,\n  FaSignOutAlt,\n} from 'react-icons/fa';\n\nimport { Button } from '@/components/ui/button';\nimport {\n  DropdownMenu,\n  DropdownMenuContent,\n  DropdownMenuItem,\n  DropdownMenuTrigger,\n} from '@/components/ui/dropdown-menu';\n\nconst listItems = [\n  {\n    icon: FaUserCircle,\n    label: 'View Profile',\n    desc: 'See your public profile',\n  },\n  {\n    icon: FaWallet,\n    label: 'Wallet',\n    desc: 'Manage balance & payments',\n  },\n  {\n    icon: FaShieldAlt,\n    label: 'Security',\n    desc: 'Password & 2FA settings',\n  },\n  {\n    icon: FaMoon,\n    label: 'Appearance',\n    desc: 'Theme & display',\n  },\n  {\n    icon: FaSignOutAlt,\n    label: 'Logout',\n    desc: 'End your session',\n    danger: true,\n  },\n];\n\nconst DropdownMenu2 = () => {\n  return (\n    <DropdownMenu>\n      <DropdownMenuTrigger asChild>\n        <Button\n          variant=\"secondary\"\n          size=\"icon\"\n          className=\"overflow-hidden rounded-sm shadow-sm p-0\"\n        >\n          <img\n            src=\"https://github.com/t3dotgg.png\"\n            alt=\"User Avatar\"\n            className=\"h-full w-full object-cover\"\n          />\n        </Button>\n      </DropdownMenuTrigger>\n\n      <DropdownMenuContent className=\"w-72 p-0\" align='center'>\n        <div className=\"bg-muted relative p-2\">\n          <p className=\"text-sm font-semibold\">Welcome back</p>\n          <p className=\"text-muted-foreground text-xs\">\n            Manage your account & settings\n          </p>\n          <div className=\"bg-border absolute bottom-0 left-0 h-px w-full shadow-[inset_0px_-0.5px_0px_-2px_rgba(255,255,255,1),inset_0px_-0.0px_2px_0px_rgba(0,0,0,0.1)]\" />\n        </div>\n        <div className='flex flex-col px-0.5 pb-1'>\n          {listItems.map((item, index) => (\n            <DropdownMenuItem\n              key={index}\n              variant={item.danger ? 'destructive' : 'default'}\n              className={`mt-1 flex items-start gap-3 rounded-md p-2 ${\n                item.danger ? 'text-destructive' : ''\n              }`}\n            >\n              <item.icon className=\"mt-0.5 shrink-0 text-sm\" />\n              <div className=\"flex flex-col\">\n                <span className=\"text-sm\">{item.label}</span>\n                <span className=\"text-muted-foreground text-xs\">\n                  {item.desc}\n                </span>\n              </div>\n            </DropdownMenuItem>\n          ))}\n        </div>\n      </DropdownMenuContent>\n    </DropdownMenu>\n  );\n};\n\nexport default DropdownMenu2;\n",
+      "type": "registry:ui",
+      "target": "components/ui/dropdown-menu-2.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}
