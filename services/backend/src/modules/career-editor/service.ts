@@ -32,6 +32,7 @@ import {
 } from "./repository.js";
 import { AiProposalService } from "./ai-proposals.js";
 import type { AiProposalAdapter } from "./ai-adapter.js";
+import { projectCareerRecordPropertiesForRead } from "../career/index.js";
 
 type CreateRevisionInput = CareerRevision & { userId: string };
 
@@ -98,6 +99,7 @@ export class CareerDocumentService implements CareerDocumentApi {
     return inTransaction(this.context, async (tx) => {
       const record = await this.repository.record(userId, recordId, tx.session);
       if (!record) throw new CareerDocumentError(404, "career record not found");
+      const propertiesByRecordId = await projectCareerRecordPropertiesForRead(tx, userId, [record], tx.session);
       let snapshot = await this.repository.snapshot(recordId, tx.session);
       if (!snapshot) {
         const document = markdownToCareerDocument(record.bodyMd);
@@ -141,7 +143,7 @@ export class CareerDocumentService implements CareerDocumentApi {
           title: record.title,
           status: record.status,
           origin: record.origin,
-          properties: record.properties,
+          properties: propertiesByRecordId.get(record._id)!,
           bodyMd: record.bodyMd,
           version: record.version,
           updatedAt: record.updatedAt.toISOString(),

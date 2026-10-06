@@ -74,5 +74,33 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       expect(restored.document.content[0]?.text?.[0]?.text).toBe("원본");
       await expect(service.bootstrap(randomUUID(), recordId)).rejects.toMatchObject({ statusCode: 404 });
     }, 30_000);
+
+    it("bootstraps compatibility properties from canonical values", async () => {
+      const collections = mongoCollections(fixture.resource.db);
+      const category = await collections.careerCategories.findOne({ isSystem: true });
+      const definition = category?.propertyDefinitions?.find(
+        (candidate) => candidate.type === "text" && candidate.deletedAt === null,
+      );
+      if (!category || !definition) throw new Error("text PropertyDefinition fixture is missing");
+      const canonicalRecordId = randomUUID();
+      await collections.careerRecords.insertOne({
+        _id: canonicalRecordId,
+        userId,
+        categoryId: category._id,
+        title: "canonical bootstrap",
+        status: "draft",
+        origin: "manual",
+        properties: { [definition.key]: "stale legacy value" },
+        propertyValues: [{ propertyDefinitionId: definition.id, type: "text", value: "canonical value" }],
+        bodyMd: "",
+        version: 1,
+        updatedAt: new Date(),
+        deletedAt: null,
+      });
+
+      const bootstrap = await service.bootstrap(userId, canonicalRecordId);
+
+      expect(bootstrap.record.properties).toEqual({ [definition.key]: "canonical value" });
+    });
   },
 );

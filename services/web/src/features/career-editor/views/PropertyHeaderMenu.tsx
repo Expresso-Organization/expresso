@@ -11,7 +11,6 @@ import { createPortal } from "react-dom";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 
 import { Icon } from "@/components/ui/Icon";
-import { PropertySelect } from "@/features/career-editor/properties/PropertySelect";
 import { nextNumberedPropertyName, propertyNameBase } from "@/features/career-editor/properties/property-name";
 
 import styles from "./views.module.css";
@@ -268,7 +267,7 @@ export function PropertyHeaderMenu({ category, definition, view, sortDirection, 
     <div className={styles.columnMenuTypeRow}>
       <Icon name="arrows-left-right" size={17} />
       <span>유형</span>
-      <PropertySelect label="속성 유형" value={editableType ? definition.type : ""} placeholder={meta.label} disabled={!typeEditable || busy} options={TYPES.map((item) => ({ value: item.value, label: item.label }))} onChange={(type) => void changeType(type)} />
+      <span>{meta.label}</span>
     </div>
     <div className={styles.columnMenuSection}>
       <MenuAction icon="funnel" disabled={busy} onClick={() => { onViewChange({ ...view, filter: { propertyId: definition.id, operator: "is_not_empty", operand: null } }); setOpen(false); }}>필터</MenuAction>
@@ -281,7 +280,6 @@ export function PropertyHeaderMenu({ category, definition, view, sortDirection, 
       <MenuAction icon="arrow-line-left" disabled={busy || category.isSystem} onClick={() => void createProperty("insert-left")}>왼쪽에 삽입</MenuAction>
       <MenuAction icon="arrow-line-right" disabled={busy || category.isSystem} onClick={() => void createProperty("insert-right")}>오른쪽에 삽입</MenuAction>
       <MenuAction icon="copy" disabled={busy || category.isSystem || definition.system} onClick={() => void createProperty("duplicate")}>속성 복제</MenuAction>
-      <MenuAction icon="trash" danger disabled={busy || !schemaEditable} onClick={() => void requestDelete()}>속성 삭제</MenuAction>
     </div>
     {pending ? <div className={styles.columnMenuConfirm} role="alertdialog" aria-label={pending.title}>
       <strong>{pending.title}</strong>

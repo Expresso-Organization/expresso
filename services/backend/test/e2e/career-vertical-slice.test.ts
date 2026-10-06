@@ -140,8 +140,7 @@ describeWithDatabase("career authenticated vertical slice", () => {
     const created = (await createdResponse.json()) as {
       data: { id: string; version: number; bodyMd: string };
     };
-    const firstEtag = createdResponse.headers.get("etag");
-    expect(firstEtag).toBe('"v1"');
+    expect(createdResponse.headers.get("etag")).toBe('"v1"');
 
     const replayResponse = await api("/v1/career/records", {
       method: "POST",
@@ -153,24 +152,8 @@ describeWithDatabase("career authenticated vertical slice", () => {
       created.data.id,
     );
 
-    const updatedBody = `${recordBody.bodyMd}\nNo downtime was observed.`;
-    const updatedResponse = await api(`/v1/career/records/${created.data.id}`, {
-      method: "PATCH",
-      headers: { "if-match": firstEtag ?? "" },
-      body: { bodyMd: updatedBody },
-    });
-    expect(updatedResponse.status).toBe(200);
-    expect(updatedResponse.headers.get("etag")).toBe('"v2"');
-
-    const staleResponse = await api(`/v1/career/records/${created.data.id}`, {
-      method: "PATCH",
-      headers: { "if-match": firstEtag ?? "" },
-      body: { title: "stale overwrite" },
-    });
-    expect(staleResponse.status).toBe(412);
-
     const quote = "PostgreSQL";
-    const start = updatedBody.indexOf(quote);
+    const start = recordBody.bodyMd.indexOf(quote);
     const skillResponse = await api("/v1/career/skills/recompute", {
       method: "POST",
       body: {
@@ -238,7 +221,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career authenticated ver
     return fetch(`${origin}${path}`, { method: options.method ?? "GET", headers: { authorization: `Bearer ${options.token ?? firstAccessToken}`, ...(options.body === undefined ? {} : { "content-type": "application/json" }), ...options.headers }, ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }) });
   }
 
-  it("runs record evidence, optimistic locking, and cross-user isolation over HTTP", async () => {
+  it("runs record evidence and cross-user isolation over HTTP", async () => {
     const categories = await (await api("/v1/career/categories")).json() as { data: Array<{ id: string; key: string }> };
     const categoryId = categories.data.find(({ key }) => key === "experience")?.id;
     if (!categoryId) throw new Error("experience category missing");
@@ -246,12 +229,8 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career authenticated ver
     const createdResponse = await api("/v1/career/records", { method: "POST", headers: { "idempotency-key": "mongo-vertical-record-0001" }, body });
     expect(createdResponse.status).toBe(201);
     const created = await createdResponse.json() as { data: { id: string } };
-    const etag = createdResponse.headers.get("etag") ?? "";
     expect((await api("/v1/career/records", { method: "POST", headers: { "idempotency-key": "mongo-vertical-record-0001" }, body })).status).toBe(200);
-    const updatedBody = `${body.bodyMd}\nNo downtime was observed.`;
-    expect((await api(`/v1/career/records/${created.data.id}`, { method: "PATCH", headers: { "if-match": etag }, body: { bodyMd: updatedBody } })).status).toBe(200);
-    expect((await api(`/v1/career/records/${created.data.id}`, { method: "PATCH", headers: { "if-match": etag }, body: { title: "stale overwrite" } })).status).toBe(412);
-    const quote = "MongoDB"; const start = updatedBody.indexOf(quote);
+    const quote = "MongoDB"; const start = body.bodyMd.indexOf(quote);
     const skillResponse = await api("/v1/career/skills/recompute", { method: "POST", body: { name: "MongoDB", evidence: [{ recordId: created.data.id, span: { source: "body_md", start, end: start + quote.length, quote } }] } });
     expect(skillResponse.status).toBe(200);
     const skill = await skillResponse.json() as { data: { id: string } };

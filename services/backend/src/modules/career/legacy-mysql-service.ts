@@ -19,7 +19,6 @@ import {
   type ListCareerRecordsQuery,
   type RecomputeCareerSkill,
   type SaveCareerProfile,
-  type UpdateCareerRecord,
 } from "@expresso/contracts";
 import type { SqlTag, JSONValue } from "../../platform/legacy-mysql.js";
 
@@ -585,46 +584,6 @@ export class CareerService {
     const record = rows[0];
     if (!record) throw new CareerError(404, "career record not found");
     return mapRecord(record);
-  }
-
-  async updateRecord(
-    userId: string,
-    recordId: string,
-    expectedVersion: number,
-    input: UpdateCareerRecord,
-  ) {
-    return this.#sql.begin(async (transaction) => {
-      const rows = await transaction<(RecordRow & { property_schema: CareerPropertySchema })[]>`
-        select record.*, category.property_schema
-        from record
-        join category on category.id = record.category_id
-        where record.id = ${recordId}
-          and record.user_id = ${userId}
-          and record.deleted_at is null
-      `;
-      const existing = rows[0];
-      if (!existing) throw new CareerError(404, "career record not found");
-      if (existing.version !== expectedVersion) {
-        throw new CareerError(412, "career record version is stale");
-      }
-      const properties = input.properties ?? existing.properties;
-      validateCareerProperties(existing.property_schema, properties);
-
-      const updatedRows = await transaction<RecordRow[]>`
-        update record
-        set title = ${input.title ?? existing.title},
-            properties = ${transaction.json(properties as JSONValue)},
-            body_md = ${input.bodyMd ?? existing.body_md}
-        where id = ${recordId}
-          and user_id = ${userId}
-          and deleted_at is null
-          and version = ${expectedVersion}
-        returning *
-      `;
-      const updated = updatedRows[0];
-      if (!updated) throw new CareerError(412, "career record version is stale");
-      return mapRecord(updated);
-    });
   }
 
   async createView(

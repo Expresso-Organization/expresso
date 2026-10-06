@@ -1,9 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { MongoClient } from "mongodb";
+import { MongoClient, type Document } from "mongodb";
 import { migrateMongo } from "@expresso/database";
 import { createMongoResource, type MongoResource } from "../../src/platform/mongodb.js";
 
-export async function createMongoFixture(label: string): Promise<{ resource: MongoResource; dispose(): Promise<void> }> {
+export async function createMongoFixture(
+  label: string,
+  options: { migrationTargetVersion?: string } = {},
+): Promise<{ resource: MongoResource; dispose(): Promise<void> }> {
   const adminUrl = process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL;
   if (!adminUrl) throw new Error("TEST_MONGODB_ADMIN_URL or TEST_MONGODB_URL is required");
   const databaseName = `expresso_test_${label.replace(/[^a-z0-9]/gi, "").slice(0, 20)}_${randomUUID().replaceAll("-", "")}`;
@@ -15,7 +18,23 @@ export async function createMongoFixture(label: string): Promise<{ resource: Mon
     finally { try { await admin.db(databaseName).dropDatabase(); } finally { await admin.close(); } }
   })();
   try {
-    await migrateMongo({ databaseUrl: adminUrl, databaseName });
+    if (!options.migrationTargetVersion || options.migrationTargetVersion >= "0012") {
+      await admin.db(databaseName).collection<Document & { _id: string }>("career_property_migration_journal").insertOne({
+        _id: "0012:compatibility-writer-canary",
+        migration: "0012_career_property_values_backfill",
+        kind: "execution_gate",
+        deploymentVersion: "isolated-test-fixture",
+        verifiedAt: new Date(),
+        checkedWrites: 1,
+        mismatches: 0,
+        state: "verified",
+      });
+    }
+    await migrateMongo({
+      databaseUrl: adminUrl,
+      databaseName,
+      ...(options.migrationTargetVersion ? { targetVersion: options.migrationTargetVersion } : {}),
+    });
     resource = createMongoResource(process.env.TEST_MONGODB_RUNTIME_URL ?? adminUrl, { databaseName });
     return { resource, dispose };
   } catch (error) { await dispose(); throw error; }

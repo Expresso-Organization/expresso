@@ -96,13 +96,16 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
 
   it("applies selected property changes atomically and emits computation work", async () => {
     const propertyId = randomUUID(); const propertyKey = "note";
-    await mongoCollections(fixture.resource.db).careerCategories.updateOne({ _id: categoryId }, { $set: { propertySchemaV2: [{ id: propertyId, key: propertyKey, name: "메모", type: "text", required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null }] } });
+    const definition = { id: propertyId, key: propertyKey, name: "메모", type: "text" as const, required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null };
+    await mongoCollections(fixture.resource.db).careerCategories.updateOne({ _id: categoryId }, { $set: { propertySchemaV2: [definition], propertyDefinitions: [definition] } });
     const career = new CareerService(fixture.resource); const propertyRecordId = (await career.createRecord(userId, randomUUID(), { categoryId, title: "프로퍼티", properties: {}, bodyMd: "본문" })).record.id;
     const bootstrap = await documentService.bootstrap(userId, propertyRecordId); const blockId = bootstrap.document.content[0]!.id;
     const adapter: AiProposalAdapter = { async generate() { return { summary: "프로퍼티", commands: [], propertyChanges: [{ propertyId, previousValue: null, nextValue: { type: "text", value: "AI 메모" } }] }; } };
     const local = new AiProposalService(fixture.resource, documentService, adapter); const proposal = await local.create(userId, propertyRecordId, { selection: { blockIds: [blockId] }, prompt: "메모" });
     await local.apply(userId, propertyRecordId, { recordId: propertyRecordId, proposalId: proposal.proposalId, expectedDocumentVersion: bootstrap.documentVersion, commandIndexes: [], propertyChangeIndexes: [0] });
-    expect((await mongoCollections(fixture.resource.db).careerRecords.findOne({ _id: propertyRecordId }))?.properties[propertyKey]).toEqual({ type: "text", value: "AI 메모" });
+    const stored = await mongoCollections(fixture.resource.db).careerRecords.findOne({ _id: propertyRecordId });
+    expect(stored?.properties[propertyKey]).toEqual({ type: "text", value: "AI 메모" });
+    expect(stored?.propertyValues).toEqual([{ propertyDefinitionId: propertyId, type: "text", value: "AI 메모" }]);
     expect(await mongoCollections(fixture.resource.db).outboxEvents.countDocuments({ topic: "career.computation", "payload.recordId": propertyRecordId, "payload.changedPropertyIds": propertyId })).toBe(1);
   });
 });

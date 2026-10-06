@@ -5,6 +5,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
+import { createEmptyCanonicalBlockBody } from "../career/index.js";
 import { InterviewError } from "./public.js";
 
 const duplicate = (error: unknown) => (error as { code?: number })?.code === 11000;
@@ -80,7 +81,7 @@ export async function saveMongoAnswer(context: MongoContext, userId: string, ses
       }
       const category = await db.careerCategories.findOne({ key: "experience", isSystem: true, userId: null }, options);
       if (!category) throw new Error("experience category missing");
-      const record: CareerRecordDoc = { _id: randomUUID(), userId, categoryId: category._id, title: fallbackTitle(input.transcript), status: "draft", origin: "interview", properties: {}, bodyMd: input.transcript, version: 1, updatedAt: now, deletedAt: null, purgeAfter: null, referenceVersion: 0 };
+      const record: CareerRecordDoc = { _id: randomUUID(), userId, categoryId: category._id, title: fallbackTitle(input.transcript), status: "draft", origin: "interview", properties: {}, propertyValues: [], blockBody: createEmptyCanonicalBlockBody(), bodyMd: input.transcript, version: 1, updatedAt: now, deletedAt: null, purgeAfter: null, referenceVersion: 0 };
       const answer: AnswerDoc = { _id: randomUUID(), userId, questionId, inputType: input.inputType, transcript: input.transcript, createdRecordId: record._id, inputIdempotencyKey: idempotencyKey, requestHash: hash, version: 1, recordVersion: 1, updatedAt: now };
       await db.careerRecords.insertOne(record, options);
       await db.answers.insertOne(answer, options);

@@ -6,7 +6,7 @@ import {
   TimestampSchema,
   UuidSchema,
 } from "./common.js";
-import { CareerPropertyDefinitionV2Schema, CareerPropertyValueV2Schema } from "./career-properties.js";
+import { CareerPropertyDefinitionV2Schema, CareerPropertyValueV2Schema, WritableCareerPropertyValueSchema } from "./career-properties.js";
 
 export const CareerViewTypeSchema = z.enum([
   "table",
@@ -103,6 +103,8 @@ export const CareerRecordSchema = z.strictObject({
   status: CareerRecordStatusSchema,
   origin: CareerRecordOriginSchema,
   properties: CareerPropertiesSchema,
+  /** canonical PropertyValue snapshot입니다. 필드가 없을 때만 legacy properties를 읽습니다. */
+  propertyValues: z.array(WritableCareerPropertyValueSchema).max(50).optional(),
   /** 수식·롤업 Worker가 확정한 읽기 전용 projection입니다. 내부 계산 메타데이터는 포함하지 않습니다. */
   computedProperties: z.record(z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/), CareerPropertyValueV2Schema).optional(),
   bodyMd: z.string().max(200_000),
@@ -122,17 +124,6 @@ export const CreateCareerRecordSchema = z.strictObject({
   properties: CareerPropertiesSchema.default({}),
   bodyMd: z.string().max(200_000).default(""),
 });
-
-export const UpdateCareerRecordSchema = z
-  .strictObject({
-    title: z.string().trim().max(300).optional(),
-    status: CareerRecordStatusSchema.optional(),
-    properties: CareerPropertiesSchema.optional(),
-    bodyMd: z.string().max(200_000).optional(),
-  })
-  .refine((value) => Object.keys(value).length > 0, {
-    message: "at least one record field must be supplied",
-  });
 
 export const CareerRecordIdParamsSchema = z.strictObject({
   recordId: UuidSchema,
@@ -302,7 +293,6 @@ export type CareerRecordSummary = z.infer<typeof CareerRecordSummarySchema>;
 export type CareerRecordListResponse = z.infer<
   typeof CareerRecordListResponseSchema
 >;
-export type UpdateCareerRecord = z.infer<typeof UpdateCareerRecordSchema>;
 export type CreateCareerView = z.infer<typeof CreateCareerViewSchema>;
 export type RecomputeCareerSkill = z.infer<typeof RecomputeCareerSkillSchema>;
 export type CareerSkill = z.infer<typeof CareerSkillSchema>;

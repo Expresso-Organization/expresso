@@ -8,6 +8,8 @@ export interface MongoMigrateOptions {
   databaseName?: string;
   /** 동일 실행기의 실패·복구 검증과 명시적인 마이그레이션 등록에 사용합니다. */
   migrations?: readonly MongoMigration[];
+  /** 이 버전까지만 적용합니다. 생략하면 등록된 모든 migration을 적용합니다. */
+  targetVersion?: string;
 }
 
 export interface MigrateResult {
@@ -30,9 +32,16 @@ export async function migrateMongo(options: MongoMigrateOptions): Promise<Migrat
       }
       versions.add(migration.version); lastVersion = migration.version;
     }
+    const targetIndex = options.targetVersion === undefined
+      ? migrations.length - 1
+      : migrations.findIndex(({ version }) => version === options.targetVersion);
+    if (options.targetVersion !== undefined && targetIndex < 0) {
+      throw new Error(`Unknown migration target version: ${options.targetVersion}`);
+    }
+    const selectedMigrations = migrations.slice(0, targetIndex + 1);
     const lease = await acquireMigrationLease(db);
     const history = db.collection<SchemaMigrationDoc>("schema_migrations");
-    for (const migration of migrations) {
+    for (const migration of selectedMigrations) {
       await renewMigrationLease(db, lease.token);
       const previous = await history.findOne({ _id: migration.version });
       const label = `${migration.version}_${migration.name}`;

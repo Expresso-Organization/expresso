@@ -5,6 +5,7 @@ import { createEmptyCareerDocument } from "./document.js";
 describe("career edit commands", () => {
   it("applies nested insert, replace, move, text, and delete immutably", () => {
     const document = createEmptyCareerDocument();
+    document.content[0]!.type = "blockquote";
     const first = { id: crypto.randomUUID(), type: "paragraph", attrs: {}, text: [{ text: "first" }] };
     const second = { id: crypto.randomUUID(), type: "paragraph", attrs: {}, text: [{ text: "second" }] };
     document.content[0]!.content = [first, second];

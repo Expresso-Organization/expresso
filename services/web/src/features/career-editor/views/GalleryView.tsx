@@ -1,9 +1,9 @@
 "use client";
 
-import type { CareerRecord, CareerRecordListItem } from "@expresso/contracts";
+import type { CareerCategory, CareerRecord, CareerRecordListItem } from "@expresso/contracts";
 
 import type { CareerViewRendererProps } from "./view-types";
-import { displayValue, keyboardActivate, propertyKey, rawValue } from "./view-types";
+import { displayValue, keyboardActivate, propertyDefinition, propertyDefinitionByKey, rawValue } from "./view-types";
 import styles from "./views.module.css";
 
 const COVER_BARS = [18, 30, 24, 41, 33, 52, 45, 61, 49, 70, 58, 76, 66, 82];
@@ -12,15 +12,17 @@ function plainText(record: CareerRecord): string {
   return record.bodyMd.replace(/[#*_`>\[\]]/g, "").replace(/\s+/g, " ").trim();
 }
 
-function textProperty(record: CareerRecord, key: string): string | null {
-  const value = rawValue(record, key);
+function textProperty(record: CareerRecord, category: CareerCategory, key: string): string | null {
+  const definition = propertyDefinitionByKey(category, key);
+  const value = definition ? rawValue(record, definition) : null;
   if (typeof value === "string" && value.trim()) return value.trim();
   if (typeof value === "number") return String(value);
   return null;
 }
 
-function projectTags(record: CareerRecord): string[] {
-  const value = rawValue(record, "technologies");
+function projectTags(record: CareerRecord, category: CareerCategory): string[] {
+  const definition = propertyDefinitionByKey(category, "technologies");
+  const value = definition ? rawValue(record, definition) : null;
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => typeof item === "string" && item.trim() ? [item.trim()] : []).slice(0, 4);
 }
@@ -50,14 +52,14 @@ function ProjectCover({ index, ai }: { index: number; ai: boolean }) {
 }
 
 function ProjectGallery(props: CareerViewRendererProps) {
-  const missingOutcome = props.records.filter((record) => !textProperty(record, "outcome"));
+  const missingOutcome = props.records.filter((record) => !textProperty(record, props.category, "outcome"));
   return (
     <section className={styles.projectGalleryRegion} aria-label="프로젝트 갤러리 영역">
       <ul className={styles.projectGallery} aria-label="커리어 갤러리">
         {props.records.map((record, index) => {
           const summary = plainText(record);
-          const tags = projectTags(record);
-          const outcome = textProperty(record, "outcome");
+          const tags = projectTags(record, props.category);
+          const outcome = textProperty(record, props.category, "outcome");
           return (
             <li key={record.id}>
               <article className={record.id === props.openId ? styles.projectCardActive : styles.projectCard}>
@@ -85,20 +87,18 @@ function ProjectGallery(props: CareerViewRendererProps) {
           <button type="button" className={styles.projectAdd} onClick={() => props.onCreate()}>
             <span aria-hidden="true">＋</span>
             <strong>프로젝트 추가</strong>
-            <small>또는 AI로 만들기</small>
           </button>
         </li>
       </ul>
       <footer className={styles.projectGalleryFooter}>
         <span>{props.records.length}개 · 성과 수치 없음 {missingOutcome.length}</span>
-        <button type="button" disabled={!missingOutcome[0]} onClick={() => missingOutcome[0] && props.onFillMissing(missingOutcome[0].id)}>비어 있는 성과 채우기</button>
       </footer>
     </section>
   );
 }
 
 function GenericGallery(props: CareerViewRendererProps) {
-  return <ul className={styles.gallery} aria-label="커리어 갤러리">{props.records.map((record) => { const preview=props.view.visiblePropertyIds.flatMap((id)=>{const key=propertyKey(props.category,id);return key&&key!=="title"?[displayValue(rawValue(record,key))]:[]}).filter((value)=>value!=="—").slice(0,3); return <li key={record.id}><article className={record.id === props.openId ? styles.cardActive : styles.card} tabIndex={record.id === props.activeId ? 0 : -1} onKeyDown={(event) => keyboardActivate(event, record.id, props.records, props.onActivate)}><div className={styles.cover} aria-hidden="true"><span>{record.title.slice(0, 1) || "E"}</span><small>{props.category.name}</small></div><label><input aria-label={`${record.title || "제목 없음"} 선택`} type="checkbox" checked={props.selectedIds.has(record.id)} onChange={() => props.onToggle(record.id)} /> 선택</label><button type="button" onClick={() => props.onActivate(record.id)}><strong>{record.title || "제목 없음"}</strong><span className={styles.cardSummary}>{plainText(record).slice(0,100)||"내용을 채워 주세요."}</span><span className={styles.cardTags}>{preview.map((item)=><small key={item}>{item}</small>)}</span></button></article></li>})}</ul>;
+  return <ul className={styles.gallery} aria-label="커리어 갤러리">{props.records.map((record) => { const preview=props.view.visiblePropertyIds.flatMap((id)=>{const definition=propertyDefinition(props.category,id);return definition&&definition.key!=="title"?[displayValue(rawValue(record,definition))]:[]}).filter((value)=>value!=="—").slice(0,3); return <li key={record.id}><article className={record.id === props.openId ? styles.cardActive : styles.card} tabIndex={record.id === props.activeId ? 0 : -1} onKeyDown={(event) => keyboardActivate(event, record.id, props.records, props.onActivate)}><div className={styles.cover} aria-hidden="true"><span>{record.title.slice(0, 1) || "E"}</span><small>{props.category.name}</small></div><label><input aria-label={`${record.title || "제목 없음"} 선택`} type="checkbox" checked={props.selectedIds.has(record.id)} onChange={() => props.onToggle(record.id)} /> 선택</label><button type="button" onClick={() => props.onActivate(record.id)}><strong>{record.title || "제목 없음"}</strong><span className={styles.cardSummary}>{plainText(record).slice(0,100)||"내용을 채워 주세요."}</span><span className={styles.cardTags}>{preview.map((item)=><small key={item}>{item}</small>)}</span></button></article></li>})}</ul>;
 }
 
 export function GalleryView(props: CareerViewRendererProps) {

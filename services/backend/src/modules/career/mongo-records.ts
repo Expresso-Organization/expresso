@@ -1,16 +1,18 @@
 import { createHash } from "node:crypto";
 import { CareerPropertyValueV2Schema, CareerRecordSchema, CareerRecordListResponseSchema, ListCareerRecordsQuerySchema, type CreateCareerRecord, type ListCareerRecordsQuery } from "@expresso/contracts";
-import { mongoCollections, type CareerRecordDoc } from "@expresso/database";
+import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc } from "@expresso/database";
 import type { Document } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { CareerError } from "./errors.js";
+import { projectCanonicalCareerPropertyValues, projectCareerResponseProperties } from "./properties.js";
 
-export function mapMongoRecord(record: CareerRecordDoc, bodyMd = record.bodyMd) {
+export function mapMongoRecord(record: CareerRecordDoc, category: CareerCategoryDoc, bodyMd = record.bodyMd) {
   const computedProperties = Object.fromEntries(Object.entries(record.computedProperties ?? {}).flatMap(([key, value]) => {
     const parsed = CareerPropertyValueV2Schema.safeParse(value);
     return key === "__expressoComputation" || !parsed.success || (parsed.data.type !== "formula" && parsed.data.type !== "rollup") ? [] : [[key, parsed.data]];
   }));
-  return CareerRecordSchema.parse({ id: record._id, categoryId: record.categoryId, title: record.title, status: record.status, origin: record.origin, properties: record.properties, ...(Object.keys(computedProperties).length ? { computedProperties } : {}), bodyMd, version: record.version, createdAt: (record.createdAt ?? record.updatedAt).toISOString(), updatedAt: record.updatedAt.toISOString() });
+  const propertyValues = projectCanonicalCareerPropertyValues(category, record);
+  return CareerRecordSchema.parse({ id: record._id, categoryId: record.categoryId, title: record.title, status: record.status, origin: record.origin, properties: projectCareerResponseProperties(category, record), ...(propertyValues === undefined ? {} : { propertyValues }), ...(Object.keys(computedProperties).length ? { computedProperties } : {}), bodyMd, version: record.version, createdAt: (record.createdAt ?? record.updatedAt).toISOString(), updatedAt: record.updatedAt.toISOString() });
 }
 
 export function careerRequestHash(input: CreateCareerRecord) {
@@ -59,7 +61,7 @@ export async function listMongoRecords(context: MongoContext, userId: string, qu
       { $match: { userId, $expr: { $or: [{ $eq: ["$fromRecordId", "$$recordId"] }, { $eq: ["$toRecordId", "$$recordId"] }] } } }, { $count: "count" },
     ], as: "links" } }, ...usageLookup(userId));
   const [result] = await mongoCollections(context.db).careerRecords.aggregate<{
-    data: (CareerRecordDoc & { sortKey: string; category: { key: string }; links: { count: number }[]; usage: { portfolioCount: number }[] })[];
+    data: (CareerRecordDoc & { sortKey: string; category: CareerCategoryDoc; links: { count: number }[]; usage: { portfolioCount: number }[] })[];
     summary: { total: number; draft: number; organized: number; verified: number; empty: number }[];
   }>([
     { $match: match },
@@ -68,18 +70,27 @@ export async function listMongoRecords(context: MongoContext, userId: string, qu
     { $facet: { data: pageStages, summary: [{ $group: {
       _id: null, total: { $sum: 1 },
       ...Object.fromEntries(["draft", "organized", "verified"].map((status) => [status, { $sum: { $cond: [{ $eq: ["$status", status] }, 1, 0] } }])),
-      empty: { $sum: { $cond: [{ $and: [{ $eq: ["$bodyMd", ""] }, { $eq: [{ $size: { $objectToArray: "$properties" } }, 0] }] }, 1, 0] } },
+      empty: { $sum: { $cond: [{ $and: [
+        { $eq: ["$bodyMd", ""] },
+        { $cond: [
+          { $isArray: "$propertyValues" },
+          { $eq: [{ $size: "$propertyValues" }, 0] },
+          { $eq: [{ $size: { $objectToArray: "$properties" } }, 0] },
+        ] },
+      ] }, 1, 0] } },
     } }, { $project: { _id: 0 } }] } },
   ]).toArray();
   const hasNextPage = (result?.data.length ?? 0) > query.limit;
   const records = result?.data.slice(0, query.limit) ?? [];
   const last = records.at(-1);
   return CareerRecordListResponseSchema.parse({
-    data: records.map((record) => ({ ...mapMongoRecord(record), categoryKey: record.category.key,
-      isEmpty: record.bodyMd === "" && Object.keys(record.properties).length === 0,
+    data: records.map((record) => {
+      const mapped = mapMongoRecord(record, record.category);
+      return { ...mapped, categoryKey: record.category.key,
+      isEmpty: mapped.bodyMd === "" && Object.keys(mapped.properties).length === 0,
       periodFrom: record.periodStart ?? null, periodTo: record.periodEnd ?? null,
       linkCount: record.links[0]?.count ?? 0, usedInCount: record.usage[0]?.portfolioCount ?? 0,
-    })),
+    }; }),
     summary: result?.summary[0] ?? { total: 0, draft: 0, organized: 0, verified: 0, empty: 0 },
     page: { hasNextPage, nextCursor: hasNextPage && last ? Buffer.from(JSON.stringify({ sort: query.sort, key: last.sortKey, id: last._id })).toString("base64url") : null },
   });

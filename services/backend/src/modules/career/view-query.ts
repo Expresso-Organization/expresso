@@ -113,9 +113,21 @@ function fieldExpression(definition: CareerPropertyDefinitionV2): Document | str
   if (definition.type === "title") return "$title";
   if (definition.type === "created_time" && definition.system) return { $ifNull: ["$createdAt", "$updatedAt"] };
   if (definition.type === "updated_time" && definition.system) return "$updatedAt";
+  const legacy = { $getField: { input: { $ifNull: ["$properties", {}] }, field: definition.key } };
+  const canonical = {
+    $let: {
+      vars: {
+        matched: { $arrayElemAt: [{ $filter: {
+          input: "$propertyValues", as: "propertyValue",
+          cond: { $eq: ["$$propertyValue.propertyDefinitionId", definition.id] },
+        } }, 0] },
+      },
+      in: { $getField: { input: "$$matched", field: "value" } },
+    },
+  };
   const raw = definition.type === "formula" || definition.type === "rollup"
     ? { $getField: { input: { $ifNull: ["$computedProperties", {}] }, field: definition.key } }
-    : { $getField: { input: { $ifNull: ["$properties", {}] }, field: definition.key } };
+    : { $cond: [{ $isArray: "$propertyValues" }, canonical, legacy] };
   const value = unwrapStoredValue(raw);
   if (definition.type === "date") {
     return { $cond: [
@@ -261,6 +273,7 @@ export class CareerViewQuery {
     const projection: Document = {
       _id: 1, title: 1, status: 1, origin: 1, categoryId: 1, bodyMd: 1, version: 1, updatedAt: 1,
       createdAt: 1, computedProperties: 1, periodStart: 1, periodEnd: 1,
+      propertyValues: 1,
       ...Object.fromEntries(projectionKeys.map((key) => [`properties.${key}`, 1])),
       ...Object.fromEntries(sortParts.map((part) => [part.field, 1])),
     };
