@@ -14,6 +14,8 @@
 
 두 번째 호출은 `structuredModelSchema(content)`에 따라 Spec을 만듭니다. 입력 식별자와 데이터 참조는 고정하고 지면·순서·팔레트·서체·모션을 선택합니다. 이름 소개는 맨 앞, 제공된 연락처는 맨 뒤에 둡니다. 누락·중복·잘못된 참조를 거부하며, 실패하면 한 번 수정 요청을 보냅니다. 사용자가 생성 전에 선택한 스타일은 모델 선택보다 우선합니다.
 
+공급자에 전달하는 `children`은 요소 ID의 enum 배열과 길이 제한을 사용합니다. [OpenAI Structured Outputs의 지원 배열 문법](https://developers.openai.com/api/docs/guides/structured-outputs)에 맞춰 위치별 튜플 문법을 피하고, 소개·연락처의 위치와 참조 관계는 반환 후 도메인 검사에서 검증합니다.
+
 `packages/portfolio-renderer`는 실제 `@json-render/core` Catalog와 `@json-render/react` Registry/Renderer를 사용합니다. 서버에서 HTML을 만들고 같은 CSS를 제품 미리보기와 저장 문서에 사용합니다. 모델이 HTML/CSS를 자유 작성하는 경로는 `PAGE_GENERATION_FORMAT=html`로 유지합니다. 기본값은 `json-render`이며 AI 공급자의 기본값 `off`는 유지합니다.
 
 ## 선택 가능한 지면
@@ -58,6 +60,8 @@
 
 - [원본 자료부터 생성한 결과](../library/previews/portfolio/runs/structured-normalized-2026-10-06/robotics-engineer/index.html)
 - [두 호출의 원본 응답](../library/previews/portfolio/runs/structured-normalized-2026-10-06/robotics-engineer/model-record.json)
+
+공통 배열 출력 스키마로 바꾼 뒤에도 같은 로컬 모델로 가상 로봇 엔지니어의 Spec을 새로 생성했습니다. [추가 실행](../library/previews/portfolio/runs/structured-provider-compatible-2026-10-06/robotics-engineer/index.html)과 해당 실행의 `model-record.json`, `verification.json`에 결과를 보존합니다. 기존 세 프로필 Spec의 저장 형식은 유지됩니다.
 
 재현 명령은 다음과 같습니다. Ollama와 문서 미리보기 서버가 필요합니다. 실행 ID는 기존 결과를 덮어쓰지 않는 새 값으로 지정합니다.
 

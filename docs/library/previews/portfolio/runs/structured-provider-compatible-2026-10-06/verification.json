@@ -1,0 +1,68 @@
+{
+  "fictional": true,
+  "model": "qwen3.8:27b-q4_K_M",
+  "runs": [
+    {
+      "slug": "robotics-engineer",
+      "name": "한도윤",
+      "role": "로봇 엔지니어",
+      "design": {
+        "layout": "dossier",
+        "palette": "graphite",
+        "font": "mono"
+      },
+      "htmlSha256": "fe897e7aa2333e0439dcc7b38b760741781e9980d99b4a1523347df2c86c067d",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64,
+          "headlineSize": 20,
+          "caseTypes": [
+            "gallery",
+            "gallery",
+            "process"
+          ],
+          "motion": "none",
+          "preservedFields": 66
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64.82,
+          "headlineSize": 22.224,
+          "caseTypes": [
+            "gallery",
+            "gallery",
+            "process"
+          ],
+          "motion": "none",
+          "preservedFields": 66
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 96,
+          "headlineSize": 32,
+          "caseTypes": [
+            "gallery",
+            "gallery",
+            "process"
+          ],
+          "motion": "none",
+          "preservedFields": 66
+        }
+      ],
+      "noJavaScript": true
+    }
+  ]
+}
