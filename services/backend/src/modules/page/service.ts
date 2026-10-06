@@ -10,7 +10,14 @@ import {
   pageDocument,
   type GeneratedPage,
   type PageStyleGrammar,
+  EditStructuredPageSchema,
+  applyStructuredTextPatches,
+  validateStructuredPortfolio,
+  type EditStructuredPage,
+  PortfolioMediaSchema,
+  PAGE_IMAGE_SRC_PREFIX,
 } from "@expresso/contracts";
+import { renderStructuredPortfolio } from "@expresso/portfolio-renderer";
 import { mongoCollections, type GeneratedPageDoc, type JsonObject } from "@expresso/database";
 
 import type { MongoContext } from "../../platform/mongodb.js";
@@ -71,11 +78,11 @@ export class PageService {
     const sections = await db.recipeSections.find({ userId, recipeId: recipe._id }).sort({ orderNo: 1 }).toArray();
     if (sections.length === 0) throw new PageServiceError(409, "recipe has no sections");
     const paths = await db.recipeEvidencePaths.find({ userId, recipeId: recipe._id }).toArray();
-    const [records, answers, requirements, template, brew] = await Promise.all([
+    const [records, answers, requirements, template, brew, author] = await Promise.all([
       db.careerRecords.find({ userId, _id: { $in: paths.filter((p) => p.sourceType === "record").map((p) => p.sourceId) } }).toArray(),
       db.answers.find({ userId, _id: { $in: paths.filter((p) => p.sourceType === "answer").map((p) => p.sourceId) } }).toArray(),
       db.jobPostingRequirements.find({ _id: { $in: paths.filter((p) => p.sourceType === "requirement").map((p) => p.sourceId) } }).toArray(),
-      db.templates.findOne({ _id: portfolio.templateId }), db.brews.findOne({ _id: portfolio.brewId, userId }),
+      db.templates.findOne({ _id: portfolio.templateId }), db.brews.findOne({ _id: portfolio.brewId, userId }), db.users.findOne({ _id: userId }),
     ]);
     const sourceText = (sourceId: string) => {
       const record = records.find(({ _id }) => _id === sourceId); if (record) return `${record.title}\n${record.bodyMd}`;
@@ -103,12 +110,19 @@ export class PageService {
     const analysis = brew ? await db.jobAnalyses.findOne({ _id: brew.jobAnalysisId, userId }) : null;
     const posting = analysis?.jobPostingId ? await db.jobPostings.findOne({ _id: analysis.jobPostingId }) : null;
     const company = posting ? await db.companies.findOne({ _id: posting.companyId }) : null;
+    const pageSections = await db.portfolioSections.find({ userId, portfolioId }).toArray();
+    const mediaBlocks = await db.blocks.find({ userId, portfolioSectionId: { $in: pageSections.map(item => item._id) }, kind: "media" }).toArray();
+    const supplied = mediaBlocks.flatMap(item => { const parsed = PortfolioMediaSchema.safeParse(item.content); return parsed.success ? [{ id: parsed.data.assetId, alt: parsed.data.alt }] : []; });
+    for (const record of records) for (const match of record.bodyMd.matchAll(/\/v1\/media\/([a-f0-9-]{36})/gi)) supplied.push({ id: match[1]!, alt: record.title });
+    const assets = await db.mediaAssets.find({ userId, _id: { $in: supplied.map(item => item.id) }, storageKey: { $ne: "" } }).toArray();
+    const media = [...new Map(supplied.flatMap(item => { const asset = assets.find(value => value._id === item.id); return asset ? [[item.id, { src: `${PAGE_IMAGE_SRC_PREFIX}${asset._id}`, srcSet: "", alt: item.alt, width: asset.width, height: asset.height }] as const] : []; })).values()];
     return {
+      ...(author ? { author: { name: author.displayName } } : {}),
       portfolioPlan: recipe.portfolioPlan ? PortfolioPlanSchema.parse(recipe.portfolioPlan) : null,
       ...(style ? { style } : {}),
-      sections: sections.map((row) => ({ title: row.title, purpose: row.purpose, goal: typeof row.context.goal === "string" ? row.context.goal : "", points: Array.isArray(row.context.points) ? row.context.points.filter((v): v is string => typeof v === "string") : [], targetLength: row.targetLength })),
-      evidence: paths.map((path) => ({ label: path.sourceLabel, text: sourceText(path.sourceId) })).filter(({ text }) => text.trim().length > 0),
-      media: [], jobTitle: posting?.title ?? brew?.freeTitle ?? null,
+      sections: sections.map((row) => ({ id: row._id, title: row.title, purpose: row.purpose, goal: typeof row.context.goal === "string" ? row.context.goal : "", points: Array.isArray(row.context.points) ? row.context.points.filter((v): v is string => typeof v === "string") : [], targetLength: row.targetLength })),
+      evidence: [...new Map(paths.map((path) => [path.sourceId, { id: path.sourceId, label: path.sourceLabel, text: sourceText(path.sourceId) }])).values()].filter(({ text }) => text.trim().length > 0),
+      media, jobTitle: posting?.title ?? brew?.freeTitle ?? null,
       company: company ? { name: company.name, industry: company.industry ?? null, toneSummary: company.toneSummary ?? null, brandColors: Array.isArray(company.brandColors) ? company.brandColors.filter((v): v is string => typeof v === "string") : [] } : null,
       instruction, previous, useKit: !preset, modelTier: "sonnet",
     };
@@ -119,6 +133,10 @@ export class PageService {
     if (options.generationJobId) { const existing = await this.forGenerationJob(userId, options.generationJobId); if (existing) return existing; }
     const current = await this.latest(userId, portfolioId);
     const context = await this.#context(userId, portfolioId, options.instruction, current ? { html: current.html, css: current.css } : undefined);
+    if (context.previous && current?.generationManifest?.structured) {
+      context.previous.structured = current.generationManifest.structured;
+      context.structuredContent = current.generationManifest.structured.content;
+    }
     await this.#consent?.require(userId, "page_generation");
     const streamId = options.streamId ?? portfolioId; const stream = this.#stream;
     const sink = stream ? { delta: (value: string) => { void this.#publish(stream.delta(streamId, value)); }, thinking: (tokens: number) => { void this.#publish(stream.thinking(streamId, tokens)); } } : null;
@@ -156,6 +174,37 @@ export class PageService {
   async #publish(work: Promise<void> | undefined): Promise<void> {
     if (!work) return;
     try { await work; } catch (error) { console.error(JSON.stringify({ level: "warn", event: "page.stream_failed", detail: error instanceof Error ? error.message : String(error) })); }
+  }
+
+  async editComposition(userId: string, portfolioId: string, raw: EditStructuredPage): Promise<GeneratedPage> {
+    const input = EditStructuredPageSchema.parse(raw), current = await this.latest(userId, portfolioId);
+    if (!current) throw new PageServiceError(404, "지면이 없습니다.");
+    if (current.revision !== input.expectedRevision) throw new PageServiceError(409, "다른 편집이 먼저 저장됐습니다. 새로고침해 주세요.");
+    const previous = current.generationManifest?.structured;
+    if (!previous) throw new PageServiceError(409, "구조화 지면에서만 구성을 편집할 수 있습니다.");
+    let snapshot, rendered;
+    try {
+      const content = applyStructuredTextPatches(previous.content, input.patches);
+      snapshot = validateStructuredPortfolio(input.spec ?? previous.spec, content);
+      rendered = renderStructuredPortfolio(snapshot.spec, snapshot.content, current.styleSpec ?? undefined);
+    } catch (error) { throw new PageServiceError(422, error instanceof Error ? error.message : "구성이 올바르지 않습니다."); }
+    const row = await inTransaction(this.context, async tx => {
+      await requireActiveUser(tx, userId);
+      const db = mongoCollections(tx.db), options = { session: tx.session };
+      const portfolio = await db.portfolios.findOne({ _id: portfolioId, userId }, options);
+      if (!portfolio) throw new PageServiceError(404, "portfolio not found");
+      // 같은 포트폴리오의 동시 편집은 이 문서 쓰기로 충돌시킵니다.
+      const root = snapshot.spec.elements[snapshot.spec.root]!;
+      if (root.type !== "PortfolioPage") throw new PageServiceError(422, "페이지 루트가 필요합니다.");
+      const structure = root.props.design.layout === "editorial" ? "wide-margin" : root.props.design.layout === "dossier" ? "dense-grid" : "single-column";
+      await db.portfolios.updateOne({ _id: portfolioId, userId }, { $set: { updatedAt: new Date(), "styleOverrides.structure": structure } }, options);
+      const latest = await db.generatedPages.find({ userId, portfolioId }, options).sort({ revision: -1 }).limit(1).next();
+      if (!latest || latest.revision !== input.expectedRevision) throw new PageServiceError(409, "다른 편집이 먼저 저장됐습니다.");
+      const created: GeneratedPageDoc = { ...latest, _id: randomUUID(), generationJobId: null, revision: latest.revision + 1, html: rendered.html, css: rendered.css, styleSpecSnapshot: latest.styleSpecSnapshot ? { ...latest.styleSpecSnapshot, structure } : null, instruction: "구성·문장 직접 편집", createdAt: new Date(), generationManifest: { ...latest.generationManifest, structured: snapshot } as unknown as JsonObject };
+      await db.generatedPages.insertOne(created, options);
+      return created;
+    });
+    return toPage(row);
   }
 }
 

@@ -1391,6 +1391,12 @@
 
 /* ── 속성 탭 (04b) ────────────────────────────────────────── */
 
+.propertiesStack {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .properties {
   flex: 1;
   min-height: 0;

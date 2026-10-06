@@ -32,6 +32,7 @@ import { MediaService } from "../modules/media/index.js";
 import { PageService } from "../modules/page/index.js";
 import { PageStream } from "../modules/page/stream.js";
 import { AiPageGenerator } from "../modules/page/generator.js";
+import { StructuredPageGenerator } from "../modules/page/structured-generator.js";
 import { createMediaStorage } from "../platform/storage/create-storage.js";
 import { AnalyticsService } from "../modules/analytics/index.js";
 import { EngagementService } from "../modules/engagement/index.js";
@@ -107,7 +108,7 @@ const pageStream = new PageStream(createStreamRedis(config.redisUrl), {
 const pageService = new PageService(database, consentService, pageStream);
 // AI가 꺼져 있으면 지면을 만들 길이 없다. 규칙 폴백을 두지 않는다 —
 // 이 경로의 산출물은 **모델이 쓴 마크업 그 자체**여서 흉내 낼 것이 없다.
-const pageGenerator = ai ? new AiPageGenerator(ai) : null;
+const pageGenerator = ai ? (config.pageGenerationFormat === "html" ? new AiPageGenerator(ai) : new StructuredPageGenerator(ai)) : null;
 const analyticsService = new AnalyticsService(database, {
   ...(config.analyticsVisitorSalt ? { visitorSalt: config.analyticsVisitorSalt } : {}),
   // 해설은 07에서 사용자가 누를 때만 쓴다. 없으면 숫자를 다시 읽어 주는 한 문장이 남는다.
