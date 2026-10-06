@@ -1,2 +1,4 @@
 *.ts text eol=lf
 *.json text eol=lf
+0009/migration.ts -text -eol
+0010/migration.ts -text -eol

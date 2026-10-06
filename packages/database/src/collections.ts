@@ -9,6 +9,9 @@ export interface MongoCollections {
   companies: Collection<Docs.CompanyDoc>;
   jobPostings: Collection<Docs.JobPostingDoc>;
   jobAnalyses: Collection<Docs.JobAnalysisDoc>;
+  jobChatSessions: Collection<Docs.JobChatSessionDoc>;
+  jobChatMessages: Collection<Docs.JobChatMessageDoc>;
+  jobCareerMatches: Collection<Docs.JobCareerMatchDoc>;
   brews: Collection<Docs.BrewDoc>;
   templates: Collection<Docs.TemplateDoc>;
   portfolios: Collection<Docs.PortfolioDoc>;
@@ -95,6 +98,9 @@ export function mongoCollections(db: Db): MongoCollections {
     companies: db.collection<Docs.CompanyDoc>("companies"),
     jobPostings: db.collection<Docs.JobPostingDoc>("job_postings"),
     jobAnalyses: db.collection<Docs.JobAnalysisDoc>("job_analyses"),
+    jobChatSessions: db.collection<Docs.JobChatSessionDoc>("job_chat_sessions"),
+    jobChatMessages: db.collection<Docs.JobChatMessageDoc>("job_chat_messages"),
+    jobCareerMatches: db.collection<Docs.JobCareerMatchDoc>("job_career_matches"),
     brews: db.collection<Docs.BrewDoc>("brews"),
     templates: db.collection<Docs.TemplateDoc>("templates"),
     portfolios: db.collection<Docs.PortfolioDoc>("portfolios"),

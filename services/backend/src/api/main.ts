@@ -39,6 +39,8 @@ import { AccountLifecycleService } from "../modules/account-lifecycle/index.js";
 import { CareerDocumentService } from "../modules/career-editor/index.js";
 import { AiClientProposalAdapter, SelectedBlockTextAiProposalAdapter } from "../modules/career-editor/ai-adapter.js";
 import { createReliableQueue } from "../platform/queue.js";
+import { JobChatService } from "../modules/job-chat/index.js";
+import { JobCareerMatchAnalyzer, JobCareerMatchInputLoader, JobCareerMatchService, } from "../modules/job-career-match/index.js";
 
 const config = loadRuntimeConfig();
 if (!config.mongodbUrl || !config.mongodbDatabase) throw new Error("MongoDB runtime configuration is missing");
@@ -54,6 +56,7 @@ const entitlementService = new EntitlementService(database);
 const careerService = new CareerService(database);
 const jobUrlImporter = new JobUrlImporter();
 const jobBoardService = new JobBoardService(database);
+const jobChatService = new JobChatService(database);
 const jobAnalysisService = new JobAnalysisService(database);
 const materialsService = new MaterialsService(database);
 const interviewService = new InterviewService(database);
@@ -83,6 +86,22 @@ const consentService = new ConsentService(database);
 // 자연어 검색도 요청 안에서 계약을 부른다 — 검색은 사용자가 입력하고 바로
 // 결과를 보는 화면이라 뒤로 미룰 수 없다. AI가 꺼져 있으면 규칙 폴백
 // (search-parser.ts)이 그대로 돈다.
+const jobCareerMatchInputLoader =
+  new JobCareerMatchInputLoader(
+    database,
+    jobBoardService,
+  );
+const jobCareerMatchAnalyzer = ai
+  ? new JobCareerMatchAnalyzer(ai, consentService)
+  : null;
+
+const jobCareerMatchService =
+  new JobCareerMatchService(
+    database,
+    jobCareerMatchInputLoader,
+    jobCareerMatchAnalyzer,
+    (config.aiTimeoutMs ?? 180_000) * 3 + 60_000,
+  );
 const jobMarketService = new JobMarketService(
   database,
   ai ? new AiSearchInterpreter(ai) : null,
@@ -139,6 +158,8 @@ const careerDocumentService = new CareerDocumentService(
 const app = buildApi({
   config,
   jobChatAi: ai,
+  jobChatService,
+  jobCareerMatchService,
   readinessChecks: [database.readinessCheck, redis.readinessCheck],
   identityService,
   ...(googleIdTokenVerifier ? { googleIdTokenVerifier } : {}),
