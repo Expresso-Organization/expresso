@@ -155,8 +155,8 @@ function BoundElement({
       return '';
     };
     const label=labelOf(body).trim(),target=binding.sections.find(section=>section.title===label);
-    if(target)props.href=`#section-${target.id}`;
-    else if(label===binding.profile.name)props.href='#intro';
+    if(target){props.href=`#section-${target.id}`;props['data-portfolio-nav']='true';}
+    else if(label===binding.profile.name){props.href='#intro';props['data-portfolio-nav']='true';}
     if (
       typeof props.href !== "string" ||
       !/^#(?:intro|work|section-[a-zA-Z0-9-]+|source-[a-zA-Z0-9-]+|contact)$/.test(
@@ -174,6 +174,7 @@ function BoundElement({
     props.href = binding.section ? `#section-${binding.section.id}` : "#work";
     delete props.type;
   }
+  if(tag==='a'&&/(?:^|\s)(?:bg-white|bg-\[#(?:fff|ffffff)\])(?:\s|$)/i.test(String(props.className)))props['data-light-control']='true';
   if (["p", "small", "strong"].includes(kind) && !readable(body)) return null;
   if (
     kind === "span" &&
