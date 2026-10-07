@@ -1,3 +1,4 @@
+import { PageLibrarySelectionSchema } from "./page-library.js";
 import { z } from "zod";
 
 import { TimestampSchema, UuidSchema } from "./common.js";
@@ -319,6 +320,7 @@ export const PageGenerationManifestSchema = z.strictObject({
   attempts: z.number().int().min(1).max(2),
   repairCount: z.number().int().min(0).max(1),
   structured: StructuredPortfolioSnapshotSchema.optional(),
+  library: PageLibrarySelectionSchema.optional(),
   usage: z.strictObject({
     inputTokens: z.number().int().nonnegative(),
     outputTokens: z.number().int().nonnegative(),

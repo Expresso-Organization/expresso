@@ -3,6 +3,7 @@ import { useActionState, useState } from "react";
 import {
   STRUCTURED_CASE_TYPES,
   type GeneratedPage,
+  type PageLibraryItem,
   type StructuredPortfolioSpec,
 } from "@expresso/contracts";
 import { structuredPageAction } from "./edit-actions";
@@ -21,9 +22,11 @@ const names: Record<string, string> = {
 export function StructuredPageProperties({
   page,
   portfolioId,
+  libraryItems = [],
 }: {
   page: GeneratedPage;
   portfolioId: string;
+  libraryItems?: readonly PageLibraryItem[];
 }) {
   const snapshot = page.generationManifest?.structured;
   const [spec, setSpec] = useState<StructuredPortfolioSpec | null>(
@@ -40,6 +43,9 @@ export function StructuredPageProperties({
       change(next);
       return next;
     });
+  const displayKey = (id: string) =>
+    libraryItems.find((item) => item.id === id || item.renderKey === id)
+      ?.renderKey || id;
   const patch = (path: string, value: string) =>
     setPatches((previous) => ({ ...previous, [path]: value }));
   return (
@@ -70,13 +76,14 @@ export function StructuredPageProperties({
                 node.props.design.layout = event.target.value as
                   | "editorial"
                   | "gallery"
-                  | "dossier";
+                  | "dossier"
+                  | "library";
             })
           }
         >
-          {["editorial", "gallery", "dossier"].map((key) => (
+          {["library", "editorial", "gallery", "dossier"].map((key) => (
             <option key={key} value={key}>
-              {names[key]}
+              {key === "library" ? "수집 컴포넌트 배치" : names[key]}
             </option>
           ))}
         </select>
@@ -98,6 +105,41 @@ export function StructuredPageProperties({
           maxLength={160}
           onChange={(event) => patch("/profile/headline", event.target.value)}
         />
+      </label>
+      <label>
+        첫 화면 원본
+        <select
+          aria-label="첫 화면 원본"
+          value={displayKey(
+            spec.elements[root.children[0]!]!.props &&
+              (spec.elements[root.children[0]!]!.type === "NameIntro"
+                ? (
+                    spec.elements[root.children[0]!]!.props as {
+                      sourceId?: string;
+                    }
+                  ).sourceId || ""
+                : ""),
+          )}
+          onChange={(event) =>
+            update((next) => {
+              const intro = next.elements[root.children[0]!];
+              if (intro?.type === "NameIntro") {
+                if (event.target.value)
+                  intro.props.sourceId = event.target.value;
+                else delete intro.props.sourceId;
+              }
+            })
+          }
+        >
+          <option value="">기본 지면</option>
+          {libraryItems
+            .filter((item) => item.slot === "intro")
+            .map((item) => (
+              <option key={item.id} value={item.renderKey || item.id}>
+                {item.source} / {item.name}
+              </option>
+            ))}
+        </select>
       </label>
       <ol className={styles.sections}>
         {root.children.map((key, position) => {
@@ -136,6 +178,32 @@ export function StructuredPageProperties({
                     .map((type) => (
                       <option key={type} value={type}>
                         {names[type]}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label>
+                사례 원본
+                <select
+                  aria-label={`${section.title} 사례 원본`}
+                  value={displayKey(node.props.sourceId || "")}
+                  onChange={(event) =>
+                    update((next) => {
+                      const target = next.elements[key];
+                      if (target && "section" in target.props) {
+                        if (event.target.value)
+                          target.props.sourceId = event.target.value;
+                        else delete target.props.sourceId;
+                      }
+                    })
+                  }
+                >
+                  <option value="">기본 지면</option>
+                  {libraryItems
+                    .filter((item) => item.slot === "section")
+                    .map((item) => (
+                      <option key={item.id} value={item.renderKey || item.id}>
+                        {item.source} / {item.name}
                       </option>
                     ))}
                 </select>

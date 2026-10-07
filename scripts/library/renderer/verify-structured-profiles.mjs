@@ -146,6 +146,13 @@ try {
       name: content.profile.name,
       role: content.profile.role,
       design,
+      library: run.library || null,
+      sourceComposition: spec.elements[spec.root].children.map(
+        (key) =>
+          spec.elements[key].props.sourceId ||
+          spec.elements[key].props.variant ||
+          spec.elements[key].type,
+      ),
       htmlSha256: run.htmlSha256,
       screens,
       noJavaScript: true,
@@ -154,9 +161,15 @@ try {
   }
   if (slugs.length === 3)
     assert.equal(
-      new Set(report.map((item) => item.design.layout)).size,
+      new Set(
+        report.map((item) =>
+          item.library
+            ? JSON.stringify(item.sourceComposition)
+            : item.design.layout,
+        ),
+      ).size,
       3,
-      "세 입력의 페이지 골격이 수렴했습니다.",
+      "세 입력의 원본 컴포넌트 조합이 수렴했습니다.",
     );
   fs.writeFileSync(
     path.join(folder, "verification.json"),
@@ -167,6 +180,12 @@ try {
           fs.readFileSync(path.join(folder, slugs[0], "run.json")),
         ).model,
         runs: report,
+        distinctIntroSources: new Set(
+          report.map((item) => item.sourceComposition[0]),
+        ).size,
+        distinctSourceCompositions: new Set(
+          report.map((item) => JSON.stringify(item.sourceComposition)),
+        ).size,
       },
       null,
       2,

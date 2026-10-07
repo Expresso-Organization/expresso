@@ -256,5 +256,47 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
         },
       });
     });
+    it("수집 원본의 키·Spec·선택 해시를 저장하고 미연결 항목은 거절한다", async () => {
+      const current = (await service.latest(user, portfolio))!;
+      const spec = structuredClone(
+        current.generationManifest!.structured!.spec,
+      );
+      const root = spec.elements[spec.root]!,
+        intro = spec.elements.intro!,
+        section = spec.elements["section-project-a"]!;
+      if (
+        root.type !== "PortfolioPage" ||
+        intro.type !== "NameIntro" ||
+        !("section" in section.props)
+      )
+        throw new Error("시험 지면 연결 오류");
+      root.props.design.layout = "library";
+      intro.props.sourceId = "watermelon-hero-12";
+      section.props.sourceId = "watermelon-card";
+      const edited = await service.editComposition(user, portfolio, {
+        expectedRevision: current.revision,
+        spec,
+        patches: [],
+      });
+      expect(edited.generationManifest?.structured?.spec).toEqual(spec);
+      expect(
+        edited.generationManifest?.library?.selected.map((item) => item.key),
+      ).toEqual(["watermelon-hero-12", "watermelon-card"]);
+      expect(edited.generationManifest?.library?.selected[0]?.sha256).toMatch(
+        /^[0-9a-f]{64}$/,
+      );
+      expect(edited.html).toContain("data-library-source");
+      intro.props.sourceId = "unsupported-source";
+      await expect(
+        service.editComposition(user, portfolio, {
+          expectedRevision: edited.revision,
+          spec,
+          patches: [],
+        }),
+      ).rejects.toMatchObject({ statusCode: 422 });
+      expect((await service.latest(user, portfolio))?.revision).toBe(
+        edited.revision,
+      );
+    });
   },
 );

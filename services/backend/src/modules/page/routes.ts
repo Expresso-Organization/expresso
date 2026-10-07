@@ -3,7 +3,9 @@ import {
   PortfolioIdParamsSchema,
   RegeneratePageSchema,
   EditStructuredPageSchema,
+  PageLibrarySearchSchema,
 } from "@expresso/contracts";
+import { searchPageLibrary } from "@expresso/portfolio-renderer";
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
@@ -26,6 +28,10 @@ export function registerPageRoutes(
   app: FastifyInstance,
   options: RegisterPageRoutesOptions,
 ): void {
+  app.get(`${API_PREFIX}/page-library`, { preHandler: options.authenticateRequest }, async request => {
+    requireAuth(request);
+    return { data: searchPageLibrary(PageLibrarySearchSchema.parse(request.query)) };
+  });
   const path = `${API_PREFIX}/portfolios/:id/page`;
 
   app.post(path, { preHandler: options.authenticateRequest }, async (request, reply) => {

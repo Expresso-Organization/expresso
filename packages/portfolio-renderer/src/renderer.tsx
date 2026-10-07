@@ -19,6 +19,12 @@ import {
   type StructuredPortfolioContent,
   type StructuredSection,
 } from "@expresso/contracts";
+import {
+  renderCollected,
+  collectedSourceName,
+  validateLibrarySelection,
+  COLLECTED_PORTFOLIO_CSS,
+} from "./library.js";
 import { STRUCTURED_PORTFOLIO_CSS } from "./styles.js";
 
 // 수집한 레지스트리의 구도를 데이터에 연결할 수 있는 어댑터로 확장합니다.
@@ -54,7 +60,10 @@ export const STRUCTURED_COMPONENT_SOURCES = {
     adaptation: "과정별 설명과 자료",
   },
 };
-const projectProps = z.object({ section: StructuredSectionSchema });
+const projectProps = z.object({
+  section: StructuredSectionSchema,
+  sourceId: z.string().optional(),
+});
 export const structuredCatalog = defineCatalog(schema, {
   components: {
     PortfolioPage: {
@@ -63,6 +72,7 @@ export const structuredCatalog = defineCatalog(schema, {
         design: StructuredDesignSchema,
         motion: z.enum(["none", "subtle", "showcase"]),
         rationale: z.string(),
+        referenceIds: z.array(z.string()).optional(),
       }),
       slots: ["default"],
       description:
@@ -72,6 +82,7 @@ export const structuredCatalog = defineCatalog(schema, {
       props: z.object({
         profile: content.shape.profile,
         sections: content.shape.sections.optional(),
+        sourceId: z.string().optional(),
       }),
       description:
         "이름을 가장 크게, 그 아래 짧은 자기 정의와 제공된 대표 작품을 표시합니다.",
@@ -185,10 +196,59 @@ function Sources({ section }: { section: StructuredSection }) {
 function Case({
   section,
   kind,
+  sourceId,
 }: {
   section: StructuredSection;
   kind: "essay" | "gallery" | "technical" | "process" | "panel";
+  sourceId?: string | undefined;
 }) {
+  if (sourceId) {
+    const sourceName = collectedSourceName(sourceId);
+    const isFeature = sourceName?.startsWith("feature-");
+    const content = (
+      <div className="sp-source-details">
+        {!isFeature &&
+          sourceName !== "annotated-text" &&
+          sourceName !== "text-gradient" && <SectionTitle section={section} />}
+        {(sourceName === "annotated-text" ||
+          sourceName === "text-gradient") && (
+          <p className="sp-summary">{section.summary}</p>
+        )}
+        <Media section={section} />
+        <Body value={section.body} />
+        <dl>
+          {section.details
+            .slice(isFeature ? (sourceName === "feature-1" ? 5 : 3) : 0)
+            .map((detail) => (
+              <div key={detail.label}>
+                <dt>{detail.label}</dt>
+                <dd>{detail.text}</dd>
+              </div>
+            ))}
+        </dl>
+        <Sources section={section} />
+      </div>
+    );
+    const inside = sourceName === "card";
+    return (
+      <article
+        id={`section-${section.id}`}
+        className="sp-case"
+        data-case-type={kind}
+      >
+        {renderCollected(
+          sourceId,
+          {
+            profile: { name: "", role: "", headline: "", intro: "", focus: [] },
+            sections: [section],
+            section,
+          },
+          inside ? content : undefined,
+        )}
+        {!inside && content}
+      </article>
+    );
+  }
   return (
     <article
       id={`section-${section.id}`}
@@ -255,38 +315,52 @@ const { registry } = defineRegistry(structuredCatalog, {
         {children}
       </main>
     ),
-    NameIntro: ({ props: { profile, sections } }) => (
-      <header id="intro" className="sp-intro">
-        <p className="sp-kicker">PERSONAL PORTFOLIO · {profile.role}</p>
-        <h1>{profile.name}</h1>
-        <p className="sp-definition">{profile.headline}</p>
-        <Body value={profile.intro} />
-        <ul className="sp-focus">
-          {profile.focus.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-        {sections?.[0]?.media[0] && (
-          <a className="sp-intro-art" href={`#section-${sections[0].id}`}>
-            <Card>
-              <div data-slot="card-content">
-                <img
-                  src={sections[0].media[0].src}
-                  alt={sections[0].media[0].alt}
-                />
-              </div>
-              <div data-slot="card-header">
-                <small>FEATURED PROJECT</small>
-                <strong>{sections[0].title}</strong>
-              </div>
-              <div data-slot="card-footer" aria-hidden="true">
-                ↗
-              </div>
-            </Card>
-          </a>
-        )}
-      </header>
-    ),
+    NameIntro: ({ props: { profile, sections, sourceId } }) =>
+      sourceId ? (
+        <header id="intro" className="sp-intro">
+          {renderCollected(sourceId, { profile, sections: sections || [] })}
+          <div className="sp-source-details">
+            <p className="sp-kicker">{profile.role}</p>
+            <Body value={profile.intro} />
+            <ul className="sp-focus">
+              {profile.focus.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </header>
+      ) : (
+        <header id="intro" className="sp-intro">
+          <p className="sp-kicker">PERSONAL PORTFOLIO · {profile.role}</p>
+          <h1>{profile.name}</h1>
+          <p className="sp-definition">{profile.headline}</p>
+          <Body value={profile.intro} />
+          <ul className="sp-focus">
+            {profile.focus.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+          {sections?.[0]?.media[0] && (
+            <a className="sp-intro-art" href={`#section-${sections[0].id}`}>
+              <Card>
+                <div data-slot="card-content">
+                  <img
+                    src={sections[0].media[0].src}
+                    alt={sections[0].media[0].alt}
+                  />
+                </div>
+                <div data-slot="card-header">
+                  <small>FEATURED PROJECT</small>
+                  <strong>{sections[0].title}</strong>
+                </div>
+                <div data-slot="card-footer" aria-hidden="true">
+                  ↗
+                </div>
+              </Card>
+            </a>
+          )}
+        </header>
+      ),
     ProjectIndex: ({ props: { sections, variant } }) => (
       <nav
         id="work"
@@ -324,13 +398,25 @@ const { registry } = defineRegistry(structuredCatalog, {
         </div>
       </nav>
     ),
-    CaseEssay: ({ props }) => <Case section={props.section} kind="essay" />,
-    CaseGallery: ({ props }) => <Case section={props.section} kind="gallery" />,
-    CaseTechnical: ({ props }) => (
-      <Case section={props.section} kind="technical" />
+    CaseEssay: ({ props }) => (
+      <Case section={props.section} sourceId={props.sourceId} kind="essay" />
     ),
-    CaseProcess: ({ props }) => <Case section={props.section} kind="process" />,
-    ContentPanel: ({ props }) => <Case section={props.section} kind="panel" />,
+    CaseGallery: ({ props }) => (
+      <Case section={props.section} sourceId={props.sourceId} kind="gallery" />
+    ),
+    CaseTechnical: ({ props }) => (
+      <Case
+        section={props.section}
+        sourceId={props.sourceId}
+        kind="technical"
+      />
+    ),
+    CaseProcess: ({ props }) => (
+      <Case section={props.section} sourceId={props.sourceId} kind="process" />
+    ),
+    ContentPanel: ({ props }) => (
+      <Case section={props.section} sourceId={props.sourceId} kind="panel" />
+    ),
     CareerTimeline: ({ props: { career } }) => (
       <section id="career" className="sp-career">
         <p className="sp-kicker">EXPERIENCE</p>
@@ -383,6 +469,7 @@ export function renderStructuredPortfolio(
   theme?: { background: string; text: string; accent: string },
 ): { html: string; css: string } {
   const snapshot = validateStructuredPortfolio(spec, input);
+  validateLibrarySelection(snapshot.spec);
   const state = {
     ...snapshot.content,
     sectionById: Object.fromEntries(
@@ -399,7 +486,8 @@ export function renderStructuredPortfolio(
     </StateProvider>,
   );
   // 저장 계약을 넘는 지면은 판을 추가하기 전에 거부합니다.
-  if (html.length > PAGE_MAX_BYTES) throw new Error("지면이 저장 크기 제한을 넘었습니다. 내용을 줄여 주세요.");
+  if (html.length > PAGE_MAX_BYTES)
+    throw new Error("지면이 저장 크기 제한을 넘었습니다. 내용을 줄여 주세요.");
   const colors = theme
     ? z
         .object({
@@ -412,5 +500,14 @@ export function renderStructuredPortfolio(
   const overrides = colors
     ? `\n.sp-page[data-palette]{--sp-bg:${colors.background};--sp-ink:${colors.text};--sp-accent:${colors.accent};--sp-panel:color-mix(in srgb,${colors.background},${colors.text} 7%);--sp-muted:color-mix(in srgb,${colors.background},${colors.text} 70%);--sp-line:color-mix(in srgb,${colors.background},${colors.text} 25%)}`
     : "";
-  return { html, css: STRUCTURED_PORTFOLIO_CSS + overrides };
+  const hasSources = Object.values(snapshot.spec.elements).some(
+    (node) => "sourceId" in node.props && node.props.sourceId,
+  );
+  const css =
+    STRUCTURED_PORTFOLIO_CSS +
+    (hasSources ? COLLECTED_PORTFOLIO_CSS : "") +
+    overrides;
+  if (css.length > PAGE_MAX_BYTES)
+    throw new Error("스타일이 저장 크기 제한을 넘었습니다.");
+  return { html, css };
 }
