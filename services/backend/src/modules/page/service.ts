@@ -17,7 +17,7 @@ import {
   PortfolioMediaSchema,
   PAGE_IMAGE_SRC_PREFIX,
 } from "@expresso/contracts";
-import { renderStructuredPortfolio } from "@expresso/portfolio-renderer";
+import { renderStructuredPortfolio, librarySelection } from "@expresso/portfolio-renderer";
 import { mongoCollections, type GeneratedPageDoc, type JsonObject } from "@expresso/database";
 
 import type { MongoContext } from "../../platform/mongodb.js";
@@ -200,7 +200,7 @@ export class PageService {
       await db.portfolios.updateOne({ _id: portfolioId, userId }, { $set: { updatedAt: new Date(), "styleOverrides.structure": structure } }, options);
       const latest = await db.generatedPages.find({ userId, portfolioId }, options).sort({ revision: -1 }).limit(1).next();
       if (!latest || latest.revision !== input.expectedRevision) throw new PageServiceError(409, "다른 편집이 먼저 저장됐습니다.");
-      const created: GeneratedPageDoc = { ...latest, _id: randomUUID(), generationJobId: null, revision: latest.revision + 1, html: rendered.html, css: rendered.css, styleSpecSnapshot: latest.styleSpecSnapshot ? { ...latest.styleSpecSnapshot, structure } : null, instruction: "구성·문장 직접 편집", createdAt: new Date(), generationManifest: { ...latest.generationManifest, structured: snapshot } as unknown as JsonObject };
+      const created: GeneratedPageDoc = { ...latest, _id: randomUUID(), generationJobId: null, revision: latest.revision + 1, html: rendered.html, css: rendered.css, styleSpecSnapshot: latest.styleSpecSnapshot ? { ...latest.styleSpecSnapshot, structure } : null, instruction: "구성·문장 직접 편집", createdAt: new Date(), generationManifest: { ...latest.generationManifest, structured: snapshot, library: librarySelection(snapshot.spec) } as unknown as JsonObject };
       await db.generatedPages.insertOne(created, options);
       return created;
     });

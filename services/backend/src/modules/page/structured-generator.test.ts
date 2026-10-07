@@ -1,3 +1,4 @@
+import { retrievePageLibrary } from "@expresso/portfolio-renderer";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
@@ -34,6 +35,7 @@ const content: StructuredPortfolioContent = {
   career: [],
   contact: null,
 };
+const choices = retrievePageLibrary(content);
 const spec = {
   root: "page",
   elements: {
@@ -41,8 +43,9 @@ const spec = {
       type: "PortfolioPage",
       props: {
         profile: { $state: "/profile" },
-        design: { layout: "dossier", palette: "sage", font: "sans" },
+        design: { layout: "library", palette: "sage", font: "sans" },
         motion: "showcase",
+        referenceIds: [],
         rationale: "경로 설명을 읽는 목차와 상세 구성",
       },
       children: ["intro", "index", "section-project-a"],
@@ -52,6 +55,7 @@ const spec = {
       props: {
         profile: { $state: "/profile" },
         sections: { $state: "/sections" },
+        sourceId: choices.intro[0]!.renderKey!,
       },
       children: [],
     },
@@ -62,7 +66,11 @@ const spec = {
     },
     "section-project-a": {
       type: "CaseTechnical",
-      props: { section: { $state: "/sectionById/project-a" } },
+      props: {
+        section: { $state: "/sectionById/project-a" },
+        sourceId: choices.section.find((i) => i.sourceItemId === "card")!
+          .renderKey!,
+      },
       children: [],
     },
   },

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 
-import type { GeneratedPage, PortfolioDetail, PortfolioRevision } from "@expresso/contracts";
+import type { GeneratedPage, PortfolioDetail, PortfolioRevision, PageLibraryItem } from "@expresso/contracts";
 
 import { LogoMark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
@@ -67,6 +67,7 @@ export function Editor({
   checkpoints,
   generatedPage,
   generatedPageHistory,
+  libraryItems = [],
 }: {
   displayName: string;
   portfolio: PortfolioDetail;
@@ -74,6 +75,7 @@ export function Editor({
   checkpoints: readonly EditorCheckpoint[];
   generatedPage: GeneratedPage | null;
   generatedPageHistory: readonly GeneratedPage[];
+  libraryItems?: readonly PageLibraryItem[];
 }) {
   const [, startTransition] = useTransition();
   const [tab, setTab] = useState<PanelTab>("chat");
@@ -665,7 +667,7 @@ export function Editor({
             {tab === "properties" ? (
               generatedPage ? (
                 <div className={styles.propertiesStack}>
-                  <StructuredPageProperties key={generatedPage.revision} page={generatedPage} portfolioId={portfolio.id} />
+                  <StructuredPageProperties key={generatedPage.revision} page={generatedPage} portfolioId={portfolio.id} libraryItems={libraryItems} />
                   <FreePageProperties page={generatedPage} />
                 </div>
               ) : <>
