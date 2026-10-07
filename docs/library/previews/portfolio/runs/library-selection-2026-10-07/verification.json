@@ -103,7 +103,7 @@
         "EvidenceGrid",
         "Contact"
       ],
-      "htmlSha256": "074dbb29a4f9cd5e64058723c61c9b85822a5eb32f788a9b1bdfa596927aeab1",
+      "htmlSha256": "5457a5b2dca85eb968f5d4f383a305d5dad1dc07326368f353cc662321d14839",
       "screens": [
         {
           "width": 390,
@@ -119,6 +119,7 @@
             "process"
           ],
           "motion": "none",
+          "controlContrast": [],
           "preservedFields": 66
         },
         {
@@ -135,6 +136,7 @@
             "process"
           ],
           "motion": "none",
+          "controlContrast": [],
           "preservedFields": 66
         },
         {
@@ -151,6 +153,7 @@
             "process"
           ],
           "motion": "none",
+          "controlContrast": [],
           "preservedFields": 66
         }
       ],
@@ -266,7 +269,7 @@
         "EvidenceGrid",
         "Contact"
       ],
-      "htmlSha256": "80206137a67177fb5b1f96491c855716bc97be5c144e21842481339863951ef9",
+      "htmlSha256": "279a1e00a4dcfd3ae2a012442a9b44ad180efa3a946e67738b15ba551bb97259",
       "screens": [
         {
           "width": 390,
@@ -282,6 +285,12 @@
             "process"
           ],
           "motion": "none",
+          "controlContrast": [
+            {
+              "text": "프로젝트 보기",
+              "ratio": 13.297176725788873
+            }
+          ],
           "preservedFields": 66
         },
         {
@@ -298,6 +307,12 @@
             "process"
           ],
           "motion": "none",
+          "controlContrast": [
+            {
+              "text": "프로젝트 보기",
+              "ratio": 13.297176725788873
+            }
+          ],
           "preservedFields": 66
         },
         {
@@ -314,6 +329,12 @@
             "process"
           ],
           "motion": "none",
+          "controlContrast": [
+            {
+              "text": "프로젝트 보기",
+              "ratio": 13.297176725788873
+            }
+          ],
           "preservedFields": 66
         }
       ],
@@ -429,7 +450,7 @@
         "EvidenceGrid",
         "Contact"
       ],
-      "htmlSha256": "09cad255c908e15d058d90bf5cab5c8cd573a424d550268c29cf3c03a725e4f7",
+      "htmlSha256": "260fd7f665fca8e2ea65c433b208f30253f97c43ca3c42c5fc2ed6baca0d4a5c",
       "screens": [
         {
           "width": 390,
@@ -445,6 +466,7 @@
             "technical"
           ],
           "motion": "none",
+          "controlContrast": [],
           "preservedFields": 66
         },
         {
@@ -461,6 +483,7 @@
             "technical"
           ],
           "motion": "none",
+          "controlContrast": [],
           "preservedFields": 66
         },
         {
@@ -477,6 +500,7 @@
             "technical"
           ],
           "motion": "none",
+          "controlContrast": [],
           "preservedFields": 66
         }
       ],

@@ -3,7 +3,7 @@
   "specOrigin": "model",
   "contentOrigin": "prepared-fictional",
   "model": "qwen3.5:9b-q8_0",
-  "htmlSha256": "074dbb29a4f9cd5e64058723c61c9b85822a5eb32f788a9b1bdfa596927aeab1",
+  "htmlSha256": "5457a5b2dca85eb968f5d4f383a305d5dad1dc07326368f353cc662321d14839",
   "methodologyVersion": 1,
   "promptHash": "367b8497240f20c7e1386561492421b473a58ad73293bcb4b9b9968857d76edf",
   "promptVersions": {

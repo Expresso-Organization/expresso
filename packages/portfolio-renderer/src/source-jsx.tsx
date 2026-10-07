@@ -36,6 +36,7 @@ function BoundElement({
   const binding = useContext(SourceBindingContext);
   if (!binding) throw new Error("수집 컴포넌트의 데이터 연결이 필요합니다.");
   const { children, ...props } = sourceProps;
+  props["data-source-native"]="true";
   const values: string[] = [];
   const collect = (value: unknown) => {
     if (typeof value === "string") values.push(value);
