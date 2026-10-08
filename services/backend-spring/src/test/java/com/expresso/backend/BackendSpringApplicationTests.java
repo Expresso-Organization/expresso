@@ -13,5 +13,8 @@ class BackendSpringApplicationTests {
     void contextLoadsWithoutDatabaseOrHttpServer() {
         assertEquals(0, context.getBeansOfType(com.mongodb.client.MongoClient.class).size());
         assertEquals(0, context.getBeansOfType(com.expresso.backend.career.http.CareerCommandController.class).size());
+        assertEquals(0, context.getBeansOfType(com.expresso.backend.career.integration.CareerProducerBusinessController.class).size());
+        assertEquals(0, context.getBeansOfType(com.expresso.backend.career.integration.CareerProducerBusinessService.class).size());
+        assertEquals(0, context.getBeansOfType(com.expresso.backend.career.integration.CareerProducerCredentials.class).size());
     }
 }

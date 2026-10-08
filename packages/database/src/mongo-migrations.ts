@@ -10,6 +10,7 @@ import { careerEditorLedgerSteps } from "./mongodb-migrations/0006/migration.js"
 import { jobSourceSeedSteps } from "./mongodb-migrations/0007/migration.js";
 import { careerViewConfigurationSteps } from "./mongodb-migrations/0008/migration.js";
 import { careerBusinessWriterPreparationSteps } from "./mongodb-migrations/0014/migration.js";
+import { careerProducerPreparationSteps } from "./mongodb-migrations/0016/migration.js";
 import { careerPropertyMutationPreparationSteps } from "./mongodb-migrations/0015/migration.js";
 
 import { agentCredentialSteps } from "./mongodb-migrations/0010/migration.js";
@@ -71,6 +72,12 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     const source = await readFile(new URL(file, mutationDirectory));
     mutationHash.update(`${file}\0${source.byteLength}\0`).update(source);
   }
+  const producerDirectory=new URL("./mongodb-migrations/0016/",import.meta.url);
+  const producerManifest=await readFile(new URL("checksum-manifest.json",producerDirectory));
+  const producerHash=createHash("sha256").update("checksum-manifest.json\0"+producerManifest.byteLength+"\0").update(producerManifest);
+  const producerFiles=(JSON.parse(producerManifest.toString("utf8")) as {files:string[]}).files;
+  if(producerFiles.length!==new Set(producerFiles).size || producerFiles.some(file=>!/^[a-z-]+\.(ts|json)$/.test(file)))throw new Error("invalid0016 checksum manifest");
+  for(const file of producerFiles){const source=await readFile(new URL(file,producerDirectory));producerHash.update(file+"\0"+source.byteLength+"\0").update(source);}
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
@@ -84,5 +91,6 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0010", name: "agent_credentials", checksum: tenthHash, steps: await agentCredentialSteps() },
     { version: "0014", name: "career_business_writer_preparation", checksum: businessHash.digest("hex"), steps: await careerBusinessWriterPreparationSteps() },
     { version: "0015", name: "career_property_mutation_preparation", checksum: mutationHash.digest("hex"), steps: await careerPropertyMutationPreparationSteps() },
+    { version: "0016", name: "career_producer_preparation", checksum: producerHash.digest("hex"), steps: await careerProducerPreparationSteps() },
   ];
 }

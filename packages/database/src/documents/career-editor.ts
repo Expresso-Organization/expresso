@@ -1,3 +1,4 @@
+import type { CareerProducerIntent } from "@expresso/contracts";
 import type { Binary } from "mongodb";
 import type { JsonValue } from "./common.js";
 
@@ -63,6 +64,8 @@ export interface CareerRecordRelationDoc {
 }
 
 export interface CareerAiProposalDoc {
+  writerIntegration?: CareerProducerIntent;
+  writerIntegrationHistory?: CareerProducerIntent[];
   _id: string;
   userId: string;
   recordId: string;

@@ -16,7 +16,7 @@ describe.skipIf(!url)("Career business forward preparation", () => {
 
   it("extends existing 0001-0008 history without changing checksums or rejecting legacy creates", async () => {
     const migrations = await loadMongoMigrations();
-    expect(migrations.map((item) => item.version)).toEqual(["0001","0002","0003","0004","0005","0006","0007","0008","0009","0010","0014","0015"]);
+    expect(migrations.map((item) => item.version)).toEqual(["0001","0002","0003","0004","0005","0006","0007","0008","0009","0010","0014","0015","0016"]);
     const options = { databaseUrl: url!, databaseName: name };
     await migrateMongo({ ...options, migrations: migrations.slice(0, 8) });
     const history = await db.collection("schema_migrations").find({}).sort({ _id: 1 }).toArray();

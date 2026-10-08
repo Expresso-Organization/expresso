@@ -133,3 +133,5 @@ export const InterviewQuestionRewriteSchema = z
 
 export type InterviewQuestionDraft = z.infer<typeof InterviewQuestionDraftSchema>;
 export type InterviewQuestionRewrite = z.infer<typeof InterviewQuestionRewriteSchema>;
+
+export type InterviewAnswerResult = z.infer<typeof InterviewAnswerResultSchema>;

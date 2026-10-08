@@ -98,7 +98,10 @@ export class AiProposalService {
   async get(userId: string, recordId: string, proposalId: string): Promise<AiEditProposalDetail> {
     const row = await mongoCollections(this.context.db).careerAiProposals.findOne({ _id: proposalId, userId, recordId });
     if (!row) throw new CareerDocumentError(404, "AI proposal not found");
-    if (row.expiresAt <= new Date() && ["draft", "streaming", "ready"].includes(row.status)) { await mongoCollections(this.context.db).careerAiProposals.updateOne({ _id: row._id }, { $set: { status: "expired", updatedAt: new Date() } }); row.status = "expired"; }
+    if (!row.writerIntegration && row.expiresAt <= new Date() && ["draft", "streaming", "ready"].includes(row.status)) {
+      const expired = await mongoCollections(this.context.db).careerAiProposals.updateOne({ _id: row._id, writerIntegration: { $exists: false } }, { $set: { status: "expired", updatedAt: new Date() } });
+      if (expired.matchedCount) row.status = "expired";
+    }
     return toDetail(row);
   }
 
@@ -107,10 +110,12 @@ export class AiProposalService {
     if (input.recordId !== recordId) throw new CareerDocumentError(404, "AI proposal not found");
     const db = mongoCollections(this.context.db); const row = await db.careerAiProposals.findOne({ _id: input.proposalId, userId, recordId });
     if (!row) throw new CareerDocumentError(404, "AI proposal not found");
+    if (row.writerIntegration) throw new CareerDocumentError(409, "AI proposal is owned by a prepared writer");
     if (["rejected", "cancelled"].includes(row.status)) return;
     if (row.status !== "ready" && row.status !== "draft" && row.status !== "streaming") throw new CareerDocumentError(409, "AI proposal cannot be cancelled");
     row.status = status; row.progress = null; row.updatedAt = new Date();
-    await db.careerAiProposals.updateOne({ _id: row._id, userId }, { $set: { status, progress: null, updatedAt: row.updatedAt } });
+    const changed = await db.careerAiProposals.updateOne({ _id: row._id, userId, writerIntegration: { $exists: false } }, { $set: { status, progress: null, updatedAt: row.updatedAt } });
+    if (!changed.matchedCount) throw new CareerDocumentError(409, "AI proposal is owned by a prepared writer");
     if (status === "cancelled") this.controllers.get(row._id)?.abort();
     this.publish(row);
   }
@@ -124,9 +129,11 @@ export class AiProposalService {
     await inTransaction(this.context, async (tx) => {
       const db = mongoCollections(tx.db); const proposal = await db.careerAiProposals.findOne({ _id: input.proposalId, userId, recordId }, { session: tx.session });
       if (!proposal) throw new CareerDocumentError(404, "AI proposal not found");
+      if (proposal.writerIntegration) throw new CareerDocumentError(409, "AI proposal is owned by a prepared writer");
       if (proposal.status === "applied") { publishRow = proposal; return; }
       if (proposal.status !== "ready" || proposal.expiresAt <= new Date()) throw new CareerDocumentError(409, "AI proposal is unavailable");
       const repository = new MongoCareerDocumentRepository(tx); const record = await repository.record(userId, recordId, tx.session);
+      if (record && "documentReservation" in record && record.documentReservation != null) throw new CareerDocumentError(409, "document is reserved by a prepared writer");
       if (!record || (record.documentVersion ?? 0) !== input.expectedDocumentVersion) throw new CareerDocumentError(409, "document version is stale");
       const snapshot = await repository.snapshot(recordId, tx.session); if (!snapshot) throw new CareerDocumentError(409, "career document is not initialized");
       const updates = await repository.updates(recordId, snapshot.serverSequence, tx.session);
