@@ -4,4 +4,5 @@ export { mongoCollections, type MongoCollections } from "./collections.js";
 export { loadCollectionSpecs, type MongoCollectionSpec } from "./collection-specs.js";
 export { acquireMigrationLease, renewMigrationLease, recoverMigrationLease, releaseMigrationLease, MigrationLeaseUnavailable } from "./migration-lease.js";
 export type * from "./documents/index.js";
+export { readCanonicalCareerPropertyValues, canonicalDecimalString } from "./career-canonical-values.js";
 

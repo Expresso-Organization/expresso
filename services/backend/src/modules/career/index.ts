@@ -8,6 +8,10 @@ export { CareerService } from "./service.js";
 export { MongoCareerService } from "./service.js";
 export { assertActiveRecordsForWrite, purgeTrashedCareerRecord } from "./mongo-record-guard.js";
 export { CareerError } from "./errors.js";
+export { MongoCanonicalCareerPropertySchemaService } from "./canonical-property-schema.js";
+export { CanonicalPropertyMutationWorker } from "./property-mutation.js";
+export { createSpringPropertyMutationPort } from "./spring-property-mutation-port.js";
+export type { SpringPropertyMutationPort, SpringPropertyMutationTransport } from "./spring-property-mutation-port.js";
 export interface CareerApi extends Pick<LegacyCareerService, keyof LegacyCareerService> {
   /** Mongo v2 구현이 연결된 서비스에서 제공됩니다. 레거시 SQL 서비스와의 롤아웃 호환을 위해 선택적입니다. */
   previewChange?: CareerPropertySchemaService["previewChange"];

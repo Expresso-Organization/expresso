@@ -31,6 +31,10 @@ export interface CareerRecordDoc {
   status: Contracts.CareerRecord["status"];
   origin: Contracts.CareerRecord["origin"];
   properties: Contracts.CareerRecord["properties"];
+  /** canonical business 입력입니다. 숫자는 BSON Decimal128로 저장합니다. */
+  propertyValues?: Array<Exclude<Contracts.CareerBusinessPropertyValue, { type: "number" }> | {
+    propertyDefinitionId: string; type: "number"; value: Decimal128;
+  }>;
   bodyMd: Contracts.CareerRecord["bodyMd"];
   periodStart?: string | null;
   periodEnd?: string | null;
@@ -46,6 +50,8 @@ export interface CareerRecordDoc {
   documentVersion?: number | null;
   latestSnapshotId?: string | null;
   computedProperties?: JsonObject | null;
+  computationVersion?: number;
+  computedAt?: Date | null;
   unmappedProperties?: JsonObject | null;
   /** 삭제한 프로퍼티의 값을 안정 ID 아래 보존해 같은 프로퍼티 복원 때 되살립니다. */
   propertyValueTombstones?: JsonObject | null;

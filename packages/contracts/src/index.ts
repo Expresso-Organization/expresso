@@ -77,3 +77,5 @@ export * from "./page-library.js";
 export * from "./agent-chat.js";
 export * from "./career-writer.js";
 export * from "./career-writer-openapi.js";
+export * from "./career-property-mutation.js";
+export * from "./career-property-mutation-openapi.js";
