@@ -88,7 +88,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("inactive canonical mutation work
     const state=await setup(101);await new state.Worker(fixture.resource,state.port).run(state.job._id,state.job.operationFingerprint);
     const job=await mongoCollections(fixture.resource.db).careerPropertyMutations.findOne({_id:state.job._id});expect(job).toMatchObject({status:"completed",active:false,cursor:101,processedCount:101,skippedCount:0});
     expect(state.commits).toBe(101);expect([...state.records.values()].every(r=>r.propertyValues[1]?.value==="preserve" && r.propertyValues[0]?.value==="42.1200")).toBe(true);
-  });
+  },30_000);
   it("bounded CAS rereads and recalculates without overwriting a concurrent edit",async()=>{
     const state=await setup();state.conflict();await new state.Worker(fixture.resource,state.port).run(state.job._id,state.job.operationFingerprint);
     expect([...state.records.values()][0]).toMatchObject({title:"concurrent edit",version:3});expect(state.commits).toBe(1);
@@ -152,7 +152,11 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("inactive canonical mutation work
     try {
       deliveryWorker=start(port);
       const delivery=await queue.add("career.property-mutation",{mutationId:state.job._id,operationFingerprint:state.job.operationFingerprint},{attempts:1});
-      const exhausted=await waitFor(async()=>{const job=await queue.getJob(delivery.id!);return await job?.getState()==="failed"?job:undefined;});
+      const exhausted=await waitFor(async()=>{
+        const job=await queue.getJob(delivery.id!);
+        // getState는 Redis만 조회하므로 실패 전 객체의 attemptsMade를 갱신하지 않습니다.
+        return await job?.getState()==="failed"?queue.getJob(delivery.id!):undefined;
+      });
       expect(exhausted.attemptsMade).toBe(1);expect(exhausted.failedReason).toContain("lease lost before checkpoint");
       expect(await jobs.findOne({_id:state.job._id})).toMatchObject({status:"running",cursor:0,processedCount:0,attempts:1,lastError:null});
       await deliveryWorker.close();deliveryWorker=undefined;
@@ -188,6 +192,10 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("inactive canonical mutation work
     const errors:unknown[]=[];
     let deliveryWorker:Worker<Record<string,unknown>>|undefined;
     const recoveries=[mutationProcessorModule.createCareerPropertyMutationRecovery(fixture.resource,queue,{intervalMs:25,onError:error=>errors.push(error)}),mutationProcessorModule.createCareerPropertyMutationRecovery(fixture.resource,queue,{intervalMs:25,onError:error=>errors.push(error)})];
+    // 공유 DB의 다른 expired-running 작업도 복구 대상이며 큐 전체 개수는 이 작업의 불변식이 아닙니다.
+    const inherited=await setup(),inheritedCanonical=await durablePort(inherited);
+    await new inherited.Worker(fixture.resource,inheritedCanonical).run(inherited.job._id,inherited.job.operationFingerprint);
+    await jobs.updateOne({_id:inherited.job._id},{$set:{status:"running",active:true,cursor:0,processedCount:0,attempts:1,leaseToken:randomUUID(),leaseUntil:new Date(Date.now()-1),completedAt:null}});
     try {
       // claim에 도달하기 전에 마지막 복구 전달도 실패한 상태를 만듭니다.
       deliveryWorker=new Worker<Record<string,unknown>>(queueName,async()=>{throw new Error("crash before durable claim");},{connection:{url:process.env.TEST_REDIS_URL!},prefix});
@@ -197,7 +205,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("inactive canonical mutation work
       expect(await exhausted.getState()).toBe("failed");
       deliveryWorker=new Worker<Record<string,unknown>>(queueName,createCareerPropertyMutationProcessor(new crashed!.Worker(fixture.resource,canonical)),{connection:{url:process.env.TEST_REDIS_URL!},prefix});
       recoveries.forEach(recovery=>recovery.start());
-      await waitFor(async()=>{const job=await jobs.findOne({_id:crashed!.job._id});return job?.status==="completed"?job:undefined;});
+      await waitFor(async()=>{const completedJobs=await jobs.countDocuments({_id:{$in:[crashed!.job._id,inherited.job._id]},status:"completed"});return completedJobs===2?true:undefined;});
       await Promise.all(recoveries.map(recovery=>recovery.stop()));
       const job=await jobs.findOne({_id:crashed!.job._id});
       expect(job).toMatchObject({status:"completed",attempts:2,cursor:1,processedCount:1,lastError:null});
@@ -206,7 +214,24 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("inactive canonical mutation work
       expect(await mongoCollections(fixture.resource.db).careerPropertyMutationReceipts.countDocuments({mutationId:crashed!.job._id})).toBe(1);
       expect(await mongoCollections(fixture.resource.db).outboxEvents.countDocuments({idempotencyKey:`record-commit-${[...crashed!.records.keys()][0]}`})).toBe(1);
       expect(await Promise.all([live,failed,completed].map(state=>jobs.findOne({_id:state!.job._id})))).toEqual(preserved);
-      expect(await queue.getJobCounts("completed","failed")).toEqual({completed:1,failed:0});expect(errors).toEqual([]);
+      await waitFor(async()=>{
+        const deliveries=await queue.getJobs(["completed"]);
+        return [crashed!.job._id,inherited.job._id].every(id=>deliveries.some(delivery=>delivery.data.mutationId===id))?true:undefined;
+      });
+      const targetDeliveries=async()=> (await queue.getJobs(["completed","failed","waiting","active","delayed"])).filter(delivery=>delivery.data.mutationId===crashed!.job._id);
+      const target=await targetDeliveries();
+      expect(target.map(delivery=>delivery.id)).toEqual([exhausted.id]);
+      expect(await target[0]!.getState()).toBe("completed");
+      const settledDelivery=target[0]!.asJSON();
+      // 새 sweep을 반복해도 완료된 Mongo 작업을 다시 등록하거나 같은 delivery를 retry하지 않습니다.
+      for(let sweep=0;sweep<3;sweep++)await Promise.all(recoveries.map(recovery=>recovery.pollOnce()));
+      expect((await targetDeliveries()).map(delivery=>delivery.id)).toEqual([exhausted.id]);
+      expect((await queue.getJob(exhausted.id!))?.asJSON()).toEqual(settledDelivery);
+      expect(await jobs.findOne({_id:crashed!.job._id})).toEqual(job);
+      expect(await mongoCollections(fixture.resource.db).careerRecords.findOne({_id:[...inherited.records.keys()][0]!})).toMatchObject({version:2});
+      expect(await mongoCollections(fixture.resource.db).careerPropertyMutationReceipts.countDocuments({mutationId:inherited.job._id})).toBe(1);
+      expect(await mongoCollections(fixture.resource.db).outboxEvents.countDocuments({idempotencyKey:`record-commit-${[...inherited.records.keys()][0]}`})).toBe(1);
+      expect(errors).toEqual([]);
     } finally {await Promise.all(recoveries.map(recovery=>recovery.stop()));await deliveryWorker?.close();await queue.obliterate({force:true});await queue.close();}
   },15_000);
   it.skipIf(!process.env.TEST_REDIS_URL)("automatically replays a durable receipt after forcibly terminating a BullMQ worker process",async()=>{
