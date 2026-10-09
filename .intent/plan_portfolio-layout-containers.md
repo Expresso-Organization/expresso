@@ -24,9 +24,11 @@ date: 2026-10-09
 | `services/backend/src/modules/page/structured.mongo.integration.test.ts` | 중첩 Spec 저장·구성 편집 |
 | `services/web/src/app/(app)/edit/[portfolioId]/StructuredPageProperties.tsx` | 트리 순회 목록, 부모 안 이동, 묶음 표시 |
 | `scripts/library/renderer/run-structured-profiles.ts` | `PORTFOLIO_AI=claude-code` |
+| `scripts/library/renderer/check-collected-runtime.mjs` | 사례 원본을 `Grid`·`Columns`에 넣은 넘침 검사 |
+| `scripts/library/renderer/seed-structured-preview.ts` | 편집 화면 확인용 컨테이너 Spec(필요 시) |
 | `scripts/library/renderer/verify-structured-profiles.mjs` | 트리 표기, 구성 수 기록 |
 | `scripts/library/renderer/compare-runs.mjs` | 지면 구성 측정값 |
-| `docs/library/previews/portfolio/runs/library-layout-qwen-2026-10-09/` · `library-layout-sonnet-2026-10-09/` | 실행 기록·비교·검증 |
+| `docs/library/previews/portfolio/runs/library-layout-qwen-2026-10-09/` · `library-layout-sonnet-2026-10-09/` · `library-layout-sonnet-full-2026-10-09/` | 실행 기록·비교·검증 |
 | `docs/architecture/portfolio-library-selection.md` | 컨테이너 규칙과 실행 결과 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
@@ -39,7 +41,7 @@ date: 2026-10-09
 4. 편집 화면 — 트리 목록·부모 안 이동. `pnpm --filter web test`, 개발 서버에서 컨테이너가 있는 판을 열어 유형 교체·이동·저장 확인.
 5. 통합 테스트 — 중첩 Spec 저장·편집. `pnpm test:infra structured.mongo.integration.test.ts`.
 6. 스크립트 — Sonnet 공급자, 트리 표기, 구성 측정값.
-7. 실행 — qwen 3개, Sonnet 3개. 비교 페이지·검증 기록 생성, 화면 확인.
+7. 실행 — qwen 3개와 Sonnet 3개(같은 준비된 입력), Sonnet 전체 경로 1개(시간·토큰 측정용). 비교 페이지·검증 기록 생성, 화면 확인.
 8. 문서, 전체 `pnpm typecheck`·`pnpm test`·`pnpm test:infra`, 커밋·푸시·PR(#56 위에 쌓은 PR).
 
 ## 가장 위험한 단계
@@ -55,7 +57,8 @@ node scripts/library/renderer/check-collected-runtime.mjs --browser
 pnpm typecheck && pnpm test
 pnpm test:infra integration.test.ts --maxWorkers=2
 PORTFOLIO_RUN_ID=library-layout-qwen-2026-10-09 services/backend/node_modules/.bin/tsx scripts/library/renderer/run-structured-profiles.ts
-PORTFOLIO_AI=claude-code PORTFOLIO_NORMALIZE=1 PORTFOLIO_RUN_ID=library-layout-sonnet-2026-10-09 services/backend/node_modules/.bin/tsx scripts/library/renderer/run-structured-profiles.ts
+PORTFOLIO_AI=claude-code PORTFOLIO_RUN_ID=library-layout-sonnet-2026-10-09 services/backend/node_modules/.bin/tsx scripts/library/renderer/run-structured-profiles.ts
+PORTFOLIO_AI=claude-code PORTFOLIO_NORMALIZE=1 PORTFOLIO_PROFILE=robotics-engineer PORTFOLIO_RUN_ID=library-layout-sonnet-full-2026-10-09 services/backend/node_modules/.bin/tsx scripts/library/renderer/run-structured-profiles.ts
 python3 -m http.server 8942 -d docs   # 별도 프로세스
 node scripts/library/renderer/compare-runs.mjs library-selection-rerender-2026-10-09 library-layout-qwen-2026-10-09
 node scripts/library/renderer/verify-structured-profiles.mjs library-layout-qwen-2026-10-09

@@ -11,13 +11,13 @@ date: 2026-10-09
 
 ## 요구사항
 
-- [ ] R1. 카탈로그에 컨테이너 세 종류가 있다. `Columns`(두 열, `variant`=`even`·`wide-start`·`wide-end`), `Grid`(같은 폭 2–3열, `variant`=`even`), `Band`(배경이 있는 묶음, `variant`=`panel`·`accent`).
+- [ ] R1. 카탈로그에 컨테이너 세 종류가 있다. `Columns`(두 열, `variant`=`even`·`wide-start`·`wide-end`), `Grid`(같은 폭 2–3열, `variant`=`even`), `Band`(묶음, `variant`=`panel`·`accent`). 색·여백은 기존 값만 쓴다. `panel`은 `.sp-case-panel`의 배경(`--sp-panel`)과 32px 여백, `accent`는 `.sp-steps li`의 상단 3px `--sp-accent` 선이다.
 - [ ] R2. 트리 규칙: 깊이는 `page → 컨테이너 → 요소`까지다. 컨테이너 안에 컨테이너·`NameIntro`·`Contact`를 넣을 수 없다. 컨테이너 자식 수는 `Columns` 2개, `Grid` 2–3개, `Band` 1–3개다. 컨테이너는 최대 4개, 각각 `page.children`에서 한 번만 참조한다. 모든 요소는 트리에서 정확히 한 번 나타나고, 참조되지 않는 요소가 없다. `NameIntro`는 `page.children`의 첫 요소, `Contact`는 마지막 요소다.
 - [ ] R3. `structuredModelSchema`는 선택적 컨테이너 키 `group-1`…`group-4`를 제공한다. `page.children`은 고정 길이 순열이 아니라 요소 ID·컨테이너 ID의 배열이다. R2는 `validateStructuredPortfolio`가 모델 출력과 직접 편집에 똑같이 적용한다.
 - [ ] R4. 컨테이너가 없는 저장 Spec(`library-selection-rerender-2026-10-09` 세 개)을 다시 렌더링한 HTML이 PR #56 결과와 바이트 단위로 같다.
 - [ ] R5. 컨테이너는 900px 이하에서 한 열이 되고, 390·926·1440px에서 가로 넘침이 없으며, JavaScript 없이 표시된다.
 - [ ] R6. 편집 화면은 트리를 따라 모든 사례를 나열한다. 유형·원본 교체와 문장 편집은 컨테이너 안에서도 동작한다. 위·아래 이동은 같은 부모 안에서만 일어나고, 저장 후 컨테이너 구성이 보존된다.
-- [ ] R7. 실행 스크립트가 `PORTFOLIO_AI=claude-code`로 Sonnet을 호출할 수 있다. qwen 실행(준비된 입력 3개)과 Sonnet 실행(입력 정리 포함 3개)이 각각 실행 기록으로 남는다.
+- [ ] R7. 실행 스크립트가 `PORTFOLIO_AI=claude-code`로 Sonnet을 호출할 수 있다. qwen과 Sonnet이 같은 준비된 입력 3개로 각각 실행 기록을 남긴다. 입력 정리 모드는 이미지를 넘기지 않으므로(스크립트가 `media: []`, 생성기가 업로드 이미지만 허용) 구성 비교에 쓰지 않고, Sonnet 전체 경로(입력 정리 + Spec) 시간·토큰 측정용으로 1회만 실행한다.
 - [ ] R8. 검증 기록과 비교 페이지가 프로필별 지면 구성(컨테이너 트리 표기), 서로 다른 구성 수, 토큰·시간을 적는다. 세 결과의 구성이 같아도 검증은 실패하지 않고 그 사실을 기록한다.
 
 ## 설계
@@ -43,11 +43,11 @@ date: 2026-10-09
 
 ## 함정
 
-- 수집 원본은 Tailwind 뷰포트 중단점(`md:`)을 쓴다. 1440px에서 `Grid` 세 열 안의 Feature 원본은 세 열 카드를 약 400px 폭에 그린다. 넘침 검사로 확인하고, 넘치면 원본이 있는 사례를 세 열 `Grid`에 넣지 못하게 도메인 검사로 막는다.
+- 수집 원본은 Tailwind 뷰포트 중단점(`md:`)을 쓴다. 1440px에서 `Grid` 세 열 안의 Feature 원본은 세 열 카드를 약 400px 폭에 그린다. `check-collected-runtime.mjs`에 사례 원본 6개를 세 열 `Grid`와 `Columns`에 넣은 변형을 추가해 넘침을 측정하고, 넘치는 조합만 도메인 검사로 막는다.
 - 사용자 스타일이 있으면 `design.layout`이 고정된다(`fixedLayout`). editorial·dossier 배치는 페이지 자체가 두 열이므로 컨테이너가 본문 열 안에 들어간다.
 - 편집 화면은 `root.children[0]`을 소개로 가정한다. 이 가정은 R2로 유지된다.
 - 로컬 qwen이 컨테이너를 쓰지 않을 수 있다. 이것은 결과로 기록하고, 프롬프트를 계속 고쳐 원하는 결과를 만들지 않는다.
-- Sonnet 실행은 이 Mac의 Claude 사용량을 쓴다. 실행 수는 프로필 3개 × 1회로 제한한다.
+- Sonnet 실행은 이 Mac의 Claude 사용량을 쓴다. 준비된 입력 3회와 전체 경로 측정 1회로 제한한다.
 
 ## 완료 기준
 
@@ -56,7 +56,8 @@ pnpm typecheck && pnpm test                   # 계약·렌더러·백엔드·�
 pnpm test:infra structured.mongo.integration.test.ts --maxWorkers=1   # 중첩 Spec 저장·편집 포함
 node scripts/library/renderer/check-collected-runtime.mjs --browser
 PORTFOLIO_RUN_ID=library-layout-qwen-2026-10-09 services/backend/node_modules/.bin/tsx scripts/library/renderer/run-structured-profiles.ts
-PORTFOLIO_AI=claude-code PORTFOLIO_NORMALIZE=1 PORTFOLIO_RUN_ID=library-layout-sonnet-2026-10-09 services/backend/node_modules/.bin/tsx scripts/library/renderer/run-structured-profiles.ts
+PORTFOLIO_AI=claude-code PORTFOLIO_RUN_ID=library-layout-sonnet-2026-10-09 services/backend/node_modules/.bin/tsx scripts/library/renderer/run-structured-profiles.ts
+PORTFOLIO_AI=claude-code PORTFOLIO_NORMALIZE=1 PORTFOLIO_PROFILE=robotics-engineer PORTFOLIO_RUN_ID=library-layout-sonnet-full-2026-10-09 services/backend/node_modules/.bin/tsx scripts/library/renderer/run-structured-profiles.ts
 node scripts/library/renderer/compare-runs.mjs library-selection-rerender-2026-10-09 library-layout-qwen-2026-10-09
 node scripts/library/renderer/verify-structured-profiles.mjs library-layout-qwen-2026-10-09
 node scripts/library/renderer/verify-structured-profiles.mjs library-layout-sonnet-2026-10-09
