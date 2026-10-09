@@ -1,14 +1,15 @@
 import { type IdentityPrincipal, type IssueIdentitySessionInput, IdentityError } from "./public.js";
 export { type IdentityPrincipal, type IssueIdentitySessionInput, IdentityError } from "./public.js";
 import { randomUUID } from "node:crypto";
-import type {
-  AuthSession,
-  AuthenticatedUser,
-  IssuedIdentitySession,
-  Login,
-  PlanCode,
-  Signup,
-  SocialAuthSession,
+import {
+  SESSION_POLICY,
+  type AuthSession,
+  type AuthenticatedUser,
+  type IssuedIdentitySession,
+  type Login,
+  type PlanCode,
+  type Signup,
+  type SocialAuthSession,
 } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/legacy-mysql.js";
 
@@ -16,8 +17,6 @@ import type { GoogleIdentity } from "./google.js";
 import { hashPassword, verifyPassword } from "./password.js";
 import { createAccessToken, hashAccessToken, isAccessToken } from "./token.js";
 
-const DEFAULT_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
-const MAX_SESSION_TTL_MS = 90 * 24 * 60 * 60 * 1_000;
 
 interface IssuedSessionRow {
   id: string;
@@ -83,13 +82,15 @@ export class IdentityService {
     this.#sql = sql;
   }
 
+  /**
+   * 레거시 MySQL 경로는 고정 TTL만 준다 — 활동 기준 연장은 Mongo 서비스에만 있다.
+   * 운영 런타임은 Mongo이고(`api/main.ts`), 이 클래스는 `IdentityApi`의 타입 출처로 남는다.
+   */
   async issueSession(
     input: IssueIdentitySessionInput,
   ): Promise<IssuedIdentitySession> {
-    const ttlMs = input.ttlMs ?? DEFAULT_SESSION_TTL_MS;
-    if (!Number.isSafeInteger(ttlMs) || ttlMs <= 0 || ttlMs > MAX_SESSION_TTL_MS) {
-      throw new RangeError("session TTL must be between 1ms and 90 days");
-    }
+    const persistent = input.persistent ?? true;
+    const ttlMs = (persistent ? SESSION_POLICY.persistent : SESSION_POLICY.ephemeral).idleMs;
 
     const accessToken = createAccessToken();
     const expiresAt = new Date(Date.now() + ttlMs);
@@ -105,6 +106,7 @@ export class IdentityService {
       sessionId: session.id,
       accessToken,
       expiresAt: new Date(session.expires_at).toISOString(),
+      persistent,
     };
   }
 
@@ -148,7 +150,7 @@ export class IdentityService {
 
     return {
       user: toAuthenticatedUser(account),
-      session: await this.issueSession({ userId: account.id }),
+      session: await this.issueSession({ userId: account.id, persistent: input.persistent }),
     };
   }
 
@@ -175,7 +177,7 @@ export class IdentityService {
 
     return {
       user: toAuthenticatedUser(account),
-      session: await this.issueSession({ userId: account.id }),
+      session: await this.issueSession({ userId: account.id, persistent: input.persistent }),
     };
   }
 
@@ -190,7 +192,7 @@ export class IdentityService {
    * 않는다 — 남의 주소로 먼저 가입해 둔 계정에 진짜 주인을 넣어 주는 셈이 된다.
    * 409로 되돌려 비밀번호를 확인받는다(`linkGoogle`).
    */
-  async signInWithGoogle(identity: GoogleIdentity): Promise<SocialAuthSession> {
+  async signInWithGoogle(identity: GoogleIdentity, persistent = true): Promise<SocialAuthSession> {
     const linked = await this.#sql<CredentialRow[]>`
       select
         account.id,
@@ -218,7 +220,7 @@ export class IdentityService {
       `;
       return {
         user: toAuthenticatedUser(existing),
-        session: await this.issueSession({ userId: existing.id }),
+        session: await this.issueSession({ userId: existing.id, persistent }),
         created: false,
       };
     }
@@ -238,7 +240,7 @@ export class IdentityService {
       });
     }
 
-    return this.#createAccountFromGoogle(identity);
+    return this.#createAccountFromGoogle(identity, persistent);
   }
 
   /**
@@ -247,6 +249,7 @@ export class IdentityService {
   async linkGoogle(
     identity: GoogleIdentity,
     password: string,
+    persistent = true,
   ): Promise<SocialAuthSession> {
     if (!identity.emailVerified) {
       throw new IdentityError(401, "google account email is not verified");
@@ -286,7 +289,7 @@ export class IdentityService {
 
     return {
       user: toAuthenticatedUser(account),
-      session: await this.issueSession({ userId: account.id }),
+      session: await this.issueSession({ userId: account.id, persistent }),
       created: false,
     };
   }
@@ -299,6 +302,7 @@ export class IdentityService {
    */
   async #createAccountFromGoogle(
     identity: GoogleIdentity,
+    persistent: boolean,
   ): Promise<SocialAuthSession> {
     const created = await this.#sql.begin(async (tx) => {
       const newUserId = randomUUID();
@@ -344,7 +348,7 @@ export class IdentityService {
 
     return {
       user: toAuthenticatedUser(created),
-      session: await this.issueSession({ userId: created.id }),
+      session: await this.issueSession({ userId: created.id, persistent }),
       created: true,
     };
   }

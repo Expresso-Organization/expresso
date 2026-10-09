@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { AuthSession, AuthenticatedUser, IssuedIdentitySession, Login, Signup, SocialAuthSession } from "@expresso/contracts";
+import { SESSION_POLICY, type AuthSession, type AuthenticatedUser, type IssuedIdentitySession, type Login, type Signup, type SocialAuthSession } from "@expresso/contracts";
 import { mongoCollections, type UserDoc } from "@expresso/database";
 import type { ClientSession } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
@@ -24,13 +24,18 @@ export class IdentityService implements IdentityApi {
   }
 
   async #session(tx: MongoTransaction, input: IssueIdentitySessionInput): Promise<IssuedIdentitySession> {
-    const ttl = input.ttlMs ?? 30 * 86_400_000;
-    if (!Number.isSafeInteger(ttl) || ttl <= 0 || ttl > 90 * 86_400_000) throw new RangeError("session TTL must be between 1ms and 90 days");
+    const persistent = input.persistent ?? true;
+    const idleTtlMs = (persistent ? SESSION_POLICY.persistent : SESSION_POLICY.ephemeral).idleMs;
     const accessToken = createAccessToken();
     const sessionId = randomUUID();
-    const expiresAt = new Date(Date.now() + ttl);
-    await mongoCollections(tx.db).identitySessions.insertOne({ _id: sessionId, userId: input.userId, tokenHash: hashAccessToken(accessToken), expiresAt, revokedAt: null, createdAt: new Date() }, { session: tx.session });
-    return { sessionId, accessToken, expiresAt: expiresAt.toISOString() };
+    const now = Date.now();
+    const expiresAt = new Date(now + idleTtlMs);
+    const absoluteExpiresAt = new Date(now + SESSION_POLICY.absoluteMs);
+    await mongoCollections(tx.db).identitySessions.insertOne(
+      { _id: sessionId, userId: input.userId, tokenHash: hashAccessToken(accessToken), expiresAt, absoluteExpiresAt, idleTtlMs, revokedAt: null, createdAt: new Date(now) },
+      { session: tx.session },
+    );
+    return { sessionId, accessToken, expiresAt: expiresAt.toISOString(), persistent };
   }
 
   issueSession(input: IssueIdentitySessionInput): Promise<IssuedIdentitySession> {
@@ -49,7 +54,7 @@ export class IdentityService implements IdentityApi {
         if (!plan) throw new Error("free plan is not installed");
         const account: UserDoc = { _id: randomUUID(), email: input.email, displayName: input.displayName, planId: plan._id, passwordHash, createdAt: new Date(), deletionRequestedAt: null, lifecycleVersion: 0 };
         await collections.users.insertOne(account, { session: tx.session });
-        return { user: await this.#user(account, tx.session), session: await this.#session(tx, { userId: account._id }) };
+        return { user: await this.#user(account, tx.session), session: await this.#session(tx, { userId: account._id, persistent: input.persistent }) };
       });
     } catch (error) { if (duplicate(error)) throw new IdentityError(409, "email is already registered"); throw error; }
   }
@@ -60,11 +65,11 @@ export class IdentityService implements IdentityApi {
     if (!account || !matches || account.deletionRequestedAt) throw new IdentityError(401, "email or password is incorrect");
     return inTransaction(this.context, async tx => {
       await requireActiveUser(tx, account._id);
-      return { user: await this.#user(account, tx.session), session: await this.#session(tx, { userId: account._id }) };
+      return { user: await this.#user(account, tx.session), session: await this.#session(tx, { userId: account._id, persistent: input.persistent }) };
     });
   }
 
-  async signInWithGoogle(identity: GoogleIdentity): Promise<SocialAuthSession> {
+  async signInWithGoogle(identity: GoogleIdentity, persistent = true): Promise<SocialAuthSession> {
     try {
       return await inTransaction(this.context, async tx => {
         const collections = mongoCollections(tx.db);
@@ -73,7 +78,7 @@ export class IdentityService implements IdentityApi {
           await requireActiveUser(tx, linked.userId);
           const account = await collections.users.findOne({ _id: linked.userId }, { session: tx.session });
           await collections.identityOauthAccounts.updateOne({ _id: linked._id }, { $set: { email: identity.email, lastLoginAt: new Date() } }, { session: tx.session });
-          return { user: await this.#user(account!, tx.session), session: await this.#session(tx, { userId: linked.userId }), created: false };
+          return { user: await this.#user(account!, tx.session), session: await this.#session(tx, { userId: linked.userId, persistent }), created: false };
         }
         if (!identity.emailVerified) throw new IdentityError(401, "google account email is not verified");
         const owner = await collections.users.findOne({ email: identity.email }, { session: tx.session, collation: emailCollation });
@@ -83,7 +88,7 @@ export class IdentityService implements IdentityApi {
         const account: UserDoc = { _id: randomUUID(), email: identity.email, displayName: (identity.displayName?.trim() || identity.email.split("@")[0] || identity.email).slice(0, 200), planId: plan._id, passwordHash: null, deletionRequestedAt: null, createdAt: new Date(), lifecycleVersion: 0 };
         await collections.users.insertOne(account, { session: tx.session });
         await collections.identityOauthAccounts.insertOne({ _id: randomUUID(), userId: account._id, provider: "google", providerAccountId: identity.subject, email: identity.email, linkedAt: new Date(), lastLoginAt: new Date() }, { session: tx.session });
-        return { user: await this.#user(account, tx.session), session: await this.#session(tx, { userId: account._id }), created: true };
+        return { user: await this.#user(account, tx.session), session: await this.#session(tx, { userId: account._id, persistent }), created: true };
       });
     } catch (error) {
       if (duplicate(error)) throw new IdentityError(409, "email belongs to a password account", { reason: "password_confirmation_required", email: identity.email });
@@ -91,7 +96,7 @@ export class IdentityService implements IdentityApi {
     }
   }
 
-  async linkGoogle(identity: GoogleIdentity, password: string): Promise<SocialAuthSession> {
+  async linkGoogle(identity: GoogleIdentity, password: string, persistent = true): Promise<SocialAuthSession> {
     if (!identity.emailVerified) throw new IdentityError(401, "google account email is not verified");
     const account = await mongoCollections(this.context.db).users.findOne({ email: identity.email }, { collation: emailCollation });
     const matches = await verifyPassword(password, account?.passwordHash ?? null);
@@ -100,7 +105,7 @@ export class IdentityService implements IdentityApi {
       return await inTransaction(this.context, async tx => {
         await requireActiveUser(tx, account._id);
         await mongoCollections(tx.db).identityOauthAccounts.insertOne({ _id: randomUUID(), userId: account._id, provider: "google", providerAccountId: identity.subject, email: identity.email, linkedAt: new Date(), lastLoginAt: new Date() }, { session: tx.session });
-        return { user: await this.#user(account, tx.session), session: await this.#session(tx, { userId: account._id }), created: false };
+        return { user: await this.#user(account, tx.session), session: await this.#session(tx, { userId: account._id, persistent }), created: false };
       });
     } catch (error) { if (duplicate(error)) throw new IdentityError(409, "google account is already linked elsewhere"); throw error; }
   }
@@ -108,9 +113,22 @@ export class IdentityService implements IdentityApi {
   async verifyAccessToken(accessToken: string): Promise<IdentityPrincipal | null> {
     if (!isAccessToken(accessToken)) return null;
     const collections = mongoCollections(this.context.db);
+    // 활동 기준 연장. 새 만료 = min(now + idle, 절대 상한). 0009 이전 문서는 두 필드가 없어
+    // 유지 모드(30일) · `createdAt + 90일`로 읽는다 — 배포 전 세션이 그대로 살아 있게.
     const session = await collections.identitySessions.findOneAndUpdate(
       { tokenHash: hashAccessToken(accessToken), revokedAt: null, expiresAt: { $gt: new Date() } },
-      { $set: { lastSeenAt: new Date() } }, { returnDocument: "after" },
+      [{
+        $set: {
+          lastSeenAt: "$$NOW",
+          expiresAt: {
+            $min: [
+              { $add: ["$$NOW", { $ifNull: ["$idleTtlMs", SESSION_POLICY.persistent.idleMs] }] },
+              { $ifNull: ["$absoluteExpiresAt", { $add: ["$createdAt", SESSION_POLICY.absoluteMs] }] },
+            ],
+          },
+        },
+      }],
+      { returnDocument: "after" },
     );
     if (!session) return null;
     const account = await collections.users.findOne({ _id: session.userId, deletionRequestedAt: null });

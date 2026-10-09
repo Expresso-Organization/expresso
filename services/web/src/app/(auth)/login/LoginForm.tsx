@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { loginAction, type AuthFormState } from "@/app/auth-actions";
 import { Catchphrase } from "@/components/brand/Catchphrase";
+import { Icon } from "@/components/ui/Icon";
 
 import { AuthAside } from "../AuthAside";
 import { SocialSignIn } from "../SocialSignIn";
@@ -15,12 +16,17 @@ const INITIAL: AuthFormState = {};
 export function LoginForm({
   googleEnabled,
   notice,
+  next,
 }: {
   googleEnabled: boolean;
   /** 소셜 왕복이 중간에 끊겼을 때 그 이유. 화면 위쪽에 한 줄로 선다. */
   notice?: string | undefined;
+  /** 로그인 뒤 돌아갈 자리. 서버가 이미 걸러 준 값이다. */
+  next: string;
 }) {
   const [state, action, pending] = useActionState(loginAction, INITIAL);
+  // "로그인 상태 유지". 기본 켬 — 끄면 브라우저를 닫을 때 끝나는 세션을 받는다.
+  const [persistent, setPersistent] = useState(true);
 
   return (
     <div className={styles.frame}>
@@ -43,7 +49,7 @@ export function LoginForm({
             </p>
           ) : null}
 
-          <SocialSignIn googleEnabled={googleEnabled} />
+          <SocialSignIn googleEnabled={googleEnabled} persistent={persistent} next={next} />
 
           <div className={styles.divider}>
             <span className={styles.dividerLine} />
@@ -52,6 +58,9 @@ export function LoginForm({
           </div>
 
           <form action={action}>
+            <input type="hidden" name="next" value={next} />
+            <input type="hidden" name="persistent" value={persistent ? "1" : "0"} />
+
             {state.error ? (
               <p className={styles.formError} role="alert">
                 {state.error}
@@ -95,14 +104,41 @@ export function LoginForm({
                 autoComplete="current-password"
                 required
                 placeholder="••••••••"
-                className={styles.input}
+                className={`${styles.input} ${
+                  state.fieldErrors?.password ? styles.inputInvalid : ""
+                }`}
+                aria-invalid={state.fieldErrors?.password ? true : undefined}
               />
+              {state.fieldErrors?.password ? (
+                <p className={styles.fieldError}>{state.fieldErrors.password}</p>
+              ) : null}
             </div>
+
+            <label className={styles.consent}>
+              <input
+                type="checkbox"
+                className={styles.consentInput}
+                checked={persistent}
+                aria-labelledby="persistent-label"
+                onChange={(event) => setPersistent(event.currentTarget.checked)}
+              />
+              <span
+                className={`${styles.consentBox} ${persistent ? styles.consentBoxOn : ""}`}
+                aria-hidden="true"
+              >
+                {persistent ? (
+                  <Icon name="check" weight="bold" size={10} color="var(--ex-fg-on-accent)" />
+                ) : null}
+              </span>
+              <span id="persistent-label" className={styles.consentText}>
+                로그인 상태 유지 — 공용 기기에서는 끄십시오
+              </span>
+            </label>
 
             <button
               type="submit"
               disabled={pending}
-              className={`${styles.submit} ${styles.submitSpacingLogin}`}
+              className={`${styles.submit} ${styles.submitSpacingSignup}`}
             >
               {pending ? "확인하는 중" : "로그인"}
             </button>

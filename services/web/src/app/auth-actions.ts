@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
 import { auth } from "@/lib/api/endpoints";
+import { safeNext } from "@/lib/auth/next-path";
 import { clearPendingLink, readPendingLink } from "@/lib/auth/oauth-cookies";
 import { clearAccessToken, readAccessToken, writeAccessToken } from "@/lib/session";
 
@@ -14,6 +15,32 @@ export interface AuthFormState {
   fieldErrors?: Partial<Record<"email" | "password" | "displayName", string>>;
 }
 
+type AuthFieldErrors = NonNullable<AuthFormState["fieldErrors"]>;
+type AuthField = keyof AuthFieldErrors;
+
+/** 검증 실패를 틀린 칸 아래에 붙인다. 어느 칸이든 이메일 아래에 몰아 두지 않는다. */
+function fieldErrorsFrom(
+  issues: readonly { path: PropertyKey[] }[],
+  messages: Record<AuthField, string>,
+): AuthFieldErrors {
+  const fieldErrors: AuthFieldErrors = {};
+  for (const issue of issues) {
+    const field = issue.path[0];
+    if (field === "email" || field === "password" || field === "displayName") {
+      fieldErrors[field] = messages[field];
+    }
+  }
+  return fieldErrors;
+}
+
+/**
+ * "로그인 상태 유지" 체크. 폼은 `persistent=1|0`으로 보낸다. 값이 없으면 켬 —
+ * 체크가 없는 폼(가입)도 지금까지와 같은 세션을 받게.
+ */
+function readPersistent(formData: FormData): boolean {
+  return formData.get("persistent") !== "0";
+}
+
 export async function loginAction(
   _previous: AuthFormState,
   formData: FormData,
@@ -21,14 +48,21 @@ export async function loginAction(
   const parsed = LoginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
+    persistent: readPersistent(formData),
   });
   if (!parsed.success) {
-    return { fieldErrors: { email: "이메일과 비밀번호를 확인해 주세요." } };
+    return {
+      fieldErrors: fieldErrorsFrom(parsed.error.issues, {
+        email: "유효한 이메일을 넣어주세요.",
+        password: "비밀번호를 입력해 주세요.",
+        displayName: "",
+      }),
+    };
   }
 
   try {
     const { data } = await auth.login(parsed.data);
-    await writeAccessToken(data.session.accessToken, data.session.expiresAt);
+    await writeAccessToken(data.session);
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
       return { error: "이메일 또는 비밀번호가 맞지 않습니다. 다시 입력해 주세요." };
@@ -36,7 +70,7 @@ export async function loginAction(
     throw error;
   }
 
-  redirect("/home");
+  redirect(safeNext(formData.get("next")?.toString()));
 }
 
 export async function signupAction(
@@ -47,21 +81,21 @@ export async function signupAction(
     email: formData.get("email"),
     password: formData.get("password"),
     displayName: formData.get("displayName"),
+    persistent: readPersistent(formData),
   });
   if (!parsed.success) {
-    const fieldErrors: AuthFormState["fieldErrors"] = {};
-    for (const issue of parsed.error.issues) {
-      const field = issue.path[0];
-      if (field === "email") fieldErrors.email = "유효한 이메일을 넣어주세요.";
-      if (field === "password") fieldErrors.password = "10자 이상으로 적어주세요.";
-      if (field === "displayName") fieldErrors.displayName = "이름을 적어주세요.";
-    }
-    return { fieldErrors };
+    return {
+      fieldErrors: fieldErrorsFrom(parsed.error.issues, {
+        email: "유효한 이메일을 넣어주세요.",
+        password: "10자 이상으로 적어주세요.",
+        displayName: "이름을 적어주세요.",
+      }),
+    };
   }
 
   try {
     const { data } = await auth.signup(parsed.data);
-    await writeAccessToken(data.session.accessToken, data.session.expiresAt);
+    await writeAccessToken(data.session);
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) {
       return {
@@ -99,8 +133,9 @@ export async function linkGoogleAction(
       idToken: pending.idToken,
       nonce: pending.nonce,
       password,
+      persistent: pending.persistent,
     });
-    await writeAccessToken(data.session.accessToken, data.session.expiresAt);
+    await writeAccessToken(data.session);
     await clearPendingLink();
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
@@ -113,7 +148,7 @@ export async function linkGoogleAction(
     throw error;
   }
 
-  redirect("/home");
+  redirect(safeNext(pending.next));
 }
 
 export async function logoutAction(): Promise<void> {
