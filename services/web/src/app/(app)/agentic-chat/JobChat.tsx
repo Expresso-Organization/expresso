@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import { loadJobChat, sendJobChat } from "./actions";
+import ConfirmedFacts from "./ConfirmedFacts";
 
 type ChatData = GetJobChatSessionResponse["data"];
 
@@ -213,6 +214,24 @@ export default function JobChat({
     }
   }
 
+  async function handleStartInterview() {
+    if (
+      sendingRef.current ||
+      loadingRef.current ||
+      pending ||
+      generating ||
+      loading ||
+      retryTarget
+    ) {
+      return;
+    }
+
+    await submitQuestion({
+      requestId: crypto.randomUUID(),
+      content: "내 경력에서 보완할 경험을 질문해줘.",
+    });
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -273,9 +292,24 @@ export default function JobChat({
   return (
     <section>
       <p>
-        선택한 공고를 참고해 답변합니다.
+        선택한 공고와 내 경력을 참고해 답변합니다.
+        맞춤 분석 후 추가 질문으로 경험을 구체화할 수 있습니다.
         질문과 답변은 대화방에 저장됩니다.
       </p>
+
+      <button
+        type="button"
+        onClick={() => void handleStartInterview()}
+        disabled={
+          pending ||
+          generating ||
+          loading ||
+          Boolean(retryTarget)
+        }
+        style={{ marginRight: 8 }}
+      >
+        경력 추가 질문 받기
+      </button>
 
       <button
         type="button"
@@ -340,7 +374,7 @@ export default function JobChat({
 
       <form onSubmit={handleSubmit} style={{ marginTop: 16 }}>
         <label htmlFor="job-chat-input">
-          공고에 대해 질문하기
+          공고에 대해 질문하거나 AI의 추가 질문에 답변하기
         </label>
 
         <textarea
@@ -372,6 +406,19 @@ export default function JobChat({
           {pending ? "답변 생성 중…" : "보내기"}
         </button>
       </form>
+
+      {/* P5: 경력 후보 생성·승인·거절 */}
+      <ConfirmedFacts
+        key={sessionId}
+        sessionId={sessionId}
+        messages={messages}
+        disabled={
+          pending ||
+          generating ||
+          loading ||
+          Boolean(retryTarget)
+        }
+      />
     </section>
   );
 }
