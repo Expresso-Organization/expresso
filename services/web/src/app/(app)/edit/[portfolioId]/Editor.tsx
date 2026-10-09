@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 
-import type { GeneratedPage, PortfolioDetail, PortfolioRevision } from "@expresso/contracts";
+import type { GeneratedPage, PortfolioDetail, PortfolioRevision, PageLibraryItem } from "@expresso/contracts";
 
 import { LogoMark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
 import { EDITOR_SUGGESTION } from "@/lib/sample/editor";
 
 import { PagePreview } from "@/components/portfolio/PagePreview";
+import { StructuredPageProperties } from "./StructuredPageProperties";
 import { PortfolioPage } from "@/components/portfolio/PortfolioPage";
 
 import {
@@ -66,6 +67,7 @@ export function Editor({
   checkpoints,
   generatedPage,
   generatedPageHistory,
+  libraryItems = [],
 }: {
   displayName: string;
   portfolio: PortfolioDetail;
@@ -73,6 +75,7 @@ export function Editor({
   checkpoints: readonly EditorCheckpoint[];
   generatedPage: GeneratedPage | null;
   generatedPageHistory: readonly GeneratedPage[];
+  libraryItems?: readonly PageLibraryItem[];
 }) {
   const [, startTransition] = useTransition();
   const [tab, setTab] = useState<PanelTab>("chat");
@@ -529,7 +532,7 @@ export function Editor({
               <div className={styles.crumbs}>
                 {generatedPage ? (
                   <span className={`${styles.crumb} ${styles.crumbCurrent}`}>
-                    자유 HTML · 판 {generatedPage.revision + 1}
+                    {generatedPage.generationManifest?.structured ? "구조화 지면" : "자유 HTML"} · 판 {generatedPage.revision + 1}
                   </span>
                 ) : chosen ? (
                   <>
@@ -628,7 +631,7 @@ export function Editor({
               <span className={styles.panelTitle}>편집</span>
               <span className={styles.panelTarget}>
                 {generatedPage
-                  ? (tab === "history" ? `판 ${generatedPageHistory.length}개` : "웹페이지 전체")
+                  ? (tab === "history" ? `판 ${generatedPageHistory.length}개` : generatedPage.generationManifest?.structured ? "구성·문장" : "웹페이지 전체")
                   : panelTarget(tab, revisions.length, chosen?.path ?? null)}
               </span>
               <button type="button" className={styles.panelHeadAction} aria-label="넓게 보기">
@@ -658,11 +661,15 @@ export function Editor({
                 portfolioId={portfolio.id}
                 blocks={editableBlocks}
                 freePage={generatedPage !== null}
+                structured={!!generatedPage?.generationManifest?.structured}
               />
             ) : null}
             {tab === "properties" ? (
               generatedPage ? (
-                <FreePageProperties page={generatedPage} />
+                <div className={styles.propertiesStack}>
+                  <StructuredPageProperties key={generatedPage.revision} page={generatedPage} portfolioId={portfolio.id} libraryItems={libraryItems} />
+                  <FreePageProperties page={generatedPage} />
+                </div>
               ) : <>
                 <PropertiesPanel
                   portfolioId={portfolio.id}

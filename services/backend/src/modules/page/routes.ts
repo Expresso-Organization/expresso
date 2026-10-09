@@ -2,7 +2,10 @@ import {
   API_PREFIX,
   PortfolioIdParamsSchema,
   RegeneratePageSchema,
+  EditStructuredPageSchema,
+  PageLibrarySearchSchema,
 } from "@expresso/contracts";
+import { searchPageLibrary } from "@expresso/portfolio-renderer";
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
@@ -12,31 +15,33 @@ import { writePageStream, type PageStream } from "./stream.js";
 
 export interface RegisterPageRoutesOptions {
   service: PageApi;
-  generator: PageGenerator;
+  generator?: PageGenerator;
   /** 없으면 흘려보내는 자리를 열지 않는다. */
   stream?: PageStream | null;
   authenticateRequest: preHandlerHookHandler;
 }
 
 /**
- * 자유 생성 지면.
- *
- * 뽑기 · 꺼내기 · 되짚기 셋뿐이다. **고치는 자리가 없다** — 이 경로에서
- * 마음에 안 드는 지면을 손보는 방법은 지시를 붙여 다시 뽑는 것이고, 그것도
- * 결국 뽑기다.
+ * 생성 지면의 조회·재생성과 구조화 구성·문장 편집을 제공합니다.
  */
 export function registerPageRoutes(
   app: FastifyInstance,
   options: RegisterPageRoutesOptions,
 ): void {
+  app.get(`${API_PREFIX}/page-library`, { preHandler: options.authenticateRequest }, async request => {
+    requireAuth(request);
+    return { data: searchPageLibrary(PageLibrarySearchSchema.parse(request.query)) };
+  });
   const path = `${API_PREFIX}/portfolios/:id/page`;
 
   app.post(path, { preHandler: options.authenticateRequest }, async (request, reply) => {
     const principal = requireAuth(request);
     const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
     const { instruction } = RegeneratePageSchema.parse(request.body ?? {});
+    const generator = options.generator;
+    if (!generator) throw new HttpStatusError(503, "지면 생성 AI가 꺼져 있습니다.");
     const page = await lift(() =>
-      options.service.generate(principal.user.id, portfolioId, options.generator, instruction === undefined ? {} : { instruction }));
+      options.service.generate(principal.user.id, portfolioId, generator, instruction === undefined ? {} : { instruction }));
     return reply.code(201).send({ data: page });
   });
 
@@ -46,6 +51,14 @@ export function registerPageRoutes(
     const page = await lift(() => options.service.latest(principal.user.id, portfolioId));
     if (!page) throw new HttpStatusError(404, "아직 지면을 만들지 않았습니다");
     return { data: page };
+  });
+
+  app.patch(`${path}/composition`, { preHandler: options.authenticateRequest }, async (request) => {
+    const principal = requireAuth(request);
+    const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
+    const input = EditStructuredPageSchema.parse(request.body);
+    if (!options.service.editComposition) throw new HttpStatusError(503, "구성 편집을 사용할 수 없습니다.");
+    return { data: await lift(() => options.service.editComposition!(principal.user.id, portfolioId, input)) };
   });
 
   /**

@@ -1,0 +1,192 @@
+{
+  "fictional": true,
+  "model": "qwen3.8:27b-q4_K_M",
+  "runs": [
+    {
+      "slug": "robotics-engineer",
+      "name": "한도윤",
+      "role": "로봇 엔지니어",
+      "design": {
+        "layout": "dossier",
+        "palette": "graphite",
+        "font": "sans"
+      },
+      "htmlSha256": "1592fee234c3ffe3cf156b73c24b1e28d8a1bf0c8a0941d79f19038050bb1d6b",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64,
+          "headlineSize": 20,
+          "caseTypes": [
+            "technical",
+            "technical",
+            "process"
+          ],
+          "motion": "none",
+          "preservedFields": 66
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64.82,
+          "headlineSize": 22.224,
+          "caseTypes": [
+            "technical",
+            "technical",
+            "process"
+          ],
+          "motion": "none",
+          "preservedFields": 66
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 96,
+          "headlineSize": 32,
+          "caseTypes": [
+            "technical",
+            "technical",
+            "process"
+          ],
+          "motion": "none",
+          "preservedFields": 66
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "design": {
+        "layout": "gallery",
+        "palette": "ivory",
+        "font": "serif"
+      },
+      "htmlSha256": "994db1c62c8081ba205f05ab37aff20e964fd03d99d50069031b4a8619858f54",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64,
+          "headlineSize": 20,
+          "caseTypes": [
+            "gallery",
+            "gallery",
+            "gallery"
+          ],
+          "motion": "none",
+          "preservedFields": 66
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 120.38,
+          "headlineSize": 22.224,
+          "caseTypes": [
+            "gallery",
+            "gallery",
+            "gallery"
+          ],
+          "motion": "none",
+          "preservedFields": 66
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 187.2,
+          "headlineSize": 32,
+          "caseTypes": [
+            "gallery",
+            "gallery",
+            "gallery"
+          ],
+          "motion": "none",
+          "preservedFields": 66
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "slug": "climate-analyst",
+      "name": "정하린",
+      "role": "기후 데이터 분석가",
+      "design": {
+        "layout": "editorial",
+        "palette": "ivory",
+        "font": "serif"
+      },
+      "htmlSha256": "99b0c071e31b991a1b89e5e65a8f441002faf73b298ba3739f33d4ec6124b8ee",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64,
+          "headlineSize": 22,
+          "caseTypes": [
+            "gallery",
+            "gallery",
+            "gallery"
+          ],
+          "motion": "none",
+          "preservedFields": 66
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 48,
+          "headlineSize": 22,
+          "caseTypes": [
+            "gallery",
+            "gallery",
+            "gallery"
+          ],
+          "motion": "none",
+          "preservedFields": 66
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 72,
+          "headlineSize": 22,
+          "caseTypes": [
+            "gallery",
+            "gallery",
+            "gallery"
+          ],
+          "motion": "none",
+          "preservedFields": 66
+        }
+      ],
+      "noJavaScript": true
+    }
+  ]
+}

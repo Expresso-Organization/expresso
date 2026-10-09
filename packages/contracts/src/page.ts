@@ -1,8 +1,11 @@
+import { PageLibrarySelectionSchema } from "./page-library.js";
 import { z } from "zod";
 
 import { TimestampSchema, UuidSchema } from "./common.js";
 import { PAGE_KIT_CSS, pageKitVariables } from "./page-kit.js";
 import { PortfolioDesignReferenceSchema, TemplateFontSchema } from "./templates.js";
+import { StructuredPortfolioSnapshotSchema } from "./structured-portfolio.js";
+import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
 
 /**
  * 자유 생성 지면.
@@ -190,7 +193,7 @@ export const PAGE_ALLOWED_LINK_SCHEMES = ["http", "https", "mailto"] as const;
  * 방문자의 IP가 그 서버에 남는다 — 남의 포트폴리오를 보는 일이 추적당하는
  * 일이 되어서는 안 된다.
  */
-export const PAGE_IMAGE_SRC_PREFIX = "/v1/media/";
+export const PAGE_IMAGE_SRC_PREFIX = MEDIA_ASSET_PATH_PREFIX;
 
 /**
  * 바깥 스타일시트를 부를 수 있는 곳.
@@ -316,6 +319,8 @@ export const PageGenerationManifestSchema = z.strictObject({
   sourceUrls: z.array(z.string().url().max(2_000)).max(100),
   attempts: z.number().int().min(1).max(2),
   repairCount: z.number().int().min(0).max(1),
+  structured: StructuredPortfolioSnapshotSchema.optional(),
+  library: PageLibrarySelectionSchema.optional(),
   usage: z.strictObject({
     inputTokens: z.number().int().nonnegative(),
     outputTokens: z.number().int().nonnegative(),

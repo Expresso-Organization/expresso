@@ -1,0 +1,68 @@
+{
+  "fictional": true,
+  "model": "qwen3.8:27b-q4_K_M",
+  "runs": [
+    {
+      "slug": "robotics-engineer",
+      "name": "한도윤",
+      "role": "로봇 설계 연구원",
+      "design": {
+        "layout": "dossier",
+        "palette": "graphite",
+        "font": "sans"
+      },
+      "htmlSha256": "d5feeb097764d30f078c2f31eda68c76a4b80d9db24d277830790c976246ba33",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64,
+          "headlineSize": 20,
+          "caseTypes": [
+            "process",
+            "technical",
+            "process"
+          ],
+          "motion": "none",
+          "preservedFields": 59
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64.82,
+          "headlineSize": 22.224,
+          "caseTypes": [
+            "process",
+            "technical",
+            "process"
+          ],
+          "motion": "none",
+          "preservedFields": 59
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 96,
+          "headlineSize": 32,
+          "caseTypes": [
+            "process",
+            "technical",
+            "process"
+          ],
+          "motion": "none",
+          "preservedFields": 59
+        }
+      ],
+      "noJavaScript": true
+    }
+  ]
+}

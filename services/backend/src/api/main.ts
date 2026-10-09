@@ -35,6 +35,7 @@ import { MediaService } from "../modules/media/index.js";
 import { PageService } from "../modules/page/index.js";
 import { PageStream } from "../modules/page/stream.js";
 import { AiPageGenerator } from "../modules/page/generator.js";
+import { StructuredPageGenerator } from "../modules/page/structured-generator.js";
 import { createMediaStorage } from "../platform/storage/create-storage.js";
 import { AnalyticsService } from "../modules/analytics/index.js";
 import { EngagementService } from "../modules/engagement/index.js";
@@ -101,16 +102,14 @@ const layoutService = new LayoutService(database, ai ? new AiLayoutRemixer(ai) :
 const brewJobService = new BrewJobService(database);
 const publishingService = new PublishingService(database, config.assetSigningSecret);
 const mediaService = new MediaService(database, createMediaStorage(config));
-// 자유 생성 지면. 요청 안에서 계약을 부른다 — 사용자가 뽑기를 누르고 기다리는
-// 화면이고, 결과가 곧 페이지 전체라 뒤로 미뤄 봐야 볼 것이 없다.
+// 생성 지면의 저장·조회·직접 편집을 제공합니다.
 // 만들어지는 지면이 지나는 길. 워커가 쓰고 여기서 읽어 브라우저로 흘린다.
 const pageStream = new PageStream(createStreamRedis(config.redisUrl), {
   prefix: config.queuePrefix,
 });
 const pageService = new PageService(database, consentService, pageStream);
-// AI가 꺼져 있으면 지면을 만들 길이 없다. 규칙 폴백을 두지 않는다 —
-// 이 경로의 산출물은 **모델이 쓴 마크업 그 자체**여서 흉내 낼 것이 없다.
-const pageGenerator = ai ? new AiPageGenerator(ai) : null;
+// AI가 켜져 있을 때 모델이 내용·Spec 또는 HTML을 생성합니다.
+const pageGenerator = ai ? (config.pageGenerationFormat === "html" ? new AiPageGenerator(ai) : new StructuredPageGenerator(ai)) : null;
 const analyticsService = new AnalyticsService(database, {
   ...(config.analyticsVisitorSalt ? { visitorSalt: config.analyticsVisitorSalt } : {}),
   // 해설은 07에서 사용자가 누를 때만 쓴다. 없으면 숫자를 다시 읽어 주는 한 문장이 남는다.
