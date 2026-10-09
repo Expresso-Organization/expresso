@@ -2,6 +2,8 @@ import {
   AnalyticsAggregationResponseSchema,
   MediaAssetResponseSchema,
   GeneratedPageSchema,
+  PageLibraryResultSchema,
+  type PageLibrarySearch,
   type RegeneratePage,
   type EditStructuredPage,
   type CreateMediaBlock,
@@ -960,6 +962,7 @@ export const media = {
  * 지시를 붙여 다시 뽑는다. 앞 판은 지워지지 않으므로 되돌아갈 수 있다.
  */
 export const page = {
+  library: (accessToken: string, query: Partial<PageLibrarySearch> = {}) => request(`${API_PREFIX}/page-library?${new URLSearchParams(Object.entries(query).map(([key,value])=>[key,String(value)]))}`, z.object({data:PageLibraryResultSchema}), {accessToken}),
   editComposition: (accessToken: string, portfolioId: string, body: EditStructuredPage) =>
     request(`${API_PREFIX}/portfolios/${portfolioId}/page/composition`, z.object({ data: GeneratedPageSchema }), { method: "PATCH", accessToken, body }),
   latest: (accessToken: string, portfolioId: string) =>

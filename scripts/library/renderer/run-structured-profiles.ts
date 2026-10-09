@@ -83,9 +83,11 @@ for (const slug of slugs) {
     async complete(request, schema) {
       const started = Date.now();
       // 로컬 grammar 변환기가 큰 maxLength를 처리하지 못합니다. 내용 정리는 JSON 모드로 받고 같은 Zod 계약으로 검증합니다.
-      const format = request.system.startsWith("출처 자료")
-        ? "json"
-        : z.toJSONSchema(schema);
+      const format =
+        process.env.PORTFOLIO_JSON_MODE === "1" ||
+        request.system.startsWith("출처 자료")
+          ? "json"
+          : z.toJSONSchema(schema);
       const response = await fetch("http://127.0.0.1:11434/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -107,7 +109,9 @@ for (const slug of slugs) {
           think: false,
           options: { temperature: 0.25, num_ctx: 16384, num_predict: 6000 },
         }),
-        signal: AbortSignal.timeout(240_000),
+        signal: AbortSignal.timeout(
+          Number(process.env.PORTFOLIO_TIMEOUT_MS || 600_000),
+        ),
       });
       if (!response.ok)
         throw new Error(

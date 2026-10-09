@@ -108,7 +108,7 @@ export type StructuredPortfolioContent = z.infer<
 >;
 export type StructuredSection = z.infer<typeof StructuredSectionSchema>;
 export const StructuredDesignSchema = z.strictObject({
-  layout: z.enum(["editorial", "gallery", "dossier"]),
+  layout: z.enum(["editorial", "gallery", "dossier", "library"]),
   palette: z.enum(["ivory", "cobalt", "graphite", "sage", "burgundy"]),
   font: z.enum(["serif", "sans", "mono"]),
 });
@@ -133,12 +133,17 @@ export const StructuredNodeSchema = z.union([
       design: StructuredDesignSchema,
       motion: z.enum(["none", "subtle", "showcase"]),
       rationale: z.string().min(1).max(400),
+      referenceIds: z.array(id).max(8).optional(),
     }),
     children: z.array(id).min(2).max(24),
   }),
   leaf(
     "NameIntro",
-    z.strictObject({ profile: binding, sections: binding.optional() }),
+    z.strictObject({
+      profile: binding,
+      sections: binding.optional(),
+      sourceId: id.optional(),
+    }),
   ),
   leaf(
     "ProjectIndex",
@@ -148,7 +153,7 @@ export const StructuredNodeSchema = z.union([
     }),
   ),
   ...STRUCTURED_CASE_TYPES.map((type) =>
-    leaf(type, z.strictObject({ section: binding })),
+    leaf(type, z.strictObject({ section: binding, sourceId: id.optional() })),
   ),
   leaf("CareerTimeline", z.strictObject({ career: binding })),
   leaf("EvidenceGrid", z.strictObject({ evidence: binding })),
@@ -230,6 +235,12 @@ export function applyStructuredTextPatches(
 // 요소 ID와 참조는 입력에서 고정하고 순서와 지면 유형은 모델이 선택합니다.
 export function structuredModelSchema(
   content: StructuredPortfolioContent,
+  choices?: {
+    intro: string[];
+    section: string[];
+    guidance: string[];
+    layout?: z.infer<typeof StructuredDesignSchema>["layout"];
+  },
 ): z.ZodType<StructuredPortfolioSpec> {
   const ref = (value: string) =>
     z.strictObject({ $state: z.literal(`/${value}`) });
@@ -240,6 +251,9 @@ export function structuredModelSchema(
       props: z.strictObject({
         profile: ref("profile"),
         sections: ref("sections"),
+        ...(choices?.intro.length
+          ? { sourceId: z.enum(choices.intro as [string, ...string[]]) }
+          : {}),
       }),
       children: empty,
     }),
@@ -259,7 +273,12 @@ export function structuredModelSchema(
           ? STRUCTURED_CASE_TYPES
           : ["CaseEssay", "CaseTechnical", "CaseProcess", "ContentPanel"],
       ),
-      props: z.strictObject({ section: ref(`sectionById/${section.id}`) }),
+      props: z.strictObject({
+        section: ref(`sectionById/${section.id}`),
+        ...(choices?.section.length
+          ? { sourceId: z.enum(choices.section as [string, ...string[]]) }
+          : {}),
+      }),
       children: empty,
     });
   if (content.career.length)
@@ -285,7 +304,16 @@ export function structuredModelSchema(
     type: z.literal("PortfolioPage"),
     props: z.strictObject({
       profile: ref("profile"),
-      design: StructuredDesignSchema,
+      design: choices?.layout
+        ? StructuredDesignSchema.extend({ layout: z.literal(choices.layout) })
+        : StructuredDesignSchema,
+      ...(choices?.guidance.length
+        ? {
+            referenceIds: z
+              .array(z.enum(choices.guidance as [string, ...string[]]))
+              .max(8),
+          }
+        : {}),
       motion: z.enum(["none", "subtle", "showcase"]),
       rationale: z.string().min(1).max(400),
     }),

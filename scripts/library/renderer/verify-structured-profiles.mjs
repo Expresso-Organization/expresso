@@ -63,6 +63,13 @@ try {
           await image.decode().catch(() => {});
         }
       });
+      const controlContrast=await page.evaluate(()=>{
+        const canvas=document.createElement('canvas');canvas.width=canvas.height=1;const context=canvas.getContext('2d');
+        const pixel=color=>{context.clearRect(0,0,1,1);context.fillStyle=color;context.fillRect(0,0,1,1);return [...context.getImageData(0,0,1,1).data];};
+        const luminance=p=>p.slice(0,3).map(x=>x/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4).reduce((sum,x,i)=>sum+x*[.2126,.7152,.0722][i],0);
+        return [...document.querySelectorAll('.sp-source a[data-source-native]')].map(node=>{const style=getComputedStyle(node),bg=pixel(style.backgroundColor),fg=pixel(style.color);if(bg[3]<250)return null;const a=luminance(bg),b=luminance(fg);return {text:node.textContent,ratio:(Math.max(a,b)+.05)/(Math.min(a,b)+.05)};}).filter(Boolean);
+      });
+      assert.ok(controlContrast.every(control=>control.ratio>=3),`${slug}/${width}: 버튼 글자 대비`);
       const checks = await page.evaluate(() => ({
         overflow: document.documentElement.scrollWidth > innerWidth + 1,
         brokenImages: [...document.images].filter(
@@ -125,7 +132,7 @@ try {
           .first()
           .screenshot({ path: path.join(folder, `${slug}-case.png`) });
       }
-      screens.push({ width, ...checks, preservedFields: values.length });
+      screens.push({ width, ...checks, controlContrast, preservedFields: values.length });
       await page.close();
     }
     const noJs = await browser.newContext({
@@ -146,6 +153,13 @@ try {
       name: content.profile.name,
       role: content.profile.role,
       design,
+      library: run.library || null,
+      sourceComposition: spec.elements[spec.root].children.map(
+        (key) =>
+          spec.elements[key].props.sourceId ||
+          spec.elements[key].props.variant ||
+          spec.elements[key].type,
+      ),
       htmlSha256: run.htmlSha256,
       screens,
       noJavaScript: true,
@@ -154,9 +168,15 @@ try {
   }
   if (slugs.length === 3)
     assert.equal(
-      new Set(report.map((item) => item.design.layout)).size,
+      new Set(
+        report.map((item) =>
+          item.library
+            ? JSON.stringify(item.sourceComposition)
+            : item.design.layout,
+        ),
+      ).size,
       3,
-      "세 입력의 페이지 골격이 수렴했습니다.",
+      "세 입력의 원본 컴포넌트 조합이 수렴했습니다.",
     );
   fs.writeFileSync(
     path.join(folder, "verification.json"),
@@ -167,6 +187,12 @@ try {
           fs.readFileSync(path.join(folder, slugs[0], "run.json")),
         ).model,
         runs: report,
+        distinctIntroSources: new Set(
+          report.map((item) => item.sourceComposition[0]),
+        ).size,
+        distinctSourceCompositions: new Set(
+          report.map((item) => JSON.stringify(item.sourceComposition)),
+        ).size,
       },
       null,
       2,

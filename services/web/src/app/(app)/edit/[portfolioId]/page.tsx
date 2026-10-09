@@ -1,4 +1,4 @@
-import type { GeneratedPage, PortfolioRevision } from "@expresso/contracts";
+import type { GeneratedPage, PortfolioRevision, PageLibraryItem } from "@expresso/contracts";
 import { notFound } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
@@ -26,6 +26,7 @@ export default async function EditPage({
   let revisions: readonly PortfolioRevision[] = [];
   let checkpoints: { id: string; label: string; createdAt: string }[] = [];
   let generatedPage: GeneratedPage | null = null;
+  let libraryItems: PageLibraryItem[] = [];
   let generatedPageHistory: GeneratedPage[] = [];
 
   try {
@@ -49,11 +50,13 @@ export default async function EditPage({
   }
 
   try {
-    const [latest, history] = await Promise.all([
+    const [latest, history, library] = await Promise.all([
       pageApi.latest(session.accessToken, portfolioId),
       pageApi.history(session.accessToken, portfolioId),
+      pageApi.library(session.accessToken, {status:"renderable",limit:100}),
     ]);
     generatedPage = latest.data;
+    libraryItems = library.data.items;
     generatedPageHistory = history.data;
   } catch (error) {
     // 자유 지면은 v1 생성부터 생긴다. 옛 포트폴리오의 404는 정상 호환 경로다.
@@ -68,6 +71,7 @@ export default async function EditPage({
       checkpoints={checkpoints}
       generatedPage={generatedPage}
       generatedPageHistory={generatedPageHistory}
+      libraryItems={libraryItems}
     />
   );
 }
