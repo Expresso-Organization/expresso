@@ -9,10 +9,11 @@ import { jobSourceProviderSteps } from "./mongodb-migrations/0005/migration.js";
 import { careerEditorLedgerSteps } from "./mongodb-migrations/0006/migration.js";
 import { jobSourceSeedSteps } from "./mongodb-migrations/0007/migration.js";
 import { careerViewConfigurationSteps } from "./mongodb-migrations/0008/migration.js";
-
-import { agentCredentialSteps } from "./mongodb-migrations/0010/migration.js";
 import { agentConversationSteps } from "./mongodb-migrations/0009/migration.js";
-
+import { agentCredentialSteps } from "./mongodb-migrations/0010/migration.js";
+import { jobChatFactSteps } from "./mongodb-migrations/0011/migration.js";
+import { jobChatSteps } from "./mongodb-migrations/0012/migration.js";
+import { jobCareerMatchSteps } from "./mongodb-migrations/0013/migration.js";
 
 export interface MongoMigrationStep {
   id: string;
@@ -50,7 +51,14 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const eighthHash = createHash("sha256").update(`migration.ts\0${eighthSource.byteLength}\0`).update(eighthSource).digest("hex");
   const ninthSource = await readFile(new URL("./mongodb-migrations/0009/migration.ts", import.meta.url));
   const ninthHash = createHash("sha256").update(ninthSource).digest("hex");
-  const tenthHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0010/migration.ts", import.meta.url))).digest("hex");
+  const tenthSource = await readFile(new URL("./mongodb-migrations/0010/migration.ts", import.meta.url));
+  const tenthHash = createHash("sha256").update(tenthSource).digest("hex");
+  const eleventhSource = await readFile(new URL("./mongodb-migrations/0011/migration.ts", import.meta.url));
+  const eleventhHash = createHash("sha256").update(`migration.ts\0${eleventhSource.byteLength}\0`).update(eleventhSource).digest("hex");
+  const twelfthSource = await readFile(new URL("./mongodb-migrations/0012/migration.ts", import.meta.url));
+  const twelfthHash = createHash("sha256").update(`migration.ts\0${twelfthSource.byteLength}\0`).update(twelfthSource).digest("hex");
+  const thirteenthSource = await readFile(new URL("./mongodb-migrations/0013/migration.ts", import.meta.url));
+  const thirteenthHash = createHash("sha256").update(`migration.ts\0${thirteenthSource.byteLength}\0`).update(thirteenthSource).digest("hex");
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
@@ -62,5 +70,8 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0008", name: "career_view_configurations", checksum: eighthHash, steps: await careerViewConfigurationSteps() },
     { version: "0009", name: "agent_conversations", checksum: ninthHash, steps: await agentConversationSteps() },
     { version: "0010", name: "agent_credentials", checksum: tenthHash, steps: await agentCredentialSteps() },
+    { version: "0011", name: "job_chat_confirmed_facts", checksum: eleventhHash, steps: await jobChatFactSteps() },
+    { version: "0012", name: "job_chat_storage", checksum: twelfthHash, steps: await jobChatSteps() },
+    { version: "0013", name: "job_career_match_storage", checksum: thirteenthHash, steps: await jobCareerMatchSteps() },
   ];
 }

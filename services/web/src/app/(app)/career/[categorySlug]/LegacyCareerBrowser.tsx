@@ -1,12 +1,14 @@
 "use client";
 
 import type { CareerCategory, CareerRecordListItem, CareerRecordSummary, CareerViewType } from "@expresso/contracts";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
 import panelStyles from "./DocumentPanel.module.css";
 import styles from "./page.module.css";
+
+import { useRouter } from "next/navigation";
 
 const BLURB: Record<string, string> = {
   experience: "대화로 꺼낸 순간들을 문서로 관리합니다. 직접 쓰거나, 바리스타에게 질문을 받아 채울 수 있습니다.",
@@ -29,8 +31,67 @@ export function LegacyCareerBrowser({ category, records, summary }: { category: 
   const [view, setView] = useState<CareerViewType>(views.includes(category.defaultView) ? category.defaultView : views[0]!);
   const [selectedId, setSelectedId] = useState(records[0]?.id ?? null);
   const selected = records.find((record) => record.id === selectedId) ?? null;
+  const router = useRouter();
+  const deletingRef = useRef(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  async function deleteSelectedRecord() {
+    if (!selected || deletingRef.current) return;
+
+    const recordId = selected.id;
+    const title = selected.title || "제목 없음";
+
+    if (!window.confirm(`"${title}" 기록을 삭제할까요?`)) {
+      return;
+    }
+
+    deletingRef.current = true;
+    setDeleting(true);
+    setDeleteError("");
+
+    try {
+      const response = await fetch(
+        `/api/career/records/${encodeURIComponent(recordId)}`,
+        { method: "DELETE" },
+      );
+
+      if (!response.ok) {
+        setDeleteError(
+          `삭제하지 못했습니다. 오류 코드: ${response.status}`,
+        );
+        return;
+      }
+
+      setSelectedId(null);
+      router.refresh();
+    } catch {
+      setDeleteError("삭제 요청에 실패했습니다.");
+    } finally {
+      deletingRef.current = false;
+      setDeleting(false);
+    }
+  }
   return <div data-career-editor="legacy" className={styles.legacyLayout}>
     <main className={styles.list} aria-label="기존 커리어 목록">
+      <div style={{ marginBottom: 12 }}>
+        <button
+          type="button"
+          disabled={!selected || deleting}
+          onClick={() => void deleteSelectedRecord()}
+          style={{ color: "#b91c1c" }}
+        >
+          {deleting ? "삭제 중…" : "선택한 기록 삭제"}
+        </button>
+
+        {selected && (
+          <p>
+            선택된 기록: {selected.title || "제목 없음"}
+          </p>
+        )}
+
+        {deleteError && <p role="alert">{deleteError}</p>}
+      </div>
       <div className={styles.categoryHead}><span className={styles.categoryIcon}><Icon name="archive" size={18} /></span><h1 className={styles.categoryName}>{category.name}</h1></div>
       <p className={styles.categoryBlurb}>{BLURB[category.key] ?? "이 카테고리의 기록입니다."}</p>
       <div className={styles.viewBar}>{views.map((item) => <button key={item} type="button" className={`${styles.viewTab} ${item === view ? styles.viewTabActive : ""}`} onClick={() => setView(item)}>{LABEL[item]}</button>)}<div className={styles.viewBarRight}><button type="button" className={styles.viewBarAction}>필터</button><button type="button" className={styles.viewBarAction}>정렬</button><button type="button" className={styles.viewBarAction}>속성</button></div></div>

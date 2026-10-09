@@ -420,6 +420,12 @@ export default async function JobDetailPage({
                   이 공고로 포트폴리오 만들기
                 </button>
               </form>
+              <form action="/agentic-chat" method="get">
+                <input type="hidden" name="jobPostingId" value={job.id}/>
+                <button type="submit">
+                  AI로 분석
+                </button>
+              </form>
             </div>
           </aside>
         </div>
