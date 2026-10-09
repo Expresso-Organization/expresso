@@ -256,6 +256,53 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
         },
       });
     });
+    it("컨테이너로 묶은 구성을 저장하고 문장 편집 뒤에도 보존한다", async () => {
+      const current = (await service.latest(user, portfolio))!;
+      const spec = structuredClone(
+        current.generationManifest!.structured!.spec,
+      );
+      const root = spec.elements[spec.root]!;
+      if (root.type !== "PortfolioPage") throw new Error("시험 지면 연결 오류");
+      root.children = ["intro", "group-1"];
+      spec.elements["group-1"] = {
+        type: "Columns",
+        props: { variant: "wide-end" },
+        children: ["index", "section-project-a"],
+      };
+      const grouped = await service.editComposition(user, portfolio, {
+        expectedRevision: current.revision,
+        spec,
+        patches: [],
+      });
+      expect(grouped.generationManifest?.structured?.spec).toEqual(spec);
+      expect(grouped.html).toContain(
+        'data-group="columns" data-variant="wide-end"',
+      );
+      const patched = await service.editComposition(user, portfolio, {
+        expectedRevision: grouped.revision,
+        patches: [
+          { path: "/sections/project-a/summary", value: "묶음 안 요약" },
+        ],
+      });
+      expect(patched.generationManifest?.structured?.spec).toEqual(spec);
+      expect(patched.html).toContain("묶음 안 요약");
+      const broken = structuredClone(spec);
+      (broken.elements["group-1"] as { children: string[] }).children = [
+        "intro",
+        "section-project-a",
+      ];
+      (broken.elements[broken.root] as { children: string[] }).children = [
+        "index",
+        "group-1",
+      ];
+      await expect(
+        service.editComposition(user, portfolio, {
+          expectedRevision: patched.revision,
+          spec: broken,
+          patches: [],
+        }),
+      ).rejects.toMatchObject({ statusCode: 422 });
+    });
     it("수집 원본의 키·Spec·선택 해시를 저장하고 미연결 항목은 거절한다", async () => {
       const current = (await service.latest(user, portfolio))!;
       const spec = structuredClone(
