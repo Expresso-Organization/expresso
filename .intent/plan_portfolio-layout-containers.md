@@ -66,3 +66,12 @@ node scripts/library/renderer/verify-structured-profiles.mjs library-layout-sonn
 ```
 
 화면: 두 실행의 세 프로필을 1440·390px로 열어 컨테이너 배치와 넘침을 확인한다. 편집 화면에서 컨테이너 안 사례의 유형 교체·이동·저장 후 구성이 남는지 확인한다.
+
+## 구현 중 바뀐 점
+
+- `Grid` 세 열과 `Columns(wide-start)` 좁은 열에서 Book 원본(고정 폭 300px)이 926px 화면에서 열 밖으로 나갔다. 원본을 금지하지 않고, 열 최소 폭 300px과 `Columns` 컨테이너 쿼리(680px)로 해결했다. 컨테이너에 `.sp-group-track` 안쪽 요소를 더했다.
+- 저장 스키마가 type별 variant enum으로 먼저 거절하면 재시도 요청에 union 오류 전체가 들어갔다. 저장 스키마도 variant를 단일 enum으로 받고, 짝은 도메인 검사 메시지로 알린다.
+- 프롬프트가 바뀌어 `PAGE_PROMPT_VERSION`을 8로 올렸다.
+- `verify-structured-profiles.mjs`는 생성에 실패한 프로필(`run.json` 없음)을 검사에서 빼고 `failed`로 기록한다.
+- 첫 Claude 실행은 `modelTier`를 넘기지 않아 기본 티어 `opus`로 호출됐다. 결과를 `library-layout-opus-2026-10-09`로 옮겨 기록하고, 스크립트가 제품과 같은 `sonnet`을 넘기도록 고쳐 다시 실행했다.
+- Sonnet 전체 경로 측정은 입력 정리 단계 실패로 결과 폴더를 남기지 못했다. 실패 내용은 문서에 기록했다.
