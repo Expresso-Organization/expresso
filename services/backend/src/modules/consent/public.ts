@@ -29,6 +29,7 @@ export const CONTRACT_CONSENT: Record<AiContract, ConsentScope | null> = {
   job_analysis: "job_posting_analysis",
   job_chat: "job_posting_analysis",
   search_interpret: "job_posting_analysis",
+  job_career_match: "career_records",
   // 우리가 모아 온 공개 공고를 읽는다. 사용자 데이터가 나가지 않는다.
   job_facts: null,
   question_draft: "career_records",

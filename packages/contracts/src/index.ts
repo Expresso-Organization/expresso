@@ -49,7 +49,6 @@ export * from "./recipe.js";
 export * from "./portfolio-plan.js";
 export * from "./portfolio-styles.js";
 export * from "./templates.js";
-export * from "./portfolio-styles.js";
 export * from "./layout-vocabulary.js";
 export * from "./layout-classes.js";
 export * from "./layout.js";
@@ -69,7 +68,7 @@ export * from "./account-lifecycle.js";
 export * from "./openapi.js";
 export * from "./design-system.js";
 export * from "./structured-portfolio.js";
-
 export * from "./page-library.js";
-
 export * from "./agent-chat.js";
+export * from "./job-chat.js";
+export * from "./job-career-match.js";

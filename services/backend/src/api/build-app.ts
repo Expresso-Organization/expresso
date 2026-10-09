@@ -68,9 +68,15 @@ import type { CareerDocumentApi } from "../modules/career-editor/index.js";
 import { registerCareerDocumentRoutes } from "../modules/career-editor/routes.js";
 import websocket from "@fastify/websocket";
 import { registerCareerDocumentSocket } from "../modules/career-editor/socket.js";
+import type { JobChatApi } from "../modules/job-chat/index.js";
+import { registerJobChatP2Routes } from "../modules/job-chat/p2-routes.js";
+import type { JobCareerMatchApi } from "../modules/job-career-match/index.js";
+import { registerJobCareerMatchRoutes } from "../modules/job-career-match/routes.js";
 
 export interface BuildApiOptions {
   jobChatAi?: AiClient | null;
+  jobChatService?: JobChatApi;
+  jobCareerMatchService?: JobCareerMatchApi;
   config: RuntimeConfig;
   readinessChecks?: readonly ReadinessCheck[];
   identityService?: IdentityApi;
@@ -193,6 +199,35 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
         ai: options.jobChatAi ?? null,
         jobBoardService: options.jobBoardService,
         consentService: options.consentService,
+        authenticateRequest: createAuthenticateRequest(
+          options.identityService,
+        ),
+      });
+    }
+    if (
+    options.identityService &&
+    options.jobBoardService &&
+    options.consentService &&
+    options.jobChatService
+    ) {
+      registerJobChatP2Routes(app, {
+        ai: options.jobChatAi ?? null,
+        jobChatService: options.jobChatService,
+        jobBoardService: options.jobBoardService,
+        consentService: options.consentService,
+        authenticateRequest: createAuthenticateRequest(
+          options.identityService,
+        ),
+        generationLeaseMs:
+          (options.config.aiTimeoutMs ?? 180_000) * 3 + 60_000,
+      });
+    }
+    if (
+      options.identityService &&
+      options.jobCareerMatchService
+    ) {
+      registerJobCareerMatchRoutes(app, {
+        jobCareerMatchService: options.jobCareerMatchService,
         authenticateRequest: createAuthenticateRequest(
           options.identityService,
         ),
