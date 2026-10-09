@@ -102,13 +102,74 @@ try {
       });
     }
   }
+  // 사례 원본을 좁은 열에 넣은 컨테이너 변형입니다. 세 열 Grid와 두 열 Columns에서 넘침을 잽니다.
+  const grouped = {
+    ...content,
+    sections: ["a", "b", "c"].map((key, index) => ({
+      ...content.sections[0],
+      id: key,
+      title: `${["첫번째", "두번째", "세번째"][index]} 프로젝트`,
+    })),
+  };
+  const groupedSpec = (sourceId, group) => {
+    const s = structuredClone(spec);
+    for (const key of ["a", "b", "c"])
+      s.elements[`case-${key}`] = {
+        type: "CaseTechnical",
+        props: { section: { $state: `/sectionById/${key}` }, sourceId },
+        children: [],
+      };
+    delete s.elements.case;
+    s.elements["group-1"] = group;
+    s.elements.page.children = [
+      "intro",
+      "group-1",
+      ...["a", "b", "c"]
+        .map((key) => `case-${key}`)
+        .filter((key) => !group.children.includes(key)),
+    ];
+    return s;
+  };
+  for (const item of items.filter((entry) => entry.slot === "section"))
+    for (const group of [
+      { type: "Grid", props: { variant: "even" }, children: ["case-a", "case-b", "case-c"] },
+      { type: "Columns", props: { variant: "even" }, children: ["case-a", "case-b"] },
+      { type: "Columns", props: { variant: "wide-start" }, children: ["case-a", "case-b"] },
+    ]) {
+      const name = `${item.sourceItemId} in ${group.type}(${group.props.variant})`;
+      try {
+        const r = renderStructuredPortfolio(groupedSpec(item.id, group), grouped);
+        const screens = [];
+        if (page)
+          for (const width of [390, 926, 1440]) {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.setContent(`<html lang="ko"><meta charset="utf-8"><style>html,body{margin:0}${r.css}</style><body>${r.html}</body></html>`);
+            screens.push(await page.evaluate(() => ({
+              width: innerWidth,
+              overflow: document.documentElement.scrollWidth > innerWidth + 1,
+              // 열 밖으로 나간 원본 요소의 수입니다.
+              escaped: [...document.querySelectorAll(".sp-group > *")].reduce((sum, column) => {
+                const box = column.getBoundingClientRect();
+                return sum + [...column.querySelectorAll("[data-library-source] *")].filter((node) => {
+                  const inner = node.getBoundingClientRect();
+                  return inner.width > 0 && (inner.left < box.left - 1 || inner.right > box.right + 1);
+                }).length;
+              }, 0),
+              h1: document.querySelectorAll("h1").length,
+            })));
+          }
+        results.push({ id: item.id, name, ok: true, h1: 1, stock: false, screens });
+      } catch (e) {
+        results.push({ id: item.id, name, ok: false, error: e.message });
+      }
+    }
   await browser?.close();
   console.log(JSON.stringify(results));
   fs.writeFileSync(
     "/tmp/expresso-collected-render-check.json",
     JSON.stringify(results),
   );
-  if (results.some((r) => !r.ok || r.h1 !== 1 || r.stock || r.screens?.some(s=>s.overflow||s.h1!==1||s.name!==content.profile.name||s.opacity==='0'||s.unstyledDetails||s.sampleResidue))) process.exitCode = 1;
+  if (results.some((r) => !r.ok || r.h1 !== 1 || r.stock || r.screens?.some(s=>s.overflow||s.escaped||s.h1!==1||(s.name!==undefined&&s.name!==content.profile.name)||s.opacity==='0'||s.unstyledDetails||s.sampleResidue))) process.exitCode = 1;
 } catch (e) {
   console.error(e.message);
   process.exitCode = 1;
