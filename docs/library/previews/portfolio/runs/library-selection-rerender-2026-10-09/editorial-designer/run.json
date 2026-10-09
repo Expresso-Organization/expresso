@@ -1,0 +1,454 @@
+{
+  "fictional": true,
+  "specOrigin": "model",
+  "contentOrigin": "prepared-fictional",
+  "model": "qwen3.5:9b-q8_0",
+  "htmlSha256": "a862e179ef973520e7931c8a8a24e612b0aa93a72a4021279ca1a749c086dc30",
+  "methodologyVersion": 1,
+  "promptHash": "2167b71a377a624312081cdecab4d2e6e2c3ca6aae4839913b2a91ecb1e030cf",
+  "promptVersions": {
+    "page": 7,
+    "designPrinciples": 1
+  },
+  "tools": [],
+  "sourceUrls": [],
+  "attempts": 1,
+  "repairCount": 0,
+  "usage": {
+    "inputTokens": 4560,
+    "outputTokens": 723,
+    "cacheReadTokens": 0,
+    "cacheCreationTokens": 0,
+    "durationMs": 27989,
+    "costUsd": null
+  },
+  "structured": {
+    "version": 1,
+    "content": {
+      "version": 1,
+      "profile": {
+        "name": "오수빈",
+        "role": "편집 디자이너",
+        "headline": "읽는 흐름을 조판하는 편집 디자이너입니다.",
+        "intro": "문장과 이미지가 페이지에서 만나는 리듬을 설계합니다. 책과 전시 도록에서 독자가 시선을 옮기는 순서, 지면의 여백, 인쇄 후 질감을 함께 검토합니다.",
+        "focus": [
+          "조판",
+          "출판 디자인",
+          "인쇄"
+        ]
+      },
+      "sections": [
+        {
+          "id": "season-reader",
+          "title": "계절의 언어",
+          "summary": "한 계절의 짧은 글과 식물 도판을 엮은 가상 독립 출판물입니다.",
+          "body": "",
+          "pattern": "project",
+          "details": [
+            {
+              "label": "역할",
+              "text": "아트 디렉션 · 조판"
+            },
+            {
+              "label": "기간",
+              "text": "2026.01 — 2026.04"
+            },
+            {
+              "label": "문제 정의",
+              "text": "짧은 글과 이미지가 같은 속도로 반복되면 책의 장면 전환이 잘 드러나지 않는다는 가상 편집 과제를 설정했습니다."
+            },
+            {
+              "label": "담당 작업",
+              "text": "절마다 글줄 길이와 이미지 여백을 달리하고 표지부터 본문까지 하나의 조판 규칙을 정의했습니다."
+            },
+            {
+              "label": "결과와 한계",
+              "text": "표지와 본문 펼침면을 포함한 가상 인쇄 시안을 제작했습니다. 실제 출판 이력은 없습니다."
+            }
+          ],
+          "media": [
+            {
+              "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIj48cmVjdCB3aWR0aD0iOTYwIiBoZWlnaHQ9IjcyMCIgZmlsbD0iI2Y0ZWVlMiIvPjxwYXRoIGQ9Ik01NSA2NEw5MDUgNjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2MjMyYSIgc3Ryb2tlLXdpZHRoPSIxIi8+PHBhdGggZD0iTTU1IDY1Nkw5MDUgNjU2IiBmaWxsPSJub25lIiBzdHJva2U9IiMyNjIzMmEiIHN0cm9rZS13aWR0aD0iMSIvPjxyZWN0IHg9IjU1IiB5PSI5OCIgd2lkdGg9Ijg1MCIgaGVpZ2h0PSI1MjAiIGZpbGw9IiNlNWM1YTkiLz48Y2lyY2xlIGN4PSI2NjUiIGN5PSIzMzAiIHI9IjIwNCIgZmlsbD0iI2U5ZTBjOCIvPjxwYXRoIGQ9Ik02NzAgMTgwUTQzMCAzMjAgNjgwIDU2ME03MzQgMjA4UTU2OCAzMTIgNzkwIDUzMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYmE2MTNkIiBzdHJva2Utd2lkdGg9IjM0IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48dGV4dCB4PSI4NiIgeT0iMjg0IiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9Ijc4IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMjYyMzJhIj7qs4TsoIjsnZg8L3RleHQ+PHRleHQgeD0iODYiIHk9IjM4NSIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMTIiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiMyNjIzMmEiPuyWuOyWtDwvdGV4dD48dGV4dCB4PSI4NiIgeT0iNTcwIiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMjYyMzJhIj5TRUFTT05BTCBSRUFERVIgLyBWT0wuIDAxPC90ZXh0Pjx0ZXh0IHg9IjU1IiB5PSI0NSIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNSIgZm9udC13ZWlnaHQ9IjUwMCIgZmlsbD0iIzI2MjMyYSI+RURJVE9SSUFMIFNUVURZPC90ZXh0Pjx0ZXh0IHg9IjgyNSIgeT0iNjkwIiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE1IiBmb250LXdlaWdodD0iNTAwIiBmaWxsPSIjMjYyMzJhIj4wMSAvIDAzPC90ZXh0Pjwvc3ZnPgo=",
+              "alt": "계절의 언어 가상 출판물 표지 시안",
+              "origin": "fictional"
+            }
+          ],
+          "sourceIds": [
+            "season-grid"
+          ]
+        },
+        {
+          "id": "archive-walk",
+          "title": "아카이브 산책",
+          "summary": "거리의 기록을 시간과 장소의 단서로 엮은 가상 전시 도록입니다.",
+          "body": "",
+          "pattern": "project",
+          "details": [
+            {
+              "label": "역할",
+              "text": "편집 구조 · 이미지 배열"
+            },
+            {
+              "label": "기간",
+              "text": "2025.05 — 2025.11"
+            },
+            {
+              "label": "문제 정의",
+              "text": "서로 다른 시기의 기록 사진을 촬영 순서대로 놓으면 장소의 변화를 읽기 어렵다는 가상 문제를 다뤘습니다."
+            },
+            {
+              "label": "담당 작업",
+              "text": "장소별 펼침면을 만들고 사진, 기록 시점, 해설이 짝을 이루도록 배열했습니다."
+            },
+            {
+              "label": "결과와 한계",
+              "text": "지면 순서와 이미지 크기의 차이를 보여 주는 가상 도록 시안을 작성했습니다."
+            }
+          ],
+          "media": [
+            {
+              "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIj48cmVjdCB3aWR0aD0iOTYwIiBoZWlnaHQ9IjcyMCIgZmlsbD0iI2Y0ZWVlMiIvPjxwYXRoIGQ9Ik01NSA2NEw5MDUgNjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2MjMyYSIgc3Ryb2tlLXdpZHRoPSIxIi8+PHBhdGggZD0iTTU1IDY1Nkw5MDUgNjU2IiBmaWxsPSJub25lIiBzdHJva2U9IiMyNjIzMmEiIHN0cm9rZS13aWR0aD0iMSIvPjxyZWN0IHg9IjU1IiB5PSI5NiIgd2lkdGg9IjQwOCIgaGVpZ2h0PSI1MjAiIGZpbGw9IiNkOWNmZGIiLz48cmVjdCB4PSI0ODAiIHk9Ijk2IiB3aWR0aD0iNDI1IiBoZWlnaHQ9IjUyMCIgZmlsbD0iI2VmZTRkMyIvPjxjaXJjbGUgY3g9IjI2MCIgY3k9IjMyNSIgcj0iMTUwIiBmaWxsPSIjYWFhMGFmIi8+PHBhdGggZD0iTTE5MCA0MzBRMjYwIDE1MCAzNDUgNDAwIiBmaWxsPSJub25lIiBzdHJva2U9IiNmNmVjZTUiIHN0cm9rZS13aWR0aD0iMzAiLz48dGV4dCB4PSI1MDAiIHk9IjIyMCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSI0OCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzI2MjMyYSI+QVJDSElWRTwvdGV4dD48dGV4dCB4PSI1MDAiIHk9IjI3OCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSI0OCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzI2MjMyYSI+V0FMSzwvdGV4dD48dGV4dCB4PSI1MDAiIHk9IjM3MyIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNiIgZm9udC13ZWlnaHQ9IjUwMCIgZmlsbD0iIzI2MjMyYSI+7J287IOB7J2YIOuztOq0gCDrsKnsi508L3RleHQ+PHRleHQgeD0iNTAwIiB5PSI0MTgiIGZvbnQtZmFtaWx5PSJBcmlhbCxBcHBsZSBTRCBHb3RoaWMgTmVvLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTciIGZvbnQtd2VpZ2h0PSI1MDAiIGZpbGw9IiMyNjIzMmEiPuqxsOumrOydmCDquLDroZ3snYQg7J2964qUIOuPhOuhnTwvdGV4dD48dGV4dCB4PSI1NSIgeT0iNDUiIGZvbnQtZmFtaWx5PSJBcmlhbCxBcHBsZSBTRCBHb3RoaWMgTmVvLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTUiIGZvbnQtd2VpZ2h0PSI1MDAiIGZpbGw9IiMyNjIzMmEiPkVYSElCSVRJT04gQ0FUQUxPR1VFPC90ZXh0Pjx0ZXh0IHg9IjgyNSIgeT0iNjkwIiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE1IiBmb250LXdlaWdodD0iNTAwIiBmaWxsPSIjMjYyMzJhIj4wMiAvIDAzPC90ZXh0Pjwvc3ZnPgo=",
+              "alt": "아카이브 산책 가상 도록의 펼침면",
+              "origin": "fictional"
+            }
+          ],
+          "sourceIds": [
+            "archive-proof"
+          ]
+        },
+        {
+          "id": "reading-routes",
+          "title": "읽는 길",
+          "summary": "동네 도서관의 주제 구역을 작은 인쇄 지도에 표현한 가상 프로젝트입니다.",
+          "body": "",
+          "pattern": "project",
+          "details": [
+            {
+              "label": "역할",
+              "text": "정보 구성 · 그래픽 시스템"
+            },
+            {
+              "label": "기간",
+              "text": "2024.09 — 2025.01"
+            },
+            {
+              "label": "문제 정의",
+              "text": "서가 번호만으로는 처음 방문한 사람이 주제 구역을 빠르게 찾기 어렵다는 상황을 설정했습니다."
+            },
+            {
+              "label": "담당 작업",
+              "text": "주제 범례와 동선 번호를 함께 표기하고 지도를 접어도 핵심 안내가 보이도록 배치했습니다."
+            },
+            {
+              "label": "결과와 한계",
+              "text": "접지형 지도와 벽면 안내의 가상 시안을 만들었습니다. 실제 설치는 진행하지 않았습니다."
+            }
+          ],
+          "media": [
+            {
+              "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIj48cmVjdCB3aWR0aD0iOTYwIiBoZWlnaHQ9IjcyMCIgZmlsbD0iI2Y0ZWVlMiIvPjxwYXRoIGQ9Ik01NSA2NEw5MDUgNjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2MjMyYSIgc3Ryb2tlLXdpZHRoPSIxIi8+PHBhdGggZD0iTTU1IDY1Nkw5MDUgNjU2IiBmaWxsPSJub25lIiBzdHJva2U9IiMyNjIzMmEiIHN0cm9rZS13aWR0aD0iMSIvPjxyZWN0IHg9IjU1IiB5PSI5NiIgd2lkdGg9Ijg1MCIgaGVpZ2h0PSI1MjAiIGZpbGw9IiNkOGU3ZGYiLz48cGF0aCBkPSJNOTUgMTE2UTEyMCAzMzAgMTAwIDU5NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWViZGIyIiBzdHJva2Utd2lkdGg9IjMyIi8+PHBhdGggZD0iTTIyMCAxMTZRMjQwIDMzMCAyMjYgNTk1IiBmaWxsPSJub25lIiBzdHJva2U9IiMzZDcyNmEiIHN0cm9rZS13aWR0aD0iMTgiLz48cGF0aCBkPSJNMzQ1IDExNlEzNjAgMzMwIDM1MiA1OTUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzllYmRiMiIgc3Ryb2tlLXdpZHRoPSIzMiIvPjxwYXRoIGQ9Ik00NzAgMTE2UTQ4MCAzMzAgNDc4IDU5NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM2Q3MjZhIiBzdHJva2Utd2lkdGg9IjE4Ii8+PHBhdGggZD0iTTU5NSAxMTZRNjAwIDMzMCA2MDQgNTk1IiBmaWxsPSJub25lIiBzdHJva2U9IiM5ZWJkYjIiIHN0cm9rZS13aWR0aD0iMzIiLz48cGF0aCBkPSJNNzIwIDExNlE3MjAgMzMwIDczMCA1OTUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzNkNzI2YSIgc3Ryb2tlLXdpZHRoPSIxOCIvPjxyZWN0IHg9IjEyMCIgeT0iMTYwIiB3aWR0aD0iNTIwIiBoZWlnaHQ9IjE5MCIgZmlsbD0iI2Y3ZjNlOCIvPjx0ZXh0IHg9IjE1NSIgeT0iMjUwIiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjgyIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMjYyMzJhIj7snb3ripQg6ri4PC90ZXh0Pjx0ZXh0IHg9IjE1NSIgeT0iMzA1IiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmb250LXdlaWdodD0iNTAwIiBmaWxsPSIjMjYyMzJhIj5SRUFESU5HIFJPVVRFUzwvdGV4dD48dGV4dCB4PSI1NSIgeT0iNDUiIGZvbnQtZmFtaWx5PSJBcmlhbCxBcHBsZSBTRCBHb3RoaWMgTmVvLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTUiIGZvbnQtd2VpZ2h0PSI1MDAiIGZpbGw9IiMyNjIzMmEiPklORk9STUFUSU9OIERFU0lHTjwvdGV4dD48dGV4dCB4PSI4MjUiIHk9IjY5MCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNSIgZm9udC13ZWlnaHQ9IjUwMCIgZmlsbD0iIzI2MjMyYSI+MDMgLyAwMzwvdGV4dD48L3N2Zz4K",
+              "alt": "읽는 길 가상 도서관 인쇄 지도 시안",
+              "origin": "fictional"
+            }
+          ],
+          "sourceIds": [
+            "reading-key"
+          ]
+        }
+      ],
+      "career": [
+        {
+          "id": "editorial-studio",
+          "period": "2023.09 — 현재",
+          "organization": "가상 조직 · 이음 지면 스튜디오",
+          "role": "편집 디자이너",
+          "description": "가상 도록과 독립 출판물의 지면 체계를 설계한 설정입니다."
+        },
+        {
+          "id": "editorial-press",
+          "period": "2021.02 — 2023.08",
+          "organization": "가상 조직 · 여백 인쇄소",
+          "role": "그래픽 디자이너",
+          "description": "소형 인쇄물의 활자와 제작 사양을 검토한 가상 경력입니다."
+        }
+      ],
+      "evidence": [
+        {
+          "id": "season-grid",
+          "title": "본문 그리드",
+          "kind": "조판 기준",
+          "summary": "책의 여백과 행 길이",
+          "body": "가상 지면에서 본문 행 길이, 절 제목 위치, 이미지 캡션 간격을 비교한 조판 기준입니다."
+        },
+        {
+          "id": "archive-proof",
+          "title": "도록 교정지",
+          "kind": "제작 기록",
+          "summary": "펼침면의 이미지와 주석 점검",
+          "body": "가상 전시 도록의 펼침면에서 이미지 순서와 주석 연결을 검토한 교정 기록입니다."
+        },
+        {
+          "id": "reading-key",
+          "title": "독서 지도 범례",
+          "kind": "정보 디자인",
+          "summary": "주제와 동선을 구분하는 범례",
+          "body": "도서관의 가상 주제 구역을 색과 번호로 함께 구분한 정보 디자인 자료입니다."
+        }
+      ],
+      "contact": {
+        "label": "작업을 함께 검토할 수 있습니다.",
+        "href": "mailto:fictional-editorial@example.com"
+      }
+    },
+    "spec": {
+      "root": "page",
+      "elements": {
+        "page": {
+          "type": "PortfolioPage",
+          "props": {
+            "profile": {
+              "$state": "/profile"
+            },
+            "design": {
+              "layout": "library",
+              "palette": "ivory",
+              "font": "serif"
+            },
+            "motion": "showcase",
+            "rationale": "편집 디자이너의 포트폴리오이므로, 텍스트와 이미지의 조화를 강조하는 'library' 레이아웃을 선택했습니다. 계절별 출판물과 아카이브 도록 등 시각적 요소가 중요한 프로젝트들을 위해 'gallery' 스타일의 큰 이미지 전시를 기본으로 하되, 논리적인 설명이 필요한 부분에서는 'editorial' 방식을 병행합니다.",
+            "referenceIds": []
+          },
+          "children": [
+            "intro",
+            "index",
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes",
+            "career",
+            "evidence",
+            "contact"
+          ]
+        },
+        "intro": {
+          "type": "NameIntro",
+          "props": {
+            "profile": {
+              "$state": "/profile"
+            },
+            "sections": {
+              "$state": "/sections"
+            },
+            "sourceId": "watermelon-hero-15"
+          },
+          "children": []
+        },
+        "index": {
+          "type": "ProjectIndex",
+          "props": {
+            "sections": {
+              "$state": "/sections"
+            },
+            "variant": "mosaic"
+          },
+          "children": []
+        },
+        "section-season-reader": {
+          "type": "CaseGallery",
+          "props": {
+            "section": {
+              "$state": "/sectionById/season-reader"
+            },
+            "sourceId": "watermelon-book"
+          },
+          "children": []
+        },
+        "section-archive-walk": {
+          "type": "CaseTechnical",
+          "props": {
+            "section": {
+              "$state": "/sectionById/archive-walk"
+            },
+            "sourceId": "watermelon-feature-4"
+          },
+          "children": []
+        },
+        "section-reading-routes": {
+          "type": "CaseProcess",
+          "props": {
+            "section": {
+              "$state": "/sectionById/reading-routes"
+            },
+            "sourceId": "watermelon-card"
+          },
+          "children": []
+        },
+        "career": {
+          "type": "CareerTimeline",
+          "props": {
+            "career": {
+              "$state": "/career"
+            }
+          },
+          "children": []
+        },
+        "evidence": {
+          "type": "EvidenceGrid",
+          "props": {
+            "evidence": {
+              "$state": "/evidence"
+            }
+          },
+          "children": []
+        },
+        "contact": {
+          "type": "Contact",
+          "props": {
+            "contact": {
+              "$state": "/contact"
+            }
+          },
+          "children": []
+        }
+      }
+    }
+  },
+  "library": {
+    "inventoryHash": "4985cdcfd66e312515888735c8578dd238cf97b5766fedcafbc85bcd21e1e2fc",
+    "inventoryTotal": 9516,
+    "selected": [
+      {
+        "id": "watermelon-ce66f3b1a56849db",
+        "key": "watermelon-hero-15",
+        "sourceUrl": null,
+        "status": "renderable",
+        "material": "./library/materials/watermelon/registry/hero-15.json",
+        "sha256": "24eca369ad8547f582bd56760e591945713818c9f2dbd95c7b003d2ece255079",
+        "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+      },
+      {
+        "id": "watermelon-92719fe0cf8cd515",
+        "key": "watermelon-book",
+        "sourceUrl": null,
+        "status": "renderable",
+        "material": "./library/materials/watermelon/registry/book.json",
+        "sha256": "39fbf105061d3a60e95932065ae7b3e044269aebcdc97d7bd1e440fea84d5dbf",
+        "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+      },
+      {
+        "id": "watermelon-81213bb8a61f3c51",
+        "key": "watermelon-feature-4",
+        "sourceUrl": null,
+        "status": "renderable",
+        "material": "./library/materials/watermelon/registry/feature-4.json",
+        "sha256": "99b65e28e486bcd2d694f82ac9d869a1a8a22faaa74ef8d47a62eb1e45d53f1e",
+        "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+      },
+      {
+        "id": "watermelon-8367cd66fdd136bb",
+        "key": "watermelon-card",
+        "sourceUrl": null,
+        "status": "renderable",
+        "material": "./library/materials/watermelon/registry/card.json",
+        "sha256": "76314b6dd15952fa21ac98d23beecd6678e11aea04986b1793e1794bdafe9193",
+        "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+      }
+    ],
+    "query": "editorial typography layout bento 편집 디자이너 조판 출판 디자인 인쇄 계절의 언어 아카이브 산책 읽는 길 ",
+    "offeredIds": [
+      "watermelon-hero-1",
+      "watermelon-hero-10",
+      "watermelon-hero-11",
+      "watermelon-hero-12",
+      "watermelon-hero-14",
+      "watermelon-hero-15",
+      "watermelon-hero-16",
+      "watermelon-hero-17",
+      "watermelon-hero-18",
+      "watermelon-hero-19",
+      "watermelon-hero-2",
+      "watermelon-hero-20",
+      "watermelon-hero-21",
+      "watermelon-hero-22",
+      "watermelon-hero-23",
+      "watermelon-hero-24",
+      "watermelon-hero-25",
+      "watermelon-hero-26",
+      "watermelon-hero-27",
+      "watermelon-hero-28",
+      "watermelon-hero-29",
+      "watermelon-hero-3",
+      "watermelon-hero-30",
+      "watermelon-hero-31",
+      "watermelon-hero-32",
+      "watermelon-hero-33",
+      "watermelon-hero-4",
+      "watermelon-hero-5",
+      "watermelon-hero-6",
+      "watermelon-hero-7",
+      "watermelon-hero-8",
+      "watermelon-hero-9",
+      "watermelon-feature-1",
+      "watermelon-feature-4",
+      "watermelon-book",
+      "watermelon-card",
+      "watermelon-text-gradient",
+      "componentry-annotated-text",
+      "al-folio-core-article",
+      "al-folio-core-publications",
+      "bento-01a24bda1a663e15",
+      "bento-01eb4be6b2e8c3b0",
+      "bento-02bdc3d40d1b3a96",
+      "bento-037d13497cb7a47b",
+      "bento-0482b8b607f6f780",
+      "bento-04ce998a59bc6cc3"
+    ]
+  },
+  "modelRunId": "collected-readable-keys-2026-10-07",
+  "renderer": "source-adapter-reviewed",
+  "rendererLibrary": {
+    "inventoryHash": "701f1b2e84b5124509dc563cbf731fbe55ae6d371352bac1e0f2ec60c44cab6e",
+    "inventoryTotal": 9516,
+    "selected": [
+      {
+        "id": "watermelon-ce66f3b1a56849db",
+        "key": "watermelon-hero-15",
+        "sourceUrl": "https://ui.watermelon.sh/block/hero-15",
+        "status": "renderable",
+        "material": "./library/materials/watermelon/registry/hero-15.json",
+        "sha256": "24eca369ad8547f582bd56760e591945713818c9f2dbd95c7b003d2ece255079",
+        "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+      },
+      {
+        "id": "watermelon-92719fe0cf8cd515",
+        "key": "watermelon-book",
+        "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+        "status": "renderable",
+        "material": "./library/materials/watermelon/registry/book.json",
+        "sha256": "39fbf105061d3a60e95932065ae7b3e044269aebcdc97d7bd1e440fea84d5dbf",
+        "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+      },
+      {
+        "id": "watermelon-81213bb8a61f3c51",
+        "key": "watermelon-feature-4",
+        "sourceUrl": "https://ui.watermelon.sh/block/feature-4",
+        "status": "renderable",
+        "material": "./library/materials/watermelon/registry/feature-4.json",
+        "sha256": "99b65e28e486bcd2d694f82ac9d869a1a8a22faaa74ef8d47a62eb1e45d53f1e",
+        "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+      },
+      {
+        "id": "watermelon-8367cd66fdd136bb",
+        "key": "watermelon-card",
+        "sourceUrl": "https://ui.watermelon.sh/components/card",
+        "status": "renderable",
+        "material": "./library/materials/watermelon/registry/card.json",
+        "sha256": "76314b6dd15952fa21ac98d23beecd6678e11aea04986b1793e1794bdafe9193",
+        "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+      }
+    ]
+  },
+  "rerenderOf": {
+    "runId": "library-selection-2026-10-07",
+    "htmlSha256": "279a1e00a4dcfd3ae2a012442a9b44ad180efa3a946e67738b15ba551bb97259"
+  }
+}
