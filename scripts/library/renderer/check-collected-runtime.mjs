@@ -77,7 +77,10 @@ try {
       if(page)for(const width of [390,926,1440]){
         await page.setViewportSize({width,height:1000});
         await page.setContent(`<html lang="ko"><meta charset="utf-8"><style>html,body{margin:0}${r.css}</style><body>${r.html}</body></html>`);
-        screens.push(await page.evaluate(()=>({width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth+1,h1:document.querySelectorAll('h1').length,name:document.querySelector('h1').textContent,opacity:getComputedStyle(document.querySelector('h1')).opacity})));
+        screens.push(await page.evaluate(()=>({width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth+1,h1:document.querySelectorAll('h1').length,name:document.querySelector('h1').textContent,opacity:getComputedStyle(document.querySelector('h1')).opacity,
+          // 서식 없는 항목표와 원본 샘플 글자를 지운 뒤 남은 빈 상자를 셉니다.
+          unstyledDetails:document.querySelectorAll('.sp-case dl,.sp-case dd').length,
+          sampleResidue:[...document.querySelectorAll('[data-source-slot=section] *')].filter(node=>{if(node.closest('svg,[data-source-decoration]')||node.matches('img,svg'))return false;if(node.textContent.trim()||node.querySelector('img,svg'))return false;const box=node.getBoundingClientRect(),style=getComputedStyle(node);return box.width>2&&box.height>2&&(style.backgroundColor!=='rgba(0, 0, 0, 0)'||style.backgroundImage!=='none'||parseFloat(style.borderTopWidth)>0);}).length})));
       }
       results.push({
         id: item.id,
@@ -105,7 +108,7 @@ try {
     "/tmp/expresso-collected-render-check.json",
     JSON.stringify(results),
   );
-  if (results.some((r) => !r.ok || r.h1 !== 1 || r.stock || r.screens?.some(s=>s.overflow||s.h1!==1||s.name!==content.profile.name||s.opacity==='0'))) process.exitCode = 1;
+  if (results.some((r) => !r.ok || r.h1 !== 1 || r.stock || r.screens?.some(s=>s.overflow||s.h1!==1||s.name!==content.profile.name||s.opacity==='0'||s.unstyledDetails||s.sampleResidue))) process.exitCode = 1;
 } catch (e) {
   console.error(e.message);
   process.exitCode = 1;
