@@ -11,9 +11,25 @@ if (!runId || !/^[a-zA-Z0-9-]+$/.test(runId))
   throw new Error("실행 ID가 필요합니다.");
 const folder = path.join(root, "docs/library/previews/portfolio/runs", runId);
 const base = process.env.PORTFOLIO_PREVIEW_BASE || "http://127.0.0.1:8942";
-const slugs = process.env.PORTFOLIO_PROFILE
+const requested = process.env.PORTFOLIO_PROFILE
   ? [process.env.PORTFOLIO_PROFILE]
   : ["robotics-engineer", "editorial-designer", "climate-analyst"];
+// 생성에 실패한 프로필은 run.json이 없습니다. 검사에서 빼고 실패로 기록합니다.
+const slugs = requested.filter((slug) =>
+  fs.existsSync(path.join(folder, slug, "run.json")),
+);
+const failed = requested
+  .filter((slug) => !slugs.includes(slug))
+  .map((slug) => {
+    const record = path.join(folder, slug, "model-record.json");
+    return {
+      slug,
+      attempts: fs.existsSync(record)
+        ? JSON.parse(fs.readFileSync(record, "utf8")).length
+        : 0,
+    };
+  });
+if (!slugs.length) throw new Error("검사할 생성 결과가 없습니다.");
 const normalize = (value) =>
   String(value)
     .replace(/[^\p{L}\p{N}@]/gu, "")
@@ -241,6 +257,7 @@ try {
           report.map((item) => JSON.stringify(item.sourceComposition)),
         ).size,
         distinctLayouts: new Set(report.map((item) => item.layout)).size,
+        failed,
         groupCount: report.map((item) => (item.layout.match(/\(/g) || []).length),
       },
       null,

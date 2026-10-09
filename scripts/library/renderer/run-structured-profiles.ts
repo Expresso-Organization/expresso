@@ -212,6 +212,10 @@ for (const slug of rerenderFrom ? [] : slugs) {
   try {
     const normalize = process.env.PORTFOLIO_NORMALIZE === "1";
     const result = await new StructuredPageGenerator(ai).generate({
+      // 제품 경로(PageService)와 같은 티어를 씁니다. 지정하지 않으면 지면 생성 기본 티어(opus)로 호출됩니다.
+      ...(claude
+        ? { modelTier: (process.env.PORTFOLIO_MODEL_TIER || "sonnet") as "sonnet" | "opus" | "haiku" }
+        : {}),
       ...(normalize
         ? { author: { name: content.profile.name } }
         : { structuredContent: content }),
