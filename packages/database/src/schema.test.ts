@@ -16,7 +16,9 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
   afterAll(async () => { try { await mongo.dropDatabase(); } finally { await client.close(); } });
 
   it("creates every product collection and preserves the seeded IDs and all 30 additional designs", async () => {
-    expect(await mongo.listCollections({}, { nameOnly: true }).toArray()).toHaveLength(85);
+    const collectionList = await mongo.listCollections({}, { nameOnly: true }).toArray();
+    expect(collectionList).toHaveLength(86);
+    expect(collectionList.map(({ name }) => name)).toContain("job_chat_facts");
     expect(await collections.plans.countDocuments()).toBe(3);
     expect((await collections.plans.findOne({ code: "free" }))?._id).toBe("aa09f35f-bde6-4e18-b9cd-7b32759bf43b");
     expect(await collections.careerCategories.countDocuments({ isSystem: true })).toBe(7);
@@ -31,7 +33,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await collections.plans.updateOne({ code: "free" }, { $set: { generationQuota: 17 } });
     const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     expect(result.applied).toEqual([]);
-    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_job_chat_storage", "0010_job_career_match_storage"]);
+    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_job_chat_storage", "0010_job_career_match_storage", "0011_job_chat_confirmed_facts"]);
     expect((await collections.plans.findOne({ code: "free" }))?.generationQuota).toBe(17);
   });
 

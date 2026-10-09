@@ -53,7 +53,8 @@ describe("MongoDB migration sources", () => {
     expect(first.map(({ version, checksum }) => ({ version, checksum }))).toEqual(
       second.map(({ version, checksum }) => ({ version, checksum })),
     );
-    expect(first).toHaveLength(10);
+    expect(first).toHaveLength(11);
+    expect(first.map(({ version }) => version)).toContain("0011");
     expect(first.every(({ checksum }) => /^[a-f0-9]{64}$/.test(checksum))).toBe(true);
     for (const migration of first) {
       expect(new Set(migration.steps.map(({ id }) => id)).size).toBe(migration.steps.length);
