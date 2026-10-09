@@ -53,3 +53,7 @@
   display: flex;
   gap: 8px;
 }
+.group {
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-xs);
+}
