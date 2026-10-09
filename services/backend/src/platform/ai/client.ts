@@ -30,6 +30,7 @@ export const AI_CONTRACTS = [
   "partial_edit",
   "style_remix",
   "insight_note",
+  "job_chat",
 ] as const;
 
 export type AiContract = (typeof AI_CONTRACTS)[number];
@@ -63,6 +64,7 @@ export const DEFAULT_MODEL_TIER: Record<AiContract, AiModelTier> = {
   style_remix: "sonnet",
   search_interpret: "haiku",
   insight_note: "haiku",
+  job_chat: "sonnet",
 };
 
 export interface AiCallSpec {
@@ -293,9 +295,12 @@ export function dropNulls(value: unknown): unknown {
  * 모델이 낸 JSON을 계약으로 받는다.
  *
  * 먼저 **온 그대로** 본다 — 계약이 진짜 nullable인 자리의 null을 잃지 않기
- * 위해서다. 거절당하면 그때 null을 걷어내고 다시 본다.
+ * 위해서다. 거절당하면 그때 null을 걷어낸 것으로 다시 본다.
  */
-export function parseToolOutput<T>(schema: z.ZodType<T>, json: unknown): z.ZodSafeParseResult<T> {
+export function parseToolOutput<T>(
+  schema: z.ZodType<T>,
+  json: unknown,
+): z.ZodSafeParseResult<T> {
   const asIs = schema.safeParse(json);
   return asIs.success ? asIs : schema.safeParse(dropNulls(json));
 }

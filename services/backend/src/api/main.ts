@@ -142,6 +142,7 @@ const agentChatService = new AgentChatService(database, config.agentChatEnabled 
 const app = buildApi({
   agentChatService,
   config,
+  jobChatAi: ai,
   readinessChecks: [database.readinessCheck, redis.readinessCheck],
   identityService,
   ...(googleIdTokenVerifier ? { googleIdTokenVerifier } : {}),
