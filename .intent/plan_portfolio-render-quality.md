@@ -15,9 +15,11 @@ date: 2026-10-09
 | 파일 | 무엇을 |
 |---|---|
 | `scripts/library/renderer/build-collected-registry.mjs` | Feature 변환을 `bindFeatureFields`로 분리, `runtime.boundDetails` 기록 |
-| `packages/portfolio-renderer/src/collected/inventory.json` · `summary.json` | 빌드 재생성 결과(`boundDetails`, 해시) |
-| `packages/portfolio-renderer/src/library.ts` | `collectedBoundDetails`, 블러 판 CSS |
-| `packages/portfolio-renderer/src/source-jsx.tsx` | 빈 샘플 요소 판정, 소개 이름 판 래퍼 |
+| `packages/portfolio-renderer/src/collected/inventory.json` · `summary.json` · `components.mjs` · `docs/library/generation-index.json` | 빌드 재생성 결과(`boundDetails`, 해시, Motion 대체 코드) |
+| `packages/portfolio-renderer/src/library.ts` | `collectedBoundDetails`, 블러 판 CSS, `sp-source-base` 레이어(링크 상속·이미지 최대 폭·`min-width:0`) |
+| `packages/portfolio-renderer/src/source-jsx.tsx` | 빈 샘플 요소 판정, 순수 장식 표시, 소개 이름 판 래퍼 |
+| `packages/portfolio-renderer/src/source-motion.tsx` | Motion 대체 컴포넌트에 원래 태그(`sourceTag`) 기록 |
+| `packages/portfolio-renderer/src/styles.ts` | 모션 감소 설정에서 정지 `transform`을 지우지 않음(Book 뒤표지가 앞표지를 덮는 문제) |
 | `packages/portfolio-renderer/src/renderer.tsx` | `Details` 공유, 원본 경로 유형 클래스, 근거 제목 context |
 | `packages/portfolio-renderer/src/library.test.ts` | R1·R2·R4·R5·R7 테스트 |
 | `scripts/library/renderer/check-collected-runtime.mjs` | 사례 원본 잔여 요소·`dd` 검사 |
@@ -46,10 +48,17 @@ date: 2026-10-09
 node scripts/library/renderer/build-collected-registry.mjs && git diff --stat packages/portfolio-renderer/src/collected
 pnpm --filter @expresso/portfolio-renderer build && pnpm --filter @expresso/portfolio-renderer test
 node scripts/library/renderer/check-collected-runtime.mjs --browser
-PORTFOLIO_RERENDER_FROM=library-selection-2026-10-07 PORTFOLIO_RUN_ID=library-selection-rerender-2026-10-09 pnpm exec tsx scripts/library/renderer/run-structured-profiles.ts
+PORTFOLIO_RERENDER_FROM=library-selection-2026-10-07 PORTFOLIO_RUN_ID=library-selection-rerender-2026-10-09 services/backend/node_modules/.bin/tsx scripts/library/renderer/run-structured-profiles.ts
 python3 -m http.server 8942 -d docs   # 별도 프로세스
 node scripts/library/renderer/verify-structured-profiles.mjs library-selection-rerender-2026-10-09
 pnpm typecheck && pnpm test
 ```
 
 화면: 재렌더링한 세 프로필의 첫 화면(이름 판), 사례 지면(항목표·관련 자료 제목)을 1440px·390px에서 확인한다.
+
+## 구현 중 바뀐 점
+
+- 레이어 밖의 `.sp-source *{min-width:0}`·`.sp-source img{height:auto}`가 원본 크기 유틸리티를 덮어 Book 표지 폭이 0이었다(사례 PNG 좌상단의 작은 사각형, intent 열린 질문 2). `sp-source-base` 레이어로 옮겼다.
+- 히어로 12의 버튼이 브라우저 기본 링크색으로 그려졌다. 같은 레이어에 링크 상속 규칙을 두었다.
+- 모션 감소 규칙의 `transform:none!important`가 Book의 3D 배치를 지워 뒤표지가 앞표지를 덮었다. 움직임만 끄도록 고쳤다.
+- 판정이 Book의 책등·속지 같은 순수 장식을 잔여 요소로 셌다. `data-source-decoration` 표시로 구분했다.

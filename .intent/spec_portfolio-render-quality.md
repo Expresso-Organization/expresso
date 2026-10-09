@@ -56,7 +56,7 @@ date: 2026-10-09
 pnpm typecheck                      # 통과
 pnpm test                           # 통과 (renderer 신규 테스트 포함)
 node scripts/library/renderer/check-collected-runtime.mjs --browser   # 38개 × 3폭 통과, 사례 원본 잔여 요소 0
-PORTFOLIO_RERENDER_FROM=library-selection-2026-10-07 PORTFOLIO_RUN_ID=library-selection-rerender-2026-10-09 pnpm exec tsx scripts/library/renderer/run-structured-profiles.ts
+PORTFOLIO_RERENDER_FROM=library-selection-2026-10-07 PORTFOLIO_RUN_ID=library-selection-rerender-2026-10-09 services/backend/node_modules/.bin/tsx scripts/library/renderer/run-structured-profiles.ts
 node scripts/library/renderer/verify-structured-profiles.mjs library-selection-rerender-2026-10-09   # 세 프로필 통과
 ```
 
