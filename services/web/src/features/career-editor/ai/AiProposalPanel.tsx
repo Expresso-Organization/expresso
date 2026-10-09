@@ -179,7 +179,7 @@ export function AiProposalPanel({ recordId, documentVersion, selectedBlockIds = 
 
   function toggleDictation() {
     if (listening) { recognitionRef.current?.stop(); return; }
-    const speechWindow = window as Window & { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor };
+    const speechWindow = window as unknown as { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor };
     const Constructor = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
     if (!Constructor) { setIssue("이 브라우저에서는 음성 입력을 사용할 수 없습니다."); return; }
     setIssue(null);

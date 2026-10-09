@@ -4,6 +4,8 @@ import { createEmptyCareerDocument, parseCareerDocument } from "@expresso/editor
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// 채팅의 네트워크·스크롤은 별도 테스트와 실제 브라우저에서 검증합니다.
+vi.mock("@/features/agent-chat/AgentChat", () => ({ AgentChat: () => null }));
 const mocks = vi.hoisted(() => ({ useSession: vi.fn(), updateDocument: vi.fn() }));
 vi.mock("../session/useCareerEditorSession", () => ({
   useCareerEditorSession: (recordId: string) => mocks.useSession(recordId),
