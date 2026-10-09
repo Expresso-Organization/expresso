@@ -174,4 +174,24 @@ describe("모델 기반 구조화 생성", () => {
       }),
     ).rejects.toThrow("이름이나 입력 섹션");
   });
+  it("모델이 컨테이너로 묶은 Spec을 받아 렌더링하고, 규칙을 어긴 컨테이너는 오류와 함께 다시 요청한다", async () => {
+    const grouped = structuredClone(spec) as unknown as {
+      elements: Record<string, unknown> & { page: { children: string[] } };
+    };
+    grouped.elements.page.children = ["intro", "group-1"];
+    grouped.elements["group-1"] = {
+      type: "Columns",
+      props: { variant: "wide-end" },
+      children: ["index", "section-project-a"],
+    };
+    const broken = structuredClone(grouped);
+    (broken.elements["group-1"] as { props: { variant: string } }).props.variant = "panel";
+    const ai = new Stub([broken, grouped]);
+    const result = await new StructuredPageGenerator(ai).generate(context);
+    expect(ai.calls).toHaveLength(2);
+    expect(ai.calls[1]!.prompt).toContain("Columns에 사용할 수 없는 variant");
+    expect(ai.calls[0]!.prompt).toContain("컨테이너 예:");
+    expect(result.html).toContain('data-group="columns" data-variant="wide-end"');
+    expect(result.manifest.structured?.spec).toEqual(grouped);
+  });
 });

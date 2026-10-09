@@ -134,6 +134,9 @@ export const STRUCTURED_GROUP_CHILDREN: Record<StructuredGroupType, [number, num
   Band: [1, 3],
 };
 export const STRUCTURED_MAX_GROUPS = 4;
+export const STRUCTURED_GROUP_VARIANT_VALUES = [
+  ...new Set(Object.values(STRUCTURED_GROUP_VARIANTS).flat()),
+] as [string, ...string[]];
 const leaf = <T extends string, P extends z.ZodType>(type: T, props: P) =>
   z.strictObject({
     type: z.literal(type),
@@ -173,15 +176,12 @@ export const StructuredNodeSchema = z.union([
   leaf("CareerTimeline", z.strictObject({ career: binding })),
   leaf("EvidenceGrid", z.strictObject({ evidence: binding })),
   leaf("Contact", z.strictObject({ contact: binding })),
-  ...STRUCTURED_GROUP_TYPES.map((type) =>
-    z.strictObject({
-      type: z.literal(type),
-      props: z.strictObject({
-        variant: z.enum(STRUCTURED_GROUP_VARIANTS[type]),
-      }),
-      children: z.array(id).min(1).max(3),
-    }),
-  ),
+  // type과 variant의 짝은 validateStructuredPortfolio가 읽을 수 있는 메시지로 검사합니다.
+  z.strictObject({
+    type: z.enum(STRUCTURED_GROUP_TYPES),
+    props: z.strictObject({ variant: z.enum(STRUCTURED_GROUP_VARIANT_VALUES) }),
+    children: z.array(id).min(1).max(3),
+  }),
 ]);
 export const StructuredPortfolioSpecSchema = z.strictObject({
   root: id,
@@ -357,9 +357,7 @@ export function structuredModelSchema(
     type: z.enum(STRUCTURED_GROUP_TYPES),
     // type과 variant의 짝은 도메인 검사에서 확인합니다. 공급자 공통 문법을 위해 union을 쓰지 않습니다.
     props: z.strictObject({
-      variant: z.enum([
-        ...new Set(Object.values(STRUCTURED_GROUP_VARIANTS).flat()),
-      ] as [string, ...string[]]),
+      variant: z.enum(STRUCTURED_GROUP_VARIANT_VALUES),
     }),
     children: z.array(z.enum(groupable)).min(1).max(3),
   });
