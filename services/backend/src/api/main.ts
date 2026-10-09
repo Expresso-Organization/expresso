@@ -45,6 +45,7 @@ import { AiClientProposalAdapter, SelectedBlockTextAiProposalAdapter } from "../
 import { createReliableQueue } from "../platform/queue.js";
 import { JobChatService } from "../modules/job-chat/index.js";
 import { JobCareerMatchAnalyzer, JobCareerMatchInputLoader, JobCareerMatchService, } from "../modules/job-career-match/index.js";
+import { JobChatFactService } from "../modules/job-chat/fact-service.js";
 
 const config = loadRuntimeConfig();
 if (!config.mongodbUrl || !config.mongodbDatabase) throw new Error("MongoDB runtime configuration is missing");
@@ -164,6 +165,7 @@ const app = buildApi({
   jobChatAi: ai,
   jobChatService,
   jobCareerMatchService,
+  jobChatFactService: new JobChatFactService(database, ai, consentService),
   readinessChecks: [database.readinessCheck, redis.readinessCheck],
   identityService,
   ...(googleIdTokenVerifier ? { googleIdTokenVerifier } : {}),

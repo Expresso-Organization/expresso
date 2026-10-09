@@ -31,6 +31,10 @@ function errorMessage(error: unknown): string {
     if (error.status === 503) {
       return "AI 서비스를 사용할 수 없습니다. 서버 설정을 확인해 주세요.";
     }
+
+    if (error.status === 422) {
+      return "공고 × 경력 맞춤 분석을 먼저 실행한 뒤 추가 질문을 요청해 주세요.";
+    }
   }
 
   return "요청에 실패했습니다. 대화를 다시 불러온 뒤 재시도해 주세요.";

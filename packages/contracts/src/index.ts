@@ -72,3 +72,4 @@ export * from "./page-library.js";
 export * from "./agent-chat.js";
 export * from "./job-chat.js";
 export * from "./job-career-match.js";
+export * from "./job-chat-facts.js";
