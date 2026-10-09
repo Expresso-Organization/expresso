@@ -61,7 +61,10 @@
 
 ```bash
 PORTFOLIO_RERENDER_FROM=<원래 실행 ID> PORTFOLIO_RUN_ID=<새 실행 ID> services/backend/node_modules/.bin/tsx scripts/library/renderer/run-structured-profiles.ts
+node scripts/library/renderer/compare-runs.mjs <원래 실행 ID> <새 실행 ID>
 node scripts/library/renderer/verify-structured-profiles.mjs <새 실행 ID>
 ```
+
+`compare-runs.mjs`는 두 실행의 같은 프로필을 첫 화면과 사례 지면 단위로 캡처하고, 달라진 측정값(서식 없는 항목, 샘플 잔여 요소, 원본 블록 크기, 관련 자료 링크, 기본 링크색 링크, 이름 판 블러, 사례 높이)만 표로 적어 `compare.html`을 만듭니다. 새 실행 폴더의 `notes.json`이 있으면 지면별 설명을 붙입니다. `verify-structured-profiles.mjs`는 `compare.html`이 있으면 비교 페이지에서 링크합니다.
 
 `library-selection-rerender-2026-10-09/`는 위 실행의 Spec을 원본 렌더링 결함 수정 뒤에 다시 그린 결과입니다. 이미지 속 글자는 검사하지 못합니다. 블러 판 밖의 이미지 글자는 그대로 보입니다.

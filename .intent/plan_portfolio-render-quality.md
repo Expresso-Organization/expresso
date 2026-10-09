@@ -25,7 +25,8 @@ date: 2026-10-09
 | `scripts/library/renderer/check-collected-runtime.mjs` | 사례 원본 잔여 요소·`dd` 검사 |
 | `scripts/library/renderer/verify-structured-profiles.mjs` | R1·R2·R4·R5 측정, 사례 이미지 높이 |
 | `scripts/library/renderer/run-structured-profiles.ts` | `PORTFOLIO_RERENDER_FROM` 재렌더링 모드 |
-| `docs/library/previews/portfolio/runs/library-selection-rerender-2026-10-09/` | 재렌더링 결과·검증 기록·비교 페이지 |
+| `scripts/library/renderer/compare-runs.mjs` | 두 실행의 변경 전후 캡처·측정값 비교 페이지(`compare.html`) |
+| `docs/library/previews/portfolio/runs/library-selection-rerender-2026-10-09/` | 재렌더링 결과·검증 기록·비교 페이지·변경 전후 비교(`compare.html`, `notes.json`, `compare/`) |
 | `docs/architecture/portfolio-library-selection.md` | 샘플 제거 규칙·히어로 이름 판·재렌더링 절차 |
 
 ## 작업 순서
@@ -62,3 +63,4 @@ pnpm typecheck && pnpm test
 - 히어로 12의 버튼이 브라우저 기본 링크색으로 그려졌다. 같은 레이어에 링크 상속 규칙을 두었다.
 - 모션 감소 규칙의 `transform:none!important`가 Book의 3D 배치를 지워 뒤표지가 앞표지를 덮었다. 움직임만 끄도록 고쳤다.
 - 판정이 Book의 책등·속지 같은 순수 장식을 잔여 요소로 셌다. `data-source-decoration` 표시로 구분했다.
+- 리뷰에서 무엇이 어떻게 나아졌는지 보이지 않는다는 지적을 받았다. 변경 전후 캡처와 측정값을 나란히 보여 주는 `compare-runs.mjs`를 추가했다.
