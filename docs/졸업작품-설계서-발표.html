@@ -654,6 +654,27 @@ h2 { font-size: 50px; }
 }
 .lens iframe { position: absolute; left: 0; top: 0; width: var(--doc-w); border: 0; background: var(--ex-white); }
 
+/* 폭 조절 핸들 — 경계의 세로 가운데에 놓인 회색 pill. 눈에 띄지 않게 두께만 있는 막대로 둡니다.
+   라운드 full은 양식 기본값으로 Brew 버튼 전용이지만, 막대 끝을 둥글게 하려고 여기서도 씁니다.
+   왼쪽 끝까지 가면 지면 안쪽에 붙어 남습니다. */
+.split-handle {
+  position: absolute; top: 540px; left: max(10px, calc(1920px - var(--split))); z-index: 8;
+  width: 6px; height: 56px; transform: translate(-50%, -50%);
+  background: var(--ex-slate-300); border-radius: 999px;
+  cursor: col-resize; touch-action: none;
+  transition: background-color var(--ex-motion-quick);
+}
+/* 잡는 자리는 막대보다 넓게 — 보이는 두께는 6px, 누를 수 있는 폭은 24px */
+.split-handle::before { content: ""; position: absolute; inset: -8px -9px; }
+.split-handle:hover, .split-handle:focus-visible, .deck-stage.resizing .split-handle { background: var(--ex-slate-400); outline: none; }
+/* 끄는 동안 iframe 이 포인터를 가져가지 않게 합니다. */
+.deck-stage.resizing iframe { pointer-events: none; }
+.deck-stage.resizing { cursor: col-resize; user-select: none; }
+/* 왼쪽이 좁아지면 발표 내용을 걷고 설계서가 지면 전체를 씁니다. */
+.deck-stage.doc-full > .slide.active > .frame { opacity: 0; transition: opacity 240ms ease; pointer-events: none; }
+.deck-stage.doc-full .docpane { border-left-color: transparent; }
+.is-preview .split-handle { display: none; }
+
 /* 쪽 번호 — 오른쪽 아래. 숫자는 자리마다 0–9 띠를 굴려 바꿉니다(--n 칸만큼 올림). */
 .docpane .pager {
   position: absolute; right: 20px; bottom: 20px; z-index: 2; pointer-events: none;
@@ -702,7 +723,7 @@ h2 { font-size: 50px; }
 .tl .who { font-size: 16px; }
 
 @media print {
-  .docpane, .lens { display: none; }
+  .docpane, .lens, .split-handle { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -982,6 +1003,10 @@ h2 { font-size: 50px; }
   </div>
   <iframe src="졸업작품-설계서.html" title="졸업작품 설계서 v0.7"></iframe>
 </aside>
+
+<!-- 설계서 폭 조절 핸들 — 경계의 세로 가운데. 끌어서 폭을 바꾸고, 더블클릭하면 기본 폭으로 돌아갑니다. -->
+<div class="split-handle" role="separator" aria-orientation="vertical" aria-label="설계서 폭 조절"
+     aria-valuemin="520" aria-valuemax="1920" aria-valuenow="760" tabindex="0" title="끌어서 폭 조절 · 더블클릭하면 기본 폭"></div>
 
 <!-- 확대 창 — 같은 설계서를 한 번 더 띄워 대상 구역만 잘라 보입니다. 그림을 새로 그리지 않고
      설계서의 그림 · 표를 그대로 키우기 위한 것입니다. 위치와 배율은 스크립트가 정합니다. -->
@@ -1416,6 +1441,8 @@ window.deck = new Deck();
      보이려면 어긋나지 않아야 합니다. */
   const FADE = 'opacity 420ms cubic-bezier(.4, 0, .2, 1)';
   let doc = null, ldoc = null, anim = 0, ticket = 0;
+  let cur = null;          /* 지금 장의 대상 — 폭을 바꿀 때 박스와 확대 창을 다시 맞추는 데 씁니다 */
+  let full = false;        /* 설계서가 지면 전체를 쓰는 중 */
 
   /* 양끝에서 속도와 가속도가 모두 0인 곡선 — 출발과 정지에 턱이 생기지 않습니다. */
   const smooth = (t) => t * t * t * (t * (6 * t - 15) + 10);
@@ -1552,8 +1579,8 @@ window.deck = new Deck();
     return { x, y: top, w: frameEl.offsetWidth, h: frameEl.offsetTop + frameEl.offsetHeight - top };
   }
 
-  function showLens(slide, box, still) {
-    if (!lens || !ldoc || slide.dataset.lens === 'off' || !box) { hideLens(still); return; }
+  /* 확대 창의 자리와 배율만 맞춥니다 — 밝기는 건드리지 않습니다(폭을 끌 때 매 프레임 부릅니다). */
+  function placeLens(slide, box) {
     const se = ldoc.scrollingElement;
     /* 확대 창 안의 설계서를 대상 구역만 보이게 맞춥니다 — 창 높이를 구역 높이로, 스크롤을 구역 위로. */
     lensFrame.style.height = box.h + 'px';
@@ -1566,9 +1593,13 @@ window.deck = new Deck();
     /* 왼쪽 자리에 꽉 차게, 2배까지. 자리를 옮기며 커지는 연출은 정신없어 쓰지 않고 그 자리에서 밝아집니다. */
     const slot = slotOf(slide);
     const k = Math.min(slot.w / box.w, slot.h / box.h, 2);
-    lens.style.transition = 'none';
     lens.style.transform = `translate(${slot.x}px, ${slot.y}px) scale(${k})`;
-    if (still) { lens.style.opacity = '1'; return; }
+  }
+
+  function showLens(slide, box, still) {
+    if (!lens || !ldoc || full || slide.dataset.lens === 'off' || !box) { hideLens(still); return; }
+    placeLens(slide, box);
+    if (still) { lens.style.transition = 'none'; lens.style.opacity = '1'; return; }
     lens.getBoundingClientRect();
     lens.style.transition = FADE;
     lens.style.opacity = '1';
@@ -1580,6 +1611,7 @@ window.deck = new Deck();
     const slide = window.deck.slides[n];
     if (!slide) return;
     const my = ++ticket;
+    cur = null;
     const el = find(doc, slide.dataset.doc);
     if (slide.dataset.doc && !el) console.warn('[설계서 연결] 대상을 찾지 못했습니다:', slide.dataset.doc);
     label(slide, el);
@@ -1594,6 +1626,7 @@ window.deck = new Deck();
       if (my !== ticket) return;
       syncPage();
       const box = boxOf(el, span);
+      cur = { slide, el, span };
       /* 박스와 확대 창을 같은 프레임에 켭니다. */
       showLens(slide, box, instant);
       mark(box, instant);
@@ -1643,6 +1676,117 @@ window.deck = new Deck();
     if (doc) settle();
   }
 
+  /* ── 설계서 폭 조절 ────────────────────────────────────────────────
+     경계 가운데의 핸들을 끌면 설계서 칸의 폭이 바뀝니다. 설계서는 1000px 폭으로 그려
+     칸 폭에 맞춰 줄이고(1.15배까지), 그보다 넓으면 그리는 폭을 넓힙니다. 확대 창도 같은 폭으로
+     그려야 모양이 같으므로 --doc-w 를 함께 씁니다.
+     왼쪽이 MIN_LEFT 보다 좁아지면 발표 내용과 확대 창을 걷고, 손을 떼면 설계서가 지면 전체로
+     펴집니다. 다시 HYST 만큼 넓히면 발표 내용이 돌아옵니다. 더블클릭은 기본 폭으로. */
+  const stage = document.getElementById('deckStage');
+  const handle = document.querySelector('.split-handle');
+  const SPLIT0 = 760, MIN_W = 520, MIN_LEFT = 640, HYST = 40, KEY = 'deck:split:' + location.pathname;
+  let split = SPLIT0, splitAnim = 0;
+
+  function setSplit(w) {
+    split = Math.max(MIN_W, Math.min(1920, w));
+    const sc = Math.min(split / 1000, 1.15);
+    stage.style.setProperty('--split', split + 'px');
+    stage.style.setProperty('--doc-s', String(sc));
+    stage.style.setProperty('--doc-w', split / sc + 'px');
+    if (handle) handle.setAttribute('aria-valuenow', String(Math.round(split)));
+  }
+
+  /* 폭이 바뀐 뒤 박스와 확대 창의 자리를 다시 맞춥니다(밝기는 그대로). */
+  function relayout() {
+    if (!doc || !cur) return;
+    const box = boxOf(cur.el, cur.span);
+    mark(box, true);
+    if (!full && ldoc && cur.slide.dataset.lens !== 'off') placeLens(cur.slide, box);
+  }
+
+  function setFull(on) {
+    if (full === on) return;
+    full = on;
+    stage.classList.toggle('doc-full', on);
+    if (on) hideLens(false);
+    else if (cur && doc) showLens(cur.slide, boxOf(cur.el, cur.span), false);
+  }
+
+  const crossing = () => {
+    const left = 1920 - split;
+    if (!full && left < MIN_LEFT) setFull(true);
+    else if (full && left >= MIN_LEFT + HYST) setFull(false);
+  };
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify({ w: split, full })); } catch { /* 저장소가 막힌 창 */ }
+  }
+
+  function animateSplit(to) {
+    cancelAnimationFrame(splitAnim);
+    const from = split, t0 = performance.now();
+    const end = () => { setSplit(to); relayout(); measure(); save(); };
+    if (STILL || document.hidden) { end(); return; }
+    const step = (now) => {
+      const t = Math.min(1, (now - t0) / 380);
+      setSplit(from + (to - from) * smooth(t));
+      relayout();
+      if (t < 1) splitAnim = requestAnimationFrame(step); else end();
+    };
+    splitAnim = requestAnimationFrame(step);
+  }
+
+  if (handle) {
+    let dragging = false;
+    const stageX = (clientX) => {
+      const r = stage.getBoundingClientRect();
+      return (clientX - r.left) * 1920 / r.width;
+    };
+    handle.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      cancelAnimationFrame(splitAnim);
+      dragging = true;
+      handle.setPointerCapture(e.pointerId);
+      stage.classList.add('resizing');
+    });
+    handle.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      setSplit(1920 - stageX(e.clientX));
+      crossing();
+      relayout();
+    });
+    const release = () => {
+      if (!dragging) return;
+      dragging = false;
+      stage.classList.remove('resizing');
+      handle.blur();               /* 포커스가 남으면 화살표가 장 넘기기 대신 폭 조절로 갑니다 */
+      if (full) animateSplit(1920); else { measure(); save(); }
+    };
+    handle.addEventListener('pointerup', release);
+    handle.addEventListener('pointercancel', release);
+    handle.addEventListener('dblclick', () => { setFull(false); animateSplit(SPLIT0); });
+    /* 키보드로 고를 때만 화살표가 폭을 바꿉니다 — 덱의 장 넘기기로 새지 않게 막습니다. */
+    handle.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault();
+      e.stopPropagation();
+      setSplit(split + (e.key === 'ArrowLeft' ? 40 : -40));
+      crossing();
+      if (full) setSplit(1920);
+      relayout();
+      save();
+    });
+    handle.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+  }
+
+  /* 보는 사람이 정한 폭을 되살립니다. 축소판 · 내보내기는 늘 기본 폭으로. */
+  if (!STILL) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (saved && saved.w) { setSplit(saved.w); if (saved.full) { full = true; stage.classList.add('doc-full'); } }
+    } catch { /* 저장소가 막힌 창 */ }
+  }
+
   /* 컨트롤러의 show 를 감쌉니다 — 왼쪽 글은 양식대로, 오른쪽과 확대 창은 여기서. */
   const show = window.deck.show.bind(window.deck);
   window.deck.show = (n) => { show(n); go(window.deck.i, STILL); };
@@ -1679,6 +1823,8 @@ window.deck = new Deck();
       /* 오른쪽 위치 표시는 장마다 스크립트가 다시 씁니다 — 파일에 남기지 않습니다. */
       doc.querySelector('.docpane .where')?.replaceChildren();
       doc.querySelectorAll('.lens, .lens .clip, .lens iframe').forEach((el) => el.removeAttribute('style'));
+      doc.querySelector('#deckStage')?.classList.remove('doc-full', 'resizing');
+      doc.querySelector('.split-handle')?.setAttribute('aria-valuenow', '760');
       doc.querySelectorAll('.docpane .pager .dg').forEach((d) => { d.removeAttribute('style'); d.classList.remove('off'); });
       const tot = doc.querySelector('.docpane .pager .total'); if (tot) tot.textContent = '';
       doc.querySelector('.docpane .pager')?.setAttribute('aria-label', '설계서 쪽');
