@@ -26,3 +26,10 @@ date: 2026-10-10
    - 1–17장을 넘기며 대상, 넘침, 콘솔 오류를 확인한다.
    - 포털 `#/doc/deck`에서 연다.
 7. **배포**: 커밋, PR, 머지, 포털 배포 워크플로 성공, 라이브 확인 순서로 진행한다.
+
+## 실행 중 벗어난 곳
+
+- 5단계: `build_portal_search.mjs`는 라이브러리 항목만 색인한다. 덱 목록에는 영향이 없어 결과 파일이 바뀌지 않는다.
+- 포털 이동 스크립트 경로: 양식의 `deck-portal-navigation.js`를 `templates/deck-portal-navigation.js`로 고쳤다. 사본은 `docs/` 바로 아래에 놓이기 때문이다.
+- 편집기 저장: `beforeSave`에서 오른쪽 위치 표시를 비운다. 그러지 않으면 실행 중 쓴 글자가 파일에 남는다.
+- 6단계 검증 서버: 미리보기 도구가 메인 체크아웃의 `.claude/launch.json`만 읽는다. 그래서 워크트리의 `scripts/serve-docs.py 8911`을 따로 띄워 확인했고, `launch.json`은 커밋하지 않았다.

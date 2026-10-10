@@ -644,6 +644,12 @@ h2 { font-size: 54px; }
 .docpane .where .pgno { font-family: var(--ex-font-mono); font-size: 13px; letter-spacing: .08em; color: var(--ex-espresso); }
 .docpane .where:empty { opacity: 0; }
 
+/* 양식에서 라틴 크롬(mono · 넓은 자간 · 대문자)인 자리에 이 덱은 한글을 씁니다.
+   한글에는 자간을 벌리지 않으므로 이 자리들만 본문 서체로 되돌립니다. */
+.panel .lab, .covermeta .k, .tl .who, .rail .end, .docpane .where .pgno {
+  font-family: var(--ex-font-ui); letter-spacing: normal; text-transform: none; font-weight: 600;
+}
+
 /* 왼쪽 부품 — 960px 칸에 맞춘 크기 */
 .panel { padding: 26px 28px; }
 .panel h3 { font-size: 25px; margin-bottom: 8px; }
@@ -755,7 +761,7 @@ tr.on td:first-child { font-weight: 600; }
       <div class="tl">
         <div class="row in dl-3"><span class="when">01</span><span class="what">프로젝트 소개<small>서비스 개요 · 추천 모델 두 종</small></span><span class="who">1장 · 3장</span></div>
         <div class="row in dl-4"><span class="when">02</span><span class="what">v0.4 ~ v0.7 추가 내역<small>피드백 반영 그림 · 지표 설명 · 명세 확장</small></span><span class="who">1 – 9장</span></div>
-        <div class="row in dl-5"><span class="when">03</span><span class="what">파일럿 실험 결과와 해석<small>학습 조건 · NDCG 읽는 법 · 결과 · 남은 측정</small></span><span class="who">9.2</span></div>
+        <div class="row in dl-5"><span class="when">03</span><span class="what">파일럿 실험 결과와 해석<small>학습 조건 · NDCG 해석 방법 · 결과 · 남은 측정</small></span><span class="who">9.2</span></div>
       </div>
     </div>
     <div class="foot in in-fade dl-1"><p>오른쪽은 설계서 원문 · 장을 넘기면 해당 위치로 이동</p><span class="pg"></span></div>
@@ -1023,7 +1029,7 @@ tr.on td:first-child { font-weight: 600; }
     <div class="body">
       <div class="cols c-3 in dl-3" style="gap: 14px">
         <div class="panel"><div class="stat"><div class="k">학습 쌍</div><div class="v">10,000</div><div class="d">합성 프로필 1,000개 × 공고 10개</div></div></div>
-        <div class="panel"><div class="stat"><div class="k">평가 분할</div><div class="v">70명</div><div class="d">700쌍 · 학습 840명 · 검증 90명</div></div></div>
+        <div class="panel"><div class="stat"><div class="k">평가 분할 프로필</div><div class="v">70</div><div class="d">700쌍 · 학습 840명 · 검증 90명</div></div></div>
         <div class="panel"><div class="stat"><div class="k">라벨</div><div class="v">0–100</div><div class="d">루브릭 <code>job-profile-fit-v1</code></div></div></div>
       </div>
       <div class="panel in dl-4" style="margin-top: 18px">
@@ -1039,12 +1045,12 @@ tr.on td:first-child { font-weight: 600; }
   </div>
 </section>
 
-<section class="slide" data-title="NDCG 읽는 법" data-kind="03 · 파일럿" data-doc="fig:9.2" data-doc-label="그림 9.2">
+<section class="slide" data-title="NDCG 해석 방법" data-kind="03 · 파일럿" data-doc="fig:9.2" data-doc-label="그림 9.2">
   <div class="frame">
     <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">파일럿 실험 결과와 해석</span><span class="end count"></span></div>
     <div class="head">
       <div class="kicker ko in dl-2">설계서 9.2 순위 지표의 이해 · 예시 숫자</div>
-      <h2 class="in dl-2">NDCG 읽는 법</h2>
+      <h2 class="in dl-2">NDCG 해석 방법</h2>
       <p class="sub in dl-3">값 하나의 크기가 아니라 기준선과의 차이로</p>
     </div>
     <div class="body">
@@ -1132,7 +1138,7 @@ tr.on td:first-child { font-weight: 600; }
     <div class="body">
       <div class="table-shell in dl-4">
         <table>
-          <thead><tr><th style="width: 260px">지표</th><th>상태</th></tr></thead>
+          <thead><tr><th style="width: 260px">항목</th><th>상태</th></tr></thead>
           <tbody>
             <tr><td>Recall@K (스크리닝)</td><td>후보 10개 전체를 평가해 Recall@10이 항상 1 → K보다 큰 후보 풀로 별도 구성</td></tr>
             <tr><td>모델 B NDCG@10</td><td>교사의 기록 단위 판정 기준 · 측정하지 않음</td></tr>
@@ -1741,6 +1747,8 @@ window.deck = new Deck();
       if (cnt) cnt.textContent = '01 / ' + String(doc.querySelectorAll('.slide').length).padStart(2, '0');
       const list = doc.querySelector('#mapList');
       if (list) list.innerHTML = '';
+      /* 오른쪽 위치 표시는 장마다 스크립트가 다시 씁니다 — 파일에 남기지 않습니다. */
+      doc.querySelector('.docpane .where')?.replaceChildren();
       const over = doc.querySelector('#overview');
       if (over) { over.classList.remove('on'); over.setAttribute('hidden', ''); }
     },
