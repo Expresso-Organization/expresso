@@ -603,7 +603,7 @@ svg [data-morph] { transform-box: fill-box; }
    띄운 확대 창(.lens)이 그 구역만 잘라 왼쪽에 키워 보입니다. 확대 창은 제자리에서 밝아지고 걷힙니다.
    설계서는 슬라이드 밖에 한 번만 놓여 장이 바뀌어도 사라지지 않습니다.
    =========================================================== */
-/* 설계서는 1000px 폭으로 그린 뒤 0.76배로 줄여 760px 칸에 넣습니다. 확대 창도 같은
+/* 설계서는 1000px 폭으로 그린 뒤 칸 폭에 비례해 줄입니다(기본 760px 칸이면 0.76배). 확대 창도 같은
    1000px 폭으로 그려야 줄바꿈과 그림 크기가 똑같습니다(.lens iframe 도 var(--doc-w)). */
 :root { --split: 760px; --doc-w: 1000px; --doc-s: .76; }
 
@@ -1677,9 +1677,9 @@ window.deck = new Deck();
   }
 
   /* ── 설계서 폭 조절 ────────────────────────────────────────────────
-     경계 가운데의 핸들을 끌면 설계서 칸의 폭이 바뀝니다. 설계서는 1000px 폭으로 그려
-     칸 폭에 맞춰 줄이고(1.15배까지), 그보다 넓으면 그리는 폭을 넓힙니다. 확대 창도 같은 폭으로
-     그려야 모양이 같으므로 --doc-w 를 함께 씁니다.
+     경계 가운데의 핸들을 끌면 설계서 칸의 폭이 바뀝니다. 설계서는 늘 1000px 폭으로 그리고
+     칸 폭에 비례해 줄이거나 키웁니다 — 전체 보기(1920px)에서는 1.92배가 되어 확대해 읽는 자리가 됩니다.
+     그리는 폭이 고정이라 확대 창과 줄바꿈 · 좌표가 늘 같습니다.
      왼쪽이 MIN_LEFT 보다 좁아지면 발표 내용과 확대 창을 걷고, 손을 떼면 설계서가 지면 전체로
      펴집니다. 다시 HYST 만큼 넓히면 발표 내용이 돌아옵니다. 더블클릭은 기본 폭으로. */
   const stage = document.getElementById('deckStage');
@@ -1689,10 +1689,8 @@ window.deck = new Deck();
 
   function setSplit(w) {
     split = Math.max(MIN_W, Math.min(1920, w));
-    const sc = Math.min(split / 1000, 1.15);
     stage.style.setProperty('--split', split + 'px');
-    stage.style.setProperty('--doc-s', String(sc));
-    stage.style.setProperty('--doc-w', split / sc + 'px');
+    stage.style.setProperty('--doc-s', String(split / 1000));
     if (handle) handle.setAttribute('aria-valuenow', String(Math.round(split)));
   }
 
