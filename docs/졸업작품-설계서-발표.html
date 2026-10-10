@@ -629,9 +629,31 @@ h2 { font-size: 54px; }
 /* 오른쪽 설계서 */
 .docpane {
   position: absolute; top: 0; right: 0; width: var(--split); height: 1080px; z-index: 5;
-  background: var(--ex-canvas); border-left: 1px solid var(--ex-line-200);
+  /* 설계서를 불러오기 전에 비치는 바탕 — 설계서 본문 바탕과 같은 색입니다. */
+  background: var(--ex-surface-50); border-left: 1px solid var(--ex-line-200);
 }
-.docpane iframe { display: block; width: 100%; height: 100%; border: 0; background: var(--ex-canvas); }
+
+/* 쪽 번호 — 오른쪽 아래. 숫자는 자리마다 0–9 띠를 굴려 바꿉니다(--n 칸만큼 올림). */
+.docpane .pager {
+  position: absolute; right: 24px; bottom: 22px; z-index: 2; pointer-events: none;
+  display: flex; align-items: baseline; gap: 8px;
+  background: rgba(255, 255, 255, .92); border: 1px solid var(--ex-line-200); border-radius: 12px;
+  padding: 8px 16px 9px; box-shadow: var(--ex-elevation-raised);
+}
+.docpane .pager .num { display: flex; font-family: var(--ex-font-brand); font-weight: 300; font-size: 34px; line-height: 1; color: var(--ex-ink-900); }
+.docpane .pager .dg { display: block; height: 1em; overflow: hidden; max-width: .6em; transition: max-width 620ms cubic-bezier(.22, 1, .36, 1); }
+/* 자리 수가 모자라면 앞 자리 폭을 접습니다 — 6쪽에서 203쪽으로 가면 자리가 펴지며 숫자가 굴러 나옵니다. */
+.docpane .pager .dg.off { max-width: 0; }
+.docpane .pager .dg i {
+  display: block; height: 1em; font-style: normal; text-align: center; min-width: .56em;
+  transform: translateY(calc(var(--n, 0) * -1em));
+  transition: transform 620ms cubic-bezier(.22, 1, .36, 1);
+}
+.docpane .pager .of { font-size: 16px; color: var(--ex-slate-400); }
+.docpane .pager .of .total { font-family: var(--ex-font-brand); font-weight: 300; font-size: 18px; margin-right: 2px; }
+@media (prefers-reduced-motion: reduce) { .docpane .pager .dg, .docpane .pager .dg i { transition: none; } }
+.is-preview .docpane .pager .dg, .is-preview .docpane .pager .dg i { transition: none; }
+.docpane iframe { display: block; width: 100%; height: 100%; border: 0; background: var(--ex-surface-50); }
 /* 지금 보고 있는 설계서의 자리 — 쪽 번호는 설계서 제목의 data-page(PDF 기준)를 읽습니다. */
 .docpane .where {
   position: absolute; top: 20px; right: 24px; z-index: 2; pointer-events: none;
@@ -1183,6 +1205,11 @@ tr.on td:first-child { font-weight: 600; }
 <!-- 오른쪽 설계서 — 슬라이드 밖에 한 번만 둡니다. 장이 바뀌어도 다시 불러오지 않습니다. -->
 <aside class="docpane" aria-label="설계서 원문">
   <div class="where"></div>
+  <!-- 설계서 쪽 번호 — 스크롤에 따라 자리마다 굴러 바뀝니다. 띠는 스크립트가 아니라 여기 적어 둡니다. -->
+  <div class="pager" role="status" aria-live="off" aria-label="설계서 쪽">
+    <span class="num"><span class="dg"><i></i><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i></span><span class="dg"><i></i><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i></span><span class="dg"><i></i><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i></span></span>
+    <span class="of">/ <span class="total"></span>쪽</span>
+  </div>
   <iframe src="졸업작품-설계서.html" title="졸업작품 설계서 v0.7"></iframe>
 </aside>
 
@@ -1603,10 +1630,13 @@ window.deck = new Deck();
   /* 축소판 · 내보내기는 한 장씩 찍으므로 움직이지 않고 바로 그 자리에 둡니다. */
   const STILL = q.has('preview') || q.has('export') || matchMedia('(prefers-reduced-motion: reduce)').matches;
   const TOP = 84;          /* 대상 위쪽이 놓일 자리 — 오른쪽 위 위치 표시 아래 */
-  const DURATION = 900;
   let doc = null, anim = 0, markTimer = 0;
 
-  const ease = (t) => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  /* 양끝에서 속도와 가속도가 모두 0인 곡선 — 출발과 정지에 턱이 생기지 않습니다. */
+  const smooth = (t) => t * t * t * (t * (6 * t - 15) + 10);
+  /* 이동 시간은 거리의 로그에 비례합니다 — 한 화면은 약 0.8초, 200쪽은 약 1.5초.
+     거리에 정비례하면 먼 이동이 지루하고, 고정하면 먼 이동이 너무 빠르게 흐릅니다. */
+  const durationOf = (d, vh) => Math.min(1500, 650 + 170 * Math.log2(1 + Math.abs(d) / vh));
   const text = (el) => (el.textContent || '').replace(/\s+/g, ' ').trim();
 
   const STYLE = `
@@ -1650,6 +1680,48 @@ window.deck = new Deck();
     if (page) where.querySelector('.pgno').textContent = page + '쪽';
   }
 
+  /* 쪽 번호 — 설계서 PDF의 쪽은 절 제목(data-page)에만 새겨져 있습니다. 앞의 표지 · 문서 정보 ·
+     목차는 PDF에서 확인한 쪽(1 · 2 · 4)을 기준점으로 두고, 기준점 사이는 화면 위치로 보간합니다.
+     그래서 절 중간에서는 ±1쪽 어긋날 수 있습니다. */
+  const pager = pane.querySelector('.pager');
+  const digits = pager ? [...pager.querySelectorAll('.dg')] : [];
+  let anchors = [], lastPage = null;
+
+  function measure() {
+    if (!doc) return;
+    const y = (el) => el.getBoundingClientRect().top + doc.defaultView.scrollY;
+    const front = [['.cover', 1], ['.docinfo', 2], ['#ex-toc-page', 4]]
+      .map(([sel, p]) => [doc.querySelector(sel), p]).filter(([el]) => el);
+    const heads = [...doc.querySelectorAll('[data-page]')].map((el) => [el, +el.dataset.page]);
+    anchors = [...front, ...heads].map(([el, p]) => ({ y: y(el), p })).sort((a, b) => a.y - b.y);
+    const total = doc.getElementById('doc')?.dataset.docPages;
+    if (total && pager) pager.querySelector('.total').textContent = total;
+  }
+
+  function pageAt(ref) {
+    if (!anchors.length) return null;
+    let i = 0;
+    while (i + 1 < anchors.length && anchors[i + 1].y <= ref) i++;
+    const a = anchors[i], b = anchors[i + 1];
+    if (!b || ref <= a.y || b.p <= a.p) return a.p;
+    return a.p + Math.floor(((ref - a.y) / (b.y - a.y)) * (b.p - a.p));
+  }
+
+  /* 자리마다 0–9 띠를 세워 두고 위아래로 굴립니다. 맨 앞 칸(빈칸)은 자리 수가 모자랄 때 씁니다. */
+  function renderPage(page) {
+    if (!digits.length || page === lastPage || page == null) return;
+    lastPage = page;
+    const str = String(page).padStart(digits.length, ' ');
+    digits.forEach((d, k) => {
+      const ch = str[k];
+      d.style.setProperty('--n', ch === ' ' ? 0 : +ch + 1);
+      d.classList.toggle('off', ch === ' ');
+    });
+    pager.setAttribute('aria-label', `설계서 ${page}쪽`);
+  }
+
+  const syncPage = () => doc && renderPage(pageAt(doc.scrollingElement.scrollTop + TOP + 1));
+
   function mark(el, span) {
     let box = doc.querySelector('.deck-mark');
     if (!box) { box = doc.createElement('div'); box.className = 'deck-mark'; doc.body.appendChild(box); }
@@ -1684,16 +1756,16 @@ window.deck = new Deck();
     const to = Math.max(0, Math.min(el.getBoundingClientRect().top + win.scrollY - TOP, se.scrollHeight - win.innerHeight));
     const span = parseInt(slide.dataset.docSpan || '0', 10);
     cancelAnimationFrame(anim);
+    const done = () => { syncPage(); mark(el, span); };
     /* 탭이 가려져 있으면 프레임이 돌지 않습니다 — 그때는 바로 그 자리에 둡니다. */
-    if (still || document.hidden) { se.scrollTop = to; mark(el, span); return; }
+    if (still || document.hidden) { se.scrollTop = to; done(); return; }
     const from = se.scrollTop, d = to - from, t0 = performance.now();
-    /* 멀리 갈수록 조금 더 오래 — 1쪽 안쪽은 0.6초, 먼 거리는 1.2초까지 */
-    const dur = Math.min(1200, Math.max(600, DURATION * Math.min(1.35, 0.6 + Math.abs(d) / 20000)));
+    if (Math.abs(d) < 2) { done(); return; }
+    const dur = durationOf(d, win.innerHeight);
     const step = (now) => {
       const t = Math.min(1, (now - t0) / dur);
-      se.scrollTop = from + d * ease(t);
-      if (t < 1) anim = requestAnimationFrame(step);
-      else mark(el, span);
+      se.scrollTop = from + d * smooth(t);
+      if (t < 1) anim = requestAnimationFrame(step); else done();
     };
     anim = requestAnimationFrame(step);
   }
@@ -1713,7 +1785,8 @@ window.deck = new Deck();
       document.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, bubbles: true }));
     });
     /* 설계서의 글꼴과 그림이 다 놓인 뒤에 자리를 잡아야 위치가 어긋나지 않습니다. */
-    const settle = () => go(window.deck.i, true);
+    doc.addEventListener('scroll', syncPage, { passive: true });
+    const settle = () => { measure(); go(window.deck.i, true); };
     settle();
     (doc.fonts ? doc.fonts.ready : Promise.resolve()).then(settle);
     setTimeout(settle, 800);
@@ -1749,6 +1822,9 @@ window.deck = new Deck();
       if (list) list.innerHTML = '';
       /* 오른쪽 위치 표시는 장마다 스크립트가 다시 씁니다 — 파일에 남기지 않습니다. */
       doc.querySelector('.docpane .where')?.replaceChildren();
+      doc.querySelectorAll('.docpane .pager .dg').forEach((d) => { d.removeAttribute('style'); d.classList.remove('off'); });
+      const tot = doc.querySelector('.docpane .pager .total'); if (tot) tot.textContent = '';
+      doc.querySelector('.docpane .pager')?.setAttribute('aria-label', '설계서 쪽');
       const over = doc.querySelector('#overview');
       if (over) { over.classList.remove('on'); over.setAttribute('hidden', ''); }
     },
