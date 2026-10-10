@@ -46,6 +46,7 @@ const runtimeConfigSchema = z.object({
   AI_PROVIDER: z.enum(["off", "claude-code", "codex", "fixture", "anthropic"]).default("off"),
   /** 공통 채팅은 기존 구조화 AI 호출과 별도로 활성화합니다. */
   AGENT_CREDENTIAL_ENCRYPTION_KEY: z.string().regex(/^[a-fA-F0-9]{64}$/).optional(),
+  AGENT_CHAT_PROVIDER: z.enum(["claude", "codex"]).default("claude"),
   AGENT_CHAT_ENABLED: z.enum(["0", "1"]).default("0"),
   AGENT_CHAT_MODEL: z.literal("sonnet").default("sonnet"),
   AGENT_CHAT_DEVELOPER_USER_IDS: z.string().default("").refine(value => value.split(",").map(item => item.trim()).filter(Boolean).every(item => z.uuid().safeParse(item).success), "개발 멤버 ID는 UUID여야 합니다."),
@@ -130,6 +131,7 @@ export interface RuntimeConfig {
   /** 없으면 `off`. 키도 로그인도 없이 앱 전체가 돌아야 한다. */
   aiProvider?: "off" | "claude-code" | "codex" | "fixture" | "anthropic";
   agentChatEnabled?: boolean;
+  agentChatProvider?: "claude" | "codex";
   agentChatModel?: string;
   agentCredentialEncryptionKey?: string;
   agentChatDeveloperUserIds?: string[];
@@ -151,6 +153,12 @@ export function loadRuntimeConfig(
   environment: NodeJS.ProcessEnv = process.env,
 ): RuntimeConfig {
   const result = runtimeConfigSchema.parse(environment);
+  // 로컬 CLI 인증을 운영 환경이나 다른 프로바이더로 잘못 연결하지 않습니다.
+  if (result.AGENT_CHAT_ENABLED === "1" && result.AGENT_CHAT_PROVIDER === "codex") {
+    if (result.NODE_ENV === "production" || result.AI_PROVIDER !== "codex") {
+      throw new Error("Codex Agent Chat requires a non-production environment and AI_PROVIDER=codex");
+    }
+  }
 
   return {
     nodeEnv: result.NODE_ENV,
@@ -176,6 +184,7 @@ export function loadRuntimeConfig(
     googleClientId: result.GOOGLE_CLIENT_ID,
     ...(result.AGENT_CREDENTIAL_ENCRYPTION_KEY ? { agentCredentialEncryptionKey: result.AGENT_CREDENTIAL_ENCRYPTION_KEY } : {}),
     agentChatEnabled: result.AGENT_CHAT_ENABLED === "1",
+    agentChatProvider: result.AGENT_CHAT_PROVIDER,
     agentChatModel: result.AGENT_CHAT_MODEL,
     agentChatDeveloperUserIds: result.AGENT_CHAT_DEVELOPER_USER_IDS.split(",").map(value => value.trim().toLowerCase()).filter(Boolean),
     aiProvider: result.AI_PROVIDER,

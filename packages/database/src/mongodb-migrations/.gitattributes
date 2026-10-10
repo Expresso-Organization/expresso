@@ -2,3 +2,5 @@
 *.json text eol=lf
 0009/migration.ts -text -eol
 0010/migration.ts -text -eol
+0012/migration.ts -text -eol
+0013/migration.ts -text -eol

@@ -10,18 +10,34 @@ import type { CareerDocumentApi } from "../career-editor/index.js";
 import type { CareerApi } from "../career/index.js";
 import type { JobBoardApi } from "../jobs/index.js";
 import type { ConsentApi } from "../consent/index.js";
+import type { JobCareerMatchResult } from "@expresso/contracts";
+import type { JobCareerMatchApi } from "../job-career-match/index.js";
 
 export class AgentChatError extends Error { constructor(readonly statusCode: number, message: string) { super(message); } }
 const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, heartbeatAt: _heartbeat, ...data } = row; return AgentConversationSchema.parse({ ...data, id: _id }); };
 export class AgentChatService {
   private readonly running = new Map<string, AbortController>();
   private readonly tasks = new Set<Promise<void>>();
-  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest">) {}
+  constructor(
+    private readonly db: MongoContext,
+    private readonly runtime: AgentRuntime | null,
+    private readonly career: Pick<CareerApi, "getRecord">,
+    private readonly jobs: Pick<JobBoardApi, "get">,
+    private readonly documents: CareerDocumentApi,
+    private readonly consent: ConsentApi,
+    readonly credentials: AgentCredentials = new AgentCredentials(db),
+    private readonly portfolios?: Pick<PortfolioReadApi, "get">,
+    private readonly pages?: Pick<PageApi, "latest">,
+    private readonly careerMatch?: Pick<JobCareerMatchApi, "getLatest">,
+  ) {}
   async consentRequired(userId: string) {
     const result = await this.consent.list(userId);
     return !result.data.consents.some(item => item.scope === "career_records" && item.granted);
   }
   get enabled() { return !!this.runtime; }
+  get provider(): "claude" | "codex" { return this.runtime?.provider ?? "claude"; }
+  get requiresApiKey() { return this.provider !== "codex"; }
+  get model() { return this.provider === "codex" ? "codex" : "sonnet"; }
   private get rows() { return mongoCollections(this.db.db).agentConversations; }
   private async owned(userId: string, id: string) {
     await this.rows.updateOne({ _id: id, userId, "run.status": "running", heartbeatAt: { $lt: new Date(Date.now() - 60_000) } }, { $set: { "run.status": "interrupted", "run.error": "서버 실행이 중단되었습니다. 다시 보내 주세요.", updatedAt: new Date().toISOString() }, $inc: { version: 1 } });
@@ -78,7 +94,46 @@ export class AgentChatService {
     if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝나거나 취소된 뒤 보내 주세요.");
     if (row.messages.length >= 98 || JSON.stringify(row.messages).length > 160_000) throw new AgentChatError(409, "대화가 길어졌습니다. 새 대화를 시작해 주세요.");
     await this.consent.require(userId, "partial_edit");
+    if (row.contexts.some(ref => ref.kind === "job")) await this.consent.require(userId, "job_chat");
     const context = await this.context(userId, row.contexts);
+    const isInterviewRequest =
+      input.text.trim() === "내 경력에서 보완할 경험을 질문해줘.";
+
+    const linkedJobs = row.contexts.filter(
+      (ref) => ref.kind === "job",
+    );
+
+    if (isInterviewRequest && linkedJobs.length !== 1) {
+      throw new AgentChatError(
+        422,
+        "추가 질문을 받으려면 공고를 하나만 연결해 주세요.",
+      );
+    }
+
+    let previousCareerMatch: JobCareerMatchResult | null = null;
+
+    if (linkedJobs.length === 1 && this.careerMatch) {
+      await this.consent.require(userId, "job_career_match");
+
+      const latest = await this.careerMatch.getLatest(
+        userId,
+        id,
+      );
+
+      // 다른 공고를 분석했던 결과는 사용하지 않습니다.
+      if (
+        latest?.inputSnapshot.jobPostingId === linkedJobs[0]!.id
+      ) {
+        previousCareerMatch = latest;
+      }
+    }
+
+    if (isInterviewRequest && !previousCareerMatch) {
+      throw new AgentChatError(
+        422,
+        "현재 공고의 경력 맞춤 분석을 먼저 실행해 주세요.",
+      );
+    }
     if (JSON.stringify(context).length > 120_000) throw new AgentChatError(422, "연결된 자료가 너무 큽니다. 자료를 나누어 새 대화를 시작해 주세요.");
     const now = new Date().toISOString();
     const user: AgentMessage = { id: input.requestId, role: "user", text: input.text, tools: [], createdAt: now };
@@ -86,57 +141,260 @@ export class AgentChatService {
     const run = { id: randomUUID(), requestId: input.requestId, status: "running" as const, error: null, startedAt: now };
     const changed = await this.rows.findOneAndUpdate({ _id: id, userId, version: row.version, "run.status": { $ne: "running" } }, { $push: { messages: { $each: [user, assistant] } }, $set: { run, title: row.messages.length ? row.title : input.text.slice(0, 100), updatedAt: now, heartbeatAt: new Date() }, $inc: { version: 1 } }, { returnDocument: "after" });
     if (!changed) throw new AgentChatError(409, "다른 화면에서 실행을 시작했습니다.");
-    const task = this.execute(changed, context, apiKey).catch(() => undefined);
+    const task = this.execute(
+      changed,
+      context,
+      apiKey,
+      previousCareerMatch,
+    ).catch(() => undefined);
     this.tasks.add(task); void task.finally(() => this.tasks.delete(task));
     return view(changed);
   }
-  private async execute(row: AgentConversationDoc, context: Awaited<ReturnType<AgentChatService["context"]>>, apiKey?: string) {
-    const controller = new AbortController(); this.running.set(row._id, controller);
-    const runId = row.run!.id;
-    const filter = { _id: row._id, userId: row.userId, "run.id": runId, "run.status": "running" };
-    const message = structuredClone(row.messages.at(-1)!);
-    const beforeDocuments = new Map<string, CareerDocumentBootstrap["document"]>();
-    let lastFlush = 0;
-    let heartbeatBusy = false;
-    const flush = async () => {
-      const result = await this.rows.updateOne(filter, { $set: { [`messages.${row.messages.length - 1}`]: message, updatedAt: new Date().toISOString() }, $inc: { version: 1 } });
-      lastFlush = Date.now(); if (!result.matchedCount) controller.abort();
-    };
-    const timer = setInterval(() => {
-      if (heartbeatBusy) return;
-      heartbeatBusy = true;
-      void this.rows.updateOne(filter, { $set: { heartbeatAt: new Date() } }).then(result => { if (!result.matchedCount) controller.abort(); }).catch(() => controller.abort()).finally(() => { heartbeatBusy = false; });
-    }, 1_000);
-    const timeout = setTimeout(() => controller.abort(), 600_000);
-    try {
-      await this.runtime!.run({ messages: row.messages.slice(0, -1), context, ...(apiKey ? { apiKey } : {}), signal: controller.signal,
-        emit: async event => {
-          if (controller.signal.aborted) throw new Error("cancelled");
-          if (event.type === "text") { message.text += event.text; if (message.text.length > 64_000) throw new Error("response too large"); }
-          else { const before = event.tool.proposal ? beforeDocuments.get(event.tool.proposal.proposalId) : undefined; if (before) event.tool.beforeDocument = before; const at = message.tools.findIndex(tool => tool.id === event.tool.id); if (at < 0) message.tools.push(event.tool); else message.tools[at] = event.tool; if (message.tools.length > 30) throw new Error("too many tools"); }
-          if (event.type === "tool" || Date.now() - lastFlush > 200) await flush();
-        },
-        propose: async (recordId, draft) => {
-          if (!row.contexts.some(ref => ref.kind === "record" && ref.id === recordId)) throw new AgentChatError(403, "대화에 연결된 기록만 변경할 수 있습니다.");
-          await this.consent.require(row.userId, "partial_edit");
-          if (controller.signal.aborted) throw new Error("cancelled");
-          const doc = await this.documents.bootstrap(row.userId, recordId);
-          const source = context.find(ref => ref.kind === "record" && ref.id === recordId);
-          if (!source || !("documentVersion" in source.data) || source.data.documentVersion !== doc.documentVersion) throw new AgentChatError(409, "답변을 만드는 동안 기록이 변경되었습니다. 다시 요청해 주세요.");
-          const blockIds = doc.document.content.map(block => block.id);
-          const proposal = await this.documents.createPreparedAiProposal(row.userId, recordId, { prompt: row.messages.at(-2)!.text, selection: { blockIds } }, draft);
-          if (controller.signal.aborted) { await this.documents.cancelAiProposal(row.userId, recordId, { recordId, proposalId: proposal.proposalId }); throw new Error("cancelled"); }
-          beforeDocuments.set(proposal.proposalId, doc.document);
-          return proposal;
-        },
-      });
-      if (controller.signal.aborted) throw new Error("cancelled");
-      await flush();
-      await this.rows.updateOne(filter, { $set: { "run.status": "complete" }, $inc: { version: 1 } });
-    } catch {
-      for (const tool of message.tools) if (tool.status === "running") { tool.status = "failed"; tool.summary = "실행이 중단되었습니다."; }
-      await this.rows.updateOne(filter, { $set: { [`messages.${row.messages.length - 1}`]: message, "run.status": controller.signal.aborted ? "interrupted" : "failed", "run.error": "응답을 완료하지 못했습니다. 설정을 확인하고 다시 보내 주세요." }, $inc: { version: 1 } });
-    } finally { clearInterval(timer); clearTimeout(timeout); if (this.running.get(row._id) === controller) this.running.delete(row._id); }
+  private async execute(
+      row: AgentConversationDoc,
+      context: Awaited<ReturnType<AgentChatService["context"]>>,
+      apiKey?: string,
+      previousCareerMatch: JobCareerMatchResult | null = null,
+    ) {
+      const controller = new AbortController();
+      this.running.set(row._id, controller);
+
+      const runId = row.run!.id;
+
+      const filter = {
+        _id: row._id,
+        userId: row.userId,
+        "run.id": runId,
+        "run.status": "running",
+      };
+
+      const message = structuredClone(row.messages.at(-1)!);
+
+      const beforeDocuments = new Map<
+        string,
+        CareerDocumentBootstrap["document"]
+      >();
+
+      let lastFlush = 0;
+      let heartbeatBusy = false;
+
+      const flush = async () => {
+        const result = await this.rows.updateOne(
+          filter,
+          {
+            $set: {
+              [`messages.${row.messages.length - 1}`]: message,
+              updatedAt: new Date().toISOString(),
+            },
+            $inc: { version: 1 },
+          },
+        );
+
+        lastFlush = Date.now();
+
+        if (!result.matchedCount) {
+          controller.abort();
+        }
+      };
+
+      const timer = setInterval(() => {
+        if (heartbeatBusy) return;
+
+        heartbeatBusy = true;
+
+        void this.rows
+          .updateOne(filter, {
+            $set: { heartbeatAt: new Date() },
+          })
+          .then((result) => {
+            if (!result.matchedCount) {
+              controller.abort();
+            }
+          })
+          .catch(() => {
+            controller.abort();
+          })
+          .finally(() => {
+            heartbeatBusy = false;
+          });
+      }, 1_000);
+
+      const timeout = setTimeout(() => {
+        controller.abort();
+      }, 600_000);
+
+      try {
+        await this.runtime!.run({
+          messages: row.messages.slice(0, -1),
+          context,
+          previousCareerMatch,
+          ...(apiKey ? { apiKey } : {}),
+          signal: controller.signal,
+
+          emit: async (event) => {
+            if (controller.signal.aborted) {
+              throw new Error("cancelled");
+            }
+
+            if (event.type === "text") {
+              message.text += event.text;
+
+              if (message.text.length > 64_000) {
+                throw new Error("response too large");
+              }
+            } else {
+              const before = event.tool.proposal
+                ? beforeDocuments.get(event.tool.proposal.proposalId)
+                : undefined;
+
+              if (before) {
+                event.tool.beforeDocument = before;
+              }
+
+              const at = message.tools.findIndex(
+                (tool) => tool.id === event.tool.id,
+              );
+
+              if (at < 0) {
+                message.tools.push(event.tool);
+              } else {
+                message.tools[at] = event.tool;
+              }
+
+              if (message.tools.length > 30) {
+                throw new Error("too many tools");
+              }
+            }
+
+            if (
+              event.type === "tool" ||
+              Date.now() - lastFlush > 200
+            ) {
+              await flush();
+            }
+          },
+
+          propose: async (recordId, draft) => {
+            const linked = row.contexts.some(
+              (ref) => ref.kind === "record" && ref.id === recordId,
+            );
+
+            if (!linked) {
+              throw new AgentChatError(
+                403,
+                "대화에 연결된 기록만 변경할 수 있습니다.",
+              );
+            }
+
+            await this.consent.require(
+              row.userId,
+              "partial_edit",
+            );
+
+            if (controller.signal.aborted) {
+              throw new Error("cancelled");
+            }
+
+            const doc = await this.documents.bootstrap(
+              row.userId,
+              recordId,
+            );
+
+            const source = context.find(
+              (ref) => ref.kind === "record" && ref.id === recordId,
+            );
+
+            if (
+              !source ||
+              !("documentVersion" in source.data) ||
+              source.data.documentVersion !== doc.documentVersion
+            ) {
+              throw new AgentChatError(
+                409,
+                "답변을 만드는 동안 기록이 변경되었습니다. 다시 요청해 주세요.",
+              );
+            }
+
+            const blockIds = doc.document.content.map(
+              (block) => block.id,
+            );
+
+            const proposal =
+              await this.documents.createPreparedAiProposal(
+                row.userId,
+                recordId,
+                {
+                  prompt: row.messages.at(-2)!.text,
+                  selection: { blockIds },
+                },
+                draft,
+              );
+
+            if (controller.signal.aborted) {
+              await this.documents.cancelAiProposal(
+                row.userId,
+                recordId,
+                {
+                  recordId,
+                  proposalId: proposal.proposalId,
+                },
+              );
+
+              throw new Error("cancelled");
+            }
+
+            beforeDocuments.set(
+              proposal.proposalId,
+              doc.document,
+            );
+
+            return proposal;
+          },
+        });
+
+        if (controller.signal.aborted) {
+          throw new Error("cancelled");
+        }
+
+        await flush();
+
+        await this.rows.updateOne(
+          filter,
+          {
+            $set: { "run.status": "complete" },
+            $inc: { version: 1 },
+          },
+        );
+      } catch {
+        for (const tool of message.tools) {
+          if (tool.status === "running") {
+            tool.status = "failed";
+            tool.summary = "실행이 중단되었습니다.";
+          }
+        }
+
+        await this.rows.updateOne(
+          filter,
+          {
+            $set: {
+              [`messages.${row.messages.length - 1}`]: message,
+              "run.status": controller.signal.aborted
+                ? "interrupted"
+                : "failed",
+              "run.error":
+                "응답을 완료하지 못했습니다. 설정을 확인하고 다시 보내 주세요.",
+            },
+            $inc: { version: 1 },
+          },
+        );
+      } finally {
+        clearInterval(timer);
+        clearTimeout(timeout);
+
+        if (this.running.get(row._id) === controller) {
+          this.running.delete(row._id);
+        }
+      }
   }
   async cancel(userId: string, id: string) {
     const row = await this.owned(userId, id);
