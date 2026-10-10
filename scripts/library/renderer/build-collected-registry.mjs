@@ -57,6 +57,44 @@ fs.writeFileSync(
   path.join(tmp, "src/assets/logo-icon.tsx"),
   "export default function Logo(){return null} export const LogoIcon=Logo;",
 );
+// Feature 원본의 제목·설명 위치에 입력 슬롯을 표시합니다. 연결한 항목 수를 함께 돌려줘 렌더러가 나머지 항목만 따로 출력하게 합니다.
+const bindFeatureFields = (original, fileName) => {
+  let detail = -1;
+  const parsed = ts.createSourceFile(fileName, original, 99, true, 4);
+  const transformed = ts.transform(parsed, [
+    (context) => (node) => {
+      const visit = (n) => {
+        if (ts.isJsxOpeningElement(n)) {
+          const tag = n.tagName.getText(parsed);
+          let field = null;
+          if (tag === "h1") field = "title";
+          else if (tag === "h3") {
+            detail++;
+            field = detail + ".label";
+          } else if (tag === "p") field = detail >= 0 ? detail + ".text" : "summary";
+          if (field)
+            return ts.factory.updateJsxOpeningElement(
+              n,
+              n.tagName,
+              n.typeArguments,
+              ts.factory.updateJsxAttributes(n.attributes, [
+                ...n.attributes.properties,
+                ts.factory.createJsxAttribute(
+                  ts.factory.createIdentifier("data-portfolio-field"),
+                  ts.factory.createStringLiteral(field),
+                ),
+              ]),
+            );
+        }
+        return ts.visitEachChild(n, visit, context);
+      };
+      return ts.visitNode(node, visit);
+    },
+  ]);
+  const contents = ts.createPrinter().printFile(transformed.transformed[0]);
+  transformed.dispose();
+  return { contents, boundDetails: detail + 1 };
+};
 const modules = [],
   metadata = [];
 let compilerOptions;
@@ -167,6 +205,9 @@ for (const item of catalog.items) {
           license: detail.sourceLicense || item.sourceLicense || null,
           adaptation:
             "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션",
+          boundDetails: /^feature-(1|4)$/.test(item.sourceItemId)
+            ? bindFeatureFields(entry.content, entry.path).boundDetails
+            : 0,
         };
         const index = modules.length,
           alias = `Source${index}`;
@@ -208,63 +249,14 @@ for (const item of catalog.items) {
               {
                 name: "bound-jsx",
                 setup(build) {
-                  build.onLoad({ filter: /feature-(1|4)\.tsx$/ }, (args) => {
-                    const original = fs.readFileSync(args.path, "utf8");
-                    let detail = -1,
-                      paragraph = 0;
-                    const parsed = ts.createSourceFile(
+                  build.onLoad({ filter: /feature-(1|4)\.tsx$/ }, (args) => ({
+                    contents: bindFeatureFields(
+                      fs.readFileSync(args.path, "utf8"),
                       args.path,
-                      original,
-                      99,
-                      true,
-                      4,
-                    );
-                    const transformed = ts.transform(parsed, [
-                      (context) => (node) => {
-                        const visit = (n) => {
-                          if (ts.isJsxOpeningElement(n)) {
-                            const tag = n.tagName.getText(parsed);
-                            let field = null;
-                            if (tag === "h1") field = "title";
-                            else if (tag === "h3") {
-                              detail++;
-                              field = detail + ".label";
-                            } else if (tag === "p") {
-                              field =
-                                detail >= 0 ? detail + ".text" : "summary";
-                              paragraph++;
-                            }
-                            if (field)
-                              return ts.factory.updateJsxOpeningElement(
-                                n,
-                                n.tagName,
-                                n.typeArguments,
-                                ts.factory.updateJsxAttributes(n.attributes, [
-                                  ...n.attributes.properties,
-                                  ts.factory.createJsxAttribute(
-                                    ts.factory.createIdentifier(
-                                      "data-portfolio-field",
-                                    ),
-                                    ts.factory.createStringLiteral(field),
-                                  ),
-                                ]),
-                              );
-                          }
-                          return ts.visitEachChild(n, visit, context);
-                        };
-                        return ts.visitNode(node, visit);
-                      },
-                    ]);
-                    const contents = ts
-                      .createPrinter()
-                      .printFile(transformed.transformed[0]);
-                    transformed.dispose();
-                    return {
-                      contents,
-                      loader: "tsx",
-                      resolveDir: path.dirname(args.path),
-                    };
-                  });
+                    ).contents,
+                    loader: "tsx",
+                    resolveDir: path.dirname(args.path),
+                  }));
                   build.onResolve({ filter: /^react(?:\/.*)?$/ }, (args) => ({
                     path:
                       args.path === "react/jsx-runtime" &&

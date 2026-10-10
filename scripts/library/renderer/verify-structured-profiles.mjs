@@ -90,6 +90,46 @@ try {
         ),
         motion: getComputedStyle(document.querySelector("#intro"))
           .animationName,
+        // 원본을 고른 사례도 유형별 항목 표현과 이미지 규칙을 따라야 합니다.
+        unstyledDetails: document.querySelectorAll(".sp-case dl, .sp-case dd")
+          .length,
+        detailsWithoutType: [
+          ...document.querySelectorAll(".sp-case .sp-source-details"),
+        ].filter(
+          (node) =>
+            !node.classList.contains(
+              `sp-case-${node.closest("[data-case-type]").dataset.caseType}`,
+            ),
+        ).length,
+        // 원본의 샘플 글자를 지운 뒤 남은 빈 상자와 샘플 수치 그래프입니다.
+        sampleResidue: [
+          ...document.querySelectorAll("[data-source-slot=section] *"),
+        ].filter((node) => {
+          if (node.closest("svg,[data-source-decoration]") || node.matches("img,svg"))
+            return false;
+          if (node.textContent.trim() || node.querySelector("img,svg"))
+            return false;
+          const box = node.getBoundingClientRect(),
+            style = getComputedStyle(node);
+          return (
+            box.width > 2 &&
+            box.height > 2 &&
+            (style.backgroundColor !== "rgba(0, 0, 0, 0)" ||
+              style.backgroundImage !== "none" ||
+              parseFloat(style.borderTopWidth) > 0)
+          );
+        }).length,
+        numberedSources: [...document.querySelectorAll(".sp-sources a")]
+          .map((link) => link.textContent.trim())
+          .filter((label) => /^관련 자료 \d/.test(label)),
+        nameplate: document.querySelector(
+          "[data-source-slot=intro][data-has-media=true]",
+        )
+          ? getComputedStyle(
+              document.querySelector(".sp-source-nameplate") ||
+                document.body,
+            ).backdropFilter
+          : "not-applicable",
       }));
       assert.deepEqual(errors, []);
       assert.equal(checks.overflow, false, `${slug}/${width}: 가로 넘침`);
@@ -98,6 +138,14 @@ try {
       assert.equal(checks.h1, 1);
       assert.ok(checks.nameSize > checks.headlineSize);
       assert.equal(checks.motion, "none");
+      assert.equal(checks.unstyledDetails, 0, `${slug}/${width}: 서식 없는 항목표`);
+      assert.equal(checks.detailsWithoutType, 0, `${slug}/${width}: 사례 유형 규칙 누락`);
+      assert.equal(checks.sampleResidue, 0, `${slug}/${width}: 원본 샘플 잔여 요소`);
+      assert.deepEqual(checks.numberedSources, [], `${slug}/${width}: 번호만 있는 관련 자료 링크`);
+      assert.ok(
+        checks.nameplate === "not-applicable" || /blur\(/.test(checks.nameplate),
+        `${slug}/${width}: 히어로 이름 판 블러`,
+      );
       const text = normalize(await page.locator(".sp-page").textContent());
       const values = [
         ...Object.values(content.profile).flat(),
@@ -217,11 +265,14 @@ try {
         `<li><a href="./${item.slug}/index.html" target="_blank" rel="noopener"><img style="width:100%;height:auto;border:1px solid var(--line)" src="./${item.slug}-case.png" alt="${item.name} 사례 지면"><p>${item.name} 사례 지면 ↗</p></a></li>`,
     )
     .join("");
+  const rerenderOf = JSON.parse(
+    fs.readFileSync(path.join(folder, slugs[0], "run.json")),
+  ).rerenderOf?.runId;
   const title =
     slugs.length === 3
       ? "세 가상 프로필 생성 비교"
       : "원본 자료부터 생성한 포트폴리오";
-  const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${title} · Expresso</title><style>body{margin:0}*{box-sizing:border-box}${css}.portfolio-comparison h1{font-size:32px;margin:0;padding-top:32px}.comparison-content h2{font-size:20px}.comparison-content p{line-height:1.7}.comparison-card img{object-fit:contain}.comparison-grid{display:grid;margin-bottom:48px;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.comparison-grid a{color:inherit}.comparison-content>p a{color:var(--accent)}@media(max-width:800px){.comparison-grid{grid-template-columns:1fr}.comparison-card{min-width:0}}</style></head><body><main class="portfolio-comparison"><div class="comparison-content"><h1>${title}</h1><p>같은 생성기와 요청으로 모델이 선택한 지면입니다. 인물·프로젝트·이미지는 가상 시험 자료이며, 이미지는 입력 준비 단계에서 만들었습니다.</p><ul class="comparison-grid">${cards}</ul><h2>프로젝트 사례 지면</h2><ul class="comparison-grid">${cases}</ul><p><a href="./verification.json">브라우저 검증 기록 ↗</a> · ${report.map((item) => `<a href="./${item.slug}/run.json">${item.name} Spec ↗</a>`).join(" · ")}</p></div></main></body></html>`;
+  const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${title} · Expresso</title><style>body{margin:0}*{box-sizing:border-box}${css}.portfolio-comparison h1{font-size:32px;margin:0;padding-top:32px}.comparison-content h2{font-size:20px}.comparison-content p{line-height:1.7}.comparison-card img{object-fit:contain}.comparison-grid{display:grid;margin-bottom:48px;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.comparison-grid a{color:inherit}.comparison-content>p a{color:var(--accent)}@media(max-width:800px){.comparison-grid{grid-template-columns:1fr}.comparison-card{min-width:0}}</style></head><body><main class="portfolio-comparison"><div class="comparison-content"><h1>${title}</h1><p>같은 생성기와 요청으로 모델이 선택한 지면입니다.${rerenderOf ? ` 모델을 다시 호출하지 않고 <a href="../${rerenderOf}/index.html">${rerenderOf}</a>의 저장 Spec을 현재 렌더러로 다시 그렸습니다.${fs.existsSync(path.join(folder, "compare.html")) ? ` <a href="./compare.html">변경 전후 비교 보기</a>` : ""}` : ""} 인물·프로젝트·이미지는 가상 시험 자료이며, 이미지는 입력 준비 단계에서 만들었습니다.</p><ul class="comparison-grid">${cards}</ul><h2>프로젝트 사례 지면</h2><ul class="comparison-grid">${cases}</ul><p><a href="./verification.json">브라우저 검증 기록 ↗</a> · ${report.map((item) => `<a href="./${item.slug}/run.json">${item.name} Spec ↗</a>`).join(" · ")}</p></div></main></body></html>`;
   fs.writeFileSync(path.join(folder, "index.html"), html);
 } finally {
   await browser.close();

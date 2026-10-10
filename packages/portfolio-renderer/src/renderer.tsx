@@ -22,6 +22,7 @@ import {
 import {
   renderCollected,
   collectedSourceName,
+  collectedBoundDetails,
   validateLibrarySelection,
   COLLECTED_PORTFOLIO_CSS,
 } from "./library.js";
@@ -182,16 +183,77 @@ function Body({ value }: { value: string }) {
     </div>
   );
 }
+// 사례에서 근거 항목을 제목으로 가리키기 위해 입력의 근거 제목을 전달합니다.
+const EvidenceTitles = React.createContext<ReadonlyMap<string, string>>(
+  new Map(),
+);
 function Sources({ section }: { section: StructuredSection }) {
-  return section.sourceIds.length ? (
+  const titles = React.useContext(EvidenceTitles);
+  const links = section.sourceIds.flatMap((key) => {
+    const title = titles.get(key);
+    return title ? [{ key, title }] : [];
+  });
+  return links.length ? (
     <nav className="sp-sources" aria-label={`${section.title} 관련 자료`}>
-      {section.sourceIds.map((key, i) => (
+      {links.map(({ key, title }) => (
         <a href={`#source-${key}`} key={key}>
-          관련 자료 {i + 1} ↗
+          {title} ↗
         </a>
       ))}
     </nav>
   ) : null;
+}
+type CaseKind = "essay" | "gallery" | "technical" | "process" | "panel";
+// 사례 유형별 항목 표현입니다. 원본을 고른 사례와 아닌 사례가 함께 씁니다.
+function Details({
+  section,
+  kind,
+  skip = 0,
+}: {
+  section: StructuredSection;
+  kind: CaseKind;
+  skip?: number;
+}) {
+  const details = section.details.slice(skip);
+  if (!details.length) return null;
+  return kind === "technical" ? (
+    <table className="sp-facts">
+      <caption className="sp-sr">{section.title} 작업 설명</caption>
+      <tbody>
+        {details.map((item, i) => (
+          <tr key={i}>
+            <th scope="row">{item.label}</th>
+            <td>
+              <Body value={item.text} />
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ) : kind === "process" ? (
+    <ol className="sp-steps">
+      {details.map((item, i) => (
+        <li key={i}>
+          <span className="sp-step-number">
+            {String(skip + i + 1).padStart(2, "0")}
+          </span>
+          <div>
+            <h3>{item.label}</h3>
+            <Body value={item.text} />
+          </div>
+        </li>
+      ))}
+    </ol>
+  ) : (
+    <div className="sp-details">
+      {details.map((item, i) => (
+        <section key={i}>
+          <h3>{item.label}</h3>
+          <Body value={item.text} />
+        </section>
+      ))}
+    </div>
+  );
 }
 function Case({
   section,
@@ -199,33 +261,26 @@ function Case({
   sourceId,
 }: {
   section: StructuredSection;
-  kind: "essay" | "gallery" | "technical" | "process" | "panel";
+  kind: CaseKind;
   sourceId?: string | undefined;
 }) {
   if (sourceId) {
     const sourceName = collectedSourceName(sourceId);
     const isFeature = sourceName?.startsWith("feature-");
+    const isAnnotation =
+      sourceName === "annotated-text" || sourceName === "text-gradient";
+    // 유형 클래스를 설명 블록에 붙여 원본이 아닌 사례와 같은 그리드·이미지 규칙을 적용합니다.
     const content = (
-      <div className="sp-source-details">
-        {!isFeature &&
-          sourceName !== "annotated-text" &&
-          sourceName !== "text-gradient" && <SectionTitle section={section} />}
-        {(sourceName === "annotated-text" ||
-          sourceName === "text-gradient") && (
-          <p className="sp-summary">{section.summary}</p>
-        )}
+      <div className={`sp-source-details sp-case-${kind}`}>
+        {!isFeature && !isAnnotation && <SectionTitle section={section} />}
+        {isAnnotation && <p className="sp-summary">{section.summary}</p>}
         <Media section={section} />
         <Body value={section.body} />
-        <dl>
-          {section.details
-            .slice(isFeature ? (sourceName === "feature-1" ? 5 : 3) : 0)
-            .map((detail) => (
-              <div key={detail.label}>
-                <dt>{detail.label}</dt>
-                <dd>{detail.text}</dd>
-              </div>
-            ))}
-        </dl>
+        <Details
+          section={section}
+          kind={kind}
+          skip={collectedBoundDetails(sourceId)}
+        />
         <Sources section={section} />
       </div>
     );
@@ -259,44 +314,7 @@ function Case({
       <SectionTitle section={section} />
       <Media section={section} />
       <Body value={section.body} />
-      {kind === "technical" ? (
-        <table className="sp-facts">
-          <caption className="sp-sr">{section.title} 작업 설명</caption>
-          <tbody>
-            {section.details.map((item, i) => (
-              <tr key={i}>
-                <th scope="row">{item.label}</th>
-                <td>
-                  <Body value={item.text} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : kind === "process" ? (
-        <ol className="sp-steps">
-          {section.details.map((item, i) => (
-            <li key={i}>
-              <span className="sp-step-number">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <div>
-                <h3>{item.label}</h3>
-                <Body value={item.text} />
-              </div>
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <div className="sp-details">
-          {section.details.map((item, i) => (
-            <section key={i}>
-              <h3>{item.label}</h3>
-              <Body value={item.text} />
-            </section>
-          ))}
-        </div>
-      )}
+      <Details section={section} kind={kind} />
       <Sources section={section} />
     </article>
   );
@@ -476,11 +494,16 @@ export function renderStructuredPortfolio(
       snapshot.content.sections.map((section) => [section.id, section]),
     ),
   };
+  const evidenceTitles = new Map(
+    snapshot.content.evidence.map((item) => [item.id, item.title]),
+  );
   const html = renderToStaticMarkup(
     <StateProvider initialState={state}>
       <VisibilityProvider>
         <ActionProvider handlers={{}}>
-          <Renderer spec={snapshot.spec} registry={registry} />
+          <EvidenceTitles.Provider value={evidenceTitles}>
+            <Renderer spec={snapshot.spec} registry={registry} />
+          </EvidenceTitles.Provider>
         </ActionProvider>
       </VisibilityProvider>
     </StateProvider>,
