@@ -52,7 +52,7 @@ const MarkdownTextImpl: FC<MarkdownTextProps> = ({ components }) => {
       remarkPlugins={[remarkGfm]}
       className="aui-md"
       components={markdownComponents}
-      defer
+      smooth={false}
     />
   );
 };

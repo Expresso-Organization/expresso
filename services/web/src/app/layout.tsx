@@ -9,6 +9,8 @@ import "@phosphor-icons/web/bold";
 import { THEME_BOOTSTRAP } from "@/lib/theme";
 import "@/styles/global.css";
 
+import Script from "next/script";
+
 export const metadata: Metadata = {
   title: "Expresso",
   description:
@@ -41,9 +43,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           맞춰지고 밝은 화면이 스쳤다 어두워지는 일이 없다. 자세한 이유는
           `lib/theme.ts`에 있다.
         */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
       </head>
-      <body>{children}</body>
+      <body>
+        <Script
+          id="expresso-theme-bootstrap"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }}
+        />
+        {children}
+      </body>
     </html>
   );
 }

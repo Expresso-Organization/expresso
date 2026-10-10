@@ -25,7 +25,7 @@ function matchErrorMessage(error: unknown): string {
     }
 
     if (error.status === 422) {
-      return "경력 기록이 없거나 분석 입력·근거 검증에 실패했습니다. 경력 내용을 확인한 뒤 다시 시도해 주세요.";
+      return "공고를 하나만 연결하고 경력 기록을 확인해 주세요. 분석 입력 또는 근거 검증 실패 시에도 이 안내가 표시됩니다.";
     }
 
     if (error.status === 503) {
