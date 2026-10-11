@@ -25,13 +25,14 @@ import {
   type FormulaPropertyDefinition,
   type FormulaPropertyValue,
 } from "@expresso/editor";
-import type { CareerCategoryDoc, CareerRecordDoc } from "@expresso/database";
+import type { CareerCategoryDoc, CareerRecordDoc, CareerRecordRelationDoc } from "@expresso/database";
 import { readCanonicalCareerPropertyValues } from "@expresso/database";
 
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { MongoCareerComputationRepository } from "./repository.js";
+import { CanonicalCareerReadService,canonicalRecordReadDefinitions,CareerError } from "../career/index.js";
 
 export interface CareerComputationEvent {
   eventId: string;
@@ -57,6 +58,10 @@ export interface CareerComputationTargetStateService {
 
 interface ComputationMetadata { readonly eventIds?: readonly string[]; readonly sourceRecordVersion?: number }
 interface DerivedDefinition extends CareerPropertyDefinitionV2 { readonly ast?: FormulaAst | null; readonly dependencies: readonly string[] }
+class PendingRelationProjection extends Error {
+  readonly statusCode=409;
+  constructor() {super("CAREER_RELATION_PROJECTION_PENDING");}
+}
 class ProjectionDependencyChanged extends Error {
   constructor(readonly causeFingerprint:string) {super("rollup dependency changed");}
 }
@@ -144,7 +149,7 @@ function valueFor(record: CareerRecordDoc, definitions_: readonly CareerProperty
   if (!definition) return null;
   if(mode==="canonical") {
     if(definition.type==="formula" || definition.type==="rollup")return asValue(computed[definition.key],definition);
-    if(definition.type==="created_time" || definition.type==="updated_time") {
+    if(definition.system && (definition.type==="created_time" || definition.type==="updated_time")) {
       const timestamp=definition.type==="updated_time"?record.updatedAt:record.createdAt;
       return timestamp?{type:definition.type,value:timestamp.toISOString()}:null;
     }
@@ -152,8 +157,14 @@ function valueFor(record: CareerRecordDoc, definitions_: readonly CareerProperty
     if(definition.type==="title")return {type:"title",value:record.title};
     const value=readCanonicalCareerPropertyValues(record).find(v=>v.propertyDefinitionId===propertyId);
     if(!value)return null;
+    if(definition.type==="created_time" || definition.type==="updated_time") return value.type==="date" && value.value.precision==="datetime" && value.value.end===null?{type:definition.type,value:value.value.start}:null;
     // 수식 엔진의 number는 derived 계산 전용이며 canonical 값으로 저장하지 않습니다.
     if(value.type==="number") {const numeric=Number(value.value);if(!Number.isFinite(numeric))throw new Error("canonical decimal exceeds computation numeric range");return {type:"number",value:numeric};}
+    if(value.type==="multi_select" && definition.config.legacyFreeformTags===true) {
+      const options=Array.isArray(definition.config.options)?definition.config.options as {id:string;label?:string;name?:string}[]:[];
+      const labels=value.value.map(id=>{const option=options.find(item=>item.id===id),label=option?.label??option?.name;if(typeof label!=="string")throw new CareerError(409,"CANONICAL_OPTION_LABEL_UNAVAILABLE");return label;});
+      return {type:"multi_select",value:labels};
+    }
     return {type:value.type,value:value.value};
   }
   return asValue(record.properties[definition.key] ?? computed[definition.key], definition);
@@ -164,11 +175,52 @@ function parseComputed(value: FormulaPropertyValue | null, type: "formula" | "ro
   return parsed.success ? parsed.data : null;
 }
 
+/** Canonical 기간은 offset과 precision을 비교하되 원문 값을 그대로 projection에 남깁니다. */
+function canonicalTemporalRollup(kind:"earliest"|"latest",values:readonly (FormulaPropertyValue|null)[]):FormulaPropertyValue {
+ const dates=values.flatMap(value=>{
+  if(!value)return [];
+  const raw=value.type==="date"&&value.value&&typeof value.value==="object"&&!Array.isArray(value.value)&&"start" in value.value?value.value.start:value.value;
+  return raw===null||raw===undefined||raw===""?[]:[raw];
+ });
+ const ticks=(raw:unknown):bigint|null=>{
+  if(typeof raw!=="string")return null;
+  const normalized=/^\d{4}-\d{2}$/.test(raw)?`${raw}-01T00:00:00Z`:/^\d{4}-\d{2}-\d{2}$/.test(raw)?`${raw}T00:00:00Z`:raw;
+  const fraction=/\.([0-9]{1,9})(?=Z|[+-])/.exec(normalized)?.[1]??"";
+  const seconds=Date.parse(normalized.replace(/\.[0-9]+(?=Z|[+-])/u,""))/1000;
+  return Number.isFinite(seconds)?BigInt(seconds)*1_000_000_000n+BigInt(fraction.padEnd(9,"0")):null;
+ };
+ const parsed=dates.map(raw=>({raw,ticks:ticks(raw)}));
+ if(!parsed.length||parsed.some(value=>value.ticks===null))return {type:"rollup",value:null,diagnostics:[]};
+ parsed.sort((a,b)=>a.ticks!<b.ticks!?-1:a.ticks!>b.ticks!?1:0);
+ return {type:"rollup",value:(kind==="earliest"?parsed[0]!:parsed.at(-1)!).raw,diagnostics:[]};
+}
+const MAX_RELATION_FANOUT = 10_000;
+function relationFanoutSources(edges:readonly CareerRecordRelationDoc[],targetRecordId:string,errorMessage:string):Map<string,Set<string>> {
+  // 정방향과 역방향의 물리 mirror 두 행은 같은 논리 연결 하나로 계산합니다.
+  if(edges.length>MAX_RELATION_FANOUT*2)throw new Error(errorMessage);
+  const sources=new Map<string,Set<string>>(),connections=new Set<string>();
+  for(const edge of edges){
+    const incoming=edge.targetRecordId===targetRecordId;
+    const recordId=incoming?edge.sourceRecordId:edge.targetRecordId,propertyId=incoming?edge.sourcePropertyId:edge.inversePropertyId;
+    if(!propertyId)continue;
+    connections.add(JSON.stringify([recordId,propertyId,incoming?edge.inversePropertyId:edge.sourcePropertyId]));
+    if(connections.size>MAX_RELATION_FANOUT)throw new Error(errorMessage);
+    const ids=sources.get(recordId)??new Set<string>();ids.add(propertyId);sources.set(recordId,ids);
+  }
+  return sources;
+}
 export class MongoCareerComputationService implements CareerComputationService {
   readonly repository: MongoCareerComputationRepository;
   constructor(readonly context: MongoContext,readonly inputMode:"legacy"|"canonical"="legacy") { this.repository = new MongoCareerComputationRepository(context); }
 
-  /** Lifecycle writer는 이벤트만 발행합니다. 이 준비용 consumer는 runtime에 등록하지 않습니다. */
+  private async readDefinitions(userId:string,category:CareerCategoryDoc,record?:CareerRecordDoc,repository=this.repository):Promise<CareerPropertyDefinitionV2[]> {
+    if(this.inputMode!=="canonical")return activeDefinitions(category);
+    const state=await new CanonicalCareerReadService(repository.context).viewReadContext(userId,category,repository.options().session);
+    const definitions_=record?canonicalRecordReadDefinitions(state.definitions,readCanonicalCareerPropertyValues(record),state.source):state.definitions;
+    return definitions_.filter(definition=>definition.deletedAt===null);
+  }
+
+  /** Lifecycle 이벤트를 소비해 관련 canonical projection의 갱신을 durable outbox에 발행합니다. */
   async invalidateTargetState(userId:string,targetRecordId:string,targetRecordVersion:number):Promise<void> {
     if(this.inputMode!=="canonical")throw new Error("target-state invalidation requires canonical computation");
     if(!Number.isSafeInteger(targetRecordVersion) || targetRecordVersion<1)throw new Error("target-state version is invalid");
@@ -176,14 +228,10 @@ export class MongoCareerComputationService implements CareerComputationService {
       const repository=new MongoCareerComputationRepository(tx);
       const target=await repository.records().findOne({_id:targetRecordId,userId},{session:tx.session});
       if(target && target.version<targetRecordVersion)throw new Error("target-state event is ahead of canonical record");
-      const incoming=await repository.relations().find({userId,targetRecordId},{session:tx.session}).limit(10_001).toArray();
-      if(incoming.length>10_000)throw new Error("career lifecycle fanout limit exceeded");
+      const incoming=await repository.relations().find({userId,$or:[{targetRecordId},{sourceRecordId:targetRecordId,inversePropertyId:{$type:"string"}}]},{session:tx.session}).limit(MAX_RELATION_FANOUT*2+1).toArray();
+      const sources=relationFanoutSources(incoming,targetRecordId,"career lifecycle fanout limit exceeded");
       if(target)await this.guardProjectionTarget(repository,target);
       const refreshCause=target?`target:${targetRecordId}:v${target.version}`:`target:${targetRecordId}:missing:v${targetRecordVersion}`;
-      const sources=new Map<string,Set<string>>();
-      for(const edge of incoming) {
-        const ids=sources.get(edge.sourceRecordId)??new Set<string>();ids.add(edge.sourcePropertyId);sources.set(edge.sourceRecordId,ids);
-      }
       for(const [recordId,relations] of sources) {
         const source=await repository.activeRecord(userId,recordId,tx.session);
         const category=source?await repository.readableCategory(userId,source.categoryId,tx.session):null;
@@ -198,7 +246,9 @@ export class MongoCareerComputationService implements CareerComputationService {
     const input = PreviewCareerFormulaSchema.parse(raw);
     const category = await this.repository.readableCategory(userId, input.categoryId);
     if (!category) throw new Error("career category not found");
-    const all = activeDefinitions(category);
+    let record=this.inputMode==="canonical" && input.recordId?await this.repository.activeRecord(userId,input.recordId):null;
+    if(this.inputMode==="canonical" && input.recordId && (!record || record.categoryId!==input.categoryId))throw new Error("career record not found");
+    const all = await this.readDefinitions(userId,category,record??undefined);
     let ast: FormulaAst | null = null;
     let diagnostics: readonly FormulaDiagnostic[];
     try { ast = parseFormula(input.source); diagnostics = typecheckFormula(ast, editorSchema(all)); }
@@ -216,10 +266,10 @@ export class MongoCareerComputationService implements CareerComputationService {
     const dependencies = ast ? collectFormulaDependencies(ast) : [];
     let value: CareerPropertyValueV2 | null = null;
     if (input.recordId && ast && diagnostics.length === 0) {
-      const record = await this.repository.activeRecord(userId, input.recordId);
-      if (!record || record.categoryId !== input.categoryId) throw new Error("career record not found");
-      const computed = computedMap(record);
-      const context = new Map(all.map((definition) => [definition.id, valueFor(record, all, definition.id, computed,this.inputMode)]));
+      record??=await this.repository.activeRecord(userId,input.recordId);
+      if(!record || record.categoryId!==input.categoryId)throw new Error("career record not found");
+      const evaluatedRecord=record,computed = computedMap(evaluatedRecord);
+      const context = new Map(all.map((definition) => [definition.id, valueFor(evaluatedRecord, all, definition.id, computed,this.inputMode)]));
       value = parseComputed(evaluateFormula(ast, context), "formula");
     }
     return CareerFormulaPreviewSchema.parse({ source: input.source, ast, diagnostics, value, dependencies });
@@ -229,11 +279,15 @@ export class MongoCareerComputationService implements CareerComputationService {
     const input = PreviewCareerRollupSchema.parse(raw);
     const category = await this.repository.readableCategory(userId, input.categoryId);
     if (!category) throw new Error("career category not found");
-    const all = activeDefinitions(category);
+    if(this.inputMode==="canonical") {
+      const policy=await new CanonicalCareerReadService(this.context).viewReadContext(userId,category);
+      if(policy.blockedRelationIds.includes(input.relationPropertyId))throw new PendingRelationProjection();
+    }
+    const all = await this.readDefinitions(userId,category);
     const relation = all.find((definition) => definition.id === input.relationPropertyId && definition.type === "relation");
     const targetCategoryId = relation?.config.targetCategoryId;
     const targetCategory = typeof targetCategoryId === "string" ? await this.repository.readableCategory(userId, targetCategoryId) : null;
-    const target = targetCategory ? activeDefinitions(targetCategory).find((definition) => definition.id === input.targetPropertyId) : undefined;
+    const target = targetCategory ? (await this.readDefinitions(userId,targetCategory)).find((definition) => definition.id === input.targetPropertyId) : undefined;
     if (!relation || !target) return CareerRollupPreviewSchema.parse({ diagnostics: [{ code: "unknown_property", message: "관계 또는 대상 프로퍼티를 찾을 수 없습니다", severity: "error", start: 0, end: 0 }], value: null });
     const numeric = ["sum", "average", "min", "max"].includes(input.aggregation);
     const temporal = ["earliest", "latest"].includes(input.aggregation);
@@ -267,7 +321,7 @@ export class MongoCareerComputationService implements CareerComputationService {
           await this.enqueueFresh(tx,event,record.version);return "stale";
         }
       }
-      const all = activeDefinitions(category); const derived = derivedDefinitions(category);
+      const all = await this.readDefinitions(event.userId,category,record,repository); const derived = derivedDefinitions(category);
       if (event.sourcePropertyVersions) {
         const currentVersions = Object.fromEntries((this.inputMode==="canonical"?definitions(category):all).filter((definition) => event.changedPropertyIds.includes(definition.id)).map((definition) => [definition.id, definition.version]));
         if (Object.entries(event.sourcePropertyVersions).some(([id, version]) => currentVersions[id] !== version)) {
@@ -323,6 +377,7 @@ export class MongoCareerComputationService implements CareerComputationService {
       await this.fanout(tx, updated, category, [...new Set([...event.changedPropertyIds, ...changedOutputIds])]);
       return "applied";
     });}catch(error) {
+      if(error instanceof PendingRelationProjection)return "stale";
       if(!(error instanceof ProjectionDependencyChanged))throw error;
       return inTransaction(this.context,async tx=>{
         const record=await new MongoCareerComputationRepository(tx).activeRecord(event.userId,event.recordId,tx.session);
@@ -334,24 +389,36 @@ export class MongoCareerComputationService implements CareerComputationService {
 
   private async rollupForRecord(userId: string, record: CareerRecordDoc, sourceDefinitions: readonly CareerPropertyDefinitionV2[], relationPropertyId: string, targetPropertyId: string, aggregation: string, repository = this.repository,observedTargets?:Map<string,CareerRecordDoc>): Promise<FormulaPropertyValue | null> {
     const relation = sourceDefinitions.find((definition) => definition.id === relationPropertyId && definition.type === "relation");
+
+    const edges = await repository.relations().find(this.inputMode==="canonical"?{userId,$or:[{sourceRecordId:record._id,sourcePropertyId:relationPropertyId},{targetRecordId:record._id,inversePropertyId:relationPropertyId}]}:{userId,sourceRecordId:record._id,sourcePropertyId:relationPropertyId}, repository.options()).limit(this.inputMode==="canonical"?2_001:1_001).toArray();
+    if (edges.length > (this.inputMode==="canonical"?2_000:1_000)) throw new Error("career rollup relation target limit exceeded");
+    let visibleIds:Set<string>|undefined;
+    if(this.inputMode==="canonical") {
+      const projection=await new CanonicalCareerReadService(repository.context).relationProjection(record,sourceDefinitions,repository.options().session);
+      if(projection.blockedPropertyIds.includes(relationPropertyId))throw new PendingRelationProjection();
+      visibleIds=new Set((relation?projection.properties[relation.key]:undefined)?.value.map(target=>target.recordId)??[]);
+    }
     if (!relation) return null;
-    const edges = await repository.relations().find({ userId, sourceRecordId: record._id, sourcePropertyId: relationPropertyId }, repository.options()).limit(1_001).toArray();
-    if (edges.length > 1_000) throw new Error("career rollup relation target limit exceeded");
-    const targets = edges.length ? await repository.records().find({ _id: { $in: edges.map((edge) => edge.targetRecordId) }, userId,...(this.inputMode==="canonical"?{}:{deletedAt:null}) }, repository.options()).limit(1_000).toArray() : [];
+    // 숨겨진 삭제 대상도 관찰해 lifecycle 변경과 projection commit을 직렬화합니다.
+    const targetIds=[...new Set([...edges.map(edge=>edge.sourceRecordId===record._id?edge.targetRecordId:edge.sourceRecordId),...(visibleIds??[])])];
+    if(targetIds.length>1_000)throw new Error("career rollup relation target limit exceeded");
+    const targets = targetIds.length ? await repository.records().find({ _id: { $in: targetIds }, userId,...(this.inputMode==="canonical"?{}:{deletedAt:null}) }, repository.options()).limit(1_000).toArray() : [];
     targets.forEach(target=>observedTargets?.set(target._id,target));
     const categories = new Map<string, CareerCategoryDoc>();
     for (const target of targets) if (!categories.has(target.categoryId)) {
       const category = await repository.readableCategory(userId, target.categoryId,this.inputMode==="canonical"?repository.options().session:undefined);
       if (category) {categories.set(target.categoryId,category);if(this.inputMode==="canonical" && repository.options().session)await this.guardProjectionCategory(repository,category);}
     }
-    const values = targets.filter(target=>target.deletedAt==null).map((target) => {
-      const category = categories.get(target.categoryId);
-      if (!category) return null;
-      const targetDefinitions = activeDefinitions(category);
-      return valueFor(target, targetDefinitions, targetPropertyId, computedMap(target),this.inputMode);
-    });
+    const values:(FormulaPropertyValue|null)[]=[];
+    for(const target of targets.filter(target=>target.deletedAt==null && (!visibleIds || visibleIds.has(target._id)))) {
+      const category=categories.get(target.categoryId);
+      if(!category){values.push(null);continue;}
+      const targetDefinitions=await this.readDefinitions(userId,category,target,repository);
+      values.push(valueFor(target,targetDefinitions,targetPropertyId,computedMap(target),this.inputMode));
+    }
     const validAggregation = ["count", "unique_count", "sum", "average", "min", "max", "earliest", "latest", "percent_checked", "show_unique"] as const;
     if (!validAggregation.includes(aggregation as typeof validAggregation[number])) return null;
+    if(this.inputMode==="canonical" && (aggregation==="earliest" || aggregation==="latest"))return canonicalTemporalRollup(aggregation,values);
     return aggregateRollup(aggregation as typeof validAggregation[number], values);
   }
 
@@ -396,16 +463,17 @@ export class MongoCareerComputationService implements CareerComputationService {
 
   private async fanout(tx: MongoContext & { session: import("mongodb").ClientSession }, record: CareerRecordDoc, _category: CareerCategoryDoc, changedPropertyIds: readonly string[]): Promise<void> {
     const repository = new MongoCareerComputationRepository(tx);
-    const incoming = await repository.relations().find({ userId: record.userId, targetRecordId: record._id }, { session: tx.session }).limit(10_001).toArray();
-    if (incoming.length > 10_000) throw new Error("career rollup fanout limit exceeded");
-    for (const edge of incoming) {
-      const source = await repository.activeRecord(record.userId, edge.sourceRecordId, tx.session);
+    const incoming = await repository.relations().find(this.inputMode==="canonical"?{userId:record.userId,$or:[{targetRecordId:record._id},{sourceRecordId:record._id,inversePropertyId:{$type:"string"}}]}:{userId:record.userId,targetRecordId:record._id}, { session: tx.session }).limit(MAX_RELATION_FANOUT*(this.inputMode==="canonical"?2:1)+1).toArray();
+    if (this.inputMode==="legacy" && incoming.length > MAX_RELATION_FANOUT) throw new Error("career rollup fanout limit exceeded");
+    const sources=relationFanoutSources(incoming,record._id,"career rollup fanout limit exceeded");
+    for (const [recordId,relations] of sources) {
+      const source = await repository.activeRecord(record.userId, recordId, tx.session);
       if (!source) continue;
       const category = await repository.readableCategory(record.userId, source.categoryId, tx.session);
       if (!category) continue;
-      const matches = derivedDefinitions(category).some((definition) => definition.type === "rollup" && definition.config.relationPropertyId === edge.sourcePropertyId && changedPropertyIds.includes(String(definition.config.targetPropertyId)));
-      if (!matches) continue;
-      await addMongoOutboxEvent(tx, { userId: record.userId, topic: "career.computation", idempotencyKey: `career-computation-fanout:${record._id}:${edge.sourceRecordId}:v${record.version}${this.inputMode==="canonical"?`:c${record.computationVersion}`:""}`, payload: { userId: record.userId, recordId: source._id, changedPropertyIds: [edge.sourcePropertyId], sourceRecordVersion: source.version } });
+      const matches=[...new Set(derivedDefinitions(category).filter(definition=>definition.type==="rollup" && relations.has(String(definition.config.relationPropertyId)) && changedPropertyIds.includes(String(definition.config.targetPropertyId))).map(definition=>String(definition.config.relationPropertyId)))].sort();
+      if (!matches.length) continue;
+      await addMongoOutboxEvent(tx, { userId: record.userId, topic: "career.computation", idempotencyKey: `career-computation-fanout:${record._id}:${source._id}:v${record.version}${this.inputMode==="canonical"?`:c${record.computationVersion}`:""}`, payload: { userId: record.userId, recordId: source._id, changedPropertyIds: matches, sourceRecordVersion: source.version } });
     }
   }
 }

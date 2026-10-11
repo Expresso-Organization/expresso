@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { TimestampSchema, UuidSchema } from "./common.js";
+import { CareerWriteOperationSchema } from "./career-write-operation.js";
 
 export const InterviewQuestionBasisSchema = z.discriminatedUnion("type", [
   z.strictObject({
@@ -27,6 +28,7 @@ export const InterviewQuestionSchema = z.strictObject({
   replacedFromId: UuidSchema.nullable(),
   skipped: z.boolean(),
   answered: z.boolean(),
+  pendingOperation: CareerWriteOperationSchema.refine(value => value.producer === "interview", "Interview operation required").optional(),
 });
 
 export const InterviewAnswerSchema = z.strictObject({

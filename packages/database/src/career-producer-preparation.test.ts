@@ -6,8 +6,9 @@ import { randomUUID } from "node:crypto";
 describe("prepared producer storage",()=>{
  it("adds forward-only0016 while preserving0014/0015",async()=>{
  const list=await loadMongoMigrations();
- expect(list.at(-1)?.version).toBe("0016");
- expect(list.at(-1)?.steps.map(s=>s.id)).toContain("career_ai_proposals:durable_intent");
+ const producer=list.find(migration=>migration.version==="0016");
+ expect(producer).toBeDefined();
+ expect(producer?.steps.map(s=>s.id)).toContain("career_ai_proposals:durable_intent");
  });
 });
 describe.skipIf(!process.env.TEST_MONGODB_URL)("real prepared producer storage",()=>{

@@ -24,7 +24,7 @@ import com.expresso.backend.career.infrastructure.mongo.MongoCareerCommandReposi
 @Configuration(proxyBeanMethods=false)
 @ConditionalOnProperty(name={"career.writer.enabled","career.integration.enabled"},havingValue="true")
 public class CareerProducerConfiguration {
-    @Bean CareerProducerCredentials careerProducerCredentials(@Value("${career.integration.ai-secret}") String aiSecret,@Value("${career.integration.interview-secret}") String interviewSecret,Clock clock) {return new CareerProducerCredentials(aiSecret,interviewSecret,clock);}
+    @Bean CareerProducerCredentials careerProducerCredentials(@Value("${career.integration.ai-secret}") String aiSecret,@Value("${career.integration.interview-secret}") String interviewSecret,Clock clock,org.springframework.core.env.Environment environment) {return new CareerProducerCredentials(aiSecret,interviewSecret,environment.getProperty("career.product.service-secret"),clock);}
     @Bean CareerProducerBusinessService careerProducerBusiness(MongoCareerCommandRepository repository,Clock clock,@Value("${career.writer.move-secret}") String secret) {return new CareerProducerBusinessService(repository,clock,new CareerMoveTokens(secret));}
     @Bean @Order(1) @ConditionalOnWebApplication(type=ConditionalOnWebApplication.Type.SERVLET)
     SecurityFilterChain careerProducerSecurity(HttpSecurity http,CareerProducerCredentials credentials) throws Exception {

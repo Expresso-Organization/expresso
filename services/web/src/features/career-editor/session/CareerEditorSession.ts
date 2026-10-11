@@ -1,4 +1,5 @@
 import {
+  compareCareerProposalOrder,
   CareerDocumentBootstrapSchema,
   CareerSocketClientMessageSchema,
   CareerSocketServerMessageSchema,
@@ -20,7 +21,7 @@ export interface CareerEditorSnapshot {
   status: SessionStatus;
   documentVersion: number;
   lastAckSequence: number;
-  proposal: { proposalId: string; baseDocumentVersion: number; status: "draft" | "streaming" | "ready" | "applied" | "rejected" | "cancelled" | "expired" | "conflicted"; progress: { phase: "preparing" | "generating" | "validating"; completed: number; total?: number | undefined } | null } | null;
+  proposal: { proposalId: string; createdAt?: string | undefined; baseDocumentVersion: number; status: "draft" | "streaming" | "ready" | "applied" | "rejected" | "cancelled" | "expired" | "conflicted"; progress: { phase: "preparing" | "generating" | "validating"; completed: number; total?: number | undefined } | null } | null;
 }
 export interface CareerEditorSessionOptions {
   fetch?: typeof globalThis.fetch;
@@ -153,7 +154,13 @@ export class CareerEditorSession {
         this.snapshot = { ...this.snapshot, status: this.pending.size ? "saving" : "saved", documentVersion: message.documentVersion, lastAckSequence: Math.max(this.snapshot.lastAckSequence, message.sequence) };
         this.emit(); return;
       }
-      if (message.type === "proposal") { this.setSnapshot({ proposal: { proposalId: message.proposalId, baseDocumentVersion: message.baseDocumentVersion, status: message.status, progress: message.progress } }); return; }
+      if (message.type === "proposal") {
+        const current = this.snapshot.proposal;
+        if (current && compareCareerProposalOrder(message, current) < 0) return;
+        const createdAt = message.createdAt ?? (current?.proposalId === message.proposalId ? current.createdAt : undefined);
+        this.setSnapshot({ proposal: { proposalId: message.proposalId, ...(createdAt === undefined ? {} : { createdAt }), baseDocumentVersion: message.baseDocumentVersion, status: message.status, progress: message.progress } });
+        return;
+      }
       if (message.type === "error") this.setSnapshot({ status: message.code === "VERSION_CONFLICT" ? "conflict" : "offline" });
     } catch { this.setSnapshot({ status: "conflict" }); }
   }

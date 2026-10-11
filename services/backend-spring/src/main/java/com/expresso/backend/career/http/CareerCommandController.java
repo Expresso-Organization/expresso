@@ -44,9 +44,9 @@ public final class CareerCommandController {
         return Map.of("data",Map.of("previewToken",preview.previewToken(),"targetCategoryId",preview.targetCategoryId(),"version",preview.version(),"expiresAt",preview.expiresAt().toString(),"conversions",conversions,"unmappedPropertyIds",preview.unmappedPropertyIds()));
     }
     @PostMapping("/{id}/move") public ResponseEntity<?> move(Authentication auth,@PathVariable String id,@RequestHeader(value="If-Match",required=false) String match,@RequestBody JsonNode input) {
-        CareerBusinessInput.fields(input,Set.of("targetCategoryId","previewToken"),Set.of("targetCategoryId","previewToken"));
+        CareerBusinessInput.fields(input,Set.of("targetCategoryId","previewToken","discardUnmappedPropertyIds"),Set.of("targetCategoryId","previewToken"));
         var token=CareerBusinessInput.text(input.get("previewToken")); if(token.length()<32 || token.length()>4096) throw new IllegalArgumentException("preview token 범위 오류입니다");
-        return response(service.move(actor(auth),CareerBusinessInput.uuid(id),CareerBusinessInput.version(match),CareerBusinessInput.uuid(input.get("targetCategoryId")),token),200);
+        return response(service.move(actor(auth),CareerBusinessInput.uuid(id),CareerBusinessInput.version(match),CareerBusinessInput.uuid(input.get("targetCategoryId")),token,input.has("discardUnmappedPropertyIds")?CareerBusinessInput.ids(input.get("discardUnmappedPropertyIds"),200):List.of()),200);
     }
     @PutMapping("/{id}/relations") public ResponseEntity<?> relation(Authentication auth,@PathVariable String id,@RequestHeader(value="If-Match",required=false) String match,@RequestBody JsonNode input) {
         CareerBusinessInput.fields(input,Set.of("propertyId","targetIds"),Set.of("propertyId","targetIds"));

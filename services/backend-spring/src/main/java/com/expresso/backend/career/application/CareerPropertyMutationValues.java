@@ -14,6 +14,10 @@ public final class CareerPropertyMutationValues {
     }
     private static Conversion convertValue(PropertyValue before, PropertyDefinition target) {
         var type=target.type().wireName(); var id=target.id();
+        if(Set.of("created_time","updated_time").contains(type)) {
+            if(!target.system() && before instanceof DatePropertyValue date && date.precision()==DatePropertyValue.Precision.DATETIME && date.end()==null)return new Conversion("exact",rebind(before,id));
+            return new Conversion("unmapped",null);
+        }
         if((before instanceof SelectPropertyValue || before instanceof MultiSelectPropertyValue) && Set.of("select","multi_select").contains(type)) {
             var ids=before instanceof SelectPropertyValue select ? select.value()==null?List.<String>of():List.of(select.value()) : ((MultiSelectPropertyValue)before).value();
             var allowed=new HashSet<String>();
@@ -78,7 +82,7 @@ public final class CareerPropertyMutationValues {
         }
         if(!kind.equals("conversion")) throw new IllegalArgumentException("mutation kind 오류입니다");
         if(current==null) return new PropertyDelta(List.of(),List.of());
-        if(current.type().wireName().equals(target.type().wireName()) || current.type().wireName().equals(source.type().wireName())) {
+        if(current.type().wireName().equals(target.type().wireName()) || current.type().wireName().equals(source.type().wireName()) || (current instanceof DatePropertyValue && !source.system() && Set.of(PropertyDefinitionType.CREATED_TIME,PropertyDefinitionType.UPDATED_TIME).contains(source.type()))) {
             var result=convert(current,target);
             if(result.kind().equals("unmapped")) throw new CareerCommandException(409,"UNSUPPORTED_PROPERTY_CONVERSION");
             if(result.kind().equals("lossy") && !confirmLossy) throw new CareerCommandException(409,"LOSSY_CONFIRMATION_REQUIRED");

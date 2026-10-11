@@ -25,6 +25,7 @@ import { inTransaction } from "../../platform/mongo-transaction.js";
 import { withTimeout } from "../../platform/timeouts.js";
 import type { ConsentApi } from "../consent/index.js";
 import { requireActiveUser } from "../identity/index.js";
+import type { CanonicalCareerReadService } from "../career/index.js";
 import { DESIGN_PRINCIPLES_VERSION, type PageGenerationContext, type PageGenerator } from "./generator.js";
 import { PageServiceError } from "./public.js";
 import type { PageStream } from "./stream.js";
@@ -43,7 +44,7 @@ function isPageStyleGrammar(value: unknown): value is PageStyleGrammar { return 
 
 export class PageService {
   readonly #consent: ConsentApi | null; readonly #stream: PageStream | null;
-  constructor(readonly context: MongoContext, consent?: ConsentApi | null, stream?: PageStream | null) {
+  constructor(readonly context: MongoContext, consent?: ConsentApi | null, stream?: PageStream | null, readonly careerReads?: CanonicalCareerReadService) {
     this.#consent = consent ?? null; this.#stream = stream ?? null;
   }
 
@@ -84,8 +85,9 @@ export class PageService {
       db.jobPostingRequirements.find({ _id: { $in: paths.filter((p) => p.sourceType === "requirement").map((p) => p.sourceId) } }).toArray(),
       db.templates.findOne({ _id: portfolio.templateId }), db.brews.findOne({ _id: portfolio.brewId, userId }), db.users.findOne({ _id: userId }),
     ]);
+    const projectedRecords = this.careerReads ? await Promise.all(records.map(async record => { const canonical=await this.careerReads!.mapRecord(record);return {...record,title:canonical.title,bodyMd:canonical.bodyMd}; })) : records;
     const sourceText = (sourceId: string) => {
-      const record = records.find(({ _id }) => _id === sourceId); if (record) return `${record.title}\n${record.bodyMd}`;
+      const record = projectedRecords.find(({ _id }) => _id === sourceId); if (record) return `${record.title}\n${record.bodyMd}`;
       const answer = answers.find(({ _id }) => _id === sourceId); if (answer) return answer.transcript;
       const requirement = requirements.find(({ _id }) => _id === sourceId);
       return requirement ? `${requirement.label}\n${typeof requirement.sourceSpan.quote === "string" ? requirement.sourceSpan.quote : ""}` : "";

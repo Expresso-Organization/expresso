@@ -8,12 +8,13 @@ import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
 import { assertActiveRecordsForWrite } from "./mongo-record-guard.js";
 import { computeSkillAggregate, normalizeSkillName } from "./skills.js";
+import type { CanonicalCareerReadService } from "./canonical-reads.js";
 
 function mapSkill(skill: SkillDoc) {
   return CareerSkillSchema.parse({ id: skill._id, name: skill.name, level: skill.level, evidenceCount: skill.evidenceCount, strength: skill.strength, lastUsedAt: skill.lastUsedAt?.toISOString(), computedAt: skill.computedAt.toISOString() });
 }
 
-export async function recomputeMongoSkill(context: MongoContext, userId: string, inputValue: RecomputeCareerSkill, computedAt: Date) {
+export async function recomputeMongoSkill(context: MongoContext, userId: string, inputValue: RecomputeCareerSkill, computedAt: Date, careerReads?: CanonicalCareerReadService) {
   const input = RecomputeCareerSkillSchema.parse(inputValue);
   const name = normalizeSkillName(input.name);
   if (!name) throw new CareerError(400, "skill name is empty");
@@ -28,7 +29,8 @@ export async function recomputeMongoSkill(context: MongoContext, userId: string,
     for (const record of records) {
       if (!await db.careerCategories.findOne({ _id: record.categoryId, isSystem: true }, options)) throw new CareerError(404, "skill evidence record not found");
     }
-    const byId = new Map(records.map((record) => [record._id, record]));
+    const projectedRecords=careerReads?await Promise.all(records.map(async record=>{const canonical=await careerReads.mapRecord(record,undefined,tx.session);return {...record,title:canonical.title,bodyMd:canonical.bodyMd};})):records;
+    const byId = new Map(projectedRecords.map((record) => [record._id, record]));
     for (const evidence of input.evidence) {
       const record = byId.get(evidence.recordId);
       if (!record) throw new CareerError(404, "skill evidence record not found");

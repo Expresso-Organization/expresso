@@ -19,6 +19,11 @@ career:
     mongo-uri: ${MONGODB_URL}
     database: ${MONGODB_DATABASE}
     move-secret: ${CAREER_WRITER_MOVE_SECRET:}
+  product:
+    service-secret: ${CAREER_PRODUCT_SERVICE_SECRET:}
+  property-mutation:
+    enabled: ${CAREER_PROPERTY_MUTATION_ENABLED:false}
+    secret: ${CAREER_PROPERTY_MUTATION_SECRET:}
   integration:
     enabled: ${CAREER_INTEGRATION_ENABLED:false}
     ai-secret: ${CAREER_INTEGRATION_AI_SECRET:}

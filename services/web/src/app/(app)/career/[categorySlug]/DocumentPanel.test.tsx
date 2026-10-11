@@ -1,12 +1,14 @@
 // @vitest-environment jsdom
 import type { CareerCategory, CareerRecordListItem } from "@expresso/contracts";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const requestCallbacks = vi.hoisted(() => new Map<string, () => void>());
+
 vi.mock("@/features/career-editor/editor/CareerDocumentEditor", () => ({
-  CareerDocumentEditor: ({ recordId, onAiRequest }: { recordId: string; onAiRequest?: (request: { id: string; recordId: string; prompt: string; blockIds: string[] }) => void }) => <div>편집기 {recordId}<button type="button" onClick={() => onAiRequest?.({ id: "selection-request", recordId, prompt: "선택한 문장을 짧게", blockIds: ["00000000-0000-4000-8000-000000000003"] })}>선택 AI 요청</button></div>,
+  CareerDocumentEditor: ({ recordId, onAiRequest }: { recordId: string; onAiRequest?: (request: { id: string; recordId: string; prompt: string; blockIds: string[] }) => void }) => <div>편집기 {recordId}<button type="button" onClick={() => onAiRequest?.({ id: "selection-request", recordId, prompt: "선택한 문장을 짧게", blockIds: ["00000000-0000-4000-8000-000000000003"] })}>선택 AI 요청</button><button type="button" onClick={() => onAiRequest?.({ id: "selection-request-B", recordId, prompt: "다음 요청 B", blockIds: ["00000000-0000-4000-8000-000000000003"] })}>다음 선택 AI 요청</button></div>,
 }));
-vi.mock("@/features/career-editor/ai/AiProposalPanel", () => ({ AiProposalPanel: ({ requestedPrompt }: { requestedPrompt?: { prompt: string } | null }) => <div>AI {requestedPrompt?.prompt}</div> }));
+vi.mock("@/features/career-editor/ai/AiProposalPanel", () => ({ AiProposalPanel: ({ requestedPrompt, onRequestHandled }: { requestedPrompt?: { id: string; prompt: string } | null; onRequestHandled?: () => void }) => { if (requestedPrompt && onRequestHandled) requestCallbacks.set(requestedPrompt.id, onRequestHandled); return <div>AI {requestedPrompt?.prompt}</div>; } }));
 vi.mock("@/features/career-editor/session/useCareerEditorSession", () => ({
   useCareerEditorSession: () => ({ snapshot: { documentVersion: 1, proposal: null }, document: { content: [] } }),
 }));
@@ -71,4 +73,15 @@ describe("DocumentPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "선택 AI 요청" }));
     expect(screen.getByText(/AI 선택한 문장을 짧게/)).toBeTruthy();
   });
+});
+
+it("keeps editor request B when the captured completion for request A arrives", () => {
+  render(<DocumentPanel record={record} category={category} onClose={() => undefined} />);
+  fireEvent.click(screen.getByRole("button", { name: "선택 AI 요청" }));
+  const completeA = requestCallbacks.get("selection-request")!;
+  fireEvent.click(screen.getByRole("button", { name: "다음 선택 AI 요청" }));
+  act(() => completeA());
+  expect(screen.getByText("AI 다음 요청 B")).toBeTruthy();
+  act(() => requestCallbacks.get("selection-request-B")!());
+  expect(screen.queryByText("AI 다음 요청 B")).toBeNull();
 });

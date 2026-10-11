@@ -33,6 +33,7 @@ import {
 } from "./repository.js";
 import { AiProposalService } from "./ai-proposals.js";
 import type { AiProposalAdapter } from "./ai-adapter.js";
+import type { ProductAiProposalIntegration,AiApplyOperationResult,AiUndoOperationResult } from "./product-ai-integration.js";
 
 type CreateRevisionInput = CareerRevision & { userId: string };
 
@@ -52,6 +53,8 @@ export interface CareerDocumentApi {
   rejectAiProposal(userId: string, recordId: string, input: unknown): Promise<void>;
   cancelAiProposal(userId: string, recordId: string, input: unknown): Promise<void>;
   undoAiProposal(userId: string, recordId: string, input: unknown): Promise<CareerDocumentBootstrap>;
+  applyAiProposalOperation?: (userId:string,recordId:string,input:unknown,key?:string)=>Promise<AiApplyOperationResult>;
+  undoAiProposalOperation?: (userId:string,recordId:string,input:unknown,key?:string)=>Promise<AiUndoOperationResult>;
   setAiProposalPublisher(publisher: (recordId: string, proposal: AiEditProposalDetail) => void): void;
   setAiUpdatePublisher(publisher: (recordId: string, updateBase64: string, serverSequence: number) => void): void;
 }
@@ -59,6 +62,8 @@ export interface CareerDocumentApi {
 export class CareerDocumentService implements CareerDocumentApi {
   private readonly repository: CareerDocumentRepository;
   private aiProposals?: AiProposalService;
+  private productAi?: ProductAiProposalIntegration;
+  private aiPublisher?: (recordId:string,proposal:AiEditProposalDetail)=>void;
 
   constructor(
     private readonly context: MongoContext,
@@ -70,8 +75,9 @@ export class CareerDocumentService implements CareerDocumentApi {
     this.repository = repository ?? new MongoCareerDocumentRepository(context);
   }
 
-  private proposalService(adapter?: AiProposalAdapter) { return this.aiProposals ??= new AiProposalService(this.context, this, adapter ?? this.aiProposalAdapter); }
-  setAiProposalPublisher(publisher: (recordId: string, proposal: AiEditProposalDetail) => void) { this.proposalService().setPublisher(publisher); }
+  private proposalService(adapter?: AiProposalAdapter) { const service=this.aiProposals ??= new AiProposalService(this.context, this, adapter ?? this.aiProposalAdapter);if(this.productAi)service.setProductWriter(this.productAi.reads);return service; }
+  setProductAiIntegration(integration:ProductAiProposalIntegration){this.productAi=integration;this.proposalService().setProductWriter(integration.reads);if(this.aiPublisher)integration.setPublisher(this.aiPublisher);}
+  setAiProposalPublisher(publisher: (recordId: string, proposal: AiEditProposalDetail) => void) { this.aiPublisher=publisher;this.proposalService().setPublisher(publisher);this.productAi?.setPublisher(publisher); }
   setAiUpdatePublisher(publisher: (recordId: string, updateBase64: string, serverSequence: number) => void) { this.proposalService().setUpdatePublisher(publisher); }
   async createPreparedAiProposal(userId: string, recordId: string, input: CreateAiEditProposal, draft: AgentEditDraft) {
     // 에이전트가 만든 명령도 기존 제안 검증과 저장 절차를 거칩니다.
@@ -79,10 +85,12 @@ export class CareerDocumentService implements CareerDocumentApi {
   }
   createAiProposal(userId: string, recordId: string, input: CreateAiEditProposal) { return this.proposalService().create(userId, recordId, input); }
   getAiProposal(userId: string, recordId: string, proposalId: string) { return this.proposalService().get(userId, recordId, proposalId); }
-  applyAiProposal(userId: string, recordId: string, input: unknown) { return this.proposalService().apply(userId, recordId, input); }
-  rejectAiProposal(userId: string, recordId: string, input: unknown) { return this.proposalService().reject(userId, recordId, input); }
-  cancelAiProposal(userId: string, recordId: string, input: unknown) { return this.proposalService().reject(userId, recordId, input, "cancelled"); }
-  undoAiProposal(userId: string, recordId: string, input: unknown) { return this.proposalService().undo(userId, recordId, input); }
+  async applyAiProposal(userId: string, recordId: string, input: unknown) { if(!this.productAi)return this.proposalService().apply(userId,recordId,input);const result=await this.productAi.applyOperation(userId,recordId,input);if(result.status!==200)throw new CareerDocumentError(503,"AI operation is pending");return result.body.data;}
+  async applyAiProposalOperation(userId:string,recordId:string,input:unknown,key?:string):Promise<AiApplyOperationResult>{return this.productAi?this.productAi.applyOperation(userId,recordId,input,key):{status:200,body:{data:await this.proposalService().apply(userId,recordId,input)}};}
+  async rejectAiProposal(userId: string, recordId: string, input: unknown) { if(this.productAi&&await this.productAi.terminate(userId,recordId,input,"rejected"))return;return this.proposalService().reject(userId,recordId,input);}
+  async cancelAiProposal(userId: string, recordId: string, input: unknown) { if(this.productAi&&await this.productAi.terminate(userId,recordId,input,"cancelled"))return;return this.proposalService().reject(userId,recordId,input,"cancelled");}
+  async undoAiProposal(userId: string, recordId: string, input: unknown) { if(this.productAi)throw new CareerDocumentError(409,"Use the AI owner operation response for Undo");return this.proposalService().undo(userId,recordId,input); }
+  async undoAiProposalOperation(userId:string,recordId:string,input:unknown,key?:string):Promise<AiUndoOperationResult>{return this.productAi?this.productAi.undoOperation(userId,recordId,input,key):{status:200,body:await this.proposalService().undo(userId,recordId,input)};}
 
   private token(userId: string, recordId: string) {
     const body = `${userId}.${recordId}.${Date.now() + 15 * 60_000}`;
@@ -142,7 +150,7 @@ export class CareerDocumentService implements CareerDocumentApi {
       }
       const documentVersion = record.documentVersion ?? snapshot.documentVersion + pending.length;
       return CareerDocumentBootstrapSchema.parse({
-        record: {
+        record: this.productAi ? await this.productAi.reads.mapRecord(record,undefined,tx.session) : {
           id: record._id,
           categoryId: record.categoryId,
           title: record.title,

@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { MongoClient } from "mongodb";
 
 import { loadMongoMigrations } from "./mongo-migrations.js";
@@ -53,10 +54,26 @@ describe("MongoDB migration sources", () => {
     expect(first.map(({ version, checksum }) => ({ version, checksum }))).toEqual(
       second.map(({ version, checksum }) => ({ version, checksum })),
     );
-    expect(first).toHaveLength(13);
+    expect(first.map(({ version }) => version)).toEqual(["0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009", "0010", "0014", "0015", "0016", "0017", "0018", "0019"]);
+    expect(first.filter(({ version }) => version === "0009" || version === "0010").map(({ version, name }) => ({ version, name }))).toEqual([
+      { version: "0009", name: "agent_conversations" },
+      { version: "0010", name: "agent_credentials" },
+    ]);
+    for (const version of ["0009", "0010"]) {
+      const source = await readFile(new URL(`./mongodb-migrations/${version}/migration.ts`, import.meta.url));
+      expect(first.find(migration => migration.version === version)?.checksum).toBe(createHash("sha256").update(source).digest("hex"));
+    }
     expect(first.every(({ checksum }) => /^[a-f0-9]{64}$/.test(checksum))).toBe(true);
     for (const migration of first) {
       expect(new Set(migration.steps.map(({ id }) => id)).size).toBe(migration.steps.length);
     }
+  });
+
+  it("preserves every migration checksum in the deployed build", async () => {
+    const source = await loadMongoMigrations();
+    const builtModule = await import(new URL("../dist/mongo-migrations.js", import.meta.url).href) as typeof import("./mongo-migrations.js");
+    const built = await builtModule.loadMongoMigrations();
+    const identity = ({ version, name, checksum }: typeof source[number]) => ({ version, name, checksum });
+    expect(built.map(identity)).toEqual(source.map(identity));
   });
 });

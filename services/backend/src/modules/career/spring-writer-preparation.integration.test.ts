@@ -21,7 +21,10 @@ describe.skipIf(!url)("B1 migration keeps current product schema editing compati
     await db.users.insertOne({ _id: userId, email: `${userId}@example.test`, displayName: "tester", planId: "aa09f35f-bde6-4e18-b9cd-7b32759bf43b", createdAt: new Date() });
     const category = await service.createCategory(userId, { key: `b1_${randomUUID().replaceAll("-", "")}`, name: "compatibility", icon: "folder", defaultView: "table", propertySchema: { requiredText: { label: "Required", type: "text", required: true, system: false } } });
     const before = await service.createRecord(userId, randomUUID(), { categoryId: category.id, title: "before", properties: { requiredText: "value" }, bodyMd: "unchanged product" });
-    await migrateMongo({ databaseUrl: url!, databaseName, migrations });
+    // 이 회귀는 B1의 0014 준비 단계까지만 검증합니다. B2 정본 준비 이후의 쓰기는 Spring facade 테스트가 검증합니다.
+    const b1Migrations = migrations.filter((migration) => Number(migration.version) <= 14);
+    expect(b1Migrations.at(-1)?.version).toBe("0014");
+    await migrateMongo({ databaseUrl: url!, databaseName, migrations: b1Migrations });
     await service.updatePropertySchema(userId, category.id, 1, {}, true);
     const after = await service.createRecord(userId, randomUUID(), { categoryId: category.id, title: "after", properties: {}, bodyMd: "" });
     expect(after.record.title).toBe("after");

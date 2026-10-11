@@ -93,3 +93,20 @@ describe("CareerEditorSession", () => {
     session.dispose();
   });
 });
+
+it("never lets an older late proposal frame replace the newest replay or live proposal",async()=>{
+ const session=new CareerEditorSession(recordId,{fetch:vi.fn(async()=>new Response(JSON.stringify(bootstrap),{status:200})),WebSocket:FakeSocket as unknown as typeof WebSocket});
+ await flush();const socket=FakeSocket.instances[0]!;socket.open();const sid=JSON.parse(socket.sent[0]!).sessionId as string;
+ const frame=(proposalId:string,createdAt:string,status="ready")=>({type:"proposal",protocolVersion:1,recordId,sessionId:sid,proposalId,createdAt,baseDocumentVersion:0,status,progress:null});
+ socket.receive(frame("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","2026-10-01T00:00:00.000Z"));
+ socket.receive(frame("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","2026-10-02T00:00:00.000Z"));
+ socket.receive(frame("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","2026-10-01T00:00:00.000Z","applied"));
+ expect(session.getSnapshot().proposal).toMatchObject({proposalId:"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",status:"ready"});
+ socket.receive(frame("cccccccc-cccc-4ccc-8ccc-cccccccccccc","2026-10-02T00:00:00.000Z"));
+ socket.receive(frame("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","2026-10-02T00:00:00.000Z","applied"));
+ expect(session.getSnapshot().proposal).toMatchObject({proposalId:"cccccccc-cccc-4ccc-8ccc-cccccccccccc",status:"ready"});
+ const legacy=frame("cccccccc-cccc-4ccc-8ccc-cccccccccccc","2026-10-02T00:00:00.000Z");const {createdAt:_createdAt,...withoutOrder}=legacy;socket.receive(withoutOrder);
+ socket.receive(frame("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","2026-10-02T00:00:00.000Z","applied"));
+ expect(session.getSnapshot().proposal).toMatchObject({proposalId:"cccccccc-cccc-4ccc-8ccc-cccccccccccc",createdAt:"2026-10-02T00:00:00.000Z",status:"ready"});
+ session.dispose();
+});

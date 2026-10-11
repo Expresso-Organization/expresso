@@ -1,16 +1,18 @@
 "use client";
 
-import type { CareerPropertyDefinitionV2, CareerPropertyValueV2, CareerRecord } from "@expresso/contracts";
+import { CareerBusinessPropertyValueSchema, CareerPropertyValueV2Schema, type CareerPropertyDefinitionV2, type CareerRecord } from "@expresso/contracts";
 import { createPortal } from "react-dom";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 import { propertyOptions } from "@/features/career-editor/properties/property-editors";
+import { CanonicalPropertyValueEditor } from "../properties/CanonicalPropertyValueEditor";
+import { canonicalCellValue, canonicalPropertyValue, canonicalReadDefinition, propertyMutationHint, type CareerCellValue } from "../properties/canonical-values";
 
 import { displayValue, rawValue } from "./view-types";
 import styles from "./views.module.css";
 
-export type TableCellValue = CareerPropertyValueV2 | null;
+export type TableCellValue = CareerCellValue;
 
 interface CellPosition { top: number; left: number; width: number }
 
@@ -18,7 +20,9 @@ function valueFor(record: CareerRecord, definition: CareerPropertyDefinitionV2):
   if (definition.key === "title") return record.title;
   if (definition.system && definition.type === "created_time") return record.createdAt ?? record.updatedAt;
   if (definition.system && definition.type === "updated_time") return record.updatedAt;
-  return rawValue(record, definition.key);
+  const value = rawValue(record, definition.key, definition);
+  if ((definition.type === "created_time" || definition.type === "updated_time") && value && typeof value === "object" && "start" in value) return value.start;
+  return value;
 }
 
 function draftValue(record: CareerRecord, definition: CareerPropertyDefinitionV2): string {
@@ -36,9 +40,10 @@ function inlineType(definition: CareerPropertyDefinitionV2): boolean {
   return ["title", "text", "number", "url", "email", "phone", "created_time", "updated_time"].includes(definition.type);
 }
 
-function toValue(definition: CareerPropertyDefinitionV2, draft: string): TableCellValue {
+function toValue(definition: CareerPropertyDefinitionV2, draft: string, record: CareerRecord): TableCellValue {
   if (!draft && !definition.required) return null;
   if (definition.type === "number") {
+    if (record.propertyValues !== undefined) return canonicalCellValue(definition, { propertyDefinitionId: definition.id, type: "number", value: draft });
     const number = Number(draft);
     if (!Number.isFinite(number)) throw new Error("숫자를 입력해 주세요.");
     return { type: "number", value: number };
@@ -46,13 +51,21 @@ function toValue(definition: CareerPropertyDefinitionV2, draft: string): TableCe
   if (definition.type === "created_time" || definition.type === "updated_time") {
     const timestamp = new Date(draft.replace(" ", "T"));
     if (Number.isNaN(timestamp.getTime())) throw new Error("YYYY-MM-DD HH:mm 형식으로 입력해 주세요.");
+    if (record.propertyValues !== undefined) {
+      const previous = canonicalPropertyValue(record, definition);
+      const timezone = previous?.type === "date" && previous.value.precision === "datetime" ? previous.value.timezone : null;
+      const start = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(draft) ? timestamp.toISOString() : draft;
+      return canonicalCellValue(definition, { propertyDefinitionId: definition.id, type: "date", value: { precision: "datetime", start, end: null, timezone } });
+    }
     return { type: definition.type, value: timestamp.toISOString() };
   }
   const type = definition.type === "title" ? "title" : definition.type === "url" ? "url" : definition.type === "email" ? "email" : definition.type === "phone" ? "phone" : "text";
-  return { type, value: draft };
+  if (record.propertyValues !== undefined && type !== "title") return CareerBusinessPropertyValueSchema.parse({ propertyDefinitionId: definition.id, type, value: draft });
+  return CareerPropertyValueV2Schema.parse({ type, value: draft });
 }
 
 function CellDisplay({ record, definition }: { record: CareerRecord; definition: CareerPropertyDefinitionV2 }) {
+  if (definition.type === "relation" && record.pendingRelationPropertyIds?.includes(definition.id)) return <span>관계 변경 적용 중</span>;
   const value = valueFor(record, definition);
   const options = propertyOptions(definition);
   const labels = new Map(options.map((option) => [option.id, option.name]));
@@ -93,7 +106,7 @@ function usePopoverPosition(open: boolean, anchorRef: React.RefObject<HTMLElemen
   return position;
 }
 
-function OptionPopout({ definition, value, anchorRef, onCommit, onClose }: { definition: CareerPropertyDefinitionV2; value: unknown; anchorRef: React.RefObject<HTMLElement | null>; onCommit(value: TableCellValue): void; onClose(): void }) {
+function OptionPopout({ definition, value, anchorRef, onCommit, onClose }: { definition: CareerPropertyDefinitionV2; value: unknown; anchorRef: React.RefObject<HTMLElement | null>; onCommit(value: TableCellValue): void; onClose(): void; onEnsureOption?(label: string): Promise<{ id: string; name: string }> }) {
   const options = propertyOptions(definition);
   const initial = definition.type === "multi_select" && Array.isArray(value) ? value.map(String) : [];
   const [selected, setSelected] = useState(new Set(initial));
@@ -132,7 +145,7 @@ function isoDate(date: Date): string {
   return new Date(date.getTime() - offset).toISOString().slice(0, 10);
 }
 
-function DatePopout({ definition, value, anchorRef, onCommit, onClose }: { definition: CareerPropertyDefinitionV2; value: unknown; anchorRef: React.RefObject<HTMLElement | null>; onCommit(value: TableCellValue): void; onClose(): void }) {
+function DatePopout({ definition, value, anchorRef, onCommit, onClose }: { definition: CareerPropertyDefinitionV2; value: unknown; anchorRef: React.RefObject<HTMLElement | null>; onCommit(value: TableCellValue): void; onClose(): void; onEnsureOption?(label: string): Promise<{ id: string; name: string }> }) {
   const range = value && typeof value === "object" && "start" in value ? value as { start: string; end?: string | null } : null;
   const initial = range?.start ? new Date(`${range.start.slice(0, 10)}T00:00:00`) : new Date();
   const [month, setMonth] = useState(new Date(initial.getFullYear(), initial.getMonth(), 1));
@@ -160,12 +173,31 @@ function DatePopout({ definition, value, anchorRef, onCommit, onClose }: { defin
   </div>, document.body);
 }
 
-export function CareerTableCell({ record, definition, active, editing, issue, cellRef, onFocus, onEdit, onCommit, onCancel, onMove, onContextMenu, onOpenRecord }: {
+function CanonicalPropertyPopout({ record, definition, anchorRef, onCommit, onClose, onEnsureOption }: { record: CareerRecord; definition: CareerPropertyDefinitionV2; anchorRef: React.RefObject<HTMLElement | null>; onCommit(value: TableCellValue): void; onClose(): void; onEnsureOption?(label: string): Promise<{ id: string; name: string }> }) {
+  const position = usePopoverPosition(true, anchorRef);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const close = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!(target instanceof Element && target.closest("[data-property-floating-layer]")) && !anchorRef.current?.contains(target) && !panelRef.current?.contains(target)) onClose();
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [anchorRef, onClose]);
+  return createPortal(<div ref={panelRef} className={styles.cellPopout} style={position ? { top: position.top, left: position.left, width: position.width } as CSSProperties : { visibility: "hidden" }} role="dialog" aria-label={definition.name + " 값 편집"}>
+    <CanonicalPropertyValueEditor definition={definition} value={canonicalPropertyValue(record, definition)} {...(onEnsureOption ? { onEnsureOption } : {})} onCommit={async (value) => onCommit(value)} />
+    <div className={styles.cellPopoutFoot}><button type="button" onClick={() => { onCommit(null); onClose(); }}>지우기</button><button type="button" onClick={onClose}>완료</button></div>
+  </div>, document.body);
+}
+
+export function CareerTableCell({ record, definition: currentDefinition, businessPending = false, active, editing: requestedEditing, issue, cellRef, onEnsureOption, onFocus, onEdit, onCommit, onCancel, onMove, onContextMenu, onOpenRecord }: {
   record: CareerRecord;
+  businessPending?: boolean;
   definition: CareerPropertyDefinitionV2;
   active: boolean;
   editing: boolean;
   issue?: string;
+  onEnsureOption?(label: string): Promise<{ id: string; name: string }>;
   cellRef(node: HTMLElement | null): void;
   onFocus(): void;
   onEdit(): void;
@@ -175,19 +207,23 @@ export function CareerTableCell({ record, definition, active, editing, issue, ce
   onContextMenu(event: React.MouseEvent<HTMLElement>): void;
   onOpenRecord(): void;
 }) {
+  const definition = canonicalReadDefinition(record, currentDefinition);
+  const mutationHint = (businessPending ? "변경 적용 중입니다. 완료 후 다시 편집할 수 있습니다." : null) || propertyMutationHint(record) || (definition.type === "relation" && record.pendingRelationPropertyIds?.includes(definition.id) ? "관계 변경을 적용하고 있습니다. 완료 후 다시 확인해 주세요." : null);
+  const editing = requestedEditing && !mutationHint;
   const anchorRef = useRef<HTMLSpanElement | null>(null);
   const [draft, setDraft] = useState(() => draftValue(record, definition));
   const [localIssue, setLocalIssue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const committedRef = useRef(false);
   const raw = valueFor(record, definition);
-  const canEdit = editable(definition);
+  const canEdit = !mutationHint && editable(definition);
+  const freeformPopup = editing && record.propertyValues !== undefined && definition.type === "multi_select" && definition.config.legacyFreeformTags === true;
   const popup = editing && (definition.type === "select" || definition.type === "multi_select" || definition.type === "date");
   useEffect(() => { if (!editing) setDraft(draftValue(record, definition)); }, [definition, editing, record]);
   useEffect(() => { if (editing) committedRef.current = false; if (editing && inlineType(definition)) queueMicrotask(() => { inputRef.current?.focus(); inputRef.current?.select(); }); }, [definition, editing]);
   function finish() {
-    if (committedRef.current) return;
-    try { committedRef.current = true; onCommit(toValue(definition, draft)); setLocalIssue(""); }
+    if (!canEdit || committedRef.current) return;
+    try { committedRef.current = true; onCommit(toValue(definition, draft, record)); setLocalIssue(""); }
     catch (error) { setLocalIssue(error instanceof Error ? error.message : "값을 확인해 주세요."); }
   }
   function keyDown(event: KeyboardEvent<HTMLElement>) {
@@ -196,14 +232,15 @@ export function CareerTableCell({ record, definition, active, editing, issue, ce
     const direction = event.key === "ArrowLeft" ? "left" : event.key === "ArrowRight" ? "right" : event.key === "ArrowUp" ? "up" : event.key === "ArrowDown" ? "down" : event.key === "Tab" ? (event.shiftKey ? "previous" : "next") : null;
     if (direction) { event.preventDefault(); event.stopPropagation(); onMove(direction); }
   }
-  return <span ref={(node) => { anchorRef.current = node; cellRef(node); }} className={styles.tableCell} role="gridcell" tabIndex={active ? 0 : -1} data-active={active ? "true" : "false"} data-editing={editing ? "true" : "false"} data-issue={issue || localIssue ? "true" : "false"} title={issue || localIssue || undefined} onFocus={onFocus} onKeyDown={keyDown} onClick={(event) => { event.stopPropagation(); if (definition.key === "title" && !editing) { onOpenRecord(); return; } if (definition.type === "checkbox" && canEdit) { onFocus(); onCommit({ type: "checkbox", value: raw !== true }); return; } if (active && canEdit) onEdit(); else onFocus(); }} onDoubleClick={(event) => { event.stopPropagation(); if (canEdit) onEdit(); }} onContextMenu={onContextMenu}>
+  return <span ref={(node) => { anchorRef.current = node; cellRef(node); }} className={styles.tableCell} role="gridcell" aria-readonly={!canEdit} tabIndex={active ? 0 : -1} data-active={active ? "true" : "false"} data-editing={editing ? "true" : "false"} data-issue={issue || localIssue ? "true" : "false"} title={issue || localIssue || mutationHint || undefined} onFocus={onFocus} onKeyDown={keyDown} onClick={(event) => { event.stopPropagation(); if (definition.key === "title" && !editing) { onOpenRecord(); return; } if (definition.type === "checkbox" && canEdit) { onFocus(); onCommit({ type: "checkbox", value: raw !== true }); return; } if (active && canEdit) onEdit(); else onFocus(); }} onDoubleClick={(event) => { event.stopPropagation(); if (canEdit) onEdit(); }} onContextMenu={onContextMenu}>
     {editing && inlineType(definition) ? <input ref={inputRef} className={styles.cellInput} aria-label={`${definition.name} 셀 편집`} type="text" inputMode={definition.type === "number" ? "decimal" : undefined} value={draft} onChange={(event) => { setDraft(event.target.value); setLocalIssue(""); }} onBlur={finish} onKeyDown={(event) => {
       event.stopPropagation();
       if (event.key === "Escape") { event.preventDefault(); onCancel(); return; }
       if (event.key === "Enter" || event.key === "Tab") { event.preventDefault(); finish(); if (event.key === "Tab") onMove(event.shiftKey ? "previous" : "next"); }
     }} /> : <CellDisplay record={record} definition={definition} />}
     {active && definition.key === "title" && !editing ? <button type="button" className={styles.cellOpenButton} onClick={(event) => { event.stopPropagation(); onOpenRecord(); }}><Icon name="arrow-square-out" size={13} />열기</button> : null}
-    {popup && (definition.type === "select" || definition.type === "multi_select") ? <OptionPopout definition={definition} value={raw} anchorRef={anchorRef} onCommit={onCommit} onClose={onCancel} /> : null}
-    {popup && definition.type === "date" ? <DatePopout definition={definition} value={raw} anchorRef={anchorRef} onCommit={onCommit} onClose={onCancel} /> : null}
+    {popup && !freeformPopup && (definition.type === "select" || definition.type === "multi_select") ? <OptionPopout definition={definition} value={raw} anchorRef={anchorRef} onCommit={onCommit} onClose={onCancel} /> : null}
+    {freeformPopup ? <CanonicalPropertyPopout record={record} definition={definition} anchorRef={anchorRef} onCommit={onCommit} onClose={onCancel} {...(onEnsureOption ? { onEnsureOption } : {})} /> : null}
+    {popup && definition.type === "date" ? record.propertyValues !== undefined && (canonicalPropertyValue(record, definition)?.type !== "date" || (canonicalPropertyValue(record, definition) as Extract<NonNullable<ReturnType<typeof canonicalPropertyValue>>, { type: "date" }>).value.precision !== "day") ? <CanonicalPropertyPopout record={record} definition={definition} anchorRef={anchorRef} onCommit={onCommit} onClose={onCancel} /> : <DatePopout definition={definition} value={raw} anchorRef={anchorRef} onCommit={(next) => onCommit(record.propertyValues !== undefined && next?.type === "date" ? canonicalCellValue(definition, { propertyDefinitionId: definition.id, type: "date", value: { precision: "day", start: next.value.start, end: next.value.end } }) : next)} onClose={onCancel} /> : null}
   </span>;
 }

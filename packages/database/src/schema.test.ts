@@ -17,12 +17,18 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
 
   it("creates every product collection and preserves the seeded IDs and all 30 additional designs", async () => {
     const names = (await mongo.listCollections({}, { nameOnly: true }).toArray()).map(item => item.name);
-    expect(names).toHaveLength(88);
+    expect(names).toHaveLength(91);
     expect(names).toContain("agent_conversations");
     expect(names).toContain("agent_credentials");
     expect(await collections.plans.countDocuments()).toBe(3);
     expect((await collections.plans.findOne({ code: "free" }))?._id).toBe("aa09f35f-bde6-4e18-b9cd-7b32759bf43b");
     expect(await collections.careerCategories.countDocuments({ isSystem: true })).toBe(7);
+    const systemCategories = await collections.careerCategories.find({ isSystem: true }).toArray();
+    for (const category of systemCategories) {
+      expect(category.schemaVersion).toBe(category.version);
+      expect(category.propertySchemaV2?.map(definition => definition.id)).toEqual(Object.values(category.propertySchema).map(definition => definition.id));
+      for (const definition of category.propertySchemaV2 ?? []) if (category.propertySchema[definition.key]?.type === "tags") expect(definition.config).toEqual({ legacyFreeformTags: true, options: [] });
+    }
     expect(await collections.scheduledJobDefinitions.countDocuments()).toBe(8);
     expect(await collections.templates.countDocuments()).toBe(33);
     for (let i = 1; i <= 30; i++) {
@@ -34,7 +40,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await collections.plans.updateOne({ code: "free" }, { $set: { generationQuota: 17 } });
     const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     expect(result.applied).toEqual([]);
-    expect(result.existing).toEqual(["0001_initial_collections","0002_generation_ledger_amount_constraint","0003_analytics_rate_and_notification_preferences","0004_job_import_metadata","0005_job_source_ats_providers","0006_career_record_editor","0007_job_source_boards","0008_career_view_configurations","0009_agent_conversations","0010_agent_credentials","0014_career_business_writer_preparation","0015_career_property_mutation_preparation","0016_career_producer_preparation"]);
+    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_agent_conversations", "0010_agent_credentials", "0014_career_business_writer_preparation", "0015_career_property_mutation_preparation", "0016_career_producer_preparation", "0017_career_canonical_preparation", "0018_career_relation_property_mutation_preparation", "0019_career_product_owner_preparation"]);
     expect((await collections.plans.findOne({ code: "free" }))?.generationQuota).toBe(17);
   });
 

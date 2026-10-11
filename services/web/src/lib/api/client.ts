@@ -1,4 +1,4 @@
-import { ApiErrorResponseSchema, type ErrorCode } from "@expresso/contracts";
+import { ApiErrorResponseSchema, CareerWriteOperationResponseSchema, type CareerWriteOperation, type CareerWriteOperationResponse, type ErrorCode } from "@expresso/contracts";
 import type { z } from "zod";
 
 export const API_BASE_URL =
@@ -123,4 +123,16 @@ async function toApiError(response: Response): Promise<ApiError> {
       requestId,
     });
   }
+}
+
+/** 실제 202만 미완료 작업으로 읽고 기존 완료 응답 계약은 그대로 검증합니다. */
+export async function requestWithPendingOperation<TSchema extends z.ZodType>(path: string, schema: TSchema, options: RequestOptions, producer: CareerWriteOperation["producer"]): Promise<z.infer<TSchema> | CareerWriteOperationResponse> {
+  const response = await fetchRaw(path, options);
+  const body: unknown = await response.json();
+  if (response.status === 202) {
+    const operation = CareerWriteOperationResponseSchema.parse(body);
+    if (operation.data.producer !== producer || !["pending", "running", "retry"].includes(operation.data.state)) throw new Error("invalid pending owner operation");
+    return operation;
+  }
+  return schema.parse(body);
 }

@@ -17,7 +17,7 @@ const OFFERED: Record<string, readonly CareerViewConfiguration["type"][]> = {
 const SPECIAL: Record<string, string> = { skill_tool: "수요 비교", academic_writing: "인용 지표" };
 type ToolbarMenu = "filter" | "sort" | "properties";
 
-export function ViewToolbar({ category, view, onChange, onCreate, onAiCreate, onDuplicate }: { category: CareerCategory; view: CareerViewConfiguration; onChange(next: CareerViewConfiguration): Promise<void>; onCreate(): void; onAiCreate(): void; onDuplicate(): Promise<void> }) {
+export function ViewToolbar({ category, view, onChange, onCreate, onAiCreate, onDuplicate, createPending = false }: { category: CareerCategory; view: CareerViewConfiguration; onChange(next: CareerViewConfiguration): Promise<void>; onCreate(): void; onAiCreate(): void; onDuplicate(): Promise<void>; createPending?: boolean }) {
   const [activeMenu, setActiveMenu] = useState<ToolbarMenu | null>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const definitions = (category.propertySchemaV2 ?? []).filter((item) => item.deletedAt === null);
@@ -68,8 +68,8 @@ export function ViewToolbar({ category, view, onChange, onCreate, onAiCreate, on
       <button type="button" onClick={() => toggleMenu("sort")} aria-expanded={activeMenu === "sort"} aria-controls="career-sort-popover"><Icon name="sort-ascending" size={12} />정렬</button>
       <button type="button" onClick={() => toggleMenu("properties")} aria-expanded={activeMenu === "properties"} aria-controls="career-properties-popover"><Icon name="sliders-horizontal" size={12} />속성</button>
       <span className={styles.createSplit}>
-        <button type="button" onClick={onCreate}>새로 만들기</button>
-        <button type="button" onClick={onAiCreate}><Icon name="coffee" size={12} />AI로 만들기</button>
+        <button type="button" disabled={createPending} onClick={onCreate}>새로 만들기</button>
+        <button type="button" disabled={createPending} onClick={onAiCreate}><Icon name="coffee" size={12} />AI로 만들기</button>
       </span>
     </div>
 

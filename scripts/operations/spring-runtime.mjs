@@ -12,6 +12,7 @@ const environmentKeys = new Set([
   'MONGODB_DATABASE', 'MONGODB_REPLICA_SET', 'CAREER_WRITER_ENABLED',
   'CAREER_INTEGRATION_ENABLED', 'CAREER_WRITER_MOVE_SECRET',
   'CAREER_INTEGRATION_AI_SECRET', 'CAREER_INTEGRATION_INTERVIEW_SECRET',
+  'CAREER_PRODUCT_SERVICE_SECRET', 'CAREER_PROPERTY_MUTATION_ENABLED', 'CAREER_PROPERTY_MUTATION_SECRET',
 ]);
 
 // systemd와 함께 읽을 수 있는 단순한 대입만 허용하고 셸로 실행하지 않습니다.
@@ -86,10 +87,20 @@ export function validateEnvironment(env) {
   } catch { throw new Error('MONGODB_URL must be a valid MongoDB URI'); }
   if (mongo.query.getAll('replicaSet').length !== 1 || mongo.query.get('replicaSet') !== replicaSet) throw new Error('MONGODB_URL must name the configured replicaSet');
   if (mongo.database && mongo.database !== database) throw new Error('Mongo URI database must match MONGODB_DATABASE');
-  for (const key of ['CAREER_WRITER_ENABLED', 'CAREER_INTEGRATION_ENABLED']) {
-    if ((env[key] ?? 'false') !== 'false') throw new Error(`${key} must be false for this deployment preparation`);
-  }
-  return { bindAddress, port, writerEnabled: false, integrationEnabled: false };
+  const flag = key => {
+    const value = env[key] ?? 'false';
+    if (value !== 'true' && value !== 'false') throw new Error(`${key} must be true or false`);
+    return value === 'true';
+  };
+  const writerEnabled = flag('CAREER_WRITER_ENABLED'), integrationEnabled = flag('CAREER_INTEGRATION_ENABLED');
+  const mutationEnabled = flag('CAREER_PROPERTY_MUTATION_ENABLED');
+  if ((integrationEnabled || mutationEnabled) && !writerEnabled) throw new Error('Career integration and property mutation require CAREER_WRITER_ENABLED=true');
+  const requiredSecrets = writerEnabled ? ['CAREER_WRITER_MOVE_SECRET'] : [];
+  if (integrationEnabled) requiredSecrets.push('CAREER_INTEGRATION_AI_SECRET','CAREER_INTEGRATION_INTERVIEW_SECRET','CAREER_PRODUCT_SERVICE_SECRET');
+  if (mutationEnabled) requiredSecrets.push('CAREER_PROPERTY_MUTATION_SECRET');
+  for (const key of requiredSecrets) if (typeof env[key] !== 'string' || Buffer.byteLength(env[key],'utf8') < 32) throw new Error(`${key} must contain at least 32 UTF-8 bytes`);
+  if (new Set(requiredSecrets.map(key=>env[key])).size !== requiredSecrets.length) throw new Error('Career service actor and move secrets must be distinct');
+  return { bindAddress, port, writerEnabled, integrationEnabled };
 }
 
 function absolute(value, name) {

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { CareerViewConfigurationSchema, type CareerCategory, type CareerPropertyDefinitionV2 } from "@expresso/contracts";
 import { describe, expect, it } from "vitest";
+import { Decimal128 } from "mongodb";
 
 import { CareerViewQuery } from "./view-query.js";
 
@@ -52,7 +53,7 @@ function view(overrides: Record<string, unknown> = {}) {
 
 describe("career saved view pipeline compiler", () => {
   it("compiles nested filters with escaped regex, null placement and stable _id tie-break", () => {
-    const compiled = new CareerViewQuery().compile(category, view());
+    const compiled = new CareerViewQuery({ source: "legacy" }).compile(category, view());
     const serialized = JSON.stringify(compiled.pipeline);
     expect(serialized).toContain("결제\\\\.\\\\*");
     expect(serialized).toContain("__careerViewNull0");
@@ -64,7 +65,7 @@ describe("career saved view pipeline compiler", () => {
   it("uses saved record order when no property sort is active", () => {
     const first = randomUUID();
     const second = randomUUID();
-    const compiled = new CareerViewQuery().compile(category, view({ sorts: [], recordOrder: [second, first] }));
+    const compiled = new CareerViewQuery({ source: "legacy" }).compile(category, view({ sorts: [], recordOrder: [second, first] }));
     const serialized = JSON.stringify(compiled.pipeline);
     expect(serialized).toContain("__careerViewManualOrder");
     expect(serialized).toContain(second);
@@ -73,35 +74,35 @@ describe("career saved view pipeline compiler", () => {
   });
 
   it("rejects a deleted property and a filter tree above the global limit", () => {
-    expect(() => new CareerViewQuery().compile(category, view({ visiblePropertyIds: [ids.deleted] }))).toThrow(/deleted or foreign/);
+    expect(() => new CareerViewQuery({ source: "legacy" }).compile(category, view({ visiblePropertyIds: [ids.deleted] }))).toThrow(/deleted or foreign/);
     const leaves = Array.from({ length: 11 }, () => ({ propertyId: ids.score, operator: "eq" as const, operand: { type: "number" as const, value: 1 } }));
-    expect(() => new CareerViewQuery().compile(category, view({ filter: { operator: "and", filters: [{ operator: "or", filters: leaves }, { operator: "or", filters: leaves }] } }))).toThrow(/filter limit/);
+    expect(() => new CareerViewQuery({ source: "legacy" }).compile(category, view({ filter: { operator: "and", filters: [{ operator: "or", filters: leaves }, { operator: "or", filters: leaves }] } }))).toThrow(/filter limit/);
   });
 
   it("rejects operators and operands that do not match the property type", () => {
-    expect(() => new CareerViewQuery().compile(category, view({ filter: { propertyId: ids.score, operator: "contains", operand: { type: "number", value: 1 } } }))).toThrow(/operator/);
-    expect(() => new CareerViewQuery().compile(category, view({ filter: { propertyId: ids.score, operator: "eq", operand: { type: "text", value: "1" } } }))).toThrow(/operand type/);
+    expect(() => new CareerViewQuery({ source: "legacy" }).compile(category, view({ filter: { propertyId: ids.score, operator: "contains", operand: { type: "number", value: 1 } } }))).toThrow(/operator/);
+    expect(() => new CareerViewQuery({ source: "legacy" }).compile(category, view({ filter: { propertyId: ids.score, operator: "eq", operand: { type: "text", value: "1" } } }))).toThrow(/operand type/);
   });
 
   it("maps migrated legacy property IDs when v2 definitions are not materialized yet", () => {
     const legacyCategory = { ...category, propertySchemaV2: undefined };
-    expect(new CareerViewQuery().compile(legacyCategory, view({
+    expect(new CareerViewQuery({ source: "legacy" }).compile(legacyCategory, view({
       visiblePropertyIds: [ids.score], propertyOrder: [ids.score], groupPropertyId: null,
       gallery: null, board: null, filter: { propertyId: ids.score, operator: "gte", operand: { type: "number", value: 0 } },
     })).projectionKeys).toEqual(["score"]);
   });
 
   it("queries user-defined timestamps from properties and system timestamps from record metadata", () => {
-    const custom = new CareerViewQuery().compile(category, view({ sorts: [{ propertyId: ids.customTime, direction: "asc", nulls: "last" }], visiblePropertyIds: [ids.customTime], propertyOrder: [ids.customTime], groupPropertyId: null, gallery: null, board: null }));
+    const custom = new CareerViewQuery({ source: "legacy" }).compile(category, view({ sorts: [{ propertyId: ids.customTime, direction: "asc", nulls: "last" }], visiblePropertyIds: [ids.customTime], propertyOrder: [ids.customTime], groupPropertyId: null, gallery: null, board: null }));
     expect(custom.projectionKeys).toContain("custom_time");
     expect(JSON.stringify(custom.pipeline)).toContain("custom_time");
-    const system = new CareerViewQuery().compile(category, view({ sorts: [{ propertyId: ids.systemTime, direction: "asc", nulls: "last" }], visiblePropertyIds: [ids.systemTime], propertyOrder: [ids.systemTime], groupPropertyId: null, gallery: null, board: null }));
+    const system = new CareerViewQuery({ source: "legacy" }).compile(category, view({ sorts: [{ propertyId: ids.systemTime, direction: "asc", nulls: "last" }], visiblePropertyIds: [ids.systemTime], propertyOrder: [ids.systemTime], groupPropertyId: null, gallery: null, board: null }));
     expect(system.projectionKeys).not.toContain("system_time");
     expect(JSON.stringify(system.pipeline)).toContain("$updatedAt");
   });
 
   it("keeps signed cursor bindings opaque and rejects a tampered cursor", () => {
-    const compiler = new CareerViewQuery();
+    const compiler = new CareerViewQuery({ source: "legacy" });
     const compiled = compiler.compile(category, view());
     const userId = randomUUID();
     const viewId = randomUUID();
@@ -109,5 +110,31 @@ describe("career saved view pipeline compiler", () => {
     const decoded = compiler.decodeCursor(cursor, { userId, viewId, viewVersion: 1 });
     expect(decoded.values).toHaveLength(compiled.sortParts.length);
     expect(() => compiler.decodeCursor(`${cursor}x`, { userId: decoded.userId, viewId: decoded.viewId, viewVersion: 1 })).toThrow(/invalid/);
+  });
+});
+describe("canonical Career view compiler", () => {
+  it("queries the canonical array by stable definition IDs without a legacy value fallback", () => {
+    const compiled = new CareerViewQuery().compile(category, view());
+    expect(JSON.stringify(compiled.pipeline)).toContain("$propertyValues");
+    expect(JSON.stringify(compiled.pipeline)).toContain(ids.score);
+    expect(compiled.pipeline.find((stage) => "$project" in stage)?.$project).toMatchObject({ userId: 1, propertyValues: 1 });
+  });
+  it("derives canonical relation queries from owned forward and inverse edges", () => {
+    const relationId = randomUUID();
+    const relationCategory = { ...category, propertySchemaV2: [...category.propertySchemaV2!, definition(relationId, "related", "relation", 8)] };
+    const configured = view({ filter: { propertyId: relationId, operator: "contains", operand: { type: "relation", value: [{ recordId: ids.title, title: "copied title" }] } }, sorts: [], visiblePropertyIds: [relationId], propertyOrder: [relationId], groupPropertyId: null, gallery: null, board: null });
+    expect(JSON.stringify(new CareerViewQuery().compile(relationCategory, configured).pipeline)).toContain("career_record_relations");
+  });
+  it("rejects an inexact decimal operand rather than rounding it", () => {
+    const configured = view({ filter: null });
+    expect(() => new CareerViewQuery().compile(category, { ...configured, filter: { propertyId: ids.score, operator: "eq", operand: { type: "number", value: "1".repeat(35) } } })).toThrow(/invalid career view decimal operand/);
+  });
+  it("preserves BSON Decimal128 cursor values across signed round trips", () => {
+    const compiler = new CareerViewQuery();
+    const value = Decimal128.fromString("9007199254740993123456789012345678");
+    const cursor = compiler.encodeCursor({ userId: ids.category, viewId: ids.title, viewVersion: 1, expiresAt: Date.now() + 10_000, values: [0, value, ids.score], id: ids.score });
+    const decoded = compiler.decodeCursor(cursor, { userId: ids.category, viewId: ids.title, viewVersion: 1 });
+    expect(decoded.values[1]).toBeInstanceOf(Decimal128);
+    expect(String(decoded.values[1])).toBe(value.toString());
   });
 });

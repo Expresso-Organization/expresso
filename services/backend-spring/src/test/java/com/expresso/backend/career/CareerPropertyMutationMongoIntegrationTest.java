@@ -185,6 +185,7 @@ class CareerPropertyMutationMongoIntegrationTest {
         assertTrue(swapped.get());assertEquals(before,stored());assertEquals(0,db.getCollection("outbox_events").countDocuments());assertEquals(0,db.getCollection("career_property_mutation_receipts").countDocuments());assertEquals(id(99),db.getCollection("career_property_mutations").find().first().getString("leaseToken"));
     }
     @Test void b1TrashAndRestorePublishTargetStateInvalidationAtomically() {
+        db.getCollection("career_property_mutations").updateMany(new Document(),new Document("$set",new Document("status","completed").append("active",false).append("cursor",1).append("processedCount",1).append("completedAt",new Date())));
         var commands=new CareerCommandService(repository,Clock.systemUTC(),new CareerMoveTokens("test-secret-".repeat(4)));var actor=repository.authenticate(TOKEN);var before=stored();
         commands.trash(actor,RID,1);var trashed=stored();assertNotNull(trashed.getDate("deletedAt"));assertEquals(2L,trashed.getLong("version"));
         var trashEvent=db.getCollection("outbox_events").find(new Document("topic","career.computation.target-state")).first();assertNotNull(trashEvent);
@@ -198,6 +199,7 @@ class CareerPropertyMutationMongoIntegrationTest {
         assertThrows(CareerCommandException.class,()->commands.restore(actor,RID,2));assertEquals(2,db.getCollection("outbox_events").countDocuments());
     }
     @Test void targetStateInvalidationFailureRollsBackBothLifecycleDirections() {
+        db.getCollection("career_property_mutations").updateMany(new Document(),new Document("$set",new Document("status","completed").append("active",false).append("cursor",1).append("processedCount",1).append("completedAt",new Date())));
         var commands=new CareerCommandService(repository,Clock.systemUTC(),new CareerMoveTokens("test-secret-".repeat(4)));var actor=repository.authenticate(TOKEN);
         var info=db.listCollections().filter(new Document("name","outbox_events")).first();var validator=info.get("options",Document.class).get("validator",Document.class);
         var reject=new Document("$jsonSchema",new Document("bsonType","object").append("required",List.of("intentionally_missing")));var before=stored();

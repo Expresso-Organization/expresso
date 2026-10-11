@@ -1,11 +1,19 @@
 "use client";
 
-import type { CareerCategory, CareerPropertyDefinitionV2, CareerPropertyValueV2, CareerRecord, CareerRecordListItem, CareerViewConfiguration } from "@expresso/contracts";
+import { CareerCategoriesResponseSchema, CareerRecordResponseSchema, CareerRecordSchema, type CareerCategory, type CreateCareerRecord, type CareerPropertyDefinitionV2, type CareerProductPropertyValues, type CareerRecord, type CareerRecordListItem, type CareerViewConfiguration, type CareerWriteOperation } from "@expresso/contracts";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { DocumentPanel } from "@/app/(app)/career/[categorySlug]/DocumentPanel";
+import { parseCareerRecordWrite, patchCareerRecord, readCareerRecord, RECORD_WRITE_HINT, RECORD_WRITE_PENDING_EVENT, recordWriteScope } from "../write-operations/record-write-client";
+import { WriteOperationStatus } from "../write-operations/WriteOperationStatus";
+import type { PendingRecordWrite } from "../write-operations/usePendingRecordWrite";
+import { clearDurableWriteKeys, durableWriteKey, saveOperation, savedOperation } from "../write-operations/write-operation-client";
 import { Icon } from "@/components/ui/Icon";
+import { applyCareerCellValue, canonicalPropertyDelta, canonicalReadDefinition, compareDateStrings, compareDecimalStrings, propertyMutationHint, type CareerCellValue } from "../properties/canonical-values";
+import { ensureCareerPropertyOption,withCareerPropertyOption } from "../properties/option-registration";
+import { PropertyMutationNotice } from "../properties/PropertyMutationNotice";
+import { readPropertyMutationJson, resumeCareerPropertyMutation, waitForCareerPropertyMutation } from "../properties/property-mutation-client";
 import type { AiPromptRequest } from "@/features/career-editor/ai/AiProposalPanel";
 
 import { AiRecordInterview, type AiInterviewResult } from "./AiRecordInterview";
@@ -19,11 +27,12 @@ import { ViewToolbar } from "./ViewToolbar";
 import { displayValue, propertyKey, rawValue } from "./view-types";
 import styles from "./views.module.css";
 
+interface CellWriteRequest { version: number; patch: unknown }
 export interface CareerViewPage { data: CareerRecord[]; page: { hasNextPage: boolean; nextCursor: string | null } }
-export interface CareerViewShellProps { category: CareerCategory; initialView: CareerViewConfiguration; initialPage: CareerViewPage }
+export interface CareerViewShellProps { category: CareerCategory; initialView: CareerViewConfiguration; initialPage: CareerViewPage; onResumePropertyMutation?(jobId: string): Promise<void>; onEnsureOption?(definition: CareerPropertyDefinitionV2, label: string): Promise<{ id: string; name: string }> }
 
 function listItem(record: CareerRecord): CareerRecordListItem {
-  return { ...record, categoryKey: "", isEmpty: record.title === "" && record.bodyMd === "" && Object.keys(record.properties).length === 0, periodFrom: null, periodTo: null, linkCount: 0, usedInCount: 0 };
+  return { ...record, categoryKey: "", isEmpty: record.title === "" && record.bodyMd === "" && (record.propertyValues !== undefined ? record.propertyValues.length === 0 : Object.keys(record.properties).length === 0), periodFrom: null, periodTo: null, linkCount: 0, usedInCount: 0 };
 }
 
 const BLURB: Record<string, string> = {
@@ -65,12 +74,17 @@ function sortedRecords(records: CareerRecordListItem[], view: CareerViewConfigur
   return [...records].sort((left, right) => {
     for (const sort of view.sorts) {
       const key = propertyKey(category, sort.propertyId);
-      const leftValue = comparable(key === "title" ? left.title : key ? rawValue(left, key) : null);
-      const rightValue = comparable(key === "title" ? right.title : key ? rawValue(right, key) : null);
+      const leftValue = comparable(key === "title" ? left.title : key ? rawValue(left, key, category) : null);
+      const rightValue = comparable(key === "title" ? right.title : key ? rawValue(right, key, category) : null);
       if (leftValue === rightValue) continue;
       if (leftValue === null) return sort.nulls === "first" ? -1 : 1;
       if (rightValue === null) return sort.nulls === "first" ? 1 : -1;
-      const result = typeof leftValue === "number" && typeof rightValue === "number" ? leftValue - rightValue : String(leftValue).localeCompare(String(rightValue), "ko");
+      const definition = category.propertySchemaV2?.find((item) => item.id === sort.propertyId);
+      const leftType = definition ? canonicalReadDefinition(left, definition).type : undefined;
+      const rightType = definition ? canonicalReadDefinition(right, definition).type : undefined;
+      const decimal = leftType === "number" && rightType === "number" && (left.propertyValues !== undefined || right.propertyValues !== undefined) && /^-?\d+(?:\.\d+)?$/.test(String(leftValue)) && /^-?\d+(?:\.\d+)?$/.test(String(rightValue));
+      const date = ["date", "created_time", "updated_time"].includes(leftType ?? "") && ["date", "created_time", "updated_time"].includes(rightType ?? "") && (left.propertyValues !== undefined || right.propertyValues !== undefined);
+      const result = decimal ? compareDecimalStrings(String(leftValue), String(rightValue)) : date ? compareDateStrings(String(leftValue), String(rightValue)) : typeof leftValue === "number" && typeof rightValue === "number" ? leftValue - rightValue : String(leftValue).localeCompare(String(rightValue), "ko");
       if (result) return sort.direction === "asc" ? result : -result;
     }
     return 0;
@@ -85,8 +99,9 @@ function matchesSavedFilter(record: CareerRecordListItem, filter: unknown, categ
   }
   if (!("propertyId" in filter) || !("operator" in filter)) return true;
   const leaf = filter as { propertyId: string; operator: string; operand?: unknown };
+  if(record.pendingRelationPropertyIds?.includes(leaf.propertyId))return false;
   const key = propertyKey(category, leaf.propertyId);
-  const actual = key === "title" ? record.title : key ? rawValue(record, key) : null;
+  const actual = key === "title" ? record.title : key ? rawValue(record, key, category) : null;
   const actualLabel = displayValue(actual);
   const operand = comparable(leaf.operand);
   const value = comparable(actual);
@@ -96,18 +111,34 @@ function matchesSavedFilter(record: CareerRecordListItem, filter: unknown, categ
     const included = String(value ?? "").includes(String(operand ?? ""));
     return leaf.operator === "contains" ? included : !included;
   }
-  if (leaf.operator === "eq" || leaf.operator === "neq") return leaf.operator === "eq" ? value === operand : value !== operand;
+  const currentDefinition = category.propertySchemaV2?.find((item) => item.id === leaf.propertyId);
+  const definition = currentDefinition ? canonicalReadDefinition(record, currentDefinition) : undefined;
+  let comparison: number | null = null;
+  if (record.propertyValues !== undefined && value !== null && operand !== null) {
+    if (definition?.type === "number" && /^-?\d+(?:\.\d+)?$/.test(String(value)) && /^-?\d+(?:\.\d+)?$/.test(String(operand))) comparison = compareDecimalStrings(String(value), String(operand));
+    else if (["date", "created_time", "updated_time"].includes(definition?.type ?? "")) comparison = compareDateStrings(String(value), String(operand));
+  }
+  if (leaf.operator === "eq" || leaf.operator === "neq") {
+    const equal = comparison === null ? value === operand : comparison === 0;
+    return leaf.operator === "eq" ? equal : !equal;
+  }
   if (value === null || operand === null) return false;
-  if (leaf.operator === "gt") return value > operand;
-  if (leaf.operator === "gte") return value >= operand;
-  if (leaf.operator === "lt") return value < operand;
-  if (leaf.operator === "lte") return value <= operand;
+  if (leaf.operator === "gt") return comparison === null ? value > operand : comparison > 0;
+  if (leaf.operator === "gte") return comparison === null ? value >= operand : comparison >= 0;
+  if (leaf.operator === "lt") return comparison === null ? value < operand : comparison < 0;
+  if (leaf.operator === "lte") return comparison === null ? value <= operand : comparison <= 0;
   return true;
 }
 
-export function CareerViewShell({ category: initialCategory, initialView, initialPage }: CareerViewShellProps) {
+export function CareerViewShell({ category: initialCategory, initialView, initialPage, onEnsureOption, onResumePropertyMutation }: CareerViewShellProps) {
   const router = useRouter();
   const [category, setCategory] = useState(initialCategory);
+  useEffect(() => setCategory(initialCategory), [initialCategory]);
+  const registerOption = useCallback(async (definition: CareerPropertyDefinitionV2, label: string) => {
+    const option = onEnsureOption ? await onEnsureOption(definition,label) : await ensureCareerPropertyOption(initialCategory.id,definition.id,label);
+    setCategory(previous => withCareerPropertyOption(previous,definition.id,option));
+    return option;
+  },[initialCategory.id,onEnsureOption]);
   const [view, setView] = useState(initialView);
   const [records, setRecords] = useState(() => initialPage.data.map(listItem));
   const [page, setPage] = useState(initialPage.page);
@@ -120,9 +151,48 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
   const [cellIssues, setCellIssues] = useState<Map<string, string>>(new Map());
   const recordsRef = useRef(records);
   const recordQueues = useRef(new Map<string, Promise<void>>());
-  const pendingCells = useRef(new Map<string, { recordId: string; definition: CareerPropertyDefinitionV2; value: CareerPropertyValueV2 | null; revision: number }>());
-  const failedCells = useRef(new Map<string, { recordId: string; definition: CareerPropertyDefinitionV2; value: CareerPropertyValueV2 | null }>());
+  const pendingCells = useRef(new Map<string, { recordId: string; definition: CareerPropertyDefinitionV2; value: CareerCellValue; revision: number; request?: CellWriteRequest }>());
+  const failedCells = useRef(new Map<string, { recordId: string; definition: CareerPropertyDefinitionV2; value: CareerCellValue; request?: CellWriteRequest }>());
   const revision = useRef(0);
+  const categoryContext = useRef(category.id); categoryContext.current = category.id;
+  const mutationPoll = useRef<AbortController | null>(null);
+  useEffect(() => () => { mutationPoll.current?.abort(); }, [category.id]);
+  const createScope = "career-category:" + category.id + ":create";
+  const [pendingCreate, setPendingCreate] = useState<PendingRecordWrite | null>(null);
+  const [creating, setCreating] = useState(false);
+  const creatingRef = useRef(false);
+  const createContinuation = useRef<{ open?: boolean; onCreated?(record: CareerRecordListItem): void; resolve?(record: CareerRecordListItem | null): void } | null>(null);
+  const [pendingWrites, setPendingWrites] = useState<Map<string, PendingRecordWrite>>(new Map());
+  const [savingRecords, setSavingRecords] = useState<Set<string>>(new Set());
+  const savingRecordsRef = useRef(new Set<string>());
+  const staleBusinessRecords = useRef(new Set<string>());
+
+  useEffect(() => {
+    const operationId = savedOperation(createScope);
+    setPendingCreate(operationId ? { operationId } : null);
+    createContinuation.current = null;
+  }, [createScope]);
+  useEffect(() => {
+    setPendingWrites(previous => {
+      let next = previous;
+      for (const record of records) {
+        const operationId = savedOperation(recordWriteScope(record.id));
+        if (operationId && !previous.has(record.id)) {
+          if (next === previous) next = new Map(previous);
+          next.set(record.id, { operationId });
+        }
+      }
+      return next;
+    });
+  }, [records]);
+  useEffect(() => {
+    const receive = (event: Event) => {
+      const detail = (event as CustomEvent<{ recordId: string; operation: CareerWriteOperation }>).detail;
+      if (recordsRef.current.some(record => record.id === detail.recordId)) setPendingWrites(previous => new Map(previous).set(detail.recordId, { operationId: detail.operation.operationId, initial: detail.operation }));
+    };
+    window.addEventListener(RECORD_WRITE_PENDING_EVENT, receive);
+    return () => window.removeEventListener(RECORD_WRITE_PENDING_EVENT, receive);
+  }, []);
 
   useEffect(() => { recordsRef.current = records; }, [records]);
 
@@ -132,43 +202,34 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
     setRecords(next);
   }, []);
 
-  function applyCell(record: CareerRecordListItem, definition: CareerPropertyDefinitionV2, value: CareerPropertyValueV2 | null): CareerRecordListItem {
-    if (definition.key === "title") return { ...record, title: value?.type === "title" ? value.value : "" };
-    const properties = { ...record.properties };
-    if (value === null) delete properties[definition.key];
-    else properties[definition.key] = value;
-    return { ...record, properties };
+  function applyCell(record: CareerRecordListItem, definition: CareerPropertyDefinitionV2, value: CareerCellValue): CareerRecordListItem {
+    return applyCareerCellValue(record, definition, value);
   }
-
   function applyPending(record: CareerRecordListItem): CareerRecordListItem {
+    if (record.pendingPropertyMutation) return record;
     let next = record;
     for (const pending of pendingCells.current.values()) if (pending.recordId === record.id) next = applyCell(next, pending.definition, pending.value);
     return next;
   }
 
-  async function saveCell(pending: { recordId: string; definition: CareerPropertyDefinitionV2; value: CareerPropertyValueV2 | null; revision: number }) {
+  async function saveCell(pending: { recordId: string; definition: CareerPropertyDefinitionV2; value: CareerCellValue; revision: number; request?: CellWriteRequest }) {
     const key = `${pending.recordId}:${pending.definition.id}`;
-    async function attempt(base: CareerRecordListItem, retry: boolean): Promise<CareerRecordListItem> {
+    let attemptedRequest: CellWriteRequest | undefined;
+    async function attempt(base: CareerRecordListItem): Promise<CareerRecordListItem | null> {
+      const hint = propertyMutationHint(base);
+      if (hint) throw new Error(hint);
       const optimistic = applyPending(base);
-      const body = pending.definition.key === "title"
-        ? { title: optimistic.title }
-        : { properties: optimistic.properties };
-      const response = await fetch(`/api/career/records/${pending.recordId}`, { method: "PATCH", headers: { "content-type": "application/json", "if-match": `"v${base.version}"` }, body: JSON.stringify(body) });
-      if ((response.status === 409 || response.status === 412) && retry) {
-        const latestResponse = await fetch(`/api/career/records/${pending.recordId}`);
-        if (!latestResponse.ok) throw new Error("최신 기록을 불러오지 못했습니다.");
-        const latestPayload = await latestResponse.json() as { data: CareerRecord };
-        return attempt(listItem(latestPayload.data), false);
-      }
-      if (!response.ok) throw new Error(response.status === 409 || response.status === 412 ? "다른 곳에서 바뀐 값과 충돌했습니다." : "값을 저장하지 못했습니다.");
-      const payload = await response.json() as { data: CareerRecord };
-      return listItem(payload.data);
+      const body = pending.request?.patch ?? (pending.definition.key === "title" ? { title: optimistic.title }
+        : base.propertyValues !== undefined ? { propertyValues: canonicalPropertyDelta(pending.definition, pending.value) } : { properties: optimistic.properties });
+      attemptedRequest = { version: pending.request?.version ?? base.version, patch: body };
+      const result = await patchCareerRecord(pending.recordId, attemptedRequest.version, attemptedRequest.patch);
+      return result.kind === "completed" ? listItem(result.record) : null;
     }
-
     const base = recordsRef.current.find((record) => record.id === pending.recordId);
     if (!base) return;
     try {
-      const saved = await attempt(base, true);
+      const saved = await attempt(base);
+      if (!saved) return;
       if (pendingCells.current.get(key)?.revision === pending.revision) pendingCells.current.delete(key);
       failedCells.current.delete(key);
       setCellIssues((current) => { if (!current.has(key)) return current; const next = new Map(current); next.delete(key); return next; });
@@ -176,20 +237,25 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
     } catch (error) {
       if (pendingCells.current.get(key)?.revision !== pending.revision) return;
       pendingCells.current.delete(key);
-      failedCells.current.set(key, { recordId: pending.recordId, definition: pending.definition, value: pending.value });
+      failedCells.current.set(key, { recordId: pending.recordId, definition: pending.definition, value: pending.value, ...(attemptedRequest ? { request: attemptedRequest } : {}) });
       const message = error instanceof Error ? error.message : "값을 저장하지 못했습니다.";
       setCellIssues((current) => new Map(current).set(key, message));
       const latestResponse = await fetch(`/api/career/records/${pending.recordId}`).catch(() => null);
       if (latestResponse?.ok) {
-        const latestPayload = await latestResponse.json() as { data: CareerRecord };
-        replaceRecords((current) => current.map((record) => record.id === pending.recordId ? applyPending(listItem(latestPayload.data)) : record));
+        const latestPayload = await parseCareerRecordWrite(latestResponse, pending.recordId);
+        if (latestPayload.kind === "completed") replaceRecords((current) => current.map((record) => record.id === pending.recordId ? applyPending(listItem(latestPayload.record)) : record));
       }
     }
   }
 
-  const commitCell = useCallback(async (recordId: string, definition: CareerPropertyDefinitionV2, value: CareerPropertyValueV2 | null) => {
+  const commitCell = useCallback(async (recordId: string, definition: CareerPropertyDefinitionV2, value: CareerCellValue, request?: CellWriteRequest) => {
+    const record = recordsRef.current.find((item) => item.id === recordId);
+    const hint = record ? propertyMutationHint(record) || (savingRecordsRef.current.has(recordId) || savedOperation(recordWriteScope(recordId)) ? RECORD_WRITE_HINT : null) : null;
+    if (hint) { setMessage(hint); return; }
     const key = `${recordId}:${definition.id}`;
-    const pending = { recordId, definition, value, revision: ++revision.current };
+    savingRecordsRef.current.add(recordId);
+    setSavingRecords(new Set(savingRecordsRef.current));
+    const pending = { recordId, definition, value, revision: ++revision.current, ...(request ? { request } : {}) };
     pendingCells.current.set(key, pending);
     failedCells.current.delete(key);
     setCellIssues((current) => { if (!current.has(key)) return current; const next = new Map(current); next.delete(key); return next; });
@@ -197,15 +263,15 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
     const previous = recordQueues.current.get(recordId) ?? Promise.resolve();
     const queued = previous.catch(() => undefined).then(() => saveCell(pending));
     recordQueues.current.set(recordId, queued);
-    await queued;
+    try { await queued; } finally { savingRecordsRef.current.delete(recordId); setSavingRecords(new Set(savingRecordsRef.current)); }
   }, [replaceRecords]);
 
   const retryCell = useCallback((recordId: string, propertyId: string) => {
     const failed = failedCells.current.get(`${recordId}:${propertyId}`);
-    if (failed) void commitCell(failed.recordId, failed.definition, failed.value);
+    if (failed) void commitCell(failed.recordId, failed.definition, failed.value, failed.request);
   }, [commitCell]);
 
-  const visibleRecords = useMemo(() => sortedRecords(records.filter((record) => matchesSavedFilter(record, view.filter, category) && matchesQuickFilter(record, category.key, quickFilter)), view, category), [category, quickFilter, records, view]);
+  const visibleRecords = useMemo(() => sortedRecords(records.filter((record) => matchesSavedFilter(record, view.filter, category) && matchesQuickFilter(record, category.key, quickFilter, category)), view, category), [category, quickFilter, records, view]);
   const active = records.find((record) => record.id === activeId) ?? null;
   const focusId = activeId && visibleRecords.some((record) => record.id === activeId) ? activeId : visibleRecords[0]?.id ?? null;
   const common = {
@@ -221,26 +287,108 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
     onToggle: (id: string) => setSelected((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; }),
     onViewChange: (next: CareerViewConfiguration) => void updateView(next),
     onCellCommit: commitCell,
+    onEnsureOption: registerOption,
     onCellRetry: retryCell,
     onDuplicateRecord: duplicateRecord,
     onDeleteRecord: deleteRecord,
     cellIssues,
+    pendingBusinessRecordIds: new Set([...pendingWrites.keys(), ...savingRecords]),
   };
 
-  async function create(draft: { title?: string; bodyMd?: string; properties?: Record<string, unknown> } = {}, options: { open?: boolean } = {}): Promise<CareerRecordListItem | null> {
-    const response = await fetch("/api/career/records", { method: "POST", headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() }, body: JSON.stringify({ categoryId: category.id, title: draft.title ?? "", properties: draft.properties ?? {}, bodyMd: draft.bodyMd ?? "" }) });
-    if (!response.ok) { setMessage("기록을 만들지 못했습니다."); return null; }
-    const payload = await response.json() as { data: CareerRecord };
-    const item = listItem(payload.data);
-    replaceRecords((current) => [item, ...current]);
+  function acceptCreated(record: CareerRecord, options: { open?: boolean; onCreated?(record: CareerRecordListItem): void }) {
+    if (record.categoryId !== categoryContext.current) throw new Error("기록 응답이 요청한 카테고리와 일치하지 않습니다.");
+    const item = listItem(record);
+    replaceRecords(current => [item, ...current.filter(existing => existing.id !== item.id)]);
     if (options.open !== false) setActiveId(item.id);
+    options.onCreated?.(item);
     return item;
   }
-
+  async function create(draft: { title?: string; bodyMd?: string; properties?: Record<string, unknown>; propertyValues?: CareerProductPropertyValues; initialRelations?: CreateCareerRecord["initialRelations"] } = {}, options: { open?: boolean; onCreated?(record: CareerRecordListItem): void } = {}): Promise<CareerRecordListItem | null> {
+    if (creatingRef.current || savedOperation(createScope)) { setMessage(RECORD_WRITE_HINT); return null; }
+    const categoryId = category.id;
+    creatingRef.current = true; setCreating(true);
+    const body = { categoryId, title: draft.title ?? "", ...(draft.propertyValues !== undefined ? { propertyValues: draft.propertyValues } : { properties: draft.properties ?? {} }), bodyMd: draft.bodyMd ?? "", ...(draft.initialRelations?.length ? { initialRelations: draft.initialRelations } : {}) };
+    try {
+      const key = await durableWriteKey(createScope, body);
+      const response = await fetch("/api/career/records", { method: "POST", headers: { "content-type": "application/json", "idempotency-key": key }, body: JSON.stringify(body) });
+      const result = await parseCareerRecordWrite(response);
+      if (categoryContext.current !== categoryId) return null;
+      if (result.kind !== "completed") {
+        saveOperation(createScope, result.operation.operationId);
+        setPendingCreate({ operationId: result.operation.operationId, initial: result.operation });
+        if (result.kind === "blocked") return null;
+        return await new Promise<CareerRecordListItem | null>(resolve => { createContinuation.current = { ...options, resolve }; });
+      }
+      const item = acceptCreated(result.record, options);
+      clearDurableWriteKeys(createScope);
+      return item;
+    } catch (error) { if (categoryContext.current === categoryId) setMessage(error instanceof Error ? error.message : "기록을 만들지 못했습니다."); return null; }
+    finally { creatingRef.current = false; if (categoryContext.current === categoryId) setCreating(false); }
+  }
+  async function completeCreate(operation: CareerWriteOperation) {
+    if (!operation.recordId) throw new Error("완료된 기록을 확인하지 못했습니다.");
+    const categoryId = category.id;
+    const fresh = await readCareerRecord(operation.recordId);
+    if (categoryContext.current !== categoryId) return;
+    const continuation = createContinuation.current;
+    const item = acceptCreated(fresh, continuation ?? {});
+    continuation?.resolve?.(item);
+    createContinuation.current = null;
+    saveOperation(createScope, null);
+    clearDurableWriteKeys(createScope);
+    setPendingCreate(null);
+  }
+  async function refreshBusinessRecord(recordId: string) {
+    const categoryId = category.id;
+    staleBusinessRecords.current.add(recordId);
+    savingRecordsRef.current.add(recordId);
+    setSavingRecords(new Set(savingRecordsRef.current));
+    try {
+      const fresh = await readCareerRecord(recordId);
+      if (fresh.categoryId !== categoryId) throw new Error("기록 응답이 요청한 카테고리와 일치하지 않습니다.");
+      const categoriesResponse = await fetch("/api/career/categories", { cache: "no-store" });
+      if (!categoriesResponse.ok) throw new Error("최신 카테고리를 불러오지 못했습니다.");
+      const freshCategory = CareerCategoriesResponseSchema.parse(await categoriesResponse.json()).data.find(item => item.id === categoryId);
+      if (!freshCategory) throw new Error("카테고리를 찾을 수 없습니다.");
+      if (categoryContext.current !== categoryId) return;
+      replaceRecords(current => current.map(record => record.id === recordId && record.version <= fresh.version ? { ...record, ...listItem(fresh), pendingPropertyMutation: fresh.pendingPropertyMutation, pendingRelationPropertyIds: fresh.pendingRelationPropertyIds } : record));
+      setCategory(previous => previous.version <= freshCategory.version ? freshCategory : previous);
+      staleBusinessRecords.current.delete(recordId);
+      setMessage(previous => previous === RECORD_WRITE_HINT ? "" : previous);
+    } finally {
+      savingRecordsRef.current.delete(recordId);
+      setSavingRecords(new Set(savingRecordsRef.current));
+    }
+  }
+  async function completeRecordWrite(recordId: string) {
+    const fresh = await readCareerRecord(recordId);
+    for (const [key, pending] of pendingCells.current) if (pending.recordId === recordId) pendingCells.current.delete(key);
+    for (const [key, pending] of failedCells.current) if (pending.recordId === recordId) failedCells.current.delete(key);
+    replaceRecords(current => current.map(record => record.id === recordId ? { ...record, ...listItem(fresh), pendingPropertyMutation: fresh.pendingPropertyMutation, pendingRelationPropertyIds: fresh.pendingRelationPropertyIds } : record));
+    saveOperation(recordWriteScope(recordId), null);
+    setPendingWrites(previous => { const next = new Map(previous); next.delete(recordId); return next; });
+  }
   async function duplicateRecord(recordId: string): Promise<CareerRecordListItem | null> {
-    const source = recordsRef.current.find((record) => record.id === recordId);
+    let source = recordsRef.current.find((record) => record.id === recordId);
     if (!source) return null;
-    return create({ title: source.title ? `${source.title} 복제` : "", bodyMd: source.bodyMd, properties: source.properties }, { open: false });
+    if (savingRecordsRef.current.has(recordId) || savedOperation(recordWriteScope(recordId))) { setMessage(RECORD_WRITE_HINT); return null; }
+    if (staleBusinessRecords.current.has(recordId)) {
+      try { await refreshBusinessRecord(recordId); }
+      catch (error) { setMessage(error instanceof Error ? error.message : "최신 기록을 불러오지 못했습니다."); return null; }
+      source = recordsRef.current.find(record => record.id === recordId);
+      if (!source || staleBusinessRecords.current.has(recordId)) return null;
+    }
+    if (source.pendingRelationPropertyIds?.length) {
+      setMessage("관계 변경이 완료된 뒤 기록을 복제할 수 있습니다."); return null;
+    }
+    if (source.pendingPropertyMutation) { setMessage("속성 변경이 완료된 뒤 기록을 복제할 수 있습니다."); return null; }
+    const initialRelations = (category.propertySchemaV2 ?? []).filter(definition => definition.deletedAt === null && definition.type === "relation").flatMap(definition => {
+      const value = source.properties[definition.key];
+      return value && typeof value === "object" && "type" in value && value.type === "relation" && "value" in value && Array.isArray(value.value)
+        ? [{ propertyId: definition.id, targetIds: value.value.map(target => target.recordId) }] : [];
+    });
+    return create({ title: source.title ? source.title + " 복제" : "", bodyMd: source.bodyMd,
+      ...(source.propertyValues !== undefined ? { propertyValues: source.propertyValues, initialRelations } : { properties: source.properties }) }, { open: false });
   }
 
   async function deleteRecord(recordId: string): Promise<void> {
@@ -257,8 +405,7 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
     setInterview(null);
     if (!current) return;
     if (current.mode === "create") {
-      const item = await create({ title: result.title, bodyMd: result.bodyMd });
-      if (item) setAiRequest({ id: crypto.randomUUID(), recordId: item.id, prompt: result.prompt, displayPrompt: `인터뷰 답변으로 ${category.name} 기록 정리` });
+      await create({ title: result.title, bodyMd: result.bodyMd }, { onCreated: item => setAiRequest({ id: crypto.randomUUID(), recordId: item.id, prompt: result.prompt, displayPrompt: `인터뷰 답변으로 ${category.name} 기록 정리` }) });
       return;
     }
     if (!current.targetId) return;
@@ -284,13 +431,58 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
   }
 
   async function bulkStatus(status: CareerRecord["status"]) {
-    for (const record of records.filter((item) => selected.has(item.id))) {
-      const response = await fetch(`/api/career/records/${record.id}`, { method: "PATCH", headers: { "content-type": "application/json", "if-match": `"v${record.version}"` }, body: JSON.stringify({ status }) });
-      if (response.ok) { const payload = await response.json() as { data: CareerRecord }; setRecords((current) => current.map((item) => item.id === record.id ? { ...item, ...payload.data } : item)); }
+    for (const record of records.filter(item => selected.has(item.id))) {
+      if (record.pendingPropertyMutation || savingRecordsRef.current.has(record.id) || savedOperation(recordWriteScope(record.id))) continue;
+      savingRecordsRef.current.add(record.id); setSavingRecords(new Set(savingRecordsRef.current));
+      try {
+        const result = await patchCareerRecord(record.id, record.version, { status });
+        if (result.kind === "completed") replaceRecords(current => current.map(item => item.id === record.id ? { ...item, ...result.record } : item));
+      } catch (error) { setMessage(error instanceof Error ? error.message : "상태를 저장하지 못했습니다."); }
+      finally { savingRecordsRef.current.delete(record.id); setSavingRecords(new Set(savingRecordsRef.current)); }
     }
     setSelected(new Set());
   }
-
+  async function observePropertyMutation(jobId: string, resume = false) {
+    const categoryId = category.id, controller = new AbortController();
+    mutationPoll.current?.abort();
+    mutationPoll.current = controller;
+    try {
+      if (resume) {
+        if (onResumePropertyMutation) await onResumePropertyMutation(jobId);
+        else await resumeCareerPropertyMutation(jobId, controller.signal);
+      }
+      if (controller.signal.aborted || categoryContext.current !== categoryId) return;
+      const status = await waitForCareerPropertyMutation(jobId, categoryId, { signal: controller.signal, onStatus: result => {
+        if (result.status === "completed" || controller.signal.aborted || categoryContext.current !== categoryId) return;
+        replaceRecords(current => current.map(record => record.pendingPropertyMutation?.jobId === jobId ? { ...record, pendingPropertyMutation: { ...record.pendingPropertyMutation, status: result.status as "pending" | "running" | "failed", retryable: result.retryable } } : record));
+      } });
+      const freshCategory = CareerCategoriesResponseSchema.parse(await readPropertyMutationJson("/api/career/categories", controller.signal, "최신 카테고리를 불러오지 못했습니다.")).data.find((item) => item.id === categoryId);
+      if (!freshCategory) throw new Error("카테고리를 찾을 수 없습니다.");
+      if (controller.signal.aborted || categoryContext.current !== categoryId) return;
+      if (view.id.startsWith("local-")) {
+        const affected = recordsRef.current.filter((record) => record.pendingPropertyMutation?.jobId === jobId);
+        const fresh = await Promise.all(affected.map(async (record) => {
+          const result = CareerRecordResponseSchema.parse(await readPropertyMutationJson("/api/career/records/" + record.id, controller.signal, "최신 기록을 불러오지 못했습니다.")).data;
+          if (result.id !== record.id || result.categoryId !== categoryId) throw new Error("기록 응답이 요청과 일치하지 않습니다.");
+          return listItem(result);
+        }));
+        if (controller.signal.aborted || categoryContext.current !== categoryId) return;
+        replaceRecords((current) => current.map((record) => record.pendingPropertyMutation?.jobId === jobId ? fresh.find((item) => item.id === record.id && record.version <= item.version) ?? record : record));
+      } else {
+        const result = await readPropertyMutationJson("/api/career/view-configurations/" + view.id + "/query?limit=50", controller.signal, "최신 뷰를 불러오지 못했습니다.") as CareerViewPage;
+        if (controller.signal.aborted || categoryContext.current !== categoryId) return;
+        replaceRecords(() => result.data.map((record) => listItem(CareerRecordSchema.parse(record))));
+        setPage(result.page);
+      }
+      setCategory(previous => previous.version <= freshCategory.version ? freshCategory : previous);
+      if (status.status === "failed") throw new Error("속성 변경이 다시 중단되었습니다. 작업 상태를 확인해 주세요.");
+    } catch (error) {
+      if (!controller.signal.aborted && categoryContext.current === categoryId) throw error;
+    } finally {
+      controller.abort();
+      if (mutationPoll.current === controller) mutationPoll.current = null;
+    }
+  }
   async function more() {
     if (!page.nextCursor || view.id.startsWith("local-")) return;
     const response = await fetch(`/api/career/view-configurations/${view.id}/query?cursor=${encodeURIComponent(page.nextCursor)}&limit=50`);
@@ -306,14 +498,17 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
     <main className={styles.viewArea}>
       <div className={styles.categoryIntro}><span className={styles.categoryIcon}><Icon name={CATEGORY_ICON[category.key] ?? "file-text"} weight="fill" size={18} /></span><h1>{category.name}</h1><span className={styles.caret} aria-hidden="true" /></div>
       <p className={styles.categoryBlurb}>{BLURB[category.key] ?? "이 카테고리의 기록입니다."}</p>
-      <ViewToolbar category={category} view={view} onChange={updateView} onCreate={() => void create()} onAiCreate={() => setInterview({ mode: "create" })} onDuplicate={duplicate} />
-      {records.length ? <QuickFilterBar records={records} categoryKey={category.key} value={quickFilter} onChange={setQuickFilter} /> : null}
-      {selected.size ? <div className={styles.bulk} role="toolbar" aria-label="선택한 기록 작업"><span>{selected.size}개 선택</span><button onClick={() => void bulkStatus("draft")}>초안</button><button onClick={() => void bulkStatus("organized")}>정리됨</button><button onClick={() => void bulkStatus("verified")}>검증됨</button></div> : null}
+      <ViewToolbar category={category} view={view} createPending={creating || !!pendingCreate} onChange={updateView} onCreate={() => void create()} onAiCreate={() => setInterview({ mode: "create" })} onDuplicate={duplicate} />
+      {records.length ? <QuickFilterBar records={records} category={category} categoryKey={category.key} value={quickFilter} onChange={setQuickFilter} /> : null}
+      {selected.size ? <div className={styles.bulk} role="toolbar" aria-label="선택한 기록 작업"><span>{selected.size}개 선택</span><button disabled={records.some((record) => selected.has(record.id) && (!!record.pendingPropertyMutation || pendingWrites.has(record.id) || savingRecords.has(record.id)))} onClick={() => void bulkStatus("draft")}>초안</button><button disabled={records.some((record) => selected.has(record.id) && (!!record.pendingPropertyMutation || pendingWrites.has(record.id) || savingRecords.has(record.id)))} onClick={() => void bulkStatus("organized")}>정리됨</button><button disabled={records.some((record) => selected.has(record.id) && (!!record.pendingPropertyMutation || pendingWrites.has(record.id) || savingRecords.has(record.id)))} onClick={() => void bulkStatus("verified")}>검증됨</button></div> : null}
+      {[...new Map(records.filter((record) => record.pendingPropertyMutation).map((record) => [record.pendingPropertyMutation!.jobId, record])).values()].map((record) => <PropertyMutationNotice key={record.pendingPropertyMutation!.jobId} record={record} onResumePropertyMutation={jobId => observePropertyMutation(jobId, true)} onCheckPropertyMutation={observePropertyMutation} />)}
+      {pendingCreate ? <WriteOperationStatus operationId={pendingCreate.operationId} initial={pendingCreate.initial} scope={createScope} producer="career-product" onCompleted={completeCreate} /> : null}
+      {[...pendingWrites].map(([recordId, pending]) => <WriteOperationStatus key={recordId} operationId={pending.operationId} initial={pending.initial} scope={recordWriteScope(recordId)} producer="career-product" recordId={recordId} onCompleted={() => completeRecordWrite(recordId)} />)}
       {message ? <p role="status" className={styles.message}>{message}</p> : null}
       {visibleRecords.length ? renderer : <div className={styles.emptyFilter}><strong>조건에 맞는 기록이 없습니다.</strong><button type="button" onClick={() => setQuickFilter("all")}>전체 기록 보기</button></div>}
       {page.hasNextPage ? <button className={styles.more} onClick={() => void more()}>더 보기</button> : null}
     </main>
-    <DocumentPanel record={active} category={category} onClose={() => setActiveId(null)} aiRequest={aiRequest?.recordId === active?.id ? aiRequest : null} onAiRequestHandled={() => setAiRequest(null)} {...(active ? { onExpand: () => router.push(`/career/records/${active.id}` as never) } : {})} />
+    <DocumentPanel onApplied={refreshBusinessRecord} record={active} category={category} onClose={() => setActiveId(null)} aiRequest={aiRequest?.recordId === active?.id ? aiRequest : null} onAiRequestHandled={() => setAiRequest(current => current?.id === aiRequest?.id ? null : current)} {...(active ? { onExpand: () => router.push(`/career/records/${active.id}` as never) } : {})} />
     {interview ? <AiRecordInterview mode={interview.mode} categoryName={category.name} recordTitle={records.find((record) => record.id === interview.targetId)?.title ?? ""} onCancel={() => setInterview(null)} onComplete={(result) => void completeInterview(result)} /> : null}
   </div>;
 }

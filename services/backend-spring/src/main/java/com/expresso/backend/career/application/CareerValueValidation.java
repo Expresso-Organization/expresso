@@ -12,8 +12,13 @@ public final class CareerValueValidation {
                 .collect(Collectors.toMap(PropertyDefinition::id, d -> d));
         for (var value : values) {
             var definition = definitions.get(value.propertyDefinitionId());
-            if (definition == null || !definition.type().writable()
-                    || !definition.type().wireName().equals(value.type().wireName())) {
+            // 사용자 정의 시각은 단일 datetime date 값으로 보존하며 시스템 시각은 읽기 전용입니다.
+            var customTimestamp = definition != null && !definition.system()
+                    && (definition.type() == PropertyDefinitionType.CREATED_TIME || definition.type() == PropertyDefinitionType.UPDATED_TIME);
+            var timestampMatches = value instanceof DatePropertyValue date
+                    && date.precision() == DatePropertyValue.Precision.DATETIME && date.end() == null;
+            if (definition == null || (customTimestamp ? !timestampMatches
+                    : !definition.type().writable() || !definition.type().wireName().equals(value.type().wireName()))) {
                 throw new IllegalArgumentException("category의 활성 writable definition과 값이 일치하지 않습니다");
             }
             List<String> ids = value instanceof SelectPropertyValue select

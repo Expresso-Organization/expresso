@@ -4,11 +4,11 @@ import java.util.*;
 import com.expresso.backend.career.domain.*;
 
 public record PatchCareerBusinessCommand(Optional<String> title, Optional<PropertyDelta> propertyValues,
-                                        Optional<CareerRecordStatus> status) {
+                                        Optional<CareerRecordStatus> status,Optional<List<CareerRelationTargets>> relations) {
+    public PatchCareerBusinessCommand(Optional<String> title,Optional<PropertyDelta> values,Optional<CareerRecordStatus> status){this(title,values,status,Optional.empty());}
     public PatchCareerBusinessCommand {
-        Objects.requireNonNull(title); Objects.requireNonNull(propertyValues); Objects.requireNonNull(status);
-        if(title.isEmpty() && propertyValues.isEmpty() && status.isEmpty()) throw new IllegalArgumentException("빈 PATCH입니다");
-        if(status.isPresent() && (title.isPresent() || propertyValues.isPresent())) throw new IllegalArgumentException("status는 별도 PATCH입니다");
+        Objects.requireNonNull(title); Objects.requireNonNull(propertyValues); Objects.requireNonNull(status);Objects.requireNonNull(relations);relations=relations.map(CareerRelationTargets::validate);
+        if(title.isEmpty() && propertyValues.isEmpty() && status.isEmpty() && relations.isEmpty()) throw new IllegalArgumentException("빈 PATCH입니다");
     }
     public record PropertyDelta(List<PropertyValue> set, List<String> unsetPropertyIds) {
         public PropertyDelta {

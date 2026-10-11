@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.*;
 import tools.jackson.databind.JsonNode;
 import com.expresso.backend.career.application.CreateCareerBusinessCommand;
+import com.expresso.backend.career.application.CareerRelationTargets;
 import com.expresso.backend.career.application.PatchCareerBusinessCommand;
 import com.expresso.backend.career.domain.*;
 
@@ -27,17 +28,17 @@ public final class CareerBusinessInput {
         if(version>CareerRecord.MAX_VERSION) throw new IllegalArgumentException("If-Match 범위 오류입니다"); return version;
     }
     public static CreateCareerBusinessCommand create(JsonNode input) {
-        fields(input,Set.of("categoryId","title","propertyValues"),Set.of("categoryId"));
-        var category=uuid(input.get("categoryId"));
+        fields(input,Set.of("categoryId","title","propertyValues","initialRelations"),Set.of("categoryId"));
+        var category=uuid(input.get("categoryId"));var initial=input.has("initialRelations")?relations(input.get("initialRelations")):List.<CareerRelationTargets>of();
         if(input.has("title")) {
             if(!input.has("propertyValues")) throw new IllegalArgumentException("duplicate에는 propertyValues가 필요합니다");
-            return new CreateCareerBusinessCommand(category,text(input.get("title")),values(input.get("propertyValues")),CreateCareerBusinessCommand.Mode.DUPLICATE);
+            return new CreateCareerBusinessCommand(category,text(input.get("title")),values(input.get("propertyValues")),CreateCareerBusinessCommand.Mode.DUPLICATE,initial);
         }
-        if(input.has("propertyValues")) return new CreateCareerBusinessCommand(category,"",values(input.get("propertyValues")),CreateCareerBusinessCommand.Mode.GROUPED);
-        return CreateCareerBusinessCommand.empty(category);
+        if(input.has("propertyValues")) return new CreateCareerBusinessCommand(category,"",values(input.get("propertyValues")),CreateCareerBusinessCommand.Mode.GROUPED,initial);
+        return new CreateCareerBusinessCommand(category,"",List.of(),CreateCareerBusinessCommand.Mode.EMPTY,initial);
     }
     public static PatchCareerBusinessCommand patch(JsonNode input) {
-        fields(input,Set.of("title","propertyValues","status"),Set.of());
+        fields(input,Set.of("title","propertyValues","status","relations"),Set.of());
         Optional<PatchCareerBusinessCommand.PropertyDelta> delta=Optional.empty();
         if(input.has("propertyValues")) {
             var value=input.get("propertyValues");
@@ -45,7 +46,11 @@ public final class CareerBusinessInput {
             delta=Optional.of(new PatchCareerBusinessCommand.PropertyDelta(values(value.get("set")),ids(value.get("unsetPropertyIds"),50)));
         }
         return new PatchCareerBusinessCommand(input.has("title")?Optional.of(text(input.get("title"))):Optional.empty(),delta,
-                input.has("status")?Optional.of(CareerRecordStatus.fromWireName(text(input.get("status")))):Optional.empty());
+                input.has("status")?Optional.of(CareerRecordStatus.fromWireName(text(input.get("status")))):Optional.empty(),input.has("relations")?Optional.of(relations(input.get("relations"))):Optional.empty());
+    }
+    public static List<CareerRelationTargets> relations(JsonNode input) {
+        if(input==null||!input.isArray()||input.size()>50)throw new IllegalArgumentException("관계 definition 배열은 최대 50개입니다");var result=new ArrayList<CareerRelationTargets>();
+        for(var relation:input){fields(relation,Set.of("propertyId","targetIds"),Set.of("propertyId","targetIds"));result.add(new CareerRelationTargets(uuid(relation.get("propertyId")),ids(relation.get("targetIds"),1000)));}return CareerRelationTargets.validate(result);
     }
     public static List<PropertyValue> values(JsonNode input) {
         if(input==null || !input.isArray() || input.size()>50) throw new IllegalArgumentException("값 배열은 최대 50개입니다");

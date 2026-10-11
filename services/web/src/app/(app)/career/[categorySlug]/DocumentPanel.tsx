@@ -21,6 +21,7 @@ export function DocumentPanel({
   onExpand,
   aiRequest,
   onAiRequestHandled,
+  onApplied,
 }: {
   record: CareerRecordListItem | null;
   category: CareerCategory;
@@ -28,11 +29,21 @@ export function DocumentPanel({
   onExpand?: () => void;
   aiRequest?: AiPromptRequest | null | undefined;
   onAiRequestHandled?: (() => void) | undefined;
+  onApplied?: ((recordId: string) => void | Promise<void>) | undefined;
 }) {
   const [width, setWidth] = useState(DEFAULT_PANEL_WIDTH);
   const [visibleRecord, setVisibleRecord] = useState(record);
   const [resizing, setResizing] = useState(false);
   const [editorAiRequest, setEditorAiRequest] = useState<AiPromptRequest | null>(null);
+  const [retainedAiRecords, setRetainedAiRecords] = useState<Set<string>>(new Set());
+  const handleActiveWriteChange = useCallback((recordId: string, active: boolean) => {
+    setRetainedAiRecords(current => {
+      if (current.has(recordId) === active) return current;
+      const next = new Set(current);
+      if (active) next.add(recordId); else next.delete(recordId);
+      return next;
+    });
+  }, []);
   const drag = useRef<{ pointerId: number; startX: number; startWidth: number } | null>(null);
   const panelRecord = record ?? visibleRecord;
 
@@ -44,7 +55,7 @@ export function DocumentPanel({
   const requestedPrompt = editorAiRequest ?? aiRequest;
   const handleAiRequest = () => {
     if (requestedPrompt?.id === aiRequest?.id) onAiRequestHandled?.();
-    setEditorAiRequest(null);
+    setEditorAiRequest(current => current?.id === requestedPrompt?.id ? null : current);
   };
 
   const clampWidth = useCallback((next: number) => {
@@ -137,7 +148,11 @@ export function DocumentPanel({
           </div>
 
           <div className={styles.foot}>
-            <DocumentPanelAiDock key={panelRecord.id} recordId={panelRecord.id} category={category} aiRequest={requestedPrompt} onAiRequestHandled={handleAiRequest} />
+            {[...new Set([panelRecord.id, ...retainedAiRecords])].map(recordId => (
+              <div key={recordId} hidden={recordId !== panelRecord.id}>
+                <DocumentPanelAiDock recordId={recordId} category={category} aiRequest={recordId === panelRecord.id ? requestedPrompt : null} onAiRequestHandled={recordId === panelRecord.id ? handleAiRequest : undefined} onApplied={onApplied} onActiveWriteChange={handleActiveWriteChange} />
+              </div>
+            ))}
           </div>
         </>
       ) : null}
@@ -145,9 +160,11 @@ export function DocumentPanel({
   );
 }
 
-function DocumentPanelAiDock({ recordId, category, aiRequest, onAiRequestHandled }: { recordId: string; category: CareerCategory; aiRequest?: AiPromptRequest | null | undefined; onAiRequestHandled?: (() => void) | undefined }) {
+function DocumentPanelAiDock({ recordId, category, aiRequest, onAiRequestHandled, onApplied, onActiveWriteChange }: { recordId: string; category: CareerCategory; aiRequest?: AiPromptRequest | null | undefined; onAiRequestHandled?: (() => void) | undefined; onApplied?: ((recordId: string) => void | Promise<void>) | undefined; onActiveWriteChange(recordId: string, active: boolean): void }) {
   const { snapshot, document } = useCareerEditorSession(recordId);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  return <AiProposalPanel recordId={recordId} documentVersion={snapshot.documentVersion} selectedBlockIds={mounted && document?.content[0]?.id ? [document.content[0].id] : []} announcedProposal={mounted ? snapshot.proposal : null} requestedPrompt={mounted ? aiRequest : null} onRequestHandled={onAiRequestHandled} document={mounted ? document : null} definitions={category.propertySchemaV2 ?? []} />;
+  const handleApplied = useCallback(() => onApplied?.(recordId), [onApplied, recordId]);
+  const handleActiveWrite = useCallback((active: boolean) => onActiveWriteChange(recordId, active), [onActiveWriteChange, recordId]);
+  return <AiProposalPanel onApplied={handleApplied} onActiveWriteChange={handleActiveWrite} recordId={recordId} documentVersion={snapshot.documentVersion} selectedBlockIds={mounted && document?.content[0]?.id ? [document.content[0].id] : []} announcedProposal={mounted ? snapshot.proposal : null} requestedPrompt={mounted ? aiRequest : null} onRequestHandled={onAiRequestHandled} document={mounted ? document : null} definitions={category.propertySchemaV2 ?? []} />;
 }

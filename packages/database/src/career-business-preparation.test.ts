@@ -16,7 +16,7 @@ describe.skipIf(!url)("Career business forward preparation", () => {
 
   it("extends existing 0001-0008 history without changing checksums or rejecting legacy creates", async () => {
     const migrations = await loadMongoMigrations();
-    expect(migrations.map((item) => item.version)).toEqual(["0001","0002","0003","0004","0005","0006","0007","0008","0009","0010","0014","0015","0016"]);
+    expect(migrations.map((item) => item.version)).toEqual(["0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009", "0010", "0014", "0015", "0016", "0017", "0018", "0019"]);
     const options = { databaseUrl: url!, databaseName: name };
     await migrateMongo({ ...options, migrations: migrations.slice(0, 8) });
     const history = await db.collection("schema_migrations").find({}).sort({ _id: 1 }).toArray();
@@ -30,7 +30,23 @@ describe.skipIf(!url)("Career business forward preparation", () => {
     await expect(records.insertOne({ ...legacy, _id: randomUUID(), propertyValues: [{ propertyDefinitionId: randomUUID(), type: "number", value: "12.500" }] })).rejects.toMatchObject({ code: 121 });
     const categories = await db.collection("career_categories").find({}).toArray();
     expect(categories.length).toBeGreaterThan(0);
-    expect(await db.collection("career_categories").find({}).sort({ _id: 1 }).toArray()).toEqual(categoriesBefore);
+    const preparedCategories = await db.collection("career_categories").find({}).sort({ _id: 1 }).toArray();
+    expect(preparedCategories.map(({ propertySchemaV2: _schema, schemaVersion: _version, ...original }) => original)).toEqual(categoriesBefore);
+    for (const category of preparedCategories) {
+      expect(category.schemaVersion).toBe(category.version);
+      expect(category.propertySchemaV2).toHaveLength(Object.keys(category.propertySchema).length);
+      for (const definition of category.propertySchemaV2 as Document[]) {
+        const legacy = category.propertySchema[definition.key] as Document;
+        expect(definition.id).toBe(legacy.id);
+        expect(definition.name).toBe(legacy.label);
+        expect(definition.type).toBe(legacy.type === "boolean" ? "checkbox" : legacy.type === "tags" ? "multi_select" : legacy.type);
+        expect(definition.required).toBe(legacy.required);
+        expect(definition.system).toBe(legacy.system);
+        expect(definition.config).toEqual(legacy.type === "tags" ? { legacyFreeformTags: true, options: [] } : {});
+        expect(definition.version).toBe(1);
+        expect(definition.deletedAt).toBeNull();
+      }
+    }
     expect(categories.every((item) => Object.values(item.propertySchema).every((definition) => typeof (definition as Document).id === "string"))).toBe(true);
   }, 60_000);
 

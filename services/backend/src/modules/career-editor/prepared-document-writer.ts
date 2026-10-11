@@ -191,6 +191,19 @@ export class PreparedCareerDocumentWriter {
     if (published) this.publish?.(published.recordId, Buffer.from(published.bytes).toString("base64"), published.version);
     return result;
   }
+  /** Owner conflict로 종료된 operation의 예약만 같은 transaction에서 해제합니다. */
+  async releaseBlocked(raw: CareerProducerScope, tx: MongoTransaction): Promise<void> {
+    const scope = CareerProducerScopeSchema.parse(raw);
+    await requireActiveUser(tx, scope.userId);
+    const intent = await this.intent(scope, tx.session);
+    if (intent.state !== "blocked") throw new CareerDocumentError(409, "prepared operation is not blocked");
+    const recordId = this.recordId(intent);
+    if (!recordId) return;
+    await mongoCollections(tx.db).careerRecords.updateOne(
+      { _id: recordId, userId: scope.userId, documentReservation: scope },
+      { $unset: { documentReservation: "" } }, { session: tx.session },
+    );
+  }
   async cancel(raw: CareerProducerScope): Promise<void> {
     const scope = CareerProducerScopeSchema.parse(raw);
     if (scope.producer === "interview") throw new CareerDocumentError(409, "prepared Interview cancellation is unsupported");
@@ -199,7 +212,7 @@ export class PreparedCareerDocumentWriter {
       const intent = await this.intent(scope, tx.session);
       if (intent.document?.kind === "restore") throw new CareerDocumentError(409, "prepared undo cancellation is unsupported");
       if (intent.businessResult || intent.documentResult || intent.state === "completed") throw new CareerDocumentError(409, "committed prepared document cannot be cancelled");
-      const changed = await sourceCollection(tx, scope).updateOne({ ...scopeFilter(scope), "writerIntegration.businessResult": null, "writerIntegration.documentResult": null, "writerIntegration.state": { $in: ["pending", "running", "retry", "cancelled"] } }, { $set: { "writerIntegration.state": "cancelled", "writerIntegration.leaseToken": null, "writerIntegration.leaseUntil": null, "writerIntegration.updatedAt": new Date().toISOString() } }, { session: tx.session });
+      const changed = await sourceCollection(tx, scope).updateOne({ ...scopeFilter(scope), "writerIntegration.businessResult": null, "writerIntegration.documentResult": null, "writerIntegration.state": { $in: ["pending", "running", "retry", "blocked", "cancelled"] } }, { $set: { "writerIntegration.state": "cancelled", "writerIntegration.leaseToken": null, "writerIntegration.leaseUntil": null, "writerIntegration.updatedAt": new Date().toISOString() } }, { session: tx.session });
       if (!changed.matchedCount) throw new CareerDocumentError(409, "prepared document cancellation raced owner");
       const recordId = this.recordId(intent);
       if (recordId) await mongoCollections(tx.db).careerRecords.updateOne({ _id: recordId, userId: scope.userId, documentReservation: scope }, { $unset: { documentReservation: "" } }, { session: tx.session });

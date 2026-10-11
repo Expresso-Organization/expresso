@@ -49,7 +49,7 @@ class CareerWriterMongoIntegrationTest {
         if(client!=null) { try { db.drop(); } finally {client.close();} }
     }
     @BeforeEach void seed() throws Exception {
-        for(var collection:List.of("career_records","career_record_relations","outbox_events","career_command_idempotency","identity_sessions","users","career_document_snapshots","career_document_updates","career_record_revisions")) db.getCollection(collection).deleteMany(new Document());
+        for(var collection:List.of("career_property_options","career_property_mutations","career_records","career_record_relations","outbox_events","career_command_idempotency","identity_sessions","users","career_document_snapshots","career_document_updates","career_record_revisions")) db.getCollection(collection).deleteMany(new Document());
         db.getCollection("career_categories").deleteMany(new Document("_id",new Document("$in",List.of(CATEGORY,TARGET))));
         for(var user:List.of(USER,OTHER)) db.getCollection("users").insertOne(new Document("_id",user).append("email",user+"@example.test").append("displayName","tester").append("planId",id(91)).append("createdAt",new Date()).append("deletionRequestedAt",null));
         session(USER,TOKEN); session(OTHER,TOKEN2);
@@ -206,6 +206,32 @@ class CareerWriterMongoIntegrationTest {
             for(var title:List.of("first","second")) results.add(executor.submit(() -> {latch.await();return mvc.perform(patch(PATH+"/"+rid).header("Authorization","Bearer "+TOKEN).header("If-Match","\"v1\"").contentType("application/json").content("{\"title\":\""+title+"\"}")).andReturn().getResponse().getStatus();}));
             latch.countDown(); var statuses=new ArrayList<Integer>(); for(var result:results) statuses.add(result.get()); Collections.sort(statuses); assertEquals(List.of(200,412),statuses); assertEquals(2L,stored(rid).getLong("version"));
         }
+    }
+    @Test void incomingOnlyInverseRelationClearAndReplaceRemoveTheOriginalRowOnce() throws Exception {
+        for(var replace:List.of(false,true)){
+            seed();var source=create(CATEGORY,"incoming-source").get("id").asText();var target=create(TARGET,"incoming-target").get("id").asText();var other=create(CATEGORY,"incoming-other").get("id").asText();
+            call(put(PATH+"/"+source+"/relations").header("If-Match","\"v1\"").content(new Document("propertyId",REL).append("targetIds",List.of(target)).toJson()),200);
+            db.getCollection("career_record_relations").deleteMany(new Document("sourceRecordId",target));db.getCollection("outbox_events").deleteMany(new Document());var original=db.getCollection("career_record_relations").find().first();
+            var targets=replace?List.of(other):List.<String>of();var result=call(put(PATH+"/"+target+"/relations").header("If-Match","\"v1\"").content(new Document("propertyId",INVERSE).append("targetIds",targets).toJson()),200);
+            assertEquals(2,result.get("data").get("version").asLong());assertNull(db.getCollection("career_record_relations").find(new Document("_id",original.getString("_id"))).first());assertEquals(replace?2:0,db.getCollection("career_record_relations").countDocuments());assertEquals(2L,stored(source).getLong("version"));assertEquals(1L,stored(other).getLong("version"));assertEquals(replace?3:2,db.getCollection("outbox_events").countDocuments());
+            var before=unidirectionalWriterState();call(put(PATH+"/"+target+"/relations").header("If-Match","\"v2\"").content(new Document("propertyId",INVERSE).append("targetIds",targets).toJson()),200);var noOp=unidirectionalWriterState();for(var collection:List.of("career_records","career_record_relations","outbox_events"))assertEquals(before.get(collection),noOp.get(collection));
+        }
+    }
+    @Test void incomingOnlyInverseRelationConcurrentClearAndReplaceHaveOneCasWinner() throws Exception {
+        var source=create(CATEGORY,"incoming-race-source").get("id").asText();var target=create(TARGET,"incoming-race-target").get("id").asText();var other=create(CATEGORY,"incoming-race-other").get("id").asText();
+        call(put(PATH+"/"+source+"/relations").header("If-Match","\"v1\"").content(new Document("propertyId",REL).append("targetIds",List.of(target)).toJson()),200);
+        db.getCollection("career_record_relations").deleteMany(new Document("sourceRecordId",target));db.getCollection("outbox_events").deleteMany(new Document());var original=db.getCollection("career_record_relations").find().first();
+        try(var executor=java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor()){
+            var gate=new java.util.concurrent.CountDownLatch(1);var results=new ArrayList<java.util.concurrent.Future<Integer>>();
+            for(var targets:List.of(List.<String>of(),List.of(other)))results.add(executor.submit(()->{gate.await();return mvc.perform(put(PATH+"/"+target+"/relations").header("Authorization","Bearer "+TOKEN).header("If-Match","\"v1\"").contentType("application/json").content(new Document("propertyId",INVERSE).append("targetIds",targets).toJson())).andReturn().getResponse().getStatus();}));
+            gate.countDown();var statuses=new ArrayList<Integer>();for(var result:results)statuses.add(result.get());Collections.sort(statuses);assertEquals(List.of(200,412),statuses);
+        }
+        assertEquals(2L,stored(target).getLong("version"));assertEquals(2L,stored(source).getLong("version"));assertNull(db.getCollection("career_record_relations").find(new Document("_id",original.getString("_id"))).first());var edges=db.getCollection("career_record_relations").countDocuments();assertTrue(edges==0||edges==2);assertEquals(edges==0?2:3,db.getCollection("outbox_events").countDocuments());
+    }
+    @Test void incomingOnlyInverseSingleCardinalityRejectsASecondSource() throws Exception {
+        var source=create(CATEGORY,"incoming-single-source").get("id").asText();var target=create(TARGET,"incoming-single-target").get("id").asText();var other=create(CATEGORY,"incoming-single-other").get("id").asText();
+        call(put(PATH+"/"+source+"/relations").header("If-Match","\"v1\"").content(new Document("propertyId",REL).append("targetIds",List.of(target)).toJson()),200);db.getCollection("career_record_relations").deleteMany(new Document("sourceRecordId",target));var before=unidirectionalWriterState();
+        call(put(PATH+"/"+other+"/relations").header("If-Match","\"v1\"").content(new Document("propertyId",REL).append("targetIds",List.of(target)).toJson()),409);assertEquals(before,unidirectionalWriterState());
     }
     @Test void authenticationRejectsExpiredRevokedMissingAndDeletingUsers() throws Exception {
         var request="{\"categoryId\":\""+CATEGORY+"\"}";
@@ -389,4 +415,283 @@ class CareerWriterMongoIntegrationTest {
         var schema=JSON.readTree(Files.readString(Path.of(System.getProperty("b1RepositoryRoot"),"packages/database/src/mongodb-migrations/0001/schema.json")));
         for(var collection:schema) if(collection.get("name").asText().equals("outbox_events")) db.runCommand(new Document("collMod","outbox_events").append("validator",Document.parse(collection.get("validator").toString())));
     }
-}
+
+    String moveDiscardFixture(String suffix) throws Exception {
+        var rid=create(CATEGORY,suffix).get("id").asText();protectDocument(rid);
+        call(patch(PATH+"/"+rid).header("If-Match","\"v1\"").content(delta(fixture().get("data").get("propertyValues").toString(),List.of())),200);
+        var target=db.getCollection("career_categories").find(new Document("_id",TARGET)).first();
+        var definitions=new ArrayList<>(target.getList("propertySchemaV2",Document.class));definitions.add(def(id(95),"p0","text",new Document()));
+        db.getCollection("career_categories").updateOne(new Document("_id",TARGET),new Document("$set",new Document("propertySchemaV2",definitions)));
+        var provenance=new Document("sourcePropertyKey","older").append("sourcePropertyName","Older").append("sourcePropertyDefinitionVersion",1L).append("preservedAt","2026-09-01T00:00:00Z").append("sourceRecordVersion",1L).append("reason","no_target_property");
+        var previous=new Document("sourceCategoryId",CATEGORY).append("propertyValue",new Document("propertyDefinitionId",id(97)).append("type","number").append("value",new Decimal128(new java.math.BigDecimal("7.1200")))).append("provenance",provenance);
+        db.getCollection("career_records").updateOne(new Document("_id",rid),new Document("$set",new Document("unmappedProperties",new Document(id(97),previous))));
+        db.getCollection("outbox_events").deleteMany(new Document());
+        return rid;
+    }
+    JsonNode discardPreview(String rid) throws Exception {
+        return call(post(PATH+"/"+rid+"/move/preview").header("If-Match","\"v2\"").content(new Document("targetCategoryId",TARGET).toJson()),200).get("data");
+    }
+    static String discardMove(JsonNode preview,List<String> ids) {
+        var input=new Document("targetCategoryId",TARGET).append("previewToken",preview.get("previewToken").asText());
+        if(ids!=null)input.append("discardUnmappedPropertyIds",ids);return input.toJson();
+    }
+    @Test void moveDiscardsOnlySelectedUnmappedIdsAndPreservesMappedDecimalDateAndExistingEnvelope() throws Exception {
+        var rid=moveDiscardFixture("discard-selected");var previous=stored(rid).get("unmappedProperties",Document.class).get(id(97));var preview=discardPreview(rid);
+        assertFalse(preview.get("unmappedPropertyIds").toString().contains(id(11)));assertTrue(preview.get("unmappedPropertyIds").toString().contains(id(13)));
+        var moved=call(post(PATH+"/"+rid+"/move").header("If-Match","\"v2\"").content(discardMove(preview,List.of(id(13),id(13)))),200).get("data");
+        assertEquals(3,moved.get("version").asLong());assertEquals(TARGET,moved.get("categoryId").asText());assertEquals(1,moved.get("propertyValues").size());
+        assertEquals(id(95),moved.get("propertyValues").get(0).get("propertyDefinitionId").asText());assertEquals(fixture().get("data").get("propertyValues").get(0).get("value"),moved.get("propertyValues").get(0).get("value"));
+        var unmapped=stored(rid).get("unmappedProperties",Document.class);assertFalse(unmapped.containsKey(id(13)));assertFalse(unmapped.containsKey(id(11)));assertEquals(previous,unmapped.get(id(97)));
+        assertEquals(new Decimal128(new java.math.BigDecimal("12345678901234567890.123400")),unmapped.get(id(12),Document.class).get("propertyValue",Document.class).get("value"));
+        var date=fixture().get("data").get("propertyValues");for(var value:date)if(value.get("type").asText().equals("date"))assertEquals(value.get("value"),JSON.valueToTree(unmapped.get(value.get("propertyDefinitionId").asText(),Document.class).get("propertyValue",Document.class).get("value")));
+        assertEquals(1,db.getCollection("outbox_events").countDocuments());assertDocument(rid);
+    }
+    @Test void moveMayExplicitlyDiscardPreviouslyUnmappedEntries() throws Exception {
+        var rid=moveDiscardFixture("discard-previous");var preview=discardPreview(rid);
+        call(post(PATH+"/"+rid+"/move").header("If-Match","\"v2\"").content(discardMove(preview,List.of(id(97)))),200);
+        var unmapped=stored(rid).get("unmappedProperties",Document.class);assertFalse(unmapped.containsKey(id(97)));assertTrue(unmapped.containsKey(id(13)));assertEquals(1,db.getCollection("outbox_events").countDocuments());assertDocument(rid);
+    }
+    @Test void moveRejectsUnknownAndMappedDiscardIdsWithoutAnyBusinessOrOutboxChange() throws Exception {
+        var rid=moveDiscardFixture("discard-invalid");var preview=discardPreview(rid);var before=stored(rid);
+        for(var property:List.of(id(99),id(11),id(95)))call(post(PATH+"/"+rid+"/move").header("If-Match","\"v2\"").content(discardMove(preview,List.of(property))),400);
+        assertEquals(before,stored(rid));assertEquals(0,db.getCollection("outbox_events").countDocuments());assertDocument(rid);
+    }
+    @Test void discardMoveRejectsChangedPreviewAndStaleRecordVersion() throws Exception {
+        var rid=moveDiscardFixture("discard-stale");var preview=discardPreview(rid);var before=stored(rid);
+        db.getCollection("career_categories").updateOne(new Document("_id",TARGET),new Document("$inc",new Document("schemaVersion",1L)));
+        call(post(PATH+"/"+rid+"/move").header("If-Match","\"v2\"").content(discardMove(preview,List.of(id(13)))),409);assertEquals(before,stored(rid));assertEquals(0,db.getCollection("outbox_events").countDocuments());
+        var fresh=discardPreview(rid);call(patch(PATH+"/"+rid).header("If-Match","\"v2\"").content("{\"title\":\"later\"}"),200);var updated=stored(rid);
+        call(post(PATH+"/"+rid+"/move").header("If-Match","\"v2\"").content(discardMove(fresh,List.of(id(13)))),412);
+        call(post(PATH+"/"+rid+"/move").header("If-Match","\"v3\"").content(discardMove(fresh,List.of(id(13)))),409);assertEquals(updated,stored(rid));assertEquals(CATEGORY,stored(rid).getString("categoryId"));assertDocument(rid);
+    }
+    @Test void failedOutboxRollsBackDiscardAndCategoryMoveTogether() throws Exception {
+        var rid=moveDiscardFixture("discard-rollback");var preview=discardPreview(rid);var before=stored(rid);
+        var validator=db.listCollections().filter(new Document("name","outbox_events")).first().get("options",Document.class).get("validator",Document.class);
+        db.runCommand(new Document("collMod","outbox_events").append("validator",new Document("$expr",new Document("$eq",List.of(1,0)))));
+        try {call(post(PATH+"/"+rid+"/move").header("If-Match","\"v2\"").content(discardMove(preview,List.of(id(13),id(97)))),500);assertEquals(before,stored(rid));assertEquals(0,db.getCollection("outbox_events").countDocuments());}
+        finally {db.runCommand(new Document("collMod","outbox_events").append("validator",validator));}
+        assertDocument(rid);
+    }
+
+    static Document mutationLockJob(String user,String category,String record,String status) {
+        var target=def(id(11),"p0","text",new Document());var operation=new Document("kind","conversion").append("source",target).append("target",target).append("defaultValue",null).append("confirmLossy",false);
+        var plan=new Document("userId",user).append("categoryId",category).append("categoryVersion",1).append("schemaVersion",1).append("definitions",List.of(target)).append("recordIds",List.of(record)).append("operation",operation);
+        var planJson=JSON.writeValueAsString(plan);var now=new Date();
+        return new Document("_id",id(300)).append("userId",user).append("categoryId",category).append("propertyId",id(11)).append("planJson",planJson).append("operationFingerprint",CareerMoveTokens.hash(planJson)).append("status",status).append("active",true).append("cursor",0).append("processedCount",0).append("skippedCount",0).append("attempts",0).append("leaseToken",null).append("leaseUntil",null).append("lastError",null).append("commitFence",0L).append("createdAt",now).append("updatedAt",now).append("completedAt",null);
+    }
+    @Test void activeMutationBlocksWritesIncludingNoopsWithOnlyOwnedJobMetadata() throws Exception {
+        var rid=create(CATEGORY,"lock-active").get("id").asText();protectDocument(rid);var before=stored(rid);
+        db.getCollection("career_property_mutations").insertOne(mutationLockJob(USER,CATEGORY,rid,"pending"));
+        for(var title:List.of("","blocked")) {
+            var error=call(patch(PATH+"/"+rid).header("If-Match","\"v1\"").content(new Document("title",title).toJson()),409).get("error");
+            assertEquals("CONFLICT",error.get("code").asText());assertEquals("CAREER_PROPERTY_MUTATION_ACTIVE",error.get("message").asText());assertEquals(id(300),error.get("details").get("mutationId").asText());assertEquals("pending",error.get("details").get("status").asText());assertFalse(error.get("details").get("retryable").asBoolean());assertEquals(3,error.get("details").size());assertFalse(error.toString().contains(USER));assertFalse(error.toString().contains(OTHER));
+        }
+        call(post(PATH).header("Idempotency-Key","lock-active-create-key").content(new Document("categoryId",CATEGORY).toJson()),409);
+        call(delete(PATH+"/"+rid).header("If-Match","\"v1\""),409);
+        call(put(PATH+"/"+rid+"/relations").header("If-Match","\"v1\"").content(new Document("propertyId",REL).append("targetIds",List.of()).toJson()),409);
+        call(post(PATH+"/"+rid+"/move/preview").header("If-Match","\"v1\"").content(new Document("targetCategoryId",TARGET).toJson()),200);
+        assertEquals(before,stored(rid));assertEquals(1,db.getCollection("career_records").countDocuments());assertEquals(0,db.getCollection("outbox_events").countDocuments());assertDocument(rid);
+    }
+    @Test void failedAndResumedMutationStayLockedUntilCompletion() throws Exception {
+        var rid=create(CATEGORY,"lock-status").get("id").asText();db.getCollection("career_property_mutations").insertOne(mutationLockJob(USER,CATEGORY,rid,"failed"));
+        var failed=call(patch(PATH+"/"+rid).header("If-Match","\"v1\"").content("{\"title\":\"blocked\"}"),409).get("error").get("details");assertEquals("failed",failed.get("status").asText());assertTrue(failed.get("retryable").asBoolean());
+        db.getCollection("career_property_mutations").updateOne(new Document(),new Document("$set",new Document("status","running")));
+        var resumed=call(patch(PATH+"/"+rid).header("If-Match","\"v1\"").content("{\"title\":\"blocked\"}"),409).get("error").get("details");assertEquals("running",resumed.get("status").asText());assertFalse(resumed.get("retryable").asBoolean());
+        db.getCollection("career_property_mutations").updateOne(new Document(),new Document("$set",new Document("status","completed").append("active",false).append("completedAt",new Date())));
+        assertEquals(2,call(patch(PATH+"/"+rid).header("If-Match","\"v1\"").content("{\"title\":\"unlocked\"}"),200).get("data").get("version").asLong());
+    }
+    @Test void foreignMutationAndSharedSystemCategoryCannotGloballyBlockOwnedRecords() throws Exception {
+        var rid=create(CATEGORY,"lock-foreign").get("id").asText();db.getCollection("career_property_mutations").insertOne(mutationLockJob(OTHER,CATEGORY,rid,"pending"));
+        call(patch(PATH+"/"+rid).header("If-Match","\"v1\"").content("{\"title\":\"owned\"}"),200);
+        db.getCollection("career_property_mutations").deleteMany(new Document());
+        db.getCollection("career_categories").updateOne(new Document("_id",CATEGORY),new Document("$set",new Document("userId",null).append("isSystem",true)));
+        db.getCollection("career_property_mutations").insertOne(mutationLockJob(USER,CATEGORY,rid,"pending"));
+        call(patch(PATH+"/"+rid).header("If-Match","\"v2\"").content("{\"title\":\"shared\"}"),200);
+        var other=mvc.perform(post(PATH).header("Authorization","Bearer "+TOKEN2).header("Idempotency-Key","shared-other-create-key").contentType("application/json").content(new Document("categoryId",CATEGORY).toJson())).andReturn().getResponse();assertEquals(201,other.getStatus(),other.getContentAsString());
+    }
+    @Test void committedCreateReceiptStillReplaysWhileAnUnrelatedMutationIsActive() throws Exception {
+        var first=create(CATEGORY,"lock-replay");db.getCollection("career_property_mutations").insertOne(mutationLockJob(USER,CATEGORY,first.get("id").asText(),"pending"));
+        assertEquals(first,create(CATEGORY,"lock-replay"));assertEquals(1,db.getCollection("career_records").countDocuments());assertEquals(1,db.getCollection("career_command_idempotency").countDocuments());
+    }
+    @Test void categoryFenceRejectsLifecycleWriteWhenSchemaJobCommitsAfterBusinessSnapshot() throws Exception {
+        var rid=create(CATEGORY,"lock-race").get("id").asText();var before=stored(rid);var swapped=new java.util.concurrent.atomic.AtomicBoolean();
+        CareerCommandRepository intercepted=new CareerCommandRepository() {
+            @Override public <T> T transaction(Actor actor,java.util.function.Function<Operations,T> work) {
+                return repository.transaction(actor,operations->work.apply((Operations)java.lang.reflect.Proxy.newProxyInstance(Operations.class.getClassLoader(),new Class<?>[]{Operations.class},(proxy,method,args)->{
+                    if(method.getName().equals("save")&&swapped.compareAndSet(false,true))try(var schema=client.startSession()) {
+                        schema.withTransaction(()->{db.getCollection("career_categories").updateOne(schema,new Document("_id",CATEGORY),new Document("$inc",new Document("version",1L).append("schemaVersion",1L)));db.getCollection("career_property_mutations").insertOne(schema,mutationLockJob(USER,CATEGORY,rid,"pending"));return null;});
+                    }
+                    try{return method.invoke(operations,args);}catch(java.lang.reflect.InvocationTargetException error){throw error.getCause();}
+                })));
+            }
+        };
+        var service=new CareerCommandService(intercepted,Clock.systemUTC(),new CareerMoveTokens("disposable-test-secret-with-at-least-32-bytes"));
+        var error=assertThrows(CareerCommandException.class,()->service.trash(repository.authenticate(TOKEN),rid,1));
+        assertEquals("CAREER_PROPERTY_MUTATION_ACTIVE",error.code());assertTrue(swapped.get());assertEquals(before,stored(rid));assertEquals(0,db.getCollection("outbox_events").countDocuments());assertEquals(1,db.getCollection("career_property_mutations").countDocuments());
+    }
+
+    @Test void activeMutationBlocksRestoreAndCompletionUnlocksBothLifecycleDirections() throws Exception {
+        var rid=create(CATEGORY,"lock-restore").get("id").asText();var other=create(CATEGORY,"lock-restore-active").get("id").asText();protectDocument(rid);
+        call(delete(PATH+"/"+rid).header("If-Match","\"v1\""),200);var before=stored(rid);var outbox=db.getCollection("outbox_events").countDocuments();
+        db.getCollection("career_property_mutations").insertOne(mutationLockJob(USER,CATEGORY,other,"pending"));
+        call(post(PATH+"/"+rid+"/restore").header("If-Match","\"v2\""),409);call(delete(PATH+"/"+other).header("If-Match","\"v1\""),409);
+        assertEquals(before,stored(rid));assertEquals(1L,stored(other).getLong("version"));assertEquals(outbox,db.getCollection("outbox_events").countDocuments());
+        db.getCollection("career_property_mutations").updateOne(new Document(),new Document("$set",new Document("status","completed").append("active",false).append("cursor",1).append("processedCount",1).append("completedAt",new Date())));
+        call(post(PATH+"/"+rid+"/restore").header("If-Match","\"v2\""),200);call(delete(PATH+"/"+other).header("If-Match","\"v1\""),200);assertNull(stored(rid).get("deletedAt"));assertEquals(3L,stored(rid).getLong("version"));assertNotNull(stored(other).get("deletedAt"));assertDocument(rid);
+    }
+    static Document privateOption(String user,String category,String property,String option,String label) {
+        return new Document("_id",UUID.randomUUID().toString()).append("userId",user).append("categoryId",category).append("propertyId",property).append("optionId",option).append("rawLabel",label).append("version",1L).append("createdAt",new Date());
+    }
+    void privateOptionsCategory() {
+        var definition=def(id(15),"tags","multi_select",new Document("legacyFreeformTags",true).append("options",List.of(new Document("id",id(81)).append("label","A").append("color","blue"))));
+        db.getCollection("career_categories").updateOne(new Document("_id",CATEGORY),new Document("$set",new Document("userId",null).append("isSystem",true).append("propertySchemaV2",List.of(definition))));
+        db.getCollection("career_property_options").insertMany(List.of(privateOption(USER,CATEGORY,id(15),id(401)," A "),privateOption(USER,CATEGORY,id(15),id(402),"a"),privateOption(OTHER,CATEGORY,id(15),id(403),"foreign"),privateOption(USER,CATEGORY,id(16),id(404),"wrong property")));
+    }
+    static String multiValue(String property,List<String> ids) {
+        return new Document("propertyDefinitionId",property).append("type","multi_select").append("value",ids).toJson();
+    }
+    @Test void privateOptionsFollowAuthenticatedRecordOwnerAndNeverPublishIntoSharedSchema() throws Exception {
+        privateOptionsCategory();var schema=db.getCollection("career_categories").find(new Document("_id",CATEGORY)).first().get("propertySchemaV2");
+        var values="["+multiValue(id(15),List.of(id(81),id(401),id(402)))+"]";
+        var created=call(post(PATH).header("Idempotency-Key","private-options-user-a-key").content("{\"categoryId\":\""+CATEGORY+"\",\"title\":\"\",\"propertyValues\":"+values+"}"),201).get("data");var rid=created.get("id").asText();
+        var before=stored(rid);var outbox=db.getCollection("outbox_events").countDocuments();var receipts=db.getCollection("career_command_idempotency").countDocuments();
+        for(var option:List.of(id(403),id(404)))call(patch(PATH+"/"+rid).header("If-Match","\"v1\"").content(delta("["+multiValue(id(15),List.of(option))+"]",List.of())),400);
+        call(patch(PATH+"/"+rid).header("If-Match","\"v1\"").content("{\"userId\":\""+OTHER+"\",\"title\":\"spoof\"}"),400);
+        assertEquals(before,stored(rid));assertEquals(outbox,db.getCollection("outbox_events").countDocuments());assertEquals(receipts,db.getCollection("career_command_idempotency").countDocuments());
+        var body="{\"categoryId\":\""+CATEGORY+"\",\"propertyValues\":["+multiValue(id(15),List.of(id(403)))+"]}";
+        var own=mvc.perform(post(PATH).header("Authorization","Bearer "+TOKEN2).header("Idempotency-Key","private-options-user-b-key").contentType("application/json").content(body)).andReturn().getResponse();assertEquals(201,own.getStatus(),own.getContentAsString());
+        var otherId=JSON.readTree(own.getContentAsString()).get("data").get("id").asText();
+        var foreign=mvc.perform(patch(PATH+"/"+otherId).header("Authorization","Bearer "+TOKEN2).header("If-Match","\"v1\"").contentType("application/json").content(delta("["+multiValue(id(15),List.of(id(401)))+"]",List.of()))).andReturn().getResponse();assertEquals(400,foreign.getStatus(),foreign.getContentAsString());
+        assertEquals(schema,db.getCollection("career_categories").find(new Document("_id",CATEGORY)).first().get("propertySchemaV2"));assertEquals(4,db.getCollection("career_property_options").countDocuments());
+    }
+    @Test void privateOptionOverlayPreservesExactLabelsCommonIdsAndMetadata() {
+        privateOptionsCategory();db.getCollection("career_property_options").insertOne(privateOption(USER,CATEGORY,id(15),id(81),"A"));
+        var category=repository.transaction(repository.authenticate(TOKEN),tx->tx.category(CATEGORY));
+        var options=(List<?>)category.business().propertyDefinitions().getFirst().config().get("options");assertEquals(3,options.size());
+        var first=(Map<?,?>)options.getFirst();assertEquals(id(81),first.get("id"));assertEquals("A",first.get("name"));assertEquals("blue",first.get("color"));
+        assertEquals(Set.of("A"," A ","a"),options.stream().map(value->((Map<?,?>)value).get("name")).collect(java.util.stream.Collectors.toSet()));
+    }
+    @Test void privateOptionUuidAndExactLabelCollisionsFailWithoutBusinessWrites() throws Exception {
+        for(var collision:List.of(privateOption(USER,CATEGORY,id(15),id(81),"different"),privateOption(USER,CATEGORY,id(15),id(405),"A"))) {
+            seed();privateOptionsCategory();db.getCollection("career_property_options").insertOne(collision);
+            var response=call(post(PATH).header("Idempotency-Key","private-options-collision-key").content("{\"categoryId\":\""+CATEGORY+"\"}"),409);
+            assertEquals("PRIVATE_OPTION_MAPPING_CONFLICT",response.get("error").get("message").asText());assertFalse(response.toString().contains(OTHER));
+            assertEquals(0,db.getCollection("career_records").countDocuments());assertEquals(0,db.getCollection("career_command_idempotency").countDocuments());assertEquals(0,db.getCollection("outbox_events").countDocuments());
+        }
+    }
+    @Test void moveMapsOwnerPrivateOptionsByExactWireLabelWithoutNormalizing() throws Exception {
+        privateOptionsCategory();var target=def(id(406),"tags","multi_select",new Document("legacyFreeformTags",true).append("options",List.of()));
+        db.getCollection("career_categories").updateOne(new Document("_id",TARGET),new Document("$set",new Document("propertySchemaV2",List.of(target))));
+        db.getCollection("career_property_options").insertMany(List.of(privateOption(USER,TARGET,id(406),id(407)," A "),privateOption(USER,TARGET,id(406),id(408),"a"),privateOption(OTHER,TARGET,id(406),id(409),"A")));
+        var created=call(post(PATH).header("Idempotency-Key","private-options-move-key").content("{\"categoryId\":\""+CATEGORY+"\",\"title\":\"\",\"propertyValues\":["+multiValue(id(15),List.of(id(401),id(402)))+"]}"),201).get("data");var rid=created.get("id").asText();
+        var preview=call(post(PATH+"/"+rid+"/move/preview").header("If-Match","\"v1\"").content("{\"targetCategoryId\":\""+TARGET+"\"}"),200).get("data");
+        var moved=call(post(PATH+"/"+rid+"/move").header("If-Match","\"v1\"").content("{\"targetCategoryId\":\""+TARGET+"\",\"previewToken\":\""+preview.get("previewToken").asText()+"\"}"),200).get("data");
+        assertEquals(JSON.readTree("["+multiValue(id(406),List.of(id(407),id(408)))+"]"),moved.get("propertyValues"));
+    }
+    @Test void privateOptionMalformedWireLabelAndNullCommonOptionsFailClosed() throws Exception {
+        for(var config:List.of(new Document("options",null),new Document("options",List.of(new Document("id",id(81)).append("label",null).append("name","A"))),new Document("options",List.of(new Document("id",id(81)).append("label","A").append("name","different"))))) {
+            seed();privateOptionsCategory();db.getCollection("career_categories").updateOne(new Document("_id",CATEGORY),new Document("$set",new Document("propertySchemaV2.0.config",config)));
+            call(post(PATH).header("Idempotency-Key","private-options-malformed-key").content("{\"categoryId\":\""+CATEGORY+"\"}"),409);
+            assertEquals(0,db.getCollection("career_records").countDocuments());assertEquals(0,db.getCollection("career_command_idempotency").countDocuments());assertEquals(0,db.getCollection("outbox_events").countDocuments());
+        }
+    }
+    @Test void combinedTitleStatusAndPropertyDeltaUsesOneCasVersionAndOutbox() throws Exception {
+        var rid=create(CATEGORY,"combined-patch").get("id").asText();protectDocument(rid);var original=fixture().get("data").get("propertyValues");
+        call(patch(PATH+"/"+rid).header("If-Match","\"v1\"").content(delta(original.toString(),List.of())),200);
+        var number=new Document("propertyDefinitionId",id(12)).append("type","number").append("value","9.1200");
+        var input=new Document("title","combined").append("status","verified").append("propertyValues",new Document("set",List.of(number)).append("unsetPropertyIds",List.of(id(13)))).toJson();
+        var result=call(patch(PATH+"/"+rid).header("If-Match","\"v2\"").content(input),200).get("data");assertEquals(3,result.get("version").asLong());assertEquals("combined",result.get("title").asText());assertEquals("verified",result.get("status").asText());
+        var values=result.get("propertyValues");assertEquals(original.size()-1,values.size());assertEquals(original.get(0),values.get(0));assertEquals("9.1200",values.get(1).get("value").asText());assertEquals(2,db.getCollection("outbox_events").countDocuments());
+        assertEquals(3,call(patch(PATH+"/"+rid).header("If-Match","\"v3\"").content(input),200).get("data").get("version").asLong());assertEquals(2,db.getCollection("outbox_events").countDocuments());
+        call(patch(PATH+"/"+rid).header("If-Match","\"v2\"").content(input),412);var before=stored(rid);
+        var invalid=new Document("title","must roll back").append("status","draft").append("propertyValues",new Document("set",List.of(new Document("propertyDefinitionId",id(12)).append("type","checkbox").append("value",true))).append("unsetPropertyIds",List.of())).toJson();
+        call(patch(PATH+"/"+rid).header("If-Match","\"v3\"").content(invalid),400);assertEquals(before,stored(rid));assertEquals(2,db.getCollection("outbox_events").countDocuments());assertDocument(rid);
+    }
+    @Test void combinedPatchOutboxFailureRollsBackTitleStatusValuesAndOneVersionTogether() throws Exception {
+        var rid=create(CATEGORY,"combined-rollback").get("id").asText();protectDocument(rid);var before=stored(rid);
+        var input=new Document("title","rollback").append("status","organized").append("propertyValues",new Document("set",List.of(new Document("propertyDefinitionId",id(12)).append("type","number").append("value","7.1200"))).append("unsetPropertyIds",List.of())).toJson();
+        var validator=db.listCollections().filter(new Document("name","outbox_events")).first().get("options",Document.class).get("validator",Document.class);
+        db.runCommand(new Document("collMod","outbox_events").append("validator",new Document("$expr",new Document("$eq",List.of(1,0)))));
+        try {call(patch(PATH+"/"+rid).header("If-Match","\"v1\"").content(input),500);assertEquals(before,stored(rid));assertEquals(0,db.getCollection("outbox_events").countDocuments());}
+        finally {db.runCommand(new Document("collMod","outbox_events").append("validator",validator));}
+        var result=call(patch(PATH+"/"+rid).header("If-Match","\"v1\"").content(input),200).get("data");assertEquals(2,result.get("version").asLong());assertEquals("organized",result.get("status").asText());assertEquals("rollback",result.get("title").asText());assertEquals(1,db.getCollection("outbox_events").countDocuments());assertDocument(rid);
+    }
+    @Test void initialRelationCreateUsesOneFinalVersionAndDurableReceiptWithoutPartialDuplicate() throws Exception {
+        var target=create(TARGET,"initial-target").get("id").asText();db.getCollection("outbox_events").deleteMany(new Document());var input=new Document("categoryId",CATEGORY).append("title","initial relations").append("propertyValues",List.of()).append("initialRelations",List.of(new Document("propertyId",REL).append("targetIds",List.of(target))));
+        var first=call(post(PATH).header("Idempotency-Key","initial-relation-create-key").content(input.toJson()),201).get("data");var source=first.get("id").asText();assertEquals(1,first.get("version").asLong());assertEquals(2,db.getCollection("career_record_relations").countDocuments());assertEquals(2,db.getCollection("outbox_events").countDocuments());assertEquals(1L,stored(target).getLong("version"));var refs=stored(target).get("referenceVersion");
+        assertEquals(source,call(post(PATH).header("Idempotency-Key","initial-relation-create-key").content(input.toJson()),201).get("data").get("id").asText());assertEquals(refs,stored(target).get("referenceVersion"));assertEquals(2,db.getCollection("outbox_events").countDocuments());
+        var beforeRecords=db.getCollection("career_records").countDocuments();var beforeReceipts=db.getCollection("career_command_idempotency").countDocuments();call(post(PATH).header("Idempotency-Key","initial-relation-conflict-key").content(input.toJson()),409);assertEquals(beforeRecords,db.getCollection("career_records").countDocuments());assertEquals(beforeReceipts,db.getCollection("career_command_idempotency").countDocuments());assertEquals(2,db.getCollection("career_record_relations").countDocuments());
+        input.put("initialRelations",List.of());call(post(PATH).header("Idempotency-Key","initial-relation-create-key").content(input.toJson()),409);
+    }
+    @Test void mixedScalarRelationPatchSharesOneCasVersionAndOutboxWhileNoopAndRelationOnlyPreserveValues() throws Exception {
+        var source=create(CATEGORY,"mixed-source").get("id").asText();var target=create(TARGET,"mixed-target").get("id").asText();protectDocument(source);protectDocument(target);db.getCollection("outbox_events").deleteMany(new Document());var number=new Document("propertyDefinitionId",id(12)).append("type","number").append("value","7.1200");var input=new Document("title","mixed").append("status","verified").append("propertyValues",new Document("set",List.of(number)).append("unsetPropertyIds",List.of())).append("relations",List.of(new Document("propertyId",REL).append("targetIds",List.of(target,target))));
+        var first=call(patch(PATH+"/"+source).header("If-Match","\"v1\"").content(input.toJson()),200).get("data");assertEquals(2,first.get("version").asLong());assertEquals("verified",first.get("status").asText());assertEquals(2,db.getCollection("outbox_events").countDocuments());assertEquals(1L,stored(target).getLong("version"));var ref=stored(source).get("referenceVersion");
+        assertEquals(2,call(patch(PATH+"/"+source).header("If-Match","\"v2\"").content(input.toJson()),200).get("data").get("version").asLong());assertEquals(ref,stored(source).get("referenceVersion"));assertEquals(2,db.getCollection("outbox_events").countDocuments());
+        var clear=new Document("relations",List.of(new Document("propertyId",REL).append("targetIds",List.of())));var cleared=call(patch(PATH+"/"+source).header("If-Match","\"v2\"").content(clear.toJson()),200).get("data");assertEquals(3,cleared.get("version").asLong());assertEquals("mixed",cleared.get("title").asText());assertEquals("7.1200",cleared.get("propertyValues").get(0).get("value").asText());assertEquals(0,db.getCollection("career_record_relations").countDocuments());assertEquals(4,db.getCollection("outbox_events").countDocuments());call(patch(PATH+"/"+source).header("If-Match","\"v2\"").content(input.toJson()),412);assertDocument(source);assertDocument(target);
+    }
+    @Test void mixedRelationCreateAndPatchFailuresRollBackScalarsEdgesReferencesAndOutbox() throws Exception {
+        var source=create(CATEGORY,"mixed-rollback-source").get("id").asText();var target=create(TARGET,"mixed-rollback-target").get("id").asText();db.getCollection("outbox_events").deleteMany(new Document());var beforeSource=stored(source);var beforeTarget=stored(target);var relations=List.of(new Document("propertyId",REL).append("targetIds",List.of(target)));var patchInput=new Document("title","rollback").append("status","verified").append("relations",relations);rejectOutbox();
+        try{call(patch(PATH+"/"+source).header("If-Match","\"v1\"").content(patchInput.toJson()),500);assertEquals(beforeSource,stored(source));assertEquals(beforeTarget,stored(target));assertEquals(0,db.getCollection("career_record_relations").countDocuments());var beforeCount=db.getCollection("career_records").countDocuments();call(post(PATH).header("Idempotency-Key","initial-outbox-rollback-key").content(new Document("categoryId",CATEGORY).append("initialRelations",relations).toJson()),500);assertEquals(beforeCount,db.getCollection("career_records").countDocuments());assertEquals(beforeTarget,stored(target));assertEquals(0,db.getCollection("career_record_relations").countDocuments());}finally{restoreOutbox();}
+        db.getCollection("career_records").updateOne(new Document("_id",target),new Document("$set",new Document("userId",OTHER)));call(patch(PATH+"/"+source).header("If-Match","\"v1\"").content(patchInput.toJson()),404);assertEquals(beforeSource,stored(source));assertEquals(0,db.getCollection("outbox_events").countDocuments());
+    }
+    private Map<String,List<Document>> unidirectionalWriterState() {
+        var state=new TreeMap<String,List<Document>>();for(var name:List.of("career_records","career_categories","career_record_relations","career_command_idempotency","outbox_events","users","career_property_mutations"))state.put(name,db.getCollection(name).find().sort(new Document("_id",1)).into(new ArrayList<>()));return state;
+    }
+    private void unidirectionalTargetLock(String target,String status) {
+        var sourceCategory=db.getCollection("career_categories").find(new Document("_id",CATEGORY)).first();var definitions=sourceCategory.getList("propertySchemaV2",Document.class);for(var definition:definitions)if(definition.getString("id").equals(REL))definition.get("config",Document.class).put("inversePropertyId",null);
+        db.getCollection("career_categories").updateOne(new Document("_id",CATEGORY),new Document("$set",new Document("propertySchemaV2",definitions)));
+        var scalar=def(id(11),"p0","text",new Document());scalar.put("order",1);db.getCollection("career_categories").updateOne(new Document("_id",TARGET),new Document("$push",new Document("propertySchemaV2",scalar)));
+        db.getCollection("career_property_mutations").insertOne(mutationLockJob(USER,TARGET,target,status));
+    }
+    private void unidirectionalWriteRejectsTargetJob(String operation) throws Exception {
+        for(var status:List.of("pending","failed")) {
+            seed();var target=create(TARGET,"uni-target").get("id").asText();var source=operation.equals("create")?null:create(CATEGORY,"uni-source").get("id").asText();
+            var category=db.getCollection("career_categories").find(new Document("_id",CATEGORY)).first();var definitions=category.getList("propertySchemaV2",Document.class);for(var definition:definitions)if(definition.getString("id").equals(REL))definition.get("config",Document.class).put("inversePropertyId",null);db.getCollection("career_categories").updateOne(new Document("_id",CATEGORY),new Document("$set",new Document("propertySchemaV2",definitions)));
+            if(operation.equals("remove"))call(put(PATH+"/"+source+"/relations").header("If-Match","\"v1\"").content(new Document("propertyId",REL).append("targetIds",List.of(target)).toJson()),200);
+            unidirectionalTargetLock(target,status);var before=unidirectionalWriterState();
+            var payload=operation.equals("create")?new Document("categoryId",CATEGORY).append("initialRelations",List.of(new Document("propertyId",REL).append("targetIds",List.of(target)))):new Document("propertyId",REL).append("targetIds",operation.equals("remove")?List.of():List.of(target));
+            var request=operation.equals("create")?post(PATH).header("Idempotency-Key","uni-lock-create-key"):put(PATH+"/"+source+"/relations").header("If-Match",operation.equals("remove")?"\"v2\"":"\"v1\"");
+            var error=call(request.content(payload.toJson()),409).get("error");assertEquals("CAREER_PROPERTY_MUTATION_ACTIVE",error.get("message").asText());assertEquals(id(300),error.get("details").get("mutationId").asText());assertEquals(status,error.get("details").get("status").asText());assertEquals(status.equals("failed"),error.get("details").get("retryable").asBoolean());assertEquals(before,unidirectionalWriterState(),operation+":"+status);
+            db.getCollection("career_property_mutations").updateOne(new Document("_id",id(300)),new Document("$set",new Document("active",false).append("status","completed").append("cursor",1).append("processedCount",1).append("completedAt",new Date())));
+            call(request.content(payload.toJson()),operation.equals("create")?201:200);assertEquals(operation.equals("remove")?0:1,db.getCollection("career_record_relations").countDocuments());
+        }
+    }
+    @Test void unidirectionalInsertionRejectsPendingAndFailedTargetJobsAtomically() throws Exception {unidirectionalWriteRejectsTargetJob("insert");}
+    @Test void unidirectionalRemovalRejectsPendingAndFailedOldActiveTargetJobsAtomically() throws Exception {unidirectionalWriteRejectsTargetJob("remove");}
+    @Test void unidirectionalInitialCreateRejectsPendingAndFailedTargetJobsWithoutReceipt() throws Exception {unidirectionalWriteRejectsTargetJob("create");}
+    @Test void unidirectionalRemovalPreservesSoftTrashedTargetWithoutResurrection() throws Exception {
+        var source=create(CATEGORY,"uni-trash-source").get("id").asText();var target=create(TARGET,"uni-trash-target").get("id").asText();unidirectionalTargetLock(target,"pending");db.getCollection("career_property_mutations").deleteOne(new Document("_id",id(300)));
+        call(put(PATH+"/"+source+"/relations").header("If-Match","\"v1\"").content(new Document("propertyId",REL).append("targetIds",List.of(target)).toJson()),200);db.getCollection("career_records").updateOne(new Document("_id",target),new Document("$set",new Document("deletedAt",new Date()).append("purgeAfter",Date.from(Instant.now().plusSeconds(86400)))));var before=stored(target);
+        call(put(PATH+"/"+source+"/relations").header("If-Match","\"v2\"").content(new Document("propertyId",REL).append("targetIds",List.of()).toJson()),200);assertEquals(before,stored(target));assertEquals(0,db.getCollection("career_record_relations").countDocuments());
+    }
+    @Test void unidirectionalRemovalRejectsUnreadableActiveTargetCategoryButPreservesPurgedTargetCleanup() throws Exception {
+        var source=create(CATEGORY,"uni-category-source").get("id").asText();var target=create(TARGET,"uni-category-target").get("id").asText();unidirectionalTargetLock(target,"pending");db.getCollection("career_property_mutations").deleteOne(new Document("_id",id(300)));
+        call(put(PATH+"/"+source+"/relations").header("If-Match","\"v1\"").content(new Document("propertyId",REL).append("targetIds",List.of(target)).toJson()),200);
+        var foreignCategory=UUID.randomUUID().toString();var raw=new Document(db.getCollection("career_categories").find(new Document("_id",TARGET)).first()).append("_id",foreignCategory).append("key","foreign-"+foreignCategory).append("userId",OTHER);db.getCollection("career_categories").insertOne(raw);
+        try {
+            db.getCollection("career_records").updateOne(new Document("_id",target),new Document("$set",new Document("categoryId",foreignCategory)));var before=unidirectionalWriterState();var clear=new Document("propertyId",REL).append("targetIds",List.of()).toJson();
+            call(put(PATH+"/"+source+"/relations").header("If-Match","\"v2\"").content(clear),404);assertEquals(before,unidirectionalWriterState());
+            db.getCollection("career_records").deleteOne(new Document("_id",target).append("userId",USER));call(put(PATH+"/"+source+"/relations").header("If-Match","\"v2\"").content(clear),200);assertEquals(0,db.getCollection("career_record_relations").countDocuments());
+        } finally {db.getCollection("career_categories").deleteOne(new Document("_id",foreignCategory).append("userId",OTHER));}
+    }
+    @Test void reservedPropertyKeysAndIdsRejectDirectSpringWritesWithoutPartialChanges() throws Exception {
+        for(var duplicate:List.of("key","id")) {
+            seed();var rid=create(CATEGORY,"key-policy-"+duplicate).get("id").asText();
+            var category=db.getCollection("career_categories").find(new Document("_id",CATEGORY)).first();
+            var definitions=category.getList("propertySchemaV2",Document.class);var first=definitions.getFirst();
+            var tombstone=def(duplicate.equals("id")?first.getString("id"):id(98),duplicate.equals("key")?first.getString("key"):"reserved_other","text",new Document());
+            tombstone.put("deletedAt",Instant.EPOCH.toString());definitions.add(tombstone);
+            db.getCollection("career_categories").updateOne(new Document("_id",CATEGORY),new Document("$set",new Document("propertySchemaV2",definitions)));
+            var before=unidirectionalWriterState();
+            var failure=call(patch(PATH+"/"+rid).header("If-Match","\"v1\"").content("{\"title\":\"must not overwrite\"}"),409);
+            assertEquals("DUPLICATE_CANONICAL_DEFINITION",failure.get("error").get("message").asText());assertEquals(before,unidirectionalWriterState());
+            var failedCreate=call(post(PATH).header("Idempotency-Key","reserved-key-create-"+duplicate).content(new Document("categoryId",CATEGORY).toJson()),409);
+            assertEquals("DUPLICATE_CANONICAL_DEFINITION",failedCreate.get("error").get("message").asText());assertEquals(before,unidirectionalWriterState());
+        }
+    }
+    @Test void directSpringAllowsDuplicateDisplayNamesWithUniqueKeys() throws Exception {
+        var category=db.getCollection("career_categories").find(new Document("_id",CATEGORY)).first();var definitions=category.getList("propertySchemaV2",Document.class);
+        definitions.forEach(definition->definition.put("name","같은 이름"));
+        db.getCollection("career_categories").updateOne(new Document("_id",CATEGORY),new Document("$set",new Document("propertySchemaV2",definitions)));
+        assertEquals(1,create(CATEGORY,"duplicate-display-name").get("version").asLong());
+    }}

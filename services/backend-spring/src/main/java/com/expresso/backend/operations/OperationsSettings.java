@@ -8,6 +8,7 @@ final class OperationsSettings {
     final ConnectionString connection;
     final String database;
     final String replicaSet;
+    final boolean writerEnabled;
     OperationsSettings(String address, int port, String uri, String database, String replicaSet,
                        String writerFlag, String integrationFlag, String moveSecret, String aiSecret, String interviewSecret) {
         if (!java.util.Set.of("127.0.0.1", "::1").contains(address)) fail("Spring bind address must be loopback");
@@ -28,7 +29,19 @@ final class OperationsSettings {
             if (aiSecret.equals(interviewSecret) || aiSecret.equals(moveSecret) || interviewSecret.equals(moveSecret))
                 fail("Career service actor and move secrets must be distinct");
         }
-        this.connection = parsed; this.database = database; this.replicaSet = replicaSet;
+        this.connection = parsed; this.database = database; this.replicaSet = replicaSet; this.writerEnabled=writer;
+    }
+    OperationsSettings(String address,int port,String uri,String database,String replicaSet,
+                       String writer,String integration,String move,String ai,String interview,
+                       String mutation,String product,String mutationSecret) {
+        this(address,port,uri,database,replicaSet,writer,integration,move,ai,interview);
+        boolean mutations=flag(mutation);
+        if(mutations && !writerEnabled) fail("Property mutation requires the Career writer");
+        var enabled=new java.util.ArrayList<String>();
+        if(writerEnabled) enabled.add(move);
+        if(flag(integration)) { secret(product); enabled.add(ai);enabled.add(interview);enabled.add(product); }
+        if(mutations) { secret(mutationSecret);enabled.add(mutationSecret); }
+        if(new java.util.HashSet<>(enabled).size()!=enabled.size()) fail("Career service actor and move secrets must be distinct");
     }
     private static boolean flag(String value) {
         if (!"true".equals(value) && !"false".equals(value)) fail("Career enable flags must be true or false");

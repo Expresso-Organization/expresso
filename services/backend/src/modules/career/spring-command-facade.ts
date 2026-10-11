@@ -1,5 +1,5 @@
 import {
-  ApiErrorResponseSchema, CareerBusinessRecordResponseSchema, CareerWriterCreateSchema, CareerWriterPatchSchema,
+  ApiErrorResponseSchema, CareerBusinessRecordResponseSchema, CareerWriterCreateSchema, CareerWriterPatchSchema, CareerRecordLinkSchema, CreateCareerRecordLinkSchema,
   CareerWriterIfMatchSchema, CareerWriterMoveSchema, CareerWriterRelationSchema, CareerWriterMovePreviewInputSchema,
   CareerWriterMovePreviewResponseSchema, IdempotencyKeySchema, UuidSchema,
   type CareerWriterCreate, type CareerWriterPatch, type CareerWriterMove, type CareerWriterRelation,
@@ -12,7 +12,7 @@ export class SpringCareerCommandError extends Error {
 }
 type Transport = (url: string, init: RequestInit) => Promise<Response>;
 
-// B2가 명시적으로 등록할 command port입니다. 현재 서비스·라우트에서 가져오지 않습니다.
+// 인증된 제품 요청과 background actor 포트를 구분한 business command transport입니다.
 export function createSpringCareerCommandFacade(baseUrl: string, transport: Transport = (url, init) => fetch(url, init)) {
   const base = new URL(baseUrl);
   if (!["http:", "https:"].includes(base.protocol) || base.username || base.password || base.search || base.hash) throw new Error("invalid Spring command base URL");
@@ -37,11 +37,26 @@ export function createSpringCareerCommandFacade(baseUrl: string, transport: Tran
   }
   return {
     create: (token: string, key: string, input: CareerWriterCreate) => record(token, "POST", records, CareerWriterCreateSchema.parse(input), { "Idempotency-Key": IdempotencyKeySchema.parse(key) }),
+    async createWithStatus(token: string, key: string, input: CareerWriterCreate) {
+      const result = await request(token, "POST", records, CareerWriterCreateSchema.parse(input), { "Idempotency-Key": IdempotencyKeySchema.parse(key) });
+      const body = CareerBusinessRecordResponseSchema.parse(result.body);
+      if (result.response.headers.get("ETag") !== etag(body.data.version) || ![200, 201].includes(result.response.status)) throw new Error("Spring create response mismatch");
+      return { body, created: result.response.status === 201 };
+    },
     patch: (token: string, id: string, version: number, input: CareerWriterPatch) => record(token, "PATCH", resource(id), CareerWriterPatchSchema.parse(input), { "If-Match": etag(version) }),
     trash: (token: string, id: string, version: number) => record(token, "DELETE", resource(id), undefined, { "If-Match": etag(version) }),
     restore: (token: string, id: string, version: number) => record(token, "POST", `${resource(id)}/restore`, undefined, { "If-Match": etag(version) }),
     move: (token: string, id: string, version: number, input: CareerWriterMove) => record(token, "POST", `${resource(id)}/move`, CareerWriterMoveSchema.parse(input), { "If-Match": etag(version) }),
     relation: (token: string, id: string, version: number, input: CareerWriterRelation) => record(token, "PUT", `${resource(id)}/relations`, CareerWriterRelationSchema.parse(input), { "If-Match": etag(version) }),
+    async createLink(token:string,id:string,version:number,input:ReturnType<typeof CreateCareerRecordLinkSchema.parse>) {
+      const result=await request(token,"POST",`${resource(id)}/links`,CreateCareerRecordLinkSchema.parse(input),{"If-Match":etag(version)});
+      if(result.response.status!==201 || !CareerWriterIfMatchSchema.safeParse(result.response.headers.get("ETag")).success)throw new Error("Spring link response mismatch");
+      return CareerRecordLinkSchema.parse((result.body as {data?:unknown})?.data);
+    },
+    async listLinks(token:string,id:string) {
+      const result=await request(token,"GET",`${resource(id)}/links`);
+      return CareerRecordLinkSchema.array().parse((result.body as {data?:unknown})?.data);
+    },
     async previewMove(token: string, id: string, version: number, targetCategoryId: string) {
       const result = await request(token, "POST", `${resource(id)}/move/preview`, CareerWriterMovePreviewInputSchema.parse({ targetCategoryId }), { "If-Match": etag(version) });
       return CareerWriterMovePreviewResponseSchema.parse(result.body);

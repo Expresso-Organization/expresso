@@ -47,7 +47,7 @@ export function registerCareerDocumentSocket(app: FastifyInstance, options: Care
   const registry = options.registry ?? new InMemoryCareerDocumentSessionRegistry();
   options.service.setAiProposalPublisher((recordId, proposal) => registry.publish(recordId, {
     type: "proposal", protocolVersion: 1, recordId, sessionId: EMPTY_SESSION_ID,
-    proposalId: proposal.proposalId, baseDocumentVersion: proposal.baseDocumentVersion,
+    proposalId: proposal.proposalId, createdAt: proposal.createdAt, baseDocumentVersion: proposal.baseDocumentVersion,
     status: proposal.status, progress: proposal.progress,
   }));
   options.service.setAiUpdatePublisher((recordId, updateBase64, sequence) => registry.publish(recordId, {
@@ -142,7 +142,7 @@ async function handleSocket(
           fail(CLOSE.rate, "too many sessions"); return;
         }
         joined = registry.join({
-          sessionId, userId: principal.user.id, recordId,
+          sessionId, userId: principal.user.id, recordId,lastAckSequence:message.lastAckSequence,
           send: (value) => send(socket, value),
         });
         const bootstrap = await options.service.bootstrap(principal.user.id, recordId);

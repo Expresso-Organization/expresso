@@ -16,10 +16,13 @@ public final class CareerProducerCredentials {
     private final Map<String,byte[]> secrets;
     private final Clock clock;
     private final JsonMapper json=JsonMapper.builder().enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION).enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).build();
-    public CareerProducerCredentials(String aiSecret,String interviewSecret,Clock clock) {
+    public CareerProducerCredentials(String aiSecret,String interviewSecret,Clock clock) {this(aiSecret,interviewSecret,null,clock);}
+    public CareerProducerCredentials(String aiSecret,String interviewSecret,String productSecret,Clock clock) {
         var ai=aiSecret.getBytes(StandardCharsets.UTF_8); var interview=interviewSecret.getBytes(StandardCharsets.UTF_8);
         if(ai.length<32 || interview.length<32 || MessageDigest.isEqual(ai,interview)) throw new IllegalArgumentException("producer별 서로 다른 32바이트 이상의 key가 필요합니다");
-        this.secrets=Map.of("ai-proposal",ai,"interview",interview); this.clock=clock;
+        var keys=new HashMap<String,byte[]>();keys.put("ai-proposal",ai);keys.put("interview",interview);
+        if(productSecret!=null){var product=productSecret.getBytes(StandardCharsets.UTF_8);if(product.length<32||MessageDigest.isEqual(product,ai)||MessageDigest.isEqual(product,interview))throw new IllegalArgumentException("product 전용 32바이트 이상의 다른 key가 필요합니다");keys.put("career-product",product);}
+        this.secrets=Map.copyOf(keys); this.clock=clock;
     }
     public ServiceActor authenticate(String token) {
         try {

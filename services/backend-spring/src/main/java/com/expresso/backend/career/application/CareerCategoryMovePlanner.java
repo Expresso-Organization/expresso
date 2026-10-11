@@ -132,6 +132,23 @@ public final class CareerCategoryMovePlanner {
 			PropertyValue value,
 			PropertyDefinition source,
 			PropertyDefinition target) {
+		if ((timestampType(source.type()) && source.system()) || (timestampType(target.type()) && target.system())) {
+			return ConvertedValue.unmapped(CareerUnmappedPropertyReason.INCOMPATIBLE_TYPE);
+		}
+		if (timestampType(target.type())) {
+			if (source.type() != PropertyDefinitionType.DATE && !timestampType(source.type())) return ConvertedValue.unmapped(CareerUnmappedPropertyReason.INCOMPATIBLE_TYPE);
+			// 사용자 시각은 이미 존재하는 단일 datetime만 옮기며 offset·정밀도·timezone을 보존합니다.
+			if (!(value instanceof DatePropertyValue date) || date.precision() != DatePropertyValue.Precision.DATETIME || date.end() != null) {
+				return ConvertedValue.unmapped(CareerUnmappedPropertyReason.INCOMPATIBLE_TYPE);
+			}
+			return new ConvertedValue(rebind(date,target.id()),source.type() == target.type() ? CareerPropertyConversion.Kind.EXACT : CareerPropertyConversion.Kind.SAFE,null);
+		}
+		if (timestampType(source.type())) {
+			if (!(value instanceof DatePropertyValue date) || date.precision() != DatePropertyValue.Precision.DATETIME || date.end() != null) {
+				return ConvertedValue.unmapped(CareerUnmappedPropertyReason.INCOMPATIBLE_TYPE);
+			}
+			if (target.type() == PropertyDefinitionType.DATE) return new ConvertedValue(rebind(date,target.id()),CareerPropertyConversion.Kind.SAFE,null);
+		}
 		if (!target.type().writable()) {
 			return ConvertedValue.unmapped(CareerUnmappedPropertyReason.INCOMPATIBLE_TYPE);
 		}
@@ -250,6 +267,10 @@ public final class CareerCategoryMovePlanner {
 		if (value instanceof DatePropertyValue date && date.end() == null) return new TextConversion(date.start(), CareerPropertyConversion.Kind.SAFE);
 		if (value instanceof DatePropertyValue date) return new TextConversion(date.start() + " - " + date.end(), CareerPropertyConversion.Kind.LOSSY);
 		return null;
+	}
+
+	private static boolean timestampType(PropertyDefinitionType type) {
+		return type == PropertyDefinitionType.CREATED_TIME || type == PropertyDefinitionType.UPDATED_TIME;
 	}
 
 	private static boolean isTextual(PropertyDefinitionType type) {

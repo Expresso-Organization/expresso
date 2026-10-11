@@ -22,11 +22,7 @@ class CareerWriterInputContractTest {
     private static void parse(String kind,JsonNode input) {
         switch(kind) {
             case "create" -> CareerBusinessInput.create(input);
-            case "patch" -> {
-                var changes=CareerBusinessInput.patch(input);
-                if(changes.title().isEmpty() && changes.propertyValues().isEmpty() && changes.status().isEmpty()) throw new IllegalArgumentException();
-                if(changes.status().isPresent() && (changes.title().isPresent() || changes.propertyValues().isPresent())) throw new IllegalArgumentException();
-            }
+            case "patch" -> CareerBusinessInput.patch(input);
             case "ifMatch" -> CareerBusinessInput.version(CareerBusinessInput.text(input));
             case "move" -> {
                 CareerBusinessInput.fields(input,Set.of("targetCategoryId","previewToken"),Set.of("targetCategoryId","previewToken"));

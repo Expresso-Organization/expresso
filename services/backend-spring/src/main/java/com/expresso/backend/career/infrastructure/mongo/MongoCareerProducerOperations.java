@@ -79,4 +79,18 @@ public final class MongoCareerProducerOperations {
         var saved=db.getCollection("career_records").updateOne(session,new Document("_id",record.id()).append("userId",scope.userId()),new Document("$set",new Document("origin","interview")));
         if(saved.getMatchedCount()!=1) throw CareerCommandException.missing();
     }
+    public void validateProductSource(Document source,String kind,String recordId,boolean fresh) {
+        if(!scope.producer().equals("career-product"))throw new CareerCommandException(403,"PRODUCER_SCOPE_MISMATCH");
+        if(!scope.sourceId().equals(scope.operationId())||!scope.sourceId().equals(source.getString("_id"))||!scope.userId().equals(source.getString("userId"))||!kind.equals(source.getString("kind"))||!source.containsKey("recordId")||!Objects.equals(recordId,source.get("recordId"))||!scope.fingerprint().equals(source.getString("requestHash"))||!(source.get("inputHash") instanceof String inputHash)||!inputHash.matches("[a-f0-9]{64}")||!(source.get("inputIdempotencyKey") instanceof String inputKey)||inputKey.length()<8||inputKey.length()>200||!(source.get("active") instanceof Boolean)||fresh&&!Boolean.TRUE.equals(source.get("active")))throw new CareerCommandException(409,"PRODUCER_SOURCE_CHANGED");
+    }
+    public void guardProductSource(Document source,String kind,String recordId) {
+        validateProductSource(source,kind,recordId,true);
+        var filter=owner().append("active",true).append("kind",kind).append("recordId",recordId).append("requestHash",scope.fingerprint()).append("inputHash",source.getString("inputHash")).append("inputIdempotencyKey",source.getString("inputIdempotencyKey"));
+        var result=db.getCollection(scope.collection()).updateOne(session,filter,new Document("$inc",new Document("writerIntegration.fence",1L)));
+        if(result.getMatchedCount()!=1)throw new CareerCommandException(409,"PRODUCER_SOURCE_CHANGED");
+    }
+    public void requireProductCreateCategory(String categoryId) {
+        var filter=new Document("_id",categoryId).append("deletedAt",null).append("$or",List.of(new Document("userId",scope.userId()),new Document("userId",null).append("isSystem",true)));
+        if(db.getCollection("career_categories").find(session,filter).first()==null)throw CareerCommandException.missing();
+    }
 }

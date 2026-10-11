@@ -61,11 +61,11 @@ test('env files remain data and reject ambiguous or duplicate assignments withou
   assert.throws(() => parse('export SECRET=do-not-print\n'), error => !error.message.includes('do-not-print'));
 });
 
-test('deployment validation keeps writer and integration disabled and honors a configured replica set', () => {
+test('deployment validation rejects incomplete activation and honors a configured replica set', () => {
   const parse = feature('parseEnvironment');
   const validate = feature('validateEnvironment');
-  assert.throws(() => validate(parse(`${envText}CAREER_WRITER_ENABLED=true\n`)), /CAREER_WRITER_ENABLED.*false/i);
-  assert.throws(() => validate(parse(`${envText}CAREER_INTEGRATION_ENABLED=true\n`)), /CAREER_INTEGRATION_ENABLED.*false/i);
+  assert.throws(() => validate(parse(`${envText}CAREER_WRITER_ENABLED=true\n`)), /CAREER_WRITER_MOVE_SECRET/i);
+  assert.throws(() => validate(parse(`${envText}CAREER_INTEGRATION_ENABLED=true\n`)), /require CAREER_WRITER_ENABLED/i);
   assert.doesNotThrow(() => validate(parse(`${envText.replace('replicaSet=rs0', 'replicaSet=rs_custom')}MONGODB_REPLICA_SET=rs_custom\n`)));
   assert.throws(() => validate(parse(`${envText}MONGODB_REPLICA_SET=rs_custom\n`)), /replicaSet/i);
 });
@@ -606,4 +606,10 @@ test('explicit rollback still refuses symlinked or nonregular artifacts in the c
       assert.deepEqual((await readdir(root)).filter(name => name.startsWith('.current-')), []);
     });
   }
+});
+test('explicit cutover activation requires scoped keys without changing disabled defaults',()=>{
+ const enabled=runtime.parseEnvironment(`${envText}CAREER_WRITER_ENABLED=true\nCAREER_INTEGRATION_ENABLED=true\nCAREER_PROPERTY_MUTATION_ENABLED=true\nCAREER_WRITER_MOVE_SECRET=${'m'.repeat(32)}\nCAREER_INTEGRATION_AI_SECRET=${'a'.repeat(32)}\nCAREER_INTEGRATION_INTERVIEW_SECRET=${'i'.repeat(32)}\nCAREER_PRODUCT_SERVICE_SECRET=${'p'.repeat(32)}\nCAREER_PROPERTY_MUTATION_SECRET=${'w'.repeat(32)}\n`);
+ assert.equal(runtime.validateEnvironment(enabled).writerEnabled,true);assert.equal(runtime.validateEnvironment(enabled).integrationEnabled,true);
+ assert.throws(()=>runtime.validateEnvironment({...enabled,CAREER_PRODUCT_SERVICE_SECRET:''}),error=>!error.message.includes('m'.repeat(32)));
+ assert.throws(()=>runtime.validateEnvironment({...enabled,CAREER_PROPERTY_MUTATION_SECRET:enabled.CAREER_INTEGRATION_AI_SECRET}));
 });

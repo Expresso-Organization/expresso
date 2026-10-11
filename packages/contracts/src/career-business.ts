@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CareerRecordStatusSchema } from "./career.js";
+import { CareerRecordStatusSchema } from "./career-record-status.js";
 import { TimestampSchema, UuidSchema } from "./common.js";
 import timezonePolicy from "./career-business-timezones.json" with { type: "json" };
 

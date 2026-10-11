@@ -12,7 +12,7 @@ import {
 } from "@expresso/contracts";
 import { Decimal128 } from "mongodb";
 import { createHash } from "node:crypto";
-import { mongoCollections, type CareerAiProposalDoc } from "@expresso/database";
+import { mongoCollections, overlayCareerPropertyOptions, type CareerAiProposalDoc } from "@expresso/database";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { requireActiveUser } from "../identity/index.js";
@@ -46,6 +46,10 @@ function fromV2(propertyId: string, raw: unknown): CareerBusinessPropertyValue |
   return CareerBusinessPropertyValueSchema.parse({ propertyDefinitionId: propertyId, type: value.type, value: converted });
 }
 
+function canonicalAiChange(change: AiEditProposal["propertyChanges"][number]):CareerProducerSelectedPropertyChange|undefined {
+  if(change.canonicalPreviousValue===undefined && change.canonicalNextValue===undefined)return undefined;
+  return CareerProducerSelectedPropertyChangeSchema.parse({propertyId:change.propertyId,previousValue:change.canonicalPreviousValue,nextValue:change.canonicalNextValue});
+}
 /** 선택한 ID만 canonical delta로 고정하고 나머지 저장값은 읽거나 다시 만들지 않습니다. */
 export function selectAiCanonicalDelta(
   definitions: readonly CareerPropertyDefinitionV2[],
@@ -58,18 +62,19 @@ export function selectAiCanonicalDelta(
   if (selectedIds.size !== changes.length || new Set(overrides.map((change) => change.propertyId)).size !== overrides.length || overrides.some((change) => !selectedIds.has(change.propertyId))) throw new CareerDocumentError(400, "selected canonical property IDs are invalid");
   const set: CareerBusinessPropertyValue[] = [];
   const unsetPropertyIds: string[] = [];
-  const writable = new Set(["text", "number", "checkbox", "select", "multi_select", "date", "url", "email", "phone", "file", "media"]);
+  const writable = new Set(["text", "number", "checkbox", "select", "multi_select", "date", "url", "email", "phone", "file", "media", "created_time", "updated_time"]);
   for (const change of changes) {
     const definition = definitions.find((definition) => definition.id === change.propertyId);
     if (!definition || definition.system || definition.deletedAt !== null || !writable.has(definition.type)) throw new CareerDocumentError(409, "selected canonical property is not writable");
     const stored = storedValues.filter((value) => !!value && typeof value === "object" && (value as { propertyDefinitionId?: string }).propertyDefinitionId === change.propertyId);
     if (stored.length > 1) throw new CareerDocumentError(409, "duplicate selected canonical property");
     const current = stored.length ? storedCanonical(stored[0]) : null;
-    const override = overrides.find((override) => override.propertyId === change.propertyId);
+    const override = overrides.find((override) => override.propertyId === change.propertyId) ?? canonicalAiChange(change);
     if (!override && current && ((current.type === "number" && plainDecimal(String(Number(current.value))) !== current.value) || (current.type === "date" && current.value.precision === "month"))) throw new CareerDocumentError(409, "selected value requires an explicit canonical override");
     const previous = override ? override.previousValue === null ? null : CareerBusinessPropertyValueSchema.parse(override.previousValue) : fromV2(change.propertyId, change.previousValue);
     const next = override ? override.nextValue === null ? null : CareerBusinessPropertyValueSchema.parse(override.nextValue) : fromV2(change.propertyId, change.nextValue);
-    if (JSON.stringify(current) !== JSON.stringify(previous) || (previous && previous.propertyDefinitionId !== change.propertyId) || (next && (next.propertyDefinitionId !== change.propertyId || next.type !== definition.type))) throw new CareerDocumentError(409, "selected canonical property changed");
+    if (JSON.stringify(current) !== JSON.stringify(previous) || (previous && previous.propertyDefinitionId !== change.propertyId) || (next && (next.propertyDefinitionId !== change.propertyId || (next.type !== definition.type && !(next.type==="date"&&!definition.system&&(definition.type==="created_time"||definition.type==="updated_time")&&next.value.precision==="datetime"&&next.value.end===null))))) throw new CareerDocumentError(409, "selected canonical property changed");
+    if(next?.type==="select"||next?.type==="multi_select"){const options=new Set(Array.isArray(definition.config.options)?definition.config.options.map(option=>(option as {id:string}).id):[]);const ids=next.type==="select"?(next.value===null?[]:[next.value]):next.value;if(ids.some(id=>!options.has(id)))throw new CareerDocumentError(409,"selected canonical option is not owned by this property");}
     if (next === null) unsetPropertyIds.push(change.propertyId); else set.push(next);
   }
   return CareerWriterPropertyDeltaSchema.parse({ set, unsetPropertyIds });
@@ -83,7 +88,7 @@ function selectedNextDelta(changes: AiEditProposal["propertyChanges"], overrides
   if (selected.size !== changes.length || new Set(overrides.map((change) => change.propertyId)).size !== overrides.length || overrides.some((change) => !selected.has(change.propertyId))) throw new CareerDocumentError(400, "canonical override selection is invalid");
   const set: CareerBusinessPropertyValue[] = []; const unsetPropertyIds: string[] = [];
   for (const change of changes) {
-    const override = overrides.find((item) => item.propertyId === change.propertyId);
+    const override = overrides.find((item) => item.propertyId === change.propertyId) ?? canonicalAiChange(change);
     const next = override ? override.nextValue : fromV2(change.propertyId, change.nextValue);
     if (next === null) unsetPropertyIds.push(change.propertyId); else set.push(next);
   }
@@ -128,7 +133,8 @@ export class PreparedAiProposalService {
         const category = await db.careerCategories.findOne({ _id: record.categoryId, $or: [{ userId: null }, { userId }] }, { session: tx.session });
         if (!category) throw new CareerDocumentError(404, "career category not found");
         const definitions = "propertyDefinitions" in category && Array.isArray(category.propertyDefinitions) ? category.propertyDefinitions as CareerPropertyDefinitionV2[] : category.propertySchemaV2 ?? [];
-        const delta = selectAiCanonicalDelta(definitions, record.propertyValues, changes, overrides);
+        const optionScope={userId,categoryId:category._id};const options=await db.careerPropertyOptions.find(optionScope,{session:tx.session}).toArray();const effective=overlayCareerPropertyOptions(definitions,options,optionScope);
+        const delta = selectAiCanonicalDelta(effective, record.propertyValues, changes, overrides);
         business = { kind: "patch", recordId, expectedVersion: record.version, expectedCategoryVersion: category.version, patches: [{ propertyValues: delta }] };
       }
       const intent = createCareerProducerIntent({ producer: "ai-proposal", userId, sourceId: proposal._id, operationId: input.operationId, business, document });
