@@ -683,7 +683,9 @@ h2 { font-size: 50px; }
   padding: 8px 16px 9px; box-shadow: var(--ex-elevation-raised);
 }
 .docpane .pager .num { display: flex; font-family: var(--ex-font-brand); font-weight: 300; font-size: 34px; line-height: 1; color: var(--ex-ink-900); }
-.docpane .pager .dg { display: block; height: 1em; overflow: hidden; max-width: .6em; transition: max-width 620ms cubic-bezier(.22, 1, .36, 1); }
+/* overflow: hidden 은 스크롤 컨테이너를 만들어 기준선이 상자 아래 끝으로 잡히고, 「/ 214쪽」이 숫자보다 내려앉습니다.
+   clip 은 기준선을 글자에서 그대로 읽습니다. 빈 첫 칸에도 글자를 넣어야 첫 줄 기준선이 0–9 띠 첫 칸에 남습니다. */
+.docpane .pager .dg { display: block; height: 1em; overflow: clip; max-width: .6em; transition: max-width 620ms cubic-bezier(.22, 1, .36, 1); }
 /* 자리 수가 모자라면 앞 자리 폭을 접습니다 — 6쪽에서 203쪽으로 가면 자리가 펴지며 숫자가 굴러 나옵니다. */
 .docpane .pager .dg.off { max-width: 0; }
 .docpane .pager .dg i {
@@ -691,6 +693,7 @@ h2 { font-size: 50px; }
   transform: translateY(calc(var(--n, 0) * -1em));
   transition: transform 620ms cubic-bezier(.22, 1, .36, 1);
 }
+.docpane .pager .dg i:empty::before { content: "\00a0"; }
 .docpane .pager .of { font-size: 16px; color: var(--ex-slate-400); }
 .docpane .pager .of .total { font-family: var(--ex-font-brand); font-weight: 300; font-size: 18px; margin-right: 2px; }
 @media (prefers-reduced-motion: reduce) { .docpane .pager .dg, .docpane .pager .dg i { transition: none; } }
