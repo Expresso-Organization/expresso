@@ -875,6 +875,28 @@ h2 { font-size: 50px; }
   </div>
 </section>
 
+<section class="slide" data-title="유스케이스 다이어그램" data-kind="01 · 서비스와 모델" data-doc="fig:2.3" data-doc-label="그림 2.3">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">01</span><span class="ko">서비스와 모델</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 2.4 AI서비스 유스케이스 모델</div>
+      <h2 class="in dl-2">유스케이스 다이어그램</h2>
+      <p class="sub in dl-3">사람 액터(구직자 · 방문자 · 관리자)와 시스템 액터(AI서버 · AI학습서버 · 데이터수집기)</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>사용자용(그림 2.3) · 관리자용(그림 2.4) 유스케이스 다이어그램</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>구직자 · 방문자의 유스케이스와 시스템 액터 연결 표시</li>
+          <li>AI서버 · AI학습서버 · 데이터수집기의 호출 지점 구분</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="slide" data-title="추천 모델 두 종" data-kind="01 · 서비스와 모델" data-doc="fig:3.1" data-doc-label="그림 3.1">
   <div class="frame">
     <div class="rail in in-fade dl-1"><span class="now">01</span><span class="ko">서비스와 모델</span><span class="end count"></span></div>
@@ -942,33 +964,146 @@ h2 { font-size: 50px; }
 </section>
 
 <!-- ============================================================
-     02 명세와 지표 — 설계서 7.3 · 9.1 · 9.2 순위 지표의 이해
+     02 화면 · 시스템 설계 — 설계서 5 – 8장. 다이어그램 종류마다 한 장씩, 예시는 공고 분석 기능으로 맞춥니다
      ============================================================ -->
-<section class="slide" data-title="API · 데이터 명세" data-kind="02 · 명세와 지표" data-doc="h:■ 요청 · 응답 유형" data-doc-span="1" data-doc-label="7.3 요청 · 응답 유형">
+<section class="slide" data-title="메뉴 구조도" data-kind="02 · 화면 · 시스템 설계" data-doc="fig:5.1" data-doc-label="그림 5.1">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">명세와 지표</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
     <div class="head">
-      <div class="kicker ko in dl-2">설계서 7.3 · 8.2 · <span class="tag">v0.4</span></div>
-      <h2 class="in dl-2">API · 데이터 명세</h2>
-      <p class="sub in dl-3">API 163개를 요청 · 응답 유형으로 묶고 26개를 상세 설계 · 컬렉션 명세서 82개는 스크립트로 생성</p>
+      <div class="kicker ko in dl-2">설계서 5.1 메뉴 구조도</div>
+      <h2 class="in dl-2">메뉴 구조도</h2>
+      <p class="sub in dl-3">화면 정의서(docs/Expresso Screens.dc.html) 기준 화면번호 사용</p>
     </div>
     <div class="body">
       <div class="notes">
-        <div class="in dl-4"><div class="lab">추가 의도</div><ul class="pts">
-          <li>전체 HTTP 경로의 유형 귀속 기준 제시</li>
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>사용자용(그림 5.1) · 관리자용(그림 5.4) 메뉴 구조도</li>
         </ul></div>
         <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
-          <li>유형별 요청 · 응답 특징과 상태 코드 정리</li>
-          <li>유형별 대표 API 상세 설계 절(7.3.x) 연결</li>
+          <li>기록 · 공고 · 생성 · 배포 · 분석 · 설정 메뉴별 화면 배치 표시</li>
+          <li>화면번호 기준 화면 정의서 대응</li>
         </ul></div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="slide" data-title="순위 지표" data-kind="02 · 명세와 지표" data-doc="fig:9.1" data-doc-label="그림 9.1">
+<section class="slide" data-title="화면 설계" data-kind="02 · 화면 · 시스템 설계" data-doc="h:■ 공고 분석 — 화면번호 01" data-doc-span="3" data-doc-label="5.3 공고 분석 (화면번호 01)">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">명세와 지표</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 5.3 · 예시 화면번호 01 공고 분석</div>
+      <h2 class="in dl-2">화면 설계</h2>
+      <p class="sub in dl-3">화면마다 한 쪽 · 실제 화면 캡처 기반</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>사용자 화면 29개의 화면별 설계</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>화면 캡처 · 라우트 · 담당 도메인 모듈 표시</li>
+          <li>주요 구성 요소 · 사용자에게 하는 역할 · 기능 요구사항 · 제약조건 정리</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="시스템 아키텍쳐" data-kind="02 · 화면 · 시스템 설계" data-doc="fig:6.1" data-doc-label="그림 6.1">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 6.1 시스템 아키텍쳐</div>
+      <h2 class="in dl-2">시스템 아키텍쳐</h2>
+      <p class="sub in dl-3">화면 · 백엔드 · 저장소 · 외부 서비스의 계층 구성</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>화면 · API 서버 · Worker · 저장소 · 외부 서비스 구성도</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>계층 간 의존 방향 표시</li>
+          <li>API 서버 · Worker 분리 실행과 Outbox 기반 큐 발행 표시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="시퀀스 다이어그램" data-kind="02 · 화면 · 시스템 설계" data-doc="h:7) 공고 분석 기능" data-doc-span="2" data-doc-label="6.2.7 공고 분석 기능">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 6.2 · 6.3 · 예시 6.2.7 공고 분석</div>
+      <h2 class="in dl-2">시퀀스 다이어그램</h2>
+      <p class="sub in dl-3">기능 하나에 시퀀스 다이어그램 한 장</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>사용자 기능(6.2) · 관리자 기능(6.3)별 시퀀스 다이어그램</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>사용자 · 웹 · API 서버 · 큐 · Worker · AI서버 간 호출 순서 표시</li>
+          <li>비동기 접수(202) 뒤 완료 조회 흐름 표시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="API 설계" data-kind="02 · 화면 · 시스템 설계" data-doc="h:5) 공고 분석 접수" data-doc-span="3" data-doc-label="7.3.5 공고 분석 접수">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 7.3 · 예시 7.3.5 공고 분석 접수</div>
+      <h2 class="in dl-2">API 설계</h2>
+      <p class="sub in dl-3">packages/contracts의 zod 스키마 기준</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>요청 · 응답 유형별 대표 API 상세 설계</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>요청 · 응답 방향 그림과 파라메터 표 제시</li>
+          <li>실제 전송 내용(IN · OUT) 예시 제시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="컬렉션 참조 관계" data-kind="02 · 화면 · 시스템 설계" data-doc="fig:8.1" data-doc-label="그림 8.1">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 8.1 · 8.2 데이터 설계</div>
+      <h2 class="in dl-2">컬렉션 참조 관계</h2>
+      <p class="sub in dl-3">MongoDB 컬렉션 간 식별자 참조</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>핵심 컬렉션 참조 관계(그림 8.1) · 컬렉션 명세서(8.2)</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>users · career_records · brews · portfolios · job_postings 간 식별자 참조 표시</li>
+          <li>참조 방향 기준 문서 간 의존 확인</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     03 지표와 파일럿 실험 — 설계서 9장
+     ============================================================ -->
+<section class="slide" data-title="순위 지표" data-kind="03 · 지표와 파일럿" data-doc="fig:9.1" data-doc-label="그림 9.1">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">지표와 파일럿 실험</span><span class="end count"></span></div>
     <div class="head">
       <div class="kicker ko in dl-2">설계서 9.2 · <span class="tag">v0.7 · 피드백 반영</span></div>
       <h2 class="in dl-2">순위 지표</h2>
@@ -988,9 +1123,9 @@ h2 { font-size: 50px; }
   </div>
 </section>
 
-<section class="slide" data-title="NDCG 해석 방법" data-kind="02 · 명세와 지표" data-doc="fig:9.2" data-doc-label="그림 9.2">
+<section class="slide" data-title="NDCG 해석 방법" data-kind="03 · 지표와 파일럿" data-doc="fig:9.2" data-doc-label="그림 9.2">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">명세와 지표</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">지표와 파일럿 실험</span><span class="end count"></span></div>
     <div class="head">
       <div class="kicker ko in dl-2">설계서 9.2 순위 지표의 이해 · <span class="tag">v1.0 추가 그림</span></div>
       <h2 class="in dl-2">NDCG 해석 방법</h2>
@@ -1010,12 +1145,9 @@ h2 { font-size: 50px; }
   </div>
 </section>
 
-<!-- ============================================================
-     03 파일럿 실험 결과와 해석 — 설계서 9.2
-     ============================================================ -->
-<section class="slide" data-title="파일럿 학습 조건" data-kind="03 · 파일럿" data-doc="h:■ 파일럿 학습 조건" data-doc-span="3" data-doc-label="9.2 파일럿 학습 조건">
+<section class="slide" data-title="파일럿 학습 조건" data-kind="03 · 지표와 파일럿" data-doc="h:■ 파일럿 학습 조건" data-doc-span="3" data-doc-label="9.2 파일럿 학습 조건">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">파일럿 실험 결과와 해석</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">지표와 파일럿 실험</span><span class="end count"></span></div>
     <div class="head">
       <div class="kicker ko in dl-2">설계서 9.2 · 2026-09-04 수행</div>
       <h2 class="in dl-2">파일럿 학습 조건</h2>
@@ -1035,9 +1167,9 @@ h2 { font-size: 50px; }
   </div>
 </section>
 
-<section class="slide" data-title="파일럿 평가 결과" data-kind="03 · 파일럿" data-doc="fig:9.3" data-doc-span="1" data-doc-label="그림 9.3 · 9.4">
+<section class="slide" data-title="파일럿 평가 결과" data-kind="03 · 지표와 파일럿" data-doc="fig:9.3" data-doc-span="1" data-doc-label="그림 9.3 · 9.4">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">파일럿 실험 결과와 해석</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">지표와 파일럿 실험</span><span class="end count"></span></div>
     <div class="head">
       <div class="kicker ko in dl-2">설계서 9.2 · 평가 분할 70명 · 700쌍</div>
       <h2 class="in dl-2">파일럿 평가 결과</h2>
@@ -1071,7 +1203,6 @@ h2 { font-size: 50px; }
     </div>
     <div class="body mid">
       <h2 class="in dl-2" style="font-size: 76px">감사합니다</h2>
-      <p class="sub in dl-3">질문과 피드백은 다음 판에 반영</p>
     </div>
     <div class="foot in in-fade dl-5">
       <div class="covermeta">
