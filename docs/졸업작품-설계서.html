@@ -1752,18 +1752,18 @@ svg.dg .mute { fill: var(--ex-slate-300); }
   <circle class="ac" cx="760" cy="150" r="9"/><line class="ac" x1="760" y1="159" x2="760" y2="180"/><line class="ac" x1="747" y1="167" x2="773" y2="167"/><line class="ac" x1="760" y1="180" x2="749" y2="196"/><line class="ac" x1="760" y1="180" x2="771" y2="196"/><text class="t" x="760" y="214" text-anchor="middle">데이터수집기</text>
   <circle class="ac" cx="760" cy="275" r="9"/><line class="ac" x1="760" y1="284" x2="760" y2="305"/><line class="ac" x1="747" y1="292" x2="773" y2="292"/><line class="ac" x1="760" y1="305" x2="749" y2="321"/><line class="ac" x1="760" y1="305" x2="771" y2="321"/><text class="t" x="760" y="339" text-anchor="middle">AI학습서버</text>
   <circle class="ac" cx="760" cy="445" r="9"/><line class="ac" x1="760" y1="454" x2="760" y2="475"/><line class="ac" x1="747" y1="462" x2="773" y2="462"/><line class="ac" x1="760" y1="475" x2="749" y2="491"/><line class="ac" x1="760" y1="475" x2="771" y2="491"/><text class="t" x="760" y="509" text-anchor="middle">AI서버</text>
-  <!-- 공고 검색은 한 줄로 나와 세 액터로 갈라집니다(T자 분기). 피할 수 없는 교차 두 곳은 반원으로 넘어
-       분기와 구분합니다. 액터는 교차가 가장 적은 순서(데이터수집기 · AI학습서버 · AI서버)로 둡니다. -->
-  <path class="fl" d="M 562 216 H 670 V 175 H 724"/>
-  <text class="lm" x="697" y="166" text-anchor="middle">공고 수집</text>
-  <path class="fl" d="M 610 216 V 300"/>
-  <path class="fl" d="M 562 300 H 644 A 6 6 0 0 1 656 300 H 724"/>
-  <text class="lm" x="692" y="291" text-anchor="middle">모델 판정</text>
-  <path class="fl" d="M 650 216 V 470 H 724"/>
-  <path class="fl" d="M 562 258 H 604 A 6 6 0 0 1 616 258 H 650"/>
-  <path class="fl" d="M 562 342 H 650"/>
-  <path class="fl" d="M 562 384 H 650"/>
-  <text class="lm" x="687" y="461" text-anchor="middle">해석 · 생성</text>
+  <!-- 공고 검색은 한 줄로 나와 세 액터로 갈라집니다(T자 분기). 안쪽 세로선이 AI서버, 바깥쪽이 AI학습서버라
+       교차는 재료 선정 → AI학습서버 한 곳뿐이고, 그 자리는 반원으로 넘어 분기와 구분합니다. -->
+  <path class="fl" d="M 562 216 H 690 V 175 H 724"/>
+  <text class="lm" x="707" y="166" text-anchor="middle">공고 수집</text>
+  <path class="fl" d="M 600 216 V 470 H 724"/>
+  <path class="fl" d="M 562 258 H 600"/>
+  <path class="fl" d="M 562 342 H 600"/>
+  <path class="fl" d="M 562 384 H 600"/>
+  <text class="lm" x="662" y="461" text-anchor="middle">해석 · 생성</text>
+  <path class="fl" d="M 650 216 V 300"/>
+  <path class="fl" d="M 562 300 H 594 A 6 6 0 0 1 606 300 H 724"/>
+  <text class="lm" x="687" y="291" text-anchor="middle">모델 판정</text>
 </svg></div>
         <figcaption>그림 2.3 사용자용 유스케이스 다이어그램</figcaption>
       </figure>
