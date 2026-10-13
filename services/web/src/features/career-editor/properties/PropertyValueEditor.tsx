@@ -46,7 +46,8 @@ export function PropertyValueEditor({ definition, value, onCommit, disabled = fa
   const [issue, setIssue] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const options = useMemo(() => propertyOptions(definition), [definition]);
-  useEffect(() => { setDraft(initialDraft(value)); setDateEnd(value?.type === "date" ? value.value.end ?? "" : ""); setIssue(null); }, [value]);
+  const valueSignature = JSON.stringify(value);
+  useEffect(() => { setDraft(initialDraft(value)); setDateEnd(value?.type === "date" ? value.value.end ?? "" : ""); setIssue(null); }, [valueSignature]);
 
   async function commit(next: CareerPropertyValueV2 | null) {
     if (next === null) { setSaving(true); setIssue(null); try { await onCommit(null); } catch (error) { setIssue(error instanceof Error ? error.message : "저장하지 못했습니다."); } finally { setSaving(false); } return; }

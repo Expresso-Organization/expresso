@@ -15,6 +15,7 @@ import {
   startInterviewAction,
 } from "../brew-actions";
 import styles from "./page.module.css";
+import { InterviewAnswerForm } from "./InterviewAnswerForm";
 
 /**
  * 01b 대화.
@@ -171,29 +172,7 @@ export default async function CounterPage({
           </div>
 
           {current ? (
-            <form action={answerQuestionAction} className={styles.composer}>
-              <input type="hidden" name="brewId" value={brewId} />
-              <input type="hidden" name="sessionId" value={talk.id} />
-              <input type="hidden" name="questionId" value={current.id} />
-              <div className={styles.inputBox}>
-                <textarea
-                  name="transcript"
-                  className={styles.textarea}
-                  placeholder="떠오르는 대로 적어도 됩니다. 문장은 제가 다듬을게요."
-                  aria-label="답변"
-                  required
-                />
-                <div className={styles.inputActions}>
-                  <span className={styles.inputHint}>
-                    적은 그대로 기록에 남습니다 — 없는 수치를 채우지 않습니다
-                  </span>
-                  <button type="submit" className={styles.send}>
-                    보내기
-                    <Icon name="arrow-up" size={13} />
-                  </button>
-                </div>
-              </div>
-            </form>
+            <InterviewAnswerForm key={current.id} brewId={brewId} sessionId={talk.id} questionId={current.id} pendingOperation={current.pendingOperation} submit={answerQuestionAction} />
           ) : null}
         </div>
 

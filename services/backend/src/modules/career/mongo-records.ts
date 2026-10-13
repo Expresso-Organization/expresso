@@ -1,18 +1,44 @@
 import { createHash } from "node:crypto";
-import { CareerPropertyValueV2Schema, CareerRecordSchema, CareerRecordListResponseSchema, ListCareerRecordsQuerySchema, type CreateCareerRecord, type ListCareerRecordsQuery } from "@expresso/contracts";
-import { mongoCollections, type CareerRecordDoc } from "@expresso/database";
+import { CareerPropertyValueV2Schema, CareerRecordSchema, CareerRecordListResponseSchema, ListCareerRecordsQuerySchema, type CreateCareerRecord, type ListCareerRecordsQuery, type CareerPropertyDefinitionV2 } from "@expresso/contracts";
+import { mongoCollections, readCanonicalCareerPropertyValues, projectCanonicalCareerProductProperties, type CareerRecordDoc } from "@expresso/database";
 import type { Document } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { CareerError } from "./errors.js";
 
-export function mapMongoRecord(record: CareerRecordDoc, bodyMd = record.bodyMd) {
+export interface CanonicalRecordMapping {
+  definitions: readonly CareerPropertyDefinitionV2[];
+  requireCanonical?: boolean;
+}
+
+/** 표시용 호환 필드도 canonical에서 만들며 물리 properties를 정본으로 사용하지 않습니다. */
+export function mapMongoRecord(record: CareerRecordDoc, bodyMd = record.bodyMd, canonical?: CanonicalRecordMapping) {
+  let propertyValues: ReturnType<typeof readCanonicalCareerPropertyValues> | undefined;
+  let properties: Record<string, unknown> = record.properties;
+  if (canonical || Array.isArray(record.propertyValues)) {
+    if (!canonical) throw new CareerError(409, "CANONICAL_DEFINITIONS_NOT_PREPARED");
+    try {
+      propertyValues = readCanonicalCareerPropertyValues(record);
+      const projection = projectCanonicalCareerProductProperties(canonical.definitions, propertyValues);
+      properties = Object.fromEntries(Object.entries(projection).map(([key, value]) => {
+        if (value.type === "number" || value.type === "checkbox") return [key, value.value];
+        if (value.type === "text") return [key, value.value.length <= 5_000 ? value.value : value];
+        if (value.type === "url" || value.type === "email" || value.type === "phone") return [key, value.value];
+        if (value.type === "date") {
+          if (value.value.precision === "month") return [key, value.value.start];
+          return [key, { type: "date", value: { start: value.value.start, end: value.value.end, timezone: value.value.precision === "datetime" ? value.value.timezone : null } }];
+        }
+        return [key, value];
+      }));
+    } catch (error) {
+      throw new CareerError(409, error instanceof Error ? error.message : "INVALID_CANONICAL_VALUES");
+    }
+  }
   const computedProperties = Object.fromEntries(Object.entries(record.computedProperties ?? {}).flatMap(([key, value]) => {
     const parsed = CareerPropertyValueV2Schema.safeParse(value);
     return key === "__expressoComputation" || !parsed.success || (parsed.data.type !== "formula" && parsed.data.type !== "rollup") ? [] : [[key, parsed.data]];
   }));
-  return CareerRecordSchema.parse({ id: record._id, categoryId: record.categoryId, title: record.title, status: record.status, origin: record.origin, properties: record.properties, ...(Object.keys(computedProperties).length ? { computedProperties } : {}), bodyMd, version: record.version, createdAt: (record.createdAt ?? record.updatedAt).toISOString(), updatedAt: record.updatedAt.toISOString() });
+  return CareerRecordSchema.parse({ id: record._id, categoryId: record.categoryId, title: record.title, status: record.status, origin: record.origin, properties, ...(propertyValues === undefined ? {} : { propertyValues }), ...(Object.keys(computedProperties).length ? { computedProperties } : {}), bodyMd, version: record.version, createdAt: (record.createdAt ?? record.updatedAt).toISOString(), updatedAt: record.updatedAt.toISOString() });
 }
-
 export function careerRequestHash(input: CreateCareerRecord) {
   const stable = (value: unknown): unknown => Array.isArray(value) ? value.map(stable)
     : value !== null && typeof value === "object" ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => [key, stable(item)])) : value;

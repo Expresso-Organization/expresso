@@ -62,6 +62,7 @@ import {
   createRequestId,
 } from "../platform/observability.js";
 import { registerErrorHandler } from "./error-handler.js";
+import type { CareerDocumentSessionRegistry } from "../modules/career-editor/index.js";
 import type { CareerDocumentApi } from "../modules/career-editor/index.js";
 import { registerCareerDocumentRoutes } from "../modules/career-editor/routes.js";
 import websocket from "@fastify/websocket";
@@ -104,6 +105,7 @@ export interface BuildApiOptions {
   engagementService?: EngagementApi;
   accountLifecycleService?: AccountLifecycleApi;
   careerDocumentService?: CareerDocumentApi;
+  careerDocumentRegistry?:CareerDocumentSessionRegistry;
 }
 
 export function buildApi(options: BuildApiOptions): FastifyInstance {
@@ -126,6 +128,7 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
     if (options.identityService && options.careerDocumentService) {
       registerCareerDocumentSocket(app, {
         service: options.careerDocumentService,
+        ...(options.careerDocumentRegistry?{registry:options.careerDocumentRegistry}:{}),
         identityService: options.identityService,
         signingSecret: options.config.assetSigningSecret ?? "expresso-local-asset-signing-secret",
         ...(options.config.careerSocketAllowedOrigin

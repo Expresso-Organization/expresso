@@ -1,4 +1,5 @@
-import type { CareerCategory, CareerPropertyDefinitionV2, CareerPropertyValueV2, CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
+import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
+import { canonicalEditableDefinition, canonicalPropertyValue, canonicalReadDefinition, type CareerCellValue } from "../properties/canonical-values";
 
 export interface CareerViewRendererProps {
   records: readonly CareerRecord[];
@@ -14,11 +15,13 @@ export interface CareerViewRendererProps {
   onFillMissing(recordId: string): void;
   onToggle(recordId: string): void;
   onViewChange(next: CareerViewConfiguration): void;
-  onCellCommit?(recordId: string, definition: CareerPropertyDefinitionV2, value: CareerPropertyValueV2 | null): Promise<void>;
+  onCellCommit?(recordId: string, definition: CareerPropertyDefinitionV2, value: CareerCellValue): Promise<void>;
+  onEnsureOption?(definition: CareerPropertyDefinitionV2, label: string): Promise<{ id: string; name: string }>;
   onCellRetry?(recordId: string, propertyId: string): void;
   onDuplicateRecord?(recordId: string): Promise<CareerRecord | null>;
   onDeleteRecord?(recordId: string): Promise<void>;
   cellIssues?: ReadonlyMap<string, string>;
+  pendingBusinessRecordIds?: ReadonlySet<string>;
 }
 
 export function propertyKey(category: CareerCategory, propertyId: string): string | null {
@@ -28,7 +31,13 @@ export function propertyName(category: CareerCategory, propertyId: string): stri
   return category.propertySchemaV2?.find((item) => item.id === propertyId)?.name ?? Object.entries(category.propertySchema).find(([, item]) => item.id === propertyId)?.[1].label ?? propertyId.slice(0, 8);
 }
 
-export function rawValue(record: CareerRecord, key: string): unknown {
+export function rawValue(record: CareerRecord, key: string, source?: CareerCategory | CareerPropertyDefinitionV2): unknown {
+  const currentDefinition = source && ("propertySchema" in source ? source.propertySchemaV2?.find((item) => item.key === key && item.deletedAt === null) : source);
+  const definition = currentDefinition ? canonicalReadDefinition(record, currentDefinition) : undefined;
+  if (definition?.system && definition.type === "created_time") return record.createdAt ?? record.updatedAt;
+  if (definition?.system && definition.type === "updated_time") return record.updatedAt;
+  if (definition?.type === "formula" || definition?.type === "rollup") return record.computedProperties?.[key]?.value;
+  if (record.propertyValues !== undefined && definition && canonicalEditableDefinition(definition)) return canonicalPropertyValue(record, definition)?.value;
   const stored = record.properties[key];
   return stored && typeof stored === "object" && "value" in stored ? stored.value : stored;
 }

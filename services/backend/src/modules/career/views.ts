@@ -5,7 +5,7 @@ import {
   CareerRecordSchema,
   type CareerViewConfiguration,
 } from "@expresso/contracts";
-import { mongoCollections, type CareerViewDoc } from "@expresso/database";
+import { mongoCollections, type CareerViewDoc, type CareerCategoryDoc, type CareerRecordDoc } from "@expresso/database";
 import type { Document } from "mongodb";
 import { z } from "zod";
 
@@ -14,7 +14,8 @@ import { inTransaction } from "../../platform/mongo-transaction.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
 import { mapMongoCategory, requireCareerCategory } from "./mongo-categories.js";
-import { CareerViewQuery } from "./view-query.js";
+import { CareerViewQuery, type CareerViewQueryOptions } from "./view-query.js";
+import { CanonicalCareerReadService } from "./canonical-reads.js";
 
 const ViewCreateSchema = CareerViewConfigurationSchema.omit({
   id: true, categoryId: true, version: true, order: true, createdAt: true, updatedAt: true,
@@ -76,9 +77,17 @@ function versionConflict(): CareerError {
  * projection pipeline을 만들어 원본 `career_records`를 읽습니다.
  */
 export class CareerViewService {
-  readonly queryCompiler = new CareerViewQuery();
+  readonly queryCompiler: CareerViewQuery;
+  readonly reader: CanonicalCareerReadService;
 
-  constructor(readonly context: MongoContext) {}
+  constructor(readonly context: MongoContext, readonly options: CareerViewQueryOptions = { source: "canonical" }) {
+    this.queryCompiler = new CareerViewQuery(options);
+    this.reader = new CanonicalCareerReadService(context);
+  }
+
+  private async queryCategory(userId: string, category: CareerCategoryDoc) {
+    return mapMongoCategory(this.options.source === "canonical" ? { ...category, propertySchemaV2: await this.reader.definitions(userId, category) } : category);
+  }
 
   async list(userId: string, categoryId: string): Promise<CareerViewConfiguration[]> {
     await requireCareerCategory(this.context, userId, categoryId);
@@ -105,7 +114,7 @@ export class CareerViewService {
         createdAt: now.toISOString(), updatedAt: now.toISOString(),
       });
       // compile은 저장 전 모든 property UUID와 view-type 설정을 검사한다.
-      this.queryCompiler.compile(mapMongoCategory(category), config);
+      this.queryCompiler.compile(await this.queryCategory(userId, category), config);
       const doc = asDoc(config);
       doc.userId = userId;
       await views.insertOne(doc, { session: tx.session });
@@ -127,7 +136,7 @@ export class CareerViewService {
         ...current, ...input, id: current.id, categoryId: current.categoryId, order: current.order,
         version: current.version + 1, createdAt: current.createdAt, updatedAt: new Date().toISOString(),
       });
-      this.queryCompiler.compile(mapMongoCategory(category), next);
+      this.queryCompiler.compile(await this.queryCategory(userId, category), next);
       const result = await views.updateOne(
         { _id: viewId, userId, "configuration.version": expectedVersion },
         { $set: compatibilitySet(next) },
@@ -152,7 +161,7 @@ export class CareerViewService {
       if (order >= 20) throw new CareerError(409, "category view limit exceeded");
       const now = new Date().toISOString();
       const copy = CareerViewConfigurationSchema.parse({ ...source, id: randomUUID(), name: parsedName, version: 1, order, createdAt: now, updatedAt: now });
-      this.queryCompiler.compile(mapMongoCategory(category), copy);
+      this.queryCompiler.compile(await this.queryCategory(userId, category), copy);
       const doc = asDoc(copy);
       doc.userId = userId;
       await views.insertOne(doc, { session: tx.session });
@@ -185,6 +194,8 @@ export class CareerViewService {
       const category = await categories.findOne({ _id: categoryId, $or: [{ userId: null }, { userId }] }, { session: tx.session });
       if (!category) throw new CareerError(404, "career category not found");
       if (category.version !== expectedCategoryVersion) throw versionConflict();
+      const mutation = await mongoCollections(tx.db).careerPropertyMutations.findOne({ userId, categoryId, active: true }, { session: tx.session });
+      if (mutation) throw new CareerError(409, "category property mutation is active", { mutationId: mutation._id, status: mutation.status, retryable: mutation.status === "failed" });
       const views = mongoCollections(tx.db).careerViews;
       const rows = await views.find({ userId, categoryId, configuration: { $exists: true } }, { session: tx.session }).limit(21).toArray();
       const actual = new Set(rows.map((row) => row._id));
@@ -205,8 +216,13 @@ export class CareerViewService {
     if (!viewDoc) throw new CareerError(404, "career view configuration not found");
     const view = configuration(viewDoc);
     const categoryDoc = await requireCareerCategory(this.context, userId, view.categoryId);
-    const category = mapMongoCategory(categoryDoc);
-    const compiled = this.queryCompiler.compile(category, view);
+    const readContext = this.options.source === "canonical" ? await this.reader.viewReadContext(userId, categoryDoc) : null;
+    const category = readContext ? mapMongoCategory({ ...categoryDoc, propertySchemaV2: readContext.definitions }) : await this.queryCategory(userId, categoryDoc);
+    if (this.options.source === "canonical") {
+      const unprepared = await mongoCollections(this.context.db).careerRecords.findOne({ userId, categoryId: view.categoryId, deletedAt: null, $expr: { $not: [{ $isArray: "$propertyValues" }] } }, { projection: { _id: 1 } });
+      if (unprepared) throw new CareerError(409, "CANONICAL_VALUES_NOT_PREPARED");
+    }
+    const compiled = this.queryCompiler.compile(category, view, readContext ?? undefined);
     const pipeline = [{ $match: { userId, categoryId: view.categoryId, deletedAt: null } } as Document, ...compiled.pipeline];
     if (cursor) {
       const payload = this.queryCompiler.decodeCursor(cursor, { userId, viewId, viewVersion: view.version });
@@ -223,7 +239,7 @@ export class CareerViewService {
       ? this.queryCompiler.encodeCursor({ userId, viewId, viewVersion: view.version, expiresAt: Date.now() + CURSOR_LIFETIME_MS, values: compiled.sortParts.map((part) => last[part.field]), id: String(last._id) })
       : null;
     return {
-      data: pageRows.map((row) => CareerRecordSchema.parse({
+      data: this.options.source === "canonical" ? await Promise.all(pageRows.map((row) => this.reader.mapRecord(row as CareerRecordDoc, categoryDoc))) : pageRows.map((row) => CareerRecordSchema.parse({
         id: String(row._id), categoryId: row.categoryId, title: row.title, status: row.status, origin: row.origin,
         properties: row.properties ?? {}, computedProperties: Object.fromEntries(Object.entries(row.computedProperties ?? {}).filter(([key]) => key !== "__expressoComputation")), bodyMd: row.bodyMd ?? "", version: row.version, createdAt: new Date(row.createdAt ?? row.updatedAt).toISOString(), updatedAt: new Date(row.updatedAt).toISOString(),
       })),

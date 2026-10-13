@@ -57,3 +57,9 @@ describe("loadRuntimeConfig", () => {
     });
   });
 });
+
+describe("Career owner runtime settings",()=>{
+ it("keeps owner endpoint and scoped credentials absent until configured",()=>{expect(loadRuntimeConfig({}).careerSpringBaseUrl).toBeUndefined();expect(loadRuntimeConfig({}).careerProductServiceSecret).toBeUndefined();});
+ it("reads explicit endpoint and separate minimum service keys",()=>{const config=loadRuntimeConfig({CAREER_SPRING_BASE_URL:"http://127.0.0.1:18081",CAREER_PRODUCT_SERVICE_SECRET:"p".repeat(32),CAREER_INTEGRATION_AI_SECRET:"a".repeat(32),CAREER_INTEGRATION_INTERVIEW_SECRET:"i".repeat(32),CAREER_PROPERTY_MUTATION_SECRET:"m".repeat(32),CAREER_SCHEMA_PREVIEW_SECRET:"s".repeat(32)});expect(config.careerSpringBaseUrl).toBe("http://127.0.0.1:18081");expect(config.careerProductServiceSecret).toBe("p".repeat(32));});
+ it("rejects credential-bearing URLs and reused service-actor keys",()=>{expect(()=>loadRuntimeConfig({CAREER_SPRING_BASE_URL:"http://user:password@localhost:8080"})).toThrow();expect(()=>loadRuntimeConfig({CAREER_PRODUCT_SERVICE_SECRET:"x".repeat(32),CAREER_PROPERTY_MUTATION_SECRET:"x".repeat(32)})).toThrow();expect(()=>loadRuntimeConfig({CAREER_INTEGRATION_AI_SECRET:"too-short"})).toThrow();});
+});

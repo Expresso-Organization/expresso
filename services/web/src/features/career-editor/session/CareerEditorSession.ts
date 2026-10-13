@@ -1,4 +1,5 @@
 import {
+  compareCareerProposalOrder,
   CareerDocumentBootstrapSchema,
   CareerSocketClientMessageSchema,
   CareerSocketServerMessageSchema,
@@ -10,7 +11,7 @@ import {
 } from "@expresso/editor/document";
 import {
   encodeDocumentAsYUpdate,
-  encodeDocumentStateVector,
+  encodeDocumentUpdatesStateVector,
   reconstructYDocument,
 } from "@expresso/editor/yjs";
 
@@ -20,7 +21,7 @@ export interface CareerEditorSnapshot {
   status: SessionStatus;
   documentVersion: number;
   lastAckSequence: number;
-  proposal: { proposalId: string; baseDocumentVersion: number; status: "draft" | "streaming" | "ready" | "applied" | "rejected" | "cancelled" | "expired" | "conflicted"; progress: { phase: "preparing" | "generating" | "validating"; completed: number; total?: number | undefined } | null } | null;
+  proposal: { proposalId: string; createdAt?: string | undefined; baseDocumentVersion: number; status: "draft" | "streaming" | "ready" | "applied" | "rejected" | "cancelled" | "expired" | "conflicted"; progress: { phase: "preparing" | "generating" | "validating"; completed: number; total?: number | undefined } | null } | null;
 }
 export interface CareerEditorSessionOptions {
   fetch?: typeof globalThis.fetch;
@@ -65,6 +66,8 @@ export class CareerEditorSession {
   private pending = new Map<number, Pending>();
   private acknowledgedServerSequences = new Set<number>();
   private nextSequence = 1;
+  private synced = false;
+  private sentSequences = new Set<number>();
   private snapshot: CareerEditorSnapshot = { status: "loading", documentVersion: 0, lastAckSequence: 0, proposal: null };
   private document: CareerDocument | null = null;
 
@@ -107,9 +110,11 @@ export class CareerEditorSession {
       const response = await this.fetcher(`/api/career/records/${encodeURIComponent(this.recordId)}/document`, { credentials: "same-origin", cache: "no-store" });
       if (!response.ok) throw new Error(`bootstrap failed: ${response.status}`);
       const bootstrap = CareerDocumentBootstrapSchema.parse(await response.json());
+      if (this.disposed) return;
       this.sessionToken = bootstrap.sessionToken;
-      this.document = bootstrap.document;
-      this.updates = [encodeDocumentAsYUpdate(bootstrap.document)];
+      const state = bootstrap.stateUpdateBase64 ? decode(bootstrap.stateUpdateBase64) : encodeDocumentAsYUpdate(bootstrap.document);
+      this.updates = [state, ...Array.from(this.pending.values(), value => decode(value.updateBase64))];
+      this.document = reconstructYDocument(this.updates);
       this.snapshot = { ...this.snapshot, status: "offline", documentVersion: bootstrap.documentVersion };
       this.emit();
       this.connect();
@@ -121,27 +126,43 @@ export class CareerEditorSession {
   }
   private connect() {
     if (this.disposed || !this.sessionToken) return;
-    const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? globalThis.location?.origin ?? "http://127.0.0.1:4000";
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:4000";
     const url = new URL(`${base.replace(/^http/, "ws")}/v1/career/records/${encodeURIComponent(this.recordId)}/session`);
     const socket = new this.Socket(url.href);
     this.socket = socket;
+    this.synced = false;
+    this.sentSequences.clear();
     socket.onopen = () => {
-      this.reconnectAttempt = 0;
-      const stateVectorBase64 = this.document ? encode(encodeDocumentStateVector(this.document)) : EMPTY_STATE_VECTOR;
+      if (this.socket !== socket || this.disposed) return;
+      const stateVectorBase64 = this.document ? encode(encodeDocumentUpdatesStateVector(this.updates)) : EMPTY_STATE_VECTOR;
       const sync = clientFrame({ protocolVersion: 1, recordId: this.recordId, sessionId: this.sessionId, type: "sync", stateVectorBase64, lastAckSequence: this.snapshot.lastAckSequence });
       // 짧은 수명 세션 토큰은 첫 sync에만 붙이고, 쿠키나 저장소에는 남기지 않습니다.
       socket.send(sync.replace("}", `,"sessionToken":${JSON.stringify(this.sessionToken)}}`));
-      this.sendPending();
     };
-    socket.onmessage = (event) => this.receive(event.data);
+    socket.onmessage = (event) => { if (this.socket === socket && !this.disposed) this.receive(event.data); };
     socket.onerror = () => socket.close();
-    socket.onclose = () => { if (this.socket === socket) this.socket = null; if (!this.disposed) { this.setSnapshot({ status: "offline" }); this.scheduleReconnect(); } };
+    socket.onclose = (event) => {
+      if (this.socket !== socket) return;
+      this.socket = null; this.synced = false;
+      if (this.disposed) return;
+      if (event?.code === 4401) this.sessionToken = "";
+      this.setSnapshot({ status: "offline" });
+      if (event?.code !== 4403) this.scheduleReconnect();
+    };
   }
   private receive(raw: unknown) {
     try {
       const message: CareerSocketServerMessage = CareerSocketServerMessageSchema.parse(typeof raw === "string" ? JSON.parse(raw) : raw);
       if (message.recordId !== this.recordId || message.sessionId !== this.sessionId) return;
-      if (message.type === "ready") { this.snapshot = { ...this.snapshot, status: this.pending.size ? "saving" : "saved", documentVersion: message.documentVersion, lastAckSequence: Math.max(this.snapshot.lastAckSequence, message.sequence) }; this.emit(); return; }
+      if (message.type === "ready") {
+        if (message.stateUpdateBase64) {
+          this.updates.push(decode(message.stateUpdateBase64));
+          this.document = reconstructYDocument(this.updates);
+        }
+        this.synced = true; this.reconnectAttempt = 0;
+        this.snapshot = { ...this.snapshot, status: this.pending.size ? "saving" : "saved", documentVersion: Math.max(this.snapshot.documentVersion, message.documentVersion), lastAckSequence: Math.max(this.snapshot.lastAckSequence, message.sequence) };
+        this.emit(); this.sendPending(); return;
+      }
       if (message.type === "update") { this.updates.push(decode(message.updateBase64)); this.document = reconstructYDocument(this.updates); this.setSnapshot({ documentVersion: Math.max(this.snapshot.documentVersion, message.sequence), lastAckSequence: Math.max(this.snapshot.lastAckSequence, message.sequence) }); return; }
       if (message.type === "ack") {
         // 서버 sequence가 같은 ack는 재연결 중 중복 도착할 수 있으므로 한 번만 pending을 줄입니다.
@@ -150,16 +171,26 @@ export class CareerEditorSession {
           const first = this.pending.keys().next().value as number | undefined;
           if (first !== undefined) this.pending.delete(first);
         }
-        this.snapshot = { ...this.snapshot, status: this.pending.size ? "saving" : "saved", documentVersion: message.documentVersion, lastAckSequence: Math.max(this.snapshot.lastAckSequence, message.sequence) };
+        this.snapshot = { ...this.snapshot, status: this.pending.size ? "saving" : "saved", documentVersion: Math.max(this.snapshot.documentVersion, message.documentVersion), lastAckSequence: Math.max(this.snapshot.lastAckSequence, message.sequence) };
         this.emit(); return;
       }
-      if (message.type === "proposal") { this.setSnapshot({ proposal: { proposalId: message.proposalId, baseDocumentVersion: message.baseDocumentVersion, status: message.status, progress: message.progress } }); return; }
+      if (message.type === "proposal") {
+        const current = this.snapshot.proposal;
+        if (current && compareCareerProposalOrder(message, current) < 0) return;
+        const createdAt = message.createdAt ?? (current?.proposalId === message.proposalId ? current.createdAt : undefined);
+        this.setSnapshot({ proposal: { proposalId: message.proposalId, ...(createdAt === undefined ? {} : { createdAt }), baseDocumentVersion: message.baseDocumentVersion, status: message.status, progress: message.progress } });
+        return;
+      }
       if (message.type === "error") this.setSnapshot({ status: message.code === "VERSION_CONFLICT" ? "conflict" : "offline" });
     } catch { this.setSnapshot({ status: "conflict" }); }
   }
   private sendPending() {
-    if (!this.socket || this.socket.readyState !== 1) return;
-    for (const pending of this.pending.values()) this.socket.send(clientFrame({ protocolVersion: 1, recordId: this.recordId, sessionId: this.sessionId, type: "update", clientId: this.clientId, clientSequence: pending.clientSequence, updateBase64: pending.updateBase64 }));
+    if (!this.socket || this.socket.readyState !== 1 || !this.synced) return;
+    for (const pending of this.pending.values()) {
+      if (this.sentSequences.has(pending.clientSequence)) continue;
+      this.socket.send(clientFrame({ protocolVersion: 1, recordId: this.recordId, sessionId: this.sessionId, type: "update", clientId: this.clientId, clientSequence: pending.clientSequence, updateBase64: pending.updateBase64 }));
+      this.sentSequences.add(pending.clientSequence);
+    }
   }
   private scheduleReconnect() {
     if (this.disposed || this.reconnectTimer) return;

@@ -1,3 +1,4 @@
+import {latestCareerProposal} from "./proposal-order.js";
 import { createHash, randomUUID } from "node:crypto";
 
 import {
@@ -13,11 +14,12 @@ import {
   type AiEditProposalDetail,
   type CreateAiEditProposal,
 } from "@expresso/contracts";
-import { applyCareerCommands, encodeDocumentAsYUpdate, encodeDocumentStateVector, parseCareerDocument, reconstructYDocument, type CareerDocument, type CareerEditCommand } from "@expresso/editor";
+import { applyCareerCommands, encodeDocumentAsYUpdate, encodeDocumentUpdatesStateVector, mergeDocumentYUpdates, reconstructYDocument, type CareerDocument, type CareerEditCommand } from "@expresso/editor";
 import { mongoCollections, type CareerAiProposalDoc } from "@expresso/database";
 import { Binary } from "mongodb";
 
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
+import { readCareerSnapshotUpdate } from "../../platform/career-document-snapshot.js";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { CareerDocumentError } from "./errors.js";
@@ -25,6 +27,8 @@ import { binaryBytes, hashUpdate, MongoCareerDocumentRepository } from "./reposi
 import type { CareerDocumentService } from "./service.js";
 import type { AiProposalAdapter } from "./ai-adapter.js";
 import { DeterministicAiProposalAdapter } from "./ai-adapter.js";
+import type { CanonicalCareerReadService } from "../career/index.js";
+import { selectAiCanonicalDelta } from "./prepared-ai-proposals.js";
 
 const LIFETIME_MS = 30 * 60_000;
 const EMPTY_SESSION_ID = "00000000-0000-0000-0000-000000000000";
@@ -43,7 +47,7 @@ function definitionMap(category: { propertySchemaV2?: readonly { id: string; key
   return map;
 }
 function toDetail(row: CareerAiProposalDoc): AiEditProposalDetail {
-  return AiEditProposalDetailSchema.parse({ proposalId: row._id, recordId: row.recordId, baseDocumentVersion: row.baseDocumentVersion, selection: row.selection, summary: row.summary ?? "생성 중", commands: row.commands, propertyChanges: row.propertyChanges, createdAt: row.createdAt.toISOString(), expiresAt: row.expiresAt.toISOString(), status: row.status, progress: row.progress, appliedDocumentVersion: row.appliedDocumentVersion, revisionId: row.revisionId });
+  return AiEditProposalDetailSchema.parse({ proposalId: row._id, recordId: row.recordId, baseDocumentVersion: row.baseDocumentVersion, selection: row.selection, summary: row.summary ?? "생성 중", commands: row.commands, propertyChanges: row.propertyChanges, createdAt: row.createdAt.toISOString(), expiresAt: row.expiresAt.toISOString(), status: row.status, progress: row.progress, appliedDocumentVersion: row.appliedDocumentVersion, revisionId: row.revisionId, ...(row.writerIntegration ? {undoScope:row.beforeSnapshotId&&row.revisionId?"document":"none",businessChangesRetained:Boolean(row.writerIntegration.businessResult || row.writerIntegrationHistory?.some(intent=>intent.businessResult))} : {}) });
 }
 function changedCommandIds(command: CareerEditCommand): string[] {
   if (command.type === "insertBlocks") return command.afterBlockId ? [command.afterBlockId] : [];
@@ -53,12 +57,14 @@ function changedCommandIds(command: CareerEditCommand): string[] {
 
 export class AiProposalService {
   private publisher?: ProposalPublisher;
+  private canonicalReads?: CanonicalCareerReadService;
+  setProductWriter(reads:CanonicalCareerReadService){this.canonicalReads=reads;}
   private updatePublisher?: UpdatePublisher;
   private readonly controllers = new Map<string, AbortController>();
   constructor(readonly context: MongoContext, readonly documentService: CareerDocumentService, readonly adapter: AiProposalAdapter = new DeterministicAiProposalAdapter()) {}
   setPublisher(publisher: ProposalPublisher) { this.publisher = publisher; }
   setUpdatePublisher(publisher: UpdatePublisher) { this.updatePublisher = publisher; }
-  private publish(row: CareerAiProposalDoc) { this.publisher?.(row.recordId, toDetail(row)); }
+  private async publish(row: CareerAiProposalDoc) { if(this.publisher && (await latestCareerProposal(this.context,row.userId,row.recordId))?._id===row._id)this.publisher(row.recordId, toDetail(row)); }
 
   async create(userId: string, recordId: string, raw: CreateAiEditProposal): Promise<AiEditProposalDetail> {
     const input = CreateAiEditProposalSchema.parse(raw);
@@ -68,18 +74,18 @@ export class AiProposalService {
     const now = new Date();
     const row: CareerAiProposalDoc = { _id: randomUUID(), userId, recordId, status: "draft", baseDocumentVersion: bootstrap.documentVersion, selection: { blockIds: [...input.selection.blockIds], ...(input.selection.from === undefined ? {} : { from: input.selection.from }), ...(input.selection.to === undefined ? {} : { to: input.selection.to }) }, prompt: input.prompt, summary: null, commands: [], propertyChanges: [], progress: { phase: "preparing", completed: 0, total: 3 }, beforeSnapshotId: null, afterSnapshotId: null, beforeChecksum: null, afterChecksum: null, revisionId: null, appliedDocumentVersion: null, expiresAt: new Date(now.getTime() + LIFETIME_MS), createdAt: now, updatedAt: now };
     await mongoCollections(this.context.db).careerAiProposals.insertOne(row);
-    this.publish(row);
+    await this.publish(row);
     const streaming = { ...row, status: "streaming" as const, progress: { phase: "generating" as const, completed: 1, total: 3 }, updatedAt: new Date() };
     await mongoCollections(this.context.db).careerAiProposals.updateOne({ _id: row._id, userId, status: "draft" }, { $set: { status: streaming.status, progress: streaming.progress, updatedAt: streaming.updatedAt } });
-    this.publish(streaming);
+    await this.publish(streaming);
     const markConflicted = async () => {
       const updatedAt = new Date();
       const failed = await mongoCollections(this.context.db).careerAiProposals.findOneAndUpdate({ _id: row._id, userId, status: "streaming" }, { $set: { status: "conflicted", progress: null, updatedAt } }, { returnDocument: "after" });
-      if (failed) this.publish(failed);
+      if (failed) await this.publish(failed);
     };
     const controller = new AbortController(); this.controllers.set(row._id, controller);
     let generated;
-    try { generated = await this.adapter.generate({ recordId, documentVersion: bootstrap.documentVersion, selectionBlockIds: input.selection.blockIds, selectedBlocks: input.selection.blockIds.map((id) => blocks.get(id)!), prompt: input.prompt, signal: controller.signal }); }
+    try { const canonical = this.canonicalReads ? await this.canonicalContext(userId,recordId) : undefined; generated = await this.adapter.generate({ recordId, documentVersion: bootstrap.documentVersion, selectionBlockIds: input.selection.blockIds, selectedBlocks: input.selection.blockIds.map((id) => blocks.get(id)!), prompt: input.prompt, signal: controller.signal, ...(canonical?{canonicalPropertyValues:canonical.record.propertyValues!,propertyDefinitions:canonical.definitions}:{}) }); }
     catch (error) { if (controller.signal.aborted) return this.get(userId, recordId, row._id); await markConflicted(); throw error; }
     finally { this.controllers.delete(row._id); }
     let proposal: AiEditProposal;
@@ -91,14 +97,18 @@ export class AiProposalService {
     const ready = { ...streaming, status: "ready" as const, summary: proposal.summary, commands: proposal.commands as unknown as CareerAiProposalDoc["commands"], propertyChanges: proposal.propertyChanges as unknown as CareerAiProposalDoc["propertyChanges"], progress: { phase: "validating" as const, completed: 3, total: 3 }, updatedAt: new Date() };
     const transition = await mongoCollections(this.context.db).careerAiProposals.findOneAndUpdate({ _id: row._id, userId, status: "streaming" }, { $set: { status: ready.status, summary: ready.summary, commands: ready.commands, propertyChanges: ready.propertyChanges, progress: ready.progress, updatedAt: ready.updatedAt } }, { returnDocument: "after" });
     if (!transition) return this.get(userId, recordId, row._id);
-    this.publish(ready);
+    await this.publish(ready);
     return toDetail(ready);
   }
 
   async get(userId: string, recordId: string, proposalId: string): Promise<AiEditProposalDetail> {
+    if(this.canonicalReads)await this.canonicalReads.getRecord(userId,recordId);
     const row = await mongoCollections(this.context.db).careerAiProposals.findOne({ _id: proposalId, userId, recordId });
     if (!row) throw new CareerDocumentError(404, "AI proposal not found");
-    if (row.expiresAt <= new Date() && ["draft", "streaming", "ready"].includes(row.status)) { await mongoCollections(this.context.db).careerAiProposals.updateOne({ _id: row._id }, { $set: { status: "expired", updatedAt: new Date() } }); row.status = "expired"; }
+    if (!row.writerIntegration && row.expiresAt <= new Date() && ["draft", "streaming", "ready"].includes(row.status)) {
+      const expired = await mongoCollections(this.context.db).careerAiProposals.updateOne({ _id: row._id, writerIntegration: { $exists: false } }, { $set: { status: "expired", updatedAt: new Date() } });
+      if (expired.matchedCount) row.status = "expired";
+    }
     return toDetail(row);
   }
 
@@ -107,15 +117,18 @@ export class AiProposalService {
     if (input.recordId !== recordId) throw new CareerDocumentError(404, "AI proposal not found");
     const db = mongoCollections(this.context.db); const row = await db.careerAiProposals.findOne({ _id: input.proposalId, userId, recordId });
     if (!row) throw new CareerDocumentError(404, "AI proposal not found");
+    if (row.writerIntegration) throw new CareerDocumentError(409, "AI proposal is owned by a prepared writer");
     if (["rejected", "cancelled"].includes(row.status)) return;
     if (row.status !== "ready" && row.status !== "draft" && row.status !== "streaming") throw new CareerDocumentError(409, "AI proposal cannot be cancelled");
     row.status = status; row.progress = null; row.updatedAt = new Date();
-    await db.careerAiProposals.updateOne({ _id: row._id, userId }, { $set: { status, progress: null, updatedAt: row.updatedAt } });
+    const changed = await db.careerAiProposals.updateOne({ _id: row._id, userId, writerIntegration: { $exists: false } }, { $set: { status, progress: null, updatedAt: row.updatedAt } });
+    if (!changed.matchedCount) throw new CareerDocumentError(409, "AI proposal is owned by a prepared writer");
     if (status === "cancelled") this.controllers.get(row._id)?.abort();
-    this.publish(row);
+    await this.publish(row);
   }
 
   async apply(userId: string, recordId: string, raw: unknown): Promise<AiEditProposalDetail> {
+    if(this.canonicalReads)throw new CareerDocumentError(409,"AI business writes require the product owner integration");
     const input = AiProposalApplyRequestSchema.parse(raw);
     if (input.recordId !== recordId) throw new CareerDocumentError(404, "AI proposal not found");
     await this.documentService.bootstrap(userId, recordId);
@@ -124,13 +137,16 @@ export class AiProposalService {
     await inTransaction(this.context, async (tx) => {
       const db = mongoCollections(tx.db); const proposal = await db.careerAiProposals.findOne({ _id: input.proposalId, userId, recordId }, { session: tx.session });
       if (!proposal) throw new CareerDocumentError(404, "AI proposal not found");
+      if (proposal.writerIntegration) throw new CareerDocumentError(409, "AI proposal is owned by a prepared writer");
       if (proposal.status === "applied") { publishRow = proposal; return; }
       if (proposal.status !== "ready" || proposal.expiresAt <= new Date()) throw new CareerDocumentError(409, "AI proposal is unavailable");
       const repository = new MongoCareerDocumentRepository(tx); const record = await repository.record(userId, recordId, tx.session);
+      if (record && "documentReservation" in record && record.documentReservation != null) throw new CareerDocumentError(409, "document is reserved by a prepared writer");
       if (!record || (record.documentVersion ?? 0) !== input.expectedDocumentVersion) throw new CareerDocumentError(409, "document version is stale");
       const snapshot = await repository.snapshot(recordId, tx.session); if (!snapshot) throw new CareerDocumentError(409, "career document is not initialized");
       const updates = await repository.updates(recordId, snapshot.serverSequence, tx.session);
-      const before = reconstructYDocument([encodeDocumentAsYUpdate(parseCareerDocument(snapshot.content)), ...updates.map((update) => binaryBytes(update.update))]);
+      const beforeState = mergeDocumentYUpdates([readCareerSnapshotUpdate(snapshot), ...updates.map((update) => binaryBytes(update.update))]);
+      const before = reconstructYDocument([beforeState]);
       const existingBlocks = blockMap(before.content);
       const commands = input.commandIndexes.map((index) => proposal.commands[index] as unknown as CareerEditCommand | undefined).filter((command): command is CareerEditCommand => command !== undefined);
       const changes = input.propertyChangeIndexes.map((index) => proposal.propertyChanges[index] as unknown as { propertyId: string; previousValue: unknown; nextValue: unknown } | undefined).filter((change): change is { propertyId: string; previousValue: unknown; nextValue: unknown } => change !== undefined);
@@ -139,12 +155,12 @@ export class AiProposalService {
       await this.validateProposal(before, commands, proposal.selection.blockIds);
       const after = applyCareerCommands(before, commands);
       const beforeSnapshotId = randomUUID(); const afterSnapshotId = randomUUID(); const beforeChecksum = checksum(before); const afterChecksum = checksum(after);
-      const canonicalBefore = encodeDocumentAsYUpdate(before); const nextUpdate = encodeDocumentAsYUpdate(after, [canonicalBefore], `ai:${proposal._id}:apply`);
-      await repository.insertSnapshot({ _id: beforeSnapshotId, userId, recordId, documentVersion: input.expectedDocumentVersion, version: input.expectedDocumentVersion, schemaVersion: 1, content: before as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(before))), serverSequence: input.expectedDocumentVersion, checksum: hashUpdate(canonicalBefore), actor: "ai", createdAt: new Date() }, tx.session);
+      const canonicalBefore = encodeDocumentAsYUpdate(before); const nextUpdate = encodeDocumentAsYUpdate(after, [beforeState, canonicalBefore], `ai:${proposal._id}:apply`);
+      await repository.insertSnapshot({ _id: beforeSnapshotId, userId, recordId, documentVersion: input.expectedDocumentVersion, version: input.expectedDocumentVersion, schemaVersion: 1, content: before as never, stateUpdate: new Binary(Buffer.from(beforeState)), stateVector: new Binary(Buffer.from(encodeDocumentUpdatesStateVector([beforeState]))), serverSequence: input.expectedDocumentVersion, checksum: hashUpdate(canonicalBefore), actor: "ai", createdAt: new Date() }, tx.session);
       const nextVersion = await repository.bumpDocumentVersion(recordId, userId, input.expectedDocumentVersion, afterSnapshotId, tx.session); if (nextVersion === null) throw new CareerDocumentError(409, "document version is stale");
       await repository.insertUpdate({ _id: randomUUID(), recordId, userId, clientId: proposal._id, clientSequence: 1, serverSequence: nextVersion, update: new Binary(nextUpdate), byteLength: nextUpdate.byteLength, updateHash: hashUpdate(nextUpdate), actor: "ai", receivedAt: new Date(), compactedAt: null }, tx.session);
       update = { base64: Buffer.from(nextUpdate).toString("base64"), sequence: nextVersion };
-      await repository.insertSnapshot({ _id: afterSnapshotId, userId, recordId, documentVersion: nextVersion, version: nextVersion, schemaVersion: 1, content: after as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(after))), serverSequence: nextVersion, checksum: hashUpdate(encodeDocumentAsYUpdate(after)), actor: "ai", createdAt: new Date() }, tx.session);
+      await repository.insertSnapshot({ _id: afterSnapshotId, userId, recordId, documentVersion: nextVersion, version: nextVersion, schemaVersion: 1, content: after as never, stateUpdate: new Binary(Buffer.from(nextUpdate)), stateVector: new Binary(Buffer.from(encodeDocumentUpdatesStateVector([nextUpdate]))), serverSequence: nextVersion, checksum: hashUpdate(encodeDocumentAsYUpdate(after)), actor: "ai", createdAt: new Date() }, tx.session);
       const category = await db.careerCategories.findOne({ _id: record.categoryId, $or: [{ userId: null }, { userId }] }, { session: tx.session }); if (!category) throw new CareerDocumentError(404, "career category not found");
       const properties = { ...record.properties }; const definitions = definitionMap(category); const changedPropertyIds: string[] = [];
       for (const change of changes) { const definition = definitions.get(change.propertyId); if (!definition || definition.system || JSON.stringify(properties[definition.key] ?? null) !== JSON.stringify(change.previousValue)) throw new CareerDocumentError(409, "AI proposal property changed"); if (change.nextValue === null) delete properties[definition.key]; else properties[definition.key] = CareerPropertyValueV2Schema.parse(change.nextValue); changedPropertyIds.push(change.propertyId); }
@@ -155,24 +171,21 @@ export class AiProposalService {
       proposal.status = "applied"; proposal.beforeSnapshotId = beforeSnapshotId; proposal.afterSnapshotId = afterSnapshotId; proposal.beforeChecksum = beforeChecksum; proposal.afterChecksum = afterChecksum; proposal.revisionId = revisionId; proposal.appliedDocumentVersion = nextVersion; proposal.progress = null; proposal.updatedAt = new Date();
       await db.careerAiProposals.updateOne({ _id: proposal._id }, { $set: { status: proposal.status, beforeSnapshotId, afterSnapshotId, beforeChecksum, afterChecksum, revisionId, appliedDocumentVersion: nextVersion, progress: null, updatedAt: proposal.updatedAt } }, { session: tx.session }); publishRow = proposal;
     });
-    if (!publishRow) throw new CareerDocumentError(404, "AI proposal not found"); this.publish(publishRow);
+    if (!publishRow) throw new CareerDocumentError(404, "AI proposal not found"); await this.publish(publishRow);
     if (publishRow.status === "conflicted") throw new CareerDocumentError(409, "AI proposal blocks no longer exist");
     if (update) this.updatePublisher?.(recordId, update.base64, update.sequence);
     return toDetail(publishRow);
   }
 
   async undo(userId: string, recordId: string, raw: unknown) {
+    if(this.canonicalReads)throw new CareerDocumentError(409,"AI Undo requires the product owner integration");
     const input = AiProposalUndoRequestSchema.parse(raw); if (input.recordId !== recordId) throw new CareerDocumentError(404, "AI proposal not found");
     const proposal = await mongoCollections(this.context.db).careerAiProposals.findOne({ _id: input.proposalId, userId, recordId, status: "applied" });
     if (!proposal?.revisionId || !proposal.beforeSnapshotId || proposal.appliedDocumentVersion !== input.expectedDocumentVersion) throw new CareerDocumentError(409, "AI proposal undo is stale");
     const beforeSnapshot = await mongoCollections(this.context.db).careerDocumentSnapshots.findOne({ _id: proposal.beforeSnapshotId, userId, recordId });
     if (!beforeSnapshot) throw new CareerDocumentError(409, "AI proposal before snapshot is missing");
-    const before = parseCareerDocument(beforeSnapshot.content);
-    const current = await this.documentService.bootstrap(userId, recordId);
     const bootstrap = await this.documentService.restoreRevision(userId, proposal.revisionId, input.expectedDocumentVersion, recordId);
-    const canonicalBefore = encodeDocumentAsYUpdate(before);
-    const appliedUpdate = encodeDocumentAsYUpdate(current.document, [canonicalBefore], `ai:${proposal._id}:apply`);
-    const update = encodeDocumentAsYUpdate(bootstrap.document, [canonicalBefore, appliedUpdate], `ai:${proposal._id}:undo:${bootstrap.documentVersion}`);
+    const update = bootstrap.stateUpdateBase64 ? Buffer.from(bootstrap.stateUpdateBase64, "base64") : encodeDocumentAsYUpdate(bootstrap.document);
     this.updatePublisher?.(recordId, Buffer.from(update).toString("base64"), bootstrap.documentVersion);
     return bootstrap;
   }
@@ -187,8 +200,12 @@ export class AiProposalService {
     catch { throw new CareerDocumentError(409, "AI proposal command sequence is invalid"); }
   }
 
-  private async validatePropertyChanges(userId: string, recordId: string, changes: readonly { propertyId: string; previousValue: unknown; nextValue: unknown }[]) {
+  private async canonicalContext(userId:string,recordId:string){
+    const record=await this.canonicalReads!.getRecord(userId,recordId);const category=await mongoCollections(this.context.db).careerCategories.findOne({_id:record.categoryId,$or:[{userId},{userId:null,isSystem:true}]});if(!category)throw new CareerDocumentError(404,"career category not found");return{record,definitions:await this.canonicalReads!.definitions(userId,category)};
+  }
+  private async validatePropertyChanges(userId: string, recordId: string, changes: readonly AiEditProposal["propertyChanges"][number][]) {
     if (!changes.length) return;
+    if(this.canonicalReads){const {record,definitions}=await this.canonicalContext(userId,recordId);selectAiCanonicalDelta(definitions,record.propertyValues!,changes);return;}
     const db = mongoCollections(this.context.db); const record = await db.careerRecords.findOne({ _id: recordId, userId, deletedAt: null });
     if (!record) throw new CareerDocumentError(404, "career record not found");
     const category = await db.careerCategories.findOne({ _id: record.categoryId, $or: [{ userId: null }, { userId }] });

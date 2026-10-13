@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+const serviceKey=z.string().max(4096).refine(value=>Buffer.byteLength(value,"utf8")>=32,"service key must contain at least32 UTF-8 bytes");
 const runtimeConfigSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   HOST: z.string().min(1).default("127.0.0.1"),
@@ -19,6 +20,12 @@ const runtimeConfigSchema = z.object({
   MEDIA_DIR: z.string().min(1).default("var/media"),
   ANALYTICS_VISITOR_SALT: z.string().min(16).default("expresso-local-analytics-salt"),
   REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).default(30_000),
+  CAREER_SPRING_BASE_URL:z.url().refine(value=>{const url=new URL(value);return["http:","https:"].includes(url.protocol)&&!url.username&&!url.password&&!url.hash&&!url.search&&url.pathname==="/";},"Career Spring endpoint must be a credential-free HTTP origin").optional(),
+  CAREER_PRODUCT_SERVICE_SECRET:serviceKey.optional(),
+  CAREER_INTEGRATION_AI_SECRET:serviceKey.optional(),
+  CAREER_INTEGRATION_INTERVIEW_SECRET:serviceKey.optional(),
+  CAREER_PROPERTY_MUTATION_SECRET:serviceKey.optional(),
+  CAREER_SCHEMA_PREVIEW_SECRET:serviceKey.optional(),
   CAREER_SOCKET_ALLOWED_ORIGIN: z.url().default("http://127.0.0.1:3000"),
   /** 출시 후보 검증 전까지 새 문서·실시간 API를 닫아 기존 career API를 보존한다. */
   CAREER_EDITOR_V2_ENABLED: z.stringbool().default(false),
@@ -99,6 +106,9 @@ const runtimeConfigSchema = z.object({
   AI_MODEL_PARTIAL_EDIT: z.string().min(1).optional(),
   AI_MODEL_STYLE_REMIX: z.string().min(1).optional(),
   AI_MODEL_INSIGHT_NOTE: z.string().min(1).optional(),
+}).superRefine((value,context)=>{
+ const keys=[value.CAREER_PRODUCT_SERVICE_SECRET,value.CAREER_INTEGRATION_AI_SECRET,value.CAREER_INTEGRATION_INTERVIEW_SECRET,value.CAREER_PROPERTY_MUTATION_SECRET].filter(key=>key!==undefined);
+ if(new Set(keys).size!==keys.length)context.addIssue({code:"custom",message:"Career service actor keys must be distinct"});
 }).refine((value) => value.NODE_ENV !== "production" || !value.CAREER_AI_DETERMINISTIC_TEST, { message: "CAREER_AI_DETERMINISTIC_TEST is forbidden in production", path: ["CAREER_AI_DETERMINISTIC_TEST"] });
 
 export interface RuntimeConfig {
@@ -121,6 +131,12 @@ export interface RuntimeConfig {
   mediaDir?: string;
   analyticsVisitorSalt?: string;
   requestTimeoutMs?: number;
+  careerSpringBaseUrl?:string;
+  careerProductServiceSecret?:string;
+  careerIntegrationAiSecret?:string;
+  careerIntegrationInterviewSecret?:string;
+  careerPropertyMutationSecret?:string;
+  careerSchemaPreviewSecret?:string;
   careerSocketAllowedOrigin?: string;
   careerEditorV2Enabled?: boolean;
   careerAiDeterministicTest?: boolean;
@@ -169,6 +185,12 @@ export function loadRuntimeConfig(
     mediaDir: result.MEDIA_DIR,
     analyticsVisitorSalt: result.ANALYTICS_VISITOR_SALT,
     requestTimeoutMs: result.REQUEST_TIMEOUT_MS,
+    ...(result.CAREER_SPRING_BASE_URL?{careerSpringBaseUrl:result.CAREER_SPRING_BASE_URL}:{}),
+    ...(result.CAREER_PRODUCT_SERVICE_SECRET?{careerProductServiceSecret:result.CAREER_PRODUCT_SERVICE_SECRET}:{}),
+    ...(result.CAREER_INTEGRATION_AI_SECRET?{careerIntegrationAiSecret:result.CAREER_INTEGRATION_AI_SECRET}:{}),
+    ...(result.CAREER_INTEGRATION_INTERVIEW_SECRET?{careerIntegrationInterviewSecret:result.CAREER_INTEGRATION_INTERVIEW_SECRET}:{}),
+    ...(result.CAREER_PROPERTY_MUTATION_SECRET?{careerPropertyMutationSecret:result.CAREER_PROPERTY_MUTATION_SECRET}:{}),
+    ...(result.CAREER_SCHEMA_PREVIEW_SECRET?{careerSchemaPreviewSecret:result.CAREER_SCHEMA_PREVIEW_SECRET}:{}),
     careerSocketAllowedOrigin: result.CAREER_SOCKET_ALLOWED_ORIGIN,
     careerEditorV2Enabled: result.CAREER_EDITOR_V2_ENABLED,
     careerAiDeterministicTest: result.CAREER_AI_DETERMINISTIC_TEST,

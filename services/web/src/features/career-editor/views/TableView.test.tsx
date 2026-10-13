@@ -170,3 +170,20 @@ describe("TableView", () => {
     expect(screen.getByRole("button", { name: "React 그룹 펼치기" })).toBeTruthy();
   });
 });
+
+it("keeps pending relations out of empty summaries and places them in an unknown group",()=>{
+ const relation={...category.propertySchemaV2![3]!,type:"relation" as const,config:{targetCategoryId:categoryId,cardinality:"multiple",deletePolicy:"restrict"}};
+ const relationCategory={...category,propertySchemaV2:[relation,category.propertySchemaV2![4]!]};
+ const pending={...records[0]!,title:"Pending",properties:{score:{type:"number" as const,value:2}},pendingRelationPropertyIds:[technologiesId]};
+ const empty={...records[1]!,title:"Known empty",properties:{technologies:{type:"relation" as const,value:[]},score:{type:"number" as const,value:3}}};
+ const props={records:[pending,empty],category:relationCategory,view:{...view,visiblePropertyIds:[technologiesId,scoreId],propertyOrder:[technologiesId,scoreId]},activeId:null,openId:null,selectedIds:new Set<string>(),onActivate:()=>{},onCreate:()=>{},onFillMissing:()=>{},onToggle:()=>{},onViewChange:()=>{},onCategoryChange:()=>{}};
+ const rendered=render(<TableView {...props}/>);
+ expect(screen.getByRole("gridcell",{name:"빈 값 1 · 확인 중 1"})).toBeTruthy();
+ expect(screen.getByRole("gridcell",{name:"모두 입력됨"})).toBeTruthy();
+ rendered.rerender(<TableView {...props} view={{...props.view,groupPropertyId:technologiesId}}/>);
+ const pendingGroup=screen.getByRole("region",{name:"기술 확인 중 그룹"});
+ expect(pendingGroup.textContent).toContain("Pending");expect(pendingGroup.textContent).not.toContain("Known empty");
+ const emptyGroup=screen.getByRole("region",{name:"기술 없음 그룹"});
+ expect(emptyGroup.textContent).toContain("Known empty");expect(emptyGroup.textContent).not.toContain("Pending");
+ cleanup();
+});

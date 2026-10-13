@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { careerDocumentToMarkdown, encodeDocumentAsYUpdate, encodeDocumentStateVector, markdownToCareerDocument, parseCareerDocument, reconstructYDocument } from "@expresso/editor";
+import { careerDocumentToMarkdown, encodeDocumentAsYUpdate, encodeDocumentUpdatesStateVector, markdownToCareerDocument, reconstructYDocument } from "@expresso/editor";
 import { CareerPropertySchemaSchema, CareerProfileSchema, CreateCareerCategorySchema, CreateCareerRecordSchema, CreateCareerViewSchema, SaveCareerProfileSchema, UpdateCareerRecordSchema, type CareerPropertySchema, type CreateCareerCategory, type CreateCareerRecord, type CreateCareerView, type ListCareerRecordsQuery, type SaveCareerProfile, type UpdateCareerRecord } from "@expresso/contracts";
 import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc, type CareerViewDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
+import { readCareerSnapshotUpdate } from "../../platform/career-document-snapshot.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
@@ -16,6 +17,8 @@ import { createMongoLink, listMongoLinks, mongoDeleteImpact, trashMongoRecord, r
 import { recomputeMongoSkill, listMongoSkills, listMongoSkillEvidence } from "./mongo-skills.js";
 import { MongoCareerDocumentRepository, hashUpdate } from "../career-editor/repository.js";
 import { Binary } from "mongodb";
+import { readCareerPropertyMutationStatus,resumeCareerPropertyMutation } from "./property-mutation-status.js";
+import { registerCanonicalCareerPropertyOption } from "./canonical-property-schema.js";
 import { MongoCareerPropertySchemaService } from "./property-schema.js";
 import { CareerViewService } from "./views.js";
 import { MongoCategoryMoveService } from "./category-move.js";
@@ -27,17 +30,20 @@ const duplicate = (error: unknown) => (error as { code?: number })?.code === 110
 export class CareerService implements CareerApi {
   constructor(readonly context: MongoContext) {}
 
+  getPropertyMutationStatus(userId:string,mutationId:string) {return readCareerPropertyMutationStatus(this.context,userId,mutationId); }
+  resumePropertyMutation(userId:string,mutationId:string) {return resumeCareerPropertyMutation(this.context,userId,mutationId); }
+  registerPropertyOption(userId:string,categoryId:string,propertyId:string,input:import("@expresso/contracts").CareerRegisterPropertyOption) { return registerCanonicalCareerPropertyOption(this.context,userId,categoryId,propertyId,input); }
   previewChange(userId: string, categoryId: string, change: import("@expresso/contracts").CareerPropertySchemaChange) { return new MongoCareerPropertySchemaService(this.context).previewChange(userId, categoryId, change); }
   applyChange(userId: string, categoryId: string, expectedVersion: number, idempotencyKey: string, input: import("@expresso/contracts").ApplyCareerPropertyChange) { return new MongoCareerPropertySchemaService(this.context).applyChange(userId, categoryId, expectedVersion, idempotencyKey, input); }
   restoreProperty(userId: string, categoryId: string, propertyId: string, expectedVersion: number) { return new MongoCareerPropertySchemaService(this.context).restoreProperty(userId, categoryId, propertyId, expectedVersion); }
 
-  listViewConfigurations(userId: string, categoryId: string) { return new CareerViewService(this.context).list(userId, categoryId); }
-  createViewConfiguration(userId: string, categoryId: string, expectedCategoryVersion: number, input: import("./views.js").CreateCareerViewConfiguration) { return new CareerViewService(this.context).create(userId, categoryId, expectedCategoryVersion, input); }
-  updateViewConfiguration(userId: string, viewId: string, expectedVersion: number, input: import("./views.js").UpdateCareerViewConfiguration) { return new CareerViewService(this.context).update(userId, viewId, expectedVersion, input); }
-  duplicateViewConfiguration(userId: string, viewId: string, expectedVersion: number, name: string) { return new CareerViewService(this.context).duplicate(userId, viewId, expectedVersion, name); }
-  deleteViewConfiguration(userId: string, viewId: string, expectedVersion: number) { return new CareerViewService(this.context).delete(userId, viewId, expectedVersion); }
-  reorderViewConfigurations(userId: string, categoryId: string, expectedCategoryVersion: number, orderedIds: readonly string[]) { return new CareerViewService(this.context).reorder(userId, categoryId, expectedCategoryVersion, orderedIds); }
-  queryViewConfiguration(userId: string, viewId: string, cursor: string | null, limit: number) { return new CareerViewService(this.context).query(userId, viewId, cursor, limit); }
+  listViewConfigurations(userId: string, categoryId: string) { return new CareerViewService(this.context, { source: "legacy" }).list(userId, categoryId); }
+  createViewConfiguration(userId: string, categoryId: string, expectedCategoryVersion: number, input: import("./views.js").CreateCareerViewConfiguration) { return new CareerViewService(this.context, { source: "legacy" }).create(userId, categoryId, expectedCategoryVersion, input); }
+  updateViewConfiguration(userId: string, viewId: string, expectedVersion: number, input: import("./views.js").UpdateCareerViewConfiguration) { return new CareerViewService(this.context, { source: "legacy" }).update(userId, viewId, expectedVersion, input); }
+  duplicateViewConfiguration(userId: string, viewId: string, expectedVersion: number, name: string) { return new CareerViewService(this.context, { source: "legacy" }).duplicate(userId, viewId, expectedVersion, name); }
+  deleteViewConfiguration(userId: string, viewId: string, expectedVersion: number) { return new CareerViewService(this.context, { source: "legacy" }).delete(userId, viewId, expectedVersion); }
+  reorderViewConfigurations(userId: string, categoryId: string, expectedCategoryVersion: number, orderedIds: readonly string[]) { return new CareerViewService(this.context, { source: "legacy" }).reorder(userId, categoryId, expectedCategoryVersion, orderedIds); }
+  queryViewConfiguration(userId: string, viewId: string, cursor: string | null, limit: number) { return new CareerViewService(this.context, { source: "legacy" }).query(userId, viewId, cursor, limit); }
   replaceTargets(userId: string, recordId: string, propertyId: string, targetIds: readonly string[], expectedVersion: number) { return new MongoRelationService(this.context).replaceTargets(userId, recordId, propertyId, targetIds, expectedVersion); }
   listRelationTargets(userId: string, recordId: string, propertyId: string) { return new MongoRelationService(this.context).listTargets(userId, recordId, propertyId); }
   removeRelationTargetsForRecord(userId: string, recordId: string) { return new MongoRelationService(this.context).removeForRecord(userId, recordId); }
@@ -114,6 +120,8 @@ export class CareerService implements CareerApi {
 
   async createRecord(userId: string, idempotencyKey: string, inputValue: CreateCareerRecord) {
     const input = CreateCareerRecordSchema.parse(inputValue);
+    if (input.propertyValues !== undefined) throw new CareerError(503, "canonical business writes require Spring");
+    const { propertyValues: _canonical, ...legacyInput } = input;
     const hash = careerRequestHash(input);
     return inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
@@ -126,7 +134,7 @@ export class CareerService implements CareerApi {
         return { record: mapMongoRecord(existing), created: false };
       }
       const now = new Date();
-      const record: CareerRecordDoc = { _id: randomUUID(), userId, ...input, status: "draft", origin: "manual", version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null, createIdempotencyKey: idempotencyKey, createRequestHash: hash };
+      const record: CareerRecordDoc = { _id: randomUUID(), userId, ...legacyInput, status: "draft", origin: "manual", version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null, createIdempotencyKey: idempotencyKey, createRequestHash: hash };
       await records.insertOne(record, { session: tx.session });
       const definitions = category.propertySchemaV2?.filter((definition) => definition.deletedAt === null) ?? [];
       const changedPropertyIds = definitions.filter((definition) => definition.type === "formula" || definition.type === "rollup" || Object.hasOwn(input.properties, definition.key) || (definition.type === "title" && input.title !== "")).map((definition) => definition.id);
@@ -146,14 +154,15 @@ export class CareerService implements CareerApi {
     try {
       const updates = await mongoCollections(this.context.db).careerDocumentUpdates.find({ recordId, serverSequence: { $gt: snapshot.serverSequence }, compactedAt: null }).sort({ serverSequence: 1 }).limit(10_001).toArray();
       if (updates.length > 10_000) throw new CareerError(503, "document compaction is required before legacy projection");
-      const document = reconstructYDocument([encodeDocumentAsYUpdate(parseCareerDocument(snapshot.content)), ...updates.map((row) => new Uint8Array(row.update.buffer))]);
+      const document = reconstructYDocument([readCareerSnapshotUpdate(snapshot), ...updates.map((row) => new Uint8Array(row.update.buffer))]);
       return mapMongoRecord(record, careerDocumentToMarkdown(document));
     }
     catch { return mapMongoRecord(record); }
   }
 
   async updateRecord(userId: string, recordId: string, expectedVersion: number, inputValue: UpdateCareerRecord) {
-      const input = UpdateCareerRecordSchema.parse(inputValue);
+    const input = UpdateCareerRecordSchema.parse(inputValue);
+    if (input.propertyValues !== undefined) throw new CareerError(503, "canonical business writes require Spring");
     return inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const records = mongoCollections(tx.db).careerRecords;
@@ -161,6 +170,7 @@ export class CareerService implements CareerApi {
       if (!existing) throw new CareerError(404, "career record not found");
       if (existing.version !== expectedVersion) throw new CareerError(412, "career record version is stale");
       if (input.bodyMd !== undefined) {
+        if ("documentReservation" in existing && existing.documentReservation != null) throw new CareerError(409, "document is reserved by a prepared writer");
         const latestSnapshot = await mongoCollections(tx.db).careerDocumentSnapshots.findOne(
           { recordId },
           { sort: { documentVersion: -1 }, session: tx.session },
@@ -197,9 +207,12 @@ export class CareerService implements CareerApi {
         const next = await repository.bumpDocumentVersion(recordId, userId, current, undefined, tx.session);
         if (next === null) throw new CareerError(412, "document version is stale");
         const document = markdownToCareerDocument(input.bodyMd);
-        const update = encodeDocumentAsYUpdate(document);
+        const previousSnapshot = await repository.snapshot(recordId, tx.session);
+        const priorUpdates = previousSnapshot ? [readCareerSnapshotUpdate(previousSnapshot)] : [encodeDocumentAsYUpdate(markdownToCareerDocument(existing.bodyMd))];
         const snapshotId = randomUUID();
-        await repository.insertSnapshot({ _id: snapshotId, userId, recordId, documentVersion: next, version: next, schemaVersion: 1, content: document as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(document))), serverSequence: next, checksum: hashUpdate(update), actor: "user", createdAt: new Date() }, tx.session);
+        const stateUpdate = encodeDocumentAsYUpdate(document, priorUpdates, `legacy:${snapshotId}`);
+        const update = encodeDocumentAsYUpdate(document);
+        await repository.insertSnapshot({ _id: snapshotId, userId, recordId, documentVersion: next, version: next, schemaVersion: 1, content: document as never, stateUpdate: new Binary(Buffer.from(stateUpdate)), stateVector: new Binary(Buffer.from(encodeDocumentUpdatesStateVector([stateUpdate]))), serverSequence: next, checksum: hashUpdate(update), actor: "user", createdAt: new Date() }, tx.session);
         await records.updateOne({ _id: recordId, userId, documentVersion: next }, { $set: { latestSnapshotId: snapshotId } }, { session: tx.session });
         await repository.insertRevision({ _id: randomUUID(), userId, recordId, actor: "user", summary: "레거시 본문 저장", beforeVersion: current, afterVersion: next, snapshotId, createdAt: new Date() }, tx.session);
       }

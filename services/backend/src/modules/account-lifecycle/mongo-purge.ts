@@ -9,7 +9,11 @@ const AGGREGATE_COLLECTIONS = ["metrics_daily", "insights", "analytics_rate_limi
 const DOMAIN_COLLECTIONS = [
   "agent_conversations",
   "agent_credentials",
-  "annotations", "interview_sessions", "questions", "career_categories", "career_records", "answers",
+  "career_property_options", "career_property_mutations", "career_property_mutation_receipts",
+  "career_relation_property_tombstones", "career_record_relations", "career_command_idempotency",
+  "career_document_snapshots", "career_document_updates", "career_record_revisions", "career_ai_proposals",
+  "career_product_operations",
+  "interview_career_operations", "annotations", "interview_sessions", "questions", "career_categories", "career_records", "answers",
   "answer_record_changes", "recipes", "recipe_sections", "portfolio_sections", "blocks", "brew_jobs",
   "brew_sources", "career_views", "company_research_items", "consents", "dashboard_views", "deployment_slug_redirects",
   "derived_metrics", "export_assets", "export_jobs", "generated_pages", "generation_jobs", "recipe_items",

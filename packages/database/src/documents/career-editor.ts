@@ -1,3 +1,4 @@
+import type { CareerProducerIntent } from "@expresso/contracts";
 import type { Binary } from "mongodb";
 import type { JsonValue } from "./common.js";
 
@@ -13,6 +14,8 @@ export interface CareerDocumentSnapshotDoc {
   schemaVersion: number;
   content: JsonValue;
   stateVector: Binary;
+  /** 압축 전후에도 같은 CRDT item을 유지하는 실제 Yjs 상태입니다. */
+  stateUpdate?: Binary;
   serverSequence: number;
   checksum: string;
   actor: CareerEditorActor;
@@ -63,6 +66,8 @@ export interface CareerRecordRelationDoc {
 }
 
 export interface CareerAiProposalDoc {
+  writerIntegration?: CareerProducerIntent;
+  writerIntegrationHistory?: CareerProducerIntent[];
   _id: string;
   userId: string;
   recordId: string;

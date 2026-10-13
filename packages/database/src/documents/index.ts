@@ -1,6 +1,7 @@
 export type * from "./analytics.js";
 export type * from "./brew.js";
 export type * from "./career.js";
+export type * from "./career-property-mutation.js";
 export type * from "./career-editor.js";
 export type * from "./generation.js";
 export type * from "./identity.js";
@@ -16,3 +17,8 @@ export type * from "./common.js";
 export type * from "./agent-chat.js";
 
 export type { AgentCredentialDoc } from "./agent-credential.js";
+export type * from "./career-property-option.js";
+
+export type * from "./career-relation-property-tombstone.js";
+
+export type * from "./career-product-operation.js";

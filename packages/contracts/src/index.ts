@@ -1,5 +1,7 @@
 export * from "./common.js";
 export * from "./career.js";
+export * from "./career-business.js";
+export * from "./career-business-openapi.js";
 export * from "./career-editor.js";
 export {
   CareerPropertyTypeV2Schema,
@@ -73,3 +75,22 @@ export * from "./structured-portfolio.js";
 export * from "./page-library.js";
 
 export * from "./agent-chat.js";
+export * from "./career-writer.js";
+export * from "./career-writer-openapi.js";
+export * from "./career-property-mutation.js";
+export * from "./career-property-mutation-openapi.js";
+
+export * from "./career-producer.js";
+
+export * from "./career-producer-openapi.js";
+
+export * from "./career-property-mutation-http.js";
+export * from "./career-product.js";
+export * from "./career-property-options.js";
+
+export * from "./career-property-mutation-status.js";
+
+export { CareerWriteOperationSchema,CareerWriteOperationResponseSchema,type CareerWriteOperation,type CareerWriteOperationResponse } from "./career-write-operation.js";
+
+export { AiProposalUndoNoDocumentTargetSchema, AiProposalUndoResultSchema, AiProposalUndoResponseSchema, type AiProposalUndoResult, type AiProposalUndoResponse } from "./career-ai.js";
+export { AiProposalApplyResponseSchema, type AiProposalApplyResponse } from "./career-ai.js";
