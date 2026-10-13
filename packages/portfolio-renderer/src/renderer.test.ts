@@ -1,5 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { renderStructuredPortfolio, StructuredRenderError } from "./renderer.js";
+import { renderCollected, retrievePageLibrary } from "./library.js";
+
+// 수집 원본 어댑터의 결함을 재현하려고 renderCollected만 감쌉니다. 기본 동작은 실제 구현입니다.
+vi.mock("./library.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./library.js")>();
+  return { ...actual, renderCollected: vi.fn(actual.renderCollected) };
+});
 import type { StructuredPortfolioContent } from "@expresso/contracts";
 const content: StructuredPortfolioContent = {
   version: 1,
@@ -69,6 +76,21 @@ describe("등록 지면 렌더러", () => {
     const invalid = (() => { try { renderStructuredPortfolio(broken, content); } catch (error) { return error; } })();
     expect(invalid).toBeInstanceOf(Error);
     expect(invalid).not.toBeInstanceOf(StructuredRenderError);
+  });
+  it("수집 원본 컴포넌트의 예외를 RENDER_FAILED로 감싼다", () => {
+    const tree = structuredClone(spec) as typeof spec & {
+      elements: { intro: { props: { sourceId?: string } } };
+    };
+    tree.elements.intro.props.sourceId =
+      retrievePageLibrary(content).intro[0]!.renderKey!;
+    vi.mocked(renderCollected).mockImplementationOnce(() => {
+      throw new Error("가상 어댑터 결함");
+    });
+    const failure = (() => { try { renderStructuredPortfolio(tree, content); } catch (error) { return error; } })();
+    expect(failure).toBeInstanceOf(StructuredRenderError);
+    expect((failure as StructuredRenderError).code).toBe("RENDER_FAILED");
+    expect((failure as Error).message).toContain("가상 어댑터 결함");
+    expect(() => renderStructuredPortfolio(tree, content)).not.toThrow();
   });
   it("동일 내용의 전체 배치를 바꾸고 세 지면 유형을 저장 HTML에 표시한다", () => {
     for (const layout of ["editorial", "gallery", "dossier"]) {

@@ -14,9 +14,9 @@ date: 2026-10-13
 
 | 파일 | 무엇을 |
 |---|---|
-| `packages/portfolio-renderer/src/renderer.tsx` | `validateRenderableSpec`, `StructuredRenderError` 추가. 렌더링 예외·크기 초과 감싸기 |
+| `packages/portfolio-renderer/src/renderer.tsx` | `validateRenderableSpec`, `StructuredRenderError` 추가. 렌더링 예외·크기 초과 감싸기. 카탈로그 전체 구도 설명에 빠진 `library` 보충 |
 | `packages/portfolio-renderer/src/index.ts` | 두 이름 내보내기 |
-| `packages/portfolio-renderer/src/renderer.test.ts` | 오류 코드 테스트 추가 |
+| `packages/portfolio-renderer/src/renderer.test.ts` | 오류 코드 테스트 추가(`PAGE_TOO_LARGE`, 수집 원본 예외의 `RENDER_FAILED`) |
 | `services/backend/src/modules/page/generator.ts` | `PageRenderError` 추가 |
 | `services/backend/src/modules/page/structured-spec-format.ts` (새 파일) | `describeSpecSchema`, `describeGroupRules` |
 | `services/backend/src/modules/page/structured-spec-format.test.ts` (새 파일) | 설명과 스키마의 일치 테스트, 프롬프트 ID 일치 테스트 |
