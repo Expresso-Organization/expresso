@@ -66,10 +66,15 @@ export default async function AgenticChatPage({
     jobPostingId = parsed.data;
   }
 
-  const { data: job } = await jobs.posting(
-    authSession.accessToken,
-    jobPostingId,
-  );
+  const { data: job } = await jobs
+    .posting(authSession.accessToken, jobPostingId)
+    .catch((error: unknown) => {
+      if (error instanceof ApiError && error.status === 404) {
+        notFound();
+      }
+
+      throw error;
+    });
 
   return (
     <main style={{ maxWidth: 900, margin: "0 auto", padding: 24 }}>

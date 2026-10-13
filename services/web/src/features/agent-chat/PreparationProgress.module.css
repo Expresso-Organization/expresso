@@ -1,0 +1,7 @@
+.root { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--ex-border); color: var(--ex-fg); font-family: var(--ex-font-ui); }
+.root p { margin: 12px 0; line-height: var(--ex-leading-relaxed); white-space: pre-wrap; }
+.root label { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.root input, .root select, .root textarea { width: 100%; padding: 8px; border: 1px solid var(--ex-border); border-radius: 8px; background: var(--ex-bg); color: var(--ex-fg); }
+.root textarea { min-height: 100px; }
+.task { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--ex-border); }
+.settings, .actions { display: flex; flex-wrap: wrap; gap: 12px; }

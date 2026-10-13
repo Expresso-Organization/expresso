@@ -32,6 +32,7 @@ export const AI_CONTRACTS = [
   "insight_note",
   "job_chat",
   "job_career_match",
+  "job_career_gap",
 ] as const;
 
 export type AiContract = (typeof AI_CONTRACTS)[number];
@@ -67,6 +68,7 @@ export const DEFAULT_MODEL_TIER: Record<AiContract, AiModelTier> = {
   insight_note: "haiku",
   job_chat: "sonnet",
   job_career_match: "sonnet",
+  job_career_gap: "sonnet",
 };
 
 export interface AiCallSpec {

@@ -15,6 +15,9 @@ const migrations = [
   ["0011", ["migration.ts"]],
   ["0012", ["migration.ts"]],
   ["0013", ["migration.ts"]],
+  ["0014", ["migration.ts"]],
+  ["0015", ["migration.ts"]],
+  ["0016", ["migration.ts"]],
 ];
 
 for (const [version, files] of migrations) {

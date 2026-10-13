@@ -27,6 +27,7 @@ import {
   type JobCareerMatchInput,
 } from "./input-loader.js";
 import { JobCareerMatchError } from "./public.js";
+import { resolveMatchChat } from "./chat-context.js";
 
 type BeginResult =
   | {
@@ -62,14 +63,11 @@ export class JobCareerMatchService {
   ): Promise<JobCareerMatchResult | null> {
     const db = mongoCollections(this.context.db);
 
-    const session = await db.jobChatSessions.findOne({
-      _id: sessionId,
+    const session = await resolveMatchChat(
+      this.context.db,
       userId,
-    });
-
-    if (!session) {
-      throw new JobCareerMatchError(404, "chat session not found");
-    }
+      sessionId,
+    );
 
     const row = await db.jobCareerMatches.findOne(
       {
@@ -95,14 +93,11 @@ export class JobCareerMatchService {
   ): Promise<JobCareerMatchResult | null> {
     const db = mongoCollections(this.context.db);
 
-    const session = await db.jobChatSessions.findOne({
-      _id: sessionId,
+    const session = await resolveMatchChat(
+      this.context.db,
       userId,
-    });
-
-    if (!session) {
-      throw new JobCareerMatchError(404, "chat session not found");
-    }
+      sessionId,
+    );
 
     const row = await db.jobCareerMatches.findOne({
       userId,
@@ -132,17 +127,12 @@ export class JobCareerMatchService {
       const options = { session: tx.session };
       const now = new Date();
 
-      const session = await db.jobChatSessions.findOne(
-        { _id: sessionId, userId },
+      const session = await resolveMatchChat(
+        tx.db,
+        userId,
+        sessionId,
         options,
       );
-
-      if (!session) {
-        throw new JobCareerMatchError(
-          404,
-          "chat session not found",
-        );
-      }
 
       if (session.jobPostingId !== input.job.id) {
         throw new JobCareerMatchError(
@@ -282,15 +272,17 @@ export class JobCareerMatchService {
       const options = { session: tx.session };
       const now = new Date();
 
-      const session = await db.jobChatSessions.findOne(
-        { _id: sessionId, userId },
+      const session = await resolveMatchChat(
+        tx.db,
+        userId,
+        sessionId,
         options,
       );
 
-      if (!session) {
+      if (session.jobPostingId !== input.job.id) {
         throw new JobCareerMatchError(
-          404,
-          "chat session not found",
+          409,
+          "chat job changed during analysis",
         );
       }
 

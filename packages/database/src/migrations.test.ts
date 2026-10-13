@@ -53,7 +53,7 @@ describe("MongoDB migration sources", () => {
     expect(first.map(({ version, checksum }) => ({ version, checksum }))).toEqual(
       second.map(({ version, checksum }) => ({ version, checksum })),
     );
-    expect(first).toHaveLength(13);
+    expect(first).toHaveLength(16);
     expect(first.map(({ version }) => version)).toEqual([
       "0001",
       "0002",
@@ -68,6 +68,9 @@ describe("MongoDB migration sources", () => {
       "0011",
       "0012",
       "0013",
+      "0014",
+      "0015",
+      "0016",
     ]);
     expect(first.every(({ checksum }) => /^[a-f0-9]{64}$/.test(checksum))).toBe(true);
     for (const migration of first) {

@@ -16,3 +16,6 @@ export type * from "./agent-chat.js";
 export type { AgentCredentialDoc } from "./agent-credential.js";
 export type * from "./job-chat.js";
 export type * from "./job-career-match.js";
+export type { CareerGapRunDoc } from "./job-career-gap.js";
+export type { PreparationPlanDoc } from "./career-preparation.js";
+export type { PreparationProgressDoc, PreparationProgressEventDoc, PreparationReplanDoc } from "./preparation-progress.js";

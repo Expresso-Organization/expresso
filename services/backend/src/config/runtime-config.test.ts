@@ -57,3 +57,15 @@ describe("loadRuntimeConfig", () => {
     });
   });
 });
+
+// 로컬 CLI 모드가 팀의 Claude 인증 경로를 변경하지 않는지 확인합니다.
+describe("Codex Agent 설정", () => {
+  it("기본은 기존 Claude 경로를 유지한다", () => {
+    expect(loadRuntimeConfig({}).agentChatProvider).toBe("claude");
+  });
+  it("개발 환경에서 Codex AI Client와 함께 활성화한다", () => {
+    expect(loadRuntimeConfig({ AGENT_CHAT_ENABLED: "1", AGENT_CHAT_PROVIDER: "codex", AI_PROVIDER: "codex" }).agentChatProvider).toBe("codex");
+    expect(() => loadRuntimeConfig({ AGENT_CHAT_ENABLED: "1", AGENT_CHAT_PROVIDER: "codex", AI_PROVIDER: "anthropic" })).toThrow(/AI_PROVIDER=codex/);
+    expect(() => loadRuntimeConfig({ NODE_ENV: "production", AGENT_CHAT_ENABLED: "1", AGENT_CHAT_PROVIDER: "codex", AI_PROVIDER: "codex" })).toThrow(/non-production/);
+  });
+});

@@ -43,6 +43,7 @@ export const CONTRACT_CONSENT: Record<AiContract, ConsentScope | null> = {
   partial_edit: "career_records",
   style_remix: "career_records",
   insight_note: "career_records",
+  job_career_gap: "career_records",
 };
 
 

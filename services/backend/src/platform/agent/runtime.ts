@@ -4,17 +4,19 @@ import { join } from "node:path";
 import { query, tool, createSdkMcpServer } from "@anthropic-ai/claude-agent-sdk";
 import { z } from "zod";
 import { AgentEditDraftSchema, type AgentEditDraft, type AgentMessage, type AgentToolResult } from "@expresso/contracts";
+import type { JobCareerMatchResult } from "@expresso/contracts";
 
 export type AgentEvent = { type: "text"; text: string } | { type: "tool"; tool: AgentToolResult };
 export interface AgentInput {
   apiKey?: string;
   messages: AgentMessage[];
   context: unknown;
+  previousCareerMatch?: JobCareerMatchResult | null;
   signal: AbortSignal;
   emit(event: AgentEvent): Promise<void>;
   propose(recordId: string, draft: AgentEditDraft): Promise<NonNullable<AgentToolResult["proposal"]>>;
 }
-export interface AgentRuntime { run(input: AgentInput): Promise<void> }
+export interface AgentRuntime { readonly provider?: "claude" | "codex"; run(input: AgentInput): Promise<void> }
 
 /** NOTE(agent-chat-framework): 62f5587의 lib/agent/bridge.ts 이벤트 매핑을 제품 계약으로 변환합니다.
  * 원시 파일 경로·도구 인자·추론은 노출하지 않고 텍스트와 승인 가능한 도메인 결과만 전송합니다.

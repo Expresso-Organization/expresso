@@ -20,7 +20,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
       await mongo.listCollections({}, { nameOnly: true }).toArray()
     ).map((item) => item.name);
 
-    expect(names).toHaveLength(88);
+    expect(names).toHaveLength(93);
     expect(names).toContain("agent_conversations");
     expect(names).toContain("agent_credentials");
     expect(names).toContain("job_chat_sessions");
@@ -55,6 +55,9 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
       "0011_job_chat_confirmed_facts",
       "0012_job_chat_storage",
       "0013_job_career_match_storage",
+      "0014_job_career_gap_storage",
+      "0015_career_preparation_plans",
+      "0016_preparation_progress",
     ]);
     expect((await collections.plans.findOne({ code: "free" }))?.generationQuota).toBe(17);
   });

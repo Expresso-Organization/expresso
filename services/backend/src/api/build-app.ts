@@ -143,6 +143,10 @@ import { registerErrorHandler } from "./error-handler.js";
 import type { JobChatFactService } from "../modules/job-chat/fact-service.js";
 import { registerJobChatFactRoutes } from "../modules/job-chat/fact-routes.js";
 
+import { registerCareerGapRoutes, type CareerGapService } from "../modules/job-career-gap/index.js";
+import { registerPreparationRoutes, type PreparationService } from "../modules/career-preparation/index.js";
+import { registerPreparationProgressRoutes, type PreparationProgressService } from "../modules/preparation-progress/index.js";
+
 export interface BuildApiOptions {
   config: RuntimeConfig;
   readinessChecks?: readonly ReadinessCheck[];
@@ -150,6 +154,9 @@ export interface BuildApiOptions {
   jobChatAi?: AiClient | null;
   jobChatService?: JobChatApi;
   jobCareerMatchService?: JobCareerMatchApi;
+  careerGapService?: CareerGapService;
+  preparationService?: PreparationService;
+  preparationProgressService?: PreparationProgressService;
   jobChatFactService?: JobChatFactService;
 
   identityService?: IdentityApi;
@@ -255,6 +262,27 @@ export function buildApi(
           }
         : {}),
     });
+
+    if (options.careerGapService) {
+      registerCareerGapRoutes(app, {
+        service: options.careerGapService,
+        authenticateRequest,
+      });
+    }
+
+    if (options.preparationService) {
+      registerPreparationRoutes(app, {
+        service: options.preparationService,
+        authenticateRequest,
+      });
+    }
+
+    if (options.preparationProgressService) {
+      registerPreparationProgressRoutes(app, {
+        service: options.preparationProgressService,
+        authenticateRequest,
+      });
+    }
 
     if (options.entitlementService) {
       registerEntitlementRoutes(app, {

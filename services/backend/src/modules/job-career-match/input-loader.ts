@@ -18,6 +18,8 @@ import {
 import type { MongoContext } from "../../platform/mongodb.js";
 import type { JobBoardApi } from "../jobs/index.js";
 import { JobCareerMatchError } from "./public.js";
+import { resolveMatchChat } from "./chat-context.js";
+
 
 const MAX_RECORDS = 50;
 const MAX_RECORD_TEXT = 4000;
@@ -114,17 +116,11 @@ export class JobCareerMatchInputLoader {
   ): Promise<JobCareerMatchInput> {
     const db = mongoCollections(this.context.db);
 
-    const session = await db.jobChatSessions.findOne({
-      _id: sessionId,
+    const session = await resolveMatchChat(
+      this.context.db,
       userId,
-    });
-
-    if (!session) {
-      throw new JobCareerMatchError(
-        404,
-        "chat session not found",
-      );
-    }
+      sessionId,
+    );
 
     const job = await this.jobBoardService.get(
       userId,

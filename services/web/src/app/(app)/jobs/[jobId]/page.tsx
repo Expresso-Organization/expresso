@@ -302,7 +302,12 @@ export default async function JobDetailPage({
           </div>
 
           <aside className={styles.rail}>
-            <AgentChat context={{ kind: "job", id: jobId }} contextLabel={job.title} />
+            <div id="job-agent-chat">
+              <AgentChat
+                context={{ kind: "job", id: jobId }}
+                contextLabel={job.title}
+              />
+            </div>
             {job.match ? (
               <div className={styles.matchCard}>
                 {/*
@@ -420,12 +425,9 @@ export default async function JobDetailPage({
                   이 공고로 포트폴리오 만들기
                 </button>
               </form>
-              <form action="/agentic-chat" method="get">
-                <input type="hidden" name="jobPostingId" value={job.id}/>
-                <button type="submit">
+                <a href="#job-agent-chat" className={styles.brew}>
                   AI로 분석
-                </button>
-              </form>
+                </a>
             </div>
           </aside>
         </div>

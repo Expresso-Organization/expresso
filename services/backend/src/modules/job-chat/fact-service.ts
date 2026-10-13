@@ -34,6 +34,7 @@ import {
 } from "../career/properties.js";
 
 import { JobChatError } from "./public.js";
+import type { ClientSession, Db } from "mongodb";
 
 interface ChatFactDoc {
   _id: string;
@@ -95,17 +96,85 @@ export class JobChatFactService {
   private async requireSession(
     userId: string,
     sessionId: string,
+    database: Db = this.context.db,
+    options: { session?: ClientSession } = {},
   ) {
-    const session = await mongoCollections(
-      this.context.db,
-    ).jobChatSessions.findOne({
+    const db = mongoCollections(database);
+
+    const legacy = await db.jobChatSessions.findOne(
+      { _id: sessionId, userId },
+      options,
+    );
+
+    if (legacy) return;
+
+    const agent = await db.agentConversations.findOne(
+      { _id: sessionId, userId },
+      options,
+    );
+
+    if (!agent) {
+      throw new JobChatError(
+        404,
+        "chat session not found",
+      );
+    }
+  }
+
+  private async readUserAnswers(
+    userId: string,
+    sessionId: string,
+    messageIds: string[],
+  ): Promise<Array<{ _id: string; content: string }>> {
+    const db = mongoCollections(this.context.db);
+
+    const legacy = await db.jobChatSessions.findOne({
       _id: sessionId,
       userId,
     });
 
-    if (!session) {
-      throw new JobChatError(404, "chat session not found");
+    if (legacy) {
+      const messages = await db.jobChatMessages
+        .find({
+          userId,
+          sessionId,
+          _id: { $in: messageIds },
+          role: "user",
+        })
+        .sort({ sequence: 1 })
+        .toArray();
+
+      return messages.map((message) => ({
+        _id: message._id,
+        content: message.content,
+      }));
     }
+
+    const conversation = await db.agentConversations.findOne({
+      _id: sessionId,
+      userId,
+    });
+
+    if (!conversation) {
+      throw new JobChatError(
+        404,
+        "chat session not found",
+      );
+    }
+
+    const selected = new Set(messageIds);
+
+    // 저장된 대화의 순서대로 사용자 발언만 추출합니다.
+    return conversation.messages
+      .filter(
+        (message) =>
+          message.role === "user" &&
+          selected.has(message.id),
+      )
+      .map((message) => ({
+        _id: message.id,
+        content: message.text,
+      }));
   }
 
   async list(userId: string, sessionId: string) {
@@ -163,14 +232,11 @@ export class JobChatFactService {
       "record_cleanup",
     );
 
-    const messages = await mongoCollections(
-      this.context.db,
-    ).jobChatMessages.find({
+    const messages = await this.readUserAnswers(
       userId,
       sessionId,
-      _id: { $in: messageIds },
-      role: "user",
-    }).sort({ sequence: 1 }).toArray();
+      messageIds,
+    );
 
     if (
       messages.length !== messageIds.length ||
@@ -251,19 +317,12 @@ export class JobChatFactService {
         async (tx) => {
           await requireActiveUser(tx, userId);
 
-          const session = await mongoCollections(
+          await this.requireSession(
+            userId,
+            sessionId,
             tx.db,
-          ).jobChatSessions.findOne(
-            { _id: sessionId, userId },
             { session: tx.session },
           );
-
-          if (!session) {
-            throw new JobChatError(
-              404,
-              "chat session not found",
-            );
-          }
 
           const collection = this.collection(tx);
           const previous = await collection.findOne(
@@ -331,14 +390,12 @@ export class JobChatFactService {
       const db = mongoCollections(tx.db);
       const mongoOptions = { session: tx.session };
 
-      const session = await db.jobChatSessions.findOne(
-        { _id: sessionId, userId },
+      await this.requireSession(
+        userId,
+        sessionId,
+        tx.db,
         mongoOptions,
       );
-
-      if (!session) {
-        throw new JobChatError(404, "chat session not found");
-      }
 
       const fact = await collection.findOne(
         { _id: factId, userId, sessionId },
@@ -497,16 +554,12 @@ export class JobChatFactService {
     return inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
 
-      const session = await mongoCollections(
+      await this.requireSession(
+        userId,
+        sessionId,
         tx.db,
-      ).jobChatSessions.findOne(
-        { _id: sessionId, userId },
         { session: tx.session },
       );
-
-      if (!session) {
-        throw new JobChatError(404, "chat session not found");
-      }
 
       const collection = this.collection(tx);
 

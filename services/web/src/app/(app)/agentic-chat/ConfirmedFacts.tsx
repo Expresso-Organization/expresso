@@ -179,7 +179,9 @@ export default function ConfirmedFacts({
   disabled = false,
 }: {
   sessionId: string;
-  messages: JobChatMessage[];
+  messages: Array<
+    Pick<JobChatMessage, "id" | "role" | "content">
+  >;
   disabled?: boolean;
 }) {
   const [facts, setFacts] = useState<ChatFact[]>([]);
