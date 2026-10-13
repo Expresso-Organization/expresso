@@ -1645,7 +1645,7 @@ window.deck = new Deck();
      펴집니다. 다시 HYST 만큼 넓히면 발표 내용이 돌아옵니다. 더블클릭은 기본 폭으로. */
   const stage = document.getElementById('deckStage');
   const handle = document.querySelector('.split-handle');
-  const SPLIT0 = 960, MIN_W = 520, MIN_LEFT = 640, HYST = 40, KEY = 'deck:split:' + location.pathname;
+  const SPLIT0 = 960, MIN_W = 520, MIN_LEFT = 300, HYST = 40, KEY = 'deck:split:' + location.pathname;
   let split = SPLIT0, splitAnim = 0;
 
   function setSplit(w) {
